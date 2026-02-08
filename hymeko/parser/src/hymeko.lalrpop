@@ -1,0 +1,178 @@
+// src/hymeko.lalrpop
+use crate::ast::*;
+
+grammar;
+
+// ------------------------------------------------------------
+// Top-level
+// ------------------------------------------------------------
+
+pub Description: Description = {
+    <name:Ident> <header:OptHeaderBlock> <items:HyperItem*> =>
+        Description { name, header, items }
+};
+
+OptHeaderBlock: Vec<NodeDecl> = {
+    // pl. Minimal_Example{}  vagy MyDesc{ }
+    "{" <xs:HeaderItem*> "}" => xs,
+    // ha később engednéd header nélkül is:
+    // => Vec::new(),
+};
+
+HeaderItem: NodeDecl = {
+    // Headerben csak "statement node" jellegű dolgokat engedünk
+    <name:Ident> <anno:OptAnno> ";" => NodeDecl {
+        anno,
+        inner: NodeInner { name, body: None }
+    }
+};
+
+HyperItem: HyperItem = {
+    <n:NodeDecl>  => HyperItem::Node(n),
+    <e:EdgeDecl>  => HyperItem::Edge(e),
+    <a:HyperArc>  => HyperItem::Arc(a),
+};
+
+// ------------------------------------------------------------
+// Values
+// ------------------------------------------------------------
+
+IdentList: Vec<String> = {
+    <x:Ident> <rest:("," Ident)*> ","? => {
+        let mut out = vec![x];
+        for (_, y) in rest { out.push(y); }
+        out
+    }
+};
+
+Value: Value = {
+    <s:StrLit> => Value::Str(s),
+    <n:Number> => Value::Num(n),
+    "[" <xs:ValueList> "]" => Value::List(xs),
+    <r:RefPath> => Value::Ref(r),
+};
+
+ValueList: Vec<Value> = {
+    => Vec::new(),
+    <v:Value> <rest:("," Value)*> ","? => {
+        let mut out = vec![v];
+        for (_, x) in rest { out.push(x); }
+        out
+    }
+};
+
+// ------------------------------------------------------------
+// Nodes
+// ------------------------------------------------------------
+
+NodeDecl: NodeDecl = {
+    // Block node: name <tags> { ... }
+    <name:Ident> <anno:OptAnnoNoValue> "{" <body:HyperItem*> "}" => NodeDecl {
+        anno,
+        inner: NodeInner { name, body: Some(body) }
+    },
+
+    // Reference assignment: val_node <tags> -> a.b.c ;
+    <name:Ident> <tags:OptTags> "->" <r:RefPath> ";" => NodeDecl {
+        anno: Anno { tags, value: Some(Value::Ref(r)) },
+        inner: NodeInner { name, body: None }
+    },
+
+    // Statement node: val0 <int> 56 ;
+    <name:Ident> <anno:OptAnno> ";" => NodeDecl {
+        anno,
+        inner: NodeInner { name, body: None }
+    },
+};
+
+// ------------------------------------------------------------
+// Edges
+// ------------------------------------------------------------
+
+// @E1 { ... }   (és opcionálisan .E1 { ... } is)
+EdgeDecl: EdgeDecl = {
+    <sig:EdgeSig> <name:Ident> <anno:OptAnno> "{" <body:HyperItem*> "}" => EdgeDecl {
+        anno,
+        inner: EdgeInner { name, body }
+    }
+};
+
+EdgeSig: () = {
+    "@" => (),
+    "." => (),
+};
+
+// ------------------------------------------------------------
+// Arcs inside blocks/edges: +A -B ;
+// ------------------------------------------------------------
+
+HyperArc: HyperArc = {
+    <refs:SignedRef+> <anno:OptAnno> ";" => HyperArc {
+        anno,
+        inner: ArcInner { refs }
+    }
+};
+
+// ------------------------------------------------------------
+// References
+// ------------------------------------------------------------
+
+RefPath: Ref = {
+    <first:Ident> <rest:("." Ident)+> => {
+        let mut path = Vec::new();
+        path.push(first);
+        for (_, seg) in rest { path.push(seg); }
+        Ref { path }
+    },
+    <one:Ident> => Ref { path: {
+        let mut v = Vec::new();
+        v.push(one);
+        v
+    }}
+};
+
+// A SignedRef AST RefAtom-ot vár, ezért itt csinálunk default-ot.
+SignedRef: SignedRef = {
+    "+" <r:RefPath> => SignedRef::Plus(RefAtom { target: r, anno: RefAnno::default() }),
+    "-" <r:RefPath> => SignedRef::Minus(RefAtom { target: r, anno: RefAnno::default() }),
+    // ha szeretnéd a ~-t is (legacyből), add hozzá az AST-be a Neutral-t és itt is:
+    "~" <r:RefPath> => SignedRef::Neutral(RefAtom { target: r, anno: RefAnno::default() }),
+};
+
+// ------------------------------------------------------------
+// Annotation helpers
+// ------------------------------------------------------------
+
+OptAnno: Anno = {
+    <tags:OptTags> <v:OptValue> => Anno { tags, value: v }
+};
+
+OptAnnoNoValue: Anno = {
+    <tags:OptTags> => Anno { tags, value: None }
+};
+
+OptTags: Vec<String> = {
+    => Vec::new(),
+    "<" <xs:IdentList> ">" => xs
+};
+
+OptValue: Option<Value> = {
+    => None,
+    <v:Value> => Some(v)
+};
+
+// ------------------------------------------------------------
+// Terminals
+// ------------------------------------------------------------
+
+Ident: String = {
+    <s:r"[A-Za-z_][A-Za-z0-9_]*"> => s.to_string()
+};
+
+StrLit: String = {
+    <s:r#""([^"\\]|\\.)*""#> => s[1..s.len()-1].to_string()
+};
+
+Number: f64 = {
+    <s:r"[0-9]+(\.[0-9]+)?"> => s.parse().unwrap()
+};
