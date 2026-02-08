@@ -27,7 +27,7 @@ fn parses_minimal_description() {
         B ;
 
         @E1 {
-          +A -B ;
+          (+A, -B);
         }
         "#
     );
@@ -56,8 +56,8 @@ fn parses_multiple_arcs_in_one_edge() {
         C ;
 
         @E1 {
-          +A -B ;
-          +A -C ;
+          (+A, -B );
+          (+A, -C );
         }
         "#
     );

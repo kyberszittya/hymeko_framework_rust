@@ -1,4 +1,5 @@
-use crate::tests::lib::{as_node, body, find_node, read_parse_file};
+use crate::lib::{as_node, body, find_node, read_parse_file};
+
 
 #[test]
 fn parses_minimal_example_context_fields() {

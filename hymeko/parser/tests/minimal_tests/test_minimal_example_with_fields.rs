@@ -1,5 +1,5 @@
 use parser::ast::*;
-use crate::tests::lib::{assert_list_nums, assert_no_value, assert_num_value, assert_str_value, assert_tags, find_node, read_parse_file};
+use crate::lib::{assert_list_nums, assert_no_value, assert_num_value, assert_str_value, assert_tags, find_node, read_parse_file};
 
 
 

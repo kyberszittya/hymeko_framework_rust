@@ -1,5 +1,5 @@
 use parser::ast::*;
-use super::lib::read_parse_file;
+use crate::lib::read_parse_file;
 
 
 #[test]

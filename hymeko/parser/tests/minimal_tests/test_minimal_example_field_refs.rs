@@ -1,5 +1,5 @@
 use parser::ast::*;
-use crate::tests::lib::{body, find_node, read_parse_file};
+use crate::lib::{body, find_node, read_parse_file};
 
 #[test]
 fn parses_legacy_context_with_refs() {

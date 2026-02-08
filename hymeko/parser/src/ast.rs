@@ -61,6 +61,7 @@ pub enum ArcDir {
 pub struct DirectedRef {
     pub dir: ArcDir,
     pub target: RefAtom,
+    pub weights: Option<Vec<Value>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -70,6 +71,7 @@ pub struct Ref {
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct RefAnno {
+    pub weights: Option<Vec<Value>>,
     pub tags: Vec<String>,
     pub value: Option<Value>,
 }

@@ -107,9 +107,17 @@ EdgeSig: () = {
 // ------------------------------------------------------------
 
 HyperArc: HyperArc = {
-    <refs:SignedRef+> <anno:OptAnno> ";" => HyperArc {
+    "(" <refs:SignedRefList> ")" <anno:OptAnno> ";" => HyperArc {
         anno,
         inner: ArcInner { refs }
+    }
+}
+
+SignedRefList: Vec<SignedRef> = {
+    <x:SignedRef> <rest:("," SignedRef)*> ","? => {
+        let mut out = vec![x];
+        for (_, y) in rest { out.push(y); }
+        out
     }
 };
 
@@ -132,13 +140,15 @@ RefPath: Ref = {
 };
 
 // A SignedRef AST RefAtom-ot vár, ezért itt csinálunk default-ot.
-SignedRef: SignedRef = {
-    "+" <r:RefPath> => SignedRef::Plus(RefAtom { target: r, anno: RefAnno::default() }),
-    "-" <r:RefPath> => SignedRef::Minus(RefAtom { target: r, anno: RefAnno::default() }),
-    // ha szeretnéd a ~-t is (legacyből), add hozzá az AST-be a Neutral-t és itt is:
-    "~" <r:RefPath> => SignedRef::Neutral(RefAtom { target: r, anno: RefAnno::default() }),
+OptWeights: Option<Vec<Value>> = {
+    => None,
+    "[" <xs:ValueList> "]" => Some(xs),
 };
-
+SignedRef: SignedRef = {
+    "+" <r:RefPath> <w:OptWeights> => SignedRef::Plus(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
+    "-" <r:RefPath> <w:OptWeights> => SignedRef::Minus(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
+    "~" <r:RefPath> <w:OptWeights> => SignedRef::Neutral(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
+};
 // ------------------------------------------------------------
 // Annotation helpers
 // ------------------------------------------------------------
