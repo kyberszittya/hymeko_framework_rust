@@ -30,7 +30,8 @@ fn main() {
     let parser = hymeko::DescriptionParser::new();
 
     // 4. Parse and handle result
-    match parser.parse(&input) {
+
+    match parser.parse(crate::lexer::simd::Lexer::new(&input)) {
         Ok(ast) => {
             println!("✅ Parse Successful!");
             println!("{:#?}", ast); // Pretty-print the AST

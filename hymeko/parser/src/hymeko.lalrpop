@@ -1,8 +1,36 @@
 // src/hymeko.lalrpop
 use crate::ast::*;
+use crate::lexer::Token;
 
 grammar;
 
+extern {
+    type Location = usize;
+    type Error = crate::lexer::LexError;
+
+    enum Token {
+        "{" => crate::lexer::Token::LBrace,
+        "}" => crate::lexer::Token::RBrace,
+        "(" => crate::lexer::Token::LParen,
+        ")" => crate::lexer::Token::RParen,
+        "[" => crate::lexer::Token::LBrack,
+        "]" => crate::lexer::Token::RBrack,
+        "<" => crate::lexer::Token::LAngle,
+        ">" => crate::lexer::Token::RAngle,
+        "," => crate::lexer::Token::Comma,
+        ";" => crate::lexer::Token::Semi,
+        "." => crate::lexer::Token::Dot,
+        "@" => crate::lexer::Token::At,
+        "+" => crate::lexer::Token::Plus,
+        "-" => crate::lexer::Token::Minus,
+        "~" => crate::lexer::Token::Tilde,
+        "->" => crate::lexer::Token::Arrow,
+
+        Ident => crate::lexer::Token::Ident(<String>),
+        Number => crate::lexer::Token::Number(<f64>),
+        StrLit => crate::lexer::Token::Str(<String>),
+    }
+}
 // ------------------------------------------------------------
 // Top-level
 // ------------------------------------------------------------
@@ -111,7 +139,7 @@ HyperArc: HyperArc = {
         anno,
         inner: ArcInner { refs }
     }
-}
+};
 
 SignedRefList: Vec<SignedRef> = {
     <x:SignedRef> <rest:("," SignedRef)*> ","? => {
@@ -174,7 +202,7 @@ OptValue: Option<Value> = {
 // ------------------------------------------------------------
 // Terminals
 // ------------------------------------------------------------
-
+/*
 Ident: String = {
     <s:r"[A-Za-z_][A-Za-z0-9_]*"> => s.to_string()
 };
@@ -186,3 +214,4 @@ StrLit: String = {
 Number: f64 = {
     <s:r"[0-9]+(\.[0-9]+)?"> => s.parse().unwrap()
 };
+*/
