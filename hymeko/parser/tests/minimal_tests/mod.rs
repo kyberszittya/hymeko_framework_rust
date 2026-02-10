@@ -7,3 +7,4 @@ pub mod test_read_minimal_example;
 mod test_minimal_example_basic_hierarchy;
 mod test_smoke_test;
 mod test_minimal_example_field_refs;
+mod test_minimal_example_comments;
