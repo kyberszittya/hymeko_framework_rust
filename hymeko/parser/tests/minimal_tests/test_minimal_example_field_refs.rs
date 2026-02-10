@@ -1,10 +1,11 @@
 use parser::ast::*;
-use crate::lib::{body, find_node, read_parse_file};
+use parser::read_parse_file;
+use crate::lib::{body, find_node};
 
 #[test]
 fn parses_legacy_context_with_refs() {
     let path = "./data/minimal_examples/minimal_example_fields_with_reference.hymeko";
-    let d = read_parse_file(path);
+    let d = read_parse_file(path).unwrap();
 
     assert_eq!(d.name, "Minimal_Example");
 
@@ -51,7 +52,7 @@ fn parses_legacy_context_with_refs() {
 #[test]
 fn parses_legacy_context_with_refs_alternative() {
     let path = "./data/minimal_examples/minimal_example_fields_with_reference2.hymeko";
-    let d = read_parse_file(path);
+    let d = read_parse_file(path).unwrap();
 
     assert_eq!(d.name, "Minimal_Example");
 

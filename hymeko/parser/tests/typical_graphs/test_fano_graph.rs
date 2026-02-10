@@ -1,11 +1,12 @@
 use parser::ast::*;
-use crate::lib::{body, find_node, read_parse_file};
+use parser::read_parse_file;
+use crate::lib::{body, find_node};
 
 #[test]
 fn parse_fano_graph() {
 
     let path = "./data/typical_graphs/fano_graph.hymeko";
-    let desc: Description = read_parse_file(path);
+    let desc: Description = read_parse_file(path).unwrap();
 
     // Top-level: "Fano_graph" név + üres header
     assert_eq!(desc.name, "Fano_graph");

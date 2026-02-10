@@ -1,12 +1,5 @@
-use parser::ast::{Description, HyperItem, NodeDecl, Value};
-use parser::parse_description;
+use parser::ast::{HyperItem, NodeDecl, Value};
 
-// Read file and parse
-pub fn read_parse_file(path: &str) -> Description
-{
-    let input = std::fs::read_to_string(path).unwrap();
-    parse_description(&input).unwrap()
-}
 
 pub fn find_node<'a>(items: &'a [HyperItem], name: &str) -> &'a NodeDecl {
     items

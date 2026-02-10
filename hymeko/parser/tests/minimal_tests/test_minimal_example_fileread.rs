@@ -1,11 +1,11 @@
 use parser::ast::*;
-use crate::lib::read_parse_file;
+use parser::{read_parse_file};
 
 
 #[test]
 fn test_minimal_example() {
     let path = "./data/minimal_examples/minimal_example.hymeko";
-    let d = read_parse_file(path);
+    let d = read_parse_file(path).unwrap();
 
     assert_eq!(d.name, "Minimal_Example");
     /*
@@ -24,7 +24,7 @@ fn test_minimal_example() {
 #[test]
 fn test_minimal_example_base_elements() {
     let path = "./data/minimal_examples/minimal_example_base_elements.hymeko";
-    let d = read_parse_file(path);
+    let d = read_parse_file(path).unwrap();
 
     assert_eq!(d.name, "MyDesc");
 

@@ -1,7 +1,6 @@
 pub mod ast;
 pub mod lexer;
 
-// Must be pub
 use crate::hymeko::DescriptionParser;
 use lalrpop_util::lalrpop_mod;
 use crate::ast::Description;
@@ -16,3 +15,9 @@ pub fn parse_description(input: &str) -> Result<Description, lalrpop_util::Parse
 }
 
 
+// Read file and parse
+pub fn read_parse_file(path: &str) -> Result<Description, lalrpop_util::ParseError<usize, Token, LexError>>
+{
+    let input = std::fs::read_to_string(path).unwrap();
+    parse_description(&input)
+}

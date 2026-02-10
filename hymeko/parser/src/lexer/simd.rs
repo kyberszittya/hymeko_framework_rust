@@ -36,6 +36,56 @@ impl<'a> Lexer<'a> {
 
     // ---------- SIMD: whitespace ----------
     #[inline(always)]
+    fn skip_ws_and_line_comments(&mut self) -> Result<(), LexError> {
+        loop {
+            // Whitespace (SIMD / fallback)
+            self.skip_ws();
+            // Not enough char for comment prefixes
+            if self.i + 1 >= self.n {
+                return Ok(());
+            }
+            // Comment exclusion
+            // Line comment
+            if self.i + 1 < self.n && self.s[self.i] == b'/' &&
+                self.s[self.i + 1] == b'/' {
+                self.i += 2;
+                while self.i < self.n {
+                    let c = self.s[self.i];
+                    if c == b'\n' || c == b'\r' {
+                        break;
+                    }
+                    self.i += 1;
+                }
+                // Collect \r\n
+                continue;
+            }
+            // Block comment (/* */)
+            if self.s[self.i] == b'/' && self.s[self.i + 1] == b'*' {
+                let start = self.i;
+                self.i += 2;
+
+                while self.i + 1 < self.n {
+                    if self.s[self.i] == b'*' && self.s[self.i + 1] == b'/' {
+                        self.i += 2;
+                        break;
+                    }
+                    self.i += 1;
+                }
+                // No closing befor EOF
+                if self.i + 1 >= self.n {
+                    return Err(LexError{
+                        msg: "Unterminated block comment /* ... */".to_string(),
+                        at: start
+                    });
+                }
+                continue;
+            }
+            return Ok(());
+        }
+    }
+
+
+    #[inline(always)]
     fn skip_ws(&mut self) {
         #[cfg(all(target_arch = "x86_64"))]
         {
@@ -175,7 +225,6 @@ impl<'a> Lexer<'a> {
                 return;
             }
 
-            // 2) SIMD: 16 byte egyszerre
             let p = self.s.as_ptr().add(self.i) as *const __m128i;
             let x = _mm_loadu_si128(p);
 
@@ -245,10 +294,8 @@ impl<'a> Lexer<'a> {
             let mask_ok = _mm256_movemask_epi8(ok) as u32;
 
             if mask_ok == 0xFFFF_FFFF {
-                // mind a 32 ok → ugorj
                 self.i += 32;
             } else {
-                // első nem-ok pozíció
                 let not_ok = !mask_ok;
                 let adv = not_ok.trailing_zeros() as usize;
                 self.i += adv;
@@ -308,7 +355,7 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = Result<(usize, Token, usize), LexError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.skip_ws();
+        self.skip_ws_and_line_comments();
         let start = self.i;
         let c = self.bump()?;
 

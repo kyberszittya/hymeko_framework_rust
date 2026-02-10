@@ -1,10 +1,11 @@
-use crate::lib::{as_node, body, find_node, read_parse_file};
+use parser::read_parse_file;
+use crate::lib::{as_node, body, find_node};
 
 
 #[test]
 fn parses_minimal_example_context_fields() {
     let path = "./data/minimal_examples/minimal_example_basic_hierarchy.hymeko";
-    let d = read_parse_file(path);
+    let d = read_parse_file(path).unwrap();
     // Header
     assert_eq!(d.name, "Minimal_Example");
     /*

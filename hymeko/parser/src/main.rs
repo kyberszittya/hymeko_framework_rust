@@ -4,6 +4,7 @@ use parser::hymeko;
 use std::env;
 use std::fs;
 use std::process;
+use parser::lexer::simd::Lexer;
 
 // Args: path
 fn main() {
@@ -31,7 +32,7 @@ fn main() {
 
     // 4. Parse and handle result
 
-    match parser.parse(crate::lexer::simd::Lexer::new(&input)) {
+    match parser.parse(Lexer::new(&input)) {
         Ok(ast) => {
             println!("✅ Parse Successful!");
             println!("{:#?}", ast); // Pretty-print the AST
@@ -42,4 +43,6 @@ fn main() {
             process::exit(1);
         }
     }
+
+
 }
