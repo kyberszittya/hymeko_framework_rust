@@ -64,19 +64,29 @@ impl<'a> Lexer<'a> {
                 let start = self.i;
                 self.i += 2;
 
+                let mut closed = false;
+
                 while self.i + 1 < self.n {
                     if self.s[self.i] == b'*' && self.s[self.i + 1] == b'/' {
                         self.i += 2;
+                        closed = true;
                         break;
                     }
                     self.i += 1;
                 }
-                // No closing befor EOF
+                // No closing before EOF
                 if self.i + 1 >= self.n {
                     return Err(LexError{
                         msg: "Unterminated block comment /* ... */".to_string(),
                         at: start
                     });
+                }
+                if !closed {
+                    return Err(LexError{
+                        msg: "Unterminated block comment /* ... */".to_string(),
+                        at: start
+                    });
+
                 }
                 continue;
             }
@@ -355,7 +365,9 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = Result<(usize, Token, usize), LexError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.skip_ws_and_line_comments();
+        if let Err(e) = self.skip_ws_and_line_comments() {
+            return Some(Err(e));
+        }
         let start = self.i;
         let c = self.bump()?;
 

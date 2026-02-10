@@ -145,5 +145,7 @@ fn parses_minimal_example_context_fields_with_bad_comments() {
     let path = "./data/minimal_examples/minimal_example_with_fields_with_bad_comments.hymeko";
     // This should throw an error
     let res = read_parse_file(path);
+    // Expect error
+    assert!(res.is_err());
 
 }
