@@ -1,16 +1,17 @@
 // src/lexer/simd.rs
+use crate::interner::Interner;
 use crate::lexer::{LexError, Token};
 
 pub struct Lexer<'a> {
     s: &'a [u8],
     i: usize,
-    n: usize,
+    n: usize
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         let b = input.as_bytes();
-        Self { s: b, i: 0, n: b.len() }
+        Self { s: b, i: 0, n: b.len()}
     }
 
     #[inline(always)]
@@ -316,20 +317,25 @@ impl<'a> Lexer<'a> {
 
     // ---------- lexers ----------
     fn lex_ident(&mut self, start: usize) -> Token {
-        // self.i már az első char UTÁN van, tehát csak a tailt scanneljük
         self.scan_ident_tail();
-        let text = std::str::from_utf8(&self.s[start..self.i]).unwrap().to_string();
-        Token::Ident(text)
+        let text = std::str::from_utf8(&self.s[start..self.i]).unwrap();
+        Token::Ident(text.to_string())
     }
 
     fn lex_number(&mut self, start: usize) -> Result<Token, LexError> {
+        let mut seen_dot = false;
         while self.i < self.n {
             let c = self.s[self.i];
-            if (c >= b'0' && c <= b'9') || c == b'.' {
+            if (c >= b'0' && c <= b'9')  {
                 self.i += 1;
+            } else if c == b'.' && !seen_dot {
+                seen_dot = true;
+                self.i += 1;
+                continue;
             } else {
                 break;
             }
+
         }
         let text = std::str::from_utf8(&self.s[start..self.i]).unwrap();
         match text.parse::<f64>() {
@@ -415,3 +421,4 @@ impl<'a> Iterator for Lexer<'a> {
         Some(Ok((start, tok, end)))
     }
 }
+

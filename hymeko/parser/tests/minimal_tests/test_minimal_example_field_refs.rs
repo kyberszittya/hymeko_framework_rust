@@ -1,20 +1,11 @@
 use parser::ast::*;
-use parser::read_parse_file;
-use crate::lib::{body, find_node};
+use parser::{body, find_node, read_parse_file};
 
 #[test]
 fn parses_legacy_context_with_refs() {
     let path = "./data/minimal_examples/minimal_example_fields_with_reference.hymeko";
     let d = read_parse_file(path).unwrap();
-
     assert_eq!(d.name, "Minimal_Example");
-
-    // meta kötelező a mostani formában
-    /*
-    assert_eq!(d.meta.inner.name, "Minimal_Example");
-    
-     */
-
     // context
     assert_eq!(d.items.len(), 1);
     let context = match &d.items[0] {
@@ -55,12 +46,6 @@ fn parses_legacy_context_with_refs_alternative() {
     let d = read_parse_file(path).unwrap();
 
     assert_eq!(d.name, "Minimal_Example");
-
-    // meta kötelező a mostani formában
-    /*
-    assert_eq!(d.meta.inner.name, "Minimal_Example");
-
-     */
 
     // context
     assert_eq!(d.items.len(), 1);

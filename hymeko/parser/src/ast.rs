@@ -1,49 +1,51 @@
 // src/ast.rs
 
+use crate::common::SymId;
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct Description {
-    pub name: String,
-    pub header: Vec<NodeDecl>,
-    pub items: Vec<HyperItem>,
+pub struct Description<Id> {
+    pub name: Id,
+    pub header: Vec<NodeDecl<Id>>,
+    pub items: Vec<HyperItem<Id>>,
 }
 #[derive(Debug, Clone, PartialEq)]
-pub enum HyperItem {
-    Node(NodeDecl),
-    Edge(EdgeDecl),
-    Arc(HyperArc),
+pub enum HyperItem<Id> {
+    Node(NodeDecl<Id>),
+    Edge(EdgeDecl<Id>),
+    Arc(HyperArc<Id>),
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct Anno {
+pub struct Anno<Id> {
     pub tags: Vec<String>,        // <...>
-    pub value: Option<Value>,     // opcionális érték
+    pub value: Option<Value<Id>>,     // opcionális érték
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct HyperAnnotatedElement<T> {
-    pub anno: Anno,
+pub struct HyperAnnotatedElement<T, Id> {
+    pub anno: Anno<Id>,
     pub inner: T,
 }
 
-pub type NodeDecl  = HyperAnnotatedElement<NodeInner>;
-pub type EdgeDecl  = HyperAnnotatedElement<EdgeInner>;
-pub type HyperArc  = HyperAnnotatedElement<ArcInner>;
+pub type NodeDecl<Id>  = HyperAnnotatedElement<NodeInner<Id>, Id>;
+pub type EdgeDecl<Id>  = HyperAnnotatedElement<EdgeInner<Id>, Id>;
+pub type HyperArc<Id>  = HyperAnnotatedElement<ArcInner<Id>, Id>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NodeInner {
+pub struct NodeInner<Id> {
     pub name: String,
-    pub body: Option<Vec<HyperItem>>,
+    pub body: Option<Vec<HyperItem<Id>>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct EdgeInner {
+pub struct EdgeInner<Id> {
     pub name: String,
-    pub body: Vec<HyperItem>,
+    pub body: Vec<HyperItem<Id>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ArcInner {
-    pub refs: Vec<SignedRef>,
+pub struct ArcInner<Id> {
+    pub refs: Vec<SignedRef<Id>>,
 }
 
 //----
@@ -58,41 +60,44 @@ pub enum ArcDir {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DirectedRef {
+pub struct DirectedRef<Id> {
     pub dir: ArcDir,
-    pub target: RefAtom,
-    pub weights: Option<Vec<Value>>,
+    pub target: RefAtom<Id>,
+    pub weights: Option<Vec<Value<Id>>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Ref {
-    pub path: Vec<String>
+pub struct Ref<Id> {
+    pub path: Vec<Id>
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct RefAnno {
-    pub weights: Option<Vec<Value>>,
+pub struct RefAnno<Id> {
+    pub weights: Option<Vec<Value<Id>>>,
     pub tags: Vec<String>,
-    pub value: Option<Value>,
+    pub value: Option<Value<Id>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct RefAtom {
-    pub target: Ref,
-    pub anno: RefAnno,
+pub struct RefAtom<Id> {
+    pub target: Ref<Id>,
+    pub anno: RefAnno<Id>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum SignedRef {
-    Plus(RefAtom),
-    Minus(RefAtom),
-    Neutral(RefAtom)
+pub enum SignedRef<Id> {
+    Plus(RefAtom<Id>),
+    Minus(RefAtom<Id>),
+    Neutral(RefAtom<Id>)
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Value {
+pub enum Value<Id> {
     Str(String),
     Num(f64),
-    List(Vec<Value>),
-    Ref(Ref),
+    List(Vec<Value<Id>>),
+    Ref(Ref<Id>),
 }
+
+pub type AstStr = Description<String>;
+pub type AstSym = Description<SymId>;

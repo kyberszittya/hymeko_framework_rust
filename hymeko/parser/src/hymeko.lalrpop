@@ -35,19 +35,19 @@ extern {
 // Top-level
 // ------------------------------------------------------------
 
-pub Description: Description = {
+pub Description: Description<String> = {
     <name:Ident> <header:OptHeaderBlock> <items:HyperItem*> =>
         Description { name, header, items }
 };
 
-OptHeaderBlock: Vec<NodeDecl> = {
+OptHeaderBlock: Vec<NodeDecl<String>> = {
     // pl. Minimal_Example{}  vagy MyDesc{ }
     "{" <xs:HeaderItem*> "}" => xs,
     // ha később engednéd header nélkül is:
     // => Vec::new(),
 };
 
-HeaderItem: NodeDecl = {
+HeaderItem: NodeDecl<String> = {
     // Headerben csak "statement node" jellegű dolgokat engedünk
     <name:Ident> <anno:OptAnno> ";" => NodeDecl {
         anno,
@@ -55,7 +55,7 @@ HeaderItem: NodeDecl = {
     }
 };
 
-HyperItem: HyperItem = {
+HyperItem: HyperItem<String> = {
     <n:NodeDecl>  => HyperItem::Node(n),
     <e:EdgeDecl>  => HyperItem::Edge(e),
     <a:HyperArc>  => HyperItem::Arc(a),
@@ -73,14 +73,14 @@ IdentList: Vec<String> = {
     }
 };
 
-Value: Value = {
+Value: Value<String> = {
     <s:StrLit> => Value::Str(s),
     <n:Number> => Value::Num(n),
     "[" <xs:ValueList> "]" => Value::List(xs),
     <r:RefPath> => Value::Ref(r),
 };
 
-ValueList: Vec<Value> = {
+ValueList: Vec<Value<String>> = {
     => Vec::new(),
     <v:Value> <rest:("," Value)*> ","? => {
         let mut out = vec![v];
@@ -93,7 +93,7 @@ ValueList: Vec<Value> = {
 // Nodes
 // ------------------------------------------------------------
 
-NodeDecl: NodeDecl = {
+NodeDecl: NodeDecl<String> = {
     // Block node: name <tags> { ... }
     <name:Ident> <anno:OptAnnoNoValue> "{" <body:HyperItem*> "}" => NodeDecl {
         anno,
@@ -117,8 +117,8 @@ NodeDecl: NodeDecl = {
 // Edges
 // ------------------------------------------------------------
 
-// @E1 { ... }   (és opcionálisan .E1 { ... } is)
-EdgeDecl: EdgeDecl = {
+// @E1 { ... }   is an edge
+EdgeDecl: EdgeDecl<String> = {
     <sig:EdgeSig> <name:Ident> <anno:OptAnno> "{" <body:HyperItem*> "}" => EdgeDecl {
         anno,
         inner: EdgeInner { name, body }
@@ -127,21 +127,20 @@ EdgeDecl: EdgeDecl = {
 
 EdgeSig: () = {
     "@" => (),
-    "." => (),
 };
 
 // ------------------------------------------------------------
 // Arcs inside blocks/edges: +A -B ;
 // ------------------------------------------------------------
 
-HyperArc: HyperArc = {
+HyperArc: HyperArc<String> = {
     "(" <refs:SignedRefList> ")" <anno:OptAnno> ";" => HyperArc {
         anno,
         inner: ArcInner { refs }
     }
 };
 
-SignedRefList: Vec<SignedRef> = {
+SignedRefList: Vec<SignedRef<String>> = {
     <x:SignedRef> <rest:("," SignedRef)*> ","? => {
         let mut out = vec![x];
         for (_, y) in rest { out.push(y); }
@@ -153,7 +152,7 @@ SignedRefList: Vec<SignedRef> = {
 // References
 // ------------------------------------------------------------
 
-RefPath: Ref = {
+RefPath: Ref<String> = {
     <first:Ident> <rest:("." Ident)+> => {
         let mut path = Vec::new();
         path.push(first);
@@ -168,11 +167,11 @@ RefPath: Ref = {
 };
 
 // A SignedRef AST RefAtom-ot vár, ezért itt csinálunk default-ot.
-OptWeights: Option<Vec<Value>> = {
+OptWeights: Option<Vec<Value<String>>> = {
     => None,
     "[" <xs:ValueList> "]" => Some(xs),
 };
-SignedRef: SignedRef = {
+SignedRef: SignedRef<String> = {
     "+" <r:RefPath> <w:OptWeights> => SignedRef::Plus(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
     "-" <r:RefPath> <w:OptWeights> => SignedRef::Minus(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
     "~" <r:RefPath> <w:OptWeights> => SignedRef::Neutral(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
@@ -181,11 +180,11 @@ SignedRef: SignedRef = {
 // Annotation helpers
 // ------------------------------------------------------------
 
-OptAnno: Anno = {
+OptAnno: Anno<String> = {
     <tags:OptTags> <v:OptValue> => Anno { tags, value: v }
 };
 
-OptAnnoNoValue: Anno = {
+OptAnnoNoValue: Anno<String> = {
     <tags:OptTags> => Anno { tags, value: None }
 };
 
@@ -194,7 +193,7 @@ OptTags: Vec<String> = {
     "<" <xs:IdentList> ">" => xs
 };
 
-OptValue: Option<Value> = {
+OptValue: Option<Value<String>> = {
     => None,
     <v:Value> => Some(v)
 };

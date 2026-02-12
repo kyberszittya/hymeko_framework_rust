@@ -1,6 +1,5 @@
 use parser::ast::HyperItem;
-use parser::read_parse_file;
-use crate::lib::{assert_list_nums, assert_no_value, assert_num_value, assert_str_value, assert_tags, find_node};
+use parser::{assert_list_nums, assert_no_value, assert_num_value, assert_str_value, assert_tags, find_node, read_parse_file};
 
 #[test]
 fn parses_minimal_example_context_fields_with_comments() {
@@ -146,15 +145,7 @@ fn parses_minimal_example_context_fields_with_header_comment() {
     // description name
     assert_eq!(d.name, "Minimal_Example");
 
-    // meta node
-    /*
-    assert_eq!(d.meta.inner.name, "Minimal_Example");
-    let meta_body = d.meta.inner.body.as_ref().expect("meta must have a body");
-    let author = find_node(meta_body, "author");
-    assert_str_value(author, "Csaba");
-
-     */
-
+    
     // top-level: context node
     assert_eq!(d.items.len(), 1);
     let context = match &d.items[0] {

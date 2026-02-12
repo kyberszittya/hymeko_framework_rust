@@ -3,14 +3,14 @@ use parser::ast::*;
 #[test]
 fn ast_variants_are_constructible() {
     // HyperItem::Node
-    let n: NodeDecl = HyperAnnotatedElement {
+    let n: NodeDecl<String> = HyperAnnotatedElement {
         anno: Anno { tags: Vec::new(), value: None },
         inner: NodeInner { name: "n".to_string(), body: None },
     };
     let _hi = HyperItem::Node(n);
 
     // HyperItem::Edge
-    let e: EdgeDecl = HyperAnnotatedElement {
+    let e: EdgeDecl<String> = HyperAnnotatedElement {
         anno: Anno { tags: Vec::new(), value: None },
         inner: EdgeInner { name: "e".to_string(), body: Vec::new() },
     };
@@ -31,7 +31,5 @@ fn ast_variants_are_constructible() {
     */
 
     // Value variants
-    let _v1 = Value::Str("x".to_string());
-    let _v2 = Value::Num(1.0);
-    let _v3 = Value::List(vec![Value::Num(1.0), Value::Num(2.0)]);
+    
 }

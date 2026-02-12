@@ -1,11 +1,11 @@
 use parser::parse_description;
 use parser::ast::*;
 
-fn must_parse(input: &str) -> Description {
+fn must_parse(input: &str) -> AstStr {
     parse_description(input).unwrap()
 }
 
-fn edge_arcs(e: &EdgeDecl) -> Vec<&HyperArc> {
+fn edge_arcs(e: &EdgeDecl<String>) -> Vec<&HyperArc<String>> {
     e.inner
         .body
         .iter()

@@ -28,12 +28,6 @@ fn test_minimal_example_base_elements() {
 
     assert_eq!(d.name, "MyDesc");
 
-    // meta node kötelező
-    /*
-    assert_eq!(d.meta.inner.name, "MyDesc");
-    
-     */
-
     assert_eq!(d.items.len(), 3);
 
     // Hypernode A
@@ -54,7 +48,7 @@ fn test_minimal_example_base_elements() {
             assert_eq!(e.inner.name, "E1");
 
             // szedjük ki az arcokat a body-ból
-            let arcs: Vec<&HyperArc> = e.inner.body.iter().filter_map(|it| {
+            let arcs: Vec<&HyperArc<String>> = e.inner.body.iter().filter_map(|it| {
                 if let HyperItem::Arc(a) = it { Some(a) } else { None }
             }).collect();
 

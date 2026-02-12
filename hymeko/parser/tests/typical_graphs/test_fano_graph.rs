@@ -1,12 +1,11 @@
 use parser::ast::*;
-use parser::read_parse_file;
-use crate::lib::{body, find_node};
+use parser::{body, find_node, read_parse_file};
 
 #[test]
 fn parse_fano_graph() {
 
     let path = "./data/typical_graphs/fano_graph.hymeko";
-    let desc: Description = read_parse_file(path).unwrap();
+    let desc: AstStr = read_parse_file(path).unwrap();
 
     // Top-level: "Fano_graph" név + üres header
     assert_eq!(desc.name, "Fano_graph");
@@ -37,7 +36,7 @@ fn parse_fano_graph() {
             .unwrap_or_else(|| panic!("Expected Edge({}) in fano body", ename));
 
         // edge.inner.body : Vec<HyperItem>
-        let arc_items: Vec<&parser::ast::HyperArc> = edge
+        let arc_items: Vec<&parser::ast::HyperArc<String>> = edge
             .inner
             .body
             .iter()
