@@ -16,7 +16,7 @@ impl Interner{
         let id = SymId(self.vec.len() as u32);
         self.vec.push(s.to_owned());
         self.map.insert(self.vec[id.0 as usize].clone(), id);
-        return id
+        id
     }
 
     pub fn resolve(&self, id: SymId) -> &str {
