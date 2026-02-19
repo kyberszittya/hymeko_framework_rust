@@ -2,12 +2,13 @@ pub mod common;
 pub mod ast;
 pub mod lexer;
 pub mod interner;
-
-
+pub mod intern_pass;
+pub mod resolve;
 
 use crate::hymeko::DescriptionParser;
 use lalrpop_util::lalrpop_mod;
-use crate::ast::{AstStr, Description, HyperItem, NodeDecl, Value};
+use crate::ast::{AstStr, EdgeDecl, HyperItem, NodeDecl, Value};
+use crate::common::SymId;
 use crate::lexer::{LexError, Token};
 
 lalrpop_mod!(pub hymeko);
@@ -15,7 +16,6 @@ lalrpop_mod!(pub hymeko);
 
 
 pub fn parse_description(input: &str) -> Result<AstStr, lalrpop_util::ParseError<usize, Token, LexError>> {
-    let mut interner = crate::interner::Interner::new();
     let lexer = crate::lexer::simd::Lexer::new(input);
     let ast = DescriptionParser::new().parse(lexer)?;
     Ok(ast)
@@ -30,7 +30,7 @@ pub fn read_parse_file(path: &str) -> Result<AstStr, lalrpop_util::ParseError<us
 }
 
 
-pub fn find_node<'a, Id>(items: &'a [HyperItem<Id>], name: &str) -> &'a NodeDecl<Id> {
+pub fn find_node<'a>(items: &'a [HyperItem<String>], name: &str) -> &'a NodeDecl<String> {
     items
         .iter()
         .find_map(|it| match it {
@@ -40,7 +40,7 @@ pub fn find_node<'a, Id>(items: &'a [HyperItem<Id>], name: &str) -> &'a NodeDecl
         .unwrap_or_else(|| panic!("Expected Node({}) in body", name))
 }
 
-pub fn assert_tags<Id>(n: &NodeDecl<Id>, expected: &[&str]) {
+pub fn assert_tags(n: &NodeDecl<String>, expected: &[&str]) {
     let got = &n.anno.tags;
     assert_eq!(got.len(), expected.len(), "Tag count mismatch for {}", n.inner.name);
     for (g, e) in got.iter().zip(expected.iter()) {
@@ -109,9 +109,27 @@ pub fn as_node<Id>(it: &HyperItem<Id>) -> Option<&NodeDecl<Id>> {
     }
 }
 
-pub fn body<'a, Id>(n: &'a NodeDecl<Id>) -> &'a [HyperItem<Id>] {
+pub fn body<'a>(n: &'a NodeDecl<String>) -> &'a [HyperItem<String>] {
     n.inner
         .body
         .as_deref()
         .unwrap_or_else(|| panic!("Expected node {} to have a body", n.inner.name))
 }
+
+
+pub fn find_edge<'a>(items: &'a [HyperItem<SymId>], name: SymId) -> &'a EdgeDecl<SymId> {
+    items.iter().find_map(|it| match it {
+        HyperItem::Edge(e) if e.inner.name == name => Some(e),
+        _ => None
+    }).unwrap()
+}
+
+pub fn find_node_id<'a>(items: &'a [HyperItem<SymId>], name: SymId) -> &'a NodeDecl<SymId> {
+    items.iter().find_map(|it| match it {
+        HyperItem::Node(n) if n.inner.name == name => Some(n),
+        _ => None
+    }).unwrap()
+}
+
+
+

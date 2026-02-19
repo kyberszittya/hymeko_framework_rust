@@ -7,19 +7,24 @@ pub struct Interner {
     vec: Vec<String>,
 }
 
-impl Interner{
+impl Interner {
     pub fn new() -> Self { Self::default() }
+
     pub fn intern(&mut self, s: &str) -> SymId {
-        if let Some(&id) = self.map.get(s) {
-            return id;
-        }
+        if let Some(&id) = self.map.get(s) { return id; }
         let id = SymId(self.vec.len() as u32);
         self.vec.push(s.to_owned());
-        self.map.insert(self.vec[id.0 as usize].clone(), id);
+        self.map.insert(s.to_owned(), id);
         id
     }
 
     pub fn resolve(&self, id: SymId) -> &str {
         &self.vec[id.0 as usize]
+    }
+}
+
+impl Interner {
+    pub fn get_id(&self, s: &str) -> Option<SymId> {
+        self.map.get(s).copied()
     }
 }

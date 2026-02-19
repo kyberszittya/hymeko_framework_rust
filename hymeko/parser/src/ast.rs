@@ -33,13 +33,13 @@ pub type HyperArc<Id>  = HyperAnnotatedElement<ArcInner<Id>, Id>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeInner<Id> {
-    pub name: String,
+    pub name: Id,
     pub body: Option<Vec<HyperItem<Id>>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct EdgeInner<Id> {
-    pub name: String,
+    pub name: Id,
     pub body: Vec<HyperItem<Id>>,
 }
 
