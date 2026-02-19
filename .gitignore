@@ -1,2 +1,22 @@
 /target
 /hymeko/parser/target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.rlib
+*.rmeta
+
+# Coverage
+cobertura.xml
+tarpaulin-report.html
+
