@@ -4,6 +4,7 @@ pub mod lexer;
 pub mod interner;
 pub mod intern_pass;
 pub mod resolve;
+pub mod ir;
 
 use crate::hymeko::DescriptionParser;
 use lalrpop_util::lalrpop_mod;
