@@ -9,6 +9,17 @@ use crate::ir::ir::SignedRefR;
 #[derive(Debug)]
 pub struct Index {
     pub by_path: HashMap<PathKey, DeclId>, // FQ path -> unique DeclId
+
+
+
+
+}
+
+impl Index {
+    /// Returns an iterator over all (PathKey, DeclId) pairs in the index
+    pub fn iter(&self) -> impl Iterator<Item = (&PathKey, &DeclId)> {
+        self.by_path.iter()
+    }
 }
 
 #[derive(Debug)]

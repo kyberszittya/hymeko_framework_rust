@@ -35,7 +35,11 @@ pub fn hash_decl(doc: HashId, kind: DeclKind, path: &PathKey, it: &Interner) -> 
     let mut h = blake3::Hasher::new();
     h.update(b"hymeko-decl-v1");
     h.update(&doc.0);
-    h.update(match kind { DeclKind::Node => b"N", DeclKind::Edge => b"E" });
+    h.update(match kind {
+        DeclKind::Node => b"N",
+        DeclKind::Edge => b"E",
+        DeclKind::Arc => b"A",
+    });
     let pb = path.0.iter().map(|&x| it.resolve(x)).collect::<Vec<_>>().join(".");
     h.update(pb.as_bytes());
     HashId(*h.finalize().as_bytes())

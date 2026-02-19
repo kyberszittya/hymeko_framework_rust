@@ -21,6 +21,11 @@ impl Interner {
     pub fn resolve(&self, id: SymId) -> &str {
         &self.vec[id.0 as usize]
     }
+
+    /// Iterator over all interned strings and their SymIds.
+    pub fn iter(&self) -> impl Iterator<Item = (SymId, &str)> {
+        self.vec.iter().enumerate().map(|(i, s)| (SymId(i as u32), s.as_str()))
+    }
 }
 
 impl Interner {

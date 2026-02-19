@@ -3,7 +3,7 @@ use crate::common::ids::{ArcId, DeclId, EdgeId, NodeId, SymId};
 use crate::ir::meta::Meta;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DeclKind { Node, Edge }
+pub enum DeclKind { Node, Edge, Arc }
 
 #[derive(Debug, Default)]
 pub struct Ir {
@@ -15,6 +15,8 @@ pub struct Ir {
     pub decl_kind: Vec<DeclKind>,     // DeclId -> kind
     pub decl_name: Vec<SymId>,        // DeclId -> name symbol (nem String!)
     pub decl_parent: Vec<Option<DeclId>>, // hierarchia/scope (opcionális, de hasznos)
+    pub decl_first_child: Vec<Option<DeclId>>,
+    pub decl_next_sibling: Vec<Option<DeclId>>,
 
     // “konkrét” táblák
     pub nodes: Vec<NodeRec>,          // NodeId indexel
@@ -24,6 +26,7 @@ pub struct Ir {
     // DeclId -> NodeId/EdgeId leképzés (gyors jump)
     pub decl_to_node: Vec<Option<NodeId>>,
     pub decl_to_edge: Vec<Option<EdgeId>>,
+    pub decl_to_arc: Vec<Option<ArcId>>,
 }
 
 
@@ -34,29 +37,80 @@ impl Ir {
             doc_hash: None,
             decl_hash: Vec::new(),
             arc_hash: Vec::new(),
-            
+
             decl_kind: Vec::new(),
             decl_name: Vec::new(),
             decl_parent: Vec::new(),
+            decl_first_child: vec![],
             decl_to_node: Vec::new(),
             decl_to_edge: Vec::new(),
             nodes: Vec::new(),
             edges: Vec::new(),
             arcs: Vec::new(),
+            decl_next_sibling: vec![],
+            decl_to_arc: vec![],
         }
+    }
+
+    pub fn decl_children(&self, parent: DeclId) -> DeclChildren<'_> {
+        DeclChildren { ir: self, next: self.decl_first_child[parent.0 as usize] }
+    }
+
+    pub fn decl_kind(&self, did: DeclId) -> DeclKind {
+        self.decl_kind[did.0 as usize]
+    }
+
+    #[inline]
+    pub fn first_child(&self, item: DeclId) -> Option<DeclId> {
+        self.decl_first_child[item.0 as usize]
+    }
+
+    #[inline]
+    pub fn next_sibling(&self, item: DeclId) -> Option<DeclId> {
+        self.decl_next_sibling[item.0 as usize]
+    }
+
+    #[inline]
+    pub fn parent(&self, item: DeclId) -> Option<DeclId> {
+        self.decl_parent[item.0 as usize]
+    }
+
+    #[inline]
+    pub fn kind(&self, item: DeclId) -> DeclKind {
+        self.decl_kind[item.0 as usize]
+    }
+
+    /// Children iterator for *any* item (node/edge/arc).
+    pub fn children(&self, parent: DeclId) -> DeclChildren<'_> {
+        DeclChildren { ir: self, next: self.first_child(parent) }
+    }
+
+    pub fn as_node(&self, d: DeclId) -> Option<NodeId> { self.decl_to_node[d.0 as usize] }
+    pub fn as_edge(&self, d: DeclId) -> Option<EdgeId> { self.decl_to_edge[d.0 as usize] }
+    pub fn as_arc(&self, d: DeclId)  -> Option<ArcId>  { self.decl_to_arc[d.0 as usize] }
+}
+
+pub struct DeclChildren<'a> {
+    ir: &'a Ir,
+    next: Option<DeclId>,
+}
+
+impl<'a> Iterator for DeclChildren<'a> {
+    type Item = DeclId;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let cur = self.next?;
+        self.next = self.ir.next_sibling(cur);
+        Some(cur)
     }
 }
 
 #[derive(Debug)]
 pub struct NodeRec {
     pub decl: DeclId,
-    pub first_child: Option<DeclId>,
-    pub next_sibling: Option<DeclId>,
 }
 impl NodeRec {
-    pub fn new(decl: DeclId) -> Self {
-        Self { decl, first_child: None, next_sibling: None }
-    }
+    pub fn new(decl: DeclId) -> Self { Self { decl } }
 }
 
 #[derive(Debug)]
@@ -72,12 +126,13 @@ impl EdgeRec {
 
 #[derive(Debug, Clone)]
 pub struct ArcRec {
+    pub decl: DeclId,
     pub in_edge: DeclId,              // melyik edge scope-jában volt (általában EdgeDecl)
     pub refs: Vec<SignedRefR>,        // DeclId-kra mutat (determinista)
     // később: attribútumok/value külön, lásd lent
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SignedRefR {
     Plus(DeclId),
     Minus(DeclId),
