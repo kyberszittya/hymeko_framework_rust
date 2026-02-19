@@ -1,8 +1,8 @@
-use crate::ast::{AstSym, HyperItem};
+use crate::ast::{AstSym, HyperArc, HyperItem};
 use crate::interner::Interner;
 use crate::common::ids::{ArcId, DeclId, EdgeId, NodeId, SymId};
 use crate::common::pathkey::PathKey;
-use crate::ir::ir::{ArcRec, DeclKind, EdgeRec, Ir, NodeRec, SignedRefR};
+use crate::ir::ir::{AnnoR, ArcRec, DeclKind, EdgeRec, Ir, NodeRec};
 use crate::ir::meta::Meta;
 use crate::ir::time::now_ns;
 use crate::resolve::{self, Index, ResolveError};
@@ -42,12 +42,17 @@ fn ensure_decl_capacity(ir: &mut Ir, did: DeclId) {
         ir.decl_kind.resize(need, DeclKind::Node);
         ir.decl_name.resize(need, SymId(0));
         ir.decl_parent.resize(need, None);
-        ir.decl_to_node.resize(need, None);
-        ir.decl_to_edge.resize(need, None);
-        ir.decl_hash.resize(need, None); // <-- EZ HIÁNYZOTT tipikusan
+
         ir.decl_first_child.resize(need, None);
         ir.decl_next_sibling.resize(need, None);
+
+        ir.decl_to_node.resize(need, None);
+        ir.decl_to_edge.resize(need, None);
         ir.decl_to_arc.resize(need, None);
+
+        ir.decl_hash.resize(need, None);
+        ir.decl_to_arc.resize(need, None);
+        ir.decl_anno.resize(need, AnnoR::default());
     }
 }
 
@@ -102,15 +107,12 @@ fn lower_node(
 
     ir.decl_kind[did.0 as usize] = DeclKind::Node;
     ir.decl_name[did.0 as usize] = n.inner.name;
-    /*
-    ir.decl_parent[did.0 as usize] = scope.last().copied().map(|_| {
-        // parent DeclId = scope path itself
-        let parent_did = decl_id_of(idx, scope);
-        parent_did
-    });
-    */
+
     let parent_did = if scope.is_empty() { None } else { Some(decl_id_of(idx, scope)) };
     ir.decl_parent[did.0 as usize] = parent_did;
+
+    let anno = resolve::resolve_anno(idx, &path, &n.anno, _it)?;
+    ir.decl_anno[did.0 as usize] = anno;
 
     // NodeId kiosztás (tömör)
     let nid = NodeId(ir.nodes.len() as u32);
@@ -125,6 +127,46 @@ fn lower_node(
     if let Some(body) = &n.inner.body {
         lower_items(ir, idx, _it, &path, body)?;
     }
+
+    Ok(())
+}
+
+fn lower_arc(
+    ir: &mut Ir,
+    idx: &Index,
+    it: &Interner,
+    edge_decl: DeclId,
+    path: &[SymId],
+    eid: EdgeId,
+    a: &HyperArc<SymId>,
+
+) -> Result<(), ResolveError> {
+    // 1) allocate a fresh anonymous DeclId for the arc
+    let arc_decl = DeclId(ir.decl_kind.len() as u32);
+    ensure_decl_capacity(ir, arc_decl);
+
+    // 2) fill decl tables
+    ir.decl_kind[arc_decl.0 as usize] = DeclKind::Arc;
+    ir.decl_name[arc_decl.0 as usize] = SymId(0); // névtelen arc
+    ir.decl_parent[arc_decl.0 as usize] = Some(edge_decl);
+
+    // 3) resolve arc payload once
+    let anno = resolve::resolve_anno(idx, &path, &a.anno, it)?;
+    let refs = resolve::resolve_arc_refs(idx, &path, a, it)?;
+
+    // 4) store decl anno (decl-level canonical place)
+    ir.decl_anno[arc_decl.0 as usize] = anno.clone();
+
+    // 5) create ArcRec + mapping
+    let aid = ArcId(ir.arcs.len() as u32);
+    ir.arcs.push(ArcRec { anno, in_edge: edge_decl, refs });
+    ir.decl_to_arc[arc_decl.0 as usize] = Some(aid);
+
+    // 6) link into edge's decl-children chain (for traversal)
+    link_decl_child(ir, edge_decl, arc_decl);
+
+    // 7) keep per-edge arc list once
+    ir.edges[eid.0 as usize].arcs.push(aid);
 
     Ok(())
 }
@@ -144,10 +186,12 @@ fn lower_edge(
 
     ir.decl_kind[did.0 as usize] = DeclKind::Edge;
     ir.decl_name[did.0 as usize] = e.inner.name;
-    ir.decl_parent[did.0 as usize] = scope.last().copied().map(|_| decl_id_of(idx, scope));
 
     let parent_did = if scope.is_empty() { None } else { Some(decl_id_of(idx, scope)) };
     ir.decl_parent[did.0 as usize] = parent_did;
+
+    let anno = resolve::resolve_anno(idx, &path, &e.anno, it)?;
+    ir.decl_anno[did.0 as usize] = anno;
 
     // EdgeId kiosztás
     let eid = EdgeId(ir.edges.len() as u32);
@@ -164,33 +208,7 @@ fn lower_edge(
     for item in &e.inner.body {
         match item {
             HyperItem::Arc(a) => {
-                // 1) resolve refs
-                let resolved = resolve::resolve_arc_refs(idx, &path, a, it)?;
-                let refs = resolved.into_iter().map(|r| match r {
-                    SignedRefR::Plus(d) => SignedRefR::Plus(d),
-                    SignedRefR::Minus(d) => SignedRefR::Minus(d),
-                    SignedRefR::Neutral(d) => SignedRefR::Neutral(d),
-                }).collect::<Vec<_>>();
-
-                // 2) allocate a fresh anonymous DeclId for the arc
-                let arc_decl = DeclId(ir.decl_kind.len() as u32);
-                ensure_decl_capacity(ir, arc_decl);
-
-                // 3) fill decl tables
-                ir.decl_kind[arc_decl.0 as usize] = DeclKind::Arc;
-                ir.decl_name[arc_decl.0 as usize] = SymId(0); // nincs neve (később adhatsz "anon arc" id-t)
-                ir.decl_parent[arc_decl.0 as usize] = Some(edge_decl);
-
-                // 4) create ArcRec + mapping
-                let aid = ArcId(ir.arcs.len() as u32);
-                ir.arcs.push(ArcRec { decl: arc_decl, in_edge: edge_decl, refs });
-                ir.decl_to_arc[arc_decl.0 as usize] = Some(aid);
-
-                // 5) link into edge's decl-children chain (for traversal)
-                link_decl_child(ir, edge_decl, arc_decl);
-
-                // 6) keep the per-edge arc list too (still useful)
-                ir.edges[eid.0 as usize].arcs.push(aid);
+                lower_arc(ir, idx, it, edge_decl, &path, eid, a)?;
             }
             HyperItem::Node(n) => {
                 // ha edge-bodyban engedsz node-ot: akkor ezek is scope alatt legyenek

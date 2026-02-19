@@ -17,6 +17,7 @@ pub struct Ir {
     pub decl_parent: Vec<Option<DeclId>>, // hierarchia/scope (opcionális, de hasznos)
     pub decl_first_child: Vec<Option<DeclId>>,
     pub decl_next_sibling: Vec<Option<DeclId>>,
+    pub decl_anno: Vec<AnnoR>,
 
     // “konkrét” táblák
     pub nodes: Vec<NodeRec>,          // NodeId indexel
@@ -49,6 +50,7 @@ impl Ir {
             arcs: Vec::new(),
             decl_next_sibling: vec![],
             decl_to_arc: vec![],
+            decl_anno: vec![],
         }
     }
 
@@ -126,15 +128,36 @@ impl EdgeRec {
 
 #[derive(Debug, Clone)]
 pub struct ArcRec {
-    pub decl: DeclId,
+    pub anno: AnnoR,
     pub in_edge: DeclId,              // melyik edge scope-jában volt (általában EdgeDecl)
     pub refs: Vec<SignedRefR>,        // DeclId-kra mutat (determinista)
     // később: attribútumok/value külön, lásd lent
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct RefAtomR {
+    pub target: DeclId,
+    pub anno: AnnoR,
+    pub weights: Option<Vec<ValueR>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum SignedRefR {
-    Plus(DeclId),
-    Minus(DeclId),
-    Neutral(DeclId),
+    Plus(RefAtomR),
+    Minus(RefAtomR),
+    Neutral(RefAtomR),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ValueR {
+    Str(String),
+    Num(f64),
+    List(Vec<ValueR>),
+    Ref(DeclId), // AST Ref(path) -> IR Ref(DeclId)
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct AnnoR {
+    pub tags: Vec<String>,
+    pub value: Option<ValueR>,
 }

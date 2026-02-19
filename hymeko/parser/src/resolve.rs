@@ -4,7 +4,7 @@ use crate::ast::*;
 use crate::common::ids::{DeclId, SymId};
 use crate::common::pathkey::PathKey;
 use crate::interner::Interner;
-use crate::ir::ir::SignedRefR;
+use crate::ir::ir::{AnnoR, RefAtomR, SignedRefR, ValueR};
 
 #[derive(Debug)]
 pub struct Index {
@@ -61,6 +61,38 @@ fn index_items(
     Ok(())
 }
 
+fn resolve_value(
+    idx: &Index,
+    scope: &[SymId],
+    v: &Value<SymId>,
+    it: &Interner,
+) -> Result<ValueR, ResolveError> {
+    Ok(match v {
+        Value::Str(s) => ValueR::Str(s.clone()),
+        Value::Num(x) => ValueR::Num(*x),
+        Value::List(xs) => ValueR::List(xs.iter().map(|x| resolve_value(idx, scope, x, it)).collect::<Result<_,_>>()?),
+        Value::Ref(r) => {
+            let did = resolve_ref_to_declid(idx, scope, r, it)?;
+            ValueR::Ref(did)
+        }
+    })
+}
+
+pub fn resolve_anno(
+    idx: &Index,
+    scope: &[SymId],
+    a: &Anno<SymId>,
+    it: &Interner,
+) -> Result<AnnoR, ResolveError> {
+    Ok(AnnoR {
+        tags: a.tags.clone(),
+        value: match &a.value {
+            Some(v) => Some(resolve_value(idx, scope, v, it)?),
+            None => None,
+        },
+    })
+}
+
 fn add_decl(
     idx: &mut Index,
     next: &mut u32,
@@ -93,6 +125,15 @@ fn index_node(
         index_items(idx, next, &child, body, it)?;
     }
     Ok(())
+}
+
+pub fn resolve_arc_anno(
+    idx: &Index,
+    scope: &[SymId],
+    arc: &HyperArc<SymId>,
+    it: &Interner,
+) -> Result<AnnoR, ResolveError> {
+    resolve_anno(idx, scope, &arc.anno, it)
 }
 
 fn index_edge(
@@ -153,6 +194,21 @@ pub fn resolve_ref_to_declid(
     }
 }
 
+fn resolve_refanno(
+    idx: &Index,
+    scope: &[SymId],
+    a: &RefAnno<SymId>,
+    it: &Interner,
+) -> Result<AnnoR, ResolveError> {
+    Ok(AnnoR {
+        tags: a.tags.clone(),
+        value: match &a.value {
+            Some(v) => Some(resolve_value(idx, scope, v, it)?),
+            None => None,
+        },
+    })
+}
+
 
 /// Arc refs “lefordítása” DeclId-ra (innentől egyértelmű)
 pub fn resolve_arc_refs(
@@ -169,10 +225,24 @@ pub fn resolve_arc_refs(
         };
         let did = resolve_ref_to_declid(idx, scope, &atom.target, it)?;
 
+        let anno_r = resolve_refanno(idx, scope, &atom.anno, it)?;
+        let weights_r = match &atom.anno.weights {
+            Some(ws) => Some(ws.iter()
+                .map(|w| resolve_value(idx, scope, w, it))
+                .collect::<Result<Vec<_>, _>>()?),
+            None => None,
+        };
+
+        let atom_r = RefAtomR {
+            target: did,
+            weights: weights_r,
+            anno: anno_r
+        };
+
         out.push(match sref {
-            SignedRef::Plus(_) => SignedRefR::Plus(did),
-            SignedRef::Minus(_) => SignedRefR::Minus(did),
-            SignedRef::Neutral(_) => SignedRefR::Neutral(did),
+            SignedRef::Plus(_) => SignedRefR::Plus(atom_r),
+            SignedRef::Minus(_) => SignedRefR::Minus(atom_r),
+            SignedRef::Neutral(_) => SignedRefR::Neutral(atom_r),
         });
     }
 

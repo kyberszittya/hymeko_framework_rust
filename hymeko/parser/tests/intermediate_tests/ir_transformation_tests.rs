@@ -1,10 +1,11 @@
 
 #[cfg(test)]
-mod tests {
+mod basic_transformation_tests {
     use parser::common::ids::{DeclId, SymId};
     use parser::common::pathkey::PathKey;
     use parser::intern_pass::{intern_ast, Interned};
-    use parser::ir::ir::{DeclKind, SignedRefR};
+    use parser::ir::common::{ref_sign, ref_target};
+    use parser::ir::ir::{DeclKind};
     use parser::ir::lower::lower_to_ir;
     use parser::parse_description;
     use parser::resolve::build_index_sym;
@@ -300,13 +301,23 @@ mod tests {
             .expect("arc decl should map to ArcId via decl_to_arc");
         let arc = &ir.arcs[arc_id.0 as usize];
 
-        // Optional sanity: arc record points back to its decl + parent edge
-        assert_eq!(arc.decl, arc_decl, "ArcRec.decl should match arc decl id");
+        // Arc decl konzisztencia (ArcRec-ben nincs `decl`, ezért mappinget tesztelünk)
+        assert_eq!(ir.decl_kind[arc_decl.0 as usize], DeclKind::Arc, "child decl should be Arc");
+        assert_eq!(ir.decl_parent[arc_decl.0 as usize], Some(did_edge), "Arc decl parent should be the edge");
+
+        let arc_id = ir.decl_to_arc[arc_decl.0 as usize]
+            .expect("arc decl should map to ArcId via decl_to_arc");
+        let arc = &ir.arcs[arc_id.0 as usize];
+
         assert_eq!(arc.in_edge, did_edge, "ArcRec.in_edge should be the edge decl");
 
-        // 3) Refs must resolve to (+Root, -Root0) in this order
+        // Refs: (+Root, -Root0) sorrendben
         assert_eq!(arc.refs.len(), 2, "arc should have 2 refs");
-        assert_eq!(arc.refs[0], SignedRefR::Plus(did_root),  "first ref should be +Root");
-        assert_eq!(arc.refs[1], SignedRefR::Minus(did_root0), "second ref should be -Root0");
+
+        assert_eq!(ref_sign(&arc.refs[0]),  1, "first ref should be +");
+        assert_eq!(ref_target(&arc.refs[0]), did_root, "first ref should target Root");
+
+        assert_eq!(ref_sign(&arc.refs[1]), -1, "second ref should be -");
+        assert_eq!(ref_target(&arc.refs[1]), did_root0, "second ref should target Root0");
     }
 }
