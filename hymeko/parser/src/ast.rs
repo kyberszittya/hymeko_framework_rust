@@ -1,6 +1,6 @@
 // src/ast.rs
 
-use crate::common::SymId;
+use crate::common::ids::SymId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Description<Id> {

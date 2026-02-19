@@ -1,6 +1,5 @@
-use crate::common::SymId;
 use crate::ir::hash::HashId;
-use crate::ir::ids::{ArcId, DeclId, EdgeId, NodeId};
+use crate::common::ids::{ArcId, DeclId, EdgeId, NodeId, SymId};
 use crate::ir::meta::Meta;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,6 +27,25 @@ pub struct Ir {
 }
 
 
+impl Ir {
+    pub fn new(meta: Meta) -> Self {
+        Self {
+            meta: Some(meta),
+            doc_hash: None,
+            decl_hash: Vec::new(),
+            arc_hash: Vec::new(),
+            
+            decl_kind: Vec::new(),
+            decl_name: Vec::new(),
+            decl_parent: Vec::new(),
+            decl_to_node: Vec::new(),
+            decl_to_edge: Vec::new(),
+            nodes: Vec::new(),
+            edges: Vec::new(),
+            arcs: Vec::new(),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct NodeRec {

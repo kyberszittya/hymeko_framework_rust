@@ -1,8 +1,9 @@
 use parser::ast::*;
 use parser::{body, find_edge, find_node, find_node_id, intern_pass, read_parse_file, resolve};
-use parser::common::SymId;
+use parser::common::ids::{DeclId, SymId};
 use parser::intern_pass::Interned;
 use parser::interner::Interner;
+use parser::ir::ir::SignedRefR;
 
 #[test]
 fn parse_fano_graph_resolve() -> Result<(), resolve::ResolveError> {
@@ -146,7 +147,7 @@ fn fano_graph_shape() -> Result<(), Box<dyn std::error::Error>> {
 fn invert_index(
     idx: &resolve::Index,
     it: &Interner,
-) -> std::collections::HashMap<resolve::DeclId, String> {
+) -> std::collections::HashMap<DeclId, String> {
     let mut inv = std::collections::HashMap::new();
     for (k, &did) in &idx.by_path {
         let s = k.0.iter().map(|&sid| it.resolve(sid).to_string()).collect::<Vec<_>>().join(".");
@@ -157,14 +158,14 @@ fn invert_index(
 
 // kinyeri a "fano.n0" típusú resolved célneveket az arc refs-ből
 fn resolved_targets_as_strings(
-    refs: &[resolve::SignedRefR],
-    inv: &std::collections::HashMap<resolve::DeclId, String>,
+    refs: &[SignedRefR],
+    inv: &std::collections::HashMap<DeclId, String>,
 ) -> Vec<String> {
     refs.iter().map(|r| {
         let did = match r {
-            resolve::SignedRefR::Plus(d) => *d,
-            resolve::SignedRefR::Minus(d) => *d,
-            resolve::SignedRefR::Neutral(d) => *d,
+            SignedRefR::Plus(d) => *d,
+            SignedRefR::Minus(d) => *d,
+            SignedRefR::Neutral(d) => *d,
         };
         inv.get(&did).cloned().unwrap_or_else(|| format!("<unknown {did:?}>"))
     }).collect()

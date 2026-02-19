@@ -1,7 +1,8 @@
-use crate::common::SymId;
+use crate::common::ids::SymId;
+use crate::common::pathkey::PathKey;
 use crate::interner::Interner;
 use crate::ir::ir::DeclKind;
-use crate::resolve::{Index, PathKey};
+use crate::resolve::{Index};
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct HashId(pub [u8; 32]);

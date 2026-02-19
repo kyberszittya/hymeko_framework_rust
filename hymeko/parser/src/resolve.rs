@@ -1,14 +1,10 @@
 use std::collections::HashMap;
 
 use crate::ast::*;
-use crate::common::SymId;
+use crate::common::ids::{DeclId, SymId};
+use crate::common::pathkey::PathKey;
 use crate::interner::Interner;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct DeclId(pub u32);
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct PathKey(pub Vec<SymId>);
+use crate::ir::ir::SignedRefR;
 
 #[derive(Debug)]
 pub struct Index {
@@ -146,12 +142,6 @@ pub fn resolve_ref_to_declid(
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum SignedRefR {
-    Plus(DeclId),
-    Minus(DeclId),
-    Neutral(DeclId),
-}
 
 /// Arc refs “lefordítása” DeclId-ra (innentől egyértelmű)
 pub fn resolve_arc_refs(

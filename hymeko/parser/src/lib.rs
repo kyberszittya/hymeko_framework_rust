@@ -1,15 +1,16 @@
-pub mod common;
+
 pub mod ast;
 pub mod lexer;
 pub mod interner;
 pub mod intern_pass;
 pub mod resolve;
 pub mod ir;
+pub mod common;
 
 use crate::hymeko::DescriptionParser;
 use lalrpop_util::lalrpop_mod;
 use crate::ast::{AstStr, EdgeDecl, HyperItem, NodeDecl, Value};
-use crate::common::SymId;
+use crate::common::ids::SymId;
 use crate::lexer::{LexError, Token};
 
 lalrpop_mod!(pub hymeko);

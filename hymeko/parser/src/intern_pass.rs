@@ -1,5 +1,5 @@
 use crate::ast::*;
-use crate::common::SymId;
+use crate::common::ids::SymId;
 use crate::interner::Interner;
 
 pub struct Interned {

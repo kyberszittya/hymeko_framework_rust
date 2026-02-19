@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::common::SymId;
+use crate::common::ids::SymId;
 
 #[derive(Default)]
 pub struct Interner {
