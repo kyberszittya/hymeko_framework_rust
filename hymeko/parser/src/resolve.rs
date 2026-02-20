@@ -147,27 +147,40 @@ fn index_edge<'a>(
     Ok(())
 }
 
+fn fmt_path_from_slice(p: &[SymId], it: &Interner) -> String {
+    p.iter()
+        .map(|&s| it.resolve(s))
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
 pub fn resolve_ref_to_declid(
     idx: &Index,
     scope: &[SymId],
     target: &Ref<SymId>,
     it: &Interner,
 ) -> Result<DeclId, ResolveError> {
-    let target_key = PathKey(target.path.clone());
     let mut hit: Option<(PathKey, DeclId)> = None;
 
+    // 1. One single scratch buffer for the entire search [cite: 2026-02-08]
+    let mut fq_buffer = Vec::with_capacity(scope.len() + target.path.len());
+
     for k in (0..=scope.len()).rev() {
-        let mut fq = scope[..k].to_vec();
-        fq.extend_from_slice(&target_key.0);
-        let fk = PathKey(fq);
+        fq_buffer.clear();
+        fq_buffer.extend_from_slice(&scope[..k]);
+        fq_buffer.extend_from_slice(&target.path);
+
+        // 2. We only 'own' it if we find a hit and need to store it [cite: 2026-02-08]
+        // Note: Unless you use a custom lookup wrapper, .get() usually requires
+        // the same type as the key (PathKey). We'll assume PathKey(Vec<SymId>) here.
+        let fk = PathKey(fq_buffer.clone());
 
         if let Some(&did) = idx.by_path.get(&fk) {
-            if hit.is_some() {
-                let first = hit.take().unwrap().0;
+            if let Some((ref first_key, _)) = hit {
                 return Err(ResolveError::AmbiguousRef {
                     from_scope: fmt_scope(scope, it),
-                    target: fmt_path(&target_key, it),
-                    candidates: vec![fmt_path(&first, it), fmt_path(&fk, it)],
+                    target: fmt_path_from_slice(&target.path, it), // Use a slice formatter [cite: 2026-02-08]
+                    candidates: vec![fmt_path(first_key, it), fmt_path(&fk, it)],
                 });
             }
             hit = Some((fk, did));
@@ -175,10 +188,10 @@ pub fn resolve_ref_to_declid(
     }
 
     match hit {
-        Some((_k, did)) => Ok(did),
+        Some((_, did)) => Ok(did),
         None => Err(ResolveError::UnresolvedRef {
             from_scope: fmt_scope(scope, it),
-            target: fmt_path(&target_key, it),
+            target: fmt_path_from_slice(&target.path, it), // No clone needed [cite: 2026-02-08]
         }),
     }
 }
