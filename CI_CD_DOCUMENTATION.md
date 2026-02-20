@@ -14,8 +14,16 @@ Runs on every push to `master`, `main`, `develop` branches and on all pull reque
 - **Coverage**: Generates code coverage reports and uploads to Codecov
 - **Build**: Creates release build artifacts
 
+**Coverage Job Details:**
+- Generates XML report for Codecov.io
+- Generates HTML report (downloadable as artifact)
+- Uploads to Codecov dashboard
+- Sets minimum coverage targets
+- Includes verbose reporting
+
 **Artifacts:**
 - Release binaries are uploaded as GitHub Actions artifacts
+- Coverage reports (HTML) saved for 30 days
 
 ### 2. **Release Workflow** (`.github/workflows/release.yml`)
 Automatically creates releases and builds binaries when a tag is pushed (e.g., `v0.1.0`).

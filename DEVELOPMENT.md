@@ -121,6 +121,21 @@ All tests must pass:
 cargo test --all
 ```
 
+### Code Coverage
+Generate code coverage reports to identify untested code:
+```bash
+cargo install cargo-tarpaulin
+cargo tarpaulin --out Html --all
+# Open tarpaulin-report.html in your browser
+```
+
+Coverage targets:
+- **Overall:** 60% minimum
+- **Parser module:** 70% minimum
+- **New code:** Should have test coverage
+
+For detailed coverage information, see [CODE_COVERAGE.md](CODE_COVERAGE.md)
+
 ### Pre-commit Hook (Optional)
 
 Create `.git/hooks/pre-commit`:

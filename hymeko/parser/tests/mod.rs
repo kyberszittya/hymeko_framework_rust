@@ -7,3 +7,6 @@ mod typical_graphs;
 
 #[path = "intermediate_tests/mod.rs"]
 mod intermediate_tests;
+
+#[path = "traversal/mod.rs"]
+mod traversal;

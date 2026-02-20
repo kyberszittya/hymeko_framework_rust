@@ -4,11 +4,15 @@ Add these badges to your repository's README.md to display CI/CD status.
 
 ## Markdown Badges
 
+Add these badges to your repository's README.md to display CI/CD and coverage status.
+
 ```markdown
 [![CI](https://github.com/hakiko/hymeko_framework/actions/workflows/ci.yml/badge.svg)](https://github.com/hakiko/hymeko_framework/actions/workflows/ci.yml)
 [![Security Audit](https://github.com/hakiko/hymeko_framework/actions/workflows/security-audit.yml/badge.svg)](https://github.com/hakiko/hymeko_framework/actions/workflows/security-audit.yml)
-[![codecov](https://codecov.io/gh/hakiko/hymeko_framework/branch/master/graph/badge.svg)](https://codecov.io/gh/hakiko/hymeko_framework)
+[![codecov](https://codecov.io/gh/hakiko/hymeko_framework/branch/main/graph/badge.svg)](https://codecov.io/gh/hakiko/hymeko_framework)
 ```
+
+**Coverage Badge Note:** The codecov badge will show data after the first successful coverage upload to Codecov.io.
 
 ## Workflow Files Summary
 

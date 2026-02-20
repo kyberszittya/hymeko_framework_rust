@@ -1,0 +1,74 @@
+#!cfg[(test)]
+mod test_traversal
+{
+    use std::collections::HashSet;
+    use parser::ast::AstStr;
+    use parser::common::ids::{EdgeId, NodeId};
+    use parser::common::pathkey::PathKey;
+    use parser::intern_pass::{intern_ast, Interned};
+    use parser::ir::lower::lower_to_ir;
+    use parser::parse_description;
+    use parser::resolve::build_index_sym;
+    use parser::traversal::graph_traversal::dfs_preorder;
+    use parser::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
+
+    #[test]
+    fn berge_dfs_reaches_other_node() {
+        let src = r#"
+        berge_demo {}
+
+        D {
+            A {}
+            B {}
+            Root {
+                @E { (+A, +B); }
+            }
+        }
+        "#;
+
+        let desc: AstStr = parse_description(src).expect("parse failed");
+        let Interned { ast, mut interner } = intern_ast(&desc);
+
+        let idx = build_index_sym(&ast, &interner).expect("index build failed");
+        let ir = lower_to_ir(&ast, &idx, &interner).expect("lower_to_ir failed");
+
+        // --- DeclId-k kikeresése path alapján
+        let sid_d = interner.intern("D");
+        let sid_a = interner.intern("A");
+        let sid_b = interner.intern("B");
+        let sid_root = interner.intern("Root");
+        let sid_e = interner.intern("E");
+
+        let did_a = *idx.by_path.get(&PathKey(vec![sid_d, sid_a])).expect("D.A missing");
+        let did_b = *idx.by_path.get(&PathKey(vec![sid_d, sid_b])).expect("D.B missing");
+        let did_e = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_e])).expect("D.Root.E missing");
+
+        // --- Decl -> NodeId / EdgeId
+        let nid_a = ir.decl_to_node[did_a.0 as usize].expect("A not lowered as node");
+        let nid_b = ir.decl_to_node[did_b.0 as usize].expect("B not lowered as node");
+        let eid_e = ir.decl_to_edge[did_e.0 as usize].expect("E not lowered as edge");
+
+        // --- HyperGraphView felépítése
+        let hg = HyperGraphView::from_ir(&ir);
+
+        // 1) incidenciák ellenőrzése (set-alapon)
+        let a_edges: HashSet<EdgeId> = hg.node_to_edges[nid_a.0 as usize].iter().copied().collect();
+        let b_edges: HashSet<EdgeId> = hg.node_to_edges[nid_b.0 as usize].iter().copied().collect();
+        assert!(a_edges.contains(&eid_e), "A should be incident to E");
+        assert!(b_edges.contains(&eid_e), "B should be incident to E");
+
+        let e_nodes: HashSet<NodeId> = hg.edge_to_nodes[eid_e.0 as usize].iter().copied().collect();
+        assert!(e_nodes.contains(&nid_a), "E should connect to A");
+        assert!(e_nodes.contains(&nid_b), "E should connect to B");
+
+        // 2) Berge-DFS: A-ból indulva elérjük (Edge E)-t és B-t
+        let bv = BergeView { hg: &hg };
+        let got = dfs_preorder(&bv, BergeState::Node(nid_a));
+
+        let got_set: HashSet<BergeState> = got.into_iter().collect();
+
+        assert!(got_set.contains(&BergeState::Node(nid_a)), "DFS should include start node A");
+        assert!(got_set.contains(&BergeState::Edge(eid_e)), "DFS should include edge E");
+        assert!(got_set.contains(&BergeState::Node(nid_b)), "DFS should reach node B");
+    }
+}
