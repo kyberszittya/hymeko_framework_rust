@@ -1,18 +1,23 @@
 #[cfg(test)]
 mod ir_value_tests {
-    use parser::ast::AstStr;
+    use std::fs::File;
+    use memmap2::Mmap;
     use parser::common::pathkey::PathKey;
     use parser::intern_pass::Interned;
     use parser::ir::ir::{ValueR};
     use parser::ir::lower::lower_to_ir;
-    use parser::read_parse_file;
+    use parser::{parse_from_mmap};
 
     #[test]
     fn ir_value_resolution() {
         // This is a placeholder test to demonstrate how you might construct IR values.
         // In a real test, you would parse an actual graph and lower it to IR.
         let path = "./data/minimal_examples/minimal_example_with_fields.hymeko";
-        let desc: AstStr = read_parse_file(path).unwrap();
+        let file = File::open(path).unwrap();
+        let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+        // The AST is valid as long as 'mmap' is in scope.
+        let desc = parse_from_mmap(&mmap).unwrap();
         // Intern and resolve as needed, then lower to IR.
         let Interned { ast, mut interner } = parser::intern_pass::intern_ast(&desc);
         let idx = parser::resolve::build_index_sym(&ast, &interner).unwrap();

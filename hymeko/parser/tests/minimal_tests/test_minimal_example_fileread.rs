@@ -1,11 +1,17 @@
+use std::fs::File;
+use memmap2::Mmap;
 use parser::ast::*;
-use parser::{read_parse_file};
+use parser::{parse_from_mmap};
 
 
 #[test]
 fn test_minimal_example() {
     let path = "./data/minimal_examples/minimal_example.hymeko";
-    let d = read_parse_file(path).unwrap();
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+    // The AST is valid as long as 'mmap' is in scope.
+    let d = parse_from_mmap(&mmap).unwrap();
 
     assert_eq!(d.name, "Minimal_Example");
     /*
@@ -24,7 +30,11 @@ fn test_minimal_example() {
 #[test]
 fn test_minimal_example_base_elements() {
     let path = "./data/minimal_examples/minimal_example_base_elements.hymeko";
-    let d = read_parse_file(path).unwrap();
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+    // The AST is valid as long as 'mmap' is in scope.
+    let d = parse_from_mmap(&mmap).unwrap();
 
     assert_eq!(d.name, "MyDesc");
 
@@ -48,7 +58,7 @@ fn test_minimal_example_base_elements() {
             assert_eq!(e.inner.name, "E1");
 
             // szedjük ki az arcokat a body-ból
-            let arcs: Vec<&HyperArc<String>> = e.inner.body.iter().filter_map(|it| {
+            let arcs: Vec<&HyperArc<&str>> = e.inner.body.iter().filter_map(|it| {
                 if let HyperItem::Arc(a) = it { Some(a) } else { None }
             }).collect();
 

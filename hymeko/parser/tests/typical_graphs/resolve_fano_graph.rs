@@ -1,7 +1,9 @@
 #!cfg[(test)]
 mod resolve_fano_graph {
+    use std::fs::File;
+    use memmap2::Mmap;
     use parser::ast::*;
-    use parser::{body, find_edge, find_node, find_node_id, intern_pass, read_parse_file, resolve};
+    use parser::{body, find_edge, find_node, find_node_id, intern_pass, parse_from_mmap, resolve};
     use parser::common::ids::{DeclId, SymId};
     use parser::intern_pass::Interned;
     use parser::interner::Interner;
@@ -10,7 +12,11 @@ mod resolve_fano_graph {
     #[test]
     fn parse_fano_graph_resolve() -> Result<(), resolve::ResolveError> {
         let path = "./data/typical_graphs/fano_graph.hymeko";
-        let desc: AstStr = read_parse_file(path).unwrap();
+        let file = File::open(path).unwrap();
+        let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+        // The AST is valid as long as 'mmap' is in scope.
+        let desc = parse_from_mmap(&mmap).unwrap();
         let Interned { ast: ast_sym, interner } = intern_pass::intern_ast(&desc);
         let idx = resolve::build_index_sym(&ast_sym, &interner)?;
         resolve::validate_all_refs_sym(&ast_sym, &idx, &interner)?;
@@ -45,7 +51,7 @@ mod resolve_fano_graph {
                 .unwrap_or_else(|| panic!("Expected Edge({}) in fano body", ename));
 
             // edge.inner.body : Vec<HyperItem>
-            let arc_items: Vec<&parser::ast::HyperArc<String>> = edge
+            let arc_items: Vec<&parser::ast::HyperArc<&str>> = edge
                 .inner
                 .body
                 .iter()
@@ -92,7 +98,11 @@ mod resolve_fano_graph {
     fn fano_graph_shape() -> Result<(), Box<dyn std::error::Error>> {
         // parse -> AST<String>
         let path = "./data/typical_graphs/fano_graph.hymeko";
-        let d_str = read_parse_file(&path).unwrap();
+        let file = File::open(path).unwrap();
+        let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+        // The AST is valid as long as 'mmap' is in scope.
+        let d_str = parse_from_mmap(&mmap).unwrap();
 
         // intern -> AST<SymId> + Interner
         let interned = intern_pass::intern_ast(&d_str);
@@ -179,7 +189,11 @@ mod resolve_fano_graph {
     fn fano_edges_resolve_to_expected_nodes() -> Result<(), Box<dyn std::error::Error>> {
         // 1) Parse -> AST<String>
         let path = "./data/typical_graphs/fano_graph.hymeko";
-        let d_str = read_parse_file(path).unwrap();
+        let file = File::open(path).unwrap();
+        let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+        // The AST is valid as long as 'mmap' is in scope.
+        let d_str = parse_from_mmap(&mmap).unwrap();
 
         // 2) Intern -> AST<SymId> + Interner
         let interned = intern_pass::intern_ast(&d_str);

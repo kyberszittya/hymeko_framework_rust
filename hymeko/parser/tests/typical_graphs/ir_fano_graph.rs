@@ -1,6 +1,8 @@
 #!cfg[(test)]
 mod ir_fano_graph {
-    use parser::{intern_pass, read_parse_file, resolve};
+    use std::fs::File;
+    use memmap2::Mmap;
+    use parser::{intern_pass, parse_from_mmap, resolve};
     use parser::common::ids::{DeclId, SymId};
     use parser::common::pathkey::PathKey;
     use parser::interner::Interner;
@@ -41,7 +43,11 @@ mod ir_fano_graph {
     fn fano_graph_lowers_to_ir_with_correct_arc_targets() -> Result<(), Box<dyn std::error::Error>> {
         // 1) parse -> AST<String>
         let path = "./data/typical_graphs/fano_graph.hymeko";
-        let d_str = read_parse_file(&path).unwrap();
+        let file = File::open(path).unwrap();
+        let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+        // The AST is valid as long as 'mmap' is in scope.
+        let d_str = parse_from_mmap(&mmap).unwrap();
 
         // 2) intern -> AST<SymId> + interner
         let interned = intern_pass::intern_ast(&d_str);

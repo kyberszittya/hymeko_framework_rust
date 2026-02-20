@@ -1,51 +1,51 @@
-// src/ast.rs
-
+use std::borrow::Cow;
 use crate::common::ids::SymId;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Description<Id> {
+pub struct Description<'a, Id> {
     pub name: Id,
-    pub header: Vec<NodeDecl<Id>>,
-    pub items: Vec<HyperItem<Id>>,
+    pub header: Vec<NodeDecl<'a, Id>>,
+    pub items: Vec<HyperItem<'a, Id>>,
 }
+
 #[derive(Debug, Clone, PartialEq)]
-pub enum HyperItem<Id> {
-    Node(NodeDecl<Id>),
-    Edge(EdgeDecl<Id>),
-    Arc(HyperArc<Id>),
+pub enum HyperItem<'a, Id> {
+    Node(NodeDecl<'a, Id>),
+    Edge(EdgeDecl<'a, Id>),
+    Arc(HyperArc<'a, Id>),
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct Anno<Id> {
-    pub tags: Vec<String>,        // <...>
-    pub value: Option<Value<Id>>,     // opcionális érték
+pub struct Anno<'a, Id> {
+    pub tags: Vec<Cow<'a, str>>,        // Zero-copy or minimal allocation
+    pub value: Option<Value<'a, Id>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct HyperAnnotatedElement<T, Id> {
-    pub anno: Anno<Id>,
+pub struct HyperAnnotatedElement<'a, T, Id> {
+    pub anno: Anno<'a, Id>,
     pub inner: T,
 }
 
-pub type NodeDecl<Id>  = HyperAnnotatedElement<NodeInner<Id>, Id>;
-pub type EdgeDecl<Id>  = HyperAnnotatedElement<EdgeInner<Id>, Id>;
-pub type HyperArc<Id>  = HyperAnnotatedElement<ArcInner<Id>, Id>;
+pub type NodeDecl<'a, Id>  = HyperAnnotatedElement<'a, NodeInner<'a, Id>, Id>;
+pub type EdgeDecl<'a, Id>  = HyperAnnotatedElement<'a, EdgeInner<'a, Id>, Id>;
+pub type HyperArc<'a, Id>  = HyperAnnotatedElement<'a, ArcInner<'a, Id>, Id>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NodeInner<Id> {
+pub struct NodeInner<'a, Id> {
     pub name: Id,
-    pub body: Option<Vec<HyperItem<Id>>>,
+    pub body: Option<Vec<HyperItem<'a, Id>>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct EdgeInner<Id> {
+pub struct EdgeInner<'a, Id> {
     pub name: Id,
-    pub body: Vec<HyperItem<Id>>,
+    pub body: Vec<HyperItem<'a, Id>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ArcInner<Id> {
-    pub refs: Vec<SignedRef<Id>>,
+pub struct ArcInner<'a, Id> {
+    pub refs: Vec<SignedRef<'a, Id>>,
 }
 
 //----
@@ -60,10 +60,10 @@ pub enum ArcDir {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DirectedRef<Id> {
+pub struct DirectedRef<'a, Id> {
     pub dir: ArcDir,
-    pub target: RefAtom<Id>,
-    pub weights: Option<Vec<Value<Id>>>,
+    pub target: RefAtom<'a, Id>,
+    pub weights: Option<Vec<Value<'a, Id>>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,32 +72,33 @@ pub struct Ref<Id> {
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct RefAnno<Id> {
-    pub weights: Option<Vec<Value<Id>>>,
-    pub tags: Vec<String>,
-    pub value: Option<Value<Id>>,
+pub struct RefAnno<'a, Id> {
+    pub weights: Option<Vec<Value<'a, Id>>>,
+    pub tags: Vec<Cow<'a, str>>,
+    pub value: Option<Value<'a, Id>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct RefAtom<Id> {
+pub struct RefAtom<'a, Id> {
     pub target: Ref<Id>,
-    pub anno: RefAnno<Id>,
+    pub anno: RefAnno<'a, Id>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum SignedRef<Id> {
-    Plus(RefAtom<Id>),
-    Minus(RefAtom<Id>),
-    Neutral(RefAtom<Id>)
+pub enum SignedRef<'a, Id> {
+    Plus(RefAtom<'a, Id>),
+    Minus(RefAtom<'a, Id>),
+    Neutral(RefAtom<'a, Id>)
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Value<Id> {
-    Str(String),
+pub enum Value<'a, Id> {
+    Str(Cow<'a, str>), // Zero-copy for fast-path strings
     Num(f64),
-    List(Vec<Value<Id>>),
+    List(Vec<Value<'a, Id>>),
     Ref(Ref<Id>),
 }
 
-pub type AstStr = Description<String>;
-pub type AstSym = Description<SymId>;
+// The core type alias now strictly binds to the file buffer's lifetime
+pub type AstStr<'a> = Description<'a, &'a str>;
+pub type AstSym<'a> = Description<'a, SymId>;

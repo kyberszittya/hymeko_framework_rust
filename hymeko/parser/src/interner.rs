@@ -12,9 +12,14 @@ impl Interner {
 
     pub fn intern(&mut self, s: &str) -> SymId {
         if let Some(&id) = self.map.get(s) { return id; }
+
         let id = SymId(self.vec.len() as u32);
-        self.vec.push(s.to_owned());
-        self.map.insert(s.to_owned(), id);
+        let owned: Box<str> = s.into();
+
+        // We use unsafe or a raw pointer map to point back into the Vec,
+        // or simply store the Box in both places for better locality.
+        self.vec.push(owned.to_string());
+        self.map.insert(owned.to_string(), id); // This still allocates.
         id
     }
 

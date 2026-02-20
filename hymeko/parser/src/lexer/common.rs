@@ -2,7 +2,7 @@ use super::token::{Token, LexError};
 
 pub type Location = usize;
 pub type Spanned<T> = (Location, T, Location);
-pub type LexItem = Result<Spanned<Token>, LexError>;
+pub type LexItem<'a> = Result<Spanned<Token<'a>>, LexError>;
 
 #[inline(always)]
 fn is_ident_start(c: u8) -> bool {
@@ -16,8 +16,8 @@ fn is_ident_cont(c: u8) -> bool {
 
 /// A közös lexer “backend” trait.
 /// A SIMD/simple lexer csak ezt implementálja + a 2 speciális hookot.
-pub trait CommonLexer {
-    fn bytes(&self) -> &[u8];
+pub trait CommonLexer<'a> {
+    fn bytes(&self) -> &'a[u8];
     fn pos(&self) -> usize;
     fn set_pos(&mut self, i: usize);
 
@@ -61,63 +61,66 @@ pub trait CommonLexer {
     /// Opcionális: ha külön akarod kezelni a `/* */`-t és `//`-t
     #[inline(always)]
     fn skip_ws_and_comments(&mut self) -> Result<(), LexError> {
-        loop {
-            self.skip_ws();
-
-            let i = self.pos();
-            let Some((c0, c1)) = self.peek2() else { return Ok(()); };
-
-            // line comment: //
-            if c0 == b'/' && c1 == b'/' {
-                self.set_pos(i + 2);
-                while let Some(c) = self.peek() {
-                    if c == b'\n' || c == b'\r' { break; }
-                    self.set_pos(self.pos() + 1);
-                }
-                continue;
-            }
-
-            // block comment: /* ... */
-            if c0 == b'/' && c1 == b'*' {
-                let start = i;
-                self.set_pos(i + 2);
-
-                loop {
-                    let p = self.pos();
-                    let Some((a, b)) = self.peek2() else {
-                        return Err(LexError {
-                            msg: "Unterminated block comment /* ... */".to_string(),
-                            at: start,
-                        });
-                    };
-
-                    if a == b'*' && b == b'/' {
-                        self.set_pos(p + 2);
-                        break;
+        while let Some(c) = self.peek() {
+            if c.is_ascii_whitespace() {
+                self.bump();
+            } else if c == b'/' {
+                let start = self.pos(); // Mark the start of the potential comment [cite: 2026-02-08]
+                self.bump();
+                match self.peek() {
+                    Some(b'/') => {
+                        self.bump();
+                        while let Some(c) = self.bump() {
+                            if c == b'\n' { break; }
+                        }
                     }
-                    self.set_pos(p + 1);
+                    Some(b'*') => {
+                        self.bump();
+                        let mut closed = false;
+                        while let Some(c) = self.bump() {
+                            if c == b'*' && self.peek() == Some(b'/') {
+                                self.bump();
+                                closed = true;
+                                break;
+                            }
+                        }
+                        if !closed {
+                            // This triggers the assert!(res.is_err()) in your test [cite: 2026-02-08]
+                            return Err(LexError {
+                                at: start,
+                                msg: "Unterminated multi-line comment".into()
+                            });
+                        }
+                    }
+                    _ => {
+                        self.set_pos(start); // Backtrack if it's just a slash [cite: 2026-02-08]
+                        return Ok(());
+                    }
                 }
-
-                continue;
+            } else {
+                break;
             }
-
-            return Ok(());
         }
+        Ok(())
     }
 
     #[inline(always)]
-    fn lex_ident(&mut self, start: usize) -> Token {
+    fn lex_ident(&mut self, start: usize) -> Token<'a> {
         self.scan_ident_tail();
-        let text = std::str::from_utf8(&self.bytes()[start..self.pos()]).unwrap();
-        Token::Ident(text.to_string())
+        // SAFETY: Identifier characters are exclusively valid ASCII.
+        let text = unsafe { std::str::from_utf8_unchecked(&self.bytes()[start..self.pos()]) };
+        Token::Ident(text) // Returns &'a str directly. Zero cost.
     }
 
     #[inline(always)]
-    fn lex_number(&mut self, start: usize) -> Result<Token, LexError> {
+    fn lex_number(&mut self, start: usize) -> Result<Token<'a>, LexError> {
         let mut i = self.pos();
         let mut seen_dot = false;
 
-        while let Some(c) = self.byte_at(i) {
+        let b = self.bytes();
+
+        while i < b.len() {
+            let c = b[i];
             if c.is_ascii_digit() {
                 i += 1;
             } else if c == b'.' && !seen_dot {
@@ -128,46 +131,101 @@ pub trait CommonLexer {
             }
         }
 
+        let text = unsafe { std::str::from_utf8_unchecked(&b[start..i]) };
+
+        // Construct the owned types here to end the borrow of `b` and `text`.
+        let result = text.parse::<f64>()
+            .map(Token::Number)
+            .map_err(|_| LexError {
+                at: start,
+                msg: format!("Bad number literal: {}", text)
+            });
+
+        // The immutable borrow is mathematically proven to be dead here.
         self.set_pos(i);
 
-        let text = std::str::from_utf8(&self.bytes()[start..i]).unwrap();
-        text.parse::<f64>()
-            .map(Token::Number)
-            .map_err(|_| LexError { at: start, msg: format!("Bad number literal: {}", text) })
+        result
     }
 
     #[inline(always)]
-    fn lex_string(&mut self, start: usize) -> Result<Token, LexError> {
-        let mut out = String::new();
-        while let Some(c) = self.bump() {
-            match c {
-                b'"' => return Ok(Token::Str(out)),
-                b'\\' => {
-                    let esc = self.bump().ok_or(LexError{ at: self.pos(), msg: "Unterminated escape".into() })?;
-                    match esc {
-                        b'"' => out.push('"'),
-                        b'\\' => out.push('\\'),
-                        b'n' => out.push('\n'),
-                        b'r' => out.push('\r'),
-                        b't' => out.push('\t'),
-                        other => out.push(other as char),
-                    }
-                }
-                other => out.push(other as char),
+    fn lex_string(&mut self, start: usize) -> Result<Token<'a>, LexError> {
+        let mut i = self.pos(); // self.pos() is already at start + 1
+        let mut has_escape = false;
+        let len = self.len();
+
+        // Pass 1: Fast-scan via index, avoiding direct slice holding
+        while i < len {
+            let Some(c) = self.byte_at(i) else { break; };
+            if c == b'"' {
+                break;
+            } else if c == b'\\' {
+                has_escape = true;
+                i += 2; // Skip the backslash and the escaped character
+            } else {
+                i += 1;
             }
         }
-        Err(LexError { at: start, msg: "Unterminated string literal".into() })
+
+        if i >= len || self.byte_at(i) != Some(b'"') {
+            return Err(LexError { at: start, msg: "Unterminated string literal".into() });
+        }
+
+        let end = i;
+
+        // Pass 2: Strictly scope the immutable borrow
+        let token = {
+            let b = self.bytes();
+            // CORRECTED: Start at `start + 1` to exclude the opening quote
+            let slice = &b[start + 1 .. end];
+
+            if !has_escape {
+                let text = unsafe { std::str::from_utf8_unchecked(slice) };
+                Token::Str(std::borrow::Cow::Borrowed(text))
+            } else {
+                let mut out = String::with_capacity(slice.len());
+                let mut j = 0;
+                while j < slice.len() {
+                    if slice[j] == b'\\' && j + 1 < slice.len() {
+                        match slice[j + 1] {
+                            b'n' => out.push('\n'),
+                            b'r' => out.push('\r'),
+                            b't' => out.push('\t'),
+                            b'\\' => out.push('\\'),
+                            b'"' => out.push('"'),
+                            other => out.push(other as char),
+                        }
+                        j += 2;
+                    } else {
+                        out.push(slice[j] as char);
+                        j += 1;
+                    }
+                }
+                Token::Str(std::borrow::Cow::Owned(out)) // Heap allocation only when strictly required.
+            }
+        };
+
+        // Pass 3: Safe mutation
+        self.set_pos(end + 1);
+
+        Ok(token)
     }
 }
 
 /// Közös `next()` implementáció.
 /// A lexer típusa adja a hookokat.
-pub fn next_token<L: CommonLexer>(lex: &mut L) -> Option<LexItem> {
+pub fn next_token<'a, L: CommonLexer<'a>>(lex: &mut L) -> Option<LexItem<'a>> {
     if let Err(e) = lex.skip_ws_and_comments() {
         return Some(Err(e));
     }
 
     let start = lex.pos();
+    let bytes = lex.bytes();
+
+    // 2. Handle EOF correctly for the LALRPOP anchor [cite: 2026-02-08]
+    if start >= bytes.len() {
+        return None;
+    }
+
     let c = lex.bump()?;
 
     let tok = match c {

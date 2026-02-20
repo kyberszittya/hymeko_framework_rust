@@ -1,11 +1,12 @@
 use parser::parse_description;
 use parser::ast::*;
 
-fn must_parse(input: &str) -> AstStr {
+fn must_parse<'a>(input: &'a str) -> AstStr<'a> {
     parse_description(input).unwrap()
 }
 
-fn edge_arcs(e: &EdgeDecl<String>) -> Vec<&HyperArc<String>> {
+// EdgeArcs now filters based on the reference lifetime
+fn edge_arcs<'ast, 'slice>(e: &'slice EdgeDecl<'ast, &'ast str>) -> Vec<&'slice HyperArc<'ast, &'ast str>> {
     e.inner
         .body
         .iter()

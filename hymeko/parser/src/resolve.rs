@@ -1,3 +1,4 @@
+// src/resolve.rs
 use std::collections::HashMap;
 
 use crate::ast::*;
@@ -8,15 +9,10 @@ use crate::ir::ir::{AnnoR, RefAtomR, SignedRefR, ValueR};
 
 #[derive(Debug)]
 pub struct Index {
-    pub by_path: HashMap<PathKey, DeclId>, // FQ path -> unique DeclId
-
-
-
-
+    pub by_path: HashMap<PathKey, DeclId>,
 }
 
 impl Index {
-    /// Returns an iterator over all (PathKey, DeclId) pairs in the index
     pub fn iter(&self) -> impl Iterator<Item = (&PathKey, &DeclId)> {
         self.by_path.iter()
     }
@@ -29,26 +25,24 @@ pub enum ResolveError {
     AmbiguousRef { from_scope: String, target: String, candidates: Vec<String> },
 }
 
-pub fn build_index_sym(d: &AstSym, it: &Interner) -> Result<Index, ResolveError> {
+pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, ResolveError> {
     let mut idx = Index { by_path: HashMap::new() };
     let mut next: u32 = 0;
 
-    // header nodes
     for n in &d.header {
         index_node(&mut idx, &mut next, &[], n, it)?;
     }
 
-    // top-level items
     index_items(&mut idx, &mut next, &[], &d.items, it)?;
 
     Ok(idx)
 }
 
-fn index_items(
+fn index_items<'a>(
     idx: &mut Index,
     next: &mut u32,
     scope: &[SymId],
-    items: &[HyperItem<SymId>],
+    items: &[HyperItem<'a, SymId>],
     it: &Interner,
 ) -> Result<(), ResolveError> {
     for item in items {
@@ -61,14 +55,14 @@ fn index_items(
     Ok(())
 }
 
-fn resolve_value(
+fn resolve_value<'a>(
     idx: &Index,
     scope: &[SymId],
-    v: &Value<SymId>,
+    v: &Value<'a, SymId>,
     it: &Interner,
 ) -> Result<ValueR, ResolveError> {
     Ok(match v {
-        Value::Str(s) => ValueR::Str(s.clone()),
+        Value::Str(s) => ValueR::Str(s.to_string()), // Bridging to owned IR
         Value::Num(x) => ValueR::Num(*x),
         Value::List(xs) => ValueR::List(xs.iter().map(|x| resolve_value(idx, scope, x, it)).collect::<Result<_,_>>()?),
         Value::Ref(r) => {
@@ -78,14 +72,14 @@ fn resolve_value(
     })
 }
 
-pub fn resolve_anno(
+pub fn resolve_anno<'a>(
     idx: &Index,
     scope: &[SymId],
-    a: &Anno<SymId>,
+    a: &Anno<'a, SymId>,
     it: &Interner,
 ) -> Result<AnnoR, ResolveError> {
     Ok(AnnoR {
-        tags: a.tags.clone(),
+        tags: a.tags.iter().map(|t| t.to_string()).collect(), // Bridging to owned IR
         value: match &a.value {
             Some(v) => Some(resolve_value(idx, scope, v, it)?),
             None => None,
@@ -108,11 +102,11 @@ fn add_decl(
     Ok(id)
 }
 
-fn index_node(
+fn index_node<'a>(
     idx: &mut Index,
     next: &mut u32,
     scope: &[SymId],
-    n: &NodeDecl<SymId>,
+    n: &NodeDecl<'a, SymId>,
     it: &Interner,
 ) -> Result<(), ResolveError> {
     let mut fq = scope.to_vec();
@@ -127,20 +121,20 @@ fn index_node(
     Ok(())
 }
 
-pub fn resolve_arc_anno(
+pub fn resolve_arc_anno<'a>(
     idx: &Index,
     scope: &[SymId],
-    arc: &HyperArc<SymId>,
+    arc: &HyperArc<'a, SymId>,
     it: &Interner,
 ) -> Result<AnnoR, ResolveError> {
     resolve_anno(idx, scope, &arc.anno, it)
 }
 
-fn index_edge(
+fn index_edge<'a>(
     idx: &mut Index,
     next: &mut u32,
     scope: &[SymId],
-    e: &EdgeDecl<SymId>,
+    e: &EdgeDecl<'a, SymId>,
     it: &Interner,
 ) -> Result<(), ResolveError> {
     let mut fq = scope.to_vec();
@@ -153,8 +147,6 @@ fn index_edge(
     Ok(())
 }
 
-/// ***EZ a resolve: RefPath + Scope -> DeclId***
-/// 0 találat: error, 2+ találat: error (nincs "50 cél")
 pub fn resolve_ref_to_declid(
     idx: &Index,
     scope: &[SymId],
@@ -162,10 +154,8 @@ pub fn resolve_ref_to_declid(
     it: &Interner,
 ) -> Result<DeclId, ResolveError> {
     let target_key = PathKey(target.path.clone());
-
     let mut hit: Option<(PathKey, DeclId)> = None;
 
-    // scope->root: [scope..k] + target
     for k in (0..=scope.len()).rev() {
         let mut fq = scope[..k].to_vec();
         fq.extend_from_slice(&target_key.0);
@@ -173,7 +163,6 @@ pub fn resolve_ref_to_declid(
 
         if let Some(&did) = idx.by_path.get(&fk) {
             if hit.is_some() {
-                // második találat -> ambiguous azonnal
                 let first = hit.take().unwrap().0;
                 return Err(ResolveError::AmbiguousRef {
                     from_scope: fmt_scope(scope, it),
@@ -194,14 +183,14 @@ pub fn resolve_ref_to_declid(
     }
 }
 
-fn resolve_refanno(
+fn resolve_refanno<'a>(
     idx: &Index,
     scope: &[SymId],
-    a: &RefAnno<SymId>,
+    a: &RefAnno<'a, SymId>,
     it: &Interner,
 ) -> Result<AnnoR, ResolveError> {
     Ok(AnnoR {
-        tags: a.tags.clone(),
+        tags: a.tags.iter().map(|t| t.to_string()).collect(), // Bridging to owned IR
         value: match &a.value {
             Some(v) => Some(resolve_value(idx, scope, v, it)?),
             None => None,
@@ -209,12 +198,10 @@ fn resolve_refanno(
     })
 }
 
-
-/// Arc refs “lefordítása” DeclId-ra (innentől egyértelmű)
-pub fn resolve_arc_refs(
+pub fn resolve_arc_refs<'a>(
     idx: &Index,
     scope: &[SymId],
-    arc: &HyperArc<SymId>,
+    arc: &HyperArc<'a, SymId>,
     it: &Interner,
 ) -> Result<Vec<SignedRefR>, ResolveError> {
     let mut out = Vec::with_capacity(arc.inner.refs.len());
@@ -249,14 +236,13 @@ pub fn resolve_arc_refs(
     Ok(out)
 }
 
-/// Opcionális: teljes fában minden ref validálása (és arc refek leképzése)
-pub fn validate_all_refs_sym(d: &AstSym, idx: &Index, it: &Interner) -> Result<(), ResolveError> {
+pub fn validate_all_refs_sym<'a>(d: &AstSym<'a>, idx: &Index, it: &Interner) -> Result<(), ResolveError> {
     validate_items(&[], &d.items, idx, it)
 }
 
-fn validate_items(
+fn validate_items<'a>(
     scope: &[SymId],
-    items: &[HyperItem<SymId>],
+    items: &[HyperItem<'a, SymId>],
     idx: &Index,
     it: &Interner,
 ) -> Result<(), ResolveError> {
@@ -275,9 +261,7 @@ fn validate_items(
                 validate_items(&child, &e.inner.body, idx, it)?;
             }
             HyperItem::Arc(a) => {
-                // arc refs
                 let _ = resolve_arc_refs(idx, scope, a, it)?;
-                // value-ben lévő Ref-ek is:
                 if let Some(v) = &a.anno.value {
                     validate_value(scope, v, idx, it)?;
                 }
@@ -287,9 +271,9 @@ fn validate_items(
     Ok(())
 }
 
-fn validate_value(
+fn validate_value<'a>(
     scope: &[SymId],
-    v: &Value<SymId>,
+    v: &Value<'a, SymId>,
     idx: &Index,
     it: &Interner,
 ) -> Result<(), ResolveError> {

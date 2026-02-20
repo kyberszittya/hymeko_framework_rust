@@ -1,14 +1,15 @@
 // src/hymeko.lalrpop
 use crate::ast::*;
 use crate::lexer::Token;
+use std::borrow::Cow;
 
-grammar;
+grammar<'a>;
 
 extern {
     type Location = usize;
     type Error = crate::lexer::LexError;
 
-    enum Token {
+    enum Token<'a> {
         "{" => crate::lexer::Token::LBrace,
         "}" => crate::lexer::Token::RBrace,
         "(" => crate::lexer::Token::LParen,
@@ -25,29 +26,30 @@ extern {
         "-" => crate::lexer::Token::Minus,
         "~" => crate::lexer::Token::Tilde,
         "->" => crate::lexer::Token::Arrow,
+        "EOF" => crate::lexer::Token::EOF,
 
-        Ident => crate::lexer::Token::Ident(<String>),
+        Ident => crate::lexer::Token::Ident(<&'a str>),
         Number => crate::lexer::Token::Number(<f64>),
-        StrLit => crate::lexer::Token::Str(<String>),
+        StrLit => crate::lexer::Token::Str(<Cow<'a, str>>),
     }
 }
 // ------------------------------------------------------------
 // Top-level
 // ------------------------------------------------------------
 
-pub Description: Description<String> = {
+pub Description: Description<'a, &'a str> = {
     <name:Ident> <header:OptHeaderBlock> <items:HyperItem*> =>
         Description { name, header, items }
 };
 
-OptHeaderBlock: Vec<NodeDecl<String>> = {
+OptHeaderBlock: Vec<NodeDecl<'a, &'a str>> = {
     // pl. Minimal_Example{}  vagy MyDesc{ }
     "{" <xs:HeaderItem*> "}" => xs,
     // ha később engednéd header nélkül is:
     // => Vec::new(),
 };
 
-HeaderItem: NodeDecl<String> = {
+HeaderItem: NodeDecl<'a, &'a str> = {
     // Headerben csak "statement node" jellegű dolgokat engedünk
     <name:Ident> <anno:OptAnno> ";" => NodeDecl {
         anno,
@@ -55,7 +57,7 @@ HeaderItem: NodeDecl<String> = {
     }
 };
 
-HyperItem: HyperItem<String> = {
+HyperItem: HyperItem<'a, &'a str> = {
     <n:NodeDecl>  => HyperItem::Node(n),
     <e:EdgeDecl>  => HyperItem::Edge(e),
     <a:HyperArc>  => HyperItem::Arc(a),
@@ -65,7 +67,7 @@ HyperItem: HyperItem<String> = {
 // Values
 // ------------------------------------------------------------
 
-IdentList: Vec<String> = {
+IdentList: Vec<&'a str> = {
     <x:Ident> <rest:("," Ident)*> ","? => {
         let mut out = vec![x];
         for (_, y) in rest { out.push(y); }
@@ -73,14 +75,14 @@ IdentList: Vec<String> = {
     }
 };
 
-Value: Value<String> = {
+Value: Value<'a, &'a str> = {
     <s:StrLit> => Value::Str(s),
     <n:Number> => Value::Num(n),
     "[" <xs:ValueList> "]" => Value::List(xs),
     <r:RefPath> => Value::Ref(r),
 };
 
-ValueList: Vec<Value<String>> = {
+ValueList: Vec<Value<'a, &'a str>> = {
     => Vec::new(),
     <v:Value> <rest:("," Value)*> ","? => {
         let mut out = vec![v];
@@ -93,7 +95,7 @@ ValueList: Vec<Value<String>> = {
 // Nodes
 // ------------------------------------------------------------
 
-NodeDecl: NodeDecl<String> = {
+NodeDecl: NodeDecl<'a, &'a str> = {
     // Block node: name <tags> { ... }
     <name:Ident> <anno:OptAnnoNoValue> "{" <body:HyperItem*> "}" => NodeDecl {
         anno,
@@ -118,7 +120,7 @@ NodeDecl: NodeDecl<String> = {
 // ------------------------------------------------------------
 
 // @E1 { ... }   is an edge
-EdgeDecl: EdgeDecl<String> = {
+EdgeDecl: EdgeDecl<'a, &'a str> = {
     <sig:EdgeSig> <name:Ident> <anno:OptAnno> "{" <body:HyperItem*> "}" => EdgeDecl {
         anno,
         inner: EdgeInner { name, body }
@@ -133,14 +135,14 @@ EdgeSig: () = {
 // Arcs inside blocks/edges: +A -B ;
 // ------------------------------------------------------------
 
-HyperArc: HyperArc<String> = {
+HyperArc: HyperArc<'a, &'a str> = {
     "(" <refs:SignedRefList> ")" <anno:OptAnno> ";" => HyperArc {
         anno,
         inner: ArcInner { refs }
     }
 };
 
-SignedRefList: Vec<SignedRef<String>> = {
+SignedRefList: Vec<SignedRef<'a, &'a str>> = {
     <x:SignedRef> <rest:("," SignedRef)*> ","? => {
         let mut out = vec![x];
         for (_, y) in rest { out.push(y); }
@@ -152,7 +154,7 @@ SignedRefList: Vec<SignedRef<String>> = {
 // References
 // ------------------------------------------------------------
 
-RefPath: Ref<String> = {
+RefPath: Ref<&'a str> = {
     <first:Ident> <rest:("." Ident)+> => {
         let mut path = Vec::new();
         path.push(first);
@@ -167,11 +169,11 @@ RefPath: Ref<String> = {
 };
 
 // A SignedRef AST RefAtom-ot vár, ezért itt csinálunk default-ot.
-OptWeights: Option<Vec<Value<String>>> = {
+OptWeights: Option<Vec<Value<'a, &'a str>>> = {
     => None,
     "[" <xs:ValueList> "]" => Some(xs),
 };
-SignedRef: SignedRef<String> = {
+SignedRef: SignedRef<'a, &'a str> = {
     "+" <r:RefPath> <w:OptWeights> => SignedRef::Plus(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
     "-" <r:RefPath> <w:OptWeights> => SignedRef::Minus(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
     "~" <r:RefPath> <w:OptWeights> => SignedRef::Neutral(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
@@ -180,20 +182,20 @@ SignedRef: SignedRef<String> = {
 // Annotation helpers
 // ------------------------------------------------------------
 
-OptAnno: Anno<String> = {
+OptAnno: Anno<'a, &'a str> = {
     <tags:OptTags> <v:OptValue> => Anno { tags, value: v }
 };
 
-OptAnnoNoValue: Anno<String> = {
+OptAnnoNoValue: Anno<'a, &'a str> = {
     <tags:OptTags> => Anno { tags, value: None }
 };
 
-OptTags: Vec<String> = {
+OptTags: Vec<Cow<'a, str>> = {
     => Vec::new(),
-    "<" <xs:IdentList> ">" => xs
+    "<" <xs:IdentList> ">" => xs.into_iter().map(Cow::Borrowed).collect()
 };
 
-OptValue: Option<Value<String>> = {
+OptValue: Option<Value<'a, &'a str>> = {
     => None,
     <v:Value> => Some(v)
 };

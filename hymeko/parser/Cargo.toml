@@ -9,3 +9,4 @@ lalrpop = ">=0.22.2"
 [dependencies]
 lalrpop-util = { version = ">=0.22.2", features = ["lexer", "unicode"]}
 blake3 = ">=1"
+memmap2 = ">=0.9.10"

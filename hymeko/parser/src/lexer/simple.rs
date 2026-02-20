@@ -16,8 +16,8 @@ impl<'i> Lexer<'i> {
     }
 }
 
-impl<'i> CommonLexer for Lexer<'i> {
-    #[inline(always)] fn bytes(&self) -> &[u8] { self.bytes }
+impl<'i> CommonLexer<'i> for Lexer<'i> {
+    #[inline(always)] fn bytes(&self) -> &'i[u8] { self.bytes }
     #[inline(always)] fn pos(&self) -> usize { self.i }
     #[inline(always)] fn set_pos(&mut self, v: usize) { self.i = v; }
 
@@ -37,7 +37,7 @@ impl<'i> CommonLexer for Lexer<'i> {
 }
 
 impl<'i> Iterator for Lexer<'i> {
-    type Item = LexItem;
+    type Item = LexItem<'i>;
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         common::next_token(self)

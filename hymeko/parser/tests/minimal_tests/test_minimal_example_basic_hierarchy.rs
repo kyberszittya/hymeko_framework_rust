@@ -1,10 +1,17 @@
-use parser::{as_node, body, find_node, read_parse_file};
+use std::fs::File;
+use memmap2::Mmap;
+use parser::{as_node, body, find_node, parse_from_mmap};
 // <- fontos: parser::lib, ne crate::lib
 
 #[test]
 fn parses_minimal_example_context_fields() {
     let path = "./data/minimal_examples/minimal_example_basic_hierarchy.hymeko";
-    let d = read_parse_file(path).unwrap();
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+    // The AST is valid as long as 'mmap' is in scope.
+    let d = parse_from_mmap(&mmap).unwrap();
+    
 
     // Header
     assert_eq!(d.name, "Minimal_Example");

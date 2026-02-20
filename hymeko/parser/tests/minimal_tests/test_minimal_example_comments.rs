@@ -1,10 +1,17 @@
+use std::fs::File;
+use memmap2::Mmap;
 use parser::ast::HyperItem;
-use parser::{assert_list_nums, assert_no_value, assert_num_value, assert_str_value, assert_tags, find_node, read_parse_file};
+use parser::{assert_list_nums, assert_no_value, assert_num_value, assert_str_value, assert_tags, 
+             find_node, parse_description, parse_from_mmap};
 
 #[test]
 fn parses_minimal_example_context_fields_with_comments() {
     let path = "./data/minimal_examples/comments/minimal_example_with_fields_with_comments.hymeko";
-    let d = read_parse_file(path).unwrap();
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+    // The AST is valid as long as 'mmap' is in scope.
+    let d = parse_from_mmap(&mmap).unwrap();
 
     // description name
     assert_eq!(d.name, "Minimal_Example");
@@ -72,7 +79,11 @@ fn parses_minimal_example_context_fields_with_comments() {
 #[test]
 fn parses_minimal_example_context_fields_with_line_comments() {
     let path = "./data/minimal_examples/comments/minimal_example_with_fields_with_line_comments.hymeko";
-    let d = read_parse_file(path).unwrap();
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+    // The AST is valid as long as 'mmap' is in scope.
+    let d = parse_from_mmap(&mmap).unwrap();
 
     // description name
     assert_eq!(d.name, "Minimal_Example");
@@ -140,7 +151,11 @@ fn parses_minimal_example_context_fields_with_line_comments() {
 #[test]
 fn parses_minimal_example_context_fields_with_header_comment() {
     let path = "./data/minimal_examples/comments/minimal_example_with_fields_with_block_header_comment.hymeko";
-    let d = read_parse_file(path).unwrap();
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+    // The AST is valid as long as 'mmap' is in scope.
+    let d = parse_from_mmap(&mmap).unwrap();
 
     // description name
     assert_eq!(d.name, "Minimal_Example");
@@ -201,8 +216,29 @@ fn parses_minimal_example_context_fields_with_header_comment() {
 fn parses_minimal_example_context_fields_with_bad_comments() {
     let path = "./data/minimal_examples/comments/minimal_example_with_fields_with_bad_comments.hymeko";
     // This should throw an error
-    let res = read_parse_file(path);
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+    // The AST is valid as long as 'mmap' is in scope.
+    let res = parse_from_mmap(&mmap);
     // Expect error
     assert!(res.is_err());
+
+}
+
+#[test]
+fn parses_minimal_example_context_fields_with_bad_comments_inline() {
+    let input = r#"
+        Minimal_Example { author "Csaba"; }
+        context {
+        /* Multi-line comment without closing tag
+        val0 <int> 56;
+        }
+    "#;
+
+    let res = parse_description(input);
+    // Expect error
+    assert!(res.is_err());
+
 
 }

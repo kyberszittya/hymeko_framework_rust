@@ -1,11 +1,17 @@
+use std::fs::File;
+use memmap2::Mmap;
 use parser::ast::*;
-use parser::{body, find_node, read_parse_file};
+use parser::{body, find_node, parse_from_mmap};
 
 #[test]
 fn parse_fano_graph() {
 
     let path = "./data/typical_graphs/fano_graph.hymeko";
-    let desc: AstStr = read_parse_file(path).unwrap();
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+
+    // The AST is valid as long as 'mmap' is in scope.
+    let desc = parse_from_mmap(&mmap).unwrap();
 
     // Top-level: "Fano_graph" név + üres header
     assert_eq!(desc.name, "Fano_graph");
@@ -36,7 +42,7 @@ fn parse_fano_graph() {
             .unwrap_or_else(|| panic!("Expected Edge({}) in fano body", ename));
 
         // edge.inner.body : Vec<HyperItem>
-        let arc_items: Vec<&parser::ast::HyperArc<String>> = edge
+        let arc_items: Vec<&parser::ast::HyperArc<&str>> = edge
             .inner
             .body
             .iter()

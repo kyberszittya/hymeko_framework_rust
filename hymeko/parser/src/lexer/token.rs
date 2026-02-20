@@ -1,23 +1,22 @@
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum Token<'a> {
     // punctuation / operators
     LBrace, RBrace, LParen, RParen, LBrack, RBrack, LAngle, RAngle,
     Comma, Semi, Dot, At,
     Plus, Minus, Tilde,
-    Arrow, // ->
+    Arrow,
 
-    // literals
-    Ident(String),
+    // literals bound to the input lifetime
+    Ident(&'a str),
     Number(f64),
-    Str(String),
-
-    // end / error helper
-    // (EOF-t LALRPOP nem mindig igényel; mi nem adjuk ki tokenként.)
+    Str(Cow<'a, str>),
+    EOF,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LexError {
-    pub msg: String,
-    pub at: usize, // byte offset
+    pub msg: String, // Heap allocation is acceptable for rare error paths
+    pub at: usize,
 }
