@@ -10,3 +10,6 @@ mod intermediate_tests;
 
 #[path = "traversal/mod.rs"]
 mod traversal;
+
+#[path = "simd_lexer_tests/mod.rs"]
+mod simd_lexer_tests;
