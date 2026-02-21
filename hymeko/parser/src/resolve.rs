@@ -59,10 +59,10 @@ fn resolve_value<'a>(
     idx: &Index,
     scope: &[SymId],
     v: &Value<'a, SymId>,
-    it: &Interner,
+    it: &mut Interner,
 ) -> Result<ValueR, ResolveError> {
     Ok(match v {
-        Value::Str(s) => ValueR::Str(s.to_string()), // Bridging to owned IR
+        Value::Str(s) => ValueR::Str(it.intern(s)), // Bridging to owned IR
         Value::Num(x) => ValueR::Num(*x),
         Value::List(xs) => ValueR::List(xs.iter().map(|x| resolve_value(idx, scope, x, it)).collect::<Result<_,_>>()?),
         Value::Ref(r) => {
@@ -76,10 +76,10 @@ pub fn resolve_anno<'a>(
     idx: &Index,
     scope: &[SymId],
     a: &Anno<'a, SymId>,
-    it: &Interner,
+    it: &mut Interner,
 ) -> Result<AnnoR, ResolveError> {
     Ok(AnnoR {
-        tags: a.tags.iter().map(|t| t.to_string()).collect(), // Bridging to owned IR
+        tags: a.tags.iter().map(|t| it.intern(t)).collect(), // Bridging to owned IR
         value: match &a.value {
             Some(v) => Some(resolve_value(idx, scope, v, it)?),
             None => None,
@@ -125,7 +125,7 @@ pub fn resolve_arc_anno<'a>(
     idx: &Index,
     scope: &[SymId],
     arc: &HyperArc<'a, SymId>,
-    it: &Interner,
+    it: &mut Interner,
 ) -> Result<AnnoR, ResolveError> {
     resolve_anno(idx, scope, &arc.anno, it)
 }
@@ -200,10 +200,10 @@ fn resolve_refanno<'a>(
     idx: &Index,
     scope: &[SymId],
     a: &RefAnno<'a, SymId>,
-    it: &Interner,
+    it: &mut Interner,
 ) -> Result<AnnoR, ResolveError> {
     Ok(AnnoR {
-        tags: a.tags.iter().map(|t| t.to_string()).collect(), // Bridging to owned IR
+        tags: a.tags.iter().map(|t| it.intern(t)).collect(), // Bridging to owned IR
         value: match &a.value {
             Some(v) => Some(resolve_value(idx, scope, v, it)?),
             None => None,
@@ -215,7 +215,7 @@ pub fn resolve_arc_refs<'a>(
     idx: &Index,
     scope: &[SymId],
     arc: &HyperArc<'a, SymId>,
-    it: &Interner,
+    it: &mut Interner,
 ) -> Result<Vec<SignedRefR>, ResolveError> {
     let mut out = Vec::with_capacity(arc.inner.refs.len());
 
@@ -249,7 +249,7 @@ pub fn resolve_arc_refs<'a>(
     Ok(out)
 }
 
-pub fn validate_all_refs_sym<'a>(d: &AstSym<'a>, idx: &Index, it: &Interner) -> Result<(), ResolveError> {
+pub fn validate_all_refs_sym<'a>(d: &AstSym<'a>, idx: &Index, it: &mut Interner) -> Result<(), ResolveError> {
     validate_items(&[], &d.items, idx, it)
 }
 
@@ -257,7 +257,7 @@ fn validate_items<'a>(
     scope: &[SymId],
     items: &[HyperItem<'a, SymId>],
     idx: &Index,
-    it: &Interner,
+    it: &mut Interner,
 ) -> Result<(), ResolveError> {
     for item in items {
         match item {

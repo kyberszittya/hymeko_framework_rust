@@ -30,7 +30,7 @@ mod basic_transformation_tests {
         let ast_str = parse_description(src).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
-        let ir = lower_to_ir(&ast, &idx, &interner).expect("lower_to_ir failed");
+        let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
         // List all elements stored in interner for debugging
         println!("Interner contents:");
         for (sid, s) in interner.iter() {
@@ -92,7 +92,7 @@ mod basic_transformation_tests {
         let root_rec = &ir.nodes[root_nid.0 as usize];
 
         // first_child points to A, and A->B->C via next_sibling
-        assert_eq!(ir.first_child(did_root), Some(did_a), "Root.first_child should be Root.A");
+        assert_eq!(ir.first_child(did_root), did_a, "Root.first_child should be Root.A");
 
         let a_nid = ir.decl_to_node[did_a.0 as usize].expect("A not lowered as node");
         let b_nid = ir.decl_to_node[did_b.0 as usize].expect("B not lowered as node");
@@ -100,17 +100,17 @@ mod basic_transformation_tests {
 
         assert_eq!(
             ir.next_sibling(did_a),
-            Some(did_b),
+            did_b,
             "A.next_sibling should be B"
         );
         assert_eq!(
             ir.next_sibling(did_b),
-            Some(did_c),
+            did_c,
             "B.next_sibling should be C"
         );
         assert_eq!(
             ir.next_sibling(did_c),
-            None,
+            DeclId::NONE,
             "C.next_sibling should be None"
         );
     }
@@ -137,7 +137,7 @@ mod basic_transformation_tests {
         let ast_str = parse_description(src).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
-        let ir = lower_to_ir(&ast, &idx, &interner).expect("lower_to_ir failed");
+        let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
         // List all elements stored in interner for debugging
         println!("Interner contents:");
         for (sid, s) in interner.iter() {
@@ -205,7 +205,7 @@ mod basic_transformation_tests {
         let root_rec = &ir.nodes[root_nid.0 as usize];
 
         // first_child points to Root.A, and Root.A->Root.B->Root.C via next_sibling
-        assert_eq!(ir.first_child(did_root), Some(did_root_a), "Root.first_child should be Root.A");
+        assert_eq!(ir.first_child(did_root), did_root_a, "Root.first_child should be Root.A");
 
         let root_a_nid = ir.decl_to_node[did_root_a.0 as usize].expect("Root.A not lowered as node");
         let root_b_nid = ir.decl_to_node[did_root_b.0 as usize].expect("Root.B not lowered as node");
@@ -213,23 +213,23 @@ mod basic_transformation_tests {
 
         assert_eq!(
             ir.next_sibling(did_root_a),
-            Some(did_root_b),
+            did_root_b,
             "Root.A.next_sibling should be Root.B"
         );
         assert_eq!(
             ir.next_sibling(did_root_b),
-            Some(did_root_c),
+            did_root_c,
             "Root.B.next_sibling should be Root.C"
         );
         assert_eq!(
             ir.next_sibling(did_root_c),
-            None,
+            DeclId::NONE,
             "Root.C.next_sibling should be None"
         );
 
         // Root.A must also have children: Root.A.A->Root.A.B->Root.A.C
         let root_a_rec = &ir.nodes[root_a_nid.0 as usize];
-        assert_eq!(ir.first_child(did_root_a), Some(did_root_a_a), "Root.A.first_child should be Root.A.A");
+        assert_eq!(ir.first_child(did_root_a), did_root_a_a, "Root.A.first_child should be Root.A.A");
 
         let root_a_a_nid = ir.decl_to_node[did_root_a_a.0 as usize].expect("Root.A.A not lowered as node");
         let root_a_b_nid = ir.decl_to_node[did_root_a_b.0 as usize].expect("Root.A.B not lowered as node");
@@ -239,17 +239,17 @@ mod basic_transformation_tests {
 
         assert_eq!(
             ir.next_sibling(did_root_a_a),
-            Some(did_root_a_b),
+            did_root_a_b,
             "Root.A.A.next_sibling should be Root.A.B"
         );
         assert_eq!(
             ir.next_sibling(did_root_a_b),
-            Some(did_root_a_c),
+            did_root_a_c,
             "Root.A.B.next_sibling should be Root.A.C"
         );
         assert_eq!(
             ir.next_sibling(did_root_a_c),
-            None,
+            DeclId::NONE,
             "Root.A.C.next_sibling should be None"
         );
         let kids_root: Vec<_> = ir.children(did_root).collect();
@@ -274,7 +274,7 @@ mod basic_transformation_tests {
         let ast_str = parse_description(src).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
-        let ir = lower_to_ir(&ast, &idx, &interner).expect("lower_to_ir failed");
+        let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
 
 
         let sid_d = interner.intern("D");
@@ -303,7 +303,7 @@ mod basic_transformation_tests {
 
         // Arc decl konzisztencia (ArcRec-ben nincs `decl`, ezért mappinget tesztelünk)
         assert_eq!(ir.decl_kind[arc_decl.0 as usize], DeclKind::Arc, "child decl should be Arc");
-        assert_eq!(ir.decl_parent[arc_decl.0 as usize], Some(did_edge), "Arc decl parent should be the edge");
+        assert_eq!(ir.decl_parent[arc_decl.0 as usize], did_edge, "Arc decl parent should be the edge");
 
         let arc_id = ir.decl_to_arc[arc_decl.0 as usize]
             .expect("arc decl should map to ArcId via decl_to_arc");

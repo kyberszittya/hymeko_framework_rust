@@ -12,3 +12,13 @@ pub struct ArcId(pub u32);
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SymId(pub u32);
+
+impl DeclId {
+    pub const NONE: Self = Self(u32::MAX);
+
+    #[inline(always)]
+    pub fn is_none(self) -> bool { self.0 == u32::MAX }
+
+    #[inline(always)]
+    pub fn is_some(self) -> bool { self.0 != u32::MAX }
+}

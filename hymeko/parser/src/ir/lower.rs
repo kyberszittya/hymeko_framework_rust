@@ -17,21 +17,19 @@ fn link_decl_child(ir: &mut Ir, parent: DeclId, child: DeclId) {
     // ha parentnek még nincs gyereke
     let slot = &mut ir.decl_first_child[parent.0 as usize];
     if slot.is_none() {
-        *slot = Some(child);
+        *slot = child;
         return;
     }
 
     // különben a sibling lánc végére fűzzük
-    let mut cur = slot.unwrap();
+    let mut cur = *slot;
     loop {
         let next = ir.decl_next_sibling[cur.0 as usize];
-        match next {
-            None => {
-                ir.decl_next_sibling[cur.0 as usize] = Some(child);
-                break;
-            }
-            Some(n) => cur = n,
+        if next.is_none() {
+            ir.decl_next_sibling[cur.0 as usize] = child;
+            break;
         }
+        cur = next;
     }
 }
 
@@ -41,10 +39,10 @@ fn ensure_decl_capacity(ir: &mut Ir, did: DeclId) {
     if ir.decl_kind.len() < need {
         ir.decl_kind.resize(need, DeclKind::Node);
         ir.decl_name.resize(need, SymId(0));
-        ir.decl_parent.resize(need, None);
+        ir.decl_parent.resize(need, DeclId::NONE);
 
-        ir.decl_first_child.resize(need, None);
-        ir.decl_next_sibling.resize(need, None);
+        ir.decl_first_child.resize(need, DeclId::NONE);
+        ir.decl_next_sibling.resize(need, DeclId::NONE);
 
         ir.decl_to_node.resize(need, None);
         ir.decl_to_edge.resize(need, None);
@@ -56,7 +54,7 @@ fn ensure_decl_capacity(ir: &mut Ir, did: DeclId) {
     }
 }
 
-pub fn lower_to_ir(ast: &AstSym, idx: &Index, it: &Interner) -> Result<Ir, ResolveError> {
+pub fn lower_to_ir(ast: &AstSym, idx: &Index, it: &mut Interner) -> Result<Ir, ResolveError> {
     let mut ir = Ir::new(Meta { created_at_unix_ns: now_ns() });
 
     // header nodes (ha van)
@@ -73,7 +71,7 @@ pub fn lower_to_ir(ast: &AstSym, idx: &Index, it: &Interner) -> Result<Ir, Resol
 fn lower_items(
     ir: &mut Ir,
     idx: &Index,
-    it: &Interner,
+    it: &mut Interner,
     scope: &[SymId],
     items: &[HyperItem<SymId>],
 ) -> Result<(), ResolveError> {
@@ -81,11 +79,7 @@ fn lower_items(
         match item {
             HyperItem::Node(n) => lower_node(ir, idx, it, scope, n)?,
             HyperItem::Edge(e) => lower_edge(ir, idx, it, scope, e)?,
-            HyperItem::Arc(a)  => {
-                // Arc önmagában csak edge-bodyban legyen; ha mégis top-level, akkor itt is lekezelheted,
-                // de én inkább hibára futtatnám.
-                let _ = a; // ha nem kell most
-            }
+            HyperItem::Arc(a)  => {let _ = a;   }
         }
     }
     Ok(())
@@ -94,7 +88,7 @@ fn lower_items(
 fn lower_node(
     ir: &mut Ir,
     idx: &Index,
-    _it: &Interner,
+    _it: &mut Interner,
     scope: &[SymId],
     n: &crate::ast::NodeDecl<SymId>,
 ) -> Result<(), ResolveError> {
@@ -108,19 +102,18 @@ fn lower_node(
     ir.decl_kind[did.0 as usize] = DeclKind::Node;
     ir.decl_name[did.0 as usize] = n.inner.name;
 
-    let parent_did = if scope.is_empty() { None } else { Some(decl_id_of(idx, scope)) };
+    let parent_did = if scope.is_empty() { DeclId::NONE } else { decl_id_of(idx, scope) };
     ir.decl_parent[did.0 as usize] = parent_did;
 
     let anno = resolve::resolve_anno(idx, &path, &n.anno, _it)?;
     ir.decl_anno[did.0 as usize] = anno;
 
-    // NodeId kiosztás (tömör)
     let nid = NodeId(ir.nodes.len() as u32);
     ir.nodes.push(NodeRec::new(did));
     ir.decl_to_node[did.0 as usize] = Some(nid);
 
-    if let Some(pd) = parent_did {
-        link_decl_child(ir, pd, did);
+    if parent_did.is_some() {
+        link_decl_child(ir, parent_did, did);
     }
 
     // children
@@ -134,7 +127,7 @@ fn lower_node(
 fn lower_arc(
     ir: &mut Ir,
     idx: &Index,
-    it: &Interner,
+    it: &mut Interner,
     edge_decl: DeclId,
     path: &[SymId],
     eid: EdgeId,
@@ -148,7 +141,7 @@ fn lower_arc(
     // 2) fill decl tables
     ir.decl_kind[arc_decl.0 as usize] = DeclKind::Arc;
     ir.decl_name[arc_decl.0 as usize] = SymId(0); // névtelen arc
-    ir.decl_parent[arc_decl.0 as usize] = Some(edge_decl);
+    ir.decl_parent[arc_decl.0 as usize] = edge_decl;
 
     // 3) resolve arc payload once
     let anno = resolve::resolve_anno(idx, &path, &a.anno, it)?;
@@ -174,7 +167,7 @@ fn lower_arc(
 fn lower_edge(
     ir: &mut Ir,
     idx: &Index,
-    it: &Interner,
+    it: &mut Interner,
     scope: &[SymId],
     e: &crate::ast::EdgeDecl<SymId>,
 ) -> Result<(), ResolveError> {
@@ -187,7 +180,7 @@ fn lower_edge(
     ir.decl_kind[did.0 as usize] = DeclKind::Edge;
     ir.decl_name[did.0 as usize] = e.inner.name;
 
-    let parent_did = if scope.is_empty() { None } else { Some(decl_id_of(idx, scope)) };
+    let parent_did = if scope.is_empty() { DeclId::NONE } else { decl_id_of(idx, scope) };
     ir.decl_parent[did.0 as usize] = parent_did;
 
     let anno = resolve::resolve_anno(idx, &path, &e.anno, it)?;
@@ -197,21 +190,18 @@ fn lower_edge(
     let eid = EdgeId(ir.edges.len() as u32);
     ir.edges.push(EdgeRec::new(did));
     ir.decl_to_edge[did.0 as usize] = Some(eid);
-    if let Some(pd) = parent_did {
-        link_decl_child(ir, pd, did);
+    if parent_did.is_some() {
+        link_decl_child(ir, parent_did, did);
     }
 
-    // edge body: Arc-ok kellenek az IR-be
     let edge_decl = did;
 
-    // scope az edge belsejében = path (scope + edge_name)
     for item in &e.inner.body {
         match item {
             HyperItem::Arc(a) => {
                 lower_arc(ir, idx, it, edge_decl, &path, eid, a)?;
             }
             HyperItem::Node(n) => {
-                // ha edge-bodyban engedsz node-ot: akkor ezek is scope alatt legyenek
                 lower_node(ir, idx, it, &path, n)?;
             }
             HyperItem::Edge(ed) => {

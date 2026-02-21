@@ -7,6 +7,7 @@ pub mod resolve;
 pub mod ir;
 pub mod common;
 pub mod traversal;
+pub mod writers;
 
 use std::fs::File;
 use crate::hymeko::DescriptionParser;

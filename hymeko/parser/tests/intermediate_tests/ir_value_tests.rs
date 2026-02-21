@@ -21,7 +21,7 @@ mod ir_value_tests {
         // Intern and resolve as needed, then lower to IR.
         let Interned { ast, mut interner } = parser::intern_pass::intern_ast(&desc);
         let idx = parser::resolve::build_index_sym(&ast, &interner).unwrap();
-        let ir = lower_to_ir(&ast, &idx, &interner).unwrap();
+        let ir = lower_to_ir(&ast, &idx, &mut interner).unwrap();
 
         let sid_context = interner.intern("context");
         let sid_val0 = interner.intern("val0");
@@ -34,11 +34,14 @@ mod ir_value_tests {
         let did_vector = *idx.by_path.get(&PathKey(vec![sid_context, sid_vector])).expect("vector missing");
 
         // tags + value
-        assert!(ir.decl_anno[did_val0.0 as usize].tags.contains(&"int".to_string()));
+        let sid_int = interner.intern("int");
+        assert!(ir.decl_anno[did_val0.0 as usize].tags.contains(&sid_int));
         assert_eq!(ir.decl_anno[did_val0.0 as usize].value, Some(ValueR::Num(56.0)));
 
-        assert!(ir.decl_anno[did_val1.0 as usize].tags.contains(&"string".to_string()));
-        assert_eq!(ir.decl_anno[did_val1.0 as usize].value, Some(ValueR::Str("vakond".to_string())));
+        let sid_string = interner.intern("string");
+        let sid_vakond = interner.intern("vakond");
+        assert!(ir.decl_anno[did_val1.0 as usize].tags.contains(&sid_string));
+        assert_eq!(ir.decl_anno[did_val1.0 as usize].value, Some(ValueR::Str(sid_vakond)));
 
         // vector list
         match ir.decl_anno[did_vector.0 as usize].value.as_ref().expect("vector has no value") {
@@ -48,8 +51,9 @@ mod ir_value_tests {
 
         // val_undef: tags ok, value None
         let sid_val_undef = interner.intern("val_undef");
+        let sid_real = interner.intern("real");
         let did_val_undef = *idx.by_path.get(&PathKey(vec![sid_context, sid_val_undef])).expect("val_undef missing");
-        assert!(ir.decl_anno[did_val_undef.0 as usize].tags.contains(&"real".to_string()));
+        assert!(ir.decl_anno[did_val_undef.0 as usize].tags.contains(&sid_real));
         assert!(ir.decl_anno[did_val_undef.0 as usize].value.is_none());
 
         // sanity: context itself exists

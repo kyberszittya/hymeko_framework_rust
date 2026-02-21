@@ -30,7 +30,7 @@ mod test_traversal
         let Interned { ast, mut interner } = intern_ast(&desc);
 
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
-        let ir = lower_to_ir(&ast, &idx, &interner).expect("lower_to_ir failed");
+        let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
 
         // --- DeclId-k kikeresése path alapján
         let sid_d = interner.intern("D");

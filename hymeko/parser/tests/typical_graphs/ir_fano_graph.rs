@@ -5,6 +5,7 @@ mod ir_fano_graph {
     use parser::{intern_pass, parse_from_mmap, resolve};
     use parser::common::ids::{DeclId, SymId};
     use parser::common::pathkey::PathKey;
+    use parser::intern_pass::Interned;
     use parser::interner::Interner;
     use parser::ir::common::ref_target;
     use parser::ir::lower::lower_to_ir;
@@ -44,24 +45,22 @@ mod ir_fano_graph {
         // 1) parse -> AST<String>
         let path = "./data/typical_graphs/fano_graph.hymeko";
         let file = File::open(path).unwrap();
-        let mmap = unsafe { Mmap::map(&file).unwrap() };
+        let mmap = unsafe { Mmap::map(&file)? };
 
         // The AST is valid as long as 'mmap' is in scope.
         let d_str = parse_from_mmap(&mmap).unwrap();
 
         // 2) intern -> AST<SymId> + interner
-        let interned = intern_pass::intern_ast(&d_str);
-        let ast = &interned.ast;
-        let it = &interned.interner;
+        let Interned { ast, mut interner } = intern_pass::intern_ast(&d_str);        
 
         // 3) resolve index (PathKey -> DeclId)
-        let idx = resolve::build_index_sym(ast, it).unwrap();
+        let idx = resolve::build_index_sym(&ast, &interner).unwrap();
 
         // 4) lower -> IR
-        let ir = lower_to_ir(ast, &idx, it).unwrap();
+        let ir = lower_to_ir(&ast, &idx, &mut interner).unwrap();
 
         // invert index: DeclId -> "fano.n0"
-        let inv = invert_index(&idx, it);
+        let inv = invert_index(&idx, &interner);
 
         // várt incidenciák
         let expected: [(&str, [&str; 3]); 7] = [
@@ -74,10 +73,10 @@ mod ir_fano_graph {
             ("e6", ["n1", "n5", "n6"]),
         ];
 
-        let fano_sid = it.get_id("fano").expect("missing SymId for 'fano'");
+        let fano_sid = interner.get_id("fano").expect("missing SymId for 'fano'");
 
         for (ename, nodes) in expected {
-            let e_sid = it.get_id(ename).unwrap_or_else(|| panic!("missing SymId for '{ename}'"));
+            let e_sid = interner.get_id(ename).unwrap_or_else(|| panic!("missing SymId for '{ename}'"));
 
             // edge DeclId = path [fano, eX]
             let edge_did = did_of_path(&idx, &[fano_sid, e_sid]);

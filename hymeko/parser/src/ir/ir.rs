@@ -14,9 +14,9 @@ pub struct Ir {
     // deklarációk (globális nézet)
     pub decl_kind: Vec<DeclKind>,     // DeclId -> kind
     pub decl_name: Vec<SymId>,        // DeclId -> name symbol (nem String!)
-    pub decl_parent: Vec<Option<DeclId>>, // hierarchia/scope (opcionális, de hasznos)
-    pub decl_first_child: Vec<Option<DeclId>>,
-    pub decl_next_sibling: Vec<Option<DeclId>>,
+    pub decl_parent: Vec<DeclId>, // hierarchia/scope (opcionális, de hasznos)
+    pub decl_first_child: Vec<DeclId>,
+    pub decl_next_sibling: Vec<DeclId>,
     pub decl_anno: Vec<AnnoR>,
 
     // “konkrét” táblák
@@ -35,22 +35,7 @@ impl Ir {
     pub fn new(meta: Meta) -> Self {
         Self {
             meta: Some(meta),
-            doc_hash: None,
-            decl_hash: Vec::new(),
-            arc_hash: Vec::new(),
-
-            decl_kind: Vec::new(),
-            decl_name: Vec::new(),
-            decl_parent: Vec::new(),
-            decl_first_child: vec![],
-            decl_to_node: Vec::new(),
-            decl_to_edge: Vec::new(),
-            nodes: Vec::new(),
-            edges: Vec::new(),
-            arcs: Vec::new(),
-            decl_next_sibling: vec![],
-            decl_to_arc: vec![],
-            decl_anno: vec![],
+            ..Default::default()
         }
     }
 
@@ -63,17 +48,17 @@ impl Ir {
     }
 
     #[inline]
-    pub fn first_child(&self, item: DeclId) -> Option<DeclId> {
+    pub fn first_child(&self, item: DeclId) -> DeclId {
         self.decl_first_child[item.0 as usize]
     }
 
     #[inline]
-    pub fn next_sibling(&self, item: DeclId) -> Option<DeclId> {
+    pub fn next_sibling(&self, item: DeclId) -> DeclId {
         self.decl_next_sibling[item.0 as usize]
     }
 
     #[inline]
-    pub fn parent(&self, item: DeclId) -> Option<DeclId> {
+    pub fn parent(&self, item: DeclId) -> DeclId {
         self.decl_parent[item.0 as usize]
     }
 
@@ -94,14 +79,15 @@ impl Ir {
 
 pub struct DeclChildren<'a> {
     ir: &'a Ir,
-    next: Option<DeclId>,
+    next: DeclId,
 }
 
 impl<'a> Iterator for DeclChildren<'a> {
     type Item = DeclId;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let cur = self.next?;
+        if self.next.is_none() { return None; }
+        let cur = self.next;
         self.next = self.ir.next_sibling(cur);
         Some(cur)
     }
@@ -150,7 +136,7 @@ pub enum SignedRefR {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueR {
-    Str(String),
+    Str(SymId),
     Num(f64),
     List(Vec<ValueR>),
     Ref(DeclId), // AST Ref(path) -> IR Ref(DeclId)
@@ -158,6 +144,6 @@ pub enum ValueR {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct AnnoR {
-    pub tags: Vec<String>,
+    pub tags: Vec<SymId>,
     pub value: Option<ValueR>,
 }

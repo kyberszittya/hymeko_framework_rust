@@ -17,9 +17,9 @@ mod resolve_fano_graph {
 
         // The AST is valid as long as 'mmap' is in scope.
         let desc = parse_from_mmap(&mmap).unwrap();
-        let Interned { ast: ast_sym, interner } = intern_pass::intern_ast(&desc);
+        let Interned { ast: ast_sym, mut interner } = intern_pass::intern_ast(&desc);
         let idx = resolve::build_index_sym(&ast_sym, &interner)?;
-        resolve::validate_all_refs_sym(&ast_sym, &idx, &interner)?;
+        resolve::validate_all_refs_sym(&ast_sym, &idx, &mut interner)?;
 
 
         // Top-level: "Fano_graph" név + üres header
@@ -196,18 +196,17 @@ mod resolve_fano_graph {
         let d_str = parse_from_mmap(&mmap).unwrap();
 
         // 2) Intern -> AST<SymId> + Interner
-        let interned = intern_pass::intern_ast(&d_str);
-        let ast = &interned.ast;
-        let it = &interned.interner;
+        let Interned { ast, mut interner } = intern_pass::intern_ast(&d_str);
+        
 
         // 3) Index build (PathKey(Vec<SymId>) -> DeclId), duplikátum tiltással
-        let idx = resolve::build_index_sym(ast, it).unwrap();
+        let idx = resolve::build_index_sym(&ast, &interner).unwrap();
 
         // 4) Invert index a teszt-összehasonlításhoz
-        let inv = invert_index(&idx, it);
+        let inv = invert_index(&idx, &interner);
 
         // 5) Keresd meg a `fano` node-ot és a body-t
-        let nid = it.get_id("fano").unwrap();
+        let nid = interner.get_id("fano").unwrap();
         let fano = find_node_id(&ast.items, nid);
         let fano_body = fano.inner.body.as_deref().expect("fano should have body");
 
@@ -224,10 +223,10 @@ mod resolve_fano_graph {
         ];
 
         // SymId-k a scope-hoz
-        let fano_sid: SymId = it.get_id("fano").expect("missing SymId for 'fano'");
+        let fano_sid: SymId = interner.get_id("fano").expect("missing SymId for 'fano'");
 
         for (ename, nodes) in expected {
-            let nid = it.get_id(ename).unwrap();
+            let nid = interner.get_id(ename).unwrap();
             let e = find_edge(fano_body, nid);
             assert_eq!(e.inner.body.len(), 1, "{ename}: edge body should contain exactly 1 item");
 
@@ -245,11 +244,11 @@ mod resolve_fano_graph {
             }
 
             // Scope: [fano, eX]
-            let e_sid = it.get_id(ename).expect("missing SymId for edge name");
+            let e_sid = interner.get_id(ename).expect("missing SymId for edge name");
             let scope = vec![fano_sid, e_sid];
 
             // Resolve refs -> DeclId
-            let resolved = resolve::resolve_arc_refs(&idx, &scope, arc, it).unwrap();
+            let resolved = resolve::resolve_arc_refs(&idx, &scope, arc, &mut interner).unwrap();
 
             // DeclId -> "fano.nK" string
             let mut got = resolved_targets_as_strings(&resolved, &inv);
