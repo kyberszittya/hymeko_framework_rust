@@ -8,14 +8,35 @@ pub enum BergeState {
     Edge(EdgeId),
 }
 
-pub struct HyperGraphView {
-    /// NodeId -> list of incident EdgeId
-    pub node_to_edges: Vec<Vec<EdgeId>>,
-    /// EdgeId -> list of incident NodeId
-    pub edge_to_nodes: Vec<Vec<NodeId>>,
+pub enum BergeIter<'a> {
+    Node(std::slice::Iter<'a, EdgeId>),
+    Edge(std::slice::Iter<'a, NodeId>),
+}
 
+impl<'a> Iterator for BergeIter<'a> {
+    type Item = BergeState;
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            BergeIter::Node(it) => it.next().map(|&e| BergeState::Edge(e)),
+            BergeIter::Edge(it) => it.next().map(|&n| BergeState::Node(n)),
+        }
+    }
+}
+
+pub struct HyperGraphView {
     pub node_decl: Vec<DeclId>, // NodeId -> DeclId
     pub edge_decl: Vec<DeclId>, // EdgeId -> DeclId
+    /// Flat array of all incident edges.
+    pub flat_node_edges: Vec<EdgeId>,
+    /// Offsets into flat_node_edges for each NodeId.
+    pub node_offsets: Vec<u32>,
+    /// Flat array of all incident nodes.
+    pub flat_edge_nodes: Vec<NodeId>,
+    /// Offsets into flat_edge_nodes for each EdgeId.
+    pub edge_offsets: Vec<u32>,
+
+
 }
 
 impl HyperGraphView {
@@ -25,61 +46,64 @@ impl HyperGraphView {
 
     /// Build incidence tables from IR (single source of truth).
     pub fn from_ir(ir: &Ir) -> Self {
-        // NodeId and EdgeId are dense indices into ir.nodes / ir.edges.
-        let mut node_to_edges: Vec<Vec<EdgeId>> = vec![Vec::new(); ir.nodes.len()];
-        let mut edge_to_nodes: Vec<Vec<NodeId>> = vec![Vec::new(); ir.edges.len()];
+        let num_nodes = ir.nodes.len();
+        let num_edges = ir.edges.len();
 
         let node_decl: Vec<DeclId> = ir.nodes.iter().map(|n| n.decl).collect();
         let edge_decl: Vec<DeclId> = ir.edges.iter().map(|e| e.decl).collect();
 
-
-        // Helper: extract target DeclId from SignedRefR
-        fn ref_target(r: &SignedRefR) -> DeclId {
-            match r {
-                SignedRefR::Plus(a) => a.target,
-                SignedRefR::Minus(a) => a.target,
-                SignedRefR::Neutral(a) => a.target,
-            }
-        }
+        // Phase 1: Collect raw pairs
+        let mut pairs: Vec<(EdgeId, NodeId)> = Vec::new();
 
         for (eid_usize, edge) in ir.edges.iter().enumerate() {
             let eid = EdgeId(eid_usize as u32);
-
-            // collect nodes for this edge (dedup via temporary bool/HashSet)
-            // use a small HashSet because arcs may repeat nodes
-            let mut seen_nodes = std::collections::HashSet::<NodeId>::new();
-
             for &aid in &edge.arcs {
                 let arc = &ir.arcs[aid.0 as usize];
-
                 for r in &arc.refs {
-                    let did = ref_target(r);
-
-                    if let Some(nid) = ir.decl_to_node[did.0 as usize] {
-                        if seen_nodes.insert(nid) {
-                            edge_to_nodes[eid_usize].push(nid);
-                            node_to_edges[nid.0 as usize].push(eid);
-                        }
+                    let target = match r {
+                        SignedRefR::Plus(a) | SignedRefR::Minus(a) | SignedRefR::Neutral(a) => a.target,
+                    };
+                    if let Some(nid) = ir.decl_to_node[target.0 as usize] {
+                        pairs.push((eid, nid));
                     }
                 }
             }
-
-            // Optional: keep deterministic order
-            edge_to_nodes[eid_usize].sort_by_key(|n| n.0);
-            edge_to_nodes[eid_usize].dedup();
         }
 
-        // Optional: deterministic order for node_to_edges too
-        for v in &mut node_to_edges {
-            v.sort_by_key(|e| e.0);
-            v.dedup();
+        // Phase 2: Sort and Deduplicate (The DOD way)
+        pairs.sort_unstable_by_key(|&(e, n)| (e.0, n.0));
+        pairs.dedup();
+
+        // Phase 3: Build CSR for Edge -> Nodes
+        let mut flat_edge_nodes = Vec::with_capacity(pairs.len());
+        let mut edge_offsets = vec![0; num_edges + 1];
+
+        for &(eid, nid) in &pairs {
+            flat_edge_nodes.push(nid);
+            edge_offsets[eid.0 as usize + 1] += 1; // Count degrees
+        }
+        for i in 0..num_edges {
+            edge_offsets[i + 1] += edge_offsets[i]; // Prefix sum
+        }
+
+        // Phase 4: Build CSR for Node -> Edges (Reverse sort)
+        pairs.sort_unstable_by_key(|&(e, n)| (n.0, e.0));
+
+        let mut flat_node_edges = Vec::with_capacity(pairs.len());
+        let mut node_offsets = vec![0; num_nodes + 1];
+
+        for &(eid, nid) in &pairs {
+            flat_node_edges.push(eid);
+            node_offsets[nid.0 as usize + 1] += 1;
+        }
+        for i in 0..num_nodes {
+            node_offsets[i + 1] += node_offsets[i];
         }
 
         Self {
-            node_to_edges,
-            edge_to_nodes,
-            node_decl,
-            edge_decl,
+            node_decl, edge_decl,
+            flat_node_edges, node_offsets,
+            flat_edge_nodes, edge_offsets,
         }
     }
 }
@@ -90,25 +114,21 @@ pub struct BergeView<'a> {
 
 impl<'a> GraphView for BergeView<'a> {
     type Node = BergeState;
+    type NeighIter<'b> = BergeIter<'b> where Self: 'b;
 
-    type NeighIter<'b> = Box<dyn Iterator<Item = BergeState> + 'b>
-    where
-        Self: 'b;
-
+    #[inline(always)]
     fn neighbors<'b>(&'b self, s: BergeState) -> Self::NeighIter<'b> {
         match s {
-            BergeState::Node(nid) => Box::new(
-                self.hg.node_to_edges[nid.0 as usize]
-                    .iter()
-                    .copied()
-                    .map(BergeState::Edge),
-            ),
-            BergeState::Edge(eid) => Box::new(
-                self.hg.edge_to_nodes[eid.0 as usize]
-                    .iter()
-                    .copied()
-                    .map(BergeState::Node),
-            ),
+            BergeState::Node(nid) => {
+                let start = self.hg.node_offsets[nid.0 as usize] as usize;
+                let end = self.hg.node_offsets[nid.0 as usize + 1] as usize;
+                BergeIter::Node(self.hg.flat_node_edges[start..end].iter())
+            },
+            BergeState::Edge(eid) => {
+                let start = self.hg.edge_offsets[eid.0 as usize] as usize;
+                let end = self.hg.edge_offsets[eid.0 as usize + 1] as usize;
+                BergeIter::Edge(self.hg.flat_edge_nodes[start..end].iter())
+            },
         }
     }
 }

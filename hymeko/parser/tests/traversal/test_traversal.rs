@@ -3,7 +3,6 @@ mod test_traversal
 {
     use std::collections::HashSet;
     use parser::ast::AstStr;
-    use parser::common::ids::{EdgeId, NodeId};
     use parser::common::pathkey::PathKey;
     use parser::intern_pass::{intern_ast, Interned};
     use parser::ir::lower::lower_to_ir;
@@ -52,12 +51,19 @@ mod test_traversal
         let hg = HyperGraphView::from_ir(&ir);
 
         // 1) incidenciák ellenőrzése (set-alapon)
-        let a_edges: HashSet<EdgeId> = hg.node_to_edges[nid_a.0 as usize].iter().copied().collect();
-        let b_edges: HashSet<EdgeId> = hg.node_to_edges[nid_b.0 as usize].iter().copied().collect();
+        let a_start = hg.node_offsets[nid_a.0 as usize] as usize;
+        let a_end = hg.node_offsets[nid_a.0 as usize + 1] as usize;
+        let a_edges = &hg.flat_node_edges[a_start..a_end];
         assert!(a_edges.contains(&eid_e), "A should be incident to E");
+
+        let b_start = hg.node_offsets[nid_b.0 as usize] as usize;
+        let b_end = hg.node_offsets[nid_b.0 as usize + 1] as usize;
+        let b_edges = &hg.flat_node_edges[b_start..b_end];
         assert!(b_edges.contains(&eid_e), "B should be incident to E");
 
-        let e_nodes: HashSet<NodeId> = hg.edge_to_nodes[eid_e.0 as usize].iter().copied().collect();
+        let e_start = hg.edge_offsets[eid_e.0 as usize] as usize;
+        let e_end = hg.edge_offsets[eid_e.0 as usize + 1] as usize;
+        let e_nodes = &hg.flat_edge_nodes[e_start..e_end];
         assert!(e_nodes.contains(&nid_a), "E should connect to A");
         assert!(e_nodes.contains(&nid_b), "E should connect to B");
 
