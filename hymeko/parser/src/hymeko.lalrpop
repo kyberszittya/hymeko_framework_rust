@@ -50,7 +50,6 @@ OptHeaderBlock: Vec<NodeDecl<'a, &'a str>> = {
 };
 
 HeaderItem: NodeDecl<'a, &'a str> = {
-    // Headerben csak "statement node" jellegű dolgokat engedünk
     <name:Ident> <anno:OptAnno> ";" => NodeDecl {
         anno,
         inner: NodeInner { name, body: None }
