@@ -64,7 +64,7 @@ fn parses_minimal_example_context_fields() {
     // vector [..];
     let vector = find_node(ctx_body, "vector");
     assert_tags(vector, &[]);
-    assert_list_nums(vector, &[15.6, 17.8, 16.3, 12.3, 67.8, 45.0, 2.0]);
+    assert_list_nums(vector, &[15.6, -17.8, 16.3, 12.3, 67.8, 45.0, 2.0]);
 }
 
 

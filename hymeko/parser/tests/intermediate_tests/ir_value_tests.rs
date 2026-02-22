@@ -1,10 +1,11 @@
 #[cfg(test)]
 mod ir_value_tests {
     use std::fs::File;
+    use std::f64;
     use memmap2::Mmap;
     use parser::common::pathkey::PathKey;
     use parser::intern_pass::Interned;
-    use parser::ir::ir::{ValueR};
+    use parser::ir::ir::{ValueR, SignedRefR};
     use parser::ir::lower::lower_to_ir;
     use parser::{parse_from_mmap};
 
@@ -43,9 +44,21 @@ mod ir_value_tests {
         assert!(ir.decl_anno[did_val1.0 as usize].tags.contains(&sid_string));
         assert_eq!(ir.decl_anno[did_val1.0 as usize].value, Some(ValueR::Str(sid_vakond)));
 
+        // negative scalar
+        let sid_val_neg = interner.intern("val_neg");
+        let did_val_neg = *idx.by_path.get(&PathKey(vec![sid_context, sid_val_neg])).expect("val_neg missing");
+        assert_eq!(ir.decl_anno[did_val_neg.0 as usize].value, Some(ValueR::Num(-42.0)));
+
         // vector list
         match ir.decl_anno[did_vector.0 as usize].value.as_ref().expect("vector has no value") {
-            ValueR::List(xs) => assert_eq!(xs.len(), 7),
+            ValueR::List(xs) => {
+                assert_eq!(xs.len(), 7);
+                if let Some(ValueR::Num(v)) = xs.get(1) {
+                    assert!((*v + 17.8).abs() < f64::EPSILON, "second element should be -17.8, got {v}");
+                } else {
+                    panic!("second vector element should be numeric");
+                }
+            }
             other => panic!("vector should be list, got {other:?}"),
         }
 

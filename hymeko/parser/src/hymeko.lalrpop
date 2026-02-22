@@ -78,6 +78,7 @@ IdentList: Vec<&'a str> = {
 Value: Value<'a, &'a str> = {
     <s:StrLit> => Value::Str(s),
     <n:Number> => Value::Num(n),
+    "-" <n:Number> => Value::Num(-n),
     "[" <xs:ValueList> "]" => Value::List(xs),
     <r:RefPath> => Value::Ref(r),
 };
