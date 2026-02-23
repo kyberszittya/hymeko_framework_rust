@@ -266,3 +266,20 @@ fn io_diag(op: &'static str, path: &Path, e: String) -> ModuleLoadError {
         err: std::io::Error::new(std::io::ErrorKind::Other, e),
     })
 }
+
+
+fn make_build_id(created_at_unix_ns: i128) -> [u8; 16] {
+    let mut h = blake3::Hasher::new();
+    h.update(b"HYMEKO_BUILD_ID");
+    h.update(&created_at_unix_ns.to_le_bytes());
+
+    // kis entropy: address (nem kriptó, de session ID-nek oké)
+    let addr = (&h as *const _ as usize).to_le_bytes();
+    h.update(&addr);
+
+    let out = h.finalize();
+    let b = out.as_bytes();
+    let mut id = [0u8; 16];
+    id.copy_from_slice(&b[..16]);
+    id
+}

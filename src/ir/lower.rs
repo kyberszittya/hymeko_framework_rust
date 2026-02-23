@@ -8,6 +8,8 @@ use crate::resolution::interner::Interner;
 use crate::resolution::resolve::{resolve_anno, resolve_arc_refs, Index, ResolveError};
 use crate::sym_ast::AstSym;
 
+fn default_build_id() -> [u8; 16] { [0u8; 16] }
+
 fn parent_decl(idx: &Index, scope: &[SymId]) -> DeclId {
     if scope.is_empty() { DeclId::NONE }
     else {
@@ -64,16 +66,21 @@ fn ensure_decl_capacity(ir: &mut Ir, did: DeclId) {
 }
 
 pub fn lower_to_ir(ast: &AstSym, idx: &Index, it: &mut Interner) -> Result<Ir, ResolveError> {
-    let mut ir = Ir::new(Meta { created_at_unix_ns: now_ns() });
+    lower_to_ir_with_meta(
+        ast, idx, it,
+        Meta { created_at_unix_ns: now_ns(), build_id: default_build_id() }
+    )
+}
 
-    // header nodes (ha van)
-    for n in &ast.header {
-        lower_node(&mut ir, idx, it, &[], n)?;
-    }
-
-    // top-level items
+pub fn lower_to_ir_with_meta(
+    ast: &AstSym,
+    idx: &Index,
+    it: &mut Interner,
+    meta: Meta,
+) -> Result<Ir, ResolveError> {
+    let mut ir = Ir::new(meta);
+    for n in &ast.header { lower_node(&mut ir, idx, it, &[], n)?; }
     lower_items(&mut ir, idx, it, &[], &ast.items)?;
-
     Ok(ir)
 }
 
@@ -237,21 +244,29 @@ pub fn lower_into_ir(
 }
 
 
+pub fn lower_program_to_ir_with_meta(
+    root: &AstSym,
+    imported: &[(SymId, AstSym)],
+    idx: &Index,
+    it: &mut Interner,
+    meta: Meta,
+) -> Result<Ir, ResolveError> {
+    let mut ir = Ir::new(meta);
+    lower_into_ir(&mut ir, root, idx, it, &[])?;
+    for (ns, dep_ast) in imported {
+        lower_into_ir(&mut ir, dep_ast, idx, it, &[*ns])?;
+    }
+    Ok(ir)
+}
+
 pub fn lower_program_to_ir(
     root: &AstSym,
     imported: &[(SymId, AstSym)],
     idx: &Index,
     it: &mut Interner,
 ) -> Result<Ir, ResolveError> {
-    let mut ir = Ir::new(Meta { created_at_unix_ns: now_ns() });
-
-    // root a globál scope-ban
-    lower_into_ir(&mut ir, root, idx, it, &[])?;
-
-    // importok a saját namespace-ük alatt
-    for (ns, dep_ast) in imported {
-        lower_into_ir(&mut ir, dep_ast, idx, it, &[*ns])?;
-    }
-
-    Ok(ir)
+    lower_program_to_ir_with_meta(
+        root, imported, idx, it,
+        Meta { created_at_unix_ns: now_ns(), build_id: default_build_id() }
+    )
 }
