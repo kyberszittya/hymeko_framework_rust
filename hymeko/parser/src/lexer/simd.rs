@@ -1,3 +1,6 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+#![allow(dead_code)]
+
 use super::common::{self, CommonLexer, LexItem};
 
 // 1. Base state
