@@ -5,13 +5,15 @@ use std::{
 use std::sync::Arc;
 use parser::ast::AstStr;
 use crate::common::ids::SymId;
+use crate::ir::hash::HashId;
 use crate::ir::hash_pass::compute_merkle_hashes;
 use crate::ir::ir::Ir;
 use crate::ir::lower::lower_program_to_ir;
+use crate::module_store::source_provider::SourceProvider;
 use crate::resolution::intern_pass::intern_ast_into_owned;
 use crate::resolution::interner::Interner;
 use crate::resolution::resolve::{build_index_sym_with_prefix, validate_all_refs_sym_with_prefix, Index};
-use crate::resolution::source_provider::SourceProvider;
+
 use crate::sym_ast::AstSym;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -30,6 +32,7 @@ pub struct CompiledProgram {
     pub ir: Ir,
     // extra debug/teszt kényelmesség:
     pub imports: Vec<(SymId, ModuleKey)>, // (namespace, module key)
+    pub canon_hash: HashId,
 }
 
 #[derive(Debug)]
@@ -225,11 +228,20 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
 
         compute_merkle_hashes(&mut ir, &self.it);
 
-        let compiled = Arc::new(CompiledProgram {
+        let cfg = crate::ir::canonical_hash::CanonHashCfg {
+            schema_version: 1,
+            algo_version: 1,
+            flags: 0,
+        };
+        let canon_hash = crate::ir::canonical_hash::canonical_program_hash(cfg, &idx, &ir, &self.it);
+
+        // 9) bundle + cache
+        let compiled = std::sync::Arc::new(CompiledProgram {
             root: root.clone(),
             idx,
             ir,
             imports: imports_map,
+            canon_hash,
         });
 
         self.last_compiled = Some(compiled.clone());

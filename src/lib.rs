@@ -7,6 +7,8 @@ pub mod traversal;
 pub mod writers;
 pub mod sym_ast;
 pub mod resolution;
+pub mod util;
+pub mod module_store;
 
 pub fn find_node<'ast, 'slice>(items: &'slice [HyperItem<'ast, &'ast str>], name: &str) -> &'slice NodeDecl<'ast, &'ast str> {
     items

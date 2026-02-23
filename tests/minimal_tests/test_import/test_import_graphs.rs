@@ -9,10 +9,10 @@ mod test_import_graphs
     use hymeko_framework::ir::hash_pass::compute_merkle_hashes;
     use hymeko_framework::ir::ir::{DeclKind, SignedRefR};
     use hymeko_framework::ir::lower::lower_to_ir;
+    use hymeko_framework::module_store::module_store::{HymekoParser, ModuleStore};
     use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
-    use hymeko_framework::resolution::module_store::{HymekoParser, ModuleStore};
     use hymeko_framework::resolution::resolve::build_index_sym;
-    use hymeko_framework::resolution::source_provider::StdFsProvider;
+    use hymeko_framework::module_store::source_provider::StdFsProvider;
     use parser::ast::{AstStr};
     use parser::hymeko::DescriptionParser;
     use parser::lexer::simd::Lexer;

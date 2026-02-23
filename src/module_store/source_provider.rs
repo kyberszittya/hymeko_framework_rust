@@ -1,6 +1,17 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::time::UNIX_EPOCH;
+
+fn mix64(mut x: u64) -> u64 {
+    // egyszerű, gyors keverés (SplitMix64-szerű)
+    x ^= x >> 30;
+    x = x.wrapping_mul(0xbf58476d1ce4e5b9);
+    x ^= x >> 27;
+    x = x.wrapping_mul(0x94d049bb133111eb);
+    x ^= x >> 31;
+    x
+}
 
 pub trait SourceProvider {
     fn canonicalize(&self, p: &Path) -> Result<PathBuf, String>;
@@ -35,7 +46,24 @@ impl SourceProvider for StdFsProvider {
     }
 
     fn version(&self, path: &Path) -> Result<u64, String> {
-        todo!()
+        let md = std::fs::metadata(path).map_err(|e| e.to_string())?;
+        let len = md.len();
+
+        let mtime_ns: u128 = match md.modified() {
+            Ok(t) => match t.duration_since(UNIX_EPOCH) {
+                Ok(d) => d.as_nanos(),
+                Err(_) => 0,
+            },
+            Err(_) => 0,
+        };
+
+        // 128bit -> két u64
+        let lo = (mtime_ns & 0xFFFF_FFFF_FFFF_FFFF) as u64;
+        let hi = (mtime_ns >> 64) as u64;
+
+        // mix(mtime_hi, mtime_lo, len)
+        let v = mix64(hi) ^ mix64(lo) ^ mix64(len);
+        Ok(v)
     }
 }
 
@@ -75,6 +103,14 @@ impl SourceProvider for MemProvider {
     }
 
     fn version(&self, path: &Path) -> Result<u64, String> {
-        todo!()
+        let s = self
+            .files
+            .get(path)
+            .ok_or_else(|| format!("file not found: {}", path.display()))?;
+
+        // content-hash → u64 version
+        let h = blake3::hash(s.as_bytes());
+        let b = h.as_bytes();
+        Ok(u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
     }
 }

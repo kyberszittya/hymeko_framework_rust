@@ -1,4 +1,4 @@
-use hymeko_framework::resolution::module_store::HymekoParser;
+use hymeko_framework::module_store::module_store::HymekoParser;
 use parser::ast::AstStr;
 use parser::hymeko::DescriptionParser;
 use parser::lexer::simd::Lexer;

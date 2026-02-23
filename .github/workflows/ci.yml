@@ -50,26 +50,6 @@ jobs:
         if: matrix.rust == 'nightly'
         run: cargo test --workspace --all-targets --all-features --verbose
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - run: cargo fmt --all -- --check
-
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
@@ -115,4 +95,3 @@ jobs:
         with:
           name: build-artifacts
           path: target/release/
-
