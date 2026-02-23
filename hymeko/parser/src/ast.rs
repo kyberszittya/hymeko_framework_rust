@@ -5,7 +5,13 @@ use crate::common::ids::SymId;
 pub struct Description<'a, Id> {
     pub name: Id,
     pub header: Vec<NodeDecl<'a, Id>>,
+    pub imports: Vec<ImportStmt<'a, Id>>,
     pub items: Vec<HyperItem<'a, Id>>,
+}
+
+pub enum HeaderStmt<'a, S> {
+    Node(NodeDecl<'a, S>),
+    Import(ImportStmt<'a, S>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -102,3 +108,9 @@ pub enum Value<'a, Id> {
 // The core type alias now strictly binds to the file buffer's lifetime
 pub type AstStr<'a> = Description<'a, &'a str>;
 pub type AstSym<'a> = Description<'a, SymId>;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ImportStmt<'a, Id> {
+    pub path: Cow<'a, str>,
+    pub alias: Option<Id>,
+}

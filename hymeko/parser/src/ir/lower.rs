@@ -1,12 +1,21 @@
 use crate::ast::{AstSym, HyperArc, HyperItem};
 use crate::interner::Interner;
-use crate::common::ids::{ArcId, DeclId, EdgeId, NodeId, SymId};
+use crate::common::ids::{HyperArcId, DeclId, EdgeId, NodeId, SymId};
 use crate::common::pathkey::PathKey;
 use crate::ir::ir::{AnnoR, ArcRec, DeclKind, EdgeRec, Ir, NodeRec};
 use crate::ir::meta::Meta;
 use crate::ir::time::now_ns;
 use crate::resolve::{self, Index, ResolveError};
 
+
+fn parent_decl(idx: &Index, scope: &[SymId]) -> DeclId {
+    if scope.is_empty() { DeclId::NONE }
+    else {
+        *idx.by_path
+            .get(&PathKey(scope.to_vec()))
+            .unwrap_or(&DeclId::NONE)
+    }
+}
 
 fn decl_id_of(idx: &Index, path: &[SymId]) -> DeclId {
     *idx.by_path.get(&PathKey(path.to_vec()))
@@ -102,7 +111,7 @@ fn lower_node(
     ir.decl_kind[did.0 as usize] = DeclKind::Node;
     ir.decl_name[did.0 as usize] = n.inner.name;
 
-    let parent_did = if scope.is_empty() { DeclId::NONE } else { decl_id_of(idx, scope) };
+    let parent_did = parent_decl(idx, scope);
     ir.decl_parent[did.0 as usize] = parent_did;
 
     let anno = resolve::resolve_anno(idx, &path, &n.anno, _it)?;
@@ -139,7 +148,7 @@ fn lower_arc(
     ensure_decl_capacity(ir, arc_decl);
 
     // 2) fill decl tables
-    ir.decl_kind[arc_decl.0 as usize] = DeclKind::Arc;
+    ir.decl_kind[arc_decl.0 as usize] = DeclKind::HyperArc;
     ir.decl_name[arc_decl.0 as usize] = SymId(0); // névtelen arc
     ir.decl_parent[arc_decl.0 as usize] = edge_decl;
 
@@ -151,7 +160,7 @@ fn lower_arc(
     ir.decl_anno[arc_decl.0 as usize] = anno.clone();
 
     // 5) create ArcRec + mapping
-    let aid = ArcId(ir.arcs.len() as u32);
+    let aid = HyperArcId(ir.arcs.len() as u32);
     ir.arcs.push(ArcRec { anno, in_edge: edge_decl, refs });
     ir.decl_to_arc[arc_decl.0 as usize] = Some(aid);
 
@@ -180,7 +189,7 @@ fn lower_edge(
     ir.decl_kind[did.0 as usize] = DeclKind::Edge;
     ir.decl_name[did.0 as usize] = e.inner.name;
 
-    let parent_did = if scope.is_empty() { DeclId::NONE } else { decl_id_of(idx, scope) };
+    let parent_did = parent_decl(idx, scope);
     ir.decl_parent[did.0 as usize] = parent_did;
 
     let anno = resolve::resolve_anno(idx, &path, &e.anno, it)?;
@@ -211,4 +220,38 @@ fn lower_edge(
     }
 
     Ok(())
+}
+
+pub fn lower_into_ir(
+    ir: &mut Ir,
+    ast: &AstSym,
+    idx: &Index,
+    it: &mut Interner,
+    prefix: &[SymId],
+) -> Result<(), ResolveError> {
+    for n in &ast.header {
+        lower_node(ir, idx, it, prefix, n)?;
+    }
+    lower_items(ir, idx, it, prefix, &ast.items)?;
+    Ok(())
+}
+
+
+pub fn lower_program_to_ir(
+    root: &AstSym,
+    imported: &[(SymId, AstSym)],
+    idx: &Index,
+    it: &mut Interner,
+) -> Result<Ir, ResolveError> {
+    let mut ir = Ir::new(Meta { created_at_unix_ns: now_ns() });
+
+    // root a globál scope-ban
+    lower_into_ir(&mut ir, root, idx, it, &[])?;
+
+    // importok a saját namespace-ük alatt
+    for (ns, dep_ast) in imported {
+        lower_into_ir(&mut ir, dep_ast, idx, it, &[*ns])?;
+    }
+
+    Ok(ir)
 }

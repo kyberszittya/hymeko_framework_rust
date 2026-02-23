@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DeclId(pub u32);
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -8,9 +8,9 @@ pub struct NodeId(pub u32);
 pub struct EdgeId(pub u32);
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ArcId(pub u32);
+pub struct HyperArcId(pub u32);
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SymId(pub u32);
 
 impl DeclId {

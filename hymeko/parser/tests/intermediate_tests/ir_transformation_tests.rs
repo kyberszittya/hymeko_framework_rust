@@ -294,7 +294,7 @@ mod basic_transformation_tests {
         assert_eq!(kids.len(), 1, "edge should have exactly one decl-child (the arc)");
 
         let arc_decl = kids[0];
-        assert_eq!(ir.decl_kind[arc_decl.0 as usize], DeclKind::Arc, "child should be Arc");
+        assert_eq!(ir.decl_kind[arc_decl.0 as usize], DeclKind::HyperArc, "child should be Arc");
 
         // 2) Downcast: Arc decl -> ArcId -> ArcRec
         let arc_id = ir.decl_to_arc[arc_decl.0 as usize]
@@ -302,7 +302,7 @@ mod basic_transformation_tests {
         let arc = &ir.arcs[arc_id.0 as usize];
 
         // Arc decl konzisztencia (ArcRec-ben nincs `decl`, ezért mappinget tesztelünk)
-        assert_eq!(ir.decl_kind[arc_decl.0 as usize], DeclKind::Arc, "child decl should be Arc");
+        assert_eq!(ir.decl_kind[arc_decl.0 as usize], DeclKind::HyperArc, "child decl should be Arc");
         assert_eq!(ir.decl_parent[arc_decl.0 as usize], did_edge, "Arc decl parent should be the edge");
 
         let arc_id = ir.decl_to_arc[arc_decl.0 as usize]

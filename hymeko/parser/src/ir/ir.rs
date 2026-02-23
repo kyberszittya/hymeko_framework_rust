@@ -1,9 +1,9 @@
 use crate::ir::hash::HashId;
-use crate::common::ids::{ArcId, DeclId, EdgeId, NodeId, SymId};
+use crate::common::ids::{HyperArcId, DeclId, EdgeId, NodeId, SymId};
 use crate::ir::meta::Meta;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DeclKind { Node, Edge, Arc }
+pub enum DeclKind { Node, Edge, HyperArc }
 
 #[derive(Debug, Default)]
 pub struct Ir {
@@ -27,7 +27,7 @@ pub struct Ir {
     // DeclId -> NodeId/EdgeId leképzés (gyors jump)
     pub decl_to_node: Vec<Option<NodeId>>,
     pub decl_to_edge: Vec<Option<EdgeId>>,
-    pub decl_to_arc: Vec<Option<ArcId>>,
+    pub decl_to_arc: Vec<Option<HyperArcId>>,
 }
 
 
@@ -74,7 +74,7 @@ impl Ir {
 
     pub fn as_node(&self, d: DeclId) -> Option<NodeId> { self.decl_to_node[d.0 as usize] }
     pub fn as_edge(&self, d: DeclId) -> Option<EdgeId> { self.decl_to_edge[d.0 as usize] }
-    pub fn as_arc(&self, d: DeclId)  -> Option<ArcId>  { self.decl_to_arc[d.0 as usize] }
+    pub fn as_arc(&self, d: DeclId)  -> Option<HyperArcId>  { self.decl_to_arc[d.0 as usize] }
 }
 
 pub struct DeclChildren<'a> {
@@ -104,7 +104,7 @@ impl NodeRec {
 #[derive(Debug)]
 pub struct EdgeRec {
     pub decl: DeclId,
-    pub arcs: Vec<ArcId>,
+    pub arcs: Vec<HyperArcId>,
 }
 impl EdgeRec {
     pub fn new(decl: DeclId) -> Self {

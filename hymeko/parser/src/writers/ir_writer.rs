@@ -56,7 +56,7 @@ impl<'a> IrWriter<'a> {
                 self.write_indent(w, depth)?;
                 writeln!(w, "}}")?;
             }
-            DeclKind::Arc => {
+            DeclKind::HyperArc => {
                 writeln!(w, "arc {} {{ /* Arc references pending */ }}", name)?;
             }
         }

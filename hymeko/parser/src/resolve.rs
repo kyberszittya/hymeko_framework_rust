@@ -38,6 +38,23 @@ pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, Resol
     Ok(idx)
 }
 
+pub fn build_index_sym_with_prefix<'a>(
+    d: &AstSym<'a>,
+    prefix: &[SymId],
+    it: &Interner,
+    idx: &mut Index,
+    next: &mut u32,
+) -> Result<(), ResolveError> {
+    // header node decl-ek
+    for n in &d.header {
+        index_node(idx, next, prefix, n, it)?;
+    }
+
+    // items
+    index_items(idx, next, prefix, &d.items, it)?;
+    Ok(())
+}
+
 fn index_items<'a>(
     idx: &mut Index,
     next: &mut u32,
@@ -251,6 +268,15 @@ pub fn resolve_arc_refs<'a>(
 
 pub fn validate_all_refs_sym<'a>(d: &AstSym<'a>, idx: &Index, it: &mut Interner) -> Result<(), ResolveError> {
     validate_items(&[], &d.items, idx, it)
+}
+
+pub fn validate_all_refs_sym_with_prefix<'a>(
+    d: &AstSym<'a>,
+    prefix: &[SymId],
+    idx: &Index,
+    it: &mut Interner,
+) -> Result<(), ResolveError> {
+    validate_items(prefix, &d.items, idx, it)
 }
 
 fn validate_items<'a>(

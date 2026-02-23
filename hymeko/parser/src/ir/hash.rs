@@ -38,7 +38,7 @@ pub fn hash_decl(doc: HashId, kind: DeclKind, path: &PathKey, it: &Interner) -> 
     h.update(match kind {
         DeclKind::Node => b"N",
         DeclKind::Edge => b"E",
-        DeclKind::Arc => b"A",
+        DeclKind::HyperArc => b"A",
     });
     let pb = path.0.iter().map(|&x| it.resolve(x)).collect::<Vec<_>>().join(".");
     h.update(pb.as_bytes());

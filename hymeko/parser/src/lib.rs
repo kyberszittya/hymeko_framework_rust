@@ -8,6 +8,9 @@ pub mod ir;
 pub mod common;
 pub mod traversal;
 pub mod writers;
+pub mod module_store;
+pub mod module_view;
+pub mod source_provider;
 
 use std::fs::File;
 use crate::hymeko::DescriptionParser;

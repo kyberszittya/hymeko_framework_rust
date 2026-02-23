@@ -37,16 +37,31 @@ extern {
 // Top-level
 // ------------------------------------------------------------
 
+
+
 pub Description: Description<'a, &'a str> = {
-    <name:Ident> <header:OptHeaderBlock> <items:HyperItem*> =>
-        Description { name, header, items }
+    <name:Ident> <hb:OptHeaderBlock> <items:HyperItem*> => {
+        let (imports, header) = hb;
+        Description { name, header, imports, items }
+    }
 };
 
-OptHeaderBlock: Vec<NodeDecl<'a, &'a str>> = {
-    // pl. Minimal_Example{}  vagy MyDesc{ }
-    "{" <xs:HeaderItem*> "}" => xs,
-    // ha később engednéd header nélkül is:
-    // => Vec::new(),
+OptHeaderBlock: (Vec<ImportStmt<'a, &'a str>>, Vec<NodeDecl<'a, &'a str>>) = {
+    "{" <xs:HeaderStmt*> "}" => {
+        let mut imports = Vec::new();
+        let mut decls = Vec::new();
+        for x in xs {
+            match x {
+                HeaderStmt::Import(i) => imports.push(i),
+                HeaderStmt::Node(n) => decls.push(n),
+            }
+        }
+        (imports, decls)
+    }
+};
+HeaderStmt: HeaderStmt<'a, &'a str> = {
+    <i:ImportStmt> => HeaderStmt::Import(i),
+    <n:HeaderItem> => HeaderStmt::Node(n),
 };
 
 HeaderItem: NodeDecl<'a, &'a str> = {
@@ -54,6 +69,16 @@ HeaderItem: NodeDecl<'a, &'a str> = {
         anno,
         inner: NodeInner { name, body: None }
     }
+};
+
+ImportStmt: ImportStmt<'a, &'a str> = {
+    "@" <path:StrLit> <alias:OptImportAlias> ";" =>
+        ImportStmt { path, alias }
+};
+
+OptImportAlias: Option<&'a str> = {
+    "->" <name:Ident> => Some(name),
+    => None,
 };
 
 HyperItem: HyperItem<'a, &'a str> = {
