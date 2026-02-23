@@ -13,10 +13,7 @@ pub struct CoreLexer<'a> {
 impl<'a> CoreLexer<'a> {
     #[inline(always)]
     fn is_ident_cont(c: u8) -> bool {
-        (c >= b'a' && c <= b'z')
-            || (c >= b'A' && c <= b'Z')
-            || (c >= b'0' && c <= b'9')
-            || c == b'_'
+        matches!(c, b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_')
     }
 }
 

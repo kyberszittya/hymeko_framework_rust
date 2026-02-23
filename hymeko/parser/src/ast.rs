@@ -35,6 +35,7 @@ pub struct HyperAnnotatedElement<'a, T, Id> {
 pub type NodeDecl<'a, Id>  = HyperAnnotatedElement<'a, NodeInner<'a, Id>, Id>;
 pub type EdgeDecl<'a, Id>  = HyperAnnotatedElement<'a, EdgeInner<'a, Id>, Id>;
 pub type HyperArc<'a, Id>  = HyperAnnotatedElement<'a, ArcInner<'a, Id>, Id>;
+pub type HeaderBlock<'a> = (Vec<ImportStmt<'a, &'a str>>, Vec<NodeDecl<'a, &'a str>>);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeInner<'a, Id> {

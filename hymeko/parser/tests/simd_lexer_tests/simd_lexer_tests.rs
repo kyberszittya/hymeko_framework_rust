@@ -312,7 +312,8 @@ mod simd_lexer_tests
 
     #[test]
     fn test_simd_number_many_decimals() {
-        single_token!("3.14159265", Token::Number(3.14159265));
+        let pi_str = std::f64::consts::PI.to_string();
+        single_token!(pi_str.as_str(), Token::Number(std::f64::consts::PI));
     }
 
     // ============================================================================

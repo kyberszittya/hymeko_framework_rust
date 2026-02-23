@@ -3,6 +3,7 @@ use crate::ast::*;
 use crate::lexer::Token;
 use std::borrow::Cow;
 
+
 grammar<'a>;
 
 extern {
@@ -46,7 +47,7 @@ pub Description: Description<'a, &'a str> = {
     }
 };
 
-OptHeaderBlock: (Vec<ImportStmt<'a, &'a str>>, Vec<NodeDecl<'a, &'a str>>) = {
+OptHeaderBlock: HeaderBlock<'a> = {
     "{" <xs:HeaderStmt*> "}" => {
         let mut imports = Vec::new();
         let mut decls = Vec::new();
@@ -146,7 +147,7 @@ NodeDecl: NodeDecl<'a, &'a str> = {
 
 // @E1 { ... }   is an edge
 EdgeDecl: EdgeDecl<'a, &'a str> = {
-    <sig:EdgeSig> <name:Ident> <anno:OptAnno> "{" <body:HyperItem*> "}" => EdgeDecl {
+    <_sig:EdgeSig> <name:Ident> <anno:OptAnno> "{" <body:HyperItem*> "}" => EdgeDecl {
         anno,
         inner: EdgeInner { name, body }
     }
@@ -186,11 +187,7 @@ RefPath: Ref<&'a str> = {
         for (_, seg) in rest { path.push(seg); }
         Ref { path }
     },
-    <one:Ident> => Ref { path: {
-        let mut v = Vec::new();
-        v.push(one);
-        v
-    }}
+    <one:Ident> => Ref { path: vec![one] }
 };
 
 // A SignedRef AST RefAtom-ot vár, ezért itt csinálunk default-ot.

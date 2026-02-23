@@ -6,12 +6,7 @@ pub type LexItem<'a> = Result<Spanned<Token<'a>>, LexError>;
 
 #[inline(always)]
 fn is_ident_start(c: u8) -> bool {
-    (c >= b'a' && c <= b'z') || (c >= b'A' && c <= b'Z') || c == b'_'
-}
-
-#[inline(always)]
-fn is_ident_cont(c: u8) -> bool {
-    is_ident_start(c) || (c >= b'0' && c <= b'9')
+    matches!(c, b'_' | b'a'..=b'z' | b'A'..=b'Z')
 }
 
 /// A közös lexer “backend” trait.
@@ -27,6 +22,7 @@ pub trait CommonLexer<'a> {
         if idx < b.len() { Some(b[idx]) } else { None }
     }
 
+    #[allow(dead_code)]
     #[inline(always)]
     fn peek2(&self) -> Option<(u8, u8)> {
         let i = self.pos();
@@ -52,6 +48,7 @@ pub trait CommonLexer<'a> {
         Some(c)
     }
 
+    #[allow(dead_code)]
     /// Hook #1: whitespace skip (SIMD vagy scalar)
     fn skip_ws(&mut self);
 
