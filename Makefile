@@ -19,13 +19,13 @@ help:
 	@echo ""
 
 build:
-	cargo build --verbose
+	cargo build --workspace --all-targets --verbose
 
 test:
-	cargo test --verbose --all
+	cargo test --workspace --all-targets --verbose
 
 test-watch:
-	cargo watch -x "test --all"
+	cargo watch -x "test --workspace --all-targets"
 
 fmt:
 	cargo fmt --all
@@ -34,16 +34,16 @@ fmt-check:
 	cargo fmt --all -- --check
 
 lint:
-	cargo clippy --all --all-targets -- -D warnings
+	cargo clippy --workspace --all-targets -- -D warnings
 
 clean:
 	cargo clean
 
 coverage:
-	cargo tarpaulin --out Html --all
+	cargo tarpaulin --workspace --all-targets --out Html
 
 release:
-	cargo build --release --verbose --all
+	cargo build --workspace --all-targets --release --verbose
 
 doc:
 	cargo doc --no-deps --open

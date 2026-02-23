@@ -16,7 +16,7 @@ impl<'a> IrWriter<'a> {
 
     pub fn write_all<W: Write>(&self, w: &mut W) -> io::Result<()> {
         // Iterate only the roots (items without a parent)
-        for (i, &parent) in self.ir.decl_parent.iter().enumerate() {
+        for (i, parent) in self.ir.decl_parent.iter().enumerate() {
             if parent.is_none() {
                 self.write_decl(w, DeclId(i as u32), 0)?;
             }

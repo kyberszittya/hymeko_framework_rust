@@ -75,7 +75,7 @@ if [ $MISSING -eq 0 ]; then
     echo ""
     echo -e "${BLUE}Next steps:${NC}"
     echo "  1. Review the workflows: cat .github/workflows/ci.yml"
-    echo "  2. Test locally: cargo test --all"
+    echo "  2. Test locally: cargo test --workspace --all-targets"
     echo "  3. Commit: git add .github/ *.md *.sh *.ps1 Makefile .gitignore"
     echo "  4. Commit: git commit -m 'ci: setup GitHub Actions CI/CD pipeline'"
     echo "  5. Push: git push origin <branch>"

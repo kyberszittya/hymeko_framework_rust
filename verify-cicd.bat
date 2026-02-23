@@ -159,7 +159,7 @@ if %MISSING% equ 0 (
     echo [SUCCESS] All CI/CD files are in place! (!FOUND!/!FOUND!)
     echo.
     echo Next steps:
-    echo   1. Test locally: cargo test --all
+    echo   1. Test locally: cargo test --workspace --all-targets
     echo   2. Check scripts work: .\dev.ps1 help
     echo   3. Commit: git add .github/ *.md *.sh *.ps1 Makefile .gitignore
     echo   4. Commit: git commit -m "ci: setup GitHub Actions CI/CD pipeline"
@@ -171,4 +171,3 @@ if %MISSING% equ 0 (
 )
 
 endlocal
-

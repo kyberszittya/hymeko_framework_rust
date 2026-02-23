@@ -244,9 +244,13 @@ pub fn resolve_arc_refs<'a>(
 
         let anno_r = resolve_refanno(idx, scope, &atom.anno, it)?;
         let weights_r = match &atom.anno.weights {
-            Some(ws) => Some(ws.iter()
-                .map(|w| resolve_value(idx, scope, w, it))
-                .collect::<Result<Vec<_>, _>>()?),
+            Some(ws) => {
+                let resolved = ws
+                    .iter()
+                    .map(|w| resolve_value(idx, scope, w, it))
+                    .collect::<Result<Vec<ValueR>, _>>()?;
+                Some(resolved)
+            }
             None => None,
         };
 

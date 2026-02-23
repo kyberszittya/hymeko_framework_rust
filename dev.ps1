@@ -30,11 +30,11 @@ function Invoke-Task {
     switch ($TaskName) {
         "build" {
             Write-Host "Building project..." -ForegroundColor Green
-            cargo build --verbose
+            cargo build --workspace --all-targets --verbose
         }
         "test" {
             Write-Host "Running tests..." -ForegroundColor Green
-            cargo test --verbose --all
+            cargo test --workspace --all-targets --verbose
         }
         "fmt" {
             Write-Host "Formatting code..." -ForegroundColor Green
@@ -47,7 +47,7 @@ function Invoke-Task {
         }
         "lint" {
             Write-Host "Running clippy..." -ForegroundColor Green
-            cargo clippy --all --all-targets -- -D warnings
+            cargo clippy --workspace --all-targets -- -D warnings
         }
         "clean" {
             Write-Host "Cleaning build artifacts..." -ForegroundColor Green
@@ -57,7 +57,7 @@ function Invoke-Task {
         "coverage" {
             Write-Host "Generating code coverage..." -ForegroundColor Green
             if (Get-Command cargo-tarpaulin -ErrorAction SilentlyContinue) {
-                cargo tarpaulin --out Html --all
+                cargo tarpaulin --workspace --all-targets --out Html
             } else {
                 Write-Host "cargo-tarpaulin not installed. Install with:" -ForegroundColor Yellow
                 Write-Host "cargo install cargo-tarpaulin" -ForegroundColor Yellow
@@ -65,7 +65,7 @@ function Invoke-Task {
         }
         "release" {
             Write-Host "Building release binary..." -ForegroundColor Green
-            cargo build --release --verbose --all
+            cargo build --workspace --all-targets --release --verbose
             Write-Host "✓ Release build complete" -ForegroundColor Green
         }
         "doc" {
@@ -79,16 +79,17 @@ function Invoke-Task {
                 Write-Host "✗ Formatting check failed" -ForegroundColor Red
                 exit 1
             }
-            cargo clippy --all --all-targets -- -D warnings
+            cargo clippy --workspace --all-targets -- -D warnings
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "✗ Lint check failed" -ForegroundColor Red
                 exit 1
             }
-            cargo test --all
+            cargo test --workspace --all-targets
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "✗ Tests failed" -ForegroundColor Red
                 exit 1
             }
+
             Write-Host "✓ All checks passed!" -ForegroundColor Green
         }
         "help" {
@@ -104,4 +105,3 @@ function Invoke-Task {
 
 # Main
 Invoke-Task $Task
-

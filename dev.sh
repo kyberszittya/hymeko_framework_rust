@@ -38,16 +38,16 @@ run_task() {
     case "$TASK" in
         build)
             echo -e "${GREEN}Building project...${NC}"
-            cargo build --verbose
+            cargo build --workspace --all-targets --verbose
             ;;
         test)
             echo -e "${GREEN}Running tests...${NC}"
-            cargo test --verbose --all
+            cargo test --workspace --all-targets --verbose
             ;;
         test-watch)
             echo -e "${GREEN}Running tests in watch mode...${NC}"
             if command -v cargo-watch &> /dev/null; then
-                cargo watch -x "test --all"
+                cargo watch -x "test --workspace --all-targets"
             else
                 echo -e "${YELLOW}cargo-watch not installed. Install with:${NC}"
                 echo "cargo install cargo-watch"
@@ -65,7 +65,7 @@ run_task() {
             ;;
         lint)
             echo -e "${GREEN}Running clippy...${NC}"
-            cargo clippy --all --all-targets -- -D warnings
+            cargo clippy --workspace --all-targets -- -D warnings
             ;;
         clean)
             echo -e "${GREEN}Cleaning build artifacts...${NC}"
@@ -75,7 +75,7 @@ run_task() {
         coverage)
             echo -e "${GREEN}Generating code coverage...${NC}"
             if command -v cargo-tarpaulin &> /dev/null; then
-                cargo tarpaulin --out Html --all
+                cargo tarpaulin --workspace --all-targets --out Html
             else
                 echo -e "${YELLOW}cargo-tarpaulin not installed. Install with:${NC}"
                 echo "cargo install cargo-tarpaulin"
@@ -84,7 +84,7 @@ run_task() {
             ;;
         release)
             echo -e "${GREEN}Building release binary...${NC}"
-            cargo build --release --verbose --all
+            cargo build --workspace --all-targets --release --verbose
             echo -e "${GREEN}✓ Release build complete${NC}"
             ;;
         doc)
@@ -98,12 +98,12 @@ run_task() {
                 echo -e "${RED}✗ Formatting check failed${NC}"
                 exit 1
             fi
-            cargo clippy --all --all-targets -- -D warnings
+            cargo clippy --workspace --all-targets -- -D warnings
             if [ $? -ne 0 ]; then
                 echo -e "${RED}✗ Lint check failed${NC}"
                 exit 1
             fi
-            cargo test --all
+            cargo test --workspace --all-targets
             if [ $? -ne 0 ]; then
                 echo -e "${RED}✗ Tests failed${NC}"
                 exit 1
@@ -122,4 +122,3 @@ run_task() {
 }
 
 run_task
-
