@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use crate::common::ids::SymId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Description<'a, Id> {
@@ -107,7 +106,7 @@ pub enum Value<'a, Id> {
 
 // The core type alias now strictly binds to the file buffer's lifetime
 pub type AstStr<'a> = Description<'a, &'a str>;
-pub type AstSym<'a> = Description<'a, SymId>;
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ImportStmt<'a, Id> {

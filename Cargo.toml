@@ -3,4 +3,18 @@ name = "hymeko_framework"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = [
+    "hymeko/parser",
+]
+resolver = "2"
+
+[workspace.dependencies]
+blake3 = ">=1"
+memmap2 = "0.9.10"
+parser = { path = "hymeko/parser" }
+
 [dependencies]
+blake3 = { workspace = true }
+memmap2 = { workspace = true }
+parser = { workspace = true }

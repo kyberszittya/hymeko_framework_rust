@@ -44,11 +44,11 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run tests
-        run: cargo test --verbose --all
+        run: cargo test --workspace --all-targets --verbose
 
       - name: Run tests (nightly features)
         if: matrix.rust == 'nightly'
-        run: cargo test --verbose --all --all-features
+        run: cargo test --workspace --all-targets --all-features --verbose
 
   fmt:
     name: Rustfmt
@@ -68,7 +68,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: cargo clippy --all --all-targets -- -D warnings
+      - run: cargo clippy --workspace --all-targets -- -D warnings
 
   coverage:
     name: Code Coverage
@@ -79,7 +79,7 @@ jobs:
       - uses: taiki-e/install-action@cargo-tarpaulin
 
       - name: Generate coverage report
-        run: cargo tarpaulin --out Xml --all --timeout 300
+        run: cargo tarpaulin --workspace --all-targets --out Xml --timeout 300
         env:
           RUSTFLAGS: -C instrument-coverage
 
@@ -93,7 +93,7 @@ jobs:
           verbose: true
 
       - name: Generate HTML coverage report
-        run: cargo tarpaulin --out Html --all --timeout 300
+        run: cargo tarpaulin --workspace --all-targets --out Html --timeout 300
         continue-on-error: true
 
       - name: Upload HTML coverage as artifact
@@ -109,7 +109,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release --verbose --all
+      - run: cargo build --workspace --all-targets --release --verbose
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
