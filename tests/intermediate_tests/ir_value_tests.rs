@@ -20,6 +20,22 @@ mod ir_value_tests {
         // Intern and resolve as needed, then lower to IR.
         let Interned { ast, mut interner } = intern_pass::intern_ast(&desc);
         let idx = build_index_sym(&ast, &interner).unwrap();
+        // === DIAGNOSTIC OVERLAY ===
+        println!("\n--- [INTERNER STATE] ---");
+        for (id, s) in interner.iter() {
+            println!("Symbol [{:?}]: \"{}\"", id, s);
+        }
+
+        println!("\n--- [SYMBOL INDEX] ---");
+        for (path_key, did) in idx.iter() {
+            // Using your existing fmt_path logic
+            let path_str = path_key.0.iter()
+                .map(|&s| interner.resolve(s))
+                .collect::<Vec<_>>()
+                .join(".");
+            println!("DeclId({:?}): {}", did, path_str);
+        }
+        println!("------------------------\n");
         let ir = lower_to_ir(&ast, &idx, &mut interner).unwrap();
 
         let sid_context = interner.intern("context");
