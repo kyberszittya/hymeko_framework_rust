@@ -244,7 +244,7 @@ fn prufer_from_forest(
     vtie: &[u64],     // indexed by DeclId.0 as usize
 ) -> Vec<u8> {
     let n = verts.len();
-    let mut vidx: HashMap<u32, usize> = HashMap::new();
+    let mut vidx: HashMap<usize, usize> = HashMap::new();
     for (i, d) in verts.iter().enumerate() {
         vidx.insert(d.0, i);
     }

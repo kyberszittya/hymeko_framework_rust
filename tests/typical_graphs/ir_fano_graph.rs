@@ -88,7 +88,7 @@ mod ir_fano_graph {
             // Print arc info
             for (i, arc_ref) in edge.arcs.iter().enumerate() {
                 let arc_did = ir.decl_to_arc.iter().position(|&aid| aid == Some(*arc_ref))
-                    .map(|i| DeclId(i as u32))
+                    .map(|i| DeclId(i))
                     .unwrap_or_else(|| panic!("ArcId {:?} not mapped to DeclId in IR", arc_ref));
                 println!("  Arc {i}: DeclId: {:?}, Parent Edge DeclId: {:?}", arc_did, edge_did);
                 // Print arc refs

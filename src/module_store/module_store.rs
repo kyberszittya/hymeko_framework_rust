@@ -208,7 +208,7 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
 
         // 5) global index: root + deps namespace alatt
         let mut idx = Index { by_path: std::collections::HashMap::new() };
-        let mut next: u32 = 0;
+        let mut next: usize = 0;
 
         build_index_sym_with_prefix(&root_ast, &[], &self.it, &mut idx, &mut next)
             .map_err(|e| ModuleLoadError::Parse(format!("index root failed: {e:?}")))?;

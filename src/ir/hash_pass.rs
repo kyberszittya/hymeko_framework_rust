@@ -15,7 +15,7 @@ pub fn compute_merkle_hashes(ir: &mut Ir, interner: &Interner) {
 
     // Process backwards to ensure children are hashed before parents [cite: 2026-02-08].
     for i in (0..num_decls).rev() {
-        let did = DeclId(i as u32);
+        let did = DeclId(i);
         let mut hasher = Hasher::new();
 
         // 1. Hash Kind and Name

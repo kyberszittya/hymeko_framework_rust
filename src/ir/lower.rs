@@ -123,7 +123,7 @@ fn lower_node(
     let anno = resolve_anno(idx, &path, &n.anno, _it)?;
     ir.decl_anno[did.0 as usize] = anno;
 
-    let nid = NodeId(ir.nodes.len() as u32);
+    let nid = NodeId(ir.nodes.len());
     ir.nodes.push(NodeRec::new(did));
     ir.decl_to_node[did.0 as usize] = Some(nid);
 
@@ -150,7 +150,7 @@ fn lower_arc(
 
 ) -> Result<(), ResolveError> {
     // 1) allocate a fresh anonymous DeclId for the arc
-    let arc_decl = DeclId(ir.decl_kind.len() as u32);
+    let arc_decl = DeclId(ir.decl_kind.len());
     ensure_decl_capacity(ir, arc_decl);
 
     // 2) fill decl tables
@@ -166,7 +166,7 @@ fn lower_arc(
     ir.decl_anno[arc_decl.0 as usize] = anno.clone();
 
     // 5) create ArcRec + mapping
-    let aid = HyperArcId(ir.arcs.len() as u32);
+    let aid = HyperArcId(ir.arcs.len());
     ir.arcs.push(ArcRec { anno, in_edge: edge_decl, refs });
     ir.decl_to_arc[arc_decl.0 as usize] = Some(aid);
 
@@ -202,7 +202,7 @@ fn lower_edge(
     ir.decl_anno[did.0 as usize] = anno;
 
     // EdgeId kiosztás
-    let eid = EdgeId(ir.edges.len() as u32);
+    let eid = EdgeId(ir.edges.len());
     ir.edges.push(EdgeRec::new(did));
     ir.decl_to_edge[did.0 as usize] = Some(eid);
     if parent_did.is_some() {

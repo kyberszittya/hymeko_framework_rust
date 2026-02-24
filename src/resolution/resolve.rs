@@ -27,7 +27,7 @@ pub enum ResolveError {
 
 pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, ResolveError> {
     let mut idx = Index { by_path: HashMap::new() };
-    let mut next: u32 = 0;
+    let mut next: usize = 0;
 
     for n in &d.header {
         index_node(&mut idx, &mut next, &[], n, it)?;
@@ -43,7 +43,7 @@ pub fn build_index_sym_with_prefix<'a>(
     prefix: &[SymId],
     it: &Interner,
     idx: &mut Index,
-    next: &mut u32,
+    next: &mut usize,
 ) -> Result<(), ResolveError> {
     // header node decl-ek
     for n in &d.header {
@@ -57,7 +57,7 @@ pub fn build_index_sym_with_prefix<'a>(
 
 fn index_items<'a>(
     idx: &mut Index,
-    next: &mut u32,
+    next: &mut usize,
     scope: &[SymId],
     items: &[HyperItem<'a, SymId>],
     it: &Interner,
@@ -106,7 +106,7 @@ pub fn resolve_anno<'a>(
 
 fn add_decl(
     idx: &mut Index,
-    next: &mut u32,
+    next: &mut usize,
     key: PathKey,
     it: &Interner,
 ) -> Result<DeclId, ResolveError> {
@@ -121,7 +121,7 @@ fn add_decl(
 
 fn index_node<'a>(
     idx: &mut Index,
-    next: &mut u32,
+    next: &mut usize,
     scope: &[SymId],
     n: &NodeDecl<'a, SymId>,
     it: &Interner,
@@ -149,7 +149,7 @@ pub fn resolve_arc_anno<'a>(
 
 fn index_edge<'a>(
     idx: &mut Index,
-    next: &mut u32,
+    next: &mut usize,
     scope: &[SymId],
     e: &EdgeDecl<'a, SymId>,
     it: &Interner,

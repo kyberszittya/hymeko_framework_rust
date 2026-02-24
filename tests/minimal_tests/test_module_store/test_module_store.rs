@@ -82,13 +82,15 @@ Dep { Foo; }
         let a = ms.it.intern("A");
 
         let mut idx = Index { by_path: HashMap::new() };
-        let mut next: u32 = 0;
+        let mut next: usize = 0;
 
         build_index_sym_with_prefix(&root_ast, &[], &ms.it, &mut idx, &mut next).unwrap();
         build_index_sym_with_prefix(&dep_ast, &[a], &ms.it, &mut idx, &mut next).unwrap();
 
         validate_all_refs_sym_with_prefix(&root_ast, &[], &idx, &mut ms.it).unwrap();
     }
+
+
 
 
 }

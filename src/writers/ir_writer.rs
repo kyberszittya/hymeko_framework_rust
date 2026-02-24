@@ -18,7 +18,7 @@ impl<'a> IrWriter<'a> {
         // Iterate only the roots (items without a parent)
         for (i, parent) in self.ir.decl_parent.iter().enumerate() {
             if parent.is_none() {
-                self.write_decl(w, DeclId(i as u32), 0)?;
+                self.write_decl(w, DeclId(i), 0)?;
             }
         }
         Ok(())

@@ -16,7 +16,7 @@ pub fn build_index_modules<'a>(
     it: &Interner,
 ) -> Result<Index, ResolveError> {
     let mut idx = Index { by_path: HashMap::new() };
-    let mut next: u32 = 0;
+    let mut next: usize = 0;
 
     // root a globális névtérben (prefix = [])
     build_index_sym_with_prefix(root, &[], it, &mut idx, &mut next)?;

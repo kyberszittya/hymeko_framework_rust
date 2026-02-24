@@ -9,3 +9,5 @@ mod intermediate_tests;
 
 #[path = "traversal/mod.rs"]
 mod traversal;
+
+pub mod test_helpers;
