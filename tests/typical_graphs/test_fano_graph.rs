@@ -1,18 +1,15 @@
-use std::fs::File;
-use memmap2::Mmap;
 use hymeko_framework::{body, find_node};
 use parser::ast::*;
-use parser::{parse_from_mmap};
+
 
 #[test]
 fn parse_fano_graph() {
 
     let path = "./data/typical_graphs/fano_graph.hymeko";
-    let file = File::open(path).unwrap();
-    let mmap = unsafe { Mmap::map(&file).unwrap() };
+    let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-    // The AST is valid as long as 'mmap' is in scope.
-    let desc = parse_from_mmap(&mmap).unwrap();
+    // 2. Parse it, tying the AST lifetimes to the String
+    let desc = parser::parse_description(&source_code).unwrap();
 
     // Top-level: "Fano_graph" név + üres header
     assert_eq!(desc.name, "Fano_graph");

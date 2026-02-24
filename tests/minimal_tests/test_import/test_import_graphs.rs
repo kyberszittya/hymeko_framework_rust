@@ -1,28 +1,24 @@
 #![cfg(test)]
 mod test_import_graphs
 {
-    use memmap2::Mmap;
-    use parser::parse_from_mmap;
-    use std::fs::File;
     use std::path::Path;
     use hymeko_framework::common::pathkey::PathKey;
     use hymeko_framework::ir::hash_pass::compute_merkle_hashes;
     use hymeko_framework::ir::ir::{DeclKind, SignedRefR};
     use hymeko_framework::ir::lower::lower_to_ir;
-    use hymeko_framework::module_store::module_store::{HymekoParser, ModuleStore};
+    use hymeko_framework::module_store::module_store::{ModuleStore};
     use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
     use hymeko_framework::resolution::resolve::build_index_sym;
     use hymeko_framework::module_store::source_provider::StdFsProvider;
-    use parser::ast::{AstStr};
-    use parser::hymeko::DescriptionParser;
-    use parser::lexer::simd::Lexer;
+    use crate::minimal_tests::TestParser;
 
     #[test]
     fn check_import_graph_library() {
         let path = "data/minimal_examples/import_examples/minimal_example_library.hymeko";
-        let file = File::open(path).expect("failed to open hymeko file");
-        let mmap = unsafe { Mmap::map(&file).expect("mmap failed") };
-        let desc = parse_from_mmap(&mmap).expect("parse_from_mmap failed");
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
+
+        // 2. Parse it, tying the AST lifetimes to the String
+        let desc = parser::parse_description(&source_code).unwrap();
         assert_eq!(desc.name, "basic_library");
         let Interned { ast, mut interner } = intern_ast(&desc);
         let idx = build_index_sym(&ast, &mut interner).expect("index build failed");
@@ -73,14 +69,7 @@ mod test_import_graphs
         let root_path = Path::new("data/minimal_examples/import_examples/minimal_example_import.hymeko");
 
         // Parser adapter a LALRPOP-hoz (igazítsd a modulneveket, ha kell)
-        struct TestParser;
-        impl HymekoParser for TestParser {
-            fn parse<'a>(&self, src: &'a str) -> Result<AstStr<'a>, String> {
-                let p = DescriptionParser::new();
-                p.parse(Lexer::new(src))
-                    .map_err(|e| format!("{e:?}"))
-            }
-        }
+
 
         let mut ms = ModuleStore::new(StdFsProvider::new(), TestParser);
 

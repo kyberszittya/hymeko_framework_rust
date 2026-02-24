@@ -1,7 +1,6 @@
 use hymeko_framework::module_store::module_store::HymekoParser;
 use parser::ast::AstStr;
-use parser::hymeko::DescriptionParser;
-use parser::lexer::simd::Lexer;
+use parser::parse_description;
 
 pub mod test_minimal_example;
 pub mod test_minimal_example_with_fields;
@@ -23,8 +22,6 @@ struct TestParser;
 
 impl HymekoParser for TestParser {
     fn parse<'a>(&self, src: &'a str) -> Result<AstStr<'a>, String> {
-        let p = DescriptionParser::new();
-        p.parse(Lexer::new(src))
-            .map_err(|e| format!("{e:?}"))
+        parse_description(src).map_err(|e| format!("{e:?}"))
     }
 }

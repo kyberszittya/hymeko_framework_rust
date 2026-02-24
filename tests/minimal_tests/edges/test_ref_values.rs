@@ -1,9 +1,6 @@
 #!cfg[(test)]
 mod test_ref_values
 {
-    use memmap2::Mmap;
-    use parser::parse_from_mmap;
-    use std::fs::File;
     use hymeko_framework::common::pathkey::PathKey;
     use hymeko_framework::ir::ir::{RefAtomR, SignedRefR, ValueR};
     use hymeko_framework::ir::lower::lower_to_ir;
@@ -79,10 +76,10 @@ mod test_ref_values
     #[test]
     fn edges_with_ref_values() {
         let path = "./data/minimal_examples/testing_edges/minimal_example_with_hierarchy_ref_edges_with_values.hymeko";
-        let file = File::open(path).unwrap();
-        let mmap = unsafe { Mmap::map(&file).unwrap() };
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-        let d = parse_from_mmap(&mmap).unwrap();
+        // 2. Parse it, tying the AST lifetimes to the String
+        let d = parser::parse_description(&source_code).unwrap();
         assert_eq!(d.name, "Minimal_Example");
 
         let context = find_node(&d.items, "context");
@@ -115,10 +112,10 @@ mod test_ref_values
     #[test]
     fn edges_with_ref_values_ir() {
         let path = "./data/minimal_examples/testing_edges/minimal_example_with_hierarchy_ref_edges_with_values.hymeko";
-        let file = File::open(path).unwrap();
-        let mmap = unsafe { Mmap::map(&file).unwrap() };
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-        let desc = parse_from_mmap(&mmap).unwrap();
+        // 2. Parse it, tying the AST lifetimes to the String
+        let desc = parser::parse_description(&source_code).unwrap();
         let Interned { ast, mut interner } = intern_ast(&desc);
         let idx = build_index_sym(&ast, &interner).unwrap();
         let ir = lower_to_ir(&ast, &idx, &mut interner).unwrap();

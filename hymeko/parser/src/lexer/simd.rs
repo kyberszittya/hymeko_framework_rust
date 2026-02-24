@@ -11,6 +11,16 @@ pub struct CoreLexer<'a> {
 }
 
 impl<'a> CoreLexer<'a> {
+
+    #[inline(always)]
+    pub fn new(input: &'a str) -> Self {
+        Self {
+            s: input.as_bytes(),
+            i: 0,
+            n: input.len(),
+        }
+    }
+
     #[inline(always)]
     fn is_ident_cont(c: u8) -> bool {
         matches!(c, b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_')
@@ -18,50 +28,26 @@ impl<'a> CoreLexer<'a> {
 }
 
 // 2. Specific hardware variants
-pub struct Avx2Lexer<'a>(CoreLexer<'a>);
-pub struct Sse2Lexer<'a>(CoreLexer<'a>);
-pub struct ScalarLexer<'a>(CoreLexer<'a>);
+pub struct Avx2Lexer<'a>(pub CoreLexer<'a>);
+pub struct Sse2Lexer<'a>(pub CoreLexer<'a>);
+pub struct ScalarLexer<'a>(pub CoreLexer<'a>);
 
-// 3. Public unified interface
-pub enum Lexer<'a> {
-    Avx2(Avx2Lexer<'a>),
-    Sse2(Sse2Lexer<'a>),
-    Scalar(ScalarLexer<'a>),
-}
 
-impl<'a> Lexer<'a> {
-    pub fn new(input: &'a str) -> Self {
-        let core = CoreLexer {
-            s: input.as_bytes(),
-            i: 0,
-            n: input.len(),
-        };
+// --- Implement Iterator directly on the monomorphized types ---
 
-        #[cfg(target_arch = "x86_64")]
-        {
-            if std::is_x86_feature_detected!("avx2") {
-                return Lexer::Avx2(Avx2Lexer(core));
-            }
-            if std::is_x86_feature_detected!("sse2") {
-                return Lexer::Sse2(Sse2Lexer(core));
-            }
-        }
-        Lexer::Scalar(ScalarLexer(core))
-    }
-}
-
-// 4. Iterator implementation delegates to monomorphized paths
-impl<'a> Iterator for Lexer<'a> {
+impl<'a> Iterator for Avx2Lexer<'a> {
     type Item = LexItem<'a>;
+    #[inline(always)] fn next(&mut self) -> Option<Self::Item> { common::next_token(self) }
+}
 
-    #[inline(always)]
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            Lexer::Avx2(l) => common::next_token(l),
-            Lexer::Sse2(l) => common::next_token(l),
-            Lexer::Scalar(l) => common::next_token(l),
-        }
-    }
+impl<'a> Iterator for Sse2Lexer<'a> {
+    type Item = LexItem<'a>;
+    #[inline(always)] fn next(&mut self) -> Option<Self::Item> { common::next_token(self) }
+}
+
+impl<'a> Iterator for ScalarLexer<'a> {
+    type Item = LexItem<'a>;
+    #[inline(always)] fn next(&mut self) -> Option<Self::Item> { common::next_token(self) }
 }
 
 // 5. Trait Implementations

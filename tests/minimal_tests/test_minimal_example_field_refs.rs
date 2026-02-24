@@ -1,17 +1,13 @@
-use std::fs::File;
-use memmap2::Mmap;
 use hymeko_framework::{body, find_node};
 use parser::ast::*;
-use parser::{parse_from_mmap};
 
 #[test]
 fn parses_legacy_context_with_refs() {
     let path = "./data/minimal_examples/minimal_example_fields_with_reference.hymeko";
-    let file = File::open(path).unwrap();
-    let mmap = unsafe { Mmap::map(&file).unwrap() };
+    let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-    // The AST is valid as long as 'mmap' is in scope.
-    let d = parse_from_mmap(&mmap).unwrap();
+    // 2. Parse it, tying the AST lifetimes to the String
+    let d = parser::parse_description(&source_code).unwrap();
     assert_eq!(d.name, "Minimal_Example");
     // context
     assert_eq!(d.items.len(), 1);
@@ -50,11 +46,10 @@ fn parses_legacy_context_with_refs() {
 #[test]
 fn parses_legacy_context_with_refs_alternative() {
     let path = "./data/minimal_examples/minimal_example_fields_with_reference2.hymeko";
-    let file = File::open(path).unwrap();
-    let mmap = unsafe { Mmap::map(&file).unwrap() };
+    let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-    // The AST is valid as long as 'mmap' is in scope.
-    let d = parse_from_mmap(&mmap).unwrap();
+    // 2. Parse it, tying the AST lifetimes to the String
+    let d = parser::parse_description(&source_code).unwrap();
 
     assert_eq!(d.name, "Minimal_Example");
 

@@ -1,15 +1,12 @@
 #!cfg[(test)]
 mod ir_fano_graph {
-    use std::fs::File;
-    use memmap2::Mmap;
     use hymeko_framework::common::ids::{DeclId, SymId};
     use hymeko_framework::common::pathkey::PathKey;
     use hymeko_framework::ir::common::ref_target;
     use hymeko_framework::ir::lower::lower_to_ir;
     use hymeko_framework::resolution::intern_pass::Interned;
     use hymeko_framework::resolution::interner::Interner;
-    use hymeko_framework::resolution::{intern_pass, resolve};
-    use parser::parse_from_mmap;
+    use hymeko_framework::resolution::{intern_pass, resolve};    
 
     fn invert_index(
         idx: &resolve::Index,
@@ -44,11 +41,10 @@ mod ir_fano_graph {
     fn fano_graph_lowers_to_ir_with_correct_arc_targets() -> Result<(), Box<dyn std::error::Error>> {
         // 1) parse -> AST<String>
         let path = "./data/typical_graphs/fano_graph.hymeko";
-        let file = File::open(path).unwrap();
-        let mmap = unsafe { Mmap::map(&file)? };
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-        // The AST is valid as long as 'mmap' is in scope.
-        let d_str = parse_from_mmap(&mmap).unwrap();
+        // 2. Parse it, tying the AST lifetimes to the String
+        let d_str = parser::parse_description(&source_code).unwrap();
 
         // 2) intern -> AST<SymId> + interner
         let Interned { ast, mut interner } = intern_pass::intern_ast(&d_str);        

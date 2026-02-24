@@ -1,9 +1,7 @@
 #[cfg(test)]
 mod ir_blake3_hash_tests {
     use blake3::Hasher;
-    use memmap2::Mmap;
     use std::collections::HashMap;
-    use std::fs::File;
     use hymeko_framework::resolution::intern_pass::Interned;
     use parser::ast::AstStr;
     use hymeko_framework::common::pathkey::PathKey;
@@ -14,7 +12,7 @@ mod ir_blake3_hash_tests {
     use hymeko_framework::ir::ir::DeclKind;
     use hymeko_framework::ir::lower::lower_to_ir;
     use hymeko_framework::resolution::resolve::build_index_sym;
-    use parser::{parse_description, parse_from_mmap};
+    use parser::{parse_description};
     
 
     #[test]
@@ -52,9 +50,10 @@ mod ir_blake3_hash_tests {
     }
 
     fn context_hash_from_file(path: &str) -> HashId {
-        let file = File::open(path).expect("failed to open hymeko file");
-        let mmap = unsafe { Mmap::map(&file).expect("mmap failed") };
-        let desc = parse_from_mmap(&mmap).expect("parse_from_mmap failed");
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
+
+        // 2. Parse it, tying the AST lifetimes to the String
+        let desc = parser::parse_description(&source_code).unwrap();
         let Interned { ast, mut interner } = intern_ast(&desc);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
         let mut ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
@@ -85,9 +84,10 @@ mod ir_blake3_hash_tests {
     }
 
     fn hashes_for_paths<'a>(path: &str, specs: &[&[&'a str]]) -> HashMap<String, HashId> {
-        let file = File::open(path).expect("failed to open hymeko file");
-        let mmap = unsafe { Mmap::map(&file).expect("mmap failed") };
-        let desc = parse_from_mmap(&mmap).expect("parse_from_mmap failed");
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
+
+        // 2. Parse it, tying the AST lifetimes to the String
+        let desc = parser::parse_description(&source_code).unwrap();
         let Interned { ast, mut interner } = intern_ast(&desc);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
         let mut ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");

@@ -1,19 +1,13 @@
-use std::fs::File;
-use memmap2::Mmap;
 use hymeko_framework::{assert_list_nums, assert_no_value, assert_num_value, assert_str_value, assert_tags, find_node};
 use parser::ast::*;
-use parser::{parse_from_mmap};
-
-
 
 #[test]
 fn parses_minimal_example_context_fields() {
     let path = "./data/minimal_examples/minimal_example_with_fields.hymeko";
-    let file = File::open(path).unwrap();
-    let mmap = unsafe { Mmap::map(&file).unwrap() };
+    let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-    // The AST is valid as long as 'mmap' is in scope.
-    let d = parse_from_mmap(&mmap).unwrap();
+    // 2. Parse it, tying the AST lifetimes to the String
+    let d = parser::parse_description(&source_code).unwrap();
     // description name
     assert_eq!(d.name, "Minimal_Example");
     // top-level: context node

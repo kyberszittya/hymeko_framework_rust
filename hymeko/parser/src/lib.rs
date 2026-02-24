@@ -2,44 +2,48 @@
 pub mod ast;
 pub mod lexer;
 
-use std::fs::File;
+use std::fs;
+use std::path::Path;
 use crate::hymeko::DescriptionParser;
 use lalrpop_util::lalrpop_mod;
-use memmap2::Mmap;
 use crate::ast::{AstStr};
 use crate::lexer::{LexError, Token};
+use crate::lexer::simd::{Avx2Lexer, CoreLexer, ScalarLexer, Sse2Lexer};
 
 lalrpop_mod!(pub hymeko);
 
 
-
-pub fn parse_description<'a>(input: &'a str) -> Result<AstStr<'a>, lalrpop_util::ParseError<usize, Token<'a>, LexError>> {
-    let lexer = crate::lexer::simd::Lexer::new(input);
-
-    // DescriptionParser now correctly returns AstStr<'a> (Description<'a, &'a str>)
-    DescriptionParser::new().parse(lexer)
+// The generic boundary. The compiler will generate 3 highly optimized
+// copies of this parser, one for each lexer type.
+#[inline(always)]
+fn parse_inner<'a, I>(
+    iter: I,
+) -> Result<AstStr<'a>, lalrpop_util::ParseError<usize, Token<'a>, LexError>>
+where
+    I: Iterator<Item = Result<(usize, Token<'a>, usize), LexError>>,
+{
+    DescriptionParser::new().parse(iter)
 }
 
-pub struct ParsedFile<'a> {
-    pub mmap: Mmap,
-    pub ast: AstStr<'a>,
-}
+pub fn parse_description<'a>(
+    input: &'a str,
+) -> Result<AstStr<'a>, lalrpop_util::ParseError<usize, Token<'a>, LexError>> {
+    let core = CoreLexer::new(input);
 
-pub fn read_parse_file(path: &str) -> Result<Mmap, Box<dyn std::error::Error>> {
-    let file = File::open(path)?;
-    // SAFETY: We assume the file is not being modified concurrently.
-    let mmap = unsafe { Mmap::map(&file)? };
-    Ok(mmap)
-}
-
-pub fn parse_from_mmap<'a>(mmap: &'a Mmap) -> Result<AstStr<'a>, lalrpop_util::ParseError<usize, Token<'a>, LexError>> {
-    let input = std::str::from_utf8(mmap).map_err(|_| {
-        lalrpop_util::ParseError::User {
-            error: LexError { at: 0, msg: "File is not valid UTF-8".into() }
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::is_x86_feature_detected!("avx2") {
+            return parse_inner(Avx2Lexer(core));
         }
-    })?;
-    parse_description(input)
+        if std::is_x86_feature_detected!("sse2") {
+            return parse_inner(Sse2Lexer(core));
+        }
+    }
+
+    // Fallback for non-x86 or older processors
+    parse_inner(ScalarLexer(core))
 }
 
-
-
+pub fn read_source_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
+    fs::read_to_string(path)
+}

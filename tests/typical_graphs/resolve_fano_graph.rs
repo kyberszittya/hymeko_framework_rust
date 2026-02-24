@@ -1,7 +1,5 @@
 #!cfg[(test)]
 mod resolve_fano_graph {
-    use std::fs::File;
-    use memmap2::Mmap;
     use hymeko_framework::{body, find_edge, find_node, find_node_id};
     use hymeko_framework::common::ids::{DeclId, SymId};
     use hymeko_framework::ir::ir::SignedRefR;
@@ -9,16 +7,14 @@ mod resolve_fano_graph {
     use hymeko_framework::resolution::{intern_pass, resolve};
     use hymeko_framework::resolution::interner::Interner;
     use parser::ast::*;
-    use parser::parse_from_mmap;
 
     #[test]
     fn parse_fano_graph_resolve() -> Result<(), resolve::ResolveError> {
         let path = "./data/typical_graphs/fano_graph.hymeko";
-        let file = File::open(path).unwrap();
-        let mmap = unsafe { Mmap::map(&file).unwrap() };
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-        // The AST is valid as long as 'mmap' is in scope.
-        let desc = parse_from_mmap(&mmap).unwrap();
+        // 2. Parse it, tying the AST lifetimes to the String
+        let desc = parser::parse_description(&source_code).unwrap();
         let Interned { ast: ast_sym, mut interner } = intern_pass::intern_ast(&desc);
         let idx = resolve::build_index_sym(&ast_sym, &interner)?;
         resolve::validate_all_refs_sym(&ast_sym, &idx, &mut interner)?;
@@ -100,11 +96,10 @@ mod resolve_fano_graph {
     fn fano_graph_shape() -> Result<(), Box<dyn std::error::Error>> {
         // parse -> AST<String>
         let path = "./data/typical_graphs/fano_graph.hymeko";
-        let file = File::open(path).unwrap();
-        let mmap = unsafe { Mmap::map(&file).unwrap() };
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-        // The AST is valid as long as 'mmap' is in scope.
-        let d_str = parse_from_mmap(&mmap).unwrap();
+        // 2. Parse it, tying the AST lifetimes to the String
+        let d_str = parser::parse_description(&source_code).unwrap();
 
         // intern -> AST<SymId> + Interner
         let interned = intern_pass::intern_ast(&d_str);
@@ -191,11 +186,10 @@ mod resolve_fano_graph {
     fn fano_edges_resolve_to_expected_nodes() -> Result<(), Box<dyn std::error::Error>> {
         // 1) Parse -> AST<String>
         let path = "./data/typical_graphs/fano_graph.hymeko";
-        let file = File::open(path).unwrap();
-        let mmap = unsafe { Mmap::map(&file).unwrap() };
+        let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
-        // The AST is valid as long as 'mmap' is in scope.
-        let d_str = parse_from_mmap(&mmap).unwrap();
+        // 2. Parse it, tying the AST lifetimes to the String
+        let d_str = parser::parse_description(&source_code).unwrap();
 
         // 2) Intern -> AST<SymId> + Interner
         let Interned { ast, mut interner } = intern_pass::intern_ast(&d_str);
