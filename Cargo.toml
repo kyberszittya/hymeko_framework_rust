@@ -18,3 +18,12 @@ parser = { path = "hymeko/parser" }
 blake3 = { workspace = true }
 memmap2 = { workspace = true }
 parser = { workspace = true }
+criterion = ">=0.8"
+[[bench]]
+name = "parser_bench"
+harness = false
+[profile.bench]
+opt-level = 3
+debug = true       # Useful for profiling with tools like 'perf' or 'VTune'
+lto = "thin"       # Link Time Optimization helps with the cross-module interning logic
+codegen-units = 1  # Improves optimization quality for the lexer's hot loops

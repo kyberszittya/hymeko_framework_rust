@@ -22,9 +22,16 @@ pub enum HyperItem<'a, Id> {
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Anno<'a, Id> {
-    pub tags: Vec<Cow<'a, str>>,        // Zero-copy or minimal allocation
+    pub tags: Vec<Id>,        // Zero-copy or minimal allocation
     pub value: Option<Value<'a, Id>>,
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Ref<Id> {
+    pub path: Vec<Id>
+}
+
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HyperAnnotatedElement<'a, T, Id> {
@@ -58,36 +65,15 @@ pub struct ArcInner<'a, Id> {
 // References
 //----
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum ArcDir {
-    In,   // +
-    Out,  // -
-    Bi,   // ~
-}
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct DirectedRef<'a, Id> {
-    pub dir: ArcDir,
-    pub target: RefAtom<'a, Id>,
-    pub weights: Option<Vec<Value<'a, Id>>>,
-}
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Ref<Id> {
-    pub path: Vec<Id>
-}
 
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct RefAnno<'a, Id> {
-    pub weights: Option<Vec<Value<'a, Id>>>,
-    pub tags: Vec<Cow<'a, str>>,
-    pub value: Option<Value<'a, Id>>,
-}
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RefAtom<'a, Id> {
     pub target: Ref<Id>,
-    pub anno: RefAnno<'a, Id>,
+    pub anno: Anno<'a, Id>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

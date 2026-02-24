@@ -46,25 +46,25 @@ pub fn compute_merkle_hashes(ir: &mut Ir, interner: &Interner) {
 }
 
 fn hash_anno(anno: &AnnoR, hasher: &mut Hasher, ir: &Ir, it: &Interner) {
-    // 1. Hash the number of tags to prevent "concatenation collisions" [cite: 2026-02-08]
     let num_tags = anno.tags.len() as u64;
     hasher.update(&num_tags.to_le_bytes());
 
-    // 2. Resolve and hash each tag string
     for &tag_sid in &anno.tags {
-        // Ensure you are passing the SymId, not a reference to it [cite: 2026-02-08]
         let tag_str = it.resolve(tag_sid);
+
+        // Mathematically isolate each string
+        let len = tag_str.len() as u64;
+        hasher.update(&len.to_le_bytes());
         hasher.update(tag_str.as_bytes());
     }
 
-    // 3. Hash the presence and content of the value
     match &anno.value {
         Some(v) => {
-            hasher.update(&[1]); // Presence flag (discriminant)
+            hasher.update(&[1]);
             hash_value(v, hasher, ir, it);
         }
         None => {
-            hasher.update(&[0]); // Absence flag
+            hasher.update(&[0]); // <-- THIS SEMICOLON IS CRITICAL
         }
     }
 }

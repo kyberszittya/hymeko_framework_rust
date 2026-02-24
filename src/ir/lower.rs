@@ -60,7 +60,6 @@ fn ensure_decl_capacity(ir: &mut Ir, did: DeclId) {
         ir.decl_to_arc.resize(need, None);
 
         ir.decl_hash.resize(need, None);
-        ir.decl_to_arc.resize(need, None);
         ir.decl_anno.resize(need, AnnoR::default());
     }
 }

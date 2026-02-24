@@ -1,6 +1,6 @@
 // src/resolve.rs
 use std::collections::HashMap;
-use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, RefAnno, SignedRef, Value};
+use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, Value};
 use crate::common::ids::{DeclId, SymId};
 use crate::common::pathkey::PathKey;
 use crate::ir::ir::{AnnoR, RefAtomR, SignedRefR, ValueR};
@@ -96,7 +96,7 @@ pub fn resolve_anno<'a>(
     it: &mut Interner,
 ) -> Result<AnnoR, ResolveError> {
     Ok(AnnoR {
-        tags: a.tags.iter().map(|t| it.intern(t)).collect(), // Bridging to owned IR
+        tags: a.tags.clone(), // They are already SymIds! No interning needed.
         value: match &a.value {
             Some(v) => Some(resolve_value(idx, scope, v, it)?),
             None => None,
@@ -213,20 +213,7 @@ pub fn resolve_ref_to_declid(
     }
 }
 
-fn resolve_refanno<'a>(
-    idx: &Index,
-    scope: &[SymId],
-    a: &RefAnno<'a, SymId>,
-    it: &mut Interner,
-) -> Result<AnnoR, ResolveError> {
-    Ok(AnnoR {
-        tags: a.tags.iter().map(|t| it.intern(t)).collect(), // Bridging to owned IR
-        value: match &a.value {
-            Some(v) => Some(resolve_value(idx, scope, v, it)?),
-            None => None,
-        },
-    })
-}
+
 
 pub fn resolve_arc_refs<'a>(
     idx: &Index,
@@ -242,14 +229,21 @@ pub fn resolve_arc_refs<'a>(
         };
         let did = resolve_ref_to_declid(idx, scope, &atom.target, it)?;
 
-        let anno_r = resolve_refanno(idx, scope, &atom.anno, it)?;
-        let weights_r = match &atom.anno.weights {
-            Some(ws) => {
+        // Delegate directly to the unified annotation resolver
+        let anno_r = resolve_anno(idx, scope, &atom.anno, it)?;
+
+        // Map the unified value back to IR weights if necessary
+        let weights_r = match &atom.anno.value {
+            Some(Value::List(ws)) => {
                 let resolved = ws
                     .iter()
                     .map(|w| resolve_value(idx, scope, w, it))
                     .collect::<Result<Vec<ValueR>, _>>()?;
                 Some(resolved)
+            }
+            Some(v) => {
+                let resolved = resolve_value(idx, scope, v, it)?;
+                Some(vec![resolved])
             }
             None => None,
         };
@@ -260,11 +254,13 @@ pub fn resolve_arc_refs<'a>(
             anno: anno_r
         };
 
-        out.push(match sref {
+        let sref_r = match sref {
             SignedRef::Plus(_) => SignedRefR::Plus(atom_r),
             SignedRef::Minus(_) => SignedRefR::Minus(atom_r),
             SignedRef::Neutral(_) => SignedRefR::Neutral(atom_r),
-        });
+        };
+
+        out.push(sref_r);
     }
 
     Ok(out)

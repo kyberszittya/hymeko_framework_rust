@@ -1,5 +1,11 @@
 use std::borrow::Cow;
-use parser::ast::{Anno, ArcInner, AstStr, Description, EdgeDecl, EdgeInner, HyperAnnotatedElement, HyperArc, HyperItem, ImportStmt, NodeDecl, NodeInner, Ref, RefAnno, RefAtom, SignedRef, Value};
+use parser::ast::{Anno, ArcInner,
+                  AstStr,
+                  Description, EdgeDecl,
+                  EdgeInner, HyperAnnotatedElement,
+                  HyperArc, HyperItem, ImportStmt,
+                  NodeDecl, NodeInner, Ref,
+                  RefAtom, SignedRef, Value};
 use crate::common::ids::SymId;
 use crate::resolution::interner::Interner;
 use crate::sym_ast::AstSym;
@@ -36,9 +42,7 @@ fn lower_item<'a>(src: &HyperItem<'a, &'a str>, it: &mut Interner) -> HyperItem<
 
 fn lower_anno<'a>(src: &Anno<'a, &'a str>, it: &mut Interner) -> Anno<'a, SymId> {
     Anno {
-        tags: src.tags.iter()
-            .map(|t| std::borrow::Cow::Owned(t.as_ref().to_string()))
-            .collect(),
+        tags: src.tags.iter().map(|&t| sid(it, t)).collect(),
         value: src.value.as_ref().map(|v| lower_value(v, it)),
     }
 }
@@ -83,11 +87,7 @@ fn lower_signed_ref<'a>(src: &SignedRef<'a, &'a str>, it: &mut Interner) -> Sign
 fn lower_ref_atom<'a>(src: &RefAtom<'a, &'a str>, it: &mut Interner) -> RefAtom<'a, SymId> {
     RefAtom {
         target: Ref { path: src.target.path.iter().map(|&p| sid(it, p)).collect() },
-        anno: RefAnno {
-            weights: src.anno.weights.as_ref().map(|ws| ws.iter().map(|v| lower_value(v, it)).collect()),
-            tags: src.anno.tags.clone(),
-            value: src.anno.value.as_ref().map(|v| lower_value(v, it)),
-        },
+        anno: lower_anno(&src.anno, it),
     }
 }
 
@@ -136,7 +136,7 @@ fn lower_item_owned<'a>(src: &HyperItem<'a, &'a str>, it: &mut Interner) -> Hype
 
 fn lower_anno_owned<'a>(src: &Anno<'a, &'a str>, it: &mut Interner) -> Anno<'static, SymId> {
     Anno {
-        tags: src.tags.iter().map(|t| Cow::Owned(t.as_ref().to_string())).collect(),
+        tags: src.tags.iter().map(|&t| sid(it, t)).collect(),
         value: src.value.as_ref().map(|v| lower_value_owned(v, it)),
     }
 }
@@ -181,11 +181,7 @@ fn lower_signed_ref_owned<'a>(src: &SignedRef<'a, &'a str>, it: &mut Interner) -
 fn lower_ref_atom_owned<'a>(src: &RefAtom<'a, &'a str>, it: &mut Interner) -> RefAtom<'static, SymId> {
     RefAtom {
         target: Ref { path: src.target.path.iter().map(|&p| sid(it, p)).collect() },
-        anno: RefAnno {
-            weights: src.anno.weights.as_ref().map(|ws| ws.iter().map(|v| lower_value_owned(v, it)).collect()),
-            tags: src.anno.tags.iter().map(|t| Cow::Owned(t.as_ref().to_string())).collect(),
-            value: src.anno.value.as_ref().map(|v| lower_value_owned(v, it)),
-        },
+        anno: lower_anno_owned(&src.anno, it),
     }
 }
 

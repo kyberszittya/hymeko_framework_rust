@@ -190,15 +190,11 @@ RefPath: Ref<&'a str> = {
     <one:Ident> => Ref { path: vec![one] }
 };
 
-// A SignedRef AST RefAtom-ot vár, ezért itt csinálunk default-ot.
-OptWeights: Option<Vec<Value<'a, &'a str>>> = {
-    => None,
-    "[" <xs:ValueList> "]" => Some(xs),
-};
+
 SignedRef: SignedRef<'a, &'a str> = {
-    "+" <r:RefPath> <w:OptWeights> => SignedRef::Plus(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
-    "-" <r:RefPath> <w:OptWeights> => SignedRef::Minus(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
-    "~" <r:RefPath> <w:OptWeights> => SignedRef::Neutral(RefAtom { target: r, anno: RefAnno { weights: w, ..RefAnno::default() } }),
+    "+" <r:RefPath> <anno:OptAnno> => SignedRef::Plus(RefAtom { target: r, anno }),
+    "-" <r:RefPath> <anno:OptAnno> => SignedRef::Minus(RefAtom { target: r, anno }),
+    "~" <r:RefPath> <anno:OptAnno> => SignedRef::Neutral(RefAtom { target: r, anno }),
 };
 // ------------------------------------------------------------
 // Annotation helpers
@@ -212,9 +208,9 @@ OptAnnoNoValue: Anno<'a, &'a str> = {
     <tags:OptTags> => Anno { tags, value: None }
 };
 
-OptTags: Vec<Cow<'a, str>> = {
+OptTags: Vec<&'a str> = {
     => Vec::new(),
-    "<" <xs:IdentList> ">" => xs.into_iter().map(Cow::Borrowed).collect()
+    "<" <xs:IdentList> ">" => xs
 };
 
 OptValue: Option<Value<'a, &'a str>> = {

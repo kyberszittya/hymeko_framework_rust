@@ -39,9 +39,20 @@ mod test_ref_values
     }
 
     fn assert_weights(atom: &RefAtom<'_, &'_ str>, expected: &[f64]) {
-        let actual = atom.anno.weights.as_ref().expect("weights must be present");
-        assert_eq!(actual.len(), expected.len(), "weight arity mismatch for {:?}", atom.target.path);
-        for (value, exp) in actual.iter().zip(expected.iter()) {
+        // 1. Extract the unified value field
+        let actual_val = atom.anno.value.as_ref().expect("weights must be present");
+
+        // 2. Safely map it to a slice, whether it's a list or a single number
+        let actual_slice = match actual_val {
+            Value::List(xs) => xs.as_slice(),
+            Value::Num(_) => std::slice::from_ref(actual_val), // Zero-cost abstraction
+            other => panic!("expected numeric weight or list, got {:?}", other),
+        };
+
+        // 3. Verify arity and precision
+        assert_eq!(actual_slice.len(), expected.len(), "weight arity mismatch for {:?}", atom.target.path);
+
+        for (value, exp) in actual_slice.iter().zip(expected.iter()) {
             let num = match value {
                 Value::Num(n) => *n,
                 other => panic!("expected numeric weight, got {:?}", other),

@@ -24,8 +24,8 @@ pub fn assert_tags<'a>(n: &NodeDecl<'a, &'a str>, expected: &[&str]) {
     let got = &n.anno.tags;
     assert_eq!(got.len(), expected.len(), "Tag count mismatch for {}", n.inner.name);
     for (g, e) in got.iter().zip(expected.iter()) {
-        // Use .as_ref() to extract the &str from the Cow for comparison
-        assert_eq!(g.as_ref(), *e, "Tag mismatch for {}", n.inner.name);
+        // Directly compare the string slices
+        assert_eq!(*g, *e, "Tag mismatch for {}", n.inner.name);
     }
 }
 

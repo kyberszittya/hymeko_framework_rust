@@ -1,4 +1,3 @@
-pub mod lib;
 #[path = "minimal_tests/mod.rs"]
 mod minimal_tests;
 
