@@ -6,6 +6,7 @@ mod test_traversal
     use hymeko_framework::ir::lower::lower_to_ir;
     use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
     use hymeko_framework::resolution::resolve::build_index_sym;
+    use hymeko_framework::traversal::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_framework::traversal::graph_traversal::dfs_preorder;
     use hymeko_framework::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
     use parser::ast::AstStr;
@@ -48,7 +49,8 @@ mod test_traversal
         let eid_e = ir.decl_to_edge[did_e.0 as usize].expect("E not lowered as edge");
 
         // --- HyperGraphView felépítése
-        let hg = HyperGraphView::from_ir(&ir);
+        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let hg = HyperGraphView::from_ir(&ir, &aggcfg);
 
         // 1) incidenciák ellenőrzése (set-alapon)
         let a_start = hg.node_offsets[nid_a.0 as usize] as usize;

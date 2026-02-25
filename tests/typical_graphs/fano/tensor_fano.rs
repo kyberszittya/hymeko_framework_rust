@@ -1,8 +1,9 @@
-#![cfg(test)]
+#[cfg(test)]
 
 mod tensor_fano {
     use std::collections::BTreeSet;
     use hymeko_framework::common::ids::{EdgeId, NodeId};
+    use hymeko_framework::traversal::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
     use hymeko_framework::traversal::tensor::{print_dense_block, star_expansion_coo};
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
@@ -16,7 +17,8 @@ mod tensor_fano {
     #[test]
     fn fano_invariants_hold() {
         let (_store, compiled) = load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let hg = HyperGraphView::from_ir(&compiled.ir);
+        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         let n = hg.num_nodes(); // usize nálad
         let m = hg.num_edges(); // usize nálad
@@ -76,7 +78,8 @@ mod tensor_fano {
     fn star_tensor_respects_bretto_directions() {
         let (_store, compiled) =
             load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let hg = HyperGraphView::from_ir(&compiled.ir);
+        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         let coo = star_expansion_coo(&hg);
 
@@ -119,7 +122,8 @@ mod tensor_fano {
     #[test]
     fn fano_star_tensor_nnz_matches_sign_policy() {
         let (_store, compiled) = load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let hg = HyperGraphView::from_ir(&compiled.ir);
+        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         // Itt két opció van:
         // A) ha free function: star_expansion_coo(&hg)
@@ -149,7 +153,8 @@ mod tensor_fano {
 
         let (_store, compiled) =
             load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let hg = HyperGraphView::from_ir(&compiled.ir);
+        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         let coo = star_expansion_coo(&hg);
 
@@ -264,7 +269,8 @@ mod tensor_fano {
     #[test]
     fn debug_fano_star_dense_view() {
         let (_store, compiled) = load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let hg = HyperGraphView::from_ir(&compiled.ir);
+        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         let coo = star_expansion_coo(&hg);
 
@@ -276,7 +282,8 @@ mod tensor_fano {
     fn projected_star_matches_view_incidence() {
         let (_store, compiled) =
             load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let hg = HyperGraphView::from_ir(&compiled.ir);
+        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         let coo = star_expansion_coo(&hg);
         let proj = hymeko_framework::traversal::tensor::project_sum_over_slices(&coo);

@@ -27,6 +27,15 @@ pub struct TensorCoo {
 
 }
 
+#[inline(always)]
+pub fn signed_incidence(sign: i8) -> f32 {
+    match sign {
+        1 => 1.0,
+        -1 => -1.0,
+        _ => 1.0, // neutral: a "szimmetrikus/abs" nézetekben ez oké
+    }
+}
+
 impl TensorCoo {
     pub fn new(num_slices: usize, dim_i: usize, dim_j: usize) -> Self {
         Self { num_slices, dim_i, dim_j, k: vec![], i: vec![], j: vec![], v: vec![] }
@@ -95,7 +104,7 @@ pub fn star_expansion_coo(hg: &HyperGraphView) -> TensorCoo {
             let nid: NodeId = hg.flat_edge_nodes[p];
             let n_v = nid.0 as usize; // node index in V*
             let sign = hg.flat_edge_sign[p];
-            let w: f32 = 1.0;
+            let w: f32 = hg.flat_edge_w[p] * hg.edge_weight[u_eid];
 
             match sign {
                 1 => { // '+' node -> edge
@@ -131,18 +140,20 @@ pub fn clique_expansion_coo(hg: &HyperGraphView) -> TensorCoo {
         let (s, eend) = hg.edge_span(eid);
 
         // gather (node, sign) for this edge
-        let mut nodes: Vec<(usize, i8)> = Vec::with_capacity(eend - s);
+        let mut nodes: Vec<(usize, i8, f32)> = Vec::with_capacity(eend - s);
+        let e_w = hg.edge_weight[eid.0];
         for p in s..eend {
-            nodes.push((hg.flat_edge_nodes[p].0, hg.flat_edge_sign[p]));
+            let inc_w = hg.flat_edge_w[p] * e_w;
+            nodes.push((hg.flat_edge_nodes[p].0, hg.flat_edge_sign[p], inc_w));
         }
 
         // pairwise fill
         for a in 0..nodes.len() {
             for b in 0..nodes.len() {
                 if a == b { continue; }
-                let (u, su) = nodes[a];
-                let (v, _sv) = nodes[b];
-                let w: f32 = 1.0;
+                let (u, su, wu) = nodes[a];
+                let (v, _sv, _wv) = nodes[b];
+                let w: f32 = wu;
 
                 match su {
                     1 => {        // '+' : u tends to point outward
@@ -227,4 +238,87 @@ pub fn project_sum_over_slices(coo: &TensorCoo) -> Vec<Vec<f32>> {
         m[coo.i[t]][coo.j[t]] += coo.v[t];
     }
     m
+}
+
+pub fn compute_bipartite_degrees(
+    hg: &HyperGraphView,
+    use_abs: bool,
+) -> (Vec<f32>, Vec<f32>) {
+    let n = hg.num_nodes();
+    let m = hg.num_edges();
+    let mut deg_v = vec![0.0f32; n];
+    let mut deg_e = vec![0.0f32; m];
+
+    for e in 0..m {
+        let s = hg.edge_offsets[e];
+        let eend = hg.edge_offsets[e + 1];
+        let ew = hg.edge_weight[e];
+
+        let mut de = 0.0f32;
+        for p in s..eend {
+            let v = hg.flat_edge_nodes[p].0;
+            let mut b = hg.flat_edge_w[p] * ew;
+
+            // ha a signed incidenciát bele akarod venni a fokszámba, akkor:
+            let sgn = signed_incidence(hg.flat_edge_sign[p]);
+            b *= sgn;
+
+            if use_abs { b = b.abs(); }
+
+            deg_v[v] += b;
+            de += b;
+        }
+        deg_e[e] = de;
+    }
+
+    (deg_v, deg_e)
+}
+
+pub fn star_expansion_coo_normalized(
+    hg: &HyperGraphView,
+    use_abs: bool,
+    eps: f32,
+) -> TensorCoo {
+    let (deg_v, deg_e) = compute_bipartite_degrees(hg, true); // fokszámhoz abs ajánlott
+
+    let num_nodes = hg.num_nodes();
+    let num_edges = hg.num_edges();
+    let dim = num_nodes + num_edges;
+    let edge_base = num_nodes;
+
+    let mut t = TensorCoo::new(num_edges, dim, dim);
+
+    for e in 0..num_edges {
+        let s = hg.edge_offsets[e];
+        let eend = hg.edge_offsets[e + 1];
+        let ew = hg.edge_weight[e];
+
+        for p in s..eend {
+            let v = hg.flat_edge_nodes[p].0;
+            let sign = hg.flat_edge_sign[p];
+
+            // raw incidence (signed)
+            let mut b = hg.flat_edge_w[p] * ew * signed_incidence(sign);
+            if use_abs { b = b.abs(); }
+
+            // normalize
+            let dv = deg_v[v].max(eps);
+            let de = deg_e[e].max(eps);
+            let w = b / (dv * de).sqrt();
+
+            let n_v = v;
+            let e_v = edge_base + e;
+
+            match sign {
+                1 => t.push(e, n_v, e_v, w),     // node -> edge
+                -1 => t.push(e, e_v, n_v, w),    // edge -> node
+                _ => {                           // neutral: both
+                    t.push(e, n_v, e_v, w);
+                    t.push(e, e_v, n_v, w);
+                }
+            }
+        }
+    }
+
+    t
 }
