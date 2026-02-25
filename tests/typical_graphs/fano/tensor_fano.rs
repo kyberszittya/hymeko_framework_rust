@@ -3,9 +3,10 @@
 mod tensor_fano {
     use std::collections::BTreeSet;
     use hymeko_framework::common::ids::{EdgeId, NodeId};
-    use hymeko_framework::traversal::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
-    use hymeko_framework::traversal::tensor::{print_dense_block, star_expansion_coo};
+    use hymeko_framework::tensor::tensor::{star_expansion_coo};
+    use hymeko_framework::tensor::util::print_dense_block;
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
 
     #[inline(always)]
@@ -130,7 +131,7 @@ mod tensor_fano {
         // B) ha method: hg.tensor_star_coo()
         //
         // Én free function-t javaslok, mert tisztább rétegzés.
-        let coo = hymeko_framework::traversal::tensor::star_expansion_coo(&hg);
+        let coo = hymeko_framework::tensor::tensor::star_expansion_coo(&hg);
 
         // nnz = directed incidences:
         // neutral (0) -> 2 bejegyzés, plus/minus -> 1 bejegyzés
@@ -286,7 +287,7 @@ mod tensor_fano {
         let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         let coo = star_expansion_coo(&hg);
-        let proj = hymeko_framework::traversal::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
         let num_edges = hg.num_edges();

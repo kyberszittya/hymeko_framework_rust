@@ -6,7 +6,7 @@ mod test_traversal
     use hymeko_framework::ir::lower::lower_to_ir;
     use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
     use hymeko_framework::resolution::resolve::build_index_sym;
-    use hymeko_framework::traversal::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_framework::traversal::graph_traversal::dfs_preorder;
     use hymeko_framework::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
     use parser::ast::AstStr;

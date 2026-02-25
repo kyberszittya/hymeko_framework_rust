@@ -1,3 +1,4 @@
+use crate::tensor::common::signed_incidence;
 use crate::traversal::hypergraphview::HyperGraphView;
 
 #[derive(Clone, Copy, Debug)]
@@ -12,14 +13,6 @@ impl Default for CliqueStepCfg {
     }
 }
 
-#[inline(always)]
-fn signed_incidence(sign: i8) -> f32 {
-    match sign {
-        1 => 1.0,
-        -1 => -1.0,
-        _ => 1.0, // neutral: kezeld +1-nek (abs esetben mindegy)
-    }
-}
 
 /// y = B W B^T x  (implicit, sparse)
 /// x_nodes hossza: hg.num_nodes()  (root is benne lehet)

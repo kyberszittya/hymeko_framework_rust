@@ -1,83 +1,8 @@
 use crate::common::ids::{EdgeId, NodeId};
+use crate::tensor::common::{signed_incidence, TensorCoo};
 use crate::traversal::hypergraphview::HyperGraphView;
 
-/// Sparse 3D tensor in COO form (k, i, j, value).
-/// Intended as an intermediate export format for JAX/PyTorch.
-///
-/// - `k` selects the slice (e.g., edge index / hyperedge id).
-/// - `i`, `j` are row/col indices inside the slice.
-/// - `v` is the weight/value (usually f32).
-#[derive(Clone, Debug, Default)]
-pub struct TensorCoo {
-    /// Number of slices (e.g., |E|)
-    pub num_slices: usize,
-    /// First dimension size (e.g., |V*| or |V|)
-    pub dim_i: usize,
-    /// Second dimension size (e.g., |V*| or |V|)
-    pub dim_j: usize,
-    /// Slice index (0..num_slices)
-    pub k: Vec<usize>,
-    /// Row index (0..dim_i)
-    pub i: Vec<usize>,
-    /// Column index (0..dim_j)
-    pub j: Vec<usize>,
-    /// Value / weight (e.g., f(.) from the dissertation)
-    pub v: Vec<f32>,
 
-
-}
-
-#[inline(always)]
-pub fn signed_incidence(sign: i8) -> f32 {
-    match sign {
-        1 => 1.0,
-        -1 => -1.0,
-        _ => 1.0, // neutral: a "szimmetrikus/abs" nézetekben ez oké
-    }
-}
-
-impl TensorCoo {
-    pub fn new(num_slices: usize, dim_i: usize, dim_j: usize) -> Self {
-        Self { num_slices, dim_i, dim_j, k: vec![], i: vec![], j: vec![], v: vec![] }
-    }
-
-    #[inline(always)]
-    pub fn with_meta(num_slices: usize, dim_i: usize, dim_j: usize) -> Self {
-        Self {
-            num_slices,
-            dim_i,
-            dim_j,
-            k: Vec::new(),
-            i: Vec::new(),
-            j: Vec::new(),
-            v: Vec::new(),
-
-        }
-    }
-
-    /// Push one non-zero entry (k, i, j, value).
-    #[inline(always)]
-    pub fn push(&mut self, k: usize, i: usize, j: usize, value: f32) {
-        self.k.push(k);
-        self.i.push(i);
-        self.j.push(j);
-        self.v.push(value);
-    }
-
-    #[inline(always)]
-    pub fn reserve(&mut self, n: usize) {
-        self.k.reserve(n);
-        self.i.reserve(n);
-        self.j.reserve(n);
-        self.v.reserve(n);
-    }
-
-    #[inline(always)]
-    pub fn len(&self) -> usize { self.v.len() }
-
-    #[inline(always)]
-    pub fn is_empty(&self) -> bool { self.v.is_empty() }
-}
 
 /// Star-expansion tensor (|V*| x |V*| x |E|) COO.
 /// V* := V ∪ E  (edges are placed after nodes)
@@ -185,51 +110,6 @@ pub fn dense_view_slice(coo: &TensorCoo, k_sel: usize) -> Vec<Vec<f32>> {
         m[i][j] += coo.v[t]; // coalesce by summation
     }
     m
-}
-
-pub fn print_dense_block(
-    coo: &TensorCoo,
-    k_sel: usize,
-    row0: usize,
-    col0: usize,
-    rows: usize,
-    cols: usize,
-) {
-    assert!(k_sel < coo.num_slices, "k out of range");
-    assert!(row0 < coo.dim_i && col0 < coo.dim_j, "start out of range");
-
-    let r = rows.min(coo.dim_i - row0);
-    let c = cols.min(coo.dim_j - col0);
-
-    let mut block = vec![vec![0.0f32; c]; r];
-
-    for t in 0..coo.len() {
-        if coo.k[t] != k_sel { continue; }
-        let i = coo.i[t];
-        let j = coo.j[t];
-
-        if i >= row0 && i < row0 + r && j >= col0 && j < col0 + c {
-            block[i - row0][j - col0] += coo.v[t];
-        }
-    }
-
-    println!(
-        "slice k={k_sel}, block rows [{row0}..{}), cols [{col0}..{})",
-        row0 + r,
-        col0 + c
-    );
-
-    for i in 0..r {
-        for j in 0..c {
-            let x = block[i][j];
-            if (x - x.round()).abs() < 1e-6 {
-                print!("{:>3} ", x.round() as i32);
-            } else {
-                print!("{:>6.2} ", x);
-            }
-        }
-        println!();
-    }
 }
 
 pub fn project_sum_over_slices(coo: &TensorCoo) -> Vec<Vec<f32>> {

@@ -1,10 +1,10 @@
 #[cfg(test)]
 
 mod test_tensor_representation {
-    use hymeko_framework::traversal::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
-    use hymeko_framework::traversal::message_passing::{build_explicit_a, implicit_clique_step, print_dense_f32, CliqueStepCfg};
-    use hymeko_framework::traversal::tensor::{clique_expansion_coo, compute_bipartite_degrees, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_framework::tensor::message_passing::{build_explicit_a, implicit_clique_step, print_dense_f32, CliqueStepCfg};
+    use hymeko_framework::tensor::tensor::{clique_expansion_coo, compute_bipartite_degrees, star_expansion_coo, star_expansion_coo_normalized};
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
 
     #[test]
@@ -21,7 +21,7 @@ mod test_tensor_representation {
         let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         let coo = star_expansion_coo(&hg);
-        let proj = hymeko_framework::traversal::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes(); // nálad: root + 5 => 6
         let num_edges = hg.num_edges(); // 4
@@ -120,7 +120,7 @@ mod test_tensor_representation {
 
         let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
         let coo = star_expansion_coo(&hg);
-        let proj = hymeko_framework::traversal::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
         let num_edges = hg.num_edges();
@@ -224,7 +224,7 @@ mod test_tensor_representation {
 
         // 1) "Dense" reference: clique_view -> matrix
         let clique_coo = clique_expansion_coo(&hg);
-        let a = hymeko_framework::traversal::tensor::project_sum_over_slices(&clique_coo);
+        let a = hymeko_framework::tensor::tensor::project_sum_over_slices(&clique_coo);
 
         let n = hg.num_nodes();
         let eps: f32 = 1e-4;
@@ -298,7 +298,7 @@ mod test_tensor_representation {
                 }
             }
         }
-        let proj = hymeko_framework::traversal::tensor::project_sum_over_slices(&clique_coo);
+        let proj = hymeko_framework::tensor::tensor::project_sum_over_slices(&clique_coo);
         print_dense_matrix(&proj, "Clique projection (sum over slices)");
     }
 
@@ -440,7 +440,7 @@ mod test_tensor_representation {
 
         // normalized star
         let coo = star_expansion_coo_normalized(&hg, true, 1e-12);
-        let proj = hymeko_framework::traversal::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
         let num_edges = hg.num_edges();
@@ -495,7 +495,7 @@ mod test_tensor_representation {
             load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
 
         let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
-        let mut hg1 = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
+        let hg1 = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
         let mut hg2 = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
 
         // scale all incidence weights by c
@@ -505,10 +505,10 @@ mod test_tensor_representation {
         for w in &mut hg2.edge_weight { *w *= 1.0; } // hagyhatod 1.0-n, vagy ezt is skálázhatod
 
         let coo1 = star_expansion_coo_normalized(&hg1, true, 1e-12);
-        let proj1 = hymeko_framework::traversal::tensor::project_sum_over_slices(&coo1);
+        let proj1 = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo1);
 
         let coo2 = star_expansion_coo_normalized(&hg2, true, 1e-12);
-        let proj2 = hymeko_framework::traversal::tensor::project_sum_over_slices(&coo2);
+        let proj2 = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo2);
 
         let dim = hg1.num_nodes() + hg1.num_edges();
         assert_eq!(dim, hg2.num_nodes() + hg2.num_edges());

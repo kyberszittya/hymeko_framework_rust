@@ -1,7 +1,6 @@
 use nalgebra::DMatrix;
 use nalgebra_sparse::{coo::CooMatrix, CsrMatrix};
-use crate::traversal::tensor::TensorCoo;
-
+use crate::tensor::common::TensorCoo;
 
 pub struct JaxBcoo {
     pub shape: [usize; 3],          // [K, I, J]
