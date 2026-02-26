@@ -5,7 +5,6 @@ mod test_message_passing_components
         clique_diag, gather_edges_from_nodes,
         implicit_clique_step, remove_self_effect, scatter_nodes_from_edges, CliqueStepCfg};
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
-    use num_traits::real::Real;
     use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_framework::tensor::common_traversal::inc_scalar_signed;
     use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
