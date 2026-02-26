@@ -2,7 +2,7 @@ use crate::ir::ir::{SignedRefR, ValueR};
 use crate::tensor::aggregation::{agg_weight, AggCfg};
 use crate::tensor::common::Real;
 
-pub trait IncVal<F>: Clone
+pub trait IncVal<F>: Clone + Send + Sync
 where
     F: Real
 {
@@ -79,7 +79,7 @@ impl<F: Real> RefValueExtractor<F, F> for ScalarWeightExtractor {
     }
 }
 
-pub trait EdgeWeight<V, F>: Clone
+pub trait EdgeWeight<V, F>: Clone + Send + Sync
 where
     V: IncVal<F>,
     F: Real

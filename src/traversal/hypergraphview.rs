@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use rayon::prelude::*;
 use crate::common::ids::{NodeId, EdgeId, DeclId};
 use crate::ir::ir::{Ir, SignedRefR};
 use crate::tensor::aggregation::{agg_sign, AggCfg};
@@ -165,7 +166,7 @@ where
         mut triples: Vec<TensorInc<F, V>>,
         cfg: &AggCfg,
     ) -> Vec<TensorInc<F, V>> {
-        triples.sort_unstable_by_key(|x| (x.e.0, x.n.0));
+        triples.par_sort_unstable_by_key(|x| (x.e.0, x.n.0));
 
         // reduce/dedup
         let mut out: Vec<TensorInc<F, V>> = Vec::with_capacity(triples.len());
@@ -174,7 +175,6 @@ where
                 && last.e.0 == inc.e.0
                 && last.n.0 == inc.n.0
             {
-                // előbb weight, aztán sign (sign agg használhat súlyt)
                 let new_w = V::agg(cfg, &last.w, &inc.w);
                 let wa = last.w.as_scalar();
                 let wb = inc.w.as_scalar();
@@ -218,7 +218,7 @@ where
         V: IncVal<F>
     {
         // node-first order
-        pairs.sort_unstable_by_key(|x| (x.n.0, x.e.0));
+        pairs.par_sort_unstable_by_key(|x| (x.n.0, x.e.0));
 
         let mut flat_edges = Vec::with_capacity(pairs.len());
         let mut flat_sign  = Vec::with_capacity(pairs.len());

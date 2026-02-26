@@ -9,6 +9,7 @@ core::ops::SubAssign +
 core::ops::Mul<Output=Self> +
 core::ops::MulAssign +
 core::ops::Div<Output=Self> +
+Send + Sync +
 Debug + Display + AsF64 + AsF32
 {
     fn zero() -> Self;
