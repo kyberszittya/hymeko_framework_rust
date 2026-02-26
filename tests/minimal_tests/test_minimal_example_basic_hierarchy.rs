@@ -21,8 +21,8 @@ fn parses_minimal_example_context_fields() {
     let ctx = body(context);
     assert_eq!(ctx.len(), 2);
 
-    let lev0 = find_node(ctx, "node_lev_0");
-    let lev1 = find_node(ctx, "node_lev_1");
+    let lev0 = find_node(ctx, "node_lev_0").unwrap();
+    let lev1 = find_node(ctx, "node_lev_1").unwrap();
 
     // node_lev_0 body: node0 (block), node1; node2; node3;
     let lev0_body = body(lev0);

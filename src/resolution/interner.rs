@@ -3,8 +3,8 @@ use crate::common::ids::SymId;
 
 #[derive(Default)]
 pub struct Interner {
-    map: HashMap<&'static str, SymId>, // Pointer back into 'vec'
-    vec: Vec<Box<str>>,
+    map: HashMap<String, SymId>, // Pointer back into 'vec'
+    vec: Vec<String>,
 }
 
 impl Interner {
@@ -15,16 +15,13 @@ impl Interner {
         if let Some(&id) = self.map.get(s) { return id; }
 
         // Slow path: One-time allocation
-        let id = SymId(self.vec.len() as u32);
-        let owned: Box<str> = s.into();
-
+        let id = SymId(self.vec.len());
         // Safety: We manage the lifetime of the string in the 'vec'.
         // As long as the interner isn't dropped and we don't remove from 'vec',
         // the pointer in 'map' remains valid.
-        let static_ref: &'static str = unsafe { std::mem::transmute(&*owned) };
 
-        self.vec.push(owned);
-        self.map.insert(static_ref, id);
+        self.vec.push(s.to_string());
+        self.map.insert(s.to_string(), id);
         id
     }
 
@@ -36,9 +33,10 @@ impl Interner {
     pub fn iter(&self) -> impl Iterator<Item = (SymId, &str)> + '_ {
         self.vec.iter().enumerate().map(|(i, s)| {
             // Stable alternative to .as_str()
-            (SymId(i as u32), &**s)
+            (SymId(i), s.as_str())
         })
     }
+    
 }
 
 impl Interner {

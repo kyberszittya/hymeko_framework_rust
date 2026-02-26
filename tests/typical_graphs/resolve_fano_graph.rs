@@ -25,7 +25,7 @@ mod resolve_fano_graph {
         assert!(desc.header.is_empty(), "Expected empty header");
 
         // Top-levelben legyen a fano block (NodeDecl body-val)
-        let fano = find_node(&desc.items, "fano");
+        let fano = find_node(&desc.items, "fano").unwrap();
         let fano_body = body(fano);
 
         // 7 node: n0..n6
@@ -111,7 +111,7 @@ mod resolve_fano_graph {
         let e_ids: Vec<SymId> = (0..=6).map(|i| it.get_id(&format!("e{i}")).unwrap()).collect();
 
         // top-level items: itt kell lennie a fano node-nak
-        let fano = find_node_id(&ast.items, fano_id);
+        let fano = find_node_id(&ast.items, fano_id).unwrap();
 
         let fano_body = fano.inner.body.as_deref().expect("fano should have a body");
         assert_eq!(fano_body.len(), 14, "fano body should contain 7 nodes + 7 edges");
@@ -126,7 +126,7 @@ mod resolve_fano_graph {
         assert_eq!(fano_body.iter().filter(|it| matches!(it, HyperItem::Edge(_))).count(), 7, "fano body should contain exactly 7 edges");
         // 7 edges megvannak, mindegyikben 1 arc, és az arcban 3 neutral ref
         for &eid in &e_ids {
-            let e = find_edge(fano_body, eid);
+            let e = find_edge(fano_body, eid).unwrap();
             assert_eq!(e.inner.body.len(), 1, "edge body should contain exactly 1 item (the arc)");
 
             let arc = match &e.inner.body[0] {
@@ -203,7 +203,7 @@ mod resolve_fano_graph {
 
         // 5) Keresd meg a `fano` node-ot és a body-t
         let nid = interner.get_id("fano").unwrap();
-        let fano = find_node_id(&ast.items, nid);
+        let fano = find_node_id(&ast.items, nid).unwrap();
         let fano_body = fano.inner.body.as_deref().expect("fano should have body");
 
         // 6) Várt Fano-incidenciák (edge -> 3 node)
@@ -223,7 +223,7 @@ mod resolve_fano_graph {
 
         for (ename, nodes) in expected {
             let nid = interner.get_id(ename).unwrap();
-            let e = find_edge(fano_body, nid);
+            let e = find_edge(fano_body, nid).unwrap();
             assert_eq!(e.inner.body.len(), 1, "{ename}: edge body should contain exactly 1 item");
 
             let arc = match &e.inner.body[0] {

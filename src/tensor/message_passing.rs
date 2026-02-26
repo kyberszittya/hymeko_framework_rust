@@ -1,5 +1,6 @@
 use crate::tensor::common::{signed_incidence, Real};
 use crate::tensor::common_traversal::inc_to_real;
+use crate::tensor::tensor_coo::TensorCoo;
 use crate::tensor::tensor_val::{EdgeWeight, IncVal};
 use crate::traversal::hypergraphview::HyperGraphView;
 
@@ -171,7 +172,7 @@ where
 
 
 pub fn build_explicit_a<V, EW, F>(
-    hg: &HyperGraphView<V, EW, F>, cfg: CliqueStepCfg) -> Vec<Vec<F>>
+    hg: &HyperGraphView<V, EW, F>, cfg: CliqueStepCfg) -> TensorCoo<F>
 where
     V: IncVal<F>,
     EW: EdgeWeight<V, F>,
@@ -181,7 +182,7 @@ where
     let m = hg.num_edges();
 
     // A = B B^T
-    let mut a = vec![vec![F::zero(); n]; n];
+    let mut coo = TensorCoo::with_meta(1, n, n);
 
     for e in 0..m {
         let s = hg.edge_offsets[e];
@@ -200,18 +201,12 @@ where
         // outer product: A[u,v] += b(u,e) * b(v,e)
         for &(u, bu) in &nodes {
             for &(v, bv) in &nodes {
-                a[u][v] += bu * bv;
+                if !cfg.include_self && u == v { continue; }
+                coo.push(0, u, v, bu * bv);
             }
         }
-    }
-
-    if !cfg.include_self {
-        for i in 0..n {
-            a[i][i] = F::zero();
-        }
-    }
-
-    a
+    }    
+    coo
 }
 
 pub fn print_dense_real<F: Real>(mat: &[Vec<F>], title: &str) {

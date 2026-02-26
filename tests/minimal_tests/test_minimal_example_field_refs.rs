@@ -20,7 +20,7 @@ fn parses_legacy_context_with_refs() {
     let ctx = body(context);
 
     // val0
-    let val0 = find_node(ctx, "val0");
+    let val0 = find_node(ctx, "val0").unwrap();
     assert_eq!(val0.anno.tags, vec!["int".to_string()]);
     match val0.anno.value {
         Some(Value::Num(x)) => assert!((x - 56.0).abs() < 1e-9),
@@ -28,7 +28,7 @@ fn parses_legacy_context_with_refs() {
     }
 
     // val1
-    let val1 = find_node(ctx, "val1");
+    let val1 = find_node(ctx, "val1").unwrap();
     assert_eq!(val1.anno.tags, vec!["string".to_string()]);
     match &val1.anno.value {
         Some(Value::Str(s)) => assert_eq!(s, "vakond"),
@@ -36,7 +36,7 @@ fn parses_legacy_context_with_refs() {
     }
 
     // val_node -> node.node0
-    let val_node = find_node(ctx, "val_node");
+    let val_node = find_node(ctx, "val_node").unwrap();
     match &val_node.anno.value {
         Some(Value::Ref(r)) => assert_eq!(r.path, vec!["node".to_string(), "node0".to_string()]),
         other => panic!("Expected val_node ref value, got {:?}", other),
@@ -64,7 +64,7 @@ fn parses_legacy_context_with_refs_alternative() {
     let ctx = body(context);
 
     // val0
-    let val0 = find_node(ctx, "val0");
+    let val0 = find_node(ctx, "val0").unwrap();
     assert_eq!(val0.anno.tags, vec!["int".to_string()]);
     match val0.anno.value {
         Some(Value::Num(x)) => assert!((x - 56.0).abs() < 1e-9),
@@ -72,7 +72,7 @@ fn parses_legacy_context_with_refs_alternative() {
     }
 
     // val1
-    let val1 = find_node(ctx, "val1");
+    let val1 = find_node(ctx, "val1").unwrap();
     assert_eq!(val1.anno.tags, vec!["string".to_string()]);
     match &val1.anno.value {
         Some(Value::Str(s)) => assert_eq!(s, "vakond"),
@@ -80,7 +80,7 @@ fn parses_legacy_context_with_refs_alternative() {
     }
 
     // val_node -> node.node0
-    let val_node = find_node(ctx, "val_node");
+    let val_node = find_node(ctx, "val_node").unwrap();
     match &val_node.anno.value {
         Some(Value::Ref(r)) => assert_eq!(r.path, vec!["node".to_string(), "node0".to_string()]),
         other => panic!("Expected val_node ref value, got {:?}", other),

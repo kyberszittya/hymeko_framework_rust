@@ -16,7 +16,7 @@ fn parse_fano_graph() {
     assert!(desc.header.is_empty(), "Expected empty header");
 
     // Top-levelben legyen a fano block (NodeDecl body-val)
-    let fano = find_node(&desc.items, "fano");
+    let fano = find_node(&desc.items, "fano").unwrap();
     let fano_body = body(fano);
 
     // 7 node: n0..n6

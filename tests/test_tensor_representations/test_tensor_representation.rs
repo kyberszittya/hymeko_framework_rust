@@ -1,16 +1,16 @@
 #[cfg(test)]
 
 mod test_tensor_representation {
+    use std::marker::PhantomData;
+    use hymeko_framework::common::ids::{DeclId, EdgeId, NodeId};
     use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_framework::tensor::common::signed_incidence;
     use hymeko_framework::tensor::common_traversal::inc_to_real;
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
     use hymeko_framework::tensor::message_passing::{
         build_explicit_a, implicit_clique_step, print_dense_real, CliqueStepCfg};
-    use hymeko_framework::tensor::tensor::{
-        clique_expansion_coo,
-        compute_bipartite_degrees, star_expansion_coo, star_expansion_coo_normalized};
-    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko_framework::tensor::tensor::{clique_expansion_coo, compute_bipartite_degrees, dense_view_slice, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, EdgeWeight, ScalarWeightExtractor};
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
 
     #[test]
@@ -314,7 +314,7 @@ mod test_tensor_representation {
     }
 
     #[test]
-    fn test_implicit_clique_step_matches_explicit_bwbT() {
+    fn test_implicit_clique_step_matches_explicit_bwb_t() {
         let (_store, compiled) =
             load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
 
@@ -400,8 +400,9 @@ mod test_tensor_representation {
                 i, y_dense[i], y_imp[i], d
             );
         }
-        let a = build_explicit_a(&hg, cfg);
-        print_dense_real(&a, "Explicit A = B B^T (matches implicit_clique_step)");
+        let a_coo = build_explicit_a(&hg, cfg);
+        let a_dense = dense_view_slice(&a_coo, 0);
+        print_dense_real(&a_dense, "Explicit A = B B^T (matches implicit_clique_step)");
     }
 
     #[test]
@@ -424,7 +425,7 @@ mod test_tensor_representation {
         let eps: f32 = 1e-4;
 
         // node degrees (sum of abs incidence weights per node)
-        
+
         assert!((deg_v[0] - 0.0).abs() <= eps);   // root
         assert!((deg_v[1] - 3.0).abs() <= eps);   // node0: 1.5 + 0.75 + 0.75
         assert!((deg_v[2] - 4.45).abs() <= eps);  // node1: 2.5 + 1.95
@@ -536,5 +537,98 @@ mod test_tensor_representation {
                 assert!(d <= eps, "scale invariance failed at ({},{}) diff={}", r, c, d);
             }
         }
+    }
+
+    #[test]
+    fn test_regression_degree_initialization_starts_at_zero() {
+        let (_store, compiled) =
+            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+
+        let aggcfg = AggCfg {
+            weight: WeightAgg::Sum,
+            sign: SignAgg::PreferNonNeutral,
+            clamp01: false,
+        };
+        let ex = ScalarWeightExtractor::default();
+        let hg = HyperGraphView::<f64, EdgeWScalar<f64>, f64>::from_ir(&compiled.ir, &aggcfg, &ex);
+
+        let (deg_v, deg_e) = compute_bipartite_degrees(&hg, true);
+
+        // 1. Explicit Zero-Degree Check
+        // Node 0 is known to be isolated or have 0.0 degree in this specific file.
+        // If the 1.0 initialization bug returns, this equals 1.0 and fails immediately.
+        let eps: f64 = 1e-6;
+        assert!(
+            (deg_v[0] - 0.0).abs() <= eps,
+            "Regression caught: Node 0 degree is {}, expected exactly 0.0. Check array initialization.",
+            deg_v[0]
+        );
+
+        // 2. Structural Invariant Check
+        // The total mass of node degrees must perfectly match the total mass of edge degrees.
+        // Initializing with 1.0 silently breaks this if the number of nodes != number of edges.
+        let sum_v: f64 = deg_v.iter().sum();
+        let sum_e: f64 = deg_e.iter().sum();
+
+        assert!(
+            (sum_v - sum_e).abs() <= eps,
+            "Regression caught: Bipartite degree mass mismatch. Node sum: {}, Edge sum: {}. They must be identical.",
+            sum_v, sum_e
+        );
+    }
+
+    
+    #[test]
+    fn test_compute_bipartite_degrees_manual_simple() {
+        // We manually construct a graph with 3 nodes and 2 edges.
+        // Node 0: Isolated (Degree should be 0.0)
+        // Node 1: Connected to Edge 0 (Weight 2.0) and Edge 1 (Weight 3.5)
+        // Node 2: Connected to Edge 0 (Weight 4.0)
+
+        // Edge 0 spans Node 1, Node 2
+        // Edge 1 spans Node 1
+
+        let hg = HyperGraphView::<f64, EdgeWScalar<f64>, f64> {
+            node_decl: vec![DeclId(0), DeclId(1), DeclId(2)],
+            edge_decl: vec![DeclId(3), DeclId(4)],
+
+            // --- Node to Edge CSR (Not used by compute_degrees, but needed for struct) ---
+            node_offsets: vec![0, 0, 2, 3], // Node 0 has 0, Node 1 has 2, Node 2 has 1
+            flat_node_edges: vec![EdgeId(0), EdgeId(1), EdgeId(0)],
+            flat_node_sign: vec![1, 1, 1],
+            flat_node_w: vec![2.0, 3.5, 4.0],
+
+            // --- Edge to Node CSR (The one compute_bipartite_degrees actually uses) ---
+            edge_offsets: vec![0, 2, 3], // Edge 0 has 2 nodes, Edge 1 has 1 node
+            flat_edge_nodes: vec![
+                NodeId(1), NodeId(2), // Edge 0's nodes
+                NodeId(1)             // Edge 1's nodes
+            ],
+            flat_edge_sign: vec![1, 1, 1],
+
+            // These are the incidence weights (.degree_mass() is called on these)
+            flat_edge_w: vec![2.0, 4.0, 3.5],
+
+            // Global edge weights (must implement ::one() per your from_ir logic)
+            edge_weight: vec![EdgeWScalar::one(), EdgeWScalar::one()],
+            _phantom: PhantomData,
+        };
+
+        let (deg_v, deg_e) = compute_bipartite_degrees(&hg, true);
+
+        // 1. Verify Node Degrees
+        assert_eq!(deg_v[0], 0.0, "Isolated node must have exactly 0.0 degree.");
+        assert_eq!(deg_v[1], 2.0 + 3.5, "Node 1 degree should be the sum of its incidence weights.");
+        assert_eq!(deg_v[2], 4.0, "Node 2 degree should exactly match its single incidence.");
+
+        // 2. Verify Edge Degrees
+        assert_eq!(deg_e[0], 2.0 + 4.0, "Edge 0 degree should be sum of Node 1 and Node 2 weights.");
+        assert_eq!(deg_e[1], 3.5, "Edge 1 degree should exactly match Node 1's weight.");
+
+        // 3. Verify Bipartite Mass Invariant
+        let sum_v: f64 = deg_v.iter().sum();
+        let sum_e: f64 = deg_e.iter().sum();
+        assert_eq!(sum_v, sum_e, "Total node mass must equal total edge mass.");
+        
     }
 }

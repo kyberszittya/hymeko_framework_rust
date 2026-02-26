@@ -153,8 +153,8 @@ where
 {
     let n = hg.num_nodes();
     let m = hg.num_edges();
-    let mut deg_v = vec![F::one(); n];
-    let mut deg_e = vec![F::one(); m];
+    let mut deg_v = vec![F::zero(); n];
+    let mut deg_e = vec![F::zero(); m];
 
     for e in 0..m {
         let (s, eend) = hg.edge_span(EdgeId(e));

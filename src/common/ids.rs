@@ -11,7 +11,7 @@ pub struct EdgeId(pub usize);
 pub struct HyperArcId(pub usize);
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct SymId(pub u32);
+pub struct SymId(pub usize);
 
 impl DeclId {
     pub const NONE: Self = Self(usize::MAX);

@@ -21,42 +21,42 @@ fn parses_minimal_example_context_fields() {
     let ctx_body = context.inner.body.as_ref().expect("context must have a body");
 
     // val0 <int> 56;
-    let val0 = find_node(ctx_body, "val0");
+    let val0 = find_node(ctx_body, "val0").unwrap();
     assert_tags(val0, &["int"]);
     assert_num_value(val0, 56.0);
 
     // val1 <string> "vakond";
-    let val1 = find_node(ctx_body, "val1");
+    let val1 = find_node(ctx_body, "val1").unwrap();
     assert_tags(val1, &["string"]);
     assert_str_value(val1, "vakond");
 
     // val2 <real> 56.891;
-    let val2 = find_node(ctx_body, "val2");
+    let val2 = find_node(ctx_body, "val2").unwrap();
     assert_tags(val2, &["real"]);
     assert_num_value(val2, 56.891);
 
     // val_undef <real>;
-    let val_undef = find_node(ctx_body, "val_undef");
+    let val_undef = find_node(ctx_body, "val_undef").unwrap();
     assert_tags(val_undef, &["real"]);
     assert_no_value(val_undef);
 
     // val3 3444.4623;
-    let val3 = find_node(ctx_body, "val3");
+    let val3 = find_node(ctx_body, "val3").unwrap();
     assert_tags(val3, &[]);
     assert_num_value(val3, 3444.4623);
 
     // pi 3.14156;
-    let pi = find_node(ctx_body, "pi");
+    let pi = find_node(ctx_body, "pi").unwrap();
     assert_tags(pi, &[]);
     assert_num_value(pi, 3.14156);
 
     // val_float;
-    let val_float = find_node(ctx_body, "val_float");
+    let val_float = find_node(ctx_body, "val_float").unwrap();
     assert_tags(val_float, &[]);
     assert_no_value(val_float);
 
     // vector [..];
-    let vector = find_node(ctx_body, "vector");
+    let vector = find_node(ctx_body, "vector").unwrap();
     assert_tags(vector, &[]);
     assert_list_nums(vector, &[15.6, -17.8, 16.3, 12.3, 67.8, 45.0, 2.0]);
 }

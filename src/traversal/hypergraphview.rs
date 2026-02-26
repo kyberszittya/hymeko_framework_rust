@@ -57,7 +57,7 @@ where
     /// even though it doesn't directly contain any F values.
     /// This allows us to use F in trait bounds and method signatures without causing compilation errors about unused type parameters.
     /// (sucks, I know)
-    _phantom: core::marker::PhantomData<F>,
+    pub _phantom: core::marker::PhantomData<F>,
 }
 
 

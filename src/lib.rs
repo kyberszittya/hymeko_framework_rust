@@ -11,14 +11,15 @@ pub mod util;
 pub mod module_store;
 pub mod tensor;
 
-pub fn find_node<'ast, 'slice>(items: &'slice [HyperItem<'ast, &'ast str>], name: &str) -> &'slice NodeDecl<'ast, &'ast str> {
-    items
-        .iter()
-        .find_map(|it| match it {
+pub fn find_node<'ast, 'slice>(
+    items: &'slice [HyperItem<'ast, &'ast str>],
+    name: &str
+) -> Option<&'slice NodeDecl<'ast, &'ast str>> {
+    items.iter().find_map(|it| match it {
             HyperItem::Node(n) if n.inner.name == name => Some(n),
             _ => None,
         })
-        .unwrap_or_else(|| panic!("Expected Node({}) in body", name))
+        
 }
 
 pub fn assert_tags<'a>(n: &NodeDecl<'a, &'a str>, expected: &[&str]) {
@@ -98,16 +99,22 @@ pub fn body<'ast, 'slice>(n: &'slice NodeDecl<'ast, &'ast str>) -> &'slice [Hype
         .unwrap_or_else(|| panic!("Expected node {} to have a body", n.inner.name))
 }
 
-pub fn find_edge<'ast, 'slice>(items: &'slice [HyperItem<'ast, SymId>], name: SymId) -> &'slice EdgeDecl<'ast, SymId> {
+pub fn find_edge<'ast, 'slice>(
+    items: &'slice [HyperItem<'ast, SymId>], 
+    name: SymId
+) -> Option<&'slice EdgeDecl<'ast, SymId>> {
     items.iter().find_map(|it| match it {
         HyperItem::Edge(e) if e.inner.name == name => Some(e),
         _ => None
-    }).unwrap()
+    })
 }
 
-pub fn find_node_id<'ast, 'slice>(items: &'slice [HyperItem<'ast, SymId>], name: SymId) -> &'slice NodeDecl<'ast, SymId> {
+pub fn find_node_id<'ast, 'slice>(
+    items: &'slice [HyperItem<'ast, SymId>], 
+    name: SymId
+) -> Option<&'slice NodeDecl<'ast, SymId>> {
     items.iter().find_map(|it| match it {
         HyperItem::Node(n) if n.inner.name == name => Some(n),
         _ => None
-    }).unwrap()
+    })
 }
