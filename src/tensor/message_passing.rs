@@ -1,4 +1,6 @@
-use crate::tensor::common::signed_incidence;
+use crate::tensor::common::{signed_incidence, Real};
+use crate::tensor::common_traversal::inc_to_real;
+use crate::tensor::tensor_val::{EdgeWeight, IncVal};
 use crate::traversal::hypergraphview::HyperGraphView;
 
 #[derive(Clone, Copy, Debug)]
@@ -16,51 +18,51 @@ impl Default for CliqueStepCfg {
 
 /// y = B W B^T x  (implicit, sparse)
 /// x_nodes hossza: hg.num_nodes()  (root is benne lehet)
-pub fn implicit_clique_step(
-    hg: &HyperGraphView,
-    x_nodes: &[f32],
+pub fn implicit_clique_step<V, EW, F>(
+    hg: &HyperGraphView<V, EW, F>,
+    x_nodes: &[F],
     cfg: CliqueStepCfg,
-) -> Vec<f32> {
+) -> Vec<F>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real
+{
     assert_eq!(x_nodes.len(), hg.num_nodes());
 
     let n = hg.num_nodes();
     let m = hg.num_edges();
 
     // 1) x_e = B^T x
-    let mut x_edges = vec![0.0f32; m];
-    for eid_usize in 0..m {
-        let s = hg.edge_offsets[eid_usize];
-        let eend = hg.edge_offsets[eid_usize + 1];
+    let mut x_edges = vec![F::zero(); m];
+    for e in 0..m {
+        let s = hg.edge_offsets[e];
+        let eend = hg.edge_offsets[e + 1];
 
-        let ew = hg.edge_weight[eid_usize]; // globális él-súly
-
-        let mut acc = 0.0f32;
+        let mut acc = F::zero();
         for p in s..eend {
             let v = hg.flat_edge_nodes[p].0; // NodeId -> usize
-            let mut b = hg.flat_edge_w[p] * ew;
-            let sgn = signed_incidence(hg.flat_edge_sign[p]);
-            b *= sgn;
+            let mut b: F = inc_to_real(hg, p, e);
+            b *= signed_incidence::<F>(hg.flat_edge_sign[p]);
 
             if cfg.use_abs { b = b.abs(); }
             acc += b * x_nodes[v];
         }
-        x_edges[eid_usize] = acc;
+        x_edges[e] = acc;
     }
 
     // 2) y = B x_e
-    let mut y = vec![0.0f32; n];
-    for eid_usize in 0..m {
-        let s = hg.edge_offsets[eid_usize];
-        let eend = hg.edge_offsets[eid_usize + 1];
+    let mut y = vec![F::zero(); n];
+    for e in 0..m {
+        let s = hg.edge_offsets[e];
+        let eend = hg.edge_offsets[e + 1];
 
-        let ew = hg.edge_weight[eid_usize];
-        let xe = x_edges[eid_usize];
+        let xe = x_edges[e];
 
         for p in s..eend {
             let v = hg.flat_edge_nodes[p].0;
-            let mut b = hg.flat_edge_w[p] * ew;
-            let sgn = signed_incidence(hg.flat_edge_sign[p]);
-            b *= sgn;
+            let mut b = inc_to_real(hg, p, e);
+            b *= signed_incidence(hg.flat_edge_sign[p]);
 
             if cfg.use_abs { b = b.abs(); }
             y[v] += b * xe;
@@ -70,17 +72,15 @@ pub fn implicit_clique_step(
     if !cfg.include_self {
         // önhatás eltávolítása (opcionális): y[v] -= x[v] * sum_e b_{v,e}^2
         // Ez a "diag" levétel implicit megfelelője.
-        let mut diag = vec![0.0f32; n];
-        for eid_usize in 0..m {
-            let s = hg.edge_offsets[eid_usize];
-            let eend = hg.edge_offsets[eid_usize + 1];
+        let mut diag = vec![F::zero(); n];
+        for e in 0..m {
+            let s = hg.edge_offsets[e];
+            let eend = hg.edge_offsets[e + 1];
 
-            let ew = hg.edge_weight[eid_usize];
             for p in s..eend {
                 let v = hg.flat_edge_nodes[p].0;
-                let mut b = hg.flat_edge_w[p] * ew;
-                let sgn = signed_incidence(hg.flat_edge_sign[p]);
-                b *= sgn;
+                let mut b: F = inc_to_real(hg, p, e);
+                b *= signed_incidence::<F>(hg.flat_edge_sign[p]);
                 if cfg.use_abs { b = b.abs(); }
                 diag[v] += b * b;
             }
@@ -93,25 +93,31 @@ pub fn implicit_clique_step(
     y
 }
 
-pub fn build_explicit_a(hg: &HyperGraphView, cfg: CliqueStepCfg) -> Vec<Vec<f32>> {
+
+
+pub fn build_explicit_a<V, EW, F>(
+    hg: &HyperGraphView<V, EW, F>, cfg: CliqueStepCfg) -> Vec<Vec<F>>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real
+{
     let n = hg.num_nodes();
     let m = hg.num_edges();
 
     // A = B B^T
-    let mut a = vec![vec![0.0f32; n]; n];
+    let mut a = vec![vec![F::zero(); n]; n];
 
     for e in 0..m {
         let s = hg.edge_offsets[e];
         let eend = hg.edge_offsets[e + 1];
-        let ew = hg.edge_weight[e];
 
         // kis edge-szelet (v, bve)
-        let mut nodes: Vec<(usize, f32)> = Vec::with_capacity(eend - s);
+        let mut nodes: Vec<(usize, F)> = Vec::with_capacity(eend - s);
         for p in s..eend {
             let v = hg.flat_edge_nodes[p].0;
-            let mut b = hg.flat_edge_w[p] * ew;
-            let sgn = signed_incidence(hg.flat_edge_sign[p]); // ugyanaz a helper
-            b *= sgn;
+            let mut b: F = inc_to_real(hg, p, e);
+            b *= signed_incidence::<F>(hg.flat_edge_sign[p]);
             if cfg.use_abs { b = b.abs(); }
             nodes.push((v, b));
         }
@@ -126,20 +132,20 @@ pub fn build_explicit_a(hg: &HyperGraphView, cfg: CliqueStepCfg) -> Vec<Vec<f32>
 
     if !cfg.include_self {
         for i in 0..n {
-            a[i][i] = 0.0;
+            a[i][i] = F::zero();
         }
     }
 
     a
 }
 
-pub fn print_dense_f32(mat: &[Vec<f32>], title: &str) {
+pub fn print_dense_real<F: Real>(mat: &[Vec<F>], title: &str) {
     let n = mat.len();
     let m = if n > 0 { mat[0].len() } else { 0 };
     println!("{title} ({}x{}):", n, m);
     for i in 0..n {
         for j in 0..m {
-            print!("{:7.2} ", mat[i][j]);
+            print!("{:7.2} ", mat[i][j].as_f64());
         }
         println!();
     }

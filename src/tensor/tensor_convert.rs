@@ -1,16 +1,21 @@
-use nalgebra::DMatrix;
+use nalgebra::{DMatrix, Scalar};
+use num_traits::Zero;
 use nalgebra_sparse::{coo::CooMatrix, CsrMatrix};
-use crate::tensor::common::TensorCoo;
+use crate::tensor::common::{Real};
+use crate::tensor::tensor_coo::TensorCoo;
 
-pub struct JaxBcoo {
+pub struct JaxBcoo<F: Real> {
     pub shape: [usize; 3],          // [K, I, J]
     pub indices: Vec<[i32; 3]>,     // (nnz, 3)
-    pub data: Vec<f32>,             // (nnz,)
+    pub data: Vec<F>,             // (nnz,)
 }
 
-pub fn to_nalgebra_dense_slice(coo: &TensorCoo, k_sel: usize) -> DMatrix<f32> {
+pub fn to_nalgebra_dense_slice<F: Real>(coo: &TensorCoo<F>, k_sel: usize) -> DMatrix<F>
+where
+    F: Real + Scalar + Zero,
+{
     assert!(k_sel < coo.num_slices);
-    let mut m = DMatrix::<f32>::zeros(coo.dim_i, coo.dim_j);
+    let mut m = DMatrix::<F>::zeros(coo.dim_i, coo.dim_j);
 
     for t in 0..coo.len() {
         if coo.k[t] != k_sel { continue; }
@@ -19,7 +24,10 @@ pub fn to_nalgebra_dense_slice(coo: &TensorCoo, k_sel: usize) -> DMatrix<f32> {
     m
 }
 
-pub fn to_nalgebra_csr_slice(coo: &TensorCoo, k_sel: usize) -> CsrMatrix<f32> {
+pub fn to_nalgebra_csr_slice<F: Real>(coo: &TensorCoo<F>, k_sel: usize) -> CsrMatrix<F>
+where
+    F: Real + Scalar + Zero,
+{
     assert!(k_sel < coo.num_slices);
 
     let mut m = CooMatrix::new(coo.dim_i, coo.dim_j);
@@ -32,7 +40,10 @@ pub fn to_nalgebra_csr_slice(coo: &TensorCoo, k_sel: usize) -> CsrMatrix<f32> {
 }
 
 
-pub fn to_jax_bcoo(coo: &TensorCoo) -> JaxBcoo {
+pub fn to_jax_bcoo<F: Real>(coo: &TensorCoo<F>) -> JaxBcoo<F>
+where
+    F: Real + Scalar + Zero,
+{
     let mut indices = Vec::with_capacity(coo.len());
     let mut data = Vec::with_capacity(coo.len());
 

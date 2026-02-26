@@ -2,9 +2,15 @@
 
 mod test_tensor_representation {
     use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko_framework::tensor::common::signed_incidence;
+    use hymeko_framework::tensor::common_traversal::inc_to_real;
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
-    use hymeko_framework::tensor::message_passing::{build_explicit_a, implicit_clique_step, print_dense_f32, CliqueStepCfg};
-    use hymeko_framework::tensor::tensor::{clique_expansion_coo, compute_bipartite_degrees, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_framework::tensor::message_passing::{
+        build_explicit_a, implicit_clique_step, print_dense_real, CliqueStepCfg};
+    use hymeko_framework::tensor::tensor::{
+        clique_expansion_coo,
+        compute_bipartite_degrees, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
 
     #[test]
@@ -17,8 +23,9 @@ mod test_tensor_representation {
             sign: SignAgg::PreferNonNeutral,
             clamp01: false,
         };
+        let ex = ScalarWeightExtractor::default();
 
-        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         let coo = star_expansion_coo(&hg);
         let proj = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo);
@@ -117,8 +124,10 @@ mod test_tensor_representation {
             sign: SignAgg::PreferNonNeutral,
             clamp01: false,
         };
+        let ex = ScalarWeightExtractor::default();
 
-        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &compiled.ir, &aggcfg, &ex);
         let coo = star_expansion_coo(&hg);
         let proj = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo);
 
@@ -220,7 +229,9 @@ mod test_tensor_representation {
             sign: SignAgg::PreferNonNeutral,
             clamp01: false,
         };
-        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
+        let ex = ScalarWeightExtractor::default();
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &compiled.ir, &aggcfg, &ex);
 
         // 1) "Dense" reference: clique_view -> matrix
         let clique_coo = clique_expansion_coo(&hg);
@@ -270,7 +281,7 @@ mod test_tensor_representation {
             for p in s..eend {
                 let u = hg.flat_edge_nodes[p].0;
                 let su = hg.flat_edge_sign[p];
-                let wu = hg.flat_edge_w[p] * ew;
+                let wu = inc_to_real(&hg, p, eid);
                 nodes.push((u, su, wu));
             }
 
@@ -312,8 +323,9 @@ mod test_tensor_representation {
             sign: SignAgg::PreferNonNeutral,
             clamp01: false,
         };
-
-        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
+        let ex = ScalarWeightExtractor::default();
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &compiled.ir, &aggcfg, &ex);
 
         // cfg must match your implicit_clique_step semantics
         let cfg = CliqueStepCfg {
@@ -332,20 +344,14 @@ mod test_tensor_representation {
         let mut b: Vec<Vec<(usize, f32)>> = vec![Vec::new(); m]; // per edge: (v, bve)
 
         for e in 0..m {
-            let s = hg.edge_offsets[e];
-            let eend = hg.edge_offsets[e + 1];
-            let ew = hg.edge_weight[e];
+            let (s, eend) = hg.edge_span(hymeko_framework::common::ids::EdgeId(e));
+
             for p in s..eend {
                 let v = hg.flat_edge_nodes[p].0;
-                let mut val = hg.flat_edge_w[p] * ew;
+                let mut val = inc_to_real(&hg, p, e);
 
                 // same sign convention as in implicit_clique_step
-                let sgn = match hg.flat_edge_sign[p] {
-                    1 => 1.0,
-                    -1 => -1.0,
-                    _ => 1.0,
-                };
-                val *= sgn;
+                val *= signed_incidence::<f32>(hg.flat_edge_sign[p]);
 
                 if cfg.use_abs {
                     val = val.abs();
@@ -395,7 +401,7 @@ mod test_tensor_representation {
             );
         }
         let a = build_explicit_a(&hg, cfg);
-        print_dense_f32(&a, "Explicit A = B B^T (matches implicit_clique_step)");
+        print_dense_real(&a, "Explicit A = B B^T (matches implicit_clique_step)");
     }
 
     #[test]
@@ -404,7 +410,9 @@ mod test_tensor_representation {
             load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
 
         let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
-        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
+        let ex = ScalarWeightExtractor::default();
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &compiled.ir, &aggcfg, &ex);
 
         let (deg_v, deg_e) = compute_bipartite_degrees(&hg, true); // abs degree
 
@@ -416,6 +424,7 @@ mod test_tensor_representation {
         let eps: f32 = 1e-4;
 
         // node degrees (sum of abs incidence weights per node)
+        
         assert!((deg_v[0] - 0.0).abs() <= eps);   // root
         assert!((deg_v[1] - 3.0).abs() <= eps);   // node0: 1.5 + 0.75 + 0.75
         assert!((deg_v[2] - 4.45).abs() <= eps);  // node1: 2.5 + 1.95
@@ -436,7 +445,9 @@ mod test_tensor_representation {
             load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
 
         let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
-        let hg = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
+        let ex = ScalarWeightExtractor::default();
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &compiled.ir, &aggcfg, &ex);
 
         // normalized star
         let coo = star_expansion_coo_normalized(&hg, true, 1e-12);
@@ -495,14 +506,15 @@ mod test_tensor_representation {
             load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
 
         let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
-        let hg1 = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
-        let mut hg2 = HyperGraphView::from_ir(&compiled.ir, &aggcfg);
+        let ex = ScalarWeightExtractor::default();
+        let hg1 = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &compiled.ir, &aggcfg, &ex);
+        let mut hg2 = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &compiled.ir, &aggcfg, &ex);
 
         // scale all incidence weights by c
         let c: f32 = 10.0;
         for w in &mut hg2.flat_edge_w { *w *= c; }
-        for w in &mut hg2.flat_node_w { *w *= c; } // ha használod ezt is máshol
-        for w in &mut hg2.edge_weight { *w *= 1.0; } // hagyhatod 1.0-n, vagy ezt is skálázhatod
 
         let coo1 = star_expansion_coo_normalized(&hg1, true, 1e-12);
         let proj1 = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo1);

@@ -1,7 +1,8 @@
-use crate::tensor::common::TensorCoo;
+use crate::tensor::common::Real;
+use crate::tensor::tensor_coo::TensorCoo;
 
-pub fn print_dense_block(
-    coo: &TensorCoo,
+pub fn print_dense_block<F: Real>(
+    coo: &TensorCoo<F>,
     k_sel: usize,
     row0: usize,
     col0: usize,
@@ -14,7 +15,7 @@ pub fn print_dense_block(
     let r = rows.min(coo.dim_i - row0);
     let c = cols.min(coo.dim_j - col0);
 
-    let mut block = vec![vec![0.0f32; c]; r];
+    let mut block = vec![vec![F::zero(); c]; r];
 
     for t in 0..coo.len() {
         if coo.k[t] != k_sel { continue; }
@@ -31,12 +32,13 @@ pub fn print_dense_block(
         row0 + r,
         col0 + c
     );
+    let eps = F::from_other(1e-6_f64);
 
     for i in 0..r {
         for j in 0..c {
             let x = block[i][j];
-            if (x - x.round()).abs() < 1e-6 {
-                print!("{:>3} ", x.round() as i32);
+            if (x - x.round()).abs() < eps {
+                print!("{:>3} ", x.round());
             } else {
                 print!("{:>6.2} ", x);
             }

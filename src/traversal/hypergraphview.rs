@@ -1,7 +1,10 @@
+use std::marker::PhantomData;
 use crate::common::ids::{NodeId, EdgeId, DeclId};
-use crate::ir::ir::{Ir, SignedRefR, ValueR};
-use crate::tensor::common::TensorInc;
-use crate::tensor::aggregation::{agg_sign, agg_weight, AggCfg};
+use crate::ir::ir::{Ir, SignedRefR};
+use crate::tensor::aggregation::{agg_sign, AggCfg};
+use crate::tensor::common::Real;
+use crate::tensor::tensor_coo::TensorInc;
+use crate::tensor::tensor_val::{EdgeWeight, IncVal, RefValueExtractor};
 use crate::traversal::graphview::{GraphView};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -26,7 +29,12 @@ impl<'a> Iterator for BergeIter<'a> {
     }
 }
 
-pub struct HyperGraphView {
+pub struct HyperGraphView<V: IncVal<F>, EW: EdgeWeight<V, F>, F: Real>
+where
+    F: Real,
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>
+{
     pub node_decl: Vec<DeclId>, // NodeId -> DeclId
     pub edge_decl: Vec<DeclId>, // EdgeId -> DeclId
     /// Flat array of all incident edges.
@@ -42,45 +50,24 @@ pub struct HyperGraphView {
     /// Offsets into flat_edge_nodes for each EdgeId.
     pub edge_offsets: Vec<usize>,
     /// Optional weights (e.g., for GNNs), aligned with the corresponding flat arrays.
-    pub flat_node_w: Vec<f32>, // aligned with flat_node_edges
-    pub flat_edge_w: Vec<f32>, // aligned with flat_edge_nodes
-    pub edge_weight: Vec<f32>, // per EdgeId (global)
-
-
+    pub flat_node_w: Vec<V>, // aligned with flat_node_edges
+    pub flat_edge_w: Vec<V>, // aligned with flat_edge_nodes
+    pub edge_weight: Vec<EW>, // per EdgeId (global)
+    /// This PhantomData is needed to tell the compiler that HyperGraphView is generic over F,
+    /// even though it doesn't directly contain any F values.
+    /// This allows us to use F in trait bounds and method signatures without causing compilation errors about unused type parameters.
+    /// (sucks, I know)
+    _phantom: core::marker::PhantomData<F>,
 }
 
-#[inline(always)]
-fn extract_ref_weight_scalar(weights: &Option<Vec<ValueR>>) -> f32 {
-    // Default: ha nincs weight, akkor 1.0
-    let Some(ws) = weights else { return 1.0; };
 
-    // Flatten 1 szintig: [Num(..)] vagy [[..]] eseteket is kezelünk
-    let mut nums: Vec<f32> = Vec::new();
 
-    for v in ws {
-        match v {
-            ValueR::Num(x) => nums.push(*x as f32),
-            ValueR::List(xs) => {
-                for vv in xs {
-                    if let ValueR::Num(x) = vv {
-                        nums.push(*x as f32);
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-
-    if nums.is_empty() { 1.0 }
-    else if nums.len() == 1 { nums[0] }
-    else {
-        // Többdimenziós eseteknél ez egy “placeholder” döntés.
-        // Most SUM: evidenciagyűjtés jelleg (és determinisztikus).
-        nums.into_iter().sum()
-    }
-}
-
-impl HyperGraphView {
+impl<V, EW, F> HyperGraphView<V, EW, F>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real,
+{
     #[inline(always)]
     fn sign_of(r: &SignedRefR) -> i8 {
         match r {
@@ -119,16 +106,16 @@ impl HyperGraphView {
     /// Returns the [start, end) range for a node's incident edges.
     #[inline(always)]
     pub fn node_span(&self, nid: NodeId) -> (usize, usize) {
-        let s = self.node_offsets[nid.0 as usize] as usize;
-        let e = self.node_offsets[nid.0 as usize + 1] as usize;
+        let s = self.node_offsets[nid.0];
+        let e = self.node_offsets[nid.0 + 1];
         (s, e)
     }
 
     /// Returns the [start, end) range for an edge's incident nodes.
     #[inline(always)]
     pub fn edge_span(&self, eid: EdgeId) -> (usize, usize) {
-        let s = self.edge_offsets[eid.0 as usize] as usize;
-        let e = self.edge_offsets[eid.0 as usize + 1] as usize;
+        let s = self.edge_offsets[eid.0];
+        let e = self.edge_offsets[eid.0 + 1];
         (s, e)
     }
 
@@ -146,16 +133,16 @@ impl HyperGraphView {
         &self.flat_edge_nodes[s..e]
     }
 
-    fn collect_triples(ir: &Ir) -> Vec<TensorInc> {
-        let mut triples: Vec<TensorInc> = Vec::with_capacity(ir.arcs.len() * 2);
+    fn collect_triples<E>(ir: &Ir, ex: &E) -> Vec<TensorInc<F, V>>
+    where
+        E: RefValueExtractor<F, V>,
+    {
+        let mut out = Vec::with_capacity(ir.arcs.len() * 2);
 
         for (eid_usize, edge) in ir.edges.iter().enumerate() {
             let eid = EdgeId(eid_usize);
             for &aid in &edge.arcs {
                 let arc = &ir.arcs[aid.0];
-
-                let arc_w: f32 = 1.0;
-
                 for r in &arc.refs {
                     let (target, _sgn) = match r {
                         SignedRefR::Plus(a) | SignedRefR::Minus(a) | SignedRefR::Neutral(a)
@@ -163,58 +150,59 @@ impl HyperGraphView {
                     };
 
                     if let Some(nid) = ir.decl_to_node[target.0] {
-                        let (_target, sgn, ref_w) = match r {
-                            SignedRefR::Plus(a) => (a.target,  1i8, extract_ref_weight_scalar(&a.weights)),
-                            SignedRefR::Minus(a) => (a.target, -1i8, extract_ref_weight_scalar(&a.weights)),
-                            SignedRefR::Neutral(a) => (a.target, 0i8, extract_ref_weight_scalar(&a.weights)),
-                        };
-                        let w = arc_w * ref_w;
-                        triples.push(TensorInc{e: eid,  n: nid, s: sgn, w });
+                        let sgn = Self::sign_of(r);
+                        let v = ex.value_of(r);
+                        out.push(TensorInc{
+                            e: eid,  n: nid, s: sgn, w: v, _pd: PhantomData });
                     }
                 }
             }
         }
-        triples
+        out
     }
 
     fn sort_reduce_pairs(
-        mut triples: Vec<TensorInc>,
+        mut triples: Vec<TensorInc<F, V>>,
         cfg: &AggCfg,
-    ) -> Vec<TensorInc> {
-        triples.sort_unstable_by_key(|&entry| (entry.e.0, entry.n.0));
+    ) -> Vec<TensorInc<F, V>> {
+        triples.sort_unstable_by_key(|x| (x.e.0, x.n.0));
 
         // reduce/dedup
-        let mut pairs: Vec<TensorInc> = Vec::with_capacity(triples.len());
+        let mut out: Vec<TensorInc<F, V>> = Vec::with_capacity(triples.len());
         for inc in triples {
-            match pairs.last_mut() {
-                Some(inc_pair)
-                    if inc_pair.e.0 == inc.e.0 && inc_pair.n.0 == inc.n.0 => {
-                    // előbb weight, aztán sign (sign agg használhat súlyt)
-                    let new_w = agg_weight(cfg, inc_pair.w, inc.w);
-                    let new_s = agg_sign(cfg, inc_pair.s, inc.s, inc_pair.w, inc.w);
-                    inc_pair.w = new_w;
-                    inc_pair.s = new_s;
-                }
-                _ => pairs.push(inc),
+            if let Some(last) = out.last_mut()
+                && last.e.0 == inc.e.0
+                && last.n.0 == inc.n.0
+            {
+                // előbb weight, aztán sign (sign agg használhat súlyt)
+                let new_w = V::agg(cfg, &last.w, &inc.w);
+                let wa = last.w.as_scalar();
+                let wb = inc.w.as_scalar();
+                let new_s = agg_sign(cfg, last.s, inc.s, wa, wb);
+                last.w = new_w;
+                last.s = new_s;
+            }else {
+                out.push(inc);
             }
         }
-        pairs
+        out
     }
 
     fn build_csr_edge_to_nodes(
-        pairs: &[TensorInc],
+        pairs: &[TensorInc<F, V>],
         num_edges: usize,
-    ) -> (Vec<NodeId>, Vec<i8>, Vec<f32>, Vec<usize>) {
+    ) -> (Vec<NodeId>, Vec<i8>, Vec<V>, Vec<usize>)
+    {
         // CSR: Edge -> Nodes
         let mut flat_nodes = Vec::with_capacity(pairs.len());
         let mut flat_sign  = Vec::with_capacity(pairs.len());
         let mut flat_w     = Vec::with_capacity(pairs.len());
         let mut offsets = vec![0usize; num_edges + 1];
 
-        for &entry in pairs {
+        for entry in pairs {
             flat_nodes.push(entry.n);
             flat_sign.push(entry.s);
-            flat_w.push(entry.w);
+            flat_w.push(entry.w.clone());
             offsets[entry.e.0 + 1] += 1;
         }
         for i in 0..num_edges { offsets[i+1] += offsets[i]; }
@@ -223,21 +211,24 @@ impl HyperGraphView {
     }
 
     fn build_csr_node_to_edges(
-        pairs: &mut Vec<TensorInc>,
+        pairs: &mut Vec<TensorInc<F, V>>,
         num_nodes: usize,
-    ) -> (Vec<EdgeId>, Vec<i8>, Vec<f32>, Vec<usize>) {
+    ) -> (Vec<EdgeId>, Vec<i8>, Vec<V>, Vec<usize>)
+    where
+        V: IncVal<F>
+    {
         // node-first order
-        pairs.sort_unstable_by_key(|&entry| (entry.n.0, entry.e.0));
+        pairs.sort_unstable_by_key(|x| (x.n.0, x.e.0));
 
         let mut flat_edges = Vec::with_capacity(pairs.len());
         let mut flat_sign  = Vec::with_capacity(pairs.len());
         let mut flat_w     = Vec::with_capacity(pairs.len());
         let mut offsets = vec![0usize; num_nodes + 1];
 
-        for &entry in pairs.iter() {
+        for entry in pairs.iter() {
             flat_edges.push(entry.e);
             flat_sign.push(entry.s);
-            flat_w.push(entry.w);
+            flat_w.push(entry.w.clone());
             offsets[entry.n.0 + 1] += 1;
         }
         for i in 0..num_nodes { offsets[i + 1] += offsets[i]; }
@@ -247,14 +238,17 @@ impl HyperGraphView {
 
 
     /// Build incidence tables from IR (single source of truth).
-    pub fn from_ir(ir: &Ir, cfg: &AggCfg) -> Self {
+    pub fn from_ir<E>(ir: &Ir, cfg: &AggCfg, ex: &E) -> Self
+    where
+        E: RefValueExtractor<F, V>
+    {
         let num_nodes = ir.nodes.len();
         let num_edges = ir.edges.len();
 
         let node_decl: Vec<DeclId> = ir.nodes.iter().map(|n| n.decl).collect();
         let edge_decl: Vec<DeclId> = ir.edges.iter().map(|e| e.decl).collect();
 
-        let triples: Vec<TensorInc> = Self::collect_triples(ir);
+        let triples = Self::collect_triples(ir, ex);
 
         // sort by (eid,nid)
         let mut pairs = Self::sort_reduce_pairs(triples, cfg);
@@ -278,16 +272,27 @@ impl HyperGraphView {
             flat_edge_sign,
             flat_edge_w,
             edge_offsets,
-            edge_weight: vec![1.0; num_edges],
+            edge_weight: vec![EW::one(); num_edges],
+            _phantom: core::marker::PhantomData,
         }
     }
 }
 
-pub struct BergeView<'a> {
-    pub hg: &'a HyperGraphView,
+pub struct BergeView<'a, V, EW, F>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real
+{
+    pub hg: &'a HyperGraphView<V, EW, F>,
 }
 
-impl<'a> GraphView for BergeView<'a> {
+impl<'a, V, EW, F> GraphView for BergeView<'a, V, EW, F>
+where
+    F: Real,
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+{
     type Node = BergeState;
     type NeighIter<'b> = BergeIter<'b> where Self: 'b;
 
@@ -295,13 +300,13 @@ impl<'a> GraphView for BergeView<'a> {
     fn neighbors<'b>(&'b self, s: BergeState) -> Self::NeighIter<'b> {
         match s {
             BergeState::Node(nid) => {
-                let start = self.hg.node_offsets[nid.0 as usize] as usize;
-                let end = self.hg.node_offsets[nid.0 as usize + 1] as usize;
+                let start = self.hg.node_offsets[nid.0];
+                let end = self.hg.node_offsets[nid.0 + 1];
                 BergeIter::Node(self.hg.flat_node_edges[start..end].iter())
             },
             BergeState::Edge(eid) => {
-                let start = self.hg.edge_offsets[eid.0 as usize] as usize;
-                let end = self.hg.edge_offsets[eid.0 as usize + 1] as usize;
+                let start = self.hg.edge_offsets[eid.0];
+                let end = self.hg.edge_offsets[eid.0 + 1];
                 BergeIter::Edge(self.hg.flat_edge_nodes[start..end].iter())
             },
         }

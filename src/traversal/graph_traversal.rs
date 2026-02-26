@@ -1,4 +1,6 @@
 use std::collections::{HashSet, VecDeque};
+use crate::tensor::common::Real;
+use crate::tensor::tensor_val::{EdgeWeight, IncVal};
 use crate::traversal::graphview::GraphView;
 use crate::traversal::hypergraphview::{BergeState, BergeView};
 
@@ -19,13 +21,13 @@ impl VisitedSet {
     fn mark_and_check(&mut self, s: BergeState) -> bool {
         match s {
             BergeState::Node(n) => {
-                let v = self.nodes[n.0 as usize];
-                self.nodes[n.0 as usize] = true;
+                let v = self.nodes[n.0];
+                self.nodes[n.0] = true;
                 v // returns true if it WAS already visited
             }
             BergeState::Edge(e) => {
-                let v = self.edges[e.0 as usize];
-                self.edges[e.0 as usize] = true;
+                let v = self.edges[e.0];
+                self.edges[e.0] = true;
                 v
             }
         }
@@ -53,7 +55,7 @@ pub fn bfs<V: GraphView>(view: &V, start: V::Node) -> Vec<V::Node> {
 
 pub fn dfs_preorder<V: GraphView>(view: &V, start: V::Node) -> Vec<V::Node> {
     let mut out = Vec::new();
-    let mut seen = std::collections::HashSet::new();
+    let mut seen = HashSet::new();
     let mut st = vec![start];
 
     while let Some(u) = st.pop() {
@@ -67,7 +69,12 @@ pub fn dfs_preorder<V: GraphView>(view: &V, start: V::Node) -> Vec<V::Node> {
     out
 }
 
-pub fn bfs_dense(view: &BergeView, start: BergeState) -> Vec<BergeState> {
+pub fn bfs_dense<'a, V, EW, F>(view: &BergeView<'a, V, EW, F>, start: BergeState) -> Vec<BergeState>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real,
+{
     let mut out = Vec::new();
     let mut q = VecDeque::new();
 
@@ -89,7 +96,12 @@ pub fn bfs_dense(view: &BergeView, start: BergeState) -> Vec<BergeState> {
     out
 }
 
-pub fn dfs_preorder_dense(view: &BergeView, start: BergeState) -> Vec<BergeState> {
+pub fn dfs_preorder_dense<'a, V, EW, F>(view: &BergeView<'a, V, EW, F>, start: BergeState) -> Vec<BergeState>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real
+{
     let mut out = Vec::new();
     let mut st = vec![start];
 

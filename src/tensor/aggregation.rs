@@ -1,3 +1,5 @@
+use crate::tensor::common::Real;
+
 #[derive(Clone, Copy, Debug)]
 pub enum SignAgg {
     PreferNonNeutral, // a mostani logika
@@ -21,7 +23,7 @@ pub struct AggCfg {
 }
 
 #[inline(always)]
-pub fn agg_sign(cfg: &AggCfg, a: i8, b: i8, wa: f32, wb: f32) -> i8 {
+pub fn agg_sign<F: Real>(cfg: &AggCfg, a: i8, b: i8, wa: F, wb: F) -> i8 {
     match cfg.sign {
         SignAgg::PreferNonNeutral => {
             if a == b { return a; }
@@ -30,7 +32,7 @@ pub fn agg_sign(cfg: &AggCfg, a: i8, b: i8, wa: f32, wb: f32) -> i8 {
             0
         }
         SignAgg::WeightedVote => {
-            let s = (a as f32) * wa + (b as f32) * wb;
+            let s = (a as f64) * wa.as_f64() + (b as f64) * wb.as_f64();
             if s > 0.0 { 1 } else if s < 0.0 { -1 } else { 0 }
         }
         SignAgg::Channels3 => {
@@ -42,15 +44,17 @@ pub fn agg_sign(cfg: &AggCfg, a: i8, b: i8, wa: f32, wb: f32) -> i8 {
 }
 
 #[inline(always)]
-pub fn clamp01(x: f32) -> f32 { x.max(0.0).min(1.0) }
+pub fn clamp01<T: Real>(x: T) -> T { x.max(T::zero()).min(T::one()) }
 
 #[inline(always)]
-pub fn agg_weight(cfg: &AggCfg, a: f32, b: f32) -> f32 {
+pub fn agg_weight<T: Real>(cfg: &AggCfg, a: T, b: T) -> T {
     let mut out = match cfg.weight {
         WeightAgg::Sum => a + b,
-        WeightAgg::Max => a.max(b),
-        WeightAgg::ProbSum01 => 1.0 - (1.0 - a) * (1.0 - b),
-        WeightAgg::LukasSat01 => (a + b).min(1.0),
+        WeightAgg::Max => a + b,
+        WeightAgg::ProbSum01 => {
+            T::one() - (T::one() - a) * (T::one() - b)
+        }
+        WeightAgg::LukasSat01 => (a + b).min(T::one()),
     };
     if cfg.clamp01 { out = clamp01(out); }
     out

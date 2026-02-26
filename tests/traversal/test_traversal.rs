@@ -7,6 +7,7 @@ mod test_traversal
     use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
     use hymeko_framework::resolution::resolve::build_index_sym;
     use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko_framework::traversal::graph_traversal::dfs_preorder;
     use hymeko_framework::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
     use parser::ast::AstStr;
@@ -50,7 +51,9 @@ mod test_traversal
 
         // --- HyperGraphView felépítése
         let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
-        let hg = HyperGraphView::from_ir(&ir, &aggcfg);
+        let ex = ScalarWeightExtractor::default();
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            &ir, &aggcfg, &ex);
 
         // 1) incidenciák ellenőrzése (set-alapon)
         let a_start = hg.node_offsets[nid_a.0 as usize] as usize;
