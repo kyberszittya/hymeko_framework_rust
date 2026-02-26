@@ -50,7 +50,7 @@ pub fn clamp01<T: Real>(x: T) -> T { x.max(T::zero()).min(T::one()) }
 pub fn agg_weight<T: Real>(cfg: &AggCfg, a: T, b: T) -> T {
     let mut out = match cfg.weight {
         WeightAgg::Sum => a + b,
-        WeightAgg::Max => a + b,
+        WeightAgg::Max => a.max(b),
         WeightAgg::ProbSum01 => {
             T::one() - (T::one() - a) * (T::one() - b)
         }

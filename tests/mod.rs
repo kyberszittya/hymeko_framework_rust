@@ -13,3 +13,4 @@ mod traversal;
 pub mod test_helpers;
 
 mod test_tensor_representations;
+mod aggregations;

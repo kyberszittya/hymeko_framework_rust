@@ -16,8 +16,133 @@ impl Default for CliqueStepCfg {
 }
 
 
+#[inline(always)]
+fn inc_scalar_signed<V, EW, F>(
+    hg: &HyperGraphView<V, EW, F>,
+    p: usize,
+    e: usize,
+    use_abs: bool,
+) -> F
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real,
+{
+    // incidence value -> apply edge weight -> project to scalar
+    let mut b = hg.edge_weight[e]
+        .apply_to(hg.flat_edge_w[p].clone())
+        .as_scalar();
+
+    // sign
+    b *= signed_incidence::<F>(hg.flat_edge_sign[p]);
+
+    if use_abs { b = b.abs(); }
+    b
+}
+
+/// 1) x_e = B^T x
+pub fn gather_edges_from_nodes<V, EW, F>(
+    hg: &HyperGraphView<V, EW, F>,
+    x_nodes: &[F],
+    use_abs: bool,
+) -> Vec<F>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real,
+{
+    assert_eq!(x_nodes.len(), hg.num_nodes());
+
+    let m = hg.num_edges();
+    let mut x_edges = vec![F::zero(); m];
+
+    for e in 0..m {
+        let s = hg.edge_offsets[e];
+        let eend = hg.edge_offsets[e + 1];
+
+        let mut acc = F::zero();
+        for p in s..eend {
+            let v = hg.flat_edge_nodes[p].0;
+            let b = inc_scalar_signed(hg, p, e, use_abs);
+            acc += b * x_nodes[v];
+        }
+        x_edges[e] = acc;
+    }
+
+    x_edges
+}
+
+/// 2) y = B x_e
+pub fn scatter_nodes_from_edges<V, EW, F>(
+    hg: &HyperGraphView<V, EW, F>,
+    x_edges: &[F],
+    use_abs: bool,
+) -> Vec<F>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real,
+{
+    assert_eq!(x_edges.len(), hg.num_edges());
+
+    let n = hg.num_nodes();
+    let m = hg.num_edges();
+    let mut y = vec![F::zero(); n];
+
+    for e in 0..m {
+        let s = hg.edge_offsets[e];
+        let eend = hg.edge_offsets[e + 1];
+        let xe = x_edges[e];
+
+        for p in s..eend {
+            let v = hg.flat_edge_nodes[p].0;
+            let b = inc_scalar_signed(hg, p, e, use_abs);
+            y[v] += b * xe;
+        }
+    }
+
+    y
+}
+
+/// diag[v] = Σ_e b_{v,e}^2
+pub fn clique_diag<V, EW, F>(
+    hg: &HyperGraphView<V, EW, F>,
+    use_abs: bool,
+) -> Vec<F>
+where
+    V: IncVal<F>,
+    EW: EdgeWeight<V, F>,
+    F: Real,
+{
+    let n = hg.num_nodes();
+    let m = hg.num_edges();
+    let mut diag = vec![F::zero(); n];
+
+    for e in 0..m {
+        let s = hg.edge_offsets[e];
+        let eend = hg.edge_offsets[e + 1];
+
+        for p in s..eend {
+            let v = hg.flat_edge_nodes[p].0;
+            let b = inc_scalar_signed(hg, p, e, use_abs);
+            diag[v] += b * b;
+        }
+    }
+
+    diag
+}
+
+/// y -= diag ⊙ x  (elementwise)
+#[inline(always)]
+pub fn remove_self_effect<F: Real>(y: &mut [F], diag: &[F], x_nodes: &[F]) {
+    debug_assert_eq!(y.len(), diag.len());
+    debug_assert_eq!(y.len(), x_nodes.len());
+    for i in 0..y.len() {
+        y[i] -= diag[i] * x_nodes[i];
+    }
+}
+
 /// y = B W B^T x  (implicit, sparse)
-/// x_nodes hossza: hg.num_nodes()  (root is benne lehet)
 pub fn implicit_clique_step<V, EW, F>(
     hg: &HyperGraphView<V, EW, F>,
     x_nodes: &[F],
@@ -26,68 +151,18 @@ pub fn implicit_clique_step<V, EW, F>(
 where
     V: IncVal<F>,
     EW: EdgeWeight<V, F>,
-    F: Real
+    F: Real,
 {
-    assert_eq!(x_nodes.len(), hg.num_nodes());
+    // 1) gather
+    let x_edges = gather_edges_from_nodes(hg, x_nodes, cfg.use_abs);
 
-    let n = hg.num_nodes();
-    let m = hg.num_edges();
+    // 2) scatter
+    let mut y = scatter_nodes_from_edges(hg, &x_edges, cfg.use_abs);
 
-    // 1) x_e = B^T x
-    let mut x_edges = vec![F::zero(); m];
-    for e in 0..m {
-        let s = hg.edge_offsets[e];
-        let eend = hg.edge_offsets[e + 1];
-
-        let mut acc = F::zero();
-        for p in s..eend {
-            let v = hg.flat_edge_nodes[p].0; // NodeId -> usize
-            let mut b: F = inc_to_real(hg, p, e);
-            b *= signed_incidence::<F>(hg.flat_edge_sign[p]);
-
-            if cfg.use_abs { b = b.abs(); }
-            acc += b * x_nodes[v];
-        }
-        x_edges[e] = acc;
-    }
-
-    // 2) y = B x_e
-    let mut y = vec![F::zero(); n];
-    for e in 0..m {
-        let s = hg.edge_offsets[e];
-        let eend = hg.edge_offsets[e + 1];
-
-        let xe = x_edges[e];
-
-        for p in s..eend {
-            let v = hg.flat_edge_nodes[p].0;
-            let mut b = inc_to_real(hg, p, e);
-            b *= signed_incidence(hg.flat_edge_sign[p]);
-
-            if cfg.use_abs { b = b.abs(); }
-            y[v] += b * xe;
-        }
-    }
-
+    // 3) optional diagonal removal
     if !cfg.include_self {
-        // önhatás eltávolítása (opcionális): y[v] -= x[v] * sum_e b_{v,e}^2
-        // Ez a "diag" levétel implicit megfelelője.
-        let mut diag = vec![F::zero(); n];
-        for e in 0..m {
-            let s = hg.edge_offsets[e];
-            let eend = hg.edge_offsets[e + 1];
-
-            for p in s..eend {
-                let v = hg.flat_edge_nodes[p].0;
-                let mut b: F = inc_to_real(hg, p, e);
-                b *= signed_incidence::<F>(hg.flat_edge_sign[p]);
-                if cfg.use_abs { b = b.abs(); }
-                diag[v] += b * b;
-            }
-        }
-        for v in 0..n {
-            y[v] -= diag[v] * x_nodes[v];
-        }
+        let diag = clique_diag(hg, cfg.use_abs);
+        remove_self_effect(&mut y, &diag, x_nodes);
     }
 
     y
