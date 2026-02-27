@@ -11,6 +11,7 @@ mod intermediate_tests;
 mod traversal;
 
 pub mod test_helpers;
+pub mod test_asserts;
 
 mod test_tensor_representations;
 mod aggregations;

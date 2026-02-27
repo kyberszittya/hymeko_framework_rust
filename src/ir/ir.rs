@@ -5,6 +5,16 @@ use crate::ir::meta::Meta;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeclKind { Node, Edge, HyperArc }
 
+#[derive(Debug, Clone)]
+pub struct DeclNode {
+    pub kind: DeclKind,
+    pub name: SymId,
+    pub parent: DeclId,
+    pub first_child: DeclId,
+    pub next_sibling: DeclId,
+    pub anno: AnnoR,
+}
+
 #[derive(Debug, Default)]
 pub struct Ir {
     pub meta: Option<Meta>,

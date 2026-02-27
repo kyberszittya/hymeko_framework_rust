@@ -82,7 +82,7 @@ where
     // rough upper bound: per edge, deg^2 potential pairs (dense), but we stay COO sparse
     let mut t = TensorCoo::with_meta(num_edges, num_nodes, num_nodes);
 
-    for e in 0..(num_edges as usize) {
+    for e in 0..(num_edges) {
         let eid = EdgeId(e);
         let (s, eend) = hg.edge_span(eid);
 
@@ -99,20 +99,20 @@ where
         // pairwise fill
         for a in 0..nodes.len() {
             let (u, su, wu) = nodes[a];
-            for b in 0..nodes.len() {
-                if a == b { continue; }
-                let (v, _sv, wv) = nodes[b];
+            for b in (a+1)..nodes.len() {
+                let (v, sv, wv) = nodes[b];
                 let w: F = wu * wv;
 
-                match su {
-                    1 => {        // '+' : u tends to point outward
+                match (su, sv) {
+                    (1, -1) => {        // '+' : u tends to point outward
                         t.push(e, u, v, w);
                     }
-                    -1 => {       // '-' : u tends to be incoming -> flip direction
+                    (-1, 1) => {       // '-' : u tends to be incoming -> flip direction
                         t.push(e, v, u, w);
                     }
                     _ => {        // neutral: treat as undirected pair entry
                         t.push(e, u, v, w);
+                        t.push(e, v, u, w);
                     }
                 }
             }
@@ -125,7 +125,7 @@ where
 pub fn dense_view_slice<F: Real>(coo: &TensorCoo<F>, k_sel: usize) -> Vec<Vec<F>> {
     assert!(k_sel < coo.num_slices, "k out of range");
 
-    let mut m = vec![vec![F::one(); coo.dim_j]; coo.dim_i];
+    let mut m = vec![vec![F::zero(); coo.dim_j]; coo.dim_i];
 
     for t in 0..coo.len() {
         if coo.k[t] != k_sel { continue; }

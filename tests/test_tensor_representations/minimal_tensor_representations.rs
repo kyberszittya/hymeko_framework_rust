@@ -135,13 +135,12 @@ mod minimal_tensor_representations {
         let off01 = a[0][1];
         let off10 = a[1][0];
 
-        let expected = 2.0_f32 * 0.85_f32 * 0.9_f32; // 1.53
+        let expected =  0.85_f32 * 0.9_f32; // 1.53
 
         // Exactly one direction should carry the weight
         let cond_a = (off01 - expected).abs() <= 1e-4 && off10.abs() <= 1e-4;
         let cond_b = (off10 - expected).abs() <= 1e-4 && off01.abs() <= 1e-4;
 
-        // root row/col is zero
         for i in 0..n {
             assert!(a[0][i].abs() < eps);
             assert!(a[i][0].abs() < eps);
@@ -157,8 +156,7 @@ mod minimal_tensor_representations {
                 }
             }
         }
-        assert_eq!(nz.len(), 1);
-        assert!((nz[0].2 - 1.53).abs() < 1e-4);
-
+        assert_eq!(nz.len(), 1, "There should be exactly one directed off-diagonal entry");
+        assert!((nz[0].2 - 0.765).abs() < 1e-4, "Expected mathematically correct single-counted weight 0.765, got {}", nz[0].2);
     }
 }
