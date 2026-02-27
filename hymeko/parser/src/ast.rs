@@ -47,12 +47,14 @@ pub type HeaderBlock<'a> = (Vec<ImportStmt<'a, &'a str>>, Vec<NodeDecl<'a, &'a s
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeInner<'a, Id> {
     pub name: Id,
+    pub bases: Vec<SignedRef<'a, Id>>,
     pub body: Option<Vec<HyperItem<'a, Id>>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct EdgeInner<'a, Id> {
     pub name: Id,
+    pub bases: Vec<SignedRef<'a, Id>>,
     pub body: Vec<HyperItem<'a, Id>>,
 }
 

@@ -273,7 +273,7 @@ where
             flat_edge_w,
             edge_offsets,
             edge_weight: vec![EW::one(); num_edges],
-            _phantom: core::marker::PhantomData,
+            _phantom: PhantomData,
         }
     }
 }

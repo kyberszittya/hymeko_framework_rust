@@ -37,7 +37,8 @@ mod test_message_passing_components
         let mut x = vec![0.0f32; n];
         for i in 0..n { x[i] = 1.0 + (i as f32) * 0.1; }
 
-        let x_edges = gather_edges_from_nodes(&hg, &x, use_abs);
+        let mut x_edges = vec![0.0f32; m];
+        gather_edges_from_nodes(&hg, &x, &mut x_edges, use_abs);
 
         // manual: x_e = Σ_v b_{v,e} x_v
         let mut x_edges_ref = vec![0.0f32; m];
@@ -73,7 +74,8 @@ mod test_message_passing_components
         let mut x_edges = vec![0.0f32; m];
         for e in 0..m { x_edges[e] = 0.5 + (e as f32) * 0.2; }
 
-        let y = scatter_nodes_from_edges(&hg, &x_edges, use_abs);
+        let mut y = vec![0.0f32; n];
+        scatter_nodes_from_edges(&hg, &x_edges, &mut y, use_abs);
 
         // manual: y_v = Σ_e b_{v,e} x_e
         let mut y_ref = vec![0.0f32; n];
@@ -147,17 +149,23 @@ mod test_message_passing_components
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         let n = hg.num_nodes();
+        let m = hg.num_edges();
         let mut x = vec![0.0f32; n];
         for i in 0..n { x[i] = 1.0 + (i as f32) * 0.1; }
 
         let cfg = CliqueStepCfg { use_abs: true, include_self: false };
 
         // orchestrator
-        let y1 = implicit_clique_step(&hg, &x, cfg);
+        let diag = clique_diag(&hg, cfg.use_abs);
+        let mut y1 = vec![0.0f32; n];
+        let mut buffer_edges = vec![0.0f32; m];
+        implicit_clique_step(&hg, &x, &mut y1, &mut buffer_edges, Some(&diag), cfg);
 
         // explicit pipeline
-        let x_edges = gather_edges_from_nodes(&hg, &x, cfg.use_abs);
-        let mut y2 = scatter_nodes_from_edges(&hg, &x_edges, cfg.use_abs);
+        let mut x_edges = vec![0.0f32; m];
+        gather_edges_from_nodes(&hg, &x, &mut x_edges, cfg.use_abs);
+        let mut y2 = vec![0.0f32; n];
+        scatter_nodes_from_edges(&hg, &x_edges, &mut y2, cfg.use_abs);
         let diag = clique_diag(&hg, cfg.use_abs);
         remove_self_effect(&mut y2, &diag, &x);
 

@@ -36,11 +36,21 @@ kinematics {
             @state_interface {}
             @command_interface {}
         }
-        joint_trajectory_controller: + <isa> meta_controller {type "joint_trajectory_controller/JointTrajectoryController"}
-        diff_drive_controller: + <isa> meta_controller {type "diff_drive_controller/DiffDriveController"}
-        force_torque_sensor_controller: + <isa> meta_controller {type "force_torque_sensor_controller/ForceTorqueSensorController"}
-        forward_position_controller: + <isa> meta_controller {type "forward_position_controller/ForwardPositionController"}
-        forward_velocity_controller: + <isa> meta_controller {type "forward_velocity_controller/ForwardVelocityController"}
+        joint_trajectory_controller: + <isa> meta_controller {
+            type "joint_trajectory_controller/JointTrajectoryController";
+        }
+        diff_drive_controller: + <isa> meta_controller {
+            type "diff_drive_controller/DiffDriveController";
+        }
+        force_torque_sensor_controller: + <isa> meta_controller {
+            type "force_torque_sensor_controller/ForceTorqueSensorController";
+        }
+        forward_position_controller: + <isa> meta_controller {
+            type "forward_position_controller/ForwardPositionController";
+        }
+        forward_velocity_controller: + <isa> meta_controller {
+            type "forward_velocity_controller/ForwardVelocityController";
+        }
     }
     @control_plugin {}
     @sim_plugin {}
@@ -61,9 +71,9 @@ kinematics {
     @rev_joint: + <isa> elements.joint {
         limit -> joint_rev_limit;
     }
-    @conti_joint: -> elements.joint {
+    @conti_joint: + <isa> elements.joint {
     }
-    @prismatic_joint: -> elements.joint {
+    @prismatic_joint: + <isa> elements.joint {
         limit -> joint_prismatic_limit;
     }
     geometry {

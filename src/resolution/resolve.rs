@@ -213,7 +213,56 @@ pub fn resolve_ref_to_declid(
     }
 }
 
+pub fn resolve_node_bases<'a>(
+    idx: &Index,
+    scope: &[SymId],
+    bases: &[SignedRef<'a, SymId>],
+    it: &mut Interner,
+) -> Result<Vec<SignedRefR>, ResolveError> {
+    let mut out = Vec::with_capacity(bases.len());
 
+    for sref in bases {
+        let atom = match sref {
+            SignedRef::Plus(x) | SignedRef::Minus(x) | SignedRef::Neutral(x) => x,
+        };
+
+        let did = resolve_ref_to_declid(idx, scope, &atom.target, it)?;
+
+        // Tag-ek + value ugyanúgy, mint arcoknál
+        let anno_r = resolve_anno(idx, scope, &atom.anno, it)?;
+
+        let weights_r = match &atom.anno.value {
+            Some(Value::List(ws)) => {
+                let resolved = ws
+                    .iter()
+                    .map(|w| resolve_value(idx, scope, w, it))
+                    .collect::<Result<Vec<ValueR>, _>>()?;
+                Some(resolved)
+            }
+            Some(v) => {
+                let resolved = resolve_value(idx, scope, v, it)?;
+                Some(vec![resolved])
+            }
+            None => None,
+        };
+
+        let atom_r = RefAtomR {
+            target: did,
+            weights: weights_r,
+            anno: anno_r,
+        };
+
+        let sref_r = match sref {
+            SignedRef::Plus(_) => SignedRefR::Plus(atom_r),
+            SignedRef::Minus(_) => SignedRefR::Minus(atom_r),
+            SignedRef::Neutral(_) => SignedRefR::Neutral(atom_r),
+        };
+
+        out.push(sref_r);
+    }
+
+    Ok(out)
+}
 
 pub fn resolve_arc_refs<'a>(
     idx: &Index,
@@ -288,6 +337,7 @@ fn validate_items<'a>(
     for item in items {
         match item {
             HyperItem::Node(n) => {
+                let _ = resolve_node_bases(idx, scope, &n.inner.bases, it)?;
                 if let Some(body) = &n.inner.body {
                     let mut child = scope.to_vec();
                     child.push(n.inner.name);
@@ -295,6 +345,7 @@ fn validate_items<'a>(
                 }
             }
             HyperItem::Edge(e) => {
+                let _ = resolve_node_bases(idx, scope, &e.inner.bases, it)?;
                 let mut child = scope.to_vec();
                 child.push(e.inner.name);
                 validate_items(&child, &e.inner.body, idx, it)?;

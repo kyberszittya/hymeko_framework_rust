@@ -52,6 +52,7 @@ fn lower_node<'a>(src: &NodeDecl<'a, &'a str>, it: &mut Interner) -> NodeDecl<'a
         anno: lower_anno(&src.anno, it),
         inner: NodeInner {
             name: sid(it, src.inner.name),
+            bases: src.inner.bases.iter().map(|r| lower_signed_ref(r, it)).collect(),
             body: src.inner.body.as_ref().map(|xs| xs.iter().map(|x| lower_item(x, it)).collect()),
         },
     }
@@ -62,6 +63,7 @@ fn lower_edge<'a>(src: &EdgeDecl<'a, &'a str>, it: &mut Interner) -> EdgeDecl<'a
         anno: lower_anno(&src.anno, it),
         inner: EdgeInner {
             name: sid(it, src.inner.name),
+            bases: src.inner.bases.iter().map(|r| lower_signed_ref(r, it)).collect(),
             body: src.inner.body.iter().map(|x| lower_item(x, it)).collect(),
         },
     }
@@ -93,14 +95,14 @@ fn lower_ref_atom<'a>(src: &RefAtom<'a, &'a str>, it: &mut Interner) -> RefAtom<
 
 fn lower_import<'a>(src: &ImportStmt<'a, &'a str>, it: &mut Interner) -> ImportStmt<'a, SymId> {
     ImportStmt {
-        path: std::borrow::Cow::Owned(src.path.as_ref().to_string()),
+        path: Cow::Owned(src.path.as_ref().to_string()),
         alias: src.alias.map(|n| sid(it, n)),
     }
 }
 
 fn lower_value<'a>(src: &Value<'a, &'a str>, it: &mut Interner) -> Value<'a, SymId> {
     match src {
-        Value::Str(s) => Value::Str(std::borrow::Cow::Owned(s.as_ref().to_string())),
+        Value::Str(s) => Value::Str(Cow::Owned(s.as_ref().to_string())),
         Value::Num(n) => Value::Num(*n),
         Value::List(xs) => Value::List(xs.iter().map(|v| lower_value(v, it)).collect()),
         Value::Ref(r) => Value::Ref(Ref {
@@ -146,6 +148,7 @@ fn lower_node_owned<'a>(src: &NodeDecl<'a, &'a str>, it: &mut Interner) -> NodeD
         anno: lower_anno_owned(&src.anno, it),
         inner: NodeInner {
             name: sid(it, src.inner.name),
+            bases: src.inner.bases.iter().map(|r| lower_signed_ref_owned(r, it)).collect(),
             body: src.inner.body.as_ref().map(|xs| xs.iter().map(|x| lower_item_owned(x, it)).collect()),
         },
     }
@@ -156,6 +159,7 @@ fn lower_edge_owned<'a>(src: &EdgeDecl<'a, &'a str>, it: &mut Interner) -> EdgeD
         anno: lower_anno_owned(&src.anno, it),
         inner: EdgeInner {
             name: sid(it, src.inner.name),
+            bases: src.inner.bases.iter().map(|r| lower_signed_ref_owned(r, it)).collect(),
             body: src.inner.body.iter().map(|x| lower_item_owned(x, it)).collect(),
         },
     }

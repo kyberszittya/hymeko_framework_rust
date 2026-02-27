@@ -96,19 +96,21 @@ impl<'a> Iterator for DeclChildren<'a> {
 #[derive(Debug)]
 pub struct NodeRec {
     pub decl: DeclId,
+    pub bases: Vec<SignedRefR>,
 }
 impl NodeRec {
-    pub fn new(decl: DeclId) -> Self { Self { decl } }
+    pub fn new(decl: DeclId, bases: Vec<SignedRefR>) -> Self { Self { decl, bases } }
 }
 
 #[derive(Debug)]
 pub struct EdgeRec {
     pub decl: DeclId,
+    pub bases: Vec<SignedRefR>,
     pub arcs: Vec<HyperArcId>,
 }
 impl EdgeRec {
-    pub fn new(decl: DeclId) -> Self {
-        Self { decl, arcs: Vec::new() }
+    pub fn new(decl: DeclId, bases: Vec<SignedRefR>) -> Self {
+        Self { decl, bases, arcs: Vec::new() }
     }
 }
 

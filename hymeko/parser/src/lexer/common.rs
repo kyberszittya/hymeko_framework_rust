@@ -232,6 +232,7 @@ pub fn next_token<'a, L: CommonLexer<'a>>(lex: &mut L) -> Option<LexItem<'a>> {
         b')' => Token::RParen,
         b'[' => Token::LBrack,
         b']' => Token::RBrack,
+        b':' => Token::Colon,
         b'<' => Token::LAngle,
         b'>' => Token::RAngle,
         b',' => Token::Comma,

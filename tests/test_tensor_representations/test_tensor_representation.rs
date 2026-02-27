@@ -7,8 +7,7 @@ mod test_tensor_representation {
     use hymeko_framework::tensor::common::signed_incidence;
     use hymeko_framework::tensor::common_traversal::inc_to_real;
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
-    use hymeko_framework::tensor::message_passing::{
-        build_explicit_a, implicit_clique_step, print_dense_real, CliqueStepCfg};
+    use hymeko_framework::tensor::message_passing::{build_explicit_a, clique_diag, implicit_clique_step, print_dense_real, scatter_nodes_from_edges, CliqueStepCfg};
     use hymeko_framework::tensor::tensor::{clique_expansion_coo, compute_bipartite_degrees, dense_view_slice, star_expansion_coo, star_expansion_coo_normalized};
     use hymeko_framework::tensor::tensor_val::{EdgeWScalar, EdgeWeight, ScalarWeightExtractor};
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
@@ -388,8 +387,18 @@ mod test_tensor_representation {
             y_dense[i] = acc;
         }
 
+        // --- NEW: Allocate buffers and pass precomputed optional diagonal ---
+        let mut y_imp = vec![0.0f32; n];
+        let mut buffer_edges = vec![0.0f32; m];
+        let diag_opt = if !cfg.include_self {
+            let _diag = clique_diag(&hg, cfg.use_abs);
+            None
+        } else {
+            None
+        };
+
         // y_imp from your implementation
-        let y_imp = implicit_clique_step(&hg, &x, cfg);
+        implicit_clique_step(&hg, &x, &mut y_imp, &mut buffer_edges, diag_opt, cfg);
 
         // Compare
         for i in 0..n {
@@ -577,7 +586,7 @@ mod test_tensor_representation {
         );
     }
 
-    
+
     #[test]
     fn test_compute_bipartite_degrees_manual_simple() {
         // We manually construct a graph with 3 nodes and 2 edges.
@@ -629,6 +638,45 @@ mod test_tensor_representation {
         let sum_v: f64 = deg_v.iter().sum();
         let sum_e: f64 = deg_e.iter().sum();
         assert_eq!(sum_v, sum_e, "Total node mass must equal total edge mass.");
-        
+
+    }
+
+    #[test]
+    fn test_regression_scatter_no_phantom_allocation() {
+        let (_store, compiled) =
+            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+
+        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let ex = ScalarWeightExtractor::default();
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
+
+        let n = hg.num_nodes();
+        let m = hg.num_edges();
+        let use_abs = true;
+
+        // Populate input with 1.0s to ensure mathematical accumulation occurs
+        let x_edges = vec![1.0f32; m];
+
+        // 1) Fill the out-parameter with a toxic sentinel value (999.0).
+        let mut y_nodes_out = vec![999.0f32; n];
+
+        // Execute the sterile scatter operation
+        scatter_nodes_from_edges(&hg, &x_edges, &mut y_nodes_out, use_abs);
+
+        let mut sum = 0.0f32;
+        for i in 0..n {
+            // 2) Verify the caller's buffer was actually targeted and cleared
+            assert!(
+                (y_nodes_out[i] - 999.0).abs() > 0.1,
+                "Regression caught: scatter_nodes_from_edges ignored the caller's buffer. Sentinel values remain."
+            );
+            sum += y_nodes_out[i];
+        }
+
+        // 3) Verify the mathematical accumulation was written to this specific buffer
+        assert!(
+            sum > 0.001,
+            "Regression caught: scatter_nodes_from_edges zeroed the caller's buffer but failed to write the accumulated results into it (Sum is 0.0)."
+        );
     }
 }

@@ -16,7 +16,7 @@ mod edges;
 
 mod test_import;
 mod test_module_store;
-
+mod annotations;
 
 struct TestParser;
 

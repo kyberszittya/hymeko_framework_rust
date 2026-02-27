@@ -17,6 +17,7 @@ extern {
         ")" => crate::lexer::Token::RParen,
         "[" => crate::lexer::Token::LBrack,
         "]" => crate::lexer::Token::RBrack,
+        ":" => crate::lexer::Token::Colon,
         "<" => crate::lexer::Token::LAngle,
         ">" => crate::lexer::Token::RAngle,
         "," => crate::lexer::Token::Comma,
@@ -68,7 +69,7 @@ HeaderStmt: HeaderStmt<'a, &'a str> = {
 HeaderItem: NodeDecl<'a, &'a str> = {
     <name:Ident> <anno:OptAnno> ";" => NodeDecl {
         anno,
-        inner: NodeInner { name, body: None }
+        inner: NodeInner { name, bases: Vec::new(), body: None }
     }
 };
 
@@ -86,6 +87,28 @@ HyperItem: HyperItem<'a, &'a str> = {
     <n:NodeDecl>  => HyperItem::Node(n),
     <e:EdgeDecl>  => HyperItem::Edge(e),
     <a:HyperArc>  => HyperItem::Arc(a),
+};
+
+BaseRef: SignedRef<'a, &'a str> = {
+    <s: SignedRef> => s,
+
+    <pre:OptTags> <r:RefPath> <anno:OptAnno> => {
+        let mut anno = anno;
+        let mut tags = pre;
+        tags.extend(anno.tags);
+        anno.tags = tags;
+        SignedRef::Neutral(RefAtom { target: r, anno })
+
+    }
+};
+
+BaseRefs: Vec<SignedRef<'a, &'a str>> = {
+    <x:BaseRef> <rest:("," BaseRef)*> ","? => {
+        let mut out = vec![x];
+        for (_, y) in rest { out.push(y); }
+        out
+    }
+
 };
 
 // ------------------------------------------------------------
@@ -122,22 +145,27 @@ ValueList: Vec<Value<'a, &'a str>> = {
 // ------------------------------------------------------------
 
 NodeDecl: NodeDecl<'a, &'a str> = {
+    // Block node with base refs: name <tags>? : base0, base1 { ... }
+    <name:Ident> <anno:OptAnnoNoValue> ":" <bases:BaseRefs> "{" <body:HyperItem*> "}" => NodeDecl {
+        anno,
+        inner: NodeInner { name, bases, body: Some(body) }
+    },
     // Block node: name <tags> { ... }
     <name:Ident> <anno:OptAnnoNoValue> "{" <body:HyperItem*> "}" => NodeDecl {
         anno,
-        inner: NodeInner { name, body: Some(body) }
+        inner: NodeInner { name, bases: Vec::new(), body: Some(body) }
     },
 
     // Reference assignment: val_node <tags> -> a.b.c ;
     <name:Ident> <tags:OptTags> "->" <r:RefPath> ";" => NodeDecl {
         anno: Anno { tags, value: Some(Value::Ref(r)) },
-        inner: NodeInner { name, body: None }
+        inner: NodeInner { name, bases: Vec::new(), body: None }
     },
 
     // Statement node: val0 <int> 56 ;
     <name:Ident> <anno:OptAnno> ";" => NodeDecl {
         anno,
-        inner: NodeInner { name, body: None }
+        inner: NodeInner { name, bases: Vec::new(), body: None }
     },
 };
 
@@ -147,9 +175,15 @@ NodeDecl: NodeDecl<'a, &'a str> = {
 
 // @E1 { ... }   is an edge
 EdgeDecl: EdgeDecl<'a, &'a str> = {
-    <_sig:EdgeSig> <name:Ident> <anno:OptAnno> "{" <body:HyperItem*> "}" => EdgeDecl {
+    <_sig:EdgeSig> <name:Ident> <anno:OptAnnoNoValue> ":" <bases:BaseRefs> "{" <body:HyperItem*> "}"
+    => EdgeDecl {
         anno,
-        inner: EdgeInner { name, body }
+        inner: EdgeInner { name, bases, body }
+    },
+    <_sig:EdgeSig> <name:Ident> <anno:OptAnno> "{" <body:HyperItem*> "}"
+    => EdgeDecl {
+        anno,
+        inner: EdgeInner { name, bases: Vec::new(), body }
     }
 };
 
@@ -192,9 +226,27 @@ RefPath: Ref<&'a str> = {
 
 
 SignedRef: SignedRef<'a, &'a str> = {
-    "+" <r:RefPath> <anno:OptAnno> => SignedRef::Plus(RefAtom { target: r, anno }),
-    "-" <r:RefPath> <anno:OptAnno> => SignedRef::Minus(RefAtom { target: r, anno }),
-    "~" <r:RefPath> <anno:OptAnno> => SignedRef::Neutral(RefAtom { target: r, anno }),
+    "+" <pre:OptTags> <r:RefPath> <anno:OptAnno> => {
+        let mut anno = anno;
+        let mut tags = pre;
+        tags.extend(anno.tags);
+        anno.tags = tags;
+        SignedRef::Plus(RefAtom { target: r, anno })
+    },
+    "-" <pre:OptTags> <r:RefPath> <anno:OptAnno> => {
+        let mut anno = anno;
+        let mut tags = pre;
+        tags.extend(anno.tags);
+        anno.tags = tags;
+        SignedRef::Minus(RefAtom { target: r, anno })
+    },
+    "~" <pre:OptTags> <r:RefPath> <anno:OptAnno> => {
+        let mut anno = anno;
+        let mut tags = pre;
+        tags.extend(anno.tags);
+        anno.tags = tags;
+        SignedRef::Neutral(RefAtom { target: r, anno })
+    },
 };
 // ------------------------------------------------------------
 // Annotation helpers

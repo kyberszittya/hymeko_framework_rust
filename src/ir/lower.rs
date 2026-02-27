@@ -5,7 +5,7 @@ use crate::ir::ir::{AnnoR, ArcRec, DeclKind, EdgeRec, Ir, NodeRec};
 use crate::ir::meta::Meta;
 use crate::ir::time::now_ns;
 use crate::resolution::interner::Interner;
-use crate::resolution::resolve::{resolve_anno, resolve_arc_refs, Index, ResolveError};
+use crate::resolution::resolve::{resolve_anno, resolve_arc_refs, resolve_node_bases, Index, ResolveError};
 use crate::sym_ast::AstSym;
 
 fn default_build_id() -> [u8; 16] { [0u8; 16] }
@@ -124,7 +124,8 @@ fn lower_node(
     ir.decl_anno[did.0 as usize] = anno;
 
     let nid = NodeId(ir.nodes.len());
-    ir.nodes.push(NodeRec::new(did));
+    let bases = resolve_node_bases(idx, &path, &n.inner.bases, _it)?;
+    ir.nodes.push(NodeRec::new(did, bases));
     ir.decl_to_node[did.0 as usize] = Some(nid);
 
     if parent_did.is_some() {
@@ -192,19 +193,20 @@ fn lower_edge(
     let did = decl_id_of(idx, &path);
     ensure_decl_capacity(ir, did);
 
-    ir.decl_kind[did.0 as usize] = DeclKind::Edge;
-    ir.decl_name[did.0 as usize] = e.inner.name;
+    ir.decl_kind[did.0] = DeclKind::Edge;
+    ir.decl_name[did.0] = e.inner.name;
 
     let parent_did = parent_decl(idx, scope);
-    ir.decl_parent[did.0 as usize] = parent_did;
+    ir.decl_parent[did.0] = parent_did;
 
     let anno = resolve_anno(idx, &path, &e.anno, it)?;
-    ir.decl_anno[did.0 as usize] = anno;
+    ir.decl_anno[did.0] = anno;
 
     // EdgeId kiosztás
     let eid = EdgeId(ir.edges.len());
-    ir.edges.push(EdgeRec::new(did));
-    ir.decl_to_edge[did.0 as usize] = Some(eid);
+    let bases = resolve_node_bases(idx, &path, &e.inner.bases, it)?;
+    ir.edges.push(EdgeRec::new(did, bases));
+    ir.decl_to_edge[did.0] = Some(eid);
     if parent_did.is_some() {
         link_decl_child(ir, parent_did, did);
     }

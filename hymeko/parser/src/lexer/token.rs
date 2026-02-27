@@ -5,6 +5,7 @@ pub enum Token<'a> {
     // punctuation / operators
     LBrace, RBrace, LParen, RParen, LBrack, RBrack, LAngle, RAngle,
     Comma, Semi, Dot, At,
+    Colon, // for type annotations
     Plus, Minus, Tilde,
     Arrow,
 

@@ -45,17 +45,21 @@ where
 pub fn gather_edges_from_nodes<V, EW, F>(
     hg: &HyperGraphView<V, EW, F>,
     x_nodes: &[F],
+    x_edges_out: &mut [F],
     use_abs: bool,
-) -> Vec<F>
+)
 where
     V: IncVal<F>,
     EW: EdgeWeight<V, F>,
     F: Real,
 {
-    assert_eq!(x_nodes.len(), hg.num_nodes());
+    debug_assert_eq!(x_nodes.len(), hg.num_nodes());
+    debug_assert_eq!(x_edges_out.len(), hg.num_edges());
 
     let m = hg.num_edges();
-    let mut x_edges = vec![F::zero(); m];
+    // Originally zero initialized in the function
+    // To ensure zero vector
+    //let mut x_edges = vec![F::zero(); m];
 
     for e in 0..m {
         let s = hg.edge_offsets[e];
@@ -67,28 +71,33 @@ where
             let b = inc_scalar_signed(hg, p, e, use_abs);
             acc += b * x_nodes[v];
         }
-        x_edges[e] = acc;
+        x_edges_out[e] = acc;
     }
-
-    x_edges
 }
 
 /// 2) y = B x_e
 pub fn scatter_nodes_from_edges<V, EW, F>(
     hg: &HyperGraphView<V, EW, F>,
     x_edges: &[F],
+    y_nodes_out: &mut [F],
     use_abs: bool,
-) -> Vec<F>
+)
 where
     V: IncVal<F>,
     EW: EdgeWeight<V, F>,
     F: Real,
 {
-    assert_eq!(x_edges.len(), hg.num_edges());
+    debug_assert_eq!(x_edges.len(), hg.num_edges());
+    debug_assert_eq!(y_nodes_out.len(), hg.num_nodes());
 
-    let n = hg.num_nodes();
     let m = hg.num_edges();
-    let mut y = vec![F::zero(); n];
+    // Originally zero initialized in the function
+    // let mut y = vec![F::zero(); n];
+
+    // Zero the buffer
+    for y in y_nodes_out.iter_mut() {
+        *y = F::zero();
+    }
 
     for e in 0..m {
         let s = hg.edge_offsets[e];
@@ -98,11 +107,9 @@ where
         for p in s..eend {
             let v = hg.flat_edge_nodes[p].0;
             let b = inc_scalar_signed(hg, p, e, use_abs);
-            y[v] += b * xe;
+            y_nodes_out[v] += b * xe;
         }
     }
-
-    y
 }
 
 /// diag[v] = Σ_e b_{v,e}^2
@@ -147,26 +154,27 @@ pub fn remove_self_effect<F: Real>(y: &mut [F], diag: &[F], x_nodes: &[F]) {
 pub fn implicit_clique_step<V, EW, F>(
     hg: &HyperGraphView<V, EW, F>,
     x_nodes: &[F],
+    y_nodes_out: &mut [F],
+    buffer_edges: &mut [F],
+    precomputed_diag: Option<&[F]>,
     cfg: CliqueStepCfg,
-) -> Vec<F>
+)
 where
     V: IncVal<F>,
     EW: EdgeWeight<V, F>,
     F: Real,
 {
     // 1) gather
-    let x_edges = gather_edges_from_nodes(hg, x_nodes, cfg.use_abs);
+    gather_edges_from_nodes(hg, x_nodes, buffer_edges, cfg.use_abs);
 
     // 2) scatter
-    let mut y = scatter_nodes_from_edges(hg, &x_edges, cfg.use_abs);
+    scatter_nodes_from_edges(hg, buffer_edges, y_nodes_out, cfg.use_abs);
 
     // 3) optional diagonal removal
     if !cfg.include_self {
-        let diag = clique_diag(hg, cfg.use_abs);
-        remove_self_effect(&mut y, &diag, x_nodes);
+        let diag = precomputed_diag.expect("Precomputed diagonal required if include_self is false");
+        remove_self_effect(y_nodes_out, diag, x_nodes);
     }
-
-    y
 }
 
 
@@ -205,7 +213,7 @@ where
                 coo.push(0, u, v, bu * bv);
             }
         }
-    }    
+    }
     coo
 }
 
