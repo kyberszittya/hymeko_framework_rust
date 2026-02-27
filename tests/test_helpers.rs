@@ -50,12 +50,12 @@ pub fn print_dense_matrix(m: &[Vec<f32>], title: &str) {
 }
 
 pub fn find_decl(ir: &Ir, it: &Interner, name: &str, kind: DeclKind) -> DeclId {
-    for (i, &sym) in ir.decl_name.iter().enumerate() {
-        if ir.decl_kind[i] == kind && it.resolve(sym) == name {
+    for (i, node) in ir.decl_nodes.iter().enumerate() {
+        if node.kind == kind && it.resolve(node.name) == name {
             return DeclId(i);
         }
     }
-    panic!("decl not found: {name}");
+    panic!("decl not found: {}", name);
 }
 
 pub fn get_node<'a>(

@@ -25,19 +25,17 @@ fn decl_id_of(idx: &Index, path: &[SymId]) -> DeclId {
 }
 
 fn link_decl_child(ir: &mut Ir, parent: DeclId, child: DeclId) {
-    // ha parentnek még nincs gyereke
-    let slot = &mut ir.decl_first_child[parent.0 as usize];
-    if slot.is_none() {
-        *slot = child;
+    let parent_idx = parent.0 as usize;
+    if ir.decl_nodes[parent_idx].first_child.is_none() {
+        ir.decl_nodes[parent_idx].first_child = child;
         return;
     }
 
-    // különben a sibling lánc végére fűzzük
-    let mut cur = *slot;
+    let mut cur = ir.decl_nodes[parent_idx].first_child;
     loop {
-        let next = ir.decl_next_sibling[cur.0 as usize];
+        let next = ir.decl_nodes[cur.0].next_sibling;
         if next.is_none() {
-            ir.decl_next_sibling[cur.0 as usize] = child;
+            ir.decl_nodes[cur.0].next_sibling = child;
             break;
         }
         cur = next;
@@ -45,22 +43,21 @@ fn link_decl_child(ir: &mut Ir, parent: DeclId, child: DeclId) {
 }
 
 fn ensure_decl_capacity(ir: &mut Ir, did: DeclId) {
-    let i = did.0 as usize;
-    let need = i + 1;
-    if ir.decl_kind.len() < need {
-        ir.decl_kind.resize(need, DeclKind::Node);
-        ir.decl_name.resize(need, SymId(0));
-        ir.decl_parent.resize(need, DeclId::NONE);
-
-        ir.decl_first_child.resize(need, DeclId::NONE);
-        ir.decl_next_sibling.resize(need, DeclId::NONE);
+    let need = (did.0) + 1;
+    if ir.decl_nodes.len() < need {
+        ir.decl_nodes.resize(need, crate::ir::ir::DeclNode {
+            kind: DeclKind::Node,
+            name: SymId(0),
+            parent: DeclId::NONE,
+            first_child: DeclId::NONE,
+            next_sibling: DeclId::NONE,
+            anno: AnnoR::default(),
+        });
 
         ir.decl_to_node.resize(need, None);
         ir.decl_to_edge.resize(need, None);
         ir.decl_to_arc.resize(need, None);
-
         ir.decl_hash.resize(need, None);
-        ir.decl_anno.resize(need, AnnoR::default());
     }
 }
 
@@ -114,19 +111,20 @@ fn lower_node(
     let did = decl_id_of(idx, &path);
     ensure_decl_capacity(ir, did);
 
-    ir.decl_kind[did.0 as usize] = DeclKind::Node;
-    ir.decl_name[did.0 as usize] = n.inner.name;
+    // Replace the old flat assignments:
+    ir.decl_nodes[did.0].kind = DeclKind::Node;
+    ir.decl_nodes[did.0].name = n.inner.name;
 
     let parent_did = parent_decl(idx, scope);
-    ir.decl_parent[did.0 as usize] = parent_did;
+    ir.decl_nodes[did.0].parent = parent_did;
 
     let anno = resolve_anno(idx, &path, &n.anno, _it)?;
-    ir.decl_anno[did.0 as usize] = anno;
+    ir.decl_nodes[did.0].anno = anno;
 
     let nid = NodeId(ir.nodes.len());
     let bases = resolve_node_bases(idx, &path, &n.inner.bases, _it)?;
     ir.nodes.push(NodeRec::new(did, bases));
-    ir.decl_to_node[did.0 as usize] = Some(nid);
+    ir.decl_to_node[did.0] = Some(nid);
 
     if parent_did.is_some() {
         link_decl_child(ir, parent_did, did);
@@ -150,26 +148,28 @@ fn lower_arc(
     a: &HyperArc<SymId>,
 
 ) -> Result<(), ResolveError> {
-    // 1) allocate a fresh anonymous DeclId for the arc
-    let arc_decl = DeclId(ir.decl_kind.len());
+    // 1) allocate a fresh anonymous DeclId for the arc based on the new arena length
+    let arc_decl = DeclId(ir.decl_nodes.len());
     ensure_decl_capacity(ir, arc_decl);
 
-    // 2) fill decl tables
-    ir.decl_kind[arc_decl.0 as usize] = DeclKind::HyperArc;
-    ir.decl_name[arc_decl.0 as usize] = SymId(0); // névtelen arc
-    ir.decl_parent[arc_decl.0 as usize] = edge_decl;
+    let idx_usize = arc_decl.0 as usize;
+
+    // 2) fill decl tables via the unified node
+    ir.decl_nodes[idx_usize].kind = DeclKind::HyperArc;
+    ir.decl_nodes[idx_usize].name = SymId(0); // névtelen arc
+    ir.decl_nodes[idx_usize].parent = edge_decl;
 
     // 3) resolve arc payload once
     let anno = resolve_anno(idx, &path, &a.anno, it)?;
     let refs = resolve_arc_refs(idx, &path, a, it)?;
 
-    // 4) store decl anno (decl-level canonical place)
-    ir.decl_anno[arc_decl.0 as usize] = anno.clone();
+    // 4) store decl anno
+    ir.decl_nodes[idx_usize].anno = anno.clone();
 
     // 5) create ArcRec + mapping
     let aid = HyperArcId(ir.arcs.len());
     ir.arcs.push(ArcRec { anno, in_edge: edge_decl, refs });
-    ir.decl_to_arc[arc_decl.0 as usize] = Some(aid);
+    ir.decl_to_arc[idx_usize] = Some(aid);
 
     // 6) link into edge's decl-children chain (for traversal)
     link_decl_child(ir, edge_decl, arc_decl);
@@ -193,20 +193,23 @@ fn lower_edge(
     let did = decl_id_of(idx, &path);
     ensure_decl_capacity(ir, did);
 
-    ir.decl_kind[did.0] = DeclKind::Edge;
-    ir.decl_name[did.0] = e.inner.name;
+    let idx_usize = did.0 as usize;
+
+    ir.decl_nodes[idx_usize].kind = DeclKind::Edge;
+    ir.decl_nodes[idx_usize].name = e.inner.name;
 
     let parent_did = parent_decl(idx, scope);
-    ir.decl_parent[did.0] = parent_did;
+    ir.decl_nodes[idx_usize].parent = parent_did;
 
     let anno = resolve_anno(idx, &path, &e.anno, it)?;
-    ir.decl_anno[did.0] = anno;
+    ir.decl_nodes[idx_usize].anno = anno;
 
     // EdgeId kiosztás
     let eid = EdgeId(ir.edges.len());
     let bases = resolve_node_bases(idx, &path, &e.inner.bases, it)?;
     ir.edges.push(EdgeRec::new(did, bases));
-    ir.decl_to_edge[did.0] = Some(eid);
+    ir.decl_to_edge[idx_usize] = Some(eid);
+
     if parent_did.is_some() {
         link_decl_child(ir, parent_did, did);
     }

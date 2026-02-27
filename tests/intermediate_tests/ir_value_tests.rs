@@ -50,21 +50,21 @@ mod ir_value_tests {
 
         // tags + value
         let sid_int = interner.intern("int");
-        assert!(ir.decl_anno[did_val0.0 as usize].tags.contains(&sid_int));
-        assert_eq!(ir.decl_anno[did_val0.0 as usize].value, Some(ValueR::Num(56.0)));
+        assert!(ir.decl_nodes[did_val0.0 as usize].anno.tags.contains(&sid_int));
+        assert_eq!(ir.decl_nodes[did_val0.0 as usize].anno.value, Some(ValueR::Num(56.0)));
 
         let sid_string = interner.intern("string");
         let sid_vakond = interner.intern("vakond");
-        assert!(ir.decl_anno[did_val1.0 as usize].tags.contains(&sid_string));
-        assert_eq!(ir.decl_anno[did_val1.0 as usize].value, Some(ValueR::Str(sid_vakond)));
+        assert!(ir.decl_nodes[did_val1.0 as usize].anno.tags.contains(&sid_string));
+        assert_eq!(ir.decl_nodes[did_val1.0 as usize].anno.value, Some(ValueR::Str(sid_vakond)));
 
         // negative scalar
         let sid_val_neg = interner.intern("val_neg");
         let did_val_neg = *idx.by_path.get(&PathKey(vec![sid_context, sid_val_neg])).expect("val_neg missing");
-        assert_eq!(ir.decl_anno[did_val_neg.0 as usize].value, Some(ValueR::Num(-42.0)));
+        assert_eq!(ir.decl_nodes[did_val_neg.0 as usize].anno.value, Some(ValueR::Num(-42.0)));
 
         // vector list
-        match ir.decl_anno[did_vector.0 as usize].value.as_ref().expect("vector has no value") {
+        match ir.decl_nodes[did_vector.0 as usize].anno.value.as_ref().expect("vector has no value") {
             ValueR::List(xs) => {
                 assert_eq!(xs.len(), 7);
                 if let Some(ValueR::Num(v)) = xs.get(1) {
@@ -80,8 +80,8 @@ mod ir_value_tests {
         let sid_val_undef = interner.intern("val_undef");
         let sid_real = interner.intern("real");
         let did_val_undef = *idx.by_path.get(&PathKey(vec![sid_context, sid_val_undef])).expect("val_undef missing");
-        assert!(ir.decl_anno[did_val_undef.0 as usize].tags.contains(&sid_real));
-        assert!(ir.decl_anno[did_val_undef.0 as usize].value.is_none());
+        assert!(ir.decl_nodes[did_val_undef.0 as usize].anno.tags.contains(&sid_real));
+        assert!(ir.decl_nodes[did_val_undef.0 as usize].anno.value.is_none());
 
         // sanity: context itself exists
         let _ = did_context;

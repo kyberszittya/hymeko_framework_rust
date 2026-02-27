@@ -88,7 +88,7 @@ fn print_trie(
         let name = it.resolve(seg);
 
         if let Some(did) = child.did {
-            let kind = ir.decl_kind.get(did.0 as usize).copied();
+            let kind = ir.decl_nodes.get(did.0 as usize).map(|n| n.kind);
             let hash = ir.decl_hash.get(did.0 as usize).and_then(|x| *x);
 
             let indent = "\t".repeat(depth);
@@ -188,7 +188,7 @@ pub fn pretty_print_compiled(
     }
 
     println!("\nIndex size: {}", compiled.idx.by_path.len());
-    println!("IR decls:   {}", compiled.ir.decl_kind.len());
+    println!("IR decls:   {}", compiled.ir.decl_nodes.len());
     println!("IR edges:   {}", compiled.ir.edges.len());
     println!("IR arcs:    {}", compiled.ir.arcs.len());
 
@@ -207,6 +207,6 @@ pub fn pretty_print_compiled(
     }
 
     // print
-    let did_to_path = build_declid_to_path(&compiled.idx, compiled.ir.decl_kind.len());
+    let did_to_path = build_declid_to_path(&compiled.idx, compiled.ir.decl_nodes.len());
     print_trie(&it, &compiled.ir, &did_to_path, &trie, 0);
 }

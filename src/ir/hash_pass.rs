@@ -7,26 +7,29 @@ use crate::ir::hash::HashId;
 use crate::resolution::interner::Interner;
 
 pub fn compute_merkle_hashes(ir: &mut Ir, interner: &Interner) {
-    let num_decls = ir.decl_kind.len();
+    let num_decls = ir.decl_nodes.len();
 
     if ir.decl_hash.len() < num_decls {
         ir.decl_hash.resize(num_decls, None);
     }
 
-    // Process backwards to ensure children are hashed before parents [cite: 2026-02-08].
+    // Process backwards to ensure children are hashed before parents.
     for i in (0..num_decls).rev() {
         let did = DeclId(i);
         let mut hasher = Hasher::new();
 
+        // Bind the unified node reference once for cache efficiency
+        let node = &ir.decl_nodes[i];
+
         // 1. Hash Kind and Name
-        hasher.update(&[ir.decl_kind[i] as u8]);
-        let name_str = interner.resolve(ir.decl_name[i]);
+        hasher.update(&[node.kind as u8]);
+        let name_str = interner.resolve(node.name);
         hasher.update(name_str.as_bytes());
 
         // 2. Hash Annotations
-        hash_anno(&ir.decl_anno[i], &mut hasher, ir, interner);
+        hash_anno(&node.anno, &mut hasher, ir, interner);
 
-        // 3. Hash Children (Merkle linkage) [cite: 2026-02-08]
+        // 3. Hash Children (Merkle linkage)
         for child_did in ir.decl_children(did) {
             if let Some(h) = ir.decl_hash[child_did.0 as usize] {
                 hasher.update(&h.0);

@@ -31,15 +31,15 @@ mod test_import_graphs
         let sid_operator = interner.intern("operator");
 
         let did_elements = *idx.by_path.get(&PathKey(vec![sid_elements])).expect("elements missing");
-        assert_eq!(ir.decl_kind[did_elements.0 as usize], DeclKind::Node);
+        assert_eq!(ir.decl_nodes[did_elements.0 as usize].kind, DeclKind::Node);
 
         let did_operand = *idx.by_path.get(&PathKey(vec![sid_elements, sid_operand])).expect("operand missing");
         let did_operand2 = *idx.by_path.get(&PathKey(vec![sid_elements, sid_operand2])).expect("operand2 missing");
-        assert_eq!(ir.decl_kind[did_operand.0 as usize], DeclKind::Node);
-        assert_eq!(ir.decl_kind[did_operand2.0 as usize], DeclKind::Node);
+        assert_eq!(ir.decl_nodes[did_operand.0 as usize].kind, DeclKind::Node);
+        assert_eq!(ir.decl_nodes[did_operand2.0 as usize].kind, DeclKind::Node);
 
         let did_operator = *idx.by_path.get(&PathKey(vec![sid_elements, sid_operator])).expect("operator edge missing");
-        assert_eq!(ir.decl_kind[did_operator.0 as usize], DeclKind::Edge);
+        assert_eq!(ir.decl_nodes[did_operator.0 as usize].kind, DeclKind::Edge);
 
         let edge_id = ir.decl_to_edge[did_operator.0 as usize].expect("operator not lowered as edge");
         let edge_rec = &ir.edges[edge_id.0 as usize];
@@ -89,7 +89,7 @@ mod test_import_graphs
             .get(&PathKey(vec![ns, elements, operand]))
             .expect("missing basic_library.elements.operand in global index");
 
-        let kind = compiled.ir.decl_kind[did.0 as usize];
+        let kind = compiled.ir.decl_nodes[did.0 as usize].kind;
         assert!(matches!(kind, DeclKind::Node|DeclKind::Edge|DeclKind::HyperArc));
 
         let mut referenced = false;

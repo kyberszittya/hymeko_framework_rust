@@ -4,7 +4,7 @@ use std::collections::{HashMap, BinaryHeap};
 use crate::common::ids::{DeclId};
 use crate::common::pathkey::PathKey;
 use crate::ir::hash::HashId;
-use crate::ir::ir::{DeclKind, Ir, SignedRefR};
+use crate::ir::ir::{DeclKind, DeclNode, Ir, SignedRefR};
 use crate::resolution::interner::Interner;
 use crate::resolution::resolve::Index;
 
@@ -30,13 +30,13 @@ pub fn canonical_program_hash(
     it: &Interner,
 ) -> HashId {
     // 1) reverse map: DeclId -> PathKey (első találat elég)
-    let did_to_path = build_did_to_path(idx, ir.decl_kind.len());
+    let did_to_path = build_did_to_path(idx, ir.decl_nodes.len());
 
     // 2) skeleton forest (csak Node+Edge) -> roots + children
     let (verts, parent, children, roots) = build_skeleton_forest(idx, ir, &did_to_path);
 
     // 3) skeleton subtree hashes (name-invariant)
-    let vhash = compute_subtree_hashes_with_kinds(cfg, &ir.decl_kind, &roots, &children);
+    let vhash = compute_subtree_hashes_with_kinds(cfg, &ir.decl_nodes, &roots, &children);
 
     // 4) tie-break: path hash (csak ütközés ellen)
     let vtie = compute_tiebreak(cfg, &verts, &did_to_path, it);
@@ -104,7 +104,7 @@ fn build_skeleton_forest(
     // collect skeleton vertices
     let mut verts = Vec::new();
     for &did in idx.by_path.values() {
-        match ir.decl_kind[did.0 as usize] {
+        match ir.decl_nodes[did.0 as usize].kind {
             DeclKind::Node | DeclKind::Edge => verts.push(did),
             DeclKind::HyperArc => {}
         }
@@ -121,7 +121,7 @@ fn build_skeleton_forest(
     }
 
     // compute parent by nearest prefix
-    let mut parent: Vec<Option<DeclId>> = vec![None; ir.decl_kind.len()];
+    let mut parent: Vec<Option<DeclId>> = vec![None; ir.decl_nodes.len()];
     for &did in &verts {
         let Some(pk) = &did_to_path[did.0 as usize] else { continue; };
         // walk prefixes: [a,b,c] -> [a,b] -> [a] -> []
@@ -135,7 +135,7 @@ fn build_skeleton_forest(
     }
 
     // children lists
-    let mut children: Vec<Vec<DeclId>> = vec![Vec::new(); ir.decl_kind.len()];
+    let mut children: Vec<Vec<DeclId>> = vec![Vec::new(); ir.decl_nodes.len()];
     let mut roots = Vec::new();
     for &did in &verts {
         match parent[did.0 as usize] {
@@ -158,7 +158,7 @@ fn build_skeleton_forest(
 /// Proper subtree hash computation with decl kinds supplied.
 fn compute_subtree_hashes_with_kinds(
     cfg: CanonHashCfg,
-    kinds: &[DeclKind],
+    nodes: &[DeclNode], // Changed from kinds to nodes for clarity
     roots: &[DeclId],
     children: &[Vec<DeclId>],
 ) -> Vec<HashId> {
@@ -175,7 +175,7 @@ fn compute_subtree_hashes_with_kinds(
     fn rec(
         cfg: CanonHashCfg,
         v: DeclId,
-        kinds: &[DeclKind],
+        nodes: &[DeclNode], // Match the outer type exactly
         children: &[Vec<DeclId>],
         memo: &mut [Option<HashId>],
     ) -> HashId {
@@ -183,13 +183,14 @@ fn compute_subtree_hashes_with_kinds(
 
         let mut ch: Vec<[u8; 32]> = children[v.0 as usize]
             .iter()
-            .map(|&c| rec(cfg, c, kinds, children, memo).0)
+            .map(|&c| rec(cfg, c, nodes, children, memo).0)
             .collect();
 
         ch.sort(); // lexicographic on [u8;32]
 
         let mut h = blake3::Hasher::new();
-        write_header(&mut h, cfg, node_domain(kinds[v.0 as usize]));
+        // Extract the .kind field from the node struct here
+        write_header(&mut h, cfg, node_domain(nodes[v.0 as usize].kind));
         for x in ch {
             h.update(&x);
         }
@@ -200,7 +201,7 @@ fn compute_subtree_hashes_with_kinds(
 
     // compute for all reachable nodes
     for &r in roots {
-        let _ = rec(cfg, r, kinds, children, &mut memo);
+        let _ = rec(cfg, r, nodes, children, &mut memo);
     }
 
     // fill missing (shouldn't happen) with zero

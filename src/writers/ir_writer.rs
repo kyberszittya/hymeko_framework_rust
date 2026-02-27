@@ -15,9 +15,9 @@ impl<'a> IrWriter<'a> {
     }
 
     pub fn write_all<W: Write>(&self, w: &mut W) -> io::Result<()> {
-        // Iterate only the roots (items without a parent)
-        for (i, parent) in self.ir.decl_parent.iter().enumerate() {
-            if parent.is_none() {
+        // Iterate only the roots (items without a parent) directly from the unified nodes
+        for (i, node) in self.ir.decl_nodes.iter().enumerate() {
+            if node.parent.is_none() {
                 self.write_decl(w, DeclId(i), 0)?;
             }
         }
@@ -38,13 +38,13 @@ impl<'a> IrWriter<'a> {
     }
 
     fn write_decl<W: Write>(&self, w: &mut W, did: DeclId, depth: usize) -> io::Result<()> {
-        let kind = self.ir.decl_kind(did);
-        let name_sym = self.ir.decl_name[did.0 as usize];
-        let name = self.interner.resolve(name_sym);
+        // Extract the unified node exactly once for cache efficiency
+        let node = &self.ir.decl_nodes[did.0 as usize];
+        let name = self.interner.resolve(node.name);
 
         self.write_indent(w, depth)?;
 
-        match kind {
+        match node.kind {
             DeclKind::Node => {
                 writeln!(w, "{} {{", name)?;
                 self.write_children(w, did, depth + 1)?;
@@ -63,7 +63,6 @@ impl<'a> IrWriter<'a> {
         }
         Ok(())
     }
-
     #[inline(always)]
     fn write_children<W: Write>(&self, w: &mut W, parent: DeclId, depth: usize) -> io::Result<()> {
         for child in self.ir.decl_children(parent) {
