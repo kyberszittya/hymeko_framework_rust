@@ -4,7 +4,7 @@ use crate::common::ids::{NodeId, EdgeId, DeclId};
 use crate::ir::ir::{Ir, SignedRefR};
 use crate::tensor::aggregation::{agg_sign, AggCfg};
 use crate::tensor::common::Real;
-use crate::tensor::tensor_coo::TensorInc;
+use crate::tensor::representations::tensor_coo::TensorInc;
 use crate::tensor::tensor_val::{EdgeWeight, IncVal, RefValueExtractor};
 use crate::traversal::graphview::{GraphView};
 

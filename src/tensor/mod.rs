@@ -6,5 +6,5 @@ pub mod util;
 pub mod aggregation;
 pub mod tensor_val;
 pub mod aggregation_impl;
-pub mod tensor_coo;
 pub mod common_traversal;
+pub mod representations;

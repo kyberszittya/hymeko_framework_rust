@@ -2,7 +2,7 @@ use nalgebra::{DMatrix, Scalar};
 use num_traits::Zero;
 use nalgebra_sparse::{coo::CooMatrix, CsrMatrix};
 use crate::tensor::common::{Real};
-use crate::tensor::tensor_coo::TensorCoo;
+use crate::tensor::representations::tensor_coo::TensorCoo;
 
 pub struct JaxBcoo<F: Real> {
     pub shape: [usize; 3],          // [K, I, J]

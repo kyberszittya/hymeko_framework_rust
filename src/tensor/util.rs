@@ -1,5 +1,5 @@
 use crate::tensor::common::Real;
-use crate::tensor::tensor_coo::TensorCoo;
+use crate::tensor::representations::tensor_coo::TensorCoo;
 
 pub fn print_dense_block<F: Real>(
     coo: &TensorCoo<F>,

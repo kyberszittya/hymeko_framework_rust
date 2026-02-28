@@ -1,6 +1,6 @@
 use crate::tensor::common::{signed_incidence, Real};
 use crate::tensor::common_traversal::inc_to_real;
-use crate::tensor::tensor_coo::TensorCoo;
+use crate::tensor::representations::tensor_coo::TensorCoo;
 use crate::tensor::tensor_val::{EdgeWeight, IncVal};
 use crate::traversal::hypergraphview::HyperGraphView;
 

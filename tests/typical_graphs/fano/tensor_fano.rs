@@ -4,8 +4,8 @@ mod tensor_fano {
     use std::collections::BTreeSet;
     use hymeko_framework::common::ids::{EdgeId, NodeId};
     use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko_framework::tensor::representations::tensor_coo_representation::star_expansion_coo;
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
-    use hymeko_framework::tensor::tensor::{star_expansion_coo};
     use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko_framework::tensor::util::print_dense_block;
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
@@ -138,7 +138,7 @@ mod tensor_fano {
         // B) ha method: hg.tensor_star_coo()
         //
         // Én free function-t javaslok, mert tisztább rétegzés.
-        let coo = hymeko_framework::tensor::tensor::star_expansion_coo(&hg);
+        let coo = star_expansion_coo(&hg);
 
         // nnz = directed incidences:
         // neutral (0) -> 2 bejegyzés, plus/minus -> 1 bejegyzés

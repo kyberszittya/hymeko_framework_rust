@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod minimal_tensor_representations {
     use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko_framework::tensor::tensor::{clique_expansion_coo, compute_bipartite_degrees, project_sum_over_slices, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_framework::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_framework::tensor::tensor::{compute_bipartite_degrees, project_sum_over_slices};
     use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko_framework::tensor::util::print_dense_block;
     use hymeko_framework::traversal::hypergraphview::HyperGraphView;
