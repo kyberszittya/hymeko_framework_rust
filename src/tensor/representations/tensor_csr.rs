@@ -22,3 +22,20 @@ impl<F: Real> TensorCsr<F> {
         }
     }
 }
+
+
+// ==========================================
+// UTILITY: Universal Prefix Sum
+// ==========================================
+#[inline]
+pub fn build_row_ptr(counts: &[usize]) -> (Vec<usize>, usize) {
+    let dim = counts.len();
+    let mut row_ptr = vec![0; dim + 1];
+    let mut total = 0;
+    for i in 0..dim {
+        row_ptr[i] = total;
+        total += counts[i];
+    }
+    row_ptr[dim] = total;
+    (row_ptr, total)
+}

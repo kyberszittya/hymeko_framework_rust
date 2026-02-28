@@ -10,6 +10,7 @@ pub mod resolution;
 pub mod util;
 pub mod module_store;
 pub mod tensor;
+mod interface_python;
 
 pub fn find_node<'ast, 'slice>(
     items: &'slice [HyperItem<'ast, &'ast str>],

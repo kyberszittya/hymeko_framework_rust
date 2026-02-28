@@ -4,20 +4,6 @@ use crate::tensor::representations::tensor_coo::TensorCoo;
 use crate::tensor::tensor_val::{EdgeWeight, IncVal};
 use crate::traversal::hypergraphview::HyperGraphView;
 
-#[inline(always)]
-fn inc_to_real<V, EW, F>(hg: &HyperGraphView<V, EW, F>, p: usize, e: usize) -> F
-where
-    V: IncVal<F>,
-    EW: EdgeWeight<V, F>,
-    F: Real
-{
-    let v = hg.flat_edge_w[p].clone();            // V
-    let v2 = hg.edge_weight[e].apply_to(v);       // V
-    v2.as_scalar()
-}
-
-
-
 
 pub fn dense_view_slice<F: Real>(coo: &TensorCoo<F>, k_sel: usize) -> Vec<Vec<F>> {
     assert!(k_sel < coo.num_slices, "k out of range");
