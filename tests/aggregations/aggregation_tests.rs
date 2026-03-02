@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use hymeko_framework::tensor::aggregation::{agg_sign, agg_weight, clamp01, AggCfg, SignAgg, WeightAgg};
+    use hymeko::tensor::aggregation::{agg_sign, agg_weight, clamp01, AggCfg, SignAgg, WeightAgg};
 
     fn cfg(weight: WeightAgg, sign: SignAgg, clamp01: bool) -> AggCfg {
         AggCfg { weight, sign, clamp01 }

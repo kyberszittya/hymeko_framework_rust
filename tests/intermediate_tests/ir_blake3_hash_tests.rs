@@ -2,16 +2,16 @@
 mod ir_blake3_hash_tests {
     use blake3::Hasher;
     use std::collections::HashMap;
-    use hymeko_framework::resolution::intern_pass::Interned;
+    use hymeko::resolution::intern_pass::Interned;
     use parser::ast::AstStr;
-    use hymeko_framework::common::pathkey::PathKey;
-    use hymeko_framework::ir::hash::HashId;
-    use hymeko_framework::resolution::intern_pass::{intern_ast};
+    use hymeko::common::pathkey::PathKey;
+    use hymeko::ir::hash::HashId;
+    use hymeko::resolution::intern_pass::{intern_ast};
     
-    use hymeko_framework::ir::hash_pass::compute_merkle_hashes;
-    use hymeko_framework::ir::ir::DeclKind;
-    use hymeko_framework::ir::lower::lower_to_ir;
-    use hymeko_framework::resolution::resolve::build_index_sym;
+    use hymeko::ir::hash_pass::compute_merkle_hashes;
+    use hymeko::ir::ir::DeclKind;
+    use hymeko::ir::lower::lower_to_ir;
+    use hymeko::resolution::resolve::build_index_sym;
     use parser::{parse_description};
     
 

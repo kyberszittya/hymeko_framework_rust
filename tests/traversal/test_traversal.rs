@@ -2,14 +2,14 @@
 mod test_traversal
 {
     use std::collections::HashSet;
-    use hymeko_framework::common::pathkey::PathKey;
-    use hymeko_framework::ir::lower::lower_to_ir;
-    use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
-    use hymeko_framework::resolution::resolve::build_index_sym;
-    use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko_framework::traversal::graph_traversal::dfs_preorder;
-    use hymeko_framework::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
+    use hymeko::common::pathkey::PathKey;
+    use hymeko::ir::lower::lower_to_ir;
+    use hymeko::resolution::intern_pass::{intern_ast, Interned};
+    use hymeko::resolution::resolve::build_index_sym;
+    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko::traversal::graph_traversal::dfs_preorder;
+    use hymeko::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
     use parser::ast::AstStr;
     use parser::parse_description;
 

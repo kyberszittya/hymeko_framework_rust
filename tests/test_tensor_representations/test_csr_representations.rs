@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod test_csr_representations {
-    use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko_framework::tensor::tensor::{project_sum_over_slices};
-    use hymeko_framework::tensor::representations::tensor_csr::TensorCsr;
-    use hymeko_framework::tensor::representations::tensor_csr_representations::{star_expansion_csr, clique_expansion_csr};
-    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko_framework::traversal::hypergraphview::HyperGraphView;
-    use hymeko_framework::tensor::common::Real;
-    use hymeko_framework::tensor::representations::tensor_coo_representation::star_expansion_coo;
+    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko::tensor::tensor::project_sum_over_slices;
+    use hymeko::tensor::representations::tensor_csr::TensorCsr;
+    use hymeko::tensor::representations::tensor_csr_representations::{star_expansion_csr, clique_expansion_csr};
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko::tensor::common::Real;
+    use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
     use crate::test_helpers::load_and_lower;
 
     fn approx_eq(a: f32, b: f32, eps: f32) -> bool { (a - b).abs() <= eps }

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test_annotaions {
-    use hymeko_framework::ir::ir::{DeclKind, SignedRefR};
+    use hymeko::ir::ir::{DeclKind, SignedRefR};
     use crate::test_helpers::{find_decl, get_node, has_tag, load_and_lower, weight0};
 
     #[test]

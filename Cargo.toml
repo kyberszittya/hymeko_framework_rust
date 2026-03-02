@@ -1,5 +1,5 @@
 [package]
-name = "hymeko_framework"
+name = "hymeko"
 version = "0.1.0"
 edition = "2024"
 
@@ -13,6 +13,9 @@ resolver = "2"
 blake3 = ">=1"
 memmap2 = "0.9.10"
 parser = { path = "hymeko/parser" }
+[lib]
+name = "hymeko"
+crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 blake3 = { workspace = true }

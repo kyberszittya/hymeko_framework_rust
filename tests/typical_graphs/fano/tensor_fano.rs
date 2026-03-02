@@ -2,12 +2,12 @@
 
 mod tensor_fano {
     use std::collections::BTreeSet;
-    use hymeko_framework::common::ids::{EdgeId, NodeId};
-    use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko_framework::tensor::representations::tensor_coo_representation::star_expansion_coo;
-    use hymeko_framework::traversal::hypergraphview::HyperGraphView;
-    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko_framework::tensor::util::print_dense_block;
+    use hymeko::common::ids::{EdgeId, NodeId};
+    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
+    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko::tensor::util::print_dense_block;
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
 
     #[inline(always)]
@@ -300,7 +300,7 @@ mod tensor_fano {
             &compiled.ir, &aggcfg, &ex);
 
         let coo = star_expansion_coo(&hg);
-        let proj = hymeko_framework::tensor::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
         let num_edges = hg.num_edges();

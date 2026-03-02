@@ -2,14 +2,14 @@
 mod test_import_graphs
 {
     use std::path::Path;
-    use hymeko_framework::common::pathkey::PathKey;
-    use hymeko_framework::ir::hash_pass::compute_merkle_hashes;
-    use hymeko_framework::ir::ir::{DeclKind, SignedRefR};
-    use hymeko_framework::ir::lower::lower_to_ir;
-    use hymeko_framework::module_store::module_store::{ModuleStore};
-    use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
-    use hymeko_framework::resolution::resolve::build_index_sym;
-    use hymeko_framework::module_store::source_provider::StdFsProvider;
+    use hymeko::common::pathkey::PathKey;
+    use hymeko::ir::hash_pass::compute_merkle_hashes;
+    use hymeko::ir::ir::{DeclKind, SignedRefR};
+    use hymeko::ir::lower::lower_to_ir;
+    use hymeko::module_store::module_store::ModuleStore;
+    use hymeko::resolution::intern_pass::{intern_ast, Interned};
+    use hymeko::resolution::resolve::build_index_sym;
+    use hymeko::module_store::source_provider::StdFsProvider;
     use crate::minimal_tests::TestParser;
 
     #[test]

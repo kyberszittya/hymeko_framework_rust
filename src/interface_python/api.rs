@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use numpy::{PyArray1, IntoPyArray};
+use crate::ir::ir::Ir;
 use crate::tensor::representations::tensor_csr::TensorCsr;
 
 #[pyclass]
@@ -48,5 +49,68 @@ impl From<TensorCsr<f32>> for PyGraphTopology {
             col_ind: Some(csr.col_ind),
             val: Some(csr.val),
         }
+    }
+}
+
+#[pyclass]
+pub struct PyHypergraphIR {
+    // Keep the compiled IR alive
+    ir: Ir
+}
+
+#[pymethods]
+impl PyHypergraphIR {
+    /// Maps a CSR matrix row/col index back to its string identifier
+    pub fn get_node_name(&self, index: usize) -> PyResult<String> {
+        // Implementation mapping index -> DeclId -> Interner String
+        Ok("Placeholder".to_string())
+    }
+
+    pub fn get_node_annotations(&self, index: usize) -> PyResult<Vec<String>> {
+        // Fetch original AnnoR metadata attached to this node
+        Ok(vec![])
+    }
+}
+
+#[pyclass]
+pub struct PyHypergraphBuilder {
+    // We hold the mutable symbolic IR here
+    ir: Ir,
+}
+
+#[pymethods]
+impl PyHypergraphBuilder {
+    #[new]
+    pub fn new() -> Self {
+        // Initialize an empty or default IR
+        Self { ir: Ir::default() } // Replace with your actual IR constructor
+    }
+
+    /// Path 2: Mutate the Topology (Low Frequency)
+    pub fn add_node(&mut self, name: &str) -> PyResult<usize> {
+        // Map this to your actual IR mutation logic
+        // let node_id = self.ir.create_node(name);
+        // Ok(node_id.0)
+        Ok(0)
+    }
+
+    /// Path 1: Compile the current state into the locked CSR matrix
+    pub fn compile_epoch(&self) -> PyResult<PyGraphTopology> {
+        // 1. Lower the IR into the View
+        // 2. Run the star_expansion_csr
+        // 3. Wrap and return memory to Python
+
+        /* let aggcfg = ...; // Your default aggregation config
+        let ex = ...;     // Your weight extractor
+        let hg = HyperGraphView::from_ir(&self.ir, &aggcfg, &ex);
+        let csr = star_expansion_csr(&hg);
+        Ok(PyGraphTopology::from(csr))
+        */
+
+        // Placeholder returning empty struct to satisfy compiler:
+        Ok(PyGraphTopology {
+            num_rows: 0, num_cols: 0, nnz: 0,
+            row_ptr: None, col_ind: None, val: None
+        })
     }
 }

@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod minimal_tensor_representations {
-    use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko_framework::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
-    use hymeko_framework::tensor::tensor::{compute_bipartite_degrees, project_sum_over_slices};
-    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko_framework::tensor::util::print_dense_block;
-    use hymeko_framework::traversal::hypergraphview::HyperGraphView;
+    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko::tensor::tensor::{compute_bipartite_degrees, project_sum_over_slices};
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko::tensor::util::print_dense_block;
+    use hymeko::traversal::hypergraphview::HyperGraphView;
     use crate::test_helpers::load_and_lower;
 
     fn approx_eq(a: f32, b: f32, eps: f32) -> bool { (a - b).abs() <= eps }

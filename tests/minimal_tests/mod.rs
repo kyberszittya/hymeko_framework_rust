@@ -1,4 +1,4 @@
-use hymeko_framework::module_store::module_store::HymekoParser;
+use hymeko::module_store::module_store::HymekoParser;
 use parser::ast::AstStr;
 use parser::parse_description;
 

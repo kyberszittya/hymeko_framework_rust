@@ -1,12 +1,12 @@
 #!cfg[(test)]
 mod ir_fano_graph {
-    use hymeko_framework::common::ids::{DeclId, SymId};
-    use hymeko_framework::common::pathkey::PathKey;
-    use hymeko_framework::ir::common::ref_target;
-    use hymeko_framework::ir::lower::lower_to_ir;
-    use hymeko_framework::resolution::intern_pass::Interned;
-    use hymeko_framework::resolution::interner::Interner;
-    use hymeko_framework::resolution::{intern_pass, resolve};    
+    use hymeko::common::ids::{DeclId, SymId};
+    use hymeko::common::pathkey::PathKey;
+    use hymeko::ir::common::ref_target;
+    use hymeko::ir::lower::lower_to_ir;
+    use hymeko::resolution::intern_pass::Interned;
+    use hymeko::resolution::interner::Interner;
+    use hymeko::resolution::{intern_pass, resolve};
 
     fn invert_index(
         idx: &resolve::Index,

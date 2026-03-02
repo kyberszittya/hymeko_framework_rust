@@ -3,9 +3,9 @@ mod mod_test_module_store {
     use std::collections::HashMap;
     use std::path::Path;
     use std::sync::Arc;
-    use hymeko_framework::module_store::module_store::ModuleStore;
-    use hymeko_framework::resolution::resolve::{build_index_sym_with_prefix, validate_all_refs_sym_with_prefix, Index};
-    use hymeko_framework::module_store::source_provider::MemProvider;
+    use hymeko::module_store::module_store::ModuleStore;
+    use hymeko::resolution::resolve::{build_index_sym_with_prefix, validate_all_refs_sym_with_prefix, Index};
+    use hymeko::module_store::source_provider::MemProvider;
     use crate::minimal_tests::TestParser;
 
     #[test]

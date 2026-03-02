@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod ir_value_tests {
     use std::f64;
-    use hymeko_framework::common::pathkey::PathKey;
-    use hymeko_framework::resolution::intern_pass::Interned;
-    use hymeko_framework::ir::ir::{ValueR};
-    use hymeko_framework::ir::lower::lower_to_ir;
-    use hymeko_framework::resolution::intern_pass;
-    use hymeko_framework::resolution::resolve::build_index_sym;
+    use hymeko::common::pathkey::PathKey;
+    use hymeko::resolution::intern_pass::Interned;
+    use hymeko::ir::ir::{ValueR};
+    use hymeko::ir::lower::lower_to_ir;
+    use hymeko::resolution::intern_pass;
+    use hymeko::resolution::resolve::build_index_sym;
 
     #[test]
     fn ir_value_resolution() {

@@ -1,10 +1,10 @@
 
 
 use std::path::{PathBuf};
-use hymeko_framework::module_store::module_store::ModuleStore;
-use hymeko_framework::module_store::source_provider::StdFsProvider;
-use hymeko_framework::util::pretty_print::pretty_print_compiled;
-use hymeko_framework::util::real_parser::RealParser;
+use hymeko::module_store::module_store::ModuleStore;
+use hymeko::module_store::source_provider::StdFsProvider;
+use hymeko::util::pretty_print::pretty_print_compiled;
+use hymeko::util::real_parser::RealParser;
 
 fn main() {
     let mut args = std::env::args().skip(1);

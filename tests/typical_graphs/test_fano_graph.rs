@@ -1,4 +1,4 @@
-use hymeko_framework::{body, find_node};
+use hymeko::{body, find_node};
 use parser::ast::*;
 
 

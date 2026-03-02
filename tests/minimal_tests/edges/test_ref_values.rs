@@ -1,11 +1,11 @@
 #!cfg[(test)]
 mod test_ref_values
 {
-    use hymeko_framework::common::pathkey::PathKey;
-    use hymeko_framework::ir::ir::{RefAtomR, SignedRefR, ValueR};
-    use hymeko_framework::ir::lower::lower_to_ir;
-    use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
-    use hymeko_framework::resolution::resolve::build_index_sym;
+    use hymeko::common::pathkey::PathKey;
+    use hymeko::ir::ir::{RefAtomR, SignedRefR, ValueR};
+    use hymeko::ir::lower::lower_to_ir;
+    use hymeko::resolution::intern_pass::{intern_ast, Interned};
+    use hymeko::resolution::resolve::build_index_sym;
     use parser::ast::*;
 
 

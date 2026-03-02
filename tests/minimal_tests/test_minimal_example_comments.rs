@@ -1,4 +1,4 @@
-use hymeko_framework::{find_node};
+use hymeko::{find_node};
 use parser::ast::HyperItem;
 use parser::{parse_description};
 use crate::test_asserts::test_helpers::{assert_list_nums, assert_no_value, assert_num_value, assert_str_value, assert_tags};

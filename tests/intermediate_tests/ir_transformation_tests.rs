@@ -1,14 +1,14 @@
 
 #[cfg(test)]
 mod basic_transformation_tests {
-    use hymeko_framework::common::ids::{DeclId, SymId};
-    use hymeko_framework::common::pathkey::PathKey;
-    use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
-    use hymeko_framework::ir::common::{ref_sign, ref_target};
-    use hymeko_framework::ir::ir::{DeclKind};
-    use hymeko_framework::ir::lower::lower_to_ir;
+    use hymeko::common::ids::{DeclId, SymId};
+    use hymeko::common::pathkey::PathKey;
+    use hymeko::resolution::intern_pass::{intern_ast, Interned};
+    use hymeko::ir::common::{ref_sign, ref_target};
+    use hymeko::ir::ir::{DeclKind};
+    use hymeko::ir::lower::lower_to_ir;
     use parser::parse_description;
-    use hymeko_framework::resolution::resolve::build_index_sym;
+    use hymeko::resolution::resolve::build_index_sym;
 
 
 

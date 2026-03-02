@@ -1,4 +1,4 @@
-use hymeko_framework::{as_node, body, find_node};
+use hymeko::{as_node, body, find_node};
 
 #[test]
 fn parses_minimal_example_context_fields() {

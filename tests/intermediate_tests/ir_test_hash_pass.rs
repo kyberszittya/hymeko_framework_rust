@@ -1,14 +1,14 @@
 #[cfg(test)]
 mod test_hash_pass {
     use parser::ast::AstStr;
-    use hymeko_framework::common::pathkey::PathKey;
-    use hymeko_framework::resolution::intern_pass::{intern_ast, Interned};
-    use hymeko_framework::ir::lower::lower_to_ir;
+    use hymeko::common::pathkey::PathKey;
+    use hymeko::resolution::intern_pass::{intern_ast, Interned};
+    use hymeko::ir::lower::lower_to_ir;
     use parser::parse_description;
-    use hymeko_framework::resolution::resolve::build_index_sym;
+    use hymeko::resolution::resolve::build_index_sym;
 
     // Adjust import path to wherever you placed compute_merkle_hashes
-    use hymeko_framework::ir::hash_pass::compute_merkle_hashes;
+    use hymeko::ir::hash_pass::compute_merkle_hashes;
 
     #[test]
     fn deterministic_merkle_hashing() {

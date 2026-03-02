@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 use std::hint::black_box;
-use hymeko_framework::resolution::intern_pass::intern_ast;
+use hymeko::resolution::intern_pass::intern_ast;
 use parser::lexer::simd::{Avx2Lexer, CoreLexer, ScalarLexer};
 use parser::parse_description;
 

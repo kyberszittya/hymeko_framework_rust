@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod test_parse_files {
-    use hymeko_framework::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko_framework::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko_framework::traversal::hypergraphview::HyperGraphView;
+    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko::traversal::hypergraphview::HyperGraphView;
     use crate::test_helpers::load_and_lower;
 
     #[test]

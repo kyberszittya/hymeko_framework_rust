@@ -1,11 +1,11 @@
 #!cfg[(test)]
 mod resolve_fano_graph {
-    use hymeko_framework::{body, find_edge, find_node, find_node_id};
-    use hymeko_framework::common::ids::{DeclId, SymId};
-    use hymeko_framework::ir::ir::SignedRefR;
-    use hymeko_framework::resolution::intern_pass::Interned;
-    use hymeko_framework::resolution::{intern_pass, resolve};
-    use hymeko_framework::resolution::interner::Interner;
+    use hymeko::{body, find_edge, find_node, find_node_id};
+    use hymeko::common::ids::{DeclId, SymId};
+    use hymeko::ir::ir::SignedRefR;
+    use hymeko::resolution::intern_pass::Interned;
+    use hymeko::resolution::{intern_pass, resolve};
+    use hymeko::resolution::interner::Interner;
     use parser::ast::*;
 
     #[test]

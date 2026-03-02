@@ -1,11 +1,11 @@
 
 use std::path::{Path};
 use std::sync::Arc;
-use hymeko_framework::common::ids::{DeclId, SymId};
-use hymeko_framework::ir::ir::{DeclKind, Ir, NodeRec, SignedRefR, ValueR};
-use hymeko_framework::module_store::module_store::{CompiledProgram, HymekoParser, ModuleLoadError, ModuleStore};
-use hymeko_framework::module_store::source_provider::{StdFsProvider};
-use hymeko_framework::resolution::interner::Interner;
+use hymeko::common::ids::{DeclId, SymId};
+use hymeko::ir::ir::{DeclKind, Ir, NodeRec, SignedRefR, ValueR};
+use hymeko::module_store::module_store::{CompiledProgram, HymekoParser, ModuleLoadError, ModuleStore};
+use hymeko::module_store::source_provider::StdFsProvider;
+use hymeko::resolution::interner::Interner;
 use parser::ast::AstStr;
 
 /// Load, parse, resolve, and lower a HyMeKo module using the production ModuleStore pipeline.
