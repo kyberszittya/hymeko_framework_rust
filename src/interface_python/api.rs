@@ -1,5 +1,7 @@
 use pyo3::prelude::*;
 use numpy::{PyArray1, IntoPyArray};
+use pyo3::exceptions::PyIndexError;
+use crate::engine::hypergraphengine::HypergraphEngine;
 use crate::ir::ir::Ir;
 use crate::tensor::representations::tensor_csr::TensorCsr;
 
@@ -112,5 +114,46 @@ impl PyHypergraphBuilder {
             num_rows: 0, num_cols: 0, nnz: 0,
             row_ptr: None, col_ind: None, val: None
         })
+    }
+}
+
+#[pyclass(unsendable)]
+pub struct PyHypergraphEngine {
+    inner: HypergraphEngine, // Kompozíció: a wrapper birtokolja a magot
+}
+
+#[pymethods]
+impl PyHypergraphEngine {
+    #[new]
+    pub fn new() -> Self {
+        Self {
+            inner: HypergraphEngine::new(),
+        }
+    }
+
+    pub fn add_node(&mut self) -> PyResult<usize> {
+        Ok(self.inner.add_node())
+    }
+
+    pub fn add_edge(&mut self) -> PyResult<usize> {
+        Ok(self.inner.add_edge())
+    }
+
+    pub fn add_arc(&mut self, node_id: usize, edge_id: usize, weight: f64) -> PyResult<()> {
+        // A Rust Error-t tiszta Python Exceptionné alakítjuk
+        self.inner.add_arc(node_id, edge_id, weight)
+            .map_err(|e| PyIndexError::new_err(e))
+    }
+
+    pub fn compile_epoch<'py>(&mut self, py: Python<'py>) -> PyResult<(Bound<'py, PyArray1<usize>>, Bound<'py, PyArray1<usize>>, Bound<'py, PyArray1<f64>>)> {
+        // 1. Meghívjuk a tiszta Rust logikát
+        let final_csr = self.inner.compile_epoch();
+
+        // 2. Kezeljük a PyO3 / NumPy interfészt (Zéró-másolat)
+        let row_ptr_py = numpy::ndarray::Array1::from_vec(final_csr.row_ptr).into_pyarray(py);
+        let col_ind_py = numpy::ndarray::Array1::from_vec(final_csr.col_ind).into_pyarray(py);
+        let val_py = numpy::ndarray::Array1::from_vec(final_csr.val).into_pyarray(py);
+
+        Ok((row_ptr_py, col_ind_py, val_py))
     }
 }

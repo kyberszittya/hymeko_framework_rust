@@ -1,5 +1,13 @@
 use crate::tensor::common::Real;
 
+pub struct TensorCsrBuilder<F> {
+    pub dim_i: usize,
+    pub dim_j: usize,
+    pub unfinalized_row_ptr: Vec<usize>, // Length: dim_i
+    pub unfinalized_col_ind: Vec<usize>, // Length: nnz (number of non-zeros)
+    pub unfinalized_val: Vec<F>,         // Length: nnz
+}
+
 #[derive(Debug, Clone)]
 pub struct TensorCsr<F> {
     pub num_rows: usize,
@@ -39,3 +47,4 @@ pub fn build_row_ptr(counts: &[usize]) -> (Vec<usize>, usize) {
     row_ptr[dim] = total;
     (row_ptr, total)
 }
+

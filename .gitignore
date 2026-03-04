@@ -1,5 +1,5 @@
 /target
-/hymeko/parser/target/
+/parser/target/
 
 # IDE
 .idea/

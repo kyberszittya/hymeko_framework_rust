@@ -1,0 +1,59 @@
+flowchart TD
+%% Styling
+    classDef physical fill:#2d3436,stroke:#74b9ff,stroke-width:2px,color:#fff
+    classDef rust fill:#b33939,stroke:#ffb8b8,stroke-width:2px,color:#fff
+    classDef bridge fill:#636e72,stroke:#00cec9,stroke-width:2px,color:#fff
+    classDef python fill:#227093,stroke:#7ed6df,stroke-width:2px,color:#fff
+    classDef gpu fill:#218c74,stroke:#55efc4,stroke-width:2px,color:#fff
+    classDef db fill:#84817a,stroke:#d1ccc0,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
+
+%% 1. Physical Layer
+    subgraph Physical["Physical Reality (ROS / IoT)"]
+        HF["High-Frequency Telemetry (>100Hz)\n(Continuous State)"]:::physical
+        LF["Low-Frequency Mutations\n(Structural/Topology Changes)"]:::physical
+    end
+
+%% 2. Rust Engine
+    subgraph Rust["Rust Topological Compiler"]
+        KV[("Embedded KV-Store\n(RocksDB / redb)")]:::db
+        IR["Symbolic IR Arena\n(Hypergraph Builder)"]:::rust
+        Exp["Bipartite Star Expansion\n(Incidence Resolution)"]:::rust
+        CSR["CSR Memory Allocator\n(row_ptr, col_ind)"]:::rust
+
+        KV -. "Durability (Phase 4)" .-> IR
+        IR -->|"Compile Epoch"| Exp
+        Exp -->|"Prefix Sums"| CSR
+    end
+
+%% 3. PyO3 Bridge
+    subgraph Bridge["PyO3 / NumPy Bridge"]
+        ZC["Zero-Copy Memory Handoff\n(rust-numpy)"]:::bridge
+    end
+
+%% 4. Python/PyTorch Layer
+    subgraph PyTorch["PyTorch Orchestration"]
+        Mask["Neural Masking Tensor\n(State Injection)"]:::python
+        SparseT["torch.sparse_csr_tensor\n(Locked Topology)"]:::python
+        Mod["HyperKANLayer\n(torch.nn.Module)"]:::python
+    end
+
+%% 5. Triton / GPU Execution
+    subgraph GPU["GPU Execution (Triton)"]
+        Inner["Inner Kernel\n(Node-to-Edge Splines)"]:::gpu
+        Outer["Outer Kernel\n(Edge-to-Node Splines)"]:::gpu
+        Out["Updated Cybernetic State"]:::gpu
+    end
+
+%% Routing
+    LF -->|"Mutate Topology"| IR
+    HF -->|"Direct Injection"| Mask
+
+    CSR -->|"Borrow Bound Memory"| ZC
+    ZC -->|"C-Contiguous Arrays"| SparseT
+
+    SparseT -->|"Routing Indices"| Mod
+    Mask -->|"Signal States"| Mod
+
+    Mod -->|"Dispatch"| Inner
+    Inner -->|"Aggregate (h_e)"| Outer
+    Outer --> Out

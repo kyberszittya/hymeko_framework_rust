@@ -5,14 +5,14 @@ edition = "2024"
 
 [workspace]
 members = [
-    "hymeko/parser",
+    "parser",
 ]
 resolver = "2"
 
 [workspace.dependencies]
 blake3 = ">=1"
 memmap2 = "0.9.10"
-parser = { path = "hymeko/parser" }
+parser = { path = "parser" }
 [lib]
 name = "hymeko"
 crate-type = ["rlib", "cdylib"]
