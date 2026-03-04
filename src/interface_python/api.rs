@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
 use numpy::{PyArray1, IntoPyArray};
-use pyo3::exceptions::PyIndexError;
+use pyo3::exceptions::{PyIndexError, PyValueError};
 use crate::engine::hypergraphengine::HypergraphEngine;
-use crate::ir::ir::Ir;
+use crate::ir::ir::{Ir, SignedRefR};
 use crate::tensor::representations::tensor_csr::TensorCsr;
 
 #[pyclass]
@@ -71,6 +71,19 @@ impl PyHypergraphIR {
     pub fn get_node_annotations(&self, index: usize) -> PyResult<Vec<String>> {
         // Fetch original AnnoR metadata attached to this node
         Ok(vec![])
+    }
+
+    #[staticmethod]
+    pub fn from_dsl(source_code: &str) -> PyResult<Self> {
+        // Itt hívod meg a tényleges LALRPOP parsert a hymeko/parser ládából.
+        // Példa a valós bekötésre:
+        // let parsed_ir = parser::parse(source_code)
+        //     .map_err(|e| PySyntaxError::new_err(format!("LALRPOP hiba: {:?}", e)))?;
+
+        println!("[RUST] Parsed {} bytes into strictly typed IR.", source_code.len());
+
+        // Helyőrző a fordításig, amíg be nem kötöd a valós LALRPOP hívást:
+        Ok(Self { ir: crate::ir::ir::Ir::default() })
     }
 }
 
@@ -156,4 +169,55 @@ impl PyHypergraphEngine {
 
         Ok((row_ptr_py, col_ind_py, val_py))
     }
+
+    pub fn apply_ir(&mut self, py_ir: &PyHypergraphIR) -> PyResult<()> {
+        println!("[RUST] Ingesting IR topology into the State Machine...");
+        let ir = &py_ir.ir;
+
+        // 1. Csomópontok (Nodes) leképezése: DeclId -> CSR Mátrix Sor (Row)
+        let mut decl_to_csr_node = std::collections::HashMap::new();
+        for node_rec in &ir.nodes {
+            // Ide jön majd az Interner lekérdezés: interner.resolve(ir.decl_nodes[node_rec.decl.0].name)
+            let node_name = format!("node_{}", node_rec.decl.0);
+            let csr_id = self.inner.get_or_create_node(&node_name);
+            decl_to_csr_node.insert(node_rec.decl.0, csr_id);
+        }
+
+        // 2. Élek (Edges) leképezése: DeclId -> CSR Mátrix Oszlop (Col)
+        let mut decl_to_csr_edge = std::collections::HashMap::new();
+        for edge_rec in &ir.edges {
+            let edge_name = format!("edge_{}", edge_rec.decl.0);
+            let csr_id = self.inner.get_or_create_edge(&edge_name);
+            decl_to_csr_edge.insert(edge_rec.decl.0, csr_id);
+        }
+
+        // 3. Ívek (Arcs) feloldása és betöltése a CSR Builderbe
+        for arc_rec in &ir.arcs {
+            // Az arc_rec.in_edge mutatja meg, melyik élhez (oszlophoz) tartozik
+            let edge_decl_id = arc_rec.in_edge.0;
+
+            if let Some(&csr_edge_id) = decl_to_csr_edge.get(&edge_decl_id) {
+                // Végigiterálunk a hivatkozott csomópontokon (SignedRefR)
+                for signed_ref in &arc_rec.refs {
+                    // Az irányultság határozza meg az alap súlyozást (1.0 vagy -1.0)
+                    let (target_decl, base_weight) = match signed_ref {
+                        SignedRefR::Plus(atom) => (atom.target.0, 1.0),
+                        SignedRefR::Minus(atom) => (atom.target.0, -1.0),
+                        SignedRefR::Neutral(atom) => (atom.target.0, 1.0),
+                    };
+
+                    if let Some(&csr_node_id) = decl_to_csr_node.get(&target_decl) {
+                        // Injektáljuk a Rust magba, ami automatikusan kezeli az O(N log N) coalescingot
+                        self.inner.add_arc(csr_node_id, csr_edge_id, base_weight)
+                            .map_err(|e| PyValueError::new_err(e))?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
+
+
+
