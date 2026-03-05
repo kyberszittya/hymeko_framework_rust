@@ -88,6 +88,10 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
         }
     }
 
+    pub fn provider_mut(&mut self) -> &mut P {
+        &mut self.fs
+    }
+
     pub fn get(&self, k: &ModuleKey) -> Option<&ModuleEntry> {
         self.entries.get(k)
     }

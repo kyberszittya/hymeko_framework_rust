@@ -3,9 +3,9 @@ use crate::tensor::common::Real;
 pub struct TensorCsrBuilder<F> {
     pub dim_i: usize,
     pub dim_j: usize,
-    pub unfinalized_row_ptr: Vec<usize>, // Length: dim_i
-    pub unfinalized_col_ind: Vec<usize>, // Length: nnz (number of non-zeros)
-    pub unfinalized_val: Vec<F>,         // Length: nnz
+    pub rows: Vec<usize>, // Length: dim_i
+    pub cols: Vec<usize>, // Length: nnz (number of non-zeros)
+    pub vals: Vec<F>,         // Length: nnz
 }
 
 #[derive(Debug, Clone)]

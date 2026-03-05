@@ -21,7 +21,7 @@ pub trait SourceProvider {
 }
 
 pub struct StdFsProvider {
-    cache: std::collections::HashMap<std::path::PathBuf, std::sync::Arc<str>>,
+    cache: HashMap<PathBuf, std::sync::Arc<str>>,
 }
 
 impl StdFsProvider {
@@ -74,6 +74,10 @@ pub struct MemProvider {
 }
 
 impl MemProvider {
+    pub fn insert_file(&mut self, path: impl Into<PathBuf>, content: impl Into<Arc<str>>) {
+        self.files.insert(path.into(), content.into());
+    }
+
     pub fn with_file(mut self, path: impl Into<PathBuf>, content: impl Into<Arc<str>>) -> Self {
         self.files.insert(path.into(), content.into());
         self

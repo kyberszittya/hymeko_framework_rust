@@ -4,50 +4,55 @@ use crate::tensor::representations::tensor_csr::{TensorCsr, TensorCsrBuilder};
 impl<F: Real> TensorCsrBuilder<F> {
     /// O(N log N) time complexity due to sorting the column indices within each row.
     pub fn finalize_coalesced(self) -> TensorCsr<F> {
-        let mut new_row_ptr = Vec::with_capacity(self.dim_i + 1);
-        let mut new_col_ind = Vec::with_capacity(self.unfinalized_col_ind.len());
-        let mut new_val = Vec::with_capacity(self.unfinalized_val.len());
-
-        // We can use a scratch buffer to hold the (col, val) pairs for each row before sorting and coalescing.
-        let mut scratch_buffer: Vec<(usize, F)> = Vec::new();
-
-        new_row_ptr.push(0);
-        for i in 0..self.dim_i {
-            let start = self.unfinalized_row_ptr[i];
-            let end = self.unfinalized_row_ptr[i + 1];
-            if start == end {
-            new_row_ptr.push(new_col_ind.len());
-                continue;
-            }
-            // Clear the scratch buffer and fill it with the (col, val) pairs for the current row.
-            scratch_buffer.clear();
-            for idx in start..end {
-                let col = self.unfinalized_col_ind[idx];
-                let val = self.unfinalized_val[idx];
-                scratch_buffer.push((col, val));
-            }
-            // Sort the scratch buffer by column index to bring duplicates together.
-            scratch_buffer.sort_by_key(|&(col, _)| col);
-            // After sorting, we can coalesce duplicates by iterating through the sorted entries.
-            // Coalesce
-            let mut current_col = scratch_buffer[0].0;
-            let mut current_val = scratch_buffer[0].1;
-            for &(col, val) in &scratch_buffer[1..] {
-                if col == current_col {
-                    current_val += val; // Coalesce by summing values of duplicate columns
-                } else {
-                    new_col_ind.push(current_col);
-                    new_val.push(current_val);
-                    current_col = col;
-                    current_val = val;
-                }
-            }
-            new_col_ind.push(current_col);
-            new_val.push(current_val);
-            new_row_ptr.push(new_col_ind.len());
+        if self.vals.is_empty() {
+            return TensorCsr {
+                num_rows: self.dim_i,
+                num_cols: self.dim_j,
+                row_ptr: vec![0; self.dim_i + 1],
+                col_ind: Vec::new(),
+                val: Vec::new(),
+            };
         }
-        new_col_ind.shrink_to_fit();
-        new_val.shrink_to_fit();
+        // 1. Összefűzzük az elemeket (sor, oszlop, érték)
+        let mut entries: Vec<(usize, usize, F)> = self.rows.into_iter()
+            .zip(self.cols.into_iter())
+            .zip(self.vals.into_iter())
+            .map(|((r, c), v)| (r, c, v))
+            .collect();
+
+        // 2. Globális rendezés: Először sor szerint, azon belül oszlop szerint
+        entries.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+
+        let mut new_row_ptr = vec![0; self.dim_i + 1];
+        let mut new_col_ind = Vec::with_capacity(entries.len());
+        let mut new_val = Vec::with_capacity(entries.len());
+
+        // 3. Coalescing (duplikátumok összevonása) és CSR építés
+        let mut current_row = entries[0].0;
+        let mut current_col = entries[0].1;
+        let mut current_val = entries[0].2;
+
+        for &(r, c, v) in &entries[1..] {
+            if r == current_row && c == current_col {
+                current_val += v; // Duplikátumok összevonása
+            } else {
+                new_col_ind.push(current_col);
+                new_val.push(current_val);
+                new_row_ptr[current_row + 1] += 1;
+
+                current_row = r;
+                current_col = c;
+                current_val = v;
+            }
+        }
+        new_col_ind.push(current_col);
+        new_val.push(current_val);
+        new_row_ptr[current_row + 1] += 1;
+
+        // 4. Prefix sum a row_ptr-en (A valódi CSR sormutatók generálása)
+        for i in 0..self.dim_i {
+            new_row_ptr[i + 1] += new_row_ptr[i];
+        }
 
         TensorCsr {
             num_rows: self.dim_i,

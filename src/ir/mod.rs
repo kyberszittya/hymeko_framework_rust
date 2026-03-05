@@ -1,5 +1,5 @@
 pub mod ir;
-mod meta;
+pub mod meta;
 pub mod hash;
 pub mod lower;
 mod time;

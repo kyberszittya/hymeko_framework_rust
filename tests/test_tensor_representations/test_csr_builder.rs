@@ -7,15 +7,15 @@ mod test_csr_builder {
         let builder = TensorCsrBuilder::<f64> {
             dim_i: 3,
             dim_j: 4,
-            unfinalized_row_ptr: vec![0, 3, 3, 7],
-            unfinalized_col_ind: vec![
+            rows: vec![0, 3, 3, 7],
+            cols: vec![
                 // 0th node arcs
                 2, 0, 2,
                 // 1st node arcs (none)
                 // 2nd node arcs (with duplicates)
                 3, 1, 1, 3
             ],
-            unfinalized_val: vec![
+            vals: vec![
                 // 0th node arc weights
                 1.0, 2.0, 1.5,
                 // 1st node arc weights (none)
