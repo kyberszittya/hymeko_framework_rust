@@ -1,10 +1,12 @@
+use serde::{Deserialize, Serialize};
 use crate::common::ids::SymId;
 use crate::common::pathkey::PathKey;
 use crate::ir::ir::DeclKind;
 use crate::resolution::interner::Interner;
 use crate::resolution::resolve::Index;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug,
+    Serialize, Deserialize)]
 pub struct HashId(pub [u8; 32]);
 
 fn path_bytes(path: &[SymId], it: &Interner) -> Vec<u8> {

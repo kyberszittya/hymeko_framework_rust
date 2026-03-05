@@ -10,7 +10,7 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-blake3 = ">=1"
+blake3 = "1.8.3"
 memmap2 = "0.9.10"
 parser = { path = "parser" }
 [lib]
@@ -23,12 +23,14 @@ criterion = ">=0.8"
 blake3 = { workspace = true }
 parser = { workspace = true }
 
-nalgebra = ">=0.34.1"
-nalgebra-sparse = ">=0.11.0"
+nalgebra = "0.34.1"
+nalgebra-sparse = "0.11.0"
 rayon = ">=1.11.0"
-num-traits = ">=0.2.19"
-pyo3 = ">=0.28.2"
-numpy = ">=0.28.0"
+num-traits = "0.2.19"
+pyo3 = "0.28.2"
+numpy = "0.28.0"
+serde = { version = "1.0.228", features = ["derive"] }
+ciborium = "0.2.2"
 [[bench]]
 name = "parser_bench"
 harness = false

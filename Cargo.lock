@@ -481,6 +481,7 @@ name = "hymeko"
 version = "0.1.0"
 dependencies = [
  "blake3",
+ "ciborium",
  "criterion",
  "nalgebra",
  "nalgebra-sparse",
@@ -489,6 +490,7 @@ dependencies = [
  "parser",
  "pyo3",
  "rayon",
+ "serde",
 ]
 
 [[package]]

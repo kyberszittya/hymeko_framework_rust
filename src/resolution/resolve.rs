@@ -1,5 +1,6 @@
 // src/resolve.rs
 use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
 use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, Value};
 use crate::common::ids::{DeclId, SymId};
 use crate::common::pathkey::PathKey;
@@ -7,7 +8,8 @@ use crate::ir::ir::{AnnoR, RefAtomR, SignedRefR, ValueR};
 use crate::resolution::interner::Interner;
 use crate::sym_ast::AstSym;
 
-#[derive(Debug)]
+#[derive(Debug, 
+    Serialize, Deserialize)]
 pub struct Index {
     pub by_path: HashMap<PathKey, DeclId>,
 }

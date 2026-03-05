@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
 use crate::common::ids::SymId;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, 
+    Serialize, Deserialize)]
 pub struct PathKey(pub Vec<SymId>);
 
 impl PathKey {

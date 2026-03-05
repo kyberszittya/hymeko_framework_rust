@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use std::sync::Arc;
+use serde::{Deserialize, Serialize};
 use parser::ast::AstStr;
 use crate::common::ids::SymId;
 use crate::ir::hash::HashId;
@@ -16,7 +17,8 @@ use crate::resolution::resolve::{build_index_sym_with_prefix, validate_all_refs_
 
 use crate::sym_ast::AstSym;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash,
+    Serialize, Deserialize)]
 pub struct ModuleKey(pub PathBuf);
 
 #[derive(Debug)]

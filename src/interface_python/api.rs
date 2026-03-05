@@ -5,9 +5,10 @@ use numpy::{PyArray1};
 use pyo3::exceptions::{PyIndexError, PySyntaxError, PyValueError};
 use crate::engine::hypergraphengine::HypergraphEngine;
 use crate::ir::ir::{Ir, SignedRefR};
-use crate::module_store::module_store::{CompiledProgram, ModuleStore};
+use crate::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
 use crate::module_store::source_provider::{MemProvider};
 use crate::util::real_parser::RealParser;
+use crate::writers::cbor_writer::CborPayload;
 
 #[pyclass]
 pub struct PyGraphTopology {
@@ -45,6 +46,44 @@ impl PyHypergraphIR {
 
     pub fn get_node_annotations(&self, _index: usize) -> PyResult<Vec<String>> {
         Ok(vec![])
+    }
+
+    pub fn to_cbor(&self) -> PyResult<Vec<u8>> {
+        let mut buffer = Vec::new();
+        ciborium::into_writer(&self.compiled.ir, &mut buffer)
+            .map_err(|e| PyValueError::new_err(format!("CBOR Serialization Error: {}", e)))?;
+        Ok(buffer)
+    }
+
+    #[staticmethod]
+    pub fn from_cbor(data: &[u8]) -> PyResult<Self> {
+        // 1. Deserialize the complete payload, not just the Ir
+        let payload: CborPayload = ciborium::from_reader(data)
+            .map_err(|e| PyValueError::new_err(format!("CBOR Deserialization Error: {}", e)))?;
+
+        // 2. Reconstruct the Interner's state
+        // We must manually rebuild the HashMap to restore O(1) string lookups
+        let mut reconstructed_interner = crate::resolution::interner::Interner::new();
+        for s in payload.interned_strings {
+            reconstructed_interner.intern(&s);
+        }
+
+        // 3. Assemble the CompiledProgram precisely as defined in module_store.rs
+        let compiled = CompiledProgram {
+            root: ModuleKey(payload.root_path),
+            idx: payload.index,
+            ir: payload.ir,
+            imports: payload.imports,
+            canon_hash: payload.canon_hash,
+        };
+        // 4. Wrap the CompiledProgram in an Arc to ensure it lives as long as the PyHypergraphIR instance
+        let compiled_arc = std::sync::Arc::new(compiled);
+
+        // Note: If your PyHypergraphIR wrapper also requires the Interner
+        // to resolve strings back to Python, you must store `reconstructed_interner`
+        // inside PyHypergraphIR alongside `compiled`.
+
+        Ok(PyHypergraphIR { compiled: compiled_arc }) // Adjust according to your exact PyHypergraphIR struct
     }
 
 }

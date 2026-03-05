@@ -1,4 +1,7 @@
-#[derive(Debug, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone,
+    Serialize, Deserialize)]
 pub struct Meta {
     pub created_at_unix_ns: i128,
     pub build_id: [u8; 16], // random/session ID

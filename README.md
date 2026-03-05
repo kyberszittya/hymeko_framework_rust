@@ -17,6 +17,7 @@ A high-performance Rust-based parsing and hypergraph framework for Hymeko - a do
 - [Building](#building)
 - [Testing](#testing)
 - [CI/CD Pipeline](#cicd-pipeline)
+- [Changelog](#-changelog)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -399,6 +400,11 @@ git push origin v0.2.0
 cargo doc --no-deps --open
 ```
 
+## 📝 Changelog
+- Consolidated index: see [`docs/changelog/README.md`](docs/changelog/README.md) for the full timeline and links to every dated log.
+- **2026-03-05 – Serialization & Dataset Push:** Portable CBOR snapshots via `CborPayload`, serde coverage across IR structures, deterministic CSR coalescing, and new math notes plus benchmark fixtures. Read the full entry in [`changelog_20260305.md`](docs/changelog/changelog_20260305.md).
+- **2026-03-02 – Cybernetic State Compiler Foundations:** Zero-copy PyO3 bridge, dual-frequency telemetry loop, Hyper-KA formalization, and the publication roadmap. Details in [`changelog_20260302.md`](docs/changelog/changelog_20260302.md).
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow these guidelines:
@@ -538,7 +544,4 @@ Built with modern Rust tools:
 **Maintainers:** Hakiko Development Team
 
 For more information, see [CI_CD_DOCUMENTATION_INDEX.md](CI_CD_DOCUMENTATION_INDEX.md) for a complete documentation index.
-
-
-
 

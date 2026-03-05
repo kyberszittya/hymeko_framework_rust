@@ -1,11 +1,14 @@
 use crate::ir::hash::HashId;
 use crate::common::ids::{HyperArcId, DeclId, EdgeId, NodeId, SymId};
 use crate::ir::meta::Meta;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq,
+    Serialize, Deserialize)]
 pub enum DeclKind { Node, Edge, HyperArc }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone,
+    Serialize, Deserialize)]
 pub struct DeclNode {
     pub kind: DeclKind,
     pub name: SymId,
@@ -15,7 +18,8 @@ pub struct DeclNode {
     pub anno: AnnoR,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default,
+    Serialize, Deserialize)]
 pub struct Ir {
     pub meta: Option<Meta>,
     pub doc_hash: Option<HashId>,
@@ -98,7 +102,8 @@ impl<'a> Iterator for DeclChildren<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,
+    Serialize, Deserialize)]
 pub struct NodeRec {
     pub decl: DeclId,
     pub bases: Vec<SignedRefR>,
@@ -107,7 +112,8 @@ impl NodeRec {
     pub fn new(decl: DeclId, bases: Vec<SignedRefR>) -> Self { Self { decl, bases } }
 }
 
-#[derive(Debug)]
+#[derive(Debug,
+    Serialize, Deserialize)]
 pub struct EdgeRec {
     pub decl: DeclId,
     pub bases: Vec<SignedRefR>,
@@ -119,7 +125,8 @@ impl EdgeRec {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone,
+    Serialize, Deserialize)]
 pub struct ArcRec {
     pub anno: AnnoR,
     pub in_edge: DeclId,              // melyik edge scope-jában volt (általában EdgeDecl)
@@ -127,21 +134,24 @@ pub struct ArcRec {
     // később: attribútumok/value külön, lásd lent
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq,
+    Serialize, Deserialize)]
 pub struct RefAtomR {
     pub target: DeclId,
     pub anno: AnnoR,
     pub weights: Option<Vec<ValueR>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq,
+    Serialize, Deserialize)]
 pub enum SignedRefR {
     Plus(RefAtomR),
     Minus(RefAtomR),
     Neutral(RefAtomR),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq,
+    Serialize, Deserialize)]
 pub enum ValueR {
     Str(SymId),
     Num(f64),
@@ -149,7 +159,8 @@ pub enum ValueR {
     Ref(DeclId), // AST Ref(path) -> IR Ref(DeclId)
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq,
+    Serialize, Deserialize)]
 pub struct AnnoR {
     pub tags: Vec<SymId>,
     pub value: Option<ValueR>,
