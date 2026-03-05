@@ -1,7 +1,6 @@
 use parser::ast::{EdgeDecl, HyperArc, HyperItem, NodeDecl};
 use crate::common::ids::{HyperArcId, DeclId, EdgeId, NodeId, SymId};
-use crate::common::pathkey::PathKey;
-use crate::ir::ir::{AnnoR, ArcRec, DeclKind, EdgeRec, Ir, NodeRec};
+use crate::ir::ir::{ArcRec, DeclKind, EdgeRec, Ir, NodeRec};
 use crate::ir::meta::Meta;
 use crate::ir::time::now_ns;
 use crate::resolution::interner::Interner;
@@ -14,17 +13,18 @@ fn parent_decl(idx: &Index, scope: &[SymId]) -> DeclId {
     if scope.is_empty() { DeclId::NONE }
     else {
         *idx.by_path
-            .get(&PathKey(scope.to_vec()))
+            .get(scope)
             .unwrap_or(&DeclId::NONE)
     }
 }
 
 fn decl_id_of(idx: &Index, path: &[SymId]) -> DeclId {
-    *idx.by_path.get(&PathKey(path.to_vec()))
+    *idx.by_path.get(path)
         .unwrap_or_else(|| panic!("Missing DeclId for path {:?}", path))
 }
 
 fn link_decl_child(ir: &mut Ir, parent: DeclId, child: DeclId) {
+    /*
     let parent_idx = parent.0 as usize;
     if ir.decl_nodes[parent_idx].first_child.is_none() {
         ir.decl_nodes[parent_idx].first_child = child;
@@ -40,26 +40,19 @@ fn link_decl_child(ir: &mut Ir, parent: DeclId, child: DeclId) {
         }
         cur = next;
     }
-}
-
-fn ensure_decl_capacity(ir: &mut Ir, did: DeclId) {
-    let need = (did.0) + 1;
-    if ir.decl_nodes.len() < need {
-        ir.decl_nodes.resize(need, crate::ir::ir::DeclNode {
-            kind: DeclKind::Node,
-            name: SymId(0),
-            parent: DeclId::NONE,
-            first_child: DeclId::NONE,
-            next_sibling: DeclId::NONE,
-            anno: AnnoR::default(),
-        });
-
-        ir.decl_to_node.resize(need, None);
-        ir.decl_to_edge.resize(need, None);
-        ir.decl_to_arc.resize(need, None);
-        ir.decl_hash.resize(need, None);
+    */
+    let p = parent.0;
+    if ir.decl_nodes[p].first_child.is_none() {
+        ir.decl_nodes[p].first_child = child;
+        ir.decl_nodes[p].last_child = child;
+    } else {
+        let last = ir.decl_nodes[p].last_child;
+        ir.decl_nodes[last.0].next_sibling = child;
+        ir.decl_nodes[p].last_child = child;
     }
 }
+
+
 
 pub fn lower_to_ir(ast: &AstSym, idx: &Index, it: &mut Interner) -> Result<Ir, ResolveError> {
     lower_to_ir_with_meta(
@@ -91,7 +84,11 @@ fn lower_items(
         match item {
             HyperItem::Node(n) => lower_node(ir, idx, it, scope, n)?,
             HyperItem::Edge(e) => lower_edge(ir, idx, it, scope, e)?,
-            HyperItem::Arc(a)  => {let _ = a;   }
+            HyperItem::Arc(a)  => {
+                return Err(ResolveError::UnexpectedTopLevelArc {
+                    detail: format!("{:?}", a.inner.refs)
+                });
+            }
         }
     }
     Ok(())
@@ -109,7 +106,7 @@ fn lower_node(
     path.push(n.inner.name);
 
     let did = decl_id_of(idx, &path);
-    ensure_decl_capacity(ir, did);
+    ir.ensure_decl_capacity(did);
 
     // Replace the old flat assignments:
     ir.decl_nodes[did.0].kind = DeclKind::Node;
@@ -150,9 +147,9 @@ fn lower_arc(
 ) -> Result<(), ResolveError> {
     // 1) allocate a fresh anonymous DeclId for the arc based on the new arena length
     let arc_decl = DeclId(ir.decl_nodes.len());
-    ensure_decl_capacity(ir, arc_decl);
+    ir.ensure_decl_capacity(arc_decl);
 
-    let idx_usize = arc_decl.0 as usize;
+    let idx_usize = arc_decl.0;
 
     // 2) fill decl tables via the unified node
     ir.decl_nodes[idx_usize].kind = DeclKind::HyperArc;
@@ -175,7 +172,7 @@ fn lower_arc(
     link_decl_child(ir, edge_decl, arc_decl);
 
     // 7) keep per-edge arc list once
-    ir.edges[eid.0 as usize].arcs.push(aid);
+    ir.edges[eid.0].arcs.push(aid);
 
     Ok(())
 }
@@ -191,9 +188,9 @@ fn lower_edge(
     path.push(e.inner.name);
 
     let did = decl_id_of(idx, &path);
-    ensure_decl_capacity(ir, did);
+    ir.ensure_decl_capacity(did);
 
-    let idx_usize = did.0 as usize;
+    let idx_usize = did.0;
 
     ir.decl_nodes[idx_usize].kind = DeclKind::Edge;
     ir.decl_nodes[idx_usize].name = e.inner.name;

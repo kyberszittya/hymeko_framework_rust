@@ -25,6 +25,7 @@ pub enum ResolveError {
     DuplicateDecl { path: String },
     UnresolvedRef { from_scope: String, target: String },
     AmbiguousRef { from_scope: String, target: String, candidates: Vec<String> },
+    UnexpectedTopLevelArc {detail: String}
 }
 
 pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, ResolveError> {

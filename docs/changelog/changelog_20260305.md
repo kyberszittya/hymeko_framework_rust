@@ -11,3 +11,17 @@
 ## Research collateral and datasets
 - Authored docs/math/kan_math.md, formally stating the Hypergraph-KA operator and tying KA inner/outer sums to our CSR-backed incidence tensors for future publication.
 - Added the curated data/benchmarks/*.hymeko fixtures (dense, sparse, clique, etc.) so simulation, compression, and serialization benchmarks have reproducible inputs going forward.
+- Captured the 2026-03-05 architecture blueprint in `docs/plans/plan_20260305.md`, detailing expansion strategies, CBOR/Zlib serialization, spectral math, and the NURBS-powered HyperKAN roadmap.
+
+## Parsing grid benchmarks
+- Introduced `py/parsing/benchmarks/grid_expansion_bench.py`, which sweeps configurable node/edge/density grids, records parse/expansion timings, and prints a summary table for each configuration.
+- Added timestamped CSV exports for both aggregate statistics and raw per-iteration measurements (`grid_expansion_<timestamp>.csv` and `grid_expansion_raw_<timestamp>.csv`) so downstream tooling can ingest the benchmark data without rerunning experiments.
+- Captured the iteration count in both the tabular summaries and CSV output, and persisted every per-trial parse/expansion measurement (including NNZ counts) for deeper statistical post-processing.
+
+## Path indexing and IR tree hygiene
+- Let `PathKey` implement `Borrow<[SymId]>`, so the resolver/index no longer clones temporary vectors when doing lookups, and wired the lowering phase to query paths by slice directly.
+- `DeclNode` now tracks both `first_child` and `last_child`, plus `Ir::decl_node(_unchecked)` and `Ir::ensure_decl_capacity` helpers centralize arena growth; the lowering pass uses these helpers and keeps siblings wired in O(1) without re-scanning child lists.
+- Added `ResolveError::UnexpectedTopLevelArc` so stray arcs at the module root throw a descriptive error instead of silently mutating IR state, and tightened HyperArc lowering so edge arc lists stay coherent.
+
+## Tensor CSR math helpers
+- Introduced `TensorCsr::spmv` and `TensorCsr::spmm`, giving the Python/Hutchinson pipelines ready-to-use sparse mat-vec/mat-mat kernels that run directly on the coalesced CSR data without rebuilding dense tensors.

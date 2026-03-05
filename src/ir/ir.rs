@@ -14,6 +14,7 @@ pub struct DeclNode {
     pub name: SymId,
     pub parent: DeclId,
     pub first_child: DeclId,
+    pub last_child: DeclId,
     pub next_sibling: DeclId,
     pub anno: AnnoR,
 }
@@ -46,6 +47,18 @@ impl Ir {
             meta: Some(meta),
             ..Default::default()
         }
+    }
+
+    #[inline]
+    pub fn decl_node(&self, id: DeclId) -> Option<&DeclNode> {
+        if id.is_none() { return None; }
+        self.decl_nodes.get(id.0)
+    }
+
+    #[inline]
+    pub fn decl_node_unchecked(&self, id: DeclId) -> &DeclNode {
+        assert!(id.is_some(), "attempted to dereference DeclId::NONE");
+        &self.decl_nodes[id.0]
     }
 
     pub fn decl_children(&self, parent: DeclId) -> DeclChildren<'_> {
@@ -84,6 +97,27 @@ impl Ir {
     pub fn as_node(&self, d: DeclId) -> Option<NodeId> { self.decl_to_node[d.0] }
     pub fn as_edge(&self, d: DeclId) -> Option<EdgeId> { self.decl_to_edge[d.0] }
     pub fn as_arc(&self, d: DeclId)  -> Option<HyperArcId>  { self.decl_to_arc[d.0] }
+
+    pub fn ensure_decl_capacity(&mut self, did: DeclId) {
+        let need = (did.0) + 1;
+        if self.decl_nodes.len() >= need { return; }
+
+        let default_node = DeclNode {
+            kind: DeclKind::Node,
+            name: SymId(0),
+            parent: DeclId::NONE,
+            first_child: DeclId::NONE,
+            last_child:   DeclId::NONE,
+            next_sibling: DeclId::NONE,
+            anno: AnnoR::default(),
+        };
+        self.decl_nodes.resize(need, default_node);
+        self.decl_to_node.resize(need, None);
+        self.decl_to_edge.resize(need, None);
+        self.decl_to_arc.resize(need, None);
+        self.decl_hash.resize(need, None);
+
+    }
 }
 
 pub struct DeclChildren<'a> {
