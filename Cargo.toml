@@ -17,10 +17,12 @@ parser = { path = "parser" }
 name = "hymeko"
 crate-type = ["rlib", "cdylib"]
 
+[dev-dependencies]
+criterion = ">=0.8"
 [dependencies]
 blake3 = { workspace = true }
 parser = { workspace = true }
-criterion = ">=0.8"
+
 nalgebra = ">=0.34.1"
 nalgebra-sparse = ">=0.11.0"
 rayon = ">=1.11.0"

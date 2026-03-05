@@ -247,21 +247,14 @@ impl PyHypergraphEngine {
             decl_to_csr_edge.insert(edge_rec.decl.0, self.inner.get_or_create_edge(name));
         }
 
-        let v_count = self.inner.current_nodes;
-        let e_count = self.inner.current_edges;
 
-        let mut k_vec = Vec::new();
-        let mut i_vec = Vec::new();
-        let mut j_vec = Vec::new();
-        let mut v_vec = Vec::new();
+        let mut processed_edges = Vec::new();
+        let mut exact_nnz = 0;
 
-        // 2. Build the Edge-Colored Tensor Space
         for arc in &ir.arcs {
-            let edge_idx = *decl_to_csr_edge.get(&arc.in_edge.0)
-                .ok_or_else(|| PyValueError::new_err("Mathematical Error: Missing parent edge in registry"))?;
-
-            // Collect all pure nodes participating in this specific hyperedge
+            let edge_idx = *decl_to_csr_edge.get(&arc.in_edge.0).unwrap();
             let mut edge_nodes = Vec::new();
+
             for reference in &arc.refs {
                 let target_decl = crate::ir::common::ref_target(reference);
                 if let Some(&node_id) = decl_to_csr_node.get(&target_decl.0) {
@@ -269,12 +262,25 @@ impl PyHypergraphEngine {
                 }
             }
 
-            let k = edge_idx; // The slice identity is the Edge ID
+            let d = edge_nodes.len();
+            if d > 1 {
+                exact_nnz += d * (d - 1); // Mathematically exact clique size
+            }
+            processed_edges.push((edge_idx, edge_nodes));
+        }
 
-            // Project the clique exclusively into slice `k`
+        let mut k_vec = Vec::new();
+        let mut i_vec = Vec::new();
+        let mut j_vec = Vec::new();
+        let mut v_vec = Vec::new();
+
+
+
+        // 3. Build the tensor
+        for (k, edge_nodes) in processed_edges {
             for &u in &edge_nodes {
                 for &v in &edge_nodes {
-                    if u != v { // Exclude self-loops on the diagonal
+                    if u != v {
                         k_vec.push(k);
                         i_vec.push(u);
                         j_vec.push(v);
@@ -284,7 +290,6 @@ impl PyHypergraphEngine {
             }
         }
 
-        // Return dimensions strictly bound to (E, V, V)
-        Ok((k_vec, i_vec, j_vec, v_vec, (e_count, v_count, v_count)))
+        Ok((k_vec, i_vec, j_vec, v_vec, (self.inner.current_edges, self.inner.current_nodes, self.inner.current_nodes)))
     }
 }
