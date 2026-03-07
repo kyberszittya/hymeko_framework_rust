@@ -3,7 +3,7 @@ use crate::tensor::common::Real;
 pub struct TensorCsrBuilder<F> {
     pub dim_i: usize,
     pub dim_j: usize,
-    pub rows: Vec<usize>, // Length: dim_i
+    pub uncoalesced_row_ptr: Vec<usize>, // Length: dim_i
     pub cols: Vec<usize>, // Length: nnz (number of non-zeros)
     pub vals: Vec<F>,         // Length: nnz
 }
@@ -20,7 +20,7 @@ pub struct TensorCsr<F> {
 impl<F: Real> TensorCsr<F> {
     /// Pre-allocates the exact memory required for the CSR structure.
     pub fn with_capacity(num_rows: usize, num_cols: usize, nnz: usize) -> Self {
-        let mut row_ptr = vec![0; num_rows + 1];
+        let row_ptr = vec![0; num_rows + 1];
         Self {
             num_rows,
             num_cols,

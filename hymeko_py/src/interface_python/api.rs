@@ -365,7 +365,7 @@ impl PyTensorCoo3D {
             indices_matrix[[0, idx]] = self.k_ind[idx];
             indices_matrix[[1, idx]] = self.i_ind[idx];
             indices_matrix[[2, idx]] = self.j_ind[idx];
- }
+        }
 
         // Use into_pyarray_bound for the modern PyO3 0.21+ memory safe API
         let py_indices = indices_matrix.into_pyarray(py);

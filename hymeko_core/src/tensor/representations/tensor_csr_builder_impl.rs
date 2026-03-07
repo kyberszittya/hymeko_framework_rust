@@ -20,8 +20,8 @@ impl<F: Real> TensorCsrBuilder<F> {
 
         // Process row by row using the uncoalesced row_ptr boundaries
         for i in 0..self.dim_i {
-            let start = self.rows[i];
-            let end = self.rows[i + 1];
+            let start = self.uncoalesced_row_ptr[i];
+            let end = self.uncoalesced_row_ptr[i + 1];
 
             // If the row is completely empty, carry forward the previous pointer
             if start == end {

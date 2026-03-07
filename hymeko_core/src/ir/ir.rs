@@ -62,7 +62,8 @@ impl Ir {
     }
 
     pub fn decl_children(&self, parent: DeclId) -> DeclChildren<'_> {
-        DeclChildren { ir: self, next: self.decl_nodes[parent.0].first_child }
+        let next = if parent.is_none() { DeclId::NONE } else { self.decl_nodes[parent.0].first_child };
+        DeclChildren { ir: self, next }
     }
 
     pub fn decl_kind(&self, did: DeclId) -> DeclKind {
@@ -71,16 +72,19 @@ impl Ir {
 
     #[inline]
     pub fn first_child(&self, item: DeclId) -> DeclId {
+        if item.is_none() { return DeclId::NONE; }
         self.decl_nodes[item.0].first_child
     }
 
     #[inline]
     pub fn next_sibling(&self, item: DeclId) -> DeclId {
+        if item.is_none() { return DeclId::NONE; }
         self.decl_nodes[item.0].next_sibling
     }
 
     #[inline]
     pub fn parent(&self, item: DeclId) -> DeclId {
+        if item.is_none() { return DeclId::NONE; }
         self.decl_nodes[item.0].parent
     }
 
@@ -91,12 +95,21 @@ impl Ir {
 
     /// Children iterator for *any* item (node/edge/arc).
     pub fn children(&self, parent: DeclId) -> DeclChildren<'_> {
-        DeclChildren { ir: self, next: self.first_child(parent) }
+        self.decl_children(parent)
     }
 
-    pub fn as_node(&self, d: DeclId) -> Option<NodeId> { self.decl_to_node[d.0] }
-    pub fn as_edge(&self, d: DeclId) -> Option<EdgeId> { self.decl_to_edge[d.0] }
-    pub fn as_arc(&self, d: DeclId)  -> Option<HyperArcId>  { self.decl_to_arc[d.0] }
+    pub fn as_node(&self, d: DeclId) -> Option<NodeId> {
+        if d.is_none() { return None; }
+        self.decl_to_node.get(d.0).copied().flatten()
+    }
+    pub fn as_edge(&self, d: DeclId) -> Option<EdgeId> {
+        if d.is_none() { return None; }
+        self.decl_to_edge.get(d.0).copied().flatten()
+    }
+    pub fn as_arc(&self, d: DeclId)  -> Option<HyperArcId>  {
+        if d.is_none() { return None; }
+        self.decl_to_arc.get(d.0).copied().flatten()
+    }
 
     pub fn ensure_decl_capacity(&mut self, did: DeclId) {
         let need = (did.0) + 1;

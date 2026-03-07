@@ -61,7 +61,7 @@ mod test_csr_builder {
         let builder = TensorCsrBuilder::<f64> {
             dim_i: case.dim_i,
             dim_j: case.dim_j,
-            rows: case.rows.to_vec(),
+            uncoalesced_row_ptr: case.rows.to_vec(),
             cols: case.cols.to_vec(),
             vals: case.vals.to_vec(),
         };

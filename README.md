@@ -4,7 +4,7 @@ A high-performance Rust-based parsing and hypergraph framework for Hymeko - a do
 
 ![CI](https://github.com/hakiko/hymeko_framework/actions/workflows/ci.yml/badge.svg)
 ![Security Audit](https://github.com/hakiko/hymeko_framework/actions/workflows/security-audit.yml/badge.svg)
-[![codecov](https://codecov.io/gh/hakiko/hymeko_framework/branch/main/graph/badge.svg?token=YOUR_CODECOV_TOKEN)](https://codecov.io/gh/hakiko/hymeko_framework)
+[![codecov](https://codecov.io/github/kyberszittya/hymeko_framework_rust/graph/badge.svg?token=R50S5HLU98)](https://codecov.io/github/kyberszittya/hymeko_framework_rust)
 
 ## 📚 Table of Contents
 
