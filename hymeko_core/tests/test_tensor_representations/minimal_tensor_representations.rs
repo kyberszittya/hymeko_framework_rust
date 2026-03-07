@@ -1,21 +1,20 @@
 #[cfg(test)]
 mod minimal_tensor_representations {
-    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
     use hymeko::tensor::tensor::{compute_bipartite_degrees, project_sum_over_slices};
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use crate::test_helpers::load_and_lower;
+    use crate::test_tensor_representations::constants::*;
 
     fn approx_eq(a: f32, b: f32, eps: f32) -> bool { (a - b).abs() <= eps }
 
     #[test]
     fn tiny_star_2nodes_1edge_directions_and_values() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -27,7 +26,7 @@ mod minimal_tensor_representations {
         assert_eq!(m, 1, "expected exactly 1 edge in this tiny graph");
 
         let e_idx = n + 0;
-        let eps = 1e-5_f32;
+        let eps = EPS_F32_STRICT;
 
         // Keressük meg a két várt nemnullát úgy, hogy ne kelljen tudni a node indexeket.
         // Várt: A[e_idx, v_minus] = 0.85 és A[v_plus, e_idx] = 0.9
@@ -45,8 +44,8 @@ mod minimal_tensor_representations {
         let (v_minus, val_minus) = found_minus.expect("expected one edge->node nonzero (minus incidence)");
         let (v_plus,  val_plus)  = found_plus.expect("expected one node->edge nonzero (plus incidence)");
 
-        assert!(approx_eq(val_minus, 0.85, 1e-4), "edge->node value should be 0.85, got {}", val_minus);
-        assert!(approx_eq(val_plus,  0.9,  1e-4), "node->edge value should be 0.9, got {}", val_plus);
+        assert!(approx_eq(val_minus, 0.85, EPS_F32_DEFAULT), "edge->node value should be 0.85, got {}", val_minus);
+        assert!(approx_eq(val_plus,  0.9,  EPS_F32_DEFAULT), "node->edge value should be 0.9, got {}", val_plus);
 
         // Biztosítsuk, hogy nincs véletlen extra nemnulla a node-edge blokkon kívül
         // (szigorú, de tiny példán jó)
@@ -68,23 +67,22 @@ mod minimal_tensor_representations {
 
     #[test]
     fn tiny_star_2nodes_1edge_normalized_matches_formula() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         let (deg_v, deg_e) = compute_bipartite_degrees(&hg, true);
 
-        let coo = star_expansion_coo_normalized(&hg, true, 1e-12_f32);
+        let coo = star_expansion_coo_normalized(&hg, true, STAR_NORMALIZATION_EPS);
         let a = project_sum_over_slices(&coo);
 
         let n = hg.num_nodes();
         let e_idx = n + 0;
 
         // megtaláljuk ugyanúgy a két nemnullát
-        let eps = 1e-5_f32;
+        let eps = EPS_F32_STRICT;
         let mut v_minus = None;
         let mut v_plus = None;
 
@@ -96,12 +94,12 @@ mod minimal_tensor_representations {
         let v_plus = v_plus.unwrap();
 
         // elvárt normalizált értékek
-        let de = deg_e[0].max(1e-12);
+        let de = deg_e[0].max(STAR_NORMALIZATION_EPS);
         let expected_minus = 0.85 / (deg_v[v_minus] * de).sqrt();
         let expected_plus  = 0.9  / (deg_v[v_plus]  * de).sqrt();
 
-        assert!((a[e_idx][v_minus] - expected_minus).abs() < 1e-4);
-        assert!((a[v_plus][e_idx]  - expected_plus ).abs() < 1e-4);
+        assert!((a[e_idx][v_minus] - expected_minus).abs() < EPS_F32_DEFAULT);
+        assert!((a[v_plus][e_idx]  - expected_plus ).abs() < EPS_F32_DEFAULT);
         let dim = hg.num_nodes() + hg.num_edges();
         print_dense_block::<f32>(&coo, 0, 0, 0, dim, dim);
 
@@ -109,10 +107,9 @@ mod minimal_tensor_representations {
 
     #[test]
     fn tiny_clique_2nodes_1edge_expected_direction_and_value() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -126,7 +123,7 @@ mod minimal_tensor_representations {
         print_dense_block(&clique, 0, 0, 0, n, n);
 
         let a = project_sum_over_slices(&clique);
-        let eps = 1e-5_f32;
+        let eps = EPS_F32_STRICT;
 
         // Find the single nonzero off-diagonal (robust to node index order)
         // Expected: exactly one offdiag ~ 1.53, the other offdiag ~ 0, diag ~0
@@ -139,8 +136,9 @@ mod minimal_tensor_representations {
         let expected =  0.85_f32 * 0.9_f32; // 1.53
 
         // Exactly one direction should carry the weight
-        let cond_a = (off01 - expected).abs() <= 1e-4 && off10.abs() <= 1e-4;
-        let cond_b = (off10 - expected).abs() <= 1e-4 && off01.abs() <= 1e-4;
+        let cond_a = (off01 - expected).abs() <= EPS_F32_DEFAULT && off10.abs() <= EPS_F32_DEFAULT;
+        let cond_b = (off10 - expected).abs() <= EPS_F32_DEFAULT && off01.abs() <= EPS_F32_DEFAULT;
+        assert!(cond_a || cond_b, "Clique weights should be directional: off01={} off10={}", off01, off10);
 
         for i in 0..n {
             assert!(a[0][i].abs() < eps);
@@ -158,6 +156,6 @@ mod minimal_tensor_representations {
             }
         }
         assert_eq!(nz.len(), 1, "There should be exactly one directed off-diagonal entry");
-        assert!((nz[0].2 - 0.765).abs() < 1e-4, "Expected mathematically correct single-counted weight 0.765, got {}", nz[0].2);
+        assert!((nz[0].2 - 0.765).abs() < EPS_F32_DEFAULT, "Expected mathematically correct single-counted weight 0.765, got {}", nz[0].2);
     }
 }

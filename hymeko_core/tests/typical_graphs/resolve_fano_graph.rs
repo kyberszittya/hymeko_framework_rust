@@ -7,11 +7,11 @@ mod resolve_fano_graph {
     use hymeko::resolution::{intern_pass, resolve};
     use hymeko::resolution::interner::Interner;
     use parser::ast::*;
+    use crate::typical_graphs::fano::constants::*;
 
     #[test]
     fn parse_fano_graph_resolve() -> Result<(), resolve::ResolveError> {
-        let path = "./data/typical_graphs/fano_graph.hymeko";
-        let source_code = parser::read_source_file(&path).expect("failed to read source file");
+        let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
         let desc = parser::parse_description(&source_code).unwrap();
@@ -21,24 +21,24 @@ mod resolve_fano_graph {
 
 
         // Top-level: "Fano_graph" név + üres header
-        assert_eq!(desc.name, "Fano_graph");
+        assert_eq!(desc.name, FANO_DESCRIPTION_NAME);
         assert!(desc.header.is_empty(), "Expected empty header");
 
         // Top-levelben legyen a fano block (NodeDecl body-val)
-        let fano = find_node(&desc.items, "fano").unwrap();
+        let fano = find_node(&desc.items, FANO_BLOCK_NAME).unwrap();
         let fano_body = body(fano);
 
         // 7 node: n0..n6
-        for i in 0..7 {
-            let n = format!("n{}", i);
+        for i in 0..FANO_POINT_NODE_COUNT {
+            let n = format!("{}{}", FANO_NODE_PREFIX, i);
             let _ = find_node(fano_body, &n);
         }
 
         // 7 edge: e0..e6
         // Itt csak azt ellenőrizzük, hogy mindegyik EdgeDecl megvan,
         // és hogy a body-jában 1 arc van, és az 3 referenciát tartalmaz.
-        for i in 0..7 {
-            let ename = format!("e{}", i);
+        for i in 0..FANO_EDGE_COUNT {
+            let ename = format!("{}{}", FANO_EDGE_PREFIX, i);
 
             let edge = fano_body
                 .iter()
@@ -74,7 +74,7 @@ mod resolve_fano_graph {
             // A Fano input "~ n0" -> SignedRef::Neutral várható.
             assert_eq!(
                 arc.inner.refs.len(),
-                3,
+                FANO_ARC_REF_COUNT,
                 "Expected 3 endpoints in arc inside edge {}",
                 edge.inner.name
             );
@@ -95,8 +95,7 @@ mod resolve_fano_graph {
     #[test]
     fn fano_graph_shape() -> Result<(), Box<dyn std::error::Error>> {
         // parse -> AST<String>
-        let path = "./data/typical_graphs/fano_graph.hymeko";
-        let source_code = parser::read_source_file(&path).expect("failed to read source file");
+        let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
         let d_str = parser::parse_description(&source_code).unwrap();
@@ -106,24 +105,28 @@ mod resolve_fano_graph {
         let ast = &interned.ast;
         let it = &interned.interner;
 
-        let fano_id = it.get_id("fano").expect("missing SymId for 'fano'");
-        let n_ids: Vec<SymId> = (0..=6).map(|i| it.get_id(&format!("n{i}")).unwrap()).collect();
-        let e_ids: Vec<SymId> = (0..=6).map(|i| it.get_id(&format!("e{i}")).unwrap()).collect();
+        let fano_id = it.get_id(FANO_BLOCK_NAME).expect("missing SymId for 'fano'");
+        let n_ids: Vec<SymId> = (0..FANO_POINT_NODE_COUNT)
+            .map(|i| it.get_id(&format!("{}{}", FANO_NODE_PREFIX, i)).unwrap())
+            .collect();
+        let e_ids: Vec<SymId> = (0..FANO_EDGE_COUNT)
+            .map(|i| it.get_id(&format!("{}{}", FANO_EDGE_PREFIX, i)).unwrap())
+            .collect();
 
         // top-level items: itt kell lennie a fano node-nak
         let fano = find_node_id(&ast.items, fano_id).unwrap();
 
         let fano_body = fano.inner.body.as_deref().expect("fano should have a body");
-        assert_eq!(fano_body.len(), 14, "fano body should contain 7 nodes + 7 edges");
+        assert_eq!(fano_body.len(), FANO_BODY_ITEM_COUNT, "fano body should contain 7 nodes + 7 edges");
 
         // Check node count
-        assert_eq!(fano_body.iter().filter(|it| matches!(it, HyperItem::Node(_))).count(), 7, "fano body should contain exactly 7 nodes");
+        assert_eq!(fano_body.iter().filter(|it| matches!(it, HyperItem::Node(_))).count(), FANO_POINT_NODE_COUNT, "fano body should contain exactly 7 nodes");
         for &nid in &n_ids {
             let _ = find_node_id(fano_body, nid);
         }
 
         // Check edge count and structure
-        assert_eq!(fano_body.iter().filter(|it| matches!(it, HyperItem::Edge(_))).count(), 7, "fano body should contain exactly 7 edges");
+        assert_eq!(fano_body.iter().filter(|it| matches!(it, HyperItem::Edge(_))).count(), FANO_EDGE_COUNT, "fano body should contain exactly 7 edges");
         // 7 edges megvannak, mindegyikben 1 arc, és az arcban 3 neutral ref
         for &eid in &e_ids {
             let e = find_edge(fano_body, eid).unwrap();
@@ -134,7 +137,7 @@ mod resolve_fano_graph {
                 other => panic!("edge body should be Arc, got: {:?}", other),
             };
 
-            assert_eq!(arc.inner.refs.len(), 3, "each edge arc should contain 3 refs");
+            assert_eq!(arc.inner.refs.len(), FANO_ARC_REF_COUNT, "each edge arc should contain 3 refs");
 
             for sref in &arc.inner.refs {
                 let atom = match sref {
@@ -185,8 +188,7 @@ mod resolve_fano_graph {
     #[test]
     fn fano_edges_resolve_to_expected_nodes() -> Result<(), Box<dyn std::error::Error>> {
         // 1) Parse -> AST<String>
-        let path = "./data/typical_graphs/fano_graph.hymeko";
-        let source_code = parser::read_source_file(&path).expect("failed to read source file");
+        let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
         let d_str = parser::parse_description(&source_code).unwrap();
@@ -202,24 +204,13 @@ mod resolve_fano_graph {
         let inv = invert_index(&idx, &interner);
 
         // 5) Keresd meg a `fano` node-ot és a body-t
-        let nid = interner.get_id("fano").unwrap();
+        let nid = interner.get_id(FANO_BLOCK_NAME).unwrap();
         let fano = find_node_id(&ast.items, nid).unwrap();
         let fano_body = fano.inner.body.as_deref().expect("fano should have body");
 
         // 6) Várt Fano-incidenciák (edge -> 3 node)
         //    (a te inputod alapján)
-        let expected: [(&str, [&str; 3]); 7] = [
-            ("e0", ["n0", "n1", "n3"]),
-            ("e1", ["n0", "n2", "n6"]),
-            ("e2", ["n0", "n4", "n5"]),
-            ("e3", ["n1", "n2", "n4"]),
-            ("e4", ["n2", "n3", "n5"]),
-            ("e5", ["n3", "n4", "n6"]),
-            ("e6", ["n1", "n5", "n6"]),
-        ];
-
-        // SymId-k a scope-hoz
-        let fano_sid: SymId = interner.get_id("fano").expect("missing SymId for 'fano'");
+        let expected = FANO_EXPECTED_EDGE_TARGETS;
 
         for (ename, nodes) in expected {
             let nid = interner.get_id(ename).unwrap();
@@ -241,6 +232,7 @@ mod resolve_fano_graph {
 
             // Scope: [fano, eX]
             let e_sid = interner.get_id(ename).expect("missing SymId for edge name");
+            let fano_sid = interner.get_id(FANO_BLOCK_NAME).expect("missing SymId for 'fano'");
             let scope = vec![fano_sid, e_sid];
 
             // Resolve refs -> DeclId

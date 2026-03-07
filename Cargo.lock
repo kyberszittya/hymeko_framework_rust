@@ -509,7 +509,6 @@ dependencies = [
  "ciborium",
  "hymeko_core",
  "numpy",
- "parser",
  "pyo3",
 ]
 

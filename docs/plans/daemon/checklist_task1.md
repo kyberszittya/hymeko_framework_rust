@@ -11,7 +11,7 @@
     - [X] Create hymeko python bindings in `hymeko_py` crate and move all relevant code files and update module paths accordingly.
   - [X] Update CI/CD pipelines to build and test both crates independently, ensuring that the core library can be validated without the daemon dependencies.
   - [X] Verify that the new structure allows for clean separation of concerns and that the core library can be used without pulling in unnecessary dependencies.
-  - [ ] Extract magic numbers from test cases
+  - [X] Extract magic numbers from test cases
 
 - [ ] **Task 1.2: FxHash Integration (Local Loop Acceleration)**
   - [ ] Add `rustc-hash` to the dependencies in `hymeko/Cargo.toml`.

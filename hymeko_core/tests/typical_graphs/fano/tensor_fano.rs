@@ -9,14 +9,8 @@ mod tensor_fano {
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
+    use crate::typical_graphs::fano::constants::*;
 
-    const FANO_GRAPH_PATH: &str = "./data/typical_graphs/fano_graph.hymeko";
-    const FANO_NODE_COUNT: usize = 8; // includes neutral/root meta node
-    const FANO_EDGE_COUNT: usize = 7;
-    const FANO_INCIDENT_NODES: usize = 7;
-    const FANO_EDGE_DEGREE: usize = 3;
-    const FANO_NODE_DEGREE: usize = 3;
-    const TOLERANCE: f32 = 1e-6;
     const AGG_CFG: AggCfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
 
     #[inline(always)]
@@ -34,7 +28,7 @@ mod tensor_fano {
         let n = hg.num_nodes(); // usize nálad
         let m = hg.num_edges(); // usize nálad
 
-        assert_eq!(n, FANO_NODE_COUNT, "Fano: node count mismatch");
+        assert_eq!(n, FANO_GRAPH_TOTAL_NODES, "Fano: node count mismatch");
         assert_eq!(m, FANO_EDGE_COUNT, "Fano: edge count mismatch");
 
         // Collect the set of nodes that actually appear in edge incidences.
@@ -55,7 +49,7 @@ mod tensor_fano {
         }
 
         // The Fano plane has exactly 7 incident point nodes.
-        assert_eq!(incident.len(), FANO_INCIDENT_NODES, "Fano: 7 incident point nodes");
+        assert_eq!(incident.len(), FANO_INCIDENT_NODE_COUNT, "Fano: 7 incident point nodes");
 
         // Each incident point has degree 3.
         for &u in &incident {
@@ -211,16 +205,16 @@ mod tensor_fano {
 
                 match s {
                     1 => {
-                        assert!((ne - 1.0).abs() <= TOLERANCE, "Expected '+' incidence to create (node,edge)=1.0");
-                        assert!(en.abs() <= TOLERANCE, "Expected '+' incidence NOT to create (edge,node)");
+                        assert!((ne - 1.0).abs() <= FANO_TOLERANCE, "Expected '+' incidence to create (node,edge)=1.0");
+                        assert!(en.abs() <= FANO_TOLERANCE, "Expected '+' incidence NOT to create (edge,node)");
                     }
                     -1 => {
-                        assert!((en - 1.0).abs() <= TOLERANCE, "Expected '-' incidence to create (edge,node)=1.0");
-                        assert!(ne.abs() <= TOLERANCE, "Expected '-' incidence NOT to create (node,edge)");
+                        assert!((en - 1.0).abs() <= FANO_TOLERANCE, "Expected '-' incidence to create (edge,node)=1.0");
+                        assert!(ne.abs() <= FANO_TOLERANCE, "Expected '-' incidence NOT to create (node,edge)");
                     }
                     _ => {
-                        assert!((ne - 1.0).abs() <= TOLERANCE, "Expected neutral incidence to create (node,edge)=1.0");
-                        assert!((en - 1.0).abs() <= TOLERANCE, "Expected neutral incidence to create (edge,node)=1.0");
+                        assert!((ne - 1.0).abs() <= FANO_TOLERANCE, "Expected neutral incidence to create (node,edge)=1.0");
+                        assert!((en - 1.0).abs() <= FANO_TOLERANCE, "Expected neutral incidence to create (edge,node)=1.0");
                     }
                 }
             }
@@ -249,7 +243,7 @@ mod tensor_fano {
                     "Unexpected matrix entry in slice {e}: ({i},{j}) = {val}"
                 );
                 // Optional: assert it's exactly 1.0 (or 2.0 if duplicates happen).
-                assert!((val - 1.0).abs() <= TOLERANCE, "Unexpected value in slice {e}: ({i},{j}) = {val}");
+                assert!((val - 1.0).abs() <= FANO_TOLERANCE, "Unexpected value in slice {e}: ({i},{j}) = {val}");
             }
         }
     }
@@ -312,7 +306,7 @@ mod tensor_fano {
             for j in 0..dim {
                 let a = proj[i][j];
                 let b = expected[i][j];
-                assert!((a - b).abs() <= TOLERANCE, "Mismatch at ({i},{j}): got {a}, expected {b}");
+                assert!((a - b).abs() <= FANO_TOLERANCE, "Mismatch at ({i},{j}): got {a}, expected {b}");
             }
         }
         print_dense_matrix(&proj, "Projected star matrix (sum over slices)");

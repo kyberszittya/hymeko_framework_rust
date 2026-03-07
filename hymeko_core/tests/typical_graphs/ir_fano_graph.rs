@@ -7,6 +7,7 @@ mod ir_fano_graph {
     use hymeko::resolution::intern_pass::Interned;
     use hymeko::resolution::interner::Interner;
     use hymeko::resolution::{intern_pass, resolve};
+    use crate::typical_graphs::fano::constants::*;
 
     fn invert_index(
         idx: &resolve::Index,
@@ -40,8 +41,7 @@ mod ir_fano_graph {
     #[test]
     fn fano_graph_lowers_to_ir_with_correct_arc_targets() -> Result<(), Box<dyn std::error::Error>> {
         // 1) parse -> AST<String>
-        let path = "./data/typical_graphs/fano_graph.hymeko";
-        let source_code = parser::read_source_file(&path).expect("failed to read source file");
+        let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
         let d_str = parser::parse_description(&source_code).unwrap();
@@ -59,17 +59,9 @@ mod ir_fano_graph {
         let inv = invert_index(&idx, &interner);
 
         // várt incidenciák
-        let expected: [(&str, [&str; 3]); 7] = [
-            ("e0", ["n0", "n1", "n3"]),
-            ("e1", ["n0", "n2", "n6"]),
-            ("e2", ["n0", "n4", "n5"]),
-            ("e3", ["n1", "n2", "n4"]),
-            ("e4", ["n2", "n3", "n5"]),
-            ("e5", ["n3", "n4", "n6"]),
-            ("e6", ["n1", "n5", "n6"]),
-        ];
+        let expected = FANO_EXPECTED_EDGE_TARGETS;
 
-        let fano_sid = interner.get_id("fano").expect("missing SymId for 'fano'");
+        let fano_sid = interner.get_id(FANO_BLOCK_NAME).expect("missing SymId for 'fano'");
 
         for (ename, nodes) in expected {
             let e_sid = interner.get_id(ename).unwrap_or_else(|| panic!("missing SymId for '{ename}'"));
@@ -78,10 +70,10 @@ mod ir_fano_graph {
             let edge_did = did_of_path(&idx, &[fano_sid, e_sid]);
 
             // IR: DeclId -> EdgeId -> EdgeRec
-            let edge_id = ir.decl_to_edge[edge_did.0 as usize]
+            let edge_id = ir.decl_to_edge[edge_did.0]
                 .unwrap_or_else(|| panic!("Edge DeclId {:?} not mapped to EdgeId in IR", edge_did));
 
-            let edge = &ir.edges[edge_id.0 as usize];
+            let edge = &ir.edges[edge_id.0];
 
             // Print edge info  fordebugging
             println!("Checking edge '{ename}' (DeclId: {:?}, EdgeId: {:?})", edge_did, edge_id);
@@ -92,7 +84,7 @@ mod ir_fano_graph {
                     .unwrap_or_else(|| panic!("ArcId {:?} not mapped to DeclId in IR", arc_ref));
                 println!("  Arc {i}: DeclId: {:?}, Parent Edge DeclId: {:?}", arc_did, edge_did);
                 // Print arc refs
-                let arc = &ir.arcs[arc_ref.0 as usize];
+                let arc = &ir.arcs[arc_ref.0];
                 for (j, r) in arc.refs.iter().enumerate() {
                     let target_did = ref_target(r);
                     let target_name = inv.get(&target_did)                        .cloned()
@@ -105,7 +97,7 @@ mod ir_fano_graph {
 
             assert_eq!(edge.arcs.len(), 1, "{ename}: expected exactly 1 arc");
 
-            let arc = &ir.arcs[edge.arcs[0].0 as usize];
+            let arc = &ir.arcs[edge.arcs[0].0];
 
             // targetok (DeclId) -> "fano.nK"
             let mut got = arc.refs

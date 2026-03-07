@@ -3,7 +3,6 @@
 mod test_tensor_representation {
     use std::marker::PhantomData;
     use hymeko::common::ids::{DeclId, EdgeId, NodeId};
-    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko::tensor::common::signed_incidence;
     use hymeko::tensor::common_traversal::inc_to_real;
     use hymeko::traversal::hypergraphview::HyperGraphView;
@@ -12,27 +11,16 @@ mod test_tensor_representation {
     use hymeko::tensor::tensor::{compute_bipartite_degrees, dense_view_slice};
     use hymeko::tensor::tensor_val::{EdgeWScalar, EdgeWeight, ScalarWeightExtractor};
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
+    use crate::test_tensor_representations::constants::*;
 
-    const STAR_NODE_COUNT: usize = 6;
-    const STAR_EDGE_COUNT: usize = 4;
     const STAR_EDGE_BASE: usize = STAR_NODE_COUNT;
-    const STAR_EXPECTED_DIM: usize = STAR_NODE_COUNT + STAR_EDGE_COUNT;
-    const EPS_F32: f32 = 1e-4; // default tolerance for f32 comparisons
-    const EPS_F64: f64 = 1e-6; // tighter tolerance for f64 checks
-    const STAR_NORMALIZATION_EPS: f32 = 1e-12; // normalization guard to avoid div-by-zero
-    const INCIDENCE_SCALE_FACTOR: f32 = 10.0;
-    const SCATTER_SENTINEL: f32 = 999.0;
 
     #[test]
     fn test_tensor_representation_creation() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg {
-            weight: WeightAgg::Sum,
-            sign: SignAgg::PreferNonNeutral,
-            clamp01: false,
-        };
+        let aggcfg = DEFAULT_AGG_CFG;
+
         let ex = ScalarWeightExtractor::default();
 
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
@@ -46,7 +34,7 @@ mod test_tensor_representation {
         let edge_base = num_nodes; // 6
 
         // --- helpers ---
-        let eps = EPS_F32;
+        let eps = EPS_F32_DEFAULT;
         let at = |r: usize, c: usize| -> f32 {
             // Ha nálad más az indexelés, itt cseréld:
             proj[r][c]
@@ -126,14 +114,10 @@ mod test_tensor_representation {
 
     #[test]
     fn test_star_projection_linear_edge_values() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg {
-            weight: WeightAgg::Sum,
-            sign: SignAgg::PreferNonNeutral,
-            clamp01: false,
-        };
+        let aggcfg = DEFAULT_AGG_CFG;
+
         let ex = ScalarWeightExtractor::default();
 
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
@@ -150,7 +134,7 @@ mod test_tensor_representation {
         assert_eq!(dim, STAR_EXPECTED_DIM);
         assert_eq!(edge_base, STAR_EDGE_BASE);
 
-        let eps = EPS_F32;
+        let eps = EPS_F32_DEFAULT;
 
         // ---- adapt this accessor if your matrix type differs ----
         let at = |r: usize, c: usize| -> f32 {
@@ -231,14 +215,9 @@ mod test_tensor_representation {
 
     #[test]
     fn test_clique_message_passing_matches_clique_view() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg {
-            weight: WeightAgg::Sum,
-            sign: SignAgg::PreferNonNeutral,
-            clamp01: false,
-        };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
             &compiled.ir, &aggcfg, &ex);
@@ -248,7 +227,6 @@ mod test_tensor_representation {
         let a = hymeko::tensor::tensor::project_sum_over_slices(&clique_coo);
 
         let n = hg.num_nodes();
-        let eps = EPS_F32;
 
         // ---- adapt accessor to your matrix type ----
         let mat = |r: usize, c: usize| -> f32 {
@@ -284,7 +262,6 @@ mod test_tensor_representation {
         for eid in 0..hg.num_edges() {
             let s = hg.edge_offsets[eid];
             let eend = hg.edge_offsets[eid + 1];
-            let ew = hg.edge_weight[eid];
 
             // collect nodes in this hyperedge
             let mut nodes: Vec<(usize, i8, f32)> = Vec::with_capacity(eend - s);
@@ -325,14 +302,9 @@ mod test_tensor_representation {
 
     #[test]
     fn test_implicit_clique_step_matches_explicit_bwb_t() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg {
-            weight: WeightAgg::Sum,
-            sign: SignAgg::PreferNonNeutral,
-            clamp01: false,
-        };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
             &compiled.ir, &aggcfg, &ex);
@@ -345,7 +317,7 @@ mod test_tensor_representation {
 
         let n = hg.num_nodes();
         let m = hg.num_edges();
-        let eps = EPS_F32;
+        let eps = EPS_F32_DEFAULT;
 
         // ---- Build explicit A = B W B^T (no diag removal here) ----
         // We'll treat incidence as:
@@ -427,10 +399,9 @@ mod test_tensor_representation {
 
     #[test]
     fn test_bipartite_degrees_linear_edge_values() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
             &compiled.ir, &aggcfg, &ex);
@@ -442,7 +413,7 @@ mod test_tensor_representation {
         // 1..5 = node0..node4
         // edges: 0..3 = e1..e4
 
-        let eps = EPS_F32;
+        let eps = EPS_F32_DEFAULT;
 
         // node degrees (sum of abs incidence weights per node)
 
@@ -462,10 +433,9 @@ mod test_tensor_representation {
 
     #[test]
     fn test_star_projection_linear_edge_values_normalized() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
             &compiled.ir, &aggcfg, &ex);
@@ -482,7 +452,7 @@ mod test_tensor_representation {
         assert_eq!(dim, STAR_EXPECTED_DIM);
         assert_eq!(edge_base, STAR_EDGE_BASE);
 
-        let eps = EPS_F32;
+        let eps = EPS_F32_DEFAULT;
 
         let at = |r: usize, c: usize| -> f32 {
             proj[r][c]
@@ -523,10 +493,9 @@ mod test_tensor_representation {
 
     #[test]
     fn test_star_projection_normalized_scale_invariant() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg1 = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
             &compiled.ir, &aggcfg, &ex);
@@ -545,7 +514,7 @@ mod test_tensor_representation {
         let dim = hg1.num_nodes() + hg1.num_edges();
         assert_eq!(dim, hg2.num_nodes() + hg2.num_edges());
 
-        let eps = EPS_F32;
+        let eps = EPS_F32_DEFAULT;
 
         let at1 = |r: usize, c: usize| -> f32 { proj1[r][c] };
         let at2 = |r: usize, c: usize| -> f32 { proj2[r][c] };
@@ -560,14 +529,9 @@ mod test_tensor_representation {
 
     #[test]
     fn test_regression_degree_initialization_starts_at_zero() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg {
-            weight: WeightAgg::Sum,
-            sign: SignAgg::PreferNonNeutral,
-            clamp01: false,
-        };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f64, EdgeWScalar<f64>, f64>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -576,7 +540,7 @@ mod test_tensor_representation {
         // 1. Explicit Zero-Degree Check
         // Node 0 is known to be isolated or have 0.0 degree in this specific file.
         // If the 1.0 initialization bug returns, this equals 1.0 and fails immediately.
-        let eps = EPS_F64;
+        let eps = EPS_F64_DEFAULT;
         assert!(
             (deg_v[0] - 0.0).abs() <= eps,
             "Regression caught: Node 0 degree is {}, expected exactly 0.0. Check array initialization.",
@@ -652,10 +616,9 @@ mod test_tensor_representation {
 
     #[test]
     fn test_regression_scatter_no_phantom_allocation() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 

@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod test_csr_representations {
-    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko::tensor::tensor::project_sum_over_slices;
     use hymeko::tensor::representations::tensor_csr::TensorCsr;
     use hymeko::tensor::representations::tensor_csr_representations::{star_expansion_csr, clique_expansion_csr};
@@ -9,6 +8,7 @@ mod test_csr_representations {
     use hymeko::tensor::common::Real;
     use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
     use crate::test_helpers::load_and_lower;
+    use crate::test_tensor_representations::constants::*;
 
     fn approx_eq(a: f32, b: f32, eps: f32) -> bool { (a - b).abs() <= eps }
 
@@ -29,10 +29,9 @@ mod test_csr_representations {
 
     #[test]
     fn csr_star_expansion_matches_coo_minimal_graph() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -49,7 +48,7 @@ mod test_csr_representations {
         let a_coo = project_sum_over_slices(&coo);
         let a_csr = project_csr_to_dense(&csr);
 
-        let eps = 1e-5_f32;
+        let eps = EPS_F32_STRICT;
         for i in 0..dim {
             for j in 0..dim {
                 assert!(
@@ -62,10 +61,9 @@ mod test_csr_representations {
 
     #[test]
     fn csr_clique_expansion_correctness() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -76,7 +74,7 @@ mod test_csr_representations {
         assert_eq!(csr.num_cols, n, "Clique CSR should be |V| x |V|");
 
         let a_csr = project_csr_to_dense(&csr);
-        let eps = 1e-5_f32;
+        let eps = EPS_F32_STRICT;
 
         let mut nz = vec![];
         for i in 0..n {
@@ -104,10 +102,9 @@ mod test_csr_representations {
 
     #[test]
     fn csr_star_expansion_scales_to_fano_graph() {
-        let (_store, compiled) =
-            load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -118,7 +115,7 @@ mod test_csr_representations {
         let a_csr = project_csr_to_dense(&csr);
 
         let dim = hg.num_nodes() + hg.num_edges();
-        let eps = 1e-6_f32;
+        let eps = EPS_F32_ULTRA;
 
         let mut non_zero_count = 0;
         for i in 0..dim {

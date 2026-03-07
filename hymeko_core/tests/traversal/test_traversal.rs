@@ -1,4 +1,4 @@
-#!cfg[(test)]
+#![cfg(test)]
 mod test_traversal
 {
     use std::collections::HashSet;
@@ -13,9 +13,7 @@ mod test_traversal
     use parser::ast::AstStr;
     use parser::parse_description;
 
-    #[test]
-    fn berge_dfs_reaches_other_node() {
-        let src = r#"
+    const BERGE_SRC: &str = r#"
         berge_demo {}
 
         D {
@@ -26,19 +24,27 @@ mod test_traversal
             }
         }
         "#;
+    const NAMESPACE_D: &str = "D";
+    const NODE_A: &str = "A";
+    const NODE_B: &str = "B";
+    const ROOT_NAME: &str = "Root";
+    const EDGE_E: &str = "E";
+    const AGG_CFG: AggCfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
 
-        let desc: AstStr = parse_description(src).expect("parse failed");
+    #[test]
+    fn berge_dfs_reaches_other_node() {
+        let desc: AstStr = parse_description(BERGE_SRC).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&desc);
 
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
         let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
 
         // --- DeclId-k kikeresése path alapján
-        let sid_d = interner.intern("D");
-        let sid_a = interner.intern("A");
-        let sid_b = interner.intern("B");
-        let sid_root = interner.intern("Root");
-        let sid_e = interner.intern("E");
+        let sid_d = interner.intern(NAMESPACE_D);
+        let sid_a = interner.intern(NODE_A);
+        let sid_b = interner.intern(NODE_B);
+        let sid_root = interner.intern(ROOT_NAME);
+        let sid_e = interner.intern(EDGE_E);
 
         let did_a = *idx.by_path.get(&PathKey(vec![sid_d, sid_a])).expect("D.A missing");
         let did_b = *idx.by_path.get(&PathKey(vec![sid_d, sid_b])).expect("D.B missing");
@@ -50,24 +56,19 @@ mod test_traversal
         let eid_e = ir.decl_to_edge[did_e.0 as usize].expect("E not lowered as edge");
 
         // --- HyperGraphView felépítése
-        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&ir, &AGG_CFG, &ex);
 
         // 1) incidenciák ellenőrzése (set-alapon)
-        let a_start = hg.node_offsets[nid_a.0 as usize] as usize;
-        let a_end = hg.node_offsets[nid_a.0 as usize + 1] as usize;
+        let (a_start, a_end) = hg.node_span(nid_a);
         let a_edges = &hg.flat_node_edges[a_start..a_end];
         assert!(a_edges.contains(&eid_e), "A should be incident to E");
 
-        let b_start = hg.node_offsets[nid_b.0 as usize] as usize;
-        let b_end = hg.node_offsets[nid_b.0 as usize + 1] as usize;
+        let (b_start, b_end) = hg.node_span(nid_b);
         let b_edges = &hg.flat_node_edges[b_start..b_end];
         assert!(b_edges.contains(&eid_e), "B should be incident to E");
 
-        let e_start = hg.edge_offsets[eid_e.0 as usize] as usize;
-        let e_end = hg.edge_offsets[eid_e.0 as usize + 1] as usize;
+        let (e_start, e_end) = hg.edge_span(eid_e);
         let e_nodes = &hg.flat_edge_nodes[e_start..e_end];
         assert!(e_nodes.contains(&nid_a), "E should connect to A");
         assert!(e_nodes.contains(&nid_b), "E should connect to B");

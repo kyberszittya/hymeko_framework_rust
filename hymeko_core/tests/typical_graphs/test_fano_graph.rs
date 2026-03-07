@@ -1,3 +1,4 @@
+use crate::typical_graphs::fano::constants::*;
 use hymeko::{body, find_node};
 use parser::ast::*;
 
@@ -5,31 +6,30 @@ use parser::ast::*;
 #[test]
 fn parse_fano_graph() {
 
-    let path = "./data/typical_graphs/fano_graph.hymeko";
-    let source_code = parser::read_source_file(&path).expect("failed to read source file");
+    let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
     let desc = parser::parse_description(&source_code).unwrap();
 
     // Top-level: "Fano_graph" név + üres header
-    assert_eq!(desc.name, "Fano_graph");
+    assert_eq!(desc.name, FANO_DESCRIPTION_NAME);
     assert!(desc.header.is_empty(), "Expected empty header");
 
     // Top-levelben legyen a fano block (NodeDecl body-val)
-    let fano = find_node(&desc.items, "fano").unwrap();
+    let fano = find_node(&desc.items, FANO_BLOCK_NAME).unwrap();
     let fano_body = body(fano);
 
     // 7 node: n0..n6
-    for i in 0..7 {
-        let n = format!("n{}", i);
+    for i in 0..FANO_POINT_NODE_COUNT {
+        let n = format!("{}{}", FANO_NODE_PREFIX, i);
         let _ = find_node(fano_body, &n);
     }
 
     // 7 edge: e0..e6
     // Itt csak azt ellenőrizzük, hogy mindegyik EdgeDecl megvan,
     // és hogy a body-jában 1 arc van, és az 3 referenciát tartalmaz.
-    for i in 0..7 {
-        let ename = format!("e{}", i);
+    for i in 0..FANO_EDGE_COUNT {
+        let ename = format!("{}{}", FANO_EDGE_PREFIX, i);
 
         let edge = fano_body
             .iter()
@@ -65,7 +65,7 @@ fn parse_fano_graph() {
         // A Fano input "~ n0" -> SignedRef::Neutral várható.
         assert_eq!(
             arc.inner.refs.len(),
-            3,
+            FANO_ARC_REF_COUNT,
             "Expected 3 endpoints in arc inside edge {}",
             edge.inner.name
         );

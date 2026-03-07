@@ -4,10 +4,10 @@ mod test_message_passing_components
         clique_diag, gather_edges_from_nodes,
         implicit_clique_step, remove_self_effect, scatter_nodes_from_edges, CliqueStepCfg};
     use hymeko::traversal::hypergraphview::HyperGraphView;
-    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko::tensor::common_traversal::inc_scalar_signed;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use crate::test_helpers::load_and_lower;
+    use crate::test_tensor_representations::constants::*;
 
 
 
@@ -21,10 +21,9 @@ mod test_message_passing_components
 
     #[test]
     fn test_gather_matches_manual_btx() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -53,15 +52,14 @@ mod test_message_passing_components
             x_edges_ref[e] = acc;
         }
 
-        assert_vec_close(&x_edges, &x_edges_ref, 1e-4, "gather_edges_from_nodes mismatch");
+        assert_vec_close(&x_edges, &x_edges_ref, EPS_F32_DEFAULT, "gather_edges_from_nodes mismatch");
     }
 
     #[test]
     fn test_scatter_matches_manual_bxe() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -89,15 +87,14 @@ mod test_message_passing_components
             }
         }
 
-        assert_vec_close(&y, &y_ref, 1e-4, "scatter_nodes_from_edges mismatch");
+        assert_vec_close(&y, &y_ref, EPS_F32_DEFAULT, "scatter_nodes_from_edges mismatch");
     }
 
     #[test]
     fn test_diag_matches_sum_of_squares() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -118,7 +115,7 @@ mod test_message_passing_components
             }
         }
 
-        assert_vec_close(&diag, &ref_diag, 1e-4, "clique_diag mismatch");
+        assert_vec_close(&diag, &ref_diag, EPS_F32_DEFAULT, "clique_diag mismatch");
     }
 
     #[test]
@@ -135,15 +132,14 @@ mod test_message_passing_components
             100.0 - 0.5 * 2.0,
             100.0 - 2.0 * 3.0,
         ];
-        assert_vec_close(&y, &expected, 1e-6, "remove_self_effect mismatch");
+        assert_vec_close(&y, &expected, EPS_F32_ULTRA, "remove_self_effect mismatch");
     }
 
     #[test]
     fn test_implicit_clique_step_equals_pipeline() {
-        let (_store, compiled) =
-            load_and_lower("./data/minimal_examples/testing_edges/linear_edge_values.hymeko").unwrap();
+        let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let aggcfg = DEFAULT_AGG_CFG;
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
@@ -168,6 +164,6 @@ mod test_message_passing_components
         let diag = clique_diag(&hg, cfg.use_abs);
         remove_self_effect(&mut y2, &diag, &x);
 
-        assert_vec_close(&y1, &y2, 1e-4, "implicit_clique_step != pipeline");
+        assert_vec_close(&y1, &y2, EPS_F32_DEFAULT, "implicit_clique_step != pipeline");
     }
 }

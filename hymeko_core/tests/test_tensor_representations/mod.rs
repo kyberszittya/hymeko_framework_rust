@@ -1,3 +1,4 @@
+pub mod constants;
 mod test_tensor_representation;
 mod test_message_passing_components;
 mod minimal_tensor_representations;
