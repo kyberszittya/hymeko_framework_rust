@@ -11,9 +11,17 @@ mod test_import_graphs
     use hymeko::resolution::resolve::build_index_sym;
     use hymeko::module_store::source_provider::StdFsProvider;
     use crate::minimal_tests::TestParser;
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use log::info;
+    use std::time::Instant;
 
     #[test]
     fn check_import_graph_library() {
+        log_test_header(
+            "check_import_graph_library",
+            "Lowers the library import example and inspects operand/operator bindings.",
+        );
+        let start = Instant::now();
         let path = "data/minimal_examples/import_examples/minimal_example_library.hymeko";
         let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
@@ -58,13 +66,21 @@ mod test_import_graphs
             }
             other => panic!("unexpected arc refs ordering: {other:?}"),
         }
+        info!("{} lowered to IR with {} nodes and {} edges", path, ir.nodes.len(), ir.edges.len());
+        log_test_footer(
+            "check_import_graph_library",
+            Some(start.elapsed()),
+            "Library operands/operators survived IR lowering with expected refs.",
+        );
     }
 
     #[test]
     fn check_import_graph_library_with_import() {
-
-
-
+        log_test_header(
+            "check_import_graph_library_with_import",
+            "Compiles the importing root module and validates namespaced references.",
+        );
+        let start = Instant::now();
         // ugyanaz a root file, mint eddig
         let root_path = Path::new("./data/minimal_examples/import_examples/minimal_example_import.hymeko");
 
@@ -110,6 +126,15 @@ mod test_import_graphs
             compiled.ir.decl_hash.get(did.0).and_then(|x| *x).is_some(),
             "expected decl hash for operand to be computed"
         );
-
+        info!(
+            "Import compilation pulled {} namespaces and produced {} decls",
+            compiled.imports.len(),
+            compiled.ir.decl_nodes.len()
+        );
+        log_test_footer(
+            "check_import_graph_library_with_import",
+            Some(start.elapsed()),
+            "Imported namespace resolved operand references and hashes.",
+        );
     }
 }

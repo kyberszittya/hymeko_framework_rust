@@ -1,3 +1,4 @@
+#[cfg(test)]
 mod test_message_passing_components
 {
     use hymeko::tensor::message_passing::{
@@ -6,7 +7,9 @@ mod test_message_passing_components
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::common_traversal::inc_scalar_signed;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use crate::test_helpers::load_and_lower;
+    use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
+    use log::info;
+    use std::time::Instant;
     use crate::test_tensor_representations::constants::*;
 
 
@@ -21,6 +24,11 @@ mod test_message_passing_components
 
     #[test]
     fn test_gather_matches_manual_btx() {
+        log_test_header(
+            "test_gather_matches_manual_btx",
+            "Compares gather_edges_from_nodes against the manual Bt * x computation.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -53,10 +61,21 @@ mod test_message_passing_components
         }
 
         assert_vec_close(&x_edges, &x_edges_ref, EPS_F32_DEFAULT, "gather_edges_from_nodes mismatch");
+        info!("Gather matched manual computation for {} nodes / {} edges", n, m);
+        log_test_footer(
+            "test_gather_matches_manual_btx",
+            Some(start.elapsed()),
+            "gather_edges_from_nodes produced the same edge features as the reference Bt * x.",
+        );
     }
 
     #[test]
     fn test_scatter_matches_manual_bxe() {
+        log_test_header(
+            "test_scatter_matches_manual_bxe",
+            "Checks scatter_nodes_from_edges against explicit B * x_e aggregation.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -88,10 +107,21 @@ mod test_message_passing_components
         }
 
         assert_vec_close(&y, &y_ref, EPS_F32_DEFAULT, "scatter_nodes_from_edges mismatch");
+        info!("Scatter matched manual computation for {} nodes / {} edges", n, m);
+        log_test_footer(
+            "test_scatter_matches_manual_bxe",
+            Some(start.elapsed()),
+            "scatter_nodes_from_edges reproduced the manual y = B * x_e result.",
+        );
     }
 
     #[test]
     fn test_diag_matches_sum_of_squares() {
+        log_test_header(
+            "test_diag_matches_sum_of_squares",
+            "Verifies clique_diag accumulates squared incidences per node.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -116,10 +146,21 @@ mod test_message_passing_components
         }
 
         assert_vec_close(&diag, &ref_diag, EPS_F32_DEFAULT, "clique_diag mismatch");
+        info!("Clique diag matched manual squares for {} nodes", n);
+        log_test_footer(
+            "test_diag_matches_sum_of_squares",
+            Some(start.elapsed()),
+            "clique_diag equaled the explicit sum-of-squares reference vector.",
+        );
     }
 
     #[test]
     fn test_remove_self_effect_matches_definition() {
+        log_test_header(
+            "test_remove_self_effect_matches_definition",
+            "Ensures remove_self_effect subtracts diag * x entry-wise.",
+        );
+        let start = Instant::now();
         // tiny synthetic vector test (no HG needed)
         let x = vec![1.0f32, 2.0, 3.0];
         let diag = vec![10.0f32, 0.5, 2.0];
@@ -133,10 +174,21 @@ mod test_message_passing_components
             100.0 - 2.0 * 3.0,
         ];
         assert_vec_close(&y, &expected, EPS_F32_ULTRA, "remove_self_effect mismatch");
+        info!("remove_self_effect updated {} entries", x.len());
+        log_test_footer(
+            "test_remove_self_effect_matches_definition",
+            Some(start.elapsed()),
+            "remove_self_effect produced the expected y - diag * x output.",
+        );
     }
 
     #[test]
     fn test_implicit_clique_step_equals_pipeline() {
+        log_test_header(
+            "test_implicit_clique_step_equals_pipeline",
+            "Compares implicit_clique_step to the explicit gather/scatter pipeline.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -165,5 +217,11 @@ mod test_message_passing_components
         remove_self_effect(&mut y2, &diag, &x);
 
         assert_vec_close(&y1, &y2, EPS_F32_DEFAULT, "implicit_clique_step != pipeline");
+        info!("Implicit clique step matched explicit pipeline for {} nodes", n);
+        log_test_footer(
+            "test_implicit_clique_step_equals_pipeline",
+            Some(start.elapsed()),
+            "implicit_clique_step matched the gather/scatter/remove_self pipeline output.",
+        );
     }
 }

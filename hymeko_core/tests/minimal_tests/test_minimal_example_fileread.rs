@@ -1,9 +1,17 @@
 use parser::ast::*;
+use log::info;
+use std::time::Instant;
+use crate::test_helpers::{log_test_footer, log_test_header};
 use super::constants::*;
 
 
 #[test]
 fn test_minimal_example() {
+    log_test_header(
+        "test_minimal_example",
+        "Reads the minimal .hymeko example from disk and checks the top-level node.",
+    );
+    let start = Instant::now();
     let source_code = parser::read_source_file(MINIMAL_EXAMPLE_PATH).expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
@@ -21,10 +29,21 @@ fn test_minimal_example() {
         HyperItem::Node(n) => assert_eq!(n.inner.name, CONTEXT_NODE_NAME),
         _ => panic!("Expected Node(context)"),
     }
+    info!("File {} parsed with {} top-level items", MINIMAL_EXAMPLE_PATH, d.items.len());
+    log_test_footer(
+        "test_minimal_example",
+        Some(start.elapsed()),
+        "Verified the context node in minimal_example.hymeko.",
+    );
 }
 
 #[test]
 fn test_minimal_example_base_elements() {
+    log_test_header(
+        "test_minimal_example_base_elements",
+        "Reads the base elements example and validates nodes/arcs.",
+    );
+    let start = Instant::now();
     let source_code = parser::read_source_file(MINIMAL_EXAMPLE_BASE_ELEMENTS_PATH).expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
@@ -58,7 +77,13 @@ fn test_minimal_example_base_elements() {
 
             assert_eq!(arcs.len(), SINGLE_ARC_COUNT);
             assert_eq!(arcs[0].inner.refs.len(), ARC_REF_PAIR_COUNT);
+            info!("Edge {} contained {} arc(s)", EDGE_E1_NAME, arcs.len());
         }
         _ => panic!("Expected Edge(E1)"),
     }
+    log_test_footer(
+        "test_minimal_example_base_elements",
+        Some(start.elapsed()),
+        "Verified nodes A/B and edge E1 with its arc references.",
+    );
 }

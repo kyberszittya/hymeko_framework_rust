@@ -1,19 +1,32 @@
 use hymeko::body;
 use parser::ast::*;
+use log::info;
+use std::time::Instant;
+use crate::test_helpers::{log_test_footer, log_test_header};
 use super::constants::*;
 use super::helpers::assert_expected_fields;
 
 #[test]
 fn parses_legacy_context_with_refs() {
-    assert_field_ref_fixture(MINIMAL_FIELDS_REF_PATH);
+    run_field_ref_fixture(
+        "parses_legacy_context_with_refs",
+        MINIMAL_FIELDS_REF_PATH,
+        "Validates reference nodes in the original minimal example.",
+    );
 }
 
 #[test]
 fn parses_legacy_context_with_refs_alternative() {
-    assert_field_ref_fixture(MINIMAL_FIELDS_REF_ALT_PATH);
+    run_field_ref_fixture(
+        "parses_legacy_context_with_refs_alternative",
+        MINIMAL_FIELDS_REF_ALT_PATH,
+        "Validates reference nodes in the alternate minimal example.",
+    );
 }
 
-fn assert_field_ref_fixture(path: &str) {
+fn run_field_ref_fixture(title: &str, path: &str, details: &str) {
+    log_test_header(title, details);
+    let start = Instant::now();
     let source_code = parser::read_source_file(path).expect("failed to read source file");
     let d = parser::parse_description(&source_code).unwrap();
 
@@ -27,4 +40,10 @@ fn assert_field_ref_fixture(path: &str) {
 
     let ctx = body(context);
     assert_expected_fields(ctx, FIELD_REF_EXPECTATIONS);
+    info!("Verified {} reference fields for {path}", FIELD_REF_EXPECTATIONS.len());
+    log_test_footer(
+        title,
+        Some(start.elapsed()),
+        &format!("Parsed {path} and confirmed all reference lookups."),
+    );
 }

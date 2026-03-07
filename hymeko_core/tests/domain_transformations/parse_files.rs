@@ -6,7 +6,9 @@ mod test_parse_files {
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use hymeko::ir::ir::DeclKind;
-    use crate::test_helpers::{load_and_lower, find_decl};
+    use crate::test_helpers::{load_and_lower, find_decl, log_test_footer, log_test_header};
+    use log::info;
+    use std::time::Instant;
 
     const META_KINEMATICS_PATH: &str = "./data/robotics/meta_kinematics.hymeko";
     const AGG_WEIGHT_SUM: WeightAgg = WeightAgg::Sum;
@@ -27,8 +29,21 @@ mod test_parse_files {
     const SENSOR_DECLS: [&str; 2] = ["rgb_camera", "laser_scanner"];
     const PASSIVE_SENSOR_DECLS: [&str; 1] = ["joint_state_broadcaster"];
 
+    fn start(name: &str, desc: &str) -> Instant {
+        log_test_header(name, desc);
+        Instant::now()
+    }
+
+    fn finish(name: &str, start: Instant, summary: &str) {
+        log_test_footer(name, Some(start.elapsed()), summary);
+    }
+
     #[test]
     fn test_load_meta_geometry() {
+        let timer = start(
+            "test_load_meta_geometry",
+            "Loads the robotics meta kinematics file and validates inheritance + degrees.",
+        );
         let (store, compiled) = load_and_lower(META_KINEMATICS_PATH).unwrap();
 
         let aggcfg = AggCfg { weight: AGG_WEIGHT_SUM, sign: AGG_SIGN_NON_NEUTRAL, clamp01: CLAMP_DISABLED };
@@ -102,6 +117,19 @@ mod test_parse_files {
                 name
             );
         }
-
+        info!(
+            "Meta geometry: nodes={} edges={} controllers={}, axes={}, sensors={} passive={}",
+            node_count,
+            edge_count,
+            CONTROLLER_DECLS.len(),
+            AXIS_DECLS.len(),
+            SENSOR_DECLS.len(),
+            PASSIVE_SENSOR_DECLS.len()
+        );
+        finish(
+            "test_load_meta_geometry",
+            timer,
+            "Meta kinematics degrees and inheritance chains remained stable.",
+        );
     }
  }

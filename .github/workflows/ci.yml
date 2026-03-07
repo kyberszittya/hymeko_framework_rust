@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_LOG: info
 
 jobs:
   workspace-tests:
@@ -44,11 +45,11 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run tests
-        run: cargo test --workspace --all-targets --verbose
+        run: cargo test --workspace --all-targets --verbose -- --nocapture
 
       - name: Run tests (nightly features)
         if: matrix.rust == 'nightly'
-        run: cargo test --workspace --all-targets --all-features --verbose
+        run: cargo test --workspace --all-targets --all-features --verbose -- --nocapture
 
   package-check:
     name: Package Build & Test
@@ -84,7 +85,7 @@ jobs:
         run: cargo build --package ${{ matrix.package }} --all-targets --verbose
 
       - name: Test ${{ matrix.package }}
-        run: cargo test --package ${{ matrix.package }} --all-targets --verbose
+        run: cargo test --package ${{ matrix.package }} --all-targets --verbose -- --nocapture
 
   coverage:
     name: Code Coverage

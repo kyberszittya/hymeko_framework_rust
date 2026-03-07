@@ -11,6 +11,9 @@ mod test_ref_values
 
     use parser::ast::*;
     use crate::minimal_tests::constants::*;
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use log::info;
+    use std::time::Instant;
 
 
     fn find_node<'a>(items: &'a [HyperItem<'a, &'a str>], name: &str) -> &'a NodeDecl<'a, &'a str> {
@@ -93,6 +96,11 @@ mod test_ref_values
 
     #[test]
     fn edges_with_ref_values() {
+        log_test_header(
+            "edges_with_ref_values",
+            "Parses the minimal edge fixture and validates AST-level references.",
+        );
+        let start = Instant::now();
         let source_code = parser::read_source_file(EDGE_REF_VALUES_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
@@ -124,10 +132,21 @@ mod test_ref_values
         for (actual, expected) in flattened_weights.iter().zip(EDGE_REF_FLAT_WEIGHTS.iter()) {
             assert!((*actual - *expected).abs() < 1e-9, "AST flattened weight mismatch: got {actual}, expected {expected}");
         }
+        info!("Validated AST refs for edge {}", EDGE_E0_NAME);
+        log_test_footer(
+            "edges_with_ref_values",
+            Some(start.elapsed()),
+            "All AST references carried the expected weights and paths.",
+        );
     }
 
     #[test]
     fn edges_with_ref_values_ir() {
+        log_test_header(
+            "edges_with_ref_values_ir",
+            "Lowers the fixture to IR and checks reference targets/weights.",
+        );
+        let start = Instant::now();
         let source_code = parser::read_source_file(EDGE_REF_VALUES_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
@@ -177,6 +196,12 @@ mod test_ref_values
         let _ = did_context;
         let _ = did_node_lev_0;
         let _ = did_node_lev_1;
+        info!("Validated IR refs for edge {}", EDGE_E0_NAME);
+        log_test_footer(
+            "edges_with_ref_values_ir",
+            Some(start.elapsed()),
+            "IR references matched expected targets and weights.",
+        );
     }
 
     fn decl_id_for_path(interner: &mut Interner, idx: &Index, segments: &[&str]) -> DeclId {

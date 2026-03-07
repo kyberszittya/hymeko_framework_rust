@@ -10,13 +10,20 @@ mod test_tensor_representation {
     use hymeko::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
     use hymeko::tensor::tensor::{compute_bipartite_degrees, dense_view_slice};
     use hymeko::tensor::tensor_val::{EdgeWScalar, EdgeWeight, ScalarWeightExtractor};
-    use crate::test_helpers::{load_and_lower, print_dense_matrix};
+    use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header, print_dense_matrix};
+    use log::info;
+    use std::time::Instant;
     use crate::test_tensor_representations::constants::*;
 
     const STAR_EDGE_BASE: usize = STAR_NODE_COUNT;
 
     #[test]
     fn test_tensor_representation_creation() {
+        log_test_header(
+            "test_tensor_representation_creation",
+            "Validates the raw star projection against expected weights and sparsity.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -110,10 +117,21 @@ mod test_tensor_representation {
         }
 
         print_dense_matrix(&proj, "Projected star matrix (sum over slices)");
+        info!("Star projection validated for {} nodes and {} edges", num_nodes, num_edges);
+        log_test_footer(
+            "test_tensor_representation_creation",
+            Some(start.elapsed()),
+            "All expected star entries matched and remaining cells stayed near zero.",
+        );
     }
 
     #[test]
     fn test_star_projection_linear_edge_values() {
+        log_test_header(
+            "test_star_projection_linear_edge_values",
+            "Recomputes the star projection and compares every non-zero entry.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -209,12 +227,26 @@ mod test_tensor_representation {
             }
         }
 
-        // Debug output is still nice during bring-up; keep or remove later.
         print_dense_matrix(&proj, "Projected star matrix (sum over slices)");
+        info!(
+            "Star projection check completed for dim {} with {} edges",
+            dim,
+            num_edges
+        );
+        log_test_footer(
+            "test_star_projection_linear_edge_values",
+            Some(start.elapsed()),
+            "Star projection matched expected weights for all arcs.",
+        );
     }
 
     #[test]
     fn test_clique_message_passing_matches_clique_view() {
+        log_test_header(
+            "test_clique_message_passing_matches_clique_view",
+            "Cross-checks implicit clique traversal against the dense clique expansion.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -276,21 +308,22 @@ mod test_tensor_representation {
             for a_i in 0..nodes.len() {
                 for b_i in (a_i + 1)..nodes.len() {
                     let (u, su, wu) = nodes[a_i];
-                    let (v, _sv, _wv) = nodes[b_i];
+                    let (v, sv, wv) = nodes[b_i];
+                    let w = wu * wv;
 
-                    match su {
-                        1 => {
-                            // edge u -> v with weight wu : y[u] += wu * x[v]
-                            y_imp[u] += wu * x[v];
+                    match (su, sv) {
+                        (1, -1) => {
+                            // matrix entry (u,v) = w
+                            y_imp[u] += w * x[v];
                         }
-                        -1 => {
-                            // edge v -> u with weight wu : y[v] += wu * x[u]
-                            y_imp[v] += wu * x[u];
+                        (-1, 1) => {
+                            // matrix entry (v,u) = w
+                            y_imp[v] += w * x[u];
                         }
                         _ => {
-                            // both directions
-                            y_imp[u] += wu * x[v];
-                            y_imp[v] += wu * x[u];
+                            // undirected pair: add both directions
+                            y_imp[u] += w * x[v];
+                            y_imp[v] += w * x[u];
                         }
                     }
                 }
@@ -298,10 +331,36 @@ mod test_tensor_representation {
         }
         let proj = hymeko::tensor::tensor::project_sum_over_slices(&clique_coo);
         print_dense_matrix(&proj, "Clique projection (sum over slices)");
+        for (i, (dense, imp)) in y_dense.iter().zip(&y_imp).enumerate() {
+            let diff = (dense - imp).abs();
+            assert!(
+                diff <= EPS_F32_DEFAULT,
+                "implicit clique mismatch at i={} dense={} imp={} |diff|={}",
+                i,
+                dense,
+                imp,
+                diff
+            );
+        }
+        info!(
+            "Implicit clique verified for {} nodes across {} edges",
+            n,
+            hg.num_edges()
+        );
+        log_test_footer(
+            "test_clique_message_passing_matches_clique_view",
+            Some(start.elapsed()),
+            "Implicit clique step produced the same activations as the dense reference.",
+        );
     }
 
     #[test]
     fn test_implicit_clique_step_matches_explicit_bwb_t() {
+        log_test_header(
+            "test_implicit_clique_step_matches_explicit_bwb_t",
+            "Confirms implicit clique propagation equals the explicit BWB^T product.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -326,7 +385,7 @@ mod test_tensor_representation {
         let mut b: Vec<Vec<(usize, f32)>> = vec![Vec::new(); m]; // per edge: (v, bve)
 
         for e in 0..m {
-            let (s, eend) = hg.edge_span(hymeko::common::ids::EdgeId(e));
+            let (s, eend) = hg.edge_span(EdgeId(e));
 
             for p in s..eend {
                 let v = hg.flat_edge_nodes[p].0;
@@ -395,10 +454,26 @@ mod test_tensor_representation {
         let a_coo = build_explicit_a(&hg, cfg);
         let a_dense = dense_view_slice(&a_coo, 0);
         print_dense_real(&a_dense, "Explicit A = B B^T (matches implicit_clique_step)");
+        info!(
+            "Implicit clique verified for {} nodes and {} edges using include_self={}",
+            n,
+            m,
+            cfg.include_self
+        );
+        log_test_footer(
+            "test_implicit_clique_step_matches_explicit_bwb_t",
+            Some(start.elapsed()),
+            "Implicit clique outputs matched the dense multiplication within EPS.",
+        );
     }
 
     #[test]
     fn test_bipartite_degrees_linear_edge_values() {
+        log_test_header(
+            "test_bipartite_degrees_linear_edge_values",
+            "Ensures node/edge degree sums line up for the linear-edge fixture.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -429,10 +504,27 @@ mod test_tensor_representation {
         assert!((deg_e[1] - 8.25).abs() <= eps);  // e2: 0.75+7.5
         assert!((deg_e[2] - 10.2).abs() <= eps);  // e3: 0.75+1.95+7.5
         assert!((deg_e[3] - 10.2).abs() <= eps);  // e4: 0.75+1.95+7.5
+        let sum_nodes: f32 = deg_v.iter().sum();
+        let sum_edges: f32 = deg_e.iter().sum();
+        info!(
+            "Bipartite degrees OK: node mass = {:.2}, edge mass = {:.2}",
+            sum_nodes,
+            sum_edges
+        );
+        log_test_footer(
+            "test_bipartite_degrees_linear_edge_values",
+            Some(start.elapsed()),
+            "Bipartite degrees matched expected per-node and per-edge totals.",
+        );
     }
 
     #[test]
     fn test_star_projection_linear_edge_values_normalized() {
+        log_test_header(
+            "test_star_projection_linear_edge_values_normalized",
+            "Verifies the normalized star projection keeps the expected sparsity pattern.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -489,10 +581,25 @@ mod test_tensor_representation {
         assert_close(5, edge_base + 3, 0.48136299); // node4 -> e4
         assert_close(edge_base + 3, 1, 0.13558154); // e4 -> node0
         assert_close(edge_base + 3, 2, 0.28943731); // e4 -> node1
+        info!(
+            "Normalized star projection covered dim {} with {} edges",
+            dim,
+            num_edges
+        );
+        log_test_footer(
+            "test_star_projection_linear_edge_values_normalized",
+            Some(start.elapsed()),
+            "Normalized star matrix entries matched the golden weights.",
+        );
     }
 
     #[test]
     fn test_star_projection_normalized_scale_invariant() {
+        log_test_header(
+            "test_star_projection_normalized_scale_invariant",
+            "Checks that scaling incidences leaves the normalized projection unchanged.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -518,17 +625,30 @@ mod test_tensor_representation {
 
         let at1 = |r: usize, c: usize| -> f32 { proj1[r][c] };
         let at2 = |r: usize, c: usize| -> f32 { proj2[r][c] };
+        let mut max_diff = 0.0f32;
 
         for r in 0..dim {
-            for c in 0..dim {
-                let d = (at1(r, c) - at2(r, c)).abs();
-                assert!(d <= eps, "scale invariance failed at ({},{}) diff={}", r, c, d);
-            }
-        }
+             for c in 0..dim {
+                 let d = (at1(r, c) - at2(r, c)).abs();
+                max_diff = max_diff.max(d);
+                 assert!(d <= eps, "scale invariance failed at ({},{}) diff={}", r, c, d);
+             }
+         }
+        info!("Normalized star scale invariance max diff {:.3e}", max_diff);
+         log_test_footer(
+             "test_star_projection_normalized_scale_invariant",
+             Some(start.elapsed()),
+             "Normalized star projection remained stable under global scaling.",
+         );
     }
 
     #[test]
     fn test_regression_degree_initialization_starts_at_zero() {
+        log_test_header(
+            "test_regression_degree_initialization_starts_at_zero",
+            "Guards against accidental non-zero initialization in degree buffers.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -554,14 +674,29 @@ mod test_tensor_representation {
         let sum_e: f64 = deg_e.iter().sum();
 
         assert!(
-            (sum_v - sum_e).abs() <= eps,
-            "Regression caught: Bipartite degree mass mismatch. Node sum: {}, Edge sum: {}. They must be identical.",
-            sum_v, sum_e
+             (sum_v - sum_e).abs() <= eps,
+             "Regression caught: Bipartite degree mass mismatch. Node sum: {}, Edge sum: {}. They must be identical.",
+             sum_v, sum_e
+         );
+        info!(
+            "Degree-init regression check sums: nodes={:.2}, edges={:.2}",
+            sum_v,
+            sum_e
         );
+         log_test_footer(
+             "test_regression_degree_initialization_starts_at_zero",
+             Some(start.elapsed()),
+             "Degree buffers started at zero and preserved node=edge mass.",
+         );
     }
 
     #[test]
     fn test_compute_bipartite_degrees_manual_simple() {
+        log_test_header(
+            "test_compute_bipartite_degrees_manual_simple",
+            "Uses a hand-built graph to confirm degree calculations stay consistent.",
+        );
+        let start = Instant::now();
         // We manually construct a graph with 3 nodes and 2 edges.
         // Node 0: Isolated (Degree should be 0.0)
         // Node 1: Connected to Edge 0 (Weight 2.0) and Edge 1 (Weight 3.5)
@@ -611,11 +746,21 @@ mod test_tensor_representation {
         let sum_v: f64 = deg_v.iter().sum();
         let sum_e: f64 = deg_e.iter().sum();
         assert_eq!(sum_v, sum_e, "Total node mass must equal total edge mass.");
-
+        info!("Manual degree sums: nodes={:.1}, edges={:.1}", sum_v, sum_e);
+         log_test_footer(
+             "test_compute_bipartite_degrees_manual_simple",
+             Some(start.elapsed()),
+             "Manual bipartite degree example preserved node=edge mass.",
+         );
     }
 
     #[test]
     fn test_regression_scatter_no_phantom_allocation() {
+        log_test_header(
+            "test_regression_scatter_no_phantom_allocation",
+            "Ensures scatter writes into caller-provided buffers without phantom allocation.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(LINEAR_EDGE_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -647,8 +792,19 @@ mod test_tensor_representation {
 
         // 3) Verify the mathematical accumulation was written to this specific buffer
         assert!(
-            sum > 0.001,
-            "Regression caught: scatter_nodes_from_edges zeroed the caller's buffer but failed to write the accumulated results into it (Sum is 0.0)."
+             sum > 0.001,
+             "Regression caught: scatter_nodes_from_edges zeroed the caller's buffer but failed to write the accumulated results into it (Sum is 0.0)."
+         );
+        info!(
+            "Scatter regression ran with {} nodes, {} edges; summed mass {:.3}",
+            n,
+            m,
+            sum
         );
+         log_test_footer(
+             "test_regression_scatter_no_phantom_allocation",
+             Some(start.elapsed()),
+             "Scatter path mutated the caller buffer and produced positive mass.",
+         );
     }
 }

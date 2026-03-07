@@ -1,10 +1,18 @@
 use crate::typical_graphs::fano::constants::*;
 use hymeko::{body, find_node};
 use parser::ast::*;
+use log::info;
+use std::time::Instant;
+use crate::test_helpers::{log_test_footer, log_test_header};
 
 
 #[test]
 fn parse_fano_graph() {
+    log_test_header(
+        "parse_fano_graph",
+        "Parses the canonical Fano graph and validates node/edge counts.",
+    );
+    let start = Instant::now();
 
     let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
@@ -76,5 +84,11 @@ fn parse_fano_graph() {
     assert!(
         !fano_body.iter().any(|it| matches!(it, HyperItem::Arc(_))),
         "Did not expect HyperArc directly under `fano graph`"
+    );
+    info!("Validated {} nodes and {} edges for the Fano graph", FANO_POINT_NODE_COUNT, FANO_EDGE_COUNT);
+    log_test_footer(
+        "parse_fano_graph",
+        Some(start.elapsed()),
+        "Fano graph AST structure matches expectations.",
     );
 }

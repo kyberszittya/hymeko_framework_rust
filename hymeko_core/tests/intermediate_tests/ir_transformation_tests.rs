@@ -8,6 +8,9 @@ mod basic_transformation_tests {
     use hymeko::ir::lower::lower_to_ir;
     use parser::parse_description;
     use hymeko::resolution::resolve::build_index_sym;
+    use log::info;
+    use std::time::Instant;
+    use crate::test_helpers::{log_test_footer, log_test_header};
 
     const SIMPLE_CHAIN_SRC: &str = r#"
         test{}
@@ -62,8 +65,21 @@ mod basic_transformation_tests {
     const SIMPLE_INDEX_LEN: usize = 5;
     const DUP_INDEX_LEN: usize = 8;
 
+    fn start(name: &str, desc: &str) -> Instant {
+        log_test_header(name, desc);
+        Instant::now()
+    }
+
+    fn finish(name: &str, start: Instant, summary: &str) {
+        log_test_footer(name, Some(start.elapsed()), summary);
+    }
+
     #[test]
     fn node_child_chain_order_is_body_order() {
+        let timer = start(
+            "node_child_chain_order_is_body_order",
+            "Validates sibling ordering for a simple Root.{A,B,C} chain.",
+        );
         let ast_str = parse_description(SIMPLE_CHAIN_SRC).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
@@ -124,10 +140,21 @@ mod basic_transformation_tests {
             DeclId::NONE,
             "C.next_sibling should be None"
         );
+        let children: Vec<_> = ir.children(did_root).collect();
+        info!("Root children sequence = {:?}", children.iter().map(|d| d.0).collect::<Vec<_>>());
+        finish(
+            "node_child_chain_order_is_body_order",
+            timer,
+            "Root preserved the body order for all immediate children.",
+        );
     }
 
     #[test]
     fn node_child_chain_order_is_body_order_same_names() {
+        let timer = start(
+            "node_child_chain_order_is_body_order_same_names",
+            "Ensures siblings keep order even when names repeat.",
+        );
         let ast_str = parse_description(DUP_NAMES_SRC).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
@@ -228,10 +255,24 @@ mod basic_transformation_tests {
 
         let kids_a: Vec<_> = ir.children(did_root_a).collect();
         assert_eq!(kids_a, vec![did_root_a_a, did_root_a_b, did_root_a_c]);
+        info!(
+            "Root kids {:?}, nested Root.A kids {:?}",
+            kids_root.iter().map(|d| d.0).collect::<Vec<_>>(),
+            kids_a.iter().map(|d| d.0).collect::<Vec<_>>()
+        );
+        finish(
+            "node_child_chain_order_is_body_order_same_names",
+            timer,
+            "Duplicate-named children retained deterministic ordering.",
+        );
     }
 
     #[test]
     fn edge_children_include_arcs_as_decls() {
+        let timer = start(
+            "edge_children_include_arcs_as_decls",
+            "Checks that arc decls stay attached to their parent edge.",
+        );
         let ast_str = parse_description(EDGE_WITH_ARC_SRC).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
@@ -276,5 +317,11 @@ mod basic_transformation_tests {
 
         assert_eq!(ref_sign(&arc.refs[1]), -1, "second ref should be -");
         assert_eq!(ref_target(&arc.refs[1]), did_root0, "second ref should target Root0");
+        info!("Arc decl {:?} resolved to refs {:?}", arc_decl.0, arc.refs.len());
+        finish(
+            "edge_children_include_arcs_as_decls",
+            timer,
+            "Edge children enumeration exposed the arc declaration and references.",
+        );
     }
 }

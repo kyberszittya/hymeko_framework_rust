@@ -3,15 +3,23 @@ mod mod_test_module_store {
     use std::collections::HashMap;
     use std::path::Path;
     use std::sync::Arc;
+    use log::info;
+    use std::time::Instant;
     use hymeko::common::pathkey::PathKey;
     use hymeko::module_store::module_store::ModuleStore;
     use hymeko::resolution::resolve::{build_index_sym_with_prefix, validate_all_refs_sym_with_prefix, Index};
     use hymeko::module_store::source_provider::MemProvider;
     use crate::minimal_tests::constants::*;
     use crate::minimal_tests::TestParser;
+    use crate::test_helpers::{log_test_footer, log_test_header};
 
     #[test]
     fn module_store_loads_root_and_one_import() {
+        log_test_header(
+            "module_store_loads_root_and_one_import",
+            "Ensures ModuleStore caches imported dependencies and avoids duplicate fs reads.",
+        );
+        let start = Instant::now();
         // root.hmk importálja a dep.hmk-t A alias alatt
         let fs = MemProvider::default()
             .with_file(MODULE_STORE_ROOT_FILE, Arc::<str>::from(MODULE_STORE_SIMPLE_ROOT_SRC))
@@ -36,10 +44,21 @@ mod mod_test_module_store {
         let _ = ms.load_recursive(Path::new(MODULE_STORE_ROOT_FILE)).unwrap();
         assert_eq!(fs_probe.read_count(MODULE_STORE_ROOT_FILE), 1);
         assert_eq!(fs_probe.read_count(MODULE_STORE_DEP_FILE), 1);
+        info!("ModuleStore cache read counts root={}, dep={}", fs_probe.read_count(MODULE_STORE_ROOT_FILE), fs_probe.read_count(MODULE_STORE_DEP_FILE));
+        log_test_footer(
+            "module_store_loads_root_and_one_import",
+            Some(start.elapsed()),
+            "Verified caching behavior for root.hmk and dep.hmk.",
+        );
     }
 
     #[test]
     fn module_store_allows_resolving_imported_refs() {
+        log_test_header(
+            "module_store_allows_resolving_imported_refs",
+            "Confirms ModuleStore indexes imported modules with the correct alias prefix.",
+        );
+        let start = Instant::now();
         // root.hmk importálja a dep.hmk-t A alias alatt
         let fs = MemProvider::default()
             .with_file(MODULE_STORE_ROOT_FILE, MODULE_STORE_RESOLVE_ROOT_SRC)
@@ -72,5 +91,11 @@ mod mod_test_module_store {
         let foo_sym = ms.it.intern(MODULE_STORE_DEP_NODE);
         let foo_path = PathKey(vec![a, dep_sym, foo_sym]);
         assert!(idx.by_path.contains_key(&foo_path), "Dep.Foo should be indexed under the A prefix");
+        info!("Indexed path {:?}", foo_path);
+        log_test_footer(
+            "module_store_allows_resolving_imported_refs",
+            Some(start.elapsed()),
+            "Imported references resolved through alias A.",
+        );
     }
 }

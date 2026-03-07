@@ -7,7 +7,9 @@ mod test_csr_representations {
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::common::Real;
     use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
-    use crate::test_helpers::load_and_lower;
+    use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
+    use log::info;
+    use std::time::Instant;
     use crate::test_tensor_representations::constants::*;
 
     fn approx_eq(a: f32, b: f32, eps: f32) -> bool { (a - b).abs() <= eps }
@@ -29,6 +31,11 @@ mod test_csr_representations {
 
     #[test]
     fn csr_star_expansion_matches_coo_minimal_graph() {
+        log_test_header(
+            "csr_star_expansion_matches_coo_minimal_graph",
+            "Compares CSR star projection against the COO reference on the tiny graph.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -57,10 +64,25 @@ mod test_csr_representations {
                 );
             }
         }
+        info!(
+            "CSR star matched COO projection on dim {} with nnz={}",
+            dim,
+            csr.val.len()
+        );
+        log_test_footer(
+            "csr_star_expansion_matches_coo_minimal_graph",
+            Some(start.elapsed()),
+            "Minimal graph CSR star exactly matched the dense COO projection.",
+        );
     }
 
     #[test]
     fn csr_clique_expansion_correctness() {
+        log_test_header(
+            "csr_clique_expansion_correctness",
+            "Ensures the clique CSR keeps only the intended directed edge.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -98,10 +120,21 @@ mod test_csr_representations {
             "Clique projection failed to maintain strict directionality: found {} non-zeros instead of exactly 1",
             nz.len()
         );
+        info!("Clique CSR retained {} directed entry", nz.len());
+        log_test_footer(
+            "csr_clique_expansion_correctness",
+            Some(start.elapsed()),
+            "Clique CSR on the toy example left exactly one off-diagonal non-zero.",
+        );
     }
 
     #[test]
     fn csr_star_expansion_scales_to_fano_graph() {
+        log_test_header(
+            "csr_star_expansion_scales_to_fano_graph",
+            "Validates CSR star equality with COO on the larger Fano graph.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -137,5 +170,15 @@ mod test_csr_representations {
         // Ensure we actually mapped the topology and didn't just compare two empty matrices
         assert!(non_zero_count > 0, "Fano matrix projection resulted in an entirely zero matrix");
         assert_eq!(csr.val.len(), non_zero_count, "CSR nnz count differs from actual projected non-zeros");
+        info!(
+            "Fano CSR star validated with dim {} and nnz={}",
+            dim,
+            non_zero_count
+        );
+        log_test_footer(
+            "csr_star_expansion_scales_to_fano_graph",
+            Some(start.elapsed()),
+            "Fano CSR star exactly matched the COO projection with consistent nnz counts.",
+        );
     }
 }

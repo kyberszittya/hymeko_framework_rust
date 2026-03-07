@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod test_csr_builder {
     use hymeko::tensor::representations::tensor_csr::TensorCsrBuilder;
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use log::info;
+    use std::time::Instant;
 
     struct CsrBuilderCase {
         dim_i: usize,
@@ -39,12 +42,22 @@ mod test_csr_builder {
 
     #[test]
     fn test_tensor_csr_builder_finalize_coalesced() {
-        for case in TEST_CASES {
-            run_case(case);
+        log_test_header(
+            "test_tensor_csr_builder_finalize_coalesced",
+            "Coalesces COO data into CSR form across multiple fixtures.",
+        );
+        let start = Instant::now();
+        for (idx, case) in TEST_CASES.iter().enumerate() {
+            run_case(case, idx);
         }
+        log_test_footer(
+            "test_tensor_csr_builder_finalize_coalesced",
+            Some(start.elapsed()),
+            "All CSR builder cases produced the expected row/col/value buffers.",
+        );
     }
 
-    fn run_case(case: &CsrBuilderCase) {
+    fn run_case(case: &CsrBuilderCase, idx: usize) {
         let builder = TensorCsrBuilder::<f64> {
             dim_i: case.dim_i,
             dim_j: case.dim_j,
@@ -59,5 +72,12 @@ mod test_csr_builder {
         assert_eq!(csr.row_ptr, case.expected_row_ptr, "Unexpected row_ptr: {:?}", csr.row_ptr);
         assert_eq!(csr.col_ind, case.expected_col_ind, "Unexpected col_ind: {:?}", csr.col_ind);
         assert_eq!(csr.val, case.expected_vals, "Unexpected val: {:?}", csr.val);
+        info!(
+            "CSR case {} validated (dim {}x{}, nnz={})",
+            idx,
+            csr.num_rows,
+            csr.num_cols,
+            csr.val.len()
+        );
     }
 }

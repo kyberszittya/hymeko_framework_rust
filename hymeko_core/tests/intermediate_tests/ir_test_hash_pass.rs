@@ -6,12 +6,28 @@ mod test_hash_pass {
     use hymeko::ir::lower::lower_to_ir;
     use parser::parse_description;
     use hymeko::resolution::resolve::build_index_sym;
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use log::info;
+    use std::time::Instant;
 
     // Adjust import path to wherever you placed compute_merkle_hashes
     use hymeko::ir::hash_pass::compute_merkle_hashes;
 
+    fn start(name: &str, desc: &str) -> Instant {
+        log_test_header(name, desc);
+        Instant::now()
+    }
+
+    fn finish(name: &str, start: Instant, summary: &str) {
+        log_test_footer(name, Some(start.elapsed()), summary);
+    }
+
     #[test]
     fn deterministic_merkle_hashing() {
+        let timer = start(
+            "deterministic_merkle_hashing",
+            "Ensures identical structures hash identically and parents differ from children.",
+        );
         // We define two completely separate roots that contain an identical leaf
         let src = r#"
         hash_example {}
@@ -48,5 +64,11 @@ mod test_hash_pass {
         // 2. Proof of Avalanche Effect:
         // A parent's hash must be mathematically distinct from its child's hash
         assert_ne!(hash_root1.0, hash_leaf1.0, "Parent hash must differ from child hash");
+        info!("Leaf hash {:?} == {:?}; root hash {:?}", hash_leaf1.0, hash_leaf2.0, hash_root1.0);
+        finish(
+            "deterministic_merkle_hashing",
+            timer,
+            "Merkle hashing stayed deterministic while preserving avalanche behavior.",
+        );
     }
 }

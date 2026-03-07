@@ -1,8 +1,16 @@
 use hymeko::{as_node, body, find_node};
+use log::info;
+use std::time::Instant;
+use crate::test_helpers::{log_test_header, log_test_footer};
 use super::constants::*;
 
 #[test]
 fn parses_minimal_example_context_fields() {
+    log_test_header(
+        "parses_minimal_example_context_fields/basic_hierarchy",
+        "Validates the nested nodes in the minimal hierarchy example.",
+    );
+    let start = Instant::now();
     let source_code = parser::read_source_file(MINIMAL_BASIC_HIERARCHY_PATH).expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
@@ -17,6 +25,7 @@ fn parses_minimal_example_context_fields() {
     // context body: node_lev_0, node_lev_1
     let ctx = body(context);
     assert_eq!(ctx.len(), BASIC_CONTEXT_CHILD_COUNT);
+    info!("Context child count OK: {}", ctx.len());
 
     let lev0 = find_node(ctx, "node_lev_0").unwrap();
     let lev1 = find_node(ctx, "node_lev_1").unwrap();
@@ -27,6 +36,7 @@ fn parses_minimal_example_context_fields() {
     for (item, expected) in lev0_body.iter().zip(BASIC_LEVEL0_BODY_NAMES.iter()) {
         assert_eq!(as_node(item).unwrap().inner.name, *expected);
     }
+    info!("Validated node_lev_0 children: {:?}", BASIC_LEVEL0_BODY_NAMES);
 
     // node0 is a block and contains: node0;
     let node0_block = as_node(&lev0_body[0]).unwrap();
@@ -42,4 +52,10 @@ fn parses_minimal_example_context_fields() {
     for (item, expected) in lev1_body.iter().zip(BASIC_LEVEL1_BODY_NAMES.iter()) {
         assert_eq!(as_node(item).unwrap().inner.name, *expected);
     }
+    info!("Validated node_lev_1 children: {:?}", BASIC_LEVEL1_BODY_NAMES);
+    log_test_footer(
+        "parses_minimal_example_context_fields/basic_hierarchy",
+        Some(start.elapsed()),
+        "Confirmed hierarchy structure for both node levels.",
+    );
 }

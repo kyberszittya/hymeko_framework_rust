@@ -1,4 +1,7 @@
 use parser::ast::*;
+use log::info;
+use std::time::Instant;
+use crate::test_helpers::{log_test_footer, log_test_header};
 use super::constants::{NODE_A_NAME, NODE_B_NAME, SMOKE_ARC_WEIGHT, SMOKE_EDGE_NAME, SMOKE_NODE_NAME};
 
 fn ra(name: &str) -> RefAtom<'static, String> {
@@ -10,6 +13,11 @@ fn ra(name: &str) -> RefAtom<'static, String> {
 
 #[test]
 fn ast_variants_are_constructible() {
+    log_test_header(
+        "ast_variants_are_constructible",
+        "Constructs node/edge/arc HyperItems to ensure smoke-level API stability.",
+    );
+    let start = Instant::now();
     let node_item = HyperItem::Node(HyperAnnotatedElement {
         anno: Anno { tags: Vec::new(), value: None },
         inner: NodeInner { name: SMOKE_NODE_NAME.to_string(), bases: vec![], body: None },
@@ -60,4 +68,10 @@ fn ast_variants_are_constructible() {
         }
         _ => panic!("expected HyperItem::Arc"),
     }
+    info!("Constructed node '{}', edge '{}', and arc with weight {:.2}", SMOKE_NODE_NAME, SMOKE_EDGE_NAME, SMOKE_ARC_WEIGHT);
+    log_test_footer(
+        "ast_variants_are_constructible",
+        Some(start.elapsed()),
+        "Verified HyperItem variants remain constructible in tests.",
+    );
 }

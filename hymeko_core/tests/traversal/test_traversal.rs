@@ -2,37 +2,35 @@
 mod test_traversal
 {
     use std::collections::HashSet;
+    use std::time::Instant;
     use hymeko::common::pathkey::PathKey;
     use hymeko::ir::lower::lower_to_ir;
     use hymeko::resolution::intern_pass::{intern_ast, Interned};
     use hymeko::resolution::resolve::build_index_sym;
-    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::traversal::graph_traversal::dfs_preorder;
     use hymeko::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
+    use log::info;
     use parser::ast::AstStr;
     use parser::parse_description;
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use crate::traversal::constants::*;
 
-    const BERGE_SRC: &str = r#"
-        berge_demo {}
+    fn start(name: &str, desc: &str) -> Instant {
+        log_test_header(name, desc);
+        Instant::now()
+    }
 
-        D {
-            A {}
-            B {}
-            Root {
-                @E { (+A, +B); }
-            }
-        }
-        "#;
-    const NAMESPACE_D: &str = "D";
-    const NODE_A: &str = "A";
-    const NODE_B: &str = "B";
-    const ROOT_NAME: &str = "Root";
-    const EDGE_E: &str = "E";
-    const AGG_CFG: AggCfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+    fn finish(name: &str, start: Instant, summary: &str) {
+        log_test_footer(name, Some(start.elapsed()), summary);
+    }
 
     #[test]
     fn berge_dfs_reaches_other_node() {
+        let timer = start(
+            "berge_dfs_reaches_other_node",
+            "Ensures Berge DFS from A visits edge E and node B.",
+        );
         let desc: AstStr = parse_description(BERGE_SRC).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&desc);
 
@@ -82,5 +80,16 @@ mod test_traversal
         assert!(got_set.contains(&BergeState::Node(nid_a)), "DFS should include start node A");
         assert!(got_set.contains(&BergeState::Edge(eid_e)), "DFS should include edge E");
         assert!(got_set.contains(&BergeState::Node(nid_b)), "DFS should reach node B");
+        info!(
+            "Berge DFS visited {} states (nodes={}, edges={})",
+            got_set.len(),
+            got_set.iter().filter(|s| matches!(s, BergeState::Node(_))).count(),
+            got_set.iter().filter(|s| matches!(s, BergeState::Edge(_))).count()
+        );
+        finish(
+            "berge_dfs_reaches_other_node",
+            timer,
+            "DFS traversal covered the expected node/edge frontier.",
+        );
     }
 }

@@ -14,10 +14,10 @@
   - [X] Extract magic numbers from test cases
 
 - [ ] **Task 1.2: FxHash Integration (Local Loop Acceleration)**
-  - [ ] Add `rustc-hash` to the dependencies in `hymeko/Cargo.toml`.
-  - [ ] Open `hymeko/src/engine/hypergraphengine.rs`.
-  - [ ] Replace `std::collections::HashMap` with `rustc_hash::FxHashMap` for `node_registry`, `edge_registry`, and `ir_repository`.
-  - [ ] Update their initialization to use `FxHashMap::default()`.
+  - [X] Add `rustc-hash` to the dependencies in `hymeko/Cargo.toml`.
+  - [X] Open `hymeko/src/engine/hypergraphengine.rs`.
+  - [X] Replace `std::collections::HashMap` with `rustc_hash::FxHashMap` for `node_registry`, `edge_registry`, and `ir_repository`.
+  - [X] Update their initialization to use `FxHashMap::default()`.
   - [ ] Locate the tensor expansion loops and swap the temporary `decl_to_csr_node` and `decl_to_csr_edge` mappings to `FxHashMap`.
 
 - [ ] **Task 1.3: Deterministic B-Tree Indexing (Hash Stability)**

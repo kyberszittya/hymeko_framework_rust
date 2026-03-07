@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use crate::engine::hypergraphengine::HypergraphEngine;
 use crate::ir::common::ref_target;
 use crate::ir::ir::{DeclKind, Ir, SignedRefR};
@@ -8,13 +8,13 @@ impl HypergraphEngine {
     pub fn new() -> Self {
         Self {
             builder: TensorCoo::with_meta(0, 0, 0),
-            node_registry: HashMap::new(),
-            edge_registry: HashMap::new(),
+            node_registry: FxHashMap::default(),
+            edge_registry: FxHashMap::default(),
             node_names: Vec::new(),
             edge_names: Vec::new(),
             current_nodes: 0,
             current_edges: 0,
-            ir_repository: HashMap::new(),
+            ir_repository: FxHashMap::default(),
         }
     }
 

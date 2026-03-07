@@ -1,4 +1,4 @@
-#!cfg[(test)]
+#![cfg(test)]
 mod resolve_fano_graph {
     use hymeko::{body, find_edge, find_node, find_node_id};
     use hymeko::common::ids::{DeclId, SymId};
@@ -8,9 +8,17 @@ mod resolve_fano_graph {
     use hymeko::resolution::interner::Interner;
     use parser::ast::*;
     use crate::typical_graphs::fano::constants::*;
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use log::{debug, info, log_enabled, Level};
+    use std::time::Instant;
 
     #[test]
     fn parse_fano_graph_resolve() -> Result<(), resolve::ResolveError> {
+        log_test_header(
+            "parse_fano_graph_resolve",
+            "Parses and resolves the Fano graph, ensuring refs validate.",
+        );
+        let start = Instant::now();
         let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
@@ -89,11 +97,22 @@ mod resolve_fano_graph {
         // Check that all references are resolved (iterate over all edges)
 
 
+        info!("Fano resolve index contained {} entries", idx.by_path.len());
+        log_test_footer(
+            "parse_fano_graph_resolve",
+            Some(start.elapsed()),
+            "Resolve pass succeeded for the AST-level Fano graph.",
+        );
         Ok(())
     }
 
     #[test]
     fn fano_graph_shape() -> Result<(), Box<dyn std::error::Error>> {
+        log_test_header(
+            "fano_graph_shape",
+            "Verifies node/edge counts and arc structure via SymId AST.",
+        );
+        let start = Instant::now();
         // parse -> AST<String>
         let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
@@ -151,6 +170,12 @@ mod resolve_fano_graph {
             }
         }
 
+        info!("Fano shape confirmed: {} nodes, {} edges", FANO_POINT_NODE_COUNT, FANO_EDGE_COUNT);
+        log_test_footer(
+            "fano_graph_shape",
+            Some(start.elapsed()),
+            "AST shape matched Fano expectations.",
+        );
         Ok(())
     }
 
@@ -187,6 +212,11 @@ mod resolve_fano_graph {
 
     #[test]
     fn fano_edges_resolve_to_expected_nodes() -> Result<(), Box<dyn std::error::Error>> {
+        log_test_header(
+            "fano_edges_resolve_to_expected_nodes",
+            "Resolves each Fano edge arc and compares targets to the expected triples.",
+        );
+        let start = Instant::now();
         // 1) Parse -> AST<String>
         let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
@@ -244,12 +274,19 @@ mod resolve_fano_graph {
 
             let mut exp = nodes.iter().map(|n| format!("fano.{n}")).collect::<Vec<_>>();
             exp.sort();
-            // Print info everytime for easier debugging
-            println!("Edge {ename}: expected targets = {exp:?}, got = {got:?}");
-
+            if log_enabled!(Level::Debug) {
+                debug!("Edge {ename}: expected targets = {exp:?}, got = {got:?}");
+            }
             assert_eq!(got, exp, "{ename}: resolved targets mismatch");
         }
 
+        info!("Verified {} Fano edges resolve to their expected node triples", FANO_EDGE_COUNT);
+
+        log_test_footer(
+            "fano_edges_resolve_to_expected_nodes",
+            Some(start.elapsed()),
+            "All Fano edges resolved to the expected incidence sets.",
+        );
         Ok(())
     }
 

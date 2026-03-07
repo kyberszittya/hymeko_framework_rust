@@ -5,13 +5,20 @@ mod minimal_tensor_representations {
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;
     use hymeko::traversal::hypergraphview::HyperGraphView;
-    use crate::test_helpers::load_and_lower;
+    use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
+    use log::info;
+    use std::time::Instant;
     use crate::test_tensor_representations::constants::*;
 
     fn approx_eq(a: f32, b: f32, eps: f32) -> bool { (a - b).abs() <= eps }
 
     #[test]
     fn tiny_star_2nodes_1edge_directions_and_values() {
+        log_test_header(
+            "tiny_star_2nodes_1edge_directions_and_values",
+            "Validates raw star incidences for the two-node tiny graph.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -63,10 +70,25 @@ mod minimal_tensor_representations {
         }
         let dim = hg.num_nodes() + hg.num_edges();
         print_dense_block::<f32>(&coo, 0, 0, 0, dim, dim);
+        info!(
+            "Tiny star located minus node {} -> 0.85 and plus node {} -> 0.9",
+            v_minus,
+            v_plus
+        );
+        log_test_footer(
+            "tiny_star_2nodes_1edge_directions_and_values",
+            Some(start.elapsed()),
+            "Star incidences produced the expected directional weights (0.85/0.9).",
+        );
     }
 
     #[test]
     fn tiny_star_2nodes_1edge_normalized_matches_formula() {
+        log_test_header(
+            "tiny_star_2nodes_1edge_normalized_matches_formula",
+            "Checks normalized star entries against the manual degree formula.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -102,11 +124,25 @@ mod minimal_tensor_representations {
         assert!((a[v_plus][e_idx]  - expected_plus ).abs() < EPS_F32_DEFAULT);
         let dim = hg.num_nodes() + hg.num_edges();
         print_dense_block::<f32>(&coo, 0, 0, 0, dim, dim);
-
+        info!(
+            "Normalized star minus node {} plus node {} matched analytic scaling",
+            v_minus,
+            v_plus
+        );
+        log_test_footer(
+            "tiny_star_2nodes_1edge_normalized_matches_formula",
+            Some(start.elapsed()),
+            "Normalized entries equaled the computed (deg_v, deg_e) scaling.",
+        );
     }
 
     #[test]
     fn tiny_clique_2nodes_1edge_expected_direction_and_value() {
+        log_test_header(
+            "tiny_clique_2nodes_1edge_expected_direction_and_value",
+            "Checks clique projection directionality for the 2-node toy graph.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(MINIMAL_TENSOR_VALUES_PATH).unwrap();
 
         let aggcfg = DEFAULT_AGG_CFG;
@@ -130,12 +166,6 @@ mod minimal_tensor_representations {
         assert!((a[0][0]).abs() <= eps, "diag(0,0) should be 0, got {}", a[0][0]);
         assert!((a[1][1]).abs() <= eps, "diag(1,1) should be 0, got {}", a[1][1]);
 
-        let off01 = a[0][1];
-        let off10 = a[1][0];
-
-        let expected =  0.85_f32 * 0.9_f32; // 1.53
-
-
         for i in 0..n {
             assert!(a[0][i].abs() < eps);
             assert!(a[i][0].abs() < eps);
@@ -153,5 +183,16 @@ mod minimal_tensor_representations {
         }
         assert_eq!(nz.len(), 1, "There should be exactly one directed off-diagonal entry");
         assert!((nz[0].2 - 0.765).abs() < EPS_F32_DEFAULT, "Expected mathematically correct single-counted weight 0.765, got {}", nz[0].2);
+        info!(
+            "Clique non-zero registered at ({}, {}) with value {:.3}",
+            nz[0].0,
+            nz[0].1,
+            nz[0].2
+        );
+        log_test_footer(
+            "tiny_clique_2nodes_1edge_expected_direction_and_value",
+            Some(start.elapsed()),
+            "Clique projection kept exactly one directed off-diagonal entry (0.765).",
+        );
     }
 }

@@ -1,11 +1,18 @@
 #[cfg(test)]
 mod test_annotations {
     use hymeko::ir::ir::{DeclKind, SignedRefR};
-    use crate::test_helpers::{find_decl, get_node, has_tag, load_and_lower, weight0};
+    use crate::test_helpers::{find_decl, get_node, has_tag, load_and_lower, log_test_footer, log_test_header, weight0};
+    use log::info;
+    use std::time::Instant;
     use crate::minimal_tests::constants::*;
 
     #[test]
     fn parses_minimal_tag_annotation_and_extracts_bases_and_arc_weights() {
+        log_test_header(
+            "parses_minimal_tag_annotation_and_extracts_bases_and_arc_weights",
+            "Parses tag annotations and validates node bases along with arc weights.",
+        );
+        let start = Instant::now();
         let src = std::fs::read_to_string(TAG_ANNOTATION_PATH).unwrap();
 
         let ast = parser::parse_description(&src).expect("parse should succeed");
@@ -99,10 +106,21 @@ mod test_annotations {
             }
             other => panic!("expected second ref Plus(node10), got {:?}", other),
         }
+        info!("Validated annotation fixture {}", TAG_ANNOTATION_PATH);
+        log_test_footer(
+            "parses_minimal_tag_annotation_and_extracts_bases_and_arc_weights",
+            Some(start.elapsed()),
+            "Node bases and arc weights matched expectations.",
+        );
     }
 
     #[test]
     fn lowers_node_bases_into_ir_with_isa_tag() {
+        log_test_header(
+            "lowers_node_bases_into_ir_with_isa_tag",
+            "Checks that node bases carry isa tags through IR lowering.",
+        );
+        let start = Instant::now();
         let (store, compiled) = load_and_lower(TAG_ANNOTATION_PATH).unwrap();
 
         let ir = &compiled.ir;
@@ -130,10 +148,21 @@ mod test_annotations {
             }
             other => panic!("expected Plus base ref, got {:?}", other),
         }
+        info!("lowered node {} base count {}", NODE10_NAME, n10.bases.len());
+        log_test_footer(
+            "lowers_node_bases_into_ir_with_isa_tag",
+            Some(start.elapsed()),
+            "IR retained isa tags on node10 -> node0 base.",
+        );
     }
 
     #[test]
     fn lowers_multi_bases_into_ir_and_preserves_tags_and_default_direction() {
+        log_test_header(
+            "lowers_multi_bases_into_ir_and_preserves_tags_and_default_direction",
+            "Ensures multi-base annotations keep their tags and signs in IR.",
+        );
+        let start = Instant::now();
         let (store, compiled) = load_and_lower(MULTI_TAG_ANNOTATION_PATH).unwrap();
 
         let ir = &compiled.ir;
@@ -218,5 +247,11 @@ mod test_annotations {
             }
             other => panic!("arc[1]: expected Plus(node10), got {:?}", other),
         }
+        info!("Validated multi-base annotations across {} nodes", 4);
+        log_test_footer(
+            "lowers_multi_bases_into_ir_and_preserves_tags_and_default_direction",
+            Some(start.elapsed()),
+            "Multi-base annotations preserved isa/impl tags and edge weights.",
+        );
     }
 }

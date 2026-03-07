@@ -1,9 +1,17 @@
 use parser::ast::*;
+use log::info;
+use std::time::Instant;
+use crate::test_helpers::{log_test_header, log_test_footer};
 use super::constants::{MINIMAL_WITH_FIELDS_EXPECTATIONS, MINIMAL_WITH_FIELDS_PATH, CONTEXT_NODE_NAME, DESC_MINIMAL_EXAMPLE_NAME};
 use super::helpers::assert_expected_fields;
 
 #[test]
 fn parses_minimal_example_context_fields() {
+    log_test_header(
+        "parses_minimal_example_context_fields",
+        "Parses the minimal example with fields and validates every annotated node.",
+    );
+    let start = Instant::now();
     let source_code = parser::read_source_file(MINIMAL_WITH_FIELDS_PATH).expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
@@ -20,4 +28,10 @@ fn parses_minimal_example_context_fields() {
 
     let ctx_body = context.inner.body.as_ref().expect("context must have a body");
     assert_expected_fields(ctx_body.as_slice(), MINIMAL_WITH_FIELDS_EXPECTATIONS);
+    info!("Validated {} field expectations", MINIMAL_WITH_FIELDS_EXPECTATIONS.len());
+    log_test_footer(
+        "parses_minimal_example_context_fields",
+        Some(start.elapsed()),
+        "Parsed source and confirmed all expected field annotations.",
+    );
 }

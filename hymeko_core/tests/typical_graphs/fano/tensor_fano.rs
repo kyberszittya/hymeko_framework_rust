@@ -1,14 +1,16 @@
 #[cfg(test)]
 
 mod tensor_fano {
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeSet, HashMap, HashSet};
     use hymeko::common::ids::{EdgeId, NodeId};
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;
-    use crate::test_helpers::{load_and_lower, print_dense_matrix};
+    use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header, print_dense_matrix};
+    use log::info;
+    use std::time::Instant;
     use crate::typical_graphs::fano::constants::*;
 
     const AGG_CFG: AggCfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
@@ -21,6 +23,11 @@ mod tensor_fano {
 
     #[test]
     fn fano_invariants_hold() {
+        log_test_header(
+            "fano_invariants_hold",
+            "Validates classical Fano incidence invariants against the tensor view.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
@@ -77,10 +84,26 @@ mod tensor_fano {
                 );
             }
         }
+        info!(
+            "Fano invariants: {} nodes, {} edges, {} incidences",
+            hg.num_nodes(),
+            hg.num_edges(),
+            hg.flat_edge_nodes.len()
+        );
+        log_test_footer(
+            "fano_invariants_hold",
+            Some(start.elapsed()),
+            "All structural invariants (degrees, intersections) satisfied.",
+        );
     }
 
     #[test]
     fn star_tensor_respects_bretto_directions() {
+        log_test_header(
+            "star_tensor_respects_bretto_directions",
+            "Checks star tensor directions vs. Bretto sign policy.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
@@ -121,10 +144,20 @@ mod tensor_fano {
                 }
             }
         }
+        log_test_footer(
+            "star_tensor_respects_bretto_directions",
+            Some(start.elapsed()),
+            "Each incidence generated the expected directed entries in the star tensor.",
+        );
     }
 
     #[test]
     fn fano_star_tensor_nnz_matches_sign_policy() {
+        log_test_header(
+            "fano_star_tensor_nnz_matches_sign_policy",
+            "Counts non-zeros in the star tensor to match neutral/directed policy.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
@@ -148,12 +181,27 @@ mod tensor_fano {
         assert_eq!(coo.num_slices, hg.num_edges());
         assert_eq!(coo.dim_i, hg.num_nodes() + hg.num_edges());
         assert_eq!(coo.dim_j, hg.num_nodes() + hg.num_edges());
+        info!(
+            "Star tensor NNZ check: {} directed, {} neutral -> {} entries",
+            directed,
+            neutral,
+            coo.len()
+        );
+        log_test_footer(
+            "fano_star_tensor_nnz_matches_sign_policy",
+            Some(start.elapsed()),
+            "Star tensor dimensions and nnz matched the sign policy counts.",
+        );
     }
 
 
     #[test]
     fn fano_star_tensor_has_correct_matrix_entries() {
-        use std::collections::HashMap;
+        log_test_header(
+            "fano_star_tensor_has_correct_matrix_entries",
+            "Confirms per-slice entries align with incidence signs and values.",
+        );
+        let start = Instant::now();
 
         let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
@@ -223,7 +271,7 @@ mod tensor_fano {
             // to an incidence in this edge (in one of the allowed directions).
             //
             // Build a set of allowed pairs for this edge slice.
-            let mut allowed = std::collections::HashSet::<(usize, usize)>::new();
+            let mut allowed = HashSet::<(usize, usize)>::new();
             for p in a..b {
                 let u = hg.flat_edge_nodes[p].0;
                 let s = hg.flat_edge_sign[p];
@@ -246,22 +294,43 @@ mod tensor_fano {
                 assert!((val - 1.0).abs() <= FANO_TOLERANCE, "Unexpected value in slice {e}: ({i},{j}) = {val}");
             }
         }
+        log_test_footer(
+            "fano_star_tensor_has_correct_matrix_entries",
+            Some(start.elapsed()),
+            "All slice entries matched the expected sign-constrained adjacency.",
+        );
     }
 
     #[test]
     fn debug_fano_star_dense_view() {
+        log_test_header(
+            "debug_fano_star_dense_view",
+            "Materializes one dense slice for human inspection.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let coo = star_expansion_coo(&hg);
+        assert!(coo.len() > 0, "Star tensor should contain entries for Fano graph");
 
         // Print slice 0 as a sanity check (14x14 would still be OK, but let's show all).
         print_dense_block(&coo, 0, 0, 0, coo.dim_i, coo.dim_j);
+        log_test_footer(
+            "debug_fano_star_dense_view",
+            Some(start.elapsed()),
+            "Slice 0 dense block dumped for debugging.",
+        );
     }
 
     #[test]
     fn projected_star_matches_view_incidence() {
+        log_test_header(
+            "projected_star_matches_view_incidence",
+            "Projects the star tensor and matches it against raw incidence lists.",
+        );
+        let start = Instant::now();
         let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
@@ -310,5 +379,10 @@ mod tensor_fano {
             }
         }
         print_dense_matrix(&proj, "Projected star matrix (sum over slices)");
+        log_test_footer(
+            "projected_star_matches_view_incidence",
+            Some(start.elapsed()),
+            "Projected star matrix matched directly accumulated incidence weights.",
+        );
     }
-}
+ }

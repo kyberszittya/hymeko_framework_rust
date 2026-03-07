@@ -1,4 +1,4 @@
-#!cfg[(test)]
+#![cfg(test)]
 mod ir_fano_graph {
     use hymeko::common::ids::{DeclId, SymId};
     use hymeko::common::pathkey::PathKey;
@@ -8,6 +8,9 @@ mod ir_fano_graph {
     use hymeko::resolution::interner::Interner;
     use hymeko::resolution::{intern_pass, resolve};
     use crate::typical_graphs::fano::constants::*;
+    use crate::test_helpers::{log_test_footer, log_test_header};
+    use log::{debug, info, log_enabled, Level};
+    use std::time::Instant;
 
     fn invert_index(
         idx: &resolve::Index,
@@ -40,6 +43,11 @@ mod ir_fano_graph {
 
     #[test]
     fn fano_graph_lowers_to_ir_with_correct_arc_targets() -> Result<(), Box<dyn std::error::Error>> {
+        log_test_header(
+            "fano_graph_lowers_to_ir_with_correct_arc_targets",
+            "Lowers the Fano graph to IR and confirms each arc hits the expected nodes.",
+        );
+        let start = Instant::now();
         // 1) parse -> AST<String>
         let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
@@ -75,25 +83,23 @@ mod ir_fano_graph {
 
             let edge = &ir.edges[edge_id.0];
 
-            // Print edge info  fordebugging
-            println!("Checking edge '{ename}' (DeclId: {:?}, EdgeId: {:?})", edge_did, edge_id);
-            // Print arc info
-            for (i, arc_ref) in edge.arcs.iter().enumerate() {
-                let arc_did = ir.decl_to_arc.iter().position(|&aid| aid == Some(*arc_ref))
-                    .map(|i| DeclId(i))
-                    .unwrap_or_else(|| panic!("ArcId {:?} not mapped to DeclId in IR", arc_ref));
-                println!("  Arc {i}: DeclId: {:?}, Parent Edge DeclId: {:?}", arc_did, edge_did);
-                // Print arc refs
-                let arc = &ir.arcs[arc_ref.0];
-                for (j, r) in arc.refs.iter().enumerate() {
-                    let target_did = ref_target(r);
-                    let target_name = inv.get(&target_did)                        .cloned()
-                        .unwrap_or_else(|| format!("<unknown {target_did:?}>"));
-                    println!("    Ref {j}: target DeclId: {:?}, name: {}", target_did, target_name);
+            if log_enabled!(Level::Debug) {
+                debug!("Checking edge '{ename}' (DeclId: {:?}, EdgeId: {:?})", edge_did, edge_id);
+                for (i, arc_ref) in edge.arcs.iter().enumerate() {
+                    let arc_did = ir.decl_to_arc.iter().position(|&aid| aid == Some(*arc_ref))
+                        .map(|idx| DeclId(idx))
+                        .unwrap_or_else(|| panic!("ArcId {:?} not mapped to DeclId in IR", arc_ref));
+                    debug!("  Arc {i}: DeclId: {:?}, Parent Edge DeclId: {:?}", arc_did, edge_did);
+                    let arc = &ir.arcs[arc_ref.0];
+                    for (j, r) in arc.refs.iter().enumerate() {
+                        let target_did = ref_target(r);
+                        let target_name = inv.get(&target_did)
+                            .cloned()
+                            .unwrap_or_else(|| format!("<unknown {target_did:?}>"));
+                        debug!("    Ref {j}: target DeclId: {:?}, name: {}", target_did, target_name);
+                    }
                 }
-
             }
-
 
             assert_eq!(edge.arcs.len(), 1, "{ename}: expected exactly 1 arc");
 
@@ -117,6 +123,13 @@ mod ir_fano_graph {
             assert_eq!(got, exp, "{ename}: IR arc targets mismatch");
         }
 
-        Ok(())
-    }
-}
+        info!("Verified {} IR edges retained the expected arc targets", FANO_EDGE_COUNT);
+
+        log_test_footer(
+             "fano_graph_lowers_to_ir_with_correct_arc_targets",
+             Some(start.elapsed()),
+             "IR arcs matched the expected node triplets.",
+         );
+         Ok(())
+     }
+ }

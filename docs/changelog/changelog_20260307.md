@@ -18,3 +18,8 @@
 - Expanded `tests/minimal_tests/constants.rs` with every path/name/weight used across the suite (module-store fixtures, tag-annotation nodes, smoke-test weights, edge expectations) and introduced the shared `helpers` module for field assertions.
 - Refactored the traversal/tensor/edge/annotation/module-store/smoke tests to import those fixtures, eliminating inlined strings, verifying flattened weight vectors, and adding new sanity checks for HyperItem variants and DeclId lookups.
 - Re-ran the focused suites via `cargo test minimal_tests::test_module_store::mod_test_module_store minimal_tests::test_smoke_test minimal_tests::annotations::test_annotations minimal_tests::edges::test_ref_values --color never` to confirm the new helpers and assertions behave as expected.
+
+## Core Test Telemetry & Logging Cleanup
+- Applied the same constant-hoisting + logging strategy to `tests/traversal`, `tests/intermediate_tests`, `tests/domain_transformations`, and `tests/aggregations`, including a new `traversal::constants` module and start/finish helpers that wrap every case with elapsed-time output.
+- Added contextual `info!` statements (node/edge counts, hash digests, inheritance tallies, aggregator outcomes) so CI logs explain what each suite verified without drowning tensor dumps.
+- Re-ran the full integration suite with `cargo test -p hymeko_core --tests -- --nocapture` to validate the instrumentation and give Codecov a consistent signal.

@@ -1,6 +1,10 @@
-
+use std::fmt::Write;
+use std::io::{self, Write as IoWrite};
 use std::path::{Path};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock, Mutex};
+use std::time::{Duration, SystemTime};
+use env_logger::Env;
+use log::{info, LevelFilter};
 use hymeko::common::ids::{DeclId, SymId};
 use hymeko::ir::ir::{DeclKind, Ir, NodeRec, SignedRefR, ValueR};
 use hymeko::module_store::module_store::{CompiledProgram, HymekoParser, ModuleLoadError, ModuleStore};
@@ -36,17 +40,29 @@ pub fn load_and_lower(
 }
 
 pub fn print_dense_matrix(m: &[Vec<f32>], title: &str) {
-    println!("{title} ({}x{}):", m.len(), if m.is_empty() { 0 } else { m[0].len() });
+    init_test_logger();
+    let lock = MATRIX_PRINT_LOCK.get_or_init(|| Mutex::new(())).lock().expect("matrix print lock poisoned");
+    let cols = if m.is_empty() { 0 } else { m[0].len() };
+    let mut buf = String::new();
+    let _ = writeln!(buf, "{title} ({}x{}):", m.len(), cols);
     for row in m {
         for &x in row {
             if (x - x.round()).abs() < 1e-6 {
-                print!("{:>3} ", x.round() as i32);
+                let _ = write!(buf, "{:>3} ", x.round() as i32);
             } else {
-                print!("{:>6.2} ", x);
+                let _ = write!(buf, "{:>6.2} ", x);
             }
         }
-        println!();
+        buf.push('\n');
     }
+    info!("--- BEGIN TENSOR: {title} ---");
+    let prev_level = log::max_level();
+    log::set_max_level(LevelFilter::Warn);
+    print!("{}", buf);
+    let _ = io::stdout().flush();
+    log::set_max_level(prev_level);
+    info!("--- END TENSOR: {title} ---");
+    drop(lock);
 }
 
 pub fn find_decl(ir: &Ir, it: &Interner, name: &str, kind: DeclKind) -> DeclId {
@@ -93,4 +109,39 @@ pub fn weight0(r: &SignedRefR) -> f64 {
         }
         None => panic!("expected weight(s), got None"),
     }
+}
+
+static TEST_LOGGER: OnceLock<()> = OnceLock::new();
+static MATRIX_PRINT_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+fn init_test_logger() {
+    TEST_LOGGER.get_or_init(|| {
+        let _ = env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+            .is_test(true)
+            .try_init();
+    });
+}
+
+pub fn log_test_header(title: &str, details: &str) {
+    init_test_logger();
+    info!("============================================================");
+    info!("TEST START: {title}");
+    if !details.is_empty() {
+        info!("DETAILS: {details}");
+    }
+    info!("START TIME: {:?}", SystemTime::now());
+    info!("============================================================");
+}
+
+pub fn log_test_footer(title: &str, duration: Option<Duration>, summary: &str) {
+    init_test_logger();
+    info!("------------------------------------------------------------");
+    if let Some(d) = duration {
+        info!("DURATION: {:.3} seconds", d.as_secs_f64());
+    }
+    if !summary.is_empty() {
+        info!("SUMMARY: {summary}");
+    }
+    info!("END TEST: {title}");
+    info!("============================================================");
 }
