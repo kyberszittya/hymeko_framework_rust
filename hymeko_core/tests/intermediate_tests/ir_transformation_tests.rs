@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod basic_transformation_tests {
     use hymeko::common::ids::{DeclId, SymId};
@@ -10,12 +9,7 @@ mod basic_transformation_tests {
     use parser::parse_description;
     use hymeko::resolution::resolve::build_index_sym;
 
-
-
-    #[test]
-    fn node_child_chain_order_is_body_order() {
-        // Minimal, self-contained input that creates node→node nesting
-        let src = r#"
+    const SIMPLE_CHAIN_SRC: &str = r#"
         test{}
         D {
             Root {
@@ -25,53 +19,75 @@ mod basic_transformation_tests {
             }
         }
         "#;
+    const DUP_NAMES_SRC: &str = r#"
+        test{}
+        D {
+            Root {
+                A {
+                  A;
+                  B;
+                  C;
+                }
+                B;
+                C;
+            }
+        }
+        "#;
+    const EDGE_WITH_ARC_SRC: &str = r#"
+        edge_example{}
+        D {
+            Root0 {}
+            Root {
+                @E { (+Root, -Root0); }
+            }
+        }
+        "#;
 
-        // parse -> intern -> index -> lower
-        let ast_str = parse_description(src).expect("parse failed");
+    const SYM_TEST: &str = "test";
+    const SYM_D: &str = "D";
+    const SYM_ROOT: &str = "Root";
+    const SYM_ROOT0: &str = "Root0";
+    const SYM_A: &str = "A";
+    const SYM_B: &str = "B";
+    const SYM_C: &str = "C";
+    const SYM_E: &str = "E";
+
+    const SID_TEST: usize = 0;
+    const SID_D: usize = 1;
+    const SID_ROOT: usize = 2;
+    const SID_A: usize = 3;
+    const SID_B: usize = 4;
+    const SID_C: usize = 5;
+
+    const SIMPLE_INDEX_LEN: usize = 5;
+    const DUP_INDEX_LEN: usize = 8;
+
+    #[test]
+    fn node_child_chain_order_is_body_order() {
+        let ast_str = parse_description(SIMPLE_CHAIN_SRC).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
         let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
-        // List all elements stored in interner for debugging
-        println!("Interner contents:");
-        for (sid, s) in interner.iter() {
-            println!("  SymId({}): '{}'", sid.0, s);
-        }
-        // List all paths in the index for debugging
-        println!("Index paths:");
-        for (path_key, did) in &idx.by_path {
-            let path_str = path_key.0.iter().map(|&sid| interner.resolve(sid)).collect::<Vec<_>>().join(".");
-            println!("  PathKey({}): '{}'", did.0, path_str);
-        }
 
-        // Resolve DeclIds by path: Root, Root.A, Root.B, Root.C
-        let sid_root = interner.intern("Root");
-        let sid_a = interner.intern("A");
-        let sid_b = interner.intern("B");
-        let sid_c = interner.intern("C");
-        // Print resolved sids for debugging
-        println!("Resolved SymIds:");
-        println!("  Root: SymId({})", sid_root.0);
-        println!("  A: SymId({})", sid_a.0);
-        println!("  B: SymId({})", sid_b.0);
-        println!("  C: SymId({})", sid_c.0);
+        let sid_root = interner.intern(SYM_ROOT);
+        let sid_a = interner.intern(SYM_A);
+        let sid_b = interner.intern(SYM_B);
+        let sid_c = interner.intern(SYM_C);
 
-        // Assert Interner contents
-        assert_eq!(interner.resolve(SymId(0)), "test", "SymId(0) should be 'test'");
-        assert_eq!(interner.resolve(SymId(1)), "D", "SymId(1) should be 'D'");
-        assert_eq!(interner.resolve(SymId(2)), "Root", "SymId(2) should be 'Root'");
-        assert_eq!(interner.resolve(SymId(3)), "A", "SymId(3) should be 'A'");
-        assert_eq!(interner.resolve(SymId(4)), "B", "SymId(4) should be 'B'");
-        assert_eq!(interner.resolve(SymId(5)), "C", "SymId(5) should be 'C'");
+        assert_eq!(interner.resolve(SymId(SID_TEST)), SYM_TEST);
+        assert_eq!(interner.resolve(SymId(SID_D)), SYM_D);
+        assert_eq!(interner.resolve(SymId(SID_ROOT)), SYM_ROOT);
+        assert_eq!(interner.resolve(SymId(SID_A)), SYM_A);
+        assert_eq!(interner.resolve(SymId(SID_B)), SYM_B);
+        assert_eq!(interner.resolve(SymId(SID_C)), SYM_C);
 
-        // Assert resolved SymIds
-        assert_eq!(sid_root.0, 2, "Root SymId should be 2");
-        assert_eq!(sid_a.0, 3, "A SymId should be 3");
-        assert_eq!(sid_b.0, 4, "B SymId should be 4");
-        assert_eq!(sid_c.0, 5, "C SymId should be 5");
+        assert_eq!(sid_root.0, SID_ROOT);
+        assert_eq!(sid_a.0, SID_A);
+        assert_eq!(sid_b.0, SID_B);
+        assert_eq!(sid_c.0, SID_C);
 
-        // Assert Index paths contain expected DeclIds
-        let sid_d = interner.intern("D");
-        assert_eq!(sid_d.0, 1, "D SymId should be 1");
+        let sid_d = interner.intern(SYM_D);
+        assert_eq!(sid_d.0, SID_D, "D SymId should match expectation");
 
         let did_d = *idx.by_path.get(&PathKey(vec![sid_d])).expect("missing D");
         let did_root = *idx.by_path.get(&PathKey(vec![sid_d, sid_root])).expect("missing D.Root");
@@ -85,18 +101,13 @@ mod basic_transformation_tests {
         assert_eq!(did_a.0, 2, "D.Root.A DeclId should be 2");
         assert_eq!(did_b.0, 3, "D.Root.B DeclId should be 3");
         assert_eq!(did_c.0, 4, "D.Root.C DeclId should be 4");
-        assert_eq!(idx.by_path.len(), 5, "Index should contain exactly 5 paths");
+        assert_eq!(idx.by_path.len(), SIMPLE_INDEX_LEN, "Index should contain expected number of paths");
 
         // Root must be a node in IR
-        let root_nid = ir.decl_to_node[did_root.0 as usize].expect("Root not lowered as node");
-        let root_rec = &ir.nodes[root_nid.0 as usize];
+        let _root_nid = ir.decl_to_node[did_root.0].expect("Root not lowered as node");
 
         // first_child points to A, and A->B->C via next_sibling
         assert_eq!(ir.first_child(did_root), did_a, "Root.first_child should be Root.A");
-
-        let a_nid = ir.decl_to_node[did_a.0 as usize].expect("A not lowered as node");
-        let b_nid = ir.decl_to_node[did_b.0 as usize].expect("B not lowered as node");
-        let c_nid = ir.decl_to_node[did_c.0 as usize].expect("C not lowered as node");
 
         assert_eq!(
             ir.next_sibling(did_a),
@@ -117,68 +128,30 @@ mod basic_transformation_tests {
 
     #[test]
     fn node_child_chain_order_is_body_order_same_names() {
-        // Minimal, self-contained input that creates node→node nesting
-        let src = r#"
-        test{}
-        D {
-            Root {
-                A {
-                  A;
-                  B;
-                  C;
-                }
-                B;
-                C;
-            }
-        }
-        "#;
-
-        // parse -> intern -> index -> lower
-        let ast_str = parse_description(src).expect("parse failed");
+        let ast_str = parse_description(DUP_NAMES_SRC).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
         let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
-        // List all elements stored in interner for debugging
-        println!("Interner contents:");
-        for (sid, s) in interner.iter() {
-            println!("  SymId({}): '{}'", sid.0, s);
-        }
-        // List all paths in the index for debugging
-        println!("Index paths:");
-        for (path_key, did) in &idx.by_path {
-            let path_str = path_key.0.iter().map(|&sid| interner.resolve(sid)).collect::<Vec<_>>().join(".");
-            println!("  PathKey({}): '{}'", did.0, path_str);
-        }
 
-        // Resolve DeclIds by path: Root, Root.A, Root.B, Root.C
-        let sid_root = interner.intern("Root");
-        let sid_a = interner.intern("A");
-        let sid_b = interner.intern("B");
-        let sid_c = interner.intern("C");
-        // Print resolved sids for debugging
-        println!("Resolved SymIds:");
-        println!("  Root: SymId({})", sid_root.0);
-        println!("  A: SymId({})", sid_a.0);
-        println!("  B: SymId({})", sid_b.0);
-        println!("  C: SymId({})", sid_c.0);
+        let sid_root = interner.intern(SYM_ROOT);
+        let sid_a = interner.intern(SYM_A);
+        let sid_b = interner.intern(SYM_B);
+        let sid_c = interner.intern(SYM_C);
 
-        // Assert Interner contents
-        assert_eq!(interner.resolve(SymId(0)), "test", "SymId(0) should be 'test'");
-        assert_eq!(interner.resolve(SymId(1)), "D", "SymId(1) should be 'D'");
-        assert_eq!(interner.resolve(SymId(2)), "Root", "SymId(2) should be 'Root'");
-        assert_eq!(interner.resolve(SymId(3)), "A", "SymId(3) should be 'A'");
-        assert_eq!(interner.resolve(SymId(4)), "B", "SymId(4) should be 'B'");
-        assert_eq!(interner.resolve(SymId(5)), "C", "SymId(5) should be 'C'");
+        assert_eq!(interner.resolve(SymId(SID_TEST)), SYM_TEST);
+        assert_eq!(interner.resolve(SymId(SID_D)), SYM_D);
+        assert_eq!(interner.resolve(SymId(SID_ROOT)), SYM_ROOT);
+        assert_eq!(interner.resolve(SymId(SID_A)), SYM_A);
+        assert_eq!(interner.resolve(SymId(SID_B)), SYM_B);
+        assert_eq!(interner.resolve(SymId(SID_C)), SYM_C);
 
-        // Assert resolved SymIds
-        assert_eq!(sid_root.0, 2, "Root SymId should be 2");
-        assert_eq!(sid_a.0, 3, "A SymId should be 3");
-        assert_eq!(sid_b.0, 4, "B SymId should be 4");
-        assert_eq!(sid_c.0, 5, "C SymId should be 5");
+        assert_eq!(sid_root.0, SID_ROOT);
+        assert_eq!(sid_a.0, SID_A);
+        assert_eq!(sid_b.0, SID_B);
+        assert_eq!(sid_c.0, SID_C);
 
-        // Assert Index paths contain expected DeclIds
-        let sid_d = interner.intern("D");
-        assert_eq!(sid_d.0, 1, "D SymId should be 1");
+        let sid_d = interner.intern(SYM_D);
+        assert_eq!(sid_d.0, SID_D, "D SymId should match expectation");
 
         let did_d = *idx.by_path.get(&PathKey(vec![sid_d])).expect("missing D");
         let did_root = *idx.by_path.get(&PathKey(vec![sid_d, sid_root])).expect("missing D.Root");
@@ -189,7 +162,6 @@ mod basic_transformation_tests {
         let did_root_b = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_b])).expect("missing D.Root.B");
         let did_root_c = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_c])).expect("missing D.Root.C");
 
-        // Assert Index paths match expected DeclIds
         assert_eq!(did_d.0, 0, "D DeclId should be 0");
         assert_eq!(did_root.0, 1, "D.Root DeclId should be 1");
         assert_eq!(did_root_a.0, 2, "D.Root.A DeclId should be 2");
@@ -198,18 +170,17 @@ mod basic_transformation_tests {
         assert_eq!(did_root_a_c.0, 5, "D.Root.A.C DeclId should be 5");
         assert_eq!(did_root_b.0, 6, "D.Root.B DeclId should be 6");
         assert_eq!(did_root_c.0, 7, "D.Root.C DeclId should be 7");
-        assert_eq!(idx.by_path.len(), 8, "Index should contain exactly 8 paths");
+        assert_eq!(idx.by_path.len(), DUP_INDEX_LEN, "Index should contain expected number of paths");
 
         // Root must be a node in IR
-        let root_nid = ir.decl_to_node[did_root.0 as usize].expect("Root not lowered as node");
-        let root_rec = &ir.nodes[root_nid.0 as usize];
+        let _root_nid = ir.decl_to_node[did_root.0].expect("Root not lowered as node");
 
         // first_child points to Root.A, and Root.A->Root.B->Root.C via next_sibling
         assert_eq!(ir.first_child(did_root), did_root_a, "Root.first_child should be Root.A");
 
-        let root_a_nid = ir.decl_to_node[did_root_a.0 as usize].expect("Root.A not lowered as node");
-        let root_b_nid = ir.decl_to_node[did_root_b.0 as usize].expect("Root.B not lowered as node");
-        let root_c_nid = ir.decl_to_node[did_root_c.0 as usize].expect("Root.C not lowered as node");
+        let root_a_nid = ir.decl_to_node[did_root_a.0].expect("Root.A not lowered as node");
+        let _root_b_nid = ir.decl_to_node[did_root_b.0].expect("Root.B not lowered as node");
+        let _root_c_nid = ir.decl_to_node[did_root_c.0].expect("Root.C not lowered as node");
 
         assert_eq!(
             ir.next_sibling(did_root_a),
@@ -228,12 +199,12 @@ mod basic_transformation_tests {
         );
 
         // Root.A must also have children: Root.A.A->Root.A.B->Root.A.C
-        let root_a_rec = &ir.nodes[root_a_nid.0 as usize];
+        let _root_a_rec = &ir.nodes[root_a_nid.0];
         assert_eq!(ir.first_child(did_root_a), did_root_a_a, "Root.A.first_child should be Root.A.A");
 
-        let root_a_a_nid = ir.decl_to_node[did_root_a_a.0 as usize].expect("Root.A.A not lowered as node");
-        let root_a_b_nid = ir.decl_to_node[did_root_a_b.0 as usize].expect("Root.A.B not lowered as node");
-        let root_a_c_nid = ir.decl_to_node[did_root_a_c.0 as usize].expect("Root.A.C not lowered as node");
+        let root_a_a_nid = ir.decl_to_node[did_root_a_a.0].expect("Root.A.A not lowered as node");
+        let root_a_b_nid = ir.decl_to_node[did_root_a_b.0].expect("Root.A.B not lowered as node");
+        let root_a_c_nid = ir.decl_to_node[did_root_a_c.0].expect("Root.A.C not lowered as node");
         assert_ne!(root_a_a_nid, root_a_b_nid);
         assert_ne!(root_a_b_nid, root_a_c_nid);
 
@@ -261,52 +232,39 @@ mod basic_transformation_tests {
 
     #[test]
     fn edge_children_include_arcs_as_decls() {
-        let src = r#"
-        edge_example{}
-        D {
-            Root0 {}
-            Root {
-                @E { (+Root, -Root0); }
-            }
-        }
-        "#;
-
-        let ast_str = parse_description(src).expect("parse failed");
+        let ast_str = parse_description(EDGE_WITH_ARC_SRC).expect("parse failed");
         let Interned { ast, mut interner } = intern_ast(&ast_str);
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
         let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
 
 
-        let sid_d = interner.intern("D");
-        let sid_root = interner.intern("Root");
-        let sid_root0 = interner.intern("Root0");
-        let sid_e    = interner.intern("E");
+        let sid_d = interner.intern(SYM_D);
+        let sid_root = interner.intern(SYM_ROOT);
+        let sid_root0 = interner.intern(SYM_ROOT0);
+        let sid_e    = interner.intern(SYM_E);
+
         let did_root  = *idx.by_path.get(&PathKey(vec![sid_d, sid_root]))
             .expect("missing D.Root");
         let did_root0 = *idx.by_path.get(&PathKey(vec![sid_d, sid_root0]))
             .expect("missing D.Root0");
         let did_edge = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_e])).unwrap();
 
-        let kids: Vec<DeclId> = ir.decl_children(did_edge).collect();
 
         // 1) Edge children (decl-level) contains exactly one Arc decl
         let kids: Vec<DeclId> = ir.decl_children(did_edge).collect();
         assert_eq!(kids.len(), 1, "edge should have exactly one decl-child (the arc)");
 
         let arc_decl = kids[0];
-        assert_eq!(ir.decl_nodes[arc_decl.0 as usize].kind, DeclKind::HyperArc, "child should be Arc");
+        assert_eq!(ir.decl_nodes[arc_decl.0].kind, DeclKind::HyperArc, "child should be Arc");
 
         // 2) Downcast: Arc decl -> ArcId -> ArcRec
-        let arc_id = ir.decl_to_arc[arc_decl.0 as usize]
+        let arc_id = ir.decl_to_arc[arc_decl.0]
             .expect("arc decl should map to ArcId via decl_to_arc");
-        let arc = &ir.arcs[arc_id.0 as usize];
+        let arc = &ir.arcs[arc_id.0];
 
         // Arc decl konzisztencia (ArcRec-ben nincs `decl`, ezért mappinget tesztelünk)
-        assert_eq!(ir.decl_nodes[arc_decl.0 as usize].kind, DeclKind::HyperArc, "child decl should be Arc");
-        assert_eq!(ir.decl_nodes[arc_decl.0 as usize].parent, did_edge, "Arc decl parent should be the edge");
-        let arc_id = ir.decl_to_arc[arc_decl.0 as usize]
-            .expect("arc decl should map to ArcId via decl_to_arc");
-        let arc = &ir.arcs[arc_id.0 as usize];
+        assert_eq!(ir.decl_nodes[arc_decl.0].kind, DeclKind::HyperArc, "child decl should be Arc");
+        assert_eq!(ir.decl_nodes[arc_decl.0].parent, did_edge, "Arc decl parent should be the edge");
 
         assert_eq!(arc.in_edge, did_edge, "ArcRec.in_edge should be the edge decl");
 

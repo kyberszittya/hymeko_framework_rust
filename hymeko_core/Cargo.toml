@@ -1,0 +1,19 @@
+[package]
+name = "hymeko_core"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "hymeko"
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+parser = { path = "../parser" }
+serde = { version = "1.0.228", features = ["derive"] }
+blake3 = "1.8.3"
+nalgebra = "0.34.1"
+num-traits = "0.2.19"
+nalgebra-sparse = "0.11.0"
+rayon = "1.11.0"
+
+

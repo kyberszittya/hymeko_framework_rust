@@ -10,25 +10,32 @@ mod tensor_fano {
     use hymeko::tensor::util::print_dense_block;
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
 
+    const FANO_GRAPH_PATH: &str = "./data/typical_graphs/fano_graph.hymeko";
+    const FANO_NODE_COUNT: usize = 8; // includes neutral/root meta node
+    const FANO_EDGE_COUNT: usize = 7;
+    const FANO_INCIDENT_NODES: usize = 7;
+    const FANO_EDGE_DEGREE: usize = 3;
+    const FANO_NODE_DEGREE: usize = 3;
+    const TOLERANCE: f32 = 1e-6;
+    const AGG_CFG: AggCfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+
     #[inline(always)]
     fn node_u(n: NodeId) -> usize {
         // Works whether NodeId wraps u32 or usize
-        n.0 as usize
+        n.0
     }
 
     #[test]
     fn fano_invariants_hold() {
-        let (_store, compiled) = load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let n = hg.num_nodes(); // usize nálad
         let m = hg.num_edges(); // usize nálad
 
-        assert_eq!(n, 8, "Fano: 7 nodes");
-        assert_eq!(m, 7, "Fano: 7 edges");
+        assert_eq!(n, FANO_NODE_COUNT, "Fano: node count mismatch");
+        assert_eq!(m, FANO_EDGE_COUNT, "Fano: edge count mismatch");
 
         // Collect the set of nodes that actually appear in edge incidences.
         let mut incident: BTreeSet<usize> = BTreeSet::new();
@@ -38,7 +45,7 @@ mod tensor_fano {
 
         for e in 0..hg.num_edges() {
             let (a, b) = hg.edge_span(EdgeId(e));
-            assert_eq!(b - a, 3, "Each Fano edge should have degree 3");
+            assert_eq!(b - a, FANO_EDGE_DEGREE, "Each Fano edge should have degree 3");
 
             for p in a..b {
                 let u = node_u(hg.flat_edge_nodes[p]);
@@ -48,11 +55,11 @@ mod tensor_fano {
         }
 
         // The Fano plane has exactly 7 incident point nodes.
-        assert_eq!(incident.len(), 7, "Fano: 7 incident point nodes");
+        assert_eq!(incident.len(), FANO_INCIDENT_NODES, "Fano: 7 incident point nodes");
 
         // Each incident point has degree 3.
         for &u in &incident {
-            assert_eq!(deg[u], 3, "Each incident node should have degree 3");
+            assert_eq!(deg[u], FANO_NODE_DEGREE, "Each incident node should have degree 3");
         }
 
         // Any two distinct edges intersect in exactly 1 incident node.
@@ -80,12 +87,9 @@ mod tensor_fano {
 
     #[test]
     fn star_tensor_respects_bretto_directions() {
-        let (_store, compiled) =
-            load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let coo = star_expansion_coo(&hg);
 
@@ -108,9 +112,9 @@ mod tensor_fano {
 
                 // Scan COO entries for this slice (small in Fano, fine for test).
                 for idx in 0..coo.len() {
-                    if coo.k[idx] as usize != e { continue; }
-                    let i = coo.i[idx] as usize;
-                    let j = coo.j[idx] as usize;
+                    if coo.k[idx] != e { continue; }
+                    let i = coo.i[idx];
+                    let j = coo.j[idx];
 
                     if i == u && j == e_v { has_ne = true; }
                     if i == e_v && j == u { has_en = true; }
@@ -127,11 +131,9 @@ mod tensor_fano {
 
     #[test]
     fn fano_star_tensor_nnz_matches_sign_policy() {
-        let (_store, compiled) = load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         // Itt két opció van:
         // A) ha free function: star_expansion_coo(&hg)
@@ -159,12 +161,9 @@ mod tensor_fano {
     fn fano_star_tensor_has_correct_matrix_entries() {
         use std::collections::HashMap;
 
-        let (_store, compiled) =
-            load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let coo = star_expansion_coo(&hg);
 
@@ -212,34 +211,16 @@ mod tensor_fano {
 
                 match s {
                     1 => {
-                        assert!(
-                            (ne - 1.0).abs() < 1e-6,
-                            "Expected '+' incidence to create (node,edge)=1.0"
-                        );
-                        assert!(
-                            en.abs() < 1e-6,
-                            "Expected '+' incidence NOT to create (edge,node)"
-                        );
+                        assert!((ne - 1.0).abs() <= TOLERANCE, "Expected '+' incidence to create (node,edge)=1.0");
+                        assert!(en.abs() <= TOLERANCE, "Expected '+' incidence NOT to create (edge,node)");
                     }
                     -1 => {
-                        assert!(
-                            (en - 1.0).abs() < 1e-6,
-                            "Expected '-' incidence to create (edge,node)=1.0"
-                        );
-                        assert!(
-                            ne.abs() < 1e-6,
-                            "Expected '-' incidence NOT to create (node,edge)"
-                        );
+                        assert!((en - 1.0).abs() <= TOLERANCE, "Expected '-' incidence to create (edge,node)=1.0");
+                        assert!(ne.abs() <= TOLERANCE, "Expected '-' incidence NOT to create (node,edge)");
                     }
                     _ => {
-                        assert!(
-                            (ne - 1.0).abs() < 1e-6,
-                            "Expected neutral incidence to create (node,edge)=1.0"
-                        );
-                        assert!(
-                            (en - 1.0).abs() < 1e-6,
-                            "Expected neutral incidence to create (edge,node)=1.0"
-                        );
+                        assert!((ne - 1.0).abs() <= TOLERANCE, "Expected neutral incidence to create (node,edge)=1.0");
+                        assert!((en - 1.0).abs() <= TOLERANCE, "Expected neutral incidence to create (edge,node)=1.0");
                     }
                 }
             }
@@ -268,21 +249,16 @@ mod tensor_fano {
                     "Unexpected matrix entry in slice {e}: ({i},{j}) = {val}"
                 );
                 // Optional: assert it's exactly 1.0 (or 2.0 if duplicates happen).
-                assert!(
-                    (val - 1.0).abs() < 1e-6,
-                    "Unexpected value in slice {e}: ({i},{j}) = {val}"
-                );
+                assert!((val - 1.0).abs() <= TOLERANCE, "Unexpected value in slice {e}: ({i},{j}) = {val}");
             }
         }
     }
 
     #[test]
     fn debug_fano_star_dense_view() {
-        let (_store, compiled) = load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let coo = star_expansion_coo(&hg);
 
@@ -292,12 +268,9 @@ mod tensor_fano {
 
     #[test]
     fn projected_star_matches_view_incidence() {
-        let (_store, compiled) =
-            load_and_lower("./data/typical_graphs/fano_graph.hymeko").unwrap();
-        let aggcfg = AggCfg  { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+        let (_store, compiled) = load_and_lower(FANO_GRAPH_PATH).unwrap();
         let ex = ScalarWeightExtractor::default();
-        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
-            &compiled.ir, &aggcfg, &ex);
+        let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let coo = star_expansion_coo(&hg);
         let proj = hymeko::tensor::tensor::project_sum_over_slices(&coo);
@@ -339,10 +312,7 @@ mod tensor_fano {
             for j in 0..dim {
                 let a = proj[i][j];
                 let b = expected[i][j];
-                assert!(
-                    (a - b).abs() < 1e-6,
-                    "Mismatch at ({i},{j}): got {a}, expected {b}"
-                );
+                assert!((a - b).abs() <= TOLERANCE, "Mismatch at ({i},{j}): got {a}, expected {b}");
             }
         }
         print_dense_matrix(&proj, "Projected star matrix (sum over slices)");
