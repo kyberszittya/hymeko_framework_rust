@@ -14,3 +14,7 @@
 - Refreshed `CI_CD_DOCUMENTATION.md`, `CODE_COVERAGE.md`, and `README_CICD.md` to explain the per-crate jobs, artifact layout, and local replication commands.
 - Marked the Task 1.1 CI/CD checkbox in `docs/plans/daemon/checklist_task1.md`, confirming the daemon crate now enjoys first-class CI coverage.
 
+## Minimal Tests Fixture Consolidation
+- Expanded `tests/minimal_tests/constants.rs` with every path/name/weight used across the suite (module-store fixtures, tag-annotation nodes, smoke-test weights, edge expectations) and introduced the shared `helpers` module for field assertions.
+- Refactored the traversal/tensor/edge/annotation/module-store/smoke tests to import those fixtures, eliminating inlined strings, verifying flattened weight vectors, and adding new sanity checks for HyperItem variants and DeclId lookups.
+- Re-ran the focused suites via `cargo test minimal_tests::test_module_store::mod_test_module_store minimal_tests::test_smoke_test minimal_tests::annotations::test_annotations minimal_tests::edges::test_ref_values --color never` to confirm the new helpers and assertions behave as expected.

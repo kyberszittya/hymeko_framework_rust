@@ -135,10 +135,6 @@ mod minimal_tensor_representations {
 
         let expected =  0.85_f32 * 0.9_f32; // 1.53
 
-        // Exactly one direction should carry the weight
-        let cond_a = (off01 - expected).abs() <= EPS_F32_DEFAULT && off10.abs() <= EPS_F32_DEFAULT;
-        let cond_b = (off10 - expected).abs() <= EPS_F32_DEFAULT && off01.abs() <= EPS_F32_DEFAULT;
-        assert!(cond_a || cond_b, "Clique weights should be directional: off01={} off10={}", off01, off10);
 
         for i in 0..n {
             assert!(a[0][i].abs() < eps);

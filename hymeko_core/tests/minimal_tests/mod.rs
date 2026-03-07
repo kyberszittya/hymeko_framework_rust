@@ -2,7 +2,9 @@ use hymeko::module_store::module_store::HymekoParser;
 use parser::ast::AstStr;
 use parser::parse_description;
 
+pub mod constants;
 pub mod test_minimal_example;
+pub mod helpers;
 pub mod test_minimal_example_with_fields;
 
 pub mod test_minimal_example_fileread;

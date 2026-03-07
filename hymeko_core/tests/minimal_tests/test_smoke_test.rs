@@ -1,4 +1,5 @@
 use parser::ast::*;
+use super::constants::{NODE_A_NAME, NODE_B_NAME, SMOKE_ARC_WEIGHT, SMOKE_EDGE_NAME, SMOKE_NODE_NAME};
 
 fn ra(name: &str) -> RefAtom<'static, String> {
     RefAtom {
@@ -9,28 +10,54 @@ fn ra(name: &str) -> RefAtom<'static, String> {
 
 #[test]
 fn ast_variants_are_constructible() {
-    let n: NodeDecl<'static, String> = HyperAnnotatedElement {
+    let node_item = HyperItem::Node(HyperAnnotatedElement {
         anno: Anno { tags: Vec::new(), value: None },
-        inner: NodeInner { name: "n".to_string(), bases: vec![], body: None },
-    };
-    let _hi = HyperItem::Node(n);
+        inner: NodeInner { name: SMOKE_NODE_NAME.to_string(), bases: vec![], body: None },
+    });
+    match node_item {
+        HyperItem::Node(node) => {
+            assert_eq!(node.inner.name, SMOKE_NODE_NAME);
+            assert!(node.inner.bases.is_empty());
+            assert!(node.inner.body.is_none());
+        }
+        _ => panic!("expected HyperItem::Node"),
+    }
 
-    // Edge
-    let e: EdgeDecl<'static, String> = HyperAnnotatedElement {
+    let edge_item = HyperItem::Edge(HyperAnnotatedElement {
         anno: Anno { tags: Vec::new(), value: None },
-        inner: EdgeInner { name: "e".to_string(), bases: vec![], body: Vec::new() },
-    };
-    let _hi = HyperItem::Edge(e);
+        inner: EdgeInner { name: SMOKE_EDGE_NAME.to_string(), bases: vec![], body: Vec::new() },
+    });
+    match edge_item {
+        HyperItem::Edge(edge) => {
+            assert_eq!(edge.inner.name, SMOKE_EDGE_NAME);
+            assert!(edge.inner.body.is_empty());
+        }
+        _ => panic!("expected HyperItem::Edge"),
+    }
 
-    // Arc + SignedRef
-    let a: HyperArc<'static, String> = HyperAnnotatedElement {
-        anno: Anno { tags: Vec::new(), value: Some(Value::Num(0.2)) },
+    let arc_item = HyperItem::Arc(HyperAnnotatedElement {
+        anno: Anno { tags: Vec::new(), value: Some(Value::Num(SMOKE_ARC_WEIGHT)) },
         inner: ArcInner {
             refs: vec![
-                SignedRef::Plus(ra("A")),
-                SignedRef::Minus(ra("B")),
+                SignedRef::Plus(ra(NODE_A_NAME)),
+                SignedRef::Minus(ra(NODE_B_NAME)),
             ],
         },
-    };
-    let _hi = HyperItem::Arc(a);
+    });
+    match arc_item {
+        HyperItem::Arc(arc) => {
+            assert_eq!(arc.inner.refs.len(), 2);
+            assert!(matches!(arc.anno.value, Some(Value::Num(w)) if (w - SMOKE_ARC_WEIGHT).abs() < 1e-9));
+
+            match &arc.inner.refs[0] {
+                SignedRef::Plus(atom) => assert_eq!(atom.target.path, vec![NODE_A_NAME.to_string()]),
+                other => panic!("expected plus ref to {}, got {:?}", NODE_A_NAME, other),
+            }
+            match &arc.inner.refs[1] {
+                SignedRef::Minus(atom) => assert_eq!(atom.target.path, vec![NODE_B_NAME.to_string()]),
+                other => panic!("expected minus ref to {}, got {:?}", NODE_B_NAME, other),
+            }
+        }
+        _ => panic!("expected HyperItem::Arc"),
+    }
 }

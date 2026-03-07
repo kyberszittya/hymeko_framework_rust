@@ -1,5 +1,17 @@
+use parser::ast::HyperItem;
+use super::constants::{CONTEXT_NODE_NAME, DESC_MINIMAL_EXAMPLE_NAME, MINIMAL_EXAMPLE_PATH};
 
 #[test]
 fn test_minimal_example_from_file() {
+    let source_code = parser::read_source_file(MINIMAL_EXAMPLE_PATH)
+        .expect("failed to read minimal example file");
+    let desc = parser::parse_description(&source_code)
+        .expect("failed to parse minimal example file");
 
+    assert_eq!(desc.name, DESC_MINIMAL_EXAMPLE_NAME);
+    assert_eq!(desc.items.len(), 1, "expected a single top-level item");
+    match &desc.items[0] {
+        HyperItem::Node(node) => assert_eq!(node.inner.name, CONTEXT_NODE_NAME),
+        other => panic!("expected context node, got {:?}", other),
+    }
 }

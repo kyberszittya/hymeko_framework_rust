@@ -1,14 +1,12 @@
 #[cfg(test)]
-mod test_annotaions {
+mod test_annotations {
     use hymeko::ir::ir::{DeclKind, SignedRefR};
     use crate::test_helpers::{find_decl, get_node, has_tag, load_and_lower, weight0};
+    use crate::minimal_tests::constants::*;
 
     #[test]
     fn parses_minimal_tag_annotation_and_extracts_bases_and_arc_weights() {
-        let src = std::fs::read_to_string(
-            "./data/minimal_examples/tag_annotations/minimal_tag_annotation.hymeko",
-        )
-            .unwrap();
+        let src = std::fs::read_to_string(TAG_ANNOTATION_PATH).unwrap();
 
         let ast = parser::parse_description(&src).expect("parse should succeed");
 
@@ -19,7 +17,7 @@ mod test_annotaions {
             .items
             .iter()
             .find_map(|it| match it {
-                HyperItem::Node(n) if n.inner.name == "context" => Some(n),
+                HyperItem::Node(n) if n.inner.name == CONTEXT_NODE_NAME => Some(n),
                 _ => None,
             })
             .expect("context node should exist at top-level");
@@ -34,7 +32,7 @@ mod test_annotaions {
         let node10 = ctx_items
             .iter()
             .find_map(|it| match it {
-                HyperItem::Node(n) if n.inner.name == "node10" => Some(n),
+                HyperItem::Node(n) if n.inner.name == NODE10_NAME => Some(n),
                 _ => None,
             })
             .expect("node10 should exist inside context");
@@ -42,7 +40,7 @@ mod test_annotaions {
         let edge_e0 = ctx_items
             .iter()
             .find_map(|it| match it {
-                HyperItem::Edge(e) if e.inner.name == "e0" => Some(e),
+                HyperItem::Edge(e) if e.inner.name == EDGE_E0_NAME => Some(e),
                 _ => None,
             })
             .expect("e0 edge should exist inside context");
@@ -51,8 +49,8 @@ mod test_annotaions {
         assert_eq!(node10.inner.bases.len(), 1);
         match &node10.inner.bases[0] {
             SignedRef::Plus(atom) => {
-                assert_eq!(atom.target.path.as_slice(), ["node0"]);
-                assert!(atom.anno.tags.contains(&"isa"), "expected <isa> tag");
+                assert_eq!(atom.target.path.as_slice(), [NODE0_NAME]);
+                assert!(atom.anno.tags.contains(&TAG_ISA), "expected <isa> tag");
                 assert!(atom.anno.value.is_none());
             }
             other => panic!("expected Plus base ref, got {:?}", other),
@@ -87,7 +85,7 @@ mod test_annotaions {
         // - node0[0.85]
         match &arc.inner.refs[0] {
             SignedRef::Minus(a) => {
-                assert_eq!(a.target.path.as_slice(), ["node0"]);
+                assert_eq!(a.target.path.as_slice(), [NODE0_NAME]);
                 assert!((weight(&arc.inner.refs[0]) - 0.85).abs() < 1e-9);
             }
             other => panic!("expected first ref Minus(node0), got {:?}", other),
@@ -96,7 +94,7 @@ mod test_annotaions {
         // + node10[0.9]
         match &arc.inner.refs[1] {
             SignedRef::Plus(a) => {
-                assert_eq!(a.target.path.as_slice(), ["node10"]);
+                assert_eq!(a.target.path.as_slice(), [NODE10_NAME]);
                 assert!((weight(&arc.inner.refs[1]) - 0.9).abs() < 1e-9);
             }
             other => panic!("expected second ref Plus(node10), got {:?}", other),
@@ -105,9 +103,7 @@ mod test_annotaions {
 
     #[test]
     fn lowers_node_bases_into_ir_with_isa_tag() {
-        let (store, compiled) = load_and_lower(
-            "./data/minimal_examples/tag_annotations/minimal_tag_annotation.hymeko"
-        ).unwrap();
+        let (store, compiled) = load_and_lower(TAG_ANNOTATION_PATH).unwrap();
 
         let ir = &compiled.ir;
         let it = &store.it;
@@ -115,17 +111,17 @@ mod test_annotaions {
         // 1) segéd: DeclId keresés név + kind alapján
 
 
-        let node10 = find_decl(ir, it, "node10", DeclKind::Node);
-        let node0  = find_decl(ir, it, "node0",  DeclKind::Node);
+        let node10 = find_decl(ir, it, NODE10_NAME, DeclKind::Node);
+        let node0  = find_decl(ir, it, NODE0_NAME,  DeclKind::Node);
 
         // 2) NodeRec lekérés
         let n10_id = ir.as_node(node10).expect("node10 should be a node");
-        let n10 = &ir.nodes[n10_id.0 as usize];
+        let n10 = &ir.nodes[n10_id.0];
 
         assert_eq!(n10.bases.len(), 1);
 
         // 3) base ref ellenőrzés
-        let isa_sym = it.get_id("isa").expect("isa should be interned");
+        let isa_sym = it.get_id(TAG_ISA).expect("isa should be interned");
 
         match &n10.bases[0] {
             SignedRefR::Plus(atom) => {
@@ -138,18 +134,16 @@ mod test_annotaions {
 
     #[test]
     fn lowers_multi_bases_into_ir_and_preserves_tags_and_default_direction() {
-        let (store, compiled) = load_and_lower(
-            "./data/minimal_examples/tag_annotations/minimal_multi_tag_annotation.hymeko",
-        ).unwrap();
+        let (store, compiled) = load_and_lower(MULTI_TAG_ANNOTATION_PATH).unwrap();
 
         let ir = &compiled.ir;
         let it = &store.it;
 
         // --- decl ids ---
-        let node0  = find_decl(ir, it, "node0",  DeclKind::Node);
-        let node10 = find_decl(ir, it, "node10", DeclKind::Node);
-        let node11 = find_decl(ir, it, "node11", DeclKind::Node);
-        let node2  = find_decl(ir, it, "node2",  DeclKind::Node);
+        let node0  = find_decl(ir, it, NODE0_NAME,  DeclKind::Node);
+        let node10 = find_decl(ir, it, NODE10_NAME, DeclKind::Node);
+        let node11 = find_decl(ir, it, NODE11_NAME, DeclKind::Node);
+        let node2  = find_decl(ir, it, NODE2_NAME,  DeclKind::Node);
 
         // --- node10 bases ---
         let n10 = get_node(ir, node10);
@@ -157,7 +151,7 @@ mod test_annotaions {
         match &n10.bases[0] {
             SignedRefR::Plus(a) => {
                 assert_eq!(a.target, node0);
-                assert!(has_tag(it, &a.anno.tags, "isa"));
+                assert!(has_tag(it, &a.anno.tags, TAG_ISA));
             }
             other => panic!("node10: expected Plus base, got {:?}", other),
         }
@@ -170,7 +164,7 @@ mod test_annotaions {
         match &n11.bases[0] {
             SignedRefR::Plus(a) => {
                 assert_eq!(a.target, node0);
-                assert!(has_tag(it, &a.anno.tags, "isa"));
+                assert!(has_tag(it, &a.anno.tags, TAG_ISA));
             }
             other => panic!("node11[0]: expected Plus(isa node0), got {:?}", other),
         }
@@ -179,7 +173,7 @@ mod test_annotaions {
         match &n11.bases[1] {
             SignedRefR::Plus(a) => {
                 assert_eq!(a.target, node2);
-                assert!(has_tag(it, &a.anno.tags, "impl"));
+                assert!(has_tag(it, &a.anno.tags, TAG_IMPL));
             }
             other => panic!("node11[1]: expected Plus(impl node2), got {:?}", other),
         }
@@ -188,7 +182,7 @@ mod test_annotaions {
         match &n11.bases[2] {
             SignedRefR::Neutral(a) => {
                 assert_eq!(a.target, node10);
-                assert!(has_tag(it, &a.anno.tags, "isa"));
+                assert!(has_tag(it, &a.anno.tags, TAG_ISA));
             }
             other => panic!("node11[2]: expected Neutral(isa node10), got {:?}", other),
         }
@@ -198,12 +192,12 @@ mod test_annotaions {
         assert!(n2.bases.is_empty());
 
         // --- optional: check e0 arc weights still parse/lower ---
-        let e0 = find_decl(ir, it, "e0", DeclKind::Edge);
+        let e0 = find_decl(ir, it, EDGE_E0_NAME, DeclKind::Edge);
         let eid = ir.as_edge(e0).expect("e0 should be an edge");
-        let e0rec = &ir.edges[eid.0 as usize];
+        let e0rec = &ir.edges[eid.0];
 
         assert_eq!(e0rec.arcs.len(), 1);
-        let arc = &ir.arcs[e0rec.arcs[0].0 as usize];
+        let arc = &ir.arcs[e0rec.arcs[0].0];
 
         assert_eq!(arc.refs.len(), 2);
 

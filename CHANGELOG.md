@@ -5,6 +5,7 @@ This root changelog summarizes every dated engineering log. Full entries live un
 ## 2026-03-07 — Workspace-Wide CI & Coverage Flags
 - Rebuilt `.github/workflows/ci.yml` so every crate (`hymeko`, `hymeko_core`, `hymeko_daemon`, `hymeko_py`, `parser`) now has its own cache-aware build/test matrix plus per-crate Tarpaulin uploads feeding Codecov flags.
 - Expanded `codecov.yml`, `CI_CD_DOCUMENTATION.md`, `CODE_COVERAGE.md`, and `README_CICD.md` to document the new reports, HTML artifacts, and flag-driven targets.
+- Normalized the `hymeko_core/tests/minimal_tests` suite by hoisting fixture strings, node names, and weight tables into `constants.rs`, adding the shared `helpers` module, and updating traversal/tensor/edge/annotation/module-store/smoke tests to import those definitions (plus new assertions for edges, IR lowering, and HyperItem variants).
 - Details captured in [`docs/changelog/changelog_20260307.md`](docs/changelog/changelog_20260307.md).
 
 ## 2026-03-06 — Tensor Grid Telemetry & PathID Notes
