@@ -8,22 +8,20 @@ This project uses GitHub Actions for continuous integration and continuous deplo
 Runs on every push to `master`, `main`, `develop` branches and on all pull requests.
 
 **Jobs:**
-- **Test**: Runs tests on Linux, Windows, and macOS with stable and nightly Rust
-- **Rustfmt**: Checks code formatting
-- **Clippy**: Runs linter with warnings as errors
-- **Coverage**: Generates code coverage reports and uploads to Codecov
-- **Build**: Creates release build artifacts
+- **Workspace Tests:** Runs `cargo test --workspace` across Linux, Windows, and macOS using both stable and nightly toolchains. Nightly additionally exercises `--all-features`.
+- **Package Build & Test:** Ubuntu matrix that builds and tests each crate (`hymeko`, `hymeko_core`, `hymeko_daemon`, `hymeko_py`, `parser`) independently so regressions in one package cannot hide behind workspace defaults.
+- **Coverage:** Uses Tarpaulin to create per-package XML + HTML reports, uploads each report to Codecov with dedicated flags, and publishes the HTML bundle as an artifact.
+- **Build:** Produces release-mode artifacts after the test suites succeed.
 
 **Coverage Job Details:**
-- Generates XML report for Codecov.io
-- Generates HTML report (downloadable as artifact)
-- Uploads to Codecov dashboard
-- Sets minimum coverage targets
-- Includes verbose reporting
+- Iterates over every crate, running Tarpaulin twice (XML + HTML) so each package has its own `coverage/xml/<crate>.xml` and HTML viewer.
+- Uploads all XML reports to Codecov with matching flags so the dashboards show per-crate deltas and status checks.
+- Publishes the combined HTML directory (`coverage/html/`) as a downloadable artifact for offline inspection.
+- Keeps the existing 300-second timeout and verbose logging per Tarpaulin invocation.
 
 **Artifacts:**
 - Release binaries are uploaded as GitHub Actions artifacts
-- Coverage reports (HTML) saved for 30 days
+- Coverage HTML directory saved for 30 days
 
 ### 2. **Release Workflow** (`.github/workflows/release.yml`)
 Automatically creates releases and builds binaries when a tag is pushed (e.g., `v0.1.0`).
@@ -63,7 +61,7 @@ cargo clippy --all --all-targets -- -D warnings
 4. GitHub Actions will automatically build and create a release
 
 ### Code Coverage
-Coverage reports are generated using `cargo-tarpaulin` and uploaded to Codecov.
+Coverage reports are generated using `cargo-tarpaulin`. The CI job loops over every crate, stores XML outputs in `coverage/xml/`, HTML viewers in `coverage/html/`, and uploads each XML file to Codecov under a dedicated flag.
 
 ## Prerequisites
 

@@ -13,6 +13,16 @@ mod test_tensor_representation {
     use hymeko::tensor::tensor_val::{EdgeWScalar, EdgeWeight, ScalarWeightExtractor};
     use crate::test_helpers::{load_and_lower, print_dense_matrix};
 
+    const STAR_NODE_COUNT: usize = 6;
+    const STAR_EDGE_COUNT: usize = 4;
+    const STAR_EDGE_BASE: usize = STAR_NODE_COUNT;
+    const STAR_EXPECTED_DIM: usize = STAR_NODE_COUNT + STAR_EDGE_COUNT;
+    const EPS_F32: f32 = 1e-4; // default tolerance for f32 comparisons
+    const EPS_F64: f64 = 1e-6; // tighter tolerance for f64 checks
+    const STAR_NORMALIZATION_EPS: f32 = 1e-12; // normalization guard to avoid div-by-zero
+    const INCIDENCE_SCALE_FACTOR: f32 = 10.0;
+    const SCATTER_SENTINEL: f32 = 999.0;
+
     #[test]
     fn test_tensor_representation_creation() {
         let (_store, compiled) =
@@ -36,7 +46,7 @@ mod test_tensor_representation {
         let edge_base = num_nodes; // 6
 
         // --- helpers ---
-        let eps: f32 = 1e-4;
+        let eps = EPS_F32;
         let at = |r: usize, c: usize| -> f32 {
             // Ha nálad más az indexelés, itt cseréld:
             proj[r][c]
@@ -54,8 +64,8 @@ mod test_tensor_representation {
         };
 
         // --- shape checks ---
-        assert_eq!(dim, 10, "expected dim=10 (root + 5 nodes + 4 edges)");
-        assert_eq!(edge_base, 6, "expected edge_base=num_nodes=6");
+        assert_eq!(dim, STAR_EXPECTED_DIM, "expected dim=10 (root + 5 nodes + 4 edges)");
+        assert_eq!(edge_base, STAR_EDGE_BASE, "expected edge_base=num_nodes=6");
 
         // --- expected nonzeros (from your printed matrix) ---
         // e1 is edge_base+0 = 6
@@ -137,10 +147,10 @@ mod test_tensor_representation {
         let edge_base = num_nodes;
 
         // Root + 5 node + 4 edge = 10
-        assert_eq!(dim, 10);
-        assert_eq!(edge_base, 6);
+        assert_eq!(dim, STAR_EXPECTED_DIM);
+        assert_eq!(edge_base, STAR_EDGE_BASE);
 
-        let eps: f32 = 1e-4;
+        let eps = EPS_F32;
 
         // ---- adapt this accessor if your matrix type differs ----
         let at = |r: usize, c: usize| -> f32 {
@@ -238,7 +248,7 @@ mod test_tensor_representation {
         let a = hymeko::tensor::tensor::project_sum_over_slices(&clique_coo);
 
         let n = hg.num_nodes();
-        let eps: f32 = 1e-4;
+        let eps = EPS_F32;
 
         // ---- adapt accessor to your matrix type ----
         let mat = |r: usize, c: usize| -> f32 {
@@ -335,7 +345,7 @@ mod test_tensor_representation {
 
         let n = hg.num_nodes();
         let m = hg.num_edges();
-        let eps: f32 = 1e-4;
+        let eps = EPS_F32;
 
         // ---- Build explicit A = B W B^T (no diag removal here) ----
         // We'll treat incidence as:
@@ -432,7 +442,7 @@ mod test_tensor_representation {
         // 1..5 = node0..node4
         // edges: 0..3 = e1..e4
 
-        let eps: f32 = 1e-4;
+        let eps = EPS_F32;
 
         // node degrees (sum of abs incidence weights per node)
 
@@ -461,7 +471,7 @@ mod test_tensor_representation {
             &compiled.ir, &aggcfg, &ex);
 
         // normalized star
-        let coo = star_expansion_coo_normalized(&hg, true, 1e-12);
+        let coo = star_expansion_coo_normalized(&hg, true, STAR_NORMALIZATION_EPS);
         let proj = hymeko::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
@@ -469,10 +479,10 @@ mod test_tensor_representation {
         let dim = num_nodes + num_edges;
         let edge_base = num_nodes;
 
-        assert_eq!(dim, 10);
-        assert_eq!(edge_base, 6);
+        assert_eq!(dim, STAR_EXPECTED_DIM);
+        assert_eq!(edge_base, STAR_EDGE_BASE);
 
-        let eps: f32 = 1e-4;
+        let eps = EPS_F32;
 
         let at = |r: usize, c: usize| -> f32 {
             proj[r][c]
@@ -524,19 +534,18 @@ mod test_tensor_representation {
             &compiled.ir, &aggcfg, &ex);
 
         // scale all incidence weights by c
-        let c: f32 = 10.0;
-        for w in &mut hg2.flat_edge_w { *w *= c; }
+        for w in &mut hg2.flat_edge_w { *w *= INCIDENCE_SCALE_FACTOR; }
 
-        let coo1 = star_expansion_coo_normalized(&hg1, true, 1e-12);
+        let coo1 = star_expansion_coo_normalized(&hg1, true, STAR_NORMALIZATION_EPS);
         let proj1 = hymeko::tensor::tensor::project_sum_over_slices(&coo1);
 
-        let coo2 = star_expansion_coo_normalized(&hg2, true, 1e-12);
+        let coo2 = star_expansion_coo_normalized(&hg2, true, STAR_NORMALIZATION_EPS);
         let proj2 = hymeko::tensor::tensor::project_sum_over_slices(&coo2);
 
         let dim = hg1.num_nodes() + hg1.num_edges();
         assert_eq!(dim, hg2.num_nodes() + hg2.num_edges());
 
-        let eps: f32 = 1e-4;
+        let eps = EPS_F32;
 
         let at1 = |r: usize, c: usize| -> f32 { proj1[r][c] };
         let at2 = |r: usize, c: usize| -> f32 { proj2[r][c] };
@@ -567,7 +576,7 @@ mod test_tensor_representation {
         // 1. Explicit Zero-Degree Check
         // Node 0 is known to be isolated or have 0.0 degree in this specific file.
         // If the 1.0 initialization bug returns, this equals 1.0 and fails immediately.
-        let eps: f64 = 1e-6;
+        let eps = EPS_F64;
         assert!(
             (deg_v[0] - 0.0).abs() <= eps,
             "Regression caught: Node 0 degree is {}, expected exactly 0.0. Check array initialization.",
@@ -586,7 +595,6 @@ mod test_tensor_representation {
             sum_v, sum_e
         );
     }
-
 
     #[test]
     fn test_compute_bipartite_degrees_manual_simple() {
@@ -659,7 +667,7 @@ mod test_tensor_representation {
         let x_edges = vec![1.0f32; m];
 
         // 1) Fill the out-parameter with a toxic sentinel value (999.0).
-        let mut y_nodes_out = vec![999.0f32; n];
+        let mut y_nodes_out = vec![SCATTER_SENTINEL; n];
 
         // Execute the sterile scatter operation
         scatter_nodes_from_edges(&hg, &x_edges, &mut y_nodes_out, use_abs);
@@ -668,7 +676,7 @@ mod test_tensor_representation {
         for i in 0..n {
             // 2) Verify the caller's buffer was actually targeted and cleared
             assert!(
-                (y_nodes_out[i] - 999.0).abs() > 0.1,
+                (y_nodes_out[i] - SCATTER_SENTINEL).abs() > 0.1,
                 "Regression caught: scatter_nodes_from_edges ignored the caller's buffer. Sentinel values remain."
             );
             sum += y_nodes_out[i];

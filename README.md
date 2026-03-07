@@ -13,9 +13,11 @@ A high-performance Rust-based parsing and hypergraph framework for Hymeko - a do
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
+- [Parser Layout FAQ](#-parser-layout-faq)
 - [Development](#development)
 - [Building](#building)
 - [Testing](#testing)
+- [Benchmark Harnesses](#-benchmark-harnesses)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Changelog](#-changelog)
 - [Contributing](#contributing)
@@ -171,6 +173,11 @@ hymeko_framework/
     └── ISSUE_TEMPLATE/         # Issue templates
 ```
 
+## 🧭 Parser Layout FAQ
+- **Why not move `parser/` to the repository root?** Keeping the LALRPOP crate nested preserves the dedicated workspace members, so Cargo does not leak parser-only features into the top-level engine binary.
+- **What about fixtures and build scripts?** The parser crate ships with large `.hymeko` fixtures plus a custom `build.rs`; colocating them keeps relative paths stable across OSes and allows CI to cache `parser/target/` artifacts independently.
+- **Does Python tooling depend on this layout?** Yes—`PyHypergraphEngine` resolves parser modules by workspace-relative paths. Moving the crate would break both `ModuleStore` lookups and the Maturin wheels unless every consumer updated import paths simultaneously.
+
 ## 🛠️ Development
 
 ### Development Environment Setup
@@ -321,6 +328,16 @@ The project includes comprehensive tests across multiple levels with specific fo
 - Field references and resolution
 - Comments handling
 
+## 📊 Benchmark Harnesses
+- **Parser Grid Sweep:** `py/parsing/benchmarks/grid_expansion_bench.py` sweeps nodes/edges/densities, measures parse plus expansion timings, and writes both summary and raw CSV exports for regression tracking.
+  ```powershell
+  python py/parsing/benchmarks/grid_expansion_bench.py
+  ```
+- **COO Tensor Grid Sweep:** `py/coo_tensor/coo_tensor_grid_eval.py` evaluates star and clique expansions end-to-end (parse → extraction → tensor materialization) and records NNZ counts alongside timestamped CSV telemetry.
+  ```powershell
+  python py/coo_tensor/coo_tensor_grid_eval.py
+  ```
+
 ## 🤖 CI/CD Pipeline
 
 This project uses GitHub Actions for automated testing and releases. The CI/CD pipeline includes:
@@ -401,7 +418,9 @@ cargo doc --no-deps --open
 ```
 
 ## 📝 Changelog
+- Root summary lives in [`CHANGELOG.md`](CHANGELOG.md); it mirrors and links to every dated log.
 - Consolidated index: see [`docs/changelog/README.md`](docs/changelog/README.md) for the full timeline and links to every dated log.
+- **2026-03-06 – Tensor Grid Telemetry & PathID Notes:** COO tensor grid benchmarks, parser layout guidance, captured PathKey/DeclNode hygiene, and Maturin troubleshooting notes. Read [`changelog_20260306.md`](docs/changelog/changelog_20260306.md).
 - **2026-03-05 – Serialization & Dataset Push:** Portable CBOR snapshots via `CborPayload`, serde coverage across IR structures, deterministic CSR coalescing, and new math notes plus benchmark fixtures. Read the full entry in [`changelog_20260305.md`](docs/changelog/changelog_20260305.md).
 - **2026-03-02 – Cybernetic State Compiler Foundations:** Zero-copy PyO3 bridge, dual-frequency telemetry loop, Hyper-KA formalization, and the publication roadmap. Details in [`changelog_20260302.md`](docs/changelog/changelog_20260302.md).
 

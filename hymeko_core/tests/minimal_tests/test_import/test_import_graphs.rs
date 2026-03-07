@@ -66,7 +66,7 @@ mod test_import_graphs
 
 
         // ugyanaz a root file, mint eddig
-        let root_path = Path::new("data/minimal_examples/import_examples/minimal_example_import.hymeko");
+        let root_path = Path::new("./data/minimal_examples/import_examples/minimal_example_import.hymeko");
 
         // Parser adapter a LALRPOP-hoz (igazítsd a modulneveket, ha kell)
 

@@ -480,17 +480,37 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 name = "hymeko"
 version = "0.1.0"
 dependencies = [
- "blake3",
- "ciborium",
  "criterion",
+ "hymeko_core",
+ "parser",
+]
+
+[[package]]
+name = "hymeko_core"
+version = "0.1.0"
+dependencies = [
+ "blake3",
  "nalgebra",
  "nalgebra-sparse",
  "num-traits",
+ "parser",
+ "rayon",
+ "serde",
+]
+
+[[package]]
+name = "hymeko_daemon"
+version = "0.1.0"
+
+[[package]]
+name = "hymeko_py"
+version = "0.1.0"
+dependencies = [
+ "ciborium",
+ "hymeko_core",
  "numpy",
  "parser",
  "pyo3",
- "rayon",
- "serde",
 ]
 
 [[package]]

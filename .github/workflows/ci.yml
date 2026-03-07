@@ -10,8 +10,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Test
+  workspace-tests:
+    name: Workspace Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run tests
         run: cargo test --workspace --all-targets --verbose
@@ -50,42 +50,145 @@ jobs:
         if: matrix.rust == 'nightly'
         run: cargo test --workspace --all-targets --all-features --verbose
 
+  package-check:
+    name: Package Build & Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [hymeko, hymeko_core, hymeko_daemon, hymeko_py, parser]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ubuntu-cargo-registry-${{ matrix.package }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ubuntu-cargo-git-${{ matrix.package }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ubuntu-cargo-build-target-${{ matrix.package }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build ${{ matrix.package }}
+        run: cargo build --package ${{ matrix.package }} --all-targets --verbose
+
+      - name: Test ${{ matrix.package }}
+        run: cargo test --package ${{ matrix.package }} --all-targets --verbose
+
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
+    needs: package-check
+    env:
+      RUSTFLAGS: -C instrument-coverage
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
+
       - uses: taiki-e/install-action@cargo-tarpaulin
 
-      - name: Generate coverage report
-        run: cargo tarpaulin --workspace --all-targets --out Xml --timeout 300
-        env:
-          RUSTFLAGS: -C instrument-coverage
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ubuntu-coverage-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Upload coverage to Codecov
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ubuntu-coverage-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ubuntu-coverage-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Generate per-package coverage reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          packages=(hymeko hymeko_core hymeko_daemon hymeko_py parser)
+          mkdir -p coverage/xml coverage/html
+          for pkg in "${packages[@]}"; do
+            echo "Running Tarpaulin for ${pkg}"
+            cargo tarpaulin --package "${pkg}" --all-targets --out Xml --timeout 300
+            mv cobertura.xml "coverage/xml/${pkg}.xml"
+            cargo tarpaulin --package "${pkg}" --all-targets --out Html --timeout 300 || true
+            if [ -f tarpaulin-report.html ]; then
+              mv tarpaulin-report.html "coverage/html/${pkg}.html"
+            fi
+          done
+
+      - name: Upload coverage (hymeko)
         uses: codecov/codecov-action@v4
         with:
-          files: ./cobertura.xml
-          flags: rust
-          name: codecov-umbrella
+          files: coverage/xml/hymeko.xml
+          flags: hymeko
+          name: coverage-hymeko
           fail_ci_if_error: false
           verbose: true
 
-      - name: Generate HTML coverage report
-        run: cargo tarpaulin --workspace --all-targets --out Html --timeout 300
-        continue-on-error: true
+      - name: Upload coverage (hymeko_core)
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/xml/hymeko_core.xml
+          flags: hymeko_core
+          name: coverage-hymeko-core
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage (hymeko_daemon)
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/xml/hymeko_daemon.xml
+          flags: hymeko_daemon
+          name: coverage-hymeko-daemon
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage (hymeko_py)
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/xml/hymeko_py.xml
+          flags: hymeko_py
+          name: coverage-hymeko-py
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage (parser)
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/xml/parser.xml
+          flags: parser
+          name: coverage-parser
+          fail_ci_if_error: false
+          verbose: true
 
       - name: Upload HTML coverage as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
-          path: tarpaulin-report.html
+          name: coverage-html
+          path: coverage/html
           retention-days: 30
 
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: workspace-tests
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

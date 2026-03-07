@@ -1,13 +1,7 @@
-use pyo3::prelude::*;
 use parser::ast::{EdgeDecl, HyperItem, NodeDecl};
 use crate::common::ids::SymId;
 
-use crate::interface_python::api::{
-    PyGraphTopology,
-    PyHypergraphIR,
-    PyHypergraphBuilder,
-    PyHypergraphEngine,
-};
+
 
 pub mod common;
 pub mod ir;
@@ -18,7 +12,6 @@ pub mod resolution;
 pub mod util;
 pub mod module_store;
 pub mod tensor;
-mod interface_python;
 pub mod engine;
 
 pub fn find_node<'ast, 'slice>(
@@ -68,17 +61,3 @@ pub fn find_node_id<'ast, 'slice>(
     })
 }
 
-// ==========================================
-// LEGACY API SIGNATURE (for pyo3 < 0.21)
-// If you update PyO3 later, this will change to (m: &Bound<'_, PyModule>)
-// ==========================================
-#[pymodule]
-fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // Explicitly register EVERY class to make them visible in Python
-    m.add_class::<PyGraphTopology>()?;
-    m.add_class::<PyHypergraphIR>()?;
-    m.add_class::<PyHypergraphBuilder>()?;
-    m.add_class::<PyHypergraphEngine>()?;
-
-    Ok(())
-}

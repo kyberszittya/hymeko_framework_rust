@@ -16,9 +16,14 @@ Code coverage is automatically tracked on every CI run using:
 The project includes a `codecov.yml` file that defines:
 
 **Coverage Targets:**
-- **Default Target:** 60% coverage minimum
-- **Parser Module Target:** 70% coverage minimum
-- **Threshold:** 1% (fails if coverage drops more than 1%)
+- **Default Target:** 60% coverage minimum for the aggregate project
+- **hymeko_core Target:** 65% coverage minimum to protect the core engine APIs
+- **parser Target:** 70% coverage minimum for the parser front-end
+- **Other Flags:** `hymeko`, `hymeko_daemon`, and `hymeko_py` each inherit a 60% floor so regressions surface quickly.
+
+**Flag Mapping:**
+- Each crate uploads an XML file under `coverage/xml/<flag>.xml` (e.g., `coverage/xml/hymeko_core.xml`).
+- The Codecov configuration uses matching flag names so dashboards and required checks line up with the CI job output.
 
 **Ignored Paths:**
 - Test files (`tests/`)
@@ -32,8 +37,8 @@ The project includes a `codecov.yml` file that defines:
 ### CI/CD Integration
 
 The CI workflow includes enhanced coverage job with:
-- ✅ XML report generation (for Codecov)
-- ✅ HTML report generation (for artifact download)
+- ✅ Per-crate XML report generation saved under `coverage/xml/<crate>.xml` for Codecov uploads
+- ✅ Per-crate HTML report generation saved under `coverage/html/<crate>.html` for artifact download
 - ✅ Coverage artifact retention (30 days)
 - ✅ Timeout handling (300 seconds)
 - ✅ Verbose reporting
@@ -46,16 +51,18 @@ The CI workflow includes enhanced coverage job with:
 # Install cargo-tarpaulin (if not already installed)
 cargo install cargo-tarpaulin
 
-# Generate XML report (for Codecov)
-cargo tarpaulin --out Xml --all
+# Generate XML report for a single crate (matches CI flags)
+cargo tarpaulin --package hymeko_core --all-targets --out Xml
 
-# Generate HTML report (browsable)
-cargo tarpaulin --out Html --all
+# Generate HTML report for the same crate
+cargo tarpaulin --package hymeko_core --all-targets --out Html
 
-# View HTML report
-open tarpaulin-report.html  # macOS
-xdg-open tarpaulin-report.html  # Linux
-start tarpaulin-report.html  # Windows
+# Loop across all crates just like CI
+declare -a crates=(hymeko hymeko_core hymeko_daemon hymeko_py parser)
+for crate in "${crates[@]}"; do
+  cargo tarpaulin --package "$crate" --all-targets --out Xml --output-dir coverage/xml
+  cargo tarpaulin --package "$crate" --all-targets --out Html --output-dir coverage/html || true
+done
 ```
 
 ### Using Development Script
@@ -76,10 +83,10 @@ make coverage        # Make
    - Validates code quality
 
 2. **Coverage Job Runs**
-   - Generates `cobertura.xml` (XML format for Codecov)
-   - Uploads to Codecov.io
-   - Generates `tarpaulin-report.html` (HTML report)
-   - Uploads HTML as GitHub Actions artifact
+   - Generates per-crate XML reports (`coverage/xml/<crate>.xml`) for Codecov
+   - Uploads each XML file with the matching flag so Codecov enforces per-crate gates
+   - Generates per-crate HTML reports (`coverage/html/<crate>.html`)
+   - Uploads the entire HTML directory as a GitHub Actions artifact
 
 3. **Coverage Comments**
    - Codecov posts coverage comment on PR
@@ -94,7 +101,7 @@ make coverage        # Make
 
 ### HTML Report
 
-The HTML report (`tarpaulin-report.html`) shows:
+Each Tarpaulin HTML report (local `tarpaulin-report.html`, CI `coverage/html/<crate>.html`) shows:
 
 - **File-by-file coverage:** Each file with line coverage percentage
 - **Color coding:**
@@ -344,8 +351,8 @@ cargo tarpaulin --out Xml --all
 - `.github/workflows/ci.yml` - CI coverage job
 
 ### Coverage Artifacts
-- `cobertura.xml` - Generated (uploaded to Codecov)
-- `tarpaulin-report.html` - Generated (GitHub Actions artifact)
+- `coverage/xml/<crate>.xml` - Generated Cobertura reports uploaded to Codecov with matching flags
+- `coverage/html/<crate>.html` - Generated HTML viewers published as GitHub Actions artifacts
 
 ### Documentation
 - This file: `CODE_COVERAGE.md`
@@ -369,6 +376,6 @@ cargo tarpaulin --out Xml --all
 
 ---
 
-**Last Updated:** February 20, 2026
+**Last Updated:** March 7, 2026
 **Status:** ✅ Coverage tracking enabled
 

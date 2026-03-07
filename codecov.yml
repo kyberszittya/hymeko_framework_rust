@@ -18,10 +18,26 @@ ignore:
   - "**/tests/**"
 
 flags:
-  rust:
+  hymeko:
     carryforward: false
     paths:
-      - hymeko/parser/src/
+      - src/
+  hymeko_core:
+    carryforward: false
+    paths:
+      - hymeko_core/src/
+  hymeko_daemon:
+    carryforward: false
+    paths:
+      - hymeko_daemon/src/
+  hymeko_py:
+    carryforward: false
+    paths:
+      - hymeko_py/src/
+  parser:
+    carryforward: false
+    paths:
+      - parser/src/
 
 comment:
   layout: "reach,diff,flags,tree,footer"
@@ -39,11 +55,26 @@ status:
       target: 60%
       threshold: 1%
       base: auto
+    hymeko:
+      target: 60%
+      threshold: 1%
+      flags: hymeko
+    hymeko_core:
+      target: 65%
+      threshold: 1%
+      flags: hymeko_core
+    hymeko_daemon:
+      target: 60%
+      threshold: 1%
+      flags: hymeko_daemon
+    hymeko_py:
+      target: 60%
+      threshold: 1%
+      flags: hymeko_py
     parser:
       target: 70%
       threshold: 1%
-      paths:
-        - hymeko/parser/src/
+      flags: parser
   patch:
     default:
       target: 60%
@@ -52,4 +83,3 @@ status:
     default:
       target: 60%
       threshold: 1%
-

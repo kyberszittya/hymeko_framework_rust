@@ -1,14 +1,15 @@
 use std::path::Path;
 use std::sync::Arc;
 use pyo3::prelude::*;
-use numpy::{PyArray1};
+use numpy::{IntoPyArray, PyArray1, PyArray2};
+use numpy::ndarray::Array2;
 use pyo3::exceptions::{PyIndexError, PySyntaxError, PyValueError};
-use crate::engine::hypergraphengine::HypergraphEngine;
-use crate::ir::ir::{Ir, SignedRefR};
-use crate::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
-use crate::module_store::source_provider::{MemProvider};
-use crate::util::real_parser::RealParser;
-use crate::writers::cbor_writer::CborPayload;
+use hymeko::engine::hypergraphengine::HypergraphEngine;
+use hymeko::ir::ir::{Ir, SignedRefR};
+use hymeko::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
+use hymeko::module_store::source_provider::{MemProvider};
+use hymeko::util::real_parser::RealParser;
+use hymeko::writers::cbor_writer::CborPayload;
 
 #[pyclass]
 pub struct PyGraphTopology {
@@ -63,7 +64,7 @@ impl PyHypergraphIR {
 
         // 2. Reconstruct the Interner's state
         // We must manually rebuild the HashMap to restore O(1) string lookups
-        let mut reconstructed_interner = crate::resolution::interner::Interner::new();
+        let mut reconstructed_interner = hymeko::resolution::interner::Interner::new();
         for s in payload.interned_strings {
             reconstructed_interner.intern(&s);
         }
@@ -173,7 +174,7 @@ impl PyHypergraphEngine {
             // Collect all nodes participating in this specific hyperedge
             let mut edge_nodes = Vec::new();
             for reference in &arc.refs {
-                let target_decl = crate::ir::common::ref_target(reference);
+                let target_decl = hymeko::ir::common::ref_target(reference);
                 if let Some(&node_id) = decl_to_csr_node.get(&target_decl.0) {
                     edge_nodes.push(node_id);
                 }
@@ -230,7 +231,7 @@ impl PyHypergraphEngine {
             let k = edge_idx;
 
             for reference in &arc.refs {
-                let target_decl = crate::ir::common::ref_target(reference);
+                let target_decl = hymeko::ir::common::ref_target(reference);
 
                 // Check the explicit target mapping. If it is the fano root (neither node nor edge), it is ignored.
                 let target_mapped = if let Some(&node_id) = decl_to_csr_node.get(&target_decl.0) {
@@ -295,7 +296,7 @@ impl PyHypergraphEngine {
             let mut edge_nodes = Vec::new();
 
             for reference in &arc.refs {
-                let target_decl = crate::ir::common::ref_target(reference);
+                let target_decl = hymeko::ir::common::ref_target(reference);
                 if let Some(&node_id) = decl_to_csr_node.get(&target_decl.0) {
                     edge_nodes.push(node_id);
                 }
@@ -330,5 +331,46 @@ impl PyHypergraphEngine {
         }
 
         Ok((k_vec, i_vec, j_vec, v_vec, (self.inner.current_edges, self.inner.current_nodes, self.inner.current_nodes)))
+    }
+}
+
+#[pyclass]
+pub struct PyTensorCoo3D {
+    dim_k: usize,
+    dim_i: usize,
+    dim_j: usize,
+    // We store them as i64 because PyTorch strictly demands 64-bit signed integers for indices
+    k_ind: Vec<i64>,
+    i_ind: Vec<i64>,
+    j_ind: Vec<i64>,
+    val: Vec<f32>, // f32 is standard for neural network weights
+}
+
+#[pymethods]
+impl PyTensorCoo3D {
+    #[getter]
+    pub fn shape(&self) -> (usize, usize, usize) {
+        (self.dim_k, self.dim_i, self.dim_j)
+    }
+
+    /// Packs the 1D Rust vectors into the exact 2D NumPy matrices PyTorch expects.
+    pub fn export_to_pytorch<'py>(
+        &self,
+        py: Python<'py>
+    ) -> PyResult<(Bound<'py, PyArray2<i64>>, Bound<'py, PyArray1<f32>>)> {
+        let nnz = self.val.len();
+
+        let mut indices_matrix = Array2::<i64>::zeros((3, nnz));
+        for idx in 0..nnz {
+            indices_matrix[[0, idx]] = self.k_ind[idx];
+            indices_matrix[[1, idx]] = self.i_ind[idx];
+            indices_matrix[[2, idx]] = self.j_ind[idx];
+ }
+
+        // Use into_pyarray_bound for the modern PyO3 0.21+ memory safe API
+        let py_indices = indices_matrix.into_pyarray(py);
+        let py_values = self.val.clone().into_pyarray(py);
+
+        Ok((py_indices, py_values))
     }
 }
