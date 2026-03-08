@@ -2,7 +2,13 @@ use rustc_hash::FxHashMap;
 use crate::engine::hypergraphengine::HypergraphEngine;
 use crate::ir::common::ref_target;
 use crate::ir::ir::{DeclKind, Ir, SignedRefR};
+use crate::resolution::string_table::StringTable;
+use crate::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+use crate::tensor::common::Real;
 use crate::tensor::representations::tensor_coo::TensorCoo;
+use crate::tensor::representations::tensor_coo_representation;
+use crate::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+use crate::traversal::hypergraphview::HyperGraphView;
 
 impl HypergraphEngine {
     pub fn new() -> Self {
@@ -137,6 +143,59 @@ impl HypergraphEngine {
         }
 
         Ok(tensor)
+    }
+
+    /// Internal engine logic for Star Expansion. Returns pure Rust TensorCoo<f32>.
+    pub fn compile_star_expansion_core<F: Real>(&self, ir: &Ir) -> TensorCoo<F> {
+        let cfg = AggCfg {
+            sign: SignAgg::PreferNonNeutral,
+            weight: WeightAgg::Sum,
+            clamp01: false,
+        };
+        let ex = ScalarWeightExtractor;
+
+        // Build the optimized mathematical view
+        let view: HyperGraphView<F, EdgeWScalar<F>, F> =
+            HyperGraphView::from_ir(ir, &cfg, &ex);
+
+        // Execute core expansion math
+        tensor_coo_representation::star_expansion_coo(&view)
+    }
+
+    fn sync_ir_to_engine(
+        ir: &Ir,
+        strings: &StringTable,
+        engine: &mut HypergraphEngine
+    ) -> (FxHashMap<usize, usize>, FxHashMap<usize, usize>) {
+        let mut decl_to_csr_node = FxHashMap::default();
+        let mut decl_to_csr_edge = FxHashMap::default();
+
+        for node_rec in &ir.nodes {
+            let name = strings.resolve(ir.decl_nodes[node_rec.decl.0].name);
+            decl_to_csr_node.insert(node_rec.decl.0, engine.get_or_create_node(name));
+        }
+
+        for edge_rec in &ir.edges {
+            let name = strings.resolve(ir.decl_nodes[edge_rec.decl.0].name);
+            decl_to_csr_edge.insert(edge_rec.decl.0, engine.get_or_create_edge(name));
+        }
+
+        (decl_to_csr_node, decl_to_csr_edge)
+    }
+
+    /// Internal engine logic for Clique Expansion.
+    pub fn compile_clique_expansion_core<F: Real>(&self, ir: &Ir) -> TensorCoo<F> {
+        let cfg = AggCfg {
+            sign: SignAgg::PreferNonNeutral,
+            weight: WeightAgg::Sum,
+            clamp01: false,
+        };
+        let ex = ScalarWeightExtractor;
+
+        let view: HyperGraphView<F, EdgeWScalar<F>, F> =
+            HyperGraphView::from_ir(ir, &cfg, &ex);
+
+        tensor_coo_representation::clique_expansion_coo(&view)
     }
 
 

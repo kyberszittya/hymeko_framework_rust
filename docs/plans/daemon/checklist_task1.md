@@ -13,13 +13,13 @@
   - [X] Verify that the new structure allows for clean separation of concerns and that the core library can be used without pulling in unnecessary dependencies.
   - [X] Extract magic numbers from test cases
 
-- [ ] **Task 1.2: FxHash Integration (Local Loop Acceleration)**
+- [X] **Task 1.2: FxHash Integration (Local Loop Acceleration)**
   - [X] Add `rustc-hash` to the dependencies in `hymeko/Cargo.toml`.
   - [X] Open `hymeko/src/engine/hypergraphengine.rs`.
   - [X] Replace `std::collections::HashMap` with `rustc_hash::FxHashMap` for `node_registry`, `edge_registry`, and `ir_repository`.
   - [X] Update their initialization to use `FxHashMap::default()`.
-  - [ ] Extract current Python API implementations containing tensor expansion logic from the Python API so the Python API is essentially a thin wrapper around the core library. This will allow us to benchmark the core library's performance improvements without Python overhead.
-  - [ ] Locate the tensor expansion loops and swap the temporary `decl_to_csr_node` and `decl_to_csr_edge` mappings to `FxHashMap`.
+  - [X] Extract current Python API implementations containing tensor expansion logic from the Python API so the Python API is essentially a thin wrapper around the core library. This will allow us to benchmark the core library's performance improvements without Python overhead.
+  - [X] Locate the tensor expansion loops and swap the temporary `decl_to_csr_node` and `decl_to_csr_edge` mappings to `FxHashMap`.
 
 - [ ] **Task 1.3: Deterministic B-Tree Indexing (Hash Stability)**
   - [ ] Open the compiler's resolution module (`hymeko/src/resolution/resolve.rs`).

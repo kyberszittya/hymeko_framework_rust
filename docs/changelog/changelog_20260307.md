@@ -23,3 +23,16 @@
 - Applied the same constant-hoisting + logging strategy to `tests/traversal`, `tests/intermediate_tests`, `tests/domain_transformations`, and `tests/aggregations`, including a new `traversal::constants` module and start/finish helpers that wrap every case with elapsed-time output.
 - Added contextual `info!` statements (node/edge counts, hash digests, inheritance tallies, aggregator outcomes) so CI logs explain what each suite verified without drowning tensor dumps.
 - Re-ran the full integration suite with `cargo test -p hymeko_core --tests -- --nocapture` to validate the instrumentation and give Codecov a consistent signal.
+
+## IR Lowering: Dedicated Arc Decls
+- Updated `hymeko_core/src/ir/lower.rs` so each arc allocates an explicit `DeclId`, copies its annotation via `resolve_anno`, and pushes a single `ArcRec` into both the parent edge's decl-child chain and its `EdgeRec::arcs` list.
+- The helper now uses `resolve_arc_refs` once, stores the `HyperArcId` mapping in `decl_to_arc`, and guarantees downstream traversals (e.g., `ir.decl_children` + per-edge arc scans) observe the same metadata without re-resolving the AST.
+
+## Python API Slimming for FxHash Integration
+- Reworked `hymeko_py/src/interface_python/api.rs` so `PyHypergraphEngine` simply forwards star/clique tensor expansion calls to `HypergraphEngine::compile_star_expansion_core` / `compile_clique_expansion_core`, leaving Python responsible only for Arrow-backed wrappers and serialization.
+- This keeps the Python surface area thin (no duplicate tensor loops), aligning Task 1.2 with a single Rust implementation that can be benchmarked independently of the bindings.
+
+## Hypergraph Engine FxHash Adoption
+- Migrated `hymeko_core/src/engine/hypergraphengine_impl.rs` so `HypergraphEngine` stores its registries (`node_registry`, `edge_registry`, `ir_repository`) and CSR sync maps in `rustc_hash::FxHashMap`, eliminating the last runtime `HashMap` bottlenecks in the inner loop.
+- The constructor now seeds `TensorCoo` metadata, keeps the node/edge name caches, and exposes fast `get_or_create_*` helpers that rely on FxHash for deterministic, accelerated lookups ahead of Task 1.2’s remaining CSR swaps.
+- With the Python wrapper simplified and the CSR helpers on FxHash, Task 1.2 (“FxHash Integration”) is fully checked off in `docs/plans/daemon/checklist_task1.md`.

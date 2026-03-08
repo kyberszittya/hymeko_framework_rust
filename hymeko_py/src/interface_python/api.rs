@@ -1,52 +1,103 @@
 use std::path::Path;
 use std::sync::Arc;
+
 use pyo3::prelude::*;
-use numpy::{IntoPyArray, PyArray1, PyArray2};
-use numpy::ndarray::Array2;
 use pyo3::exceptions::{PyIndexError, PySyntaxError, PyValueError};
+
+// The exact Arrow imports required for zero-copy FFI.
+use arrow::array::{Array, Int64Array, Float32Array};
+use arrow::pyarrow::IntoPyArrow;
 use hymeko::engine::hypergraphengine::HypergraphEngine;
-use hymeko::ir::ir::{Ir, SignedRefR};
 use hymeko::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
-use hymeko::module_store::source_provider::{MemProvider};
+use hymeko::module_store::source_provider::MemProvider;
+use hymeko::resolution::string_table::StringTable;
 use hymeko::util::real_parser::RealParser;
 use hymeko::writers::cbor_writer::CborPayload;
-
-#[pyclass]
-pub struct PyGraphTopology {
-    #[pyo3(get)]
-    pub k: Py<PyArray1<usize>>,
-    #[pyo3(get)]
-    pub i: Py<PyArray1<usize>>,
-    #[pyo3(get)]
-    pub j: Py<PyArray1<usize>>,
-    #[pyo3(get)]
-    pub val: Py<PyArray1<f64>>,
-}
-
-
 
 
 #[pyclass]
 pub struct PyHypergraphIR {
     // Keep the compiled IR alive
-    pub compiled: Arc<CompiledProgram>
+    pub compiled: Arc<CompiledProgram>,
+    pub strings: StringTable,
 }
 
 #[pymethods]
 impl PyHypergraphIR {
 
+    // -- Counts --
+
+    #[getter]
+    pub fn node_count(&self) -> usize {
+        self.compiled.ir.nodes.len()
+    }
+
+    #[getter]
+    pub fn edge_count(&self) -> usize {
+        self.compiled.ir.edges.len()
+    }
+
+    #[getter]
+    pub fn arc_count(&self) -> usize {
+        self.compiled.ir.arcs.len()
+    }
+
+    // -- Name Resolution --
 
     /// Maps a CSR matrix row/col index back to its string identifier
     pub fn get_node_name(&self, index: usize) -> PyResult<String> {
-        if let Some(node_rec) = self.compiled.ir.nodes.get(index) {
-            Ok(format!("decl_{}", node_rec.decl.0))
-        } else {
-            Err(PyIndexError::new_err("Node index out of bounds"))
-        }
+        let ir = &self.compiled.ir;
+        let rec = ir.nodes.get(index)
+            .ok_or_else(|| PyIndexError::new_err("Node index out of bounds"))?;
+        Ok(self.strings.resolve(ir.decl_nodes[rec.decl.0].name).to_string())
     }
 
-    pub fn get_node_annotations(&self, _index: usize) -> PyResult<Vec<String>> {
-        Ok(vec![])
+    pub fn get_edge_name(&self, index: usize) -> PyResult<String> {
+        let ir = &self.compiled.ir;
+        let rec = ir.edges.get(index)
+            .ok_or_else(|| PyIndexError::new_err("Edge index out of bounds"))?;
+        Ok(self.strings.resolve(ir.decl_nodes[rec.decl.0].name).to_string())
+    }
+
+    #[getter]
+    pub fn node_names(&self) -> Vec<String> {
+        let ir = &self.compiled.ir;
+        ir.nodes.iter()
+            .map(|rec| self.strings.resolve(ir.decl_nodes[rec.decl.0].name).to_string())
+            .collect()
+    }
+
+    #[getter]
+    pub fn edge_names(&self) -> Vec<String> {
+        let ir = &self.compiled.ir;
+        ir.edges.iter()
+            .map(|rec| self.strings.resolve(ir.decl_nodes[rec.decl.0].name).to_string())
+            .collect()
+    }
+
+    // -- Annotations --
+
+    pub fn get_node_annotations(&self, index: usize) -> PyResult<Vec<String>> {
+        let ir = &self.compiled.ir;
+        let rec = ir.nodes.get(index)
+            .ok_or_else(|| PyIndexError::new_err("Node index out of bounds"))?;
+        let anno = &ir.decl_nodes[rec.decl.0].anno;
+        Ok(anno.tags.iter().map(|&s| self.strings.resolve(s).to_string()).collect())
+    }
+
+    pub fn get_edge_annotations(&self, index: usize) -> PyResult<Vec<String>> {
+        let ir = &self.compiled.ir;
+        let rec = ir.edges.get(index)
+            .ok_or_else(|| PyIndexError::new_err("Edge index out of bounds"))?;
+        let anno = &ir.decl_nodes[rec.decl.0].anno;
+        Ok(anno.tags.iter().map(|&s| self.strings.resolve(s).to_string()).collect())
+    }
+
+    pub fn edge_arity(&self, index: usize) -> PyResult<usize> {
+        let ir = &self.compiled.ir;
+        let rec = ir.edges.get(index)
+            .ok_or_else(|| PyIndexError::new_err("Edge index out of bounds"))?;
+        Ok(rec.bases.len())
     }
 
     pub fn to_cbor(&self) -> PyResult<Vec<u8>> {
@@ -56,20 +107,13 @@ impl PyHypergraphIR {
         Ok(buffer)
     }
 
+    // -- Serialization --
+
     #[staticmethod]
     pub fn from_cbor(data: &[u8]) -> PyResult<Self> {
-        // 1. Deserialize the complete payload, not just the Ir
         let payload: CborPayload = ciborium::from_reader(data)
             .map_err(|e| PyValueError::new_err(format!("CBOR Deserialization Error: {}", e)))?;
-
-        // 2. Reconstruct the Interner's state
-        // We must manually rebuild the HashMap to restore O(1) string lookups
-        let mut reconstructed_interner = hymeko::resolution::interner::Interner::new();
-        for s in payload.interned_strings {
-            reconstructed_interner.intern(&s);
-        }
-
-        // 3. Assemble the CompiledProgram precisely as defined in module_store.rs
+        let strings = StringTable::from_vec(payload.interned_strings);
         let compiled = CompiledProgram {
             root: ModuleKey(payload.root_path),
             idx: payload.index,
@@ -77,23 +121,181 @@ impl PyHypergraphIR {
             imports: payload.imports,
             canon_hash: payload.canon_hash,
         };
-        // 4. Wrap the CompiledProgram in an Arc to ensure it lives as long as the PyHypergraphIR instance
-        let compiled_arc = std::sync::Arc::new(compiled);
+
 
         // Note: If your PyHypergraphIR wrapper also requires the Interner
         // to resolve strings back to Python, you must store `reconstructed_interner`
         // inside PyHypergraphIR alongside `compiled`.
 
-        Ok(PyHypergraphIR { compiled: compiled_arc }) // Adjust according to your exact PyHypergraphIR struct
+        Ok(PyHypergraphIR { compiled: Arc::new(compiled), strings }) // Adjust according to your exact PyHypergraphIR struct
+    }
+
+    fn __repr__(&self) -> String {
+        format!("<PyHypergraphIR(nodes={}, edges={}, arcs={})",
+            self.node_count(), self.edge_count(), self.arc_count())
     }
 
 }
 
+// ================================================
+// PyTensorCoo3D: A simple COO format for 3D sparse tensors (for clique expansions)
+// ================================================
+/// 3D sparse tensor in COO format.
+///
+/// Returned by `compile_star_expansion` and `compile_clique_tensor_expansion`.
+///
+/// ```python
+/// coo = engine.compile_star_expansion(ir)
+/// print(coo.shape, coo.nnz)
+/// indices, values = coo.export_to_pytorch()
+/// t = torch.sparse_coo_tensor(indices, values, coo.shape)
+/// ```
+
 #[pyclass]
-pub struct PyHypergraphBuilder {
-    // We hold the mutable symbolic IR here
-    ir: Ir,
+pub struct PyTensorCoo3D {
+    #[pyo3(get)]
+    pub dim_k: i64,
+    #[pyo3(get)]
+    pub dim_i: i64,
+    #[pyo3(get)]
+    pub dim_j: i64,
+
+    k_ind: Int64Array,
+    i_ind: Int64Array,
+    j_ind: Int64Array,
+    val: Float32Array,
 }
+
+impl PyTensorCoo3D {
+    fn from_raw(
+        k: Vec<usize>, i: Vec<usize>, j: Vec<usize>, v: Vec<f32>,
+        shape: (usize, usize, usize)
+    ) -> Self {
+        Self {
+            dim_k: shape.0 as i64,
+            dim_i: shape.1 as i64,
+            dim_j: shape.2 as i64,
+            k_ind: k.into_iter().map(|x| x as i64).collect(),
+            i_ind: i.into_iter().map(|x| x as i64).collect(),
+            j_ind: j.into_iter().map(|x| x as i64).collect(),
+            val: v.into_iter().map(|x| x as f32).collect(),
+        }
+    }
+}
+
+
+#[pymethods]
+impl PyTensorCoo3D {
+    #[getter]
+    pub fn shape(&self) -> (i64, i64, i64) {
+        (self.dim_k, self.dim_i, self.dim_j)
+    }
+
+
+
+
+    #[getter]
+    pub fn nnz(&self) -> usize {
+        self.val.len()
+    }
+
+
+
+    /// True zero-copy export to Python using the Arrow C Data Interface.
+    pub fn export_to_pytorch<'py>(
+        &self,
+        py: Python<'py>
+    ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>)> {
+        // No more .into() - we return the safe Bound directly
+        let k_py = self.k_ind.to_data().into_pyarrow(py)?;
+        let i_py = self.i_ind.to_data().into_pyarrow(py)?;
+        let j_py = self.j_ind.to_data().into_pyarrow(py)?;
+        let val_py = self.val.to_data().into_pyarrow(py)?;
+
+        Ok((k_py, i_py, j_py, val_py))
+    }
+
+    fn __repr__(&self) -> String {
+        format!("<PyTensorCoo3D shape=({}, {}, {}) nnz={}>",
+            self.dim_k, self.dim_i, self.dim_j, self.nnz())
+    }
+}
+
+// ================================================
+// PySparseMatrix2D - struct for 2D sparse matrices
+// ================================================
+#[pyclass]
+pub struct PySparseMatrix2D {
+    #[pyo3(get)]
+    dim_i: i64,
+    #[pyo3(get)]
+    dim_j: i64,
+    i_ind: Int64Array,
+    j_ind: Int64Array,
+    val: Float32Array,
+}
+
+impl PySparseMatrix2D {
+    pub fn from_raw(i: Vec<usize>, j: Vec<usize>, v: Vec<f32>, shape: (usize, usize)) -> Self {
+        Self {
+            dim_i: shape.0 as i64,
+            dim_j: shape.1 as i64,
+            i_ind: Int64Array::from(i.into_iter().map(|x| x as i64).collect::<Vec<i64>>()),
+            j_ind: Int64Array::from(j.into_iter().map(|x| x as i64).collect::<Vec<i64>>()),
+            val: Float32Array::from(v.into_iter().map(|x| x).collect::<Vec<f32>>()),
+        }
+    }
+}
+
+#[pymethods]
+impl PySparseMatrix2D {
+    #[getter]
+    pub fn shape(&self) -> (i64, i64) {
+        (self.dim_i, self.dim_j)
+    }
+
+    #[getter]
+    pub fn nnz(&self) -> usize {
+        self.val.len()
+    }
+
+    /// True zero-copy export to Python using the Arrow C Data Interface.
+    pub fn export_to_pytorch<'py>(
+        &self,
+        py: Python<'py>
+    ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>)> {
+        // No more .into()
+        let i_py = self.i_ind.to_data().into_pyarrow(py)?;
+        let j_py = self.j_ind.to_data().into_pyarrow(py)?;
+        let val_py = self.val.to_data().into_pyarrow(py)?;
+
+        Ok((i_py, j_py, val_py))
+    }
+
+    fn __repr__(&self) -> String {
+        format!("<PySparseMatrix2D shape=({}, {}) nnz={}>", self.dim_i, self.dim_j, self.nnz())
+    }
+}
+
+// ================================================
+// Shared helper: sync IR declarations to engine's global registries
+// ================================================
+
+
+
+// ================================================
+// PyHypergraphEngine: Main interface for Python users to interact with the HypergraphEngine and compile IRs
+// ================================================
+/// The main engine for compiling `.hymeko` sources and extracting tensor
+/// representations from the resulting hypergraph IR.
+///
+/// ```python
+/// engine = hymeko.PyHypergraphEngine()
+/// ir = engine.load_file("fano_graph.hymeko")
+///
+/// star = engine.compile_star_expansion(ir)
+/// print(star)  # PyTensorCoo3D(shape=(7,14,14), nnz=42)
+/// ```
 
 #[pyclass(unsendable)]
 pub struct PyHypergraphEngine {
@@ -109,16 +311,6 @@ impl PyHypergraphEngine {
             inner: HypergraphEngine::new(),
             store: ModuleStore::new(MemProvider::default(), RealParser),
         }
-    }
-
-
-
-    pub fn get_node_count(&self) -> usize {
-        self.inner.current_nodes
-    }
-
-    pub fn get_edge_count(&self) -> usize {
-        self.inner.current_edges
     }
 
     pub fn load_file(&mut self, file_path: &str) -> PyResult<PyHypergraphIR> {
@@ -138,8 +330,9 @@ impl PyHypergraphEngine {
 
         let compiled = self.store.compile(Path::new(path))
             .map_err(|e| PySyntaxError::new_err(format!("Compile error: {:?}", e)))?;
+        let strings = StringTable::from_interner(&self.store.it);
 
-        Ok(PyHypergraphIR { compiled })
+        Ok(PyHypergraphIR { compiled, strings })
     }
 
     pub fn add_node(&mut self) -> PyResult<usize> {
@@ -155,222 +348,40 @@ impl PyHypergraphEngine {
             .map_err(|e| PyIndexError::new_err(e))
     }
 
-    pub fn compile_clique_expansion(&mut self, py_ir: &PyHypergraphIR) -> PyResult<(Vec<usize>, Vec<usize>, Vec<f64>, (usize, usize))> {
+
+
+    pub fn compile_star_expansion(&mut self, py_ir: &PyHypergraphIR) -> PyResult<PyTensorCoo3D> {
         let ir = &py_ir.compiled.ir;
-        let it = &self.store.it;
+        let core_coo = self.inner.compile_star_expansion_core::<f32>(ir);
 
-        let mut decl_to_csr_node = std::collections::HashMap::new();
-        for node_rec in &ir.nodes {
-            let name = it.resolve(ir.decl_nodes[node_rec.decl.0 as usize].name);
-            decl_to_csr_node.insert(node_rec.decl.0, self.inner.get_or_create_node(name));
-        }
-
-        let v_count = self.inner.current_nodes;
-        let mut i_vec = Vec::new();
-        let mut j_vec = Vec::new();
-        let mut v_vec = Vec::new();
-
-        for arc in &ir.arcs {
-            // Collect all nodes participating in this specific hyperedge
-            let mut edge_nodes = Vec::new();
-            for reference in &arc.refs {
-                let target_decl = hymeko::ir::common::ref_target(reference);
-                if let Some(&node_id) = decl_to_csr_node.get(&target_decl.0) {
-                    edge_nodes.push(node_id);
-                }
-            }
-
-            // Project the clique (fully connected subgraph) for these nodes
-            for &u in &edge_nodes {
-                for &v in &edge_nodes {
-                    if u != v { // Subtract the diagonal block (no self-loops)
-                        i_vec.push(u);
-                        j_vec.push(v);
-                        v_vec.push(1.0);
-                    }
-                }
-            }
-        }
-
-        Ok((i_vec, j_vec, v_vec, (v_count, v_count)))
+        // Step 5: Thin Arrow wrapper
+        Ok(PyTensorCoo3D::from_raw(
+            core_coo.k, core_coo.i, core_coo.j, core_coo.v,
+            (core_coo.num_slices, core_coo.dim_i, core_coo.dim_j)
+        ))
     }
 
-    pub fn compile_star_expansion(&mut self, py_ir: &PyHypergraphIR) -> PyResult<(Vec<usize>, Vec<usize>, Vec<usize>, Vec<f64>, (usize, usize, usize))> {
+    pub fn compile_clique_expansion(&mut self, py_ir: &PyHypergraphIR) -> PyResult<PySparseMatrix2D> {
         let ir = &py_ir.compiled.ir;
-        let it = &self.store.it;
 
-        // 1. Sync local IR declarations to the global Engine Registry
-        let mut decl_to_csr_node = std::collections::HashMap::new();
-        let mut decl_to_csr_edge = std::collections::HashMap::new();
+        let core_coo = self.inner.compile_clique_expansion_core::<f32>(ir);
 
-        for node_rec in &ir.nodes {
-            let name = it.resolve(ir.decl_nodes[node_rec.decl.0 as usize].name);
-            decl_to_csr_node.insert(node_rec.decl.0, self.inner.get_or_create_node(name));
-        }
-
-        for edge_rec in &ir.edges {
-            let name = it.resolve(ir.decl_nodes[edge_rec.decl.0 as usize].name);
-            decl_to_csr_edge.insert(edge_rec.decl.0, self.inner.get_or_create_edge(name));
-        }
-
-        let v_count = self.inner.current_nodes;
-        let e_count = self.inner.current_edges;
-        let dim_star = v_count + e_count;
-
-        let mut k_vec = Vec::new();
-        let mut i_vec = Vec::new();
-        let mut j_vec = Vec::new();
-        let mut v_vec = Vec::new();
-
-        // 2. Extract topological arcs directly using the globally mapped IDs
-        for arc in &ir.arcs {
-            let edge_idx = *decl_to_csr_edge.get(&arc.in_edge.0)
-                .ok_or_else(|| PyValueError::new_err("Mathematical Error: Missing parent edge in registry"))?;
-
-            let e_mapped = edge_idx + v_count; // Strict offset into the Edge quadrant [V, V+E-1]
-            let k = edge_idx;
-
-            for reference in &arc.refs {
-                let target_decl = hymeko::ir::common::ref_target(reference);
-
-                // Check the explicit target mapping. If it is the fano root (neither node nor edge), it is ignored.
-                let target_mapped = if let Some(&node_id) = decl_to_csr_node.get(&target_decl.0) {
-                    node_id // Node quadrant [0, V-1]
-                } else if let Some(&edge_id) = decl_to_csr_edge.get(&target_decl.0) {
-                    edge_id + v_count // Edge quadrant [V, V+E-1]
-                } else {
-                    continue;
-                };
-
-                let weight = 1.0;
-
-                // Natively resolve spatial symmetry from the AST operators (+, -, ~)
-                match reference {
-                    SignedRefR::Plus(_) => {
-                        // Forward directed arc: Source -> Target
-                        k_vec.push(k); i_vec.push(target_mapped); j_vec.push(e_mapped); v_vec.push(weight);
-                    },
-                    SignedRefR::Minus(_) => {
-                        // Reverse directed arc: Target -> Source
-                        k_vec.push(k); i_vec.push(e_mapped); j_vec.push(target_mapped); v_vec.push(weight);
-                    },
-                    SignedRefR::Neutral(_) => {
-                        // Perfect Symmetry for neutral operators (~)
-                        k_vec.push(k); i_vec.push(target_mapped); j_vec.push(e_mapped); v_vec.push(weight);
-                        k_vec.push(k); i_vec.push(e_mapped); j_vec.push(target_mapped); v_vec.push(weight);
-                    }
-                }
-            }
-        }
-
-        // The Z-axis slices natively correspond to the total global edge count
-        Ok((k_vec, i_vec, j_vec, v_vec, (e_count, dim_star, dim_star)))
+        Ok(PySparseMatrix2D::from_raw(
+            core_coo.i, core_coo.j, core_coo.v,
+            (core_coo.dim_i, core_coo.dim_j)
+        ))
     }
 
     /// Natively extracts the 3D Edge-Colored Clique Expansion Tensor.
     /// Yields an E x V x V tensor where each slice `k` is the fully connected clique for edge `k`.
-    pub fn compile_clique_tensor_expansion(&mut self, py_ir: &PyHypergraphIR) -> PyResult<(Vec<usize>, Vec<usize>, Vec<usize>, Vec<f64>, (usize, usize, usize))> {
+    pub fn compile_clique_tensor_expansion(&mut self, py_ir: &PyHypergraphIR) -> PyResult<PyTensorCoo3D> {
         let ir = &py_ir.compiled.ir;
-        let it = &self.store.it;
+        let core_coo = self.inner.compile_clique_expansion_core::<f32>(ir);
 
-        // 1. Map declarations to global Engine IDs
-        let mut decl_to_csr_node = std::collections::HashMap::new();
-        let mut decl_to_csr_edge = std::collections::HashMap::new();
-
-        for node_rec in &ir.nodes {
-            let name = it.resolve(ir.decl_nodes[node_rec.decl.0 as usize].name);
-            decl_to_csr_node.insert(node_rec.decl.0, self.inner.get_or_create_node(name));
-        }
-
-        for edge_rec in &ir.edges {
-            let name = it.resolve(ir.decl_nodes[edge_rec.decl.0 as usize].name);
-            decl_to_csr_edge.insert(edge_rec.decl.0, self.inner.get_or_create_edge(name));
-        }
-
-
-        let mut processed_edges = Vec::new();
-        let mut exact_nnz = 0;
-
-        for arc in &ir.arcs {
-            let edge_idx = *decl_to_csr_edge.get(&arc.in_edge.0).unwrap();
-            let mut edge_nodes = Vec::new();
-
-            for reference in &arc.refs {
-                let target_decl = hymeko::ir::common::ref_target(reference);
-                if let Some(&node_id) = decl_to_csr_node.get(&target_decl.0) {
-                    edge_nodes.push(node_id);
-                }
-            }
-
-            let d = edge_nodes.len();
-            if d > 1 {
-                exact_nnz += d * (d - 1); // Mathematically exact clique size
-            }
-            processed_edges.push((edge_idx, edge_nodes));
-        }
-
-        let mut k_vec = Vec::new();
-        let mut i_vec = Vec::new();
-        let mut j_vec = Vec::new();
-        let mut v_vec = Vec::new();
-
-
-
-        // 3. Build the tensor
-        for (k, edge_nodes) in processed_edges {
-            for &u in &edge_nodes {
-                for &v in &edge_nodes {
-                    if u != v {
-                        k_vec.push(k);
-                        i_vec.push(u);
-                        j_vec.push(v);
-                        v_vec.push(1.0);
-                    }
-                }
-            }
-        }
-
-        Ok((k_vec, i_vec, j_vec, v_vec, (self.inner.current_edges, self.inner.current_nodes, self.inner.current_nodes)))
+        Ok(PyTensorCoo3D::from_raw(
+            core_coo.k, core_coo.i, core_coo.j, core_coo.v,
+            (core_coo.num_slices, core_coo.dim_i, core_coo.dim_j)
+        ))
     }
 }
 
-#[pyclass]
-pub struct PyTensorCoo3D {
-    dim_k: usize,
-    dim_i: usize,
-    dim_j: usize,
-    // We store them as i64 because PyTorch strictly demands 64-bit signed integers for indices
-    k_ind: Vec<i64>,
-    i_ind: Vec<i64>,
-    j_ind: Vec<i64>,
-    val: Vec<f32>, // f32 is standard for neural network weights
-}
-
-#[pymethods]
-impl PyTensorCoo3D {
-    #[getter]
-    pub fn shape(&self) -> (usize, usize, usize) {
-        (self.dim_k, self.dim_i, self.dim_j)
-    }
-
-    /// Packs the 1D Rust vectors into the exact 2D NumPy matrices PyTorch expects.
-    pub fn export_to_pytorch<'py>(
-        &self,
-        py: Python<'py>
-    ) -> PyResult<(Bound<'py, PyArray2<i64>>, Bound<'py, PyArray1<f32>>)> {
-        let nnz = self.val.len();
-
-        let mut indices_matrix = Array2::<i64>::zeros((3, nnz));
-        for idx in 0..nnz {
-            indices_matrix[[0, idx]] = self.k_ind[idx];
-            indices_matrix[[1, idx]] = self.i_ind[idx];
-            indices_matrix[[2, idx]] = self.j_ind[idx];
-        }
-
-        // Use into_pyarray_bound for the modern PyO3 0.21+ memory safe API
-        let py_indices = indices_matrix.into_pyarray(py);
-        let py_values = self.val.clone().into_pyarray(py);
-
-        Ok((py_indices, py_values))
-    }
-}

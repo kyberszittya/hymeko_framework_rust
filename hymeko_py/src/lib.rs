@@ -6,10 +6,10 @@ pub fn add(left: u64, right: u64) -> u64 {
 
 use pyo3::prelude::*;
 use crate::interface_python::api::{
-    PyGraphTopology,
     PyHypergraphIR,
-    PyHypergraphBuilder,
     PyHypergraphEngine,
+    PyTensorCoo3D,
+    PySparseMatrix2D
 };
 
 #[cfg(test)]
@@ -24,10 +24,10 @@ mod tests {
 #[pymodule]
 fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Explicitly register EVERY class to make them visible in Python
-    m.add_class::<PyGraphTopology>()?;
     m.add_class::<PyHypergraphIR>()?;
-    m.add_class::<PyHypergraphBuilder>()?;
     m.add_class::<PyHypergraphEngine>()?;
+    m.add_class::<PyTensorCoo3D>()?;
+    m.add_class::<PySparseMatrix2D>()?;
 
     Ok(())
 }
