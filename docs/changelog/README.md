@@ -2,6 +2,10 @@
 
 This root changelog tracks every dated log stored in `docs/changelog/` and provides a short summary so you can jump straight to the details you need. Each entry links to the full write-up.
 
+## 2026-03-08 — Arrow Schemas for Tensor Expansions
+- **Link:** [changelog_20260308.md](changelog_20260308.md)
+- **Highlights:** Centralized the Arrow schemas for 3D star/clique and 2D projected expansions in `hymeko_core/src/tensor/arrow_schema.rs`, marked Task 2.2 complete, and outlined the follow-on work for the translation layer.
+
 ## 2026-03-07 — Workspace-Wide CI & Coverage Flags
 - **Link:** [changelog_20260307.md](changelog_20260307.md)
 - **Highlights:** Matrixed workspace tests, per-crate Tarpaulin uploads with Codecov flags, documentation refresh (`CI_CD_DOCUMENTATION.md`, `CODE_COVERAGE.md`, `README_CICD.md`), and the daemon checklist update confirming CI parity.

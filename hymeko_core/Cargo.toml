@@ -16,6 +16,8 @@ nalgebra = "0.34.1"
 num-traits = "0.2.19"
 nalgebra-sparse = "0.11.0"
 rayon = "1.11.0"
+iceoryx2 = "0.8.1"
+arrow = "58.0.0"
 
 [dev-dependencies]
 log = "0.4.22"

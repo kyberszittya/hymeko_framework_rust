@@ -2,6 +2,11 @@
 
 This root changelog summarizes every dated engineering log. Full entries live under `docs/changelog/` for deep dives and diagrams.
 
+## 2026-03-08 — Arrow Schemas for Tensor Expansions
+- Added `hymeko_core/src/tensor/arrow_schema.rs`, providing `schema_expansion_3d` and `schema_expansion_2d` helpers so every crate (daemon, Python, analytics) can lock onto the same Arrow layouts for zero-copy tensor sharing.
+- Checked off Task 2.2 inside `docs/plans/daemon/checklist_task2.md`, capturing that both `hymeko_core` and `hymeko_py` now depend on Arrow and that the canonical schemas live in one module for Task 2.3 to consume.
+- Recorded follow-on work for the translation layer and iceoryx bridge inside [`docs/changelog/changelog_20260308.md`](docs/changelog/changelog_20260308.md).
+
 ## 2026-03-07 — Workspace-Wide CI & Coverage Flags
 - Rebuilt `.github/workflows/ci.yml` so every crate (`hymeko`, `hymeko_core`, `hymeko_daemon`, `hymeko_py`, `parser`) now has its own cache-aware build/test matrix plus per-crate Tarpaulin uploads feeding Codecov flags.
 - Expanded `codecov.yml`, `CI_CD_DOCUMENTATION.md`, `CODE_COVERAGE.md`, and `README_CICD.md` to document the new reports, HTML artifacts, and flag-driven targets.
