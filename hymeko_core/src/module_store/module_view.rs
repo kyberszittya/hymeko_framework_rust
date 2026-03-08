@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap};
 
 use crate::common::ids::SymId;
 use crate::resolution::interner::Interner;
@@ -15,7 +15,7 @@ pub fn build_index_modules<'a>(
     imported: &[ModuleView<'a>],
     it: &Interner,
 ) -> Result<Index, ResolveError> {
-    let mut idx = Index { by_path: HashMap::new() };
+    let mut idx = Index { by_path: BTreeMap::new() };
     let mut next: usize = 0;
 
     // root a globális névtérben (prefix = [])

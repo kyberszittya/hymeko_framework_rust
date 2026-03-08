@@ -16,19 +16,22 @@ fn path_bytes(path: &[SymId], it: &Interner) -> Vec<u8> {
 }
 
 pub fn hash_doc(idx: &Index, it: &Interner) -> HashId {
-    let mut keys: Vec<&PathKey> = idx.by_path.keys().collect();
-    keys.sort_by(|a, b| {
-        let sa = a.0.iter().map(|&x| it.resolve(x)).collect::<Vec<_>>().join(".");
-        let sb = b.0.iter().map(|&x| it.resolve(x)).collect::<Vec<_>>().join(".");
-        sa.cmp(&sb)
-    });
-
     let mut h = blake3::Hasher::new();
     h.update(b"hymeko-doc-v1");
-    for k in keys {
-        let pb = k.0.iter().map(|&x| it.resolve(x)).collect::<Vec<_>>().join(".");
-        h.update(pb.as_bytes());
-        h.update(b"\n");
+    let mut scratch = Vec::with_capacity(256);
+    for k in idx.by_path.keys() {
+        scratch.clear(); // Resets length to 0, but KEEPS the allocated capacity
+
+        for (i, &sym) in k.0.iter().enumerate() {
+            if i > 0 {
+                scratch.push(b'.');
+            }
+            scratch.extend_from_slice(it.resolve(sym).as_bytes());
+        }
+        scratch.push(b'\n');
+
+        // One single function call to Blake3 per path, passing a contiguous block of memory.
+        h.update(&scratch);
     }
     HashId(*h.finalize().as_bytes())
 }

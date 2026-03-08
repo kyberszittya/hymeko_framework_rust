@@ -1,6 +1,6 @@
 #![cfg(test)]
 mod mod_test_module_store {
-    use std::collections::HashMap;
+    use std::collections::{BTreeMap};
     use std::path::Path;
     use std::sync::Arc;
     use log::info;
@@ -78,7 +78,7 @@ mod mod_test_module_store {
         // most már oké mut interner
         let a = ms.it.intern(MODULE_STORE_ALIAS);
 
-        let mut idx = Index { by_path: HashMap::new() };
+        let mut idx = Index { by_path: BTreeMap::new() };
         let mut next: usize = 0;
 
         build_index_sym_with_prefix(&root_ast, &[], &ms.it, &mut idx, &mut next).unwrap();

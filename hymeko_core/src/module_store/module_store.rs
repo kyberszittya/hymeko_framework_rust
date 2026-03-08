@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use parser::ast::AstStr;
@@ -213,7 +214,7 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
         }
 
         // 5) global index: root + deps namespace alatt
-        let mut idx = Index { by_path: std::collections::HashMap::new() };
+        let mut idx = Index { by_path: BTreeMap::new() };
         let mut next: usize = 0;
 
         build_index_sym_with_prefix(&root_ast, &[], &self.it, &mut idx, &mut next)

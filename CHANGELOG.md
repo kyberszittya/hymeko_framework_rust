@@ -10,6 +10,8 @@ This root changelog summarizes every dated engineering log. Full entries live un
 - Hardened `hymeko_core/src/ir/lower.rs` so arcs get their own anonymous `DeclId`, inherit annotations via `resolve_anno`, and are linked into both the parent edge's decl-child chain and its per-edge arc list, ensuring downstream traversals and IR consumers see consistent metadata.
 - Slimmed `hymeko_py/src/interface_python/api.rs` so the Python bindings now delegate star/clique tensor expansion work straight to `HypergraphEngine::compile_*_core`, keeping the bindings as thin zero-copy wrappers (Arrow exports only) for Task 1.2's FxHash acceleration effort.
 - Adopted `rustc_hash::FxHashMap` throughout `hymeko_core/src/engine/hypergraphengine_impl.rs` (`node_registry`, `edge_registry`, `ir_repository`, plus the CSR sync helper) to remove the last `std::collections::HashMap` usages inside the core engine, allowing us to mark Task 1.2 fully complete.
+- Completed Task 1.3’s deterministic hashing work by backing `Index::by_path` with a `BTreeMap` and updating `hymeko_core/src/ir/hash.rs` plus `hymeko_core/src/ir/canonical_hash.rs` to stream directly from that ordered iterator (no manual key sorting).
+- Hardened `hymeko_core/tests/hash/hashing_test.rs` by hoisting all symbol/workload literals into module constants and asserting both total and per-run hashing latency stay within the CI budgets.
 - Details captured in [`docs/changelog/changelog_20260307.md`](docs/changelog/changelog_20260307.md).
 
 ## 2026-03-06 — Tensor Grid Telemetry & PathID Notes

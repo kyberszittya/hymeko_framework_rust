@@ -21,8 +21,8 @@
   - [X] Extract current Python API implementations containing tensor expansion logic from the Python API so the Python API is essentially a thin wrapper around the core library. This will allow us to benchmark the core library's performance improvements without Python overhead.
   - [X] Locate the tensor expansion loops and swap the temporary `decl_to_csr_node` and `decl_to_csr_edge` mappings to `FxHashMap`.
 
-- [ ] **Task 1.3: Deterministic B-Tree Indexing (Hash Stability)**
-  - [ ] Open the compiler's resolution module (`hymeko/src/resolution/resolve.rs`).
-  - [ ] Change the `by_path` mapping in your `Index` struct from a standard `HashMap` to a `std::collections::BTreeMap`.
-  - [ ] Open `hymeko/src/ir/hash.rs` and `hymeko/src/ir/canonical_hash.rs`.
-  - [ ] Delete the manual vector allocation and sorting logic that was previously used to order `PathKey`s. Route the hasher directly through the `BTreeMap`'s native lexicographical iterator.
+- [X] **Task 1.3: Deterministic B-Tree Indexing (Hash Stability)**
+  - [X] Open the compiler's resolution module (`hymeko_core/src/resolution/resolve.rs`).
+  - [X] Change the `by_path` mapping in your `Index` struct from a standard `HashMap` to a `std::collections::BTreeMap`.
+  - [X] Open `hymeko_core/src/ir/hash.rs` and `hymeko_core/src/ir/canonical_hash.rs`.
+  - [X] Delete the manual vector allocation and sorting logic that was previously used to order `PathKey`s. Route the hasher directly through the `BTreeMap`'s native lexicographical iterator.

@@ -1,5 +1,5 @@
 // src/resolve.rs
-use std::collections::HashMap;
+use std::collections::{BTreeMap};
 use serde::{Deserialize, Serialize};
 use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, Value};
 use crate::common::ids::{DeclId, SymId};
@@ -11,7 +11,7 @@ use crate::sym_ast::AstSym;
 #[derive(Debug, 
     Serialize, Deserialize)]
 pub struct Index {
-    pub by_path: HashMap<PathKey, DeclId>,
+    pub by_path: BTreeMap<PathKey, DeclId>,
 }
 
 impl Index {
@@ -29,7 +29,7 @@ pub enum ResolveError {
 }
 
 pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, ResolveError> {
-    let mut idx = Index { by_path: HashMap::new() };
+    let mut idx = Index { by_path: BTreeMap::new() };
     let mut next: usize = 0;
 
     for n in &d.header {

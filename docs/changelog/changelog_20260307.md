@@ -36,3 +36,7 @@
 - Migrated `hymeko_core/src/engine/hypergraphengine_impl.rs` so `HypergraphEngine` stores its registries (`node_registry`, `edge_registry`, `ir_repository`) and CSR sync maps in `rustc_hash::FxHashMap`, eliminating the last runtime `HashMap` bottlenecks in the inner loop.
 - The constructor now seeds `TensorCoo` metadata, keeps the node/edge name caches, and exposes fast `get_or_create_*` helpers that rely on FxHash for deterministic, accelerated lookups ahead of Task 1.2’s remaining CSR swaps.
 - With the Python wrapper simplified and the CSR helpers on FxHash, Task 1.2 (“FxHash Integration”) is fully checked off in `docs/plans/daemon/checklist_task1.md`.
+
+## Deterministic Index (Task 1.3 Complete)
+- Backed `hymeko_core/src/resolution/resolve.rs::Index::by_path` with a `BTreeMap` and wired both `hymeko_core/src/ir/hash.rs` and `hymeko_core/src/ir/canonical_hash.rs` to iterate that ordered map directly, eliminating the ad-hoc PathKey sorting logic.
+- This closes Task 1.3 in `docs/plans/daemon/checklist_task1.md`; the hashers now rely solely on the lexicographical iteration provided by `BTreeMap`.
