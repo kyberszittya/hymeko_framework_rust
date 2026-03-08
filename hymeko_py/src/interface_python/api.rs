@@ -1,13 +1,17 @@
+use std::mem::size_of;
 use std::path::Path;
 use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::exceptions::{PyIndexError, PySyntaxError, PyValueError};
+use pyo3::types::PyModule;
+use pyo3::PyRef;
 
 // The exact Arrow imports required for zero-copy FFI.
 use arrow::array::{Array, Int64Array, Float32Array};
 use arrow::pyarrow::IntoPyArrow;
 use hymeko::engine::hypergraphengine::HypergraphEngine;
+use hymeko::tensor::shared_state::ExpansionHeader;
 use hymeko::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
 use hymeko::module_store::source_provider::MemProvider;
 use hymeko::resolution::string_table::StringTable;
@@ -278,9 +282,95 @@ impl PySparseMatrix2D {
 }
 
 // ================================================
-// Shared helper: sync IR declarations to engine's global registries
+// Shared Memory Expansion Struct (Direct Memory Bridge)
 // ================================================
 
+#[pyclass]
+pub struct PySharedExpansion {
+    base_ptr: usize,
+    header: ExpansionHeader,
+}
+
+impl PySharedExpansion {
+    fn nnz_value(&self) -> usize {
+        self.header.nnz as usize
+    }
+
+    fn layout_offsets(&self) -> (usize, usize, usize, usize) {
+        let header_size = size_of::<ExpansionHeader>();
+        let i64_bytes = size_of::<i64>();
+        let nnz = self.nnz_value();
+
+        let k_addr = self.base_ptr + header_size;
+        let i_addr = k_addr + nnz * i64_bytes;
+        let j_addr = i_addr + nnz * i64_bytes;
+        let values_addr = j_addr + nnz * i64_bytes;
+
+        (k_addr, i_addr, j_addr, values_addr)
+    }
+}
+
+#[pymethods]
+impl PySharedExpansion {
+    #[new]
+    pub fn new(base_ptr: usize) -> PyResult<Self> {
+        if base_ptr == 0 {
+            return Err(PyValueError::new_err("Shared memory pointer cannot be null"));
+        }
+
+        let header_ptr = base_ptr as *const ExpansionHeader;
+        let header = unsafe { header_ptr.read() };
+
+        Ok(Self { base_ptr, header })
+    }
+
+    /// Returns the raw memory address of the payload
+    #[getter]
+    pub fn payload_address(&self) -> usize {
+        self.base_ptr
+    }
+
+    #[getter]
+    pub fn dims(&self) -> PyResult<(i64, i64, i64)> {
+        Ok((
+            i64::try_from(self.header.dim_k).map_err(|_| PyValueError::new_err("dim_k exceeds i64"))?,
+            i64::try_from(self.header.dim_i).map_err(|_| PyValueError::new_err("dim_i exceeds i64"))?,
+            i64::try_from(self.header.dim_j).map_err(|_| PyValueError::new_err("dim_j exceeds i64"))?,
+        ))
+    }
+
+    #[getter]
+    pub fn nnz(&self) -> usize {
+        self.nnz_value()
+    }
+
+    /// Returns the underlying pyarrow buffers for (k, i, j, values).
+    pub fn buffers<'py>(slf: PyRef<'py, Self>, py: Python<'py>)
+        -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>)>
+    {
+        let pyarrow = PyModule::import(py, "pyarrow")
+            .map_err(|_| PyValueError::new_err("pyarrow module is required for shared expansions"))?;
+        let foreign_buffer = pyarrow.getattr("foreign_buffer")
+            .map_err(|_| PyValueError::new_err("pyarrow.foreign_buffer is missing"))?;
+
+        let nnz = slf.nnz_value();
+        let i64_bytes = nnz * size_of::<i64>();
+        let f32_bytes = nnz * size_of::<f32>();
+        let (k_addr, i_addr, j_addr, v_addr) = slf.layout_offsets();
+        let owner = slf.into_pyobject(py)?.unbind();
+
+         let make_buffer = |addr: usize, len: usize| -> PyResult<Bound<'py, PyAny>> {
+             foreign_buffer.call1((addr, len, owner.clone_ref(py)))
+         };
+
+        let k_buf = make_buffer(k_addr, i64_bytes)?;
+        let i_buf = make_buffer(i_addr, i64_bytes)?;
+        let j_buf = make_buffer(j_addr, i64_bytes)?;
+        let v_buf = make_buffer(v_addr, f32_bytes)?;
+
+        Ok((k_buf, i_buf, j_buf, v_buf))
+    }
+}
 
 
 // ================================================

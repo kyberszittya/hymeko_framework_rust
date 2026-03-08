@@ -1,0 +1,51 @@
+graph TB
+    subgraph Actors
+        C[Compiler]
+        O[Orchestrator]
+        P[Persistence]
+        T[Telemetry]
+        S[System/Subscriber]
+    end
+
+    subgraph "HymekoDaemon (Subject)"
+        subgraph "Data Lifecycle"
+            UC_Load(Load Hypergraph)
+            UC_Save(Save Hypergraph)
+            UC_Update(Update Hypergraph)
+            UC_Validate(Validate Schema)
+            UC_Align(Enforce Tensor Alignment)
+            UC_Persist(Persist Hypergraph)
+        end
+
+        subgraph "Zero-Copy Data Plane"
+            UC_Stream(Publish Hypergraph Stream)
+            UC_Map(Publish Hypergraph Mapping)
+            UC_Struct(Handle Structural Change)
+            UC_SubStream(Subscribe to Stream)
+            UC_SubMap(Subscribe to Mapping)
+        end
+
+        subgraph "Health & Orchestration"
+            UC_Recover(Recover Shared Memory)
+            UC_Heart(Heartbeat Health Check)
+            UC_Disc(Discover Service Instance)
+            UC_Ack(Acknowledge Mapping)
+        end
+    end
+
+%% Actor Relationships
+    C --> UC_Load
+    C --> UC_Update
+    P --> UC_Save
+    P --> UC_Persist
+    O --> UC_Recover
+    T --> UC_Heart
+    S --> UC_Validate
+    S --> UC_SubStream
+    S --> UC_SubMap
+
+%% Behavioral Relationships (Include/Extend)
+    UC_Update -- "<<include>>" --> UC_Validate
+    UC_Update -- "<<include>>" --> UC_Align
+    UC_Map -- "<<include>>" --> UC_Struct
+    UC_Stream -. "<<extend>>" .-> UC_Map

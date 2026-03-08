@@ -1,4 +1,5 @@
 use rustc_hash::FxHashMap;
+use std::slice;
 use crate::engine::hypergraphengine::HypergraphEngine;
 use crate::ir::common::ref_target;
 use crate::ir::ir::{DeclKind, Ir, SignedRefR};
@@ -9,6 +10,7 @@ use crate::tensor::representations::tensor_coo::TensorCoo;
 use crate::tensor::representations::tensor_coo_representation;
 use crate::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
 use crate::traversal::hypergraphview::HyperGraphView;
+use crate::tensor::shared_state::{ExpansionHeader, ExpansionKind};
 
 impl HypergraphEngine {
     pub fn new() -> Self {
@@ -198,5 +200,77 @@ impl HypergraphEngine {
         tensor_coo_representation::clique_expansion_coo(&view)
     }
 
+    /// Streams the star expansion directly into raw buffers that live inside an `iceoryx2` sample.
+    ///
+    /// # Safety
+    /// The caller must guarantee that the provided pointers reference at least `capacity`
+    /// writable elements and that the backing memory outlives the write.
+    pub unsafe fn write_tensor_into_raw(
+        header: &ExpansionHeader,
+        coo: &TensorCoo<f32>,
+        header_ptr: *mut ExpansionHeader,
+        k_ptr: *mut i64,
+        i_ptr: *mut i64,
+        j_ptr: *mut i64,
+        values_ptr: *mut f32,
+        capacity: usize,
+    ) -> Result<usize, &'static str> {
+        if header_ptr.is_null() || k_ptr.is_null() || i_ptr.is_null() || j_ptr.is_null() || values_ptr.is_null() {
+            return Err("raw star expansion pointers must not be null");
+        }
 
-}
+        if coo.len() > capacity {
+            return Err("provided buffer capacity is too small for star expansion output");
+        }
+
+        unsafe { *header_ptr = *header; }
+
+        let k_slice = unsafe { slice::from_raw_parts_mut(k_ptr, capacity) };
+        let i_slice = unsafe { slice::from_raw_parts_mut(i_ptr, capacity) };
+        let j_slice = unsafe { slice::from_raw_parts_mut(j_ptr, capacity) };
+        let values_slice = unsafe { slice::from_raw_parts_mut(values_ptr, capacity) };
+
+        for idx in 0..coo.len() {
+            k_slice[idx] = coo.k[idx] as i64;
+            i_slice[idx] = coo.i[idx] as i64;
+            j_slice[idx] = coo.j[idx] as i64;
+            values_slice[idx] = coo.v[idx];
+        }
+
+        Ok(coo.len())
+    }
+
+    /// Streams the star expansion directly into raw buffers that live inside an `iceoryx2` sample.
+    ///
+    /// # Safety
+    /// The caller must guarantee that the provided pointers reference at least `capacity`
+    /// writable elements and that the backing memory outlives the write.
+    pub unsafe fn write_star_tensor_into_raw(
+         &self,
+         header: &ExpansionHeader,
+         coo: &TensorCoo<f32>,
+         header_ptr: *mut ExpansionHeader,
+         k_ptr: *mut i64,
+         i_ptr: *mut i64,
+         j_ptr: *mut i64,
+         values_ptr: *mut f32,
+         capacity: usize,
+     ) -> Result<usize, &'static str> {
+         unsafe { Self::write_tensor_into_raw(header, coo, header_ptr, k_ptr, i_ptr, j_ptr, values_ptr, capacity) }
+     }
+
+     pub unsafe fn write_star_expansion_into_raw(
+          &self,
+          ir: &Ir,
+          header_ptr: *mut ExpansionHeader,
+          k_ptr: *mut i64,
+          i_ptr: *mut i64,
+          j_ptr: *mut i64,
+          values_ptr: *mut f32,
+          capacity: usize,
+     ) -> Result<usize, &'static str> {
+         let coo = self.compile_star_expansion_core::<f32>(ir);
+         let header = ExpansionHeader::new(ExpansionKind::Star3D, coo.len(), coo.num_slices, coo.dim_i, coo.dim_j);
+         unsafe { Self::write_tensor_into_raw(&header, &coo, header_ptr, k_ptr, i_ptr, j_ptr, values_ptr, capacity) }
+      }
+  }

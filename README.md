@@ -1,4 +1,5 @@
 # 🎯 Hymeko Framework
+![Hymeko Logo](logo.png)
 
 A high-performance Rust-based parsing and hypergraph framework for Hymeko - a domain-specific language (DSL) designed for declarative hypergraph structure definition, manipulation, and analysis.
 
@@ -9,6 +10,7 @@ A high-performance Rust-based parsing and hypergraph framework for Hymeko - a do
 ## 📚 Table of Contents
 
 - [Overview](#overview)
+- [Architecture](#-architecture)
 - [Hypergraph Support](#hypergraph-support)
 - [Features](#features)
 - [Quick Start](#quick-start)
@@ -41,6 +43,10 @@ The framework provides a complete pipeline from lexical analysis through interme
 - **Hypergraph IR** (`src/ir/`) - Specialized intermediate representation for hypergraph structures and transformations
 - **Resolver** (`src/resolve.rs`) - Symbol resolution and node/edge validation in hypergraph context
 - **Index** (`src/resolve.rs`) - Symbol and path indexing for efficient hypergraph lookup
+
+## 🧱 Architecture
+
+High-level control-plane and data-plane interactions are documented in [`architecture/README.md`](architecture/README.md), which renders the Mermaid diagrams from `architecture/overview.mermaid`. Use that page to keep the operational flows in sync with the rapidly evolving code.
 
 ## 🕸️ Hypergraph Support
 

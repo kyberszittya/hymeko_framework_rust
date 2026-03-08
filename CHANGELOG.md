@@ -5,6 +5,11 @@ This root changelog summarizes every dated engineering log. Full entries live un
 ## 2026-03-08 — Arrow Schemas for Tensor Expansions
 - Added `hymeko_core/src/tensor/arrow_schema.rs`, providing `schema_expansion_3d` and `schema_expansion_2d` helpers so every crate (daemon, Python, analytics) can lock onto the same Arrow layouts for zero-copy tensor sharing.
 - Checked off Task 2.2 inside `docs/plans/daemon/checklist_task2.md`, capturing that both `hymeko_core` and `hymeko_py` now depend on Arrow and that the canonical schemas live in one module for Task 2.3 to consume.
+- Rewrote Task 2.3 in `docs/plans/daemon/checklist_task2.md` as **The Direct Memory Bridge**, spelling out the raw-pointer expansion hooks on the Rust side and the `pyarrow.foreign_buffer` wiring required in `hymeko_py/src/interface_python/api.rs` (including the `PySharedExpansion` scaffold) for zero-copy PyTorch ingestion.
+- Landed `HypergraphEngine::write_star_expansion_into_raw` plus the updated `PySharedExpansion::buffers`, so an `iceoryx2` sample can now be filled and consumed via contiguous `[k,i,j,val]` buffers without intermediate allocations.
+- `hymeko_daemon` loans `[u8]` slices from iceoryx2, writes the `ExpansionHeader + COO` payload with `HypergraphEngine::write_tensor_into_raw`, and publishes a frame on every tick where subscribers are attached, giving Task 2.1 a concrete streaming path.
+- `PySharedExpansion::buffers` now hands `pyarrow.foreign_buffer` the `PySharedExpansion` object itself as the owner so the shared memory lifetime matches the Python handles.
+- Noted in the checklist that `hymeko_daemon` currently advertises a raw `[u8]` slice on its publish/subscribe service so Task 2.3 can graft the typed zero-copy bridge without blocking the keepalive loop.
 - Recorded follow-on work for the translation layer and iceoryx bridge inside [`docs/changelog/changelog_20260308.md`](docs/changelog/changelog_20260308.md).
 
 ## 2026-03-07 — Workspace-Wide CI & Coverage Flags
