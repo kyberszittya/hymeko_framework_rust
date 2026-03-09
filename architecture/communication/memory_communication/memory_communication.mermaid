@@ -1,0 +1,23 @@
+stateDiagram-v2
+    [*] --> Idle : Initialize Client
+
+    state Idle {
+        [*] --> Polling : Receive()
+        Polling --> [*] : Timeout / None
+    }
+
+    Idle --> EvaluatingHash : Sample Received
+
+    state EvaluatingHash {
+        state if_state <<choice>>
+        [*] --> if_state : Compare (Incoming == Current?)
+
+        if_state --> StructuralShift : False (Topology Changed)
+        if_state --> FastPath : True (Weights Only)
+    }
+
+    StructuralShift --> EmitMappingUpdate : Update Current Hash
+    FastPath --> EmitWeightStream : Keep Current Hash
+
+    EmitMappingUpdate --> Idle : Release to FFI
+    EmitWeightStream --> Idle : Release to FFI

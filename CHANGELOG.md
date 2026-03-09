@@ -2,6 +2,11 @@
 
 This root changelog summarizes every dated engineering log. Full entries live under `docs/changelog/` for deep dives and diagrams.
 
+## 2026-03-09 — Architecture Catalog & Branding Touches
+- Added `architecture/README.md` and per-subfolder READMEs so every Mermaid/SysML diagram is self-documented and linked from a single index.
+- Refreshed `README.md` with the repo logo plus a dedicated Architecture section that jumps straight to the new catalog for control/data-plane context.
+- Details in [`docs/changelog/changelog_20260309.md`](docs/changelog/changelog_20260309.md).
+
 ## 2026-03-08 — Arrow Schemas for Tensor Expansions
 - Added `hymeko_core/src/tensor/arrow_schema.rs`, providing `schema_expansion_3d` and `schema_expansion_2d` helpers so every crate (daemon, Python, analytics) can lock onto the same Arrow layouts for zero-copy tensor sharing.
 - Checked off Task 2.2 inside `docs/plans/daemon/checklist_task2.md`, capturing that both `hymeko_core` and `hymeko_py` now depend on Arrow and that the canonical schemas live in one module for Task 2.3 to consume.

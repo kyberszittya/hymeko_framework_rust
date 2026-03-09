@@ -6,12 +6,16 @@ use pyo3::prelude::*;
 use pyo3::exceptions::{PyIndexError, PySyntaxError, PyValueError};
 use pyo3::types::PyModule;
 use pyo3::PyRef;
+use iceoryx2::prelude::*;
+use tokio::sync::broadcast;
 
 // The exact Arrow imports required for zero-copy FFI.
 use arrow::array::{Array, Int64Array, Float32Array};
+use arrow::ipc;
 use arrow::pyarrow::IntoPyArrow;
+use iceoryx2::port::subscriber::Subscriber;
 use hymeko::engine::hypergraphengine::HypergraphEngine;
-use hymeko::tensor::shared_state::ExpansionHeader;
+use hymeko::tensor::shared_state::{ExpansionHeader, HypergraphWeights};
 use hymeko::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
 use hymeko::module_store::source_provider::MemProvider;
 use hymeko::resolution::string_table::StringTable;
@@ -140,6 +144,16 @@ impl PyHypergraphIR {
     }
 
 }
+
+/*
+#[pyclass]
+pub struct HymekoRuntime {
+    // The node keeps the IPC connection alive
+    node: Arc<Node<ipc::Service>>,
+    // The subscriber listens for the specific memory segment
+    subscriber: Subscriber<ipc::Service, HypergraphWeights, ()>,
+}
+*/
 
 // ================================================
 // PyTensorCoo3D: A simple COO format for 3D sparse tensors (for clique expansions)

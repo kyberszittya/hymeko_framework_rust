@@ -1,0 +1,36 @@
+graph TD
+%% Tiers
+    subgraph "Rust Domain (Safe/Heavy)"
+        Core[hymeko_core<br/>AST, BTreeMap, Blake3]
+        Daemon[hymeko_daemon<br/>iceoryx2 Anchor]
+    end
+
+    subgraph "Shared Memory (Zero-Copy Plane)"
+        direction LR
+        SHM_Mapping[[Segment A: Arrow Schema<br/>k, i, j indices]]
+        SHM_Weights[[Segment B: Fast State<br/>f32 weight tensors]]
+    end
+
+    subgraph "FFI Bridge"
+        PyAPI[hymeko_py<br/>PyO3 + Arrow-rs]
+    end
+
+    subgraph "Python Domain (User/Compute)"
+        Torch[PyTorch / LibTorch<br/>GPU Execution]
+    end
+
+%% Connections
+    Core -->|Publish| SHM_Mapping
+    Core -->|Stream| SHM_Weights
+
+    Daemon ---|Owns/Anchors| SHM_Mapping
+    Daemon ---|Owns/Anchors| SHM_Weights
+
+    PyAPI -->|Map Pointer| SHM_Mapping
+    PyAPI -->|Map Pointer| SHM_Weights
+
+    PyAPI -->|DLPack| Torch
+    Torch -->|Compute| GPU((GPU))
+
+%% IPC Notification
+    Daemon -.->|Event Notification| PyAPI

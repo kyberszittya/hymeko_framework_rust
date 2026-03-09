@@ -2,6 +2,10 @@
 
 This root changelog tracks every dated log stored in `docs/changelog/` and provides a short summary so you can jump straight to the details you need. Each entry links to the full write-up.
 
+## 2026-03-09 — Architecture Catalog & Branding Touches
+- **Link:** [changelog_20260309.md](changelog_20260309.md)
+- **Highlights:** Documented every diagram under `architecture/` with inline Mermaid/SysML snippets (plus per-folder READMEs) and refreshed the repository README with the logo plus a direct Architecture section.
+
 ## 2026-03-08 — Arrow Schemas for Tensor Expansions
 - **Link:** [changelog_20260308.md](changelog_20260308.md)
 - **Highlights:** Centralized the Arrow schemas for 3D star/clique and 2D projected expansions in `hymeko_core/src/tensor/arrow_schema.rs`, marked Task 2.2 complete, and outlined the follow-on work for the translation layer.
