@@ -1,0 +1,21 @@
+graph TD
+    classDef rust fill:#B7410E,stroke:#8B0000,stroke-width:2px,color:#fff;
+    classDef action fill:#4CAF50,stroke:#2E8B57,stroke-width:2px,color:#fff;
+
+    subgraph "Layer 1: The Rust Core (hymeko_core)"
+        AST[(BTreeMap AST)]:::rust
+        Query[Pattern Matcher / Query Engine]:::rust
+        Visitor[Functional Visitor / Functor]:::action
+
+        AST -->|Topology Scan| Query
+        Query -->|Matched Subgraphs| Visitor
+
+        Visitor -.->|Graph Rewrite| AST
+        Visitor -->|Domain Transform| Output[URDF / SDF / Analytics]
+    end
+
+    subgraph "Event Trigger"
+        Hash[Blake3 Hasher]:::rust
+        AST -->|If AST Mutated| Hash
+        Hash -->|TopologyShift Event| Downstream[Layer 2: Daemon]
+    end

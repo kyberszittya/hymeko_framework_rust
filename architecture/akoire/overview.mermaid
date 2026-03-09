@@ -1,0 +1,31 @@
+graph TD
+%% Define Styles
+    classDef cognitive fill:#e1bee7,stroke:#8e24aa,stroke-width:2px,color:#000;
+    classDef engine fill:#bbdefb,stroke:#1976d2,stroke-width:2px,color:#000;
+    classDef gatekeeper fill:#ffcc80,stroke:#f57c00,stroke-width:3px,color:#000;
+    classDef memory fill:#c8e6c9,stroke:#388e3c,stroke-width:2px,color:#000;
+
+    subgraph AKOIRE ["Layer 2: AKOIRE (Cognitive OS)"]
+        I["Intent (I)<br/>High-Level Task"]:::cognitive
+        O["Objectives (O)<br/>Target Topology"]:::cognitive
+        K["Kyosei (K)<br/>Physical Limits"]:::cognitive
+        A["Ambience (A)<br/>Current Mathematical Reality"]:::cognitive
+
+        I --> R
+        O --> R
+        K --> R
+        A --> R["Refinement (R)<br/>LLM Generates HyQL"]:::cognitive
+    end
+
+    subgraph HyMeKo ["Layer 1: HyMeKo (Deterministic Engine)"]
+        E{"Evaluation (E)<br/>LALRPOP Parser"}:::gatekeeper
+        COO[("TensorCoo<br/>Active State (k, i, j, v)")]:::memory
+        CSR[("TensorCsr<br/>Compressed Incidence Matrix")]:::memory
+    end
+
+%% Flow Dynamics
+    R -- "Proposed Structural Mutation (String)" --> E
+    E -- "Syntax Error Trace" --> A
+    E -- "Valid AST (Atomic Transaction)" --> COO
+    COO -- "Freeze & Compress" --> CSR
+    CSR -- "Read Updated Topology" --> A

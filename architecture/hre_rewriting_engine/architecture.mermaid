@@ -1,0 +1,43 @@
+graph TD
+    classDef rust fill:#B7410E,stroke:#8B0000,stroke-width:2px,color:#fff;
+    classDef daemon fill:#4CAF50,stroke:#2E8B57,stroke-width:2px,color:#fff;
+    classDef ffi fill:#7B68EE,stroke:#483D8B,stroke-width:2px,color:#fff;
+    classDef python fill:#306998,stroke:#FFD43B,stroke-width:2px,color:#fff;
+
+    subgraph "Layer 1: Knowledge & Mutation (Rust Core)"
+        AST[(BTreeMap AST)]:::rust
+        HRE[Hypergraph Rewriting Engine<br/>Query & Visitor]:::rust
+        Hash[Blake3 Hasher]:::rust
+
+        HRE -->|Read/Transform| AST
+        HRE -->|Mutate Topology| AST
+        AST -->|On Change| Hash
+    end
+
+    subgraph "Layer 2: Event & State (Daemon)"
+        Dispatch{Event Dispatcher}:::daemon
+        StateGate[Atomic State Gate<br/>Double Buffer u8]:::daemon
+        MemMap[[Segment A: Arrow Structure]]:::daemon
+        MemWeight[[Segment B: Raw Weights]]:::daemon
+
+        Hash -->|Hash ID| Dispatch
+        Dispatch -- TopologyShift --> MemMap
+        Dispatch -- WeightStream --> MemWeight
+        Dispatch --> StateGate
+    end
+
+    subgraph "Layer 3: The Contract Boundary (FFI)"
+        Registry[Schema Registry<br/>Version Check]:::ffi
+        Reactor[FFI Async Reactor]:::ffi
+
+        StateGate -. Signal .-> Reactor
+        Reactor --> Registry
+    end
+
+    subgraph "Layer 4: Execution (Python)"
+        PyTorch[PyTorch GPU Loop]:::python
+        URDF[Domain Export<br/>URDF/SDF XML]:::python
+
+        Registry -- DLPack Zero-Copy --> PyTorch
+        HRE -. Functional Emission .-> URDF
+    end

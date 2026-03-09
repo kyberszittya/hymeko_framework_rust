@@ -7,6 +7,7 @@ This index documents every architecture diagram that lives under `architecture/`
 - [How to View the Diagrams](#how-to-view-the-diagrams)
 - [Diagram Catalog](#diagram-catalog)
   - [System Overview](#system-overview)
+  - [Layered Architecture View](#layered-architecture-view)
   - [Core Components](#core-components)
   - [Communication Sequence](#communication-sequence)
   - [Memory-State Transitions](#memory-state-transitions)
@@ -65,6 +66,47 @@ graph TD
 ```
 
 > No SysML companion yet—add one here when we capture the same relationships in a formal model.
+
+### Layered Architecture View
+
+Source: `architecture/layers.mermaid`
+
+```mermaid
+graph TD
+%% Styling
+    classDef python fill:#306998,stroke:#FFD43B,stroke-width:2px,color:#fff;
+    classDef ffi fill:#7B68EE,stroke:#483D8B,stroke-width:2px,color:#fff;
+    classDef daemon fill:#4CAF50,stroke:#2E8B57,stroke-width:2px,color:#fff;
+    classDef rust fill:#B7410E,stroke:#8B0000,stroke-width:2px,color:#fff;
+
+    subgraph "Layer 4: Execution (Python / PyTorch)"
+        Reactor[FFI Reactor<br/>Event Loop]:::python
+        GPU[GPU Training Loop]:::python
+        Reactor -- Yields Zero-Copy Tensor --> GPU
+    end
+
+    subgraph "Layer 3: Contract Boundary (FFI / Schema)"
+        Registry[Schema Registry<br/>Version Handshake]:::ffi
+        Reactor -- 1. Requests Mapping --> Registry
+        Registry -- 2. Validates Layout --> Reactor
+    end
+
+    subgraph "Layer 2: Synchronization (HyMeKo Daemon)"
+        StateGate{Atomic State Gate<br/>u8 Toggle}:::daemon
+        Buffer[(Shared Memory<br/>Front & Back Buffers)]:::daemon
+        StateGate -- Enforces Read-Locks --> Buffer
+        Registry -. Subscribes to Events .-> StateGate
+    end
+
+    subgraph "Layer 1: Source of Truth (Rust Core)"
+        Dispatcher[The Dispatcher<br/>Event Router]:::rust
+        AST[(BTreeMap AST<br/>Index)]:::rust
+        AST -- Hashing --> Dispatcher
+        Dispatcher -- Emits TopologyShift / WeightStream --> StateGate
+    end
+```
+
+> SysML companion for this layered view is not added yet; if needed, create `architecture/layers.sysml` and link it here.
 
 ### Core Components
 
