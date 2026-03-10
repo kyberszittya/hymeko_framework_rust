@@ -4,7 +4,7 @@ This root changelog tracks every dated log stored in `docs/changelog/` and provi
 
 ## 2026-03-10 — Data-Plane Traceability & Bridge Closure
 - **Link:** [changelog_20260310.md](changelog_20260310.md)
-- **Highlights:** Closed and traced Phase 2/3 daemon checklist updates (`docs/plans/daemon/checklist_task2.md`, `docs/plans/daemon/checklist_task3.md`), captured subscriber-gated `ExpansionHeader + COO` publishing, and logged architecture-doc consolidation follow-through.
+- **Highlights:** Closed and traced Phase 2/3 daemon checklist updates (`docs/plans/daemon/checklist_task2.md`, `docs/plans/daemon/checklist_task3.md`), captured subscriber-gated `ExpansionHeader + COO` publishing, migrated daemon runtime output to structured geometric/ascii logging, and recorded `worker.rs` Tokio-to-Rayon bridge status as scaffolded.
 
 ## 2026-03-09 — Architecture Catalog & Branding Touches
 - **Link:** [changelog_20260309.md](changelog_20260309.md)

@@ -11,9 +11,10 @@
   - [x] Initialize the `tokio` multi-threaded runtime in `hymeko_daemon/src/main.rs`. *(`#[tokio::main]` is active.)*
   - [ ] Add `zenoh` dependency and initialize a session to listen for incoming CBOR-encoded query objects.
   - [x] Implement the main `tokio::select!` loop to multiplex network requests and the `iceoryx2` heartbeat. *(Current loop handles the heartbeat tick and subscriber-gated publishing path.)*
+  - [x] Replace ad-hoc console prints with structured runtime logging (`tracing` + `tracing-subscriber`) and geometric/ascii markers in daemon status messages.
 
 - [ ] **Task 3.3: The Async-to-Sync Bridge (Tokio-to-Rayon)**
   - [x] Add `rayon = "1.10"` to `hymeko_daemon/Cargo.toml`. *(Using `1.11.0`.)*
-  - [ ] Implement `tokio::sync::oneshot` channels to send hypergraph ASTs from the async reactor to the Rayon thread pool.
-  - [ ] Define the worker closure that executes the `hypergraphengine` math and writes directly to the loaned `iceoryx2` slice.
+  - [ ] Implement `tokio::sync::oneshot` channels to send hypergraph ASTs from the async reactor to the Rayon thread pool. *(A scaffold exists in `hymeko_daemon/src/worker.rs::compute_expansion`, but the Rayon branch is still commented and not active.)*
+  - [ ] Define the worker closure that executes the `hypergraphengine` math and writes directly to the loaned `iceoryx2` slice. *(Present only as commented pseudo-flow in `worker.rs`; needs live execution path.)*
   - [ ] Ensure the Rayon worker completion path signals back into the async runtime for publish/ack.

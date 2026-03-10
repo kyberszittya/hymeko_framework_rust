@@ -24,6 +24,7 @@ pub struct ExpansionHeader {
     pub version: u32,
     pub kind: ExpansionKind,
     pub nnz: u64,
+    pub etag: [u8; 32],
     pub dim_k: u64,
     pub dim_i: u64,
     pub dim_j: u64,
@@ -37,6 +38,7 @@ impl ExpansionHeader {
             version: Self::VERSION,
             kind,
             nnz: nnz as u64,
+            etag: [0u8; 32],
             dim_k: dim_k as u64,
             dim_i: dim_i as u64,
             dim_j: dim_j as u64,
@@ -74,4 +76,16 @@ pub struct ExpansionOffsets {
     pub j_offset: usize,
     pub values_offset: usize,
     pub total_bytes: usize,
+}
+
+/// A helper function to calculate the exact byte size required for a given NNZ.
+/// Memory Layout: [ExpansionHeader] + [k: i64 * nnz] + [i: i64 * nnz] + [j: i64 * nnz] + [val: f32 * nnz]
+pub fn calculate_required_bytes(nnz: usize) -> usize {
+    let header_size = std::mem::size_of::<ExpansionHeader>();
+    let k_size = std::mem::size_of::<i64>() * nnz;
+    let i_size = std::mem::size_of::<i64>() * nnz;
+    let j_size = std::mem::size_of::<i64>() * nnz;
+    let val_size = std::mem::size_of::<f32>() * nnz;
+
+    header_size + k_size + i_size + j_size + val_size
 }

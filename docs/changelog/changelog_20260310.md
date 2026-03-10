@@ -9,7 +9,8 @@
 - Updated `docs/plans/daemon/checklist_task3.md` to reflect completed groundwork already present in code.
 - Marked `moka` cache dependency + `HymekoDaemon` cache initialization as done under Task 3.1; cache hit/skip routing remains open.
 - Marked `#[tokio::main]` runtime and the heartbeat `tokio::select!` loop as done under Task 3.2; `zenoh` session wiring remains open.
-- Marked Rayon dependency setup as done under Task 3.3; oneshot bridge and worker completion signaling remain open.
+- Traced the logging migration in `hymeko_daemon/src/main.rs`: daemon status output now uses `tracing`/`tracing-subscriber` with geometric/ascii markers instead of pictograms.
+- Marked Rayon dependency setup as done under Task 3.3, and documented `hymeko_daemon/src/worker.rs::compute_expansion` as scaffold-only (oneshot + Rayon flow is outlined but not activated yet).
 
 ## Zero-Copy Bridge Runtime Notes
 - `hymeko_core/src/tensor/shared_state.rs` remains the canonical layout boundary for `ExpansionHeader` and transport payload framing.
