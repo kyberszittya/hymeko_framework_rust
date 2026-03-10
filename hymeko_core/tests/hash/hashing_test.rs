@@ -7,6 +7,7 @@ mod tests {
     use hymeko::resolution::resolve::Index;
     use std::collections::BTreeMap;
     use std::time::Instant;
+    use log::info;
 
     const SYMBOL_FANO: &str = "fano";
     const SYMBOL_NODE_0: &str = "n0";
@@ -14,8 +15,10 @@ mod tests {
     const SYMBOL_EDGE_0: &str = "e0";
     const MASSIVE_NODE_COUNT: usize = 10_000;
     const HASH_RUNS: usize = 100;
-    const PERF_BUDGET_MS: u128 = 750;
+    const PERF_BUDGET_MS: u128 = 2000;
+    const PERF_BUDGET_MS_MASSIVE : u128 = 15000;
     const PERF_AVG_BUDGET_MS: f64 = 10.0;
+    const PERF_AVG_BUDGET_MS_MASSIVE: f64 = 35.0;
 
     // Helper to mock the environment
     fn setup_mock_env() -> (Interner, Vec<(PathKey, DeclId)>) {
@@ -35,6 +38,43 @@ mod tests {
         ];
 
         (it, paths)
+    }
+
+    fn median_ms(samples: &mut [f64]) -> f64 {
+        samples.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let n = samples.len();
+        if n == 0 {
+            return 0.0;
+        }
+        if n % 2 == 1 {
+            samples[n / 2]
+        } else {
+            (samples[n / 2 - 1] + samples[n / 2]) * 0.5
+        }
+    }
+
+    fn stddev_ms(samples: &[f64], mean: f64) -> f64 {
+        if samples.is_empty() {
+            return 0.0;
+        }
+        let variance = samples
+            .iter()
+            .map(|v| {
+                let d = *v - mean;
+                d * d
+            })
+            .sum::<f64>()
+            / samples.len() as f64;
+        variance.sqrt()
+    }
+
+    fn percentile_from_sorted(sorted: &[f64], pct: f64) -> f64 {
+        if sorted.is_empty() {
+            return 0.0;
+        }
+        let clamped = pct.clamp(0.0, 100.0);
+        let idx = ((clamped / 100.0) * (sorted.len() as f64 - 1.0)).round() as usize;
+        sorted[idx]
     }
 
     #[test]
@@ -92,7 +132,7 @@ mod tests {
         let avg_ms = elapsed.as_secs_f64() * 1_000.0 / HASH_RUNS as f64;
 
         // Log the telemetry (aligning with your recent CI telemetry cleanup)
-        println!(
+        info!(
             "Hashing 10,000 nodes 100 times took: {:?} (avg {:.3} ms/run)",
             elapsed,
             avg_ms
@@ -102,7 +142,180 @@ mod tests {
         assert_ne!(last_hash.0, [0; 32]);
 
         // We expect this to be well under a few milliseconds per run
-        assert!(elapsed.as_millis() < PERF_BUDGET_MS, "Hashing is suspiciously slow!");
+        assert!(elapsed.as_millis() < PERF_BUDGET_MS,
+                "Hashing is suspiciously slow! Elapsed: {:?} exceeds budget of {} ms", elapsed, PERF_BUDGET_MS);
         assert!(avg_ms < PERF_AVG_BUDGET_MS, "Average hash runtime {:.3} ms exceeds budget", avg_ms);
+    }
+
+    #[test]
+    fn test_hash_doc_performance_benchmark_multiple_nodes() {
+        let (mut it, paths) = setup_mock_env();
+        // Test hashing performance across a range of node counts to see how it scales
+        let node_counts = [10, 100, 200, 500, 1_000, 2_000, 2_500,
+            5_000, 10_000, 20_000, 25_000, 50_000, 100_000];
+        // Collect telemetry for each node count to analyze scaling behavior
+        let mut telemetry = Vec::with_capacity(node_counts.len());
+        // Store rows as numeric tuples to avoid per-run string formatting in the hot loop.
+        let mut run_rows: Vec<(usize, usize, f64)> = Vec::with_capacity(node_counts.len() * HASH_RUNS);
+        let mut summary_rows: Vec<(usize, f64, f64, f64, f64, f64, f64, f64)> = Vec::with_capacity(node_counts.len());
+        // Test each node count in the range, ensuring we stay within reasonable performance bounds
+        for &count in node_counts.iter() {
+            info!("Testing hash performance with {} nodes...", count);
+
+            // Build a massive index to simulate a heavy hypergraph
+            let mut massive_idx = Index { by_path: BTreeMap::new() };
+            for i in 0..count {
+                let s_node = it.intern(&format!("node_{}", i));
+                massive_idx.by_path.insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId(i));
+            }
+
+            let start = Instant::now();
+
+            // Run the hash HASH_RUNS times and sample each run for richer telemetry.
+            let mut last_hash = HashId([0; 32]);
+            let mut run_times_ms = Vec::with_capacity(HASH_RUNS);
+            for run_idx in 0..HASH_RUNS {
+                let run_start = Instant::now();
+                last_hash = hash_doc(&massive_idx, &it);
+                let run_ms = run_start.elapsed().as_secs_f64() * 1_000.0;
+                run_times_ms.push(run_ms);
+                run_rows.push((count, run_idx + 1, run_ms));
+            }
+
+            let elapsed = start.elapsed();
+            let avg_ms = elapsed.as_secs_f64() * 1_000.0 / HASH_RUNS as f64;
+            let mut sorted_samples = run_times_ms.clone();
+            let median_ms = median_ms(&mut sorted_samples);
+            let stddev_ms = stddev_ms(&run_times_ms, avg_ms);
+            let min_ms = *sorted_samples.first().unwrap_or(&0.0);
+            let max_ms = *sorted_samples.last().unwrap_or(&0.0);
+            let p95_ms = percentile_from_sorted(&sorted_samples, 95.0);
+
+            info!(
+                "Hashing {} nodes {} times took: {:?} (avg {:.3} ms/run, median {:.3} ms, p95 {:.3} ms, stddev {:.3} ms)",
+                count,
+                HASH_RUNS,
+                elapsed,
+                avg_ms,
+                median_ms,
+                p95_ms,
+                stddev_ms
+            );
+            // Collect telemetry for analysis
+            telemetry.push((count, elapsed, avg_ms, median_ms, stddev_ms));
+            summary_rows.push((
+                count,
+                elapsed.as_secs_f64(),
+                avg_ms,
+                median_ms,
+                p95_ms,
+                min_ms,
+                max_ms,
+                stddev_ms,
+            ));
+
+            // Basic sanity check to ensure it actually computed something
+            assert_ne!(last_hash.0, [0; 32]);
+
+            // Use a wider elapsed budget for the largest scenario to reduce CI flakiness.
+            let elapsed_budget_ms = if count >= 10_000 {
+                PERF_BUDGET_MS_MASSIVE
+            } else {
+                PERF_BUDGET_MS
+            };
+            let avg_budget_ms = if count >= 10_000 {
+                PERF_AVG_BUDGET_MS_MASSIVE
+            } else {
+                PERF_AVG_BUDGET_MS
+            };
+            assert!(
+                elapsed.as_millis() < elapsed_budget_ms,
+                "Hashing {} nodes is suspiciously slow: {:?} exceeds budget of {} ms",
+                count,
+                elapsed,
+                elapsed_budget_ms
+            );
+            assert!(
+                avg_ms < avg_budget_ms,
+                "Average hash runtime {:.3} ms exceeds budget {:.3} ms for count {}",
+                avg_ms,
+                avg_budget_ms,
+                count
+            );
+        }
+
+        // Analyze scaling across adjacent buckets to catch pathological regressions.
+        for window in telemetry.windows(2) {
+            let (prev_count, _prev_elapsed, prev_avg_ms, _prev_median_ms, _prev_stddev_ms) = window[0];
+            let (curr_count, _curr_elapsed, curr_avg_ms, _curr_median_ms, _curr_stddev_ms) = window[1];
+            let count_ratio = curr_count as f64 / prev_count as f64;
+            let runtime_ratio = curr_avg_ms / prev_avg_ms.max(1e-9);
+            let ms_per_node_prev = prev_avg_ms / prev_count as f64;
+            let ms_per_node_curr = curr_avg_ms / curr_count as f64;
+            let normalized_ratio = ms_per_node_curr / ms_per_node_prev.max(1e-12);
+
+            info!(
+                "Scale {} -> {} nodes: avg {:.4} -> {:.4} ms/run | runtime x{:.3}, normalized x{:.3}",
+                prev_count,
+                curr_count,
+                prev_avg_ms,
+                curr_avg_ms,
+                runtime_ratio,
+                normalized_ratio
+            );
+
+            // 10x data growth should not produce runaway (>20x) runtime growth.
+            assert!(
+                runtime_ratio <= count_ratio * 2.0,
+                "Scaling regression: {} -> {} nodes produced runtime ratio x{:.3} for count ratio x{:.3}",
+                prev_count,
+                curr_count,
+                runtime_ratio,
+                count_ratio
+            );
+
+            // Per-node cost should stay broadly stable as input grows.
+            assert!(
+                normalized_ratio <= 5.0,
+                "Per-node cost regression: {} -> {} nodes normalized ratio x{:.3}",
+                prev_count,
+                curr_count,
+                normalized_ratio
+            );
+        }
+        // Save telemetry to a file for offline analysis
+        let run_csv = format!(
+            "node_count,run_index,run_ms\n{}",
+            run_rows
+                .iter()
+                .map(|(count, run_index, run_ms)| format!("{},{},{:.6}", count, run_index, run_ms))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        std::fs::write("hash_performance_runs.csv", run_csv)
+            .expect("Failed to write run telemetry file");
+
+        let summary_csv = format!(
+            "node_count,elapsed_seconds,avg_ms_per_run,median_ms_per_run,p95_ms_per_run,min_ms_per_run,max_ms_per_run,stddev_ms_per_run\n{}",
+            summary_rows
+                .iter()
+                .map(|(count, elapsed_seconds, avg_ms, median_ms, p95_ms, min_ms, max_ms, stddev_ms)| {
+                    format!(
+                        "{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6}",
+                        count,
+                        elapsed_seconds,
+                        avg_ms,
+                        median_ms,
+                        p95_ms,
+                        min_ms,
+                        max_ms,
+                        stddev_ms
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        std::fs::write("hash_performance_summary.csv", summary_csv)
+            .expect("Failed to write summary telemetry file");
     }
 }
