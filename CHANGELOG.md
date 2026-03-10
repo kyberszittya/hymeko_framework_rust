@@ -2,6 +2,12 @@
 
 This root changelog summarizes every dated engineering log. Full entries live under `docs/changelog/` for deep dives and diagrams.
 
+## 2026-03-10 — Data-Plane Traceability & Bridge Closure
+- Closed and re-traced Phase 2 daemon checklist work in `docs/plans/daemon/checklist_task2.md`, including the rewritten Task 2.3 direct-memory bridge wording.
+- Captured the end-to-end shared-memory delivery path across `hymeko_core/src/tensor/shared_state.rs`, `hymeko_daemon/src/main.rs`, and `hymeko_py/src/interface_python/api.rs` (`PySharedExpansion::buffers`).
+- Extended architecture documentation continuity (`architecture/README.md` + sub-READMEs) and kept README-level navigation/logo touch-ups aligned with the architecture catalog.
+- Details in [`docs/changelog/changelog_20260310.md`](docs/changelog/changelog_20260310.md).
+
 ## 2026-03-09 — Architecture Catalog & Branding Touches
 - Added `architecture/README.md` and per-subfolder READMEs so every Mermaid/SysML diagram is self-documented and linked from a single index.
 - Refreshed `README.md` with the repo logo plus a dedicated Architecture section that jumps straight to the new catalog for control/data-plane context.

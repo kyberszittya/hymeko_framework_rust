@@ -10,17 +10,17 @@ pub fn dense_view_slice<F: Real>(coo: &TensorCoo<F>, k_sel: usize) -> Vec<Vec<F>
 
     let mut m = vec![vec![F::zero(); coo.dim_j]; coo.dim_i];
 
-    for t in 0..coo.len() {
-        if coo.k[t] != k_sel { continue; }
-        m[coo.i[t]][coo.j[t]] += coo.v[t]; // coalesce by summation
+    for e in coo.iter() {
+        if e.k != k_sel { continue; }
+        m[e.i][e.j] += e.v; // coalesce by summation
     }
     m
 }
 
 pub fn project_sum_over_slices<F: Real>(coo: &TensorCoo<F>) -> Vec<Vec<F>> {
     let mut m = vec![vec![F::zero(); coo.dim_j]; coo.dim_i];
-    for t in 0..coo.len() {
-        m[coo.i[t]][coo.j[t]] += coo.v[t];
+    for e in coo.iter() {
+        m[e.i][e.j] += e.v;
     }
     m
 }

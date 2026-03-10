@@ -3,6 +3,25 @@ use crate::common::ids::{EdgeId, NodeId};
 use crate::tensor::common::{Real};
 use crate::tensor::tensor_val::IncVal;
 
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct CooEntry<F: Real> {
+    pub k: usize,
+    pub i: usize,
+    pub j: usize,
+    pub v: F,
+}
+
+pub struct CooSoa<F: Real> {
+    pub num_slices: usize,
+    pub dim_i: usize,
+    pub dim_j: usize,
+    pub k: Vec<usize>,
+    pub i: Vec<usize>,
+    pub j: Vec<usize>,
+    pub v: Vec<F>,
+}
+
 /// Sparse 3D tensor in COO form (k, i, j, value).
 /// Intended as an intermediate export format for JAX/PyTorch.
 ///
@@ -11,20 +30,10 @@ use crate::tensor::tensor_val::IncVal;
 /// - `v` is the weight/value (usually f32).
 #[derive(Clone, Debug, Default)]
 pub struct TensorCoo<F: Real> {
-    /// Number of slices (e.g., |E|)
     pub num_slices: usize,
-    /// First dimension size (e.g., |V*| or |V|)
     pub dim_i: usize,
-    /// Second dimension size (e.g., |V*| or |V|)
     pub dim_j: usize,
-    /// Slice index (0..num_slices)
-    pub k: Vec<usize>,
-    /// Row index (0..dim_i)
-    pub i: Vec<usize>,
-    /// Column index (0..dim_j)
-    pub j: Vec<usize>,
-    /// Value / weight (e.g., f(.) from the dissertation)
-    pub v: Vec<F>,
+    pub entries: Vec<CooEntry<F>>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -52,7 +61,7 @@ impl Default for TensorBuildCfg {
 }
 impl<F: Real> TensorCoo<F> {
     pub fn new(num_slices: usize, dim_i: usize, dim_j: usize) -> Self {
-        Self { num_slices, dim_i, dim_j, k: vec![], i: vec![], j: vec![], v: vec![] }
+        Self { num_slices, dim_i, dim_j, entries: Vec::new() }
     }
 
     #[inline(always)]
@@ -61,34 +70,59 @@ impl<F: Real> TensorCoo<F> {
             num_slices,
             dim_i,
             dim_j,
-            k: Vec::new(),
-            i: Vec::new(),
-            j: Vec::new(),
-            v: Vec::new(),
+            entries: Vec::new(),
 
         }
     }
 
     /// Push one non-zero entry (k, i, j, value).
     #[inline(always)]
-    pub fn push(&mut self, k: usize, i: usize, j: usize, value: F) {
-        self.k.push(k);
-        self.i.push(i);
-        self.j.push(j);
-        self.v.push(value);
+    pub fn push(&mut self, k: usize, i: usize, j: usize, v: F) {
+        self.entries.push(CooEntry { k, i, j, v });
     }
 
     #[inline(always)]
     pub fn reserve(&mut self, n: usize) {
-        self.k.reserve(n);
-        self.i.reserve(n);
-        self.j.reserve(n);
-        self.v.reserve(n);
+        self.entries.reserve(n);
+    }
+
+    pub fn entry(&self, t: usize) -> &CooEntry<F> {
+        &self.entries[t]
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, CooEntry<F>> {
+        self.entries.iter()
     }
 
     #[inline(always)]
-    pub fn len(&self) -> usize { self.v.len() }
+    pub fn len(&self) -> usize { self.entries.len() }
 
     #[inline(always)]
-    pub fn is_empty(&self) -> bool { self.v.is_empty() }
+    pub fn is_empty(&self) -> bool { self.entries.is_empty() }
+
+    pub fn into_soa(self) -> CooSoa<F> {
+        let n = self.entries.len();
+        let mut k = Vec::with_capacity(n);
+        let mut i = Vec::with_capacity(n);
+        let mut j = Vec::with_capacity(n);
+        let mut v = Vec::with_capacity(n);
+
+        for e in self.entries {
+            k.push(e.k);
+            i.push(e.i);
+            j.push(e.j);
+            v.push(e.v);
+        }
+
+        CooSoa {
+            num_slices: self.num_slices,
+            dim_i: self.dim_i,
+            dim_j: self.dim_j,
+            k,
+            i,
+            j,
+            v,
+
+        }
+    }
 }

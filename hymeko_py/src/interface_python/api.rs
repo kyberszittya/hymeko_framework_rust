@@ -457,11 +457,12 @@ impl PyHypergraphEngine {
     pub fn compile_star_expansion(&mut self, py_ir: &PyHypergraphIR) -> PyResult<PyTensorCoo3D> {
         let ir = &py_ir.compiled.ir;
         let core_coo = self.inner.compile_star_expansion_core::<f32>(ir);
+        let soa = core_coo.into_soa();
 
         // Step 5: Thin Arrow wrapper
         Ok(PyTensorCoo3D::from_raw(
-            core_coo.k, core_coo.i, core_coo.j, core_coo.v,
-            (core_coo.num_slices, core_coo.dim_i, core_coo.dim_j)
+            soa.k, soa.i, soa.j, soa.v,
+            (soa.num_slices, soa.dim_i, soa.dim_j)
         ))
     }
 
@@ -469,10 +470,11 @@ impl PyHypergraphEngine {
         let ir = &py_ir.compiled.ir;
 
         let core_coo = self.inner.compile_clique_expansion_core::<f32>(ir);
+        let soa = core_coo.into_soa();
 
         Ok(PySparseMatrix2D::from_raw(
-            core_coo.i, core_coo.j, core_coo.v,
-            (core_coo.dim_i, core_coo.dim_j)
+            soa.i, soa.j, soa.v,
+            (soa.dim_i, soa.dim_j)
         ))
     }
 
@@ -481,10 +483,11 @@ impl PyHypergraphEngine {
     pub fn compile_clique_tensor_expansion(&mut self, py_ir: &PyHypergraphIR) -> PyResult<PyTensorCoo3D> {
         let ir = &py_ir.compiled.ir;
         let core_coo = self.inner.compile_clique_expansion_core::<f32>(ir);
+        let soa = core_coo.into_soa();
 
         Ok(PyTensorCoo3D::from_raw(
-            core_coo.k, core_coo.i, core_coo.j, core_coo.v,
-            (core_coo.num_slices, core_coo.dim_i, core_coo.dim_j)
+            soa.k, soa.i, soa.j, soa.v,
+            (soa.num_slices, soa.dim_i, soa.dim_j)
         ))
     }
 }

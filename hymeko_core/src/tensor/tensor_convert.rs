@@ -17,9 +17,9 @@ where
     assert!(k_sel < coo.num_slices);
     let mut m = DMatrix::<F>::zeros(coo.dim_i, coo.dim_j);
 
-    for t in 0..coo.len() {
-        if coo.k[t] != k_sel { continue; }
-        m[(coo.i[t], coo.j[t])] += coo.v[t];
+    for e in coo.iter() {
+        if e.k != k_sel { continue; }
+        m[(e.i, e.j)] += e.v;
     }
     m
 }
@@ -32,9 +32,9 @@ where
 
     let mut m = CooMatrix::new(coo.dim_i, coo.dim_j);
 
-    for t in 0..coo.len() {
-        if coo.k[t] != k_sel { continue; }
-        m.push(coo.i[t], coo.j[t], coo.v[t]);
+    for e in coo.iter() {
+        if e.k != k_sel { continue; }
+        m.push(e.i, e.j, e.v);
     }
     CsrMatrix::from(&m) // will coalesce duplicates
 }
@@ -47,13 +47,13 @@ where
     let mut indices = Vec::with_capacity(coo.len());
     let mut data = Vec::with_capacity(coo.len());
 
-    for t in 0..coo.len() {
+    for e in coo.iter() {
         indices.push([
-            coo.k[t] as i32,
-            coo.i[t] as i32,
-            coo.j[t] as i32,
+            e.k as i32,
+            e.i as i32,
+            e.j as i32,
         ]);
-        data.push(coo.v[t]);
+        data.push(e.v);
     }
 
     JaxBcoo {

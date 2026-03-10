@@ -1,7 +1,7 @@
-# 🎯 Hymeko Framework
+# Hypergraph Model Cognition Framework (HyMeKo) Framework
 ![Hymeko Logo](logo.png)
 
-A high-performance Rust-based parsing and hypergraph framework for Hymeko - a domain-specific language (DSL) designed for declarative hypergraph structure definition, manipulation, and analysis.
+Hypergraph Model Cognition Framework is a high-performance Rust-based parsing and hypergraph framework for HyMeKo - a domain-specific language (DSL) designed for declarative hypergraph structure definition, manipulation, and analysis.
 
 ![CI](https://github.com/hakiko/hymeko_framework/actions/workflows/ci.yml/badge.svg)
 ![Security Audit](https://github.com/hakiko/hymeko_framework/actions/workflows/security-audit.yml/badge.svg)

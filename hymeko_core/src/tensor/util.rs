@@ -17,13 +17,13 @@ pub fn print_dense_block<F: Real>(
 
     let mut block = vec![vec![F::zero(); c]; r];
 
-    for t in 0..coo.len() {
-        if coo.k[t] != k_sel { continue; }
-        let i = coo.i[t];
-        let j = coo.j[t];
+    for e in coo.iter() {
+        if e.k != k_sel { continue; }
+        let i = e.i;
+        let j = e.j;
 
         if i >= row0 && i < row0 + r && j >= col0 && j < col0 + c {
-            block[i - row0][j - col0] += coo.v[t];
+            block[i - row0][j - col0] += e.v;
         }
     }
 

@@ -129,9 +129,10 @@ mod tensor_fano {
 
                 // Scan COO entries for this slice (small in Fano, fine for test).
                 for idx in 0..coo.len() {
-                    if coo.k[idx] != e { continue; }
-                    let i = coo.i[idx];
-                    let j = coo.j[idx];
+                    let entry = coo.entry(idx);
+                    if entry.k != e { continue; }
+                    let i = entry.i;
+                    let j = entry.j;
 
                     if i == u && j == e_v { has_ne = true; }
                     if i == e_v && j == u { has_en = true; }
@@ -220,11 +221,11 @@ mod tensor_fano {
             (0..num_edges).map(|_| HashMap::new()).collect();
 
         // 1) Range checks + build maps
-        for t in 0..coo.len() {
-            let k = coo.k[t];
-            let i = coo.i[t];
-            let j = coo.j[t];
-            let v = coo.v[t];
+        for e in coo.iter() {
+            let k = e.k;
+            let i = e.i;
+            let j = e.j;
+            let v = e.v;
 
             assert!(k < num_edges, "slice index k out of range");
             assert!(i < dim, "row index i out of range");

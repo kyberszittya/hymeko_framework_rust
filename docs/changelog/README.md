@@ -2,6 +2,10 @@
 
 This root changelog tracks every dated log stored in `docs/changelog/` and provides a short summary so you can jump straight to the details you need. Each entry links to the full write-up.
 
+## 2026-03-10 — Data-Plane Traceability & Bridge Closure
+- **Link:** [changelog_20260310.md](changelog_20260310.md)
+- **Highlights:** Closed and traced Phase 2 daemon checklist updates (`docs/plans/daemon/checklist_task2.md`), captured the shared-memory `ExpansionHeader + COO` publish/bridge flow across core/daemon/python, and logged architecture-doc consolidation follow-through.
+
 ## 2026-03-09 — Architecture Catalog & Branding Touches
 - **Link:** [changelog_20260309.md](changelog_20260309.md)
 - **Highlights:** Documented every diagram under `architecture/` with inline Mermaid/SysML snippets (plus per-folder READMEs) and refreshed the repository README with the logo plus a direct Architecture section.

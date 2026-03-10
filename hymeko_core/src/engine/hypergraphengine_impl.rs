@@ -231,10 +231,11 @@ impl HypergraphEngine {
         let values_slice = unsafe { slice::from_raw_parts_mut(values_ptr, capacity) };
 
         for idx in 0..coo.len() {
-            k_slice[idx] = coo.k[idx] as i64;
-            i_slice[idx] = coo.i[idx] as i64;
-            j_slice[idx] = coo.j[idx] as i64;
-            values_slice[idx] = coo.v[idx];
+            let entry = coo.entry(idx);
+            k_slice[idx] = entry.k as i64;
+            i_slice[idx] = entry.i as i64;
+            j_slice[idx] = entry.j as i64;
+            values_slice[idx] = entry.v;
         }
 
         Ok(coo.len())
