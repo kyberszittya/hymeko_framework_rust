@@ -31,12 +31,13 @@ pub enum ResolveError {
 pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, ResolveError> {
     let mut idx = Index { by_path: BTreeMap::new() };
     let mut next: usize = 0;
+    let mut path = Vec::new();
 
     for n in &d.header {
-        index_node(&mut idx, &mut next, &[], n, it)?;
+        index_node(&mut idx, &mut next, &mut path, n, it)?;
     }
 
-    index_items(&mut idx, &mut next, &[], &d.items, it)?;
+    index_items(&mut idx, &mut next, &mut path, &d.items, it)?;
 
     Ok(idx)
 }
@@ -48,27 +49,28 @@ pub fn build_index_sym_with_prefix<'a>(
     idx: &mut Index,
     next: &mut usize,
 ) -> Result<(), ResolveError> {
-    // header node decl-ek
+    let mut path = prefix.to_vec();
+    // Index header nodes with the given prefix
     for n in &d.header {
-        index_node(idx, next, prefix, n, it)?;
+        index_node(idx, next, &mut path, n, it)?;
     }
 
     // items
-    index_items(idx, next, prefix, &d.items, it)?;
+    index_items(idx, next, &mut path, &d.items, it)?;
     Ok(())
 }
 
 fn index_items<'a>(
     idx: &mut Index,
     next: &mut usize,
-    scope: &[SymId],
+    path: &mut Vec<SymId>,
     items: &[HyperItem<'a, SymId>],
     it: &Interner,
 ) -> Result<(), ResolveError> {
     for item in items {
         match item {
-            HyperItem::Node(n) => index_node(idx, next, scope, n, it)?,
-            HyperItem::Edge(e) => index_edge(idx, next, scope, e, it)?,
+            HyperItem::Node(n) => index_node(idx, next, path, n, it)?,
+            HyperItem::Edge(e) => index_edge(idx, next, path, e, it)?,
             HyperItem::Arc(_) => {}
         }
     }
@@ -125,19 +127,18 @@ fn add_decl(
 fn index_node<'a>(
     idx: &mut Index,
     next: &mut usize,
-    scope: &[SymId],
+    path: &mut Vec<SymId>,
     n: &NodeDecl<'a, SymId>,
     it: &Interner,
 ) -> Result<(), ResolveError> {
-    let mut fq = scope.to_vec();
-    fq.push(n.inner.name);
-    let _id = add_decl(idx, next, PathKey(fq), it)?;
+    let scope_len = path.len();
+    path.push(n.inner.name);
+    let _id = add_decl(idx, next, PathKey(path.clone()), it)?;
 
     if let Some(body) = &n.inner.body {
-        let mut child = scope.to_vec();
-        child.push(n.inner.name);
-        index_items(idx, next, &child, body, it)?;
+        index_items(idx, next, path, body, it)?;
     }
+    path.truncate(scope_len);
     Ok(())
 }
 
@@ -153,17 +154,16 @@ pub fn resolve_arc_anno<'a>(
 fn index_edge<'a>(
     idx: &mut Index,
     next: &mut usize,
-    scope: &[SymId],
+    path: &mut Vec<SymId>,
     e: &EdgeDecl<'a, SymId>,
     it: &Interner,
 ) -> Result<(), ResolveError> {
-    let mut fq = scope.to_vec();
-    fq.push(e.inner.name);
-    let _id = add_decl(idx, next, PathKey(fq), it)?;
+    let scope_len = path.len();
+    path.push(e.inner.name);
+    let _id = add_decl(idx, next, PathKey(path.clone()), it)?;
 
-    let mut child = scope.to_vec();
-    child.push(e.inner.name);
-    index_items(idx, next, &child, &e.inner.body, it)?;
+    index_items(idx, next, path, &e.inner.body, it)?;
+    path.truncate(scope_len);
     Ok(())
 }
 
@@ -287,7 +287,8 @@ pub fn resolve_arc_refs<'a>(
 }
 
 pub fn validate_all_refs_sym<'a>(d: &AstSym<'a>, idx: &Index, it: &mut Interner) -> Result<(), ResolveError> {
-    validate_items(&[], &d.items, idx, it)
+    let mut path = Vec::new();
+    validate_items(&mut path, &d.items, idx, it)
 }
 
 pub fn validate_all_refs_sym_with_prefix<'a>(
@@ -296,11 +297,12 @@ pub fn validate_all_refs_sym_with_prefix<'a>(
     idx: &Index,
     it: &mut Interner,
 ) -> Result<(), ResolveError> {
-    validate_items(prefix, &d.items, idx, it)
+    let mut path = prefix.to_vec();
+    validate_items(&mut path, &d.items, idx, it)
 }
 
 fn validate_items<'a>(
-    scope: &[SymId],
+    path: &mut Vec<SymId>,
     items: &[HyperItem<'a, SymId>],
     idx: &Index,
     it: &mut Interner,
@@ -308,23 +310,25 @@ fn validate_items<'a>(
     for item in items {
         match item {
             HyperItem::Node(n) => {
-                let _ = resolve_node_bases(idx, scope, &n.inner.bases, it)?;
+                let _ = resolve_node_bases(idx, path.as_slice(), &n.inner.bases, it)?;
                 if let Some(body) = &n.inner.body {
-                    let mut child = scope.to_vec();
-                    child.push(n.inner.name);
-                    validate_items(&child, body, idx, it)?;
+                    let scope_len = path.len();
+                    path.push(n.inner.name);
+                    validate_items(path, body, idx, it)?;
+                    path.truncate(scope_len);
                 }
             }
             HyperItem::Edge(e) => {
-                let _ = resolve_node_bases(idx, scope, &e.inner.bases, it)?;
-                let mut child = scope.to_vec();
-                child.push(e.inner.name);
-                validate_items(&child, &e.inner.body, idx, it)?;
+                let _ = resolve_node_bases(idx, path.as_slice(), &e.inner.bases, it)?;
+                let scope_len = path.len();
+                path.push(e.inner.name);
+                validate_items(path, &e.inner.body, idx, it)?;
+                path.truncate(scope_len);
             }
             HyperItem::Arc(a) => {
-                let _ = resolve_arc_refs(idx, scope, a, it)?;
+                let _ = resolve_arc_refs(idx, path.as_slice(), a, it)?;
                 if let Some(v) = &a.anno.value {
-                    validate_value(scope, v, idx, it)?;
+                    validate_value(path.as_slice(), v, idx, it)?;
                 }
             }
         }

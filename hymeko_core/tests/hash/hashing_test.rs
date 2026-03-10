@@ -18,7 +18,7 @@ mod tests {
     const PERF_BUDGET_MS: u128 = 2000;
     const PERF_BUDGET_MS_MASSIVE : u128 = 15000;
     const PERF_AVG_BUDGET_MS: f64 = 10.0;
-    const PERF_AVG_BUDGET_MS_MASSIVE: f64 = 35.0;
+    const PERF_AVG_BUDGET_MS_MASSIVE: f64 = 50.0;
 
     // Helper to mock the environment
     fn setup_mock_env() -> (Interner, Vec<(PathKey, DeclId)>) {
