@@ -4,7 +4,8 @@ This root changelog summarizes every dated engineering log. Full entries live un
 
 ## 2026-03-10 — Data-Plane Traceability & Bridge Closure
 - Closed and re-traced Phase 2 daemon checklist work in `docs/plans/daemon/checklist_task2.md`, including the rewritten Task 2.3 direct-memory bridge wording.
-- Captured the end-to-end shared-memory delivery path across `hymeko_core/src/tensor/shared_state.rs`, `hymeko_daemon/src/main.rs`, and `hymeko_py/src/interface_python/api.rs` (`PySharedExpansion::buffers`).
+- Updated `docs/plans/daemon/checklist_task3.md` to reflect implemented control-plane groundwork (`moka` cache init, `#[tokio::main]`, and heartbeat `tokio::select!`), while keeping `zenoh` and async-to-rayon handoff items open.
+- Captured the end-to-end shared-memory delivery path across `hymeko_core/src/tensor/shared_state.rs`, `hymeko_daemon/src/main.rs`, and `hymeko_py/src/interface_python/api.rs` (`PySharedExpansion::buffers`), including subscriber gating via `number_of_subscribers()`.
 - Extended architecture documentation continuity (`architecture/README.md` + sub-READMEs) and kept README-level navigation/logo touch-ups aligned with the architecture catalog.
 - Details in [`docs/changelog/changelog_20260310.md`](docs/changelog/changelog_20260310.md).
 

@@ -1,13 +1,35 @@
 use std::error::Error;
 use std::fmt;
+use std::sync::Arc;
 use std::time::Duration;
+use clap::Parser;
 use iceoryx2::prelude::*;
 use iceoryx2::port::publisher::Publisher;
 use iceoryx2::port::{LoanError, SendError};
+use moka::future::Cache;
+use tokio::time::interval;
 use hymeko::engine::hypergraphengine::HypergraphEngine;
 use hymeko::ir::ir::Ir;
 use hymeko::tensor::representations::tensor_coo::TensorCoo;
 use hymeko::tensor::shared_state::{ExpansionHeader, ExpansionKind, ExpansionOffsets};
+
+/// CLI Configuration for the Hymeko Daemon.
+#[derive(Parser, Debug)]
+#[command(author, version, about = "Hymeko Zero-Copy Tensor Daemon")]
+struct Args {
+    /// Name of the iceoryx2 service segment.
+    #[arg(short, long, default_value = "HymekoFastState")]
+    service: String,
+
+    /// Maximum number of cached expansions in the LRU.
+    #[arg(short, long, default_value_t = 1024)]
+    cache_size: u64,
+
+    /// Heartbeat interval in milliseconds.
+    #[arg(short, long, default_value_t = 1000)]
+    tick: u64,
+}
+
 
 /// Configuration injected via CLI (e.g., clap) or config files.
 pub struct DaemonConfig {
@@ -26,17 +48,22 @@ impl Default for DaemonConfig {
 
 /// The main Daemon service object.
 pub struct HymekoDaemon {
-    config: DaemonConfig,
+    args: Args,
+    cache: Cache<[u8; 32], bool>,
 }
 
 impl HymekoDaemon {
-    pub fn new(config: DaemonConfig) -> Self {
-        Self { config }
+    pub fn new(args: Args) -> Self {
+        let cache = Cache::builder()
+            .max_capacity(args.cache_size)
+            .build();
+        Self { args, cache }
     }
 
     /// Takes ownership of the thread and drives the IPC lifecycle.
-    pub fn run(&self) -> Result<(), Box<dyn Error>> {
-        let service_name = ServiceName::new(&self.config.service_name)?;
+    pub async fn run(self: Arc<Self>) -> Result<(), Box<dyn Error>> {
+        let service_name = ServiceName::new(&self.args.service)?;
+        let node = NodeBuilder::new().create::<ipc::Service>()?;
 
         let engine = HypergraphEngine::new();
         let ir = Self::build_stub_ir();
@@ -53,12 +80,13 @@ impl HymekoDaemon {
         // 3. Create the Publisher instance
         let publisher = service.publisher_builder().create()?;
 
-        println!("Hymeko Daemon: Zero-copy service '{}' is live.", service_name);
-        println!("Waiting for PyTorch subscriber to attach...");
-
+        println!("⚡ Hymeko Daemon '{}' is active.", self.args.service);
+        println!("🚀 Cache capacity: {} expansions.", self.args.cache_size);
+        let mut heartbeat = interval(Duration::from_millis(self.args.tick));
         let mut had_subscribers = false;
 
         // 4. The Physics Loop
+        /*
         while node.wait(self.config.tick_rate).is_ok() {
             let currently_has_subscribers = service.dynamic_config().number_of_subscribers() > 0;
 
@@ -74,6 +102,28 @@ impl HymekoDaemon {
             }
 
             had_subscribers = currently_has_subscribers;
+        }
+
+         */
+        loop {
+            tokio::select! {
+                _ = heartbeat.tick() => {
+                    let currently_has_subscribers = service.dynamic_config().number_of_subscribers() > 0;
+
+                    if currently_has_subscribers {
+                        if !had_subscribers {
+                            println!("⚡ PyTorch subscriber connected! Streaming star expansion frames...");
+                        }
+                        if let Err(err) = Self::publish_star_expansion(&publisher, &coo, &header, &offsets) {
+                            eprintln!("Failed to publish star expansion: {err}");
+                        }
+                    } else if had_subscribers {
+                        println!("PyTorch subscriber disconnected. Waiting...");
+                    }
+
+                    had_subscribers = currently_has_subscribers;
+                }
+            }
         }
 
         Ok(())
@@ -145,10 +195,12 @@ impl fmt::Display for PublishError {
 
 impl Error for PublishError {}
 
-fn main() -> Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let args = Args::parse();
+    let daemon = Arc::new(HymekoDaemon::new(args));
     // Later, you parse CLI args here and map them to DaemonConfig
     let config = DaemonConfig::default();
-
-    let daemon = HymekoDaemon::new(config);
-    daemon.run()
+    // Start the daemon with the provided configuration
+    daemon.run().await
 }

@@ -3,17 +3,17 @@
 ## Phase 3: The Control Plane (Concurrency & Networking)
 
 - [ ] **Task 3.1: Concurrent Cache Integration (`moka`)**
-  - [ ] Add `moka = { version = "0.12", features = ["future"] }` to `hymeko_daemon/Cargo.toml`.
-  - [ ] Initialize `moka::future::Cache` in `HymekoDaemon` struct mapping `[u8; 32]` (Blake3 ETag) to compute state.
+  - [x] Add `moka = { version = "0.12", features = ["future"] }` to `hymeko_daemon/Cargo.toml`.
+  - [x] Initialize `moka::future::Cache` in `HymekoDaemon` struct mapping `[u8; 32]` (Blake3 ETag) to compute state.
   - [ ] Implement cache lookup logic: if ETag exists, skip computation and signal the subscriber to reuse the existing `iceoryx2` segment.
 
 - [ ] **Task 3.2: Tokio & Zenoh Reactor (The I/O Hub)**
-  - [ ] Initialize the `tokio` multi-threaded runtime in `hymeko_daemon/src/main.rs`.
+  - [x] Initialize the `tokio` multi-threaded runtime in `hymeko_daemon/src/main.rs`. *(`#[tokio::main]` is active.)*
   - [ ] Add `zenoh` dependency and initialize a session to listen for incoming CBOR-encoded query objects.
-  - [ ] Implement the main `tokio::select! ` loop to multiplex network requests and the `iceoryx2` heartbeat.
+  - [x] Implement the main `tokio::select!` loop to multiplex network requests and the `iceoryx2` heartbeat. *(Current loop handles the heartbeat tick and subscriber-gated publishing path.)*
 
 - [ ] **Task 3.3: The Async-to-Sync Bridge (Tokio-to-Rayon)**
-  - [ ] Add `rayon = "1.10"` to `hymeko_daemon/Cargo.toml`.
+  - [x] Add `rayon = "1.10"` to `hymeko_daemon/Cargo.toml`. *(Using `1.11.0`.)*
   - [ ] Implement `tokio::sync::oneshot` channels to send hypergraph ASTs from the async reactor to the Rayon thread pool.
   - [ ] Define the worker closure that executes the `hypergraphengine` math and writes directly to the loaned `iceoryx2` slice.
-  - [ ] Ensure the Ray
+  - [ ] Ensure the Rayon worker completion path signals back into the async runtime for publish/ack.

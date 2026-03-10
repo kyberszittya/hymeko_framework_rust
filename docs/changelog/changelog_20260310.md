@@ -5,9 +5,15 @@
 - Marked Task 2.1 as implemented with the daemon loop publishing `ExpansionHeader + COO` payloads via shared-memory loaned slices.
 - Kept Task 2.3 wording focused on the concrete bridge contract (raw pointer writes in core + `pyarrow.foreign_buffer` offsets in Python).
 
+## Daemon Control-Plane Checklist Trace
+- Updated `docs/plans/daemon/checklist_task3.md` to reflect completed groundwork already present in code.
+- Marked `moka` cache dependency + `HymekoDaemon` cache initialization as done under Task 3.1; cache hit/skip routing remains open.
+- Marked `#[tokio::main]` runtime and the heartbeat `tokio::select!` loop as done under Task 3.2; `zenoh` session wiring remains open.
+- Marked Rayon dependency setup as done under Task 3.3; oneshot bridge and worker completion signaling remain open.
+
 ## Zero-Copy Bridge Runtime Notes
 - `hymeko_core/src/tensor/shared_state.rs` remains the canonical layout boundary for `ExpansionHeader` and transport payload framing.
-- `hymeko_daemon/src/main.rs` publishes the payload as a contiguous shared-memory frame for subscribers.
+- `hymeko_daemon/src/main.rs` gates publication with `service.dynamic_config().number_of_subscribers() > 0` and sends contiguous `ExpansionHeader + COO` frames via `publish_star_expansion`.
 - `hymeko_py/src/interface_python/api.rs` (`PySharedExpansion::buffers`) exports `(k, i, j, val)` as foreign buffers while tying ownership to the Python object for lifetime safety.
 
 ## Architecture Documentation Consolidation
@@ -17,4 +23,3 @@
 
 ## Follow-ups
 - If CI starts compiling `iceoryx2` from source in additional targets, add an explicit toolchain note (including `clang`) in CI docs and pin it in the next changelog entry.
-
