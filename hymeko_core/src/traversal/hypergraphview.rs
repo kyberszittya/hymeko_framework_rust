@@ -69,6 +69,7 @@ where
     EW: EdgeWeight<V, F>,
     F: Real,
 {
+    const PAR_SORT_THRESHOLD: usize = 8192;
     #[inline(always)]
     fn sign_of(r: &SignedRefR) -> i8 {
         match r {
@@ -166,7 +167,12 @@ where
         mut triples: Vec<TensorInc<F, V>>,
         cfg: &AggCfg,
     ) -> Vec<TensorInc<F, V>> {
-        triples.par_sort_unstable_by_key(|x| (x.e.0, x.n.0));
+
+        if triples.len() >= Self::PAR_SORT_THRESHOLD {
+            triples.par_sort_unstable_by_key(|x| (x.e.0, x.n.0));
+        } else {
+            triples.sort_unstable_by_key(|x| (x.e.0, x.n.0));
+        }
 
         // reduce/dedup
         let mut out: Vec<TensorInc<F, V>> = Vec::with_capacity(triples.len());
@@ -218,7 +224,11 @@ where
         V: IncVal<F>
     {
         // node-first order
-        pairs.par_sort_unstable_by_key(|x| (x.n.0, x.e.0));
+        if pairs.len() >= Self::PAR_SORT_THRESHOLD {
+            pairs.par_sort_unstable_by_key(|x| (x.n.0, x.e.0));
+        } else {
+            pairs.sort_unstable_by_key(|x| (x.n.0, x.e.0));
+        }
 
         let mut flat_edges = Vec::with_capacity(pairs.len());
         let mut flat_sign  = Vec::with_capacity(pairs.len());
@@ -312,4 +322,3 @@ where
         }
     }
 }
-

@@ -17,6 +17,8 @@ impl<F: Real> TensorCsrBuilder<F> {
         let mut new_row_ptr = vec![0; self.dim_i + 1];
         let mut new_col_ind = Vec::with_capacity(self.cols.len());
         let mut new_val = Vec::with_capacity(self.vals.len());
+        // Temporary buffer to hold column-value pairs for the current row
+        let mut row_entries: Vec<(usize, F)> = Vec::new();
 
         // Process row by row using the uncoalesced row_ptr boundaries
         for i in 0..self.dim_i {
@@ -30,14 +32,14 @@ impl<F: Real> TensorCsrBuilder<F> {
             }
 
             // Extract just the columns and values for this specific row
-            let mut row_entries: Vec<(usize, F)> = self.cols[start..end]
+            row_entries.clear();
+            row_entries.extend(self.cols[start..end]
                 .iter()
                 .copied()
                 .zip(self.vals[start..end].iter().copied())
-                .collect();
-
+            );
             // Sort locally by column index
-            row_entries.sort_by(|a, b| a.0.cmp(&b.0));
+            row_entries.sort_unstable_by_key(|a| a.0);
 
             // Coalesce duplicates strictly within this row
             let mut current_col = row_entries[0].0;

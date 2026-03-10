@@ -1,5 +1,5 @@
 use crate::common::ids::{EdgeId, NodeId};
-use crate::tensor::common::{signed_incidence, Real};
+use crate::tensor::common::{calc_approx_nnz, signed_incidence, Real};
 use crate::tensor::common_traversal::inc_to_real;
 use crate::tensor::representations::tensor_coo::TensorCoo;
 use crate::tensor::tensor::compute_bipartite_degrees;
@@ -75,15 +75,19 @@ where
 
     // rough upper bound: per edge, deg^2 potential pairs (dense), but we stay COO sparse
     let mut t = TensorCoo::with_meta(num_edges, num_nodes, num_nodes);
+    // Pre pass
+    let approx_nnz = calc_approx_nnz(hg, num_edges);
 
-    for e in 0..(num_edges) {
+    t.reserve(approx_nnz);
+    // Main pass
+    for e in 0..num_edges {
         let eid = EdgeId(e);
         let (s, eend) = hg.edge_span(eid);
 
         // gather (node, sign) for this edge
         let mut nodes: Vec<(usize, i8, F)> = Vec::with_capacity(eend - s);
         for p in s..eend {
-            let u = hg.flat_edge_nodes[p].0 as usize;
+            let u = hg.flat_edge_nodes[p].0;
             let su = hg.flat_edge_sign[p];
             let wu: F = inc_to_real(hg, p, e);
 
@@ -136,15 +140,15 @@ where
     let mut t = TensorCoo::with_meta(num_edges, dim, dim);
     t.reserve(approx_nnz);
 
-    for e in 0..(num_edges as usize) {
+    for e in 0..num_edges {
         let eid = EdgeId(e);
         let (s, eend) = hg.edge_span(eid);
-        let u_eid = eid.0 as usize;
+        let u_eid = eid.0;
         let e_v = edge_base + u_eid; // edge index in V*
 
         for p in s..eend {
             let nid: NodeId = hg.flat_edge_nodes[p];
-            let n_v = nid.0 as usize; // node index in V*
+            let n_v = nid.0; // node index in V*
             let sign = hg.flat_edge_sign[p];
             let w: F = inc_to_real(hg, p, u_eid);
 

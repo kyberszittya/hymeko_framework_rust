@@ -1,4 +1,4 @@
-use crate::tensor::common::{signed_incidence, Real};
+use crate::tensor::common::{calc_approx_nnz, signed_incidence, Real};
 use crate::tensor::common_traversal::inc_to_real;
 use crate::tensor::representations::tensor_coo::TensorCoo;
 use crate::tensor::tensor_val::{EdgeWeight, IncVal};
@@ -191,7 +191,10 @@ where
 
     // A = B B^T
     let mut coo = TensorCoo::with_meta(1, n, n);
-
+    // Pre-pass
+    let approx_nnz = calc_approx_nnz(hg, m);
+    coo.reserve(approx_nnz);
+    // Main pass
     for e in 0..m {
         let s = hg.edge_offsets[e];
         let eend = hg.edge_offsets[e + 1];

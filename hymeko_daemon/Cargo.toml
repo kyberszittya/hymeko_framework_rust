@@ -14,3 +14,4 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
 oneshot = "0.2.1"
 blake3 = "1.8.3"
+zenoh = "1.7.2"

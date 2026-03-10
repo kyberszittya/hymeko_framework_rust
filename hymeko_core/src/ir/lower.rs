@@ -52,6 +52,7 @@ pub fn lower_to_ir_with_meta(
 ) -> Result<Ir, ResolveError> {
     let mut ir = Ir::new(meta);
     let mut path = Vec::new();
+    ir.preallocate_from_index(idx.by_path.len());
     for n in &ast.header { lower_node(&mut ir, idx, it, &mut path, n)?; }
     lower_items(&mut ir, idx, it, &mut path, &ast.items)?;
     Ok(ir)
@@ -90,8 +91,6 @@ fn lower_node(
     path.push(n.inner.name);
 
     let did = decl_id_of(idx, path);
-    ir.ensure_decl_capacity(did);
-
     // Replace the old flat assignments:
     ir.decl_nodes[did.0].kind = DeclKind::Node;
     ir.decl_nodes[did.0].name = n.inner.name;
@@ -127,17 +126,12 @@ fn lower_arc(
     path: &[SymId],
     eid: EdgeId,
     a: &HyperArc<SymId>,
-
 ) -> Result<(), ResolveError> {
-    // 1) allocate a fresh anonymous DeclId for the arc based on the new arena length
-    let arc_decl = DeclId(ir.decl_nodes.len());
-    ir.ensure_decl_capacity(arc_decl);
-
+    // 1) Push directly onto the vectors (amortized O(1), zero resize-tracking overhead)
+    let arc_decl = ir.push_anonymous_arc();
     let idx_usize = arc_decl.0;
 
     // 2) fill decl tables via the unified node
-    ir.decl_nodes[idx_usize].kind = DeclKind::HyperArc;
-    ir.decl_nodes[idx_usize].name = SymId(0); // anonymous arc
     ir.decl_nodes[idx_usize].parent = edge_decl;
 
     // 3) resolve arc payload once
@@ -152,7 +146,7 @@ fn lower_arc(
     ir.arcs.push(ArcRec { anno, in_edge: edge_decl, refs });
     ir.decl_to_arc[idx_usize] = Some(aid);
 
-    // 6) link into edge's decl-children chain (for traversal)
+    // 6) link into edge's decl-children chain
     link_decl_child(ir, edge_decl, arc_decl);
 
     // 7) keep per-edge arc list once
@@ -172,7 +166,6 @@ fn lower_edge(
     path.push(e.inner.name);
 
     let did = decl_id_of(idx, &path);
-    ir.ensure_decl_capacity(did);
 
     let idx_usize = did.0;
 
@@ -239,6 +232,9 @@ pub fn lower_program_to_ir_with_meta(
     meta: Meta,
 ) -> Result<Ir, ResolveError> {
     let mut ir = Ir::new(meta);
+    // MATHEMATICAL PRE-ALLOCATION: We know exactly how many named decls exist
+    ir.preallocate_from_index(idx.by_path.len());
+    // 2) lower root + deps into IR under their namespaces (prefixes)
     lower_into_ir(&mut ir, root, idx, it, &[])?;
     for (ns, dep_ast) in imported {
         lower_into_ir(&mut ir, dep_ast, idx, it, &[*ns])?;

@@ -1,5 +1,3 @@
-use std::collections::{BTreeMap};
-
 use crate::common::ids::SymId;
 use crate::resolution::interner::Interner;
 use crate::resolution::resolve::{build_index_sym_with_prefix, validate_all_refs_sym_with_prefix, Index, ResolveError};
@@ -15,7 +13,7 @@ pub fn build_index_modules<'a>(
     imported: &[ModuleView<'a>],
     it: &Interner,
 ) -> Result<Index, ResolveError> {
-    let mut idx = Index { by_path: BTreeMap::new() };
+    let mut idx = Index::default();
     let mut next: usize = 0;
 
     // root a globális névtérben (prefix = [])

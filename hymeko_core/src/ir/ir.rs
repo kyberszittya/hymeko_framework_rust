@@ -111,25 +111,40 @@ impl Ir {
         self.decl_to_arc.get(d.0).copied().flatten()
     }
 
-    pub fn ensure_decl_capacity(&mut self, did: DeclId) {
-        let need = (did.0) + 1;
-        if self.decl_nodes.len() >= need { return; }
-
+    pub fn preallocate_from_index(&mut self, total_named_decls: usize) {
         let default_node = DeclNode {
             kind: DeclKind::Node,
             name: SymId(0),
             parent: DeclId::NONE,
             first_child: DeclId::NONE,
-            last_child:   DeclId::NONE,
+            last_child: DeclId::NONE,
             next_sibling: DeclId::NONE,
             anno: AnnoR::default(),
         };
-        self.decl_nodes.resize(need, default_node);
-        self.decl_to_node.resize(need, None);
-        self.decl_to_edge.resize(need, None);
-        self.decl_to_arc.resize(need, None);
-        self.decl_hash.resize(need, None);
+        // Allocate exact capacity for Nodes and Edges
+        self.decl_nodes.resize(total_named_decls, default_node);
+        self.decl_to_node.resize(total_named_decls, None);
+        self.decl_to_edge.resize(total_named_decls, None);
+        self.decl_to_arc.resize(total_named_decls, None);
+        self.decl_hash.resize(total_named_decls, None);
+    }
 
+    pub fn push_anonymous_arc(&mut self) -> DeclId {
+        let id = DeclId(self.decl_nodes.len());
+        self.decl_nodes.push(DeclNode {
+            kind: DeclKind::HyperArc,
+            name: SymId(0),
+            parent: DeclId::NONE,
+            first_child: DeclId::NONE,
+            last_child: DeclId::NONE,
+            next_sibling: DeclId::NONE,
+            anno: AnnoR::default(),
+        });
+        self.decl_to_node.push(None);
+        self.decl_to_edge.push(None);
+        self.decl_to_arc.push(None);
+        self.decl_hash.push(None);
+        id
     }
 }
 

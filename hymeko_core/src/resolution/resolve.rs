@@ -1,5 +1,5 @@
 // src/resolve.rs
-use std::collections::{BTreeMap};
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, Value};
 use crate::common::ids::{DeclId, SymId};
@@ -9,12 +9,16 @@ use crate::resolution::interner::Interner;
 use crate::sym_ast::AstSym;
 
 #[derive(Debug, 
-    Serialize, Deserialize)]
+    Serialize, Deserialize, Default)]
 pub struct Index {
-    pub by_path: BTreeMap<PathKey, DeclId>,
+    pub by_path: FxHashMap<PathKey, DeclId>,
 }
 
 impl Index {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (&PathKey, &DeclId)> {
         self.by_path.iter()
     }
@@ -29,7 +33,7 @@ pub enum ResolveError {
 }
 
 pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, ResolveError> {
-    let mut idx = Index { by_path: BTreeMap::new() };
+    let mut idx = Index::default();
     let mut next: usize = 0;
     let mut path = Vec::new();
 

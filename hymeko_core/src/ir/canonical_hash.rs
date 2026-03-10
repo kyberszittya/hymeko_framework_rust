@@ -361,28 +361,33 @@ fn canonical_incidence_bytes(
 ) -> Vec<u8> {
     let _ = cfg; // flags later (weights/tags inclusion)
 
-    // build DeclId -> "path string" cache for speed
-    let mut did_path_str: Vec<Option<String>> = vec![None; did_to_path.len()];
+    // 1. Precompute path strings ONCE. No cloning in the loop.
+    let mut did_path_str: Vec<String> = vec![String::new(); did_to_path.len()];
     for (i, pk) in did_to_path.iter().enumerate() {
         if let Some(pk) = pk {
-            let s = pk.0.iter().map(|&sid| it.resolve(sid)).collect::<Vec<_>>().join(".");
-            did_path_str[i] = Some(s);
+            did_path_str[i] = pk.0.iter().map(|&sid| it.resolve(sid)).collect::<Vec<_>>().join(".");
+        } else {
+            did_path_str[i] = format!("DeclId({})", i);
         }
     }
 
-    #[derive(Clone)]
-    struct Rec {
-        key: (String, u16, u16), // (edge_path, arc_idx, slot)
-        bytes: Vec<u8>,
+    // 2. The Arena: One single contiguous memory block.
+    let mut arena = Vec::with_capacity(ir.edges.len() * 128);
+
+    // 3. Lightweight struct storing references and offsets, NOT allocations.
+    struct Rec<'a> {
+        edge_path: &'a str,
+        arc_idx: u16,
+        slot: u16,
+        start: usize,
+        end: usize,
     }
 
-    let mut recs: Vec<Rec> = Vec::new();
+    // Guessing capacity to avoid vector resizing
+    let mut recs = Vec::with_capacity(ir.edges.len() * 4);
 
     for e in &ir.edges {
-        let edge_did = e.decl;
-        let edge_path = did_path_str[edge_did.0 as usize]
-            .clone()
-            .unwrap_or_else(|| format!("{edge_did:?}"));
+        let edge_path: &str = &did_path_str[e.decl.0 as usize];
 
         for (ai, &arc_id) in e.arcs.iter().enumerate() {
             let arc = &ir.arcs[arc_id.0 as usize];
@@ -394,36 +399,41 @@ fn canonical_incidence_bytes(
                     SignedRefR::Neutral(a) => (0i8, a.target),
                 };
 
-                let target_path = did_path_str[target.0 as usize]
-                    .clone()
-                    .unwrap_or_else(|| format!("{target:?}"));
+                let target_path: &str = &did_path_str[target.0 as usize];
 
-                // bytes layout (stable LE):
-                // edge_path_len u16 | edge_path bytes
-                // arc_idx u16 | slot u16 | sign i8
-                // target_path_len u16 | target_path bytes
-                let mut b = Vec::new();
-                push_str(&mut b, &edge_path);
-                b.extend_from_slice(&(ai as u16).to_le_bytes());
-                b.extend_from_slice(&(slot as u16).to_le_bytes());
-                b.push(sign as u8);
-                push_str(&mut b, &target_path);
+                let start = arena.len();
+
+                // Write directly into the arena
+                push_str(&mut arena, edge_path);
+                arena.extend_from_slice(&(ai as u16).to_le_bytes());
+                arena.extend_from_slice(&(slot as u16).to_le_bytes());
+                arena.push(sign as u8);
+                push_str(&mut arena, target_path);
+
+                let end = arena.len();
 
                 recs.push(Rec {
-                    key: (edge_path.clone(), ai as u16, slot as u16),
-                    bytes: b,
+                    edge_path,
+                    arc_idx: ai as u16,
+                    slot: slot as u16,
+                    start,
+                    end,
                 });
             }
         }
     }
 
-    // deterministic sort
-    recs.sort_by(|a, b| a.key.cmp(&b.key));
+    // 4. sort_unstable_by is faster than sort_by, and safe here because keys are unique
+    recs.sort_unstable_by(|a, b| {
+        a.edge_path.cmp(b.edge_path)
+            .then_with(|| a.arc_idx.cmp(&b.arc_idx))
+            .then_with(|| a.slot.cmp(&b.slot))
+    });
 
-    // concat
-    let mut out = Vec::new();
+    // 5. Build final output by reading from the sorted arena offsets
+    let mut out = Vec::with_capacity(arena.len());
     for r in recs {
-        out.extend_from_slice(&r.bytes);
+        out.extend_from_slice(&arena[r.start..r.end]);
     }
     out
 }

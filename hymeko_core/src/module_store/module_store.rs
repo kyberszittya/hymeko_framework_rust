@@ -2,7 +2,6 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
-use std::collections::BTreeMap;
 use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use parser::ast::AstStr;
@@ -14,7 +13,7 @@ use crate::ir::lower::lower_program_to_ir;
 use crate::module_store::source_provider::SourceProvider;
 use crate::resolution::intern_pass::intern_ast_into_owned;
 use crate::resolution::interner::Interner;
-use crate::resolution::resolve::{build_index_sym_with_prefix, validate_all_refs_sym_with_prefix, Index};
+use crate::resolution::resolve::{build_index_sym_with_prefix, Index};
 
 use crate::sym_ast::AstSym;
 
@@ -214,7 +213,7 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
         }
 
         // 5) global index: root + deps namespace alatt
-        let mut idx = Index { by_path: BTreeMap::new() };
+        let mut idx = Index::default();
         let mut next: usize = 0;
 
         build_index_sym_with_prefix(&root_ast, &[], &self.it, &mut idx, &mut next)
@@ -225,9 +224,6 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
                 .map_err(|e| ModuleLoadError::Parse(format!("index dep failed: {e:?}")))?;
         }
 
-        // 6) resolve/validate (ajánlott)
-        validate_all_refs_sym_with_prefix(&root_ast, &[], &idx, &mut self.it)
-            .map_err(|e| ModuleLoadError::Parse(format!("resolve/validate failed: {e:?}")))?;
 
         // 7) lower program IR (2A) + merkle
         let mut ir = lower_program_to_ir(&root_ast, &imported, &idx, &mut self.it)

@@ -20,6 +20,7 @@
   - [X] Update their initialization to use `FxHashMap::default()`.
   - [X] Extract current Python API implementations containing tensor expansion logic from the Python API so the Python API is essentially a thin wrapper around the core library. This will allow us to benchmark the core library's performance improvements without Python overhead.
   - [X] Locate the tensor expansion loops and swap the temporary `decl_to_csr_node` and `decl_to_csr_edge` mappings to `FxHashMap`.
+  - [X] Capture randomized COO benchmark telemetry for the accelerated path via `hymeko_core/tests/benchmarks/bench_coo_builder_random.rs::bench_random_hypergraph_coo_builder_suite`, exported to `hymeko_core/target/benchmarks/coo_builder_random_benchmark.csv`.
 
 - [X] **Task 1.3: Deterministic B-Tree Indexing (Hash Stability)**
   - [X] Open the compiler's resolution module (`hymeko_core/src/resolution/resolve.rs`).

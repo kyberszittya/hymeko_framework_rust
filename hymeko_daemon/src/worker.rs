@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::oneshot;
 
 use hymeko::tensor::shared_state::{calculate_required_bytes, ExpansionHeader};
-use crate::service::HymekoDaemon; // Import the struct from the service module
+use crate::service::{HymekoDaemon, PublishRequest}; // Import the struct from the service module
 
 type ThreadSafeError = Box<dyn Error + Send + Sync>;
 type ThreadSafeResult<T> = Result<T, ThreadSafeError>;
@@ -49,6 +49,41 @@ impl HymekoDaemon {
             let _ = tx.send(result);
         });
         */
+
+        match rx.await {
+            Ok(result) => result.map_err(|e| e as Box<dyn Error>),
+            Err(_) => Err("Rayon worker hung up".into()),
+        }
+    }
+
+    pub async fn handle_query(
+        &self,
+        _payload: Vec<u8>,
+        tx_pub: tokio::sync::mpsc::Sender<PublishRequest>,
+    ) -> Result<(), Box<dyn Error>> {
+        let (tx, rx) = oneshot::channel::<ThreadSafeResult<()>>();
+        let interner = Arc::clone(&self.interner);
+
+        rayon::spawn(move || {
+            let _lock = interner.write().unwrap(); // Use write lock if parsing modifies the interner
+
+            // 1. Math stub: Assume we calculated an expansion of 1000 non-zero elements
+            let nnz = 1000;
+            let etag = [0u8; 32];
+
+            // 2. Build the exact memory layout of the tensor in a local Vec
+            // For now, an empty Vec is fine to prove the pipeline connects.
+            let tensor_data = Vec::new();
+
+            // 3. Send the instruction back to the Tokio Main Thread Actor
+            let req = PublishRequest { etag, nnz, tensor_data };
+            if let Err(e) = tx_pub.blocking_send(req) {
+                let _ = tx.send(Err(format!("Failed to send to publisher actor: {}", e).into()));
+                return;
+            }
+
+            let _ = tx.send(Ok(()));
+        });
 
         match rx.await {
             Ok(result) => result.map_err(|e| e as Box<dyn Error>),

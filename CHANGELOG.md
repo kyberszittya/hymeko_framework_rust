@@ -4,9 +4,11 @@ This root changelog summarizes every dated engineering log. Full entries live un
 
 ## 2026-03-10 — Data-Plane Traceability & Bridge Closure
 - Closed and re-traced Phase 2 daemon checklist work in `docs/plans/daemon/checklist_task2.md`, including the rewritten Task 2.3 direct-memory bridge wording.
-- Updated `docs/plans/daemon/checklist_task3.md` to reflect implemented control-plane groundwork (`moka` cache init, `#[tokio::main]`, heartbeat `tokio::select!`, and `tracing`-based geometric/ascii logging), while keeping `zenoh` and async-to-rayon handoff items open.
+- Updated `docs/plans/daemon/checklist_task3.md` to reflect implemented control-plane groundwork (`moka` cache init, `#[tokio::main]`, active Zenoh session + subscriber wiring in `hymeko_daemon/src/service.rs`, heartbeat `tokio::select!`, and `tracing`-based geometric/ascii logging), while keeping async-to-rayon handoff items open.
 - Captured the end-to-end shared-memory delivery path across `hymeko_core/src/tensor/shared_state.rs`, `hymeko_daemon/src/main.rs`, and `hymeko_py/src/interface_python/api.rs` (`PySharedExpansion::buffers`), including subscriber gating via `number_of_subscribers()`.
 - Traced `hymeko_daemon/src/worker.rs::compute_expansion` as scaffolded for the Tokio-to-Rayon bridge (structure present, execution path still pending).
+- Logged fresh random COO benchmark telemetry from `hymeko_core/tests/benchmarks/bench_coo_builder_random.rs::bench_random_hypergraph_coo_builder_suite` to `hymeko_core/target/benchmarks/coo_builder_random_benchmark.csv` (28 rows; `total_ms` range `4.4408..1432.9884`; `ns_per_entry` range `10128.738..249896.226`).
+- Captured daemon bootstrap modularization in `hymeko_daemon/src/main.rs`, where `main` now acts as a thin orchestrator for `config::{Args, DaemonConfig}` plus `service::HymekoDaemon::new(config).run().await` with `tracing_subscriber` env-filter setup.
 - Extended architecture documentation continuity (`architecture/README.md` + sub-READMEs) and kept README-level navigation/logo touch-ups aligned with the architecture catalog.
 - Details in [`docs/changelog/changelog_20260310.md`](docs/changelog/changelog_20260310.md).
 
