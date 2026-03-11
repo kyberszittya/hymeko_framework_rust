@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["hymeko_core",
+members = ["hymeko_client","hymeko_core",
     "hymeko_daemon", "hymeko_py",
     "parser",
 ]

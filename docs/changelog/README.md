@@ -4,7 +4,7 @@ This root changelog tracks every dated log stored in `docs/changelog/` and provi
 
 ## 2026-03-11 — Service-Aware Daemon Logging
 - **Link:** [changelog_20260311.md](changelog_20260311.md)
-- **Highlights:** Enriched daemon tracing with service-aware structured context across `hymeko_daemon/src/worker.rs`, `hymeko_daemon/src/service.rs`, and `hymeko_daemon/src/iox_ingress.rs` (`service`, `request_id`, ingress source labels, payload/timing metadata), and synced Task 3.2 evidence in `docs/plans/daemon/checklist_task3.md`.
+- **Highlights:** Enriched daemon tracing with service-aware structured context across `hymeko_daemon/src/worker.rs`, `hymeko_daemon/src/service.rs`, and `hymeko_daemon/src/iox_ingress.rs` (`service`, `request_id`, ingress source labels, payload/timing metadata), introduced the standalone `hymeko_client/src/main.rs` Iceoryx ingress/egress smoke harness, and synced Task 3.2 evidence in `docs/plans/daemon/checklist_task3.md`.
 
 ## 2026-03-10 — Data-Plane Traceability & Bridge Closure
 - **Link:** [changelog_20260310.md](changelog_20260310.md)

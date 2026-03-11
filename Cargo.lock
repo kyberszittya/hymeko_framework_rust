@@ -1690,6 +1690,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hymeko_client"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "iceoryx2",
+]
+
+[[package]]
 name = "hymeko_core"
 version = "0.1.0"
 dependencies = [

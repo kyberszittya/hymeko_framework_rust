@@ -56,7 +56,10 @@ impl HymekoDaemon {
         let egress_service = node.service_builder(&egress_name)
             .publish_subscribe::<[u8]>()
             .open_or_create()?;
-        let publisher = Arc::new(egress_service.publisher_builder().create()?);
+        let publisher = Arc::new(egress_service
+            .publisher_builder()
+            .initial_max_slice_len(1024 * 1024)
+            .create()?);
 
         // 2. Iceoryx2 Ingress Subscriber (CBOR)
         let ingress_name = ServiceName::new(&(self.config.service_name.clone() + "_query_cbor"))?;
@@ -70,7 +73,7 @@ impl HymekoDaemon {
         let is_running = Arc::new(AtomicBool::new(true));
 
         let ingress_worker_src = IoxIngressWorker::new(
-            self.config.service_name.clone() + "_query_src",
+            self.config.service_name.clone() + "/query/src",
             tx_iox_src,
             Arc::clone(&is_running)
         );
@@ -79,7 +82,7 @@ impl HymekoDaemon {
         let (tx_iox_ir, mut rx_iox_ir) = mpsc::channel::<Vec<u8>>(100);
 
         let ingress_worker_ir = IoxIngressWorker::new(
-            self.config.service_name.clone() + "_query_ir",
+            self.config.service_name.clone() + "/query/ir",
             tx_iox_ir,
             Arc::clone(&is_running) // Share the exact same atomic shutdown flag!
         );
@@ -152,7 +155,7 @@ impl HymekoDaemon {
                     let self_clone = Arc::clone(&self);
                     let tx_clone = tx_pub.clone();
                     tokio::spawn(async move {
-                        if let Err(e) = self_clone.handle_cbor_query(payload, tx_clone).await {
+                        if let Err(e) = self_clone.handle_utf8_query(payload, tx_clone).await {
                             error!(source = "iceoryx2_src", "query processing failed: {}", e);
                         }
                     });

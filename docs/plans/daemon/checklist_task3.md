@@ -14,6 +14,7 @@
   - [x] Implement the main `tokio::select!` loop to multiplex network requests and the `iceoryx2` heartbeat. *(Current loop handles Zenoh receive, heartbeat tick, and subscriber-gated publishing path.)*
   - [x] Replace ad-hoc console prints with structured runtime logging (`tracing` + `tracing-subscriber`) and geometric/ascii markers in daemon status messages.
   - [x] Enrich structured logs across ingress and worker paths with service-aware context (`service`, `request_id`, `source`, payload-size/timing metadata) in `hymeko_daemon/src/service.rs`, `hymeko_daemon/src/iox_ingress.rs`, and `hymeko_daemon/src/worker.rs`.
+  - [x] Add standalone Rust ingress harness `hymeko_client/src/main.rs` to publish src-channel payloads, signal the paired Iceoryx event, and poll tensor egress responses for end-to-end control-plane smoke validation.
 
 - [ ] **Task 3.3: The Async-to-Sync Bridge (Tokio-to-Rayon)**
   - [x] Add `rayon = "1.10"` to `hymeko_daemon/Cargo.toml`. *(Using `1.11.0`.)*

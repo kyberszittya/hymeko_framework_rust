@@ -1,0 +1,46 @@
+flowchart TD
+%% Define CSS classes for the layers
+    classDef rustLayer fill:#2b2d42,stroke:#ef233c,stroke-width:2px,color:#fff;
+    classDef transportLayer fill:#8d99ae,stroke:#2b2d42,stroke-width:2px,color:#fff;
+    classDef pythonLayer fill:#edf2f4,stroke:#d90429,stroke-width:2px,color:#000;
+
+    subgraph Producer ["1. Rust Producer Layer (Hymeko Daemon)"]
+        direction TB
+        Ingress("📡 Zenoh / Iceoryx2 Ingress")
+        Compute("⚙️ Rayon Compute Pool")
+        Vault[("🧠 DashMap Graph Vault")]
+        Math("📐 HyperGraph Expansion (COO AoS)")
+        Arrow("🏹 Apache Arrow (SoA Pivot)")
+
+        Ingress -- "Query Text / CBOR" --> Compute
+        Compute -- "Extract Ir" --> Vault
+        Compute -- "Borrow Ir" --> Math
+        Math -- "TensorCoo" --> Arrow
+    end
+
+    subgraph Transport ["2. IPC Transport Layer (Zero-Copy)"]
+        direction LR
+        IoxPub("📤 Iceoryx2 Publisher")
+        Shm[("💾 OS Shared Memory")]
+        IoxSub("📥 Iceoryx2 Subscriber")
+
+        Arrow -- "RecordBatch (IPC Stream)" --> IoxPub
+        IoxPub -- "unsafe pointer copy" --> Shm
+        Shm -- "O(1) Memory Mapping" --> IoxSub
+    end
+
+    subgraph Consumer ["3. Python Consumer Layer (PyTorch Client)"]
+        direction TB
+        PyArrow("🐍 PyArrow (open_stream)")
+        Torch("🔥 PyTorch (sparse_coo_tensor)")
+        GPU[("⚡ GPU VRAM")]
+
+        IoxSub -- "Raw Bytes (memoryview)" --> PyArrow
+        PyArrow -- "zero_copy_only=True" --> Torch
+        Torch -- ".coalesce()" --> GPU
+    end
+
+%% Apply classes
+    class Ingress,Compute,Vault,Math,Arrow rustLayer;
+    class IoxPub,Shm,IoxSub transportLayer;
+    class PyArrow,Torch,GPU pythonLayer;

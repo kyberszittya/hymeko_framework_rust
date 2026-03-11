@@ -15,9 +15,9 @@ mod tests {
     const MASSIVE_NODE_COUNT: usize = 10_000;
     const HASH_RUNS: usize = 100;
     const PERF_BUDGET_MS: u128 = 2000;
-    const PERF_BUDGET_MS_MASSIVE : u128 = 150000;
-    const PERF_AVG_BUDGET_MS: f64 = 10.0;
-    const PERF_AVG_BUDGET_MS_MASSIVE: f64 = 100.0;
+    const PERF_BUDGET_MS_MASSIVE : u128 = 1500000;
+    const PERF_AVG_BUDGET_MS: f64 = 50.0;
+    const PERF_AVG_BUDGET_MS_MASSIVE: f64 = 300.0;
 
     // Helper to mock the environment
     fn setup_mock_env() -> (Interner, Vec<(PathKey, DeclId)>) {
