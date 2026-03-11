@@ -5,8 +5,9 @@ This root changelog summarizes every dated engineering log. Full entries live un
 - Enriched structured logging in `hymeko_daemon/src/worker.rs` with per-request/service context (`service`, `request_id`, `source`, payload-size/timing, enqueue outcomes, and debug `etag_prefix` correlation).
 - Improved ingress observability in `hymeko_daemon/src/service.rs` with explicit channel/source labels (`zenoh_utf8`, `zenoh_cbor`, `iceoryx2_src`, `iox_ir`) and branch-specific receive/processing failure logs.
 - Added service-scoped lifecycle logs for ingress thread start/stop and channel-close paths in `hymeko_daemon/src/iox_ingress.rs`.
+- Refactored `hymeko_daemon/src/iox_ingress.rs` to normalize `RawUtf8`/`CompiledIr`/`CborEncoded` payloads into `ExecutableQuery` IR units before async handoff, with compile/deserialization errors logged and dropped safely.
 - Added a standalone `hymeko_client` crate (`hymeko_client/src/main.rs`) to publish src ingress payloads, send event wakeups, and poll tensor egress responses for external smoke validation.
-- Synced Task 3.2 evidence in `docs/plans/daemon/checklist_task3.md` to reflect service-aware structured logging coverage across ingress and worker paths plus the new client harness.
+- Synced Task 3.2 evidence in `docs/plans/daemon/checklist_task3.md` to reflect service-aware structured logging coverage, and added Task 3.3 evidence for ingress query normalization progress.
 - Details in [`docs/changelog/changelog_20260311.md`](docs/changelog/changelog_20260311.md).
 
 ## 2026-03-10 — Data-Plane Traceability & Bridge Closure

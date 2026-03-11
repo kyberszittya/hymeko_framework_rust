@@ -9,6 +9,7 @@ use tracing::{debug, error, info, warn};
 use arrow::array::{Float32Array, Int64Array};
 use arrow::ipc::writer::StreamWriter;
 use arrow::record_batch::RecordBatch;
+use hymeko::ir::ir::Ir;
 use hymeko::module_store::module_store::ModuleStore;
 use hymeko::module_store::source_provider::MemProvider;
 use hymeko::tensor::arrow_schema::schema_expansion_3d;
@@ -251,6 +252,40 @@ impl HymekoDaemon {
             }
         };
         self.execute_compilation(query_str, tx).await
+    }
+
+    pub fn compile_to_ir_only(&self, dsl_source: String) -> Result<Arc<Ir>, Box<dyn Error + Send + Sync>> {
+        // This is the first half of your existing execute_compilation logic
+        let mut fs = MemProvider::default();
+        let query_path = PathBuf::from("incoming_query.hy");
+        fs.insert_file(query_path.clone(), dsl_source);
+
+        let mut store = ModuleStore::new(fs, RealParser);
+        store.compile(&query_path).map_err(|e| format!("Compile Error: {:?}", e))?;
+
+        let ir = store.take_last_ir()?;
+        Ok(Arc::new(ir))
+    }
+
+    pub fn deserialize_cbor_ir(&self, payload: &[u8]) -> Result<Arc<Ir>, Box<dyn Error + Send + Sync>> {
+        let cbor_payload: CborPayload = serde_cbor::from_slice(payload)?;
+        Ok(Arc::new(cbor_payload.ir))
+    }
+
+    pub fn expand_graph(&self, ir: &Ir) -> Vec<u8> {
+        // 1. Setup the views using the extractor logic you already have
+        let extractor = ScalarWeightExtractor::default();
+        let hg_view = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
+            ir,
+            &self.agg_cfg,
+            &extractor
+        );
+
+        // 2. Perform the Star Expansion
+        let tensor = hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo::<_, _, f32>(&hg_view);
+
+        // 3. Serialize to Arrow IPC bytes using your existing helper
+        tensor_to_arrow_bytes(tensor).expect("Failed to encode Arrow IPC stream")
     }
 }
 

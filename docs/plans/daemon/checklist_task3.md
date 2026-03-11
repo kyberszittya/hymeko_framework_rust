@@ -18,6 +18,7 @@
 
 - [ ] **Task 3.3: The Async-to-Sync Bridge (Tokio-to-Rayon)**
   - [x] Add `rayon = "1.10"` to `hymeko_daemon/Cargo.toml`. *(Using `1.11.0`.)*
+  - [x] Normalize ingress payloads into executable IR units inside `hymeko_daemon/src/iox_ingress.rs` using format-aware branches (`RawUtf8`, `CompiledIr`, `CborEncoded`) and push them over `mpsc::Sender<ExecutableQuery>`.
   - [ ] Implement `tokio::sync::oneshot` channels to send hypergraph ASTs from the async reactor to the Rayon thread pool. *(A scaffold exists in `hymeko_daemon/src/worker.rs::compute_expansion`, but the Rayon branch is still commented and not active.)*
   - [ ] Define the worker closure that executes the `hypergraphengine` math and writes directly to the loaned `iceoryx2` slice. *(Present only as commented pseudo-flow in `worker.rs`; needs live execution path.)*
   - [ ] Ensure the Rayon worker completion path signals back into the async runtime for publish/ack.

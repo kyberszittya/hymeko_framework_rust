@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 use iceoryx2::prelude::*;
 use moka::future::Cache;
 use tokio::sync::mpsc;
@@ -12,7 +13,8 @@ use crate::config::DaemonConfig;
 use hymeko::resolution::interner::Interner;
 use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
 use hymeko::tensor::shared_state::{calculate_required_bytes, ExpansionHeader};
-use crate::iox_ingress::IoxIngressWorker;
+use crate::common::{ExecutableQuery, IngressFormat, IngressPayload};
+use crate::iox_ingress::{IoxIngressWorker};
 
 pub struct PublishRequest {
     pub etag: [u8; 32],
@@ -49,173 +51,119 @@ impl HymekoDaemon {
     // It initializes both the Iceoryx data plane and the Zenoh control plane,
     // then enters an event-driven loop.
     pub async fn run(self: Arc<Self>) -> Result<(), Box<dyn Error>> {
+        // 1. Setup the Unified Execution Funnel
+        let (tx, mut rx) = mpsc::channel::<ExecutableQuery>(100);
+        let is_running = Arc::new(AtomicBool::new(true));
+
+        // 2. Initialize the Shared Memory Data Plane (Egress)
         let node = NodeBuilder::new().create::<ipc::Service>()?;
-        // 1. Iceoryx2 Data Plane (Inline to avoid generic type hell)
-        // 1. Iceoryx2 Egress Publisher
         let egress_name = ServiceName::new(&self.config.service_name)?;
         let egress_service = node.service_builder(&egress_name)
             .publish_subscribe::<[u8]>()
             .open_or_create()?;
-        let publisher = Arc::new(egress_service
+
+        let publisher = egress_service
             .publisher_builder()
             .initial_max_slice_len(1024 * 1024)
-            .create()?);
+            .create()?;
 
-        // 2. Iceoryx2 Ingress Subscriber (CBOR)
-        let ingress_name = ServiceName::new(&(self.config.service_name.clone() + "_query_cbor"))?;
-        let ingress_service = node.service_builder(&ingress_name)
-            .publish_subscribe::<[u8]>()
-            .open_or_create()?;
-        let iox_subscriber = ingress_service.subscriber_builder().create()?;
-
-        // 3. The Graceful Thread Bridge
-        let (tx_iox_src, mut rx_iox_src) = mpsc::channel::<Vec<u8>>(100);
-        let is_running = Arc::new(AtomicBool::new(true));
-
-        let ingress_worker_src = IoxIngressWorker::new(
+        // 3. Spawn Parallel Iceoryx Workers
+        // These now use the synchronous compiler logic on their own OS threads
+        let _handle_src = IoxIngressWorker::new(
             self.config.service_name.clone() + "/query/src",
-            tx_iox_src,
-            Arc::clone(&is_running)
-        );
-        let ingress_handle_src = ingress_worker_src.spawn(); // Spin up the OS thread
-        // IceOryx2 Pre-compiled ID (Fast path)
-        let (tx_iox_ir, mut rx_iox_ir) = mpsc::channel::<Vec<u8>>(100);
+            IngressFormat::RawUtf8,
+            tx.clone(),
+            Arc::clone(&is_running),
+            Arc::clone(&self),
+        ).spawn();
 
-        let ingress_worker_ir = IoxIngressWorker::new(
+        let _handle_src_cbor = IoxIngressWorker::new(
+            self.config.service_name.clone() + "/query/cbor_src",
+            IngressFormat::CborEncoded,
+            tx.clone(),
+            Arc::clone(&is_running),
+            Arc::clone(&self),
+        ).spawn();
+
+        let _handle_ir = IoxIngressWorker::new(
             self.config.service_name.clone() + "/query/ir",
-            tx_iox_ir,
-            Arc::clone(&is_running) // Share the exact same atomic shutdown flag!
-        );
-        let ingress_handle_ir = ingress_worker_ir.spawn();
+            IngressFormat::CompiledIr,
+            tx.clone(),
+            Arc::clone(&is_running),
+            Arc::clone(&self),
+        ).spawn();
 
-        // 4. Zenoh Control Plane
-        info!(marker = "[*]", "Initializing Zenoh session...");
+        // 4. Initialize Zenoh Control Plane
+        // We bridge Zenoh to the Fan-In channel by spawning a compilation task
         let z_session = zenoh::open(zenoh::Config::default()).await.map_err(|e| e.to_string())?;
-        let sub_utf8 = z_session.declare_subscriber(format!("{}/query/utf8", self.config.service_name)).await.map_err(|e| e.to_string())?;
-        let sub_cbor = z_session.declare_subscriber(format!("{}/query/cbor", self.config.service_name)).await.map_err(|e| e.to_string())?;
+        let sub_utf8 = z_session
+            .declare_subscriber(format!("{}/query/utf8", self.config.service_name))
+            .await.map_err(|e| e.to_string())?;
 
-        info!(marker = "[>]", service = %self.config.service_name, "tri-channel daemon active");
+        let tx_zenoh = tx.clone();
+        let self_zenoh = Arc::clone(&self);
+        tokio::spawn(async move {
+            while let Ok(msg) = sub_utf8.recv_async().await {
+                let payload = msg.payload().to_bytes().to_vec();
+                if let Ok(query_str) = String::from_utf8(payload) {
+                    // Perform compilation in the background task
+                    if let Ok(ir) = self_zenoh.compile_to_ir_only(query_str) {
+                        let _ = tx_zenoh.send(ExecutableQuery { ir }).await;
+                    }
+                }
+            }
+        });
+
+        info!(marker = "[>]", service = %self.config.service_name, "Hymeko Fan-In Engine Active");
 
         let mut heartbeat = interval(self.config.tick_rate);
         let mut had_subscribers = false;
-        let (tx_pub, mut rx_pub) = mpsc::channel::<PublishRequest>(100);
 
+        // --- THE CORE DISPATCHER LOOP ---
         loop {
             tokio::select! {
-                _ = tokio::signal::ctrl_c() => {
-                    info!(marker = "[x]", "shutdown signal received, initiating graceful teardown...");
-                    // Atomically command the Iceoryx2 thread to halt
-                    is_running.store(false, Ordering::Relaxed);
-                    break;
-                }
+            _ = tokio::signal::ctrl_c() => {
+                info!(marker = "[x]", "Graceful shutdown initiated.");
+                is_running.store(false, Ordering::Relaxed);
+                break;
+            }
 
-                // 3. The Zenoh 1.x Async Reactor Catch-Block
-                sample = sub_utf8.recv_async() => {
-                    match sample {
-                        Ok(msg) => {
-                            let payload = msg.payload().to_bytes().into_owned();
-                            info!(marker = "[<]", source = "zenoh_utf8", bytes = payload.len(), "received query payload");
+            // The Unified Execution Pipe: Everything here is already compiled IR
+            Some(query) = rx.recv() => {
+                let start = std::time::Instant::now();
 
-                            let self_clone = Arc::clone(&self);
-                            let tx_clone = tx_pub.clone();
+                // 1. Execute Math (Star Expansion)
+                let result_tensor = self.expand_graph(&query.ir);
 
-                            tokio::spawn(async move {
-                                if let Err(e) = self_clone.handle_utf8_query(payload, tx_clone).await {
-                                    error!(source = "zenoh_utf8", "query processing failed: {}", e);
-                                }
-                            });
-                        }
-                        Err(e) => {
-                            error!(source = "zenoh_utf8", "subscriber receive failed: {}", e);
-                        }
+                // 2. Dispatch Result (Zero-Copy)
+                if let Ok(mut sample) = publisher.loan_slice_uninit(result_tensor.len()) {
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(
+                            result_tensor.as_ptr(),
+                            sample.payload_mut().as_mut_ptr() as *mut u8,
+                            result_tensor.len(),
+                        );
+                        sample.assume_init().send().ok();
                     }
-                }
-                sample = sub_cbor.recv_async() => {
-                    match sample {
-                        Ok(msg) => {
-                            let payload = msg.payload().to_bytes().into_owned();
-                            info!(marker = "[<]", source = "zenoh_cbor", bytes = payload.len(), "received query payload");
-                            let self_clone = Arc::clone(&self);
-                            let tx_clone = tx_pub.clone();
-                            tokio::spawn(async move {
-                                if let Err(e) = self_clone.handle_cbor_query(payload, tx_clone).await {
-                                    error!(source = "zenoh_cbor", "query processing failed: {}", e);
-                                }
-                            });
-                        }
-                        Err(e) => {
-                            error!(source = "zenoh_cbor", "subscriber receive failed: {}", e);
-                        }
-                    }
-                }
-
-                // Iceoryx2 Ingress Bridge
-                Some(payload) = rx_iox_src.recv() => {
-                    info!(marker = "[<]", source="iceoryx2_src", bytes = payload.len(), "received query");
-                    let self_clone = Arc::clone(&self);
-                    let tx_clone = tx_pub.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) = self_clone.handle_utf8_query(payload, tx_clone).await {
-                            error!(source = "iceoryx2_src", "query processing failed: {}", e);
-                        }
-                    });
-                }
-                // Iceoryx2 Ingress Bridge (IR)
-                Some(payload) = rx_iox_ir.recv() => {
-                    info!(marker = "[<]", source="iox_ir", bytes = payload.len(), "received compiled IR");
-                    let self_clone = Arc::clone(&self);
-                    let tx_clone = tx_pub.clone();
-                    tokio::spawn(async move {
-                        // Directly to the tensor builder bypass
-                        if let Err(e) = self_clone.handle_fast_path_ir(payload, tx_clone).await {
-                            error!(source = "iox_ir", "IR query failed: {}", e);
-                        }
-                    });
-                }
-
-                Some(req) = rx_pub.recv() => {
-                    info!(marker = "[>]", nnz = req.nnz, bytes = req.tensor_data.len(), "publishing COO tensor to shared memory");
-
-                    // Loan the exact required memory size from the zero-copy pool
-                    match publisher.loan_slice_uninit(req.tensor_data.len()) {
-                        Ok(mut sample) => {
-                            unsafe {
-                                std::ptr::copy_nonoverlapping(
-                                    req.tensor_data.as_ptr(),
-                                    sample.payload_mut().as_mut_ptr() as *mut u8,
-                                    req.tensor_data.len()
-                                );
-
-                                // Mathematically declare the memory as initialized
-                                let initialized_sample = sample.assume_init();
-
-                                // Commit and instantly release to PyTorch clients
-                                if let Err(e) = initialized_sample.send() {
-                                    error!(marker = "[x]", "Iceoryx2 publisher failed to send sample: {}", e);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            error!(marker = "[x]", "Iceoryx2 failed to loan memory: {}", e);
-                        }
-                    }
-                }
-
-                _ = heartbeat.tick() => {
-                    let currently_has_subscribers = egress_service.dynamic_config().number_of_subscribers() > 0;
-                    if currently_has_subscribers && !had_subscribers {
-                        info!(marker = "[+]", "subscriber connected");
-                    } else if !currently_has_subscribers && had_subscribers {
-                        warn!(marker = "[-]", "subscriber disconnected");
-                    }
-                    had_subscribers = currently_has_subscribers;
+                    info!(
+                        marker = "[+]",
+                        elapsed = ?start.elapsed(),
+                        "Tensor dispatched."
+                    );
                 }
             }
+
+            _ = heartbeat.tick() => {
+                let currently_active = egress_service.dynamic_config().number_of_subscribers() > 0;
+                if currently_active && !had_subscribers {
+                    info!(marker = "[+]", "Subscriber connected");
+                } else if !currently_active && had_subscribers {
+                    warn!(marker = "[-]", "Subscriber disconnected");
+                }
+                had_subscribers = currently_active;
+            }
         }
-        let _ = ingress_handle_src.join();
-        let _ = ingress_handle_ir.join();
+        }
         Ok(())
     }
-
-
 }

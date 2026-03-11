@@ -3,6 +3,7 @@ pub mod config;
 pub mod service;
 pub mod worker;
 mod iox_ingress;
+mod common;
 
 use std::error::Error;
 use std::sync::Arc;
