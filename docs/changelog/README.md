@@ -2,6 +2,10 @@
 
 This root changelog tracks every dated log stored in `docs/changelog/` and provides a short summary so you can jump straight to the details you need. Each entry links to the full write-up.
 
+## 2026-03-11 — Service-Aware Daemon Logging
+- **Link:** [changelog_20260311.md](changelog_20260311.md)
+- **Highlights:** Enriched daemon tracing with service-aware structured context across `hymeko_daemon/src/worker.rs`, `hymeko_daemon/src/service.rs`, and `hymeko_daemon/src/iox_ingress.rs` (`service`, `request_id`, ingress source labels, payload/timing metadata), and synced Task 3.2 evidence in `docs/plans/daemon/checklist_task3.md`.
+
 ## 2026-03-10 — Data-Plane Traceability & Bridge Closure
 - **Link:** [changelog_20260310.md](changelog_20260310.md)
 - **Highlights:** Closed and traced Phase 2/3 daemon checklist updates (`docs/plans/daemon/checklist_task2.md`, `docs/plans/daemon/checklist_task3.md`), captured subscriber-gated `ExpansionHeader + COO` publishing, confirmed active Zenoh subscriber wiring in `hymeko_daemon/src/service.rs`, migrated daemon runtime output to structured geometric/ascii logging, modularized `hymeko_daemon/src/main.rs` into a thin `config` -> `service` bootstrap, recorded `worker.rs` Tokio-to-Rayon bridge status as scaffolded, and logged random COO suite telemetry in `hymeko_core/target/benchmarks/coo_builder_random_benchmark.csv`.

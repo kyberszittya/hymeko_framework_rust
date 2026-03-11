@@ -239,7 +239,7 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
         let canon_hash = crate::ir::canonical_hash::canonical_program_hash(cfg, &idx, &ir, &self.it);
 
         // 9) bundle + cache
-        let compiled = std::sync::Arc::new(CompiledProgram {
+        let compiled = Arc::new(CompiledProgram {
             root: root.clone(),
             idx,
             ir,
@@ -249,6 +249,19 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
 
         self.last_compiled = Some(compiled.clone());
         Ok(compiled)
+    }
+
+    /// Consumes the store (or extracts the specific module) to return the owned Ir.
+    /// This avoids requiring #[derive(Clone)] on the massive Ir tree.
+    pub fn take_last_ir(mut self) -> Result<Ir, String> {
+        // Take the Arc out of the Option
+        let arc_prog = self.last_compiled.take().ok_or("No program was compiled.")?;
+
+        // Attempt to unwrap the Arc to get ownership of the CompiledProgram
+        match Arc::try_unwrap(arc_prog) {
+            Ok(prog) => Ok(prog.ir),
+            Err(_) => Err("Cannot extract Ir: Arc has multiple strong references.".to_string()),
+        }
     }
 }
 

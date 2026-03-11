@@ -18,7 +18,7 @@ nalgebra-sparse = "0.11.0"
 rayon = "1.11.0"
 iceoryx2 = "0.8.1"
 arrow = "58.0.0"
-
+dashmap = "7.0.0-rc2"
 [dev-dependencies]
 log = "0.4.22"
 env_logger = { version = "0.11.5", default-features = false, features = ["auto-color"] }

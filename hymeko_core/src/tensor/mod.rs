@@ -9,4 +9,4 @@ pub mod aggregation_impl;
 pub mod common_traversal;
 pub mod representations;
 pub mod shared_state;
-mod arrow_schema;
+pub mod arrow_schema;
