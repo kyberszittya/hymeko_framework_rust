@@ -9,6 +9,7 @@ use tracing::{debug, error, info, warn};
 use arrow::array::{Float32Array, Int64Array};
 use arrow::ipc::writer::StreamWriter;
 use arrow::record_batch::RecordBatch;
+use hymeko::ir::hash::HashId;
 use hymeko::ir::ir::Ir;
 use hymeko::module_store::module_store::ModuleStore;
 use hymeko::module_store::source_provider::MemProvider;
@@ -37,11 +38,24 @@ fn etag_prefix_hex(etag: &[u8; 32]) -> String {
     out
 }
 
+fn graph_name_from_ir(ir: &Ir) -> String {
+    // Meta currently has no explicit name field, so derive a stable fallback label.
+    ir.doc_hash
+        .map(|hash| format!("graph-{}", etag_prefix_hex(&hash.0)))
+        .unwrap_or_else(|| "AnonymousGraph".to_string())
+}
 
-
-fn tensor_to_arrow_bytes(tensor: TensorCoo<f32>) -> Result<Vec<u8>, arrow::error::ArrowError> {
+fn tensor_to_arrow_bytes(
+    tensor: TensorCoo<f32>,
+    etag: &[u8; 32],
+    graph_name: &str,
+) -> Result<Vec<u8>, arrow::error::ArrowError> {
     // 1. Pivot the memory layout from AoS to SoA
     let soa = tensor.into_soa();
+    // Metadata
+    let mut metadata = std::collections::HashMap::new();
+    metadata.insert("etag".to_string(), hex::encode(etag)); // Store the hash as hex
+    metadata.insert("graph_name".to_string(), graph_name.to_string());
 
     // 2. Cast architecture-dependent usize to deterministic i64
     let k_array = Int64Array::from(soa.k.into_iter().map(|x| x as i64).collect::<Vec<_>>());
@@ -50,9 +64,11 @@ fn tensor_to_arrow_bytes(tensor: TensorCoo<f32>) -> Result<Vec<u8>, arrow::error
     let v_array = Float32Array::from(soa.v);
 
     // 3. Assemble the RecordBatch using your predefined schema
-    let schema = schema_expansion_3d();
+    let base_schema = schema_expansion_3d();
+    let schema_owned = base_schema.as_ref().clone().with_metadata(metadata);
+    let schema_arc = Arc::new(schema_owned);
     let batch = RecordBatch::try_new(
-        schema.clone(),
+        schema_arc.clone(),
         vec![
             Arc::new(k_array),
             Arc::new(i_array),
@@ -64,7 +80,7 @@ fn tensor_to_arrow_bytes(tensor: TensorCoo<f32>) -> Result<Vec<u8>, arrow::error
     // 4. Serialize into an IPC stream buffer
     let mut buffer = Vec::new();
     {
-        let mut writer = StreamWriter::try_new(&mut buffer, schema.as_ref())?;
+        let mut writer = StreamWriter::try_new(&mut buffer, &schema_arc)?;
         writer.write(&batch)?;
         writer.finish()?;
     }
@@ -107,10 +123,11 @@ impl HymekoDaemon {
                     // Compute the sparse Star Expansion COO tensor (using f32 as the Real type)
                     let tensor = hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo::<_, _, f32>(&hg_view);
                     let nnz = tensor.len() as u64;
+                    let graph_name = graph_name_from_ir(&ir_arc);
 
                     // 3. ZERO-COPY BYTE CASTING
-                    // Because CooEntry is #[repr(C)], we instantly cast the heap memory to raw bytes
-                    let tensor_data = tensor_to_arrow_bytes(tensor).expect("Failed to encode Arrow IPC stream");
+                    let tensor_data = tensor_to_arrow_bytes(tensor, &etag, graph_name.as_str())
+                        .expect("Failed to encode Arrow IPC stream");
 
                     debug!(
                         request_id,
@@ -191,8 +208,10 @@ impl HymekoDaemon {
                 &ir_arc, &agg_cfg, &extractor);
             let tensor = hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo::<_, _, f32>(&hg_view);
             let nnz = tensor.len() as u64;
+            let graph_name = graph_name_from_ir(&ir_arc);
 
-            let tensor_data = tensor_to_arrow_bytes(tensor).expect("Failed to encode Arrow IPC stream");
+            let tensor_data = tensor_to_arrow_bytes(tensor, &etag, graph_name.as_str())
+                .expect("Failed to encode Arrow IPC stream");
 
 
             debug!(
@@ -272,7 +291,36 @@ impl HymekoDaemon {
         Ok(Arc::new(cbor_payload.ir))
     }
 
+    pub fn expand_graph_clique(&self, ir: &Ir) -> Vec<u8> {
+        let etag = ir.doc_hash.unwrap_or_else(|| {
+            HashId([0; 32])
+        }).0;
+
+        let graph_name = ir.meta.as_ref()
+            .map(|_m| "NamedGraph".to_string())
+            .unwrap_or_else(|| "AnonymousGraph".to_string());
+
+        let extractor = ScalarWeightExtractor::default();
+        let hg_view = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(ir, &self.agg_cfg, &extractor);
+
+        // Using your clique expansion algorithm here
+        let tensor = hymeko::tensor::representations::tensor_coo_representation::clique_expansion_coo::<_, _, f32>(&hg_view);
+
+        tensor_to_arrow_bytes(tensor, &etag, &graph_name).expect("Failed to encode Clique Arrow IPC stream")
+    }
+
+    pub fn serialize_ir_to_cbor(&self, ir: &Ir) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+        // Assuming you have #[derive(Serialize)] on your Ir struct
+        let bytes = serde_cbor::to_vec(ir)?;
+        Ok(bytes)
+    }
+
     pub fn expand_graph(&self, ir: &Ir) -> Vec<u8> {
+        let etag = ir.doc_hash.unwrap_or_else(|| {
+            warn!(marker = "[-]", "IR reached execution without doc_hash. Using zeroed fallback.");
+            HashId([0; 32]) // Fallback to zeroes
+        }).0;
+        let graph_name = graph_name_from_ir(ir);
         // 1. Setup the views using the extractor logic you already have
         let extractor = ScalarWeightExtractor::default();
         let hg_view = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
@@ -285,7 +333,7 @@ impl HymekoDaemon {
         let tensor = hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo::<_, _, f32>(&hg_view);
 
         // 3. Serialize to Arrow IPC bytes using your existing helper
-        tensor_to_arrow_bytes(tensor).expect("Failed to encode Arrow IPC stream")
+        tensor_to_arrow_bytes(tensor, &etag, graph_name.as_str()).expect("Failed to encode Arrow IPC stream")
     }
 }
 

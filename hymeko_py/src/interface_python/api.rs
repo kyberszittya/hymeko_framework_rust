@@ -108,9 +108,22 @@ impl PyHypergraphIR {
     }
 
     pub fn to_cbor(&self) -> PyResult<Vec<u8>> {
+        // Construct the full payload that the daemon expects
+        let payload = CborPayload {
+            root_path: self.compiled.root.0.clone(), // Extract the inner ID from ModuleKey
+            index: self.compiled.idx.clone(),
+            ir: self.compiled.ir.clone(),
+            imports: self.compiled.imports.clone(),
+            canon_hash: self.compiled.canon_hash,
+            // Assuming your StringTable has a method like to_vec() or into_inner()
+            // to retrieve the original Vec<String>. Adjust the method name if needed.
+            interned_strings: self.strings.to_vec(),
+        };
+
         let mut buffer = Vec::new();
-        ciborium::into_writer(&self.compiled.ir, &mut buffer)
+        ciborium::into_writer(&payload, &mut buffer)
             .map_err(|e| PyValueError::new_err(format!("CBOR Serialization Error: {}", e)))?;
+
         Ok(buffer)
     }
 

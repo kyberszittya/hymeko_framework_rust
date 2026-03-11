@@ -19,7 +19,7 @@ pub struct DeclNode {
     pub anno: AnnoR,
 }
 
-#[derive(Debug, Default,
+#[derive(Debug, Default, Clone,
     Serialize, Deserialize)]
 pub struct Ir {
     pub meta: Option<Meta>,
@@ -164,7 +164,7 @@ impl<'a> Iterator for DeclChildren<'a> {
     }
 }
 
-#[derive(Debug,
+#[derive(Debug, Clone,
     Serialize, Deserialize)]
 pub struct NodeRec {
     pub decl: DeclId,
@@ -174,7 +174,7 @@ impl NodeRec {
     pub fn new(decl: DeclId, bases: Vec<SignedRefR>) -> Self { Self { decl, bases } }
 }
 
-#[derive(Debug,
+#[derive(Debug, Clone,
     Serialize, Deserialize)]
 pub struct EdgeRec {
     pub decl: DeclId,

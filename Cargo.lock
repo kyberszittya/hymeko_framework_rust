@@ -1724,6 +1724,7 @@ dependencies = [
  "blake3",
  "clap",
  "dashmap",
+ "hex",
  "hymeko_core",
  "iceoryx2",
  "moka",

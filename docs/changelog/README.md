@@ -2,6 +2,10 @@
 
 This root changelog tracks every dated log stored in `docs/changelog/` and provides a short summary so you can jump straight to the details you need. Each entry links to the full write-up.
 
+## 2026-03-12 — Multiplexed Daemon Egress and Worker Refactor
+- **Link:** [changelog_20260312.md](changelog_20260312.md)
+- **Highlights:** Added multiplexed daemon dispatch in `hymeko_daemon/src/service.rs` (compiled IR + star tensor + clique tensor publishers), centralized graph-name derivation in `hymeko_daemon/src/worker.rs` via `graph_name_from_ir`, fixed Arrow serialization argument/hash type mismatches, and synced Phase 3 task evidence in `docs/plans/daemon/checklist_task3.md`.
+
 ## 2026-03-11 — Service-Aware Daemon Logging
 - **Link:** [changelog_20260311.md](changelog_20260311.md)
 - **Highlights:** Enriched daemon tracing with service-aware structured context across `hymeko_daemon/src/worker.rs`, `hymeko_daemon/src/service.rs`, and `hymeko_daemon/src/iox_ingress.rs` (`service`, `request_id`, ingress source labels, payload/timing metadata), introduced ingress format normalization to `ExecutableQuery` (`RawUtf8`/`CompiledIr`/`CborEncoded`) in `hymeko_daemon/src/iox_ingress.rs`, added the standalone `hymeko_client/src/main.rs` Iceoryx ingress/egress smoke harness, and synced Task 3.2/3.3 evidence in `docs/plans/daemon/checklist_task3.md`.

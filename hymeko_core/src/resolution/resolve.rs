@@ -9,7 +9,7 @@ use crate::resolution::interner::Interner;
 use crate::sym_ast::AstSym;
 
 #[derive(Debug, 
-    Serialize, Deserialize, Default)]
+    Serialize, Deserialize, Default, Clone)]
 pub struct Index {
     pub by_path: FxHashMap<PathKey, DeclId>,
 }

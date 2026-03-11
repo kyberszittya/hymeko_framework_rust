@@ -11,14 +11,15 @@
   - [x] Initialize the `tokio` multi-threaded runtime in `hymeko_daemon/src/main.rs`. *(`#[tokio::main]` is active.)*
   - [x] Modularize daemon bootstrap flow in `hymeko_daemon/src/main.rs` so startup runs `config::{Args, DaemonConfig}` -> `service::HymekoDaemon::new(config).run().await` with a thin orchestrator `main`.
   - [x] Add `zenoh` dependency and initialize a session to listen for incoming CBOR-encoded query objects. *(Session setup now lives in `hymeko_daemon/src/service.rs::run` via `zenoh::open(...)` and `declare_subscriber(...)`.)*
-  - [x] Implement the main `tokio::select!` loop to multiplex network requests and the `iceoryx2` heartbeat. *(Current loop handles Zenoh receive, heartbeat tick, and subscriber-gated publishing path.)*
+  - [x] Implement the main `tokio::select!` loop to multiplex network requests and the `iceoryx2` heartbeat. *(Current runtime loop handles compiled query intake and heartbeat while Zenoh ingress feeds the unified query channel.)*
   - [x] Replace ad-hoc console prints with structured runtime logging (`tracing` + `tracing-subscriber`) and geometric/ascii markers in daemon status messages.
   - [x] Enrich structured logs across ingress and worker paths with service-aware context (`service`, `request_id`, `source`, payload-size/timing metadata) in `hymeko_daemon/src/service.rs`, `hymeko_daemon/src/iox_ingress.rs`, and `hymeko_daemon/src/worker.rs`.
   - [x] Add standalone Rust ingress harness `hymeko_client/src/main.rs` to publish src-channel payloads, signal the paired Iceoryx event, and poll tensor egress responses for end-to-end control-plane smoke validation.
+  - [x] Multiplex daemon egress outputs per query in `hymeko_daemon/src/service.rs`: publish raw IR (`/ir/cbor`), star tensor, and clique tensor in one dispatch cycle.
 
 - [ ] **Task 3.3: The Async-to-Sync Bridge (Tokio-to-Rayon)**
   - [x] Add `rayon = "1.10"` to `hymeko_daemon/Cargo.toml`. *(Using `1.11.0`.)*
   - [x] Normalize ingress payloads into executable IR units inside `hymeko_daemon/src/iox_ingress.rs` using format-aware branches (`RawUtf8`, `CompiledIr`, `CborEncoded`) and push them over `mpsc::Sender<ExecutableQuery>`.
-  - [ ] Implement `tokio::sync::oneshot` channels to send hypergraph ASTs from the async reactor to the Rayon thread pool. *(A scaffold exists in `hymeko_daemon/src/worker.rs::compute_expansion`, but the Rayon branch is still commented and not active.)*
-  - [ ] Define the worker closure that executes the `hypergraphengine` math and writes directly to the loaned `iceoryx2` slice. *(Present only as commented pseudo-flow in `worker.rs`; needs live execution path.)*
-  - [ ] Ensure the Rayon worker completion path signals back into the async runtime for publish/ack.
+  - [x] Implement `tokio::sync::oneshot` channels to return Rayon worker completion/error state from `hymeko_daemon/src/worker.rs` (`execute_compilation`, `handle_fast_path_ir`).
+  - [ ] Define the worker closure that executes the `hypergraphengine` math and writes directly to the loaned `iceoryx2` slice. *(Current closure computes tensors and builds publish payloads; final Iceoryx loan/write remains in `hymeko_daemon/src/service.rs`.)*
+  - [x] Ensure the Rayon worker completion path signals back into the async runtime for publish/ack. *(Implemented with oneshot completion signaling and async-side result handling.)*

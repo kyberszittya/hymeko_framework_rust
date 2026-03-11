@@ -2,7 +2,9 @@
 name = "hymeko_py"
 version = "0.1.0"
 edition = "2024"
-
+[lib]
+name = "hymeko"
+crate-type = ["cdylib"]
 [dependencies]
 hymeko_core = { path = "../hymeko_core" }
 

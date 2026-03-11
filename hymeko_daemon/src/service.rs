@@ -61,11 +61,21 @@ impl HymekoDaemon {
         let egress_service = node.service_builder(&egress_name)
             .publish_subscribe::<[u8]>()
             .open_or_create()?;
-
         let publisher = egress_service
             .publisher_builder()
             .initial_max_slice_len(1024 * 1024)
             .create()?;
+        // Publisher B: Clique Expansion
+        let name_clique = ServiceName::new(&(self.config.service_name.clone() + "/tensor/clique"))?;
+        let pub_clique = node.service_builder(&name_clique)
+            .publish_subscribe::<[u8]>().open_or_create()?
+            .publisher_builder().initial_max_slice_len(10 * 1024 * 1024).create()?; // 10MB capacity
+
+        // Publisher C: Raw Compiled IR
+        let name_ir = ServiceName::new(&(self.config.service_name.clone() + "/ir/cbor"))?;
+        let pub_ir = node.service_builder(&name_ir)
+            .publish_subscribe::<[u8]>().open_or_create()?
+            .publisher_builder().initial_max_slice_len(1024 * 1024).create()?;
 
         // 3. Spawn Parallel Iceoryx Workers
         // These now use the synchronous compiler logic on their own OS threads
@@ -131,6 +141,15 @@ impl HymekoDaemon {
             // The Unified Execution Pipe: Everything here is already compiled IR
             Some(query) = rx.recv() => {
                 let start = std::time::Instant::now();
+                // Task 1: Broadcast IR
+                if let Ok(ir_bytes) = self.serialize_ir_to_cbor(&query.ir) {
+                    if let Ok(mut sample) = pub_ir.loan_slice_uninit(ir_bytes.len()) {
+                        unsafe {
+                            std::ptr::copy_nonoverlapping(ir_bytes.as_ptr(), sample.payload_mut().as_mut_ptr() as *mut u8, ir_bytes.len());
+                            sample.assume_init().send().ok();
+                        }
+                    }
+                }
 
                 // 1. Execute Math (Star Expansion)
                 let result_tensor = self.expand_graph(&query.ir);
@@ -148,9 +167,29 @@ impl HymekoDaemon {
                     info!(
                         marker = "[+]",
                         elapsed = ?start.elapsed(),
-                        "Tensor dispatched."
+                        "Star Tensor dispatched."
                     );
                 }
+                // Task 3: Broadcast Clique Tensor
+                let clique_bytes = self.expand_graph_clique(&query.ir);
+                if let Ok(mut sample) = pub_clique.loan_slice_uninit(clique_bytes.len()) {
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(
+                                clique_bytes.as_ptr(),
+                                sample.payload_mut().as_mut_ptr() as *mut u8, clique_bytes.len());
+                        sample.assume_init().send().ok();
+                    }
+                    info!(
+                        marker = "[+]",
+                        elapsed = ?start.elapsed(),
+                        "Clique Tensor dispatched."
+                    );
+                }
+                info!(
+                    marker = "[=]",
+                    elapsed = ?start.elapsed(),
+                    "Multiplexing complete: IR, Star, and Clique dispatched."
+                );
             }
 
             _ = heartbeat.tick() => {

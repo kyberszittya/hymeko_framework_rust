@@ -24,4 +24,11 @@ impl StringTable {
     pub fn resolve(&self, id: SymId) -> &str {
         &self.0[id.0]
     }
+
+    pub fn to_vec(&self) -> Vec<String> {
+        // self.0 accesses the Arc inside the tuple struct
+        // (*self.0) dereferences the Arc to get the actual Vec
+        // .clone() duplicates the vector for the CborPayload
+        (*self.0).clone()
+    }
 }
