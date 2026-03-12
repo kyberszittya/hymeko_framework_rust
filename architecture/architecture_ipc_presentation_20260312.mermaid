@@ -1,0 +1,51 @@
+graph TD
+%% Styling Definitions
+    classDef ingress fill:#e8f4f8,stroke:#3498db,stroke-width:2px,color:#2c3e50;
+    classDef ipc fill:#f9ebea,stroke:#e74c3c,stroke-width:2px,color:#2c3e50;
+    classDef rust fill:#eaeded,stroke:#7f8c8d,stroke-width:2px,color:#2c3e50;
+    classDef python fill:#e8f8f5,stroke:#1abc9c,stroke-width:2px,color:#2c3e50;
+    classDef render fill:#fef9e7,stroke:#f1c40f,stroke-width:2px,color:#2c3e50;
+
+    subgraph IngressLayer ["1. Ingress Modalities"]
+        direction TB
+        Opt[Physical Optical<br/>OpenCV + CBOR QR]:::ingress
+        Proc[Procedural Pinnacle<br/>Synthetic Generator]:::ingress
+        Inj((Payload<br/>Injection)):::ingress
+
+        Opt -->|zlib decompress| Inj
+        Proc -->|UTF-8 String| Inj
+    end
+
+    subgraph IPC_TX ["2. Iceoryx2 IPC (Transmit)"]
+        direction TB
+        Inj -->|loan_slice_uninit| T_Src[Topic: query/src]:::ipc
+        Inj -.->|notifier.notify| T_Src
+    end
+
+    subgraph Daemon ["3. Rust Daemon (Hypergraph Engine)"]
+        direction TB
+        T_Src --> Compiler["Compile IR"]:::rust
+        Compiler --> StarEx["Star Expansion<br/>O(|E| * d)"]:::rust
+        Compiler --> CliqEx["Clique Expansion<br/>O(|E| * d²)"]:::rust
+    end
+
+    subgraph IPC_RX ["4. Iceoryx2 IPC (Receive)"]
+        direction TB
+        StarEx -->|Arrow RecordBatch| T_Star[Topic: HymekoFastStateV2]:::ipc
+        CliqEx -->|Arrow RecordBatch| T_Cliq[Topic: HymekoFastStateV2/tensor/clique]:::ipc
+    end
+
+    subgraph PythonLayer ["5. Python Presentation Layer"]
+        direction TB
+        T_Star --> ReadS[Arrow IPC Reader]:::python
+        T_Cliq --> ReadC[Arrow IPC Reader]:::python
+        ReadS --> Latch{Latched<br/>Event Loop}:::python
+        ReadC --> Latch
+        Latch -->|Synchronized| DF[Pandas DataFrames<br/>df_star, df_clique]:::python
+    end
+
+    subgraph RenderLayer ["6. Topological Rendering"]
+        direction TB
+        DF --> Volumetric[3D OpenGL Monolith<br/>PyQtGraph gl.GLMeshItem]:::render
+        DF -.->|block=False| Bipartite[2D Bipartite Plot<br/>NetworkX]:::render
+    end
