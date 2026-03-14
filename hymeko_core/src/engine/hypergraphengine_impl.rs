@@ -10,6 +10,7 @@ use crate::tensor::representations::tensor_coo::TensorCoo;
 use crate::tensor::representations::tensor_coo_representation;
 use crate::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
 use crate::traversal::hypergraphview::HyperGraphView;
+#[cfg(feature = "ipc")]
 use crate::tensor::shared_state::{ExpansionHeader, ExpansionKind};
 
 impl HypergraphEngine {
@@ -200,6 +201,7 @@ impl HypergraphEngine {
         tensor_coo_representation::clique_expansion_coo(&view)
     }
 
+    #[cfg(feature = "ipc")]
     /// Streams the star expansion directly into raw buffers that live inside an `iceoryx2` sample.
     ///
     /// # Safety
@@ -241,37 +243,39 @@ impl HypergraphEngine {
         Ok(coo.len())
     }
 
+    #[cfg(feature = "ipc")]
     /// Streams the star expansion directly into raw buffers that live inside an `iceoryx2` sample.
     ///
     /// # Safety
     /// The caller must guarantee that the provided pointers reference at least `capacity`
     /// writable elements and that the backing memory outlives the write.
     pub unsafe fn write_star_tensor_into_raw(
+        &self,
+        header: &ExpansionHeader,
+        coo: &TensorCoo<f32>,
+        header_ptr: *mut ExpansionHeader,
+        k_ptr: *mut i64,
+        i_ptr: *mut i64,
+        j_ptr: *mut i64,
+        values_ptr: *mut f32,
+        capacity: usize,
+    ) -> Result<usize, &'static str> {
+        unsafe { Self::write_tensor_into_raw(header, coo, header_ptr, k_ptr, i_ptr, j_ptr, values_ptr, capacity) }
+    }
+
+    #[cfg(feature = "ipc")]
+    pub unsafe fn write_star_expansion_into_raw(
          &self,
-         header: &ExpansionHeader,
-         coo: &TensorCoo<f32>,
+         ir: &Ir,
          header_ptr: *mut ExpansionHeader,
          k_ptr: *mut i64,
          i_ptr: *mut i64,
          j_ptr: *mut i64,
          values_ptr: *mut f32,
          capacity: usize,
-     ) -> Result<usize, &'static str> {
-         unsafe { Self::write_tensor_into_raw(header, coo, header_ptr, k_ptr, i_ptr, j_ptr, values_ptr, capacity) }
-     }
-
-     pub unsafe fn write_star_expansion_into_raw(
-          &self,
-          ir: &Ir,
-          header_ptr: *mut ExpansionHeader,
-          k_ptr: *mut i64,
-          i_ptr: *mut i64,
-          j_ptr: *mut i64,
-          values_ptr: *mut f32,
-          capacity: usize,
-     ) -> Result<usize, &'static str> {
-         let coo = self.compile_star_expansion_core::<f32>(ir);
-         let header = ExpansionHeader::new(ExpansionKind::Star3D, coo.len(), coo.num_slices, coo.dim_i, coo.dim_j);
-         unsafe { Self::write_tensor_into_raw(&header, &coo, header_ptr, k_ptr, i_ptr, j_ptr, values_ptr, capacity) }
-      }
+    ) -> Result<usize, &'static str> {
+        let coo = self.compile_star_expansion_core::<f32>(ir);
+        let header = ExpansionHeader::new(ExpansionKind::Star3D, coo.len(), coo.num_slices, coo.dim_i, coo.dim_j);
+        unsafe { Self::write_tensor_into_raw(&header, &coo, header_ptr, k_ptr, i_ptr, j_ptr, values_ptr, capacity) }
+    }
   }

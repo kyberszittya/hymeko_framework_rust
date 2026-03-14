@@ -10,9 +10,7 @@ use iceoryx2::prelude::*;
 
 // The exact Arrow imports required for zero-copy FFI.
 use arrow::array::{Array, Int64Array, Float32Array};
-use arrow::ipc;
 use arrow::pyarrow::IntoPyArrow;
-use iceoryx2::port::subscriber::Subscriber;
 use hymeko::engine::hypergraphengine::HypergraphEngine;
 use hymeko::tensor::shared_state::{ExpansionHeader, HypergraphWeights};
 use hymeko::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
@@ -101,6 +99,30 @@ impl PyHypergraphIR {
     }
 
     pub fn edge_arity(&self, index: usize) -> PyResult<usize> {
+        let ir = &self.compiled.ir;
+        let rec = ir.edges.get(index)
+            .ok_or_else(|| PyIndexError::new_err("Edge index out of bounds"))?;
+
+        // Count distinct node targets across all arcs of this edge
+        let mut count = 0usize;
+        for &aid in &rec.arcs {
+            let arc = &ir.arcs[aid.0];
+            for r in &arc.refs {
+                let target = match r {
+                    hymeko::ir::ir::SignedRefR::Plus(a)
+                    | hymeko::ir::ir::SignedRefR::Minus(a)
+                    | hymeko::ir::ir::SignedRefR::Neutral(a) => a.target,
+                };
+                // Only count if the target resolves to a node (not another edge)
+                if ir.decl_to_node.get(target.0).and_then(|x| *x).is_some() {
+                    count += 1;
+                }
+            }
+        }
+        Ok(count)
+    }
+
+    pub fn edge_base_count(&self, index: usize) -> PyResult<usize> {
         let ir = &self.compiled.ir;
         let rec = ir.edges.get(index)
             .ok_or_else(|| PyIndexError::new_err("Edge index out of bounds"))?;
@@ -208,7 +230,7 @@ impl PyTensorCoo3D {
             k_ind: k.into_iter().map(|x| x as i64).collect(),
             i_ind: i.into_iter().map(|x| x as i64).collect(),
             j_ind: j.into_iter().map(|x| x as i64).collect(),
-            val: v.into_iter().map(|x| x as f32).collect(),
+            val: Float32Array::from(v),
         }
     }
 }
@@ -272,7 +294,7 @@ impl PySparseMatrix2D {
             dim_j: shape.1 as i64,
             i_ind: Int64Array::from(i.into_iter().map(|x| x as i64).collect::<Vec<i64>>()),
             j_ind: Int64Array::from(j.into_iter().map(|x| x as i64).collect::<Vec<i64>>()),
-            val: Float32Array::from(v.into_iter().map(|x| x).collect::<Vec<f32>>()),
+            val: Float32Array::from(v),
         }
     }
 }

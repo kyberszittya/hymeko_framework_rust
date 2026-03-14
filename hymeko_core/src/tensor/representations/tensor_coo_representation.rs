@@ -170,7 +170,4 @@ where
     t
 }
 
-pub fn compile_clique_expansion() {
-    
-}
 

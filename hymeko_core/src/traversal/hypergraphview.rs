@@ -79,19 +79,6 @@ where
         }
     }
 
-
-
-    /// Deterministic aggregation when the same (edge,node) appears multiple times.
-    /// Policy: prefer non-neutral; if conflicting (+ and -), collapse to 0 (neutral).
-    #[inline(always)]
-    fn agg_sign(a: i8, b: i8) -> i8 {
-        if a == b { return a; }
-        if a == 0 { return b; }
-        if b == 0 { return a; }
-        // conflict: (+1,-1) -> 0
-        0
-    }
-
     /// Number of nodes in the view.
     #[inline(always)]
     pub fn num_nodes(&self) -> usize {

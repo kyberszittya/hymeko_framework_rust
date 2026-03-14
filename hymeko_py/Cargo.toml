@@ -6,10 +6,9 @@ edition = "2024"
 name = "hymeko"
 crate-type = ["cdylib"]
 [dependencies]
-hymeko_core = { path = "../hymeko_core" }
+hymeko_core = { path = "../hymeko_core", features = ["ipc", "arrow-schema"] }
 
-ciborium = "0.2.2"
-arrow = { version = "58.0.0", features = ["pyarrow", "ffi"] }
+ciborium = {  workspace = true }
+arrow = { workspace = true, features = ["pyarrow", "ffi"] }
 pyo3 = { version = "0.28.2", features = ["extension-module"] }
-iceoryx2 = "0.8.1"
-tokio = { version = "1.50.0", features = ["sync"] }
+iceoryx2 = { workspace = true }
