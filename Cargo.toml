@@ -24,6 +24,7 @@ serde = "1.0.228"
 log = "0.4.22"
 ciborium = "0.2.2"
 clap = "4.6.0"
+bindgen = "=0.72.1"
 [profile.bench]
 opt-level = 3
 debug = true       # Useful for profiling with tools like 'perf' or 'VTune'
