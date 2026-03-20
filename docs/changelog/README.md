@@ -37,3 +37,9 @@ This root changelog tracks every dated log stored in `docs/changelog/` and provi
 ## 2026-03-02 — Cybernetic State Compiler Foundations
 - **Link:** [changelog_20260302.md](changelog_20260302.md)
 - **Highlights:** Documented the zero-copy PyO3 bridge, dual-frequency architecture for telemetry, Hyper-KA mathematical formalization (including NURBS activations), long-horizon roadmap, and publication strategy framing the engine as a cybernetic state compiler.
+
+## Python Packaging Integration
+
+- CI/CD now builds and tests Python packages using maturin.
+- Python wheels are uploaded as artifacts and optionally published to PyPI.
+- See `hymeko_py` crate and workflow YAML files for details.

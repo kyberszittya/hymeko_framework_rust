@@ -16,3 +16,10 @@
 - Marked Tokio-to-Rayon oneshot completion signaling as implemented in `hymeko_daemon/src/worker.rs` (`execute_compilation` and `handle_fast_path_ir`).
 - Clarified remaining gap for Task 3.3: Rayon worker currently computes and enqueues publish payloads, while final Iceoryx loan/write still occurs in the async service loop.
 
+## Python Packaging Integration (2026-03-20)
+
+- Added maturin-based Python packaging to CI/CD workflows:
+  - New job in `ci.yml` for Python package build, test, and artifact upload.
+  - New job in `release.yml` for Python package build, artifact upload, and optional PyPI publish.
+- Updated CI/CD documentation and tasklist to reflect Python packaging support.
+- All workflow YAML files validated and tested.

@@ -1698,15 +1698,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "135b12329e5e3ce057a9f972339ea52bc954fe1e9358ef27f95e89716fbc5424"
 
 [[package]]
-name = "hymeko"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "hymeko_core",
- "parser",
-]
-
-[[package]]
 name = "hymeko_client"
 version = "0.1.0"
 dependencies = [
@@ -1720,6 +1711,7 @@ version = "0.1.0"
 dependencies = [
  "arrow",
  "blake3",
+ "criterion",
  "env_logger",
  "iceoryx2",
  "log",
@@ -2471,15 +2463,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
 
 [[package]]
-name = "memmap2"
-version = "0.9.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "714098028fe011992e1c3962653c96b2d578c4b4bce9036e15ff220319b1e0e3"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2814,9 +2797,9 @@ dependencies = [
 name = "parser"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "lalrpop",
  "lalrpop-util",
- "memmap2",
 ]
 
 [[package]]

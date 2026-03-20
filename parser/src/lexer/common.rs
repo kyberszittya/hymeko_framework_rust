@@ -55,50 +55,47 @@ pub trait CommonLexer<'a> {
     /// Hook #2: ident tail scan (SIMD vagy scalar)
     fn scan_ident_tail(&mut self);
 
-    /// Opcionális: ha külön akarod kezelni a `/* */`-t és `//`-t
     #[inline(always)]
     fn skip_ws_and_comments(&mut self) -> Result<(), LexError> {
-        while let Some(c) = self.peek() {
-            if c.is_ascii_whitespace() {
-                self.bump();
-            } else if c == b'/' {
-                let start = self.pos(); // Mark the start of the potential comment [cite: 2026-02-08]
-                self.bump();
-                match self.peek() {
-                    Some(b'/') => {
-                        self.bump();
-                        while let Some(c) = self.bump() {
-                            if c == b'\n' { break; }
-                        }
-                    }
-                    Some(b'*') => {
-                        self.bump();
-                        let mut closed = false;
-                        while let Some(c) = self.bump() {
-                            if c == b'*' && self.peek() == Some(b'/') {
-                                self.bump();
-                                closed = true;
-                                break;
+        loop {
+            self.skip_ws();
+            match self.peek() {
+                Some(b'/') => {
+                    let start = self.pos();
+                    self.bump();
+                    match self.peek() {
+                        Some(b'/') => {
+                            self.bump();
+                            while let Some(c) = self.bump() {
+                                if c == b'\n' { break; }
                             }
                         }
-                        if !closed {
-                            // This triggers the assert!(res.is_err()) in your test [cite: 2026-02-08]
-                            return Err(LexError {
-                                at: start,
-                                msg: "Unterminated multi-line comment".into()
-                            });
+                        Some(b'*') => {
+                            self.bump();
+                            let mut closed = false;
+                            while let Some(c) = self.bump() {
+                                if c == b'*' && self.peek() == Some(b'/') {
+                                    self.bump();
+                                    closed = true;
+                                    break;
+                                }
+                            }
+                            if !closed {
+                                return Err(LexError {
+                                    at: start,
+                                    msg: "Unterminated multi-line comment".into()
+                                });
+                            }
+                        }
+                        _ => {
+                            self.set_pos(start);
+                            return Ok(());
                         }
                     }
-                    _ => {
-                        self.set_pos(start); // Backtrack if it's just a slash [cite: 2026-02-08]
-                        return Ok(());
-                    }
                 }
-            } else {
-                break;
+                _ => return Ok(())
             }
         }
-        Ok(())
     }
 
     #[inline(always)]

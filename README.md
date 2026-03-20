@@ -383,6 +383,12 @@ This project uses GitHub Actions for automated testing and releases. The CI/CD p
 - Runs tests with new versions
 - Creates PR if updates available
 
+### Python Packaging Integration
+
+- CI/CD now builds and tests Python packages using maturin.
+- Python wheels are uploaded as artifacts and optionally published to PyPI.
+- See `hymeko_py` crate and workflow YAML files for details.
+
 ### Monitoring Workflows
 
 View all workflow runs at: https://github.com/hakiko/hymeko_framework/actions

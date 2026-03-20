@@ -20,12 +20,3 @@ pub struct HyperArcId(pub usize);
     Serialize, Deserialize)]
 pub struct SymId(pub usize);
 
-impl DeclId {
-    pub const NONE: Self = Self(usize::MAX);
-
-    #[inline(always)]
-    pub fn is_none(self) -> bool { self.0 == usize::MAX }
-
-    #[inline(always)]
-    pub fn is_some(self) -> bool { self.0 != usize::MAX }
-}

@@ -101,6 +101,12 @@ This project uses GitHub Actions for automated testing and releases.
 4. Push: `git push origin main && git push origin v0.2.0`
 5. GitHub Actions will automatically build and create a release on GitHub
 
+## Python Packaging Integration
+
+- CI/CD now builds and tests Python packages using maturin.
+- Python wheels are uploaded as artifacts and optionally published to PyPI.
+- See `hymeko_py` crate and workflow YAML files for details.
+
 ## Code Quality Standards
 
 ### Formatting

@@ -1,7 +1,4 @@
-[package]
-name = "hymeko"
-version = "0.1.0"
-edition = "2024"
+
 
 [workspace]
 members = [
@@ -27,16 +24,6 @@ serde = "1.0.228"
 log = "0.4.22"
 ciborium = "0.2.2"
 clap = "4.6.0"
-[dev-dependencies]
-criterion = ">=0.8"
-[dependencies]
-parser = { workspace = true }
-hymeko_core = { workspace = true }
-
-
-[[bench]]
-name = "parser_bench"
-harness = false
 [profile.bench]
 opt-level = 3
 debug = true       # Useful for profiling with tools like 'perf' or 'VTune'

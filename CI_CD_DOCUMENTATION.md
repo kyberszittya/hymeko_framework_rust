@@ -79,3 +79,9 @@ All workflows use GitHub's default `GITHUB_TOKEN` for authentication. No additio
 - Add scheduled performance benchmarking
 - Add integration tests with external services
 
+## Python Packaging Integration
+
+- CI/CD now builds and tests Python packages using maturin.
+- `ci.yml` runs maturin build/test and uploads wheel artifacts.
+- `release.yml` builds Python wheels and optionally publishes to PyPI.
+- See `hymeko_py` crate for Python bindings and packaging details.

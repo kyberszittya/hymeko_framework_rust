@@ -8,4 +8,8 @@ lalrpop = ">=0.22.2"
 
 [dependencies]
 lalrpop-util = { version = ">=0.22.2", features = ["lexer", "unicode"]}
-memmap2 = { workspace = true }
+[dev-dependencies]
+criterion = "0.8.2"
+[[bench]]
+name = "parser_bench"
+harness = false

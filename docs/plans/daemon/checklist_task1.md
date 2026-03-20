@@ -27,3 +27,9 @@
   - [X] Change the `by_path` mapping in your `Index` struct from a standard `HashMap` to a `std::collections::BTreeMap`.
   - [X] Open `hymeko_core/src/ir/hash.rs` and `hymeko_core/src/ir/canonical_hash.rs`.
   - [X] Delete the manual vector allocation and sorting logic that was previously used to order `PathKey`s. Route the hasher directly through the `BTreeMap`'s native lexicographical iterator.
+
+## Python Packaging Integration
+
+- CI/CD now builds and tests Python packages using maturin.
+- Python wheels are uploaded as artifacts and optionally published to PyPI.
+- See `hymeko_py` crate and workflow YAML files for details.

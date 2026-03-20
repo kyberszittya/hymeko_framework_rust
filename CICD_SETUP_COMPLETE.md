@@ -57,6 +57,12 @@ This document summarizes the CI/CD infrastructure that has been set up for the H
 ### Configuration
 1. **.gitignore** - Enhanced with build and IDE patterns
 
+## Python Packaging Integration
+
+- CI/CD now builds and tests Python packages using maturin.
+- Python wheels are uploaded as artifacts and optionally published to PyPI.
+- See `hymeko_py` crate and workflow YAML files for details.
+
 ## 🚀 Next Steps
 
 ### 1. Commit and Push
@@ -177,4 +183,3 @@ For issues or questions:
 **Project:** Hymeko Framework Parser
 
 **Questions?** See the documentation files or GitHub Actions logs.
-

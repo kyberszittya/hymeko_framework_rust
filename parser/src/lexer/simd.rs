@@ -58,16 +58,8 @@ impl<'a> Avx2Lexer<'a> {
     #[target_feature(enable = "avx2")]
     unsafe fn skip_ws_avx2(&mut self) {
         use std::arch::x86_64::*;
-        while self.0.i < self.0.n {
-            let c = self.0.s[self.0.i];
-            if c == b' ' || c == b'\t' || c == b'\n' || c == b'\r' {
-                self.0.i += 1;
-                continue;
-            }
-
-            let rem = self.0.n - self.0.i;
-            if rem < 32 { break; }
-
+        // Phase 1: SIMD - process 32 bytes at a time until we find a non-whitespace character or run out of input.
+        while self.0.i + 32 <= self.0.n {
             let p = self.0.s.as_ptr().add(self.0.i) as *const __m256i;
             let chunk = _mm256_loadu_si256(p);
 
@@ -81,12 +73,16 @@ impl<'a> Avx2Lexer<'a> {
 
             if mask == 0xFFFF_FFFF {
                 self.0.i += 32;
-                continue;
             } else {
-                let not_ws = !mask;
-                let adv = not_ws.trailing_zeros() as usize;
-                self.0.i += adv;
+                self.0.i += (!mask).trailing_zeros() as usize;
                 return;
+            }
+        }
+        // Phase 2: Scalar - handle the remaining bytes one by one.
+        while self.0.i < self.0.n {
+            match self.0.s[self.0.i] {
+                b' ' | b'\t' | b'\n' | b'\r' => self.0.i += 1,
+                _ => return,
             }
         }
     }
@@ -94,46 +90,40 @@ impl<'a> Avx2Lexer<'a> {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
     unsafe fn scan_ident_tail_avx2(&mut self) {
-        use std::arch::x86_64::*;
-        while self.0.i < self.0.n {
-            if !CoreLexer::is_ident_cont(self.0.s[self.0.i]) {
-                return;
-            }
+        // Short-circuit if we're already at the end or the first char is not an identifier continuation.
+        while self.0.i < self.0.n && CoreLexer::is_ident_cont(self.0.s[self.0.i]) {
+            if self.0.n - self.0.i >= 32 {
+                use std::arch::x86_64::*;
+                // Phase 1: SIMD - process 32 bytes at a time until we find a non-identifier character or run out of input.
+                while self.0.i + 32 <= self.0.n {
+                    let p = self.0.s.as_ptr().add(self.0.i) as *const __m256i;
+                    let x = _mm256_loadu_si256(p);
 
-            let rem = self.0.n - self.0.i;
-            if rem < 32 {
-                while self.0.i < self.0.n && CoreLexer::is_ident_cont(self.0.s[self.0.i]) {
-                    self.0.i += 1;
+                    let ge = |lo: u8| _mm256_cmpeq_epi8(_mm256_max_epu8(x, _mm256_set1_epi8(lo as i8)), x);
+                    let le = |hi: u8| _mm256_cmpeq_epi8(_mm256_min_epu8(x, _mm256_set1_epi8(hi as i8)), x);
+
+                    let is_az = _mm256_and_si256(ge(b'a'), le(b'z'));
+                    let is_az_upper = _mm256_and_si256(ge(b'A'), le(b'Z'));
+                    let is_09 = _mm256_and_si256(ge(b'0'), le(b'9'));
+                    let is_us = _mm256_cmpeq_epi8(x, _mm256_set1_epi8(b'_' as i8));
+
+                    let ok = _mm256_or_si256(
+                        _mm256_or_si256(is_az, is_az_upper),
+                        _mm256_or_si256(is_09, is_us),
+                    );
+
+                    let mask_ok = _mm256_movemask_epi8(ok) as u32;
+
+                    if mask_ok == 0xFFFF_FFFF {
+                        self.0.i += 32;
+                    } else {
+                        self.0.i += (!mask_ok).trailing_zeros() as usize;
+                        return;
+                    }
                 }
-                return;
             }
-
-            let p = self.0.s.as_ptr().add(self.0.i) as *const __m256i;
-            let x = _mm256_loadu_si256(p);
-
-            let ge = |lo: u8| _mm256_cmpeq_epi8(_mm256_max_epu8(x, _mm256_set1_epi8(lo as i8)), x);
-            let le = |hi: u8| _mm256_cmpeq_epi8(_mm256_min_epu8(x, _mm256_set1_epi8(hi as i8)), x);
-
-            let is_az = _mm256_and_si256(ge(b'a'), le(b'z'));
-            let is_az_upper = _mm256_and_si256(ge(b'A'), le(b'Z'));
-            let is_09 = _mm256_and_si256(ge(b'0'), le(b'9'));
-            let is_us = _mm256_cmpeq_epi8(x, _mm256_set1_epi8(b'_' as i8));
-
-            let ok = _mm256_or_si256(
-                _mm256_or_si256(is_az, is_az_upper),
-                _mm256_or_si256(is_09, is_us),
-            );
-
-            let mask_ok = _mm256_movemask_epi8(ok) as u32;
-
-            if mask_ok == 0xFFFF_FFFF {
-                self.0.i += 32;
-            } else {
-                let not_ok = !mask_ok;
-                let adv = not_ok.trailing_zeros() as usize;
-                self.0.i += adv;
-                return;
-            }
+            // Phase 2: Scalar - handle the remaining bytes one by one.
+            self.0.i += 1;
         }
     }
 }
@@ -151,6 +141,13 @@ impl<'a> CommonLexer<'a> for Avx2Lexer<'a> {
 
     #[inline(always)]
     fn scan_ident_tail(&mut self) {
+        // Short-circuit for small remaining input to avoid SIMD overhead.
+        if self.0.n - self.0.i < 32 {
+            while self.0.i < self.0.n && CoreLexer::is_ident_cont(self.0.s[self.0.i]) {
+                self.0.i += 1;
+            }
+            return;
+        }
         #[cfg(target_arch = "x86_64")]
         unsafe { self.scan_ident_tail_avx2(); }
     }
@@ -162,16 +159,8 @@ impl<'a> Sse2Lexer<'a> {
     #[target_feature(enable = "sse2")]
     unsafe fn skip_ws_sse2(&mut self) {
         use std::arch::x86_64::*;
-        while self.0.i < self.0.n {
-            let c = self.0.s[self.0.i];
-            if c == b' ' || c == b'\t' || c == b'\n' || c == b'\r' {
-                self.0.i += 1;
-                continue;
-            }
-
-            let rem = self.0.n - self.0.i;
-            if rem < 16 { break; }
-
+        // Phase 1: SIMD - process 16 bytes at a time until we find a non-whitespace character or run out of input.
+        while self.0.i + 16 <= self.0.n {
             let p = self.0.s.as_ptr().add(self.0.i) as *const __m128i;
             let chunk = _mm_loadu_si128(p);
 
@@ -183,14 +172,19 @@ impl<'a> Sse2Lexer<'a> {
             let ws = _mm_or_si128(_mm_or_si128(sp, tb), _mm_or_si128(nl, cr));
             let mask = _mm_movemask_epi8(ws) as u32;
 
-            if mask == 0xFFFF {
+            if (mask & 0xFFFF) == 0xFFFF {
                 self.0.i += 16;
-                continue;
             } else {
                 let not_ws = (!mask) & 0xFFFF;
-                let adv = not_ws.trailing_zeros() as usize;
-                self.0.i += adv;
+                self.0.i += not_ws.trailing_zeros() as usize;
                 return;
+            }
+        }
+        // Phase 2: Scalar - handle the remaining bytes one by one.
+        while self.0.i < self.0.n {
+            match self.0.s[self.0.i] {
+                b' ' | b'\t' | b'\n' | b'\r' => self.0.i += 1,
+                _ => return,
             }
         }
     }
@@ -251,6 +245,13 @@ impl<'a> CommonLexer<'a> for Sse2Lexer<'a> {
 
     #[inline(always)]
     fn scan_ident_tail(&mut self) {
+        // Short-circuit for small remaining input to avoid SIMD overhead.
+        if self.0.n - self.0.i < 16 {
+            while self.0.i < self.0.n && CoreLexer::is_ident_cont(self.0.s[self.0.i]) {
+                self.0.i += 1;
+            }
+            return;
+        }
         #[cfg(target_arch = "x86_64")]
         unsafe { self.scan_ident_tail_sse2(); }
     }

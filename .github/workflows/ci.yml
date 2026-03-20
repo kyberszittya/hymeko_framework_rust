@@ -199,3 +199,21 @@ jobs:
         with:
           name: build-artifacts
           path: target/release/
+
+  python-package:
+    name: Python Package Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install maturin
+        run: pip install maturin
+      - name: Build Python package
+        run: maturin build --release --manifest-path hymeko_py/Cargo.toml
+      - name: Test Python package
+        run: |
+          maturin develop --manifest-path hymeko_py/Cargo.toml
+          python -c "import hymeko_py; print(hymeko_py.__doc__)"

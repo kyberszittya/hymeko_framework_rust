@@ -123,3 +123,8 @@ https://github.com/hakiko/hymeko_framework/actions
 4. Monitor runs at https://github.com/hakiko/hymeko_framework/actions
 5. Update README with badges once workflows are working
 
+## Python Packaging Integration
+
+- CI/CD now builds and tests Python packages using maturin.
+- Python wheels are uploaded as artifacts and optionally published to PyPI.
+- See `hymeko_py` crate and workflow YAML files for details.
