@@ -1,4 +1,14 @@
 # Hypergraph Model Cognition Framework (HyMeKo) Framework
+
+<!-- Fancy animated logo block -->
+<div align="center" style="margin: 2em 0;">
+  <img src="logo_anime.jpg" alt="HyMeKo Animated Logo" width="320" style="border-radius: 16px; box-shadow: 0 4px 24px #888;">
+  <div style="font-size: 1.1em; color: #555; margin-top: 0.5em; font-style: italic;">
+    <b>HyMeKo:</b> Hypergraph Model Cognition Framework<br>
+    <span style="font-size:0.95em;">Declarative, high-performance, and visually inspired.</span>
+  </div>
+</div>
+
 ![Hymeko Logo](logo.png)
 
 Hypergraph Model Cognition Framework is a high-performance Rust-based parsing and hypergraph framework for HyMeKo - a domain-specific language (DSL) designed for declarative hypergraph structure definition, manipulation, and analysis.
