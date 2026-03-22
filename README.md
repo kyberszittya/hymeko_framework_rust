@@ -1,13 +1,6 @@
 # Hypergraph Model Cognition Framework (HyMeKo) Framework
 
-<!-- Fancy animated logo block -->
-<div align="center" style="margin: 2em 0;">
-  <img src="logo_anime.jpg" alt="HyMeKo Animated Logo" width="320" style="border-radius: 16px; box-shadow: 0 4px 24px #888;">
-  <div style="font-size: 1.1em; color: #555; margin-top: 0.5em; font-style: italic;">
-    <b>HyMeKo:</b> Hypergraph Model Cognition Framework<br>
-    <span style="font-size:0.95em;">Declarative, high-performance, and visually inspired.</span>
-  </div>
-</div>
+
 
 ![Hymeko Logo](logo.png)
 
@@ -53,6 +46,8 @@ The framework provides a complete pipeline from lexical analysis through interme
 - **Hypergraph IR** (`src/ir/`) - Specialized intermediate representation for hypergraph structures and transformations
 - **Resolver** (`src/resolve.rs`) - Symbol resolution and node/edge validation in hypergraph context
 - **Index** (`src/resolve.rs`) - Symbol and path indexing for efficient hypergraph lookup
+
+![Hymeko_Anime_Logo](logo_anime.png)
 
 ## 🧱 Architecture
 
