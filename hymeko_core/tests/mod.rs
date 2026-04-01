@@ -19,3 +19,4 @@ mod domain_transformations;
 mod engine;
 mod hash;
 mod benchmarks;
+mod query;

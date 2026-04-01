@@ -212,6 +212,32 @@ pub enum SignedRefR {
     Neutral(RefAtomR),
 }
 
+impl SignedRefR {
+    // Extract inner atom (RefAtomR) regardless of sign
+    #[inline]
+    pub fn atom(&self) -> &RefAtomR {
+        match self {
+            Self::Plus(r) | Self::Minus(r) | Self::Neutral(r) => r,
+        }
+    }
+
+    // Target 'DeclId' of this reference
+    #[inline]
+    pub fn target(&self) -> DeclId {
+        self.atom().target
+    }
+
+    // Sign as i8
+    #[inline]
+    pub fn sign(&self) -> i8 {
+        match self {
+            Self::Plus(_) => 1,
+            Self::Minus(_) => -1,
+            Self::Neutral(_) => 0,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq,
     Serialize, Deserialize)]
 pub enum ValueR {

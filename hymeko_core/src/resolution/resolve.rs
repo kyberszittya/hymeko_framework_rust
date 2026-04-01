@@ -235,6 +235,7 @@ pub fn resolve_signed_refs<'a>(
             SignedRef::Plus(x) | SignedRef::Minus(x) | SignedRef::Neutral(x) => x,
         };
 
+
         let did = resolve_ref_to_declid(idx, scope, &atom.target, it)?;
 
         let anno_r = resolve_anno(idx, scope, &atom.anno, it)?;

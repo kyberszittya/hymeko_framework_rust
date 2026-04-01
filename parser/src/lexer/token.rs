@@ -13,6 +13,7 @@ pub enum Token<'a> {
     Ident(&'a str),
     Number(f64),
     Str(Cow<'a, str>),
+    Question,
     EOF,
 }
 

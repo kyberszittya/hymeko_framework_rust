@@ -28,6 +28,7 @@ extern {
         "-" => crate::lexer::Token::Minus,
         "~" => crate::lexer::Token::Tilde,
         "->" => crate::lexer::Token::Arrow,
+        "?" => crate::lexer::Token::Question,
         "EOF" => crate::lexer::Token::EOF,
 
         Ident => crate::lexer::Token::Ident(<&'a str>),
@@ -268,6 +269,10 @@ OptTags: Vec<&'a str> = {
 OptValue: Option<Value<'a, &'a str>> = {
     => None,
     <v:Value> => Some(v)
+};
+
+QueryVar: &'a str = {
+    "?" <name:Ident> => name,
 };
 
 // ------------------------------------------------------------

@@ -253,6 +253,7 @@ pub fn next_token<'a, L: CommonLexer<'a>>(lex: &mut L) -> Option<LexItem<'a>> {
             Ok(t) => t,
             Err(e) => return Some(Err(e)),
         },
+        b'?' => Token::Question,
 
         d if d.is_ascii_digit() => match lex.lex_number(start) {
             Ok(t) => t,
@@ -260,6 +261,7 @@ pub fn next_token<'a, L: CommonLexer<'a>>(lex: &mut L) -> Option<LexItem<'a>> {
         },
 
         a if is_ident_start(a) => lex.lex_ident(start),
+
 
         other => {
             return Some(Err(LexError {
