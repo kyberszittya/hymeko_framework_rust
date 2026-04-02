@@ -1,81 +1,82 @@
-diff_drive_robot_4wh_camera
-  import "meta_kinematics.himeko"
-  import "meta_topic.himeko"
+diff_drive_robot_4wh_camera {
+  @"meta_kinematics.himeko";
+  @"meta_topic.himeko";
+}
 
-diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
+diff_robot: kinematics.elements, kinematics.geometry, kinematics.axes
 {
-    body_color [0.0, 0.0, 1.0, 1.0]
-    wheel_color [0.0, 0.0, 0.0, 1.0]
-    camera_color [0.86, 0.86, 0.86, 1.0]
+    body_color [0.0, 0.0, 1.0, 1.0];
+    wheel_color [0.0, 0.0, 0.0, 1.0];
+    camera_color [0.86, 0.86, 0.86, 1.0];
 
     diffdrive_control: kinematics.elements.control {
-        update_rate 100
+        update_rate 100;
     }
 
     @wheel_joint_control {
-        + control_attributes.velocity,
+        (+ control_attributes.velocity,
         - control_attributes.position,
-        - control_attributes.velocity
+        - control_attributes.velocity)
     }
     base_link: kinematics.elements.link {
-        mass 25.0
+        mass 25.0;
         link_geometry: box {
             dimension [0.7, 0.5, 0.2]
         }
-        visual -> link_geometry
-        collision -> link_geometry
-        color -> diff_robot.body_color
-        origin [0.0, 0.0, 0.05]
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> diff_robot.body_color;
+        origin [0.0, 0.0, 0.05];
     }
     wheel_fr: kinematics.elements.link {
-        mass 2.0
+        mass 2.0;
         link_geometry: cylinder {
-            dimension [0.2, 0.1]
+            dimension [0.2, 0.1];
         }
-        visual -> link_geometry
-        collision -> link_geometry
-        color -> diff_robot.wheel_color
-        origin [0.0, 0.0, 0.05]
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> diff_robot.wheel_color;
+        origin [0.0, 0.0, 0.05];
     }
     wheel_fl: kinematics.elements.link {
-        mass 2.0
+        mass 2.0;
         link_geometry: cylinder {
             dimension [0.2, 0.1]
         }
-        visual -> link_geometry
-        collision -> link_geometry
-        color -> diff_robot.wheel_color
-        origin [0.0, 0.0, 0.05]
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> diff_robot.wheel_color;
+        origin [0.0, 0.0, 0.05];
     }
     wheel_rr: kinematics.elements.link {
-        mass 2.0
+        mass 2.0;
         link_geometry: cylinder {
-            dimension [0.2, 0.1]
+            dimension [0.2, 0.1];
         }
-        visual -> link_geometry
-        collision -> link_geometry
-        color -> diff_robot.wheel_color
-        origin [0.0, 0.0, 0.05]
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> diff_robot.wheel_color;
+        origin [0.0, 0.0, 0.05];
     }
     wheel_rl: kinematics.elements.link {
-        mass 2.0
+        mass 2.0;
         link_geometry: cylinder {
-            dimension [0.2, 0.1]
+            dimension [0.2, 0.1];
         }
-        visual -> link_geometry
-        collision -> link_geometry
-        color -> diff_robot.wheel_color
-        origin [0.0, 0.0, 0.05]
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> diff_robot.wheel_color;
+        origin [0.0, 0.0, 0.05];
     }
     camera_link: kinematics.elements.link {
-        mass 0.5
+        mass 0.5;
         link_geometry: box {
-            dimension [0.05, 0.2, 0.1]
+            dimension [0.05, 0.2, 0.1];
         }
-        visual -> link_geometry
-        collision -> link_geometry
-        color -> diff_robot.camera_color
-        origin [0.0, 0.0, 0.05]
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> diff_robot.camera_color;
+        origin [0.0, 0.0, 0.05];
     }
 
     @camera_joint: kinematics.fixed_joint {
@@ -119,13 +120,13 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
         - joint_fr, - joint_fl, - joint_rr, - joint_rl
     }
     diff_drive_base_controller: controllers.diff_drive_controller {
-       publish_rate 50.0
-       wheel_separation 0.5
-       wheel_radius 0.2
-       base_frame_id "base_link"
-       odom_frame_id "odom"
-       pose_covariance  [0.001, 0.001, 0.0, 0.0, 0.0, 0.01]
-       twist_covariance [0.001, 0.0,   0.0, 0.0, 0.0, 0.01]
+       publish_rate 50.0;
+       wheel_separation 0.5;
+       wheel_radius 0.2;
+       base_frame_id "base_link";
+       odom_frame_id "odom";
+       pose_covariance  [0.001, 0.001, 0.0, 0.0, 0.0, 0.01];
+       twist_covariance [0.001, 0.0,   0.0, 0.0, 0.0, 0.01];
 
        @interfaces {
            + control_attributes.velocity,
@@ -138,26 +139,26 @@ diff_robot use kinematics.elements use kinematics.geometry use kinematics.axes
        }
     }
     camera: kinematics.sensors.rgb_camera {
-        image_size [640, 480]
-        focal_length [0.05, 0.05]
-        distortion [0.0, 0.0, 0.0, 0.0, 0.0]
-        update_rate 30.0
-        fov [60]
-        always_on 1
-        clip [0.1, 100.0]
+        image_size [640, 480];
+        focal_length [0.05, 0.05];
+        distortion [0.0, 0.0, 0.0, 0.0, 0.0];
+        update_rate 30.0;
+        fov [60];
+        always_on 1;
+        clip [0.1, 100.0];
     }
     camera_image_topic_definition: communication.topic_definition {
-        topic_name "camera",
-        message_type "sensor_msgs/Image"
+        topic_name "camera";
+        message_type "sensor_msgs/Image";
     }
     camera_info_topic_definition: communication.topic_definition {
-        topic_name "camera_info",
-        message_type "sensor_msgs/CameraInfo"
+        topic_name "camera_info";
+        message_type "sensor_msgs/CameraInfo";
     }
     @camera_topic: communication.topic {
-        + camera_image_topic_definition,
-        + camera_info_topic_definition,
-        - camera
+        + camera_image_topic_definition;
+        + camera_info_topic_definition,;
+        - camera;
     }
     @camera_connection: kinematics.sensors.sensor_connection {
         + camera,
