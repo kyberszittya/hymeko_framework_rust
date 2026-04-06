@@ -1,8 +1,8 @@
 use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
 
-pub const LINEAR_EDGE_VALUES_PATH: &str = "./data/minimal_examples/testing_edges/linear_edge_values.hymeko";
-pub const MINIMAL_TENSOR_VALUES_PATH: &str = "./data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko";
-pub const FANO_GRAPH_PATH: &str = "./data/typical_graphs/fano_graph.hymeko";
+pub const LINEAR_EDGE_VALUES_PATH: &str = "../data/minimal_examples/testing_edges/linear_edge_values.hymeko";
+pub const MINIMAL_TENSOR_VALUES_PATH: &str = "../data/minimal_examples/testing_edges/minimal_test_tensor_values_2nodes_1_edge.hymeko";
+pub const FANO_GRAPH_PATH: &str = "../data/typical_graphs/fano_graph.hymeko";
 
 pub const STAR_NODE_COUNT: usize = 6;
 pub const STAR_EDGE_COUNT: usize = 4;

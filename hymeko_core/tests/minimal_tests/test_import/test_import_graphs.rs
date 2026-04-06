@@ -22,7 +22,7 @@ mod test_import_graphs
             "Lowers the library import example and inspects operand/operator bindings.",
         );
         let start = Instant::now();
-        let path = "data/minimal_examples/import_examples/minimal_example_library.hymeko";
+        let path = "../data/minimal_examples/import_examples/minimal_example_library.hymeko";
         let source_code = parser::read_source_file(&path).expect("failed to read source file");
 
         // 2. Parse it, tying the AST lifetimes to the String
@@ -82,7 +82,7 @@ mod test_import_graphs
         );
         let start = Instant::now();
         // ugyanaz a root file, mint eddig
-        let root_path = Path::new("./data/minimal_examples/import_examples/minimal_example_import.hymeko");
+        let root_path = Path::new("../data/minimal_examples/import_examples/minimal_example_import.hymeko");
 
         // Parser adapter a LALRPOP-hoz (igazítsd a modulneveket, ha kell)
 

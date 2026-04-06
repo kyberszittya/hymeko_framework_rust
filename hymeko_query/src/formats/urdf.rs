@@ -1,10 +1,10 @@
 //! URDF XML generation from kinematic model.
 
-use crate::ir::ir::Ir;
-use crate::query::engine::{NameResolver, QueryEngine};
-use crate::query::kinematics::joints::JointType;
-use crate::query::kinematics::kinematic::*;
-use crate::query::predicate::*;
+use hymeko::ir::ir::Ir;
+use crate::{NamedQuery, Predicate, QueryEngine};
+use crate::kinematics::joints::JointType;
+use crate::kinematics::kinematic::{extract_kinematic_model, GeometryInfo, GeometryShape};
+use crate::traits::NameResolver;
 
 /// Predefined queries for URDF generation.
 pub fn urdf_queries() -> Vec<NamedQuery> {

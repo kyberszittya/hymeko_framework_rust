@@ -34,7 +34,8 @@ mod resolve_fano_graph {
 
         // Top-levelben legyen a fano block (NodeDecl body-val)
         let fano = find_node(&desc.items, FANO_BLOCK_NAME).unwrap();
-        let fano_body = body(fano);
+        let fano_body = body(fano).unwrap();
+        assert_eq!(fano_body.len(), FANO_BODY_ITEM_COUNT, "Expected 14 items in fano body (7 nodes + 7 edges)");
 
         // 7 node: n0..n6
         for i in 0..FANO_POINT_NODE_COUNT {

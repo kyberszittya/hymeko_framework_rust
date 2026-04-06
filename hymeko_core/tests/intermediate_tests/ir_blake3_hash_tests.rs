@@ -22,8 +22,8 @@ mod ir_blake3_hash_tests {
         "#;
     const ROOT_NAME: &str = "Root";
     const CONTEXT_NAME: &str = "context";
-    const EDGE_FIXTURE: &str = "./data/minimal_examples/testing_edges/minimal_example_with_hierarchy_ref_edges_with_values.hymeko";
-    const HIERARCHY_FIXTURE: &str = "./data/minimal_examples/minimal_example_basic_hierarchy.hymeko";
+    const EDGE_FIXTURE: &str = "../data/minimal_examples/testing_edges/minimal_example_with_hierarchy_ref_edges_with_values.hymeko";
+    const HIERARCHY_FIXTURE: &str = "../data/minimal_examples/minimal_example_basic_hierarchy.hymeko";
     type PathSpec = &'static [&'static str];
     const EDGE_HASH_SPECS: [PathSpec; 6] = [
         &[CONTEXT_NAME],

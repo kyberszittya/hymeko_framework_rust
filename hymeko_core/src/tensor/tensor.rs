@@ -1,4 +1,4 @@
-use crate::common::ids::{EdgeId};
+use crate::common::ids::EdgeId;
 use crate::tensor::common::{Real};
 use crate::tensor::representations::tensor_coo::TensorCoo;
 use crate::tensor::tensor_val::{EdgeWeight, IncVal};
@@ -40,7 +40,7 @@ where
     let mut deg_e = vec![F::zero(); m];
 
     for e in 0..m {
-        let (s, eend) = hg.edge_span(EdgeId(e));
+        let (s, eend) = hg.edge_span(EdgeId::new(e));
         let mut de = F::zero();
         for p in s..eend {
             let v = hg.flat_edge_nodes[p].0;

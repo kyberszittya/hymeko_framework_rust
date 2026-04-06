@@ -30,10 +30,10 @@ mod tests {
 
         // Create some paths
         let paths = vec![
-            (PathKey(vec![s_fano, s_n0]), DeclId(0)),
-            (PathKey(vec![s_fano, s_n1]), DeclId(1)),
-            (PathKey(vec![s_fano, s_e0]), DeclId(2)),
-            (PathKey(vec![s_fano]), DeclId(3)), // Parent path
+            (PathKey(vec![s_fano, s_n0]), DeclId::new(0)),
+            (PathKey(vec![s_fano, s_n1]), DeclId::new(1)),
+            (PathKey(vec![s_fano, s_e0]), DeclId::new(2)),
+            (PathKey(vec![s_fano]), DeclId::new(3)), // Parent path
         ];
 
         (it, paths)
@@ -116,7 +116,7 @@ mod tests {
         let mut massive_idx = Index::default();
         for i in 0..MASSIVE_NODE_COUNT {
             let s_node = it.intern(&format!("node_{}", i));
-            massive_idx.by_path.insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId(i));
+            massive_idx.by_path.insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId::new(i));
         }
 
         let start = Instant::now();
@@ -165,7 +165,7 @@ mod tests {
             let mut massive_idx = Index::default();
             for i in 0..count {
                 let s_node = it.intern(&format!("node_{}", i));
-                massive_idx.by_path.insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId(i));
+                massive_idx.by_path.insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId::new(i));
             }
 
             let start = Instant::now();

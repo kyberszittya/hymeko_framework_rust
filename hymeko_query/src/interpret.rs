@@ -15,9 +15,9 @@
 //!   - `@edge { +x -y }` → arc ref match
 //!   - Value after name → value match
 
+use hymeko::ir::ir::DeclKind;
 use parser::ast::*;
-use crate::ir::ir::DeclKind;
-use crate::query::predicate::*;
+use crate::{NamedQuery, Predicate, ValuePredicate};
 
 /// Convert a parsed .hymeko description into a list of named queries.
 ///

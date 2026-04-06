@@ -385,7 +385,7 @@ mod test_tensor_representation {
         let mut b: Vec<Vec<(usize, f32)>> = vec![Vec::new(); m]; // per edge: (v, bve)
 
         for e in 0..m {
-            let (s, eend) = hg.edge_span(EdgeId(e));
+            let (s, eend) = hg.edge_span(EdgeId::new(e));
 
             for p in s..eend {
                 let v = hg.flat_edge_nodes[p].0;
@@ -706,20 +706,20 @@ mod test_tensor_representation {
         // Edge 1 spans Node 1
 
         let hg = HyperGraphView::<f64, EdgeWScalar<f64>, f64> {
-            node_decl: vec![DeclId(0), DeclId(1), DeclId(2)],
-            edge_decl: vec![DeclId(3), DeclId(4)],
+            node_decl: vec![DeclId::new(0), DeclId::new(1), DeclId::new(2)],
+            edge_decl: vec![DeclId::new(3), DeclId::new(4)],
 
             // --- Node to Edge CSR (Not used by compute_degrees, but needed for struct) ---
             node_offsets: vec![0, 0, 2, 3], // Node 0 has 0, Node 1 has 2, Node 2 has 1
-            flat_node_edges: vec![EdgeId(0), EdgeId(1), EdgeId(0)],
+            flat_node_edges: vec![EdgeId::new(0), EdgeId::new(1), EdgeId::new(0)],
             flat_node_sign: vec![1, 1, 1],
             flat_node_w: vec![2.0, 3.5, 4.0],
 
             // --- Edge to Node CSR (The one compute_bipartite_degrees actually uses) ---
             edge_offsets: vec![0, 2, 3], // Edge 0 has 2 nodes, Edge 1 has 1 node
             flat_edge_nodes: vec![
-                NodeId(1), NodeId(2), // Edge 0's nodes
-                NodeId(1)             // Edge 1's nodes
+                NodeId::new(1), NodeId::new(2), // Edge 0's nodes
+                NodeId::new(1)             // Edge 1's nodes
             ],
             flat_edge_sign: vec![1, 1, 1],
 

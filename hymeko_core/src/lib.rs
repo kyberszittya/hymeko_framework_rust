@@ -13,7 +13,6 @@ pub mod util;
 pub mod module_store;
 pub mod tensor;
 pub mod engine;
-pub mod query;
 
 pub fn find_node<'ast, 'slice>(
     items: &'slice [HyperItem<'ast, &'ast str>],
@@ -35,11 +34,11 @@ pub fn as_node<'ast, 'slice, Id>(it: &'slice HyperItem<'ast, Id>) -> Option<&'sl
     }
 }
 
-pub fn body<'ast, 'slice>(n: &'slice NodeDecl<'ast, &'ast str>) -> &'slice [HyperItem<'ast, &'ast str>] {
+pub fn body<'ast, 'slice>(n: &'slice NodeDecl<'ast, &'ast str>) -> Option<&'slice [HyperItem<'ast, &'ast str>]> {
     n.inner
         .body
         .as_deref()
-        .unwrap_or_else(|| panic!("Expected node {} to have a body", n.inner.name))
+        
 }
 
 pub fn find_edge<'ast, 'slice>(

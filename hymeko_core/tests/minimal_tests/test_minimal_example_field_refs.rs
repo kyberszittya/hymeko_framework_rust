@@ -38,7 +38,7 @@ fn run_field_ref_fixture(title: &str, path: &str, details: &str) {
     };
     assert_eq!(context.inner.name, CONTEXT_NODE_NAME);
 
-    let ctx = body(context);
+    let ctx = body(context).unwrap();
     assert_expected_fields(ctx, FIELD_REF_EXPECTATIONS);
     info!("Verified {} reference fields for {path}", FIELD_REF_EXPECTATIONS.len());
     log_test_footer(

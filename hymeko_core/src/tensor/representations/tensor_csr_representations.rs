@@ -30,7 +30,7 @@ where
     let mut counts = vec![0; dim];
 
     for e in 0..hg.num_edges() {
-        let (s, eend) = hg.edge_span(EdgeId(e));
+        let (s, eend) = hg.edge_span(EdgeId::new(e));
         let e_v = hg.num_nodes() + e;
 
         for p in s..eend {
@@ -56,7 +56,7 @@ where
     let mut offset = row_ptr;
 
     for e in 0..hg.num_edges() {
-        let (s, eend) = hg.edge_span(EdgeId(e));
+        let (s, eend) = hg.edge_span(EdgeId::new(e));
         let e_v = hg.num_nodes() + e;
 
         for p in s..eend {
@@ -105,7 +105,7 @@ where
     let mut counts = vec![0; num_nodes];
 
     for e in 0..hg.num_edges() {
-        let (s, eend) = hg.edge_span(EdgeId(e));
+        let (s, eend) = hg.edge_span(EdgeId::new(e));
         let nodes_in_edge = eend - s;
 
         for i in 0..nodes_in_edge {
@@ -142,7 +142,7 @@ where
     let mut offset = row_ptr;
 
     for e in 0..hg.num_edges() {
-        let (s, eend) = hg.edge_span(EdgeId(e));
+        let (s, eend) = hg.edge_span(EdgeId::new(e));
         let nodes_in_edge = eend - s;
 
         // Gather local nodes to avoid repetitive memory lookups

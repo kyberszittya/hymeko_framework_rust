@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod test_query_robot {
-    use hymeko::query::engine::QueryEngine;
-    use hymeko::query::formats::urdf::{urdf_queries, validate_robot_schema};
-    use hymeko::query::predicate::*;
+    use hymeko_query::engine::QueryEngine;
+    use hymeko_query::formats::urdf::{urdf_queries, validate_robot_schema};
+    use hymeko_query::{Predicate, ValuePredicate};
+    use hymeko_query::QueryMatch;
     use crate::test_helpers::load_and_lower;
 
-    const ROBOT: &str = "./data/robotics/robot_4wh.hymeko";
+    const ROBOT: &str = "../data/robotics/robot_4wh.hymeko";
 
     /// Helper: extract names from Vec<QueryMatch>
     fn names(matches: &[QueryMatch]) -> Vec<&str> {
@@ -111,7 +112,7 @@ mod test_query_robot {
         assert_eq!(joints.len(), 4);
         // Verify bindings carry weight annotations on plus refs
         for m in &joints {
-            let plus_bindings: Vec<_> = m.bindings.iter()
+            let plus_bindings: Vec<_> = m.arc_bindings.iter()
                 .filter(|b| b.sign == 1)
                 .collect();
             assert!(!plus_bindings.is_empty(),
@@ -133,10 +134,10 @@ mod test_query_robot {
             &Predicate::edge().and(Predicate::inherits("conti_joint"))
         );
         for m in &joints {
-            let plus_count = m.bindings.iter().filter(|b| b.sign == 1).count();
-            let minus_count = m.bindings.iter().filter(|b| b.sign == -1).count();
+            let plus_count = m.arc_bindings.iter().filter(|b| b.sign == 1).count();
+            let minus_count = m.arc_bindings.iter().filter(|b| b.sign == -1).count();
             println!("Joint {}: {} plus refs, {} minus refs, {} total bindings",
-                     m.name, plus_count, minus_count, m.bindings.len());
+                     m.name, plus_count, minus_count, m.arc_bindings.len());
             assert!(plus_count >= 1,
                     "Joint {} needs at least 1 parent (+) binding", m.name);
             assert!(minus_count >= 1,
@@ -189,7 +190,7 @@ mod test_query_robot {
     fn batch_query_all_urdf() {
         let (store, compiled) = load_and_lower(ROBOT).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
-        let results = engine.query_all(&urdf_queries());
+        let results = engine.query_batch(&urdf_queries());
         println!("--- URDF query results ---");
         for (label, matches) in &results {
             println!("  {}: {} matches → {:?}", label, matches.len(), names(matches));

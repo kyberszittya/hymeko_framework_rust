@@ -1,4 +1,4 @@
-use crate::common::ids::DeclId;
+use hymeko::common::ids::DeclId;
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

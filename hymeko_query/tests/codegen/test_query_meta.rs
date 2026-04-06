@@ -1,10 +1,11 @@
 #[cfg(test)]
 mod test_query_meta {
-    use hymeko::query::engine::QueryEngine;
-    use hymeko::query::predicate::*;
+    use hymeko_query::engine::QueryEngine;
+    use hymeko_query::Predicate;
+    use hymeko_query::QueryMatch;
     use crate::test_helpers::load_and_lower;
 
-    const META: &str = "./data/robotics/meta_kinematics.hymeko";
+    const META: &str = "../data/robotics/meta_kinematics.hymeko";
 
     /// Helper: extract names from Vec<QueryMatch>
     fn names(matches: &[QueryMatch]) -> Vec<&str> {

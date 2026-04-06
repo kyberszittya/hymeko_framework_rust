@@ -3,9 +3,9 @@
 //! A domain transform declares query patterns and generates
 //! output from results. This makes the query engine domain-agnostic.
 
-use crate::ir::ir::Ir;
-use crate::query::engine::{NameResolver, QueryResult};
-use crate::query::predicate::NamedQuery;
+use hymeko::ir::ir::Ir;
+use crate::{NameResolver, NamedQuery};
+use crate::QueryMatch;
 
 /// A domain transform declares what queries it needs and produces output.
 pub trait DomainTransform {
@@ -22,7 +22,7 @@ pub trait DomainTransform {
     fn generate<R: NameResolver>(
         &self,
         config: &Self::Config,
-        results: &[(String, QueryResult)],
+        results: &[(String, Vec<QueryMatch>)],
         ir: &Ir,
         resolver: &R,
     ) -> Self::Output;

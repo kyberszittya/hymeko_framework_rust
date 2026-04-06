@@ -5,7 +5,7 @@ members = [
     "hymeko_client",
     "hymeko_core",
     "hymeko_daemon",
-    "hymeko_py",
+    "hymeko_py", "hymeko_query",
     "parser",
 ]
 resolver = "2"

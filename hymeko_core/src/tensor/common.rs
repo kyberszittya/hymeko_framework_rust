@@ -1,18 +1,19 @@
 use std::fmt::{Debug, Display};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Sub, SubAssign};
 use crate::tensor::tensor_val::{EdgeWeight, IncVal};
 use crate::traversal::hypergraphview::HyperGraphView;
 
 pub trait Real:
-Copy + PartialOrd +
-core::ops::Add<Output=Self> +
-core::ops::AddAssign +
-core::ops::Sub<Output=Self> +
-core::ops::SubAssign +
-core::ops::Mul<Output=Self> +
-core::ops::MulAssign +
-core::ops::Div<Output=Self> +
-Send + Sync +
-Debug + Display + AsF64 + AsF32
+    Copy + PartialOrd +
+    Add<Output=Self> +
+    AddAssign +
+    Sub<Output=Self> +
+    SubAssign +
+    Mul<Output=Self> +
+    MulAssign +
+    Div<Output=Self> +
+    Send + Sync +
+    Debug + Display + AsF64 + AsF32
 {
     fn zero() -> Self;
     fn one() -> Self;
@@ -24,6 +25,18 @@ Debug + Display + AsF64 + AsF32
     fn round(self) -> Self { self }
     /// Convert from any other real type, if needed (e.g. for mixed-precision).
     fn from_other<T: Real>(rhs: T) -> Self;
+
+    /// |-------------------------
+    /// |  Higher order functions
+    /// |-------------------------
+    fn exp(self) -> Self;
+    fn ln(self) -> Self;
+    fn tan(self) -> Self;
+    fn cos(self) -> Self;
+    fn cosh(self) -> Self;
+    fn sin(self) -> Self;
+    fn tanh(self) -> Self;
+    fn powi(self, n: i32) -> Self;
 
 }
 
@@ -39,6 +52,18 @@ impl Real for f32 {
 
     #[inline] fn from_other<T: Real>(rhs: T) -> Self { rhs.as_f32() as f32 }
 
+    /// |-------------------------
+    /// | Higher-order functions
+    /// |-------------------------
+    #[inline] fn exp(self) -> Self { self.exp() }
+    #[inline] fn ln(self) -> Self { self.ln() }
+    #[inline] fn tan(self) -> Self { self.tan() }
+    #[inline] fn cos(self) -> Self { self.cos() }
+    #[inline] fn cosh(self) -> Self { self.cosh() }
+    #[inline] fn sin(self) -> Self { self.sin() }
+    #[inline] fn tanh(self) -> Self { self.tanh() }
+    #[inline] fn powi(self, n: i32) -> Self { self.powi(n) }
+
 }
 
 impl Real for f64 {
@@ -51,6 +76,19 @@ impl Real for f64 {
     #[inline] fn min(self, rhs: Self) -> Self { self.min(rhs) }
     #[inline] fn round(self) -> Self { self.round() }
     #[inline] fn from_other<T: Real>(rhs: T) -> Self { rhs.as_f64() }
+
+    /// |------------------------
+    /// | Higher-order functions
+    /// |------------------------
+
+    #[inline] fn exp(self) -> Self { self.exp() }
+    #[inline] fn ln(self) -> Self { self.ln() }
+    #[inline] fn tan(self) -> Self { self.tan() }
+    #[inline] fn cos(self) -> Self { self.cos() }
+    #[inline] fn cosh(self) -> Self { self.cosh() }
+    #[inline] fn sin(self) -> Self { self.sin() }
+    #[inline] fn tanh(self) -> Self { self.tanh() }
+    #[inline] fn powi(self, n: i32) -> Self { self.powi(n) }
 }
 
 pub trait AsF64 { fn as_f64(self) -> f64; }

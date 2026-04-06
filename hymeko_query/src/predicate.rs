@@ -1,25 +1,7 @@
-use crate::common::ids::DeclId;
-use crate::ir::ir::{DeclKind, ValueR};
+use hymeko::common::ids::DeclId;
+use hymeko::ir::ir::{DeclKind, ValueR};
 
 
-#[derive(Debug, Clone)]
-pub struct ArcBinding {
-    pub sign: i8,                           // +1, -1, 0
-    pub target: DeclId,                     // what it points to
-    pub target_name: String,                // resolved name (avoids re-resolution)
-    pub weights: Option<Vec<ValueR>>,       // [[xyz],[rpy]] from RefAtomR
-}
-
-/// Result of matching a single declaration against a predicate.
-/// Carries the matched id, resolved name, inheritance depth,
-/// and all arc-reference bindings captured during the match.
-#[derive(Debug, Clone)]
-pub struct QueryMatch {
-    pub id: DeclId,
-    pub name: String,
-    pub depth: u16,                         // inheritance depth that satisfied InheritsFrom
-    pub bindings: Vec<ArcBinding>,          // arc refs that satisfied HasPlusRef/HasMinusRef/etc
-}
 
 /// Value comparison for numeric/string predicates.
 #[derive(Debug, Clone)]

@@ -29,6 +29,7 @@ pub enum ResolveError {
     DuplicateDecl { path: String },
     UnresolvedRef { from_scope: String, target: String },
     AmbiguousRef { from_scope: String, target: String, candidates: Vec<String> },
+    MissingDecl { detail: String },
     UnexpectedTopLevelArc {detail: String}
 }
 
@@ -122,7 +123,7 @@ fn add_decl(
     if idx.by_path.contains_key(&key) {
         return Err(ResolveError::DuplicateDecl { path: fmt_path(&key, it) });
     }
-    let id = DeclId(*next);
+    let id = DeclId::new(*next);
     *next += 1;
     idx.by_path.insert(key, id);
     Ok(id)

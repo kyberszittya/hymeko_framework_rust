@@ -18,9 +18,12 @@ fn parent_decl(idx: &Index, scope: &[SymId]) -> DeclId {
     }
 }
 
-fn decl_id_of(idx: &Index, path: &[SymId]) -> DeclId {
-    *idx.by_path.get(path)
-        .unwrap_or_else(|| panic!("Missing DeclId for path {:?}", path))
+fn decl_id_of(idx: &Index, path: &[SymId]) -> Result<DeclId, ResolveError> {
+    idx.by_path.get(path)
+        .copied()
+        .ok_or_else(|| ResolveError::MissingDecl {
+            detail: format!("No DeclId for path {:?}", path),
+        })
 }
 
 fn link_decl_child(ir: &mut Ir, parent: DeclId, child: DeclId) {
@@ -90,7 +93,7 @@ fn lower_node(
     let scope_len = path.len();
     path.push(n.inner.name);
 
-    let did = decl_id_of(idx, path);
+    let did = decl_id_of(idx, path)?;
     // Replace the old flat assignments:
     ir.decl_nodes[did.0].kind = DeclKind::Node;
     ir.decl_nodes[did.0].name = n.inner.name;
@@ -101,7 +104,7 @@ fn lower_node(
     let anno = resolve_anno(idx, path, &n.anno, it)?;
     ir.decl_nodes[did.0].anno = anno;
 
-    let nid = NodeId(ir.nodes.len());
+    let nid = NodeId::new(ir.nodes.len());
     let bases = resolve_node_bases(idx, path, &n.inner.bases, it)?;
     ir.nodes.push(NodeRec::new(did, bases));
     ir.decl_to_node[did.0] = Some(nid);
@@ -142,7 +145,7 @@ fn lower_arc(
     ir.decl_nodes[idx_usize].anno = anno.clone();
 
     // 5) create ArcRec + mapping
-    let aid = HyperArcId(ir.arcs.len());
+    let aid = HyperArcId::new(ir.arcs.len());
     ir.arcs.push(ArcRec { anno, in_edge: edge_decl, refs });
     ir.decl_to_arc[idx_usize] = Some(aid);
 
@@ -165,7 +168,7 @@ fn lower_edge(
     let scope_len = path.len();
     path.push(e.inner.name);
 
-    let did = decl_id_of(idx, &path);
+    let did = decl_id_of(idx, &path)?;
 
     let idx_usize = did.0;
 
@@ -178,8 +181,8 @@ fn lower_edge(
     let anno = resolve_anno(idx, path, &e.anno, it)?;
     ir.decl_nodes[idx_usize].anno = anno;
 
-    // EdgeId kiosztás
-    let eid = EdgeId(ir.edges.len());
+    // EdgeId is assigned after resolving the edge-level anno, so that we can
+    let eid = EdgeId::new(ir.edges.len());
     let bases = resolve_node_bases(idx, path, &e.inner.bases, it)?;
     ir.edges.push(EdgeRec::new(did, bases));
     ir.decl_to_edge[idx_usize] = Some(eid);

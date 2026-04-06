@@ -5,13 +5,11 @@
 //! DeclIds from query results, extracting links, joints, topology,
 //! geometry, axes, and origin transforms.
 
-use crate::common::ids::DeclId;
-use crate::ir::ir::{Ir, ValueR};
-use crate::query::engine::{NameResolver, QueryEngine};
-use crate::query::kinematics::joints::{JointInfo, JointLimits, JointType};
-use crate::query::predicate::*;
-
-
+use hymeko::common::ids::DeclId;
+use hymeko::ir::ir::{Ir, ValueR};
+use crate::kinematics::joints::{JointInfo, JointLimits, JointType};
+use crate::{Predicate, QueryEngine};
+use crate::traits::NameResolver;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GeometryShape {
@@ -99,7 +97,7 @@ pub fn extract_kinematic_model<R: NameResolver>(
             let mut origin_xyz: Option<[f64; 3]> = None;
             let mut origin_rpy: Option<[f64; 3]> = None;
 
-            for b in &m.bindings {
+            for b in &m.arc_bindings {
                 let is_link = check_inherits_simple(ir, res, b.target, "link", 4);
                 let is_axis = check_inherits_simple(ir, res, b.target, "axis_definition", 4);
 

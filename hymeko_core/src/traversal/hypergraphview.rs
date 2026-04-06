@@ -129,7 +129,7 @@ where
         let mut out = Vec::with_capacity(ir.arcs.len() * 2);
 
         for (eid_usize, edge) in ir.edges.iter().enumerate() {
-            let eid = EdgeId(eid_usize);
+            let eid = EdgeId::new(eid_usize);
             for &aid in &edge.arcs {
                 let arc = &ir.arcs[aid.0];
                 for r in &arc.refs {

@@ -13,7 +13,13 @@ ipc = ["dep:iceoryx2"]
 arrow-schema = ["dep:arrow"]
 
 [dependencies]
+#
+# Internal dependencies
+#
 parser = { path = "../parser" }
+#
+# Common dependencies
+#
 serde = { workspace = true, features = ["derive"] }
 rustc-hash = "2.1.1"
 blake3 = {  workspace = true }
@@ -21,13 +27,16 @@ nalgebra = "0.34.1"
 num-traits = "0.2.19"
 nalgebra-sparse = "0.11.0"
 rayon = { workspace = true }
+#
 # Heavy feature dependencies
+#
 iceoryx2 = { workspace = true, optional = true }
 arrow = {  workspace = true, optional = true }
 [dev-dependencies]
 log = { workspace = true }
 env_logger = { version = "0.11.5", default-features = false, features = ["auto-color"] }
 criterion = { version = "0.8.2", default-features = false }
+serde_json = "1.0.149"
 [[bench]]
 name = "interning_bench"
 harness = false

@@ -10,7 +10,7 @@ mod test_parse_files {
     use log::info;
     use std::time::Instant;
 
-    const META_KINEMATICS_PATH: &str = "./data/robotics/meta_kinematics.hymeko";
+    const META_KINEMATICS_PATH: &str = "../data/robotics/meta_kinematics.hymeko";
     const AGG_WEIGHT_SUM: WeightAgg = WeightAgg::Sum;
     const AGG_SIGN_NON_NEUTRAL: SignAgg = SignAgg::PreferNonNeutral;
     const CLAMP_DISABLED: bool = false;

@@ -28,7 +28,7 @@ where
     t.reserve(approx_nnz);
 
     for e in 0..num_edges {
-        let eid = EdgeId(e);
+        let eid = EdgeId::new(e);
         let (s, eend) = hg.edge_span(eid);
         let e_v = edge_base + e;
         let de = deg_e[e].max(eps);
@@ -81,7 +81,7 @@ where
     t.reserve(approx_nnz);
     // Main pass
     for e in 0..num_edges {
-        let eid = EdgeId(e);
+        let eid = EdgeId::new(e);
         let (s, eend) = hg.edge_span(eid);
 
         // gather (node, sign) for this edge
@@ -141,7 +141,7 @@ where
     t.reserve(approx_nnz);
 
     for e in 0..num_edges {
-        let eid = EdgeId(e);
+        let eid = EdgeId::new(e);
         let (s, eend) = hg.edge_span(eid);
         let u_eid = eid.0;
         let e_v = edge_base + u_eid; // edge index in V*

@@ -1,10 +1,11 @@
 //! SDF (Simulation Description Format) XML generation.
 //! SDF 1.7 format for Gazebo compatibility.
 
-use crate::ir::ir::Ir;
-use crate::query::engine::{NameResolver, QueryEngine};
-use crate::query::kinematics::joints::JointType;
-use crate::query::kinematics::kinematic::*;
+use hymeko::ir::ir::Ir;
+use crate::kinematics::joints::JointType;
+use crate::kinematics::kinematic::{extract_kinematic_model, GeometryInfo, GeometryShape};
+use crate::QueryEngine;
+use crate::traits::NameResolver;
 
 /// Generate SDF XML string from a compiled IR.
 pub fn generate_sdf<R: NameResolver>(ir: &Ir, resolver: &R, model_name: &str) -> String {

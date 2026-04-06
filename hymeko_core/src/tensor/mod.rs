@@ -12,4 +12,6 @@ pub mod representations;
 pub mod shared_state;
 #[cfg(feature = "arrow-schema")]
 pub mod arrow_schema;
-mod conv;
+pub mod conv;
+mod decomposition;
+mod mesh_nn;
