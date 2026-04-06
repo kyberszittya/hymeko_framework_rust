@@ -20,3 +20,4 @@ mod engine;
 mod hash;
 mod benchmarks;
 mod basic;
+mod computations;
