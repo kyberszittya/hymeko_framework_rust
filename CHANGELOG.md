@@ -7,6 +7,7 @@ This root changelog summarizes every dated engineering log. Full entries live un
 - Added deterministic and randomizable weight initializer support in `hymeko_core/src/tensor/conv/weight_init/` (`Xavier`, `Kaiming`, `XavierRandom`, `Zeros`, `Ones`, `Constant`, `van_der_corput`) with targeted coverage in `hymeko_core/tests/computations/test_weight_init.rs`.
 - Updated parser grammar/token handling (`parser/src/hymeko.lalrpop`, `parser/src/lexer/common.rs`, `parser/src/lexer/token.rs`) to align with the new query/model pipeline.
 - Relocated sample datasets from `hymeko_core/data/` to top-level `data/` and refreshed robotics fixtures used by query/codegen scenarios.
+- Added the articulated robotics fixture `data/robotics/anthropomorphic_arm.hymeko` with a full link/joint/control graph (revolute chain, limits, control interfaces, and simulation plugin wiring) for richer kinematics/query validation scenarios.
 - Details in [`docs/changelog/changelog_20260407.md`](docs/changelog/changelog_20260407.md).
 
 ## 2026-03-11 — Service-Aware Daemon Logging

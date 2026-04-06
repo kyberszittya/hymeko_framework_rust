@@ -4,7 +4,7 @@ This root changelog tracks every dated log stored in `docs/changelog/` and provi
 
 ## 2026-04-07 — Query Engine Split, Tensor Modules, and Weight Initializers
 - **Link:** [changelog_20260407.md](changelog_20260407.md)
-- **Highlights:** Finalized the query-engine branch by moving query/codegen/kinematics workflows into `hymeko_query/src/` (plus new helpers/tests), reorganized tensor conv/decomposition surfaces in `hymeko_core/src/tensor/`, introduced deterministic weight initialization in `hymeko_core/src/tensor/conv/weight_init/` with coverage in `hymeko_core/tests/computations/test_weight_init.rs`, and updated parser plus sample-data layout (`hymeko_core/data/` -> `data/`).
+- **Highlights:** Finalized the query-engine branch by moving query/codegen/kinematics workflows into `hymeko_query/src/` (plus new helpers/tests), reorganized tensor conv/decomposition surfaces in `hymeko_core/src/tensor/`, introduced deterministic weight initialization in `hymeko_core/src/tensor/conv/weight_init/` with coverage in `hymeko_core/tests/computations/test_weight_init.rs`, updated parser plus sample-data layout (`hymeko_core/data/` -> `data/`), and added `data/robotics/anthropomorphic_arm.hymeko` as a complete articulated arm fixture for kinematics/control simulation scenarios.
 
 ## 2026-03-12 — Multiplexed Daemon Egress and Worker Refactor
 - **Link:** [changelog_20260312.md](changelog_20260312.md)
