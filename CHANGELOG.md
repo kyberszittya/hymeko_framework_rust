@@ -1,6 +1,14 @@
 # Hymeko Framework Changelog
 
 This root changelog summarizes every dated engineering log. Full entries live under `docs/changelog/` for deep dives and diagrams.
+## 2026-04-07 — Query Engine and Tensor Initialization Expansion
+- Finalized the query-engine branch by splitting query/codegen/kinematics modules into the dedicated `hymeko_query` crate (`hymeko_query/src/engine.rs`, `hymeko_query/src/interpret.rs`, `hymeko_query/src/codegen.rs`, `hymeko_query/src/formats/`, `hymeko_query/src/kinematics/`) and wiring matching integration tests under `hymeko_query/tests/codegen/`.
+- Reorganized tensor compute surfaces in `hymeko_core/src/tensor/` by modularizing convolution logic (`conv/gcn_clique.rs`, `conv/hgnn.rs`, `conv/signed_hgnn.rs`, `conv/traits.rs`) and adding decomposition + mesh support (`decomposition.rs`, `mesh_nn/mod.rs`).
+- Added deterministic and randomizable weight initializer support in `hymeko_core/src/tensor/conv/weight_init/` (`Xavier`, `Kaiming`, `XavierRandom`, `Zeros`, `Ones`, `Constant`, `van_der_corput`) with targeted coverage in `hymeko_core/tests/computations/test_weight_init.rs`.
+- Updated parser grammar/token handling (`parser/src/hymeko.lalrpop`, `parser/src/lexer/common.rs`, `parser/src/lexer/token.rs`) to align with the new query/model pipeline.
+- Relocated sample datasets from `hymeko_core/data/` to top-level `data/` and refreshed robotics fixtures used by query/codegen scenarios.
+- Details in [`docs/changelog/changelog_20260407.md`](docs/changelog/changelog_20260407.md).
+
 ## 2026-03-11 — Service-Aware Daemon Logging
 - Enriched structured logging in `hymeko_daemon/src/worker.rs` with per-request/service context (`service`, `request_id`, `source`, payload-size/timing, enqueue outcomes, and debug `etag_prefix` correlation).
 - Improved ingress observability in `hymeko_daemon/src/service.rs` with explicit channel/source labels (`zenoh_utf8`, `zenoh_cbor`, `iceoryx2_src`, `iox_ir`) and branch-specific receive/processing failure logs.

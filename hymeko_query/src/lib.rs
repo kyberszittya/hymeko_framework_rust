@@ -1,0 +1,31 @@
+//! HyMeKo Query Engine — standalone crate for pattern matching on
+//! compiled hypergraph IR.
+//!
+//! # Architecture
+//!
+//! ```text
+//! Predicate tree  ──→  QueryEngine  ──→  Vec<QueryMatch>
+//!       ↑                   ↑                   ↓
+//!   interpret.rs        Ir + Resolver      domain transforms
+//!  (from AST)       (from hymeko_core)    (URDF, SDF, etc.)
+//! ```
+//!
+//! The engine is generic over `NameResolver` — works with both
+//! `Interner` (daemon) and `StringTable` (Python bindings).
+
+pub mod predicate;
+pub mod engine;
+
+#[cfg(feature = "interpret")]
+pub mod interpret;
+
+pub mod traits;
+pub mod formats;
+pub mod kinematics;
+pub mod codegen;
+pub mod transforms;
+
+// Re-exports for convenience
+pub use predicate::{NamedQuery, Predicate, ValuePredicate};
+pub use engine::{ArcBinding, QueryConfig, QueryEngine, QueryMatch};
+pub use traits::NameResolver;

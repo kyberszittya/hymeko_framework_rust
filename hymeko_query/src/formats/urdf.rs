@@ -3,7 +3,7 @@
 use hymeko::ir::ir::Ir;
 use crate::{NamedQuery, Predicate, QueryEngine};
 use crate::kinematics::joints::JointType;
-use crate::kinematics::kinematic::{extract_kinematic_model, GeometryInfo, GeometryShape};
+use crate::kinematics::kinematic::{extract_kinematic_model, GeometryInfo, GeometryShape, KinematicModel};
 use crate::traits::NameResolver;
 
 /// Predefined queries for URDF generation.
@@ -22,6 +22,94 @@ pub fn urdf_queries() -> Vec<NamedQuery> {
         NamedQuery { label: "axes".into(),
             predicate: Predicate::node().and(Predicate::inherits("axis_definition")) },
     ]
+}
+
+pub fn generate_urdf_from_model<R: NameResolver>(model: &KinematicModel) -> String {
+    let mut out = String::with_capacity(4096);
+    out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    out.push_str(&format!("<robot name=\"{}\">\n", xml_escape(&model.name)));
+
+    // Links
+    for link in &model.links {
+        out.push_str(&format!("  <link name=\"{}\">\n", xml_escape(&link.name)));
+
+        if let Some(mass) = link.mass {
+            out.push_str("    <inertial>\n");
+            out.push_str(&format!("      <mass value=\"{}\"/>\n", mass));
+            out.push_str("    </inertial>\n");
+        }
+
+        if let Some(ref geom) = link.geometry {
+            for tag in &["visual", "collision"] {
+                out.push_str(&format!("    <{}>\n", tag));
+                if let Some(ref origin) = link.origin {
+                    emit_origin_list(&mut out, origin, 6);
+                }
+                out.push_str("      <geometry>\n");
+                emit_geometry(&mut out, geom, 8);
+                out.push_str("      </geometry>\n");
+                if *tag == "visual" {
+                    if let Some(ref color) = link.color {
+                        out.push_str("      <material name=\"color\">\n");
+                        out.push_str(&format!(
+                            "        <color rgba=\"{} {} {} {}\"/>\n",
+                            color.get(0).unwrap_or(&0.5),
+                            color.get(1).unwrap_or(&0.5),
+                            color.get(2).unwrap_or(&0.5),
+                            color.get(3).unwrap_or(&1.0),
+                        ));
+                        out.push_str("      </material>\n");
+                    }
+                }
+                out.push_str(&format!("    </{}>\n", tag));
+            }
+        }
+
+        out.push_str("  </link>\n\n");
+    }
+
+    // Joints
+    for joint in &model.joints {
+        out.push_str(&format!(
+            "  <joint name=\"{}\" type=\"{}\">\n",
+            xml_escape(&joint.name), joint.joint_type.urdf_str()
+        ));
+        out.push_str(&format!(
+            "    <parent link=\"{}\"/>\n", xml_escape(&joint.parent_link)
+        ));
+        out.push_str(&format!(
+            "    <child link=\"{}\"/>\n", xml_escape(&joint.child_link)
+        ));
+
+        if let Some(xyz) = joint.origin_xyz {
+            let rpy = joint.origin_rpy_rad().unwrap_or([0.0; 3]);
+            out.push_str(&format!(
+                "    <origin xyz=\"{} {} {}\" rpy=\"{:.4} {:.4} {:.4}\"/>\n",
+                xyz[0], xyz[1], xyz[2], rpy[0], rpy[1], rpy[2]
+            ));
+        }
+
+        if joint.joint_type != JointType::Fixed {
+            if let Some(ax) = joint.axis {
+                out.push_str(&format!(
+                    "    <axis xyz=\"{} {} {}\"/>\n",
+                    ax[0] as i32, ax[1] as i32, ax[2] as i32
+                ));
+            }
+        }
+
+        if let Some(ref lim) = joint.limits {
+            out.push_str(&format!(
+                "    <limit lower=\"{}\" upper=\"{}\" effort=\"{}\" velocity=\"{}\"/>\n",
+                lim.lower, lim.upper, lim.effort, lim.velocity
+            ));
+        }
+
+        out.push_str("  </joint>\n\n");
+    }
+
+    out.push_str("</robot>\n");
+    out
 }
 
 /// Generate URDF XML string from a compiled IR.

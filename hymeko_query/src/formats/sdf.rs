@@ -3,7 +3,7 @@
 
 use hymeko::ir::ir::Ir;
 use crate::kinematics::joints::JointType;
-use crate::kinematics::kinematic::{extract_kinematic_model, GeometryInfo, GeometryShape};
+use crate::kinematics::kinematic::{extract_kinematic_model, GeometryInfo, GeometryShape, KinematicModel};
 use crate::QueryEngine;
 use crate::traits::NameResolver;
 
@@ -16,6 +16,77 @@ pub fn generate_sdf<R: NameResolver>(ir: &Ir, resolver: &R, model_name: &str) ->
     out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     out.push_str("<sdf version=\"1.7\">\n");
     out.push_str(&format!("  <model name=\"{}\">\n", model_name));
+    out.push_str("    <static>false</static>\n\n");
+
+    for link in &model.links {
+        out.push_str(&format!("    <link name=\"{}\">\n", link.name));
+
+        if let Some(mass) = link.mass {
+            out.push_str("      <inertial>\n");
+            out.push_str(&format!("        <mass>{}</mass>\n", mass));
+            let ixx = mass * 0.01; // diagonal approximation
+            out.push_str(&format!(
+                "        <inertia>\n          <ixx>{ixx}</ixx><iyy>{ixx}</iyy><izz>{ixx}</izz>\n          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>\n        </inertia>\n"
+            ));
+            out.push_str("      </inertial>\n");
+        }
+
+        if let Some(ref geom) = link.geometry {
+            for tag in &["visual", "collision"] {
+                out.push_str(&format!("      <{} name=\"{}_{}\">\n", tag, link.name, tag));
+                out.push_str("        <geometry>\n");
+                emit_sdf_geometry(&mut out, geom, 10);
+                out.push_str("        </geometry>\n");
+                out.push_str(&format!("      </{}>\n", tag));
+            }
+        }
+
+        out.push_str("    </link>\n\n");
+    }
+
+    for joint in &model.joints {
+        out.push_str(&format!(
+            "    <joint name=\"{}\" type=\"{}\">\n",
+            joint.name, joint.joint_type.sdf_str()
+        ));
+        out.push_str(&format!("      <parent>{}</parent>\n", joint.parent_link));
+        out.push_str(&format!("      <child>{}</child>\n", joint.child_link));
+
+        if let Some(xyz) = joint.origin_xyz {
+            let rpy = joint.origin_rpy_rad().unwrap_or([0.0; 3]);
+            out.push_str(&format!(
+                "      <pose relative_to=\"{}\">{} {} {} {:.4} {:.4} {:.4}</pose>\n",
+                joint.parent_link, xyz[0], xyz[1], xyz[2], rpy[0], rpy[1], rpy[2]
+            ));
+        }
+
+        if joint.joint_type != JointType::Fixed {
+            if let Some(ax) = joint.axis {
+                out.push_str("      <axis>\n");
+                out.push_str(&format!(
+                    "        <xyz>{} {} {}</xyz>\n",
+                    ax[0] as i32, ax[1] as i32, ax[2] as i32
+                ));
+                if joint.joint_type == JointType::Continuous {
+                    out.push_str("        <limit>\n          <lower>-1e16</lower>\n          <upper>1e16</upper>\n        </limit>\n");
+                }
+                out.push_str("      </axis>\n");
+            }
+        }
+
+        out.push_str("    </joint>\n\n");
+    }
+
+    out.push_str("  </model>\n");
+    out.push_str("</sdf>\n");
+    out
+}
+
+pub fn generate_sdf_from_model(model: &KinematicModel) -> String {
+    let mut out = String::with_capacity(4096);
+    out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    out.push_str("<sdf version=\"1.7\">\n");
+    out.push_str(&format!("  <model name=\"{}\">\n", model.name));
     out.push_str("    <static>false</static>\n\n");
 
     for link in &model.links {
