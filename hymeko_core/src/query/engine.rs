@@ -61,7 +61,7 @@ impl Default for QueryConfig {
 /// Evaluates [`Predicate`] trees against every declaration
 /// in the IR and returns the set of matching `DeclId`s. It is
 /// intentionally stateless — all domain knowledge lives in the
-/// predicates (see [`crate::query::urdf`] for an example).
+/// predicates (see [`crate::query::formats::urdf`] for an example).
 pub struct QueryEngine<'a, R: NameResolver> {
     ir: &'a Ir,
     resolver: &'a R,
@@ -83,22 +83,105 @@ impl<'a, R: NameResolver> QueryEngine<'a, R> {
     /// Expose resolver for domain transforms.
     pub fn resolver(&self) -> &R { self.resolver }
 
-    /// Run a single predicate against every declaration in the IR.
-    pub fn query(&self, predicate: &Predicate) -> QueryResult {
-        let mut matches = Vec::new();
-        for (idx, decl) in self.ir.decl_nodes.iter().enumerate() {
-            let did = DeclId(idx);
-            if did.is_none() { continue; }
-            if self.matches(did, predicate) {
-                let name = self.resolver.resolve(decl.name).to_string();
-                matches.push((did, name));
-            }
+    fn try_match(&self, did: DeclId, pred: &Predicate) -> Option<QueryMatch> {
+        if !self.matches(did, pred) {
+            return None;
         }
-        QueryResult { matches }
+        let decl = &self.ir.decl_nodes[did.0];
+        let name = self.resolver.resolve(decl.name).to_string();
+        let bindings = self.collect_bindings(did);
+        let depth = self.shallowest_inherit_depth(did, pred);
+
+        Some(QueryMatch { id: did, name, depth, bindings })
     }
 
-    /// Run multiple named queries in a single pass.
-    pub fn query_all(&self, queries: &[NamedQuery]) -> Vec<(String, QueryResult)> {
+    /// Find the shallowest inheritance depth used by any
+    /// InheritsFrom predicate in the tree. Returns 0 if no
+    /// inheritance predicate is present.
+    fn shallowest_inherit_depth(&self, did: DeclId, pred: &Predicate) -> u16 {
+        match pred {
+            Predicate::InheritsFrom(base) =>
+                self.inherit_depth(did, base, self.config.max_inherit_depth)
+                    .unwrap_or(0),
+            Predicate::And(subs) => subs.iter()
+                .map(|p| self.shallowest_inherit_depth(did, p))
+                .filter(|&d| d > 0)
+                .min()
+                .unwrap_or(0),
+            Predicate::Or(subs) => subs.iter()
+                .map(|p| self.shallowest_inherit_depth(did, p))
+                .filter(|&d| d > 0)
+                .min()
+                .unwrap_or(0),
+            _ => 0,
+        }
+    }
+
+    /// Returns Some(depth) if `did` inherits from `base_name`, None otherwise.
+    /// depth=1 means direct base, depth=2 means grandparent, etc.
+    fn inherit_depth(&self, did: DeclId, base_name: &str, max: usize) -> Option<u16> {
+        if max == 0 { return None; }
+        let bases = self.get_bases(did);
+        for base_ref in bases {
+            let target = base_ref.target();
+            if target.is_none() { continue; }
+            let target_name = self.resolver.resolve(self.ir.decl_nodes[target.0].name);
+            if target_name == base_name {
+                return Some(1);
+            }
+            if let Some(d) = self.inherit_depth(target, base_name, max - 1) {
+                return Some(d + 1);
+            }
+        }
+        None
+    }
+
+    fn collect_bindings(&self, did: DeclId) -> Vec<ArcBinding> {
+        let Some(eid) = self.ir.as_edge(did) else { return Vec::new() };
+        let edge_rec = &self.ir.edges[eid.0];
+        let mut bindings = Vec::new();
+
+        for &arc_id in &edge_rec.arcs {
+            let arc = &self.ir.arcs[arc_id.0];
+            for sref in &arc.refs {
+                let target = sref.target();
+                if target.is_none() { continue; }
+                let target_name = self.resolver.resolve(
+                    self.ir.decl_nodes[target.0].name
+                ).to_string();
+                bindings.push(ArcBinding {
+                    sign: sref.sign(),
+                    target,
+                    target_name,
+                    weights: sref.atom().weights.clone(),
+                });
+            }
+        }
+        bindings
+    }
+
+    pub fn query_iter<'b>(
+        &'b self,
+        predicate: &'b Predicate,
+    ) -> impl Iterator<Item = QueryMatch> + 'b {
+        self.ir.decl_nodes.iter().enumerate().filter_map(move |(idx, _)| {
+            let did = DeclId(idx);
+            if did.is_none() { return None; }
+            self.try_match(did, predicate)
+        })
+    }
+
+    /// Collect all matches into a Vec.
+    pub fn query(&self, predicate: &Predicate) -> Vec<QueryMatch> {
+        self.query_iter(predicate).collect()
+    }
+
+    pub fn query_first(&self, predicate: &Predicate) -> Option<QueryMatch> {
+        self.query_iter(predicate).next()
+    }
+
+    /// Run multiple named queries.
+    pub fn query_all(&self, queries: &[NamedQuery]) -> Vec<(String, Vec<QueryMatch>)> {
         queries.iter()
             .map(|nq| (nq.label.clone(), self.query(&nq.predicate)))
             .collect()

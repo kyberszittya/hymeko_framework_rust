@@ -14,6 +14,8 @@ pub enum Token<'a> {
     Number(f64),
     Str(Cow<'a, str>),
     Question,
+    Star,
+    DotDot,
     EOF,
 }
 

@@ -6,37 +6,12 @@
 //! geometry, axes, and origin transforms.
 
 use crate::common::ids::DeclId;
-use crate::ir::ir::{Ir, ValueR, SignedRefR};
+use crate::ir::ir::{Ir, ValueR};
 use crate::query::engine::{NameResolver, QueryEngine};
+use crate::query::kinematics::joints::{JointInfo, JointLimits, JointType};
 use crate::query::predicate::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum JointType {
-    Fixed,
-    Continuous,
-    Revolute,
-    Prismatic,
-}
 
-impl JointType {
-    pub fn urdf_str(&self) -> &'static str {
-        match self {
-            Self::Fixed      => "fixed",
-            Self::Continuous => "continuous",
-            Self::Revolute   => "revolute",
-            Self::Prismatic  => "prismatic",
-        }
-    }
-
-    pub fn sdf_str(&self) -> &'static str {
-        match self {
-            Self::Fixed      => "fixed",
-            Self::Continuous => "revolute", // SDF 1.7 has no continuous
-            Self::Revolute   => "revolute",
-            Self::Prismatic  => "prismatic",
-        }
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GeometryShape {
@@ -61,36 +36,9 @@ pub struct LinkInfo {
     pub color: Option<Vec<f64>>,
 }
 
-#[derive(Debug, Clone)]
-pub struct JointLimits {
-    pub lower: f64,
-    pub upper: f64,
-    pub effort: f64,
-    pub velocity: f64,
-}
 
-#[derive(Debug, Clone)]
-pub struct JointInfo {
-    pub did: DeclId,
-    pub name: String,
-    pub joint_type: JointType,
-    pub parent_link: String,
-    pub child_link: String,
-    pub axis: Option<[f64; 3]>,
-    pub origin_xyz: Option<[f64; 3]>,
-    pub origin_rpy_deg: Option<[f64; 3]>,
-    pub limits: Option<JointLimits>,
-}
 
-impl JointInfo {
-    /// Convert origin RPY from degrees to radians.
-    pub fn origin_rpy_rad(&self) -> Option<[f64; 3]> {
-        self.origin_rpy_deg.map(|rpy| {
-            let d2r = std::f64::consts::PI / 180.0;
-            [rpy[0] * d2r, rpy[1] * d2r, rpy[2] * d2r]
-        })
-    }
-}
+
 
 #[derive(Debug, Clone)]
 pub struct KinematicModel {
@@ -108,21 +56,20 @@ pub fn extract_kinematic_model<R: NameResolver>(
     let res = engine.resolver();
 
     // Query links
-    let link_results = engine.query(
+    let link_matches = engine.query(
         &Predicate::node().and(Predicate::inherits("link"))
     );
 
-    let links: Vec<LinkInfo> = link_results.matches.iter().map(|(did, name)| {
-        let mass = find_child_num(ir, res, *did, "mass");
-        let geometry = extract_geometry(ir, res, *did);
-        let origin = find_child_list(ir, res, *did, "origin");
-
-        // Color via reference: `color -> diff_robot.body_color;`
-        let color = find_child_ref_value_list(ir, res, *did, "color");
+    let links: Vec<LinkInfo> = link_matches.iter().map(|m| {
+        let mass = find_child_num(ir, res, m.id, "mass");
+        let geometry = extract_geometry(ir, res, m.id);
+        let origin = find_child_list(ir, res, m.id, "origin");
+        let color_ref = find_child_ref_target(ir, m.id);
+        let color = color_ref.and_then(|cdid| extract_value_list(ir, cdid));
 
         LinkInfo {
-            did: *did,
-            name: name.clone(),
+            did: m.id,
+            name: m.name.clone(),
             mass,
             geometry,
             origin,
@@ -144,18 +91,55 @@ pub fn extract_kinematic_model<R: NameResolver>(
             &Predicate::edge().and(Predicate::inherits(base_name))
         );
 
-        for (did, name) in &results.matches {
-            let topo = extract_joint_topology(ir, res, *did);
+        for m in &results {
+            // Read directly from bindings — no re-query needed
+            let mut parent_link = String::from("unknown");
+            let mut child_link = String::from("unknown");
+            let mut axis: Option<[f64; 3]> = None;
+            let mut origin_xyz: Option<[f64; 3]> = None;
+            let mut origin_rpy: Option<[f64; 3]> = None;
+
+            for b in &m.bindings {
+                let is_link = check_inherits_simple(ir, res, b.target, "link", 4);
+                let is_axis = check_inherits_simple(ir, res, b.target, "axis_definition", 4);
+
+                if b.sign == 1 && is_link {
+                    // Parent link (+ sign, inherits from link)
+                    parent_link = b.target_name.clone();
+
+                    // Extract origin from weight annotations on this binding
+                    if let Some(ref weights) = b.weights {
+                        if let Some(first) = weights.first() {
+                            origin_xyz = extract_3vec(first);
+                        }
+                        if weights.len() >= 2 {
+                            origin_rpy = extract_3vec(&weights[1]);
+                        }
+                    }
+                } else if b.sign == -1 && is_link {
+                    // Child link (- sign, inherits from link)
+                    child_link = b.target_name.clone();
+                } else if b.sign == -1 && is_axis {
+                    // Axis (- sign, inherits from axis_definition)
+                    let ax_vals = find_child_list(ir, res, b.target, "ax");
+                    if let Some(v) = ax_vals {
+                        if v.len() >= 3 {
+                            axis = Some([v[0], v[1], v[2]]);
+                        }
+                    }
+                }
+            }
+
             joints.push(JointInfo {
-                did: *did,
-                name: name.clone(),
+                did: m.id,
+                name: m.name.clone(),
                 joint_type: *jtype,
-                parent_link: topo.parent_link,
-                child_link: topo.child_link,
-                axis: topo.axis,
-                origin_xyz: topo.origin_xyz,
-                origin_rpy_deg: topo.origin_rpy,
-                limits: None,
+                parent_link,
+                child_link,
+                axis,
+                origin_xyz,
+                origin_rpy_deg: origin_rpy,
+                limits: extract_joint_limits(ir, res, m.id),
             });
         }
     }
@@ -217,16 +201,23 @@ fn find_child_ref_value_list<R: NameResolver>(
     })
 }
 
+fn find_child_ref_target(ir: &Ir, did: DeclId) -> Option<DeclId> {
+    ir.decl_children(did).find_map(|cid| {
+        let child = &ir.decl_nodes[cid.0];
+        match &child.anno.value {
+            Some(ValueR::Ref(target_did)) => Some(*target_did),
+            _ => None,
+        }
+    })
+}
+
+
 fn extract_num_list(val: &Option<ValueR>) -> Option<Vec<f64>> {
     match val {
         Some(ValueR::List(items)) => {
             let nums: Vec<f64> = items.iter().filter_map(|v| {
                 match v {
                     ValueR::Num(n) => Some(*n),
-                    ValueR::List(inner) => {
-                        // Nested list: flatten one level
-                        None // handled separately in weight extraction
-                    }
                     _ => None,
                 }
             }).collect();
@@ -234,6 +225,10 @@ fn extract_num_list(val: &Option<ValueR>) -> Option<Vec<f64>> {
         }
         _ => None,
     }
+}
+fn extract_value_list(ir: &Ir, did: DeclId) -> Option<Vec<f64>> {
+    let decl = &ir.decl_nodes[did.0];
+    extract_num_list(&decl.anno.value)
 }
 
 /// Extract geometry from a child named `link_geometry` that inherits
@@ -266,88 +261,25 @@ fn extract_geometry<R: NameResolver>(ir: &Ir, res: &R, link_did: DeclId) -> Opti
     })
 }
 
-// ============================================================
-// Joint topology extraction
-// ============================================================
 
-struct JointTopology {
-    parent_link: String,
-    child_link: String,
-    axis: Option<[f64; 3]>,
-    origin_xyz: Option<[f64; 3]>,
-    origin_rpy: Option<[f64; 3]>,
-}
-
-/// Extract parent/child link, axis, and origin from joint arc refs.
-///
-/// The convention in HyMeKo:
-///   `+ base_link, [[x,y,z],[r,p,y]] - wheel_fr, - AXIS_Z`
-///
-/// - Plus ref → parent link (origin weights on this ref)
-/// - Minus ref to something inheriting `link` → child link
-/// - Minus ref to something inheriting `axis_definition` → joint axis
-fn extract_joint_topology<R: NameResolver>(
-    ir: &Ir, res: &R, edge_did: DeclId,
-) -> JointTopology {
-    let mut topo = JointTopology {
-        parent_link: "unknown".to_string(),
-        child_link: "unknown".to_string(),
-        axis: None,
-        origin_xyz: None,
-        origin_rpy: None,
-    };
-
-    let Some(eid) = ir.as_edge(edge_did) else { return topo; };
-    let edge_rec = &ir.edges[eid.0];
-
-    for &arc_id in &edge_rec.arcs {
-        let arc = &ir.arcs[arc_id.0];
-        for sref in &arc.refs {
-            let sign = sref.sign();
-            let target = sref.target();
-            if target.is_none() { continue; }
-
-            let target_name = res.resolve(ir.decl_nodes[target.0].name);
-            let is_axis = check_inherits_simple(ir, res, target, "axis_definition", 4);
-            let is_link = check_inherits_simple(ir, res, target, "link", 4);
-
-            if sign == 1 && is_link {
-                topo.parent_link = target_name.to_string();
-                // Extract origin from the weight annotation on this ref
-                let atom = sref.atom();
-                if let Some(ref weights) = atom.weights {
-                    extract_origin_from_weights(weights, &mut topo);
-                }
-            } else if sign == -1 && is_link {
-                topo.child_link = target_name.to_string();
-            } else if sign == -1 && is_axis {
-                let ax_vals = find_child_list(ir, res, target, "ax");
-                if let Some(v) = ax_vals {
-                    if v.len() >= 3 {
-                        topo.axis = Some([v[0], v[1], v[2]]);
-                    }
-                }
-            }
-        }
-    }
-
-    topo
-}
-
-/// Extract xyz and rpy from weight annotations like `[[x,y,z],[r,p,y]]`.
-fn extract_origin_from_weights(weights: &[ValueR], topo: &mut JointTopology) {
-    // The weights Vec typically has structure:
-    // [List([Num(x), Num(y), Num(z)]), List([Num(r), Num(p), Num(y)])]
-    if let Some(xyz) = extract_3vec_from_value(weights.first()) {
-        topo.origin_xyz = Some(xyz);
-    }
-    if let Some(rpy) = extract_3vec_from_value(weights.get(1)) {
-        topo.origin_rpy = Some(rpy);
-    }
-}
 
 fn extract_3vec_from_value(val: Option<&ValueR>) -> Option<[f64; 3]> {
     match val? {
+        ValueR::List(items) if items.len() >= 3 => {
+            let mut arr = [0.0f64; 3];
+            for (i, item) in items.iter().take(3).enumerate() {
+                if let ValueR::Num(n) = item {
+                    arr[i] = *n;
+                }
+            }
+            Some(arr)
+        }
+        _ => None,
+    }
+}
+
+fn extract_3vec(val: &ValueR) -> Option<[f64; 3]> {
+    match val {
         ValueR::List(items) if items.len() >= 3 => {
             let mut arr = [0.0f64; 3];
             for (i, item) in items.iter().take(3).enumerate() {
@@ -387,4 +319,24 @@ fn check_inherits_simple<R: NameResolver>(
     }
 
     false
+}
+
+fn extract_joint_limits<R: NameResolver>(
+    ir: &Ir, res: &R, did: DeclId,
+) -> Option<JointLimits> {
+    let lower = find_child_num(ir, res, did, "limit_lower");
+    let upper = find_child_num(ir, res, did, "limit_upper");
+    let effort = find_child_num(ir, res, did, "limit_effort");
+    let velocity = find_child_num(ir, res, did, "limit_velocity");
+
+    // Only produce limits if at least lower+upper are present
+    match (lower, upper) {
+        (Some(lo), Some(hi)) => Some(JointLimits {
+            lower: lo,
+            upper: hi,
+            effort: effort.unwrap_or(0.0),
+            velocity: velocity.unwrap_or(0.0),
+        }),
+        _ => None,
+    }
 }

@@ -254,6 +254,8 @@ pub fn next_token<'a, L: CommonLexer<'a>>(lex: &mut L) -> Option<LexItem<'a>> {
             Err(e) => return Some(Err(e)),
         },
         b'?' => Token::Question,
+        b'*' => Token::Star,
+
 
         d if d.is_ascii_digit() => match lex.lex_number(start) {
             Ok(t) => t,

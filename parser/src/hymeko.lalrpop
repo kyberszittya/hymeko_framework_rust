@@ -29,6 +29,8 @@ extern {
         "~" => crate::lexer::Token::Tilde,
         "->" => crate::lexer::Token::Arrow,
         "?" => crate::lexer::Token::Question,
+        "*" => crate::lexer::Token::Star,
+        ".." => crate::lexer::Token::DotDot,
         "EOF" => crate::lexer::Token::EOF,
 
         Ident => crate::lexer::Token::Ident(<&'a str>),
@@ -274,6 +276,14 @@ OptValue: Option<Value<'a, &'a str>> = {
 QueryVar: &'a str = {
     "?" <name:Ident> => name,
 };
+
+DeepContainemnt: () = {
+    "." "." => ()
+};
+
+StarRef: () = {
+    "*" => ()
+}
 
 // ------------------------------------------------------------
 // Terminals

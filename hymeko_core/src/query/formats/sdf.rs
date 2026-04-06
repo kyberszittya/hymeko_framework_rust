@@ -3,7 +3,8 @@
 
 use crate::ir::ir::Ir;
 use crate::query::engine::{NameResolver, QueryEngine};
-use crate::query::kinematic::*;
+use crate::query::kinematics::joints::JointType;
+use crate::query::kinematics::kinematic::*;
 
 /// Generate SDF XML string from a compiled IR.
 pub fn generate_sdf<R: NameResolver>(ir: &Ir, resolver: &R, model_name: &str) -> String {

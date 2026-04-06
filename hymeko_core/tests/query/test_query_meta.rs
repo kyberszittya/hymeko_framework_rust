@@ -6,13 +6,18 @@ mod test_query_meta {
 
     const META: &str = "./data/robotics/meta_kinematics.hymeko";
 
+    /// Helper: extract names from Vec<QueryMatch>
+    fn names(matches: &[QueryMatch]) -> Vec<&str> {
+        matches.iter().map(|m| m.name.as_str()).collect()
+    }
+
     #[test]
     fn find_all_nodes() {
         let (store, compiled) = load_and_lower(META).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let r = engine.query(&Predicate::node());
-        assert!(r.len() > 0);
-        println!("All nodes ({}): {:?}", r.len(), r.names());
+        assert!(!r.is_empty());
+        println!("All nodes ({}): {:?}", r.len(), names(&r));
     }
 
     #[test]
@@ -20,8 +25,8 @@ mod test_query_meta {
         let (store, compiled) = load_and_lower(META).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let r = engine.query(&Predicate::edge());
-        assert!(r.len() > 0);
-        println!("All edges ({}): {:?}", r.len(), r.names());
+        assert!(!r.is_empty());
+        println!("All edges ({}): {:?}", r.len(), names(&r));
     }
 
     #[test]
@@ -29,13 +34,13 @@ mod test_query_meta {
         let (store, compiled) = load_and_lower(META).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let r = engine.query(&Predicate::node().and(Predicate::inherits("axis_definition")));
-        let names = r.names();
-        println!("Axes: {:?}", names);
+        let n = names(&r);
+        println!("Axes: {:?}", n);
         assert_eq!(r.len(), 4);
-        assert!(names.contains(&"AXIS_X"));
-        assert!(names.contains(&"AXIS_Y"));
-        assert!(names.contains(&"AXIS_Z"));
-        assert!(names.contains(&"AXIS_M_Z"));
+        assert!(n.contains(&"AXIS_X"));
+        assert!(n.contains(&"AXIS_Y"));
+        assert!(n.contains(&"AXIS_Z"));
+        assert!(n.contains(&"AXIS_M_Z"));
     }
 
     #[test]
@@ -43,12 +48,12 @@ mod test_query_meta {
         let (store, compiled) = load_and_lower(META).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let r = engine.query(&Predicate::edge().and(Predicate::inherits("joint")));
-        let names = r.names();
-        println!("Edges inheriting from 'joint': {:?}", names);
-        assert!(names.contains(&"fixed_joint"));
-        assert!(names.contains(&"rev_joint"));
-        assert!(names.contains(&"conti_joint"));
-        assert!(names.contains(&"prismatic_joint"));
+        let n = names(&r);
+        println!("Edges inheriting from 'joint': {:?}", n);
+        assert!(n.contains(&"fixed_joint"));
+        assert!(n.contains(&"rev_joint"));
+        assert!(n.contains(&"conti_joint"));
+        assert!(n.contains(&"prismatic_joint"));
     }
 
     #[test]
@@ -56,12 +61,12 @@ mod test_query_meta {
         let (store, compiled) = load_and_lower(META).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let r = engine.query(&Predicate::node().and(Predicate::inherits("meta_element")));
-        let names = r.names();
-        println!("Inherits meta_element: {:?}", names);
-        assert!(names.contains(&"link"));
-        assert!(names.contains(&"frame"));
-        assert!(names.contains(&"sensor"));
-        assert!(names.contains(&"control"));
+        let n = names(&r);
+        println!("Inherits meta_element: {:?}", n);
+        assert!(n.contains(&"link"));
+        assert!(n.contains(&"frame"));
+        assert!(n.contains(&"sensor"));
+        assert!(n.contains(&"control"));
     }
 
     #[test]

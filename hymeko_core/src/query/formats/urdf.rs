@@ -2,7 +2,8 @@
 
 use crate::ir::ir::Ir;
 use crate::query::engine::{NameResolver, QueryEngine};
-use crate::query::kinematic::*;
+use crate::query::kinematics::joints::JointType;
+use crate::query::kinematics::kinematic::*;
 use crate::query::predicate::*;
 
 /// Predefined queries for URDF generation.
