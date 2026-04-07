@@ -18,4 +18,5 @@
 - Extended parser token/grammar handling in `parser/src/hymeko.lalrpop`, `parser/src/lexer/common.rs`, and `parser/src/lexer/token.rs` to support the updated query/model authoring flow.
 - Moved sample `.hymeko` assets from `hymeko_core/data/` to top-level `data/` and kept robotics fixtures updated for query/codegen scenarios (notably `data/robotics/robot_4wh.hymeko`).
 - Added `data/robotics/anthropomorphic_arm.hymeko`, a multi-link manipulator fixture with explicit revolute/fixed joints, joint limits, shared control attributes, and simulation plugin/control definitions for end-to-end kinematics modeling and parser coverage.
+- Added `data/robotics/meta_kinematics.hymeko`, a reusable kinematics schema fixture defining common units, element categories (`link`, `frame`, `control`, `sensor`), joint templates/limits, controller + sensor catalogs, axis presets, and `@control_plugin`/`@sim_plugin` anchors for downstream robot models.
 
