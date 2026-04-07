@@ -1,0 +1,179 @@
+anthropomorphic_arm_description {
+  @"meta_kinematics.hymeko";
+  using kinematics.elements as el;
+  using kinematics.geometry as geo;
+  using kinematics.axes as ax;
+}
+
+robot: el, geo, ax
+{
+    world: el.frame {}
+
+    link_color [1.0, 0.776, 0.0, 1.0];
+    f0_color [0.98, 0.824, 0.6, 1.0];
+
+    anthropomorphic_arm_control: el.control {
+        update_rate 500;
+    }
+
+    // === Links ===
+    base_link: el.link {
+        mass 25.0;
+        link_geometry: cylinder {
+            dimension [0.13, 0.05];
+        }
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> robot.link_color;
+        origin [0.0, 0.0, 0.025];
+    }
+    link_0: el.link {
+        mass 5.0;
+        link_geometry: cylinder {
+            dimension [0.075, 0.2];
+        }
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> robot.link_color;
+        origin [0.0, 0.0, 0.1];
+    }
+    link_1: el.link {
+        mass 2.0;
+        link_geometry: cylinder {
+            dimension [0.075, 0.3];
+        }
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> robot.f0_color;
+        origin [0.0, 0.0, 0.15];
+    }
+    link_2: el.link {
+        mass 2.0;
+        link_geometry: cylinder {
+            dimension [0.075, 0.25];
+        }
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> robot.link_color;
+        origin [0.0, 0.0, 0.125];
+    }
+    link_3: el.link {
+        mass 2.0;
+        link_geometry: cylinder {
+            dimension [0.075, 0.32];
+        }
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> robot.link_color;
+        origin [0.0, 0.0, 0.16];
+    }
+    link_4: el.link {
+        mass 2.0;
+        link_geometry: cylinder {
+            dimension [0.075, 0.15];
+        }
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> robot.link_color;
+        origin [0.0, 0.0, 0.075];
+    }
+    tool: el.link {
+        mass 0.5;
+        link_geometry: box {
+            dimension [0.075, 0.15, 0.1];
+        }
+        visual -> link_geometry;
+        collision -> link_geometry;
+        color -> robot.link_color;
+        origin [0.0, 0.0, 0.05];
+    }
+
+    // === Joint control interface ===
+    @arm_joint_control {
+        (+ control_attributes.position,
+         + control_attributes.velocity,
+         - control_attributes.position,
+         - control_attributes.velocity,
+         - control_attributes.effort);
+    }
+
+    // === Joint limits ===
+    joint0_limit {
+        lower -180.0;
+        upper 180.0;
+        effort 500.0;
+        velocity 4.0;
+    }
+    joint1_limit {
+        lower -180.0;
+        upper 180.0;
+        effort 500.0;
+        velocity 2.0;
+    }
+
+    // === Fixed joint: world -> base ===
+    @j_fix: kinematics.fixed_joint {
+        (+ world [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - base_link);
+    }
+
+    // === Revolute joints ===
+    @j0: kinematics.rev_joint {
+        (+ base_link [[0.0, 0.0, 0.05], [0.0, 0.0, 0.0]], - link_0,
+         - AXIS_Z);
+        @control: arm_joint_control {}
+        limit -> joint0_limit;
+    }
+    @j1: kinematics.rev_joint {
+        (+ link_0 [[0.0, 0.15, 0.15], [0.0, 0.0, 90.0]], - link_1,
+         - AXIS_X);
+        @control: arm_joint_control {}
+        limit -> joint0_limit;
+    }
+    @j2: kinematics.rev_joint {
+        (+ link_1 [[0.0, 0.0, 0.3], [0.0, 0.0, 0.0]], - link_2,
+         - AXIS_Z);
+        @control: arm_joint_control {}
+    }
+    @j3: kinematics.rev_joint {
+        (+ link_2 [[-0.15, 0.0, 0.15], [0.0, 0.0, 0.0]], - link_3,
+         - AXIS_X);
+        @control: arm_joint_control {}
+    }
+    @j4: kinematics.rev_joint {
+        (+ link_3 [[0.0, 0.15, 0.25], [0.0, 0.0, 0.0]], - link_4,
+         - AXIS_Y);
+        @control: arm_joint_control {}
+    }
+    @jtool: kinematics.rev_joint {
+        (+ link_4 [[0.0, 0.0, 0.15], [0.0, 0.0, 0.0]], - tool,
+         - AXIS_Z);
+        @control: arm_joint_control {}
+    }
+
+    // === Simulation ===
+    @gazebo_sim_system: kinematics.control_plugin {
+        plugin "gz_ros2_control/GazeboSimSystem";
+        (- j0, - j1, - j2, - j3, - j4, - jtool);
+    }
+    @sim_control_plugin: kinematics.sim_plugin {
+        plugin "gz_ros2_control::GazeboSimROS2ControlPlugin";
+        filename "gz_ros2_control-system";
+        parameters "moveo_control.yaml";
+    }
+    @joint_state_broadcaster: kinematics.control_definition {
+        (- robot.anthropomorphic_arm_control,
+         + sensors.joint_state_broadcaster);
+    }
+    joint_trajectory_controller: controllers.joint_trajectory_controller {
+       state_publish_rate 100.0;
+       action_monitor_rate 20.0;
+       @interfaces {
+           (+ control_attributes.position,
+            - control_attributes.position,
+            - control_attributes.velocity);
+       }
+       @joints {
+            (- j0, - j1, - j2, - j3, - j4, - jtool);
+       }
+    }
+}
