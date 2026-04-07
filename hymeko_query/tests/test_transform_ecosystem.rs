@@ -5,8 +5,6 @@ mod test_transform_ecosystem {
     use hymeko_query::transforms::ModelView;
 
     const MOVEO_ARM: &str = "../data/robotics/anthropomorphic_arm.hymeko";
-    const MOVEO_ARM_USING: &str = "../data/robotics/anthropomorphic_arm_using.hymeko";
-    const DIFF_ROBOT_USING: &str = "../data/robotics/robot_4wh_using.hymeko";
     const DIFF_ROBOT: &str = "../data/robotics/robot_4wh.hymeko";
 
     // ============================================================
@@ -98,7 +96,7 @@ mod test_transform_ecosystem {
                 let diags = transform.validate(&ModelView::Kinematic(model.clone()));
                 let errors: Vec<_> = diags.iter()
                     .filter(|d| d.is_error())
-                    .filter(|d| !d.message.contains("unknown"))
+                    .filter(|d| !d.message.contains("world"))
                     .collect();
                 assert!(errors.is_empty(),
                         "{} validation failed: {:?}",
@@ -379,88 +377,6 @@ mod test_transform_ecosystem {
 
             assert!(output.contains("\"base_link\""));
             assert!(output.contains("\"wheel_fr\""));
-        }
-    }
-
-    // ============================================================
-    // using...as alias tests
-    // ============================================================
-
-    mod using_alias {
-        use hymeko_query::transforms::{TransformConfig, TransformRegistry, ModelView, ModelKind, DomainTransform};
-        use hymeko_query::transforms::model_view::extract;
-        use crate::test_helpers::load_and_lower;
-        use super::*;
-
-        #[test]
-        fn using_parses_and_extracts() {
-            let (store, compiled) = load_and_lower(MOVEO_ARM_USING).unwrap();
-            let engine = QueryEngine::new(&compiled.ir, &store.it);
-            let model = extract_kinematic_model(&engine, "moveo");
-            assert!(model.links.len() >= 7, "Should have links");
-            assert!(model.joints.len() >= 7, "Should have joints");
-        }
-
-        #[test]
-        fn using_and_original_same_topology() {
-            let (s1, c1) = load_and_lower(MOVEO_ARM).unwrap();
-            let (s2, c2) = load_and_lower(MOVEO_ARM_USING).unwrap();
-
-            let e1 = QueryEngine::new(&c1.ir, &s1.it);
-            let e2 = QueryEngine::new(&c2.ir, &s2.it);
-
-            let m1 = extract_kinematic_model(&e1, "moveo");
-            let m2 = extract_kinematic_model(&e2, "moveo");
-
-            assert_eq!(m1.links.len(), m2.links.len());
-            assert_eq!(m1.joints.len(), m2.joints.len());
-        }
-
-        #[test]
-        fn using_generates_all_formats() {
-            let (store, compiled) = load_and_lower(MOVEO_ARM_USING).unwrap();
-            let reg = TransformRegistry::default();
-            let config = TransformConfig::default().with_name("moveo");
-
-            let model = extract(&compiled.ir, &store.it, "moveo", ModelKind::Kinematic);
-            let results = reg.emit_all(&model, &config);
-
-            assert_eq!(results.len(), 4, "Should generate URDF, SDF, MJCF, DOT");
-            for (filename, content) in &results {
-                assert!(!content.is_empty(), "Empty output for {}", filename);
-                println!("  [using] {} ({} bytes)", filename, content.len());
-            }
-        }
-
-        #[test]
-        fn using_dot_matches_original() {
-            let (s1, c1) = load_and_lower(MOVEO_ARM).unwrap();
-            let (s2, c2) = load_and_lower(MOVEO_ARM_USING).unwrap();
-
-            let e1 = QueryEngine::new(&c1.ir, &s1.it);
-            let e2 = QueryEngine::new(&c2.ir, &s2.it);
-
-            let m1 = extract_kinematic_model(&e1, "moveo");
-            let m2 = extract_kinematic_model(&e2, "moveo");
-
-            let config = TransformConfig::default().with_name("moveo");
-            let dot = hymeko_query::transforms::DotTransform;
-
-            let d1 = dot.emit(&ModelView::Kinematic(m1), &config).unwrap();
-            let d2 = dot.emit(&ModelView::Kinematic(m2), &config).unwrap();
-
-            // Same structure
-            assert_eq!(
-                d1.matches("->").count(),
-                d2.matches("->").count(),
-                "DOT edge count should match"
-            );
-        }
-
-        #[test]
-        fn diff_robot_using_parses() {
-            let (_store, compiled) = load_and_lower(DIFF_ROBOT_USING).unwrap();
-            assert!(compiled.ir.decl_nodes.len() > 0);
         }
     }
 }

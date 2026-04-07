@@ -62,8 +62,7 @@ pub fn extract_kinematic_model<R: NameResolver>(
         let mass = find_child_num(ir, res, m.id, "mass");
         let geometry = extract_geometry(ir, res, m.id);
         let origin = find_child_list(ir, res, m.id, "origin");
-        let color_ref = find_child_ref_target(ir, m.id);
-        let color = color_ref.and_then(|cdid| extract_value_list(ir, cdid));
+        let color = find_child_ref_value_list(ir, res, m.id, "color");
 
         LinkInfo {
             did: m.id,
@@ -98,7 +97,8 @@ pub fn extract_kinematic_model<R: NameResolver>(
             let mut origin_rpy: Option<[f64; 3]> = None;
 
             for b in &m.arc_bindings {
-                let is_link = check_inherits_simple(ir, res, b.target, "link", 4);
+                let is_link = check_inherits_simple(ir, res, b.target, "link", 4)
+                    || check_inherits_simple(ir, res, b.target, "frame", 4);
                 let is_axis = check_inherits_simple(ir, res, b.target, "axis_definition", 4);
 
                 if b.sign == 1 && is_link {

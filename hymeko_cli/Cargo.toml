@@ -1,0 +1,14 @@
+[package]
+name = "hymeko_cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "hymeko"
+path = "src/main.rs"
+
+[dependencies]
+hymeko_core = { path = "../hymeko_core", default-features = false }
+hymeko_query = { path = "../hymeko_query", features = ["interpret"] }
+parser = { path = "../parser", default-features = false }
+clap = { version = "4.6.0", features = ["derive"] }

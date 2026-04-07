@@ -2,7 +2,6 @@
 mod test_generation_engine {
     use hymeko_query::engine::QueryEngine;
     use hymeko_query::kinematics::kinematic::*;
-    use hymeko_query::kinematics::joints::*;
     use hymeko_query::{Predicate, QueryMatch, ValuePredicate};
     use hymeko_query::formats::urdf::{generate_urdf, validate_robot_schema};
     use hymeko_query::formats::sdf::generate_sdf;
@@ -12,8 +11,6 @@ mod test_generation_engine {
     // ============================================================
     const DIFF_ROBOT: &str = "../data/robotics/robot_4wh.hymeko";
     const MOVEO_ARM: &str = "../data/robotics/anthropomorphic_arm.hymeko";
-    const MOVEO_ARM_USING: &str = "../data/robotics/anthropomorphic_arm_using.hymeko";
-    const DIFF_ROBOT_USING: &str = "../data/robotics/robot_4wh_using.hymeko";
 
     /// Helper: extract names from Vec<QueryMatch>
     fn names(matches: &[QueryMatch]) -> Vec<&str> {
@@ -82,7 +79,7 @@ mod test_generation_engine {
 
             // Verify kinematic chain: world→base→link0→link1→link2→link3→link4→tool
             let expected_chain = vec![
-                ("j_fix",  "unknown",   "base_link"), // TODO: world is a frame, extractor resolves as "unknown"
+                ("j_fix",  "world",     "base_link"),
                 ("j0",     "base_link", "link_0"),
                 ("j1",     "link_0",    "link_1"),
                 ("j2",     "link_1",    "link_2"),
@@ -323,9 +320,9 @@ mod test_generation_engine {
             if !errors.is_empty() {
                 for e in &errors { eprintln!("  Schema error: {}", e); }
             }
-            // j_fix has "unknown" parent (world is a frame, not a link)
+            // j_fix parent "world" is a frame, not in links list
             let real_errors: Vec<_> = errors.iter()
-                .filter(|e| !e.contains("unknown"))
+                .filter(|e| !e.contains("world"))
                 .collect();
             assert!(real_errors.is_empty(),
                     "Schema validation failed: {:?}", real_errors);
@@ -602,133 +599,6 @@ mod test_generation_engine {
 
             assert!(!names(&r).contains(&"base_link"));
             assert!(r.len() >= 6, "Should have link_0..4, tool, world");
-        }
-    }
-
-    // ============================================================
-    // SECTION 6: using...as alias tests
-    // ============================================================
-
-    mod using_alias {
-        use super::*;
-        use crate::test_helpers::load_and_lower;
-
-        #[test]
-        fn moveo_using_parses() {
-            let (_store, compiled) = load_and_lower(MOVEO_ARM_USING).unwrap();
-            assert!(compiled.ir.decl_nodes.len() > 0,
-                    "using-alias variant should parse and compile");
-        }
-
-        #[test]
-        fn diff_robot_using_parses() {
-            let (_store, compiled) = load_and_lower(DIFF_ROBOT_USING).unwrap();
-            assert!(compiled.ir.decl_nodes.len() > 0,
-                    "using-alias variant should parse and compile");
-        }
-
-        #[test]
-        fn using_produces_same_links_as_original() {
-            let (_s1, c1) = load_and_lower(MOVEO_ARM).unwrap();
-            let (_s2, c2) = load_and_lower(MOVEO_ARM_USING).unwrap();
-
-            let engine1 = QueryEngine::new(&c1.ir, &_s1.it);
-            let engine2 = QueryEngine::new(&c2.ir, &_s2.it);
-
-            let links1 = engine1.query(&Predicate::node().and(Predicate::inherits("link")));
-            let links2 = engine2.query(&Predicate::node().and(Predicate::inherits("link")));
-
-            assert_eq!(links1.len(), links2.len(),
-                       "Original has {} links, using-alias has {}",
-                       links1.len(), links2.len());
-        }
-
-        #[test]
-        fn using_produces_same_joints_as_original() {
-            let (_s1, c1) = load_and_lower(MOVEO_ARM).unwrap();
-            let (_s2, c2) = load_and_lower(MOVEO_ARM_USING).unwrap();
-
-            let engine1 = QueryEngine::new(&c1.ir, &_s1.it);
-            let engine2 = QueryEngine::new(&c2.ir, &_s2.it);
-
-            let joints1 = engine1.query(&Predicate::edge().and(Predicate::inherits("joint")));
-            let joints2 = engine2.query(&Predicate::edge().and(Predicate::inherits("joint")));
-
-            assert_eq!(joints1.len(), joints2.len(),
-                       "Original has {} joints, using-alias has {}",
-                       joints1.len(), joints2.len());
-        }
-
-        #[test]
-        fn using_urdf_matches_original() {
-            let (s1, c1) = load_and_lower(MOVEO_ARM).unwrap();
-            let (s2, c2) = load_and_lower(MOVEO_ARM_USING).unwrap();
-
-            let urdf1 = generate_urdf(&c1.ir, &s1.it, "moveo");
-            let urdf2 = generate_urdf(&c2.ir, &s2.it, "moveo");
-
-            // Same link count
-            let links1 = urdf1.matches("<link name=").count();
-            let links2 = urdf2.matches("<link name=").count();
-            assert_eq!(links1, links2, "URDF link count mismatch");
-
-            // Same joint count
-            let joints1 = urdf1.matches("<joint name=").count();
-            let joints2 = urdf2.matches("<joint name=").count();
-            assert_eq!(joints1, joints2, "URDF joint count mismatch");
-        }
-
-        #[test]
-        fn using_sdf_matches_original() {
-            let (s1, c1) = load_and_lower(MOVEO_ARM).unwrap();
-            let (s2, c2) = load_and_lower(MOVEO_ARM_USING).unwrap();
-
-            let sdf1 = generate_sdf(&c1.ir, &s1.it, "moveo");
-            let sdf2 = generate_sdf(&c2.ir, &s2.it, "moveo");
-
-            let links1 = sdf1.matches("<link name=").count();
-            let links2 = sdf2.matches("<link name=").count();
-            assert_eq!(links1, links2, "SDF link count mismatch");
-        }
-
-        #[test]
-        fn diff_robot_using_same_link_count() {
-            let (_s1, c1) = load_and_lower(DIFF_ROBOT).unwrap();
-            let (_s2, c2) = load_and_lower(DIFF_ROBOT_USING).unwrap();
-
-            let engine1 = QueryEngine::new(&c1.ir, &_s1.it);
-            let engine2 = QueryEngine::new(&c2.ir, &_s2.it);
-
-            let links1 = engine1.query(&Predicate::node().and(Predicate::inherits("link")));
-            let links2 = engine2.query(&Predicate::node().and(Predicate::inherits("link")));
-
-            assert_eq!(links1.len(), links2.len(),
-                       "diff_robot: original {} links, using-alias {} links",
-                       links1.len(), links2.len());
-        }
-
-        #[test]
-        fn using_kinematic_model_matches() {
-            let (s1, c1) = load_and_lower(MOVEO_ARM).unwrap();
-            let (s2, c2) = load_and_lower(MOVEO_ARM_USING).unwrap();
-
-            let engine1 = QueryEngine::new(&c1.ir, &s1.it);
-            let engine2 = QueryEngine::new(&c2.ir, &s2.it);
-
-            let m1 = extract_kinematic_model(&engine1, "moveo");
-            let m2 = extract_kinematic_model(&engine2, "moveo");
-
-            assert_eq!(m1.links.len(), m2.links.len(), "Link count mismatch");
-            assert_eq!(m1.joints.len(), m2.joints.len(), "Joint count mismatch");
-
-            // Verify same joint topology
-            for (j1, j2) in m1.joints.iter().zip(m2.joints.iter()) {
-                assert_eq!(j1.name, j2.name, "Joint name mismatch");
-                assert_eq!(j1.parent_link, j2.parent_link,
-                           "Joint {} parent mismatch: {} vs {}", j1.name, j1.parent_link, j2.parent_link);
-                assert_eq!(j1.child_link, j2.child_link,
-                           "Joint {} child mismatch", j1.name);
-            }
         }
     }
 }

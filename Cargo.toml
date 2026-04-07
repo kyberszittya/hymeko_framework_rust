@@ -1,7 +1,7 @@
 
 
 [workspace]
-members = [
+members = ["hymeko_cli",
     "hymeko_client",
     "hymeko_core",
     "hymeko_daemon",

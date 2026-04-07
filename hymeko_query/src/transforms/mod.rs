@@ -1,3 +1,15 @@
+//! Domain transform ecosystem for HyMeKo.
+//!
+//! Module structure:
+//!   mod.rs            — DomainTransform trait, Registry, Config, Diagnostic
+//!   model_view.rs     — ModelView enum, ModelKind, extract() generic functions
+//!   transform_engine.rs — TransformEngine (CLI orchestrator, generic on R)
+//!
+//! The separation ensures:
+//!   - DomainTransform is dyn-compatible (no generics)
+//!   - Extraction is generic on R: NameResolver (concrete, sized)
+//!   - TransformEngine bridges the two layers
+
 pub mod model_view;
 pub mod transform_engine;
 
@@ -403,12 +415,23 @@ fn emit_dot(model: &KinematicModel, config: &TransformConfig) -> String {
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
 fn find_roots(model: &KinematicModel) -> Vec<String> {
+    // Find parent_link names that never appear as child_link.
+    // This handles frames like "world" that aren't in model.links.
     let children: std::collections::HashSet<&str> =
         model.joints.iter().map(|j| j.child_link.as_str()).collect();
-    model.links.iter()
-        .filter(|l| !children.contains(l.name.as_str()))
-        .map(|l| l.name.clone())
-        .collect()
+    let parents: std::collections::HashSet<&str> =
+        model.joints.iter().map(|j| j.parent_link.as_str()).collect();
+    let mut roots: Vec<String> = parents.difference(&children)
+        .map(|s| s.to_string())
+        .collect();
+    // Fallback: if no joints exist, use links not appearing as children
+    if roots.is_empty() {
+        roots = model.links.iter()
+            .filter(|l| !children.contains(l.name.as_str()))
+            .map(|l| l.name.clone())
+            .collect();
+    }
+    roots
 }
 
 fn xml_escape(s: &str) -> String {
