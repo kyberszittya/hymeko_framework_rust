@@ -1,7 +1,7 @@
 # Hymeko Framework Changelog
 
 This root changelog summarizes every dated engineering log. Full entries live under `docs/changelog/` for deep dives and diagrams.
-## 2026-04-07 — Query Engine and Tensor Initialization Expansion
+## 2026-04-07 — Query Engine, Tensor Initialization, and Compilation Pipeline Expansion
 - Finalized the query-engine branch by splitting query/codegen/kinematics modules into the dedicated `hymeko_query` crate (`hymeko_query/src/engine.rs`, `hymeko_query/src/interpret.rs`, `hymeko_query/src/codegen.rs`, `hymeko_query/src/formats/`, `hymeko_query/src/kinematics/`) and wiring matching integration tests under `hymeko_query/tests/codegen/`.
 - Reorganized tensor compute surfaces in `hymeko_core/src/tensor/` by modularizing convolution logic (`conv/gcn_clique.rs`, `conv/hgnn.rs`, `conv/signed_hgnn.rs`, `conv/traits.rs`) and adding decomposition + mesh support (`decomposition.rs`, `mesh_nn/mod.rs`).
 - Added deterministic and randomizable weight initializer support in `hymeko_core/src/tensor/conv/weight_init/` (`Xavier`, `Kaiming`, `XavierRandom`, `Zeros`, `Ones`, `Constant`, `van_der_corput`) with targeted coverage in `hymeko_core/tests/computations/test_weight_init.rs`.
@@ -9,6 +9,9 @@ This root changelog summarizes every dated engineering log. Full entries live un
 - Relocated sample datasets from `hymeko_core/data/` to top-level `data/` and refreshed robotics fixtures used by query/codegen scenarios.
 - Added the articulated robotics fixture `data/robotics/anthropomorphic_arm.hymeko` with a full link/joint/control graph (revolute chain, limits, control interfaces, and simulation plugin wiring) for richer kinematics/query validation scenarios.
 - Added `data/robotics/meta_kinematics.hymeko` as a reusable robotics schema layer covering units, joint archetypes, controller/sensor definitions, axis presets, and control/simulation plugin anchors for consistent model authoring.
+- Enhanced `hymeko_core/src/module_store/module_store.rs` with new APIs for ownership-safe IR extraction: `ModuleStore::take_last_ir()` consumes the store to extract owned `Ir` without requiring `Clone`, enabling zero-copy IR hand-offs to daemon/worker threads in `hymeko_daemon/src/worker.rs` (`compile_to_ir_only()`) and Python bindings.
+- Wired `ModuleStore::compile()` step 6b to apply using-alias resolution via `apply_usings()`, ensuring all namespace aliases are resolved during compilation before IR lowering.
+- Added `compile_to_ir_only()` and `deserialize_cbor_ir()` paths in the daemon to decouple IR compilation from tensor expansion scheduling, allowing precompiled/cached IRs to flow through the query/codegen pipeline.
 - Details in [`docs/changelog/changelog_20260407.md`](docs/changelog/changelog_20260407.md).
 
 ## 2026-03-11 — Service-Aware Daemon Logging

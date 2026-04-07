@@ -1,17 +1,20 @@
 // src/resolve.rs
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, Value};
+use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, UsingStmt, Value};
 use crate::common::ids::{DeclId, SymId};
 use crate::common::pathkey::PathKey;
 use crate::ir::ir::{AnnoR, RefAtomR, SignedRefR, ValueR};
 use crate::resolution::interner::Interner;
 use crate::sym_ast::AstSym;
 
-#[derive(Debug, 
+#[derive(Debug,
     Serialize, Deserialize, Default, Clone)]
 pub struct Index {
     pub by_path: FxHashMap<PathKey, DeclId>,
+    /// Alias map from `using path as alias` statements.
+    #[serde(default)]
+    pub aliases: FxHashMap<SymId, Vec<SymId>>,
 }
 
 impl Index {
@@ -45,6 +48,26 @@ pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, Resol
     index_items(&mut idx, &mut next, &mut path, &d.items, it)?;
 
     Ok(idx)
+}
+
+/// Process `using path as alias` statements.
+/// Call AFTER build_index_sym and AFTER imports are indexed.
+pub fn apply_usings(
+    idx: &mut Index,
+    usings: &[UsingStmt<SymId>],
+    it: &Interner,
+) -> Result<(), ResolveError> {
+    for u in usings {
+        let target_key = PathKey(u.path.path.clone());
+        if !idx.by_path.contains_key(&target_key) {
+            return Err(ResolveError::UnresolvedRef {
+                from_scope: "<using>".into(),
+                target: u.path.path.iter().map(|&s| it.resolve(s)).collect::<Vec<_>>().join("."),
+            });
+        }
+        idx.aliases.insert(u.alias, u.path.path.clone());
+    }
+    Ok(())
 }
 
 pub fn build_index_sym_with_prefix<'a>(
@@ -185,15 +208,27 @@ pub fn resolve_ref_to_declid(
     target: &Ref<SymId>,
     it: &Interner,
 ) -> Result<DeclId, ResolveError> {
+    // ── Alias expansion ──────────────────────────────────────
+    let expanded;
+    let effective = if !target.path.is_empty() {
+        if let Some(exp) = idx.aliases.get(&target.path[0]) {
+            let mut p = exp.clone();
+            p.extend_from_slice(&target.path[1..]);
+            expanded = Ref { path: p };
+            &expanded
+        } else { target }
+    } else { target };
+    // ─────────────────────────────────────────────────────────
+
     let mut hit: Option<(PathKey, DeclId)> = None;
 
     // Single scratch buffer for the entire search [cite: 2026-02-08]
-    let mut fq_buffer = Vec::with_capacity(scope.len() + target.path.len());
+    let mut fq_buffer = Vec::with_capacity(scope.len() + effective.path.len());
 
     for k in (0..=scope.len()).rev() {
         fq_buffer.clear();
         fq_buffer.extend_from_slice(&scope[..k]);
-        fq_buffer.extend_from_slice(&target.path);
+        fq_buffer.extend_from_slice(&effective.path);
 
         // Borrowed lookup wrapper to avoid unnecessary PathKey allocations
         // Note: Unless you use a custom lookup wrapper, .get() usually requires

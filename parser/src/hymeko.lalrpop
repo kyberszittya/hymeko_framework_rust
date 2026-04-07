@@ -33,6 +33,8 @@ extern {
         ".." => crate::lexer::Token::DotDot,
         "EOF" => crate::lexer::Token::EOF,
 
+        "using" => crate::lexer::Token::Using,
+        "as" => crate::lexer::Token::As,
         Ident => crate::lexer::Token::Ident(<&'a str>),
         Number => crate::lexer::Token::Number(<f64>),
         StrLit => crate::lexer::Token::Str(<Cow<'a, str>>),
@@ -46,26 +48,29 @@ extern {
 
 pub Description: Description<'a, &'a str> = {
     <name:Ident> <hb:OptHeaderBlock> <items:HyperItem*> => {
-        let (imports, header) = hb;
-        Description { name, header, imports, items }
+        let (imports, usings, header) = hb;
+        Description { name, header, imports, usings, items }
     }
 };
 
 OptHeaderBlock: HeaderBlock<'a> = {
     "{" <xs:HeaderStmt*> "}" => {
         let mut imports = Vec::new();
+        let mut usings = Vec::new();
         let mut decls = Vec::new();
         for x in xs {
             match x {
                 HeaderStmt::Import(i) => imports.push(i),
+                HeaderStmt::Using(u) => usings.push(u),
                 HeaderStmt::Node(n) => decls.push(n),
             }
         }
-        (imports, decls)
+        (imports, usings, decls)
     }
 };
 HeaderStmt: HeaderStmt<'a, &'a str> = {
     <i:ImportStmt> => HeaderStmt::Import(i),
+    <u:UsingStmt> => HeaderStmt::Using(u),
     <n:HeaderItem> => HeaderStmt::Node(n),
 };
 
@@ -79,6 +84,11 @@ HeaderItem: NodeDecl<'a, &'a str> = {
 ImportStmt: ImportStmt<'a, &'a str> = {
     "@" <path:StrLit> <alias:OptImportAlias> ";" =>
         ImportStmt { path, alias }
+};
+
+UsingStmt: UsingStmt<&'a str> = {
+    "using" <path:RefPath> "as" <alias:Ident> ";" =>
+        UsingStmt { path, alias }
 };
 
 OptImportAlias: Option<&'a str> = {

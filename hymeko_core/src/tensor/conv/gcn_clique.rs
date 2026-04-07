@@ -8,9 +8,11 @@ use crate::tensor::common::Real;
 use crate::tensor::representations::tensor_csr::TensorCsr;
 
 use crate::tensor::conv::traits::{compute_degree, inv_sqrt_degree, DegreeMode, HypergraphConv};
+use crate::tensor::conv::weight_init::weight_init::{WeightInit, Xavier};
 use crate::tensor::tensor_val::{IncVal, EdgeWeight};
 use crate::traversal::hypergraphview::HyperGraphView;
 use crate::tensor::message_passing::{build_explicit_a, CliqueStepCfg};
+
 
 pub struct GcnCliqueLayer<F: Real> {
     /// Learnable weight matrix W: d_in × d_out (row-major)
@@ -22,15 +24,24 @@ pub struct GcnCliqueLayer<F: Real> {
 }
 
 impl<F: Real> GcnCliqueLayer<F> {
+
+    pub fn from_view<V, EW>(hg: &HyperGraphView<V, EW, F>, d_in: usize, d_out: usize) -> Self
+    where V: IncVal<F>, EW: EdgeWeight<V, F>,
+    {
+        Self::from_view_with_init(hg, d_in, d_out, &Xavier)
+    }
+
     /// Build from HyperGraphView. Precomputes the normalized adjacency.
-    pub fn from_view<V, EW>(
+    pub fn from_view_with_init<V, EW, I>(
         hg: &HyperGraphView<V, EW, F>,
         d_in: usize,
         d_out: usize,
+        init: &I
     ) -> Self
     where
         V: IncVal<F>,
         EW: EdgeWeight<V, F>,
+        I: WeightInit<F>,
     {
         let cfg = CliqueStepCfg { use_abs: true, include_self: true };
         let a_coo = build_explicit_a(hg, cfg);
@@ -78,10 +89,13 @@ impl<F: Real> GcnCliqueLayer<F> {
         };
 
         // Initialize weights with Xavier uniform
-        let scale = F::from_other(1.0 / (d_in as f64).sqrt());
-        let weights = vec![scale; d_in * d_out]; // TODO: proper random init
+        let weights = init.create(d_in, d_out);
 
         Self { weights, d_in, d_out, norm_adj }
+    }
+
+    pub fn reinit_weights<I: WeightInit<F>>(&mut self, init: &I) {
+        init.init(self.d_in, self.d_out, &mut self.weights);
     }
 
     /// Forward: X' = ReLU(Ã · X · W)

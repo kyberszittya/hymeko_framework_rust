@@ -5,13 +5,22 @@ pub struct Description<'a, Id> {
     pub name: Id,
     pub header: Vec<NodeDecl<'a, Id>>,
     pub imports: Vec<ImportStmt<'a, Id>>,
+    pub usings: Vec<UsingStmt<Id>>,
     pub items: Vec<HyperItem<'a, Id>>,
 }
 
 pub enum HeaderStmt<'a, S> {
     Node(NodeDecl<'a, S>),
+    Using(UsingStmt<S>),
     Import(ImportStmt<'a, S>),
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct UsingStmt<Id> {
+    pub path: Ref<Id>,
+    pub alias: Id,
+}
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum HyperItem<'a, Id> {
@@ -42,7 +51,11 @@ pub struct HyperAnnotatedElement<'a, T, Id> {
 pub type NodeDecl<'a, Id>  = HyperAnnotatedElement<'a, NodeInner<'a, Id>, Id>;
 pub type EdgeDecl<'a, Id>  = HyperAnnotatedElement<'a, EdgeInner<'a, Id>, Id>;
 pub type HyperArc<'a, Id>  = HyperAnnotatedElement<'a, ArcInner<'a, Id>, Id>;
-pub type HeaderBlock<'a> = (Vec<ImportStmt<'a, &'a str>>, Vec<NodeDecl<'a, &'a str>>);
+pub type HeaderBlock<'a> = (
+    Vec<ImportStmt<'a, &'a str>>,
+    Vec<UsingStmt<&'a str>>,
+    Vec<NodeDecl<'a, &'a str>>
+);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeInner<'a, Id> {

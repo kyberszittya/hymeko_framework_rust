@@ -1,22 +1,7 @@
 use crate::tensor::common::Real;
-use crate::tensor::conv::weight_init::weight_init::{Constant, Kaiming, KaimingRandom, LeCun, Ones, Xavier, XavierRandom, Zeros};
+use crate::tensor::conv::weight_init::weight_init::{Constant, Kaiming, KaimingRandom, LeCun, Ones, WeightInit, Xavier, XavierRandom, Zeros};
 
-/// Weight initialization strategy.
-///
-/// Implementations produce a `Vec<F>` of length `fan_in * fan_out`
-/// given the layer dimensions.
-pub trait WeightInit<F: Real> {
-    /// Fill `out` with initialized weights.
-    /// `fan_in`: number of input features, `fan_out`: number of output features.
-    fn init(&self, fan_in: usize, fan_out: usize, out: &mut [F]);
 
-    /// Convenience: allocate and fill.
-    fn create(&self, fan_in: usize, fan_out: usize) -> Vec<F> {
-        let mut v = vec![F::zero(); fan_in * fan_out];
-        self.init(fan_in, fan_out, &mut v);
-        v
-    }
-}
 
 // ─── Deterministic initializers (no RNG needed) ───────────────────────────
 

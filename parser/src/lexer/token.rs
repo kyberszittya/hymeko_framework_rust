@@ -16,6 +16,8 @@ pub enum Token<'a> {
     Question,
     Star,
     DotDot,
+    Using,
+    As,
     EOF,
 }
 

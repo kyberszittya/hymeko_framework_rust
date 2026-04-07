@@ -13,7 +13,7 @@ use crate::ir::lower::lower_program_to_ir;
 use crate::module_store::source_provider::SourceProvider;
 use crate::resolution::intern_pass::intern_ast_into_owned;
 use crate::resolution::interner::Interner;
-use crate::resolution::resolve::{build_index_sym_with_prefix, Index};
+use crate::resolution::resolve::{apply_usings, build_index_sym_with_prefix, Index};
 
 use crate::sym_ast::AstSym;
 
@@ -224,6 +224,10 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
                 .map_err(|e| ModuleLoadError::Parse(format!("index dep failed: {e:?}")))?;
         }
 
+
+        // 6b) apply using aliases
+        apply_usings(&mut idx, &root_ast.usings, &self.it)
+            .map_err(|e| ModuleLoadError::Parse(format!("using alias failed: {e:?}")))?;
 
         // 7) lower program IR (2A) + merkle
         let mut ir = lower_program_to_ir(&root_ast, &imported, &idx, &mut self.it)

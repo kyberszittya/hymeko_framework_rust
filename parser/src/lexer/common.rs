@@ -103,7 +103,11 @@ pub trait CommonLexer<'a> {
         self.scan_ident_tail();
         // SAFETY: Identifier characters are exclusively valid ASCII.
         let text = unsafe { std::str::from_utf8_unchecked(&self.bytes()[start..self.pos()]) };
-        Token::Ident(text) // Returns &'a str directly. Zero cost.
+        match text {
+            "using" => Token::Using,
+            "as"    => Token::As,
+            _       => Token::Ident(text),
+        }
     }
 
     #[inline(always)]

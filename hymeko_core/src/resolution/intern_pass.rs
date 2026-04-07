@@ -5,7 +5,7 @@ use parser::ast::{Anno, ArcInner,
                   EdgeInner, HyperAnnotatedElement,
                   HyperArc, HyperItem, ImportStmt,
                   NodeDecl, NodeInner, Ref,
-                  RefAtom, SignedRef, Value};
+                  RefAtom, SignedRef, UsingStmt, Value};
 use crate::common::ids::SymId;
 use crate::resolution::interner::Interner;
 use crate::sym_ast::AstSym;
@@ -28,7 +28,15 @@ fn lower_desc<'a>(src: &Description<'a, &'a str>, it: &mut Interner) -> Descript
         name: sid(it, src.name),
         header: src.header.iter().map(|n| lower_node(n, it)).collect(),
         imports: src.imports.iter().map(|imp| lower_import(imp, it)).collect(),
+        usings: src.usings.iter().map(|u| lower_using(u, it)).collect(),
         items: src.items.iter().map(|x| lower_item(x, it)).collect(),
+    }
+}
+
+fn lower_using(src: &UsingStmt<&str>, it: &mut Interner) -> UsingStmt<SymId> {
+    UsingStmt {
+        path: Ref { path: src.path.path.iter().map(|&p| sid(it, p)).collect() },
+        alias: sid(it, src.alias),
     }
 }
 
@@ -124,7 +132,15 @@ fn lower_desc_owned<'a>(src: &Description<'a, &'a str>, it: &mut Interner) -> De
         name: sid(it, src.name),
         header: src.header.iter().map(|n| lower_node_owned(n, it)).collect(),
         imports: src.imports.iter().map(|imp| lower_import_owned(imp, it)).collect(),
+        usings: src.usings.iter().map(|u| lower_using_owned(u, it)).collect(),
         items: src.items.iter().map(|x| lower_item_owned(x, it)).collect(),
+    }
+}
+
+fn lower_using_owned(src: &UsingStmt<&str>, it: &mut Interner) -> UsingStmt<SymId> {
+    UsingStmt {
+        path: Ref { path: src.path.path.iter().map(|&p| sid(it, p)).collect() },
+        alias: sid(it, src.alias),
     }
 }
 
