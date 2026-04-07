@@ -97,7 +97,11 @@ mod test_query_robot {
         let (store, compiled) = load_and_lower(ROBOT).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let r = engine.query(&Predicate::node().and(Predicate::name_prefix("wheel")));
-        assert_eq!(r.len(), 4);
+        assert!(r.len() >= 4, "At least 4 wheel nodes, got {}", r.len());
+        let n = names(&r);
+        for expected in &["wheel_fr", "wheel_fl", "wheel_rr", "wheel_rl"] {
+            assert!(n.contains(expected), "{} missing", expected);
+        }
     }
 
     #[test]

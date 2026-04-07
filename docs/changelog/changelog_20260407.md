@@ -4,6 +4,10 @@
 - Landed the new query stack and follow-up refactors across `hymeko_query/src/` (`engine.rs`, `interpret.rs`, `predicate.rs`, `codegen.rs`, `formats/`, and `kinematics/`) plus matching tests under `hymeko_query/tests/codegen/`.
 - Split query functionality out of `hymeko_core` into the dedicated `hymeko_query` crate, including path/module moves and workspace wiring updates in `Cargo.toml` and `hymeko_core/src/lib.rs`.
 - Added missing helper surfaces for downstream query workflows in `hymeko_query/src/traits.rs` and expanded test helpers in `hymeko_query/tests/test_helpers.rs`.
+- Expanded `hymeko_query/tests/test_transform_ecosystem.rs` with grouped coverage for transform registry discovery (`available`, name/extension lookup, `emit_all`), cross-format validation (URDF/SDF/MJCF/DOT), MJCF structure checks (nested body topology, hinge/actuator counts, radian mode, materials), and DOT rendering assertions (edge direction, style, axis labels).
+- Added `using ... as` alias-parity scenarios in `hymeko_query/tests/test_transform_ecosystem.rs` to confirm that `anthropomorphic_arm_using.hymeko` / `robot_4wh_using.hymeko` produce equivalent topology and transform outputs to their non-alias fixtures.
+- Added `hymeko_query/tests/test_generation_engine.rs` as an end-to-end generation regression suite covering: kinematic model extraction (link/joint counts, topology, axes, origins, masses, geometries), URDF generation/schema checks, SDF generation checks, and URDF-vs-SDF cross-format consistency assertions.
+- Added predicate-behavior and alias-equivalence checks in `hymeko_query/tests/test_generation_engine.rs`, including combined/or/not predicates, signed arc bindings on revolute joints, and `using ... as` parity for both Moveo and differential-drive fixtures across query results and emitted URDF/SDF structures.
 
 ## Tensor Convolution and Decomposition Expansion
 - Reorganized tensor convolution into modular components under `hymeko_core/src/tensor/conv/` (`gcn_clique.rs`, `hgnn.rs`, `signed_hgnn.rs`, and shared `traits.rs`) and exported them via `mod.rs`.

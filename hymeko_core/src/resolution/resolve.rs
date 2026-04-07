@@ -55,17 +55,36 @@ pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, Resol
 pub fn apply_usings(
     idx: &mut Index,
     usings: &[UsingStmt<SymId>],
+    import_namespaces: &[SymId],
     it: &Interner,
 ) -> Result<(), ResolveError> {
     for u in usings {
-        let target_key = PathKey(u.path.path.clone());
-        if !idx.by_path.contains_key(&target_key) {
-            return Err(ResolveError::UnresolvedRef {
-                from_scope: "<using>".into(),
-                target: u.path.path.iter().map(|&s| it.resolve(s)).collect::<Vec<_>>().join("."),
-            });
+        // Try each import namespace as prefix (e.g., kinematics.elements
+        // lives at [meta_kinematics, kinematics, elements] in the index)
+        let mut resolved = false;
+        for &ns in import_namespaces {
+            let mut prefixed = vec![ns];
+            prefixed.extend_from_slice(&u.path.path);
+            let key = PathKey(prefixed.clone());
+            if idx.by_path.contains_key(&key) {
+                // Store FULL path so alias expansion maps directly to index entries
+                idx.aliases.insert(u.alias, prefixed);
+                resolved = true;
+                break;
+            }
         }
-        idx.aliases.insert(u.alias, u.path.path.clone());
+        if !resolved {
+            // Try without prefix (root-level refs)
+            let key = PathKey(u.path.path.clone());
+            if idx.by_path.contains_key(&key) {
+                idx.aliases.insert(u.alias, u.path.path.clone());
+            } else {
+                return Err(ResolveError::UnresolvedRef {
+                    from_scope: "<using>".into(),
+                    target: u.path.path.iter().map(|&s| it.resolve(s)).collect::<Vec<_>>().join("."),
+                });
+            }
+        }
     }
     Ok(())
 }

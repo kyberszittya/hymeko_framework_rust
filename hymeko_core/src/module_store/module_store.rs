@@ -226,7 +226,8 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
 
 
         // 6b) apply using aliases
-        apply_usings(&mut idx, &root_ast.usings, &self.it)
+        let import_ns: Vec<SymId> = imported.iter().map(|(ns, _)| *ns).collect();
+        apply_usings(&mut idx, &root_ast.usings, &import_ns, &self.it)
             .map_err(|e| ModuleLoadError::Parse(format!("using alias failed: {e:?}")))?;
 
         // 7) lower program IR (2A) + merkle

@@ -19,13 +19,13 @@ diff_robot: el, geo, ax
     }
 
     @wheel_joint_control {
-        (+ control_attributes.velocity,
-         - control_attributes.position,
-         - control_attributes.velocity);
+        (+  meta_kinematics.kinematics.control_attributes.velocity,
+         -  meta_kinematics.kinematics.control_attributes.position,
+         -  meta_kinematics.kinematics.control_attributes.velocity);
     }
     base_link: el.link {
         mass 25.0;
-        link_geometry: box {
+        link_geometry: geo.box {
             dimension [0.7, 0.5, 0.2];
         }
         visual -> link_geometry;
@@ -35,7 +35,7 @@ diff_robot: el, geo, ax
     }
     wheel_fr: el.link {
         mass 2.0;
-        link_geometry: cylinder {
+        link_geometry: geo.cylinder {
             dimension [0.2, 0.1];
         }
         visual -> link_geometry;
@@ -45,7 +45,7 @@ diff_robot: el, geo, ax
     }
     wheel_fl: el.link {
         mass 2.0;
-        link_geometry: cylinder {
+        link_geometry: geo.cylinder {
             dimension [0.2, 0.1];
         }
         visual -> link_geometry;
@@ -55,7 +55,7 @@ diff_robot: el, geo, ax
     }
     wheel_rr: el.link {
         mass 2.0;
-        link_geometry: cylinder {
+        link_geometry: geo.cylinder {
             dimension [0.2, 0.1];
         }
         visual -> link_geometry;
@@ -65,7 +65,7 @@ diff_robot: el, geo, ax
     }
     wheel_rl: el.link {
         mass 2.0;
-        link_geometry: cylinder {
+        link_geometry: geo.cylinder {
             dimension [0.2, 0.1];
         }
         visual -> link_geometry;
@@ -75,7 +75,7 @@ diff_robot: el, geo, ax
     }
     camera_link: el.link {
         mass 0.5;
-        link_geometry: box {
+        link_geometry: geo.box {
             dimension [0.05, 0.2, 0.1];
         }
         visual -> link_geometry;
@@ -84,46 +84,46 @@ diff_robot: el, geo, ax
         origin [0.0, 0.0, 0.05];
     }
 
-    @camera_joint: kinematics.fixed_joint {
+    @camera_joint: meta_kinematics.kinematics.fixed_joint {
         (+ base_link [[0.35, 0.0, 0.15], [0.0, 0.0, 0.0]], - camera_link,
-         - AXIS_Z);
+         - ax.AXIS_Z);
     }
 
-    @joint_fr: kinematics.conti_joint {
+    @joint_fr: meta_kinematics.kinematics.conti_joint {
         (+ base_link [[0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]], - wheel_fr,
-         - AXIS_Z);
+         - ax.AXIS_Z);
         @control: wheel_joint_control {}
     }
-    @joint_fl: kinematics.conti_joint {
+    @joint_fl: meta_kinematics.kinematics.conti_joint {
         (+ base_link [[0.25, -0.25, 0.05], [90.0, 0.0, 0.0]], - wheel_fl,
-         - AXIS_M_Z);
+         - ax.AXIS_M_Z);
         @control: wheel_joint_control {}
     }
-    @joint_rr: kinematics.conti_joint {
+    @joint_rr: meta_kinematics.kinematics.conti_joint {
         (+ base_link [[-0.25, 0.25, 0.05], [-90.0, 0.0, 0.0]], - wheel_rr,
-         - AXIS_Z);
+         - ax.AXIS_Z);
         @control: wheel_joint_control {}
     }
-    @joint_rl: kinematics.conti_joint {
+    @joint_rl: meta_kinematics.kinematics.conti_joint {
         (+ base_link [[-0.25, -0.25, 0.05], [90.0, 0.0, 0.0]], - wheel_rl,
-         - AXIS_M_Z);
+         - ax.AXIS_M_Z);
         @control: wheel_joint_control {}
     }
 
-    @joint_state_broadcaster: kinematics.control_definition {
+    @joint_state_broadcaster: el.control_definition {
         (+ diff_robot.diffdrive_control,
-         - sensors.joint_state_broadcaster);
+         - sens.joint_state_broadcaster);
     }
-    @sim_control_plugin: kinematics.sim_plugin {
+    @sim_control_plugin: meta_kinematics.kinematics.sim_plugin {
         plugin "gz_ros2_control::GazeboSimROS2ControlPlugin";
         filename "gz_ros2_control-system";
         parameters "diff_control.yaml";
     }
-    @gazebo_sim_system: kinematics.control_plugin {
+    @gazebo_sim_system: meta_kinematics.kinematics.control_plugin {
         plugin "gz_ros2_control/GazeboSimSystem";
         (- joint_fr, - joint_fl, - joint_rr, - joint_rl);
     }
-    diff_drive_base_controller: controllers.diff_drive_controller {
+    diff_drive_base_controller: ctrl.diff_drive_controller {
        publish_rate 50.0;
        wheel_separation 0.5;
        wheel_radius 0.2;
@@ -133,9 +133,9 @@ diff_robot: el, geo, ax
        twist_covariance [0.001, 0.0,   0.0, 0.0, 0.0, 0.01];
 
        @interfaces {
-           (+ control_attributes.velocity,
-            - control_attributes.position,
-            - control_attributes.velocity);
+           (+  meta_kinematics.kinematics.control_attributes.velocity,
+            -  meta_kinematics.kinematics.control_attributes.position,
+            -  meta_kinematics.kinematics.control_attributes.velocity);
        }
        @joints {
             (- joint_fr ["right"], - joint_rr ["right"],
@@ -151,15 +151,15 @@ diff_robot: el, geo, ax
         always_on 1;
         clip [0.1, 100.0];
     }
-    camera_image_topic_definition: communication.topic_definition {
+    camera_image_topic_definition: meta_topic.communication.topic_definition {
         topic_name "camera";
         message_type "sensor_msgs/Image";
     }
-    camera_info_topic_definition: communication.topic_definition {
+    camera_info_topic_definition: meta_topic.communication.topic_definition {
         topic_name "camera_info";
         message_type "sensor_msgs/CameraInfo";
     }
-    @camera_topic: communication.topic {
+    @camera_topic: meta_topic.communication.topic {
         (+ camera_image_topic_definition,
          + camera_info_topic_definition,
          - camera);
