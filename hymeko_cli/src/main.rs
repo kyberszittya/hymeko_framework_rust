@@ -1,9 +1,17 @@
-use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::fs;
 
 use clap::{Parser, Subcommand};
+
+use rustyline::{Cmd, Config, CompletionType, Context, Editor, KeyCode, KeyEvent, Modifiers};
+use rustyline::completion::{Completer, FilenameCompleter, Pair};
+use rustyline::error::ReadlineError;
+use rustyline::highlight::Highlighter;
+use rustyline::hint::Hinter;
+use rustyline::history::FileHistory;
+use rustyline::validate::Validator;
+use rustyline::Helper;
 
 use hymeko::module_store::module_store::{CompiledProgram, ModuleStore};
 use hymeko::module_store::source_provider::StdFsProvider;
@@ -265,11 +273,43 @@ fn interactive_console() {
     println!("╔══════════════════════════════════════════════╗");
     println!("║  HyMeKo Interactive Console                 ║");
     println!("║  Type 'help' for available commands          ║");
+    println!("║  Tab to complete, ↑/↓ for history            ║");
     println!("╚══════════════════════════════════════════════╝");
     println!();
 
-    let stdin = io::stdin();
-    let mut stdout = io::stdout();
+    let config = Config::builder()
+        .completion_type(CompletionType::List)
+        .history_ignore_space(true)
+        .auto_add_history(false)
+        .build();
+
+    let helper = ReplHelper {
+        fs: FilenameCompleter::new(),
+        transforms_dir: session.transforms_dir.clone(),
+    };
+
+    let mut rl: Editor<ReplHelper, FileHistory> = match Editor::with_config(config) {
+        Ok(rl) => rl,
+        Err(e) => {
+            eprintln!("Failed to initialise readline: {e}. Falling back to basic mode.");
+            return;
+        }
+    };
+    rl.set_helper(Some(helper));
+    // Make ↑/↓ search history filtered by the prefix already typed.
+    rl.bind_sequence(
+        KeyEvent(KeyCode::Up, Modifiers::NONE),
+        Cmd::HistorySearchBackward,
+    );
+    rl.bind_sequence(
+        KeyEvent(KeyCode::Down, Modifiers::NONE),
+        Cmd::HistorySearchForward,
+    );
+
+    let history_path = history_file_path();
+    if let Some(p) = &history_path {
+        let _ = rl.load_history(p);
+    }
 
     loop {
         let label = session.loaded_path.as_ref()
@@ -277,19 +317,31 @@ fn interactive_console() {
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_else(|| "no file".into());
 
-        print!("hymeko [{label}]> ");
-        stdout.flush().ok();
+        let prompt = format!("hymeko [{label}]> ");
+        let line = match rl.readline(&prompt) {
+            Ok(line) => line,
+            Err(ReadlineError::Interrupted) => {
+                // Ctrl-C: discard current line, keep going.
+                continue;
+            }
+            Err(ReadlineError::Eof) => {
+                // Ctrl-D on empty line: exit.
+                println!("  Bye.");
+                break;
+            }
+            Err(e) => {
+                eprintln!("  readline error: {e}");
+                break;
+            }
+        };
 
-        let mut line = String::new();
-        if stdin.lock().read_line(&mut line).is_err() || line.is_empty() {
-            break;
-        }
-
-        let line = line.trim();
-        if line.is_empty() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
             continue;
         }
+        rl.add_history_entry(trimmed).ok();
 
+        let line = trimmed;
         let parts: Vec<&str> = line.splitn(3, char::is_whitespace).collect();
         let cmd = parts[0].to_lowercase();
 
@@ -492,6 +544,9 @@ fn interactive_console() {
             "tdir" | "transforms-dir" => {
                 if parts.len() >= 2 {
                     session.transforms_dir = parts[1].to_string();
+                    if let Some(h) = rl.helper_mut() {
+                        h.transforms_dir = session.transforms_dir.clone();
+                    }
                     println!("  Transforms directory set to: {}", session.transforms_dir);
                 } else {
                     println!("  Current transforms directory: {}", session.transforms_dir);
@@ -578,6 +633,147 @@ fn interactive_console() {
             }
         }
     }
+
+    if let Some(p) = &history_path {
+        let _ = rl.save_history(p);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REPL helper — tab completion + history
+// ═══════════════════════════════════════════════════════════════
+
+const REPL_COMMANDS: &[&str] = &[
+    "help", "load", "open", "reload", "name",
+    "compile", "gen", "generate",
+    "validate", "check",
+    "inspect", "ir", "dump",
+    "info", "status", "formats",
+    "query", "qfile", "query-file",
+    "daemon", "transform", "tf",
+    "tdir", "transforms-dir",
+    "cd", "pwd", "ls",
+    "exit", "quit",
+];
+
+const FORMAT_NAMES: &[&str] = &["urdf", "sdf", "mjcf", "dot"];
+
+struct ReplHelper {
+    fs: FilenameCompleter,
+    transforms_dir: String,
+}
+
+impl Completer for ReplHelper {
+    type Candidate = Pair;
+
+    fn complete(
+        &self,
+        line: &str,
+        pos: usize,
+        ctx: &Context<'_>,
+    ) -> rustyline::Result<(usize, Vec<Pair>)> {
+        let before = &line[..pos];
+
+        // Start of the word the cursor is sitting on.
+        let word_start = before
+            .rfind(|c: char| c.is_whitespace())
+            .map(|i| i + 1)
+            .unwrap_or(0);
+        let current_word = &before[word_start..];
+
+        // Index of the word being completed (0 = command, 1 = first arg, …).
+        // Whitespace-followed-by-cursor counts as a fresh word.
+        let starts_new_word = before.ends_with(char::is_whitespace);
+        let prior_word_count = before.split_whitespace().count();
+        let word_index = if starts_new_word || prior_word_count == 0 {
+            prior_word_count
+        } else {
+            prior_word_count - 1
+        };
+
+        // Word 0 → completing the command itself.
+        if word_index == 0 {
+            let pairs = REPL_COMMANDS
+                .iter()
+                .filter(|c| c.starts_with(current_word))
+                .map(|c| Pair {
+                    display: c.to_string(),
+                    replacement: format!("{c} "),
+                })
+                .collect();
+            return Ok((word_start, pairs));
+        }
+
+        // Otherwise dispatch on the command name.
+        let cmd = before
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_lowercase();
+
+        match (cmd.as_str(), word_index) {
+            // Commands whose only argument is a filesystem path.
+            ("load" | "open" | "qfile" | "query-file" | "cd" | "ls" | "tdir" | "transforms-dir", _) => {
+                self.fs.complete(line, pos, ctx)
+            }
+            // compile <fmt> [outfile]
+            ("compile" | "gen" | "generate", 1) => {
+                let pairs = FORMAT_NAMES
+                    .iter()
+                    .filter(|f| f.starts_with(current_word))
+                    .map(|f| Pair {
+                        display: f.to_string(),
+                        replacement: format!("{f} "),
+                    })
+                    .collect();
+                Ok((word_start, pairs))
+            }
+            ("compile" | "gen" | "generate", _) => self.fs.complete(line, pos, ctx),
+            // transform <name> [outfile]
+            ("transform" | "tf", 1) => {
+                let pairs = list_transform_names(&self.transforms_dir)
+                    .into_iter()
+                    .filter(|t| t.starts_with(current_word))
+                    .map(|t| Pair {
+                        display: t.clone(),
+                        replacement: format!("{t} "),
+                    })
+                    .collect();
+                Ok((word_start, pairs))
+            }
+            ("transform" | "tf", _) => self.fs.complete(line, pos, ctx),
+            // No completion suggestions for other commands' args.
+            _ => Ok((word_start, vec![])),
+        }
+    }
+}
+
+impl Hinter for ReplHelper {
+    type Hint = String;
+}
+impl Highlighter for ReplHelper {}
+impl Validator for ReplHelper {}
+impl Helper for ReplHelper {}
+
+fn list_transform_names(transforms_dir: &str) -> Vec<String> {
+    let dir = PathBuf::from(transforms_dir);
+    let Ok(entries) = fs::read_dir(&dir) else {
+        return Vec::new();
+    };
+    let mut names: Vec<String> = entries
+        .flatten()
+        .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+        .filter(|e| e.path().join("queries.hymeko").exists())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .collect();
+    names.sort();
+    names
+}
+
+fn history_file_path() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(|h| PathBuf::from(h).join(".hymeko_history"))
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -755,6 +951,14 @@ fn print_help() {
   │                                                         │
   │  help / h / ?             This help                     │
   │  exit / quit / q          Exit the console              │
+  │                                                         │
+  │  Line editing:                                          │
+  │    Tab                    Complete cmd / file / format  │
+  │    ↑ / ↓                  Prefix-search command history │
+  │    Ctrl-R                 Reverse search history        │
+  │    Ctrl-C                 Discard current line          │
+  │    Ctrl-D                 Exit (on empty line)          │
+  │  History persists in ~/.hymeko_history                  │
   │                                                         │
   └─────────────────────────────────────────────────────────┘
 "#);
