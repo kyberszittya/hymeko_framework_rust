@@ -1,0 +1,18 @@
+digraph {{config:robot_name}} {
+  rankdir=TB;
+  node [shape=box, style=filled, fillcolor=lightblue];
+{{#each links}}
+  "{{name}}" [label="{{name}}"];
+{{/each}}
+  edge [color=gray, style=dashed];
+{{#each fixed_joints}}
+  "{{bind:+:0}}" -> "{{bind:-:0}}" [label="{{name}} (fixed)"];
+{{/each}}
+  edge [color=red, fontcolor=red, style=solid];
+{{#each revolute_joints}}
+  "{{bind:+:0}}" -> "{{bind:-:0}}" [label="{{name}} (revolute)"];
+{{/each}}
+{{#each continuous_joints}}
+  "{{bind:+:0}}" -> "{{bind:-:0}}" [label="{{name}} (continuous)"];
+{{/each}}
+}

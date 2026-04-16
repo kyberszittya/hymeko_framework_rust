@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="{{config:robot_name}}">
+{{#each links}}
+  <link name="{{name}}">
+{{#if field:mass}}
+    <inertial>
+      <mass value="{{field:mass}}"/>
+    </inertial>
+{{/if}}
+{{#if field:link_geometry}}
+    <visual>
+{{#if field:origin}}
+      <origin xyz="{{field:origin}}" rpy="0 0 0"/>
+{{/if}}
+      <geometry>
+        <cylinder radius="0.05" length="0.1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.05" length="0.1"/>
+      </geometry>
+    </collision>
+{{/if}}
+  </link>
+{{/each}}
+
+{{#each fixed_joints}}
+  <joint name="{{name}}" type="fixed">
+    <parent link="{{bind:+:0}}"/>
+    <child link="{{bind:-:0}}"/>
+  </joint>
+{{/each}}
+
+{{#each revolute_joints}}
+  <joint name="{{name}}" type="revolute">
+    <parent link="{{bind:+:0}}"/>
+    <child link="{{bind:-:0}}"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+{{/each}}
+
+{{#each continuous_joints}}
+  <joint name="{{name}}" type="continuous">
+    <parent link="{{bind:+:0}}"/>
+    <child link="{{bind:-:0}}"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+{{/each}}
+
+{{#each prismatic_joints}}
+  <joint name="{{name}}" type="prismatic">
+    <parent link="{{bind:+:0}}"/>
+    <child link="{{bind:-:0}}"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0" upper="1.0" effort="100" velocity="0.5"/>
+  </joint>
+{{/each}}
+</robot>

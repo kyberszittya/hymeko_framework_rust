@@ -19,6 +19,9 @@ pub mod engine;
 #[cfg(feature = "interpret")]
 pub mod interpret;
 
+#[cfg(feature = "interpret")]
+pub mod rewrite;
+
 pub mod traits;
 pub mod formats;
 pub mod kinematics;

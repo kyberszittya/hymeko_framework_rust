@@ -24,12 +24,50 @@ use crate::{NamedQuery, Predicate, ValuePredicate};
 /// Each top-level item in the description becomes one `NamedQuery`.
 /// The description's own name becomes the query set label.
 pub fn interpret_as_queries(ast: &Description<'_, &str>) -> Vec<NamedQuery> {
+    interpret_items_as_queries(&ast.items)
+}
+
+/// Convert a parsed .hymeko description (transform definition) into queries.
+///
+/// Transform query files follow the convention:
+/// ```text
+/// <transform_name> {}
+/// context {
+///     label1: base1 {}
+///     label2: base2 {}
+/// }
+/// ```
+///
+/// This helper finds a top-level `context` block and interprets its children
+/// as the queries, ignoring the transform-header node. If no `context` block
+/// is found, falls back to the plain [`interpret_as_queries`] behaviour.
+pub fn interpret_transform_queries(ast: &Description<'_, &str>) -> Vec<NamedQuery> {
+    for item in &ast.items {
+        if let HyperItem::Node(n) = item {
+            if n.inner.name == "context" {
+                if let Some(body) = &n.inner.body {
+                    return interpret_items_as_queries_opts(body, false);
+                }
+            }
+        }
+    }
+    interpret_as_queries(ast)
+}
+
+fn interpret_items_as_queries(items: &[HyperItem<'_, &str>]) -> Vec<NamedQuery> {
+    interpret_items_as_queries_opts(items, true)
+}
+
+fn interpret_items_as_queries_opts(
+    items: &[HyperItem<'_, &str>],
+    use_name_as_filter: bool,
+) -> Vec<NamedQuery> {
     let mut queries = Vec::new();
 
-    for item in &ast.items {
+    for item in items {
         match item {
             HyperItem::Node(n) => {
-                let pred = interpret_node_pattern(n);
+                let pred = interpret_node_pattern_opts(n, use_name_as_filter);
                 let label = if n.inner.name == "_" {
                     format!("node_query_{}", queries.len())
                 } else {
@@ -38,7 +76,7 @@ pub fn interpret_as_queries(ast: &Description<'_, &str>) -> Vec<NamedQuery> {
                 queries.push(NamedQuery { label, predicate: pred });
             }
             HyperItem::Edge(e) => {
-                let pred = interpret_edge_pattern(e);
+                let pred = interpret_edge_pattern_opts(e, use_name_as_filter);
                 let label = if e.inner.name == "_" {
                     format!("edge_query_{}", queries.len())
                 } else {
@@ -55,10 +93,19 @@ pub fn interpret_as_queries(ast: &Description<'_, &str>) -> Vec<NamedQuery> {
 
 /// Interpret a `NodeDecl` as a node-matching predicate.
 fn interpret_node_pattern(n: &NodeDecl<'_, &str>) -> Predicate {
+    interpret_node_pattern_opts(n, true)
+}
+
+/// Interpret a `NodeDecl` as a node-matching predicate.
+///
+/// `use_name_as_filter` — when `false`, the leading name is treated as a label
+/// only (not an exact-name match constraint). Used for transform queries where
+/// `links: link {}` means "any node inheriting link", labelled `links`.
+fn interpret_node_pattern_opts(n: &NodeDecl<'_, &str>, use_name_as_filter: bool) -> Predicate {
     let mut parts: Vec<Predicate> = vec![Predicate::Kind(DeclKind::Node)];
 
-    // Name: "_" = wildcard, anything else = exact match
-    if n.inner.name != "_" {
+    // Name: "_" = wildcard, anything else = exact match (unless suppressed)
+    if use_name_as_filter && n.inner.name != "_" {
         parts.push(Predicate::named(n.inner.name));
     }
 
@@ -111,9 +158,13 @@ fn interpret_node_pattern(n: &NodeDecl<'_, &str>) -> Predicate {
 
 /// Interpret an `EdgeDecl` as an edge-matching predicate.
 fn interpret_edge_pattern(e: &EdgeDecl<'_, &str>) -> Predicate {
+    interpret_edge_pattern_opts(e, true)
+}
+
+fn interpret_edge_pattern_opts(e: &EdgeDecl<'_, &str>, use_name_as_filter: bool) -> Predicate {
     let mut parts: Vec<Predicate> = vec![Predicate::Kind(DeclKind::Edge)];
 
-    if e.inner.name != "_" {
+    if use_name_as_filter && e.inner.name != "_" {
         parts.push(Predicate::named(e.inner.name));
     }
 

@@ -14,6 +14,7 @@ use hymeko::util::pretty_print::pretty_print_compiled;
 use hymeko_query::codegen::{generate_description, OutputFormat};
 use hymeko_query::engine::QueryEngine;
 use hymeko_query::interpret::interpret_as_queries;
+use hymeko_query::rewrite::{execute_transform, TransformSpec};
 
 use parser::parse_description;
 
@@ -67,6 +68,28 @@ enum Commands {
         /// Query file (.hymeko with pattern descriptions)
         #[arg(short = 'q', long)]
         query_file: PathBuf,
+    },
+
+    /// Run a template-driven transform (loads queries + template from transforms/ dir)
+    Transform {
+        /// Input .hymeko description file
+        input: PathBuf,
+
+        /// Transform name (e.g., urdf, sdf, dot — must match a directory under transforms/)
+        #[arg(short = 't', long)]
+        transform: String,
+
+        /// Output file path (default: stdout)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+
+        /// Robot/model name
+        #[arg(short, long, default_value = "robot")]
+        name: String,
+
+        /// Directory containing transform definitions (default: transforms/)
+        #[arg(long, default_value = "transforms")]
+        transforms_dir: String,
     },
 }
 
@@ -150,6 +173,33 @@ fn run_command(cmd: Commands) {
 
             run_query_source(&compiled, &ms.it, &query_src, &query_file.to_string_lossy());
         }
+
+        Commands::Transform { input, transform, output, name, transforms_dir } => {
+            let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
+            let compiled = compile_or_exit(&mut ms, &input);
+
+            let spec = load_transform_spec(&transforms_dir, &transform);
+
+            let mut config = std::collections::HashMap::new();
+            config.insert("robot_name".into(), name);
+
+            let result = execute_transform(&compiled.ir, &ms.it, &spec, &config)
+                .unwrap_or_else(|e| {
+                    eprintln!("Transform failed: {e}");
+                    std::process::exit(1);
+                });
+
+            match output {
+                Some(path) => {
+                    fs::write(&path, &result).unwrap_or_else(|e| {
+                        eprintln!("Failed to write {}: {e}", path.display());
+                        std::process::exit(1);
+                    });
+                    eprintln!("Wrote {} bytes to {}", result.len(), path.display());
+                }
+                None => print!("{result}"),
+            }
+        }
     }
 }
 
@@ -182,6 +232,7 @@ struct Session {
     compiled: Option<Arc<CompiledProgram>>,
     loaded_path: Option<PathBuf>,
     robot_name: String,
+    transforms_dir: String,
 }
 
 impl Session {
@@ -191,6 +242,7 @@ impl Session {
             compiled: None,
             loaded_path: None,
             robot_name: "robot".into(),
+            transforms_dir: "transforms".into(),
         }
     }
 
@@ -399,6 +451,54 @@ fn interactive_console() {
                 eprintln!("  (Planned: daemon connect/push/status/disconnect)");
             }
 
+            "transform" | "tf" => {
+                let Some(compiled) = session.ensure_loaded() else { continue };
+                if parts.len() < 2 {
+                    eprintln!("  Usage: transform <name> [output_file]");
+                    eprintln!("  Available transforms:");
+                    list_available_transforms(&session.transforms_dir);
+                    continue;
+                }
+                let tf_name = parts[1];
+                let tf_dir = PathBuf::from(&session.transforms_dir).join(tf_name);
+                if !tf_dir.is_dir() {
+                    eprintln!("  Transform '{tf_name}' not found in {}", session.transforms_dir);
+                    eprintln!("  Available:");
+                    list_available_transforms(&session.transforms_dir);
+                    continue;
+                }
+
+                let spec = load_transform_spec(&session.transforms_dir, tf_name);
+
+                let mut config = std::collections::HashMap::new();
+                config.insert("robot_name".into(), session.robot_name.clone());
+
+                match execute_transform(&compiled.ir, session.interner(), &spec, &config) {
+                    Ok(result) => {
+                        if parts.len() >= 3 {
+                            let out_path = PathBuf::from(parts[2]);
+                            match fs::write(&out_path, &result) {
+                                Ok(_) => println!("  Wrote {} bytes to {}", result.len(), out_path.display()),
+                                Err(e) => eprintln!("  Write failed: {e}"),
+                            }
+                        } else {
+                            println!("{result}");
+                        }
+                    }
+                    Err(e) => eprintln!("  Transform failed: {e}"),
+                }
+            }
+
+            "tdir" | "transforms-dir" => {
+                if parts.len() >= 2 {
+                    session.transforms_dir = parts[1].to_string();
+                    println!("  Transforms directory set to: {}", session.transforms_dir);
+                } else {
+                    println!("  Current transforms directory: {}", session.transforms_dir);
+                    list_available_transforms(&session.transforms_dir);
+                }
+            }
+
             "cd" => {
                 if parts.len() < 2 {
                     // cd with no args → home directory
@@ -475,6 +575,70 @@ fn interactive_console() {
                 } else {
                     eprintln!("  Unknown command: '{other}'. Type 'help' for available commands.");
                 }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Transform loading helpers
+// ═══════════════════════════════════════════════════════════════
+
+/// Load a transform spec from a directory: <dir>/<name>/queries.hymeko + template.*
+fn load_transform_spec(transforms_dir: &str, name: &str) -> TransformSpec {
+    let dir = PathBuf::from(transforms_dir).join(name);
+
+    let query_path = dir.join("queries.hymeko");
+    let query_source = fs::read_to_string(&query_path).unwrap_or_else(|e| {
+        eprintln!("Failed to read {}: {e}", query_path.display());
+        std::process::exit(1);
+    });
+
+    // Find the template file (any file starting with "template.")
+    let template_source = find_template_file(&dir).unwrap_or_else(|| {
+        eprintln!("No template.* file found in {}", dir.display());
+        std::process::exit(1);
+    });
+
+    TransformSpec {
+        name: name.to_string(),
+        query_source,
+        template_source,
+    }
+}
+
+/// Find and read the template file in a transform directory.
+fn find_template_file(dir: &PathBuf) -> Option<String> {
+    let entries = fs::read_dir(dir).ok()?;
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with("template.") {
+            return fs::read_to_string(entry.path()).ok();
+        }
+    }
+    None
+}
+
+/// List available transforms in a directory.
+fn list_available_transforms(transforms_dir: &str) {
+    let dir = PathBuf::from(transforms_dir);
+    if !dir.is_dir() {
+        println!("  (directory '{}' not found)", transforms_dir);
+        return;
+    }
+    if let Ok(entries) = fs::read_dir(&dir) {
+        for entry in entries.flatten() {
+            if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                let name = entry.file_name().to_string_lossy().to_string();
+                let has_queries = entry.path().join("queries.hymeko").exists();
+                let has_template = find_template_file(&entry.path()).is_some();
+                let status = match (has_queries, has_template) {
+                    (true, true)   => "✅",
+                    (true, false)  => "⚠️  (missing template)",
+                    (false, true)  => "⚠️  (missing queries.hymeko)",
+                    (false, false) => "❌ (empty)",
+                };
+                println!("    {status} {name}");
             }
         }
     }
@@ -575,6 +739,13 @@ fn print_help() {
   │    query _ : link         Find all link nodes            │
   │    query _ : joint        Find all joint edges           │
   │  qfile <file.hymeko>      Run queries from a file        │
+  │                                                         │
+  │  transform <name> [out]   Run a template-driven transform│
+  │    tf urdf                Print URDF to stdout           │
+  │    tf sdf robot.sdf       Write SDF to file              │
+  │    tf dot graph.dot       Write DOT to file              │
+  │  tdir [dir]               Get/set transforms directory   │
+  │  daemon                   (planned) IPC bridge           │
   │                                                         │
   │  cd [dir]                 Change directory               │
   │  pwd                      Print working directory        │

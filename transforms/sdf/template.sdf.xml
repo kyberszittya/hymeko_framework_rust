@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="{{config:robot_name}}">
+{{#each links}}
+    <link name="{{name}}">
+{{#if field:mass}}
+      <inertial>
+        <mass>{{field:mass}}</mass>
+      </inertial>
+{{/if}}
+    </link>
+{{/each}}
+{{#each revolute_joints}}
+    <joint name="{{name}}" type="revolute">
+      <parent>{{bind:+:0}}</parent>
+      <child>{{bind:-:0}}</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+{{/each}}
+{{#each fixed_joints}}
+    <joint name="{{name}}" type="fixed">
+      <parent>{{bind:+:0}}</parent>
+      <child>{{bind:-:0}}</child>
+    </joint>
+{{/each}}
+  </model>
+</sdf>
