@@ -13,7 +13,7 @@ use hymeko::util::pretty_print::pretty_print_compiled;
 
 use hymeko_query::codegen::{generate_description, OutputFormat};
 use hymeko_query::engine::QueryEngine;
-use hymeko_query::interpret::interpret_as_queries;
+use hymeko_query::interpret::interpret_transform_queries;
 use hymeko_query::rewrite::{execute_transform, TransformSpec};
 
 use parser::parse_description;
@@ -667,7 +667,9 @@ fn run_query_source(compiled: &CompiledProgram, interner: &Interner, src: &str, 
         }
     };
 
-    let queries = interpret_as_queries(&ast);
+    // Transform-aware: unwraps `context { … }` if present, otherwise
+    // falls back to plain top-level interpretation.
+    let queries = interpret_transform_queries(&ast);
     if queries.is_empty() {
         println!("  No query patterns found in {label}.");
         return;
