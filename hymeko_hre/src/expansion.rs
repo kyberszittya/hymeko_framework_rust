@@ -1,11 +1,21 @@
-use crate::common::ids::{EdgeId, NodeId};
-use crate::tensor::common::{calc_approx_nnz, signed_incidence, Real};
-use crate::tensor::common_traversal::inc_to_real;
-use crate::tensor::representations::tensor_coo::TensorCoo;
-use crate::tensor::tensor::compute_bipartite_degrees;
-use crate::tensor::tensor_val::{EdgeWeight, IncVal};
-use crate::traversal::hypergraphview::HyperGraphView;
+//! Hypergraph expansion operators — turn a `HyperGraphView` into a sparse
+//! `TensorCoo` representation for downstream tensor algebra.
+//!
+//! Moved from `hymeko_core::tensor::representations::tensor_coo_representation`
+//! into `hymeko_hre` on 2026-04-18 as part of the HRE engine-ops consolidation.
+//! The functions still operate on `HyperGraphView` (which stays in `hymeko_core`
+//! to avoid a cycle with `hymeko_core::tensor::conv` HGNN operators).
 
+use hymeko::common::ids::{EdgeId, NodeId};
+use hymeko::tensor::common::{calc_approx_nnz, signed_incidence, Real};
+use hymeko::tensor::common_traversal::inc_to_real;
+use hymeko::tensor::representations::tensor_coo::TensorCoo;
+use hymeko::tensor::tensor::compute_bipartite_degrees;
+use hymeko::tensor::tensor_val::{EdgeWeight, IncVal};
+use hymeko::traversal::hypergraphview::HyperGraphView;
+
+/// Normalized star expansion. Each incidence weight is divided by
+/// `sqrt(deg_v * deg_e)` so the spectral radius stays bounded.
 pub fn star_expansion_coo_normalized<V, EW, F>(
     hg: &HyperGraphView<V, EW, F>,
     use_abs: bool,
@@ -14,9 +24,9 @@ pub fn star_expansion_coo_normalized<V, EW, F>(
 where
     V: IncVal<F>,
     EW: EdgeWeight<V, F>,
-    F: Real
+    F: Real,
 {
-    let (deg_v, deg_e) = compute_bipartite_degrees(hg, true); // fokszámhoz abs ajánlott
+    let (deg_v, deg_e) = compute_bipartite_degrees(hg, true);
 
     let num_nodes = hg.num_nodes();
     let num_edges = hg.num_edges();
@@ -39,17 +49,17 @@ where
             let n_v = v;
             let sign = hg.flat_edge_sign[p];
 
-            // raw incidence (signed)
             let mut b = inc_to_real(hg, p, e) * signed_incidence::<F>(sign);
-            if use_abs { b = b.abs(); }
+            if use_abs {
+                b = b.abs();
+            }
 
-            // normalize
             let dv = deg_v[v].max(eps);
             let w = b / (dv * de).sqrt();
             match sign {
-                1 => t.push(e, n_v, e_v, w),     // node -> edge
-                -1 => t.push(e, e_v, n_v, w),    // edge -> node
-                _ => {                           // neutral: both
+                1 => t.push(e, n_v, e_v, w),
+                -1 => t.push(e, e_v, n_v, w),
+                _ => {
                     t.push(e, n_v, e_v, w);
                     t.push(e, e_v, n_v, w);
                 }
@@ -68,23 +78,19 @@ pub fn clique_expansion_coo<V, EW, F>(hg: &HyperGraphView<V, EW, F>) -> TensorCo
 where
     V: IncVal<F>,
     EW: EdgeWeight<V, F>,
-    F: Real
+    F: Real,
 {
     let num_nodes = hg.num_nodes();
     let num_edges = hg.num_edges();
 
-    // rough upper bound: per edge, deg^2 potential pairs (dense), but we stay COO sparse
     let mut t = TensorCoo::with_meta(num_edges, num_nodes, num_nodes);
-    // Pre pass
     let approx_nnz = calc_approx_nnz(hg, num_edges);
-
     t.reserve(approx_nnz);
-    // Main pass
+
     for e in 0..num_edges {
         let eid = EdgeId::new(e);
         let (s, eend) = hg.edge_span(eid);
 
-        // gather (node, sign) for this edge
         let mut nodes: Vec<(usize, i8, F)> = Vec::with_capacity(eend - s);
         for p in s..eend {
             let u = hg.flat_edge_nodes[p].0;
@@ -94,21 +100,20 @@ where
             nodes.push((u, su, wu));
         }
 
-        // pairwise fill
         for a in 0..nodes.len() {
             let (u, su, wu) = nodes[a];
-            for b in (a+1)..nodes.len() {
+            for b in (a + 1)..nodes.len() {
                 let (v, sv, wv) = nodes[b];
                 let w: F = wu * wv;
 
                 match (su, sv) {
-                    (1, -1) => {        // '+' : u tends to point outward
+                    (1, -1) => {
                         t.push(e, u, v, w);
                     }
-                    (-1, 1) => {       // '-' : u tends to be incoming -> flip direction
+                    (-1, 1) => {
                         t.push(e, v, u, w);
                     }
-                    _ => {        // neutral: treat as undirected pair entry
+                    _ => {
                         t.push(e, u, v, w);
                         t.push(e, v, u, w);
                     }
@@ -127,14 +132,13 @@ pub fn star_expansion_coo<V, EW, F>(hg: &HyperGraphView<V, EW, F>) -> TensorCoo<
 where
     V: IncVal<F>,
     EW: EdgeWeight<V, F>,
-    F: Real
+    F: Real,
 {
     let num_nodes = hg.num_nodes();
     let num_edges = hg.num_edges();
     let dim = num_nodes + num_edges;
     let edge_base = num_nodes;
 
-    // worst-case ~ 2 incidences per (edge,node) if neutral -> both directions
     let approx_nnz = (hg.flat_edge_nodes.len() * 2).max(16);
 
     let mut t = TensorCoo::with_meta(num_edges, dim, dim);
@@ -144,22 +148,22 @@ where
         let eid = EdgeId::new(e);
         let (s, eend) = hg.edge_span(eid);
         let u_eid = eid.0;
-        let e_v = edge_base + u_eid; // edge index in V*
+        let e_v = edge_base + u_eid;
 
         for p in s..eend {
             let nid: NodeId = hg.flat_edge_nodes[p];
-            let n_v = nid.0; // node index in V*
+            let n_v = nid.0;
             let sign = hg.flat_edge_sign[p];
             let w: F = inc_to_real(hg, p, u_eid);
 
             match sign {
-                1 => { // '+' node -> edge
+                1 => {
                     t.push(u_eid, n_v, e_v, w);
                 }
-                -1 => { // '-' edge -> node
+                -1 => {
                     t.push(u_eid, e_v, n_v, w);
                 }
-                _ => { // neutral: both
+                _ => {
                     t.push(u_eid, n_v, e_v, w);
                     t.push(u_eid, e_v, n_v, w);
                 }
@@ -169,5 +173,3 @@ where
 
     t
 }
-
-

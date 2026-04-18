@@ -7,8 +7,8 @@ use hymeko::resolution::string_table::StringTable;
 use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
 use hymeko::tensor::common::Real;
 use hymeko::tensor::representations::tensor_coo::TensorCoo;
-use hymeko::tensor::representations::tensor_coo_representation;
 use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+use crate::expansion;
 use hymeko::traversal::hypergraphview::HyperGraphView;
 #[cfg(feature = "ipc")]
 use hymeko::tensor::shared_state::{ExpansionHeader, ExpansionKind};
@@ -162,7 +162,7 @@ impl HypergraphEngine {
             HyperGraphView::from_ir(ir, &cfg, &ex);
 
         // Execute core expansion math
-        tensor_coo_representation::star_expansion_coo(&view)
+        expansion::star_expansion_coo(&view)
     }
 
     fn sync_ir_to_engine(
@@ -198,7 +198,7 @@ impl HypergraphEngine {
         let view: HyperGraphView<F, EdgeWScalar<F>, F> =
             HyperGraphView::from_ir(ir, &cfg, &ex);
 
-        tensor_coo_representation::clique_expansion_coo(&view)
+        expansion::clique_expansion_coo(&view)
     }
 
     #[cfg(feature = "ipc")]

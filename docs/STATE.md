@@ -23,11 +23,11 @@ A point-in-time map of what's integrated, what's in-flight, and what's planned. 
 
 ## Test status
 
-`cargo test --workspace` → **347 tests passing**, 0 failures, 3 ignored doc-tests.
+`cargo test --workspace` → **360 tests passing**, 0 failures, 3 ignored doc-tests.
 
 - `parser`: 76 lexer + 11 using-alias + 15 query-variable + 1 doc-test = 103
 - `hymeko_core`: 133 (no engine tests anymore — moved to `hymeko_hre`)
-- `hymeko_hre`: 2 (engine registry + hashing load)
+- `hymeko_hre`: 15 (2 engine registry + 7 expansion + 6 Berge / visitor)
 - `hymeko_query`: 106 (90 existing + 16 alias-parity incl. SDF/MJCF/per-link-mass)
 - `hymeko_cli`: 3 (integration)
 

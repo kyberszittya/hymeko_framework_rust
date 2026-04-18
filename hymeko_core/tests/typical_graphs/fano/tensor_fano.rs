@@ -4,7 +4,7 @@ mod tensor_fano {
     use std::collections::{BTreeSet, HashMap, HashSet};
     use hymeko::common::ids::{EdgeId, NodeId};
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
+    use hymeko_hre::expansion::star_expansion_coo;
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;

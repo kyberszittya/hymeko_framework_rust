@@ -121,7 +121,7 @@ impl HymekoDaemon {
                         &ir_arc, &agg_cfg, &extractor);
 
                     // Compute the sparse Star Expansion COO tensor (using f32 as the Real type)
-                    let tensor = hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo::<_, _, f32>(&hg_view);
+                    let tensor = hymeko_hre::expansion::star_expansion_coo::<_, _, f32>(&hg_view);
                     let nnz = tensor.len() as u64;
                     let graph_name = graph_name_from_ir(&ir_arc);
 
@@ -206,7 +206,7 @@ impl HymekoDaemon {
             let extractor = ScalarWeightExtractor::default();
             let hg_view = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
                 &ir_arc, &agg_cfg, &extractor);
-            let tensor = hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo::<_, _, f32>(&hg_view);
+            let tensor = hymeko_hre::expansion::star_expansion_coo::<_, _, f32>(&hg_view);
             let nnz = tensor.len() as u64;
             let graph_name = graph_name_from_ir(&ir_arc);
 
@@ -304,7 +304,7 @@ impl HymekoDaemon {
         let hg_view = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(ir, &self.agg_cfg, &extractor);
 
         // Using your clique expansion algorithm here
-        let tensor = hymeko::tensor::representations::tensor_coo_representation::clique_expansion_coo::<_, _, f32>(&hg_view);
+        let tensor = hymeko_hre::expansion::clique_expansion_coo::<_, _, f32>(&hg_view);
 
         tensor_to_arrow_bytes(tensor, &etag, &graph_name).expect("Failed to encode Clique Arrow IPC stream")
     }
@@ -330,7 +330,7 @@ impl HymekoDaemon {
         );
 
         // 2. Perform the Star Expansion
-        let tensor = hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo::<_, _, f32>(&hg_view);
+        let tensor = hymeko_hre::expansion::star_expansion_coo::<_, _, f32>(&hg_view);
 
         // 3. Serialize to Arrow IPC bytes using your existing helper
         tensor_to_arrow_bytes(tensor, &etag, graph_name.as_str()).expect("Failed to encode Arrow IPC stream")

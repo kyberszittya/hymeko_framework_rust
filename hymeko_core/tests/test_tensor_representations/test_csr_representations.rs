@@ -6,7 +6,7 @@ mod test_csr_representations {
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::common::Real;
-    use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
+    use hymeko_hre::expansion::star_expansion_coo;
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
     use log::info;
     use std::time::Instant;

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod minimal_tensor_representations {
-    use hymeko::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_hre::expansion::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
     use hymeko::tensor::tensor::{compute_bipartite_degrees, project_sum_over_slices};
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;

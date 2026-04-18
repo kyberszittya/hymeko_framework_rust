@@ -7,7 +7,7 @@ mod test_tensor_representation {
     use hymeko::tensor::common_traversal::inc_to_real;
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::message_passing::{build_explicit_a, clique_diag, implicit_clique_step, print_dense_real, scatter_nodes_from_edges, CliqueStepCfg};
-    use hymeko::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_hre::expansion::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
     use hymeko::tensor::tensor::{compute_bipartite_degrees, dense_view_slice};
     use hymeko::tensor::tensor_val::{EdgeWScalar, EdgeWeight, ScalarWeightExtractor};
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header, print_dense_matrix};

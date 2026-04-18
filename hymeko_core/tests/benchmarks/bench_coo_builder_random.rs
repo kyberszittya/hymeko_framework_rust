@@ -3,7 +3,7 @@ mod bench_coo_builder_random {
     use hymeko::module_store::module_store::{CompiledProgram, HymekoParser, ModuleLoadError, ModuleStore};
     use hymeko::module_store::source_provider::StdFsProvider;
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
+    use hymeko_hre::expansion::star_expansion_coo;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::traversal::hypergraphview::HyperGraphView;
     use parser::ast::AstStr;

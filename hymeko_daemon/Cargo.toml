@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 hymeko_core = { path = "../hymeko_core", features = ["ipc", "arrow-schema"] }
+hymeko_hre = { path = "../hymeko_hre", features = ["ipc"] }
 iceoryx2 = { workspace = true }
 zenoh = { workspace = true }
 serde_cbor = { workspace = true }

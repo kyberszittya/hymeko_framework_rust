@@ -6,5 +6,8 @@
 //! splitting this crate out of `hymeko_core`.
 
 pub mod engine;
+pub mod expansion;
+pub mod traversal;
+pub mod visitor;
 
 pub use engine::hypergraphengine::HypergraphEngine;
