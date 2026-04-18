@@ -1,7 +1,21 @@
-//! Berge bipartite traversal — walks the Node ↔ Edge incidence structure of
-//! a [`HyperGraphView`]. Each enter-node / enter-edge event is reported to
-//! the supplied [`HypergraphVisitor`], so callers can attach pattern
-//! matchers, tracers, or live reactive hooks without modifying the loop.
+//! Berge / Levi bipartite traversal — walks the Node ↔ Edge incidence
+//! structure of a [`HyperGraphView`]. Each enter-node / enter-edge event
+//! is reported to the supplied [`HypergraphVisitor`], so callers can attach
+//! pattern matchers, tracers, or live reactive hooks without modifying the
+//! loop.
+//!
+//! ## Naming — "Berge" vs "Levi" vs "König"
+//!
+//! The bipartite graph on vertex set `V ⊔ E` with an edge `{v, e}` for every
+//! incidence `v ∈ e` has three names in the literature: **Levi graph**
+//! (Levi, 1942), **Berge representation** (Berge, *Hypergraphs*, 1973),
+//! and **König representation**. This module uses `berge_*` identifiers
+//! (and `hymeko_core::traversal::hypergraphview::BergeState` / `BergeView`
+//! from core) for historical reasons. Readers who prefer the Levi-graph
+//! name can use the aliases at the bottom of this module
+//! ([`levi_bfs`], [`levi_dfs`], and the `LeviState` / `LeviView`
+//! re-exports from `hymeko_core::traversal::hypergraphview`) — they point
+//! at the same code.
 //!
 //! Two front-ends:
 //! - [`berge_bfs`] — level-order, using `VecDeque`.
@@ -188,3 +202,15 @@ pub fn berge_bfs_from_edge<V, EW, F, Vis>(
 {
     berge_bfs(view, BergeState::Edge(eid), visitor);
 }
+
+// ---------------------------------------------------------------------------
+// Levi-graph aliases
+// ---------------------------------------------------------------------------
+//
+// Same functions under the Levi-graph name. Zero cost — these are `pub use`
+// aliases, not wrappers.
+
+pub use berge_bfs as levi_bfs;
+pub use berge_dfs as levi_dfs;
+pub use berge_bfs_from_node as levi_bfs_from_node;
+pub use berge_bfs_from_edge as levi_bfs_from_edge;

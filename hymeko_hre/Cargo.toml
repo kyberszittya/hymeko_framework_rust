@@ -21,3 +21,6 @@ iceoryx2 = { workspace = true, optional = true }
 
 [dev-dependencies]
 log = { workspace = true }
+# For end-to-end fixture tests: parse `.hymeko` files, lower to `Ir`, build
+# a `HyperGraphView`, and run hre's expansion / traversal on top.
+parser = { workspace = true }

@@ -23,13 +23,17 @@ A point-in-time map of what's integrated, what's in-flight, and what's planned. 
 
 ## Test status
 
-`cargo test --workspace` → **360 tests passing**, 0 failures, 3 ignored doc-tests.
+`cargo test --workspace` → **403 tests passing**, 0 failures, 3 ignored doc-tests.
 
 - `parser`: 76 lexer + 11 using-alias + 15 query-variable + 1 doc-test = 103
 - `hymeko_core`: 133 (no engine tests anymore — moved to `hymeko_hre`)
-- `hymeko_hre`: 15 (2 engine registry + 7 expansion + 6 Berge / visitor)
-- `hymeko_query`: 106 (90 existing + 16 alias-parity incl. SDF/MJCF/per-link-mass)
+- `hymeko_hre`: 30 (2 engine registry + 7 hand-built expansion + 6 hand-built Berge / visitor + 8 fixture-based expansion + 7 fixture-based Berge)
+- `hymeko_query`: 134 (90 existing + 16 alias-parity + 25 anthropomorphic-arm generation + 3 gazebo sim launch bundle)
 - `hymeko_cli`: 3 (integration)
+
+### Levi-graph naming
+
+The bipartite incidence graph code is named `Berge*` for historical reasons; **Levi-graph aliases** (`LeviState`, `LeviIter`, `LeviView` in `hymeko_core::traversal::hypergraphview`, and `levi_bfs` / `levi_dfs` / `levi_bfs_from_node` / `levi_bfs_from_edge` in `hymeko_hre::traversal::berge`) are zero-cost re-exports pointing at the same code. Use whichever name reads more naturally for your audience.
 
 ## Integrated features
 

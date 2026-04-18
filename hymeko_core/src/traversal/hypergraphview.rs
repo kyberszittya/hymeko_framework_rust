@@ -8,16 +8,30 @@ use crate::tensor::representations::tensor_coo::TensorInc;
 use crate::tensor::tensor_val::{EdgeWeight, IncVal, RefValueExtractor};
 use crate::traversal::graphview::{GraphView};
 
+/// Bipartite vertex of the hypergraph's incidence graph.
+///
+/// This is the **Levi graph** of a hypergraph H = (V, E) — the bipartite
+/// graph on vertex set V ⊔ E whose edges encode incidence. `Levi` (1942),
+/// `Berge` (Hypergraphs, 1973), and `König` representation are all names
+/// for essentially this construction; our code uses `Berge*` identifiers
+/// for historical reasons, with [`LeviState`] / [`LeviView`] re-exports
+/// for readers who prefer the Levi-graph terminology.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BergeState {
     Node(NodeId),
     Edge(EdgeId),
 }
 
+/// Alias for [`BergeState`] using the Levi-graph naming convention.
+pub type LeviState = BergeState;
+
 pub enum BergeIter<'a> {
     Node(std::slice::Iter<'a, EdgeId>),
     Edge(std::slice::Iter<'a, NodeId>),
 }
+
+/// Alias for [`BergeIter`] using the Levi-graph naming convention.
+pub type LeviIter<'a> = BergeIter<'a>;
 
 impl<'a> Iterator for BergeIter<'a> {
     type Item = BergeState;
@@ -275,6 +289,14 @@ where
     }
 }
 
+/// Bipartite incidence view over a [`HyperGraphView`] — the **Levi graph**
+/// of the hypergraph. Walks between `BergeState::Node(_)` and
+/// `BergeState::Edge(_)` alternate, giving classical graph algorithms a
+/// uniform notion of "neighbour" without flattening the hypergraph into a
+/// lossy 2-section.
+///
+/// The name `Berge` is kept for historical reasons; [`LeviView`] is a type
+/// alias for readers who prefer the Levi-graph terminology.
 pub struct BergeView<'a, V, EW, F>
 where
     V: IncVal<F>,
@@ -283,6 +305,9 @@ where
 {
     pub hg: &'a HyperGraphView<V, EW, F>,
 }
+
+/// Alias for [`BergeView`] using the Levi-graph naming convention.
+pub type LeviView<'a, V, EW, F> = BergeView<'a, V, EW, F>;
 
 impl<'a, V, EW, F> GraphView for BergeView<'a, V, EW, F>
 where

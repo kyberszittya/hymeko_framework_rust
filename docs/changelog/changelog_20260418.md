@@ -66,6 +66,54 @@
 - **Tests.** `hymeko_hre/tests/test_expansion.rs` (7 tests): hand-built `HyperGraphView` via struct-literal construction, asserting shape + exact `(k,i,j,value)` entries for star, clique, and normalized-star expansion on a 3-node / 1-hyperedge fixture plus a two-edge chain. `hymeko_hre/tests/test_berge_traversal.rs` (6 tests): per-state visit counting, trace order, DFS preorder, `ChainVisitor` composition, `PatternMatcherVisitor` firing once on the targeted edge, and `should_continue()` short-circuit.
 - **`hymeko_hre/src/lib.rs`** — added `pub mod expansion; pub mod traversal; pub mod visitor;`.
 
+## Fixture-based HRE Tests (end-to-end through the parser)
+
+- Added `hymeko_hre/tests/common/mod.rs` with a `LalrpopParser` + `load_and_lower()` helper + `view_f32` / `view_f64` builders. Mirrors the minimal parts of `hymeko_core/tests/test_helpers.rs` that hre needs to drive the full `ModuleStore → Ir → HyperGraphView` pipeline without reaching into core's test harness.
+- Added `parser` as a `hymeko_hre` dev-dependency so integration tests can drive the LALRPOP grammar end-to-end.
+- `hymeko_hre/tests/test_fixture_expansion.rs` (8 tests): loads `mini_arm.hymeko`, `anthropomorphic_arm.hymeko`, and `robot_4wh.hymeko` and asserts star/clique shape invariants, per-slice index validity, per-slice non-empty count for the robot's own joints, sparse-vs-dense ratio, and alias-parity on the expansion side (`anthropomorphic_arm.hymeko` vs `anthropomorphic_arm_using.hymeko` produce equal nnz).
+- `hymeko_hre/tests/test_fixture_berge.rs` (7 tests): picks a "first connected node" helper (first incidence of first edge) to avoid the standalone meta-decl nodes that imports contribute, then exercises Berge BFS/DFS, counting visitor vs tracer agreement, pattern matching on reachable target edges, pattern ignoring unreachable-edge IDs, early-exit via `should_continue`, and chained trace + matcher in a single walk.
+- Key learning captured in the test doc-comments: real `.hymeko` fixtures import `meta_kinematics.hymeko`, whose type declarations become standalone `Ir` nodes with no edge incidences. Tests must start traversals from a node that is actually incident to at least one hyperedge (the helper `first_connected_node` does this).
+
+## Anthropomorphic-Arm Generation Test Suite
+
+- Added `hymeko_query/tests/test_anthropomorphic_generation.rs` (25 tests) dedicated to `data/robotics/anthropomorphic_arm.hymeko`. Organised by concern rather than by format:
+  - **Structural signature (§1):** 7 link-typed nodes (world is a `frame`, not a `link`), 6 revolute + 1 fixed joint, `j_fix` connects world→base_link, serial chain adjacency from world to tool, tree invariant that every link is the child of at most one joint.
+  - **Kinematic specifics (§2):** revolute joints use canonical unit axes, exact `(j0=Z, j1=X, j2=Z, j3=X, j4=Y, jtool=Z)` signature, j1's 90° twist preserved, base_link is the heaviest link (25 kg), `joint0_limit` shared-node values are queryable at the IR level.
+  - **Control / simulation hyperedges (§3):** `gazebo_sim_system` edge is queryable, `joint_trajectory_controller` node inherits from the template, `sim_control_plugin` `filename` string matches `gz_ros2_control-system`.
+  - **URDF / SDF generation via `formats::` (§4):** every expected link + joint present in URDF, URDF emits exactly 1 fixed + 6 revolute, SDF collapses non-fixed to `type="revolute"`, URDF and SDF agree on joint count.
+  - **MJCF / DOT via `TransformRegistry` (§5):** body hierarchy matches chain depth (with tolerance for optional world-wrapper), one `<motor>` per revolute joint, DOT emits exactly 7 arrows with the fixed joint dashed, MJCF validator produces no errors on the serial chain.
+  - **Determinism (§6):** two URDF runs produce byte-identical output; two extractions produce identical link/joint sequences.
+- Discovered and documented two API realities while landing this suite:
+  - `TransformRegistry`'s `UrdfTransform` / `SdfTransform` are currently stubs (see the `TODO` comments in `hymeko_query/src/transforms/mod.rs`); the full generators live at `hymeko_query::formats::{urdf::generate_urdf, sdf::generate_sdf}`. The anthropomorphic suite uses the full generators directly and calls the registry only for MJCF + DOT where the registry implementation is complete.
+  - `extract_joint_limits` looks for inline `limit_lower` / `limit_upper` child values and does not yet dereference `limit -> joint0_limit;` references. The test documents this gap inline and queries `joint0_limit` at the IR level instead, so the shared-limit fixture pattern remains regression-covered until the extractor catches up.
+- Registered the new module in `hymeko_query/tests/mod.rs`.
+
+## Levi-Graph Aliases
+
+- Added `LeviState`, `LeviIter`, `LeviView` type aliases in `hymeko_core::traversal::hypergraphview` alongside the existing `Berge*` types, with doc-comment blocks calling out that Levi (1942), Berge (1973), and König are three names for the same bipartite incidence construction — the code keeps `Berge` as the canonical spelling for historical reasons.
+- Added `levi_bfs`, `levi_dfs`, `levi_bfs_from_node`, `levi_bfs_from_edge` as `pub use` re-exports of the `berge_*` traversal functions in `hymeko_hre::traversal::berge`. Zero-cost — they refer to the same code, so either name reads naturally depending on the reader's literature background.
+- Module doc-comment in `hymeko_hre/src/traversal/berge.rs` now explains the naming equivalence so future readers don't have to chase the history.
+
+## Logged Output in `test_anthropomorphic_generation`
+
+- Wrapped eight representative tests with `log_test_header` / `log_test_footer` (from `crate::test_helpers`) plus `log::info!` calls that surface the discovered axis signature (`ZXZXYZ`), mass ranking, URDF/SDF/MJCF/DOT census counts, serial-chain parent/child adjacency, and the `j_fix` world→base_link wiring. Visible via `RUST_LOG=info cargo test -p hymeko_query --test integration test_anthropomorphic_generation -- --nocapture`.
+
+## Gazebo (New `gz sim`) Launch Bundle Test
+
+- Added `hymeko_query/tests/test_gazebo_sim_launch.rs` with 3 tests:
+  - `generate_gz_sim_launch_bundle_for_moveo` — runs `generate_urdf` on `anthropomorphic_arm.hymeko`, writes `moveo.urdf` (~4.5 KB), a hand-templated SDF 1.8 world with the `gz-sim-physics-system` / `user-commands-system` / `scene-broadcaster-system` plugin triple and a ground_plane (`moveo.world.sdf`, ~1.4 KB), and a ROS 2 `gz_sim.launch.py` (~2 KB) that starts `gz sim`, runs `robot_state_publisher` with the URDF, spawns via `ros_gz_sim::create`, and bridges `/clock` + joint-state topics through `ros_gz_bridge::parameter_bridge`. Bundle lands under `target/test_gz_launch_bundle_moveo/` (or `CARGO_TARGET_TMPDIR/gz_launch_bundle_moveo` when cargo provides it) so it is directly launchable with `ros2 launch gz_sim.launch.py`.
+  - `bundle_files_are_referentially_consistent` — parses the generated launch file and asserts every referenced filename actually exists in the bundle directory.
+  - `launch_targets_new_gazebo_not_classic` — regression guard that fails if the launch template ever re-introduces `gazebo_ros` / `gazebo_ros_pkgs` / `libgazebo_ros` (classic Gazebo). The new-Gazebo stack (`gz sim`, `ros_gz_sim`, `ros_gz_bridge`) is a project requirement.
+- All three tests wrap their bodies with `log_test_header` / `log_test_footer` and log the bundle output path, joint/link tag counts, plugin counts, and the exact `cd` + `ros2 launch` commands needed to run the bundle. `RUST_LOG=info cargo test … -- --nocapture` prints the full trace.
+
+## Gazebo Bundle Path Relocation
+
+- Moved the `test_gazebo_sim_launch` bundle output from `target/test_gz_launch_bundle_moveo/` to **`generated/gazebo_launch/<robot>/`** at the workspace root. Motivation: `target/` gets wiped by `cargo clean` and is deeply nested, whereas `generated/` is top-level, survives `cargo clean`, and reads as the canonical home for any "emitted for external tooling" artefact.
+- Path resolution uses `env!("CARGO_MANIFEST_DIR")/..` so it is always the workspace root regardless of where `cargo test` is invoked from.
+- Each bundle now ships a generated `README.md` (~1.5 KB) alongside `moveo.urdf`, `moveo.world.sdf`, and `gz_sim.launch.py`. The README spells out prerequisites (`ros-jazzy-ros-gz`, `ros-jazzy-ros-gz-sim`, `ros-jazzy-ros-gz-bridge`, `ros-jazzy-robot-state-publisher`), the regenerate command, and the exact `ros2 launch gz_sim.launch.py` invocation. Written by a fresh `make_readme()` helper so the directory is self-documenting even if someone stumbles into it without project context.
+- Added `/generated/` to `.gitignore` so the bundle is discoverable locally but never committed.
+- Switched the test's directory prep to idempotent `fs::create_dir_all` + `fs::write` overwrite — previously the two tests would race on `remove_dir_all` under cargo's default parallel runner. No stale-file risk because the bundle has a fixed set of filenames.
+
 ## Workspace test tally
 
-`cargo test --workspace`: **360 tests passing** (was 347 before this slice: +7 expansion, +6 Berge/visitor), 0 failures, 3 ignored doc-tests (pre-existing).
+`cargo test --workspace`: **403 tests passing** (was 400 before: +3 gazebo sim launch bundle), 0 failures, 3 ignored doc-tests (pre-existing).
