@@ -5,6 +5,7 @@ members = ["hymeko_cli",
     "hymeko_client",
     "hymeko_core",
     "hymeko_daemon",
+    "hymeko_hre",
     "hymeko_py", "hymeko_query",
     "parser",
 ]

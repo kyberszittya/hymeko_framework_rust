@@ -1,6 +1,6 @@
 use rustc_hash::FxHashMap;
-use crate::ir::ir::Ir;
-use crate::tensor::representations::tensor_coo::TensorCoo;
+use hymeko::ir::ir::Ir;
+use hymeko::tensor::representations::tensor_coo::TensorCoo;
 
 pub struct HypergraphEngine {
     pub builder: TensorCoo<f64>,

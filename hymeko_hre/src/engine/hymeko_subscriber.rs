@@ -1,6 +1,7 @@
-// In hymeko_core (or hymeko_client), purely in Rust.
+// Hypergraph memory subscriber — lives in `hymeko_hre` so consumers can opt
+// into the iceoryx2 data-plane without pulling it through `hymeko_core`.
 use iceoryx2::prelude::*;
-use crate::tensor::shared_state::HypergraphWeights;
+use hymeko::tensor::shared_state::HypergraphWeights;
 use std::error::Error;
 use iceoryx2::port::subscriber::Subscriber;
 use iceoryx2::sample::Sample;

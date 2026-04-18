@@ -283,7 +283,7 @@ OptValue: Option<Value<'a, &'a str>> = {
     <v:Value> => Some(v)
 };
 
-QueryVar: &'a str = {
+pub QueryVar: &'a str = {
     "?" <name:Ident> => name,
 };
 

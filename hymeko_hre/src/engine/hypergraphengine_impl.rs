@@ -1,17 +1,17 @@
 use rustc_hash::FxHashMap;
 use std::slice;
 use crate::engine::hypergraphengine::HypergraphEngine;
-use crate::ir::common::ref_target;
-use crate::ir::ir::{DeclKind, Ir, SignedRefR};
-use crate::resolution::string_table::StringTable;
-use crate::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-use crate::tensor::common::Real;
-use crate::tensor::representations::tensor_coo::TensorCoo;
-use crate::tensor::representations::tensor_coo_representation;
-use crate::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-use crate::traversal::hypergraphview::HyperGraphView;
+use hymeko::ir::common::ref_target;
+use hymeko::ir::ir::{DeclKind, Ir, SignedRefR};
+use hymeko::resolution::string_table::StringTable;
+use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+use hymeko::tensor::common::Real;
+use hymeko::tensor::representations::tensor_coo::TensorCoo;
+use hymeko::tensor::representations::tensor_coo_representation;
+use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+use hymeko::traversal::hypergraphview::HyperGraphView;
 #[cfg(feature = "ipc")]
-use crate::tensor::shared_state::{ExpansionHeader, ExpansionKind};
+use hymeko::tensor::shared_state::{ExpansionHeader, ExpansionKind};
 
 impl HypergraphEngine {
     pub fn new() -> Self {

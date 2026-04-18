@@ -12,7 +12,6 @@ pub mod resolution;
 pub mod util;
 pub mod module_store;
 pub mod tensor;
-pub mod engine;
 
 pub fn find_node<'ast, 'slice>(
     items: &'slice [HyperItem<'ast, &'ast str>],

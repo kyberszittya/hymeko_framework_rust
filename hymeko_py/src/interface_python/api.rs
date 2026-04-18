@@ -11,7 +11,7 @@ use iceoryx2::prelude::*;
 // The exact Arrow imports required for zero-copy FFI.
 use arrow::array::{Array, Int64Array, Float32Array};
 use arrow::pyarrow::IntoPyArrow;
-use hymeko::engine::hypergraphengine::HypergraphEngine;
+use hymeko_hre::HypergraphEngine;
 use hymeko::tensor::shared_state::{ExpansionHeader, HypergraphWeights};
 use hymeko::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
 use hymeko::module_store::source_provider::MemProvider;

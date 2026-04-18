@@ -1,0 +1,23 @@
+[package]
+name = "hymeko_hre"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "hymeko_hre"
+crate-type = ["rlib"]
+
+[features]
+default = []
+ipc = ["dep:iceoryx2", "hymeko_core/ipc"]
+arrow-schema = ["hymeko_core/arrow-schema"]
+
+[dependencies]
+hymeko_core = { path = "../hymeko_core" }
+rustc-hash = "2.1.1"
+rayon = { workspace = true }
+
+iceoryx2 = { workspace = true, optional = true }
+
+[dev-dependencies]
+log = { workspace = true }

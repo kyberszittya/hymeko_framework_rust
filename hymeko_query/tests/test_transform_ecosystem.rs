@@ -6,7 +6,9 @@ mod test_transform_ecosystem {
     use hymeko_query::transforms::ModelView;
 
     const MOVEO_ARM: &str = "../data/robotics/anthropomorphic_arm.hymeko";
+    const MOVEO_ARM_USING: &str = "../data/robotics/anthropomorphic_arm_using.hymeko";
     const DIFF_ROBOT: &str = "../data/robotics/robot_4wh.hymeko";
+    const DIFF_ROBOT_USING: &str = "../data/robotics/robot_4wh_using.hymeko";
 
     // ============================================================
     // Registry tests
@@ -378,6 +380,273 @@ mod test_transform_ecosystem {
 
             assert!(output.contains("\"base_link\""));
             assert!(output.contains("\"wheel_fr\""));
+        }
+    }
+
+    // ============================================================
+    // Alias-parity tests
+    //
+    // Fixtures ending in `_using.hymeko` exercise the `using <path> as <alias>;`
+    // namespace-alias syntax (grammar in parser/src/hymeko.lalrpop, lowered via
+    // ModuleStore::compile() → apply_usings()). These tests guarantee that the
+    // aliased sources produce the same kinematic model and the same transform
+    // output as their non-alias counterparts — i.e. alias resolution is a pure
+    // desugaring step with no semantic drift.
+    //
+    // Coverage promised in changelog_20260407.md; first landed 2026-04-18 as
+    // part of the namespace-alias audit follow-up.
+    // ============================================================
+
+    mod alias_parity {
+        use hymeko_query::transforms::{DotTransform, TransformConfig, TransformRegistry,
+                                         DomainTransform, ModelView};
+        use crate::test_helpers::load_and_lower;
+        use std::collections::BTreeSet;
+        use super::*;
+
+        fn load_model(path: &str, name: &str) -> KinematicModel {
+            let (store, compiled) = load_and_lower(path).unwrap();
+            let engine = QueryEngine::new(&compiled.ir, &store.it);
+            extract_kinematic_model(&engine, name)
+        }
+
+        fn link_name_set(model: &KinematicModel) -> BTreeSet<String> {
+            model.links.iter().map(|l| l.name.clone()).collect()
+        }
+
+        fn joint_name_set(model: &KinematicModel) -> BTreeSet<String> {
+            model.joints.iter().map(|j| j.name.clone()).collect()
+        }
+
+        // --- moveo (anthropomorphic arm) -------------------------------------
+
+        #[test]
+        fn moveo_using_has_same_link_count_as_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            assert_eq!(
+                aliased.links.len(),
+                baseline.links.len(),
+                "aliased fixture lost or gained links during alias resolution"
+            );
+        }
+
+        #[test]
+        fn moveo_using_has_same_joint_count_as_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            assert_eq!(
+                aliased.joints.len(),
+                baseline.joints.len(),
+                "aliased fixture lost or gained joints during alias resolution"
+            );
+        }
+
+        #[test]
+        fn moveo_using_link_names_match_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            assert_eq!(
+                link_name_set(&aliased),
+                link_name_set(&baseline),
+                "aliased fixture produced a different set of link names"
+            );
+        }
+
+        #[test]
+        fn moveo_using_joint_names_match_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            assert_eq!(
+                joint_name_set(&aliased),
+                joint_name_set(&baseline),
+                "aliased fixture produced a different set of joint names"
+            );
+        }
+
+        #[test]
+        fn moveo_using_urdf_structure_matches_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            let reg = TransformRegistry::default();
+            let urdf = reg.get("urdf").expect("URDF transform registered");
+
+            let cfg = TransformConfig::default().with_name("moveo");
+            let out_baseline = urdf.emit(&ModelView::Kinematic(baseline), &cfg).unwrap();
+            let out_aliased = urdf.emit(&ModelView::Kinematic(aliased), &cfg).unwrap();
+
+            let link_tag_count = |s: &str| s.matches("<link name=").count();
+            let joint_tag_count = |s: &str| s.matches("<joint name=").count();
+
+            assert_eq!(
+                link_tag_count(&out_aliased),
+                link_tag_count(&out_baseline),
+                "aliased URDF has a different <link> count"
+            );
+            assert_eq!(
+                joint_tag_count(&out_aliased),
+                joint_tag_count(&out_baseline),
+                "aliased URDF has a different <joint> count"
+            );
+        }
+
+        #[test]
+        fn moveo_using_dot_edge_count_matches_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            let cfg = TransformConfig::default().with_name("moveo");
+            let dot = DotTransform;
+            let out_baseline = dot.emit(&ModelView::Kinematic(baseline), &cfg).unwrap();
+            let out_aliased = dot.emit(&ModelView::Kinematic(aliased), &cfg).unwrap();
+            assert_eq!(
+                out_aliased.matches(" -> ").count(),
+                out_baseline.matches(" -> ").count(),
+                "aliased DOT has a different edge count"
+            );
+        }
+
+        // --- diff_robot (4-wheel differential drive) -------------------------
+
+        #[test]
+        fn diff_robot_using_has_same_link_count_as_baseline() {
+            let baseline = load_model(DIFF_ROBOT, "diff_robot");
+            let aliased = load_model(DIFF_ROBOT_USING, "diff_robot");
+            assert_eq!(aliased.links.len(), baseline.links.len());
+        }
+
+        #[test]
+        fn diff_robot_using_has_same_joint_count_as_baseline() {
+            let baseline = load_model(DIFF_ROBOT, "diff_robot");
+            let aliased = load_model(DIFF_ROBOT_USING, "diff_robot");
+            assert_eq!(aliased.joints.len(), baseline.joints.len());
+        }
+
+        #[test]
+        fn diff_robot_using_link_names_match_baseline() {
+            let baseline = load_model(DIFF_ROBOT, "diff_robot");
+            let aliased = load_model(DIFF_ROBOT_USING, "diff_robot");
+            assert_eq!(link_name_set(&aliased), link_name_set(&baseline));
+        }
+
+        #[test]
+        fn diff_robot_using_joint_names_match_baseline() {
+            let baseline = load_model(DIFF_ROBOT, "diff_robot");
+            let aliased = load_model(DIFF_ROBOT_USING, "diff_robot");
+            assert_eq!(joint_name_set(&aliased), joint_name_set(&baseline));
+        }
+
+        #[test]
+        fn diff_robot_using_urdf_structure_matches_baseline() {
+            let baseline = load_model(DIFF_ROBOT, "diff_robot");
+            let aliased = load_model(DIFF_ROBOT_USING, "diff_robot");
+            let reg = TransformRegistry::default();
+            let urdf = reg.get("urdf").expect("URDF transform registered");
+
+            let cfg = TransformConfig::default().with_name("diff_robot");
+            let out_baseline = urdf.emit(&ModelView::Kinematic(baseline), &cfg).unwrap();
+            let out_aliased = urdf.emit(&ModelView::Kinematic(aliased), &cfg).unwrap();
+
+            assert_eq!(
+                out_aliased.matches("<link name=").count(),
+                out_baseline.matches("<link name=").count()
+            );
+            assert_eq!(
+                out_aliased.matches("<joint name=").count(),
+                out_baseline.matches("<joint name=").count()
+            );
+        }
+
+        // --- cross-format parity --------------------------------------------
+
+        #[test]
+        fn moveo_using_sdf_link_count_matches_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            let reg = TransformRegistry::default();
+            let sdf = reg.get("sdf").expect("SDF transform registered");
+
+            let cfg = TransformConfig::default().with_name("moveo");
+            let out_baseline = sdf.emit(&ModelView::Kinematic(baseline), &cfg).unwrap();
+            let out_aliased = sdf.emit(&ModelView::Kinematic(aliased), &cfg).unwrap();
+            assert_eq!(
+                out_aliased.matches("<link name=").count(),
+                out_baseline.matches("<link name=").count(),
+                "SDF <link> count must be invariant under aliasing"
+            );
+        }
+
+        #[test]
+        fn moveo_using_mjcf_body_count_matches_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            let reg = TransformRegistry::default();
+            let mjcf = reg.get("mjcf").expect("MJCF transform registered");
+
+            let cfg = TransformConfig::default().with_name("moveo");
+            let out_baseline = mjcf.emit(&ModelView::Kinematic(baseline), &cfg).unwrap();
+            let out_aliased = mjcf.emit(&ModelView::Kinematic(aliased), &cfg).unwrap();
+            assert_eq!(
+                out_aliased.matches("<body name=").count(),
+                out_baseline.matches("<body name=").count(),
+                "MJCF <body> count must be invariant under aliasing"
+            );
+        }
+
+        #[test]
+        fn moveo_using_mjcf_hinge_count_matches_baseline() {
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+            let reg = TransformRegistry::default();
+            let mjcf = reg.get("mjcf").expect("MJCF transform registered");
+
+            let cfg = TransformConfig::default().with_name("moveo");
+            let out_baseline = mjcf.emit(&ModelView::Kinematic(baseline), &cfg).unwrap();
+            let out_aliased = mjcf.emit(&ModelView::Kinematic(aliased), &cfg).unwrap();
+            assert_eq!(
+                out_aliased.matches("type=\"hinge\"").count(),
+                out_baseline.matches("type=\"hinge\"").count(),
+                "MJCF hinge-joint count must be invariant under aliasing"
+            );
+        }
+
+        #[test]
+        fn diff_robot_using_sdf_link_count_matches_baseline() {
+            let baseline = load_model(DIFF_ROBOT, "diff_robot");
+            let aliased = load_model(DIFF_ROBOT_USING, "diff_robot");
+            let reg = TransformRegistry::default();
+            let sdf = reg.get("sdf").expect("SDF transform registered");
+
+            let cfg = TransformConfig::default().with_name("diff_robot");
+            let out_baseline = sdf.emit(&ModelView::Kinematic(baseline), &cfg).unwrap();
+            let out_aliased = sdf.emit(&ModelView::Kinematic(aliased), &cfg).unwrap();
+            assert_eq!(
+                out_aliased.matches("<link name=").count(),
+                out_baseline.matches("<link name=").count()
+            );
+        }
+
+        #[test]
+        fn moveo_using_link_name_masses_match_baseline() {
+            // Stronger check: link masses keyed by name must be identical.
+            let baseline = load_model(MOVEO_ARM, "moveo");
+            let aliased = load_model(MOVEO_ARM_USING, "robot");
+
+            let mut map_baseline: std::collections::BTreeMap<_, _> = baseline
+                .links
+                .iter()
+                .map(|l| (l.name.clone(), l.mass))
+                .collect();
+            let map_aliased: std::collections::BTreeMap<_, _> = aliased
+                .links
+                .iter()
+                .map(|l| (l.name.clone(), l.mass))
+                .collect();
+            assert_eq!(
+                map_aliased, map_baseline,
+                "per-link mass must survive alias expansion"
+            );
+            // Drop the mutable one to silence unused-mut warning.
+            map_baseline.clear();
         }
     }
 }

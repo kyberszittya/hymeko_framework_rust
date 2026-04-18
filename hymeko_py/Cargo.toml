@@ -7,6 +7,7 @@ name = "hymeko_py"
 crate-type = ["cdylib"]
 [dependencies]
 hymeko_core = { path = "../hymeko_core", features = ["ipc", "arrow-schema"] }
+hymeko_hre = { path = "../hymeko_hre", features = ["ipc"] }
 
 ciborium = {  workspace = true }
 arrow = { workspace = true, features = ["pyarrow", "ffi"] }
