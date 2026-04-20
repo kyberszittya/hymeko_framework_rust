@@ -234,7 +234,24 @@ Medians over 30 reps (HyMeKo) and 5 reps (competitor) for the bundle.
 
 All nine morphology points fall on HyMeKo's chain/tree fit line — the speed gap is not a chain/tree-shape artefact.
 
-### 5.4  Competitor capability failures
+### 5.4  Real-robot URDF imports (added 2026-04-21)
+
+Beyond the synthetic chain/tree/morphology fixtures, the bench now also includes two real-robot fixtures imported from public URDFs:
+
+| Fixture | Source URDF | Links | Joints | HyMeKo bundle [ms] |
+|---|---|---:|---:|---:|
+| `wam` | Barrett WAM 7-DOF arm (DART distribution) | 9 | 8 (7 revolute + 1 fixed) | 0.54 |
+| `drchubo` | DRC-Hubo (Atlas-class humanoid, DRC distribution) | 52 | 51 revolute | 3.72 |
+
+The translator (`scripts/scaling/urdf_to_hymeko.py`) parses the URDF XML, maps each `<link>`/`<joint>` to the corresponding HyMeKo decl, and emits a self-contained `.hymeko` source. Mesh geometry (`<mesh filename="…">`) is replaced with placeholder boxes — HyMeKo's emitters do not produce mesh-bearing artefacts, and the kinematic structure (link names, joint hierarchy, axes, limits, masses, inertias) is preserved verbatim.
+
+**What this proves.** The pipeline accepts real published URDFs at humanoid scale (52 links, 51 joints) without grammar / resolver / lower issues. Both imported fixtures compile and emit non-empty URDF, SDF, MJCF, DOT, and Mermaid output through the full pipeline; `tests/test_imported_real.rs` asserts this at `cargo test` time and exercises the kinematic-extractor on each.
+
+**What this does not prove.** Visual fidelity. Mesh references are substituted with placeholders at import; round-tripping into MuJoCo or Gazebo would not visually reproduce the original robot. Adding mesh support to HyMeKo's emitters (a `GeometryShape::Mesh(filename)` extension to `hymeko_query/src/kinematics/kinematic.rs::GeometryShape`) is a separate line of work, deliberately out of scope.
+
+**Position relative to §"What remains untested".** Before this addition, the paper's §"What remains untested" included "real humanoid and industrial public fixtures (e.g., Atlas-class URDFs, automotive wiring-harness SysML) would strengthen the external-validity claim beyond generator-topology artefacts." The DRC-Hubo import closes the humanoid half of that caveat: an Atlas-class URDF *now* runs through HyMeKo's pipeline, and its bundle wall-clock (3.72 ms for 52 links + 51 joints) sits exactly on the chain/tree fit line at the same size. The §"What remains untested" paragraph in the journal version has been narrowed accordingly: industrial-CPS fixtures (SysML, AADL) and mesh-bearing visual fidelity remain explicitly future work.
+
+### 5.5  Competitor capability failures
 
 | Fixture | Failing tool | Mode | HyMeKo |
 |---|---|---|---|
