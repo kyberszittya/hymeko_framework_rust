@@ -1,7 +1,5 @@
 use std::fmt::{Debug, Display};
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Sub, SubAssign};
-use crate::tensor::tensor_val::{EdgeWeight, IncVal};
-use crate::traversal::hypergraphview::HyperGraphView;
 
 pub trait Real:
     Copy + PartialOrd +
@@ -108,15 +106,9 @@ pub fn signed_incidence<F: Real>(sign: i8) -> F {
     }
 }
 
-#[inline]
-pub fn calc_approx_nnz<V, EW, F>(hg: &HyperGraphView<V, EW, F>, num_edges: usize) -> usize where 
-    V: IncVal<F>,
-    EW: EdgeWeight<V, F>,
-    F: Real
-{
-    (0..num_edges).map(|e|{
-        let d = hg.edge_offsets[e + 1] - hg.edge_offsets[e];
-        d * d.saturating_sub(1)
-    }).sum()
-}
+// `calc_approx_nnz` was the single `HyperGraphView`-aware helper in this
+// file. It moved to `hymeko_hnn::tensor::common::calc_approx_nnz` on
+// 2026-04-18 together with the rest of the hypergraph-aware tensor
+// layer; the remaining items in `tensor/common` (Real, AsF32, AsF64,
+// signed_incidence) stay in `hymeko_core`.
 

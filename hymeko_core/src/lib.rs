@@ -5,7 +5,6 @@ use crate::common::ids::SymId;
 
 pub mod common;
 pub mod ir;
-pub mod traversal;
 pub mod writers;
 pub mod sym_ast;
 pub mod resolution;

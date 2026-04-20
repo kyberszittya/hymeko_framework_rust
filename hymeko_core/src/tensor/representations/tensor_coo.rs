@@ -48,7 +48,25 @@ pub struct TensorInc<F: Real, V: IncVal<F>> {
     pub n: NodeId,
     pub s: i8,
     pub w: V,
-    pub(crate) _pd: PhantomData<F>,
+    /// Phantom `F` marker. Public so `hymeko_hnn` (which lives in a
+    /// sibling crate since 2026-04-18) can construct the value — see
+    /// `hymeko_hnn::traversal::hypergraphview::HyperGraphView::from_ir`.
+    pub _pd: PhantomData<F>,
+}
+
+impl<F: Real, V: IncVal<F>> TensorInc<F, V> {
+    /// Convenience constructor so callers don't need to materialise a
+    /// `PhantomData<F>` value at every call-site.
+    #[inline]
+    pub fn new(e: EdgeId, n: NodeId, s: i8, w: V) -> Self {
+        Self {
+            e,
+            n,
+            s,
+            w,
+            _pd: PhantomData,
+        }
+    }
 }
 
 impl Default for TensorBuildCfg {

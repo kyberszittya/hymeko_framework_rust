@@ -114,6 +114,78 @@
 - Added `/generated/` to `.gitignore` so the bundle is discoverable locally but never committed.
 - Switched the test's directory prep to idempotent `fs::create_dir_all` + `fs::write` overwrite — previously the two tests would race on `remove_dir_all` under cargo's default parallel runner. No stale-file risk because the bundle has a fixed set of filenames.
 
+## Plan 06 Step 1 — IR Strategy Decision
+
+- Wrote `docs/plans/06_wasm_editor/step1_ir_design.md` documenting the design decision for the WASM editor's IR: **do not** create a separate `hymeko_ir` crate (as the original spec proposed). Instead, keep the compile-time arena IR in `hymeko_core::ir` unchanged, and host an editor-facing slotmap IR + `IRDelta` + bridge inside a new `hymeko_emitter` crate.
+- Rationale recorded in the doc: (1) phase separation is the right axis — compile IR wants arena + canonical hash, editor IR wants slotmap + atomic mutations for CRDT gossip; (2) industry precedent (rustc HIR/MIR/Ty, Swift AST/SIL, GCC GENERIC/GIMPLE/RTL); (3) one new crate (`hymeko_emitter`) vs two (+`hymeko_ir`) is the right over-vs-under-split trade at this stage; (4) the bridge between the two IRs is ~200 lines and reversible-by-construction.
+- Editor IR shape diverges from the spec in two places: `HyperEdge.incident` carries per-arc signs `(VertexKey, Sign)` (lossless bridge to `SignedRefR`), and a new `IRDelta::Batch` variant supports one-shot bulk apply for CRDT gossip and bridge "rebuild after n edits" patterns.
+
+## Plan 06 Step 2 — `hymeko_emitter` Crate
+
+- Created the new `hymeko_emitter` workspace crate (registered in `Cargo.toml`). Depends on `hymeko_core`, `slotmap` (feature `serde`), `serde`, `thiserror`; dev-dep on `parser` for end-to-end fixture tests.
+- `editor_ir.rs` — slotmap-backed `HyMeKoEditorIR` with `VertexKey` / `EdgeKey` / `PatchKey`, `Vertex` / `HyperEdge` / `Patch` / `Attribute` / `AttributeValue` / `Position` / `Sign`, and `IRDelta::{AddVertex, RemoveVertex, AddHyperEdge, RemoveEdge, MoveVertex, UpdateWeight, UpdateSign, AttachAttribute, DetachAttribute, AddPatch, Batch}`. `apply(delta)` implements all variants; `RemoveVertex` also prunes dangling incident references from hyperedges.
+- `emit_hymeko.rs` — arena `Ir` → deterministic `.hymeko` text with `robot_name { node … @edge …(+a, -b, -c); }` wrapper. Children/values/weights carry `TODO` markers for Step 2b.
+- `emit_sysml.rs` — arena `Ir` → SysML v2: `package { metadata def HyperedgeAnnotation { … }; part def <node>; connection def <edge>_arc_<i>; part <edge>_arc_<i>_arcs { signs, targets }; }`. Matches the contract in `docs/examples/hymeko_to_sysmlv2.md` for the trivially-bracketed structure.
+- `emit_rust_stubs.rs` — one `pub trait <PascalName>` per node with `fn process()` placeholder.
+- `emit_lean4.rs` — one trivial `theorem <lower>_level_invariant : True := by trivial` per node.
+- `bridge.rs` — `to_compiler_ir` / `from_compiler_ir` signatures only; full implementation is Step 2c (property-tested round-trip against `mini_arm.hymeko`).
+- `hymeko_emitter/tests/test_editor_ir.rs` (10 tests): `AddVertex`, `RemoveVertex` pruning incident refs, `MoveVertex` position update, `UpdateWeight`, `UpdateSign` in-range + out-of-range, `AttachAttribute` / `DetachAttribute` round-trip, `DetachAttribute` error on missing name, `Batch` ordered apply, `Batch` short-circuit on first error (partial apply is intentional).
+- `hymeko_emitter/tests/test_emitters.rs` (6 tests): loads `mini_arm.hymeko` via `ModuleStore`, then asserts `emit_hymeko` produces a wrapped + deterministic output containing `base_link` / `spinner` / `@spin_joint`; `emit_sysml` opens/closes `package MiniArm`, declares the metadata profile, and emits a `part def` per node + `connection def` per arc; `emit_rust_stubs` produces PascalCase `pub trait BaseLink { fn process(&self) … }`; `emit_lean4` produces `import Mathlib` + `theorem base_link_level_invariant : True := by trivial`.
+
+## Plan 06 Step 2b — Full Emitter Round-Trip
+
+- **`emit_hymeko` now walks the decl tree recursively** (`DeclNode::first_child` / `next_sibling`) from every top-level decl (parent == `DeclId::NONE`, kind != `HyperArc`). Emits inline numeric / string / list values, attachment-arc sugar (`visual -> link_geometry;`), tag annotations (`<tag>`), nested child blocks, signed refs with optional weight annotations (`+ base_link [[0.0, 0.0, 0.1], [0.0, 0.0, 0.0]]`). Multiple bases render comma-separated per the grammar.
+- **Critical shape fix (same change):** top-level decls are now emitted as sibling `HyperItem`s **outside** the `description_name { }` header block, not nested inside it. The parser's `Description` production reserves the outer `{ … }` for a header block that only accepts imports / usings / simple statement nodes — so the previous emitter's output failed round-trip with an `UnrecognizedToken { Colon }` error on the first `name: bases { … }` child. Documented in the emitter's module doc-comment.
+- **`emit_sysml` expanded** to walk the decl tree for per-node inline values, emitting `attribute <child> :>> <value>;` lines for scalar / list children and a second `metadata def JointOrigin { xyz, rpy }` profile matching `docs/examples/hymeko_to_sysmlv2.md`.
+- **Round-trip regression test:** new `emit_hymeko_roundtrips_through_the_parser` loads `mini_arm.hymeko`, emits it, re-parses the emitted text via `parser::parse_description`, and asserts the round-tripped AST has ≥ the original node/edge count. Four companion tests cover signed-ref sign preservation, inline numeric value preservation, insertion-order byte stability (double-emission byte equality), and round-trip determinism.
+- **SysML companion tests:** `emit_sysml_inlines_node_scalar_attributes` (asserts `attribute mass :>> 5.0;` + origin tuple `(0.0, 0.0, 0.05)`); `emit_sysml_metadata_profile_includes_joint_origin` (asserts the `HyperedgeAnnotation` + `JointOrigin` metadata defs with the `xyz : ScalarValues::Real[3]` attribute).
+- **Net test growth:** `hymeko_emitter` went from 16 → 24 passing tests (+8: 4 emit_hymeko round-trip/content, 2 SysML scalar & metadata, 2 emit_hymeko stability variants).
+
 ## Workspace test tally
 
-`cargo test --workspace`: **403 tests passing** (was 400 before: +3 gazebo sim launch bundle), 0 failures, 3 ignored doc-tests (pre-existing).
+`cargo test --workspace`: **427 tests passing** (was 419 before Step 2b: +8 emitter round-trip / content / SysML expansion), 0 failures, 3 ignored doc-tests (pre-existing).
+
+## Plan 06 Steps 3–6 — WASM + Server + MCP + Wire Crates
+
+Four new workspace crates landed in a single batch. Each compiles and ships passing tests; together they trace the spec in `steps/20260418/hymeko_claude_code_spec.md` from Step 3 through Step 8.
+
+### `hymeko_wasm` (Step 3)
+
+- `src/session.rs` — native-portable `EditorSession` wrapping `HyMeKoEditorIR` with CBOR export/import, JSON snapshot, summary counts, add_vertex / add_hyperedge / move / attach / reset / apply.
+- `src/wasm.rs` — wasm-bindgen façade exposing the same surface to JavaScript, gated behind `cfg(target_arch = "wasm32")` so native `cargo test` is unaffected. Build: `wasm-pack build hymeko_wasm --target web`.
+- `tests/test_session.rs` — 9 tests: empty init, add/move/attach, CBOR round-trip, JSON snapshot, reset, batch apply.
+
+### `hymeko_server` (Step 4)
+
+- Axum 0.7 router: `GET /health`, `GET /api/workspace`, `GET/POST /api/files/:name`, static service at `/static`. CORS permissive. Path-traversal guard on filename joins.
+- `bin/hymeko_server` binds `127.0.0.1:3000` (override via `HYMEKO_SERVER_ADDR`); workspace root via `HYMEKO_WORKSPACE`.
+- `tests/test_api.rs` — 5 tests via `tower::ServiceExt::oneshot`: `/health`, empty workspace, populated workspace listing (`.hymeko` + `.sysml` only), POST/GET round-trip, path-traversal rejection.
+
+### `hymeko_mcp` (Step 5)
+
+- Plain JSON-RPC 2.0 MCP implementation — **no `rmcp` dependency**. `src/protocol.rs` defines the JSON-RPC envelope types; `src/server.rs` provides `McpServer::handle_request(json) -> json` and a `bin/hymeko_mcp` driver that reads newline-delimited requests from stdin and writes responses to stdout (the shape Claude Code's `.claude/mcp.json` expects).
+- Six tools: `add_vertex`, `add_hyperedge` (references vertices by name via internal reverse index), `snapshot`, `summary`, `reset`, `export_cbor` (base64-encoded). `initialize` and `tools/list` return the protocol version and the `ToolDescriptor` catalogue.
+- `tests/test_mcp.rs` — 9 tests: initialize handshake, tools/list returns all six, add_vertex + summary flow, add_hyperedge with name-indexed vertices, unknown method (→ `-32601`), unknown tool (→ `-32603`), sign-vector length mismatch, malformed JSON (→ `-32700`), reset clears state.
+
+### `hymeko_wire` (Step 6)
+
+- `PacketHeader` (`#[repr(C, packed)]`, 28 bytes) with magic `0x484D4B4F` "HMKO", version 1, flags (bit `0x01` = zstd), 8-byte `patch_id`, 8-byte `delta_seq`, 4-byte xxh3_32 checksum of the (post-compression) payload.
+- `encode_delta(delta, patch_id, seq, compress)` runs CBOR → optional zstd → xxh3_64 → header + payload. `decode_delta(packet)` validates magic + version, verifies checksum, decompresses, CBOR-decodes back to `IRDelta`.
+- `tests/test_wire.rs` — 7 tests: compressed round-trip, uncompressed round-trip, bad magic rejection, checksum mismatch, too-short packet, magic-prefix assertion, 500-delta `Batch` round-trip exercising the zstd path.
+
+## Workspace test tally
+
+`cargo test --workspace`: **457 tests passing** (was 427 before Steps 3–6: +9 hymeko_wasm, +5 hymeko_server, +9 hymeko_mcp, +7 hymeko_wire), 0 failures, 3 ignored doc-tests (pre-existing).
+
+## Plan 06 Step 2c — Bridge Round-Trip + Session Emitters
+
+- **`hymeko_emitter::bridge::to_compiler_ir`** walks a `HyMeKoEditorIR` and produces a fresh `hymeko::ir::ir::Ir`: one `decl_nodes` entry per editor vertex (kind `Node`) + `NodeRec`, one per hyperedge (kind `Edge`) + `EdgeRec` with a single anonymous `HyperArc` decl and matching `ArcRec`. Sign discipline (`Plus` / `Minus` / `Neutral`) is preserved in `SignedRefR::{Plus,Minus,Neutral}`. Layout is flat (`parent == DeclId::NONE` for every decl) — editor IR does not track containment yet.
+- **`from_compiler_ir`** does the reverse walk: each `NodeRec` becomes a `Vertex` (with default editor metadata — `level = 0`, empty attributes, no position — because the arena IR does not retain those editor-only fields), each `EdgeRec` flattens its arcs into a single `HyperEdge` with concatenated `(VertexKey, Sign)` incidents, filtering out edge-to-edge refs that the editor cannot represent.
+- **Structural round-trip contract** (documented inline): `from_compiler_ir(to_compiler_ir(editor))` preserves vertex-name set, hyperedge-name set, and per-edge multiset of `(vertex_name, sign)` — slotmap keys are *not* preserved (fresh allocation on each pass) and editor-only metadata fields are dropped.
+- **`hymeko_emitter/tests/test_bridge.rs`** (6 tests): basic editor round-trip, empty editor case, multi-edge sign-preservation (`+/-` vs `~/~` on distinct edges), `mini_arm.hymeko` project-and-back via the full `ModuleStore` pipeline preserving node/edge counts, vertex-and-edge count parity after arena→editor→arena, and edge-to-edge ref filtering on the reverse path.
+- **`EditorSession::emit_{hymeko,sysml,rust_stubs,lean4}`** wired through the bridge — each call creates a fresh `Interner`, projects to a fresh arena `Ir`, and hands off to the matching `hymeko_emitter` emitter. Output is deterministic because both the bridge and the emitters are insertion-order-stable.
+- **`hymeko_wasm/tests/test_session.rs` +5 tests**: `emit_hymeko` roundtrips from an editor session (result parses via `parser::parse_description`), `emit_sysml` wraps in `package Demo { … }` with `part def` per vertex, `emit_rust_stubs` produces PascalCase `pub trait`s, `emit_lean4` produces trivial theorems, and all four emit methods are deterministic across repeated calls.
+
+## Workspace test tally
+
+`cargo test --workspace`: **468 tests passing** (was 457 before Step 2c: +6 bridge round-trip + +5 session emit front-ends), 0 failures, 3 ignored doc-tests (pre-existing).

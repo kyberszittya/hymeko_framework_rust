@@ -25,6 +25,29 @@ use super::match_context::{FieldValue, MatchContext};
 
 use std::collections::HashMap;
 
+/// Walk a [`FieldValue::List`] of degrees and emit space-separated
+/// radian values. Non-list values pass through via
+/// `to_template_string` so single scalars like `{{rad:angle}}` also
+/// work.
+fn deg_list_to_rad_string(v: &FieldValue) -> String {
+    const DEG_TO_RAD: f64 = std::f64::consts::PI / 180.0;
+    fn as_num(v: &FieldValue) -> Option<f64> {
+        match v {
+            FieldValue::Num(n) => Some(*n),
+            _ => None,
+        }
+    }
+    match v {
+        FieldValue::List(items) => items
+            .iter()
+            .filter_map(|it| as_num(it).map(|n| format!("{:.6}", n * DEG_TO_RAD)))
+            .collect::<Vec<_>>()
+            .join(" "),
+        FieldValue::Num(n) => format!("{:.6}", *n * DEG_TO_RAD),
+        _ => String::new(),
+    }
+}
+
 /// Parsed template block.
 #[derive(Clone, Debug)]
 enum Block {
@@ -36,6 +59,16 @@ enum Block {
     Each { label: String, body: Vec<Block> },
     /// {{#if field}} ... {{/if}} — conditional.
     If { field: String, body: Vec<Block> },
+    /// `{{#inherits field "base_name"}} ... {{/inherits}}` — render the
+    /// body only when the declaration at `field` (or the current match
+    /// if `field` is `.`) transitively inherits from a decl named
+    /// `base_name`. Used for geometry dispatch (`box` / `cylinder` /
+    /// `sphere`) without needing a full switch/case construct.
+    Inherits {
+        field: String,
+        base: String,
+        body: Vec<Block>,
+    },
 }
 
 /// Parse a template string into blocks.
@@ -74,6 +107,18 @@ fn parse_blocks(src: &str, out: &mut Vec<Block>, pos: &mut usize) -> Result<(), 
                 parse_blocks(src, &mut body, pos)?;
                 out.push(Block::If { field, body });
             } else if tag == "/if" {
+                return Ok(());
+            } else if let Some(rest) = tag.strip_prefix("#inherits ") {
+                // Syntax: {{#inherits <field> "<base_name>"}}
+                //   where <field> is either `.` (current match) or a
+                //   field path (`link_geometry`, `geometry.shape`).
+                //   <base_name> is a quoted string.
+                let (field, base) = parse_inherits_tag(rest)
+                    .ok_or_else(|| format!("Malformed #inherits tag: `{tag}`"))?;
+                let mut body = Vec::new();
+                parse_blocks(src, &mut body, pos)?;
+                out.push(Block::Inherits { field, base, body });
+            } else if tag == "/inherits" {
                 return Ok(());
             } else if tag.starts_with("#comment") {
                 // Skip until /comment
@@ -149,8 +194,97 @@ fn render_blocks<R: NameResolver>(
                     render_blocks(body, ctx, out);
                 }
             }
+
+            Block::Inherits { field, base, body } => {
+                if inherits_matches(field, base, ctx) {
+                    render_blocks(body, ctx, out);
+                }
+            }
         }
     }
+}
+
+/// Split an `#inherits` tag into (field_path, base_name).
+///
+/// Forms supported:
+/// - `. "base"`             — current match inherits from base
+/// - `field.path "base"`    — declaration at field path inherits
+fn parse_inherits_tag(rest: &str) -> Option<(String, String)> {
+    let rest = rest.trim();
+    let quote_start = rest.find('"')?;
+    let field = rest[..quote_start].trim().to_string();
+    let after = &rest[quote_start + 1..];
+    let quote_end = after.find('"')?;
+    let base = after[..quote_end].to_string();
+    if field.is_empty() || base.is_empty() {
+        return None;
+    }
+    Some((field, base))
+}
+
+/// Resolve a field path to a DeclId, then ask the MatchContext whether
+/// that declaration transitively inherits from `base_name`.
+fn inherits_matches<R: NameResolver>(
+    field: &str,
+    base_name: &str,
+    ctx: &RenderContext<R>,
+) -> bool {
+    let Some(m) = ctx.current_match else { return false; };
+    let mc = MatchContext::new(ctx.ir, ctx.resolver, m);
+    let target_did = if field == "." {
+        m.id
+    } else {
+        match mc.resolve_field_decl(field) {
+            Some(d) => d,
+            None => return false,
+        }
+    };
+    decl_inherits_from(ctx.ir, ctx.resolver, target_did, base_name, 16)
+}
+
+/// Walk the decl's bases transitively up to `max_depth` levels and
+/// return `true` if any of them is named `base_name`. 16 levels is
+/// more than deep enough for any real hypergraph hierarchy.
+fn decl_inherits_from<R: NameResolver>(
+    ir: &hymeko::ir::ir::Ir,
+    resolver: &R,
+    did: hymeko::common::ids::DeclId,
+    base_name: &str,
+    max_depth: usize,
+) -> bool {
+    if max_depth == 0 || did.is_none() {
+        return false;
+    }
+    let decl = &ir.decl_nodes[did.0];
+
+    // Direct-name match on the decl itself.
+    if resolver.resolve(decl.name) == base_name {
+        return true;
+    }
+
+    // Pull bases list from NodeRec or EdgeRec.
+    let bases: Vec<hymeko::common::ids::DeclId> = if let Some(nid) = ir.as_node(did) {
+        ir.nodes[nid.0]
+            .bases
+            .iter()
+            .map(|b| b.target())
+            .collect()
+    } else if let Some(eid) = ir.as_edge(did) {
+        ir.edges[eid.0]
+            .bases
+            .iter()
+            .map(|b| b.target())
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    for base_did in bases {
+        if decl_inherits_from(ir, resolver, base_did, base_name, max_depth - 1) {
+            return true;
+        }
+    }
+    false
 }
 
 /// Resolve an expression against the current context.
@@ -179,6 +313,37 @@ fn resolve_expr<R: NameResolver>(expr: &str, ctx: &RenderContext<R>) -> String {
             let field_path = &expr["field:".len()..];
             let mc = MatchContext::new(ctx.ir, ctx.resolver, m);
             mc.get_field(field_path).to_template_string()
+        }
+
+        // {{rad:field_path}} — treat the field as a list of degree
+        // values and emit space-separated radians. Useful for joint
+        // origin RPY which HyMeKo stores in degrees and URDF / SDF
+        // expect in radians.
+        _ if expr.starts_with("rad:") => {
+            let field_path = &expr["rad:".len()..];
+            let mc = MatchContext::new(ctx.ir, ctx.resolver, m);
+            deg_list_to_rad_string(&mc.get_field(field_path))
+        }
+
+        // {{nth:field_path:N}} — pick the N-th element of a list field,
+        // rendered as a scalar. Out-of-range returns empty.
+        _ if expr.starts_with("nth:") => {
+            let rest = &expr["nth:".len()..];
+            let (field_path, idx_str) = match rest.rfind(':') {
+                Some(p) => (&rest[..p], &rest[p + 1..]),
+                None => return String::new(),
+            };
+            let Ok(idx) = idx_str.parse::<usize>() else {
+                return String::new();
+            };
+            let mc = MatchContext::new(ctx.ir, ctx.resolver, m);
+            match mc.get_field(field_path) {
+                FieldValue::List(items) => items
+                    .get(idx)
+                    .map(|v| v.to_template_string())
+                    .unwrap_or_default(),
+                _ => String::new(),
+            }
         }
 
         _ if expr.starts_with("bind:") => {

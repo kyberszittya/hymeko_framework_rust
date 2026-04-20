@@ -23,7 +23,7 @@
 use std::collections::BTreeMap;
 
 use hymeko::common::ids::{DeclId, EdgeId, NodeId};
-use hymeko::traversal::hypergraphview::BergeState;
+use hymeko_hnn::traversal::hypergraphview::BergeState;
 
 /// A captured binding produced when a [`HypergraphVisitor`] matches a
 /// pattern. Keyed by the variable name the author wrote in the pattern.

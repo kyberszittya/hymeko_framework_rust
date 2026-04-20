@@ -21,7 +21,7 @@ use hymeko::module_store::module_store::{
 use hymeko::module_store::source_provider::StdFsProvider;
 use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
 use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-use hymeko::traversal::hypergraphview::HyperGraphView;
+use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
 use parser::ast::AstStr;
 
 /// LALRPOP parser thin wrapper that implements `HymekoParser`, letting a

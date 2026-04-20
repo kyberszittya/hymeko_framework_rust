@@ -1,7 +1,7 @@
 # HyMeKo Framework — State Snapshot
 
-**Date:** 2026-04-18
-**Branch:** `refactor/extract-hymeko-hre` (off `dev/query_engine`)
+**Date:** 2026-04-19 (last updated)
+**Branch:** `refactor/extract-hymeko-hre` (off `dev/query_engine`) + local `hymeko_hnn` extraction
 **Workspace root:** `hymeko_framework_rust/`
 
 A point-in-time map of what's integrated, what's in-flight, and what's planned. Renew whenever a major phase lands. This doc is derived from `cargo test --workspace`, the git tree, and the authoritative plans under `docs/plans/`.
@@ -13,23 +13,35 @@ A point-in-time map of what's integrated, what's in-flight, and what's planned. 
 | Crate | Purpose | Notes |
 |-------|---------|-------|
 | `parser` | LALRPOP grammar + SIMD lexer | Source of the `.hymeko` AST. 76 lexer tests + 4 using-alias tests passing. |
-| `hymeko_core` | IR, resolution, module store, tensor primitives, HGNN/mesh ops, traversal, writers | 133 tests passing. Lib crate-name `hymeko`. |
-| `hymeko_hre` | Hypergraph Rewriting Engine orchestrator (IR → `TensorCoo` expansions, `iceoryx2` subscriber) | Extracted from `hymeko_core` on 2026-04-18. 2 tests. |
+| `hymeko_core` | IR, resolution, module store, tensor primitives, writers | 133 tests. Lib crate-name `hymeko`. HGNN/traversal split out on 2026-04-19 (see `hymeko_hnn`). |
+| `hymeko_hnn` | Hypergraph neural ops: `HyperGraphView`, `BergeView`, traversal, HGNN / clique-GCN / signed-HGNN / mesh-conv layers, star/clique CSR projections. | Extracted from `hymeko_core` on 2026-04-19. Depends on `hymeko_core` for tensor primitives (`TensorCoo`, `Real`, `aggregation`, `tensor_val`). |
+| `hymeko_hre` | Hypergraph Rewriting Engine orchestrator (IR → `TensorCoo` expansions, Berge/Levi traversal, visitor pattern, `iceoryx2` subscriber) | Extracted from `hymeko_core` on 2026-04-18. 2 tests. Now consumes `hymeko_hnn` for `HyperGraphView`. |
 | `hymeko_query` | Predicate / query engine / rewrite / formats / kinematics | 101 tests passing. Includes URDF/SDF/MJCF/DOT/ROS2-launch transforms. |
 | `hymeko_daemon` | Worker, IR-CBOR pipeline, shared-memory gates | Depends on `hymeko_core`; does not yet use `hymeko_hre` directly. |
 | `hymeko_client` | Subscriber shell | |
 | `hymeko_cli` | `emit`/`query`/`compile` entry points + robotics workflow | Consumes `hymeko_query` (`QueryEngine`) and `hymeko_hre` indirectly via Python. |
 | `hymeko_py` | PyO3 bindings (`PyHypergraphEngine`, `PyHypergraphIR`, etc.) | Now depends on both `hymeko_core` and `hymeko_hre`. |
+| `hymeko_emitter` | Editor IR (slotmap + `IRDelta`) + M2T emitters (`.hymeko`, SysML v2, Rust stubs, Lean 4) | Plan 06 Step 2 (2026-04-18). Design rationale in `docs/plans/06_wasm_editor/step1_ir_design.md`. |
+| `hymeko_wasm` | `EditorSession` over editor IR + wasm-bindgen façade for the browser canvas. | Plan 06 Step 3 (2026-04-18). `wasm-pack build --target web`. |
+| `hymeko_server` | Axum static + `/api/files/:name` REST + `/api/workspace` listing. | Plan 06 Step 4 (2026-04-18). `cargo run -p hymeko_server`. |
+| `hymeko_mcp` | stdio JSON-RPC 2.0 MCP server exposing 6 editor tools. | Plan 06 Step 5 (2026-04-18). No `rmcp` dep. |
+| `hymeko_wire` | CBOR + zstd + xxh3 packet envelope for `IRDelta` gossip. | Plan 06 Step 6 (2026-04-18). Magic `0x484D4B4F`. |
 
 ## Test status
 
-`cargo test --workspace` → **403 tests passing**, 0 failures, 3 ignored doc-tests.
+`cargo test --workspace` → **508 tests passing**, 0 failures, 3 ignored doc-tests.
 
 - `parser`: 76 lexer + 11 using-alias + 15 query-variable + 1 doc-test = 103
-- `hymeko_core`: 133 (no engine tests anymore — moved to `hymeko_hre`)
-- `hymeko_hre`: 30 (2 engine registry + 7 hand-built expansion + 6 hand-built Berge / visitor + 8 fixture-based expansion + 7 fixture-based Berge)
-- `hymeko_query`: 134 (90 existing + 16 alias-parity + 25 anthropomorphic-arm generation + 3 gazebo sim launch bundle)
-- `hymeko_cli`: 3 (integration)
+- `hymeko_core`: 133
+- `hymeko_hnn`: 0 (tests continue to live in `hymeko_core/tests/` as integration tests — the post-move files import `hymeko_hnn::traversal::*` / `hymeko_hnn::tensor::*` and exercise them end-to-end)
+- `hymeko_hre`: 30
+- `hymeko_query`: 174 (134 existing + 15 T11 gazebo + 12 Mermaid + 13 template-driven pipeline)
+- `hymeko_emitter`: 30 (10 editor_ir `apply` + 14 emitters + 6 bridge round-trip)
+- `hymeko_wasm`: 14 (9 session basics + 5 emit front-ends via bridge)
+- `hymeko_server`: 5
+- `hymeko_mcp`: 9
+- `hymeko_wire`: 7
+- `hymeko_cli`: 3
 
 ### Levi-graph naming
 
@@ -67,12 +79,15 @@ The bipartite incidence graph code is named `Berge*` for historical reasons; **L
 | Query | AST-to-predicate interpreter | ✅ | `hymeko_query::interpret` |
 | Query | Kinematic model extraction (links, joints, geometries, axes) | ✅ | `hymeko_query::kinematics::kinematic` |
 | Query | Template-driven rewrite engine | ✅ | `hymeko_query::rewrite` |
-| Transforms | URDF | ✅ | `transforms/urdf/`, `hymeko_query::formats::urdf` |
-| Transforms | SDF | ✅ | `transforms/sdf/` |
+| Transforms | URDF | ✅ **template-driven geometry dispatch** | `transforms/urdf/template.urdf.xml` now uses `{{#inherits link_geometry "box"|"cylinder"|"sphere"}}` + `{{nth:link_geometry.dimension:N}}` so shape selection is data-driven, not Rust-side `match`. Rich `formats::urdf` rich emitter still backs legacy tests pending bind-attribute accessor. |
+| Transforms | SDF | ✅ **template-driven geometry dispatch** | Same `{{#inherits}}` pattern as URDF — `transforms/sdf/template.sdf.xml`. |
 | Transforms | MJCF (MuJoCo) | ✅ | `transforms/mjcf/` |
 | Transforms | DOT (Graphviz) | ✅ | `transforms/dot/` |
 | Transforms | ROS2 launch | ✅ | `transforms/ros2_launch/` |
-| Transforms | Gazebo world | ❌ planned (T11) | |
+| Transforms | Gazebo world (`gz sim`, SDF 1.8) | ✅ **shipped (template-driven)** | `transforms/gazebo/template.world.sdf` + `queries.hymeko` — `generate_gazebo_world` is now a 20-line wrapper around `TransformRegistry::render_from_templates`. Paper 2 T11 (2026-04-19) |
+| Transforms | Mermaid flowchart (GitHub / docs / VS Code preview) | ✅ **shipped (template-driven)** | `transforms/mermaid/template.mmd` with mass labels — 2026-04-19 |
+| CLI | `hymeko_cli emit --format <name>` | ✅ **shipped** | Canonical data-driven emission path. Routes through `TransformRegistry::render_from_templates`; rejects unknown formats with the list of registered ones. 2026-04-19 |
+| CLI | `hymeko_cli compile --format <name>` | ✅ **now template-driven** | `codegen::generate_description` rewritten (2026-04-19 "last mile") — hard-coded `generate_mjcf` / `generate_dot` / `emit_mjcf_body` / `mjcf_joint_type` deleted; dispatch goes through `render_from_templates` for *every* format. 211 → 85 LOC. |
 | Transforms | Isaac Sim USD | ❌ planned (T12) | |
 | Transforms | SysML v2 | ❌ planned (Plan 06 §2) | Ground truth in `docs/examples/hymeko_to_sysmlv2.md` |
 | Transforms | Mermaid hypergraph render | ❌ planned | Hand-authored examples in `docs/examples/visualizations.md` |

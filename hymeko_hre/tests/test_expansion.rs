@@ -18,7 +18,7 @@ use std::marker::PhantomData;
 
 use hymeko::common::ids::{DeclId, EdgeId, NodeId};
 use hymeko::tensor::tensor_val::EdgeWScalar;
-use hymeko::traversal::hypergraphview::HyperGraphView;
+use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
 use hymeko_hre::expansion::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
 
 type View = HyperGraphView<f32, EdgeWScalar<f32>, f32>;

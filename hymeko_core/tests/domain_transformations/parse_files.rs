@@ -2,9 +2,9 @@
 mod test_parse_files {
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko::common::ids::DeclId;
-    use hymeko::tensor::tensor::compute_bipartite_degrees;
+    use hymeko_hnn::tensor::tensor::compute_bipartite_degrees;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use hymeko::ir::ir::DeclKind;
     use crate::test_helpers::{load_and_lower, find_decl, log_test_footer, log_test_header};
     use log::info;

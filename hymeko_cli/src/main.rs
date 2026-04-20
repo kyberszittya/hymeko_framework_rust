@@ -99,6 +99,42 @@ enum Commands {
         #[arg(long, default_value = "transforms")]
         transforms_dir: String,
     },
+
+    /// Emit a format by **rendering a template** from the `transforms/`
+    /// directory through the shared query + rendering pipeline. This is
+    /// the canonical data-driven entry point — no hard-coded Rust string
+    /// builders — and is the recommended alternative to `compile` for
+    /// any format with a registered `transforms/<name>/` directory.
+    ///
+    /// Equivalent to the `transform` subcommand but uses
+    /// `TransformRegistry::render_from_templates` directly, which picks
+    /// up every format registered in the default registry (urdf, sdf,
+    /// mjcf, dot, gazebo, mermaid).
+    Emit {
+        /// Input .hymeko description file
+        input: PathBuf,
+
+        /// Format name — one of the registered transforms (urdf, sdf,
+        /// mjcf, dot, gazebo, mermaid).
+        #[arg(short, long)]
+        format: String,
+
+        /// Output file path (default: stdout)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+
+        /// Robot/model name
+        #[arg(short, long, default_value = "robot")]
+        name: String,
+
+        /// Gazebo world name (used only by the `gazebo` format)
+        #[arg(long, default_value = "empty")]
+        world: String,
+
+        /// Directory containing transform definitions (default: transforms/)
+        #[arg(long, default_value = "transforms")]
+        transforms_dir: String,
+    },
 }
 
 fn main() {
@@ -194,6 +230,44 @@ fn run_command(cmd: Commands) {
             let result = execute_transform(&compiled.ir, &ms.it, &spec, &config)
                 .unwrap_or_else(|e| {
                     eprintln!("Transform failed: {e}");
+                    std::process::exit(1);
+                });
+
+            match output {
+                Some(path) => {
+                    fs::write(&path, &result).unwrap_or_else(|e| {
+                        eprintln!("Failed to write {}: {e}", path.display());
+                        std::process::exit(1);
+                    });
+                    eprintln!("Wrote {} bytes to {}", result.len(), path.display());
+                }
+                None => print!("{result}"),
+            }
+        }
+
+        Commands::Emit { input, format, output, name, world, transforms_dir } => {
+            use hymeko_query::transforms::{TransformConfig, TransformRegistry};
+
+            let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
+            let compiled = compile_or_exit(&mut ms, &input);
+
+            let reg = TransformRegistry::default();
+            let cfg = TransformConfig::default()
+                .with_name(&name)
+                .with_option("world_name", &world);
+
+            let transforms_root = PathBuf::from(&transforms_dir);
+            let result = reg
+                .render_from_templates(&format, &compiled.ir, &ms.it, &cfg, &transforms_root)
+                .unwrap_or_else(|| {
+                    eprintln!(
+                        "Unknown format: `{format}`. Registered template-driven formats: {:?}",
+                        reg.available()
+                    );
+                    std::process::exit(1);
+                })
+                .unwrap_or_else(|e| {
+                    eprintln!("Render failed: {e}");
                     std::process::exit(1);
                 });
 

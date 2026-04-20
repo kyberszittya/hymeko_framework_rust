@@ -24,7 +24,7 @@ pub fn urdf_queries() -> Vec<NamedQuery> {
     ]
 }
 
-pub fn generate_urdf_from_model<R: NameResolver>(model: &KinematicModel) -> String {
+pub fn generate_urdf_from_model(model: &KinematicModel) -> String {
     let mut out = String::with_capacity(4096);
     out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     out.push_str(&format!("<robot name=\"{}\">\n", xml_escape(&model.name)));

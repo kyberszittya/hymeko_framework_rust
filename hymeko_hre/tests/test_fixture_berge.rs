@@ -17,7 +17,7 @@ use std::rc::Rc;
 
 use hymeko::common::ids::{DeclId, EdgeId, NodeId};
 use hymeko::tensor::tensor_val::EdgeWScalar;
-use hymeko::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
+use hymeko_hnn::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
 
 use hymeko_hre::traversal::berge::{berge_bfs_from_node, berge_dfs};
 use hymeko_hre::visitor::{

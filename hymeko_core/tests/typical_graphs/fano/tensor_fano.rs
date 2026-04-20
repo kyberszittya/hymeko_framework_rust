@@ -5,7 +5,7 @@ mod tensor_fano {
     use hymeko::common::ids::{EdgeId, NodeId};
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_hre::expansion::star_expansion_coo;
-    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header, print_dense_matrix};
@@ -337,7 +337,7 @@ mod tensor_fano {
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let coo = star_expansion_coo(&hg);
-        let proj = hymeko::tensor::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
         let num_edges = hg.num_edges();

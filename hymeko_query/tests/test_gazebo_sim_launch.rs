@@ -269,6 +269,20 @@ def generate_launch_description():
         let urdf = generate_urdf(&compiled.ir, &store.it, ROBOT_NAME);
         info!("generated URDF: {} bytes", urdf.len());
 
+        // --- Generate the Gazebo world via the real T11 emitter ----------
+        // Prior versions of this test used a hand-templated world; since
+        // `hymeko_query::formats::gazebo::generate_gazebo_world` landed
+        // on 2026-04-19 we route through it so the bundle's plugin
+        // section reflects the fixture's `sim_plugin` / `control_plugin`
+        // declarations.
+        let world = hymeko_query::formats::gazebo::generate_gazebo_world(
+            &compiled.ir,
+            &store.it,
+            ROBOT_NAME,
+            WORLD_NAME,
+        );
+        info!("generated world.sdf: {} bytes", world.len());
+
         // --- Prepare output directory ------------------------------------
         // `fs::write` truncates on open, so idempotent `create_dir_all`
         // is enough — no need to remove first (and the two tests in this
@@ -289,7 +303,7 @@ def generate_launch_description():
         let readme_path = dir.join(&readme_file);
 
         fs::write(&urdf_path, &urdf).expect("write URDF");
-        fs::write(&world_path, make_world_sdf(WORLD_NAME)).expect("write world.sdf");
+        fs::write(&world_path, &world).expect("write world.sdf");
         fs::write(
             &launch_path,
             make_gz_launch_py(ROBOT_NAME, &urdf_file, &world_file),

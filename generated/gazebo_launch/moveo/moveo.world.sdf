@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.8">
+  <world name="empty">
+    <physics name="default" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+
+      <parameters>moveo_control.yaml</parameters>
+
+    </plugin>
+
+
+    <model name="moveo">
+      <static>false</static>
+
+      <link name="base_link">
+
+        <inertial>
+          <mass>25</mass>
+          <inertia>
+            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+
+
+        <visual name="base_link_visual">
+
+          <pose relative_to="base_link">0 0 0.025 0 0 0</pose>
+
+          <geometry>
+
+
+            <cylinder><radius>0.13</radius><length>0.05</length></cylinder>
+
+
+          </geometry>
+        </visual>
+        <collision name="base_link_collision">
+          <geometry>
+
+
+            <cylinder><radius>0.13</radius><length>0.05</length></cylinder>
+
+
+          </geometry>
+        </collision>
+
+      </link>
+
+      <link name="link_0">
+
+        <inertial>
+          <mass>5</mass>
+          <inertia>
+            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+
+
+        <visual name="link_0_visual">
+
+          <pose relative_to="link_0">0 0 0.1 0 0 0</pose>
+
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.2</length></cylinder>
+
+
+          </geometry>
+        </visual>
+        <collision name="link_0_collision">
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.2</length></cylinder>
+
+
+          </geometry>
+        </collision>
+
+      </link>
+
+      <link name="link_1">
+
+        <inertial>
+          <mass>2</mass>
+          <inertia>
+            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+
+
+        <visual name="link_1_visual">
+
+          <pose relative_to="link_1">0 0 0.15 0 0 0</pose>
+
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.3</length></cylinder>
+
+
+          </geometry>
+        </visual>
+        <collision name="link_1_collision">
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.3</length></cylinder>
+
+
+          </geometry>
+        </collision>
+
+      </link>
+
+      <link name="link_2">
+
+        <inertial>
+          <mass>2</mass>
+          <inertia>
+            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+
+
+        <visual name="link_2_visual">
+
+          <pose relative_to="link_2">0 0 0.125 0 0 0</pose>
+
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.25</length></cylinder>
+
+
+          </geometry>
+        </visual>
+        <collision name="link_2_collision">
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.25</length></cylinder>
+
+
+          </geometry>
+        </collision>
+
+      </link>
+
+      <link name="link_3">
+
+        <inertial>
+          <mass>2</mass>
+          <inertia>
+            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+
+
+        <visual name="link_3_visual">
+
+          <pose relative_to="link_3">0 0 0.16 0 0 0</pose>
+
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.32</length></cylinder>
+
+
+          </geometry>
+        </visual>
+        <collision name="link_3_collision">
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.32</length></cylinder>
+
+
+          </geometry>
+        </collision>
+
+      </link>
+
+      <link name="link_4">
+
+        <inertial>
+          <mass>2</mass>
+          <inertia>
+            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+
+
+        <visual name="link_4_visual">
+
+          <pose relative_to="link_4">0 0 0.075 0 0 0</pose>
+
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.15</length></cylinder>
+
+
+          </geometry>
+        </visual>
+        <collision name="link_4_collision">
+          <geometry>
+
+
+            <cylinder><radius>0.075</radius><length>0.15</length></cylinder>
+
+
+          </geometry>
+        </collision>
+
+      </link>
+
+      <link name="tool">
+
+        <inertial>
+          <mass>0.5</mass>
+          <inertia>
+            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+
+
+        <visual name="tool_visual">
+
+          <pose relative_to="tool">0 0 0.05 0 0 0</pose>
+
+          <geometry>
+
+            <box><size>0.075 0.15 0.1</size></box>
+
+
+
+          </geometry>
+        </visual>
+        <collision name="tool_collision">
+          <geometry>
+
+            <box><size>0.075 0.15 0.1</size></box>
+
+
+
+          </geometry>
+        </collision>
+
+      </link>
+
+
+
+      <joint name="j_fix" type="fixed">
+        <parent>world</parent>
+        <child>base_link</child>
+      </joint>
+
+
+
+      <joint name="j0" type="revolute">
+        <parent>base_link</parent>
+        <child>link_0</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name="j1" type="revolute">
+        <parent>link_0</parent>
+        <child>link_1</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name="j2" type="revolute">
+        <parent>link_1</parent>
+        <child>link_2</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name="j3" type="revolute">
+        <parent>link_2</parent>
+        <child>link_3</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name="j4" type="revolute">
+        <parent>link_3</parent>
+        <child>link_4</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name="jtool" type="revolute">
+        <parent>link_4</parent>
+        <child>tool</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+
+
+
+
+      <plugin name="gz_ros2_control/GazeboSimSystem">
+      </plugin>
+
+    </model>
+  </world>
+</sdf>

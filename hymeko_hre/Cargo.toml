@@ -14,6 +14,10 @@ arrow-schema = ["hymeko_core/arrow-schema"]
 
 [dependencies]
 hymeko_core = { path = "../hymeko_core" }
+# hymeko_hnn owns HyperGraphView + the hypergraph-aware tensor ops after
+# the 2026-04-19 extraction. hre consumes those for its expansion,
+# engine projection, and Berge traversal paths.
+hymeko_hnn = { path = "../hymeko_hnn" }
 rustc-hash = "2.1.1"
 rayon = { workspace = true }
 

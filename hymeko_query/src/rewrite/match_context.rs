@@ -78,6 +78,32 @@ impl<'a, R: NameResolver> MatchContext<'a, R> {
         self.get_field_at(self.match_result.id, &segments)
     }
 
+    /// Resolve a dotted field path to the underlying `DeclId` without
+    /// pulling its value — used by `{{#inherits}}` to inspect the base
+    /// chain of a nested declaration.
+    pub fn resolve_field_decl(&self, field_path: &str) -> Option<DeclId> {
+        if field_path.is_empty() {
+            return Some(self.match_result.id);
+        }
+        let segments: Vec<&str> = field_path.split('.').collect();
+        self.resolve_decl_at(self.match_result.id, &segments)
+    }
+
+    fn resolve_decl_at(&self, parent: DeclId, segments: &[&str]) -> Option<DeclId> {
+        if segments.is_empty() {
+            return Some(parent);
+        }
+        let target_name = segments[0];
+        let rest = &segments[1..];
+        for child in self.ir.decl_children(parent) {
+            let child_name = self.resolver.resolve(self.ir.decl_nodes[child.0].name);
+            if child_name == target_name {
+                return self.resolve_decl_at(child, rest);
+            }
+        }
+        None
+    }
+
     fn get_field_at(&self, parent: DeclId, segments: &[&str]) -> FieldValue {
         if segments.is_empty() {
             // Return the value of this declaration itself

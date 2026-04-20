@@ -29,8 +29,8 @@ use std::collections::VecDeque;
 use hymeko::common::ids::{EdgeId, NodeId};
 use hymeko::tensor::common::Real;
 use hymeko::tensor::tensor_val::{EdgeWeight, IncVal};
-use hymeko::traversal::graphview::GraphView;
-use hymeko::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
+use hymeko_hnn::traversal::graphview::GraphView;
+use hymeko_hnn::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
 
 use crate::visitor::HypergraphVisitor;
 

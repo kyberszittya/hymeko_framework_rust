@@ -15,7 +15,7 @@ use hymeko::module_store::module_store::ModuleStore;
 use hymeko::module_store::source_provider::MemProvider;
 use hymeko::tensor::arrow_schema::schema_expansion_3d;
 use hymeko::tensor::representations::tensor_coo::{CooEntry, TensorCoo};
-use hymeko::traversal::hypergraphview::HyperGraphView;
+use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
 use hymeko::tensor::tensor_val::{EdgeWScalar, RefValueExtractor, ScalarWeightExtractor};
 use hymeko::util::real_parser::RealParser;
 use hymeko::writers::cbor_writer::CborPayload;

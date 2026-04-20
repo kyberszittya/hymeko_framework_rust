@@ -7,12 +7,13 @@
 //! to avoid a cycle with `hymeko_core::tensor::conv` HGNN operators).
 
 use hymeko::common::ids::{EdgeId, NodeId};
-use hymeko::tensor::common::{calc_approx_nnz, signed_incidence, Real};
-use hymeko::tensor::common_traversal::inc_to_real;
+use hymeko_hnn::tensor::common::calc_approx_nnz;
+use hymeko::tensor::common::{signed_incidence, Real};
+use hymeko_hnn::tensor::common_traversal::inc_to_real;
 use hymeko::tensor::representations::tensor_coo::TensorCoo;
-use hymeko::tensor::tensor::compute_bipartite_degrees;
+use hymeko_hnn::tensor::tensor::compute_bipartite_degrees;
 use hymeko::tensor::tensor_val::{EdgeWeight, IncVal};
-use hymeko::traversal::hypergraphview::HyperGraphView;
+use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
 
 /// Normalized star expansion. Each incidence weight is divided by
 /// `sqrt(deg_v * deg_e)` so the spectral radius stays bounded.

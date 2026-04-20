@@ -5,7 +5,7 @@ mod bench_coo_builder_random {
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
     use hymeko_hre::expansion::star_expansion_coo;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use parser::ast::AstStr;
     use std::fs;
     use std::path::{Path, PathBuf};

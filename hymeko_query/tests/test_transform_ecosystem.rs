@@ -53,7 +53,10 @@ mod test_transform_ecosystem {
             let model = hymeko_query::transforms::extract(&compiled.ir, &store.it, &config.robot_name, hymeko_query::transforms::ModelKind::Kinematic);
             let results = reg.emit_all(&model, &config);
 
-            assert_eq!(results.len(), 4, "Should generate 4 formats");
+            // 6 default registrations: urdf, sdf, mjcf, dot, gazebo, mermaid.
+            // Gazebo joined with Paper 2 T11 and Mermaid with the docs-friendly
+            // diagram path on 2026-04-19.
+            assert_eq!(results.len(), 6, "Should generate 6 formats");
             for (filename, content) in &results {
                 assert!(!content.is_empty(), "Empty output for {}", filename);
                 println!("Generated {} ({} bytes)", filename, content.len());

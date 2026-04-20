@@ -4,3 +4,7 @@ mod test_generation_engine;
 mod test_transform_ecosystem;
 mod test_anthropomorphic_generation;
 mod test_gazebo_sim_launch;
+mod test_gazebo_world;
+mod test_mermaid;
+mod test_template_driven;
+mod bench_workflow;

@@ -1,0 +1,19 @@
+[package]
+name = "hymeko_wire"
+version = "0.1.0"
+edition = "2024"
+description = "HyMeKo wire-format — CBOR + zstd + xxhash3 packets for IR-delta gossip"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "hymeko_wire"
+crate-type = ["rlib"]
+
+[dependencies]
+hymeko_emitter = { path = "../hymeko_emitter" }
+ciborium = { workspace = true }
+bytes = "1"
+serde = { workspace = true, features = ["derive"] }
+zstd = { version = "0.13", default-features = false }
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+thiserror = "1"

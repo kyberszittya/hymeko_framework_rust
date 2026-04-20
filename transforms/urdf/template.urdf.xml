@@ -5,6 +5,7 @@
 {{#if field:mass}}
     <inertial>
       <mass value="{{field:mass}}"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
     </inertial>
 {{/if}}
 {{#if field:link_geometry}}
@@ -13,12 +14,31 @@
       <origin xyz="{{field:origin}}" rpy="0 0 0"/>
 {{/if}}
       <geometry>
-        <cylinder radius="0.05" length="0.1"/>
+{{#inherits link_geometry "box"}}
+        <box size="{{field:link_geometry.dimension}}"/>
+{{/inherits}}
+{{#inherits link_geometry "cylinder"}}
+        <cylinder radius="{{nth:link_geometry.dimension:0}}" length="{{nth:link_geometry.dimension:1}}"/>
+{{/inherits}}
+{{#inherits link_geometry "sphere"}}
+        <sphere radius="{{nth:link_geometry.dimension:0}}"/>
+{{/inherits}}
       </geometry>
     </visual>
     <collision>
+{{#if field:origin}}
+      <origin xyz="{{field:origin}}" rpy="0 0 0"/>
+{{/if}}
       <geometry>
-        <cylinder radius="0.05" length="0.1"/>
+{{#inherits link_geometry "box"}}
+        <box size="{{field:link_geometry.dimension}}"/>
+{{/inherits}}
+{{#inherits link_geometry "cylinder"}}
+        <cylinder radius="{{nth:link_geometry.dimension:0}}" length="{{nth:link_geometry.dimension:1}}"/>
+{{/inherits}}
+{{#inherits link_geometry "sphere"}}
+        <sphere radius="{{nth:link_geometry.dimension:0}}"/>
+{{/inherits}}
       </geometry>
     </collision>
 {{/if}}

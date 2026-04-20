@@ -9,7 +9,7 @@ use hymeko::tensor::common::Real;
 use hymeko::tensor::representations::tensor_coo::TensorCoo;
 use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
 use crate::expansion;
-use hymeko::traversal::hypergraphview::HyperGraphView;
+use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
 #[cfg(feature = "ipc")]
 use hymeko::tensor::shared_state::{ExpansionHeader, ExpansionKind};
 
