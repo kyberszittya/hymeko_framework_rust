@@ -18,8 +18,8 @@
 #[cfg(test)]
 mod test_anthropomorphic_generation {
     use hymeko_query::engine::QueryEngine;
-    use hymeko_query::formats::sdf::generate_sdf;
-    use hymeko_query::formats::urdf::generate_urdf;
+    use hymeko_formats::sdf::generate_sdf;
+    use hymeko_formats::urdf::generate_urdf;
     use hymeko_query::kinematics::joints::{JointInfo, JointType};
     use hymeko_query::kinematics::kinematic::*;
     use hymeko_query::transforms::{DomainTransform, ModelView, TransformConfig, TransformRegistry};
@@ -421,7 +421,7 @@ mod test_anthropomorphic_generation {
 
     fn emit_via_registry(name: &str) -> String {
         let m = model();
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let t = reg.get(name).unwrap_or_else(|| panic!("{name} not registered"));
         let cfg = TransformConfig::default().with_name(ROBOT_NAME);
         t.emit(&ModelView::Kinematic(m), &cfg).expect("emit succeeds")
@@ -491,7 +491,7 @@ mod test_anthropomorphic_generation {
     #[test]
     fn mjcf_validator_passes_for_moveo_serial_chain() {
         let m = model();
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let mjcf = reg.get("mjcf").unwrap();
         let diags = mjcf.validate(&ModelView::Kinematic(m));
         let errors: Vec<_> = diags.iter().filter(|d| d.is_error()).collect();

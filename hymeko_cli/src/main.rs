@@ -19,7 +19,7 @@ use hymeko::resolution::interner::Interner;
 use hymeko::util::real_parser::RealParser;
 use hymeko::util::pretty_print::pretty_print_compiled;
 
-use hymeko_query::codegen::{generate_description, OutputFormat};
+use hymeko_formats::{generate_description, OutputFormat};
 use hymeko_query::engine::QueryEngine;
 use hymeko_query::interpret::interpret_transform_queries;
 use hymeko_query::rewrite::{execute_transform, TransformSpec};
@@ -179,7 +179,7 @@ fn run_command(cmd: Commands) {
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
             match ms.compile(&input) {
                 Ok(compiled) => {
-                    let warnings = hymeko_query::formats::urdf::validate_robot_schema(
+                    let warnings = hymeko_formats::urdf::validate_robot_schema(
                         &compiled.ir, &ms.it,
                     );
                     if warnings.is_empty() {
@@ -246,12 +246,12 @@ fn run_command(cmd: Commands) {
         }
 
         Commands::Emit { input, format, output, name, world, transforms_dir } => {
-            use hymeko_query::transforms::{TransformConfig, TransformRegistry};
+            use hymeko_query::transforms::TransformConfig;
 
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
             let compiled = compile_or_exit(&mut ms, &input);
 
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let cfg = TransformConfig::default()
                 .with_name(&name)
                 .with_option("world_name", &world);
@@ -498,7 +498,7 @@ fn interactive_console() {
 
             "validate" | "check" => {
                 let Some(compiled) = session.ensure_loaded() else { continue };
-                let warnings = hymeko_query::formats::urdf::validate_robot_schema(
+                let warnings = hymeko_formats::urdf::validate_robot_schema(
                     &compiled.ir, session.interner(),
                 );
                 if warnings.is_empty() {

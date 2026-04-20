@@ -1,0 +1,14 @@
+\begin{table}[t]
+\centering
+\caption{Head-to-head wall-clock on the \textsf{tree} family at representative sizes (median of release-profile repetitions). HyMeKo's 3-format-bundle column is compile$+$URDF$+$SDF$+$MJCF summed in a single in-process pipeline; the competitor column is \texttt{xacro} $\to$ \texttt{gz sdf} $\to$ \texttt{mujoco} run as three subprocesses. Speed-up is the ratio; FAIL denotes invocations where a competitor tool returned an error (e.g.\ \texttt{mujoco} raising on $\ge$\,2000-link URDFs).}
+\label{tab:head_to_head}
+\begin{tabular}{rrrrr}
+\toprule
+$|V|$ & HyMeKo URDF+SDF+MJCF [ms] & Competitor stack [ms] & Speed-up & Note \\
+\midrule
+10 & 0.572 & 402.0 & 703$\times$ &  \\
+100 & 3.560 & 673.1 & 189$\times$ &  \\
+1000 & 34.585 & 4136.6 & 120$\times$ &  \\
+\bottomrule
+\end{tabular}
+\end{table}

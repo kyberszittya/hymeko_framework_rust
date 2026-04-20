@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test_query_robot {
     use hymeko_query::engine::QueryEngine;
-    use hymeko_query::formats::urdf::{urdf_queries, validate_robot_schema};
+    use hymeko_formats::urdf::{urdf_queries, validate_robot_schema};
     use hymeko_query::{Predicate, ValuePredicate};
     use hymeko_query::QueryMatch;
     use crate::test_helpers::load_and_lower;

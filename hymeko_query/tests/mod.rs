@@ -7,4 +7,7 @@ mod test_gazebo_sim_launch;
 mod test_gazebo_world;
 mod test_mermaid;
 mod test_template_driven;
+mod test_const_resolve;
+mod test_prop_witnesses;
+mod test_imported_real;
 mod bench_workflow;

@@ -1,0 +1,146 @@
+tree_10_k3_description {
+    @"meta_kinematics.hymeko";
+    using kinematics.elements as el;
+    using kinematics.geometry as geo;
+    using kinematics.axes as ax;
+    using kinematics.conti_joint as cj;
+}
+
+tree_10_k3: el, geo, ax
+{
+    l0: el.link {
+        mass 2.900;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.028, 0.031, 0.103];
+    }
+    l1: el.link {
+        mass 4.085;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.129, 0.061, 0.080];
+    }
+    l2: el.link {
+        mass 2.651;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.069, -0.100, 0.476];
+    }
+    l3: el.link {
+        mass 4.983;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.182, 0.144, 0.302];
+    }
+    l4: el.link {
+        mass 1.970;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.087, 0.070, 0.228];
+    }
+    l5: el.link {
+        mass 3.461;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.065, -0.147, 0.384];
+    }
+    l6: el.link {
+        mass 4.914;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.188, 0.045, 0.022];
+    }
+    l7: el.link {
+        mass 0.120;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.146, 0.176, 0.151];
+    }
+    l8: el.link {
+        mass 1.894;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.159, -0.074, 0.274];
+    }
+    l9: el.link {
+        mass 2.237;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.174, 0.034, 0.422];
+    }
+    @j0: cj {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l1,
+         - ax.AXIS_Z);
+    }
+    @j1: cj {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l2,
+         - ax.AXIS_Z);
+    }
+    @j2: cj {
+        (+ l1 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l3,
+         - ax.AXIS_Z);
+    }
+    @j3: cj {
+        (+ l1 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l4,
+         - ax.AXIS_Z);
+    }
+    @j4: cj {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l5,
+         - ax.AXIS_Z);
+    }
+    @j5: cj {
+        (+ l1 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l6,
+         - ax.AXIS_Z);
+    }
+    @j6: cj {
+        (+ l5 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l7,
+         - ax.AXIS_Z);
+    }
+    @j7: cj {
+        (+ l4 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l8,
+         - ax.AXIS_Z);
+    }
+    @j8: cj {
+        (+ l8 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l9,
+         - ax.AXIS_Z);
+    }
+}

@@ -1,0 +1,14 @@
+\begin{table}[t]
+\centering
+\caption{Scaling: median wall-clock times (ms, $n{=}30$) on the synthetic \textsf{tree} family at representative sizes. \textit{compile}-dominance and the $\mathrm{emit}_\Sigma / \mathrm{compile}$ ratio remain bounded, consistent with Proposition~3.}
+\label{tab:scaling}
+\begin{tabular}{rrrrrrrrr}
+\toprule
+$m$ (joints) & compile & URDF & SDF & Gazebo & MJCF & DOT & Mermaid & emit$_\Sigma$ \\
+\midrule
+10 & 0.456 & 0.055 & 0.041 & 0.112 & 0.018 & 0.004 & 0.006 & 0.236 \\
+100 & 2.554 & 0.454 & 0.348 & 0.594 & 0.180 & 0.037 & 0.056 & 1.668 \\
+1000 & 24.768 & 4.255 & 3.498 & 5.492 & 1.763 & 0.353 & 0.548 & 15.908 \\
+\bottomrule
+\end{tabular}
+\end{table}

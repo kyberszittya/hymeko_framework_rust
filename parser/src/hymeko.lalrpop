@@ -35,6 +35,9 @@ extern {
 
         "using" => crate::lexer::Token::Using,
         "as" => crate::lexer::Token::As,
+        "const" => crate::lexer::Token::Const,
+        "/" => crate::lexer::Token::Slash,
+        "=" => crate::lexer::Token::Equals,
         Ident => crate::lexer::Token::Ident(<&'a str>),
         Number => crate::lexer::Token::Number(<f64>),
         StrLit => crate::lexer::Token::Str(<Cow<'a, str>>),
@@ -48,8 +51,8 @@ extern {
 
 pub Description: Description<'a, &'a str> = {
     <name:Ident> <hb:OptHeaderBlock> <items:HyperItem*> => {
-        let (imports, usings, header) = hb;
-        Description { name, header, imports, usings, items }
+        let (imports, usings, header, consts) = hb;
+        Description { name, header, imports, usings, consts, items }
     }
 };
 
@@ -58,20 +61,27 @@ OptHeaderBlock: HeaderBlock<'a> = {
         let mut imports = Vec::new();
         let mut usings = Vec::new();
         let mut decls = Vec::new();
+        let mut consts = Vec::new();
         for x in xs {
             match x {
                 HeaderStmt::Import(i) => imports.push(i),
                 HeaderStmt::Using(u) => usings.push(u),
                 HeaderStmt::Node(n) => decls.push(n),
+                HeaderStmt::Const(c) => consts.push(c),
             }
         }
-        (imports, usings, decls)
+        (imports, usings, decls, consts)
     }
 };
 HeaderStmt: HeaderStmt<'a, &'a str> = {
     <i:ImportStmt> => HeaderStmt::Import(i),
     <u:UsingStmt> => HeaderStmt::Using(u),
+    <c:ConstStmt> => HeaderStmt::Const(c),
     <n:HeaderItem> => HeaderStmt::Node(n),
+};
+
+ConstStmt: ConstDecl<&'a str> = {
+    "const" <name:Ident> "=" <value:NumExpr> ";" => ConstDecl { name, value }
 };
 
 HeaderItem: NodeDecl<'a, &'a str> = {
@@ -142,6 +152,59 @@ Value: Value<'a, &'a str> = {
     "-" <n:Number> => Value::Num(-n),
     "[" <xs:ValueList> "]" => Value::List(xs),
     <r:RefPath> => Value::Ref(r),
+    // Parenthesised numeric expression — Tier B. Bare const refs go via
+    // the RefPath arm above and are resolved at lowering time; only
+    // compound expressions need the explicit parens.
+    "(" <e:NumExpr> ")" => Value::Expr(e),
+};
+
+// ─── Compile-time numeric expressions (Tier B) ────────────────────────
+// Standard precedence: NumExpr → NumExprAdd → NumExprMul → NumExprUnary → NumExprAtom
+
+NumExpr: ConstExpr<&'a str> = {
+    NumExprAdd,
+};
+
+NumExprAdd: ConstExpr<&'a str> = {
+    <l:NumExprAdd> "+" <r:NumExprMul> =>
+        ConstExpr::Bin(BinOp::Add, Box::new(l), Box::new(r)),
+    <l:NumExprAdd> "-" <r:NumExprMul> =>
+        ConstExpr::Bin(BinOp::Sub, Box::new(l), Box::new(r)),
+    NumExprMul,
+};
+
+NumExprMul: ConstExpr<&'a str> = {
+    <l:NumExprMul> "*" <r:NumExprUnary> =>
+        ConstExpr::Bin(BinOp::Mul, Box::new(l), Box::new(r)),
+    <l:NumExprMul> "/" <r:NumExprUnary> =>
+        ConstExpr::Bin(BinOp::Div, Box::new(l), Box::new(r)),
+    NumExprUnary,
+};
+
+NumExprUnary: ConstExpr<&'a str> = {
+    "-" <e:NumExprAtom> => ConstExpr::Neg(Box::new(e)),
+    NumExprAtom,
+};
+
+NumExprAtom: ConstExpr<&'a str> = {
+    <n:Number> => ConstExpr::Lit(n),
+    <id:Ident> <call:NumExprCallTail?> => {
+        match (id, call) {
+            ("pi", None) => ConstExpr::Pi,
+            ("exp", Some(arg)) => ConstExpr::Exp(Box::new(arg)),
+            (other, None) => ConstExpr::Ref(other),
+            // (other, Some(_)) — unknown function call; lalrpop has no
+            // user-action error path, so we encode unsupported calls as
+            // a Ref to the function name (will fail in the resolver
+            // with an "undefined identifier" error pointing at it).
+            (other, Some(_)) => ConstExpr::Ref(other),
+        }
+    },
+    "(" <e:NumExpr> ")" => e,
+};
+
+NumExprCallTail: ConstExpr<&'a str> = {
+    "(" <e:NumExpr> ")" => e,
 };
 
 ValueList: Vec<Value<'a, &'a str>> = {

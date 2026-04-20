@@ -14,10 +14,13 @@ pub enum Token<'a> {
     Number(f64),
     Str(Cow<'a, str>),
     Question,
-    Star,
+    Star,    // dual-use: wildcard pattern, also multiplication in expr context
+    Slash,   // division in expr context (currently unused outside expressions)
+    Equals,  // `=` in const decls and (future) named-arg / let bindings
     DotDot,
     Using,
     As,
+    Const,   // `const` keyword for compile-time numeric bindings (Tier B)
     EOF,
 }
 

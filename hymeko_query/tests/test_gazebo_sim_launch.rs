@@ -6,7 +6,7 @@
 //! `gazebo-classic` stack):
 //!
 //!   - `moveo.urdf`             — robot description, produced by
-//!                                 `hymeko_query::formats::urdf::generate_urdf`
+//!                                 `hymeko_formats::urdf::generate_urdf`
 //!   - `moveo.world.sdf`        — minimal SDF 1.8 world with ground plane
 //!                                 and the standard gz-sim plugin triple
 //!                                 (physics / user-commands / scene-broadcaster)
@@ -36,7 +36,7 @@ mod test_gazebo_sim_launch {
 
     use log::info;
 
-    use hymeko_query::formats::urdf::generate_urdf;
+    use hymeko_formats::urdf::generate_urdf;
 
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
 
@@ -86,7 +86,7 @@ old `gazebo-classic`).
 ## Contents
 
 - `{urdf_file}`  — URDF robot description produced by
-  `hymeko_query::formats::urdf::generate_urdf` from
+  `hymeko_formats::urdf::generate_urdf` from
   `data/robotics/anthropomorphic_arm.hymeko`.
 - `{world_file}`  — Minimal SDF 1.8 world with a ground plane and the
   standard `gz-sim-physics-system` / `-user-commands-system` /
@@ -271,11 +271,11 @@ def generate_launch_description():
 
         // --- Generate the Gazebo world via the real T11 emitter ----------
         // Prior versions of this test used a hand-templated world; since
-        // `hymeko_query::formats::gazebo::generate_gazebo_world` landed
+        // `hymeko_formats::gazebo::generate_gazebo_world` landed
         // on 2026-04-19 we route through it so the bundle's plugin
         // section reflects the fixture's `sim_plugin` / `control_plugin`
         // declarations.
-        let world = hymeko_query::formats::gazebo::generate_gazebo_world(
+        let world = hymeko_formats::gazebo::generate_gazebo_world(
             &compiled.ir,
             &store.it,
             ROBOT_NAME,

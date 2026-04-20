@@ -8,7 +8,7 @@ old `gazebo-classic`).
 ## Contents
 
 - `moveo.urdf`  — URDF robot description produced by
-  `hymeko_query::formats::urdf::generate_urdf` from
+  `hymeko_formats::urdf::generate_urdf` from
   `data/robotics/anthropomorphic_arm.hymeko`.
 - `moveo.world.sdf`  — Minimal SDF 1.8 world with a ground plane and the
   standard `gz-sim-physics-system` / `-user-commands-system` /

@@ -21,7 +21,7 @@ mod test_transform_ecosystem {
 
         #[test]
         fn default_registry_has_all_formats() {
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let available = reg.available();
             assert!(available.contains(&"urdf"), "Missing URDF");
             assert!(available.contains(&"sdf"), "Missing SDF");
@@ -31,14 +31,14 @@ mod test_transform_ecosystem {
 
         #[test]
         fn lookup_by_name() {
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             assert!(reg.get("urdf").is_some());
             assert!(reg.get("nonexistent").is_none());
         }
 
         #[test]
         fn lookup_by_extension() {
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             assert_eq!(reg.by_extension("urdf").unwrap().name(), "urdf");
             assert_eq!(reg.by_extension("sdf").unwrap().name(), "sdf");
             assert_eq!(reg.by_extension("dot").unwrap().name(), "dot");
@@ -47,7 +47,7 @@ mod test_transform_ecosystem {
         #[test]
         fn generate_all_formats() {
             let (store, compiled) = load_and_lower(MOVEO_ARM).unwrap();
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let config = TransformConfig::default().with_name("moveo");
 
             let model = hymeko_query::transforms::extract(&compiled.ir, &store.it, &config.robot_name, hymeko_query::transforms::ModelKind::Kinematic);
@@ -65,7 +65,7 @@ mod test_transform_ecosystem {
 
         #[test]
         fn generate_all_for_both_robots() {
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
 
             for (path, name) in &[(MOVEO_ARM, "moveo"), (DIFF_ROBOT, "diff_robot")] {
                 let (store, compiled) = load_and_lower(path).unwrap();
@@ -86,7 +86,8 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod validation {
-        use hymeko_query::transforms::{DomainTransform, MjcfTransform, TransformRegistry, ModelView};
+        use hymeko_query::transforms::{DomainTransform, TransformRegistry, ModelView};
+        use hymeko_formats::MjcfTransform;
         use crate::test_helpers::load_and_lower;
         use super::*;
 
@@ -96,7 +97,7 @@ mod test_transform_ecosystem {
             let engine = QueryEngine::new(&compiled.ir, &store.it);
             let model = extract_kinematic_model(&engine, "moveo");
 
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             for name in reg.available() {
                 let transform = reg.get(name).unwrap();
                 let diags = transform.validate(&ModelView::Kinematic(model.clone()));
@@ -131,7 +132,8 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod mjcf {
-        use hymeko_query::transforms::{MjcfTransform, TransformConfig, ModelView, DomainTransform};
+        use hymeko_query::transforms::{TransformConfig, ModelView, DomainTransform};
+        use hymeko_formats::MjcfTransform;
         use crate::test_helpers::load_and_lower;
         use super::*;
 
@@ -274,7 +276,8 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod dot {
-        use hymeko_query::transforms::{DotTransform, TransformConfig, ModelView, DomainTransform};
+        use hymeko_query::transforms::{TransformConfig, ModelView, DomainTransform};
+        use hymeko_formats::DotTransform;
         use crate::test_helpers::load_and_lower;
         use super::*;
 
@@ -401,8 +404,9 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod alias_parity {
-        use hymeko_query::transforms::{DotTransform, TransformConfig, TransformRegistry,
+        use hymeko_query::transforms::{TransformConfig, TransformRegistry,
                                          DomainTransform, ModelView};
+        use hymeko_formats::DotTransform;
         use crate::test_helpers::load_and_lower;
         use std::collections::BTreeSet;
         use super::*;
@@ -471,7 +475,7 @@ mod test_transform_ecosystem {
         fn moveo_using_urdf_structure_matches_baseline() {
             let baseline = load_model(MOVEO_ARM, "moveo");
             let aliased = load_model(MOVEO_ARM_USING, "robot");
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let urdf = reg.get("urdf").expect("URDF transform registered");
 
             let cfg = TransformConfig::default().with_name("moveo");
@@ -542,7 +546,7 @@ mod test_transform_ecosystem {
         fn diff_robot_using_urdf_structure_matches_baseline() {
             let baseline = load_model(DIFF_ROBOT, "diff_robot");
             let aliased = load_model(DIFF_ROBOT_USING, "diff_robot");
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let urdf = reg.get("urdf").expect("URDF transform registered");
 
             let cfg = TransformConfig::default().with_name("diff_robot");
@@ -565,7 +569,7 @@ mod test_transform_ecosystem {
         fn moveo_using_sdf_link_count_matches_baseline() {
             let baseline = load_model(MOVEO_ARM, "moveo");
             let aliased = load_model(MOVEO_ARM_USING, "robot");
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let sdf = reg.get("sdf").expect("SDF transform registered");
 
             let cfg = TransformConfig::default().with_name("moveo");
@@ -582,7 +586,7 @@ mod test_transform_ecosystem {
         fn moveo_using_mjcf_body_count_matches_baseline() {
             let baseline = load_model(MOVEO_ARM, "moveo");
             let aliased = load_model(MOVEO_ARM_USING, "robot");
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let mjcf = reg.get("mjcf").expect("MJCF transform registered");
 
             let cfg = TransformConfig::default().with_name("moveo");
@@ -599,7 +603,7 @@ mod test_transform_ecosystem {
         fn moveo_using_mjcf_hinge_count_matches_baseline() {
             let baseline = load_model(MOVEO_ARM, "moveo");
             let aliased = load_model(MOVEO_ARM_USING, "robot");
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let mjcf = reg.get("mjcf").expect("MJCF transform registered");
 
             let cfg = TransformConfig::default().with_name("moveo");
@@ -616,7 +620,7 @@ mod test_transform_ecosystem {
         fn diff_robot_using_sdf_link_count_matches_baseline() {
             let baseline = load_model(DIFF_ROBOT, "diff_robot");
             let aliased = load_model(DIFF_ROBOT_USING, "diff_robot");
-            let reg = TransformRegistry::default();
+            let reg = hymeko_formats::default_registry();
             let sdf = reg.get("sdf").expect("SDF transform registered");
 
             let cfg = TransformConfig::default().with_name("diff_robot");

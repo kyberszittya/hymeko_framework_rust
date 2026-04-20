@@ -1,6 +1,6 @@
 //! Paper 2 / T11 — Gazebo world transform tests.
 //!
-//! Exercises `hymeko_query::formats::gazebo::generate_gazebo_world` and
+//! Exercises `hymeko_formats::gazebo::generate_gazebo_world` and
 //! the `GazeboWorldTransform` registry entry, plus the
 //! `extract_gazebo_plugins` helper in
 //! `hymeko_query::kinematics::gazebo_plugins`. The fixtures
@@ -12,7 +12,7 @@
 #[cfg(test)]
 mod test_gazebo_world {
     use hymeko_query::engine::QueryEngine;
-    use hymeko_query::formats::gazebo::generate_gazebo_world;
+    use hymeko_formats::gazebo::generate_gazebo_world;
     use hymeko_query::kinematics::gazebo_plugins::{
         extract_gazebo_plugins, GazeboPluginKind,
     };
@@ -195,7 +195,7 @@ mod test_gazebo_world {
 
     #[test]
     fn registry_exposes_gazebo_transform() {
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let names = reg.available();
         assert!(names.contains(&"gazebo"));
         assert_eq!(reg.get("gazebo").unwrap().extension(), "world.sdf");
@@ -209,7 +209,7 @@ mod test_gazebo_world {
         let (store, compiled) = load_and_lower(MOVEO).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let model = extract_kinematic_model(&engine, "moveo");
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let t = reg.get("gazebo").unwrap();
         let out = t
             .emit(&ModelView::Kinematic(model), &TransformConfig::default().with_name("moveo"))
@@ -228,7 +228,7 @@ mod test_gazebo_world {
         let (store, compiled) = load_and_lower(MOVEO).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let model = extract_kinematic_model(&engine, "moveo");
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let t = reg.get("gazebo").unwrap();
         let diags = t.validate(&ModelView::Kinematic(model));
         let errors: Vec<_> = diags.iter().filter(|d| d.is_error()).collect();

@@ -20,7 +20,7 @@ mod test_mermaid {
         let (store, compiled) = load_and_lower(path).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
         let model = extract_kinematic_model(&engine, robot_name);
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let t = reg.get("mermaid").expect("mermaid transform registered");
         let cfg = TransformConfig::default().with_name(robot_name);
         t.emit(&ModelView::Kinematic(model), &cfg)
@@ -29,7 +29,7 @@ mod test_mermaid {
 
     #[test]
     fn mermaid_registered_with_mmd_extension() {
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         assert!(reg.available().contains(&"mermaid"));
         assert_eq!(reg.get("mermaid").unwrap().extension(), "mmd");
     }

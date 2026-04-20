@@ -1,0 +1,706 @@
+chain_50_description {
+    @"meta_kinematics.hymeko";
+    using kinematics.elements as el;
+    using kinematics.geometry as geo;
+    using kinematics.axes as ax;
+    using kinematics.conti_joint as cj;
+}
+
+chain_50: el, geo, ax
+{
+    l0: el.link {
+        mass 2.538;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.047, 0.000, 0.000];
+    }
+    l1: el.link {
+        mass 3.223;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.052, 0.000, 0.100];
+    }
+    l2: el.link {
+        mass 2.419;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.094, 0.000, 0.200];
+    }
+    l3: el.link {
+        mass 0.517;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.037, 0.000, 0.300];
+    }
+    l4: el.link {
+        mass 3.415;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.083, 0.000, 0.400];
+    }
+    l5: el.link {
+        mass 0.851;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.065, 0.000, 0.500];
+    }
+    l6: el.link {
+        mass 4.901;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.036, 0.000, 0.600];
+    }
+    l7: el.link {
+        mass 1.026;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.094, 0.000, 0.700];
+    }
+    l8: el.link {
+        mass 1.712;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.021, 0.000, 0.800];
+    }
+    l9: el.link {
+        mass 3.077;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.027, 0.000, 0.900];
+    }
+    l10: el.link {
+        mass 4.585;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.092, 0.000, 1.000];
+    }
+    l11: el.link {
+        mass 3.496;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.065, 0.000, 1.100];
+    }
+    l12: el.link {
+        mass 3.990;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.029, 0.000, 1.200];
+    }
+    l13: el.link {
+        mass 2.208;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.055, 0.000, 1.300];
+    }
+    l14: el.link {
+        mass 1.404;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.086, 0.000, 1.400];
+    }
+    l15: el.link {
+        mass 3.530;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.079, 0.000, 1.500];
+    }
+    l16: el.link {
+        mass 4.563;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.046, 0.000, 1.600];
+    }
+    l17: el.link {
+        mass 3.493;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.008, 0.000, 1.700];
+    }
+    l18: el.link {
+        mass 1.421;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.058, 0.000, 1.800];
+    }
+    l19: el.link {
+        mass 2.937;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.018, 0.000, 1.900];
+    }
+    l20: el.link {
+        mass 3.160;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.039, 0.000, 2.000];
+    }
+    l21: el.link {
+        mass 4.115;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.071, 0.000, 2.100];
+    }
+    l22: el.link {
+        mass 3.165;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.093, 0.000, 2.200];
+    }
+    l23: el.link {
+        mass 2.531;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.078, 0.000, 2.300];
+    }
+    l24: el.link {
+        mass 4.093;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.064, 0.000, 2.400];
+    }
+    l25: el.link {
+        mass 0.713;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.014, 0.000, 2.500];
+    }
+    l26: el.link {
+        mass 2.631;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.081, 0.000, 2.600];
+    }
+    l27: el.link {
+        mass 1.902;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.003, 0.000, 2.700];
+    }
+    l28: el.link {
+        mass 0.133;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.098, 0.000, 2.800];
+    }
+    l29: el.link {
+        mass 2.976;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.018, 0.000, 2.900];
+    }
+    l30: el.link {
+        mass 4.894;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.070, 0.000, 3.000];
+    }
+    l31: el.link {
+        mass 4.161;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.061, 0.000, 3.100];
+    }
+    l32: el.link {
+        mass 1.199;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.045, 0.000, 3.200];
+    }
+    l33: el.link {
+        mass 0.580;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.073, 0.000, 3.300];
+    }
+    l34: el.link {
+        mass 1.943;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.051, 0.000, 3.400];
+    }
+    l35: el.link {
+        mass 0.264;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.004, 0.000, 3.500];
+    }
+    l36: el.link {
+        mass 4.832;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.084, 0.000, 3.600];
+    }
+    l37: el.link {
+        mass 1.262;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.085, 0.000, 3.700];
+    }
+    l38: el.link {
+        mass 2.689;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.007, 0.000, 3.800];
+    }
+    l39: el.link {
+        mass 2.150;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.064, 0.000, 3.900];
+    }
+    l40: el.link {
+        mass 2.404;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.019, 0.000, 4.000];
+    }
+    l41: el.link {
+        mass 1.876;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.055, 0.000, 4.100];
+    }
+    l42: el.link {
+        mass 0.194;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.011, 0.000, 4.200];
+    }
+    l43: el.link {
+        mass 3.233;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.098, 0.000, 4.300];
+    }
+    l44: el.link {
+        mass 1.652;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.031, 0.000, 4.400];
+    }
+    l45: el.link {
+        mass 3.260;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.004, 0.000, 4.500];
+    }
+    l46: el.link {
+        mass 2.539;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.040, 0.000, 4.600];
+    }
+    l47: el.link {
+        mass 2.206;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.085, 0.000, 4.700];
+    }
+    l48: el.link {
+        mass 0.650;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.082, 0.000, 4.800];
+    }
+    l49: el.link {
+        mass 0.882;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.090, 0.000, 4.900];
+    }
+    @j0: cj {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l1,
+         - ax.AXIS_Z);
+    }
+    @j1: cj {
+        (+ l1 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l2,
+         - ax.AXIS_Z);
+    }
+    @j2: cj {
+        (+ l2 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l3,
+         - ax.AXIS_Z);
+    }
+    @j3: cj {
+        (+ l3 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l4,
+         - ax.AXIS_Z);
+    }
+    @j4: cj {
+        (+ l4 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l5,
+         - ax.AXIS_Z);
+    }
+    @j5: cj {
+        (+ l5 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l6,
+         - ax.AXIS_Z);
+    }
+    @j6: cj {
+        (+ l6 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l7,
+         - ax.AXIS_Z);
+    }
+    @j7: cj {
+        (+ l7 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l8,
+         - ax.AXIS_Z);
+    }
+    @j8: cj {
+        (+ l8 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l9,
+         - ax.AXIS_Z);
+    }
+    @j9: cj {
+        (+ l9 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l10,
+         - ax.AXIS_Z);
+    }
+    @j10: cj {
+        (+ l10 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l11,
+         - ax.AXIS_Z);
+    }
+    @j11: cj {
+        (+ l11 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l12,
+         - ax.AXIS_Z);
+    }
+    @j12: cj {
+        (+ l12 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l13,
+         - ax.AXIS_Z);
+    }
+    @j13: cj {
+        (+ l13 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l14,
+         - ax.AXIS_Z);
+    }
+    @j14: cj {
+        (+ l14 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l15,
+         - ax.AXIS_Z);
+    }
+    @j15: cj {
+        (+ l15 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l16,
+         - ax.AXIS_Z);
+    }
+    @j16: cj {
+        (+ l16 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l17,
+         - ax.AXIS_Z);
+    }
+    @j17: cj {
+        (+ l17 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l18,
+         - ax.AXIS_Z);
+    }
+    @j18: cj {
+        (+ l18 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l19,
+         - ax.AXIS_Z);
+    }
+    @j19: cj {
+        (+ l19 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l20,
+         - ax.AXIS_Z);
+    }
+    @j20: cj {
+        (+ l20 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l21,
+         - ax.AXIS_Z);
+    }
+    @j21: cj {
+        (+ l21 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l22,
+         - ax.AXIS_Z);
+    }
+    @j22: cj {
+        (+ l22 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l23,
+         - ax.AXIS_Z);
+    }
+    @j23: cj {
+        (+ l23 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l24,
+         - ax.AXIS_Z);
+    }
+    @j24: cj {
+        (+ l24 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l25,
+         - ax.AXIS_Z);
+    }
+    @j25: cj {
+        (+ l25 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l26,
+         - ax.AXIS_Z);
+    }
+    @j26: cj {
+        (+ l26 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l27,
+         - ax.AXIS_Z);
+    }
+    @j27: cj {
+        (+ l27 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l28,
+         - ax.AXIS_Z);
+    }
+    @j28: cj {
+        (+ l28 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l29,
+         - ax.AXIS_Z);
+    }
+    @j29: cj {
+        (+ l29 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l30,
+         - ax.AXIS_Z);
+    }
+    @j30: cj {
+        (+ l30 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l31,
+         - ax.AXIS_Z);
+    }
+    @j31: cj {
+        (+ l31 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l32,
+         - ax.AXIS_Z);
+    }
+    @j32: cj {
+        (+ l32 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l33,
+         - ax.AXIS_Z);
+    }
+    @j33: cj {
+        (+ l33 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l34,
+         - ax.AXIS_Z);
+    }
+    @j34: cj {
+        (+ l34 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l35,
+         - ax.AXIS_Z);
+    }
+    @j35: cj {
+        (+ l35 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l36,
+         - ax.AXIS_Z);
+    }
+    @j36: cj {
+        (+ l36 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l37,
+         - ax.AXIS_Z);
+    }
+    @j37: cj {
+        (+ l37 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l38,
+         - ax.AXIS_Z);
+    }
+    @j38: cj {
+        (+ l38 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l39,
+         - ax.AXIS_Z);
+    }
+    @j39: cj {
+        (+ l39 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l40,
+         - ax.AXIS_Z);
+    }
+    @j40: cj {
+        (+ l40 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l41,
+         - ax.AXIS_Z);
+    }
+    @j41: cj {
+        (+ l41 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l42,
+         - ax.AXIS_Z);
+    }
+    @j42: cj {
+        (+ l42 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l43,
+         - ax.AXIS_Z);
+    }
+    @j43: cj {
+        (+ l43 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l44,
+         - ax.AXIS_Z);
+    }
+    @j44: cj {
+        (+ l44 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l45,
+         - ax.AXIS_Z);
+    }
+    @j45: cj {
+        (+ l45 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l46,
+         - ax.AXIS_Z);
+    }
+    @j46: cj {
+        (+ l46 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l47,
+         - ax.AXIS_Z);
+    }
+    @j47: cj {
+        (+ l47 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l48,
+         - ax.AXIS_Z);
+    }
+    @j48: cj {
+        (+ l48 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l49,
+         - ax.AXIS_Z);
+    }
+}

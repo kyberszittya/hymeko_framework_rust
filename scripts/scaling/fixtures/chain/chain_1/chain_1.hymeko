@@ -1,0 +1,18 @@
+chain_1_description {
+    @"meta_kinematics.hymeko";
+}
+
+chain_1: meta_kinematics.kinematics.elements,
+        meta_kinematics.kinematics.geometry,
+        meta_kinematics.kinematics.axes
+{
+    l0: meta_kinematics.kinematics.elements.link {
+        mass 0.758;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.069, 0.000, 0.000];
+    }
+}

@@ -1,0 +1,812 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="humanoid_f5">
+  <link name="L_ankle">
+    <inertial><mass value="1.785"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_elbow">
+    <inertial><mass value="2.056"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger0_distal">
+    <inertial><mass value="2.033"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger0_knuckle">
+    <inertial><mass value="3.855"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger0_middle">
+    <inertial><mass value="2.663"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger0_proximal">
+    <inertial><mass value="1.021"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger1_distal">
+    <inertial><mass value="3.257"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger1_knuckle">
+    <inertial><mass value="0.829"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger1_middle">
+    <inertial><mass value="1.749"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger1_proximal">
+    <inertial><mass value="3.283"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger2_distal">
+    <inertial><mass value="1.818"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger2_knuckle">
+    <inertial><mass value="1.581"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger2_middle">
+    <inertial><mass value="0.856"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger2_proximal">
+    <inertial><mass value="2.429"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger3_distal">
+    <inertial><mass value="2.808"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger3_knuckle">
+    <inertial><mass value="3.635"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger3_middle">
+    <inertial><mass value="1.921"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger3_proximal">
+    <inertial><mass value="1.486"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger4_distal">
+    <inertial><mass value="3.678"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger4_knuckle">
+    <inertial><mass value="3.403"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger4_middle">
+    <inertial><mass value="3.701"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_finger4_proximal">
+    <inertial><mass value="2.921"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_foot">
+    <inertial><mass value="2.729"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_forearm">
+    <inertial><mass value="1.604"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_hand">
+    <inertial><mass value="1.895"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_hip">
+    <inertial><mass value="0.645"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_knee">
+    <inertial><mass value="2.461"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_lower_leg">
+    <inertial><mass value="3.643"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_shoulder">
+    <inertial><mass value="1.013"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_upper_arm">
+    <inertial><mass value="1.642"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_upper_leg">
+    <inertial><mass value="2.432"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_wrist">
+    <inertial><mass value="0.404"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_ankle">
+    <inertial><mass value="3.394"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_elbow">
+    <inertial><mass value="1.039"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger0_distal">
+    <inertial><mass value="3.456"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger0_knuckle">
+    <inertial><mass value="2.716"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger0_middle">
+    <inertial><mass value="3.915"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger0_proximal">
+    <inertial><mass value="0.951"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger1_distal">
+    <inertial><mass value="3.042"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger1_knuckle">
+    <inertial><mass value="1.814"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger1_middle">
+    <inertial><mass value="1.398"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger1_proximal">
+    <inertial><mass value="3.963"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger2_distal">
+    <inertial><mass value="1.209"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger2_knuckle">
+    <inertial><mass value="1.281"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger2_middle">
+    <inertial><mass value="0.999"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger2_proximal">
+    <inertial><mass value="1.802"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger3_distal">
+    <inertial><mass value="0.993"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger3_knuckle">
+    <inertial><mass value="1.379"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger3_middle">
+    <inertial><mass value="0.723"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger3_proximal">
+    <inertial><mass value="3.182"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger4_distal">
+    <inertial><mass value="2.096"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger4_knuckle">
+    <inertial><mass value="2.054"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger4_middle">
+    <inertial><mass value="1.032"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_finger4_proximal">
+    <inertial><mass value="1.074"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_foot">
+    <inertial><mass value="1.377"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_forearm">
+    <inertial><mass value="2.381"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_hand">
+    <inertial><mass value="1.153"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_hip">
+    <inertial><mass value="2.974"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_knee">
+    <inertial><mass value="3.868"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_lower_leg">
+    <inertial><mass value="3.074"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_shoulder">
+    <inertial><mass value="3.650"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_upper_arm">
+    <inertial><mass value="1.603"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_upper_leg">
+    <inertial><mass value="3.550"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_wrist">
+    <inertial><mass value="1.983"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="head">
+    <inertial><mass value="1.333"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="neck">
+    <inertial><mass value="3.994"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="pelvis">
+    <inertial><mass value="0.659"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="torso">
+    <inertial><mass value="2.631"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <joint name="j_pelvis_torso" type="revolute">
+    <parent link="pelvis"/>
+    <child link="torso"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_torso_neck" type="revolute">
+    <parent link="torso"/>
+    <child link="neck"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_neck_head" type="revolute">
+    <parent link="neck"/>
+    <child link="head"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_shoulder" type="revolute">
+    <parent link="torso"/>
+    <child link="L_shoulder"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_upper_arm" type="revolute">
+    <parent link="L_shoulder"/>
+    <child link="L_upper_arm"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_elbow" type="revolute">
+    <parent link="L_upper_arm"/>
+    <child link="L_elbow"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_forearm" type="revolute">
+    <parent link="L_elbow"/>
+    <child link="L_forearm"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_wrist" type="revolute">
+    <parent link="L_forearm"/>
+    <child link="L_wrist"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_hand" type="revolute">
+    <parent link="L_wrist"/>
+    <child link="L_hand"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger0_knuckle" type="revolute">
+    <parent link="L_hand"/>
+    <child link="L_finger0_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger0_proximal" type="revolute">
+    <parent link="L_finger0_knuckle"/>
+    <child link="L_finger0_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger0_middle" type="revolute">
+    <parent link="L_finger0_proximal"/>
+    <child link="L_finger0_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger0_distal" type="revolute">
+    <parent link="L_finger0_middle"/>
+    <child link="L_finger0_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger1_knuckle" type="revolute">
+    <parent link="L_hand"/>
+    <child link="L_finger1_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger1_proximal" type="revolute">
+    <parent link="L_finger1_knuckle"/>
+    <child link="L_finger1_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger1_middle" type="revolute">
+    <parent link="L_finger1_proximal"/>
+    <child link="L_finger1_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger1_distal" type="revolute">
+    <parent link="L_finger1_middle"/>
+    <child link="L_finger1_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger2_knuckle" type="revolute">
+    <parent link="L_hand"/>
+    <child link="L_finger2_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger2_proximal" type="revolute">
+    <parent link="L_finger2_knuckle"/>
+    <child link="L_finger2_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger2_middle" type="revolute">
+    <parent link="L_finger2_proximal"/>
+    <child link="L_finger2_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger2_distal" type="revolute">
+    <parent link="L_finger2_middle"/>
+    <child link="L_finger2_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger3_knuckle" type="revolute">
+    <parent link="L_hand"/>
+    <child link="L_finger3_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger3_proximal" type="revolute">
+    <parent link="L_finger3_knuckle"/>
+    <child link="L_finger3_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger3_middle" type="revolute">
+    <parent link="L_finger3_proximal"/>
+    <child link="L_finger3_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger3_distal" type="revolute">
+    <parent link="L_finger3_middle"/>
+    <child link="L_finger3_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger4_knuckle" type="revolute">
+    <parent link="L_hand"/>
+    <child link="L_finger4_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger4_proximal" type="revolute">
+    <parent link="L_finger4_knuckle"/>
+    <child link="L_finger4_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger4_middle" type="revolute">
+    <parent link="L_finger4_proximal"/>
+    <child link="L_finger4_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_finger4_distal" type="revolute">
+    <parent link="L_finger4_middle"/>
+    <child link="L_finger4_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_shoulder" type="revolute">
+    <parent link="torso"/>
+    <child link="R_shoulder"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_upper_arm" type="revolute">
+    <parent link="R_shoulder"/>
+    <child link="R_upper_arm"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_elbow" type="revolute">
+    <parent link="R_upper_arm"/>
+    <child link="R_elbow"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_forearm" type="revolute">
+    <parent link="R_elbow"/>
+    <child link="R_forearm"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_wrist" type="revolute">
+    <parent link="R_forearm"/>
+    <child link="R_wrist"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_hand" type="revolute">
+    <parent link="R_wrist"/>
+    <child link="R_hand"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger0_knuckle" type="revolute">
+    <parent link="R_hand"/>
+    <child link="R_finger0_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger0_proximal" type="revolute">
+    <parent link="R_finger0_knuckle"/>
+    <child link="R_finger0_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger0_middle" type="revolute">
+    <parent link="R_finger0_proximal"/>
+    <child link="R_finger0_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger0_distal" type="revolute">
+    <parent link="R_finger0_middle"/>
+    <child link="R_finger0_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger1_knuckle" type="revolute">
+    <parent link="R_hand"/>
+    <child link="R_finger1_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger1_proximal" type="revolute">
+    <parent link="R_finger1_knuckle"/>
+    <child link="R_finger1_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger1_middle" type="revolute">
+    <parent link="R_finger1_proximal"/>
+    <child link="R_finger1_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger1_distal" type="revolute">
+    <parent link="R_finger1_middle"/>
+    <child link="R_finger1_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger2_knuckle" type="revolute">
+    <parent link="R_hand"/>
+    <child link="R_finger2_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger2_proximal" type="revolute">
+    <parent link="R_finger2_knuckle"/>
+    <child link="R_finger2_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger2_middle" type="revolute">
+    <parent link="R_finger2_proximal"/>
+    <child link="R_finger2_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger2_distal" type="revolute">
+    <parent link="R_finger2_middle"/>
+    <child link="R_finger2_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger3_knuckle" type="revolute">
+    <parent link="R_hand"/>
+    <child link="R_finger3_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger3_proximal" type="revolute">
+    <parent link="R_finger3_knuckle"/>
+    <child link="R_finger3_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger3_middle" type="revolute">
+    <parent link="R_finger3_proximal"/>
+    <child link="R_finger3_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger3_distal" type="revolute">
+    <parent link="R_finger3_middle"/>
+    <child link="R_finger3_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger4_knuckle" type="revolute">
+    <parent link="R_hand"/>
+    <child link="R_finger4_knuckle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger4_proximal" type="revolute">
+    <parent link="R_finger4_knuckle"/>
+    <child link="R_finger4_proximal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger4_middle" type="revolute">
+    <parent link="R_finger4_proximal"/>
+    <child link="R_finger4_middle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_finger4_distal" type="revolute">
+    <parent link="R_finger4_middle"/>
+    <child link="R_finger4_distal"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_hip" type="revolute">
+    <parent link="pelvis"/>
+    <child link="L_hip"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_upper_leg" type="revolute">
+    <parent link="L_hip"/>
+    <child link="L_upper_leg"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_knee" type="revolute">
+    <parent link="L_upper_leg"/>
+    <child link="L_knee"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_lower_leg" type="revolute">
+    <parent link="L_knee"/>
+    <child link="L_lower_leg"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_ankle" type="revolute">
+    <parent link="L_lower_leg"/>
+    <child link="L_ankle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_foot" type="revolute">
+    <parent link="L_ankle"/>
+    <child link="L_foot"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_hip" type="revolute">
+    <parent link="pelvis"/>
+    <child link="R_hip"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_upper_leg" type="revolute">
+    <parent link="R_hip"/>
+    <child link="R_upper_leg"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_knee" type="revolute">
+    <parent link="R_upper_leg"/>
+    <child link="R_knee"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_lower_leg" type="revolute">
+    <parent link="R_knee"/>
+    <child link="R_lower_leg"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_ankle" type="revolute">
+    <parent link="R_lower_leg"/>
+    <child link="R_ankle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_foot" type="revolute">
+    <parent link="R_ankle"/>
+    <child link="R_foot"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+</robot>

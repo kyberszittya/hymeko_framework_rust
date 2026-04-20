@@ -8,9 +8,9 @@
 //! Stages measured:
 //!   - compile:  parse + intern + resolve + lower + apply_usings
 //!               (the full `ModuleStore::compile` pipeline)
-//!   - urdf:     `hymeko_query::formats::urdf::generate_urdf`
-//!   - sdf:      `hymeko_query::formats::sdf::generate_sdf`
-//!   - gazebo:   `hymeko_query::formats::gazebo::generate_gazebo_world`
+//!   - urdf:     `hymeko_formats::urdf::generate_urdf`
+//!   - sdf:      `hymeko_formats::sdf::generate_sdf`
+//!   - gazebo:   `hymeko_formats::gazebo::generate_gazebo_world`
 //!   - mjcf:     `TransformRegistry::emit("mjcf", ModelView::Kinematic(model))`
 //!   - dot:      `TransformRegistry::emit("dot", ...)`
 //!   - mermaid:  `TransformRegistry::emit("mermaid", ...)`
@@ -41,9 +41,9 @@ mod bench_workflow {
     }
 
     use hymeko_query::engine::QueryEngine;
-    use hymeko_query::formats::gazebo::generate_gazebo_world;
-    use hymeko_query::formats::sdf::generate_sdf;
-    use hymeko_query::formats::urdf::generate_urdf;
+    use hymeko_formats::gazebo::generate_gazebo_world;
+    use hymeko_formats::sdf::generate_sdf;
+    use hymeko_formats::urdf::generate_urdf;
     use hymeko_query::kinematics::kinematic::extract_kinematic_model;
     use hymeko_query::transforms::{
         DomainTransform, ModelView, TransformConfig, TransformRegistry,
@@ -215,7 +215,7 @@ mod bench_workflow {
     #[test]
     fn bench_end_to_end_workflow() {
         init_bench_logger();
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let mut all = Vec::new();
         for fx in FIXTURES {
             let mut rows = run_fixture(*fx, &reg);

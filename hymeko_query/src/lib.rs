@@ -23,9 +23,7 @@ pub mod interpret;
 pub mod rewrite;
 
 pub mod traits;
-pub mod formats;
 pub mod kinematics;
-pub mod codegen;
 pub mod transforms;
 
 // Re-exports for convenience

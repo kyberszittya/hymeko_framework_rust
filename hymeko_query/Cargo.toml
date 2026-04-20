@@ -21,6 +21,9 @@ log = "0.4.29"
 default = ["interpret"]
 interpret = ["parser"]  # AST-to-Predicate interpreter requires parser
 
+[dev-dependencies]
+hymeko_formats = { path = "../hymeko_formats" }
+
 [[test]]
 name = "integration"
 path = "tests/mod.rs"

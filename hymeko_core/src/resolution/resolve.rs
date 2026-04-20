@@ -138,6 +138,12 @@ fn resolve_value<'a>(
             let did = resolve_ref_to_declid(idx, scope, r, it)?;
             ValueR::Ref(did)
         }
+        // Tier B: const expressions must be evaluated by the
+        // pre-resolve const pass; if one survives to this point it is
+        // a pipeline-ordering bug.
+        Value::Expr(_) => unreachable!(
+            "const expression in resolve_value — const-resolution pass must run before resolve"
+        ),
     })
 }
 
@@ -406,6 +412,10 @@ fn validate_value<'a>(
         Value::Ref(r) => { let _ = resolve_ref_to_declid(idx, scope, r, it)?; }
         Value::List(xs) => for x in xs { validate_value(scope, x, idx, it)?; }
         Value::Str(_) | Value::Num(_) => {}
+        // Tier B: see resolve_value above.
+        Value::Expr(_) => unreachable!(
+            "const expression in validate_value — const-resolution pass must run before validate_value"
+        ),
     }
     Ok(())
 }

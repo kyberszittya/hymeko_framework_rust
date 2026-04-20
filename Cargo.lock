@@ -1846,11 +1846,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "135b12329e5e3ce057a9f972339ea52bc954fe1e9358ef27f95e89716fbc5424"
 
 [[package]]
+name = "hymeko_bench"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "csv",
+ "hymeko_core",
+ "hymeko_formats",
+ "hymeko_query",
+ "parser",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "hymeko_cli"
 version = "0.1.0"
 dependencies = [
  "clap",
  "hymeko_core",
+ "hymeko_formats",
  "hymeko_query",
  "parser",
  "rustyline",
@@ -1920,6 +1936,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hymeko_formats"
+version = "0.1.0"
+dependencies = [
+ "hymeko_core",
+ "hymeko_query",
+]
+
+[[package]]
 name = "hymeko_hnn"
 version = "0.1.0"
 dependencies = [
@@ -1973,6 +1997,7 @@ version = "0.1.0"
 dependencies = [
  "env_logger",
  "hymeko_core",
+ "hymeko_formats",
  "log",
  "parser",
 ]

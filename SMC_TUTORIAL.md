@@ -93,6 +93,80 @@ To add a new target format *f*:
 
 No dispatcher change is required; Propositions 1–3 lift automatically.
 
+## 6.1  Compile-time constants and arithmetic (Tier B, 2026-04-20)
+
+A description header may declare numeric constants, optionally with
+arithmetic expressions, that resolve to `f64` literals before the IR is
+built. Constants subsume `xacro:property` and `${expr}` for the
+numerical-parameterization case:
+
+```hymeko
+mini_arm_description {
+    @"meta_kinematics.hymeko";
+    using kinematics.elements as el;
+    using kinematics.geometry as geo;
+    using kinematics.axes as ax;
+
+    const RADIUS      = 0.05;
+    const LINK_HEIGHT = 0.1;
+    const LENGTH      = LINK_HEIGHT * 2.0;     // arithmetic in expr
+    const ORIGIN_Z    = LINK_HEIGHT / 2.0;
+}
+
+mini_arm: el, geo, ax {
+    base: el.link {
+        mass 5.0;
+        link_geometry: geo.cylinder { dimension [RADIUS, LENGTH]; }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.0, 0.0, ORIGIN_Z];
+    }
+    spinner: el.link {
+        mass 1.0;
+        link_geometry: geo.cylinder {
+            dimension [(RADIUS * 0.5), (LENGTH / 2.0)];   // expr in list
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.0, 0.0, ORIGIN_Z];
+    }
+}
+```
+
+**Surface rules.**
+- `const NAME = <expr>;` — bindings live in the description header
+  block (alongside `using`/`@"…"`).
+- A bare `NAME` in numeric value position (e.g.\ `mass NAME;`,
+  `origin [NAME, 0.0, 0.0]`) refers to the binding. No syntax change
+  for the simple case.
+- Compound expressions go in parentheses: `(NAME * 2.0)`,
+  `(LEN + 0.05)`. Operators: `+ - * /`, unary `-`. Parens nest.
+- Builtins: `pi` (constant) and `exp(<expr>)` (natural exponential).
+  More builtins are easy to add as needed.
+- Forward references between consts are allowed and resolved
+  topologically; cycles are reported at compile time.
+
+**Errors caught at compile time.**
+- Undefined identifier — `const A = UNKNOWN;` fails with
+  `undefined const reference 'UNKNOWN'`.
+- Cycle — `const A = B; const B = A;` fails with `cyclic const
+  definitions: A → B → A`.
+- Division by zero — `const A = 1.0 / 0.0;` fails with `division by
+  zero in const expression`.
+
+**What it does not change.**
+- The IR is byte-identical to a description that inlines the resolved
+  numbers. Verified by the `test_const_resolve` integration suite
+  (`hymeko_query/tests/test_const_resolve.rs`): a fixture using
+  consts emits byte-equal URDF and SDF to a hand-written
+  literal-only equivalent.
+- Compile-time cost is one extra pass over the AST — an `O(|consts|
+  + |values|)` walk with `HashMap` lookups. Bench numbers do not
+  change measurably.
+- `const` is the only new keyword. `*`, `/`, `=` are new tokens but
+  used only inside parenthesised numeric expressions and `const` decl
+  RHSes — existing fixtures parse unchanged.
+
 ## 7. Contact
 
 For questions about the artefact, open an issue on the repository or

@@ -1,0 +1,596 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="tree_50_k3">
+  <link name="l0">
+    <inertial><mass value="2.538"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l1">
+    <inertial><mass value="1.404"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l2">
+    <inertial><mass value="3.223"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l3">
+    <inertial><mass value="1.288"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l4">
+    <inertial><mass value="2.419"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l5">
+    <inertial><mass value="4.855"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l6">
+    <inertial><mass value="0.517"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l7">
+    <inertial><mass value="1.655"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l8">
+    <inertial><mass value="3.415"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l9">
+    <inertial><mass value="0.518"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l10">
+    <inertial><mass value="0.851"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l11">
+    <inertial><mass value="4.144"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l12">
+    <inertial><mass value="4.901"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l13">
+    <inertial><mass value="1.665"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l14">
+    <inertial><mass value="1.026"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l15">
+    <inertial><mass value="4.865"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l16">
+    <inertial><mass value="1.712"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l17">
+    <inertial><mass value="3.059"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l18">
+    <inertial><mass value="3.077"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l19">
+    <inertial><mass value="3.211"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l20">
+    <inertial><mass value="4.585"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l21">
+    <inertial><mass value="4.816"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l22">
+    <inertial><mass value="3.496"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l23">
+    <inertial><mass value="4.142"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l24">
+    <inertial><mass value="3.990"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l25">
+    <inertial><mass value="3.251"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l26">
+    <inertial><mass value="2.208"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l27">
+    <inertial><mass value="1.213"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l28">
+    <inertial><mass value="1.404"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l29">
+    <inertial><mass value="4.657"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l30">
+    <inertial><mass value="3.530"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l31">
+    <inertial><mass value="0.618"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l32">
+    <inertial><mass value="4.563"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l33">
+    <inertial><mass value="1.428"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l34">
+    <inertial><mass value="3.493"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l35">
+    <inertial><mass value="2.354"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l36">
+    <inertial><mass value="1.421"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l37">
+    <inertial><mass value="1.125"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l38">
+    <inertial><mass value="2.937"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l39">
+    <inertial><mass value="2.118"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l40">
+    <inertial><mass value="3.160"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l41">
+    <inertial><mass value="3.510"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l42">
+    <inertial><mass value="4.115"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l43">
+    <inertial><mass value="4.281"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l44">
+    <inertial><mass value="3.165"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l45">
+    <inertial><mass value="4.835"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l46">
+    <inertial><mass value="2.531"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l47">
+    <inertial><mass value="4.449"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l48">
+    <inertial><mass value="4.093"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <link name="l49">
+    <inertial><mass value="4.106"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.100 0.100 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.100 0.100 0.100"/></geometry></collision>
+  </link>
+  <joint name="j0" type="revolute">
+    <parent link="l0"/>
+    <child link="l1"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j1" type="revolute">
+    <parent link="l1"/>
+    <child link="l2"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j2" type="revolute">
+    <parent link="l2"/>
+    <child link="l3"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j3" type="revolute">
+    <parent link="l2"/>
+    <child link="l4"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j4" type="revolute">
+    <parent link="l0"/>
+    <child link="l5"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j5" type="revolute">
+    <parent link="l2"/>
+    <child link="l6"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j6" type="revolute">
+    <parent link="l5"/>
+    <child link="l7"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j7" type="revolute">
+    <parent link="l1"/>
+    <child link="l8"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j8" type="revolute">
+    <parent link="l0"/>
+    <child link="l9"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j9" type="revolute">
+    <parent link="l7"/>
+    <child link="l10"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j10" type="revolute">
+    <parent link="l1"/>
+    <child link="l11"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j11" type="revolute">
+    <parent link="l9"/>
+    <child link="l12"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j12" type="revolute">
+    <parent link="l10"/>
+    <child link="l13"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j13" type="revolute">
+    <parent link="l13"/>
+    <child link="l14"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j14" type="revolute">
+    <parent link="l11"/>
+    <child link="l15"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j15" type="revolute">
+    <parent link="l15"/>
+    <child link="l16"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j16" type="revolute">
+    <parent link="l6"/>
+    <child link="l17"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j17" type="revolute">
+    <parent link="l5"/>
+    <child link="l18"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j18" type="revolute">
+    <parent link="l6"/>
+    <child link="l19"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j19" type="revolute">
+    <parent link="l7"/>
+    <child link="l20"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j20" type="revolute">
+    <parent link="l11"/>
+    <child link="l21"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j21" type="revolute">
+    <parent link="l15"/>
+    <child link="l22"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j22" type="revolute">
+    <parent link="l10"/>
+    <child link="l23"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j23" type="revolute">
+    <parent link="l13"/>
+    <child link="l24"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j24" type="revolute">
+    <parent link="l4"/>
+    <child link="l25"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j25" type="revolute">
+    <parent link="l23"/>
+    <child link="l26"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j26" type="revolute">
+    <parent link="l19"/>
+    <child link="l27"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j27" type="revolute">
+    <parent link="l4"/>
+    <child link="l28"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j28" type="revolute">
+    <parent link="l5"/>
+    <child link="l29"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j29" type="revolute">
+    <parent link="l24"/>
+    <child link="l30"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j30" type="revolute">
+    <parent link="l11"/>
+    <child link="l31"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j31" type="revolute">
+    <parent link="l26"/>
+    <child link="l32"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j32" type="revolute">
+    <parent link="l13"/>
+    <child link="l33"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j33" type="revolute">
+    <parent link="l22"/>
+    <child link="l34"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j34" type="revolute">
+    <parent link="l19"/>
+    <child link="l35"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j35" type="revolute">
+    <parent link="l20"/>
+    <child link="l36"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j36" type="revolute">
+    <parent link="l24"/>
+    <child link="l37"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j37" type="revolute">
+    <parent link="l32"/>
+    <child link="l38"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j38" type="revolute">
+    <parent link="l31"/>
+    <child link="l39"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j39" type="revolute">
+    <parent link="l36"/>
+    <child link="l40"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j40" type="revolute">
+    <parent link="l9"/>
+    <child link="l41"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j41" type="revolute">
+    <parent link="l31"/>
+    <child link="l42"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j42" type="revolute">
+    <parent link="l12"/>
+    <child link="l43"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j43" type="revolute">
+    <parent link="l29"/>
+    <child link="l44"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j44" type="revolute">
+    <parent link="l7"/>
+    <child link="l45"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j45" type="revolute">
+    <parent link="l4"/>
+    <child link="l46"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j46" type="revolute">
+    <parent link="l10"/>
+    <child link="l47"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j47" type="revolute">
+    <parent link="l37"/>
+    <child link="l48"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j48" type="revolute">
+    <parent link="l45"/>
+    <child link="l49"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+</robot>

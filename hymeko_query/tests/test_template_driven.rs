@@ -30,7 +30,7 @@ mod test_template_driven {
 
     fn render(transform: &str, fixture: &str, name: &str) -> String {
         let (store, compiled) = load_and_lower(fixture).expect("compile");
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let cfg = TransformConfig::default().with_name(name);
         reg.render_from_templates(
             transform,
@@ -47,7 +47,7 @@ mod test_template_driven {
 
     #[test]
     fn every_shipped_transform_exposes_a_template_dir() {
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         for name in ["urdf", "sdf", "mjcf", "dot", "gazebo", "mermaid"] {
             let t = reg.get(name).expect(name);
             assert_eq!(
@@ -60,7 +60,7 @@ mod test_template_driven {
 
     #[test]
     fn render_from_templates_returns_none_for_unknown_transform() {
-        let reg = TransformRegistry::default();
+        let reg = hymeko_formats::default_registry();
         let (store, compiled) = load_and_lower(MINI_ARM).unwrap();
         let out = reg.render_from_templates(
             "nonexistent",

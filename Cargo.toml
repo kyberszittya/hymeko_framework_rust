@@ -1,11 +1,13 @@
 
 
 [workspace]
-members = ["hymeko_cli",
+members = ["hymeko_bench",
+    "hymeko_cli",
     "hymeko_client",
     "hymeko_core",
     "hymeko_daemon",
     "hymeko_emitter",
+    "hymeko_formats",
     "hymeko_hnn",
     "hymeko_hre",
     "hymeko_mcp",

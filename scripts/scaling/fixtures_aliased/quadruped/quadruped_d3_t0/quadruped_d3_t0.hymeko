@@ -1,0 +1,202 @@
+quadruped_d3_t0_description {
+    @"meta_kinematics.hymeko";
+    using kinematics.elements as el;
+    using kinematics.geometry as geo;
+    using kinematics.axes as ax;
+    using kinematics.conti_joint as cj;
+}
+
+quadruped_d3_t0: el, geo, ax
+{
+    FL_hip: el.link {
+        mass 1.800;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.147, -0.042, 0.014];
+    }
+    FL_knee: el.link {
+        mass 2.370;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.064, 0.062, 0.149];
+    }
+    FL_upper: el.link {
+        mass 4.866;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.051, 0.055, 0.067];
+    }
+    FR_hip: el.link {
+        mass 1.314;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.134, 0.081, 0.019];
+    }
+    FR_knee: el.link {
+        mass 3.170;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.108, 0.066, 0.145];
+    }
+    FR_upper: el.link {
+        mass 4.815;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.115, -0.045, 0.013];
+    }
+    RL_hip: el.link {
+        mass 0.300;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.070, -0.007, 0.132];
+    }
+    RL_knee: el.link {
+        mass 1.104;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.039, 0.022, 0.083];
+    }
+    RL_upper: el.link {
+        mass 4.815;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.108, -0.111, 0.168];
+    }
+    RR_hip: el.link {
+        mass 3.531;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.033, -0.064, 0.025];
+    }
+    RR_knee: el.link {
+        mass 1.163;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.101, -0.083, 0.066];
+    }
+    RR_upper: el.link {
+        mass 3.397;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.118, 0.080, 0.116];
+    }
+    body: el.link {
+        mass 2.635;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.077, 0.029, 0.150];
+    }
+    head: el.link {
+        mass 0.600;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.055, -0.009, 0.034];
+    }
+    @j_body_head: cj {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - head,
+         - ax.AXIS_Z);
+    }
+    @j_FL_hip: cj {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FL_hip,
+         - ax.AXIS_Z);
+    }
+    @j_FL_upper: cj {
+        (+ FL_hip [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FL_upper,
+         - ax.AXIS_Z);
+    }
+    @j_FL_knee: cj {
+        (+ FL_upper [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FL_knee,
+         - ax.AXIS_Z);
+    }
+    @j_FR_hip: cj {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FR_hip,
+         - ax.AXIS_Z);
+    }
+    @j_FR_upper: cj {
+        (+ FR_hip [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FR_upper,
+         - ax.AXIS_Z);
+    }
+    @j_FR_knee: cj {
+        (+ FR_upper [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FR_knee,
+         - ax.AXIS_Z);
+    }
+    @j_RL_hip: cj {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RL_hip,
+         - ax.AXIS_Z);
+    }
+    @j_RL_upper: cj {
+        (+ RL_hip [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RL_upper,
+         - ax.AXIS_Z);
+    }
+    @j_RL_knee: cj {
+        (+ RL_upper [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RL_knee,
+         - ax.AXIS_Z);
+    }
+    @j_RR_hip: cj {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RR_hip,
+         - ax.AXIS_Z);
+    }
+    @j_RR_upper: cj {
+        (+ RR_hip [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RR_upper,
+         - ax.AXIS_Z);
+    }
+    @j_RR_knee: cj {
+        (+ RR_upper [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RR_knee,
+         - ax.AXIS_Z);
+    }
+}

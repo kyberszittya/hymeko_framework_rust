@@ -106,6 +106,7 @@ pub trait CommonLexer<'a> {
         match text {
             "using" => Token::Using,
             "as"    => Token::As,
+            "const" => Token::Const,
             _       => Token::Ident(text),
         }
     }
@@ -259,6 +260,8 @@ pub fn next_token<'a, L: CommonLexer<'a>>(lex: &mut L) -> Option<LexItem<'a>> {
         },
         b'?' => Token::Question,
         b'*' => Token::Star,
+        b'/' => Token::Slash,
+        b'=' => Token::Equals,
 
 
         d if d.is_ascii_digit() => match lex.lex_number(start) {

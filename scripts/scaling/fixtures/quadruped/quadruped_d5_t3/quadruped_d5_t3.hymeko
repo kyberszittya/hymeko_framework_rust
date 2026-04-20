@@ -1,0 +1,354 @@
+quadruped_d5_t3_description {
+    @"meta_kinematics.hymeko";
+}
+
+quadruped_d5_t3: meta_kinematics.kinematics.elements,
+        meta_kinematics.kinematics.geometry,
+        meta_kinematics.kinematics.axes
+{
+    FL_ankle: meta_kinematics.kinematics.elements.link {
+        mass 1.762;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.108, 0.084, 0.035];
+    }
+    FL_hip: meta_kinematics.kinematics.elements.link {
+        mass 0.322;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.066, 0.094, 0.109];
+    }
+    FL_knee: meta_kinematics.kinematics.elements.link {
+        mass 0.674;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.119, -0.147, 0.127];
+    }
+    FL_lower: meta_kinematics.kinematics.elements.link {
+        mass 4.682;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.147, 0.141, 0.091];
+    }
+    FL_upper: meta_kinematics.kinematics.elements.link {
+        mass 4.490;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.033, -0.037, 0.111];
+    }
+    FR_ankle: meta_kinematics.kinematics.elements.link {
+        mass 3.025;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.014, -0.091, 0.091];
+    }
+    FR_hip: meta_kinematics.kinematics.elements.link {
+        mass 3.513;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.089, -0.069, 0.019];
+    }
+    FR_knee: meta_kinematics.kinematics.elements.link {
+        mass 4.196;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.110, -0.020, 0.114];
+    }
+    FR_lower: meta_kinematics.kinematics.elements.link {
+        mass 3.801;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.042, -0.126, 0.132];
+    }
+    FR_upper: meta_kinematics.kinematics.elements.link {
+        mass 4.303;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.064, -0.006, 0.017];
+    }
+    RL_ankle: meta_kinematics.kinematics.elements.link {
+        mass 1.183;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.148, 0.090, 0.049];
+    }
+    RL_hip: meta_kinematics.kinematics.elements.link {
+        mass 2.525;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.016, 0.113, 0.149];
+    }
+    RL_knee: meta_kinematics.kinematics.elements.link {
+        mass 4.754;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.057, 0.040, 0.106];
+    }
+    RL_lower: meta_kinematics.kinematics.elements.link {
+        mass 4.541;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.100, -0.038, 0.146];
+    }
+    RL_upper: meta_kinematics.kinematics.elements.link {
+        mass 4.895;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.115, 0.054, 0.090];
+    }
+    RR_ankle: meta_kinematics.kinematics.elements.link {
+        mass 0.740;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.133, 0.061, 0.083];
+    }
+    RR_hip: meta_kinematics.kinematics.elements.link {
+        mass 1.245;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.060, 0.075, 0.085];
+    }
+    RR_knee: meta_kinematics.kinematics.elements.link {
+        mass 0.839;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.064, 0.122, 0.027];
+    }
+    RR_lower: meta_kinematics.kinematics.elements.link {
+        mass 4.258;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.071, -0.009, 0.050];
+    }
+    RR_upper: meta_kinematics.kinematics.elements.link {
+        mass 4.781;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.119, -0.070, 0.084];
+    }
+    body: meta_kinematics.kinematics.elements.link {
+        mass 2.258;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.071, 0.148, 0.004];
+    }
+    head: meta_kinematics.kinematics.elements.link {
+        mass 2.891;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.014, -0.000, 0.053];
+    }
+    tail0: meta_kinematics.kinematics.elements.link {
+        mass 0.421;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.132, -0.020, 0.065];
+    }
+    tail1: meta_kinematics.kinematics.elements.link {
+        mass 3.373;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.041, -0.028, 0.058];
+    }
+    tail2: meta_kinematics.kinematics.elements.link {
+        mass 3.512;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.093, -0.081, 0.064];
+    }
+    @j_body_head: meta_kinematics.kinematics.conti_joint {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - head,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FL_hip: meta_kinematics.kinematics.conti_joint {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FL_hip,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FL_upper: meta_kinematics.kinematics.conti_joint {
+        (+ FL_hip [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FL_upper,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FL_knee: meta_kinematics.kinematics.conti_joint {
+        (+ FL_upper [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FL_knee,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FL_lower: meta_kinematics.kinematics.conti_joint {
+        (+ FL_knee [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FL_lower,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FL_ankle: meta_kinematics.kinematics.conti_joint {
+        (+ FL_lower [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FL_ankle,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FR_hip: meta_kinematics.kinematics.conti_joint {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FR_hip,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FR_upper: meta_kinematics.kinematics.conti_joint {
+        (+ FR_hip [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FR_upper,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FR_knee: meta_kinematics.kinematics.conti_joint {
+        (+ FR_upper [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FR_knee,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FR_lower: meta_kinematics.kinematics.conti_joint {
+        (+ FR_knee [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FR_lower,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_FR_ankle: meta_kinematics.kinematics.conti_joint {
+        (+ FR_lower [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - FR_ankle,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RL_hip: meta_kinematics.kinematics.conti_joint {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RL_hip,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RL_upper: meta_kinematics.kinematics.conti_joint {
+        (+ RL_hip [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RL_upper,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RL_knee: meta_kinematics.kinematics.conti_joint {
+        (+ RL_upper [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RL_knee,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RL_lower: meta_kinematics.kinematics.conti_joint {
+        (+ RL_knee [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RL_lower,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RL_ankle: meta_kinematics.kinematics.conti_joint {
+        (+ RL_lower [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RL_ankle,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RR_hip: meta_kinematics.kinematics.conti_joint {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RR_hip,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RR_upper: meta_kinematics.kinematics.conti_joint {
+        (+ RR_hip [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RR_upper,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RR_knee: meta_kinematics.kinematics.conti_joint {
+        (+ RR_upper [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RR_knee,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RR_lower: meta_kinematics.kinematics.conti_joint {
+        (+ RR_knee [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RR_lower,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_RR_ankle: meta_kinematics.kinematics.conti_joint {
+        (+ RR_lower [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - RR_ankle,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_tail0: meta_kinematics.kinematics.conti_joint {
+        (+ body [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - tail0,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_tail1: meta_kinematics.kinematics.conti_joint {
+        (+ tail0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - tail1,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j_tail2: meta_kinematics.kinematics.conti_joint {
+        (+ tail1 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - tail2,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+}

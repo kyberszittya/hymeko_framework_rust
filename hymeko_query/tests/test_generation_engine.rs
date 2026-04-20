@@ -4,8 +4,8 @@ mod test_generation_engine {
     use hymeko_query::engine::QueryEngine;
     use hymeko_query::kinematics::kinematic::*;
     use hymeko_query::{Predicate, QueryMatch, ValuePredicate};
-    use hymeko_query::formats::urdf::{generate_urdf, validate_robot_schema};
-    use hymeko_query::formats::sdf::generate_sdf;
+    use hymeko_formats::urdf::{generate_urdf, validate_robot_schema};
+    use hymeko_formats::sdf::generate_sdf;
 
     // ============================================================
     // Test fixtures

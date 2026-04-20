@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use parser::ast::{Anno, ArcInner,
                   AstStr,
+                  ConstDecl, ConstExpr,
                   Description, EdgeDecl,
                   EdgeInner, HyperAnnotatedElement,
                   HyperArc, HyperItem, ImportStmt,
@@ -29,7 +30,30 @@ fn lower_desc<'a>(src: &Description<'a, &'a str>, it: &mut Interner) -> Descript
         header: src.header.iter().map(|n| lower_node(n, it)).collect(),
         imports: src.imports.iter().map(|imp| lower_import(imp, it)).collect(),
         usings: src.usings.iter().map(|u| lower_using(u, it)).collect(),
+        consts: src.consts.iter().map(|c| lower_const_decl(c, it)).collect(),
         items: src.items.iter().map(|x| lower_item(x, it)).collect(),
+    }
+}
+
+fn lower_const_decl(src: &ConstDecl<&str>, it: &mut Interner) -> ConstDecl<SymId> {
+    ConstDecl {
+        name: sid(it, src.name),
+        value: lower_const_expr(&src.value, it),
+    }
+}
+
+fn lower_const_expr(src: &ConstExpr<&str>, it: &mut Interner) -> ConstExpr<SymId> {
+    match src {
+        ConstExpr::Lit(n) => ConstExpr::Lit(*n),
+        ConstExpr::Ref(name) => ConstExpr::Ref(sid(it, name)),
+        ConstExpr::Neg(e) => ConstExpr::Neg(Box::new(lower_const_expr(e, it))),
+        ConstExpr::Bin(op, l, r) => ConstExpr::Bin(
+            *op,
+            Box::new(lower_const_expr(l, it)),
+            Box::new(lower_const_expr(r, it)),
+        ),
+        ConstExpr::Pi => ConstExpr::Pi,
+        ConstExpr::Exp(e) => ConstExpr::Exp(Box::new(lower_const_expr(e, it))),
     }
 }
 
@@ -116,6 +140,7 @@ fn lower_value<'a>(src: &Value<'a, &'a str>, it: &mut Interner) -> Value<'a, Sym
         Value::Ref(r) => Value::Ref(Ref {
             path: r.path.iter().map(|&seg| sid(it, seg)).collect(),
         }),
+        Value::Expr(e) => Value::Expr(lower_const_expr(e, it)),
     }
 }
 
@@ -133,6 +158,7 @@ fn lower_desc_owned<'a>(src: &Description<'a, &'a str>, it: &mut Interner) -> De
         header: src.header.iter().map(|n| lower_node_owned(n, it)).collect(),
         imports: src.imports.iter().map(|imp| lower_import_owned(imp, it)).collect(),
         usings: src.usings.iter().map(|u| lower_using_owned(u, it)).collect(),
+        consts: src.consts.iter().map(|c| lower_const_decl(c, it)).collect(),
         items: src.items.iter().map(|x| lower_item_owned(x, it)).collect(),
     }
 }
@@ -218,5 +244,6 @@ fn lower_value_owned<'a>(src: &Value<'a, &'a str>, it: &mut Interner) -> Value<'
         Value::Num(n) => Value::Num(*n),
         Value::List(xs) => Value::List(xs.iter().map(|v| lower_value_owned(v, it)).collect()),
         Value::Ref(r) => Value::Ref(Ref { path: r.path.iter().map(|&seg| sid(it, seg)).collect() }),
+        Value::Expr(e) => Value::Expr(lower_const_expr(e, it)),
     }
 }
