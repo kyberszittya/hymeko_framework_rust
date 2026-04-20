@@ -127,8 +127,10 @@
 {{/each}}
 
 {{#each control_plugins}}
-      <plugin name="{{field:plugin}}">
+{{#if field:filename}}
+      <plugin filename="{{field:filename}}" name="{{field:plugin}}">
       </plugin>
+{{/if}}
 {{/each}}
     </model>
   </world>

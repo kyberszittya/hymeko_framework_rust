@@ -116,6 +116,7 @@ diff_robot: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geom
     }
     @gazebo_sim_system: meta_kinematics.kinematics.control_plugin {
         plugin "gz_ros2_control/GazeboSimSystem";
+        filename "gz_ros2_control-system";
         (- joint_fr, - joint_fl, - joint_rr, - joint_rl);
     }
     diff_drive_base_controller: meta_kinematics.kinematics.controllers.diff_drive_controller {

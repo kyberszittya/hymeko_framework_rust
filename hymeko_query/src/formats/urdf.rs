@@ -29,6 +29,8 @@ pub fn generate_urdf_from_model(model: &KinematicModel) -> String {
     out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     out.push_str(&format!("<robot name=\"{}\">\n", xml_escape(&model.name)));
 
+    emit_world_stub_if_referenced(&mut out, &model);
+
     // Links
     for link in &model.links {
         out.push_str(&format!("  <link name=\"{}\">\n", xml_escape(&link.name)));
@@ -36,6 +38,7 @@ pub fn generate_urdf_from_model(model: &KinematicModel) -> String {
         if let Some(mass) = link.mass {
             out.push_str("    <inertial>\n");
             out.push_str(&format!("      <mass value=\"{}\"/>\n", mass));
+            out.push_str("      <inertia ixx=\"0.01\" iyy=\"0.01\" izz=\"0.01\" ixy=\"0\" ixz=\"0\" iyz=\"0\"/>\n");
             out.push_str("    </inertial>\n");
         }
 
@@ -103,6 +106,19 @@ pub fn generate_urdf_from_model(model: &KinematicModel) -> String {
                 "    <limit lower=\"{}\" upper=\"{}\" effort=\"{}\" velocity=\"{}\"/>\n",
                 lim.lower, lim.upper, lim.effort, lim.velocity
             ));
+        } else {
+            match joint.joint_type {
+                JointType::Revolute => {
+                    out.push_str("    <limit lower=\"-3.14\" upper=\"3.14\" effort=\"100\" velocity=\"1.0\"/>\n");
+                }
+                JointType::Prismatic => {
+                    out.push_str("    <limit lower=\"0\" upper=\"1.0\" effort=\"100\" velocity=\"0.5\"/>\n");
+                }
+                JointType::Continuous => {
+                    out.push_str("    <limit effort=\"100\" velocity=\"1.0\"/>\n");
+                }
+                JointType::Fixed => {}
+            }
         }
 
         out.push_str("  </joint>\n\n");
@@ -121,6 +137,8 @@ pub fn generate_urdf<R: NameResolver>(ir: &Ir, resolver: &R, robot_name: &str) -
     out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     out.push_str(&format!("<robot name=\"{}\">\n", xml_escape(robot_name)));
 
+    emit_world_stub_if_referenced(&mut out, &model);
+
     // Links
     for link in &model.links {
         out.push_str(&format!("  <link name=\"{}\">\n", xml_escape(&link.name)));
@@ -128,6 +146,7 @@ pub fn generate_urdf<R: NameResolver>(ir: &Ir, resolver: &R, robot_name: &str) -
         if let Some(mass) = link.mass {
             out.push_str("    <inertial>\n");
             out.push_str(&format!("      <mass value=\"{}\"/>\n", mass));
+            out.push_str("      <inertia ixx=\"0.01\" iyy=\"0.01\" izz=\"0.01\" ixy=\"0\" ixz=\"0\" iyz=\"0\"/>\n");
             out.push_str("    </inertial>\n");
         }
 
@@ -195,6 +214,19 @@ pub fn generate_urdf<R: NameResolver>(ir: &Ir, resolver: &R, robot_name: &str) -
                 "    <limit lower=\"{}\" upper=\"{}\" effort=\"{}\" velocity=\"{}\"/>\n",
                 lim.lower, lim.upper, lim.effort, lim.velocity
             ));
+        } else {
+            match joint.joint_type {
+                JointType::Revolute => {
+                    out.push_str("    <limit lower=\"-3.14\" upper=\"3.14\" effort=\"100\" velocity=\"1.0\"/>\n");
+                }
+                JointType::Prismatic => {
+                    out.push_str("    <limit lower=\"0\" upper=\"1.0\" effort=\"100\" velocity=\"0.5\"/>\n");
+                }
+                JointType::Continuous => {
+                    out.push_str("    <limit effort=\"100\" velocity=\"1.0\"/>\n");
+                }
+                JointType::Fixed => {}
+            }
         }
 
         out.push_str("  </joint>\n\n");
@@ -232,6 +264,17 @@ pub fn validate_robot_schema<R: NameResolver>(ir: &Ir, resolver: &R) -> Vec<Stri
 }
 
 // ---- XML helpers ----
+
+fn emit_world_stub_if_referenced(out: &mut String, model: &KinematicModel) {
+    let declared: std::collections::HashSet<&str> =
+        model.links.iter().map(|l| l.name.as_str()).collect();
+    let needs_world = model.joints.iter().any(|j| {
+        (j.parent_link == "world" || j.child_link == "world") && !declared.contains("world")
+    });
+    if needs_world {
+        out.push_str("  <link name=\"world\"/>\n\n");
+    }
+}
 
 fn emit_origin_list(out: &mut String, vals: &[f64], indent: usize) {
     let pad: String = " ".repeat(indent);

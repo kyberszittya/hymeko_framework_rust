@@ -357,8 +357,10 @@
 
 
 
-      <plugin name="gz_ros2_control/GazeboSimSystem">
+
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control/GazeboSimSystem">
       </plugin>
+
 
     </model>
   </world>

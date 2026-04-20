@@ -150,6 +150,7 @@ robot: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geometry,
     // === Simulation ===
     @gazebo_sim_system: meta_kinematics.kinematics.control_plugin {
         plugin "gz_ros2_control/GazeboSimSystem";
+        filename "gz_ros2_control-system";
         (- j0, - j1, - j2, - j3, - j4, - jtool);
     }
     @sim_control_plugin: meta_kinematics.kinematics.sim_plugin {

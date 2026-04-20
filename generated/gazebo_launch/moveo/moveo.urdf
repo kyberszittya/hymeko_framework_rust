@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <robot name="moveo">
+  <link name="world"/>
+
   <link name="base_link">
     <inertial>
       <mass value="25"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0.025"/>
@@ -24,6 +27,7 @@
   <link name="link_0">
     <inertial>
       <mass value="5"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0.1"/>
@@ -45,6 +49,7 @@
   <link name="link_1">
     <inertial>
       <mass value="2"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0.15"/>
@@ -66,6 +71,7 @@
   <link name="link_2">
     <inertial>
       <mass value="2"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0.125"/>
@@ -87,6 +93,7 @@
   <link name="link_3">
     <inertial>
       <mass value="2"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0.16"/>
@@ -108,6 +115,7 @@
   <link name="link_4">
     <inertial>
       <mass value="2"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0.075"/>
@@ -129,6 +137,7 @@
   <link name="tool">
     <inertial>
       <mass value="0.5"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0.05"/>
@@ -158,6 +167,7 @@
     <child link="link_0"/>
     <origin xyz="0 0 0.05" rpy="0.0000 0.0000 0.0000"/>
     <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
   </joint>
 
   <joint name="j1" type="revolute">
@@ -165,6 +175,7 @@
     <child link="link_1"/>
     <origin xyz="0 0.15 0.15" rpy="0.0000 0.0000 1.5708"/>
     <axis xyz="1 0 0"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
   </joint>
 
   <joint name="j2" type="revolute">
@@ -172,6 +183,7 @@
     <child link="link_2"/>
     <origin xyz="0 0 0.3" rpy="0.0000 0.0000 0.0000"/>
     <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
   </joint>
 
   <joint name="j3" type="revolute">
@@ -179,6 +191,7 @@
     <child link="link_3"/>
     <origin xyz="-0.15 0 0.15" rpy="0.0000 0.0000 0.0000"/>
     <axis xyz="1 0 0"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
   </joint>
 
   <joint name="j4" type="revolute">
@@ -186,6 +199,7 @@
     <child link="link_4"/>
     <origin xyz="0 0.15 0.25" rpy="0.0000 0.0000 0.0000"/>
     <axis xyz="0 1 0"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
   </joint>
 
   <joint name="jtool" type="revolute">
@@ -193,6 +207,7 @@
     <child link="tool"/>
     <origin xyz="0 0 0.15" rpy="0.0000 0.0000 0.0000"/>
     <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
   </joint>
 
 </robot>

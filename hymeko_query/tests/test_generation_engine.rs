@@ -471,7 +471,12 @@ mod test_generation_engine {
             let urdf = generate_urdf(&compiled.ir, &store.it, "moveo");
             let sdf = generate_sdf(&compiled.ir, &store.it, "moveo");
 
-            let urdf_links = urdf.matches("<link name=").count();
+            // URDF may emit a `<link name="world"/>` stub as a spec-mandated
+            // anchor for fixed joints to the world frame; SDF expresses the
+            // world attachment via `<pose>` and has no such stub. Exclude it
+            // so the count reflects the kinematic topology of the robot.
+            let urdf_links = urdf.matches("<link name=").count()
+                - urdf.matches("<link name=\"world\"").count();
             let sdf_links = sdf.matches("<link name=").count();
 
             assert_eq!(urdf_links, sdf_links,
