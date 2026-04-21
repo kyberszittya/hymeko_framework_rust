@@ -67,6 +67,45 @@ mod test_split_on_simple_net {
     }
 
     #[test]
+    fn regen_emits_nonempty_hymeko_source_with_both_cluster_scopes() {
+        let (_store, compiled) = load_and_lower(SIMPLE_NET).expect("compile simple_net");
+        let proposal = hymeko_query::rewrite::propose_split_for_highest_h_sign(&compiled.ir)
+            .expect("should propose a split");
+        let source = hymeko_query::rewrite::emit_split_rewrite(
+            &compiled.ir, &_store.it, &proposal, "simple_net",
+        );
+
+        // Header + both cluster scope headers + cross-edge section
+        // are all present. The emitted source is informational (not
+        // guaranteed to recompile with cross edges), so we check
+        // structural landmarks rather than full syntactic validity.
+        assert!(source.contains("// Rewritten from `simple_net`"),
+                "missing rewrite header:\n{source}");
+        assert!(source.contains("simple_net_cluster_a"),
+                "missing cluster A scope:\n{source}");
+        assert!(source.contains("simple_net_cluster_b"),
+                "missing cluster B scope:\n{source}");
+        assert!(source.contains("// Cluster A:"),
+                "missing cluster A comment:\n{source}");
+        // Cross edges section only appears when n_cross_edges > 0;
+        // simple_net auto-pick has exactly one cross edge (flow_1).
+        assert_eq!(proposal.n_cross_edges, 1);
+        assert!(source.contains("// Cross-cluster edges"),
+                "missing cross-edges section:\n{source}");
+    }
+
+    #[test]
+    fn regen_is_deterministic_across_recompiles() {
+        let (store_a, compiled_a) = load_and_lower(SIMPLE_NET).unwrap();
+        let (store_b, compiled_b) = load_and_lower(SIMPLE_NET).unwrap();
+        let p_a = hymeko_query::rewrite::propose_split_for_highest_h_sign(&compiled_a.ir).unwrap();
+        let p_b = hymeko_query::rewrite::propose_split_for_highest_h_sign(&compiled_b.ir).unwrap();
+        let src_a = hymeko_query::rewrite::emit_split_rewrite(&compiled_a.ir, &store_a.it, &p_a, "simple_net");
+        let src_b = hymeko_query::rewrite::emit_split_rewrite(&compiled_b.ir, &store_b.it, &p_b, "simple_net");
+        assert_eq!(src_a, src_b, "emitted source must be byte-identical across recompiles");
+    }
+
+    #[test]
     fn determinism_on_real_ir() {
         let (_store_a, compiled_a) = load_and_lower(SIMPLE_NET).expect("compile a");
         let (_store_b, compiled_b) = load_and_lower(SIMPLE_NET).expect("compile b");

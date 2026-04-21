@@ -68,4 +68,16 @@ def build_incidence(*args, **kwargs) -> torch.Tensor:
     return torch.zeros(*shape)
 
 
-__all__ = ["GGKSpec", "HypergraphConv", "build_incidence"]
+from .proposal import SplitProposal, load_proposal, ClusterTag
+from .hotswap import (
+    TransferReport,
+    transfer_compatible_weights,
+    reinfer_structure_and_rebuild,
+)
+
+__all__ = [
+    "GGKSpec", "HypergraphConv", "build_incidence",
+    "SplitProposal", "load_proposal", "ClusterTag",
+    "TransferReport", "transfer_compatible_weights",
+    "reinfer_structure_and_rebuild",
+]

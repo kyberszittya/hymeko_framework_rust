@@ -181,6 +181,17 @@ enum Commands {
         /// Emit machine-readable JSON instead of the human table.
         #[arg(long)]
         json: bool,
+
+        /// Write the proposed rewrite as a `.hymeko` source document
+        /// to this path (or `-` for stdout). When omitted, only the
+        /// table/JSON proposal is printed. The emitted source
+        /// documents the split structurally — clean splits (zero
+        /// cross edges) may recompile; cross-cluster splits emit an
+        /// informational document whose inner references to bridge
+        /// vertices at outer scope may need port-based rewiring
+        /// before recompile.
+        #[arg(long = "emit-source")]
+        emit_source: Option<String>,
     },
 }
 
@@ -304,7 +315,7 @@ fn run_command(cmd: Commands) {
             }
         }
 
-        Commands::Rewrite { input, scope, weight_metric, json } => {
+        Commands::Rewrite { input, scope, weight_metric, json, emit_source } => {
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
             let compiled = compile_or_exit(&mut ms, &input);
 
@@ -322,6 +333,24 @@ fn run_command(cmd: Commands) {
                 print!("{}", split_proposal_to_json(&compiled.ir, &ms.it, &proposal));
             } else {
                 print_split_proposal(&compiled.ir, &ms.it, &proposal);
+            }
+
+            if let Some(dest) = emit_source {
+                let base = input.file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("rewritten");
+                let source = hymeko_query::rewrite::emit_split_rewrite(
+                    &compiled.ir, &ms.it, &proposal, base,
+                );
+                if dest == "-" {
+                    print!("{source}");
+                } else {
+                    fs::write(&dest, &source).unwrap_or_else(|e| {
+                        eprintln!("Failed to write {dest}: {e}");
+                        std::process::exit(1);
+                    });
+                    eprintln!("Wrote {} bytes to {dest}", source.len());
+                }
             }
         }
 
