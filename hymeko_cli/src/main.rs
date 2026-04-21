@@ -151,6 +151,37 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+
+    /// Propose a k=2 split of a hypervertex body using k-means on
+    /// incidence-row signatures. Step 3 of the entropy hot-swap plan:
+    /// the proposer reads the structural entropy (see `hymeko entropy`)
+    /// and clusters vertices by which edges they participate in.
+    ///
+    /// Without `--scope`, auto-picks the scope with the highest
+    /// `H_sign` (the three-role sign-mixing component). The
+    /// `--weight-metric` flag controls how multi-component arc
+    /// weights (axes, RPY, per-channel gains) collapse to a single
+    /// participation strength in the feature space.
+    Rewrite {
+        /// Input .hymeko description file
+        input: PathBuf,
+
+        /// Restrict the proposal to the named scope instead of the
+        /// auto-picked highest-`H_sign` one.
+        #[arg(long = "scope")]
+        scope: Option<String>,
+
+        /// How to collapse arc weight vectors to a scalar. One of
+        /// `l2` (default, Euclidean), `l1` (Manhattan), `linf`
+        /// (max-norm), or `first` (first scalar only). All degenerate
+        /// to `|scalar|` for single-scalar weights.
+        #[arg(long = "weight-metric", default_value = "l2")]
+        weight_metric: String,
+
+        /// Emit machine-readable JSON instead of the human table.
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 fn main() {
@@ -270,6 +301,27 @@ fn run_command(cmd: Commands) {
                 print!("{}", entropy_rows_to_json(&rows));
             } else {
                 print_entropy_table(&rows);
+            }
+        }
+
+        Commands::Rewrite { input, scope, weight_metric, json } => {
+            let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
+            let compiled = compile_or_exit(&mut ms, &input);
+
+            let agg = parse_weight_metric(&weight_metric).unwrap_or_else(|e| {
+                eprintln!("{e}");
+                std::process::exit(1);
+            });
+            let proposal = resolve_split_proposal(&compiled.ir, &ms.it, scope.as_deref(), agg)
+                .unwrap_or_else(|e| {
+                    eprintln!("{e}");
+                    std::process::exit(1);
+                });
+
+            if json {
+                print!("{}", split_proposal_to_json(&compiled.ir, &ms.it, &proposal));
+            } else {
+                print_split_proposal(&compiled.ir, &ms.it, &proposal);
             }
         }
 
@@ -438,6 +490,138 @@ fn json_escape(s: &str) -> String {
             c => out.push(c),
         }
     }
+    out
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Split-proposal output helpers
+// ═══════════════════════════════════════════════════════════════
+
+use hymeko_query::rewrite::{
+    propose_split_for_highest_h_sign_with, propose_split_with,
+    Cluster, SplitProposal, WeightAggregation,
+};
+use hymeko::common::ids::DeclId;
+
+fn parse_weight_metric(s: &str) -> Result<WeightAggregation, String> {
+    match s.to_lowercase().as_str() {
+        "l1"    => Ok(WeightAggregation::L1Norm),
+        "l2"    => Ok(WeightAggregation::L2Norm),
+        "linf"  => Ok(WeightAggregation::LinfNorm),
+        "first" => Ok(WeightAggregation::FirstScalar),
+        other => Err(format!(
+            "Unknown weight metric: `{other}`. Use one of: l1, l2, linf, first."
+        )),
+    }
+}
+
+fn resolve_split_proposal(
+    ir: &hymeko::ir::ir::Ir,
+    it: &Interner,
+    scope_name: Option<&str>,
+    weight_agg: WeightAggregation,
+) -> Result<SplitProposal, String> {
+    match scope_name {
+        Some(name) => {
+            let did = find_scope_by_name(ir, it, name)
+                .ok_or_else(|| format!("No hypervertex scope named `{name}` found."))?;
+            propose_split_with(ir, did, weight_agg).ok_or_else(|| format!(
+                "Scope `{name}` is not splittable (needs ≥2 vertices and ≥1 edge)."
+            ))
+        }
+        None => propose_split_for_highest_h_sign_with(ir, weight_agg).ok_or_else(|| {
+            "No scope in this IR has enough structure to split (need ≥2 vertices + ≥1 edge).".to_string()
+        }),
+    }
+}
+
+fn find_scope_by_name(ir: &hymeko::ir::ir::Ir, it: &Interner, name: &str) -> Option<DeclId> {
+    for (i, decl) in ir.decl_nodes.iter().enumerate() {
+        if decl.kind == hymeko::ir::ir::DeclKind::Node && it.resolve(decl.name) == name {
+            return Some(DeclId::new(i));
+        }
+    }
+    None
+}
+
+fn decl_name<'a>(ir: &'a hymeko::ir::ir::Ir, it: &'a Interner, did: DeclId) -> &'a str {
+    if did.is_none() {
+        return "<root>";
+    }
+    it.resolve(ir.decl_nodes[did.raw()].name)
+}
+
+fn print_split_proposal(
+    ir: &hymeko::ir::ir::Ir,
+    it: &Interner,
+    p: &SplitProposal,
+) {
+    println!("Proposed split of `{}`:", decl_name(ir, it, p.target_scope));
+    println!("  Cluster A ({} vertices): {}",
+             p.cluster_a.len(),
+             join_names(ir, it, &p.cluster_a));
+    println!("  Cluster B ({} vertices): {}",
+             p.cluster_b.len(),
+             join_names(ir, it, &p.cluster_b));
+    println!("  Edge assignments ({} total, {} cross):",
+             p.edge_assignments.len(), p.n_cross_edges);
+    for (e_did, cluster) in &p.edge_assignments {
+        let tag = match cluster {
+            Cluster::A     => "A",
+            Cluster::B     => "B",
+            Cluster::Cross => "cross",
+        };
+        println!("    {:<28} -> {}", decl_name(ir, it, *e_did), tag);
+    }
+    println!("  Inertia: {:.4}", p.inertia);
+}
+
+fn join_names(ir: &hymeko::ir::ir::Ir, it: &Interner, dids: &[DeclId]) -> String {
+    let mut names: Vec<&str> = dids.iter().map(|d| decl_name(ir, it, *d)).collect();
+    names.sort();
+    names.join(", ")
+}
+
+fn split_proposal_to_json(
+    ir: &hymeko::ir::ir::Ir,
+    it: &Interner,
+    p: &SplitProposal,
+) -> String {
+    let mut out = String::from("{\n");
+    out.push_str(&format!(
+        "  \"target_scope\": \"{}\",\n",
+        json_escape(decl_name(ir, it, p.target_scope)),
+    ));
+    out.push_str("  \"cluster_a\": [");
+    out.push_str(&p.cluster_a.iter()
+        .map(|d| format!("\"{}\"", json_escape(decl_name(ir, it, *d))))
+        .collect::<Vec<_>>()
+        .join(", "));
+    out.push_str("],\n");
+    out.push_str("  \"cluster_b\": [");
+    out.push_str(&p.cluster_b.iter()
+        .map(|d| format!("\"{}\"", json_escape(decl_name(ir, it, *d))))
+        .collect::<Vec<_>>()
+        .join(", "));
+    out.push_str("],\n");
+    out.push_str("  \"edge_assignments\": [\n");
+    for (i, (e_did, cluster)) in p.edge_assignments.iter().enumerate() {
+        let tag = match cluster {
+            Cluster::A     => "A",
+            Cluster::B     => "B",
+            Cluster::Cross => "cross",
+        };
+        out.push_str(&format!(
+            "    {{\"edge\": \"{}\", \"cluster\": \"{}\"}}{}\n",
+            json_escape(decl_name(ir, it, *e_did)),
+            tag,
+            if i + 1 < p.edge_assignments.len() { "," } else { "" },
+        ));
+    }
+    out.push_str("  ],\n");
+    out.push_str(&format!("  \"n_cross_edges\": {},\n", p.n_cross_edges));
+    out.push_str(&format!("  \"inertia\": {}\n", p.inertia));
+    out.push_str("}\n");
     out
 }
 
