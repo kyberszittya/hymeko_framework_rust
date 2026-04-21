@@ -1980,6 +1980,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hymeko_monitor"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "hymeko_py"
 version = "0.1.0"
 dependencies = [

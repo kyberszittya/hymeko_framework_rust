@@ -1,0 +1,24 @@
+[package]
+name        = "hymeko_monitor"
+version     = "0.1.0"
+edition     = "2021"
+description = "Runtime monitoring of STL/LTL over signed-incidence hypergraphs (HyMeKo IR)"
+license     = "MIT OR Apache-2.0"
+authors     = ["Csaba Hajdu <hajdu.csaba@ga.sze.hu>"]
+
+[dependencies]
+# Replace with the actual path / version once wired into the workspace.
+# hymeko_core = { path = "../hymeko_core" }
+thiserror = "2"
+
+[dev-dependencies]
+approx = "0.5"
+
+[[bench]]
+name    = "per_observation_latency"
+harness = false
+path    = "benches/per_observation_latency.rs"
+
+[profile.release]
+lto            = "fat"
+codegen-units  = 1

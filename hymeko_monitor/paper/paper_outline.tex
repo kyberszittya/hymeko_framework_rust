@@ -1,0 +1,377 @@
+% ============================================================ %
+% Runtime Monitoring over Signed-Incidence Hypergraphs           %
+% Paper skeleton targeting RV 2026 (Springer LNCS, 12 pages)     %
+% Backup venues: FormaliSE, FMICS, FM tool papers track          %
+% ============================================================ %
+
+\documentclass[runningheads]{llncs}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Streaming Runtime Monitoring of Signal Temporal Logic
+       over Signed-Incidence Hypergraphs}
+\titlerunning{Runtime Monitoring over Signed Hypergraphs}
+\author{Csaba Hajdu\inst{1,2}}
+\institute{Sz\'echenyi Istv\'an University, Gy\H{o}r, Hungary \and
+           SZTIP, Sz\'ekesfeh\'erv\'ar, Hungary \\
+           \email{hajdu.csaba@ga.sze.hu}}
+\maketitle
+
+% ---------- Abstract ---------- %
+
+\begin{abstract}
+% ~150 words, last.
+% STRUCTURE to fill in at the end:
+%   (1) context: runtime verification of CPS requires structural
+%       state, not only scalar signals.
+%   (2) gap: STL/LTL/CTL are defined over scalar traces or Kripke
+%       structures; directed hypergraphs with signed incidence are
+%       the natural substrate for multi-entity, multi-context
+%       constraints but lack temporal-logic semantics.
+%   (3) contribution: (a) formal semantics of STL over signed-
+%       incidence hypergraph traces, with structural robustness;
+%       (b) bounded-memory online monitor construction; (c) Rust
+%       implementation on top of the HyMeKo IR; (d) case study
+%       on cross-layer kinematic/safety constraints.
+%   (4) result: monitor runs in X microseconds per observation on
+%       Y-vertex hypergraphs, detects Z structural violations that
+%       classical scalar STL monitors cannot express.
+\keywords{Runtime verification \and Signal temporal logic \and
+          Hypergraphs \and Cyber-physical systems \and HyMeKo.}
+\end{abstract}
+
+% ============================================================ %
+\section{Introduction}
+\label{sec:intro}
+% Target: 1 page. Three paragraphs + contribution list.
+% ============================================================ %
+
+% Paragraph 1: The runtime-verification gap for CPS.
+% - Classical RV: Maler-Nickovic online STL, Havelund-Rosu
+%   rewriting, Bauer-Leucker-Schallhart impartiality.
+% - All operate on scalar signal traces.
+% - Modern CPS (industrial robotics, autonomous vehicles,
+%   multi-agent systems) have constraints that are structural,
+%   not scalar: "every joint has a corresponding actuator in
+%   the runtime stack", "no kinematic cycle is present in the
+%   live model", "maintenance-derived health state constrains
+%   permissible production speed". These properties are over
+%   the running system's structure and its cross-layer
+%   dependencies, not over isolated signals.
+% - Cite: Maler-Nickovic 2004, Donze-Maler 2010, Bauer et al.
+%   2011, Bartocci et al. RV survey 2018.
+
+% Paragraph 2: Why hypergraphs.
+% - Signed-incidence directed hypergraphs are the substrate
+%   used by HyMeKo (cite) for cross-view consistency in CPS
+%   engineering. n-ary relations stay n-ary, signs disambiguate
+%   directional roles, and the Levi bipartite presentation
+%   (Levi 1942, Berge 1973, Gallo et al. 1993) gives a uniform
+%   traversal substrate.
+% - But: HyMeKo compiles at design time. A running CPS needs
+%   monitoring at runtime: structural evolution observed,
+%   temporal-logic property evaluated incrementally, verdict
+%   produced within bounded latency.
+
+% Paragraph 3: This paper.
+% - We lift LTL, CTL, and STL onto signed-incidence hypergraph
+%   traces. Atomic propositions are predicates over the
+%   hypergraph (using HyMeKo's existing predicate algebra).
+%   Temporal operators apply over sequences of hypergraph
+%   states.
+% - We give a bounded-memory online monitor construction for
+%   the bounded-horizon fragment of STL. The monitor runs
+%   alongside HyMeKo and observes attribute and incidence
+%   updates, producing robustness verdicts incrementally.
+% - We demonstrate on two case studies: kinematic-limit
+%   monitoring and cross-layer constraint propagation (the
+%   Szilagyi et al. scenario, cite).
+
+\paragraph{Contributions.}
+\begin{enumerate}
+  \item A formal semantics for STL (and, by restriction, LTL
+        and qualitative CTL) over traces of signed-incidence
+        directed hypergraphs, including a \emph{structural
+        robustness} function that extends the Maler-Nickovic
+        robustness to predicates over hypergraph structure.
+  \item A bounded-memory online monitor construction for the
+        bounded-horizon fragment of hypergraph STL, with
+        complexity $\mathcal{O}(|\phi| \cdot k)$ per observation
+        where $k$ is the sliding-window length determined by
+        the formula's temporal horizon, leveraging incremental
+        predicate evaluation (cf.\ Rath et al.\ 2008).
+  \item An open-source Rust implementation (\texttt{hymeko\_monitor})
+        built on top of the HyMeKo IR.
+  \item Empirical validation on a kinematic-chain limit
+        scenario and a cross-layer health-to-speed constraint
+        scenario drawn from industrial robotic ecosystems.
+\end{enumerate}
+
+% ============================================================ %
+\section{Background}
+\label{sec:background}
+% Target: 1.25 pages. Four subsections, each ~0.3 page.
+% ============================================================ %
+
+\subsection{Signed-Incidence Directed Hypergraphs}
+% H = (V, E, I, \tau, \sigma, \alpha). Levi bipartite presentation.
+% Cite HyMeKo, CogInfoCom 2024, Levi 1942, Berge 1973, Gallo et al. 1993.
+% Concrete example: 3-link chain with 2 joint hyperedges and
+% signed parent/child incidences. One figure, half-column.
+
+\subsection{Signal Temporal Logic}
+% Classical syntax: \phi ::= p | \neg\phi | \phi \wedge \psi |
+% F_{[a,b]}\phi | G_{[a,b]}\phi | \phi U_{[a,b]} \psi.
+% Boolean and robust semantics per Maler-Nickovic 2004, Donze-Maler 2010.
+% Robustness: \rho(p, s, t) = \mu(s(t)), where \mu is a signed
+% margin from the predicate threshold.
+% Temporal combinators: sup/inf over the interval.
+
+\subsection{Runtime Verification}
+% Online monitors, impartiality, 3-valued LTL verdicts
+% (Bauer-Leucker-Schallhart 2011), STL online monitoring with
+% predictive windows (Maler-Nickovic, Deshmukh et al. 2017).
+% VIATRA-CEP (Daboczi et al. 2017) as the closest prior work on
+% graph-structured runtime verification -- but typed graphs,
+% not hypergraphs, and boolean-only.
+
+\subsection{Incremental Pattern Matching}
+% Rath-Bergmann-Okros-Varro 2008 and follow-up. Rete-style
+% dependency networks, delta-propagation of updates through
+% partial matches. We extend this to hypergraph predicates
+% with signed incidences in Section~\ref{sec:monitor}.
+
+% ============================================================ %
+\section{Semantics of Temporal Logic over Signed Hypergraphs}
+\label{sec:semantics}
+% Target: 3 pages. The technical core of the paper. This section
+% must be tight, with numbered definitions and propositions.
+% ============================================================ %
+
+\subsection{Hypergraph Traces}
+% DEFINITION 1 (Hypergraph state). Same as the HyMeKo IR tuple.
+% DEFINITION 2 (Trace). A trace is a finite or infinite sequence
+%   \pi = (H_0, t_0), (H_1, t_1), ... with t_i \in \mathbb{R}_{\geq 0},
+%   strictly increasing. Piecewise-constant interpretation:
+%   H(t) = H_i for t \in [t_i, t_{i+1}).
+% DEFINITION 3 (Transition kinds). Two families:
+%   (a) attribute update: \alpha changes, rest fixed.
+%   (b) structural rewrite: V, E, I, \tau, \sigma may change.
+%   This paper focuses on (a); (b) is future work.
+
+\subsection{Structural Atomic Propositions}
+% DEFINITION 4 (Hypergraph predicate). A predicate is a function
+%   P: H -> \mathbb{B} defined by a closed expression over the
+%   HyMeKo predicate algebra extended with:
+%     COUNT(p) -- number of entities satisfying p
+%     EXISTS(p), FORALL(p)
+%     ARITY(e) -- |{v : (v,e) \in I}|
+%     ATTR(v, k) -- \alpha(v)[k] read as scalar
+%     ACYCLIC(), CONNECTED(), ...
+% DEFINITION 5 (Robustness of a predicate). For predicates with
+%   natural numeric content, robustness is the signed margin:
+%     \rho(COUNT(p) \geq n, H) = |{v : P(v)}| - n
+%     \rho(ATTR(v, k) \leq \theta, H) = \theta - \alpha(v)[k]
+%     \rho(ARITY(e) = d, H) = -(|incid(e)| - d)^2     [or abs]
+%   For structural-only predicates (ACYCLIC, CONNECTED),
+%   robustness is \pm\infty (qualitative case).
+% PROPOSITION 1. Robustness is sound with respect to boolean
+%   evaluation: \rho(P, H) > 0 \iff P(H) = true, and \rho(P, H)
+%   < 0 \iff P(H) = false, with \rho = 0 on the boundary.
+
+\subsection{STL over Hypergraph Traces}
+% SYNTAX (as in classical STL).
+% BOOLEAN SEMANTICS: standard, over \pi, t.
+% ROBUST SEMANTICS:
+%   \rho(P, \pi, t)      = \rho(P, H(t))
+%   \rho(\neg \phi)      = -\rho(\phi)
+%   \rho(\phi \wedge \psi) = min(\rho(\phi), \rho(\psi))
+%   \rho(F_{[a,b]} \phi, \pi, t) = sup_{t' \in [t+a, t+b]} \rho(\phi, \pi, t')
+%   \rho(G_{[a,b]} \phi, \pi, t) = inf_{t' \in [t+a, t+b]} \rho(\phi, \pi, t')
+%   \rho(\phi U_{[a,b]} \psi, \pi, t) = sup_{t' \in [t+a, t+b]}
+%                                        min(\rho(\psi, \pi, t'),
+%                                            inf_{t'' \in [t, t']} \rho(\phi, \pi, t''))
+% PROPOSITION 2 (soundness). \rho(\phi, \pi, t) > 0 \iff
+%   (\pi, t) \models \phi.
+
+\subsection{LTL and CTL as Fragments}
+% LTL: STL with intervals [0, \infty) and qualitative predicates.
+% CTL: requires computation tree, not trace; appears in future
+%   work when structural rewrites (transition kind b) are
+%   included. Section ends with: "for the remainder of the
+%   paper, we focus on STL over attribute-update traces."
+
+% ============================================================ %
+\section{Monitor Construction}
+\label{sec:monitor}
+% Target: 2 pages. Algorithm + complexity.
+% ============================================================ %
+
+\subsection{Bounded-Horizon Fragment}
+% DEFINITION 6. A formula is bounded-horizon if every temporal
+%   operator has a bounded interval [a, b] with b < \infty.
+%   This fragment admits bounded-memory online monitoring.
+
+\subsection{Sliding-Window Monitor}
+% ALGORITHM:
+%   (1) Parse \phi into a tree.
+%   (2) Compute per-subformula horizon H_\phi = max b over
+%       temporal operators above the subformula.
+%   (3) Allocate a ring buffer of size ceil(H_\phi / dt_min)
+%       per subformula.
+%   (4) On each sample (H_i, t_i):
+%       (a) For each predicate p in \phi:
+%            -- if p's match set could have changed given the
+%               incremental delta from H_{i-1} to H_i, re-evaluate
+%               robustness and push into p's buffer.
+%       (b) For each temporal subformula, recompute its
+%           robustness via sup/inf over its window.
+%       (c) Emit \rho(\phi, \pi, t_i - H_\phi) as the
+%           \emph{settled} verdict at the window trailing edge.
+
+\subsection{Incremental Predicate Evaluation}
+% Extend Rath et al.'s dependency tracking: each predicate
+% caches the set of vertices / hyperedges it matched on in the
+% previous state. An attribute update on vertex v triggers
+% re-evaluation only of predicates whose match set includes v.
+% Structural predicates (ACYCLIC, CONNECTED) fall back to
+% global re-evaluation; this is the cost paid for their
+% expressive power.
+
+\subsection{Complexity}
+% PROPOSITION 3. For bounded-horizon \phi with |\phi|
+%   subformulas, horizon H_\phi, minimum sample spacing
+%   dt_min, and hypergraph size |V| + |E|:
+%   per-observation cost is
+%     O(|\phi| \cdot H_\phi / dt_min + \Delta)
+%   where \Delta is the incremental delta between successive
+%   hypergraph states. For attribute-only updates with a
+%   small delta, \Delta is dominated by affected predicate
+%   match sets.
+
+% ============================================================ %
+\section{Implementation}
+\label{sec:impl}
+% Target: 1 page. Crate architecture + API example.
+% ============================================================ %
+
+% - \texttt{hymeko\_monitor} Rust crate (~2000 LOC).
+% - Crates: hymeko\_core (IR), hymeko\_monitor (this work).
+% - Architecture diagram (Fig.\ \ref{fig:arch}).
+% - Public API listing (one short Rust listing, ~15 lines,
+%   showing formula construction + monitor stepping).
+% - Released as open source; code, fixtures, and benchmarks in
+%   the companion repository (cite).
+
+% ============================================================ %
+\section{Case Studies}
+\label{sec:cases}
+% Target: 2 pages. Two scenarios, empirical numbers.
+% ============================================================ %
+
+\subsection{Case Study 1: Kinematic Limit Monitoring}
+% SETUP: anthropomorphic-arm fixture (7 links, 7 joints), with
+% joint positions attributed to joint hyperedges. Property:
+%   G(collaborative_mode -> G(FORALL joint. WITHIN_LIMITS(joint))).
+% TRACE: 30 s simulated motion, sampling at 100 Hz (3000 states).
+% RESULT: monitor detects first limit approach at t=X with
+% robustness crossing zero; violation at t=Y with negative
+% robustness. Wall-clock overhead < Z microseconds per sample
+% on the fixture.
+
+\subsection{Case Study 2: Cross-Layer Health-to-Speed Constraint}
+% SETUP: reproduce the Szilagyi et al. maintenance/production/
+% safety scenario (cite). Property:
+%   G((HEALTH < theta_h) -> G_{[0, 100ms]}(SPEED <= v_maint_limit)).
+% The property spans two context subgraphs (maintenance D_out
+% and production D_out) and requires the monitor to detect
+% violations of cross-layer constraint propagation within a
+% bounded latency.
+% RESULT: monitor detects the delayed-response failure mode;
+% reports robustness margin live during correct operation.
+
+\subsection{What Classical STL Cannot Express}
+% Short paragraph: the closest scalar-STL formulation requires
+% pre-aggregating hypergraph structure into scalar features,
+% which loses the cross-layer dependency structure. Demonstrate
+% with a specific property that is expressible in hypergraph
+% STL and is not expressible (or requires multiple coupled
+% scalar monitors) in classical STL.
+
+% ============================================================ %
+\section{Related Work}
+\label{sec:related}
+% Target: 0.75 page.
+% ============================================================ %
+
+% - Classical RV: Bauer-Leucker-Schallhart 2011; Bartocci et al.
+%   RV survey 2018; Falcone et al. RV tutorial.
+% - STL: Maler-Nickovic 2004; Donze-Maler 2010 (robustness);
+%   Deshmukh et al. 2017 (predictive monitoring).
+% - Graph-structured RV: VIATRA-CEP (Daboczi et al. 2017);
+%   Rath et al. 2008 (incremental pattern matching, the
+%   algorithmic ancestor here).
+% - STL-as-reward in RL: Aksaray et al. 2016 (Q-learning with
+%   STL), Balakrishnan-Deshmukh 2019, the Belta group line,
+%   Hasanbeig et al. (LTL rewards). We connect to this line in
+%   Section~\ref{sec:conclusion} as future work.
+% - Hypergraph learning: Feng et al. HGNN 2019, Bai et al. 2021.
+%   None address runtime verification.
+
+% ============================================================ %
+\section{Limitations and Future Work}
+\label{sec:future}
+% Target: 0.5 page.
+% ============================================================ %
+
+% - Transition kind (b): structural rewrites introduce a
+%   computation tree and enable CTL monitoring. Nontrivial
+%   because the rewrite relation is HyMeKo's rewriting engine;
+%   the monitoring question becomes model-checking-like.
+% - Robustness design for purely structural predicates: current
+%   \pm\infty choice is sound but does not give dense reward
+%   gradients. Future work: quantitative distance metrics on
+%   hypergraph structure (edit distance from violating pattern).
+% - RL integration: robustness as dense reward signal, shield
+%   synthesis from CTL invariants. Part of the broader program
+%   sketched in [cite: Szilagyi et al.].
+% - Distributed monitoring: split the monitor across context
+%   subgraphs for decentralized CPS.
+
+% ============================================================ %
+\section{Conclusion}
+\label{sec:conclusion}
+% Target: 0.25 page. One paragraph.
+% ============================================================ %
+
+% Recap contributions in plain language. Emphasize: this is the
+% first temporal-logic runtime monitor for directed hypergraphs
+% with signed incidence. The semantics, the monitor construction,
+% and the Rust implementation together provide a deployable
+% substrate for structural runtime verification in CPS. The RL
+% reward-shaping connection is the next step.
+
+% ============================================================ %
+\begin{thebibliography}{99}
+% Required citations, to populate:
+% - Maler \& Nickovic 2004 (STL)
+% - Donze \& Maler 2010 (robustness)
+% - Bauer-Leucker-Schallhart 2011 (3-valued LTL)
+% - Bartocci et al. 2018 (RV survey)
+% - Deshmukh et al. 2017 (online STL)
+% - Rath-Bergmann-Okros-Varro 2008 (incremental pattern matching)
+% - Daboczi et al. 2017 (VIATRA-CEP)
+% - Aksaray et al. 2016 (Q-learning with STL)
+% - Balakrishnan \& Deshmukh 2019 (STL-RL)
+% - Levi 1942, Berge 1973, Gallo et al. 1993 (hypergraphs)
+% - Hajdu \& Csapo CogInfoCom 2024 (HyMeKo lineage)
+% - Hajdu et al. SMC 2026 (HyMeKo cross-view consistency)
+% - Szilagyi et al. Technologies 2026 (the cross-layer scenario)
+\end{thebibliography}
+
+\end{document}
