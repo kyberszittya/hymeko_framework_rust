@@ -24,6 +24,22 @@ Run a reproducible, metric-based quality check on this workspace. Output is one 
 4. **Be conservative with shell commands.** `cargo check` and `cargo clippy` are safe; anything that writes to `target/` or modifies files is out of scope. `find`, `rg`, `wc`, `scc`, `tokei`, `lizard`, `radon`, `pylint` are all fine if installed.
 5. **Handle failures gracefully.** If `lizard` isn't installed, state that in Methodology and use the fallback walk. If a crate fails to parse, note which and continue with the rest.
 
+## Quick path: existing driver scripts
+
+Two checked-in Python scripts operationalise this spec end-to-end — use them first:
+
+```bash
+# Compute raw metrics (writes /tmp/audit.json):
+python3 scripts/quality/audit.py > /tmp/audit.json
+
+# Post-process into the dated Markdown report:
+python3 scripts/quality/report.py
+```
+
+Runtime is ~10 s for the whole workspace on a consumer CPU. The scripts require `lizard` and `textstat` (both installable via `pip install --user lizard textstat`); the rest uses the stdlib. If either is missing, install them before running rather than falling back — the fallbacks are noisier and the cost is a one-time minute.
+
+If you edit the thresholds table below, update `scripts/quality/report.py`'s `T` dict at the top in lockstep so classifications stay consistent with the spec. The Markdown spec is the source of truth; the driver is the executable translation of it.
+
 ---
 
 ## Metrics

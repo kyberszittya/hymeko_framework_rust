@@ -80,61 +80,79 @@ pub fn parse_template(src: &str) -> Result<Vec<Block>, String> {
 
 fn parse_blocks(src: &str, out: &mut Vec<Block>, pos: &mut usize) -> Result<(), String> {
     while *pos < src.len() {
-        if let Some(idx) = src[*pos..].find("{{") {
-            let abs = *pos + idx;
-            // Emit literal before the tag
-            if abs > *pos {
-                out.push(Block::Literal(src[*pos..abs].to_string()));
-            }
-            *pos = abs + 2;
-
-            // Find closing }}
-            let close = src[*pos..].find("}}")
-                .ok_or_else(|| format!("Unclosed {{{{ at position {abs}"))?;
-            let tag = src[*pos..*pos + close].trim();
-            *pos += close + 2;
-
-            if let Some(label) = tag.strip_prefix("#each ") {
-                let label = label.trim().to_string();
-                let mut body = Vec::new();
-                parse_blocks(src, &mut body, pos)?;
-                out.push(Block::Each { label, body });
-            } else if tag == "/each" {
-                return Ok(()); // Caller's Each block ends here
-            } else if let Some(field) = tag.strip_prefix("#if ") {
-                let field = field.trim().to_string();
-                let mut body = Vec::new();
-                parse_blocks(src, &mut body, pos)?;
-                out.push(Block::If { field, body });
-            } else if tag == "/if" {
-                return Ok(());
-            } else if let Some(rest) = tag.strip_prefix("#inherits ") {
-                // Syntax: {{#inherits <field> "<base_name>"}}
-                //   where <field> is either `.` (current match) or a
-                //   field path (`link_geometry`, `geometry.shape`).
-                //   <base_name> is a quoted string.
-                let (field, base) = parse_inherits_tag(rest)
-                    .ok_or_else(|| format!("Malformed #inherits tag: `{tag}`"))?;
-                let mut body = Vec::new();
-                parse_blocks(src, &mut body, pos)?;
-                out.push(Block::Inherits { field, base, body });
-            } else if tag == "/inherits" {
-                return Ok(());
-            } else if tag.starts_with("#comment") {
-                // Skip until /comment
-                if let Some(end) = src[*pos..].find("{{/comment}}") {
-                    *pos += end + "{{/comment}}".len();
-                }
-            } else {
-                out.push(Block::Interpolate(tag.to_string()));
-            }
-        } else {
-            // Rest is literal
+        let Some(idx) = src[*pos..].find("{{") else {
             out.push(Block::Literal(src[*pos..].to_string()));
             *pos = src.len();
+            break;
+        };
+        let abs = *pos + idx;
+        if abs > *pos {
+            out.push(Block::Literal(src[*pos..abs].to_string()));
+        }
+        *pos = abs + 2;
+
+        let close = src[*pos..].find("}}")
+            .ok_or_else(|| format!("Unclosed {{{{ at position {abs}"))?;
+        let tag = src[*pos..*pos + close].trim().to_string();
+        *pos += close + 2;
+
+        if dispatch_tag(&tag, src, out, pos)? {
+            return Ok(());
         }
     }
     Ok(())
+}
+
+/// Dispatch a single `{{tag}}` occurrence. Returns `true` when the tag
+/// closes the caller's enclosing block (`/each`, `/if`, `/inherits`),
+/// signalling `parse_blocks` to return from the current invocation.
+fn dispatch_tag(
+    tag: &str,
+    src: &str,
+    out: &mut Vec<Block>,
+    pos: &mut usize,
+) -> Result<bool, String> {
+    if let Some(label) = tag.strip_prefix("#each ") {
+        let body = parse_nested_body(src, pos)?;
+        out.push(Block::Each { label: label.trim().to_string(), body });
+        return Ok(false);
+    }
+    if let Some(field) = tag.strip_prefix("#if ") {
+        let body = parse_nested_body(src, pos)?;
+        out.push(Block::If { field: field.trim().to_string(), body });
+        return Ok(false);
+    }
+    if let Some(rest) = tag.strip_prefix("#inherits ") {
+        // Syntax: {{#inherits <field> "<base_name>"}}
+        //   where <field> is `.` or a field path like `geometry.shape`,
+        //   and <base_name> is a quoted string.
+        let (field, base) = parse_inherits_tag(rest)
+            .ok_or_else(|| format!("Malformed #inherits tag: `{tag}`"))?;
+        let body = parse_nested_body(src, pos)?;
+        out.push(Block::Inherits { field, base, body });
+        return Ok(false);
+    }
+    if tag.starts_with("#comment") {
+        if let Some(end) = src[*pos..].find("{{/comment}}") {
+            *pos += end + "{{/comment}}".len();
+        }
+        return Ok(false);
+    }
+    if matches!(tag, "/each" | "/if" | "/inherits") {
+        return Ok(true);
+    }
+    out.push(Block::Interpolate(tag.to_string()));
+    Ok(false)
+}
+
+/// Parse a body nested inside an opening tag, up to the matching
+/// closer (`/each`, `/if`, or `/inherits`). The closer is consumed by
+/// the recursive `parse_blocks` call and reported via its `Ok(())`
+/// return (driven by `dispatch_tag` returning `true`).
+fn parse_nested_body(src: &str, pos: &mut usize) -> Result<Vec<Block>, String> {
+    let mut body = Vec::new();
+    parse_blocks(src, &mut body, pos)?;
+    Ok(body)
 }
 
 /// Rendering context.
