@@ -8,6 +8,32 @@ A working list of real bugs and gaps we've identified, with reproducers and curr
 
 ## Open
 
+### B-002: `Verdict::t` semantics ambiguous (settled time, not observation time)
+
+**Component:** `hymeko_monitor/src/monitor/mod.rs::Verdict`, doc-only.
+**Severity:** Low — no incorrect behaviour, but a foot-gun for first-time users writing test assertions or downstream integrations against the monitor.
+**First observed:** 2026-04-21 while writing `tests/stl_kinematic.rs`.
+
+**Symptom.** A first-pass test threshold comparing verdicts to "before / after the violation at t=12.30 s" used `v.t < 12.0` for "before" and `v.t > 12.35` for "after". The "before" assertion failed: at the moment the verdict crossed into negative robustness, `v.t` was 11.30, not 12.30 — so the negative verdict was being *recorded as a pre-violation sample*, then asserted to be positive, which it wasn't.
+
+**Reproducer.** `cargo test -p hymeko_monitor --test stl_kinematic` with the original `< 12.0` threshold (now corrected) fails with:
+```
+pre-violation robustness should be positive, got -0.86
+```
+
+**Root cause.** The `Verdict::t` field is the *settled time* `t* = observation_time − formula.horizon`, not the observation time. For a formula with horizon 1.1 s, a violation observed at `τ = 12.30` first appears in the verdict at observation time 12.30 with `v.t = 11.20` — and stays visible to the outer `Always` at settled times in `[11.20, 12.30]`. The current `Verdict` struct doc says only "the timestamp at which this verdict is reported (i.e., the time whose robustness the verdict describes — typically trailing the most recent sample by the formula horizon)", which is technically correct but easy to misread as "the observation time at which we got this verdict."
+
+**Workaround.** Compute the violation-visible window from the formula's horizon explicitly when writing assertions: for an injected violation at observation time `τ_v` with formula horizon `H`, the verdict's settled time `v.t` falls in the danger zone iff `v.t ∈ [τ_v − H, τ_v]`. Test thresholds for "safely pre" / "safely post" should use `< τ_v − H − ε` and `> τ_v + ε` respectively. The corrected `tests/stl_kinematic.rs` uses this pattern for a three-point pre/during/post assertion.
+
+**Investigation plan.** Two non-mutually-exclusive options:
+
+1. **Doc-only fix (small):** rewrite the `Verdict::t` docstring in `hymeko_monitor/src/monitor/mod.rs` and the corresponding section in `SPEC.md` to spell out the settled-time semantics with a worked example (the kinematic-arm violation). Add a doctest on `Verdict` showing the time-arithmetic. Cross-reference from `Monitor::verdict`.
+2. **API fix (larger):** rename `Verdict::t` to `Verdict::settled_t`, optionally adding a `Verdict::observation_t` field set by `observe()` and computed as `settled_t + monitor.horizon()`. This is a breaking API change but eliminates the ambiguity at the type level. Worth doing before v1.0 ships externally; not urgent for v0.1.
+
+**Why not yet fixed.** The integration test now passes; the foot-gun is documented in this entry and in the corrected test code. Doc fix is a 10-minute task scheduled with the next round of `hymeko_monitor` polish; API rename should wait for the v1.0 cut so it doesn't churn the v0.1 RV-paper text mid-stream.
+
+---
+
 ### B-001: Resolver stack overflow on dense `highArityFixedPool` fixtures
 
 **Component:** `hymeko_core/src/resolution/{intern_pass,resolve}.rs`

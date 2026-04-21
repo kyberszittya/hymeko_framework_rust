@@ -1,0 +1,88 @@
+meta_nn
+{
+
+}
+nn {
+    units {
+        // Numeric values are dimensionless; tensor shapes use cardinal counts.
+        time      "step";   // forward-pass step
+        magnitude "scalar"; // generic floating-point
+    }
+
+    // ─── Tensor vertices ────────────────────────────────────────────────
+    // Tensors are the data carried between layer hypervertices in the
+    // dataflow view. Their `shape` field is a 1-D list of dimensions.
+    //
+    // Type names are PREFIXED with `t_` so the inheritance walker
+    // (which matches by short name, not by full path) doesn't collide
+    // with port / neuron names that share the same intuitive meaning.
+    // User authors `y: ten.t_output { shape [2]; }`.
+    tensors {
+        meta_tensor {}
+        t_input:      + <isa> meta_tensor {}
+        t_activation: + <isa> meta_tensor {}
+        t_output:     + <isa> meta_tensor {}
+    }
+
+    // ─── Port decls (layer hypervertex interface) ──────────────────────
+    // Ports are nested INSIDE layer hypervertices and expose the
+    // hypervertex's interface to the outer dataflow. Outer dataflow
+    // hyperedges reference the layer hypervertex; the projection
+    // π_factor resolves port-incidences against those edges.
+    ports {
+        meta_port {}
+        input:  + <isa> meta_port {}
+        output: + <isa> meta_port {}
+    }
+
+    // ─── Neuron decls (factor view leaves) ──────────────────────────────
+    // Neurons are the leaf-level activation units inside layer
+    // hypervertices. The factor view's hypergraph is built from these.
+    neurons {
+        meta_neuron {}
+        input:  + <isa> meta_neuron {}
+        hidden: + <isa> meta_neuron {}
+        output: + <isa> meta_neuron {}
+    }
+
+    // ─── GGK kernel specs ───────────────────────────────────────────────
+    // Generalised Generative Kernel K = (B, G, μ, r). Each spec is a
+    // typed decl that layers reference via `ggk -> some_spec`. Shared
+    // GGK specs across layers dedupe via canonical-IR hashing.
+    ggk {
+        meta_ggk {}
+        bspline:  + <isa> meta_ggk {}
+        bezier:   + <isa> meta_ggk {}
+        rbf:      + <isa> meta_ggk {}
+        hermite:  + <isa> meta_ggk {}
+        wavelet:  + <isa> meta_ggk {}
+    }
+
+    // ─── Factor decls (intra-layer hyperedges) ──────────────────────────
+    // Factors live inside a layer hypervertex's body. Each factor is a
+    // hyperedge: `+` source neurons, `-` sink neuron, optional `~`
+    // output-port marker.
+    factors {
+        @meta_factor {}
+        @hypergraph_conv: + <isa> meta_factor {}
+    }
+
+    // ─── Layer decls (hypervertices in the dataflow view) ───────────────
+    // Each layer is a hypervertex: a node decl with a body containing
+    // input ports, hidden neurons, output ports, and intra-layer
+    // factors. The outer dataflow references the layer by name (its
+    // hypervertex identity), not its internal neurons.
+    layers {
+        meta_layer {}
+        hypergraph_conv: + <isa> meta_layer {}
+        mean_pool:       + <isa> meta_layer {}
+        max_pool:        + <isa> meta_layer {}
+        readout_linear:  + <isa> meta_layer {}
+
+        // Dataflow hyperedge type: outer-level wiring between layer
+        // hypervertices and tensors. Conventional incidence pattern:
+        //   (+ in_tensor, ~ layer_hypervertex, - out_tensor)
+        // For readout: (+ in_tensor, ~ readout_layer)  — no out_tensor.
+        @dataflow {}
+    }
+}

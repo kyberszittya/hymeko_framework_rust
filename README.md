@@ -553,13 +553,13 @@ The project includes comprehensive tests across multiple levels with specific fo
 - Comments handling
 
 ## 📊 Benchmark Harnesses
-- **Parser Grid Sweep:** `py/parsing/benchmarks/grid_expansion_bench.py` sweeps nodes/edges/densities, measures parse plus expansion timings, and writes both summary and raw CSV exports for regression tracking.
+- **Parser Grid Sweep:** `python/benches/parsing/grid_expansion_bench.py` sweeps nodes/edges/densities, measures parse plus expansion timings, and writes both summary and raw CSV exports for regression tracking.
   ```powershell
-  python py/parsing/benchmarks/grid_expansion_bench.py
+  python python/benches/parsing/grid_expansion_bench.py
   ```
-- **COO Tensor Grid Sweep:** `py/coo_tensor/coo_tensor_grid_eval.py` evaluates star and clique expansions end-to-end (parse → extraction → tensor materialization) and records NNZ counts alongside timestamped CSV telemetry.
+- **COO Tensor Grid Sweep:** `python/benches/coo_tensor/coo_tensor_grid_eval.py` evaluates star and clique expansions end-to-end (parse → extraction → tensor materialization) and records NNZ counts alongside timestamped CSV telemetry.
   ```powershell
-  python py/coo_tensor/coo_tensor_grid_eval.py
+  python python/benches/coo_tensor/coo_tensor_grid_eval.py
   ```
 
 ## 🤖 CI/CD Pipeline

@@ -183,7 +183,7 @@ cargo run -p hymeko_cli -- emit --all        data/robotics/mini_arm.hymeko -o ou
 cargo run -p hymeko_cli -- emit --format dot data/robotics/mini_arm.hymeko | dot -Tsvg > mini_arm.svg
 
 # Star/clique expansion tensor (Python)
-python py/use_hymeko_engine.py data/robotics/mini_arm.hymeko
+python python/examples/use_hymeko_engine.py data/robotics/mini_arm.hymeko
 ```
 
 The Mermaid renders in this document are authored by hand from the `.hymeko` source; a proper `emit_mermaid` transform is scoped into Plan 06 as part of the WASM editor's canvas preview.

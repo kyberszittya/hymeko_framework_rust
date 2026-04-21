@@ -1,7 +1,7 @@
 """Batch-evaluate COO tensor exports across node/edge grids.
 
 Run directly via:
-    python py/coo_tensor/coo_tensor_grid_eval.py
+    python python/benches/coo_tensor/coo_tensor_grid_eval.py
 """
 
 from __future__ import annotations

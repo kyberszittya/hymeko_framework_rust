@@ -23,6 +23,10 @@ pub enum OutputFormat {
     Sdf17,
     Mjcf,
     DotGraph,
+    /// PyTorch dataflow projection — emits an `nn.Module` Python source
+    /// file from the hierarchical hypergraph IR via
+    /// `transforms/torch_dataflow/`.
+    TorchDataflow,
 }
 
 impl OutputFormat {
@@ -34,6 +38,7 @@ impl OutputFormat {
             OutputFormat::Sdf17 => "sdf",
             OutputFormat::Mjcf => "mjcf",
             OutputFormat::DotGraph => "dot",
+            OutputFormat::TorchDataflow => "torch_dataflow",
         }
     }
 }

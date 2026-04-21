@@ -108,6 +108,31 @@ impl DomainTransform for DotTransform {
     fn template_dir(&self) -> Option<&'static str> { Some("dot") }
 }
 
+// ─── Torch (dataflow projection of hierarchical hypergraph) ─────────────
+
+/// PyTorch dataflow-projection emitter. Consumes the hierarchical
+/// hypergraph IR (or its π_dataflow projection): top-level layers,
+/// tensors, and dataflow hyperedges. Layer hypervertex bodies (inner
+/// ports / neurons / factors) are not walked — they are encoded
+/// implicitly via each layer's `d_in`, `d_out`, `ggk` fields.
+///
+/// The emit() body is a stub because this transform is template-only:
+/// it goes through `TransformRegistry::render_from_templates` against
+/// `transforms/torch_dataflow/{queries.hymeko, template.py}`. The
+/// kinematic ModelView is not the right input shape for an NN.
+pub struct TorchDataflowTransform;
+
+impl DomainTransform for TorchDataflowTransform {
+    fn name(&self) -> &'static str { "torch_dataflow" }
+    fn extension(&self) -> &'static str { "py" }
+    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn emit(&self, _model: &ModelView, _config: &TransformConfig) -> Option<String> {
+        // Template-only path; emit() is unused for this transform.
+        None
+    }
+    fn template_dir(&self) -> Option<&'static str> { Some("torch_dataflow") }
+}
+
 // ─── Mermaid flowchart ───────────────────────────────────────────────────
 
 /// Emits a Mermaid `flowchart TD` of the kinematic chain — renders inline

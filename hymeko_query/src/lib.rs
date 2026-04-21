@@ -15,6 +15,7 @@
 
 pub mod predicate;
 pub mod engine;
+pub mod entropy;
 
 #[cfg(feature = "interpret")]
 pub mod interpret;
@@ -29,4 +30,5 @@ pub mod transforms;
 // Re-exports for convenience
 pub use predicate::{NamedQuery, Predicate, ValuePredicate};
 pub use engine::{ArcBinding, QueryConfig, QueryEngine, QueryMatch};
+pub use entropy::{compute_entropy, compute_entropy_hierarchical, StructuralEntropy};
 pub use traits::NameResolver;

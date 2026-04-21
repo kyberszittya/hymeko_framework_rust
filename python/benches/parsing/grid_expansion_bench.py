@@ -1,7 +1,7 @@
 """Benchmark Hymeko expansions across a grid of node/edge sizes and densities.
 
 This module is intentionally standalone so it can be run directly:
-    python py/parsing/benchmarks/grid_expansion_bench.py
+    python python/benches/parsing/grid_expansion_bench.py
 """
 
 from __future__ import annotations

@@ -1,0 +1,20 @@
+torch_dataflow_transform {}
+context
+{
+    // All layer hypervertices (any decl inheriting from meta_layer).
+    // The dataflow view ignores their inner bodies; only their
+    // top-level fields (d_in, d_out, ggk reference) are read.
+    layers:  meta_layer {}
+
+    // Tensors of any role (input / activation / output).
+    tensors: meta_tensor {}
+
+    // Outer dataflow hyperedges: (+ in_tensor, ~ layer, - out_tensor).
+    @flows:  dataflow {}
+
+    // Output tensors only — used to emit the return statement.
+    // Uses the disambiguated `t_output` name to avoid collisions with
+    // `ports.output` and `neurons.output` (HyMeKo's inheritance walker
+    // matches by short name).
+    outputs: t_output {}
+}

@@ -21,6 +21,7 @@ use hymeko::util::pretty_print::pretty_print_compiled;
 
 use hymeko_formats::{generate_description, OutputFormat};
 use hymeko_query::engine::QueryEngine;
+use hymeko_query::entropy::{compute_entropy_hierarchical, StructuralEntropy};
 use hymeko_query::interpret::interpret_transform_queries;
 use hymeko_query::rewrite::{execute_transform, TransformSpec};
 
@@ -135,6 +136,28 @@ enum Commands {
         #[arg(long, default_value = "transforms")]
         transforms_dir: String,
     },
+
+    /// Compute per-scope structural entropy on the compiled IR.
+    ///
+    /// Walks every scope (module root + every hypervertex body) that
+    /// contains at least one hyperedge, and emits the three-component
+    /// Shannon metric `H_struct = (H_arity + H_sign + H_degree) / 3`
+    /// (in nats) along with per-component values, vertex and edge
+    /// counts. This is step 2 of the entropy hot-swap plan; the metric
+    /// is defined in `docs/structural_entropy_ir.md`.
+    Entropy {
+        /// Input .hymeko description file
+        input: PathBuf,
+
+        /// Restrict output to scopes whose decl name matches exactly.
+        /// Can be passed multiple times to keep a subset.
+        #[arg(long = "scope")]
+        scopes: Vec<String>,
+
+        /// Emit machine-readable JSON instead of the human table.
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 fn main() {
@@ -245,6 +268,18 @@ fn run_command(cmd: Commands) {
             }
         }
 
+        Commands::Entropy { input, scopes, json } => {
+            let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
+            let compiled = compile_or_exit(&mut ms, &input);
+
+            let rows = resolve_entropy_rows(&compiled.ir, &ms.it, &scopes);
+            if json {
+                print!("{}", entropy_rows_to_json(&rows));
+            } else {
+                print_entropy_table(&rows);
+            }
+        }
+
         Commands::Emit { input, format, output, name, world, transforms_dir } => {
             use hymeko_query::transforms::TransformConfig;
 
@@ -285,14 +320,143 @@ fn run_command(cmd: Commands) {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Entropy output helpers (shared by the subcommand and the REPL)
+// ═══════════════════════════════════════════════════════════════
+
+/// One row of the per-scope entropy report, with the scope resolved to
+/// a human-readable name for display. `scope_name` is `"<root>"` for
+/// the module root (DeclId::NONE) and `"<anonymous#<id>>"` for any
+/// unnamed decl (rare but possible).
+struct EntropyRow {
+    scope_id: usize,
+    scope_name: String,
+    entropy: StructuralEntropy,
+}
+
+fn resolve_entropy_rows(
+    ir: &hymeko::ir::ir::Ir,
+    it: &Interner,
+    keep: &[String],
+) -> Vec<EntropyRow> {
+    let keep_set: Option<std::collections::HashSet<&str>> = if keep.is_empty() {
+        None
+    } else {
+        Some(keep.iter().map(String::as_str).collect())
+    };
+
+    compute_entropy_hierarchical(ir)
+        .into_iter()
+        .map(|(did, entropy)| {
+            let (scope_id, scope_name) = if did.is_none() {
+                (usize::MAX, "<root>".to_string())
+            } else {
+                let decl = &ir.decl_nodes[did.raw()];
+                let name = it.resolve(decl.name).to_string();
+                let name = if name.is_empty() {
+                    format!("<anonymous#{}>", did.raw())
+                } else {
+                    name
+                };
+                (did.raw(), name)
+            };
+            EntropyRow { scope_id, scope_name, entropy }
+        })
+        .filter(|row| match &keep_set {
+            Some(set) => set.contains(row.scope_name.as_str()),
+            None => true,
+        })
+        .collect()
+}
+
+fn print_entropy_table(rows: &[EntropyRow]) {
+    if rows.is_empty() {
+        eprintln!("No scopes with hyperedges in this IR.");
+        return;
+    }
+    // Pad scope name to the longest present, min 12.
+    let name_w = rows.iter().map(|r| r.scope_name.len()).max().unwrap_or(12).max(12);
+    println!(
+        "{:<nw$}  {:>4} {:>4}  {:>9} {:>9} {:>9}  {:>9}",
+        "scope", "V", "E", "H_arity", "H_sign", "H_degree", "H_total",
+        nw = name_w,
+    );
+    println!("{}", "─".repeat(name_w + 2 + 4 + 1 + 4 + 2 + 9 + 1 + 9 + 1 + 9 + 2 + 9));
+    for row in rows {
+        let e = &row.entropy;
+        println!(
+            "{:<nw$}  {:>4} {:>4}  {:>9.4} {:>9.4} {:>9.4}  {:>9.4}",
+            row.scope_name,
+            e.n_vertices,
+            e.n_edges,
+            e.h_arity,
+            e.h_sign,
+            e.h_degree,
+            e.h_total,
+            nw = name_w,
+        );
+    }
+}
+
+/// Minimal hand-rolled JSON emitter — avoids pulling in `serde_json`
+/// just for this one surface. f64 values use Rust's default Display
+/// which round-trips through f64 parsers.
+fn entropy_rows_to_json(rows: &[EntropyRow]) -> String {
+    let mut out = String::from("[\n");
+    for (i, row) in rows.iter().enumerate() {
+        let e = &row.entropy;
+        let scope_id_json = if row.scope_id == usize::MAX {
+            "null".to_string()
+        } else {
+            row.scope_id.to_string()
+        };
+        out.push_str("  {");
+        out.push_str(&format!("\"scope_id\": {scope_id_json}, "));
+        out.push_str(&format!(
+            "\"scope_name\": \"{}\", ",
+            json_escape(&row.scope_name)
+        ));
+        out.push_str(&format!("\"n_vertices\": {}, ", e.n_vertices));
+        out.push_str(&format!("\"n_edges\": {}, ", e.n_edges));
+        out.push_str(&format!("\"h_arity\": {}, ", e.h_arity));
+        out.push_str(&format!("\"h_sign\": {}, ", e.h_sign));
+        out.push_str(&format!("\"h_degree\": {}, ", e.h_degree));
+        out.push_str(&format!("\"h_total\": {}", e.h_total));
+        out.push('}');
+        if i + 1 < rows.len() {
+            out.push(',');
+        }
+        out.push('\n');
+    }
+    out.push_str("]\n");
+    out
+}
+
+fn json_escape(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out
+}
+
 fn parse_format(s: &str) -> OutputFormat {
     match s.to_lowercase().as_str() {
         "urdf" => OutputFormat::Urdf,
         "sdf"  => OutputFormat::Sdf17,
         "mjcf" => OutputFormat::Mjcf,
         "dot"  => OutputFormat::DotGraph,
+        "torch" | "torch_dataflow" => OutputFormat::TorchDataflow,
         other => {
-            eprintln!("Unknown format: {other}. Use: urdf, sdf, mjcf, dot");
+            eprintln!("Unknown format: {other}. Use: urdf, sdf, mjcf, dot, torch_dataflow");
             std::process::exit(1);
         }
     }
@@ -516,6 +680,25 @@ fn interactive_console() {
                 pretty_print_compiled(session.interner(), compiled);
             }
 
+            "entropy" => {
+                let Some(compiled) = session.ensure_loaded() else { continue };
+                // `entropy` → table for all scopes.
+                // `entropy <name>` → table restricted to the named scope.
+                // `entropy json` → JSON of all scopes (to stdout).
+                let rest: Vec<&str> = parts.iter().skip(1).copied().collect();
+                let (as_json, scopes) = match rest.as_slice() {
+                    [] => (false, Vec::<String>::new()),
+                    ["json"] => (true, Vec::new()),
+                    names => (false, names.iter().map(|s| s.to_string()).collect()),
+                };
+                let rows = resolve_entropy_rows(&compiled.ir, session.interner(), &scopes);
+                if as_json {
+                    print!("{}", entropy_rows_to_json(&rows));
+                } else {
+                    print_entropy_table(&rows);
+                }
+            }
+
             "info" | "status" => {
                 match &session.loaded_path {
                     Some(p) => {
@@ -722,6 +905,7 @@ const REPL_COMMANDS: &[&str] = &[
     "compile", "gen", "generate",
     "validate", "check",
     "inspect", "ir", "dump",
+    "entropy",
     "info", "status", "formats",
     "query", "qfile", "query-file",
     "daemon", "transform", "tf",
@@ -1003,6 +1187,7 @@ fn print_help() {
   │                                                         │
   │  validate / check         Run schema validation         │
   │  inspect / ir             Pretty-print compiled IR      │
+  │  entropy [scope|json]     Per-scope structural entropy  │
   │  info                     Show current session info     │
   │  name [new_name]          Get/set robot model name      │
   │  formats                  List available output formats  │
