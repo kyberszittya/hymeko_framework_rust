@@ -12,12 +12,16 @@ use iceoryx2::prelude::*;
 use arrow::array::{Array, Int64Array, Float32Array};
 use arrow::pyarrow::IntoPyArrow;
 use hymeko_hre::HypergraphEngine;
-use hymeko::tensor::shared_state::{ExpansionHeader, HypergraphWeights};
+use hymeko::tensor::shared_state::ExpansionHeader;
 use hymeko::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
 use hymeko::module_store::source_provider::MemProvider;
 use hymeko::resolution::string_table::StringTable;
 use hymeko::util::real_parser::RealParser;
 use hymeko::writers::cbor_writer::CborPayload;
+use hymeko::common::ids::DeclId;
+use hymeko::ir::ir::{DeclKind, Ir};
+use hymeko_formats::urdf::generate_urdf;
+use hymeko_formats::sdf::generate_sdf;
 
 
 #[pyclass]
@@ -177,6 +181,151 @@ impl PyHypergraphIR {
             self.node_count(), self.edge_count(), self.arc_count())
     }
 
+    // -- Codegen --
+
+    /// Emit URDF XML from the compiled IR.
+    pub fn to_urdf(&self, robot_name: &str) -> String {
+        generate_urdf(&self.compiled.ir, &self.strings, robot_name)
+    }
+
+    /// Emit SDF 1.7 XML from the compiled IR.
+    pub fn to_sdf(&self, model_name: &str) -> String {
+        generate_sdf(&self.compiled.ir, &self.strings, model_name)
+    }
+
+    // -- Predicate queries --
+
+    /// Run a predicate-string query over the IR and return the list of
+    /// matching decl names. Supported atoms (same surface as
+    /// `queries/standard.qlist`):
+    ///
+    ///   KIND(<name>)                — decl whose first inherited base is <name>
+    ///   INHERITS(<name>)            — decl transitively inheriting <name>
+    ///   SCOPEDIN(<name>)            — decl has an ancestor inheriting <name>
+    ///   HASARCREF(<sign>, <inner>)  — edge with an arc-ref of <sign> (+1/-1)
+    ///                                 pointing at a decl matching <inner>
+    ///   <a> AND <b>                 — conjunction
+    ///   ANY                         — always true
+    pub fn query(&self, predicate: &str) -> Vec<String> {
+        let ir = &self.compiled.ir;
+        let mut out = Vec::new();
+        for i in 0..ir.decl_nodes.len() {
+            let did = DeclId::new(i);
+            if pred_match_expr(predicate, did, ir, &self.strings) {
+                out.push(self.strings.resolve(ir.decl_nodes[i].name).to_string());
+            }
+        }
+        out
+    }
+
+    /// Convenience: return the match count only.
+    pub fn query_count(&self, predicate: &str) -> usize {
+        let ir = &self.compiled.ir;
+        (0..ir.decl_nodes.len())
+            .filter(|i| pred_match_expr(predicate, DeclId::new(*i), ir, &self.strings))
+            .count()
+    }
+
+}
+
+// ================================================
+// Predicate string evaluator (mirrors queries/standard.qlist grammar).
+// Generalized over StringTable; kept local to hymeko_py for now.
+// ================================================
+
+fn pred_match_expr(expr: &str, did: DeclId, ir: &Ir, st: &StringTable) -> bool {
+    expr.split(" AND ").all(|p| pred_match_atom(p.trim(), did, ir, st))
+}
+
+fn pred_match_atom(atom: &str, did: DeclId, ir: &Ir, st: &StringTable) -> bool {
+    if atom == "ANY" { return true; }
+    if let Some(rest) = atom.strip_prefix("KIND(") {
+        let name = rest.trim_end_matches(')');
+        return pred_decl_kind_name(did, ir, st) == name;
+    }
+    if let Some(rest) = atom.strip_prefix("INHERITS(") {
+        let name = rest.trim_end_matches(')');
+        return pred_decl_inherits(did, name, ir, st);
+    }
+    if let Some(rest) = atom.strip_prefix("SCOPEDIN(") {
+        let name = rest.trim_end_matches(')');
+        return pred_decl_scoped_in(did, name, ir, st);
+    }
+    if let Some(rest) = atom.strip_prefix("HASARCREF(") {
+        let rest = rest.trim_end_matches(')');
+        let (sign_s, inner) = rest.split_once(',').unwrap_or((rest, ""));
+        let sign: i8 = sign_s.trim().trim_start_matches('+').parse().unwrap_or(0);
+        return pred_has_arc_ref(did, sign, inner.trim(), ir, st);
+    }
+    false
+}
+
+fn pred_decl_kind_name<'a>(did: DeclId, ir: &'a Ir, st: &'a StringTable) -> &'a str {
+    let decl = &ir.decl_nodes[did.0];
+    match decl.kind {
+        DeclKind::Node => {
+            if let Some(nid) = ir.as_node(did) {
+                if let Some(b) = ir.nodes[nid.0].bases.first() {
+                    return st.resolve(ir.decl_nodes[b.target().0].name);
+                }
+            }
+            ""
+        }
+        DeclKind::Edge => {
+            if let Some(eid) = ir.as_edge(did) {
+                if let Some(b) = ir.edges[eid.0].bases.first() {
+                    return st.resolve(ir.decl_nodes[b.target().0].name);
+                }
+            }
+            ""
+        }
+        DeclKind::HyperArc => "",
+    }
+}
+
+fn pred_decl_inherits(did: DeclId, target_name: &str, ir: &Ir, st: &StringTable) -> bool {
+    let mut visited = std::collections::HashSet::new();
+    let mut stack = vec![did];
+    while let Some(d) = stack.pop() {
+        if !visited.insert(d) { continue; }
+        let decl = &ir.decl_nodes[d.0];
+        if st.resolve(decl.name) == target_name { return true; }
+        match decl.kind {
+            DeclKind::Node => {
+                if let Some(nid) = ir.as_node(d) {
+                    for b in &ir.nodes[nid.0].bases { stack.push(b.target()); }
+                }
+            }
+            DeclKind::Edge => {
+                if let Some(eid) = ir.as_edge(d) {
+                    for b in &ir.edges[eid.0].bases { stack.push(b.target()); }
+                }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
+fn pred_decl_scoped_in(did: DeclId, name: &str, ir: &Ir, st: &StringTable) -> bool {
+    let mut cur = ir.decl_nodes[did.0].parent;
+    while cur.is_some() {
+        if pred_decl_inherits(cur, name, ir, st) { return true; }
+        if st.resolve(ir.decl_nodes[cur.0].name) == name { return true; }
+        cur = ir.decl_nodes[cur.0].parent;
+    }
+    false
+}
+
+fn pred_has_arc_ref(did: DeclId, sign: i8, inner: &str, ir: &Ir, st: &StringTable) -> bool {
+    let Some(eid) = ir.as_edge(did) else { return false };
+    for &aid in &ir.edges[eid.0].arcs {
+        for r in &ir.arcs[aid.0].refs {
+            if r.sign() != sign { continue; }
+            if pred_match_expr(inner, r.target(), ir, st) { return true; }
+        }
+    }
+    false
 }
 
 /*

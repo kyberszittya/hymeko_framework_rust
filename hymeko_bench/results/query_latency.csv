@@ -1,0 +1,6 @@
+id,predicate,matches,latency_us
+P1,KIND(joint),4,5.690
+P2,"KIND(joint) AND HASARCREF(+1, INHERITS(link))",4,8.151
+P3,"KIND(sensor) AND HASARCREF(+1, KIND(joint))",3,7.735
+P4,"INHERITS(aggregation) AND HASARCREF(-1, ANY)",8,16.472
+P5,"KIND(constraint) AND HASARCREF(+1, SCOPEDIN(context))",1,8.031

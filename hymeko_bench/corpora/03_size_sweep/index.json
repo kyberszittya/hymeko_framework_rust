@@ -1,0 +1,42 @@
+[
+  {
+    "family": "03_size_sweep",
+    "name": "size_00010_d3",
+    "n_vertices": 15,
+    "n_hyperedges": 10,
+    "mean_arity": 3.0,
+    "source_bytes": 6344,
+    "path": "03_size_sweep/size_00010_d3/size_00010_d3.hymeko",
+    "robot_name": "ha_m10_d3"
+  },
+  {
+    "family": "03_size_sweep",
+    "name": "size_00100_d3",
+    "n_vertices": 150,
+    "n_hyperedges": 100,
+    "mean_arity": 3.0,
+    "source_bytes": 62207,
+    "path": "03_size_sweep/size_00100_d3/size_00100_d3.hymeko",
+    "robot_name": "ha_m100_d3"
+  },
+  {
+    "family": "03_size_sweep",
+    "name": "size_01000_d3",
+    "n_vertices": 1500,
+    "n_hyperedges": 1000,
+    "mean_arity": 3.0,
+    "source_bytes": 625786,
+    "path": "03_size_sweep/size_01000_d3/size_01000_d3.hymeko",
+    "robot_name": "ha_m1000_d3"
+  },
+  {
+    "family": "03_size_sweep",
+    "name": "size_10000_d3",
+    "n_vertices": 15000,
+    "n_hyperedges": 10000,
+    "mean_arity": 3.0,
+    "source_bytes": 6310773,
+    "path": "03_size_sweep/size_10000_d3/size_10000_d3.hymeko",
+    "robot_name": "ha_m10000_d3"
+  }
+]

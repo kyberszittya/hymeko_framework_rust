@@ -8,6 +8,8 @@ crate-type = ["cdylib"]
 [dependencies]
 hymeko_core = { path = "../hymeko_core", features = ["ipc", "arrow-schema"] }
 hymeko_hre = { path = "../hymeko_hre", features = ["ipc"] }
+hymeko_query = { path = "../hymeko_query" }
+hymeko_formats = { path = "../hymeko_formats" }
 
 ciborium = {  workspace = true }
 arrow = { workspace = true, features = ["pyarrow", "ffi"] }

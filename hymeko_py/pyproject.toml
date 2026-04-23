@@ -1,0 +1,31 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "hymeko"
+version = "0.1.0"
+description = "HyMeKo — hypergraph-based semantic description of robotic systems. Python bindings."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Máté Hajdu", email = "gemeauxrapace@gmail.com" },
+]
+license = { text = "MIT OR Apache-2.0" }
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Intended Audience :: Science/Research",
+]
+dependencies = [
+    "pyarrow>=14",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.0"]
+
+[tool.maturin]
+module-name = "hymeko"
+features = ["pyo3/extension-module"]

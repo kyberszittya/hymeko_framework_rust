@@ -1854,6 +1854,8 @@ dependencies = [
  "csv",
  "hymeko_core",
  "hymeko_formats",
+ "hymeko_hnn",
+ "hymeko_hre",
  "hymeko_query",
  "parser",
  "serde",
@@ -1994,7 +1996,9 @@ dependencies = [
  "arrow",
  "ciborium",
  "hymeko_core",
+ "hymeko_formats",
  "hymeko_hre",
+ "hymeko_query",
  "iceoryx2",
  "pyo3",
 ]
