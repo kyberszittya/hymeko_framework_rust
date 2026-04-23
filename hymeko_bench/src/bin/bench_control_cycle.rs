@@ -76,6 +76,11 @@ struct Cli {
     /// Warm-up iterations (not recorded).
     #[arg(long, default_value_t = 100)]
     warmup: usize,
+    /// Optional: dump per-iteration raw stage times for the TD3 pipeline
+    /// (for 3-D latency scatter in the paper). One row per iteration with
+    /// columns: iter, state_assembly_us, forward_us, decode_us, total_us.
+    #[arg(long)]
+    raw_td3_out: Option<PathBuf>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -86,6 +91,15 @@ struct Row {
     p95_us: f64,
     stddev_us: f64,
     iterations: usize,
+}
+
+#[derive(Serialize, Debug, Clone)]
+struct RawRow {
+    iter: usize,
+    state_assembly_us: f64,
+    forward_us: f64,
+    decode_us: f64,
+    total_us: f64,
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -377,10 +391,13 @@ fn main() -> Result<()> {
 
     let mut vel = vec![0.0_f32; ACTION_DIM];
     let mut rows = Vec::with_capacity(4 * 3);
+    let mut td3_raw: Option<(Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>)> = None;
 
-    // Helper to time one pipeline's stages.
+    // Helper to time one pipeline's stages. When `$capture_raw` is true,
+    // the raw per-iteration timing vectors are cloned out into td3_raw
+    // so they can be dumped to a secondary CSV for the 3-D latency plot.
     macro_rules! bench_pipeline {
-        ($name:expr, $p:expr) => {{
+        ($name:expr, $p:expr, $capture_raw:expr) => {{
             // Warm-up.
             for _ in 0..cli.warmup {
                 $p.state_assembly(&sensors);
@@ -406,6 +423,9 @@ fn main() -> Result<()> {
                 t_dec.push((t3 - t2).as_secs_f64() * 1e6);
                 t_total.push((t3 - t0).as_secs_f64() * 1e6);
             }
+            if $capture_raw {
+                td3_raw = Some((t_sa.clone(), t_fw.clone(), t_dec.clone(), t_total.clone()));
+            }
             rows.push(summarize(t_sa,    cli.iters, $name, "state_assembly"));
             rows.push(summarize(t_fw,    cli.iters, $name, "forward"));
             rows.push(summarize(t_dec,   cli.iters, $name, "decode"));
@@ -413,15 +433,32 @@ fn main() -> Result<()> {
         }};
     }
 
-    bench_pipeline!("hypergraph", p_hg);
-    bench_pipeline!("td3",        p_td3);
-    bench_pipeline!("pid_td3",    p_pid);
+    bench_pipeline!("hypergraph", p_hg,  false);
+    bench_pipeline!("td3",        p_td3, cli.raw_td3_out.is_some());
+    bench_pipeline!("pid_td3",    p_pid, false);
 
     // Emit CSV.
     if let Some(parent) = cli.out.parent() { fs::create_dir_all(parent).ok(); }
     let mut w = csv::Writer::from_path(&cli.out)?;
     for r in &rows { w.serialize(r)?; }
     w.flush()?;
+
+    // Emit raw TD3 per-iteration CSV if requested.
+    if let (Some(path), Some((sa, fw, dec, tot))) = (&cli.raw_td3_out, td3_raw) {
+        if let Some(parent) = path.parent() { fs::create_dir_all(parent).ok(); }
+        let mut rw = csv::Writer::from_path(path)?;
+        for i in 0..sa.len() {
+            rw.serialize(RawRow {
+                iter: i,
+                state_assembly_us: sa[i],
+                forward_us: fw[i],
+                decode_us: dec[i],
+                total_us: tot[i],
+            })?;
+        }
+        rw.flush()?;
+        eprintln!("Wrote raw TD3 per-iteration CSV: {}", path.display());
+    }
 
     // Print a summary.
     eprintln!("\nResults (median_us, p95_us, stddev_us):");

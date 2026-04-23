@@ -1,0 +1,5 @@
+dataset,arm,view,seed,final_val_acc,final_train_loss,final_entropy,final_kl,wall_seconds,stable_rank_mean,stable_rank_max,spectral_norm_mean,spectral_norm_max,spectral_norm_product,participation_ratio_mean,val_acc_per_epoch
+two_moons,baseline,dataflow,0,0.866000,0.610604,5.460949,0.000000,0.38,3.1010,6.1620,1.4092,2.5876,1.6837,4.8266,0.502000;0.866000
+two_moons,baseline,dataflow,1,0.768000,0.648186,5.471467,0.000000,0.09,3.3478,6.5957,1.3412,2.4406,1.4887,4.8405,0.500000;0.768000
+two_moons,scalar_entropy,dataflow,0,0.866000,0.610891,5.452610,0.000000,0.21,3.0882,6.1278,1.4047,2.5950,1.6518,4.7992,0.502000;0.866000
+two_moons,scalar_entropy,dataflow,1,0.768000,0.648611,5.457828,0.000000,0.09,3.3009,6.4390,1.3315,2.4457,1.4327,4.8209,0.500000;0.768000

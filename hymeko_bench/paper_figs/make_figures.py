@@ -22,6 +22,7 @@ REPO = Path(__file__).resolve().parents[2]
 CSV = REPO / "hymeko_bench" / "results" / "binary_vs_hypergraph.csv"
 SCALING_CSV = REPO / "hymeko_bench" / "results" / "scaling.csv"
 CONTROL_CSV = REPO / "hymeko_bench" / "results" / "control_cycle.csv"
+CONTROL_TD3_RAW_CSV = REPO / "hymeko_bench" / "results" / "control_cycle_td3_raw.csv"
 OUT = REPO / "hymeko_bench" / "paper_figs"
 
 
@@ -193,6 +194,58 @@ def fig_control_cycle(rows, out):
     print(f"wrote {out / 'fig_control_cycle.pdf'}")
 
 
+def fig_td3_latency_3d(raw_rows, out):
+    """Rev. 4 response: per-iteration 3-D latency cloud for the TD3
+    pipeline. Each of 10 000 control cycles contributes one point in
+    (state_assembly, forward, decode) microsecond space. The density is
+    informative — a tight cluster = consistent timing, scattered tail =
+    scheduler noise on this CPU.
+
+    A 2-D top-view inset projects the cloud onto (forward, total) so the
+    bulk of the distribution is visible even if the 3-D projection is
+    hard to read in print.
+    """
+    import numpy as np
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 — register 3-D projection
+
+    sa  = np.array([float(r["state_assembly_us"]) for r in raw_rows])
+    fw  = np.array([float(r["forward_us"])        for r in raw_rows])
+    dec = np.array([float(r["decode_us"])         for r in raw_rows])
+    tot = np.array([float(r["total_us"])          for r in raw_rows])
+    n = len(sa)
+
+    fig = plt.figure(figsize=(7.6, 3.9))
+    ax3d = fig.add_subplot(1, 2, 1, projection="3d")
+    ax3d.scatter(sa, fw, dec, s=3, alpha=0.08, color="0.15", depthshade=False)
+    ax3d.set_xlabel(r"State assembly ($\mu$s)")
+    ax3d.set_ylabel(r"Forward pass ($\mu$s)")
+    ax3d.set_zlabel(r"Decode ($\mu$s)")
+    ax3d.set_title(r"TD3 per-cycle latency cloud ($N{=}10^4$)")
+    ax3d.view_init(elev=22, azim=-58)
+    # Grid + light grey panes for print readability
+    for pane in (ax3d.xaxis.pane, ax3d.yaxis.pane, ax3d.zaxis.pane):
+        pane.set_facecolor((0.97, 0.97, 0.97, 1.0))
+        pane.set_edgecolor((0.7, 0.7, 0.7, 1.0))
+
+    # 2-D marginal: forward vs total. This is what a reader can actually
+    # read off a printed page if the 3-D projection doesn't render cleanly.
+    ax2d = fig.add_subplot(1, 2, 2)
+    ax2d.scatter(fw, tot, s=3, alpha=0.1, color="0.15")
+    med_fw  = float(np.median(fw))
+    med_tot = float(np.median(tot))
+    ax2d.axvline(med_fw,  color="k", linestyle="--", linewidth=0.8, alpha=0.6)
+    ax2d.axhline(med_tot, color="k", linestyle="--", linewidth=0.8, alpha=0.6)
+    ax2d.set_xlabel(r"Forward pass ($\mu$s)")
+    ax2d.set_ylabel(r"Total cycle ($\mu$s)")
+    ax2d.set_title(r"Forward / total projection (medians dashed)")
+    ax2d.grid(True, alpha=0.3)
+
+    fig.tight_layout()
+    fig.savefig(out / "fig_td3_latency_3d.pdf", bbox_inches="tight")
+    fig.savefig(out / "fig_td3_latency_3d.png", dpi=150, bbox_inches="tight")
+    print(f"wrote {out / 'fig_td3_latency_3d.pdf'}  ({n} points)")
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     if CSV.exists():
@@ -211,6 +264,12 @@ def main():
         fig_control_cycle(load_csv(CONTROL_CSV), OUT)
     else:
         print(f"note: {CONTROL_CSV} missing — skipping fig_control_cycle", file=sys.stderr)
+
+    if CONTROL_TD3_RAW_CSV.exists():
+        fig_td3_latency_3d(load_csv(CONTROL_TD3_RAW_CSV), OUT)
+    else:
+        print(f"note: {CONTROL_TD3_RAW_CSV} missing — skipping fig_td3_latency_3d",
+              file=sys.stderr)
 
 
 if __name__ == "__main__":
