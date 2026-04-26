@@ -5,11 +5,21 @@
 # Hierarchical-hypergraph projection π_dataflow(H): each layer
 # hypervertex's body is stripped; only top-level layer / tensor /
 # dataflow-hyperedge structure is emitted as a torch.nn.Module.
+#
+# Tier 1 (plain MLP primitives) and Tier 2 (named composite blocks)
+# are emitted alongside the original HypergraphConv path. Dispatch
+# happens in `queries.hymeko` via per-kind collections; the template
+# below has one section per supported layer class.
 
 import torch
 import torch.nn as nn
 
-from ehk_torch_stub import HypergraphConv, GGKSpec
+from ehk_torch_stub import (
+    GGKSpec,
+    HighwayBlock,
+    HypergraphConv,
+    ResidualBlock,
+)
 
 
 class {{config:robot_name}}(nn.Module):
@@ -17,8 +27,7 @@ class {{config:robot_name}}(nn.Module):
 
     def __init__(self):
         super().__init__()
-{{#each layers}}{{#if field:d_in}}
-        self.{{name}} = HypergraphConv(
+{{#each hg_conv_layers}}        self.{{name}} = HypergraphConv(
             d_in={{field:d_in}},
             d_out={{field:d_out}},
             ggk_spec=GGKSpec(
@@ -35,8 +44,13 @@ class {{config:robot_name}}(nn.Module):
                 n_knots={{field:kernel.n_knots}},
 {{/inherits}}            ),
         )
-{{/if}}{{/each}}
-
+{{/each}}{{#each linear_layers}}        self.{{name}} = nn.Linear({{field:d_in}}, {{field:d_out}})
+{{/each}}{{#each relu_layers}}        self.{{name}} = nn.ReLU()
+{{/each}}{{#each sigmoid_layers}}        self.{{name}} = nn.Sigmoid()
+{{/each}}{{#each tanh_layers}}        self.{{name}} = nn.Tanh()
+{{/each}}{{#each residual_blocks}}        self.{{name}} = ResidualBlock(hidden={{field:hidden}})
+{{/each}}{{#each highway_blocks}}        self.{{name}} = HighwayBlock(hidden={{field:hidden}})
+{{/each}}
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Dataflow follows the order of @dataflow hyperedge declarations.
         # Each edge: (+ in_tensor, ~ layer, - out_tensor).

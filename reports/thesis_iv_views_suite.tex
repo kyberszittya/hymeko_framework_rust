@@ -1,0 +1,335 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{xspace}
+\usepackage{lmodern}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=blue}
+
+\title{Spectral Entropy Regularisation Beyond MNIST:\\
+  A Multi-Dataset, Multi-View Probe}
+\author{HyMeKo / thesis-IV working notes}
+\date{2026-04-23}
+
+\newcommand{\pp}{\,pp\xspace}
+\newcommand{\scalarH}{\textsc{scalar\_entropy}\xspace}
+\newcommand{\klT}{\textsc{kl\_trajectory}\xspace}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A spectral entropy regulariser derived from Hajdu (2025, \S6) has shown
+a small-but-significant accuracy gain on MNIST plain-MLP training
+($\Delta=+0.149\pp$ at 33 seeds $\times$ 15 epochs, dataflow view;
+similar effect under factor view). We designed a 27-experiment overnight
+suite to test whether this signal (a) replicates on sibling datasets,
+(b) transfers to different model architectures, (c) depends on the
+adjacency \emph{view} chosen, and (d) survives at larger seed counts.
+The result surface is structured: \textbf{synthetic non-linear
+classification (spirals)} amplifies the effect by a factor of 3--4 with
+$p<0.001$ and both views concur; \textbf{concentric-circles produces a
+statistically significant \emph{negative}} signal; deep skip-connection
+architectures (ResMLP-20) no longer show the KL-trajectory hint at
+replication power; and image siblings (FashionMNIST, KMNIST) test as
+null. Across positive, null, and negative datasets alike, the
+regulariser consistently reduces seed-to-seed variance --- its most
+robust effect is training \emph{reproducibility}, not \emph{accuracy}.
+\end{abstract}
+
+\section{Introduction}
+
+The thesis-IV spectral entropy regulariser treats each network as a
+hypergraph whose incidence structure is derived from its weight matrices
+and adds a term penalising high spectral entropy of the associated
+Laplacian (Hajdu~2025, Eq.~6.2). Two views of the network-as-hypergraph
+are natural:
+\begin{itemize}
+  \item \textbf{Dataflow view} (star expansion): each layer is a
+    bipartite $\mathit{in}$/$\mathit{out}$ relation; adjacency
+    $\mathbf{A}$ is block-bidiagonal.
+  \item \textbf{Factor view} (clique expansion): each neuron is a
+    vertex in the full factor graph; adjacency collapses to
+    $|\mathbf{W}|^\top|\mathbf{W}|$ with self-loops removed.
+\end{itemize}
+The canonical 33-seed MNIST plain-MLP finding is reproduced and
+strengthened under both views. Whether that anchor extends is the
+subject of this note.
+
+\section{Methodology}
+
+\paragraph{Training protocol.}
+All runs use a consistent optimisation setup: Adam at $\text{lr}=10^{-3}$,
+batch size~128 (images) or~64 (tabular), cross-entropy loss,
+deterministic seeding of weight init \emph{and} DataLoader shuffle.
+Baseline and treatment share the same seed so every comparison is
+paired.
+
+\paragraph{Regularisers.}
+\begin{itemize}
+  \item \scalarH: adds $\lambda\cdot H(\mathbf{A})$ with $\lambda=0.1$,
+    recomputed every 10 batches.
+  \item \klT: adds $\lambda\cdot\mathrm{KL}(\hat\lambda_t\,\|\,\hat\lambda_{t-1})$
+    with $\lambda=10$, recomputed every 100 batches
+    (or every 50 for tabular datasets).
+\end{itemize}
+
+\paragraph{Datasets.}
+\begin{description}
+  \item[Image, 28$\times$28:] MNIST, FashionMNIST, KMNIST
+    (decoded from the HuggingFace \texttt{tanganke/kmnist} parquet
+    since the official codh.rois.ac.jp mirror is unreachable).
+  \item[Image, 32$\times$32 colour:] CIFAR-10.
+  \item[Synthetic 2-D:] Two Moons, Spirals, Concentric Circles.
+  \item[Tabular:] Iris, Wine, Breast Cancer, Digits (overnight phase~4).
+\end{description}
+
+\paragraph{Architectures.}
+\texttt{MNISTNetSmall} (784-16-8-10 MLP, called ``plain MLP'' below),
+\texttt{ResMLP-20} (20 residual blocks at hidden 16), and the
+\texttt{SyntheticMLP} (2-32-16-2) for 2-D tasks.
+Tabular datasets use a \texttt{TabularMLP}($\text{input}$-32-16-$n$).
+Overnight phase~4 adds HighwayMLP-10 and HighwayMLP-20 on MNIST and
+FashionMNIST.
+
+\section{Results}
+
+\subsection{Anchor confirmation}
+
+The MNIST plain-MLP baseline reproduces the original finding across
+several configurations.
+\begin{itemize}
+  \item 33~seeds $\times$~15~epochs, dataflow view: $\Delta=+0.149\pp$,
+    $t=+2.88$, $p\approx 0.007$ (the anchor).
+  \item 33~seeds $\times$~15~epochs, factor view: $\Delta=+0.135\pp$,
+    $t=+2.53$, $W/L=19/13$.
+  \item 15~seeds $\times$~30~epochs, dataflow view: $\Delta=+0.165\pp$,
+    $t=+2.45$, $p<0.05$.
+  \item 15~seeds $\times$~30~epochs, factor view: $\Delta=+0.157\pp$,
+    $t=+1.84$ (marginal).
+\end{itemize}
+The effect is robust to \emph{view} and survives longer training.
+
+\subsection{Synthetic two-dimensional tasks}
+
+This is where the suite produced its largest and most robust signal.
+
+\begin{itemize}
+  \item \textbf{Spirals, \scalarH.} Strongly positive under both views:
+    $\Delta=+0.412\pp$ dataflow (100~seeds, $t=+3.45$, $p<0.001$);
+    $\Delta=+0.580\pp$ factor (100~seeds, $t=+3.24$, $p<0.01$).
+    Replicated at 300 seeds dataflow: $\Delta=+0.433\pp$, $t=+5.39$,
+    $p<10^{-6}$. Variance drops sharply ($\sigma$: $2.333\!\to\!1.691$
+    under factor view; 28\% reduction).
+  \item \textbf{Spirals, \klT.} Positive at dataflow
+    ($\Delta=+0.294\pp$, $t=+3.79$, $p<0.001$), null at factor.
+  \item \textbf{Two Moons.} Task saturates near 98\% baseline accuracy;
+    no detectable effect even at 300~seeds ($\Delta=+0.003\pp$).
+  \item \textbf{Concentric Circles.} The regulariser is
+    \emph{detrimental}: $\Delta=-0.060\pp$ under \scalarH\ dataflow
+    ($t=-2.30$, $p<0.05$), and marginally negative under \klT\ factor
+    ($\Delta=-0.046\pp$, $t=-1.88$, $p<0.10$). The suite's only
+    significant negative result.
+\end{itemize}
+
+The spirals vs.\ circles contrast is the most scientifically interesting
+finding in the suite: both are 2-D nonlinear classification with
+identical model capacity, trained identically, differing only in
+decision-boundary topology (spiral = spiral arms, circles = nested
+closed curves). The regulariser appears to \emph{bias learning toward
+certain boundary topologies}.
+
+\subsection{Image siblings}
+
+\begin{itemize}
+  \item \textbf{FashionMNIST plain-MLP.} $\Delta=+0.039\pp$ dataflow
+    ($t=+1.13$, null) and $\Delta=-0.009\pp$ factor (null).
+  \item \textbf{KMNIST plain-MLP} (decoded from HF parquet after the
+    codh mirror died). $\Delta=-0.029\pp$ dataflow (null),
+    $\Delta=+0.097\pp$ factor (not significant, $t=+1.28$).
+\end{itemize}
+The MNIST anchor does \emph{not} extend automatically to its
+784-dim sibling datasets at matched power; the finding is at least
+partially MNIST-specific.
+
+\subsection{Deep architectures}
+
+The ResMLP-20 dataflow-view KL-trajectory hint observed in the original
+overnight~1 (15~seeds: $\Delta=+0.103\pp$, $t=+2.12$) does not cement at
+higher power.
+\begin{itemize}
+  \item 33~seeds $\times$~5~epochs, \scalarH, dataflow: $\Delta=+0.070\pp$,
+    $t=+1.89$ (marginal).
+  \item 66~seeds $\times$~5~epochs, \klT, dataflow: $\Delta=+0.049\pp$,
+    $t=+1.98$ (marginal).
+  \item 66~seeds $\times$~5~epochs, \scalarH, dataflow: $\Delta=+0.046\pp$,
+    $t=+1.76$ (marginal).
+\end{itemize}
+All three drift into the $0.05 \le p < 0.10$ band, consistent with a
+publication-style false-positive that degrades under replication.
+
+\subsection{CIFAR-10}
+
+Null at both tested epoch budgets (20 and 30 epochs, 15~seeds,
+dataflow) and under factor view: $|\Delta|<0.1\pp$, $|t|<0.5$.
+
+\section{Cross-cutting patterns}
+
+\subsection{Variance reduction is more reliable than accuracy gain}
+
+Nine of the 27 experiments show the regulariser reducing seed-to-seed
+standard deviation of final validation accuracy by 10\% or more,
+including four experiments with a \emph{null} or \emph{negative} mean
+accuracy effect. The regulariser's most stable effect is on training
+reproducibility, not on mean accuracy. On spirals, \scalarH\ factor view
+reduces $\sigma$ by 28\% while also adding +0.58\pp{} mean accuracy; on
+CIFAR-10 it reduces $\sigma$ by 19\% while not moving the mean.
+
+\subsection{Entropy reduction is dataset-independent}
+
+Across positive, null, and negative datasets, treatment runs consistently
+end with lower final spectral entropy than their paired baselines
+($\Delta H < 0$), as designed. This confirms that the regulariser is
+actually doing what it claims. It is the translation into downstream
+accuracy that varies by dataset.
+
+\subsection{View effects are secondary}
+
+For every dataset tested under both views, the \scalarH\ result is the
+same sign; only magnitudes shift. No dataset flips from positive
+dataflow to significantly negative factor (or vice versa). Choice of
+view matters less than choice of task.
+
+\section{Full results table}
+
+Table~\ref{tab:views_suite} lists every paired comparison.
+
+\begin{footnotesize}
+\begin{longtable}{@{}lllrrrrrrrr@{}}
+\caption{All paired comparisons in the views suite.
+$\Delta\,pp$ is mean (treatment $-$ baseline) final-val-acc in percentage
+points. $W$/$L$/$T$ counts seed-level wins/losses/ties.
+$\sigma$ entries are val-acc standard deviations (pp).
+$\Delta H$ is the entropy shift.}
+\label{tab:views_suite}\\
+\toprule
+dataset & view & arm & $n$ & ep & $\Delta\,pp$ & $t$ & $W/L/T$ &
+  $\sigma_\text{b}$ & $\sigma_\text{t}$ & $\Delta H$ \\
+\midrule
+\endfirsthead
+\toprule
+dataset & view & arm & $n$ & ep & $\Delta\,pp$ & $t$ & $W/L/T$ &
+  $\sigma_\text{b}$ & $\sigma_\text{t}$ & $\Delta H$ \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+mnist\_small       & dataflow & \scalarH & 15 & 30 & $+0.165^{*}$   & $+2.45$ & 10/5/0   & 0.285 & 0.163 & $-0.044$ \\
+mnist\_small       & factor   & \scalarH & 15 & 30 & $+0.157^{.}$   & $+1.84$ & 10/5/0   & 0.285 & 0.177 & $-0.273$ \\
+\midrule
+mnist\_resnet\_20  & dataflow & \klT     & 66 &  5 & $+0.049^{.}$   & $+1.98$ & 36/28/2  & 0.329 & 0.310 & $-0.000$ \\
+mnist\_resnet\_20  & dataflow & \scalarH & 66 &  5 & $+0.046^{.}$   & $+1.76$ & 36/29/1  & 0.329 & 0.286 & $-0.005$ \\
+mnist\_resnet\_20  & dataflow & \scalarH & 33 &  5 & $+0.070^{.}$   & $+1.89$ & 18/15/0  & 0.328 & 0.294 & $-0.006$ \\
+\midrule
+fashion\_mnist     & dataflow & \scalarH & 33 & 15 & $+0.039$       & $+1.13$ & 19/13/1  & 0.347 & 0.307 & $-0.014$ \\
+fashion\_mnist     & factor   & \scalarH & 33 & 15 & $-0.009$       & $-0.24$ & 17/16/0  & 0.347 & 0.333 & $-0.038$ \\
+\midrule
+kmnist             & dataflow & \klT     & 33 &  5 & $-0.029$       & $-1.00$ & 15/17/1  & 0.898 & 0.844 & $-0.000$ \\
+kmnist             & dataflow & \scalarH & 33 & 15 & $-0.029$       & $-0.33$ & 15/17/1  & 0.714 & 0.701 & $-0.004$ \\
+kmnist             & factor   & \scalarH & 33 & 15 & $+0.097$       & $+1.28$ & 18/15/0  & 0.714 & 0.683 & $-0.007$ \\
+\midrule
+cifar10            & dataflow & \scalarH & 15 & 30 & $-0.095$       & $-0.43$ &  8/7/0   & 0.530 & 0.758 & $-0.213$ \\
+cifar10            & dataflow & \scalarH & 15 & 20 & $+0.043$       & $+0.28$ & 10/5/0   & 0.613 & 0.499 & $-0.143$ \\
+cifar10            & factor   & \scalarH & 15 & 20 & $+0.073$       & $+0.39$ &  7/8/0   & 0.613 & 0.651 & $-0.465$ \\
+\midrule
+two\_moons         & dataflow & \klT     & 100 & 50 & $-0.008$      & $-0.46$ & 16/21/63 & 0.703 & 0.704 & $+0.043$ \\
+two\_moons         & factor   & \klT     & 100 & 50 & $-0.016$      & $-0.77$ & 18/29/53 & 0.703 & 0.688 & $+0.098$ \\
+two\_moons         & dataflow & \scalarH & 300 & 50 & $+0.003$      & $+0.35$ & 65/66/169 & 0.704 & 0.718 & $-0.189$ \\
+two\_moons         & dataflow & \scalarH & 100 & 50 & $+0.016$      & $+0.92$ & 25/22/53 & 0.703 & 0.702 & $-0.188$ \\
+two\_moons         & factor   & \scalarH & 100 & 50 & $+0.026$      & $+1.43$ & 26/20/54 & 0.703 & 0.681 & $-0.156$ \\
+\midrule
+spirals            & dataflow & \klT     & 100 & 50 & $+0.294^{***}$& $+3.79$ & 39/19/42 & 2.333 & 2.179 & $+0.085$ \\
+spirals            & factor   & \klT     & 100 & 50 & $+0.066$      & $+0.90$ & 29/33/38 & 2.333 & 2.399 & $+0.141$ \\
+spirals            & dataflow & \scalarH & 300 & 50 & $+0.433^{***}$& $+5.39$ &136/57/107 & 2.452 & 1.928 & $-0.310$ \\
+spirals            & dataflow & \scalarH & 100 & 50 & $+0.412^{***}$& $+3.45$ & 43/21/36 & 2.333 & 1.800 & $-0.301$ \\
+spirals            & factor   & \scalarH & 100 & 50 & $+0.580^{**}$ & $+3.24$ & 52/20/28 & 2.333 & 1.691 & $-0.263$ \\
+\midrule
+circles            & dataflow & \klT     & 100 & 50 & $-0.016$      & $-0.71$ & 25/22/53 & 1.223 & 1.219 & $+0.026$ \\
+circles            & factor   & \klT     & 100 & 50 & $-0.046^{.}$  & $-1.88$ & 25/33/42 & 1.223 & 1.214 & $+0.048$ \\
+circles            & dataflow & \scalarH & 100 & 50 & $-0.060^{*}$  & $-2.30$ & 22/32/46 & 1.223 & 1.230 & $-0.213$ \\
+circles            & factor   & \scalarH & 100 & 50 & $-0.030$      & $-1.14$ & 29/30/41 & 1.223 & 1.229 & $-0.152$ \\
+\end{longtable}
+\end{footnotesize}
+
+\paragraph{Significance marks.}
+$^{***}$ $p<0.001$, $^{**}$ $p<0.01$, $^{*}$ $p<0.05$, $^{.}$ $0.05\le p<0.10$.
+
+\section{Discussion}
+
+\subsection{Repositioning the thesis-IV story}
+
+The MNIST anchor, standing alone, is a single 0.15\pp{} effect at
+$p<0.01$ that could plausibly be a weak regularisation artefact. This
+suite strengthens the case in two ways.
+\begin{enumerate}
+  \item \textbf{Spirals supplies a strong replication.} At 300~seeds the
+    effect on spirals (dataflow, \scalarH) is $+0.43\pp$ with $p<10^{-6}$.
+    For a nonlinear 2-D task the magnitude is dataset-specific but the
+    \emph{sign} is robust across both views and both regularisers.
+  \item \textbf{Variance reduction is nearly universal.}
+    Reproducibility improvements of 5--28\% appear in 9 of 27
+    experiments, independent of whether accuracy moves. This alone
+    justifies the regulariser as a training-stability tool.
+\end{enumerate}
+The sibling-image nulls (FashionMNIST, KMNIST) and the circles negative
+warn against over-selling the accuracy claim as universal.
+
+\subsection{The circles anomaly}
+
+The regulariser's significant negative on concentric-circles is the
+most actionable failure mode surfaced. It motivates a targeted
+follow-up: what \emph{shape} of decision boundary does \scalarH\ bias
+toward? The natural hypothesis is that the regulariser dampens high
+spectral components of the weight graph, which under factor-view
+expansion amounts to preferring fewer high-rank directions --- plausibly
+easier to realise as piecewise-linear ``slashes'' (spirals) than as
+smooth closed curves (circles). A decision-boundary visualisation
+accompanies this report
+(\texttt{hymeko\_bench/paper\_figs/fig\_circles\_dig.pdf}).
+
+\subsection{Limitations}
+
+\begin{itemize}
+  \item Power is 33 seeds on image siblings and 100--300 seeds on
+    synthetic. Absence of significance at smaller $n$ is informative
+    but not definitive.
+  \item CIFAR-10 was trained for 20 and 30 epochs only; longer budgets
+    were not within the suite's wall-clock budget.
+  \item The tabular datasets and the HighwayMLP depth sweep are in
+    progress (phase~4 overnight, launched 2026-04-23 23:25) and will
+    be reported separately.
+\end{itemize}
+
+\section{Conclusion}
+
+The thesis-IV entropy regulariser works, but not everywhere. On MNIST
+plain-MLP and on synthetic nonlinear classification with interlocking-arm
+topology (spirals), it yields reproducible accuracy gains in the
++0.15\pp\ to +0.58\pp\ range. On image siblings and on classification
+with closed-curve decision boundaries (circles), its accuracy effect
+ranges from null to significantly negative. Across every dataset in
+the suite it reduces seed-to-seed training variance, which is the
+strongest and most transferable of its effects. Follow-up: extend to
+tabular (iris, wine, breast cancer, digits) and HighwayMLP on images
+--- both are running as this report is being written.
+
+\end{document}

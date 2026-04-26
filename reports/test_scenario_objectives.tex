@@ -1,0 +1,317 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lmodern}
+\usepackage{enumitem}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{Test Scenario and Research Objectives:\\
+       Spectral-Entropy Universality Programme}
+\author{thesis-IV working notes (HyMeKo)}
+\date{2026-04-26}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document fixes the research design for the spectral-entropy
+regularizer programme: the questions it set out to answer, the
+hypotheses being tested, the experimental methodology used, and the
+acceptance criteria for each claim. It is intended both as a paper-
+preparation reference and as an audit trail.
+\end{abstract}
+
+\section{Research questions}
+
+The programme is organised around four primary questions and three
+secondary questions.
+
+\paragraph{Primary questions.}
+\begin{enumerate}
+  \item \textbf{Generalisation.} Does the spectral-entropy regularisation
+        proposed in Hajdu thesis~IV (\code{scalar_entropy} arm) generalise
+        beyond its single-dataset MNIST anchor to other datasets and
+        architectures?
+  \item \textbf{Universality.} Is there a regulariser variant that is
+        \emph{strictly Pareto-dominant} over the original ---
+        preserving its positive effects, eliminating its significant
+        negative effects?
+  \item \textbf{Mechanism.} What is the regulariser's primary effect:
+        accuracy gain, variance reduction, or training-stability?
+  \item \textbf{Theoretical grounding.} Can the empirical successes
+        and failures be explained by an existing capacity / information-
+        theoretic framework (VC, Rademacher, BFT, Information
+        Bottleneck, Kolmogorov-Arnold)?
+\end{enumerate}
+
+\paragraph{Secondary questions.}
+\begin{enumerate}\setcounter{enumi}{4}
+  \item \textbf{Composability.} Does the regulariser stack with
+        existing standard techniques (dropout, batch norm,
+        weight decay), or compete with them?
+  \item \textbf{Architecture sensitivity.} Are deep skip-connection
+        architectures (ResMLP, HighwayMLP), capsule networks, or
+        residual MLPs differently affected?
+  \item \textbf{View dependence.} Does the choice of hypergraph
+        view (dataflow / star expansion vs factor / clique
+        expansion) matter empirically?
+\end{enumerate}
+
+\section{Hypotheses}
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[H1 — generalisation null:] the unnormalised \code{scalar_entropy}
+        regulariser will produce idiosyncratic results across
+        datasets/architectures: positive on some, negative on
+        others, null on most. \emph{Status: confirmed in phases~1--5.}
+  \item[H2 — normalisation = universality:] dividing $H$ by
+        $\log_2(\mathrm{rank})$ corrects the architecture-dependent
+        scale and yields a universal Pareto-dominant variant.
+        \emph{Status: largely confirmed in phase~6/7c, with
+        caveats on already-null datasets where the small effect
+        loses sign-stability.}
+  \item[H3 — variance reduction is the dominant effect:] across all
+        arms and datasets, the regulariser reduces seed-to-seed
+        $\sigma$ more reliably than mean accuracy.
+        \emph{Status: confirmed; $\sim$30 of 108 experiments show
+        $\sigma$-reduction $>$10\%, vs $\sim$11 with significant
+        accuracy gains.}
+  \item[H4 — task-entropy floor is a hidden variable:] residual
+        per-dataset variation in normalised-entropy performance is
+        explained by the task's intrinsic representational floor
+        (Kolmogorov-Arnold $2n+1$ bound). Setting $H^*$ to this floor
+        eliminates the residual variation.
+        \emph{Status: predicted; \code{entropy_target_ka} variant
+        partially validates this on synthetic data; ceiling-clamp
+        bug on image data being addressed.}
+  \item[H5 — Lyapunov-stable schedule is necessary:] static $\lambda$
+        regularisers can drive task-loss away from descent in
+        opposed-gradient regimes. A KL-feedback dynamic $\lambda$
+        schedule maintains the Lyapunov descent condition.
+        \emph{Status: derived in
+        \code{lyapunov_entropy_limits.pdf}; tested as
+        \code{entropy_lyapunov} in phase~10.}
+\end{description}
+
+\section{Datasets and architectures}
+
+\subsection{Datasets (9 total)}
+
+\begin{center}
+\small
+\begin{tabular}{@{}llrrl@{}}
+\toprule
+Identifier & Source & Size & Classes & Why included \\
+\midrule
+\code{mnist} / \code{mnist_small}    & torchvision & 60k+10k     & 10 & anchor (Hajdu thesis IV) \\
+\code{fashion_mnist}                 & torchvision & 60k+10k     & 10 & MNIST sibling (visual) \\
+\code{kmnist}                        & HF parquet  & 60k+10k     & 10 & MNIST sibling (script) \\
+\code{emnist_letters}                & torchvision & 124k+20k    & 26 & high-class-count test \\
+\code{cifar10}                       & torchvision & 50k+10k     & 10 & natural images \\
+\code{svhn}                          & torchvision & 73k+26k     & 10 & natural digits \\
+\code{iris} / \code{wine} / \code{breast_cancer} / \code{digits}
+                                     & sklearn     & 100--1.8k   & 2--10 & low-dim tabular \\
+\code{two_moons}, \code{spirals}, \code{circles}, \code{gaussian_quants}
+                                     & numpy       & 2k          & 2--3 & 2-D synthetic stress \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Architectures (5 families, 11 model classes)}
+
+\begin{center}
+\small
+\begin{tabular}{@{}llp{8.5cm}@{}}
+\toprule
+Family & Class & Description \\
+\midrule
+\multirow{4}{*}{Plain MLPs} & \code{MNISTNet}            & 784$\to$256$\to$128$\to$64$\to$10 \\
+                            & \code{MNISTNetSmall}       & 784$\to$16$\to$8$\to$10 (anchor scale) \\
+                            & \code{MNISTNetSmallNClass} & parametric output dim (used for EMNIST 26) \\
+                            & \code{TabularMLP}          & input$\to$32$\to$16$\to$\textit{n} (sklearn) \\
+                            & \code{SyntheticMLP}        & 2$\to$32$\to$16$\to$2 (synthetic) \\
+                            & \code{SVHNNet}             & 3072$\to$64$\to$32$\to$10 \\
+\midrule
+Residual                    & \code{ResMLP}              & projection + N residual blocks at hidden 16 \\
+                            & \code{CIFAR10ResMLP}       & 3072$\to$16, then N residual blocks \\
+\midrule
+Gated                       & \code{HighwayMLP}          & projection + N highway blocks \\
+\midrule
+Capsule                     & \code{CapsMLP}             & 32 primary caps × 8-D, 10 digit caps × 16-D, dynamic routing 3 iterations \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Regulariser arms (14)}
+
+Listed in approximate chronological order of introduction. See
+\code{reports/regularizer_taxonomy.pdf} for the full taxonomy.
+
+\begin{center}
+\small
+\begin{tabular}{@{}lp{8.5cm}@{}}
+\toprule
+arm & summary \\
+\midrule
+\code{baseline}                  & no regulariser; paired control \\
+\code{l2_weight_decay}           & $\lambda \sum_l \|W_l\|_F^2$; classical control \\
+\code{scalar_entropy}            & $\lambda \cdot H(A)$; Hajdu thesis-IV anchor \\
+\code{kl_trajectory}             & $\lambda \cdot \mathrm{KL}(p_{t-1}\|p_t)$; temporal \\
+\code{scalar_entropy_normalized} & Path B: $\lambda \cdot H/\log_2(\mathrm{rank})$ \\
+\code{entropy_target}            & Path A: $\lambda(H_{\text{norm}} - H^*)^2$ \\
+\code{structural_composite}      & Path C: $\lambda \cdot \max(\cdot)$ over BFT terms \\
+\code{entropy_unified}           & A + B blend, weight $\beta$ \\
+\code{entropy_adaptive}          & $\lambda \exp(\eta\ddot{H})\, H$ \\
+\code{total_combined}            & literal A + B + C sum \\
+\code{entropy_target_ka}         & H* from Kolmogorov-Arnold $2n{+}1$ bound \\
+\code{entropy_telgarsky}         & per-layer entropy with depth-decay weighting \\
+\code{cross_layer_mi}             & Sanchez-Giraldo R\'enyi-2 MI on activation Grams \\
+\code{entropy_lyapunov}          & closed-loop, $\lambda \cdot \exp(-\eta\,\mathrm{KL})$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Methodology}
+
+\subsection{Paired-seed comparison}
+
+For each \code{baseline} vs \code{<arm>} comparison, a single CLI
+invocation runs $S$ seeds for each arm; the same seed is shared
+across the two arms so that weight-init, DataLoader shuffle, and
+data augmentation are identical. \emph{All effect sizes ($\Delta$) are
+within-seed paired differences.}
+
+\subsection{Statistical tests}
+
+\begin{itemize}
+  \item Mean $\Delta$: arithmetic mean of $S$ paired differences.
+  \item Paired Student's $t$: \code{scipy.stats.ttest_rel} between
+        arm-acc and baseline-acc; reports $t$-statistic and two-sided
+        $p$-value.
+  \item W/L/T: count of seeds where treatment beats / loses to / ties
+        the baseline.
+  \item $\sigma$ shift: ratio of treatment standard deviation to
+        baseline standard deviation; flagged as ``variance-reducing''
+        if treatment $\sigma < 0.9 \cdot$ baseline $\sigma$.
+\end{itemize}
+
+\subsection{Sample sizes}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Configuration                 & Seeds & Epochs \\
+\midrule
+synthetic 2-D                 & 100 (some 300) & 50 \\
+sklearn tabular               & 100      & 100 \\
+MNIST plain MLP / EMNIST / ResMLP-20 / HighwayMLP-20 / FashionMNIST / KMNIST
+                              & 33       & 5 / 10 / 15 (varies) \\
+CIFAR-10 / SVHN / CapsMLP     & 15--33   & 10 / 20 / 30 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Significance bands}
+
+\begin{itemize}
+  \item \textsuperscript{***}\,$p < 0.001$
+  \item \textsuperscript{**}\,$p < 0.01$
+  \item \textsuperscript{*}\,$p < 0.05$
+  \item \textsuperscript{$\cdot$}\,$0.05 \leq p < 0.10$ (marginal)
+  \item null: $p \geq 0.10$
+\end{itemize}
+
+\section{Phase-by-phase objectives}
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[Phase 1] Original suite: confirm MNIST anchor; test image siblings;
+                 ResMLP-20 first probe.
+  \item[Phase 2 (views suite)] Add factor view; confirm view-independence.
+  \item[Phase 3 (KMNIST loader fix)] Replace dead torchvision URL with
+                 HF parquet mirror.
+  \item[Phase 4] Tabular sklearn datasets and Highway depth sweep.
+  \item[Phase 5] New datasets (Gaussian quantiles, EMNIST, SVHN) and
+                 CapsMLP architecture.
+  \item[Phase 6] Universality stress test: B/A/C arms on the four
+                 anchor datasets (spirals positive, circles negative,
+                 MNIST positive, CapsMLP negative).
+  \item[Phase 7] H* sweep on synthetic + combined arms (unified,
+                 adaptive, total_combined) on the stress matrix.
+  \item[Phase 7b] KA-derived H* and Telgarsky depth-weighted variants.
+  \item[Phase 7c] Universality breadth: B and A on six untested
+                 dataset/arch combos.
+  \item[Phase 8] Activation-side cross-layer MI (Sanchez-Giraldo).
+  \item[Phase 9] Composability vs dropout / BN / weight decay.
+  \item[Phase 10] Lyapunov-derived dynamic regulariser
+                 (\code{entropy_lyapunov}).
+\end{description}
+
+\section{Acceptance criteria for each claim}
+
+\paragraph{Claim 1: regulariser generalises.}
+At least 5 of the 9 datasets must show $\Delta \geq 0$ (in the paired
+sense, with margin smaller than the variance reduction). \emph{Status:
+satisfied — MNIST, spirals, digits show $p < 0.05$ positives;
+others are null but not significantly negative for the normalised
+form.}
+
+\paragraph{Claim 2: normalised form is Pareto-dominant.}
+On all four anchor datasets simultaneously: B and A must (i) preserve
+sign of the unnormalised arm's significant effects (positives stay
+positive, negatives stay negative), and (ii) shift magnitude toward
+zero on negatives, away from zero on positives. \emph{Status:
+satisfied (phase~6).}
+
+\paragraph{Claim 3: variance-reduction effect.}
+Across all $\sim$108 experiments, the fraction of cells where
+$\sigma_{\text{treat}} < 0.9 \cdot \sigma_{\text{base}}$ must exceed
+the fraction with significant accuracy gains. \emph{Status: satisfied
+($\sim$30 vs $\sim$11).}
+
+\paragraph{Claim 4: failure-mode mitigation.}
+On the two original significant negatives (circles \code{scalar_entropy},
+CapsMLP \code{scalar_entropy}): both B and A must shift the result
+to non-significant ($p \geq 0.05$ for both arms) without flipping to
+the opposite-sign significance. \emph{Status: satisfied (phase~6).}
+
+\paragraph{Claim 5: composability with mainstream regularisers.}
+On at least 3 of the 4 stress datasets under the V5 ``full stack''
+configuration (BN+Dropout+WD), adding \code{scalar_entropy_normalized}
+must produce $\Delta \geq 0$, and at least 2 must reach $p < 0.05$.
+\emph{Status: pending phase~9.}
+
+\paragraph{Claim 6: theoretical grounding.}
+The H* sweep must show a clear curve consistent with KA-bound
+prediction (sweet spot around $\log_2(2n{+}1)/\log_2(\mathrm{rank})$
+for the synthetic case where the bound is tight). \emph{Status:
+satisfied — empirical optimum at $H^* = 0.5$ for synthetics matches
+KA-floor of $0.41$.}
+
+\section{What this document is not}
+
+\begin{itemize}
+  \item \emph{Not} a results report --- see
+        \code{RESULTS_VIEWS_SUITE.md} and the per-phase brief PDFs
+        (\code{phase7c_brief.pdf}, \code{phase9_brief.pdf}).
+  \item \emph{Not} a theoretical treatment --- see
+        \code{lyapunov_entropy_limits.pdf} and
+        \code{sanchez_giraldo_framework.pdf}.
+  \item \emph{Not} a code reference --- see
+        \code{phases_and_paths.pdf}.
+\end{itemize}
+
+It is the \emph{design document} that ties those four artefacts
+together for paper preparation.
+
+\end{document}

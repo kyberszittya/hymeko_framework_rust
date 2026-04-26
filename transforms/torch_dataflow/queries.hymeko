@@ -2,9 +2,21 @@ torch_dataflow_transform {}
 context
 {
     // All layer hypervertices (any decl inheriting from meta_layer).
-    // The dataflow view ignores their inner bodies; only their
-    // top-level fields (d_in, d_out, ggk reference) are read.
+    // Kept for backward compatibility / inspection; per-kind queries
+    // below drive the per-class emission in template.py.
     layers:  meta_layer {}
+
+    // ── Per-kind layer collections (Tier 1 + Tier 2) ───────────────
+    // The template iterates each collection separately so each
+    // layer class emits the right PyTorch primitive. A given layer
+    // appears in `layers` AND its specific collection.
+    hg_conv_layers:    hypergraph_conv {}
+    linear_layers:     linear_layer {}
+    relu_layers:       relu_layer {}
+    sigmoid_layers:    sigmoid_layer {}
+    tanh_layers:       tanh_layer {}
+    residual_blocks:   residual_block {}
+    highway_blocks:    highway_block {}
 
     // Tensors of any role (input / activation / output).
     tensors: meta_tensor {}
@@ -13,8 +25,5 @@ context
     @flows:  dataflow {}
 
     // Output tensors only — used to emit the return statement.
-    // Uses the disambiguated `t_output` name to avoid collisions with
-    // `ports.output` and `neurons.output` (HyMeKo's inheritance walker
-    // matches by short name).
     outputs: t_output {}
 }

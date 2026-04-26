@@ -56,6 +56,40 @@ class HypergraphConv(nn.Module):
         return self.linear(x)
 
 
+class ResidualBlock(nn.Module):
+    """Tier-2 composite block: y = x + Linear(ReLU(Linear(x))).
+    `hidden` sets the input/output dimension (must match for the
+    additive skip). Shipped here so HyMeKo descriptions referencing
+    `residual_block` instantiate cleanly via the codegen path.
+    """
+    def __init__(self, hidden: int):
+        super().__init__()
+        self.hidden = hidden
+        self.l0 = nn.Linear(hidden, hidden)
+        self.l1 = nn.Linear(hidden, hidden)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = torch.relu(self.l0(x))
+        return x + self.l1(h)
+
+
+class HighwayBlock(nn.Module):
+    """Tier-2 composite block: highway network unit.
+    y = T(x) ⊙ F(x) + (1 − T(x)) ⊙ x  with T learnt sigmoid gate
+    and F a single Linear+ReLU.
+    """
+    def __init__(self, hidden: int):
+        super().__init__()
+        self.hidden = hidden
+        self.transform = nn.Linear(hidden, hidden)
+        self.gate = nn.Linear(hidden, hidden)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        t = torch.sigmoid(self.gate(x))
+        f = torch.relu(self.transform(x))
+        return t * f + (1.0 - t) * x
+
+
 def build_incidence(*args, **kwargs) -> torch.Tensor:
     """Stub for the factor-view incidence builder.
 
@@ -77,6 +111,7 @@ from .hotswap import (
 
 __all__ = [
     "GGKSpec", "HypergraphConv", "build_incidence",
+    "ResidualBlock", "HighwayBlock",
     "SplitProposal", "load_proposal", "ClusterTag",
     "TransferReport", "transfer_compatible_weights",
     "reinfer_structure_and_rebuild",

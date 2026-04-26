@@ -1,0 +1,347 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lmodern}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=blue}
+
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+
+\title{A Cross-Layer Mutual-Information Extension\\[2pt]
+       via Matrix-Based R\'enyi Entropy}
+\author{thesis-IV working notes (HyMeKo)}
+\date{2026-04-26}
+
+\newcommand{\trace}{\operatorname{tr}}
+\newcommand{\Khat}{\hat{K}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We formalise the cross-layer mutual-information regulariser proposed as
+Path~F of the universality programme. Using the matrix-based R\'enyi-$\alpha$
+entropy framework of Sanchez-Giraldo, Rao, and Principe, we show that
+four extensions of the existing scalar-spectral-entropy regulariser
+(temporal-conditional, cross-layer mutual information, joint view
+entropy, and matrix-based information bottleneck) are all instances of
+a single primitive: the joint of two trace-normalised activation Gram
+matrices via Hadamard product. The $\alpha=2$ collision-entropy form
+admits a closed-form, eigendecomposition-free, batch-quadratic estimator
+and is differentiable through standard autograd. Three falsifiable
+predictions for the phase-8 empirical test conclude.
+\end{abstract}
+
+\section{Motivation}
+
+The nine entropy regularisers tested in phases 1--7b all use
+\emph{marginal} spectral entropy at a single timestep. Specifically, for
+layer weights $W$ with adjacency $A$ and normalised-Laplacian eigenvalues
+$\{\lambda_i\}$,
+\[
+H_{\text{marg}}(A) = -\sum p_i \log p_i,
+\qquad p_i = \lambda_i / \textstyle\sum_j \lambda_j .
+\]
+This captures \emph{how spread out} the weight spectrum is, but never:
+\begin{itemize}
+  \item the \textbf{joint} distribution across layers $H(W_i, W_j)$,
+  \item the \textbf{conditional} distribution across time
+        $H(W_t \mid W_{t-1})$,
+  \item or the \textbf{mutual information} between any of those.
+\end{itemize}
+Phases~6 and~7 demonstrated that a single normalisation
+(\texttt{scalar\_entropy\_normalized}, Path~B) and target-entropy
+formulation (\texttt{entropy\_target}, Path~A) achieve universality on a
+4-dataset stress matrix (spirals, circles, MNIST plain MLP, CapsMLP MNIST),
+but neither addresses the structural hypothesis that \emph{layers may be
+redundant with each other} and that decorrelating them might be a stronger
+universality lever than tuning a single scalar target.
+
+This note develops a single quantity --- the matrix-based R\'enyi-$\alpha$
+mutual information between activation Gram matrices of two layers --- which
+subsumes the four extension paths under one definition.
+
+\section{Setup and notation}
+
+Let $M : \mathbb{R}^d \to \mathbb{R}^c$ be a feedforward network with $L$
+layers parameterised by weights $W_1, \dots, W_L$. Let $X \in
+\mathbb{R}^{B \times d}$ be a batch of $B$ input examples. Define the
+per-layer activation tensor
+\[
+a_l \;=\; \varphi_l\bigl( W_l\, \varphi_{l-1}(\cdots W_1 X^\top) \bigr)^\top
+   \;\in\; \mathbb{R}^{B \times d_l},
+\]
+i.e.\ the post-non-linearity output of layer~$l$ evaluated on $X$.
+
+Construct the \textbf{sample-side Gram matrix} of layer~$l$,
+\[
+K_l(X) = a_l a_l^\top \in \mathbb{R}^{B \times B},  \tag{1}
+\]
+normalised so trace is~1,
+\[
+\Khat_l = K_l / \trace(K_l), \qquad \trace(\Khat_l) = 1. \tag{2}
+\]
+$\Khat_l$ is symmetric positive semi-definite and trace-$1$; equivalently,
+its eigenvalue distribution $\{\mu_i^{(l)}\}$ is a valid probability mass
+function on $B$ outcomes.
+
+\section{Matrix-based R\'enyi-$\alpha$ entropy}
+
+For $\alpha > 0$, $\alpha \neq 1$, define
+\begin{equation}
+H_\alpha(\Khat) \;=\; \frac{1}{1-\alpha} \log \sum_i \mu_i^\alpha
+            \;=\; \frac{1}{1-\alpha} \log \trace(\Khat^\alpha).  \tag{3}
+\end{equation}
+
+\paragraph{Special cases.}
+$\alpha \to 1$ recovers the Shannon (von Neumann) entropy
+$H_1(\Khat) = -\sum \mu_i \log \mu_i$.
+
+$\alpha = 2$ gives the \textbf{collision entropy}
+\[
+H_2(\Khat) = -\log \sum_i \mu_i^2 = -\log \trace(\Khat^2).  \tag{4}
+\]
+Equation~(4) is the workhorse: it requires no eigendecomposition, scales
+as $O(B^2)$ from $\trace(\Khat^2) = \sum_{i,j} \Khat_{ij}^2$, and is
+automatically differentiable in any standard autograd framework.
+
+\section{Joint distribution: Hadamard product}
+
+For two trace-$1$ PSD matrices $\Khat_i, \Khat_j \in \mathbb{R}^{B
+\times B}$, define the \textbf{joint matrix} as the entrywise (Hadamard)
+product, normalised:
+\begin{equation}
+\Khat_{ij} \;=\; (\Khat_i \odot \Khat_j) /
+                   \trace(\Khat_i \odot \Khat_j). \tag{5}
+\end{equation}
+
+\begin{lemma}[Schur product theorem]
+$\Khat_i \odot \Khat_j$ is positive semi-definite.
+\end{lemma}
+\begin{proof}[Sketch]
+The Hadamard product of two PSD matrices is PSD; this is the classical
+Schur theorem. Both factors are PSD by construction (eq.~1).
+\end{proof}
+
+\begin{lemma}[Independence factorisation]
+If $\Khat_i$ and $\Khat_j$ correspond to statistically independent
+features over the batch, then $H_\alpha(\Khat_{ij}) = H_\alpha(\Khat_i) +
+H_\alpha(\Khat_j)$.
+\end{lemma}
+\begin{proof}[Sketch]
+Direct manipulation of $\trace(\Khat^\alpha)$ using
+spectral-factor independence; full proof in Sanchez-Giraldo et al.\
+(2014), Theorem~5.
+\end{proof}
+
+\section{Cross-layer mutual information}
+
+Define
+\begin{equation}
+I_\alpha(\Khat_i ; \Khat_j) \;=\; H_\alpha(\Khat_i) + H_\alpha(\Khat_j)
+                                  - H_\alpha(\Khat_{ij}). \tag{6}
+\end{equation}
+
+\begin{theorem}[Sanchez-Giraldo, Theorem~6]
+For $\alpha \in (0,1) \cup (1, \infty)$, $I_\alpha(\Khat_i ; \Khat_j)
+\geq 0$, with equality iff $\Khat_{ij} = \Khat_i \odot \Khat_j$ holds in
+the independence-factorisation sense.
+\end{theorem}
+\begin{proof}[Sketch]
+Apply the log-sum inequality to the spectrum of $\Khat_{ij}$ relative
+to the product of marginal spectra. The Hadamard product satisfies
+\[
+\trace\bigl((\Khat_i \odot \Khat_j)^\alpha\bigr)
+   \;\leq\; \trace(\Khat_i^\alpha)^{1/2} \cdot \trace(\Khat_j^\alpha)^{1/2}
+\]
+(Cauchy-Schwarz on traces); rearranging gives the bound.
+\end{proof}
+
+\paragraph{Properties.}
+\begin{itemize}
+  \item Symmetry: $I_\alpha(\Khat_i ; \Khat_j) = I_\alpha(\Khat_j ; \Khat_i)$
+        --- immediate from Hadamard commutativity.
+  \item Boundedness: $0 \leq I_\alpha(\Khat_i ; \Khat_j) \leq
+        \min\{H_\alpha(\Khat_i), H_\alpha(\Khat_j)\}$.
+\end{itemize}
+
+\section{Conditional entropy}
+
+Define
+\begin{equation}
+H_\alpha(\Khat_j \mid \Khat_i)
+   \;=\; H_\alpha(\Khat_{ij}) - H_\alpha(\Khat_i). \tag{7}
+\end{equation}
+
+\paragraph{Key properties.}
+\begin{itemize}
+  \item $H_\alpha(\Khat_j \mid \Khat_i) \geq 0$.
+  \item $H_\alpha(\Khat_j \mid \Khat_i) = H_\alpha(\Khat_j) -
+        I_\alpha(\Khat_i ; \Khat_j)$ (chain rule).
+  \item Chain rule recovers eq.~(6).
+\end{itemize}
+
+\section{Differentiability and computational complexity}
+
+\paragraph{Differentiability.} With $\alpha = 2$,
+\[
+H_2(\Khat) = -\log \trace(\Khat^2),
+\quad \trace(\Khat^2) = \sum_{i,j} \Khat_{ij}^2,
+\quad \Khat = (a a^\top) / \trace(a a^\top).
+\]
+Each operation is a smooth function of the activations $a$, hence of the
+weights through the chain rule. Standard autograd handles this without
+manual derivatives.
+
+For $\alpha \neq 2$ we need eigenvalues; \texttt{torch.linalg.eigvalsh}
+provides gradients via the Bunch-Lehmberger formula on symmetric inputs.
+
+\paragraph{Computational cost per regulariser-update step.}
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Step & Cost \\
+\midrule
+Compute $\Khat_l$ for one layer            & $O(B^2 d_l)$ \\
+Compute $H_2(\Khat_l)$ per layer            & $O(B^2)$ \\
+Compute $\Khat_{ij}$ per pair               & $O(B^2)$ \\
+Compute $H_2(\Khat_{ij})$ per pair          & $O(B^2)$ \\
+Number of pairs                             & $L(L{-}1)/2$ \\
+\midrule
+\textbf{Total at $\alpha = 2$}              & $\bm{O(L^2 B^2)}$ per step \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For our setups $B = 128$ and $L \in \{3, \dots, 21\}$ this is
+${<}1$\,ms on GPU per regulariser update.
+
+\section{The four extensions, unified}
+
+\paragraph{Path~E --- temporal conditional entropy.}
+For batch $X$ shared across consecutive regulariser updates with
+layer-$l$ Gram $\Khat_l^{(t)}$ and $\Khat_l^{(t-1)}$,
+\[
+\mathcal{L}_E = \lambda \cdot H_\alpha\bigl(\Khat_l^{(t)} \,\big|\,
+                                                \Khat_l^{(t-1)}\bigr).
+\]
+Penalises \emph{novel} layer information per step.
+
+\paragraph{Path~F --- cross-layer mutual information.}
+\[
+\mathcal{L}_F = \lambda \cdot \sum_{i < j} I_\alpha(\Khat_i ; \Khat_j).
+\]
+Penalises redundancy between layers; encourages each layer to encode
+information not already in its predecessors.
+
+\paragraph{Path~G --- joint view entropy.}
+For dataflow- and factor-view adjacencies $K_{\text{df}}, K_{\text{ft}}$,
+\[
+\mathcal{L}_G = \lambda \cdot H_\alpha
+                \bigl(\Khat_{\text{df}} \odot \Khat_{\text{ft}}\bigr).
+\]
+Removes the user's choice of view.
+
+\paragraph{Path~H --- information bottleneck.}
+For input/target batches with Gram $\Khat_X, \Khat_Y$ and a hidden
+representation $T = a_l(X)$ with Gram $\Khat_T$,
+\[
+\mathcal{L}_H = \lambda \cdot I_\alpha(\Khat_X ; \Khat_T)
+                - \beta \cdot I_\alpha(\Khat_T ; \Khat_Y).
+\]
+The matrix-based information-bottleneck of Achille and Soatto.
+
+\paragraph{Unification.} Paths E, F, G, H are all functions of the same
+primitive $I_\alpha(\Khat_a ; \Khat_b)$, with differing arguments
+(layer/time/view/data axes). Choosing one implementation gives all four
+extensions for free.
+
+\section{Caveats and design choices}
+
+\begin{enumerate}
+  \item \textbf{Data dependence.} Unlike the existing weight-only
+        regularisers, $\Khat_l$ requires a forward pass. In our training
+        loop this is free (one forward already happens for the task
+        loss). \emph{However}, the regulariser becomes stochastic across
+        mini-batches.
+  \item \textbf{Mini-batch noise mitigation.} Sample a fixed held-out
+        batch $X_{\text{reg}}$ once at training start and compute
+        $\Khat_l(X_{\text{reg}})$. Removes mini-batch fluctuations.
+  \item \textbf{Choice of $\alpha$.} $\alpha = 2$ has the closed-form
+        $-\log \trace(\Khat^2)$ and is the recommended default for
+        compute. Shannon ($\alpha\to1$) is the ``standard'' entropy
+        reviewers expect; we default to $\alpha = 2$ and report
+        Shannon as a sensitivity analysis.
+  \item \textbf{Activation hook point.} Hook \textbf{post-linear,
+        pre-activation} to keep the closest connection to the existing
+        weight-side adjacency; the post-non-linear hook is also
+        defensible and slightly cheaper.
+\end{enumerate}
+
+\section{Hypotheses for empirical testing (phase~8)}
+
+If layer redundancy is the structural cause of the residual negatives
+(circles, CapsMLP) under the original weight-side regulariser, we
+predict:
+\begin{enumerate}
+  \item \textbf{Positive datasets} (spirals, MNIST plain MLP) should
+        have non-negligible cross-layer MI; the MI penalty should
+        preserve the positive sign --- with possibly smaller magnitude
+        than scalar entropy (since MI penalises a different structural
+        quantity).
+  \item \textbf{Negative datasets} (circles, CapsMLP MNIST) should have
+        \emph{higher} cross-layer MI than positives --- the failure mode
+        is layers learning redundant information instead of a
+        distributed code. If this prediction holds, decorrelating via MI
+        penalty should \emph{neutralise} the negatives more cleanly than
+        scalar-entropy normalisation does.
+  \item \textbf{Variance reduction}: the dominant cross-cutting effect
+        of the weight-side family was $\sigma$-reduction in val-acc
+        across seeds. We predict the activation-side MI penalty also
+        reduces $\sigma$, possibly \emph{more strongly} on architectures
+        with redundant pathways (CapsMLP, ResMLP-20).
+\end{enumerate}
+
+A clear pass through these three predictions would justify presenting
+the activation-side framework as the principled refinement of the
+weight-side one in the manuscript.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+\bibitem{sanchezgiraldo2014}
+Sanchez-Giraldo, L., Rao, M., and Principe, J.~C.
+\newblock {\em Measures of Entropy from Data Using Infinitely Divisible
+  Kernels.}
+\newblock IEEE Trans.\ Inform.\ Theory 61(1), 2014.
+
+\bibitem{yu2019}
+Yu, S., Sanchez-Giraldo, L., and Principe, J.~C.
+\newblock {\em Multivariate Extension of Matrix-Based R\'enyi's
+  $\alpha$-Order Entropy Functional.}
+\newblock IEEE Trans.\ PAMI 42(8), 2019.
+
+\bibitem{wickstrom2020}
+Wickstr\o m et al.
+\newblock {\em Information Plane Analysis of Deep Neural Networks via
+  Matrix-Based R\'enyi's Entropy and Tensor Kernels.}
+\newblock JMLR 21, 2020.
+
+\bibitem{achillesoatto2018}
+Achille, A. and Soatto, S.
+\newblock {\em Information Dropout: Learning Optimal Representations
+  Through Noisy Computation.}
+\newblock IEEE Trans.\ PAMI 40(12), 2018.
+
+\bibitem{tishby2015}
+Tishby, N. and Zaslavsky, N.
+\newblock {\em Deep Learning and the Information Bottleneck Principle.}
+\newblock ITW, 2015.
+\end{thebibliography}
+
+\end{document}

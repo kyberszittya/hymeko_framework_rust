@@ -193,6 +193,26 @@ impl PyHypergraphIR {
         generate_sdf(&self.compiled.ir, &self.strings, model_name)
     }
 
+    /// Emit a DOT (Graphviz) serialisation of the signed-incidence
+    /// hypergraph — vertices as ellipses, hyperedges as rounded boxes,
+    /// signed arcs colour-coded (blue +1, red −1, grey ~0). Mirrors the
+    /// browser demo's `to_dot` so Python scripts can produce the same
+    /// artefact. Does NOT go through the workspace `transforms/` dir,
+    /// so the output is deterministic and self-contained.
+    pub fn to_dot(&self, graph_name: &str) -> String {
+        emit_dot_graph(&self.compiled.ir, &self.strings, graph_name)
+    }
+
+    /// JSON snapshot of the compiled IR — graph-viewer-ready shape.
+    /// Top-level keys: `node_count`, `edge_count`, `arc_count`,
+    /// `nodes` (list of decl-Node entries), `edges` (list of decl-Edge
+    /// entries with their signed arc refs). Same schema as the browser
+    /// demo's `snapshot_json()`.
+    pub fn snapshot_json(&self) -> PyResult<String> {
+        emit_snapshot_json(&self.compiled.ir, &self.strings)
+            .map_err(|e| PyValueError::new_err(e))
+    }
+
     // -- Predicate queries --
 
     /// Run a predicate-string query over the IR and return the list of
@@ -326,6 +346,154 @@ fn pred_has_arc_ref(did: DeclId, sign: i8, inner: &str, ir: &Ir, st: &StringTabl
         }
     }
     false
+}
+
+// ================================================
+// DOT emitter — mirrors hymeko_wasm::compile::CompiledDoc::to_dot
+// ================================================
+
+fn dot_escape(s: &str) -> String {
+    s.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn emit_dot_graph(ir: &Ir, st: &StringTable, graph_name: &str) -> String {
+    let mut out = String::with_capacity(4096);
+    out.push_str(&format!("digraph \"{}\" {{\n", dot_escape(graph_name)));
+    out.push_str("  rankdir=LR;\n");
+    out.push_str("  node [fontname=\"Helvetica\"];\n\n");
+
+    for rec in &ir.nodes {
+        let name = st.resolve(ir.decl_nodes[rec.decl.0].name);
+        out.push_str(&format!(
+            "  \"n{}\" [label=\"{}\", shape=ellipse, style=filled, fillcolor=\"#EEF1F5\"];\n",
+            rec.decl.0, dot_escape(name)
+        ));
+    }
+    for rec in &ir.edges {
+        let name = st.resolve(ir.decl_nodes[rec.decl.0].name);
+        out.push_str(&format!(
+            "  \"e{}\" [label=\"{}\", shape=box, style=\"rounded,filled\", fillcolor=\"#D7E4F5\"];\n",
+            rec.decl.0, dot_escape(name)
+        ));
+    }
+    out.push('\n');
+
+    for rec in &ir.edges {
+        let eid_num = rec.decl.0;
+        for &aid in &rec.arcs {
+            for r in &ir.arcs[aid.0].refs {
+                let tgt = r.target();
+                if tgt.is_none() { continue; }
+                let target_is_edge = ir
+                    .decl_nodes
+                    .get(tgt.0)
+                    .map(|d| matches!(d.kind, DeclKind::Edge))
+                    .unwrap_or(false);
+                let tgt_id = if target_is_edge {
+                    format!("e{}", tgt.0)
+                } else {
+                    format!("n{}", tgt.0)
+                };
+                let (color, arrowhead, penwidth) = match r.sign() {
+                     1 => ("#1b6ca8", "normal", 1.4),
+                    -1 => ("#b02a2a", "inv",    1.4),
+                     _ => ("#888888", "odot",   1.0),
+                };
+                out.push_str(&format!(
+                    "  \"e{}\" -> \"{}\" [color=\"{}\", arrowhead=\"{}\", penwidth={:.1}];\n",
+                    eid_num, tgt_id, color, arrowhead, penwidth
+                ));
+            }
+        }
+    }
+    out.push_str("}\n");
+    out
+}
+
+// ================================================
+// Snapshot JSON — same schema as hymeko_wasm::compile::SnapshotDto
+// ================================================
+
+#[derive(serde::Serialize)]
+struct ArcDto<'a> {
+    sign: i8,
+    target_id: usize,
+    target_name: &'a str,
+}
+
+#[derive(serde::Serialize)]
+struct NodeDto<'a> {
+    id: usize,
+    name: &'a str,
+    kind: &'static str,
+    bases: Vec<&'a str>,
+    tags: Vec<&'a str>,
+    arcs: Vec<ArcDto<'a>>,
+}
+
+#[derive(serde::Serialize)]
+struct SnapshotDto<'a> {
+    node_count: usize,
+    edge_count: usize,
+    arc_count: usize,
+    nodes: Vec<NodeDto<'a>>,
+    edges: Vec<NodeDto<'a>>,
+}
+
+fn emit_snapshot_json(ir: &Ir, st: &StringTable) -> Result<String, String> {
+    let mk = |did: DeclId, with_arcs: bool| -> NodeDto<'_> {
+        let decl = &ir.decl_nodes[did.0];
+        let name = st.resolve(decl.name);
+        let kind_str = match decl.kind {
+            DeclKind::Node => "Node",
+            DeclKind::Edge => "Edge",
+            DeclKind::HyperArc => "HyperArc",
+        };
+        let bases: Vec<&str> = match decl.kind {
+            DeclKind::Node => ir.as_node(did).map(|nid|
+                ir.nodes[nid.0].bases.iter()
+                    .map(|b| st.resolve(ir.decl_nodes[b.target().0].name)).collect()
+            ).unwrap_or_default(),
+            DeclKind::Edge => ir.as_edge(did).map(|eid|
+                ir.edges[eid.0].bases.iter()
+                    .map(|b| st.resolve(ir.decl_nodes[b.target().0].name)).collect()
+            ).unwrap_or_default(),
+            _ => Vec::new(),
+        };
+        let tags: Vec<&str> = decl.anno.tags.iter().map(|&s| st.resolve(s)).collect();
+        let mut arcs: Vec<ArcDto> = Vec::new();
+        if with_arcs {
+            if let Some(eid) = ir.as_edge(did) {
+                for &aid in &ir.edges[eid.0].arcs {
+                    for r in &ir.arcs[aid.0].refs {
+                        let tgt = r.target();
+                        if !tgt.is_none() {
+                            arcs.push(ArcDto {
+                                sign: r.sign(),
+                                target_id: tgt.0,
+                                target_name: st.resolve(ir.decl_nodes[tgt.0].name),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        NodeDto { id: did.0, name, kind: kind_str, bases, tags, arcs }
+    };
+
+    let mut nodes = Vec::with_capacity(ir.nodes.len());
+    let mut edges = Vec::with_capacity(ir.edges.len());
+    for rec in &ir.nodes { nodes.push(mk(rec.decl, false)); }
+    for rec in &ir.edges { edges.push(mk(rec.decl, true)); }
+
+    let snap = SnapshotDto {
+        node_count: ir.nodes.len(),
+        edge_count: ir.edges.len(),
+        arc_count:  ir.arcs.len(),
+        nodes,
+        edges,
+    };
+    serde_json::to_string(&snap).map_err(|e| format!("json encode: {e}"))
 }
 
 /*

@@ -14,9 +14,11 @@
 //! wasm-pack build hymeko_wasm --target web
 //! ```
 
+pub mod compile;
 pub mod session;
 
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
 
+pub use compile::{compile_source, CompiledDoc, SnapshotDto};
 pub use session::{EditorSession, SessionError};

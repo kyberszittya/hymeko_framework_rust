@@ -79,6 +79,27 @@ nn {
         max_pool:        + <isa> meta_layer {}
         readout_linear:  + <isa> meta_layer {}
 
+        // ─── Tier-1: plain feed-forward primitives ─────────────────
+        // Linear layer with explicit (d_in, d_out) — emits torch.nn.Linear.
+        linear_layer:    + <isa> meta_layer {}
+        // Activation hypervertices — emit torch.nn.ReLU / Sigmoid / Tanh.
+        // Carry no learnable parameters; needed for explicit dataflow
+        // wiring of the activation between two linear layers.
+        relu_layer:      + <isa> meta_layer {}
+        sigmoid_layer:   + <isa> meta_layer {}
+        tanh_layer:      + <isa> meta_layer {}
+
+        // ─── Tier-2: composite blocks shipped with ehk_torch_stub ──
+        // Residual block: y = x + Linear(ReLU(Linear(x))). Has fields
+        // hidden (d_in == d_out for residual sum). Emits a
+        // ResidualBlock(hidden=...) instantiation; the internal
+        // structure is realised by the helper class, NOT by HyMeKo
+        // hypergraph topology (multi-input dataflow not yet supported).
+        residual_block:  + <isa> meta_layer {}
+        // Highway block: y = T(x)·F(x) + (1−T(x))·x with a learned
+        // sigmoid gate T. Same field surface as residual_block.
+        highway_block:   + <isa> meta_layer {}
+
         // Dataflow hyperedge type: outer-level wiring between layer
         // hypervertices and tensors. Conventional incidence pattern:
         //   (+ in_tensor, ~ layer_hypervertex, - out_tensor)

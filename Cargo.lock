@@ -2001,6 +2001,8 @@ dependencies = [
  "hymeko_query",
  "iceoryx2",
  "pyo3",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2035,6 +2037,8 @@ dependencies = [
  "console_error_panic_hook",
  "hymeko_core",
  "hymeko_emitter",
+ "hymeko_formats",
+ "hymeko_query",
  "parser",
  "serde",
  "serde-wasm-bindgen",

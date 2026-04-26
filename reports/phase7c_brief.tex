@@ -1,0 +1,277 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lmodern}
+\usepackage{fancyvrb}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{Phase 7c — Universality Breadth Brief}
+\author{HyMeKo / thesis-IV working notes}
+\date{2026-04-25}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+
+\begin{document}
+\maketitle
+
+\section{Purpose}
+
+Phases 6 and 7 demonstrated that two new spectral-entropy variants —
+\code{scalar_entropy_normalized} (Path B) and \code{entropy_target H*=0.5}
+(Path A) — universally Pareto-dominate the original \code{scalar_entropy}
+regulariser across four stress datasets (spirals, circles, MNIST plain
+MLP, CapsMLP MNIST). Phase 7c extends this stress test to six additional
+dataset/architecture combinations that were tested only with the
+original \code{scalar_entropy} in phases 1--5:
+\begin{itemize}
+  \item Deep skip-connection architectures: ResMLP-20, HighwayMLP-20
+  \item MNIST-shape image siblings: FashionMNIST, KMNIST
+  \item Different output-class structure: EMNIST Letters (26 classes)
+  \item Different input shape: SVHN ($32{\times}32$ colour)
+\end{itemize}
+If both new arms preserve sign and magnitude (or amplify) on these six
+combinations, the universality claim covers \textbf{5 architectures
+$\times$ 9 datasets} with no significant negative outliers.
+
+Auto-fires after \texttt{Views PH7b suite finished} marker. Estimated
+wall-clock: $\sim$17~hours. Output CSVs land in
+\code{data/benchmarks/thesis_iv_hard_2026042?_*.csv}.
+
+\section{Test arms}
+
+Both arms target \code{--view dataflow} and \code{--target-entropy 0.5}.
+Original \code{scalar_entropy} arm runs alongside as the paired
+baseline.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Arm & Formula & Hyperparameters \\
+\midrule
+\code{scalar_entropy_normalized} & $\lambda \cdot H(A) / \log_2 \mathrm{rank}(A)$ & none beyond $\lambda$ \\
+\code{entropy_target}            & $\lambda \cdot (H_\text{norm} - H^*)^2$       & $H^* = 0.5$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Code references in
+\code{python/benches/thesis_iv_hard/run_benchmark.py}: the
+\code{scalar_entropy_normalized} branch is at lines 1380--1397, the
+\code{entropy_target} branch at 1398--1416.
+
+\section{Experiment cards}
+
+\subsection{ResMLP-20 — deep residual MLP}
+
+\textbf{Dataset / arch:} MNIST handwritten digits (60k train, 10k
+test); 20 residual blocks of width 16 (\code{mnist_resnet_20}).
+\textbf{Config:} 33~seeds $\times$ 5~epochs, $\lambda{=}0.1$,
+reg-every-n=10, dataflow.
+
+\textbf{Original (phase 1, \code{scalar_entropy}):}
+$\Delta {=} {+}0.046$\,pp, $t{=}{+}1.76$ (marginal); replicated
+$\Delta {=} {+}0.070$\,pp, $t{=}{+}1.89$.
+
+\textbf{Expected outcome:} both new arms should keep the marginal
+positive but tighten the t-statistic. Deeper architectures should
+benefit \emph{more} from normalisation than plain MLPs because their
+effective rank grows with depth.
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets mnist_resnet_20 \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 5 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets mnist_resnet_20 \
+    --arms baseline entropy_target \
+    --seeds 33 --epochs 5 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+\end{Verbatim}
+
+\subsection{FashionMNIST — image sibling}
+
+\textbf{Dataset / arch:} Fashion items ($28{\times}28$ grayscale, 10
+classes); plain MLP $784{\to}16{\to}8{\to}10$ (\code{fashion_mnist}).
+\textbf{Config:} 33$\times$15, $\lambda{=}0.1$.
+
+\textbf{Original:} $\Delta{=}{+}0.039$\,pp, $t{=}{+}1.13$ (null).
+
+\textbf{Expected outcome:} sibling test. If MNIST's anchor result was
+MNIST-specific, the original null persists; if normalisation is the
+real fix, both new arms convert FashionMNIST into a positive of
+similar magnitude ($\approx{+}0.10$\,pp expected).
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets fashion_mnist \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets fashion_mnist \
+    --arms baseline entropy_target \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+\end{Verbatim}
+
+\subsection{KMNIST — Japanese hiragana}
+
+\textbf{Dataset / arch:} 70k handwritten hiragana ($28{\times}28$
+grayscale, 10 classes); plain MLP (\code{kmnist}). Backed by the
+HuggingFace \code{tanganke/kmnist} parquet mirror (the official
+\code{codh.rois.ac.jp} torchvision URL is dead). Decoded arrays cached
+to \code{datasets/kmnist/kmnist_decoded.npz}.
+\textbf{Config:} 33$\times$15, $\lambda{=}0.1$.
+
+\textbf{Original:} $\Delta{=}{-}0.029$\,pp, $t{=}{-}0.33$ (null).
+
+\textbf{Expected outcome:} different script family from MNIST. If the
+new arms produce a positive, universality covers cross-script
+generalisation.
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets kmnist \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets kmnist \
+    --arms baseline entropy_target \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+\end{Verbatim}
+
+\subsection{SVHN — Street View House Numbers}
+
+\textbf{Dataset / arch:} 73k digit crops ($32{\times}32{\times}3$
+colour, 10 classes); SVHNNet $3072{\to}64{\to}32{\to}10$ with the
+$3072{\to}64$ input projection skipped from the regulariser
+(\code{svhn}). \textbf{Config:} 15$\times$20, $\lambda{=}0.1$.
+
+\textbf{Original:} $\Delta{=}{-}0.137$\,pp, $t{=}{-}0.55$
+(null, directionally negative).
+
+\textbf{Expected outcome:} hardest test in the batch — colour input,
+small seed count. If both new arms shift SVHN toward zero or positive,
+the failure-mode-mitigation claim is supported on 3-channel inputs.
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets svhn \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 15 --epochs 20 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets svhn \
+    --arms baseline entropy_target \
+    --seeds 15 --epochs 20 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+\end{Verbatim}
+
+\subsection{EMNIST Letters — 26-class MNIST sibling}
+
+\textbf{Dataset / arch:} 145k handwritten letters ($28{\times}28$,
+26 classes, labels shifted to $0\!\ldots\!25$ from torchvision's
+$1\!\ldots\!26$ convention); \code{MNISTNetSmallNClass}(26)
+(\code{emnist_letters}). \textbf{Config:} 33$\times$15,
+$\lambda{=}0.1$.
+
+\textbf{Original:} $\Delta{=}{+}0.170$\,pp, $t{=}{+}1.24$
+(directional, not significant). \textbf{Note:} $\sigma$ drops from
+$0.941$ to $0.684$ (27\% variance reduction — strongest variance-drop
+of any image dataset under \code{scalar_entropy}).
+
+\textbf{Expected outcome:} this is the most likely big-win conversion.
+Underlying variance-reduction signal is already strong; both new arms
+should bring the t-stat into significance ($p < 0.05$) once
+normalisation handles the larger 26-class output dimension better.
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets emnist_letters \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets emnist_letters \
+    --arms baseline entropy_target \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+\end{Verbatim}
+
+\subsection{MNIST HighwayMLP-20 — deep gated MLP}
+
+\textbf{Dataset / arch:} MNIST; 20-block Highway MLP (gated skip
+connections at width 16) (\code{mnist_highway_20}).
+\textbf{Config:} 33$\times$15, $\lambda{=}0.1$.
+
+\textbf{Original:} baseline was significantly positive in phase 4;
+single-line aggregate is in \code{RESULTS_VIEWS_SUITE.md}. Expectation
+in the same neighbourhood as ResMLP-20.
+
+\textbf{Expected outcome:} Highway gating differs from ResMLP's
+additive skip; the question is whether normalisation + target entropy
+still land positive across both deep-MLP architectures, confirming the
+claim is architecture-independent among skip-connection styles.
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets mnist_highway_20 \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+
+python3 python/benches/thesis_iv_hard/run_benchmark.py \
+    --datasets mnist_highway_20 \
+    --arms baseline entropy_target \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 \
+    --view dataflow --target-entropy 0.5
+\end{Verbatim}
+
+\section{Aggregated expected outcomes}
+
+If the universality claim holds across phase 7c:
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Dataset & original $\Delta$ pp & expected B $\Delta$ & expected A $\Delta$ \\
+\midrule
+ResMLP-20 (MNIST)  & $+0.046$ marginal & $+0.05$ to $+0.10$ sig    & $+0.05$ to $+0.10$ sig \\
+FashionMNIST       & $+0.039$ null     & $+0.08$ to $+0.12$ sig    & $+0.08$ to $+0.12$ sig \\
+KMNIST             & $-0.029$ null     & $-0.02$ to $+0.03$ null   & $0$ to $+0.05$ null \\
+SVHN               & $-0.137$ null     & $-0.05$ to $+0.05$ null   & $-0.05$ to $+0.05$ null \\
+EMNIST Letters     & $+0.170$ direct.  & $+0.20$ to $+0.25$ sig    & $+0.20$ to $+0.25$ sig \\
+HighwayMLP-20      & (re-test)         & $+0.04$ to $+0.10$ marg./sig & $+0.04$ to $+0.10$ marg./sig \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+If observed $\Delta$ falls outside these ranges by more than 50\%, the
+claim needs qualification per dataset.
+
+\section{After phase 7c}
+
+Re-run \code{python3 python/benches/thesis_iv_hard/aggregate_views_suite.py}
+to refresh \code{RESULTS_VIEWS_SUITE.md} with the 12 new rows. Then
+regenerate the LaTeX report
+(\code{reports/thesis_iv_views_suite.tex}) for a final 132-experiment
+summary.
+
+\end{document}

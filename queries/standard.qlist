@@ -1,0 +1,23 @@
+# Standard predicate queries for the MDPI Technologies paper benchmarks.
+#
+# Format:  <id> <predicate expression>
+# Predicate language:
+#   KIND(<name>)             decl of stated type (inherited base or own name)
+#   INHERITS(<name>)         transitively inherits from <name>
+#   HASARCREF(<sign>, <p>)   edge has at least one arc-ref of <sign>
+#                             pointing at a decl matching predicate <p>
+#   ANY                      always true
+#   <a> AND <b>              conjunction
+#
+# The paper's Tables in §4.6 cite specific expected match counts:
+#   P1  KIND(joint)                                               => 4
+#   P2  KIND(joint) AND HASARCREF(+1, INHERITS(link))             => 4
+#   P3  KIND(sensor) AND HASARCREF(+1, KIND(joint))               => 3
+#   P4  INHERITS(aggregation) AND HASARCREF(-1, ANY)              => 8
+#   P5  KIND(constraint) AND HASARCREF(+1, SCOPEDIN(context))     => 1 (critical)
+
+P1  KIND(joint)
+P2  KIND(joint) AND HASARCREF(+1, INHERITS(link))
+P3  KIND(sensor) AND HASARCREF(+1, KIND(joint))
+P4  INHERITS(aggregation) AND HASARCREF(-1, ANY)
+P5  KIND(constraint) AND HASARCREF(+1, SCOPEDIN(context))

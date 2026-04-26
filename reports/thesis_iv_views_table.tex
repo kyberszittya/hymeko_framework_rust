@@ -1,0 +1,82 @@
+% Paper-ready results table for the spectral-entropy views suite
+% (overnight 2026-04-23). Drop into a `table*` environment in the host
+% paper. Requires only booktabs + multirow (both ubiquitous).
+%
+% Significance marks: *** p<0.001, ** p<0.01, * p<0.05, . p<0.10.
+%
+% Column legend:
+%   n / ep        : seeds / epochs
+%   Delta pp      : mean (treatment - baseline) validation accuracy (pp)
+%   t             : paired two-sided t-statistic
+%   W/L/T         : wins / losses / ties across seeds
+%   sigma_b       : baseline val-acc stdev (pp)
+%   sigma_t       : treatment val-acc stdev (pp)
+%   Delta H       : spectral entropy shift (treat - baseline)
+
+\begin{table*}[t]
+\centering
+\caption{Paired entropy-regularisation comparisons across nine datasets,
+two network views, and two regulariser arms.
+$\Delta\,pp$ is mean (treatment $-$ baseline) validation-accuracy shift
+in percentage points; $W/L/T$ is wins/losses/ties across seeds;
+$\sigma_b,\sigma_t$ are val-acc standard deviations (pp) of each arm;
+$\Delta H$ is the final spectral-entropy shift.
+Significance marks: \textsuperscript{***}\,$p{<}0.001$,
+\textsuperscript{**}\,$p{<}0.01$,
+\textsuperscript{*}\,$p{<}0.05$,
+\textsuperscript{\textperiodcentered}\,$0.05{\le}p{<}0.10$.
+All runs share the anchor MNIST config (Adam, $\text{lr}=10^{-3}$) with
+$\lambda{=}0.1$ (\textsc{scalar\_entropy}) or $\lambda{=}10$
+(\textsc{kl\_trajectory}).}
+\label{tab:spectral_entropy_views}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrrrrrrrrr@{}}
+\toprule
+Dataset & View & Arm & $n$ & ep & $\Delta\,pp$ & $t$ & $W$ & $L$ & $T$ & $\sigma_b\!\to\!\sigma_t$ & $\Delta H$ \\
+\midrule
+\multirow{2}{*}{MNIST (plain MLP)}
+  & dataflow & \textsc{scalar\_h}  &  15 & 30 & $+0.165^{*}$    & $+2.45$ & 10 &  5 &   0 & $0.285{\to}0.163$ & $-0.044$ \\
+  & factor   & \textsc{scalar\_h}  &  15 & 30 & $+0.157^{.}$    & $+1.84$ & 10 &  5 &   0 & $0.285{\to}0.177$ & $-0.273$ \\
+\midrule
+\multirow{3}{*}{MNIST (ResMLP-20)}
+  & dataflow & \textsc{kl\_traj}   &  66 &  5 & $+0.049^{.}$    & $+1.98$ & 36 & 28 &   2 & $0.329{\to}0.310$ & $-0.000$ \\
+  & dataflow & \textsc{scalar\_h}  &  66 &  5 & $+0.046^{.}$    & $+1.76$ & 36 & 29 &   1 & $0.329{\to}0.286$ & $-0.005$ \\
+  & dataflow & \textsc{scalar\_h}  &  33 &  5 & $+0.070^{.}$    & $+1.89$ & 18 & 15 &   0 & $0.328{\to}0.294$ & $-0.006$ \\
+\midrule
+\multirow{2}{*}{FashionMNIST}
+  & dataflow & \textsc{scalar\_h}  &  33 & 15 & $+0.039$        & $+1.13$ & 19 & 13 &   1 & $0.347{\to}0.307$ & $-0.014$ \\
+  & factor   & \textsc{scalar\_h}  &  33 & 15 & $-0.009$        & $-0.24$ & 17 & 16 &   0 & $0.347{\to}0.333$ & $-0.038$ \\
+\midrule
+\multirow{3}{*}{KMNIST}
+  & dataflow & \textsc{kl\_traj}   &  33 &  5 & $-0.029$        & $-1.00$ & 15 & 17 &   1 & $0.898{\to}0.844$ & $-0.000$ \\
+  & dataflow & \textsc{scalar\_h}  &  33 & 15 & $-0.029$        & $-0.33$ & 15 & 17 &   1 & $0.714{\to}0.701$ & $-0.004$ \\
+  & factor   & \textsc{scalar\_h}  &  33 & 15 & $+0.097$        & $+1.28$ & 18 & 15 &   0 & $0.714{\to}0.683$ & $-0.007$ \\
+\midrule
+\multirow{3}{*}{CIFAR-10}
+  & dataflow & \textsc{scalar\_h}  &  15 & 30 & $-0.095$        & $-0.43$ &  8 &  7 &   0 & $0.530{\to}0.758$ & $-0.213$ \\
+  & dataflow & \textsc{scalar\_h}  &  15 & 20 & $+0.043$        & $+0.28$ & 10 &  5 &   0 & $0.613{\to}0.499$ & $-0.143$ \\
+  & factor   & \textsc{scalar\_h}  &  15 & 20 & $+0.073$        & $+0.39$ &  7 &  8 &   0 & $0.613{\to}0.651$ & $-0.465$ \\
+\midrule
+\multirow{5}{*}{Two Moons}
+  & dataflow & \textsc{kl\_traj}   & 100 & 50 & $-0.008$        & $-0.46$ & 16 & 21 &  63 & $0.703{\to}0.704$ & $+0.043$ \\
+  & factor   & \textsc{kl\_traj}   & 100 & 50 & $-0.016$        & $-0.77$ & 18 & 29 &  53 & $0.703{\to}0.688$ & $+0.098$ \\
+  & dataflow & \textsc{scalar\_h}  & 300 & 50 & $+0.003$        & $+0.35$ & 65 & 66 & 169 & $0.704{\to}0.718$ & $-0.189$ \\
+  & dataflow & \textsc{scalar\_h}  & 100 & 50 & $+0.016$        & $+0.92$ & 25 & 22 &  53 & $0.703{\to}0.702$ & $-0.188$ \\
+  & factor   & \textsc{scalar\_h}  & 100 & 50 & $+0.026$        & $+1.43$ & 26 & 20 &  54 & $0.703{\to}0.681$ & $-0.156$ \\
+\midrule
+\multirow{5}{*}{Spirals}
+  & dataflow & \textsc{kl\_traj}   & 100 & 50 & $+0.294^{***}$  & $+3.79$ & 39 & 19 &  42 & $2.333{\to}2.179$ & $+0.085$ \\
+  & factor   & \textsc{kl\_traj}   & 100 & 50 & $+0.066$        & $+0.90$ & 29 & 33 &  38 & $2.333{\to}2.399$ & $+0.141$ \\
+  & dataflow & \textsc{scalar\_h}  & 300 & 50 & $+0.433^{***}$  & $+5.39$ &136 & 57 & 107 & $2.452{\to}1.928$ & $-0.310$ \\
+  & dataflow & \textsc{scalar\_h}  & 100 & 50 & $+0.412^{***}$  & $+3.45$ & 43 & 21 &  36 & $2.333{\to}1.800$ & $-0.301$ \\
+  & factor   & \textsc{scalar\_h}  & 100 & 50 & $+0.580^{**}$   & $+3.24$ & 52 & 20 &  28 & $2.333{\to}1.691$ & $-0.263$ \\
+\midrule
+\multirow{4}{*}{Circles}
+  & dataflow & \textsc{kl\_traj}   & 100 & 50 & $-0.016$        & $-0.71$ & 25 & 22 &  53 & $1.223{\to}1.219$ & $+0.026$ \\
+  & factor   & \textsc{kl\_traj}   & 100 & 50 & $-0.046^{.}$    & $-1.88$ & 25 & 33 &  42 & $1.223{\to}1.214$ & $+0.048$ \\
+  & dataflow & \textsc{scalar\_h}  & 100 & 50 & $-0.060^{*}$    & $-2.30$ & 22 & 32 &  46 & $1.223{\to}1.230$ & $-0.213$ \\
+  & factor   & \textsc{scalar\_h}  & 100 & 50 & $-0.030$        & $-1.14$ & 29 & 30 &  41 & $1.223{\to}1.229$ & $-0.152$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
