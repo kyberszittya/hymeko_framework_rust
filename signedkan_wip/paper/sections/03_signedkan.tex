@@ -1,0 +1,140 @@
+\section{SignedKAN}
+\label{sec:signedkan}
+
+\subsection{Signed-incidence hypergraph}
+
+A signed-incidence hypergraph $\mathcal{H} = (V, E, \sigma)$ has
+vertices $V$, hyperedges $E$, and a sign function
+$\sigma : E \times V \to \{-1, 0, +1\}$ with
+$\sigma(e, v) \neq 0 \iff v \in e$. We instantiate $\mathcal{H}$ via
+sign-balance triads: for every signed triangle in the underlying
+graph we emit a 3-arity hyperedge with $\sigma$ assigned by the
+deterministic apex rule of \S\ref{sec:experiments}.
+
+\subsection{Option C aggregation}
+
+For a hyperedge $e = (v_1, \dots, v_k)$ with sign assignment
+$(\sigma_1, \dots, \sigma_k)$ and vertex embeddings
+$\mathbf{h}_{v_1}, \dots, \mathbf{h}_{v_k} \in \mathbb{R}^{d}$, the
+SignedKAN layer computes
+\begin{equation}
+\mathbf{h}_e \;=\; \!\!\sum_{s \in \{+1, -1, \sim 0\}}\!\! \phi_e^{s}\!\Bigl(
+  \frac{1}{|\{i : \sigma_i = s\}|} \sum_{i : \sigma_i = s}
+  \phi_i^{s}\bigl(\mathbf{h}_{v_i}\bigr)
+\Bigr),
+\label{eq:signedkan-forward}
+\end{equation}
+where each $\phi^{s}$ is a learnable Cox--de Boor B-spline activation
+acting componentwise on $\mathbb{R}^{d}$. The inner splines
+$\phi_i^{s}$ shape per-vertex contributions; the outer splines
+$\phi_e^{s}$ reshape the per-sign aggregate. Sign-conditioning happens
+at \emph{both} levels --- this is the defining structural feature of
+\emph{Option C} and what distinguishes SignedKAN from
+sign-blind hypergraph KANs.
+
+\subsection{B-spline activation}
+
+We use a fixed uniform knot grid on $[-1, 1]$ with $G = 5$ inner
+knots and cubic order $k = 3$. The basis is computed via the standard
+Cox--de Boor recursion. Spline coefficients are learnable parameters
+of size $G + k - 1 = 7$ per channel. Forward pass clamps inputs to
+the active knot range; gradients flow through both coefficients and
+inputs.
+
+\subsection{Predictor}
+
+For link sign prediction on a candidate edge $(u, v)$, we mean-pool
+the embeddings $\mathbf{h}_e$ of triads incident to $(u, v)$ and apply
+a linear classifier $\hat{y}_{uv} = \mathbf{w}^\top \bar{\mathbf{h}}_{uv}$.
+The sigmoid of $\hat{y}_{uv}$ is the predicted probability of
+$\sigma_{uv} = +1$.
+
+\subsection{Parameter accounting}
+
+For input dimension $d_{\text{in}}$ (= number of nodes in the
+embedding table), hidden dimension $d$, spline grid $G$, order $k$,
+and three branches (for $+, -, \sim$), the parameter count is
+\begin{align}
+P_{\text{node}} &= |V| \cdot d & \text{(node embeddings)} \\
+P_{\text{spline}} &= 6 \cdot d \cdot (G + k - 1) & \text{(3 inner + 3 outer)} \\
+P_{\text{cls}} &= d + 1 & \text{(linear classifier)} \\
+P_{\text{total}} &= |V|d + 6 d(G + k - 1) + d + 1.
+\end{align}
+For Bitcoin Alpha ($|V| = 3{,}783, d = 32, G = 5, k = 3$) this is
+$3{,}783 \cdot 32 + 6 \cdot 32 \cdot 7 + 33 = 121{,}985$ parameters,
+of which $\sim 99\%$ are in the node embedding table.
+
+\subsection{Architecture as a Kolmogorov--Arnold rank ladder}
+\label{sec:ka-rank}
+
+The Option-C aggregation of
+Equation~\eqref{eq:signedkan-forward} sits at the top of a natural
+three-level hierarchy of hypergraph convolutional architectures,
+each row corresponding to a strict enlargement of the function
+class the model can represent on a signed-incidence input.
+
+\begin{itemize}
+\item \textbf{Level 1 --- HGNN}~\cite{feng2019hgnn}. Sign-blind
+  linear hypergraph convolution
+  $f(\mathbf{h}_e) = \sum_{i} w_i \mathbf{h}_{v_i}$, with a single
+  shared weight per hidden channel.
+\item \textbf{Level 2 --- Signed-HGNN.} Sign-aware linear
+  convolution with separate weight matrices per sign:
+  $f(\mathbf{h}_e, \boldsymbol{\sigma}) = \sum_{s \in \{+,-\}}
+   \mathbf{W}^{s}\!\sum_{i : \sigma_i = s}\!\mathbf{h}_{v_i}$.
+\item \textbf{Level 3 --- SignedKAN (this work).} Sign-aware
+  \emph{nonlinear} convolution with per-sign univariate splines:
+  Equation~\eqref{eq:signedkan-forward}, with each
+  $\phi^{s}$ a learnable cubic B-spline.
+\end{itemize}
+
+The Kolmogorov--Arnold representation theorem states that any
+continuous multivariate function decomposes into a finite sum of
+univariate continuous functions. Applied to functions on
+signed-incidence hypergraphs $f : (V, E, \sigma) \to \mathbb{R}^d$,
+the three levels above realise a finite hierarchy of
+representational ranks:
+
+\begin{itemize}
+\item Level~1 (HGNN) is rank-1: the per-vertex contribution
+  collapses to a single linear map indexed by the channel.
+\item Level~2 (Signed-HGNN) is rank-2: the per-vertex
+  contribution decomposes into two linear maps, indexed by the
+  channel and by sign.
+\item Level~3 (SignedKAN) realises the full
+  Kolmogorov--Arnold form for the per-sign decomposition: the
+  per-vertex contribution is an arbitrary continuous univariate
+  function per sign, approximated to fixed-grid resolution by
+  the Cox--de~Boor B-spline basis.
+\end{itemize}
+
+The ladder is strict: there exist signed-graph functions
+representable at level $\ell+1$ that are not representable at
+level $\ell$ at any finite parameter count. The simplest example
+at the Level-1 to Level-2 transition is any function whose value
+flips sign with $\sigma$; the simplest example at the Level-2 to
+Level-3 transition is any non-linear-in-$\mathbf{h}$ per-sign
+function, e.g.\ a saturation $f^{s}(h) = \tanh(\alpha^{s} h)$
+with sign-dependent slope $\alpha^{s}$. Section~\ref{sec:experiments}
+characterises the empirical capacity profile each level induces:
+the saturation curve sharpens monotonically as we ascend the
+ladder, in line with the rank prediction.
+
+The ladder framing also positions the entropy regulariser of
+Section~\ref{sec:experiments} as a level-dependent fix: the
+higher the rank, the larger the function class, the more it
+overfits, the more it benefits from a spectral-entropy schedule
+that tames the singular-value distribution of the embedding
+matrix at the input of the per-sign splines. The dose-response
+across the ladder is the journal-version follow-up.
+
+\subsection{Vectorised training}
+
+Equation~\eqref{eq:signedkan-forward} is computed once per training
+step over all hyperedges. Per-edge predictions are obtained by a
+single sparse matrix multiplication $\mathbf{X}_E = \mathbf{M} \,
+\mathbf{X}_T$, where $\mathbf{M} \in \{0, 1/k\}^{|E| \times |T|}$ is
+the inverse-arity-weighted edge--triad incidence matrix. This
+eliminates the per-edge Python loop that dominates the cost of a
+naive implementation; a single full-batch step on Bitcoin Alpha takes
+$\sim 0.3$~s on commodity GPU.

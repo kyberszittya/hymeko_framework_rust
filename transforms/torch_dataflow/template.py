@@ -57,3 +57,24 @@ class {{config:robot_name}}(nn.Module):
 {{#each flows}}        {{bind:-:0}} = self.{{bind:~:0}}({{bind:+:0}})
 {{/each}}{{#each outputs}}        return {{name}}
 {{/each}}
+    def spectral_weights(self):
+        # All learned weight tensors that the spectral-entropy
+        # regulariser walks, in dataflow order (matching the order
+        # of forward(self.<layer>(x)) calls). Block-tridiagonal
+        # adjacency builders require this order so that consecutive
+        # weights' (out_dim, in_dim) form a chain.
+        # Linear layers contribute their `.weight` directly.
+        # Composite Tier-2 blocks expose their inner Linear weights
+        # so the adjacency builder sees a flat layer list (skip /
+        # gate connections are omitted, matching the hand-written
+        # ResMLP / HighwayMLP convention in
+        # python/benches/thesis_iv_hard/run_benchmark.py).
+        out = []
+{{#each flows}}        _m = self.{{bind:~:0}}
+        if isinstance(_m, nn.Linear):
+            out.append(_m.weight)
+        elif isinstance(_m, ResidualBlock):
+            out.append(_m.l0.weight); out.append(_m.l1.weight)
+        elif isinstance(_m, HighwayBlock):
+            out.append(_m.transform.weight); out.append(_m.gate.weight)
+{{/each}}        return out

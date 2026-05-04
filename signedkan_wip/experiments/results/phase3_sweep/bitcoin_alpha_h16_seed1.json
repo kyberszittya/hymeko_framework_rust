@@ -1,0 +1,46 @@
+{
+  "config": {
+    "dataset": "bitcoin_alpha",
+    "hidden": 16,
+    "grid": 5,
+    "k": 3,
+    "lr": 0.1,
+    "weight_decay": 1e-05,
+    "n_epochs": 100,
+    "batch_size": 256,
+    "seed": 1,
+    "log_every": 100,
+    "recompute_every_k_batches": 10,
+    "out_dir": "signedkan_wip/experiments/results/phase3_sweep"
+  },
+  "n_params": 60993,
+  "n_triads": 22153,
+  "elapsed_s": 16.69856333732605,
+  "history": {
+    "epoch": [
+      1,
+      100
+    ],
+    "train_loss": [
+      0.782366156578064,
+      0.07162942737340927
+    ],
+    "val_auc": [
+      0.44451103394197383,
+      0.8213047496359359
+    ],
+    "val_f1_bin": [
+      0.7792274238935789,
+      0.9718279100240227
+    ],
+    "val_f1_mac": [
+      0.4241336687968434,
+      0.7349411923660969
+    ]
+  },
+  "test": {
+    "auc": 0.8033846663061242,
+    "f1_binary": 0.9686684073107049,
+    "f1_macro": 0.6892522364422378
+  }
+}

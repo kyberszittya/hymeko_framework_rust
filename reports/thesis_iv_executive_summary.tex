@@ -1,0 +1,130 @@
+% reports/thesis_iv_executive_summary.tex
+%
+% One-page executive abstract of Thesis IV (the spectral-entropy
+% regularisation programme). Drop-in for a thesis-chapter intro or
+% a short stand-alone summary; pairs with the full taxonomy at
+% reports/phases_and_paths.tex and the negative-result writeup at
+% reports/ph12_path_i_negative_result.md.
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\newcommand{\arm}[1]{\texttt{#1}}
+\newcommand{\pp}{\,pp}
+
+\title{Thesis IV --- Executive Summary\\
+       \large Spectral-Entropy Regularisation on Signed-Incidence Hypergraphs}
+\author{C.~Hajdu, \'A.~B.~Csap\'o, K.~Kov\'acs}
+\date{2026-04-29}
+
+\begin{document}
+\maketitle
+
+\section*{Question}
+
+Can a single regulariser, derived from the spectral entropy of a
+signed-incidence hypergraph view of a neural network, deliver
+\emph{universal} improvement across architectures and datasets, or do
+the empirical positives reported in the literature collapse under
+matched cross-fixture testing?
+
+\section*{Programme}
+
+\textbf{18 phases, 2026-04-22 to 2026-04-29.} Twelve regulariser
+\emph{paths} (A--I plus combination arms) tested under a single
+benchmark harness on nine datasets (MNIST, FashionMNIST, KMNIST,
+CIFAR-10, EMNIST, SVHN, two\_moons, spirals, circles) and five
+architectures (plain MLP, ResMLP, HighwayMLP, CapsMLP, plus the
+HyMeKo-emitted variants of the first three). Total volume:
+roughly 90+ paired-seed comparisons, $\sim$3{,}000 individual
+training runs, 0 statistical-power failures, all CSVs reproducible
+from seeded scripts.
+
+\section*{Settled positive --- the universality claim}
+
+The normalised-entropy formulation
+\[
+\mathcal{R}_B(A) = H_{\text{norm}}(A) = \frac{H(A)}{\log_2 \mathrm{rank}(A)}
+\]
+\textbf{strictly Pareto-dominates} the unnormalised form
+$\mathcal{R}_0 = \lambda H(A)$ across the universality matrix:
+every significant-positive effect of $\mathcal{R}_0$ is preserved or
+amplified, and \emph{all four} significant-negative effects of
+$\mathcal{R}_0$ (capsule networks on MNIST, two-circle synthetic, deep
+ResMLP-20, Highway networks at depth) are neutralised
+($p\!\geq\!0.05$). The Kolmogorov--Arnold-derived target
+$H^\star_{KA}=\log_2(2n+1)/\log_2 \mathrm{rank}(A)$ supplies a
+principled per-dataset $H^\star$ and removes the one remaining free
+hyperparameter.
+
+\section*{Settled negative --- the activation-side family with a calibration law}
+
+The activation-side paths --- \arm{cross_layer_mi} (Path F,
+pairwise Sanchez-Giraldo Rényi-2 MI) and \arm{total_correlation_mi}
+(Path I, L-way joint multi-information with KL-feedback $\lambda$ and
+variance-momentum modulator) --- are \textbf{dominated by Path B
+everywhere on the matrix}. The collapse is not arbitrary: it follows
+the calibration law
+\[
+\lambda_{\mathrm{multi}} \sim \lambda_{\mathrm{scalar}} / L,
+\]
+empirically verified at $L\!=\!4$ (spirals collapse at
+$\lambda\!\geq\!0.1$, productive band at
+$\lambda\!\approx\!0.025$--$0.03$) and at $L\!\approx\!41$
+(ResMLP-20: rescaled $\lambda\!\approx\!0.0005$ recovers the same
+null-positive band as Path B at $\lambda\!=\!0.01$, \emph{not} an
+additional lift). The single positive trend is Path I at
+$\lambda\!=\!0.03$ on spirals at $\Delta\!=\!+0.306$\pp{}
+($t\!=\!+1.78$, $p\!\approx\!0.08$), reproduced to three decimal
+places across two independent phases.
+
+The closed-loop multi-term wrapping
+$\lambda_{\text{eff}}=\lambda_0\exp(-\eta\,D_{KL}(\hat\lambda^{(t-1)}\|\hat\lambda^{(t)}))$
+(\arm{entropy_lyapunov}) yields one significant published-power
+positive --- \texttt{fashion\_mnist\_highway\_10} at
+$\Delta\!=\!+0.087$\pp, $p\!<\!0.01$ --- but does not extend to
+deeper architectures.
+
+\section*{Architectural-parity claim}
+
+Networks emitted from \texttt{.hymeko} sources via the
+\texttt{torch\_dataflow} backend (Tier-2 \texttt{ResidualBlock} /
+\texttt{HighwayBlock} blocks; \texttt{*\_hymeko} dataset entries in
+the bench harness) statistically mirror their hand-written PyTorch
+counterparts on the same regulariser arms, confirming that the
+canonical IR round-trips through to a runnable bench fixture
+without distorting regulariser dynamics.
+
+\section*{Bounds (what is not yet shown)}
+
+\textit{Composability} (Path B alongside dropout / batch-norm /
+optimiser weight decay) is queued as Phase~9; the three paper
+claims that hinge on it are not yet defended. \textit{CapsMLP under
+activation-side regularisers} requires a refactor of CapsMLP's
+synthesised routing tensor before Phase~13 can be re-run. The
+\texttt{entropy\_target\_ka} ceiling clamp at 1.0 is a known
+implementation bug and should be 0.75 (matches the empirical
+$H^\star$ collapse threshold).
+
+\section*{Artifacts}
+
+Code: \texttt{python/benches/thesis\_iv\_hard/} (harness, sweep
+scripts, aggregator). Generated nets:
+\texttt{python/benches/thesis\_iv\_hard/generated\_nets/} +
+\texttt{data/nn/*.hymeko}. Reports:
+\texttt{reports/phases\_and\_paths.\{tex,pdf\}} (full taxonomy),
+\texttt{reports/ph12\_path\_i\_negative\_result.md} (negative-result
+writeup with the 13-run paired-$\Delta$ table),
+\texttt{reports/sanchez\_giraldo\_framework.\{md,pdf\}} (math for
+Paths E--H of the activation-side family),
+\texttt{RESULTS\_VIEWS\_SUITE.md} (aggregated all-experiments
+table). Every CSV under \texttt{data/benchmarks/} is seeded and
+reproducible by re-running the corresponding \texttt{ph*.sh}
+script.
+
+\end{document}

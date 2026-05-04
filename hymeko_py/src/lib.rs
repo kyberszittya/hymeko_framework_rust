@@ -1,4 +1,5 @@
 pub mod interface_python;
+pub mod cycles;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
@@ -28,6 +29,10 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyHypergraphEngine>()?;
     m.add_class::<PyTensorCoo3D>()?;
     m.add_class::<PySparseMatrix2D>()?;
+
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_color_coded_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_path_closure_rs, m)?)?;
 
     Ok(())
 }

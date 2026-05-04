@@ -21,3 +21,36 @@ cobertura.xml
 tarpaulin-report.html
 
 /paper/
+
+# Python build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Demo binary outputs (regenerable)
+/demo_out/
+/demo_video/
+
+# Bulk benchmark CSV dumps (regenerable)
+/data/benchmarks/
+
+# One-off archive
+/archive.zip
+
+# Claude scheduling lock
+/.claude/scheduled_tasks.lock
+
+# Rust subcrate build artifacts
+**/target/
+
+# LaTeX build cache (keep .tex/.bib, drop intermediate)
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

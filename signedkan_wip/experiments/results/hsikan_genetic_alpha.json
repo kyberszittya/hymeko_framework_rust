@@ -1,0 +1,249 @@
+{
+  "dataset": "bitcoin_alpha",
+  "history": [
+    {
+      "gen": 0,
+      "best_fit": 0.7673888396830066,
+      "mean_fit": 0.7508458932266838,
+      "elite": {
+        "lr": 0.01,
+        "init_scale": 0.1,
+        "entropy_lam0": 0.02,
+        "entropy_eta": 5.0,
+        "entropy_target": 0.7,
+        "participation_lam": 0.1,
+        "n_layers": 1,
+        "hidden": 64,
+        "grid": 5
+      },
+      "elapsed_s": 96.1
+    },
+    {
+      "gen": 1,
+      "best_fit": 0.773814764627391,
+      "mean_fit": 0.7629457830419012,
+      "elite": {
+        "lr": 0.01,
+        "init_scale": 0.05,
+        "entropy_lam0": 0.01,
+        "entropy_eta": 10.0,
+        "entropy_target": 0.3,
+        "participation_lam": 0.1,
+        "n_layers": 1,
+        "hidden": 32,
+        "grid": 7
+      },
+      "elapsed_s": 70.8
+    },
+    {
+      "gen": 2,
+      "best_fit": 0.7758437458258792,
+      "mean_fit": 0.7617529221129528,
+      "elite": {
+        "lr": 0.01,
+        "init_scale": 0.05,
+        "entropy_lam0": 0.01,
+        "entropy_eta": 10.0,
+        "entropy_target": 0.7,
+        "participation_lam": 0.1,
+        "n_layers": 1,
+        "hidden": 64,
+        "grid": 7
+      },
+      "elapsed_s": 105.9
+    },
+    {
+      "gen": 3,
+      "best_fit": 0.7758430421773208,
+      "mean_fit": 0.7589451570893281,
+      "elite": {
+        "lr": 0.01,
+        "init_scale": 0.05,
+        "entropy_lam0": 0.01,
+        "entropy_eta": 10.0,
+        "entropy_target": 0.7,
+        "participation_lam": 0.1,
+        "n_layers": 1,
+        "hidden": 64,
+        "grid": 7
+      },
+      "elapsed_s": 147.1
+    },
+    {
+      "gen": 4,
+      "best_fit": 0.7764257693350597,
+      "mean_fit": 0.7621167171315998,
+      "elite": {
+        "lr": 0.01,
+        "init_scale": 0.1,
+        "entropy_lam0": 0.01,
+        "entropy_eta": 5.0,
+        "entropy_target": 0.7,
+        "participation_lam": 0.1,
+        "n_layers": 1,
+        "hidden": 64,
+        "grid": 7
+      },
+      "elapsed_s": 142.3
+    },
+    {
+      "gen": 5,
+      "best_fit": 0.7764257693350597,
+      "mean_fit": 0.7653401954605973,
+      "elite": {
+        "lr": 0.01,
+        "init_scale": 0.1,
+        "entropy_lam0": 0.01,
+        "entropy_eta": 5.0,
+        "entropy_target": 0.7,
+        "participation_lam": 0.1,
+        "n_layers": 1,
+        "hidden": 64,
+        "grid": 7
+      },
+      "elapsed_s": 113.3
+    }
+  ],
+  "elite_genome": {
+    "lr": 0.01,
+    "init_scale": 0.1,
+    "entropy_lam0": 0.01,
+    "entropy_eta": 5.0,
+    "entropy_target": 0.7,
+    "participation_lam": 0.1,
+    "n_layers": 1,
+    "hidden": 64,
+    "grid": 7
+  },
+  "elite_runs": [
+    {
+      "model": "signedkan",
+      "dataset": "bitcoin_alpha",
+      "hidden": 64,
+      "seed": 0,
+      "lr": 0.01,
+      "n_epochs": 120,
+      "grid": 7,
+      "early_stopping": true,
+      "class_weighted": true,
+      "spline_kind": "bspline",
+      "n_layers": 1,
+      "spline_kinds": [
+        "catmull_rom"
+      ],
+      "minibatch": false,
+      "batch_size": null,
+      "steps_per_epoch": null,
+      "triad_loss_alpha": 0.0,
+      "triad_loss_margin": 0.5,
+      "bce_weight": 1.0,
+      "best_epoch": 105,
+      "best_val_auc": 0.8524714156908911,
+      "n_params": 248641,
+      "elapsed_s": 16.83792781829834,
+      "entropy_lam0": 0.01,
+      "last_h_norm": 0.31786394119262695,
+      "last_lam_eff": 0.009999684187877318,
+      "test_auc": 0.8200306227852661,
+      "test_f1_binary": 0.9626832518880497,
+      "test_f1_macro": 0.7328209158848533
+    },
+    {
+      "model": "signedkan",
+      "dataset": "bitcoin_alpha",
+      "hidden": 64,
+      "seed": 1,
+      "lr": 0.01,
+      "n_epochs": 120,
+      "grid": 7,
+      "early_stopping": true,
+      "class_weighted": true,
+      "spline_kind": "bspline",
+      "n_layers": 1,
+      "spline_kinds": [
+        "catmull_rom"
+      ],
+      "minibatch": false,
+      "batch_size": null,
+      "steps_per_epoch": null,
+      "triad_loss_alpha": 0.0,
+      "triad_loss_margin": 0.5,
+      "bce_weight": 1.0,
+      "best_epoch": 75,
+      "best_val_auc": 0.8687941077629663,
+      "n_params": 248641,
+      "elapsed_s": 16.813777923583984,
+      "entropy_lam0": 0.01,
+      "last_h_norm": 0.3078261613845825,
+      "last_lam_eff": 0.009999623820390035,
+      "test_auc": 0.8473693698486017,
+      "test_f1_binary": 0.9568522244578582,
+      "test_f1_macro": 0.715483332937376
+    },
+    {
+      "model": "signedkan",
+      "dataset": "bitcoin_alpha",
+      "hidden": 64,
+      "seed": 2,
+      "lr": 0.01,
+      "n_epochs": 120,
+      "grid": 7,
+      "early_stopping": true,
+      "class_weighted": true,
+      "spline_kind": "bspline",
+      "n_layers": 1,
+      "spline_kinds": [
+        "catmull_rom"
+      ],
+      "minibatch": false,
+      "batch_size": null,
+      "steps_per_epoch": null,
+      "triad_loss_alpha": 0.0,
+      "triad_loss_margin": 0.5,
+      "bce_weight": 1.0,
+      "best_epoch": 90,
+      "best_val_auc": 0.8605216622458002,
+      "n_params": 248641,
+      "elapsed_s": 16.827053785324097,
+      "entropy_lam0": 0.01,
+      "last_h_norm": 0.32664358615875244,
+      "last_lam_eff": 0.009999827446011338,
+      "test_auc": 0.8316707874699991,
+      "test_f1_binary": 0.9579230080572964,
+      "test_f1_macro": 0.7262733319856374
+    }
+  ],
+  "best_single_seed_fit": 0.7764257693350597,
+  "best_single_seed_run": {
+    "model": "signedkan",
+    "dataset": "bitcoin_alpha",
+    "hidden": 64,
+    "seed": 0,
+    "lr": 0.01,
+    "n_epochs": 120,
+    "grid": 7,
+    "early_stopping": true,
+    "class_weighted": true,
+    "spline_kind": "bspline",
+    "n_layers": 1,
+    "spline_kinds": [
+      "catmull_rom"
+    ],
+    "minibatch": false,
+    "batch_size": null,
+    "steps_per_epoch": null,
+    "triad_loss_alpha": 0.0,
+    "triad_loss_margin": 0.5,
+    "bce_weight": 1.0,
+    "best_epoch": 105,
+    "best_val_auc": 0.852471415690891,
+    "n_params": 248641,
+    "elapsed_s": 19.68169093132019,
+    "entropy_lam0": 0.01,
+    "last_h_norm": 0.3178641200065613,
+    "last_lam_eff": 0.009999684312307577,
+    "test_auc": 0.8200306227852661,
+    "test_f1_binary": 0.9626832518880497,
+    "test_f1_macro": 0.7328209158848533
+  }
+}

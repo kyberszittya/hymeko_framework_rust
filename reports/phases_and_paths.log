@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.11.29)  26 APR 2026 03:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.11.29)  29 APR 2026 16:15
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -549,29 +549,61 @@ LaTeX Font Warning: Font shape `OMS/lmtt/m/n' undefined
 (Font)              using `OMS/cmsy/m/n' instead
 (Font)              for symbol `textbraceleft' on input line 185.
 
+LaTeX Font Info:    Trying to load font information for OMS+lmr on input line 2
+19.
+(/usr/share/texmf/tex/latex/lm/omslmr.fd
+File: omslmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+)
+LaTeX Font Info:    Font shape `OMS/lmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 219.
 
-Overfull \hbox (43.42117pt too wide) in paragraph at lines 209--217
+Overfull \hbox (43.42117pt too wide) in paragraph at lines 248--256
 \OT1/lmr/bx/n/10 Script: \OT1/lmtt/m/n/10 run_overnight_views_ph4.sh\OT1/lmr/m/
 n/10 . \OT1/lmr/bx/n/10 Goal: \OT1/lmr/m/n/10 ex-tend cov-er-age to tab-u-lar s
 klearn datasets and the HighwayMLP/ResMLP-
  []
 
 [3]
-Overfull \hbox (1.21823pt too wide) in paragraph at lines 291--304
+Overfull \hbox (1.21823pt too wide) in paragraph at lines 330--343
 \OT1/lmr/m/n/10 miser weight de-cay). Five model+optimiser vari-ants (\OT1/lmtt
 /m/n/10 vanilla\OT1/lmr/m/n/10 , \OT1/lmtt/m/n/10 dropout\OT1/lmr/m/n/10 , \OT1
 /lmtt/m/n/10 batch_norm\OT1/lmr/m/n/10 , \OT1/lmtt/m/n/10 weight_decay\OT1/lmr/
 m/n/10 , \OT1/lmtt/m/n/10 full_stack\OT1/lmr/m/n/10 )
  []
 
+[4]
+Overfull \hbox (51.4485pt too wide) in paragraph at lines 370--387
+\OT1/lmr/bx/n/10 Script: \OT1/lmtt/m/n/10 run_overnight_views_ph12.sh\OT1/lmr/m
+/n/10 . \OT1/lmr/bx/n/10 Brief / negative-result writeup: \OT1/lmtt/m/n/10 repo
+rts/ph12_path_i_negative_result.md\OT1/lmr/m/n/10 .
+ []
 
-Overfull \hbox (43.12529pt too wide) in paragraph at lines 307--309
+
+Overfull \hbox (74.28304pt too wide) in paragraph at lines 459--478
+\OT1/lmr/m/n/10 same arm against six HyMeKo-emitted nets (\OT1/lmtt/m/n/10 mnis
+t\_highway\_\{3,10,20\}\_hymeko\OT1/lmr/m/n/10 , \OT1/lmtt/m/n/10 mnist\_resmlp
+\_\{10,20,40\}\_hymeko\OT1/lmr/m/n/10 )
+ []
+
+
+Overfull \hbox (39.1218pt too wide) in paragraph at lines 459--478
+\OT1/lmr/m/n/10 architectural-parity claim end-to-end. Bucket B re-quired a sma
+ll wrap-per fix in \OT1/lmtt/m/n/10 run_benchmark.py::\_wrap\_hymeko\_net
+ []
+
+[5]
+Overfull \hbox (43.12529pt too wide) in paragraph at lines 481--483
 \OT1/lmr/m/n/10 Per-arm best-known re-sult on each an-chor dataset (most re-cen
 t published-power con-fig-u-ra-tion; see \OT1/lmtt/m/n/10 RESULTS_VIEWS_SUITE.m
 d
  []
 
-[4] [5] (./phases_and_paths.aux)
+
+Overfull \hbox (126.99635pt too wide) in paragraph at lines 487--511
+ [] 
+ []
+
+[6] [7] (./phases_and_paths.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -580,15 +612,21 @@ L3 programming layer <2024-01-22>
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-Package rerunfilecheck Info: File `phases_and_paths.out' has not changed.
-(rerunfilecheck)             Checksum: D57710F19A1E7B34CBAB50E07410BD8B;1844.
+
+Package rerunfilecheck Warning: File `phases_and_paths.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `phases_and_paths.out':
+(rerunfilecheck)             Before: D57710F19A1E7B34CBAB50E07410BD8B;1844
+(rerunfilecheck)             After:  6CDEFBBDEA33F497BF574D1D6F778DBC;2641.
  ) 
 Here is how much of TeX's memory you used:
- 11071 strings out of 475582
- 168250 string characters out of 5778245
+ 11107 strings out of 475582
+ 168737 string characters out of 5778245
  1944975 words of memory out of 5000000
- 32910 multiletter control sequences out of 15000+600000
- 626470 words of font info for 87 fonts, out of 8000000 for 9000
+ 32927 multiletter control sequences out of 15000+600000
+ 626781 words of font info for 88 fonts, out of 8000000 for 9000
  350 hyphenation exceptions out of 8191
  75i,9n,79p,529b,566s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></us
@@ -609,12 +647,12 @@ ype1/public/lm/lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy7.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/pub
 lic/lm/lmsy9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtk10.pfb></usr/share
 /texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm
-/lmtt9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
-sam10.pfb>
-Output written on phases_and_paths.pdf (5 pages, 475112 bytes).
+/lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/texl
+ive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
+Output written on phases_and_paths.pdf (7 pages, 526073 bytes).
 PDF statistics:
- 252 PDF objects out of 1000 (max. 8388607)
- 184 compressed objects within 2 object streams
- 31 named destinations out of 1000 (max. 500000)
+ 285 PDF objects out of 1000 (max. 8388607)
+ 212 compressed objects within 3 object streams
+ 46 named destinations out of 1000 (max. 500000)
  97 words of extra memory for PDF output out of 10000 (max. 10000000)
 

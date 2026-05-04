@@ -1,0 +1,78 @@
+{
+  "full": [
+    {
+      "dataset": "bitcoin_alpha",
+      "seed": 0,
+      "hidden": 32,
+      "lr": 0.05,
+      "use_minus_branch": true,
+      "n_params": 121985,
+      "elapsed_s": 31.556586980819702,
+      "test_auc": 0.7886197511335777,
+      "test_f1_binary": 0.9692206941715783,
+      "test_f1_macro": 0.712409574885017
+    },
+    {
+      "dataset": "bitcoin_alpha",
+      "seed": 1,
+      "hidden": 32,
+      "lr": 0.05,
+      "use_minus_branch": true,
+      "n_params": 121985,
+      "elapsed_s": 32.22216486930847,
+      "test_auc": 0.82267959891128,
+      "test_f1_binary": 0.9707551287647316,
+      "test_f1_macro": 0.7256876419017456
+    },
+    {
+      "dataset": "bitcoin_alpha",
+      "seed": 2,
+      "hidden": 32,
+      "lr": 0.05,
+      "use_minus_branch": true,
+      "n_params": 121985,
+      "elapsed_s": 31.860189199447632,
+      "test_auc": 0.7902230923611686,
+      "test_f1_binary": 0.9646542261251372,
+      "test_f1_macro": 0.6998709727116914
+    }
+  ],
+  "incidence_only": [
+    {
+      "dataset": "bitcoin_alpha",
+      "seed": 0,
+      "hidden": 32,
+      "lr": 0.05,
+      "use_minus_branch": false,
+      "n_params": 121537,
+      "elapsed_s": 16.16013765335083,
+      "test_auc": 0.7641679637255095,
+      "test_f1_binary": 0.9662382923110433,
+      "test_f1_macro": 0.671874166235843
+    },
+    {
+      "dataset": "bitcoin_alpha",
+      "seed": 1,
+      "hidden": 32,
+      "lr": 0.05,
+      "use_minus_branch": false,
+      "n_params": 121537,
+      "elapsed_s": 16.09627366065979,
+      "test_auc": 0.8125238268332253,
+      "test_f1_binary": 0.9684714068275712,
+      "test_f1_macro": 0.6834058278951134
+    },
+    {
+      "dataset": "bitcoin_alpha",
+      "seed": 2,
+      "hidden": 32,
+      "lr": 0.05,
+      "use_minus_branch": false,
+      "n_params": 121537,
+      "elapsed_s": 15.763673782348633,
+      "test_auc": 0.7694384672680625,
+      "test_f1_binary": 0.9643091745128093,
+      "test_f1_macro": 0.6836197887216061
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+// Naïve O(N^2) Fruchterman-Reingold force summation, one per-vertex
+// thread, one dispatch per layout iteration. Octree / Barnes-Hut
+// follows in a future revision.
+
+#version 450
+
+layout(local_size_x = 64) in;
+
+struct Position { float x; float y; };
+struct Arc      { uint src; uint dst; float rest_len; float pad; };
+
+layout(set = 0, binding = 0)          buffer Positions  { Position pos[];  };
+layout(set = 0, binding = 1)          buffer Velocities { Position vel[];  };
+layout(set = 0, binding = 2) readonly buffer Arcs       { Arc      arcs[]; };
+layout(set = 0, binding = 3) readonly buffer Params {
+    uint  n_vertices;
+    uint  n_arcs;
+    float k_repulsion;
+    float k_attraction;
+    float damping;
+    float dt;
+    float pad0;
+    float pad1;
+} P;
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= P.n_vertices) return;
+
+    float fx = 0.0;
+    float fy = 0.0;
+    float xi = pos[i].x;
+    float yi = pos[i].y;
+
+    // Pair-wise repulsion.
+    for (uint j = 0; j < P.n_vertices; ++j) {
+        if (j == i) continue;
+        float dx = xi - pos[j].x;
+        float dy = yi - pos[j].y;
+        float d2 = dx * dx + dy * dy + 1e-6;
+        float inv_d2 = 1.0 / d2;
+        fx += P.k_repulsion * dx * inv_d2;
+        fy += P.k_repulsion * dy * inv_d2;
+    }
+
+    // Attraction along incident arcs.
+    for (uint a = 0; a < P.n_arcs; ++a) {
+        uint s = arcs[a].src;
+        uint t = arcs[a].dst;
+        if (s != i && t != i) continue;
+        uint other = (s == i) ? t : s;
+        float dx = pos[other].x - xi;
+        float dy = pos[other].y - yi;
+        float d  = sqrt(dx * dx + dy * dy + 1e-6);
+        float k  = P.k_attraction * (d - arcs[a].rest_len);
+        fx += k * dx / d;
+        fy += k * dy / d;
+    }
+
+    // Semi-implicit Euler with damping.
+    float vx = vel[i].x * P.damping + P.dt * fx;
+    float vy = vel[i].y * P.damping + P.dt * fy;
+    vel[i].x = vx;
+    vel[i].y = vy;
+    pos[i].x = xi + P.dt * vx;
+    pos[i].y = yi + P.dt * vy;
+}

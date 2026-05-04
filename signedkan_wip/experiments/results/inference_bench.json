@@ -1,0 +1,176 @@
+[
+  {
+    "dataset": "bitcoin_alpha",
+    "device": "cpu",
+    "model": "SGCN",
+    "n_test_queries": 1413,
+    "n_nodes": 3783,
+    "setup_ms": 6.931273999725818,
+    "fwd_med_ms": 4.3925660002059885,
+    "per_query_us": 3.1086808210941177,
+    "n_params": 135585
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "device": "cpu",
+    "model": "HSiKAN",
+    "n_test_queries": 1413,
+    "n_nodes": 3783,
+    "setup_ms": 1372.9347179996694,
+    "fwd_med_ms": 160.67716749967076,
+    "per_query_us": 113.71349433805432,
+    "n_params": 61059,
+    "n_cycles": 25000,
+    "n_arities": 2,
+    "max_k": {
+      "k3": 0,
+      "k4": 20000,
+      "k5": 5000
+    }
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "device": "cuda",
+    "model": "SGCN",
+    "n_test_queries": 1413,
+    "n_nodes": 3783,
+    "setup_ms": 70.28827099929913,
+    "fwd_med_ms": 0.763539000217861,
+    "per_query_us": 0.5403673037635252,
+    "n_params": 135585
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "device": "cuda",
+    "model": "HSiKAN",
+    "n_test_queries": 1413,
+    "n_nodes": 3783,
+    "setup_ms": 1482.2298330000194,
+    "fwd_med_ms": 6.831648499883158,
+    "per_query_us": 4.8348538569590644,
+    "n_params": 61059,
+    "n_cycles": 25000,
+    "n_arities": 2,
+    "max_k": {
+      "k3": 0,
+      "k4": 20000,
+      "k5": 5000
+    }
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "device": "cpu",
+    "model": "SGCN",
+    "n_test_queries": 2150,
+    "n_nodes": 5881,
+    "setup_ms": 7.557691000329214,
+    "fwd_med_ms": 6.379745999765873,
+    "per_query_us": 2.9673237208213363,
+    "n_params": 202721
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "device": "cpu",
+    "model": "HSiKAN",
+    "n_test_queries": 2150,
+    "n_nodes": 5881,
+    "setup_ms": 1250.2590650001366,
+    "fwd_med_ms": 168.16214699974807,
+    "per_query_us": 78.21495209290607,
+    "n_params": 94627,
+    "n_cycles": 25000,
+    "n_arities": 2,
+    "max_k": {
+      "k3": 0,
+      "k4": 20000,
+      "k5": 5000
+    }
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "device": "cuda",
+    "model": "SGCN",
+    "n_test_queries": 2150,
+    "n_nodes": 5881,
+    "setup_ms": 2.277431000038632,
+    "fwd_med_ms": 0.7551879998572986,
+    "per_query_us": 0.3512502324917668,
+    "n_params": 202721
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "device": "cuda",
+    "model": "HSiKAN",
+    "n_test_queries": 2150,
+    "n_nodes": 5881,
+    "setup_ms": 1232.6900530006242,
+    "fwd_med_ms": 6.96729499986759,
+    "per_query_us": 3.2406023255198093,
+    "n_params": 94627,
+    "n_cycles": 25000,
+    "n_arities": 2,
+    "max_k": {
+      "k3": 0,
+      "k4": 20000,
+      "k5": 5000
+    }
+  },
+  {
+    "dataset": "slashdot",
+    "device": "cpu",
+    "model": "SGCN",
+    "n_test_queries": 50049,
+    "n_nodes": 82140,
+    "setup_ms": 127.75753599999007,
+    "fwd_med_ms": 137.425485499989,
+    "per_query_us": 2.745818807568363,
+    "n_params": 2643009
+  },
+  {
+    "dataset": "slashdot",
+    "device": "cpu",
+    "model": "HSiKAN",
+    "n_test_queries": 50049,
+    "n_nodes": 82140,
+    "setup_ms": 6414.95960300017,
+    "fwd_med_ms": 1821.4917890004472,
+    "per_query_us": 36.39416949390492,
+    "n_params": 1314770,
+    "n_cycles": 100000,
+    "n_arities": 1,
+    "max_k": {
+      "k3": 0,
+      "k4": 100000,
+      "k5": 0
+    }
+  },
+  {
+    "dataset": "slashdot",
+    "device": "cuda",
+    "model": "SGCN",
+    "n_test_queries": 50049,
+    "n_nodes": 82140,
+    "setup_ms": 22.003734999998414,
+    "fwd_med_ms": 9.439615499559295,
+    "per_query_us": 0.18860747466601321,
+    "n_params": 2643009
+  },
+  {
+    "dataset": "slashdot",
+    "device": "cuda",
+    "model": "HSiKAN",
+    "n_test_queries": 50049,
+    "n_nodes": 82140,
+    "setup_ms": 6343.241562000003,
+    "fwd_med_ms": 93.36055300036605,
+    "per_query_us": 1.8653829846823324,
+    "n_params": 1314770,
+    "n_cycles": 100000,
+    "n_arities": 1,
+    "max_k": {
+      "k3": 0,
+      "k4": 100000,
+      "k5": 0
+    }
+  }
+]

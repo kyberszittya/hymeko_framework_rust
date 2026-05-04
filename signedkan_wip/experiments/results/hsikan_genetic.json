@@ -1,0 +1,117 @@
+{
+  "dataset": "bitcoin_alpha",
+  "history": [
+    {
+      "gen": 0,
+      "best_fit": 0.7552526157891732,
+      "mean_fit": 0.7522519003968566,
+      "elite": {
+        "lr": 0.03,
+        "init_scale": 0.1,
+        "entropy_lam0": 0.0,
+        "entropy_eta": 10.0,
+        "entropy_target": 0.3,
+        "participation_lam": 0.1,
+        "n_layers": 2,
+        "hidden": 32,
+        "grid": 7
+      },
+      "elapsed_s": 24.4
+    },
+    {
+      "gen": 1,
+      "best_fit": 0.7621439753294144,
+      "mean_fit": 0.7566265022123541,
+      "elite": {
+        "lr": 0.05,
+        "init_scale": 0.1,
+        "entropy_lam0": 0.0,
+        "entropy_eta": 1.0,
+        "entropy_target": 0.7,
+        "participation_lam": 0.1,
+        "n_layers": 1,
+        "hidden": 32,
+        "grid": 5
+      },
+      "elapsed_s": 21.3
+    }
+  ],
+  "elite_genome": {
+    "lr": 0.05,
+    "init_scale": 0.1,
+    "entropy_lam0": 0.0,
+    "entropy_eta": 1.0,
+    "entropy_target": 0.7,
+    "participation_lam": 0.1,
+    "n_layers": 1,
+    "hidden": 32,
+    "grid": 5
+  },
+  "elite_runs": [
+    {
+      "model": "signedkan",
+      "dataset": "bitcoin_alpha",
+      "hidden": 32,
+      "seed": 0,
+      "lr": 0.05,
+      "n_epochs": 60,
+      "grid": 5,
+      "early_stopping": true,
+      "class_weighted": true,
+      "spline_kind": "bspline",
+      "n_layers": 1,
+      "spline_kinds": [
+        "catmull_rom"
+      ],
+      "minibatch": false,
+      "batch_size": null,
+      "steps_per_epoch": null,
+      "triad_loss_alpha": 0.0,
+      "triad_loss_margin": 0.5,
+      "bce_weight": 1.0,
+      "best_epoch": 45,
+      "best_val_auc": 0.8497245661805014,
+      "n_params": 123041,
+      "elapsed_s": 4.566277027130127,
+      "entropy_lam0": 0.0,
+      "last_h_norm": NaN,
+      "last_lam_eff": NaN,
+      "test_auc": 0.8140031692331074,
+      "test_f1_binary": 0.9557046979865772,
+      "test_f1_macro": 0.710284781425721
+    }
+  ],
+  "best_single_seed_fit": 0.7621439753294144,
+  "best_single_seed_run": {
+    "model": "signedkan",
+    "dataset": "bitcoin_alpha",
+    "hidden": 32,
+    "seed": 0,
+    "lr": 0.05,
+    "n_epochs": 60,
+    "grid": 5,
+    "early_stopping": true,
+    "class_weighted": true,
+    "spline_kind": "bspline",
+    "n_layers": 1,
+    "spline_kinds": [
+      "catmull_rom"
+    ],
+    "minibatch": false,
+    "batch_size": null,
+    "steps_per_epoch": null,
+    "triad_loss_alpha": 0.0,
+    "triad_loss_margin": 0.5,
+    "bce_weight": 1.0,
+    "best_epoch": 45,
+    "best_val_auc": 0.8497245661805012,
+    "n_params": 123041,
+    "elapsed_s": 4.427034378051758,
+    "entropy_lam0": 0.0,
+    "last_h_norm": NaN,
+    "last_lam_eff": NaN,
+    "test_auc": 0.8140031692331076,
+    "test_f1_binary": 0.9557046979865772,
+    "test_f1_macro": 0.710284781425721
+  }
+}

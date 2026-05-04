@@ -1,0 +1,55 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{Kolmogorov--Arnold Networks}
+
+The Kolmogorov--Arnold representation theorem~\cite{kolmogorov1957}
+states that any continuous function $f : [0,1]^n \to \mathbb{R}$ can
+be expressed as
+$f(\mathbf{x}) = \sum_{q=1}^{2n+1} \Phi_q\!\left(\sum_{p=1}^{n} \phi_{p,q}(x_p)\right)$
+for some univariate continuous $\Phi_q, \phi_{p,q}$.
+Liu~et~al.~\cite{liu2024kan} cast this as a neural-network primitive:
+each connection learns a univariate spline activation rather than a
+fixed nonlinearity on top of a learnable weight. For Cox--de
+Boor~\cite{coxdeboor} B-spline parameterisation with grid $G$ and
+order $k$, each activation has $G + k - 1$ learnable coefficients.
+The architecture is parameter-efficient on small-to-mid-scale
+function-regression benchmarks; recent extensions reach ordinary
+graphs.
+
+\subsection{Signed graphs and signed networks}
+
+A signed graph carries an edge-label function
+$\sigma : E \to \{+1, -1\}$. Cartwright and
+Harary~\cite{cartwright1956structural} introduced \emph{structural
+balance}: a triangle $(u, v, w)$ is balanced iff
+$\sigma(uv)\sigma(vw)\sigma(uw) = +1$.
+Leskovec~et~al.~\cite{leskovec2010signed} showed that real signed
+networks (Wikipedia voting, Slashdot, Epinions) are predominantly
+balanced. Signed-graph neural networks
+(SGCN~\cite{derr2018sgcn}, SiGAT~\cite{huang2019sigat},
+SDGNN~\cite{huang2021sdgnn}) propagate sign-aware messages, but use
+fixed (typically ReLU or LeakyReLU) activations.
+
+\subsection{Hypergraph neural networks}
+
+Hypergraph neural networks~\cite{feng2019hgnn,bai2021hgnn} extend
+GNNs to hyperedges through clique-expansion or star-expansion
+projections. \emph{Signed} hypergraph extensions are less developed;
+Huang and collaborators have proposed sign-aware hypergraph variants
+in the SDGNN family but the activations remain fixed. To our
+knowledge, no published architecture combines:
+(i) signed-incidence hyperedges,
+(ii) per-vertex / per-edge / per-sign learnable activations,
+(iii) the Kolmogorov--Arnold formalism.
+SignedKAN fills this gap.
+
+\subsection{Distinguishing from concurrent work}
+
+Recent unsigned hypergraph KAN variants (e.g.\ Fang et al.\
+``HyperKAN'') treat all incidences identically; they cannot ingest
+sign information without a separate preprocessing step that projects
+signs out at the input. SignedKAN keeps signs first-class throughout
+the architecture --- inner spline, outer spline, and sub-aggregation
+all branch on $\sigma$ --- which is what the ablation in
+\S\ref{sec:experiments} measures the contribution of.

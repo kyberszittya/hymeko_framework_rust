@@ -1,13 +1,14 @@
-# Phases 11 / 12 / 13 brief — activation-side family characterisation
+# Phases 11 / 12 / 13 / 14 brief — activation-side family characterisation
 
-**Date launched:** 2026-04-26 evening
+**Date launched:** 2026-04-26 evening (extended 2026-04-27 with ph14)
 **Phases covered:**
 - **Phase 11** — `cross_layer_mi` (Path F) characterisation
 - **Phase 12** — `total_correlation_mi` (Path I) sweep
 - **Phase 13** — Path I × CapsMLP MNIST stress test
+- **Phase 14** — Path I × deep architectures (ResMLP-20, HighwayMLP-10/20) × {MNIST, FashionMNIST} + CapsMLP×FashionMNIST companion
 
-**Logs:** `/tmp/thesis_iv_views_{ph11,ph12,ph13}.log`
-**Scripts:** `python/benches/thesis_iv_hard/run_overnight_views_ph{11,12,13}.sh`
+**Logs:** `/tmp/thesis_iv_views_{ph11,ph12,ph13,ph14}.log`
+**Scripts:** `python/benches/thesis_iv_hard/run_overnight_views_ph{11,12,13,14}.sh`
 **CSVs:** `data/benchmarks/thesis_iv_hard_*.csv` (one per `RUN` invocation)
 **Chain status:** ph11 → ph12 auto-chained via `/tmp/.../ph11_to_ph12_chain.log` watcher.
 **Abort:** `python/benches/thesis_iv_hard/abort_ph12_chain.sh` kills the watcher; ph11 untouched.
@@ -185,19 +186,50 @@ programme.
 
 ---
 
+## Phase 14 — Path I × deep architectures (scouting sweep)
+
+**Why it's separate:** TC over L=20 layers is exactly what total
+correlation is *for*. If Path I outperforms anything in the universality
+table, the deep architectures (ResMLP-20, HighwayMLP-10/20) are the
+strongest a-priori bet — pairwise spectral entropy can't express L-way
+joint structure but TC can.
+
+**Compute philosophy:** scouting at 15 seeds × 5–15 epochs, mode=mix.
+Detects effect sign and rough magnitude; does NOT chase p-values.
+Follow-up with full-power 33×15 paired runs only on combos that surface
+≥ +0.10 pp at the scouting budget.
+
+### 6 runs
+
+| run | dataset                    | seeds×ep | rationale |
+|-----|----------------------------|----------|-----------|
+| 1   | mnist_resnet_20            | 15×10    | 21-way joint Gram on residual depth. |
+| 2   | fashion_mnist_resnet_20    | 15×10    | Sibling distribution, same arch — does the effect transfer? |
+| 3   | mnist_highway_10           | 15×15    | Gated MLP at moderate depth (cheaper than -20 for first scout). |
+| 4   | fashion_mnist_highway_10   | 15×15    | Highway sibling. |
+| 5   | mnist_highway_20           | 15×10    | Full-depth Highway scout (skip FashionMNIST for budget). |
+| 6   | fashion_mnist_capsnet      | 15×10    | Companion to ph13 — completes capsule-network coverage. |
+
+**Acceptance:** Δ ≥ +0.10 pp on any (arch, dataset) at 15 seeds → schedule
+a 33-seed power follow-up. Δ ≤ 0 across the board → activation-side
+family genuinely doesn't scale to deep nets, document as a negative
+result, lean on Path A/B for the universality argument.
+
 ## Combined timeline
 
-- **20:22** ph11 launched (background)
-- **~22:30** ph11 expected to finish (~2h)
-- **~22:30** ph12 auto-fires via chain watcher (13 runs, ~90 min)
-- **~midnight** ph12 expected to finish
-- **manual launch** of ph13 after ph12 (~30–40 min) — *not* chained,
-  because ph13 results inform whether the activation-side family
-  is worth a journal section at all.
+- **20:22 (2026-04-26)** ph11 launched (background)
+- **23:36** ph11 done; ph12 auto-fired via chain watcher
+- **~02:54 (2026-04-27)** ph12 expected to finish (revised estimate
+  given actual MNIST-family per-seed timings observed in ph11)
+- **manual launch** of ph13 after ph12 (~30–40 min) — *not* chained.
+- **manual launch** of ph14 after ph12 + ph13 review (~2.5–3 h). Held
+  back so ph12 + ph13 results inform whether the deep-arch sweep is
+  worth burning compute on. ph14 lives at
+  `run_overnight_views_ph14.sh` with full configuration.
 
 ## Deliverables checklist (after results land)
 
-- [ ] Aggregate ph11 + ph12 + ph13 CSVs into `RESULTS_VIEWS_SUITE.md`
+- [ ] Aggregate ph11 + ph12 + ph13 + ph14 CSVs into `RESULTS_VIEWS_SUITE.md`
       via `aggregate_views_suite.py`.
 - [ ] Update `reports/phases_and_paths.tex`: add §3.x Path I entry,
       §3.y phase-11/12/13 sections, headline rows for `cross_layer_mi`

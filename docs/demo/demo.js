@@ -115,7 +115,11 @@ $("fileInput").addEventListener("change", (ev) => {
 // Canonical example loader — pulled at runtime from the repo's
 // `examples/paper/hymeko_robot.hymeko` if the demo is served from the
 // repo root; falls back to a small inline sample otherwise.
-const FALLBACK_EXAMPLE = `// Tiny inline example — two links joined by one revolute joint.
+// Tiny inline example — two links joined by one revolute joint.
+// Top-level *_description {} header is required by the grammar; the
+// canonical paper example has the same `hymeko_robot_description {}`
+// pattern.
+const FALLBACK_EXAMPLE = `tiny_arm_description {}
 
 tiny_arm {
     link {}

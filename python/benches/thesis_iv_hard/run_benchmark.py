@@ -1282,6 +1282,70 @@ DATASETS: dict[str, tuple[Callable, Callable]] = {
 }
 
 
+# ─── HyMeKo-generated networks (drop-in replacements via the
+# torch_dataflow backend; see data/nn/*.hymeko sources and
+# python/benches/thesis_iv_hard/generated_nets/ for the auto-emitted
+# Python). The emitted classes already expose `spectral_weights()` via
+# the patched torch_dataflow template; we add the matching
+# `spectral_adjacency(view)` here so they slot into the bench harness
+# without further modification. The registered dataset entries
+# `*_hymeko` reuse the `mnist_loaders` data pipeline (the architectures
+# are MNIST-shaped with 784→hidden→10 dataflow).
+def _wrap_hymeko_net(emitted_cls):
+    """Add spectral_adjacency(view) and an MNIST-shape flatten to a
+    HyMeKo-emitted nn.Module class. The HyMeKo .hymeko sources declare
+    input shape [784], so the emitted forward expects a flat (B, 784)
+    tensor; mnist_loaders returns (B, 28, 28) unflattened. We monkey-
+    patch forward to flatten on entry, preserving the canonical IR
+    semantics. The dataflow / factor adjacency builders are the same
+    module-level functions used by the hand-written ResMLP /
+    HighwayMLP, so the spectral observables are fully comparable
+    between the two paths."""
+    def spectral_adjacency(self, view: str = "dataflow"):
+        W = self.spectral_weights()
+        return build_adjacency_factor_view(W) if view == "factor" else build_adjacency(W)
+    emitted_cls.spectral_adjacency = spectral_adjacency
+
+    _orig_forward = emitted_cls.forward
+    def forward(self, x):
+        if x.dim() > 2:
+            x = x.flatten(start_dim=1)
+        return _orig_forward(self, x)
+    emitted_cls.forward = forward
+    return emitted_cls
+
+
+import os as _os
+_HYMEKO_GEN_DIR = _os.path.join(
+    _os.path.dirname(_os.path.abspath(__file__)), "generated_nets"
+)
+if _os.path.isdir(_HYMEKO_GEN_DIR):
+    import sys as _sys
+    if _HYMEKO_GEN_DIR not in _sys.path:
+        _sys.path.insert(0, _HYMEKO_GEN_DIR)
+    try:
+        import mnist_highway_3   as _hg3
+        import mnist_highway_10  as _hg10
+        import mnist_highway_20  as _hg20
+        import mnist_resmlp_10   as _rm10
+        import mnist_resmlp_20   as _rm20
+        import mnist_resmlp_40   as _rm40
+        DATASETS["mnist_highway_3_hymeko"]  = (mnist_loaders,
+            _wrap_hymeko_net(_hg3.HighwayMLP3FromHymeko))
+        DATASETS["mnist_highway_10_hymeko"] = (mnist_loaders,
+            _wrap_hymeko_net(_hg10.HighwayMLP10FromHymeko))
+        DATASETS["mnist_highway_20_hymeko"] = (mnist_loaders,
+            _wrap_hymeko_net(_hg20.HighwayMLP20FromHymeko))
+        DATASETS["mnist_resmlp_10_hymeko"]  = (mnist_loaders,
+            _wrap_hymeko_net(_rm10.ResMLP10FromHymeko))
+        DATASETS["mnist_resmlp_20_hymeko"]  = (mnist_loaders,
+            _wrap_hymeko_net(_rm20.ResMLP20FromHymeko))
+        DATASETS["mnist_resmlp_40_hymeko"]  = (mnist_loaders,
+            _wrap_hymeko_net(_rm40.ResMLP40FromHymeko))
+    except Exception as _e:
+        print(f"  [WARN] HyMeKo-generated nets not loaded: {_e}", flush=True)
+
+
 class CIFAR10ResMLP(nn.Module):
     """CIFAR-10 ResNet-style MLP: fixed projection 3072 → 16, then N
     residual blocks at hidden=16, then linear head → 10. Like ResMLP
@@ -1457,6 +1521,23 @@ def train_one_run(
             if hasattr(m, "weight") and id(m.weight) in weight_ids:
                 target_modules.append(m)
         target_modules.sort(key=lambda mm: weight_ids.index(id(mm.weight)))
+        # Architectures whose spectral_weights() includes synthesised
+        # tensors (e.g., CapsMLP's routing matrix `W.permute(...).reshape(...)`)
+        # don't have an `nn.Linear` whose `.weight is W`. Path F / Path I
+        # need at least two hookable modules to compute a pairwise / joint
+        # MI; if fewer are found, the regulariser silently no-ops and the
+        # arm collapses to baseline. Make this LOUD so a re-run with a
+        # different model fixes it.
+        if len(target_modules) < 2:
+            print(
+                f"  [WARN] {arm} on {dataset}: only {len(target_modules)} "
+                f"hookable modules found out of {len(spec_ws)} spectral_weights "
+                f"entries. Activation-side regulariser will not fire — "
+                f"results will be byte-identical to baseline. Likely cause: "
+                f"model.spectral_weights() includes synthesised tensors not "
+                f"backed by an nn.Linear (e.g., CapsMLP routing W).",
+                flush=True,
+            )
         # `cross_layer_activations` is reset on every forward by clearing
         # in-place from inside the first hook.
         first_id = id(target_modules[0]) if target_modules else None

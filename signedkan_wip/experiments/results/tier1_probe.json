@@ -1,0 +1,20 @@
+{
+  "equivalence_probe": {
+    "n_nodes": 3783,
+    "d": 32,
+    "device": "cuda",
+    "ms_per_call_svd": 1.3598,
+    "ms_per_call_eigh": 0.6738,
+    "speedup_x": 2.02,
+    "max_abs_diff": 2.2724270820617676e-07
+  },
+  "canonical_seed0": {
+    "test_auc": 0.829885924495695,
+    "test_f1_macro": 0.6949989917322041,
+    "elapsed_s": 30.227108001708984,
+    "last_h_norm": 0.29269152879714966,
+    "last_lam_eff": 0.00999934862961369,
+    "n_params": 123233,
+    "best_epoch": 65
+  }
+}

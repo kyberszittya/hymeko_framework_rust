@@ -1,0 +1,3 @@
+{"dataset": "slashdot", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 54921, "arities": [3, 4], "auc": 0.6833381464920848, "f1m": 0.5813819827786694, "fwd_per_call_ms": 68.53741649956646, "n_params": 1314771}
+{"dataset": "slashdot", "model": "HSiKAN-mixed", "hidden": 8, "n_test": 54921, "arities": [3, 4], "auc": 0.6830813173564358, "f1m": 0.5814925496063996, "fwd_per_call_ms": 45.91032050029753, "n_params": 657323}
+{"dataset": "slashdot", "model": "HSiKAN-mixed", "hidden": 4, "n_test": 54921, "arities": [3, 4], "auc": 0.6897276430082856, "f1m": 0.583656433754022, "fwd_per_call_ms": 41.77678999985801, "n_params": 328647}

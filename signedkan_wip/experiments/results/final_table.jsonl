@@ -1,0 +1,35 @@
+{"dataset": "bitcoin_alpha", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 2420, "arities": [3, 4], "auc": 0.9606871550362942, "f1m": 0.8263087010305796, "fwd_per_call_ms": 44.874935500047286, "n_params": 61092}
+{"dataset": "bitcoin_alpha", "model": "HSiKAN-mixed", "hidden": 8, "n_test": 2420, "arities": [3, 4], "auc": 0.9634721960308592, "f1m": 0.810164907878794, "fwd_per_call_ms": 23.696104000009655, "n_params": 30484}
+{"dataset": "bitcoin_alpha", "model": "HSiKAN-mixed", "hidden": 4, "n_test": 2420, "arities": [3, 4], "auc": 0.9627080336963222, "f1m": 0.7992458521870287, "fwd_per_call_ms": 13.453224500153738, "n_params": 15228}
+{"dataset": "bitcoin_alpha", "model": "SGCN", "hidden": 32, "n_test": 2420, "auc": 0.8775426340661598, "f1m": 0.7074081552778464, "fwd_per_call_ms": 0.7303424999918207, "n_params": 135585}
+{"dataset": "bitcoin_otc", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 3560, "arities": [3, 4], "auc": 0.9357666746842658, "f1m": 0.8223340120573323, "fwd_per_call_ms": 45.83509500025684, "n_params": 94660}
+{"dataset": "bitcoin_otc", "model": "HSiKAN-mixed", "hidden": 8, "n_test": 3560, "arities": [3, 4], "auc": 0.9385434548384015, "f1m": 0.8122572139235861, "fwd_per_call_ms": 24.185539000427525, "n_params": 47268}
+{"dataset": "bitcoin_otc", "model": "HSiKAN-mixed", "hidden": 4, "n_test": 3560, "arities": [3, 4], "auc": 0.910707695906741, "f1m": 0.7740747008608659, "fwd_per_call_ms": 13.783925000097952, "n_params": 23620}
+{"dataset": "bitcoin_otc", "model": "SGCN", "hidden": 32, "n_test": 3560, "auc": 0.901455194251052, "f1m": 0.7873409045714317, "fwd_per_call_ms": 0.7303569991563563, "n_params": 202721}
+{"dataset": "slashdot", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 50049, "arities": [3, 4], "auc": 0.6337103121783865, "f1m": 0.5783788250117794, "fwd_per_call_ms": 68.8813630004006, "n_params": 1314804}
+{"dataset": "slashdot", "model": "HSiKAN-mixed", "hidden": 8, "n_test": 50049, "arities": [3, 4], "auc": 0.6284875218293188, "f1m": 0.5670943940155018, "fwd_per_call_ms": 45.77092150066164, "n_params": 657340}
+{"dataset": "slashdot", "model": "HSiKAN-mixed", "hidden": 4, "n_test": 50049, "arities": [3, 4], "auc": 0.5768801634279188, "f1m": 0.3584773932969362, "fwd_per_call_ms": 43.18470700036414, "n_params": 328656}
+{"dataset": "slashdot", "model": "SGCN", "hidden": 32, "n_test": 50049, "auc": 0.8602445456963934, "f1m": 0.7569179406426919, "fwd_per_call_ms": 8.704831499017018, "n_params": 2643009}
+{"dataset": "sbm_n200", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 174, "arities": [3, 4], "auc": 0.8920634920634921, "f1m": 0.810037383795944, "fwd_per_call_ms": 3.6689469998236746, "n_params": 3764}
+{"dataset": "sbm_n200", "model": "HSiKAN-mixed", "hidden": 8, "n_test": 174, "arities": [3, 4], "auc": 0.8977513227513226, "f1m": 0.7929940515532055, "fwd_per_call_ms": 2.4637550004626974, "n_params": 1820}
+{"dataset": "sbm_n200", "model": "HSiKAN-mixed", "hidden": 4, "n_test": 174, "arities": [3, 4], "auc": 0.8071428571428572, "f1m": 0.7642977500247794, "fwd_per_call_ms": 2.24227750004502, "n_params": 896}
+{"dataset": "sbm_n200", "model": "SGCN", "hidden": 32, "n_test": 174, "auc": 0.475, "f1m": 0.48467605071378655, "fwd_per_call_ms": 0.7284035000338918, "n_params": 20929}
+{"dataset": "sbm_n400", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 695, "arities": [3, 4], "auc": 0.9551298125950816, "f1m": 0.8943727215757795, "fwd_per_call_ms": 41.622180498961825, "n_params": 6964}
+{"dataset": "sbm_n400", "model": "HSiKAN-mixed", "hidden": 8, "n_test": 695, "arities": [3, 4], "auc": 0.947331026296872, "f1m": 0.8888404216648491, "fwd_per_call_ms": 22.096331999819085, "n_params": 3420}
+{"dataset": "sbm_n400", "model": "HSiKAN-mixed", "hidden": 4, "n_test": 695, "arities": [3, 4], "auc": 0.9493120684755171, "f1m": 0.8901871101871102, "fwd_per_call_ms": 14.487856499727059, "n_params": 1696}
+{"dataset": "sbm_n400", "model": "SGCN", "hidden": 32, "n_test": 695, "auc": 0.7442449470886203, "f1m": 0.6863250906802258, "fwd_per_call_ms": 0.726990000657679, "n_params": 27329}
+{"dataset": "scene_synth_vg_k2", "model": "HSiKAN-scene", "hidden": 16, "n_test_scenes": 57, "auc": 1.0, "f1m": 1.0, "fwd_per_call_ms": 1.3837084998158389, "n_params": 883}
+{"dataset": "scene_synth_vg_k2", "model": "HSiKAN-scene", "hidden": 8, "n_test_scenes": 57, "auc": 1.0, "f1m": 1.0, "fwd_per_call_ms": 1.3175495005270932, "n_params": 379}
+{"dataset": "scene_synth_vg_k2", "model": "HSiKAN-scene", "hidden": 4, "n_test_scenes": 57, "auc": 1.0, "f1m": 1.0, "fwd_per_call_ms": 1.2891904998468817, "n_params": 175}
+{"dataset": "kinematic_k4", "model": "HSiKAN-graphlevel", "hidden": 16, "n_test": 16, "family_acc": 1.0, "family_f1m": 1.0, "dof_mae": 1.1920928955078125e-07, "fwd_per_call_ms": 1.1586050004552817, "n_params": 887}
+{"dataset": "pose_k4", "model": "HSiKAN-pose", "hidden": 16, "n_test": 18, "mse": 1.1338988807466295, "mae": 0.4358442657523685, "fwd_per_call_ms": 0.5275800003801123, "n_params": 645}
+{"dataset": "kinematic_k4", "model": "HSiKAN-graphlevel", "hidden": 8, "n_test": 16, "family_acc": 1.0, "family_f1m": 1.0, "dof_mae": 3.5762786865234375e-07, "fwd_per_call_ms": 1.1711434990502312, "n_params": 383}
+{"dataset": "pose_k4", "model": "HSiKAN-pose", "hidden": 8, "n_test": 18, "mse": 1.132312536239624, "mae": 0.4357125510772069, "fwd_per_call_ms": 0.5245345000730595, "n_params": 261}
+{"dataset": "kinematic_k4", "model": "HSiKAN-graphlevel", "hidden": 4, "n_test": 16, "family_acc": 1.0, "family_f1m": 1.0, "dof_mae": 1.7881393432617188e-06, "fwd_per_call_ms": 1.184809500045958, "n_params": 179}
+{"dataset": "pose_k4", "model": "HSiKAN-pose", "hidden": 4, "n_test": 18, "mse": 1.1320177382893033, "mae": 0.43575265010197956, "fwd_per_call_ms": 0.7814840000719414, "n_params": 117}
+{"dataset": "kinematic_k6", "model": "HSiKAN-graphlevel", "hidden": 16, "n_test": 9, "family_acc": 1.0, "family_f1m": 1.0, "dof_mae": 0.01757645606994629, "fwd_per_call_ms": 1.226647999828856, "n_params": 1047}
+{"dataset": "pose_k6", "model": "HSiKAN-pose", "hidden": 16, "n_test": 15, "mse": 0.027782899638017017, "mae": 0.053664779663085936, "fwd_per_call_ms": 0.5428185004348052, "n_params": 805}
+{"dataset": "kinematic_k6", "model": "HSiKAN-graphlevel", "hidden": 8, "n_test": 9, "family_acc": 1.0, "family_f1m": 1.0, "dof_mae": 0.01748249265882704, "fwd_per_call_ms": 1.2098609995518927, "n_params": 463}
+{"dataset": "pose_k6", "model": "HSiKAN-pose", "hidden": 8, "n_test": 15, "mse": 0.02775768513480822, "mae": 0.053626567125320435, "fwd_per_call_ms": 0.5387510000218754, "n_params": 341}
+{"dataset": "kinematic_k6", "model": "HSiKAN-graphlevel", "hidden": 4, "n_test": 9, "family_acc": 1.0, "family_f1m": 1.0, "dof_mae": 0.009315225813123915, "fwd_per_call_ms": 1.2970215002496843, "n_params": 219}
+{"dataset": "pose_k6", "model": "HSiKAN-pose", "hidden": 4, "n_test": 15, "mse": 0.027744991332292558, "mae": 0.05373772184054057, "fwd_per_call_ms": 0.5363009995562606, "n_params": 157}

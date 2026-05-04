@@ -1,0 +1,134 @@
+[
+  {
+    "model": "signedkan",
+    "dataset": "bitcoin_alpha",
+    "hidden": 16,
+    "seed": 0,
+    "n_params": 60993,
+    "elapsed_s": 20.47605538368225,
+    "test_auc": 0.767743905699835,
+    "test_f1_binary": 0.9694589877835951,
+    "test_f1_macro": 0.7112919938917975
+  },
+  {
+    "model": "signedkan",
+    "dataset": "bitcoin_alpha",
+    "hidden": 16,
+    "seed": 1,
+    "n_params": 60993,
+    "elapsed_s": 18.866178274154663,
+    "test_auc": 0.8022705309726669,
+    "test_f1_binary": 0.9712668698302134,
+    "test_f1_macro": 0.7173407519882774
+  },
+  {
+    "model": "signedkan",
+    "dataset": "bitcoin_alpha",
+    "hidden": 16,
+    "seed": 2,
+    "n_params": 60993,
+    "elapsed_s": 18.92346453666687,
+    "test_auc": 0.7801314346602665,
+    "test_f1_binary": 0.9640193067134708,
+    "test_f1_macro": 0.6912295115127638
+  },
+  {
+    "model": "vanillakan",
+    "dataset": "bitcoin_alpha",
+    "hidden": 16,
+    "seed": 0,
+    "n_params": 60769,
+    "elapsed_s": 9.583463191986084,
+    "test_auc": 0.7728355066691811,
+    "test_f1_binary": 0.9664488017429194,
+    "test_f1_macro": 0.6752244008714596
+  },
+  {
+    "model": "vanillakan",
+    "dataset": "bitcoin_alpha",
+    "hidden": 16,
+    "seed": 1,
+    "n_params": 60769,
+    "elapsed_s": 9.522598505020142,
+    "test_auc": 0.821448730565431,
+    "test_f1_binary": 0.9688113413304253,
+    "test_f1_macro": 0.7040135138024676
+  },
+  {
+    "model": "vanillakan",
+    "dataset": "bitcoin_alpha",
+    "hidden": 16,
+    "seed": 2,
+    "n_params": 60769,
+    "elapsed_s": 9.54717493057251,
+    "test_auc": 0.7765934060249938,
+    "test_f1_binary": 0.962930467207721,
+    "test_f1_macro": 0.6807534898316185
+  },
+  {
+    "model": "signedkan",
+    "dataset": "bitcoin_otc",
+    "hidden": 16,
+    "seed": 0,
+    "n_params": 94561,
+    "elapsed_s": 27.406874895095825,
+    "test_auc": 0.8566045522390517,
+    "test_f1_binary": 0.9597772277227723,
+    "test_f1_macro": 0.7817178821540691
+  },
+  {
+    "model": "signedkan",
+    "dataset": "bitcoin_otc",
+    "hidden": 16,
+    "seed": 1,
+    "n_params": 94561,
+    "elapsed_s": 24.785598516464233,
+    "test_auc": 0.8337100105381506,
+    "test_f1_binary": 0.958659904717996,
+    "test_f1_macro": 0.7599172280523097
+  },
+  {
+    "model": "signedkan",
+    "dataset": "bitcoin_otc",
+    "hidden": 16,
+    "seed": 2,
+    "n_params": 94561,
+    "elapsed_s": 24.77152967453003,
+    "test_auc": 0.8475775823756057,
+    "test_f1_binary": 0.9653805093792893,
+    "test_f1_macro": 0.781091675648792
+  },
+  {
+    "model": "vanillakan",
+    "dataset": "bitcoin_otc",
+    "hidden": 16,
+    "seed": 0,
+    "n_params": 94337,
+    "elapsed_s": 12.44356894493103,
+    "test_auc": 0.8601449263424261,
+    "test_f1_binary": 0.9583333333333334,
+    "test_f1_macro": 0.7682291666666667
+  },
+  {
+    "model": "vanillakan",
+    "dataset": "bitcoin_otc",
+    "hidden": 16,
+    "seed": 1,
+    "n_params": 94337,
+    "elapsed_s": 12.493348360061646,
+    "test_auc": 0.8340298557436445,
+    "test_f1_binary": 0.954636321697678,
+    "test_f1_macro": 0.7382581932637499
+  },
+  {
+    "model": "vanillakan",
+    "dataset": "bitcoin_otc",
+    "hidden": 16,
+    "seed": 2,
+    "n_params": 94337,
+    "elapsed_s": 12.439192295074463,
+    "test_auc": 0.8393487451287194,
+    "test_f1_binary": 0.9632677945435147,
+    "test_f1_macro": 0.7660703910105766
+  }
+]

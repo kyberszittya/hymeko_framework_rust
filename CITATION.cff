@@ -1,0 +1,59 @@
+cff-version: 1.2.0
+message: >
+  If you use this software in your research, please cite the framework
+  paper (Hajdu et al., 2026, IEEE T-SMC: Systems) and, if you use the
+  spectral-entropy regulariser specifically, also cite the companion
+  paper (Hajdu et al., 2026, IEEE T-SMC: Cybernetics).
+title: HyMeKo — Canonical-Hypergraph Infrastructure for Cross-View Consistency in Cyber-Physical Systems
+authors:
+  - family-names: Hajdu
+    given-names: Csaba
+    affiliation: Department of Informatics, Széchenyi István University, Győr, Hungary
+  - family-names: Csapó
+    given-names: Ádám Balázs
+    affiliation: Corvinus Institute for Advanced Studies / Hungarian Research Network, Budapest, Hungary
+  - family-names: Kovács
+    given-names: Katalin
+    affiliation: Department of Informatics, Széchenyi István University, Győr, Hungary
+type: software
+license: MIT
+repository-code: "https://github.com/kyberszittya/hymeko_framework_rust"
+keywords:
+  - cyber-physical systems
+  - hypergraphs
+  - cross-view consistency
+  - canonical hashing
+  - intermediate representation
+  - robotic systems
+  - URDF
+  - SDF
+  - MJCF
+  - SysML
+  - spectral entropy
+  - regularization
+  - Lyapunov
+preferred-citation:
+  type: article
+  title: "HyMeKo: A Canonical-Hypergraph Infrastructure for Cross-View Consistency in Cyber-Physical Systems Engineering"
+  authors:
+    - family-names: Hajdu
+      given-names: Csaba
+    - family-names: Csapó
+      given-names: Ádám Balázs
+    - family-names: Kovács
+      given-names: Katalin
+  journal: "IEEE Transactions on Systems, Man, and Cybernetics: Systems"
+  year: 2026
+references:
+  - type: article
+    title: "Spectral-Entropy Regularization on Signed-Incidence Hypergraphs: A Universal Operating Point with a Lyapunov-Derived Schedule"
+    authors:
+      - family-names: Hajdu
+        given-names: Csaba
+      - family-names: Csapó
+        given-names: Ádám Balázs
+      - family-names: Kovács
+        given-names: Katalin
+    journal: "IEEE Transactions on Systems, Man, and Cybernetics: Cybernetics"
+    year: 2026
+    notes: "Companion paper using the framework's project operator; spectral-entropy regulariser results."

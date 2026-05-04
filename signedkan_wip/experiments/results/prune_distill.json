@@ -1,0 +1,416 @@
+[
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "threshold": 0.0,
+    "base_auc": 0.763854136468416,
+    "base_f1": 0.7099593451061159,
+    "pruned_auc": 0.763854136468416,
+    "pruned_f1": 0.7099593451061159,
+    "n_pruned": 0,
+    "n_splines": 128,
+    "pruned_frac": 0.0
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "threshold": 0.05,
+    "base_auc": 0.763854136468416,
+    "base_f1": 0.7099593451061159,
+    "pruned_auc": 0.7638583583597671,
+    "pruned_f1": 0.7099593451061159,
+    "n_pruned": 45,
+    "n_splines": 128,
+    "pruned_frac": 0.3515625
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "threshold": 0.1,
+    "base_auc": 0.763854136468416,
+    "base_f1": 0.7099593451061159,
+    "pruned_auc": 0.7638217686347247,
+    "pruned_f1": 0.709033814033425,
+    "n_pruned": 53,
+    "n_splines": 128,
+    "pruned_frac": 0.4140625
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "threshold": 0.2,
+    "base_auc": 0.763854136468416,
+    "base_f1": 0.7099593451061159,
+    "pruned_auc": 0.7673076435935614,
+    "pruned_f1": 0.7166473688520262,
+    "n_pruned": 72,
+    "n_splines": 128,
+    "pruned_frac": 0.5625
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "threshold": 0.5,
+    "base_auc": 0.763854136468416,
+    "base_f1": 0.7099593451061159,
+    "pruned_auc": 0.7910867429796983,
+    "pruned_f1": 0.7051626234024642,
+    "n_pruned": 87,
+    "n_splines": 128,
+    "pruned_frac": 0.6796875,
+    "inner_symbolic_hist": {
+      "sine": 46,
+      "cubic": 10,
+      "zero": 8
+    },
+    "outer_symbolic_hist": {
+      "sine": 54,
+      "cubic": 10
+    }
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "threshold": 0.0,
+    "base_auc": 0.8132641210004168,
+    "base_f1": 0.7381567720634606,
+    "pruned_auc": 0.8132641210004168,
+    "pruned_f1": 0.7381567720634606,
+    "n_pruned": 0,
+    "n_splines": 128,
+    "pruned_frac": 0.0
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "threshold": 0.05,
+    "base_auc": 0.8132641210004168,
+    "base_f1": 0.7381567720634606,
+    "pruned_auc": 0.8132582104681437,
+    "pruned_f1": 0.7381567720634606,
+    "n_pruned": 49,
+    "n_splines": 128,
+    "pruned_frac": 0.3828125
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "threshold": 0.1,
+    "base_auc": 0.8132641210004168,
+    "base_f1": 0.7381567720634606,
+    "pruned_auc": 0.8132537775689389,
+    "pruned_f1": 0.7381567720634606,
+    "n_pruned": 56,
+    "n_splines": 128,
+    "pruned_frac": 0.4375
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "threshold": 0.2,
+    "base_auc": 0.8132641210004168,
+    "base_f1": 0.7381567720634606,
+    "pruned_auc": 0.820222295118787,
+    "pruned_f1": 0.7358999621068587,
+    "n_pruned": 71,
+    "n_splines": 128,
+    "pruned_frac": 0.5546875
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "threshold": 0.5,
+    "base_auc": 0.8132641210004168,
+    "base_f1": 0.7381567720634606,
+    "pruned_auc": 0.846163621264913,
+    "pruned_f1": 0.7263112249137889,
+    "n_pruned": 90,
+    "n_splines": 128,
+    "pruned_frac": 0.703125,
+    "inner_symbolic_hist": {
+      "sine": 44,
+      "zero": 16,
+      "cubic": 4
+    },
+    "outer_symbolic_hist": {
+      "sine": 57,
+      "cubic": 7
+    }
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "threshold": 0.0,
+    "base_auc": 0.7724954481502937,
+    "base_f1": 0.7021871678693293,
+    "pruned_auc": 0.7724954481502937,
+    "pruned_f1": 0.7021871678693293,
+    "n_pruned": 0,
+    "n_splines": 128,
+    "pruned_frac": 0.0
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "threshold": 0.05,
+    "base_auc": 0.7724954481502937,
+    "base_f1": 0.7021871678693293,
+    "pruned_auc": 0.7724941550111728,
+    "pruned_f1": 0.7021871678693293,
+    "n_pruned": 49,
+    "n_splines": 128,
+    "pruned_frac": 0.3828125
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "threshold": 0.1,
+    "base_auc": 0.7724954481502937,
+    "base_f1": 0.7021871678693293,
+    "pruned_auc": 0.7742088574857238,
+    "pruned_f1": 0.7021871678693293,
+    "n_pruned": 57,
+    "n_splines": 128,
+    "pruned_frac": 0.4453125
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "threshold": 0.2,
+    "base_auc": 0.7724954481502937,
+    "base_f1": 0.7021871678693293,
+    "pruned_auc": 0.7764369361913431,
+    "pruned_f1": 0.7076495381580127,
+    "n_pruned": 70,
+    "n_splines": 128,
+    "pruned_frac": 0.546875
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "threshold": 0.5,
+    "base_auc": 0.7724954481502937,
+    "base_f1": 0.7021871678693293,
+    "pruned_auc": 0.7804029938756931,
+    "pruned_f1": 0.7069635088265567,
+    "n_pruned": 86,
+    "n_splines": 128,
+    "pruned_frac": 0.671875,
+    "inner_symbolic_hist": {
+      "sine": 50,
+      "zero": 9,
+      "cubic": 5
+    },
+    "outer_symbolic_hist": {
+      "sine": 58,
+      "cubic": 6
+    }
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "threshold": 0.0,
+    "base_auc": 0.854586011815525,
+    "base_f1": 0.783980389759771,
+    "pruned_auc": 0.854586011815525,
+    "pruned_f1": 0.783980389759771,
+    "n_pruned": 0,
+    "n_splines": 128,
+    "pruned_frac": 0.0
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "threshold": 0.05,
+    "base_auc": 0.854586011815525,
+    "base_f1": 0.783980389759771,
+    "pruned_auc": 0.8545860118155248,
+    "pruned_f1": 0.783980389759771,
+    "n_pruned": 47,
+    "n_splines": 128,
+    "pruned_frac": 0.3671875
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "threshold": 0.1,
+    "base_auc": 0.854586011815525,
+    "base_f1": 0.783980389759771,
+    "pruned_auc": 0.8545798338709518,
+    "pruned_f1": 0.7834626590726645,
+    "n_pruned": 55,
+    "n_splines": 128,
+    "pruned_frac": 0.4296875
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "threshold": 0.2,
+    "base_auc": 0.854586011815525,
+    "base_f1": 0.783980389759771,
+    "pruned_auc": 0.855206277450667,
+    "pruned_f1": 0.7830171429177145,
+    "n_pruned": 66,
+    "n_splines": 128,
+    "pruned_frac": 0.515625
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "threshold": 0.5,
+    "base_auc": 0.854586011815525,
+    "base_f1": 0.783980389759771,
+    "pruned_auc": 0.8629460064118827,
+    "pruned_f1": 0.7793989914362193,
+    "n_pruned": 77,
+    "n_splines": 128,
+    "pruned_frac": 0.6015625,
+    "inner_symbolic_hist": {
+      "sine": 54,
+      "cubic": 7,
+      "zero": 3
+    },
+    "outer_symbolic_hist": {
+      "sine": 58,
+      "cubic": 6
+    }
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "threshold": 0.0,
+    "base_auc": 0.8276532173079431,
+    "base_f1": 0.7664855689777125,
+    "pruned_auc": 0.8276532173079431,
+    "pruned_f1": 0.7664855689777125,
+    "n_pruned": 0,
+    "n_splines": 128,
+    "pruned_frac": 0.0
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "threshold": 0.05,
+    "base_auc": 0.8276532173079431,
+    "base_f1": 0.7664855689777125,
+    "pruned_auc": 0.8276505739591372,
+    "pruned_f1": 0.7664855689777125,
+    "n_pruned": 39,
+    "n_splines": 128,
+    "pruned_frac": 0.3046875
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "threshold": 0.1,
+    "base_auc": 0.8276532173079431,
+    "base_f1": 0.7664855689777125,
+    "pruned_auc": 0.82764264391272,
+    "pruned_f1": 0.7659647121475683,
+    "n_pruned": 52,
+    "n_splines": 128,
+    "pruned_frac": 0.40625
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "threshold": 0.2,
+    "base_auc": 0.8276532173079431,
+    "base_f1": 0.7664855689777125,
+    "pruned_auc": 0.8293749184967452,
+    "pruned_f1": 0.7672434310850715,
+    "n_pruned": 65,
+    "n_splines": 128,
+    "pruned_frac": 0.5078125
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "threshold": 0.5,
+    "base_auc": 0.8276532173079431,
+    "base_f1": 0.7664855689777125,
+    "pruned_auc": 0.837303202681413,
+    "pruned_f1": 0.7596754057428214,
+    "n_pruned": 81,
+    "n_splines": 128,
+    "pruned_frac": 0.6328125,
+    "inner_symbolic_hist": {
+      "sine": 49,
+      "zero": 10,
+      "cubic": 5
+    },
+    "outer_symbolic_hist": {
+      "cubic": 6,
+      "sine": 58
+    }
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "threshold": 0.0,
+    "base_auc": 0.8374466041526635,
+    "base_f1": 0.7773895781637716,
+    "pruned_auc": 0.8374466041526635,
+    "pruned_f1": 0.7773895781637716,
+    "n_pruned": 0,
+    "n_splines": 128,
+    "pruned_frac": 0.0
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "threshold": 0.05,
+    "base_auc": 0.8374466041526635,
+    "base_f1": 0.7773895781637716,
+    "pruned_auc": 0.8374433903011471,
+    "pruned_f1": 0.7773895781637716,
+    "n_pruned": 39,
+    "n_splines": 128,
+    "pruned_frac": 0.3046875
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "threshold": 0.1,
+    "base_auc": 0.8374466041526635,
+    "base_f1": 0.7773895781637716,
+    "pruned_auc": 0.8374410946929209,
+    "pruned_f1": 0.7785959390754777,
+    "n_pruned": 42,
+    "n_splines": 128,
+    "pruned_frac": 0.328125
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "threshold": 0.2,
+    "base_auc": 0.8374466041526635,
+    "base_f1": 0.7773895781637716,
+    "pruned_auc": 0.8398014390708847,
+    "pruned_f1": 0.7786803713527851,
+    "n_pruned": 51,
+    "n_splines": 128,
+    "pruned_frac": 0.3984375
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "threshold": 0.5,
+    "base_auc": 0.8374466041526635,
+    "base_f1": 0.7773895781637716,
+    "pruned_auc": 0.8497666743799103,
+    "pruned_f1": 0.7573091517139365,
+    "n_pruned": 73,
+    "n_splines": 128,
+    "pruned_frac": 0.5703125,
+    "inner_symbolic_hist": {
+      "sine": 54,
+      "zero": 8,
+      "cubic": 2
+    },
+    "outer_symbolic_hist": {
+      "sine": 54,
+      "cubic": 10
+    }
+  }
+]

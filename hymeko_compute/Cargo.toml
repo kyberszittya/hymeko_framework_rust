@@ -1,0 +1,30 @@
+[package]
+name = "hymeko_compute"
+version = "0.1.0"
+edition = "2021"
+description = "Vulkan compute kernels for hypergraph computations on the canonical signed-incidence IR. Self-contained; vulkano-backed; first kernels target the KEPAF GPU layout pipeline (force-directed) and the hymeko_hnn signed-incidence SpMV."
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "hymeko_compute"
+
+[dependencies]
+# Vulkan binding — Rust-idiomatic, stable, real Vulkan under the hood.
+vulkano = "0.34"
+# Plain old data marker for buffer transfers.
+bytemuck = { version = "1", features = ["derive"] }
+# Error helpers.
+thiserror = "1"
+
+# Shaders are GLSL `.comp` files in `shaders/`, compiled at build time
+# by `build.rs` via `glslc` into `OUT_DIR/*.spv`, and `include_bytes!`-
+# embedded by the kernel modules at compile time. This avoids the
+# `vulkano_shaders::shader!` proc-macro path that hit a workspace-
+# specific name-resolution issue on this checkout.
+
+[dev-dependencies]
+# Used in tests for ground-truth force-directed reference.
+approx = "0.5"
+# Used by the layout_from_json example: graph JSON in, positions JSON out.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

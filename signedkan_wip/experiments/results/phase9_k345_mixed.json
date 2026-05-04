@@ -1,0 +1,3997 @@
+{
+  "runs": [
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 3.558802843093872,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9285714285714286,
+      "test_f1_macro": 0.8615384615384616,
+      "alpha": [
+        0.5901774764060974,
+        0.4098225235939026
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1076,
+      "elapsed_s": 5.615489959716797,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9285714285714286,
+      "test_f1_macro": 0.8615384615384616,
+      "alpha": [
+        0.38114309310913086,
+        0.5117222666740417,
+        0.10713464021682739
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 3.8356308937072754,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 1.0,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.930621862411499,
+        0.06937815248966217
+      ],
+      "n_tuples_per_arity": {
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 3.800048828125,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 1.0,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.4504285752773285,
+        0.5495713949203491
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1076,
+      "elapsed_s": 5.671519994735718,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 1.0,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.2204633206129074,
+        0.593277096748352,
+        0.18625959753990173
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 3.823457956314087,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 1.0,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.9485791325569153,
+        0.05142081528902054
+      ],
+      "n_tuples_per_arity": {
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 3.8633742332458496,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 1.0,
+      "test_f1_macro": 0.4,
+      "alpha": [
+        0.4721016585826874,
+        0.5278983116149902
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1076,
+      "elapsed_s": 5.834899663925171,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 1.0,
+      "test_f1_macro": 0.4,
+      "alpha": [
+        0.21195870637893677,
+        0.6607279777526855,
+        0.1273133009672165
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 4.129580736160278,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 1.0,
+      "test_f1_macro": 0.6785714285714286,
+      "alpha": [
+        0.9525018930435181,
+        0.047498058527708054
+      ],
+      "n_tuples_per_arity": {
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 4.041462659835815,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": NaN,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.5712084174156189,
+        0.4287915825843811
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1076,
+      "elapsed_s": 5.817541837692261,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": NaN,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.40640029311180115,
+        0.5070584416389465,
+        0.08654122054576874
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 4.090120077133179,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": NaN,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.8966864943504333,
+        0.10331344604492188
+      ],
+      "n_tuples_per_arity": {
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 3.855131149291992,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": NaN,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.5231884121894836,
+        0.47681158781051636
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1076,
+      "elapsed_s": 5.593636512756348,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": NaN,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.4393142759799957,
+        0.5010904669761658,
+        0.05959527939558029
+      ],
+      "n_tuples_per_arity": {
+        "3": 45,
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "karate",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 1075,
+      "elapsed_s": 3.3876800537109375,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": NaN,
+      "test_f1_macro": 1.0,
+      "alpha": [
+        0.8966690301895142,
+        0.10333099216222763
+      ],
+      "n_tuples_per_arity": {
+        "4": 154,
+        "5": 374
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 4.598653078079224,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9151455026455027,
+      "test_f1_macro": 0.8445760412875906,
+      "alpha": [
+        0.032116081565618515,
+        0.9678838849067688
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3732,
+      "elapsed_s": 14.732404232025146,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9481481481481482,
+      "test_f1_macro": 0.9022956234516928,
+      "alpha": [
+        0.02428123913705349,
+        0.6604470014572144,
+        0.31527179479599
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 14.238581657409668,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.966005291005291,
+      "test_f1_macro": 0.9194976867151354,
+      "alpha": [
+        0.5860558748245239,
+        0.4139441251754761
+      ],
+      "n_tuples_per_arity": {
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 4.816470384597778,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.911628540305011,
+      "test_f1_macro": 0.8131041890440387,
+      "alpha": [
+        0.030099717900156975,
+        0.9699002504348755
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3732,
+      "elapsed_s": 15.358160495758057,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9584694989106753,
+      "test_f1_macro": 0.882001898820019,
+      "alpha": [
+        0.02454020269215107,
+        0.64553302526474,
+        0.3299267590045929
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 14.562780618667603,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9610566448801744,
+      "test_f1_macro": 0.8867303936684141,
+      "alpha": [
+        0.6116081476211548,
+        0.3883918523788452
+      ],
+      "n_tuples_per_arity": {
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 4.958967924118042,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9529330572808834,
+      "test_f1_macro": 0.8758620689655172,
+      "alpha": [
+        0.025868015363812447,
+        0.9741320013999939
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3732,
+      "elapsed_s": 14.224641561508179,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9723947550034506,
+      "test_f1_macro": 0.9167236428278409,
+      "alpha": [
+        0.018278419971466064,
+        0.6891667246818542,
+        0.2925547957420349
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 13.383779764175415,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9737750172532781,
+      "test_f1_macro": 0.9347091932457786,
+      "alpha": [
+        0.5511641502380371,
+        0.4488358497619629
+      ],
+      "n_tuples_per_arity": {
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 4.465159893035889,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8834104428288169,
+      "test_f1_macro": 0.7985244979653952,
+      "alpha": [
+        0.04392043501138687,
+        0.9560796022415161
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3732,
+      "elapsed_s": 13.958266258239746,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9300727032385988,
+      "test_f1_macro": 0.8503968253968254,
+      "alpha": [
+        0.0270241629332304,
+        0.6292752623558044,
+        0.3437005281448364
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 13.370141506195068,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9532055518836748,
+      "test_f1_macro": 0.8848139811995233,
+      "alpha": [
+        0.5327449440956116,
+        0.46725502610206604
+      ],
+      "n_tuples_per_arity": {
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 4.473356246948242,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9378507295173961,
+      "test_f1_macro": 0.8672308546059934,
+      "alpha": [
+        0.043362103402614594,
+        0.956637978553772
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3732,
+      "elapsed_s": 14.109824180603027,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9638047138047139,
+      "test_f1_macro": 0.8965553418429795,
+      "alpha": [
+        0.02357778698205948,
+        0.641304612159729,
+        0.3351175785064697
+      ],
+      "n_tuples_per_arity": {
+        "3": 1015,
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n200_k4_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 3731,
+      "elapsed_s": 13.398937463760376,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9851290684624018,
+      "test_f1_macro": 0.9134943181818183,
+      "alpha": [
+        0.5265963077545166,
+        0.473403662443161
+      ],
+      "n_tuples_per_arity": {
+        "4": 11791,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 9.918510675430298,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9195405722000516,
+      "test_f1_macro": 0.8283192074630235,
+      "alpha": [
+        0.0058471886441111565,
+        0.994152843952179
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6932,
+      "elapsed_s": 19.781468391418457,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9415639208211726,
+      "test_f1_macro": 0.8723789106987339,
+      "alpha": [
+        0.009041877463459969,
+        0.664995551109314,
+        0.3259626030921936
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 18.1122829914093,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9585641392181389,
+      "test_f1_macro": 0.8912997635710938,
+      "alpha": [
+        0.6424270272254944,
+        0.357573002576828
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 9.941393375396729,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8888789451703358,
+      "test_f1_macro": 0.7983126550868487,
+      "alpha": [
+        0.008838310837745667,
+        0.9911617040634155
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6932,
+      "elapsed_s": 19.816534280776978,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9396814032575621,
+      "test_f1_macro": 0.8722267351303816,
+      "alpha": [
+        0.008472781628370285,
+        0.6691329479217529,
+        0.3223942816257477
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 18.182459115982056,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9430622675655789,
+      "test_f1_macro": 0.8675979983319433,
+      "alpha": [
+        0.619284451007843,
+        0.38071557879447937
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 9.848687171936035,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9188469714126786,
+      "test_f1_macro": 0.8312935608741101,
+      "alpha": [
+        0.004742804449051619,
+        0.9952571988105774
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6932,
+      "elapsed_s": 19.78855562210083,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9511492540278523,
+      "test_f1_macro": 0.8783915198635059,
+      "alpha": [
+        0.006280692294239998,
+        0.6392510533332825,
+        0.35446831583976746
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 18.117954969406128,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9421201104555298,
+      "test_f1_macro": 0.8770772529632498,
+      "alpha": [
+        0.6297969222068787,
+        0.3702031075954437
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 9.931375741958618,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.906775204873306,
+      "test_f1_macro": 0.8265440928144308,
+      "alpha": [
+        0.005984713323414326,
+        0.9940152764320374
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6932,
+      "elapsed_s": 19.824238300323486,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.95212016588289,
+      "test_f1_macro": 0.8849469224449679,
+      "alpha": [
+        0.006572808139026165,
+        0.641014575958252,
+        0.3524125814437866
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 18.158193588256836,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9530726035279877,
+      "test_f1_macro": 0.8803004147072246,
+      "alpha": [
+        0.6130068898200989,
+        0.38699308037757874
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 9.915966987609863,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8775505140724861,
+      "test_f1_macro": 0.7951287549387496,
+      "alpha": [
+        0.04449567571282387,
+        0.9555043578147888
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6932,
+      "elapsed_s": 19.876656770706177,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9399041324282481,
+      "test_f1_macro": 0.8739629232662458,
+      "alpha": [
+        0.01644510217010975,
+        0.6198470592498779,
+        0.3637078106403351
+      ],
+      "n_tuples_per_arity": {
+        "3": 6381,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "sbm_n400_k5_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 6931,
+      "elapsed_s": 18.39760947227478,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.930833432575126,
+      "test_f1_macro": 0.8439396760379818,
+      "alpha": [
+        0.6118694543838501,
+        0.3881305456161499
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 6.864439010620117,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9597402597402598,
+      "test_f1_macro": 0.9101381240408053,
+      "alpha": [
+        0.030350565910339355,
+        0.9696494340896606
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4372,
+      "elapsed_s": 16.99204421043396,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9780663780663781,
+      "test_f1_macro": 0.9272546718425567,
+      "alpha": [
+        0.019623151049017906,
+        0.652587354183197,
+        0.3277894854545593
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 16.144901752471924,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9777056277056277,
+      "test_f1_macro": 0.9316017316017317,
+      "alpha": [
+        0.6309780478477478,
+        0.3690219223499298
+      ],
+      "n_tuples_per_arity": {
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 6.863664865493774,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9109109109109109,
+      "test_f1_macro": 0.830131880733945,
+      "alpha": [
+        0.042814042419195175,
+        0.9571859240531921
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4372,
+      "elapsed_s": 16.982804775238037,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9586014586014586,
+      "test_f1_macro": 0.8856770228503028,
+      "alpha": [
+        0.023241279646754265,
+        0.523429811000824,
+        0.4533288776874542
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 16.132194757461548,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9485199485199485,
+      "test_f1_macro": 0.8642806012884753,
+      "alpha": [
+        0.5700260400772095,
+        0.4299739897251129
+      ],
+      "n_tuples_per_arity": {
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 6.837912321090698,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9611790079079799,
+      "test_f1_macro": 0.8935979168537308,
+      "alpha": [
+        0.05902421846985817,
+        0.9409757852554321
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4372,
+      "elapsed_s": 16.983458518981934,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9837526959022286,
+      "test_f1_macro": 0.9361587501122385,
+      "alpha": [
+        0.025910204276442528,
+        0.5723311305046082,
+        0.40175867080688477
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 16.13974142074585,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9884255930984903,
+      "test_f1_macro": 0.94467091676394,
+      "alpha": [
+        0.522735595703125,
+        0.4772644340991974
+      ],
+      "n_tuples_per_arity": {
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 6.874671220779419,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9393276949541285,
+      "test_f1_macro": 0.8413396298105629,
+      "alpha": [
+        0.0627247542142868,
+        0.9372752904891968
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4372,
+      "elapsed_s": 17.00040555000305,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9644495412844036,
+      "test_f1_macro": 0.8939027665860865,
+      "alpha": [
+        0.027977192774415016,
+        0.6640750765800476,
+        0.3079477846622467
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 16.146802186965942,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9741255733944955,
+      "test_f1_macro": 0.9150659403669725,
+      "alpha": [
+        0.6623231768608093,
+        0.3376767635345459
+      ],
+      "n_tuples_per_arity": {
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 6.856889963150024,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9672657252888317,
+      "test_f1_macro": 0.898515558093063,
+      "alpha": [
+        0.053059082478284836,
+        0.9469409584999084
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4372,
+      "elapsed_s": 16.985228300094604,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9835972043930965,
+      "test_f1_macro": 0.9366682700016034,
+      "alpha": [
+        0.02346676029264927,
+        0.5330238938331604,
+        0.4435093402862549
+      ],
+      "n_tuples_per_arity": {
+        "3": 1704,
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "hier_n240_s0",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 4371,
+      "elapsed_s": 16.141185760498047,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9783910997004708,
+      "test_f1_macro": 0.9282496037611525,
+      "alpha": [
+        0.5916242003440857,
+        0.4083757996559143
+      ],
+      "n_tuples_per_arity": {
+        "4": 21145,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 13.990165710449219,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8323050682398374,
+      "test_f1_macro": 0.7683238159220692,
+      "alpha": [
+        0.4342431128025055,
+        0.5657568573951721
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61060,
+      "elapsed_s": 24.056246995925903,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8814338105946955,
+      "test_f1_macro": 0.7983957108980306,
+      "alpha": [
+        0.32140052318573,
+        0.32932794094085693,
+        0.3492715358734131
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 18.93730068206787,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8871052179762504,
+      "test_f1_macro": 0.8091837796750763,
+      "alpha": [
+        0.5215610861778259,
+        0.4784388840198517
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 13.732826232910156,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.7983001309182899,
+      "test_f1_macro": 0.7269969576513957,
+      "alpha": [
+        0.38604217767715454,
+        0.6139578223228455
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61060,
+      "elapsed_s": 24.02091407775879,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8317197580228087,
+      "test_f1_macro": 0.738231042096624,
+      "alpha": [
+        0.26191356778144836,
+        0.2917914092540741,
+        0.4462950527667999
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 18.954259395599365,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8894863451928163,
+      "test_f1_macro": 0.7768741528516317,
+      "alpha": [
+        0.45134076476097107,
+        0.5486592650413513
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 13.728394508361816,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8340954233220227,
+      "test_f1_macro": 0.746879334257975,
+      "alpha": [
+        0.4041750729084015,
+        0.5958248972892761
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61060,
+      "elapsed_s": 24.05479669570923,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8502350926922122,
+      "test_f1_macro": 0.736884322925339,
+      "alpha": [
+        0.3736039698123932,
+        0.22873707115650177,
+        0.3976588845252991
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 18.9239661693573,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8826696081271208,
+      "test_f1_macro": 0.7772064114470978,
+      "alpha": [
+        0.4537932574748993,
+        0.5462067127227783
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 13.731337308883667,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.826844755425834,
+      "test_f1_macro": 0.7568036307642434,
+      "alpha": [
+        0.3746335208415985,
+        0.6253664493560791
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61060,
+      "elapsed_s": 24.0676212310791,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8734488067527746,
+      "test_f1_macro": 0.7935446069846503,
+      "alpha": [
+        0.27197352051734924,
+        0.3506339192390442,
+        0.37739256024360657
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 18.95008873939514,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8939263871024035,
+      "test_f1_macro": 0.812985772149883,
+      "alpha": [
+        0.510226309299469,
+        0.489773690700531
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 13.731518030166626,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.825016022217475,
+      "test_f1_macro": 0.7267349899943201,
+      "alpha": [
+        0.42173147201538086,
+        0.5782685875892639
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61060,
+      "elapsed_s": 24.090474843978882,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8725400555436873,
+      "test_f1_macro": 0.7779630678891523,
+      "alpha": [
+        0.2911849915981293,
+        0.3137924075126648,
+        0.39502260088920593
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 18.943968057632446,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8790970590329703,
+      "test_f1_macro": 0.7951344632821999,
+      "alpha": [
+        0.5111634731292725,
+        0.48883649706840515
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 15.409238576889038,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8764316356890798,
+      "test_f1_macro": 0.7934801525389057,
+      "alpha": [
+        0.3720358610153198,
+        0.6279641389846802
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94628,
+      "elapsed_s": 25.735289096832275,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8914955238732254,
+      "test_f1_macro": 0.8023506666069482,
+      "alpha": [
+        0.2710781693458557,
+        0.24758701026439667,
+        0.4813348650932312
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 18.912606954574585,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9118423783933389,
+      "test_f1_macro": 0.8376420804908082,
+      "alpha": [
+        0.47343677282333374,
+        0.5265632271766663
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 15.436131000518799,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8256887685871477,
+      "test_f1_macro": 0.7762754604681728,
+      "alpha": [
+        0.3187767267227173,
+        0.6812232732772827
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94628,
+      "elapsed_s": 25.69275689125061,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8588976001917309,
+      "test_f1_macro": 0.7897568238213399,
+      "alpha": [
+        0.24678824841976166,
+        0.3276497423648834,
+        0.4255620539188385
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 18.905301809310913,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8819471612196058,
+      "test_f1_macro": 0.8180248138957816,
+      "alpha": [
+        0.500518262386322,
+        0.499481737613678
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 15.422592401504517,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8414088239507234,
+      "test_f1_macro": 0.7863358624333241,
+      "alpha": [
+        0.36118069291114807,
+        0.6388192772865295
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94628,
+      "elapsed_s": 25.73060393333435,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8918901670835491,
+      "test_f1_macro": 0.8159065053263006,
+      "alpha": [
+        0.30011388659477234,
+        0.2520270049571991,
+        0.44785910844802856
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 18.9057457447052,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8849234552393125,
+      "test_f1_macro": 0.81475466188153,
+      "alpha": [
+        0.4565548598766327,
+        0.5434451103210449
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 15.436001062393188,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8322139345903831,
+      "test_f1_macro": 0.7652722341180573,
+      "alpha": [
+        0.35848063230514526,
+        0.64151930809021
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94628,
+      "elapsed_s": 25.73166537284851,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.865172794062989,
+      "test_f1_macro": 0.7858592382236828,
+      "alpha": [
+        0.26596271991729736,
+        0.29468706250190735,
+        0.4393502175807953
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 3,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 18.91474151611328,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8836411242611313,
+      "test_f1_macro": 0.8147045045774465,
+      "alpha": [
+        0.48132559657096863,
+        0.518674373626709
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 15.427871704101562,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8722468268670347,
+      "test_f1_macro": 0.7991763975856039,
+      "alpha": [
+        0.34798356890678406,
+        0.6520164608955383
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000
+      },
+      "arch": "hsikan_k34"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        3,
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94628,
+      "elapsed_s": 25.730032920837402,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.8999929465309924,
+      "test_f1_macro": 0.8203594645647779,
+      "alpha": [
+        0.2588086724281311,
+        0.2762579023838043,
+        0.4649334251880646
+      ],
+      "n_tuples_per_arity": {
+        "3": 30000,
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k345"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 4,
+      "n_epochs": 200,
+      "lr": 0.05,
+      "weight_decay": 0.0,
+      "grad_clip": 0.0,
+      "coef_smooth_lam": 0.0,
+      "participation_lam": 0.0,
+      "arities": [
+        4,
+        5
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 18.913458108901978,
+      "best_epoch": -1,
+      "best_val_auc": -1.0,
+      "test_auc": 0.9033790756985718,
+      "test_f1_macro": 0.8211185853664212,
+      "alpha": [
+        0.47707054018974304,
+        0.5229294896125793
+      ],
+      "n_tuples_per_arity": {
+        "4": 30000,
+        "5": 30000
+      },
+      "arch": "hsikan_k45"
+    }
+  ],
+  "summary": {
+    "hsikan_k34|bitcoin_alpha": {
+      "auc_med": 0.8268,
+      "f1m_med": 0.7469,
+      "auc_mean": 0.8233,
+      "auc_std": 0.0129,
+      "f1m_mean": 0.7451,
+      "elapsed_med_s": 13.73,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.8323,
+        0.7983,
+        0.8341,
+        0.8268,
+        0.825
+      ],
+      "f1m_seeds": [
+        0.7683,
+        0.727,
+        0.7469,
+        0.7568,
+        0.7267
+      ],
+      "alpha_seeds": [
+        [
+          0.434,
+          0.566
+        ],
+        [
+          0.386,
+          0.614
+        ],
+        [
+          0.404,
+          0.596
+        ],
+        [
+          0.375,
+          0.625
+        ],
+        [
+          0.422,
+          0.578
+        ]
+      ]
+    },
+    "hsikan_k34|bitcoin_otc": {
+      "auc_med": 0.8414,
+      "f1m_med": 0.7863,
+      "auc_mean": 0.8496,
+      "auc_std": 0.0209,
+      "f1m_mean": 0.7841,
+      "elapsed_med_s": 15.43,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.8764,
+        0.8257,
+        0.8414,
+        0.8322,
+        0.8722
+      ],
+      "f1m_seeds": [
+        0.7935,
+        0.7763,
+        0.7863,
+        0.7653,
+        0.7992
+      ],
+      "alpha_seeds": [
+        [
+          0.372,
+          0.628
+        ],
+        [
+          0.319,
+          0.681
+        ],
+        [
+          0.361,
+          0.639
+        ],
+        [
+          0.358,
+          0.642
+        ],
+        [
+          0.348,
+          0.652
+        ]
+      ]
+    },
+    "hsikan_k34|hier_n240_s0": {
+      "auc_med": 0.9597,
+      "f1m_med": 0.8936,
+      "auc_mean": 0.9477,
+      "auc_std": 0.0207,
+      "f1m_mean": 0.8747,
+      "elapsed_med_s": 6.86,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9597,
+        0.9109,
+        0.9612,
+        0.9393,
+        0.9673
+      ],
+      "f1m_seeds": [
+        0.9101,
+        0.8301,
+        0.8936,
+        0.8413,
+        0.8985
+      ],
+      "alpha_seeds": [
+        [
+          0.03,
+          0.97
+        ],
+        [
+          0.043,
+          0.957
+        ],
+        [
+          0.059,
+          0.941
+        ],
+        [
+          0.063,
+          0.937
+        ],
+        [
+          0.053,
+          0.947
+        ]
+      ]
+    },
+    "hsikan_k34|karate": {
+      "auc_med": 1.0,
+      "f1m_med": 1.0,
+      "auc_mean": NaN,
+      "auc_std": NaN,
+      "f1m_mean": 0.8523,
+      "elapsed_med_s": 3.86,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9286,
+        1.0,
+        1.0,
+        NaN,
+        NaN
+      ],
+      "f1m_seeds": [
+        0.8615,
+        1.0,
+        0.4,
+        1.0,
+        1.0
+      ],
+      "alpha_seeds": [
+        [
+          0.59,
+          0.41
+        ],
+        [
+          0.45,
+          0.55
+        ],
+        [
+          0.472,
+          0.528
+        ],
+        [
+          0.571,
+          0.429
+        ],
+        [
+          0.523,
+          0.477
+        ]
+      ]
+    },
+    "hsikan_k34|sbm_n200_k4_s0": {
+      "auc_med": 0.9151,
+      "f1m_med": 0.8446,
+      "auc_mean": 0.9202,
+      "auc_std": 0.0238,
+      "f1m_mean": 0.8399,
+      "elapsed_med_s": 4.6,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9151,
+        0.9116,
+        0.9529,
+        0.8834,
+        0.9379
+      ],
+      "f1m_seeds": [
+        0.8446,
+        0.8131,
+        0.8759,
+        0.7985,
+        0.8672
+      ],
+      "alpha_seeds": [
+        [
+          0.032,
+          0.968
+        ],
+        [
+          0.03,
+          0.97
+        ],
+        [
+          0.026,
+          0.974
+        ],
+        [
+          0.044,
+          0.956
+        ],
+        [
+          0.043,
+          0.957
+        ]
+      ]
+    },
+    "hsikan_k34|sbm_n400_k5_s0": {
+      "auc_med": 0.9068,
+      "f1m_med": 0.8265,
+      "auc_mean": 0.9023,
+      "auc_std": 0.0166,
+      "f1m_mean": 0.8159,
+      "elapsed_med_s": 9.92,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9195,
+        0.8889,
+        0.9188,
+        0.9068,
+        0.8776
+      ],
+      "f1m_seeds": [
+        0.8283,
+        0.7983,
+        0.8313,
+        0.8265,
+        0.7951
+      ],
+      "alpha_seeds": [
+        [
+          0.006,
+          0.994
+        ],
+        [
+          0.009,
+          0.991
+        ],
+        [
+          0.005,
+          0.995
+        ],
+        [
+          0.006,
+          0.994
+        ],
+        [
+          0.044,
+          0.956
+        ]
+      ]
+    },
+    "hsikan_k345|bitcoin_alpha": {
+      "auc_med": 0.8725,
+      "f1m_med": 0.778,
+      "auc_mean": 0.8619,
+      "auc_std": 0.0183,
+      "f1m_mean": 0.769,
+      "elapsed_med_s": 24.06,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.8814,
+        0.8317,
+        0.8502,
+        0.8734,
+        0.8725
+      ],
+      "f1m_seeds": [
+        0.7984,
+        0.7382,
+        0.7369,
+        0.7935,
+        0.778
+      ],
+      "alpha_seeds": [
+        [
+          0.321,
+          0.329,
+          0.349
+        ],
+        [
+          0.262,
+          0.292,
+          0.446
+        ],
+        [
+          0.374,
+          0.229,
+          0.398
+        ],
+        [
+          0.272,
+          0.351,
+          0.377
+        ],
+        [
+          0.291,
+          0.314,
+          0.395
+        ]
+      ]
+    },
+    "hsikan_k345|bitcoin_otc": {
+      "auc_med": 0.8915,
+      "f1m_med": 0.8024,
+      "auc_mean": 0.8815,
+      "auc_std": 0.0163,
+      "f1m_mean": 0.8028,
+      "elapsed_med_s": 25.73,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.8915,
+        0.8589,
+        0.8919,
+        0.8652,
+        0.9
+      ],
+      "f1m_seeds": [
+        0.8024,
+        0.7898,
+        0.8159,
+        0.7859,
+        0.8204
+      ],
+      "alpha_seeds": [
+        [
+          0.271,
+          0.248,
+          0.481
+        ],
+        [
+          0.247,
+          0.328,
+          0.426
+        ],
+        [
+          0.3,
+          0.252,
+          0.448
+        ],
+        [
+          0.266,
+          0.295,
+          0.439
+        ],
+        [
+          0.259,
+          0.276,
+          0.465
+        ]
+      ]
+    },
+    "hsikan_k345|hier_n240_s0": {
+      "auc_med": 0.9781,
+      "f1m_med": 0.9273,
+      "auc_mean": 0.9737,
+      "auc_std": 0.0103,
+      "f1m_mean": 0.9159,
+      "elapsed_med_s": 16.99,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9781,
+        0.9586,
+        0.9838,
+        0.9644,
+        0.9836
+      ],
+      "f1m_seeds": [
+        0.9273,
+        0.8857,
+        0.9362,
+        0.8939,
+        0.9367
+      ],
+      "alpha_seeds": [
+        [
+          0.02,
+          0.653,
+          0.328
+        ],
+        [
+          0.023,
+          0.523,
+          0.453
+        ],
+        [
+          0.026,
+          0.572,
+          0.402
+        ],
+        [
+          0.028,
+          0.664,
+          0.308
+        ],
+        [
+          0.023,
+          0.533,
+          0.444
+        ]
+      ]
+    },
+    "hsikan_k345|karate": {
+      "auc_med": 1.0,
+      "f1m_med": 1.0,
+      "auc_mean": NaN,
+      "auc_std": NaN,
+      "f1m_mean": 0.8523,
+      "elapsed_med_s": 5.67,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9286,
+        1.0,
+        1.0,
+        NaN,
+        NaN
+      ],
+      "f1m_seeds": [
+        0.8615,
+        1.0,
+        0.4,
+        1.0,
+        1.0
+      ],
+      "alpha_seeds": [
+        [
+          0.381,
+          0.512,
+          0.107
+        ],
+        [
+          0.22,
+          0.593,
+          0.186
+        ],
+        [
+          0.212,
+          0.661,
+          0.127
+        ],
+        [
+          0.406,
+          0.507,
+          0.087
+        ],
+        [
+          0.439,
+          0.501,
+          0.06
+        ]
+      ]
+    },
+    "hsikan_k345|sbm_n200_k4_s0": {
+      "auc_med": 0.9585,
+      "f1m_med": 0.8966,
+      "auc_mean": 0.9546,
+      "auc_std": 0.0146,
+      "f1m_mean": 0.8896,
+      "elapsed_med_s": 14.22,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9481,
+        0.9585,
+        0.9724,
+        0.9301,
+        0.9638
+      ],
+      "f1m_seeds": [
+        0.9023,
+        0.882,
+        0.9167,
+        0.8504,
+        0.8966
+      ],
+      "alpha_seeds": [
+        [
+          0.024,
+          0.66,
+          0.315
+        ],
+        [
+          0.025,
+          0.646,
+          0.33
+        ],
+        [
+          0.018,
+          0.689,
+          0.293
+        ],
+        [
+          0.027,
+          0.629,
+          0.344
+        ],
+        [
+          0.024,
+          0.641,
+          0.335
+        ]
+      ]
+    },
+    "hsikan_k345|sbm_n400_k5_s0": {
+      "auc_med": 0.9416,
+      "f1m_med": 0.874,
+      "auc_mean": 0.9449,
+      "auc_std": 0.0056,
+      "f1m_mean": 0.8764,
+      "elapsed_med_s": 19.82,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9416,
+        0.9397,
+        0.9511,
+        0.9521,
+        0.9399
+      ],
+      "f1m_seeds": [
+        0.8724,
+        0.8722,
+        0.8784,
+        0.8849,
+        0.874
+      ],
+      "alpha_seeds": [
+        [
+          0.009,
+          0.665,
+          0.326
+        ],
+        [
+          0.008,
+          0.669,
+          0.322
+        ],
+        [
+          0.006,
+          0.639,
+          0.354
+        ],
+        [
+          0.007,
+          0.641,
+          0.352
+        ],
+        [
+          0.016,
+          0.62,
+          0.364
+        ]
+      ]
+    },
+    "hsikan_k45|bitcoin_alpha": {
+      "auc_med": 0.8871,
+      "f1m_med": 0.7951,
+      "auc_mean": 0.8865,
+      "auc_std": 0.0052,
+      "f1m_mean": 0.7943,
+      "elapsed_med_s": 18.94,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.8871,
+        0.8895,
+        0.8827,
+        0.8939,
+        0.8791
+      ],
+      "f1m_seeds": [
+        0.8092,
+        0.7769,
+        0.7772,
+        0.813,
+        0.7951
+      ],
+      "alpha_seeds": [
+        [
+          0.522,
+          0.478
+        ],
+        [
+          0.451,
+          0.549
+        ],
+        [
+          0.454,
+          0.546
+        ],
+        [
+          0.51,
+          0.49
+        ],
+        [
+          0.511,
+          0.489
+        ]
+      ]
+    },
+    "hsikan_k45|bitcoin_otc": {
+      "auc_med": 0.8849,
+      "f1m_med": 0.818,
+      "auc_mean": 0.8931,
+      "auc_std": 0.0121,
+      "f1m_mean": 0.8212,
+      "elapsed_med_s": 18.91,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9118,
+        0.8819,
+        0.8849,
+        0.8836,
+        0.9034
+      ],
+      "f1m_seeds": [
+        0.8376,
+        0.818,
+        0.8148,
+        0.8147,
+        0.8211
+      ],
+      "alpha_seeds": [
+        [
+          0.473,
+          0.527
+        ],
+        [
+          0.501,
+          0.499
+        ],
+        [
+          0.457,
+          0.543
+        ],
+        [
+          0.481,
+          0.519
+        ],
+        [
+          0.477,
+          0.523
+        ]
+      ]
+    },
+    "hsikan_k45|hier_n240_s0": {
+      "auc_med": 0.9777,
+      "f1m_med": 0.9282,
+      "auc_mean": 0.9734,
+      "auc_std": 0.0133,
+      "f1m_mean": 0.9168,
+      "elapsed_med_s": 16.14,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9777,
+        0.9485,
+        0.9884,
+        0.9741,
+        0.9784
+      ],
+      "f1m_seeds": [
+        0.9316,
+        0.8643,
+        0.9447,
+        0.9151,
+        0.9282
+      ],
+      "alpha_seeds": [
+        [
+          0.631,
+          0.369
+        ],
+        [
+          0.57,
+          0.43
+        ],
+        [
+          0.523,
+          0.477
+        ],
+        [
+          0.662,
+          0.338
+        ],
+        [
+          0.592,
+          0.408
+        ]
+      ]
+    },
+    "hsikan_k45|karate": {
+      "auc_med": 1.0,
+      "f1m_med": 1.0,
+      "auc_mean": NaN,
+      "auc_std": NaN,
+      "f1m_mean": 0.9357,
+      "elapsed_med_s": 3.84,
+      "n_seeds": 5,
+      "auc_seeds": [
+        1.0,
+        1.0,
+        1.0,
+        NaN,
+        NaN
+      ],
+      "f1m_seeds": [
+        1.0,
+        1.0,
+        0.6786,
+        1.0,
+        1.0
+      ],
+      "alpha_seeds": [
+        [
+          0.931,
+          0.069
+        ],
+        [
+          0.949,
+          0.051
+        ],
+        [
+          0.953,
+          0.047
+        ],
+        [
+          0.897,
+          0.103
+        ],
+        [
+          0.897,
+          0.103
+        ]
+      ]
+    },
+    "hsikan_k45|sbm_n200_k4_s0": {
+      "auc_med": 0.966,
+      "f1m_med": 0.9135,
+      "auc_mean": 0.9678,
+      "auc_std": 0.0109,
+      "f1m_mean": 0.9078,
+      "elapsed_med_s": 13.4,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.966,
+        0.9611,
+        0.9738,
+        0.9532,
+        0.9851
+      ],
+      "f1m_seeds": [
+        0.9195,
+        0.8867,
+        0.9347,
+        0.8848,
+        0.9135
+      ],
+      "alpha_seeds": [
+        [
+          0.586,
+          0.414
+        ],
+        [
+          0.612,
+          0.388
+        ],
+        [
+          0.551,
+          0.449
+        ],
+        [
+          0.533,
+          0.467
+        ],
+        [
+          0.527,
+          0.473
+        ]
+      ]
+    },
+    "hsikan_k45|sbm_n400_k5_s0": {
+      "auc_med": 0.9431,
+      "f1m_med": 0.8771,
+      "auc_mean": 0.9455,
+      "auc_std": 0.0096,
+      "f1m_mean": 0.872,
+      "elapsed_med_s": 18.16,
+      "n_seeds": 5,
+      "auc_seeds": [
+        0.9586,
+        0.9431,
+        0.9421,
+        0.9531,
+        0.9308
+      ],
+      "f1m_seeds": [
+        0.8913,
+        0.8676,
+        0.8771,
+        0.8803,
+        0.8439
+      ],
+      "alpha_seeds": [
+        [
+          0.642,
+          0.358
+        ],
+        [
+          0.619,
+          0.381
+        ],
+        [
+          0.63,
+          0.37
+        ],
+        [
+          0.613,
+          0.387
+        ],
+        [
+          0.612,
+          0.388
+        ]
+      ]
+    }
+  },
+  "wall_clock_s": 4843.7
+}

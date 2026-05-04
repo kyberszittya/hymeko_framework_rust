@@ -1,0 +1,57 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Kolmogorov--Arnold Networks (KAN) replace each fixed neural-network
+activation with a learnable univariate spline, achieving
+parameter-efficient function approximation on small-to-mid-scale
+benchmarks~\cite{liu2024kan}. Recent extensions reach ordinary graphs
+and unsigned hypergraphs, but no published variant ingests the
+\emph{signed-incidence} hypergraph model that signed-graph
+theory~\cite{cartwright1956structural} and applied work on signed
+networks~\cite{leskovec2010signed,derr2018sgcn,huang2019sigat} have
+established as the right primitive when edges carry direction-of-
+information-flow semantics. The literature gap is structural: the KAN
+formalism lifts cleanly to incidence-typed hypergraphs but no one has
+done it.
+
+We close that gap. \textbf{SignedKAN} is, to our knowledge, the first
+KAN variant on signed hypergraphs. Its forward pass decomposes each
+hyperedge's vertex aggregation into three sign-conditioned
+sub-aggregations (one each for $\sigma \in \{+1, -1, \sim 0\}$), with
+a separate inner+outer Cox--de Boor B-spline pair learned per
+(vertex, edge, sign) triple. The inner spline shapes per-vertex
+contributions before aggregation; the outer spline reshapes the
+aggregated edge embedding before passing it on to the classifier.
+This is \emph{Option C} of the design space we map in
+\S\ref{sec:signedkan}; the choice is motivated by isolating signs at
+the inner-spline level, where they have the most representational
+leverage with the lowest parameter cost.
+
+\subsection*{Contributions}
+
+\textbf{(C1)} A KAN architecture for signed-incidence hypergraphs
+with three-branch sign-conditioned aggregation
+(\S\ref{sec:signedkan}). The architecture is fully differentiable,
+end-to-end trainable, and has no hyperparameter beyond standard KAN
+ones (spline order $k$, grid $G$).
+
+\textbf{(C2)} A reproducible benchmark on Bitcoin Alpha and Bitcoin
+OTC link-sign prediction~\cite{kumar2016bitcoin} with
+sign-balance-triad hyperedge construction. SignedKAN reaches
+AUC $\approx 0.80$ on Alpha and AUC $\approx 0.85$ on OTC at
+$\sim 122$\,k parameters with no per-dataset tuning
+(\S\ref{sec:experiments}).
+
+\textbf{(C3)} An ablation that isolates the contribution of signed
+semantics: the same architecture with all $\sigma$ collapsed to $+1$
+underperforms the full SignedKAN on both metrics, quantifying the
+value of carrying sign information through the spline activations
+(\S\ref{sec:experiments}).
+
+\subsection*{Scope}
+
+This is a work-in-progress submission. The architecture and the
+two-dataset characterization are settled; matching SGCN's published
+AUC of $\sim 0.93$~\cite{derr2018sgcn} on Bitcoin Alpha is left to
+the journal extension. The WiP-track contribution is the
+\emph{architecture}, not a state-of-the-art table.
