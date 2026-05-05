@@ -43,6 +43,29 @@ class MixedAritySignedKANConfig:
     base: MultiLayerSignedKANConfig
     arities: tuple[int, ...] = (3, 4)        # which k's to mix
     init_arity_logits: tuple[float, ...] = (0.0, 0.0)
+    # Per-edge learned mixture gate.  When True, the αₖ at the final
+    # edge-pool mixing step is replaced by a per-edge softmax over a
+    # gate MLP applied to the query edge's endpoint embeddings.  This
+    # lets the model dynamically choose which arity (cycle vs walk)
+    # carries the signal for each individual query — useful when
+    # different graph regions have different geometric / topological
+    # character (e.g. cube faces vs path-rich social graphs).  Within-
+    # layer vertex aggregation still uses the global αₖ.
+    per_edge_gate: bool = False
+    # Gumbel--softmax hard gate.  When True (and `per_edge_gate=True`),
+    # the gate uses `F.gumbel_softmax(.., tau=gumbel_tau, hard=True)`
+    # instead of plain `softmax`.  In hard mode the forward pass
+    # selects exactly ONE channel per query edge (one-hot), but the
+    # backward pass uses the soft-Gumbel surrogate so gradients still
+    # flow.  This breaks the soft-mixing ceiling we observed on the
+    # mesh-cube experiment: when one channel needs to be totally
+    # suppressed for the optimum, hard gating can do that, soft
+    # gating cannot.
+    gumbel_hard: bool = False
+    # Gumbel--softmax temperature.  $\tau \to 0$ approaches a hard
+    # one-hot; $\tau \to \infty$ approaches uniform.  Default $1.0$
+    # matches the PyTorch convention; cooler values are crisper.
+    gumbel_tau: float = 1.0
     # When set, encode_edges processes cycles in mini-batches of this
     # size per layer and uses gradient checkpointing, bounding the
     # peak (T, k, S, d) activation memory at O(cycle_batch_size).
@@ -57,6 +80,16 @@ class MixedAritySignedKANConfig:
     # attention between the query-edge embedding and each cycle
     # embedding, then row-softmaxed.
     attention_m_e: bool = False
+    # Choice of attention head when `attention_m_e=True`:
+    #   "dot"        — standard scalar dot-product (default)
+    #   "quaternion" — Hamilton-product real part: treats the
+    #                  d_attn projection as d_attn/4 quaternions and
+    #                  uses real(q ⊗ k) = qa·ka − qb·kb − qc·kc − qd·kd
+    #                  as the score. The (i, j, k) components contribute
+    #                  with negative sign — natural for signed-graph
+    #                  data where i, j, k can encode sign-rotation
+    #                  phases. Requires d_attn % 4 == 0.
+    attention_m_e_kind: str = "dot"
     # When True, add a parallel SGCN-style sign-conditional direct
     # message-passing path between layers. h_v is updated by both the
     # cycle-pool aggregation and a per-sign-channel propagation:
@@ -159,6 +192,68 @@ class _AttentionM_e(nn.Module):
         return _scatter_softmax(scores, rows, h_query.shape[0])
 
 
+class _QuaternionAttentionM_e(nn.Module):
+    """Quaternion-valued attention head over (query_edge, cycle) pairs.
+
+    Same I/O contract as :class:`_AttentionM_e` (returns softmax
+    weights over the sparse `M_e` non-zeros), but the score function
+    treats the per-pair `d_attn` projection as `d_attn / 4`
+    independent quaternions and uses
+
+        score = Σ_q  real(q_i ⊗ k_i)
+              = Σ_q  (q_a·k_a − q_b·k_b − q_c·k_c − q_d·k_d)
+
+    The negative sign on the (i, j, k) components is the
+    distinguishing feature: in standard scalar attention, every
+    embedding dimension contributes positively to the score, so
+    "agreement" and "anti-agreement" both pull attention up. With
+    Hamilton-product real-part scoring, (i, j, k) components
+    *subtract* — geometrically, anti-aligned imaginary parts reduce
+    the score even when the magnitudes are large. For signed graphs
+    where the (i, j, k) axes can carry sign / phase information, this
+    asymmetry is what we want.
+
+    Implementation note: the layout is (E, n_quaternions, 4) where
+    the last axis is the (real, i, j, k) ordering. Init scale 0.01
+    keeps initial scores near zero so softmax starts ≈ uniform —
+    same warm-start as :class:`_AttentionM_e`.
+    """
+    def __init__(self, d_query: int, d_cycle: int, d_attn: int = 32):
+        super().__init__()
+        if d_attn % 4 != 0:
+            raise ValueError(
+                f"_QuaternionAttentionM_e requires d_attn % 4 == 0, "
+                f"got d_attn={d_attn}",
+            )
+        self.d_attn = d_attn
+        self.n_quat = d_attn // 4
+        self.W_q = nn.Linear(d_query, d_attn, bias=False)
+        self.W_k = nn.Linear(d_cycle, d_attn, bias=False)
+        with torch.no_grad():
+            self.W_q.weight.mul_(0.01)
+            self.W_k.weight.mul_(0.01)
+        self.scale = self.n_quat ** -0.5
+
+    def forward(self, h_query: torch.Tensor, h_cycle: torch.Tensor,
+                indices: torch.Tensor) -> torch.Tensor:
+        rows = indices[0]
+        cols = indices[1]
+        # Project to (E, n_quat, 4) and (T, n_quat, 4).
+        q = self.W_q(h_query).view(-1, self.n_quat, 4)
+        k = self.W_k(h_cycle).view(-1, self.n_quat, 4)
+        qg = q[rows]                    # (nnz, n_quat, 4)
+        kg = k[cols]                    # (nnz, n_quat, 4)
+        # Hamilton-product real component, summed over quaternion
+        # blocks: q ⊗ k → real = qa·ka − qb·kb − qc·kc − qd·kd.
+        scores = (
+            qg[..., 0] * kg[..., 0]
+            - qg[..., 1] * kg[..., 1]
+            - qg[..., 2] * kg[..., 2]
+            - qg[..., 3] * kg[..., 3]
+        ).sum(dim=-1) * self.scale
+        return _scatter_softmax(scores, rows, h_query.shape[0])
+
+
 class MixedAritySignedKAN(nn.Module):
     """Wraps the shared SignedKANLayer of a MultiLayerSignedKAN and
     runs it once per arity per layer, fusing via learnable αₖ."""
@@ -178,14 +273,50 @@ class MixedAritySignedKAN(nn.Module):
             torch.tensor(list(cfg.init_arity_logits), dtype=torch.float32)
         )
 
+        # Per-edge learned mixture gate (alternative to global αₖ at
+        # the final edge-pool stage).  Input: concatenated endpoint
+        # embeddings + their absolute difference.  Output: per-edge
+        # logits over arity slots, softmax-normalised at forward time.
+        if cfg.per_edge_gate:
+            d = cfg.base.hidden_dim
+            n_arities = len(cfg.arities)
+            self.gate_mlp = nn.Sequential(
+                nn.Linear(3 * d, max(8, d // 2)),
+                nn.GELU(),
+                nn.Linear(max(8, d // 2), n_arities),
+            )
+            # Initialise the final layer near zero so the gate starts
+            # uniform; it converges away from uniform only as the
+            # edge-classification gradient drives it.
+            with torch.no_grad():
+                self.gate_mlp[-1].weight.mul_(0.05)
+                self.gate_mlp[-1].bias.zero_()
+        else:
+            self.gate_mlp = None
+
         # Attention M_e head (one shared per arity).
         # JK-concat output dim = d * n_layers; we project from that.
         if cfg.attention_m_e:
             d = cfg.base.hidden_dim
             d_jk = d * cfg.base.n_layers if cfg.base.jk_mode == "concat" else d
-            self.attention_m_e = _AttentionM_e(
-                d_query=d, d_cycle=d_jk, d_attn=max(16, d // 2),
-            )
+            d_attn = max(16, d // 2)
+            kind = getattr(cfg, "attention_m_e_kind", "dot")
+            if kind == "quaternion":
+                # Round d_attn up to a multiple of 4.
+                if d_attn % 4 != 0:
+                    d_attn = ((d_attn + 3) // 4) * 4
+                self.attention_m_e = _QuaternionAttentionM_e(
+                    d_query=d, d_cycle=d_jk, d_attn=d_attn,
+                )
+            elif kind == "dot":
+                self.attention_m_e = _AttentionM_e(
+                    d_query=d, d_cycle=d_jk, d_attn=d_attn,
+                )
+            else:
+                raise ValueError(
+                    f"unknown attention_m_e_kind: {kind!r}; "
+                    f"valid: 'dot', 'quaternion'"
+                )
         else:
             self.attention_m_e = None
 
@@ -364,11 +495,19 @@ class MixedAritySignedKAN(nn.Module):
                 "attention_m_e=True requires query_edges to be passed "
                 "into encode_edges()"
             )
+        if self.cfg.per_edge_gate and query_edges is None:
+            raise ValueError(
+                "per_edge_gate=True requires query_edges to be passed "
+                "into encode_edges()"
+            )
         # Stash vertex/edge features for the inner forward path to read.
         # Could thread through args but module state keeps signature stable.
         self._pending_vertex_features = vertex_features
         self._pending_edge_features = edge_features
         self._pending_edge_to_vertex = edge_to_vertex
+        # Stash query_edges so the batched path can access it for the
+        # per-edge gate without breaking the signature.
+        self._pending_query_edges = query_edges
         if self.cfg.cycle_batch_size is None:
             return self._encode_edges_full(per_arity_inputs, query_edges)
         if self.cfg.attention_m_e:
@@ -450,30 +589,53 @@ class MixedAritySignedKAN(nn.Module):
                 raise ValueError(f"unknown jk_mode: {jk}")
 
         # Pool per-arity to edges and mix.
-        edge_emb = None
-        # Build query embedding once if attention is enabled.
-        if self.cfg.attention_m_e:
+        # Build query embedding once if attention OR per-edge gate is on.
+        if self.cfg.attention_m_e or self.cfg.per_edge_gate:
             # query_edges shape (E, 2) of (u, v); use h_v[u] + h_v[v] as
-            # the query embedding (additive, permutation-invariant).
+            # the additive permutation-invariant query for attention,
+            # and (z_u, z_v, |z_u - z_v|) as the gate input.
             h_query = h_v[query_edges[:, 0]] + h_v[query_edges[:, 1]]
+
+        # First, gather all per-arity edge pools (shape (E, d_jk)).
+        per_arity_edge_pools = []
         for ai, h_final in enumerate(per_arity_final):
             M_e = per_arity_inputs[ai][3]
             if self.cfg.attention_m_e:
-                # Recompute M_e values via attention. Sparse structure
-                # (indices) stays the same; values are softmax-attention
-                # weights derived from h_query and h_final.
-                idx = M_e._indices()                        # (2, nnz)
+                idx = M_e._indices()
                 attn_vals = self.attention_m_e(
                     h_query, h_final, idx,
-                )                                            # (nnz,)
+                )
                 M_e_attn = torch.sparse_coo_tensor(
                     idx, attn_vals, M_e.shape,
                 ).coalesce()
                 edge_pool = torch.sparse.mm(M_e_attn, h_final)
             else:
-                edge_pool = torch.sparse.mm(M_e, h_final)   # (E, d_jk)
-            edge_emb = (alpha[ai] * edge_pool if edge_emb is None
-                        else edge_emb + alpha[ai] * edge_pool)
+                edge_pool = torch.sparse.mm(M_e, h_final)
+            per_arity_edge_pools.append(edge_pool)
+
+        if self.cfg.per_edge_gate:
+            # Per-edge gating: weights of shape (E, n_arities).
+            z_u = h_v[query_edges[:, 0]]
+            z_v = h_v[query_edges[:, 1]]
+            gate_in = torch.cat([z_u, z_v, (z_u - z_v).abs()], dim=-1)
+            gate_logits = self.gate_mlp(gate_in)        # (E, n_arities)
+            if self.cfg.gumbel_hard:
+                # Hard one-hot in forward, soft Gumbel in backward.
+                gate = F.gumbel_softmax(
+                    gate_logits,
+                    tau=self.cfg.gumbel_tau,
+                    hard=True,
+                    dim=-1,
+                )
+            else:
+                gate = F.softmax(gate_logits, dim=-1)
+            stacked = torch.stack(per_arity_edge_pools, dim=1)  # (E, A, d)
+            edge_emb = (gate.unsqueeze(-1) * stacked).sum(dim=1)
+        else:
+            edge_emb = None
+            for ai, edge_pool in enumerate(per_arity_edge_pools):
+                edge_emb = (alpha[ai] * edge_pool if edge_emb is None
+                            else edge_emb + alpha[ai] * edge_pool)
         return edge_emb
 
     def _encode_edges_batched(
@@ -601,7 +763,7 @@ class MixedAritySignedKAN(nn.Module):
                     h_v = self.base.layer_norms[li](h_v)
 
         # JK fold per arity (over the stored per-layer edge pools).
-        edge_emb = None
+        per_arity_pools: list[torch.Tensor] = []
         for ai in range(n_arities):
             stack = edge_pool_per_arity_per_layer[ai]
             if jk == "last":
@@ -614,8 +776,34 @@ class MixedAritySignedKAN(nn.Module):
                 arity_pool = torch.cat(stack, dim=-1)
             else:
                 raise ValueError(f"unknown jk_mode: {jk}")
-            edge_emb = (alpha[ai] * arity_pool if edge_emb is None
-                        else edge_emb + alpha[ai] * arity_pool)
+            per_arity_pools.append(arity_pool)
+
+        if self.cfg.per_edge_gate:
+            query_edges = getattr(self, "_pending_query_edges", None)
+            if query_edges is None:
+                raise RuntimeError(
+                    "per_edge_gate requires query_edges; ensure they "
+                    "are passed via encode_edges()"
+                )
+            z_u = h_v[query_edges[:, 0]]
+            z_v = h_v[query_edges[:, 1]]
+            gate_in = torch.cat([z_u, z_v, (z_u - z_v).abs()], dim=-1)
+            gate_logits = self.gate_mlp(gate_in)
+            if self.cfg.gumbel_hard:
+                gate = F.gumbel_softmax(
+                    gate_logits, tau=self.cfg.gumbel_tau,
+                    hard=True, dim=-1,
+                )
+            else:
+                gate = F.softmax(gate_logits, dim=-1)
+            stacked = torch.stack(per_arity_pools, dim=1)  # (E, A, d_jk)
+            edge_emb = (gate.unsqueeze(-1) * stacked).sum(dim=1)
+        else:
+            edge_emb = None
+            for ai in range(n_arities):
+                edge_emb = (alpha[ai] * per_arity_pools[ai]
+                            if edge_emb is None
+                            else edge_emb + alpha[ai] * per_arity_pools[ai])
         return edge_emb
 
 

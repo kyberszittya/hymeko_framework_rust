@@ -258,58 +258,57 @@ def _catmull_rom_eval(coef: torch.Tensor, x: torch.Tensor,
     x   : (..., C)    inputs in $[-1, 1]$.
     Returns the spline value of shape ``(..., C)``.
 
-    Optimised path (Phase 9 / lever 3):
-      - Basis weights computed via a single (T_basis, 4) ⊗ (..., 4)
-        contraction using the closed-form Catmull-Rom matrix
-        coefficients. Avoids the four separate ``w_m1, w_0, …``
-        multiplications which the eager path materialises.
-      - Single 4-wide gather along the grid axis using a stacked
-        index tensor (``..., C, 4``) so PyTorch fuses the four
-        per-control-point gathers into one kernel call.
-      - ``coef.expand`` removed — gather broadcasts naturally when
-        the index has the explicit leading dims.
+    Memory-friendly form (post-2026-05-04 rewrite):
+      - Basis weights computed via the closed-form CR polynomial
+        ($w_{-1} = (-t^3 + 2t^2 - t)/2$ etc.).  No intermediate
+        ``t_powers`` stack and no $4{\\times}4$ matmul — each
+        weight is a single fused expression in ``t``.
+      - Four separate gathers (one per control point) instead of
+        a stacked-index single gather.  Trades one kernel launch
+        for a $\\sim 4\\times$ smaller index tensor (no
+        ``(\\ldots, C, 4)`` int64 stack), which is the dominant
+        autograd-retained intermediate at large $T$.
 
     The compiled (lever 2) form sits one level up: the
     ``BatchedCatmullRomActivation`` modules wrap the call in
-    ``torch.compile`` once at module construction.
+    ``torch.compile`` once at module construction; the lower
+    intermediate count here lets ``torch.compile`` fuse more
+    aggressively in the cudagraph capture.
     """
     G = grid
     x = x.clamp(min=-1.0, max=1.0)
     u = (x + 1.0) * 0.5 * (G - 1)
     i = u.floor().long().clamp(max=G - 2)
     t = u - i.to(x.dtype)
-    # Stack [1, t, t², t³] along a new last dim → (..., C, 4).
     t2 = t * t
     t3 = t2 * t
-    one = torch.ones_like(t)
-    t_powers = torch.stack([one, t, t2, t3], dim=-1)            # (..., C, 4)
-    # Catmull-Rom basis matrix M_CR · t_powers gives the four blend
-    # weights (Pm1, P0, P1, P2) at once. Each row of M_CR is the
-    # polynomial coefficient list for the corresponding weight.
-    #   w_m1 = 0.5 * (-t³ + 2t² - t)            → ( 0, -1,  2, -1) · 0.5
-    #   w_0  = 0.5 * (3t³ - 5t² + 0t + 2)       → ( 2,  0, -5,  3) · 0.5
-    #   w_1  = 0.5 * (-3t³ + 4t² + t)           → ( 0,  1,  4, -3) · 0.5
-    #   w_2  = 0.5 * (t³ - t²)                  → ( 0,  0, -1,  1) · 0.5
-    M = torch.tensor(
-        [[ 0.0, -1.0,  2.0, -1.0],
-         [ 2.0,  0.0, -5.0,  3.0],
-         [ 0.0,  1.0,  4.0, -3.0],
-         [ 0.0,  0.0, -1.0,  1.0]],
-        dtype=x.dtype, device=x.device,
-    ) * 0.5                                                       # (4, 4)
-    # weights[..., k] = sum_j M[k, j] * t_powers[..., j]
-    weights = t_powers @ M.t()                                    # (..., C, 4)
 
-    # Stack gather indices (..., C, 4) along the grid axis for a fused
-    # single-gather call.
-    idx_m1 = (i - 1).clamp(min=0, max=G - 1)
-    idx_0  = i
-    idx_p1 = (i + 1).clamp(min=0, max=G - 1)
-    idx_p2 = (i + 2).clamp(min=0, max=G - 1)
-    idx = torch.stack([idx_m1, idx_0, idx_p1, idx_p2], dim=-1)    # (..., C, 4)
+    # Closed-form Catmull-Rom blend weights (each (..., C)):
+    #   w_m1 = 0.5 * (-t^3 + 2t^2 - t)
+    #   w_0  = 0.5 * (3t^3 - 5t^2 + 2)
+    #   w_p1 = 0.5 * (-3t^3 + 4t^2 + t)
+    #   w_p2 = 0.5 * (t^3 - t^2)
+    w_m1 = 0.5 * (-t3 + 2.0 * t2 - t)
+    w_0  = 0.5 * ( 3.0 * t3 - 5.0 * t2 + 2.0)
+    w_p1 = 0.5 * (-3.0 * t3 + 4.0 * t2 + t)
+    w_p2 = 0.5 * ( t3 - t2)
+
+    # Gather indices — int64 but kept as separate (..., C) tensors,
+    # so we never materialise a (..., C, 4) int64 stack
+    # (which is 8 bytes/element × 4 = the dominant memory chunk in
+    # the prior path).
+    idx_m1 = (i - 1).clamp(min=0, max=G - 1).unsqueeze(-1)        # (..., C, 1)
+    idx_0  = i.unsqueeze(-1)
+    idx_p1 = (i + 1).clamp(min=0, max=G - 1).unsqueeze(-1)
+    idx_p2 = (i + 2).clamp(min=0, max=G - 1).unsqueeze(-1)
     coef_b = coef.expand(*x.shape, G)
-    P = coef_b.gather(-1, idx)                                     # (..., C, 4)
-    return (weights * P).sum(dim=-1)                               # (..., C)
+
+    P_m1 = coef_b.gather(-1, idx_m1).squeeze(-1)                  # (..., C)
+    P_0  = coef_b.gather(-1, idx_0).squeeze(-1)
+    P_p1 = coef_b.gather(-1, idx_p1).squeeze(-1)
+    P_p2 = coef_b.gather(-1, idx_p2).squeeze(-1)
+
+    return w_m1 * P_m1 + w_0 * P_0 + w_p1 * P_p1 + w_p2 * P_p2
 
 
 class CatmullRomActivation(nn.Module):

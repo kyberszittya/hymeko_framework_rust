@@ -185,6 +185,34 @@ def _enumerate_cycles_fast(g: SignedGraph, k: int,
         cap = max_cycles
     try:
         import hymeko  # type: ignore
+        # ── Axiom-aware top-K path: opt-in via env var ──
+        # HSIKAN_TOPK_MODE = "global" | "per_vertex"   (otherwise → off)
+        # HSIKAN_TOPK_K    = K when global; m when per_vertex
+        # HSIKAN_TOPK_SCORER = "fraction_negative" (default) | "balance"
+        #                     | "sign_product_abs" | "low_root"
+        import os
+        topk_mode = os.environ.get("HSIKAN_TOPK_MODE", "").strip()
+        if topk_mode in ("global", "per_vertex"):
+            scorer = os.environ.get("HSIKAN_TOPK_SCORER", "fraction_negative")
+            pruner = os.environ.get("HSIKAN_TOPK_PRUNER", "none")
+            K = int(os.environ.get("HSIKAN_TOPK_K", "16"))
+            eu = np.ascontiguousarray(g.edges[:, 0], dtype=np.uint32)
+            ev = np.ascontiguousarray(g.edges[:, 1], dtype=np.uint32)
+            es = np.ascontiguousarray(g.signs, dtype=np.int8)
+            if topk_mode == "global" and hasattr(
+                    hymeko, "enumerate_top_k_cycles_signed_rs"):
+                arr, _scores = hymeko.enumerate_top_k_cycles_signed_rs(
+                    eu, ev, es, g.n_nodes, k, K, scorer, pruner,
+                )
+                return [tuple(row) for row in arr.tolist()]
+            if topk_mode == "per_vertex" and hasattr(
+                    hymeko, "enumerate_top_k_per_vertex_cycles_signed_rs"):
+                arr, _scores = (
+                    hymeko.enumerate_top_k_per_vertex_cycles_signed_rs(
+                        eu, ev, es, g.n_nodes, k, K, scorer, pruner,
+                    )
+                )
+                return [tuple(row) for row in arr.tolist()]
         if hasattr(hymeko, "enumerate_k_cycles_rs"):
             eu = np.ascontiguousarray(g.edges[:, 0], dtype=np.uint32)
             ev = np.ascontiguousarray(g.edges[:, 1], dtype=np.uint32)

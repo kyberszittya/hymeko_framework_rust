@@ -32,8 +32,16 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod abb;
 pub mod axioms;
+pub mod lowering;
+pub mod msg;
 pub mod schema;
+pub mod ssg;
 
-pub use axioms::AxiomViolation;
+pub use axioms::{AxiomBundle, AxiomTrace, AxiomViolation};
+pub use lowering::{lower, LoweredPGraph, LowerError};
+pub use msg::{maximal_structure, MaximalStructure};
 pub use schema::{PGraphError, PGraphSchema, PNodeKind};
+pub use ssg::{enumerate as ssg_enumerate, SolutionStructure, SsgOptions};
+pub use abb::{solve as abb_solve, AbbOptions, AbbSolution};

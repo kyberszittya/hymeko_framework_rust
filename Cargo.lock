@@ -2054,6 +2054,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hymeko_graph"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "proptest",
+ "rayon",
+]
+
+[[package]]
 name = "hymeko_hnn"
 version = "0.1.0"
 dependencies = [
@@ -2101,7 +2110,9 @@ dependencies = [
 name = "hymeko_pgraph"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "hymeko_core",
+ "parser",
  "proptest",
  "thiserror 1.0.69",
 ]
@@ -2115,11 +2126,13 @@ dependencies = [
  "dashmap 6.1.0",
  "hymeko_core",
  "hymeko_formats",
+ "hymeko_graph",
  "hymeko_hre",
  "hymeko_query",
  "iceoryx2",
  "ndarray",
  "numpy",
+ "parser",
  "pyo3",
  "rayon",
  "serde",

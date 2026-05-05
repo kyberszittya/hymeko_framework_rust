@@ -15,10 +15,14 @@ import torch
 import torch.nn as nn
 
 from ehk_torch_stub import (
+    ArityMixer,
     GGKSpec,
     HighwayBlock,
     HypergraphConv,
     ResidualBlock,
+    SignedClassifier,
+    SignedKANLayer,
+    WalkLayer,
 )
 
 
@@ -50,11 +54,17 @@ class {{config:robot_name}}(nn.Module):
 {{/each}}{{#each tanh_layers}}        self.{{name}} = nn.Tanh()
 {{/each}}{{#each residual_blocks}}        self.{{name}} = ResidualBlock(hidden={{field:hidden}})
 {{/each}}{{#each highway_blocks}}        self.{{name}} = HighwayBlock(hidden={{field:hidden}})
+{{/each}}{{#each signedkan_layers}}        self.{{name}} = SignedKANLayer(hidden={{field:hidden}}, arity={{field:arity}}, spline_kind="{{field:spline_kind}}", grid={{field:grid}})
+{{/each}}{{#each walk_layers}}        self.{{name}} = WalkLayer(hidden={{field:hidden}}, walk_len={{field:walk_len}}, spline_kind="{{field:spline_kind}}", grid={{field:grid}})
+{{/each}}{{#each arity_mixers}}        self.{{name}} = ArityMixer(hidden={{field:hidden}}, mix_K={{field:mix_K}})
+{{/each}}{{#each signed_classifiers}}        self.{{name}} = SignedClassifier(d_in={{field:d_in}}, d_out={{field:d_out}})
 {{/each}}
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Dataflow follows the order of @dataflow hyperedge declarations.
-        # Each edge: (+ in_tensor, ~ layer, - out_tensor).
-{{#each flows}}        {{bind:-:0}} = self.{{bind:~:0}}({{bind:+:0}})
+        # Each edge: (+ in_tensor[, + in_tensor...], ~ layer, - out_tensor).
+        # `bind:+:all_csv` joins multiple `+` operands with ", " so a
+        # multi-source fan-in (e.g. arity_mixer) renders as one call.
+{{#each flows}}        {{bind:-:0}} = self.{{bind:~:0}}({{bind:+:all_csv}})
 {{/each}}{{#each outputs}}        return {{name}}
 {{/each}}
     def spectral_weights(self):
@@ -77,4 +87,12 @@ class {{config:robot_name}}(nn.Module):
             out.append(_m.l0.weight); out.append(_m.l1.weight)
         elif isinstance(_m, HighwayBlock):
             out.append(_m.transform.weight); out.append(_m.gate.weight)
+        elif isinstance(_m, SignedKANLayer):
+            out.append(_m.inner.weight); out.append(_m.outer.weight)
+        elif isinstance(_m, WalkLayer):
+            out.append(_m.inner.weight); out.append(_m.outer.weight)
+        elif isinstance(_m, ArityMixer):
+            out.append(_m.proj.weight)
+        elif isinstance(_m, SignedClassifier):
+            out.append(_m.linear.weight)
 {{/each}}        return out

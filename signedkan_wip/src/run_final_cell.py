@@ -73,6 +73,16 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     if dataset.startswith("sbm_n"):
         n_nodes = int(dataset.split("_n")[1])
         g, _ = sbm_signed(n_nodes=n_nodes, n_communities=4, seed=seed)
+    elif dataset.startswith("mesh_"):
+        from .datasets_meshes import (build_polyhedral_mesh,
+                                        build_mixed_polytope_dataset)
+        kind = dataset[len("mesh_"):]
+        if kind == "mixed":
+            g = build_mixed_polytope_dataset(seed=seed,
+                                                n_per_kind=80)
+        else:
+            g = build_polyhedral_mesh(name=kind, n_copies=200,
+                                        seed=seed)
     else:
         g = load(dataset)
         # NOTE: published Slashdot SOTA script (run_phase7_slashdot_pruning.py)
@@ -126,25 +136,96 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         arities = (3, 4, 5)
     else:
         arities = (3, 4)
-    cap_dict = {2: 1_000_000, 3: 30_000,
+    # k=2 cap respects HSIKAN_MAX_K2 env var if set (defaults to 1M to
+    # match the published Slashdot recipe).  Useful for memory-bound
+    # datasets like Epinions where 1M k=2 cycles overwhelms 8GB GPUs.
+    max_k2 = int(os.environ.get("HSIKAN_MAX_K2", "1000000"))
+    max_k3 = int(os.environ.get("HSIKAN_MAX_K3", "30000"))
+    cap_dict = {2: max_k2, 3: max_k3,
                   4: max_k4, 5: max_k4, 6: max_k4}
 
     from .n_tuples import construct_2
+    # ── Tuple-spec parsing ──────────────────────────────────────────
+    #
+    # Three modes, in priority order:
+    #
+    # 1) HSIKAN_MIXED_TUPLES=c3,c4,w2,w3  → mixed cycles + walks; each
+    #    "cN" enumerates closed N-cycles, each "wL" enumerates open
+    #    length-L simple walks (L+1 vertex tuples).  The
+    #    MixedAritySignedKAN treats each spec as an independent
+    #    "arity slot" with its own αₖ weight, so the model
+    #    autonomously discovers which structural primitive carries
+    #    each dataset's signal.
+    #
+    # 2) HSIKAN_WALK_LENS=L1,L2,...  → walks-only mode.
+    #
+    # 3) HSIKAN_ARITIES=k1,k2,... (or default per-dataset) → cycles-
+    #    only mode.
+    mixed_env = os.environ.get("HSIKAN_MIXED_TUPLES")
+    walk_lens_env = os.environ.get("HSIKAN_WALK_LENS")
+
+    # Parse to a list of (kind, n_vertices, walk_len_or_none).
+    tuple_specs: list[tuple[str, int, int | None]] = []
+    if mixed_env:
+        for token in mixed_env.split(","):
+            token = token.strip()
+            if not token:
+                continue
+            if token.startswith("c"):
+                k_v = int(token[1:])
+                tuple_specs.append(("cycle", k_v, None))
+            elif token.startswith("w"):
+                L_v = int(token[1:])
+                tuple_specs.append(("walk", L_v + 1, L_v))
+            else:
+                raise ValueError(
+                    f"unknown HSIKAN_MIXED_TUPLES token: {token} "
+                    f"(expected 'cN' or 'wL')")
+    elif walk_lens_env:
+        for L in (int(x) for x in walk_lens_env.split(",")):
+            tuple_specs.append(("walk", L + 1, L))
+    else:
+        for k_v in arities:
+            tuple_specs.append(("cycle", k_v, None))
+
+    # `arities` (= per-spec n_vertices) drives the model's
+    # MixedAritySignedKANConfig.arities.  Duplicates are fine —
+    # alpha mixer is per-position, not per-value.
+    arities = tuple(spec[1] for spec in tuple_specs)
+    use_walks = any(spec[0] == "walk" for spec in tuple_specs)
+
+    if any(spec[0] == "walk" for spec in tuple_specs):
+        from .walks import construct_walks
+
+    # Strict no-leakage protocol: when set, exclude every cycle / walk
+    # whose internal edges include the test edge.  Defends the
+    # transductive-edge-in-cycle protocol caveat documented in the
+    # SISY paper §III.B.  Default: SMC-paper transductive convention
+    # (only k=2 cycles excluded; higher cycles / walks may contain
+    # the test edge).
+    strict_protocol = bool(int(os.environ.get(
+        "HSIKAN_STRICT_PROTOCOL", "0")))
     per_arity_tr, per_arity_te = [], []
-    for k in arities:
-        if k == 2:
+    for kind, k_v, walk_len in tuple_specs:
+        if kind == "walk":
+            assert walk_len is not None
+            t_k = construct_walks(
+                g, walk_len=walk_len,
+                max_walks=cap_dict.get(k_v, max_k4),
+                seed=seed)
+        elif k_v == 2:
             t_k = construct_2(g)
-        elif k == 3:
+        elif k_v == 3:
             t_k = construct(g)
         else:
-            # Published Slashdot SOTA (phase7_slashdot_pruning.py:65) uses
-            # plain construct_k WITHOUT early_stop — reservoir-sampled
-            # cycles, unbiased. early_stop biases toward small-vertex
-            # cycles which apparently hurts AUC noticeably on Slashdot.
-            t_k = construct_k(g, k=k, max_cycles=cap_dict[k], seed=seed)
-        if not t_k: continue
-        if len(t_k) > cap_dict[k]:
-            t_k = subsample_tuples(t_k, cap_dict[k], seed=seed)
+            t_k = construct_k(g, k=k_v,
+                               max_cycles=cap_dict[k_v],
+                               seed=seed)
+        if not t_k:
+            continue
+        cap = cap_dict.get(k_v, max_k4)
+        if len(t_k) > cap:
+            t_k = subsample_tuples(t_k, cap, seed=seed)
         triad_v_np = np.array([t.v for t in t_k], dtype=np.int64)
         triad_sigma_np = np.array([t.sigma for t in t_k], dtype=np.int64)
         triad_v = torch.from_numpy(triad_v_np).to(device)
@@ -152,21 +233,45 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         M_vt = build_vertex_triad_incidence(triad_v_np, g.n_nodes, device,
                                               mode="sum")
         n_t = len(t_k)
-        edge_to_tuples = {}
-        # k=2 self-tuple lookup: for each undirected edge key, the
-        # tuple-index whose vertex set IS that edge. Used to exclude
-        # the answer-leaking row from M_e at query time (n_tuples.py:215).
-        edge_to_self_idx_k = {}
+        edge_to_tuples: dict = {}
+        # `edge_to_self_idx_k`: map edge-key → set of tuple indices
+        # that "leak" the sign of that edge.  Always populated for
+        # k=2 cycles (where the cycle IS the edge).  In strict mode,
+        # populated for every internal edge of every cycle / walk so
+        # the M_e build can exclude all leaky tuples.
+        edge_to_self_idx_k: dict = {}
+        # k = number of vertices in this tuple-type.  For cycles, the
+        # vertex count equals the edge count (modular wrap closes the
+        # last edge).  For walks, edge count = vertices - 1 (no wrap).
+        k = k_v
+        is_walk = (kind == "walk")
         for ti in range(n_t):
             cyc = triad_v_np[ti]
-            if k == 2:
-                key2 = (min(int(cyc[0]), int(cyc[1])),
-                         max(int(cyc[0]), int(cyc[1])))
-                edge_to_self_idx_k[key2] = ti
-            for j in range(k):
-                u_, v_ = int(cyc[j]), int(cyc[(j + 1) % k])
-                key = (min(u_, v_), max(u_, v_))
-                edge_to_tuples.setdefault(key, []).append(ti)
+            if is_walk:
+                # Open walk: iterate L = arity-1 walk-edges only.
+                for j in range(k - 1):
+                    u_, v_ = int(cyc[j]), int(cyc[j + 1])
+                    key = (min(u_, v_), max(u_, v_))
+                    edge_to_tuples.setdefault(key, []).append(ti)
+                    if strict_protocol:
+                        edge_to_self_idx_k.setdefault(
+                            key, set()).add(ti)
+            else:
+                # Cycle: iterate k edges WITH modular wrap.
+                if k == 2:
+                    key2 = (min(int(cyc[0]), int(cyc[1])),
+                             max(int(cyc[0]), int(cyc[1])))
+                    edge_to_self_idx_k[key2] = ti
+                for j in range(k):
+                    u_, v_ = int(cyc[j]), int(cyc[(j + 1) % k])
+                    if strict_protocol and k != 2:
+                        # In strict mode, every cycle-edge marks
+                        # this cycle as a self-tuple of that edge.
+                        sk = (min(u_, v_), max(u_, v_))
+                        edge_to_self_idx_k.setdefault(
+                            sk, set()).add(ti)
+                    key = (min(u_, v_), max(u_, v_))
+                    edge_to_tuples.setdefault(key, []).append(ti)
 
         def build_me(edges_arr):
             rows, cols, vals = [], [], []
@@ -174,7 +279,19 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                 u_, v_ = int(e[0]), int(e[1])
                 key = (min(u_, v_), max(u_, v_))
                 ids = edge_to_tuples.get(key, [])
-                if k == 2:
+                # Self-tuple exclusion.  In default (transductive)
+                # mode: only k=2 cycles excluded (the cycle IS the
+                # edge).  In strict mode: every cycle / walk
+                # containing the edge as an internal edge excluded
+                # — defends the σ-leakage protocol caveat.
+                if strict_protocol:
+                    self_set = edge_to_self_idx_k.get(key, set())
+                    if self_set:
+                        if isinstance(self_set, set):
+                            ids = [t for t in ids if t not in self_set]
+                        else:  # k=2 cycle stored a single int
+                            ids = [t for t in ids if t != self_set]
+                elif (not is_walk) and k == 2:
                     self_t = edge_to_self_idx_k.get(key)
                     ids = [t for t in ids if t != self_t]
                 if not ids: continue
@@ -198,9 +315,40 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         per_arity_tr.append((triad_v, triad_sigma, M_vt, M_e_tr))
         per_arity_te.append((triad_v, triad_sigma, M_vt, M_e_te))
     arities_used = arities[:len(per_arity_tr)]
-    cycle_batch = 10000 if (dataset == "slashdot") else None
+    # Cycle-batching activates the chunked-forward path
+    # (`_encode_edges_batched`) which bounds peak (T, k, S, d)
+    # activation memory at O(cycle_batch).  Epinions and other
+    # large-vertex datasets need this.  Override via env-var.
+    _default_cb = 10000 if dataset in ("slashdot", "epinions") else None
+    cycle_batch_env = os.environ.get("HSIKAN_CYCLE_BATCH")
+    if cycle_batch_env:
+        cycle_batch = int(cycle_batch_env) or None
+    else:
+        cycle_batch = _default_cb
     is_slashdot = (dataset == "slashdot")
 
+    per_edge_gate = bool(int(os.environ.get("HSIKAN_PER_EDGE_GATE", "0")))
+    gumbel_hard = bool(int(os.environ.get("HSIKAN_GUMBEL_HARD", "0")))
+    gumbel_tau = float(os.environ.get("HSIKAN_GUMBEL_TAU", "1.0"))
+    if gumbel_hard:
+        # Hard gate only meaningful with the per-edge gate enabled.
+        per_edge_gate = True
+    # Attention-over-cycles head. "none" = uniform 1/|N| pooling
+    # (default); "dot" = scalar dot-product attention; "quaternion" =
+    # Hamilton-product real-part attention (signed-graph natural).
+    attention_kind = os.environ.get("HSIKAN_ATTENTION_M_E", "none").lower()
+    use_attention_m_e = attention_kind in ("dot", "quaternion")
+    direct_messaging = bool(int(os.environ.get("HSIKAN_DIRECT_MESSAGING", "0")))
+    # attention_m_e is mutually exclusive with cycle_batch_size in the
+    # current implementation. If user asks for attention on a dataset
+    # whose default has batching enabled (slashdot/epinions), disable
+    # batching with a heads-up.
+    if use_attention_m_e and cycle_batch is not None:
+        print(f"[run_final_cell] attention_m_e={attention_kind!r} disables "
+              f"cycle_batch_size (was {cycle_batch}); peak GPU memory will "
+              f"increase — reduce HSIKAN_TOPK_K if OOM.",
+              file=sys.stderr)
+        cycle_batch = None
     cfg = MixedAritySignedKANConfig(
         base=MultiLayerSignedKANConfig(
             n_nodes=g.n_nodes, n_layers=2, hidden_dim=hidden,
@@ -210,8 +358,36 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
             inner_skip="highway", outer_skip="none", use_residual=True),
         arities=arities_used,
         init_arity_logits=tuple([0.0]*len(arities_used)),
-        cycle_batch_size=cycle_batch)
+        cycle_batch_size=cycle_batch,
+        per_edge_gate=per_edge_gate,
+        gumbel_hard=gumbel_hard,
+        gumbel_tau=gumbel_tau,
+        attention_m_e=use_attention_m_e,
+        attention_m_e_kind=attention_kind if use_attention_m_e else "dot",
+        direct_messaging=direct_messaging)
     model = MixedAritySignedKAN(cfg).to(device)
+
+    # Optional Lyapunov-safe spectral entropy regulariser.
+    # HSIKAN_ENTROPY_LAMBDA > 0 enables it on model.node_embed.weight.
+    entropy_lambda = float(os.environ.get("HSIKAN_ENTROPY_LAMBDA", "0"))
+    entropy_reg = None
+    if entropy_lambda > 0:
+        from .entropy_reg import EntropyRegulariser, EntropyRegConfig
+        entropy_reg = EntropyRegulariser(EntropyRegConfig(
+            lam_0=entropy_lambda,
+            target_entropy=0.5,
+            kl_normalized=True,
+            momentum=0.9,
+            stride=5,
+        ))
+
+    # Tensor of (u, v) query edges for the per-edge gate (when on).
+    e_tr_t = torch.tensor(e_tr, dtype=torch.long, device=device)
+    e_te_t = torch.tensor(e_te, dtype=torch.long, device=device)
+    # query_edges are required by attention_m_e (any kind) AND by
+    # per_edge_gate. Either path needs them.
+    q_tr = e_tr_t if (per_edge_gate or use_attention_m_e) else None
+    q_te = e_te_t if (per_edge_gate or use_attention_m_e) else None
 
     if is_slashdot:
         # Match the published Slashdot SOTA config exactly
@@ -223,15 +399,18 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                                 weight_decay=0.0)
         for _ in range(n_epochs):
             model.train()
-            edge_emb = model.encode_edges(per_arity_tr)
+            edge_emb = model.encode_edges(per_arity_tr, query_edges=q_tr)
             logits = model.classifier(edge_emb).squeeze(-1)
             loss = F.binary_cross_entropy_with_logits(logits, y_tr)
+            if entropy_reg is not None:
+                loss = loss + entropy_reg(model.node_embed.weight)
             opt.zero_grad(); loss.backward(); opt.step()
         # Eval: also use model.classifier
         model.eval()
         def fwd():
             with torch.no_grad():
-                return model.classifier(model.encode_edges(per_arity_te))
+                return model.classifier(model.encode_edges(
+                    per_arity_te, query_edges=q_te))
         with torch.no_grad():
             probs = torch.sigmoid(fwd().squeeze(-1)).cpu().numpy()
         auc = roc_auc_score(y_te, probs) if len(set(y_te)) > 1 else float("nan")
@@ -251,15 +430,18 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                             lr=5e-3)
     for _ in range(n_epochs):
         model.train(); clf.train()
-        edge_emb = model.encode_edges(per_arity_tr)
+        edge_emb = model.encode_edges(per_arity_tr, query_edges=q_tr)
         logits = clf(edge_emb).squeeze(-1)
         loss = F.binary_cross_entropy_with_logits(logits, y_tr,
                                                     pos_weight=pw)
+        if entropy_reg is not None:
+            loss = loss + entropy_reg(model.node_embed.weight)
         opt.zero_grad(); loss.backward(); opt.step()
     model.eval(); clf.eval()
     def fwd():
         with torch.no_grad():
-            return clf(model.encode_edges(per_arity_te))
+            return clf(model.encode_edges(per_arity_te,
+                                            query_edges=q_te))
     with torch.no_grad():
         probs = torch.sigmoid(fwd().squeeze(-1)).cpu().numpy()
     auc = roc_auc_score(y_te, probs) if len(set(y_te)) > 1 else float("nan")
@@ -540,10 +722,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", required=True,
                     choices=["bitcoin_alpha", "bitcoin_otc", "slashdot",
+                              "epinions",
                               "sbm_n200", "sbm_n400",
                               "kinematic_k4", "kinematic_k6",
                               "pose_k4", "pose_k6",
-                              "scene"])
+                              "scene",
+                              "mesh_cube", "mesh_icosahedron",
+                              "mesh_octahedron", "mesh_tetrahedron",
+                              "mesh_mixed"])
     ap.add_argument("--model", default="HSiKAN")
     ap.add_argument("--hidden", type=int, default=16)
     ap.add_argument("--n-epochs", type=int, default=80)
@@ -553,7 +739,8 @@ def main():
     args = ap.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    if args.dataset.startswith(("bitcoin", "slashdot", "sbm")):
+    if args.dataset.startswith(("bitcoin", "slashdot", "sbm", "epinions",
+                                  "mesh_")):
         out = cell_signed_graph(args.dataset, args.model, args.hidden,
                                   args.n_epochs, args.max_k4, device,
                                   seed=args.seed)

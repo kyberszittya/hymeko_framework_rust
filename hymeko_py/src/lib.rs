@@ -1,5 +1,6 @@
 pub mod interface_python;
 pub mod cycles;
+pub mod hymeko_parse;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
@@ -33,6 +34,10 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_color_coded_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_path_closure_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_walks_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_signed_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::hymeko_parse::parse_hymeko_rs, m)?)?;
 
     Ok(())
 }

@@ -100,6 +100,51 @@ nn {
         // sigmoid gate T. Same field surface as residual_block.
         highway_block:   + <isa> meta_layer {}
 
+        // ─── Tier-3: signed-cycle KAN primitives ────────────────────
+        // signedkan_layer: realises the Option-C signed-incidence
+        // factor for one fixed arity k. Forward, per signed cycle
+        // c=(v_1,...,v_k) with σ assignments:
+        //   h_c = Σ_s ∈ {+,−,~0} φ_e^s ( Σ_{i: σ_i=s} φ_v^s(h_{v_i}) )
+        // Carries fields:
+        //   hidden  : channel width
+        //   arity   : k for this layer (matches construct_k_cycles arity)
+        //   spline_kind : "bspline" | "catmull_rom" | "kochanek_bartels"
+        //   grid    : spline grid size
+        // Internal structure (inner / outer φ pair, σ-mask aggregation,
+        // three branch sum) is realised by the helper class; the IR
+        // captures the shape contract only — multi-input dataflow
+        // (needed to wire the M_e sparse mm in pure HyMeKo) is not yet
+        // supported and is deferred to a later tier.
+        signedkan_layer: + <isa> meta_layer {}
+
+        // arity_mixer: combines per-arity cycle embeddings with
+        // learned softmax weights α_k. Forward:
+        //   h_e = Σ_k softmax(α)_k · M_e^{(k)} h_c^{(k)}
+        // Single tensor input (one per arity-channel) is conceptually
+        // a multi-input op; current single-input dataflow encodes
+        // it as a stacked input per port.
+        arity_mixer:     + <isa> meta_layer {}
+
+        // signed_classifier: linear classifier over edge embeddings.
+        // Trivial wrapper around nn.Linear, named separately so that
+        // the dataflow walker distinguishes "head" from "body" Linears
+        // for downstream analyses.
+        signed_classifier: + <isa> meta_layer {}
+
+        // walk_layer: open-walk sibling of signedkan_layer.  Same
+        // signed-aggregation Option-C structure but consuming
+        // length-`walk_len` simple walks (open paths, walk_len+1
+        // vertices) enumerated by hymeko.enumerate_k_walks_rs
+        // instead of closed cycles.  Carries:
+        //   hidden    : channel width
+        //   walk_len  : L (number of edges in the walk)
+        //   spline_kind : "bspline" | "catmull_rom" | "kochanek_bartels"
+        //   grid    : spline grid size
+        // Walk-HSiKAN is the architectural extension that contains
+        // both HSiKAN (closed cycles) and SGCN (length-L walks) as
+        // special cases.
+        walk_layer:      + <isa> meta_layer {}
+
         // Dataflow hyperedge type: outer-level wiring between layer
         // hypervertices and tensors. Conventional incidence pattern:
         //   (+ in_tensor, ~ layer_hypervertex, - out_tensor)

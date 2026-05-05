@@ -186,7 +186,29 @@ class SignedKANLayer(nn.Module):
         Generalised over ``k`` (arity): k=3 is the original triad case;
         k=4,5,... are Davis-1967 weakly-balanced n-tuples constructed
         by ``n_tuples.construct_k``.
+
+        Memory mode: when ``HSIKAN_CHUNK_T`` is set in env, the
+        T-dimension is processed in chunks of that size and the
+        per-chunk outer-spline outputs are concatenated.  Reduces
+        peak GPU memory roughly linearly with chunk count, at the
+        cost of recomputing the inner+outer spline forward on each
+        chunk.  Required for $|V| \\gtrsim 10^5$ datasets (Epinions)
+        on $\\le 8$ GB GPUs.
         """
+        import os
+        chunk_t = int(os.environ.get("HSIKAN_CHUNK_T", "0"))
+        if chunk_t > 0 and triad_v.shape[0] > chunk_t:
+            chunks = []
+            for s in range(0, triad_v.shape[0], chunk_t):
+                e = min(s + chunk_t, triad_v.shape[0])
+                chunks.append(self._forward_impl(
+                    x, triad_v[s:e], triad_sigma[s:e]))
+            return torch.cat(chunks, dim=0)
+        return self._forward_impl(x, triad_v, triad_sigma)
+
+    def _forward_impl(self, x: torch.Tensor,
+                       triad_v: torch.Tensor,
+                       triad_sigma: torch.Tensor) -> torch.Tensor:
         T, k = triad_v.shape[0], triad_v.shape[1]
         d = self.cfg.hidden_dim
         S = self.n_branches

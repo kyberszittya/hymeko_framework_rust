@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.11.29)  29 APR 2026 16:15
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.11.29)  4 MAY 2026 08:10
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -592,18 +592,25 @@ ll wrap-per fix in \OT1/lmtt/m/n/10 run_benchmark.py::\_wrap\_hymeko\_net
  []
 
 [5]
-Overfull \hbox (43.12529pt too wide) in paragraph at lines 481--483
+Overfull \hbox (75.83594pt too wide) in paragraph at lines 481--493
+\OT1/lmr/bx/n/10 Script: \OT1/lmtt/m/n/10 run_overnight_views_ph18c.sh\OT1/lmr/
+m/n/10 . \OT1/lmr/bx/n/10 Goal: \OT1/lmr/m/n/10 two follow-on ques-tions raised
+ by ph18: (1) does the \OT1/lmtt/m/n/10 fashion_mnist_highway_10
+ []
+
+
+Overfull \hbox (43.12529pt too wide) in paragraph at lines 524--526
 \OT1/lmr/m/n/10 Per-arm best-known re-sult on each an-chor dataset (most re-cen
 t published-power con-fig-u-ra-tion; see \OT1/lmtt/m/n/10 RESULTS_VIEWS_SUITE.m
 d
  []
 
 
-Overfull \hbox (126.99635pt too wide) in paragraph at lines 487--511
+Overfull \hbox (285.15121pt too wide) in paragraph at lines 530--554
  [] 
  []
 
-[6] [7] (./phases_and_paths.aux)
+[6] [7] [8] (./phases_and_paths.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -612,20 +619,14 @@ L3 programming layer <2024-01-22>
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-
-Package rerunfilecheck Warning: File `phases_and_paths.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `phases_and_paths.out':
-(rerunfilecheck)             Before: D57710F19A1E7B34CBAB50E07410BD8B;1844
-(rerunfilecheck)             After:  6CDEFBBDEA33F497BF574D1D6F778DBC;2641.
+Package rerunfilecheck Info: File `phases_and_paths.out' has not changed.
+(rerunfilecheck)             Checksum: 6CDEFBBDEA33F497BF574D1D6F778DBC;2641.
  ) 
 Here is how much of TeX's memory you used:
- 11107 strings out of 475582
- 168737 string characters out of 5778245
+ 11111 strings out of 475582
+ 168786 string characters out of 5778245
  1944975 words of memory out of 5000000
- 32927 multiletter control sequences out of 15000+600000
+ 32929 multiletter control sequences out of 15000+600000
  626781 words of font info for 88 fonts, out of 8000000 for 9000
  350 hyphenation exceptions out of 8191
  75i,9n,79p,529b,566s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -649,10 +650,10 @@ lic/lm/lmsy9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtk10.pfb></usr/share
 /texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm
 /lmtt9.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/texl
 ive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
-Output written on phases_and_paths.pdf (7 pages, 526073 bytes).
+Output written on phases_and_paths.pdf (8 pages, 530405 bytes).
 PDF statistics:
- 285 PDF objects out of 1000 (max. 8388607)
- 212 compressed objects within 3 object streams
- 46 named destinations out of 1000 (max. 500000)
- 97 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 296 PDF objects out of 1000 (max. 8388607)
+ 222 compressed objects within 3 object streams
+ 48 named destinations out of 1000 (max. 500000)
+ 113 words of extra memory for PDF output out of 10000 (max. 10000000)
 

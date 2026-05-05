@@ -85,10 +85,16 @@ places across two independent phases.
 
 The closed-loop multi-term wrapping
 $\lambda_{\text{eff}}=\lambda_0\exp(-\eta\,D_{KL}(\hat\lambda^{(t-1)}\|\hat\lambda^{(t)}))$
-(\arm{entropy_lyapunov}) yields one significant published-power
-positive --- \texttt{fashion\_mnist\_highway\_10} at
-$\Delta\!=\!+0.087$\pp, $p\!<\!0.01$ --- but does not extend to
-deeper architectures.
+(\arm{entropy_lyapunov}) yields two significant published-power
+positives at FashionMNIST: \texttt{fashion\_mnist\_highway\_10}
+($L\!=\!10$) at $\Delta\!=\!+0.092$\pp, $p\!<\!0.05$ at 10-seed
+(ph18c confirmation of the original ph18 result), and
+\texttt{mnist\_resmlp\_40\_hymeko} ($L\!=\!40$) at
+$\Delta\!=\!+0.213$\pp, $p\!<\!0.05$ once $\lambda_{a,b}$ is
+rescaled to $0.5$ per the depth-aware calibration law
+$\lambda_{\rm multi}\sim\lambda_{\rm scalar}/L$. Highway-20
+remains a genuine depth-fragility null across
+$\lambda\!\in\!\{0.5,1.0,2.0,5.0\}$.
 
 \section*{Architectural-parity claim}
 

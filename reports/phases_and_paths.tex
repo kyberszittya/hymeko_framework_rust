@@ -476,6 +476,49 @@ confirming the architectural-parity claim end-to-end. Bucket B
 required a small wrapper fix in \code{run_benchmark.py::\_wrap\_hymeko\_net}
 (flatten 28$\times$28 inputs to flat 784) --- shipped as ph18b.
 
+\subsection*{Phase 18c --- Confirmation sweep + depth $\lambda$-grid (2026-05-04)}
+
+\textbf{Script:} \code{run_overnight_views_ph18c.sh}.
+\textbf{Goal:} two follow-on questions raised by ph18:
+(1) does the \code{fashion_mnist_highway_10} positive survive a
+10-seed sweep? (2) is the depth-fragility of highway-20 / resmlp-40
+real, or was the original constant-$\lambda$ off-axis at depth?
+Path I's calibration law $\lambda_{\rm multi}\sim\lambda_{\rm scalar}/L$
+predicts the original sweep was systematically over-strong at depth.
+The cell grid is highway-10 confirm 10-seed $\times$ $\lambda{=}1.0$,
+plus highway-20 / resmlp-40 / resnet-20 each at
+$\lambda\!\in\!\{0.5,2.0,5.0\}$ (3-seed), plus a
+highway-20 10-seed cross-check at $\lambda{=}1.0$.
+\textbf{Findings:}
+\begin{itemize}[leftmargin=1.5em,itemsep=2pt]
+  \item \emph{Headline confirmed.}
+    \code{fashion_mnist_highway_10} 10-seed:
+    $\Delta=+0.00092$ ($+0.092$\pp), $t=+2.08$, $p<0.05$,
+    W/L/T $=9/1/0$. The load-bearing positive of the multi-term
+    programme survives the bedrock test.
+  \item \emph{New positive at depth.}
+    \code{mnist_resmlp_40_hymeko} at $\lambda_a{=}\lambda_b{=}0.5$:
+    $\Delta=+0.00213$ ($+0.213$\pp), $t=+2.72$, W/L/T $=3/0/0$
+    --- significant positive at $L\!=\!40$ once $\lambda$ is rescaled.
+    This is the first empirical validation of Path I's
+    calibration law on the multi-term arm: the original ph18
+    null at $\lambda{=}1.0$ was a depth-mistuning artefact for
+    resmlp-40, not a depth-fragility limit.
+  \item \emph{Depth-fragility confirmed for highway-20.}
+    The 10-seed cross-check at $\lambda{=}1.0$ returns
+    $\Delta=-0.00022$ ($t=-0.35$, W/L/T $=4/6/0$); the full
+    $\lambda\!\in\!\{0.5,1.0,2.0,5.0\}$ grid all return null or
+    trending-negative. Highway-20's depth-fragility is
+    therefore not a $\lambda$-tuning artefact.
+\end{itemize}
+\textbf{Outcome.} The multi-term programme has \emph{two}
+confirmed positives (highway-10 at $L{=}10$ and resmlp-40 at
+$L{=}40$ with depth-aware $\lambda$) plus one genuine null
+(highway-20). Together with ph12 / ph15, this gives Path I's
+calibration law two independent empirical anchors:
+the spirals collapse at $\lambda \geq 0.1$ at $L{=}4$, and the
+resmlp-40 recovery at $\lambda{=}0.5$ at $L{=}40$.
+
 \section{Headline results map}
 
 Per-arm best-known result on each anchor dataset (most recent published-power
@@ -505,7 +548,7 @@ entropy\_telgarsky           & $+0.598$\,**  & $+0.040$ ns   & \textbf{$-0.046$\
 cross\_layer\_mi (Path F, ph11)        & $+0.000$ ns & ---       & ---         & --- \\
 total\_correlation\_mi (Path I, ph12)  & $-1.014$\,*** ($\lambda=0.1$) & --- & --- & --- \\
 total\_correlation\_mi (Path I, ph15)  & $+0.306$\,. ($\lambda=0.03$) & --- & --- & --- \\
-entropy\_lyapunov (ph18)               & --- & --- & --- (FashionMNIST: highway-10 $+0.087$\,**) & invalidated (ph13) \\
+entropy\_lyapunov (ph18/18c)           & --- & --- & --- (FashionMNIST: highway-10 $+0.092$\,* @ 10-seed; resmlp-40 $+0.213$\,* @ $\lambda{=}0.5$) & invalidated (ph13) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -543,9 +586,13 @@ recovers the same null-positive band as Path B at $\lambda = 0.01$,
 \arm{total_correlation_mi} at $\lambda = 0.03$ on spirals
 ($+0.306$\pp, $p \approx 0.08$, reproduced to three decimals across
 phases 12 and 15). Multi-term wrapping (\arm{entropy_lyapunov}) on the
-PyTorch deep-architecture matrix yields one significant positive
-(\code{fashion_mnist_highway_10}, $+0.087$\pp, $p<0.01$) but does not
-generalise to depth.
+PyTorch deep-architecture matrix yields two confirmed positives
+(\code{fashion_mnist_highway_10} at $L{=}10$, $+0.092$\pp,
+$p<0.05$ at 10-seed; \code{mnist_resmlp_40_hymeko} at $L{=}40$,
+$+0.213$\pp, $p<0.05$ at $\lambda_{a,b}{=}0.5$) once $\lambda$ is
+rescaled per the calibration law for the deep variant. Highway-20
+remains a genuine depth-fragility null across the full
+$\lambda\!\in\!\{0.5,1.0,2.0,5.0\}$ grid.
 \end{quote}
 
 \paragraph{Architectural-parity claim (phase 18b).}

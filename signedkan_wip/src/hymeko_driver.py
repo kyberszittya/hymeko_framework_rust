@@ -1,0 +1,420 @@
+"""HyMeKo-driven HSiKAN training cell.
+
+Reads a HyMeKo description (architecture + training + optional
+sweep) and runs an actual training cell. Two execution modes:
+
+- **single**: parse arch + training .hymeko, instantiate a config,
+  invoke ``run_final_cell.cell_signed_graph`` once.
+- **sweep**: parse a sweep .hymeko, enumerate the search space (grid
+  / GA / MSG-axiom-feasibility), run one cell per point, emit JSONL.
+
+Usage:
+
+    # Single training cell from a HyMeKo description:
+    python -m signedkan_wip.src.hymeko_driver \\
+        --arch     data/hsikan/arch_mixed_k34.hymeko \\
+        --training data/hsikan/training.hymeko \\
+        --dataset  bitcoin_alpha
+
+    # Grid sweep:
+    python -m signedkan_wip.src.hymeko_driver \\
+        --sweep data/hsikan/sweep_grid.hymeko \\
+        --dataset bitcoin_alpha
+
+    # P-graph axiom-feasibility sweep (MSG/SSG/ABB):
+    python -m signedkan_wip.src.hymeko_driver \\
+        --sweep data/hsikan/sweep_msg.hymeko
+
+The driver maps tagged hyperedges to existing pipeline knobs
+(`HSIKAN_TOPK_*` env vars + `cell_signed_graph` arguments) so the
+first version can stand on the shoulders of the existing training
+code rather than re-implementing forward/backward.
+
+Schema convention (see data/hsikan/*.hymeko):
+- Tensors: nodes tagged `<input>`, `<activation>`, `<output>`.
+- Layers: nodes inheriting from a layer-class base (signedkan_layer,
+  arity_mixer, signed_classifier, walk_layer); sub-tags drive kwargs.
+- Dataflow: `@name <dataflow> { (+in, ~layer, -out); }`.
+- Training step: `@name <forward|loss|backward|optimizer|...>` tag.
+- Sweep range: `@name <param_range, target="x.y"> { values [...]; }`.
+"""
+
+from __future__ import annotations
+
+import argparse
+import itertools
+import json
+import os
+import sys
+from pathlib import Path
+from typing import Any
+
+import hymeko  # PyO3 wheel; provides parse_hymeko_rs
+
+
+# ─── Tiny AST helpers ───────────────────────────────────────────────
+
+
+def _read_hymeko(path: str) -> dict:
+    """Parse a .hymeko file via the Rust bridge → nested dict."""
+    src = Path(path).read_text()
+    return hymeko.parse_hymeko_rs(src)
+
+
+def _all_items(tree: dict) -> list[dict]:
+    """Flatten the tree one level into the context body (the
+    canonical convention used across all our .hymeko files)."""
+    out = []
+    for it in tree.get("items", []):
+        if it["kind"] == "node" and it.get("body"):
+            # context wrapper — recurse one level
+            out.extend(it["body"])
+        else:
+            out.append(it)
+    return out
+
+
+def _has_tag(item: dict, tag: str) -> bool:
+    return tag in (item.get("tags") or [])
+
+
+def _has_base(item: dict, base_name: str) -> bool:
+    """True if the item inherits from `base_name` via `:` syntax."""
+    for b in item.get("bases") or []:
+        if b.get("path") and b["path"][-1] == base_name:
+            return True
+    return False
+
+
+def _child_value(item: dict, child_name: str, default=None):
+    """Find a child node by name and return its scalar value."""
+    body = item.get("body") or []
+    for c in body:
+        if c.get("kind") == "node" and c.get("name") == child_name:
+            return c.get("value", default)
+    return default
+
+
+def _tag_value(item: dict, key: str, default=None):
+    """Read a `key="value"` style tag-pair from the item's value
+    field. The HyMeKo grammar doesn't carry per-tag values directly,
+    but the convention is: edge value carries `key="value"`-shaped
+    string OR cost number; for kwargs we use child statements
+    (see _child_value)."""
+    return _child_value(item, key, default)
+
+
+# ─── Architecture .hymeko → MixedAritySignedKANConfig ──────────────
+
+
+def parse_arch(arch_path: str) -> dict:
+    """Walk an architecture .hymeko and return a normalized config
+    dict the driver can map onto MixedAritySignedKANConfig:
+
+        {"hidden": int, "grid": int, "arities": [int],
+         "spline_kind": str, "n_layers": int}
+    """
+    tree = _read_hymeko(arch_path)
+    items = _all_items(tree)
+    layers = [it for it in items if _has_base(it, "signedkan_layer")
+              or _has_base(it, "walk_layer")]
+    if not layers:
+        raise ValueError(f"no signedkan_layer / walk_layer in {arch_path}")
+    # Per-layer hyperparameters; we take the max-spread arity tuple
+    # and the first layer's hidden/grid/spline as the model defaults.
+    arities = sorted({int(_child_value(l, "arity", 3)) for l in layers
+                      if _has_base(l, "signedkan_layer")})
+    hidden = int(_child_value(layers[0], "hidden", 16))
+    grid = int(_child_value(layers[0], "grid", 5))
+    spline_kind = _child_value(layers[0], "spline_kind", "catmull_rom")
+    if isinstance(spline_kind, str):
+        spline_kind = spline_kind.strip('"')
+    # Count signedkan_layer hypervertices per arity to derive depth.
+    n_layers = max(
+        1,
+        len([l for l in layers if _has_base(l, "signedkan_layer")
+             and int(_child_value(l, "arity", 3)) == arities[0]])
+    )
+    return {
+        "hidden": hidden,
+        "grid": grid,
+        "arities": arities or [3],
+        "spline_kind": spline_kind,
+        "n_layers": n_layers,
+        "name": tree.get("name", "HSiKAN"),
+    }
+
+
+# ─── Training .hymeko → run knobs + env vars ───────────────────────
+
+
+def parse_training(training_path: str) -> dict:
+    """Walk a training .hymeko and return a dict of knobs the driver
+    routes into HSIKAN_TOPK_* env vars + run_final_cell kwargs."""
+    tree = _read_hymeko(training_path)
+    items = _all_items(tree)
+    # Constants
+    consts = {c["name"]: c["value"] for c in tree.get("consts") or []}
+
+    knobs: dict[str, Any] = {
+        "n_epochs": int(consts.get("N_EPOCHS", 30)),
+        "lr": float(consts.get("LR", 0.01)),
+        "weight_decay": float(consts.get("WD", 0.0001)),
+        "seed": int(consts.get("SEED", 0)),
+        # Defaults (overwritten by hyperedges below)
+        "topk_mode": "",
+        "topk_k": 16,
+        "topk_scorer": "fraction_negative",
+        "topk_pruner": "none",
+        "loss_kind": "bce",
+        "entropy_lambda": 0.0,
+        "entropy_kind": "spectral",
+        "dataset_name": None,
+        "max_k4": 200000,
+    }
+
+    for it in items:
+        if it["kind"] != "edge":
+            continue
+        tags = it.get("tags") or []
+
+        # @load_dataset <dataset, name="...">
+        if "dataset" in tags:
+            # Try to find a `name` tag-value via child node first
+            for child in it.get("body", []) or []:
+                if child.get("kind") == "node" and child.get("name") == "name":
+                    v = child.get("value")
+                    if isinstance(v, str):
+                        knobs["dataset_name"] = v.strip('"')
+            # Fallback: edge value
+            v = it.get("value")
+            if isinstance(v, str) and not knobs["dataset_name"]:
+                knobs["dataset_name"] = v.strip('"')
+
+        # @enumerate_cycles <cycle_enum>
+        if "cycle_enum" in tags:
+            mode = _child_value(it, "mode", "")
+            if isinstance(mode, str):
+                knobs["topk_mode"] = mode.strip('"')
+            knobs["topk_k"] = int(_child_value(it, "m_per_vertex", knobs["topk_k"]))
+            scorer = _child_value(it, "scorer", knobs["topk_scorer"])
+            if isinstance(scorer, str):
+                knobs["topk_scorer"] = scorer.strip('"')
+            pruner = _child_value(it, "pruner", knobs["topk_pruner"])
+            if isinstance(pruner, str):
+                knobs["topk_pruner"] = pruner.strip('"')
+
+        # @compute_loss <loss, kind="bce">
+        if "loss" in tags:
+            loss_kind = _child_value(it, "loss_kind", knobs["loss_kind"])
+            if isinstance(loss_kind, str):
+                knobs["loss_kind"] = loss_kind.strip('"')
+            knobs["entropy_lambda"] = float(
+                _child_value(it, "entropy_lambda", knobs["entropy_lambda"]))
+            ek = _child_value(it, "entropy_kind", knobs["entropy_kind"])
+            if isinstance(ek, str):
+                knobs["entropy_kind"] = ek.strip('"')
+
+        # @optimizer_step <optimizer>
+        if "optimizer" in tags:
+            knobs["lr"] = float(_child_value(it, "lr", knobs["lr"]))
+            knobs["weight_decay"] = float(
+                _child_value(it, "weight_decay", knobs["weight_decay"]))
+
+        # @train_loop <epoch_loop>
+        if "epoch_loop" in tags:
+            knobs["n_epochs"] = int(_child_value(it, "n_epochs", knobs["n_epochs"]))
+
+    return knobs
+
+
+# ─── Sweep .hymeko → list of config dicts ──────────────────────────
+
+
+def parse_sweep(sweep_path: str) -> dict:
+    """Parse a sweep .hymeko (grid / GA / MSG)."""
+    tree = _read_hymeko(sweep_path)
+    items = _all_items(tree)
+    ranges: dict[str, list] = {}
+    policy: dict[str, Any] = {}
+    for it in items:
+        tags = it.get("tags") or []
+        if it["kind"] != "edge":
+            continue
+        if "param_range" in tags:
+            target = _tag_value(it, "target")
+            # `target` may live in tags or as a child node — we
+            # accept either.  Fallback to edge name.
+            if not target:
+                # Extract from tag-payload-style tags ('target="..."')
+                for t in tags:
+                    if t.startswith("target="):
+                        target = t.split("=", 1)[1].strip('"')
+            target = target or it.get("name")
+            values = _child_value(it, "values", []) or []
+            ranges[target] = values
+        elif "sweep_policy" in tags:
+            for child in it.get("body") or []:
+                if child.get("kind") == "node":
+                    policy[child["name"]] = child.get("value")
+    return {
+        "ranges": ranges,
+        "policy": policy,
+        "name": tree.get("name", "Sweep"),
+    }
+
+
+# ─── Execution: HyMeKo config → existing run_final_cell ───────────
+
+
+def run_single(arch: dict, training: dict, dataset: str | None,
+                hidden_override: int | None = None) -> dict:
+    """Run one training cell with the parsed arch+training config.
+    Routes through `signedkan_wip.src.run_final_cell.cell_signed_graph`,
+    wiring HSIKAN_TOPK_* env vars on the way in.
+    """
+    import torch
+
+    ds = dataset or training.get("dataset_name") or "bitcoin_alpha"
+    hidden = hidden_override if hidden_override is not None else arch["hidden"]
+    n_epochs = training["n_epochs"]
+    seed = training["seed"]
+    max_k4 = training.get("max_k4", 200000)
+
+    # Set env vars BEFORE importing the inner training code (they are
+    # consumed at cycle-enum time).
+    if training.get("topk_mode"):
+        os.environ["HSIKAN_TOPK_MODE"] = training["topk_mode"]
+        os.environ["HSIKAN_TOPK_K"] = str(training["topk_k"])
+        os.environ["HSIKAN_TOPK_SCORER"] = training["topk_scorer"]
+        os.environ["HSIKAN_TOPK_PRUNER"] = training["topk_pruner"]
+    if training["entropy_lambda"] > 0:
+        os.environ["HSIKAN_ENTROPY_LAMBDA"] = str(training["entropy_lambda"])
+
+    # Pin arities the user asked for (mixed_k34 → "3,4")
+    if arch.get("arities"):
+        os.environ["HSIKAN_ARITIES"] = ",".join(str(a) for a in arch["arities"])
+
+    from signedkan_wip.src.run_final_cell import cell_signed_graph
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    out = cell_signed_graph(
+        ds, "HSiKAN", hidden, n_epochs, max_k4, device, seed=seed,
+    )
+    if out is not None:
+        out["seed"] = seed
+        out["hymeko_arch"] = arch.get("name")
+        out["hymeko_training"] = {
+            "topk_mode": training.get("topk_mode"),
+            "topk_k": training.get("topk_k"),
+            "topk_scorer": training.get("topk_scorer"),
+            "topk_pruner": training.get("topk_pruner"),
+            "n_epochs": n_epochs,
+            "lr": training["lr"],
+        }
+    return out or {}
+
+
+def run_sweep(sweep: dict, base_arch: dict, base_training: dict,
+              dataset: str, output_path: str | None,
+              max_runs: int | None = None) -> list[dict]:
+    """Grid sweep — Cartesian product of the param_range edges."""
+    ranges = sweep["ranges"]
+    policy = sweep["policy"]
+    if not ranges:
+        print("no param_range edges in sweep file", file=sys.stderr)
+        return []
+
+    keys = list(ranges.keys())
+    grids = [ranges[k] for k in keys]
+    cells = list(itertools.product(*grids))
+    if max_runs is None:
+        max_runs = int(policy.get("max_runs") or len(cells))
+    cells = cells[:max_runs]
+    print(f"sweep: {len(cells)} cells (capped at {max_runs})", file=sys.stderr)
+
+    results = []
+    for ix, point in enumerate(cells):
+        cfg = dict(zip(keys, point))
+        print(f"\n── cell {ix+1}/{len(cells)}: {cfg}", file=sys.stderr)
+        # Apply the cell to base_arch / base_training copies
+        arch = dict(base_arch)
+        training = dict(base_training)
+        if "model.hidden" in cfg:
+            arch["hidden"] = int(cfg["model.hidden"])
+        if "model.grid" in cfg:
+            arch["grid"] = int(cfg["model.grid"])
+        if "model.arities" in cfg:
+            arch["arities"] = [int(x) for x in cfg["model.arities"]]
+        if "topk.m_per_vertex" in cfg:
+            training["topk_k"] = int(cfg["topk.m_per_vertex"])
+        if "topk.pruner" in cfg:
+            v = cfg["topk.pruner"]
+            training["topk_pruner"] = v.strip('"') if isinstance(v, str) else v
+        if "optimizer.lr" in cfg:
+            training["lr"] = float(cfg["optimizer.lr"])
+        try:
+            out = run_single(arch, training, dataset)
+            out["sweep_cell"] = cfg
+            results.append(out)
+            if output_path:
+                with open(output_path, "a") as f:
+                    f.write(json.dumps(out) + "\n")
+            print(json.dumps(out), flush=True)
+        except Exception as e:
+            err = {"sweep_cell": cfg, "error": repr(e)}
+            results.append(err)
+            print(f"  cell failed: {e}", file=sys.stderr)
+    return results
+
+
+# ─── CLI ─────────────────────────────────────────────────────────────
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="HyMeKo-driven HSiKAN training")
+    ap.add_argument("--arch",     help="Architecture .hymeko")
+    ap.add_argument("--training", help="Training .hymeko")
+    ap.add_argument("--sweep",    help="Sweep .hymeko (grid / GA / MSG)")
+    ap.add_argument("--dataset",  default=None,
+                    help="Override the dataset (default: from training file)")
+    ap.add_argument("--max-runs", type=int, default=None,
+                    help="Cap sweep runs (default from policy)")
+    ap.add_argument("--output",   default=None,
+                    help="Append per-cell JSON to this file")
+    ap.add_argument("--print-only", action="store_true",
+                    help="Parse and print parsed config; don't run")
+    args = ap.parse_args()
+
+    if args.sweep:
+        sweep = parse_sweep(args.sweep)
+        # Use the first arch + training in the sweep file's @use_*
+        # references; if not present, require explicit --arch/--training
+        arch = parse_arch(args.arch) if args.arch else \
+            parse_arch("data/hsikan/arch_mixed_k34.hymeko")
+        training = parse_training(args.training) if args.training else \
+            parse_training("data/hsikan/training.hymeko")
+        if args.print_only:
+            print(json.dumps({"arch": arch, "training": training,
+                              "sweep": sweep}, indent=2, default=str))
+            return
+        run_sweep(sweep, arch, training,
+                  args.dataset or training.get("dataset_name") or "bitcoin_alpha",
+                  args.output, max_runs=args.max_runs)
+        return
+
+    if not args.arch or not args.training:
+        ap.error("--arch and --training required (or pass --sweep)")
+    arch = parse_arch(args.arch)
+    training = parse_training(args.training)
+    if args.print_only:
+        print(json.dumps({"arch": arch, "training": training}, indent=2,
+                          default=str))
+        return
+    out = run_single(arch, training, args.dataset)
+    print(json.dumps(out))
+
+
+if __name__ == "__main__":
+    main()

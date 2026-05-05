@@ -1049,3 +1049,334 @@ pub fn enumerate_k_cycles_path_closure_rs(
     }
     flat_to_pyarray2(py, flat, k, Some(target_cycles))
 }
+
+// ============================================================================
+// Open length-`walk_len` walk enumeration. Item #5 — Walk-HSiKAN prototype.
+//
+// A length-`L` simple walk is a sequence (v_0, v_1, ..., v_L) with each
+// consecutive pair an edge in G and no vertex revisits. Output shape:
+// (N, L+1). Canonical form: emit only walks with path[0] <= path[L] to
+// avoid emitting both (a, ..., b) and (b, ..., a) in undirected graphs.
+//
+// Reuses the same Sink machinery (Full / Reservoir / EarlyStop) as
+// the cycle enumerator. Bitset visited; BFS distance pruning is not
+// applicable to walks (they don't close), so dist[] is left empty.
+// ============================================================================
+
+fn dfs_walks_recurse(
+    row_ptr: &[u32],
+    col_idx: &[u32],
+    walk_len: usize,
+    path: &mut Vec<u32>,
+    visited: &mut [u64],
+    sink: &mut Sink,
+) -> bool {
+    if path.len() == walk_len + 1 {
+        if path[0] <= path[walk_len] {
+            return sink.offer(path);
+        }
+        return true;
+    }
+    let tail = *path.last().unwrap();
+    for &nxt in neighbours(row_ptr, col_idx, tail) {
+        if bs_get(visited, nxt) { continue; }
+        path.push(nxt);
+        bs_set(visited, nxt);
+        let cont = dfs_walks_recurse(row_ptr, col_idx, walk_len,
+                                       path, visited, sink);
+        path.pop();
+        bs_clear(visited, nxt);
+        if !cont { return false; }
+    }
+    true
+}
+
+fn dfs_walks_from(
+    row_ptr: &[u32],
+    col_idx: &[u32],
+    start: u32,
+    walk_len: usize,
+    visited: &mut [u64],
+    path: &mut Vec<u32>,
+    sink: &mut Sink,
+) -> bool {
+    path.push(start);
+    bs_set(visited, start);
+    let cont = dfs_walks_recurse(row_ptr, col_idx, walk_len,
+                                   path, visited, sink);
+    path.pop();
+    bs_clear(visited, start);
+    cont
+}
+
+/// Enumerate all simple length-`walk_len` walks (open paths, walk_len+1
+/// vertices each, no vertex revisits) in an undirected graph.
+///
+/// Returns a numpy ndarray of shape ``(N, walk_len + 1)``. With
+/// ``max_walks`` set, samples uniformly via reservoir.
+///
+/// Walk-HSiKAN prototype primitive — the closed-cycle enumeration
+/// already lives in `enumerate_k_cycles_rs`. This is its open-path
+/// sibling: same DFS skeleton, no closure check, canonical-form
+/// dedup by smallest endpoint.
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, n_nodes, walk_len,
+                      max_walks=None, seed=0))]
+pub fn enumerate_k_walks_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    n_nodes: usize,
+    walk_len: usize,
+    max_walks: Option<usize>,
+    seed: u64,
+) -> PyResult<Py<PyArray2<u32>>> {
+    if walk_len == 0 {
+        let arr = Array2::<u32>::zeros((0, 1));
+        return Ok(arr.into_pyarray(py).unbind());
+    }
+    if edges_u.len() != edges_v.len() {
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "edges_u and edges_v must have the same length",
+        ));
+    }
+    let edges: Vec<(u32, u32)> = edges_u
+        .into_iter()
+        .zip(edges_v.into_iter())
+        .collect();
+    let (row_ptr, col_idx) = build_csr(&edges, n_nodes, false);
+
+    let sink = py.detach(|| {
+        let mut s = match max_walks {
+            Some(cap) => Sink::new_reservoir(cap, seed),
+            None => Sink::new_full(),
+        };
+        let mut visited: Vec<u64> = vec![0u64; bs_words(n_nodes)];
+        let mut path: Vec<u32> = Vec::with_capacity(walk_len + 1);
+        for start in 0..n_nodes as u32 {
+            let cont = dfs_walks_from(&row_ptr, &col_idx, start,
+                                        walk_len, &mut visited,
+                                        &mut path, &mut s);
+            if !cont { break; }
+        }
+        s
+    });
+
+    let buf = sink.into_flat();
+    flat_to_pyarray2(py, buf, walk_len + 1, max_walks)
+}
+
+// ============================================================================
+// Top-K signed cycle enumeration (axiom-aware approximation).
+//
+// Bridges hymeko_graph::enumerate_top_k_cycles + the vertex-stratified
+// variant into Python. Returns (cycles_array, scores_array) so the caller
+// can use scores as edge weights in M_e if desired.
+// ============================================================================
+
+use hymeko_graph::{
+    balance::{BalanceMode, CartwrightHararyPruner, DavisWeakBalancePruner},
+    community::{
+        balance_ratio_per_community, label_propagation,
+        CommunityAxiomPruner,
+    },
+    enumerate_top_k_cycles_par,
+    enumerate_top_k_cycles_par_noprune as g_top_k_par,
+    enumerate_top_k_per_vertex_cycles_par,
+    enumerate_top_k_per_vertex_cycles_par_noprune as g_top_k_per_v_par,
+    topk_cycles::scorers as g_scorers,
+    traversal::Csr, NoOpPruner, SignedGraph as GSignedGraph,
+};
+use numpy::PyArray1;
+
+/// Build a hymeko_graph::SignedGraph from python-side buffers.
+fn build_signed_graph(
+    edges_u: &[u32],
+    edges_v: &[u32],
+    edges_s: &[i8],
+    n_nodes: u32,
+) -> PyResult<GSignedGraph> {
+    if edges_u.len() != edges_v.len() || edges_u.len() != edges_s.len() {
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "edges_u, edges_v, edges_s must have equal length",
+        ));
+    }
+    Ok(GSignedGraph::from_parts(n_nodes, edges_u, edges_v, edges_s))
+}
+
+/// Look up the right scorer by string tag.
+fn pick_scorer(name: &str) -> Option<fn(&[u32], &[i8]) -> f64> {
+    match name {
+        "balance"           => Some(g_scorers::balance),
+        "fraction_negative" => Some(g_scorers::fraction_negative),
+        "sign_product_abs"  => Some(g_scorers::sign_product_abs),
+        "low_root"          => Some(g_scorers::low_root),
+        _ => None,
+    }
+}
+
+/// Top-K signed cycle enumeration: keep the `k_keep` highest-scoring
+/// cycles globally.
+///
+/// `score_kind` ∈ {"balance", "fraction_negative", "sign_product_abs",
+/// "low_root"} — emit-time ranking heuristic.
+///
+/// `pruner_kind` ∈ {"none", "balance", "unbalanced", "davis"} —
+/// extend-time axiom pruner that cuts DFS branches before they
+/// materialise. Combined with BFS-distance pruning (always on),
+/// `pruner_kind != "none"` is what makes top-K *cheaper than full*,
+/// not just "full and then sort."
+///
+/// Returns `(cycles, scores)`.
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, edges_s, n_nodes, k_len, k_keep,
+                      score_kind="balance", pruner_kind="none"))]
+pub fn enumerate_top_k_cycles_signed_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    k_keep: usize,
+    score_kind: &str,
+    pruner_kind: &str,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let scorer = pick_scorer(score_kind).ok_or_else(|| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))
+    })?;
+
+    let result = py.detach(|| match pruner_kind {
+        "none" => g_top_k_par(&g, k_len, k_keep, scorer),
+        "balance" => enumerate_top_k_cycles_par(
+            &g, k_len,
+            &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+            k_keep, scorer,
+        ),
+        "unbalanced" => enumerate_top_k_cycles_par(
+            &g, k_len,
+            &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+            k_keep, scorer,
+        ),
+        "davis" => enumerate_top_k_cycles_par(
+            &g, k_len,
+            &DavisWeakBalancePruner,
+            k_keep, scorer,
+        ),
+        _ => g_top_k_par(&g, k_len, k_keep, scorer),
+    });
+    let _ = NoOpPruner; // silence unused-import warning when pruner_kind matches a real branch
+
+    let n = result.len();
+    let mut flat = Vec::with_capacity(n * k_len);
+    let mut scores = Vec::with_capacity(n);
+    for (s, vs, _signs) in result {
+        debug_assert_eq!(vs.len(), k_len);
+        flat.extend_from_slice(&vs);
+        scores.push(s);
+    }
+    let arr = Array2::from_shape_vec((n, k_len), flat).map_err(|e| {
+        pyo3::exceptions::PyRuntimeError::new_err(format!("reshape: {e}"))
+    })?;
+    Ok((
+        arr.into_pyarray(py).unbind(),
+        scores.into_pyarray(py).unbind(),
+    ))
+}
+
+/// Vertex-stratified top-m signed cycle enumeration: for each vertex
+/// `v`, keep the `m_per_vertex` highest-scoring cycles passing
+/// through `v`. Total `|cycles|` ≤ `n_nodes * m_per_vertex` and every
+/// vertex on at least one cycle is covered.
+///
+/// `score_kind` ∈ {"balance", "fraction_negative", "sign_product_abs",
+/// "low_root"} — emit-time ranking heuristic.
+///
+/// `pruner_kind` ∈ {"none", "balance", "unbalanced", "davis"} —
+/// extend-time axiom pruner. BFS-distance pruning is always on
+/// (~10× DFS savings on dense graphs at high k).
+///
+/// This is the variant that bounds `|M_e|` per row instead of
+/// globally — recommended for HSiKAN training on Slashdot/Epinions.
+///
+/// Returns `(cycles, scores)`.
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, edges_s, n_nodes, k_len, m_per_vertex,
+                      score_kind="fraction_negative", pruner_kind="none"))]
+pub fn enumerate_top_k_per_vertex_cycles_signed_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    m_per_vertex: usize,
+    score_kind: &str,
+    pruner_kind: &str,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let scorer = pick_scorer(score_kind).ok_or_else(|| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))
+    })?;
+
+    let result = py.detach(|| match pruner_kind {
+        "none" => g_top_k_per_v_par(&g, k_len, m_per_vertex, scorer),
+        "balance" => enumerate_top_k_per_vertex_cycles_par(
+            &g, k_len,
+            &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+            m_per_vertex, scorer,
+        ),
+        "unbalanced" => enumerate_top_k_per_vertex_cycles_par(
+            &g, k_len,
+            &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+            m_per_vertex, scorer,
+        ),
+        "davis" => enumerate_top_k_per_vertex_cycles_par(
+            &g, k_len,
+            &DavisWeakBalancePruner,
+            m_per_vertex, scorer,
+        ),
+        "community" => {
+            // Phase A: Louvain-equivalent (label-propagation)
+            // community detection → per-community balance ratio →
+            // per-community axiom (auto: balance/unbalanced/none).
+            // Tunables hardcoded to sensible defaults; if needed,
+            // expose via additional Python kwargs.
+            let csr = Csr::from_graph(&g);
+            let (labels, n_comm) = label_propagation(&csr, 50, 0xC0FFEE);
+            let bal = balance_ratio_per_community(
+                &g, &csr, &labels, n_comm,
+            );
+            let comm_pruner = CommunityAxiomPruner::auto(
+                labels, &bal, 0.85, 0.75,
+            );
+            enumerate_top_k_per_vertex_cycles_par(
+                &g, k_len, &comm_pruner, m_per_vertex, scorer,
+            )
+        }
+        _ => g_top_k_per_v_par(&g, k_len, m_per_vertex, scorer),
+    });
+
+    let n = result.len();
+    let mut flat = Vec::with_capacity(n * k_len);
+    let mut scores = Vec::with_capacity(n);
+    for (s, vs, _signs) in result {
+        debug_assert_eq!(vs.len(), k_len);
+        flat.extend_from_slice(&vs);
+        scores.push(s);
+    }
+    let arr = Array2::from_shape_vec((n, k_len), flat).map_err(|e| {
+        pyo3::exceptions::PyRuntimeError::new_err(format!("reshape: {e}"))
+    })?;
+    Ok((
+        arr.into_pyarray(py).unbind(),
+        scores.into_pyarray(py).unbind(),
+    ))
+}

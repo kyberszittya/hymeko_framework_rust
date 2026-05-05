@@ -386,6 +386,17 @@ fn resolve_expr<R: NameResolver>(expr: &str, ctx: &RenderContext<R>) -> String {
                     .map(|b| b.target_name.clone())
                     .collect();
                 names.join(" ")
+            } else if parts[1] == "all_csv" {
+                // Comma-separated: needed for emitting multi-input
+                // function calls e.g. `self.mixer(a, b, c, d)`
+                // when a multi-source dataflow hyperedge has many `+`
+                // operands.  Used by the torch_dataflow Tier-3
+                // arity_mixer fan-in.
+                let names: Vec<String> = m.arc_bindings.iter()
+                    .filter(|b| b.sign == sign)
+                    .map(|b| b.target_name.clone())
+                    .collect();
+                names.join(", ")
             } else if let Ok(idx) = parts[1].parse::<usize>() {
                 mc.binding_target(sign, idx).to_template_string()
             } else {

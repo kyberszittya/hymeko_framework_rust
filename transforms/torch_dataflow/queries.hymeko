@@ -18,6 +18,12 @@ context
     residual_blocks:   residual_block {}
     highway_blocks:    highway_block {}
 
+    // ── Tier-3: signed-cycle KAN primitives ────────────────────────
+    signedkan_layers:    signedkan_layer {}
+    walk_layers:         walk_layer {}
+    arity_mixers:        arity_mixer {}
+    signed_classifiers:  signed_classifier {}
+
     // Tensors of any role (input / activation / output).
     tensors: meta_tensor {}
 
