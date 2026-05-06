@@ -59,11 +59,14 @@ class {{config:robot_name}}(nn.Module):
 {{/each}}{{#each arity_mixers}}        self.{{name}} = ArityMixer(hidden={{field:hidden}}, mix_K={{field:mix_K}})
 {{/each}}{{#each signed_classifiers}}        self.{{name}} = SignedClassifier(d_in={{field:d_in}}, d_out={{field:d_out}})
 {{/each}}
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, {{#each inputs}}{{name}}: torch.Tensor, {{/each}}) -> torch.Tensor:
         # Dataflow follows the order of @dataflow hyperedge declarations.
         # Each edge: (+ in_tensor[, + in_tensor...], ~ layer, - out_tensor).
         # `bind:+:all_csv` joins multiple `+` operands with ", " so a
         # multi-source fan-in (e.g. arity_mixer) renders as one call.
+        # Forward signature is derived from t_input tensor declarations,
+        # so multi-input nets (signed-cycle KAN with cycle_v / sigma /
+        # M_e structure tensors) get one parameter per declared input.
 {{#each flows}}        {{bind:-:0}} = self.{{bind:~:0}}({{bind:+:all_csv}})
 {{/each}}{{#each outputs}}        return {{name}}
 {{/each}}

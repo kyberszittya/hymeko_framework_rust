@@ -535,7 +535,5 @@ fn find_roots(model: &KinematicModel) -> Vec<String> {
     roots
 }
 
-fn xml_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;")
-        .replace('>', "&gt;").replace('"', "&quot;")
-}
+// xml_escape consolidated to hymeko_formats::xml_util.
+use crate::xml_util::xml_escape;

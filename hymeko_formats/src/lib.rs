@@ -16,8 +16,10 @@
 pub mod codegen;
 pub mod gazebo;
 pub mod sdf;
+pub mod snapshot;
 pub mod transforms;
 pub mod urdf;
+pub mod xml_util;
 
 pub use codegen::{generate_description, CodegenError, OutputFormat};
 pub use transforms::{

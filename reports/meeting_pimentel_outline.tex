@@ -441,13 +441,16 @@ runs in a few GB.
 \subsection*{5c.\ Slashdot 5-seed regime split --- $4.4\sigma$ confirmation}
 
 \begin{center}
-\begin{tabular}{l c c c c}
+\begin{tabular}{l c c c c c}
 \toprule
-Slashdot 5-seed ($m{=}16, h{=}16, n_\text{epochs}{=}20$) & $n$ & mean AUC & std & best \\
+Slashdot 5-seed ($h{=}16, n_\text{epochs}{=}20$) & $m$ & $n$ & mean AUC & std & $\sigma$ vs none \\
 \midrule
-\code{balance}    & 5 & $0.8178$           & $0.0077$ & $0.8287$ \\
-\code{none}       & 5 & $0.8359$           & $0.0185$ & $0.8602$ \\
-\textbf{\code{unbalanced}} & 5 & $\mathbf{0.8563}$  & $0.0097$ & $0.8653$ \\
+\code{balance}    & 16 & 5 & $0.8178$           & $0.0077$ & $-1.4\sigma$ \\
+\code{none}       & 16 & 5 & $0.8359$           & $0.0185$ & --- \\
+\textbf{\code{unbalanced}} & 16 & 5 & $\mathbf{0.8563}$  & $0.0097$ & $\mathbf{+1.4\sigma}$ \\
+\midrule
+\code{none}       & 64 & 5 & $0.8200$           & $0.0118$ & --- \\
+\textbf{\code{unbalanced}} & 64 & 5 & $0.8488$  & $0.0082$ & $\mathbf{+3.3\sigma}$ \\
 \bottomrule
 \end{tabular}
 \end{center}

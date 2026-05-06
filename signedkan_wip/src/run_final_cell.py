@@ -349,10 +349,14 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
               f"increase — reduce HSIKAN_TOPK_K if OOM.",
               file=sys.stderr)
         cycle_batch = None
+    # spline_kind override: HSIKAN_SPLINE_KIND can be one of
+    # "catmull_rom" (default), "kochanek_bartels", "bspline",
+    # "bspline_cr", "cr_bspline", etc. — see signedkan.py _alias map.
+    spline_kind_env = os.environ.get("HSIKAN_SPLINE_KIND", "catmull_rom")
     cfg = MixedAritySignedKANConfig(
         base=MultiLayerSignedKANConfig(
             n_nodes=g.n_nodes, n_layers=2, hidden_dim=hidden,
-            grid=3, k=3, spline_kinds=["catmull_rom"]*2,
+            grid=3, k=3, spline_kinds=[spline_kind_env]*2,
             init_scale=0.05, pool_mode="sum", jk_mode="concat",
             layer_norm_between=True, share_weights=True,
             inner_skip="highway", outer_skip="none", use_residual=True),

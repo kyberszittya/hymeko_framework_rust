@@ -38,6 +38,51 @@ from .splines import (BSplineActivation, BatchedBSplineActivation,
 from .bilinear_head import BilinearHead, LowRankBilinearHead
 
 
+# Named canonical Kochanek-Bartels TCB triples.  Each gives a
+# qualitatively different curve geometry without numerical fiddling:
+#
+#   smooth   (0, 0, 0)      Catmull-Rom equivalent — baseline
+#   tense    (0.7, 0, 0)    sharper curve between knots, less overshoot
+#   cusp     (0, 0.7, 0)    corner at control point, ReLU/elbow-like
+#   skew     (0, 0, 0.5)    biased lean — asymmetric activation
+#   sharp    (0.5, 0.5, 0)  combined tension + cusp
+#   flat     (1.0, 0, 0)    near-linear segments (max tension)
+#
+# HSIKAN_KB_PRESET=<name> picks one; HSIKAN_KB_INIT_TCB="t,c,b" gives
+# free numerical control. Preset takes precedence when both set.
+_KB_PRESETS = {
+    "smooth": (0.0, 0.0, 0.0),
+    "tense":  (0.7, 0.0, 0.0),
+    "cusp":   (0.0, 0.7, 0.0),
+    "skew":   (0.0, 0.0, 0.5),
+    "sharp":  (0.5, 0.5, 0.0),
+    "flat":   (1.0, 0.0, 0.0),
+}
+
+
+def _resolve_kb_init_tcb() -> tuple[float, float, float] | None:
+    """Resolve HSIKAN_KB_PRESET and/or HSIKAN_KB_INIT_TCB into a
+    (t, c, b) tuple, or None if neither is set."""
+    import os
+    preset = os.environ.get("HSIKAN_KB_PRESET", "").strip().lower()
+    if preset:
+        if preset not in _KB_PRESETS:
+            raise ValueError(
+                f"unknown HSIKAN_KB_PRESET={preset!r}; "
+                f"valid: {sorted(_KB_PRESETS.keys())}"
+            )
+        return _KB_PRESETS[preset]
+    raw = os.environ.get("HSIKAN_KB_INIT_TCB", "")
+    if raw:
+        try:
+            parts = [float(p) for p in raw.split(",")]
+            if len(parts) == 3:
+                return tuple(parts)
+        except (ValueError, IndexError):
+            pass
+    return None
+
+
 @dataclass
 class SignedKANConfig:
     n_nodes: int
@@ -129,8 +174,18 @@ class SignedKANLayer(nn.Module):
                 return BatchedCatmullRomActivation(
                     n_branches, d, cfg.grid, cfg.init_scale,
                 )
+            # KB: read per-experiment init from env var (sweep knob).
+            # HSIKAN_KB_PRESET takes precedence over HSIKAN_KB_INIT_TCB.
+            # Presets are named canonical TCB triples:
+            #   "smooth": (0,0,0)     — Catmull-Rom equivalent
+            #   "tense":  (0.7,0,0)   — sharper between-knot curve
+            #   "cusp":   (0,0.7,0)   — corner at control point (ReLU-ish)
+            #   "skew":   (0,0,0.5)   — biased lean
+            #   "sharp":  (0.5,0.5,0) — combined tension + cusp
+            init_tcb = _resolve_kb_init_tcb()
             return BatchedKochanekBartelsActivation(
                 n_branches, d, cfg.grid, cfg.init_scale,
+                init_tcb=init_tcb,
             )
 
         def _make_outer(k):
@@ -142,8 +197,11 @@ class SignedKANLayer(nn.Module):
                 return DiagonalBatchedCatmullRomActivation(
                     n_branches, d, cfg.grid, cfg.init_scale,
                 )
+            # KB outer: same env-var path as inner (preset > tcb).
+            init_tcb = _resolve_kb_init_tcb()
             return DiagonalBatchedKochanekBartelsActivation(
                 n_branches, d, cfg.grid, cfg.init_scale,
+                init_tcb=init_tcb,
             )
 
         self.inner = _make_inner(inner_kind)

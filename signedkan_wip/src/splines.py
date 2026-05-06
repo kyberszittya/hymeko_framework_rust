@@ -514,9 +514,17 @@ class BatchedKochanekBartelsActivation(nn.Module):
 
     input : ``(B, n_channels)``
     output: ``(B, n_branches, n_channels)``
+
+    `init_tcb`: Optional 3-tuple `(t, c, b)` giving per-knot
+    initialisation of the TCB tangent parameters. Default `(0, 0, 0)`
+    starts identical to Catmull-Rom. Setting e.g. `(0.3, 0, 0)`
+    initialises with positive tension (sharper curves between
+    control points). Useful for per-layer expressiveness shaping
+    when stacking multiple KB layers at different depths.
     """
     def __init__(self, n_branches: int, n_channels: int, grid: int = 5,
-                 init_scale: float = 0.1):
+                 init_scale: float = 0.1,
+                 init_tcb: tuple[float, float, float] | None = None):
         super().__init__()
         self.n_branches = n_branches
         self.n_channels = n_channels
@@ -524,7 +532,18 @@ class BatchedKochanekBartelsActivation(nn.Module):
         self.coef = nn.Parameter(
             torch.randn(n_branches, n_channels, grid) * init_scale
         )
-        self.tcb = nn.Parameter(torch.zeros(n_branches, n_channels, grid, 3))
+        if init_tcb is None or init_tcb == (0.0, 0.0, 0.0):
+            self.tcb = nn.Parameter(
+                torch.zeros(n_branches, n_channels, grid, 3))
+        else:
+            t0 = float(init_tcb[0])
+            c0 = float(init_tcb[1])
+            b0 = float(init_tcb[2])
+            init = torch.zeros(n_branches, n_channels, grid, 3)
+            init[..., 0] = t0
+            init[..., 1] = c0
+            init[..., 2] = b0
+            self.tcb = nn.Parameter(init)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B_, C = x.shape
@@ -541,9 +560,14 @@ class DiagonalBatchedKochanekBartelsActivation(nn.Module):
 
     input : ``(B, S, n_channels)``
     output: ``(B, S, n_channels)``
+
+    `init_tcb`: 3-tuple `(t, c, b)` initialising the TCB tangent
+    parameters. Default `(0, 0, 0)` ⇒ Catmull-Rom equivalent at
+    start. See `BatchedKochanekBartelsActivation` for details.
     """
     def __init__(self, n_branches: int, n_channels: int, grid: int = 5,
-                 init_scale: float = 0.1):
+                 init_scale: float = 0.1,
+                 init_tcb: tuple[float, float, float] | None = None):
         super().__init__()
         self.n_branches = n_branches
         self.n_channels = n_channels
@@ -551,7 +575,14 @@ class DiagonalBatchedKochanekBartelsActivation(nn.Module):
         self.coef = nn.Parameter(
             torch.randn(n_branches, n_channels, grid) * init_scale
         )
-        self.tcb = nn.Parameter(torch.zeros(n_branches, n_channels, grid, 3))
+        if init_tcb is None or init_tcb == (0.0, 0.0, 0.0):
+            self.tcb = nn.Parameter(
+                torch.zeros(n_branches, n_channels, grid, 3))
+        else:
+            t0, c0, b0 = float(init_tcb[0]), float(init_tcb[1]), float(init_tcb[2])
+            init = torch.zeros(n_branches, n_channels, grid, 3)
+            init[..., 0] = t0; init[..., 1] = c0; init[..., 2] = b0
+            self.tcb = nn.Parameter(init)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B_, S, C = x.shape

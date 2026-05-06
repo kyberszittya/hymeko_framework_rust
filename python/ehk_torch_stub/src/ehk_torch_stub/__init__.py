@@ -105,22 +105,40 @@ def build_incidence(*args, **kwargs) -> torch.Tensor:
 # ─── Tier-3: signed-cycle KAN primitives (HSiKAN) ─────────────────────
 
 
+def _try_load_real_signedkan():
+    """Lazy import of the real Option-C SignedKANLayer.
+
+    Returned on success: tuple (SignedKANLayer, SignedKANConfig).
+    Returns None if signedkan_wip is not on the import path — in which
+    case SignedKANLayer below falls back to its stub linear+tanh+linear
+    math, preserving the codegen smoke test's "importable" guarantee.
+    """
+    try:
+        from signedkan_wip.src.signedkan import (
+            SignedKANLayer as _Real,
+            SignedKANConfig as _Cfg,
+        )
+        return _Real, _Cfg
+    except Exception:
+        return None
+
+
 class SignedKANLayer(nn.Module):
-    """Stub Tier-3 ``signedkan_layer``.
+    """Tier-3 ``signedkan_layer`` — delegates to the real signedkan_wip
+    Option-C signed-incidence layer when its inputs are present.
 
-    The real layer realises Option-C signed-incidence aggregation
-    over $k$-cycle signatures: per signed cycle $c=(v_1,\\ldots,v_k)$
-    with signs $\\sigma$,
-    $h_c = \\sum_{s \\in \\{+,-,\\sim 0\\}}
-              \\phi_e^s(\\sum_{i: \\sigma_i = s} \\phi_v^s(h_{v_i}))$
-    with per-channel Catmull--Rom (or B-spline / Kochanek--Bartels)
-    activations $\\phi_v^s, \\phi_e^s$.
+    Forward signatures:
+      * ``forward(x, triad_v, triad_sigma)`` — real path.  ``triad_v``
+        is ``(n_cycles, k)`` of vertex IDs and ``triad_sigma`` is
+        ``(n_cycles, k)`` ∈ {+1, -1}.  Output: ``(n_cycles, hidden)``.
+        Mirrors signedkan_wip.src.signedkan.SignedKANLayer.forward.
+      * ``forward(x)`` — stub fallback for codegen smoke tests.
 
-    This stub is just two `nn.Linear`s wrapping the input — same field
-    surface (hidden / arity / spline_kind / grid) so emitted networks
-    construct without error.  Round-trip parity testing requires the
-    real layer from `signedkan_wip.src.signedkan`; this stub keeps the
-    codegen path importable.
+    The real layer's per-sign Option-C aggregation is:
+    $h_c = \\sum_{s \\in \\{+,-\\}} \\phi_e^s(
+              \\sum_{i: \\sigma_i = s} \\phi_v^s(h_{v_i}))$
+    with batched Catmull--Rom / B-spline / Kochanek--Bartels splines
+    on the inner $\\phi_v^s$ and a diagonal-fused outer $\\phi_e^s$.
     """
     def __init__(self, hidden: int, arity: int,
                  spline_kind: str = "catmull_rom", grid: int = 5):
@@ -129,10 +147,29 @@ class SignedKANLayer(nn.Module):
         self.arity = arity
         self.spline_kind = spline_kind
         self.grid = grid
+
+        loaded = _try_load_real_signedkan()
+        if loaded is not None:
+            _Real, _Cfg = loaded
+            # base SignedKANLayer ignores cfg.n_nodes; placeholder is fine.
+            cfg = _Cfg(
+                n_nodes=1, hidden_dim=hidden, k=arity, grid=grid,
+                spline_kind=spline_kind,
+            )
+            self._real = _Real(cfg)
+        else:
+            self._real = None
+
+        # Stub fallback parameters — also kept around so spectral_weights
+        # has something to reference when the real path isn't taken.
         self.inner = nn.Linear(hidden, hidden)
         self.outer = nn.Linear(hidden, hidden)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor,
+                triad_v: torch.Tensor | None = None,
+                triad_sigma: torch.Tensor | None = None) -> torch.Tensor:
+        if self._real is not None and triad_v is not None and triad_sigma is not None:
+            return self._real(x, triad_v, triad_sigma)
         return self.outer(torch.tanh(self.inner(x)))
 
 
@@ -160,7 +197,7 @@ class WalkLayer(nn.Module):
 
 
 class ArityMixer(nn.Module):
-    """Stub Tier-3 ``arity_mixer``.
+    """Tier-3 ``arity_mixer`` — αₖ-weighted sparse-incidence fusion.
 
     The real mixer applies sparse signed-incidence matrices $M_e^{(k)}$
     to per-arity cycle embeddings, weighted by softmax-normalised
@@ -168,11 +205,13 @@ class ArityMixer(nn.Module):
     $h_e = \\sum_{k=1}^{K} \\mathrm{softmax}(\\alpha)_k \\cdot
             M_e^{(k)} h_c^{(k)}$.
 
-    Stub semantics: maintains the $K$-vector $\\alpha$ and a tied
-    nn.Linear projection.  `forward(*args)` accepts any of the
-    per-arity inputs (the dataflow walker emits `mixer(cyc_k_emb)`
-    once per arity, fanning into the same sink); the stub sums them
-    after a per-arity weight and projects.
+    Forward signatures (selected by argument count):
+      * ``forward(cyc_emb_k0, ..., cyc_emb_kK-1, M_e_k0, ..., M_e_kK-1)``
+        — real path.  ``cyc_emb_kK`` is ``(n_cycles_kK, hidden)``;
+        ``M_e_kK`` is ``(n_test_edges, n_cycles_kK)`` (sparse or dense).
+        Output: ``(n_test_edges, hidden)``.
+      * ``forward(cyc_emb_k0, ..., cyc_emb_kK-1)`` — stub fallback for
+        codegen smoke tests; weights and projects without M_e.
     """
     def __init__(self, hidden: int, mix_K: int):
         super().__init__()
@@ -181,18 +220,27 @@ class ArityMixer(nn.Module):
         self.alpha = nn.Parameter(torch.zeros(mix_K))
         self.proj = nn.Linear(hidden, hidden)
 
-    def forward(self, *xs: torch.Tensor) -> torch.Tensor:
-        # Multi-input fan-in: the dataflow emitter calls
-        # `mixer(cyc_2_emb, cyc_3_emb, ..., cyc_K_emb)` once per
-        # forward pass with all per-arity cycle embeddings as
-        # positional arguments.  Single-input call (one arity) also
-        # works.  Real mixer applies the per-arity sparse-incidence
-        # mm M_e^{(k)} before the alpha-weighted sum; this stub
-        # weights the inputs directly by softmax(alpha).
-        if not xs:
+    def forward(self, *args: torch.Tensor) -> torch.Tensor:
+        if not args:
             raise ValueError("ArityMixer.forward needs >=1 input")
-        w = torch.softmax(self.alpha[:len(xs)], dim=-1)
-        h = sum(w[i] * x for i, x in enumerate(xs))
+        if len(args) == 2 * self.mix_K:
+            # Real path: per-arity (cyc_emb, M_e) pairs.
+            cyc_embs = args[: self.mix_K]
+            M_es = args[self.mix_K:]
+            alpha = torch.softmax(self.alpha, dim=-1)
+            edge_emb = None
+            for k in range(self.mix_K):
+                M_e_k, h_k = M_es[k], cyc_embs[k]
+                contrib = alpha[k] * (
+                    torch.sparse.mm(M_e_k, h_k)
+                    if M_e_k.is_sparse else (M_e_k @ h_k)
+                )
+                edge_emb = contrib if edge_emb is None else edge_emb + contrib
+            return edge_emb
+        # Stub fallback: cyc_emb tensors only, no M_e — weight + project.
+        K = len(args)
+        w = torch.softmax(self.alpha[:K], dim=-1)
+        h = sum(w[i] * x for i, x in enumerate(args))
         return self.proj(torch.tanh(h))
 
 

@@ -14,6 +14,7 @@
 //! `Interner` (daemon) and `StringTable` (Python bindings).
 
 pub mod predicate;
+pub mod predicate_expr;
 pub mod engine;
 pub mod entropy;
 

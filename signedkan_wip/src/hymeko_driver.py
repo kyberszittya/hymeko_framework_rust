@@ -49,45 +49,23 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import hymeko  # PyO3 wheel; provides parse_hymeko_rs
-
-
-# ─── Tiny AST helpers ───────────────────────────────────────────────
-
-
-def _read_hymeko(path: str) -> dict:
-    """Parse a .hymeko file via the Rust bridge → nested dict."""
-    src = Path(path).read_text()
-    return hymeko.parse_hymeko_rs(src)
-
-
-def _all_items(tree: dict) -> list[dict]:
-    """Flatten the tree one level into the context body (the
-    canonical convention used across all our .hymeko files)."""
-    out = []
-    for it in tree.get("items", []):
-        if it["kind"] == "node" and it.get("body"):
-            # context wrapper — recurse one level
-            out.extend(it["body"])
-        else:
-            out.append(it)
-    return out
-
-
-def _has_tag(item: dict, tag: str) -> bool:
-    return tag in (item.get("tags") or [])
-
-
-def _has_base(item: dict, base_name: str) -> bool:
-    """True if the item inherits from `base_name` via `:` syntax."""
-    for b in item.get("bases") or []:
-        if b.get("path") and b["path"][-1] == base_name:
-            return True
-    return False
+# Shared HyMeKo-IR helpers — single source of truth lives in hymeko_ir.py.
+from .hymeko_ir import (
+    read_hymeko as _read_hymeko,
+    all_items as _all_items,
+    has_tag as _has_tag,
+    has_base as _has_base,
+)
 
 
 def _child_value(item: dict, child_name: str, default=None):
-    """Find a child node by name and return its scalar value."""
+    """Find a child node by name and return its scalar value.
+
+    NOTE: behaves slightly differently from hymeko_ir.child_value: this
+    variant does NOT strip surrounding quotes from string values; the
+    driver does its own ``.strip('"')`` at each call site for backward
+    compatibility with existing parse_training logic.  When migrating a
+    call site, prefer hymeko_ir.child_value (which strips)."""
     body = item.get("body") or []
     for c in body:
         if c.get("kind") == "node" and c.get("name") == child_name:
@@ -107,42 +85,18 @@ def _tag_value(item: dict, key: str, default=None):
 # ─── Architecture .hymeko → MixedAritySignedKANConfig ──────────────
 
 
-def parse_arch(arch_path: str) -> dict:
-    """Walk an architecture .hymeko and return a normalized config
-    dict the driver can map onto MixedAritySignedKANConfig:
+# parse_arch lives in hymeko_ir; re-exported here for backward compat
+# with callers that ``from .hymeko_driver import parse_arch``.
+from .hymeko_ir import parse_arch as _ir_parse_arch
 
-        {"hidden": int, "grid": int, "arities": [int],
-         "spline_kind": str, "n_layers": int}
-    """
-    tree = _read_hymeko(arch_path)
-    items = _all_items(tree)
-    layers = [it for it in items if _has_base(it, "signedkan_layer")
-              or _has_base(it, "walk_layer")]
-    if not layers:
-        raise ValueError(f"no signedkan_layer / walk_layer in {arch_path}")
-    # Per-layer hyperparameters; we take the max-spread arity tuple
-    # and the first layer's hidden/grid/spline as the model defaults.
-    arities = sorted({int(_child_value(l, "arity", 3)) for l in layers
-                      if _has_base(l, "signedkan_layer")})
-    hidden = int(_child_value(layers[0], "hidden", 16))
-    grid = int(_child_value(layers[0], "grid", 5))
-    spline_kind = _child_value(layers[0], "spline_kind", "catmull_rom")
-    if isinstance(spline_kind, str):
-        spline_kind = spline_kind.strip('"')
-    # Count signedkan_layer hypervertices per arity to derive depth.
-    n_layers = max(
-        1,
-        len([l for l in layers if _has_base(l, "signedkan_layer")
-             and int(_child_value(l, "arity", 3)) == arities[0]])
-    )
-    return {
-        "hidden": hidden,
-        "grid": grid,
-        "arities": arities or [3],
-        "spline_kind": spline_kind,
-        "n_layers": n_layers,
-        "name": tree.get("name", "HSiKAN"),
-    }
+
+def parse_arch(arch_path: str) -> dict:
+    """Backward-compat wrapper over hymeko_ir.parse_arch.
+
+    Returns the same shape but with ``arities`` as a list (legacy
+    convention) — the IR helper returns a tuple."""
+    cfg = _ir_parse_arch(arch_path)
+    return {**cfg, "arities": list(cfg["arities"])}
 
 
 # ─── Training .hymeko → run knobs + env vars ───────────────────────

@@ -30,6 +30,11 @@ context
     // Outer dataflow hyperedges: (+ in_tensor, ~ layer, - out_tensor).
     @flows:  dataflow {}
 
+    // Input tensors only — used to emit the forward signature.
+    // Multi-input: e.g. (x, cycle_v_k3, cycle_sigma_k3, M_e_k3, ...) for
+    // signed-cycle KAN where structure tensors flow alongside features.
+    inputs:  t_input {}
+
     // Output tensors only — used to emit the return statement.
     outputs: t_output {}
 }
