@@ -24,7 +24,7 @@ pub mod xml_util;
 pub use codegen::{generate_description, CodegenError, OutputFormat};
 pub use transforms::{
     DotTransform, GazeboWorldTransform, MermaidTransform, MjcfTransform,
-    SdfTransform, TorchDataflowTransform, UrdfTransform,
+    SdfTransform, SysmlTransform, TorchDataflowTransform, UrdfTransform,
 };
 
 use hymeko_query::transforms::TransformRegistry;
@@ -43,6 +43,7 @@ pub fn register_defaults(reg: &mut TransformRegistry) {
     reg.register(Box::new(GazeboWorldTransform));
     reg.register(Box::new(MermaidTransform));
     reg.register(Box::new(TorchDataflowTransform));
+    reg.register(Box::new(SysmlTransform));
 }
 
 /// Build a fresh [`TransformRegistry`] with all six built-in transforms

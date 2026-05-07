@@ -53,10 +53,13 @@ mod test_transform_ecosystem {
             let model = hymeko_query::transforms::extract(&compiled.ir, &store.it, &config.robot_name, hymeko_query::transforms::ModelKind::Kinematic);
             let results = reg.emit_all(&model, &config);
 
-            // 6 default registrations: urdf, sdf, mjcf, dot, gazebo, mermaid.
+            // Default registrations producing output for a Kinematic model:
+            // urdf, sdf, mjcf, dot, gazebo, mermaid, sysml.
+            // (torch_dataflow is registered but accepts a non-Kinematic model
+            // kind so it doesn't appear in this kinematic-only emit_all set.)
             // Gazebo joined with Paper 2 T11 and Mermaid with the docs-friendly
-            // diagram path on 2026-04-19.
-            assert_eq!(results.len(), 6, "Should generate 6 formats");
+            // diagram path on 2026-04-19; SysML 2 added on 2026-05-06.
+            assert_eq!(results.len(), 7, "Should generate 7 formats");
             for (filename, content) in &results {
                 assert!(!content.is_empty(), "Empty output for {}", filename);
                 println!("Generated {} ({} bytes)", filename, content.len());

@@ -17,6 +17,8 @@
 - [Use the PyO3 wheel from Python](./quickstart/11-pyo3-wheel.md)
 - [Use the WASM bundle in a browser](./quickstart/12-wasm.md)
 - [Compute structural entropy + HOSVD](./quickstart/13-tensor-decomposition.md)
+- [Emit SysML 2 textual](./quickstart/14-emit-sysml.md)
+- [Visual editor (WASM, in-browser)](./quickstart/15-wasm-editor.md)
 
 # Architecture
 

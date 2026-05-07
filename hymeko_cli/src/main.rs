@@ -661,8 +661,9 @@ fn parse_format(s: &str) -> OutputFormat {
         "mjcf" => OutputFormat::Mjcf,
         "dot"  => OutputFormat::DotGraph,
         "torch" | "torch_dataflow" => OutputFormat::TorchDataflow,
+        "sysml" | "sysml2" => OutputFormat::Sysml,
         other => {
-            eprintln!("Unknown format: {other}. Use: urdf, sdf, mjcf, dot, torch_dataflow");
+            eprintln!("Unknown format: {other}. Use: urdf, sdf, mjcf, dot, torch_dataflow, sysml");
             std::process::exit(1);
         }
     }

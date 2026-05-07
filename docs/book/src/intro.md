@@ -14,6 +14,7 @@ HyMeKo describes things as **signed hypergraphs**: a vocabulary of nodes (vertic
 | **DOT / Mermaid** | graph visualization |
 | **PyTorch nn.Module** | neural-network architectures (HSiKAN, GNNs) |
 | **Gazebo world** | simulator scenes |
+| **SysML 2 textual** | model-based systems engineering (Papyrus / Modelix / OMG playground) |
 
 A single hypergraph IR feeds all of these via the **template-driven codegen pipeline**. New formats are registered as `transforms/<name>/{queries.hymeko, template.<ext>}` — no Rust changes needed for the common case.
 
@@ -45,3 +46,4 @@ A single hypergraph IR feeds all of these via the **template-driven codegen pipe
 If you've never seen HyMeKo: read [Parse a .hymeko file](./quickstart/01-parse.md) first.
 If you came here for ROS: jump straight to [Emit URDF](./quickstart/02-emit-urdf.md).
 If you came here for ML research: [Build an HSiKAN architecture](./quickstart/08-hsikan-architecture.md).
+If you want to design visually: open the [WASM editor](./quickstart/15-wasm-editor.md) (or visit `/editor/` on the published site).

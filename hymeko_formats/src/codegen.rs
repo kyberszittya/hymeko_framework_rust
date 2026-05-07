@@ -27,6 +27,10 @@ pub enum OutputFormat {
     /// file from the hierarchical hypergraph IR via
     /// `transforms/torch_dataflow/`.
     TorchDataflow,
+    /// SysML 2 textual concrete syntax — emits a `package` containing
+    /// `part def`s for link/joint types and connection instances for
+    /// the IR's hyperedges, via `transforms/sysml/`.
+    Sysml,
 }
 
 impl OutputFormat {
@@ -39,6 +43,7 @@ impl OutputFormat {
             OutputFormat::Mjcf => "mjcf",
             OutputFormat::DotGraph => "dot",
             OutputFormat::TorchDataflow => "torch_dataflow",
+            OutputFormat::Sysml => "sysml",
         }
     }
 }

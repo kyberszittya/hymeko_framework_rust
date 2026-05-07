@@ -5,6 +5,8 @@ on:
     branches: [master, main]
     paths:
       - 'docs/book/**'
+      - 'docs/editor/**'
+      - 'docs/demo/**'
       - '**/*.rs'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -51,8 +53,21 @@ jobs:
             | tar -xz -C /usr/local/bin
           mdbook --version
 
+      - name: Install wasm-pack + wasm32 target
+        run: |
+          rustup target add wasm32-unknown-unknown
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
       - name: Build mdBook
         run: mdbook build docs/book
+
+      - name: Build WASM bundle (for /editor/ + /demo/)
+        run: |
+          wasm-pack build hymeko_wasm --target web --release \
+              --out-dir ../docs/editor/pkg
+          # Demo and editor share the same bundle, copy across.
+          mkdir -p docs/demo/pkg
+          cp docs/editor/pkg/* docs/demo/pkg/
 
       - name: Build cargo doc (public crates only)
         # `--no-deps` skips third-party crates (smaller output, faster build).
@@ -71,12 +86,11 @@ jobs:
         run: |
           mkdir -p _site
           cp -r docs/book/book/* _site/
+          # Rust API docs at /api/
           mkdir -p _site/api
           if [ -d target/doc ]; then
             cp -r target/doc/* _site/api/
           fi
-          # Top-level redirect: cargo doc writes a settings.html but no index.html
-          # at /api/, so add one pointing at the workspace's primary crate.
           cat > _site/api/index.html <<'EOF'
           <!DOCTYPE html>
           <meta charset="utf-8">
@@ -85,6 +99,12 @@ jobs:
           <link rel="canonical" href="hymeko_query/index.html">
           <p>Redirecting to <a href="hymeko_query/index.html">hymeko_query/</a></p>
           EOF
+          # Editor at /editor/ (WASM, with bundle)
+          mkdir -p _site/editor
+          cp -r docs/editor/* _site/editor/
+          # Display-only demo at /demo/
+          mkdir -p _site/demo
+          cp -r docs/demo/* _site/demo/
           # Disable Jekyll so files starting with _ aren't filtered out
           touch _site/.nojekyll
           ls -la _site/
