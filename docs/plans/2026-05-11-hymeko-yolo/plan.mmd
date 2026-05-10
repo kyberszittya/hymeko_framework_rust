@@ -1,0 +1,45 @@
+flowchart TD
+    IMG["Image<br/>3 × H × W"] --> BACKBONE["Conv backbone<br/>ResNet-18 / DarkNet-Tiny"]
+    BACKBONE --> FEATS["Feature map<br/>B × C × H' × W'<br/>(typically 32×32×256)"]
+
+    FEATS -->|"normalize per spatial pos"| NORM["F.normalize(x, dim=1)"]
+    NORM --> RUST_GRAPH["build_signed_feature_graph<br/>Rust: 8-conn edges,<br/>sign = sign(⟨f_i, f_j⟩)"]
+    RUST_GRAPH --> RUST_ENUM["top-K cycle enum<br/>Rust SoA batched<br/>k=3, m=16, balance pruner,<br/>prefilter+tiered"]
+    RUST_ENUM --> HEAT["cycle heatmap<br/>B × (k+1) × H' × W'<br/>1 chan = count, k chans = rotation-position score"]
+
+    FEATS --> CONCAT["torch.cat(dim=1)<br/>B × (C+k+1) × H' × W'"]
+    HEAT --> CONCAT
+    CONCAT --> HEAD["YOLO head<br/>anchors × (4 box + 1 conf + n_cls)"]
+    HEAD --> OUT["Detections"]
+
+    subgraph "Gradient flow (v1: detached graph)"
+        BACKBONE
+        FEATS
+        CONCAT
+        HEAD
+    end
+
+    subgraph "Cycle pipeline (NO gradients in v1)"
+        RUST_GRAPH
+        RUST_ENUM
+        HEAT
+    end
+
+    subgraph "Feasibility ladder"
+        L1["Phase 0: 5-image smoke<br/>(loss decreases)"]
+        L2["Phase 1: Cluttered MNIST<br/>5k synthetic images, 50 ep<br/>~60 min, gate: +0.01 mAP_0.5 vs baseline"]
+        L3["Phase 2: PASCAL VOC 2007<br/>5k real images, 50 ep<br/>~6h, gate: ≥ vanilla baseline"]
+        L4["Phase 3: COCO<br/>full dataset, full training<br/>only if Phase 2 passes"]
+        L1 --> L2 --> L3 --> L4
+    end
+
+    style IMG fill:#ffd
+    style BACKBONE fill:#cdf
+    style FEATS fill:#ffd
+    style NORM fill:#cdf
+    style RUST_GRAPH fill:#fcc
+    style RUST_ENUM fill:#fcc
+    style HEAT fill:#cfc
+    style CONCAT fill:#cfc
+    style HEAD fill:#cdf
+    style OUT fill:#ffd

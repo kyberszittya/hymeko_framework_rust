@@ -1,0 +1,46 @@
+%% Mermaid: hybrid alpha-blended scorer call sequence.
+%%
+%% At each closed cycle, both the signal scorer (stateless) and the
+%% diversity scorer (state-dependent) compute their contribution.
+%% The hybrid is a linear blend.  Update / rollback delegate to the
+%% diversity component only (signal owns no state).
+
+sequenceDiagram
+    autonumber
+    participant DFS as dfs_entropy
+    participant HYB as HybridScorer
+    participant SIG as BoundedScorer (signal)
+    participant DIV as UniformityHeuristic (diversity)
+    participant STATE as UniformityState
+
+    Note over DFS,STATE: closure: path = (v0, v1, v2, v3), signs
+
+    DFS->>HYB: score(vs, signs, state)
+    HYB->>SIG: score(vs, signs)
+    SIG-->>HYB: s_signal
+    HYB->>DIV: score(vs, signs, state)
+    DIV->>STATE: read counts c_v, total T
+    STATE-->>DIV: counts, T
+    DIV-->>HYB: s_div
+    HYB->>HYB: alpha * s_signal + (1 - alpha) * s_div
+    HYB-->>DFS: hybrid score
+
+    alt accepted to heap
+        DFS->>HYB: update(vs, signs, state)
+        HYB->>DIV: update(vs, signs, state)
+        DIV->>STATE: c_v += 1, T += k
+    end
+
+    Note over DFS,STATE: at extension: ABB on hybrid UB
+
+    DFS->>HYB: upper_bound(prefix, k_rem, k_len, state)
+    HYB->>SIG: upper_bound(0, k_len, k_len)
+    SIG-->>HYB: ub_signal (loose: best-case all-negative)
+    HYB->>DIV: upper_bound(prefix, k_rem, k_len, state)
+    DIV-->>HYB: ub_div
+    HYB->>HYB: alpha * ub_signal + (1 - alpha) * ub_div
+    HYB-->>DFS: ub_hybrid
+
+    alt heap full and ub_hybrid <= heap.peek().score
+        Note right of DFS: ABB prune subtree
+    end

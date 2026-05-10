@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant SH as Shell (env vars)
+    participant PY as Python n_tuples.py
+    participant BIND as PyO3 cycles.rs
+    participant FILT as Rust VertexFilter
+    participant ENUM as Rust per_vertex DFS
+    participant OUT as Output cycles
+
+    SH->>PY: HSIKAN_VERTEX_FILTER=triangle<br/>HSIKAN_VERTEX_FILTER_MIN_DEGREE=2
+    PY->>PY: read env, build filter_params dict
+    PY->>BIND: enumerate_top_k_per_vertex_cycles_signed_rs(<br/>...edges, k, m, scorer, pruner,<br/>filter_kind="triangle", filter_params={...})
+    Note over BIND: Macro-dispatch over<br/>(scorer × pruner × filter)
+    BIND->>FILT: TriangleFilter.keep_set(g)
+    FILT->>FILT: build adjacency dict<br/>(O(|E|))
+    FILT->>FILT: per-vertex triangle count<br/>(O(|E|·d̄))
+    FILT-->>BIND: Vec<u32> keep_set<br/>(e.g. 80k of 131k vertices)
+    BIND->>ENUM: enumerate_top_k_per_vertex_cycles_par(<br/>g, k, m, pruner, scorer, filter)
+    Note over ENUM: rayon par_iter over<br/>filter.keep_set() instead of 0..n_nodes
+    ENUM->>ENUM: per-vertex DFS only on kept vertices<br/>(40-60% of vertices skipped)
+    ENUM-->>BIND: Vec<Cycle>
+    BIND->>BIND: subsample to max_cycles<br/>(via _subsample_arr_to_tuples,<br/>landed 2026-05-10)
+    BIND-->>PY: numpy array (cap, k) + scores
+    PY-->>OUT: list[SignedNTuple]

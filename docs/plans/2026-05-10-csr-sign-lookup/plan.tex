@@ -1,0 +1,254 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,calc}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!60!black},
+  commentstyle=\color{green!40!black}\itshape,
+  breaklines=true,
+  showstringspaces=false,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{black!30},
+}
+
+\title{Plan: CSR-Aligned Sign Lookup for top-$K$ Cycle Enumeration}
+\author{}
+\date{2026-05-10}
+
+\begin{document}
+\maketitle
+
+\section*{Scope and goal}
+
+Replace the \texttt{HashMap<(u32, u32), i8>} sign lookup table used inside
+\texttt{hymeko\_graph::topk\_cycles}'s DFS routines with a CSR-aligned
+\texttt{Vec<i8>} parallel to the existing \texttt{col\_idx} array.
+
+Profile (\texttt{cargo flamegraph}, Epinions, $k{=}4$, $m{=}128$, balance
+pruner; baseline 114.9\,s wall) attributes
+\textbf{$\sim 39\%$ of CPU cycles} to
+\texttt{BuildHasher::hash\_one} and
+\texttt{DefaultHasher::write} — both inside the per-edge sign lookup.
+Replacing the hash-keyed lookup with an array index eliminates that
+overhead by construction. No algorithmic change; same cycles enumerated
+in the same order.
+
+Goal: bring Epinions $k{=}4$, $m{=}128$ wall time below the
+\textbf{75\,s budget} (35\% reduction floor; conservative target).
+Goal must be confirmed by a post-fix flamegraph SVG attached to the
+report (CLAUDE.md \S3 ``performance regression discipline'').
+
+\section*{Affected files}
+
+\begin{itemize}
+  \item \texttt{hymeko\_graph/src/signed\_graph.rs} — additive: a new
+    method \texttt{build\_csr\_with\_signs()} returning
+    \texttt{(Vec<u32>, Vec<u32>, Vec<i8>)}. Existing \texttt{build\_csr}
+    and \texttt{build\_sign\_lookup} unchanged.
+  \item \texttt{hymeko\_graph/src/topk\_cycles.rs} — replace the
+    \texttt{sign\_lookup: \&HashMap<(u32, u32), i8>} parameter on the
+    four DFS helpers with \texttt{signs\_csr: \&[i8]}, and update the
+    four enumeration entry points
+    (\texttt{enumerate\_top\_k\_cycles},
+    \texttt{enumerate\_top\_k\_per\_vertex\_cycles},
+    \texttt{*\_par} variants) to use the new helper.
+  \item \texttt{hymeko\_graph/tests/csr\_sign\_lookup.rs} — new
+    integration test: parity check between the old HashMap-based path
+    and the new CSR-array path on a fixed signed graph fixture.
+  \item \texttt{hymeko\_graph/benches/topk\_balance.rs} — new Criterion
+    benchmark: $k{=}4$ on a 5k-vertex synthetic Erdős–Rényi signed
+    graph, asserts the post-fix median wall time is at most
+    $0.75\times$ the pre-fix baseline (recorded in
+    \texttt{baseline.json} alongside the bench).
+  \item \texttt{hymeko\_graph/examples/profile\_topk\_balance.rs} —
+    already created. Used to capture before/after flamegraphs.
+\end{itemize}
+
+\section*{CORE.YAML items touched}
+
+\textbf{None.} \texttt{hymeko\_graph} is not listed under
+\texttt{crates}, \texttt{files}, or \texttt{globs} in
+\texttt{CORE.YAML}. \texttt{tests/**} and \texttt{benches/**} are in the
+\texttt{allowlist}. No new dependencies (\texttt{criterion} is the
+canonical Rust benchmarking tool per CLAUDE.md \S10 and is already a
+dev-dependency in this workspace; verified during plan).
+
+\section*{Interface changes}
+
+Internal helpers only — no public-API or PyO3 binding change. The
+PyO3 wrapper \texttt{enumerate\_top\_k\_per\_vertex\_cycles\_signed\_rs}
+keeps its signature unchanged.
+
+New public-on-the-crate (but \texttt{pub(crate)} or \texttt{pub} for
+test access) method on \texttt{SignedGraph}:
+
+\begin{lstlisting}
+impl SignedGraph {
+    /// Build CSR adjacency along with a parallel per-edge sign
+    /// array.  `signs_csr[k]` is the sign of the directed edge
+    /// `(start_of_row(k) -> col_idx[k])`.
+    ///
+    /// # Postconditions
+    /// - `row_ptr.len() == n_nodes + 1`
+    /// - `col_idx.len() == signs_csr.len()`
+    /// - For every undirected edge `(u, v, s)` in `self.edges`,
+    ///   both `(u, v, s)` and `(v, u, s)` appear in the CSR.
+    pub fn build_csr_with_signs(&self)
+        -> (Vec<u32>, Vec<u32>, Vec<i8>);
+}
+\end{lstlisting}
+
+DFS helper signature change (private):
+
+\begin{lstlisting}
+// before
+fn dfs_per_vertex<P, S>(
+    start: u32,
+    row_ptr: &[u32],
+    col_idx: &[u32],
+    sign_lookup: &HashMap<(u32, u32), i8>,
+    ...
+)
+
+// after
+fn dfs_per_vertex<P, S>(
+    start: u32,
+    row_ptr: &[u32],
+    col_idx: &[u32],
+    signs_csr: &[i8],
+    ...
+)
+\end{lstlisting}
+
+The signed-edge lookup at cycle closure changes from a HashMap query
+to a CSR scan:
+
+\begin{lstlisting}
+// before
+let key = (last.min(start), last.max(start));
+sign_lookup.get(&key).expect("edge present")
+
+// after
+let s = row_ptr[u as usize] as usize;
+let e = row_ptr[u as usize + 1] as usize;
+let pos = col_idx[s..e].iter().position(|&x| x == v)
+                                  .expect("edge present");
+signs_csr[s + pos]
+\end{lstlisting}
+
+Average degree on the workload graphs is small ($\bar d_{\text{Epinions}}
+\approx 13$); the linear scan replaces a SipHash-based HashMap hit.
+The per-edge cost drops from $\sim 70$\,ns to $\sim 5$--$10$\,ns at
+typical cache locality.
+
+\section*{Test strategy}
+
+\subsection*{Unit (\texttt{hymeko\_graph} crate, \texttt{cargo test --release})}
+
+\begin{itemize}
+  \item \texttt{signed\_graph::tests::csr\_with\_signs\_postcondition}:
+    \texttt{build\_csr\_with\_signs()} satisfies the documented
+    postconditions on a 6-vertex hand-checked fixture.
+  \item \texttt{signed\_graph::tests::csr\_with\_signs\_matches\_hashmap}:
+    for every $(u, v)$ entry in
+    \texttt{build\_sign\_lookup()}, the CSR-indexed lookup yields the
+    same sign. Same fixture.
+  \item Existing \texttt{topk\_cycles} unit tests must keep passing
+    unchanged — none reference the internal sign\_lookup parameter.
+\end{itemize}
+
+\subsection*{Integration (\texttt{hymeko\_graph/tests/csr\_sign\_lookup.rs})}
+
+\begin{itemize}
+  \item Generate a 200-vertex Erdős–Rényi signed graph (seed 42, edge
+    probability 0.05, sign probability 0.7 positive).
+  \item Run \texttt{enumerate\_top\_k\_per\_vertex\_cycles\_par} with
+    \texttt{CartwrightHararyPruner(OnlyBalanced)}, $k=4$, $m=8$.
+  \item Assert the cycle set (canonicalised by sorted tuple) is
+    identical to the result obtained from the equivalent HashMap-path
+    fixture run before the change.
+  \item Run again with \texttt{NoOpPruner} and the
+    \texttt{fraction\_negative} scorer; same parity assertion.
+\end{itemize}
+
+\subsection*{Performance (Criterion bench, \texttt{cargo bench})}
+
+\begin{itemize}
+  \item Bench: \texttt{topk\_balance/erdos\_renyi/k4\_m32}, 5\,000-vertex
+    seeded random graph (deterministic, fixture-hashed).
+  \item Per CLAUDE.md \S3 ``benchmark stability'': minimum 5 iterations
+    after warm-up, report median, IQR, worst case.
+  \item \textbf{Numerical budget assertion}: post-fix median $\le 0.75
+    \times$ pre-fix median (recorded as
+    \texttt{benches/baseline.json}). A regression $> 10\%$ blocks
+    completion per CLAUDE.md \S3.
+  \item Peak RSS via \texttt{dhat} feature flag (\S10 canonical Rust
+    memory profiler): asserted to drop by at least the size of the
+    sign\_lookup HashMap that is no longer allocated
+    ($\sim 24\,\text{B} \times |E|$).
+\end{itemize}
+
+\subsection*{Pre-/post-fix flamegraph}
+
+Both flamegraphs (\texttt{target/profile/topk\_balance\_*\_pre.svg},
+\texttt{*\_post.svg}) attached to the report. The post-fix flamegraph
+must show \texttt{BuildHasher::hash\_one} below 1\% of total cycles, or
+the speedup attribution is invalid (\S3 ``a $> 10\%$ improvement must
+be confirmed by profile, not by single-shot wall-clock variance'').
+
+\section*{Performance budget}
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Metric & Pre (measured) & Post (budget) & Source \\
+\midrule
+Epinions $k{=}4$, $m{=}128$ wall time & 114.9\,s & $\le 75$\,s & flamegraph (k=4 m=128) \\
+\texttt{hash\_one} share of cycles & $\sim 39\%$ & $< 1\%$ & flamegraph attribution \\
+Allocator share of cycles & $\sim 12\%$ & $\le 8\%$ & no HashMap rehashing \\
+Peak RSS, Epinions enum & --- (re-measure) & $\le$ pre $- 24 |E|$ & \texttt{dhat} \\
+Cycle output (parity) & 3\,692\,194 & 3\,692\,194 (exact) & integration test \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The 16\,GB hard cap (\S4) is far above measured peak; this change
+reduces RSS, does not lift it. No new GPU memory.
+
+\section*{Rollback path}
+
+The change is one Rust file (\texttt{topk\_cycles.rs}) plus an additive
+helper on \texttt{SignedGraph}. Single revert restores the HashMap path:
+
+\begin{lstlisting}
+git revert <commit-sha>
+cargo test --release   # all green pre-change
+\end{lstlisting}
+
+The PyO3 binding signature is unchanged, so a revert does not require
+re-publishing the wheel. No external-API surface affected.
+
+If the post-fix flamegraph fails to demonstrate \texttt{hash\_one}
+$< 1\%$ (i.e., the bottleneck moved somewhere unexpected), the change
+is held under review per \S3 — not merged on wall-clock alone.
+
+\section*{Architecture diagram}
+
+See \texttt{plan.tikz} (rendered below) for the data-layout change.
+See \texttt{plan.mmd} for the call-sequence diagram.
+
+\begin{center}
+\input{plan.tikz}
+\end{center}
+
+\end{document}

@@ -1,0 +1,37 @@
+flowchart TD
+    SH["Shell: env vars<br/>HSIKAN_DATASET=epinions<br/>HSIKAN_SEED=0<br/>HSIKAN_AGGRESSIVENESS=0.5"]
+    CLI["CLI args<br/>--dataset epinions<br/>--seed 0<br/>--hidden 4"]
+    PROFILE["DATASET_PROFILES[epinions]<br/>memory_budget_gb=8.0<br/>target_total_cycles=400_000<br/>selection_aggressiveness=0.6"]
+
+    RESOLVE["HSIKANConfig.from_env(g, args)<br/>1. dataclass default<br/>2. profile layer<br/>3. env override"]
+
+    CFG["HSIKANConfig (resolved)<br/>4 fundamentals + 6 derived"]
+
+    SH --> RESOLVE
+    CLI --> RESOLVE
+    PROFILE --> RESOLVE
+    RESOLVE --> CFG
+
+    subgraph DERIVE["Derivation rules (cached_property)"]
+        D1["cap_k = target × FPN_weights[k]"]
+        D2["cycle_batch = budget × 0.3GB / chunk_size"]
+        D3["m_v_c = 1.0 + (0.5 − aggressiveness)"]
+        D4["topk_mode = step(aggressiveness)"]
+        D5["vertex_filter = step(aggressiveness)"]
+    end
+
+    CFG --> DERIVE
+
+    USE["run_final_cell.cell_signed_graph<br/>(consumes config.*)"]
+    DERIVE --> USE
+
+    REPORT["reports/<date>-<slug>.md<br/>provenance: config.to_json()"]
+    USE --> REPORT
+
+    style SH fill:#fed
+    style CLI fill:#fed
+    style PROFILE fill:#dfe
+    style RESOLVE fill:#eef
+    style CFG fill:#ffd
+    style USE fill:#eee
+    style REPORT fill:#fef

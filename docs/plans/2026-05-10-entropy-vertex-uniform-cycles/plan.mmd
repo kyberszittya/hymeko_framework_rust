@@ -1,0 +1,44 @@
+%% Mermaid: entropy-heuristic cycle accept/reject sequence.
+%%
+%% Each closed cycle's "score" is its marginal entropy gain ΔH given
+%% the running per-vertex incidence distribution.  The heap holds
+%% the top-K cycles by ΔH.  ABB on the partial path uses an
+%% admissible UB on ΔH.
+
+sequenceDiagram
+    autonumber
+    participant DFS as dfs_entropy
+    participant CSR as (row_ptr, col_idx, signs_csr)
+    participant SCO as StatefulScorer
+    participant STATE as running counts c_v + total T
+    participant HEAP as local heap (size K)
+
+    Note over DFS,HEAP: extension step, candidate `nxt`
+    DFS->>CSR: pre-checks (visited, BFS dist, extend_ok)
+    CSR-->>DFS: pass
+
+    DFS->>SCO: upper_bound(prefix ∪ {nxt}, k_rem - 1, c, T)
+    SCO->>STATE: read c_v for v ∈ prefix
+    STATE-->>SCO: counts
+    SCO-->>DFS: UB : f64
+
+    alt heap full and UB ≤ heap.peek().score
+        Note right of DFS: ABB prune — drop subtree
+        DFS-->>DFS: continue
+    else
+        DFS->>DFS: recurse with prefix ∪ {nxt}
+    end
+
+    Note over DFS,STATE: at closure (path.len() == k_len)
+    DFS->>SCO: score(vs, signs, c, T)
+    SCO->>STATE: read c_v for v ∈ cycle
+    STATE-->>SCO: counts
+    SCO-->>DFS: ΔH : f64
+
+    alt ΔH > heap.peek().score
+        DFS->>HEAP: pop + push (cycle, ΔH)
+        DFS->>SCO: update(vs, c, T)
+        SCO->>STATE: c_v += 1, T += k
+    else
+        DFS-->>DFS: drop cycle
+    end

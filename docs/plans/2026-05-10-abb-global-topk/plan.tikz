@@ -1,0 +1,49 @@
+% TikZ figure: ABB descent state machine.
+% Each DFS step now carries a running n_neg count and checks
+% UB(n_neg, k_remaining, k_len) against the local heap threshold
+% before recursing.
+\begin{tikzpicture}[
+    >=Latex,
+    state/.style={draw, rounded corners, minimum width=24mm, minimum height=10mm,
+                  font=\small, align=center, fill=white},
+    decide/.style={draw, diamond, aspect=2.4, minimum width=22mm,
+                   minimum height=10mm, font=\footnotesize, align=center,
+                   inner sep=1pt, fill=yellow!10},
+    prune/.style={draw, rounded corners, minimum width=22mm, minimum height=8mm,
+                  font=\footnotesize\itshape, fill=red!10, align=center},
+    accept/.style={draw, rounded corners, minimum width=22mm, minimum height=8mm,
+                   font=\footnotesize\itshape, fill=green!10, align=center},
+    arr/.style={->, thick, draw=black!70},
+  ]
+
+  \node[state] (entry) at (0,0) {Extension step\\\texttt{nxt} candidate};
+  \node[decide, right=8mm of entry] (vis) {visited?};
+  \node[decide, right=8mm of vis] (bfs) {BFS dist OK?};
+  \node[decide, right=8mm of bfs] (pre) {\texttt{extend\_ok}?};
+
+  \node[state, below=10mm of pre, fill=yellow!10] (sign)
+    {Look up sign of\\\texttt{(tail, nxt)} via\\CSR scan};
+  \node[decide, left=8mm of sign] (ub) {UB $\le$ T?\\(ABB cut)};
+  \node[state, left=8mm of ub] (push) {Push \texttt{nxt};\\recurse with\\\texttt{n\_neg + s$<$0}};
+
+  \node[prune, above=4mm of vis] (p1) {skip};
+  \node[prune, above=4mm of bfs] (p2) {skip};
+  \node[prune, above=4mm of pre] (p3) {skip};
+  \node[prune, below=10mm of ub] (p4) {\textbf{ABB prune}\\branch dropped};
+
+  \draw[arr] (entry) -- (vis);
+  \draw[arr] (vis) -- node[above, font=\tiny] {no} (bfs);
+  \draw[arr] (bfs) -- node[above, font=\tiny] {yes} (pre);
+  \draw[arr] (pre.south) -- node[right, font=\tiny] {accept} (sign.north);
+  \draw[arr] (sign) -- (ub);
+  \draw[arr] (ub) -- node[above, font=\tiny] {no} (push);
+
+  \draw[arr] (vis.north) -- node[right, font=\tiny] {yes} (p1.south);
+  \draw[arr] (bfs.north) -- node[right, font=\tiny] {no} (p2.south);
+  \draw[arr] (pre.north) -- node[right, font=\tiny] {reject} (p3.south);
+  \draw[arr] (ub.south) -- node[right, font=\tiny] {yes} (p4.north);
+
+  \node[font=\footnotesize\itshape, below=2mm of p4, text width=80mm, align=center]
+    {UB $=$ \texttt{(n\_neg + (k - d)) / k}\\T $=$ \texttt{heap.peek().score} when full, $-\infty$ otherwise};
+
+\end{tikzpicture}

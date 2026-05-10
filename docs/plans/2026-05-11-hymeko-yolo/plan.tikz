@@ -1,0 +1,61 @@
+\begin{tikzpicture}[
+  node distance=0.8cm and 1.2cm,
+  every node/.style={align=center,font=\small},
+  data/.style={rectangle, draw, rounded corners=2pt, fill=yellow!10,
+                minimum width=2.6cm, minimum height=0.7cm, font=\footnotesize},
+  block/.style={rectangle, draw, rounded corners=2pt, fill=blue!10,
+                 minimum width=2.6cm, minimum height=0.8cm, font=\footnotesize},
+  rust/.style={rectangle, draw, rounded corners=2pt, fill=red!10,
+                minimum width=2.6cm, minimum height=0.8cm, font=\footnotesize},
+  py/.style={rectangle, draw, rounded corners=2pt, fill=green!10,
+              minimum width=2.6cm, minimum height=0.8cm, font=\footnotesize},
+  arrow/.style={-stealth, thick},
+]
+
+% Input
+\node[data] (img) {Image\\ \tiny 3 $\times$ H $\times$ W};
+
+% Backbone
+\node[block, right=1.4cm of img] (backbone) {Conv backbone\\ \tiny ResNet-18 / DarkNet-Tiny};
+
+% Feature map
+\node[data, right=1.4cm of backbone] (feats) {Feature map\\ \tiny B $\times$ C $\times$ H' $\times$ W'};
+
+\draw[arrow] (img) -- (backbone);
+\draw[arrow] (backbone) -- (feats);
+
+% Cycle attention branch (top path)
+\node[rust, below=1.2cm of feats, xshift=-2.2cm]
+     (sigraph) {build\_signed\_\\feature\_graph\\ \tiny edges=8-conn, sign=$\langle f_i, f_j \rangle$};
+\node[rust, below=1.2cm of feats, xshift=1.0cm]
+     (enum) {top-K cycle enum\\ \tiny SoA, k=3, m=16,\\ \tiny prefilter+tiered};
+\node[py, below=1.2cm of enum]
+     (heatmap) {cycle heatmap\\ \tiny B $\times$ (k+1) $\times$ H' $\times$ W'};
+
+\draw[arrow] (feats.south) -| (sigraph.north);
+\draw[arrow] (sigraph) -- (enum);
+\draw[arrow] (enum) -- (heatmap);
+
+% Concat
+\node[py, below=0.8cm of feats, xshift=4.0cm]
+     (concat) {torch.cat (channels)\\ \tiny B $\times$ (C+k+1) $\times$ H' $\times$ W'};
+\draw[arrow] (feats.south) -- ++(0,-0.6) -| (concat.north);
+\draw[arrow] (heatmap.east) -- ++(1.5,0) |- (concat.west);
+
+% Detection head
+\node[block, below=1.1cm of concat] (head) {YOLO head\\ \tiny anchors $\times$ (4 box + 1 conf + n\_cls)};
+\draw[arrow] (concat) -- (head);
+
+% Output
+\node[data, below=0.8cm of head] (out) {Detections};
+\draw[arrow] (head) -- (out);
+
+% Legend
+\node[font=\scriptsize, anchor=west] at (-0.5, -8.0) {%
+  \textbf{red}: Rust (signed feature graph + cycle enum via tonight's SoA infrastructure)\\
+  \textbf{green}: Python (PyTorch layers, gradients flow through CNN+head only)\\
+  \textbf{blue}: trainable conv blocks\\
+  \textbf{yellow}: data tensors\\
+  Detached graph: cycle layer is an auxiliary signal, not learned via end-to-end attention (v1).};
+
+\end{tikzpicture}

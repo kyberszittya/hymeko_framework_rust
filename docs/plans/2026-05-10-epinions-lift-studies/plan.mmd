@@ -1,0 +1,33 @@
+%% Mermaid: experiment order for the Epinions lift sweep.
+%%
+%% Each step is gated by the smoke result of the prior step.
+%% A failed gate halts that branch and moves to the next lever
+%% candidate in the matrix.
+
+flowchart TB
+    Start[In-flight 5-seed:<br/>fixed-m vs adaptive c=1]
+    Start -->|adaptive wins| A0[Lever A: sub-unit c smoke<br/>c ∈ {0.25, 0.5, 0.75}]
+    Start -->|adaptive null/loss| Halt[HALT — quality poisoned;<br/>re-evaluate smoke interpretation]
+
+    A0 -->|best c clears smoke| A5[5-seed at best c]
+    A0 -->|all fail| B0
+
+    A5 -->|paired confirmed| B0[Lever B: sparse attn smoke<br/>K_attn ∈ {4, 8, 16}]
+    A5 -->|paired regression| B0
+
+    B0 -->|best K clears smoke| B5[5-seed at best A+B]
+    B0 -->|all fail| C0
+
+    B5 -->|paired confirmed| C0[Lever C: Davis pruner smoke]
+    B5 -->|paired regression| C0
+
+    C0 -->|smoke clears| C5[5-seed at best A+B+C]
+    C0 -->|fails| D0
+
+    D0[Lever D: m_max sweep<br/>m_max ∈ {32, 64, 128}]
+    D0 -->|smoke clears| D5[5-seed at best A+B+C+D]
+    D0 -->|all fail| Done
+
+    Done[Done — best confirmed stack]
+    C5 --> D0
+    D5 --> Done

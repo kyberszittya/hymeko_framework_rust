@@ -1,0 +1,66 @@
+% TikZ figure: data-layout change for CSR-aligned sign lookup.
+% Compiled standalone via the parent plan.tex (\input{plan.tikz}) or
+% via \begin{document}\input{plan.tikz}\end{document} in any TikZ host.
+\begin{tikzpicture}[
+    >=Latex,
+    cell/.style={draw, minimum width=8mm, minimum height=6mm,
+                 font=\ttfamily\small, anchor=base},
+    label/.style={font=\small\itshape, anchor=east},
+    labelw/.style={font=\small\itshape, anchor=west},
+    title/.style={font=\bfseries\small, anchor=south west},
+    note/.style={font=\footnotesize\itshape, text=black!70},
+    arrowstyle/.style={->, thick, draw=blue!60!black},
+  ]
+
+  % ─── BEFORE: HashMap sign_lookup ──────────────────────────────
+  \node[title] at (-1,2.6) {Before --- HashMap (39\% of CPU on hash\_one)};
+
+  \node[label] at (-1,2) {row\_ptr};
+  \foreach \i/\v in {0/0, 1/2, 2/5, 3/7, 4/9} {
+    \node[cell] at ({\i*0.9},2) {\v};
+  }
+  \node[label] at (-1,1.3) {col\_idx};
+  \foreach \i/\v in {0/1, 1/2, 2/0, 3/2, 4/3, 5/0, 6/1, 7/1, 8/2} {
+    \node[cell] at ({\i*0.9},1.3) {\v};
+  }
+
+  \node[draw, rounded corners, fill=red!8, minimum width=3.6cm,
+        minimum height=1.0cm, anchor=west, font=\ttfamily\small]
+        (hashmap) at (5.5,1.6) {%
+    \begin{tabular}{l}
+      \texttt{HashMap<(u32,u32),i8>}\\
+      \texttt{(0,1) -> +1}\\
+      \texttt{(0,2) -> -1}\\
+      $\;\vdots$
+    \end{tabular}
+  };
+  \node[note] at (5.5,0.4) {SipHash, 2-word key, allocator pressure};
+
+  \draw[arrowstyle, dashed] ({4*0.9},1.0) -- ++(0,-0.4)
+    node[below, font=\footnotesize] {$\sim 70$\,ns/lookup};
+
+  % ─── AFTER: CSR-aligned signs_csr ─────────────────────────────
+  \node[title] at (-1,-1.4) {After --- CSR-aligned \texttt{signs\_csr} ($\sim 5$--$10$\,ns/lookup)};
+
+  \node[label] at (-1,-2.0) {row\_ptr};
+  \foreach \i/\v in {0/0, 1/2, 2/5, 3/7, 4/9} {
+    \node[cell] at ({\i*0.9},-2.0) {\v};
+  }
+  \node[label] at (-1,-2.7) {col\_idx};
+  \foreach \i/\v in {0/1, 1/2, 2/0, 3/2, 4/3, 5/0, 6/1, 7/1, 8/2} {
+    \node[cell] at ({\i*0.9},-2.7) {\v};
+  }
+  \node[label] at (-1,-3.4) {signs\_csr};
+  \foreach \i/\v in {0/+, 1/-, 2/+, 3/+, 4/-, 5/-, 6/+, 7/+, 8/-} {
+    \node[cell, fill=green!10] at ({\i*0.9},-3.4) {\v};
+  }
+
+  \draw[arrowstyle] ({4*0.9},-3.0) -- ++(0,0.3);
+  \node[note, anchor=west] at (5.5,-2.7)
+    {Lookup: scan \texttt{col\_idx[row\_ptr[u]..row\_ptr[u+1]]}};
+  \node[note, anchor=west] at (5.5,-3.05)
+    {for \texttt{v}, return \texttt{signs\_csr[that\_index]}.};
+  \node[note, anchor=west] at (5.5,-3.4)
+    {Same memory, no hashing, no rehash, contiguous.};
+
+\end{tikzpicture}

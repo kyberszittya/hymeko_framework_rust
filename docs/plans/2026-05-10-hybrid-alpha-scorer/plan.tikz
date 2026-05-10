@@ -1,0 +1,40 @@
+% TikZ figure: hybrid alpha-blended scorer composition.
+\begin{tikzpicture}[
+    >=Latex,
+    box/.style={draw, rounded corners, minimum width=32mm, minimum height=10mm,
+                font=\small, align=center, fill=white},
+    sig/.style={draw, rounded corners, minimum width=32mm, minimum height=12mm,
+                font=\small, align=center, fill=blue!10},
+    div/.style={draw, rounded corners, minimum width=32mm, minimum height=12mm,
+                font=\small, align=center, fill=green!10},
+    op/.style={draw, circle, minimum size=8mm, font=\small, fill=yellow!20},
+    lbl/.style={font=\footnotesize\itshape, text=black!70},
+    arr/.style={->, thick, draw=black!70},
+  ]
+
+  \node[box] (cycle) at (0,0) {Closed cycle\\$c, \mathrm{signs}$};
+  \node[sig] (sigb) at (-3.2,-2) {\texttt{signal.score(c)}\\(BoundedScorer)};
+  \node[div] (divb) at (3.2,-2) {\texttt{H\_div(c | C)}\\(state-dependent)};
+
+  \node[op] (mul1) at (-3.2,-3.6) {$\times$};
+  \node[lbl, left=2mm of mul1] {$\alpha$};
+  \node[op] (mul2) at (3.2,-3.6) {$\times$};
+  \node[lbl, right=2mm of mul2] {$1{-}\alpha$};
+
+  \node[op] (sum) at (0,-5.0) {$+$};
+  \node[box] (out) at (0,-6.5) {Hybrid score\\(this cycle's contribution)};
+
+  \draw[arr] (cycle) -- (sigb);
+  \draw[arr] (cycle) -- (divb);
+  \draw[arr] (sigb) -- (mul1);
+  \draw[arr] (divb) -- (mul2);
+  \draw[arr] (mul1) -- (sum);
+  \draw[arr] (mul2) -- (sum);
+  \draw[arr] (sum) -- (out);
+
+  % UB derivation aside
+  \node[box, right=18mm of cycle, fill=orange!8] (ub) {Upper bound\\(linearity-of-UB)};
+  \node[lbl, below=1mm of ub.south, text width=44mm, align=center]
+    {$\mathrm{UB}_\alpha = \alpha \cdot \mathrm{UB}_\mathrm{signal} + (1{-}\alpha) \cdot \mathrm{UB}_\mathrm{div}$\\admissible by Jensen};
+
+\end{tikzpicture}

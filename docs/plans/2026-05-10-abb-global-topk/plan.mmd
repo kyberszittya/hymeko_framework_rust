@@ -1,0 +1,44 @@
+%% Mermaid sequence diagram: ABB descent.
+%%
+%% Each DFS extension step gets one extra cheap test (UB <= T)
+%% after the existing pre-checks.  When UB <= heap threshold, the
+%% recursive call is skipped and the search subtree is dropped.
+
+sequenceDiagram
+    autonumber
+    participant DFS as dfs_bb
+    participant CSR as (row_ptr, col_idx, signs_csr)
+    participant SCO as BoundedScorer
+    participant HEAP as local heap (size K_keep)
+
+    Note over DFS,HEAP: extension loop, candidate `nxt`
+
+    DFS->>CSR: nxt < start? visited? BFS dist OK?
+    CSR-->>DFS: pass
+
+    DFS->>DFS: pruner.extend_ok(path, nxt)?
+    DFS->>CSR: signs_csr[s + col_idx index of nxt]
+    CSR-->>DFS: nxt_sign : i8
+
+    DFS->>DFS: new_n_neg = n_neg + (nxt_sign &lt; 0)
+    DFS->>SCO: upper_bound(new_n_neg, k_len - (path.len()+1), k_len)
+    SCO-->>DFS: UB : f64
+
+    alt heap full and UB ≤ heap.peek().score
+        Note right of DFS: <b>ABB prune</b> — skip recursion
+        DFS-->>DFS: continue
+    else
+        DFS->>DFS: path.push(nxt); visited[nxt] = true
+        DFS->>DFS: dfs_bb(start, ..., heap, new_n_neg) (recurse)
+        DFS->>DFS: path.pop(); visited[nxt] = false
+    end
+
+    Note over DFS,HEAP: at closure (path.len() == k_len)
+    DFS->>HEAP: peek().score = T
+    DFS->>SCO: score(path, signs)
+    SCO-->>DFS: s
+    alt s &gt; T
+        DFS->>HEAP: pop + push HeapEntry::from_slices(s, ...)
+    else
+        DFS-->>DFS: drop
+    end
