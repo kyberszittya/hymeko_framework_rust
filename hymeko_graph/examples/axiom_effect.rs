@@ -11,10 +11,10 @@
 use std::time::Instant;
 
 use hymeko_graph::{
-    balance::{BalanceMode, BipartiteOnlyPruner, CartwrightHararyPruner,
-              DavisWeakBalancePruner},
-    enumerate_simple_cycles, friedler::{FriedlerAxiomPruner, NodeKind},
     CompositePruner, NoOpPruner, SignedGraph,
+    balance::{BalanceMode, BipartiteOnlyPruner, CartwrightHararyPruner, DavisWeakBalancePruner},
+    enumerate_simple_cycles,
+    friedler::{FriedlerAxiomPruner, NodeKind},
 };
 
 /// Build a moderately-sized bipartite ring with chords — picks up
@@ -84,50 +84,66 @@ fn main() {
         );
 
         // ── 2-N. Single-axiom configurations.
+        // type-complexity allow: per-row closures capture local
+        // fixtures; a type alias would need a named lifetime that
+        // doesn't read well at this call site.
+        #[allow(clippy::type_complexity)]
         let configs: Vec<(&str, Box<dyn Fn() -> CompositePruner>)> = vec![
-            ("Bipartite-only (A0 emit)", Box::new(|| {
-                CompositePruner::new()
-                    .with("A0_emit", Box::new(BipartiteOnlyPruner))
-            })),
-            ("Friedler-A0 (during DFS)", Box::new(|| {
-                CompositePruner::new().with(
-                    "Friedler_A0",
-                    Box::new(FriedlerAxiomPruner::new(kinds.clone())),
-                )
-            })),
-            ("Cartwright-Harary balanced", Box::new(|| {
-                CompositePruner::new().with(
-                    "CH_balanced",
-                    Box::new(CartwrightHararyPruner {
-                        mode: BalanceMode::OnlyBalanced,
-                    }),
-                )
-            })),
-            ("Davis weak-balance", Box::new(|| {
-                CompositePruner::new()
-                    .with("Davis", Box::new(DavisWeakBalancePruner))
-            })),
-            ("A0 + CH balanced", Box::new(|| {
-                CompositePruner::new()
-                    .with(
+            (
+                "Bipartite-only (A0 emit)",
+                Box::new(|| CompositePruner::new().with("A0_emit", Box::new(BipartiteOnlyPruner))),
+            ),
+            (
+                "Friedler-A0 (during DFS)",
+                Box::new(|| {
+                    CompositePruner::new().with(
                         "Friedler_A0",
                         Box::new(FriedlerAxiomPruner::new(kinds.clone())),
                     )
-                    .with(
+                }),
+            ),
+            (
+                "Cartwright-Harary balanced",
+                Box::new(|| {
+                    CompositePruner::new().with(
                         "CH_balanced",
                         Box::new(CartwrightHararyPruner {
                             mode: BalanceMode::OnlyBalanced,
                         }),
                     )
-            })),
-            ("A0 + Davis", Box::new(|| {
-                CompositePruner::new()
-                    .with(
-                        "Friedler_A0",
-                        Box::new(FriedlerAxiomPruner::new(kinds.clone())),
-                    )
-                    .with("Davis", Box::new(DavisWeakBalancePruner))
-            })),
+                }),
+            ),
+            (
+                "Davis weak-balance",
+                Box::new(|| CompositePruner::new().with("Davis", Box::new(DavisWeakBalancePruner))),
+            ),
+            (
+                "A0 + CH balanced",
+                Box::new(|| {
+                    CompositePruner::new()
+                        .with(
+                            "Friedler_A0",
+                            Box::new(FriedlerAxiomPruner::new(kinds.clone())),
+                        )
+                        .with(
+                            "CH_balanced",
+                            Box::new(CartwrightHararyPruner {
+                                mode: BalanceMode::OnlyBalanced,
+                            }),
+                        )
+                }),
+            ),
+            (
+                "A0 + Davis",
+                Box::new(|| {
+                    CompositePruner::new()
+                        .with(
+                            "Friedler_A0",
+                            Box::new(FriedlerAxiomPruner::new(kinds.clone())),
+                        )
+                        .with("Davis", Box::new(DavisWeakBalancePruner))
+                }),
+            ),
         ];
 
         for (name, build) in configs {
@@ -136,10 +152,8 @@ fn main() {
             let cycles = enumerate_simple_cycles(&g, k_len, &p);
             let dt = t0.elapsed();
             let stats = p.child_stats();
-            let total_ext_rej: u64 =
-                stats.iter().map(|(_, s)| s.extend_rejects).sum();
-            let total_emit_rej: u64 =
-                stats.iter().map(|(_, s)| s.emit_rejects).sum();
+            let total_ext_rej: u64 = stats.iter().map(|(_, s)| s.extend_rejects).sum();
+            let total_emit_rej: u64 = stats.iter().map(|(_, s)| s.emit_rejects).sum();
             println!(
                 "  {:<26}  cycles={:>6}  ext_rej={:>6}  emit_rej={:>6}  time={:>10.3?}",
                 name,
@@ -153,11 +167,7 @@ fn main() {
                 for (cname, s) in &stats {
                     println!(
                         "      └─ {:<22}  ext={}/{}  emit={}/{}",
-                        cname,
-                        s.extend_rejects,
-                        s.extend_calls,
-                        s.emit_rejects,
-                        s.emit_calls,
+                        cname, s.extend_rejects, s.extend_calls, s.emit_rejects, s.emit_calls,
                     );
                 }
             }

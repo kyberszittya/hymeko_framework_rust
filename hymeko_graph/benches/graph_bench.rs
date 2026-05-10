@@ -14,22 +14,19 @@
 
 use std::hint::black_box;
 
-use criterion::{
-    criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
-};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 
 use hymeko_graph::{
-    balance::{BipartiteOnlyPruner, CartwrightHararyPruner, BalanceMode},
+    NoOpPruner, SignedGraph,
+    balance::{BalanceMode, BipartiteOnlyPruner, CartwrightHararyPruner},
     cycle_enum::enumerate_simple_cycles_noprune,
     enumerate_simple_cycles, enumerate_top_k_cycles_noprune,
     friedler::{FriedlerAxiomPruner, NodeKind},
     topk_cycles::scorers,
     traversal::{
-        bfs_distances, bidirectional_bfs, dfs_visit, dfs_visit_pruned,
-        BfsScratch, Csr, DfsScratch,
+        BfsScratch, Csr, DfsScratch, bfs_distances, bidirectional_bfs, dfs_visit, dfs_visit_pruned,
     },
-    traversal_heuristic::{astar, AstarScratch, ZeroHeuristic},
-    NoOpPruner, SignedGraph,
+    traversal_heuristic::{AstarScratch, ZeroHeuristic, astar},
 };
 
 // ─── Graph generators ───────────────────────────────────────────────
@@ -117,55 +114,38 @@ fn bench_dfs(c: &mut Criterion) {
         group.throughput(Throughput::Elements(n as u64));
 
         // 1. Plain DFS — no pruner machinery.
-        group.bench_with_input(
-            BenchmarkId::new("plain", n),
-            &n,
-            |b, _| {
-                let mut s = DfsScratch::with_capacity(n);
-                b.iter(|| {
-                    s.reset();
-                    let mut visited = 0u64;
-                    dfs_visit(&csr, &mut s, 0, |_| visited += 1);
-                    black_box(visited)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("plain", n), &n, |b, _| {
+            let mut s = DfsScratch::with_capacity(n);
+            b.iter(|| {
+                s.reset();
+                let mut visited = 0u64;
+                dfs_visit(&csr, &mut s, 0, |_| visited += 1);
+                black_box(visited)
+            })
+        });
 
         // 2. DFS + NoOpPruner — measures the pruner-trait overhead.
-        group.bench_with_input(
-            BenchmarkId::new("noop_pruner", n),
-            &n,
-            |b, _| {
-                let mut s = DfsScratch::with_capacity(n);
-                b.iter(|| {
-                    s.reset();
-                    let mut visited = 0u64;
-                    dfs_visit_pruned(
-                        &csr, &mut s, &NoOpPruner, 0,
-                        |_| visited += 1,
-                    );
-                    black_box(visited)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("noop_pruner", n), &n, |b, _| {
+            let mut s = DfsScratch::with_capacity(n);
+            b.iter(|| {
+                s.reset();
+                let mut visited = 0u64;
+                dfs_visit_pruned(&csr, &mut s, &NoOpPruner, 0, |_| visited += 1);
+                black_box(visited)
+            })
+        });
 
         // 3. DFS + Friedler pruner — full axiom check at every step.
-        group.bench_with_input(
-            BenchmarkId::new("friedler_pruner", n),
-            &n,
-            |b, _| {
-                let mut s = DfsScratch::with_capacity(n);
-                let p = FriedlerAxiomPruner::new(kinds.clone());
-                b.iter(|| {
-                    s.reset();
-                    let mut visited = 0u64;
-                    dfs_visit_pruned(&csr, &mut s, &p, 0, |_| {
-                        visited += 1
-                    });
-                    black_box(visited)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("friedler_pruner", n), &n, |b, _| {
+            let mut s = DfsScratch::with_capacity(n);
+            let p = FriedlerAxiomPruner::new(kinds.clone());
+            b.iter(|| {
+                s.reset();
+                let mut visited = 0u64;
+                dfs_visit_pruned(&csr, &mut s, &p, 0, |_| visited += 1);
+                black_box(visited)
+            })
+        });
     }
     group.finish();
 }
@@ -179,29 +159,21 @@ fn bench_bfs(c: &mut Criterion) {
         let csr = Csr::from_graph(&g);
         group.throughput(Throughput::Elements(n as u64));
 
-        group.bench_with_input(
-            BenchmarkId::new("distances", n),
-            &n,
-            |b, _| {
-                let mut s = BfsScratch::with_capacity(n);
-                b.iter(|| {
-                    let r = bfs_distances(&csr, &mut s, 0, 32);
-                    black_box(r)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("distances", n), &n, |b, _| {
+            let mut s = BfsScratch::with_capacity(n);
+            b.iter(|| {
+                let r = bfs_distances(&csr, &mut s, 0, 32);
+                black_box(r)
+            })
+        });
 
-        group.bench_with_input(
-            BenchmarkId::new("bi_bfs", n),
-            &n,
-            |b, _| {
-                let target = (n - 1) % n;
-                b.iter(|| {
-                    let r = bidirectional_bfs(&csr, 0, target, 32);
-                    black_box(r)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("bi_bfs", n), &n, |b, _| {
+            let target = (n - 1) % n;
+            b.iter(|| {
+                let r = bidirectional_bfs(&csr, 0, target, 32);
+                black_box(r)
+            })
+        });
     }
     group.finish();
 }
@@ -218,41 +190,31 @@ fn bench_cycles(c: &mut Criterion) {
 
         // k=4 cycles, three pruning strategies.
         for k in [4usize, 6] {
-            group.bench_with_input(
-                BenchmarkId::new(format!("k{k}/no_prune"), n),
-                &n,
-                |b, _| {
-                    b.iter(|| {
-                        let cs = enumerate_simple_cycles_noprune(&g, k);
-                        black_box(cs.len())
-                    })
-                },
-            );
+            group.bench_with_input(BenchmarkId::new(format!("k{k}/no_prune"), n), &n, |b, _| {
+                b.iter(|| {
+                    let cs = enumerate_simple_cycles_noprune(&g, k);
+                    black_box(cs.len())
+                })
+            });
 
             group.bench_with_input(
                 BenchmarkId::new(format!("k{k}/bipartite"), n),
                 &n,
                 |b, _| {
                     b.iter(|| {
-                        let cs = enumerate_simple_cycles(
-                            &g, k, &BipartiteOnlyPruner,
-                        );
+                        let cs = enumerate_simple_cycles(&g, k, &BipartiteOnlyPruner);
                         black_box(cs.len())
                     })
                 },
             );
 
-            group.bench_with_input(
-                BenchmarkId::new(format!("k{k}/friedler"), n),
-                &n,
-                |b, _| {
-                    let p = FriedlerAxiomPruner::new(kinds.clone());
-                    b.iter(|| {
-                        let cs = enumerate_simple_cycles(&g, k, &p);
-                        black_box(cs.len())
-                    })
-                },
-            );
+            group.bench_with_input(BenchmarkId::new(format!("k{k}/friedler"), n), &n, |b, _| {
+                let p = FriedlerAxiomPruner::new(kinds.clone());
+                b.iter(|| {
+                    let cs = enumerate_simple_cycles(&g, k, &p);
+                    black_box(cs.len())
+                })
+            });
 
             group.bench_with_input(
                 BenchmarkId::new(format!("k{k}/cartwright_harary"), n),
@@ -283,44 +245,28 @@ fn bench_topk(c: &mut Criterion) {
         group.throughput(Throughput::Elements(n as u64));
 
         // Full enumeration of all 4-cycles.
-        group.bench_with_input(
-            BenchmarkId::new("full_k4", n),
-            &n,
-            |b, _| {
-                b.iter(|| {
-                    let cs = enumerate_simple_cycles_noprune(&g, 4);
-                    black_box(cs.len())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("full_k4", n), &n, |b, _| {
+            b.iter(|| {
+                let cs = enumerate_simple_cycles_noprune(&g, 4);
+                black_box(cs.len())
+            })
+        });
 
         // Top-100 4-cycles by balance.
-        group.bench_with_input(
-            BenchmarkId::new("top100_k4_balance", n),
-            &n,
-            |b, _| {
-                b.iter(|| {
-                    let cs = enumerate_top_k_cycles_noprune(
-                        &g, 4, 100, scorers::balance,
-                    );
-                    black_box(cs.len())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("top100_k4_balance", n), &n, |b, _| {
+            b.iter(|| {
+                let cs = enumerate_top_k_cycles_noprune(&g, 4, 100, scorers::balance);
+                black_box(cs.len())
+            })
+        });
 
         // Top-10 — heap stays smaller, but DFS work is identical.
-        group.bench_with_input(
-            BenchmarkId::new("top10_k4_balance", n),
-            &n,
-            |b, _| {
-                b.iter(|| {
-                    let cs = enumerate_top_k_cycles_noprune(
-                        &g, 4, 10, scorers::balance,
-                    );
-                    black_box(cs.len())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("top10_k4_balance", n), &n, |b, _| {
+            b.iter(|| {
+                let cs = enumerate_top_k_cycles_noprune(&g, 4, 10, scorers::balance);
+                black_box(cs.len())
+            })
+        });
     }
     group.finish();
 }
@@ -336,30 +282,22 @@ fn bench_astar(c: &mut Criterion) {
         group.throughput(Throughput::Elements(n as u64));
 
         // Plain BFS distances — baseline.
-        group.bench_with_input(
-            BenchmarkId::new("bfs_baseline", n),
-            &n,
-            |b, _| {
-                let mut s = BfsScratch::with_capacity(n);
-                b.iter(|| {
-                    let r = bfs_distances(&csr, &mut s, 0, 64);
-                    black_box(r)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("bfs_baseline", n), &n, |b, _| {
+            let mut s = BfsScratch::with_capacity(n);
+            b.iter(|| {
+                let r = bfs_distances(&csr, &mut s, 0, 64);
+                black_box(r)
+            })
+        });
 
         // A* with zero heuristic.
-        group.bench_with_input(
-            BenchmarkId::new("zero_heuristic", n),
-            &n,
-            |b, _| {
-                let mut s = AstarScratch::with_capacity(n);
-                b.iter(|| {
-                    let r = astar(&csr, &mut s, 0, goal, &ZeroHeuristic, 64);
-                    black_box(r)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("zero_heuristic", n), &n, |b, _| {
+            let mut s = AstarScratch::with_capacity(n);
+            b.iter(|| {
+                let r = astar(&csr, &mut s, 0, goal, &ZeroHeuristic, 64);
+                black_box(r)
+            })
+        });
     }
     group.finish();
 }
@@ -374,27 +312,19 @@ fn bench_cycles_large(c: &mut Criterion) {
         let kinds = gen_kinds_alternating(n);
         group.throughput(Throughput::Elements(n as u64));
 
-        group.bench_with_input(
-            BenchmarkId::new("k4/no_prune", n),
-            &n,
-            |b, _| {
-                b.iter(|| {
-                    let cs = enumerate_simple_cycles_noprune(&g, 4);
-                    black_box(cs.len())
-                })
-            },
-        );
-        group.bench_with_input(
-            BenchmarkId::new("k4/friedler", n),
-            &n,
-            |b, _| {
-                let p = FriedlerAxiomPruner::new(kinds.clone());
-                b.iter(|| {
-                    let cs = enumerate_simple_cycles(&g, 4, &p);
-                    black_box(cs.len())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("k4/no_prune", n), &n, |b, _| {
+            b.iter(|| {
+                let cs = enumerate_simple_cycles_noprune(&g, 4);
+                black_box(cs.len())
+            })
+        });
+        group.bench_with_input(BenchmarkId::new("k4/friedler", n), &n, |b, _| {
+            let p = FriedlerAxiomPruner::new(kinds.clone());
+            b.iter(|| {
+                let cs = enumerate_simple_cycles(&g, 4, &p);
+                black_box(cs.len())
+            })
+        });
     }
     group.finish();
 }

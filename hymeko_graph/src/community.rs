@@ -31,9 +31,7 @@ use crate::traversal::Csr;
 ///   to order; a random shuffle per iteration is standard).
 ///
 /// Returns `(labels, n_communities)`.
-pub fn label_propagation(
-    csr: &Csr, max_iters: u32, seed: u64,
-) -> (Vec<u32>, u32) {
+pub fn label_propagation(csr: &Csr, max_iters: u32, seed: u64) -> (Vec<u32>, u32) {
     let n = csr.row_ptr.len() - 1;
     let mut labels: Vec<u32> = (0..n as u32).collect();
     let mut order: Vec<u32> = (0..n as u32).collect();
@@ -130,12 +128,9 @@ pub fn balance_ratio_per_community(
                     continue;
                 }
                 // Triangle (u, v, w) all in community cu.
-                let s_uv = sign_lookup
-                    .get(&(u.min(v), u.max(v))).copied().unwrap_or(1);
-                let s_vw = sign_lookup
-                    .get(&(v.min(w), v.max(w))).copied().unwrap_or(1);
-                let s_uw = sign_lookup
-                    .get(&(u.min(w), u.max(w))).copied().unwrap_or(1);
+                let s_uv = sign_lookup.get(&(u.min(v), u.max(v))).copied().unwrap_or(1);
+                let s_vw = sign_lookup.get(&(v.min(w), v.max(w))).copied().unwrap_or(1);
+                let s_uw = sign_lookup.get(&(u.min(w), u.max(w))).copied().unwrap_or(1);
                 let prod = (s_uv as i32) * (s_vw as i32) * (s_uw as i32);
                 tot[cu as usize] += 1;
                 if prod > 0 {
@@ -146,7 +141,13 @@ pub fn balance_ratio_per_community(
     }
     bal.iter()
         .zip(tot.iter())
-        .map(|(b, t)| if *t == 0 { f64::NAN } else { *b as f64 / *t as f64 })
+        .map(|(b, t)| {
+            if *t == 0 {
+                f64::NAN
+            } else {
+                *b as f64 / *t as f64
+            }
+        })
         .collect()
 }
 
@@ -190,12 +191,7 @@ impl CommunityAxiomPruner {
     /// - $\beta \geq \tau_{\mathrm{coop}}$ (default 0.85) → `Balance`
     /// - $\beta \leq \tau_{\mathrm{adv}}$ (default 0.75)  → `Unbalanced`
     /// - else (intermediate)                              → `None`
-    pub fn auto(
-        labels: Vec<u32>,
-        balance_ratios: &[f64],
-        tau_coop: f64,
-        tau_adv: f64,
-    ) -> Self {
+    pub fn auto(labels: Vec<u32>, balance_ratios: &[f64], tau_coop: f64, tau_adv: f64) -> Self {
         let axioms: Vec<AxiomChoice> = balance_ratios
             .iter()
             .map(|&b| {
@@ -289,7 +285,7 @@ mod tests {
             6,
             &[0, 1, 2, 3, 4, 5],
             &[1, 2, 0, 4, 5, 3],
-            &[1, 1, 1, 1, 1, -1],   // first balanced, second unbalanced
+            &[1, 1, 1, 1, 1, -1], // first balanced, second unbalanced
         );
         let csr = Csr::from_graph(&g);
         let (labels, n_comm) = label_propagation(&csr, 50, 42);
@@ -314,12 +310,7 @@ mod tests {
     /// Single connected triangle → one community, balance = 1.0.
     #[test]
     fn single_triangle_single_community() {
-        let g = SignedGraph::from_parts(
-            3,
-            &[0, 1, 2],
-            &[1, 2, 0],
-            &[1, 1, 1],
-        );
+        let g = SignedGraph::from_parts(3, &[0, 1, 2], &[1, 2, 0], &[1, 1, 1]);
         let csr = Csr::from_graph(&g);
         let (labels, n_comm) = label_propagation(&csr, 50, 0);
         assert_eq!(n_comm, 1);
@@ -334,12 +325,12 @@ mod tests {
     #[test]
     fn community_axiom_pruner_auto_picks_per_community() {
         let labels = vec![0, 0, 0, 1, 1, 1];
-        let bal = vec![1.0, 0.2];   // comm 0 cooperative, comm 1 adversarial
-        let p = CommunityAxiomPruner::auto(
-            labels.clone(), &bal, 0.85, 0.75,
+        let bal = vec![1.0, 0.2]; // comm 0 cooperative, comm 1 adversarial
+        let p = CommunityAxiomPruner::auto(labels.clone(), &bal, 0.85, 0.75);
+        assert_eq!(
+            p.axiom_per_community,
+            vec![AxiomChoice::Balance, AxiomChoice::Unbalanced]
         );
-        assert_eq!(p.axiom_per_community,
-                   vec![AxiomChoice::Balance, AxiomChoice::Unbalanced]);
 
         // Cycle internal to comm 0 with balanced sign-product → accept
         let dec = p.emit_ok(&[0, 1, 2], &[1, 1, 1]);
@@ -359,12 +350,7 @@ mod tests {
     /// propagation result is deterministic with a fixed seed.
     #[test]
     fn label_propagation_is_deterministic_with_fixed_seed() {
-        let g = SignedGraph::from_parts(
-            5,
-            &[0, 1, 2, 3, 0],
-            &[1, 2, 3, 4, 4],
-            &[1, 1, 1, 1, -1],
-        );
+        let g = SignedGraph::from_parts(5, &[0, 1, 2, 3, 0], &[1, 2, 3, 4, 4], &[1, 1, 1, 1, -1]);
         let csr = Csr::from_graph(&g);
         let (labels1, n1) = label_propagation(&csr, 50, 42);
         let (labels2, n2) = label_propagation(&csr, 50, 42);

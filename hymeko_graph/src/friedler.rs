@@ -103,20 +103,14 @@ impl FriedlerAxiomPruner {
 
     /// Add an A1 constraint: cycles must pass through at least
     /// one product node.
-    pub fn with_required_products(
-        mut self,
-        products: impl IntoIterator<Item = u32>,
-    ) -> Self {
+    pub fn with_required_products(mut self, products: impl IntoIterator<Item = u32>) -> Self {
         self.required_products = products.into_iter().collect();
         self
     }
 
     /// Add an A3 constraint: only emit cycles whose O-nodes are
     /// all in the supplied whitelist.
-    pub fn with_valid_o_nodes(
-        mut self,
-        valid: impl IntoIterator<Item = u32>,
-    ) -> Self {
+    pub fn with_valid_o_nodes(mut self, valid: impl IntoIterator<Item = u32>) -> Self {
         self.valid_o_nodes = Some(valid.into_iter().collect());
         self
     }
@@ -133,18 +127,17 @@ impl CyclePruner for FriedlerAxiomPruner {
     /// alternation invariant of any well-formed P-graph.
     #[inline]
     fn extend_ok(&self, path: &[u32], next: u32) -> PrunerDecision {
-        if let Some(&tail) = path.last() {
-            if self.kind_of(tail) == self.kind_of(next) {
-                return PrunerDecision::Reject;
-            }
+        if let Some(&tail) = path.last()
+            && self.kind_of(tail) == self.kind_of(next)
+        {
+            return PrunerDecision::Reject;
         }
         // A3 — incoming O-node must be in the whitelist (if set).
-        if let Some(ref valid) = self.valid_o_nodes {
-            if matches!(self.kind_of(next), NodeKind::OperatingUnit)
-                && !valid.contains(&next)
-            {
-                return PrunerDecision::Reject;
-            }
+        if let Some(ref valid) = self.valid_o_nodes
+            && matches!(self.kind_of(next), NodeKind::OperatingUnit)
+            && !valid.contains(&next)
+        {
+            return PrunerDecision::Reject;
         }
         PrunerDecision::Accept
     }
@@ -155,13 +148,12 @@ impl CyclePruner for FriedlerAxiomPruner {
         // A0 — even length is necessary (already enforced by
         // extend_ok in well-formed bipartite graphs, but cheap to
         // verify).
-        if cycle.len() % 2 != 0 {
+        if !cycle.len().is_multiple_of(2) {
             return PrunerDecision::Reject;
         }
         // A1 — at least one cycle vertex is a required product.
         if !self.required_products.is_empty() {
-            let touches_product = cycle.iter()
-                .any(|v| self.required_products.contains(v));
+            let touches_product = cycle.iter().any(|v| self.required_products.contains(v));
             if !touches_product {
                 return PrunerDecision::Reject;
             }
@@ -176,58 +168,43 @@ mod tests {
 
     fn make_kind(n: usize, alt: bool) -> Vec<NodeKind> {
         // Alternating bipartite kinds: even = M, odd = O.
-        (0..n).map(|i| if i % 2 == (alt as usize) {
-            NodeKind::Material
-        } else {
-            NodeKind::OperatingUnit
-        }).collect()
+        (0..n)
+            .map(|i| {
+                if i % 2 == (alt as usize) {
+                    NodeKind::Material
+                } else {
+                    NodeKind::OperatingUnit
+                }
+            })
+            .collect()
     }
 
     #[test]
     fn a0_rejects_same_kind_extension() {
         let p = FriedlerAxiomPruner::new(make_kind(4, false));
         // path = [0]: Material; next = 2 is also Material → reject.
-        assert_eq!(
-            p.extend_ok(&[0], 2),
-            PrunerDecision::Reject,
-        );
+        assert_eq!(p.extend_ok(&[0], 2), PrunerDecision::Reject,);
         // next = 1 is OperatingUnit → accept.
-        assert_eq!(
-            p.extend_ok(&[0], 1),
-            PrunerDecision::Accept,
-        );
+        assert_eq!(p.extend_ok(&[0], 1), PrunerDecision::Accept,);
     }
 
     #[test]
     fn emit_rejects_odd_length_cycles() {
         let p = FriedlerAxiomPruner::new(make_kind(3, false));
         // 3-cycle is odd → A0 rejection.
-        assert_eq!(
-            p.emit_ok(&[0, 1, 2], &[1; 3]),
-            PrunerDecision::Reject,
-        );
+        assert_eq!(p.emit_ok(&[0, 1, 2], &[1; 3]), PrunerDecision::Reject,);
         // 4-cycle is even → ok.
         let p4 = FriedlerAxiomPruner::new(make_kind(4, false));
-        assert_eq!(
-            p4.emit_ok(&[0, 1, 2, 3], &[1; 4]),
-            PrunerDecision::Accept,
-        );
+        assert_eq!(p4.emit_ok(&[0, 1, 2, 3], &[1; 4]), PrunerDecision::Accept,);
     }
 
     #[test]
     fn a1_requires_product_membership() {
-        let p = FriedlerAxiomPruner::new(make_kind(4, false))
-            .with_required_products([3]);
+        let p = FriedlerAxiomPruner::new(make_kind(4, false)).with_required_products([3]);
         // Cycle without vertex 3 → reject.
-        assert_eq!(
-            p.emit_ok(&[0, 1, 2, 1], &[1; 4]),
-            PrunerDecision::Reject,
-        );
+        assert_eq!(p.emit_ok(&[0, 1, 2, 1], &[1; 4]), PrunerDecision::Reject,);
         // Cycle with vertex 3 → accept.
-        assert_eq!(
-            p.emit_ok(&[0, 1, 2, 3], &[1; 4]),
-            PrunerDecision::Accept,
-        );
+        assert_eq!(p.emit_ok(&[0, 1, 2, 3], &[1; 4]), PrunerDecision::Accept,);
     }
 
     #[test]
@@ -235,8 +212,7 @@ mod tests {
         let mut kind = make_kind(4, false);
         kind[1] = NodeKind::OperatingUnit;
         kind[3] = NodeKind::OperatingUnit;
-        let p = FriedlerAxiomPruner::new(kind)
-            .with_valid_o_nodes([1]); // only vertex 1 is a valid unit
+        let p = FriedlerAxiomPruner::new(kind).with_valid_o_nodes([1]); // only vertex 1 is a valid unit
         // Extending to vertex 1 (whitelisted O) is fine.
         assert_eq!(p.extend_ok(&[0], 1), PrunerDecision::Accept);
         // Extending to vertex 3 (un-whitelisted O) is blocked.

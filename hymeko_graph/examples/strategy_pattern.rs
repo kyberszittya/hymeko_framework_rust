@@ -6,14 +6,10 @@
 //! ```
 
 use hymeko_graph::{
-    SignedGraph, NoOpPruner, FriedlerAxiomPruner,
-    CartwrightHararyPruner, DavisWeakBalancePruner,
-    BipartiteOnlyPruner,
-    balance::BalanceMode,
-    friedler::NodeKind,
-    enumerate_simple_cycles, enumerate_simple_cycles_noprune,
-    Csr, DfsScratch, dfs_visit, dfs_visit_pruned,
-    BfsScratch, bfs_distances, bidirectional_bfs,
+    BfsScratch, BipartiteOnlyPruner, CartwrightHararyPruner, Csr, DavisWeakBalancePruner,
+    DfsScratch, FriedlerAxiomPruner, NoOpPruner, SignedGraph, balance::BalanceMode, bfs_distances,
+    bidirectional_bfs, dfs_visit, dfs_visit_pruned, enumerate_simple_cycles,
+    enumerate_simple_cycles_noprune, friedler::NodeKind,
 };
 
 fn main() {
@@ -35,38 +31,70 @@ fn main() {
     let signs = vec![1, 1, 1, -1, 1, 1, 1, 1];
     let g = SignedGraph::from_parts(n, &eu, &ev, &signs);
 
-    let kinds = (0..n).map(|i| if i % 2 == 0 {
-        NodeKind::Material
-    } else {
-        NodeKind::OperatingUnit
-    }).collect::<Vec<_>>();
+    let kinds = (0..n)
+        .map(|i| {
+            if i % 2 == 0 {
+                NodeKind::Material
+            } else {
+                NodeKind::OperatingUnit
+            }
+        })
+        .collect::<Vec<_>>();
 
     // ── 2. Enumerate cycles under several strategies.
+    // type-complexity allow: the strategies vector deliberately
+    // mixes heterogeneous closures that capture local fixtures by
+    // reference; factoring into a type alias would require a named
+    // lifetime that isn't stable in 2024-edition example code.
+    #[allow(clippy::type_complexity)]
     let strategies: Vec<(&str, Box<dyn Fn() -> Vec<Vec<u32>>>)> = vec![
-        ("NoOpPruner",
-         Box::new(|| enumerate_simple_cycles_noprune(&g, 8))),
-        ("BipartiteOnly",
-         Box::new(|| enumerate_simple_cycles(
-             &g, 8, &BipartiteOnlyPruner))),
-        ("CartwrightHarary OnlyBalanced",
-         Box::new(|| enumerate_simple_cycles(
-             &g, 8, &CartwrightHararyPruner {
-                 mode: BalanceMode::OnlyBalanced }))),
-        ("CartwrightHarary OnlyUnbalanced",
-         Box::new(|| enumerate_simple_cycles(
-             &g, 8, &CartwrightHararyPruner {
-                 mode: BalanceMode::OnlyUnbalanced }))),
-        ("DavisWeakBalance (no all-neg triads)",
-         Box::new(|| enumerate_simple_cycles(
-             &g, 8, &DavisWeakBalancePruner))),
-        ("Friedler A0 (bipartite alternation)",
-         Box::new(|| enumerate_simple_cycles(
-             &g, 8, &FriedlerAxiomPruner::new(kinds.clone())))),
+        (
+            "NoOpPruner",
+            Box::new(|| enumerate_simple_cycles_noprune(&g, 8)),
+        ),
+        (
+            "BipartiteOnly",
+            Box::new(|| enumerate_simple_cycles(&g, 8, &BipartiteOnlyPruner)),
+        ),
+        (
+            "CartwrightHarary OnlyBalanced",
+            Box::new(|| {
+                enumerate_simple_cycles(
+                    &g,
+                    8,
+                    &CartwrightHararyPruner {
+                        mode: BalanceMode::OnlyBalanced,
+                    },
+                )
+            }),
+        ),
+        (
+            "CartwrightHarary OnlyUnbalanced",
+            Box::new(|| {
+                enumerate_simple_cycles(
+                    &g,
+                    8,
+                    &CartwrightHararyPruner {
+                        mode: BalanceMode::OnlyUnbalanced,
+                    },
+                )
+            }),
+        ),
+        (
+            "DavisWeakBalance (no all-neg triads)",
+            Box::new(|| enumerate_simple_cycles(&g, 8, &DavisWeakBalancePruner)),
+        ),
+        (
+            "Friedler A0 (bipartite alternation)",
+            Box::new(|| enumerate_simple_cycles(&g, 8, &FriedlerAxiomPruner::new(kinds.clone()))),
+        ),
     ];
 
-    println!("8-cycle enumeration on the {n}-vertex bipartite ring,\n\
-              one negative edge (3,4); cycle product = -1\n");
-    println!("  {:<42}  {}", "strategy", "8-cycles found");
+    println!(
+        "8-cycle enumeration on the {n}-vertex bipartite ring,\n\
+              one negative edge (3,4); cycle product = -1\n"
+    );
+    println!("  {:<42}  8-cycles found", "strategy");
     println!("  {:<42}  {}", "—".repeat(42), "—".repeat(15));
     for (name, run) in &strategies {
         let cycles = run();
@@ -84,23 +112,27 @@ fn main() {
 
     let mut order_noop: Vec<u32> = Vec::new();
     s.reset();
-    dfs_visit_pruned(&csr, &mut s, &NoOpPruner, 0,
-                      |v| order_noop.push(v));
+    dfs_visit_pruned(&csr, &mut s, &NoOpPruner, 0, |v| order_noop.push(v));
 
     let mut order_friedler: Vec<u32> = Vec::new();
     s.reset();
     dfs_visit_pruned(
-        &csr, &mut s,
+        &csr,
+        &mut s,
         &FriedlerAxiomPruner::new(kinds.clone()),
-        0, |v| order_friedler.push(v));
+        0,
+        |v| order_friedler.push(v),
+    );
 
     println!("DFS traversal from vertex 0 (Material):");
     println!("  plain DFS         : {:?}", order_plain);
     println!("  DFS + NoOpPruner  : {:?}", order_noop);
     println!("  DFS + Friedler A0 : {:?}", order_friedler);
     println!();
-    assert_eq!(order_plain, order_noop,
-               "plain DFS must equal DFS + NoOpPruner");
+    assert_eq!(
+        order_plain, order_noop,
+        "plain DFS must equal DFS + NoOpPruner"
+    );
 
     // ── 4. BFS demo (no pruner — BFS is strategy-independent for
     // now; the strategy pattern enters once we add the

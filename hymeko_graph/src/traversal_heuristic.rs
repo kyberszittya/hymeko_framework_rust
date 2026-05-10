@@ -77,7 +77,7 @@ impl DegreeHeuristic {
     /// Build a [`DegreeHeuristic`] from a CSR.
     pub fn new(csr: &Csr, prefer_high: bool) -> Self {
         let deg: Vec<u32> = (0..csr.row_ptr.len() - 1)
-            .map(|v| (csr.row_ptr[v + 1] - csr.row_ptr[v]) as u32)
+            .map(|v| csr.row_ptr[v + 1] - csr.row_ptr[v])
             .collect();
         Self { deg, prefer_high }
     }
@@ -86,11 +86,7 @@ impl DegreeHeuristic {
 impl Heuristic for DegreeHeuristic {
     fn h(&self, v: u32) -> f64 {
         let d = self.deg.get(v as usize).copied().unwrap_or(0) as f64;
-        if self.prefer_high {
-            -d
-        } else {
-            d
-        }
+        if self.prefer_high { -d } else { d }
     }
 }
 
@@ -169,7 +165,10 @@ pub fn astar<H: Heuristic>(
     s.reset();
     s.g_score[start as usize] = 0.0;
     let mut open: BinaryHeap<AstarNode> = BinaryHeap::new();
-    open.push(AstarNode { f: h.h(start), v: start });
+    open.push(AstarNode {
+        f: h.h(start),
+        v: start,
+    });
 
     while let Some(AstarNode { v, .. }) = open.pop() {
         if v == goal {
@@ -250,11 +249,7 @@ pub fn best_first_dfs<H: Heuristic, F: FnMut(u32)>(
             .copied()
             .filter(|&u| !visited[u as usize])
             .collect();
-        nb.sort_by(|&a, &b| {
-            h.h(b)
-                .partial_cmp(&h.h(a))
-                .unwrap_or(Ordering::Equal)
-        });
+        nb.sort_by(|&a, &b| h.h(b).partial_cmp(&h.h(a)).unwrap_or(Ordering::Equal));
         for u in nb {
             if !visited[u as usize] {
                 stack.push(u);
@@ -295,8 +290,16 @@ pub fn enumerate_cycles_ordered<P: CyclePruner, H: Heuristic>(
         path.push(start);
         visited[start as usize] = true;
         dfs_ordered(
-            start, &row_ptr, &col_idx, &sign_lookup, k, pruner, h,
-            &mut path, &mut visited, &mut out,
+            start,
+            &row_ptr,
+            &col_idx,
+            &sign_lookup,
+            k,
+            pruner,
+            h,
+            &mut path,
+            &mut visited,
+            &mut out,
         );
         visited[start as usize] = false;
     }
@@ -346,11 +349,7 @@ fn dfs_ordered<P: CyclePruner, H: Heuristic>(
         .copied()
         .filter(|&nxt| nxt >= start && !visited[nxt as usize])
         .collect();
-    nb.sort_by(|&a, &b| {
-        h.h(a)
-            .partial_cmp(&h.h(b))
-            .unwrap_or(Ordering::Equal)
-    });
+    nb.sort_by(|&a, &b| h.h(a).partial_cmp(&h.h(b)).unwrap_or(Ordering::Equal));
     for nxt in nb {
         if pruner.extend_ok(path, nxt) == PrunerDecision::Reject {
             continue;
@@ -358,8 +357,16 @@ fn dfs_ordered<P: CyclePruner, H: Heuristic>(
         path.push(nxt);
         visited[nxt as usize] = true;
         dfs_ordered(
-            start, row_ptr, col_idx, sign_lookup, k, pruner, h,
-            path, visited, out,
+            start,
+            row_ptr,
+            col_idx,
+            sign_lookup,
+            k,
+            pruner,
+            h,
+            path,
+            visited,
+            out,
         );
         path.pop();
         visited[nxt as usize] = false;
@@ -408,8 +415,7 @@ mod tests {
         let (g, _) = build_grid(5, 5);
         let csr = Csr::from_graph(&g);
         let mut s = AstarScratch::with_capacity(g.n_nodes);
-        let path = astar(&csr, &mut s, 0, 24, &ZeroHeuristic, 32)
-            .expect("path exists");
+        let path = astar(&csr, &mut s, 0, 24, &ZeroHeuristic, 32).expect("path exists");
         assert_eq!(path.len() - 1, 8);
     }
 
@@ -432,9 +438,7 @@ mod tests {
     #[test]
     fn astar_returns_none_for_unreachable() {
         // Two disjoint K2's.
-        let g = SignedGraph::from_parts(
-            4, &[0, 2], &[1, 3], &[1, 1],
-        );
+        let g = SignedGraph::from_parts(4, &[0, 2], &[1, 3], &[1, 1]);
         let csr = Csr::from_graph(&g);
         let mut s = AstarScratch::with_capacity(g.n_nodes);
         assert!(astar(&csr, &mut s, 0, 3, &ZeroHeuristic, 100).is_none());
@@ -461,18 +465,22 @@ mod tests {
             &[1; 8],
         );
         let unordered = crate::enumerate_simple_cycles_noprune(&g, 3);
-        let ordered = enumerate_cycles_ordered_noprune(
-            &g, 3, &ZeroHeuristic,
-        );
+        let ordered = enumerate_cycles_ordered_noprune(&g, 3, &ZeroHeuristic);
         // Both must agree on the *set* of cycles (order may differ).
-        let mut a: Vec<Vec<u32>> = unordered.into_iter().map(|mut c| {
-            c.sort();
-            c
-        }).collect();
-        let mut b: Vec<Vec<u32>> = ordered.into_iter().map(|mut c| {
-            c.sort();
-            c
-        }).collect();
+        let mut a: Vec<Vec<u32>> = unordered
+            .into_iter()
+            .map(|mut c| {
+                c.sort();
+                c
+            })
+            .collect();
+        let mut b: Vec<Vec<u32>> = ordered
+            .into_iter()
+            .map(|mut c| {
+                c.sort();
+                c
+            })
+            .collect();
         a.sort();
         b.sort();
         assert_eq!(a, b);

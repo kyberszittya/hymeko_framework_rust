@@ -153,6 +153,27 @@ def _classify_n_tuple(cycle: tuple[int, ...],
 _DEFAULT_CYCLE_CAP = 2_000_000
 
 
+def _subsample_arr_to_tuples(arr, cap: int | None, seed: int):
+    """Subsample a (N, k) numpy array to at most ``cap`` rows BEFORE
+    materialising it as a Python tuple list. Done in this order to
+    avoid producing N Python tuples just to discard most of them —
+    on Epinions per-vertex k=4/k=5 the Rust enumerator returns ~3-5M
+    cycles which a downstream caller caps to 100k. Subsampling at the
+    array level saves ~3-4 GB peak RSS / arity and many seconds of
+    Python object-construction churn.
+
+    Uses the same deterministic-random semantic as
+    ``mixed_arity_signedkan.subsample_tuples`` so downstream behaviour
+    is unchanged when the caller also subsamples post-call.
+    """
+    n = arr.shape[0]
+    if cap is not None and n > cap:
+        rng = np.random.RandomState(seed)
+        idx = rng.choice(n, size=cap, replace=False)
+        arr = arr[idx]
+    return [tuple(row) for row in arr.tolist()]
+
+
 def _enumerate_cycles_fast(g: SignedGraph, k: int,
                             max_cycles: int | None = None,
                             seed: int = 0,
@@ -186,13 +207,43 @@ def _enumerate_cycles_fast(g: SignedGraph, k: int,
     try:
         import hymeko  # type: ignore
         # ── Axiom-aware top-K path: opt-in via env var ──
-        # HSIKAN_TOPK_MODE = "global" | "per_vertex"   (otherwise → off)
-        # HSIKAN_TOPK_K    = K when global; m when per_vertex
+        # HSIKAN_TOPK_MODE = "global" | "global_bb" | "entropy"
+        #                    | "per_vertex" | "per_vertex_adaptive"
+        #                    (anything else → off)
+        # HSIKAN_TOPK_K    = K when global / global_bb / entropy;
+        #                    m when per_vertex (fixed cap)
         # HSIKAN_TOPK_SCORER = "fraction_negative" (default) | "balance"
         #                     | "sign_product_abs" | "low_root"
+        #                     [global / global_bb only]
+        # HSIKAN_TOPK_PRUNER = "none" | "balance" | "unbalanced" | "davis"
+        # HSIKAN_TOPK_HEURISTIC = "entropy" (default) | "inverse_degree"
+        #                         [entropy mode only]
+        # HSIKAN_TOPK_M_V_C = slope c for degree-adaptive m_v
+        #                     [per_vertex_adaptive mode only]; 0.0 →
+        #                     uniform cap = m_min.
+        # HSIKAN_TOPK_M_V_MIN = floor cap (default 1).
+        # HSIKAN_TOPK_M_V_MAX = ceiling cap; defaults to HSIKAN_TOPK_K.
+        #
+        # `global_bb` routes through `enumerate_top_k_cycles_signed_bb_rs`
+        # which uses score upper-bound branch-and-bound; on Epinions
+        # k=4, K=10000 it drops wall time ~25x vs `global`.  See
+        # reports/2026-05-10-abb-global-topk.md.
+        # `entropy` routes through
+        # `enumerate_top_k_cycles_signed_entropy_rs` and selects
+        # cycles to maximise per-vertex incidence entropy — the
+        # vertex-uniform alternative to `global_bb` for HSiKAN.
+        # See reports/2026-05-10-entropy-vertex-uniform-cycles.md.
+        # `per_vertex_adaptive` routes through
+        # `enumerate_top_k_per_vertex_cycles_signed_adaptive_rs` and
+        # uses m_v[v] = min(m_max, max(m_min, ceil(c * deg(v)))) so
+        # low-degree vertices get small caps that fill quickly,
+        # raising the per-vertex full-heap rate.  See
+        # reports/2026-05-10-degree-adaptive-mv.md.
         import os
         topk_mode = os.environ.get("HSIKAN_TOPK_MODE", "").strip()
-        if topk_mode in ("global", "per_vertex"):
+        if topk_mode in (
+                "global", "global_bb", "entropy",
+                "per_vertex", "per_vertex_adaptive"):
             scorer = os.environ.get("HSIKAN_TOPK_SCORER", "fraction_negative")
             pruner = os.environ.get("HSIKAN_TOPK_PRUNER", "none")
             K = int(os.environ.get("HSIKAN_TOPK_K", "16"))
@@ -204,15 +255,106 @@ def _enumerate_cycles_fast(g: SignedGraph, k: int,
                 arr, _scores = hymeko.enumerate_top_k_cycles_signed_rs(
                     eu, ev, es, g.n_nodes, k, K, scorer, pruner,
                 )
-                return [tuple(row) for row in arr.tolist()]
+                return _subsample_arr_to_tuples(arr, cap, seed)
+            if topk_mode == "global_bb" and hasattr(
+                    hymeko, "enumerate_top_k_cycles_signed_bb_rs"):
+                arr, _scores = hymeko.enumerate_top_k_cycles_signed_bb_rs(
+                    eu, ev, es, g.n_nodes, k, K, scorer, pruner,
+                )
+                return _subsample_arr_to_tuples(arr, cap, seed)
+            if topk_mode == "entropy" and hasattr(
+                    hymeko, "enumerate_top_k_cycles_signed_entropy_rs"):
+                heuristic = os.environ.get(
+                    "HSIKAN_TOPK_HEURISTIC", "entropy")
+                # Hybrid α-blend: when HSIKAN_TOPK_HYBRID_ALPHA is
+                # nonzero, route through the hybrid PyO3 binding.
+                # alpha=0 falls through to the pure-entropy binding
+                # (cheaper: skips the signal computation).
+                alpha = float(os.environ.get(
+                    "HSIKAN_TOPK_HYBRID_ALPHA", "0"))
+                if alpha > 0.0 and hasattr(
+                        hymeko, "enumerate_top_k_cycles_signed_hybrid_rs"):
+                    signal_kind = os.environ.get(
+                        "HSIKAN_TOPK_SIGNAL", "fraction_negative")
+                    arr, _scores = (
+                        hymeko.enumerate_top_k_cycles_signed_hybrid_rs(
+                            eu, ev, es, g.n_nodes, k, K,
+                            signal_kind, heuristic, alpha, pruner,
+                        )
+                    )
+                else:
+                    arr, _scores = (
+                        hymeko.enumerate_top_k_cycles_signed_entropy_rs(
+                            eu, ev, es, g.n_nodes, k, K, heuristic, pruner,
+                        )
+                    )
+                return _subsample_arr_to_tuples(arr, cap, seed)
             if topk_mode == "per_vertex" and hasattr(
                     hymeko, "enumerate_top_k_per_vertex_cycles_signed_rs"):
+                # v1 vertex-prefilter path: if HSIKAN_VERTEX_FILTER is
+                # set, route through the filtered binding which skips
+                # non-productive vertices as DFS roots.  Default "none"
+                # is bit-equivalent to the unfiltered path.  See
+                # docs/plans/2026-05-11-vertex-prefilter/ for the v1+
+                # ladder (binary filters → FPN tiered → MSG/SSG).
+                vfilter = os.environ.get(
+                    "HSIKAN_VERTEX_FILTER", "none").strip()
+                if vfilter not in ("", "none", "all") and hasattr(
+                        hymeko,
+                        "enumerate_top_k_per_vertex_cycles_signed_filtered_rs"):
+                    min_deg = int(os.environ.get(
+                        "HSIKAN_VERTEX_FILTER_MIN_DEGREE", "2"))
+                    arr, _scores = (
+                        hymeko
+                        .enumerate_top_k_per_vertex_cycles_signed_filtered_rs(
+                            eu, ev, es, g.n_nodes, k, K, scorer, pruner,
+                            vfilter, min_deg,
+                        )
+                    )
+                else:
+                    arr, _scores = (
+                        hymeko.enumerate_top_k_per_vertex_cycles_signed_rs(
+                            eu, ev, es, g.n_nodes, k, K, scorer, pruner,
+                        )
+                    )
+                return _subsample_arr_to_tuples(arr, cap, seed)
+            if topk_mode == "per_vertex_adaptive" and hasattr(
+                    hymeko,
+                    "enumerate_top_k_per_vertex_cycles_signed_adaptive_rs"):
+                m_min = int(os.environ.get("HSIKAN_TOPK_M_V_MIN", "1"))
+                m_max = int(os.environ.get("HSIKAN_TOPK_M_V_MAX", str(K)))
+                c_slope = float(os.environ.get("HSIKAN_TOPK_M_V_C", "0"))
                 arr, _scores = (
-                    hymeko.enumerate_top_k_per_vertex_cycles_signed_rs(
-                        eu, ev, es, g.n_nodes, k, K, scorer, pruner,
+                    hymeko
+                    .enumerate_top_k_per_vertex_cycles_signed_adaptive_rs(
+                        eu, ev, es, g.n_nodes, k,
+                        m_min, m_max, c_slope,
+                        scorer, pruner,
                     )
                 )
-                return [tuple(row) for row in arr.tolist()]
+                return _subsample_arr_to_tuples(arr, cap, seed)
+            if topk_mode == "per_vertex_tiered" and hasattr(
+                    hymeko,
+                    "enumerate_top_k_per_vertex_cycles_signed_tiered_rs"):
+                # v2: FPN-style concentric tiers via
+                # HSIKAN_TOPK_TIERS="<pct>:<cap>,<pct>:<cap>,..."
+                # Tiers sorted ascending by percentile; last should be
+                # 100.0.  Example FPN-5 ladder:
+                #   HSIKAN_TOPK_TIERS=0.1:1024,1.0:256,5.0:64,20.0:16,100.0:0
+                tiers_env = os.environ.get(
+                    "HSIKAN_TOPK_TIERS", "100.0:128").strip()
+                tiers: list = []
+                for spec in tiers_env.split(","):
+                    pct_str, cap_str = spec.split(":")
+                    tiers.append((float(pct_str), int(cap_str)))
+                arr, _scores = (
+                    hymeko
+                    .enumerate_top_k_per_vertex_cycles_signed_tiered_rs(
+                        eu, ev, es, g.n_nodes, k,
+                        tiers, scorer, pruner,
+                    )
+                )
+                return _subsample_arr_to_tuples(arr, cap, seed)
         if hasattr(hymeko, "enumerate_k_cycles_rs"):
             eu = np.ascontiguousarray(g.edges[:, 0], dtype=np.uint32)
             ev = np.ascontiguousarray(g.edges[:, 1], dtype=np.uint32)

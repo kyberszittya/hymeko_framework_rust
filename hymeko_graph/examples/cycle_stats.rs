@@ -28,19 +28,17 @@ use std::io::{BufRead, BufReader};
 use std::time::Instant;
 
 use hymeko_graph::{
+    CompositePruner, SignedGraph,
     balance::{BalanceMode, CartwrightHararyPruner},
-    enumerate_simple_cycles, enumerate_simple_cycles_noprune,
-    enumerate_top_k_cycles_noprune,
+    enumerate_simple_cycles, enumerate_simple_cycles_noprune, enumerate_top_k_cycles_noprune,
     enumerate_top_k_per_vertex_cycles_noprune,
-    topk_cycles::scorers, CompositePruner, NoOpPruner, SignedGraph,
+    topk_cycles::scorers,
 };
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 4 {
-        eprintln!(
-            "usage: cycle_stats <edge-file> <top_n_vertices> <k_len>"
-        );
+        eprintln!("usage: cycle_stats <edge-file> <top_n_vertices> <k_len>");
         std::process::exit(1);
     }
     let path = &args[1];
@@ -70,7 +68,10 @@ fn main() {
     println!();
 
     // ── Full enumeration: count cycles, balanced vs unbalanced.
-    println!("─── full {}-cycle enumeration ───────────────────────", k_len);
+    println!(
+        "─── full {}-cycle enumeration ───────────────────────",
+        k_len
+    );
     let t0 = Instant::now();
     let cycles = enumerate_simple_cycles_noprune(&g, k_len);
     let dt_full = t0.elapsed();
@@ -90,24 +91,23 @@ fn main() {
     let (n_bal, n_unbal) = classify_cycles(&cycles, &sign_lookup, k_len);
     println!(
         "    balanced:      {:>10}  ({:.1}%)",
-        n_bal, 100.0 * n_bal as f64 / n_full as f64,
+        n_bal,
+        100.0 * n_bal as f64 / n_full as f64,
     );
     println!(
         "    unbalanced:    {:>10}  ({:.1}%)",
-        n_unbal, 100.0 * n_unbal as f64 / n_full as f64,
+        n_unbal,
+        100.0 * n_unbal as f64 / n_full as f64,
     );
     println!();
 
     // ── Cartwright-Harary pruning: how much DFS work do we save?
     println!("─── pruning effect (DFS work saved) ─────────────────────");
     for (mode_name, mode) in &[
-        ("OnlyBalanced",   BalanceMode::OnlyBalanced),
+        ("OnlyBalanced", BalanceMode::OnlyBalanced),
         ("OnlyUnbalanced", BalanceMode::OnlyUnbalanced),
     ] {
-        let p = CompositePruner::new().with(
-            "CH",
-            Box::new(CartwrightHararyPruner { mode: *mode }),
-        );
+        let p = CompositePruner::new().with("CH", Box::new(CartwrightHararyPruner { mode: *mode }));
         let t0 = Instant::now();
         let cs = enumerate_simple_cycles(&g, k_len, &p);
         let dt = t0.elapsed();
@@ -115,7 +115,10 @@ fn main() {
         let s = &stats[0].1;
         println!(
             "  {:<16}  kept={:>9}  emit_rej={:>9}  time={:>10.3?}",
-            mode_name, cs.len(), s.emit_rejects, dt,
+            mode_name,
+            cs.len(),
+            s.emit_rejects,
+            dt,
         );
     }
     println!();
@@ -123,8 +126,9 @@ fn main() {
     // ── Top-K analysis under TWO scoring strategies.
     let n_v = vertex_kept.len() as u32;
     let n_e = n_kept_edges;
-    let scorer_configs: Vec<(&str, fn(&[u32], &[i8]) -> f64)> = vec![
-        ("top-K by balance",           scorers::balance),
+    type ScorerEntry = (&'static str, fn(&[u32], &[i8]) -> f64);
+    let scorer_configs: Vec<ScorerEntry> = vec![
+        ("top-K by balance", scorers::balance),
         ("top-K by fraction_negative", scorers::fraction_negative),
     ];
     for (scorer_name, scorer) in scorer_configs {
@@ -138,14 +142,11 @@ fn main() {
                 continue;
             }
             let t0 = Instant::now();
-            let topk = enumerate_top_k_cycles_noprune(
-                &g, k_len, k, scorer,
-            );
+            let topk = enumerate_top_k_cycles_noprune(&g, k_len, k, scorer);
             let dt = t0.elapsed();
             let n = topk.len();
             let mut touched: Vec<bool> = vec![false; n_v as usize];
-            let mut edges_used: BTreeMap<(u32, u32), bool> =
-                BTreeMap::new();
+            let mut edges_used: BTreeMap<(u32, u32), bool> = BTreeMap::new();
             let mut bal = 0u64;
             for (_, vs, signs) in &topk {
                 for &v in vs {
@@ -156,8 +157,7 @@ fn main() {
                     let w = vs[(j + 1) % vs.len()];
                     edges_used.insert((u.min(w), u.max(w)), true);
                 }
-                let prod: i32 =
-                    signs.iter().map(|&s| s as i32).product();
+                let prod: i32 = signs.iter().map(|&s| s as i32).product();
                 if prod > 0 {
                     bal += 1;
                 }
@@ -188,9 +188,8 @@ fn main() {
     );
     for &m in &[1usize, 4, 16, 64, 256] {
         let t0 = Instant::now();
-        let strat = enumerate_top_k_per_vertex_cycles_noprune(
-            &g, k_len, m, scorers::fraction_negative,
-        );
+        let strat =
+            enumerate_top_k_per_vertex_cycles_noprune(&g, k_len, m, scorers::fraction_negative);
         let dt = t0.elapsed();
         let n = strat.len();
         let mut touched: Vec<bool> = vec![false; n_v as usize];
@@ -217,7 +216,11 @@ fn main() {
             n,
             100.0 * n_touched as f64 / n_v as f64,
             100.0 * edges_used.len() as f64 / n_e as f64,
-            if n > 0 { 100.0 * bal as f64 / n as f64 } else { 0.0 },
+            if n > 0 {
+                100.0 * bal as f64 / n as f64
+            } else {
+                0.0
+            },
             dt,
         );
     }
@@ -304,8 +307,11 @@ fn induce_top_degree(
     }
     let mut by_deg: Vec<(u32, u32)> = deg.into_iter().collect();
     by_deg.sort_by(|a, b| b.1.cmp(&a.1));
-    let kept_set: std::collections::HashSet<u32> =
-        by_deg.iter().take(top_n as usize).map(|(v, _)| *v).collect();
+    let kept_set: std::collections::HashSet<u32> = by_deg
+        .iter()
+        .take(top_n as usize)
+        .map(|(v, _)| *v)
+        .collect();
     // Re-index kept vertices to 0..top_n.
     let mut sorted_kept: Vec<u32> = kept_set.iter().copied().collect();
     sorted_kept.sort();
@@ -364,12 +370,7 @@ fn classify_cycles(
     (bal, unbal)
 }
 
-fn use_random_k(
-    cycles: &[Vec<u32>],
-    vertex_kept: &[u32],
-    n_kept_edges: usize,
-    k_len: usize,
-) {
+fn use_random_k(cycles: &[Vec<u32>], vertex_kept: &[u32], n_kept_edges: usize, k_len: usize) {
     use std::collections::HashSet;
     // Reservoir-style selection without RNG — just a deterministic
     // stride.  For this analysis we want reproducible numbers, not a

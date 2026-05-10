@@ -234,6 +234,58 @@ class SignedKANLayer(nn.Module):
         else:
             self.gate_outer = None
 
+    def _can_use_triton_inner(self, x: torch.Tensor) -> bool:
+        """Conditions for dispatching the inner forward to the Triton
+        kernel.  Forward parity verified at ≤ 1e-7 vs the PyTorch path
+        in signedkan_wip/tests/test_triton_kernels.py.
+
+        Default OFF: the autograd backward currently routes through a
+        PyTorch reference, which materialises a (T, k, 2, d) intermediate
+        that can OOM on small GPUs at training time.  Set
+        HSIKAN_TRITON_KERNEL=1 to opt in (recommended for inference,
+        forward-only profiling, and any setup with ample VRAM)."""
+        import os
+        if int(os.environ.get("HSIKAN_TRITON_KERNEL", "0")) == 0:
+            return False
+        if not x.is_cuda:
+            return False
+        if self.n_branches != 2:
+            return False
+        if self.inner_skip not in ("none", "highway"):
+            return False
+        from .splines import BatchedCatmullRomActivation
+        if not isinstance(self.inner, BatchedCatmullRomActivation):
+            return False
+        try:
+            import triton  # noqa: F401
+        except ImportError:
+            return False
+        return True
+
+    def _triton_inner_agg(
+        self, x: torch.Tensor, triad_v: torch.Tensor,
+        triad_sigma: torch.Tensor,
+    ) -> torch.Tensor:
+        """Triton fast-path: returns the per-sign mean aggregate
+        ``agg`` of shape (T, 2, d), equivalent to steps 1–4 of the
+        PyTorch path."""
+        from .triton_kernels import (
+            signedkan_inner_triton_autograd,
+            signedkan_inner_highway_triton_autograd,
+        )
+        coef_pos = self.inner.coef[0]   # (d, G)
+        coef_neg = self.inner.coef[1]
+        if self.inner_skip == "highway":
+            gate_w = self.gate_inner.weight.t().contiguous()  # (d, d)
+            gate_b = self.gate_inner.bias
+            return signedkan_inner_highway_triton_autograd(
+                x, triad_v, triad_sigma, coef_pos, coef_neg,
+                gate_w, gate_b, self.cfg.grid,
+            )
+        return signedkan_inner_triton_autograd(
+            x, triad_v, triad_sigma, coef_pos, coef_neg, self.cfg.grid,
+        )
+
     def forward(self, x: torch.Tensor,
                 triad_v: torch.Tensor,    # (n_triads, k) vertex IDs
                 triad_sigma: torch.Tensor # (n_triads, k) ∈ {+1, -1}
@@ -271,33 +323,39 @@ class SignedKANLayer(nn.Module):
         d = self.cfg.hidden_dim
         S = self.n_branches
 
-        # 1. Per-vertex embeddings.
-        h_v = x[triad_v]                               # (T, k, d)
+        # Fast-path: gather + per-sign CR + (optional highway-skip) +
+        # σ-mask + mean reduce as a single fused Triton kernel.  Parity
+        # vs the PyTorch path verified at ≤ 1e-7 (see
+        # signedkan_wip/tests/test_triton_kernels.py).  Set
+        # HSIKAN_TRITON_KERNEL=0 to force the PyTorch path.
+        if self._can_use_triton_inner(x):
+            agg = self._triton_inner_agg(x, triad_v, triad_sigma)
+            # Skip steps 1-4 below; proceed to step 5 (outer spline).
+        else:
+            # 1. Per-vertex embeddings.
+            h_v = x[triad_v]                               # (T, k, d)
 
-        # 2. Single batched inner spline call.
-        inner_all = self.inner(h_v.reshape(-1, d))     # (T*k, S, d)
-        inner_all = inner_all.view(T, k, S, d)         # (T, k, S, d)
-        if self.inner_skip == "residual":
-            inner_all = inner_all + h_v.unsqueeze(2)   # (T, k, S, d)
-        elif self.inner_skip == "highway":
-            T_inner = torch.sigmoid(self.gate_inner(h_v))   # (T, k, d)
-            T_inner_b = T_inner.unsqueeze(2)                # (T, k, 1, d)
-            x_b = h_v.unsqueeze(2)                          # (T, k, 1, d)
-            inner_all = T_inner_b * inner_all + (1.0 - T_inner_b) * x_b
+            # 2. Single batched inner spline call.
+            inner_all = self.inner(h_v.reshape(-1, d))     # (T*k, S, d)
+            inner_all = inner_all.view(T, k, S, d)         # (T, k, S, d)
+            if self.inner_skip == "residual":
+                inner_all = inner_all + h_v.unsqueeze(2)   # (T, k, S, d)
+            elif self.inner_skip == "highway":
+                T_inner = torch.sigmoid(self.gate_inner(h_v))   # (T, k, d)
+                T_inner_b = T_inner.unsqueeze(2)                # (T, k, 1, d)
+                x_b = h_v.unsqueeze(2)                          # (T, k, 1, d)
+                inner_all = T_inner_b * inner_all + (1.0 - T_inner_b) * x_b
 
-        # 3. Per-sign masks: M[t, i, s] = 1 iff triad_sigma[t, i] == sign_values[s]
-        # Buffer-based path — no per-forward tensor allocation. Cast
-        # only if dtype mismatches (no-op when triad_sigma is long).
-        sign_vals = self._sign_vals
-        if sign_vals.dtype != triad_sigma.dtype:
-            sign_vals = sign_vals.to(triad_sigma.dtype)
-        masks = (triad_sigma.unsqueeze(-1) == sign_vals).to(x.dtype)
-        # masks shape: (T, k, S)
-        masks_e = masks.unsqueeze(-1)                  # (T, k, S, 1)
+            # 3. Per-sign masks: M[t, i, s] = 1 iff triad_sigma[t, i] == sign_values[s]
+            sign_vals = self._sign_vals
+            if sign_vals.dtype != triad_sigma.dtype:
+                sign_vals = sign_vals.to(triad_sigma.dtype)
+            masks = (triad_sigma.unsqueeze(-1) == sign_vals).to(x.dtype)
+            masks_e = masks.unsqueeze(-1)                  # (T, k, S, 1)
 
-        # 4. Aggregate over the k vertices, per sign.
-        counts = masks.sum(dim=1).clamp(min=1).unsqueeze(-1)  # (T, S, 1)
-        agg = (inner_all * masks_e).sum(dim=1) / counts        # (T, S, d)
+            # 4. Aggregate over the k vertices, per sign.
+            counts = masks.sum(dim=1).clamp(min=1).unsqueeze(-1)  # (T, S, 1)
+            agg = (inner_all * masks_e).sum(dim=1) / counts        # (T, S, d)
 
         # 5. Diagonal-fused outer: each per-sign aggregate row $s$ is
         # processed by branch $s$'s outer spline only. Saves an $S$

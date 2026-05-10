@@ -17,13 +17,9 @@
 //! Friedler check is in play.  The pruner is a strategy plug-in.
 
 use hymeko_graph::{
-    SignedGraph, NoOpPruner, FriedlerAxiomPruner,
-    BipartiteOnlyPruner, CartwrightHararyPruner,
-    balance::BalanceMode,
-    friedler::NodeKind,
-    enumerate_simple_cycles, enumerate_simple_cycles_noprune,
-    Csr, DfsScratch, dfs_visit, dfs_visit_pruned,
-    BfsScratch, bfs_distances,
+    BfsScratch, BipartiteOnlyPruner, CartwrightHararyPruner, Csr, DfsScratch, FriedlerAxiomPruner,
+    NoOpPruner, SignedGraph, balance::BalanceMode, bfs_distances, dfs_visit, dfs_visit_pruned,
+    enumerate_simple_cycles, enumerate_simple_cycles_noprune, friedler::NodeKind,
 };
 
 // ─── Scenario 1: Simple two-route synthesis ──────────────────────
@@ -49,11 +45,11 @@ use hymeko_graph::{
 
 fn build_simple_synthesis() -> (SignedGraph, Vec<NodeKind>) {
     let kinds = vec![
-        NodeKind::Material,        // 0  M0 (raw)
-        NodeKind::OperatingUnit,   // 1  U0
-        NodeKind::Material,        // 2  M1
-        NodeKind::OperatingUnit,   // 3  U1
-        NodeKind::Material,        // 4  M2 (product)
+        NodeKind::Material,      // 0  M0 (raw)
+        NodeKind::OperatingUnit, // 1  U0
+        NodeKind::Material,      // 2  M1
+        NodeKind::OperatingUnit, // 3  U1
+        NodeKind::Material,      // 4  M2 (product)
     ];
     // Legal P-graph edges (M-O alternation):
     //   M0 — U0, U0 — M1, M1 — U1, U1 — M2
@@ -63,8 +59,8 @@ fn build_simple_synthesis() -> (SignedGraph, Vec<NodeKind>) {
     //            U0—M1—U1—U0 that the unpruned DFS finds).
     let g = SignedGraph::from_parts(
         5,
-        &[0, 1, 2, 3, 0, 1],   // sources
-        &[1, 2, 3, 4, 4, 3],   // targets
+        &[0, 1, 2, 3, 0, 1], // sources
+        &[1, 2, 3, 4, 4, 3], // targets
         &[1, 1, 1, 1, 1, 1],
     );
     (g, kinds)
@@ -100,15 +96,15 @@ fn build_simple_synthesis() -> (SignedGraph, Vec<NodeKind>) {
 
 fn build_hda_like() -> (SignedGraph, Vec<NodeKind>) {
     let kinds = vec![
-        NodeKind::Material,        // 0 Toluene
-        NodeKind::OperatingUnit,   // 1 Mixer
-        NodeKind::Material,        // 2 H2
-        NodeKind::OperatingUnit,   // 3 Reactor
-        NodeKind::Material,        // 4 Mix
-        NodeKind::OperatingUnit,   // 5 Separator
-        NodeKind::Material,        // 6 Benzene (product)
-        NodeKind::OperatingUnit,   // 7 Catalyst (auxiliary)
-        NodeKind::Material,        // 8 Methane (byproduct)
+        NodeKind::Material,      // 0 Toluene
+        NodeKind::OperatingUnit, // 1 Mixer
+        NodeKind::Material,      // 2 H2
+        NodeKind::OperatingUnit, // 3 Reactor
+        NodeKind::Material,      // 4 Mix
+        NodeKind::OperatingUnit, // 5 Separator
+        NodeKind::Material,      // 6 Benzene (product)
+        NodeKind::OperatingUnit, // 7 Catalyst (auxiliary)
+        NodeKind::Material,      // 8 Methane (byproduct)
     ];
     let g = SignedGraph::from_parts(
         9,
@@ -150,13 +146,18 @@ fn scenario1_friedler_rejects_illegal_shortcut() {
 
     // The unpruned set should include some 3-cycles touching the
     // illegal chord.
-    assert!(!no_prune_cycles.is_empty(),
-            "unpruned 3-cycle search must find the chord-cycle");
+    assert!(
+        !no_prune_cycles.is_empty(),
+        "unpruned 3-cycle search must find the chord-cycle"
+    );
     // The Friedler-pruned set must contain ZERO 3-cycles
     // (bipartite alternation forbids odd-length cycles).
-    assert_eq!(friedler_cycles.len(), 0,
-               "Friedler A0 must reject every 3-cycle in a \
-                bipartite P-graph");
+    assert_eq!(
+        friedler_cycles.len(),
+        0,
+        "Friedler A0 must reject every 3-cycle in a \
+                bipartite P-graph"
+    );
 
     // 4-cycles: the unpruned DFS finds 0-1-3-4-0 (via the U-U
     // chord (1,3) and the M-M chord (0,4)).  A0 rejects this
@@ -165,12 +166,16 @@ fn scenario1_friedler_rejects_illegal_shortcut() {
     // returns zero 4-cycles.
     let no_prune_4 = enumerate_simple_cycles_noprune(&g, 4).len();
     let friedler_4 = enumerate_simple_cycles(&g, 4, &p).len();
-    assert!(no_prune_4 >= friedler_4,
-            "Friedler is monotone: cannot find more cycles than \
-             the unpruned enumerator");
-    assert_eq!(friedler_4, 0,
-               "all 4-cycles in this graph use a same-kind chord, \
-                A0 rejects every one");
+    assert!(
+        no_prune_4 >= friedler_4,
+        "Friedler is monotone: cannot find more cycles than \
+             the unpruned enumerator"
+    );
+    assert_eq!(
+        friedler_4, 0,
+        "all 4-cycles in this graph use a same-kind chord, \
+                A0 rejects every one"
+    );
     let _ = csr;
 }
 
@@ -188,23 +193,32 @@ fn scenario2_hda_finds_feasible_synthesis_loops() {
     let friedler_4 = enumerate_simple_cycles(&g, 4, &p_a0);
 
     // A0 should kill every odd-length cycle.
-    assert_eq!(friedler_3.len(), 0,
-               "no 3-cycle is feasible under bipartite alternation");
+    assert_eq!(
+        friedler_3.len(),
+        0,
+        "no 3-cycle is feasible under bipartite alternation"
+    );
     // A0 should preserve even-length cycles.
-    assert_eq!(friedler_4.len(), no_prune_4.len(),
-               "even cycles unaffected by A0");
+    assert_eq!(
+        friedler_4.len(),
+        no_prune_4.len(),
+        "even cycles unaffected by A0"
+    );
 
     // With Friedler A0 + A1 (require Benzene = id 6).
-    let p_a01 = FriedlerAxiomPruner::new(kinds.clone())
-        .with_required_products([6u32]);
+    let p_a01 = FriedlerAxiomPruner::new(kinds.clone()).with_required_products([6u32]);
     let friedler_a01_4 = enumerate_simple_cycles(&g, 4, &p_a01);
     // A1 is strictly more restrictive than A0 alone.
-    assert!(friedler_a01_4.len() <= friedler_4.len(),
-            "A1 (product membership) cannot increase cycle count");
+    assert!(
+        friedler_a01_4.len() <= friedler_4.len(),
+        "A1 (product membership) cannot increase cycle count"
+    );
     // Every surviving cycle must touch vertex 6.
     for c in &friedler_a01_4 {
-        assert!(c.contains(&6),
-                "A1 must require cycle to touch a product node");
+        assert!(
+            c.contains(&6),
+            "A1 must require cycle to touch a product node"
+        );
     }
 
     // Sanity: no_prune_3 may be non-zero (the graph has odd cycles).
@@ -233,8 +247,10 @@ fn dfs_works_identically_with_and_without_friedler() {
     dfs_visit_pruned(&csr, &mut s, &NoOpPruner, 0, |v| {
         order_noop.push(v);
     });
-    assert_eq!(order_plain, order_noop,
-               "NoOpPruner must produce identical traversal");
+    assert_eq!(
+        order_plain, order_noop,
+        "NoOpPruner must produce identical traversal"
+    );
 
     // DFS with Friedler — produces a (possibly empty) subset.
     let p = FriedlerAxiomPruner::new(kinds);
@@ -246,9 +262,11 @@ fn dfs_works_identically_with_and_without_friedler() {
     // Every Friedler-visited vertex must also be in the plain DFS
     // traversal (since we only ADD pruning, not connectivity).
     for v in &order_friedler {
-        assert!(order_plain.contains(v),
-                "Friedler must not produce a vertex unreachable \
-                 in the plain DFS");
+        assert!(
+            order_plain.contains(v),
+            "Friedler must not produce a vertex unreachable \
+                 in the plain DFS"
+        );
     }
     // And the start vertex itself is always visited.
     assert!(order_friedler.contains(&0));
@@ -276,8 +294,7 @@ fn bfs_works_identically_with_friedler_strategy_omitted() {
     // Third call back from 0 — must reproduce the first run.
     let n3 = bfs_distances(&csr, &mut s, 0, 10);
     assert_eq!(n1, n3);
-    assert_eq!(dist_first, s.dist,
-               "BFS is deterministic across reset()");
+    assert_eq!(dist_first, s.dist, "BFS is deterministic across reset()");
 }
 
 #[test]
@@ -291,15 +308,12 @@ fn strategy_pattern_progressive_pruning() {
     //   ⇒ a single 4-cycle 0-1-2-3.
     // With negative edge (0, 1): one 4-cycle, sign-product = -1
     // (unbalanced).
-    let g = SignedGraph::from_parts(
-        4,
-        &[0, 1, 2, 3],
-        &[1, 2, 3, 0],
-        &[-1, 1, 1, 1],
-    );
+    let g = SignedGraph::from_parts(4, &[0, 1, 2, 3], &[1, 2, 3, 0], &[-1, 1, 1, 1]);
     let kinds = vec![
-        NodeKind::Material, NodeKind::OperatingUnit,
-        NodeKind::Material, NodeKind::OperatingUnit,
+        NodeKind::Material,
+        NodeKind::OperatingUnit,
+        NodeKind::Material,
+        NodeKind::OperatingUnit,
     ];
 
     // Strategy 1: no pruning — finds all 1 cycle.
@@ -308,29 +322,34 @@ fn strategy_pattern_progressive_pruning() {
 
     // Strategy 2: BipartiteOnly — emit-time even check; in a
     // bipartite graph, all cycles are even, so no change.
-    let bipartite = enumerate_simple_cycles(
-        &g, 4, &BipartiteOnlyPruner);
+    let bipartite = enumerate_simple_cycles(&g, 4, &BipartiteOnlyPruner);
     assert_eq!(bipartite.len(), 1);
 
     // Strategy 3: Friedler A0 (during-DFS bipartite alternation).
     // Identical result to BipartiteOnly on this graph.
-    let friedler = enumerate_simple_cycles(
-        &g, 4, &FriedlerAxiomPruner::new(kinds.clone()));
+    let friedler = enumerate_simple_cycles(&g, 4, &FriedlerAxiomPruner::new(kinds.clone()));
     assert_eq!(friedler.len(), 1);
 
     // Strategy 4: CartwrightHararyPruner OnlyBalanced.  The 4-cycle
     // has product = -1 (one negative edge), so it's unbalanced.
     // OnlyBalanced rejects it.
     let bal = enumerate_simple_cycles(
-        &g, 4,
-        &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced });
-    assert_eq!(bal.len(), 0,
-               "unbalanced 4-cycle rejected by OnlyBalanced");
+        &g,
+        4,
+        &CartwrightHararyPruner {
+            mode: BalanceMode::OnlyBalanced,
+        },
+    );
+    assert_eq!(bal.len(), 0, "unbalanced 4-cycle rejected by OnlyBalanced");
 
     // Strategy 5: CartwrightHararyPruner OnlyUnbalanced — keeps it.
     let unbal = enumerate_simple_cycles(
-        &g, 4,
-        &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced });
+        &g,
+        4,
+        &CartwrightHararyPruner {
+            mode: BalanceMode::OnlyUnbalanced,
+        },
+    );
     assert_eq!(unbal.len(), 1);
 
     // Demonstrates: same DFS, different strategies, predictable
@@ -340,8 +359,7 @@ fn strategy_pattern_progressive_pruning() {
 #[test]
 fn friedler_a1_filters_cycles_by_product_membership() {
     let (g, kinds) = build_hda_like();
-    let p_a01 = FriedlerAxiomPruner::new(kinds.clone())
-        .with_required_products([6u32]);
+    let p_a01 = FriedlerAxiomPruner::new(kinds.clone()).with_required_products([6u32]);
     let friedler_4 = enumerate_simple_cycles(&g, 4, &p_a01);
     let friedler_6 = enumerate_simple_cycles(&g, 6, &p_a01);
     // Every emitted cycle must contain the product node 6.
@@ -359,8 +377,7 @@ fn friedler_a3_whitelist_rejects_unwhitelisted_units() {
     // Pretend only the Mixer (id 1) and the Reactor (id 3) are
     // valid operating units; Separator (5) and Catalyst (7) are
     // not in the master catalogue.
-    let p_a013 = FriedlerAxiomPruner::new(kinds.clone())
-        .with_valid_o_nodes([1u32, 3u32]);
+    let p_a013 = FriedlerAxiomPruner::new(kinds.clone()).with_valid_o_nodes([1u32, 3u32]);
     let friedler_4 = enumerate_simple_cycles(&g, 4, &p_a013);
     // Every cycle's O-nodes must be in the whitelist.
     for c in &friedler_4 {

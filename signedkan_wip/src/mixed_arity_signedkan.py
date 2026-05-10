@@ -25,6 +25,7 @@ Subsampling: k=4 tuples are random-sampled to ``max_k4`` (default
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -32,6 +33,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .splines import _catmull_rom_eval
 from .signedkan import (MultiLayerSignedKAN, MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 
@@ -90,6 +92,39 @@ class MixedAritySignedKANConfig:
     #                  data where i, j, k can encode sign-rotation
     #                  phases. Requires d_attn % 4 == 0.
     attention_m_e_kind: str = "dot"
+    # Number of attention heads. With n_heads>1, the d_attn dimension
+    # is split across heads, each computing its own per-row softmax;
+    # final attention weights are the mean across heads. Reduces
+    # softmax sharpness on dense graphs (Slashdot regime).
+    attention_m_e_n_heads: int = 1
+    # Highway-gated attention. When True, the final per-arity edge
+    # pool is a learned mix of the uniform 1/|N(query)| baseline and
+    # the attention-weighted pool:
+    #     edge_pool = (1 - g_k) · uniform_k  +  g_k · attention_k
+    # where g_k = sigmoid(logit_k), per-arity. Initialised at a low
+    # logit (~ -3) so g_k ≈ 0.05 at start — i.e., the model begins as
+    # the uniform-pool baseline and gradient pushes attention in only
+    # where it helps. Resolves the "softmax-too-sharp" failure mode
+    # where dense attention over hundreds of cycles concentrates
+    # signal that uniform pooling preserves (Slashdot regime).
+    attention_highway: bool = False
+    attention_highway_init_logit: float = -3.0
+    # Maximum attention contribution: g_effective = max · sigmoid(logit).
+    # 1.0 = unbounded (sigmoid range). Lower values force uniform pool
+    # to dominate even when training pushes the gate logit high —
+    # useful when softmax attention overfits the edge-in-cycle leak
+    # while uniform pool generalises (Slashdot regime).
+    attention_highway_max: float = 1.0
+    # Highway gate parameterisation:
+    #   "scalar"  — per-arity scalar gate (sigmoid-free 2-softmax form)
+    #   "edge_cr" — per-edge KAN-aligned gate: a learnable Catmull-Rom
+    #               spline maps tanh(W_κ · h_query) → 2 logits which
+    #               are softmax-normalised to (uniform, attention)
+    #               weights.  Per-edge variation (no fixed nonlinearity
+    #               at the gate level).  Adds ~ d·2 + 2·n_grid params
+    #               per arity slot; init biased toward uniform pool.
+    attention_highway_kind: str = "scalar"
+    attention_highway_n_grid: int = 8
     # When True, add a parallel SGCN-style sign-conditional direct
     # message-passing path between layers. h_v is updated by both the
     # cycle-pool aggregation and a per-sign-channel propagation:
@@ -116,6 +151,86 @@ class MixedAritySignedKANConfig:
     #   - scene graphs: spatial-overlap (IoU), confidence, distance
     #   - context graphs: temporal stamp, source confidence
     edge_feat_dim: int = 0
+
+
+def _scatter_topk_mask(scores: torch.Tensor, index: torch.Tensor,
+                         K: int) -> torch.Tensor:
+    """Per-row top-K mask over sparse (scores, index) entries.
+
+    For each unique value of ``index``, returns ``True`` for the K
+    highest-scoring entries with that index, ``False`` otherwise.
+    Empty rows produce no True entries.
+
+    Vectorised via a single sort: order entries lexicographically by
+    (row, -score), then within each row the first K (by sort order)
+    are the top-K.  Cost: O(nnz log nnz).
+    """
+    if K is None or K <= 0:
+        return torch.ones_like(scores, dtype=torch.bool)
+    nnz = scores.shape[0]
+    if nnz == 0:
+        return torch.zeros(0, dtype=torch.bool, device=scores.device)
+    # Sort key: row * BIG - score so smaller key = (lower row) or
+    # (same row, higher score).  Avoid float collision with row by
+    # using a large multiplier; subtract score so descending within
+    # row.
+    n_rows_inferred = int(index.max().item()) + 1
+    big = 1e9
+    sort_key = index.to(torch.float64) * big - scores.to(torch.float64)
+    order = torch.argsort(sort_key)
+    sorted_rows = index[order]
+    pos = torch.arange(nnz, device=scores.device)
+    is_new_row = torch.cat([
+        torch.tensor([True], device=scores.device),
+        sorted_rows[1:] != sorted_rows[:-1],
+    ])
+    # row_start_at_pos = pos at every "first slot of a new row", else 0.
+    row_start_at_pos = torch.where(
+        is_new_row, pos, torch.zeros_like(pos),
+    )
+    row_start = torch.cummax(row_start_at_pos, dim=0).values
+    rank_in_row = pos - row_start
+    keep_sorted = rank_in_row < K
+    mask = torch.zeros(nnz, dtype=torch.bool, device=scores.device)
+    mask[order] = keep_sorted
+    return mask
+
+
+def _attn_softmax_dispatch(scores: torch.Tensor, index: torch.Tensor,
+                             n_rows: int) -> torch.Tensor:
+    """Dispatcher: dense or top-K row-wise softmax based on the
+    ``HSIKAN_SPARSE_ATTN_K`` env var.  Default ``0`` → dense softmax
+    (existing behavior).  Set to a positive int K → only the K
+    highest-scoring entries per row contribute to softmax; the rest
+    get exactly zero attention weight.
+    """
+    K = int(os.environ.get("HSIKAN_SPARSE_ATTN_K", "0"))
+    if K > 0:
+        return _scatter_topk_softmax(scores, index, n_rows, K)
+    return _scatter_softmax(scores, index, n_rows)
+
+
+def _scatter_topk_softmax(scores: torch.Tensor, index: torch.Tensor,
+                            n_rows: int, K: int) -> torch.Tensor:
+    """Row-wise softmax over the top-K scores per row, zero elsewhere.
+
+    Identical to ``_scatter_softmax`` when ``K`` is None / non-positive
+    or when every row has fewer than K entries.  Otherwise, per row,
+    the K highest-scoring entries get the standard softmax
+    distribution and the remaining entries get exactly zero
+    attention weight.
+
+    This is the sparse-attention path: dense attention over the full
+    cycle pool is too diffuse on dense graphs (Epinions); top-K gives
+    the model a hard inductive bias toward a small subset of cycles
+    per query.
+    """
+    if K is None or K <= 0:
+        return _scatter_softmax(scores, index, n_rows)
+    mask = _scatter_topk_mask(scores, index, K)
+    neg_inf = scores.new_full(scores.shape, float("-inf"))
+    masked_scores = torch.where(mask, scores, neg_inf)
+    return _scatter_softmax(masked_scores, index, n_rows)
 
 
 def _scatter_softmax(scores: torch.Tensor, index: torch.Tensor,
@@ -163,8 +278,16 @@ class _AttentionM_e(nn.Module):
     that wrecks early training; near-zero init lets attention learn
     deviations from uniform incrementally.
     """
-    def __init__(self, d_query: int, d_cycle: int, d_attn: int = 32):
+    def __init__(self, d_query: int, d_cycle: int, d_attn: int = 32,
+                 n_heads: int = 1):
         super().__init__()
+        if d_attn % n_heads != 0:
+            raise ValueError(
+                f"_AttentionM_e: d_attn ({d_attn}) must be divisible by "
+                f"n_heads ({n_heads})"
+            )
+        self.n_heads = n_heads
+        self.d_head = d_attn // n_heads
         self.W_q = nn.Linear(d_query, d_attn, bias=False)
         self.W_k = nn.Linear(d_cycle, d_attn, bias=False)
         # Near-uniform init: scale weights by 1e-2 so initial scores ≈ 0
@@ -172,7 +295,7 @@ class _AttentionM_e(nn.Module):
         with torch.no_grad():
             self.W_q.weight.mul_(0.01)
             self.W_k.weight.mul_(0.01)
-        self.scale = d_attn ** -0.5
+        self.scale = self.d_head ** -0.5
 
     def forward(self, h_query: torch.Tensor, h_cycle: torch.Tensor,
                 indices: torch.Tensor) -> torch.Tensor:
@@ -182,14 +305,29 @@ class _AttentionM_e(nn.Module):
         indices: (2, nnz) — indices[0]=query row, indices[1]=cycle col
 
         Returns: (nnz,) softmax-normalised attention weights to use as
-        the values of the sparse M_e tensor.
+        the values of the sparse M_e tensor. With n_heads>1 the per-head
+        softmax weights are averaged before returning, so downstream
+        scatter sees a single (nnz,) weight tensor.
         """
         rows = indices[0]
         cols = indices[1]
-        q_proj = self.W_q(h_query)              # (E, d_attn)
-        k_proj = self.W_k(h_cycle)              # (T, d_attn)
+        q_proj = self.W_q(h_query).view(-1, self.n_heads, self.d_head)
+        k_proj = self.W_k(h_cycle).view(-1, self.n_heads, self.d_head)
+        # Per-head scores: (nnz, n_heads)
         scores = (q_proj[rows] * k_proj[cols]).sum(dim=-1) * self.scale
-        return _scatter_softmax(scores, rows, h_query.shape[0])
+        if self.n_heads == 1:
+            return _attn_softmax_dispatch(scores.squeeze(-1), rows,
+                                            h_query.shape[0])
+        # Per-head softmax, then average across heads.
+        attn_heads = torch.stack(
+            [
+                _attn_softmax_dispatch(scores[:, h], rows,
+                                        h_query.shape[0])
+                for h in range(self.n_heads)
+            ],
+            dim=-1,
+        )
+        return attn_heads.mean(dim=-1)
 
 
 class _QuaternionAttentionM_e(nn.Module):
@@ -218,7 +356,8 @@ class _QuaternionAttentionM_e(nn.Module):
     keeps initial scores near zero so softmax starts ≈ uniform —
     same warm-start as :class:`_AttentionM_e`.
     """
-    def __init__(self, d_query: int, d_cycle: int, d_attn: int = 32):
+    def __init__(self, d_query: int, d_cycle: int, d_attn: int = 32,
+                 n_heads: int = 1):
         super().__init__()
         if d_attn % 4 != 0:
             raise ValueError(
@@ -227,31 +366,53 @@ class _QuaternionAttentionM_e(nn.Module):
             )
         self.d_attn = d_attn
         self.n_quat = d_attn // 4
+        if self.n_quat % n_heads != 0:
+            raise ValueError(
+                f"_QuaternionAttentionM_e: n_quat ({self.n_quat}) must be "
+                f"divisible by n_heads ({n_heads}); pick d_attn = 4 · n_heads · k"
+            )
+        self.n_heads = n_heads
+        self.n_quat_per_head = self.n_quat // n_heads
         self.W_q = nn.Linear(d_query, d_attn, bias=False)
         self.W_k = nn.Linear(d_cycle, d_attn, bias=False)
         with torch.no_grad():
             self.W_q.weight.mul_(0.01)
             self.W_k.weight.mul_(0.01)
-        self.scale = self.n_quat ** -0.5
+        self.scale = self.n_quat_per_head ** -0.5
 
     def forward(self, h_query: torch.Tensor, h_cycle: torch.Tensor,
                 indices: torch.Tensor) -> torch.Tensor:
         rows = indices[0]
         cols = indices[1]
-        # Project to (E, n_quat, 4) and (T, n_quat, 4).
-        q = self.W_q(h_query).view(-1, self.n_quat, 4)
-        k = self.W_k(h_cycle).view(-1, self.n_quat, 4)
-        qg = q[rows]                    # (nnz, n_quat, 4)
-        kg = k[cols]                    # (nnz, n_quat, 4)
-        # Hamilton-product real component, summed over quaternion
-        # blocks: q ⊗ k → real = qa·ka − qb·kb − qc·kc − qd·kd.
+        # Project to (E, n_heads, n_quat_per_head, 4) and (T, ...).
+        q = self.W_q(h_query).view(
+            -1, self.n_heads, self.n_quat_per_head, 4,
+        )
+        k = self.W_k(h_cycle).view(
+            -1, self.n_heads, self.n_quat_per_head, 4,
+        )
+        qg = q[rows]                    # (nnz, n_heads, n_quat_per_head, 4)
+        kg = k[cols]
+        # Hamilton-product real component per head, summed over the
+        # head's quaternion blocks: (nnz, n_heads).
         scores = (
             qg[..., 0] * kg[..., 0]
             - qg[..., 1] * kg[..., 1]
             - qg[..., 2] * kg[..., 2]
             - qg[..., 3] * kg[..., 3]
         ).sum(dim=-1) * self.scale
-        return _scatter_softmax(scores, rows, h_query.shape[0])
+        if self.n_heads == 1:
+            return _attn_softmax_dispatch(scores.squeeze(-1), rows,
+                                            h_query.shape[0])
+        attn_heads = torch.stack(
+            [
+                _attn_softmax_dispatch(scores[:, h], rows,
+                                        h_query.shape[0])
+                for h in range(self.n_heads)
+            ],
+            dim=-1,
+        )
+        return attn_heads.mean(dim=-1)
 
 
 class MixedAritySignedKAN(nn.Module):
@@ -301,16 +462,21 @@ class MixedAritySignedKAN(nn.Module):
             d_jk = d * cfg.base.n_layers if cfg.base.jk_mode == "concat" else d
             d_attn = max(16, d // 2)
             kind = getattr(cfg, "attention_m_e_kind", "dot")
+            n_heads = getattr(cfg, "attention_m_e_n_heads", 1)
             if kind == "quaternion":
-                # Round d_attn up to a multiple of 4.
-                if d_attn % 4 != 0:
-                    d_attn = ((d_attn + 3) // 4) * 4
+                # d_attn must satisfy: 4 | d_attn AND n_heads | (d_attn / 4).
+                # Round d_attn up to a multiple of (4 * n_heads).
+                step = 4 * n_heads
+                if d_attn % step != 0:
+                    d_attn = ((d_attn + step - 1) // step) * step
                 self.attention_m_e = _QuaternionAttentionM_e(
-                    d_query=d, d_cycle=d_jk, d_attn=d_attn,
+                    d_query=d, d_cycle=d_jk, d_attn=d_attn, n_heads=n_heads,
                 )
             elif kind == "dot":
+                if d_attn % n_heads != 0:
+                    d_attn = ((d_attn + n_heads - 1) // n_heads) * n_heads
                 self.attention_m_e = _AttentionM_e(
-                    d_query=d, d_cycle=d_jk, d_attn=d_attn,
+                    d_query=d, d_cycle=d_jk, d_attn=d_attn, n_heads=n_heads,
                 )
             else:
                 raise ValueError(
@@ -319,6 +485,77 @@ class MixedAritySignedKAN(nn.Module):
                 )
         else:
             self.attention_m_e = None
+
+        # Highway-gated attention parameters.  Two parameterisations:
+        #
+        # "scalar"  — one learnable logit per arity slot, sigmoid-free
+        #             2-element softmax → g_κ ∈ (0, 1).  Init at low
+        #             logit so g_κ ≈ 0.05 at start (uniform-leaning).
+        # "edge_cr" — per-arity Linear projection from h_query to a
+        #             2-d input, tanh-bounded, fed to a learnable
+        #             Catmull-Rom spline whose 2 output channels are
+        #             softmax-normalised to (uniform_weight,
+        #             attention_weight).  Per-edge gate, no fixed
+        #             nonlinearities — KAN-aligned.
+        self.attn_gate_kind = (cfg.attention_highway_kind
+                                if cfg.attention_m_e and cfg.attention_highway
+                                else "scalar")
+        if cfg.attention_m_e and cfg.attention_highway:
+            if self.attn_gate_kind == "scalar":
+                self.attn_gate_logits = nn.Parameter(
+                    torch.full(
+                        (len(cfg.arities),),
+                        cfg.attention_highway_init_logit,
+                        dtype=torch.float32,
+                    )
+                )
+                self.gate_projs = None
+                self.gate_coefs = None
+            elif self.attn_gate_kind == "edge_cr":
+                self.attn_gate_logits = None
+                d_query = cfg.base.hidden_dim
+                n_grid = cfg.attention_highway_n_grid
+                self.gate_n_grid = n_grid
+                self.gate_projs = nn.ModuleList([
+                    nn.Linear(d_query, 2)
+                    for _ in cfg.arities
+                ])
+                # Init: small weights, bias [3, 0] so initial output
+                # softmax([3, 0]) ≈ (0.95, 0.05) → uniform-leaning.
+                with torch.no_grad():
+                    for p in self.gate_projs:
+                        p.weight.mul_(0.01)
+                        p.bias.copy_(
+                            torch.tensor([3.0, 0.0], dtype=torch.float32)
+                        )
+                # CR control points: linspace(-3, 3, n_grid) per channel
+                # (identity-like curve at init, gives σ-like mapping).
+                init_coef = (torch.linspace(-3.0, 3.0, n_grid)
+                             .unsqueeze(0).expand(2, -1).contiguous())
+                self.gate_coefs = nn.Parameter(
+                    init_coef.unsqueeze(0).expand(
+                        len(cfg.arities), -1, -1,
+                    ).contiguous()
+                )
+            else:
+                raise ValueError(
+                    f"unknown attention_highway_kind: "
+                    f"{self.attn_gate_kind!r}",
+                )
+        else:
+            self.attn_gate_logits = None
+            self.gate_projs = None
+            self.gate_coefs = None
+
+        # Per-edge attention entropy accumulator. Filled during forward
+        # (one (mean) entropy scalar per arity slot in the batched and
+        # full encode paths). Reset at the start of each encode_edges
+        # call. The training loop reads this list and adds
+        #     -λ · mean(H_attn)
+        # to the BCE loss when HSIKAN_ATTN_ENTROPY_LAMBDA > 0.  Plain
+        # tensor accumulation keeps backward through the attention
+        # softmax.
+        self._attn_entropy_terms: list[torch.Tensor] | None = None
 
         # Optional per-edge continuous-feature projection.
         if cfg.edge_feat_dim > 0:
@@ -376,6 +613,39 @@ class MixedAritySignedKAN(nn.Module):
 
     def num_parameters(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+    def _highway_gate(self, ai: int,
+                       h_query: torch.Tensor | None) -> torch.Tensor:
+        """Compute the per-arity Highway gate for slot ``ai``.
+
+        Returns a 0-d (scalar) or 1-d (per-edge) tensor depending on
+        ``attention_highway_kind``.
+
+        - "scalar"  : per-arity learnable scalar; sigmoid-free
+                      2-element softmax (math-equivalent to
+                      sigmoid(η_κ)).
+        - "edge_cr" : per-edge KAN-aligned gate.  ``h_query`` (E, d)
+                      is required.  Returns a (E,) attention-weight
+                      tensor; the uniform-pool weight is (1 − return).
+        """
+        if self.attn_gate_kind == "scalar":
+            eta = self.attn_gate_logits[ai]
+            pair = torch.stack([torch.zeros_like(eta), eta])
+            return self.cfg.attention_highway_max * F.softmax(pair, dim=0)[1]
+        if self.attn_gate_kind == "edge_cr":
+            if h_query is None:
+                raise RuntimeError(
+                    "edge_cr Highway gate requires h_query to be passed",
+                )
+            x = torch.tanh(self.gate_projs[ai](h_query))   # (E, 2) ∈ [-1, 1]
+            cr_out = _catmull_rom_eval(
+                self.gate_coefs[ai], x, self.gate_n_grid,
+            )                                                # (E, 2)
+            weights = F.softmax(cr_out, dim=-1)              # (E, 2)
+            return self.cfg.attention_highway_max * weights[:, 1]
+        raise ValueError(
+            f"unknown attention_highway_kind: {self.attn_gate_kind!r}"
+        )
 
     def alpha(self) -> torch.Tensor:
         a = F.softmax(self.arity_logits, dim=0)
@@ -508,13 +778,10 @@ class MixedAritySignedKAN(nn.Module):
         # Stash query_edges so the batched path can access it for the
         # per-edge gate without breaking the signature.
         self._pending_query_edges = query_edges
+        # Reset the per-edge attention entropy buffer for this forward.
+        self._attn_entropy_terms = []
         if self.cfg.cycle_batch_size is None:
             return self._encode_edges_full(per_arity_inputs, query_edges)
-        if self.cfg.attention_m_e:
-            raise NotImplementedError(
-                "attention_m_e + cycle_batch_size not yet implemented; "
-                "use either feature alone."
-            )
         return self._encode_edges_batched(per_arity_inputs,
                                            self.cfg.cycle_batch_size)
 
@@ -568,7 +835,12 @@ class MixedAritySignedKAN(nn.Module):
                         and getattr(self, "_A_pos", None) is not None):
                     h_pos = torch.sparse.mm(self._A_pos, self.W_pos(h_v))
                     h_neg = torch.sparse.mm(self._A_neg, self.W_neg(h_v))
-                    g = torch.sigmoid(self.direct_gate)
+                    # 2-element softmax (sigmoid-free, KAN-aligned).
+                    g_pair = torch.stack(
+                        [torch.zeros_like(self.direct_gate),
+                         self.direct_gate]
+                    )
+                    g = F.softmax(g_pair, dim=0)[1]
                     h_v_step = (1.0 - g) * h_v_step + g * (h_pos + h_neg)
                 h_v = (h_v + h_v_step) if cfg.use_residual else h_v_step
                 if self.base.layer_norms is not None:
@@ -602,13 +874,37 @@ class MixedAritySignedKAN(nn.Module):
             M_e = per_arity_inputs[ai][3]
             if self.cfg.attention_m_e:
                 idx = M_e._indices()
+                rows = idx[0]
+                cols = idx[1]
                 attn_vals = self.attention_m_e(
                     h_query, h_final, idx,
                 )
-                M_e_attn = torch.sparse_coo_tensor(
-                    idx, attn_vals, M_e.shape,
-                ).coalesce()
-                edge_pool = torch.sparse.mm(M_e_attn, h_final)
+                # A2 hook: accumulate per-edge attention entropy.
+                if self._attn_entropy_terms is not None:
+                    eps = 1e-12
+                    H_per_pair = -(
+                        attn_vals * attn_vals.clamp_min(eps).log()
+                    )
+                    H_per_edge = torch.zeros(
+                        M_e.shape[0],
+                        device=attn_vals.device, dtype=attn_vals.dtype,
+                    ).index_add(0, rows, H_per_pair)
+                    self._attn_entropy_terms.append(H_per_edge.mean())
+                weighted = attn_vals.unsqueeze(-1) * h_final[cols]
+                E = M_e.shape[0]
+                d_jk = h_final.shape[1]
+                attn_pool = torch.zeros(
+                    E, d_jk,
+                    device=h_final.device, dtype=h_final.dtype,
+                ).index_add(0, rows, weighted)
+                if self.attn_gate_logits is not None:
+                    uniform_pool = torch.sparse.mm(M_e, h_final)
+                    g = self.cfg.attention_highway_max * torch.sigmoid(
+                        self.attn_gate_logits[ai]
+                    )
+                    edge_pool = (1.0 - g) * uniform_pool + g * attn_pool
+                else:
+                    edge_pool = attn_pool
             else:
                 edge_pool = torch.sparse.mm(M_e, h_final)
             per_arity_edge_pools.append(edge_pool)
@@ -636,6 +932,11 @@ class MixedAritySignedKAN(nn.Module):
             for ai, edge_pool in enumerate(per_arity_edge_pools):
                 edge_emb = (alpha[ai] * edge_pool if edge_emb is None
                             else edge_emb + alpha[ai] * edge_pool)
+        # Stash post-encoder vertex embeddings for downstream node-level
+        # heads (used by tabular node classification, mesh
+        # correspondence, etc.).  This is the h_v after L−1 vertex
+        # updates from the cycle-pool aggregation.
+        self._final_h_v = h_v
         return edge_emb
 
     def _encode_edges_batched(
@@ -676,6 +977,7 @@ class MixedAritySignedKAN(nn.Module):
         alpha = self.alpha()
         n_arities = len(self.cfg.arities)
         jk = cfg.jk_mode
+        use_attention = self.cfg.attention_m_e
 
         # Pre-extract M_e COO data per arity (one-time per call).
         # NOTE: M_e was built with .coalesce() so indices are sorted by
@@ -688,24 +990,37 @@ class MixedAritySignedKAN(nn.Module):
             n_edges = M_e.shape[0]
             M_e_meta.append((idx[0], idx[1], val, n_edges))
 
-        # Per-arity, per-layer edge-pool accumulators (E, d).
-        # We always store all layers because jk="concat" / "sum" need
-        # them; "last" just discards the others.
-        edge_pool_per_arity_per_layer: list[list[torch.Tensor]] = [
-            [None] * n_layers for _ in range(n_arities)
-        ]
+        # When attention is on, we need the full per-cycle embeddings
+        # post-encoder before computing softmax over each edge's
+        # incident cycles (denominator is global per row). Collect
+        # batch slices in a list and torch.cat once after the loop —
+        # linear memory in T (vs the quadratic O(n_batches · T)
+        # cost of repeated index_copy on a full tensor).  When
+        # attention is off, accumulate edge pools directly per batch.
+        if use_attention:
+            h_t_slices_per_arity_per_layer: list[list[list[torch.Tensor]]] = [
+                [[] for _ in range(n_layers)] for _ in range(n_arities)
+            ]
+            edge_pool_per_arity_per_layer = None
+        else:
+            h_t_slices_per_arity_per_layer = None
+            edge_pool_per_arity_per_layer = [
+                [None] * n_layers for _ in range(n_arities)
+            ]
 
         for li in range(n_layers):
             # Per-arity vertex-update accumulators (V, d) for THIS layer.
             h_v_step_per_arity = [
                 torch.zeros_like(h_v) for _ in range(n_arities)
             ]
-            # Per-arity edge-pool accumulators for THIS layer.
-            edge_pool_this_layer = [
-                torch.zeros(M_e_meta[ai][3], d,
-                             device=h_v.device, dtype=h_v.dtype)
-                for ai in range(n_arities)
-            ]
+            # Per-arity edge-pool accumulators for THIS layer (only
+            # used when attention is off — attention defers pooling).
+            if not use_attention:
+                edge_pool_this_layer = [
+                    torch.zeros(M_e_meta[ai][3], d,
+                                 device=h_v.device, dtype=h_v.dtype)
+                    for ai in range(n_arities)
+                ]
 
             for ai in range(n_arities):
                 triad_v, triad_sigma, _M_vt, _M_e = per_arity_inputs[ai]
@@ -737,21 +1052,28 @@ class MixedAritySignedKAN(nn.Module):
                             )
                         )
 
-                    # Edge pool: gather M_e nnz where col ∈ [bs, be).
-                    mask = (e_cols_all >= bs) & (e_cols_all < be)
-                    if mask.any():
-                        e_rows_b = e_rows_all[mask]
-                        e_cols_b = e_cols_all[mask] - bs
-                        e_vals_b = e_vals_all[mask]
-                        contrib = (e_vals_b.unsqueeze(-1)
-                                    * h_t_b[e_cols_b])
-                        edge_pool_this_layer[ai] = (
-                            edge_pool_this_layer[ai].index_add(
-                                0, e_rows_b, contrib,
+                    if use_attention:
+                        # Stash batch slice; cat at end of layer loop.
+                        h_t_slices_per_arity_per_layer[ai][li].append(h_t_b)
+                    else:
+                        # Edge pool: gather M_e nnz where col ∈ [bs, be).
+                        mask = (e_cols_all >= bs) & (e_cols_all < be)
+                        if mask.any():
+                            e_rows_b = e_rows_all[mask]
+                            e_cols_b = e_cols_all[mask] - bs
+                            e_vals_b = e_vals_all[mask]
+                            contrib = (e_vals_b.unsqueeze(-1)
+                                        * h_t_b[e_cols_b])
+                            edge_pool_this_layer[ai] = (
+                                edge_pool_this_layer[ai].index_add(
+                                    0, e_rows_b, contrib,
+                                )
                             )
-                        )
 
-                edge_pool_per_arity_per_layer[ai][li] = edge_pool_this_layer[ai]
+                if not use_attention:
+                    edge_pool_per_arity_per_layer[ai][li] = (
+                        edge_pool_this_layer[ai]
+                    )
 
             # Combine per-arity vertex updates, advance h_v.
             if li < n_layers - 1:
@@ -762,21 +1084,91 @@ class MixedAritySignedKAN(nn.Module):
                 if self.base.layer_norms is not None:
                     h_v = self.base.layer_norms[li](h_v)
 
-        # JK fold per arity (over the stored per-layer edge pools).
+        # JK fold per arity. Without attention, fold the (E, d) edge
+        # pools directly. With attention, fold the (T, d) cycle
+        # embeddings, then apply per-arity attention to derive the
+        # final (E, d_jk) edge pool.
         per_arity_pools: list[torch.Tensor] = []
-        for ai in range(n_arities):
-            stack = edge_pool_per_arity_per_layer[ai]
-            if jk == "last":
-                arity_pool = stack[-1]
-            elif jk == "sum":
-                arity_pool = stack[0]
-                for li in range(1, n_layers):
-                    arity_pool = arity_pool + stack[li]
-            elif jk == "concat":
-                arity_pool = torch.cat(stack, dim=-1)
-            else:
-                raise ValueError(f"unknown jk_mode: {jk}")
-            per_arity_pools.append(arity_pool)
+        if use_attention:
+            # Build query embedding for attention.
+            query_edges = getattr(self, "_pending_query_edges", None)
+            if query_edges is None:
+                raise RuntimeError(
+                    "attention_m_e requires query_edges; ensure they "
+                    "are passed via encode_edges()"
+                )
+            h_query = h_v[query_edges[:, 0]] + h_v[query_edges[:, 1]]
+            for ai in range(n_arities):
+                # Materialise (T_ai, d) per layer by concatenating
+                # the per-batch slices once.
+                stack = [
+                    torch.cat(h_t_slices_per_arity_per_layer[ai][li], dim=0)
+                    for li in range(n_layers)
+                ]
+                if jk == "last":
+                    h_final = stack[-1]
+                elif jk == "sum":
+                    h_final = stack[0]
+                    for li in range(1, n_layers):
+                        h_final = h_final + stack[li]
+                elif jk == "concat":
+                    h_final = torch.cat(stack, dim=-1)   # (T_ai, d_jk)
+                else:
+                    raise ValueError(f"unknown jk_mode: {jk}")
+                M_e = per_arity_inputs[ai][3]
+                idx = M_e._indices()
+                rows = idx[0]
+                cols = idx[1]
+                attn_vals = self.attention_m_e(h_query, h_final, idx)
+                # A2 hook: accumulate per-edge attention entropy.
+                if self._attn_entropy_terms is not None:
+                    eps = 1e-12
+                    H_per_pair = -(
+                        attn_vals * attn_vals.clamp_min(eps).log()
+                    )
+                    H_per_edge = torch.zeros(
+                        M_e.shape[0],
+                        device=attn_vals.device, dtype=attn_vals.dtype,
+                    ).index_add(0, rows, H_per_pair)
+                    self._attn_entropy_terms.append(H_per_edge.mean())
+                # Direct scatter (avoids torch.sparse.mm sparse-autograd
+                # densifying backward at 14+ GiB on Slashdot).
+                weighted = attn_vals.unsqueeze(-1) * h_final[cols]
+                E = M_e.shape[0]
+                d_jk = h_final.shape[1]
+                attn_pool = torch.zeros(
+                    E, d_jk, device=h_final.device, dtype=h_final.dtype,
+                ).index_add(0, rows, weighted)
+                if (self.attn_gate_logits is not None
+                        or self.gate_projs is not None):
+                    uniform_pool = torch.sparse.mm(M_e, h_final)
+                    g = self._highway_gate(ai, h_query=h_query)
+                    if g.dim() == 0:
+                        # Scalar gate.
+                        arity_pool = ((1.0 - g) * uniform_pool
+                                      + g * attn_pool)
+                    else:
+                        # Per-edge gate of shape (E,).
+                        g_b = g.unsqueeze(-1)
+                        arity_pool = ((1.0 - g_b) * uniform_pool
+                                      + g_b * attn_pool)
+                else:
+                    arity_pool = attn_pool
+                per_arity_pools.append(arity_pool)
+        else:
+            for ai in range(n_arities):
+                stack = edge_pool_per_arity_per_layer[ai]
+                if jk == "last":
+                    arity_pool = stack[-1]
+                elif jk == "sum":
+                    arity_pool = stack[0]
+                    for li in range(1, n_layers):
+                        arity_pool = arity_pool + stack[li]
+                elif jk == "concat":
+                    arity_pool = torch.cat(stack, dim=-1)
+                else:
+                    raise ValueError(f"unknown jk_mode: {jk}")
+                per_arity_pools.append(arity_pool)
 
         if self.cfg.per_edge_gate:
             query_edges = getattr(self, "_pending_query_edges", None)

@@ -61,8 +61,15 @@ pub fn enumerate_simple_cycles(
         path.push(start);
         visited[start as usize] = true;
         dfs(
-            start, &row_ptr, &col_idx, &sign_lookup, k, pruner,
-            &mut path, &mut visited, &mut out,
+            start,
+            &row_ptr,
+            &col_idx,
+            &sign_lookup,
+            k,
+            pruner,
+            &mut path,
+            &mut visited,
+            &mut out,
         );
         visited[start as usize] = false;
     }
@@ -124,8 +131,17 @@ fn dfs(
         }
         path.push(nxt);
         visited[nxt as usize] = true;
-        dfs(start, row_ptr, col_idx, sign_lookup, k,
-            pruner, path, visited, out);
+        dfs(
+            start,
+            row_ptr,
+            col_idx,
+            sign_lookup,
+            k,
+            pruner,
+            path,
+            visited,
+            out,
+        );
         path.pop();
         visited[nxt as usize] = false;
     }
@@ -133,40 +149,26 @@ fn dfs(
 
 /// Convenience wrapper: enumerate without any pruning.  Equivalent
 /// to passing [`NoOpPruner`].
-pub fn enumerate_simple_cycles_noprune(
-    graph: &SignedGraph, k: usize,
-) -> Vec<Vec<u32>> {
+pub fn enumerate_simple_cycles_noprune(graph: &SignedGraph, k: usize) -> Vec<Vec<u32>> {
     enumerate_simple_cycles(graph, k, &NoOpPruner)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::balance::{
-        BipartiteOnlyPruner, CartwrightHararyPruner, BalanceMode,
-    };
+    use crate::balance::{BalanceMode, BipartiteOnlyPruner, CartwrightHararyPruner};
     use crate::friedler::{FriedlerAxiomPruner, NodeKind};
 
     /// 4-cycle 0-1-2-3 + chord 0-2.  Has triangles 0-1-2 and
     /// 0-2-3, plus the 4-cycle 0-1-2-3.
     fn build_chord_graph() -> SignedGraph {
-        SignedGraph::from_parts(
-            4,
-            &[0, 1, 2, 3, 0],
-            &[1, 2, 3, 0, 2],
-            &[1, -1, 1, -1, 1],
-        )
+        SignedGraph::from_parts(4, &[0, 1, 2, 3, 0], &[1, 2, 3, 0, 2], &[1, -1, 1, -1, 1])
     }
 
     /// 4-cycle 0-1-2-3, signed so the cycle is balanced
     /// (product of signs = +1).
     fn build_balanced_quad() -> SignedGraph {
-        SignedGraph::from_parts(
-            4,
-            &[0, 1, 2, 3],
-            &[1, 2, 3, 0],
-            &[1, 1, 1, 1],
-        )
+        SignedGraph::from_parts(4, &[0, 1, 2, 3], &[1, 2, 3, 0], &[1, 1, 1, 1])
     }
 
     #[test]
@@ -222,26 +224,23 @@ mod tests {
         };
         assert_eq!(
             enumerate_simple_cycles(&g, 4, &p_bal).len(),
-            1, "balanced quad survives the OnlyBalanced filter",
+            1,
+            "balanced quad survives the OnlyBalanced filter",
         );
         let p_unbal = CartwrightHararyPruner {
             mode: BalanceMode::OnlyUnbalanced,
         };
         assert_eq!(
             enumerate_simple_cycles(&g, 4, &p_unbal).len(),
-            0, "balanced quad rejected by the OnlyUnbalanced filter",
+            0,
+            "balanced quad rejected by the OnlyUnbalanced filter",
         );
     }
 
     #[test]
     fn bipartite_only_kills_odd_emissions() {
         // 5-vertex cycle (odd).
-        let g = SignedGraph::from_parts(
-            5,
-            &[0, 1, 2, 3, 4],
-            &[1, 2, 3, 4, 0],
-            &[1; 5],
-        );
+        let g = SignedGraph::from_parts(5, &[0, 1, 2, 3, 4], &[1, 2, 3, 4, 0], &[1; 5]);
         // Without pruner: 1 cycle.
         assert_eq!(enumerate_simple_cycles_noprune(&g, 5).len(), 1);
         // With BipartiteOnlyPruner: 0 cycles (5 is odd).

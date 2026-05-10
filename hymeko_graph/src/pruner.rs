@@ -33,7 +33,11 @@ impl PrunerDecision {
     /// `Accept` iff `b` is `true`.
     #[inline]
     pub fn from_bool(b: bool) -> PrunerDecision {
-        if b { PrunerDecision::Accept } else { PrunerDecision::Reject }
+        if b {
+            PrunerDecision::Accept
+        } else {
+            PrunerDecision::Reject
+        }
     }
 
     /// Is this an accept decision?
@@ -213,8 +217,10 @@ pub struct CompositePruner {
 impl std::fmt::Debug for CompositePruner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CompositePruner")
-            .field("children",
-                   &self.children.iter().map(|(n, _)| n).collect::<Vec<_>>())
+            .field(
+                "children",
+                &self.children.iter().map(|(n, _)| n).collect::<Vec<_>>(),
+            )
             .field("stats", &self.stats)
             .finish()
     }
@@ -276,7 +282,7 @@ mod tests {
     struct OnlyEvenLength;
     impl CyclePruner for OnlyEvenLength {
         fn emit_ok(&self, cycle: &[u32], _signs: &[i8]) -> PrunerDecision {
-            PrunerDecision::from_bool(cycle.len() % 2 == 0)
+            PrunerDecision::from_bool(cycle.len().is_multiple_of(2))
         }
     }
 

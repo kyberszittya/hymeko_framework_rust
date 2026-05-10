@@ -33,14 +33,16 @@
 //! that can't close in the remaining budget), connected-component
 //! decomposition, walk enumeration (planned).
 
-use crate::pruner::{CyclePruner, NoOpPruner, PrunerDecision};
+use crate::pruner::{CyclePruner, PrunerDecision};
 use crate::signed_graph::SignedGraph;
 
 // ─── bitset utilities ────────────────────────────────────────────
 
 /// Number of `u64` words needed for an `n`-bit bitset.
 #[inline]
-pub fn bs_words(n: usize) -> usize { n.div_ceil(64) }
+pub fn bs_words(n: usize) -> usize {
+    n.div_ceil(64)
+}
 
 /// Test bit `v` in a packed bitset of `u64` words.
 #[inline]
@@ -89,7 +91,11 @@ impl Csr {
     /// per-row sort + dedup.
     pub fn from_graph(g: &SignedGraph) -> Csr {
         let (row_ptr, col_idx) = g.build_csr();
-        Csr { row_ptr, col_idx, n_nodes: g.n_nodes }
+        Csr {
+            row_ptr,
+            col_idx,
+            n_nodes: g.n_nodes,
+        }
     }
 
     /// Borrow vertex `v`'s neighbour slice.  $O(1)$.
@@ -229,9 +235,7 @@ pub fn dfs_visit_pruned<F: FnMut(u32)>(
                 continue;
             }
             // Pruner check before pushing.
-            if pruner.extend_ok(&scratch.path, nxt) ==
-                PrunerDecision::Reject
-            {
+            if pruner.extend_ok(&scratch.path, nxt) == PrunerDecision::Reject {
                 continue;
             }
             bs_set(&mut scratch.visited, nxt);
@@ -307,12 +311,7 @@ impl BfsScratch {
 ///
 /// Layer-at-a-time double-buffered frontier — each layer is a
 /// flat `Vec<u32>` walk, branch-predictable.
-pub fn bfs_distances(
-    csr: &Csr,
-    scratch: &mut BfsScratch,
-    start: u32,
-    max_depth: u8,
-) -> usize {
+pub fn bfs_distances(csr: &Csr, scratch: &mut BfsScratch, start: u32, max_depth: u8) -> usize {
     scratch.reset();
     scratch.dist[start as usize] = 0;
     scratch.frontier.push(start);
@@ -346,12 +345,7 @@ pub fn bfs_distances(
 /// Bi-BFS hits $O(\bar d^{D/2})$ instead of single BFS's
 /// $O(\bar d^D)$, an exponential win for distant pairs in
 /// well-connected graphs.
-pub fn bidirectional_bfs(
-    csr: &Csr,
-    src: u32,
-    dst: u32,
-    max_half_depth: u8,
-) -> Option<u32> {
+pub fn bidirectional_bfs(csr: &Csr, src: u32, dst: u32, max_half_depth: u8) -> Option<u32> {
     if src == dst {
         return Some(0);
     }
@@ -366,7 +360,8 @@ pub fn bidirectional_bfs(
     let mut depth_dst: u32 = 0;
     let mut next_buf = Vec::with_capacity(256);
 
-    while !frontier_src.is_empty() && !frontier_dst.is_empty()
+    while !frontier_src.is_empty()
+        && !frontier_dst.is_empty()
         && (depth_src + depth_dst) < (2 * max_half_depth as u32)
     {
         // Expand the smaller frontier first — keeps the search
@@ -374,11 +369,9 @@ pub fn bidirectional_bfs(
         // ballooning while the other does nothing.
         let expand_src = frontier_src.len() <= frontier_dst.len();
         let (frontier, dist_self, dist_other, depth) = if expand_src {
-            (&mut frontier_src, &mut dist_src,
-             &dist_dst, &mut depth_src)
+            (&mut frontier_src, &mut dist_src, &dist_dst, &mut depth_src)
         } else {
-            (&mut frontier_dst, &mut dist_dst,
-             &dist_src, &mut depth_dst)
+            (&mut frontier_dst, &mut dist_dst, &dist_src, &mut depth_dst)
         };
         next_buf.clear();
         for &v in frontier.iter() {
@@ -388,10 +381,7 @@ pub fn bidirectional_bfs(
                     next_buf.push(nxt);
                     // Intersection check.
                     if dist_other[nxt as usize] != BFS_UNREACHED {
-                        return Some(
-                            (*depth as u32) + 1
-                            + dist_other[nxt as usize] as u32,
-                        );
+                        return Some(*depth + 1 + dist_other[nxt as usize] as u32);
                     }
                 }
             }
@@ -464,12 +454,7 @@ mod tests {
     #[test]
     fn dfs_scratch_reuse_across_components() {
         // Two disjoint triangles: {0,1,2} and {3,4,5}.
-        let g = SignedGraph::from_parts(
-            6,
-            &[0, 1, 2, 3, 4, 5],
-            &[1, 2, 0, 4, 5, 3],
-            &[1; 6],
-        );
+        let g = SignedGraph::from_parts(6, &[0, 1, 2, 3, 4, 5], &[1, 2, 0, 4, 5, 3], &[1; 6]);
         let csr = Csr::from_graph(&g);
         let mut s = DfsScratch::with_capacity(g.n_nodes);
         let mut visited_total = Vec::new();
@@ -527,12 +512,7 @@ mod tests {
 
     #[test]
     fn connected_components_disjoint_triangles() {
-        let g = SignedGraph::from_parts(
-            6,
-            &[0, 1, 2, 3, 4, 5],
-            &[1, 2, 0, 4, 5, 3],
-            &[1; 6],
-        );
+        let g = SignedGraph::from_parts(6, &[0, 1, 2, 3, 4, 5], &[1, 2, 0, 4, 5, 3], &[1; 6]);
         let csr = Csr::from_graph(&g);
         assert_eq!(count_connected_components(&csr), 2);
     }
@@ -557,24 +537,20 @@ mod tests {
         // Path 0 — 1 — 2 — 3 with bipartite alternation
         // 0=M, 1=O, 2=M, 3=O.  Add a cheating edge 0—2 (M—M)
         // that the Friedler pruner will reject during DFS.
-        let g = SignedGraph::from_parts(
-            4,
-            &[0, 1, 2, 0],
-            &[1, 2, 3, 2],
-            &[1; 4],
-        );
+        let g = SignedGraph::from_parts(4, &[0, 1, 2, 0], &[1, 2, 3, 2], &[1; 4]);
         let csr = Csr::from_graph(&g);
         let kinds = vec![
-            NodeKind::Material, NodeKind::OperatingUnit,
-            NodeKind::Material, NodeKind::OperatingUnit,
+            NodeKind::Material,
+            NodeKind::OperatingUnit,
+            NodeKind::Material,
+            NodeKind::OperatingUnit,
         ];
         let p = FriedlerAxiomPruner::new(kinds);
         let mut s = DfsScratch::with_capacity(g.n_nodes);
         let mut order = Vec::new();
         // Start from 0 (Material).  The 0→2 (M→M) edge must be
         // pruned; the path 0→1→2→3 must succeed.
-        let n = dfs_visit_pruned(&csr, &mut s, &p, 0,
-                                  |v| order.push(v));
+        let n = dfs_visit_pruned(&csr, &mut s, &p, 0, |v| order.push(v));
         assert_eq!(n, 4);
         // Accepted vertices are 0 (start), 1, 2 (via 1), 3.
         assert!(order.contains(&0));

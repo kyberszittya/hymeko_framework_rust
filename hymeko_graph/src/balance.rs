@@ -79,7 +79,7 @@ pub struct BipartiteOnlyPruner;
 impl CyclePruner for BipartiteOnlyPruner {
     #[inline]
     fn emit_ok(&self, cycle: &[u32], _edge_signs: &[i8]) -> PrunerDecision {
-        PrunerDecision::from_bool(cycle.len() % 2 == 0)
+        PrunerDecision::from_bool(cycle.len().is_multiple_of(2))
     }
 }
 
@@ -90,7 +90,9 @@ mod tests {
     #[test]
     fn cartwright_harary_balanced_keeps_two_negs() {
         // Triangle with edge signs (-, -, +): product = +1 → balanced.
-        let p = CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced };
+        let p = CartwrightHararyPruner {
+            mode: BalanceMode::OnlyBalanced,
+        };
         assert!(p.emit_ok(&[0, 1, 2], &[-1, -1, 1]).is_accept());
         // (+, -, -): product = +1 → balanced too.
         assert!(p.emit_ok(&[0, 1, 2], &[1, -1, -1]).is_accept());
@@ -100,7 +102,9 @@ mod tests {
 
     #[test]
     fn cartwright_harary_unbalanced_inverse() {
-        let p = CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced };
+        let p = CartwrightHararyPruner {
+            mode: BalanceMode::OnlyUnbalanced,
+        };
         assert!(!p.emit_ok(&[0, 1, 2], &[-1, -1, 1]).is_accept());
         assert!(p.emit_ok(&[0, 1, 2], &[-1, 1, 1]).is_accept());
     }

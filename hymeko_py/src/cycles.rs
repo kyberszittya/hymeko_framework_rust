@@ -1175,16 +1175,35 @@ pub fn enumerate_k_walks_rs(
 // ============================================================================
 
 use hymeko_graph::{
+    EntropyGainScorer, HybridScorer, InverseDegreeScorer,
     balance::{BalanceMode, CartwrightHararyPruner, DavisWeakBalancePruner},
     community::{
         balance_ratio_per_community, label_propagation,
         CommunityAxiomPruner,
     },
+    degree_adaptive_m_v,
     enumerate_top_k_cycles_par,
+    enumerate_top_k_cycles_par_batched,
+    enumerate_top_k_cycles_par_bb,
+    enumerate_top_k_cycles_par_bb_batched,
+    enumerate_top_k_cycles_par_entropy,
+    enumerate_top_k_cycles_par_entropy_batched,
     enumerate_top_k_cycles_par_noprune as g_top_k_par,
     enumerate_top_k_per_vertex_cycles_par,
+    enumerate_top_k_per_vertex_cycles_par_adaptive,
+    enumerate_top_k_per_vertex_cycles_par_adaptive_batched,
+    enumerate_top_k_per_vertex_cycles_par_adaptive_starting,
+    enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched,
+    enumerate_top_k_per_vertex_cycles_par_batched,
     enumerate_top_k_per_vertex_cycles_par_noprune as g_top_k_per_v_par,
-    topk_cycles::scorers as g_scorers,
+    tiered_m_v_by_degree,
+    vertex_filter::{
+        AndFilter, DegreeFilter, NoFilter, TriangleFilter, VertexFilter,
+    },
+    topk_cycles::{
+        BalanceScorer, FractionNegativeScorer, LowRootScorer,
+        SignProductAbsScorer, scorers as g_scorers,
+    },
     traversal::Csr, NoOpPruner, SignedGraph as GSignedGraph,
 };
 use numpy::PyArray1;
@@ -1202,6 +1221,25 @@ fn build_signed_graph(
         ));
     }
     Ok(GSignedGraph::from_parts(n_nodes, edges_u, edges_v, edges_s))
+}
+
+/// Convert a [`TopKCyclesBatch`] to the `(cycles_2d, scores_1d)` numpy
+/// tuple consumed by Python.  Zero-copy: the underlying `Vec` buffers
+/// are moved into numpy ownership via `into_pyarray()` --- no flatten
+/// loop, no intermediate `Vec<TopKCycle>`.
+fn batch_to_pyarray(
+    py: Python<'_>,
+    batch: hymeko_graph::TopKCyclesBatch,
+    k_len: usize,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let n = batch.len();
+    let arr = Array2::from_shape_vec((n, k_len), batch.cycles).map_err(|e| {
+        pyo3::exceptions::PyRuntimeError::new_err(format!("reshape: {e}"))
+    })?;
+    Ok((
+        arr.into_pyarray(py).unbind(),
+        batch.scores.into_pyarray(py).unbind(),
+    ))
 }
 
 /// Look up the right scorer by string tag.
@@ -1250,42 +1288,30 @@ pub fn enumerate_top_k_cycles_signed_rs(
         ))
     })?;
 
-    let result = py.detach(|| match pruner_kind {
-        "none" => g_top_k_par(&g, k_len, k_keep, scorer),
-        "balance" => enumerate_top_k_cycles_par(
+    let batch = py.detach(|| match pruner_kind {
+        "balance" => enumerate_top_k_cycles_par_batched(
             &g, k_len,
             &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
             k_keep, scorer,
         ),
-        "unbalanced" => enumerate_top_k_cycles_par(
+        "unbalanced" => enumerate_top_k_cycles_par_batched(
             &g, k_len,
             &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
             k_keep, scorer,
         ),
-        "davis" => enumerate_top_k_cycles_par(
+        "davis" => enumerate_top_k_cycles_par_batched(
             &g, k_len,
             &DavisWeakBalancePruner,
             k_keep, scorer,
         ),
-        _ => g_top_k_par(&g, k_len, k_keep, scorer),
+        _ => enumerate_top_k_cycles_par_batched(
+            &g, k_len, &NoOpPruner, k_keep, scorer,
+        ),
     });
-    let _ = NoOpPruner; // silence unused-import warning when pruner_kind matches a real branch
+    // (g_top_k_par used to be referenced here for the noprune branch;
+    // batched path delegates to _par_batched with NoOpPruner.)
 
-    let n = result.len();
-    let mut flat = Vec::with_capacity(n * k_len);
-    let mut scores = Vec::with_capacity(n);
-    for (s, vs, _signs) in result {
-        debug_assert_eq!(vs.len(), k_len);
-        flat.extend_from_slice(&vs);
-        scores.push(s);
-    }
-    let arr = Array2::from_shape_vec((n, k_len), flat).map_err(|e| {
-        pyo3::exceptions::PyRuntimeError::new_err(format!("reshape: {e}"))
-    })?;
-    Ok((
-        arr.into_pyarray(py).unbind(),
-        scores.into_pyarray(py).unbind(),
-    ))
+    batch_to_pyarray(py, batch, k_len)
 }
 
 /// Vertex-stratified top-m signed cycle enumeration: for each vertex
@@ -1326,19 +1352,18 @@ pub fn enumerate_top_k_per_vertex_cycles_signed_rs(
         ))
     })?;
 
-    let result = py.detach(|| match pruner_kind {
-        "none" => g_top_k_per_v_par(&g, k_len, m_per_vertex, scorer),
-        "balance" => enumerate_top_k_per_vertex_cycles_par(
+    let batch = py.detach(|| match pruner_kind {
+        "balance" => enumerate_top_k_per_vertex_cycles_par_batched(
             &g, k_len,
             &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
             m_per_vertex, scorer,
         ),
-        "unbalanced" => enumerate_top_k_per_vertex_cycles_par(
+        "unbalanced" => enumerate_top_k_per_vertex_cycles_par_batched(
             &g, k_len,
             &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
             m_per_vertex, scorer,
         ),
-        "davis" => enumerate_top_k_per_vertex_cycles_par(
+        "davis" => enumerate_top_k_per_vertex_cycles_par_batched(
             &g, k_len,
             &DavisWeakBalancePruner,
             m_per_vertex, scorer,
@@ -1347,8 +1372,6 @@ pub fn enumerate_top_k_per_vertex_cycles_signed_rs(
             // Phase A: Louvain-equivalent (label-propagation)
             // community detection → per-community balance ratio →
             // per-community axiom (auto: balance/unbalanced/none).
-            // Tunables hardcoded to sensible defaults; if needed,
-            // expose via additional Python kwargs.
             let csr = Csr::from_graph(&g);
             let (labels, n_comm) = label_propagation(&csr, 50, 0xC0FFEE);
             let bal = balance_ratio_per_community(
@@ -1357,26 +1380,603 @@ pub fn enumerate_top_k_per_vertex_cycles_signed_rs(
             let comm_pruner = CommunityAxiomPruner::auto(
                 labels, &bal, 0.85, 0.75,
             );
-            enumerate_top_k_per_vertex_cycles_par(
+            enumerate_top_k_per_vertex_cycles_par_batched(
                 &g, k_len, &comm_pruner, m_per_vertex, scorer,
             )
         }
-        _ => g_top_k_per_v_par(&g, k_len, m_per_vertex, scorer),
+        _ => enumerate_top_k_per_vertex_cycles_par_batched(
+            &g, k_len, &NoOpPruner, m_per_vertex, scorer,
+        ),
     });
 
-    let n = result.len();
-    let mut flat = Vec::with_capacity(n * k_len);
-    let mut scores = Vec::with_capacity(n);
-    for (s, vs, _signs) in result {
-        debug_assert_eq!(vs.len(), k_len);
-        flat.extend_from_slice(&vs);
-        scores.push(s);
+    batch_to_pyarray(py, batch, k_len)
+}
+
+/// Build a [`VertexFilter`] from a `filter_kind` string and a
+/// minimal parameter set.  Supported kinds match the v1 of the
+/// vertex-prefilter plan (`docs/plans/2026-05-11-vertex-prefilter/`):
+///   - `"none"`                    → all vertices
+///   - `"degree"`                  → degree ≥ `min_degree`
+///   - `"triangle"`                → vertex in at least one triangle
+///   - `"compose:degree,triangle"` → AND of both
+///
+/// More expensive filters (clustering, local_sign_entropy,
+/// clique_size, balanced_reachable) ship in v2 of the plan.
+fn build_vertex_filter(
+    filter_kind: &str,
+    min_degree: u32,
+) -> PyResult<Box<dyn VertexFilter>> {
+    match filter_kind {
+        "" | "none" | "all" => Ok(Box::new(NoFilter)),
+        "degree" => Ok(Box::new(DegreeFilter { min_degree })),
+        "triangle" => Ok(Box::new(TriangleFilter)),
+        "compose:degree,triangle" | "compose:degree+triangle" => Ok(Box::new(AndFilter(vec![
+            Box::new(DegreeFilter { min_degree }),
+            Box::new(TriangleFilter),
+        ]))),
+        other => Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown filter_kind '{other}'; valid: none | degree | triangle | \
+             compose:degree,triangle"
+        ))),
     }
-    let arr = Array2::from_shape_vec((n, k_len), flat).map_err(|e| {
+}
+
+/// Per-vertex top-$m$ signed cycle enumeration **with vertex
+/// pre-filter, SoA output (zero-copy numpy)** (v1 filter + tonight's
+/// SoA refactor).
+///
+/// Same shape as [`enumerate_top_k_per_vertex_cycles_signed_filtered_rs`]
+/// (returns `(cycles, scores)` as numpy arrays) but goes through
+/// the batched Rust enumerator which produces flat
+/// `Vec<u32>` / `Vec<f64>` outputs.  The Vec → numpy conversion is
+/// zero-copy via `into_pyarray()`, saving ~2N small heap allocations
+/// (one `Vec<u32>` + one `Vec<i8>` per accepted cycle) that the
+/// legacy `Vec<TopKCycle>` path produced.
+///
+/// On Epinions $k{=}4$ at production scale ($N \approx 3.7$M),
+/// this saves $\sim 7.4$M small heap allocations and the
+/// accompanying allocator pressure.  Empirically expected to save
+/// 30-50% wall on the post-enumeration phase.
+///
+/// All other parameters identical to the legacy
+/// `_filtered_rs` binding.
+#[pyfunction]
+#[pyo3(signature = (
+    edges_u, edges_v, edges_s, n_nodes, k_len, m_per_vertex,
+    score_kind, pruner_kind, filter_kind="none", filter_min_degree=2u32,
+))]
+#[allow(clippy::too_many_arguments)]
+pub fn enumerate_top_k_per_vertex_cycles_signed_filtered_batched_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    m_per_vertex: usize,
+    score_kind: &str,
+    pruner_kind: &str,
+    filter_kind: &str,
+    filter_min_degree: u32,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let scorer = pick_scorer(score_kind).ok_or_else(|| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))
+    })?;
+    let filter = build_vertex_filter(filter_kind, filter_min_degree)?;
+    let m_v: Vec<u32> = vec![m_per_vertex as u32; n_nodes as usize];
+
+    let batch = py.detach(|| {
+        let keep_set = filter.keep_set(&g);
+        match pruner_kind {
+            "balance" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+                &g, k_len,
+                &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+                &m_v, &keep_set, scorer,
+            ),
+            "unbalanced" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+                &g, k_len,
+                &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+                &m_v, &keep_set, scorer,
+            ),
+            "davis" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+                &g, k_len,
+                &DavisWeakBalancePruner,
+                &m_v, &keep_set, scorer,
+            ),
+            _ => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+                &g, k_len,
+                &NoOpPruner,
+                &m_v, &keep_set, scorer,
+            ),
+        }
+    });
+
+    // Zero-copy: Vec → numpy ownership transfer.  No flatten loop.
+    let n = batch.len();
+    let arr = Array2::from_shape_vec((n, k_len), batch.cycles).map_err(|e| {
         pyo3::exceptions::PyRuntimeError::new_err(format!("reshape: {e}"))
     })?;
     Ok((
         arr.into_pyarray(py).unbind(),
-        scores.into_pyarray(py).unbind(),
+        batch.scores.into_pyarray(py).unbind(),
     ))
+}
+
+/// Per-vertex top-$m$ signed cycle enumeration **with vertex
+/// pre-filter** (v1 of the vertex-prefilter plan).
+///
+/// Same surface as [`enumerate_top_k_per_vertex_cycles_signed_rs`]
+/// but takes an additional `filter_kind` (and `filter_min_degree` for
+/// the degree-based filters).  Vertices outside the filter's
+/// keep-set are skipped as DFS roots — they contribute zero cycles
+/// to the output.
+///
+/// `filter_kind ∈ {"none", "degree", "triangle",
+///                 "compose:degree,triangle"}` — see
+/// [`build_vertex_filter`] for the dispatch table.
+///
+/// On Epinions, ~30-40% of vertices are leaves or isolated
+/// (degree<2) and contribute no cycles — filtering them out saves
+/// 30-40% of per-vertex BFS pre-pass and DFS startup cost without
+/// changing the output cycle set.
+///
+/// Returns `(cycles, scores)` with the same shape as the
+/// unfiltered binding.
+#[pyfunction]
+#[pyo3(signature = (
+    edges_u, edges_v, edges_s, n_nodes, k_len, m_per_vertex,
+    score_kind, pruner_kind, filter_kind="none", filter_min_degree=2u32,
+))]
+#[allow(clippy::too_many_arguments)]
+pub fn enumerate_top_k_per_vertex_cycles_signed_filtered_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    m_per_vertex: usize,
+    score_kind: &str,
+    pruner_kind: &str,
+    filter_kind: &str,
+    filter_min_degree: u32,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let scorer = pick_scorer(score_kind).ok_or_else(|| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))
+    })?;
+
+    let filter = build_vertex_filter(filter_kind, filter_min_degree)?;
+    let m_v: Vec<u32> = vec![m_per_vertex as u32; n_nodes as usize];
+
+    let batch = py.detach(|| {
+        let keep_set = filter.keep_set(&g);
+        match pruner_kind {
+            "balance" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+                &g, k_len,
+                &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+                &m_v, &keep_set, scorer,
+            ),
+            "unbalanced" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+                &g, k_len,
+                &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+                &m_v, &keep_set, scorer,
+            ),
+            "davis" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+                &g, k_len,
+                &DavisWeakBalancePruner,
+                &m_v, &keep_set, scorer,
+            ),
+            _ => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+                &g, k_len,
+                &NoOpPruner,
+                &m_v, &keep_set, scorer,
+            ),
+        }
+    });
+
+    batch_to_pyarray(py, batch, k_len)
+}
+
+/// Global top-$K$ signed cycle enumeration **with score-bounded
+/// branch-and-bound** (ABB).
+///
+/// Same surface as [`enumerate_top_k_cycles_signed_rs`] but routes
+/// through `enumerate_top_k_cycles_par_bb` with the `BoundedScorer`
+/// matching `score_kind`.  On Epinions $k{=}4$, $K{=}10\,000$,
+/// `score_kind="fraction_negative"`, `pruner_kind="balance"` this
+/// drops wall time from ~100 s to ~4 s (25x speedup; see
+/// `reports/2026-05-10-abb-global-topk.md`).
+///
+/// The output cycle SET may differ from the non-ABB path on score
+/// ties (heap's strict `>` replacement rule), but the sorted score
+/// vector is identical.  See
+/// `tests/abb_global_topk.rs::parity_par_vs_par_bb_*`.
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, edges_s, n_nodes, k_len, k_keep,
+                      score_kind="fraction_negative", pruner_kind="balance"))]
+pub fn enumerate_top_k_cycles_signed_bb_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    k_keep: usize,
+    score_kind: &str,
+    pruner_kind: &str,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+
+    // The four BoundedScorer impls live in `hymeko_graph::topk_cycles`;
+    // each has its own type, so the dispatch is over types here
+    // (not function pointers).  Macro-expand the pruner x scorer
+    // matrix so every combination calls the monomorphised inner
+    // function with no dynamic dispatch overhead.
+    macro_rules! run_bb_batched {
+        ($pruner:expr, $scorer:expr) => {
+            py.detach(|| enumerate_top_k_cycles_par_bb_batched(
+                &g, k_len, &$pruner, k_keep, &$scorer,
+            ))
+        };
+    }
+    macro_rules! dispatch_pruner_bb {
+        ($scorer:expr) => {
+            match pruner_kind {
+                "none" => run_bb_batched!(NoOpPruner, $scorer),
+                "balance" => run_bb_batched!(
+                    CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+                    $scorer
+                ),
+                "unbalanced" => run_bb_batched!(
+                    CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+                    $scorer
+                ),
+                "davis" => run_bb_batched!(DavisWeakBalancePruner, $scorer),
+                _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "unknown pruner_kind '{pruner_kind}'; valid: \
+                     none, balance, unbalanced, davis"
+                ))),
+            }
+        };
+    }
+    let batch = match score_kind {
+        "fraction_negative" => dispatch_pruner_bb!(FractionNegativeScorer),
+        "balance" => dispatch_pruner_bb!(BalanceScorer),
+        "sign_product_abs" => dispatch_pruner_bb!(SignProductAbsScorer),
+        "low_root" => dispatch_pruner_bb!(LowRootScorer),
+        _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))),
+    };
+
+    batch_to_pyarray(py, batch, k_len)
+}
+
+/// Global top-$K$ signed cycle enumeration with the
+/// **entropy-heuristic** scorer family — selects cycles to
+/// maximise the per-vertex incidence-distribution entropy of the
+/// kept set.
+///
+/// `heuristic_kind` ∈ {`"entropy"` (default), `"inverse_degree"`}.
+/// `pruner_kind` ∈ {`"none"` (default), `"balance"`, `"unbalanced"`,
+/// `"davis"`}.
+///
+/// On Epinions $k{=}4$ this delivers a vertex-uniform cycle set
+/// (per-vertex coverage variance lower than global ABB at the same
+/// $K$) at competitive wall time, matching what HSiKAN's $M_e$
+/// expects.
+///
+/// Returns `(cycles, scores)`.
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, edges_s, n_nodes, k_len, k_keep,
+                      heuristic_kind="entropy", pruner_kind="none"))]
+pub fn enumerate_top_k_cycles_signed_entropy_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    k_keep: usize,
+    heuristic_kind: &str,
+    pruner_kind: &str,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+
+    macro_rules! run_entropy_batched {
+        ($pruner:expr, $heuristic:expr) => {
+            py.detach(|| enumerate_top_k_cycles_par_entropy_batched(
+                &g, k_len, &$pruner, k_keep, &$heuristic,
+            ))
+        };
+    }
+    macro_rules! dispatch_pruner_ent {
+        ($heuristic:expr) => {
+            match pruner_kind {
+                "none" => run_entropy_batched!(NoOpPruner, $heuristic),
+                "balance" => run_entropy_batched!(
+                    CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+                    $heuristic
+                ),
+                "unbalanced" => run_entropy_batched!(
+                    CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+                    $heuristic
+                ),
+                "davis" => run_entropy_batched!(DavisWeakBalancePruner, $heuristic),
+                _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "unknown pruner_kind '{pruner_kind}'; valid: \
+                     none, balance, unbalanced, davis"
+                ))),
+            }
+        };
+    }
+    let batch = match heuristic_kind {
+        "entropy" => dispatch_pruner_ent!(EntropyGainScorer),
+        "inverse_degree" => dispatch_pruner_ent!(InverseDegreeScorer),
+        _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown heuristic_kind '{heuristic_kind}'; valid: \
+             entropy, inverse_degree"
+        ))),
+    };
+
+    batch_to_pyarray(py, batch, k_len)
+}
+
+/// Global top-$K$ signed cycle enumeration with the **hybrid
+/// alpha-blended scorer**: `score = alpha * signal + (1-alpha) *
+/// diversity`.
+///
+/// `signal_kind` ∈ {`"fraction_negative"` (default), `"balance"`,
+/// `"sign_product_abs"`, `"low_root"`} — the BoundedScorer
+/// component.
+///
+/// `heuristic_kind` ∈ {`"entropy"` (default), `"inverse_degree"`} —
+/// the diversity component.
+///
+/// `alpha` ∈ [0, 1].  alpha = 0 collapses to pure diversity (same
+/// as `enumerate_top_k_cycles_signed_entropy_rs`); alpha = 1
+/// collapses to pure signal score under the entropy enumerator's
+/// greedy-with-rollback semantics.
+///
+/// `pruner_kind` ∈ {`"none"` (default), `"balance"`, `"unbalanced"`,
+/// `"davis"`}.
+///
+/// Returns `(cycles, scores)`.
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, edges_s, n_nodes, k_len, k_keep,
+                      signal_kind="fraction_negative",
+                      heuristic_kind="entropy", alpha=0.5,
+                      pruner_kind="none"))]
+#[allow(clippy::too_many_arguments)]
+pub fn enumerate_top_k_cycles_signed_hybrid_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    k_keep: usize,
+    signal_kind: &str,
+    heuristic_kind: &str,
+    alpha: f64,
+    pruner_kind: &str,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    if !(0.0..=1.0).contains(&alpha) {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "alpha must lie in [0, 1]; got {alpha}"
+        )));
+    }
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+
+    macro_rules! run_hybrid {
+        ($pruner:expr, $signal:expr, $div:expr) => {{
+            let hybrid = HybridScorer::new($signal, $div, alpha);
+            py.detach(|| enumerate_top_k_cycles_par_entropy_batched(
+                &g, k_len, &$pruner, k_keep, &hybrid,
+            ))
+        }};
+    }
+    macro_rules! dispatch_div {
+        ($pruner:expr, $signal:expr) => {
+            match heuristic_kind {
+                "entropy" => run_hybrid!($pruner, $signal, EntropyGainScorer),
+                "inverse_degree" => run_hybrid!($pruner, $signal, InverseDegreeScorer),
+                _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "unknown heuristic_kind '{heuristic_kind}'; valid: \
+                     entropy, inverse_degree"
+                ))),
+            }
+        };
+    }
+    macro_rules! dispatch_signal {
+        ($pruner:expr) => {
+            match signal_kind {
+                "fraction_negative" => dispatch_div!($pruner, FractionNegativeScorer),
+                "balance" => dispatch_div!($pruner, BalanceScorer),
+                "sign_product_abs" => dispatch_div!($pruner, SignProductAbsScorer),
+                "low_root" => dispatch_div!($pruner, LowRootScorer),
+                _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "unknown signal_kind '{signal_kind}'; valid: balance, \
+                     fraction_negative, sign_product_abs, low_root"
+                ))),
+            }
+        };
+    }
+    let batch = match pruner_kind {
+        "none" => dispatch_signal!(NoOpPruner),
+        "balance" => dispatch_signal!(CartwrightHararyPruner {
+            mode: BalanceMode::OnlyBalanced
+        }),
+        "unbalanced" => dispatch_signal!(CartwrightHararyPruner {
+            mode: BalanceMode::OnlyUnbalanced
+        }),
+        "davis" => dispatch_signal!(DavisWeakBalancePruner),
+        _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown pruner_kind '{pruner_kind}'; valid: none, balance, unbalanced, davis"
+        ))),
+    };
+
+    batch_to_pyarray(py, batch, k_len)
+}
+
+/// Per-vertex top-$m_v$ signed cycle enumeration with a
+/// **degree-adaptive** $m_v$ schedule:
+/// $m_v[v] = \min(m_\max, \max(m_\min, \lceil c \cdot \deg(v) \rceil))$.
+///
+/// This is the production-grade variant of
+/// `enumerate_top_k_per_vertex_cycles_signed_rs` for graphs with
+/// long-tail degree distributions (Epinions, Slashdot): low-degree
+/// vertices get small caps they can actually fill, lifting the
+/// per-vertex full-heap rate from $\sim 18\%$ to $\ge 50\%$ at
+/// $c \ge 2$ on Epinions.
+///
+/// `c = 0.0` recovers a uniform cap $m_v = m_\min$ for every vertex
+/// (use this for behavioral parity with the fixed-$m$ path at
+/// $m_\min = m_\max = m_\text{per\_vertex}$).
+///
+/// `score_kind` ∈ {balance, fraction_negative, sign_product_abs,
+/// low_root}. `pruner_kind` ∈ {none, balance, unbalanced, davis,
+/// community}.
+///
+/// Returns `(cycles, scores)`.
+///
+/// ─── Tiered variant (FPN-style, v2 of vertex-prefilter plan) ───
+///
+/// See [`enumerate_top_k_per_vertex_cycles_signed_tiered_rs`] below
+/// for the concentric step-function alternative.
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, edges_s, n_nodes, k_len, tiers,
+                      score_kind="fraction_negative", pruner_kind="none"))]
+#[allow(clippy::too_many_arguments)]
+pub fn enumerate_top_k_per_vertex_cycles_signed_tiered_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    tiers: Vec<(f32, u32)>,
+    score_kind: &str,
+    pruner_kind: &str,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    if tiers.is_empty() {
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "tiers must be non-empty",
+        ));
+    }
+    for w in tiers.windows(2) {
+        if w[0].0 > w[1].0 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "tiers must be sorted ascending by percentile; got {} > {}",
+                w[0].0, w[1].0
+            )));
+        }
+    }
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let scorer = pick_scorer(score_kind).ok_or_else(|| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))
+    })?;
+    let m_v = tiered_m_v_by_degree(&g, &tiers);
+    let starting: Vec<u32> = (0..n_nodes).collect();
+
+    let batch = py.detach(|| match pruner_kind {
+        "balance" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+            &g, k_len,
+            &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+            &m_v, &starting, scorer,
+        ),
+        "unbalanced" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+            &g, k_len,
+            &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+            &m_v, &starting, scorer,
+        ),
+        "davis" => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+            &g, k_len, &DavisWeakBalancePruner, &m_v, &starting, scorer,
+        ),
+        _ => enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+            &g, k_len, &NoOpPruner, &m_v, &starting, scorer,
+        ),
+    });
+
+    batch_to_pyarray(py, batch, k_len)
+}
+
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, edges_s, n_nodes, k_len,
+                      m_min, m_max, c,
+                      score_kind="fraction_negative", pruner_kind="none"))]
+#[allow(clippy::too_many_arguments)]
+pub fn enumerate_top_k_per_vertex_cycles_signed_adaptive_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    m_min: u32,
+    m_max: u32,
+    c: f64,
+    score_kind: &str,
+    pruner_kind: &str,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    if m_min > m_max {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "m_min ({m_min}) > m_max ({m_max})"
+        )));
+    }
+    if c < 0.0 || !c.is_finite() {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "c must be a non-negative finite number; got {c}"
+        )));
+    }
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let scorer = pick_scorer(score_kind).ok_or_else(|| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))
+    })?;
+    let m_v = degree_adaptive_m_v(&g, m_min, m_max, c);
+
+    let batch = py.detach(|| match pruner_kind {
+        "balance" => enumerate_top_k_per_vertex_cycles_par_adaptive_batched(
+            &g, k_len,
+            &CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+            &m_v, scorer,
+        ),
+        "unbalanced" => enumerate_top_k_per_vertex_cycles_par_adaptive_batched(
+            &g, k_len,
+            &CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+            &m_v, scorer,
+        ),
+        "davis" => enumerate_top_k_per_vertex_cycles_par_adaptive_batched(
+            &g, k_len, &DavisWeakBalancePruner, &m_v, scorer,
+        ),
+        "community" => {
+            let csr = Csr::from_graph(&g);
+            let (labels, n_comm) = label_propagation(&csr, 50, 0xC0FFEE);
+            let bal = balance_ratio_per_community(&g, &csr, &labels, n_comm);
+            let comm_pruner = CommunityAxiomPruner::auto(labels, &bal, 0.85, 0.75);
+            enumerate_top_k_per_vertex_cycles_par_adaptive_batched(
+                &g, k_len, &comm_pruner, &m_v, scorer,
+            )
+        }
+        _ => enumerate_top_k_per_vertex_cycles_par_adaptive_batched(
+            &g, k_len, &NoOpPruner, &m_v, scorer,
+        ),
+    });
+
+    batch_to_pyarray(py, batch, k_len)
 }
