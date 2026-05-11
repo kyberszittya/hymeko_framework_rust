@@ -43,6 +43,8 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_adaptive_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_filtered_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_filtered_batched_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_filtered_bb_batched_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_filtered_bb_global_batched_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_tiered_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::hymeko_parse::parse_hymeko_rs, m)?)?;
 

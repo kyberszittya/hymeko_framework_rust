@@ -291,19 +291,62 @@ def _enumerate_cycles_fast(g: SignedGraph, k: int,
                 return _subsample_arr_to_tuples(arr, cap, seed)
             if topk_mode == "per_vertex" and hasattr(
                     hymeko, "enumerate_top_k_per_vertex_cycles_signed_rs"):
-                # v1 vertex-prefilter path: if HSIKAN_VERTEX_FILTER is
-                # set, route through the filtered binding which skips
-                # non-productive vertices as DFS roots.  Default "none"
-                # is bit-equivalent to the unfiltered path.  See
-                # docs/plans/2026-05-11-vertex-prefilter/ for the v1+
-                # ladder (binary filters → FPN tiered → MSG/SSG).
+                # v1 vertex-prefilter path + optional ABB.
+                # HSIKAN_VERTEX_FILTER: vertex pre-filter spec.
+                # HSIKAN_USE_PER_VERTEX_ABB=1: per-vertex DFS with
+                #   score upper-bound prune.
+                # HSIKAN_USE_PER_VERTEX_ABB_MODE ∈ {"start","global"}:
+                #   "start" (default) — start-vertex's heap min as
+                #     threshold; fast but produces a SUBSET (lossy in
+                #     AUC: -1.9pp on BA, -7.6pp on OTC, 2026-05-10).
+                #   "global" — MIN heap-min across all FULL heaps
+                #     (Approach 1 of 2026-05-11); AUC-preserving by
+                #     construction at the cost of less aggressive
+                #     pruning.  Best for small-data regimes where AUC
+                #     matters more than enumeration walltime.
+                # HSIKAN_PER_VERTEX_ABB_FULLNESS_GATE: float in [0,1],
+                #   Approach 5 — ABB only fires when this fraction of
+                #   vertex heaps are at capacity.  Default 1.0
+                #   (strictly correct: ABB only after EVERY heap full;
+                #   gate-sweep on Bitcoin OTC seed-0:
+                #     gate=1.0 → AUC 0.9615 (+0.0005 vs baseline)
+                #     gate=0.5 → AUC 0.9568 (-0.42 pp)
+                #     gate=0.25 → AUC 0.9516 (-0.94 pp)
+                #     gate=0.1 → AUC 0.9457 (-1.53 pp)).
+                # See docs/plans/2026-05-11-vertex-prefilter/.
                 vfilter = os.environ.get(
                     "HSIKAN_VERTEX_FILTER", "none").strip()
-                if vfilter not in ("", "none", "all") and hasattr(
+                use_abb = bool(int(os.environ.get(
+                    "HSIKAN_USE_PER_VERTEX_ABB", "0")))
+                abb_mode = os.environ.get(
+                    "HSIKAN_USE_PER_VERTEX_ABB_MODE", "start").strip()
+                fullness_gate = float(os.environ.get(
+                    "HSIKAN_PER_VERTEX_ABB_FULLNESS_GATE", "1.0"))
+                min_deg = int(os.environ.get(
+                    "HSIKAN_VERTEX_FILTER_MIN_DEGREE", "2"))
+                if use_abb and abb_mode == "global" and hasattr(
+                        hymeko,
+                        "enumerate_top_k_per_vertex_cycles_signed_filtered_bb_global_batched_rs"):
+                    arr, _scores = (
+                        hymeko
+                        .enumerate_top_k_per_vertex_cycles_signed_filtered_bb_global_batched_rs(
+                            eu, ev, es, g.n_nodes, k, K, scorer, pruner,
+                            vfilter, min_deg, fullness_gate,
+                        )
+                    )
+                elif use_abb and hasattr(
+                        hymeko,
+                        "enumerate_top_k_per_vertex_cycles_signed_filtered_bb_batched_rs"):
+                    arr, _scores = (
+                        hymeko
+                        .enumerate_top_k_per_vertex_cycles_signed_filtered_bb_batched_rs(
+                            eu, ev, es, g.n_nodes, k, K, scorer, pruner,
+                            vfilter, min_deg,
+                        )
+                    )
+                elif vfilter not in ("", "none", "all") and hasattr(
                         hymeko,
                         "enumerate_top_k_per_vertex_cycles_signed_filtered_rs"):
-                    min_deg = int(os.environ.get(
-                        "HSIKAN_VERTEX_FILTER_MIN_DEGREE", "2"))
                     arr, _scores = (
                         hymeko
                         .enumerate_top_k_per_vertex_cycles_signed_filtered_rs(

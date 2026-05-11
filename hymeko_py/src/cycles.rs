@@ -1194,6 +1194,8 @@ use hymeko_graph::{
     enumerate_top_k_per_vertex_cycles_par_adaptive_batched,
     enumerate_top_k_per_vertex_cycles_par_adaptive_starting,
     enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched,
+    enumerate_top_k_per_vertex_cycles_par_adaptive_starting_bb_batched,
+    enumerate_top_k_per_vertex_cycles_par_adaptive_starting_bb_global_batched,
     enumerate_top_k_per_vertex_cycles_par_batched,
     enumerate_top_k_per_vertex_cycles_par_noprune as g_top_k_per_v_par,
     tiered_m_v_by_degree,
@@ -1504,6 +1506,173 @@ pub fn enumerate_top_k_per_vertex_cycles_signed_filtered_batched_rs(
         arr.into_pyarray(py).unbind(),
         batch.scores.into_pyarray(py).unbind(),
     ))
+}
+
+/// Per-vertex top-$m$ signed cycle enumeration **with ABB**
+/// (score upper-bound branch-and-bound at start-vertex threshold).
+///
+/// SoA output, zero-copy numpy.  Trade-off vs the non-BB filtered
+/// variant: ABB prunes branches whose UB ≤ start vertex's heap
+/// threshold; the cycle MIGHT have been useful for some other
+/// cycle-vertex's heap.  Output is a SUBSET of the non-ABB
+/// enumerator's output.  Best combined with v2 tiered caps where
+/// heaps fill quickly.
+///
+/// Most effective when:
+///   - per-vertex caps are small (heaps fill → threshold is meaningful)
+///   - graph is dense (more cycles → more pruning opportunities)
+///   - scorer has tight upper bound (less conservative pruning)
+#[pyfunction]
+#[pyo3(signature = (
+    edges_u, edges_v, edges_s, n_nodes, k_len, m_per_vertex,
+    score_kind, pruner_kind, filter_kind="none", filter_min_degree=2u32,
+))]
+#[allow(clippy::too_many_arguments)]
+pub fn enumerate_top_k_per_vertex_cycles_signed_filtered_bb_batched_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    m_per_vertex: usize,
+    score_kind: &str,
+    pruner_kind: &str,
+    filter_kind: &str,
+    filter_min_degree: u32,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let filter = build_vertex_filter(filter_kind, filter_min_degree)?;
+    let m_v: Vec<u32> = vec![m_per_vertex as u32; n_nodes as usize];
+
+    // ABB requires a BoundedScorer (not just a Fn).  Macro-dispatch
+    // over the (pruner × scorer) matrix.
+    macro_rules! run_bb_pv {
+        ($pruner:expr, $scorer:expr) => {{
+            let keep = filter.keep_set(&g);
+            py.detach(|| {
+                enumerate_top_k_per_vertex_cycles_par_adaptive_starting_bb_batched(
+                    &g, k_len, &$pruner, &m_v, &keep, &$scorer,
+                )
+            })
+        }};
+    }
+    macro_rules! dispatch_pv_pruner {
+        ($scorer:expr) => {
+            match pruner_kind {
+                "none" => run_bb_pv!(NoOpPruner, $scorer),
+                "balance" => run_bb_pv!(
+                    CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+                    $scorer
+                ),
+                "unbalanced" => run_bb_pv!(
+                    CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+                    $scorer
+                ),
+                "davis" => run_bb_pv!(DavisWeakBalancePruner, $scorer),
+                _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "unknown pruner_kind '{pruner_kind}'; valid: \
+                     none, balance, unbalanced, davis"
+                ))),
+            }
+        };
+    }
+    let batch = match score_kind {
+        "fraction_negative" => dispatch_pv_pruner!(FractionNegativeScorer),
+        "balance" => dispatch_pv_pruner!(BalanceScorer),
+        "sign_product_abs" => dispatch_pv_pruner!(SignProductAbsScorer),
+        "low_root" => dispatch_pv_pruner!(LowRootScorer),
+        _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))),
+    };
+
+    batch_to_pyarray(py, batch, k_len)
+}
+
+/// Per-vertex top-$m$ signed cycle enumeration with **global-min
+/// ABB** (Approach 1) and **adaptive fullness-gated activation**
+/// (Approach 5) of the 2026-05-11 ABB-improvement track.
+///
+/// Differs from `enumerate_top_k_per_vertex_cycles_signed_filtered_bb_batched_rs`:
+///   - threshold is the global MIN heap-min across all FULL heaps
+///     (shared via `AtomicU64`), rather than the start-vertex's heap min
+///   - ABB only fires once `fullness_gate` fraction of vertex heaps
+///     are at capacity (default 0.25), avoiding wasted UB-checks
+///     during the warm-up phase
+///
+/// AUC-preserving by construction: global-min ≤ any heap's min, so
+/// pruning by UB ≤ global-min only discards cycles that no full heap
+/// could accept anyway.  Speedup is necessarily smaller than start-only
+/// ABB but does not throw cycles that the lossy v1 variant did.
+#[pyfunction]
+#[pyo3(signature = (
+    edges_u, edges_v, edges_s, n_nodes, k_len, m_per_vertex,
+    score_kind, pruner_kind, filter_kind="none", filter_min_degree=2u32,
+    fullness_gate=0.25_f64,
+))]
+#[allow(clippy::too_many_arguments)]
+pub fn enumerate_top_k_per_vertex_cycles_signed_filtered_bb_global_batched_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    k_len: usize,
+    m_per_vertex: usize,
+    score_kind: &str,
+    pruner_kind: &str,
+    filter_kind: &str,
+    filter_min_degree: u32,
+    fullness_gate: f64,
+) -> PyResult<(Py<PyArray2<u32>>, Py<PyArray1<f64>>)> {
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let filter = build_vertex_filter(filter_kind, filter_min_degree)?;
+    let m_v: Vec<u32> = vec![m_per_vertex as u32; n_nodes as usize];
+
+    macro_rules! run_bb_global_pv {
+        ($pruner:expr, $scorer:expr) => {{
+            let keep = filter.keep_set(&g);
+            py.detach(|| {
+                enumerate_top_k_per_vertex_cycles_par_adaptive_starting_bb_global_batched(
+                    &g, k_len, &$pruner, &m_v, &keep, &$scorer, fullness_gate,
+                )
+            })
+        }};
+    }
+    macro_rules! dispatch_pv_pruner_global {
+        ($scorer:expr) => {
+            match pruner_kind {
+                "none" => run_bb_global_pv!(NoOpPruner, $scorer),
+                "balance" => run_bb_global_pv!(
+                    CartwrightHararyPruner { mode: BalanceMode::OnlyBalanced },
+                    $scorer
+                ),
+                "unbalanced" => run_bb_global_pv!(
+                    CartwrightHararyPruner { mode: BalanceMode::OnlyUnbalanced },
+                    $scorer
+                ),
+                "davis" => run_bb_global_pv!(DavisWeakBalancePruner, $scorer),
+                _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "unknown pruner_kind '{pruner_kind}'; valid: \
+                     none, balance, unbalanced, davis"
+                ))),
+            }
+        };
+    }
+    let batch = match score_kind {
+        "fraction_negative" => dispatch_pv_pruner_global!(FractionNegativeScorer),
+        "balance" => dispatch_pv_pruner_global!(BalanceScorer),
+        "sign_product_abs" => dispatch_pv_pruner_global!(SignProductAbsScorer),
+        "low_root" => dispatch_pv_pruner_global!(LowRootScorer),
+        _ => return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{score_kind}'; valid: balance, \
+             fraction_negative, sign_product_abs, low_root"
+        ))),
+    };
+
+    batch_to_pyarray(py, batch, k_len)
 }
 
 /// Per-vertex top-$m$ signed cycle enumeration **with vertex

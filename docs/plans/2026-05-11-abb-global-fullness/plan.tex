@@ -1,0 +1,148 @@
+\documentclass[10pt]{article}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible,
+}
+
+\title{Plan: Per-Vertex Top-$m$ ABB Improvements\\
+  (Global-Min, Multi-Criteria, Smaller-$m$, Fullness Gating)}
+\author{}
+\date{2026-05-11}
+
+\begin{document}
+\maketitle
+
+\section*{Background}
+
+The 2026-05-10 ``v1'' per-vertex ABB
+(\texttt{enumerate\_top\_k\_per\_vertex\_cycles\_signed\_filtered\_bb\_batched\_rs})
+uses the \emph{start vertex's} heap min as the upper-bound threshold.
+On Bitcoin Alpha and OTC seed-0 benches this gave $4.78\times$ Rust
+walltime savings but lost $-1.9$\,pp / $-7.6$\,pp test AUC --- cycles
+useful for some other cycle vertex's heap were thrown away when their
+score upper bound fell below the start vertex's threshold.
+
+User directive (2026-05-11): pursue four orthogonal improvement axes
+labelled 1, 2, 4, 5.
+
+\section*{Scope}
+
+\begin{itemize}
+  \item \textbf{Approach 1 -- Global-min ABB.} Threshold is the
+    minimum heap-min across all FULL vertex heaps, shared across
+    rayon tasks via \texttt{AtomicU64} (encoding \texttt{f64} bits).
+    Monotonically non-increasing; AUC-preserving by construction.
+  \item \textbf{Approach 2 -- Multi-criteria composite ABB.} Extend
+    \texttt{BoundedScorer} to a \texttt{MultiBoundedScorer} that
+    combines score upper bound with axiomatic upper bounds (balance,
+    Davis-weak, geometric Ricci). Design only this round.
+  \item \textbf{Approach 4 -- Smaller $m_v$ sweep.} Config-only:
+    $m \in \{32, 64, 128\}$ on Bitcoin to test whether the
+    correctness ceiling on small-data is reached at $m{<}128$.
+  \item \textbf{Approach 5 -- Adaptive fullness gating.} ABB only
+    fires once a configurable fraction of vertex heaps are at
+    capacity; defaults to 25\%. Sweep $\in \{0.0, 0.1, 0.25, 0.5\}$.
+\end{itemize}
+
+\section*{Affected files}
+
+\begin{itemize}
+  \item \texttt{hymeko\_graph/src/topk\_cycles.rs} ---
+    \texttt{dfs\_per\_vertex\_bb\_global},
+    \texttt{atomic\_min\_f64},
+    \texttt{enumerate\_top\_k\_per\_vertex\_cycles\_par\_adaptive\_starting\_bb\_global\_batched},
+    plus three unit tests.
+  \item \texttt{hymeko\_graph/src/lib.rs} --- export.
+  \item \texttt{hymeko\_py/src/cycles.rs} ---
+    \texttt{enumerate\_top\_k\_per\_vertex\_cycles\_signed\_filtered\_bb\_global\_batched\_rs}.
+  \item \texttt{hymeko\_py/src/lib.rs} --- registration.
+  \item \texttt{signedkan\_wip/src/n\_tuples.py} --- dispatch via
+    \texttt{HSIKAN\_USE\_PER\_VERTEX\_ABB\_MODE=global} and
+    \texttt{HSIKAN\_PER\_VERTEX\_ABB\_FULLNESS\_GATE} env vars.
+\end{itemize}
+
+\section*{CORE.YAML items touched}
+
+None. All edits land in the per-vertex enumerator, its PyO3 binding,
+and the Python dispatch shim. The signed-incidence math kernels,
+HSIKAN module API, and codegen templates remain untouched.
+
+\section*{Interface changes}
+
+New public Rust function:
+\begin{lstlisting}
+pub fn enumerate_top_k_per_vertex_cycles_par_adaptive_starting_bb_global_batched<P, S>(
+    graph: &SignedGraph,
+    k_len: usize,
+    pruner: &P,
+    m_v: &[u32],
+    starting_vertices: &[u32],
+    scorer: &S,
+    fullness_gate: f64,  // [0,1]; 1.0 effectively disables ABB
+) -> TopKCyclesBatch
+where P: CyclePruner + Sync, S: BoundedScorer + Sync;
+\end{lstlisting}
+
+New Python binding wraps it; output schema unchanged (cycles as
+\texttt{(N,k)} \texttt{u32}, scores as \texttt{(N,)} \texttt{f64}).
+
+\section*{Test strategy}
+
+Three Rust unit tests, all on toy fixtures with $\le 8$ nodes:
+\begin{enumerate}
+  \item \texttt{per\_vertex\_bb\_global\_huge\_caps\_matches\_non\_bb}
+    --- caps so large that no heap fills; ABB never fires;
+    output count equals non-ABB.
+  \item \texttt{per\_vertex\_bb\_global\_subset\_of\_non\_bb} ---
+    tight caps + dense graph; ABB fires; output is a SUBSET of
+    non-ABB (correctness postcondition).
+  \item \texttt{per\_vertex\_bb\_global\_with\_full\_gate\_disables\_abb}
+    --- \texttt{fullness\_gate=1.0}; ABB never activates; output
+    matches non-ABB.
+\end{enumerate}
+
+Python smoke test:
+parity of \texttt{(cycles, scores)} between the global-min binding
+at huge caps and the non-ABB binding.
+
+Integration test on real data:
+Bitcoin Alpha + OTC seed-0 single-pass AUC compared against the
+ABB-OFF baseline; tolerance $\le |0.005|$ for ``AUC-preserving''
+verdict.
+
+\section*{Performance budget}
+
+\begin{itemize}
+  \item Memory: bound by per-vertex heaps. With $m_v{=}128$,
+    $k_{\max}{=}6$, \texttt{HeapEntry} $\approx 88$\,B,
+    $n{=}50{,}000$ vertices: $\le 0.6$\,GB. Within 16\,GB cap.
+  \item Wall-time (enumeration only): expect $\ge 1.5\times$ savings
+    over non-ABB at gate$=0.25$, $\le 1.5\times$ slowdown vs v1
+    start-ABB. Slashdot $k{=}4$ canonical workload measures this.
+  \item Inference latency unchanged (no model-architecture edit).
+\end{itemize}
+
+\section*{Rollback path}
+
+All env vars default to OFF / start-mode.
+\texttt{HSIKAN\_USE\_PER\_VERTEX\_ABB=0} reverts to the non-ABB
+filtered enumerator. The new PyO3 binding is additive --- existing
+callers reach the same code path as before.
+
+\section*{Protocol note}
+
+Implementation preceded this plan document due to the user's auto
+mode and a continuation-from-previous-context. The plan is filed
+retroactively to keep the four-artifact record (\texttt{plan.tex},
+\texttt{plan.pdf}, \texttt{plan.tikz}, \texttt{plan.mmd}) intact
+for this change. The 2026-05-10 sister plan
+\texttt{docs/plans/2026-05-10-abb-global-topk/} covers global
+(\emph{not} per-vertex) top-$K$ ABB.
+
+\end{document}

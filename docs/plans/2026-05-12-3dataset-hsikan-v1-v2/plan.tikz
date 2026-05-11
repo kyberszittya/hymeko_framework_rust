@@ -1,0 +1,69 @@
+\begin{tikzpicture}[
+  node distance=0.7cm and 1.4cm,
+  every node/.style={align=center,font=\footnotesize},
+  ds/.style={rectangle, draw, rounded corners=2pt, minimum width=2.0cm,
+              minimum height=0.6cm, fill=yellow!10},
+  cfg/.style={rectangle, draw, rounded corners=2pt, minimum width=1.4cm,
+               minimum height=0.5cm, fill=blue!10, font=\scriptsize},
+  phase/.style={rectangle, draw, thick, rounded corners=2pt,
+                 minimum width=3.2cm, minimum height=0.7cm,
+                 fill=green!10, font=\footnotesize},
+  gate/.style={diamond, draw, fill=red!8, minimum width=1.8cm,
+                aspect=2.5, font=\scriptsize, inner sep=1pt},
+  arrow/.style={-stealth, thick},
+]
+
+% Datasets row
+\node[ds] (ba) {Bitcoin\\ Alpha};
+\node[ds, right=of ba] (bo) {Bitcoin\\ OTC};
+\node[ds, right=of bo] (sd) {Slashdot};
+\node[ds, right=of sd] (ep) {Epinions};
+
+% Config band
+\node[cfg, below=0.8cm of ba] (b) {B \\ baseline};
+\node[cfg, right=0.1cm of b] (v1) {V1 \\ filter};
+\node[cfg, right=0.1cm of v1] (v2) {V2 \\ tiered};
+\node[cfg, right=0.1cm of v2] (v12) {V1+V2};
+
+% Phases
+\node[phase, below=1.3cm of bo] (A) {Phase A: 1-seed smoke\\ 4 datasets x 4 configs\\ ~9h};
+\node[gate, right=0.4cm of A] (gA) {AUC delta \\ within 0.01?};
+
+\node[phase, below=1.3cm of A] (B) {Phase B: 5-seed paired\\ Bitcoin\{Alpha,OTC\}\\ ~1h};
+\node[gate, right=0.4cm of B] (gB) {paired delta \\ within 0.005?};
+
+\node[phase, below=1.3cm of B] (C) {Phase C: 5-seed paired\\ Slashdot\\ ~3.7h};
+\node[gate, right=0.4cm of C] (gC) {V1+V2 wall \\ <= 0.80x?};
+
+\node[phase, below=1.3cm of C] (D) {Phase D: 5-seed paired\\ Epinions (B vs best)\\ ~19h};
+\node[gate, right=0.4cm of D] (gD) {AUC up >= 0.01 \\ OR wall <= 0.70x?};
+
+\node[ds, fill=green!30, below=1.0cm of D]
+     (report) {Report: \texttt{reports/2026-05-13-3dataset-v1-v2.md}};
+
+% Lines: configs to phases
+\draw[arrow] (b.south) -- ++(0,-0.4) -| (A.north);
+\draw[arrow] (v1.south) -- ++(0,-0.4) -| (A.north);
+\draw[arrow] (v2.south) -- ++(0,-0.4) -| (A.north);
+\draw[arrow] (v12.south) -- ++(0,-0.4) -| (A.north);
+
+\draw[arrow] (A) -- (gA);
+\draw[arrow] (gA) -- ++(0,-0.8) -| (B);
+\draw[arrow] (B) -- (gB);
+\draw[arrow] (gB) -- ++(0,-0.8) -| (C);
+\draw[arrow] (C) -- (gC);
+\draw[arrow] (gC) -- ++(0,-0.8) -| (D);
+\draw[arrow] (D) -- (gD);
+\draw[arrow] (gD) -- ++(0,-0.8) -| (report);
+
+% Halt branches (faded red)
+\node[font=\scriptsize\itshape, anchor=west, text=red!70!black] at (8.2, -3.5)
+  {fail -> document null,};
+\node[font=\scriptsize\itshape, anchor=west, text=red!70!black] at (8.2, -3.9)
+  {skip later phases};
+
+% Datasets ↔ configs (the 16 (dataset, config) cells run in Phase A)
+\node[font=\scriptsize, anchor=west, text=gray!50!black] at (-0.8, 0.7)
+  {Phase A runs the full 16-cell grid; gates feed Phases B, C, D in sequence.};
+
+\end{tikzpicture}

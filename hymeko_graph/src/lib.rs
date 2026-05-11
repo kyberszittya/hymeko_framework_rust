@@ -84,7 +84,7 @@ pub use pruner::{
     StatsSnapshot,
 };
 pub use signed_graph::{Sign, SignedGraph};
-pub use topk_cycles::tiered_m_v_by_degree;
+pub use topk_cycles::{tiered_m_v_by_degree, WeightedSumScorer};
 pub use topk_cycles::{
     EntropyGainScorer, HybridScorer, InverseDegreeScorer, TopKBuilder, TopKCycle,
     UniformityHeuristic, UniformityState, degree_adaptive_m_v, enumerate_top_k_cycles,
@@ -99,6 +99,8 @@ pub use topk_cycles::{
     enumerate_top_k_per_vertex_cycles_par_adaptive_batched,
     enumerate_top_k_per_vertex_cycles_par_adaptive_starting,
     enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched,
+    enumerate_top_k_per_vertex_cycles_par_adaptive_starting_bb_batched,
+    enumerate_top_k_per_vertex_cycles_par_adaptive_starting_bb_global_batched,
     enumerate_top_k_per_vertex_cycles_par_batched,
     enumerate_top_k_per_vertex_cycles_par_noprune,
     TopKCyclesBatch,

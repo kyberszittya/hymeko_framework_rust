@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    participant DFS as DFS task<br/>(rayon worker for start v)
+    participant Gate as Fullness gate<br/>(n_full ≥ γ·n)
+    participant GMin as AtomicU64<br/>global_min
+    participant Heap as per_vertex heap[c]<br/>(c ∈ cycle)
+    participant NFull as AtomicUsize<br/>n_full_heaps
+
+    Note over DFS,NFull: Initialisation
+    DFS->>GMin: load = +Inf
+    DFS->>NFull: load = 0
+
+    Note over DFS,Heap: Recursive DFS step
+    DFS->>Gate: nfull = load(NFull)
+    Gate-->>DFS: gate_satisfied = (nfull ≥ ⌈γ·n⌉)
+    alt gate open AND any_full
+        DFS->>GMin: load → threshold
+        DFS->>DFS: ub = scorer.upper_bound(...)
+        alt ub ≤ threshold
+            Note right of DFS: PRUNE branch
+        else
+            DFS->>DFS: recurse into nxt
+        end
+    else
+        Note right of DFS: ABB off → recurse unconditionally
+    end
+
+    Note over DFS,Heap: Closed cycle emit
+    DFS->>Heap: push(score=s, cycle)
+    alt heap newly full
+        Heap->>NFull: fetch_add(1)
+        Heap->>GMin: atomic_min(peek().score)
+    else heap min decreased
+        Heap->>GMin: atomic_min(peek().score)
+    end

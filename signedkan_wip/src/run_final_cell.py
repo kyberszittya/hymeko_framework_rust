@@ -54,10 +54,14 @@ def n_params(*modules) -> int:
 
 def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                         n_epochs: int, max_k4: int, device, seed: int = 0):
+    from .cycle_cache import (
+        cached_construct_2, cached_construct_k, cached_construct_triads,
+        cached_construct_walks,
+    )
     from .datasets import load, deduplicate_pairs, split
     from .datasets_small import sbm_signed
-    from .hyperedges import construct
-    from .n_tuples import construct_k
+    from .hyperedges import construct  # noqa: F401  (kept for compat; cached_construct_triads is the live path)
+    from .n_tuples import construct_k  # noqa: F401  (cached_construct_k is the live path)
     from .mixed_arity_signedkan import (MixedAritySignedKAN,
                                           MixedAritySignedKANConfig,
                                           subsample_tuples,
@@ -144,7 +148,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     cap_dict = {2: max_k2, 3: max_k3,
                   4: max_k4, 5: max_k4, 6: max_k4}
 
-    from .n_tuples import construct_2
+    from .n_tuples import construct_2  # noqa: F401  (cached_construct_2 is the live path)
     # ── Tuple-spec parsing ──────────────────────────────────────────
     #
     # Three modes, in priority order:
@@ -195,7 +199,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     use_walks = any(spec[0] == "walk" for spec in tuple_specs)
 
     if any(spec[0] == "walk" for spec in tuple_specs):
-        from .walks import construct_walks
+        from .walks import construct_walks  # noqa: F401  (cached_construct_walks is the live path)
 
     # Strict no-leakage protocol: when set, exclude every cycle / walk
     # whose internal edges include the test edge.  Defends the
@@ -209,18 +213,24 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     for kind, k_v, walk_len in tuple_specs:
         if kind == "walk":
             assert walk_len is not None
-            t_k = construct_walks(
+            # Cache-aware: when HYMEKO_CYCLE_CACHE=1, all model seeds
+            # share the same walk subsample (enum_seed-driven).  When
+            # off, falls through to walks.construct_walks(seed=seed).
+            t_k = cached_construct_walks(
                 g, walk_len=walk_len,
                 max_walks=cap_dict.get(k_v, max_k4),
-                seed=seed)
+                model_seed=seed)
         elif k_v == 2:
-            t_k = construct_2(g)
+            t_k = cached_construct_2(g)
         elif k_v == 3:
-            t_k = construct(g)
+            # cached_construct_triads redirects to the Rust per_vertex
+            # path when HSIKAN_TOPK_MODE is set, else uses the
+            # hyperedges.construct() Python triad enumerator.
+            t_k = cached_construct_triads(g)
         else:
-            t_k = construct_k(g, k=k_v,
-                               max_cycles=cap_dict[k_v],
-                               seed=seed)
+            t_k = cached_construct_k(g, k=k_v,
+                                       max_cycles=cap_dict[k_v],
+                                       model_seed=seed)
         if not t_k:
             continue
         cap = cap_dict.get(k_v, max_k4)
@@ -598,9 +608,10 @@ def cell_pose(arity: int, hidden: int, n_epochs: int, device):
 def cell_scene(hidden: int, n_epochs: int, device):
     from .adapters.visual_genome import (synth_dataset,
                                             edge_features_from_bboxes)
+    from .cycle_cache import cached_construct_2
     from .datasets import SignedGraph
-    from .hyperedges import construct
-    from .n_tuples import construct_2
+    from .hyperedges import construct  # noqa: F401  (compat)
+    from .n_tuples import construct_2  # noqa: F401  (cached_construct_2 is live)
     from .mixed_arity_signedkan import (MixedAritySignedKAN,
                                           MixedAritySignedKANConfig,
                                           build_edge_to_tuples)
@@ -625,7 +636,7 @@ def cell_scene(hidden: int, n_epochs: int, device):
 
     def build_inputs(sid):
         g, vf, _ = ds[sid]
-        t_k = construct_2(g)
+        t_k = cached_construct_2(g)
         if not t_k: return None
         triad_v_np = np.array([t.v for t in t_k], dtype=np.int64)
         triad_sigma_np = np.array([t.sigma for t in t_k], dtype=np.int64)

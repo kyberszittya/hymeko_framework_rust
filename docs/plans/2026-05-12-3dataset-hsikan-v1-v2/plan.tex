@@ -1,0 +1,355 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=*}
+\lstset{basicstyle=\ttfamily\small,frame=single,breaklines=true}
+\title{Plan: 3-Dataset HSIKAN Validation\\
+       (Slashdot + Bitcoin\{Alpha,OTC\} + Epinions)\\
+       v1 vertex prefilter $\times$ v2 FPN tiered $\times$ SoA}
+\author{HyMeKo / HSiKAN}
+\date{2026-05-12}
+\begin{document}
+\maketitle
+
+\section{Scope and goal}
+Validate the v1 vertex prefilter + v2 FPN tiered caps + SoA cycle
+enumerator refactor (all landed 2026-05-10..11) against the three
+datasets where HSiKAN currently holds SOTA (Slashdot, Bitcoin Alpha,
+Bitcoin OTC) under the transductive protocol, and probe whether the
+v2 tiered ladder closes any of the documented $-0.094$ Epinions AUC
+gap to SGT.
+
+\textbf{Goals}:
+\begin{enumerate}
+\item \textbf{AUC parity confirmation}: v1 (vertex prefilter), v2
+  (FPN tiered), and v1+v2 combined preserve the 5-seed AUC of the
+  baseline configuration within $\pm 0.005$ at the production config
+  on each dataset.  The SoA refactor is bit-identical-output by
+  construction (unit-tested 2026-05-11), so parity here is about
+  the cycle-pool shifts induced by v1/v2, not the SoA path.
+\item \textbf{Wall-time savings}: measure the cumulative wall win
+  from SoA + dedup-stack-key + v1/v2 vs the legacy
+  \texttt{HSIKAN\_TOPK\_MODE=per\_vertex} path.  Expected
+  $\sim 21\%$ on Slashdot c4 (already measured); confirm at full
+  5-seed scale.  Expected on Epinions: $\sim 30$--$40\%$ enum
+  savings (extrapolated from 22\% Slashdot triangle filter at higher
+  graph sparsity).
+\item \textbf{Epinions gap probe}: test if v2 FPN tiered + Ricci-style
+  shape-prior insights from the HyMeYOLO work lifts Epinions AUC
+  above the $0.8464$ baseline.  This is a stretch goal --- the
+  ceiling-claim memory
+  (\texttt{project\_epinions\_ceiling\_2026\_05\_09}) says the gap
+  needs sparse-attention or learnable-incidence; v2 by itself may
+  not close it but the data is informative.
+\end{enumerate}
+
+\section{Configurations}
+
+Four configurations per dataset, exact env-var recipes:
+
+\begin{lstlisting}
+# B (baseline) — reproduces yesterday's 5-seed SOTA exactly
+HSIKAN_TOPK_MODE=per_vertex
+HSIKAN_TOPK_K=128
+HSIKAN_TOPK_PRUNER=balance
+HSIKAN_TOPK_SCORER=fraction_negative
+HSIKAN_TRITON_KERNEL=1
+HSIKAN_TRITON_BACKWARD=1
+# (no HSIKAN_VERTEX_FILTER, no HSIKAN_TOPK_TIERS)
+
+# V1 = baseline + vertex prefilter (compose: degree + triangle)
+HSIKAN_VERTEX_FILTER=compose:degree,triangle
+HSIKAN_VERTEX_FILTER_MIN_DEGREE=2
+
+# V2 = baseline + FPN-style concentric per-vertex caps
+HSIKAN_TOPK_MODE=per_vertex_tiered
+HSIKAN_TOPK_TIERS=0.1:1024,1.0:256,5.0:64,20.0:16,100.0:0
+
+# V1+V2 = both stacked
+HSIKAN_TOPK_MODE=per_vertex_tiered
+HSIKAN_TOPK_TIERS=0.1:1024,1.0:256,5.0:64,20.0:16,100.0:0
+HSIKAN_VERTEX_FILTER=compose:degree,triangle
+HSIKAN_VERTEX_FILTER_MIN_DEGREE=2
+\end{lstlisting}
+
+All four configs use the SoA-batched PyO3 path (landed 2026-05-11);
+the legacy non-batched output path is no longer reachable from the
+canonical bindings.  AUC is invariant to this; wall is not.
+
+\section{Datasets}
+
+\begin{tabular}{lrrl}
+\toprule
+Dataset & $|V|$ & $|E|$ & SOTA baseline AUC (5-seed) \\
+\midrule
+Bitcoin Alpha & 3{,}783 & 24{,}186 & 0.9468 (cycle), 0.9845 (joint) \\
+Bitcoin OTC   & 5{,}881 & 35{,}592 & 0.9266 (cycle), 0.9801 (joint) \\
+Slashdot      & 82{,}140 & 549{,}202 & 0.9070 $\pm$ 0.0029 (edge\_cr, kernel on) \\
+Epinions      & 131{,}828 & 841{,}372 & 0.8464 $\pm$ 0.0106 (edge\_cr) \\
+\bottomrule
+\end{tabular}
+
+\section{Affected files}
+\begin{itemize}
+\item \texttt{signedkan\_wip/experiments/run\_3dataset\_v1\_v2\_phase\_\{A,B,C,D\}.sh}
+  --- NEW orchestrator scripts, one per phase below.
+\item \texttt{signedkan\_wip/experiments/results/3dataset\_v1\_v2\_\{phase\_A,phase\_B,phase\_C,phase\_D\}.jsonl}
+  --- per-phase result lines (one per (config, dataset, seed) triple).
+\item \texttt{reports/2026-05-13-3dataset-v1-v2.md} --- final report
+  with per-dataset paired tables, wall ratios, AUC deltas, and
+  promotion verdicts.
+\item No source changes required --- v1/v2/SoA are already shipped
+  end-to-end as of 2026-05-11 commits.
+\end{itemize}
+
+\section{CORE.YAML items touched}
+\textbf{None.}  All affected files are in
+\texttt{signedkan\_wip/experiments/} or \texttt{reports/} (allowlist
+per CORE.YAML).
+
+\section{Test strategy (CLAUDE.md \S3)}
+Acceptance per phase is gated on paired AUC + wall measurements,
+not on unit tests (the underlying code is already tested:
+117 Rust + 12 cycle\_cache + cluttered\_mnist + circles\_ricci =
+$>$ 150 tests passing as of 2026-05-11).
+
+Within each script:
+\begin{itemize}
+\item Seed-0 smoke fires before the multi-seed loop; if seed-0
+  fails to converge (loss does not decrease over the first 10
+  epochs), abort the script and dump the log path.
+\item Per-seed JSON line written immediately on completion so a
+  partial crash doesn't lose results.
+\item Final aggregate (mean $\pm$ stdev) computed and emitted at
+  script end; comparison to recorded baselines automatic.
+\end{itemize}
+
+\section{Ladder}
+
+\subsection*{Phase A --- 1-seed smoke across all 4 datasets}
+\textbf{Goal}: confirm all 4 configs train end-to-end on all 4
+datasets at production config; surface any config $\times$ dataset
+combinations that drop $> 0.005$ AUC vs baseline single-seed.
+
+\begin{tabular}{lll}
+\toprule
+Dataset & Per-config wall & 4 configs total \\
+\midrule
+Bitcoin Alpha & $\sim$1 min & $\sim$4 min \\
+Bitcoin OTC   & $\sim$2 min & $\sim$8 min \\
+Slashdot      & $\sim$13 min & $\sim$52 min \\
+Epinions      & $\sim$115 min & $\sim$460 min ($\sim$7.7 h) \\
+\midrule
+\textbf{Total} & & $\sim$\textbf{9 h} \\
+\bottomrule
+\end{tabular}
+
+\textbf{Acceptance gate}: every (config, dataset) pair completes
+without OOM; AUC delta within $\pm 0.01$ of baseline single-seed.
+If a single config OOMs or crashes on a dataset, that config is
+flagged and excluded from later phases on that dataset.
+
+\subsection*{Phase B --- 5-seed paired on Bitcoin{Alpha,OTC}}
+\textbf{Goal}: paired statistical confirmation that V1, V2, V1+V2
+preserve AUC at $5\sigma$-style paired tightness on the cheap
+datasets where wall is no constraint.
+
+\begin{tabular}{lll}
+\toprule
+Dataset & 5-seed $\times$ 4 configs & Total \\
+\midrule
+Bitcoin Alpha & 5 min & 20 min \\
+Bitcoin OTC   & 10 min & 40 min \\
+\midrule
+\textbf{Total} & & $\sim$\textbf{1 h} \\
+\bottomrule
+\end{tabular}
+
+\textbf{Acceptance gate}: paired delta vs B (baseline) within
+$\pm 0.005$ for V1, V2, V1+V2 at 5-seed; published SOTA (0.9845 /
+0.9801 joint cycle+walk) preserved.  If V1+V2 fails parity, halt
+Phase C until investigated.
+
+\subsection*{Phase C --- 5-seed paired on Slashdot}
+\textbf{Goal}: the medium-sized dataset where v1/v2 already showed
+wall wins.  Paired AUC parity + wall measurement.
+
+\begin{tabular}{ll}
+\toprule
+5-seed $\times$ 4 configs & Total wall \\
+\midrule
+$\sim$11 min / seed average $\times$ 20 seeds & $\sim$3.7 h \\
+\bottomrule
+\end{tabular}
+
+\textbf{Acceptance gate}:
+\begin{itemize}
+\item V1+V2 wall $\le 0.80 \times$ baseline wall.
+\item V1+V2 AUC paired delta within $\pm 0.002$ of $0.9070$ baseline
+  ($\sigma_{\text{baseline}} = 0.0029$, so $\pm 0.002$ is roughly
+  half a sigma).
+\item If V1+V2 lifts AUC by $\ge 0.003$ paired: \textbf{paper
+  headline} candidate.
+\item If V1+V2 drops AUC by $> 0.005$: V1 alone may still be the
+  right shipping config; document and proceed to Phase D with V1
+  only.
+\end{itemize}
+
+\subsection*{Phase D --- Epinions 5-seed (2 configs only)}
+\textbf{Goal}: the gap-closing experiment.
+
+\textbf{Pre-cache (obsolete)}: 5 seeds $\times$ 2 configs $\times$ 115
+min/seed $= \sim 19$ h.  \textbf{Post-cycle\_cache wiring} (2026-05-11):
+seed-0 enumerates ($\sim$95 min on Epinions), seeds 1-4 hit the cache
+and skip directly to training ($\sim$20 min each).
+
+\textbf{Two-config compromise}: B (baseline, reproduces 0.8464) vs
+the best of \{V1+V2, V1\}-from-Phase-A.  10 seeds total.
+
+\begin{tabular}{ll}
+\toprule
+5-seed $\times$ 2 configs (post-cache) & Total wall \\
+\midrule
+2 configs $\times$ (95 + 4$\times$20) min & $\sim$\textbf{6.5 h} \\
+\bottomrule
+\end{tabular}
+
+\textbf{Acceptance gate}:
+\begin{itemize}
+\item V1+V2 lifts AUC by $\ge 0.010$ paired vs baseline 0.8464
+  ($\sigma_{\text{baseline}} = 0.0106$, so $\ge 0.010$ is paired
+  $\sigma \approx 2$): partial gap closure, publish.
+\item OR V1+V2 wall $\le 0.70 \times$ baseline wall at AUC parity:
+  practical engineering win, publish as a methods contribution.
+\item Both: ideal outcome, paper headline.
+\item Neither: document as null, preserves the
+  \texttt{project\_epinions\_ceiling\_2026\_05\_09} ceiling claim
+  --- gap requires sparse-attention or learnable-incidence, not
+  cycle-pool refinement.
+\end{itemize}
+
+\section{Performance budget}
+
+\textbf{Update 2026-05-11 post-cycle\_cache wiring}: with
+\texttt{HYMEKO\_CYCLE\_CACHE=1} now wired into
+\texttt{run\_final\_cell.py} (cell\_signed\_graph + cell\_scene call
+sites), multi-seed runs amortise enumeration over seeds 2--5.  Cache
+hit verified end-to-end: seed-0 misses (writes \texttt{.npz}),
+seed-1+ hit (loads 720 KB instead of re-enumerating).  For Epinions
+this drops 5-seed wall from $5\times 115 = 575$ min to
+$115 + 4\times 20 = 195$ min ($\sim$66\% reduction).
+
+\textbf{Budget table (post-cache):}
+\begin{itemize}
+\item Phase A (1-seed, no cache benefit): $\le 10$ h wall total.
+\item Phase B (5-seed Bitcoin, 4 configs): $\sim$0.5 h.
+\item Phase C (5-seed Slashdot, 4 configs): $\sim$1.5 h.
+\item Phase D (5-seed Epinions, 2 configs): $\sim$\textbf{6.5 h}.
+\item Peak GPU memory: $\le 6$ GB (RTX 2070 SUPER consumer-grade).
+\item Peak system RSS: $\le 12$ GB (the 2026-05-10 morning OOM
+  at 22 GB must not recur; \texttt{ulimit -v 16777216} on every
+  script).
+\end{itemize}
+
+\textbf{Cumulative total: $\sim$\textbf{17 h} (post-cache)} vs the
+pre-cache projection of $\sim$33 h.  Phase D alone drops from 19 h
+to 6.5 h.
+
+\textbf{Caveat}: cache invariant is that
+\texttt{(graph\_hash, k, cap, scorer, pruner, topk\_mode, ...)} is
+identical across seeds.  Switching configs (B $\to$ V1 $\to$ V2 $\to$
+V1+V2) intentionally creates a different cache key per config; each
+config still does its first-seed enumeration.  This is the desired
+behaviour for paired statistical comparison.
+
+\section{Risk anticipation (CLAUDE.md \S2)}
+
+\subsection*{Performance-contract preservation}
+The 2026-05-10 Python-side \texttt{\_subsample\_arr\_to\_tuples}
+landed; the 2026-05-11 SoA refactor + dedup-stack-key landed.
+\textbf{Both contracts must be honoured in the run scripts}: do
+not set \texttt{HSIKAN\_TOPK\_K} above $128$ unless explicitly
+authorised (Rust-side per-vertex heaps grow $O(K \cdot |V|)$).
+
+\subsection*{Aspirational comments to honour}
+\texttt{project\_rust\_topk\_memory\_followup\_2026\_05\_10}: the
+Rust-side \texttt{cap\_total} pushdown has NOT been implemented.
+Peak Rust RSS during $k{=}5$ enumeration on Epinions can hit
+6--10 GB even with the Python-side fix.  Phase A's Epinions runs
+are the first end-to-end test of whether this is OK at production
+config with v1/v2 on; if Phase A Epinions OOMs, Rust-side cap
+pushdown becomes a Phase D prerequisite.
+
+\subsection*{Worst-case input}
+Epinions production-config c2--c5 + w2,w3 mixed-arity training,
+80 epochs, max\_k4=100k, quaternion attention + edge\_cr highway,
+Triton kernel on.  V2's tiered caps will shift the cycle pool
+significantly on $k{=}3$/$k{=}5$ (lift study probe data) but is
+untested against the actual training loop at production scale.
+
+\subsection*{What could go wrong}
+\begin{itemize}
+\item \textbf{V2 tiered changes cycle quality}: the tier
+  thresholds (0.1\%, 1\%, 5\%, 20\%, 100\%) are taken from the
+  lift-studies report's predicted-AUC sweet spot but never AUC-
+  measured at production.  V2 single-seed Phase A is the
+  binary go/no-go.
+\item \textbf{V1 vertex prefilter drops too much}: the
+  \texttt{compose:degree,triangle} default may be too aggressive
+  on Epinions's sparse structure (Epinions has more leaves and
+  bridge-like vertices than Slashdot).  Adaptive fallback:
+  $\min\_degree=1$ if Phase A flags it.
+\item \textbf{The Triton kernel + tiered + filter combination has
+  not been tested together at production scale}.  Phase A is the
+  first integration test.
+\end{itemize}
+
+\section{Empty-plan-dir hygiene}
+This plan dir is fully populated.  If abandoned at any halt
+condition, the dir gets a \texttt{HALTED.md} explaining the
+abort.
+
+\section{Halt conditions}
+\begin{itemize}
+\item Any Phase-A config OOMs on any dataset $\rightarrow$ halt
+  that (config, dataset) pair; document and proceed without it.
+\item Bitcoin 5-seed (Phase B) shows V1+V2 dropping $> 0.01$
+  paired AUC $\rightarrow$ halt before Phase C; design fix
+  required.
+\item Slashdot 5-seed (Phase C) shows V1+V2 dropping $> 0.005$
+  paired AUC $\rightarrow$ pick the best non-V2 config (V1 alone
+  or B) for Phase D; do not run V2 on Epinions.
+\item Epinions Phase D individual seed wall projection $> 4$ h
+  $\rightarrow$ cancel, fall back to 1-seed each at Epinions.
+\end{itemize}
+
+\section{Rollback path}
+No code changes ship with this plan; only experiment scripts and
+the final report.  Revert is \texttt{rm -rf
+docs/plans/2026-05-12-3dataset-hsikan-v1-v2/}
++ corresponding experiment-script removals.
+
+\section{Implementation order}
+\begin{enumerate}
+\item Write Phase A orchestrator script and one-shot test the
+  smallest dataset (Bitcoin Alpha, 1-seed) to confirm the recipe
+  works.  $\sim 5$ min.
+\item Phase A full sweep ($\sim$9 h, overnight).
+\item Decision gate: review Phase A AUC deltas, identify any
+  config $\times$ dataset failures, lock the configs for Phase B--D.
+\item Phase B (1 h).
+\item Phase C (4 h).
+\item Phase D (19 h, requires explicit user authorisation for
+  the long Epinions run --- not auto-launched).
+\item Final report at \texttt{reports/2026-05-13-3dataset-v1-v2.md}.
+\end{enumerate}
+
+All phases gated on user authorisation for the longer runs (CLAUDE.md
+\S11 halt: ``unverified experiment that mutates persistent state'').
+
+\end{document}

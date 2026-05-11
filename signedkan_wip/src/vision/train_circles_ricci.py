@@ -240,6 +240,8 @@ def main() -> None:
     p.add_argument("--lr", type=float, default=3e-3)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    p.add_argument("--jsonl-out", default=None,
+                    help="Optional path to write per-config results as jsonl.")
     args = p.parse_args()
     device = torch.device(args.device)
     print(f"\nPhase 1 smoke: n_images={args.n_images}  epochs={args.epochs}  "
@@ -284,10 +286,35 @@ def main() -> None:
     for r in results:
         decreased = r["losses"][0] - r["losses"][-1] > 0.30 * r["losses"][0]
         flag = "PASS" if decreased else "FAIL"
+        r["acceptance_pass"] = bool(decreased)
         if not decreased:
             all_pass = False
         print(f"  {r['label']:<18s} : loss drop ≥ 30%? {flag}")
     print(f"\n  PHASE-1 SMOKE: {'PASS' if all_pass else 'FAIL'}")
+
+    # Optional jsonl persistence — one line per config.
+    if args.jsonl_out:
+        import json
+        with open(args.jsonl_out, "w") as fh:
+            for r in results:
+                rec = {
+                    "label":       r["label"],
+                    "n_images":    args.n_images,
+                    "epochs":      args.epochs,
+                    "lr":          args.lr,
+                    "seed":        args.seed,
+                    "wall_s":      r["wall"],
+                    "loss_start":  r["losses"][0],
+                    "loss_end":    r["losses"][-1],
+                    "loss_drop_pct": (r["losses"][0] - r["losses"][-1])
+                                      / max(1e-9, r["losses"][0]) * 100.0,
+                    "box_cls_acc": r["accs"]["box_cls_acc"],
+                    "circ_cls_acc": r["accs"]["circ_cls_acc"],
+                    "acceptance_pass": r["acceptance_pass"],
+                    "losses_per_epoch": r["losses"],
+                }
+                fh.write(json.dumps(rec) + "\n")
+        print(f"\n  Results written to {args.jsonl_out}")
 
 
 if __name__ == "__main__":
