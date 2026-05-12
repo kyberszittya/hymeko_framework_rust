@@ -36,8 +36,8 @@ impl HymekoSubscriber {
     }
 
     /// The pure Rust event loop.
-    pub fn poll_memory(&mut self) -> Result<Option<MemoryEvent>, Box<dyn Error>> {
-        if let Ok(Some(sample)) = self.subscriber.receive() {
+    pub fn poll_memory(&mut self) -> Result<Option<MemoryEvent<'_>>, Box<dyn Error>> {
+        if let Ok(Some(_sample)) = self.subscriber.receive() {
             // Assume we added a `topology_hash` to the HypergraphWeights struct
             /*
             let incoming_hash = sample.topology_hash;

@@ -21,14 +21,11 @@
 
 use bytemuck::{Pod, Zeroable};
 use vulkano::{
-    command_buffer::{
-        AutoCommandBufferBuilder, CommandBufferUsage, PrimaryCommandBufferAbstract,
-    },
+    command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, PrimaryCommandBufferAbstract},
     descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
     pipeline::{
-        ComputePipeline, PipelineBindPoint, PipelineLayout,
-        PipelineShaderStageCreateInfo, compute::ComputePipelineCreateInfo,
-        layout::PipelineDescriptorSetLayoutCreateInfo,
+        ComputePipeline, PipelineBindPoint, PipelineLayout, PipelineShaderStageCreateInfo,
+        compute::ComputePipelineCreateInfo, layout::PipelineDescriptorSetLayoutCreateInfo,
     },
     shader::{ShaderModule, ShaderModuleCreateInfo},
     sync::GpuFuture,
@@ -37,11 +34,13 @@ use vulkano::{
 use crate::buffers;
 use crate::context::VulkanContext;
 
-const FORCE_DIRECTED_SPV: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/force_directed.spv"));
+const FORCE_DIRECTED_SPV: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/force_directed.spv"));
 
 fn bytes_to_words(bytes: &[u8]) -> Vec<u32> {
-    assert!(bytes.len() % 4 == 0, "SPIR-V byte length not multiple of 4");
+    assert!(
+        bytes.len().is_multiple_of(4),
+        "SPIR-V byte length not multiple of 4"
+    );
     bytes
         .chunks_exact(4)
         .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
@@ -130,13 +129,9 @@ pub fn run(
     let buf_params = buffers::upload(ctx, &[params]);
 
     let words = bytes_to_words(FORCE_DIRECTED_SPV);
-    let shader = unsafe {
-        ShaderModule::new(
-            ctx.device().clone(),
-            ShaderModuleCreateInfo::new(&words),
-        )
-    }
-    .map_err(|e| e.to_string())?;
+    let shader =
+        unsafe { ShaderModule::new(ctx.device().clone(), ShaderModuleCreateInfo::new(&words)) }
+            .map_err(|e| e.to_string())?;
     let entry_point = shader.entry_point("main").ok_or("missing entry point")?;
     let stage = PipelineShaderStageCreateInfo::new(entry_point);
     let layout = PipelineLayout::new(
@@ -152,7 +147,7 @@ pub fn run(
         ComputePipelineCreateInfo::stage_layout(stage, layout.clone()),
     )
     .map_err(|e| e.to_string())?;
-    let dsl = layout.set_layouts().get(0).ok_or("missing dsl")?;
+    let dsl = layout.set_layouts().first().ok_or("missing dsl")?;
     let descriptor_set = PersistentDescriptorSet::new(
         ctx.descriptor_set_allocator().as_ref(),
         dsl.clone(),
@@ -166,7 +161,7 @@ pub fn run(
     )
     .map_err(|e| e.to_string())?;
 
-    let workgroups = (n + 63) / 64;
+    let workgroups = n.div_ceil(64);
     for _ in 0..n_iter {
         let mut cb = AutoCommandBufferBuilder::primary(
             ctx.command_buffer_allocator().as_ref(),
@@ -214,7 +209,10 @@ mod tests {
         let mut pos: Vec<Position> = (0..n)
             .map(|i| {
                 let t = i as f32 * 1.1;
-                Position { x: t.cos(), y: t.sin() }
+                Position {
+                    x: t.cos(),
+                    y: t.sin(),
+                }
             })
             .collect();
         // 30 random arcs (binary edges) — stand-in for the canonical

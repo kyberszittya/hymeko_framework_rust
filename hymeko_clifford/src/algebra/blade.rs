@@ -15,12 +15,6 @@
 
 use super::Signature;
 
-/// Population count (bit count) — number of set bits in `x`.
-#[inline]
-const fn popcount(x: usize) -> u32 {
-    x.count_ones()
-}
-
 /// Sign of the canonical reordering needed to merge two ascending
 /// factor sequences encoded as bitmasks `a` and `b`.
 ///
@@ -49,7 +43,11 @@ pub fn canonical_reorder_sign(a: usize, b: usize) -> f64 {
         // Clear that bit.
         a_remaining &= !(1usize << bit_pos);
     }
-    if inversions % 2 == 0 { 1.0 } else { -1.0 }
+    if inversions.is_multiple_of(2) {
+        1.0
+    } else {
+        -1.0
+    }
 }
 
 /// Brute-force reference implementation: build the factor sequences
@@ -79,7 +77,7 @@ fn brute_canonical_sign(a: usize, b: usize) -> f64 {
             }
         }
     }
-    if swaps % 2 == 0 { 1.0 } else { -1.0 }
+    if swaps.is_multiple_of(2) { 1.0 } else { -1.0 }
 }
 
 /// Product of two basis blades represented as bitmasks.
@@ -106,8 +104,10 @@ pub fn blade_product(a: usize, b: usize, sig: &Signature) -> (usize, f64) {
 }
 
 /// Convenience: grade of a blade = number of factors in the wedge.
+#[allow(dead_code)]
+// Public API helper; not all internal call sites use it yet.
 pub fn grade(idx: usize) -> u32 {
-    popcount(idx)
+    idx.count_ones()
 }
 
 #[cfg(test)]
@@ -162,7 +162,7 @@ mod tests {
     /// $e_i e_i = -1$ for negative-square basis vectors.
     #[test]
     fn basis_squares_negative() {
-        let sig = Signature::lorentzian(3, 1);  // e_4^2 = -1
+        let sig = Signature::lorentzian(3, 1); // e_4^2 = -1
         let blade_4 = 1usize << 3;
         let (idx, sign) = blade_product(blade_4, blade_4, &sig);
         assert_eq!(idx, 0);
@@ -182,11 +182,21 @@ mod tests {
                 let bj = 1usize << j;
                 let (idx_ij, sign_ij) = blade_product(bi, bj, &sig);
                 let (idx_ji, sign_ji) = blade_product(bj, bi, &sig);
-                assert_eq!(idx_ij, idx_ji, "e_{} e_{} and e_{} e_{} differ in result idx",
-                           i + 1, j + 1, j + 1, i + 1);
                 assert_eq!(
-                    sign_ij, -sign_ji,
-                    "anticommutativity violated for e_{} e_{}", i + 1, j + 1
+                    idx_ij,
+                    idx_ji,
+                    "e_{} e_{} and e_{} e_{} differ in result idx",
+                    i + 1,
+                    j + 1,
+                    j + 1,
+                    i + 1
+                );
+                assert_eq!(
+                    sign_ij,
+                    -sign_ji,
+                    "anticommutativity violated for e_{} e_{}",
+                    i + 1,
+                    j + 1
                 );
             }
         }
@@ -217,7 +227,7 @@ mod tests {
         let e12 = 0b0011usize;
         let e13 = 0b0101usize;
         let (idx, sign) = blade_product(e12, e13, &sig);
-        assert_eq!(idx, 0b0110);  // e_2 ∧ e_3
+        assert_eq!(idx, 0b0110); // e_2 ∧ e_3
         assert_eq!(sign, -1.0);
     }
 }

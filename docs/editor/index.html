@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HyMeKo Editor — visual hypergraph design</title>
+  <link rel="stylesheet" href="editor.css" />
+  <!-- Cytoscape.js for the canvas (vanilla JS, no build step) -->
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+</head>
+<body>
+
+<header class="toolbar">
+  <div class="title">HyMeKo Editor</div>
+  <div class="actions">
+    <button id="btnRedraw"  title="Recompile + redraw from source text">↻ Redraw</button>
+    <span class="spacer"></span>
+    <select id="exportFormat" title="Export format">
+      <option value="hymeko">.hymeko</option>
+      <option value="urdf">URDF</option>
+      <option value="sdf">SDF</option>
+      <option value="dot">DOT</option>
+    </select>
+    <button id="btnExport" title="Download in selected format">Download</button>
+    <span class="spacer"></span>
+    <button id="btnLoad"   title="Load a .hymeko file">Load…</button>
+    <button id="btnExample" title="Reset to a small example">Example</button>
+    <input type="file" id="fileInput" accept=".hymeko" style="display: none" />
+  </div>
+</header>
+
+<main>
+  <aside class="palette">
+    <h3>Add</h3>
+    <button class="palette-btn" data-add="link">+ Link</button>
+    <button class="palette-btn" data-add="rev_joint">+ Revolute joint</button>
+    <button class="palette-btn" data-add="conti_joint">+ Continuous joint</button>
+    <button class="palette-btn" data-add="prismatic_joint">+ Prismatic joint</button>
+    <button class="palette-btn" data-add="fixed_joint">+ Fixed joint</button>
+
+    <h3>Selection</h3>
+    <div id="selectionPanel">
+      <p class="hint">Click a node or edge on the canvas.</p>
+    </div>
+
+    <h3>Stats</h3>
+    <ul class="stats">
+      <li>Nodes: <span id="nodeCount">–</span></li>
+      <li>Edges: <span id="edgeCount">–</span></li>
+      <li>Arcs:  <span id="arcCount">–</span></li>
+    </ul>
+
+    <h3>Query</h3>
+    <input type="text" id="predicate" value="INHERITS(link)" />
+    <button id="btnQuery">Run</button>
+    <div id="queryResult"></div>
+  </aside>
+
+  <section class="canvas-pane">
+    <div id="cy"></div>
+    <div id="errorBox" class="error-box" style="display: none"></div>
+  </section>
+</main>
+
+<footer>
+  <details open>
+    <summary>Source (.hymeko) — single source of truth, edits update this directly</summary>
+    <textarea id="source" spellcheck="false"></textarea>
+  </details>
+</footer>
+
+<!-- Modal for adding link/joint -->
+<div id="modal" class="modal" style="display: none">
+  <div class="modal-content">
+    <h3 id="modalTitle">Add</h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button id="modalCancel">Cancel</button>
+      <button id="modalOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="editor.js"></script>
+</body>
+</html>

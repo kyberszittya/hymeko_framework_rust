@@ -1,11 +1,10 @@
-
 #[cfg(test)]
 mod test_generation_engine {
+    use hymeko_formats::sdf::generate_sdf;
+    use hymeko_formats::urdf::{generate_urdf, validate_robot_schema};
     use hymeko_query::engine::QueryEngine;
     use hymeko_query::kinematics::kinematic::*;
     use hymeko_query::{Predicate, QueryMatch, ValuePredicate};
-    use hymeko_formats::urdf::{generate_urdf, validate_robot_schema};
-    use hymeko_formats::sdf::generate_sdf;
 
     // ============================================================
     // Test fixtures
@@ -18,14 +17,13 @@ mod test_generation_engine {
         matches.iter().map(|m| m.name.as_str()).collect()
     }
 
-
     // ============================================================
     // SECTION 1: Kinematic model extraction
     // ============================================================
 
     mod kinematic_extraction {
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
 
         #[test]
         fn diff_robot_links_count() {
@@ -40,7 +38,11 @@ mod test_generation_engine {
             let (store, compiled) = load_and_lower(DIFF_ROBOT).unwrap();
             let engine = QueryEngine::new(&compiled.ir, &store.it);
             let r = engine.query(&Predicate::edge().and(Predicate::inherits("joint")));
-            assert!(r.len() >= 5, "At least 5 joints (instances + meta templates), got {}", r.len());
+            assert!(
+                r.len() >= 5,
+                "At least 5 joints (instances + meta templates), got {}",
+                r.len()
+            );
         }
 
         #[test]
@@ -51,7 +53,13 @@ mod test_generation_engine {
             let names = names(&r);
             println!("Moveo links: {:?}", names);
             // world + base_link + link_0..4 + tool = 8
-            assert_eq!(r.len(), 7, "7 links (world is frame, not link), got {}: {:?}", r.len(), names);
+            assert_eq!(
+                r.len(),
+                7,
+                "7 links (world is frame, not link), got {}: {:?}",
+                r.len(),
+                names
+            );
         }
 
         #[test]
@@ -59,12 +67,8 @@ mod test_generation_engine {
             let (store, compiled) = load_and_lower(MOVEO_ARM).unwrap();
             let engine = QueryEngine::new(&compiled.ir, &store.it);
 
-            let fixed = engine.query(
-                &Predicate::edge().and(Predicate::inherits("fixed_joint"))
-            );
-            let revolute = engine.query(
-                &Predicate::edge().and(Predicate::inherits("rev_joint"))
-            );
+            let fixed = engine.query(&Predicate::edge().and(Predicate::inherits("fixed_joint")));
+            let revolute = engine.query(&Predicate::edge().and(Predicate::inherits("rev_joint")));
             println!("Fixed joints: {:?}", names(&fixed));
             println!("Revolute joints: {:?}", names(&revolute));
 
@@ -80,26 +84,29 @@ mod test_generation_engine {
 
             // Verify kinematic chain: world→base→link0→link1→link2→link3→link4→tool
             let expected_chain = vec![
-                ("j_fix",  "world",     "base_link"),
-                ("j0",     "base_link", "link_0"),
-                ("j1",     "link_0",    "link_1"),
-                ("j2",     "link_1",    "link_2"),
-                ("j3",     "link_2",    "link_3"),
-                ("j4",     "link_3",    "link_4"),
-                ("jtool",  "link_4",    "tool"),
+                ("j_fix", "world", "base_link"),
+                ("j0", "base_link", "link_0"),
+                ("j1", "link_0", "link_1"),
+                ("j2", "link_1", "link_2"),
+                ("j3", "link_2", "link_3"),
+                ("j4", "link_3", "link_4"),
+                ("jtool", "link_4", "tool"),
             ];
 
             for (jname, expected_parent, expected_child) in &expected_chain {
-                let joint = model.joints.iter()
-                    .find(|j| j.name == *jname);
+                let joint = model.joints.iter().find(|j| j.name == *jname);
                 assert!(joint.is_some(), "Joint '{}' not found in model", jname);
                 let joint = joint.unwrap();
-                assert_eq!(joint.parent_link, *expected_parent,
-                           "Joint '{}' parent: expected '{}', got '{}'",
-                           jname, expected_parent, joint.parent_link);
-                assert_eq!(joint.child_link, *expected_child,
-                           "Joint '{}' child: expected '{}', got '{}'",
-                           jname, expected_child, joint.child_link);
+                assert_eq!(
+                    joint.parent_link, *expected_parent,
+                    "Joint '{}' parent: expected '{}', got '{}'",
+                    jname, expected_parent, joint.parent_link
+                );
+                assert_eq!(
+                    joint.child_link, *expected_child,
+                    "Joint '{}' child: expected '{}', got '{}'",
+                    jname, expected_child, joint.child_link
+                );
             }
         }
 
@@ -110,23 +117,27 @@ mod test_generation_engine {
             let model = extract_kinematic_model(&engine, "moveo");
 
             let expected_axes: Vec<(&str, [f64; 3])> = vec![
-                ("j0",    [0.0, 0.0, 1.0]),   // Z
-                ("j1",    [1.0, 0.0, 0.0]),   // X
-                ("j2",    [0.0, 0.0, 1.0]),   // Z
-                ("j3",    [1.0, 0.0, 0.0]),   // X
-                ("j4",    [0.0, 1.0, 0.0]),   // Y
-                ("jtool", [0.0, 0.0, 1.0]),   // Z
+                ("j0", [0.0, 0.0, 1.0]),    // Z
+                ("j1", [1.0, 0.0, 0.0]),    // X
+                ("j2", [0.0, 0.0, 1.0]),    // Z
+                ("j3", [1.0, 0.0, 0.0]),    // X
+                ("j4", [0.0, 1.0, 0.0]),    // Y
+                ("jtool", [0.0, 0.0, 1.0]), // Z
             ];
 
             for (jname, expected_axis) in &expected_axes {
                 let joint = model.joints.iter().find(|j| j.name == *jname).unwrap();
-                assert!(joint.axis.is_some(),
-                        "Joint '{}' missing axis", jname);
+                assert!(joint.axis.is_some(), "Joint '{}' missing axis", jname);
                 let axis = joint.axis.unwrap();
                 for d in 0..3 {
-                    assert!((axis[d] - expected_axis[d]).abs() < 1e-9,
-                            "Joint '{}' axis[{}]: expected {}, got {}",
-                            jname, d, expected_axis[d], axis[d]);
+                    assert!(
+                        (axis[d] - expected_axis[d]).abs() < 1e-9,
+                        "Joint '{}' axis[{}]: expected {}, got {}",
+                        jname,
+                        d,
+                        expected_axis[d],
+                        axis[d]
+                    );
                 }
             }
         }
@@ -172,9 +183,13 @@ mod test_generation_engine {
                 assert!(link.is_some(), "Link '{}' not found", lname);
                 let link = link.unwrap();
                 assert!(link.mass.is_some(), "Link '{}' missing mass", lname);
-                assert!((link.mass.unwrap() - expected_mass).abs() < 1e-9,
-                        "Link '{}' mass: expected {}, got {:?}",
-                        lname, expected_mass, link.mass);
+                assert!(
+                    (link.mass.unwrap() - expected_mass).abs() < 1e-9,
+                    "Link '{}' mass: expected {}, got {:?}",
+                    lname,
+                    expected_mass,
+                    link.mass
+                );
             }
         }
 
@@ -206,8 +221,8 @@ mod test_generation_engine {
     // ============================================================
 
     mod urdf_generation {
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
 
         #[test]
         fn moveo_urdf_xml_wellformed() {
@@ -225,10 +240,20 @@ mod test_generation_engine {
             let (store, compiled) = load_and_lower(MOVEO_ARM).unwrap();
             let urdf = generate_urdf(&compiled.ir, &store.it, "moveo");
 
-            for name in &["base_link", "link_0", "link_1", "link_2",
-                "link_3", "link_4", "tool"] {
-                assert!(urdf.contains(&format!("<link name=\"{}\"", name)),
-                        "URDF missing link '{}'", name);
+            for name in &[
+                "base_link",
+                "link_0",
+                "link_1",
+                "link_2",
+                "link_3",
+                "link_4",
+                "tool",
+            ] {
+                assert!(
+                    urdf.contains(&format!("<link name=\"{}\"", name)),
+                    "URDF missing link '{}'",
+                    name
+                );
             }
         }
 
@@ -238,8 +263,11 @@ mod test_generation_engine {
             let urdf = generate_urdf(&compiled.ir, &store.it, "moveo");
 
             for name in &["j_fix", "j0", "j1", "j2", "j3", "j4", "jtool"] {
-                assert!(urdf.contains(&format!("<joint name=\"{}\"", name)),
-                        "URDF missing joint '{}'", name);
+                assert!(
+                    urdf.contains(&format!("<joint name=\"{}\"", name)),
+                    "URDF missing joint '{}'",
+                    name
+                );
             }
         }
 
@@ -249,13 +277,18 @@ mod test_generation_engine {
             let urdf = generate_urdf(&compiled.ir, &store.it, "moveo");
 
             // j_fix should be fixed
-            assert!(urdf.contains("joint name=\"j_fix\" type=\"fixed\""),
-                    "j_fix should be type='fixed'");
+            assert!(
+                urdf.contains("joint name=\"j_fix\" type=\"fixed\""),
+                "j_fix should be type='fixed'"
+            );
 
             // j0..jtool should be revolute
             let revolute_count = urdf.matches("type=\"revolute\"").count();
-            assert_eq!(revolute_count, 6,
-                       "Expected 6 revolute joints, got {}", revolute_count);
+            assert_eq!(
+                revolute_count, 6,
+                "Expected 6 revolute joints, got {}",
+                revolute_count
+            );
         }
 
         #[test]
@@ -279,8 +312,10 @@ mod test_generation_engine {
 
             // j1 has rpy = [0, 0, 90°] → [0, 0, 1.5708 rad]
             // Check that radian conversion happened
-            assert!(urdf.contains("1.5708") || urdf.contains("1.571"),
-                    "Expected j1 yaw 90° → ~1.5708 rad in URDF");
+            assert!(
+                urdf.contains("1.5708") || urdf.contains("1.571"),
+                "Expected j1 yaw 90° → ~1.5708 rad in URDF"
+            );
         }
 
         #[test]
@@ -289,8 +324,11 @@ mod test_generation_engine {
             let urdf = generate_urdf(&compiled.ir, &store.it, "moveo");
 
             let axis_count = urdf.matches("<axis xyz=").count();
-            assert_eq!(axis_count, 6,
-                       "6 revolute joints should have axes, got {}", axis_count);
+            assert_eq!(
+                axis_count, 6,
+                "6 revolute joints should have axes, got {}",
+                axis_count
+            );
 
             // Z axis for j0
             assert!(urdf.contains("<axis xyz=\"0 0 1\"/>"));
@@ -306,12 +344,13 @@ mod test_generation_engine {
             let urdf = generate_urdf(&compiled.ir, &store.it, "moveo");
 
             // base_link: cylinder radius=0.13 length=0.05
-            assert!(urdf.contains("<cylinder radius=\"0.13\" length=\"0.05\""),
-                    "base_link geometry missing or wrong");
+            assert!(
+                urdf.contains("<cylinder radius=\"0.13\" length=\"0.05\""),
+                "base_link geometry missing or wrong"
+            );
 
             // tool: box
-            assert!(urdf.contains("<box size="),
-                    "tool box geometry missing");
+            assert!(urdf.contains("<box size="), "tool box geometry missing");
         }
 
         #[test]
@@ -319,14 +358,17 @@ mod test_generation_engine {
             let (store, compiled) = load_and_lower(MOVEO_ARM).unwrap();
             let errors = validate_robot_schema(&compiled.ir, &store.it);
             if !errors.is_empty() {
-                for e in &errors { eprintln!("  Schema error: {}", e); }
+                for e in &errors {
+                    eprintln!("  Schema error: {}", e);
+                }
             }
             // j_fix parent "world" is a frame, not in links list
-            let real_errors: Vec<_> = errors.iter()
-                .filter(|e| !e.contains("world"))
-                .collect();
-            assert!(real_errors.is_empty(),
-                    "Schema validation failed: {:?}", real_errors);
+            let real_errors: Vec<_> = errors.iter().filter(|e| !e.contains("world")).collect();
+            assert!(
+                real_errors.is_empty(),
+                "Schema validation failed: {:?}",
+                real_errors
+            );
         }
 
         #[test]
@@ -340,9 +382,12 @@ mod test_generation_engine {
             // For a serial chain: joints = links - 1
             // (including world frame: 8 links, 7 joints)
             println!("Links: {}, Joints: {}", link_count, joint_count);
-            assert!(joint_count == link_count - 1 || joint_count == link_count,
-                    "Joint/link count mismatch: {} joints, {} links",
-                    joint_count, link_count);
+            assert!(
+                joint_count == link_count - 1 || joint_count == link_count,
+                "Joint/link count mismatch: {} joints, {} links",
+                joint_count,
+                link_count
+            );
         }
 
         #[test]
@@ -350,12 +395,18 @@ mod test_generation_engine {
             let (store, compiled) = load_and_lower(MOVEO_ARM).unwrap();
             let urdf = generate_urdf(&compiled.ir, &store.it, "moveo");
 
-            assert!(urdf.contains("<mass value=\"25\"/>"),
-                    "base_link mass should be 25");
-            assert!(urdf.contains("<mass value=\"5\"/>"),
-                    "link_0 mass should be 5");
-            assert!(urdf.contains("<mass value=\"0.5\"/>"),
-                    "tool mass should be 0.5");
+            assert!(
+                urdf.contains("<mass value=\"25\"/>"),
+                "base_link mass should be 25"
+            );
+            assert!(
+                urdf.contains("<mass value=\"5\"/>"),
+                "link_0 mass should be 5"
+            );
+            assert!(
+                urdf.contains("<mass value=\"0.5\"/>"),
+                "tool mass should be 0.5"
+            );
         }
 
         #[test]
@@ -364,10 +415,11 @@ mod test_generation_engine {
             let urdf = generate_urdf(&compiled.ir, &store.it, "moveo");
 
             // Should have material/color elements
-            assert!(urdf.contains("<material name=\"color\">"),
-                    "Color material missing");
-            assert!(urdf.contains("<color rgba="),
-                    "Color rgba missing");
+            assert!(
+                urdf.contains("<material name=\"color\">"),
+                "Color material missing"
+            );
+            assert!(urdf.contains("<color rgba="), "Color rgba missing");
         }
     }
 
@@ -376,8 +428,8 @@ mod test_generation_engine {
     // ============================================================
 
     mod sdf_generation {
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
 
         #[test]
         fn moveo_sdf_wellformed() {
@@ -396,10 +448,20 @@ mod test_generation_engine {
             let (store, compiled) = load_and_lower(MOVEO_ARM).unwrap();
             let sdf = generate_sdf(&compiled.ir, &store.it, "moveo");
 
-            for name in &["base_link", "link_0", "link_1", "link_2",
-                "link_3", "link_4", "tool"] {
-                assert!(sdf.contains(&format!("<link name=\"{}\"", name)),
-                        "SDF missing link '{}'", name);
+            for name in &[
+                "base_link",
+                "link_0",
+                "link_1",
+                "link_2",
+                "link_3",
+                "link_4",
+                "tool",
+            ] {
+                assert!(
+                    sdf.contains(&format!("<link name=\"{}\"", name)),
+                    "SDF missing link '{}'",
+                    name
+                );
             }
         }
 
@@ -409,8 +471,11 @@ mod test_generation_engine {
             let sdf = generate_sdf(&compiled.ir, &store.it, "moveo");
 
             for name in &["j0", "j1", "j2", "j3", "j4", "jtool"] {
-                assert!(sdf.contains(&format!("<joint name=\"{}\"", name)),
-                        "SDF missing joint '{}'", name);
+                assert!(
+                    sdf.contains(&format!("<joint name=\"{}\"", name)),
+                    "SDF missing joint '{}'",
+                    name
+                );
             }
         }
 
@@ -420,10 +485,11 @@ mod test_generation_engine {
             let sdf = generate_sdf(&compiled.ir, &store.it, "moveo");
 
             // SDF should have inertial elements with diagonal approximation
-            assert!(sdf.contains("<inertial>"),
-                    "SDF missing inertial elements");
-            assert!(sdf.contains("<mass>25</mass>"),
-                    "SDF missing base_link mass");
+            assert!(sdf.contains("<inertial>"), "SDF missing inertial elements");
+            assert!(
+                sdf.contains("<mass>25</mass>"),
+                "SDF missing base_link mass"
+            );
         }
 
         #[test]
@@ -442,8 +508,11 @@ mod test_generation_engine {
 
             // SDF uses "revolute" for both revolute and continuous
             let revolute_count = sdf.matches("type=\"revolute\"").count();
-            assert!(revolute_count >= 6,
-                    "Expected >=6 revolute joints in SDF, got {}", revolute_count);
+            assert!(
+                revolute_count >= 6,
+                "Expected >=6 revolute joints in SDF, got {}",
+                revolute_count
+            );
         }
 
         #[test]
@@ -452,8 +521,10 @@ mod test_generation_engine {
             let sdf = generate_sdf(&compiled.ir, &store.it, "moveo");
 
             // SDF poses should have relative_to attribute
-            assert!(sdf.contains("relative_to="),
-                    "SDF poses should have relative_to attribute");
+            assert!(
+                sdf.contains("relative_to="),
+                "SDF poses should have relative_to attribute"
+            );
         }
     }
 
@@ -462,8 +533,8 @@ mod test_generation_engine {
     // ============================================================
 
     mod cross_format {
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
 
         #[test]
         fn urdf_and_sdf_same_link_count() {
@@ -475,12 +546,15 @@ mod test_generation_engine {
             // anchor for fixed joints to the world frame; SDF expresses the
             // world attachment via `<pose>` and has no such stub. Exclude it
             // so the count reflects the kinematic topology of the robot.
-            let urdf_links = urdf.matches("<link name=").count()
-                - urdf.matches("<link name=\"world\"").count();
+            let urdf_links =
+                urdf.matches("<link name=").count() - urdf.matches("<link name=\"world\"").count();
             let sdf_links = sdf.matches("<link name=").count();
 
-            assert_eq!(urdf_links, sdf_links,
-                       "URDF has {} links but SDF has {}", urdf_links, sdf_links);
+            assert_eq!(
+                urdf_links, sdf_links,
+                "URDF has {} links but SDF has {}",
+                urdf_links, sdf_links
+            );
         }
 
         #[test]
@@ -492,8 +566,11 @@ mod test_generation_engine {
             let urdf_joints = urdf.matches("<joint name=").count();
             let sdf_joints = sdf.matches("<joint name=").count();
 
-            assert_eq!(urdf_joints, sdf_joints,
-                       "URDF has {} joints but SDF has {}", urdf_joints, sdf_joints);
+            assert_eq!(
+                urdf_joints, sdf_joints,
+                "URDF has {} joints but SDF has {}",
+                urdf_joints, sdf_joints
+            );
         }
 
         #[test]
@@ -529,8 +606,8 @@ mod test_generation_engine {
     // ============================================================
 
     mod query_edge_cases {
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
 
         #[test]
         fn query_nonexistent_type_returns_empty() {
@@ -546,11 +623,9 @@ mod test_generation_engine {
             let engine = QueryEngine::new(&compiled.ir, &store.it);
 
             // Heavy links that inherit from link
-            let r = engine.query(
-                &Predicate::node()
-                    .and(Predicate::inherits("link"))
-                    .and(Predicate::ChildValue("mass".into(), ValuePredicate::NumGt(10.0)))
-            );
+            let r = engine.query(&Predicate::node().and(Predicate::inherits("link")).and(
+                Predicate::ChildValue("mass".into(), ValuePredicate::NumGt(10.0)),
+            ));
             assert_eq!(r.len(), 1, "Only base_link > 10kg");
             assert!(names(&r).contains(&"base_link"));
         }
@@ -561,18 +636,14 @@ mod test_generation_engine {
             let engine = QueryEngine::new(&compiled.ir, &store.it);
 
             // All revolute joints must have both + and - refs to links
-            let rev_joints = engine.query(
-                &Predicate::edge().and(Predicate::inherits("rev_joint"))
-            );
+            let rev_joints = engine.query(&Predicate::edge().and(Predicate::inherits("rev_joint")));
 
             for m in &rev_joints {
                 let has_plus_link = m.arc_bindings.iter().any(|b| b.sign == 1);
                 let has_minus_link = m.arc_bindings.iter().any(|b| b.sign == -1);
 
-                assert!(has_plus_link,
-                        "Joint '{}' missing +link (parent)", m.name);
-                assert!(has_minus_link,
-                        "Joint '{}' missing -link (child)", m.name);
+                assert!(has_plus_link, "Joint '{}' missing +link (parent)", m.name);
+                assert!(has_minus_link, "Joint '{}' missing -link (child)", m.name);
             }
         }
 
@@ -582,10 +653,8 @@ mod test_generation_engine {
             let engine = QueryEngine::new(&compiled.ir, &store.it);
 
             let r = engine.query(
-                &Predicate::edge().and(
-                    Predicate::inherits("rev_joint")
-                        .or(Predicate::inherits("fixed_joint"))
-                )
+                &Predicate::edge()
+                    .and(Predicate::inherits("rev_joint").or(Predicate::inherits("fixed_joint"))),
             );
 
             assert_eq!(r.len(), 7, "6 revolute + 1 fixed = 7");
@@ -600,7 +669,7 @@ mod test_generation_engine {
             let r = engine.query(
                 &Predicate::node()
                     .and(Predicate::inherits("link"))
-                    .and(Predicate::named("base_link").not())
+                    .and(Predicate::named("base_link").not()),
             );
 
             assert!(!names(&r).contains(&"base_link"));

@@ -8,7 +8,7 @@
 //! the typical G-SPHF regime $N \leq 12$ but a sparse variant is
 //! planned in Phase 5.
 
-use super::{blade_product, Signature};
+use super::{Signature, blade_product};
 
 /// Dense multivector in $Cl(p, q)$ with $n = p + q$.
 ///
@@ -29,9 +29,13 @@ impl Multivector {
     pub fn zero(n: usize) -> Self {
         assert!(
             n <= 16,
-            "Multivector::zero: n = {} exceeds the safe upper bound (16)", n
+            "Multivector::zero: n = {} exceeds the safe upper bound (16)",
+            n
         );
-        Self { n, components: vec![0.0; 1 << n] }
+        Self {
+            n,
+            components: vec![0.0; 1 << n],
+        }
     }
 
     /// The scalar `1`.
@@ -118,7 +122,7 @@ impl Multivector {
         let n = self.n;
         let mut out = Self::zero(n);
         for i in 0..(1usize << n) {
-            if (i as usize).count_ones() == k {
+            if i.count_ones() == k {
                 out.components[i] = self.components[i];
             }
         }
@@ -131,8 +135,12 @@ impl Multivector {
         let n = self.n;
         let mut out = Self::zero(n);
         for i in 0..(1usize << n) {
-            let k = (i as usize).count_ones();
-            let sign = if (k * (k.wrapping_sub(1)) / 2) % 2 == 0 { 1.0 } else { -1.0 };
+            let k = i.count_ones();
+            let sign = if (k * (k.wrapping_sub(1)) / 2).is_multiple_of(2) {
+                1.0
+            } else {
+                -1.0
+            };
             out.components[i] = sign * self.components[i];
         }
         out

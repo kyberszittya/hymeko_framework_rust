@@ -1,0 +1,71 @@
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, shapes.geometric}
+
+\begin{document}
+\begin{tikzpicture}[
+    >=Stealth, font=\small,
+    tier/.style={draw, rounded corners=2pt, minimum width=2.2cm,
+                  minimum height=0.7cm, align=center},
+    t1/.style={tier, fill=yellow!20},
+    t2/.style={tier, fill=orange!25},
+    t3/.style={tier, fill=red!25},
+    pool/.style={draw, ellipse, minimum width=2.1cm,
+                  minimum height=0.6cm, fill=blue!15, align=center,
+                  font=\footnotesize},
+    head/.style={draw, rounded corners=2pt, fill=green!20,
+                  minimum width=1.8cm, minimum height=0.7cm},
+  ]
+
+  % Title
+  \node[font=\bfseries] at (4.5, 4.6) {CPML --- Concentric-Pyramid Multi-Layer, $L=3$};
+
+  % Outer ring (T_1, leaves)
+  \node[t1] (t1) at (0, 2.5) {$T_1$ (periphery)\\ \footnotesize 80\% of $V$ \\ \footnotesize low-degree};
+  \node[pool, right=of t1] (c1) {$\mathcal{C}_1$\\ \footnotesize cycles thru $T_1$};
+  \node[t1, right=of c1] (h1) {HSiKAN$_1$\\ \footnotesize $\Rightarrow H_1$};
+
+  % Middle ring
+  \node[t2, below=0.8cm of t1] (t2) {$T_2$ (mid)\\ \footnotesize 19\% \\ \footnotesize mid-degree};
+  \node[pool, right=of t2] (c2) {$\mathcal{C}_2$\\ \footnotesize cycles thru $T_2$};
+  \node[t2, right=of c2] (h2) {HSiKAN$_2$\\ \footnotesize $\Rightarrow H_2$};
+
+  % Inner ring (T_3, hubs / centre)
+  \node[t3, below=0.8cm of t2] (t3) {$T_L$=$T_3$ (centre)\\ \footnotesize 1\% \\ \footnotesize hubs};
+  \node[pool, right=of t3] (c3) {$\mathcal{C}_3$\\ \footnotesize cycles thru $T_3$\\ \footnotesize (most cycles)};
+  \node[t3, right=of c3] (h3) {HSiKAN$_3$\\ \footnotesize $\Rightarrow H_3$};
+
+  % Predictor
+  \node[head, right=1.0cm of h3] (pred) {edge $s(u,v)$};
+
+  % Arrows: tier -> cycles -> HSiKAN -> H_l
+  \draw[->] (t1) -- (c1); \draw[->] (c1) -- (h1);
+  \draw[->] (t2) -- (c2); \draw[->] (c2) -- (h2);
+  \draw[->] (t3) -- (c3); \draw[->] (c3) -- (h3);
+
+  % Inward feature flow: H_1 -> h2's input, etc.
+  \draw[->, dashed, blue!60!black] (h1.south) ..controls +(0,-0.4) and +(0,0.4).. (h2.north)
+        node[midway, right, font=\footnotesize] {concat};
+  \draw[->, dashed, blue!60!black] (h2.south) ..controls +(0,-0.4) and +(0,0.4).. (h3.north);
+
+  % H_L -> edge predictor
+  \draw[->, thick] (h3) -- (pred);
+
+  % Annotation: receptive field grows
+  \node[font=\footnotesize, anchor=west, align=left, draw,
+        rounded corners=2pt, fill=gray!10] at (0, 0)
+    {receptive field $|RF|$ grows inward \\
+     $|RF|_1 \approx k$ (one cycle) \\
+     $|RF|_2 \approx $ neighbourhood of $T_2$ \\
+     $|RF|_3 \approx $ whole-graph context};
+
+  % Biological annotation
+  \node[font=\footnotesize, anchor=east, align=right, draw,
+        rounded corners=2pt, fill=green!8] at (10.5, 0)
+    {Bio. analogue: V1 $\to$ V2 $\to$ V4 $\to$ IT \\
+     (Felleman \& Van Essen 1991) \\
+     each step: $|RF|$ grows, abstraction $\uparrow$};
+
+\end{tikzpicture}
+\end{document}

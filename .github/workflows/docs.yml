@@ -5,6 +5,10 @@ on:
     branches: [master, main]
     paths:
       - 'docs/book/**'
+      - 'docs/SOTA_RESULTS.md'
+      - 'docs/RESULTS_DISCIPLINE.md'
+      - 'docs/DEPLOY_GITHUB_PAGES.md'
+      - 'COLD_START.md'
       - 'docs/editor/**'
       - 'docs/demo/**'
       - '**/*.rs'
@@ -29,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
-      MDBOOK_VERSION: 0.4.40
+      MDBOOK_VERSION: 0.5.2
     steps:
       - uses: actions/checkout@v4
 

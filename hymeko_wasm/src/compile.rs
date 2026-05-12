@@ -9,14 +9,12 @@
 use std::sync::Arc;
 
 use hymeko::common::ids::DeclId;
-use hymeko::ir::ir::{DeclKind, Ir};
 use hymeko::module_store::module_store::{CompiledProgram, HymekoParser, ModuleStore};
 use hymeko::module_store::source_provider::MemProvider;
 use hymeko::resolution::string_table::StringTable;
 use hymeko_formats::sdf::generate_sdf;
 use hymeko_formats::urdf::generate_urdf;
 use parser::ast::AstStr;
-use serde::{Deserialize, Serialize};
 
 /// Parser glue — mirrors `hymeko_py::interface_python::api`'s
 /// `RealParser` but staying inside the wasm crate so we can keep
@@ -127,6 +125,3 @@ impl CompiledDoc {
 // ------------------------------------------------------------------- //
 
 use hymeko_query::predicate_expr::match_expr as pred_match_expr;
-
-// xml_escape consolidated to hymeko_formats::xml_util.
-use hymeko_formats::xml_util::xml_escape;

@@ -3,7 +3,6 @@ title = "HyMeKo Framework"
 authors = ["HyMeKo authors"]
 description = "Hypergraph Model Cognition Framework — DSL, IR, and toolchain for declarative hypergraph design + codegen"
 language = "en"
-multilingual = false
 src = "src"
 
 [output.html]
@@ -12,6 +11,8 @@ preferred-dark-theme = "ayu"
 git-repository-url = "https://github.com/kyberszittya/hymeko_framework_rust"
 edit-url-template = "https://github.com/kyberszittya/hymeko_framework_rust/edit/master/docs/book/{path}"
 mathjax-support = true
+additional-css = ["theme/extra.css", "theme/mermaid-extra.css"]
+additional-js = ["theme/mermaid-init.js"]
 
 [output.html.fold]
 enable = true

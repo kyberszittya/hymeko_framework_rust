@@ -11,11 +11,9 @@
 
 #[cfg(test)]
 mod test_gazebo_world {
-    use hymeko_query::engine::QueryEngine;
     use hymeko_formats::gazebo::generate_gazebo_world;
-    use hymeko_query::kinematics::gazebo_plugins::{
-        extract_gazebo_plugins, GazeboPluginKind,
-    };
+    use hymeko_query::engine::QueryEngine;
+    use hymeko_query::kinematics::gazebo_plugins::{GazeboPluginKind, extract_gazebo_plugins};
     use hymeko_query::kinematics::kinematic::extract_kinematic_model;
     use hymeko_query::transforms::{
         DomainTransform, ModelView, TransformConfig, TransformRegistry,
@@ -212,7 +210,10 @@ mod test_gazebo_world {
         let reg = hymeko_formats::default_registry();
         let t = reg.get("gazebo").unwrap();
         let out = t
-            .emit(&ModelView::Kinematic(model), &TransformConfig::default().with_name("moveo"))
+            .emit(
+                &ModelView::Kinematic(model),
+                &TransformConfig::default().with_name("moveo"),
+            )
             .expect("stub emit succeeds");
         assert!(out.contains("<sdf version=\"1.8\">"));
         assert!(out.contains("gz-sim-physics-system"));

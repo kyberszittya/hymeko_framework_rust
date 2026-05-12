@@ -40,15 +40,20 @@ mod test_imported_real {
     /// Lower bounds rather than exact counts because the kinematic
     /// extractor may filter zero-DOF joints from the model view.
     const IMPORTED: &[(&str, &str, usize, usize)] = &[
-        ("../data/robotics_imported/wam/wam.hymeko",         "wam",     8, 6),
-        ("../data/robotics_imported/drchubo/drchubo.hymeko", "drchubo", 50, 50),
+        ("../data/robotics_imported/wam/wam.hymeko", "wam", 8, 6),
+        (
+            "../data/robotics_imported/drchubo/drchubo.hymeko",
+            "drchubo",
+            50,
+            50,
+        ),
     ];
 
     #[test]
     fn imported_real_fixtures_compile_and_emit_six_formats() {
         for &(path, name, min_links, min_joints) in IMPORTED {
-            let (store, c) = load_and_lower(path)
-                .unwrap_or_else(|e| panic!("compile {path}: {e:?}"));
+            let (store, c) =
+                load_and_lower(path).unwrap_or_else(|e| panic!("compile {path}: {e:?}"));
 
             // Free-function emitters: URDF, SDF (not Gazebo because the
             // stripped-mesh imports may have an empty `world` link that
@@ -57,9 +62,11 @@ mod test_imported_real {
             let urdf = generate_urdf(&c.ir, &store.it, name);
             let sdf = generate_sdf(&c.ir, &store.it, name);
             assert!(!urdf.is_empty(), "URDF emit empty for {path}");
-            assert!(!sdf.is_empty(),  "SDF emit empty for {path}");
-            assert!(urdf.contains(&format!("<robot name=\"{name}\"")),
-                    "URDF header missing robot name for {path}");
+            assert!(!sdf.is_empty(), "SDF emit empty for {path}");
+            assert!(
+                urdf.contains(&format!("<robot name=\"{name}\"")),
+                "URDF header missing robot name for {path}"
+            );
 
             // Kinematic-model extraction must recover the link / joint
             // counts within a small filter tolerance — extraction can
@@ -67,12 +74,18 @@ mod test_imported_real {
             // the structure entirely.
             let engine = QueryEngine::new(&c.ir, &store.it);
             let km = extract_kinematic_model(&engine, name);
-            assert!(km.links.len() >= min_links,
-                    "{path}: extracted {} links, expected ≥ {}",
-                    km.links.len(), min_links);
-            assert!(km.joints.len() >= min_joints,
-                    "{path}: extracted {} joints, expected ≥ {}",
-                    km.joints.len(), min_joints);
+            assert!(
+                km.links.len() >= min_links,
+                "{path}: extracted {} links, expected ≥ {}",
+                km.links.len(),
+                min_links
+            );
+            assert!(
+                km.joints.len() >= min_joints,
+                "{path}: extracted {} joints, expected ≥ {}",
+                km.joints.len(),
+                min_joints
+            );
 
             // Registry-dispatched emitters (MJCF, DOT, Mermaid).
             let model_view = ModelView::Kinematic(km);
@@ -81,8 +94,7 @@ mod test_imported_real {
             for stage in &["mjcf", "dot", "mermaid"] {
                 let t = reg.get(stage).expect("registry has stage");
                 let out = t.emit(&model_view, &cfg).unwrap_or_default();
-                assert!(!out.is_empty(),
-                        "{stage} emit empty for imported {path}");
+                assert!(!out.is_empty(), "{stage} emit empty for imported {path}");
             }
         }
     }

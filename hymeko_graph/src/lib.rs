@@ -61,19 +61,29 @@
 //!   `hymeko_py/src/cycles.rs` and will migrate over in the next
 //!   refactor pass.
 
-#![forbid(unsafe_code)]
+// SIMD spine kernel (spine::fir_one_cycle_avx2) needs unsafe for
+// `_mm256_*` intrinsics; the rest of the crate is `deny(unsafe_code)`
+// and the unsafe is scoped via `#[allow]` only on that function.
+#![deny(unsafe_code)]
 #![warn(missing_docs)]
 
 pub mod balance;
+pub mod color_coding;
 pub mod community;
 pub mod cycle_enum;
+pub mod cycle_sampler;
 pub mod friedler;
+pub mod path_closure;
 pub mod pruner;
+pub mod rand_lcg;
 pub mod signed_graph;
+pub mod spine;
 pub mod topk_cycles;
 pub mod traversal;
 pub mod traversal_heuristic;
+pub mod unsigned_cycles;
 pub mod vertex_filter;
+pub mod walks_unsigned;
 
 pub use balance::{BipartiteOnlyPruner, CartwrightHararyPruner, DavisWeakBalancePruner};
 pub use cycle_enum::{enumerate_simple_cycles, enumerate_simple_cycles_noprune};
@@ -84,6 +94,10 @@ pub use pruner::{
     StatsSnapshot,
 };
 pub use signed_graph::{Sign, SignedGraph};
+pub use spine::{
+    CliffordFIR, SignedCycleFIR, clifford_fir_backward, clifford_fir_forward,
+    fir_cycle_forward, fir_cycle_scatter_mean,
+};
 pub use topk_cycles::{tiered_m_v_by_degree, WeightedSumScorer};
 pub use topk_cycles::{
     EntropyGainScorer, HybridScorer, InverseDegreeScorer, TopKBuilder, TopKCycle,

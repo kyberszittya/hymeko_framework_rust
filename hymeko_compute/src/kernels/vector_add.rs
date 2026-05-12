@@ -3,14 +3,11 @@
 //! on a fresh box; not a real workload.
 
 use vulkano::{
-    command_buffer::{
-        AutoCommandBufferBuilder, CommandBufferUsage, PrimaryCommandBufferAbstract,
-    },
+    command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, PrimaryCommandBufferAbstract},
     descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
     pipeline::{
-        ComputePipeline, PipelineBindPoint, PipelineLayout,
-        PipelineShaderStageCreateInfo, compute::ComputePipelineCreateInfo,
-        layout::PipelineDescriptorSetLayoutCreateInfo,
+        ComputePipeline, PipelineBindPoint, PipelineLayout, PipelineShaderStageCreateInfo,
+        compute::ComputePipelineCreateInfo, layout::PipelineDescriptorSetLayoutCreateInfo,
     },
     shader::{ShaderModule, ShaderModuleCreateInfo},
     sync::GpuFuture,
@@ -21,8 +18,7 @@ use crate::context::VulkanContext;
 
 /// Compiled SPIR-V for the vector-add kernel; produced by `build.rs`
 /// from `shaders/vector_add.comp`.
-const VECTOR_ADD_SPV: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/vector_add.spv"));
+const VECTOR_ADD_SPV: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/vector_add.spv"));
 
 /// Run `c = a + b` on the device, returning `c` to the host.
 pub fn run(ctx: &VulkanContext, a: &[f32], b: &[f32]) -> Vec<f32> {
@@ -37,13 +33,9 @@ pub fn run(ctx: &VulkanContext, a: &[f32], b: &[f32]) -> Vec<f32> {
     let buf_c = buffers::download::<f32>(ctx, n);
 
     let words = bytes_to_words(VECTOR_ADD_SPV);
-    let shader = unsafe {
-        ShaderModule::new(
-            ctx.device().clone(),
-            ShaderModuleCreateInfo::new(&words),
-        )
-    }
-    .expect("create vector_add shader module");
+    let shader =
+        unsafe { ShaderModule::new(ctx.device().clone(), ShaderModuleCreateInfo::new(&words)) }
+            .expect("create vector_add shader module");
     let entry_point = shader.entry_point("main").expect("entry point");
 
     let stage = PipelineShaderStageCreateInfo::new(entry_point);
@@ -61,7 +53,7 @@ pub fn run(ctx: &VulkanContext, a: &[f32], b: &[f32]) -> Vec<f32> {
     )
     .unwrap();
 
-    let descriptor_set_layout = layout.set_layouts().get(0).unwrap();
+    let descriptor_set_layout = layout.set_layouts().first().unwrap();
     let descriptor_set = PersistentDescriptorSet::new(
         ctx.descriptor_set_allocator().as_ref(),
         descriptor_set_layout.clone(),
@@ -74,7 +66,7 @@ pub fn run(ctx: &VulkanContext, a: &[f32], b: &[f32]) -> Vec<f32> {
     )
     .unwrap();
 
-    let workgroups = ((n as u32) + 63) / 64;
+    let workgroups = (n as u32).div_ceil(64);
     let mut cb = AutoCommandBufferBuilder::primary(
         ctx.command_buffer_allocator().as_ref(),
         ctx.queue().queue_family_index(),
@@ -108,7 +100,10 @@ pub fn run(ctx: &VulkanContext, a: &[f32], b: &[f32]) -> Vec<f32> {
 /// expects. Panics if the byte length is not a multiple of 4 (which
 /// would mean a corrupt `.spv`).
 fn bytes_to_words(bytes: &[u8]) -> Vec<u32> {
-    assert!(bytes.len() % 4 == 0, "SPIR-V byte length not multiple of 4");
+    assert!(
+        bytes.len().is_multiple_of(4),
+        "SPIR-V byte length not multiple of 4"
+    );
     bytes
         .chunks_exact(4)
         .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))

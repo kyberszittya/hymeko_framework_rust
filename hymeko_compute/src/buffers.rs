@@ -23,10 +23,7 @@ use crate::context::VulkanContext;
 /// Allocate a host-visible buffer initialised from `data` and usable
 /// as a shader storage source (read by shader). Convenient for inputs
 /// the host wants the GPU to read once.
-pub fn upload<T: Pod + Send + Sync + 'static>(
-    ctx: &VulkanContext,
-    data: &[T],
-) -> Subbuffer<[T]> {
+pub fn upload<T: Pod + Send + Sync + 'static>(ctx: &VulkanContext, data: &[T]) -> Subbuffer<[T]> {
     Buffer::from_iter(
         ctx.memory_allocator().clone(),
         BufferCreateInfo {
@@ -45,10 +42,7 @@ pub fn upload<T: Pod + Send + Sync + 'static>(
 
 /// Allocate a host-readable buffer the shader writes into. Use for
 /// outputs the host wants to read back.
-pub fn download<T: Pod + Send + Sync + 'static>(
-    ctx: &VulkanContext,
-    len: usize,
-) -> Subbuffer<[T]> {
+pub fn download<T: Pod + Send + Sync + 'static>(ctx: &VulkanContext, len: usize) -> Subbuffer<[T]> {
     Buffer::from_iter(
         ctx.memory_allocator().clone(),
         BufferCreateInfo {
@@ -60,7 +54,7 @@ pub fn download<T: Pod + Send + Sync + 'static>(
                 | MemoryTypeFilter::HOST_RANDOM_ACCESS,
             ..Default::default()
         },
-        std::iter::repeat(T::zeroed()).take(len),
+        std::iter::repeat_n(T::zeroed(), len),
     )
     .expect("buffer download alloc failed")
 }
@@ -100,9 +94,7 @@ pub fn storage<T: Pod + Send + Sync + 'static>(
 /// shader has signalled completion. Caller is responsible for
 /// ensuring the GPU is done with this buffer (typically via a
 /// `wait_for_fences` on the dispatch's future).
-pub fn read_back<T: Pod + Send + Sync + Clone + 'static>(
-    buf: &Subbuffer<[T]>,
-) -> Vec<T> {
+pub fn read_back<T: Pod + Send + Sync + Clone + 'static>(buf: &Subbuffer<[T]>) -> Vec<T> {
     let view = buf.read().expect("buffer read lock failed");
     view.iter().cloned().collect()
 }

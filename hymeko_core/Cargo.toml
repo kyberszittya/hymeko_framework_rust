@@ -2,6 +2,8 @@
 name = "hymeko_core"
 version = "0.1.0"
 edition = "2024"
+autobenches = false
+autotests = false
 
 [lib]
 name = "hymeko"
@@ -44,6 +46,11 @@ serde_json = "1.0.149"
 # neither.
 hymeko_hre = { path = "../hymeko_hre" }
 hymeko_hnn = { path = "../hymeko_hnn" }
+
+[[test]]
+name = "mod"
+path = "tests/mod.rs"
+
 [[bench]]
 name = "interning_bench"
 harness = false

@@ -1,0 +1,323 @@
+\documentclass[10pt]{article}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible,
+}
+
+\title{Plan: Concentric-Pyramid Multi-Layer (CPML) for Signed-Graph
+  Link Prediction \\ and Cross-Query Hypergraph Convolution (XHC) for
+  HyMeYOLO}
+\author{}
+\date{2026-05-11}
+
+\begin{document}
+\maketitle
+
+\section*{Scope}
+
+Two architectural proposals, sharing a hypergraph-convolution lineage:
+
+\begin{itemize}
+  \item \textbf{CPML} --- a vertex-degree-stratified depth network for
+    signed-graph link prediction, targeting the Epinions ceiling
+    (current 0.815, SGT $\sim 0.95$, gap $-0.13$).
+  \item \textbf{XHC} --- cross-query hypergraph convolution for
+    HyMeYOLO, replacing the current independent-query head with one
+    that propagates information between overlapping query polygons.
+\end{itemize}
+
+Both are motivated by your reformulation of CPG: ``going to the center,
+more cycles are detected, leading to abstraction.'' That sentence
+describes a \emph{multi-layer pyramid}, not a per-vertex cap allocation
+(which is what the earlier CPG implementation did and which we
+archived). The biological analogue is the cortical hierarchy V1
+$\to$ V2 $\to$ V4 $\to$ IT --- each level integrates over a larger
+receptive field. CPML applies that hierarchy to signed-graph cycles.
+
+\section*{1. CPML: Concentric-Pyramid Multi-Layer}
+
+\subsection*{1.1 Definitions}
+
+Let $G = (V, E, \sigma)$ be a signed graph with vertex set $V$, edge
+set $E$, and edge-sign function $\sigma : E \to \{-1, +1\}$. Let
+$d : V \to \mathbb{N}$ be the (undirected) degree function.
+
+\textbf{Tier stratification.} Choose tier breakpoints
+$0 = p_0 < p_1 < \ldots < p_L = 1$ in degree-percentile space. Tier
+$T_\ell$ consists of all vertices whose degree percentile lies in
+$(p_{\ell-1}, p_\ell]$:
+\[
+  T_\ell = \{ v \in V : F_d^{-1}(p_{\ell-1}) < d(v) \le F_d^{-1}(p_\ell) \}.
+\]
+Convention: $T_L$ is the \emph{innermost} (highest-degree) tier ---
+``the centre''. $T_1$ is the outermost (lowest-degree) ---
+``the periphery''.
+
+\textbf{Tier-restricted cycle pool.} Let $\mathcal{C}_k(G)$ be the
+set of all simple closed $k$-cycles in $G$. Define the
+\emph{$\ell$-tier cycle pool} as
+\[
+  \mathcal{C}_\ell = \bigcup_{k \in \{3, 4, 5\}}
+                      \{c \in \mathcal{C}_k(G) :
+                       c \cap T_\ell \ne \emptyset\},
+\]
+i.e.\ all cycles that touch at least one vertex of $T_\ell$. Note:
+inner tiers' cycle pools \emph{strictly contain} more cycles than
+outer ones in expectation (hubs are incident to more cycles than
+leaves), giving the ``more cycles toward the centre'' property.
+
+\textbf{Tier-restricted incidence.} Let
+$M_\ell \in \{-1, 0, +1\}^{|V| \times |\mathcal{C}_\ell|}$ be the
+signed-incidence matrix: $M_\ell[v, c] = 0$ if $v \notin c$,
+otherwise the product of signs along $c$ from $v$'s perspective.
+
+\subsection*{1.2 Forward equations}
+
+CPML stacks $L$ HSiKAN layers. Layer $\ell$ operates only on the
+$\ell$-tier cycle pool:
+
+\[
+  H_\ell = \mathrm{HSiKAN}_\ell(M_\ell, X_\ell), \quad
+  X_\ell = \mathrm{concat}(X_0, H_1, \ldots, H_{\ell-1}),
+\]
+
+where $X_0 \in \mathbb{R}^{|V| \times d_0}$ is the initial vertex
+feature and each $X_\ell$ concatenates the original features with all
+\emph{outer-tier} embeddings produced so far. This is the
+``inward funnelling'' --- abstraction at the centre receives all
+peripheral signal.
+
+\textbf{Edge predictor.} For a candidate edge $(u, v)$,
+\[
+  s(u, v) = \mathrm{MLP}\big( \mathrm{concat}(H_L[u], H_L[v]) \big),
+\]
+where $H_L$ is the final (innermost-tier) embedding. The model
+classifies the edge sign via $\mathrm{sigmoid}(s(u, v))$.
+
+\subsection*{1.3 Mathematical properties}
+
+\paragraph{Receptive field.} Each HSiKAN layer aggregates over cycles
+touching its tier's vertices. A leaf vertex in $T_1$ is in
+$\mathcal{C}_1$ only; a hub vertex in $T_L$ participates in every
+tier's cycles. So inner-tier embeddings have \emph{strictly larger}
+effective receptive field --- this mirrors the cortical
+$|RF|$ growth (Hubel--Wiesel: V1 a few degrees, V2 several, V4 large,
+IT scene-level).
+
+\paragraph{Computational cost.} Let $n_\ell = |T_\ell|$ and
+$m_\ell = |\mathcal{C}_\ell|$. CPML's forward cost is
+$\sum_\ell O(n_\ell \cdot d_{\text{hidden}} \cdot m_\ell)$, compared to
+the flat HSiKAN's $O(|V| \cdot d_{\text{hidden}} \cdot |\mathcal{C}|)$.
+For a power-law degree distribution (typical of social graphs), inner
+tiers have small $n_\ell$ but large $m_\ell$; outer tiers have large
+$n_\ell$ but small $m_\ell$. The total cost is roughly the same
+order as flat HSiKAN; the speedup or slowdown depends on the
+percentile cuts.
+
+\paragraph{Information bottleneck.} The concat-style update
+$X_\ell = \mathrm{concat}(X_0, H_1, \ldots, H_{\ell-1})$ ensures
+information from every outer tier reaches every inner tier. There is
+no information loss in the forward direction. Inner tiers may
+overfit if $n_L$ is small; mitigated by $L_2$ regularisation on the
+inner layers.
+
+\paragraph{Connection to CNN-FPN.} Replace ``vertices'' with
+``pixels'', ``degree'' with ``feature-magnitude / saliency'',
+``cycles'' with ``receptive fields'', and CPML becomes an FPN-style
+multi-scale aggregator. The mathematical structure is identical:
+hierarchical aggregation over a stratified vertex/pixel set with
+inward feature propagation.
+
+\paragraph{Biological analogue.} V1 $\to$ V2 $\to$ V4 $\to$ IT
+forms a 4-stage hierarchy with receptive-field sizes
+$1\degree \to 5\degree \to 30\degree \to 60\degree$. CPML with $L = 4$
+mirrors this. Alternative: hippocampal CA3 attractor has a similar
+``periphery $\to$ centre $\to$ pattern completion'' flow.
+
+\subsection*{1.4 Hyperparameters}
+
+\begin{itemize}
+  \item $L \in \{2, 3, 4, 5\}$: number of tiers. Default $L = 3$.
+  \item Percentile cuts: default $\{0, 0.2, 0.8, 1.0\}$ for $L = 3$
+    (bottom 20\% leaves, middle 60\% mid, top 20\% hubs).
+  \item Per-tier $d_{\text{hidden}}$: default constant. Could grow
+    inward as $d_\ell = 2^{\ell-1} \cdot d_0$.
+  \item Cycle caps per tier: $m_\ell \in [16, 256]$, possibly growing
+    inward.
+\end{itemize}
+
+\section*{2. XHC: Cross-Query Hypergraph Convolution (HyMeYOLO)}
+
+\subsection*{2.1 Hypergraph formulation}
+
+For an image with $N$ queries, each with $K_q$ corners:
+\begin{itemize}
+  \item Vertex set $V_{\text{img}} = \bigcup_{q=1}^N \{c_{q,1}, \ldots, c_{q,K_q}\}$
+    (concatenated corners across queries).
+  \item Hyperedge set $E_{\text{img}} = \{e_1, \ldots, e_N\}$ where
+    $e_q$ contains $\{c_{q,1}, \ldots, c_{q,K_q}\}$.
+  \item Incidence $H_{\text{img}} \in \{0, 1\}^{|V_{\text{img}}| \times N}$ with
+    $H_{\text{img}}[v, q] = 1$ iff corner $v$ is in query $q$.
+\end{itemize}
+
+\subsection*{2.2 Forward equation (Feng et al.\ 2019 HGNN)}
+
+\[
+  X^{(l+1)} = \sigma\big(
+    D_v^{-1/2} \, H_{\text{img}} \, W \, D_e^{-1} \, H_{\text{img}}^\top
+    \, D_v^{-1/2} \, X^{(l)} \, \Theta^{(l)}
+  \big),
+\]
+where $D_v$ and $D_e$ are the vertex / hyperedge degree diagonal
+matrices; $W$ is a learnable diagonal hyperedge weight (one per
+query); $\Theta^{(l)}$ is the per-layer linear projection;
+$\sigma = \mathrm{KAN}$-style univariate activation.
+
+This propagates: corner $\to$ query (aggregate over corners)
+$\to$ corner (re-distribute). Overlapping corner positions across
+queries trigger lateral information exchange.
+
+\subsection*{2.3 Subtlety: corners are continuous, not discrete}
+
+In the formulation above, vertices are \emph{corner indices}, not
+\emph{positions}. Two queries can predict corners at the same
+position without sharing a vertex. To get true cross-query
+propagation we need a \emph{position-aware} hypergraph:
+
+\paragraph{Soft incidence.} Replace $H_{\text{img}}[v, q] \in \{0, 1\}$
+with a position-similarity kernel:
+\[
+  H_{\text{img}}[v, q] = \kappa(c_v, c_q), \quad
+  \kappa(p, q\text{-centre}) = \exp\Big(
+    -\frac{\|p - q\text{-centre}\|^2}{2 \sigma_q^2}
+  \Big),
+\]
+where $\sigma_q$ is a learnable per-query scale. Now corners near a
+query's centre receive a strong soft incidence even if they were
+predicted for a different query.
+
+\subsection*{2.4 Computational cost}
+
+For $N$ queries with $K$ corners each, $|V_{\text{img}}| = N K$,
+$|E_{\text{img}}| = N$. The full HGNN forward is
+$O(N K \cdot d^2 + N^2 K \cdot d)$ per layer. For our HyMeYOLO scale
+($N = 6$--$8$, $K = 4$--$8$, $d = 32$), this is $\sim 10^4$ flops per
+image --- negligible compared to backbone.
+
+\section*{Affected files and CORE.YAML compliance}
+
+\textbf{CPML:}
+\begin{itemize}
+  \item NEW: \texttt{signedkan\_wip/src/cpml.py} --- model + tier
+    stratification utility.
+  \item NEW: \texttt{signedkan\_wip/tests/test\_cpml.py} --- unit + smoke.
+  \item MODIFY: \texttt{signedkan\_wip/src/run\_final\_cell.py} ---
+    add \texttt{--model CPML} dispatch.
+\end{itemize}
+
+\textbf{XHC:}
+\begin{itemize}
+  \item NEW: \texttt{signedkan\_wip/src/vision/hymeyolo\_xhc.py}.
+  \item NEW: \texttt{signedkan\_wip/tests/test\_xhc.py}.
+  \item MODIFY: \texttt{signedkan\_wip/src/vision/train\_circles\_ricci.py} ---
+    add \texttt{(+xhc)} as 7th config.
+\end{itemize}
+
+\textbf{CORE.YAML items touched: none.} Both are additive new modules.
+
+\section*{Test plan (CLAUDE.md \S3)}
+
+\paragraph{CPML unit tests} (\texttt{tests/test\_cpml.py}):
+\begin{itemize}
+  \item \texttt{tier\_stratify\_returns\_correct\_sizes} --- on a power-law
+    graph, verify $|T_\ell|$ ratios match percentile cuts.
+  \item \texttt{forward\_shapes\_l2\_l3\_l4} --- each $L \in \{2, 3, 4\}$.
+  \item \texttt{backward\_no\_nan} --- gradients flow.
+  \item \texttt{l1\_reduces\_to\_flat\_hsikan} --- $L = 1$ recovers the
+    flat baseline numerically.
+  \item \texttt{innermost\_tier\_sees\_all\_outer\_features} --- assert
+    $X_L$ row contains contributions from $X_0$, $H_1$, ..., $H_{L-1}$.
+\end{itemize}
+
+\paragraph{CPML smoke} (single seed, Bitcoin OTC, 10 epochs):
+expect $L = 2$ matches flat HSiKAN within $\pm 1\,\mathrm{pp}$ AUC
+(sanity); $L = 3$ to $L = 4$ shows measurable difference.
+
+\paragraph{CPML real-data validation}: queue 5-seed paired on
+Bitcoin OTC + Epinions (CPML-L3 vs flat HSiKAN-kitchen-sink) only
+\emph{if} smoke shows $L \ge 3$ produces nontrivial differences.
+
+\paragraph{XHC unit tests}:
+\begin{itemize}
+  \item \texttt{soft\_incidence\_normalises\_to\_one} --- per-query.
+  \item \texttt{forward\_shapes\_match\_existing\_head} --- drop-in compat.
+  \item \texttt{backward\_no\_nan}.
+  \item \texttt{l0\_soft\_incidence\_reduces\_to\_per\_query\_pool} ---
+    Gaussian-kernel with $\sigma \to 0$ recovers the existing
+    independent-query baseline.
+\end{itemize}
+
+\section*{Performance budget}
+
+\begin{itemize}
+  \item CPML peak RSS: bounded by flat HSiKAN $\times L$ (worst case);
+    in practice expect $\le 1.5 \times$ due to tier-restricted pools.
+  \item CPML wall time at $L = 3$: $\le 1.8 \times$ flat HSiKAN.
+  \item XHC wall time: $\le 1.1 \times$ existing HyMeYOLO head
+    (HGNN layer is cheap at $N = 6$--$8$ queries).
+\end{itemize}
+
+\section*{Risk anticipation}
+
+\begin{itemize}
+  \item \textbf{CPML inner-tier overfit}: $|T_L|$ may be a few hundred
+    vertices on Bitcoin OTC. Mitigation: $L_2$ on $H_L$.
+  \item \textbf{CPML cycle-pool overlap}: $\mathcal{C}_\ell$ may have
+    huge overlap with $\mathcal{C}_{\ell-1}$, weakening the
+    stratification. Verify via $|\mathcal{C}_\ell \setminus \mathcal{C}_{\ell-1}|$
+    in unit test.
+  \item \textbf{XHC over-smoothing}: standard HGNN warning. Mitigate
+    with 1 or 2 layers max.
+  \item \textbf{XHC soft incidence numerical instability}:
+    learnable $\sigma_q$ can drift to $0$, making the kernel
+    degenerate. Constrain via $\sigma_q = \mathrm{softplus}(\hat{\sigma}_q)$.
+\end{itemize}
+
+\section*{Rollback path}
+
+Both modules are additive new files. Disabling means not invoking
+them from the training script. No core math kernels touched; no
+existing API breaks.
+
+\section*{Feasibility-gate criteria}
+
+Before queueing a real training run for either architecture:
+\begin{enumerate}
+  \item Unit tests all pass (\texttt{cargo test} N/A here;
+    \texttt{pytest signedkan\_wip/tests/test\_\{cpml,xhc\}.py}).
+  \item Smoke 1-epoch run produces a non-NaN loss curve.
+  \item Memory peak $\le 4\,\mathrm{GB}$ at default hyperparams.
+  \item Forward + backward shapes match expectations.
+\end{enumerate}
+
+If any criterion fails, halt and re-design.
+
+\section*{Sequencing}
+
+\begin{enumerate}
+  \item Land CPML module + unit tests + smoke (this session).
+  \item Wait for current Stage 7 + 7.5 + 9 + 8 queue to complete.
+  \item If smoke green, queue CPML-L3 1-seed on Bitcoin OTC + Epinions
+    as a Stage 10.
+  \item XHC follows the same gate-then-queue protocol; lower priority
+    because Slashdot SOTA already broken on the vision-flavoured side
+    of the broader work.
+\end{enumerate}
+
+\end{document}

@@ -394,11 +394,7 @@ def generate_launch_description():
             ("readme", &readme_path),
         ] {
             let meta = fs::metadata(path).expect("bundle file must exist");
-            info!(
-                "  {role:<6} -> {}  ({} bytes)",
-                path.display(),
-                meta.len()
-            );
+            info!("  {role:<6} -> {}  ({} bytes)", path.display(), meta.len());
             assert!(meta.len() > 0, "{role} bundle file is empty");
         }
 

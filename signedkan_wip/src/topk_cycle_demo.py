@@ -134,7 +134,7 @@ def main():
           f"{'|M_e| MB':<10} {'time':<8}")
     for K in [1_000, 10_000, 100_000]:
         t0 = time.perf_counter()
-        cs, ss = hymeko.enumerate_top_k_cycles_signed_rs(
+        cs, ss = hymeko.enumerate_top_k_cycles_rs(
             u, v, s, n_nodes, args.k, K, "fraction_negative",
         )
         dt = time.perf_counter() - t0
@@ -149,8 +149,8 @@ def main():
           f"{'|M_e| MB':<10} {'speedup':<10} {'time':<8}")
     for m in [1, 4, 16, 64]:
         t0 = time.perf_counter()
-        cs, ss = hymeko.enumerate_top_k_per_vertex_cycles_signed_rs(
-            u, v, s, n_nodes, args.k, m, "fraction_negative",
+        cs, ss = hymeko.enumerate_cycles_rs(
+            u, v, s, n_nodes, args.k, m, score_kind="fraction_negative",
         )
         dt = time.perf_counter() - t0
         cv, ce = coverage(cs, n_nodes, edge_keys)

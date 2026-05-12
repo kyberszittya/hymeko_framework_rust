@@ -58,8 +58,9 @@ struct ArmState {
 impl ArmState {
     fn new() -> Self {
         let mut joints = HashMap::new();
+        let pi = std::f64::consts::PI;
         for j in 0..N_JOINTS {
-            joints.insert(j, [0.0, -3.14, 3.14]);
+            joints.insert(j, [0.0, -pi, pi]);
         }
         Self { joints, collab: true }
     }

@@ -53,6 +53,8 @@ signedkan_wip/src/
 
 ## See also
 
+- [Results & evidence](../results/overview.md) — abbreviations, math, SOTA charts, evidence contract, artifact indexes (mdBook).
 - [HSiKAN architecture](./hsikan.md) — the core architecture
+- [HymeKo-Gömb: “orthogonal” meanings](./gomb-orthogonal.md) — factorial vs cascade vs bank regularisation
 - [HyMeKo-driven training](./hymeko-driven.md) — how training.hymeko drives the walker
 - [Quickstart: Build an HSiKAN architecture](../quickstart/08-hsikan-architecture.md)

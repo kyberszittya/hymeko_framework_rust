@@ -1,8 +1,8 @@
 mod repl;
 
-use std::path::PathBuf;
-use std::sync::Arc;
 use std::fs;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 
@@ -12,16 +12,20 @@ use hymeko::resolution::interner::Interner;
 use hymeko::util::pretty_print::pretty_print_compiled;
 use hymeko::util::real_parser::RealParser;
 
-use hymeko_formats::{generate_description, OutputFormat};
+use hymeko_formats::{OutputFormat, generate_description};
 use hymeko_query::engine::QueryEngine;
-use hymeko_query::entropy::{compute_entropy_hierarchical, StructuralEntropy};
+use hymeko_query::entropy::{StructuralEntropy, compute_entropy_hierarchical};
 use hymeko_query::interpret::interpret_transform_queries;
-use hymeko_query::rewrite::{execute_transform, TransformSpec};
+use hymeko_query::rewrite::{TransformSpec, execute_transform};
 
 use parser::parse_description;
 
 #[derive(Parser)]
-#[command(name = "hymeko", version, about = "HyMeKo hypergraph description compiler")]
+#[command(
+    name = "hymeko",
+    version,
+    about = "HyMeKo hypergraph description compiler"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -210,13 +214,18 @@ fn main() {
 
 fn run_command(cmd: Commands) {
     match cmd {
-        Commands::Compile { input, format, output, name } => {
+        Commands::Compile {
+            input,
+            format,
+            output,
+            name,
+        } => {
             let fmt = parse_format(&format);
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
-            let compiled = compile_or_exit(&mut ms, &input);
+            let compiled = compile_or_exit(&mut ms, input.as_path());
 
-            let result = generate_description(&compiled.ir, &ms.it, &name, fmt)
-                .unwrap_or_else(|e| {
+            let result =
+                generate_description(&compiled.ir, &ms.it, &name, fmt).unwrap_or_else(|e| {
                     eprintln!("Code generation failed: {e}");
                     std::process::exit(1);
                 });
@@ -237,13 +246,16 @@ fn run_command(cmd: Commands) {
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
             match ms.compile(&input) {
                 Ok(compiled) => {
-                    let warnings = hymeko_formats::urdf::validate_robot_schema(
-                        &compiled.ir, &ms.it,
-                    );
+                    let warnings =
+                        hymeko_formats::urdf::validate_robot_schema(&compiled.ir, &ms.it);
                     if warnings.is_empty() {
                         eprintln!("✅ {} is valid", input.display());
                     } else {
-                        eprintln!("⚠️  {} compiled with {} warnings:", input.display(), warnings.len());
+                        eprintln!(
+                            "⚠️  {} compiled with {} warnings:",
+                            input.display(),
+                            warnings.len()
+                        );
                         for w in &warnings {
                             eprintln!("  - {w}");
                         }
@@ -258,7 +270,7 @@ fn run_command(cmd: Commands) {
 
         Commands::Inspect { input } => {
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
-            let compiled = compile_or_exit(&mut ms, &input);
+            let compiled = compile_or_exit(&mut ms, input.as_path());
             pretty_print_compiled(&ms.it, &compiled);
         }
 
@@ -266,7 +278,7 @@ fn run_command(cmd: Commands) {
 
         Commands::Query { input, query_file } => {
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
-            let compiled = compile_or_exit(&mut ms, &input);
+            let compiled = compile_or_exit(&mut ms, input.as_path());
 
             let query_src = fs::read_to_string(&query_file).unwrap_or_else(|e| {
                 eprintln!("Failed to read {}: {e}", query_file.display());
@@ -276,17 +288,23 @@ fn run_command(cmd: Commands) {
             run_query_source(&compiled, &ms.it, &query_src, &query_file.to_string_lossy());
         }
 
-        Commands::Transform { input, transform, output, name, transforms_dir } => {
+        Commands::Transform {
+            input,
+            transform,
+            output,
+            name,
+            transforms_dir,
+        } => {
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
-            let compiled = compile_or_exit(&mut ms, &input);
+            let compiled = compile_or_exit(&mut ms, input.as_path());
 
             let spec = load_transform_spec(&transforms_dir, &transform);
 
             let mut config = std::collections::HashMap::new();
             config.insert("robot_name".into(), name);
 
-            let result = execute_transform(&compiled.ir, &ms.it, &spec, &config)
-                .unwrap_or_else(|e| {
+            let result =
+                execute_transform(&compiled.ir, &ms.it, &spec, &config).unwrap_or_else(|e| {
                     eprintln!("Transform failed: {e}");
                     std::process::exit(1);
                 });
@@ -303,9 +321,13 @@ fn run_command(cmd: Commands) {
             }
         }
 
-        Commands::Entropy { input, scopes, json } => {
+        Commands::Entropy {
+            input,
+            scopes,
+            json,
+        } => {
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
-            let compiled = compile_or_exit(&mut ms, &input);
+            let compiled = compile_or_exit(&mut ms, input.as_path());
 
             let rows = resolve_entropy_rows(&compiled.ir, &ms.it, &scopes);
             if json {
@@ -315,9 +337,15 @@ fn run_command(cmd: Commands) {
             }
         }
 
-        Commands::Rewrite { input, scope, weight_metric, json, emit_source } => {
+        Commands::Rewrite {
+            input,
+            scope,
+            weight_metric,
+            json,
+            emit_source,
+        } => {
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
-            let compiled = compile_or_exit(&mut ms, &input);
+            let compiled = compile_or_exit(&mut ms, input.as_path());
 
             let agg = parse_weight_metric(&weight_metric).unwrap_or_else(|e| {
                 eprintln!("{e}");
@@ -330,17 +358,24 @@ fn run_command(cmd: Commands) {
                 });
 
             if json {
-                print!("{}", split_proposal_to_json(&compiled.ir, &ms.it, &proposal));
+                print!(
+                    "{}",
+                    split_proposal_to_json(&compiled.ir, &ms.it, &proposal)
+                );
             } else {
                 print_split_proposal(&compiled.ir, &ms.it, &proposal);
             }
 
             if let Some(dest) = emit_source {
-                let base = input.file_stem()
+                let base = input
+                    .file_stem()
                     .and_then(|s| s.to_str())
                     .unwrap_or("rewritten");
                 let source = hymeko_query::rewrite::emit_split_rewrite(
-                    &compiled.ir, &ms.it, &proposal, base,
+                    &compiled.ir,
+                    &ms.it,
+                    &proposal,
+                    base,
                 );
                 if dest == "-" {
                     print!("{source}");
@@ -354,11 +389,18 @@ fn run_command(cmd: Commands) {
             }
         }
 
-        Commands::Emit { input, format, output, name, world, transforms_dir } => {
+        Commands::Emit {
+            input,
+            format,
+            output,
+            name,
+            world,
+            transforms_dir,
+        } => {
             use hymeko_query::transforms::TransformConfig;
 
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
-            let compiled = compile_or_exit(&mut ms, &input);
+            let compiled = compile_or_exit(&mut ms, input.as_path());
 
             let reg = hymeko_formats::default_registry();
             let cfg = TransformConfig::default()
@@ -434,7 +476,11 @@ pub(crate) fn resolve_entropy_rows(
                 };
                 (did.raw(), name)
             };
-            EntropyRow { scope_id, scope_name, entropy }
+            EntropyRow {
+                scope_id,
+                scope_name,
+                entropy,
+            }
         })
         .filter(|row| match &keep_set {
             Some(set) => set.contains(row.scope_name.as_str()),
@@ -449,13 +495,27 @@ pub(crate) fn print_entropy_table(rows: &[EntropyRow]) {
         return;
     }
     // Pad scope name to the longest present, min 12.
-    let name_w = rows.iter().map(|r| r.scope_name.len()).max().unwrap_or(12).max(12);
+    let name_w = rows
+        .iter()
+        .map(|r| r.scope_name.len())
+        .max()
+        .unwrap_or(12)
+        .max(12);
     println!(
         "{:<nw$}  {:>4} {:>4}  {:>9} {:>9} {:>9}  {:>9}",
-        "scope", "V", "E", "H_arity", "H_sign", "H_degree", "H_total",
+        "scope",
+        "V",
+        "E",
+        "H_arity",
+        "H_sign",
+        "H_degree",
+        "H_total",
         nw = name_w,
     );
-    println!("{}", "─".repeat(name_w + 2 + 4 + 1 + 4 + 2 + 9 + 1 + 9 + 1 + 9 + 2 + 9));
+    println!(
+        "{}",
+        "─".repeat(name_w + 2 + 4 + 1 + 4 + 2 + 9 + 1 + 9 + 1 + 9 + 2 + 9)
+    );
     for row in rows {
         let e = &row.entropy;
         println!(
@@ -526,17 +586,17 @@ fn json_escape(s: &str) -> String {
 // Split-proposal output helpers
 // ═══════════════════════════════════════════════════════════════
 
-use hymeko_query::rewrite::{
-    propose_split_for_highest_h_sign_with, propose_split_with,
-    Cluster, SplitProposal, WeightAggregation,
-};
 use hymeko::common::ids::DeclId;
+use hymeko_query::rewrite::{
+    Cluster, SplitProposal, WeightAggregation, propose_split_for_highest_h_sign_with,
+    propose_split_with,
+};
 
 fn parse_weight_metric(s: &str) -> Result<WeightAggregation, String> {
     match s.to_lowercase().as_str() {
-        "l1"    => Ok(WeightAggregation::L1Norm),
-        "l2"    => Ok(WeightAggregation::L2Norm),
-        "linf"  => Ok(WeightAggregation::LinfNorm),
+        "l1" => Ok(WeightAggregation::L1Norm),
+        "l2" => Ok(WeightAggregation::L2Norm),
+        "linf" => Ok(WeightAggregation::LinfNorm),
         "first" => Ok(WeightAggregation::FirstScalar),
         other => Err(format!(
             "Unknown weight metric: `{other}`. Use one of: l1, l2, linf, first."
@@ -554,12 +614,13 @@ fn resolve_split_proposal(
         Some(name) => {
             let did = find_scope_by_name(ir, it, name)
                 .ok_or_else(|| format!("No hypervertex scope named `{name}` found."))?;
-            propose_split_with(ir, did, weight_agg).ok_or_else(|| format!(
-                "Scope `{name}` is not splittable (needs ≥2 vertices and ≥1 edge)."
-            ))
+            propose_split_with(ir, did, weight_agg).ok_or_else(|| {
+                format!("Scope `{name}` is not splittable (needs ≥2 vertices and ≥1 edge).")
+            })
         }
         None => propose_split_for_highest_h_sign_with(ir, weight_agg).ok_or_else(|| {
-            "No scope in this IR has enough structure to split (need ≥2 vertices + ≥1 edge).".to_string()
+            "No scope in this IR has enough structure to split (need ≥2 vertices + ≥1 edge)."
+                .to_string()
         }),
     }
 }
@@ -580,24 +641,27 @@ fn decl_name<'a>(ir: &'a hymeko::ir::ir::Ir, it: &'a Interner, did: DeclId) -> &
     it.resolve(ir.decl_nodes[did.raw()].name)
 }
 
-fn print_split_proposal(
-    ir: &hymeko::ir::ir::Ir,
-    it: &Interner,
-    p: &SplitProposal,
-) {
+fn print_split_proposal(ir: &hymeko::ir::ir::Ir, it: &Interner, p: &SplitProposal) {
     println!("Proposed split of `{}`:", decl_name(ir, it, p.target_scope));
-    println!("  Cluster A ({} vertices): {}",
-             p.cluster_a.len(),
-             join_names(ir, it, &p.cluster_a));
-    println!("  Cluster B ({} vertices): {}",
-             p.cluster_b.len(),
-             join_names(ir, it, &p.cluster_b));
-    println!("  Edge assignments ({} total, {} cross):",
-             p.edge_assignments.len(), p.n_cross_edges);
+    println!(
+        "  Cluster A ({} vertices): {}",
+        p.cluster_a.len(),
+        join_names(ir, it, &p.cluster_a)
+    );
+    println!(
+        "  Cluster B ({} vertices): {}",
+        p.cluster_b.len(),
+        join_names(ir, it, &p.cluster_b)
+    );
+    println!(
+        "  Edge assignments ({} total, {} cross):",
+        p.edge_assignments.len(),
+        p.n_cross_edges
+    );
     for (e_did, cluster) in &p.edge_assignments {
         let tag = match cluster {
-            Cluster::A     => "A",
-            Cluster::B     => "B",
+            Cluster::A => "A",
+            Cluster::B => "B",
             Cluster::Cross => "cross",
         };
         println!("    {:<28} -> {}", decl_name(ir, it, *e_did), tag);
@@ -611,40 +675,46 @@ fn join_names(ir: &hymeko::ir::ir::Ir, it: &Interner, dids: &[DeclId]) -> String
     names.join(", ")
 }
 
-fn split_proposal_to_json(
-    ir: &hymeko::ir::ir::Ir,
-    it: &Interner,
-    p: &SplitProposal,
-) -> String {
+fn split_proposal_to_json(ir: &hymeko::ir::ir::Ir, it: &Interner, p: &SplitProposal) -> String {
     let mut out = String::from("{\n");
     out.push_str(&format!(
         "  \"target_scope\": \"{}\",\n",
         json_escape(decl_name(ir, it, p.target_scope)),
     ));
     out.push_str("  \"cluster_a\": [");
-    out.push_str(&p.cluster_a.iter()
-        .map(|d| format!("\"{}\"", json_escape(decl_name(ir, it, *d))))
-        .collect::<Vec<_>>()
-        .join(", "));
+    out.push_str(
+        &p.cluster_a
+            .iter()
+            .map(|d| format!("\"{}\"", json_escape(decl_name(ir, it, *d))))
+            .collect::<Vec<_>>()
+            .join(", "),
+    );
     out.push_str("],\n");
     out.push_str("  \"cluster_b\": [");
-    out.push_str(&p.cluster_b.iter()
-        .map(|d| format!("\"{}\"", json_escape(decl_name(ir, it, *d))))
-        .collect::<Vec<_>>()
-        .join(", "));
+    out.push_str(
+        &p.cluster_b
+            .iter()
+            .map(|d| format!("\"{}\"", json_escape(decl_name(ir, it, *d))))
+            .collect::<Vec<_>>()
+            .join(", "),
+    );
     out.push_str("],\n");
     out.push_str("  \"edge_assignments\": [\n");
     for (i, (e_did, cluster)) in p.edge_assignments.iter().enumerate() {
         let tag = match cluster {
-            Cluster::A     => "A",
-            Cluster::B     => "B",
+            Cluster::A => "A",
+            Cluster::B => "B",
             Cluster::Cross => "cross",
         };
         out.push_str(&format!(
             "    {{\"edge\": \"{}\", \"cluster\": \"{}\"}}{}\n",
             json_escape(decl_name(ir, it, *e_did)),
             tag,
-            if i + 1 < p.edge_assignments.len() { "," } else { "" },
+            if i + 1 < p.edge_assignments.len() {
+                ","
+            } else {
+                ""
+            },
         ));
     }
     out.push_str("  ],\n");
@@ -657,9 +727,9 @@ fn split_proposal_to_json(
 fn parse_format(s: &str) -> OutputFormat {
     match s.to_lowercase().as_str() {
         "urdf" => OutputFormat::Urdf,
-        "sdf"  => OutputFormat::Sdf17,
+        "sdf" => OutputFormat::Sdf17,
         "mjcf" => OutputFormat::Mjcf,
-        "dot"  => OutputFormat::DotGraph,
+        "dot" => OutputFormat::DotGraph,
         "torch" | "torch_dataflow" => OutputFormat::TorchDataflow,
         "sysml" | "sysml2" => OutputFormat::Sysml,
         other => {
@@ -669,13 +739,15 @@ fn parse_format(s: &str) -> OutputFormat {
     }
 }
 
-fn compile_or_exit(ms: &mut ModuleStore<StdFsProvider, RealParser>, path: &PathBuf) -> Arc<CompiledProgram> {
+fn compile_or_exit(
+    ms: &mut ModuleStore<StdFsProvider, RealParser>,
+    path: &Path,
+) -> Arc<CompiledProgram> {
     ms.compile(path).unwrap_or_else(|e| {
         eprintln!("Compilation failed: {e:?}");
         std::process::exit(1);
     })
 }
-
 
 // ═══════════════════════════════════════════════════════════════
 // Transform loading helpers
@@ -730,9 +802,9 @@ pub(crate) fn list_available_transforms(transforms_dir: &str) {
                 let has_queries = entry.path().join("queries.hymeko").exists();
                 let has_template = find_template_file(&entry.path()).is_some();
                 let status = match (has_queries, has_template) {
-                    (true, true)   => "✅",
-                    (true, false)  => "⚠️  (missing template)",
-                    (false, true)  => "⚠️  (missing queries.hymeko)",
+                    (true, true) => "✅",
+                    (true, false) => "⚠️  (missing template)",
+                    (false, true) => "⚠️  (missing queries.hymeko)",
                     (false, false) => "❌ (empty)",
                 };
                 println!("    {status} {name}");
@@ -755,7 +827,12 @@ pub(crate) fn run_inline_query(compiled: &CompiledProgram, interner: &Interner, 
 }
 
 /// Parse a source string as queries and run them against the compiled IR.
-pub(crate) fn run_query_source(compiled: &CompiledProgram, interner: &Interner, src: &str, label: &str) {
+pub(crate) fn run_query_source(
+    compiled: &CompiledProgram,
+    interner: &Interner,
+    src: &str,
+    label: &str,
+) {
     let ast = match parse_description(src) {
         Ok(ast) => ast,
         Err(e) => {
@@ -776,7 +853,11 @@ pub(crate) fn run_query_source(compiled: &CompiledProgram, interner: &Interner, 
     let batch = engine.query_batch(&queries);
 
     let total_matches: usize = batch.iter().map(|(_, v)| v.len()).sum();
-    println!("  Ran {} queries, {} total matches", batch.len(), total_matches);
+    println!(
+        "  Ran {} queries, {} total matches",
+        batch.len(),
+        total_matches
+    );
     println!();
 
     for (label, matches) in &batch {
@@ -801,7 +882,9 @@ pub(crate) fn run_query_source(compiled: &CompiledProgram, interner: &Interner, 
                         -1 => "-",
                         _ => "~",
                     };
-                    if i > 0 { print!(", "); }
+                    if i > 0 {
+                        print!(", ");
+                    }
                     print!("{sign_ch}{}", ab.target_name);
                 }
                 print!("}}");

@@ -264,10 +264,11 @@ def op_epoch_loop(ctx: Ctx, e: FlowEdge):
     from .run_final_cell import cell_signed_graph
     a = ctx.arch_knobs
     dataset = ctx.consts.get("_dataset_resolved", "bitcoin_alpha")
+    from .runtime_config import get_runtime
     out = cell_signed_graph(
         dataset, "HSiKAN",
         a.get("hidden", 16), n_epochs,
-        int(os.environ.get("HSIKAN_MAX_K4", "200000")),
+        get_runtime().training.max_k4,
         ctx.device, seed=ctx.seed,
     )
     if out is None:

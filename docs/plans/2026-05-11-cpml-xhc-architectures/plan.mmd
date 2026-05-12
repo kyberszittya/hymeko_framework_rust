@@ -1,0 +1,36 @@
+flowchart TB
+    subgraph V["Vertex set V"]
+        T1["T₁ = periphery (80%)<br/>low-degree leaves"]
+        T2["T₂ = mid-tier (19%)<br/>mid-degree"]
+        T3["T_L=T₃ = centre (1%)<br/>high-degree hubs"]
+    end
+
+    subgraph Cycles["Tier-restricted cycle pools"]
+        C1["𝒞₁<br/>cycles through T₁<br/>~many short loops"]
+        C2["𝒞₂<br/>cycles through T₂<br/>~mid-range"]
+        C3["𝒞₃<br/>cycles through T₃<br/>~most cycles, longest reach"]
+    end
+
+    subgraph Layers["HSiKAN layers (one per tier)"]
+        L1["HSiKAN₁<br/>X₀ + 𝒞₁ → H₁"]
+        L2["HSiKAN₂<br/>concat(X₀, H₁) + 𝒞₂ → H₂"]
+        L3["HSiKAN₃<br/>concat(X₀, H₁, H₂) + 𝒞₃ → H_L"]
+    end
+
+    T1 --> C1
+    T2 --> C2
+    T3 --> C3
+    C1 --> L1
+    C2 --> L2
+    C3 --> L3
+
+    L1 -. concat .-> L2
+    L1 -. concat .-> L3
+    L2 -. concat .-> L3
+
+    L3 --> P["edge predictor:<br/>s(u,v) = MLP(H_L[u] ‖ H_L[v])"]
+
+    style T1 fill:#fff2cc
+    style T2 fill:#ffe0b3
+    style T3 fill:#ffb3b3
+    style L3 fill:#ffb3b3

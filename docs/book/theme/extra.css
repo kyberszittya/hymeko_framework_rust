@@ -1,0 +1,53 @@
+/* HyMeKo handbook — light polish for results chapters */
+.content main table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.95em;
+}
+.content main table th,
+.content main table td {
+  border: 1px solid var(--table-border-color, #cfd8dc);
+  padding: 0.45rem 0.6rem;
+  vertical-align: top;
+}
+.content main table thead th {
+  background: var(--table-header-bg, rgba(0, 0, 0, 0.06));
+  font-weight: 600;
+}
+.content main blockquote {
+  border-left: 4px solid #c62828;
+  background: rgba(198, 40, 40, 0.06);
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+}
+.ayu .content main blockquote {
+  border-left-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.08);
+}
+.content main pre {
+  border-radius: 6px;
+}
+.content main h1 {
+  letter-spacing: -0.02em;
+}
+
+/* Gömb sphere diagram (inline SVG in research/gomb-orthogonal.md) */
+.gomb-sphere-diagram {
+  display: block;
+  max-width: min(100%, 520px);
+  height: auto;
+  margin: 1.25rem auto;
+}
+.gomb-sphere-diagram figcaption {
+  font-size: 0.9em;
+  margin-top: 0.5rem;
+  text-align: center;
+  color: var(--fg, #37474f);
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ayu .gomb-sphere-diagram figcaption {
+  color: #b3b9c5;
+}

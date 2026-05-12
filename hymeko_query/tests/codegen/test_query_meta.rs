@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod test_query_meta {
-    use hymeko_query::engine::QueryEngine;
+    use crate::test_helpers::load_and_lower;
     use hymeko_query::Predicate;
     use hymeko_query::QueryMatch;
-    use crate::test_helpers::load_and_lower;
+    use hymeko_query::engine::QueryEngine;
 
     const META: &str = "../data/robotics/meta_kinematics.hymeko";
 
@@ -99,9 +99,8 @@ mod test_query_meta {
     fn or_predicate() {
         let (store, compiled) = load_and_lower(META).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
-        let r = engine.query(&Predicate::node().and(
-            Predicate::named("link").or(Predicate::named("frame"))
-        ));
+        let r = engine
+            .query(&Predicate::node().and(Predicate::named("link").or(Predicate::named("frame"))));
         assert_eq!(r.len(), 2);
     }
 }

@@ -6,20 +6,20 @@
 //!
 //! Fixture A — "fano-lite": 3 nodes `{n0, n1, n2}`, 1 hyperedge `e0` with
 //! signs `(+n0, -n1, -n2)`. Hand-computed expectations:
-//!   - Star expansion: dim = |V| + |E| = 4, slice 0 has 3 entries:
-//!       (k=0, i=0, j=3, 1.0)  `+n0 -> e0`
-//!       (k=0, i=3, j=1, 1.0)  `e0 -> -n1`
-//!       (k=0, i=3, j=2, 1.0)  `e0 -> -n2`
-//!   - Clique expansion: dim = |V| = 3, slice 0 has 4 entries:
-//!       (+,-) `n0 -> n1` and `n0 -> n2`
-//!       (-,-) neutral fan-out `n1 <-> n2`
+//!
+//! - Star expansion: dim = |V| + |E| = 4, slice 0 has three entries
+//!   `(k=0,i=0,j=3)`, `(k=0,i=3,j=1)`, `(k=0,i=3,j=2)` for `+n0→e0`, `e0→-n1`, `e0→-n2`.
+//! - Clique expansion: dim = |V| = 3, slice 0 has four entries including (+,-) `n0→n1`, `n0→n2`
+//!   and (-,-) neutral fan-out `n1↔n2`.
 
 use std::marker::PhantomData;
 
 use hymeko::common::ids::{DeclId, EdgeId, NodeId};
 use hymeko::tensor::tensor_val::EdgeWScalar;
 use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
-use hymeko_hre::expansion::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
+use hymeko_hre::expansion::{
+    clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized,
+};
 
 type View = HyperGraphView<f32, EdgeWScalar<f32>, f32>;
 
@@ -172,8 +172,7 @@ fn star_expansion_normalized_weights_bounded() {
 #[test]
 fn star_expansion_normalized_use_abs_flips_sign() {
     let view = fano_lite();
-    let t_signed =
-        star_expansion_coo_normalized::<f32, EdgeWScalar<f32>, f32>(&view, false, 1e-6);
+    let t_signed = star_expansion_coo_normalized::<f32, EdgeWScalar<f32>, f32>(&view, false, 1e-6);
     let t_abs = star_expansion_coo_normalized::<f32, EdgeWScalar<f32>, f32>(&view, true, 1e-6);
     // Every weight in the abs view is non-negative.
     for i in 0..t_abs.len() {

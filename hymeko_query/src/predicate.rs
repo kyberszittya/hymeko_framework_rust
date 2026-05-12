@@ -1,5 +1,4 @@
-use hymeko::common::ids::DeclId;
-use hymeko::ir::ir::{DeclKind, ValueR};
+use hymeko::ir::ir::DeclKind;
 
 
 

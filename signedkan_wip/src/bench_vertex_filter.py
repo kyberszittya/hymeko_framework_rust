@@ -65,21 +65,18 @@ def bench_dataset(name: str) -> None:
     ev = np.ascontiguousarray(g.edges[:, 1], dtype=np.uint32)
     es = np.ascontiguousarray(g.signs, dtype=np.int8)
 
-    def run_unfiltered():
-        arr, _ = hymeko.enumerate_top_k_per_vertex_cycles_signed_rs(
-            eu, ev, es, g.n_nodes, K_LEN, M_PER_VERTEX, SCORER, PRUNER,
+    # Strategy refactor 2026-05-11 (CLAUDE.md §6.5 #1):
+    # both branches dispatch through the unified enumerate_cycles_rs.
+    def run_filter(filter_kind: str = "none", min_deg: int = 2):
+        arr, _ = hymeko.enumerate_cycles_rs(
+            eu, ev, es, g.n_nodes, K_LEN, M_PER_VERTEX,
+            score_kind=SCORER, pruner_kind=PRUNER,
+            filter_kind=filter_kind, filter_min_degree=min_deg,
         )
         return arr.shape[0]
 
-    def run_filtered(filter_kind: str, min_deg: int = 2):
-        arr, _ = (
-            hymeko
-            .enumerate_top_k_per_vertex_cycles_signed_filtered_rs(
-                eu, ev, es, g.n_nodes, K_LEN, M_PER_VERTEX, SCORER,
-                PRUNER, filter_kind, min_deg,
-            )
-        )
-        return arr.shape[0]
+    run_unfiltered = lambda: run_filter("none")
+    run_filtered = run_filter
 
     results = [
         time_run("baseline (unfiltered binding)", run_unfiltered),

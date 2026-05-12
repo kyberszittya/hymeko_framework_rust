@@ -41,7 +41,10 @@ impl HymekoParser for LalrpopParser {
 pub fn load_and_lower(
     root: impl AsRef<Path>,
 ) -> Result<
-    (ModuleStore<StdFsProvider, LalrpopParser>, Arc<CompiledProgram>),
+    (
+        ModuleStore<StdFsProvider, LalrpopParser>,
+        Arc<CompiledProgram>,
+    ),
     ModuleLoadError,
 > {
     let fs = StdFsProvider::new();
@@ -64,9 +67,7 @@ pub fn default_agg_cfg() -> AggCfg {
 /// Build a `HyperGraphView<f32, EdgeWScalar<f32>, f32>` from a lowered
 /// program. The concrete type matches the one `HypergraphEngine::
 /// compile_star_expansion_core::<f32>` operates on.
-pub fn view_f32(
-    compiled: &CompiledProgram,
-) -> HyperGraphView<f32, EdgeWScalar<f32>, f32> {
+pub fn view_f32(compiled: &CompiledProgram) -> HyperGraphView<f32, EdgeWScalar<f32>, f32> {
     let cfg = default_agg_cfg();
     let ex = ScalarWeightExtractor;
     HyperGraphView::from_ir(&compiled.ir, &cfg, &ex)
@@ -74,9 +75,7 @@ pub fn view_f32(
 
 /// Build a `HyperGraphView<f64, EdgeWScalar<f64>, f64>` for tests that want
 /// double-precision.
-pub fn view_f64(
-    compiled: &CompiledProgram,
-) -> HyperGraphView<f64, EdgeWScalar<f64>, f64> {
+pub fn view_f64(compiled: &CompiledProgram) -> HyperGraphView<f64, EdgeWScalar<f64>, f64> {
     let cfg = default_agg_cfg();
     let ex = ScalarWeightExtractor;
     HyperGraphView::from_ir(&compiled.ir, &cfg, &ex)

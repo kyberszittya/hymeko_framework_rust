@@ -6,7 +6,6 @@ use pyo3::prelude::*;
 use pyo3::exceptions::{PyIndexError, PySyntaxError, PyValueError};
 use pyo3::types::PyModule;
 use pyo3::PyRef;
-use iceoryx2::prelude::*;
 
 // The exact Arrow imports required for zero-copy FFI.
 use arrow::array::{Array, Int64Array, Float32Array};
@@ -19,7 +18,6 @@ use hymeko::resolution::string_table::StringTable;
 use hymeko::util::real_parser::RealParser;
 use hymeko::writers::cbor_writer::CborPayload;
 use hymeko::common::ids::DeclId;
-use hymeko::ir::ir::{DeclKind, Ir};
 use hymeko_formats::urdf::generate_urdf;
 use hymeko_formats::sdf::generate_sdf;
 

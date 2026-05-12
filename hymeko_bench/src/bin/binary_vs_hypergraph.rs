@@ -21,6 +21,7 @@
 //!       --input examples/paper/hymeko_robot.hymeko \
 //!       --out   hymeko_bench/results/binary_vs_hypergraph.csv
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -33,6 +34,8 @@ use hymeko::module_store::module_store::ModuleStore;
 use hymeko::module_store::source_provider::StdFsProvider;
 use hymeko::resolution::interner::Interner;
 use hymeko::util::real_parser::RealParser;
+
+type ContextualHyperedge = (DeclId, usize, Vec<i8>);
 
 #[derive(Parser, Debug)]
 #[command(about = "Binary-vs-hypergraph representational-cost benchmark")]
@@ -81,7 +84,10 @@ fn compute_encodings(edge_arities: &[usize], n_verts: usize, nnz: usize) -> [Enc
         signed_entries: nnz,
         polarity: true,
     };
-    let clique_edges: usize = edge_arities.iter().map(|&k| k * (k.saturating_sub(1)) / 2).sum();
+    let clique_edges: usize = edge_arities
+        .iter()
+        .map(|&k| k * (k.saturating_sub(1)) / 2)
+        .sum();
     let clique = EncodingStats {
         n_verts,
         n_edges: clique_edges,
@@ -104,7 +110,7 @@ fn gather_contextual_edges(
     ir: &Ir,
     it: &Interner,
     contextual_bases: &[String],
-) -> (Vec<(DeclId, usize, Vec<i8>)>, std::collections::BTreeSet<DeclId>) {
+) -> (Vec<ContextualHyperedge>, BTreeSet<DeclId>) {
     let mut edges = Vec::new();
     let mut vertices = std::collections::BTreeSet::new();
     for (i, decl) in ir.decl_nodes.iter().enumerate() {
@@ -113,7 +119,9 @@ fn gather_contextual_edges(
         }
         let e_did = DeclId::new(i);
         // Look up the edge's inherited bases; match against contextual set.
-        let Some(eid) = ir.as_edge(e_did) else { continue };
+        let Some(eid) = ir.as_edge(e_did) else {
+            continue;
+        };
         let bases = &ir.edges[eid.0].bases;
         let is_contextual = bases.iter().any(|b| {
             let name = it.resolve(ir.decl_nodes[b.target().0].name);
@@ -175,11 +183,15 @@ fn main() -> Result<()> {
     println!("  nnz(B):         {}", nnz);
     println!("  Arity multiset: {:?}", arity_multiset);
     println!();
-    println!("  {:<12} {:>6} {:>6} {:>8} {}",
-             "Encoding", "Nodes", "Edges", "SignedE", "Polarity");
+    println!(
+        "  {:<12} {:>6} {:>6} {:>8} Polarity",
+        "Encoding", "Nodes", "Edges", "SignedE"
+    );
     for (name, s) in names.iter().zip(encodings.iter()) {
-        println!("  {:<12} {:>6} {:>6} {:>8} {}",
-                 name, s.n_verts, s.n_edges, s.signed_entries, s.polarity);
+        println!(
+            "  {:<12} {:>6} {:>6} {:>8} {}",
+            name, s.n_verts, s.n_edges, s.signed_entries, s.polarity
+        );
     }
 
     // ─── Build-time micro-benchmark ───
@@ -189,7 +201,8 @@ fn main() -> Result<()> {
     for _ in 0..cli.iters {
         let mut fresh_store = ModuleStore::new(StdFsProvider::new(), RealParser);
         let t = Instant::now();
-        let _c = fresh_store.compile(&cli.input)
+        let _c = fresh_store
+            .compile(&cli.input)
             .map_err(|e| anyhow::anyhow!("compile: {e:?}"))?;
         build_times.push(t.elapsed().as_secs_f64() * 1000.0);
     }
@@ -198,7 +211,10 @@ fn main() -> Result<()> {
     let build_p95 = build_times[(cli.iters * 95) / 100];
     println!();
     println!("Build time (n={} iters):", cli.iters);
-    println!("  median: {:.2} ms   p95: {:.2} ms", build_median, build_p95);
+    println!(
+        "  median: {:.2} ms   p95: {:.2} ms",
+        build_median, build_p95
+    );
 
     // ─── Arity sweep corpus ───
     // For Table 7, synthesise single-hyperedge stats at varied arities.
@@ -217,8 +233,11 @@ fn main() -> Result<()> {
         println!(
             "  {:>2} |  ({},{},{})     | ({},{})     | {}           | {}",
             k,
-            s[0].n_verts, s[0].n_edges, s[0].signed_entries,
-            s[1].n_verts, s[1].n_edges,
+            s[0].n_verts,
+            s[0].n_edges,
+            s[0].signed_entries,
+            s[1].n_verts,
+            s[1].n_edges,
             s[2].n_edges,
             !s[2].polarity && *k >= 3,
         );
@@ -227,14 +246,21 @@ fn main() -> Result<()> {
     // ─── Write CSV ───
     std::fs::create_dir_all(cli.out.parent().unwrap())?;
     let mut wtr = csv::Writer::from_path(&cli.out)?;
-    wtr.write_record(&[
-        "corpus", "arity_k", "encoding", "n_verts", "n_edges",
-        "signed_entries", "polarity", "build_median_ms", "build_p95_ms",
+    wtr.write_record([
+        "corpus",
+        "arity_k",
+        "encoding",
+        "n_verts",
+        "n_edges",
+        "signed_entries",
+        "polarity",
+        "build_median_ms",
+        "build_p95_ms",
     ])?;
 
     // Canonical example rows.
     for (name, s) in names.iter().zip(encodings.iter()) {
-        wtr.write_record(&[
+        wtr.write_record([
             "canonical",
             "",
             name,
@@ -250,7 +276,7 @@ fn main() -> Result<()> {
     // Arity sweep rows.
     for (k, stats) in &sweep {
         for (name, s) in names.iter().zip(stats.iter()) {
-            wtr.write_record(&[
+            wtr.write_record([
                 "arity_sweep",
                 &k.to_string(),
                 name,

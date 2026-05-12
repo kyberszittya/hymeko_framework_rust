@@ -1,0 +1,42 @@
+flowchart TB
+    Input["Input<br/>X (per-vertex features)<br/>𝒞 (cycle pool)<br/>σ (edge signs)"]
+
+    subgraph Outer["Outer shell — FIR volume"]
+        FIR1["Clifford-FIR bank 1<br/>(a¹, b¹) ∈ Cl(0,1)^k"]
+        FIR2["Clifford-FIR bank 2<br/>(a², b²) ∈ Cl(0,1)^k"]
+        FIRm["… M parallel banks"]
+        FIRM["Clifford-FIR bank M<br/>(aᴹ, bᴹ) ∈ Cl(0,1)^k"]
+        Concat["concat (or α-route)<br/>H_outer ∈ R^(M·d)"]
+    end
+
+    subgraph Middle["Middle shell — single HSiKAN"]
+        HSiKAN["Catmull-Rom signed-spline<br/>H_middle = HSiKAN(H_outer, 𝒞, σ)"]
+    end
+
+    subgraph Core["Inner core — CPML"]
+        CPML["Tier-stratified L=3<br/>periphery → mid → centre<br/>H_core ∈ R^(|V|·d_final)"]
+    end
+
+    Head["Edge predictor head<br/>s(u,v) = MLP([H_core[u], H_core[v]])"]
+
+    Input --> FIR1
+    Input --> FIR2
+    Input --> FIRm
+    Input --> FIRM
+    FIR1 --> Concat
+    FIR2 --> Concat
+    FIRm --> Concat
+    FIRM --> Concat
+    Concat --> HSiKAN
+    HSiKAN --> CPML
+    CPML --> Head
+
+    classDef shell fill:#fff3cd,stroke:#bf9000
+    classDef mid fill:#ffe5b4,stroke:#fd7e14
+    classDef core fill:#f8d7da,stroke:#c82333
+    classDef pred fill:#cfe2ff,stroke:#0d6efd
+
+    class FIR1,FIR2,FIRm,FIRM,Concat shell
+    class HSiKAN mid
+    class CPML core
+    class Head pred

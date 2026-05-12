@@ -13,6 +13,8 @@ These hold above any individual section. If a specific rule below appears to per
 - **Be systematic, not lazy.** When a procedure exists in this document, follow it. Shortcuts accumulate into broken experiments. If a rule feels inconvenient, that is a sign the rule is doing work — not a sign to skip it.
 - **Write the plans down.** Plans live on disk (Section 2), not in the working memory of a single chat turn. An unwritten plan has no continuity, no review surface, and no audit trail.
 - **No improvisation under pressure.** "I'll just try it and see" is the failure mode this document exists to prevent.
+- **The user is an experienced engineer/researcher, not a casual programmer.** Calibrate accordingly. Architectural complexity that eliminates duplication and surfaces invariants is *preferred* over flat code that repeats. Reach for traits, generics, associated types, sealed enums-with-data, builder/strategy/visitor patterns without hesitation if they reduce a Cartesian product or unify a duplicated scaffold. The reader is fluent in Rust, modern Python typing, and standard GoF/DDD patterns. The floor is "no needless repetition." The ceiling is "no easier than necessary." Dumbing code down to look beginner-friendly is the same failure mode as copy-paste — it costs the user tokens and dignity for nothing.
+- **Preferred paradigm hierarchy.** When you have a choice of paradigm, prefer in this order: **(1) trait-/struct-based programming** (Rust traits + impl, Python ABCs / Protocols, C++ concepts) to make the *contract* explicit; **(2) object-oriented** composition (classes that bundle state with behaviour, small inheritance trees only where they remove duplication, never for taxonomy alone); **(3) functional** (pure functions, immutable data, iterator pipelines, `map`/`filter`/`fold`, `Result`/`Option` combinators, ADTs) — preferred over imperative loops when the data flow is one-way; **(4) clean-code mechanics** (intention-revealing names, single-responsibility functions, depth-of-nesting ≤ 3, no commented-out code, no `tmp_` / `tmp2_` / `_new` suffixes left in tree). **Flat free-function dumps are the last resort**, acceptable only for: (a) the binary entry point (`main`), (b) one-off scripts that will be deleted within the week, (c) plain numerical helpers with no state, no error path, no swappable strategy. If a free function grows a `_kind: &str` argument, that's a missed trait. If it grows past 80 LOC, that's a missed method. If two free functions share 60% of their body, that's a missed `impl` block sharing a private helper. Apply the same hierarchy across Rust, Python, C++.
 
 ---
 
@@ -141,9 +143,10 @@ Test runners, benchmark frameworks, profilers, memory profilers, coverage tools,
 
 ## 4. Resource Budgets
 
-- **Hard memory cap: 16 GB.** This applies to every process spawned by a task.
-  - Enforce with `ulimit -v 16777216`, `systemd-run --user -p MemoryMax=16G`, Linux cgroups v2, or `resource.setrlimit(resource.RLIMIT_AS, …)` in Python entry points.
-  - If a run exceeds this, **abort and redesign**. Do not raise the cap. Do not add swap. Reduce batch size, stream the data, or refactor the algorithm.
+- **Hard memory cap: 16 GB peak RSS.** This applies to every process spawned by a task. The cap is on **resident set size (RSS)**, not virtual address space (VAS) — modern PyTorch+CUDA stacks reserve ~30 GB of sparse VAS at process start even when RSS stays under 2 GB, so a VAS-based cap would kill normal workloads at `.to('cuda')`.
+  - Enforce with `systemd-run --user -p MemoryMax=16G` (cgroups v2, RSS gate) — the canonical option. For Python-only entry points, `resource.setrlimit(resource.RLIMIT_DATA, …)` is also acceptable.
+  - **`ulimit -v` is forbidden.** It is a VAS gate, not an RSS gate, and triggers `RuntimeError: CUDA driver error: out of memory` at the first `torch.Tensor.to('cuda')` call. Measured 2026-05-11 on HymeYOLO `train_circles_ricci`: RSS = 1.77 GB, VSZ = 29.45 GB — a healthy run that `ulimit -v 16777216` killed three times in a row before the cause was diagnosed.
+  - If a run exceeds the RSS cap, **abort and redesign**. Do not raise the cap. Do not add swap. Reduce batch size, stream the data, or refactor the algorithm.
 - Every long-running script must:
   - Report **peak RSS** and **wall time** on exit.
   - Support checkpointing. Never rely on a single uninterrupted multi-hour run.
@@ -251,6 +254,34 @@ No silent failures. Every error path is explicit.
 - No discarding of `errno`. No silent `NULL` returns from functions that allocate.
 
 Reports must list any new error-handling waivers (`unwrap`, broad `except`, ignored return value) introduced by the change, with justification.
+
+### 6.5 Anti-Patterns (mandatory avoidance)
+
+The user is an experienced researcher and engineer (see Operating Principles). Code that *looks simple* but propagates by copy-paste is rejected. Code that *looks complex* (traits, generics, config structs) but eliminates a Cartesian product or a duplicated scaffold is the right answer. Concretely, the following anti-patterns are forbidden — refactor before adding to them, not afterward:
+
+1. **Cartesian-product API surface.** When a function family differs only by orthogonal axes (mode × scorer × pruner × filter × ABB × batched × tiered × …), do **not** create one named function per Cartesian cell. Use Strategy traits + a config struct + one entry point per family, with internal dispatch matching on the config. Canonical bad example in this repo: `hymeko_py/src/cycles.rs` had 16 `#[pyfunction]` variants for 4 axes (called out 2026-05-11; refactor in flight). If you would add `enumerate_old_name_with_X_rs` to differentiate, instead add a config field `enable_X` (or analogous) to the existing entry. The presence of `_filtered_`, `_batched_`, `_bb_`, `_tiered_`, `_global_`, `_adaptive_`, `_signed_`, `_color_coded_`, `_path_closure_` etc. in a function name is a *signal* that the next axis belongs in config — not in another wrapper. See memory `feedback_no_cartesian_pyfunction_dump.md`.
+
+2. **Algorithm code behind a Python boundary.** Pure-Rust algorithm logic (DFS, BFS, scorers, pruners, graph utilities, canonical-form helpers) belongs in the *algorithm* crate (`hymeko_graph` here), not in the PyO3 binding crate (`hymeko_py`). `hymeko_py` is a thin wrapping layer + numpy↔ndarray conversion glue. Canonical violation 2026-05-11: ~1100 LOC of pure algorithm fns (`build_csr`, `bfs_distances_into`, `dfs_recurse`, `enumerate_parallel`, `canonical_cycle`, `dfs_color_coded`, `try_one_path_closure`, `dfs_walks_*`, etc.) in `hymeko_py/src/cycles.rs`. Same rule applies to any other binding crate (`hymeko_wasm`, `hymeko_monitor` Python shims, etc.).
+
+3. **Per-experiment scaffold duplication.** When N `run_<thing>.py` files each re-implement `train_val_split`, the train loop, the AUC eval loop, argparse + JSON output — refactor to a single `Experiment` / `train_signed_link_prediction(config, model)` framework. Canonical violation 2026-05-11: 98 `run_*.py` files in `signedkan_wip/src/`, 8 reimplementations of `_train_val_split`, 69 independent AUC eval loops. Each new experiment script should be ~20-line config + model construction; everything else is shared.
+
+4. **Long single-file modules.** Past ~400 LOC AND ≥ 2 distinct concerns (separable nouns: "shells" vs "composers", "config" vs "model", "ablations" vs "variants") → split into a package with `__init__.py` re-export. CLAUDE.md §6.2's 800-LOC warning is the *outer* limit; this 400-LOC heuristic kicks in earlier. See memory `feedback_decompose_long_files.md`. Tests can stay in one file longer (read top-to-bottom less often).
+
+5. **Adding a new axis by inventing a new function name.** Sub-case of #1, but the most common entry point. Every time you reach for a new function name that is "old_name + one new word", stop. Add a config field instead.
+
+6. **`#[allow(clippy::too_many_arguments)]` as a band-aid.** If you're at >7 parameters and reaching for the allow, write a config struct first. The allow is acceptable on the *one* outer wrapper that maps to a Python kwargs surface (where the kwargs flat-list IS the API); not on internal helpers.
+
+7. **String-typed config that should be an enum.** `mode: &str` with valid values `{"none", "balance", "unbalanced"}` is a missed `enum Mode { None, Balance, Unbalanced }`. The string is fine at the Python boundary (kwargs); the moment it crosses into Rust internals, it becomes an enum with a `from_str` parser at the boundary. Mismatched strings should fail at parse, not at the `_ => panic!("unknown mode")` arm in the inner DFS.
+
+8. **Forward-time flags for what should be different code paths.** Inverse of the duplication anti-patterns: when an *ablation* or *variant* truly differs structurally (e.g., one shell removed, head replaced with MLP), construct a different model class. Don't toggle behavior at `forward()` time with `if self.no_outer:` branches — those degrade type safety, hide structural differences from the reader, and gum up profile traces. (Configuration is fine when the difference is parametric; class-per-structural-variant when the difference is structural.) The line is: parametric differences → config; structural differences → class.
+
+9. **Bypassing existing Strategy traits at a layer boundary.** When the inner library defines `trait Scorer { … }` with 4 impls, do not re-introduce `match score_kind { "balance" => …, "fraction_negative" => … }` at every API surface. Centralize the dispatch in one `pick_scorer(&str) -> Box<dyn Scorer>` (or `fn pick_scorer(...) -> &'static dyn Scorer`) and reuse it. The `cycles.rs` 16-variant case had 16 copies of the same `match` ladder.
+
+10. **`ulimit -v` on CUDA workloads.** See §4. Use `systemd-run --user -p MemoryMax=16G` (cgroups v2 RSS) instead. Cross-listed here because it is a memory-side anti-pattern, and the same class of "wrong tool, plausibly defensible at first glance" failure as the others above.
+
+11. **Global variables / module-level mutable state.** No `static mut`, no `lazy_static!`/`once_cell::sync::Lazy` holding mutable runtime state, no module-level Python dicts updated at runtime, no singletons, no "set a flag in an environment variable and read it from deep inside a hot loop." State that crosses function boundaries is passed explicitly — as a parameter, a struct field, a closure capture, or a context object threaded through the call site. The cost of globals is testability collapse, threadsafety landmines, hidden coupling between unrelated modules, and order-of-import determinism bugs. Acceptable narrow exceptions: (a) genuinely-immutable program constants (`const` / `static` of POD types), (b) logger / tracing subscriber initialised once at `main` entry, (c) feature-detection caches that are populated lazily, never mutated. Anything else: pass it as a parameter. If the call chain is long, that is a *signal* that you need a context struct, not a global. Environment-variable-driven feature flags read at deep call sites (`os.environ.get("HSIKAN_...")` inside a forward pass) are forbidden — parse all env at process startup into a typed config and pass that config explicitly.
+
+**How this section is used:** before adding a new function, sweep your proposed change against this list. If any apply, the action is *refactor first*, not *add now and defer cleanup*. The cleanup never happens; that's the whole reason this list exists. Reports (§9) should explicitly note "no §6.5 anti-patterns introduced" or list any waivers with justification.
 
 ---
 

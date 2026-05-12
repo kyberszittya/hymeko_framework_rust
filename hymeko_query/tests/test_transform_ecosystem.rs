@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod test_transform_ecosystem {
     use hymeko_query::engine::QueryEngine;
@@ -15,9 +14,9 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod registry {
-        use hymeko_query::transforms::{TransformConfig, TransformRegistry};
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
+        use hymeko_query::transforms::{TransformConfig, TransformRegistry};
 
         #[test]
         fn default_registry_has_all_formats() {
@@ -50,7 +49,12 @@ mod test_transform_ecosystem {
             let reg = hymeko_formats::default_registry();
             let config = TransformConfig::default().with_name("moveo");
 
-            let model = hymeko_query::transforms::extract(&compiled.ir, &store.it, &config.robot_name, hymeko_query::transforms::ModelKind::Kinematic);
+            let model = hymeko_query::transforms::extract(
+                &compiled.ir,
+                &store.it,
+                &config.robot_name,
+                hymeko_query::transforms::ModelKind::Kinematic,
+            );
             let results = reg.emit_all(&model, &config);
 
             // Default registrations producing output for a Kinematic model:
@@ -73,12 +77,21 @@ mod test_transform_ecosystem {
             for (path, name) in &[(MOVEO_ARM, "moveo"), (DIFF_ROBOT, "diff_robot")] {
                 let (store, compiled) = load_and_lower(path).unwrap();
                 let config = TransformConfig::default().with_name(name);
-                let model = hymeko_query::transforms::extract(&compiled.ir, &store.it, &config.robot_name, hymeko_query::transforms::ModelKind::Kinematic);
+                let model = hymeko_query::transforms::extract(
+                    &compiled.ir,
+                    &store.it,
+                    &config.robot_name,
+                    hymeko_query::transforms::ModelKind::Kinematic,
+                );
                 let results = reg.emit_all(&model, &config);
 
                 for (filename, content) in &results {
-                    assert!(!content.is_empty(),
-                            "{}: empty output for {}", name, filename);
+                    assert!(
+                        !content.is_empty(),
+                        "{}: empty output for {}",
+                        name,
+                        filename
+                    );
                 }
             }
         }
@@ -89,10 +102,10 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod validation {
-        use hymeko_query::transforms::{DomainTransform, TransformRegistry, ModelView};
-        use hymeko_formats::MjcfTransform;
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
+        use hymeko_formats::MjcfTransform;
+        use hymeko_query::transforms::{DomainTransform, ModelView, TransformRegistry};
 
         #[test]
         fn moveo_validates_clean_for_all_formats() {
@@ -104,13 +117,17 @@ mod test_transform_ecosystem {
             for name in reg.available() {
                 let transform = reg.get(name).unwrap();
                 let diags = transform.validate(&ModelView::Kinematic(model.clone()));
-                let errors: Vec<_> = diags.iter()
+                let errors: Vec<_> = diags
+                    .iter()
                     .filter(|d| d.is_error())
                     .filter(|d| !d.message.contains("world"))
                     .collect();
-                assert!(errors.is_empty(),
-                        "{} validation failed: {:?}",
-                        name, errors.iter().map(|e| &e.message).collect::<Vec<_>>());
+                assert!(
+                    errors.is_empty(),
+                    "{} validation failed: {:?}",
+                    name,
+                    errors.iter().map(|e| &e.message).collect::<Vec<_>>()
+                );
             }
         }
 
@@ -125,8 +142,11 @@ mod test_transform_ecosystem {
             let errors: Vec<_> = diags.iter().filter(|d| d.is_error()).collect();
 
             // Moveo is a serial chain — should pass tree check
-            assert!(errors.is_empty(), "MJCF tree validation failed: {:?}",
-                    errors.iter().map(|e| &e.message).collect::<Vec<_>>());
+            assert!(
+                errors.is_empty(),
+                "MJCF tree validation failed: {:?}",
+                errors.iter().map(|e| &e.message).collect::<Vec<_>>()
+            );
         }
     }
 
@@ -135,10 +155,10 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod mjcf {
-        use hymeko_query::transforms::{TransformConfig, ModelView, DomainTransform};
-        use hymeko_formats::MjcfTransform;
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
+        use hymeko_formats::MjcfTransform;
+        use hymeko_query::transforms::{DomainTransform, ModelView, TransformConfig};
 
         #[test]
         fn moveo_mjcf_wellformed() {
@@ -167,8 +187,11 @@ mod test_transform_ecosystem {
 
             // MJCF uses <body> elements for links
             for name in &["base_link", "link_0", "link_1", "link_4", "tool"] {
-                assert!(output.contains(&format!("<body name=\"{}\"", name)),
-                        "MJCF missing body '{}'", name);
+                assert!(
+                    output.contains(&format!("<body name=\"{}\"", name)),
+                    "MJCF missing body '{}'",
+                    name
+                );
             }
         }
 
@@ -184,8 +207,11 @@ mod test_transform_ecosystem {
 
             // MJCF uses <joint> inside <body>
             let hinge_count = output.matches("type=\"hinge\"").count();
-            assert_eq!(hinge_count, 6,
-                       "Expected 6 hinge joints, got {}", hinge_count);
+            assert_eq!(
+                hinge_count, 6,
+                "Expected 6 hinge joints, got {}",
+                hinge_count
+            );
         }
 
         #[test]
@@ -200,8 +226,11 @@ mod test_transform_ecosystem {
 
             assert!(output.contains("<actuator>"));
             let motor_count = output.matches("<motor").count();
-            assert_eq!(motor_count, 6,
-                       "Expected 6 actuators (one per revolute joint), got {}", motor_count);
+            assert_eq!(
+                motor_count, 6,
+                "Expected 6 actuators (one per revolute joint), got {}",
+                motor_count
+            );
         }
 
         #[test]
@@ -216,8 +245,10 @@ mod test_transform_ecosystem {
 
             // tool has box [0.075, 0.15, 0.1]
             // MJCF uses half-extents: [0.0375, 0.075, 0.05]
-            assert!(output.contains("0.0375") || output.contains("0.075"),
-                    "MJCF should use half-extents for box geometry");
+            assert!(
+                output.contains("0.0375") || output.contains("0.075"),
+                "MJCF should use half-extents for box geometry"
+            );
         }
 
         #[test]
@@ -244,8 +275,10 @@ mod test_transform_ecosystem {
             let mjcf = MjcfTransform;
             let output = mjcf.emit(&ModelView::Kinematic(model), &config).unwrap();
 
-            assert!(output.contains("angle=\"radian\""),
-                    "MJCF compiler should specify radian mode");
+            assert!(
+                output.contains("angle=\"radian\""),
+                "MJCF compiler should specify radian mode"
+            );
         }
 
         #[test]
@@ -261,16 +294,19 @@ mod test_transform_ecosystem {
             // MJCF bodies must be nested (not flat like URDF)
             // Count indentation levels to verify nesting
             let lines: Vec<&str> = output.lines().collect();
-            let max_indent = lines.iter()
+            let max_indent = lines
+                .iter()
                 .filter(|l| l.contains("<body"))
                 .map(|l| l.len() - l.trim_start().len())
                 .max()
                 .unwrap_or(0);
 
             // With 7 links in a serial chain, deepest nesting should be significant
-            assert!(max_indent >= 12,
-                    "MJCF bodies should be deeply nested for serial chain, max indent = {}",
-                    max_indent);
+            assert!(
+                max_indent >= 12,
+                "MJCF bodies should be deeply nested for serial chain, max indent = {}",
+                max_indent
+            );
         }
     }
 
@@ -279,10 +315,10 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod dot {
-        use hymeko_query::transforms::{TransformConfig, ModelView, DomainTransform};
-        use hymeko_formats::DotTransform;
-        use crate::test_helpers::load_and_lower;
         use super::*;
+        use crate::test_helpers::load_and_lower;
+        use hymeko_formats::DotTransform;
+        use hymeko_query::transforms::{DomainTransform, ModelView, TransformConfig};
 
         #[test]
         fn moveo_dot_wellformed() {
@@ -310,8 +346,11 @@ mod test_transform_ecosystem {
             let output = dot.emit(&ModelView::Kinematic(model), &config).unwrap();
 
             for name in &["base_link", "link_0", "link_4", "tool"] {
-                assert!(output.contains(&format!("\"{}\"", name)),
-                        "DOT missing node for '{}'", name);
+                assert!(
+                    output.contains(&format!("\"{}\"", name)),
+                    "DOT missing node for '{}'",
+                    name
+                );
             }
         }
 
@@ -341,8 +380,10 @@ mod test_transform_ecosystem {
             let output = dot.emit(&ModelView::Kinematic(model), &config).unwrap();
 
             // Fixed joints should be dashed
-            assert!(output.contains("style=dashed"),
-                    "Fixed joints should have dashed style in DOT");
+            assert!(
+                output.contains("style=dashed"),
+                "Fixed joints should have dashed style in DOT"
+            );
         }
 
         #[test]
@@ -356,8 +397,11 @@ mod test_transform_ecosystem {
             let output = dot.emit(&ModelView::Kinematic(model), &config).unwrap();
 
             let bold_count = output.matches("style=bold").count();
-            assert_eq!(bold_count, 6,
-                       "Expected 6 bold edges (revolute), got {}", bold_count);
+            assert_eq!(
+                bold_count, 6,
+                "Expected 6 bold edges (revolute), got {}",
+                bold_count
+            );
         }
 
         #[test]
@@ -407,12 +451,13 @@ mod test_transform_ecosystem {
     // ============================================================
 
     mod alias_parity {
-        use hymeko_query::transforms::{TransformConfig, TransformRegistry,
-                                         DomainTransform, ModelView};
-        use hymeko_formats::DotTransform;
-        use crate::test_helpers::load_and_lower;
-        use std::collections::BTreeSet;
         use super::*;
+        use crate::test_helpers::load_and_lower;
+        use hymeko_formats::DotTransform;
+        use hymeko_query::transforms::{
+            DomainTransform, ModelView, TransformConfig, TransformRegistry,
+        };
+        use std::collections::BTreeSet;
 
         fn load_model(path: &str, name: &str) -> KinematicModel {
             let (store, compiled) = load_and_lower(path).unwrap();

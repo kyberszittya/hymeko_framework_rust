@@ -11,7 +11,7 @@
 
 use hymeko::ir::ir::Ir;
 use crate::traits::NameResolver;
-use crate::transforms::model_view::{extract, ModelKind, ModelView};
+use crate::transforms::model_view::{extract, ModelKind};
 use crate::transforms::{
     TransformConfig, TransformRegistry, Diagnostic,
 };

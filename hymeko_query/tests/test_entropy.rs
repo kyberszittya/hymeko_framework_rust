@@ -45,7 +45,11 @@ mod test_entropy_on_simple_net {
         // deg distribution {1: 4/5, 2: 1/5}
         let expected_h_deg = -(0.8_f64 * 0.8_f64.ln() + 0.2_f64 * 0.2_f64.ln());
         approx(e.h_degree, expected_h_deg, "H_degree");
-        approx(e.h_total, (0.0 + 3f64.ln() + expected_h_deg) / 3.0, "H_total");
+        approx(
+            e.h_total,
+            (0.0 + 3f64.ln() + expected_h_deg) / 3.0,
+            "H_total",
+        );
     }
 
     #[test]
@@ -65,11 +69,9 @@ mod test_entropy_on_simple_net {
         // Every edge is arity 5 with (+, +, +, -, ~) → H_arity = 0.
         approx(e.h_arity, 0.0, "H_arity");
         // Per-edge sign dist: p_+ = 3/5, p_- = 1/5, p_0 = 1/5.
-        let expected_h_sign = -(
-            (3.0_f64 / 5.0) * (3.0_f64 / 5.0).ln()
+        let expected_h_sign = -((3.0_f64 / 5.0) * (3.0_f64 / 5.0).ln()
             + (1.0_f64 / 5.0) * (1.0_f64 / 5.0).ln()
-            + (1.0_f64 / 5.0) * (1.0_f64 / 5.0).ln()
-        );
+            + (1.0_f64 / 5.0) * (1.0_f64 / 5.0).ln());
         approx(e.h_sign, expected_h_sign, "H_sign");
 
         // Degree distribution sanity: at least one vertex has degree 5
@@ -97,7 +99,10 @@ mod test_entropy_on_simple_net {
         // Ascending DeclId order.
         for w in scopes.windows(2) {
             let (a, b) = (w[0].0, w[1].0);
-            assert!(a.raw() < b.raw(), "scopes must be emitted in ascending DeclId");
+            assert!(
+                a.raw() < b.raw(),
+                "scopes must be emitted in ascending DeclId"
+            );
         }
 
         // The three user-authored scopes must all appear with the
@@ -116,14 +121,10 @@ mod test_entropy_on_simple_net {
             .expect("simple_net scope should appear in hierarchical walk");
         assert_eq!(s.n_edges, 2, "simple_net scope edges");
 
-        let l0 = by_did
-            .get(&layer_0)
-            .expect("layer_0 scope should appear");
+        let l0 = by_did.get(&layer_0).expect("layer_0 scope should appear");
         assert_eq!(l0.n_edges, 5, "layer_0 factor count");
 
-        let l1 = by_did
-            .get(&layer_1)
-            .expect("layer_1 scope should appear");
+        let l1 = by_did.get(&layer_1).expect("layer_1 scope should appear");
         assert_eq!(l1.n_edges, 2, "layer_1 factor count");
     }
 

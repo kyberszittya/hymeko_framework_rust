@@ -1,23 +1,23 @@
-use std::fmt::Write;
-use std::io::{self, Write as IoWrite};
-use std::path::{Path};
-use std::sync::{Arc, OnceLock, Mutex};
-use std::time::{Duration, SystemTime};
 use env_logger::Env;
-use log::{info, LevelFilter};
 use hymeko::common::ids::{DeclId, SymId};
 use hymeko::ir::ir::{DeclKind, Ir, NodeRec, SignedRefR, ValueR};
-use hymeko::module_store::module_store::{CompiledProgram, HymekoParser, ModuleLoadError, ModuleStore};
+use hymeko::module_store::module_store::{
+    CompiledProgram, HymekoParser, ModuleLoadError, ModuleStore,
+};
 use hymeko::module_store::source_provider::StdFsProvider;
 use hymeko::resolution::interner::Interner;
+use log::{LevelFilter, info};
 use parser::ast::AstStr;
+use std::fmt::Write;
+use std::io::{self, Write as IoWrite};
+use std::path::Path;
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{Duration, SystemTime};
 
 /// Load, parse, resolve, and lower a HyMeKo module using the production ModuleStore pipeline.
 /// Returns the lowered IR, the resolved index, and a reference to the shared interner.
 ///
 /// This is meant for tests only.
-///
-
 pub struct LalrpopParser;
 
 impl HymekoParser for LalrpopParser {
@@ -30,7 +30,13 @@ impl HymekoParser for LalrpopParser {
 /// Returning the store lets tests access `store.it` without cloning.
 pub fn load_and_lower(
     root_path: impl AsRef<Path>,
-) -> Result<(ModuleStore<StdFsProvider, LalrpopParser>, Arc<CompiledProgram>), ModuleLoadError> {
+) -> Result<
+    (
+        ModuleStore<StdFsProvider, LalrpopParser>,
+        Arc<CompiledProgram>,
+    ),
+    ModuleLoadError,
+> {
     let fs = StdFsProvider::new();
     let parser = LalrpopParser;
     let mut store = ModuleStore::new(fs, parser);
@@ -41,7 +47,10 @@ pub fn load_and_lower(
 
 pub fn print_dense_matrix(m: &[Vec<f32>], title: &str) {
     init_test_logger();
-    let lock = MATRIX_PRINT_LOCK.get_or_init(|| Mutex::new(())).lock().expect("matrix print lock poisoned");
+    let lock = MATRIX_PRINT_LOCK
+        .get_or_init(|| Mutex::new(()))
+        .lock()
+        .expect("matrix print lock poisoned");
     let cols = if m.is_empty() { 0 } else { m[0].len() };
     let mut buf = String::new();
     let _ = writeln!(buf, "{title} ({}x{}):", m.len(), cols);
@@ -74,19 +83,12 @@ pub fn find_decl(ir: &Ir, it: &Interner, name: &str, kind: DeclKind) -> DeclId {
     panic!("decl not found: {}", name);
 }
 
-pub fn get_node<'a>(
-    ir: &'a Ir,
-    did: DeclId,
-) -> &'a NodeRec {
+pub fn get_node<'a>(ir: &'a Ir, did: DeclId) -> &'a NodeRec {
     let nid = ir.as_node(did).expect("decl should be a node");
     &ir.nodes[nid.0]
 }
 
-pub fn has_tag(
-    it: &Interner,
-    tags: &[SymId],
-    name: &str,
-) -> bool {
+pub fn has_tag(it: &Interner, tags: &[SymId], name: &str) -> bool {
     let tid = it.get_id(name).expect("tag should be interned");
     tags.contains(&tid)
 }

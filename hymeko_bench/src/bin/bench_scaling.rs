@@ -99,9 +99,9 @@ fn time_once<F: FnOnce() -> R, R>(f: F) -> (R, u128) {
 /// Fresh `ModuleStore` per call — the production compile path caches
 /// parsed modules, so reusing a store would only measure cold-compile
 /// once. This matches the `bench_workflow.rs` protocol.
-fn compile_fresh(path: &Path) -> anyhow::Result<
-    std::sync::Arc<hymeko::module_store::module_store::CompiledProgram>,
-> {
+fn compile_fresh(
+    path: &Path,
+) -> anyhow::Result<std::sync::Arc<hymeko::module_store::module_store::CompiledProgram>> {
     let mut store = ModuleStore::new(StdFsProvider::new(), LalrpopParser);
     let compiled = store
         .compile(path)
@@ -175,20 +175,31 @@ fn bench_fixture<W: std::io::Write>(
         let (urdf, dt_urdf) =
             time_once(|| generate_urdf(&compiled.ir, &store.it, &entry.robot_name));
         writer.serialize(Row {
-            family: &entry.family, name: &entry.name,
-            n_vertices: entry.n_vertices, n_hyperedges: entry.n_hyperedges,
-            mean_arity: entry.mean_arity, source_bytes: entry.source_bytes,
-            rep, stage: "urdf", wall_ns: dt_urdf, output_bytes: urdf.len(),
+            family: &entry.family,
+            name: &entry.name,
+            n_vertices: entry.n_vertices,
+            n_hyperedges: entry.n_hyperedges,
+            mean_arity: entry.mean_arity,
+            source_bytes: entry.source_bytes,
+            rep,
+            stage: "urdf",
+            wall_ns: dt_urdf,
+            output_bytes: urdf.len(),
         })?;
         black_box(urdf);
 
-        let (sdf, dt_sdf) =
-            time_once(|| generate_sdf(&compiled.ir, &store.it, &entry.robot_name));
+        let (sdf, dt_sdf) = time_once(|| generate_sdf(&compiled.ir, &store.it, &entry.robot_name));
         writer.serialize(Row {
-            family: &entry.family, name: &entry.name,
-            n_vertices: entry.n_vertices, n_hyperedges: entry.n_hyperedges,
-            mean_arity: entry.mean_arity, source_bytes: entry.source_bytes,
-            rep, stage: "sdf", wall_ns: dt_sdf, output_bytes: sdf.len(),
+            family: &entry.family,
+            name: &entry.name,
+            n_vertices: entry.n_vertices,
+            n_hyperedges: entry.n_hyperedges,
+            mean_arity: entry.mean_arity,
+            source_bytes: entry.source_bytes,
+            rep,
+            stage: "sdf",
+            wall_ns: dt_sdf,
+            output_bytes: sdf.len(),
         })?;
         black_box(sdf);
 
@@ -196,10 +207,16 @@ fn bench_fixture<W: std::io::Write>(
             generate_gazebo_world(&compiled.ir, &store.it, &entry.robot_name, "empty")
         });
         writer.serialize(Row {
-            family: &entry.family, name: &entry.name,
-            n_vertices: entry.n_vertices, n_hyperedges: entry.n_hyperedges,
-            mean_arity: entry.mean_arity, source_bytes: entry.source_bytes,
-            rep, stage: "gazebo", wall_ns: dt_gz, output_bytes: gazebo.len(),
+            family: &entry.family,
+            name: &entry.name,
+            n_vertices: entry.n_vertices,
+            n_hyperedges: entry.n_hyperedges,
+            mean_arity: entry.mean_arity,
+            source_bytes: entry.source_bytes,
+            rep,
+            stage: "gazebo",
+            wall_ns: dt_gz,
+            output_bytes: gazebo.len(),
         })?;
         black_box(gazebo);
 
@@ -216,14 +233,18 @@ fn bench_fixture<W: std::io::Write>(
 
         for stage_name in &["mjcf", "dot", "mermaid"] {
             let t = reg.get(stage_name).expect("registry should contain stage");
-            let (out, dt) = time_once(|| {
-                t.emit(&model_view, &cfg).unwrap_or_default()
-            });
+            let (out, dt) = time_once(|| t.emit(&model_view, &cfg).unwrap_or_default());
             writer.serialize(Row {
-                family: &entry.family, name: &entry.name,
-                n_vertices: entry.n_vertices, n_hyperedges: entry.n_hyperedges,
-                mean_arity: entry.mean_arity, source_bytes: entry.source_bytes,
-                rep, stage: stage_name, wall_ns: dt, output_bytes: out.len(),
+                family: &entry.family,
+                name: &entry.name,
+                n_vertices: entry.n_vertices,
+                n_hyperedges: entry.n_hyperedges,
+                mean_arity: entry.mean_arity,
+                source_bytes: entry.source_bytes,
+                rep,
+                stage: stage_name,
+                wall_ns: dt,
+                output_bytes: out.len(),
             })?;
             black_box(out);
         }
@@ -268,10 +289,10 @@ fn main() -> anyhow::Result<()> {
 
     let filtered: Vec<_> = manifest
         .into_iter()
-        .filter(|e| args.family.as_deref().map_or(true, |f| f == e.family))
+        .filter(|e| args.family.as_deref().is_none_or(|f| f == e.family))
         .filter(|e| {
             args.max_size
-                .map_or(true, |m| e.n_vertices + e.n_hyperedges <= m)
+                .is_none_or(|m| e.n_vertices + e.n_hyperedges <= m)
         })
         .collect();
 
@@ -279,8 +300,12 @@ fn main() -> anyhow::Result<()> {
     for (i, entry) in filtered.iter().enumerate() {
         eprintln!(
             "[{}/{}] bench: {} ({} V, {} E, d̄={:.2})",
-            i + 1, total, entry.name,
-            entry.n_vertices, entry.n_hyperedges, entry.mean_arity,
+            i + 1,
+            total,
+            entry.name,
+            entry.n_vertices,
+            entry.n_hyperedges,
+            entry.mean_arity,
         );
         bench_fixture(&mut writer, &args.fixtures, entry, args.reps, args.warmup)?;
         writer.flush()?;

@@ -27,9 +27,16 @@ fn mini_arm_star_expansion_has_one_slice_per_hyperedge() {
 
     let t = star_expansion_coo::<f32, EdgeWScalar<f32>, f32>(&view);
     assert_eq!(t.num_slices, view.num_edges(), "one slice per hyperedge");
-    assert_eq!(t.dim_i, view.num_nodes() + view.num_edges(), "dim = |V| + |E|");
+    assert_eq!(
+        t.dim_i,
+        view.num_nodes() + view.num_edges(),
+        "dim = |V| + |E|"
+    );
     assert_eq!(t.dim_j, view.num_nodes() + view.num_edges());
-    assert!(t.len() > 0, "mini_arm should produce non-empty star expansion");
+    assert!(
+        !t.is_empty(),
+        "mini_arm should produce non-empty star expansion"
+    );
 }
 
 #[test]
@@ -106,7 +113,12 @@ fn moveo_clique_expansion_more_sparse_than_dense() {
 
     // Sanity: the nnz count stays well below dim_i^2 * num_slices.
     let dense = t.dim_i * t.dim_j * t.num_slices;
-    assert!(t.len() < dense, "expected sparse fill, got nnz={} vs dense={}", t.len(), dense);
+    assert!(
+        t.len() < dense,
+        "expected sparse fill, got nnz={} vs dense={}",
+        t.len(),
+        dense
+    );
 }
 
 // ---- diff_robot: 4-wheel differential drive -----------------------------
@@ -127,8 +139,7 @@ fn alias_and_baseline_fixtures_produce_equal_star_nnz() {
     // If `using ... as ...` is a pure desugaring, the aliased and baseline
     // fixtures must yield identical star-expansion shapes.
     let (_s1, c1) = load_and_lower(MOVEO_ARM).unwrap();
-    let (_s2, c2) =
-        load_and_lower("../data/robotics/anthropomorphic_arm_using.hymeko").unwrap();
+    let (_s2, c2) = load_and_lower("../data/robotics/anthropomorphic_arm_using.hymeko").unwrap();
 
     let t1 = star_expansion_coo::<f32, EdgeWScalar<f32>, f32>(&view_f32(&c1));
     let t2 = star_expansion_coo::<f32, EdgeWScalar<f32>, f32>(&view_f32(&c2));

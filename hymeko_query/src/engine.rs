@@ -1,5 +1,5 @@
-use hymeko::common::ids::{DeclId, SymId};
-use hymeko::ir::ir::{Ir, DeclKind, SignedRefR, ValueR};
+use hymeko::common::ids::DeclId;
+use hymeko::ir::ir::{DeclKind, Ir, ValueR};
 use crate::predicate::*;
 use crate::traits::NameResolver;
 

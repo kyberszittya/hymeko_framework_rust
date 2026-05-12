@@ -56,4 +56,11 @@ print(f"Star expansion: shape={star.shape} nnz={star.nnz}")
 
 print("=" * 60)
 print("PASS" if all_ok else "FAIL")
-sys.exit(0 if all_ok else 1)
+
+
+def main() -> int:
+    return 0 if all_ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

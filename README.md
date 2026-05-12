@@ -18,6 +18,9 @@ Hypergraph Model Cognition Framework is a high-performance Rust-based parsing an
 - [Query-Driven Transforms](#-query-driven-transforms)
 - [Features](#features)
 - [Quick Start](#quick-start)
+- [SOTA snapshot (link prediction)](docs/SOTA_RESULTS.md)
+- [Handbook (mdBook source)](docs/book/src/SUMMARY.md)
+- [Deploy handbook to GitHub Pages](docs/DEPLOY_GITHUB_PAGES.md)
 - [Project Structure](#project-structure)
 - [Parser Layout FAQ](#-parser-layout-faq)
 - [Development](#development)
@@ -348,6 +351,23 @@ cargo test --all
 ./target/release/parser hymeko/parser/data/minimal_examples/minimal_example.hymeko
 ```
 
+### SOTA snapshot (link prediction)
+
+Mean AUC bar charts (Bitcoin joint vs cycle, Phase‑8 panel, Slashdot `edge_cr` seeds) and citation tables live in **[`docs/SOTA_RESULTS.md`](docs/SOTA_RESULTS.md)**. Evidence rules: [`docs/RESULTS_DISCIPLINE.md`](docs/RESULTS_DISCIPLINE.md). Repo cold start: [`COLD_START.md`](COLD_START.md).
+
+### Handbook (mdBook)
+
+The same material (plus **abbreviations**, **mathematics**, and **artifact indexes**) is collected for humans and agents in the **mdBook** under `docs/book/` — see **`docs/book/src/SUMMARY.md`** part **Results & evidence**.
+
+**Public site:** enable [GitHub Pages](docs/DEPLOY_GITHUB_PAGES.md) (workflow already builds `_site/`). After the first deploy, open the URL GitHub shows under **Settings → Pages**.
+
+```bash
+cargo install mdbook   # once, see https://github.com/rust-lang/mdBook
+cd docs/book && mdbook build
+```
+
+Then open **`docs/book/book/index.html`** in a browser (or `mdbook serve` for live reload).
+
 ## 📁 Project Structure
 
 ```
@@ -404,6 +424,12 @@ hymeko_framework/
 
 ## 🛠️ Development
 
+### Rust crate layout (workspace + `hymeko_kit`)
+
+All `hymeko_*` crates share the **same Cargo workspace** (root `Cargo.toml`): one resolver, shared `target/`, and `[workspace.dependencies]` for common versions.
+
+For binaries or experiments that want **one dependency** instead of many paths, use the optional umbrella crate **`hymeko_kit`**, which re-exports `hymeko` (from `hymeko_core`) and optionally `hymeko_clifford`, `hymeko_compute`, and `hymeko_graph` behind features `clifford`, `gpu`, and `graph` (meta-feature `full` enables all three). See `hymeko_kit/Cargo.toml` and `hymeko_kit/src/lib.rs`.
+
 ### Development Environment Setup
 
 ```bash
@@ -425,6 +451,23 @@ cargo fmt --all
 
 # Lint code
 cargo clippy --all --all-targets
+```
+
+### Python ([uv](https://docs.astral.sh/uv/))
+
+The repository root is a **uv workspace** (`pyproject.toml`, `uv.lock`) that installs the `hymeko` and `signedkan-native` packages (Maturin) plus dev tools from `tools.yaml` major ranges.
+
+```bash
+# Install uv: https://docs.astral.sh/uv/getting-started/installation/
+
+# Create `.venv/` and install workspace members + dev tools (no PyTorch by default)
+uv sync --all-packages
+
+# Optional: PyTorch + NumPy pinned to match `CORE.YAML` (large download)
+uv sync --group ml --all-packages
+
+# Optional: editable stub that depends on torch (install after `--group ml`)
+uv pip install -e python/ehk_torch_stub
 ```
 
 ### Using Development Scripts

@@ -33,6 +33,7 @@ from scipy.optimize import linear_sum_assignment
 from .cluttered_mnist import make_cluttered_mnist_hungarian_format
 from .hymeyolo_circles_ricci import RicciHyMeYOLOMulti
 from .hymeyolo_hungarian import HyMeYOLOMulti, hungarian_set_loss
+from .hymeyolo_kcycle import KCycleHyMeYOLOMulti
 from .hymeyolo_q_smoke import gt_corners_from_box
 
 
@@ -172,6 +173,199 @@ def combined_set_loss(
     )
 
 
+# ─── Detection metrics (IoU, AP@0.5, mAP@0.5:0.95) ──────────────────
+
+
+@torch.no_grad()
+def _box_iou(boxes_a: torch.Tensor, boxes_b: torch.Tensor) -> torch.Tensor:
+    """Pairwise IoU for (N,4) vs (M,4) axis-aligned boxes (x0,y0,x1,y1).
+
+    Returns (N, M) IoU matrix.  Handles zero-area degenerates by
+    treating them as IoU=0.
+    """
+    area_a = (boxes_a[:, 2] - boxes_a[:, 0]).clamp_min(0) \
+           * (boxes_a[:, 3] - boxes_a[:, 1]).clamp_min(0)
+    area_b = (boxes_b[:, 2] - boxes_b[:, 0]).clamp_min(0) \
+           * (boxes_b[:, 3] - boxes_b[:, 1]).clamp_min(0)
+    lt = torch.maximum(boxes_a[:, None, :2], boxes_b[None, :, :2])
+    rb = torch.minimum(boxes_a[:, None, 2:], boxes_b[None, :, 2:])
+    wh = (rb - lt).clamp_min(0)
+    inter = wh[..., 0] * wh[..., 1]
+    union = area_a[:, None] + area_b[None, :] - inter
+    return inter / union.clamp_min(1e-9)
+
+
+@torch.no_grad()
+def _aabb_from_corners(corners: torch.Tensor) -> torch.Tensor:
+    """(B, M, k, 2) corners → (B, M, 4) AABB (x0, y0, x1, y1)."""
+    return torch.stack([
+        corners[..., 0].min(dim=-1).values,
+        corners[..., 1].min(dim=-1).values,
+        corners[..., 0].max(dim=-1).values,
+        corners[..., 1].max(dim=-1).values,
+    ], dim=-1)
+
+
+@torch.no_grad()
+def compute_detection_metrics(
+    model, X: torch.Tensor, boxes: torch.Tensor,
+    classes: torch.Tensor, counts: torch.Tensor,
+    n_classes: int = 10, batch_size: int = 32,
+) -> dict:
+    """Per-image score-then-IoU mAP, computed at IoU@0.5 and the COCO
+    mAP@0.5:0.95 ladder.
+
+    For each image: take the model's predicted queries (boxes from box
+    queries, AABBs derived from circle queries), score them by softmax
+    max-class prob, run NMS-free greedy IoU matching (each prediction
+    consumes at most one GT), and accumulate per-class TP/FP at the
+    listed IoU thresholds. Then per-class AP via the standard
+    precision-recall integration, and mAP as the arithmetic mean of
+    per-class APs.
+
+    Returns:
+        {
+          'mAP_50': float,
+          'mAP_50_95': float,        # COCO ladder (10 thresholds)
+          'mean_iou_matched': float, # mean IoU over score-thresholded matches
+          'n_preds_used': int,
+          'n_gts_total': int,
+        }
+    """
+    model.eval()
+    iou_levels = [0.5 + 0.05 * i for i in range(10)]  # 0.50..0.95
+    device = X.device
+    # Accumulate (score, is_tp_at_iou_threshold) per class, per IoU level.
+    per_class_records: dict[int, list[tuple[float, list[bool]]]] = {
+        c: [] for c in range(n_classes)
+    }
+    n_gt_per_class = [0] * n_classes
+    iou_sum_matched = 0.0
+    n_matched = 0
+    for s in range(0, X.shape[0], batch_size):
+        e = min(s + batch_size, X.shape[0])
+        xb = X[s:e]
+        pred = model(xb)
+        if isinstance(pred, dict):
+            # RicciHyMeYOLOMulti returns dict with box_corners, box_cls,
+            # circle_corners, circle_cls (when both query types present).
+            pieces: list[tuple[torch.Tensor, torch.Tensor]] = []
+            if "box_corners" in pred and pred["box_corners"].numel() > 0:
+                pieces.append((_aabb_from_corners(pred["box_corners"]),
+                                pred["box_cls"]))
+            if "circle_corners" in pred and pred["circle_corners"].numel() > 0:
+                pieces.append((_aabb_from_corners(pred["circle_corners"]),
+                                pred["circle_cls"]))
+            if not pieces:
+                continue
+            pred_boxes = torch.cat([p[0] for p in pieces], dim=1)
+            pred_cls = torch.cat([p[1] for p in pieces], dim=1)
+        else:
+            corners, cls_logits = pred
+            pred_boxes = _aabb_from_corners(corners)
+            pred_cls = cls_logits
+        # pred_boxes: (B, Q, 4); pred_cls: (B, Q, n_classes+1)
+        # Slot "n_classes" is the no-object class; drop it for scoring.
+        probs = F.softmax(pred_cls, dim=-1)
+        obj_probs = probs[..., :n_classes]  # (B, Q, C)
+        # Per-prediction best-class score
+        best_score, best_class = obj_probs.max(dim=-1)  # (B, Q)
+        for bi in range(xb.shape[0]):
+            gt_n = int(counts[s + bi].item())
+            if gt_n == 0:
+                continue
+            gt_boxes_i = boxes[s + bi, :gt_n]                # (gt_n, 4)
+            gt_classes_i = classes[s + bi, :gt_n].tolist()   # list[int]
+            for c in gt_classes_i:
+                if 0 <= c < n_classes:
+                    n_gt_per_class[c] += 1
+            pred_boxes_i = pred_boxes[bi]                    # (Q, 4)
+            pred_scores_i = best_score[bi]                   # (Q,)
+            pred_class_i = best_class[bi].tolist()           # list[int]
+            # Score-descending order
+            order = pred_scores_i.argsort(descending=True).tolist()
+            iou_mat = _box_iou(pred_boxes_i, gt_boxes_i)     # (Q, gt_n)
+            # Greedy matching, one GT per prediction, per IoU level
+            for q in order:
+                cls = pred_class_i[q]
+                if cls < 0 or cls >= n_classes:
+                    continue
+                score = float(pred_scores_i[q].item())
+                is_tp_per_level = [False] * len(iou_levels)
+                # Only GTs matching this class can be TP
+                gt_mask = [gc == cls for gc in gt_classes_i]
+                if any(gt_mask):
+                    iou_row = iou_mat[q].tolist()
+                    best_iou = 0.0
+                    for gi, m in enumerate(gt_mask):
+                        if m and iou_row[gi] > best_iou:
+                            best_iou = iou_row[gi]
+                    for li, thr in enumerate(iou_levels):
+                        if best_iou >= thr:
+                            is_tp_per_level[li] = True
+                    if best_iou > 0:
+                        iou_sum_matched += best_iou
+                        n_matched += 1
+                per_class_records[cls].append((score, is_tp_per_level))
+
+    # Per-class AP at each IoU level via the standard PASCAL VOC
+    # all-points integration.
+    def _ap_at_level(records: list[tuple[float, list[bool]]],
+                     n_gt: int, level_idx: int) -> float:
+        if n_gt == 0:
+            return float("nan")
+        if not records:
+            return 0.0
+        recs = sorted(records, key=lambda r: -r[0])
+        tp = [int(r[1][level_idx]) for r in recs]
+        fp = [1 - t for t in tp]
+        tp_cum = 0
+        fp_cum = 0
+        precisions: list[float] = []
+        recalls: list[float] = []
+        for t, f in zip(tp, fp):
+            tp_cum += t
+            fp_cum += f
+            precisions.append(tp_cum / max(1, tp_cum + fp_cum))
+            recalls.append(tp_cum / n_gt)
+        # All-points integration: at each unique recall, take max
+        # precision to the right of that recall.
+        if not precisions:
+            return 0.0
+        for i in range(len(precisions) - 2, -1, -1):
+            precisions[i] = max(precisions[i], precisions[i + 1])
+        ap = 0.0
+        prev_r = 0.0
+        for p, r in zip(precisions, recalls):
+            ap += p * (r - prev_r)
+            prev_r = r
+        return ap
+
+    aps_50 = []
+    aps_5095 = []
+    for c in range(n_classes):
+        if n_gt_per_class[c] == 0:
+            continue
+        ap_50 = _ap_at_level(per_class_records[c], n_gt_per_class[c], 0)
+        ap_levels = [
+            _ap_at_level(per_class_records[c], n_gt_per_class[c], li)
+            for li in range(len(iou_levels))
+        ]
+        aps_50.append(ap_50)
+        aps_5095.append(sum(ap_levels) / len(ap_levels))
+
+    mAP_50 = sum(aps_50) / max(1, len(aps_50)) if aps_50 else 0.0
+    mAP_5095 = sum(aps_5095) / max(1, len(aps_5095)) if aps_5095 else 0.0
+    mean_iou = iou_sum_matched / max(1, n_matched)
+    return dict(
+        mAP_50=mAP_50,
+        mAP_50_95=mAP_5095,
+        mean_iou_matched=mean_iou,
+        n_preds_used=sum(len(v) for v in per_class_records.values()),
+        n_gts_total=sum(n_gt_per_class),
+    )
+
+
 # ─── Phase 1 smoke trainer ──────────────────────────────────────────
 
 
@@ -225,12 +419,23 @@ def train_one_config(
     drop_pct = (losses_per_epoch[0] - losses_per_epoch[-1]) / max(
         1e-9, losses_per_epoch[0],
     ) * 100.0
+    # Compute detection metrics (mAP@0.5, mAP@0.5:0.95, mean matched IoU)
+    # on the same set used for training. This is "training mAP" — a
+    # step up from class-accuracy but not held-out generalisation.
+    metrics = compute_detection_metrics(
+        model, X, boxes, classes, counts,
+        n_classes=10, batch_size=batch_size,
+    )
     print(f"  {label:<18s}  start={losses_per_epoch[0]:7.3f}  "
           f"end={losses_per_epoch[-1]:7.3f}  drop={drop_pct:5.1f}%  "
           f"wall={wall:5.1f}s  "
           f"box_acc={last_accs['box_cls_acc']:.2f}  "
-          f"circ_acc={last_accs['circ_cls_acc']:.2f}")
-    return dict(label=label, losses=losses_per_epoch, wall=wall, accs=last_accs)
+          f"circ_acc={last_accs['circ_cls_acc']:.2f}  "
+          f"mAP50={metrics['mAP_50']:.3f}  "
+          f"mAP50:95={metrics['mAP_50_95']:.3f}  "
+          f"mIoU={metrics['mean_iou_matched']:.3f}")
+    return dict(label=label, losses=losses_per_epoch, wall=wall,
+                accs=last_accs, det_metrics=metrics)
 
 
 def main() -> None:
@@ -242,6 +447,11 @@ def main() -> None:
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--jsonl-out", default=None,
                     help="Optional path to write per-config results as jsonl.")
+    p.add_argument(
+        "--configs", default=None,
+        help="Comma-separated subset of {baseline,boxes-only,circles-only,"
+             "boxes+circles,+ricci-mod,+kcycle}; default = all six.",
+    )
     args = p.parse_args()
     device = torch.device(args.device)
     print(f"\nPhase 1 smoke: n_images={args.n_images}  epochs={args.epochs}  "
@@ -267,7 +477,23 @@ def main() -> None:
                                               ricci_modulation=False)),
         ("+ricci-mod",    RicciHyMeYOLOMulti(n_box_queries=4, n_circle_queries=2,
                                               ricci_modulation=True)),
+        # 2026-05-11 new: K-cycle signed micro-graph head.  Each
+        # query's K corners form a signed sub-graph; α-routed
+        # aggregation over all C(K,k) sub-cycles (k=2..K).  Composes
+        # with both box (K=4, 3 arities) and circle (K=8, 7 arities)
+        # query types.
+        ("+kcycle",       KCycleHyMeYOLOMulti(n_box_queries=4, n_circle_queries=2,
+                                                box_k=4, circle_k=8, d_hidden=32)),
     ]
+    if args.configs:
+        keep = set(args.configs.split(","))
+        configs = [(name, m) for (name, m) in configs if name in keep]
+        if not configs:
+            raise SystemExit(
+                f"--configs={args.configs!r} matches no known config; "
+                f"valid: baseline, boxes-only, circles-only, "
+                f"boxes+circles, +ricci-mod, +kcycle",
+            )
 
     print(f"\n  {'config':<18s}  {'start':>7s}  {'end':>7s}  "
           f"{'drop':>5s}  {'wall':>5s}  box_acc circ_acc")
@@ -297,6 +523,7 @@ def main() -> None:
         import json
         with open(args.jsonl_out, "w") as fh:
             for r in results:
+                det = r.get("det_metrics", {})
                 rec = {
                     "label":       r["label"],
                     "n_images":    args.n_images,
@@ -310,6 +537,13 @@ def main() -> None:
                                       / max(1e-9, r["losses"][0]) * 100.0,
                     "box_cls_acc": r["accs"]["box_cls_acc"],
                     "circ_cls_acc": r["accs"]["circ_cls_acc"],
+                    # Detection metrics on the training set (no held-out
+                    # split in current pipeline; comparable across configs).
+                    "mAP_50":      det.get("mAP_50"),
+                    "mAP_50_95":   det.get("mAP_50_95"),
+                    "mean_iou_matched": det.get("mean_iou_matched"),
+                    "n_preds_used":     det.get("n_preds_used"),
+                    "n_gts_total":      det.get("n_gts_total"),
                     "acceptance_pass": r["acceptance_pass"],
                     "losses_per_epoch": r["losses"],
                 }

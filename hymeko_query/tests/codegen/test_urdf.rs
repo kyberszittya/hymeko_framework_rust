@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test_urdf {
-    use hymeko_formats::urdf::generate_urdf;
     use crate::test_helpers::load_and_lower;
+    use hymeko_formats::urdf::generate_urdf;
 
     const ROBOT: &str = "../data/robotics/robot_4wh.hymeko";
 

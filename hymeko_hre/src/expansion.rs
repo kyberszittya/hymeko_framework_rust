@@ -6,6 +6,9 @@
 //! The functions still operate on `HyperGraphView` (which stays in `hymeko_core`
 //! to avoid a cycle with `hymeko_core::tensor::conv` HGNN operators).
 
+// Index loops mirror dense numerical layout; iterator refactors are deferred.
+#![allow(clippy::needless_range_loop)]
+
 use hymeko::common::ids::{EdgeId, NodeId};
 use hymeko_hnn::tensor::common::calc_approx_nnz;
 use hymeko::tensor::common::{signed_incidence, Real};

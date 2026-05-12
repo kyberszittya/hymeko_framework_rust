@@ -462,7 +462,8 @@ def domain_scene_deep(device, n_epochs=80, n_scenes=200) -> list[dict]:
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
-    print(f"compile: {os.environ.get('HSIKAN_TORCH_COMPILE', '0')}")
+    from .runtime_config import get_runtime
+    print(f"compile: {'1' if get_runtime().compile.enabled else '0'}")
 
     all_rows = []
     all_rows += domain_sbm_deep(device, n_epochs=200)

@@ -5,6 +5,15 @@
 //! See `docs/plans/05_hre_extraction/plan.md` for the rationale behind
 //! splitting this crate out of `hymeko_core`.
 
+// IPC / raw-pointer helpers and the iceoryx subscriber scaffold predate strict
+// `clippy -D warnings` defaults on every workspace feature combination.
+#![allow(
+    dead_code,
+    mismatched_lifetime_syntaxes,
+    clippy::missing_safety_doc,
+    clippy::too_many_arguments,
+)]
+
 pub mod engine;
 pub mod expansion;
 pub mod traversal;

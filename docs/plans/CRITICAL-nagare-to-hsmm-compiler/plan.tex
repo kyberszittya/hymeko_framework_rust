@@ -1,0 +1,277 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\definecolor{critical}{rgb}{0.8, 0.1, 0.1}
+
+\title{\textcolor{critical}{\textbf{[CRITICAL]}} Plan:
+  HymeKo-Nagare $\to$ HSMM Compiler\\
+  \emph{Future-session work; FPGA prerequisite}}
+\author{}
+\date{Drafted: 2026-05-11. Status: \textbf{frozen}, awaiting FPGA HSMM kernel.}
+
+\begin{document}
+\maketitle
+
+\section*{\textcolor{critical}{Status banner}}
+
+This is a \textbf{CRITICAL} plan flagged for a \textbf{future session}.
+It is \textbf{not} actionable in the current session because:
+
+\begin{enumerate}
+  \item The \textbf{HSMM FPGA implementation is a prerequisite}.
+    HSMM (Hypergraph Storage Modification Machine, Hajdu \& Csapó 2026
+    Zenodo manuscript) currently has a Zynq UltraScale+ kernel
+    referenced in \texttt{docs/plans/plans\_20260429/hymeko\_monitor\_plan.md}
+    but the bitstream / HDL artefacts are not in this repo
+    (verified via \texttt{grep}). The compiler target must exist
+    before the source-language compiler is meaningful.
+  \item The Nagare ops landed today are CPU-only; GPU backend
+    (Stage 3 of \texttt{docs/plans/2026-05-11-hymeko-nagare-flow/plan.tex})
+    has not yet been built. Going straight to FPGA would skip a
+    natural staging point.
+  \item Empirical validation requires a Nagare $\to$ HSMM
+    end-to-end pipeline that we can compare against PyTorch-on-CPU
+    on real signed-graph workloads --- requires the FPGA target
+    booted and the Nagare ops mature.
+\end{enumerate}
+
+\textbf{Re-open this plan when:} the HSMM FPGA bitstream is in repo
+(\texttt{hymeko\_monitor/hsmm\_bridge.rs} mentions it; needs to
+materialise), OR the Hajdu-Csapó companion paper publishes a public
+HSMM reference implementation, whichever comes first.
+
+\section{Goal}
+
+Build a compiler $\phi : \text{Nagare-program} \to \text{HSMM-program}$
+such that every Nagare training-loop function (forward + closed-form
+backward + Adam step + loss) compiles to a fixed HSMM-program
+(sequence of NEWE / ATT / arithmetic primitives) executable on the
+Zynq UltraScale+ HSMM kernel.
+
+This is the systems counterpart to the algorithmic paper
+\texttt{docs/plans/2026-05-11-hymeko-nagare-flow/plan.tex}: it
+demonstrates that Nagare is the natural ML programming language for
+HSMM (Schönhage-class storage-modification machine, hypergraph
+variant), via a structural embedding rather than a trace-based
+lowering.
+
+\section{Why this matters}
+
+\textbf{For PyTorch / JAX / Burn:} reverse-mode autograd needs to
+traverse the recorded computation graph during backward. Compiling
+that to HSMM would require lowering the graph traversal itself to
+HSMM primitives --- effectively building an HSMM-resident autograd
+interpreter. That is feasible but bypasses the whole point of
+HSMM (compiled, fixed-schedule execution).
+
+\textbf{For Nagare:} the closed-form Clifford backward (Theorem 1 of
+\texttt{math.tex} in the Nagare plan dir) is already expressed as a
+fixed sequence of READ / FMA / ATT-LOCAL operations over the
+hyperedge stream. There is no graph traversal at backward time. The
+compilation to HSMM is a \emph{structural} embedding (operator
+$\to$ template), not a \emph{trace-based} one. This is the property
+that makes the Nagare $\to$ HSMM pairing structurally clean.
+
+\section{Affected files (when reopened)}
+
+\begin{lstlisting}
+hymeko_nagare/
+├── src/
+│   ├── compiler/
+│   │   ├── mod.rs             pub use of the compiler
+│   │   ├── ir.rs              Nagare op IR (op-graph in flat Vec form)
+│   │   ├── hsmm_target.rs     HSMM program emit (NEWE / ATT / FMA)
+│   │   ├── schedule.rs        operator-level scheduling for FPGA pipeline
+│   │   └── verify.rs          structural-equivalence checker (Nagare op
+│   │                          vs emitted HSMM program)
+│   └── ...                    (existing ops crate)
+hymeko_monitor/
+└── src/
+    └── hsmm_bridge.rs         existing scaffold; will host the runtime
+                                bridge between Nagare-compiled HSMM
+                                programs and live FPGA events.
+docs/plans/CRITICAL-nagare-to-hsmm-compiler/
+├── plan.tex (this doc)
+├── plan.pdf
+├── plan.tikz                  Nagare-IR -> HSMM-program structural diagram
+├── plan.mmd                   compiler stages flowchart
+└── README.md                  prerequisites checklist + reopen criteria
+\end{lstlisting}
+
+\section{Prerequisites checklist}
+
+Before reopening this plan, ALL must be true:
+
+\begin{enumerate}
+  \item HSMM Zynq bitstream OR public reference implementation
+    available in repo, with documented NEWE / ATT primitive
+    surface (event format, memory layout, dispatch protocol).
+  \item Nagare Stage 3 (GPU backend via wgpu OR cudarc) shipped,
+    so we have a CPU $\to$ GPU step \emph{before} CPU $\to$ FPGA;
+    that gives us 2 architectural-portability validation points
+    before the FPGA attempt.
+  \item Catmull-Rom spline forward + closed-form backward ported
+    to pure Rust (Nagare Stage 4), so the spline-aggregator path
+    is also compilable to HSMM. Without this, only the FIR path
+    works on HSMM, and the comparison vs the full Slashdot
+    SOTA recipe is not meaningful.
+  \item Slashdot 5-seed paired AUC reproduced on Nagare-CPU
+    pipeline at parity ($\le 0.005$ AUC drift) vs the existing
+    PyTorch + Triton kernel pipeline. This validates that Nagare's
+    pure-Rust ops have no accuracy regression before attempting
+    FPGA deployment.
+\end{enumerate}
+
+\section{Compilation stages (when reopened)}
+
+\begin{enumerate}
+  \item \textbf{Parse Nagare op chain.} Take a Rust function of
+    type \texttt{fn(\&CyclePool, \&Features) -> \&Logits} composed
+    of registered Nagare ops (no autograd traces, no closures with
+    captured state). Produce a flat Nagare-IR.
+  \item \textbf{Verify closure under op registry.} Every node in
+    the IR must be a registered Nagare operator with declared
+    forward + closed-form backward kernels. Reject if any op is
+    autograd-traced (which would require an interpreter on FPGA).
+  \item \textbf{Lower to HSMM-IR.} For each Nagare op, instantiate
+    the corresponding HSMM-template (per the structural embedding
+    $\phi$ defined in \texttt{math.tex} Section 7). Templates are
+    parameterised by (cycle batch size, feature dim, filter length,
+    optional Highway/attention sub-templates if Stage 4 has landed).
+  \item \textbf{Schedule for FPGA pipeline.} Assign operators to
+    FPGA pipeline stages; pipeline-balance via fanout / fanin
+    blockers; check resource budget (DSP slices, BRAM tiles,
+    LUT-FF pairs) against the Zynq UltraScale+ chip-specific
+    budget.
+  \item \textbf{Emit Verilog / SystemVerilog} via the existing
+    \texttt{hymeko\_monitor} LIR $\to$ SystemVerilog path (see
+    plan \texttt{docs/plans/plans\_20260429/hymeko\_monitor\_plan.md}).
+    The Nagare compiler reuses this emission step --- it just
+    emits a different LIR program shape.
+  \item \textbf{Bitstream synthesis + deploy.} Standard Xilinx
+    Vivado pipeline. Out of scope for the Nagare compiler crate,
+    in scope for the integration tests.
+  \item \textbf{Empirical validation.} Run Slashdot or Epinions
+    forward + backward pass on the FPGA-resident compiled Nagare
+    program; report throughput (cycles/s, edges/s) and compare
+    against PyTorch CPU baseline + Nagare CPU baseline. Expected
+    range: $10$--$100\times$ over PyTorch CPU at iso-FLOPS, with
+    much lower energy/op (FPGA-typical $10$--$50\times$ better
+    than CPU at signal-processing-class workloads, which the
+    FIR + scatter primitives are).
+\end{enumerate}
+
+\section{Test strategy}
+
+\textbf{Compiler unit tests} (pure-CPU, no FPGA):
+\begin{itemize}
+  \item Each Nagare-op $\to$ HSMM-template mapping has a unit
+    test that emits the HSMM program and verifies it against a
+    hand-written reference HSMM program for that op.
+  \item Round-trip: Nagare program $\to$ HSMM-IR $\to$ executed
+    in a Rust HSMM-IR interpreter $\to$ result matches Nagare
+    CPU forward to $\le 10^{-6}$.
+  \item Backward parity: emitted HSMM program for backward
+    matches Nagare CPU closed-form backward to $\le 10^{-6}$.
+\end{itemize}
+
+\textbf{FPGA integration tests} (requires bitstream on Zynq):
+\begin{itemize}
+  \item Slashdot k=3 cycle pool, forward only, output parity
+    $\le 10^{-5}$ vs Nagare CPU. (Float-precision drift from FPGA
+    fixed-point arithmetic, if used, is the limiting factor.)
+  \item Full training loop (forward + bwd + Adam step) for 10
+    epochs, AUC parity $\le 0.01$ vs Nagare CPU.
+  \item Throughput measurement: edges processed per second; target
+    $\ge 10\times$ PyTorch CPU at iso-FLOPS.
+\end{itemize}
+
+\section{Performance budget}
+
+\begin{itemize}
+  \item Compile time: $\le 30$ s for a typical Nagare training
+    loop (parsing + lowering + verilog emission). FPGA synthesis
+    via Vivado is hours; that's not the compiler's wall.
+  \item FPGA latency: $\le 1$ ms per forward pass on Bitcoin OTC
+    scale (30K cycles, k=3, d=32); proportionally for larger.
+  \item FPGA energy: $\le 1$ W per training step (compared to
+    $50$--$100$ W for the equivalent on a 7nm CPU). The energy-cost
+    argument is the headline for the deployment / edge-inference
+    pitch.
+\end{itemize}
+
+\section{Rollback path}
+
+If FPGA deployment proves infeasible for any reason (Vivado bug,
+resource budget overrun, fixed-point precision unacceptable for
+AUC parity), Nagare's CPU + wgpu/cudarc backends remain fully
+functional. The compiler crate is a separate module; deleting it
+does not regress the Nagare CPU+GPU path. Worst case: the FPGA
+compiler is shelved indefinitely, Nagare ships as a CPU+GPU
+framework, and the Hajdu-Csapó HSMM paper stands on its own
+(without the Nagare integration as proof-of-feasibility).
+
+\section{Risk anticipation}
+
+\begin{itemize}
+  \item \textbf{Fixed-point precision.} FPGAs typically use
+    fixed-point arithmetic; f32 emulation eats DSP slices.
+    AUC parity at fixed-point Q16.16 vs f32 needs early validation
+    (Stage 6 in the compilation pipeline).
+  \item \textbf{HSMM primitive surface drift.} The NEWE/ATT
+    primitive set in the Hajdu-Csapó manuscript may evolve before
+    publication. The compiler should target an explicitly versioned
+    HSMM-IR (\texttt{hsmm\_v1.0}) so the source-language remains
+    stable when the target evolves.
+  \item \textbf{Scope creep into attention.} HSiKAN's
+    quaternion-attention edge-cr Highway path has a more complex
+    closed-form backward; whether to support attention in the
+    Nagare compiler depends on whether attention proves necessary
+    for SOTA-on-FPGA. Default: ship the FIR-only path first.
+  \item \textbf{HSMM Zynq performance ceiling.} Zynq UltraScale+
+    has $\sim 2000$ DSP slices; large cycle pools (Epinions $530$K
+    cycles) may exceed throughput at d=32. Mitigated by streaming
+    the cycle pool in chunks of $10$--$50$K cycles (the existing
+    \texttt{HSIKAN\_CYCLE\_BATCH=2000} pattern), which fits the
+    DSP budget comfortably.
+\end{itemize}
+
+\section{Venue strategy}
+
+This work, when shipped, completes a three-paper arc:
+
+\begin{enumerate}
+  \item \textbf{Hajdu \& Csapó 2026 (Zenodo, in review):} HSMM as
+    abstract computational model. Pure theory.
+  \item \textbf{Nagare paper (planned 2026, MLSys 2027):} Cycle-additive
+    operators with closed-form Clifford backward; structural
+    correspondence to HSMM via embedding $\phi$. Theory + CPU
+    implementation.
+  \item \textbf{This plan (Nagare-to-HSMM compiler, planned 2027):}
+    Empirical realisation: compiled Nagare programs running on
+    Zynq UltraScale+ HSMM kernel, with throughput + energy
+    measurements vs PyTorch CPU + Nagare GPU baselines. Target
+    venues: FPGA 2028 / FCCM 2028 / DAC 2028 / FCCM 2028; or
+    ASPLOS 2028 if the framing leans architecture rather than
+    EDA.
+\end{enumerate}
+
+The three papers together establish HSMM as a viable parallel-ML
+substrate with a working software stack and empirical advantage,
+a much stronger claim than HSMM theory alone.
+
+\section{Citation arc}
+
+\begin{itemize}
+  \item Schönhage 1980 (original Storage Modification Machine)
+  \item Knuth-Tarjan pointer machines (1979)
+  \item Kolmogorov machines (1953)
+  \item Hajdu \& Csapó 2026 (HSMM = hypergraph SMM, Zenodo)
+  \item HymeKo-Nagare 2026 (\texttt{docs/plans/2026-05-11-hymeko-nagare-flow/})
+  \item This plan (Nagare $\to$ HSMM compiler, 2027 work)
+\end{itemize}
+
+\end{document}

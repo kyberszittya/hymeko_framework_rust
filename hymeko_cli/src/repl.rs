@@ -8,31 +8,33 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use rustyline::{Cmd, Config, CompletionType, Context, Editor, KeyCode, KeyEvent, Modifiers};
+use rustyline::Helper;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
 use rustyline::history::FileHistory;
 use rustyline::validate::Validator;
-use rustyline::Helper;
+use rustyline::{Cmd, CompletionType, Config, Context, Editor, KeyCode, KeyEvent, Modifiers};
 
 use hymeko::module_store::module_store::{CompiledProgram, ModuleStore};
 use hymeko::module_store::source_provider::StdFsProvider;
 use hymeko::resolution::interner::Interner;
-use hymeko::util::real_parser::RealParser;
 use hymeko::util::pretty_print::pretty_print_compiled;
+use hymeko::util::real_parser::RealParser;
 
-use hymeko_formats::{generate_description, OutputFormat};
+use hymeko_formats::{OutputFormat, generate_description};
 use hymeko_query::rewrite::execute_transform;
 
 use crate::{
-    entropy_rows_to_json, list_available_transforms, load_transform_spec,
-    print_entropy_table, resolve_entropy_rows, run_inline_query,
-    run_query_source,
+    entropy_rows_to_json, list_available_transforms, load_transform_spec, print_entropy_table,
+    resolve_entropy_rows, run_inline_query, run_query_source,
 };
 
-pub enum CommandOutcome { Continue, Break }
+pub enum CommandOutcome {
+    Continue,
+    Break,
+}
 
 pub struct Session {
     pub ms: ModuleStore<StdFsProvider, RealParser>,
@@ -53,7 +55,9 @@ impl Session {
         }
     }
 
-    pub fn interner(&self) -> &Interner { &self.ms.it }
+    pub fn interner(&self) -> &Interner {
+        &self.ms.it
+    }
 
     pub fn ensure_loaded(&self) -> Option<&Arc<CompiledProgram>> {
         if self.compiled.is_none() {
@@ -69,7 +73,9 @@ impl Session {
 pub fn interactive_console() {
     let mut session = Session::new();
     print_banner();
-    let Some(mut rl) = setup_editor(&session) else { return };
+    let Some(mut rl) = setup_editor(&session) else {
+        return;
+    };
     let history_path = history_file_path();
     if let Some(p) = &history_path {
         let _ = rl.load_history(p);
@@ -147,7 +153,9 @@ fn run_repl_loop(session: &mut Session, rl: &mut Editor<ReplHelper, FileHistory>
 }
 
 fn build_prompt(session: &Session) -> String {
-    let label = session.loaded_path.as_ref()
+    let label = session
+        .loaded_path
+        .as_ref()
         .and_then(|p| p.file_stem())
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "no file".into());
@@ -162,26 +170,47 @@ fn dispatch_line(
     let parts: Vec<&str> = line.splitn(3, char::is_whitespace).collect();
     let cmd = parts[0].to_lowercase();
     match cmd.as_str() {
-        "help" | "h" | "?"                   => { print_help(); CommandOutcome::Continue }
-        "load" | "open"                      => cmd_load(session, &parts),
-        "reload" | "r"                       => cmd_reload(session),
-        "name"                               => cmd_name(session, &parts),
-        "compile" | "gen" | "generate"       => cmd_compile(session, &parts),
-        "validate" | "check"                 => cmd_validate(session),
-        "inspect" | "ir" | "dump"            => cmd_inspect(session),
-        "entropy"                            => cmd_entropy(session, &parts),
-        "info" | "status"                    => cmd_info(session),
-        "formats"                            => { cmd_formats(); CommandOutcome::Continue }
-        "query" | "q!"                       => cmd_query(session, &parts, line),
-        "qfile" | "query-file"               => cmd_qfile(session, &parts),
-        "daemon"                             => { cmd_daemon(); CommandOutcome::Continue }
-        "transform" | "tf"                   => cmd_transform(session, &parts),
-        "tdir" | "transforms-dir"            => cmd_tdir(session, rl, &parts),
-        "cd"                                 => { cmd_cd(&parts); CommandOutcome::Continue }
-        "pwd"                                => { cmd_pwd(); CommandOutcome::Continue }
-        "ls"                                 => { cmd_ls(&parts); CommandOutcome::Continue }
-        "exit" | "quit" | "q"                => { println!("  Bye."); CommandOutcome::Break }
-        other                                => cmd_fallback(session, other),
+        "help" | "h" | "?" => {
+            print_help();
+            CommandOutcome::Continue
+        }
+        "load" | "open" => cmd_load(session, &parts),
+        "reload" | "r" => cmd_reload(session),
+        "name" => cmd_name(session, &parts),
+        "compile" | "gen" | "generate" => cmd_compile(session, &parts),
+        "validate" | "check" => cmd_validate(session),
+        "inspect" | "ir" | "dump" => cmd_inspect(session),
+        "entropy" => cmd_entropy(session, &parts),
+        "info" | "status" => cmd_info(session),
+        "formats" => {
+            cmd_formats();
+            CommandOutcome::Continue
+        }
+        "query" | "q!" => cmd_query(session, &parts, line),
+        "qfile" | "query-file" => cmd_qfile(session, &parts),
+        "daemon" => {
+            cmd_daemon();
+            CommandOutcome::Continue
+        }
+        "transform" | "tf" => cmd_transform(session, &parts),
+        "tdir" | "transforms-dir" => cmd_tdir(session, rl, &parts),
+        "cd" => {
+            cmd_cd(&parts);
+            CommandOutcome::Continue
+        }
+        "pwd" => {
+            cmd_pwd();
+            CommandOutcome::Continue
+        }
+        "ls" => {
+            cmd_ls(&parts);
+            CommandOutcome::Continue
+        }
+        "exit" | "quit" | "q" => {
+            println!("  Bye.");
+            CommandOutcome::Break
+        }
+        other => cmd_fallback(session, other),
     }
 }
 
@@ -235,31 +264,36 @@ fn cmd_name(session: &mut Session, parts: &[&str]) -> CommandOutcome {
 }
 
 fn cmd_compile(session: &mut Session, parts: &[&str]) -> CommandOutcome {
-    let Some(compiled) = session.ensure_loaded() else { return CommandOutcome::Continue };
+    let Some(compiled) = session.ensure_loaded() else {
+        return CommandOutcome::Continue;
+    };
     let format_str = if parts.len() >= 2 { parts[1] } else { "urdf" };
     let fmt = match format_str.to_lowercase().as_str() {
         "urdf" => OutputFormat::Urdf,
-        "sdf"  => OutputFormat::Sdf17,
+        "sdf" => OutputFormat::Sdf17,
         "mjcf" => OutputFormat::Mjcf,
-        "dot"  => OutputFormat::DotGraph,
+        "dot" => OutputFormat::DotGraph,
         other => {
             eprintln!("  Unknown format: {other}. Use: urdf, sdf, mjcf, dot");
             return CommandOutcome::Continue;
         }
     };
-    let result = match generate_description(&compiled.ir, session.interner(), &session.robot_name, fmt) {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("  Code generation failed: {e}");
-            return CommandOutcome::Continue;
-        }
-    };
+    let result =
+        match generate_description(&compiled.ir, session.interner(), &session.robot_name, fmt) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("  Code generation failed: {e}");
+                return CommandOutcome::Continue;
+            }
+        };
     write_or_print(&result, parts.get(2).map(|s| PathBuf::from(*s)).as_ref());
     CommandOutcome::Continue
 }
 
 fn cmd_validate(session: &mut Session) -> CommandOutcome {
-    let Some(compiled) = session.ensure_loaded() else { return CommandOutcome::Continue };
+    let Some(compiled) = session.ensure_loaded() else {
+        return CommandOutcome::Continue;
+    };
     let warnings = hymeko_formats::urdf::validate_robot_schema(&compiled.ir, session.interner());
     if warnings.is_empty() {
         println!("  ✅ Valid (no warnings)");
@@ -273,18 +307,22 @@ fn cmd_validate(session: &mut Session) -> CommandOutcome {
 }
 
 fn cmd_inspect(session: &mut Session) -> CommandOutcome {
-    let Some(compiled) = session.ensure_loaded() else { return CommandOutcome::Continue };
+    let Some(compiled) = session.ensure_loaded() else {
+        return CommandOutcome::Continue;
+    };
     pretty_print_compiled(session.interner(), compiled);
     CommandOutcome::Continue
 }
 
 fn cmd_entropy(session: &mut Session, parts: &[&str]) -> CommandOutcome {
-    let Some(compiled) = session.ensure_loaded() else { return CommandOutcome::Continue };
+    let Some(compiled) = session.ensure_loaded() else {
+        return CommandOutcome::Continue;
+    };
     let rest: Vec<&str> = parts.iter().skip(1).copied().collect();
     let (as_json, scopes) = match rest.as_slice() {
-        []        => (false, Vec::<String>::new()),
-        ["json"]  => (true, Vec::new()),
-        names     => (false, names.iter().map(|s| s.to_string()).collect()),
+        [] => (false, Vec::<String>::new()),
+        ["json"] => (true, Vec::new()),
+        names => (false, names.iter().map(|s| s.to_string()).collect()),
     };
     let rows = resolve_entropy_rows(&compiled.ir, session.interner(), &scopes);
     if as_json {
@@ -320,7 +358,9 @@ fn cmd_formats() {
 }
 
 fn cmd_query(session: &Session, parts: &[&str], line: &str) -> CommandOutcome {
-    let Some(compiled) = session.ensure_loaded() else { return CommandOutcome::Continue };
+    let Some(compiled) = session.ensure_loaded() else {
+        return CommandOutcome::Continue;
+    };
     if parts.len() < 2 {
         eprintln!("  Usage: query <pattern>");
         eprintln!("  Examples:");
@@ -335,7 +375,9 @@ fn cmd_query(session: &Session, parts: &[&str], line: &str) -> CommandOutcome {
 }
 
 fn cmd_qfile(session: &Session, parts: &[&str]) -> CommandOutcome {
-    let Some(compiled) = session.ensure_loaded() else { return CommandOutcome::Continue };
+    let Some(compiled) = session.ensure_loaded() else {
+        return CommandOutcome::Continue;
+    };
     if parts.len() < 2 {
         eprintln!("  Usage: qfile <query_file.hymeko>");
         return CommandOutcome::Continue;
@@ -359,7 +401,9 @@ fn cmd_daemon() {
 }
 
 fn cmd_transform(session: &Session, parts: &[&str]) -> CommandOutcome {
-    let Some(compiled) = session.ensure_loaded() else { return CommandOutcome::Continue };
+    let Some(compiled) = session.ensure_loaded() else {
+        return CommandOutcome::Continue;
+    };
     if parts.len() < 2 {
         eprintln!("  Usage: transform <name> [output_file]");
         eprintln!("  Available transforms:");
@@ -369,7 +413,10 @@ fn cmd_transform(session: &Session, parts: &[&str]) -> CommandOutcome {
     let tf_name = parts[1];
     let tf_dir = PathBuf::from(&session.transforms_dir).join(tf_name);
     if !tf_dir.is_dir() {
-        eprintln!("  Transform '{tf_name}' not found in {}", session.transforms_dir);
+        eprintln!(
+            "  Transform '{tf_name}' not found in {}",
+            session.transforms_dir
+        );
         eprintln!("  Available:");
         list_available_transforms(&session.transforms_dir);
         return CommandOutcome::Continue;
@@ -406,7 +453,8 @@ fn cmd_tdir(
 
 fn cmd_cd(parts: &[&str]) {
     if parts.len() < 2 {
-        let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
+        let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
+        else {
             eprintln!("  Usage: cd <directory>");
             return;
         };
@@ -495,17 +543,36 @@ fn write_or_print(result: &str, out_path: Option<&PathBuf>) {
 // ─── REPL completion helper ─────────────────────────────────────────
 
 const REPL_COMMANDS: &[&str] = &[
-    "help", "load", "open", "reload", "name",
-    "compile", "gen", "generate",
-    "validate", "check",
-    "inspect", "ir", "dump",
+    "help",
+    "load",
+    "open",
+    "reload",
+    "name",
+    "compile",
+    "gen",
+    "generate",
+    "validate",
+    "check",
+    "inspect",
+    "ir",
+    "dump",
     "entropy",
-    "info", "status", "formats",
-    "query", "qfile", "query-file",
-    "daemon", "transform", "tf",
-    "tdir", "transforms-dir",
-    "cd", "pwd", "ls",
-    "exit", "quit",
+    "info",
+    "status",
+    "formats",
+    "query",
+    "qfile",
+    "query-file",
+    "daemon",
+    "transform",
+    "tf",
+    "tdir",
+    "transforms-dir",
+    "cd",
+    "pwd",
+    "ls",
+    "exit",
+    "quit",
 ];
 
 const FORMAT_NAMES: &[&str] = &["urdf", "sdf", "mjcf", "dot"];
@@ -536,25 +603,49 @@ impl Completer for ReplHelper {
             return Ok((word_start, match_prefix_pairs(REPL_COMMANDS, current_word)));
         }
 
-        let cmd = before.split_whitespace().next().unwrap_or("").to_lowercase();
-        complete_for_command(&self.fs, &self.transforms_dir, cmd.as_str(), word_index,
-                              current_word, word_start, line, pos, ctx)
+        let cmd = before
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_lowercase();
+        complete_for_command(
+            &self.fs,
+            &self.transforms_dir,
+            cmd.as_str(),
+            word_index,
+            current_word,
+            word_start,
+            line,
+            pos,
+            ctx,
+        )
     }
 }
 
 fn current_word_index(before: &str) -> usize {
     let starts_new_word = before.ends_with(char::is_whitespace);
     let prior = before.split_whitespace().count();
-    if starts_new_word || prior == 0 { prior } else { prior - 1 }
+    if starts_new_word || prior == 0 {
+        prior
+    } else {
+        prior - 1
+    }
 }
 
 fn match_prefix_pairs(options: &[&str], current: &str) -> Vec<Pair> {
-    options.iter()
+    options
+        .iter()
         .filter(|c| c.starts_with(current))
-        .map(|c| Pair { display: c.to_string(), replacement: format!("{c} ") })
+        .map(|c| Pair {
+            display: c.to_string(),
+            replacement: format!("{c} "),
+        })
         .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
+// RustyLine completer: mirrors nested dispatch tables; a config struct
+// would not reduce call-site complexity meaningfully.
 fn complete_for_command(
     fs: &FilenameCompleter,
     transforms_dir: &str,
@@ -576,9 +667,13 @@ fn complete_for_command(
         ("compile" | "gen" | "generate", _) => fs.complete(line, pos, ctx),
         ("transform" | "tf", 1) => {
             let names = list_transform_names(transforms_dir);
-            let pairs = names.iter()
+            let pairs = names
+                .iter()
                 .filter(|t| t.starts_with(current_word))
-                .map(|t| Pair { display: t.clone(), replacement: format!("{t} ") })
+                .map(|t| Pair {
+                    display: t.clone(),
+                    replacement: format!("{t} "),
+                })
                 .collect();
             Ok((word_start, pairs))
         }
@@ -587,14 +682,18 @@ fn complete_for_command(
     }
 }
 
-impl Hinter for ReplHelper { type Hint = String; }
+impl Hinter for ReplHelper {
+    type Hint = String;
+}
 impl Highlighter for ReplHelper {}
 impl Validator for ReplHelper {}
 impl Helper for ReplHelper {}
 
 fn list_transform_names(transforms_dir: &str) -> Vec<String> {
     let dir = PathBuf::from(transforms_dir);
-    let Ok(entries) = fs::read_dir(&dir) else { return Vec::new() };
+    let Ok(entries) = fs::read_dir(&dir) else {
+        return Vec::new();
+    };
     let mut names: Vec<String> = entries
         .flatten()
         .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
@@ -612,7 +711,8 @@ fn history_file_path() -> Option<PathBuf> {
 }
 
 fn print_help() {
-    println!(r#"
+    println!(
+        r#"
   ┌─────────────────────────────────────────────────────────┐
   │ HyMeKo Interactive Console — Commands                  │
   ├─────────────────────────────────────────────────────────┤
@@ -662,5 +762,6 @@ fn print_help() {
   │  History persists in ~/.hymeko_history                  │
   │                                                         │
   └─────────────────────────────────────────────────────────┘
-"#);
+"#
+    );
 }

@@ -31,26 +31,31 @@ use hymeko_compute::{
 };
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
+// `n_rows` / `n_cols` are accepted for JSON schema compatibility; only row_ptr
+// dimensions drive the GPU path.
 struct CsrJson {
     n_rows: u32,
     #[serde(default)]
     n_cols: u32,
     row_ptr: Vec<u32>,
     col_ind: Vec<u32>,
-    val:     Vec<f32>,
-    x:       Vec<f32>,
+    val: Vec<f32>,
+    x: Vec<f32>,
     #[serde(default = "default_repeat")]
     n_repeat: u32,
 }
 
-fn default_repeat() -> u32 { 50 }
+fn default_repeat() -> u32 {
+    50
+}
 
 #[derive(Serialize)]
 struct OutJson {
-    wall_ms:     f64,
-    n_repeat:    u32,
+    wall_ms: f64,
+    n_repeat: u32,
     per_call_ms: f64,
-    device:      String,
+    device: String,
 }
 
 fn main() {
@@ -61,7 +66,7 @@ fn main() {
     let csr = SignedIncidenceCsr {
         row_ptr: csr_in.row_ptr,
         col_ind: csr_in.col_ind,
-        val:     csr_in.val,
+        val: csr_in.val,
     };
     let ctx = VulkanContext::new().expect("vulkan init");
 
@@ -76,9 +81,9 @@ fn main() {
 
     let out = OutJson {
         wall_ms,
-        n_repeat:    csr_in.n_repeat,
+        n_repeat: csr_in.n_repeat,
         per_call_ms: wall_ms / csr_in.n_repeat as f64,
-        device:      ctx.device_name(),
+        device: ctx.device_name(),
     };
     let s = serde_json::to_string(&out).unwrap();
     io::stdout().write_all(s.as_bytes()).unwrap();

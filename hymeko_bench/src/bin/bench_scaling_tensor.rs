@@ -16,7 +16,8 @@
 //! Usage:
 //!   cargo run --release -p hymeko_bench --bin bench_scaling_tensor
 
-use std::{fs, path::PathBuf, time::Instant};
+use std::path::{Path, PathBuf};
+use std::{fs, time::Instant};
 
 use anyhow::Result;
 use clap::Parser;
@@ -47,6 +48,8 @@ const AGG_CFG: AggCfg = AggCfg {
     clamp01: false,
 };
 const F_DIM: usize = 64;
+
+type OpTimingsMs = (f64, f64, f64, f64, f64, f64);
 
 // ───────────────────────────────────────────────────────────────────────────
 #[derive(Deserialize, Debug, Clone)]
@@ -107,16 +110,16 @@ fn median_p95(mut xs: Vec<f64>) -> (f64, f64) {
     (med, p95)
 }
 
-fn load_fixtures(root: &PathBuf) -> Result<Vec<FixtureEntry>> {
+fn load_fixtures(root: &Path) -> Result<Vec<FixtureEntry>> {
     let idx = root.join("index.json");
-    let txt = fs::read_to_string(&idx)
-        .map_err(|e| anyhow::anyhow!("read {}: {e}", idx.display()))?;
+    let txt =
+        fs::read_to_string(&idx).map_err(|e| anyhow::anyhow!("read {}: {e}", idx.display()))?;
     let mut v: Vec<FixtureEntry> = serde_json::from_str(&txt)?;
     v.sort_by_key(|f| f.n_hyperedges);
     Ok(v)
 }
 
-fn compile_once(path: &PathBuf) -> Result<()> {
+fn compile_once(path: &Path) -> Result<()> {
     let mut store = ModuleStore::new(StdFsProvider::new(), LalrpopParser);
     store
         .compile(path)
@@ -125,7 +128,7 @@ fn compile_once(path: &PathBuf) -> Result<()> {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-fn bench_fixture(cli: &Cli, f: &FixtureEntry) -> Result<(f64, f64, f64, f64, f64, f64)> {
+fn bench_fixture(cli: &Cli, f: &FixtureEntry) -> Result<OpTimingsMs> {
     let path = cli.fixtures.join(&f.path);
 
     // op_a — compile-to-IR
@@ -145,7 +148,7 @@ fn bench_fixture(cli: &Cli, f: &FixtureEntry) -> Result<(f64, f64, f64, f64, f64
     let compiled = store
         .compile(&path)
         .map_err(|e| anyhow::anyhow!("compile cached: {e:?}"))?;
-    let ex = ScalarWeightExtractor::default();
+    let ex = ScalarWeightExtractor;
     let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
     // op_b — star expansion
@@ -167,17 +170,17 @@ fn bench_fixture(cli: &Cli, f: &FixtureEntry) -> Result<(f64, f64, f64, f64, f64
     let m = hg.num_edges();
     // Deterministic node features: x[i,f] = (i + f) as f32 * 1e-3.
     let mut node_x = vec![vec![0.0_f32; n]; F_DIM];
-    for fx in 0..F_DIM {
-        for i in 0..n {
-            node_x[fx][i] = ((i + fx) as f32) * 1e-3;
+    for (fx, row) in node_x.iter_mut().enumerate().take(F_DIM) {
+        for (i, x) in row.iter_mut().enumerate().take(n) {
+            *x = ((i + fx) as f32) * 1e-3;
         }
     }
     let mut edge_buf = vec![0.0_f32; m];
     let mut node_y = vec![0.0_f32; n];
 
     for _ in 0..cli.warmup {
-        for fx in 0..F_DIM {
-            gather_edges_from_nodes(&hg, &node_x[fx], &mut edge_buf, true);
+        for row in node_x.iter().take(F_DIM) {
+            gather_edges_from_nodes(&hg, row, &mut edge_buf, true);
             scatter_nodes_from_edges(&hg, &edge_buf, &mut node_y, true);
             std::hint::black_box(&node_y);
         }
@@ -185,8 +188,8 @@ fn bench_fixture(cli: &Cli, f: &FixtureEntry) -> Result<(f64, f64, f64, f64, f64
     let mut mp_times = Vec::with_capacity(cli.c_iters);
     for _ in 0..cli.c_iters {
         mp_times.push(time_ms(|| {
-            for fx in 0..F_DIM {
-                gather_edges_from_nodes(&hg, &node_x[fx], &mut edge_buf, true);
+            for row in node_x.iter().take(F_DIM) {
+                gather_edges_from_nodes(&hg, row, &mut edge_buf, true);
                 scatter_nodes_from_edges(&hg, &edge_buf, &mut node_y, true);
                 std::hint::black_box(&node_y);
             }
@@ -213,8 +216,7 @@ fn main() -> Result<()> {
     );
 
     // Collect raw timings first so we can compute ratios vs. the |E|=10 baseline.
-    let mut raw: Vec<(FixtureEntry, (f64, f64, f64, f64, f64, f64))> =
-        Vec::with_capacity(fixtures.len());
+    let mut raw: Vec<(FixtureEntry, OpTimingsMs)> = Vec::with_capacity(fixtures.len());
     for f in &fixtures {
         eprintln!(
             "  {}  |V|={} |E|={} d̄={:.1}",
@@ -251,7 +253,11 @@ fn main() -> Result<()> {
             ("mp_forward_F64", t.4, t.5, c_base),
         ] {
             let predicted = base * scale;
-            let ratio = if predicted > 0.0 { med / predicted } else { 0.0 };
+            let ratio = if predicted > 0.0 {
+                med / predicted
+            } else {
+                0.0
+            };
             w.serialize(Row {
                 corpus: f.name.clone(),
                 num_hyperedges: f.n_hyperedges,

@@ -1,0 +1,41 @@
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+\section*{Plan: G\"omb outer-shell throughput (2026-05-12)}
+
+\paragraph{Scope.}
+Vectorize \texttt{scatter\_mean} and batch the $M$ parallel Clifford-FIR banks in
+\texttt{OuterFIRShell} (\texttt{signedkan\_wip/src/hymeko\_gomb/shells.py}) so forward
+matches the prior numerics (bit-exact is not required; floating-point associativity
+should match PyTorch defaults for the same operation order where possible).
+
+\paragraph{Affected files.}
+\texttt{signedkan\_wip/src/hymeko\_gomb/shells.py},
+\texttt{signedkan\_wip/tests/test\_hymeko\_gomb.py}.
+
+\paragraph{CORE.YAML.}
+None.
+
+\paragraph{Interface changes.}
+None public beyond \texttt{scatter\_mean} accepting batched input
+\texttt{(B, M\_c, d)} in addition to \texttt{(M\_c, d)} (documented in rustdoc-style
+comment in the module).
+
+\paragraph{Test strategy.}
+Unit tests: parity test for \texttt{scatter\_mean} vs a reference loop implementation
+(2D and 3D); existing G\"omb tests unchanged expectations.
+
+\paragraph{Performance budget.}
+Wall time for \texttt{OuterFIRShell.forward} should decrease on GPU for $M\ge 4$ at
+fixed $(N,M\_c,k,d)$; peak RSS unchanged order-of-magnitude (no materialized
+$O(M\cdot N\cdot M\_c)$ temporaries beyond the batched path already implied by the
+algorithm).
+
+\paragraph{Rollback.}
+Revert \texttt{shells.py} to sequential bank loop + corner loop in
+\texttt{scatter\_mean}.
+
+\paragraph{Risks.}
+Stacking \texttt{nn.Linear} weights each forward adds small CPU overhead; acceptable
+versus eliminated Python loops over $M$ and $k$.
+\end{document}

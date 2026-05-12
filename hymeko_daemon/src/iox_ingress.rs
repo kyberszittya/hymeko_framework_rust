@@ -1,14 +1,12 @@
-use std::sync::{Arc, RwLock};
+use crate::common::{ExecutableQuery, IngressFormat};
+use crate::service::HymekoDaemon;
+use iceoryx2::prelude::*;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
-use iceoryx2::prelude::*;
 use tokio::sync::mpsc;
 use tracing::{error, info};
-use hymeko::ir::ir::Ir;
-use hymeko::resolution::interner::Interner;
-use crate::common::{ExecutableQuery, IngressFormat, IngressPayload};
-use crate::service::HymekoDaemon;
 
 pub struct IoxIngressWorker {
     service_name: String,
@@ -18,8 +16,6 @@ pub struct IoxIngressWorker {
     daemon: Arc<HymekoDaemon>,
 }
 
-
-
 impl IoxIngressWorker {
     pub fn new(
         service_name: String,
@@ -28,7 +24,13 @@ impl IoxIngressWorker {
         is_running: Arc<AtomicBool>,
         daemon: Arc<HymekoDaemon>, // The real reference to your engine
     ) -> Self {
-        Self { service_name, format, tx_out, is_running, daemon }
+        Self {
+            service_name,
+            format,
+            tx_out,
+            is_running,
+            daemon,
+        }
     }
 
     pub fn spawn(self) -> thread::JoinHandle<()> {
@@ -37,11 +39,14 @@ impl IoxIngressWorker {
             info!(marker = "[*]", service = %self.service_name, "Iceoryx2 Ingress Worker thread started");
 
             // 1. Construct the Node and Subscriber strictly inside this OS thread
-            let node = NodeBuilder::new().create::<ipc::Service>().expect("Failed to create Iox node");
+            let node = NodeBuilder::new()
+                .create::<ipc::Service>()
+                .expect("Failed to create Iox node");
             info!(marker = "[*]", service = %self.service_name, "iox node created");
 
             let ingress_name = ServiceName::new(&self.service_name).unwrap();
-            let ingress_service = node.service_builder(&ingress_name)
+            let ingress_service = node
+                .service_builder(&ingress_name)
                 .publish_subscribe::<[u8]>()
                 .open_or_create()
                 .expect("Failed to open Iox service");
@@ -52,14 +57,17 @@ impl IoxIngressWorker {
                 "ingress publish_subscribe topic opened or created"
             );
 
-            let subscriber = ingress_service.subscriber_builder()
+            let subscriber = ingress_service
+                .subscriber_builder()
                 .create()
                 .expect("Failed to create Iox subscriber");
             info!(marker = "[*]", service = %self.service_name, topic = %ingress_name, "ingress subscriber created");
 
             // 2. The Control Plane (Event Interrupt)
-            let event_name = ServiceName::new(&(self.service_name.clone() + "/query/event")).unwrap();
-            let event_service = node.service_builder(&event_name)
+            let event_name =
+                ServiceName::new(&(self.service_name.clone() + "/query/event")).unwrap();
+            let event_service = node
+                .service_builder(&event_name)
                 .event()
                 .open_or_create()
                 .expect("Failed to open Iox event service");
@@ -70,14 +78,21 @@ impl IoxIngressWorker {
                 "event topic opened or created"
             );
 
-            let mut listener = event_service.listener_builder().create().expect("Failed to create listener");
+            let listener = event_service
+                .listener_builder()
+                .create()
+                .expect("Failed to create listener");
 
             info!(marker = "[*]", service = %self.service_name, topic = %event_name, "event listener created");
 
             // 3. The WaitSet Multiplexer
-            let waitset = WaitSetBuilder::new().create::<ipc::Service>().expect("Failed to create WaitSet");
+            let waitset = WaitSetBuilder::new()
+                .create::<ipc::Service>()
+                .expect("Failed to create WaitSet");
             info!(marker = "[*]", service = %self.service_name, "waitset created");
-            let _guard = waitset.attach_notification(&listener).expect("Failed to attach listener");
+            let _guard = waitset
+                .attach_notification(&listener)
+                .expect("Failed to attach listener");
             info!(marker = "[*]", service = %self.service_name, topic = %event_name, "listener attached to waitset");
 
             // 2. The Polling Loop

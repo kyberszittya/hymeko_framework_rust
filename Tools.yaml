@@ -1,6 +1,6 @@
 # tools.yaml — Development toolchain declaration
 #
-# Read by Claude Code at session start, alongside CORE.YAML.
+# Read by Claude Code at session start, alongside `CORE.YAML` at repo root.
 # Mirrored in human-readable form by CLAUDE.md §10.
 #
 # Policy:
@@ -87,6 +87,16 @@ rust:
 # Python
 # ---------------------------------------------------------------------
 python:
+  environment:
+    tool: uv
+    major_version: "0"
+    observed: "0.11.7"
+    notes: >
+      Root `pyproject.toml` uv workspace (`uv.lock`). Default sync installs
+      members `hymeko_py`, `signedkan_wip/signedkan_native` and `dependency-groups.dev`.
+      Use `--group ml` for CORE-pinned torch/numpy; install `ehk_torch_stub` with
+      `uv pip install -e python/ehk_torch_stub` when needed.
+
   test_runner:
     tool: pytest
     major_version: "8"

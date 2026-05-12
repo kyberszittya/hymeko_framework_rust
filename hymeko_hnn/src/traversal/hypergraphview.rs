@@ -218,7 +218,7 @@ where
     }
 
     fn build_csr_node_to_edges(
-        pairs: &mut Vec<TensorInc<F, V>>,
+        pairs: &mut [TensorInc<F, V>],
         num_nodes: usize,
     ) -> (Vec<EdgeId>, Vec<i8>, Vec<V>, Vec<usize>)
     where

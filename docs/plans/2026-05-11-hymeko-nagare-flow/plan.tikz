@@ -1,0 +1,87 @@
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds}
+
+\begin{document}
+\begin{tikzpicture}[
+    >=Stealth, font=\small,
+    soa/.style={draw, rounded corners=2pt, fill=blue!10,
+                  minimum width=2.6cm, minimum height=0.75cm, align=center},
+    map/.style={draw, rounded corners=2pt, fill=yellow!20,
+                  minimum width=2.6cm, minimum height=0.75cm, align=center},
+    red/.style={draw, rounded corners=2pt, fill=orange!25,
+                  minimum width=2.6cm, minimum height=0.75cm, align=center},
+    param/.style={draw, rounded corners=2pt, fill=green!15,
+                    minimum width=2.4cm, minimum height=0.7cm, align=center,
+                    font=\footnotesize},
+    grad/.style={draw, dashed, rounded corners=2pt, fill=red!12,
+                   minimum width=2.4cm, minimum height=0.7cm, align=center,
+                   font=\footnotesize},
+    backend/.style={draw, rectangle, fill=gray!12,
+                       minimum width=3.5cm, minimum height=0.65cm, align=center,
+                       font=\footnotesize},
+  ]
+
+  \node[font=\Large\bfseries] at (5, 6.0) {HymeKo-Nagare (流れ) --- dataflow ML};
+
+  % SoA data path
+  \node[soa] (pool)  at (0, 4.5) {CyclePool\\ \footnotesize SoA: \texttt{Vec<u32>} + \texttt{Vec<i8>}};
+  \node[soa] (feats) at (3, 4.5) {Features\\ \footnotesize \texttt{Vec<f32>} $|V| \times d$};
+  \node[soa] (graph) at (6, 4.5) {Graph hash\\ \footnotesize $h(V, E, \sigma)$};
+  \node[soa] (cache) at (9, 4.5) {Cycle cache\\ \footnotesize keyed on $h \times $env-vars};
+
+  % Map: per-cycle forward
+  \node[map] (map1) at (0, 3.0) {Map fwd\\ \footnotesize $f_\theta(c, X) \forall c$};
+  \node[map] (map2) at (3, 3.0) {Map bwd\\ \footnotesize $\partial f_\theta / \partial \theta$};
+
+  % Reduce
+  \node[red] (red1) at (1.5, 1.5) {Reduce: scatter-mean\\ \footnotesize $H[v] = \mathrm{mean}_{c: v \in c} f_\theta(c, X)$};
+  \node[red] (red2) at (5.0, 1.5) {Reduce: atomic-grad-accum\\ \footnotesize $\theta_g \mathrel{+}= \sum_c \partial f / \partial \theta(c)$};
+
+  % Params + grads
+  \node[param] (theta) at (8.5, 2.7) {$\theta$ (small)};
+  \node[grad]  (gtheta) at (8.5, 1.7) {$\theta_g$ (atomic)};
+
+  % Optimizer
+  \node[param, fill=green!25] (adam) at (8.5, 0.5)
+    {Adam step\\ \footnotesize $\theta \leftarrow \theta - \alpha \hat m / (\sqrt{\hat v} + \epsilon)$};
+
+  % Backend ladder
+  \node[backend] (bcpu) at (0, -1.0) {CPU Rayon};
+  \node[backend] (bgpu) at (3.8, -1.0) {GPU wgpu (portable)};
+  \node[backend] (bcuda) at (7.8, -1.0) {GPU cudarc (NVIDIA)};
+  \node[font=\footnotesize, anchor=west] at (0.0, -1.7)
+    {Same operator API across backends; scheduler picks per op on input size};
+
+  % Arrows: pool/feats -> map
+  \draw[->] (pool) -- (map1);
+  \draw[->] (feats) -- (map1);
+  \draw[->] (theta) -- (map1);
+  \draw[->] (pool) -- (map2);
+  \draw[->] (feats) -- (map2);
+
+  % Map -> Reduce
+  \draw[->] (map1) -- (red1);
+  \draw[->] (map2) -- (red2);
+
+  % Reduce -> grads
+  \draw[->] (red2) -- (gtheta);
+  \draw[->] (gtheta) -- (adam);
+  \draw[->] (adam) -- (theta);
+
+  % Backend implementations (dashed = "executes any of map/reduce")
+  \draw[->, dashed, gray] (map1.south) ..controls +(0,-0.3) and +(0,0.3).. (bcpu.north);
+  \draw[->, dashed, gray] (red1.south) ..controls +(0,-0.3) and +(0,0.3).. (bcpu.north);
+  \draw[->, dashed, gray] (map2.south) ..controls +(0,-0.3) and +(0,0.3).. (bgpu.north);
+  \draw[->, dashed, gray] (red2.south) ..controls +(0,-0.5) and +(0,0.3).. (bcuda.north);
+
+  % Math overlay
+  \node[font=\footnotesize, align=left, draw, rounded corners=2pt,
+        fill=gray!8] at (3.5, 5.6)
+    {$F(G, X) = \displaystyle\sum_c f_\theta(c, X), \quad
+     \partial F / \partial \theta = \displaystyle\sum_c \partial f_\theta(c, X) / \partial \theta$ \\
+     \footnotesize cycle-additive $\Rightarrow$ embarrassingly parallel by $c$, commutative reduce};
+
+\end{tikzpicture}
+\end{document}

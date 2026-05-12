@@ -109,6 +109,17 @@ fn bfs_distances_capped(
 /// `k_len <= MAX_INLINE_K`.
 const MAX_INLINE_K: usize = 8;
 
+/// Safe [`BinaryHeap::with_capacity`] hint for top-$K$ cycle storage.
+///
+/// Tests pass [`usize::MAX`] to mean "unbounded" enumeration; `k_keep + 1`
+/// overflows in debug builds. The heap may grow beyond this hint when
+/// pushes exceed it.
+#[inline]
+fn heap_capacity_hint(k_keep: usize) -> usize {
+    const MAX_HINT: usize = 1 << 22;
+    k_keep.saturating_add(1).clamp(4, MAX_HINT)
+}
+
 /// One entry in the bounded heap.
 ///
 /// `cycle` and `signs` are stored as fixed-size stack arrays
@@ -352,7 +363,7 @@ where
     let n = graph.n_nodes as usize;
     let mut visited = vec![false; n];
     let mut path: Vec<u32> = Vec::with_capacity(k_len);
-    let mut heap: BinaryHeap<HeapEntry> = BinaryHeap::with_capacity(k_keep + 1);
+    let mut heap: BinaryHeap<HeapEntry> = BinaryHeap::with_capacity(heap_capacity_hint(k_keep));
     let mut dist: Vec<u8> = vec![DIST_INF; n];
     let mut bfs_a: Vec<u32> = Vec::new();
     let mut bfs_b: Vec<u32> = Vec::new();
@@ -661,7 +672,15 @@ pub fn degree_adaptive_m_v(graph: &SignedGraph, m_min: u32, m_max: u32, c: f64) 
         .collect()
 }
 
-/// FPN-style **tiered** per-vertex cap.  v2 of the vertex-prefilter
+/// **Concentric Pyramid Graph (CPG)** tiered per-vertex cap, formerly
+/// "FPN-style".  The metaphor: vertices are sorted by descending
+/// degree and bucketed into concentric rings; the innermost ring
+/// (hubs, top percentile) gets the largest cap, and each outward ring
+/// gets a progressively smaller cap, ending with the leaves at cap 0
+/// or a small floor.  This is the cycle-enumeration analogue of a
+/// Feature-Pyramid Network's coarse-to-fine resolution hierarchy ---
+/// CPG distributes cycle budget the same way an FPN distributes
+/// resolution.  v2 of the vertex-prefilter
 /// plan (`docs/plans/2026-05-11-vertex-prefilter/`).
 ///
 /// Vertices are binned by an ascending-sorted **centrality score**
@@ -1742,8 +1761,16 @@ where
     );
     debug_assert!(k_len <= MAX_INLINE_K, "k_len exceeds MAX_INLINE_K");
     let gate = fullness_gate.clamp(0.0, 1.0);
+    // Count vertices with *non-zero* cap as the gate denominator.
+    // CPG ladders zero out leaves (bottom-80% gets cap=0); those
+    // vertices never increment `n_full_heaps`, so a naive
+    // `gate * n_nodes` denominator means ABB at gate=1.0 NEVER fires
+    // on CPG configs (the 80% zero-cap vertices can never count
+    // toward the threshold). Using `n_active` lets gate=1.0 mean
+    // "all non-zero-cap heaps full" --- the natural CPG semantics.
+    let n_active = m_v.iter().filter(|&&c| c > 0).count();
     let fullness_gate_count =
-        (gate * graph.n_nodes as f64).ceil() as usize;
+        (gate * n_active as f64).ceil() as usize;
     let (row_ptr, col_idx, signs_csr) = graph.build_csr_with_signs();
     let n = graph.n_nodes as usize;
 
@@ -1895,7 +1922,7 @@ where
         .into_par_iter()
         .fold(
             || ScratchGlobal {
-                heap: BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+                heap: BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
                 visited: vec![false; n],
                 path: Vec::with_capacity(k_len),
                 dist: vec![DIST_INF; n],
@@ -1935,7 +1962,7 @@ where
         )
         .map(|s| s.heap)
         .reduce(
-            || BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+            || BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
             |mut a, b| {
                 for entry in b {
                     if a.len() < k_keep {
@@ -1992,7 +2019,7 @@ where
         .into_par_iter()
         .fold(
             || ScratchGlobal {
-                heap: BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+                heap: BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
                 visited: vec![false; n],
                 path: Vec::with_capacity(k_len),
                 dist: vec![DIST_INF; n],
@@ -2018,7 +2045,7 @@ where
         )
         .map(|s| s.heap)
         .reduce(
-            || BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+            || BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
             |mut a, b| {
                 for entry in b {
                     if a.len() < k_keep {
@@ -2308,7 +2335,7 @@ where
     let n = graph.n_nodes as usize;
     let mut visited = vec![false; n];
     let mut path: Vec<u32> = Vec::with_capacity(k_len);
-    let mut heap: BinaryHeap<HeapEntry> = BinaryHeap::with_capacity(k_keep + 1);
+    let mut heap: BinaryHeap<HeapEntry> = BinaryHeap::with_capacity(heap_capacity_hint(k_keep));
     let mut dist: Vec<u8> = vec![DIST_INF; n];
     let mut bfs_a: Vec<u32> = Vec::new();
     let mut bfs_b: Vec<u32> = Vec::new();
@@ -2385,7 +2412,7 @@ where
         .into_par_iter()
         .fold(
             || ScratchBb {
-                heap: BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+                heap: BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
                 visited: vec![false; n],
                 path: Vec::with_capacity(k_len),
                 dist: vec![DIST_INF; n],
@@ -2426,7 +2453,7 @@ where
         )
         .map(|s| s.heap)
         .reduce(
-            || BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+            || BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
             |mut a, b| {
                 for entry in b {
                     if a.len() < k_keep {
@@ -2484,7 +2511,7 @@ where
         .into_par_iter()
         .fold(
             || ScratchBb {
-                heap: BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+                heap: BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
                 visited: vec![false; n],
                 path: Vec::with_capacity(k_len),
                 dist: vec![DIST_INF; n],
@@ -2510,7 +2537,7 @@ where
         )
         .map(|s| s.heap)
         .reduce(
-            || BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+            || BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
             |mut a, b| {
                 for entry in b {
                     if a.len() < k_keep {
@@ -2950,7 +2977,7 @@ where
         .into_par_iter()
         .fold(
             || ScratchEntropy {
-                heap: BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+                heap: BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
                 state: UniformityState::new(n),
                 visited: vec![false; n],
                 path: Vec::with_capacity(k_len),
@@ -2992,7 +3019,7 @@ where
         )
         .map(|s| s.heap)
         .reduce(
-            || BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+            || BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
             |mut a, b| {
                 // Cross-task merge: take the top-K by stored score.
                 // The state inconsistency across tasks is intentional
@@ -3055,7 +3082,7 @@ where
         .into_par_iter()
         .fold(
             || ScratchEntropy {
-                heap: BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+                heap: BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
                 state: UniformityState::new(n),
                 visited: vec![false; n],
                 path: Vec::with_capacity(k_len),
@@ -3082,7 +3109,7 @@ where
         )
         .map(|s| s.heap)
         .reduce(
-            || BinaryHeap::<HeapEntry>::with_capacity(k_keep + 1),
+            || BinaryHeap::<HeapEntry>::with_capacity(heap_capacity_hint(k_keep)),
             |mut a, b| {
                 for entry in b {
                     if a.len() < k_keep {
@@ -3612,6 +3639,54 @@ mod tests {
             bb_g_set.is_subset(&non_bb_set),
             "global-min ABB output ({}) must be a subset of non-ABB ({})",
             bb_g_set.len(), non_bb_set.len(),
+        );
+    }
+
+    #[test]
+    fn per_vertex_bb_global_gate_normalised_to_active_cap() {
+        // CPG-style: half the vertices have cap=0 (zero-cap leaves).
+        // With gate=1.0, the threshold should be the count of
+        // non-zero-cap (active) vertices, NOT total n_nodes.  This
+        // makes gate=1.0 fire when ALL active heaps are full.
+        let g = SignedGraph {
+            n_nodes: 8,
+            edges: vec![
+                (0, 1), (1, 2), (0, 2),
+                (3, 4), (4, 5), (3, 5),
+                (0, 3), (1, 4), (2, 5),
+                (6, 7),
+            ],
+            signs: vec![1, 1, -1, 1, -1, 1, -1, 1, 1, 1],
+        };
+        // Top 6 vertices: cap=2.  Bottom 2 (cap-0 vertices 6,7).
+        let m_v = vec![2u32, 2, 2, 2, 2, 2, 0, 0];
+        let starting: Vec<u32> = (0..g.n_nodes).collect();
+        let non_bb = enumerate_top_k_per_vertex_cycles_par_adaptive_starting_batched(
+            &g, 3, &NoOpPruner, &m_v, &starting,
+            |c: &[u32], s: &[i8]| {
+                let nn = s.iter().filter(|&&x| x < 0).count() as f64;
+                nn / c.len() as f64
+            },
+        );
+        // gate=1.0 with the fix: threshold = 6 (n_active), not 8.
+        // ABB should still produce a SUBSET of non-ABB output.
+        let bb_g = enumerate_top_k_per_vertex_cycles_par_adaptive_starting_bb_global_batched(
+            &g, 3, &NoOpPruner, &m_v, &starting,
+            &FractionNegativeScorer, 1.0,
+        );
+        use std::collections::HashSet;
+        let canon = |b: &TopKCyclesBatch| -> HashSet<Vec<u32>> {
+            (0..b.len()).map(|i| {
+                let s = i * b.k;
+                let e = s + b.k;
+                let mut k = b.cycles[s..e].to_vec();
+                k.sort_unstable();
+                k
+            }).collect()
+        };
+        assert!(canon(&bb_g).is_subset(&canon(&non_bb)),
+            "ABB output ({}) must be subset of non-ABB ({})",
+            bb_g.len(), non_bb.len(),
         );
     }
 

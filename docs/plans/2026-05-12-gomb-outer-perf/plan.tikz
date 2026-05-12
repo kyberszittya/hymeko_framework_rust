@@ -1,0 +1,13 @@
+% Standalone TikZ for plan (compile with plan.tex if needed).
+\documentclass[tikz,border=2mm]{standalone}
+\begin{document}
+\begin{tikzpicture}[node distance=1.2cm]
+  \node (x) {$x$};
+  \node[right of=x] (p) {$(W_m,b_m)_{m=1}^M$};
+  \node[right of=p] (h) {$H$ cycles};
+  \node[below of=h] (y) {$y$};
+  \draw[->] (x) -- (p);
+  \draw[->] (p) -- (h);
+  \draw[->] (h) -- (y);
+\end{tikzpicture}
+\end{document}

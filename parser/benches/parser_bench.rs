@@ -1,5 +1,9 @@
 // parser/benches/parser_bench.rs
 //
+#![allow(dead_code)]
+// Generators and bench groups are wired through Criterion macros; `cargo clippy
+// --all-targets` still type-checks the full module graph.
+//
 // Standalone parser benchmarks measuring:
 // 1. Lexer throughput per SIMD tier (AVX2 vs SSE2 vs Scalar)
 // 2. Full parse throughput (lexer + LALRPOP AST construction)
@@ -13,9 +17,7 @@
 // input but different throughput on long_idents, it means skip_ws SIMD is dead
 // and only scan_ident_tail SIMD is active.
 
-use criterion::{
-    criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
-};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use std::hint::black_box;
 
 use parser::lexer::simd::{Avx2Lexer, CoreLexer, ScalarLexer, Sse2Lexer};
@@ -112,7 +114,9 @@ fn bench_lexer_tiers(c: &mut Criterion) {
     group.bench_function("scalar", |b| {
         b.iter(|| {
             let lex = ScalarLexer(CoreLexer::new(black_box(&input)));
-            for tok in lex { let _ = black_box(tok); }
+            for tok in lex {
+                let _ = black_box(tok);
+            }
         })
     });
 
@@ -122,7 +126,9 @@ fn bench_lexer_tiers(c: &mut Criterion) {
             group.bench_function("sse2", |b| {
                 b.iter(|| {
                     let lex = Sse2Lexer(CoreLexer::new(black_box(&input)));
-                    for tok in lex { let _ = black_box(tok); }
+                    for tok in lex {
+                        let _ = black_box(tok);
+                    }
                 })
             });
         }
@@ -130,7 +136,9 @@ fn bench_lexer_tiers(c: &mut Criterion) {
             group.bench_function("avx2", |b| {
                 b.iter(|| {
                     let lex = Avx2Lexer(CoreLexer::new(black_box(&input)));
-                    for tok in lex { let _ = black_box(tok); }
+                    for tok in lex {
+                        let _ = black_box(tok);
+                    }
                 })
             });
         }
@@ -165,11 +173,15 @@ fn bench_input_patterns(c: &mut Criterion) {
                 #[cfg(target_arch = "x86_64")]
                 {
                     if std::is_x86_feature_detected!("avx2") {
-                        for tok in Avx2Lexer(core) { let _ = black_box(tok); }
+                        for tok in Avx2Lexer(core) {
+                            let _ = black_box(tok);
+                        }
                         return;
                     }
                 }
-                for tok in ScalarLexer(core) { let _ = black_box(tok); }
+                for tok in ScalarLexer(core) {
+                    let _ = black_box(tok);
+                }
             })
         });
 
@@ -213,7 +225,10 @@ fn bench_micro(c: &mut Criterion) {
     let mut group = c.benchmark_group("micro");
 
     // Pure whitespace skipping: 1MB of spaces
-    let ws_input = format!("BenchDesc {{}} Bench {{\n{}\nnode_0 {{}}\n}}", " ".repeat(1_000_000));
+    let ws_input = format!(
+        "BenchDesc {{}} Bench {{\n{}\nnode_0 {{}}\n}}",
+        " ".repeat(1_000_000)
+    );
     group.throughput(Throughput::Bytes(ws_input.len() as u64));
     group.bench_function("skip_1mb_whitespace", |b| {
         b.iter(|| {
@@ -222,10 +237,7 @@ fn bench_micro(c: &mut Criterion) {
     });
 
     // Pure identifier scanning: one very long identifier
-    let long_id = format!(
-        "BenchDesc {{}} Bench {{ {} 42.0; }}",
-        "a".repeat(100_000)
-    );
+    let long_id = format!("BenchDesc {{}} Bench {{ {} 42.0; }}", "a".repeat(100_000));
     group.throughput(Throughput::Bytes(long_id.len() as u64));
     group.bench_function("scan_100k_ident", |b| {
         b.iter(|| {

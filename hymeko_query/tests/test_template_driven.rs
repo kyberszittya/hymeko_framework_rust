@@ -32,15 +32,9 @@ mod test_template_driven {
         let (store, compiled) = load_and_lower(fixture).expect("compile");
         let reg = hymeko_formats::default_registry();
         let cfg = TransformConfig::default().with_name(name);
-        reg.render_from_templates(
-            transform,
-            &compiled.ir,
-            &store.it,
-            &cfg,
-            &transforms_root(),
-        )
-        .expect("transform registered")
-        .expect("template render succeeded")
+        reg.render_from_templates(transform, &compiled.ir, &store.it, &cfg, &transforms_root())
+            .expect("transform registered")
+            .expect("template render succeeded")
     }
 
     // ---- presence / surface ------------------------------------------------

@@ -104,6 +104,117 @@ no number here is paper-headline material until a 5-seed paired test confirms it
 Suitable next step: 5-seed paired Bitcoin OTC gate=1.0 vs ABB OFF to confirm
 the $+0.0005$ "AUC-preserving" verdict.
 
+## Slashdot enumeration walltime (post-dedup-fix, $k{=}4$, $m{=}128$, 3 iters + 1 warmup)
+
+Pure-enumeration bench via `signedkan_wip.src.bench_abb_enum_walltime`:
+
+| Variant | Median (s) | n_cycles | Cycles vs OFF |
+|---|---|---|---|
+| ABB OFF | 12.86 | 2,882,256 | 100.00% |
+| gate=1.0 | 12.91 | 2,882,295 | 100.001% |
+| gate=0.5 | 12.68 | 2,882,321 | 100.002% |
+| gate=0.25 | 12.79 | 2,882,282 | 100.001% |
+| v1 start (lossy) | 2.80 | 610,289 | 21.17% |
+
+**Cycle counts now match ABB OFF to within $\pm 65$ cycles** ($\sim 10^{-5}$
+relative) at all gate levels, confirming strict correctness of the
+fullness-dedup fix. The remaining variance is heap-merge non-determinism
+on exact-score ties (rayon worker order is not deterministic).
+
+**The speedup story honest at strict correctness:** global ABB gives
+**no walltime benefit on Slashdot**. Reason: with 82,140 vertices and
+$m{=}128$, only a fraction of vertices have $\ge 128$ cycles to fill
+their heaps (most are leaves or low-degree). `n_full_heaps` plateaus
+below 82,140, so `gate=1.0` ABB never activates. Even `gate=0.25`
+(threshold 20,535 unique-full vertices) doesn't activate enough to
+matter on this workload.
+
+**Practical implication:** on sparse-degree graphs (Slashdot,
+likely Bitcoin), gate=1.0 is "free correctness" but no speed lever.
+**FPN-tiered caps** (Section "Future work" below) are the natural
+counter: by giving hubs cap 1024 and leaves cap 0, the fraction of
+vertices that can fill rises sharply → ABB activates → real speedup
+materialises. This composition (FPN + gate=1.0) is now wired through
+the new `enumerate_top_k_per_vertex_cycles_signed_tiered_bb_global_batched_rs`
+binding and will be measured in the overnight 2026-05-11 v3 queue.
+
+## Dedup fix (the real strict-correctness story)
+
+Initial Slashdot bench showed gate=1.0 producing 2.64M cycles vs ABB OFF's
+2.88M (8.4% loss). Root cause: the `n_full_heaps` `AtomicUsize` was
+incremented every time **any rayon task's** local `heap[v]` filled, so
+the counter overcounted by $\sim W\times$ (worker count). gate=1.0
+($\text{threshold}=n$) thus fired far earlier than its docstring promised.
+
+Fix (committed in this change): a shared `Vec<AtomicBool>
+vertex_seen_full[v]` deduplicates per vertex --- `n_full_heaps`
+increments at most once per distinct vertex. With the fix:
+
+- Slashdot $k{=}4$ $m{=}128$: 2,882,295 cycles at gate=1.0 (was 2.64M)
+- Bitcoin OTC seed=0: AUC 0.9615 at gate=1.0 (was 0.9615 pre-fix; AUC was
+  already preserved on OTC because heaps don't fill enough to trigger
+  the overcount on this small dense graph)
+
+Unit test `per_vertex_bb_global_subset_of_non_bb` already covered the
+single-task case where the bug doesn't appear; future test work should
+add a parallel-fuzz test that exercises rayon worker count $> 1$ to
+catch this class of bug at the unit level.
+
+## cycle_cache fingerprint bug (silent-correctness, found and fixed mid-overnight)
+
+While running the Epinions FPN sweep in the overnight v3 queue, all four FPN variants
+(FPN-3, FPN-5, FPN-7, FPN-5-noABB) reported AUC = 0.6892865 to 7 decimals --- impossible
+for distinct ladders. Root cause: `signedkan_wip/src/cycle_cache.py::_topk_fingerprint`
+captured only the older env-var set (`HSIKAN_TOPK_MODE`, `_K`, etc.) and missed every
+HSIKAN env var added in 2026-05-10/11:
+
+- `HSIKAN_TOPK_TIERS` (the CPG ladder)
+- `HSIKAN_USE_PER_VERTEX_ABB`, `HSIKAN_USE_PER_VERTEX_ABB_MODE`, `HSIKAN_PER_VERTEX_ABB_FULLNESS_GATE`
+- `HSIKAN_VERTEX_FILTER`, `HSIKAN_VERTEX_FILTER_MIN_DEGREE`
+
+With `HYMEKO_CYCLE_CACHE=1` on, the first FPN run wrote its cycle set to disk under
+the (truncated) old fingerprint; the subsequent three runs read those cached cycles.
+This is exactly the failure mode the docstring warned about.
+
+Fix landed in `signedkan_wip/src/cycle_cache.py`; verified
+`_cache_key` distinguishes FPN-3 vs FPN-5 keys + ABB on/off keys.
+Stale Epinions JSONs deleted; the Stage-4 chain re-runs all four
+variants from scratch with the corrected fingerprint. Memory:
+`feedback_cycle_cache_fingerprint.md`.
+
+## ABB fullness-gate normalised to active (non-zero-cap) vertices
+
+A second CPG-specific improvement: when `m_v[v] == 0` (CPG bottom-tier
+leaves), the vertex's heap is skipped entirely in `dfs_per_vertex_bb_global`,
+so it never increments `n_full_heaps`. With `gate=1.0`, the threshold was
+$1.0 \cdot n_{\text{nodes}}$ --- unreachable in CPG configs where 80% of
+vertices have cap=0. ABB was effectively disabled in the very configuration
+where it would help most.
+
+Fix: denominator is now `n_active = m_v.iter().filter(|&&c| c > 0).count()`
+rather than `n_nodes`. `gate=1.0` now means "all heaps with non-zero cap
+are full", which is achievable in CPG configs. Test
+`per_vertex_bb_global_gate_normalised_to_active_cap` added.
+
+## CPG + global-min ABB (composition --- new this round)
+
+A fused entry point `enumerate_top_k_per_vertex_cycles_signed_tiered_bb_global_batched_rs`
+lets `HSIKAN_TOPK_MODE=per_vertex_tiered` + `HSIKAN_TOPK_TIERS=...`
++ `HSIKAN_USE_PER_VERTEX_ABB_MODE=global` compose end-to-end.
+The Python dispatcher in `signedkan_wip/src/n_tuples.py` detects this
+combination and routes to the fused binding.
+
+The expected payoff: on graphs with skewed degree distribution (Epinions,
+real social networks), top-percent hubs get $m_v{=}1024$ and quickly
+fill their heaps, while leaves get $m_v{=}0$ and contribute nothing.
+`n_full_heaps` rises quickly to threshold, ABB activates aggressively
+(but strictly correctly, with the dedup fix), and the AUC ceiling
+should rise too --- hubs in heterogeneous graphs are the cycle signal.
+
+Smoke (Bitcoin OTC + FPN-5 + gate=1.0, single seed) and Epinions
+sweep (FPN-3, FPN-5, FPN-7, plus tiered-only no-ABB control) are
+in flight as of writing in the overnight v3 queue.
+
 ## Speedup characterization
 
 `fwd_per_call_ms` numbers (downstream inference cost, not enumeration walltime):

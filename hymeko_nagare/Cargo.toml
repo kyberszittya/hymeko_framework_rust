@@ -1,0 +1,18 @@
+[package]
+name = "hymeko_nagare"
+version = "0.1.0"
+edition = "2024"
+description = "HymeKo-Nagare (流れ): a paradigm-native dataflow ML framework for signed-hypergraph learning. Cycle-additive operators with closed-form Clifford derivatives, lockless atomic gradient accumulation, and Rayon/wgpu execution backends — no autograd graph."
+license = "MIT OR Apache-2.0"
+keywords = ["signed-graph", "dataflow", "clifford-algebra", "no-autodiff", "rust-ml"]
+categories = ["algorithms", "science"]
+
+[lib]
+name = "hymeko_nagare"
+
+[dependencies]
+rayon = "1.10"
+rand = "0.9"
+hymeko_graph = { path = "../hymeko_graph" }
+
+[dev-dependencies]

@@ -1,10 +1,15 @@
+// PyO3 / NumPy return types are inherently verbose; keep `clippy -D warnings` practical.
+#![allow(
+    clippy::collapsible_if,
+    clippy::new_without_default,
+    clippy::redundant_closure,
+    clippy::type_complexity,
+    clippy::useless_conversion,
+)]
+
 pub mod interface_python;
 pub mod cycles;
 pub mod hymeko_parse;
-
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
 
 use pyo3::prelude::*;
 use crate::interface_python::api::{
@@ -13,11 +18,6 @@ use crate::interface_python::api::{
     PyTensorCoo3D,
     PySparseMatrix2D
 };
-
-#[cfg(test)]
-mod tests {
-    
-}
 
 // ==========================================
 // LEGACY API SIGNATURE (for pyo3 < 0.21)
@@ -31,21 +31,18 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyTensorCoo3D>()?;
     m.add_class::<PySparseMatrix2D>()?;
 
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_unsigned_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_color_coded_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_path_closure_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_walks_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_signed_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_signed_bb_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_signed_entropy_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_signed_hybrid_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_adaptive_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_filtered_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_filtered_batched_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_filtered_bb_batched_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_filtered_bb_global_batched_rs, m)?)?;
-    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_per_vertex_cycles_signed_tiered_rs, m)?)?;
+    // Unified entries (Strategy refactor 2026-05-11; CLAUDE.md §6.5 #1).
+    // - enumerate_cycles_rs:           per-vertex (replaces 8 legacy)
+    // - enumerate_top_k_cycles_rs:     top-K global, regular scorers (replaces 2 legacy)
+    // - enumerate_top_k_cycles_entropy_rs: top-K global, entropy/hybrid (replaces 2 legacy)
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_cycles_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_rs, m)?)?;
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_entropy_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::hymeko_parse::parse_hymeko_rs, m)?)?;
 
     Ok(())

@@ -16,13 +16,15 @@
 
 use std::fmt::Write;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use hymeko_query::kinematics::joints::{JointInfo, JointType};
 use hymeko_query::kinematics::kinematic::{GeometryShape, KinematicModel, LinkInfo};
 use hymeko_query::transforms::{
     Diagnostic, DomainTransform, ModelKind, ModelView, TransformConfig,
 };
+
+use crate::xml_util::xml_escape;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Transform implementations
@@ -33,14 +35,22 @@ use hymeko_query::transforms::{
 pub struct UrdfTransform;
 
 impl DomainTransform for UrdfTransform {
-    fn name(&self) -> &'static str { "urdf" }
-    fn extension(&self) -> &'static str { "urdf" }
-    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn name(&self) -> &'static str {
+        "urdf"
+    }
+    fn extension(&self) -> &'static str {
+        "urdf"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic
+    }
     fn emit(&self, model: &ModelView, config: &TransformConfig) -> Option<String> {
         let km = model.as_kinematic()?;
         Some(emit_urdf_stub(km, &config.robot_name))
     }
-    fn template_dir(&self) -> Option<&'static str> { Some("urdf") }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("urdf")
+    }
 }
 
 // ─── SDF ──────────────────────────────────────────────────────────────────
@@ -48,14 +58,22 @@ impl DomainTransform for UrdfTransform {
 pub struct SdfTransform;
 
 impl DomainTransform for SdfTransform {
-    fn name(&self) -> &'static str { "sdf" }
-    fn extension(&self) -> &'static str { "sdf" }
-    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn name(&self) -> &'static str {
+        "sdf"
+    }
+    fn extension(&self) -> &'static str {
+        "sdf"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic
+    }
     fn emit(&self, model: &ModelView, config: &TransformConfig) -> Option<String> {
         let km = model.as_kinematic()?;
         Some(emit_sdf_stub(km, &config.robot_name))
     }
-    fn template_dir(&self) -> Option<&'static str> { Some("sdf") }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("sdf")
+    }
 }
 
 // ─── MJCF ─────────────────────────────────────────────────────────────────
@@ -63,15 +81,23 @@ impl DomainTransform for SdfTransform {
 pub struct MjcfTransform;
 
 impl DomainTransform for MjcfTransform {
-    fn name(&self) -> &'static str { "mjcf" }
-    fn extension(&self) -> &'static str { "xml" }
-    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn name(&self) -> &'static str {
+        "mjcf"
+    }
+    fn extension(&self) -> &'static str {
+        "xml"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic
+    }
 
     fn emit(&self, model: &ModelView, config: &TransformConfig) -> Option<String> {
         let km = model.as_kinematic()?;
         Some(emit_mjcf(km, config))
     }
-    fn template_dir(&self) -> Option<&'static str> { Some("mjcf") }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("mjcf")
+    }
 
     fn validate(&self, model: &ModelView) -> Vec<Diagnostic> {
         let mut diags = Vec::new();
@@ -84,7 +110,8 @@ impl DomainTransform for MjcfTransform {
             for (name, count) in &child_counts {
                 if *count > 1 {
                     diags.push(Diagnostic::error(format!(
-                        "'{}' is child in {} joints — MJCF requires tree", name, count
+                        "'{}' is child in {} joints — MJCF requires tree",
+                        name, count
                     )));
                 }
             }
@@ -98,14 +125,22 @@ impl DomainTransform for MjcfTransform {
 pub struct DotTransform;
 
 impl DomainTransform for DotTransform {
-    fn name(&self) -> &'static str { "dot" }
-    fn extension(&self) -> &'static str { "dot" }
-    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn name(&self) -> &'static str {
+        "dot"
+    }
+    fn extension(&self) -> &'static str {
+        "dot"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic
+    }
     fn emit(&self, model: &ModelView, config: &TransformConfig) -> Option<String> {
         let km = model.as_kinematic()?;
         Some(emit_dot(km, config))
     }
-    fn template_dir(&self) -> Option<&'static str> { Some("dot") }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("dot")
+    }
 }
 
 // ─── Torch (dataflow projection of hierarchical hypergraph) ─────────────
@@ -123,14 +158,22 @@ impl DomainTransform for DotTransform {
 pub struct TorchDataflowTransform;
 
 impl DomainTransform for TorchDataflowTransform {
-    fn name(&self) -> &'static str { "torch_dataflow" }
-    fn extension(&self) -> &'static str { "py" }
-    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn name(&self) -> &'static str {
+        "torch_dataflow"
+    }
+    fn extension(&self) -> &'static str {
+        "py"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic
+    }
     fn emit(&self, _model: &ModelView, _config: &TransformConfig) -> Option<String> {
         // Template-only path; emit() is unused for this transform.
         None
     }
-    fn template_dir(&self) -> Option<&'static str> { Some("torch_dataflow") }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("torch_dataflow")
+    }
 }
 
 // ─── Mermaid flowchart ───────────────────────────────────────────────────
@@ -143,14 +186,22 @@ impl DomainTransform for TorchDataflowTransform {
 pub struct MermaidTransform;
 
 impl DomainTransform for MermaidTransform {
-    fn name(&self) -> &'static str { "mermaid" }
-    fn extension(&self) -> &'static str { "mmd" }
-    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn name(&self) -> &'static str {
+        "mermaid"
+    }
+    fn extension(&self) -> &'static str {
+        "mmd"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic
+    }
     fn emit(&self, model: &ModelView, config: &TransformConfig) -> Option<String> {
         let km = model.as_kinematic()?;
         Some(emit_mermaid(km, config))
     }
-    fn template_dir(&self) -> Option<&'static str> { Some("mermaid") }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("mermaid")
+    }
 }
 
 // ─── SysML 2 textual ──────────────────────────────────────────────────────
@@ -168,14 +219,22 @@ impl DomainTransform for MermaidTransform {
 pub struct SysmlTransform;
 
 impl DomainTransform for SysmlTransform {
-    fn name(&self) -> &'static str { "sysml" }
-    fn extension(&self) -> &'static str { "sysml" }
-    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn name(&self) -> &'static str {
+        "sysml"
+    }
+    fn extension(&self) -> &'static str {
+        "sysml"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic
+    }
     fn emit(&self, model: &ModelView, config: &TransformConfig) -> Option<String> {
         let km = model.as_kinematic()?;
         Some(emit_sysml(km, config))
     }
-    fn template_dir(&self) -> Option<&'static str> { Some("sysml") }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("sysml")
+    }
 }
 
 // ─── Gazebo world (gz sim) ────────────────────────────────────────────────
@@ -193,14 +252,22 @@ impl DomainTransform for SysmlTransform {
 pub struct GazeboWorldTransform;
 
 impl DomainTransform for GazeboWorldTransform {
-    fn name(&self) -> &'static str { "gazebo" }
-    fn extension(&self) -> &'static str { "world.sdf" }
-    fn accepts(&self) -> ModelKind { ModelKind::Kinematic }
+    fn name(&self) -> &'static str {
+        "gazebo"
+    }
+    fn extension(&self) -> &'static str {
+        "world.sdf"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic
+    }
     fn emit(&self, model: &ModelView, config: &TransformConfig) -> Option<String> {
         let km = model.as_kinematic()?;
         Some(emit_gazebo_world_stub(km, &config.robot_name, "default"))
     }
-    fn template_dir(&self) -> Option<&'static str> { Some("gazebo") }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("gazebo")
+    }
     fn validate(&self, model: &ModelView) -> Vec<Diagnostic> {
         // Same tree-topology check as MJCF — gz sim requires a DAG.
         let mut diags = Vec::new();
@@ -251,7 +318,9 @@ fn emit_gazebo_world_stub(_model: &KinematicModel, robot_name: &str, world_name:
     out.push_str("    <!-- Robot model (\"");
     out.push_str(&xml_escape(robot_name));
     out.push_str("\") + sim_plugin / control_plugin tags populated by the full emitter -->\n");
-    out.push_str("    <plugin filename=\"gz-sim-physics-system\" name=\"gz::sim::systems::Physics\"/>\n");
+    out.push_str(
+        "    <plugin filename=\"gz-sim-physics-system\" name=\"gz::sim::systems::Physics\"/>\n",
+    );
     out.push_str("    <plugin filename=\"gz-sim-user-commands-system\" name=\"gz::sim::systems::UserCommands\"/>\n");
     out.push_str("    <plugin filename=\"gz-sim-scene-broadcaster-system\" name=\"gz::sim::systems::SceneBroadcaster\"/>\n");
     out.push_str("  </world>\n");
@@ -277,32 +346,42 @@ fn emit_mjcf(model: &KinematicModel, config: &TransformConfig) -> String {
         if let Some(ref c) = link.color {
             out.push_str(&format!(
                 "    <material name=\"mat_{}\" rgba=\"{} {} {} {}\"/>\n",
-                link.name, c.get(0).unwrap_or(&0.5), c.get(1).unwrap_or(&0.5),
-                c.get(2).unwrap_or(&0.5), c.get(3).unwrap_or(&1.0),
+                link.name,
+                c.get(0).unwrap_or(&0.5),
+                c.get(1).unwrap_or(&0.5),
+                c.get(2).unwrap_or(&0.5),
+                c.get(3).unwrap_or(&1.0),
             ));
         }
     }
     out.push_str("  </asset>\n\n");
 
-    // Build O(1)-lookup indices once, before recursive descent. The
+    // Build O(1)-lookup indices once, before tree walk. The
     // previous implementation did `model.{joints,links}.iter().find(...)`
     // and `.iter().filter(...)` inside the recursion, giving an
     // O(|J| + |L|) scan per recursion level and an empirically
     // measured ~O(s^1.25) overall (see paper §VI-F, MJCF row). With
     // these indices the per-link work becomes O(1) and the whole
-    // descent is O(|L| + |J|).
+    // walk is O(|L| + |J|).
+    //
+    // The body walk uses an explicit stack (not Rust recursion): long
+    // serial chains (e.g. scaling fixtures with 200+ links) overflowed
+    // the thread stack in `emit_mjcf_body`; cycles in bad joint graphs
+    // are skipped via an active-link set.
     let ctx = MjcfCtx::build(model);
 
     out.push_str("  <worldbody>\n");
-    for root in find_roots(model) {
-        emit_mjcf_body(&mut out, &ctx, &root, 4);
-    }
+    let roots = find_roots(model);
+    emit_mjcf_body_stack(&mut out, &ctx, &roots);
     out.push_str("  </worldbody>\n\n");
 
     out.push_str("  <actuator>\n");
     for j in &model.joints {
         if j.joint_type != JointType::Fixed {
-            out.push_str(&format!("    <motor name=\"act_{}\" joint=\"{}\" gear=\"1\"/>\n", j.name, j.name));
+            out.push_str(&format!(
+                "    <motor name=\"act_{}\" joint=\"{}\" gear=\"1\"/>\n",
+                j.name, j.name
+            ));
         }
     }
     out.push_str("  </actuator>\n");
@@ -310,7 +389,7 @@ fn emit_mjcf(model: &KinematicModel, config: &TransformConfig) -> String {
     out
 }
 
-/// Pre-built O(1) lookup tables for the MJCF body recursion.
+/// Pre-built O(1) lookup tables for the MJCF body walk.
 struct MjcfCtx<'a> {
     /// child_link → its single incoming joint (URDF/MJCF require tree
     /// topology, so each link has at most one).
@@ -342,11 +421,15 @@ impl<'a> MjcfCtx<'a> {
         for l in &model.links {
             link.insert(l.name.as_str(), l);
         }
-        Self { incoming, link, children }
+        Self {
+            incoming,
+            link,
+            children,
+        }
     }
 }
 
-fn emit_mjcf_body(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, indent: usize) {
+fn emit_mjcf_body_open(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, indent: usize) {
     let pad = " ".repeat(indent);
     let pad2 = " ".repeat(indent + 2);
     let incoming = ctx.incoming.get(link_name).copied();
@@ -358,7 +441,10 @@ fn emit_mjcf_body(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, indent: 
         }
         if let Some(rpy) = j.origin_rpy_rad() {
             if rpy.iter().any(|&v| v.abs() > 1e-9) {
-                out.push_str(&format!(" euler=\"{:.4} {:.4} {:.4}\"", rpy[0], rpy[1], rpy[2]));
+                out.push_str(&format!(
+                    " euler=\"{:.4} {:.4} {:.4}\"",
+                    rpy[0], rpy[1], rpy[2]
+                ));
             }
         }
     }
@@ -367,24 +453,37 @@ fn emit_mjcf_body(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, indent: 
     if let Some(link) = ctx.link.get(link_name).copied() {
         if let Some(mass) = link.mass {
             let i = mass * 0.01;
-            out.push_str(&format!("{}<inertial mass=\"{}\" diaginertia=\"{} {} {}\"/>\n", pad2, mass, i, i, i));
+            out.push_str(&format!(
+                "{}<inertial mass=\"{}\" diaginertia=\"{} {} {}\"/>\n",
+                pad2, mass, i, i, i
+            ));
         }
         if let Some(ref geom) = link.geometry {
             let gs = match geom.shape {
                 GeometryShape::Box if geom.dimensions.len() >= 3 => {
                     let d = &geom.dimensions;
-                    format!("type=\"box\" size=\"{} {} {}\"", d[0]/2.0, d[1]/2.0, d[2]/2.0)
+                    format!(
+                        "type=\"box\" size=\"{} {} {}\"",
+                        d[0] / 2.0,
+                        d[1] / 2.0,
+                        d[2] / 2.0
+                    )
                 }
                 GeometryShape::Cylinder if geom.dimensions.len() >= 2 => {
                     let d = &geom.dimensions;
-                    format!("type=\"cylinder\" size=\"{} {}\"", d[0], d[1]/2.0)
+                    format!("type=\"cylinder\" size=\"{} {}\"", d[0], d[1] / 2.0)
                 }
-                GeometryShape::Sphere if !geom.dimensions.is_empty() =>
-                    format!("type=\"sphere\" size=\"{}\"", geom.dimensions[0]),
+                GeometryShape::Sphere if !geom.dimensions.is_empty() => {
+                    format!("type=\"sphere\" size=\"{}\"", geom.dimensions[0])
+                }
                 _ => String::new(),
             };
             if !gs.is_empty() {
-                let mat = link.color.as_ref().map(|_| format!(" material=\"mat_{}\"", link.name)).unwrap_or_default();
+                let mat = link
+                    .color
+                    .as_ref()
+                    .map(|_| format!(" material=\"mat_{}\"", link.name))
+                    .unwrap_or_default();
                 out.push_str(&format!("{}<geom {}{}/>  \n", pad2, gs, mat));
             }
         }
@@ -398,22 +497,69 @@ fn emit_mjcf_body(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, indent: 
                 JointType::Fixed => unreachable!(),
             };
             let ax = j.axis.unwrap_or([0.0, 0.0, 1.0]);
-            let range = j.limits.as_ref().map(|lim| {
-                let d2r = std::f64::consts::PI / 180.0;
-                format!(" range=\"{:.4} {:.4}\"", lim.lower * d2r, lim.upper * d2r)
-            }).unwrap_or_default();
-            out.push_str(&format!("{}<joint name=\"{}\" type=\"{}\" axis=\"{} {} {}\"{}/>\n",
-                                  pad2, j.name, jtype, ax[0], ax[1], ax[2], range));
+            let range = j
+                .limits
+                .as_ref()
+                .map(|lim| {
+                    let d2r = std::f64::consts::PI / 180.0;
+                    format!(" range=\"{:.4} {:.4}\"", lim.lower * d2r, lim.upper * d2r)
+                })
+                .unwrap_or_default();
+            out.push_str(&format!(
+                "{}<joint name=\"{}\" type=\"{}\" axis=\"{} {} {}\"{}/>\n",
+                pad2, j.name, jtype, ax[0], ax[1], ax[2], range
+            ));
         }
     }
+}
 
-    if let Some(kids) = ctx.children.get(link_name) {
-        for child in kids {
-            emit_mjcf_body(out, ctx, child, indent + 2);
-        }
-    }
-
+fn emit_mjcf_body_close(out: &mut String, indent: usize) {
+    let pad = " ".repeat(indent);
     out.push_str(&format!("{}</body>\n", pad));
+}
+
+/// Depth-safe MJCF `<worldbody>` emission: explicit stack + cycle guard.
+fn emit_mjcf_body_stack(out: &mut String, ctx: &MjcfCtx<'_>, roots: &[String]) {
+    enum Op {
+        Close { link: String, indent: usize },
+        Open { link: String, indent: usize },
+    }
+
+    let mut active: HashSet<String> = HashSet::new();
+    let mut stack: Vec<Op> = Vec::new();
+    for root in roots.iter().rev() {
+        stack.push(Op::Open {
+            link: root.clone(),
+            indent: 4,
+        });
+    }
+
+    while let Some(op) = stack.pop() {
+        match op {
+            Op::Close { link, indent } => {
+                emit_mjcf_body_close(out, indent);
+                active.remove(&link);
+            }
+            Op::Open { link, indent } => {
+                if !active.insert(link.clone()) {
+                    continue;
+                }
+                emit_mjcf_body_open(out, ctx, link.as_str(), indent);
+                stack.push(Op::Close {
+                    link: link.clone(),
+                    indent,
+                });
+                if let Some(kids) = ctx.children.get(link.as_str()) {
+                    for child in kids.iter().rev() {
+                        stack.push(Op::Open {
+                            link: (*child).to_string(),
+                            indent: indent + 2,
+                        });
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn emit_dot(model: &KinematicModel, config: &TransformConfig) -> String {
@@ -424,7 +570,9 @@ fn emit_dot(model: &KinematicModel, config: &TransformConfig) -> String {
     out.push_str("  edge [fontname=\"sans-serif\", fontsize=9];\n\n");
 
     for link in &model.links {
-        let label = link.mass.map_or(link.name.clone(), |m| format!("{}\\n{:.1} kg", link.name, m));
+        let label = link.mass.map_or(link.name.clone(), |m| {
+            format!("{}\\n{:.1} kg", link.name, m)
+        });
         out.push_str(&format!("  \"{}\" [label=\"{}\"];\n", link.name, label));
     }
     out.push('\n');
@@ -435,12 +583,23 @@ fn emit_dot(model: &KinematicModel, config: &TransformConfig) -> String {
             JointType::Revolute | JointType::Continuous => "bold",
             JointType::Prismatic => "dotted",
         };
-        let axis_label = j.axis.map(|ax| {
-            let letter = if ax[0].abs() > 0.5 { "X" } else if ax[1].abs() > 0.5 { "Y" } else { "Z" };
-            format!("{}\\n({})", j.name, letter)
-        }).unwrap_or_else(|| j.name.clone());
-        out.push_str(&format!("  \"{}\" -> \"{}\" [label=\"{}\", style={}];\n",
-                              j.parent_link, j.child_link, axis_label, style));
+        let axis_label = j
+            .axis
+            .map(|ax| {
+                let letter = if ax[0].abs() > 0.5 {
+                    "X"
+                } else if ax[1].abs() > 0.5 {
+                    "Y"
+                } else {
+                    "Z"
+                };
+                format!("{}\\n({})", j.name, letter)
+            })
+            .unwrap_or_else(|| j.name.clone());
+        out.push_str(&format!(
+            "  \"{}\" -> \"{}\" [label=\"{}\", style={}];\n",
+            j.parent_link, j.child_link, axis_label, style
+        ));
     }
 
     out.push_str("}\n");
@@ -449,14 +608,23 @@ fn emit_dot(model: &KinematicModel, config: &TransformConfig) -> String {
 
 fn emit_mermaid(model: &KinematicModel, config: &TransformConfig) -> String {
     let mut out = String::with_capacity(2048);
-    let _ = writeln!(out, "%% Generated by hymeko_formats::transforms::MermaidTransform");
+    let _ = writeln!(
+        out,
+        "%% Generated by hymeko_formats::transforms::MermaidTransform"
+    );
     let _ = writeln!(out, "%% Robot: {}", config.robot_name);
     let _ = writeln!(out, "flowchart TD");
 
     // Shared class definitions — links are rectangles, roots (world-style
     // frames that don't appear in model.links) are pill-shaped.
-    let _ = writeln!(out, "    classDef link fill:#FFE4B5,stroke:#8B4513,stroke-width:2px,color:#000;");
-    let _ = writeln!(out, "    classDef root fill:#DDD,stroke:#555,stroke-width:2px,color:#000;");
+    let _ = writeln!(
+        out,
+        "    classDef link fill:#FFE4B5,stroke:#8B4513,stroke-width:2px,color:#000;"
+    );
+    let _ = writeln!(
+        out,
+        "    classDef root fill:#DDD,stroke:#555,stroke-width:2px,color:#000;"
+    );
     let _ = writeln!(out);
 
     let link_ids: std::collections::HashSet<&str> =
@@ -497,7 +665,13 @@ fn emit_mermaid(model: &KinematicModel, config: &TransformConfig) -> String {
     // dotted (`-- dotted -->` via label trick).
     for j in &model.joints {
         let axis_letter = j.axis.map(|ax| {
-            if ax[0].abs() > 0.5 { 'X' } else if ax[1].abs() > 0.5 { 'Y' } else { 'Z' }
+            if ax[0].abs() > 0.5 {
+                'X'
+            } else if ax[1].abs() > 0.5 {
+                'Y'
+            } else {
+                'Z'
+            }
         });
         let label = match (j.joint_type, axis_letter) {
             (JointType::Fixed, _) => format!("{} (fixed)", j.name),
@@ -529,7 +703,13 @@ fn emit_mermaid(model: &KinematicModel, config: &TransformConfig) -> String {
 /// else with `_`.
 fn mermaid_id(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
@@ -543,7 +723,11 @@ fn escape_label(s: &str) -> String {
 /// preferred, see `crate::codegen::generate_description`).
 fn emit_sysml(model: &KinematicModel, config: &TransformConfig) -> String {
     let mut out = String::with_capacity(2048);
-    let _ = writeln!(out, "// SysML 2 textual, generated by HyMeKo for {}", config.robot_name);
+    let _ = writeln!(
+        out,
+        "// SysML 2 textual, generated by HyMeKo for {}",
+        config.robot_name
+    );
     let _ = writeln!(out);
     let _ = writeln!(out, "package {} {{", sysml_id(&config.robot_name));
     let _ = writeln!(out);
@@ -551,7 +735,10 @@ fn emit_sysml(model: &KinematicModel, config: &TransformConfig) -> String {
     let _ = writeln!(out, "        attribute mass : Real;");
     let _ = writeln!(out, "    }}");
     let _ = writeln!(out);
-    let _ = writeln!(out, "    part def FixedJoint      {{ end parent : Link; end child : Link; }}");
+    let _ = writeln!(
+        out,
+        "    part def FixedJoint      {{ end parent : Link; end child : Link; }}"
+    );
     let _ = writeln!(out, "    part def RevoluteJoint   {{ end parent : Link; end child : Link; attribute axis : Vector3; }}");
     let _ = writeln!(out, "    part def ContinuousJoint {{ end parent : Link; end child : Link; attribute axis : Vector3; }}");
     let _ = writeln!(out, "    part def PrismaticJoint  {{ end parent : Link; end child : Link; attribute axis : Vector3; }}");
@@ -570,12 +757,17 @@ fn emit_sysml(model: &KinematicModel, config: &TransformConfig) -> String {
     // Joint connections.
     for j in &model.joints {
         let conn_def = match j.joint_type {
-            JointType::Fixed       => "FixedJoint",
-            JointType::Revolute    => "RevoluteJoint",
-            JointType::Continuous  => "ContinuousJoint",
-            JointType::Prismatic   => "PrismaticJoint",
+            JointType::Fixed => "FixedJoint",
+            JointType::Revolute => "RevoluteJoint",
+            JointType::Continuous => "ContinuousJoint",
+            JointType::Prismatic => "PrismaticJoint",
         };
-        let _ = writeln!(out, "    connection {} : {} {{", sysml_id(&j.name), conn_def);
+        let _ = writeln!(
+            out,
+            "    connection {} : {} {{",
+            sysml_id(&j.name),
+            conn_def
+        );
         let _ = writeln!(out, "        end ::> {};", sysml_id(&j.parent_link));
         let _ = writeln!(out, "        end ::> {};", sysml_id(&j.child_link));
         let _ = writeln!(out, "    }}");
@@ -589,7 +781,13 @@ fn emit_sysml(model: &KinematicModel, config: &TransformConfig) -> String {
 /// else with `_` (same convention as `mermaid_id` above).
 fn sysml_id(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
@@ -600,14 +798,20 @@ fn find_roots(model: &KinematicModel) -> Vec<String> {
     // This handles frames like "world" that aren't in model.links.
     let children: std::collections::HashSet<&str> =
         model.joints.iter().map(|j| j.child_link.as_str()).collect();
-    let parents: std::collections::HashSet<&str> =
-        model.joints.iter().map(|j| j.parent_link.as_str()).collect();
-    let mut roots: Vec<String> = parents.difference(&children)
+    let parents: std::collections::HashSet<&str> = model
+        .joints
+        .iter()
+        .map(|j| j.parent_link.as_str())
+        .collect();
+    let mut roots: Vec<String> = parents
+        .difference(&children)
         .map(|s| s.to_string())
         .collect();
     // Fallback: if no joints exist, use links not appearing as children
     if roots.is_empty() {
-        roots = model.links.iter()
+        roots = model
+            .links
+            .iter()
             .filter(|l| !children.contains(l.name.as_str()))
             .map(|l| l.name.clone())
             .collect();
@@ -615,5 +819,60 @@ fn find_roots(model: &KinematicModel) -> Vec<String> {
     roots
 }
 
-// xml_escape consolidated to hymeko_formats::xml_util.
-use crate::xml_util::xml_escape;
+#[cfg(test)]
+mod mjcf_emit_tests {
+    use super::*;
+    use hymeko::common::ids::DeclId;
+    use hymeko_query::kinematics::joints::JointInfo;
+    use hymeko_query::kinematics::kinematic::{GeometryInfo, GeometryShape, LinkInfo};
+
+    fn deep_chain_model(n: usize) -> KinematicModel {
+        assert!(n >= 2);
+        let mut links = Vec::with_capacity(n);
+        for i in 0..n {
+            links.push(LinkInfo {
+                did: DeclId::new(i),
+                name: format!("L{i}"),
+                mass: Some(1.0),
+                geometry: Some(GeometryInfo {
+                    shape: GeometryShape::Box,
+                    dimensions: vec![0.05, 0.05, 0.05],
+                }),
+                origin: None,
+                color: None,
+            });
+        }
+        let mut joints = Vec::with_capacity(n - 1);
+        for i in 0..(n - 1) {
+            joints.push(JointInfo {
+                did: DeclId::new(1000 + i),
+                name: format!("j{i}"),
+                joint_type: JointType::Fixed,
+                parent_link: format!("L{i}"),
+                child_link: format!("L{}", i + 1),
+                axis: None,
+                origin_xyz: None,
+                origin_rpy_deg: None,
+                limits: None,
+            });
+        }
+        KinematicModel {
+            name: "deep".to_string(),
+            links,
+            joints,
+        }
+    }
+
+    /// Regression: recursive `emit_mjcf_body` overflowed the stack on
+    /// long serial chains (scaling fixtures, `highArityFixedPool`).
+    #[test]
+    fn mjcf_emits_deep_serial_chain_without_stack_overflow() {
+        let model = deep_chain_model(600);
+        let cfg = hymeko_query::transforms::TransformConfig::default().with_name("deep");
+        let xml = emit_mjcf(&model, &cfg);
+        assert!(xml.contains("<mujoco"));
+        assert!(xml.contains("</mujoco>"));
+        let closes = xml.matches("</body>").count();
+        assert_eq!(closes, 600, "expected one </body> per link");
+    }
+}

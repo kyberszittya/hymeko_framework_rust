@@ -47,6 +47,17 @@
 - [signedkan_wip overview](./research/signedkan-overview.md)
 - [HSiKAN architecture](./research/hsikan.md)
 - [HyMeKo-driven training](./research/hymeko-driven.md)
+- [HymeKo-Gömb: “orthogonal” meanings](./research/gomb-orthogonal.md)
+
+# Results & evidence (benchmarks)
+
+- [Overview](./results/overview.md)
+- [Abbreviations & symbols](./results/abbreviations.md)
+- [Mathematics](./results/mathematics.md)
+- [SOTA snapshot & diagrams](./results/sota-snapshot.md)
+- [Evidence contract](./results/evidence-contract.md)
+- [Artifact index](./results/artifact-index.md)
+- [Cold start](./results/cold-start.md)
 
 ---
 

@@ -1,0 +1,3 @@
+flowchart LR
+  T[run_gomb_tune] -->|subprocess JSONL| S[run_gomb_smoke]
+  S --> M[metrics val + test]

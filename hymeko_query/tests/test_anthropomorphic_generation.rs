@@ -17,12 +17,14 @@
 
 #[cfg(test)]
 mod test_anthropomorphic_generation {
-    use hymeko_query::engine::QueryEngine;
     use hymeko_formats::sdf::generate_sdf;
     use hymeko_formats::urdf::generate_urdf;
+    use hymeko_query::engine::QueryEngine;
     use hymeko_query::kinematics::joints::{JointInfo, JointType};
     use hymeko_query::kinematics::kinematic::*;
-    use hymeko_query::transforms::{DomainTransform, ModelView, TransformConfig, TransformRegistry};
+    use hymeko_query::transforms::{
+        DomainTransform, ModelView, TransformConfig, TransformRegistry,
+    };
     use hymeko_query::{Predicate, ValuePredicate};
     use log::info;
     use std::time::Instant;
@@ -35,7 +37,13 @@ mod test_anthropomorphic_generation {
     /// Links the kinematic extractor should produce. `world` is declared
     /// as a `frame` in the fixture, not a `link`, so it is NOT in this set.
     const EXPECTED_LINKS: &[&str] = &[
-        "base_link", "link_0", "link_1", "link_2", "link_3", "link_4", "tool",
+        "base_link",
+        "link_0",
+        "link_1",
+        "link_2",
+        "link_3",
+        "link_4",
+        "tool",
     ];
 
     /// Joints in fixture order, including the fixed world→base.
@@ -63,7 +71,10 @@ mod test_anthropomorphic_generation {
     #[test]
     fn fixture_declares_seven_robot_links() {
         let title = "fixture_declares_seven_robot_links";
-        log_test_header(title, "Confirms kinematic extractor returns the expected 7 link-typed nodes.");
+        log_test_header(
+            title,
+            "Confirms kinematic extractor returns the expected 7 link-typed nodes.",
+        );
         let start = Instant::now();
 
         let m = model();
@@ -80,25 +91,47 @@ mod test_anthropomorphic_generation {
         }
         assert_eq!(m.links.len(), EXPECTED_LINKS.len());
 
-        log_test_footer(title, Some(start.elapsed()), "all 7 expected links present.");
+        log_test_footer(
+            title,
+            Some(start.elapsed()),
+            "all 7 expected links present.",
+        );
     }
 
     #[test]
     fn fixture_declares_seven_joints_one_fixed_six_revolute() {
         let title = "fixture_declares_seven_joints_one_fixed_six_revolute";
-        log_test_header(title, "Counts fixed vs revolute joints — moveo is 1 fixed + 6 revolute.");
+        log_test_header(
+            title,
+            "Counts fixed vs revolute joints — moveo is 1 fixed + 6 revolute.",
+        );
         let start = Instant::now();
 
         let m = model();
-        let fixed = m.joints.iter().filter(|j| j.joint_type == JointType::Fixed).count();
-        let revolute = m.joints.iter().filter(|j| j.joint_type == JointType::Revolute).count();
-        info!("joint-type census: fixed={fixed}, revolute={revolute}, total={}", m.joints.len());
+        let fixed = m
+            .joints
+            .iter()
+            .filter(|j| j.joint_type == JointType::Fixed)
+            .count();
+        let revolute = m
+            .joints
+            .iter()
+            .filter(|j| j.joint_type == JointType::Revolute)
+            .count();
+        info!(
+            "joint-type census: fixed={fixed}, revolute={revolute}, total={}",
+            m.joints.len()
+        );
 
         assert_eq!(fixed, 1);
         assert_eq!(revolute, 6);
         assert_eq!(m.joints.len(), EXPECTED_JOINTS.len());
 
-        log_test_footer(title, Some(start.elapsed()), "joint counts match anthropomorphic signature.");
+        log_test_footer(
+            title,
+            Some(start.elapsed()),
+            "joint counts match anthropomorphic signature.",
+        );
     }
 
     #[test]
@@ -109,7 +142,10 @@ mod test_anthropomorphic_generation {
 
         let m = model();
         let j = find_joint(&m, "j_fix");
-        info!("j_fix: parent=`{}`, child=`{}`, type={:?}", j.parent_link, j.child_link, j.joint_type);
+        info!(
+            "j_fix: parent=`{}`, child=`{}`, type={:?}",
+            j.parent_link, j.child_link, j.joint_type
+        );
 
         assert_eq!(j.joint_type, JointType::Fixed);
         assert_eq!(j.parent_link, "world");
@@ -121,7 +157,10 @@ mod test_anthropomorphic_generation {
     #[test]
     fn serial_chain_topology_parent_child_adjacency() {
         let title = "serial_chain_topology_parent_child_adjacency";
-        log_test_header(title, "Validates the full world → base_link → link_0..4 → tool chain.");
+        log_test_header(
+            title,
+            "Validates the full world → base_link → link_0..4 → tool chain.",
+        );
         let start = Instant::now();
 
         let m = model();
@@ -141,7 +180,11 @@ mod test_anthropomorphic_generation {
             assert_eq!(j.child_link, child, "{name} child mismatch");
         }
 
-        log_test_footer(title, Some(start.elapsed()), "serial chain intact end-to-end.");
+        log_test_footer(
+            title,
+            Some(start.elapsed()),
+            "serial chain intact end-to-end.",
+        );
     }
 
     #[test]
@@ -168,21 +211,34 @@ mod test_anthropomorphic_generation {
 
     /// Axis letter ("X"/"Y"/"Z") from a unit-axis vector.
     fn axis_letter(a: [f64; 3]) -> Option<char> {
-        if (a[0].abs() - 1.0).abs() < 1e-6 { return Some('X'); }
-        if (a[1].abs() - 1.0).abs() < 1e-6 { return Some('Y'); }
-        if (a[2].abs() - 1.0).abs() < 1e-6 { return Some('Z'); }
+        if (a[0].abs() - 1.0).abs() < 1e-6 {
+            return Some('X');
+        }
+        if (a[1].abs() - 1.0).abs() < 1e-6 {
+            return Some('Y');
+        }
+        if (a[2].abs() - 1.0).abs() < 1e-6 {
+            return Some('Z');
+        }
         None
     }
 
     #[test]
     fn revolute_joints_use_only_canonical_axes() {
         let m = model();
-        for j in m.joints.iter().filter(|j| j.joint_type == JointType::Revolute) {
-            let axis = j.axis.unwrap_or_else(|| panic!("revolute {} missing axis", j.name));
+        for j in m
+            .joints
+            .iter()
+            .filter(|j| j.joint_type == JointType::Revolute)
+        {
+            let axis = j
+                .axis
+                .unwrap_or_else(|| panic!("revolute {} missing axis", j.name));
             assert!(
                 axis_letter(axis).is_some(),
                 "joint {} has non-canonical axis {:?}",
-                j.name, axis
+                j.name,
+                axis
             );
         }
     }
@@ -190,13 +246,20 @@ mod test_anthropomorphic_generation {
     #[test]
     fn six_dof_axis_signature_matches_fixture() {
         let title = "six_dof_axis_signature_matches_fixture";
-        log_test_header(title, "Verifies the j0=Z, j1=X, j2=Z, j3=X, j4=Y, jtool=Z axis pattern.");
+        log_test_header(
+            title,
+            "Verifies the j0=Z, j1=X, j2=Z, j3=X, j4=Y, jtool=Z axis pattern.",
+        );
         let start = Instant::now();
 
         let m = model();
         let expected = [
-            ("j0", 'Z'), ("j1", 'X'), ("j2", 'Z'),
-            ("j3", 'X'), ("j4", 'Y'), ("jtool", 'Z'),
+            ("j0", 'Z'),
+            ("j1", 'X'),
+            ("j2", 'Z'),
+            ("j3", 'X'),
+            ("j4", 'Y'),
+            ("jtool", 'Z'),
         ];
         let mut pattern = String::new();
         for (name, letter) in expected {
@@ -207,7 +270,11 @@ mod test_anthropomorphic_generation {
         }
         info!("6-DoF axis signature: {pattern}  (expected: ZXZXYZ)");
 
-        log_test_footer(title, Some(start.elapsed()), "axis pattern matches canonical anthropomorphic-arm signature.");
+        log_test_footer(
+            title,
+            Some(start.elapsed()),
+            "axis pattern matches canonical anthropomorphic-arm signature.",
+        );
     }
 
     #[test]
@@ -227,7 +294,10 @@ mod test_anthropomorphic_generation {
     #[test]
     fn base_link_is_heaviest_link() {
         let title = "base_link_is_heaviest_link";
-        log_test_header(title, "base_link should dominate the mass budget for the arm.");
+        log_test_header(
+            title,
+            "base_link should dominate the mass budget for the arm.",
+        );
         let start = Instant::now();
 
         let m = model();
@@ -242,7 +312,10 @@ mod test_anthropomorphic_generation {
             info!("  {n:<12} {m:>6.2} kg");
         }
         let total: f64 = masses.iter().map(|(_, m)| m).sum();
-        info!("total robot mass: {total:.2} kg across {} links", masses.len());
+        info!(
+            "total robot mass: {total:.2} kg across {} links",
+            masses.len()
+        );
 
         let (name, mass) = masses.first().cloned().expect("some link must have mass");
         assert_eq!(name, "base_link");
@@ -294,16 +367,19 @@ mod test_anthropomorphic_generation {
             Predicate::edge(),
             Predicate::Named("gazebo_sim_system".to_string()),
         ]));
-        assert_eq!(r.len(), 1, "exactly one gazebo_sim_system hyperedge expected");
+        assert_eq!(
+            r.len(),
+            1,
+            "exactly one gazebo_sim_system hyperedge expected"
+        );
     }
 
     #[test]
     fn joint_trajectory_controller_node_is_queryable() {
         let (store, compiled) = load_and_lower(MOVEO).unwrap();
         let engine = QueryEngine::new(&compiled.ir, &store.it);
-        let r = engine.query(
-            &Predicate::node().and(Predicate::inherits("joint_trajectory_controller")),
-        );
+        let r = engine
+            .query(&Predicate::node().and(Predicate::inherits("joint_trajectory_controller")));
         assert!(!r.is_empty(), "joint_trajectory_controller node expected");
     }
 
@@ -315,9 +391,7 @@ mod test_anthropomorphic_generation {
         let r = engine.query(&Predicate::And(vec![
             Predicate::node(),
             Predicate::Named("filename".to_string()),
-            Predicate::HasValue(ValuePredicate::StrEq(
-                "gz_ros2_control-system".to_string(),
-            )),
+            Predicate::HasValue(ValuePredicate::StrEq("gz_ros2_control-system".to_string())),
         ]));
         assert!(
             !r.is_empty(),
@@ -357,7 +431,11 @@ mod test_anthropomorphic_generation {
         let start = Instant::now();
 
         let urdf = urdf_text();
-        info!("URDF output: {} bytes, {} joint tags", urdf.len(), urdf.matches("<joint name=").count());
+        info!(
+            "URDF output: {} bytes, {} joint tags",
+            urdf.len(),
+            urdf.matches("<joint name=").count()
+        );
         for joint in EXPECTED_JOINTS {
             assert!(
                 urdf.contains(&format!("<joint name=\"{joint}\"")),
@@ -365,13 +443,20 @@ mod test_anthropomorphic_generation {
             );
         }
 
-        log_test_footer(title, Some(start.elapsed()), "all 7 expected joints emitted.");
+        log_test_footer(
+            title,
+            Some(start.elapsed()),
+            "all 7 expected joints emitted.",
+        );
     }
 
     #[test]
     fn urdf_joint_types_split_fixed_vs_revolute() {
         let title = "urdf_joint_types_split_fixed_vs_revolute";
-        log_test_header(title, "Counts type=\"fixed\" vs type=\"revolute\" in URDF output.");
+        log_test_header(
+            title,
+            "Counts type=\"fixed\" vs type=\"revolute\" in URDF output.",
+        );
         let start = Instant::now();
 
         let urdf = urdf_text();
@@ -382,7 +467,11 @@ mod test_anthropomorphic_generation {
         assert_eq!(fixed, 1);
         assert_eq!(rev, 6);
 
-        log_test_footer(title, Some(start.elapsed()), "1 fixed + 6 revolute in URDF.");
+        log_test_footer(
+            title,
+            Some(start.elapsed()),
+            "1 fixed + 6 revolute in URDF.",
+        );
     }
 
     #[test]
@@ -422,15 +511,21 @@ mod test_anthropomorphic_generation {
     fn emit_via_registry(name: &str) -> String {
         let m = model();
         let reg = hymeko_formats::default_registry();
-        let t = reg.get(name).unwrap_or_else(|| panic!("{name} not registered"));
+        let t = reg
+            .get(name)
+            .unwrap_or_else(|| panic!("{name} not registered"));
         let cfg = TransformConfig::default().with_name(ROBOT_NAME);
-        t.emit(&ModelView::Kinematic(m), &cfg).expect("emit succeeds")
+        t.emit(&ModelView::Kinematic(m), &cfg)
+            .expect("emit succeeds")
     }
 
     #[test]
     fn mjcf_body_hierarchy_matches_chain_depth() {
         let title = "mjcf_body_hierarchy_matches_chain_depth";
-        log_test_header(title, "MJCF emits one <body> per link (±1 for optional world wrapper) and 6 hinge joints.");
+        log_test_header(
+            title,
+            "MJCF emits one <body> per link (±1 for optional world wrapper) and 6 hinge joints.",
+        );
         let start = Instant::now();
 
         let mjcf = emit_via_registry("mjcf");
@@ -461,29 +556,45 @@ mod test_anthropomorphic_generation {
         let hinge_count = mjcf.matches("type=\"hinge\"").count();
         assert_eq!(hinge_count, 6, "expected 6 hinge joints");
 
-        log_test_footer(title, Some(start.elapsed()), "MJCF body/hinge counts match chain depth.");
+        log_test_footer(
+            title,
+            Some(start.elapsed()),
+            "MJCF body/hinge counts match chain depth.",
+        );
     }
 
     #[test]
     fn mjcf_has_one_actuator_per_revolute_joint() {
         let mjcf = emit_via_registry("mjcf");
         let motor_count = mjcf.matches("<motor").count();
-        assert_eq!(motor_count, 6, "expected 6 actuators (1 per revolute joint)");
+        assert_eq!(
+            motor_count, 6,
+            "expected 6 actuators (1 per revolute joint)"
+        );
     }
 
     #[test]
     fn dot_has_one_edge_per_joint() {
         let title = "dot_has_one_edge_per_joint";
-        log_test_header(title, "DOT output has one arrow per joint, with j_fix dashed.");
+        log_test_header(
+            title,
+            "DOT output has one arrow per joint, with j_fix dashed.",
+        );
         let start = Instant::now();
 
         let dot = emit_via_registry("dot");
         let arrow_count = dot.matches(" -> ").count();
         let dashed = dot.matches("style=dashed").count();
-        info!("DOT output: {} bytes, arrows={arrow_count}, dashed={dashed}", dot.len());
+        info!(
+            "DOT output: {} bytes, arrows={arrow_count}, dashed={dashed}",
+            dot.len()
+        );
 
         assert_eq!(arrow_count, EXPECTED_JOINTS.len());
-        assert!(dashed >= 1, "j_fix (fixed joint) should have dashed styling");
+        assert!(
+            dashed >= 1,
+            "j_fix (fixed joint) should have dashed styling"
+        );
 
         log_test_footer(title, Some(start.elapsed()), "DOT graph topology correct.");
     }

@@ -1,19 +1,18 @@
 #!cfg[(test)]
-mod simd_lexer_tests
-{
+mod simd_lexer_tests {
 
     // ============================================================================
     // HELPER MACROS AND UTILITIES
     // ============================================================================
 
     use parser::lexer::Token;
-    use parser::lexer::simd::{Avx2Lexer, Sse2Lexer, ScalarLexer, CoreLexer};
+    use parser::lexer::simd::{Avx2Lexer, CoreLexer, ScalarLexer, Sse2Lexer};
 
     /// Extract token from lexer result, panicking on error
     macro_rules! assert_token {
         ($lexer:expr, $expected:pat) => {
             match $lexer.next() {
-                Some(Ok((_, $expected, _))) => {},
+                Some(Ok((_, $expected, _))) => {}
                 Some(Ok((_, tok, _))) => panic!("Expected token pattern, got {:?}", tok),
                 Some(Err(e)) => panic!("Lexer error: {}", e.msg),
                 None => panic!("Expected token, got EOF"),
@@ -25,8 +24,10 @@ mod simd_lexer_tests
     macro_rules! assert_token_str {
         ($lexer:expr, $expected:expr) => {
             match $lexer.next() {
-                Some(Ok((_, Token::Str(ref s), _))) if s.as_ref() == $expected => {},
-                Some(Ok((_, Token::Str(s), _))) => panic!("Expected string {:?}, got {:?}", $expected, s),
+                Some(Ok((_, Token::Str(ref s), _))) if s.as_ref() == $expected => {}
+                Some(Ok((_, Token::Str(s), _))) => {
+                    panic!("Expected string {:?}, got {:?}", $expected, s)
+                }
                 Some(Ok((_, tok, _))) => panic!("Expected Token::Str, got {:?}", tok),
                 Some(Err(e)) => panic!("Lexer error: {}", e.msg),
                 None => panic!("Expected token, got EOF"),
@@ -101,51 +102,41 @@ mod simd_lexer_tests
 
     #[test]
     fn test_simd_skip_simple_whitespace() {
-        run_complex_test("  \t\n\r  ident", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
-                other => panic!("Expected ident, got {:?}", other),
-            }
+        run_complex_test("  \t\n\r  ident", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
+            other => panic!("Expected ident, got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_skip_tabs_and_spaces() {
-        run_complex_test("    ident", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
-                other => panic!("Expected ident, got {:?}", other),
-            }
+        run_complex_test("    ident", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
+            other => panic!("Expected ident, got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_skip_newlines() {
-        run_complex_test("\n\n\nident", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
-                other => panic!("Expected ident, got {:?}", other),
-            }
+        run_complex_test("\n\n\nident", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
+            other => panic!("Expected ident, got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_skip_carriage_returns() {
-        run_complex_test("\r\r\rident", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
-                other => panic!("Expected ident, got {:?}", other),
-            }
+        run_complex_test("\r\r\rident", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
+            other => panic!("Expected ident, got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_skip_mixed_whitespace() {
-        run_complex_test(" \t\n\r \t\n\r ident", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
-                other => panic!("Expected ident, got {:?}", other),
-            }
+        run_complex_test(" \t\n\r \t\n\r ident", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
+            other => panic!("Expected ident, got {:?}", other),
         });
     }
 
@@ -154,11 +145,9 @@ mod simd_lexer_tests
         // Test SIMD path that processes 32+ bytes at once (AVX2)
         let long_spaces = " ".repeat(64);
         let input = format!("{}ident", long_spaces);
-        run_complex_test(&input, |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
-                other => panic!("Expected ident, got {:?}", other),
-            }
+        run_complex_test(&input, |lexer| match lexer.next() {
+            Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
+            other => panic!("Expected ident, got {:?}", other),
         });
     }
 
@@ -170,11 +159,9 @@ mod simd_lexer_tests
             input.push_str(" \t\n\r");
         }
         input.push_str("ident");
-        run_complex_test(&input, |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
-                other => panic!("Expected ident, got {:?}", other),
-            }
+        run_complex_test(&input, |lexer| match lexer.next() {
+            Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "ident"),
+            other => panic!("Expected ident, got {:?}", other),
         });
     }
 
@@ -246,7 +233,7 @@ mod simd_lexer_tests
                 other => panic!("Expected 'hello', got {:?}", other),
             }
             match lexer.next() {
-                Some(Ok((_, Token::Comma, _))) => {},
+                Some(Ok((_, Token::Comma, _))) => {}
                 other => panic!("Expected comma, got {:?}", other),
             }
         });
@@ -380,91 +367,73 @@ mod simd_lexer_tests
 
     #[test]
     fn test_simd_string_empty() {
-        run_complex_test("\"\"", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, ""),
-                other => panic!("Expected empty string, got {:?}", other),
-            }
+        run_complex_test("\"\"", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, ""),
+            other => panic!("Expected empty string, got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_string_simple() {
-        run_complex_test("\"hello\"", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello"),
-                other => panic!("Expected 'hello', got {:?}", other),
-            }
+        run_complex_test("\"hello\"", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello"),
+            other => panic!("Expected 'hello', got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_string_with_spaces() {
-        run_complex_test("\"hello world\"", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello world"),
-                other => panic!("Expected 'hello world', got {:?}", other),
-            }
+        run_complex_test("\"hello world\"", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello world"),
+            other => panic!("Expected 'hello world', got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_string_with_numbers() {
-        run_complex_test("\"test123\"", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "test123"),
-                other => panic!("Expected 'test123', got {:?}", other),
-            }
+        run_complex_test("\"test123\"", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "test123"),
+            other => panic!("Expected 'test123', got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_string_with_escape_sequences() {
-        run_complex_test("\"hello\\nworld\"", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello\nworld"),
-                other => panic!("Expected 'hello\\nworld', got {:?}", other),
-            }
+        run_complex_test("\"hello\\nworld\"", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello\nworld"),
+            other => panic!("Expected 'hello\\nworld', got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_string_escape_tab() {
-        run_complex_test("\"hello\\tworld\"", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello\tworld"),
-                other => panic!("Expected escaped tab, got {:?}", other),
-            }
+        run_complex_test("\"hello\\tworld\"", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello\tworld"),
+            other => panic!("Expected escaped tab, got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_string_escape_backslash() {
-        run_complex_test("\"hello\\\\world\"", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello\\world"),
-                other => panic!("Expected escaped backslash, got {:?}", other),
-            }
+        run_complex_test("\"hello\\\\world\"", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello\\world"),
+            other => panic!("Expected escaped backslash, got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_string_escape_quote() {
-        run_complex_test("\"hello\\\"world\"", |lexer| {
-            match lexer.next() {
-                Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello\"world"),
-                other => panic!("Expected escaped quote, got {:?}", other),
-            }
+        run_complex_test("\"hello\\\"world\"", |lexer| match lexer.next() {
+            Some(Ok((_, Token::Str(s), _))) => assert_eq!(s, "hello\"world"),
+            other => panic!("Expected escaped quote, got {:?}", other),
         });
     }
 
     #[test]
     fn test_simd_string_unterminated() {
-        run_complex_test("\"hello", |lexer| {
-            match lexer.next() {
-                Some(Err(e)) => assert_eq!(e.msg, "Unterminated string literal"),
-                other => panic!("Expected error, got {:?}", other),
-            }
+        run_complex_test("\"hello", |lexer| match lexer.next() {
+            Some(Err(e)) => assert_eq!(e.msg, "Unterminated string literal"),
+            other => panic!("Expected error, got {:?}", other),
         });
     }
 
@@ -481,7 +450,7 @@ mod simd_lexer_tests
             }
 
             match lexer.next() {
-                Some(Ok((_, Token::Comma, _))) => {},
+                Some(Ok((_, Token::Comma, _))) => {}
                 other => panic!("Expected comma, got {:?}", other),
             }
 
@@ -489,7 +458,6 @@ mod simd_lexer_tests
                 Some(Ok((_, Token::Ident(s), _))) => assert_eq!(s, "world"),
                 other => panic!("Expected 'world', got {:?}", other),
             }
-
 
             assert_eq!(lexer.next(), None);
         });
@@ -855,4 +823,3 @@ mod simd_lexer_tests
         });
     }
 }
-

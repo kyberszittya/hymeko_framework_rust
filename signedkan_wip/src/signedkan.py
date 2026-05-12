@@ -61,10 +61,11 @@ _KB_PRESETS = {
 
 
 def _resolve_kb_init_tcb() -> tuple[float, float, float] | None:
-    """Resolve HSIKAN_KB_PRESET and/or HSIKAN_KB_INIT_TCB into a
-    (t, c, b) tuple, or None if neither is set."""
-    import os
-    preset = os.environ.get("HSIKAN_KB_PRESET", "").strip().lower()
+    """Resolve KB preset / explicit (t, c, b) override into a tuple.
+    Reads through `RuntimeConfig.kernel` rather than `os.environ`."""
+    from .runtime_config import get_runtime
+    kernel = get_runtime().kernel
+    preset = kernel.kb_preset.lower()
     if preset:
         if preset not in _KB_PRESETS:
             raise ValueError(
@@ -72,7 +73,7 @@ def _resolve_kb_init_tcb() -> tuple[float, float, float] | None:
                 f"valid: {sorted(_KB_PRESETS.keys())}"
             )
         return _KB_PRESETS[preset]
-    raw = os.environ.get("HSIKAN_KB_INIT_TCB", "")
+    raw = kernel.kb_init_tcb
     if raw:
         try:
             parts = [float(p) for p in raw.split(",")]
@@ -244,8 +245,8 @@ class SignedKANLayer(nn.Module):
         that can OOM on small GPUs at training time.  Set
         HSIKAN_TRITON_KERNEL=1 to opt in (recommended for inference,
         forward-only profiling, and any setup with ample VRAM)."""
-        import os
-        if int(os.environ.get("HSIKAN_TRITON_KERNEL", "0")) == 0:
+        from .runtime_config import get_runtime
+        if not get_runtime().kernel.triton_kernel:
             return False
         if not x.is_cuda:
             return False
@@ -305,8 +306,8 @@ class SignedKANLayer(nn.Module):
         chunk.  Required for $|V| \\gtrsim 10^5$ datasets (Epinions)
         on $\\le 8$ GB GPUs.
         """
-        import os
-        chunk_t = int(os.environ.get("HSIKAN_CHUNK_T", "0"))
+        from .runtime_config import get_runtime
+        chunk_t = get_runtime().kernel.chunk_t
         if chunk_t > 0 and triad_v.shape[0] > chunk_t:
             chunks = []
             for s in range(0, triad_v.shape[0], chunk_t):

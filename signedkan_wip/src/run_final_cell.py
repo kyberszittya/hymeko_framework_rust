@@ -10,6 +10,9 @@ Usage:
     HSIKAN_TORCH_COMPILE=1 python -m signedkan_wip.src.run_final_cell \
         --dataset bitcoin_alpha --model HSiKAN --hidden 16
 
+``HSIKAN_DEVICE`` (optional): ``auto`` (default), ``cpu``, or ``cuda``.
+Use ``cpu`` for reproducible sweeps when another job holds GPU memory.
+
 Recognised models:
     HSiKAN, HSiKAN-mixed, SGCN, HSiKAN-graphlevel, HSiKAN-pose
 """
@@ -17,7 +20,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import random
 import statistics
 import sys
@@ -28,6 +30,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
+
+from .hsikan_device_env import resolve_hsikan_device
 
 
 def time_per_call(fn, n_warmup=15, n_repeats=40, sync=True):
@@ -130,21 +134,21 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                       fwd_per_call_ms=lat,
                       n_params=int(n_params(sgcn)))
 
-    # HSiKAN arities — Slashdot SOTA-config uses k=(3,4,5) (αₖ shows
-    # k=5 carries 54% of signal); other datasets use k=(3,4).
-    # Override via env var HSIKAN_ARITIES=2,3,4,5 etc.
-    arities_env = os.environ.get("HSIKAN_ARITIES")
-    if arities_env:
-        arities = tuple(int(x) for x in arities_env.split(","))
+    # HSiKAN arities — Slashdot SOTA-config uses k=(3,4,5); other datasets
+    # use k=(3,4). Override via HSIKAN_ARITIES env var
+    # (consumed by `RuntimeConfig.training.arities`).
+    from .runtime_config import get_runtime
+    _train = get_runtime().training
+    # `(3,)` is the dataclass default → "user did not override".
+    if _train.arities != (3,):
+        arities = _train.arities
     elif dataset == "slashdot":
         arities = (3, 4, 5)
     else:
         arities = (3, 4)
-    # k=2 cap respects HSIKAN_MAX_K2 env var if set (defaults to 1M to
-    # match the published Slashdot recipe).  Useful for memory-bound
-    # datasets like Epinions where 1M k=2 cycles overwhelms 8GB GPUs.
-    max_k2 = int(os.environ.get("HSIKAN_MAX_K2", "1000000"))
-    max_k3 = int(os.environ.get("HSIKAN_MAX_K3", "30000"))
+    # k=2 / k=3 caps — env-defaults preserved at 1M / 30k.
+    max_k2 = _train.max_k2
+    max_k3 = _train.max_k3
     cap_dict = {2: max_k2, 3: max_k3,
                   4: max_k4, 5: max_k4, 6: max_k4}
 
@@ -165,8 +169,10 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     #
     # 3) HSIKAN_ARITIES=k1,k2,... (or default per-dataset) → cycles-
     #    only mode.
-    mixed_env = os.environ.get("HSIKAN_MIXED_TUPLES")
-    walk_lens_env = os.environ.get("HSIKAN_WALK_LENS")
+    mixed_env = _train.mixed_tuples or None
+    walk_lens_env = (
+        ",".join(str(L) for L in _train.walk_lens) if _train.walk_lens else None
+    )
 
     # Parse to a list of (kind, n_vertices, walk_len_or_none).
     tuple_specs: list[tuple[str, int, int | None]] = []
@@ -207,8 +213,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     # SISY paper §III.B.  Default: SMC-paper transductive convention
     # (only k=2 cycles excluded; higher cycles / walks may contain
     # the test edge).
-    strict_protocol = bool(int(os.environ.get(
-        "HSIKAN_STRICT_PROTOCOL", "0")))
+    strict_protocol = _train.strict_protocol
     per_arity_tr, per_arity_te = [], []
     for kind, k_v, walk_len in tuple_specs:
         if kind == "walk":
@@ -330,25 +335,20 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     # activation memory at O(cycle_batch).  Epinions and other
     # large-vertex datasets need this.  Override via env-var.
     _default_cb = 10000 if dataset in ("slashdot", "epinions") else None
-    cycle_batch_env = os.environ.get("HSIKAN_CYCLE_BATCH")
-    if cycle_batch_env:
-        cycle_batch = int(cycle_batch_env) or None
-    else:
-        cycle_batch = _default_cb
+    cycle_batch = _train.cycle_batch if _train.cycle_batch is not None else _default_cb
     is_slashdot = (dataset == "slashdot")
 
-    per_edge_gate = bool(int(os.environ.get("HSIKAN_PER_EDGE_GATE", "0")))
-    gumbel_hard = bool(int(os.environ.get("HSIKAN_GUMBEL_HARD", "0")))
-    gumbel_tau = float(os.environ.get("HSIKAN_GUMBEL_TAU", "1.0"))
+    per_edge_gate = _train.per_edge_gate
+    gumbel_hard = _train.gumbel_hard
+    gumbel_tau = _train.gumbel_tau
     if gumbel_hard:
-        # Hard gate only meaningful with the per-edge gate enabled.
         per_edge_gate = True
     # Attention-over-cycles head. "none" = uniform 1/|N| pooling
     # (default); "dot" = scalar dot-product attention; "quaternion" =
     # Hamilton-product real-part attention (signed-graph natural).
-    attention_kind = os.environ.get("HSIKAN_ATTENTION_M_E", "none").lower()
+    attention_kind = _train.attention_kind
     use_attention_m_e = attention_kind in ("dot", "quaternion")
-    direct_messaging = bool(int(os.environ.get("HSIKAN_DIRECT_MESSAGING", "0")))
+    direct_messaging = _train.direct_messaging
     # attention_m_e is mutually exclusive with cycle_batch_size in the
     # current implementation. If user asks for attention on a dataset
     # whose default has batching enabled (slashdot/epinions), disable
@@ -362,7 +362,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     # spline_kind override: HSIKAN_SPLINE_KIND can be one of
     # "catmull_rom" (default), "kochanek_bartels", "bspline",
     # "bspline_cr", "cr_bspline", etc. — see signedkan.py _alias map.
-    spline_kind_env = os.environ.get("HSIKAN_SPLINE_KIND", "catmull_rom")
+    spline_kind_env = _train.spline_kind
     cfg = MixedAritySignedKANConfig(
         base=MultiLayerSignedKANConfig(
             n_nodes=g.n_nodes, n_layers=2, hidden_dim=hidden,
@@ -383,7 +383,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
 
     # Optional Lyapunov-safe spectral entropy regulariser.
     # HSIKAN_ENTROPY_LAMBDA > 0 enables it on model.node_embed.weight.
-    entropy_lambda = float(os.environ.get("HSIKAN_ENTROPY_LAMBDA", "0"))
+    entropy_lambda = _train.entropy_lambda
     entropy_reg = None
     if entropy_lambda > 0:
         from .entropy_reg import EntropyRegulariser, EntropyRegConfig
@@ -737,7 +737,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", required=True,
                     choices=["bitcoin_alpha", "bitcoin_otc", "slashdot",
-                              "epinions",
+                              "epinions", "wikisigned", "wiki_elec",
+                              "wiki_conflict",
                               "sbm_n200", "sbm_n400",
                               "kinematic_k4", "kinematic_k6",
                               "pose_k4", "pose_k6",
@@ -752,9 +753,10 @@ def main():
                     help="Slashdot mixed-arity k=4 cap")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = resolve_hsikan_device()
 
     if args.dataset.startswith(("bitcoin", "slashdot", "sbm", "epinions",
+                                  "wikisigned", "wiki_elec", "wiki_conflict",
                                   "mesh_")):
         out = cell_signed_graph(args.dataset, args.model, args.hidden,
                                   args.n_epochs, args.max_k4, device,

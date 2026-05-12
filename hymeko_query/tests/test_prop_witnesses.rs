@@ -32,8 +32,16 @@ mod test_prop_witnesses {
     /// emitter must produce byte-equal output across the pair.
     const ALIAS_PAIRS: &[(&str, &str, &str)] = &[
         // (baseline,                                        alias-variant,                                              robot_name)
-        ("../data/robotics/anthropomorphic_arm.hymeko", "../data/robotics/anthropomorphic_arm_using.hymeko", "moveo"),
-        ("../data/robotics/robot_4wh.hymeko",           "../data/robotics/robot_4wh_using.hymeko",           "diff_robot"),
+        (
+            "../data/robotics/anthropomorphic_arm.hymeko",
+            "../data/robotics/anthropomorphic_arm_using.hymeko",
+            "moveo",
+        ),
+        (
+            "../data/robotics/robot_4wh.hymeko",
+            "../data/robotics/robot_4wh_using.hymeko",
+            "diff_robot",
+        ),
     ];
 
     // ──────────────────────────────────────────────────────────────────
@@ -44,12 +52,14 @@ mod test_prop_witnesses {
         use super::*;
 
         fn assert_pairwise_byte_equal_across_formats(
-            baseline: &str, alias: &str, robot_name: &str,
+            baseline: &str,
+            alias: &str,
+            robot_name: &str,
         ) {
-            let (b_store, b) = load_and_lower(baseline)
-                .unwrap_or_else(|e| panic!("compile {baseline}: {e:?}"));
-            let (a_store, a) = load_and_lower(alias)
-                .unwrap_or_else(|e| panic!("compile {alias}: {e:?}"));
+            let (b_store, b) =
+                load_and_lower(baseline).unwrap_or_else(|e| panic!("compile {baseline}: {e:?}"));
+            let (a_store, a) =
+                load_and_lower(alias).unwrap_or_else(|e| panic!("compile {alias}: {e:?}"));
 
             // Free-function emitters: URDF, SDF, Gazebo world.
             assert_eq!(
@@ -108,8 +118,8 @@ mod test_prop_witnesses {
             for &(baseline, alias, _name) in ALIAS_PAIRS {
                 let (b_store, b) = load_and_lower(baseline)
                     .unwrap_or_else(|e| panic!("compile {baseline}: {e:?}"));
-                let (a_store, a) = load_and_lower(alias)
-                    .unwrap_or_else(|e| panic!("compile {alias}: {e:?}"));
+                let (a_store, a) =
+                    load_and_lower(alias).unwrap_or_else(|e| panic!("compile {alias}: {e:?}"));
                 let h_b = hash_doc(&b.idx, &b_store.it);
                 let h_a = hash_doc(&a.idx, &a_store.it);
                 assert_eq!(
@@ -231,10 +241,7 @@ mod test_prop_witnesses {
             let arities: &[f64] = &[2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0];
 
             // Compute the bound at each swept d̄.
-            let bounds: Vec<f64> = arities
-                .iter()
-                .map(|&d| (N_POOL + M) / (M * d))
-                .collect();
+            let bounds: Vec<f64> = arities.iter().map(|&d| (N_POOL + M) / (M * d)).collect();
 
             // Property 1: strict monotone decrease.
             for w in bounds.windows(2) {
@@ -297,9 +304,21 @@ mod test_prop_witnesses {
             // overhead is at most a small constant factor over a raw
             // adjacency representation, regardless of arity.
             let cases = &[
-                ("../scripts/scaling/fixtures/highArity/ha_m200_d10/ha_m200_d10.hymeko", 200_usize, 10.0_f64),
-                ("../scripts/scaling/fixtures/highArity/ha_m200_d20/ha_m200_d20.hymeko", 200, 20.0),
-                ("../scripts/scaling/fixtures/highArity/ha_m200_d50/ha_m200_d50.hymeko", 200, 50.0),
+                (
+                    "../scripts/scaling/fixtures/highArity/ha_m200_d10/ha_m200_d10.hymeko",
+                    200_usize,
+                    10.0_f64,
+                ),
+                (
+                    "../scripts/scaling/fixtures/highArity/ha_m200_d20/ha_m200_d20.hymeko",
+                    200,
+                    20.0,
+                ),
+                (
+                    "../scripts/scaling/fixtures/highArity/ha_m200_d50/ha_m200_d50.hymeko",
+                    200,
+                    50.0,
+                ),
             ];
             const ABSOLUTE_BOUND: f64 = 0.7;
             let mut prev_bound: Option<f64> = None;

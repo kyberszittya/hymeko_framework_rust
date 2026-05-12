@@ -205,7 +205,7 @@ where
 /// Entropy of the three-role sign distribution `{+, -, ~}` for one edge.
 fn sign_entropy(n_plus: usize, n_minus: usize, n_neutral: usize) -> f64 {
     let total = n_plus + n_minus + n_neutral;
-    shannon_entropy_from_counts([n_plus, n_minus, n_neutral].into_iter(), total)
+    shannon_entropy_from_counts([n_plus, n_minus, n_neutral], total)
 }
 
 /// Iterate direct children of `scope`. When `scope` is `DeclId::NONE`,

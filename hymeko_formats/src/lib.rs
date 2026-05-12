@@ -13,6 +13,12 @@
 //! [`DomainTransform`]: hymeko_query::transforms::DomainTransform
 //! [`TransformRegistry`]: hymeko_query::transforms::TransformRegistry
 
+#![allow(
+    clippy::collapsible_if,
+    clippy::get_first,
+    clippy::needless_borrow,
+)]
+
 pub mod codegen;
 pub mod gazebo;
 pub mod sdf;

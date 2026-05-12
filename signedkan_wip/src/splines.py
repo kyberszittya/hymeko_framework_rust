@@ -233,11 +233,14 @@ def _maybe_compile(fn):
     Decoupled from default so eager fallbacks remain available when
     torch.compile encounters incompatible ops on a given PyTorch
     version."""
-    if _os.environ.get("HSIKAN_TORCH_COMPILE", "0") != "1":
+    from .runtime_config import get_runtime
+    compile_cfg = get_runtime().compile
+    if not compile_cfg.enabled:
         return fn
-    mode = _os.environ.get("HSIKAN_COMPILE_MODE", "reduce-overhead")
     try:
-        return torch.compile(fn, dynamic=False, fullgraph=False, mode=mode)
+        return torch.compile(
+            fn, dynamic=False, fullgraph=False, mode=compile_cfg.mode,
+        )
     except Exception:                                              # pragma: no cover
         return fn
 

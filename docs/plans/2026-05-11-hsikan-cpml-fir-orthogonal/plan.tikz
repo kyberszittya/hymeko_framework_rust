@@ -1,0 +1,84 @@
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
+
+\begin{document}
+\begin{tikzpicture}[
+    >=Stealth, font=\small,
+    cell/.style={draw, rounded corners=2pt, minimum width=2.2cm,
+                  minimum height=0.9cm, align=center, font=\footnotesize},
+    axis/.style={font=\bfseries\footnotesize},
+  ]
+
+  % Title
+  \node[font=\bfseries] at (5.5, 6.0)
+    {3-axis architectural factorial — HSiKAN $\times$ CPML $\times$ Clifford-FIR};
+
+  % Vertices of the 8-cell cube
+  % A axis (HSiKAN): horizontal
+  % C axis (CPML):   vertical
+  % F axis (FIR):    depth (drawn as diagonal offset)
+  \def\dx{2.6}
+  \def\dy{1.4}
+  \def\dz{1.0}
+  \def\zoff{0.55}  % horizontal offset for F=1
+  \def\zvoff{0.45} % vertical offset for F=1
+
+  % F=0 (front face): four cells (A,C) ∈ {0,1}²
+  \node[cell, fill=gray!15]    (b000) at (0,    0)        {(0,0,0)\\\texttt{baseline}\\\scriptsize MLP, $L{=}1$};
+  \node[cell, fill=yellow!25]  (b100) at (\dx,  0)        {(1,0,0)\\\texttt{hsikan}\\\scriptsize KAN, $L{=}1$};
+  \node[cell, fill=orange!25]  (b010) at (0,    \dy)      {(0,1,0)\\\texttt{cpml}\\\scriptsize MLP, $L{=}3$};
+  \node[cell, fill=orange!40]  (b110) at (\dx,  \dy)      {(1,1,0)\\\texttt{cpml-hsikan}\\\scriptsize KAN, $L{=}3$};
+
+  % F=1 (back face, drawn offset diagonally)
+  \node[cell, fill=cyan!20]    (b001) at (\zoff, \zvoff)         {(0,0,1)\\\texttt{fir}\\\scriptsize CL-FIR, $L{=}1$};
+  \node[cell, fill=teal!30]    (b101) at (\dx+\zoff, \zvoff)     {(1,0,1)\\\texttt{hsikan-fir}\\\scriptsize $\alpha$-route, $L{=}1$};
+  \node[cell, fill=red!20]     (b011) at (\zoff, \dy+\zvoff)     {(0,1,1)\\\texttt{cpml-fir}\\\scriptsize CL-FIR, $L{=}3$};
+  \node[cell, fill=red!40]     (b111) at (\dx+\zoff, \dy+\zvoff) {(1,1,1)\\\texttt{cpml-hsikan-fir}\\\scriptsize $\alpha$-route, $L{=}3$};
+
+  % Cube edges F=0 face
+  \draw[->] (b000) -- (b100);
+  \draw[->] (b000) -- (b010);
+  \draw[->] (b010) -- (b110);
+  \draw[->] (b100) -- (b110);
+  % Cube edges F=1 face
+  \draw[->] (b001) -- (b101);
+  \draw[->] (b001) -- (b011);
+  \draw[->] (b011) -- (b111);
+  \draw[->] (b101) -- (b111);
+  % Depth edges (F=0 → F=1)
+  \draw[->, gray!60] (b000) -- (b001);
+  \draw[->, gray!60] (b100) -- (b101);
+  \draw[->, gray!60] (b010) -- (b011);
+  \draw[->, gray!60] (b110) -- (b111);
+
+  % Axis labels
+  \node[axis] at (\dx, -0.9) {HSiKAN ($A$)};
+  \node[axis, rotate=90] at (-1.1, \dy) {CPML ($C$)};
+  \node[axis, rotate=30] at (-0.6, 0.4) {Clifford-FIR ($F$)};
+
+  % Effect-coefficient legend
+  \node[draw, rounded corners=2pt, fill=gray!10, align=left,
+        font=\scriptsize] at (8.5, 0.7)
+    {Effect decomposition:\\
+     $L = \mu + \alpha A + \gamma C + \varphi F$ \\
+     $\;\;\;+ \alpha\gamma AC + \alpha\varphi AF + \gamma\varphi CF$ \\
+     $\;\;\;+ \alpha\gamma\varphi ACF + \varepsilon$\\[2pt]
+     \;$\mu$: embedding floor\\
+     \;$\alpha$: HSiKAN main effect\\
+     \;$\gamma$: CPML main effect\\
+     \;$\varphi$: FIR main effect\\
+     \;$\alpha\gamma, \alpha\varphi, \gamma\varphi$: pairwise interactions\\
+     \;$\alpha\gamma\varphi$: 3-way interaction};
+
+  % Hypothesis tags
+  \node[align=left, font=\scriptsize] at (8.5, 3.2)
+    {Pre-registered hypotheses:\\
+     \;H1: $\varphi > 0$ on Bitcoin OTC\\
+     \;H2: $\alpha > 0$ on Slashdot/Epinions\\
+     \;H3: $\gamma > 0$ on Epinions/WikiSigned\\
+     \;H4: $\alpha\varphi > 0$ on dense signed graphs};
+
+\end{tikzpicture}
+\end{document}

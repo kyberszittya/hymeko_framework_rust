@@ -22,6 +22,9 @@ tarpaulin-report.html
 
 /paper/
 
+# Python / uv
+.venv/
+
 # Python build artifacts
 __pycache__/
 *.pyc
@@ -34,6 +37,15 @@ __pycache__/
 
 # Bulk benchmark CSV dumps (regenerable)
 /data/benchmarks/
+
+# Dataset / ML caches (local or downloaded; regenerable — do not add new blobs)
+# SignedKAN: `datasets.load` / `python -m signedkan_wip.src.datasets --download …`
+/signedkan_wip/data/
+# Repo-root `data/`: local caches only (tracked trees: minimal_examples/, nn/, hsikan/, robotics*)
+/data/torchvision/
+/data/ntuples_cache/
+/data/cora/
+/data/anatomy/
 
 # One-off archive
 /archive.zip

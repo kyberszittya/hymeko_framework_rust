@@ -19,14 +19,11 @@
 
 use bytemuck::{Pod, Zeroable};
 use vulkano::{
-    command_buffer::{
-        AutoCommandBufferBuilder, CommandBufferUsage, PrimaryCommandBufferAbstract,
-    },
+    command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, PrimaryCommandBufferAbstract},
     descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
     pipeline::{
-        ComputePipeline, PipelineBindPoint, PipelineLayout,
-        PipelineShaderStageCreateInfo, compute::ComputePipelineCreateInfo,
-        layout::PipelineDescriptorSetLayoutCreateInfo,
+        ComputePipeline, PipelineBindPoint, PipelineLayout, PipelineShaderStageCreateInfo,
+        compute::ComputePipelineCreateInfo, layout::PipelineDescriptorSetLayoutCreateInfo,
     },
     shader::{ShaderModule, ShaderModuleCreateInfo},
     sync::GpuFuture,
@@ -35,11 +32,13 @@ use vulkano::{
 use crate::buffers;
 use crate::context::VulkanContext;
 
-const SIGNED_SPMV_SPV: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/signed_spmv.spv"));
+const SIGNED_SPMV_SPV: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/signed_spmv.spv"));
 
 fn bytes_to_words(bytes: &[u8]) -> Vec<u32> {
-    assert!(bytes.len() % 4 == 0, "SPIR-V byte length not multiple of 4");
+    assert!(
+        bytes.len().is_multiple_of(4),
+        "SPIR-V byte length not multiple of 4"
+    );
     bytes
         .chunks_exact(4)
         .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
@@ -71,11 +70,7 @@ struct SpmvParams {
 /// Compute `y = B * x` where `b` carries the CSR view of the
 /// signed-incidence matrix. `x` is the per-hyperedge signal; the
 /// returned vector is per-vertex aggregate of length `b.row_ptr.len() - 1`.
-pub fn run(
-    ctx: &VulkanContext,
-    b: &SignedIncidenceCsr,
-    x: &[f32],
-) -> Result<Vec<f32>, String> {
+pub fn run(ctx: &VulkanContext, b: &SignedIncidenceCsr, x: &[f32]) -> Result<Vec<f32>, String> {
     let n_rows = b.row_ptr.len().saturating_sub(1) as u32;
     if n_rows == 0 {
         return Ok(Vec::new());
@@ -88,17 +83,18 @@ pub fn run(
     let buf_y = buffers::download::<f32>(ctx, n_rows as usize);
     let buf_params = buffers::upload(
         ctx,
-        &[SpmvParams { n_rows, _pad0: 0, _pad1: 0, _pad2: 0 }],
+        &[SpmvParams {
+            n_rows,
+            _pad0: 0,
+            _pad1: 0,
+            _pad2: 0,
+        }],
     );
 
     let words = bytes_to_words(SIGNED_SPMV_SPV);
-    let shader = unsafe {
-        ShaderModule::new(
-            ctx.device().clone(),
-            ShaderModuleCreateInfo::new(&words),
-        )
-    }
-    .map_err(|e| e.to_string())?;
+    let shader =
+        unsafe { ShaderModule::new(ctx.device().clone(), ShaderModuleCreateInfo::new(&words)) }
+            .map_err(|e| e.to_string())?;
     let entry_point = shader.entry_point("main").ok_or("missing entry point")?;
     let stage = PipelineShaderStageCreateInfo::new(entry_point);
     let layout = PipelineLayout::new(
@@ -114,7 +110,7 @@ pub fn run(
         ComputePipelineCreateInfo::stage_layout(stage, layout.clone()),
     )
     .map_err(|e| e.to_string())?;
-    let dsl = layout.set_layouts().get(0).ok_or("missing dsl")?;
+    let dsl = layout.set_layouts().first().ok_or("missing dsl")?;
     let descriptor_set = PersistentDescriptorSet::new(
         ctx.descriptor_set_allocator().as_ref(),
         dsl.clone(),
@@ -130,7 +126,7 @@ pub fn run(
     )
     .map_err(|e| e.to_string())?;
 
-    let workgroups = (n_rows + 63) / 64;
+    let workgroups = n_rows.div_ceil(64);
     let mut cb = AutoCommandBufferBuilder::primary(
         ctx.command_buffer_allocator().as_ref(),
         ctx.queue().queue_family_index(),
@@ -180,6 +176,10 @@ mod tests {
         assert_eq!(y.len(), 3);
         assert!((y[0] - 2.0).abs() < 1e-6, "y[0] = {} (expected 2)", y[0]);
         assert!((y[1] - 1.0).abs() < 1e-6, "y[1] = {} (expected 1)", y[1]);
-        assert!((y[2] - (-3.0)).abs() < 1e-6, "y[2] = {} (expected -3)", y[2]);
+        assert!(
+            (y[2] - (-3.0)).abs() < 1e-6,
+            "y[2] = {} (expected -3)",
+            y[2]
+        );
     }
 }

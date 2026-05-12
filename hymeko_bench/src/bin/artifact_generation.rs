@@ -34,7 +34,7 @@ use hymeko::module_store::source_provider::StdFsProvider;
 use hymeko::resolution::interner::Interner;
 use hymeko::util::real_parser::RealParser;
 
-use hymeko_formats::{generate_description, OutputFormat};
+use hymeko_formats::{OutputFormat, generate_description};
 
 #[derive(Parser, Debug)]
 #[command(about = "Artifact-generation timing benchmark")]
@@ -89,7 +89,8 @@ fn bench_parse(cli: &Cli) -> Result<(f64, f64, [u8; 32])> {
     for _ in 0..cli.parse_iters {
         let mut store = ModuleStore::new(StdFsProvider::new(), RealParser);
         let t = Instant::now();
-        let c = store.compile(&cli.input)
+        let c = store
+            .compile(&cli.input)
             .map_err(|e| anyhow::anyhow!("compile: {e:?}"))?;
         times.push(t.elapsed().as_secs_f64() * 1000.0);
         if let Some(h) = &c.ir.doc_hash {
@@ -105,7 +106,8 @@ fn bench_parse(cli: &Cli) -> Result<(f64, f64, [u8; 32])> {
 }
 
 fn bench_transform<F: FnMut() -> Result<String>>(
-    iters: usize, mut emit: F,
+    iters: usize,
+    mut emit: F,
 ) -> Result<(f64, f64, usize)> {
     let mut times = Vec::with_capacity(iters);
     let mut last_out = String::new();
@@ -122,7 +124,10 @@ fn bench_transform<F: FnMut() -> Result<String>>(
 /// Columns = (edge_idx, vertex_idx, sign) triples. Rows are sparse.
 fn emit_coo_json(ir: &Ir, it: &Interner) -> String {
     use std::fmt::Write;
-    let mut v_names: Vec<String> = ir.decl_nodes.iter().enumerate()
+    let mut v_names: Vec<String> = ir
+        .decl_nodes
+        .iter()
+        .enumerate()
         .filter(|(_, d)| d.kind == DeclKind::Node)
         .map(|(i, d)| {
             let _ = i;
@@ -138,13 +143,18 @@ fn emit_coo_json(ir: &Ir, it: &Interner) -> String {
             continue;
         }
         let e_did = DeclId::new(i);
-        let Some(eid) = ir.as_edge(e_did) else { continue };
+        let Some(eid) = ir.as_edge(e_did) else {
+            continue;
+        };
         for &aid in &ir.edges[eid.0].arcs {
             for r in &ir.arcs[aid.0].refs {
                 let tname = it.resolve(ir.decl_nodes[r.target().0].name);
-                if !first { out.push(','); } else { first = false; }
-                let _ = write!(&mut out,
-                    "[{},\"{}\",{}]", e_idx, tname, r.sign());
+                if !first {
+                    out.push(',');
+                } else {
+                    first = false;
+                }
+                let _ = write!(&mut out, "[{},\"{}\",{}]", e_idx, tname, r.sign());
             }
         }
         e_idx += 1;
@@ -157,22 +167,32 @@ fn emit_coo_json(ir: &Ir, it: &Interner) -> String {
 /// Structure: row_ptr (per edge), col_ind (vertex indices), values (signs).
 fn emit_csr_json(ir: &Ir, it: &Interner) -> String {
     use std::fmt::Write;
-    let mut v_names: Vec<(DeclId, String)> = ir.decl_nodes.iter().enumerate()
+    let mut v_names: Vec<(DeclId, String)> = ir
+        .decl_nodes
+        .iter()
+        .enumerate()
         .filter(|(_, d)| d.kind == DeclKind::Node)
         .map(|(i, d)| (DeclId::new(i), it.resolve(d.name).to_string()))
         .collect();
     v_names.sort_by(|a, b| a.1.cmp(&b.1));
-    let v_idx: std::collections::HashMap<DeclId, usize> = v_names.iter()
-        .enumerate().map(|(i, (d, _))| (*d, i)).collect();
+    let v_idx: std::collections::HashMap<DeclId, usize> = v_names
+        .iter()
+        .enumerate()
+        .map(|(i, (d, _))| (*d, i))
+        .collect();
 
     let mut row_ptr: Vec<usize> = vec![0];
     let mut col_ind: Vec<usize> = Vec::new();
     let mut values: Vec<i8> = Vec::new();
 
     for (i, decl) in ir.decl_nodes.iter().enumerate() {
-        if decl.kind != DeclKind::Edge { continue; }
+        if decl.kind != DeclKind::Edge {
+            continue;
+        }
         let e_did = DeclId::new(i);
-        let Some(eid) = ir.as_edge(e_did) else { continue };
+        let Some(eid) = ir.as_edge(e_did) else {
+            continue;
+        };
         let mut nnz_here = 0;
         for &aid in &ir.edges[eid.0].arcs {
             for r in &ir.arcs[aid.0].refs {
@@ -189,17 +209,23 @@ fn emit_csr_json(ir: &Ir, it: &Interner) -> String {
     let mut out = String::from("{");
     let _ = write!(&mut out, "\"row_ptr\":[");
     for (i, r) in row_ptr.iter().enumerate() {
-        if i > 0 { out.push(','); }
+        if i > 0 {
+            out.push(',');
+        }
         let _ = write!(&mut out, "{r}");
     }
     out.push_str("],\"col_ind\":[");
     for (i, c) in col_ind.iter().enumerate() {
-        if i > 0 { out.push(','); }
+        if i > 0 {
+            out.push(',');
+        }
         let _ = write!(&mut out, "{c}");
     }
     out.push_str("],\"values\":[");
     for (i, v) in values.iter().enumerate() {
-        if i > 0 { out.push(','); }
+        if i > 0 {
+            out.push(',');
+        }
         let _ = write!(&mut out, "{v}");
     }
     out.push_str("]}");
@@ -212,41 +238,49 @@ fn emit_graph_json(ir: &Ir, it: &Interner) -> String {
     let mut out = String::from("{\"vertices\":[");
     let mut first = true;
     for decl in ir.decl_nodes.iter() {
-        if decl.kind != DeclKind::Node { continue; }
-        if !first { out.push(','); } else { first = false; }
+        if decl.kind != DeclKind::Node {
+            continue;
+        }
+        if !first {
+            out.push(',');
+        } else {
+            first = false;
+        }
         let _ = write!(&mut out, "\"{}\"", it.resolve(decl.name));
     }
     out.push_str("],\"edges\":[");
     first = true;
     for (i, decl) in ir.decl_nodes.iter().enumerate() {
-        if decl.kind != DeclKind::Edge { continue; }
+        if decl.kind != DeclKind::Edge {
+            continue;
+        }
         let e_did = DeclId::new(i);
-        let Some(eid) = ir.as_edge(e_did) else { continue };
+        let Some(eid) = ir.as_edge(e_did) else {
+            continue;
+        };
         let e_name = it.resolve(decl.name);
         // Star expansion: hyperedge becomes a vertex-like node; each
         // incidence becomes a bipartite edge.
         for &aid in &ir.edges[eid.0].arcs {
             for r in &ir.arcs[aid.0].refs {
                 let tname = it.resolve(ir.decl_nodes[r.target().0].name);
-                if !first { out.push(','); } else { first = false; }
-                let _ = write!(&mut out,
+                if !first {
+                    out.push(',');
+                } else {
+                    first = false;
+                }
+                let _ = write!(
+                    &mut out,
                     "{{\"edge\":\"{}\",\"vertex\":\"{}\",\"sign\":{}}}",
-                    e_name, tname, r.sign());
+                    e_name,
+                    tname,
+                    r.sign()
+                );
             }
         }
     }
     out.push_str("]}");
     out
-}
-
-fn count_edges_of_kind(ir: &Ir, it: &Interner, base_name: &str) -> usize {
-    let mut n = 0;
-    for (_, decl) in ir.decl_nodes.iter().enumerate() {
-        if decl.kind != DeclKind::Edge { continue; }
-        let nm = it.resolve(decl.name);
-        if nm.contains(base_name) { n += 1; }
-    }
-    n
 }
 
 fn main() -> Result<()> {
@@ -258,8 +292,10 @@ fn main() -> Result<()> {
 
     // ─── Parse time ───
     let (parse_med, parse_p95, _hash) = bench_parse(&cli)?;
-    println!("Parse time (n={} iters): median={:.2}ms p95={:.2}ms",
-             cli.parse_iters, parse_med, parse_p95);
+    println!(
+        "Parse time (n={} iters): median={:.2}ms p95={:.2}ms",
+        cli.parse_iters, parse_med, parse_p95
+    );
     println!();
 
     // Compile once more to keep a live handle for transforms.
@@ -343,22 +379,30 @@ fn main() -> Result<()> {
     });
 
     // ─── Print + CSV ───
-    println!("  {:<12} {:>14} {:>14} {:>10} {}",
-             "Format", "Parse (ms)", "Transform (ms)", "Size (KB)", "Lossless");
+    println!(
+        "  {:<12} {:>14} {:>14} {:>10} Lossless",
+        "Format", "Parse (ms)", "Transform (ms)", "Size (KB)"
+    );
     for r in &results {
-        println!("  {:<12} {:>14.3} {:>14.3} {:>10.2} {}",
-                 r.format, r.parse_ms_median, r.transform_ms_median,
-                 r.size_kb, r.lossless_scope);
+        println!(
+            "  {:<12} {:>14.3} {:>14.3} {:>10.2} {}",
+            r.format, r.parse_ms_median, r.transform_ms_median, r.size_kb, r.lossless_scope
+        );
     }
 
     std::fs::create_dir_all(cli.out.parent().unwrap())?;
     let mut wtr = csv::Writer::from_path(&cli.out)?;
-    wtr.write_record(&[
-        "format", "parse_ms_median", "transform_ms_median",
-        "transform_ms_p95", "size_kb", "lossless_scope", "notes",
+    wtr.write_record([
+        "format",
+        "parse_ms_median",
+        "transform_ms_median",
+        "transform_ms_p95",
+        "size_kb",
+        "lossless_scope",
+        "notes",
     ])?;
     for r in &results {
-        wtr.write_record(&[
+        wtr.write_record([
             r.format,
             &format!("{:.3}", r.parse_ms_median),
             &format!("{:.3}", r.transform_ms_median),
@@ -379,15 +423,13 @@ fn main() -> Result<()> {
         let q_results = run_queries(&compiled, &store.it, &cli.queries)?;
         std::fs::create_dir_all(cli.out_queries.parent().unwrap())?;
         let mut qwtr = csv::Writer::from_path(&cli.out_queries)?;
-        qwtr.write_record(&["id", "predicate", "matches", "latency_us"])?;
+        qwtr.write_record(["id", "predicate", "matches", "latency_us"])?;
         for (id, pred, matches, latency) in &q_results {
-            println!("  {:<4} {:<64} matches={:>3} latency={:.1} µs",
-                     id, pred, matches, latency);
-            qwtr.write_record(&[
-                id, pred,
-                &matches.to_string(),
-                &format!("{:.3}", latency),
-            ])?;
+            println!(
+                "  {:<4} {:<64} matches={:>3} latency={:.1} µs",
+                id, pred, matches, latency
+            );
+            qwtr.write_record([id, pred, &matches.to_string(), &format!("{:.3}", latency)])?;
         }
         qwtr.flush()?;
         println!("Wrote {}", cli.out_queries.display());
@@ -414,7 +456,9 @@ fn run_queries(
     let mut results = Vec::new();
     for line in src.lines() {
         let line = line.trim();
-        if line.is_empty() || line.starts_with('#') { continue; }
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
         let (id, pred_str) = match line.split_once(char::is_whitespace) {
             Some((i, p)) => (i.trim().to_string(), p.trim().to_string()),
             None => continue,
@@ -443,7 +487,7 @@ fn run_queries(
 fn eval_predicate(pred: &str, ir: &Ir, it: &Interner) -> usize {
     // Walk all decls; count those matching.
     let mut n = 0;
-    for (i, _decl) in ir.decl_nodes.iter().enumerate() {
+    for i in 0..ir.decl_nodes.len() {
         if match_expr(pred, DeclId::new(i), ir, it) {
             n += 1;
         }
@@ -458,7 +502,9 @@ fn match_expr(expr: &str, did: DeclId, ir: &Ir, it: &Interner) -> bool {
 }
 
 fn match_atom(atom: &str, did: DeclId, ir: &Ir, it: &Interner) -> bool {
-    if atom == "ANY" { return true; }
+    if atom == "ANY" {
+        return true;
+    }
     if let Some(rest) = atom.strip_prefix("KIND(") {
         let name = rest.trim_end_matches(')');
         return decl_kind_name(did, ir, it) == name;
@@ -490,10 +536,14 @@ fn match_atom(atom: &str, did: DeclId, ir: &Ir, it: &Interner) -> bool {
 fn decl_scoped_in(did: DeclId, name: &str, ir: &Ir, it: &Interner) -> bool {
     let mut cur = ir.decl_nodes[did.0].parent;
     while cur.is_some() {
-        if decl_inherits(cur, name, ir, it) { return true; }
+        if decl_inherits(cur, name, ir, it) {
+            return true;
+        }
         // Also accept when the ancestor's OWN name matches.
         let own = it.resolve(ir.decl_nodes[cur.0].name);
-        if own == name { return true; }
+        if own == name {
+            return true;
+        }
         cur = ir.decl_nodes[cur.0].parent;
     }
     false
@@ -508,18 +558,18 @@ fn decl_kind_name<'a>(did: DeclId, ir: &'a Ir, it: &'a Interner) -> &'a str {
     let decl = &ir.decl_nodes[did.0];
     match decl.kind {
         DeclKind::Node => {
-            if let Some(nid) = ir.as_node(did) {
-                if let Some(b) = ir.nodes[nid.0].bases.first() {
-                    return it.resolve(ir.decl_nodes[b.target().0].name);
-                }
+            if let Some(nid) = ir.as_node(did)
+                && let Some(b) = ir.nodes[nid.0].bases.first()
+            {
+                return it.resolve(ir.decl_nodes[b.target().0].name);
             }
             ""
         }
         DeclKind::Edge => {
-            if let Some(eid) = ir.as_edge(did) {
-                if let Some(b) = ir.edges[eid.0].bases.first() {
-                    return it.resolve(ir.decl_nodes[b.target().0].name);
-                }
+            if let Some(eid) = ir.as_edge(did)
+                && let Some(b) = ir.edges[eid.0].bases.first()
+            {
+                return it.resolve(ir.decl_nodes[b.target().0].name);
             }
             ""
         }
@@ -532,10 +582,14 @@ fn decl_inherits(did: DeclId, target_name: &str, ir: &Ir, it: &Interner) -> bool
     let mut visited = std::collections::HashSet::new();
     let mut stack = vec![did];
     while let Some(d) = stack.pop() {
-        if !visited.insert(d) { continue; }
+        if !visited.insert(d) {
+            continue;
+        }
         let decl = &ir.decl_nodes[d.0];
         let nm = it.resolve(decl.name);
-        if nm == target_name { return true; }
+        if nm == target_name {
+            return true;
+        }
         match decl.kind {
             DeclKind::Node => {
                 if let Some(nid) = ir.as_node(d) {
@@ -558,10 +612,14 @@ fn decl_inherits(did: DeclId, target_name: &str, ir: &Ir, it: &Interner) -> bool
 }
 
 fn has_arc_ref(did: DeclId, sign: i8, inner: &str, ir: &Ir, it: &Interner) -> bool {
-    let Some(eid) = ir.as_edge(did) else { return false };
+    let Some(eid) = ir.as_edge(did) else {
+        return false;
+    };
     for &aid in &ir.edges[eid.0].arcs {
         for r in &ir.arcs[aid.0].refs {
-            if r.sign() != sign { continue; }
+            if r.sign() != sign {
+                continue;
+            }
             let target = r.target();
             if match_expr(inner, target, ir, it) {
                 return true;

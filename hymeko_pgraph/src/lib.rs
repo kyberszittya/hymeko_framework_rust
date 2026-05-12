@@ -31,6 +31,13 @@
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+// Clippy `-D warnings` staging (collapsible_ifs, tag scans, map iteration style).
+#![allow(
+    clippy::collapsible_if,
+    clippy::for_kv_map,
+    clippy::manual_contains,
+    clippy::only_used_in_recursion,
+)]
 
 pub mod abb;
 pub mod axioms;

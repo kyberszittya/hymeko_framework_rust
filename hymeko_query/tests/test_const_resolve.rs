@@ -10,8 +10,8 @@
 #[cfg(test)]
 mod test_const_resolve {
     use crate::test_helpers::load_and_lower;
-    use hymeko_formats::urdf::generate_urdf;
     use hymeko_formats::sdf::generate_sdf;
+    use hymeko_formats::urdf::generate_urdf;
 
     const ROOT_NAME: &str = "mini_with_consts";
     const CONSTS_FIXTURE: &str = "../data/minimal_examples/constants/mini_with_consts.hymeko";
@@ -24,10 +24,8 @@ mod test_const_resolve {
         let (literals_store, literals_compiled) =
             load_and_lower(LITERALS_FIXTURE).expect("compile literal fixture");
 
-        let consts_urdf =
-            generate_urdf(&consts_compiled.ir, &consts_store.it, ROOT_NAME);
-        let literals_urdf =
-            generate_urdf(&literals_compiled.ir, &literals_store.it, ROOT_NAME);
+        let consts_urdf = generate_urdf(&consts_compiled.ir, &consts_store.it, ROOT_NAME);
+        let literals_urdf = generate_urdf(&literals_compiled.ir, &literals_store.it, ROOT_NAME);
 
         assert_eq!(
             consts_urdf, literals_urdf,
@@ -42,10 +40,8 @@ mod test_const_resolve {
         let (literals_store, literals_compiled) =
             load_and_lower(LITERALS_FIXTURE).expect("compile literal fixture");
 
-        let consts_sdf =
-            generate_sdf(&consts_compiled.ir, &consts_store.it, ROOT_NAME);
-        let literals_sdf =
-            generate_sdf(&literals_compiled.ir, &literals_store.it, ROOT_NAME);
+        let consts_sdf = generate_sdf(&consts_compiled.ir, &consts_store.it, ROOT_NAME);
+        let literals_sdf = generate_sdf(&literals_compiled.ir, &literals_store.it, ROOT_NAME);
 
         assert_eq!(
             consts_sdf, literals_sdf,

@@ -50,7 +50,7 @@ fn deg_list_to_rad_string(v: &FieldValue) -> String {
 
 /// Parsed template block.
 #[derive(Clone, Debug)]
-enum Block {
+pub enum Block {
     /// Literal text.
     Literal(String),
     /// {{expr}} — interpolate a value.

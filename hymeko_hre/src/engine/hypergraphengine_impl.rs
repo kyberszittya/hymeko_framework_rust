@@ -1,4 +1,5 @@
 use rustc_hash::FxHashMap;
+#[cfg(feature = "ipc")]
 use std::slice;
 use crate::engine::hypergraphengine::HypergraphEngine;
 use hymeko::ir::common::ref_target;
@@ -12,6 +13,12 @@ use crate::expansion;
 use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
 #[cfg(feature = "ipc")]
 use hymeko::tensor::shared_state::{ExpansionHeader, ExpansionKind};
+
+impl Default for HypergraphEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl HypergraphEngine {
     pub fn new() -> Self {
@@ -165,6 +172,8 @@ impl HypergraphEngine {
         expansion::star_expansion_coo(&view)
     }
 
+    #[allow(dead_code)]
+    // Reserved for incremental IR sync; callers use `expand_ir` today.
     fn sync_ir_to_engine(
         ir: &Ir,
         strings: &StringTable,

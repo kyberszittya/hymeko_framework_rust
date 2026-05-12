@@ -660,8 +660,10 @@ def domain_bitcoin_summary() -> list[dict]:
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
-    print(f"compile: {os.environ.get('HSIKAN_TORCH_COMPILE', '0')}")
-    print(f"compile mode: {os.environ.get('HSIKAN_COMPILE_MODE', 'reduce-overhead')}")
+    from .runtime_config import get_runtime
+    _compile = get_runtime().compile
+    print(f"compile: {'1' if _compile.enabled else '0'}")
+    print(f"compile mode: {_compile.mode}")
 
     all_rows = []
     all_rows += domain_bitcoin_summary()

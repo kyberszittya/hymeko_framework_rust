@@ -1,21 +1,21 @@
-use std::error::Error;
-use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicBool, Ordering};
-use iceoryx2::port::publisher::Publisher;
-use iceoryx2::prelude::*;
-use iceoryx2::service::port_factory::publish_subscribe::PortFactory;
-use iceoryx2::service::port_factory::PortFactory as PortFactoryTrait;
-use moka::future::Cache;
-use tokio::sync::mpsc;
-use dashmap::DashMap;
-use tokio::time::interval;
-use tracing::{info, warn};
-use hymeko::ir::ir::Ir;
+use crate::common::{ExecutableQuery, IngressFormat};
 use crate::config::DaemonConfig;
+use crate::iox_ingress::IoxIngressWorker;
+use dashmap::DashMap;
+use hymeko::ir::ir::Ir;
 use hymeko::resolution::interner::Interner;
 use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-use crate::common::{ExecutableQuery, IngressFormat};
-use crate::iox_ingress::{IoxIngressWorker};
+use iceoryx2::port::publisher::Publisher;
+use iceoryx2::prelude::*;
+use iceoryx2::service::port_factory::PortFactory as PortFactoryTrait;
+use iceoryx2::service::port_factory::publish_subscribe::PortFactory;
+use moka::future::Cache;
+use std::error::Error;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, RwLock};
+use tokio::sync::mpsc;
+use tokio::time::interval;
+use tracing::{info, warn};
 
 pub struct PublishRequest {
     pub etag: [u8; 32],
@@ -42,9 +42,7 @@ type ByteServiceFactory = PortFactory<ipc::Service, [u8], ()>;
 
 impl HymekoDaemon {
     pub fn new(config: DaemonConfig) -> Self {
-        let cache = Cache::builder()
-            .max_capacity(config.cache_size)
-            .build();
+        let cache = Cache::builder().max_capacity(config.cache_size).build();
         let interner = Arc::new(RwLock::new(Interner::new()));
         let graph_memory = Arc::new(DashMap::new());
         let agg_cfg = Arc::new(AggCfg {
@@ -52,7 +50,13 @@ impl HymekoDaemon {
             weight: WeightAgg::Sum,
             clamp01: false,
         });
-        Self { config, cache, graph_memory, interner, agg_cfg }
+        Self {
+            config,
+            cache,
+            graph_memory,
+            interner,
+            agg_cfg,
+        }
     }
 
     /// The main execution loop of the daemon. Initializes the Iceoryx
@@ -63,8 +67,7 @@ impl HymekoDaemon {
         let is_running = Arc::new(AtomicBool::new(true));
 
         let node = NodeBuilder::new().create::<ipc::Service>()?;
-        let (publisher, pub_clique, pub_ir, egress_service) =
-            self.setup_publishers(&node)?;
+        let (publisher, pub_clique, pub_ir, egress_service) = self.setup_publishers(&node)?;
 
         self.spawn_ingress_workers(&tx, &is_running);
         self.setup_zenoh_bridge(tx.clone()).await?;
@@ -103,9 +106,18 @@ impl HymekoDaemon {
     fn setup_publishers(
         &self,
         node: &Node<ipc::Service>,
-    ) -> Result<(BytePublisher, BytePublisher, BytePublisher, ByteServiceFactory), Box<dyn Error>> {
+    ) -> Result<
+        (
+            BytePublisher,
+            BytePublisher,
+            BytePublisher,
+            ByteServiceFactory,
+        ),
+        Box<dyn Error>,
+    > {
         let egress_name = ServiceName::new(&self.config.service_name)?;
-        let egress_service = node.service_builder(&egress_name)
+        let egress_service = node
+            .service_builder(&egress_name)
             .publish_subscribe::<[u8]>()
             .open_or_create()?;
         let publisher = egress_service
@@ -114,14 +126,22 @@ impl HymekoDaemon {
             .create()?;
 
         let name_clique = ServiceName::new(&(self.config.service_name.clone() + "/tensor/clique"))?;
-        let pub_clique = node.service_builder(&name_clique)
-            .publish_subscribe::<[u8]>().open_or_create()?
-            .publisher_builder().initial_max_slice_len(10 * 1024 * 1024).create()?;
+        let pub_clique = node
+            .service_builder(&name_clique)
+            .publish_subscribe::<[u8]>()
+            .open_or_create()?
+            .publisher_builder()
+            .initial_max_slice_len(10 * 1024 * 1024)
+            .create()?;
 
         let name_ir = ServiceName::new(&(self.config.service_name.clone() + "/ir/cbor"))?;
-        let pub_ir = node.service_builder(&name_ir)
-            .publish_subscribe::<[u8]>().open_or_create()?
-            .publisher_builder().initial_max_slice_len(1024 * 1024).create()?;
+        let pub_ir = node
+            .service_builder(&name_ir)
+            .publish_subscribe::<[u8]>()
+            .open_or_create()?
+            .publisher_builder()
+            .initial_max_slice_len(1024 * 1024)
+            .create()?;
 
         Ok((publisher, pub_clique, pub_ir, egress_service))
     }
@@ -145,7 +165,8 @@ impl HymekoDaemon {
                 tx.clone(),
                 Arc::clone(is_running),
                 Arc::clone(self),
-            ).spawn();
+            )
+            .spawn();
         }
     }
 
@@ -157,19 +178,21 @@ impl HymekoDaemon {
         tx: mpsc::Sender<ExecutableQuery>,
     ) -> Result<(), Box<dyn Error>> {
         let z_session = zenoh::open(zenoh::Config::default())
-            .await.map_err(|e| e.to_string())?;
+            .await
+            .map_err(|e| e.to_string())?;
         let sub_utf8 = z_session
             .declare_subscriber(format!("{}/query/utf8", self.config.service_name))
-            .await.map_err(|e| e.to_string())?;
+            .await
+            .map_err(|e| e.to_string())?;
 
         let self_zenoh = Arc::clone(self);
         tokio::spawn(async move {
             while let Ok(msg) = sub_utf8.recv_async().await {
                 let payload = msg.payload().to_bytes().to_vec();
-                if let Ok(query_str) = String::from_utf8(payload) {
-                    if let Ok(ir) = self_zenoh.compile_to_ir_only(query_str) {
-                        let _ = tx.send(ExecutableQuery { ir }).await;
-                    }
+                if let Ok(query_str) = String::from_utf8(payload)
+                    && let Ok(ir) = self_zenoh.compile_to_ir_only(query_str)
+                {
+                    let _ = tx.send(ExecutableQuery { ir }).await;
                 }
             }
         });
@@ -214,7 +237,9 @@ impl HymekoDaemon {
 /// the sample gets dropped if send fails; both are expected under
 /// back-pressure and not fatal.
 fn publish_bytes(publisher: &BytePublisher, bytes: &[u8]) {
-    let Ok(mut sample) = publisher.loan_slice_uninit(bytes.len()) else { return };
+    let Ok(mut sample) = publisher.loan_slice_uninit(bytes.len()) else {
+        return;
+    };
     unsafe {
         std::ptr::copy_nonoverlapping(
             bytes.as_ptr(),
@@ -227,10 +252,7 @@ fn publish_bytes(publisher: &BytePublisher, bytes: &[u8]) {
 
 /// One heartbeat tick: log subscriber-count transitions (connect /
 /// disconnect) and return the new state for the caller to track.
-fn update_subscriber_state(
-    egress_service: &ByteServiceFactory,
-    had_subscribers: bool,
-) -> bool {
+fn update_subscriber_state(egress_service: &ByteServiceFactory, had_subscribers: bool) -> bool {
     let currently_active = egress_service.dynamic_config().number_of_subscribers() > 0;
     if currently_active && !had_subscribers {
         info!(marker = "[+]", "Subscriber connected");

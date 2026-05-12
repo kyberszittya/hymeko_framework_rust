@@ -103,7 +103,13 @@ mod test_mermaid {
         let revolute = out.matches(" -->|\"").count();
         let fixed = out.matches(" -.->|\"").count();
         // moveo has 6 revolute + 1 fixed = 7 joints.
-        assert_eq!(revolute + fixed, 7, "expected 7 total arrows, got {}+{}", revolute, fixed);
+        assert_eq!(
+            revolute + fixed,
+            7,
+            "expected 7 total arrows, got {}+{}",
+            revolute,
+            fixed
+        );
         assert_eq!(fixed, 1);
         assert_eq!(revolute, 6);
     }
