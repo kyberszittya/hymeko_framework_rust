@@ -1,0 +1,12 @@
+---
+description: Evidence-first results discussion; avoid protocol conflation and redundant fights
+globs: signedkan_wip/**,reports/**,RESULTS_VIEWS_SUITE.md,docs/RESULTS_DISCIPLINE.md
+alwaysApply: true
+---
+
+Before any AUC / “underperformance” / architecture verdict on SignedKAN, HSiKAN, Bitcoin, Epinions, or Slashdot:
+
+1. Read **`docs/RESULTS_DISCIPLINE.md`** and the cited files there (aggregate indexes, `joint_mix_5seed_2026_05_08.jsonl`, `phase8_bitcoin_5seed.json`, etc.).
+2. Never merge **joint mix (~0.98 OTC)** with **phase-8 leanest (~0.85 OTC)** — different protocols; name which one.
+3. Do not re-explain completed on-disk work as new discovery unless the user asks to reproduce.
+4. Stay direct and respectful; no dismissive meta. If the number isn’t in the file, say so and don’t invent.

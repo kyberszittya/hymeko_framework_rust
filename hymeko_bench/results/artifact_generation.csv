@@ -1,6 +1,6 @@
 format,parse_ms_median,transform_ms_median,transform_ms_p95,size_kb,lossless_scope,notes
-URDF,0.510,0.067,0.094,0.281,kinematic subset only,
-SDF,0.510,0.042,0.049,0.337,kinematic subset only,
-COO tensor,0.510,0.008,0.008,1.074,yes (full IR),
-CSR tensor,0.510,0.009,0.010,0.321,yes (full IR),
-Graph JSON,0.510,0.005,0.005,3.473,yes (star expansion),
+URDF,0.239,0.044,0.052,0.281,kinematic subset only,
+SDF,0.239,0.042,0.048,0.337,kinematic subset only,
+COO tensor,0.239,0.007,0.008,1.074,yes (full IR),
+CSR tensor,0.239,0.009,0.009,0.321,yes (full IR),
+Graph JSON,0.239,0.005,0.005,3.473,yes (star expansion),

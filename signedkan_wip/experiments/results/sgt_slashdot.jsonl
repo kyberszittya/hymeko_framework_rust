@@ -1,0 +1,3 @@
+{"dataset": "slashdot", "model": "SGT", "hidden": 32, "n_layers": 2, "seed": 0, "wall_s": 109.3, "auc": 0.8984662147658101, "f1m": 0.7751152835004211, "train_s": 83.34838461875916, "fwd_per_call_ms": 787.4668235017452, "n_params": 2655889}
+{"dataset": "slashdot", "model": "SGT", "hidden": 32, "n_layers": 2, "seed": 1, "wall_s": 109.0, "auc": 0.897341192451523, "f1m": 0.7800971417967979, "train_s": 84.27951455116272, "fwd_per_call_ms": 770.701294997707, "n_params": 2655889}
+{"dataset": "slashdot", "model": "SGT", "hidden": 32, "n_layers": 2, "seed": 2, "wall_s": 109.0, "auc": 0.8948731240075982, "f1m": 0.7784839714303522, "train_s": 84.07661175727844, "fwd_per_call_ms": 774.1410864982754, "n_params": 2655889}

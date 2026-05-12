@@ -1,0 +1,1 @@
+{"dataset": "epinions", "model": "HSiKAN-mixed", "hidden": 32, "n_test": 84138, "arities": [3, 4, 3, 4], "auc": 0.8130235164125581, "f1m": 0.4978856017144507, "fwd_per_call_ms": 473.53469001245685, "n_params": 4220134, "seed": 3}

@@ -1,8 +1,8 @@
 corpus,arity_k,encoding,n_verts,n_edges,signed_entries,polarity,build_median_ms,build_p95_ms
-canonical,,hypergraph,23,10,32,true,0.2453,0.3559
-canonical,,star,33,32,32,true,0.2453,0.3559
-canonical,,clique,23,40,0,false,0.2453,0.3559
-canonical,,binary,23,40,0,false,0.2453,0.3559
+canonical,,hypergraph,23,10,32,true,0.2358,0.2449
+canonical,,star,33,32,32,true,0.2358,0.2449
+canonical,,clique,23,40,0,false,0.2358,0.2449
+canonical,,binary,23,40,0,false,0.2358,0.2449
 arity_sweep,2,hypergraph,2,1,2,true,,
 arity_sweep,2,star,3,2,2,true,,
 arity_sweep,2,clique,2,1,0,false,,

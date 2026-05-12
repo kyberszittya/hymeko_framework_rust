@@ -1,0 +1,86 @@
+[
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "hidden": 16,
+    "spline_kind": "catmull_rom",
+    "trained": {
+      "auc": 0.7566023344244577,
+      "f1m": 0.7039507571855361,
+      "inner_hist": {
+        "sine": 26,
+        "cubic": 3,
+        "zero": 3
+      },
+      "outer_hist": {
+        "sine": 28,
+        "cubic": 4
+      },
+      "combined_hist": {
+        "sine": 54,
+        "cubic": 7,
+        "zero": 3
+      },
+      "combined_norm": {
+        "sine": 0.8438,
+        "cubic": 0.1094,
+        "zero": 0.0469
+      }
+    },
+    "untrained": {
+      "inner_hist": {
+        "sine": 19,
+        "cubic": 13
+      },
+      "outer_hist": {
+        "cubic": 20,
+        "sine": 12
+      },
+      "combined_hist": {
+        "sine": 31,
+        "cubic": 33
+      },
+      "combined_norm": {
+        "sine": 0.4844,
+        "cubic": 0.5156
+      }
+    },
+    "random_coefs": {
+      "inner_hist": {
+        "sine": 16,
+        "cubic": 15,
+        "exp": 1
+      },
+      "outer_hist": {
+        "sine": 18,
+        "cubic": 13,
+        "exp": 1
+      },
+      "combined_hist": {
+        "sine": 34,
+        "cubic": 28,
+        "exp": 2
+      },
+      "combined_norm": {
+        "sine": 0.5312,
+        "cubic": 0.4375,
+        "exp": 0.0312
+      }
+    },
+    "gp_draws": {
+      "n": 200,
+      "hist": {
+        "sine": 104,
+        "cubic": 92,
+        "tanh": 3,
+        "exp": 1
+      },
+      "norm": {
+        "sine": 0.52,
+        "cubic": 0.46,
+        "tanh": 0.015,
+        "exp": 0.005
+      }
+    }
+  }
+]

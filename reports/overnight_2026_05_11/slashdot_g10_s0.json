@@ -1,0 +1,1 @@
+{"dataset": "slashdot", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 54921, "arities": [3, 4, 5], "auc": 0.8496938179235085, "f1m": 0.8032396567789644, "fwd_per_call_ms": 256.4947234932333, "n_params": 1314772, "seed": 0}

@@ -1,0 +1,24 @@
+
+Phase 1 smoke: n_images=5000  epochs=50  lr=0.003  device=cuda
+  dataset: X=(5000, 3, 64, 64)  counts.mean=1.95
+
+  config                start      end   drop   wall  box_acc circ_acc
+  ------------------  -------  -------  -----  -----  -------  --------
+  baseline            start=  3.553  end=  3.399  drop=  4.4%  wall=399.3s  box_acc=0.00  circ_acc=0.00  mAP50=0.005  mAP50:95=0.001  mIoU=0.241
+  boxes-only          start=  3.582  end=  2.594  drop= 27.6%  wall=373.8s  box_acc=0.28  circ_acc=0.00  mAP50=0.153  mAP50:95=0.058  mIoU=0.408
+  circles-only        start=  3.660  end=  3.245  drop= 11.3%  wall=375.7s  box_acc=0.00  circ_acc=0.00  mAP50=0.018  mAP50:95=0.005  mIoU=0.309
+  boxes+circles       start=  7.022  end=  2.673  drop= 61.9%  wall=571.2s  box_acc=0.78  circ_acc=0.64  mAP50=0.923  mAP50:95=0.319  mIoU=0.561
+  +ricci-mod          start=  7.077  end=  3.892  drop= 45.0%  wall=594.3s  box_acc=0.28  circ_acc=0.86  mAP50=0.546  mAP50:95=0.176  mIoU=0.511
+  +kcycle             start=  7.107  end=  2.584  drop= 63.6%  wall=812.3s  box_acc=0.83  circ_acc=0.71  mAP50=0.160  mAP50:95=0.040  mIoU=0.366
+
+=== Phase 1 acceptance ===
+  baseline           : loss drop ≥ 30%? FAIL
+  boxes-only         : loss drop ≥ 30%? FAIL
+  circles-only       : loss drop ≥ 30%? FAIL
+  boxes+circles      : loss drop ≥ 30%? PASS
+  +ricci-mod         : loss drop ≥ 30%? PASS
+  +kcycle            : loss drop ≥ 30%? PASS
+
+  PHASE-1 SMOKE: FAIL
+
+  Results written to reports/overnight_2026_05_11_stage7/hymeyolo_ricci_n5k_e50_s4.jsonl

@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/run_final_cell.py", line 778, in <module>
+    main()
+    ~~~~^^
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/run_final_cell.py", line 759, in main
+    out = cell_signed_graph(args.dataset, args.model, args.hidden,
+                              args.n_epochs, args.max_k4, device,
+                              seed=args.seed)
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/run_final_cell.py", line 97, in cell_signed_graph
+    y_tr = torch.from_numpy((s_tr == 1).astype(np.float32)).to(device)
+RuntimeError: CUDA driver error: out of memory

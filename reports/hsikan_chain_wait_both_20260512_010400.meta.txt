@@ -1,0 +1,8 @@
+queued_utc=2026-05-12T01:04:00Z
+waits_for=run-rddecb84693354dcc8fed6ba5efd0fc40.service run-r510f90ddd54749488a43368229eb050f.service
+then_runs=hsikan_chain_witness -> /home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_chain_witness_20260512_010400.txt
+jsonl_inputs=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_lean_bitcoin_overnight_20260512_004029.jsonl
+jsonl_inputs+=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_lean_bitcoin_followup_20260512_005949.jsonl
+launcher=/tmp/hsikan_wait_both_20260512_010400_I29iuz.sh
+log=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_chain_wait_both_20260512_010400.log
+Running as unit: run-r9a245205509d4c78bd8675fefb095020.service
