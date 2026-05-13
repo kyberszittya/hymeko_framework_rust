@@ -7,6 +7,8 @@ for the architectural plan.
 """
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -227,11 +229,36 @@ class InnerCPMLCore(nn.Module):
     Default L=3 (periphery → mid → centre). Uses the MLP per-tier
     aggregator since the spheres already host the specialised
     aggregators (Clifford-FIR outside, HSiKAN-CR middle).
+
+    ``topology="route"`` (default): each tier routes its cycle pool through
+    an aggregator that reads **base** ``d_in`` features (no widening
+    concat between tiers inside the CPML stack).
+
+    ``topology="pyramid"``: legacy widening-concat inward stack (larger
+    aggregators and activation footprint from tier 1 onward).
+
+    ``tier_organization`` (``CPMLConfig``): ``structural`` (default) uses
+    hard cycle→tier masks from ``tier_of``; ``capsule_soft`` adds a learned
+    softmax router over tiers (**route** topology only).
     """
 
     def __init__(
-        self, d_in: int, d_layer: int,
-        n_tiers: int = 3, cycle_k: int = 3,
+        self,
+        d_in: int,
+        d_layer: int,
+        n_tiers: int = 3,
+        cycle_k: int = 3,
+        *,
+        topology: Literal["route", "pyramid"] = "route",
+        tier_organization: Literal["structural", "capsule_soft"] = "structural",
+        capsule_route_hidden: int = 64,
+        capsule_routing_iterations: int = 1,
+        capsule_soft_router: Literal[
+            "auto", "mlp_softmax", "hypergraph_conv", "em_agreement",
+        ] = "auto",
+        capsule_hg_hidden: int = 64,
+        capsule_hg_cache_degrees: bool = True,
+        torch_compile_hypergraph: bool = False,
     ):
         super().__init__()
         cuts = tuple(np.linspace(0.0, 1.0, n_tiers + 1).tolist())
@@ -240,6 +267,14 @@ class InnerCPMLCore(nn.Module):
             d_in=d_in, d_layer=d_layer,
             aggregator_kind="mlp",
             cycle_k=cycle_k,
+            topology=topology,
+            tier_organization=tier_organization,
+            capsule_route_hidden=capsule_route_hidden,
+            capsule_routing_iterations=capsule_routing_iterations,
+            capsule_soft_router=capsule_soft_router,
+            capsule_hg_hidden=capsule_hg_hidden,
+            capsule_hg_cache_degrees=capsule_hg_cache_degrees,
+            torch_compile_hypergraph=torch_compile_hypergraph,
         )
         self.cpml = CPML(self.cfg)
 

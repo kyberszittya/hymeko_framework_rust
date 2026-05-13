@@ -7,7 +7,10 @@ Search space (per trial):
 - per-slot booleans for $\mathcal{K} \subseteq \{c2,c3,c4,c5,w2,w3,w4,w5\}$
   (rejected as `TrialPruned` if all-empty)
 - hidden $\in \{4, 8, 16\}$
-- attention kind $\in \{\text{none}, \text{dot}, \text{quaternion}\}$
+- attention kind $\in \{\text{none}, \text{dot}, \text{quaternion}\}$ on
+  large GPUs; **small GPUs** (total VRAM below 12 GiB by default) search
+  **none** only — see ``_attention_kind_candidates()`` / env
+  ``HSIKAN_OPTUNA_ATTENTION_*``.
 - Highway gate $\in \{0, 1\}$ when attention is on; max ∈ [0.1, 1.0]
 - $\lambda_\alpha, \lambda_{\rm attn}$ as log-uniform conditional on use
 - max_k caps shared across $k\in\{2,3,4\}$, $\in \{50K, 100K, 200K\}$
@@ -15,6 +18,14 @@ Search space (per trial):
 
 Storage: SQLite for resumability.  Use `--study-name X --storage
 sqlite:///hsikan_bo.db` to persist across launches.
+
+``main()`` holds the repo-wide **CUDA job flock** (``cuda_job_lock``) for the
+whole study so Optuna does not overlap the SOTA gate or a second Optuna
+process on the same GPU host (disable with ``HYMEKO_CUDA_DISABLE_JOB_LOCK=1``).
+
+To block until every in-flight ``run_optuna_search`` has exited (then e.g.
+start a fresh study that picks up the latest code on disk), use
+``signedkan_wip/experiments/wait_until_no_optuna_search.sh``.
 
 Example:
     python -m signedkan_wip.src.run_optuna_search \\
@@ -33,6 +44,45 @@ import optuna
 
 
 SLOT_TAGS = ("c2", "c3", "c4", "c5", "w2", "w3", "w4", "w5")
+
+
+def _attention_kind_candidates() -> list[str]:
+    """Return Optuna ``attention_kind`` search space.
+
+    Dot / quaternion attention materialises large score tensors on ``M_e``;
+    on **small** GPUs this routinely OOMs before any AUC is emitted.  By
+    default we **drop** ``dot`` and ``quaternion`` when the **primary CUDA
+    device** reports **total** VRAM strictly below **12 GiB** (configurable).
+
+    Override env (first match wins):
+
+    * ``HSIKAN_OPTUNA_ATTENTION_KINDS`` — comma list, e.g. ``none,dot``.
+    * ``HSIKAN_OPTUNA_SKIP_EXPENSIVE_ATTENTION=1`` — force ``none`` only.
+    * ``HSIKAN_OPTUNA_ATTENTION_VRAM_GIB_MIN`` — float threshold in GiB;
+      if ``total_memory < min * 1024**3``, use ``none`` only (ignored when
+      ``ATTENTION_KINDS`` or ``SKIP`` is set).
+    """
+    raw = os.environ.get("HSIKAN_OPTUNA_ATTENTION_KINDS", "").strip()
+    if raw:
+        return [x.strip() for x in raw.split(",") if x.strip()]
+    if os.environ.get("HSIKAN_OPTUNA_SKIP_EXPENSIVE_ATTENTION", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return ["none"]
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            total = int(torch.cuda.get_device_properties(0).total_memory)
+            gib = float(os.environ.get("HSIKAN_OPTUNA_ATTENTION_VRAM_GIB_MIN", "12"))
+            limit = int(gib * (1024**3))
+            if total < limit:
+                return ["none"]
+    except Exception:
+        pass
+    return ["none", "dot", "quaternion"]
 
 
 def _parse_auc(stdout: str) -> float | None:
@@ -59,9 +109,8 @@ def objective(trial: optuna.Trial, dataset: str, seed: int = 0,
 
     # 2. Architectural categorical knobs.
     hidden = trial.suggest_categorical("hidden", [4, 8, 16])
-    attn_kind = trial.suggest_categorical(
-        "attention_kind", ["none", "dot", "quaternion"]
-    )
+    attn_choices = _attention_kind_candidates()
+    attn_kind = trial.suggest_categorical("attention_kind", attn_choices)
     if attn_kind != "none":
         use_highway = trial.suggest_categorical("highway", [True, False])
         highway_max = (
@@ -159,31 +208,34 @@ def main():
                     choices=["tpe", "gp", "random"])
     args = ap.parse_args()
 
-    if args.sampler == "tpe":
-        sampler = optuna.samplers.TPESampler(seed=42)
-    elif args.sampler == "gp":
-        sampler = optuna.samplers.GPSampler(seed=42)
-    else:
-        sampler = optuna.samplers.RandomSampler(seed=42)
+    from signedkan_wip.src.benchmarks.cuda_job_lock import cuda_job_lock
 
-    study = optuna.create_study(
-        direction="maximize",
-        study_name=args.study_name,
-        storage=args.storage,
-        load_if_exists=True,
-        sampler=sampler,
-    )
-    study.optimize(
-        lambda t: objective(
-            t, args.dataset, seed=args.seed, n_epochs=args.n_epochs,
-            run_timeout_s=args.run_timeout_s,
-        ),
-        n_trials=args.n_trials,
-    )
+    with cuda_job_lock():
+        if args.sampler == "tpe":
+            sampler = optuna.samplers.TPESampler(seed=42)
+        elif args.sampler == "gp":
+            sampler = optuna.samplers.GPSampler(seed=42)
+        else:
+            sampler = optuna.samplers.RandomSampler(seed=42)
 
-    print()
-    print(f"Best trial #{study.best_trial.number}: AUC={study.best_value:.4f}")
-    print(f"Best params: {study.best_params}")
+        study = optuna.create_study(
+            direction="maximize",
+            study_name=args.study_name,
+            storage=args.storage,
+            load_if_exists=True,
+            sampler=sampler,
+        )
+        study.optimize(
+            lambda t: objective(
+                t, args.dataset, seed=args.seed, n_epochs=args.n_epochs,
+                run_timeout_s=args.run_timeout_s,
+            ),
+            n_trials=args.n_trials,
+        )
+
+        print()
+        print(f"Best trial #{study.best_trial.number}: AUC={study.best_value:.4f}")
+        print(f"Best params: {study.best_params}")
 
 
 if __name__ == "__main__":

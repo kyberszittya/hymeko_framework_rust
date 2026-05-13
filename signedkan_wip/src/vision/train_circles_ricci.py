@@ -34,6 +34,7 @@ from .cluttered_mnist import make_cluttered_mnist_hungarian_format
 from .hymeyolo_circles_ricci import RicciHyMeYOLOMulti
 from .hymeyolo_hungarian import HyMeYOLOMulti, hungarian_set_loss
 from .hymeyolo_kcycle import KCycleHyMeYOLOMulti
+from .hymeyolo_ricci_kcycle import RicciKCycleHyMeYOLOMulti
 from .hymeyolo_q_smoke import gt_corners_from_box
 
 
@@ -450,7 +451,7 @@ def main() -> None:
     p.add_argument(
         "--configs", default=None,
         help="Comma-separated subset of {baseline,boxes-only,circles-only,"
-             "boxes+circles,+ricci-mod,+kcycle}; default = all six.",
+             "boxes+circles,+ricci-mod,+kcycle,+ricci+kcycle}; default = all seven.",
     )
     args = p.parse_args()
     device = torch.device(args.device)
@@ -484,6 +485,18 @@ def main() -> None:
         # query types.
         ("+kcycle",       KCycleHyMeYOLOMulti(n_box_queries=4, n_circle_queries=2,
                                                 box_k=4, circle_k=8, d_hidden=32)),
+        # 2026-05-13 new: Ricci × k-cycles curvature mixed.
+        # Unifies the signed k-cycle σ-product (structural curvature)
+        # with the geometric Ricci scalar signature (κ, mean_cos_θ,
+        # edge_var). Both signals feed offset prediction AND
+        # classification — closes the +kcycle localization bug where
+        # the signed-cycle aggregator was cls-only. See
+        # reports/2026-05-13-hymeyolo-kcycle-localization-bug.md and
+        # signedkan_wip/tests/test_ricci_kcycle.py for the regression
+        # gate.
+        ("+ricci+kcycle", RicciKCycleHyMeYOLOMulti(n_box_queries=4, n_circle_queries=2,
+                                                    box_k=4, circle_k=8, d_hidden=32,
+                                                    ricci_modulation=True)),
     ]
     if args.configs:
         keep = set(args.configs.split(","))
@@ -492,7 +505,7 @@ def main() -> None:
             raise SystemExit(
                 f"--configs={args.configs!r} matches no known config; "
                 f"valid: baseline, boxes-only, circles-only, "
-                f"boxes+circles, +ricci-mod, +kcycle",
+                f"boxes+circles, +ricci-mod, +kcycle, +ricci+kcycle",
             )
 
     print(f"\n  {'config':<18s}  {'start':>7s}  {'end':>7s}  "

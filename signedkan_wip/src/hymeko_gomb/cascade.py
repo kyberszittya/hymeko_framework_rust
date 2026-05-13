@@ -12,11 +12,13 @@ Three model classes that consume the shells defined in `shells.py`:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .joint_enumeration import SLOT_K
 from .shells import InnerCPMLCore, MiddleHSiKAN, OuterFIRShell
 
 
@@ -33,6 +35,24 @@ class GombConfig:
     cycle_k: int = 3
     middle_grid: int = 5
     d_predictor_hidden: int = 32
+    #: CPML readout inside ``InnerCPMLCore``: ``route`` (default) vs legacy
+    #: ``pyramid`` (wider tier aggregators + larger activation tensors).
+    cpml_topology: Literal["route", "pyramid"] = "route"
+    #: How cycles are assigned to CPML tiers: hard **structural** incidence
+    #: vs **capsule_soft** learned softmax routing (``route`` topology only).
+    cpml_tier_organization: Literal["structural", "capsule_soft"] = "structural"
+    #: Router MLP hidden dim when ``cpml_capsule_soft_router`` resolves to
+    #: ``mlp_softmax`` (see ``CPMLConfig``).
+    cpml_capsule_route_hidden: int = 64
+    cpml_capsule_routing_iterations: int = 1
+    cpml_capsule_soft_router: Literal[
+        "auto", "mlp_softmax", "hypergraph_conv", "em_agreement",
+    ] = "auto"
+    cpml_capsule_hg_hidden: int = 64
+    #: Cache ``D_v`` for ``hypergraph_conv`` when the same ``cycles`` tensor is reused.
+    cpml_capsule_hg_cache_degrees: bool = True
+    #: ``torch.compile`` the hypergraph routing head (PyTorch 2.x).
+    cpml_torch_compile_hypergraph: bool = False
 
 
 # ─── Full three-shell cascade ───────────────────────────────────────
@@ -74,6 +94,14 @@ class HymeKoGomb(nn.Module):
         self.core = InnerCPMLCore(
             d_in=core_in, d_layer=cfg.d_core,
             n_tiers=cfg.n_tiers, cycle_k=cfg.cycle_k,
+            topology=cfg.cpml_topology,
+            tier_organization=cfg.cpml_tier_organization,
+            capsule_route_hidden=cfg.cpml_capsule_route_hidden,
+            capsule_routing_iterations=cfg.cpml_capsule_routing_iterations,
+            capsule_soft_router=cfg.cpml_capsule_soft_router,
+            capsule_hg_hidden=cfg.cpml_capsule_hg_hidden,
+            capsule_hg_cache_degrees=cfg.cpml_capsule_hg_cache_degrees,
+            torch_compile_hypergraph=cfg.cpml_torch_compile_hypergraph,
         )
 
     def forward(
@@ -115,6 +143,14 @@ class GombNoOuter(nn.Module):
         self.core = InnerCPMLCore(
             d_in=cfg.d_embed + cfg.d_middle, d_layer=cfg.d_core,
             n_tiers=cfg.n_tiers, cycle_k=cfg.cycle_k,
+            topology=cfg.cpml_topology,
+            tier_organization=cfg.cpml_tier_organization,
+            capsule_route_hidden=cfg.cpml_capsule_route_hidden,
+            capsule_routing_iterations=cfg.cpml_capsule_routing_iterations,
+            capsule_soft_router=cfg.cpml_capsule_soft_router,
+            capsule_hg_hidden=cfg.cpml_capsule_hg_hidden,
+            capsule_hg_cache_degrees=cfg.cpml_capsule_hg_cache_degrees,
+            torch_compile_hypergraph=cfg.cpml_torch_compile_hypergraph,
         )
 
     def forward(self, cycles, signs, tier_of, edges_to_score):
@@ -146,6 +182,14 @@ class GombNoMiddle(nn.Module):
         self.core = InnerCPMLCore(
             d_in=cfg.d_embed + outer_out, d_layer=cfg.d_core,
             n_tiers=cfg.n_tiers, cycle_k=cfg.cycle_k,
+            topology=cfg.cpml_topology,
+            tier_organization=cfg.cpml_tier_organization,
+            capsule_route_hidden=cfg.cpml_capsule_route_hidden,
+            capsule_routing_iterations=cfg.cpml_capsule_routing_iterations,
+            capsule_soft_router=cfg.cpml_capsule_soft_router,
+            capsule_hg_hidden=cfg.cpml_capsule_hg_hidden,
+            capsule_hg_cache_degrees=cfg.cpml_capsule_hg_cache_degrees,
+            torch_compile_hypergraph=cfg.cpml_torch_compile_hypergraph,
         )
 
     def forward(self, cycles, signs, tier_of, edges_to_score):
@@ -252,6 +296,14 @@ class MixedArityGomb(nn.Module):
             self.cores[sk] = InnerCPMLCore(
                 d_in=core_in, d_layer=cfg.d_core,
                 n_tiers=cfg.n_tiers, cycle_k=k,
+                topology=cfg.cpml_topology,
+                tier_organization=cfg.cpml_tier_organization,
+                capsule_route_hidden=cfg.cpml_capsule_route_hidden,
+                capsule_routing_iterations=cfg.cpml_capsule_routing_iterations,
+                capsule_soft_router=cfg.cpml_capsule_soft_router,
+                capsule_hg_hidden=cfg.cpml_capsule_hg_hidden,
+                capsule_hg_cache_degrees=cfg.cpml_capsule_hg_cache_degrees,
+                torch_compile_hypergraph=cfg.cpml_torch_compile_hypergraph,
             )
 
         self.alpha_logits = nn.Parameter(torch.zeros(len(self.cycle_ks)))
@@ -286,6 +338,91 @@ class MixedArityGomb(nn.Module):
         """Current αₖ (softmaxed) — diagnostic for per-arity weight tracking."""
         return F.softmax(self.alpha_logits, dim=0).detach()
 
+class JointMixGomb(nn.Module):
+    """Gömb with **joint_ba** tuple recipe: slots **c3, c4, w2, w3**.
+
+    One full (outer, middle, inner) stack **per named slot** — same
+    pattern as ``MixedArityGomb``, but keys are strings so **c3** and
+    **w2** (both width 3) do not collide.  Learned softmax ``α`` fuses
+    edge logits across slots (parallel to ``MixedAritySignedKAN``'s
+    tuple-slot mixer in ``run_final_cell``).
+
+    Forward:
+        cycles_by_slot : {"c3","c4","w2","w3"} → (M, k) long tensors
+        signs_by_slot  : same keys → (M, k) float/int8 broadcastable
+    """
+
+    SLOTS: tuple[str, ...] = ("c3", "c4", "w2", "w3")
+
+    def __init__(self, cfg: GombConfig):
+        super().__init__()
+        if cfg.n_nodes <= 0:
+            raise ValueError("GombConfig.n_nodes must be set (> 0)")
+        self.cfg = cfg
+
+        self.node_embed = nn.Embedding(cfg.n_nodes, cfg.d_embed)
+        nn.init.normal_(self.node_embed.weight, std=0.1)
+
+        outer_out = cfg.M_outer * cfg.d_outer
+        middle_in = cfg.d_embed + outer_out
+        core_in = cfg.d_embed + outer_out + cfg.d_middle
+
+        self.outers = nn.ModuleDict()
+        self.middles = nn.ModuleDict()
+        self.cores = nn.ModuleDict()
+        for slot in self.SLOTS:
+            k = SLOT_K[slot]
+            self.outers[slot] = OuterFIRShell(
+                d_in=cfg.d_embed, d_layer=cfg.d_outer,
+                M=cfg.M_outer, cycle_k=k,
+            )
+            self.middles[slot] = MiddleHSiKAN(
+                n_nodes=cfg.n_nodes, d_in=middle_in, d_layer=cfg.d_middle,
+                cycle_k=k, grid=cfg.middle_grid,
+            )
+            self.cores[slot] = InnerCPMLCore(
+                d_in=core_in, d_layer=cfg.d_core,
+                n_tiers=cfg.n_tiers, cycle_k=k,
+                topology=cfg.cpml_topology,
+                tier_organization=cfg.cpml_tier_organization,
+                capsule_route_hidden=cfg.cpml_capsule_route_hidden,
+                capsule_routing_iterations=cfg.cpml_capsule_routing_iterations,
+                capsule_soft_router=cfg.cpml_capsule_soft_router,
+                capsule_hg_hidden=cfg.cpml_capsule_hg_hidden,
+                capsule_hg_cache_degrees=cfg.cpml_capsule_hg_cache_degrees,
+                torch_compile_hypergraph=cfg.cpml_torch_compile_hypergraph,
+            )
+
+        self.alpha_logits = nn.Parameter(torch.zeros(len(self.SLOTS)))
+
+    def forward(
+        self,
+        cycles_by_slot: dict[str, torch.Tensor],
+        signs_by_slot: dict[str, torch.Tensor],
+        tier_of: torch.Tensor,
+        edges_to_score: torch.Tensor,
+    ) -> torch.Tensor:
+        x_embed = self.node_embed.weight
+        alpha = F.softmax(self.alpha_logits, dim=0)
+        out: torch.Tensor | None = None
+        for i, slot in enumerate(self.SLOTS):
+            cycles_k = cycles_by_slot[slot]
+            signs_k = signs_by_slot[slot].float()
+            x_outer = self.outers[slot](x_embed, cycles_k, signs_k)
+            x_for_middle = torch.cat([x_embed, x_outer], dim=-1)
+            x_middle = self.middles[slot](x_for_middle, cycles_k, signs_k)
+            x_for_core = torch.cat([x_embed, x_outer, x_middle], dim=-1)
+            scores_k, _ = self.cores[slot](
+                x_for_core, cycles_k, signs_k, tier_of, edges_to_score,
+            )
+            contribution = alpha[i] * scores_k
+            out = contribution if out is None else out + contribution
+        assert out is not None
+        return out
+
+    def alpha(self) -> torch.Tensor:
+        return F.softmax(self.alpha_logits, dim=0).detach()
+
     def n_params(self) -> int:
         return sum(p.numel() for p in self.parameters())
 
@@ -295,4 +432,5 @@ __all__ = [
     "HymeKoGomb",
     "GombNoOuter", "GombNoMiddle", "GombNoInner",
     "MixedArityGomb",
+    "JointMixGomb",
 ]

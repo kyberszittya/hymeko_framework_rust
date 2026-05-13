@@ -26,7 +26,7 @@ use std::collections::BTreeSet;
 use hymeko::common::ids::DeclId;
 
 use crate::lowering::LoweredPGraph;
-use crate::msg::{close_producible, MaximalStructure};
+use crate::msg::{MaximalStructure, close_producible};
 
 /// One feasible solution structure.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -97,11 +97,7 @@ pub fn enumerate_with_options(
 
 /// True iff `sel` is a combinatorially feasible solution structure
 /// for `p` under `opts`.
-pub fn is_feasible(
-    p: &LoweredPGraph,
-    sel: &BTreeSet<DeclId>,
-    opts: SsgOptions,
-) -> bool {
+pub fn is_feasible(p: &LoweredPGraph, sel: &BTreeSet<DeclId>, opts: SsgOptions) -> bool {
     // (a) Every input of every selected unit must be raw or produced
     //     by another selected unit.
     let producible = close_producible(p, sel, &p.raws);

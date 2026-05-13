@@ -64,6 +64,17 @@ Path I **total correlation** multi-information across layers is documented in **
 
 **Naming / design:** what “**orthogonal**” means around Gömb vs the HSiKAN×CPML×FIR **factorial** — see **[HymeKo-Gömb: “orthogonal” meanings](../research/gomb-orthogonal.md)**.
 
+## CPML tier routing (`route` vs `pyramid`)
+
+**Tier map** \(\tau(v)\) from degree percentiles; **tier‑restricted pools** \(\mathcal{C}_\ell\) = cycles touching tier \(\ell\).
+
+- **`topology="route"` (default):** each \(\mathrm{Agg}_\ell\) reads corners from the **same** base \(X^{(0)}\); \(X^{\mathrm{final}} = [X^{(0)}\Vert H_0\Vert\cdots\Vert H_{L-1}]\). Unifying view (Highway carry + Capsule‑style structural routing + KAN corners): **[CPML routes: Highway · Capsule · KAN](../research/cpml-routing-highway-capsule-kan.md)**.
+- **`tier_organization`:** ``structural`` (default) uses pools \(\mathcal{C}_\ell\) as above; ``capsule_soft`` (**route only**) uses a learned softmax over tiers per cycle — see the handbook.
+
+- **`topology="pyramid"`:** widening concat state tier‑over‑tier (legacy inward funnel).
+
+Compact pointer from repo root: **`docs/math/cpml-route-unification.md`**.
+
 ---
 
 **Further reading (entropy programme):** repo root `RESULTS_VIEWS_SUITE.md` + `reports/thesis_iv_views_suite.tex` / PDFs in `reports/`.

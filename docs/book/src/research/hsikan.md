@@ -31,6 +31,7 @@ $$h_c = \sum_{s \in \{+, -\}} \phi_e^s\!\left(\sum_{i: \sigma_i = s} \phi_v^s(h_
 
 ## See also
 
+- [NN variants & layer geometry](./nn-architectures-and-layer-geometry.md) — how `SignedKANLayer`, `MultiLayerSignedKAN`, and `MixedAritySignedKAN` stack in code
 - `signedkan_wip/HSIKAN_FINAL_RESULTS_2026_05_03.md` — the published 5-seed numbers
 - `signedkan_wip/HSIKAN_STATE_2026_05_04.md` — current research state
 - [HyMeKo-driven training](./hymeko-driven.md) — how to drive HSiKAN from .hymeko configs

@@ -57,7 +57,7 @@ def _attn_softmax_dispatch(scores: torch.Tensor, index: torch.Tensor,
     highest-scoring entries per row contribute to softmax; the rest
     get exactly zero attention weight.
     """
-    from .runtime_config import get_runtime
+    from ..runtime_config import get_runtime
     K = get_runtime().training.sparse_attn_k
     if K > 0:
         return _scatter_topk_softmax(scores, index, n_rows, K)

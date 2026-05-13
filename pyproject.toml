@@ -28,6 +28,14 @@ ml = [
     "torch==2.4.1",
     "torchvision>=0.19.1,<0.20",
 ]
+# `demo` powers `signedkan_wip/src/demo/gui.py` (Gradio GUI + matplotlib +
+# NetworkX subgraph rendering). Opt-in: `uv sync --group ml --group demo`.
+demo = [
+    "gradio>=4,<6",
+    "matplotlib>=3.8,<4",
+    "networkx>=3,<4",
+    "pandas>=2,<3",
+]
 
 [tool.uv.workspace]
 # `ehk_torch_stub` is omitted here: it depends on `torch` and would pull the full

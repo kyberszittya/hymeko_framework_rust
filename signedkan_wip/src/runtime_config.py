@@ -128,6 +128,10 @@ class TrainingConfig:
     walk_lens:         tuple[int, ...]   = ()
     cycle_batch:       int | None        = None
     entropy_lambda:    float             = 0.0
+    # Shannon entropy on arity-mixer α (peaked vs uniform).
+    alpha_entropy_lambda: float          = 0.0
+    # Mean per-arity attention weight entropy (cycle attention head).
+    attn_entropy_lambda: float          = 0.0
     gumbel_hard:       bool              = False
     gumbel_tau:        float             = 1.0
     per_edge_gate:     bool              = False
@@ -229,6 +233,10 @@ def _parse_training() -> TrainingConfig:
         walk_lens=walk_lens,
         cycle_batch=cycle_batch,
         entropy_lambda=_env_float("HSIKAN_ENTROPY_LAMBDA", 0.0),
+        alpha_entropy_lambda=_env_float(
+            "HSIKAN_ALPHA_ENTROPY_LAMBDA", 0.0),
+        attn_entropy_lambda=_env_float(
+            "HSIKAN_ATTN_ENTROPY_LAMBDA", 0.0),
         gumbel_hard=_env_bool("HSIKAN_GUMBEL_HARD", False),
         gumbel_tau=_env_float("HSIKAN_GUMBEL_TAU", 1.0),
         per_edge_gate=_env_bool("HSIKAN_PER_EDGE_GATE", False),

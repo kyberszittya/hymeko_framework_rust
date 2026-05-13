@@ -1,0 +1,66 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{tikz}
+\usepackage{hyperref}
+\title{G\"omb tuning vs.\ non-HSiKAN AUC bars (SGCN territory)}
+\author{ops}
+\date{2026-05-12}
+\begin{document}
+\maketitle
+
+\paragraph{Scope.}
+Position HymeKo-G\"omb (single-$k$, mixed-arity, and joint-mix joint-BA
+recipe) against \emph{external} signed link-prediction bars already
+documented in-repo: \textbf{published SGCN} (Derr 2018, $\sim$0.91--0.93
+AUC on Bitcoin SNAP graphs) and \textbf{in-repo tuned SGCN} (e.g.\ Alpha
+0.927, OTC 0.957, Slashdot $\sim$0.914 under matched protocol; see
+\texttt{PAPER\_DRAFT\_2026\_05\_03.md}).  HSiKAN headline numbers are
+\emph{out of scope} as the primary target; they serve only as context.
+
+\paragraph{Goal (staged).}
+\textbf{Stage A (publishable):} maximize single-seed \texttt{test\_auroc}
+from \texttt{run\_gomb\_tune} / \texttt{run\_gomb\_smoke} until best trial
+meets or exceeds published SGCN ($\geq$0.91 Bitcoin Alpha, $\geq$0.93
+Bitcoin OTC under our split).  \textbf{Stage B (stretch):} reduce gap to
+in-repo tuned SGCN where VRAM and enumeration caps allow.
+
+\paragraph{Affected files.}
+\texttt{docs/plans/2026-05-12-gomb-external-auc-tuning/*},
+\texttt{signedkan\_wip/experiments/run\_gomb\_external\_auc\_tuning.sh},
+\texttt{reports/2026-05-12-gomb-external-auc-tuning-results.md} (append-only
+JSONL summaries).  \textbf{CORE.YAML:} none.
+
+\paragraph{Procedure.}
+(1)~Joint-mix envelope: \texttt{run\_gomb\_tune --joint-mix} on
+\texttt{bitcoin\_otc}, \texttt{bitcoin\_alpha} (Bitcoin-first; VRAM
+clamps already in \texttt{for\_joint\_mix\_tuning}).  (2)~Vanilla/mixed
+envelope: same driver \emph{without} \texttt{--joint-mix} to explore
+single-$k$ default G\"omb and occasional \texttt{--cycle-ks 3,4}.
+(3)~Log JSONL; compare best \texttt{test\_auroc} to Stage A/B thresholds.
+(4)~Optional later: Slashdot under \texttt{--architecture compact}.
+
+\paragraph{Test strategy.}
+No new unit tests required for the shell driver; existing
+\texttt{test\_hymeko\_gomb.py} tuner tests remain the regression gate for
+\texttt{run\_gomb\_tune}.
+
+\paragraph{Performance budget.}
+Per subprocess: existing \texttt{--timeout-s} default (7200\,s); total wall
+for a dual-envelope batch $\leq$2\,h on RTX-class 8\,GB unless datasets
+expand.
+
+\paragraph{Rollback.}
+Remove plan directory and experiment script; delete or archive JSONL
+artifacts; no framework defaults change.
+
+\paragraph{Risk.}
+CUDA OOM on joint-mix despite clamps; single-seed maxima overfit val;
+Slashdot requires compact search and long epochs---defer to follow-up.
+
+\begin{figure}[h]
+\centering
+\input{plan.tikz}
+\caption{Objective: G\"omb smoke output vs.\ external SGCN bars.}
+\end{figure}
+
+\end{document}

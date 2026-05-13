@@ -107,14 +107,20 @@ impl PGraphSchema {
         }
         // Bipartite check on edges.
         for (e, (src, dst)) in &edges {
-            let src_kind = kinds.get(src).copied().ok_or(PGraphError::UnknownEndpoint {
-                edge: *e,
-                decl: *src,
-            })?;
-            let dst_kind = kinds.get(dst).copied().ok_or(PGraphError::UnknownEndpoint {
-                edge: *e,
-                decl: *dst,
-            })?;
+            let src_kind = kinds
+                .get(src)
+                .copied()
+                .ok_or(PGraphError::UnknownEndpoint {
+                    edge: *e,
+                    decl: *src,
+                })?;
+            let dst_kind = kinds
+                .get(dst)
+                .copied()
+                .ok_or(PGraphError::UnknownEndpoint {
+                    edge: *e,
+                    decl: *dst,
+                })?;
             if src_kind == dst_kind {
                 return Err(PGraphError::NonBipartite {
                     edge: *e,
@@ -233,10 +239,7 @@ mod tests {
     /// M↔M edge rejected at construction time.
     #[test]
     fn rejects_m_to_m() {
-        let kinds = BTreeMap::from([
-            (d(0), PNodeKind::Material),
-            (d(1), PNodeKind::Material),
-        ]);
+        let kinds = BTreeMap::from([(d(0), PNodeKind::Material), (d(1), PNodeKind::Material)]);
         let edges = BTreeMap::from([(e(0), (d(0), d(1)))]);
         let err = PGraphSchema::try_new(kinds, edges).unwrap_err();
         match err {
@@ -275,10 +278,10 @@ mod tests {
     #[test]
     fn unit_with_two_inputs_one_output() {
         let kinds = BTreeMap::from([
-            (d(0), PNodeKind::Material),     // input A
-            (d(1), PNodeKind::Material),     // input B
+            (d(0), PNodeKind::Material),      // input A
+            (d(1), PNodeKind::Material),      // input B
             (d(2), PNodeKind::OperatingUnit), // unit U
-            (d(3), PNodeKind::Material),     // product P
+            (d(3), PNodeKind::Material),      // product P
         ]);
         let edges = BTreeMap::from([
             (e(0), (d(0), d(2))), // A → U

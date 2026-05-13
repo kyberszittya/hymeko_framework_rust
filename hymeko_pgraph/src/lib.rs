@@ -36,19 +36,21 @@
     clippy::collapsible_if,
     clippy::for_kv_map,
     clippy::manual_contains,
-    clippy::only_used_in_recursion,
+    clippy::only_used_in_recursion
 )]
 
 pub mod abb;
 pub mod axioms;
+pub mod dump;
 pub mod lowering;
 pub mod msg;
 pub mod schema;
 pub mod ssg;
 
+pub use abb::{AbbOptions, AbbSolution, solve as abb_solve};
 pub use axioms::{AxiomBundle, AxiomTrace, AxiomViolation};
-pub use lowering::{lower, LoweredPGraph, LowerError};
-pub use msg::{maximal_structure, MaximalStructure};
+pub use dump::{DumpAlgorithm, PgraphAnalysisJson, analyze_source};
+pub use lowering::{LowerError, LoweredPGraph, lower};
+pub use msg::{MaximalStructure, maximal_structure};
 pub use schema::{PGraphError, PGraphSchema, PNodeKind};
-pub use ssg::{enumerate as ssg_enumerate, SolutionStructure, SsgOptions};
-pub use abb::{solve as abb_solve, AbbOptions, AbbSolution};
+pub use ssg::{SolutionStructure, SsgOptions, enumerate as ssg_enumerate};

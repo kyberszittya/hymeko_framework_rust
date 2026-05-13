@@ -24,6 +24,8 @@ tarpaulin-report.html
 
 # Python / uv
 .venv/
+.env
+!.env.example
 
 # Python build artifacts
 __pycache__/
@@ -52,6 +54,9 @@ __pycache__/
 
 # Claude scheduling lock
 /.claude/scheduled_tasks.lock
+
+# GPU driver flock (pid audit tail; local mutex — not source of truth)
+/signedkan_wip/experiments/results/.cuda_job_serial.lock
 
 # Rust subcrate build artifacts
 **/target/

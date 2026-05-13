@@ -21,6 +21,8 @@ Conventions used across **SignedKAN / HSiKAN** experiments, **reports**, and **R
 | **SiGAT** | Signed attention GAT-style baseline (`sigat_attn`). |
 | **MLP / GCN** | Blind MLP / GCN baselines in phase panels (`mlp_blind`, `gcn_blind`). |
 | **Gömb** | HymeKo-Gömb three-shell cascade (outer Clifford-FIR / middle HSiKAN-CR / inner CPML-MLP). |
+| **CPML route** | Default inner CPML readout: tiers **route** cycles; each tier aggregator reads **base** `X_0`; concat once (`cpml.py` `topology="route"`). |
+| **CPML capsule_soft** | Learned softmax cycle→tier routing inside CPML (**``topology=route``** only); `GombConfig.cpml_tier_organization`. |
 | **edge_cr** | Slashdot (and Epinions) **Catmull–Rom per-edge highway** HSiKAN configuration used as a **strong reference** row (`run_label: edge_cr`). |
 
 ## Tuple & cycle notation

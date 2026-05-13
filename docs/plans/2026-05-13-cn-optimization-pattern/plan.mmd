@@ -1,0 +1,43 @@
+flowchart TB
+  subgraph evidence["Evidence (2026-05-13)"]
+    BA["bitcoin_alpha Optuna<br/>picked c2+c5 only<br/>(c3,c4 dropped)"]
+    EPI["epinions walks-augmented<br/>+0.075 paired vs cycles<br/>(2026-05-11)"]
+  end
+
+  subgraph hypothesis["Hypothesis"]
+    H["sparse arity support<br/>+ walk complementarity<br/>+ c_n extension worth testing"]
+  end
+
+  subgraph l1["L1 -- training"]
+    A1["Hard-Concrete alpha_k"]
+    A2["L0 prior, annealed beta"]
+    A3["expected sparsity budget"]
+  end
+
+  subgraph l2["L2 -- search"]
+    S1["ASHA / Hyperband pruner"]
+    S2["partial-epoch AUC gate"]
+    S3["compose with skip-attn"]
+  end
+
+  subgraph l3["L3 -- budget"]
+    E1["per-arity cap = C*H(p_n)/sum"]
+    E2["equal-information, not equal-count"]
+    E3["bounded by existing max_k_cap"]
+  end
+
+  subgraph deliver["Deliverable"]
+    D1["HSIKAN_ARITY_RANGE config"]
+    D2["sparse alpha_k report"]
+    D3["Pareto front AUC vs wall"]
+  end
+
+  BA --> H
+  EPI --> H
+  H --> A1
+  H --> S1
+  H --> E1
+  A1 --> A2 --> A3 --> D1
+  S1 --> S2 --> S3 --> D3
+  E1 --> E2 --> E3 --> D1
+  A3 --> D2

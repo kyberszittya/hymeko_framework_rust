@@ -10,7 +10,8 @@ This part of the book is for **humans and agents**: one place for **abbreviation
 |---------|----------|
 | [Abbreviations & symbols](./abbreviations.md) | You hit `ABB`, `OTC`, `edge_cr`, tuple labels, … |
 | [Mathematics](./mathematics.md) | You need definitions: AUC, paired Δ, spectral entropy sketch |
-| [SOTA snapshot & diagrams](./sota-snapshot.md) | You want bar charts + tables for Bitcoin / Slashdot / Epinions |
+| [NN variants & layer geometry](../research/nn-architectures-and-layer-geometry.md) | You need to know which `nn.Module` maps to which benchmark row |
+| [SOTA snapshot & diagrams](./sota-snapshot.md) | **One-page architecture × dataset table** (HyMeKo ★ vs baselines) + bar charts for Bitcoin / Slashdot / Epinions |
 | [Evidence contract](./evidence-contract.md) | You need the canonical path list + anchored numbers |
 | [Artifact index](./artifact-index.md) | You need the full experiment tree inventory |
 | [Cold start](./cold-start.md) | You are new to the repo (build, test, PYTHONPATH) |

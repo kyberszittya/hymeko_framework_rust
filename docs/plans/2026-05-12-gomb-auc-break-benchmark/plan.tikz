@@ -1,0 +1,11 @@
+% plan.tikz — fragment for \input from plan.tex (no extra TikZ libraries)
+\begin{tikzpicture}[font=\small,>=latex]
+  \tikzstyle{box}=[draw,rectangle,rounded corners,inner sep=6pt,align=center]
+  \node[box] (proto) at (0,0) {Protocol\\[-2pt]{\footnotesize split / epochs / caps}};
+  \node[box] (search) at (3.4,0) {Val search\\[-2pt]{\footnotesize tune}};
+  \node[box] (seeds) at (6.8,0) {Multi-seed\\[-2pt]{\footnotesize test stats}};
+  \node[box] (sig) at (10.2,0) {Significance\\[-2pt]{\footnotesize vs bar}};
+  \draw[->] (proto.east) -- (search.west);
+  \draw[->] (search.east) -- (seeds.west);
+  \draw[->] (seeds.east) -- (sig.west);
+\end{tikzpicture}

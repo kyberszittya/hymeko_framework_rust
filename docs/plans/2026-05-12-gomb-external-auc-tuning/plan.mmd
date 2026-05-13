@@ -1,0 +1,15 @@
+flowchart TB
+  subgraph refs["Reference bars (non-HSiKAN)"]
+    pub["Published SGCN ~0.91 Alpha / ~0.93 OTC"]
+    tuned["In-repo tuned SGCN 0.927 Alpha / 0.957 OTC / 0.914 Slashdot"]
+  end
+  subgraph drivers["Gömb search drivers"]
+    smoke["run_gomb_smoke 80_10_10 → test_auroc JSON"]
+    tuneJ["run_gomb_tune --joint-mix"]
+    tuneV["run_gomb_tune wide mixed-or-single"]
+  end
+  tuneJ --> smoke
+  tuneV --> smoke
+  smoke --> cmp{"Compare max test_auroc"}
+  pub --> cmp
+  tuned --> cmp

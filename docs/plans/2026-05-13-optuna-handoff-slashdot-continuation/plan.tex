@@ -1,0 +1,52 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{tikz}
+\usepackage{hyperref}
+\title{Handoff: Optuna Bitcoin results + Slashdot continuation}
+\author{ops}
+\date{2026-05-13}
+\begin{document}
+\maketitle
+
+\paragraph{Scope.}
+Freeze the current empirical snapshot (Bitcoin OTC/Alpha Optuna bests,
+on-disk logs and SQLite paths), document power-loss interruption points, and
+prescribe exact steps for a follow-up agent to continue \textbf{Slashdot}
+(and optionally Epinions) without conflating protocols.
+
+\paragraph{Goal.}
+One runnable continuation path (env + storage + study naming) plus a
+single canonical report under \texttt{reports/} so another session can
+resume without re-deriving context.
+
+\paragraph{Affected files.}
+\texttt{docs/plans/2026-05-13-optuna-handoff-slashdot-continuation/*},
+\texttt{reports/2026-05-13-optuna-handoff-slashdot-continuation.md}.
+\textbf{CORE.YAML:} none.
+
+\paragraph{Interface changes.}
+None (documentation and planning only).
+
+\paragraph{Test strategy.}
+\texttt{pdflatex} on \texttt{plan.tex}; manual verification that cited log
+paths exist; optional dry-run: print-only env echo before launching GPU work.
+
+\paragraph{Performance budget.}
+No new training in this change; continuation runs remain subject to existing
+16\,GB RSS policy and per-trial VRAM behavior documented in logs.
+
+\paragraph{Rollback.}
+Delete this plan directory and the report file.
+
+\paragraph{Risk.}
+Dual concurrent \texttt{run\_optuna\_search} processes can recur; Slashdot
+trials may OOM on dot/quaternion paths---mirror Bitcoin mitigations
+(\texttt{HSIKAN\_OPTUNA\_ATTENTION\_*}, \texttt{HSIKAN\_CYCLE\_BATCH}).
+
+\begin{figure}[h]
+\centering
+\input{plan.tikz}
+\caption{State: Bitcoin complete in primary logs; Slashdot is the forward edge.}
+\end{figure}
+
+\end{document}

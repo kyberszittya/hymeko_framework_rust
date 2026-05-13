@@ -195,9 +195,7 @@ impl AxiomBundle {
                 }
             }
             if !unreachable.is_empty() {
-                violations.push(AxiomViolation::UnreachableNodes {
-                    unreachable,
-                });
+                violations.push(AxiomViolation::UnreachableNodes { unreachable });
             }
         }
 
@@ -248,10 +246,7 @@ impl AxiomBundle {
             }
             let mut missing = Vec::new();
             for m in schema.m_nodes() {
-                if consumed.contains(&m)
-                    && !produced.contains(&m)
-                    && !self.raws.contains(&m)
-                {
+                if consumed.contains(&m) && !produced.contains(&m) && !self.raws.contains(&m) {
                     missing.push(m);
                 }
             }
@@ -270,10 +265,7 @@ impl AxiomBundle {
 
 // ─── Per-axiom helpers (used by both validate and validate_timed) ──
 
-fn check_a1(
-    schema: &PGraphSchema,
-    required_products: &BTreeSet<DeclId>,
-) -> Option<AxiomViolation> {
+fn check_a1(schema: &PGraphSchema, required_products: &BTreeSet<DeclId>) -> Option<AxiomViolation> {
     let mut missing = Vec::new();
     for prod in required_products {
         match schema.kind(*prod) {
@@ -288,10 +280,7 @@ fn check_a1(
     }
 }
 
-fn check_a2(
-    schema: &PGraphSchema,
-    required_products: &BTreeSet<DeclId>,
-) -> Option<AxiomViolation> {
+fn check_a2(schema: &PGraphSchema, required_products: &BTreeSet<DeclId>) -> Option<AxiomViolation> {
     if required_products.is_empty() {
         return None;
     }
@@ -311,10 +300,7 @@ fn check_a2(
     }
 }
 
-fn check_a3(
-    schema: &PGraphSchema,
-    valid_units: &BTreeSet<DeclId>,
-) -> Option<AxiomViolation> {
+fn check_a3(schema: &PGraphSchema, valid_units: &BTreeSet<DeclId>) -> Option<AxiomViolation> {
     if valid_units.is_empty() {
         return None;
     }
@@ -345,10 +331,7 @@ fn check_a4(schema: &PGraphSchema) -> Option<AxiomViolation> {
     }
 }
 
-fn check_a5(
-    schema: &PGraphSchema,
-    raws: &BTreeSet<DeclId>,
-) -> Option<AxiomViolation> {
+fn check_a5(schema: &PGraphSchema, raws: &BTreeSet<DeclId>) -> Option<AxiomViolation> {
     let mut produced: BTreeSet<DeclId> = BTreeSet::new();
     let mut consumed: BTreeSet<DeclId> = BTreeSet::new();
     for (_, src, dst) in schema.edges() {
@@ -364,8 +347,7 @@ fn check_a5(
     }
     let mut missing = Vec::new();
     for m in schema.m_nodes() {
-        if consumed.contains(&m) && !produced.contains(&m) && !raws.contains(&m)
-        {
+        if consumed.contains(&m) && !produced.contains(&m) && !raws.contains(&m) {
             missing.push(m);
         }
     }
@@ -378,11 +360,7 @@ fn check_a5(
 
 /// BFS in the directed schema: does `from` reach any node in
 /// `targets`?
-fn reaches_any(
-    schema: &PGraphSchema,
-    from: DeclId,
-    targets: &BTreeSet<DeclId>,
-) -> bool {
+fn reaches_any(schema: &PGraphSchema, from: DeclId, targets: &BTreeSet<DeclId>) -> bool {
     use std::collections::VecDeque;
     // Build a one-shot adjacency map for the BFS.  This is O(|E|)
     // per call; for the scale where the axiom checker runs (small
@@ -502,12 +480,12 @@ mod tests {
         // A1 → U1 → P (good)
         // A2 → U2 → Junk (Junk is not a product)
         let kinds = BTreeMap::from([
-            (d(0), PNodeKind::Material),         // A1 (raw)
-            (d(1), PNodeKind::OperatingUnit),    // U1
-            (d(2), PNodeKind::Material),         // P (product)
-            (d(3), PNodeKind::Material),         // A2 (raw)
-            (d(4), PNodeKind::OperatingUnit),    // U2
-            (d(5), PNodeKind::Material),         // Junk (no consumer)
+            (d(0), PNodeKind::Material),      // A1 (raw)
+            (d(1), PNodeKind::OperatingUnit), // U1
+            (d(2), PNodeKind::Material),      // P (product)
+            (d(3), PNodeKind::Material),      // A2 (raw)
+            (d(4), PNodeKind::OperatingUnit), // U2
+            (d(5), PNodeKind::Material),      // Junk (no consumer)
         ]);
         let edges = BTreeMap::from([
             (e(0), (d(0), d(1))),
@@ -536,9 +514,9 @@ mod tests {
     fn a3_catches_unwhitelisted_unit() {
         let kinds = BTreeMap::from([
             (d(0), PNodeKind::Material),
-            (d(1), PNodeKind::OperatingUnit),    // legit
+            (d(1), PNodeKind::OperatingUnit), // legit
             (d(2), PNodeKind::Material),
-            (d(3), PNodeKind::OperatingUnit),    // not in catalogue
+            (d(3), PNodeKind::OperatingUnit), // not in catalogue
         ]);
         let edges = BTreeMap::from([
             (e(0), (d(0), d(1))),
@@ -569,10 +547,10 @@ mod tests {
         // U consumes M_phantom but no edge produces it, and M_phantom
         // is not raw.
         let kinds = BTreeMap::from([
-            (d(0), PNodeKind::Material),         // raw
-            (d(1), PNodeKind::OperatingUnit),    // U
-            (d(2), PNodeKind::Material),         // product
-            (d(3), PNodeKind::Material),         // M_phantom
+            (d(0), PNodeKind::Material),      // raw
+            (d(1), PNodeKind::OperatingUnit), // U
+            (d(2), PNodeKind::Material),      // product
+            (d(3), PNodeKind::Material),      // M_phantom
         ]);
         let edges = BTreeMap::from([
             (e(0), (d(0), d(1))),
@@ -603,10 +581,7 @@ mod tests {
             (d(1), PNodeKind::OperatingUnit),
             (d(2), PNodeKind::Material),
         ]);
-        let edges = BTreeMap::from([
-            (e(0), (d(0), d(1))),
-            (e(1), (d(1), d(2))),
-        ]);
+        let edges = BTreeMap::from([(e(0), (d(0), d(1))), (e(1), (d(1), d(2)))]);
         let schema = PGraphSchema::try_new(kinds, edges).unwrap();
         let bundle = AxiomBundle::new([d(0)], []);
         let products = BTreeSet::from([d(2)]);

@@ -5,13 +5,9 @@
 
 use std::hint::black_box;
 
-use criterion::{
-    criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
-};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 
-use hymeko_pgraph::{
-    abb_solve, lower, maximal_structure, ssg_enumerate,
-};
+use hymeko_pgraph::{abb_solve, lower, maximal_structure, ssg_enumerate};
 use parser::parse_description;
 
 const HDA_SRC: &str = include_str!("../../data/pgraph/hda.hymeko");
@@ -70,7 +66,10 @@ fn gen_tree_pgraph(depth: u32) -> String {
                 let child = 2 * p + c;
                 s.push_str(&format!(
                     "    @U{uid} <unit> 1 {{ (-M{}_{}, +M{}_{}); }}\n",
-                    d - 1, p, d, child,
+                    d - 1,
+                    p,
+                    d,
+                    child,
                 ));
                 uid += 1;
             }
@@ -85,17 +84,13 @@ fn bench_parse_lower(c: &mut Criterion) {
     for &n in &[8usize, 32, 128, 512] {
         let src = gen_chain_pgraph(n);
         group.throughput(Throughput::Bytes(src.len() as u64));
-        group.bench_with_input(
-            BenchmarkId::new("chain", n),
-            &n,
-            |b, _| {
-                b.iter(|| {
-                    let d = parse_description(&src).unwrap();
-                    let p = lower(&d).unwrap();
-                    black_box(p.units.len())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("chain", n), &n, |b, _| {
+            b.iter(|| {
+                let d = parse_description(&src).unwrap();
+                let p = lower(&d).unwrap();
+                black_box(p.units.len())
+            })
+        });
     }
     // HDA — the hand-written reference.
     group.bench_function(BenchmarkId::new("hda_reference", "hda"), |b| {
@@ -115,16 +110,12 @@ fn bench_msg(c: &mut Criterion) {
         let d = parse_description(&src).unwrap();
         let p = lower(&d).unwrap();
         group.throughput(Throughput::Elements(n as u64));
-        group.bench_with_input(
-            BenchmarkId::new("chain", n),
-            &n,
-            |b, _| {
-                b.iter(|| {
-                    let m = maximal_structure(&p);
-                    black_box(m.units.len())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("chain", n), &n, |b, _| {
+            b.iter(|| {
+                let m = maximal_structure(&p);
+                black_box(m.units.len())
+            })
+        });
     }
     group.finish();
 }
@@ -138,16 +129,12 @@ fn bench_ssg(c: &mut Criterion) {
         let p = lower(&d).unwrap();
         let m = maximal_structure(&p);
         group.throughput(Throughput::Elements((1u64) << n));
-        group.bench_with_input(
-            BenchmarkId::new("chain", n),
-            &n,
-            |b, _| {
-                b.iter(|| {
-                    let s = ssg_enumerate(&p, &m);
-                    black_box(s.len())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("chain", n), &n, |b, _| {
+            b.iter(|| {
+                let s = ssg_enumerate(&p, &m);
+                black_box(s.len())
+            })
+        });
     }
     group.finish();
 }
@@ -161,16 +148,12 @@ fn bench_abb(c: &mut Criterion) {
         let p = lower(&d).unwrap();
         let m = maximal_structure(&p);
         group.throughput(Throughput::Elements(n as u64));
-        group.bench_with_input(
-            BenchmarkId::new("chain", n),
-            &n,
-            |b, _| {
-                b.iter(|| {
-                    let s = abb_solve(&p, &m);
-                    black_box(s.is_some())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("chain", n), &n, |b, _| {
+            b.iter(|| {
+                let s = abb_solve(&p, &m);
+                black_box(s.is_some())
+            })
+        });
     }
     // Tree instances stress ABB's reachability bound.
     for &d_lvl in &[3u32, 4, 5] {
@@ -180,16 +163,12 @@ fn bench_abb(c: &mut Criterion) {
         let m = maximal_structure(&p);
         let n_units = p.units.len() as u64;
         group.throughput(Throughput::Elements(n_units));
-        group.bench_with_input(
-            BenchmarkId::new("tree_depth", d_lvl),
-            &d_lvl,
-            |b, _| {
-                b.iter(|| {
-                    let s = abb_solve(&p, &m);
-                    black_box(s.is_some())
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("tree_depth", d_lvl), &d_lvl, |b, _| {
+            b.iter(|| {
+                let s = abb_solve(&p, &m);
+                black_box(s.is_some())
+            })
+        });
     }
     group.finish();
 }

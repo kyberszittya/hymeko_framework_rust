@@ -1,0 +1,13 @@
+\begin{tikzpicture}[font=\small, >=latex]
+  \draw[fill=blue!8] (0,1.5) rectangle (4,3.0);
+  \node at (2,2.25) {\textbf{Optuna logs}};
+
+  \draw[fill=green!8] (5,1.5) rectangle (9,3.0);
+  \node at (7,2.25) {\textbf{SOTA snapshot}};
+
+  \draw[fill=orange!10] (2.5,-0.8) rectangle (6.5,0.7);
+  \node at (4.5,-0.05) {\textbf{mdBook page}};
+
+  \draw[->, thick] (2,1.5) -- (3.8,0.7);
+  \draw[->, thick] (7,1.5) -- (5.2,0.7);
+\end{tikzpicture}

@@ -3,10 +3,7 @@
 
 use std::collections::BTreeSet;
 
-use hymeko_pgraph::{
-    abb_solve, lower, maximal_structure, ssg_enumerate, AbbOptions,
-    SsgOptions,
-};
+use hymeko_pgraph::{AbbOptions, SsgOptions, abb_solve, lower, maximal_structure, ssg_enumerate};
 use parser::parse_description;
 
 const HDA_SRC: &str = include_str!("../../data/pgraph/hda.hymeko");
@@ -22,11 +19,7 @@ fn parses_hda_pgraph() {
     // 4 operating units.
     assert_eq!(p.units.len(), 4);
     // Raws: Toluene, H2.
-    let raw_names: BTreeSet<&str> = p
-        .raws
-        .iter()
-        .map(|d| p.decl_to_name[d].as_str())
-        .collect();
+    let raw_names: BTreeSet<&str> = p.raws.iter().map(|d| p.decl_to_name[d].as_str()).collect();
     assert_eq!(raw_names, BTreeSet::from(["Toluene", "H2"]));
     // Required products: Benzene.
     let prod_names: BTreeSet<&str> = p
@@ -103,8 +96,10 @@ fn msg_drops_a_forward_unreachable_unit() {
     let p = lower(&d).unwrap();
     let m = maximal_structure(&p);
     assert!(m.units.contains(&p.name_to_decl["U_good"]));
-    assert!(!m.units.contains(&p.name_to_decl["U_bad"]),
-            "U_bad consumes X which no chain from raws produces");
+    assert!(
+        !m.units.contains(&p.name_to_decl["U_bad"]),
+        "U_bad consumes X which no chain from raws produces"
+    );
 }
 
 #[test]
@@ -129,8 +124,10 @@ fn msg_drops_a_backward_useless_unit() {
     let p = lower(&d).unwrap();
     let m = maximal_structure(&p);
     assert!(m.units.contains(&p.name_to_decl["U_good"]));
-    assert!(!m.units.contains(&p.name_to_decl["U_useless"]),
-            "U_useless produces a dead-end material — MSG drops it");
+    assert!(
+        !m.units.contains(&p.name_to_decl["U_useless"]),
+        "U_useless produces a dead-end material — MSG drops it"
+    );
 }
 
 #[test]
@@ -156,13 +153,17 @@ fn ssg_finds_known_feasible_structures() {
     };
 
     // Two-stage route with disposal — feasible.
-    assert!(by_units(&[mixer, reactor, disposal]),
-            "Mixer + Reactor + Disposal must be feasible (strict)");
+    assert!(
+        by_units(&[mixer, reactor, disposal]),
+        "Mixer + Reactor + Disposal must be feasible (strict)"
+    );
     // One-shot direct synthesis — feasible (no methane produced).
     assert!(by_units(&[direct]), "DirectSynth alone must be feasible");
     // Two-stage WITHOUT disposal — infeasible under strict rule.
-    assert!(!by_units(&[mixer, reactor]),
-            "Mixer + Reactor without Disposal violates strict no-excess");
+    assert!(
+        !by_units(&[mixer, reactor]),
+        "Mixer + Reactor without Disposal violates strict no-excess"
+    );
     // Disposal alone — infeasible (no Benzene produced).
     assert!(!by_units(&[disposal]));
 }
@@ -183,8 +184,10 @@ fn ssg_relaxed_includes_excess_byproduct() {
     let reactor = p.name_to_decl["Reactor"];
 
     let pair = BTreeSet::from([mixer, reactor]);
-    assert!(solutions.iter().any(|s| s.units == pair),
-            "relaxed SSG must accept Mixer+Reactor with excess Methane");
+    assert!(
+        solutions.iter().any(|s| s.units == pair),
+        "relaxed SSG must accept Mixer+Reactor with excess Methane"
+    );
 }
 
 #[test]
@@ -204,16 +207,28 @@ fn abb_finds_minimum_cost_route() {
     //   {Mixer, Reactor, Disposal} = 100 + 250 + 50 = 400
     //   {DirectSynth}              = 800
     // Optimum = the two-stage route.
-    assert_eq!(sol.units, BTreeSet::from([mixer, reactor, disposal]),
-               "expected the {{Mixer, Reactor, Disposal}} route");
-    assert!((sol.cost - 400.0).abs() < 1e-9,
-            "minimum cost is 400, got {}", sol.cost);
+    assert_eq!(
+        sol.units,
+        BTreeSet::from([mixer, reactor, disposal]),
+        "expected the {{Mixer, Reactor, Disposal}} route"
+    );
+    assert!(
+        (sol.cost - 400.0).abs() < 1e-9,
+        "minimum cost is 400, got {}",
+        sol.cost
+    );
 
     // Negate the strict rule: with excess byproducts allowed,
     // {Mixer, Reactor} (350) becomes feasible and beats 400.
     let relaxed = hymeko_pgraph::abb::solve_with_options(
-        &p, &m, AbbOptions { strict_no_excess: false, max_explored: 10_000 },
-    ).expect("relaxed ABB must find a solution");
+        &p,
+        &m,
+        AbbOptions {
+            strict_no_excess: false,
+            max_explored: 10_000,
+        },
+    )
+    .expect("relaxed ABB must find a solution");
     assert_eq!(relaxed.units, BTreeSet::from([mixer, reactor]));
     assert!((relaxed.cost - 350.0).abs() < 1e-9);
 
@@ -240,6 +255,8 @@ fn abb_returns_none_when_infeasible() {
     let p = lower(&d).expect("lowers");
     let m = maximal_structure(&p);
     let sol = abb_solve(&p, &m);
-    assert!(sol.is_none(),
-            "no unit produces Z, so ABB must report infeasible");
+    assert!(
+        sol.is_none(),
+        "no unit produces Z, so ABB must report infeasible"
+    );
 }

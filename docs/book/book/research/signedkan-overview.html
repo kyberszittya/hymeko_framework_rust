@@ -39,10 +39,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../searchindex-95c7efcc.js";
+            window.path_to_searchindex_js = "../searchindex-e042d62a.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2b0bb4b9.js"></script>
+        <script src="../toc-eca09d14.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -194,7 +194,7 @@
 </thead>
 <tbody>
 <tr><td><code>signedkan.py::SignedKANLayer</code></td><td>Stable. Option-C signed-incidence aggregation per arity k.</td></tr>
-<tr><td><code>mixed_arity_signedkan.py::MixedAritySignedKAN</code></td><td>Stable. αₖ-mixed multi-arity model.</td></tr>
+<tr><td><code>mixed_arity_signedkan/::MixedAritySignedKAN</code></td><td>Stable. αₖ-mixed multi-arity model (package split 2026-05-11).</td></tr>
 <tr><td><code>n_tuples.py::construct_k</code></td><td>Stable. k-cycle / k-tuple enumeration (Python wrapper around Rust enumerator).</td></tr>
 <tr><td><code>hyperedges.py::construct</code></td><td>Stable. k=3 cycle construction.</td></tr>
 <tr><td><code>splines.py</code></td><td>Stable. Batched B-spline / Catmull-Rom / Kochanek-Bartels activations.</td></tr>
@@ -225,7 +225,9 @@
 ├── hymeko_train_walker.py  # NEW: walks training.hymeko's dataflow, dispatches per-op
 ├── run_final_cell.py       # cell_signed_graph: the actual training kernel (~500 LOC)
 ├── signedkan.py            # SignedKANLayer (Option C)
-├── mixed_arity_signedkan.py # MixedAritySignedKAN (αₖ mixer + sparse M_e)
+├── mixed_arity_signedkan/  # MixedAritySignedKAN (αₖ mixer + sparse M_e)
+├── hymeko_gomb/            # HymeKo-Gömb cascade (outer / middle / inner)
+├── cpml.py                 # CPML tiered stack (+ factorial smoke)
 ├── splines.py              # Catmull-Rom / B-spline / KB activations
 ├── n_tuples.py             # k-cycle / k-tuple enumeration (calls Rust)
 ├── hyperedges.py           # k=3 triad construction
@@ -246,7 +248,9 @@
 <ul>
 <li><a href="../results/overview.html">Results &amp; evidence</a> — abbreviations, math, SOTA charts, evidence contract, artifact indexes (mdBook).</li>
 <li><a href="./hsikan.html">HSiKAN architecture</a> — the core architecture</li>
+<li><a href="./nn-architectures-and-layer-geometry.html">NN variants &amp; layer geometry</a> — module-by-module layout (SignedKAN, MixedArity, baselines, CPML, Gömb)</li>
 <li><a href="./gomb-orthogonal.html">HymeKo-Gömb: “orthogonal” meanings</a> — factorial vs cascade vs bank regularisation</li>
+<li><a href="./cpml-routing-highway-capsule-kan.html">CPML routes: Highway · Capsule · KAN</a> — tier routing maths; default <code>topology="route"</code></li>
 <li><a href="./hymeko-driven.html">HyMeKo-driven training</a> — how training.hymeko drives the walker</li>
 <li><a href="../quickstart/08-hsikan-architecture.html">Quickstart: Build an HSiKAN architecture</a></li>
 </ul>

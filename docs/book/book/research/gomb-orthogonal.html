@@ -39,10 +39,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../searchindex-95c7efcc.js";
+            window.path_to_searchindex_js = "../searchindex-e042d62a.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2b0bb4b9.js"></script>
+        <script src="../toc-eca09d14.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -217,6 +217,7 @@ L(D,A,C,F)</a></h1>
 <p><strong>Operational meaning:</strong> “orthogonal” = <strong>statistical independence of factors</strong> in the experiment — <em>not</em> “perpendicular vectors in (\mathbb{R}^d)” unless you deliberately add that regulariser (meaning C below overlaps only by analogy).</p>
 <p><strong>Code / harness:</strong> factorial runners (e.g. <code>signedkan_wip/src/run_cpml_factorial.py</code>) and the plan directory <strong><code>docs/plans/2026-05-11-hsikan-cpml-fir-orthogonal/</code></strong>.</p>
 <p><strong>Related CPML knob:</strong> inside a <strong>single</strong> CPML stack, <code>aggregator_kind</code> makes <strong>HSiKAN vs MLP</strong> an axis <strong>orthogonal to</strong> “flat vs tiered topology” — a <strong>2×2</strong> design at the CPML layer (<code>signedkan_wip/src/cpml.py</code>, <code>CPMLConfig</code> docstring).</p>
+<p><strong>CPML readout sub-axis (independent of the factorial (C) bit):</strong> when CPML is <strong>on</strong>, <code>topology ∈ {route, pyramid}</code> selects <strong>tier routing</strong> (default <strong>route</strong>: each tier’s aggregator always reads the <strong>same base</strong> vertex tensor; <strong>pyramid</strong>: legacy widening concat). Maths + <strong>Highway / Capsule / KAN</strong> reading: <strong><a href="./cpml-routing-highway-capsule-kan.html">CPML routes: Highway · Capsule · KAN</a></strong>.</p>
 <hr>
 <h2 id="3-hymeko-gömb--contrast-with-the-factorial-cascade-not-orthogonal-axes"><a class="header" href="#3-hymeko-gömb--contrast-with-the-factorial-cascade-not-orthogonal-axes">3. HymeKo-Gömb — <strong>contrast</strong> with the factorial (cascade, not orthogonal axes)</a></h2>
 <p><strong>HymeKo-Gömb</strong> (<em>gömb</em> = sphere) is defined in opposition to toggling axes independently:</p>
@@ -348,6 +349,7 @@ u_F = \frac{c_F}{|c_F|},
 <tr><td><code>docs/plans/2026-05-11-hsikan-cpml-fir-orthogonal/plan.tex</code></td><td>Full (2^3) factorial definition and effect decomposition.</td></tr>
 <tr><td><code>reports/2026-05-11-hymeko-gomb-sphere.md</code></td><td>Feasibility + smoke results.</td></tr>
 <tr><td><code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code></td><td>Slashdot SOTA comparison (negative at stated gate).</td></tr>
+<tr><td><a href="./cpml-routing-highway-capsule-kan.html">CPML routes: Highway · Capsule · KAN</a></td><td><strong>Route vs pyramid</strong> equations + unified lens (Highway, CapsNet, KAN).</td></tr>
 </tbody>
 </table>
 </div>
@@ -362,7 +364,7 @@ u_F = \frac{c_F}{|c_F|},
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../results/overview.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../research/cpml-routing-highway-capsule-kan.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -376,7 +378,7 @@ u_F = \frac{c_F}{|c_F|},
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../results/overview.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../research/cpml-routing-highway-capsule-kan.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

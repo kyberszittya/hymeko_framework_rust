@@ -11,26 +11,43 @@ HymeKoGomb for N epochs, logs **validation** ROC-AUC each epoch.
 * ``80_10_10``: ``datasets.split`` — same **train/val/test** convention
   as ``run_final_cell.cell_signed_graph`` / ``run_hsikan_sota_gate``.
   After training, prints **val** and **test** AUROC/AP/F1 (threshold 0.5).
+  The JSON summary also includes **inference** timing: one batched forward
+  on all held-out edges (val ∪ test for ``80_10_10``, else val only),
+  with an untimed CUDA warmup when on GPU; keys ``infer_wall_s``,
+  ``infer_n_edges``, ``infer_edges_per_s``.
+
+**Cycle enumeration ABB (``--cycle-abb-mode``):** optional Rust
+``enumerate_cycles_rs`` branch-and-bound: ``none`` (default),
+``start_local``, or ``global_min``; plus ``--cycle-abb-fullness-gate`` for
+``global_min``. Joint-mix **c3/c4** slots use the same flags.
 
 **What full HSiKAN / ``cell_signed_graph`` still has (non-exhaustive):**
-mixed arities (k=3,4,…), tuple caps / subsampling, optional walks,
-``pos_weight`` on BCE, external ``nn.Linear`` classifier head (non-Slashdot),
-``MixedAritySignedKAN`` depth/splines/attention/cycle-batch env knobs,
-strict no-leakage protocol, entropy regulariser, etc.  Gömb here is a
-different architecture; matching headline numbers requires matching
-that recipe, not only the edge split.
+optional ``MixedAritySignedKAN`` depth / attention / cycle-batch env knobs,
+strict no-leakage protocol, entropy regulariser, etc.  With ``--joint-mix``,
+Gömb uses the **same c3,c4,w2,w3 tuple pools** as ``joint_ba`` (train-edge
+enumeration + walk enumeration), fused via learned ``α`` across four
+``JointMixGomb`` stacks.
 
 Usage:
     python -m signedkan_wip.src.run_gomb_smoke \
         --dataset bitcoin_otc --seed 0 --n-epochs 50 --device cpu
     python -m signedkan_wip.src.run_gomb_smoke \
         --dataset bitcoin_alpha --edge-split 80_10_10 --seed 0 --n-epochs 80
+    python -m signedkan_wip.src.run_gomb_smoke \
+        --dataset bitcoin_alpha --joint-mix --edge-split 80_10_10 --seed 0
+
+Paired ABB vs baseline (same arch, multiple modes)::
+
+    python -m signedkan_wip.src.benchmarks.run_gomb_cycle_abb_compare \\
+        --dataset bitcoin_otc --edge-split 80_10_10 --device cpu \\
+        --n-epochs 8 --topk 48 --modes none start_local
 """
 from __future__ import annotations
 
 import argparse
 import json
 import time
+from collections.abc import Callable
 
 import numpy as np
 import torch
@@ -48,8 +65,9 @@ import hymeko
 from .datasets import load, split
 from .hymeko_gomb import (
     GombConfig, HymeKoGomb, GombNoOuter, GombNoMiddle, GombNoInner,
-    MixedArityGomb,
+    JointMixGomb, MixedArityGomb,
 )
+from .hymeko_gomb.joint_enumeration import JOINT_BA_SLOTS, build_joint_ba_pools
 
 _MODELS = {
     "gomb":      HymeKoGomb,
@@ -58,10 +76,35 @@ _MODELS = {
     "no_inner":  GombNoInner,
 }
 
+# HSiKAN on Slashdot uses cycle micro-batching; Gömb joint holds full tensors.
+# Subsample each slot to this many rows (uniform, train-only pools already).
+_DEFAULT_JOINT_SLOT_CAP_SNAP: int = 12_000
+
+
+def _subsample_joint_pools(
+    pools: dict[str, tuple[np.ndarray, np.ndarray]],
+    cap: int,
+    seed: int,
+) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """Uniform subsample without replacement when a slot exceeds ``cap`` rows."""
+    rng = np.random.default_rng(seed)
+    out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for slot, (cyc, sgn) in pools.items():
+        m = int(cyc.shape[0])
+        if m <= cap:
+            out[slot] = (cyc, sgn)
+            continue
+        idx = rng.choice(m, size=cap, replace=False)
+        out[slot] = (cyc[idx], sgn[idx])
+    return out
+
 
 def _enumerate_cycles(
     edges: np.ndarray, signs: np.ndarray, n: int,
     k: int = 3, m_per_vertex: int = 64,
+    *,
+    abb_mode: str = "none",
+    abb_fullness_gate: float = 0.25,
 ) -> tuple[np.ndarray, np.ndarray]:
     eu = np.ascontiguousarray(edges[:, 0], dtype=np.uint32)
     ev = np.ascontiguousarray(edges[:, 1], dtype=np.uint32)
@@ -71,6 +114,13 @@ def _enumerate_cycles(
         score_kind="fraction_negative",
         pruner_kind="none",
         filter_kind="none",
+        filter_min_degree=2,
+        abb_mode=abb_mode,
+        fullness_gate=float(abb_fullness_gate),
+        tiers=[],
+        adaptive_c=0.0,
+        adaptive_m_min=0,
+        adaptive_m_max=0,
     )
     cycles = np.asarray(arr, dtype=np.int64)
     sign_of: dict[tuple[int, int], int] = {}
@@ -143,6 +193,37 @@ def _heldout_edge_metrics(
     return out
 
 
+def _benchmark_inference_wall_s(
+    module: nn.Module,
+    *,
+    forward_edges: torch.Tensor,
+    forward_fn: Callable[[torch.Tensor], torch.Tensor],
+    device: torch.device,
+    warmup: bool = True,
+) -> tuple[float, int, float]:
+    """One batched forward on held-out edges; wall seconds with CUDA sync.
+
+    Returns ``(elapsed_s, n_edges, edges_per_s)``. When ``device`` is CUDA,
+    uses ``torch.cuda.synchronize()`` around the timed region and one
+    untimed warmup forward if ``warmup`` (captures compile / allocator).
+    """
+    module.eval()
+    n = int(forward_edges.shape[0])
+    with torch.no_grad():
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        if warmup:
+            _ = forward_fn(forward_edges)
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        _ = forward_fn(forward_edges)
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        elapsed = max(float(time.perf_counter() - t0), 1e-9)
+    return elapsed, n, float(n / elapsed)
+
+
 def _degree_to_tier(degrees: np.ndarray, n_tiers: int) -> np.ndarray:
     n = degrees.shape[0]
     order = np.argsort(degrees, kind="stable")
@@ -168,8 +249,78 @@ def main() -> None:
     ap.add_argument("--d-middle", type=int, default=32)
     ap.add_argument("--d-core", type=int, default=32)
     ap.add_argument("--n-tiers", type=int, default=3)
+    ap.add_argument(
+        "--cpml-topology",
+        choices=("route", "pyramid"),
+        default="route",
+        help="Inner CPML readout: route (default, Option B) vs legacy pyramid.",
+    )
+    ap.add_argument(
+        "--cpml-tier-organization",
+        choices=("structural", "capsule_soft"),
+        default="structural",
+        help="Tier routing: structural (hard incidence) vs capsule_soft "
+             "(learned softmax cycle→tier; requires --cpml-topology route).",
+    )
+    ap.add_argument(
+        "--cpml-capsule-route-hidden",
+        type=int,
+        default=64,
+        metavar="H",
+        help="Hidden dim for capsule_soft router MLP when "
+             "--cpml-capsule-routing-iterations is 1 (ignored if structural).",
+    )
+    ap.add_argument(
+        "--cpml-capsule-routing-iterations",
+        type=int,
+        default=1,
+        metavar="T",
+        help="Capsule_soft: interpreted with --cpml-capsule-soft-router (see "
+             "CPMLConfig); ignored if tier org is structural.",
+    )
+    ap.add_argument(
+        "--cpml-capsule-soft-router",
+        choices=("auto", "mlp_softmax", "hypergraph_conv", "em_agreement"),
+        default="auto",
+        help="Capsule_soft routing head: auto, MLP on corners, one HGNN-style "
+             "step on cycles as hyperedges, or EM agreement (needs T>=2).",
+    )
+    ap.add_argument(
+        "--cpml-capsule-hg-hidden",
+        type=int,
+        default=64,
+        metavar="D",
+        help="Hidden dim for hypergraph_conv router (ignored unless that router).",
+    )
+    ap.add_argument(
+        "--cpml-capsule-hg-cache-degrees",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="For hypergraph_conv: cache vertex degree tensors when the same "
+             "cycles tensor object is reused across forwards (default on).",
+    )
+    ap.add_argument(
+        "--cpml-torch-compile-hypergraph",
+        action="store_true",
+        help="torch.compile the hypergraph_conv routing submodule (PyTorch 2.x; "
+             "first forwards may compile).",
+    )
     ap.add_argument("--k", type=int, default=3)
     ap.add_argument("--topk", type=int, default=64)
+    ap.add_argument(
+        "--cycle-abb-mode",
+        choices=("none", "start_local", "global_min"),
+        default="none",
+        help="Rust per-vertex cycle enumerator: ABB branch-and-bound "
+             "(start_local / global_min) vs none (default, backward-compatible).",
+    )
+    ap.add_argument(
+        "--cycle-abb-fullness-gate",
+        type=float,
+        default=0.25,
+        metavar="G",
+        help="Fullness gate for global_min ABB (ignored for none/start_local).",
+    )
     ap.add_argument("--lr", type=float, default=3e-3)
     ap.add_argument(
         "--weight-decay",
@@ -200,10 +351,48 @@ def main() -> None:
         help="Comma-separated arities for MixedArityGomb (e.g. '3,4' or '4,5'). "
              "If non-empty, overrides --model with MixedArityGomb.",
     )
+    ap.add_argument(
+        "--joint-mix",
+        action="store_true",
+        help="JointMixGomb: four stacks (c3,c4,w2,w3) + α fusion — same tuple "
+             "recipe as joint_ba HSiKAN. Mutually exclusive with --cycle-ks.",
+    )
+    ap.add_argument(
+        "--max-walks-w2", type=int, default=50_000,
+        help="Cap on length-2 simple walks for joint-mix slot w2.",
+    )
+    ap.add_argument(
+        "--max-walks-w3", type=int, default=50_000,
+        help="Cap on length-3 simple walks for joint-mix slot w3.",
+    )
+    ap.add_argument(
+        "--joint-slot-cap",
+        type=int,
+        default=None,
+        metavar="M",
+        help="Max rows per joint-mix slot after pooling (uniform subsample). "
+             "For slashdot/epinions default is %d when omitted (VRAM). "
+             "Use 0 to keep full Rust pools (needs large GPU)." % (
+                 _DEFAULT_JOINT_SLOT_CAP_SNAP,
+             ),
+    )
     args = ap.parse_args()
     cycle_ks: tuple[int, ...] = tuple(
         int(s) for s in args.cycle_ks.split(",") if s.strip()
     )
+    if args.joint_mix and cycle_ks:
+        raise SystemExit("--joint-mix cannot be combined with --cycle-ks")
+    if (
+        args.cpml_tier_organization == "capsule_soft"
+        and args.cpml_topology != "route"
+    ):
+        raise SystemExit(
+            "--cpml-tier-organization capsule_soft requires --cpml-topology route",
+        )
+    if args.cpml_capsule_routing_iterations < 1:
+        raise SystemExit(
+            "--cpml-capsule-routing-iterations must be >= 1",
+        )
 
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     device = torch.device(args.device)
@@ -236,10 +425,47 @@ def main() -> None:
             flush=True,
         )
 
+    joint_mix = bool(args.joint_mix)
     mixed = len(cycle_ks) >= 2
+    pools_joint: dict[str, tuple[np.ndarray, np.ndarray]] | None = None
+    joint_slot_cap: int | None = None
     # k-pool enumeration: one (cycles, signs) per arity for mixed,
-    # a single pool otherwise.
-    if mixed:
+    # joint-mix dict for JointMixGomb, else a single pool.
+    if joint_mix:
+        pools_joint = build_joint_ba_pools(
+            e_tr, s_tr, n,
+            topk_c3=args.topk, topk_c4=args.topk,
+            max_walks_w2=args.max_walks_w2, max_walks_w3=args.max_walks_w3,
+            walk_seed=args.seed,
+            subsample_walks_seed=args.seed,
+            cycle_abb_mode=args.cycle_abb_mode,
+            cycle_abb_fullness_gate=float(args.cycle_abb_fullness_gate),
+        )
+        if args.joint_slot_cap is not None and args.joint_slot_cap == 0:
+            joint_slot_cap = None
+        elif args.joint_slot_cap is not None and args.joint_slot_cap > 0:
+            joint_slot_cap = int(args.joint_slot_cap)
+        elif args.dataset in ("slashdot", "epinions"):
+            joint_slot_cap = _DEFAULT_JOINT_SLOT_CAP_SNAP
+        else:
+            joint_slot_cap = None
+        if joint_slot_cap is not None:
+            pools_joint = _subsample_joint_pools(
+                pools_joint, joint_slot_cap, args.seed + 91,
+            )
+            print(
+                f"[joint-mix] per-slot row cap={joint_slot_cap} "
+                f"(subsampled; HSiKAN-scale graphs)",
+                flush=True,
+            )
+        n_cycles_total = 0
+        for slot in JOINT_BA_SLOTS:
+            m_i = int(pools_joint[slot][0].shape[0])
+            n_cycles_total += m_i
+            print(f"[joint-mix] slot {slot}: {m_i} tuples", flush=True)
+        print(f"[joint-mix] total tuples (all slots)={n_cycles_total}", flush=True)
+        ks_used: tuple[int, ...] = ()
+    elif mixed:
         ks_used = cycle_ks
         cycles_by_k_np: dict[int, np.ndarray] = {}
         cyc_signs_by_k_np: dict[int, np.ndarray] = {}
@@ -247,6 +473,8 @@ def main() -> None:
         for k in ks_used:
             cyc_k, sgn_k = _enumerate_cycles(
                 e_tr, s_tr, n, k=k, m_per_vertex=args.topk,
+                abb_mode=args.cycle_abb_mode,
+                abb_fullness_gate=float(args.cycle_abb_fullness_gate),
             )
             cycles_by_k_np[k] = cyc_k
             cyc_signs_by_k_np[k] = sgn_k
@@ -257,9 +485,17 @@ def main() -> None:
         ks_used = (args.k,)
         cycles_np, cyc_signs_np = _enumerate_cycles(
             e_tr, s_tr, n, k=args.k, m_per_vertex=args.topk,
+            abb_mode=args.cycle_abb_mode,
+            abb_fullness_gate=float(args.cycle_abb_fullness_gate),
         )
         n_cycles_total = int(cycles_np.shape[0])
         print(f"[cycles] {n_cycles_total} k={args.k}", flush=True)
+
+    print(
+        f"[cycles] abb_mode={args.cycle_abb_mode} "
+        f"abb_fullness_gate={args.cycle_abb_fullness_gate}",
+        flush=True,
+    )
 
     degrees = np.zeros(n, dtype=np.int64)
     for (u, v) in e_tr:
@@ -271,15 +507,34 @@ def main() -> None:
         d_outer=args.d_outer, M_outer=args.M_outer,
         d_middle=args.d_middle, d_core=args.d_core,
         n_tiers=args.n_tiers, cycle_k=args.k,
+        cpml_topology=args.cpml_topology,
+        cpml_tier_organization=args.cpml_tier_organization,
+        cpml_capsule_route_hidden=args.cpml_capsule_route_hidden,
+        cpml_capsule_routing_iterations=args.cpml_capsule_routing_iterations,
+        cpml_capsule_soft_router=args.cpml_capsule_soft_router,
+        cpml_capsule_hg_hidden=args.cpml_capsule_hg_hidden,
+        cpml_capsule_hg_cache_degrees=args.cpml_capsule_hg_cache_degrees,
+        cpml_torch_compile_hypergraph=args.cpml_torch_compile_hypergraph,
     )
-    if mixed:
+    if joint_mix:
+        gomb = JointMixGomb(cfg).to(device)
+        model_label = "joint_mix_gomb[c3,c4,w2,w3]"
+    elif mixed:
         gomb = MixedArityGomb(cfg, cycle_ks=cycle_ks).to(device)
         model_label = f"mixed_arity_gomb[{','.join(str(k) for k in cycle_ks)}]"
     else:
         gomb = _MODELS[args.model](cfg).to(device)
         model_label = args.model
 
-    if mixed:
+    if joint_mix:
+        assert pools_joint is not None
+        cyc_t_by_slot = {
+            s: torch.from_numpy(pools_joint[s][0]).to(device) for s in JOINT_BA_SLOTS
+        }
+        cyc_sgn_t_by_slot = {
+            s: torch.from_numpy(pools_joint[s][1]).to(device) for s in JOINT_BA_SLOTS
+        }
+    elif mixed:
         cyc_t_by_k = {
             k: torch.from_numpy(cycles_by_k_np[k]).to(device) for k in ks_used
         }
@@ -321,11 +576,18 @@ def main() -> None:
         f"[model] {model_label} d_embed={args.d_embed} M_outer={args.M_outer} "
         f"d_outer={args.d_outer} d_middle={args.d_middle} "
         f"d_core={args.d_core} n_tiers={args.n_tiers} "
+        f"cpml_topology={args.cpml_topology} "
+        f"cpml_tier_organization={args.cpml_tier_organization} "
+        f"cpml_capsule_soft_router={args.cpml_capsule_soft_router} "
+        f"cpml_capsule_routing_iterations={args.cpml_capsule_routing_iterations} "
         f"n_params={gomb.n_params()}  wd={args.weight_decay}",
         flush=True,
     )
 
     def _fwd(edges_t):
+        if joint_mix:
+            assert cyc_t_by_slot is not None and cyc_sgn_t_by_slot is not None
+            return gomb(cyc_t_by_slot, cyc_sgn_t_by_slot, tier_of, edges_t)
         if mixed:
             return gomb(cyc_t_by_k, cyc_sgn_t_by_k, tier_of, edges_t)
         return gomb(cyc_t, cyc_sgn_t, tier_of, edges_t)
@@ -376,9 +638,27 @@ def main() -> None:
         metrics = metrics_val
     params_by_module = _param_breakdown(gomb)
 
-    alpha_dump = (
-        gomb.alpha().cpu().tolist() if mixed else None  # type: ignore[union-attr]
+    infer_parts: list[torch.Tensor] = [e_va_t]
+    if three_way and e_te_t is not None:
+        infer_parts.append(e_te_t)
+    e_infer = torch.cat(infer_parts, dim=0)
+    infer_wall_s, infer_n_edges, infer_edges_per_s = (
+        _benchmark_inference_wall_s(
+            gomb,
+            forward_edges=e_infer,
+            forward_fn=_fwd,
+            device=device,
+        )
     )
+    print(
+        f"[inference] edges={infer_n_edges} wall_s={infer_wall_s:.4f} "
+        f"edges_per_s={infer_edges_per_s:.1f}",
+        flush=True,
+    )
+
+    alpha_dump = None
+    if mixed or joint_mix:
+        alpha_dump = gomb.alpha().cpu().tolist()  # type: ignore[union-attr]
     summary = {
         "dataset": args.dataset, "seed": args.seed,
         "edge_split": args.edge_split,
@@ -386,11 +666,23 @@ def main() -> None:
         "weight_decay": args.weight_decay,
         "pos_weight_auto": bool(args.pos_weight_auto),
         "model": model_label,
-        "cycle_ks": list(ks_used) if mixed else None,
+        "joint_mix": joint_mix,
+        "joint_slot_cap": int(joint_slot_cap) if joint_mix and joint_slot_cap else None,
+        "cycle_ks": list(ks_used) if mixed and not joint_mix else None,
         "alpha_k":  alpha_dump,
         "M_outer": args.M_outer, "d_outer": args.d_outer,
         "d_middle": args.d_middle, "d_core": args.d_core,
         "n_tiers": args.n_tiers, "k": args.k, "topk": args.topk,
+        "cycle_abb_mode": args.cycle_abb_mode,
+        "cycle_abb_fullness_gate": float(args.cycle_abb_fullness_gate),
+        "cpml_topology": args.cpml_topology,
+        "cpml_tier_organization": args.cpml_tier_organization,
+        "cpml_capsule_route_hidden": args.cpml_capsule_route_hidden,
+        "cpml_capsule_routing_iterations": args.cpml_capsule_routing_iterations,
+        "cpml_capsule_soft_router": args.cpml_capsule_soft_router,
+        "cpml_capsule_hg_hidden": args.cpml_capsule_hg_hidden,
+        "cpml_capsule_hg_cache_degrees": bool(args.cpml_capsule_hg_cache_degrees),
+        "cpml_torch_compile_hypergraph": bool(args.cpml_torch_compile_hypergraph),
         "n_params": gomb.n_params(),
         "params_by_module": params_by_module,
         "n_cycles": n_cycles_total,
@@ -400,6 +692,9 @@ def main() -> None:
         "val_auc_start": val_aucs[0], "val_auc_end": val_aucs[-1],
         "val_auc_best": best,
         "wall_s": time.perf_counter() - t0,
+        "infer_wall_s": infer_wall_s,
+        "infer_n_edges": infer_n_edges,
+        "infer_edges_per_s": infer_edges_per_s,
         **metrics,
     }
     if three_way and e_te is not None:

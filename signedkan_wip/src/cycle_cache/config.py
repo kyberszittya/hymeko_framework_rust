@@ -16,7 +16,7 @@ def _import_n_tuples():
 
 
 def _import_walks():
-    from . import walks
+    from .. import walks
     return walks
 
 

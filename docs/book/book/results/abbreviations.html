@@ -39,10 +39,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../searchindex-95c7efcc.js";
+            window.path_to_searchindex_js = "../searchindex-e042d62a.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2b0bb4b9.js"></script>
+        <script src="../toc-eca09d14.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -213,6 +213,8 @@
 <tr><td><strong>SiGAT</strong></td><td>Signed attention GAT-style baseline (<code>sigat_attn</code>).</td></tr>
 <tr><td><strong>MLP / GCN</strong></td><td>Blind MLP / GCN baselines in phase panels (<code>mlp_blind</code>, <code>gcn_blind</code>).</td></tr>
 <tr><td><strong>Gömb</strong></td><td>HymeKo-Gömb three-shell cascade (outer Clifford-FIR / middle HSiKAN-CR / inner CPML-MLP).</td></tr>
+<tr><td><strong>CPML route</strong></td><td>Default inner CPML readout: tiers <strong>route</strong> cycles; each tier aggregator reads <strong>base</strong> <code>X_0</code>; concat once (<code>cpml.py</code> <code>topology="route"</code>).</td></tr>
+<tr><td><strong>CPML capsule_soft</strong></td><td>Learned softmax cycle→tier routing inside CPML (<strong><code>topology=route</code></strong> only); <code>GombConfig.cpml_tier_organization</code>.</td></tr>
 <tr><td><strong>edge_cr</strong></td><td>Slashdot (and Epinions) <strong>Catmull–Rom per-edge highway</strong> HSiKAN configuration used as a <strong>strong reference</strong> row (<code>run_label: edge_cr</code>).</td></tr>
 </tbody>
 </table>

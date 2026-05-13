@@ -1,0 +1,47 @@
+% TikZ: three-layer cn optimization pattern (L1 training, L2 search, L3 budget).
+\begin{tikzpicture}[font=\small, >=latex, node distance=0.4cm]
+
+  % L1: inner training
+  \draw[fill=blue!10] (0,3.6) rectangle (5.0,5.4);
+  \node[anchor=west] at (0.15,5.15) {\textbf{L1 -- inner training}};
+  \node[anchor=west, align=left] at (0.15,4.35)
+    {Hard-Concrete $\alpha_k$ gate\\[-0.1em]
+     differentiable, pushed to $\{0,1\}$\\[-0.1em]
+     $\lambda_{L0}$ controls sparsity};
+
+  % L2: outer search
+  \draw[fill=green!10] (5.5,3.6) rectangle (10.5,5.4);
+  \node[anchor=west] at (5.65,5.15) {\textbf{L2 -- outer search}};
+  \node[anchor=west, align=left] at (5.65,4.35)
+    {ASHA / successive halving\\[-0.1em]
+     prune at partial-epoch AUC\\[-0.1em]
+     composes with skip-attn};
+
+  % L3: enumeration budget
+  \draw[fill=orange!15] (0,1.2) rectangle (5.0,3.0);
+  \node[anchor=west] at (0.15,2.75) {\textbf{L3 -- enum budget}};
+  \node[anchor=west, align=left] at (0.15,1.95)
+    {$\mathrm{cap}_n \propto H(p_n)$\\[-0.1em]
+     equal-information per arity\\[-0.1em]
+     $c_2..c_7$ tractable};
+
+  % shared arity range
+  \draw[fill=gray!15] (5.5,1.2) rectangle (10.5,3.0);
+  \node[anchor=west] at (5.65,2.75) {\textbf{shared}};
+  \node[anchor=west, align=left] at (5.65,1.95)
+    {\texttt{HSIKAN\_ARITY\_RANGE}\\[-0.1em]
+     = ``2,3,4,5,6,7''\\[-0.1em]
+     default keeps current};
+
+  % output
+  \draw[fill=yellow!15] (2.5,-0.4) rectangle (8.0,0.6);
+  \node[anchor=west, align=left] at (2.65,0.1)
+    {\textbf{output:} sparse arity support + Pareto front};
+
+  % arrows
+  \draw[->, thick] (2.5,3.6) -- (4.0,0.6);
+  \draw[->, thick] (8.0,3.6) -- (6.5,0.6);
+  \draw[->, thick] (2.5,1.2) -- (4.0,0.6);
+  \draw[->, thick] (8.0,1.2) -- (6.5,0.6);
+
+\end{tikzpicture}

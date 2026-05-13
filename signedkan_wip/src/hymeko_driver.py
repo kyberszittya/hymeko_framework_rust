@@ -25,6 +25,14 @@ Usage:
     python -m signedkan_wip.src.hymeko_driver \\
         --sweep data/hsikan/sweep_msg.hymeko
 
+    # Gömb smoke (subprocess ``run_gomb_smoke``) — default training profile:
+    python -m signedkan_wip.src.hymeko_driver \\
+        --backend gomb --device cpu
+
+    # Gömb grid sweep over ``gomb.topk`` (see ``data/hsikan/sweep_grid_gomb.hymeko``):
+    python -m signedkan_wip.src.hymeko_driver \\
+        --backend gomb --sweep data/hsikan/sweep_grid_gomb.hymeko --device cpu
+
 The driver maps tagged hyperedges to existing pipeline knobs
 (`HSIKAN_TOPK_*` env vars + `cell_signed_graph` arguments) so the
 first version can stand on the shoulders of the existing training
@@ -125,6 +133,16 @@ def parse_training(training_path: str) -> dict:
         "entropy_kind": "spectral",
         "dataset_name": None,
         "max_k4": 200000,
+        # Gömb smoke (`--backend gomb` + `run_gomb_msg_sweep` base profile)
+        "gomb_topk": 48,
+        "gomb_cycle_abb_mode": "none",
+        "gomb_cycle_abb_fullness_gate": 0.25,
+        "gomb_d_embed": 16,
+        "gomb_d_outer": 8,
+        "gomb_M_outer": 2,
+        "gomb_d_middle": 16,
+        "gomb_d_core": 16,
+        "gomb_k": 3,
     }
 
     for it in items:
@@ -179,6 +197,29 @@ def parse_training(training_path: str) -> dict:
         if "epoch_loop" in tags:
             knobs["n_epochs"] = int(_child_value(it, "n_epochs", knobs["n_epochs"]))
 
+        # @gomb_smoke <gomb_smoke> { topk …; cycle_abb_mode …; … }
+        if "gomb_smoke" in tags:
+            tv = _child_value(it, "topk", None)
+            if tv is not None:
+                knobs["gomb_topk"] = int(tv)
+            cm = _child_value(it, "cycle_abb_mode", None)
+            if isinstance(cm, str) and cm.strip():
+                knobs["gomb_cycle_abb_mode"] = cm.strip().strip('"')
+            gv = _child_value(it, "cycle_abb_fullness_gate", None)
+            if gv is not None:
+                knobs["gomb_cycle_abb_fullness_gate"] = float(gv)
+            for key, dest, caster in (
+                ("d_embed", "gomb_d_embed", int),
+                ("d_outer", "gomb_d_outer", int),
+                ("M_outer", "gomb_M_outer", int),
+                ("d_middle", "gomb_d_middle", int),
+                ("d_core", "gomb_d_core", int),
+                ("k", "gomb_k", int),
+            ):
+                v = _child_value(it, key, None)
+                if v is not None:
+                    knobs[dest] = caster(v)
+
     return knobs
 
 
@@ -221,12 +262,25 @@ def parse_sweep(sweep_path: str) -> dict:
 # ─── Execution: HyMeKo config → existing run_final_cell ───────────
 
 
-def run_single(arch: dict, training: dict, dataset: str | None,
-                hidden_override: int | None = None) -> dict:
+def run_single(
+    arch: dict,
+    training: dict,
+    dataset: str | None,
+    hidden_override: int | None = None,
+    *,
+    backend: str = "hsikan",
+    device: str | None = None,
+) -> dict:
     """Run one training cell with the parsed arch+training config.
     Routes through `signedkan_wip.src.run_final_cell.cell_signed_graph`,
     wiring HSIKAN_TOPK_* env vars on the way in.
+
+    When ``backend == "gomb"``, runs ``run_gomb_smoke`` in a subprocess and
+    returns the trailing JSON summary (plus ``backend`` / ``device`` keys).
     """
+    if backend == "gomb":
+        return run_single_gomb(training, dataset, device=device)
+
     import torch
 
     ds = dataset or training.get("dataset_name") or "bitcoin_alpha"
@@ -251,9 +305,12 @@ def run_single(arch: dict, training: dict, dataset: str | None,
 
     from signedkan_wip.src.run_final_cell import cell_signed_graph
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device:
+        dev = torch.device(device)
+    else:
+        dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     out = cell_signed_graph(
-        ds, "HSiKAN", hidden, n_epochs, max_k4, device, seed=seed,
+        ds, "HSiKAN", hidden, n_epochs, max_k4, dev, seed=seed,
     )
     if out is not None:
         out["seed"] = seed
@@ -269,9 +326,81 @@ def run_single(arch: dict, training: dict, dataset: str | None,
     return out or {}
 
 
-def run_sweep(sweep: dict, base_arch: dict, base_training: dict,
-              dataset: str, output_path: str | None,
-              max_runs: int | None = None) -> list[dict]:
+def run_single_gomb(
+    training: dict,
+    dataset: str | None,
+    *,
+    device: str | None = None,
+) -> dict:
+    """One Gömb smoke: subprocess ``run_gomb_smoke`` from ``parse_training`` knobs."""
+    import subprocess
+
+    try:
+        import torch
+    except ImportError:
+        torch = None  # type: ignore[assignment]
+
+    dev = device
+    if not dev:
+        if torch is not None and torch.cuda.is_available():
+            dev = "cuda"
+        else:
+            dev = "cpu"
+
+    repo = Path(__file__).resolve().parents[2]
+    ds = dataset or training.get("dataset_name") or "sbm_n200"
+    base = {**training, "_python_executable": sys.executable}
+    from signedkan_wip.src.gomb_pgraph_mapping import smoke_argv_from_knobs
+
+    cmd = smoke_argv_from_knobs(
+        dataset=ds,
+        device=dev,
+        edge_split="80_10_10",
+        seed=int(training.get("seed", 0)),
+        base=base,
+        structure={},
+    )
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(repo)
+    proc = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        cwd=str(repo),
+        env=env,
+        timeout=3600,
+    )
+    if proc.returncode != 0:
+        return {
+            "backend": "gomb",
+            "device": dev,
+            "dataset": ds,
+            "error": (proc.stderr or "")[-4000:],
+            "returncode": proc.returncode,
+        }
+    row = None
+    for line in reversed(proc.stdout.splitlines()):
+        line = line.strip()
+        if line.startswith('{"dataset"'):
+            row = json.loads(line)
+            break
+    out = row or {}
+    out["backend"] = "gomb"
+    out["device"] = dev
+    return out
+
+
+def run_sweep(
+    sweep: dict,
+    base_arch: dict,
+    base_training: dict,
+    dataset: str,
+    output_path: str | None,
+    max_runs: int | None = None,
+    *,
+    backend: str = "hsikan",
+    device: str | None = None,
+) -> list[dict]:
     """Grid sweep — Cartesian product of the param_range edges."""
     ranges = sweep["ranges"]
     policy = sweep["policy"]
@@ -307,8 +436,17 @@ def run_sweep(sweep: dict, base_arch: dict, base_training: dict,
             training["topk_pruner"] = v.strip('"') if isinstance(v, str) else v
         if "optimizer.lr" in cfg:
             training["lr"] = float(cfg["optimizer.lr"])
+        if "gomb.topk" in cfg:
+            training["gomb_topk"] = int(cfg["gomb.topk"])
+        if "gomb.cycle_abb_mode" in cfg:
+            v = cfg["gomb.cycle_abb_mode"]
+            training["gomb_cycle_abb_mode"] = (
+                v.strip('"') if isinstance(v, str) else str(v)
+            )
         try:
-            out = run_single(arch, training, dataset)
+            out = run_single(
+                arch, training, dataset, backend=backend, device=device
+            )
             out["sweep_cell"] = cfg
             results.append(out)
             if output_path:
@@ -327,12 +465,23 @@ def run_sweep(sweep: dict, base_arch: dict, base_training: dict,
 
 def main():
     ap = argparse.ArgumentParser(
-        description="HyMeKo-driven HSiKAN training")
+        description="HyMeKo-driven HSiKAN or Gömb training")
+    ap.add_argument(
+        "--backend",
+        choices=("hsikan", "gomb"),
+        default="hsikan",
+        help="Execution backend: HSiKAN cell vs Gömb smoke subprocess.",
+    )
     ap.add_argument("--arch",     help="Architecture .hymeko")
     ap.add_argument("--training", help="Training .hymeko")
     ap.add_argument("--sweep",    help="Sweep .hymeko (grid / GA / MSG)")
     ap.add_argument("--dataset",  default=None,
                     help="Override the dataset (default: from training file)")
+    ap.add_argument(
+        "--device",
+        default=None,
+        help="cpu / cuda (Gömb backend only; default: auto)",
+    )
     ap.add_argument("--max-runs", type=int, default=None,
                     help="Cap sweep runs (default from policy)")
     ap.add_argument("--output",   default=None,
@@ -345,17 +494,50 @@ def main():
         sweep = parse_sweep(args.sweep)
         # Use the first arch + training in the sweep file's @use_*
         # references; if not present, require explicit --arch/--training
-        arch = parse_arch(args.arch) if args.arch else \
-            parse_arch("data/hsikan/arch_mixed_k34.hymeko")
-        training = parse_training(args.training) if args.training else \
-            parse_training("data/hsikan/training.hymeko")
+        if args.backend == "gomb":
+            arch = {"name": "gomb_placeholder", "hidden": 0, "arities": []}
+            tpath = args.training or str(
+                Path(__file__).resolve().parents[2]
+                / "data"
+                / "hsikan"
+                / "gomb_training.hymeko"
+            )
+            training = parse_training(tpath)
+        else:
+            arch = parse_arch(args.arch) if args.arch else \
+                parse_arch("data/hsikan/arch_mixed_k34.hymeko")
+            training = parse_training(args.training) if args.training else \
+                parse_training("data/hsikan/training.hymeko")
         if args.print_only:
             print(json.dumps({"arch": arch, "training": training,
                               "sweep": sweep}, indent=2, default=str))
             return
-        run_sweep(sweep, arch, training,
-                  args.dataset or training.get("dataset_name") or "bitcoin_alpha",
-                  args.output, max_runs=args.max_runs)
+        run_sweep(
+            sweep,
+            arch,
+            training,
+            args.dataset or training.get("dataset_name") or "bitcoin_alpha",
+            args.output,
+            max_runs=args.max_runs,
+            backend=args.backend,
+            device=args.device,
+        )
+        return
+
+    if args.backend == "gomb":
+        tpath = args.training or str(
+            Path(__file__).resolve().parents[2]
+            / "data"
+            / "hsikan"
+            / "gomb_training.hymeko"
+        )
+        training = parse_training(tpath)
+        if args.print_only:
+            print(json.dumps({"backend": "gomb", "training": training},
+                             indent=2, default=str))
+            return
+        out = run_single_gomb(training, args.dataset, device=args.device)
+        print(json.dumps(out))
         return
 
     if not args.arch or not args.training:
@@ -366,7 +548,7 @@ def main():
         print(json.dumps({"arch": arch, "training": training}, indent=2,
                           default=str))
         return
-    out = run_single(arch, training, args.dataset)
+    out = run_single(arch, training, args.dataset, backend=args.backend)
     print(json.dumps(out))
 
 

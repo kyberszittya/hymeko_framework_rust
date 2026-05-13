@@ -257,3 +257,15 @@ def test_unpack_vectorised_returns_native_ints():
             assert type(x) is int
         for x in nt.edge_signs:
             assert type(x) is int
+
+
+def test_cached_construct_walks_resolves_walks_module():
+    """Regression 2026-05-12: ``cycle_cache.config`` must import
+    ``signedkan_wip.src.walks``, not a non-existent ``cycle_cache.walks``.
+    Otherwise ``HSIKAN_MIXED_TUPLES=…,w2,…`` (joint_ba) raises
+    ImportError before any training."""
+    g = _toy_graph()
+    out = cycle_cache.cached_construct_walks(
+        g, walk_len=2, max_walks=200, model_seed=0,
+    )
+    assert isinstance(out, list)

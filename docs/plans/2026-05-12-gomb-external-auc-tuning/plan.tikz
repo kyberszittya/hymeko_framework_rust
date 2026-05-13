@@ -1,0 +1,11 @@
+% TikZ: Gömb tuning objective vs external AUC bars (non-HSiKAN).
+\begin{tikzpicture}[font=\small, >=latex]
+  \draw[fill=blue!8] (-0.2,-0.2) rectangle (6.8,3.2);
+  \node[anchor=west] at (0,2.8) {\textbf{Objective}};
+  \node[anchor=west] at (0.2,2.2) {maximize \texttt{test\_auroc} from \texttt{run\_gomb\_smoke}};
+  \node[anchor=west] at (0.2,1.6) {split \texttt{80\_10\_10} (same convention as SGCN rows in repo docs)};
+  \draw[fill=orange!12] (0.2,0.2) rectangle (3.1,1.0);
+  \node[anchor=west] at (0.4,0.65) {Stage A: beat \textit{published} SGCN};
+  \draw[fill=green!12] (3.4,0.2) rectangle (6.5,1.0);
+  \node[anchor=west] at (3.55,0.65) {Stage B: approach \textit{tuned} SGCN};
+\end{tikzpicture}

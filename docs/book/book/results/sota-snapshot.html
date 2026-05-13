@@ -39,10 +39,10 @@
             const path_to_root = "../";
             const default_light_theme = "rust";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "../searchindex-95c7efcc.js";
+            window.path_to_searchindex_js = "../searchindex-e042d62a.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2b0bb4b9.js"></script>
+        <script src="../toc-eca09d14.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -191,7 +191,36 @@
 <p>Committed <strong>numeric</strong> artifacts for SignedKAN / HSiKAN / graph LP experiments.<br><strong>Rule:</strong> every figure below maps to a file path; if your run disagrees, update the file and then this page.</p>
 <p><strong>See also:</strong> <a href="RESULTS_DISCIPLINE.html"><code>RESULTS_DISCIPLINE.md</code></a> (protocol names), <a href="../COLD_START.html"><code>COLD_START.md</code></a> (onboarding).</p>
 <hr>
-<h2 id="1-which-artifact-answers-which-question"><a class="header" href="#1-which-artifact-answers-which-question">1. Which artifact answers which question</a></h2>
+<h2 id="1-executive-summary--hymeko-line-architectures-vs-baselines"><a class="header" href="#1-executive-summary--hymeko-line-architectures-vs-baselines">1. Executive summary — HyMeKo-line architectures vs baselines</a></h2>
+<p><strong>Metric:</strong> held-out <strong>test ROC–AUC</strong> (mean ± std over <strong>5 seeds</strong>) unless noted.<br><strong>★</strong> = HyMeKo research stack (SignedKAN / HSiKAN / joint tuple protocols / Gömb). External baselines are included for context only.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Model / run</th><th>Kind</th><th>bitcoin_alpha</th><th>bitcoin_otc</th><th>slashdot</th><th>epinions</th><th>Primary evidence</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>joint mix</strong> (<code>joint_ba</code> / <code>joint_otc</code>)</td><td>★ tuples <strong>c3,c4,w2,w3</strong> + SignedKAN</td><td><strong>0.9845</strong></td><td><strong>0.9801</strong> (n=5; <code>cycle_otc</code> n=4 → 0.9266)</td><td>—</td><td>—</td><td><code>signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl</code> (detail §3–§4)</td></tr>
+<tr><td><strong>hsikan_mixed_leanest</strong></td><td>★ HSiKAN Phase‑8 panel</td><td>0.828±0.010</td><td>0.851±0.016</td><td>—</td><td>—</td><td><code>phase8_bitcoin_5seed.json</code> + <code>master_table.md</code></td></tr>
+<tr><td><strong>hsikan_k3_only_leanest</strong></td><td>★ HSiKAN (Slashdot k=3 lean)</td><td>—</td><td>—</td><td>0.614±0.002</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><strong>signedkan_L1</strong></td><td>★ SignedKAN</td><td>0.745±0.023</td><td>0.802±0.012</td><td>—</td><td>—</td><td><code>phase8_bitcoin_5seed.json</code> + <code>master_table.md</code></td></tr>
+<tr><td><strong>HymeKo-Gömb</strong> (slim sweep winner)</td><td>★ three-shell cascade (FIR → HSiKAN‑CR → CPML)</td><td>—</td><td>—</td><td><strong>0.9031</strong> ± <strong>0.0008</strong> (5)</td><td>—</td><td><code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code> (detail §8)</td></tr>
+<tr><td><strong>edge_cr</strong> (Slashdot / Epinions ref)</td><td>★ strong HSiKAN <strong>per-edge Catmull–Rom</strong> recipe</td><td>—</td><td>—</td><td>0.9067 ± 0.0030 (5)</td><td>0.8464 ± 0.0095 (5)</td><td><code>slashdot_edge_cr_5seed_2026_05_09.jsonl</code>, <code>epinions_edge_cr_5seed_2026_05_09.jsonl</code></td></tr>
+<tr><td><code>sgcn_balance</code></td><td>ref SGCN</td><td>0.929±0.010</td><td>0.942±0.006</td><td>0.919±0.004</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><code>sigat_attn</code></td><td>ref SiGAT</td><td>0.903±0.008</td><td>0.932±0.004</td><td>—</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><code>mlp_blind</code></td><td>blind MLP</td><td>0.892±0.007</td><td>0.908±0.009</td><td>0.888±0.001</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><code>gcn_blind</code></td><td>blind GCN</td><td>0.871±0.017</td><td>0.905±0.013</td><td>0.871±0.011</td><td>—</td><td><code>master_table.md</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>How to read the ★ rows</strong></p>
+<ul>
+<li><strong>Joint mix</strong> is <em>not</em> a different backbone name — it is the <strong>same SignedKAN family</strong> with the <strong>richer tuple set</strong> (cycles + walks); it tops Bitcoin in this snapshot.</li>
+<li><strong>Phase‑8 panel</strong> rows (<code>hsikan_*</code>, <code>signedkan_L1</code>, blinds, GCN/SGCN/SiGAT) share one protocol; see <strong>§3–§4</strong> for bar charts.</li>
+<li><strong>Gömb</strong> vs <strong>edge_cr</strong> on Slashdot is a deliberate <strong>cascade vs reference highway</strong> comparison — negative at the stated gate; see <strong>§8</strong>.</li>
+</ul>
+<p>Full multi-dataset grid (incl. synthetic SBM / hier / karate): <code>signedkan_wip/experiments/results/master_table.md</code>.</p>
+<hr>
+<h2 id="2-which-artifact-answers-which-question"><a class="header" href="#2-which-artifact-answers-which-question">2. Which artifact answers which question</a></h2>
 <pre><code class="language-mermaid">flowchart LR
   subgraph joint ["Joint mix (cycles + walks)"]
     J["tuples c3,c4,w2,w3"]
@@ -208,7 +237,7 @@
 </code></pre>
 <p><strong>Do not</strong> merge “joint” and “lean panel” into one verbal score — they are different experiments.</p>
 <hr>
-<h2 id="2-bitcoin-alpha--mean-test-auc-5-seeds"><a class="header" href="#2-bitcoin-alpha--mean-test-auc-5-seeds">2. Bitcoin Alpha — mean test AUC (5 seeds)</a></h2>
+<h2 id="3-bitcoin-alpha--mean-test-auc-5-seeds"><a class="header" href="#3-bitcoin-alpha--mean-test-auc-5-seeds">3. Bitcoin Alpha — mean test AUC (5 seeds)</a></h2>
 <p><strong>Joint vs cycle-only</strong> (<code>run_label</code>, <code>joint_mix_5seed_2026_05_08.jsonl</code>):</p>
 <div class="table-wrapper">
 <table>
@@ -250,7 +279,7 @@
     bar [0.9294, 0.9033, 0.8919, 0.8710, 0.8281, 0.7449]
 </code></pre>
 <hr>
-<h2 id="3-bitcoin-otc--mean-test-auc-5-seeds"><a class="header" href="#3-bitcoin-otc--mean-test-auc-5-seeds">3. Bitcoin OTC — mean test AUC (5 seeds)</a></h2>
+<h2 id="4-bitcoin-otc--mean-test-auc-5-seeds"><a class="header" href="#4-bitcoin-otc--mean-test-auc-5-seeds">4. Bitcoin OTC — mean test AUC (5 seeds)</a></h2>
 <p><strong>Joint vs cycle</strong> (same JSONL; <code>cycle_otc</code> has <strong>4</strong> rows in the committed file — one seed missing):</p>
 <div class="table-wrapper">
 <table>
@@ -292,7 +321,7 @@
     bar [0.9421, 0.9322, 0.9077, 0.9055, 0.8506, 0.8020]
 </code></pre>
 <hr>
-<h2 id="4-slashdot--edge_cr-reference-5-seeds"><a class="header" href="#4-slashdot--edge_cr-reference-5-seeds">4. Slashdot — <code>edge_cr</code> reference (5 seeds)</a></h2>
+<h2 id="5-slashdot--edge_cr-reference-5-seeds"><a class="header" href="#5-slashdot--edge_cr-reference-5-seeds">5. Slashdot — <code>edge_cr</code> reference (5 seeds)</a></h2>
 <p>File: <code>slashdot_edge_cr_5seed_2026_05_09.jsonl</code><br>Per-seed AUC: <strong>0.9101, 0.9055, 0.9016, 0.9093, 0.9068</strong> → mean <strong>0.9067</strong>, pstdev <strong>0.0030</strong>.</p>
 <pre><code class="language-mermaid">xychart-beta
     title "Slashdot edge_cr — test AUC by seed"
@@ -301,7 +330,7 @@
     bar [0.9101, 0.9055, 0.9016, 0.9093, 0.9068]
 </code></pre>
 <hr>
-<h2 id="5-epinions--committed-snapshots"><a class="header" href="#5-epinions--committed-snapshots">5. Epinions — committed snapshots</a></h2>
+<h2 id="6-epinions--committed-snapshots"><a class="header" href="#6-epinions--committed-snapshots">6. Epinions — committed snapshots</a></h2>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -314,7 +343,7 @@
 </table>
 </div>
 <hr>
-<h2 id="6-multi-dataset-architecture-table-5-seeds"><a class="header" href="#6-multi-dataset-architecture-table-5-seeds">6. Multi-dataset architecture table (5 seeds)</a></h2>
+<h2 id="7-multi-dataset-architecture-table-5-seeds"><a class="header" href="#7-multi-dataset-architecture-table-5-seeds">7. Multi-dataset architecture table (5 seeds)</a></h2>
 <p>Source: <code>signedkan_wip/experiments/results/master_table.md</code><br>(mean±std AUC; excerpt — full table in file.)</p>
 <div class="table-wrapper">
 <table>
@@ -330,14 +359,14 @@
 </table>
 </div>
 <hr>
-<h2 id="7-hymeko-gömb-vs-slashdot-sota-reported"><a class="header" href="#7-hymeko-gömb-vs-slashdot-sota-reported">7. HymeKo-Gömb vs Slashdot SOTA (reported)</a></h2>
+<h2 id="8-hymeko-gömb-vs-slashdot-sota-reported"><a class="header" href="#8-hymeko-gömb-vs-slashdot-sota-reported">8. HymeKo-Gömb vs Slashdot SOTA (reported)</a></h2>
 <p>Not re-measured here — narrative + tables: <code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code>.<br>Headline: Gömb slim mean <strong>~0.9031</strong> vs <code>edge_cr</code> reference <strong>~0.9067</strong> (negative attempt at −2.3σ vs that reference).</p>
 <hr>
-<h2 id="8-renderer-note"><a class="header" href="#8-renderer-note">8. Renderer note</a></h2>
+<h2 id="9-renderer-note"><a class="header" href="#9-renderer-note">9. Renderer note</a></h2>
 <p><strong>Mermaid</strong> <code>xychart-beta</code> renders on <strong>GitHub</strong> and many local Markdown previews; if a viewer is too old, use the numeric tables in the same section.</p>
 <hr>
-<h2 id="9-revision"><a class="header" href="#9-revision">9. Revision</a></h2>
-<p>When you add a new SOTA row, bump the table + chart and update the <strong>Last verified</strong> line at the bottom of this file.</p>
+<h2 id="10-revision"><a class="header" href="#10-revision">10. Revision</a></h2>
+<p>When you add a new SOTA row, update the <strong>executive summary</strong> (§1), the matching detailed section + chart, and this <strong>Last verified</strong> line.</p>
 <p><strong>Last verified against on-disk artifacts:</strong> 2026-05-12 (workspace snapshot).</p>
 
                     </main>
@@ -348,7 +377,7 @@
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../results/evidence-contract.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../results/bitcoin-optuna-vs-sota.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -362,7 +391,7 @@
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../results/evidence-contract.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../results/bitcoin-optuna-vs-sota.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

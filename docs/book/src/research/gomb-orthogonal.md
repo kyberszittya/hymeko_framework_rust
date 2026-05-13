@@ -36,6 +36,8 @@ L(D,A,C,F)
 
 **Related CPML knob:** inside a **single** CPML stack, `aggregator_kind` makes **HSiKAN vs MLP** an axis **orthogonal to** “flat vs tiered topology” — a **2×2** design at the CPML layer (`signedkan_wip/src/cpml.py`, `CPMLConfig` docstring).
 
+**CPML readout sub-axis (independent of the factorial \(C\) bit):** when CPML is **on**, `topology ∈ {route, pyramid}` selects **tier routing** (default **route**: each tier’s aggregator always reads the **same base** vertex tensor; **pyramid**: legacy widening concat). Maths + **Highway / Capsule / KAN** reading: **[CPML routes: Highway · Capsule · KAN](./cpml-routing-highway-capsule-kan.md)**.
+
 ---
 
 ## 3. HymeKo-Gömb — **contrast** with the factorial (cascade, not orthogonal axes)
@@ -192,6 +194,7 @@ flowchart TB
 | `docs/plans/2026-05-11-hsikan-cpml-fir-orthogonal/plan.tex` | Full \(2^3\) factorial definition and effect decomposition. |
 | `reports/2026-05-11-hymeko-gomb-sphere.md` | Feasibility + smoke results. |
 | `reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md` | Slashdot SOTA comparison (negative at stated gate). |
+| [CPML routes: Highway · Capsule · KAN](./cpml-routing-highway-capsule-kan.md) | **Route vs pyramid** equations + unified lens (Highway, CapsNet, KAN). |
 
 ---
 

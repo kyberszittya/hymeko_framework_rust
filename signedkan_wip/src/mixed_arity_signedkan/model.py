@@ -147,13 +147,12 @@ class MixedAritySignedKAN(nn.Module):
             self.gate_coefs = None
 
         # Per-edge attention entropy accumulator. Filled during forward
-        # (one (mean) entropy scalar per arity slot in the batched and
-        # full encode paths). Reset at the start of each encode_edges
-        # call. The training loop reads this list and adds
-        #     -λ · mean(H_attn)
-        # to the BCE loss when HSIKAN_ATTN_ENTROPY_LAMBDA > 0.  Plain
-        # tensor accumulation keeps backward through the attention
-        # softmax.
+        # (one mean entropy scalar per arity in batched / full encode).
+        # Reset at each ``encode_edges``.  ``run_final_cell`` adds
+        # **-HSIKAN_ATTN_ENTROPY_LAMBDA · mean(scalars)** to the BCE loss
+        # (see ``_aux_entropy_attention_alpha``), rewarding **higher**
+        # attention entropy.  Plain tensor list keeps autograd through the
+        # attention softmax.
         self._attn_entropy_terms: list[torch.Tensor] | None = None
 
         # Optional per-edge continuous-feature projection.

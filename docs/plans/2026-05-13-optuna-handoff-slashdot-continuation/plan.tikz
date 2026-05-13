@@ -1,0 +1,20 @@
+% TikZ: handoff state and Slashdot continuation.
+\begin{tikzpicture}[font=\small, >=latex]
+  \draw[fill=green!15] (0,2.3) rectangle (3.6,3.6);
+  \node[anchor=west] at (0.15,3.35) {\textbf{Done (disk)}};
+  \node[anchor=west, align=left] at (0.15,2.75)
+    {\texttt{bitcoin\_otc}: best $\approx$0.9957\\[-0.1em]
+     \texttt{bitcoin\_alpha}: best $\approx$0.9972};
+
+  \draw[fill=orange!15] (4.2,2.3) rectangle (8.4,3.6);
+  \node[anchor=west] at (4.35,3.35) {\textbf{Next}};
+  \node[anchor=west, align=left] at (4.35,2.75)
+    {\texttt{slashdot}: resume / start study\\[-0.1em]
+     same \texttt{OPTUNA\_STAMP} + SQLite};
+
+  \draw[fill=blue!8] (0,0.5) rectangle (8.4,1.9);
+  \node[anchor=west] at (0.15,1.55) {\textbf{Driver}};
+  \node[anchor=west, align=left] at (0.15,0.95)
+    {\texttt{run\_optuna\_serial\_datasets.sh} \;|\;
+     preset \texttt{run\_optuna\_core\_signed\_graphs\_serial.sh}};
+\end{tikzpicture}

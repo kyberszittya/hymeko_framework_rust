@@ -202,6 +202,8 @@ def _bench_dataset_outer(
     warmup: int,
     iters: int,
     torch_compile: bool,
+    cycle_abb_mode: str = "none",
+    cycle_abb_fullness_gate: float = 0.25,
 ) -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -222,6 +224,8 @@ def _bench_dataset_outer(
     t_enum = time.perf_counter()
     cycles_np, cyc_signs_np = _enumerate_cycles(
         e_tr, s_tr, n, k=k, m_per_vertex=topk,
+        abb_mode=cycle_abb_mode,
+        abb_fullness_gate=cycle_abb_fullness_gate,
     )
     enum_s = time.perf_counter() - t_enum
     mc = int(cycles_np.shape[0])
@@ -315,6 +319,18 @@ def main() -> None:
     p.add_argument("--d-layer", type=int, default=16, dest="d_layer")
     p.add_argument("--k", type=int, default=3, help="cycle arity")
     p.add_argument("--topk", type=int, default=64, help="m_per_vertex cycle cap (dataset mode)")
+    p.add_argument(
+        "--cycle-abb-mode",
+        default="none",
+        choices=("none", "start_local", "global_min"),
+        help="Rust cycle enumerator ABB mode (same as run_gomb_smoke).",
+    )
+    p.add_argument(
+        "--cycle-abb-fullness-gate",
+        type=float,
+        default=0.25,
+        help="global_min ABB fullness gate.",
+    )
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--val-frac", type=float, default=0.2, dest="val_frac")
     p.add_argument("--warmup", type=int, default=5)
@@ -349,6 +365,8 @@ def main() -> None:
                 warmup=args.warmup,
                 iters=args.iters,
                 torch_compile=args.torch_compile,
+                cycle_abb_mode=args.cycle_abb_mode,
+                cycle_abb_fullness_gate=float(args.cycle_abb_fullness_gate),
             )
         return
 

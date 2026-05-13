@@ -47,8 +47,7 @@ pub fn maximal_structure(p: &LoweredPGraph) -> MaximalStructure {
 
         // Forward pass: every input must be raw or producible by some
         // surviving unit.
-        let producible: BTreeSet<DeclId> =
-            close_producible(p, &units, &p.raws);
+        let producible: BTreeSet<DeclId> = close_producible(p, &units, &p.raws);
         units.retain(|u| {
             let inputs = p.unit_inputs.get(u).cloned().unwrap_or_default();
             inputs.iter().all(|m| producible.contains(m))
@@ -69,10 +68,7 @@ pub fn maximal_structure(p: &LoweredPGraph) -> MaximalStructure {
                     .into_iter()
             })
             .collect();
-        let useful: BTreeSet<DeclId> = consumed_by_surviving
-            .union(&p.products)
-            .copied()
-            .collect();
+        let useful: BTreeSet<DeclId> = consumed_by_surviving.union(&p.products).copied().collect();
         units.retain(|u| {
             let outputs = p.unit_outputs.get(u).cloned().unwrap_or_default();
             outputs.iter().all(|m| useful.contains(m))

@@ -40,10 +40,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-95c7efcc.js";
+            window.path_to_searchindex_js = "searchindex-e042d62a.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-2b0bb4b9.js"></script>
+        <script src="toc-eca09d14.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -2153,7 +2153,7 @@ out.append(AuditCase(
 </thead>
 <tbody>
 <tr><td><code>signedkan.py::SignedKANLayer</code></td><td>Stable. Option-C signed-incidence aggregation per arity k.</td></tr>
-<tr><td><code>mixed_arity_signedkan.py::MixedAritySignedKAN</code></td><td>Stable. αₖ-mixed multi-arity model.</td></tr>
+<tr><td><code>mixed_arity_signedkan/::MixedAritySignedKAN</code></td><td>Stable. αₖ-mixed multi-arity model (package split 2026-05-11).</td></tr>
 <tr><td><code>n_tuples.py::construct_k</code></td><td>Stable. k-cycle / k-tuple enumeration (Python wrapper around Rust enumerator).</td></tr>
 <tr><td><code>hyperedges.py::construct</code></td><td>Stable. k=3 cycle construction.</td></tr>
 <tr><td><code>splines.py</code></td><td>Stable. Batched B-spline / Catmull-Rom / Kochanek-Bartels activations.</td></tr>
@@ -2184,7 +2184,9 @@ out.append(AuditCase(
 ├── hymeko_train_walker.py  # NEW: walks training.hymeko's dataflow, dispatches per-op
 ├── run_final_cell.py       # cell_signed_graph: the actual training kernel (~500 LOC)
 ├── signedkan.py            # SignedKANLayer (Option C)
-├── mixed_arity_signedkan.py # MixedAritySignedKAN (αₖ mixer + sparse M_e)
+├── mixed_arity_signedkan/  # MixedAritySignedKAN (αₖ mixer + sparse M_e)
+├── hymeko_gomb/            # HymeKo-Gömb cascade (outer / middle / inner)
+├── cpml.py                 # CPML tiered stack (+ factorial smoke)
 ├── splines.py              # Catmull-Rom / B-spline / KB activations
 ├── n_tuples.py             # k-cycle / k-tuple enumeration (calls Rust)
 ├── hyperedges.py           # k=3 triad construction
@@ -2205,7 +2207,9 @@ out.append(AuditCase(
 <ul>
 <li><a href="#results--evidence-hub">Results &amp; evidence</a> — abbreviations, math, SOTA charts, evidence contract, artifact indexes (mdBook).</li>
 <li><a href="#research-hsikan-architecture">HSiKAN architecture</a> — the core architecture</li>
+<li><a href="#neural-network-variants--layer-geometry-signedkan_wip">NN variants &amp; layer geometry</a> — module-by-module layout (SignedKAN, MixedArity, baselines, CPML, Gömb)</li>
 <li><a href="#hymeko-gömb-and-orthogonal--three-precise-meanings">HymeKo-Gömb: “orthogonal” meanings</a> — factorial vs cascade vs bank regularisation</li>
+<li><a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a> — tier routing maths; default <code>topology="route"</code></li>
 <li><a href="#research-hymeko-driven-training">HyMeKo-driven training</a> — how training.hymeko drives the walker</li>
 <li><a href="#quickstart-build-an-hsikan-architecture">Quickstart: Build an HSiKAN architecture</a></li>
 </ul>
@@ -2238,10 +2242,180 @@ out.append(AuditCase(
 </ul>
 <h2 id="see-also-11"><a class="header" href="#see-also-11">See also</a></h2>
 <ul>
+<li><a href="#neural-network-variants--layer-geometry-signedkan_wip">NN variants &amp; layer geometry</a> — how <code>SignedKANLayer</code>, <code>MultiLayerSignedKAN</code>, and <code>MixedAritySignedKAN</code> stack in code</li>
 <li><code>signedkan_wip/HSIKAN_FINAL_RESULTS_2026_05_03.md</code> — the published 5-seed numbers</li>
 <li><code>signedkan_wip/HSIKAN_STATE_2026_05_04.md</code> — current research state</li>
 <li><a href="#research-hymeko-driven-training">HyMeKo-driven training</a> — how to drive HSiKAN from .hymeko configs</li>
 </ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="neural-network-variants--layer-geometry-signedkan_wip"><a class="header" href="#neural-network-variants--layer-geometry-signedkan_wip">Neural network variants &amp; layer geometry (signedkan_wip)</a></h1>
+<p>This page is a <strong>field guide</strong> to the main <strong>PyTorch</strong> architectures in <code>signedkan_wip/src/</code>: how tensors flow, which modules stack, and how experiment names map to code. For <strong>equations</strong> and citations see <a href="#research-hsikan-architecture">HSiKAN architecture</a>; for <strong>Gömb vs factorial “orthogonal”</strong> see <a href="#hymeko-gömb-and-orthogonal--three-precise-meanings">HymeKo-Gömb: “orthogonal” meanings</a>.</p>
+<hr>
+<h2 id="0-roadmap-which-class-for-which-benchmark-row"><a class="header" href="#0-roadmap-which-class-for-which-benchmark-row">0. Roadmap: which class for which benchmark row?</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Experiment label / family</th><th>Primary <code>nn.Module</code></th><th>Entry points</th></tr>
+</thead>
+<tbody>
+<tr><td><code>signedkan_L1</code>, Phase‑8 SignedKAN</td><td><code>MixedAritySignedKAN</code> with <strong>cycle-only</strong> tuple specs</td><td><code>run_final_cell.py</code> → <code>cell_signed_graph</code></td></tr>
+<tr><td><code>hsikan_*</code>, <code>joint_ba</code> / <code>joint_otc</code> (tuples <strong>c3,c4,w2,w3</strong>)</td><td><code>MixedAritySignedKAN</code> with <strong>mixed cycles + walks</strong></td><td>same + <code>HSIKAN_MIXED_TUPLES</code> env</td></tr>
+<tr><td><code>sgcn_balance</code></td><td><code>SGCN</code></td><td><code>run_final_cell.py</code></td></tr>
+<tr><td><code>sigat_attn</code></td><td><code>SiGAT</code></td><td><code>run_final_cell.py</code></td></tr>
+<tr><td><code>mlp_blind</code>, <code>gcn_blind</code></td><td>small MLP / 2‑layer GCN + edge head</td><td><code>run_final_cell.py</code> (Phase‑8 panel)</td></tr>
+<tr><td>CPML stack (factorial / smoke)</td><td><code>CPML</code> (<code>cpml.py</code>)</td><td><code>run_cpml_factorial.py</code>, <code>run_cpml_smoke.py</code></td></tr>
+<tr><td>HymeKo‑Gömb</td><td><code>HymeKoGomb</code>, <code>MixedArityGomb</code>, ablations</td><td><code>run_gomb_smoke.py</code>, <code>hymeko_gomb/cascade.py</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Shared training kernel</strong> for most signed‑graph rows: <code>cell_signed_graph</code> in <code>signedkan_wip/src/run_final_cell.py</code> (loads graph → builds per‑tuple sparse incidence → trains → reports test AUC).</p>
+<hr>
+<h2 id="1-signedkanlayer--one-hypergraph-layer-over-arity-k"><a class="header" href="#1-signedkanlayer--one-hypergraph-layer-over-arity-k">1. <code>SignedKANLayer</code> — one hypergraph “layer” over arity <em>k</em></a></h2>
+<p><strong>File:</strong> <code>signedkan_wip/src/signedkan.py</code></p>
+<p><strong>Role:</strong> Map vertex embeddings and a fixed set of signed <strong>k‑tuples</strong> (triangles, 4‑cycles, or walk‑vertices as tuples) into <strong>tuple embeddings</strong>, then (outside this class) into <strong>edge logits</strong> via sparse incidence (M_e).</p>
+<p><strong>Internals (conceptual):</strong></p>
+<ul>
+<li><strong>Vertex branch:</strong> per‑vertex features pass through <strong>sign‑split spline banks</strong> (Catmull–Rom / B‑spline / Kochanek–Bartels per config).</li>
+<li><strong>Edge branch:</strong> same idea on tuple‑side pooled features.</li>
+<li><strong>Balance / Option‑C:</strong> contributions from <code>+</code> / <code>−</code> signed sub‑aggregates are combined per the configured signed‑incidence option.</li>
+</ul>
+<p><strong>Config:</strong> <code>SignedKANConfig</code> — <code>hidden_dim</code>, <code>grid</code>, <code>k</code>, <code>spline_kind</code>, residual / highway flags.</p>
+<hr>
+<h2 id="2-multilayersignedkan--depth-on-the-vertex-manifold"><a class="header" href="#2-multilayersignedkan--depth-on-the-vertex-manifold">2. <code>MultiLayerSignedKAN</code> — depth on the <strong>vertex</strong> manifold</a></h2>
+<p><strong>File:</strong> <code>signedkan_wip/src/signedkan.py</code> (<code>MultiLayerSignedKAN</code>, <code>MultiLayerSignedKANConfig</code>)</p>
+<p><strong>Stacking pattern (per layer (\ell)):</strong></p>
+<ol>
+<li><strong>Tuple forward:</strong> <code>SignedKANLayer</code> produces tuple embeddings (h_t^{(\ell)}) from current vertex embeddings (h_v^{(\ell-1)}).</li>
+<li><strong>Vertex scatter:</strong> triad / tuple features scatter‑mean (or sum, per <code>pool_mode</code>) back to vertices → residual update (h_v^{(\ell)}).</li>
+<li><strong>Repeat</strong> for <code>n_layers</code> (either <strong>distinct</strong> <code>SignedKANLayer</code> instances or <strong>one shared</strong> layer reapplied — <code>share_weights</code>).</li>
+</ol>
+<p><strong>On top of the stack:</strong></p>
+<ul>
+<li><strong>Jumping Knowledge:</strong> <code>jk_mode</code> ∈ <code>{last, sum, concat}</code> — how layer outputs feed the final tuple representation before edge pooling.</li>
+<li><strong>Node embedding:</strong> <code>nn.Embedding(n_nodes, hidden_dim)</code> is owned here.</li>
+</ul>
+<p><strong>Typical Phase‑8 recipe:</strong> <code>n_layers=2</code>, <code>hidden_dim=16</code>, <code>jk_mode="concat"</code>, highway / inner‑skip as in <code>MultiLayerSignedKANConfig</code> defaults used by <code>run_phase8_sota_chase</code> / <code>cell_signed_graph</code>.</p>
+<hr>
+<h2 id="3-mixedaritysignedkan--one-spline-stack-many-tuple-slots"><a class="header" href="#3-mixedaritysignedkan--one-spline-stack-many-tuple-slots">3. <code>MixedAritySignedKAN</code> — one spline stack, many <strong>tuple slots</strong></a></h2>
+<p><strong>Package:</strong> <code>signedkan_wip/src/mixed_arity_signedkan/</code> (<code>model.py</code>, <code>config.py</code>, <code>encoding_*.py</code>, <code>attention.py</code>)</p>
+<p><strong>Idea:</strong> Reuse <strong>one</strong> <code>MultiLayerSignedKAN</code> (<code>cfg.base</code>) for <strong>every</strong> tuple specification (e.g. c3, c4, w2, w3). Each slot has the <strong>same</strong> spline weights (<code>share_weights=True</code> is <strong>required</strong>); what differs per slot is the <strong>enumerated tuple set</strong> and its sparse (M_e^{(slot)}).</p>
+<p><strong>Learned fusion:</strong></p>
+<ul>
+<li><strong>Global α:</strong> <code>arity_logits</code> → softmax → blend slot-wise edge embeddings before the classifier.</li>
+<li><strong>Optional <code>per_edge_gate</code>:</strong> small MLP on endpoint features → softmax over slots <strong>per edge</strong>.</li>
+<li><strong>Optional <code>attention_m_e</code>:</strong> dot or quaternion attention from query edges into cycle features (disables cycle batching when both are on — see <code>run_final_cell</code> warnings).</li>
+</ul>
+<p><strong>Encoding paths:</strong></p>
+<ul>
+<li><strong><code>encoding_full.py</code>:</strong> full graph forward (all tuples at once).</li>
+<li><strong><code>encoding_batched.py</code>:</strong> chunked forward when <code>cycle_batch_size</code> is set (bounds peak activation memory).</li>
+</ul>
+<p><strong>Tuple modes</strong> (parsed in <code>cell_signed_graph</code> from <code>RuntimeConfig</code> / env):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mode</th><th>Env / config</th><th>Tuple specs</th></tr>
+</thead>
+<tbody>
+<tr><td>Cycles only</td><td>default <code>HSIKAN_ARITIES</code> / per‑dataset</td><td><code>("cycle", k, None)</code> for each k</td></tr>
+<tr><td>Walks only</td><td><code>HSIKAN_WALK_LENS</code></td><td><code>("walk", L+1, L)</code></td></tr>
+<tr><td>Joint mix</td><td><code>HSIKAN_MIXED_TUPLES=c3,c4,w2,w3</code></td><td>cycles + walks interleaved as independent slots</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="4-baselines-same-edge-head-protocol"><a class="header" href="#4-baselines-same-edge-head-protocol">4. Baselines (same edge head protocol)</a></h2>
+<h3 id="41-sgcn-baselinessgcn_modelpy"><a class="header" href="#41-sgcn-baselinessgcn_modelpy">4.1 SGCN (<code>baselines/sgcn_model.py</code>)</a></h3>
+<p><strong>Structure:</strong> alternate <strong>balanced</strong> / <strong>unbalanced</strong> message passing on <strong>positive</strong> vs <strong>negative</strong> adjacency; each layer updates two channels (h^B, h^U). <strong>Readout:</strong> <code>z_v = [h^B_v ; h^U_v]</code>, then MLP on <code>[z_u ; z_v]</code> for link sign.</p>
+<h3 id="42-sigat-baselinessigat_modelpy"><a class="header" href="#42-sigat-baselinessigat_modelpy">4.2 SiGAT (<code>baselines/sigat_model.py</code>)</a></h3>
+<p><strong>Structure:</strong> same positive/negative <strong>neighbour buckets</strong> as SGCN, but aggregation is <strong>multi‑head attention</strong> from the centre node to motif‑typed neighbours; concatenate with self; edge MLP as SGCN.</p>
+<p><strong>Note:</strong> In‑protocol reimplementation for apples‑to‑apples BCE training — not the full 38‑motif directed reference of Huang et al.</p>
+<hr>
+<h2 id="5-cpml--tiers-as-routes-default-vs-inward-pyramid-legacy"><a class="header" href="#5-cpml--tiers-as-routes-default-vs-inward-pyramid-legacy">5. CPML — <strong>tiers as routes</strong> (default) vs <strong>inward pyramid</strong> (legacy)</a></h2>
+<p><strong>File:</strong> <code>signedkan_wip/src/cpml.py</code> — <code>CPMLConfig.topology ∈ {route, pyramid}</code>, <code>tier_organization ∈ {structural, capsule_soft}</code> (<code>capsule_soft</code> <strong>route only</strong>).</p>
+<p><strong>Tier assignment:</strong> vertices binned by <strong>degree percentiles</strong> (<code>TierSpec.cuts</code>) → <code>tier_of[v] ∈ {0,…,L−1}</code>. Under <strong><code>structural</code></strong> routing, tier <strong>ℓ</strong> uses only cycles that <strong>touch</strong> at least one vertex in tier ℓ — <strong>tier is a routing predicate on cycles</strong>.</p>
+<p><strong>Per tier (<code>structural</code>):</strong> each <code>Agg_ℓ</code> (MLP stub, <strong>SignedKAN</strong> / spline <code>SignedKANTierAggregator</code>, or <strong>Clifford‑FIR</strong>) maps <strong>corner features</strong> of cycles in tier ℓ’s pool to per‑cycle vectors, then <strong>scatter‑mean</strong> to (H_\ell). Under <strong><code>capsule_soft</code></strong>, every tier’s <code>Agg_ℓ</code> sees <strong>all</strong> cycles, weighted by a learned softmax over tiers (§5.2).</p>
+<h3 id="51-topologyroute-default"><a class="header" href="#51-topologyroute-default">5.1 <code>topology="route"</code> (<strong>default</strong>)</a></h3>
+<ul>
+<li>Every tier reads corner features from the <strong>same base</strong> (X^{(0)}) (<code>node_features</code>).</li>
+<li>Outputs (H_0,\ldots,H_{L-1}) are <strong>concatenated once</strong> with (X^{(0)}) → final width (d_{\mathrm{in}} + L,d_{\mathrm{layer}}) for the edge head.</li>
+<li><strong>Interpretation:</strong> <strong>Highway‑like</strong> carry of (X^{(0)}); <strong>Capsule‑like</strong> <em>structural</em> routing (hard (0/1) cycle→tier from incidence); <strong>KAN‑like</strong> corner nonlinearities when <code>aggregator_kind="hsikan"</code>. Full maths + citations: <strong><a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a></strong>.</li>
+</ul>
+<h3 id="52-tier_organization--structural-vs-capsule-soft"><a class="header" href="#52-tier_organization--structural-vs-capsule-soft">5.2 <code>tier_organization</code> — structural vs capsule-soft</a></h3>
+<ul>
+<li><strong><code>structural</code> (default):</strong> tier ℓ uses only cycles touching tier ℓ (same predicate as above).</li>
+<li><strong><code>capsule_soft</code>:</strong> <strong>route topology only</strong> — an MLP softmax assigns each cycle a weight vector over all (L) tiers; every tier’s aggregator sees <strong>all</strong> cycles, scaled by that weight, then scatter-mean. <code>GombConfig.cpml_tier_organization</code> / <code>CPMLConfig.tier_organization</code>.</li>
+</ul>
+<h3 id="53-topologypyramid-legacy"><a class="header" href="#53-topologypyramid-legacy">5.3 <code>topology="pyramid"</code> (legacy)</a></h3>
+<ul>
+<li>Tier ℓ’s aggregator sees the <strong>widening</strong> concat of all previous route outputs (original concentric‑pyramid funnel).</li>
+<li>Same final width as route mode; <strong>more parameters</strong> in upper‑tier MLPs and typically <strong>higher activation memory</strong>.</li>
+</ul>
+<p><strong>HSiKAN vs MLP inside CPML:</strong> <code>CPMLConfig.aggregator_kind</code> switches the per‑tier block between a stub MLP and a <strong>Catmull–Rom / spline</strong> aggregator — a <strong>2×2</strong> style factorial (aggregator × flat/tiered) at the CPML layer in smoke scripts; see <code>run_cpml_factorial.py</code> and <code>docs/plans/2026-05-11-cpml-xhc-architectures/</code>.</p>
+<p><strong>Gömb:</strong> <code>GombConfig.cpml_topology</code> and <strong><code>cpml_tier_organization</code></strong> thread into every <code>InnerCPMLCore</code>. CLI:<br><code>python -m signedkan_wip.src.run_gomb_smoke --cpml-topology route|pyramid --cpml-tier-organization structural|capsule_soft</code><br>(<code>capsule_soft</code> requires <code>route</code>.)</p>
+<hr>
+<h2 id="6-hymekogömb--three-shells-fixed-cascade-order"><a class="header" href="#6-hymekogömb--three-shells-fixed-cascade-order">6. HymeKo‑Gömb — three shells, fixed cascade order</a></h2>
+<p><strong>Files:</strong> <code>signedkan_wip/src/hymeko_gomb/cascade.py</code>, <code>shells.py</code></p>
+<p><strong>Full model <code>HymeKoGomb</code>:</strong></p>
+<pre><code class="language-mermaid">flowchart LR
+  E["node_embed (N × d_embed)"]
+  O["OuterFIRShell: M parallel ClifFIR banks → N × (M·d_outer)"]
+  M["MiddleHSiKAN: Catmull–Rom on cycles, d_in = d_embed + M·d_outer"]
+  C["InnerCPMLCore: tiered CPML on concat(embed, outer, middle)"]
+  H["edge predictor → logits (E)"]
+  E --&gt; O
+  E --&gt; M
+  O --&gt; M
+  E --&gt; C
+  O --&gt; C
+  M --&gt; C
+  C --&gt; H
+</code></pre>
+<p><strong>Tensor concatenation rules:</strong></p>
+<ul>
+<li>After outer: <code>x_for_middle = cat(embed, x_outer)</code>.</li>
+<li>After middle: <code>x_for_core = cat(embed, x_outer, x_middle)</code>.</li>
+<li><strong>Single‑arity <code>HymeKoGomb</code>:</strong> one cycle arity from the Rust enumerator (<code>run_gomb_smoke.py</code> default).</li>
+<li><strong><code>JointMixGomb</code> + <code>--joint-mix</code>:</strong> four tuple slots <strong>c3, c4, w2, w3</strong> (cycles + length‑2/3 walks) with learned <strong>α</strong> over <strong>edge logits</strong> — same joint recipe as HSiKAN <code>joint_ba</code>, separate <code>nn.Module</code> stack.</li>
+</ul>
+<p><strong>Ablations (separate classes, no forward‑time flags):</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Class</th><th>Dropped shell</th></tr>
+</thead>
+<tbody>
+<tr><td><code>GombNoOuter</code></td><td>Outer FIR</td></tr>
+<tr><td><code>GombNoMiddle</code></td><td>Middle HSiKAN</td></tr>
+<tr><td><code>GombNoInner</code></td><td>Inner CPML → shallow MLP edge head</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong><code>MixedArityGomb</code>:</strong> one full <strong>(outer, middle, inner)</strong> stack <strong>per</strong> cycle arity in <code>cycle_ks</code>; <strong>learned softmax αₖ</strong> fuses per‑arity <strong>edge logits</strong> (not the same object as <code>MixedAritySignedKAN</code>’s tuple‑slot α).</p>
+<hr>
+<h2 id="7-how-this-connects-to-the-results-table"><a class="header" href="#7-how-this-connects-to-the-results-table">7. How this connects to the results table</a></h2>
+<ul>
+<li><strong>Phase‑8 panel</strong> rows compare <strong>the same <code>MixedAritySignedKAN</code> plumbing</strong> under different tuple sets and baselines — see <a href="#sota-snapshot--diagrams-included-from-repo">SOTA snapshot &amp; diagrams</a>.</li>
+<li><strong><code>joint_ba</code></strong> is <strong>not</strong> a different <code>nn.Module</code> name — it is <strong>MixedAritySignedKAN</strong> with <code>HSIKAN_MIXED_TUPLES=c3,c4,w2,w3</code> (see <code>run_overnight_joint_mix_2026_05_08.sh</code>).</li>
+<li><strong>Gömb</strong> rows come from <strong><code>run_gomb_smoke.py</code></strong>; <strong><code>JointMixGomb</code></strong> matches the <strong>c3,c4,w2,w3</strong> tuple protocol for apples‑to‑apples comparisons with <strong><code>joint_ba</code></strong> HSiKAN (different module family, same pools when configured).</li>
+</ul>
+<hr>
+<h2 id="8-further-reading"><a class="header" href="#8-further-reading">8. Further reading</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Topic</th><th>Where</th></tr>
+</thead>
+<tbody>
+<tr><td>Build HSiKAN from <code>.hymeko</code></td><td><a href="#quickstart-build-an-hsikan-architecture">Quickstart: Build an HSiKAN architecture</a></td></tr>
+<tr><td>HyMeKo training walker</td><td><a href="#research-hymeko-driven-training">HyMeKo-driven training</a></td></tr>
+<tr><td>Abbreviations (<code>edge_cr</code>, tuple notation)</td><td><a href="#abbreviations--symbols">Abbreviations &amp; symbols</a></td></tr>
+<tr><td>CPML × XHC plan</td><td><code>docs/plans/2026-05-11-cpml-xhc-architectures/plan.tex</code></td></tr>
+<tr><td>Gömb sphere plan</td><td><code>docs/plans/2026-05-11-hymeko-gomb-sphere/plan.tex</code></td></tr>
+<tr><td>CPML route = Highway+Capsule+KAN lens</td><td><a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a></td></tr>
+</tbody>
+</table>
+</div>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="research-hymeko-driven-training"><a class="header" href="#research-hymeko-driven-training">Research: HyMeKo-driven training</a></h1>
 <p>For the runnable walkthrough → <a href="#quickstart-hymeko-controlled-training">Quickstart: HyMeKo-controlled training</a>.</p>
@@ -2332,6 +2506,7 @@ L(D,A,C,F)</a></h1>
 <p><strong>Operational meaning:</strong> “orthogonal” = <strong>statistical independence of factors</strong> in the experiment — <em>not</em> “perpendicular vectors in (\mathbb{R}^d)” unless you deliberately add that regulariser (meaning C below overlaps only by analogy).</p>
 <p><strong>Code / harness:</strong> factorial runners (e.g. <code>signedkan_wip/src/run_cpml_factorial.py</code>) and the plan directory <strong><code>docs/plans/2026-05-11-hsikan-cpml-fir-orthogonal/</code></strong>.</p>
 <p><strong>Related CPML knob:</strong> inside a <strong>single</strong> CPML stack, <code>aggregator_kind</code> makes <strong>HSiKAN vs MLP</strong> an axis <strong>orthogonal to</strong> “flat vs tiered topology” — a <strong>2×2</strong> design at the CPML layer (<code>signedkan_wip/src/cpml.py</code>, <code>CPMLConfig</code> docstring).</p>
+<p><strong>CPML readout sub-axis (independent of the factorial (C) bit):</strong> when CPML is <strong>on</strong>, <code>topology ∈ {route, pyramid}</code> selects <strong>tier routing</strong> (default <strong>route</strong>: each tier’s aggregator always reads the <strong>same base</strong> vertex tensor; <strong>pyramid</strong>: legacy widening concat). Maths + <strong>Highway / Capsule / KAN</strong> reading: <strong><a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a></strong>.</p>
 <hr>
 <h2 id="3-hymeko-gömb--contrast-with-the-factorial-cascade-not-orthogonal-axes"><a class="header" href="#3-hymeko-gömb--contrast-with-the-factorial-cascade-not-orthogonal-axes">3. HymeKo-Gömb — <strong>contrast</strong> with the factorial (cascade, not orthogonal axes)</a></h2>
 <p><strong>HymeKo-Gömb</strong> (<em>gömb</em> = sphere) is defined in opposition to toggling axes independently:</p>
@@ -2463,11 +2638,141 @@ u_F = \frac{c_F}{|c_F|},
 <tr><td><code>docs/plans/2026-05-11-hsikan-cpml-fir-orthogonal/plan.tex</code></td><td>Full (2^3) factorial definition and effect decomposition.</td></tr>
 <tr><td><code>reports/2026-05-11-hymeko-gomb-sphere.md</code></td><td>Feasibility + smoke results.</td></tr>
 <tr><td><code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code></td><td>Slashdot SOTA comparison (negative at stated gate).</td></tr>
+<tr><td><a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a></td><td><strong>Route vs pyramid</strong> equations + unified lens (Highway, CapsNet, KAN).</td></tr>
 </tbody>
 </table>
 </div>
 <hr>
 <p><strong>Contract:</strong> if a sentence says “Gömb is orthogonal”, ask <strong>which orthogonal</strong> — factorial axes (A), cascade <em>non</em>-factorial design (B), or bank-vector regularisation (C). Mixing them is how false summaries creep in.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="cpml-tiers-as-routes-highway-capsule-and-kan-views"><a class="header" href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML tiers as <strong>routes</strong>: Highway, Capsule, and KAN views</a></h1>
+<p>This note updates the <strong>mathematics</strong> and <strong>design story</strong> for <strong>Concentric‑Pyramid Multi‑Layer (CPML)</strong> inside <code>signedkan_wip/src/cpml.py</code> and <strong><code>InnerCPMLCore</code></strong> (<code>hymeko_gomb/shells.py</code>). The default readout is <strong><code>topology="route"</code></strong>; <strong><code>topology="pyramid"</code></strong> keeps the legacy inward widening stack.</p>
+<hr>
+<h2 id="1-objects-and-notation"><a class="header" href="#1-objects-and-notation">1. Objects and notation</a></h2>
+<ul>
+<li><strong>Graph:</strong> vertices (v\in V), directed signed edges, and a multiset of <strong>signed</strong> simple cycles (or tuples) (c) with vertex set (V(c)\subseteq V) and per‑corner signs (\sigma_{c,i}\in{\pm 1}).</li>
+<li><strong>Tier map:</strong> (\tau:V\to{0,\ldots,L-1}) from <strong>degree percentiles</strong> (<code>TierSpec.cuts</code>). Tier (0) = periphery (low degree mass), (L-1) = core/hubs — same <em>stratification</em> in both topologies.</li>
+<li><strong>Base vertex signal:</strong> (X^{(0)}\in\mathbb{R}^{N\times d_{\mathrm{in}}}) — in Gömb this is the <strong>concatenation</strong> of embed, outer, and middle shells; in bare CPML it is <code>node_features</code>.</li>
+<li><strong>Per‑tier aggregator:</strong> (\mathrm{Agg}<em>\ell) (MLP stub, <strong>SignedKAN</strong> / spline aggregator, or Clifford‑FIR) maps <strong>corner features</strong> of cycles in tier (\ell)’s pool to a <strong>per‑cycle</strong> vector, then <strong>scatter‑mean</strong> yields (H</em>\ell\in\mathbb{R}^{N\times d_{\mathrm{layer}}}).</li>
+</ul>
+<p><strong>Tier‑restricted cycle pool</strong></p>
+<p>[
+\mathcal{C}_\ell ;=; {, c ;:; \exists, v\in V(c),; \tau(v)=\ell ,},.
+]</p>
+<p>So <strong>tier is a routing predicate on cycles</strong>, not an “inward only” pyramid by default.</p>
+<hr>
+<h2 id="2-route-topology-default-parallel-routes--one-concat"><a class="header" href="#2-route-topology-default-parallel-routes--one-concat">2. Route topology (default): parallel routes + one concat</a></h2>
+<p>For each (\ell=0,\ldots,L-1):</p>
+<ol>
+<li>Restrict to (\mathcal{C}_\ell).</li>
+<li><strong>Always</strong> read corner features from the <strong>same</strong> base (X^{(0)}) (not from a widening state).</li>
+</ol>
+<p>[
+H_\ell ;=; \mathrm{ScatterMean}\Bigl(\mathrm{Agg}<em>\ell\bigl(X^{(0)}[c],\sigma_c\bigr)</em>{c\in\mathcal{C}<em>\ell}\Bigr)\in\mathbb{R}^{N\times d</em>{\mathrm{layer}}},.
+]</p>
+<p><strong>Final vertex embedding</strong> before the edge head:</p>
+<p>[
+X^{\mathrm{final}} ;=; \bigl[,X^{(0)} ,\Vert, H_0 ,\Vert, \cdots ,\Vert, H_{L-1},\bigr]
+\quad\in;\mathbb{R}^{N\times,(d_{\mathrm{in}} + L,d_{\mathrm{layer}})}},.
+]</p>
+<p><strong>Edge logits</strong> (as implemented): MLP on (\bigl[X^{\mathrm{final}}_u ,\Vert, X^{\mathrm{final}}_v\bigr]).</p>
+<p><strong>Properties</strong></p>
+<ul>
+<li><strong>Width of deep state per tier is fixed</strong> at inputs to (\mathrm{Agg}<em>\ell): always (d</em>{\mathrm{in}}) on the corner branch for the MLP stub — no widening matmuls tier‑over‑tier.</li>
+<li><strong>Parameter count</strong> of tier MLPs is <strong>smaller</strong> than pyramid when (L&gt;1) (each (\mathrm{Agg}<em>\ell) sees (d</em>{\mathrm{in}}), not (d_{\mathrm{in}}+\ell d_{\mathrm{layer}})).</li>
+<li><strong>Peak activations</strong> avoid the growing concat tensor of pyramid mode — the main <strong>VRAM</strong> win in joint‑slot Gömb.</li>
+</ul>
+<hr>
+<h2 id="3-pyramid-topology-legacy-inward-widening"><a class="header" href="#3-pyramid-topology-legacy-inward-widening">3. Pyramid topology (legacy): inward widening</a></h2>
+<p>Let (x^{(0)}=X^{(0)}). For (\ell=0,\ldots,L-1):</p>
+<p>[
+H_\ell ;=; \mathrm{ScatterMean}\Bigl(\mathrm{Agg}<em>\ell\bigl(x^{(\ell)}[c],\sigma_c\bigr)</em>{c\in\mathcal{C}<em>\ell}\Bigr),\qquad
+x^{(\ell+1)} ;=; \bigl[,x^{(\ell)} ,\Vert, H</em>\ell,\bigr],.
+]</p>
+<p>So (\mathrm{Agg}<em>\ell) sees <strong>increasing</strong> corner width (d</em>{\mathrm{in}} + \ell,d_{\mathrm{layer}}) — the original “concentric pyramid” <strong>inward funnel</strong> picture: each tier’s aggregator lives in a larger space.</p>
+<p><strong>Same</strong> (X^{\mathrm{final}} = x^{(L)}) width (d_{\mathrm{in}} + L d_{\mathrm{layer}}) as route mode, so the <strong>edge head interface is unchanged</strong>; only <strong>internals</strong> differ.</p>
+<hr>
+<h2 id="4-unifying-lens-a--highway-networks"><a class="header" href="#4-unifying-lens-a--highway-networks">4. Unifying lens A — <strong>Highway networks</strong></a></h2>
+<p>Srivastava et al. (<em>Highway Networks</em>, arXiv:1505.00387) and the closely related <strong>LSTM</strong> gating idea: keep a <strong>carry</strong> path and add <strong>transformed</strong> content with learned gates.</p>
+<p><strong>Structural analogy (route CPML):</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Highway idea</th><th>Route CPML instantiation</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Carry</strong> of raw inputs</td><td>(X^{(0)}) is <strong>never replaced</strong>; it is concatenated <strong>once</strong> at the end and is the <strong>sole</strong> vertex signal read by every (\mathrm{Agg}_\ell) on the corner path.</td></tr>
+<tr><td><strong>Transform</strong> branches</td><td>Each (H_\ell) is an additive “view” of cycle evidence <strong>at tier (\ell)’s routing</strong> — different <strong>gates</strong> are implicit in <em>which cycles fire</em> ((\mathcal{C}_\ell)), not only in scalar gates on channels.</td></tr>
+<tr><td><strong>Parallel</strong> then <strong>merge</strong></td><td>Tiers are <strong>parallel routes</strong> (no widening concat between tiers); merge = final (\Vert) — same spirit as multi‑lane highway fusion before readout.</td></tr>
+</tbody>
+</table>
+</div>
+<p>We are <strong>not</strong> claiming a literal identity to elementwise (T,C) gates; we claim a <strong>design isomorphism</strong>: <strong>identity path for base features</strong> + <strong>multiple transformed pathways</strong> that are <strong>fused</strong> for downstream prediction.</p>
+<hr>
+<h2 id="5-unifying-lens-b--capsule-networks-capsnet"><a class="header" href="#5-unifying-lens-b--capsule-networks-capsnet">5. Unifying lens B — <strong>Capsule networks</strong> (CapsNet)</a></h2>
+<p>Sabour, Frosst, Hinton (<em>Dynamic Routing Between Capsules</em>, NeurIPS 2017): <strong>capsules</strong> group neurons; <strong>routing</strong> sends lower‑level capsule votes to parents using <strong>agreement</strong> (iterative softmax “routing by agreement”).</p>
+<p><strong>Structural analogy (route CPML):</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>CapsNet idea</th><th>Route CPML instantiation</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Groups / capsules</strong></td><td>Each tier (\ell) defines a <strong>group of cycles</strong> (\mathcal{C}<em>\ell) and a <strong>group output</strong> (H</em>\ell) — one “capsule map” per tier after scatter.</td></tr>
+<tr><td><strong>Routing coefficients</strong></td><td><strong>Hard, structure‑given</strong> routing: cycle (c) participates in tier (\ell) iff it <strong>touches</strong> a vertex with (\tau(v)=\ell). So (r_{c\to \ell}\in{0,1}) from <strong>graph + degree stratification</strong>, not from EM iterations.</td></tr>
+<tr><td><strong>Agreement</strong></td><td>“Agreement” is <strong>topological</strong>: a cycle <strong>agrees</strong> to route to tier (\ell) by <strong>incidence</strong> to that tier’s vertices — analogous to low‑level capsules voting for parents they geometrically support.</td></tr>
+<tr><td><strong>Pose / object parts</strong></td><td>Replace “part–whole” in images by <strong>periphery–hub</strong> in the graph: tiers are <strong>scales of centrality</strong>, cycles are <strong>local witnesses</strong> routed to the scales they touch.</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>CapsNet‑inspired soft routing (implemented as <code>tier_organization="capsule_soft"</code>):</strong> a small MLP maps each cycle’s <strong>mean‑pooled corner features</strong> of (X^{(0)}) to logits over the (L) tiers; <strong>softmax</strong> yields (R_{c,\ell}). Every tier’s aggregator runs on <strong>all</strong> cycles; contributions are scaled by (R_{c,\ell}) before scatter‑mean. <strong><code>topology</code> must be <code>route</code></strong> (pyramid widening is rejected). CLI / config: <code>CPMLConfig.tier_organization</code>, <code>GombConfig.cpml_tier_organization</code>, <code>run_gomb_smoke --cpml-tier-organization …</code>.</p>
+<p>The default <strong><code>structural</code></strong> mode keeps <strong>interpretable</strong> hard masks from (\tau) (stratified structural agreement). Iterative EM routing (CapsNet inner loops) is <strong>not</strong> implemented — one softmax pass per forward.</p>
+<hr>
+<h2 id="6-unifying-lens-c--kans-kolmogorovarnold-networks"><a class="header" href="#6-unifying-lens-c--kans-kolmogorovarnold-networks">6. Unifying lens C — <strong>KANs</strong> (Kolmogorov–Arnold networks)</a></h2>
+<p>Liu et al. (<em>KAN: Kolmogorov–Arnold Networks</em>, 2024): replace fixed linear layers by <strong>learnable univariate functions</strong> on edges of the <strong>computational graph</strong> (here: <strong>corners</strong> of cycles).</p>
+<p><strong>Where KANs sit in CPML</strong></p>
+<ul>
+<li><strong><code>aggregator_kind="hsikan"</code></strong> uses <strong>spline / Catmull–Rom</strong> activations on <strong>cycle corners</strong> — the HSiKAN recipe is a <strong>geometric KAN</strong> on the <strong>hypergraph incidence</strong> (not an MLP on flattened adjacency).</li>
+<li><strong>Clifford‑FIR</strong> tiers are <strong>minimal‑parameter</strong> signed filters — another <strong>basis‑limited</strong> nonlinearity on corners.</li>
+</ul>
+<p>So each tier is a <strong>KAN‑style</strong> nonlinear readout on a <strong>routed</strong> sub‑hypergraph; <strong>route vs pyramid</strong> only changes <strong>which width</strong> that readout sees at each depth, not whether the block is KAN‑flavoured.</p>
+<hr>
+<h2 id="7-one-sentence-unification-thesis"><a class="header" href="#7-one-sentence-unification-thesis">7. One sentence <strong>unification thesis</strong></a></h2>
+<blockquote>
+<p><strong>Route CPML</strong> treats <strong>degree tiers as routing slots</strong> over cycles: <strong>Highway‑like</strong> preservation of a <strong>base carry</strong> (X^{(0)}), <strong>Capsule‑like</strong> <strong>structural routing</strong> of witnesses into tier groups, and <strong>KAN‑like</strong> <strong>corner nonlinearities</strong> inside each (\mathrm{Agg}_\ell) — with <strong>learned α</strong> (JointMix / mixed arity) as a <strong>second routing stage</strong> across <strong>tuple kinds</strong>.</p>
+</blockquote>
+<p><strong>Pyramid</strong> mode remains the <strong>deepening representational stack</strong> analogue (closer to classical <strong>depth</strong> on a widening state).</p>
+<hr>
+<h2 id="8-gömb-cascade-placement"><a class="header" href="#8-gömb-cascade-placement">8. Gömb cascade placement</a></h2>
+<ul>
+<li><strong>Outer / middle:</strong> Clifford‑FIR volume and HSiKAN‑CR already implement <strong>multi‑bank</strong> and <strong>spline</strong> geometry on cycles.</li>
+<li><strong>Inner CPML:</strong> consumes (X^{(0)}=[\texttt{embed}\Vert\texttt{outer}\Vert\texttt{middle}]); <strong><code>GombConfig.cpml_topology</code></strong> selects <code>route</code> vs <code>pyramid</code>; <strong><code>GombConfig.cpml_tier_organization</code></strong> selects <code>structural</code> vs <code>capsule_soft</code> (latter <strong>route only</strong>).</li>
+<li><strong><code>JointMixGomb</code>:</strong> four stacks (c3, c4, w2, w3) each with its own inner core — memory stress is where <strong>route</strong> pays off most.</li>
+</ul>
+<hr>
+<h2 id="9-references-external"><a class="header" href="#9-references-external">9. References (external)</a></h2>
+<ul>
+<li>Highway: Srivastava, Greff, Schmidhuber — <em>Training Very Deep Networks</em> / Highway Networks (2015).</li>
+<li>CapsNet: Sabour, Frosst, Hinton — <em>Dynamic Routing Between Capsules</em> (2017).</li>
+<li>KAN: Liu et al. — <em>KAN: Kolmogorov–Arnold Networks</em> (2024).</li>
+</ul>
+<h2 id="10-inrepo-pointers"><a class="header" href="#10-inrepo-pointers">10. In‑repo pointers</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Artifact</th><th>Path</th></tr>
+</thead>
+<tbody>
+<tr><td>CPML implementation</td><td><code>signedkan_wip/src/cpml.py</code> (<code>CPMLConfig.topology</code>, <code>tier_organization</code>, <code>capsule_route_hidden</code>)</td></tr>
+<tr><td>Gömb wiring</td><td><code>signedkan_wip/src/hymeko_gomb/cascade.py</code>, <code>shells.py</code></td></tr>
+<tr><td>Smoke CLI</td><td><code>python -m signedkan_wip.src.run_gomb_smoke --cpml-topology {route,pyramid} --cpml-tier-organization {structural,capsule_soft}</code></td></tr>
+<tr><td>CPML × XHC plan (historical “pyramid” framing)</td><td><code>docs/plans/2026-05-11-cpml-xhc-architectures/</code></td></tr>
+<tr><td>NN field guide</td><td><a href="#neural-network-variants--layer-geometry-signedkan_wip">NN variants &amp; layer geometry</a></td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<p><em>Last updated: 2026‑05‑12 — <code>topology</code>, <code>tier_organization</code> (<code>structural</code> | <code>capsule_soft</code>), Gömb <code>cpml_*</code> fields.</em></p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="results--evidence-hub"><a class="header" href="#results--evidence-hub">Results &amp; evidence hub</a></h1>
 <p>This part of the book is for <strong>humans and agents</strong>: one place for <strong>abbreviations</strong>, <strong>mathematics</strong>, <strong>committed benchmark numbers</strong>, and <strong>where files live</strong> so scores are not argued from memory.</p>
@@ -2483,7 +2788,8 @@ u_F = \frac{c_F}{|c_F|},
 <tbody>
 <tr><td><a href="#abbreviations--symbols">Abbreviations &amp; symbols</a></td><td>You hit <code>ABB</code>, <code>OTC</code>, <code>edge_cr</code>, tuple labels, …</td></tr>
 <tr><td><a href="#mathematics-compact-reference">Mathematics</a></td><td>You need definitions: AUC, paired Δ, spectral entropy sketch</td></tr>
-<tr><td><a href="#sota-snapshot--diagrams-included-from-repo">SOTA snapshot &amp; diagrams</a></td><td>You want bar charts + tables for Bitcoin / Slashdot / Epinions</td></tr>
+<tr><td><a href="#neural-network-variants--layer-geometry-signedkan_wip">NN variants &amp; layer geometry</a></td><td>You need to know which <code>nn.Module</code> maps to which benchmark row</td></tr>
+<tr><td><a href="#sota-snapshot--diagrams-included-from-repo">SOTA snapshot &amp; diagrams</a></td><td><strong>One-page architecture × dataset table</strong> (HyMeKo ★ vs baselines) + bar charts for Bitcoin / Slashdot / Epinions</td></tr>
 <tr><td><a href="#evidence-contract-included-from-repo">Evidence contract</a></td><td>You need the canonical path list + anchored numbers</td></tr>
 <tr><td><a href="#artifact-index-experiment--report-trees">Artifact index</a></td><td>You need the full experiment tree inventory</td></tr>
 <tr><td><a href="#cold-start-included-from-repo">Cold start</a></td><td>You are new to the repo (build, test, PYTHONPATH)</td></tr>
@@ -2543,6 +2849,8 @@ u_F = \frac{c_F}{|c_F|},
 <tr><td><strong>SiGAT</strong></td><td>Signed attention GAT-style baseline (<code>sigat_attn</code>).</td></tr>
 <tr><td><strong>MLP / GCN</strong></td><td>Blind MLP / GCN baselines in phase panels (<code>mlp_blind</code>, <code>gcn_blind</code>).</td></tr>
 <tr><td><strong>Gömb</strong></td><td>HymeKo-Gömb three-shell cascade (outer Clifford-FIR / middle HSiKAN-CR / inner CPML-MLP).</td></tr>
+<tr><td><strong>CPML route</strong></td><td>Default inner CPML readout: tiers <strong>route</strong> cycles; each tier aggregator reads <strong>base</strong> <code>X_0</code>; concat once (<code>cpml.py</code> <code>topology="route"</code>).</td></tr>
+<tr><td><strong>CPML capsule_soft</strong></td><td>Learned softmax cycle→tier routing inside CPML (<strong><code>topology=route</code></strong> only); <code>GombConfig.cpml_tier_organization</code>.</td></tr>
 <tr><td><strong>edge_cr</strong></td><td>Slashdot (and Epinions) <strong>Catmull–Rom per-edge highway</strong> HSiKAN configuration used as a <strong>strong reference</strong> row (<code>run_label: edge_cr</code>).</td></tr>
 </tbody>
 </table>
@@ -2638,6 +2946,20 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 <h2 id="gömb-outer-shell-engineering-view"><a class="header" href="#gömb-outer-shell-engineering-view">Gömb outer shell (engineering view)</a></h2>
 <p><strong>Clifford algebra (\mathrm{Cl}(0,1))</strong> (or chosen signature) coefficient grids per <strong>FIR bank</strong>; outer shell applies batched <strong>einsum</strong> + scatter to map cycle features into embedding space. Details: <code>reports/2026-05-12-gomb-outer-perf.md</code>.</p>
 <p><strong>Naming / design:</strong> what “<strong>orthogonal</strong>” means around Gömb vs the HSiKAN×CPML×FIR <strong>factorial</strong> — see <strong><a href="#hymeko-gömb-and-orthogonal--three-precise-meanings">HymeKo-Gömb: “orthogonal” meanings</a></strong>.</p>
+<h2 id="cpml-tier-routing-route-vs-pyramid"><a class="header" href="#cpml-tier-routing-route-vs-pyramid">CPML tier routing (<code>route</code> vs <code>pyramid</code>)</a></h2>
+<p><strong>Tier map</strong> (\tau(v)) from degree percentiles; <strong>tier‑restricted pools</strong> (\mathcal{C}_\ell) = cycles touching tier (\ell).</p>
+<ul>
+<li>
+<p><strong><code>topology="route"</code> (default):</strong> each (\mathrm{Agg}<em>\ell) reads corners from the <strong>same</strong> base (X^{(0)}); (X^{\mathrm{final}} = [X^{(0)}\Vert H_0\Vert\cdots\Vert H</em>{L-1}]). Unifying view (Highway carry + Capsule‑style structural routing + KAN corners): <strong><a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a></strong>.</p>
+</li>
+<li>
+<p><strong><code>tier_organization</code>:</strong> <code>structural</code> (default) uses pools (\mathcal{C}_\ell) as above; <code>capsule_soft</code> (<strong>route only</strong>) uses a learned softmax over tiers per cycle — see the handbook.</p>
+</li>
+<li>
+<p><strong><code>topology="pyramid"</code>:</strong> widening concat state tier‑over‑tier (legacy inward funnel).</p>
+</li>
+</ul>
+<p>Compact pointer from repo root: <strong><code>docs/math/cpml-route-unification.md</code></strong>.</p>
 <hr>
 <p><strong>Further reading (entropy programme):</strong> repo root <code>RESULTS_VIEWS_SUITE.md</code> + <code>reports/thesis_iv_views_suite.tex</code> / PDFs in <code>reports/</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -2648,7 +2970,36 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 <p>Committed <strong>numeric</strong> artifacts for SignedKAN / HSiKAN / graph LP experiments.<br><strong>Rule:</strong> every figure below maps to a file path; if your run disagrees, update the file and then this page.</p>
 <p><strong>See also:</strong> <a href="results/RESULTS_DISCIPLINE.html"><code>RESULTS_DISCIPLINE.md</code></a> (protocol names), <a href="COLD_START.html"><code>COLD_START.md</code></a> (onboarding).</p>
 <hr>
-<h2 id="1-which-artifact-answers-which-question"><a class="header" href="#1-which-artifact-answers-which-question">1. Which artifact answers which question</a></h2>
+<h2 id="1-executive-summary--hymeko-line-architectures-vs-baselines"><a class="header" href="#1-executive-summary--hymeko-line-architectures-vs-baselines">1. Executive summary — HyMeKo-line architectures vs baselines</a></h2>
+<p><strong>Metric:</strong> held-out <strong>test ROC–AUC</strong> (mean ± std over <strong>5 seeds</strong>) unless noted.<br><strong>★</strong> = HyMeKo research stack (SignedKAN / HSiKAN / joint tuple protocols / Gömb). External baselines are included for context only.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Model / run</th><th>Kind</th><th>bitcoin_alpha</th><th>bitcoin_otc</th><th>slashdot</th><th>epinions</th><th>Primary evidence</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>joint mix</strong> (<code>joint_ba</code> / <code>joint_otc</code>)</td><td>★ tuples <strong>c3,c4,w2,w3</strong> + SignedKAN</td><td><strong>0.9845</strong></td><td><strong>0.9801</strong> (n=5; <code>cycle_otc</code> n=4 → 0.9266)</td><td>—</td><td>—</td><td><code>signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl</code> (detail §3–§4)</td></tr>
+<tr><td><strong>hsikan_mixed_leanest</strong></td><td>★ HSiKAN Phase‑8 panel</td><td>0.828±0.010</td><td>0.851±0.016</td><td>—</td><td>—</td><td><code>phase8_bitcoin_5seed.json</code> + <code>master_table.md</code></td></tr>
+<tr><td><strong>hsikan_k3_only_leanest</strong></td><td>★ HSiKAN (Slashdot k=3 lean)</td><td>—</td><td>—</td><td>0.614±0.002</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><strong>signedkan_L1</strong></td><td>★ SignedKAN</td><td>0.745±0.023</td><td>0.802±0.012</td><td>—</td><td>—</td><td><code>phase8_bitcoin_5seed.json</code> + <code>master_table.md</code></td></tr>
+<tr><td><strong>HymeKo-Gömb</strong> (slim sweep winner)</td><td>★ three-shell cascade (FIR → HSiKAN‑CR → CPML)</td><td>—</td><td>—</td><td><strong>0.9031</strong> ± <strong>0.0008</strong> (5)</td><td>—</td><td><code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code> (detail §8)</td></tr>
+<tr><td><strong>edge_cr</strong> (Slashdot / Epinions ref)</td><td>★ strong HSiKAN <strong>per-edge Catmull–Rom</strong> recipe</td><td>—</td><td>—</td><td>0.9067 ± 0.0030 (5)</td><td>0.8464 ± 0.0095 (5)</td><td><code>slashdot_edge_cr_5seed_2026_05_09.jsonl</code>, <code>epinions_edge_cr_5seed_2026_05_09.jsonl</code></td></tr>
+<tr><td><code>sgcn_balance</code></td><td>ref SGCN</td><td>0.929±0.010</td><td>0.942±0.006</td><td>0.919±0.004</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><code>sigat_attn</code></td><td>ref SiGAT</td><td>0.903±0.008</td><td>0.932±0.004</td><td>—</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><code>mlp_blind</code></td><td>blind MLP</td><td>0.892±0.007</td><td>0.908±0.009</td><td>0.888±0.001</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><code>gcn_blind</code></td><td>blind GCN</td><td>0.871±0.017</td><td>0.905±0.013</td><td>0.871±0.011</td><td>—</td><td><code>master_table.md</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>How to read the ★ rows</strong></p>
+<ul>
+<li><strong>Joint mix</strong> is <em>not</em> a different backbone name — it is the <strong>same SignedKAN family</strong> with the <strong>richer tuple set</strong> (cycles + walks); it tops Bitcoin in this snapshot.</li>
+<li><strong>Phase‑8 panel</strong> rows (<code>hsikan_*</code>, <code>signedkan_L1</code>, blinds, GCN/SGCN/SiGAT) share one protocol; see <strong>§3–§4</strong> for bar charts.</li>
+<li><strong>Gömb</strong> vs <strong>edge_cr</strong> on Slashdot is a deliberate <strong>cascade vs reference highway</strong> comparison — negative at the stated gate; see <strong>§8</strong>.</li>
+</ul>
+<p>Full multi-dataset grid (incl. synthetic SBM / hier / karate): <code>signedkan_wip/experiments/results/master_table.md</code>.</p>
+<hr>
+<h2 id="2-which-artifact-answers-which-question"><a class="header" href="#2-which-artifact-answers-which-question">2. Which artifact answers which question</a></h2>
 <pre><code class="language-mermaid">flowchart LR
   subgraph joint ["Joint mix (cycles + walks)"]
     J["tuples c3,c4,w2,w3"]
@@ -2665,7 +3016,7 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 </code></pre>
 <p><strong>Do not</strong> merge “joint” and “lean panel” into one verbal score — they are different experiments.</p>
 <hr>
-<h2 id="2-bitcoin-alpha--mean-test-auc-5-seeds"><a class="header" href="#2-bitcoin-alpha--mean-test-auc-5-seeds">2. Bitcoin Alpha — mean test AUC (5 seeds)</a></h2>
+<h2 id="3-bitcoin-alpha--mean-test-auc-5-seeds"><a class="header" href="#3-bitcoin-alpha--mean-test-auc-5-seeds">3. Bitcoin Alpha — mean test AUC (5 seeds)</a></h2>
 <p><strong>Joint vs cycle-only</strong> (<code>run_label</code>, <code>joint_mix_5seed_2026_05_08.jsonl</code>):</p>
 <div class="table-wrapper">
 <table>
@@ -2707,7 +3058,7 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
     bar [0.9294, 0.9033, 0.8919, 0.8710, 0.8281, 0.7449]
 </code></pre>
 <hr>
-<h2 id="3-bitcoin-otc--mean-test-auc-5-seeds"><a class="header" href="#3-bitcoin-otc--mean-test-auc-5-seeds">3. Bitcoin OTC — mean test AUC (5 seeds)</a></h2>
+<h2 id="4-bitcoin-otc--mean-test-auc-5-seeds"><a class="header" href="#4-bitcoin-otc--mean-test-auc-5-seeds">4. Bitcoin OTC — mean test AUC (5 seeds)</a></h2>
 <p><strong>Joint vs cycle</strong> (same JSONL; <code>cycle_otc</code> has <strong>4</strong> rows in the committed file — one seed missing):</p>
 <div class="table-wrapper">
 <table>
@@ -2749,7 +3100,7 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
     bar [0.9421, 0.9322, 0.9077, 0.9055, 0.8506, 0.8020]
 </code></pre>
 <hr>
-<h2 id="4-slashdot--edge_cr-reference-5-seeds"><a class="header" href="#4-slashdot--edge_cr-reference-5-seeds">4. Slashdot — <code>edge_cr</code> reference (5 seeds)</a></h2>
+<h2 id="5-slashdot--edge_cr-reference-5-seeds"><a class="header" href="#5-slashdot--edge_cr-reference-5-seeds">5. Slashdot — <code>edge_cr</code> reference (5 seeds)</a></h2>
 <p>File: <code>slashdot_edge_cr_5seed_2026_05_09.jsonl</code><br>Per-seed AUC: <strong>0.9101, 0.9055, 0.9016, 0.9093, 0.9068</strong> → mean <strong>0.9067</strong>, pstdev <strong>0.0030</strong>.</p>
 <pre><code class="language-mermaid">xychart-beta
     title "Slashdot edge_cr — test AUC by seed"
@@ -2758,7 +3109,7 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
     bar [0.9101, 0.9055, 0.9016, 0.9093, 0.9068]
 </code></pre>
 <hr>
-<h2 id="5-epinions--committed-snapshots"><a class="header" href="#5-epinions--committed-snapshots">5. Epinions — committed snapshots</a></h2>
+<h2 id="6-epinions--committed-snapshots"><a class="header" href="#6-epinions--committed-snapshots">6. Epinions — committed snapshots</a></h2>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -2771,7 +3122,7 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 </table>
 </div>
 <hr>
-<h2 id="6-multi-dataset-architecture-table-5-seeds"><a class="header" href="#6-multi-dataset-architecture-table-5-seeds">6. Multi-dataset architecture table (5 seeds)</a></h2>
+<h2 id="7-multi-dataset-architecture-table-5-seeds"><a class="header" href="#7-multi-dataset-architecture-table-5-seeds">7. Multi-dataset architecture table (5 seeds)</a></h2>
 <p>Source: <code>signedkan_wip/experiments/results/master_table.md</code><br>(mean±std AUC; excerpt — full table in file.)</p>
 <div class="table-wrapper">
 <table>
@@ -2787,15 +3138,52 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 </table>
 </div>
 <hr>
-<h2 id="7-hymeko-gömb-vs-slashdot-sota-reported"><a class="header" href="#7-hymeko-gömb-vs-slashdot-sota-reported">7. HymeKo-Gömb vs Slashdot SOTA (reported)</a></h2>
+<h2 id="8-hymeko-gömb-vs-slashdot-sota-reported"><a class="header" href="#8-hymeko-gömb-vs-slashdot-sota-reported">8. HymeKo-Gömb vs Slashdot SOTA (reported)</a></h2>
 <p>Not re-measured here — narrative + tables: <code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code>.<br>Headline: Gömb slim mean <strong>~0.9031</strong> vs <code>edge_cr</code> reference <strong>~0.9067</strong> (negative attempt at −2.3σ vs that reference).</p>
 <hr>
-<h2 id="8-renderer-note"><a class="header" href="#8-renderer-note">8. Renderer note</a></h2>
+<h2 id="9-renderer-note"><a class="header" href="#9-renderer-note">9. Renderer note</a></h2>
 <p><strong>Mermaid</strong> <code>xychart-beta</code> renders on <strong>GitHub</strong> and many local Markdown previews; if a viewer is too old, use the numeric tables in the same section.</p>
 <hr>
-<h2 id="9-revision"><a class="header" href="#9-revision">9. Revision</a></h2>
-<p>When you add a new SOTA row, bump the table + chart and update the <strong>Last verified</strong> line at the bottom of this file.</p>
+<h2 id="10-revision"><a class="header" href="#10-revision">10. Revision</a></h2>
+<p>When you add a new SOTA row, update the <strong>executive summary</strong> (§1), the matching detailed section + chart, and this <strong>Last verified</strong> line.</p>
 <p><strong>Last verified against on-disk artifacts:</strong> 2026-05-12 (workspace snapshot).</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="bitcoin-optuna-vs-sota-snapshot"><a class="header" href="#bitcoin-optuna-vs-sota-snapshot">Bitcoin Optuna vs SOTA snapshot</a></h1>
+<p>This page tracks the <strong>current Optuna maxima</strong> for HymeKo-Gomb on Bitcoin and
+compares them to committed SOTA-reference rows.</p>
+<blockquote>
+<p>Protocol note: the Gomb Optuna values below are <strong>single-trial best values</strong>
+from search logs; reference rows are <strong>5-seed means</strong> from the SOTA snapshot.
+Treat this as a progress view, not a final apples-to-apples leaderboard.</p>
+</blockquote>
+<h2 id="values"><a class="header" href="#values">Values</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Dataset</th><th style="text-align: right">Gomb Optuna best (single trial)</th><th style="text-align: right">Joint mix (5-seed mean)</th><th style="text-align: right">SGCN balance (5-seed mean)</th><th style="text-align: right">SiGAT attn (5-seed mean)</th></tr>
+</thead>
+<tbody>
+<tr><td>bitcoin_alpha</td><td style="text-align: right"><strong>0.9972</strong></td><td style="text-align: right">0.9845</td><td style="text-align: right">0.9294</td><td style="text-align: right">0.9033</td></tr>
+<tr><td>bitcoin_otc</td><td style="text-align: right"><strong>0.9957</strong></td><td style="text-align: right">0.9801</td><td style="text-align: right">0.9421</td><td style="text-align: right">0.9322</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="quick-chart"><a class="header" href="#quick-chart">Quick chart</a></h2>
+<pre><code class="language-mermaid">xychart-beta
+    title "Bitcoin AUC snapshot (Optuna best vs reference means)"
+    x-axis ["alpha", "otc"]
+    y-axis "AUC" 0.88 --&gt; 1.00
+    bar [0.9972, 0.9957]
+    bar [0.9845, 0.9801]
+    bar [0.9294, 0.9421]
+    bar [0.9033, 0.9322]
+</code></pre>
+<h2 id="sources"><a class="header" href="#sources">Sources</a></h2>
+<ul>
+<li>Optuna Alpha best (0.9972, trial 23): <code>signedkan_wip/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log</code></li>
+<li>Optuna OTC progression: <code>signedkan_wip/experiments/results/follow_optuna_20260513T003359Z.log</code></li>
+<li>SOTA reference table: <code>docs/SOTA_RESULTS.md</code></li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="evidence-contract-included-from-repo"><a class="header" href="#evidence-contract-included-from-repo">Evidence contract (included from repo)</a></h1>
 <p>Canonical rules and anchored scores: <strong><code>docs/RESULTS_DISCIPLINE.md</code></strong>. <strong>Edit that file</strong> first; this chapter is an include mirror.</p>

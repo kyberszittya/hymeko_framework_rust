@@ -46,8 +46,10 @@
 
 - [signedkan_wip overview](./research/signedkan-overview.md)
 - [HSiKAN architecture](./research/hsikan.md)
+- [NN variants & layer geometry](./research/nn-architectures-and-layer-geometry.md)
 - [HyMeKo-driven training](./research/hymeko-driven.md)
 - [HymeKo-Gömb: “orthogonal” meanings](./research/gomb-orthogonal.md)
+- [CPML routes: Highway · Capsule · KAN](./research/cpml-routing-highway-capsule-kan.md)
 
 # Results & evidence (benchmarks)
 
@@ -55,6 +57,7 @@
 - [Abbreviations & symbols](./results/abbreviations.md)
 - [Mathematics](./results/mathematics.md)
 - [SOTA snapshot & diagrams](./results/sota-snapshot.md)
+- [Bitcoin Optuna vs SOTA snapshot](./results/bitcoin-optuna-vs-sota.md)
 - [Evidence contract](./results/evidence-contract.md)
 - [Artifact index](./results/artifact-index.md)
 - [Cold start](./results/cold-start.md)

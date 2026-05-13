@@ -7,8 +7,10 @@ Architecture (plan: docs/plans/2026-05-11-hymeko-gomb-sphere/):
                      Cheap, redundant, sign-aware. Bio-analogue: V1.
     Middle shell →  Single HSiKAN spline layer with Catmull-Rom gates.
                      Bio-analogue: V4.
-    Inner core   →  CPML tier-stratified topology compression toward
-                     the predictor. Bio-analogue: IT.
+    Inner core   →  CPML tier-stratified readout on concat(embed, outer, middle).
+                     Default ``cpml_topology="route"`` (tiers as cycle routes;
+                     see ``docs/book/src/research/cpml-routing-highway-capsule-kan.md``).
+                     Bio-analogue: IT.
 
 Package layout:
 
@@ -16,7 +18,9 @@ Package layout:
                  (the role-distinct primitives)
     cascade.py   GombConfig, HymeKoGomb (full cascade),
                  GombNoOuter / GombNoMiddle / GombNoInner (ablations),
-                 MixedArityGomb (k=3+k=4, k=4+k=5, … with learned αₖ)
+                 MixedArityGomb (k=3+k=4, k=4+k=5, … with learned αₖ),
+                 JointMixGomb (joint_ba slots c3,c4,w2,w3 + α fusion)
+    joint_enumeration.py  Tuple pools for JointMixGomb (Rust cycles + walks)
 
 External imports stay flat: `from signedkan_wip.src.hymeko_gomb import …`
 continues to work because this module re-exports the public surface.
@@ -29,6 +33,7 @@ from .cascade import (
     GombNoMiddle,
     GombNoOuter,
     HymeKoGomb,
+    JointMixGomb,
     MixedArityGomb,
 )
 from .shells import InnerCPMLCore, MiddleHSiKAN, OuterFIRShell, scatter_mean
@@ -36,6 +41,7 @@ from .shells import InnerCPMLCore, MiddleHSiKAN, OuterFIRShell, scatter_mean
 __all__ = [
     "GombConfig",
     "HymeKoGomb",
+    "JointMixGomb",
     "OuterFIRShell", "MiddleHSiKAN", "InnerCPMLCore", "scatter_mean",
     "GombNoOuter", "GombNoMiddle", "GombNoInner",
     "MixedArityGomb",

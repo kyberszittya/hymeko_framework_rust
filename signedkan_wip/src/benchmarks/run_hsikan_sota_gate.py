@@ -20,16 +20,37 @@ Force CPU::
     python -m signedkan_wip.src.benchmarks.run_hsikan_sota_gate \\
         --datasets bitcoin_alpha --seeds 0 --device cpu
 
+Refuse to run without a GPU (exit code 2 if no CUDA, or if ``--device`` is
+not ``cuda``)::
+
+    python -m signedkan_wip.src.benchmarks.run_hsikan_sota_gate \\
+        --datasets bitcoin_alpha bitcoin_otc --seeds 0 1 2 3 4 \\
+        --require-cuda
+
+**VRAM (8 GB class):** keep the GPU exclusive to this process. Optionally set
+``--cycle-batch 2000`` (chunked forward, matches Optuna) and/or lower
+``--max-k4`` / ``--max-k3`` if you still hit OOM while building sparse
+``M_e`` incidence — tuple caps dominate peak allocation before training.
+
+With ``--device cuda``, this driver takes the **CUDA job flock** so it does
+not overlap ``run_optuna_search`` / ``run_hsikan_optuna_chase`` on the same
+host (see ``cuda_job_lock``; disable with ``HYMEKO_CUDA_DISABLE_JOB_LOCK=1``).
+
+Single-seed Optuna search until one trial clears the same competitor bar
+(``run_hsikan_optuna_chase``); use this gate afterward for multi-seed proof.
+
 Exit code 0 iff every selected dataset passes under the chosen mode.
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
+import os
 import statistics
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import torch
@@ -55,6 +76,22 @@ def main() -> None:
     ap.add_argument("--n-epochs", type=int, default=80)
     ap.add_argument("--max-k4", type=int, default=200_000)
     ap.add_argument(
+        "--max-k3",
+        type=int,
+        default=None,
+        help="If set, export HSIKAN_MAX_K3 for this process (default env: 30000). "
+        "Lower to shrink sparse M_e before forward.",
+    )
+    ap.add_argument(
+        "--cycle-batch",
+        type=int,
+        default=None,
+        metavar="N",
+        help="If set, export HSIKAN_CYCLE_BATCH=N (chunked encode_edges). "
+        "Unset for Bitcoin matches historical no-batch path; 2000–4000 "
+        "helps ~8 GB GPUs when attention is off.",
+    )
+    ap.add_argument(
         "--device", default="cuda" if torch.cuda.is_available() else "cpu",
         help="cuda when available (default), else cpu; use --device cpu to force CPU.",
     )
@@ -67,14 +104,51 @@ def main() -> None:
         "--k-sigma", type=float, default=2.0,
         help="Slack multiplier for self-mode when hsikan_std is set",
     )
+    ap.add_argument(
+        "--require-cuda",
+        action="store_true",
+        help="Require CUDA: exit 2 if unavailable; forbid --device cpu.",
+    )
     args = ap.parse_args()
 
+    if args.cycle_batch is not None:
+        os.environ["HSIKAN_CYCLE_BATCH"] = str(args.cycle_batch)
+    if args.max_k3 is not None:
+        os.environ["HSIKAN_MAX_K3"] = str(args.max_k3)
+
+    if args.require_cuda:
+        if args.device != "cuda":
+            print(
+                "[gate] --require-cuda needs --device cuda "
+                f"(got {args.device!r})",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+        if not torch.cuda.is_available():
+            print(
+                "[gate] --require-cuda set but CUDA is not available",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
     ref = _load_reference()
-    targets: dict[str, Any] = ref["targets"]
     device = torch.device(args.device)
 
+    from signedkan_wip.src.benchmarks.cuda_job_lock import cuda_job_lock
     from signedkan_wip.src.run_final_cell import cell_signed_graph
 
+    lock_ctx = cuda_job_lock() if device.type == "cuda" else contextlib.nullcontext()
+    with lock_ctx:
+        _run_gate_after_lock(args, ref, device, cell_signed_graph)
+
+
+def _run_gate_after_lock(
+    args: argparse.Namespace,
+    ref: dict[str, Any],
+    device: torch.device,
+    cell_signed_graph: Callable[..., Any],
+) -> None:
+    targets: dict[str, Any] = ref["targets"]
     all_pass = True
     print(json.dumps({"citation": ref["citation"], "mode": args.mode}, indent=2))
     for ds in args.datasets:
@@ -93,6 +167,8 @@ def main() -> None:
             if out is None:
                 raise RuntimeError(f"cell_signed_graph returned None for {ds}")
             aucs.append(float(out["auc"]))
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
         mean = float(statistics.mean(aucs))
         std_run = float(statistics.pstdev(aucs)) if len(aucs) > 1 else 0.0
 

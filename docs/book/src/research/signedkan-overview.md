@@ -7,7 +7,7 @@
 | component | status |
 |---|---|
 | `signedkan.py::SignedKANLayer` | Stable. Option-C signed-incidence aggregation per arity k. |
-| `mixed_arity_signedkan.py::MixedAritySignedKAN` | Stable. αₖ-mixed multi-arity model. |
+| `mixed_arity_signedkan/::MixedAritySignedKAN` | Stable. αₖ-mixed multi-arity model (package split 2026-05-11). |
 | `n_tuples.py::construct_k` | Stable. k-cycle / k-tuple enumeration (Python wrapper around Rust enumerator). |
 | `hyperedges.py::construct` | Stable. k=3 cycle construction. |
 | `splines.py` | Stable. Batched B-spline / Catmull-Rom / Kochanek-Bartels activations. |
@@ -33,7 +33,9 @@ signedkan_wip/src/
 ├── hymeko_train_walker.py  # NEW: walks training.hymeko's dataflow, dispatches per-op
 ├── run_final_cell.py       # cell_signed_graph: the actual training kernel (~500 LOC)
 ├── signedkan.py            # SignedKANLayer (Option C)
-├── mixed_arity_signedkan.py # MixedAritySignedKAN (αₖ mixer + sparse M_e)
+├── mixed_arity_signedkan/  # MixedAritySignedKAN (αₖ mixer + sparse M_e)
+├── hymeko_gomb/            # HymeKo-Gömb cascade (outer / middle / inner)
+├── cpml.py                 # CPML tiered stack (+ factorial smoke)
 ├── splines.py              # Catmull-Rom / B-spline / KB activations
 ├── n_tuples.py             # k-cycle / k-tuple enumeration (calls Rust)
 ├── hyperedges.py           # k=3 triad construction
@@ -55,6 +57,8 @@ signedkan_wip/src/
 
 - [Results & evidence](../results/overview.md) — abbreviations, math, SOTA charts, evidence contract, artifact indexes (mdBook).
 - [HSiKAN architecture](./hsikan.md) — the core architecture
+- [NN variants & layer geometry](./nn-architectures-and-layer-geometry.md) — module-by-module layout (SignedKAN, MixedArity, baselines, CPML, Gömb)
 - [HymeKo-Gömb: “orthogonal” meanings](./gomb-orthogonal.md) — factorial vs cascade vs bank regularisation
+- [CPML routes: Highway · Capsule · KAN](./cpml-routing-highway-capsule-kan.md) — tier routing maths; default `topology="route"`
 - [HyMeKo-driven training](./hymeko-driven.md) — how training.hymeko drives the walker
 - [Quickstart: Build an HSiKAN architecture](../quickstart/08-hsikan-architecture.md)

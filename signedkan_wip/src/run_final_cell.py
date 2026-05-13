@@ -15,6 +15,15 @@ Use ``cpu`` for reproducible sweeps when another job holds GPU memory.
 
 Recognised models:
     HSiKAN, HSiKAN-mixed, SGCN, HSiKAN-graphlevel, HSiKAN-pose
+
+Auxiliary entropy (optional, via env, added to BCE alongside
+``HSIKAN_ENTROPY_LAMBDA`` spectral reg on node embeddings):
+
+- ``HSIKAN_ALPHA_ENTROPY_LAMBDA`` — encourages higher Shannon entropy
+  of the arity-mixer ``alpha`` (adds ``-λ H(α)`` to the loss).
+- ``HSIKAN_ATTN_ENTROPY_LAMBDA`` — encourages higher per-arity attention
+  weight entropy when ``HSIKAN_ATTENTION_M_E`` is ``dot`` or ``quaternion``
+  (adds ``-λ mean(H_attn)``).
 """
 from __future__ import annotations
 
@@ -54,10 +63,89 @@ def n_params(*modules) -> int:
                  for m in modules)
 
 
+def _shannon_entropy_discrete(p: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
+    """Shannon H(p) = -sum p log p for a probability vector ``p``."""
+    return -(p * (p + eps).log()).sum()
+
+
+def _aux_entropy_attention_alpha(
+    model: torch.nn.Module,
+    *,
+    alpha_entropy_lambda: float,
+    attn_entropy_lambda: float,
+) -> torch.Tensor:
+    """BCE addend: **-λα H(α) - λ_attn mean(H_attn)** (reward higher entropy)."""
+    ref = next(model.parameters())
+    out = torch.zeros((), device=ref.device, dtype=ref.dtype)
+    if alpha_entropy_lambda > 0.0:
+        alpha = model.alpha()  # type: ignore[attr-defined]
+        out = out - alpha_entropy_lambda * _shannon_entropy_discrete(alpha)
+    if attn_entropy_lambda > 0.0:
+        terms = getattr(model, "_attn_entropy_terms", None) or []
+        if terms:
+            stacked = torch.stack(tuple(terms))
+            out = out - attn_entropy_lambda * stacked.mean()
+    return out
+
+
 # ----- Edge-sign-prediction (Bitcoin / SBM / Slashdot) -----
 
+def _save_demo_checkpoint(
+    save_path,
+    model,
+    cfg,
+    dataset,
+    n_nodes,
+    per_arity_te,
+    q_te,
+    e_te,
+    y_te,
+    seed,
+    n_epochs,
+    test_auc,
+    test_f1,
+    tuple_specs,
+    train_args,
+    classifier_module=None,
+):
+    """Write a demo checkpoint bundling state_dict, cfg, and the
+    precomputed test-set inference inputs."""
+    if save_path is None or save_path == "":
+        return
+    from .demo.checkpoint import (
+        save_checkpoint, CheckpointMeta, InferenceBundle,
+    )
+    bundle = InferenceBundle(
+        per_arity_te=per_arity_te,
+        query_edges=e_te,
+        true_signs=y_te,
+    )
+    meta = CheckpointMeta(
+        dataset=str(dataset),
+        n_nodes=int(n_nodes),
+        tuple_specs=[list(s) for s in tuple_specs],
+        seed=int(seed),
+        n_epochs=int(n_epochs),
+        test_auc=float(test_auc) if test_auc == test_auc else None,
+        test_f1=float(test_f1) if test_f1 == test_f1 else None,
+        n_params=int(sum(p.numel() for p in model.parameters())),
+        train_args=dict(train_args or {}),
+    )
+    save_checkpoint(
+        save_path,
+        model,
+        cfg,
+        "signedkan_wip.src.mixed_arity_signedkan.model.MixedAritySignedKAN",
+        meta,
+        inference_bundle=bundle,
+        classifier_module=classifier_module,
+    )
+    print(f"[demo] checkpoint saved to {save_path}", flush=True)
+
+
 def cell_signed_graph(dataset: str, model_name: str, hidden: int,
-                        n_epochs: int, max_k4: int, device, seed: int = 0):
+                        n_epochs: int, max_k4: int, device, seed: int = 0,
+                        save_checkpoint_path: str | None = None):
     from .cycle_cache import (
         cached_construct_2, cached_construct_k, cached_construct_triads,
         cached_construct_walks,
@@ -418,6 +506,11 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
             loss = F.binary_cross_entropy_with_logits(logits, y_tr)
             if entropy_reg is not None:
                 loss = loss + entropy_reg(model.node_embed.weight)
+            loss = loss + _aux_entropy_attention_alpha(
+                model,
+                alpha_entropy_lambda=float(_train.alpha_entropy_lambda),
+                attn_entropy_lambda=float(_train.attn_entropy_lambda),
+            )
             opt.zero_grad(); loss.backward(); opt.step()
         # Eval: also use model.classifier
         model.eval()
@@ -430,6 +523,14 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         auc = roc_auc_score(y_te, probs) if len(set(y_te)) > 1 else float("nan")
         f1 = f1_score(y_te, probs > 0.5, average="macro", zero_division=0)
         lat = time_per_call(fwd)
+        _save_demo_checkpoint(
+            save_checkpoint_path, model, cfg, dataset, g.n_nodes,
+            per_arity_te, q_te, e_te, y_te,
+            seed, n_epochs, auc, f1, tuple_specs,
+            train_args={"hidden": hidden, "max_k4": max_k4,
+                          "model_name": model_name},
+            classifier_module=None,  # uses model.classifier (Slashdot path)
+        )
         return dict(dataset=dataset, model="HSiKAN-mixed", hidden=hidden,
                       n_test=int(len(te_idx)),
                       arities=list(arities_used),
@@ -450,6 +551,11 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                                                     pos_weight=pw)
         if entropy_reg is not None:
             loss = loss + entropy_reg(model.node_embed.weight)
+        loss = loss + _aux_entropy_attention_alpha(
+            model,
+            alpha_entropy_lambda=float(_train.alpha_entropy_lambda),
+            attn_entropy_lambda=float(_train.attn_entropy_lambda),
+        )
         opt.zero_grad(); loss.backward(); opt.step()
     model.eval(); clf.eval()
     def fwd():
@@ -461,6 +567,14 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     auc = roc_auc_score(y_te, probs) if len(set(y_te)) > 1 else float("nan")
     f1 = f1_score(y_te, probs > 0.5, average="macro", zero_division=0)
     lat = time_per_call(fwd)
+    _save_demo_checkpoint(
+        save_checkpoint_path, model, cfg, dataset, g.n_nodes,
+        per_arity_te, q_te, e_te, y_te,
+        seed, n_epochs, auc, f1, tuple_specs,
+        train_args={"hidden": hidden, "max_k4": max_k4,
+                      "model_name": model_name},
+        classifier_module=clf,
+    )
     return dict(dataset=dataset, model="HSiKAN-mixed", hidden=hidden,
                   n_test=int(len(te_idx)),
                   arities=list(arities_used),
@@ -752,6 +866,11 @@ def main():
     ap.add_argument("--max-k4", type=int, default=200000,
                     help="Slashdot mixed-arity k=4 cap")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--save-checkpoint", default=None,
+                    help="Path to write a demo checkpoint (state_dict + cfg + "
+                         "precomputed test-set inference bundle). Loadable by "
+                         "signedkan_wip.src.demo.gui. Only signed-graph datasets "
+                         "(bitcoin*/slashdot/epinions/sbm/...).")
     args = ap.parse_args()
     device = resolve_hsikan_device()
 
@@ -760,7 +879,8 @@ def main():
                                   "mesh_")):
         out = cell_signed_graph(args.dataset, args.model, args.hidden,
                                   args.n_epochs, args.max_k4, device,
-                                  seed=args.seed)
+                                  seed=args.seed,
+                                  save_checkpoint_path=args.save_checkpoint)
         if out is not None:
             out["seed"] = args.seed
     elif args.dataset.startswith("kinematic_k"):

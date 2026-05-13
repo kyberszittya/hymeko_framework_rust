@@ -23,8 +23,8 @@ use std::collections::BTreeSet;
 use hymeko::common::ids::DeclId;
 
 use crate::lowering::LoweredPGraph;
-use crate::msg::{close_producible, MaximalStructure};
-use crate::ssg::{is_feasible, SsgOptions};
+use crate::msg::{MaximalStructure, close_producible};
+use crate::ssg::{SsgOptions, is_feasible};
 
 /// Output of [`solve`]: optimal selection plus its cost.
 #[derive(Debug, Clone)]
@@ -116,12 +116,7 @@ struct SearchState {
     opts: AbbOptions,
 }
 
-fn branch(
-    p: &LoweredPGraph,
-    msg: &MaximalStructure,
-    s: &mut SearchState,
-    depth: usize,
-) {
+fn branch(p: &LoweredPGraph, msg: &MaximalStructure, s: &mut SearchState, depth: usize) {
     if s.opts.max_explored != 0 && s.explored >= s.opts.max_explored {
         return;
     }

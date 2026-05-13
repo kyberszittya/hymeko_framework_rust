@@ -187,13 +187,12 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
                                 });
                             }
                         };
-                        let mat_id =
-                            *name_to_decl.get(target_name).ok_or_else(|| {
-                                LowerError::UnknownMaterial {
-                                    unit: unit_name.clone(),
-                                    target: target_name.to_string(),
-                                }
-                            })?;
+                        let mat_id = *name_to_decl.get(target_name).ok_or_else(|| {
+                            LowerError::UnknownMaterial {
+                                unit: unit_name.clone(),
+                                target: target_name.to_string(),
+                            }
+                        })?;
                         if sign < 0 {
                             edges.insert(EdgeId::new(next_edge), (mat_id, unit_id));
                             unit_inputs.get_mut(&unit_id).unwrap().insert(mat_id);
