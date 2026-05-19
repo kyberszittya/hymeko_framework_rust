@@ -1,0 +1,35 @@
+flowchart TD
+    img[image] --> coarse[Coarse uniform patches at scale 0]
+    coarse --> embed[Linear initial embed → x_v]
+    embed --> kappa[FormanCurvatureHead<br/>κ_v = 2 − deg_u − deg_v + 2 triangles]
+    kappa --> dec{|κ_v| > τ ?}
+    dec -- yes --> subdiv[Quadtree subdivide<br/>4 sub-anchors per region]
+    subdiv --> embed
+    dec -- no --> done[Anchor set finalized]
+    done --> msgraph[Multi-scale signed hypergraph<br/>same-scale + cross-scale edges<br/>sign = sign of inner product − θ]
+    msgraph --> sdrf[SDRF curvature-rewiring<br/>remove negative-κ bottlenecks]
+    sdrf --> hodge[Hodge Laplacians Δ_0, Δ_1, Δ_2<br/>on signed simplicial complex]
+    hodge --> bochner[Bochner-coupled HypergraphConv<br/>msg = flat-connection + α Δ_k h + β κ correction]
+    bochner --> walk[WalkConv layer<br/>Phase 2]
+    walk --> poly[PolygonConv layer<br/>Phase 3-G]
+    poly --> tri[TriangleConv layer<br/>Phase 4, Cartwright-Harary gate]
+    tri --> head[Detection head<br/>per-anchor cls + offset]
+    head --> output[mAP50 / accuracy]
+
+    classDef newComp fill:#fed7aa,stroke:#c2410c,color:#000
+    classDef geomComp fill:#bbf7d0,stroke:#15803d,color:#000
+    classDef reuseComp fill:#bfdbfe,stroke:#1d4ed8,color:#000
+    class kappa,subdiv,sdrf newComp
+    class hodge,bochner geomComp
+    class walk,poly,tri reuseComp
+
+    %% Architecture decomposes into:
+    %%   ORANGE: novel anchor-side modules (Forman κ + adaptive quadtree + SDRF rewiring)
+    %%   GREEN:  geometric propagation primitives (Hodge Laplacians, Bochner coupling)
+    %%   BLUE:   reused GömbSoma layers (Walk, Polygon, Triangle — Phase 1–3-G)
+    %%
+    %% Falsification battery:
+    %%   HyMeYOLO +kcycle (broken)     : 0.204 mAP50  → beat strongly
+    %%   HyMeYOLO +ricci+kcycle        : 0.235 mAP50  → beat strongly
+    %%   HyMeYOLO +ricci-mod (positive): 0.723 mAP50  → match or beat
+    %%   Target: ≥ 0.72 mAP50 ⇒ paper-grade YOLO-class result

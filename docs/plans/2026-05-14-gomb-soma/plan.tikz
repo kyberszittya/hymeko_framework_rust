@@ -1,0 +1,76 @@
+% TikZ figure: GömbSoma compositional hierarchy.
+% Walks → polygons → triangles → abstractions, with Clifford-FIR
+% as the inter-layer transfer operator. Gömb sits beside as the
+% cognitive-level companion.
+
+\begin{tikzpicture}[scale=1.0,
+    every node/.style={font=\small},
+    walk/.style={draw=orange!80, fill=orange!12, rounded corners=3pt,
+                 minimum width=4.0cm, minimum height=11mm, align=center,
+                 inner sep=3pt},
+    poly/.style={draw=blue!70!black, fill=blue!12, rounded corners=3pt,
+                 minimum width=4.0cm, minimum height=11mm, align=center,
+                 inner sep=3pt},
+    tri/.style={draw=green!60!black, fill=green!15, rounded corners=3pt,
+                minimum width=4.0cm, minimum height=11mm, align=center,
+                inner sep=3pt},
+    abst/.style={draw=purple!70, fill=purple!12, rounded corners=3pt,
+                 minimum width=4.0cm, minimum height=11mm, align=center,
+                 inner sep=3pt},
+    clf/.style={draw=red!70, fill=red!10, rounded corners=3pt,
+                minimum width=4.0cm, minimum height=8mm, align=center,
+                inner sep=2pt, font=\footnotesize\itshape},
+    head/.style={draw=black, fill=gray!20, rounded corners=3pt,
+                 minimum width=4.0cm, minimum height=10mm, align=center,
+                 inner sep=3pt},
+    arr/.style={-{Stealth[length=2.5mm]}, line width=0.8pt}]
+  \node[font=\bfseries\large] at (0, 6.7) {GömbSoma (sensorimotor-stack)};
+  \node[font=\footnotesize\itshape] at (0, 6.15) {compositional hierarchy};
+
+  \node[walk] (w) at (0, 5.0) {Walk-conv\\\footnotesize HG-conv over $w_2, w_3, \ldots$};
+  \node[clf]  (c1) at (0, 3.7) {Clifford-FIR transfer (grade $1 \to 2$)};
+  \node[poly] (p) at (0, 2.4) {Polygon-conv\\\footnotesize HG-conv over $c_4, c_5, c_6, \ldots$};
+  \node[clf]  (c2) at (0, 1.1) {Clifford-FIR transfer (grade $2 \to 3$)};
+  \node[tri]  (t) at (0,-0.2) {Triangle-conv\\\footnotesize HG-conv over $c_3$ + Cartwright--Harary gate};
+  \node[abst] (a) at (0,-1.5) {Abstraction-conv\\\footnotesize derivative-nodelet contraction};
+  \node[head] (h) at (0,-2.8) {head};
+  \draw[arr] (w) -- (c1);
+  \draw[arr] (c1) -- (p);
+  \draw[arr] (p) -- (c2);
+  \draw[arr] (c2) -- (t);
+  \draw[arr] (t) -- (a);
+  \draw[arr] (a) -- (h);
+
+  % Recursion arrow
+  \draw[arr, dashed, line width=0.6pt] (a.east) -- ++(1.5,0)
+    node[midway, above, font=\footnotesize\itshape] {recurse on contracted graph}
+    -- ++(0,5.0) -- (w.east);
+
+  % Gömb companion box
+  \node[draw=gray!60, dashed, rounded corners=2pt,
+        minimum width=4.5cm, minimum height=8.0cm, align=center]
+    (v1box) at (6.5, 1.3) {};
+  \node[font=\bfseries\large] at (6.5, 6.7) {Gömb (cognitive-stack)};
+  \node[font=\footnotesize\itshape] at (6.5, 6.15) {three orthogonal shells (kept)};
+  \node[outvec/.style={draw=outer, fill=outer!12, rounded corners=2pt,
+                       minimum width=3.5cm, minimum height=10mm, align=center,
+                       inner sep=2pt}, outvec]
+        (o1) at (6.5, 5.0) {OuterFIRShell\\\footnotesize geometric};
+  \node[draw=blue!70!black, fill=blue!12, rounded corners=2pt,
+        minimum width=3.5cm, minimum height=10mm, align=center, inner sep=2pt]
+        (m1) at (6.5, 3.4) {MiddleHSiKAN\\\footnotesize learnable nonlinearity};
+  \node[draw=green!60!black, fill=green!15, rounded corners=2pt,
+        minimum width=3.5cm, minimum height=10mm, align=center, inner sep=2pt]
+        (i1) at (6.5, 1.8) {InnerCPMLCore\\\footnotesize routing};
+  \node[draw=black, fill=gray!20, rounded corners=2pt,
+        minimum width=3.5cm, minimum height=10mm, align=center, inner sep=2pt]
+        (h1) at (6.5,-0.4) {head};
+  \draw[arr] (o1) -- (m1);
+  \draw[arr] (m1) -- (i1);
+  \draw[arr] (i1) -- (h1);
+
+  % Label for the layered hypothesis
+  \node[font=\footnotesize, align=center] at (3.2, -3.8)
+    {hypothesis: Soma feeds Gömb on raw input;\\
+     test by running Gömb / GömbSoma in parallel on the same benchmarks};
+\end{tikzpicture}

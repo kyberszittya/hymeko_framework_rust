@@ -1,0 +1,26 @@
+\begin{tikzpicture}[scale=0.9, every node/.style={font=\small},
+    box/.style={draw, rounded corners=3pt, minimum width=4cm,
+                minimum height=10mm, align=center, inner sep=2pt},
+    cfg/.style={box, fill=blue!12, draw=blue!70},
+    target/.style={box, fill=green!15, draw=green!70!black},
+    pass/.style={box, fill=green!25, draw=green!80!black, font=\bfseries},
+    fail/.style={box, fill=red!15, draw=red!80, font=\bfseries},
+    arr/.style={-{Stealth[length=2.2mm]}, line width=0.7pt}]
+  \node[font=\bfseries\large] at (0, 4.5) {Cluttered MNIST falsification};
+  \node[cfg] (a) at (-6, 3) {Config A\\($\alpha=0,\beta=0$)};
+  \node[cfg] (b) at (-3, 3) {Config B\\(Hodge only)};
+  \node[cfg] (c) at ( 0, 3) {Config C\\(Ricci only)};
+  \node[cfg] (d) at ( 3, 3) {Config D\\(Bochner full)};
+  \node[cfg] (e) at ( 6, 3) {Config E\\(headline + SDRF)};
+  \node[target] (t1) at (-4, 1.2) {+kcycle 0.204\\(beat strongly)};
+  \node[target] (t2) at (0, 1.2) {+ricci+kcycle 0.235\\(beat strongly)};
+  \node[target] (t3) at (4, 1.2) {+ricci-mod 0.723\\(match or beat)};
+  \node[pass] (win) at (-2, -1) {$\geq 0.72$ mAP50 \\ paper-grade};
+  \node[box, fill=yellow!15] (mid) at (2, -1) {$0.5$--$0.72$ \\ ablate};
+  \node[fail] (lose) at (6, -1) {$< 0.235$ \\ falsified};
+  \draw[arr, dashed] (e.south) -- (t3.north);
+  \draw[arr, dashed] (a.south) -- (t1.north);
+  \draw[arr] (t3) -- (win);
+  \draw[arr] (t2) -- (mid);
+  \draw[arr] (t1) -- (lose);
+\end{tikzpicture}

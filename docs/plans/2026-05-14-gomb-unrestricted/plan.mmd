@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant CLI as run_gomb_smoke.py
+    participant Enum as cycle enumerator
+    participant Model as Gömb (3 shells)
+    participant Eval as test AUC
+
+    Note over CLI: --unrestricted-cycles=False (strict, default)
+    CLI->>Enum: enumerate(e_train, s_train)
+    Enum-->>CLI: pi(c) features (train-only)
+    CLI->>Model: train + predict
+    Model->>Eval: scores on e_test
+    Eval-->>CLI: AUROC_strict = 0.9526 (5-seed)
+
+    Note over CLI: --unrestricted-cycles=True (transductive)
+    CLI->>Enum: enumerate(e_all, s_all)
+    Enum-->>CLI: pi(c) features (incl. test-edge signs)
+    CLI->>Model: train + predict
+    Model->>Eval: scores on e_test
+    Eval-->>CLI: AUROC_unrestricted = ? (5-seed)
+
+    Note over CLI: audit sanity: --shuffle-train-signs on both branches
+    CLI->>Enum: enumerate(shuffled)
+    Enum-->>Eval: AUROC_shuffled
+    Note over Eval: strict shuffled = 0.54 (no leakage)
+    Note over Eval: unrestricted shuffled > 0.54 (leakage open)

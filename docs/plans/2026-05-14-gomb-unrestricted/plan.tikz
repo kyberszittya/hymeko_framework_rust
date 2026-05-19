@@ -1,0 +1,22 @@
+% TikZ figure: data-flow contrast strict vs unrestricted cycle pool.
+\begin{tikzpicture}[scale=1.0,
+    every node/.style={font=\small},
+    box/.style={draw, rounded corners=3pt, minimum width=6cm,
+                minimum height=10mm, align=center, inner sep=3pt},
+    strict/.style={box, fill=green!15, draw=green!60!black},
+    unrestricted/.style={box, fill=red!12, draw=red!60!black},
+    cycl/.style={box, fill=orange!18, draw=orange!75},
+    metric/.style={box, fill=blue!12, draw=blue!60},
+    arr/.style={-{Stealth[length=2.2mm]}, line width=0.7pt}]
+  \node[strict]       (s1) at (-4.5, 3) {edges $E_{\mathrm{train}}$ + signs $\sigma_{\mathrm{train}}$};
+  \node[unrestricted] (u1) at ( 4.5, 3) {edges $E_{\mathrm{all}}$ + signs $\sigma_{\mathrm{all}}$};
+  \node[font=\footnotesize\itshape] at (-4.5, 3.85) {strict (default)};
+  \node[font=\footnotesize\itshape] at ( 4.5, 3.85) {--unrestricted-cycles};
+  \node[cycl] (c1) at (-4.5, 1.0) {cycle enum $\to \pi(c) = \prod \sigma$};
+  \node[cycl] (c2) at ( 4.5, 1.0) {cycle enum $\to \pi(c) = \prod \sigma$};
+  \node[metric] (m) at (0, -1.4) {test edge prediction $\to$ AUROC};
+  \draw[arr] (s1) -- (c1);
+  \draw[arr] (u1) -- (c2);
+  \draw[arr] (c1) -- (m);
+  \draw[arr] (c2) -- (m);
+\end{tikzpicture}

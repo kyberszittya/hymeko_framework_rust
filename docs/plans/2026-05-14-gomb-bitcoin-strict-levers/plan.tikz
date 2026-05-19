@@ -1,0 +1,28 @@
+\begin{tikzpicture}[scale=1.0,
+    every node/.style={font=\small},
+    baseline/.style={draw=gray!60, fill=gray!12, rounded corners=3pt,
+                     minimum width=4cm, minimum height=10mm, align=center},
+    lever/.style={draw=orange!80, fill=orange!12, rounded corners=3pt,
+                  minimum width=3.6cm, minimum height=9mm, align=center,
+                  inner sep=2pt, font=\footnotesize},
+    paired/.style={draw=blue!70!black, fill=blue!12, rounded corners=3pt,
+                   minimum width=4cm, minimum height=10mm, align=center},
+    arr/.style={-{Stealth[length=2.2mm]}, line width=0.7pt}]
+  \node[baseline] (base) at (0, 4) {v5\_combined baseline\\Alpha 0.8972 / OTC 0.9145};
+  \node[lever] (l1) at (-6, 2) {L1 c5\_arity\\+c5 in mix};
+  \node[lever] (l2) at (-3, 2) {L2 deeper\\n\_tiers $= 5$};
+  \node[lever] (l3) at ( 0, 2) {L3 wider\_outer\\M\_outer $= 16$};
+  \node[lever] (l4) at ( 3, 2) {L4 long\_train\\n\_epochs $= 200$};
+  \node[lever] (l5) at ( 6, 2) {L5 big\_embed\\d\_embed $= 64$};
+  \node[paired] (out) at (0, 0) {paired 5-seed delta\\vs baseline (same seeds)};
+  \draw[arr] (base.south) -- ++(0, -0.6) -| (l1.north);
+  \draw[arr] (base.south) -- ++(0, -0.6) -| (l2.north);
+  \draw[arr] (base.south) -- ++(0, -0.6) -| (l3.north);
+  \draw[arr] (base.south) -- ++(0, -0.6) -| (l4.north);
+  \draw[arr] (base.south) -- ++(0, -0.6) -| (l5.north);
+  \draw[arr] (l1.south) -| (out.west);
+  \draw[arr] (l2.south) -- (out.north);
+  \draw[arr] (l3.south) -- (out.north);
+  \draw[arr] (l4.south) -- (out.north);
+  \draw[arr] (l5.south) -| (out.east);
+\end{tikzpicture}

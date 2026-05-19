@@ -1,0 +1,70 @@
+% TikZ figure: GömbSoma-Stim end-to-end pipeline; side-by-side with
+% the rolling-shutter Phase 3-V baseline.
+
+\begin{tikzpicture}[scale=1.0,
+    every node/.style={font=\small},
+    img/.style={draw=gray!60, fill=gray!12, rounded corners=3pt,
+                minimum width=3.4cm, minimum height=10mm, align=center,
+                inner sep=2pt},
+    patch/.style={draw=blue!70!black, fill=blue!10, rounded corners=3pt,
+                  minimum width=3.4cm, minimum height=10mm, align=center,
+                  inner sep=2pt},
+    sal/.style={draw=orange!80, fill=orange!12, rounded corners=3pt,
+                minimum width=3.4cm, minimum height=10mm, align=center,
+                inner sep=2pt},
+    topk/.style={draw=red!70, fill=red!12, rounded corners=3pt,
+                 minimum width=3.4cm, minimum height=10mm, align=center,
+                 inner sep=2pt},
+    graph/.style={draw=purple!70, fill=purple!12, rounded corners=3pt,
+                  minimum width=3.4cm, minimum height=10mm, align=center,
+                  inner sep=2pt},
+    soma/.style={draw=green!60!black, fill=green!15, rounded corners=3pt,
+                 minimum width=3.4cm, minimum height=10mm, align=center,
+                 inner sep=2pt},
+    head/.style={draw=black, fill=gray!25, rounded corners=3pt,
+                 minimum width=3.4cm, minimum height=10mm, align=center,
+                 inner sep=2pt},
+    arr/.style={-{Stealth[length=2.2mm]}, line width=0.7pt}]
+
+  % Left: Phase 3-V (rolling-shutter)
+  \node[font=\bfseries\large] at (-4, 8) {Phase 3-V};
+  \node[font=\footnotesize\itshape] at (-4, 7.55) {rolling-shutter \Gomb{}Soma};
+  \node[img]   (img1) at (-4, 6.5) {image};
+  \node[patch] (p1)   at (-4, 5.2) {patchify on fixed 4-conn grid};
+  \node[graph] (g1)   at (-4, 3.9) {grid hypergraph\\(static, design-time)};
+  \node[soma]  (s1)   at (-4, 2.6) {Walk / Polygon / Triangle};
+  \node[head]  (h1)   at (-4, 1.3) {mean-pool head};
+  \draw[arr] (img1) -- (p1);
+  \draw[arr] (p1)   -- (g1);
+  \draw[arr] (g1)   -- (s1);
+  \draw[arr] (s1)   -- (h1);
+
+  % Right: Phase 3-V-stim (stimulus-driven)
+  \node[font=\bfseries\large] at (4, 8) {\Gomb{}Soma-Stim};
+  \node[font=\footnotesize\itshape] at (4, 7.55) {stimulus-driven; content-aware};
+  \node[img]   (img2) at (4, 6.5) {image};
+  \node[patch] (p2)   at (4, 5.7) {patchify + initial embed};
+  \node[sal]   (s2)   at (4, 4.7) {salience head $\to$ $s_v$};
+  \node[topk]  (t2)   at (4, 3.7) {top-$K$ anchor selection\\(Gumbel-softmax)};
+  \node[graph] (g2)   at (4, 2.6) {signed-similarity $k$-NN graph\\(per-image, dynamic)};
+  \node[soma]  (somaL) at (4, 1.4) {Walk / Polygon / Triangle\\(unchanged)};
+  \node[head]  (h2)   at (4, 0.2) {per-anchor cls + offset};
+  \draw[arr] (img2) -- (p2);
+  \draw[arr] (p2)   -- (s2);
+  \draw[arr] (s2)   -- (t2);
+  \draw[arr] (t2)   -- (g2);
+  \draw[arr] (g2)   -- (somaL);
+  \draw[arr] (somaL) -- (h2);
+
+  % Annotation between
+  \draw[dashed, gray!60, line width=0.5pt] (0, 7.5) -- (0, 0);
+  \node[font=\footnotesize\itshape, align=center] at (0, 4.5)
+    {fixed grid\\(design-time)\\$\longleftrightarrow$\\content-driven\\(per-image)};
+
+  % Hypothesis line at bottom
+  \node[font=\footnotesize, align=center, draw=none] at (0, -1.0)
+    {Falsification: Cluttered MNIST mAP50.\quad
+     HyMeYOLO +kcycle 0.20 (negative).\quad
+     +ricci-mod 0.72 (positive).\\
+     \Gomb{}Soma-Stim target: $\geq 0.5$ mAP50 at comparable param count.};
+\end{tikzpicture}
