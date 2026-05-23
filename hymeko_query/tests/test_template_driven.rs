@@ -137,7 +137,9 @@ mod test_template_driven {
         assert!(out.contains("gz-sim-physics-system"));
         assert!(out.contains("gz-sim-scene-broadcaster-system"));
         assert!(out.contains("<model name=\"ground_plane\""));
-        assert!(out.contains("<model name=\"moveo\""));
+        // Post-2026-05-23 the world is a stage only; the robot model is
+        // not inlined (URDF + launch-time `ros_gz_sim::create` own it).
+        assert!(!out.contains("<model name=\"moveo\""));
     }
 
     #[test]
@@ -169,10 +171,17 @@ mod test_template_driven {
     fn mini_arm_renders_every_format_non_empty() {
         // The minimal 2-link / 1-joint fixture should produce non-empty
         // output from every registered template-backed transform.
-        for name in ["urdf", "sdf", "mjcf", "dot", "gazebo", "mermaid"] {
+        //
+        // `gazebo` is excluded from the robot-name substring check: its
+        // world.sdf is a stage only (physics + plugins + ground_plane),
+        // not a robot description, so the robot name never appears there
+        // (post-2026-05-23). It still has to produce non-empty output.
+        for name in ["urdf", "sdf", "mjcf", "dot", "mermaid"] {
             let out = render(name, MINI_ARM, "mini_arm");
             assert!(!out.trim().is_empty(), "{name} produced empty output");
             assert!(out.contains("mini_arm"), "{name} output missing robot name");
         }
+        let gazebo_out = render("gazebo", MINI_ARM, "mini_arm");
+        assert!(!gazebo_out.trim().is_empty(), "gazebo produced empty output");
     }
 }

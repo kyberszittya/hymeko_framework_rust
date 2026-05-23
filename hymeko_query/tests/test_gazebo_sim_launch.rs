@@ -128,59 +128,6 @@ ROS 2 (visible via `ros2 topic list`).
         )
     }
 
-    /// Build a minimal SDF 1.8 world suitable for `gz sim`.
-    fn make_world_sdf(world_name: &str) -> String {
-        format!(
-            r#"<?xml version="1.0" ?>
-<sdf version="1.8">
-  <world name="{world_name}">
-    <physics name="default_physics" default="1" type="ignored">
-      <max_step_size>0.001</max_step_size>
-      <real_time_factor>1.0</real_time_factor>
-    </physics>
-    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
-    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
-    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
-
-    <light type="directional" name="sun">
-      <cast_shadows>true</cast_shadows>
-      <pose>0 0 10 0 0 0</pose>
-      <diffuse>0.8 0.8 0.8 1</diffuse>
-      <specular>0.2 0.2 0.2 1</specular>
-      <direction>-0.5 0.1 -0.9</direction>
-    </light>
-
-    <model name="ground_plane">
-      <static>true</static>
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <material>
-            <ambient>0.8 0.8 0.8 1</ambient>
-            <diffuse>0.8 0.8 0.8 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-  </world>
-</sdf>
-"#
-        )
-    }
-
     /// Build a ROS 2 Python launch file that starts `gz sim` on the world
     /// and spawns the robot via `ros_gz_sim::create`.
     fn make_gz_launch_py(robot_name: &str, urdf_file: &str, world_file: &str) -> String {
@@ -423,13 +370,22 @@ def generate_launch_description():
         );
         let start = Instant::now();
 
-        // Regenerate to be independent of test ordering. Idempotent
-        // overwrite — avoid removing the dir (the primary test might be
-        // writing to it concurrently under `cargo test`'s default parallel
-        // runner).
-        let dir = out_dir();
+        // Write into our OWN subdirectory under the bundle root so we can't
+        // race with `generate_gz_sim_launch_bundle_for_moveo` under cargo's
+        // default parallel runner — `fs::write` truncates the target file
+        // before writing, and any stat/read in the other test's window would
+        // see a zero-length file. Local runs are fast enough to hide this,
+        // but CI under load surfaces it as a flaky failure on the primary
+        // test (observed 2026-05-23 on workspace-tests).
+        let dir = out_dir().join("_consistency");
         let (store, compiled) = load_and_lower(MOVEO).unwrap();
         let urdf = generate_urdf(&compiled.ir, &store.it, ROBOT_NAME);
+        let world = hymeko_formats::gazebo::generate_gazebo_world(
+            &compiled.ir,
+            &store.it,
+            ROBOT_NAME,
+            WORLD_NAME,
+        );
 
         fs::create_dir_all(&dir).unwrap();
 
@@ -438,7 +394,7 @@ def generate_launch_description():
         let launch_file = "gz_sim.launch.py";
 
         fs::write(dir.join(&urdf_file), &urdf).unwrap();
-        fs::write(dir.join(&world_file), make_world_sdf(WORLD_NAME)).unwrap();
+        fs::write(dir.join(&world_file), &world).unwrap();
         fs::write(
             dir.join(launch_file),
             make_gz_launch_py(ROBOT_NAME, &urdf_file, &world_file),

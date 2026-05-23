@@ -40,6 +40,17 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install glslc
+        # hymeko_compute's build.rs invokes glslc to compile .comp shaders to
+        # SPIR-V; `cargo doc --workspace` triggers it. Verify the binary lands
+        # on PATH so any silent apt failure surfaces here, not 10 minutes later
+        # in the cargo doc step.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslc
+          which glslc
+          glslc --version
+
       - name: Cache cargo registry + target
         uses: actions/cache@v4
         with:
