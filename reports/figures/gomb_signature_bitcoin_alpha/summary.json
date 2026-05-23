@@ -1,0 +1,72 @@
+{
+  "runs": [
+    {
+      "label": "high_positive",
+      "query_idx": 689,
+      "query_edge": [
+        93,
+        557
+      ],
+      "true_sign": 1,
+      "predicted_logit": 17.011058807373047,
+      "predicted_prob_positive": 1.0,
+      "net_vote_middle": 6.827666163444519,
+      "n_cycles": 9,
+      "shell_dominance": {
+        "outer": 2.714143302705553,
+        "middle": 0.7586295737160577
+      },
+      "cross_shell_consistency": -0.6807011480491658,
+      "fig_path": "reports/figures/gomb_signature_bitcoin_alpha/gomb_signature_high_positive.png"
+    },
+    {
+      "label": "high_negative",
+      "query_idx": 1332,
+      "query_edge": [
+        4,
+        3753
+      ],
+      "true_sign": -1,
+      "predicted_logit": -0.3994007110595703,
+      "predicted_prob_positive": 0.4014563262462616,
+      "net_vote_middle": -0.7541678547859192,
+      "n_cycles": 3,
+      "shell_dominance": {
+        "outer": 0.7966356078783671,
+        "middle": 0.7354016502698263
+      },
+      "cross_shell_consistency": 0.32720970582304076,
+      "fig_path": "reports/figures/gomb_signature_bitcoin_alpha/gomb_signature_high_negative.png"
+    },
+    {
+      "label": "decision_boundary",
+      "query_idx": 1366,
+      "query_edge": [
+        25,
+        3781
+      ],
+      "true_sign": -1,
+      "predicted_logit": -0.0015543848276138306,
+      "predicted_prob_positive": 0.49961143732070923,
+      "net_vote_middle": -7.4888604283332825,
+      "n_cycles": 28,
+      "shell_dominance": {
+        "outer": 0.9931060118334634,
+        "middle": 0.7444370665720531
+      },
+      "cross_shell_consistency": 0.14573567131265872,
+      "fig_path": "reports/figures/gomb_signature_bitcoin_alpha/gomb_signature_decision_boundary.png"
+    }
+  ],
+  "config": {
+    "dataset": "bitcoin_alpha",
+    "n_epochs": 120,
+    "seed": 0,
+    "d_embed": 8,
+    "d_outer": 8,
+    "M_outer": 4,
+    "d_middle": 8,
+    "d_core": 8,
+    "cycle_k": 3
+  }
+}

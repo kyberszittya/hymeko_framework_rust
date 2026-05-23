@@ -26,7 +26,7 @@ mkdir -p "$LOG_DIR"
 echo "[d16] $(date +'%Y-%m-%d %H:%M:%S') start"
 
 echo "[d16] waiting for GPU (will queue if another run_final_cell is in-flight)..."
-while pgrep -af "python -m signedkan_wip.src.run_final_cell" \
+while pgrep -af "python -m signedkan_wip.experiments.runs.run_final_cell" \
         | grep -v "$$" | grep -q .; do
     sleep 60
 done
@@ -46,7 +46,7 @@ run_cell() {
     HSIKAN_CYCLE_BATCH=2000 \
     HSIKAN_MAX_K3=200000 \
     HSIKAN_MAX_K2=200000 \
-    python -m signedkan_wip.src.run_final_cell \
+    python -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset slashdot --hidden 16 --n-epochs 80 \
         --max-k4 200000 --seed "$seed" \
         > "$logf" 2>&1

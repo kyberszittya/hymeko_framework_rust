@@ -132,6 +132,20 @@ enum Commands {
         /// Directory containing transform definitions (default: transforms/)
         #[arg(long, default_value = "transforms")]
         transforms_dir: String,
+
+        /// Bypass the template-driven path and use the Rust-side
+        /// rich emitter (`generate_sdf_from_model` /
+        /// `generate_urdf_from_model`). For the kinematic formats
+        /// (`sdf`, `urdf`, `mjcf`) this includes joint axis,
+        /// parent-relative origin, and joint limits — fields the
+        /// current template-driven path drops. For non-kinematic
+        /// formats the rich path is identical to the template
+        /// path or absent, so the flag is a no-op there.
+        ///
+        /// Default off (preserves byte-identical template-driven
+        /// output for existing callers).
+        #[arg(long = "rich", default_value_t = false)]
+        rich: bool,
     },
 
     /// Compute per-scope structural entropy on the compiled IR.
@@ -396,8 +410,11 @@ fn run_command(cmd: Commands) {
             name,
             world,
             transforms_dir,
+            rich,
         } => {
-            use hymeko_query::transforms::TransformConfig;
+            use hymeko_query::transforms::{
+                extract_kinematic, ModelKind, TransformConfig,
+            };
 
             let mut ms = ModuleStore::new(StdFsProvider::new(), RealParser);
             let compiled = compile_or_exit(&mut ms, input.as_path());
@@ -407,20 +424,72 @@ fn run_command(cmd: Commands) {
                 .with_name(&name)
                 .with_option("world_name", &world);
 
-            let transforms_root = PathBuf::from(&transforms_dir);
-            let result = reg
-                .render_from_templates(&format, &compiled.ir, &ms.it, &cfg, &transforms_root)
-                .unwrap_or_else(|| {
+            // --rich path: bypass the template-driven pipeline and
+            // call the registered transform's stub `emit()`, which
+            // for kinematic formats routes to the rich Rust-side
+            // `generate_sdf_from_model` / `generate_urdf_from_model`
+            // that emits joint axis, origin, and limits.
+            //
+            // For non-kinematic formats we fall through to the
+            // template path (the stub does not exist there).
+            //
+            // Plan/report:
+            // docs/plans/2026-05-16-sdf-rich-emit-flag/,
+            // reports/2026-05-16-sdf-rich-emit-flag.md.
+            let result: String = if rich {
+                let Some(t) = reg.get(&format) else {
                     eprintln!(
-                        "Unknown format: `{format}`. Registered template-driven formats: {:?}",
+                        "Unknown format: `{format}`. Registered: {:?}",
                         reg.available()
                     );
                     std::process::exit(1);
-                })
-                .unwrap_or_else(|e| {
-                    eprintln!("Render failed: {e}");
-                    std::process::exit(1);
-                });
+                };
+                if t.accepts() == ModelKind::Kinematic {
+                    let model_view = extract_kinematic(&compiled.ir, &ms.it, &name);
+                    match t.emit(&model_view, &cfg) {
+                        Some(s) => s,
+                        None => {
+                            eprintln!(
+                                "Rich emit for `{format}` returned no output (model extraction failed)."
+                            );
+                            std::process::exit(1);
+                        }
+                    }
+                } else {
+                    // Non-kinematic format: --rich has no effect; fall back to the
+                    // template path so the user-visible behaviour is the same.
+                    let transforms_root = PathBuf::from(&transforms_dir);
+                    reg.render_from_templates(
+                        &format, &compiled.ir, &ms.it, &cfg, &transforms_root,
+                    )
+                    .unwrap_or_else(|| {
+                        eprintln!(
+                            "Unknown format: `{format}`. Registered template-driven formats: {:?}",
+                            reg.available()
+                        );
+                        std::process::exit(1);
+                    })
+                    .unwrap_or_else(|e| {
+                        eprintln!("Render failed: {e}");
+                        std::process::exit(1);
+                    })
+                }
+            } else {
+                let transforms_root = PathBuf::from(&transforms_dir);
+                reg
+                    .render_from_templates(&format, &compiled.ir, &ms.it, &cfg, &transforms_root)
+                    .unwrap_or_else(|| {
+                        eprintln!(
+                            "Unknown format: `{format}`. Registered template-driven formats: {:?}",
+                            reg.available()
+                        );
+                        std::process::exit(1);
+                    })
+                    .unwrap_or_else(|e| {
+                        eprintln!("Render failed: {e}");
+                        std::process::exit(1);
+                    })
+            };
 
             match output {
                 Some(path) => {

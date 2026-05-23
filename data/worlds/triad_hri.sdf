@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<!--
+  Triad HRI rapport-coherence world.
+
+  A 4×4 m empty room with three agents: alice (-1, 0), bob (+1, 0),
+  and r1 (0, -1). The three pose topics + r1's cmd_vel topic are
+  bridged to ROS 2 by `ros_gz_bridge` (config in
+  signedkan_wip/src/rapport_ros2/bridge.yaml — Day 2).
+
+  Launch:
+    gz sim data/worlds/triad_hri.sdf
+
+  Plan: docs/plans/2026-05-18-gz-rapport-demo/.
+-->
+<sdf version="1.10">
+  <world name="triad">
+    <physics name="default" type="ode">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <gui fullscreen="0">
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">true</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.65 0.65 0.65</ambient_light>
+        <background_color>0.85 0.92 0.98</background_color>
+        <camera_pose>2.4 -3.5 2.6 0 0.55 2.0</camera_pose>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+    </gui>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0.4 0.2 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.3 -0.5 -1.0</direction>
+    </light>
+
+    <!-- Floor: 4×4 m. -->
+    <model name="floor">
+      <static>true</static>
+      <link name="link">
+        <collision name="floor_collision">
+          <geometry><plane><normal>0 0 1</normal><size>4 4</size></plane></geometry>
+        </collision>
+        <visual name="floor_visual">
+          <geometry><plane><normal>0 0 1</normal><size>4 4</size></plane></geometry>
+          <material>
+            <ambient>0.92 0.92 0.92 1</ambient>
+            <diffuse>0.92 0.92 0.92 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Three agents. Pose-publisher plugins inside each model
+         emit /world/triad/model/{alice,bob,r1}/pose. -->
+    <include>
+      <uri>model://triad_human</uri>
+      <name>alice</name>
+      <pose>-1.0 0.0 0.0 0 0 0.0</pose>
+    </include>
+
+    <include>
+      <uri>model://triad_human</uri>
+      <name>bob</name>
+      <pose>1.0 0.0 0.0 0 0 3.14159</pose>
+    </include>
+
+    <include>
+      <uri>model://triad_r1</uri>
+      <name>r1</name>
+      <pose>0.0 -1.0 0.0 0 0 1.5707963</pose>
+    </include>
+  </world>
+</sdf>

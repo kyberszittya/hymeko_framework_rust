@@ -1,4 +1,0 @@
-% Stub figure for plan bundle (no standalone build required).
-\begin{tikzpicture}
-  \node[draw,rectangle,minimum width=4cm,minimum height=1cm] {run\_gomb\_tune $\rightarrow$ n\_params};
-\end{tikzpicture}

@@ -31,8 +31,8 @@ from signedkan_wip.src.mixed_arity_signedkan import (
 # `MultiLayerSignedKANConfig` moved to `signedkan` in the 2026-05-11
 # mixed_arity_signedkan refactor (per CLAUDE.md §6.5 #4 split). The
 # tabular smoke was written pre-refactor and used the stale re-export.
-from signedkan_wip.src.signedkan import MultiLayerSignedKANConfig
-from signedkan_wip.src.n_tuples import construct_2, construct_k
+from signedkan_wip.src.core.signedkan import MultiLayerSignedKANConfig
+from signedkan_wip.src.core.n_tuples import construct_2, construct_k
 from signedkan_wip.src.tabular_signed_graph import build_signed_graph_from_tabular
 
 

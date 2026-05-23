@@ -23,7 +23,8 @@ tarpaulin-report.html
 /paper/
 
 # Python / uv
-.venv/
+# .venv*/ also catches sibling venvs like .venv-rapport-ros2/ (~1.4 GB).
+.venv*/
 .env
 !.env.example
 
@@ -32,6 +33,15 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Python tool caches (regenerable)
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.benchmarks/
+.coverage
+.coverage.*
+htmlcov/
 
 # Demo binary outputs (regenerable)
 /demo_out/
@@ -48,6 +58,18 @@ __pycache__/
 /data/ntuples_cache/
 /data/cora/
 /data/anatomy/
+# aclImdb v1 tarball + extracted (~585 MB)
+/data/imdb/
+# pretrained-model dropbox (regenerable)
+/data/models/
+# `datasets/` is the alternative torchvision-cache location used by
+# some Gömb scripts; .gitignored at that subdir's .gitignore too.
+/datasets/
+
+# Demo / training checkpoints (the production HSiKAN + kinematic
+# checkpoints are committed under checkpoints/hsikan and
+# checkpoints/kinematic; the demo dir is regenerable).
+/checkpoints/hymeyolo_demo/
 
 # One-off archive
 /archive.zip
@@ -60,6 +82,16 @@ __pycache__/
 
 # Rust subcrate build artifacts
 **/target/
+
+# IP-sensitive: ALL plan documents kept local-only.  The crate
+# sources (hymeko_nagare/, hymeko_*/) remain tracked — they're
+# implementation, less legible as a research idea than the plan
+# .tex/.tikz/.mmd/.pdf set.  Plans (Nagare and all others) carry
+# the forward-looking IP and are excluded pending a Zenodo /
+# defensive-publication strategy.  Do NOT relax this without explicit
+# IP-strategy review (co-author Csapó for Nagare-line work).
+/docs/plans/
+/docs/notes/2026-05-18-task-execution-as-hsmm.md
 
 # LaTeX build cache (keep .tex/.bib, drop intermediate)
 *.aux

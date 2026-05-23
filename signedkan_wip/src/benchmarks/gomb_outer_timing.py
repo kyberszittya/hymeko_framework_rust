@@ -23,7 +23,7 @@ the outer shell stays ``ClifFIRTierAggregator`` in PyTorch until a PyO3 + autogr
 For **val AUROC, recall, precision, F1, AP**, and **learnable parameter counts**
 (including per-shell breakdown), train with::
 
-    python -m signedkan_wip.src.run_gomb_smoke --dataset bitcoin_otc --n-epochs 50
+    python -m signedkan_wip.experiments.runs.run_gomb_smoke --dataset bitcoin_otc --n-epochs 50
 
 Uses fixed seed, warmup, then ``n_iters`` timed forwards (median / IQR / worst).
 Legacy = Python loop over ``M`` banks + per-corner scatter loop (pre-optimization).
@@ -40,7 +40,7 @@ import torch
 
 from signedkan_wip.src.datasets import load
 from signedkan_wip.src.hymeko_gomb.shells import OuterFIRShell
-from signedkan_wip.src.run_gomb_smoke import _enumerate_cycles, _train_val_split
+from signedkan_wip.experiments.runs.run_gomb_smoke import _enumerate_cycles, _train_val_split
 
 _DEFAULT_BENCH_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 

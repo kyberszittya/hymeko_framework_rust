@@ -1,0 +1,127 @@
+// Triadic HRI coalition: two humans + one robot.
+//
+// Mathematical content: a signed-graph triangle whose σ-cycle
+// product (Cartwright–Harary 1956) tracks rapport-state structural
+// coherence over time. The rapport demo simulates observable
+// behaviour, the estimator updates per-edge signed magnitudes, and
+// the robot's policy fires intervention actions when the σ-product
+// crosses configured thresholds.
+//
+// Plan:   docs/plans/2026-05-18-rapport-coherence-demo-nagoya/
+// Loader: signedkan_wip/src/rapport/coalition.py
+
+triad_hri_description {
+    @"meta_hri.hymeko";
+    using hri_meta as hri;
+}
+
+triad_hri: hri {
+
+    // ─── Agents ─────────────────────────────────────────────────
+    alice: hri.human  {}
+    bob:   hri.human  {}
+    r1:    hri.robot  {}
+
+    // ─── Pairwise signed relations ─────────────────────────────
+    // The `sign` and `magnitude` fields seed the estimator. The
+    // `from` / `to` fields name the agents. `kind` is metadata
+    // used by the visualisation to colour edges by relation type.
+    r_ab: hri.interpersonal {
+        from alice;
+        to   bob;
+        sign 1;
+        magnitude 1.0;
+    }
+    r_ar: hri.hri_relation {
+        from alice;
+        to   r1;
+        sign 1;
+        magnitude 1.0;
+    }
+    r_br: hri.hri_relation {
+        from bob;
+        to   r1;
+        sign 1;
+        magnitude 1.0;
+    }
+
+    // ─── σ-cycle to monitor ────────────────────────────────────
+    // Members are relation names; the loader computes σ as the
+    // sign-product of the three relations' current sign × the
+    // minimum of their magnitudes (the weakest edge dominates).
+    triad: hri.sigma_cycle {
+        members [r_ab, r_ar, r_br];
+    }
+
+    // ─── Robot intervention policies ──────────────────────────
+    // Three thresholds → three distinct repair behaviours.
+    // `condition` is parsed by the policy module's expression
+    // evaluator; `action` is a symbolic name dispatched by the
+    // visualiser.
+    repair: hri.policy {
+        condition "sigma(triad) < -0.2";
+        action    "signal_alignment";
+    }
+    mediate: hri.policy {
+        condition "sigma(triad) < -0.5 and sustained(triad, 5)";
+        action    "mediation_offer";
+    }
+    withdraw: hri.policy {
+        condition "sigma(triad) < -0.8 and sustained(triad, 10)";
+        action    "withdraw";
+    }
+
+    // ─── GZ + ROS 2 substrate bindings (Stage G demo) ──────────
+    // One block per agent. Humans only publish pose; r1 also has
+    // cmd_vel + gaze_cmd subscribers.
+    alice_gz: hri.gz_binding {
+        agent       alice;
+        pose_topic  "/model/alice/pose";
+    }
+    bob_gz: hri.gz_binding {
+        agent       bob;
+        pose_topic  "/model/bob/pose";
+    }
+    r1_gz: hri.gz_binding {
+        agent          r1;
+        pose_topic     "/model/r1/pose";
+        cmd_vel_topic  "/cmd_vel";
+        gaze_cmd_topic "/rapport/r1/gaze_cmd";
+        // Stage G' CV-2: r1's onboard camera. ros_gz_image bridges
+        // gz.msgs.Image → sensor_msgs/Image; the vision sidecar
+        // subscribes here for live agent-detection.
+        camera_topic   "/r1/camera/image";
+    }
+
+    // ─── Observation-derivation thresholds ─────────────────────
+    // Read by the GzObserver node when computing physical
+    // observation events from pose tensors. Editable without code
+    // changes; the launcher passes them as ROS 2 node parameters.
+    thr_distance: hri.observation_threshold {
+        kind  "distance_close";
+        value 1.5;
+    }
+    thr_gaze: hri.observation_threshold {
+        kind  "gaze_at";
+        value 0.8;
+    }
+    thr_withdrawal: hri.observation_threshold {
+        kind  "withdrawal";
+        value 0.3;
+    }
+
+    // ─── Vision sidecar detector selection (Stage H/D-3) ─────────
+    // Default is "hsv_blob" (the placeholder colour detector that
+    // ships with the v0 demo). Edit `detector_kind` to "voc_person"
+    // once a Stage H checkpoint exists, or "voc_20class" once a
+    // Stage D-3 checkpoint clears its smoke gate.
+    vision_r1: hri.vision_config {
+        // 2026-05-19: upgraded from "hsv_blob" placeholder to the
+        // Stage H VOC2007-person checkpoint (mAP_50 = 0.053, near-miss
+        // zone). r1 now detects persons via a HyMeYOLO-family network
+        // trained on real VOC images, not by HSV-blob colour matching.
+        detector_kind   "voc_person";
+        checkpoint      "signedkan_wip/experiments/results/stage_h_voc_person_20260518T151704Z/checkpoints/stage_h_voc_person_seed0.pt";
+        score_threshold 0.20;
+    }
+}

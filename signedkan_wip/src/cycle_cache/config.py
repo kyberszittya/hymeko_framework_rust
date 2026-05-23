@@ -11,12 +11,12 @@ import numpy as np
 from ..runtime_config import get_runtime
 
 def _import_n_tuples():
-    from .. import n_tuples
+    from ..core import n_tuples
     return n_tuples
 
 
 def _import_walks():
-    from .. import walks
+    from ..core import walks
     return walks
 
 

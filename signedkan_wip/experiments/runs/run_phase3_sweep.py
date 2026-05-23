@@ -19,7 +19,7 @@ import json
 import time
 from pathlib import Path
 
-from signedkan_wip.src.train import TrainConfig, train
+from signedkan_wip.src.core.train import TrainConfig, train
 
 
 SWEEP_DIR = Path("signedkan_wip/experiments/results/phase3_sweep")

@@ -1,6 +1,0 @@
-flowchart LR
-  X["x (N,d_in)"] --> E["einsum: M linear projections"]
-  E --> G["gather cycles -> (M,Mc,k,d)"]
-  G --> F["signed ClifFIR coef (M,Mc,k)"]
-  F --> S["scatter_mean batched -> (M,N,d)"]
-  S --> C["reshape (N,M*d)"]

@@ -40,8 +40,7 @@ def smoke_test(dataset: str = "bitcoin_alpha", epochs: int = 1,
     `torch.cuda.max_memory_allocated()` after the cell stays below
     this threshold. Useful as a pre-flight check — if a 1-epoch run
     already consumes most of the budget, the 30-epoch sweep will OOM."""
-    sys.path.insert(0, "signedkan_wip")
-    from src.run_final_cell import cell_signed_graph
+    from signedkan_wip.experiments.runs.run_final_cell import cell_signed_graph
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":

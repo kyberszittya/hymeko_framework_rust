@@ -65,15 +65,21 @@ import hymeko
 from signedkan_wip.src.datasets import load, split
 from signedkan_wip.src.hymeko_gomb import (
     GombConfig, HymeKoGomb, GombNoOuter, GombNoMiddle, GombNoInner,
+    GombWithOuterHSIKAN, GombBridgeGomb,
     JointMixGomb, MixedArityGomb,
 )
 from signedkan_wip.src.hymeko_gomb.joint_enumeration import JOINT_BA_SLOTS, build_joint_ba_pools
 
+# HTL monitor (pure-Python; lazy import inside _build_monitor so missing module
+# never blocks a smoke run that doesn't pass --monitor).
+
 _MODELS = {
-    "gomb":      HymeKoGomb,
-    "no_outer":  GombNoOuter,
-    "no_middle": GombNoMiddle,
-    "no_inner":  GombNoInner,
+    "gomb":              HymeKoGomb,
+    "no_outer":          GombNoOuter,
+    "no_middle":         GombNoMiddle,
+    "no_inner":          GombNoInner,
+    "outer_hsikan_gomb": GombWithOuterHSIKAN,
+    "gomb_bridge_gomb":  GombBridgeGomb,
 }
 
 # HSiKAN on Slashdot uses cycle micro-batching; Gömb joint holds full tensors.
@@ -243,6 +249,22 @@ def main() -> None:
     ap.add_argument("--dataset", default="bitcoin_otc")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--n-epochs", type=int, default=50)
+    ap.add_argument(
+        "--monitor",
+        type=str,
+        default=None,
+        metavar="FORMULA",
+        help="HTL (hypergraph temporal logic) formula evaluated each epoch on "
+              "scalar training signals (val_auc, loss, best_auc). Examples: "
+              "'G(val_auc > 0.85)', 'F(val_auc > 0.90)', "
+              "'G(val_auc > 0.85) AND F(val_auc > 0.90)'.",
+    )
+    ap.add_argument(
+        "--monitor-horizon",
+        type=int,
+        default=1024,
+        help="Maximum history window for the HTL monitor (bounded ring buffer).",
+    )
     ap.add_argument("--d-embed", type=int, default=32)
     ap.add_argument("--d-outer", type=int, default=16)
     ap.add_argument("--M-outer", type=int, default=8)
@@ -306,6 +328,64 @@ def main() -> None:
              "first forwards may compile).",
     )
     ap.add_argument("--k", type=int, default=3)
+    # ─── Stacked-middle (2026-05-20) ────────────────────────────
+    ap.add_argument(
+        "--middle-n-layers", type=int, default=1,
+        help="Depth of the middle HSIKAN stack. 1 (default) keeps "
+              "the original single-tier MiddleHSiKAN; >= 2 dispatches "
+              "to StackedMiddleHSiKAN.",
+    )
+    ap.add_argument(
+        "--middle-inner-skip",
+        choices=("highway", "cr_highway", "residual", "none", "auto"),
+        default="highway",
+        help="Per-layer skip kind for the stacked middle (ignored when "
+              "--middle-n-layers <= 1).",
+    )
+    ap.add_argument(
+        "--middle-jk-mode",
+        choices=("last", "sum", "concat"),
+        default="last",
+        help="JK aggregation across the stacked middle's L layers.",
+    )
+    ap.add_argument(
+        "--middle-share-weights", action="store_true",
+        help="Share parameters across the stacked middle's L layers.",
+    )
+    # ─── Outer HSIKAN backbone (2026-05-20) ─────────────────────
+    ap.add_argument(
+        "--outer-hsikan-n-layers", type=int, default=0,
+        help="Depth of the outer HSIKAN backbone that sits BEFORE "
+              "Gömb's Clifford-FIR shell. 0 (default) = no outer "
+              "HSIKAN (use --model gomb). >= 1 requires --model "
+              "outer_hsikan_gomb.",
+    )
+    ap.add_argument(
+        "--outer-hsikan-inner-skip",
+        choices=("highway", "cr_highway", "residual", "none", "auto"),
+        default="highway",
+        help="Inner-skip kind for the outer HSIKAN's per-layer gates.",
+    )
+    ap.add_argument(
+        "--outer-hsikan-jk-mode",
+        choices=("last", "sum", "concat"),
+        default="last",
+        help="JK aggregation across the outer HSIKAN's L layers "
+              "(affects internal per-triad processing; the per-"
+              "vertex output passed to Clifford-FIR is always at "
+              "d_embed regardless).",
+    )
+    ap.add_argument(
+        "--outer-hsikan-share-weights", action="store_true",
+        help="Share parameters across the outer HSIKAN's L layers.",
+    )
+    ap.add_argument(
+        "--outer-hsikan-grad-checkpoint", action="store_true",
+        help="Wrap the outer HSIKAN's forward in torch.utils."
+              "checkpoint.checkpoint — necessary for d=4 on "
+              "Slashdot where the L-layer autograd graph + Gömb "
+              "cascade exceed 7.6 GiB.",
+    )
     ap.add_argument("--topk", type=int, default=64)
     ap.add_argument(
         "--cycle-abb-mode",
@@ -571,6 +651,15 @@ def main() -> None:
         cpml_capsule_hg_hidden=args.cpml_capsule_hg_hidden,
         cpml_capsule_hg_cache_degrees=args.cpml_capsule_hg_cache_degrees,
         cpml_torch_compile_hypergraph=args.cpml_torch_compile_hypergraph,
+        middle_n_layers=args.middle_n_layers,
+        middle_inner_skip=args.middle_inner_skip,
+        middle_jk_mode=args.middle_jk_mode,
+        middle_share_weights=args.middle_share_weights,
+        outer_hsikan_n_layers=args.outer_hsikan_n_layers,
+        outer_hsikan_inner_skip=args.outer_hsikan_inner_skip,
+        outer_hsikan_jk_mode=args.outer_hsikan_jk_mode,
+        outer_hsikan_share_weights=args.outer_hsikan_share_weights,
+        outer_hsikan_grad_checkpoint=args.outer_hsikan_grad_checkpoint,
     )
     if joint_mix:
         gomb = JointMixGomb(cfg).to(device)
@@ -650,6 +739,22 @@ def main() -> None:
 
     losses, val_aucs = [], []
     best = 0.0
+
+    monitor = None
+    monitor_trace: list[dict] = []
+    if args.monitor:
+        from signedkan_wip.src.htl import HtlMonitor, HypergraphEvent
+        try:
+            monitor = HtlMonitor(args.monitor, horizon=args.monitor_horizon)
+            print(
+                f"[htl] monitor active: formula={args.monitor!r} "
+                f"horizon={args.monitor_horizon}",
+                flush=True,
+            )
+        except Exception as exc:  # noqa: BLE001 - surface ParseError at boundary
+            print(f"[htl] monitor parse failed: {exc!r}", flush=True)
+            raise
+
     for ep in range(args.n_epochs):
         gomb.train()
         scores = _fwd(e_tr_t)
@@ -674,6 +779,22 @@ def main() -> None:
         if (ep + 1) % 5 == 0 or ep == 0:
             print(f"  ep {ep:02d}  loss={loss.item():.4f}  "
                   f"val_auc={auc:.4f}  best={best:.4f}", flush=True)
+
+        if monitor is not None:
+            evt = HypergraphEvent(
+                t=float(ep),
+                scalar_signals={
+                    "val_auc": float(auc) if auc == auc else -1.0,
+                    "loss": float(loss.detach()),
+                    "best_auc": float(best),
+                },
+            )
+            rho = monitor.observe(evt)
+            sat = monitor.satisfied()
+            monitor_trace.append({"epoch": ep, "rho": rho, "satisfied": bool(sat)})
+            if (ep + 1) % 5 == 0 or ep == 0:
+                print(f"  [htl] ep {ep:02d}  rho={rho:.4f}  "
+                      f"satisfied={'Y' if sat else 'N'}", flush=True)
 
     gomb.eval()
     with torch.no_grad():
@@ -747,6 +868,10 @@ def main() -> None:
         "loss_start": losses[0], "loss_end": losses[-1],
         "val_auc_start": val_aucs[0], "val_auc_end": val_aucs[-1],
         "val_auc_best": best,
+        "htl_formula": args.monitor,
+        "htl_final_robustness": (monitor_trace[-1]["rho"] if monitor_trace else None),
+        "htl_final_satisfied": (monitor_trace[-1]["satisfied"] if monitor_trace else None),
+        "htl_trace": monitor_trace if monitor_trace else None,
         "wall_s": time.perf_counter() - t0,
         "infer_wall_s": infer_wall_s,
         "infer_n_edges": infer_n_edges,

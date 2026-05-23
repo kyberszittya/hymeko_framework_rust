@@ -22,7 +22,7 @@ import numpy as np
 from sklearn.datasets import make_circles, make_moons, make_regression
 from sklearn.neighbors import NearestNeighbors
 
-from .datasets import SignedGraph
+from .legacy import SignedGraph
 
 
 def _knn_signed_graph(

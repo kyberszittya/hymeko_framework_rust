@@ -11,7 +11,7 @@
 # IMPORTANT: hidden differs (Alpha-best h=8, OTC-best h=4) so this is a
 # strictly lower-param comparison: a win is also a leanness win.
 #
-# Queues behind any in-flight signedkan_wip.src.run_optuna_search via the
+# Queues behind any in-flight signedkan_wip.experiments.runs.run_optuna_search via the
 # same pgrep loop as run_overnight_joint_mix_2026_05_08.sh.
 #
 # Cache is enabled so multi-seed runs amortize cycle enumeration.
@@ -58,7 +58,7 @@ run_cell() {
   env "$@" \
     HYMEKO_CYCLE_CACHE=1 \
     HSIKAN_CYCLE_BATCH=2000 \
-    python -m signedkan_wip.src.run_final_cell \
+    python -m signedkan_wip.experiments.runs.run_final_cell \
       --dataset "$dataset" --hidden "$hidden" --n-epochs 80 \
       --max-k4 "$cap" --seed "$seed" \
     > "$logf" 2>&1

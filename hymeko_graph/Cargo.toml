@@ -27,3 +27,7 @@ harness = false
 [[bench]]
 name = "spine_bench"
 harness = false
+
+[[bench]]
+name = "incidence_bench"
+harness = false

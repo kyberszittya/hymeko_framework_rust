@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .datasets import SignedGraph
+from .legacy import SignedGraph
 
 
 def karate_faction_signed() -> SignedGraph:

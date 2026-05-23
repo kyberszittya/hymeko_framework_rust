@@ -33,14 +33,14 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import load, split, SignedGraph
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.n_tuples import construct_k, construct_2
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.n_tuples import construct_k, construct_2
 from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                       MixedAritySignedKANConfig,
                                       subsample_tuples,
                                       build_edge_to_tuples,
                                       build_vertex_to_tuples)
-from signedkan_wip.src.signedkan import (MultiLayerSignedKANConfig,
+from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 from .run_phase2_mixed_arity import (_build_edge_incidence,
                                        _build_edge_incidence_k2,

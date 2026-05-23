@@ -30,7 +30,7 @@ from typing import Any
 
 import optuna
 
-from signedkan_wip.src.run_optuna_search import objective
+from signedkan_wip.experiments.runs.run_optuna_search import objective
 
 
 def load_sota_reference() -> dict[str, Any]:

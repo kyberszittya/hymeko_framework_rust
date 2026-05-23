@@ -62,7 +62,7 @@ def _unpack_to_ntuples(v: np.ndarray, sigma: np.ndarray,
     multi-million-cycle Epinions enumerations where the unpack stage
     dominates seed-1..N cache-hit latency.
     """
-    from ..n_tuples import SignedNTuple
+    from ..core.n_tuples import SignedNTuple
     n = v.shape[0]
     arity = v.shape[1] if v.ndim == 2 else 0
     if n == 0:

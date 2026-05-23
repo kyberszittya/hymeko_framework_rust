@@ -10,7 +10,7 @@ reports per-frame prediction error.
 Total runtime < 30 s on cuda. No display required (headless EGL).
 
 Usage:
-    HSIKAN_TORCH_COMPILE=1 python -m signedkan_wip.src.demo_kinematic_mujoco
+    HSIKAN_TORCH_COMPILE=1 python -m signedkan_wip.demos.demo_kinematic_mujoco
 
 Output:
     demo_out/  — frame_0000.png, frame_0001.png, ...
@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .mujoco_bridge import MuJoCoBridge
+from signedkan_wip.src.kinematic import MuJoCoBridge
 
 
 def render_sim(mech: str, duration: float, out_dir: Path,

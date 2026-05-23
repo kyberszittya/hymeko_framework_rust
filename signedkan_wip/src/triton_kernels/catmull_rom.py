@@ -104,7 +104,7 @@ def catmull_rom_triton(
     # different (C, G) load and the kernel is not yet vectorised
     # over per-row coef.
     if coef.dim() != 2:
-        from ..splines import _catmull_rom_eval as _ref
+        from ..core.splines import _catmull_rom_eval as _ref
         return _ref(coef, x, grid)
     C = coef.shape[0]
     if grid != coef.shape[1]:
@@ -159,7 +159,7 @@ class _CatmullRomTritonFn(torch.autograd.Function):
         grid = ctx.grid
         # Use the PyTorch reference to compute the backward.  Re-run
         # forward with grad-enabled inputs to get the autograd graph.
-        from ..splines import _catmull_rom_eval as _ref
+        from ..core.splines import _catmull_rom_eval as _ref
         coef_g = coef.detach().requires_grad_(True)
         x_g = x.detach().requires_grad_(True)
         with torch.enable_grad():
@@ -183,7 +183,7 @@ def install_triton_catmull_rom():
     PyTorch reference on CPU.  Idempotent: safe to call multiple
     times.  Returns the original function for restoration.
     """
-    from .. import splines
+    from ..core import splines
     if hasattr(splines, "_orig_catmull_rom_eval"):
         return splines._orig_catmull_rom_eval  # already installed
     splines._orig_catmull_rom_eval = splines._catmull_rom_eval
@@ -203,7 +203,7 @@ def install_triton_catmull_rom():
 
 def uninstall_triton_catmull_rom():
     """Restore the PyTorch-only `_catmull_rom_eval`."""
-    from .. import splines
+    from ..core import splines
     if hasattr(splines, "_orig_catmull_rom_eval"):
         splines._catmull_rom_eval = splines._orig_catmull_rom_eval
         del splines._orig_catmull_rom_eval

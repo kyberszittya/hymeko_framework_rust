@@ -37,11 +37,11 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from ..datasets import SignedGraph
-from ..hyperedges import construct
-from ..n_tuples import construct_k
-from ..signedkan import (SignedKAN, SignedKANConfig,
+from ..core.hyperedges import construct
+from ..core.n_tuples import construct_k
+from ..core.signedkan import (SignedKAN, SignedKANConfig,
                           build_vertex_triad_incidence)
-from ..train import build_edge_to_triads
+from ..core.train import build_edge_to_triads
 
 
 @dataclass

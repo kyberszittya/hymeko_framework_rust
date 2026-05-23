@@ -23,7 +23,9 @@
 //! - [`schema::PGraphSchema`]: per-decl `PNodeKind` map plus a directed
 //!   edge set, with [`schema::PGraphSchema::is_bipartite_consistent`]
 //!   gate enforced at construction.
-//! - [`AxiomViolation`] enum scaffold (A1–A5) for Phase 1.
+//! - [`AxiomViolation`] enum (A1–A5) with **canonical Friedler 1992
+//!   semantics** restored 2026-05-19; see [`axioms`] module docstring
+//!   and `docs/plans/2026-05-19-pgraph-axiom-semantics-fix/`.
 //!
 //! Subsequent phases (axioms, MSG/SSG, entropy oracle, ABB) populate
 //! the modules listed in the plan at
@@ -40,17 +42,26 @@
 )]
 
 pub mod abb;
+pub mod axiom_extensions;
 pub mod axioms;
 pub mod dump;
+pub mod builder;
 pub mod lowering;
 pub mod msg;
+pub mod pgip_io;
 pub mod schema;
 pub mod ssg;
 
 pub use abb::{AbbOptions, AbbSolution, solve as abb_solve};
+pub use axiom_extensions::{ExtensionAxiomBundle, ExtensionAxiomViolation};
 pub use axioms::{AxiomBundle, AxiomTrace, AxiomViolation};
-pub use dump::{DumpAlgorithm, PgraphAnalysisJson, analyze_source};
+pub use dump::{
+    DumpAlgorithm, PgraphAnalysisJson, analyze_lowered_with_full_options,
+    analyze_source, analyze_source_with_full_options, analyze_source_with_options,
+};
 pub use lowering::{LowerError, LoweredPGraph, lower};
-pub use msg::{MaximalStructure, maximal_structure};
+pub use builder::{BuilderError, MaterialKind, PgraphBuilder};
+pub use msg::{MaximalStructure, MaximalStructureOptions, maximal_structure, maximal_structure_with_options};
 pub use schema::{PGraphError, PGraphSchema, PNodeKind};
+pub use pgip_io::{PgipError, read_pgip, write_pgip};
 pub use ssg::{SolutionStructure, SsgOptions, enumerate as ssg_enumerate};

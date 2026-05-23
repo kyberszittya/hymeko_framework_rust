@@ -68,7 +68,7 @@ def _smoke_cmd(
     cmd: list[str] = [
         py,
         "-m",
-        "signedkan_wip.src.run_gomb_smoke",
+        "signedkan_wip.experiments.runs.run_gomb_smoke",
         "--dataset",
         dataset,
         "--edge-split",

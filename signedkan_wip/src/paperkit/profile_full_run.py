@@ -68,7 +68,7 @@ def _wrap(module, name: str, label: str, key_fields: tuple = ()):
 
 def install_stage_markers():
     """Patch the enumeration entry points with stage markers."""
-    from .. import n_tuples, walks, hyperedges
+    from ..core import n_tuples, walks, hyperedges
     _wrap(n_tuples, "construct_2", "construct_2 (k=2)")
     _wrap(n_tuples, "construct_k", "construct_k", ("k", "max_cycles", "seed"))
     _wrap(walks, "construct_walks", "construct_walks", ("walk_len", "max_walks", "seed"))

@@ -1,0 +1,189 @@
+// Canonical worked example from Listing A.6.1 of the MDPI Technologies paper
+// "Hypergraph-based Semantic Description of Robotic Systems with Multi-
+//  Context State Representation."
+//
+// Adapted from the paper's listing to fit the current HyMeKo v0.1
+// language surface. Adaptation notes in examples/paper/GAP_REPORT.md
+// describe the exact deviations from the printed form.
+//
+// Expected headline structure (§4.7.1 of the paper):
+//   - 10 contextual hyperedges (e_1 .. e_10) with arity multiset
+//     (2, 2, 3, 3, 3, 3, 3, 3, 5, 5)
+//   - 21 participating vertices across three context domains
+//   - nnz(B) = 34 signed incidence entries (includes 2 reference arcs)
+
+hymeko_robot_description {
+    // Empty header — no cross-file imports needed for this example.
+}
+
+hymeko_robot {
+
+    // ===================================================================
+    // Base type schema
+    // ===================================================================
+    // The paper's Listing A.6.1 declares these as bare types (`link {}`).
+    // In the current HyMeKo surface, base types are ordinary node decls;
+    // the inheritance arrow `+ <isa> parent` attaches to them.
+    link {}
+    joint {}
+    sensor {}
+    tool {}
+    payload {}
+    component {}
+    context {}
+    signal {}
+    counter {}
+    mode {}
+    reference {}
+    interpretation {}
+    aggregation {}
+    constraint {}
+
+    // Grasping mode enum approximated as three concrete nodes under a
+    // parent grasp_mode type.
+    grasp_mode {
+        parallel_mode {}
+        envelope_mode {}
+        pinch_mode {}
+    }
+
+    // Reference axes used by joint decls. Bare vertices.
+    AXIS_Z {}
+    AXIS_Y {}
+
+    // ===================================================================
+    // Robot kinematic structure (robot hypervertex body)
+    // ===================================================================
+    // Five kinematic links (vertices) and four revolute joints
+    // (hyperedges with signed incidence: + source, - target, - axis).
+    // Joints are NOT counted in the §4.7.1 headline E=10 — that count
+    // is over the contextual hyperedges only.
+    base_link: + <isa> link {}
+    shoulder_link: + <isa> link {}
+    elbow_link: + <isa> link {}
+    wrist_link: + <isa> link {}
+    flange_link: + <isa> link {}
+
+    @j1: + <isa> joint {
+        (+ base_link, - shoulder_link, - AXIS_Z);
+    }
+    @j2: + <isa> joint {
+        (+ shoulder_link, - elbow_link, - AXIS_Y);
+    }
+    @j3: + <isa> joint {
+        (+ elbow_link, - wrist_link, - AXIS_Y);
+    }
+    @j4: + <isa> joint {
+        (+ wrist_link, - flange_link, - AXIS_Z);
+    }
+
+    // Three sensors on j2; arity 2 per sensor (source joint + scalar reading)
+    @s_temp_j2:    + <isa> sensor <temperature>  { (+ j2); }
+    @s_vibr_j2:    + <isa> sensor <vibration>    { (+ j2); }
+    @s_current_j2: + <isa> sensor <motor_current>{ (+ j2); }
+
+    // ===================================================================
+    // Grasping context — 6 hyperedges (e_1 .. e_6)
+    //   Maps X = {P_r, ID_t, ID_p, M_g, F_g} -> Y = {S_l, C_g, F_l, S_g}
+    // ===================================================================
+    // Wrapped in a context-typed hypervertex so cross-context constraint
+    // arcs can reach vertices inside it via SCOPEDIN(context).
+    grasping_context: + <isa> context {
+        robot_pose:       + <isa> signal {}
+        active_tool:      + <isa> tool {}
+        active_payload:   + <isa> payload {}
+        mode_parallel:    + <isa> grasp_mode {}
+        grip_force:       + <isa> signal {}
+
+        tool_params:      + <isa> signal {}
+        payload_params:   + <isa> signal {}
+        loaded_state:     + <isa> signal {}
+        configuration:    + <isa> signal {}
+        force_vector:     + <isa> signal {}
+        stability_margin: + <isa> signal {}
+
+        // e_1: derive tool parameters — T = f_t(ID_t)   (arity 2)
+        @derive_tool: + <isa> interpretation {
+            (+ active_tool, - tool_params);
+        }
+        // e_2: derive payload parameters — L = f_p(ID_p) (arity 2)
+        @derive_payload: + <isa> interpretation {
+            (+ active_payload, - payload_params);
+        }
+        // e_3: loading state — S_l = f_l(T, L)          (arity 3)
+        @loading_state: + <isa> aggregation {
+            (+ tool_params, + payload_params, - loaded_state);
+        }
+        // e_4: grasp configuration — C_g = f_c(M_g, L)   (arity 3)
+        @grasp_config: + <isa> aggregation {
+            (+ mode_parallel, + payload_params, - configuration);
+        }
+        // e_5: load force — F_l = f_v(C_g, P_r)          (arity 3)
+        @load_force: + <isa> aggregation {
+            (+ configuration, + robot_pose, - force_vector);
+        }
+        // e_6: grasp stability — S_g = f_s(F_l, F_g)     (arity 3)
+        @grasp_stability: + <isa> aggregation {
+            (+ force_vector, + grip_force, - stability_margin);
+        }
+    }
+
+    // ===================================================================
+    // Maintenance context — 2 hyperedges (e_7, e_8)
+    // ===================================================================
+    maintenance_context: + <isa> context {
+        joint_temp:        + <isa> signal {}
+        vibration:         + <isa> signal {}
+        motor_current:     + <isa> signal {}
+        cycle_count:       + <isa> counter {}
+        brake_response:    + <isa> signal {}
+        degradation_level: + <isa> signal {}
+        component_health:  + <isa> signal {}
+
+        // e_7: wear indicator — D_w = f_w(T_j, V_j, I_m, N_c) (arity 5)
+        @wear_indicator: + <isa> aggregation {
+            (+ joint_temp, + vibration, + motor_current, + cycle_count, - degradation_level);
+        }
+        // e_8: health state — C_h = f_h(D_w, B_r)             (arity 3)
+        @health_state: + <isa> aggregation {
+            (+ degradation_level, + brake_response, - component_health);
+        }
+    }
+
+    // ===================================================================
+    // Safety context — 2 hyperedges (e_9, e_10)
+    //   Uses maintenance context as secondary input (D^3)
+    // ===================================================================
+    safety_context: + <isa> context {
+        robot_speed:      + <isa> signal {}
+        human_distance:   + <isa> signal {}
+        operating_mode:   + <isa> mode {}
+        braking_estimate: + <isa> signal {}
+        risk_assessment:  + <isa> signal {}
+
+        // e_9: braking capability — S_b = f_b(C_h, B_r)       (arity 3)
+        // Paper uses `reference` nodes (health_input, brake_input) that
+        // alias to maintenance_context.component_health /
+        // maintenance_context.brake_response. We reference them directly
+        // via qualified paths, preserving the cross-context dependency.
+        @braking_capability: + <isa> aggregation {
+            (+ maintenance_context.component_health, + maintenance_context.brake_response, - braking_estimate);
+        }
+        // e_10: safety state — R_s = f_r(v_r, d_h, M_o, S_b)  (arity 5)
+        @safety_state: + <isa> aggregation {
+            (+ robot_speed, + human_distance, + operating_mode, + braking_estimate, - risk_assessment);
+        }
+    }
+
+    // ===================================================================
+    // Cross-context constraint (§5.1)
+    //   S_{perm} = f_{sc}(C_h, M_o)
+    // Spans maintenance and safety contexts. Not counted in the E=10
+    // figure but represents the paper's higher-order cross-layer claim.
+    // ===================================================================
+    max_permissible_speed: + <isa> signal {}
+
+    @speed_constraint: + <isa> constraint <safety_cross_layer> {
+        (+ maintenance_context.component_health, + safety_context.operating_mode, - max_permissible_speed);
+    }
+}

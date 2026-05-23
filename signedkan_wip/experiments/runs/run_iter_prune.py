@@ -24,11 +24,11 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import load, split
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.signedkan import SignedKAN, SignedKANConfig
-from signedkan_wip.src.train import build_edge_to_triads
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.signedkan import SignedKAN, SignedKANConfig
+from signedkan_wip.src.core.train import build_edge_to_triads
 from .run_compare import build_edge_incidence
-from signedkan_wip.src.iter_prune import PruneMask, count_active_splines
+from signedkan_wip.src.core.iter_prune import PruneMask, count_active_splines
 
 
 def _eval(model, triad_v, triad_sigma, edges, signs, M, device):

@@ -16,7 +16,7 @@ def _parity_check_catmull_rom(C: int = 16, G: int = 8,
     `splines._catmull_rom_eval`.  Returns a dict with max abs / rel
     error and pass/fail.
     """
-    from ..splines import _catmull_rom_eval
+    from ..core.splines import _catmull_rom_eval
     if not torch.cuda.is_available():
         raise RuntimeError("parity test needs CUDA")
     torch.manual_seed(0)
@@ -40,7 +40,7 @@ def _benchmark_catmull_rom(C: int = 16, G: int = 8,
                             n_runs: int = 30) -> dict:
     """Compare Triton vs PyTorch reference at HSiKAN-realistic
     cycle-batch shapes."""
-    from ..splines import _catmull_rom_eval
+    from ..core.splines import _catmull_rom_eval
     if not torch.cuda.is_available():
         raise RuntimeError("benchmark needs CUDA")
     torch.manual_seed(0)
@@ -89,7 +89,7 @@ def _parity_check_signedkan_inner(
 ) -> dict:
     """Parity check the fused inner kernel against an explicit PyTorch
     reference implementation."""
-    from ..splines import _catmull_rom_eval
+    from ..core.splines import _catmull_rom_eval
     if not torch.cuda.is_available():
         raise RuntimeError("parity test needs CUDA")
     torch.manual_seed(0)

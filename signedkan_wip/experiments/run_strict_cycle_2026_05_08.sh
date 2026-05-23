@@ -18,7 +18,7 @@ run_cell() {
     local logf="$LOG_DIR/${label}_seed${seed}.log"
     local t0=$(date +%s)
     echo "[strict] $(date +%H:%M:%S) START $label seed=$seed"
-    env "$@" python -m signedkan_wip.src.run_final_cell \
+    env "$@" python -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset "$dataset" --hidden 16 --n-epochs 80 --seed "$seed" \
         > "$logf" 2>&1
     local elapsed=$(( $(date +%s) - t0 ))

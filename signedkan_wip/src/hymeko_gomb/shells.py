@@ -13,9 +13,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from ..cpml import (
+from ..core.cpml import (
     ClifFIRTierAggregator, CPML, CPMLConfig, SignedKANTierAggregator,
     TierSpec,
+)
+from ..core.signedkan import (
+    MultiLayerSignedKAN, MultiLayerSignedKANConfig,
+    build_vertex_triad_incidence,
 )
 
 
@@ -85,10 +89,23 @@ class OuterFIRShell(nn.Module):
         b_stack = torch.stack([p.bias for p in self.pre_projs], dim=0)
         x_all = torch.einsum("ni,mji->mnj", x, w_stack) + b_stack.unsqueeze(1)
         bank_outputs: list[torch.Tensor] = []
+        per_cycle_banks: list[torch.Tensor] = []
         for m in range(self.M):
             cv_feats = x_all[m][cycles_l]
             per_cycle = self.banks[m](cv_feats, signs_f)
+            per_cycle_banks.append(per_cycle)
             bank_outputs.append(scatter_mean(per_cycle, cycles_l, N))
+        # Fuzzy-signature side channel (see signedkan_wip/src/interpret/
+        # gomb_signature.py). Capture the per-cycle features at this
+        # shell — concatenated across banks, matching the shell's
+        # output dimension semantics. Cost when not in use: one
+        # attribute lookup per forward. Mirrors the
+        # ``_attn_entropy_terms`` pattern in MixedAritySignedKAN.
+        cap = getattr(self, "_signature_capture", None)
+        if cap is not None:
+            cap["outer_per_cycle"] = torch.cat(
+                [p.detach() for p in per_cycle_banks], dim=-1,
+            )
         return torch.cat(bank_outputs, dim=-1)
 
 
@@ -217,7 +234,135 @@ class MiddleHSiKAN(nn.Module):
         if cycles.shape[0] == 0:
             return torch.zeros_like(x_proj)
         per_cycle = self.agg(x_proj, cycles, signs)      # (M_c, d_layer)
+        # Fuzzy-signature side channel — see OuterFIRShell.forward
+        # for the pattern.
+        cap = getattr(self, "_signature_capture", None)
+        if cap is not None:
+            cap["middle_per_cycle"] = per_cycle.detach()
         return scatter_mean(per_cycle, cycles, N)        # (N, d_layer)
+
+
+# ─── Shell 2 (stacked variant): multi-layer HSIKAN ──────────────────
+
+
+class StackedMiddleHSiKAN(nn.Module):
+    """Multi-layer HSIKAN stack as the Gömb middle shell.
+
+    Drop-in replacement for :class:`MiddleHSiKAN` that exposes
+    inner highway gates, layer norm, JK aggregation, and (when
+    requested) arc-weight CR-highway modulation through the
+    :class:`MultiLayerSignedKAN` machinery used by the HSIKAN
+    Bitcoin-Optuna SOTA.
+
+    The pre-projected outer-shell output ``x_outer`` is fed as the
+    \\emph{initial vertex embedding} into the stack
+    (``initial_h_v`` on
+    :meth:`MultiLayerSignedKAN.encode_triads`), bypassing the
+    stack's built-in ``nn.Embedding`` — Gömb already has its own
+    upstream embedding chain.
+
+    Args:
+        n_nodes:      vertex count.
+        d_in:         input per-vertex feature dim (outer-shell output).
+        d_layer:      hidden dim of each HSIKAN layer.
+        n_layers:     stack depth $L \\geq 1$.
+        cycle_k:      cycle arity (passed to the layer).
+        grid:         spline grid size.
+        inner_skip:   "highway" (default) or "cr_highway"
+                      (arc-weight gate); "residual" / "none" also OK.
+        jk_mode:      "last" (default), "sum", or "concat" — last keeps
+                      the d_layer output dim, concat widens to L·d_layer.
+        share_weights: whether the L layers share parameters
+                       (saves params, may help / hurt depending on
+                       depth and dataset).
+    """
+
+    def __init__(
+        self,
+        n_nodes: int,
+        d_in: int,
+        d_layer: int,
+        n_layers: int = 2,
+        cycle_k: int = 3,
+        grid: int = 5,
+        inner_skip: str = "highway",
+        jk_mode: str = "last",
+        share_weights: bool = False,
+    ):
+        super().__init__()
+        self.n_nodes = n_nodes
+        self.d_in = d_in
+        self.d_layer = d_layer
+        self.n_layers = n_layers
+        self.cycle_k = cycle_k
+        self.jk_mode = jk_mode
+        self.pre_proj = nn.Linear(d_in, d_layer)
+        mcfg = MultiLayerSignedKANConfig(
+            n_nodes=n_nodes, n_layers=n_layers,
+            hidden_dim=d_layer, grid=grid, k=cycle_k,
+            spline_kinds=["catmull_rom"] * n_layers,
+            init_scale=0.05,
+            pool_mode="sum",
+            jk_mode=jk_mode,
+            layer_norm_between=True,
+            share_weights=share_weights,
+            inner_skip=inner_skip,
+            outer_skip="none",
+            use_residual=True,
+        )
+        self.stack = MultiLayerSignedKAN(mcfg)
+
+    @property
+    def d_out(self) -> int:
+        """Output per-vertex feature dim — depends on ``jk_mode``."""
+        if self.jk_mode == "concat":
+            return self.d_layer * self.n_layers
+        return self.d_layer
+
+    def forward(
+        self,
+        x_outer: torch.Tensor,         # (N, d_in)
+        cycles: torch.Tensor,          # (M_c, k) long
+        signs: torch.Tensor,           # (M_c, k) float/long
+    ) -> torch.Tensor:
+        N = x_outer.shape[0]
+        x_proj = self.pre_proj(x_outer)
+        if cycles.shape[0] == 0:
+            return torch.zeros(
+                N, self.d_out, device=x_proj.device, dtype=x_proj.dtype,
+            )
+        # Cache M_vt (and the long-cast cycles/signs) by the cycles
+        # tensor's data_ptr — training reuses the same cycles tensor
+        # across 60+ forwards, so the CPU round-trip (.cpu().numpy()
+        # → scipy CSR → torch sparse) is wasted Python work per
+        # step + GPU memory churn that fragments the allocator.
+        # The cache key is (data_ptr, M_c, k) so a fresh cycles
+        # tensor triggers a rebuild but the common case is one-shot.
+        key = (cycles.data_ptr(), int(cycles.shape[0]),
+               int(cycles.shape[1]))
+        cache = getattr(self, "_m_vt_cache", None)
+        if cache is None or cache[0] != key:
+            cycles_np = cycles.detach().cpu().numpy()
+            M_vt = build_vertex_triad_incidence(
+                cycles_np, N, x_proj.device, mode="sum",
+            )
+            signs_long = (signs.long()
+                          if signs.dtype != torch.long else signs)
+            cycles_long = (cycles.long()
+                            if cycles.dtype != torch.long else cycles)
+            self._m_vt_cache = (key, M_vt, signs_long, cycles_long)
+        else:
+            _, M_vt, signs_long, cycles_long = cache
+        h_t = self.stack.encode_triads(
+            cycles_long, signs_long, M_vt,
+            initial_h_v=x_proj,
+        )                                # (M_c, d_out)
+        # Capture for fuzzy-signature side channel — same pattern as
+        # the single-layer MiddleHSiKAN.
+        cap = getattr(self, "_signature_capture", None)
+        if cap is not None:
+            cap["middle_per_cycle"] = h_t.detach()
+        return scatter_mean(h_t, cycles, N)  # (N, d_out)
 
 
 # ─── Shell 3: Inner CPML core ───────────────────────────────────────

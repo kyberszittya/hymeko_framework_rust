@@ -87,7 +87,7 @@ echo "[$(date '+%H:%M:%S')] === Round 1: Epinions edge_cr s=0 + CV scale ===" | 
 # A: edge_cr seed 0 (proves the warm-cache speedup; prior was 0.8409 single-seed)
 TIMEOUT_S=7200 run "epinions_edge_cr_s0" \
     env "${ENV_EDGE_CR[@]}" \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 4 --n-epochs 80 \
         --max-k4 100000 --seed 0 --model HSiKAN
 
@@ -95,6 +95,7 @@ TIMEOUT_S=7200 run "epinions_edge_cr_s0" \
 TIMEOUT_S=7200 run "hymeyolo_ricci_n10k_e100_s0" \
     env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     python -u -m signedkan_wip.src.vision.train_circles_ricci \
+        --no-warm-start --schedule constant --warmup-epochs 0 \
         --n-images 10000 --epochs 100 --seed 0 \
         --jsonl-out "$LOG/hymeyolo_ricci_n10k_e100_s0.jsonl"
 
@@ -105,25 +106,27 @@ echo "[$(date '+%H:%M:%S')] === Round 2: edge_cr seeds 1-2 + HyMeYOLO s0-1 ===" 
 
 TIMEOUT_S=7200 run "epinions_edge_cr_s1" \
     env "${ENV_EDGE_CR[@]}" \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 4 --n-epochs 80 \
         --max-k4 100000 --seed 1 --model HSiKAN
 
 TIMEOUT_S=3600 run "hymeyolo_ricci_n5k_e50_s1" \
     env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     python -u -m signedkan_wip.src.vision.train_circles_ricci \
+        --no-warm-start --schedule constant --warmup-epochs 0 \
         --n-images 5000 --epochs 50 --seed 1 \
         --jsonl-out "$LOG/hymeyolo_ricci_n5k_e50_s1.jsonl"
 
 TIMEOUT_S=7200 run "epinions_edge_cr_s2" \
     env "${ENV_EDGE_CR[@]}" \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 4 --n-epochs 80 \
         --max-k4 100000 --seed 2 --model HSiKAN
 
 TIMEOUT_S=3600 run "hymeyolo_ricci_n5k_e50_s2" \
     env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     python -u -m signedkan_wip.src.vision.train_circles_ricci \
+        --no-warm-start --schedule constant --warmup-epochs 0 \
         --n-images 5000 --epochs 50 --seed 2 \
         --jsonl-out "$LOG/hymeyolo_ricci_n5k_e50_s2.jsonl"
 
@@ -134,25 +137,27 @@ echo "[$(date '+%H:%M:%S')] === Round 3: edge_cr seeds 3-4 + HyMeYOLO s3-4 ===" 
 
 TIMEOUT_S=7200 run "epinions_edge_cr_s3" \
     env "${ENV_EDGE_CR[@]}" \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 4 --n-epochs 80 \
         --max-k4 100000 --seed 3 --model HSiKAN
 
 TIMEOUT_S=3600 run "hymeyolo_ricci_n5k_e50_s3" \
     env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     python -u -m signedkan_wip.src.vision.train_circles_ricci \
+        --no-warm-start --schedule constant --warmup-epochs 0 \
         --n-images 5000 --epochs 50 --seed 3 \
         --jsonl-out "$LOG/hymeyolo_ricci_n5k_e50_s3.jsonl"
 
 TIMEOUT_S=7200 run "epinions_edge_cr_s4" \
     env "${ENV_EDGE_CR[@]}" \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 4 --n-epochs 80 \
         --max-k4 100000 --seed 4 --model HSiKAN
 
 TIMEOUT_S=3600 run "hymeyolo_ricci_n5k_e50_s4" \
     env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     python -u -m signedkan_wip.src.vision.train_circles_ricci \
+        --no-warm-start --schedule constant --warmup-epochs 0 \
         --n-images 5000 --epochs 50 --seed 4 \
         --jsonl-out "$LOG/hymeyolo_ricci_n5k_e50_s4.jsonl"
 
@@ -164,14 +169,14 @@ echo "[$(date '+%H:%M:%S')] === Round 4: novel Epinions variants ===" | tee -a "
 # B1: edge_cr at h=8 (between SOTA h=4 and kitchen-sink h=32)
 TIMEOUT_S=7200 run "epinions_edge_cr_h8_s0" \
     env "${ENV_EDGE_CR[@]}" \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 8 --n-epochs 80 \
         --max-k4 100000 --seed 0 --model HSiKAN
 
 # B2: edge_cr at h=16 (kitchen-sink capacity at edge_cr config)
 TIMEOUT_S=7200 run "epinions_edge_cr_h16_s0" \
     env "${ENV_EDGE_CR[@]}" \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 16 --n-epochs 80 \
         --max-k4 100000 --seed 0 --model HSiKAN
 

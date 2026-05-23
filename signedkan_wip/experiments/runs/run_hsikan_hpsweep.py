@@ -19,14 +19,14 @@ from pathlib import Path
 
 import torch
 from .run_compare import run_one
-from signedkan_wip.src.highway_signedkan import HighwaySignedKAN
+from signedkan_wip.src.core.highway_signedkan import HighwaySignedKAN
 
 
 def _patch_gate_bias(bias: float):
     """Monkey-patch SignedKANLayer's highway gate bias-init at the
     module level for this sweep cell. Dependent on the existing
     `bias.fill_(-2.0)` line in SignedKANLayer.__init__."""
-    import signedkan_wip.src.signedkan as sk
+    import signedkan_wip.src.core.signedkan as sk
     orig = sk.SignedKANLayer.__init__
     def patched(self, cfg):
         orig(self, cfg)
@@ -41,7 +41,7 @@ def _patch_gate_bias(bias: float):
 
 
 def _restore_gate(orig):
-    import signedkan_wip.src.signedkan as sk
+    import signedkan_wip.src.core.signedkan as sk
     sk.SignedKANLayer.__init__ = orig
 
 

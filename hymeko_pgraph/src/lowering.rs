@@ -94,8 +94,20 @@ pub struct LoweredPGraph {
     pub materials: BTreeSet<DeclId>,
     /// All O-nodes (mirrors `schema.o_nodes()`).
     pub units: BTreeSet<DeclId>,
-    /// Per-unit cost (default 1.0).
+    /// Per-unit cost (default 1.0). This is the *scalar* cost used
+    /// by the single-criterion ABB path; it is the canonical
+    /// fallback when [`Self::cost_vectors`] is empty or when
+    /// [`crate::abb::AbbOptions::cost_weights`] is `None`.
     pub costs: BTreeMap<DeclId, f64>,
+    /// Stage P-mo (2026-05-19): names of the multi-criterion cost
+    /// dimensions in canonical (alphabetised) order. Empty when the
+    /// source `.hymeko` carries no tagged `cost <name> N;` children.
+    pub cost_dimensions: Vec<String>,
+    /// Per-unit cost vector aligned with [`Self::cost_dimensions`].
+    /// A unit missing a dimension defaults to `0.0` for that
+    /// dimension. Empty when no tagged cost children are present
+    /// (scalar-only path).
+    pub cost_vectors: BTreeMap<DeclId, Vec<f64>>,
     /// Per-unit *consumed* materials (set of M-nodes appearing with
     /// `-` sign in the unit's hyperarc).
     pub unit_inputs: BTreeMap<DeclId, BTreeSet<DeclId>>,
@@ -155,8 +167,20 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
     }
 
     // ── 3. Walk each unit's body for the I/O hyperarc + cost.
+    //
+    // Cost sources, in priority order:
+    //   1. Edge value (idiomatic):  `@U <unit> 100 { ... }`
+    //   2. Untagged `cost N;` child node (back-compat).
+    //   3. Tagged   `cost <dim_name> N;` child node (Stage P-mo,
+    //      multi-objective). Sub-tag identifies the dimension.
+    //
+    // Source 3 is additive: it populates `cost_vectors` but does
+    // NOT modify `costs` (the scalar path stays byte-identical).
     let mut edges: BTreeMap<EdgeId, (DeclId, DeclId)> = BTreeMap::new();
     let mut costs: BTreeMap<DeclId, f64> = BTreeMap::new();
+    let mut per_unit_dim_costs: BTreeMap<DeclId, BTreeMap<String, f64>> =
+        BTreeMap::new();
+    let mut all_dimensions: BTreeSet<String> = BTreeSet::new();
     let mut unit_inputs: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
     let mut unit_outputs: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
     let mut next_edge: usize = 0;
@@ -166,6 +190,7 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
         let unit_name = e.inner.name.to_string();
         unit_inputs.entry(unit_id).or_default();
         unit_outputs.entry(unit_id).or_default();
+        per_unit_dim_costs.entry(unit_id).or_default();
 
         // Cost source 1: the edge's value (idiomatic).
         let cost = match &e.anno.value {
@@ -203,11 +228,34 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
                         next_edge += 1;
                     }
                 }
-                // Cost source 2: a `cost N;` child node — back-compat.
                 HyperItem::Node(child) => {
                     if child.inner.name == "cost" {
                         if let Some(Value::Num(v)) = &child.anno.value {
-                            costs.insert(unit_id, *v);
+                            // Source 2: untagged `cost N;` — back-compat
+                            // updates the scalar cost.
+                            // Source 3: tagged `cost <dim> N;` — populates
+                            // the named dimension in cost_vectors but
+                            // does NOT change the scalar.
+                            let dim_tags: Vec<&str> = child
+                                .anno
+                                .tags
+                                .iter()
+                                .map(|t| t.as_ref())
+                                .collect();
+                            if dim_tags.is_empty() {
+                                costs.insert(unit_id, *v);
+                            } else {
+                                // Multi-objective tagged form. Use the
+                                // first tag as the dimension name (a
+                                // unit declaring `cost <capex, opex>`
+                                // is unusual but accept the first tag).
+                                let dim_name = dim_tags[0].to_string();
+                                all_dimensions.insert(dim_name.clone());
+                                per_unit_dim_costs
+                                    .get_mut(&unit_id)
+                                    .unwrap()
+                                    .insert(dim_name, *v);
+                            }
                         }
                     }
                 }
@@ -215,6 +263,31 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
             }
         }
     }
+
+    // ── 3b. Build the canonical cost_dimensions Vec and cost_vectors.
+    //        Alphabetical order for deterministic output across runs
+    //        and across source-file edits. Units missing a dimension
+    //        default to 0.0 for that dimension (sensible default:
+    //        "this unit does not emit CO2" rather than "this unit's
+    //        CO2 cost is unspecified").
+    let cost_dimensions: Vec<String> =
+        all_dimensions.iter().cloned().collect();
+    let cost_vectors: BTreeMap<DeclId, Vec<f64>> = if cost_dimensions
+        .is_empty()
+    {
+        BTreeMap::new()
+    } else {
+        per_unit_dim_costs
+            .into_iter()
+            .map(|(u, dims)| {
+                let v: Vec<f64> = cost_dimensions
+                    .iter()
+                    .map(|name| dims.get(name).copied().unwrap_or(0.0))
+                    .collect();
+                (u, v)
+            })
+            .collect()
+    };
 
     // ── 4. Construct the schema (bipartite invariant check).
     let schema = PGraphSchema::try_new(kinds.clone(), edges)?;
@@ -237,6 +310,8 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
         materials,
         units: units_set,
         costs,
+        cost_dimensions,
+        cost_vectors,
         unit_inputs,
         unit_outputs,
     })

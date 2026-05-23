@@ -46,7 +46,7 @@ run_cell() {
   echo "[strict] $(date -Is) START $label seed=$seed" | tee -a "$MASTER"
   env "$@" \
     HYMEKO_CYCLE_CACHE=1 HSIKAN_STRICT_PROTOCOL=1 HSIKAN_CYCLE_BATCH=2000 \
-    python -m signedkan_wip.src.run_final_cell \
+    python -m signedkan_wip.experiments.runs.run_final_cell \
       --dataset "$dataset" --hidden "$hidden" --n-epochs 80 \
       --max-k4 "$cap" --seed "$seed" \
     > "$logf" 2>&1

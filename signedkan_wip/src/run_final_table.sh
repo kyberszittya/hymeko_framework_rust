@@ -12,7 +12,7 @@ run_cell() {
   local args="$*"
   echo "  running: $args" >&2
   local result
-  if result=$(python3 -m signedkan_wip.src.run_final_cell $args 2>/dev/null | tail -1); then
+  if result=$(python3 -m signedkan_wip.experiments.runs.run_final_cell $args 2>/dev/null | tail -1); then
     if [[ -n "$result" && "$result" != "null" ]]; then
       echo "$result" >> "$OUT"
       echo "$result" | python3 -c "import sys, json; d=json.loads(sys.stdin.read()); print(f'    -> {d}')" >&2

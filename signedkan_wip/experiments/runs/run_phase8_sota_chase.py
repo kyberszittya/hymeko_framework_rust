@@ -99,14 +99,14 @@ def _ensemble_run(dataset, seed, arity_configs, balance_lambda,
 def _train_and_snapshot_probs(dataset, seed, arities, max_per, balance_lambda,
                                 n_epochs, hidden, grid, feature_edges):
     """Train + return (test_probs, test_signs, test_auc, alpha)."""
-    from .hyperedges import construct
-    from .n_tuples import construct_k, construct_2
-    from .mixed_arity_signedkan import (MixedAritySignedKAN,
+    from signedkan_wip.src.core.hyperedges import construct
+    from signedkan_wip.src.core.n_tuples import construct_k, construct_2
+    from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                           MixedAritySignedKANConfig,
                                           subsample_tuples,
                                           build_edge_to_tuples,
                                           build_vertex_to_tuples)
-    from .signedkan import (MultiLayerSignedKANConfig,
+    from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                              build_vertex_triad_incidence)
     from .run_phase2_mixed_arity import (_build_edge_incidence,
                                            _build_edge_incidence_vertex_adj_scipy)

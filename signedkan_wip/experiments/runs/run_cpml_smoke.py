@@ -28,7 +28,7 @@ import torch
 import torch.nn.functional as F
 from sklearn.metrics import roc_auc_score
 
-from signedkan_wip.src.cpml import CPML, CPMLConfig, TierSpec
+from signedkan_wip.src.core.cpml import CPML, CPMLConfig, TierSpec
 from signedkan_wip.src.datasets import load
 
 

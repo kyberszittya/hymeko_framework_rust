@@ -12,9 +12,9 @@ Sign convention:
          by ``detect_peck_events``).
 
 The output ``SignedGraph`` plugs directly into the existing HSiKAN
-bench harness: ``signedkan_wip.src.run_final_cell --dataset
+bench harness: ``signedkan_wip.experiments.runs.run_final_cell --dataset
 <custom>`` would be straightforward to extend, or use the lower-
-level ``signedkan_wip.src.signedkan.SignedKAN`` directly.
+level ``signedkan_wip.src.core.signedkan.SignedKAN`` directly.
 """
 from __future__ import annotations
 

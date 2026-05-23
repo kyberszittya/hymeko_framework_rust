@@ -17,7 +17,7 @@ Run the GUI with::
 
 Train a checkpoint with::
 
-    python -m signedkan_wip.src.run_final_cell \\
+    python -m signedkan_wip.experiments.runs.run_final_cell \\
         --dataset bitcoin_alpha --hidden 8 --n-epochs 80 --seed 0 \\
         --save-checkpoint ./alpha_optuna_best.pt
 """

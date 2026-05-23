@@ -272,7 +272,7 @@ def run_single(
     device: str | None = None,
 ) -> dict:
     """Run one training cell with the parsed arch+training config.
-    Routes through `signedkan_wip.src.run_final_cell.cell_signed_graph`,
+    Routes through `signedkan_wip.experiments.runs.run_final_cell.cell_signed_graph`,
     wiring HSIKAN_TOPK_* env vars on the way in.
 
     When ``backend == "gomb"``, runs ``run_gomb_smoke`` in a subprocess and
@@ -303,7 +303,7 @@ def run_single(
     if arch.get("arities"):
         os.environ["HSIKAN_ARITIES"] = ",".join(str(a) for a in arch["arities"])
 
-    from signedkan_wip.src.run_final_cell import cell_signed_graph
+    from signedkan_wip.experiments.runs.run_final_cell import cell_signed_graph
 
     if device:
         dev = torch.device(device)

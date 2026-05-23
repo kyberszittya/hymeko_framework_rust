@@ -38,13 +38,13 @@ from signedkan_wip.src.adapters.ntu_skeleton import (
     NTUSample, NTU_BONES_25, build_ntu_signed_graph, synth_ntu_dataset,
     aggregate_per_vertex_features, aggregate_per_edge_features,
 )
-from signedkan_wip.src.hyperedges import construct
+from signedkan_wip.src.core.hyperedges import construct
 from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                       MixedAritySignedKANConfig,
                                       subsample_tuples,
                                       build_edge_to_tuples)
-from signedkan_wip.src.n_tuples import construct_k
-from signedkan_wip.src.signedkan import (MultiLayerSignedKANConfig,
+from signedkan_wip.src.core.n_tuples import construct_k
+from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 
 
@@ -220,7 +220,7 @@ def main():
         # HSiKAN with per-vertex + per-edge features.
         # Skeleton tree has no cycles → add a closing bone (head→l_foot)
         # to create artificial cycles for the cycle-pool to enumerate.
-        from .datasets import SignedGraph
+        from signedkan_wip.src.datasets import SignedGraph
         closing_edge = np.array([[3, 19]], dtype=np.int64)
         new_edges = np.concatenate([g.edges, closing_edge], axis=0)
         new_signs = np.concatenate([g.signs, np.array([+1], dtype=np.int8)])

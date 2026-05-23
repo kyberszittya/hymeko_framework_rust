@@ -74,13 +74,13 @@ run_pair() {
     local ds=$1 dev=$2 topk=$3
     log "Stage 2: dataset=$ds device=$dev topk=$topk START"
     for s in 0 1 2 3 4; do
-        python -u -m signedkan_wip.src.run_gomb_smoke \
+        python -u -m signedkan_wip.experiments.runs.run_gomb_smoke \
             --dataset "$ds" --seed "$s" --device "$dev" \
             "${SLIM[@]}" --topk "$topk" --k 3 \
             > "$LOGDIR/gomb_k3_${ds}_s${s}.log" 2>&1
         tail -1 "$LOGDIR/gomb_k3_${ds}_s${s}.log" >> "$LOGDIR/results.jsonl"
 
-        python -u -m signedkan_wip.src.run_gomb_smoke \
+        python -u -m signedkan_wip.experiments.runs.run_gomb_smoke \
             --dataset "$ds" --seed "$s" --device "$dev" \
             "${SLIM[@]}" --topk "$topk" --cycle-ks 3,4 \
             > "$LOGDIR/mixed34_${ds}_s${s}.log" 2>&1
@@ -110,7 +110,7 @@ run_pair wiki_conflict   cuda 16
 # ----------------------------------------------------------------------------
 log "=== Stage 3: Slashdot mixed[4,5] 5-seed (SOTA-break attempt) ==="
 for s in 0 1 2 3 4; do
-    python -u -m signedkan_wip.src.run_gomb_smoke \
+    python -u -m signedkan_wip.experiments.runs.run_gomb_smoke \
         --dataset slashdot --seed "$s" --device cuda \
         "${SLIM[@]}" --topk 16 --cycle-ks 4,5 \
         > "$LOGDIR/mixed45_slashdot_s${s}.log" 2>&1

@@ -14,6 +14,27 @@
 //! Condition (3) is the strict P-graph rule; relaxing it gives SSG'.
 //! We expose both via [`enumerate_with_options`].
 //!
+//! # Correspondence with the canonical Friedler 1992 axioms
+//!
+//! (2026-05-19 phase-2 audit.)
+//!
+//! - **(a) every input raw-or-produced** is **A2/S2 forward**
+//!   restricted to inputs of selected units. Equivalent statement:
+//!   for every consumed material `m`, either `m ∈ raws` or some
+//!   selected unit produces `m` (i.e.\ `m` has an ancestor).
+//! - **(b) every required product producible** is the constructive
+//!   form of **A1/S1** ∧ **A4/S4** taken together: it asserts that
+//!   the selected `O'` actually realises every product through the
+//!   production closure, which is the operational counterpart of
+//!   "every O-node reaches a product".
+//! - **(c) `strict_no_excess`** is the *orthogonal* no-excess
+//!   strengthener (not part of S1..S5; called the "strict P-graph
+//!   rule" by Friedler 1992).
+//!
+//! What [`is_feasible`] does not check (lives in the schema layer at
+//! [`crate::axioms`]): **A2 reverse** (raws produced inside),
+//! **A3/S3** (O-nodes in catalogue), **A5/S5** (no isolated M-nodes).
+//!
 //! For pedagogical clarity this implementation uses a
 //! *generate-and-test* enumeration over $2^{|O_{\max}|}$ subsets. On
 //! the small process-synthesis graphs that originally motivated

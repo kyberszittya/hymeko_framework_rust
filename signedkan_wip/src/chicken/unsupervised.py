@@ -39,9 +39,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ..datasets import SignedGraph
-from ..hyperedges import construct
-from ..n_tuples import construct_k
-from ..signedkan import (SignedKAN, SignedKANConfig,
+from ..core.hyperedges import construct
+from ..core.n_tuples import construct_k
+from ..core.signedkan import (SignedKAN, SignedKANConfig,
                           build_vertex_triad_incidence)
 
 

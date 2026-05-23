@@ -41,7 +41,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..splines import _catmull_rom_eval
+from ..core.splines import _catmull_rom_eval
 
 
 # ─── Synthetic dataset: one coloured rectangle per image ────────────

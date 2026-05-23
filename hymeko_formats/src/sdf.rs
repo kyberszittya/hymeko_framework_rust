@@ -60,12 +60,24 @@ pub fn generate_sdf_from_model(model: &KinematicModel) -> String {
         out.push_str(&format!("      <parent>{}</parent>\n", joint.parent_link));
         out.push_str(&format!("      <child>{}</child>\n", joint.child_link));
 
+        // Skip the joint `<pose>` when the parent is `world` — the
+        // `world` identifier inside an SDF `<model>` is not a valid
+        // `relative_to` target (Gazebo error 26: "relative_to name
+        // [world] does not match a nested model, link, joint, or
+        // frame name"). The model-to-world pose is established by
+        // the `<include>` directive that loads the model into a
+        // world file. The HymeKo convention `(+ world, - base_link)`
+        // for the j_fix joint maps to "bolt the model frame to the
+        // world frame at the include pose" and emits no model-local
+        // `<pose>`.
         if let Some(xyz) = joint.origin_xyz {
-            let rpy = joint.origin_rpy_rad().unwrap_or([0.0; 3]);
-            out.push_str(&format!(
-                "      <pose relative_to=\"{}\">{} {} {} {:.4} {:.4} {:.4}</pose>\n",
-                joint.parent_link, xyz[0], xyz[1], xyz[2], rpy[0], rpy[1], rpy[2]
-            ));
+            if joint.parent_link != "world" {
+                let rpy = joint.origin_rpy_rad().unwrap_or([0.0; 3]);
+                out.push_str(&format!(
+                    "      <pose relative_to=\"{}\">{} {} {} {:.4} {:.4} {:.4}</pose>\n",
+                    joint.parent_link, xyz[0], xyz[1], xyz[2], rpy[0], rpy[1], rpy[2]
+                ));
+            }
         }
 
         if joint.joint_type != JointType::Fixed {
@@ -75,8 +87,44 @@ pub fn generate_sdf_from_model(model: &KinematicModel) -> String {
                     "        <xyz>{} {} {}</xyz>\n",
                     ax[0] as i32, ax[1] as i32, ax[2] as i32
                 ));
-                if joint.joint_type == JointType::Continuous {
-                    out.push_str("        <limit>\n          <lower>-1e16</lower>\n          <upper>1e16</upper>\n        </limit>\n");
+                // Emit `<limit>` for non-fixed joints. For
+                // Continuous joints we keep the SDF idiom of very
+                // large bounds (preserves pre-2026-05-16
+                // behaviour). For Revolute / Prismatic we emit
+                // the limits from the IR when present — mirrors
+                // the URDF emitter's handling.
+                //
+                // NOTE: SDF / URDF expect rotational limits in
+                // radians; the HymeKo source convention is
+                // degrees. The pass-through here matches the
+                // existing URDF emitter; a unit-conversion fix
+                // applies to both and is an open follow-up.
+                match joint.joint_type {
+                    JointType::Continuous => {
+                        out.push_str("        <limit>\n");
+                        out.push_str("          <lower>-1e16</lower>\n");
+                        out.push_str("          <upper>1e16</upper>\n");
+                        out.push_str("        </limit>\n");
+                    }
+                    JointType::Revolute | JointType::Prismatic => {
+                        if let Some(ref lim) = joint.limits {
+                            out.push_str("        <limit>\n");
+                            out.push_str(&format!(
+                                "          <lower>{}</lower>\n", lim.lower,
+                            ));
+                            out.push_str(&format!(
+                                "          <upper>{}</upper>\n", lim.upper,
+                            ));
+                            out.push_str(&format!(
+                                "          <effort>{}</effort>\n", lim.effort,
+                            ));
+                            out.push_str(&format!(
+                                "          <velocity>{}</velocity>\n", lim.velocity,
+                            ));
+                            out.push_str("        </limit>\n");
+                        }
+                    }
+                    JointType::Fixed => {}
                 }
                 out.push_str("      </axis>\n");
             }

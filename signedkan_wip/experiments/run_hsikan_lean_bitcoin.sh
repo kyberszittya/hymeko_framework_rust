@@ -28,7 +28,7 @@ if [[ -n "${HSIKAN_LEAN_DEVICE:-}" ]]; then
   LEAN_DEV_FLAGS=( --device "${HSIKAN_LEAN_DEVICE}" )
 fi
 
-"${PYTHON}" -m signedkan_wip.src.run_hsikan_lean_profile \
+"${PYTHON}" -m signedkan_wip.experiments.runs.run_hsikan_lean_profile \
   --datasets bitcoin_alpha bitcoin_otc \
   --seeds 0 1 2 \
   --hidden 8 12 16 \

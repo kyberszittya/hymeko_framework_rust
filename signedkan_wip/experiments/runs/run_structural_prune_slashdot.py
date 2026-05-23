@@ -38,18 +38,18 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import load, split, deduplicate_pairs
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.n_tuples import construct_k
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.n_tuples import construct_k
 from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                       MixedAritySignedKANConfig,
                                       subsample_tuples,
                                       build_vertex_to_tuples,
                                       build_edge_to_tuples)
-from signedkan_wip.src.signedkan import (MultiLayerSignedKANConfig,
+from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 from .run_phase2_mixed_arity import _build_edge_incidence
-from signedkan_wip.src.entropy_reg import SplineSmoothRegulariser
-from signedkan_wip.src.participation_reg import ParticipationRegulariser, triad_degree
+from signedkan_wip.src.core.entropy_reg import SplineSmoothRegulariser
+from signedkan_wip.src.core.participation_reg import ParticipationRegulariser, triad_degree
 
 
 def time_fwd(model, per_arity_te, device, n_warmup=15, n_repeats=40):

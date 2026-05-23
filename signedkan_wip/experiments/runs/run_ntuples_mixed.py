@@ -35,7 +35,7 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import load, split
-from signedkan_wip.src.n_tuples import construct_k, stats as ntuple_stats
+from signedkan_wip.src.core.n_tuples import construct_k, stats as ntuple_stats
 
 
 _CACHE_DIR = Path("data/ntuples_cache")
@@ -53,7 +53,7 @@ def _construct_k_cached(g, dataset: str, k: int):
     with cache_path.open("wb") as f:
         pickle.dump(tuples, f)
     return tuples
-from signedkan_wip.src.signedkan import (SignedKAN, SignedKANConfig, SignedKANLayer,
+from signedkan_wip.src.core.signedkan import (SignedKAN, SignedKANConfig, SignedKANLayer,
                          build_vertex_triad_incidence)
 from .run_compare import build_edge_incidence
 from .run_ntuples import build_edge_to_ntuples

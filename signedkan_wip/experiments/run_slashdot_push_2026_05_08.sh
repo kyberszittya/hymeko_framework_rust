@@ -22,7 +22,7 @@ run_cell() {
     local logf="$LOG_DIR/${label}.log"
     local t0=$(date +%s)
     echo "[push] $(date +%H:%M:%S) START $label"
-    env "$@" python -m signedkan_wip.src.run_final_cell \
+    env "$@" python -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset slashdot --hidden 16 --n-epochs 80 --seed 0 \
         --max-k4 100000 \
         > "$logf" 2>&1

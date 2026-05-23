@@ -96,7 +96,7 @@ def test_run_gomb_msg_sweep_msg_phase_only():
     cmd = [
         sys.executable,
         "-m",
-        "signedkan_wip.src.run_gomb_msg_sweep",
+        "signedkan_wip.experiments.runs.run_gomb_msg_sweep",
         "--pgraph",
         str(repo / "data" / "hsikan" / "sweep_msg_gomb.hymeko"),
         "--algorithm",

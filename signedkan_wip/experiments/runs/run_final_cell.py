@@ -112,7 +112,7 @@ def _save_demo_checkpoint(
     precomputed test-set inference inputs."""
     if save_path is None or save_path == "":
         return
-    from .demo.checkpoint import (
+    from signedkan_wip.src.demo.checkpoint import (
         save_checkpoint, CheckpointMeta, InferenceBundle,
     )
     bundle = InferenceBundle(
@@ -147,23 +147,27 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                         n_epochs: int, max_k4: int, device, seed: int = 0,
                         save_checkpoint_path: str | None = None,
                         shuffle_train_signs: bool = False,
-                        emit_full_metrics: bool = False):
-    from .cycle_cache import (
+                        emit_full_metrics: bool = False,
+                        n_branches: int = 1,
+                        side_fusion: str = "mean",
+                        outer_grad_checkpoint: bool = False,
+                        use_arc_weights: bool = False):
+    from signedkan_wip.src.cycle_cache import (
         cached_construct_2, cached_construct_k, cached_construct_triads,
         cached_construct_walks,
     )
-    from .datasets import load, deduplicate_pairs, split
-    from .datasets_small import sbm_signed
-    from .hyperedges import construct  # noqa: F401  (kept for compat; cached_construct_triads is the live path)
-    from .n_tuples import construct_k  # noqa: F401  (cached_construct_k is the live path)
-    from .mixed_arity_signedkan import (MixedAritySignedKAN,
+    from signedkan_wip.src.datasets import load, deduplicate_pairs, split
+    from signedkan_wip.src.datasets import sbm_signed
+    from signedkan_wip.src.core.hyperedges import construct  # noqa: F401  (kept for compat; cached_construct_triads is the live path)
+    from signedkan_wip.src.core.n_tuples import construct_k  # noqa: F401  (cached_construct_k is the live path)
+    from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                           MixedAritySignedKANConfig,
                                           subsample_tuples,
                                           build_vertex_to_tuples,
                                           build_edge_to_tuples)
-    from .signedkan import (MultiLayerSignedKANConfig,
+    from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                              build_vertex_triad_incidence)
-    from .baselines.sgcn_model import SGCN, build_signed_adj
+    from signedkan_wip.src.baselines.sgcn_model import SGCN, build_signed_adj
     from .run_phase2_mixed_arity import _build_edge_incidence
 
     torch.manual_seed(seed); np.random.seed(seed)
@@ -172,7 +176,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         n_nodes = int(dataset.split("_n")[1])
         g, _ = sbm_signed(n_nodes=n_nodes, n_communities=4, seed=seed)
     elif dataset.startswith("mesh_"):
-        from .datasets_meshes import (build_polyhedral_mesh,
+        from signedkan_wip.src.datasets import (build_polyhedral_mesh,
                                         build_mixed_polytope_dataset)
         kind = dataset[len("mesh_"):]
         if kind == "mixed":
@@ -249,7 +253,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     # HSiKAN arities — Slashdot SOTA-config uses k=(3,4,5); other datasets
     # use k=(3,4). Override via HSIKAN_ARITIES env var
     # (consumed by `RuntimeConfig.training.arities`).
-    from .runtime_config import get_runtime
+    from signedkan_wip.src.runtime_config import get_runtime
     _train = get_runtime().training
     # `(3,)` is the dataclass default → "user did not override".
     if _train.arities != (3,):
@@ -264,7 +268,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     cap_dict = {2: max_k2, 3: max_k3,
                   4: max_k4, 5: max_k4, 6: max_k4}
 
-    from .n_tuples import construct_2  # noqa: F401  (cached_construct_2 is the live path)
+    from signedkan_wip.src.core.n_tuples import construct_2  # noqa: F401  (cached_construct_2 is the live path)
     # ── Tuple-spec parsing ──────────────────────────────────────────
     #
     # Three modes, in priority order:
@@ -317,7 +321,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     use_walks = any(spec[0] == "walk" for spec in tuple_specs)
 
     if any(spec[0] == "walk" for spec in tuple_specs):
-        from .walks import construct_walks  # noqa: F401  (cached_construct_walks is the live path)
+        from signedkan_wip.src.core.walks import construct_walks  # noqa: F401  (cached_construct_walks is the live path)
 
     # Strict no-leakage protocol: when set, exclude every cycle / walk
     # whose internal edges include the test edge.  Defends the
@@ -326,6 +330,20 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     # (only k=2 cycles excluded; higher cycles / walks may contain
     # the test edge).
     strict_protocol = _train.strict_protocol
+    # Build the undirected (u, v) → arc-weight lookup ONCE when arc
+    # weights are requested. We use the WeightedSignedGraph loader so
+    # Bitcoin Alpha's [−10, +10] trust scores arrive normalised to
+    # [−1, +1]. Other datasets degrade to ±1 floats.
+    _arc_lookup: dict[tuple[int, int], float] = {}
+    _per_arity_arc_weights: list = []
+    if use_arc_weights:
+        from signedkan_wip.src.datasets.continuous import load_continuous
+        from signedkan_wip.src.core.arc_weights import (
+            build_edge_weight_lookup,
+        )
+        _wg = load_continuous(dataset)
+        _arc_lookup = build_edge_weight_lookup(_wg)
+
     per_arity_tr, per_arity_te = [], []
     for kind, k_v, walk_len in tuple_specs:
         if kind == "walk":
@@ -441,6 +459,23 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         M_e_te = build_me(e_te)
         per_arity_tr.append((triad_v, triad_sigma, M_vt, M_e_tr))
         per_arity_te.append((triad_v, triad_sigma, M_vt, M_e_te))
+        # --- Phase 22+ arc-weight path -------------------------------
+        # Annotate this arity's tuple list with per-edge arc weights
+        # from the WeightedSignedGraph (loaded above when
+        # ``use_arc_weights=True``). The per-vertex (T, k) tensor is
+        # stashed in a parallel list returned to the caller.
+        if use_arc_weights:
+            from signedkan_wip.src.core.arc_weights import (
+                annotate_arc_weights, per_vertex_arc_weights_array,
+            )
+            annotated = annotate_arc_weights(
+                t_k, _arc_lookup, is_walk=is_walk,
+            )
+            arc_per_vertex_np = per_vertex_arc_weights_array(
+                annotated, is_walk=is_walk,
+            )
+            arc_t = torch.from_numpy(arc_per_vertex_np).to(device)
+            _per_arity_arc_weights.append(arc_t)
     arities_used = arities[:len(per_arity_tr)]
     # Cycle-batching activates the chunked-forward path
     # (`_encode_edges_batched`) which bounds peak (T, k, S, d)
@@ -481,7 +516,8 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
             grid=3, k=3, spline_kinds=[spline_kind_env]*2,
             init_scale=0.05, pool_mode="sum", jk_mode="concat",
             layer_norm_between=True, share_weights=True,
-            inner_skip="highway", outer_skip="none", use_residual=True),
+            inner_skip=("cr_highway" if use_arc_weights else "highway"),
+            outer_skip="none", use_residual=True),
         arities=arities_used,
         init_arity_logits=tuple([0.0]*len(arities_used)),
         cycle_batch_size=cycle_batch,
@@ -491,14 +527,26 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         attention_m_e=use_attention_m_e,
         attention_m_e_kind=attention_kind if use_attention_m_e else "dot",
         direct_messaging=direct_messaging)
-    model = MixedAritySignedKAN(cfg).to(device)
+    if n_branches > 1:
+        # Phase 21: N parallel mixed-arity branches with mean / sum
+        # fusion at the edge-embedding level (Bitcoin Alpha SOTA family).
+        from signedkan_wip.src.core.side_signedkan import (
+            SideMixedAritySignedKAN, SideMixedAritySignedKANConfig,
+        )
+        wrap_cfg = SideMixedAritySignedKANConfig(
+            base=cfg, n_branches=n_branches, fusion=side_fusion,
+            outer_grad_checkpoint=outer_grad_checkpoint,
+        )
+        model = SideMixedAritySignedKAN(wrap_cfg).to(device)
+    else:
+        model = MixedAritySignedKAN(cfg).to(device)
 
     # Optional Lyapunov-safe spectral entropy regulariser.
     # HSIKAN_ENTROPY_LAMBDA > 0 enables it on model.node_embed.weight.
     entropy_lambda = _train.entropy_lambda
     entropy_reg = None
     if entropy_lambda > 0:
-        from .entropy_reg import EntropyRegulariser, EntropyRegConfig
+        from signedkan_wip.src.core.entropy_reg import EntropyRegulariser, EntropyRegConfig
         entropy_reg = EntropyRegulariser(EntropyRegConfig(
             lam_0=entropy_lambda,
             target_entropy=0.5,
@@ -523,9 +571,15 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         # `model.classifier` which we use directly.
         opt = torch.optim.Adam(model.parameters(), lr=5e-2,
                                 weight_decay=0.0)
+        # Arc-weight kwarg bundle (no-op when use_arc_weights=False).
+        _arc_kwargs = (
+            {"per_arity_arc_weights": _per_arity_arc_weights}
+            if _per_arity_arc_weights else {}
+        )
         for _ in range(n_epochs):
             model.train()
-            edge_emb = model.encode_edges(per_arity_tr, query_edges=q_tr)
+            edge_emb = model.encode_edges(per_arity_tr, query_edges=q_tr,
+                                            **_arc_kwargs)
             logits = model.classifier(edge_emb).squeeze(-1)
             loss = F.binary_cross_entropy_with_logits(logits, y_tr)
             if entropy_reg is not None:
@@ -541,7 +595,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         def fwd():
             with torch.no_grad():
                 return model.classifier(model.encode_edges(
-                    per_arity_te, query_edges=q_te))
+                    per_arity_te, query_edges=q_te, **_arc_kwargs))
         with torch.no_grad():
             probs = torch.sigmoid(fwd().squeeze(-1)).cpu().numpy()
         auc = roc_auc_score(y_te, probs) if len(set(y_te)) > 1 else float("nan")
@@ -562,7 +616,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                       fwd_per_call_ms=lat,
                       n_params=int(n_params(model)))
         if emit_full_metrics:
-            from .eval_metrics_full import full_binary_metrics
+            from signedkan_wip.experiments.eval.eval_metrics_full import full_binary_metrics
             # logits = inverse-sigmoid of probs; full_binary_metrics
             # accepts is_logits=False with probs directly.
             full = full_binary_metrics(probs, y_te, is_logits=False)
@@ -574,9 +628,15 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     clf = nn.Linear(hidden * 2, 1).to(device)
     opt = torch.optim.Adam(list(model.parameters()) + list(clf.parameters()),
                             lr=5e-3)
+    # Arc-weight kwarg bundle (no-op when use_arc_weights=False).
+    _arc_kwargs2 = (
+        {"per_arity_arc_weights": _per_arity_arc_weights}
+        if _per_arity_arc_weights else {}
+    )
     for _ in range(n_epochs):
         model.train(); clf.train()
-        edge_emb = model.encode_edges(per_arity_tr, query_edges=q_tr)
+        edge_emb = model.encode_edges(per_arity_tr, query_edges=q_tr,
+                                        **_arc_kwargs2)
         logits = clf(edge_emb).squeeze(-1)
         loss = F.binary_cross_entropy_with_logits(logits, y_tr,
                                                     pos_weight=pw)
@@ -592,7 +652,8 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     def fwd():
         with torch.no_grad():
             return clf(model.encode_edges(per_arity_te,
-                                            query_edges=q_te))
+                                            query_edges=q_te,
+                                            **_arc_kwargs2))
     with torch.no_grad():
         probs = torch.sigmoid(fwd().squeeze(-1)).cpu().numpy()
     auc = roc_auc_score(y_te, probs) if len(set(y_te)) > 1 else float("nan")
@@ -613,7 +674,7 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
                   fwd_per_call_ms=lat,
                   n_params=int(n_params(model, clf)))
     if emit_full_metrics:
-        from .eval_metrics_full import full_binary_metrics
+        from signedkan_wip.experiments.eval.eval_metrics_full import full_binary_metrics
         full = full_binary_metrics(probs, y_te, is_logits=False)
         out.update({f"test_{k}": v for k, v in full.items()})
     return out
@@ -756,16 +817,16 @@ def cell_pose(arity: int, hidden: int, n_epochs: int, device):
 # ----- Scene graph (k=2 fallback) -----
 
 def cell_scene(hidden: int, n_epochs: int, device):
-    from .adapters.visual_genome import (synth_dataset,
+    from signedkan_wip.src.adapters.visual_genome import (synth_dataset,
                                             edge_features_from_bboxes)
-    from .cycle_cache import cached_construct_2
-    from .datasets import SignedGraph
-    from .hyperedges import construct  # noqa: F401  (compat)
-    from .n_tuples import construct_2  # noqa: F401  (cached_construct_2 is live)
-    from .mixed_arity_signedkan import (MixedAritySignedKAN,
+    from signedkan_wip.src.cycle_cache import cached_construct_2
+    from signedkan_wip.src.datasets import SignedGraph
+    from signedkan_wip.src.core.hyperedges import construct  # noqa: F401  (compat)
+    from signedkan_wip.src.core.n_tuples import construct_2  # noqa: F401  (cached_construct_2 is live)
+    from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                           MixedAritySignedKANConfig,
                                           build_edge_to_tuples)
-    from .signedkan import (MultiLayerSignedKANConfig,
+    from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                              build_vertex_triad_incidence)
     from scipy.sparse import csr_matrix as _csr
     rng = random.Random(0); np.random.seed(0); torch.manual_seed(0)
@@ -902,6 +963,34 @@ def main():
     ap.add_argument("--max-k4", type=int, default=200000,
                     help="Slashdot mixed-arity k=4 cap")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--n-branches", type=int, default=1,
+                    help="Phase 21: N parallel mixed-arity branches "
+                          "(SideMixedAritySignedKAN). 1 = single bare "
+                          "MixedAritySignedKAN (legacy).")
+    ap.add_argument("--side-fusion", default="mean",
+                    choices=["mean", "sum"],
+                    help="Fusion mode across branches (Phase 21 only).")
+    ap.add_argument("--use-arc-weights", action="store_true",
+                    help="Phase 22+ arc-weight CR-highway path: "
+                          "load the WeightedSignedGraph (Bitcoin "
+                          "Alpha/OTC trust scores normalised to "
+                          "[−1, +1]), annotate cycles/walks with "
+                          "per-edge arc weights, and switch the "
+                          "inner highway gate to the CR-parameterised "
+                          "mode (inner_skip='cr_highway'). At init "
+                          "the new mode is identical to the current "
+                          "highway gate; gradients learn to use arc "
+                          "weights only if they help.")
+    ap.add_argument("--outer-grad-checkpoint", action="store_true",
+                    help="Phase 22 fix: wrap the full multi-branch "
+                          "encode_edges in a single torch.utils."
+                          "checkpoint.checkpoint. Peak backward GPU "
+                          "memory collapses from N × branch-forward "
+                          "to ~1 × branch-forward (branches run "
+                          "sequentially during the recompute). "
+                          "Incompatible with HSIKAN_ATTN_ENTROPY_"
+                          "LAMBDA>0 — collection is skipped when "
+                          "this is on.")
     ap.add_argument("--save-checkpoint", default=None,
                     help="Path to write a demo checkpoint (state_dict + cfg + "
                          "precomputed test-set inference bundle). Loadable by "
@@ -931,7 +1020,11 @@ def main():
                                   seed=args.seed,
                                   save_checkpoint_path=args.save_checkpoint,
                                   shuffle_train_signs=args.shuffle_train_signs,
-                                  emit_full_metrics=args.emit_full_metrics)
+                                  emit_full_metrics=args.emit_full_metrics,
+                                  n_branches=args.n_branches,
+                                  side_fusion=args.side_fusion,
+                                  outer_grad_checkpoint=args.outer_grad_checkpoint,
+                                  use_arc_weights=args.use_arc_weights)
         if out is not None:
             out["seed"] = args.seed
     elif args.dataset.startswith("kinematic_k"):

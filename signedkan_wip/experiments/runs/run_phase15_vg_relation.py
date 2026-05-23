@@ -33,13 +33,13 @@ from signedkan_wip.src.adapters.visual_genome import (
     SIGN_BY_RELATION, edge_features_from_bboxes, synth_dataset,
 )
 from signedkan_wip.src.datasets import SignedGraph
-from signedkan_wip.src.hyperedges import construct
+from signedkan_wip.src.core.hyperedges import construct
 from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                       MixedAritySignedKANConfig,
                                       subsample_tuples,
                                       build_edge_to_tuples)
-from signedkan_wip.src.n_tuples import construct_k
-from signedkan_wip.src.signedkan import (MultiLayerSignedKANConfig,
+from signedkan_wip.src.core.n_tuples import construct_k
+from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 
 

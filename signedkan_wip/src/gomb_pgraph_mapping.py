@@ -53,7 +53,7 @@ def smoke_argv_from_knobs(
     base: dict[str, Any],
     structure: dict[str, Any],
 ) -> list[str]:
-    """Build ``python -m signedkan_wip.src.run_gomb_smoke`` argv."""
+    """Build ``python -m signedkan_wip.experiments.runs.run_gomb_smoke`` argv."""
     topk = int(structure.get("topk", base.get("gomb_topk", 48)))
     abb = str(structure.get("cycle_abb_mode", base.get("gomb_cycle_abb_mode", "none")))
     n_epochs = int(structure.get("n_epochs", base.get("n_epochs", 4)))
@@ -74,7 +74,7 @@ def smoke_argv_from_knobs(
     cmd: list[str] = [
         py,
         "-m",
-        "signedkan_wip.src.run_gomb_smoke",
+        "signedkan_wip.experiments.runs.run_gomb_smoke",
         "--dataset",
         dataset,
         "--edge-split",

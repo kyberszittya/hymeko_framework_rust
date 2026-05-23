@@ -9,7 +9,7 @@
 # See memory `feedback_ulimit_vs_cuda`.
 #
 # This script:
-#   - queues behind any in-flight signedkan_wip.src.run_optuna_search or
+#   - queues behind any in-flight signedkan_wip.experiments.runs.run_optuna_search or
 #     run_final_cell process (Bitcoin 10-seed, future Slashdot Optuna);
 #   - runs train_circles_ricci for seeds 1, 2, 3 at n=5000 / epochs=50;
 #   - uses systemd-run --user -p MemoryMax=16G (cgroup v2 RSS cap), NOT
@@ -54,7 +54,11 @@ run_seed() {
   t0=$(date +%s)
   echo "[$(date -Is)] START seed=$seed jsonl=$jsonl_out" | tee -a "$MASTER"
 
+  # Defensive opt-out from the 2026-05-16-evening defaults flip;
+  # this May-13 orchestrator measured the original protocol without
+  # warm-start or cosine LR. Preserving the historical numbers.
   local cmd=(python -m signedkan_wip.src.vision.train_circles_ricci
+             --no-warm-start --schedule constant --warmup-epochs 0
              --n-images 5000 --epochs 50 --lr 0.003
              --seed "$seed" --jsonl-out "$jsonl_out")
 

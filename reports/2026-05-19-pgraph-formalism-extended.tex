@@ -1,0 +1,713 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts,mathtools}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[hidelinks,colorlinks=true,
+            urlcolor=blue!50!black,linkcolor=blue!50!black]{hyperref}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{tikz-cd}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,calc,
+                decorations.pathreplacing,backgrounds}
+
+\definecolor{matclr}{RGB}{40,103,160}
+\definecolor{unitclr}{RGB}{180,70,40}
+\definecolor{rawclr}{RGB}{50,140,80}
+\definecolor{prodclr}{RGB}{160,60,140}
+\definecolor{kept}{RGB}{40,140,80}
+\definecolor{cut}{RGB}{170,60,60}
+\definecolor{accent}{RGB}{200,120,30}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{axiom}{Axiom}[section]
+\renewcommand{\theaxiom}{A\arabic{axiom}}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true, columns=fullflexible, keepspaces=true,
+  showstringspaces=false, frame=single, rulecolor=\color{gray!30},
+}
+
+\newcommand{\HyMeKo}{\textsc{HyMeKo}}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\axiomref}[1]{\textbf{A#1}}
+\newcommand{\msg}{\textsf{MSG}}
+\newcommand{\ssg}{\textsf{SSG}}
+\newcommand{\abb}{\textsf{ABB}}
+\newcommand{\msgop}{\mathrm{MSG}}
+\newcommand{\closer}[1]{C_R(#1)}
+\newcommand{\Real}{\mathbb{R}}
+\newcommand{\Realp}{\Real_{\geq 0}}
+\newcommand{\inset}[1]{\mathrm{in}(#1)}
+\newcommand{\outset}[1]{\mathrm{out}(#1)}
+\newcommand{\bw}{\boldsymbol{w}}
+\newcommand{\bc}{\boldsymbol{c}}
+
+\setlist[itemize]{leftmargin=1.4em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=2pt,topsep=3pt}
+
+\title{Extending the P-graph Formalism\\[4pt]
+       \large\normalfont
+       multi-objective $\abb$, signed-cycle correspondence,\\
+       and open generalisations}
+\author{For the $\HyMeKo${} project,\\
+        in dialogue with the Friedler P-graph community}
+\date{2026-05-19}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}\small
+The Friedler P-graph formalism (Friedler, Tarj\'an, Huang, Fan 1992)
+solves the cost-minimising chemical-process-synthesis problem via
+two structural bounds (inclusion and reachability) over a bipartite
+material/operating-unit hypergraph. We give a self-contained
+restatement that exposes the abstract structure independent of the
+chemical-process domain, then extend the formalism along three axes:
+(i) multi-objective $\abb$ via positive-weighted scalarisation, with
+an admissibility-preservation theorem; (ii) a structural
+correspondence between Friedler $\abb$ and the signed-cycle
+top-$K$ enumeration $\abb$ developed in this project; and
+(iii) four open generalisations --- hierarchical, time-indexed,
+stochastic, and categorical --- with axiom sketches and the natural
+next theorems for each. Every result that has shipping code is
+called out; everything else is sketched at the formal level
+sufficient for the next iteration to be written.
+\end{abstract}
+
+\tableofcontents
+
+\vspace{6pt}\hrule\vspace{6pt}
+
+% ===================================================================
+\section{Preliminaries and notation}
+\label{sec:prelim}
+
+\begin{definition}[P-graph]
+\label{def:pgraph}
+A \emph{P-graph} is a 6-tuple
+$
+\mathcal{P} \;=\; (M,\, O,\, \inset{\cdot},\, \outset{\cdot},\, R,\, P)
+$
+where:
+\begin{itemize}
+\item $M$ is a finite set of \emph{materials};
+\item $O$ is a finite set of \emph{operating units}, disjoint from $M$;
+\item $\inset{\cdot} : O \to 2^M$ assigns to each unit its
+      \emph{input materials} (consumed);
+\item $\outset{\cdot} : O \to 2^M$ assigns to each unit its
+      \emph{output materials} (produced);
+\item $R \subseteq M$ is the \emph{raw-material} set (feedstocks);
+\item $P \subseteq M$ is the \emph{product-demand} set
+      (required outputs).
+\end{itemize}
+The directed bipartite incidence graph is
+$
+E_{\text{dir}} \;=\;
+\{ (m, u) \;:\; u \in O,\; m \in \inset{u}\} \;\cup\;
+\{ (u, m) \;:\; u \in O,\; m \in \outset{u}\}.
+$
+\end{definition}
+
+\begin{definition}[Producibility closure]
+\label{def:closure}
+Given $O' \subseteq O$, the \emph{producibility closure} of the raw
+set under $O'$ is the least fixed point
+\[
+\closer{O'} \;=\; \mathrm{lfp}\,\Bigl[\,X \;\mapsto\; R \,\cup\,
+                \{\,m \in M \;:\; \exists u \in O',\; \inset{u} \subseteq X,\; m \in \outset{u}\,\}\,\Bigr].
+\]
+Operationally, $\closer{O'}$ is built by iteratively adding the
+outputs of every unit whose inputs are already producible from $R$.
+The iteration converges in $O(|O|)$ rounds.
+\end{definition}
+
+\begin{definition}[Feasibility]
+\label{def:feasible}
+A subset $O' \subseteq O$ is a \emph{solution structure} if:
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{Input consistency:} for every $u \in O'$,
+      $\inset{u} \subseteq \closer{O'}$.
+\item \textbf{Demand:} $P \subseteq \closer{O'}$.
+\item \textbf{Strict no-excess (optional):} every produced material
+      not in $R \cup P$ is consumed by some $u \in O'$.
+\end{enumerate}
+The set of all solution structures is denoted $\mathfrak{S}(\mathcal{P})$.
+\end{definition}
+
+\begin{definition}[Cost interface]
+\label{def:cost}
+A \emph{cost interface} on $\mathcal{P}$ is a non-negative function
+$c : O \to \Realp$. The \emph{total cost} of $O' \subseteq O$ is
+$
+\mathrm{tc}_c(O') = \sum_{u \in O'} c(u).
+$
+The \emph{cost-minimising synthesis problem} is
+\begin{equation}
+\label{eq:scalar-objective}
+\min_{O' \in \mathfrak{S}(\mathcal{P})}\; \mathrm{tc}_c(O').
+\end{equation}
+\end{definition}
+
+% ===================================================================
+\section{The classical Friedler axioms}
+\label{sec:classical}
+
+We restate the five axioms with explicit logical content; the
+1992 paper's prose is slightly compressed.
+
+\begin{axiom}[Product-membership]
+\label{ax:product}
+Every required product $p \in P$ is a material:
+$P \subseteq M$.
+\end{axiom}
+
+\begin{axiom}[Raw-reachability]
+\label{ax:raw}
+Every material in $M$ is either raw or producible by some unit
+chain from raws:
+$M \subseteq \closer{O}.$
+\end{axiom}
+
+\begin{axiom}[Unit-catalogue closure]
+\label{ax:unit}
+Every $u \in O$ has $\inset{u} \cup \outset{u} \subseteq M$ and
+$\inset{u} \cap \outset{u} = \emptyset$.
+\end{axiom}
+
+\begin{axiom}[Connectedness]
+\label{ax:conn}
+For every $u \in O$, both $|\inset{u}| \geq 1$ and
+$|\outset{u}| \geq 1$ (no orphan units).
+\end{axiom}
+
+\begin{axiom}[No-cycle on materials]
+\label{ax:acycle}
+The directed bipartite incidence graph $E_{\text{dir}}$ has no
+directed cycle that visits a material twice. (Equivalently,
+$E_{\text{dir}}$ is a DAG when contracted on materials.)
+\end{axiom}
+
+\begin{remark}
+\axiomref{1} and \axiomref{2} are well-formedness conditions on
+the problem statement; \axiomref{3}--\axiomref{5} are
+\emph{structural feasibility} preconditions that any P-graph
+admitted to $\msg$ must satisfy. Stage P-mo's lowering enforces
+\axiomref{3}--\axiomref{4} at parse time; \axiomref{5} is enforced
+by the bipartite-schema invariant in $\HyMeKo$.
+\end{remark}
+
+% ===================================================================
+\section{MSG, SSG, ABB as operators on the subset lattice}
+\label{sec:operators}
+
+\begin{definition}[Maximal structure $\msgop(\mathcal{P})$]
+\label{def:msg}
+The \emph{maximal structure} is
+$
+\msgop(\mathcal{P}) \;=\;
+\bigcup_{O' \in \mathfrak{S}(\mathcal{P})} O'.
+$
+Equivalently (Friedler 1992), $\msgop$ is the largest $O'$ that
+survives the fixed-point iteration of forward-feasibility
+(drop $u$ whose inputs are not in $\closer{O'}$) and
+backward-utility (drop $u$ whose outputs are not in the union of
+inputs of remaining units $\cup P$) trims.
+\end{definition}
+
+\begin{definition}[$\ssg$]
+$\ssg(\mathcal{P})$ enumerates every $O' \subseteq \msgop(\mathcal{P})$
+that satisfies feasibility (Def.~\ref{def:feasible}). For
+$|\msgop(\mathcal{P})| > 30$, $\ssg$ is impractical and $\abb$
+is the right tool.
+\end{definition}
+
+\begin{definition}[$\abb$]
+$\abb(\mathcal{P}, c)$ returns
+$\arg\min_{O' \in \mathfrak{S}(\mathcal{P})} \mathrm{tc}_c(O')$
+via depth-first include/exclude branching on a fixed ordering of
+$\msgop(\mathcal{P})$, with two bounds:
+
+\begin{enumerate}[label=\textbf{B\arabic*}]
+\item \label{B:incl}
+\textbf{Inclusion bound.} Let $s.\mathrm{cost}$ be the partial
+sum at the current node and $s.\mathrm{best}$ the cost of the
+current incumbent. If
+$s.\mathrm{cost} \geq s.\mathrm{best}$, prune.
+\item \label{B:reach}
+\textbf{Reachability bound.} Let
+$\widehat{O} = \mathrm{included} \cup \mathrm{undecided}$.
+If $\closer{\widehat{O}} \not\supseteq P$, prune.
+\end{enumerate}
+
+Branching is include-before-exclude so the inclusion bound has
+an incumbent to compare against as early as possible.
+\end{definition}
+
+\begin{proposition}[$\abb$ correctness]
+\label{prop:abb-correct}
+If both \textbf{\ref{B:incl}} and \textbf{\ref{B:reach}} are admissible
+(prune only nodes whose subtree cannot improve the incumbent), then
+$\abb(\mathcal{P}, c)$ returns an optimal feasible solution
+structure, or reports infeasibility if $\mathfrak{S}(\mathcal{P}) = \emptyset$.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+\textbf{\ref{B:incl}} is admissible because every inclusion adds
+a non-negative cost, so the partial cost lower-bounds the
+descendant's full cost. \textbf{\ref{B:reach}} is admissible
+because $\closer{\widehat{O}} \supseteq \closer{O'}$ for every
+$O' \subseteq \widehat{O}$ (monotonicity of $C_R$ in its argument),
+so if $\closer{\widehat{O}} \not\supseteq P$, no descendant subset
+can be feasible. Since both bounds preserve every optimum, the
+DFS visits at least one optimum and returns the minimum.
+\end{proof}
+
+% ===================================================================
+\section{Multi-objective extension: positive-weighted scalarisation}
+\label{sec:multi-objective}
+
+We now lift the cost interface from a scalar function
+$c : O \to \Realp$ to a $D$-dimensional vector function
+$\bc : O \to \Realp^D$ across named dimensions
+(e.g.\ CAPEX, OPEX, CO$_2$, H$_2$O).
+
+\begin{definition}[Multi-objective cost interface]
+\label{def:multi-cost}
+A \emph{$D$-dimensional cost interface} on $\mathcal{P}$ is a
+function $\bc : O \to \Realp^D$, written
+$\bc(u) = (c_1(u), \ldots, c_D(u))$. Given a user-supplied
+\emph{weight vector} $\bw \in \Realp^D$, the
+\emph{weighted-sum cost} of $u \in O$ is
+$
+c_{\bw}(u) \;=\; \langle \bw, \bc(u)\rangle
+\;=\;\sum_{d=1}^{D} w_d \cdot c_d(u),
+$
+and the weighted total cost of $O' \subseteq O$ is
+$
+\mathrm{tc}_{\bw}(O') \;=\; \sum_{u \in O'} c_{\bw}(u).
+$
+\end{definition}
+
+\begin{theorem}[Admissibility preservation under positive-weighted scalarisation]
+\label{thm:admiss}
+For every $\bw \in \Realp^D$ and every multi-objective cost
+interface $\bc : O \to \Realp^D$, the $\abb$ inclusion bound
+\textbf{\ref{B:incl}} restated as
+\[
+\text{prune when } \sum_{u \in \mathrm{included}} c_{\bw}(u)
+\;\geq\; s.\mathrm{best}_{\bw}
+\]
+is admissible, and Proposition~\ref{prop:abb-correct} extends:
+$\abb(\mathcal{P}, \bc, \bw)$ returns
+$\arg\min_{O' \in \mathfrak{S}(\mathcal{P})} \mathrm{tc}_{\bw}(O')$.
+\end{theorem}
+
+\begin{proof}
+Admissibility of \textbf{\ref{B:incl}} requires that the partial
+weighted cost be a lower bound on every descendant's full weighted
+cost. Since $w_d \geq 0$ for every $d$ and $c_d(u) \geq 0$ for every
+$d, u$, every inclusion-step term
+$c_{\bw}(u) = \sum_d w_d c_d(u)$ is non-negative. The partial sum
+is therefore monotone-non-decreasing along the include-edge of the
+search tree, so the partial weighted cost lower-bounds the
+descendant's full weighted cost. The reachability bound
+\textbf{\ref{B:reach}} is structural and does not depend on the
+cost interface; it is unaffected. The rest of
+Prop.~\ref{prop:abb-correct} applies verbatim.
+\end{proof}
+
+\begin{remark}[Why non-negativity matters]
+Theorem~\ref{thm:admiss} fails for general $\bw \in \Real^D$. If
+some $w_d < 0$, including a unit can decrease the partial cost,
+and the inclusion bound no longer holds. A \emph{benefit term}
+(negative weight, e.g.\ revenue) can be made admissible by
+treating it separately --- subtract the maximum possible benefit
+of the remaining subtree from the bound, see Section~\ref{sec:open}.
+\end{remark}
+
+\begin{corollary}[Implementation status]
+\label{cor:impl}
+The reference implementation in
+\code{hymeko\_pgraph::abb} (commit Stage P-mo, 2026-05-19)
+realises Theorem~\ref{thm:admiss} verbatim. The new
+$\abb$Options field
+\code{cost\_weights: Option<Vec<f64>>} dispatches between the
+scalar path (Friedler 1992, byte-identical) and the
+weighted-sum path. The methanol-synthesis worked example
+(\code{data/pgraph/methanol\_synthesis.hymeko}) demonstrates
+four structurally distinct optima from five weight regimes,
+including a non-obvious hybrid topology that no single-criterion
+regime selects.
+\end{corollary}
+
+% ===================================================================
+\section{The signed-cycle correspondence}
+\label{sec:cycle-corr}
+
+Beyond chemical-process synthesis, this project has independently
+applied $\abb$-style branch-and-bound to a structurally different
+problem: top-$K$ enumeration of signed cycles in a signed graph
+for graph-neural-network training. We now show these two
+$\abb$ instances are not analogues but \emph{the same abstract algorithm}.
+
+\begin{definition}[Top-$K$ signed-cycle enumeration]
+\label{def:cycle-abb}
+Given a signed graph $G = (V, E, \sigma : E \to \{-1, +1\})$, a
+cycle length $k$, a target heap size $K$, and a per-cycle score
+function $s : \mathrm{Cyc}_k(G) \to \Real$, the
+\emph{top-$K$ enumeration problem} returns the $K$ closed
+cycles of length $k$ with the largest scores. ABB uses a
+\emph{bounded scorer trait} $(s, \overline{s})$, where
+$\overline{s}(n_{\text{neg}}, k_{\text{rem}}, k)$ is an upper bound
+on the score of any closed extension of a partial path with
+$n_{\text{neg}}$ negative edges so far and $k_{\text{rem}}$
+remaining edges to close, and prunes when
+$\overline{s} \leq \mathrm{heap.peek\_min}$.
+\end{definition}
+
+\begin{theorem}[Cycle-PSE correspondence]
+\label{thm:cycle-pse}
+The cycle-enumeration $\abb$ (Def.~\ref{def:cycle-abb}) and the
+P-graph $\abb$ (Section~\ref{sec:operators}) are both instances of
+the following abstract algorithm. Let
+$\mathcal{T}$ be a finite search tree with leaves
+$\mathcal{L}$; let $\mathrm{obj} : \mathcal{L} \to \Real$ be an
+objective; let
+$\overline{\mathrm{obj}} : \mathrm{nodes}(\mathcal{T}) \to \Real$
+be an admissible upper bound (or lower bound for minimisation) on
+the optimum over each subtree. Then \textbf{Algorithm~A1}
+\textsf{[DFS-with-bound]}
+visits at least one optimum and returns it in time
+$O(|\mathcal{T}_{\overline{\mathrm{obj}}\text{-feasible}}|)$, where
+$|\mathcal{T}_{\overline{\mathrm{obj}}\text{-feasible}}|$ counts the
+nodes whose bound does not allow pruning.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+In the cycle case, $\mathcal{L}$ is the set of all closed cycles
+of length $k$ from a chosen start vertex, $\mathrm{obj}$ is the
+per-cycle score, and the bound is the BoundedScorer's
+\code{upper\_bound} method.
+In the PSE case, $\mathcal{L}$ is the set of feasible solution
+structures, $\mathrm{obj}$ is the (possibly weighted) cost, and the
+bound is the partial-cost-plus-zero-future = partial-cost itself
+(plus the structural reachability gate). Both fit Algorithm~A1
+with $\mathcal{T}$ being a binary include/exclude tree (PSE) or a
+$|V|$-way edge-extend tree (cycles).
+\end{proof}
+
+\begin{remark}
+The shared abstract algorithm explains why the implementation
+patterns parallel each other so closely. The \HyMeKo{} codebase
+duplicates structural code across the two $\abb$ instances; a
+plausible refactor (not in scope here) would extract a
+\code{trait BoundedSearch} that both inhabit.
+\end{remark}
+
+% ===================================================================
+\section{Open generalisations}
+\label{sec:open}
+
+We sketch four extensions, each with the natural next axiom or
+theorem and a pointer to the next implementation step.
+
+\subsection{Pareto-front enumeration}
+\label{ssec:pareto}
+
+For a multi-objective P-graph $(\mathcal{P}, \bc, D)$, the
+\emph{Pareto front} $\mathcal{F} \subseteq \mathfrak{S}(\mathcal{P})$ is the
+set of feasible structures $O'$ such that no other feasible
+$O''$ satisfies
+$c_d(O'') \leq c_d(O')$ for all $d$
+with strict inequality for at least one. Theorem~\ref{thm:admiss}
+gives \emph{one} Pareto-optimal point per $\bw$; sweeping $\bw$
+over the unit simplex enumerates the whole front.
+
+\begin{proposition}[Simplex-grid completeness for $D \leq 3$]
+\label{prop:simplex}
+For $D \leq 3$ and bounded integer cost vectors, the Pareto front
+$\mathcal{F}$ is finite, and a simplex-grid sweep of $\bw$ at
+resolution $1/N$ recovers every Pareto-optimal structure for
+sufficiently large $N$ (depending on the gaps between adjacent
+Pareto points).
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+The Pareto front of finitely many $\Realp^D$ points is itself
+finite. For each Pareto point $O^\star$, the cone of weights
+$\bw$ for which $O^\star$ is the weighted optimum is open and
+non-empty (otherwise $O^\star$ is dominated). A fine-enough simplex
+grid intersects every such cone.
+\end{proof}
+
+\textbf{Implementation step:} $\sim 100$ LOC, builds on the existing
+SSG enumeration loop. For $D \geq 4$ the simplex grid is
+exponential in $D$ and sampling becomes more efficient than grid;
+adaptive ($\epsilon$-constraint or weighted-$L^2$-Tchebycheff)
+methods take over.
+
+\subsection{Hierarchical P-graphs}
+
+A natural generalisation models each operating unit as itself a
+P-graph (a sub-plant). Formally:
+
+\begin{definition}[Hierarchical P-graph]
+\label{def:hier}
+A \emph{hierarchical P-graph} is a tuple
+$\mathcal{H} = (M, O, \inset{\cdot}, \outset{\cdot}, R, P, \mathrm{sub})$
+where $\mathrm{sub}: O \to \mathfrak{P}_{\text{hier}}$ is a
+(possibly partial) function assigning to each unit a sub-plant
+(itself a hierarchical P-graph). The flat unrolling of $\mathcal{H}$
+substitutes each $u \in O$ with $\mathrm{sub}(u)$, plumbing the
+boundary materials through.
+\end{definition}
+
+\begin{proposition}[Hierarchical $\abb$]
+\label{prop:hier-abb}
+$\abb$ on a hierarchical P-graph $\mathcal{H}$ reduces to nested
+$\abb$ calls: solve each sub-plant for the cost it contributes to
+its parent unit, then run parent-level $\abb$ with the cached
+sub-plant costs. The reachability bound becomes a
+\emph{nested closure}: a parent unit is reachable iff its
+sub-plant has a feasible structure under the parent's input
+materials.
+\end{proposition}
+
+\textbf{Implementation step:} sub-plant caching plus a recursive
+$\abb$ entry. The bound for the nested closure requires care;
+the natural extension is to compute the sub-plant's minimum cost
+over its input/output interface as the parent-level cost.
+
+\subsection{Time-indexed P-graphs}
+
+Real plants operate in time. We add an explicit time index.
+
+\begin{definition}[Time-indexed P-graph]
+\label{def:time}
+A \emph{time-indexed P-graph} over a finite horizon
+$T = \{0, 1, \ldots, H\}$ is a tuple
+$(\mathcal{P}, \tau_{\mathrm{in}}, \tau_{\mathrm{out}}, S)$
+where:
+\begin{itemize}
+\item $\tau_{\mathrm{in}}, \tau_{\mathrm{out}} : O \to \mathbb{Z}_{\geq 0}$
+      are per-unit consumption and production latencies;
+\item $S \subseteq M$ is a set of \emph{storable} materials
+      (others must be consumed in the same time-step as produced).
+\end{itemize}
+A \emph{time-indexed solution structure} is a function
+$\Sigma : T \to 2^O$ assigning to each time-step the set of units
+active at that step, subject to a time-extended feasibility:
+inputs at time $t$ must be available from raws or from outputs
+produced no later than $t - \tau_{\mathrm{in}}(u)$, and outputs
+of non-storable materials must be consumed at exactly
+$t + \tau_{\mathrm{out}}(u)$.
+\end{definition}
+
+\begin{axiom}[Time-monotonicity / A6]
+\label{ax:time}
+For every storable material $m \in S$ and every time-step $t$,
+the available inventory of $m$ at $t$ is a non-decreasing function
+of the production schedule up to $t$. (Production is irreversible;
+no negative inventory.)
+\end{axiom}
+
+\textbf{Implementation step:} the rolling-horizon $\abb$ takes
+$\Sigma : T \to 2^O$ as the lattice, with the reachability bound
+generalised to per-time-step closure under inventory dynamics.
+This is non-trivial work; the natural prototype is $H \leq 24$
+hourly steps on the methanol example.
+
+\subsection{Stochastic P-graphs}
+
+Real plants face uncertain feedstock costs, demand, and
+equipment availability. We treat the cost interface as random.
+
+\begin{definition}[Stochastic P-graph]
+\label{def:stoch}
+A \emph{stochastic P-graph} is a tuple
+$(\mathcal{P}, \mathbb{P})$ where $\mathbb{P}$ is a probability
+measure on a sample space $\Omega$ and the cost interface is a
+random function
+$c : O \times \Omega \to \Realp$. The decision variable is the
+structure $O'$; the realisation $\omega \in \Omega$ is drawn
+\emph{after} the decision. The \emph{risk-neutral} objective is
+$
+\min_{O'} \mathbb{E}_\omega[\mathrm{tc}_c(O', \omega)].
+$
+The \emph{conditional-value-at-risk} (CVaR) objective at level
+$\alpha \in (0, 1]$ is
+$
+\min_{O'} \mathrm{CVaR}_\alpha[\mathrm{tc}_c(O', \omega)].
+$
+\end{definition}
+
+\begin{axiom}[Risk-coherence / A7]
+\label{ax:risk}
+The risk functional $\rho : L^1(\Omega, \mathbb{P}) \to \Real$
+employed in the stochastic objective is \emph{coherent}: monotone,
+sub-additive, positively homogeneous, and translation-invariant
+(Artzner et al.\ 1999). $\mathbb{E}$ and $\mathrm{CVaR}_\alpha$ both
+satisfy A7.
+\end{axiom}
+
+\begin{proposition}[Sample-average approximation]
+\label{prop:saa}
+For coherent $\rho$ and a sample $\omega_1, \ldots, \omega_N$ drawn
+i.i.d.\ from $\mathbb{P}$, the sample-average $\abb$
+\[
+\min_{O'} \rho\bigl(\{\mathrm{tc}_c(O', \omega_n)\}_{n=1}^N\bigr)
+\]
+satisfies an admissibility-preservation theorem analogous to
+Theorem~\ref{thm:admiss}, because $\rho$ being monotone and
+translation-invariant preserves the cost-monotonicity of the
+inclusion bound.
+\end{proposition}
+
+\textbf{Implementation step:} per-realisation cost vectors as
+multi-objective cost vectors of size $D = N$; the weight vector
+encodes the risk functional. CVaR$_\alpha$ corresponds to taking
+the largest $\lceil N \alpha\rceil$ realisations' average; this can
+be re-cast as a weighted-sum with a structural weight constraint,
+fitting Theorem~\ref{thm:admiss} after a permutation step.
+
+\subsection{Categorical formulation}
+
+The bipartite structure of a P-graph and the compositional nature
+of nested sub-plants suggest a categorical view. Sketch only:
+
+\begin{definition}[$\mathbf{PGraph}$]
+Let $\mathbf{PGraph}$ be the category whose objects are finite
+sets of materials (with raw/product designations) and whose
+morphisms $\phi : M_R \to M_P$ are P-graphs from $R = M_R$ to
+$P = M_P$. Composition $\phi \circ \psi$ glues two P-graphs by
+identifying the product set of $\psi$ with the raw set of $\phi$.
+The identity morphism is the empty P-graph
+($O = \emptyset$, $R = P$).
+\end{definition}
+
+\begin{proposition}[$\mathbf{PGraph}$ is symmetric monoidal]
+The disjoint union of P-graphs equips $\mathbf{PGraph}$ with a
+symmetric monoidal structure
+$\otimes : \mathbf{PGraph} \times \mathbf{PGraph} \to \mathbf{PGraph}$,
+with unit $I = (\emptyset, \emptyset, \emptyset, \emptyset)$. Recycle
+loops correspond to the trace operator
+$\mathrm{Tr}^X : \mathbf{PGraph}(A \otimes X, B \otimes X) \to \mathbf{PGraph}(A, B)$,
+making $\mathbf{PGraph}$ a traced symmetric monoidal category.
+\end{proposition}
+
+\begin{remark}
+The categorical view connects P-graphs to other formalisms in the
+SMC ecosystem (Petri nets, signal-flow graphs, string diagrams).
+The trace structure formalises recycle loops as morphism feedback;
+the multi-objective cost functor sends $\mathbf{PGraph}$ to
+$\mathbf{Lat}^D$ (the category of $D$-component lattices), with
+$\abb$ as the value-recovery functor's adjoint. This connection
+is exploratory and not yet implemented.
+\end{remark}
+
+\textbf{Implementation step:} none in the current codebase. The
+categorical framing is a paper-only generalisation that would
+inform a future redesign of the IR shared between $\abb$ instances.
+
+% ===================================================================
+\section{Implementation status and roadmap}
+\label{sec:status}
+
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+Extension & Section & Status & Estimated LOC \\
+\midrule
+Scalar $\abb$ (Friedler 1992) & \ref{sec:operators} & shipped & --- \\
+Multi-objective $\abb$ (Thm.~\ref{thm:admiss})       & \ref{sec:multi-objective} & shipped Stage P-mo 2026-05-19 & $\sim 120$ \\
+Cycle-PSE correspondence (Thm.~\ref{thm:cycle-pse})  & \ref{sec:cycle-corr}      & shipped (both ends) & --- \\
+Pareto-front enumeration (Prop.~\ref{prop:simplex})  & \ref{ssec:pareto}         & queued & $\sim 100$ \\
+Hierarchical P-graphs (Prop.~\ref{prop:hier-abb})    & \ref{sec:open}            & queued & $\sim 300$ \\
+Time-indexed P-graphs (\axiomref{6})                 & \ref{sec:open}            & sketched & $\sim 800$ \\
+Stochastic P-graphs (\axiomref{7}, Prop.~\ref{prop:saa}) & \ref{sec:open}        & sketched & $\sim 400$ \\
+Categorical $\mathbf{PGraph}$                        & \ref{sec:open}            & exploratory & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{What the formalism is actually used for in this project.}
+\begin{enumerate}
+\item Process synthesis on the canonical HDA example (test fixture).
+\item Multi-objective methanol synthesis (\emph{this report's worked example}).
+\item Top-$K$ signed-cycle enumeration in HSiKAN (graph-neural-net
+      training); shares the abstract Algorithm~A1.
+\item Graph-property-conditional axiom selection for signed-link
+      prediction; the regime-conditional rule is structurally an
+      $\abb$-style bound choice (which axiom to enforce given the
+      graph's balance ratio).
+\end{enumerate}
+
+% ===================================================================
+\section{Bottom line}
+\label{sec:bottom}
+
+The Friedler 1992 P-graph formalism is robust enough to bear
+serious extensions. We've shipped two: the multi-objective ABB
+with admissibility preservation (Theorem~\ref{thm:admiss}) and the
+structural correspondence to signed-cycle enumeration
+(Theorem~\ref{thm:cycle-pse}). Four further generalisations
+(Pareto-front, hierarchical, time-indexed, stochastic) are
+formally sketched with explicit axioms or theorems and a clear
+implementation step for each. A categorical formulation hints at
+a deeper unification but is exploratory.
+
+The formalism's value for the PSE community goes beyond its
+original chemical-process-synthesis domain: any combinatorial
+decision problem where (a) the search space is the subset lattice
+of a finite catalogue, (b) feasibility is closed under reachability
+of a target set, and (c) the objective is non-negatively
+weighted-additive over the catalogue, is an instance of
+P-graph $\abb$. The cycle-enumeration application is a proof of
+concept that this generality is operational. The next big
+opportunities --- time-indexed plant scheduling, stochastic
+feedstock procurement, hierarchical sub-plant nesting --- are all
+within the formal envelope established here.
+
+\vspace{8pt}\hrule\vspace{3pt}
+\noindent\footnotesize
+\textbf{References to the implementation.} Plan
+\code{docs/plans/2026-05-19-pgraph-multi-objective/};
+implementation in
+\code{hymeko\_pgraph/src/\{lowering,abb,dump\}.rs};
+9 new tests in
+\code{hymeko\_pgraph/tests/multi\_objective.rs};
+worked example in
+\code{data/pgraph/methanol\_synthesis.hymeko};
+companion 5-page demo PDF in
+\code{reports/2026-05-19-pgraph-multi-objective.pdf}. The
+top-$K$ signed-cycle $\abb$ is implemented in
+\code{hymeko\_graph/src/topk\_cycles.rs}; see
+\code{reports/2026-05-10-abb-global-topk.md} for the
+$25.06\times$ Epinions benchmark.
+
+\medskip
+\noindent
+This document is intended as input for an upcoming paper
+``P-graph methodology beyond PSE: axiom-feasibility for
+sustainable combinatorial optimisation'' (working title) to be
+discussed with the Friedler community, including Jean Pimentel.
+Feedback on the axiomatic statements, the categorical framing,
+and the priority among the open generalisations is welcome.
+
+\end{document}

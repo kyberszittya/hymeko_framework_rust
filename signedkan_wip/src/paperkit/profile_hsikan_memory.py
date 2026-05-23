@@ -55,13 +55,13 @@ def main():
     _mem("startup")
 
     from ..datasets import load, split
-    from ..hyperedges import construct
-    from ..n_tuples import construct_k, construct_2
-    from ..signedkan import build_vertex_triad_incidence
+    from ..core.hyperedges import construct
+    from ..core.n_tuples import construct_k, construct_2
+    from ..core.signedkan import build_vertex_triad_incidence
     from ..mixed_arity_signedkan import (MixedAritySignedKAN,
                                           MixedAritySignedKANConfig,
                                           subsample_tuples)
-    from ..signedkan import MultiLayerSignedKANConfig
+    from ..core.signedkan import MultiLayerSignedKANConfig
 
     g = load(args.dataset)
     print(f"  {args.dataset}: {g.n_nodes} nodes, "

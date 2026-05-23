@@ -28,10 +28,12 @@ continues to work because this module re-exports the public surface.
 from __future__ import annotations
 
 from .cascade import (
+    GombBridgeGomb,
     GombConfig,
     GombNoInner,
     GombNoMiddle,
     GombNoOuter,
+    GombWithOuterHSIKAN,
     HymeKoGomb,
     JointMixGomb,
     MixedArityGomb,
@@ -42,6 +44,8 @@ __all__ = [
     "GombConfig",
     "HymeKoGomb",
     "JointMixGomb",
+    "GombWithOuterHSIKAN",
+    "GombBridgeGomb",
     "OuterFIRShell", "MiddleHSiKAN", "InnerCPMLCore", "scatter_mean",
     "GombNoOuter", "GombNoMiddle", "GombNoInner",
     "MixedArityGomb",

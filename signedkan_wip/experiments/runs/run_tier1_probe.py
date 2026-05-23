@@ -20,8 +20,8 @@ from pathlib import Path
 import torch
 
 from signedkan_wip.src.datasets import load
-from signedkan_wip.src.entropy_reg import _spectral_distribution
-from signedkan_wip.src.highway_signedkan import HighwaySignedKAN
+from signedkan_wip.src.core.entropy_reg import _spectral_distribution
+from signedkan_wip.src.core.highway_signedkan import HighwaySignedKAN
 from .run_compare import run_one
 
 

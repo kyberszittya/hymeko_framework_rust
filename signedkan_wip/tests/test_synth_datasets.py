@@ -17,7 +17,7 @@ import pytest
 import torch
 
 from signedkan_wip.src.datasets import load
-from signedkan_wip.src.datasets_synth import (
+from signedkan_wip.src.datasets import (
     make_circles_signed_graph,
     make_moon_signed_graph,
     make_regression_signed_graph,
@@ -94,7 +94,7 @@ def test_cpml_trains_on_synth_dataset(name: str, fn):
     """A minimal CPML model with random per-vertex features must
     train for 5 epochs on the synthetic signed graph without
     crashing (forward + backward + step all healthy, loss finite)."""
-    from signedkan_wip.src.cpml import CPML, CPMLConfig, TierSpec
+    from signedkan_wip.src.core.cpml import CPML, CPMLConfig, TierSpec
 
     torch.manual_seed(0)
     g, X, y = fn()

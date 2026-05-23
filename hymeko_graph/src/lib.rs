@@ -73,8 +73,10 @@ pub mod community;
 pub mod cycle_enum;
 pub mod cycle_sampler;
 pub mod friedler;
+pub mod incidence;
 pub mod path_closure;
 pub mod pruner;
+pub mod quadtree;
 pub mod rand_lcg;
 pub mod signed_graph;
 pub mod spine;
@@ -88,6 +90,11 @@ pub mod walks_unsigned;
 pub use balance::{BipartiteOnlyPruner, CartwrightHararyPruner, DavisWeakBalancePruner};
 pub use cycle_enum::{enumerate_simple_cycles, enumerate_simple_cycles_noprune};
 pub use friedler::FriedlerAxiomPruner;
+pub use incidence::{
+    build_edge_incidence, build_edge_incidence_vertex_adj, BuildOpts as IncidenceBuildOpts,
+    IncidenceCoo, IncidenceOutput, IncidenceResult,
+};
+pub use quadtree::{build_quadtree, forman_kappa_4conn, QuadtreeAnchors};
 pub use vertex_filter::{AndFilter, DegreeFilter, NoFilter, TriangleFilter, VertexFilter};
 pub use pruner::{
     CompositePruner, CountingPruner, CyclePruner, NoOpPruner, PrunerDecision, PrunerStats,

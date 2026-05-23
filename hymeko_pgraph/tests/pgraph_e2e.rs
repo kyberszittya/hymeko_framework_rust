@@ -226,6 +226,7 @@ fn abb_finds_minimum_cost_route() {
         AbbOptions {
             strict_no_excess: false,
             max_explored: 10_000,
+            cost_weights: None,
         },
     )
     .expect("relaxed ABB must find a solution");

@@ -1,5 +1,0 @@
-{"label": "baseline", "n_images": 5000, "epochs": 50, "lr": 0.003, "seed": 0, "wall_s": 429.9, "loss_start": 3.551, "loss_end": 2.404, "loss_drop_pct": 32.3, "box_cls_acc": 0.31, "circ_cls_acc": 0.0, "acceptance_pass": true}
-{"label": "boxes-only", "n_images": 5000, "epochs": 50, "lr": 0.003, "seed": 0, "wall_s": 389.4, "loss_start": 3.576, "loss_end": 2.022, "loss_drop_pct": 43.5, "box_cls_acc": 0.56, "circ_cls_acc": 0.0, "acceptance_pass": true}
-{"label": "circles-only", "n_images": 5000, "epochs": 50, "lr": 0.003, "seed": 0, "wall_s": 383.4, "loss_start": 3.643, "loss_end": 3.237, "loss_drop_pct": 11.1, "box_cls_acc": 0.0, "circ_cls_acc": 0.0, "acceptance_pass": false}
-{"label": "boxes+circles", "n_images": 5000, "epochs": 50, "lr": 0.003, "seed": 0, "wall_s": 624.2, "loss_start": 6.987, "loss_end": 3.959, "loss_drop_pct": 43.3, "box_cls_acc": 0.25, "circ_cls_acc": 0.64, "acceptance_pass": true}
-{"label": "+ricci-mod", "n_images": 5000, "epochs": 50, "lr": 0.003, "seed": 0, "wall_s": 597.3, "loss_start": 6.931, "loss_end": 2.55, "loss_drop_pct": 63.2, "box_cls_acc": 0.69, "circ_cls_acc": 0.57, "acceptance_pass": true}

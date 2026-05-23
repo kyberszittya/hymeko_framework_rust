@@ -11,7 +11,7 @@ For each timestep:
   - Annotate the corner with timestamp + L2 agreement readout
 
 Usage:
-  python -m signedkan_wip.src.annotate_mujoco_frames \
+  python -m signedkan_wip.experiments.eval.annotate_mujoco_frames \
       --mech 4dof --frames 8 24 42 60 \
       --out paper/smc2026_hsikan_wip/figures
 """
@@ -130,7 +130,7 @@ def annotate_frame(img: Image.Image, body_pixels: list,
 def render_and_annotate(mech: str, frame_indices: list[int],
                           width: int, height: int, fps: int,
                           out_dir: Path):
-    from .mujoco_bridge import MuJoCoBridge
+    from .kinematic import MuJoCoBridge
     if mech == "4dof":
         sim = MuJoCoBridge.canonical_4dof_arm()
     elif mech == "4bar":

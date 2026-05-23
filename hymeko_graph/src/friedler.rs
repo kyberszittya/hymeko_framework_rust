@@ -10,7 +10,10 @@
 //! # The five axioms as cycle constraints
 //!
 //! Translating Friedler's original axioms (originally written for
-//! synthesis structures, not cycles) into cycle-enumeration tests:
+//! synthesis structures, not cycles) into cycle-enumeration tests.
+//! The verbatim S1–S5 statements were restored on 2026-05-19 (see
+//! `docs/plans/2026-05-19-pgraph-axiom-semantics-fix/`); this
+//! docstring uses the canonical names.
 //!
 //! - **A0 (bipartite alternation, prerequisite).**  Every step of
 //!   the cycle must alternate M ↔ O.  An M-M or O-O step is a
@@ -18,31 +21,35 @@
 //!   extension *during* the DFS.  This alone gives the
 //!   even-length cycle constraint (the bipartite-only pruner)
 //!   plus a strong DFS speed-up.
-//! - **A1 (final products in cycle).**  When a `required_products`
-//!   set is supplied, the pruner can require that the cycle pass
-//!   through at least one of those product nodes.  Useful for
-//!   filtering "loops that produce something we care about".
-//! - **A2 (reachability).**  In a connected component every
-//!   M-node has a path to a final product; the cycle pruner
-//!   doesn't need to re-check this since cycle enumeration
-//!   already operates on the connected component, but exposing
-//!   it as an emission filter lets downstream code drop cycles
-//!   in disconnected sub-graphs.
-//! - **A3 (real units).**  Every O-node in the cycle must be a
-//!   registered operating unit.  Implemented as an
+//! - **A1 (S1: final products in the structure).**  When a
+//!   `required_products` set is supplied, the pruner can require
+//!   that the cycle pass through at least one of those product
+//!   nodes.  Useful for filtering "loops that produce something
+//!   we care about".
+//! - **A2 (S2: raw biconditional).**  Schema-level invariant: an
+//!   M-node has no ancestor in the structure iff it represents a
+//!   raw material.  The cycle pruner does not enforce this
+//!   directly (a cycle visits each M-node from a producer, so the
+//!   biconditional is trivially satisfied for nodes on the cycle);
+//!   it is checked once globally via `hymeko_pgraph::AxiomBundle`
+//!   and the pruner refuses extensions through M-nodes whose
+//!   schema is malformed.
+//! - **A3 (S3: real units).**  Every O-node in the cycle must be
+//!   a registered operating unit.  Implemented as an
 //!   `is_valid_o_node` predicate consulted at extension time.
-//! - **A4 (degree constraint).**  Every O-node has at least one
-//!   incoming and one outgoing M-edge.  In a cycle this is
-//!   automatic (every interior vertex has degree ≥ 2 within the
-//!   cycle), so this axiom is degenerate at cycle-enumeration
-//!   time — but we surface a hook so the caller can attach a
-//!   stronger global degree check if needed.
-//! - **A5 (consumption-edge invariant).**  If an M-node's
-//!   consumption edge is missing the schema is malformed; the
-//!   pruner doesn't enforce this directly (it's a schema-level
-//!   property checked once via `hymeko_pgraph::AxiomBundle`),
-//!   but if the schema is invalid the pruner will refuse all
-//!   extensions through the offending vertex.
+//! - **A4 (S4: path to product).**  For every O-node there is a
+//!   directed path to some required product.  Inside a cycle
+//!   this is automatically true once A1 holds for the cycle as a
+//!   whole — the product is on the cycle and every O-node on the
+//!   cycle reaches it by going around — so the constraint is
+//!   degenerate at cycle-enumeration time.  Surfaced as a hook
+//!   for callers who want a stronger global S4 gate.
+//! - **A5 (S5: every M-node touches a unit).**  Schema-level
+//!   invariant: every M-node has ≥ 1 incident edge.  Isolated
+//!   M-nodes cannot appear on any cycle by definition (a cycle
+//!   visits each M-node via at least one incident edge), so this
+//!   axiom is automatically true for nodes on the cycle.  The
+//!   global check lives in `hymeko_pgraph::AxiomBundle`.
 //!
 //! # Performance promise
 //!

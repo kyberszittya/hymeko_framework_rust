@@ -42,7 +42,7 @@ class _SignedKANInnerTritonFn(torch.autograd.Function):
             )
             return grad_x, None, None, grad_cp, grad_cn, None
         # PyTorch fallback (correctness reference).
-        from ..splines import _catmull_rom_eval as _ref
+        from ..core.splines import _catmull_rom_eval as _ref
         x_g = x.detach().requires_grad_(True)
         coef_pos_g = coef_pos.detach().requires_grad_(True)
         coef_neg_g = coef_neg.detach().requires_grad_(True)
@@ -109,7 +109,7 @@ class _SignedKANInnerHighwayTritonFn(torch.autograd.Function):
             return (grad_x, None, None,
                     grad_cp, grad_cn, grad_gw, grad_gb, None)
         # PyTorch fallback (correctness reference).
-        from ..splines import _catmull_rom_eval as _ref
+        from ..core.splines import _catmull_rom_eval as _ref
         x_g = x.detach().requires_grad_(True)
         coef_pos_g = coef_pos.detach().requires_grad_(True)
         coef_neg_g = coef_neg.detach().requires_grad_(True)

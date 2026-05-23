@@ -72,7 +72,7 @@ def _build_signedkan_layer(
     spline_kind: str = "kochanek_bartels", n_branches: int = 2, d: int = 16,
 ) -> torch.nn.Module:
     sys.path.insert(0, "signedkan_wip")
-    from src.signedkan import SignedKANLayer, SignedKANConfig
+    from signedkan_wip.src.core.signedkan import SignedKANLayer, SignedKANConfig
     cfg = SignedKANConfig(
         n_nodes=10, hidden_dim=d, k=3, grid=5, spline_kind=spline_kind,
     )
@@ -84,8 +84,8 @@ def _build_mixed_arity_model(
     direct_messaging: bool = False,
 ) -> torch.nn.Module:
     sys.path.insert(0, "signedkan_wip")
-    from src.signedkan import MultiLayerSignedKANConfig
-    from src.mixed_arity_signedkan import (
+    from signedkan_wip.src.core.signedkan import MultiLayerSignedKANConfig
+    from signedkan_wip.src.mixed_arity_signedkan import (
         MixedAritySignedKAN, MixedAritySignedKANConfig,
     )
     cfg = MixedAritySignedKANConfig(
@@ -160,7 +160,7 @@ def cases() -> list[AuditCase]:
 
     def _attn_dot_assertion(model) -> tuple[bool, str]:
         sys.path.insert(0, "signedkan_wip")
-        from src.mixed_arity_signedkan import _AttentionM_e
+        from signedkan_wip.src.mixed_arity_signedkan import _AttentionM_e
         if model.attention_m_e is None:
             return False, "model.attention_m_e is None despite use_attention=True"
         if not isinstance(model.attention_m_e, _AttentionM_e):
@@ -180,7 +180,7 @@ def cases() -> list[AuditCase]:
 
     def _attn_q_assertion(model) -> tuple[bool, str]:
         sys.path.insert(0, "signedkan_wip")
-        from src.mixed_arity_signedkan import _QuaternionAttentionM_e
+        from signedkan_wip.src.mixed_arity_signedkan import _QuaternionAttentionM_e
         if not isinstance(model.attention_m_e, _QuaternionAttentionM_e):
             return False, (
                 f"expected _QuaternionAttentionM_e, "

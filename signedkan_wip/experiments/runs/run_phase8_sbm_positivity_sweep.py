@@ -30,7 +30,7 @@ import torch
 import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
-from signedkan_wip.src.datasets_small import sbm_signed
+from signedkan_wip.src.datasets import sbm_signed
 from signedkan_wip.src.datasets import SignedGraph, split
 from signedkan_wip.src.baselines.mlp_gcn import MLPEdge, SignBlindGCN, build_unsigned_adj
 from .run_compare import run_one

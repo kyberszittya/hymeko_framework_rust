@@ -39,7 +39,8 @@ def timed(label: str, fn, *args, **kw):
 
 def main():
     banner("Setup: import + load Epinions")
-    from .. import datasets, n_tuples, hyperedges, walks
+    from ..core import n_tuples, hyperedges, walks
+    from .. import datasets
 
     g, dt_load = timed("load Epinions graph", datasets.load, "epinions")
     print(f"    n_nodes={g.n_nodes}  n_edges={len(g.edges)}", flush=True)

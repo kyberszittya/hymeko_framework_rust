@@ -36,7 +36,7 @@ from signedkan_wip.src.mixed_arity_signedkan import (
     MixedAritySignedKAN, MixedAritySignedKANConfig,
 )
 # Same 2026-05-11 refactor relocation as in run_tabular_smoke.py.
-from signedkan_wip.src.signedkan import MultiLayerSignedKANConfig
+from signedkan_wip.src.core.signedkan import MultiLayerSignedKANConfig
 from .run_tabular_smoke import build_M_vt, build_per_arity
 from signedkan_wip.src.tabular_signed_graph import build_signed_graph_from_tabular
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wait until no ``python -m signedkan_wip.src.run_optuna_search`` jobs are
+# Wait until no ``python -m signedkan_wip.experiments.runs.run_optuna_search`` jobs are
 # running, then optionally run a follow-up command.  Use this so **new**
 # Optuna processes load the current tree (e.g. ``_attention_kind_candidates``
 # VRAM gate) after long studies started before a code change.
@@ -22,7 +22,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 POLL="${WAIT_OPTUNA_POLL_S:-60}"
 # Match Optuna driver module (subprocess ``run_final_cell`` does not).
-PAT="signedkan_wip.src.run_optuna_search"
+PAT="signedkan_wip.experiments.runs.run_optuna_search"
 
 wait_loop() {
   while pgrep -f "${PAT}" >/dev/null 2>&1; do

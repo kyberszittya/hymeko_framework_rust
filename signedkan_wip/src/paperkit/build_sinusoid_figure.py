@@ -16,11 +16,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from ..datasets import load, split
-from ..hyperedges import construct
-from ..signedkan import SignedKAN, SignedKANConfig
-from ..train import build_edge_to_triads
-from ..run_compare import build_edge_incidence
-from ..prune_distill import (measure_activity, sample_spline_activation,
+from ..core.hyperedges import construct
+from ..core.signedkan import SignedKAN, SignedKANConfig
+from ..core.train import build_edge_to_triads
+from signedkan_wip.experiments.runs.run_compare import build_edge_incidence
+from ..core.prune_distill import (measure_activity, sample_spline_activation,
                              fit_symbolic, evaluate_symbolic,
                              SYMBOLIC_LIBRARY)
 

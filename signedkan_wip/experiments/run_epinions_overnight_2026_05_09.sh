@@ -37,7 +37,7 @@ echo "[ep] $(date +'%Y-%m-%d %H:%M:%S') start"
 
 # Wait for any other run_final_cell to finish first.
 echo "[ep] waiting for GPU to free..."
-while pgrep -f "python -m signedkan_wip.src.run_final_cell" \
+while pgrep -f "python -m signedkan_wip.experiments.runs.run_final_cell" \
         | grep -v "$$" | grep -q .; do
     sleep 60
 done
@@ -48,7 +48,7 @@ run_cell() {
     local logf="$LOG_DIR/${label}.log"
     local t0=$(date +%s)
     echo "[ep] $(date +%H:%M:%S) START $label"
-    env "$@" python -m signedkan_wip.src.run_final_cell \
+    env "$@" python -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 4 --n-epochs 80 \
         --max-k4 100000 --seed 0 \
         > "$logf" 2>&1
@@ -105,7 +105,7 @@ HSIKAN_ATTENTION_HIGHWAY=1 \
 HSIKAN_CYCLE_BATCH=2000 \
 HSIKAN_MAX_K3=100000 \
 HSIKAN_MAX_K2=100000 \
-python -m signedkan_wip.src.run_final_cell \
+python -m signedkan_wip.experiments.runs.run_final_cell \
     --dataset epinions --hidden 8 --n-epochs 80 \
     --max-k4 100000 --seed 0 \
     > "$LOG_DIR/h_8.log" 2>&1
@@ -133,7 +133,7 @@ HSIKAN_ATTENTION_HIGHWAY=1 \
 HSIKAN_CYCLE_BATCH=2000 \
 HSIKAN_MAX_K3=50000 \
 HSIKAN_MAX_K2=50000 \
-python -m signedkan_wip.src.run_final_cell \
+python -m signedkan_wip.experiments.runs.run_final_cell \
     --dataset epinions --hidden 16 --n-epochs 80 \
     --max-k4 50000 --seed 0 \
     > "$LOG_DIR/h_16_small.log" 2>&1

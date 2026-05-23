@@ -101,7 +101,7 @@ def cached_construct_triads(g):
         # path enforces ``n_vertices × m_per_vertex`` directly.
         return cached_construct_k(g, k=3, max_cycles=None, model_seed=0)
 
-    from ..hyperedges import construct as _construct_triads
+    from ..core.hyperedges import construct as _construct_triads
     if not cache_enabled():
         return _construct_triads(g)
     graph_hash = _hash_graph(g)

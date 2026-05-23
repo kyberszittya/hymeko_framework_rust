@@ -80,7 +80,7 @@ TIMEOUT_S=3600 run "epinions_adaptive_c1_m32_512_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -94,7 +94,7 @@ TIMEOUT_S=3600 run "epinions_adaptive_c05_m64_256_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -108,7 +108,7 @@ TIMEOUT_S=3600 run "epinions_adaptive_c2_m16_1024_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -123,7 +123,7 @@ TIMEOUT_S=3600 run "epinions_adaptive_c0_uniform64_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -144,7 +144,7 @@ TIMEOUT_S=5400 run "epinions_adaptive_c1_walks_h32_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 32
 
@@ -160,7 +160,7 @@ TIMEOUT_S=5400 run "epinions_adaptive_c05_walks_h32_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 32
 
@@ -177,7 +177,7 @@ TIMEOUT_S=1800 run "bitcoin_otc_adaptive_c1_m32_512_s0" \
         HSIKAN_TOPK_M_V_C=1.0 \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset bitcoin_otc --seed 0 --n-epochs 80 \
         --model HSiKAN --hidden 16
 

@@ -25,7 +25,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from signedkan_wip.src.mujoco_bridge import MuJoCoBridge, SimulationStates
+from signedkan_wip.src.kinematic import MuJoCoBridge, SimulationStates
 
 
 def gather_dataset(sim: MuJoCoBridge, n_rollouts: int = 50,

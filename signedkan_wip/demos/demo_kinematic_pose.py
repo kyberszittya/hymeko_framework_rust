@@ -6,7 +6,7 @@ then predicts XYZ coordinates of every link in a fresh test
 mechanism.  Total runtime < 30 s on cuda, < 60 s on cpu.
 
 Usage:
-    HSIKAN_TORCH_COMPILE=1 python -m signedkan_wip.src.demo_kinematic_pose
+    HSIKAN_TORCH_COMPILE=1 python -m signedkan_wip.demos.demo_kinematic_pose
 
 Optional flags:
     --arity {4,6}   — 4-bar (k=4) or Stewart/delta (k=6)
@@ -23,8 +23,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from .run_phase11_kinematic_tasks import detect_dominant_arity
-from .run_phase12_position_regression import (
+from signedkan_wip.experiments.runs.run_phase11_kinematic_tasks import detect_dominant_arity
+from signedkan_wip.experiments.runs.run_phase12_position_regression import (
     build_mechanism_with_positions, PositionRegHSiKAN, _build_input,
 )
 

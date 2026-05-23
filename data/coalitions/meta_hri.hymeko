@@ -1,0 +1,49 @@
+// Meta-schema for HRI coalition descriptions used by the rapport-
+// coherence demo. Declares the "vocabulary" types that concrete
+// coalitions (e.g. triad_hri.hymeko) inherit from.
+//
+// Plan: docs/plans/2026-05-18-rapport-coherence-demo-nagoya/.
+
+hri_meta_description {
+}
+
+hri_meta {
+    // Agent types — humans and robots are both "nodes" in the
+    // signed coalition graph.
+    human  {}
+    robot  {}
+
+    // Relation types — pairwise signed edges between agents.
+    // The loader reads `sign`, `magnitude`, `from`, `to` fields
+    // out of the relation body; HyMeKo treats them as plain
+    // property nodes.
+    interpersonal {}
+    hri_relation  {}
+
+    // A σ-cycle: a list of relation names whose signed product
+    // gives the Cartwright–Harary balance score.
+    sigma_cycle {}
+
+    // A robot intervention policy — `condition` (string predicate
+    // evaluated by the policy module) and `action` (symbolic
+    // intervention name).
+    policy {}
+
+    // ─── GZ + ROS 2 substrate bindings (Stage G demo) ──────────
+    // gz_binding declares the topic mapping for a single agent
+    // (pose publish topic + optional cmd_vel + gaze_cmd for robots).
+    // observation_threshold names the threshold value for a single
+    // observation kind (distance_close, gaze_at, withdrawal, ...).
+    gz_binding {}
+    observation_threshold {}
+
+    // Stage H / Stage D-3 — vision-sidecar detector selection.
+    // `detector_kind` chooses among the supported backends:
+    //   - "hsv_blob"     : the v0 HSV colour-segmented blob detector
+    //                      (no checkpoint needed; matches capsule blue)
+    //   - "voc_person"   : Stage H single-class person detector
+    //   - "voc_20class"  : Stage D-3 nodelet head trained on full VOC
+    // `checkpoint` is the .pt path (ignored for "hsv_blob").
+    // `score_threshold` filters predictions below the value.
+    vision_config {}
+}

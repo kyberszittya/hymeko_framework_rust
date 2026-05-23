@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from signedkan_wip.src.run_hsikan_lean_profile import (
+from signedkan_wip.experiments.runs.run_hsikan_lean_profile import (
     PROFILE_ENV,
     _run_cell_subprocess,
     build_child_env,
@@ -56,7 +56,7 @@ def test_run_cell_subprocess_injects_hsikan_device(monkeypatch: pytest.MonkeyPat
 
     monkeypatch.setenv("HOME", "/tmp")
     monkeypatch.setattr(
-        "signedkan_wip.src.run_hsikan_lean_profile.subprocess.run",
+        "signedkan_wip.experiments.runs.run_hsikan_lean_profile.subprocess.run",
         fake_run,
     )
     _run_cell_subprocess(

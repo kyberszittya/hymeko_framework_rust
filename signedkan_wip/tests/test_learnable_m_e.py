@@ -16,7 +16,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from signedkan_wip.src.learnable_m_e import LearnableMe
+from signedkan_wip.src.core.learnable_m_e import LearnableMe
 
 
 # ─── Identity-init smoke ────────────────────────────────────────────

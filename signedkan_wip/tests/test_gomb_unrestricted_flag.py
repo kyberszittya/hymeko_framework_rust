@@ -26,7 +26,7 @@ def _import_gomb_smoke():
     so this test file can be collected without GPU."""
     repo_root = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(repo_root))
-    from signedkan_wip.src import run_gomb_smoke
+    import signedkan_wip.experiments.runs.run_gomb_smoke as run_gomb_smoke
     return run_gomb_smoke
 
 

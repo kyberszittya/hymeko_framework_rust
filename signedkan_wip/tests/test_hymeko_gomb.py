@@ -346,7 +346,7 @@ def test_gomb_no_cycles_degrades_to_embedding_only():
 def test_gomb_trains_on_synthetic_moons():
     """End-to-end smoke: Gömb trains on a tiny moon signed graph for
     20 epochs without divergence; loss decreases."""
-    from signedkan_wip.src.datasets_synth import make_moon_signed_graph
+    from signedkan_wip.src.datasets import make_moon_signed_graph
 
     torch.manual_seed(0)
     g, X, y = make_moon_signed_graph(n_samples=60, k_neighbors=5, seed=0)
@@ -633,7 +633,7 @@ def test_joint_mix_cuda_route_peak_memory_strictly_below_pyramid():
     Pyramid tiers consume widening ``x``; route tiers read fixed-width
     base features (Option B).
     """
-    from signedkan_wip.src.run_gomb_smoke import _degree_to_tier
+    from signedkan_wip.experiments.runs.run_gomb_smoke import _degree_to_tier
 
     dev = _require_cuda_device()
     rng = np.random.default_rng(0)
@@ -709,7 +709,7 @@ def test_joint_mix_gomb_bitcoin_otc_val_auc_regression():
     only** — skipped when no GPU (no CPU fallback).
     """
     from signedkan_wip.src.datasets import load
-    from signedkan_wip.src.run_gomb_smoke import _degree_to_tier, _train_val_split
+    from signedkan_wip.experiments.runs.run_gomb_smoke import _degree_to_tier, _train_val_split
 
     dev = _require_cuda_device()
     torch.manual_seed(0)
@@ -778,7 +778,7 @@ def test_hymeko_gomb_bitcoin_otc_val_auc_cuda():
     runs on CUDA only.
     """
     from signedkan_wip.src.datasets import load
-    from signedkan_wip.src.run_gomb_smoke import (
+    from signedkan_wip.experiments.runs.run_gomb_smoke import (
         _degree_to_tier,
         _enumerate_cycles,
         _train_val_split,
@@ -834,7 +834,7 @@ def test_hymeko_gomb_bitcoin_otc_val_auc_cuda():
 def test_mixed_arity_gomb_bitcoin_otc_val_auc_cuda():
     """Mixed k=3,4 Gömb on OTC: val AUROC regression (ref ~0.70 @ 10 ep)."""
     from signedkan_wip.src.datasets import load
-    from signedkan_wip.src.run_gomb_smoke import (
+    from signedkan_wip.experiments.runs.run_gomb_smoke import (
         _degree_to_tier,
         _enumerate_cycles,
         _train_val_split,
@@ -895,7 +895,7 @@ def test_mixed_arity_gomb_bitcoin_otc_val_auc_cuda():
 def test_joint_mix_gomb_bitcoin_alpha_val_auc_cuda():
     """Joint-mix Gömb on Bitcoin Alpha (ref ~0.626 best @ 3 ep, seed 0)."""
     from signedkan_wip.src.datasets import load
-    from signedkan_wip.src.run_gomb_smoke import _degree_to_tier, _train_val_split
+    from signedkan_wip.experiments.runs.run_gomb_smoke import _degree_to_tier, _train_val_split
 
     dev = _require_cuda_device()
     torch.manual_seed(0)
@@ -956,7 +956,7 @@ def test_joint_mix_gomb_bitcoin_alpha_val_auc_cuda():
 
 
 def test_sample_params_compact_is_narrow():
-    from signedkan_wip.src.run_gomb_tune import sample_params
+    from signedkan_wip.experiments.runs.run_gomb_tune import sample_params
 
     rng = np.random.default_rng(0)
     for _ in range(40):
@@ -968,7 +968,7 @@ def test_sample_params_compact_is_narrow():
 
 
 def test_for_joint_mix_tuning_clears_cycle_ks_and_samples_walks():
-    from signedkan_wip.src.run_gomb_tune import for_joint_mix_tuning, sample_params
+    from signedkan_wip.experiments.runs.run_gomb_tune import for_joint_mix_tuning, sample_params
 
     r0 = np.random.default_rng(0)
     base = sample_params(r0, "bitcoin_otc", compact=False)
@@ -991,7 +991,7 @@ def test_for_joint_mix_tuning_clears_cycle_ks_and_samples_walks():
 
 
 def test_for_joint_mix_clamps_topk_on_bitcoin_wide():
-    from signedkan_wip.src.run_gomb_tune import for_joint_mix_tuning
+    from signedkan_wip.experiments.runs.run_gomb_tune import for_joint_mix_tuning
 
     base = {
         "lr": 0.003,
@@ -1026,7 +1026,7 @@ def test_for_joint_mix_clamps_topk_on_bitcoin_wide():
 
 
 def test_tuner_objective_val_vs_test():
-    from signedkan_wip.src.run_gomb_tune import _tuner_objective
+    from signedkan_wip.experiments.runs.run_gomb_tune import _tuner_objective
 
     row = {
         "test_auroc": 0.5,
@@ -1038,7 +1038,7 @@ def test_tuner_objective_val_vs_test():
 
 
 def test_n_params_from_row():
-    from signedkan_wip.src.run_gomb_tune import _n_params_from_row
+    from signedkan_wip.experiments.runs.run_gomb_tune import _n_params_from_row
 
     assert _n_params_from_row(None) is None
     assert _n_params_from_row({}) is None
@@ -1047,7 +1047,7 @@ def test_n_params_from_row():
 
 
 def test_compact_sample_slashdot_d_embed_includes_26():
-    from signedkan_wip.src.run_gomb_tune import sample_params
+    from signedkan_wip.experiments.runs.run_gomb_tune import sample_params
 
     seen: set[int] = set()
     for i in range(300):
@@ -1057,7 +1057,7 @@ def test_compact_sample_slashdot_d_embed_includes_26():
 
 
 def test_for_joint_mix_slashdot_compact_clamps_topk():
-    from signedkan_wip.src.run_gomb_tune import for_joint_mix_tuning, sample_params
+    from signedkan_wip.experiments.runs.run_gomb_tune import for_joint_mix_tuning, sample_params
 
     base = sample_params(np.random.default_rng(5), "slashdot", compact=True)
     base["topk"] = 40
@@ -1070,7 +1070,7 @@ def test_for_joint_mix_slashdot_compact_clamps_topk():
 
 
 def test_subsample_joint_pools_reduces_rows():
-    from signedkan_wip.src.run_gomb_smoke import _subsample_joint_pools
+    from signedkan_wip.experiments.runs.run_gomb_smoke import _subsample_joint_pools
 
     cyc = np.arange(30, dtype=np.int64).reshape(10, 3)
     sgn = np.ones((10, 3), dtype=np.int8)
@@ -1082,7 +1082,7 @@ def test_subsample_joint_pools_reduces_rows():
 def test_build_cmd_joint_mix_includes_cli_flags():
     import sys
 
-    from signedkan_wip.src.run_gomb_tune import _build_cmd
+    from signedkan_wip.experiments.runs.run_gomb_tune import _build_cmd
 
     p = {
         "lr": 0.003,
@@ -1120,7 +1120,7 @@ def test_build_cmd_joint_mix_includes_cli_flags():
 def test_build_cmd_mixed_arity_uses_cycle_ks_without_joint():
     import sys
 
-    from signedkan_wip.src.run_gomb_tune import _build_cmd
+    from signedkan_wip.experiments.runs.run_gomb_tune import _build_cmd
 
     p = {
         "lr": 0.003,
@@ -1152,7 +1152,7 @@ def test_build_cmd_mixed_arity_uses_cycle_ks_without_joint():
 def test_build_cmd_includes_cycle_abb_when_in_params():
     import sys
 
-    from signedkan_wip.src.run_gomb_tune import _build_cmd
+    from signedkan_wip.experiments.runs.run_gomb_tune import _build_cmd
 
     p = {
         "lr": 0.003,
@@ -1196,7 +1196,7 @@ def test_run_gomb_smoke_json_includes_inference_fields():
     cmd = [
         sys.executable,
         "-m",
-        "signedkan_wip.src.run_gomb_smoke",
+        "signedkan_wip.experiments.runs.run_gomb_smoke",
         "--dataset",
         "sbm_n200",
         "--n-epochs",
@@ -1242,7 +1242,7 @@ def test_run_gomb_smoke_json_includes_inference_fields():
 
 
 def test_parse_last_gomb_json_line():
-    from signedkan_wip.src.run_gomb_tune import _parse_last_gomb_json
+    from signedkan_wip.experiments.runs.run_gomb_tune import _parse_last_gomb_json
 
     stdout = "garbage\n{\"dataset\": \"z\", \"test_auroc\": 0.8123}\n"
     row = _parse_last_gomb_json(stdout)
@@ -1252,7 +1252,7 @@ def test_parse_last_gomb_json_line():
 
 def test_heldout_edge_metrics_label_keys():
     """Smoke metrics helper must namespace keys by split label."""
-    from signedkan_wip.src.run_gomb_smoke import _heldout_edge_metrics
+    from signedkan_wip.experiments.runs.run_gomb_smoke import _heldout_edge_metrics
 
     y = np.array([0.0, 1.0, 0.0, 1.0], dtype=np.float32)
     p = np.array([0.1, 0.9, 0.2, 0.8], dtype=np.float64)

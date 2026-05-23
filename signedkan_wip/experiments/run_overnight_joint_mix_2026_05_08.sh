@@ -25,7 +25,7 @@ echo "[overnight] $(date +'%Y-%m-%d %H:%M:%S') start" | tee -a "$LOG_DIR/orchest
 
 # 1. Wait for any in-flight run_final_cell to free the GPU.
 echo "[overnight] waiting for GPU to free up..." | tee -a "$LOG_DIR/orchestrator.log"
-while pgrep -af "python -m signedkan_wip.src.run_final_cell" \
+while pgrep -af "python -m signedkan_wip.experiments.runs.run_final_cell" \
         | grep -v "$$" | grep -q .; do
     sleep 30
 done
@@ -40,7 +40,7 @@ run_cell() {
     local t0=$(date +%s)
     echo "[overnight] $(date +%H:%M:%S) START $label seed=$seed dataset=$dataset" \
         | tee -a "$LOG_DIR/orchestrator.log"
-    env "$@" python -m signedkan_wip.src.run_final_cell \
+    env "$@" python -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset "$dataset" --hidden 16 --n-epochs 80 --seed "$seed" \
         > "$logf" 2>&1
     local rc=$?

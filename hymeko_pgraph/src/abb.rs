@@ -17,6 +17,21 @@
 //! Branching is by include / exclude on a fixed unit ordering. Ties
 //! are broken in favour of including, so the search hits a feasible
 //! incumbent quickly.
+//!
+//! # Correspondence with the canonical Friedler 1992 axioms
+//!
+//! (2026-05-19 phase-2 audit.) ABB delegates leaf-level feasibility
+//! to [`crate::ssg::is_feasible`], so it inherits exactly SSG's
+//! axiom coverage (A2-forward + A1/A4-as-realisation + optional
+//! no-excess strengthener). The two ABB bounds add no new axiom
+//! semantics:
+//!
+//! - The **inclusion bound** is purely cost-based and is independent
+//!   of S1..S5.
+//! - The **reachability bound** is an early-cut form of the leaf's
+//!   A1/A4 check: if even the optimistic-remaining unit set cannot
+//!   produce every required product, no descendant will satisfy
+//!   the leaf check either.
 
 use std::collections::BTreeSet;
 
@@ -50,7 +65,7 @@ impl AbbSolution {
 }
 
 /// ABB knobs.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct AbbOptions {
     /// Whether to enforce the strict no-excess P-graph rule
     /// (mirrors [`SsgOptions::strict_no_excess`]).
@@ -58,6 +73,17 @@ pub struct AbbOptions {
     /// Hard cap on explored nodes (safety net for pathological
     /// inputs). 0 = unlimited.
     pub max_explored: u64,
+    /// Stage P-mo (2026-05-19): multi-objective weight vector.
+    ///
+    /// When `None`, the per-unit cost is the scalar
+    /// [`LoweredPGraph::costs`] value (single-criterion ABB, the
+    /// original Friedler 1992 form). When `Some(w)`, the per-unit
+    /// cost is the dot product `w · cost_vector(u)` against
+    /// [`LoweredPGraph::cost_vectors`]. Dimensions absent from a
+    /// unit's vector contribute zero. The two paths return
+    /// byte-identical results when only one cost dimension is
+    /// declared and its weight is set to the scalar value.
+    pub cost_weights: Option<Vec<f64>>,
 }
 
 impl Default for AbbOptions {
@@ -65,7 +91,30 @@ impl Default for AbbOptions {
         Self {
             strict_no_excess: true,
             max_explored: 1_000_000,
+            cost_weights: None,
         }
+    }
+}
+
+/// Per-unit cost under the active option (scalar or weighted-sum).
+/// Used internally by both the inclusion bound and the branching
+/// step's incremental cost update.
+fn effective_cost(p: &LoweredPGraph, opts: &AbbOptions, u: DeclId) -> f64 {
+    match &opts.cost_weights {
+        None => p.costs.get(&u).copied().unwrap_or(1.0),
+        Some(w) => match p.cost_vectors.get(&u) {
+            Some(v) => {
+                // Dot product. Vectors may differ in length defensively
+                // — pad the shorter with zeros (weights of unused
+                // dimensions or units missing a tagged cost child).
+                let n = w.len().min(v.len());
+                (0..n).map(|i| w[i] * v[i]).sum()
+            }
+            // Unit has no multi-cost vector → cost zero under the
+            // weighted form (the user can fall back to scalar by
+            // not supplying weights).
+            None => 0.0,
+        },
     }
 }
 
@@ -166,7 +215,7 @@ fn branch(p: &LoweredPGraph, msg: &MaximalStructure, s: &mut SearchState, depth:
 
     // ── Branch: include.
     let u = s.order[depth];
-    let cu = p.costs.get(&u).copied().unwrap_or(1.0);
+    let cu = effective_cost(p, &s.opts, u);
     s.included.insert(u);
     s.cost += cu;
     branch(p, msg, s, depth + 1);

@@ -30,6 +30,8 @@ def _tar_bz2_with_out_file(inner_relpath: str, body: str) -> bytes:
 @pytest.fixture
 def isolated_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(datasets, "DATA_DIR", tmp_path)
+    from signedkan_wip.src.datasets import legacy as _ds_legacy
+    monkeypatch.setattr(_ds_legacy, "DATA_DIR", tmp_path)
     return tmp_path
 
 
@@ -85,7 +87,7 @@ def test_konect_wiki_conflict_majority_dedup(isolated_data_dir: Path) -> None:
     assert signs_by_pair[(2, 3)] == -1
 
 
-@patch("signedkan_wip.src.datasets.urllib.request.urlopen")
+@patch("signedkan_wip.src.datasets.legacy.urllib.request.urlopen")
 def test_konect_download_extracts_wikisigned_tar(
     mock_urlopen: object,
     isolated_data_dir: Path,
@@ -137,7 +139,7 @@ def test_gomb_smoke_cpu_one_epoch_wikisigned_prefilled(
     cmd = [
         sys.executable,
         "-m",
-        "signedkan_wip.src.run_gomb_smoke",
+        "signedkan_wip.experiments.runs.run_gomb_smoke",
         "--dataset",
         "wikisigned",
         "--seed",

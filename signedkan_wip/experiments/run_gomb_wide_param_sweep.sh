@@ -51,7 +51,7 @@ _run_tune() {
   fi
   local ss="$2"
   echo "[gomb-wide-sweep] ${1} search-seed=${ss} trials=${TRIALS} → ${OUT}"
-  python -m signedkan_wip.src.run_gomb_tune \
+  python -m signedkan_wip.experiments.runs.run_gomb_tune \
     --datasets "${DS[@]}" \
     "${joint_flag[@]}" \
     --trials "$TRIALS" \

@@ -38,7 +38,14 @@ from signedkan_wip.src.hymeko_driver import parse_training
 
 
 def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    # parents[0] = experiments/runs, parents[1] = experiments,
+    # parents[2] = signedkan_wip, parents[3] = repo root (where
+    # the workspace `Cargo.toml`, `target/`, and `data/hsikan/...`
+    # live). Phase-9 fix (2026-05-19): previously returned [2],
+    # which pointed at `signedkan_wip/` — `signedkan_wip/data/`
+    # contains dataset CSVs but not the .hymeko fixtures, so the
+    # default-training-file path silently FileNotFoundError'd.
+    return Path(__file__).resolve().parents[3]
 
 
 def _dump_executable(repo: Path) -> list[str]:
@@ -60,9 +67,19 @@ def _dump_executable(repo: Path) -> list[str]:
     ]
 
 
-def run_pgraph_dump(repo: Path, pgraph_path: Path, algorithm: str) -> dict[str, Any]:
+def run_pgraph_dump(
+    repo: Path,
+    pgraph_path: Path,
+    algorithm: str,
+    relaxed_msg: bool = False,
+    weights: str | None = None,
+) -> dict[str, Any]:
     prefix = _dump_executable(repo)
     tail = [str(pgraph_path), "--algorithm", algorithm]
+    if relaxed_msg:
+        tail.append("--relaxed-msg")
+    if weights:
+        tail.extend(["--weights", weights])
     cmd = prefix + tail
     env = os.environ.copy()
     env["PYTHONPATH"] = str(repo)
@@ -83,6 +100,59 @@ def run_pgraph_dump(repo: Path, pgraph_path: Path, algorithm: str) -> dict[str, 
     if not out:
         raise RuntimeError("hymeko_pgraph_dump produced empty stdout")
     return json.loads(out)
+
+
+def _cert_brief(cert: dict[str, Any] | None) -> str:
+    """One-line summary of an :class:`AxiomCertificateJson` payload.
+
+    Returns ``"n/a"`` when the cert is absent (e.g.\\ no ABB
+    solution), ``"PASS"`` on success, or ``"FAIL [tags] offenders…"``
+    on failure.
+    """
+    if cert is None:
+        return "n/a"
+    status = cert.get("status", "?")
+    if status == "PASS":
+        return "PASS"
+    tags = ",".join(cert.get("violation_tags", []))
+    offenders = "; ".join(
+        f"{tag}=[{','.join(names)}]"
+        for tag, names in cert.get("offenders", [])
+    )
+    return f"FAIL [{tags}] — {offenders}"
+
+
+def _print_certificate_summary(analysis: dict[str, Any], file=sys.stderr) -> None:
+    """Phase 7: one-line Friedler-certificate snapshot per analysis."""
+    print(
+        "[friedler] full canonical={} full extension={} abb canonical={} abb extension={} strict={}".format(
+            _cert_brief(analysis.get("canonical_full")),
+            _cert_brief(analysis.get("extension_full")),
+            _cert_brief(analysis.get("canonical_abb_subschema")),
+            _cert_brief(analysis.get("extension_abb_subschema")),
+            analysis.get("strict_no_excess", True),
+        ),
+        file=file,
+    )
+
+
+def _certificate_fields(analysis: dict[str, Any]) -> dict[str, Any]:
+    """Phase 7: subset of the analysis JSON to bake into each emitted
+    JSONL training row, so downstream consumers can filter sweeps by
+    Friedler-feasibility without re-parsing the analysis blob."""
+    return {
+        "canonical_full_status": analysis.get("canonical_full", {}).get("status"),
+        "extension_full_status": analysis.get("extension_full", {}).get("status"),
+        "canonical_abb_status": (
+            analysis.get("canonical_abb_subschema", {}).get("status")
+            if analysis.get("canonical_abb_subschema") else None
+        ),
+        "extension_abb_status": (
+            analysis.get("extension_abb_subschema", {}).get("status")
+            if analysis.get("extension_abb_subschema") else None
+        ),
+        "strict_no_excess": analysis.get("strict_no_excess", True),
+    }
 
 
 def _parse_last_smoke_json(stdout: str) -> dict[str, Any]:
@@ -159,6 +229,18 @@ def main() -> None:
     ap.add_argument("--max-runs", type=int, default=None)
     ap.add_argument("--output", default=None, help="Append JSONL per smoke")
     ap.add_argument("--timeout-s", type=int, default=600)
+    ap.add_argument(
+        "--relaxed-msg",
+        action="store_true",
+        help="Forward --relaxed-msg to hymeko_pgraph_dump (strict_no_excess=false)",
+    )
+    ap.add_argument(
+        "--weights",
+        type=str,
+        default=None,
+        help="Phase 10: comma-separated weights aligned with the "
+             "alphabetised cost_dimensions of the fixture",
+    )
     args = ap.parse_args()
 
     try:
@@ -180,8 +262,15 @@ def main() -> None:
         base = parse_training(str(repo / "data" / "hsikan" / "gomb_training.hymeko"))
     base["_python_executable"] = sys.executable
 
-    analysis = run_pgraph_dump(repo, args.pgraph, args.algorithm)
+    analysis = run_pgraph_dump(
+        repo, args.pgraph, args.algorithm, relaxed_msg=args.relaxed_msg,
+        weights=args.weights,
+    )
     print(json.dumps({"phase": "pgraph_analysis", **analysis}, indent=2, default=str))
+    # Phase 7: print a one-line Friedler-certificate summary so the
+    # human running the sweep sees PASS/FAIL at a glance, on top of
+    # the full analysis JSON.
+    _print_certificate_summary(analysis, file=sys.stderr)
 
     if not analysis.get("ok"):
         raise SystemExit(2)
@@ -205,6 +294,7 @@ def main() -> None:
         structures = [list(s) for s in raw if s]
 
     max_runs = args.max_runs if args.max_runs is not None else len(structures)
+    cert_fields = _certificate_fields(analysis)
     for i, units in enumerate(structures[:max_runs]):
         print(
             f"\n[smoke {i + 1}/{min(len(structures), max_runs)}] units={units}",
@@ -220,6 +310,8 @@ def main() -> None:
             seed=args.seed,
             timeout_s=int(args.timeout_s),
         )
+        # Phase 7: stamp the Friedler certificate onto every JSONL row.
+        row.update(cert_fields)
         line = json.dumps(row, sort_keys=True, default=str)
         print(line, flush=True)
         if args.output:

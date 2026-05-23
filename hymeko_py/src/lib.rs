@@ -10,6 +10,7 @@
 pub mod interface_python;
 pub mod cycles;
 pub mod hymeko_parse;
+pub mod quadtree;
 
 use pyo3::prelude::*;
 use crate::interface_python::api::{
@@ -44,6 +45,11 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_cycles_entropy_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::hymeko_parse::parse_hymeko_rs, m)?)?;
+
+    // GömbSoma AdaptiveQuadtree (Rust-side state machine; variance
+    // scoring stays on GPU in Python via a callback). See
+    // docs/plans/2026-05-16-gomb-soma-quadtree-triton/plan.tex.
+    m.add_function(wrap_pyfunction!(crate::quadtree::build_quadtree_rs, m)?)?;
 
     Ok(())
 }

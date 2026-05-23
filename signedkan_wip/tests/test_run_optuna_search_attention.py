@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from signedkan_wip.src import run_optuna_search as ros
+import signedkan_wip.experiments.runs.run_optuna_search as ros
 
 
 def test_attention_kinds_explicit_env(monkeypatch: pytest.MonkeyPatch) -> None:

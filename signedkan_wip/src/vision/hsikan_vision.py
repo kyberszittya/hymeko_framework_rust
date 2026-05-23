@@ -74,7 +74,7 @@ def build_rf_incidence(
     return inc, n_edges
 
 
-# ─── Catmull-Rom activation (lifted from signedkan_wip.src.splines) ─
+# ─── Catmull-Rom activation (lifted from signedkan_wip.src.core.splines) ─
 
 
 class CRActivation(nn.Module):

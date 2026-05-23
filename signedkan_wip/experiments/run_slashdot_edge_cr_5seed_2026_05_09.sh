@@ -27,7 +27,7 @@ echo "[edge_cr] $(date +'%Y-%m-%d %H:%M:%S') start"
 
 # Wait for any in-flight run_final_cell process to free the GPU.
 echo "[edge_cr] waiting for GPU..."
-while pgrep -af "python -m signedkan_wip.src.run_final_cell" \
+while pgrep -af "python -m signedkan_wip.experiments.runs.run_final_cell" \
         | grep -v "$$" | grep -q .; do
     sleep 60
 done
@@ -45,7 +45,7 @@ run_cell() {
     HSIKAN_CYCLE_BATCH=2000 \
     HSIKAN_MAX_K3=200000 \
     HSIKAN_MAX_K2=200000 \
-    python -m signedkan_wip.src.run_final_cell \
+    python -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset slashdot --hidden 4 --n-epochs 80 \
         --max-k4 200000 --seed "$seed" \
         > "$logf" 2>&1

@@ -8,7 +8,7 @@ import numpy as np
 
 from dataclasses import dataclass
 
-from ..signedkan import MultiLayerSignedKANConfig
+from ..core.signedkan import MultiLayerSignedKANConfig
 
 
 @dataclass

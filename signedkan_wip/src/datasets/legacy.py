@@ -21,7 +21,10 @@ from pathlib import Path
 
 import numpy as np
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# Post-2026-05-19-Slice-E: file moved from src/datasets.py to
+# src/datasets/legacy.py, so we now need three .parent's to reach
+# signedkan_wip/, then attach "data".
+DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 URLS = {
@@ -40,12 +43,24 @@ URLS = {
     # KONECT: Wikipedia edit-war / conflict network. 118K nodes,
     # 2.9M multi-signed edges (continuous weights → binarised on load).
     "wiki_conflict": "http://konect.cc/files/download.tsv.wikiconflict.tar.bz2",
+    # 2026-05-17 Phase C: Reddit Hyperlink Network (SNAP, Kumar et al.
+    # 2018). Subreddit-to-subreddit hyperlinks signed by sentiment of
+    # the surrounding post text. Two files (post-body links, post-title
+    # links) - we expose both. Plain TSV with 6 cols; field 5 is the
+    # signed label. Used by NO 2025 transformer baseline (SE-SGformer
+    # / DADSGNN). Real-world generalisation test.
+    "reddit_body":   "https://snap.stanford.edu/data/soc-redditHyperlinks-body.tsv",
+    "reddit_title":  "https://snap.stanford.edu/data/soc-redditHyperlinks-title.tsv",
 }
 
-# Two on-disk file formats:
+# On-disk file formats:
 #   "bitcoin"    — comma-separated, 4 cols: src, dst, rating, timestamp.
 #                  rating ∈ [-10, 10]; binarised rating > 0 → +1.
 #   "snap_signed" — tab-separated, 3 cols: src, dst, sign ∈ {+1, -1}.
+#   "reddit_hyperlinks" — tab-separated, 6 cols + header line:
+#       SOURCE_SUBREDDIT, TARGET_SUBREDDIT, POST_ID, TIMESTAMP,
+#       LINK_SENTIMENT (+1 / -1), PROPERTIES. Subreddit names are
+#       strings; we map them to integer node indices on load.
 FORMATS = {
     "bitcoin_alpha": "bitcoin",
     "bitcoin_otc":   "bitcoin",
@@ -54,6 +69,8 @@ FORMATS = {
     "wikisigned":    "konect_signed",
     "wiki_elec":     "konect_signed",
     "wiki_conflict": "konect_signed",
+    "reddit_body":   "reddit_hyperlinks",
+    "reddit_title":  "reddit_hyperlinks",
 }
 
 
@@ -77,7 +94,12 @@ class SignedGraph:
 
 def download(name: str) -> Path:
     fmt = FORMATS[name]
-    ext = "csv" if fmt == "bitcoin" else "txt"
+    if fmt == "bitcoin":
+        ext = "csv"
+    elif fmt == "reddit_hyperlinks":
+        ext = "tsv"
+    else:
+        ext = "txt"
     out = DATA_DIR / f"{name}.{ext}"
     if out.exists():
         return out
@@ -87,6 +109,11 @@ def download(name: str) -> Path:
     )
     with urllib.request.urlopen(req) as r:
         raw = r.read()
+    # Reddit Hyperlinks ships as plain TSV (no gzip); write straight to disk.
+    if fmt == "reddit_hyperlinks":
+        out.write_bytes(raw)
+        print(f"  wrote {out}")
+        return out
     # konect_signed datasets ship as `.tar.bz2` containing an
     # `out.<name>` file with `% header\nsrc tgt weight\n...`.  Extract
     # the inner file and rewrite it to the canonical `<name>.txt`
@@ -134,13 +161,13 @@ def download(name: str) -> Path:
 def load(name: str) -> SignedGraph:
     # Programmatic datasets (Phase 6 small/synthetic stitch).
     if name == "karate":
-        from .datasets_small import karate_faction_signed
+        from .small import karate_faction_signed
         return karate_faction_signed()
     if name.startswith("sbm_"):
         # sbm_n200_k4_s0 → sbm_signed(n_nodes=200, n_communities=4, seed=0)
         # sbm_n200 / sbm_n400 → same with k=4, seed=0 (matches run_final_cell
         # ``sbm_n{N}`` shorthand used in SOTA tables).
-        from .datasets_small import sbm_signed
+        from .small import sbm_signed
         parts = name.split("_")
         n = int(parts[1][1:])
         if len(parts) >= 3 and parts[2].startswith("k"):
@@ -155,7 +182,7 @@ def load(name: str) -> SignedGraph:
         return g
     if name.startswith("hier_"):
         # hier_n240_s0 → hierarchical_signed(n_nodes=240, seed=0)
-        from .datasets_small import hierarchical_signed
+        from .small import hierarchical_signed
         parts = name.split("_")
         n = int(parts[1][1:])
         seed_part = int(parts[2][1:]) if len(parts) > 2 else 0
@@ -163,7 +190,7 @@ def load(name: str) -> SignedGraph:
         return g
     if name.startswith("sbmsweep_"):
         # sbmsweep_pos85_s0 → SBM with pos_in=0.85, seed=0
-        from .datasets_small import sbm_signed
+        from .small import sbm_signed
         parts = name.split("_")
         pos_in = int(parts[1][3:]) / 100.0
         seed_part = int(parts[2][1:]) if len(parts) > 2 else 0
@@ -176,7 +203,7 @@ def load(name: str) -> SignedGraph:
     fmt = FORMATS[name]
     edges = []
     signs = []
-    nodes = set()
+    nodes: set = set()
     with raw_path.open() as f:
         if fmt == "bitcoin":
             reader = csv.reader(f)
@@ -185,6 +212,38 @@ def load(name: str) -> SignedGraph:
             # Use a manual line parser since csv.reader chokes on
             # mixed tabs+spaces.
             reader = (line.split() for line in f if line.strip())
+        elif fmt == "reddit_hyperlinks":
+            # 6-col TSV with a header line; columns 0,1 are subreddit
+            # NAMES (strings) and column 4 is the +1/-1 sentiment label.
+            # node_id_for() string-maps to integers as we parse.
+            name_to_id: dict[str, int] = {}
+
+            def _node_id_for(s: str) -> int:
+                v = name_to_id.get(s)
+                if v is None:
+                    v = len(name_to_id)
+                    name_to_id[s] = v
+                return v
+
+            for raw_line in f:
+                if not raw_line.strip() or raw_line.startswith("SOURCE_SUBREDDIT"):
+                    continue
+                fields = raw_line.rstrip("\n").split("\t")
+                if len(fields) < 5:
+                    continue
+                try:
+                    sentiment = int(fields[4])
+                except ValueError:
+                    continue
+                if sentiment == 0:
+                    continue
+                u = _node_id_for(fields[0])
+                v = _node_id_for(fields[1])
+                edges.append((u, v))
+                signs.append(1 if sentiment > 0 else -1)
+                nodes.add(u); nodes.add(v)
+            # Skip the generic reader loop below.
+            reader = iter(())
         else:  # SNAP signed (tab-separated)
             reader = csv.reader(f, delimiter="\t")
         for row in reader:

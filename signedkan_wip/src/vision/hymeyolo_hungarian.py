@@ -164,9 +164,53 @@ def hungarian_set_loss(
     lam_corner: float = 5.0,
     lam_cls: float = 1.0,
     lam_no_obj: float = 0.5,
+    *,
+    cls_loss_kind: str = "ce",    # "ce" | "focal" (Stage A-3)
+    box_loss_kind: str = "l1",    # "l1" | "giou" (Stage A-3)
 ):
     """DETR-style set-prediction loss with per-image Hungarian
-    matching."""
+    matching.
+
+    Stage A-3 (2026-05-16 evening):
+        cls_loss_kind="focal" → use multi-class focal loss instead of
+            cross-entropy (better for the heavy class-imbalance from
+            many no-object queries).
+        box_loss_kind="giou" → use 1-GIoU on AABBs derived from the
+            matched corners instead of L1 on the corner positions
+            (better for box regression — aligned with the eval mAP@0.5
+            metric, which uses IoU).
+    Defaults preserve pre-2026-05-16 behaviour (ce + L1).
+    """
+    # Lazy import: avoid a circular dependency at module load.
+    from .train_circles_ricci import focal_loss_ce, giou_loss_xyxy
+
+    def _cls_loss(logits, targets, *, reduction="mean"):
+        if cls_loss_kind == "focal":
+            return focal_loss_ce(
+                logits, targets, gamma=2.0, reduction=reduction,
+            )
+        return F.cross_entropy(logits, targets, reduction=reduction)
+
+    def _box_loss_on_matched(matched_pred_corners, matched_gt_corners):
+        if box_loss_kind == "giou":
+            # Box-loss term computes GIoU on the AABB derived from
+            # each (4-corner) prediction vs the AABB of each GT
+            # 4-corner set. Same input dimensionality as the L1
+            # branch; just different reduction.
+            pred_aabb = torch.stack([
+                matched_pred_corners[..., 0].min(dim=-1).values,
+                matched_pred_corners[..., 1].min(dim=-1).values,
+                matched_pred_corners[..., 0].max(dim=-1).values,
+                matched_pred_corners[..., 1].max(dim=-1).values,
+            ], dim=-1)
+            gt_aabb = torch.stack([
+                matched_gt_corners[..., 0].min(dim=-1).values,
+                matched_gt_corners[..., 1].min(dim=-1).values,
+                matched_gt_corners[..., 0].max(dim=-1).values,
+                matched_gt_corners[..., 1].max(dim=-1).values,
+            ], dim=-1)
+            return giou_loss_xyxy(pred_aabb, gt_aabb, reduction="mean")
+        return (matched_pred_corners - matched_gt_corners).abs().mean()
     B, N = pred_corners.shape[:2]
     device = pred_corners.device
     pred_probs = F.softmax(pred_cls, dim=-1)        # (B, N, n_classes+1)
@@ -184,12 +228,15 @@ def hungarian_set_loss(
             no_obj_targets = torch.full(
                 (N,), n_classes, dtype=torch.long, device=device,
             )
-            total_no_obj_loss = total_no_obj_loss + F.cross_entropy(
+            total_no_obj_loss = total_no_obj_loss + _cls_loss(
                 pred_cls[b], no_obj_targets, reduction="sum",
             )
             continue
         # Cost matrix: (N, n_gt).
-        # Corner L1: each pred against each gt.
+        # Corner L1: each pred against each gt. Matching cost stays
+        # on L1 even when box_loss_kind=="giou" — see note in the
+        # circle variant: per-pair GIoU as a matching cost is more
+        # expensive without measurable matching difference.
         pc = pred_corners[b].unsqueeze(1)            # (N, 1, 4, 2)
         gc = gt_corners[b, :n_gt].unsqueeze(0)       # (1, n_gt, 4, 2)
         corner_cost = (pc - gc).abs().mean(dim=(-1, -2))  # (N, n_gt)
@@ -203,15 +250,14 @@ def hungarian_set_loss(
         # Build no-object target for unmatched queries.
         matched_pred = torch.tensor(rows, device=device, dtype=torch.long)
         matched_gt = torch.tensor(cols, device=device, dtype=torch.long)
-        # Matched corner L1.
-        matched_corner_loss = (
-            pred_corners[b][matched_pred]
-            - gt_corners[b][matched_gt]
-        ).abs().mean()
-        total_corner_loss = total_corner_loss + matched_corner_loss
-        # Matched class CE.
+        # Matched corner/box loss (dispatched by box_loss_kind).
+        total_corner_loss = total_corner_loss + _box_loss_on_matched(
+            pred_corners[b][matched_pred],
+            gt_corners[b][matched_gt],
+        )
+        # Matched class loss (dispatched by cls_loss_kind).
         matched_cls_targets = gt_classes[b][matched_gt]
-        total_cls_loss = total_cls_loss + F.cross_entropy(
+        total_cls_loss = total_cls_loss + _cls_loss(
             pred_cls[b][matched_pred], matched_cls_targets,
         )
         n_matched_correct += int((
@@ -228,7 +274,7 @@ def hungarian_set_loss(
                 (unmatched.numel(),), n_classes,
                 dtype=torch.long, device=device,
             )
-            total_no_obj_loss = total_no_obj_loss + F.cross_entropy(
+            total_no_obj_loss = total_no_obj_loss + _cls_loss(
                 pred_cls[b][unmatched], no_obj_targets,
             )
 

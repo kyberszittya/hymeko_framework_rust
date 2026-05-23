@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 from .run_compare import run_one
-from signedkan_wip.src.highway_signedkan import HighwaySignedKAN
+from signedkan_wip.src.core.highway_signedkan import HighwaySignedKAN
 
 
 def main():

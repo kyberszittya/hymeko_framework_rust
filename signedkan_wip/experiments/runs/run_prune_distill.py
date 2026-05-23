@@ -22,11 +22,11 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import load, split
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.signedkan import SignedKAN, SignedKANConfig
-from signedkan_wip.src.train import build_edge_to_triads
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.signedkan import SignedKAN, SignedKANConfig
+from signedkan_wip.src.core.train import build_edge_to_triads
 from .run_compare import build_edge_incidence
-from signedkan_wip.src.prune_distill import (measure_activity, prune_inactive,
+from signedkan_wip.src.core.prune_distill import (measure_activity, prune_inactive,
                              distill_activation, fit_summary)
 
 

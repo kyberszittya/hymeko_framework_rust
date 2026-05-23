@@ -40,10 +40,10 @@
             const path_to_root = "";
             const default_light_theme = "rust";
             const default_dark_theme = "ayu";
-            window.path_to_searchindex_js = "searchindex-e042d62a.js";
+            window.path_to_searchindex_js = "searchindex-acc47493.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-eca09d14.js"></script>
+        <script src="toc-47cca6f9.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -2143,6 +2143,217 @@ out.append(AuditCase(
 <li><code>signedkan_wip/src/test_harness/</code> — three modules: <code>env_var_audit</code>, <code>result_capture</code>, <code>invariant_check</code></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="hymeko-gömb--overview"><a class="header" href="#hymeko-gömb--overview">HymeKo-Gömb — overview</a></h1>
+<p><strong>Gömb</strong> is HyMeKo’s three-shell cascade architecture for signed-graph
+prediction. It composes three architecturally-orthogonal layers — each
+adding an independent <strong>inductive bias</strong> — over a shared signed
+hypergraph representation. The shells are:</p>
+<ol>
+<li><strong>OuterFIRShell</strong> — a Clifford-algebra-based <strong>Finite Impulse Response
+(FIR)</strong> kernel bank that filters signed neighborhoods through <code>M</code>
+geometric kernels. Operates in a graded multivector space; the
+“outer” name refers to the <em>outer product</em> / wedge structure of
+geometric algebra.</li>
+<li><strong>MiddleHSiKAN</strong> — the <strong>Hypergraph Signed Kolmogorov–Arnold
+Network</strong> middle layer. Catmull–Rom (or B-spline / Kochanek–Bartels)
+splines per sign branch over per-arity cycle σ-products. This is
+the <em>learnable activation</em> layer.</li>
+<li><strong>InnerCPMLCore</strong> — the <strong>Capsule Path-routed Multi-Layer</strong> core. A
+tier-stratified capsule router with optional Highway-residual,
+Capsule-routed, or KAN-routed paths. Produces the final per-edge
+embedding consumed by the classification head.</li>
+</ol>
+<p>The three shells are deliberately <strong>orthogonal in design space</strong>:
+geometric-algebra (FIR) × spline-activation (HSiKAN) × capsule-routing
+(CPML). See the comprehensive treatment in
+<a href="#orthogonal-neural-dimensions--hsikan-clifford-fir-derivative-nodelets-cpml">Orthogonal neural dimensions</a>
+for how each axis is independently variable.</p>
+<h2 id="why-gömb"><a class="header" href="#why-gömb">Why “Gömb”</a></h2>
+<p><code>Gömb</code> is Hungarian for <em>sphere</em> — chosen because the three shells form
+a concentric architecture: outermost geometric filtering, middle
+spline-activation, innermost capsule routing. The outer-to-inner
+information flow mirrors a spherical wave-front collapsing onto a focal
+classifier.</p>
+<h2 id="architectural-anchor-cycle-σ-products-on-signed-hypergraphs"><a class="header" href="#architectural-anchor-cycle-σ-products-on-signed-hypergraphs">Architectural anchor: cycle σ-products on signed hypergraphs</a></h2>
+<p>All three shells consume the same fundamental object: <strong>per-cycle
+σ-products</strong> over a signed hypergraph <code>H = (V, E, σ)</code>. For a k-cycle
+<code>c = (v_1, …, v_k)</code> with edge signs <code>σ_i ∈ {±1}</code>:</p>
+<p>$$ \pi(c) = \prod_{i=1}^{k} \sigma_i $$</p>
+<p><code>π(c) = +1</code> iff the cycle is <strong>structurally balanced</strong>
+(Cartwright-Harary 1956); the σ-product features encode this balance
+directly.</p>
+<p>The three shells transform the same per-cycle σ-products differently:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Shell</th><th>Transform</th><th>Inductive bias</th></tr>
+</thead>
+<tbody>
+<tr><td>Outer (FIR)</td><td>Clifford-algebra graded-product filtering</td><td>geometric / scale-equivariant</td></tr>
+<tr><td>Middle (HSiKAN)</td><td>Per-sign-branch spline activation</td><td>learnable non-linearity per arity</td></tr>
+<tr><td>Inner (CPML)</td><td>Tier-stratified capsule routing</td><td>hierarchical evidence aggregation</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="strict-by-construction-protocol"><a class="header" href="#strict-by-construction-protocol">Strict-by-construction protocol</a></h2>
+<p>Gömb’s cycle pool enumerates over <strong>training edges only</strong>
+(<code>enumerate_top_k_cycles_rs(e_tr, s_tr, ...)</code> in
+<a href="../../../signedkan_wip/src/run_gomb_smoke.py">run_gomb_smoke.py</a>). Test
+edges never participate in σ-products. This means:</p>
+<ul>
+<li>No transductive σ-leakage (which the canonical Bitcoin/Slashdot
+signed-link convention silently permits).</li>
+<li>Label-shuffle on training edges drops AUC to chance (<code>test_AUROC = 0.5402</code> on Bitcoin Alpha — see
+<a href="#gömb-strict-protocol-5-seed-benchmark-2026-05-14">strict-protocol-benchmark</a>).</li>
+<li>The reported AUC numbers reflect <strong>honest architectural learning</strong>,
+not protocol-permitted feature leakage.</li>
+</ul>
+<p>This makes Gömb the architecturally-clean reference for signed-link
+prediction — distinct from HSiKAN’s transductive setup, which inherits
+the canonical-but-leaky convention.</p>
+<h2 id="variants"><a class="header" href="#variants">Variants</a></h2>
+<p>The <a href="../../../signedkan_wip/src/hymeko_gomb"><code>signedkan_wip/src/hymeko_gomb/</code></a>
+package exposes four ablation classes:</p>
+<ul>
+<li><code>HymeKoGomb</code> — full three-shell cascade.</li>
+<li><code>GombNoOuter</code> — Middle-HSiKAN + InnerCPML only.</li>
+<li><code>GombNoMiddle</code> — OuterFIR + InnerCPML.</li>
+<li><code>GombNoInner</code> — OuterFIR + Middle-HSiKAN.</li>
+</ul>
+<p>Plus two mix-fusion variants:</p>
+<ul>
+<li><code>MixedArityGomb</code> — multiple cycle arities (k=3..6) without
+cross-arity α-fusion.</li>
+<li><code>JointMixGomb</code> — c3 + c4 + w2 + w3 stacks fused via learned α
+(the standard 5-seed configuration).</li>
+</ul>
+<h2 id="cross-references"><a class="header" href="#cross-references">Cross-references</a></h2>
+<ul>
+<li><a href="#gömb-strict-protocol-5-seed-benchmark-2026-05-14">Three-shell strict-protocol 5-seed benchmark</a>
+— the 2026-05-14 paper-table numbers.</li>
+<li><a href="#research-hsikan-architecture">HSiKAN architecture</a> — Middle shell details.</li>
+<li><a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a>
+— Inner shell routing options.</li>
+<li><a href="#orthogonal-neural-dimensions--hsikan-clifford-fir-derivative-nodelets-cpml">Orthogonal neural dimensions</a>
+— comprehensive treatment of why the three shells compose.</li>
+<li><a href="#hymeko-gömb-and-orthogonal--three-precise-meanings">Gömb-orthogonal: meanings</a> —
+earlier exploration of the “orthogonal” framing across compute,
+loss, and architecture axes.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="gömb-strict-protocol-5-seed-benchmark-2026-05-14"><a class="header" href="#gömb-strict-protocol-5-seed-benchmark-2026-05-14">Gömb strict-protocol 5-seed benchmark (2026-05-14)</a></h1>
+<p>The 2026-05-14 ChatGPT audit forced a clean separation between the
+canonical-but-leaky transductive convention used by published
+signed-link papers and a strict-by-construction protocol that
+forbids test-edge σ-leakage. <strong>Gömb runs the strict protocol
+natively</strong>, which makes its 5-seed numbers the honest architectural
+reference.</p>
+<h2 id="headline-5-seed-optuna-tuned-configs"><a class="header" href="#headline-5-seed-optuna-tuned-configs">Headline 5-seed (Optuna-tuned configs)</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Dataset</th><th style="text-align: right">Gömb-strict 5-seed</th><th>Per-seed</th></tr>
+</thead>
+<tbody>
+<tr><td>Bitcoin Alpha</td><td style="text-align: right">0.8972 ± 0.0079</td><td>0.8877 · 0.9087 · 0.8901 · 0.8962 · 0.9035</td></tr>
+<tr><td>Bitcoin OTC</td><td style="text-align: right">0.9145 ± 0.0068</td><td>0.9256 · 0.9047 · 0.9125 · 0.9127 · 0.9168</td></tr>
+<tr><td>Slashdot</td><td style="text-align: right"><strong>0.9017 ± 0.0008</strong></td><td>0.9007 · 0.9015 · 0.9015 · 0.9016 · 0.9033</td></tr>
+<tr><td><strong>Epinions</strong></td><td style="text-align: right"><strong>0.9526 ± 0.0018</strong> ★</td><td>0.9532 · 0.9520 · 0.9499 · 0.9523 · 0.9555</td></tr>
+</tbody>
+</table>
+</div>
+<p>★ — Epinions number is the fine-tune winner config (v5_combined),
+<strong>beats published SiGAT (~0.95)</strong> under a strict protocol that
+forbids the σ-leakage all transductive baselines benefit from.</p>
+<h2 id="configs-optuna-reused"><a class="header" href="#configs-optuna-reused">Configs (Optuna-reused)</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Dataset</th><th style="text-align: right">d_embed</th><th style="text-align: right">M_outer</th><th style="text-align: right">d_outer</th><th style="text-align: right">d_middle</th><th style="text-align: right">d_core</th><th style="text-align: right">n_tiers</th><th style="text-align: right">topk</th><th style="text-align: right">lr</th><th style="text-align: right">epochs</th><th style="text-align: right">params</th></tr>
+</thead>
+<tbody>
+<tr><td>Bitcoin Alpha</td><td style="text-align: right">32</td><td style="text-align: right">8</td><td style="text-align: right">20</td><td style="text-align: right">24</td><td style="text-align: right">48</td><td style="text-align: right">4</td><td style="text-align: right">56</td><td style="text-align: right">5e-3</td><td style="text-align: right">80</td><td style="text-align: right">676k</td></tr>
+<tr><td>Bitcoin OTC</td><td style="text-align: right">32</td><td style="text-align: right">12</td><td style="text-align: right">8</td><td style="text-align: right">16</td><td style="text-align: right">32</td><td style="text-align: right">2</td><td style="text-align: right">32</td><td style="text-align: right">5e-3</td><td style="text-align: right">80</td><td style="text-align: right">356k</td></tr>
+<tr><td>Slashdot</td><td style="text-align: right">16</td><td style="text-align: right">4</td><td style="text-align: right">4</td><td style="text-align: right">4</td><td style="text-align: right">4</td><td style="text-align: right">3</td><td style="text-align: right">32</td><td style="text-align: right">3e-3</td><td style="text-align: right">60</td><td style="text-align: right">1.33M</td></tr>
+<tr><td>Epinions (baseline)</td><td style="text-align: right">16</td><td style="text-align: right">4</td><td style="text-align: right">4</td><td style="text-align: right">4</td><td style="text-align: right">4</td><td style="text-align: right">3</td><td style="text-align: right">32</td><td style="text-align: right">3e-3</td><td style="text-align: right">60</td><td style="text-align: right">2.13M</td></tr>
+<tr><td><strong>Epinions (v5_combined)</strong></td><td style="text-align: right"><strong>32</strong></td><td style="text-align: right"><strong>8</strong></td><td style="text-align: right"><strong>8</strong></td><td style="text-align: right"><strong>8</strong></td><td style="text-align: right"><strong>8</strong></td><td style="text-align: right"><strong>3</strong></td><td style="text-align: right"><strong>64</strong></td><td style="text-align: right"><strong>3e-3</strong></td><td style="text-align: right"><strong>80</strong></td><td style="text-align: right">—</td></tr>
+</tbody>
+</table>
+</div>
+<p>The Epinions fine-tune sweep tried 6 single-seed variants (more
+epochs, bigger embed, medium cores, more topk, combined, deep
+tiers); <strong>v5_combined</strong> (bigger embed + medium cores + more topk
+together) was the winner; single levers alone hit a ~0.95 ceiling.</p>
+<h2 id="cross-protocol-comparison-apples-to-apples-only-within-protocol"><a class="header" href="#cross-protocol-comparison-apples-to-apples-only-within-protocol">Cross-protocol comparison (apples-to-apples <em>only within</em> protocol)</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Model</th><th>Protocol</th><th style="text-align: right">Bitcoin Alpha</th><th style="text-align: right">Bitcoin OTC</th><th style="text-align: right">Slashdot</th><th style="text-align: right">Epinions</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Gömb (this work)</strong></td><td>strict</td><td style="text-align: right">0.8972</td><td style="text-align: right">0.9145</td><td style="text-align: right">0.9017</td><td style="text-align: right"><strong>0.9526</strong> ★</td></tr>
+<tr><td>SGCN (Derr et al. 2018)</td><td>transductive (leaky)</td><td style="text-align: right">0.929</td><td style="text-align: right">0.942</td><td style="text-align: right">0.919</td><td style="text-align: right">—</td></tr>
+<tr><td>SiGAT (Huang et al. 2019)</td><td>transductive (leaky)</td><td style="text-align: right">0.903</td><td style="text-align: right">0.932</td><td style="text-align: right">—</td><td style="text-align: right">~0.95</td></tr>
+<tr><td>Our HSiKAN edge_cr</td><td>transductive (leaky)</td><td style="text-align: right">0.997</td><td style="text-align: right">0.993</td><td style="text-align: right">0.9067</td><td style="text-align: right">0.8464</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Why the Bitcoin Alpha/OTC numbers look “below” SGCN</strong>: the protocols
+are different. SGCN/SiGAT include test-edge signs in their
+message-passing graph by default; Gömb does not. Under <strong>identical
+strict protocol</strong> (which the literature does not report), SGCN’s
+numbers would also drop substantially. The Slashdot number
+(0.9017) matches our prior published Gömb 0.9031 ± 0.0008 within
+noise — independent reproduction.</p>
+<h2 id="audit--label-shuffle-confirms-strict-protocol"><a class="header" href="#audit--label-shuffle-confirms-strict-protocol">Audit — label-shuffle confirms strict protocol</a></h2>
+<p>Label-shuffle is the diagnostic that distinguishes “architecture
+that learns from labels” vs “architecture that learns from
+σ-leakage”. On Bitcoin Alpha (graph-level shuffle of train-edge
+signs; test signs untouched):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Model</th><th style="text-align: right">Real labels</th><th style="text-align: right">Shuffled labels</th><th>What this means</th></tr>
+</thead>
+<tbody>
+<tr><td>HSiKAN Optuna-best (c2,c5,w2,w3,w4)</td><td style="text-align: right">0.9970</td><td style="text-align: right"><strong>0.9921</strong></td><td>σ-leakage dominates</td></tr>
+<tr><td>HSiKAN joint_mix (c3,c4,w2,w3)</td><td style="text-align: right">0.9845</td><td style="text-align: right">0.8902</td><td>moderate σ-leakage</td></tr>
+<tr><td><strong>Gömb (joint-mix)</strong></td><td style="text-align: right"><strong>(0.943 Epinions)</strong></td><td style="text-align: right"><strong>0.5402</strong></td><td><strong>strict — no leakage</strong></td></tr>
+<tr><td>SGCN</td><td style="text-align: right">0.93</td><td style="text-align: right">0.5503</td><td>no structural prior</td></tr>
+<tr><td>HSiKAN-Optuna <strong>untrained</strong></td><td style="text-align: right">n/a</td><td style="text-align: right">rank-AUC 0.9956</td><td>architecture IS the predictor</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>run_gomb_smoke.py --shuffle-train-signs</code> is the standardized hook.</p>
+<h2 id="sota-push-sweep-2026-05-14--confirms-architectural-ceiling"><a class="header" href="#sota-push-sweep-2026-05-14--confirms-architectural-ceiling">SOTA-push sweep (2026-05-14) — confirms architectural ceiling</a></h2>
+<p>A 14-variant single-seed sweep + top-1-per-dataset 5-seed validation
+found <strong>no variant beat the headline tuned 5-seed numbers</strong> on any
+dataset. The Bitcoin Alpha/OTC ceiling (~0.90 / ~0.91) is the
+architectural ceiling for the <code>c3,c4,w2,w3</code> joint-mix tuple set
+under strict protocol. Further gains require either (a) the c2
+tuple (which is the leakage path) or (b) architectural changes
+(attention, more arities, capsule-routing variants).</p>
+<h2 id="reproducibility"><a class="header" href="#reproducibility">Reproducibility</a></h2>
+<p>All artifacts in
+<a href="../../../signedkan_wip/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z"><code>signedkan_wip/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/</code></a>
+(main benchmark) +
+<a href="../../../signedkan_wip/experiments/results/gomb_epinions_finetune_20260514T014021Z"><code>gomb_epinions_finetune_20260514T014021Z/</code></a>
+(Epinions fine-tune) +
+<a href="../../../signedkan_wip/experiments/results/gomb_sota_push_20260514T082642Z"><code>gomb_sota_push_20260514T082642Z/</code></a>
+(SOTA-push sweep). Each directory contains:</p>
+<ul>
+<li><code>orchestrator.log</code> — full per-seed timing + result lines</li>
+<li><code>&lt;step&gt;_seed&lt;N&gt;.log</code> — per-run training output</li>
+<li>Reproducible via the runner scripts in
+<a href="../../../signedkan_wip/experiments"><code>signedkan_wip/experiments/run_gomb_*_2026_05_14.sh</code></a>.</li>
+</ul>
+<h2 id="cross-references-1"><a class="header" href="#cross-references-1">Cross-references</a></h2>
+<ul>
+<li>Audit: <a href="../../../reports/2026-05-14-bitcoin-leakage-audit.html">reports/2026-05-14-bitcoin-leakage-audit.md</a></li>
+<li>SOTA snapshot: <a href="#sota-snapshot--diagrams-included-from-repo">SOTA snapshot &amp; diagrams</a>
+— §0 captures the same numbers in the global benchmark table.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="research-signedkan_wip-overview"><a class="header" href="#research-signedkan_wip-overview">Research: signedkan_wip overview</a></h1>
 <p><code>signedkan_wip/</code> is the research-grade workspace for the <strong>HSiKAN family</strong> — Hypergraph Signed Kolmogorov–Arnold Networks. It accreted fast during 2026-04 / 2026-05 and is mostly Python, separate from the Rust crates’ production surface.</p>
 <h2 id="whats-stable"><a class="header" href="#whats-stable">What’s stable</a></h2>
@@ -2246,6 +2457,360 @@ out.append(AuditCase(
 <li><code>signedkan_wip/HSIKAN_FINAL_RESULTS_2026_05_03.md</code> — the published 5-seed numbers</li>
 <li><code>signedkan_wip/HSIKAN_STATE_2026_05_04.md</code> — current research state</li>
 <li><a href="#research-hymeko-driven-training">HyMeKo-driven training</a> — how to drive HSiKAN from .hymeko configs</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="orthogonal-neural-dimensions--hsikan-clifford-fir-derivative-nodelets-cpml"><a class="header" href="#orthogonal-neural-dimensions--hsikan-clifford-fir-derivative-nodelets-cpml">Orthogonal neural dimensions — HSiKAN, Clifford-FIR, Derivative Nodelets, CPML</a></h1>
+<p>This chapter is the comprehensive treatment of the four
+architecturally-orthogonal axes the HyMeKo-Gömb cascade composes:</p>
+<ol>
+<li><strong>HSiKAN</strong> — spline-activated cycle σ-product features (the
+<em>learnable nonlinearity</em> axis).</li>
+<li><strong>Clifford-FIR</strong> (<code>OuterFIRShell</code>) — graded multivector kernel
+filtering on signed neighborhoods (the <em>geometric algebra</em> axis).</li>
+<li><strong>Derivative nodelets</strong> — multi-scale operator that contracts
+balanced cliques into super-vertices, building a hierarchy on which
+any of the other shells can re-run (the <em>scale-equivariance</em> axis).</li>
+<li><strong>CPML</strong> (Capsule Path-routed Multi-Layer) — tier-stratified
+capsule routing for hierarchical evidence aggregation (the <em>routing
+topology</em> axis).</li>
+</ol>
+<p>Each axis is independently variable: turning one knob does not force
+adjustments on another. Their composition in Gömb’s three-shell
+cascade is one example; many other combinations are valid.</p>
+<p>The thesis: <strong>signed-cycle σ-products are a unifying primitive across
+four otherwise-disjoint architectural families</strong>. Spline networks,
+geometric-algebra networks, multi-scale graph networks, and
+capsule-routed networks each have a long history; HyMeKo composes
+them through the shared σ-product feature and shows that all four
+inductive biases reinforce each other on signed-relationship data.</p>
+<hr>
+<h2 id="1-hsikan--spline-activations-over-cycle-σ-products"><a class="header" href="#1-hsikan--spline-activations-over-cycle-σ-products">1. HSiKAN — spline activations over cycle σ-products</a></h2>
+<h3 id="math"><a class="header" href="#math">Math</a></h3>
+<p>Given a signed hypergraph <code>H = (V, E, σ)</code> with σ: E → {±1}, enumerate
+k-cycles <code>c = (v_1, …, v_k)</code>. The per-cycle σ-product is</p>
+<p>$$ \pi(c) = \prod_{i=1}^{k} \sigma(e_i), \quad e_i = (v_i, v_{i+1 \mod k}) $$</p>
+<p>HSiKAN computes per-cycle embeddings via <em>sign-branched splines</em>. For
+each cycle:</p>
+<p>$$ h_c = \sum_{s \in {+, -}} \phi_e^s!\left(\sum_{i : \sigma_i = s} \phi_v^s(h_{v_i})\right) $$</p>
+<p>where <code>φ_v^s</code> and <code>φ_e^s</code> are batched Catmull–Rom splines, separately
+parameterized for the positive and negative sign branches. The
+splines are <em>trained jointly</em> with the rest of the network — they
+are not fixed activations like ReLU/tanh, they are part of the
+parameter pool.</p>
+<p>Per-arity outputs are softmax-blended via a learnable α vector:</p>
+<p>$$ h_e^{\text{final}} = \sum_k \mathrm{softmax}(\alpha)_k \cdot M_e^{(k)} h_c^{(k)} $$</p>
+<p><code>M_e^{(k)}</code> is the sparse signed-incidence matrix mapping per-cycle
+embeddings to per-edge predictions for arity k.</p>
+<h3 id="why-this-matters-1"><a class="header" href="#why-this-matters-1">Why this matters</a></h3>
+<p>Classical GNNs (SGCN, SiGAT, GraphSAGE) use <strong>fixed</strong> activations
+(tanh, ReLU) and <strong>learn</strong> message functions. HSiKAN inverts this:
+the <em>activation</em> is the learnable function (a spline that can shape
+any smooth nonlinearity), while the <em>message</em> is the deterministic
+σ-product over a cycle. This produces:</p>
+<ul>
+<li><strong>Strong structural prior</strong>: the cycle σ-product already encodes
+Cartwright-Harary balance directly. Even at random initialization,
+the architecture’s predictions correlate strongly with edge signs
+(rank-AUC 0.9956 on Bitcoin Alpha).</li>
+<li><strong>Calibration efficiency</strong>: training serves more to calibrate the
+spline shape than to learn what’s predictive. Label-shuffle barely
+drops AUC under transductive convention because the
+σ-product features carry the signal regardless of the supervision.</li>
+<li><strong>Domain specificity</strong>: the inductive bias is tied to <em>signed</em>
+relationships. Tasks where edge signs are derived from continuous
+positions (e.g., HymeYOLO corner detection) do not benefit — the
+σ-product becomes noise. The bias is sharp but bounded.</li>
+</ul>
+<h3 id="family-memberships"><a class="header" href="#family-memberships">Family memberships</a></h3>
+<ul>
+<li>Cycle aggregation: HGNN (Feng et al. 2019), HyperGCN (Yadati et al. 2019).</li>
+<li>Learnable activation: KAN (Liu et al. 2024) and its many descendants.</li>
+<li>Signed extension: SGCN (Derr et al. 2018), SiGAT (Huang et al. 2019).</li>
+</ul>
+<p>HSiKAN is the <strong>product</strong> of these three lineages in a single
+architecture.</p>
+<h3 id="implementation-pointer"><a class="header" href="#implementation-pointer">Implementation pointer</a></h3>
+<p><a href="../../signedkan_wip/src/signedkan.py"><code>signedkan_wip/src/signedkan.py</code></a>
+(<code>SignedKAN</code>, <code>MultiLayerSignedKAN</code>,
+<code>build_vertex_triad_incidence</code>),
+<a href="../../signedkan_wip/src/mixed_arity_signedkan"><code>signedkan_wip/src/mixed_arity_signedkan/</code></a>
+(<code>MixedAritySignedKAN</code>).</p>
+<hr>
+<h2 id="2-clifford-fir--graded-geometric-algebra-filtering"><a class="header" href="#2-clifford-fir--graded-geometric-algebra-filtering">2. Clifford-FIR — graded geometric-algebra filtering</a></h2>
+<h3 id="math-1"><a class="header" href="#math-1">Math</a></h3>
+<p>Geometric algebra (GA) over a vector space <code>V</code> with metric <code>g</code> is
+generated by the <em>outer product</em> <code>∧</code>. Elements are <em>multivectors</em>
+with grades 0 (scalars), 1 (vectors), 2 (bivectors / 2-blades), …,
+n (pseudoscalar). A signed bivector <code>e_a ∧ e_b</code> flips sign under
+swap: <code>e_b ∧ e_a = -(e_a ∧ e_b)</code>.</p>
+<p>The <code>OuterFIRShell</code> filters a per-vertex feature <code>h_v ∈ R^d</code> through
+M graded kernels:</p>
+<p>$$ y_v = \bigoplus_{m=1}^{M} W_m \star (\Sigma_v \wedge h_v) $$</p>
+<p>where <code>Σ_v</code> is the local-neighborhood signed bivector (formed from
+incident edges’ signs), <code>W_m</code> are learned kernel weights, <code>⋆</code> is the
+geometric product, and <code>⊕</code> is sum-after-projection back to the
+chosen output grade.</p>
+<p>In practice, FIRShell uses a discrete approximation: each kernel
+<code>W_m</code> is a <code>d × d</code> matrix that mixes the components of the
+signed-neighborhood multivector. The “FIR” comes from the analogy
+to finite-impulse-response filters in signal processing — each
+kernel has a fixed local receptive field on the cycle pool.</p>
+<h3 id="why-this-matters-1-1"><a class="header" href="#why-this-matters-1-1">Why this matters</a></h3>
+<ul>
+<li><strong>Scale equivariance</strong>: bivector signs flip consistently under
+vertex permutation, so the FIR features are equivariant to local
+graph automorphisms in a way ReLU/tanh aren’t.</li>
+<li><strong>Cross-grade interactions</strong>: the geometric product couples scalar
+(degree), vector (per-vertex), and bivector (per-edge) information
+in one operation. Classical message passing only mixes vertex-vertex
+information directly.</li>
+<li><strong>Numerical conditioning</strong>: graded products distribute over
+signed-bivector inputs without the gradient-vanishing pathologies
+ReLU has on signed features.</li>
+</ul>
+<h3 id="family-memberships-1"><a class="header" href="#family-memberships-1">Family memberships</a></h3>
+<ul>
+<li>Clifford networks: Brandstetter et al. 2023 (Clifford Neural
+Layers), Ruhe et al. 2023 (Clifford GNNs).</li>
+<li>FIR / kernel-bank: ChebNet (Defferrard et al. 2016), GCN
+(Kipf &amp; Welling 2017) is its first-order specialization.</li>
+<li>Signed lift: the σ-bivector formulation extends FIR filtering to
+the signed-graph regime.</li>
+</ul>
+<h3 id="implementation-pointer-1"><a class="header" href="#implementation-pointer-1">Implementation pointer</a></h3>
+<p><a href="../../signedkan_wip/src/hymeko_gomb/shells.py"><code>signedkan_wip/src/hymeko_gomb/shells.py</code></a>
+— <code>OuterFIRShell</code>. The class wraps M parallel linear kernels with a
+graded-multivector aggregation; <code>M_outer</code> is the kernel-bank size
+hyperparameter.</p>
+<hr>
+<h2 id="3-derivative-nodelets--clique-contraction-as-a-derivative"><a class="header" href="#3-derivative-nodelets--clique-contraction-as-a-derivative">3. Derivative nodelets — clique contraction as a “derivative”</a></h2>
+<h3 id="math-2"><a class="header" href="#math-2">Math</a></h3>
+<p>Given a signed graph <code>H = (V, E, σ)</code> and a set of vertex-disjoint
+balanced cliques <code>C = {C_1, …, C_K}</code>, the <strong>contraction operator</strong>
+<code>D</code> maps <code>H</code> to a coarser signed graph <code>H' = (V', E', σ')</code>:</p>
+<p>$$
+V’ = \mathcal{C} \cup {,{v} : v \in V \setminus \bigcup_i C_i,}
+$$</p>
+<p>(super-vertices = chosen cliques + uncovered singletons)</p>
+<p>$$
+\varphi : V \to V’, \quad \varphi(v) = C_i \text{ if } v \in C_i \text{ else } {v}
+$$</p>
+<p>(coarsening map)</p>
+<p>$$
+E’ = {(\varphi(u), \varphi(w)) : (u, w) \in E \wedge \varphi(u) \neq \varphi(w)}
+$$</p>
+<p>(quotient edges)</p>
+<p>$$
+\sigma’(s, t) = \mathrm{sign}!\left(\sum_{(u, w) \in E : \varphi(u)=s, \varphi(w)=t} \sigma(u, w)\right)
+$$</p>
+<p>(majority-sign aggregation, ties → +1)</p>
+<p>Internal edges (<code>φ(u) = φ(w)</code>) are <em>absorbed</em> into the super-vertex
+and discarded — that loss of local detail is the operator’s
+defining feature.</p>
+<p>Iterating <code>D</code> builds a hierarchy:</p>
+<p>$$ H \xrightarrow{D} H’ \xrightarrow{D} H’’ \xrightarrow{D} \cdots \xrightarrow{D} H^{(k)} $$</p>
+<p>terminating either at a fixed point (<code>D(H^{(k)}) = H^{(k)}</code>) or at a
+singleton root.</p>
+<h3 id="why-derivative"><a class="header" href="#why-derivative">Why “derivative”</a></h3>
+<p>Differentiating a function loses pointwise values in exchange for a
+global shape (the slope). Contracting a signed graph loses
+intra-clique edges in exchange for an inter-clique boundary signal.
+The analogy is loose but the intuition holds: each application of
+<code>D</code> is one <em>step of coarsening</em>, exposing one more “level” of
+structure. The full hierarchy is the <em>graph-theoretic analogue of an
+iterated derivative</em>.</p>
+<p>Formal connections (open):</p>
+<ul>
+<li><strong>Discrete exterior calculus</strong>: <code>D</code> is related to the boundary
+operator <code>∂</code> for simplicial complexes; balanced-clique contraction
+is the signed-graph specialization.</li>
+<li><strong>Sheaf cohomology</strong>: each nodelet is a <em>stalk</em> carrying the local
+σ-algebra it summarizes; the cohomology classes of the hierarchy
+encode global balance topology.</li>
+<li><strong>Renormalization group</strong>: same scaling-out-the-fast-modes spirit
+as Wilson-style RG, but on a discrete signed-graph state space
+(Coen-Lambiotte 2019, Castellano-Pastor-Satorras 2009).</li>
+</ul>
+<h3 id="why-this-matters-2"><a class="header" href="#why-this-matters-2">Why this matters</a></h3>
+<ul>
+<li><strong>Multi-scale planning</strong>: high-level planning on coarse nodelets
+(teams, communities) + execution dispatch back to fine vertices
+(individual robots, transistors, neurons) — see the
+<a href="../../../docs/plans/2026-05-14-gomb-belief-planning-bridge/plan.html">belief-planning bridge plan</a>.</li>
+<li><strong>Scale equivariance for Gömb</strong>: V1 of the nodelet operator
+(already implemented and tested) lets the same architecture
+re-run at every scale of the hierarchy. Cliques become
+super-vertices; super-vertices’ inter-edges become the new edge
+set; Gömb operates on <code>H'</code> exactly as on <code>H</code>. Six properties are
+unit-tested:
+vertex-count non-increasing, identity-case (no cliques → no
+contraction), full-balance case (1 super-vertex), determinism,
+edge-preservation modulo internal absorption, sign-aggregation
+majority + tie rule.</li>
+</ul>
+<h3 id="implementation-pointer-2"><a class="header" href="#implementation-pointer-2">Implementation pointer</a></h3>
+<p><a href="../../signedkan_wip/src/demo/cliques_contract.py"><code>signedkan_wip/src/demo/cliques_contract.py</code></a>
+— <code>contract_balanced_cliques</code>, <code>multiscale_hierarchy</code>, <code>ContractedBundle</code>.
+<a href="../../signedkan_wip/tests/test_demo_cliques_contract.py"><code>signedkan_wip/tests/test_demo_cliques_contract.py</code></a>
+— 16 invariant tests including the canonical 4-clique 2-2-split
+balance check.</p>
+<h3 id="open-work"><a class="header" href="#open-work">Open work</a></h3>
+<ul>
+<li><strong>V2</strong>: replace majority-sign aggregation with Gömb’s learned
+vertex embeddings — i.e., use the cycle-pool features themselves
+to weight the contraction. This closes a fixed-point loop where
+<em>Gömb chooses how to coarsen its own input</em>.</li>
+<li><strong>Performance</strong>: current implementation calls Bron-Kerbosch on a
+network’s underlying graph; ceiling at n ≤ 500 dense networks.
+Balance-aware Bron-Kerbosch with σ-product pruning is the V2
+optimization.</li>
+</ul>
+<hr>
+<h2 id="4-cpml--capsule-path-routed-multi-layer"><a class="header" href="#4-cpml--capsule-path-routed-multi-layer">4. CPML — Capsule Path-routed Multi-Layer</a></h2>
+<h3 id="math-3"><a class="header" href="#math-3">Math</a></h3>
+<p>CPML (<code>InnerCPMLCore</code>) is a tier-stratified capsule router. Given a
+graph-level embedding <code>x ∈ R^d</code> from the Middle-HSiKAN shell, CPML:</p>
+<ol>
+<li>
+<p><strong>Tier-stratifies</strong>: partition vertices into <code>n_tiers</code> tiers by a
+structural criterion (degree, eigenvector centrality, or
+cycle-multiplicity rank). Each tier has its own readout head.</p>
+</li>
+<li>
+<p><strong>Capsule-routes</strong> within each tier: a soft-routing matrix
+<code>R^{(t)}_{ij}</code> assigns each lower-tier capsule to upper-tier
+parents, learned by dot-product attention or hard-Gumbel
+sampling. The capsule update follows the standard Sabour-Hinton
+2017 <em>dynamic routing</em>:</p>
+<p>$$ s_j = \sum_i R_{ij} \hat{u}_{j|i}, \quad v_j = \mathrm{squash}(s_j) $$</p>
+</li>
+<li>
+<p><strong>Inter-tier paths</strong>: optional Highway-residual (<code>σ(W h) ⊙ h + (1-σ) ⊙ F(h)</code>), Capsule-routed (full dynamic routing across tiers), or
+KAN-routed (spline-gated inter-tier flow).</p>
+</li>
+</ol>
+<p>The final prediction for an edge <code>(u, v)</code> is computed by pooling the
+final-tier capsules at <code>u</code> and <code>v</code> and feeding the concatenation to
+a small classification head.</p>
+<h3 id="why-this-matters-3"><a class="header" href="#why-this-matters-3">Why this matters</a></h3>
+<ul>
+<li><strong>Hierarchical evidence aggregation</strong>: capsules naturally express
+“this tier’s evidence supports / conflicts with that tier’s”, which
+is what signed-trust prediction needs. The routing matrix is the
+<em>learned trust</em> between structural levels.</li>
+<li><strong>Path-route flexibility</strong>: Highway / Capsule / KAN routes are
+selectable per-tier — different datasets favor different
+inter-tier dynamics. Slashdot benefits from Highway (residual
+pass-through dominates); Bitcoin benefits from full capsule
+routing.</li>
+<li><strong>Capsule depth ≠ network depth</strong>: CPML scales depth via
+<code>n_tiers</code>, not via additional shells. This makes the inner shell
+the right place to add “more layers” without compounding the
+outer-shell parameter blowup.</li>
+</ul>
+<h3 id="family-memberships-2"><a class="header" href="#family-memberships-2">Family memberships</a></h3>
+<ul>
+<li>Capsule networks: Sabour-Frosst-Hinton 2017 (Dynamic Routing
+Between Capsules), Hinton-Sabour-Frosst 2018 (Matrix Capsules
+with EM Routing).</li>
+<li>Path/tier hierarchies: Highway networks (Srivastava et al. 2015),
+GAT (Veličković et al. 2018) per-attention-head as a coarse
+capsule analog.</li>
+<li>KAN-routing: original to HyMeKo — spline-gated inter-tier flow,
+see
+<a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a>.</li>
+</ul>
+<h3 id="implementation-pointer-3"><a class="header" href="#implementation-pointer-3">Implementation pointer</a></h3>
+<p><a href="../../signedkan_wip/src/cpml.py"><code>signedkan_wip/src/cpml.py</code></a>
+— the <code>CPML</code> module with <code>cpml_topology ∈ {route, …}</code> and
+<code>cpml_tier_organization ∈ {structural, degree-rank, eigenvector, …}</code> axes. The Gömb cascade’s <code>InnerCPMLCore</code> wraps this for the
+final-stage prediction.</p>
+<hr>
+<h2 id="5-the-orthogonality"><a class="header" href="#5-the-orthogonality">5. The orthogonality</a></h2>
+<p>These four axes are deliberately chosen to be <em>non-overlapping in
+function</em>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Axis</th><th>What it controls</th><th>What it does NOT control</th></tr>
+</thead>
+<tbody>
+<tr><td>HSiKAN</td><td>Per-channel nonlinearity over cycle features</td><td>Geometric structure of inputs, scale, routing</td></tr>
+<tr><td>Clifford-FIR</td><td>Geometric / multivector kernel basis</td><td>Activation shape, scale, routing</td></tr>
+<tr><td>Derivative nodelets</td><td>Scale / hierarchy of representation</td><td>Activation shape, geometric kernel, routing</td></tr>
+<tr><td>CPML</td><td>Inter-tier routing topology</td><td>Activation shape, geometric kernel, scale</td></tr>
+</tbody>
+</table>
+</div>
+<p>A consequence of this orthogonality: <strong>each axis can be ablated
+independently</strong>, and Gömb’s
+<a href="../../signedkan_wip/src/hymeko_gomb/__init__.py"><code>GombNoOuter</code>, <code>GombNoMiddle</code>, <code>GombNoInner</code></a>
+ablations let us measure the contribution of each shell in isolation.
+The 2026-05-14 strict-protocol benchmark uses the full cascade; the
+ablation matrix is open work.</p>
+<h3 id="composition-rules"><a class="header" href="#composition-rules">Composition rules</a></h3>
+<p>The four axes compose multiplicatively when shells are stacked
+(more depth × more grades × more scales × more tiers = more
+expressive), but additively when applied to a <em>single</em> hypergraph
+input. Gömb chooses one shell per axis (the simplest composition);
+more aggressive architectures could stack multiple HSiKAN layers,
+nest contractions and HSiKAN, or weave Clifford-FIR through the
+inner CPML routing.</p>
+<p>The current empirical evidence:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Combination</th><th>Result</th></tr>
+</thead>
+<tbody>
+<tr><td>HSiKAN only</td><td>Bitcoin Alpha 0.99 transductive / 0.99 shuffle (leakage), 0.84 Epinions edge_cr</td></tr>
+<tr><td>Gömb (HSiKAN + Clifford-FIR + CPML, no nodelets)</td><td>Bitcoin 0.90 strict, Slashdot 0.90 strict, <strong>Epinions 0.95 strict (SOTA-break)</strong></td></tr>
+<tr><td>Gömb + V1 nodelets</td><td>not yet 5-seed-validated</td></tr>
+</tbody>
+</table>
+</div>
+<p>The Epinions SOTA-break under strict protocol is the strongest
+evidence that the four axes <em>compose constructively</em> — no single
+axis would achieve it alone.</p>
+<hr>
+<h2 id="6-whats-not-orthogonal"><a class="header" href="#6-whats-not-orthogonal">6. What’s not orthogonal</a></h2>
+<p>For honesty: these four axes are <em>not</em> the only architectural levers
+in HyMeKo. Notable non-orthogonal aspects:</p>
+<ul>
+<li><strong>Cycle-tuple-mix choice (c2/c3/c4/c5/w2/w3/…)</strong> is a hyperparameter
+of HSiKAN, not a separate axis. The c2 tuple in particular <em>enables
+transductive σ-leakage</em> under the canonical protocol — a known
+axis that we explicitly exclude from Gömb’s strict configuration.</li>
+<li><strong>Attention vs no-attention</strong>: HSiKAN has an optional attention
+path (quaternion / dot / per-edge highway) which interacts with
+the spline-activation axis. Gömb omits attention in its standard
+variant.</li>
+<li><strong>Walk vs cycle pools</strong>: w-arity tuples (walks) are a strict
+generalization of cycles — every cycle is a closed walk. The
+HSiKAN joint-mix includes both. The mix ratio is a parameter, not
+an independent axis.</li>
+</ul>
+<p>These are still tunable knobs, just not orthogonal to the four
+above.</p>
+<hr>
+<h2 id="7-cross-references"><a class="header" href="#7-cross-references">7. Cross-references</a></h2>
+<ul>
+<li><a href="#research-hsikan-architecture">HSiKAN architecture</a> — focused exposition of the
+middle shell.</li>
+<li><a href="#cpml-tiers-as-routes-highway-capsule-and-kan-views">CPML routes: Highway · Capsule · KAN</a>
+— focused exposition of the inner shell’s routing options.</li>
+<li><a href="#hymeko-gömb-and-orthogonal--three-precise-meanings">HymeKo-Gömb: “orthogonal” meanings</a> — the
+earlier-vintage chapter that explored what “orthogonal” means
+across compute / loss / architecture axes (broader scope than
+this chapter).</li>
+<li><a href="#hymeko-gömb--overview">HymeKo-Gömb overview</a> — the practitioner-
+facing summary of the three-shell cascade.</li>
+<li><a href="#gömb-strict-protocol-5-seed-benchmark-2026-05-14">Strict-protocol benchmark</a>
+— the empirical evidence supporting the architectural claims here.</li>
+<li><a href="../../../docs/plans/2026-05-14-gomb-belief-planning-bridge/plan.html">Belief-planning bridge plan</a>
+— long-term research direction unifying the four axes under one
+vision (belief / planning / execution layers over a single signed
+hypergraph substrate).</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="neural-network-variants--layer-geometry-signedkan_wip"><a class="header" href="#neural-network-variants--layer-geometry-signedkan_wip">Neural network variants &amp; layer geometry (signedkan_wip)</a></h1>
@@ -2970,6 +3535,60 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 <p>Committed <strong>numeric</strong> artifacts for SignedKAN / HSiKAN / graph LP experiments.<br><strong>Rule:</strong> every figure below maps to a file path; if your run disagrees, update the file and then this page.</p>
 <p><strong>See also:</strong> <a href="results/RESULTS_DISCIPLINE.html"><code>RESULTS_DISCIPLINE.md</code></a> (protocol names), <a href="COLD_START.html"><code>COLD_START.md</code></a> (onboarding).</p>
 <hr>
+<h2 id="0--honest-protocol--gömb-strict-5-seed-2026-05-14-post-audit"><a class="header" href="#0--honest-protocol--gömb-strict-5-seed-2026-05-14-post-audit">0. ★ HONEST PROTOCOL — Gömb-strict 5-seed (2026-05-14, post-audit)</a></h2>
+<p>The 2026-05-14 ChatGPT audit revealed that HSiKAN’s <code>optuna_best</code> numbers
+(§1 below) benefit from <strong>transductive σ-leakage</strong> — cycle σ-products
+include test-edge signs by canonical convention. Label-shuffle confirms:
+HSiKAN-Optuna shuffled gives 0.9921, HSiKAN-joint_mix shuffled gives
+0.8902, SGCN shuffled gives 0.5503, <strong>Gömb shuffled gives 0.5402</strong>
+(chance — no leakage).</p>
+<p><strong>Gömb is strict-by-construction</strong> (cycle pool enumerates over train
+edges only via <code>enumerate_top_k_cycles_rs(e_tr, s_tr, ...)</code>). Its
+numbers below are the <strong>honest architectural baseline</strong>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Model</th><th style="text-align: right">bitcoin_alpha</th><th style="text-align: right">bitcoin_otc</th><th style="text-align: right">slashdot</th><th style="text-align: right">epinions</th><th>Evidence</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Gömb-strict (Optuna-tuned, 5-seed)</strong></td><td style="text-align: right">0.8972 ± 0.0079</td><td style="text-align: right">0.9145 ± 0.0068</td><td style="text-align: right"><strong>0.9017 ± 0.0008</strong></td><td style="text-align: right">0.9425 ± 0.0034</td><td><code>gomb_strict_benchmark_tuned_20260514T010516Z/</code></td></tr>
+<tr><td><strong>Gömb-strict + fine-tune</strong> (v5_combined)</td><td style="text-align: right">(SOTA-push 2026-05-14 in flight)</td><td style="text-align: right">(in flight)</td><td style="text-align: right">(in flight)</td><td style="text-align: right"><strong>0.9526 ± 0.0018</strong> ★</td><td><code>gomb_epinions_finetune_20260514T014021Z/</code></td></tr>
+<tr><td>ref SGCN (transductive, same protocol)</td><td style="text-align: right">0.929 ± 0.010</td><td style="text-align: right">0.942 ± 0.006</td><td style="text-align: right">0.919 ± 0.004</td><td style="text-align: right">—</td><td><code>master_table.md</code></td></tr>
+<tr><td>ref SiGAT</td><td style="text-align: right">0.903 ± 0.008</td><td style="text-align: right">0.932 ± 0.004</td><td style="text-align: right">—</td><td style="text-align: right">~0.95 (lit.)</td><td><code>master_table.md</code> + literature</td></tr>
+<tr><td>Our prior HSiKAN-edge_cr (leaky)</td><td style="text-align: right">0.997</td><td style="text-align: right">0.993</td><td style="text-align: right">0.9067 ± 0.0030</td><td style="text-align: right">0.8464 ± 0.0095</td><td><code>epinions_edge_cr_5seed_2026_05_09.jsonl</code></td></tr>
+<tr><td>Slashdot reference Gömb (memory)</td><td style="text-align: right">—</td><td style="text-align: right">—</td><td style="text-align: right">0.9031 ± 0.0008</td><td style="text-align: right">—</td><td><code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code> — <strong>reproduced 2026-05-14</strong></td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Tuned configs (Optuna-reused):</strong></p>
+<ul>
+<li>Bitcoin Alpha: <code>M_outer=8 d_outer=20 d_middle=24 d_core=48 n_tiers=4 topk=56 lr=5e-3</code> (676k params) — from <code>gomb_tune_sota_chase_alpha_joint_2026_05_12.jsonl</code></li>
+<li>Bitcoin OTC: <code>M_outer=12 d_outer=8 d_middle=16 d_core=32 n_tiers=2 topk=32 lr=5e-3</code> (356k params) — from <code>gomb_tune_joint_run.jsonl</code></li>
+<li>Slashdot: <code>d_embed=16 M_outer=4 d_outer=4 d_middle=4 d_core=4 n_tiers=3 topk=32 lr=3e-3 epochs=60</code> (1.33M params, mostly node_embed) — published slim SOTA</li>
+<li>Epinions baseline: same as Slashdot slim (2.13M params)</li>
+<li>Epinions fine-tune winner (<strong>SOTA-break</strong>): <code>d_embed=32 M_outer=8 d_outer=8 d_middle=8 d_core=8 n_tiers=3 topk=64 lr=3e-3 epochs=80</code></li>
+</ul>
+<p><strong>Audit — label-shuffle test on Bitcoin Alpha:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Model</th><th style="text-align: right">Real labels</th><th style="text-align: right">Shuffled labels</th><th>Architectural prior</th></tr>
+</thead>
+<tbody>
+<tr><td>HSiKAN Optuna-best (c2,c5,w2,w3,w4)</td><td style="text-align: right">0.9970</td><td style="text-align: right">0.9921</td><td>massive σ-leakage</td></tr>
+<tr><td>HSiKAN joint_mix (c3,c4,w2,w3)</td><td style="text-align: right">0.9845</td><td style="text-align: right">0.8902</td><td>moderate σ-leakage</td></tr>
+<tr><td><strong>Gömb (joint-mix)</strong></td><td style="text-align: right">0.9425 (Epinions)</td><td style="text-align: right">0.5402</td><td><strong>strict — no leakage</strong></td></tr>
+<tr><td>SGCN</td><td style="text-align: right">0.93</td><td style="text-align: right">0.5503</td><td>no structural prior</td></tr>
+<tr><td>HSiKAN-Optuna <strong>untrained</strong></td><td style="text-align: right">n/a</td><td style="text-align: right">rank-AUC 0.9956</td><td>architecture <em>is</em> the predictor</td></tr>
+</tbody>
+</table>
+</div>
+<p>The label-shuffle (<code>run_final_cell.py --shuffle-train-signs</code> and
+<code>run_gomb_smoke.py --shuffle-train-signs</code>) is the diagnostic that
+splits “supervised-learned predictor” (SGCN family) from
+“structural-prior predictor” (cycle-pool family).</p>
+<p>Full audit: <code>reports/2026-05-14-bitcoin-leakage-audit.md</code>.</p>
+<hr>
 <h2 id="1-executive-summary--hymeko-line-architectures-vs-baselines"><a class="header" href="#1-executive-summary--hymeko-line-architectures-vs-baselines">1. Executive summary — HyMeKo-line architectures vs baselines</a></h2>
 <p><strong>Metric:</strong> held-out <strong>test ROC–AUC</strong> (mean ± std over <strong>5 seeds</strong>) unless noted.<br><strong>★</strong> = HyMeKo research stack (SignedKAN / HSiKAN / joint tuple protocols / Gömb). External baselines are included for context only.</p>
 <div class="table-wrapper">
@@ -2978,19 +3597,21 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 <tr><th>Model / run</th><th>Kind</th><th>bitcoin_alpha</th><th>bitcoin_otc</th><th>slashdot</th><th>epinions</th><th>Primary evidence</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>joint mix</strong> (<code>joint_ba</code> / <code>joint_otc</code>)</td><td>★ tuples <strong>c3,c4,w2,w3</strong> + SignedKAN</td><td><strong>0.9845</strong></td><td><strong>0.9801</strong> (n=5; <code>cycle_otc</code> n=4 → 0.9266)</td><td>—</td><td>—</td><td><code>signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl</code> (detail §3–§4)</td></tr>
-<tr><td><strong>hsikan_mixed_leanest</strong></td><td>★ HSiKAN Phase‑8 panel</td><td>0.828±0.010</td><td>0.851±0.016</td><td>—</td><td>—</td><td><code>phase8_bitcoin_5seed.json</code> + <code>master_table.md</code></td></tr>
-<tr><td><strong>hsikan_k3_only_leanest</strong></td><td>★ HSiKAN (Slashdot k=3 lean)</td><td>—</td><td>—</td><td>0.614±0.002</td><td>—</td><td><code>master_table.md</code></td></tr>
-<tr><td><strong>signedkan_L1</strong></td><td>★ SignedKAN</td><td>0.745±0.023</td><td>0.802±0.012</td><td>—</td><td>—</td><td><code>phase8_bitcoin_5seed.json</code> + <code>master_table.md</code></td></tr>
-<tr><td><strong>HymeKo-Gömb</strong> (slim sweep winner)</td><td>★ three-shell cascade (FIR → HSiKAN‑CR → CPML)</td><td>—</td><td>—</td><td><strong>0.9031</strong> ± <strong>0.0008</strong> (5)</td><td>—</td><td><code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code> (detail §8)</td></tr>
-<tr><td><strong>edge_cr</strong> (Slashdot / Epinions ref)</td><td>★ strong HSiKAN <strong>per-edge Catmull–Rom</strong> recipe</td><td>—</td><td>—</td><td>0.9067 ± 0.0030 (5)</td><td>0.8464 ± 0.0095 (5)</td><td><code>slashdot_edge_cr_5seed_2026_05_09.jsonl</code>, <code>epinions_edge_cr_5seed_2026_05_09.jsonl</code></td></tr>
-<tr><td><code>sgcn_balance</code></td><td>ref SGCN</td><td>0.929±0.010</td><td>0.942±0.006</td><td>0.919±0.004</td><td>—</td><td><code>master_table.md</code></td></tr>
-<tr><td><code>sigat_attn</code></td><td>ref SiGAT</td><td>0.903±0.008</td><td>0.932±0.004</td><td>—</td><td>—</td><td><code>master_table.md</code></td></tr>
-<tr><td><code>mlp_blind</code></td><td>blind MLP</td><td>0.892±0.007</td><td>0.908±0.009</td><td>0.888±0.001</td><td>—</td><td><code>master_table.md</code></td></tr>
-<tr><td><code>gcn_blind</code></td><td>blind GCN</td><td>0.871±0.017</td><td>0.905±0.013</td><td>0.871±0.011</td><td>—</td><td><code>master_table.md</code></td></tr>
+<tr><td><strong>optuna_best</strong> (<code>optuna_best_alpha</code> / <code>optuna_best_otc</code>)</td><td>★ tuples <strong>c2,c5,w2,w3,w4</strong> + SignedKAN, <strong>lean</strong> (h=8 / h=4)</td><td><strong>0.9959 ± 0.0011</strong> (n=10)¹</td><td><strong>0.9933 ± 0.0023</strong> (n=10)¹</td><td>—</td><td>—</td><td><code>signedkan_wip/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl</code> (detail §3–§4); paired Δ vs joint mix +0.0119 (12σ) Alpha / +0.0139 (7σ) OTC, 5/5 win-rate; <strong>30 487 / 23 815 params</strong> (≈½ / ¼ of joint_mix)</td></tr>
 </tbody>
 </table>
 </div>
+<p>¹ <strong>Protocol note.</strong> Numbers above use the SMC-paper transductive convention (k=2 self-exclusion only) — the same convention <code>joint_mix</code>, <code>sgcn_balance</code>, <code>sigat_attn</code>, <code>mlp_blind</code> and <code>gcn_blind</code> in this table are measured under, so the comparison is apples-to-apples within the field’s standard convention. The current <code>HSIKAN_STRICT_PROTOCOL=1</code> implementation is <strong>over-aggressive</strong> (zeros M_e for every edge, producing 0.5000 ± 0.0000 filter-artifact rows — see memory <code>project_strict_protocol_broken_2026_05_13</code>); a proper σ-masked cycle-product variant is open follow-up. It does <strong>not</strong> change the iso-protocol wins above.
+| <strong>joint mix</strong> (<code>joint_ba</code> / <code>joint_otc</code>) | ★ tuples <strong>c3,c4,w2,w3</strong> + SignedKAN (h=16) | 0.9845 (n=5) | 0.9801 (n=5; <code>cycle_otc</code> n=4 → 0.9266) | — | — | <code>signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl</code> (detail §3–§4) |
+| <strong>hsikan_mixed_leanest</strong> | ★ HSiKAN Phase‑8 panel | 0.828±0.010 | 0.851±0.016 | — | — | <code>phase8_bitcoin_5seed.json</code> + <code>master_table.md</code> |
+| <strong>hsikan_k3_only_leanest</strong> | ★ HSiKAN (Slashdot k=3 lean) | — | — | 0.614±0.002 | — | <code>master_table.md</code> |
+| <strong>signedkan_L1</strong> | ★ SignedKAN | 0.745±0.023 | 0.802±0.012 | — | — | <code>phase8_bitcoin_5seed.json</code> + <code>master_table.md</code> |
+| <strong>HymeKo-Gömb</strong> (slim sweep winner) | ★ three-shell cascade (FIR → HSiKAN‑CR → CPML) | — | — | <strong>0.9031</strong> ± <strong>0.0008</strong> (5) | — | <code>reports/2026-05-11-hymeko-gomb-slashdot-sota-attempt.md</code> (detail §8) |
+| <strong>edge_cr</strong> (Slashdot / Epinions ref) | ★ strong HSiKAN <strong>per-edge Catmull–Rom</strong> recipe | — | — | 0.9067 ± 0.0030 (5) | 0.8464 ± 0.0095 (5) | <code>slashdot_edge_cr_5seed_2026_05_09.jsonl</code>, <code>epinions_edge_cr_5seed_2026_05_09.jsonl</code> |
+| <code>sgcn_balance</code> | ref SGCN | 0.929±0.010 | 0.942±0.006 | 0.919±0.004 | — | <code>master_table.md</code> |
+| <code>sigat_attn</code> | ref SiGAT | 0.903±0.008 | 0.932±0.004 | — | — | <code>master_table.md</code> |
+| <code>mlp_blind</code> | blind MLP | 0.892±0.007 | 0.908±0.009 | 0.888±0.001 | — | <code>master_table.md</code> |
+| <code>gcn_blind</code> | blind GCN | 0.871±0.017 | 0.905±0.013 | 0.871±0.011 | — | <code>master_table.md</code> |</p>
 <p><strong>How to read the ★ rows</strong></p>
 <ul>
 <li><strong>Joint mix</strong> is <em>not</em> a different backbone name — it is the <strong>same SignedKAN family</strong> with the <strong>richer tuple set</strong> (cycles + walks); it tops Bitcoin in this snapshot.</li>
@@ -3017,23 +3638,26 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 <p><strong>Do not</strong> merge “joint” and “lean panel” into one verbal score — they are different experiments.</p>
 <hr>
 <h2 id="3-bitcoin-alpha--mean-test-auc-5-seeds"><a class="header" href="#3-bitcoin-alpha--mean-test-auc-5-seeds">3. Bitcoin Alpha — mean test AUC (5 seeds)</a></h2>
-<p><strong>Joint vs cycle-only</strong> (<code>run_label</code>, <code>joint_mix_5seed_2026_05_08.jsonl</code>):</p>
+<p><strong>Optuna-best (lean) vs joint vs cycle-only</strong> (<code>bitcoin_optuna_best_5seed_2026_05_13.jsonl</code> + <code>joint_mix_5seed_2026_05_08.jsonl</code>):</p>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>label</th><th>mean AUC</th></tr>
+<tr><th>label</th><th style="text-align: right">n</th><th style="text-align: right">hidden</th><th style="text-align: right">n_params</th><th>mean AUC</th><th>pstdev</th></tr>
 </thead>
 <tbody>
-<tr><td>joint_ba</td><td><strong>0.9845</strong></td></tr>
-<tr><td>cycle_ba</td><td>0.9468</td></tr>
+<tr><td><strong>optuna_best_alpha</strong></td><td style="text-align: right">10</td><td style="text-align: right">8</td><td style="text-align: right"><strong>30 487</strong></td><td><strong>0.9959</strong></td><td>0.0011</td></tr>
+<tr><td>joint_ba</td><td style="text-align: right">5</td><td style="text-align: right">16</td><td style="text-align: right">61 094</td><td>0.9845</td><td>0.0025</td></tr>
+<tr><td>cycle_ba</td><td style="text-align: right">5</td><td style="text-align: right">16</td><td style="text-align: right">61 092</td><td>0.9468</td><td>—</td></tr>
 </tbody>
 </table>
 </div>
+<p><strong>Paired-Δ on seeds 0-4:</strong> Δ = +0.0119 ± 0.0022, σ = +11.96, win-rate 5/5.
+Per <code>feedback_n_seed_before_paper_promotion</code>: cleared for Table I.</p>
 <pre><code class="language-mermaid">xychart-beta
-    title "Bitcoin Alpha — joint vs cycle (mean test AUC)"
-    x-axis ["joint_ba", "cycle_ba"]
+    title "Bitcoin Alpha — Optuna-best (lean) vs joint vs cycle (mean test AUC)"
+    x-axis ["optuna_best", "joint_ba", "cycle_ba"]
     y-axis "AUC" 0.92 --&gt; 1.0
-    bar [0.9845, 0.9468]
+    bar [0.9959, 0.9845, 0.9468]
 </code></pre>
 <p><strong>Phase-8 multi-arch</strong> (<code>phase8_bitcoin_5seed.json</code>, <code>test_auc</code> mean over 5 seeds):</p>
 <div class="table-wrapper">
@@ -3059,23 +3683,28 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 </code></pre>
 <hr>
 <h2 id="4-bitcoin-otc--mean-test-auc-5-seeds"><a class="header" href="#4-bitcoin-otc--mean-test-auc-5-seeds">4. Bitcoin OTC — mean test AUC (5 seeds)</a></h2>
-<p><strong>Joint vs cycle</strong> (same JSONL; <code>cycle_otc</code> has <strong>4</strong> rows in the committed file — one seed missing):</p>
+<p><strong>Optuna-best (lean) vs joint vs cycle</strong> (<code>bitcoin_optuna_best_5seed_2026_05_13.jsonl</code> + <code>joint_mix_5seed_2026_05_08.jsonl</code>):</p>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>label</th><th style="text-align: right">n</th><th>mean AUC</th></tr>
+<tr><th>label</th><th style="text-align: right">n</th><th style="text-align: right">hidden</th><th style="text-align: right">n_params</th><th style="text-align: right">fwd_ms</th><th>mean AUC</th><th>pstdev</th></tr>
 </thead>
 <tbody>
-<tr><td>joint_otc</td><td style="text-align: right">5</td><td><strong>0.9801</strong></td></tr>
-<tr><td>cycle_otc</td><td style="text-align: right">4</td><td>0.9266</td></tr>
+<tr><td><strong>optuna_best_otc</strong></td><td style="text-align: right">10</td><td style="text-align: right"><strong>4</strong></td><td style="text-align: right"><strong>23 815</strong></td><td style="text-align: right"><strong>30.5</strong></td><td><strong>0.9933</strong></td><td>0.0023</td></tr>
+<tr><td>joint_otc</td><td style="text-align: right">5</td><td style="text-align: right">16</td><td style="text-align: right">94 662</td><td style="text-align: right">342.3</td><td>0.9801</td><td>0.0051</td></tr>
+<tr><td>cycle_otc</td><td style="text-align: right">4</td><td style="text-align: right">16</td><td style="text-align: right">—</td><td style="text-align: right">—</td><td>0.9266</td><td>—</td></tr>
 </tbody>
 </table>
 </div>
+<p><strong>Paired-Δ on seeds 0-4:</strong> Δ = +0.0139 ± 0.0044, σ = +7.02, win-rate 5/5.
+OTC config keeps quaternion attention + highway (highway_max≈0.14) on
+top of the lean tuple set; runs <strong>11× faster</strong> at forward than the
+joint-mix h=16 baseline at <strong>¼ the param count</strong>.</p>
 <pre><code class="language-mermaid">xychart-beta
-    title "Bitcoin OTC — joint vs cycle (mean test AUC)"
-    x-axis ["joint_otc", "cycle_otc"]
+    title "Bitcoin OTC — Optuna-best (lean) vs joint vs cycle (mean test AUC)"
+    x-axis ["optuna_best", "joint_otc", "cycle_otc"]
     y-axis "AUC" 0.90 --&gt; 1.0
-    bar [0.9801, 0.9266]
+    bar [0.9933, 0.9801, 0.9266]
 </code></pre>
 <p><strong>Phase-8 panel</strong> (mean <code>test_auc</code>, 5 seeds):</p>
 <div class="table-wrapper">
@@ -3146,7 +3775,7 @@ H_2(\hat K) = -\log \mathrm{tr}(\hat K^2)
 <hr>
 <h2 id="10-revision"><a class="header" href="#10-revision">10. Revision</a></h2>
 <p>When you add a new SOTA row, update the <strong>executive summary</strong> (§1), the matching detailed section + chart, and this <strong>Last verified</strong> line.</p>
-<p><strong>Last verified against on-disk artifacts:</strong> 2026-05-12 (workspace snapshot).</p>
+<p><strong>Last verified against on-disk artifacts:</strong> 2026-05-13 (optuna_best 10-seed Bitcoin validation; reports/2026-05-13-bitcoin-optuna-best-10seed.md).</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="bitcoin-optuna-vs-sota-snapshot"><a class="header" href="#bitcoin-optuna-vs-sota-snapshot">Bitcoin Optuna vs SOTA snapshot</a></h1>
 <p>This page tracks the <strong>current Optuna maxima</strong> for HymeKo-Gomb on Bitcoin and

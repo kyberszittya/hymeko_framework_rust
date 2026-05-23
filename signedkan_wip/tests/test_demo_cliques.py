@@ -118,15 +118,20 @@ def test_clique_limit_is_respected(tmp_path):
 
 
 def test_balanced_clique_edges_match_signs():
-    """Internal invariant: len(edges) == C(size, 2) and product
-    of signs equals sigma_product."""
+    """Internal invariant: len(edges) == C(size, 2) and the clique
+    is balanced per the triangle-product check (not the all-edges
+    product, which is wrong for k ≥ 4)."""
+    from math import comb
+    from signedkan_wip.src.demo.cliques import _clique_balance_indicator
     b = make_robot_network(n_robots=25, comm_range=4.5,
                               noise_prob=0.05, seed=11)
+    # Build sign lookup for the balance check.
+    sign_of = {}
+    for (u, v), s in zip(b.graph.edges, b.graph.signs):
+        a, c0 = (int(u), int(v)) if int(u) < int(v) else (int(v), int(u))
+        sign_of[(a, c0)] = int(s)
     for c in enumerate_balanced_cliques(b, min_size=3, max_size=5):
-        from math import comb
         assert len(c.edges) == comb(c.size, 2)
         assert len(c.signs) == len(c.edges)
-        prod = 1
-        for s in c.signs:
-            prod *= s
-        assert prod == c.sigma_product == 1
+        assert _clique_balance_indicator(c.members, sign_of) == 1
+        assert c.sigma_product == 1

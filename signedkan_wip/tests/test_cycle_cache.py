@@ -24,7 +24,7 @@ import pytest
 
 from signedkan_wip.src import cycle_cache
 from signedkan_wip.src.datasets import SignedGraph
-from signedkan_wip.src.n_tuples import SignedNTuple
+from signedkan_wip.src.core.n_tuples import SignedNTuple
 
 
 def _toy_graph(seed: int = 0) -> SignedGraph:
@@ -261,7 +261,7 @@ def test_unpack_vectorised_returns_native_ints():
 
 def test_cached_construct_walks_resolves_walks_module():
     """Regression 2026-05-12: ``cycle_cache.config`` must import
-    ``signedkan_wip.src.walks``, not a non-existent ``cycle_cache.walks``.
+    ``signedkan_wip.src.core.walks``, not a non-existent ``cycle_cache.walks``.
     Otherwise ``HSIKAN_MIXED_TUPLES=…,w2,…`` (joint_ba) raises
     ImportError before any training."""
     g = _toy_graph()

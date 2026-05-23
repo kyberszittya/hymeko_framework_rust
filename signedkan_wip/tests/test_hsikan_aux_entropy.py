@@ -5,7 +5,7 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
-from signedkan_wip.src.run_final_cell import (
+from signedkan_wip.experiments.runs.run_final_cell import (
     _aux_entropy_attention_alpha,
     _shannon_entropy_discrete,
 )

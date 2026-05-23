@@ -38,15 +38,15 @@ import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import SignedGraph
-from signedkan_wip.src.datasets_small import sbm_signed
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.n_tuples import construct_k, construct_2
+from signedkan_wip.src.datasets import sbm_signed
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.n_tuples import construct_k, construct_2
 from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                       MixedAritySignedKANConfig,
                                       subsample_tuples,
                                       build_vertex_to_tuples,
                                       build_edge_to_tuples)
-from signedkan_wip.src.signedkan import (MultiLayerSignedKANConfig,
+from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 from signedkan_wip.src.baselines.sgcn_model import SGCN, build_signed_adj
 from .run_phase2_mixed_arity import (_build_edge_incidence_vertex_adj_scipy,
@@ -327,7 +327,7 @@ def domain_pose_deep(device, n_train=150, n_test=50, n_epochs=100) -> list[dict]
 
 def domain_scene_deep(device, n_epochs=80, n_scenes=200) -> list[dict]:
     print("\n=== domain: scene-graph (deep) ===", flush=True)
-    from .adapters.visual_genome import (
+    from signedkan_wip.src.adapters.visual_genome import (
         synth_dataset, edge_features_from_bboxes,
     )
     aucs, f1s, lats = [], [], []
@@ -462,7 +462,7 @@ def domain_scene_deep(device, n_epochs=80, n_scenes=200) -> list[dict]:
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
-    from .runtime_config import get_runtime
+    from signedkan_wip.src.runtime_config import get_runtime
     print(f"compile: {'1' if get_runtime().compile.enabled else '0'}")
 
     all_rows = []

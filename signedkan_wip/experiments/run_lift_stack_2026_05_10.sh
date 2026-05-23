@@ -55,7 +55,7 @@ run_smoke() {
     echo "[lift-stack] $(date +%H:%M:%S) START phase=$phase $params"
     env "$@" \
         HSIKAN_MIXED_TUPLES=c3,c4 \
-        python -m signedkan_wip.src.run_final_cell \
+        python -m signedkan_wip.experiments.runs.run_final_cell \
             --dataset epinions --hidden 4 --n-epochs 20 --seed 0 \
             > "$logf" 2>&1
     local elapsed=$(( $(date +%s) - t0 ))
@@ -195,7 +195,7 @@ run_5seed() {
         HSIKAN_TRITON_KERNEL=1 \
         HSIKAN_TRITON_BACKWARD=1 \
         HYMEKO_CYCLE_CACHE=1 \
-        python -m signedkan_wip.src.run_final_cell \
+        python -m signedkan_wip.experiments.runs.run_final_cell \
             --dataset epinions --hidden 4 --n-epochs 80 \
             --max-k4 100000 --seed "$seed" \
             > "$logf" 2>&1

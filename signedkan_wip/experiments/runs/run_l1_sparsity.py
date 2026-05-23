@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 from .run_compare import run_one
-from signedkan_wip.src.iter_prune import count_active_splines
+from signedkan_wip.src.core.iter_prune import count_active_splines
 
 
 def main():

@@ -88,7 +88,7 @@ TIMEOUT_S=1800 run "bitcoin_otc_fpn5_g10_s0" \
         HSIKAN_PER_VERTEX_ABB_FULLNESS_GATE=1.0 \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset bitcoin_otc --seed 0 --n-epochs 80 \
         --model HSiKAN --hidden 16
 
@@ -99,7 +99,7 @@ TIMEOUT_S=1800 run "bitcoin_otc_fpn3_g10_s0" \
         HSIKAN_PER_VERTEX_ABB_FULLNESS_GATE=1.0 \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset bitcoin_otc --seed 0 --n-epochs 80 \
         --model HSiKAN --hidden 16
 
@@ -110,7 +110,7 @@ TIMEOUT_S=1800 run "bitcoin_otc_fpn7_g10_s0" \
         HSIKAN_PER_VERTEX_ABB_FULLNESS_GATE=1.0 \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset bitcoin_otc --seed 0 --n-epochs 80 \
         --model HSiKAN --hidden 16
 
@@ -121,7 +121,7 @@ TIMEOUT_S=1800 run "bitcoin_otc_fpn5_noabb_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset bitcoin_otc --seed 0 --n-epochs 80 \
         --model HSiKAN --hidden 16
 
@@ -137,7 +137,7 @@ TIMEOUT_S=5400 run "epinions_off_m64_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -150,7 +150,7 @@ TIMEOUT_S=5400 run "epinions_fpn5_g10_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -163,7 +163,7 @@ TIMEOUT_S=5400 run "epinions_fpn3_g10_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -176,7 +176,7 @@ TIMEOUT_S=5400 run "epinions_fpn7_g10_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -188,7 +188,7 @@ TIMEOUT_S=5400 run "epinions_fpn5_noabb_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -218,12 +218,12 @@ for seed in 0 1 2 3 4; do
     for ds in bitcoin_alpha bitcoin_otc; do
         TIMEOUT_S=1800 run "${ds}_off_s${seed}" \
             env "${ENV_OFF[@]}" \
-            python -u -m signedkan_wip.src.run_final_cell \
+            python -u -m signedkan_wip.experiments.runs.run_final_cell \
                 --dataset "$ds" --seed "$seed" --n-epochs 80 \
                 --model HSiKAN --hidden 16
         TIMEOUT_S=1800 run "${ds}_g10_s${seed}" \
             env "${ENV_G10[@]}" \
-            python -u -m signedkan_wip.src.run_final_cell \
+            python -u -m signedkan_wip.experiments.runs.run_final_cell \
                 --dataset "$ds" --seed "$seed" --n-epochs 80 \
                 --model HSiKAN --hidden 16
     done
@@ -236,7 +236,7 @@ echo "[$(date '+%H:%M:%S')] === Stage 3: Slashdot single seed gate=1.0 ===" \
     | tee -a "$MASTER"
 TIMEOUT_S=3600 run "slashdot_g10_s0" \
     env "${ENV_G10[@]}" \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset slashdot --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16 --max-k4 200000
 

@@ -23,13 +23,13 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import load, split
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.highway_signedkan import HighwaySignedKAN, HighwaySignedKANConfig
-from signedkan_wip.src.signedkan import build_vertex_triad_incidence
-from signedkan_wip.src.train import build_edge_to_triads
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.highway_signedkan import HighwaySignedKAN, HighwaySignedKANConfig
+from signedkan_wip.src.core.signedkan import build_vertex_triad_incidence
+from signedkan_wip.src.core.train import build_edge_to_triads
 from .run_compare import build_edge_incidence
-from signedkan_wip.src.entropy_reg import EntropyRegulariser, EntropyRegConfig
-from signedkan_wip.src.participation_reg import ParticipationRegulariser, triad_degree
+from signedkan_wip.src.core.entropy_reg import EntropyRegulariser, EntropyRegConfig
+from signedkan_wip.src.core.participation_reg import ParticipationRegulariser, triad_degree
 
 
 def _time_inference(model, triad_v_dev, triad_sigma_dev, M_test, M_vt,

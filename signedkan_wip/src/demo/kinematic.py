@@ -22,7 +22,7 @@ import numpy as np
 import yaml
 
 from ..datasets import SignedGraph
-from ..kinematic_graph import (
+from ..kinematic import (
     KinematicJoint, kinematic_loop_summary, urdf_to_signed_graph,
 )
 

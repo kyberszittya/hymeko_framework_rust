@@ -104,6 +104,7 @@ class RicciKCycleHyMeYOLOMulti(nn.Module):
         n_classes: int = 10,
         d_hidden: int = 32,
         ricci_modulation: bool = True,
+        ricci_scale: float = 1.0,
     ):
         super().__init__()
         assert box_k >= 3, "box_k must be >= 3 (signed-cycle aggregator needs k>=3)"
@@ -115,6 +116,12 @@ class RicciKCycleHyMeYOLOMulti(nn.Module):
         self.n_classes = n_classes
         self.d_hidden = d_hidden
         self.ricci_modulation = ricci_modulation
+        # Multiplier on the 3-Ricci-scalar vector before it enters the
+        # offset and class heads. Default 1.0 = pre-2026-05-16 byte-
+        # identical behaviour. See `hymeyolo_circles_ricci.py` for the
+        # primary sweep target; this mirror keeps the two Ricci
+        # variants API-consistent for future ablations.
+        self.ricci_scale = float(ricci_scale)
         ricci_dim = 3 if ricci_modulation else 0
 
         self.backbone = TinyBackbone(c_in=3, c_out=d_hidden)
@@ -179,6 +186,8 @@ class RicciKCycleHyMeYOLOMulti(nn.Module):
             ricci_base = _ricci_scalars(
                 base_corners.reshape(-1, K, 2),
             ).view(N, 3).unsqueeze(0).expand(B, N, 3)                  # (B, N, 3)
+            if self.ricci_scale != 1.0:
+                ricci_base = ricci_base * self.ricci_scale
             offset_in = torch.cat([h_cycle_base, ricci_base], dim=-1)
         else:
             offset_in = h_cycle_base
@@ -201,6 +210,8 @@ class RicciKCycleHyMeYOLOMulti(nn.Module):
             ricci_ref = _ricci_scalars(
                 refined.reshape(-1, K, 2),
             ).view(B, N, 3)
+            if self.ricci_scale != 1.0:
+                ricci_ref = ricci_ref * self.ricci_scale
             cls_in = torch.cat([h_mean, h_cycle_ref, ricci_ref], dim=-1)
         else:
             cls_in = torch.cat([h_mean, h_cycle_ref], dim=-1)

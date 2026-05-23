@@ -173,6 +173,12 @@ class RicciHyMeYOLOMulti(nn.Module):
         n_classes: int = 10,
         d_hidden: int = 32,
         ricci_modulation: bool = True,
+        ricci_scale: float = 1.0,
+        use_layernorm: bool = False,
+        backbone: str = "tiny",
+        fpn: str = "none",
+        query_head_kind: str = "hungarian",
+        backbone_use_checkpoint: bool = False,
     ):
         super().__init__()
         assert circle_k >= 5, "circle_k should be >= 5 for ring queries"
@@ -181,7 +187,69 @@ class RicciHyMeYOLOMulti(nn.Module):
         self.circle_k = circle_k
         self.n_classes = n_classes
         self.ricci_modulation = ricci_modulation
-        self.backbone = TinyBackbone(c_in=3, c_out=d_hidden)
+        # `ricci_scale` multiplies the 3 Ricci scalars (κ, mean-cos, var)
+        # before they are concatenated into the class-head input. At
+        # ricci_scale=1.0 the behaviour is byte-identical to the pre-
+        # 2026-05-16 code path (this is pinned by
+        # `test_ricci_scale_default_byte_identical_to_prior`). At 0.0
+        # the Ricci features still occupy the 3 input dims but their
+        # gradient and forward influence go to zero — the class head
+        # falls back to corner-feature only behaviour through those
+        # dims (and the head's existing 3 weight columns become
+        # learnable bias-like terms via subsequent input). Used by the
+        # 2026-05-16 ricci-scale sweep
+        # (docs/plans/2026-05-16-hymeyolo-ricci-weight-sweep/).
+        self.ricci_scale = float(ricci_scale)
+        # 2026-05-16 Stage A-3 lever: LayerNorm on the class-head input.
+        # Stabilises the variable-scale Ricci + corner-feature
+        # concatenation. Off by default for backward compat; on by
+        # default in the ladder orchestrator's a3 stage.
+        self.use_layernorm = bool(use_layernorm)
+        # Stage B (2026-05-16 evening): dispatch on a backbone name.
+        # "tiny"   → pre-Stage-B 3-conv TinyBackbone (default; byte-
+        #            identical to pre-Stage-B for backward compat).
+        # "resnet" → residual-block backbone (~107k params at d=32).
+        # "hsikan" → ResNet topology with Catmull-Rom activations in
+        #            place of ReLU (KAN basis-function primitive
+        #            from the HSiKAN family).
+        from .hymeyolo_backbones import build_backbone
+        self.backbone = build_backbone(
+            backbone, c_in=3, c_out=d_hidden,
+            use_checkpoint=backbone_use_checkpoint,
+        )
+        self.backbone_kind = backbone
+
+        # Stage C (2026-05-17): optional FPN over backbone /4 + /8 features.
+        # "none"   → single-scale forward through `backbone(x)`. Byte-
+        #            identical to Stage B (pin: test_fpn_none_equals_stage_b).
+        # "2level" → 2-level FPN at /4 + /8; multi-scale bilinear
+        #            sampling at the query corners with a concat→project
+        #            head. Requires a backbone that exposes
+        #            `multi_scale_features` (ResNetTinyBackbone or
+        #            HSiKANConvBackbone — NOT TinyBackbone).
+        self.fpn_kind = str(fpn)
+        if self.fpn_kind == "none":
+            self.fpn = None
+            self.ms_proj = None
+        elif self.fpn_kind == "2level":
+            if not hasattr(self.backbone, "multi_scale_features"):
+                raise ValueError(
+                    f"fpn={fpn!r} requires a multi-scale-capable backbone; "
+                    f"backbone={backbone!r} does not implement "
+                    f"`multi_scale_features`. Use backbone='resnet' or "
+                    f"'hsikan'."
+                )
+            from .hymeyolo_fpn import FPN2Level
+            # ResNet-tiny + HSiKAN-CR both have /4 tap at 32 channels
+            # (block3 output, before down3) and /8 tap at c_out=d_hidden
+            # channels (down3 output).
+            self.fpn = FPN2Level(c_in_4=32, c_in_8=d_hidden, c_out=d_hidden)
+            # ms_proj: concat /4 + /8 channel-wise (2*d_hidden) → d_hidden.
+            self.ms_proj = nn.Linear(2 * d_hidden, d_hidden)
+        else:
+            raise ValueError(
+                f"unknown fpn={fpn!r}; expected one of 'none', '2level'"
+            )
 
         # Box queries (k=4).  Init as in HyMeYOLOMulti.
         base_box = torch.tensor(
@@ -218,8 +286,37 @@ class RicciHyMeYOLOMulti(nn.Module):
         self.head_box_offset = nn.Linear(d_hidden, 4 * 2)
         self.head_circle_offset = nn.Linear(d_hidden, circle_k * 2)
         cls_in = d_hidden + (3 if ricci_modulation else 0)
-        self.head_cls = nn.Linear(cls_in, n_classes + 1)
         # 3 extra inputs when ricci_modulation: (κ_scalar, mean_cos_θ, edge_var)
+        # 2026-05-19 Stage D-3: nodelet head — explicit per-query
+        # objectness gate replaces the no-object softmax slot. When
+        # query_head_kind == 'nodelet', cls head emits n_classes only
+        # (no +1), and an extra gate head emits one sigmoid scalar per
+        # query. Default 'hungarian' preserves byte-identical pre-2026-05-19
+        # behaviour for CMNIST / Stage A-2 / Stage B / Stage C runs.
+        self.query_head_kind = query_head_kind
+        if query_head_kind == "nodelet":
+            n_cls_out = n_classes      # no no-object slot
+            self.head_gate = nn.Linear(cls_in, 1)
+        elif query_head_kind == "hungarian":
+            n_cls_out = n_classes + 1  # legacy: includes no-object slot
+            self.head_gate = None
+        else:
+            raise ValueError(
+                f"query_head_kind {query_head_kind!r} not recognised; "
+                f"expected 'hungarian' or 'nodelet'"
+            )
+        if self.use_layernorm:
+            # Stage A-3: pre-norm the class-head input. LayerNorm
+            # parameters initialise to (γ=1, β=0), so the forward at
+            # init is *not* byte-identical to the no-LayerNorm path,
+            # but the parameter count change is small (+2·cls_in) and
+            # the gradient regime improves.
+            self.head_cls = nn.Sequential(
+                nn.LayerNorm(cls_in),
+                nn.Linear(cls_in, n_cls_out),
+            )
+        else:
+            self.head_cls = nn.Linear(cls_in, n_cls_out)
 
     def _query_features(
         self, corners: torch.Tensor, F_map: torch.Tensor,
@@ -236,6 +333,30 @@ class RicciHyMeYOLOMulti(nn.Module):
         h_BN = h_per_q.reshape(B * N, k, -1)
         h_aux = aggregator(h_BN)                                # (B*N, d)
         return h_aux.view(B, N, -1)                            # (B, N, d)
+
+    def _query_features_ms(
+        self, corners: torch.Tensor, F_maps: list[torch.Tensor],
+        aggregator: nn.Module,
+    ) -> torch.Tensor:
+        """Multi-scale variant of :meth:`_query_features`.
+
+        Bilinear-samples each feature map at the (shared, normalized)
+        query corners, concatenates along the channel dim, projects
+        back to ``d_hidden`` via ``self.ms_proj``, then aggregates
+        per-query exactly as the single-scale path.
+        """
+        assert self.ms_proj is not None
+        B = F_maps[0].shape[0]
+        N, k, _ = corners.shape
+        c = corners.unsqueeze(0).expand(B, N, k, 2)
+        flat = c.reshape(B, N * k, 2)
+        h_flats = [bilinear_sample(fm, flat) for fm in F_maps]  # each (B, N*k, d)
+        h_cat = torch.cat(h_flats, dim=-1)                      # (B, N*k, sum_d)
+        h_flat = self.ms_proj(h_cat)                            # (B, N*k, d_hidden)
+        h_per_q = h_flat.view(B, N, k, -1)
+        h_BN = h_per_q.reshape(B * N, k, -1)
+        h_aux = aggregator(h_BN)
+        return h_aux.view(B, N, -1)
 
     def _ricci_features(self, corners: torch.Tensor) -> torch.Tensor:
         """Compute Ricci shape signature per query: 3 scalars.
@@ -260,16 +381,31 @@ class RicciHyMeYOLOMulti(nn.Module):
             ricci_circle   : (n_circle, 3)
         """
         B = x.shape[0]
-        F_map = self.backbone(x)
+        # Stage C: if FPN is on, take multi-scale features and pass
+        # both /4 and /8 maps to the multi-scale query sampler.
+        # Otherwise the single-scale forward (Stage B byte-identical).
+        if self.fpn is not None:
+            p_in_4, p_in_8 = self.backbone.multi_scale_features(x)
+            p_4, p_8 = self.fpn(p_in_4, p_in_8)
+            F_maps = [p_4, p_8]
+            F_map = p_8  # representative for downstream shape-only uses
+        else:
+            F_map = self.backbone(x)
+            F_maps = None
         d_hidden = F_map.shape[1]
         # Class-head input width depends on ricci_modulation.
         cls_in_extra = 3 if self.ricci_modulation else 0
 
         # Box branch (skipped if no box queries).
         if self.n_box_queries > 0:
-            h_box = self._query_features(
-                self.box_corners, F_map, self.box_aggregator,
-            )                                                          # (B, Nb, d)
+            if F_maps is not None:
+                h_box = self._query_features_ms(
+                    self.box_corners, F_maps, self.box_aggregator,
+                )                                                      # (B, Nb, d)
+            else:
+                h_box = self._query_features(
+                    self.box_corners, F_map, self.box_aggregator,
+                )                                                      # (B, Nb, d)
             box_off = self.head_box_offset(h_box).view(B, -1, 4, 2)
             box_off = 0.3 * torch.tanh(box_off)
             box_refined = (self.box_corners.unsqueeze(0).expand(B, -1, -1, -1)
@@ -277,19 +413,35 @@ class RicciHyMeYOLOMulti(nn.Module):
             ricci_box = self._ricci_features(
                 box_refined.reshape(-1, 4, 2),
             ).view(B, -1, 3)
+            if self.ricci_scale != 1.0:
+                ricci_box = ricci_box * self.ricci_scale
             cls_in_box = (torch.cat([h_box, ricci_box], dim=-1)
                           if self.ricci_modulation else h_box)
             box_cls = self.head_cls(cls_in_box)
+            if self.head_gate is not None:
+                box_gates = torch.sigmoid(
+                    self.head_gate(cls_in_box).squeeze(-1)
+                )  # (B, Nb)
+            else:
+                box_gates = None
         else:
             box_refined = x.new_zeros(B, 0, 4, 2)
-            box_cls = x.new_zeros(B, 0, self.n_classes + 1)
+            cls_out_dim = (self.n_classes if self.query_head_kind == "nodelet"
+                            else self.n_classes + 1)
+            box_cls = x.new_zeros(B, 0, cls_out_dim)
             ricci_box = x.new_zeros(B, 0, 3)
+            box_gates = x.new_zeros(B, 0) if self.head_gate is not None else None
 
         # Circle branch (skipped if no circle queries).
         if self.n_circle_queries > 0:
-            h_circ = self._query_features(
-                self.circle_corners, F_map, self.circle_aggregator,
-            )
+            if F_maps is not None:
+                h_circ = self._query_features_ms(
+                    self.circle_corners, F_maps, self.circle_aggregator,
+                )
+            else:
+                h_circ = self._query_features(
+                    self.circle_corners, F_map, self.circle_aggregator,
+                )
             circ_off = self.head_circle_offset(h_circ).view(
                 B, -1, self.circle_k, 2,
             )
@@ -299,15 +451,27 @@ class RicciHyMeYOLOMulti(nn.Module):
             ricci_circle = self._ricci_features(
                 circ_refined.reshape(-1, self.circle_k, 2),
             ).view(B, -1, 3)
+            if self.ricci_scale != 1.0:
+                ricci_circle = ricci_circle * self.ricci_scale
             cls_in_circ = (torch.cat([h_circ, ricci_circle], dim=-1)
                            if self.ricci_modulation else h_circ)
             circle_cls = self.head_cls(cls_in_circ)
+            if self.head_gate is not None:
+                circle_gates = torch.sigmoid(
+                    self.head_gate(cls_in_circ).squeeze(-1)
+                )  # (B, Nc)
+            else:
+                circle_gates = None
         else:
             circ_refined = x.new_zeros(B, 0, self.circle_k, 2)
-            circle_cls = x.new_zeros(B, 0, self.n_classes + 1)
+            cls_out_dim = (self.n_classes if self.query_head_kind == "nodelet"
+                            else self.n_classes + 1)
+            circle_cls = x.new_zeros(B, 0, cls_out_dim)
             ricci_circle = x.new_zeros(B, 0, 3)
+            circle_gates = (x.new_zeros(B, 0) if self.head_gate is not None
+                             else None)
 
-        return {
+        out = {
             "box_corners":    box_refined,
             "box_cls":        box_cls,
             "circle_corners": circ_refined,
@@ -315,3 +479,8 @@ class RicciHyMeYOLOMulti(nn.Module):
             "ricci_box":      ricci_box,
             "ricci_circle":   ricci_circle,
         }
+        if box_gates is not None:
+            out["box_gates"] = box_gates
+        if circle_gates is not None:
+            out["circle_gates"] = circle_gates
+        return out

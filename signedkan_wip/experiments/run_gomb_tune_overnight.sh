@@ -27,7 +27,7 @@ echo "[run_gomb_tune_overnight] OUT=${OUT}" | tee -a "${LOG}"
 PY="${PYTHON:-python3}"
 
 # Phase 1 — Bitcoin only (wide search; finish before large SNAP graphs).
-"${PY}" -m signedkan_wip.src.run_gomb_tune \
+"${PY}" -m signedkan_wip.experiments.runs.run_gomb_tune \
   --datasets bitcoin_alpha bitcoin_otc \
   --trials 28 --search-seed 101 --data-seed 0 \
   --architecture wide \
@@ -35,7 +35,7 @@ PY="${PYTHON:-python3}"
   --out "${OUT}" 2>&1 | tee -a "${LOG}"
 
 # Phase 2 — Slashdot (compact widths; more trials; long timeout per trial).
-"${PY}" -m signedkan_wip.src.run_gomb_tune \
+"${PY}" -m signedkan_wip.experiments.runs.run_gomb_tune \
   --datasets slashdot \
   --trials 22 --search-seed 202 --data-seed 0 \
   --architecture compact \
@@ -43,7 +43,7 @@ PY="${PYTHON:-python3}"
   --out "${OUT}" 2>&1 | tee -a "${LOG}"
 
 # Phase 3 — Epinions (compact; fewer epochs; heaviest enumerator).
-"${PY}" -m signedkan_wip.src.run_gomb_tune \
+"${PY}" -m signedkan_wip.experiments.runs.run_gomb_tune \
   --datasets epinions \
   --trials 14 --search-seed 303 --data-seed 0 \
   --architecture compact \
@@ -51,7 +51,7 @@ PY="${PYTHON:-python3}"
   --out "${OUT}" 2>&1 | tee -a "${LOG}"
 
 # Phase 4 — SBM (wide; quick sanity vs sota_reference sbm_* rows).
-"${PY}" -m signedkan_wip.src.run_gomb_tune \
+"${PY}" -m signedkan_wip.experiments.runs.run_gomb_tune \
   --datasets sbm_n200 sbm_n400 \
   --trials 24 --search-seed 404 --data-seed 0 \
   --architecture wide \

@@ -114,7 +114,7 @@ def _try_load_real_signedkan():
     math, preserving the codegen smoke test's "importable" guarantee.
     """
     try:
-        from signedkan_wip.src.signedkan import (
+        from signedkan_wip.src.core.signedkan import (
             SignedKANLayer as _Real,
             SignedKANConfig as _Cfg,
         )
@@ -131,7 +131,7 @@ class SignedKANLayer(nn.Module):
       * ``forward(x, triad_v, triad_sigma)`` — real path.  ``triad_v``
         is ``(n_cycles, k)`` of vertex IDs and ``triad_sigma`` is
         ``(n_cycles, k)`` ∈ {+1, -1}.  Output: ``(n_cycles, hidden)``.
-        Mirrors signedkan_wip.src.signedkan.SignedKANLayer.forward.
+        Mirrors signedkan_wip.src.core.signedkan.SignedKANLayer.forward.
       * ``forward(x)`` — stub fallback for codegen smoke tests.
 
     The real layer's per-sign Option-C aggregation is:

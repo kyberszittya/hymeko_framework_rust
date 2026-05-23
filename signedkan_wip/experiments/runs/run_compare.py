@@ -29,23 +29,29 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import load, split
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.signedkan import (SignedKAN, SignedKANConfig,
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.signedkan import (SignedKAN, SignedKANConfig,
                          MultiLayerSignedKAN, MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 from signedkan_wip.src.baselines.vanilla_kan import VanillaKAN
-from signedkan_wip.src.entropy_reg import (EntropyRegulariser, EntropyRegConfig,
+from signedkan_wip.src.core.entropy_reg import (EntropyRegulariser, EntropyRegConfig,
                             CoefEntropyRegulariser,
                             SplineSmoothRegulariser)
-from signedkan_wip.src.train import build_edge_to_triads
-from signedkan_wip.src.triad_loss import TriadLoss, TriadLossConfig, build_triad_pairs
-from signedkan_wip.src.n_tuple_loss import (NTupleBalanceLoss, NTupleBalanceLossConfig,
+from signedkan_wip.src.core.train import build_edge_to_triads
+# Phase 20: side-stacked / membrane / stacked-side share the same
+# dispatch surface; bind the marker class here so the isinstance
+# checks in evaluate() / train loop can recognise them.
+from signedkan_wip.src.core.side_signedkan import (
+    StackedSideSignedKAN as _SSK_marker,
+)
+from signedkan_wip.src.core.triad_loss import TriadLoss, TriadLossConfig, build_triad_pairs
+from signedkan_wip.src.core.n_tuple_loss import (NTupleBalanceLoss, NTupleBalanceLossConfig,
                             build_ntuple_balance_tensors)
-from signedkan_wip.src.signed_laplacian import make_spectral_init
-from signedkan_wip.src.cross_branch_reg import CrossBranchRegulariser, CrossBranchRegConfig
-from signedkan_wip.src.attention import (SignedTriadAttention, attention_entropy_loss,
+from signedkan_wip.src.core.signed_laplacian import make_spectral_init
+from signedkan_wip.src.core.cross_branch_reg import CrossBranchRegulariser, CrossBranchRegConfig
+from signedkan_wip.src.core.attention import (SignedTriadAttention, attention_entropy_loss,
                           build_attention_pairs)
-from signedkan_wip.src.participation_reg import (ParticipationRegulariser, triad_degree,
+from signedkan_wip.src.core.participation_reg import (ParticipationRegulariser, triad_degree,
                                   HyperedgeDensityRegulariser, triad_density)
 
 
@@ -76,7 +82,7 @@ def evaluate(model, triad_v, triad_sigma, edges, signs, M, device,
     need_h_v = (getattr(model, "bilinear", None) is not None
                 or attn_module is not None)
     with torch.no_grad():
-        if isinstance(model, MultiLayerSignedKAN):
+        if isinstance(model, (MultiLayerSignedKAN, _SSK_marker)):  # Phase 20
             out = model.encode_triads(triad_v.to(device),
                                        triad_sigma.to(device),
                                        M_vt, return_h_v=need_h_v)
@@ -162,7 +168,8 @@ def run_one(model_name: str, dataset: str, hidden: int, seed: int,
             optimizer_kind: str = "adam",
             grad_clip: float = 0.0,
             weight_decay: float = 1e-5,
-            init_scale: float = 0.1):
+            init_scale: float = 0.1,
+            m_cycles: int | None = None):
     """Train one model. If entropy_lam0 > 0 the spectral-entropy
     Lyapunov-safe regulariser is added to the loss; otherwise plain
     cross-entropy.
@@ -179,7 +186,11 @@ def run_one(model_name: str, dataset: str, hidden: int, seed: int,
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     g = load(dataset)
-    triads = construct(g)
+    # Phase 8 (2026-05-19): `m_cycles` caps the per-apex cycle-pool
+    # size. The HSIKAN P-graph framework's cycle_topk_m{4,16,64}
+    # axis flows through here. `None` keeps every triangle (back-
+    # compat with every prior `run_one` caller).
+    triads = construct(g, m_per_vertex=m_cycles)
     triad_v = torch.tensor([t.v for t in triads], dtype=torch.long)
     triad_sigma = torch.tensor([t.sigma for t in triads], dtype=torch.long)
     edge_to_triads = build_edge_to_triads(triads)
@@ -240,6 +251,74 @@ def run_one(model_name: str, dataset: str, hidden: int, seed: int,
     elif model_name == "vanillakan":
         model = VanillaKAN(n_nodes=g.n_nodes, hidden_dim=hidden,
                            grid=grid, k=3).to(device)
+    elif model_name in ("side_signedkan", "membrane_signedkan",
+                         "stacked_side_signedkan",
+                         "stacked_side_highway_signedkan"):
+        # Phase 17/18/20 (2026-05-20): width-via-parallel-branches
+        # and the membrane-coupled / stacked-side variants.
+        # `n_layers` is reinterpreted as `n_branches` for these.
+        from signedkan_wip.src.core.side_signedkan import (
+            SideSignedKAN, SideSignedKANConfig,
+            MembraneSignedKAN, MembraneSignedKANConfig,
+            StackedSideSignedKAN, StackedSideSignedKANConfig,
+        )
+        n_branches = max(1, int(n_layers))
+        if model_name in ("stacked_side_signedkan",
+                          "stacked_side_highway_signedkan"):
+            # Phase 20: parallel branches × per-branch depth.
+            # `n_layers` flag is split between branches and depth
+            # via the side `share_weights` field — we keep it
+            # simple: caller controls N via `n_layers` (= n_branches),
+            # per-branch depth defaults to 2 unless overridden via
+            # the `bilinear_rank` field as a piggy-back channel.
+            # Cleaner is to add explicit kwargs; do that in Phase 21.
+            n_branches = max(1, int(n_layers))
+            n_layers_per_branch = max(2, int(bilinear_rank)) if bilinear_rank > 0 else 2
+            inner_skip_kind = ("highway"
+                                if model_name == "stacked_side_highway_signedkan"
+                                else "residual")
+            sscfg = StackedSideSignedKANConfig(
+                n_nodes=g.n_nodes,
+                n_branches=n_branches,
+                n_layers_per_branch=n_layers_per_branch,
+                hidden_dim=hidden,
+                grid=grid, k=3,
+                use_minus_branch=use_minus_branch,
+                init_scale=init_scale,
+                fusion="mean",
+                spline_kind=spline_kind,
+                inner_skip=inner_skip_kind,
+                use_residual=True,
+                layer_norm_between=True,
+                jk_mode="last",
+            )
+            model = StackedSideSignedKAN(sscfg).to(device)
+        elif model_name == "side_signedkan":
+            scfg = SideSignedKANConfig(
+                n_nodes=g.n_nodes,
+                n_branches=n_branches,
+                hidden_dim=hidden,
+                grid=grid, k=3,
+                use_minus_branch=use_minus_branch,
+                init_scale=init_scale,
+                fusion="mean",
+                spline_kinds=([spline_kind] * n_branches),
+            )
+            model = SideSignedKAN(scfg).to(device)
+        else:
+            mcfg = MembraneSignedKANConfig(
+                n_nodes=g.n_nodes,
+                n_branches=n_branches,
+                hidden_dim=hidden,
+                grid=grid, k=3,
+                use_minus_branch=use_minus_branch,
+                init_scale=init_scale,
+                fusion="mean",
+                spline_kinds=([spline_kind] * n_branches),
+                membrane_aggregator="mean",
+                read_gate_init=0.0,
+            )
+            model = MembraneSignedKAN(mcfg).to(device)
     else:
         raise ValueError(f"unknown model: {model_name}")
 
@@ -305,9 +384,13 @@ def run_one(model_name: str, dataset: str, hidden: int, seed: int,
     M_train = build_edge_incidence(e_tr, edge_to_triads, n_triads, device)
     M_val   = build_edge_incidence(e_va, edge_to_triads, n_triads, device)
     M_test  = build_edge_incidence(e_te, edge_to_triads, n_triads, device)
+    # Phase 20: StackedSideSignedKAN's branches are each
+    # MultiLayerSignedKAN instances, so they need M_vt too.
+    from signedkan_wip.src.core.side_signedkan import StackedSideSignedKAN as _SSK
+    needs_mvt = isinstance(model, (MultiLayerSignedKAN, _SSK))
     M_vt = (build_vertex_triad_incidence(triad_v.numpy(), g.n_nodes, device,
                                           mode=pool_mode)
-            if isinstance(model, MultiLayerSignedKAN) else None)
+            if needs_mvt else None)
     # Edge endpoints as tensors, for the bilinear head when enabled.
     e_tr_t = torch.from_numpy(e_tr.astype(np.int64)).to(device)
     e_va_t = torch.from_numpy(e_va.astype(np.int64)).to(device)
@@ -418,7 +501,7 @@ def run_one(model_name: str, dataset: str, hidden: int, seed: int,
     for epoch in range(n_epochs):
         model.train()
         for _ in range(inner_steps):
-            if isinstance(model, MultiLayerSignedKAN):
+            if isinstance(model, (MultiLayerSignedKAN, _SSK_marker)):  # Phase 20
                 out = model.encode_triads(triad_v_dev, triad_sigma_dev,
                                            M_vt, return_h_v=need_h_v)
             else:
@@ -533,6 +616,10 @@ def run_one(model_name: str, dataset: str, hidden: int, seed: int,
                     attn_module=attn_module, attn_pairs=ap_te)
     return dict(model=model_name, dataset=dataset, hidden=hidden, seed=seed,
                 lr=lr, n_epochs=n_epochs, grid=grid,
+                # Phase 8: P-graph framework's m_cycles axis echo
+                # (None when caller didn't opt in to the cap).
+                m_cycles=m_cycles,
+                n_triads=int(triad_v.shape[0]),
                 early_stopping=early_stopping,
                 class_weighted=class_weighted,
                 spline_kind=spline_kind,

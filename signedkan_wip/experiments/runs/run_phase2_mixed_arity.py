@@ -22,17 +22,17 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.datasets import load, split, deduplicate_pairs
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.n_tuples import construct_k, construct_2
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.n_tuples import construct_k, construct_2
 from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                       MixedAritySignedKANConfig,
                                       subsample_tuples,
                                       build_edge_to_tuples,
                                       build_vertex_to_tuples)
-from signedkan_wip.src.signedkan import (MultiLayerSignedKANConfig,
+from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
-from signedkan_wip.src.entropy_reg import SplineSmoothRegulariser
-from signedkan_wip.src.participation_reg import ParticipationRegulariser, triad_degree
+from signedkan_wip.src.core.entropy_reg import SplineSmoothRegulariser
+from signedkan_wip.src.core.participation_reg import ParticipationRegulariser, triad_degree
 
 
 def _build_edge_incidence(edges_array, edge_to_tuples, n_tuples, device,
@@ -300,7 +300,9 @@ def run_one_mixed(dataset: str, seed: int,
                    balance_lambda: float = 0.0,
                    attention_m_e: bool = False,
                    multitask_lambda: float = 0.0,
-                   direct_messaging: bool = False) -> dict:
+                   direct_messaging: bool = False,
+                   n_branches: int = 1,
+                   side_fusion: str = "mean") -> dict:
     """``m_e_mode``       — how M_e (edge-cycle incidence) is built.
         - "edge_in_cycle" (default): M_e[query, t] = 1 iff query edge
           appears as one of cycle t's cycle-edges. The σ assignment of
@@ -362,7 +364,7 @@ def run_one_mixed(dataset: str, seed: int,
     if feature_edges == "all":
         g_features = g
     else:
-        from .datasets import SignedGraph
+        from signedkan_wip.src.datasets import SignedGraph
         if feature_edges == "train_val":
             feat_idx = np.concatenate([tr_idx, va_idx])
         elif feature_edges == "train":
@@ -453,7 +455,19 @@ def run_one_mixed(dataset: str, seed: int,
         attention_m_e=attention_m_e,
         direct_messaging=direct_messaging,
     )
-    model = MixedAritySignedKAN(cfg).to(device)
+    if n_branches > 1:
+        # Phase 21: N parallel mixed-arity branches with mean / sum
+        # fusion at the edge-embedding level. Same training loop;
+        # the wrapper exposes encode_edges + classifier + alpha().
+        from signedkan_wip.src.core.side_signedkan import (
+            SideMixedAritySignedKAN, SideMixedAritySignedKANConfig,
+        )
+        wrap_cfg = SideMixedAritySignedKANConfig(
+            base=cfg, n_branches=n_branches, fusion=side_fusion,
+        )
+        model = SideMixedAritySignedKAN(wrap_cfg).to(device)
+    else:
+        model = MixedAritySignedKAN(cfg).to(device)
     n_params = model.num_parameters()
 
     # Build per-sign signed adjacency (D^-1 A_signed-flavoured) from
@@ -624,7 +638,14 @@ def run_one_mixed(dataset: str, seed: int,
         else:
             loss = F.binary_cross_entropy_with_logits(logits, target_tr)
         if smooth_reg is not None:
-            loss = loss + smooth_reg(model.base)
+            if n_branches > 1:
+                # Sum smooth-reg across all branches' bases so the
+                # regulariser sees every spline-coef set, not just
+                # the first branch's.
+                for _br in model.branches:
+                    loss = loss + smooth_reg(_br.base)
+            else:
+                loss = loss + smooth_reg(model.base)
         if part_reg is not None:
             loss = loss + part_reg(model.node_embed.weight)
         if balance_lambda > 0.0:
@@ -672,8 +693,11 @@ def run_one_mixed(dataset: str, seed: int,
     test_auc, test_f1m = _evaluate(model, per_arity_test, e_te, s_te, device)
 
     alpha = model.alpha().detach().cpu().tolist()
+    model_tag = ("hsikan_side_mixed" if n_branches > 1
+                 else "hsikan_mixed")
     return dict(
-        model="hsikan_mixed", dataset=dataset,
+        model=model_tag, dataset=dataset, n_branches=n_branches,
+        side_fusion=(side_fusion if n_branches > 1 else None),
         hidden=hidden, n_layers=n_layers, grid=grid,
         seed=seed, n_epochs=n_epochs, lr=lr,
         weight_decay=weight_decay, grad_clip=grad_clip,

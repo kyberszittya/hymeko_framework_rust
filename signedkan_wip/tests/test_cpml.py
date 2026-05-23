@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 import torch
 
-from signedkan_wip.src.cpml import (
+from signedkan_wip.src.core.cpml import (
     CPML,
     CPMLConfig,
     CapsuleHypergraphRouter,

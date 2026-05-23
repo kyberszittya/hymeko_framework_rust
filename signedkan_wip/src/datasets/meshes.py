@@ -21,7 +21,7 @@ from __future__ import annotations
 import math
 import numpy as np
 
-from .datasets import SignedGraph
+from .legacy import SignedGraph
 
 
 # ─── reference polyhedra (vertex coordinates + edge list) ─────────────

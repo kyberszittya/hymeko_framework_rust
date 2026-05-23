@@ -18,7 +18,7 @@ import numpy as np
 
 REPO   = Path(__file__).resolve().parents[3]
 RESDIR = REPO / "signedkan_wip" / "experiments" / "results"
-LEDGER = REPO / "signedkan_wip" / "RESULTS_LEDGER.md"
+LEDGER = REPO / "signedkan_wip" / "docs" / "archive" / "RESULTS_LEDGER.md"
 
 
 # Per-file → list of (group_key, label) extractor. group_key partitions

@@ -1,0 +1,42 @@
+# Per-robot binding for the Tier-2 dual scenario — robot B.
+context: robot_b_grasping
+
+inputs:
+  - vertex:   b_robot_pose
+    topic:    /robot_b/tcp_pose
+    msg_type: geometry_msgs/msg/PoseStamped
+    field:    pose.position.z
+  - vertex:   b_active_tool
+    topic:    /robot_b/tool_id
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   b_active_payload
+    topic:    /robot_b/payload_id
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   b_mode_parallel
+    topic:    /robot_b/grasp_mode
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   b_grip_force
+    topic:    /robot_b/wrench
+    msg_type: geometry_msgs/msg/WrenchStamped
+    field:    wrench.force.z
+
+outputs:
+  - vertex:   b_stability_margin
+    topic:    /robot_b/hymeko/grasping/stability_margin
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   b_configuration
+    topic:    /robot_b/hymeko/grasping/configuration
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   b_force_vector
+    topic:    /robot_b/hymeko/grasping/contact_force
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   b_loaded_state
+    topic:    /robot_b/hymeko/grasping/loaded_state
+    msg_type: std_msgs/msg/Float64
+    field:    data

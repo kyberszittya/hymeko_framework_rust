@@ -11,13 +11,13 @@ import numpy as np
 import torch
 
 from .datasets import load, split
-from .hyperedges import construct
-from .n_tuples import construct_k
+from .core.hyperedges import construct
+from .core.n_tuples import construct_k
 from .mixed_arity_signedkan import (MixedAritySignedKAN,
                                       MixedAritySignedKANConfig,
                                       subsample_tuples,
                                       build_edge_to_tuples)
-from .signedkan import (MultiLayerSignedKANConfig,
+from .core.signedkan import (MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 from .run_phase2_mixed_arity import _build_edge_incidence
 

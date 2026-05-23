@@ -30,7 +30,7 @@ for c in 1 2 4 8 16; do
     HSIKAN_TOPK_PRUNER=balance \
     HSIKAN_TOPK_SCORER=fraction_negative \
     HSIKAN_MIXED_TUPLES=c3,c4 \
-    python -m signedkan_wip.src.run_final_cell \
+    python -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 4 --n-epochs 20 --seed 0 \
         > "$logf" 2>&1
     elapsed=$(( $(date +%s) - t0 ))

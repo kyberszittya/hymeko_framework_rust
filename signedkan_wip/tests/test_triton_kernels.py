@@ -79,7 +79,7 @@ GRAD_PARITY_THRESHOLD = 1e-4
 )
 def test_catmull_rom_parity(C, G, B):
     """Triton CR matches PyTorch ref within ABS_PARITY_THRESHOLD."""
-    from signedkan_wip.src.splines import _catmull_rom_eval
+    from signedkan_wip.src.core.splines import _catmull_rom_eval
     from signedkan_wip.src.triton_kernels import catmull_rom_triton
 
     torch.manual_seed(0)
@@ -99,7 +99,7 @@ def test_catmull_rom_parity(C, G, B):
 
 def test_catmull_rom_boundary_clamping():
     """Inputs outside [-1, 1] must produce same clamped output as ref."""
-    from signedkan_wip.src.splines import _catmull_rom_eval
+    from signedkan_wip.src.core.splines import _catmull_rom_eval
     from signedkan_wip.src.triton_kernels import catmull_rom_triton
 
     torch.manual_seed(0)
@@ -136,7 +136,7 @@ def _torch_signedkan_inner(x, triad_v, triad_sigma, coef_pos, coef_neg, G):
     Matches production ``SignedKANLayer._forward_impl`` (no_skip case):
     no tanh wrap, CR clamps its input internally.
     """
-    from signedkan_wip.src.splines import _catmull_rom_eval
+    from signedkan_wip.src.core.splines import _catmull_rom_eval
     h_v = x[triad_v]
     inner_pos = _catmull_rom_eval(coef_pos, h_v, G)
     inner_neg = _catmull_rom_eval(coef_neg, h_v, G)
@@ -240,7 +240,7 @@ def _torch_signedkan_inner_highway(
     Matches production ``SignedKANLayer._forward_impl`` (highway case):
     no tanh wrap, raw h_v residual.  CR clamps its input internally.
     """
-    from signedkan_wip.src.splines import _catmull_rom_eval
+    from signedkan_wip.src.core.splines import _catmull_rom_eval
     h_v = x[triad_v]
     # Highway gate: per-(t, k, d) sigmoid of Linear(h_v).
     gate_logit = h_v @ gate_w + gate_b      # (T, k, d)
@@ -425,7 +425,7 @@ def test_signedkan_inner_highway_autograd_grad_parity(d):
 
 def test_catmull_rom_autograd_grad_parity():
     """Triton-wrapped CR computes gradients matching PyTorch ref."""
-    from signedkan_wip.src.splines import _catmull_rom_eval
+    from signedkan_wip.src.core.splines import _catmull_rom_eval
     from signedkan_wip.src.triton_kernels import catmull_rom_triton_autograd
 
     torch.manual_seed(0)
@@ -473,7 +473,7 @@ def _bench(fn, n_warmup=3, n_runs=20):
 
 def test_catmull_rom_speedup_canonical():
     """Speedup of CR kernel at canonical Slashdot shape ≥ threshold."""
-    from signedkan_wip.src.splines import _catmull_rom_eval
+    from signedkan_wip.src.core.splines import _catmull_rom_eval
     from signedkan_wip.src.triton_kernels import catmull_rom_triton
 
     torch.manual_seed(0)
@@ -556,7 +556,7 @@ def test_end_to_end_ba_smoke_with_patch():
         os.environ["HSIKAN_CYCLE_BATCH"] = "4000"
         # Use 5 epochs to keep this test fast.
         # Need to import after env vars are set.
-        from signedkan_wip.src.run_final_cell import cell_signed_graph
+        from signedkan_wip.experiments.runs.run_final_cell import cell_signed_graph
         device = torch.device("cuda")
         out = cell_signed_graph(
             "bitcoin_alpha", "HSiKAN", hidden=16, n_epochs=5,

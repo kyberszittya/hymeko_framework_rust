@@ -37,7 +37,7 @@ def time_per_call(fn, n_warmup=10, n_repeats=20):
 
 def run_sgt(g, e_tr, s_tr, e_te, s_te, hidden, n_layers, n_epochs,
              device, lr=5e-3):
-    from .baselines.sgt import SGT, build_signed_neighbours
+    from signedkan_wip.src.baselines.sgt import SGT, build_signed_neighbours
     nbrs, sgns = build_signed_neighbours(e_tr, s_tr, g.n_nodes)
     model = SGT(n_nodes=g.n_nodes, hidden_dim=hidden, n_heads=4,
                  n_layers=n_layers).to(device)
@@ -91,8 +91,8 @@ def main():
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("")  # truncate
 
-    from .datasets import load, split
-    from .datasets_small import sbm_signed
+    from signedkan_wip.src.datasets import load, split
+    from signedkan_wip.src.datasets import sbm_signed
 
     for dataset in args.datasets:
         print(f"\n=== {dataset} ===")

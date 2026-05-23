@@ -10,8 +10,8 @@ from .config import MixedAritySignedKANConfig
 from .scatter import _attn_softmax_dispatch
 from .attention import _AttentionM_e, _QuaternionAttentionM_e
 from .utils import subsample_tuples, build_edge_to_tuples, build_vertex_to_tuples
-from ..splines import _catmull_rom_eval
-from ..signedkan import (MultiLayerSignedKAN, MultiLayerSignedKANConfig,
+from ..core.splines import _catmull_rom_eval
+from ..core.signedkan import (MultiLayerSignedKAN, MultiLayerSignedKANConfig,
                           build_vertex_triad_incidence)
 
 class MixedAritySignedKAN(nn.Module):
@@ -339,6 +339,8 @@ class MixedAritySignedKAN(nn.Module):
         vertex_features: torch.Tensor | None = None,
         edge_features: torch.Tensor | None = None,
         edge_to_vertex: torch.sparse.Tensor | None = None,
+        collect_attn_entropy: bool = True,
+        per_arity_arc_weights: list[torch.Tensor | None] | None = None,
     ) -> torch.Tensor:
         """Run the shared layer on each arity, pool via per-arity
         incidence, mix.
@@ -376,8 +378,20 @@ class MixedAritySignedKAN(nn.Module):
         # Stash query_edges so the batched path can access it for the
         # per-edge gate without breaking the signature.
         self._pending_query_edges = query_edges
+        # Stash per-arity arc weights for the inner forward path
+        # (cr_highway mode reads them per layer call). ``None`` means
+        # "no arc-weight modulation" — backward compat with the entire
+        # existing call chain.
+        self._pending_per_arity_arc_weights = per_arity_arc_weights
         # Reset the per-edge attention entropy buffer for this forward.
-        self._attn_entropy_terms = []
+        # When ``collect_attn_entropy=False`` we set it to ``None``; the
+        # downstream collection sites in encoding_full / encoding_batched
+        # gate on ``is not None``, so this skips collecting the scalars
+        # AND skips building the autograd graph that backs them. Set to
+        # False whenever ``attn_entropy_lambda == 0`` to save the per-
+        # branch graph (the multi-branch wrapper's outer-checkpoint path
+        # relies on this).
+        self._attn_entropy_terms = [] if collect_attn_entropy else None
         if self.cfg.cycle_batch_size is None:
             return self._encode_edges_full(per_arity_inputs, query_edges)
         return self._encode_edges_batched(per_arity_inputs,

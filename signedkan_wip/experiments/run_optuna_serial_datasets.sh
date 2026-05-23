@@ -52,7 +52,7 @@ echo "[optuna_serial] stamp=${STAMP}  datasets(${#DATASETS[@]}): ${DATASETS[*]}"
 run_one() {
   local ds=$1
   echo "[optuna_serial] start dataset=${ds} trials=${N_TRIALS} epochs=${N_EPOCHS}"
-  python -m signedkan_wip.src.run_optuna_search \
+  python -m signedkan_wip.experiments.runs.run_optuna_search \
     --dataset "${ds}" \
     --n-trials "${N_TRIALS}" \
     --n-epochs "${N_EPOCHS}" \

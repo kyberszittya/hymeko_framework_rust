@@ -33,8 +33,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from ..kinematic_graph import urdf_to_signed_graph
-from ..run_phase11_kinematic_tasks import (
+from ..kinematic import urdf_to_signed_graph
+from signedkan_wip.experiments.runs.run_phase11_kinematic_tasks import (
     FAMILY_LABEL_BY_NAME, GraphLevelHSiKAN, MechInst,
     _build_per_arity_input, build_random_mechanism, detect_dominant_arity,
 )

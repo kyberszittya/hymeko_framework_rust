@@ -72,7 +72,7 @@ def main():
     s = GENERATORS[args.generator](seed=args.seed)
     n = s.graph.n_nodes
     e_total = s.graph.edges.shape[0]
-    from .runtime_config import get_runtime
+    from signedkan_wip.src.runtime_config import get_runtime
     sparse_K = get_runtime().training.sparse_attn_k
     print(f"[{s.name}] n_nodes={n}, n_edges={e_total}, "
           f"attention={args.attention}, sparse_K={sparse_K} "

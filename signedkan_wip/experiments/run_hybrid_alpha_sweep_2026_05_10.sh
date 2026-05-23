@@ -29,7 +29,7 @@ for alpha in 0.0 0.25 0.5 0.75 1.0; do
     HSIKAN_TOPK_HYBRID_ALPHA="$alpha" \
     HSIKAN_TOPK_SIGNAL=fraction_negative \
     HSIKAN_MIXED_TUPLES=c3,c4 \
-    python -m signedkan_wip.src.run_final_cell \
+    python -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset epinions --hidden 4 --n-epochs 20 --seed 0 \
         > "$logf" 2>&1
     elapsed=$(( $(date +%s) - t0 ))

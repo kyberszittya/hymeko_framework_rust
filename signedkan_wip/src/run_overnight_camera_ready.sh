@@ -28,7 +28,7 @@ run_cell() {
   stamp=$(date +"%H:%M:%S")
   echo "[$stamp] $description :: $args" | tee -a "$LOG_FILE"
   local result
-  if result=$(timeout 7200 python3 -m signedkan_wip.src.run_final_cell $args 2>&1 | tail -1); then
+  if result=$(timeout 7200 python3 -m signedkan_wip.experiments.runs.run_final_cell $args 2>&1 | tail -1); then
     if [[ -n "$result" && "$result" != "null" && "$result" =~ ^\{ ]]; then
       echo "$result" >> "$OUT_FILE"
       python3 -c "

@@ -8,7 +8,7 @@ Pipeline exercised:
      structure tensors + per-arity M_e incidence).
   2. The emitted module imports cleanly and instantiates without error.
   3. forward(x, triad_v_kK, triad_sigma_kK, M_e_kK) routes to the real
-     signedkan_wip.src.signedkan.SignedKANLayer per arity, then the
+     signedkan_wip.src.core.signedkan.SignedKANLayer per arity, then the
      ArityMixer applies M_e_kK · cyc_emb_kK weighted by softmax(αₖ).
   4. A forward + backward + optimiser step reduces loss on a synthetic
      target.  Confirms autograd is intact through both the real

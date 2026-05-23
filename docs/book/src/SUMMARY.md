@@ -41,11 +41,18 @@
 - [Add a new layer kind](./recipes/add-a-layer-kind.md)
 - [Add a new query](./recipes/add-a-query.md)
 - [Debug the pipeline](./recipes/debug-pipeline.md)
+- [Filter sweep outputs by Friedler certificate](./recipes/filter-by-friedler-certificate.md)
+
+# HymeKo-Gömb
+
+- [Three-shell cascade — overview](./gomb/overview.md)
+- [Strict-protocol 5-seed benchmark (2026-05-14)](./gomb/strict-protocol-benchmark.md)
 
 # Research code
 
 - [signedkan_wip overview](./research/signedkan-overview.md)
 - [HSiKAN architecture](./research/hsikan.md)
+- [Orthogonal neural dimensions — HSiKAN · Clifford-FIR · Derivative Nodelets · CPML](./research/orthogonal-neural-dimensions.md)
 - [NN variants & layer geometry](./research/nn-architectures-and-layer-geometry.md)
 - [HyMeKo-driven training](./research/hymeko-driven.md)
 - [HymeKo-Gömb: “orthogonal” meanings](./research/gomb-orthogonal.md)

@@ -37,11 +37,22 @@ def encode_edges_full(
     per_arity_per_layer_t: list[list[torch.Tensor]] = [
         [] for _ in self.cfg.arities
     ]
+    # Pending per-arity arc weights (None entries → no modulation).
+    per_arity_arc_weights = getattr(
+        self, "_pending_per_arity_arc_weights", None
+    )
+
     for li in range(n_layers):
         # Per-arity triad/tuple embeddings via the SHARED layer.
         arity_h_t = []
-        for triad_v, triad_sigma, _M_vt, _M_e in per_arity_inputs:
-            h_t = layer(h_v, triad_v, triad_sigma)    # (T_k, d)
+        for ai, (triad_v, triad_sigma, _M_vt, _M_e) in enumerate(
+                per_arity_inputs):
+            arc_w = (per_arity_arc_weights[ai]
+                      if (per_arity_arc_weights is not None
+                          and ai < len(per_arity_arc_weights))
+                      else None)
+            h_t = layer(h_v, triad_v, triad_sigma,
+                          arc_weights=arc_w)            # (T_k, d)
             arity_h_t.append(h_t)
         for ai, h_t in enumerate(arity_h_t):
             per_arity_per_layer_t[ai].append(h_t)
@@ -132,6 +143,29 @@ def encode_edges_full(
         else:
             edge_pool = torch.sparse.mm(M_e, h_final)
         per_arity_edge_pools.append(edge_pool)
+
+        # Fuzzy-signature side channel (set by the interpret module).
+        # Stores everything needed to reconstruct per-cycle
+        # contributions to any query edge in this batch. Cost when
+        # not in use: one ``getattr`` per arity per forward — negligible.
+        cap = getattr(self, "_signature_capture", None)
+        if cap is not None:
+            cap.setdefault("arity_h_final", []).append(
+                h_final.detach()
+            )
+            # M_e (sparse) — keep both indices and values so the
+            # extractor can compute uniform-pool weights when
+            # attention is off.
+            m_e_coalesced = M_e.coalesce()
+            cap.setdefault("m_e_indices", []).append(
+                m_e_coalesced.indices().detach()
+            )
+            cap.setdefault("m_e_values", []).append(
+                m_e_coalesced.values().detach()
+            )
+            cap.setdefault("attn_vals", []).append(
+                attn_vals.detach() if self.cfg.attention_m_e else None
+            )
 
     if self.cfg.per_edge_gate:
         # Per-edge gating: weights of shape (E, n_arities).

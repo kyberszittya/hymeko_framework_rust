@@ -135,7 +135,7 @@ def main() -> None:
     device = torch.device(args.device)
 
     from signedkan_wip.src.benchmarks.cuda_job_lock import cuda_job_lock
-    from signedkan_wip.src.run_final_cell import cell_signed_graph
+    from signedkan_wip.experiments.runs.run_final_cell import cell_signed_graph
 
     lock_ctx = cuda_job_lock() if device.type == "cuda" else contextlib.nullcontext()
     with lock_ctx:

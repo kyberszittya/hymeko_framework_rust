@@ -28,7 +28,7 @@ import statistics
 import time
 from pathlib import Path
 
-from signedkan_wip.src.highway_signedkan import HighwaySignedKAN
+from signedkan_wip.src.core.highway_signedkan import HighwaySignedKAN
 from .run_compare import run_one
 from .run_sgcn_baseline import run_one_sgcn
 

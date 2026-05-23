@@ -9,7 +9,7 @@ Reports the median of N runs after a warm-up pass per CLAUDE.md
 benchmark stability rules. CPU only — no torch, no GPU.
 
 Usage:
-    python -m signedkan_wip.src.bench_abb_enum_walltime
+    python -m signedkan_wip.experiments.bench.bench_abb_enum_walltime
         --dataset slashdot --k 4 --m 128 --iters 5 --warmup 1
 
 A pure-enumeration bench: no training, no model. The number that
@@ -25,7 +25,7 @@ import time
 
 import numpy as np
 import hymeko
-from .datasets import load
+from signedkan_wip.src.datasets import load
 
 
 def to_uv_signs(g) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:

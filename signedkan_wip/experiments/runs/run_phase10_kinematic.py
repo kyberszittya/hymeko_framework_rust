@@ -23,8 +23,8 @@ from pathlib import Path
 import numpy as np
 
 from signedkan_wip.src.datasets import SignedGraph
-from signedkan_wip.src.kinematic_fixtures import write_fixture, _serial_arm_urdf
-from signedkan_wip.src.kinematic_graph import urdf_to_signed_graph
+from signedkan_wip.src.kinematic import write_fixture, _serial_arm_urdf
+from signedkan_wip.src.kinematic import urdf_to_signed_graph
 from .run_phase2_mixed_arity import run_one_mixed
 
 
@@ -63,7 +63,7 @@ def build_kinematic_dataset(n_each: dict[str, int], seed: int = 0) -> SignedGrap
                     n_links = int(name.split("_")[1])
                     # Add some randomization
                     n_links_actual = max(2, n_links + rng.randint(-2, 2))
-                    from .kinematic_fixtures import _serial_arm_urdf
+                    from signedkan_wip.src.kinematic import _serial_arm_urdf
                     import tempfile
                     f = tempfile.NamedTemporaryFile(
                         mode="w", suffix=f"_serial_{n_links_actual}.urdf",

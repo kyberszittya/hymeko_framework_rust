@@ -74,7 +74,7 @@ TIMEOUT_S=3600 run "wikisigned_baseline_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wikisigned --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -88,7 +88,7 @@ TIMEOUT_S=5400 run "wikisigned_kitchen_sink_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wikisigned --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 32
 
@@ -106,7 +106,7 @@ TIMEOUT_S=7200 run "wikisigned_edge_cr_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wikisigned --hidden 4 --n-epochs 80 \
         --max-k4 100000 --seed 0 --model HSiKAN
 
@@ -121,7 +121,7 @@ TIMEOUT_S=1800 run "wiki_elec_baseline_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wiki_elec --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -134,7 +134,7 @@ TIMEOUT_S=3600 run "wiki_elec_kitchen_sink_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wiki_elec --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 32
 
@@ -151,7 +151,7 @@ TIMEOUT_S=5400 run "wiki_elec_edge_cr_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wiki_elec --hidden 4 --n-epochs 80 \
         --max-k4 100000 --seed 0 --model HSiKAN
 
@@ -167,7 +167,7 @@ TIMEOUT_S=3600 run "wiki_conflict_baseline_s0" \
         HSIKAN_USE_PER_VERTEX_ABB=0 HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wiki_conflict --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 16
 
@@ -180,7 +180,7 @@ TIMEOUT_S=5400 run "wiki_conflict_kitchen_sink_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wiki_conflict --seed 0 --n-epochs 60 \
         --model HSiKAN --hidden 32
 
@@ -198,7 +198,7 @@ TIMEOUT_S=10800 run "wiki_conflict_edge_cr_s0" \
         HSIKAN_TORCH_COMPILE=0 \
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         HYMEKO_CYCLE_CACHE=1 \
-    python -u -m signedkan_wip.src.run_final_cell \
+    python -u -m signedkan_wip.experiments.runs.run_final_cell \
         --dataset wiki_conflict --hidden 4 --n-epochs 60 \
         --max-k4 50000 --seed 0 --model HSiKAN
 

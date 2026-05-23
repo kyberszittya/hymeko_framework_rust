@@ -10,17 +10,89 @@ SignedKAN AUC peaks near epoch 50 and decays thereafter.
 
 Run:
   python -m signedkan_wip.experiments.runs.run_early_stop
+
+Migrated to the :class:`SimpleExperiment` pattern on 2026-05-19
+(Slice H pilot of the signedkan_wip reorganisation). The script
+body is now ~30 LOC of config + a 4-line ``run_seed``; the
+previous 60-LOC version's argparse, triple-nested loop, JSON
+emission, and printing all happen in :class:`SimpleExperiment` and
+its registered observers.
 """
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
+from ._experiment_base import (
+    JsonlObserver,
+    SeedEvent,
+    SimpleExperiment,
+    StdoutObserver,
+)
 from .run_compare import run_one
 
 
-def main():
+class EarlyStopExperiment(SimpleExperiment):
+    """Sweeps two models × N datasets × M seeds with val-AUC early
+    stopping. Subclass contract is satisfied by :meth:`run_seed`;
+    the (model, dataset) pair is folded into the seed loop by
+    overriding :meth:`run` to iterate combinations.
+    """
+
+    def __init__(self, datasets: list[str], hidden: int, lr: float,
+                 n_epochs: int, val_every: int) -> None:
+        super().__init__(label="early_stop")
+        self.datasets = datasets
+        self.hidden = hidden
+        self.lr = lr
+        self.n_epochs = n_epochs
+        self.val_every = val_every
+
+    def run_seed(self, seed: int, **cfg) -> dict:
+        model = cfg["model"]
+        dataset = cfg["dataset"]
+        return run_one(
+            model, dataset, self.hidden, seed, self.n_epochs,
+            lr=self.lr, early_stopping=True, val_every=self.val_every,
+        )
+
+    def run_grid(self, seeds: list[int]) -> list[dict]:
+        """The grid sweep: (model, dataset, seed) combinations.
+        Reuses the base's observer dispatch by calling ``run`` once
+        per (model, dataset)."""
+        all_results: list[dict] = []
+        for dataset in self.datasets:
+            for model in ("signedkan", "vanillakan"):
+                results = self.run(seeds, model=model, dataset=dataset)
+                # Annotate each result so the consumer can demux.
+                for r in results:
+                    r["dataset"] = dataset
+                    r["model"] = model
+                all_results.extend(results)
+        return all_results
+
+
+class _PrintObserver(StdoutObserver):
+    """Format the per-seed end-of-experiment line like the original
+    script did."""
+
+    def __init__(self, hidden: int) -> None:
+        self.hidden = hidden
+
+    def on_seed_end(self, ev: SeedEvent) -> None:
+        m = ev.final_metrics
+        if not m:
+            return
+        be = int(m.get("best_epoch", 0))
+        print(f"  seed={ev.seed}  "
+              f"best_ep={be:3d}  "
+              f"val_auc={m.get('best_val_auc', 0):.4f}  "
+              f"test_auc={m.get('test_auc', 0):.4f}  "
+              f"F1_mac={m.get('test_f1_macro', 0):.4f}  "
+              f"{m.get('elapsed_s', 0):.1f}s")
+
+
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--datasets", nargs="+",
                     default=["bitcoin_alpha", "bitcoin_otc"])
@@ -33,27 +105,25 @@ def main():
                     "signedkan_wip/experiments/results/early_stop.json")
     args = ap.parse_args()
 
-    results = []
-    for dataset in args.datasets:
-        for model in ("signedkan", "vanillakan"):
-            for seed in args.seeds:
-                r = run_one(model, dataset, args.hidden, seed,
-                             args.n_epochs, lr=args.lr,
-                             early_stopping=True,
-                             val_every=args.val_every)
-                print(f"  {model:11s} {dataset:14s} seed={seed}  "
-                      f"best_ep={r['best_epoch']:3d}  "
-                      f"val_auc={r['best_val_auc']:.4f}  "
-                      f"test_auc={r['test_auc']:.4f}  "
-                      f"F1_mac={r['test_f1_macro']:.4f}  "
-                      f"params={r['n_params']:,}  "
-                      f"{r['elapsed_s']:.1f}s")
-                results.append(r)
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(results, indent=2))
-    print(f"\nwrote {out}  ({len(results)} runs)")
+    exp = EarlyStopExperiment(
+        datasets=args.datasets,
+        hidden=args.hidden,
+        lr=args.lr,
+        n_epochs=args.n_epochs,
+        val_every=args.val_every,
+    )
+    exp.add_observer(_PrintObserver(args.hidden))
+    exp.add_observer(JsonlObserver(str(out_path.with_suffix(".jsonl"))))
+
+    all_results = exp.run_grid(args.seeds)
+
+    # Final aggregate JSON (compatible with the pre-pilot output format).
+    import json
+    out_path.write_text(json.dumps(all_results, indent=2))
+    print(f"\nwrote {out_path}  ({len(all_results)} runs)")
 
 
 if __name__ == "__main__":

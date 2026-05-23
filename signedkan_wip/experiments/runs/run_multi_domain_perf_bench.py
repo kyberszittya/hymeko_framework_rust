@@ -50,15 +50,15 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
 # Domain helpers (reused from existing phase scripts).
 from signedkan_wip.src.datasets import SignedGraph, load, deduplicate_pairs, split
-from signedkan_wip.src.datasets_small import sbm_signed, hierarchical_signed
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.n_tuples import construct_k, construct_2
+from signedkan_wip.src.datasets import sbm_signed, hierarchical_signed
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.n_tuples import construct_k, construct_2
 from signedkan_wip.src.mixed_arity_signedkan import (MixedAritySignedKAN,
                                       MixedAritySignedKANConfig,
                                       subsample_tuples,
                                       build_vertex_to_tuples,
                                       build_edge_to_tuples)
-from signedkan_wip.src.signedkan import (MultiLayerSignedKANConfig,
+from signedkan_wip.src.core.signedkan import (MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
 from signedkan_wip.src.baselines.sgcn_model import SGCN, build_signed_adj
 
@@ -308,7 +308,7 @@ def build_vertex_to_tuples_from_per_arity(per_arity):
 
 def domain_scene(device, n_epochs=30) -> list[dict]:
     print("\n=== domain: scene-graph (synth VG) ===", flush=True)
-    from .adapters.visual_genome import (
+    from signedkan_wip.src.adapters.visual_genome import (
         synth_dataset, edge_features_from_bboxes,
     )
 
@@ -660,7 +660,7 @@ def domain_bitcoin_summary() -> list[dict]:
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
-    from .runtime_config import get_runtime
+    from signedkan_wip.src.runtime_config import get_runtime
     _compile = get_runtime().compile
     print(f"compile: {'1' if _compile.enabled else '0'}")
     print(f"compile mode: {_compile.mode}")

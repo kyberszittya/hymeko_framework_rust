@@ -68,6 +68,7 @@ except Exception:
 TIMEOUT_S=10800 run "hymeyolo_ricci_kcycle_n10k_e100_s0" \
     env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     python -u -m signedkan_wip.src.vision.train_circles_ricci \
+        --no-warm-start --schedule constant --warmup-epochs 0 \
         --n-images 10000 --epochs 100 --seed 0 \
         --configs "+ricci-mod,+kcycle" \
         --jsonl-out "$LOG/hymeyolo_ricci_kcycle_n10k_e100_s0.jsonl"

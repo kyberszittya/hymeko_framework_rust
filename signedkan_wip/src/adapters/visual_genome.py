@@ -52,7 +52,7 @@ from pathlib import Path
 import numpy as np
 
 from ..datasets import SignedGraph
-from ..scene_graph import SceneGraph, SceneObject, SceneRelation
+from ..core.scene_graph import SceneGraph, SceneObject, SceneRelation
 
 
 # Standard VG-150 sign convention.

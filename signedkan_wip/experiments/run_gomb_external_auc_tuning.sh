@@ -34,7 +34,7 @@ mkdir -p "$OUTDIR"
 
 if [[ "$RUN_BITCOIN" == "1" ]]; then
   echo "[gomb-external-auc] joint-mix (Bitcoin) → ${OUTDIR}/gomb_tune_external_joint.jsonl"
-  python -m signedkan_wip.src.run_gomb_tune \
+  python -m signedkan_wip.experiments.runs.run_gomb_tune \
     --datasets bitcoin_otc bitcoin_alpha \
     --joint-mix \
     --trials "$TRIALS" \
@@ -49,7 +49,7 @@ if [[ "$RUN_BITCOIN" == "1" ]]; then
     --out "${OUTDIR}/gomb_tune_external_joint.jsonl"
 
   echo "[gomb-external-auc] vanilla/mixed (Bitcoin) → ${OUTDIR}/gomb_tune_external_vanilla.jsonl"
-  python -m signedkan_wip.src.run_gomb_tune \
+  python -m signedkan_wip.experiments.runs.run_gomb_tune \
     --datasets bitcoin_otc bitcoin_alpha \
     --trials "$TRIALS" \
     --search-seed 13 \
@@ -69,7 +69,7 @@ if [[ "$RUN_SLASHDOT" == "1" ]]; then
   # Joint-mix on full Slashdot often OOMs on 8GB (four Rust pools + four stacks).
   if [[ "${RUN_SLASHDOT_JOINT:-1}" == "1" ]]; then
     echo "[gomb-external-auc] joint-mix (Slashdot, compact) → ${OUTDIR}/gomb_tune_external_slashdot_joint.jsonl"
-    python -m signedkan_wip.src.run_gomb_tune \
+    python -m signedkan_wip.experiments.runs.run_gomb_tune \
       --datasets slashdot \
       --joint-mix \
       --trials "$TRIALS_SLASH" \
@@ -88,7 +88,7 @@ if [[ "$RUN_SLASHDOT" == "1" ]]; then
 
   if [[ "${RUN_SLASHDOT_VANILLA:-1}" == "1" ]]; then
     echo "[gomb-external-auc] vanilla/mixed (Slashdot, compact) → ${OUTDIR}/gomb_tune_external_slashdot_vanilla.jsonl"
-    python -m signedkan_wip.src.run_gomb_tune \
+    python -m signedkan_wip.experiments.runs.run_gomb_tune \
       --datasets slashdot \
       --trials "$TRIALS_SLASH" \
       --search-seed 23 \

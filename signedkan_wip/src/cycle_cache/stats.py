@@ -111,7 +111,7 @@ class LazyCyclePool:
         n = len(self)
         # Re-use the same builder logic as _unpack_to_ntuples but
         # yield instead of accumulating.
-        from ..n_tuples import SignedNTuple
+        from ..core.n_tuples import SignedNTuple
         v = self._v
         sigma = self._sigma
         es = self._edge_signs

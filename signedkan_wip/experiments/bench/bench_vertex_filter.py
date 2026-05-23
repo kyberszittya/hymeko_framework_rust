@@ -14,7 +14,7 @@ whether the filter has measurable overhead AND whether the cycle pool
 is reduced (which it will be if the filter actually fires).
 
 Usage:
-    python -m signedkan_wip.src.bench_vertex_filter
+    python -m signedkan_wip.experiments.bench.bench_vertex_filter
 """
 from __future__ import annotations
 import os

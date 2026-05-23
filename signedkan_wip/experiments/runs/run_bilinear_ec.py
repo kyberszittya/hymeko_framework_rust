@@ -24,7 +24,7 @@ def main():
     args = ap.parse_args()
 
     # Patch gamma_init to be smaller than the default 1e-3.
-    import signedkan_wip.src.bilinear_head as bh
+    import signedkan_wip.src.core.bilinear_head as bh
     orig_b = bh.BilinearHead.__init__
     orig_l = bh.LowRankBilinearHead.__init__
     def patched_b(self, d, gamma_init=1e-4):

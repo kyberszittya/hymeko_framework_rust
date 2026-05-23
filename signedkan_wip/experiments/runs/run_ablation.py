@@ -28,9 +28,9 @@ import torch
 import torch.nn.functional as F
 
 from signedkan_wip.src.datasets import load, split
-from signedkan_wip.src.hyperedges import construct
-from signedkan_wip.src.signedkan import SignedKAN, SignedKANConfig
-from signedkan_wip.src.train import build_edge_to_triads
+from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.signedkan import SignedKAN, SignedKANConfig
+from signedkan_wip.src.core.train import build_edge_to_triads
 
 
 SWEEP_DIR = Path("signedkan_wip/experiments/results/phase3_sweep")

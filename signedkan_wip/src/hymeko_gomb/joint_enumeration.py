@@ -16,7 +16,7 @@ import numpy as np
 import hymeko
 
 from ..datasets import SignedGraph
-from ..walks import construct_walks
+from ..core.walks import construct_walks
 
 # Canonical joint-mix slot order (matches committed JSONL ``tuple_labels``).
 JOINT_BA_SLOTS: tuple[str, ...] = ("c3", "c4", "w2", "w3")

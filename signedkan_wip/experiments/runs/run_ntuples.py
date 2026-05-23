@@ -28,10 +28,10 @@ import numpy as np
 import torch
 
 from signedkan_wip.src.datasets import load, split
-from signedkan_wip.src.n_tuples import construct_k, stats as ntuple_stats
-from signedkan_wip.src.signedkan import (MultiLayerSignedKAN, MultiLayerSignedKANConfig,
+from signedkan_wip.src.core.n_tuples import construct_k, stats as ntuple_stats
+from signedkan_wip.src.core.signedkan import (MultiLayerSignedKAN, MultiLayerSignedKANConfig,
                          build_vertex_triad_incidence)
-from signedkan_wip.src.highway_signedkan import HighwaySignedKAN, HighwaySignedKANConfig
+from signedkan_wip.src.core.highway_signedkan import HighwaySignedKAN, HighwaySignedKANConfig
 from .run_compare import build_edge_incidence
 
 

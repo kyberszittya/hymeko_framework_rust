@@ -71,7 +71,7 @@ def test_rule_based_path_for_serial_chain():
 def test_save_load_roundtrip(tmp_path):
     """Without retraining: a hand-built small GraphLevelHSiKAN must
     serialise + deserialise + match its state_dict."""
-    from signedkan_wip.src.run_phase11_kinematic_tasks import GraphLevelHSiKAN
+    from signedkan_wip.experiments.runs.run_phase11_kinematic_tasks import GraphLevelHSiKAN
     model = GraphLevelHSiKAN(n_nodes_max=8, arity=4, hidden=8, n_classes=4)
     ckpt = tmp_path / "k4_test.pt"
     save_classifier(ckpt, model, arity=4, n_nodes_max=8, train_acc=0.95,
