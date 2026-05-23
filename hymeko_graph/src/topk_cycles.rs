@@ -169,12 +169,18 @@ impl HeapEntry {
     fn signs_slice(&self) -> &[i8] {
         &self.signs[..self.len as usize]
     }
-}
 
-impl Eq for HeapEntry {}
-impl PartialEq for HeapEntry {
-    fn eq(&self, other: &Self) -> bool {
-        // We never want NaN to crash the heap; treat it as -inf.
+    /// Total preference order: higher score is more preferred; on
+    /// score ties, lex-larger cycle slice is more preferred.  Used
+    /// at heap-boundary "should this displace the min?" checks and
+    /// as the basis of [`Ord`] (reversed) so the heap top is the
+    /// least-preferred entry / next eviction candidate.
+    ///
+    /// The tiebreaker is what makes parallel reduce deterministic:
+    /// without it, equal-score cycles never displace each other and
+    /// "which one survives" depends on rayon's non-deterministic
+    /// merge order.
+    fn cmp_preference(&self, other: &Self) -> Ordering {
         let a = if self.score.is_nan() {
             f64::NEG_INFINITY
         } else {
@@ -185,7 +191,35 @@ impl PartialEq for HeapEntry {
         } else {
             other.score
         };
-        a == b
+        a.partial_cmp(&b)
+            .unwrap_or(Ordering::Equal)
+            .then_with(|| self.cycle_slice().cmp(other.cycle_slice()))
+    }
+
+    /// Same total order as [`cmp_preference`] but the right-hand side
+    /// is a raw `(score, cycle_slice)` pair, avoiding a `HeapEntry`
+    /// construction in the dfs boundary-check hot loop.
+    fn cmp_preference_vs_slice(&self, other_score: f64, other_slice: &[u32]) -> Ordering {
+        let a = if self.score.is_nan() {
+            f64::NEG_INFINITY
+        } else {
+            self.score
+        };
+        let b = if other_score.is_nan() {
+            f64::NEG_INFINITY
+        } else {
+            other_score
+        };
+        a.partial_cmp(&b)
+            .unwrap_or(Ordering::Equal)
+            .then_with(|| self.cycle_slice().cmp(other_slice))
+    }
+}
+
+impl Eq for HeapEntry {}
+impl PartialEq for HeapEntry {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp_preference(other) == Ordering::Equal
     }
 }
 impl PartialOrd for HeapEntry {
@@ -195,19 +229,10 @@ impl PartialOrd for HeapEntry {
 }
 impl Ord for HeapEntry {
     fn cmp(&self, other: &Self) -> Ordering {
-        // Reverse on score: BinaryHeap pops the *largest*, so
-        // reversing lets us pop the smallest.
-        let a = if self.score.is_nan() {
-            f64::NEG_INFINITY
-        } else {
-            self.score
-        };
-        let b = if other.score.is_nan() {
-            f64::NEG_INFINITY
-        } else {
-            other.score
-        };
-        b.partial_cmp(&a).unwrap_or(Ordering::Equal)
+        // BinaryHeap pops the *largest by Ord*, so reverse the
+        // preference order: least-preferred sits at top and is the
+        // next eviction candidate.
+        other.cmp_preference(self)
     }
 }
 
@@ -457,7 +482,7 @@ fn dfs<P, S>(
         } else {
             // Heap min — under our Ord, peek() returns the smallest
             // score (because we inverted the comparator).
-            let beat = heap.peek().map(|min| s > min.score).unwrap_or(true);
+            let beat = heap.peek().map(|min| min.cmp_preference_vs_slice(s, path).is_lt()).unwrap_or(true);
             if beat {
                 heap.pop();
                 heap.push(HeapEntry::from_slices(s, path, signs));
@@ -838,7 +863,7 @@ fn dfs_per_vertex<P, S>(
             if heap.len() < cap {
                 heap.push(HeapEntry::from_slices(s, path, signs));
             } else {
-                let beat = heap.peek().map(|min| s > min.score).unwrap_or(true);
+                let beat = heap.peek().map(|min| min.cmp_preference_vs_slice(s, path).is_lt()).unwrap_or(true);
                 if beat {
                     heap.pop();
                     heap.push(HeapEntry::from_slices(s, path, signs));
@@ -1097,7 +1122,7 @@ where
                         if av.len() < cap {
                             av.push(entry);
                         } else {
-                            let beat = av.peek().map(|min| entry.score > min.score).unwrap_or(true);
+                            let beat = av.peek().map(|min| entry.cmp_preference(min) == Ordering::Greater).unwrap_or(true);
                             if beat {
                                 av.pop();
                                 av.push(entry);
@@ -1225,7 +1250,7 @@ where
                         if av.len() < cap {
                             av.push(entry);
                         } else {
-                            let beat = av.peek().map(|min| entry.score > min.score).unwrap_or(true);
+                            let beat = av.peek().map(|min| entry.cmp_preference(min) == Ordering::Greater).unwrap_or(true);
                             if beat {
                                 av.pop();
                                 av.push(entry);
@@ -1331,7 +1356,7 @@ fn dfs_per_vertex_bb<P, S>(
             if heap.len() < cap {
                 heap.push(HeapEntry::from_slices(s, path, signs));
             } else {
-                let beat = heap.peek().map(|min| s > min.score).unwrap_or(true);
+                let beat = heap.peek().map(|min| min.cmp_preference_vs_slice(s, path).is_lt()).unwrap_or(true);
                 if beat {
                     heap.pop();
                     heap.push(HeapEntry::from_slices(s, path, signs));
@@ -1489,7 +1514,7 @@ where
                         if av.len() < cap {
                             av.push(entry);
                         } else {
-                            let beat = av.peek().map(|min| entry.score > min.score).unwrap_or(true);
+                            let beat = av.peek().map(|min| entry.cmp_preference(min) == Ordering::Greater).unwrap_or(true);
                             if beat {
                                 av.pop();
                                 av.push(entry);
@@ -1612,7 +1637,7 @@ fn dfs_per_vertex_bb_global<P, S>(
                     }
                 }
             } else {
-                let beat = heap.peek().map(|min| s > min.score).unwrap_or(true);
+                let beat = heap.peek().map(|min| min.cmp_preference_vs_slice(s, path).is_lt()).unwrap_or(true);
                 if beat {
                     heap.pop();
                     heap.push(HeapEntry::from_slices(s, path, signs));
@@ -1844,7 +1869,7 @@ where
                         if av.len() < cap {
                             av.push(entry);
                         } else {
-                            let beat = av.peek().map(|min| entry.score > min.score).unwrap_or(true);
+                            let beat = av.peek().map(|min| entry.cmp_preference(min) == Ordering::Greater).unwrap_or(true);
                             if beat {
                                 av.pop();
                                 av.push(entry);
@@ -1968,7 +1993,7 @@ where
                     if a.len() < k_keep {
                         a.push(entry);
                     } else {
-                        let beat = a.peek().map(|min| entry.score > min.score).unwrap_or(true);
+                        let beat = a.peek().map(|min| entry.cmp_preference(min) == Ordering::Greater).unwrap_or(true);
                         if beat {
                             a.pop();
                             a.push(entry);
@@ -2051,7 +2076,7 @@ where
                     if a.len() < k_keep {
                         a.push(entry);
                     } else {
-                        let beat = a.peek().map(|min| entry.score > min.score).unwrap_or(true);
+                        let beat = a.peek().map(|min| entry.cmp_preference(min) == Ordering::Greater).unwrap_or(true);
                         if beat {
                             a.pop();
                             a.push(entry);
@@ -2459,7 +2484,7 @@ where
                     if a.len() < k_keep {
                         a.push(entry);
                     } else {
-                        let beat = a.peek().map(|min| entry.score > min.score).unwrap_or(true);
+                        let beat = a.peek().map(|min| entry.cmp_preference(min) == Ordering::Greater).unwrap_or(true);
                         if beat {
                             a.pop();
                             a.push(entry);
@@ -2543,7 +2568,7 @@ where
                     if a.len() < k_keep {
                         a.push(entry);
                     } else {
-                        let beat = a.peek().map(|min| entry.score > min.score).unwrap_or(true);
+                        let beat = a.peek().map(|min| entry.cmp_preference(min) == Ordering::Greater).unwrap_or(true);
                         if beat {
                             a.pop();
                             a.push(entry);
@@ -2607,7 +2632,7 @@ fn dfs_bb<P, S>(
         if heap.len() < k_keep {
             heap.push(HeapEntry::from_slices(s, path, signs));
         } else {
-            let beat = heap.peek().map(|min| s > min.score).unwrap_or(true);
+            let beat = heap.peek().map(|min| min.cmp_preference_vs_slice(s, path).is_lt()).unwrap_or(true);
             if beat {
                 heap.pop();
                 heap.push(HeapEntry::from_slices(s, path, signs));
@@ -3029,7 +3054,7 @@ where
                     if a.len() < k_keep {
                         a.push(entry);
                     } else {
-                        let beat = a.peek().map(|m| entry.score > m.score).unwrap_or(true);
+                        let beat = a.peek().map(|m| entry.cmp_preference(m) == Ordering::Greater).unwrap_or(true);
                         if beat {
                             a.pop();
                             a.push(entry);
@@ -3115,7 +3140,7 @@ where
                     if a.len() < k_keep {
                         a.push(entry);
                     } else {
-                        let beat = a.peek().map(|m| entry.score > m.score).unwrap_or(true);
+                        let beat = a.peek().map(|m| entry.cmp_preference(m) == Ordering::Greater).unwrap_or(true);
                         if beat {
                             a.pop();
                             a.push(entry);
@@ -3179,7 +3204,7 @@ fn dfs_entropy<P, H>(
             heap.push(HeapEntry::from_slices(s, path, signs));
             accepted = true;
         } else {
-            let beat = heap.peek().map(|m| s > m.score).unwrap_or(true);
+            let beat = heap.peek().map(|m| m.cmp_preference_vs_slice(s, path).is_lt()).unwrap_or(true);
             if beat {
                 let popped = heap.pop().expect("heap non-empty");
                 // Roll back the evicted cycle's state contribution

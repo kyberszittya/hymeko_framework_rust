@@ -76,7 +76,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [hymeko_core, hymeko_daemon, hymeko_py, parser]
+        package: [hymeko_client, hymeko_core, hymeko_daemon, hymeko_py, hymeko_query, parser]
     steps:
       - uses: actions/checkout@v4
 

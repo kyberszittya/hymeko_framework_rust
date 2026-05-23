@@ -227,3 +227,88 @@ fn full_heap_rate_climbs_under_degree_adaptive() {
          long tail",
     );
 }
+
+// ─── 5. Determinism regression ────────────────────────────────────
+//
+// Repeated calls of `enumerate_top_k_per_vertex_cycles_par_adaptive`
+// with identical inputs must return bit-identical output (modulo the
+// arbitrary BinaryHeap iteration order, so we compare on canonical
+// cycle sets).
+//
+// Regression for the 2026-05-23 non-determinism: rayon's parallel
+// reduce merges per-fold heaps in scheduler-dependent order, and
+// before the fix the heap boundary check only used raw score
+// comparison.  Cycles with tied scores never displaced each other,
+// so "which tied cycle survives" depended on merge order → same
+// process, same input, two consecutive calls produced 308 vs 309
+// cycles on Windows runners with NT≈8.  Triggered specifically by
+// the balance pruner (it thins cycles enough to force ties at the
+// per-vertex cap).
+//
+// The fix introduced a total preference order on `HeapEntry` (score
+// desc, then cycle lex desc) and routed all 16 heap-boundary checks
+// through it.  This test asserts the contract directly so future
+// changes to the dispatch / merge logic can't silently reintroduce
+// the bug.
+
+#[test]
+fn par_adaptive_is_deterministic_across_calls_with_balance_pruner() {
+    let g = synthetic_signed_graph(150, 60, 700, 72);
+    let k = 4;
+    let m = 8u32;
+    let pruner = CartwrightHararyPruner {
+        mode: BalanceMode::OnlyBalanced,
+    };
+    let n = g.n_nodes as usize;
+    let m_v = vec![m; n];
+
+    let baseline = enumerate_top_k_per_vertex_cycles_par_adaptive(
+        &g,
+        k,
+        &pruner,
+        &m_v,
+        scorers::fraction_negative,
+    );
+    let baseline_canon: std::collections::HashSet<Vec<u32>> = baseline
+        .iter()
+        .map(|(_, vs, _)| {
+            let mut c = vs.clone();
+            c.sort_unstable();
+            c
+        })
+        .collect();
+
+    // 20 iterations gave us 0/20 failures locally after the fix on a
+    // host that produced 5/10 failures before.  Bumps up the test's
+    // statistical power against any reintroduction.
+    let n_iters = 20;
+    for i in 0..n_iters {
+        let out = enumerate_top_k_per_vertex_cycles_par_adaptive(
+            &g,
+            k,
+            &pruner,
+            &m_v,
+            scorers::fraction_negative,
+        );
+        assert_eq!(
+            out.len(),
+            baseline.len(),
+            "iteration {i}: length {} differs from baseline {} \
+             (parallel-reduce non-determinism regression)",
+            out.len(),
+            baseline.len(),
+        );
+        let out_canon: std::collections::HashSet<Vec<u32>> = out
+            .iter()
+            .map(|(_, vs, _)| {
+                let mut c = vs.clone();
+                c.sort_unstable();
+                c
+            })
+            .collect();
+        assert_eq!(
+            baseline_canon, out_canon,
+            "iteration {i}: canonical cycle set differs from baseline",
+        );
+    }
+}
