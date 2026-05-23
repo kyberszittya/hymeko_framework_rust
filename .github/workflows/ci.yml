@@ -13,13 +13,6 @@ env:
 permissions:
   contents: read
 
-# Default checkout: fetch by commit SHA, not refs/pull/N/merge (avoids auth flakes on PRs).
-x-checkout: &checkout
-  uses: actions/checkout@v4
-  with:
-    ref: ${{ github.event.pull_request.head.sha || github.sha }}
-    token: ${{ github.token }}
-
 jobs:
   workspace-tests:
     name: Workspace Tests
@@ -29,7 +22,11 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable, nightly]
     steps:
-      - *checkout
+      - uses: actions/checkout@v4
+        with:
+          # Commit SHA fetch avoids refs/pull/N/merge (intermittent auth failures on PRs).
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          token: ${{ github.token }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
@@ -85,7 +82,11 @@ jobs:
       matrix:
         package: [hymeko_client, hymeko_core, hymeko_daemon, hymeko_py, hymeko_query, parser]
     steps:
-      - *checkout
+      - uses: actions/checkout@v4
+        with:
+          # Commit SHA fetch avoids refs/pull/N/merge (intermittent auth failures on PRs).
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          token: ${{ github.token }}
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -120,7 +121,11 @@ jobs:
     env:
       RUSTFLAGS: -C instrument-coverage
     steps:
-      - *checkout
+      - uses: actions/checkout@v4
+        with:
+          # Commit SHA fetch avoids refs/pull/N/merge (intermittent auth failures on PRs).
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          token: ${{ github.token }}
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -199,7 +204,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: workspace-tests
     steps:
-      - *checkout
+      - uses: actions/checkout@v4
+        with:
+          # Commit SHA fetch avoids refs/pull/N/merge (intermittent auth failures on PRs).
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          token: ${{ github.token }}
       - uses: dtolnay/rust-toolchain@stable
       - name: Install glslc
         run: sudo apt-get update && sudo apt-get install -y glslc
@@ -214,7 +223,11 @@ jobs:
     name: Python Package Build & Test
     runs-on: ubuntu-latest
     steps:
-      - *checkout
+      - uses: actions/checkout@v4
+        with:
+          # Commit SHA fetch avoids refs/pull/N/merge (intermittent auth failures on PRs).
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          token: ${{ github.token }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
