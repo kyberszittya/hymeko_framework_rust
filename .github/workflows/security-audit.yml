@@ -19,8 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          token: ${{ github.token }}
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-audit
         run: cargo install cargo-audit
