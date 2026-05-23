@@ -265,11 +265,16 @@ mod tests {
                 normalized_ratio
             );
 
-            // Cap runtime growth at 2x the count growth, with an additive +1.0 grace
+            // Cap runtime growth at 2x the count growth, with an additive +2.0 grace
             // term so adjacent buckets with small count ratios (e.g. 2000->2500 at
-            // 1.25x) don't get a punishingly tight 2.5x window that any CI jitter
-            // can blow past.  At count_ratio=10 the limit is 21x; at 1.25x it's 3.5x.
-            let max_runtime_ratio = count_ratio * 2.0 + 1.0;
+            // 1.25x) don't get a punishingly tight window that shared-runner jitter
+            // in debug builds can blow past.  At count_ratio=10 the limit is 22x;
+            // at 1.25x it's 4.5x.  The +1.0 grace was empirically too tight: median
+            // runtimes at sub-millisecond ranges can ratio at ~3.7x purely from
+            // scheduling jitter (observed 2026-05-23 on ubuntu-latest CI). The
+            // per-node normalized check below (<=5.0x) remains the catch-all for
+            // genuine super-quadratic regressions.
+            let max_runtime_ratio = count_ratio * 2.0 + 2.0;
             assert!(
                 runtime_ratio <= max_runtime_ratio,
                 "Scaling regression: {} -> {} nodes produced runtime ratio x{:.3} (limit x{:.3}) for count ratio x{:.3}",
