@@ -245,10 +245,12 @@ mod tests {
 
         // Analyze scaling across adjacent buckets to catch pathological regressions.
         for window in telemetry.windows(2) {
-            let (prev_count, _prev_elapsed, prev_avg_ms, _prev_median_ms, _prev_stddev_ms) = window[0];
-            let (curr_count, _curr_elapsed, curr_avg_ms, _curr_median_ms, _curr_stddev_ms) = window[1];
+            let (prev_count, _prev_elapsed, prev_avg_ms, prev_median_ms, _prev_stddev_ms) = window[0];
+            let (curr_count, _curr_elapsed, curr_avg_ms, curr_median_ms, _curr_stddev_ms) = window[1];
             let count_ratio = curr_count as f64 / prev_count as f64;
-            let runtime_ratio = curr_avg_ms / prev_avg_ms.max(1e-9);
+            // Use median, not avg, so a single jittery sample on a shared CI runner
+            // cannot push the smallest-bucket ratio over threshold.
+            let runtime_ratio = curr_median_ms / prev_median_ms.max(1e-9);
             let ms_per_node_prev = prev_avg_ms / prev_count as f64;
             let ms_per_node_curr = curr_avg_ms / curr_count as f64;
             let normalized_ratio = ms_per_node_curr / ms_per_node_prev.max(1e-12);
