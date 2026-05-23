@@ -26,6 +26,22 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
 
+      - name: Install glslc (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y glslc
+
+      - name: Install glslc (macOS)
+        if: runner.os == 'macOS'
+        run: brew install shaderc
+
+      - name: Install glslc (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install -y vulkan-sdk
+          $sdkRoot = (Get-ChildItem 'C:\VulkanSDK' | Sort-Object Name -Descending | Select-Object -First 1).FullName
+          Add-Content -Path $env:GITHUB_PATH -Value "$sdkRoot\Bin"
+
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -122,7 +138,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          packages=(hymeko_core hymeko_daemon hymeko_py parser)
+          packages=(hymeko_core hymeko_daemon parser)
           mkdir -p coverage/xml coverage/html
           for pkg in "${packages[@]}"; do
             echo "Running Tarpaulin for ${pkg}"
@@ -152,15 +168,6 @@ jobs:
           fail_ci_if_error: false
           verbose: true
 
-      - name: Upload coverage (hymeko_py)
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage/xml/hymeko_py.xml
-          flags: hymeko_py
-          name: coverage-hymeko-py
-          fail_ci_if_error: false
-          verbose: true
-
       - name: Upload coverage (parser)
         uses: codecov/codecov-action@v4
         with:
@@ -184,6 +191,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install glslc
+        run: sudo apt-get update && sudo apt-get install -y glslc
       - run: cargo build --workspace --all-targets --release --verbose
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -206,5 +215,5 @@ jobs:
         run: maturin build --release --manifest-path hymeko_py/Cargo.toml
       - name: Test Python package
         run: |
-          maturin develop --manifest-path hymeko_py/Cargo.toml
-          python -c "import hymeko_py; print(hymeko_py.__doc__)"
+          pip install --find-links target/wheels hymeko
+          python -c "import hymeko; print(hymeko.__doc__)"
