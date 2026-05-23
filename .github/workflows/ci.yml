@@ -10,6 +10,9 @@ env:
   CARGO_TERM_COLOR: always
   RUST_LOG: info
 
+permissions:
+  contents: read
+
 jobs:
   workspace-tests:
     name: Workspace Tests
