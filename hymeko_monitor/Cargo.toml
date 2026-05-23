@@ -18,7 +18,3 @@ approx = "0.5"
 name    = "per_observation_latency"
 harness = false
 path    = "benches/per_observation_latency.rs"
-
-[profile.release]
-lto            = "fat"
-codegen-units  = 1

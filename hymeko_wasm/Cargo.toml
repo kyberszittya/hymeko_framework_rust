@@ -31,8 +31,3 @@ console_error_panic_hook = "0.1"
 
 [dev-dependencies]
 parser = { workspace = true }
-
-[profile.release]
-# wasm-opt-friendly — tiny + inlined.
-opt-level = "z"
-lto = true
