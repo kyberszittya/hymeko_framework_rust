@@ -137,16 +137,29 @@ mod test_gazebo_world {
     }
 
     #[test]
-    fn gazebo_world_embeds_robot_model_inline() {
+    fn gazebo_world_does_not_inline_robot_model() {
+        // Regression: the world.sdf emitter must emit a world-stage only
+        // (physics, gz-sim plugin triple, ground_plane, light, extracted
+        // sim_plugin/control_plugin entries at world scope). The robot
+        // itself is the URDF's responsibility and is spawned at launch
+        // time via `ros_gz_sim::create`; inlining it here would (a)
+        // duplicate the kinematic definition between URDF and world.sdf
+        // with drift risk, and (b) collide on name with the runtime
+        // spawn. Prior to 2026-05-23 the template embedded `<model
+        // name="{robot_name}">` with full link/joint/inertia geometry;
+        // this test would have failed against that revision.
         let w = moveo_world();
-        // Expect the robot's link tags from the SDF emitter to be present.
         assert!(
-            w.contains("<link name=\"base_link\""),
-            "robot base_link missing from embedded model"
+            !w.contains("<model name=\"moveo\">"),
+            "world.sdf must not inline `<model name=\"moveo\">` — the robot \
+             is spawned from URDF at launch time, not embedded in the world"
         );
-        assert!(
-            w.contains("<link name=\"link_0\""),
-            "robot link_0 missing from embedded model"
+        // The world's only `<model>` should be the ground_plane.
+        assert_eq!(
+            w.matches("<model name=").count(),
+            1,
+            "expected exactly one `<model name=` (ground_plane); inline \
+             robot model has resurfaced"
         );
     }
 
@@ -184,8 +197,11 @@ mod test_gazebo_world {
         let (store, compiled) = load_and_lower(DIFF_ROBOT).unwrap();
         let w = generate_gazebo_world(&compiled.ir, &store.it, "diff_robot", "factory");
         assert!(w.contains("<world name=\"factory\">"));
-        assert!(w.contains("diff_robot"));
-        // robot_4wh declares its sim_plugin `@sim_control_plugin`.
+        // robot_4wh declares its sim_plugin `@sim_control_plugin`; confirms
+        // the fixture's plugin hyperedges flow through the emitter even
+        // though the robot model itself lives in URDF (post-2026-05-23 the
+        // robot name no longer appears in world.sdf — the world is a stage
+        // only, the robot is spawned at launch).
         assert!(w.contains("gz_ros2_control-system"));
     }
 
