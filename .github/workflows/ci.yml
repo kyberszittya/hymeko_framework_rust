@@ -9,6 +9,12 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_LOG: info
+  # Incremental compilation is counterproductive in CI: caches are keyed on
+  # Cargo.lock (a Cargo.lock change blows the whole target dir away), and the
+  # extra fingerprint files inflate file-handle traffic on Windows runners,
+  # where Defender's real-time scan + link.exe contend for cdylib write
+  # handles and produce intermittent LNK1104 ("cannot open file").
+  CARGO_INCREMENTAL: 0
 
 permissions:
   contents: read
@@ -48,6 +54,17 @@ jobs:
           choco install -y vulkan-sdk
           $sdkRoot = (Get-ChildItem 'C:\VulkanSDK' | Sort-Object Name -Descending | Select-Object -First 1).FullName
           Add-Content -Path $env:GITHUB_PATH -Value "$sdkRoot\Bin"
+
+      - name: Use rust-lld on Windows (cdylib LNK1104 mitigation)
+        # MSVC link.exe and Windows Defender's real-time scan contend for the
+        # freshly-written hymeko_query.dll cdylib output, producing flaky
+        # LNK1104 "cannot open file" failures. rust-lld ships with the Rust
+        # toolchain, writes the DLL in one pass, and is markedly less affected
+        # by Defender file holds.
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER=rust-lld"
 
       - name: Cache cargo registry
         uses: actions/cache@v3
