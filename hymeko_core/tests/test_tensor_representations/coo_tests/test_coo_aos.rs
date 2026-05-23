@@ -206,7 +206,7 @@ mod test_tensor_coo_aos {
         let t = make_known_coo();
 
         // Slice 0: entries (0,1,1.0) and (1,0,1.0)
-        let m0 = hymeko::tensor::tensor::dense_view_slice(&t, 0);
+        let m0 = hymeko_hnn::tensor::tensor::dense_view_slice(&t, 0);
         assert_eq!(m0.len(), 4);
         assert_eq!(m0[0].len(), 4);
         assert!((m0[0][1] - 1.0).abs() < 1e-9, "m0[0][1] should be 1.0, got {}", m0[0][1]);
@@ -217,14 +217,14 @@ mod test_tensor_coo_aos {
         info!("Slice 0 validated: 2 non-zeros at (0,1) and (1,0).");
 
         // Slice 1: entries (2,3,2.5) and (3,2,2.5)
-        let m1 = hymeko::tensor::tensor::dense_view_slice(&t, 1);
+        let m1 = hymeko_hnn::tensor::tensor::dense_view_slice(&t, 1);
         assert!((m1[2][3] - 2.5).abs() < 1e-9);
         assert!((m1[3][2] - 2.5).abs() < 1e-9);
         assert!((m1[0][0]).abs() < 1e-9);
         info!("Slice 1 validated: 2 non-zeros at (2,3) and (3,2).");
 
         // Slice 2: entries (0,3,0.5) and (3,0,0.5)
-        let m2 = hymeko::tensor::tensor::dense_view_slice(&t, 2);
+        let m2 = hymeko_hnn::tensor::tensor::dense_view_slice(&t, 2);
         assert!((m2[0][3] - 0.5).abs() < 1e-9);
         assert!((m2[3][0] - 0.5).abs() < 1e-9);
         info!("Slice 2 validated: 2 non-zeros at (0,3) and (3,0).");
@@ -245,7 +245,7 @@ mod test_tensor_coo_aos {
         let start = Instant::now();
 
         let t = make_known_coo();
-        let m = hymeko::tensor::tensor::project_sum_over_slices(&t);
+        let m = hymeko_hnn::tensor::tensor::project_sum_over_slices(&t);
 
         // (0,1): 1.0 from slice 0
         assert!((m[0][1] - 1.0).abs() < 1e-9);
@@ -284,7 +284,7 @@ mod test_tensor_coo_aos {
         t.push(0, 1, 2, 0.5);  // duplicate coordinate
         t.push(0, 1, 2, 0.25); // triple
 
-        let m = hymeko::tensor::tensor::dense_view_slice(&t, 0);
+        let m = hymeko_hnn::tensor::tensor::dense_view_slice(&t, 0);
         let expected = 1.75f32;
         let eps = 1e-6f32;
         assert!((m[1][2] - expected).abs() < eps, "Expected 1.0+0.5+0.25=1.75, got {}", m[1][2]);

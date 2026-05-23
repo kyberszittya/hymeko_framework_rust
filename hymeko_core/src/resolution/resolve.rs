@@ -1,17 +1,20 @@
 // src/resolve.rs
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, Value};
+use parser::ast::{Anno, EdgeDecl, HyperArc, HyperItem, NodeDecl, Ref, SignedRef, UsingStmt, Value};
 use crate::common::ids::{DeclId, SymId};
 use crate::common::pathkey::PathKey;
 use crate::ir::ir::{AnnoR, RefAtomR, SignedRefR, ValueR};
 use crate::resolution::interner::Interner;
 use crate::sym_ast::AstSym;
 
-#[derive(Debug, 
+#[derive(Debug,
     Serialize, Deserialize, Default, Clone)]
 pub struct Index {
     pub by_path: FxHashMap<PathKey, DeclId>,
+    /// Alias map from `using path as alias` statements.
+    #[serde(default)]
+    pub aliases: FxHashMap<SymId, Vec<SymId>>,
 }
 
 impl Index {
@@ -29,6 +32,7 @@ pub enum ResolveError {
     DuplicateDecl { path: String },
     UnresolvedRef { from_scope: String, target: String },
     AmbiguousRef { from_scope: String, target: String, candidates: Vec<String> },
+    MissingDecl { detail: String },
     UnexpectedTopLevelArc {detail: String}
 }
 
@@ -44,6 +48,45 @@ pub fn build_index_sym<'a>(d: &AstSym<'a>, it: &Interner) -> Result<Index, Resol
     index_items(&mut idx, &mut next, &mut path, &d.items, it)?;
 
     Ok(idx)
+}
+
+/// Process `using path as alias` statements.
+/// Call AFTER build_index_sym and AFTER imports are indexed.
+pub fn apply_usings(
+    idx: &mut Index,
+    usings: &[UsingStmt<SymId>],
+    import_namespaces: &[SymId],
+    it: &Interner,
+) -> Result<(), ResolveError> {
+    for u in usings {
+        // Try each import namespace as prefix (e.g., kinematics.elements
+        // lives at [meta_kinematics, kinematics, elements] in the index)
+        let mut resolved = false;
+        for &ns in import_namespaces {
+            let mut prefixed = vec![ns];
+            prefixed.extend_from_slice(&u.path.path);
+            let key = PathKey(prefixed.clone());
+            if idx.by_path.contains_key(&key) {
+                // Store FULL path so alias expansion maps directly to index entries
+                idx.aliases.insert(u.alias, prefixed);
+                resolved = true;
+                break;
+            }
+        }
+        if !resolved {
+            // Try without prefix (root-level refs)
+            let key = PathKey(u.path.path.clone());
+            if idx.by_path.contains_key(&key) {
+                idx.aliases.insert(u.alias, u.path.path.clone());
+            } else {
+                return Err(ResolveError::UnresolvedRef {
+                    from_scope: "<using>".into(),
+                    target: u.path.path.iter().map(|&s| it.resolve(s)).collect::<Vec<_>>().join("."),
+                });
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn build_index_sym_with_prefix<'a>(
@@ -95,6 +138,12 @@ fn resolve_value<'a>(
             let did = resolve_ref_to_declid(idx, scope, r, it)?;
             ValueR::Ref(did)
         }
+        // Tier B: const expressions must be evaluated by the
+        // pre-resolve const pass; if one survives to this point it is
+        // a pipeline-ordering bug.
+        Value::Expr(_) => unreachable!(
+            "const expression in resolve_value — const-resolution pass must run before resolve"
+        ),
     })
 }
 
@@ -122,7 +171,7 @@ fn add_decl(
     if idx.by_path.contains_key(&key) {
         return Err(ResolveError::DuplicateDecl { path: fmt_path(&key, it) });
     }
-    let id = DeclId(*next);
+    let id = DeclId::new(*next);
     *next += 1;
     idx.by_path.insert(key, id);
     Ok(id)
@@ -184,15 +233,27 @@ pub fn resolve_ref_to_declid(
     target: &Ref<SymId>,
     it: &Interner,
 ) -> Result<DeclId, ResolveError> {
+    // ── Alias expansion ──────────────────────────────────────
+    let expanded;
+    let effective = if !target.path.is_empty() {
+        if let Some(exp) = idx.aliases.get(&target.path[0]) {
+            let mut p = exp.clone();
+            p.extend_from_slice(&target.path[1..]);
+            expanded = Ref { path: p };
+            &expanded
+        } else { target }
+    } else { target };
+    // ─────────────────────────────────────────────────────────
+
     let mut hit: Option<(PathKey, DeclId)> = None;
 
     // Single scratch buffer for the entire search [cite: 2026-02-08]
-    let mut fq_buffer = Vec::with_capacity(scope.len() + target.path.len());
+    let mut fq_buffer = Vec::with_capacity(scope.len() + effective.path.len());
 
     for k in (0..=scope.len()).rev() {
         fq_buffer.clear();
         fq_buffer.extend_from_slice(&scope[..k]);
-        fq_buffer.extend_from_slice(&target.path);
+        fq_buffer.extend_from_slice(&effective.path);
 
         // Borrowed lookup wrapper to avoid unnecessary PathKey allocations
         // Note: Unless you use a custom lookup wrapper, .get() usually requires
@@ -234,6 +295,7 @@ pub fn resolve_signed_refs<'a>(
         let atom = match sref {
             SignedRef::Plus(x) | SignedRef::Minus(x) | SignedRef::Neutral(x) => x,
         };
+
 
         let did = resolve_ref_to_declid(idx, scope, &atom.target, it)?;
 
@@ -350,6 +412,10 @@ fn validate_value<'a>(
         Value::Ref(r) => { let _ = resolve_ref_to_declid(idx, scope, r, it)?; }
         Value::List(xs) => for x in xs { validate_value(scope, x, idx, it)?; }
         Value::Str(_) | Value::Num(_) => {}
+        // Tier B: see resolve_value above.
+        Value::Expr(_) => unreachable!(
+            "const expression in validate_value — const-resolution pass must run before validate_value"
+        ),
     }
     Ok(())
 }

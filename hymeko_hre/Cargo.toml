@@ -1,0 +1,30 @@
+[package]
+name = "hymeko_hre"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "hymeko_hre"
+crate-type = ["rlib"]
+
+[features]
+default = []
+ipc = ["dep:iceoryx2", "hymeko_core/ipc"]
+arrow-schema = ["hymeko_core/arrow-schema"]
+
+[dependencies]
+hymeko_core = { path = "../hymeko_core" }
+# hymeko_hnn owns HyperGraphView + the hypergraph-aware tensor ops after
+# the 2026-04-19 extraction. hre consumes those for its expansion,
+# engine projection, and Berge traversal paths.
+hymeko_hnn = { path = "../hymeko_hnn" }
+rustc-hash = "2.1.1"
+rayon = { workspace = true }
+
+iceoryx2 = { workspace = true, optional = true }
+
+[dev-dependencies]
+log = { workspace = true }
+# For end-to-end fixture tests: parse `.hymeko` files, lower to `Ir`, build
+# a `HyperGraphView`, and run hre's expansion / traversal on top.
+parser = { workspace = true }

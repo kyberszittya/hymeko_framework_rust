@@ -1,0 +1,90 @@
+[
+  {
+    "dataset": "slashdot",
+    "seed": 0,
+    "hidden": 32,
+    "auc": 0.5595398041694426,
+    "f1m": 0.29514798510606344,
+    "fwd_latency_ms": 4.4115679993410595,
+    "n_params": 2629153,
+    "train_time_s": 0.8305127620697021,
+    "h_kept_recommended": 11
+  },
+  {
+    "dataset": "slashdot",
+    "seed": 1,
+    "hidden": 32,
+    "auc": 0.5603805217884413,
+    "f1m": 0.2930862248761631,
+    "fwd_latency_ms": 4.433574000358931,
+    "n_params": 2629153,
+    "train_time_s": 0.8417665958404541,
+    "h_kept_recommended": 11
+  },
+  {
+    "dataset": "slashdot",
+    "seed": 0,
+    "hidden": 16,
+    "auc": 0.5612349026648563,
+    "f1m": 0.2942024181428965,
+    "fwd_latency_ms": 2.216001000306278,
+    "n_params": 1314577,
+    "train_time_s": 3.1326887607574463,
+    "h_kept_recommended": 11
+  },
+  {
+    "dataset": "slashdot",
+    "seed": 1,
+    "hidden": 16,
+    "auc": 0.5593551378584289,
+    "f1m": 0.29366989943273625,
+    "fwd_latency_ms": 2.215314500972454,
+    "n_params": 1314577,
+    "train_time_s": 0.4424726963043213,
+    "h_kept_recommended": 11
+  },
+  {
+    "dataset": "slashdot",
+    "seed": 0,
+    "hidden": 8,
+    "auc": 0.559568483887866,
+    "f1m": 0.29469627963380157,
+    "fwd_latency_ms": 4.93267499950889,
+    "n_params": 657289,
+    "train_time_s": 0.5127871036529541,
+    "h_kept_recommended": 11
+  },
+  {
+    "dataset": "slashdot",
+    "seed": 1,
+    "hidden": 8,
+    "auc": 0.5609789395241889,
+    "f1m": 0.2929871227863586,
+    "fwd_latency_ms": 4.932800499773293,
+    "n_params": 657289,
+    "train_time_s": 0.46938586235046387,
+    "h_kept_recommended": 11
+  },
+  {
+    "dataset": "slashdot",
+    "seed": 0,
+    "hidden": 4,
+    "auc": 0.5597315976069803,
+    "f1m": 0.2942218305937109,
+    "fwd_latency_ms": 2.528995500142628,
+    "n_params": 328645,
+    "train_time_s": 0.2762730121612549,
+    "h_kept_recommended": 11
+  },
+  {
+    "dataset": "slashdot",
+    "seed": 1,
+    "hidden": 4,
+    "auc": 0.5602865292749543,
+    "f1m": 0.29272896852750374,
+    "fwd_latency_ms": 2.527702999941539,
+    "n_params": 328645,
+    "train_time_s": 0.2856318950653076,
+    "h_kept_recommended": 11
+  }
+]

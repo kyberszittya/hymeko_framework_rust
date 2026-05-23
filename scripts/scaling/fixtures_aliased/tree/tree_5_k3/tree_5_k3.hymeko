@@ -1,0 +1,76 @@
+tree_5_k3_description {
+    @"meta_kinematics.hymeko";
+    using kinematics.elements as el;
+    using kinematics.geometry as geo;
+    using kinematics.axes as ax;
+    using kinematics.conti_joint as cj;
+}
+
+tree_5_k3: el, geo, ax
+{
+    l0: el.link {
+        mass 3.152;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.097, 0.118, 0.471];
+    }
+    l1: el.link {
+        mass 3.726;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.169, -0.188, 0.233];
+    }
+    l2: el.link {
+        mass 4.722;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.060, 0.160, 0.057];
+    }
+    l3: el.link {
+        mass 2.398;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.101, 0.018, 0.287];
+    }
+    l4: el.link {
+        mass 0.164;
+        link_geometry: geo.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.113, -0.088, 0.458];
+    }
+    @j0: cj {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l1,
+         - ax.AXIS_Z);
+    }
+    @j1: cj {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l2,
+         - ax.AXIS_Z);
+    }
+    @j2: cj {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l3,
+         - ax.AXIS_Z);
+    }
+    @j3: cj {
+        (+ l1 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l4,
+         - ax.AXIS_Z);
+    }
+}

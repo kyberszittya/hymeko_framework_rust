@@ -8,8 +8,8 @@ mod test_traversal
     use hymeko::resolution::intern_pass::{intern_ast, Interned};
     use hymeko::resolution::resolve::build_index_sym;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko::traversal::graph_traversal::dfs_preorder;
-    use hymeko::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
+    use hymeko_hnn::traversal::graph_traversal::dfs_preorder;
+    use hymeko_hnn::traversal::hypergraphview::{BergeState, BergeView, HyperGraphView};
     use log::info;
     use parser::ast::AstStr;
     use parser::parse_description;

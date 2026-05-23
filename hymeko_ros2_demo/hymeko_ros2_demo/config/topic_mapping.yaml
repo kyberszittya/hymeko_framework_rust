@@ -1,0 +1,63 @@
+# Topic mapping for the Tier-1 grasping-context live demo.
+#
+# Reviewer note: edit this file to remap ROS topics to V_global
+# vertices without touching the node code.
+#
+# vertex   - the HyMeKo vertex label inside grasping_context.
+# topic    - the ROS 2 topic to subscribe (inputs) or publish (outputs).
+# msg_type - ROS 2 message type as `package/msg/Type`.
+# field    - dot-path inside the message to extract a single scalar.
+#            None means: use `.data` (Float64/UInt32 style).
+
+context: grasping_context
+
+inputs:
+  - vertex:   robot_pose          # P_r
+    topic:    /tcp_pose
+    msg_type: geometry_msgs/msg/PoseStamped
+    field:    pose.position.z      # collapse to scalar: gripper-Z (height)
+  - vertex:   active_tool          # ID_t
+    topic:    /tool_id
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   active_payload       # ID_p
+    topic:    /payload_id
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   mode_parallel        # M_g
+    topic:    /grasp_mode
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   grip_force           # F_g
+    topic:    /wrench
+    msg_type: geometry_msgs/msg/WrenchStamped
+    field:    wrench.force.z
+
+outputs:
+  # NAMING NOTE: the canonical hymeko_robot.hymeko vertex names
+  # don't perfectly match the article's symbols.  In the article:
+  #   S_l = "stability margin" / loaded state (e_3 output)
+  #   C_g = "grasp configuration" (e_4 output)
+  #   F_l = "contact force" (e_5 output)
+  #   S_g = "grasp stability / success" (e_6 output)
+  # In the file:
+  #   loaded_state     <-> S_l
+  #   configuration    <-> C_g
+  #   force_vector     <-> F_l
+  #   stability_margin <-> S_g   (file mislabels S_g as stability_margin)
+  - vertex:   stability_margin     # S_g — grasp stability/success (e_6 out)
+    topic:    /hymeko/grasping/stability_margin
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   configuration        # C_g — grasp configuration (e_4 out)
+    topic:    /hymeko/grasping/configuration
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   force_vector         # F_l — contact force (e_5 out)
+    topic:    /hymeko/grasping/contact_force
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   loaded_state         # S_l — loaded state (e_3 out)
+    topic:    /hymeko/grasping/loaded_state
+    msg_type: std_msgs/msg/Float64
+    field:    data

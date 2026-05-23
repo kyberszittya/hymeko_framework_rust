@@ -1,0 +1,131 @@
+[setup] epinions |V|=131828 |E_tr|=673098 |E_va|=168274 cycles=529968
+[cell] flat_mlp L=1 agg=mlp no_cycles=False ...
+  → AUC best=0.9079 (loss 0.691→0.273, wall 78.5s, params=4226849)
+[cell] flat_mlp_nocyc L=1 agg=mlp no_cycles=True ...
+  → AUC best=0.9044 (loss 0.693→0.276, wall 20.2s, params=4226849)
+[cell] flat_hsikan L=1 agg=hsikan no_cycles=False ...
+  → AUC best=0.8972 (loss 0.704→0.290, wall 713.8s, params=4224353)
+[cell] flat_hsikan_nocyc L=1 agg=hsikan no_cycles=True ...
+  → AUC best=0.8987 (loss 0.713→0.308, wall 23.5s, params=4224353)
+[cell] cpml_mlp L=3 agg=mlp no_cycles=False ...
+  → AUC best=0.8988 (loss 0.691→0.276, wall 124.4s, params=4245473)
+[cell] cpml_mlp_nocyc L=3 agg=mlp no_cycles=True ...
+  → AUC best=0.9098 (loss 0.692→0.318, wall 44.5s, params=4245473)
+[cell] cpml_hsikan L=3 agg=hsikan no_cycles=False ...
+  → AUC best=0.8906 (loss 0.680→0.302, wall 724.4s, params=4234913)
+[cell] cpml_hsikan_nocyc L=3 agg=hsikan no_cycles=True ...
+  → AUC best=0.8997 (loss 0.684→0.327, wall 41.6s, params=4234913)
+{
+  "dataset": "epinions",
+  "seed": 0,
+  "n_epochs": 30,
+  "d_layer": 32,
+  "d_in": 32,
+  "topk": 64,
+  "results": [
+    {
+      "cell": "flat_mlp",
+      "L": 1,
+      "aggregator": "mlp",
+      "no_cycles": false,
+      "n_params": 4226849,
+      "wall_s": 78.4665267909877,
+      "loss_start": 0.6909720301628113,
+      "loss_end": 0.2725592255592346,
+      "val_auc_start": 0.575639520086114,
+      "val_auc_end": 0.9078800659209026,
+      "val_auc_best": 0.9078800659209026
+    },
+    {
+      "cell": "flat_mlp_nocyc",
+      "L": 1,
+      "aggregator": "mlp",
+      "no_cycles": true,
+      "n_params": 4226849,
+      "wall_s": 20.24317162198713,
+      "loss_start": 0.6928581595420837,
+      "loss_end": 0.2756088078022003,
+      "val_auc_start": 0.5439172478479595,
+      "val_auc_end": 0.9044202116576677,
+      "val_auc_best": 0.9044202116576677
+    },
+    {
+      "cell": "flat_hsikan",
+      "L": 1,
+      "aggregator": "hsikan",
+      "no_cycles": false,
+      "n_params": 4224353,
+      "wall_s": 713.8432131760055,
+      "loss_start": 0.7040719985961914,
+      "loss_end": 0.290132075548172,
+      "val_auc_start": 0.6032346491178204,
+      "val_auc_end": 0.8972423852581177,
+      "val_auc_best": 0.8972423852581177
+    },
+    {
+      "cell": "flat_hsikan_nocyc",
+      "L": 1,
+      "aggregator": "hsikan",
+      "no_cycles": true,
+      "n_params": 4224353,
+      "wall_s": 23.505775430006906,
+      "loss_start": 0.7127625942230225,
+      "loss_end": 0.30769941210746765,
+      "val_auc_start": 0.5510152864111225,
+      "val_auc_end": 0.8986965448470475,
+      "val_auc_best": 0.8986965448470475
+    },
+    {
+      "cell": "cpml_mlp",
+      "L": 3,
+      "aggregator": "mlp",
+      "no_cycles": false,
+      "n_params": 4245473,
+      "wall_s": 124.44102106499486,
+      "loss_start": 0.6912832856178284,
+      "loss_end": 0.27618923783302307,
+      "val_auc_start": 0.5630670694494211,
+      "val_auc_end": 0.8987641902837699,
+      "val_auc_best": 0.8987641902837699
+    },
+    {
+      "cell": "cpml_mlp_nocyc",
+      "L": 3,
+      "aggregator": "mlp",
+      "no_cycles": true,
+      "n_params": 4245473,
+      "wall_s": 44.51017405599123,
+      "loss_start": 0.6923375129699707,
+      "loss_end": 0.3176565170288086,
+      "val_auc_start": 0.557255918893284,
+      "val_auc_end": 0.9098455261588657,
+      "val_auc_best": 0.9098455261588657
+    },
+    {
+      "cell": "cpml_hsikan",
+      "L": 3,
+      "aggregator": "hsikan",
+      "no_cycles": false,
+      "n_params": 4234913,
+      "wall_s": 724.4413338970044,
+      "loss_start": 0.6795264482498169,
+      "loss_end": 0.30186066031455994,
+      "val_auc_start": 0.5650735278735309,
+      "val_auc_end": 0.8905764262798788,
+      "val_auc_best": 0.8905764262798788
+    },
+    {
+      "cell": "cpml_hsikan_nocyc",
+      "L": 3,
+      "aggregator": "hsikan",
+      "no_cycles": true,
+      "n_params": 4234913,
+      "wall_s": 41.57649193605175,
+      "loss_start": 0.6842238903045654,
+      "loss_end": 0.32747718691825867,
+      "val_auc_start": 0.5513242888662184,
+      "val_auc_end": 0.8996817013710181,
+      "val_auc_best": 0.8996817013710181
+    }
+  ]
+}

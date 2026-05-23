@@ -1,0 +1,14 @@
+[
+  {
+    "family":"chain",
+    "name":"chain_2000",
+    "stage":"mujoco_mjcf",
+    "n_vertices":2000
+  },
+  {
+    "family":"chain",
+    "name":"chain_5000",
+    "stage":"mujoco_mjcf",
+    "n_vertices":5000
+  }
+]

@@ -1,0 +1,16 @@
+[load] epinions: |V|=131828, |E|=841372
+[cycles] 527586 k=3 cycles in 4.1s
+[model] CPML L=3 cuts=(0.0, 0.3333333333333333, 0.6666666666666666, 1.0) d_in=32 d_layer=32 n_params=4245473
+[tiers] sizes: [43943, 43942, 43943]
+  ep 00  loss=0.7344  val_auc=0.5486  best=0.5486
+  ep 04  loss=0.6735  val_auc=0.5625  best=0.5625
+  ep 09  loss=0.5445  val_auc=0.5877  best=0.5877
+  ep 14  loss=0.4213  val_auc=0.6069  best=0.6069
+  ep 19  loss=0.3936  val_auc=0.7445  best=0.7445
+  ep 24  loss=0.3292  val_auc=0.8617  best=0.8617
+  ep 29  loss=0.2828  val_auc=0.8989  best=0.8989
+  ep 34  loss=0.2318  val_auc=0.9108  best=0.9108
+  ep 39  loss=0.1955  val_auc=0.9195  best=0.9195
+  ep 44  loss=0.1698  val_auc=0.9289  best=0.9289
+  ep 49  loss=0.1460  val_auc=0.9381  best=0.9381
+{"dataset": "epinions", "seed": 1, "model": "CPML-real", "L": 3, "cuts": [0.0, 0.3333333333333333, 0.6666666666666666, 1.0], "d_in": 32, "d_layer": 32, "k": 3, "topk": 64, "n_params": 4245473, "n_train_edges": 673098, "n_val_edges": 168274, "n_cycles": 527586, "loss_start": 0.7344345450401306, "loss_end": 0.1460236757993698, "val_auc_start": 0.5486297305375913, "val_auc_end": 0.938106401911678, "val_auc_best": 0.938106401911678, "wall_s": 214.91345190402353, "tier_sizes": [43943, 43942, 43943]}

@@ -1,0 +1,462 @@
+[
+  {
+    "family": "chain",
+    "name": "chain_1",
+    "n_vertices": 1,
+    "n_hyperedges": 0,
+    "mean_arity": 0.0,
+    "source_bytes": 496,
+    "path": "chain/chain_1/chain_1.hymeko",
+    "robot_name": "chain_1"
+  },
+  {
+    "family": "chain",
+    "name": "chain_2",
+    "n_vertices": 2,
+    "n_hyperedges": 1,
+    "mean_arity": 2.0,
+    "source_bytes": 987,
+    "path": "chain/chain_2/chain_2.hymeko",
+    "robot_name": "chain_2"
+  },
+  {
+    "family": "chain",
+    "name": "chain_5",
+    "n_vertices": 5,
+    "n_hyperedges": 4,
+    "mean_arity": 2.0,
+    "source_bytes": 2457,
+    "path": "chain/chain_5/chain_5.hymeko",
+    "robot_name": "chain_5"
+  },
+  {
+    "family": "chain",
+    "name": "chain_10",
+    "n_vertices": 10,
+    "n_hyperedges": 9,
+    "mean_arity": 2.0,
+    "source_bytes": 4915,
+    "path": "chain/chain_10/chain_10.hymeko",
+    "robot_name": "chain_10"
+  },
+  {
+    "family": "chain",
+    "name": "chain_20",
+    "n_vertices": 20,
+    "n_hyperedges": 19,
+    "mean_arity": 2.0,
+    "source_bytes": 9856,
+    "path": "chain/chain_20/chain_20.hymeko",
+    "robot_name": "chain_20"
+  },
+  {
+    "family": "chain",
+    "name": "chain_50",
+    "n_vertices": 50,
+    "n_hyperedges": 49,
+    "mean_arity": 2.0,
+    "source_bytes": 24691,
+    "path": "chain/chain_50/chain_50.hymeko",
+    "robot_name": "chain_50"
+  },
+  {
+    "family": "chain",
+    "name": "chain_100",
+    "n_vertices": 100,
+    "n_hyperedges": 99,
+    "mean_arity": 2.0,
+    "source_bytes": 49416,
+    "path": "chain/chain_100/chain_100.hymeko",
+    "robot_name": "chain_100"
+  },
+  {
+    "family": "chain",
+    "name": "chain_200",
+    "n_vertices": 200,
+    "n_hyperedges": 199,
+    "mean_arity": 2.0,
+    "source_bytes": 99369,
+    "path": "chain/chain_200/chain_200.hymeko",
+    "robot_name": "chain_200"
+  },
+  {
+    "family": "chain",
+    "name": "chain_500",
+    "n_vertices": 500,
+    "n_hyperedges": 499,
+    "mean_arity": 2.0,
+    "source_bytes": 249220,
+    "path": "chain/chain_500/chain_500.hymeko",
+    "robot_name": "chain_500"
+  },
+  {
+    "family": "chain",
+    "name": "chain_1000",
+    "n_vertices": 1000,
+    "n_hyperedges": 999,
+    "mean_arity": 2.0,
+    "source_bytes": 498929,
+    "path": "chain/chain_1000/chain_1000.hymeko",
+    "robot_name": "chain_1000"
+  },
+  {
+    "family": "chain",
+    "name": "chain_2000",
+    "n_vertices": 2000,
+    "n_hyperedges": 1999,
+    "mean_arity": 2.0,
+    "source_bytes": 1003490,
+    "path": "chain/chain_2000/chain_2000.hymeko",
+    "robot_name": "chain_2000"
+  },
+  {
+    "family": "chain",
+    "name": "chain_5000",
+    "n_vertices": 5000,
+    "n_hyperedges": 4999,
+    "mean_arity": 2.0,
+    "source_bytes": 2516994,
+    "path": "chain/chain_5000/chain_5000.hymeko",
+    "robot_name": "chain_5000"
+  },
+  {
+    "family": "tree",
+    "name": "tree_1_k3",
+    "n_vertices": 1,
+    "n_hyperedges": 0,
+    "mean_arity": 0.0,
+    "source_bytes": 502,
+    "path": "tree/tree_1_k3/tree_1_k3.hymeko",
+    "robot_name": "tree_1_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_2_k3",
+    "n_vertices": 2,
+    "n_hyperedges": 1,
+    "mean_arity": 2.0,
+    "source_bytes": 995,
+    "path": "tree/tree_2_k3/tree_2_k3.hymeko",
+    "robot_name": "tree_2_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_5_k3",
+    "n_vertices": 5,
+    "n_hyperedges": 4,
+    "mean_arity": 2.0,
+    "source_bytes": 2474,
+    "path": "tree/tree_5_k3/tree_5_k3.hymeko",
+    "robot_name": "tree_5_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_10_k3",
+    "n_vertices": 10,
+    "n_hyperedges": 9,
+    "mean_arity": 2.0,
+    "source_bytes": 4941,
+    "path": "tree/tree_10_k3/tree_10_k3.hymeko",
+    "robot_name": "tree_10_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_20_k3",
+    "n_vertices": 20,
+    "n_hyperedges": 19,
+    "mean_arity": 2.0,
+    "source_bytes": 9902,
+    "path": "tree/tree_20_k3/tree_20_k3.hymeko",
+    "robot_name": "tree_20_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_50_k3",
+    "n_vertices": 50,
+    "n_hyperedges": 49,
+    "mean_arity": 2.0,
+    "source_bytes": 24818,
+    "path": "tree/tree_50_k3/tree_50_k3.hymeko",
+    "robot_name": "tree_50_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_100_k3",
+    "n_vertices": 100,
+    "n_hyperedges": 99,
+    "mean_arity": 2.0,
+    "source_bytes": 49659,
+    "path": "tree/tree_100_k3/tree_100_k3.hymeko",
+    "robot_name": "tree_100_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_200_k3",
+    "n_vertices": 200,
+    "n_hyperedges": 199,
+    "mean_arity": 2.0,
+    "source_bytes": 99698,
+    "path": "tree/tree_200_k3/tree_200_k3.hymeko",
+    "robot_name": "tree_200_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_500_k3",
+    "n_vertices": 500,
+    "n_hyperedges": 499,
+    "mean_arity": 2.0,
+    "source_bytes": 249916,
+    "path": "tree/tree_500_k3/tree_500_k3.hymeko",
+    "robot_name": "tree_500_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_1000_k3",
+    "n_vertices": 1000,
+    "n_hyperedges": 999,
+    "mean_arity": 2.0,
+    "source_bytes": 500421,
+    "path": "tree/tree_1000_k3/tree_1000_k3.hymeko",
+    "robot_name": "tree_1000_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_2000_k3",
+    "n_vertices": 2000,
+    "n_hyperedges": 1999,
+    "mean_arity": 2.0,
+    "source_bytes": 1004722,
+    "path": "tree/tree_2000_k3/tree_2000_k3.hymeko",
+    "robot_name": "tree_2000_k3"
+  },
+  {
+    "family": "tree",
+    "name": "tree_5000_k3",
+    "n_vertices": 5000,
+    "n_hyperedges": 4999,
+    "mean_arity": 2.0,
+    "source_bytes": 2519026,
+    "path": "tree/tree_5000_k3/tree_5000_k3.hymeko",
+    "robot_name": "tree_5000_k3"
+  },
+  {
+    "family": "highArity",
+    "name": "ha_m200_d2",
+    "n_vertices": 200,
+    "n_hyperedges": 200,
+    "mean_arity": 2.0,
+    "source_bytes": 90365,
+    "path": "highArity/ha_m200_d2/ha_m200_d2.hymeko",
+    "robot_name": "ha_m200_d2"
+  },
+  {
+    "family": "highArity",
+    "name": "ha_m200_d3",
+    "n_vertices": 300,
+    "n_hyperedges": 200,
+    "mean_arity": 3.0,
+    "source_bytes": 124643,
+    "path": "highArity/ha_m200_d3/ha_m200_d3.hymeko",
+    "robot_name": "ha_m200_d3"
+  },
+  {
+    "family": "highArity",
+    "name": "ha_m200_d5",
+    "n_vertices": 500,
+    "n_hyperedges": 200,
+    "mean_arity": 5.0,
+    "source_bytes": 193276,
+    "path": "highArity/ha_m200_d5/ha_m200_d5.hymeko",
+    "robot_name": "ha_m200_d5"
+  },
+  {
+    "family": "highArity",
+    "name": "ha_m200_d10",
+    "n_vertices": 1000,
+    "n_hyperedges": 200,
+    "mean_arity": 10.0,
+    "source_bytes": 364760,
+    "path": "highArity/ha_m200_d10/ha_m200_d10.hymeko",
+    "robot_name": "ha_m200_d10"
+  },
+  {
+    "family": "highArity",
+    "name": "ha_m200_d20",
+    "n_vertices": 2000,
+    "n_hyperedges": 200,
+    "mean_arity": 20.0,
+    "source_bytes": 710788,
+    "path": "highArity/ha_m200_d20/ha_m200_d20.hymeko",
+    "robot_name": "ha_m200_d20"
+  },
+  {
+    "family": "highArity",
+    "name": "ha_m200_d50",
+    "n_vertices": 5000,
+    "n_hyperedges": 200,
+    "mean_arity": 50.0,
+    "source_bytes": 1748779,
+    "path": "highArity/ha_m200_d50/ha_m200_d50.hymeko",
+    "robot_name": "ha_m200_d50"
+  },
+  {
+    "family": "highArityFixedPool",
+    "name": "hap_n200_m200_d2",
+    "n_vertices": 200,
+    "n_hyperedges": 200,
+    "mean_arity": 2.0,
+    "source_bytes": 90381,
+    "path": "highArityFixedPool/hap_n200_m200_d2/hap_n200_m200_d2.hymeko",
+    "robot_name": "hap_n200_m200_d2"
+  },
+  {
+    "family": "highArityFixedPool",
+    "name": "hap_n200_m200_d5",
+    "n_vertices": 200,
+    "n_hyperedges": 200,
+    "mean_arity": 5.0,
+    "source_bytes": 100189,
+    "path": "highArityFixedPool/hap_n200_m200_d5/hap_n200_m200_d5.hymeko",
+    "robot_name": "hap_n200_m200_d5"
+  },
+  {
+    "family": "highArityFixedPool",
+    "name": "hap_n200_m200_d10",
+    "n_vertices": 200,
+    "n_hyperedges": 200,
+    "mean_arity": 10.0,
+    "source_bytes": 116674,
+    "path": "highArityFixedPool/hap_n200_m200_d10/hap_n200_m200_d10.hymeko",
+    "robot_name": "hap_n200_m200_d10"
+  },
+  {
+    "family": "highArityFixedPool",
+    "name": "hap_n200_m200_d20",
+    "n_vertices": 200,
+    "n_hyperedges": 200,
+    "mean_arity": 20.0,
+    "source_bytes": 149606,
+    "path": "highArityFixedPool/hap_n200_m200_d20/hap_n200_m200_d20.hymeko",
+    "robot_name": "hap_n200_m200_d20"
+  },
+  {
+    "family": "highArityFixedPool",
+    "name": "hap_n200_m200_d50",
+    "n_vertices": 200,
+    "n_hyperedges": 200,
+    "mean_arity": 50.0,
+    "source_bytes": 248287,
+    "path": "highArityFixedPool/hap_n200_m200_d50/hap_n200_m200_d50.hymeko",
+    "robot_name": "hap_n200_m200_d50"
+  },
+  {
+    "family": "highArityFixedPool",
+    "name": "hap_n200_m200_d100",
+    "n_vertices": 200,
+    "n_hyperedges": 200,
+    "mean_arity": 100.0,
+    "source_bytes": 412757,
+    "path": "highArityFixedPool/hap_n200_m200_d100/hap_n200_m200_d100.hymeko",
+    "robot_name": "hap_n200_m200_d100"
+  },
+  {
+    "family": "highArityFixedPool",
+    "name": "hap_n200_m200_d200",
+    "n_vertices": 200,
+    "n_hyperedges": 200,
+    "mean_arity": 200.0,
+    "source_bytes": 741793,
+    "path": "highArityFixedPool/hap_n200_m200_d200/hap_n200_m200_d200.hymeko",
+    "robot_name": "hap_n200_m200_d200"
+  },
+  {
+    "family": "humanoid",
+    "name": "humanoid_f0",
+    "n_vertices": 28,
+    "n_hyperedges": 27,
+    "mean_arity": 2.0,
+    "source_bytes": 14495,
+    "path": "humanoid/humanoid_f0/humanoid_f0.hymeko",
+    "robot_name": "humanoid_f0"
+  },
+  {
+    "family": "humanoid",
+    "name": "humanoid_f2",
+    "n_vertices": 44,
+    "n_hyperedges": 43,
+    "mean_arity": 2.0,
+    "source_bytes": 23330,
+    "path": "humanoid/humanoid_f2/humanoid_f2.hymeko",
+    "robot_name": "humanoid_f2"
+  },
+  {
+    "family": "humanoid",
+    "name": "humanoid_f5",
+    "n_vertices": 68,
+    "n_hyperedges": 67,
+    "mean_arity": 2.0,
+    "source_bytes": 36567,
+    "path": "humanoid/humanoid_f5/humanoid_f5.hymeko",
+    "robot_name": "humanoid_f5"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d3_t0",
+    "n_vertices": 14,
+    "n_hyperedges": 13,
+    "mean_arity": 2.0,
+    "source_bytes": 7194,
+    "path": "quadruped/quadruped_d3_t0/quadruped_d3_t0.hymeko",
+    "robot_name": "quadruped_d3_t0"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d3_t3",
+    "n_vertices": 17,
+    "n_hyperedges": 16,
+    "mean_arity": 2.0,
+    "source_bytes": 8715,
+    "path": "quadruped/quadruped_d3_t3/quadruped_d3_t3.hymeko",
+    "robot_name": "quadruped_d3_t3"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d5_t0",
+    "n_vertices": 22,
+    "n_hyperedges": 21,
+    "mean_arity": 2.0,
+    "source_bytes": 11342,
+    "path": "quadruped/quadruped_d5_t0/quadruped_d5_t0.hymeko",
+    "robot_name": "quadruped_d5_t0"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d5_t3",
+    "n_vertices": 25,
+    "n_hyperedges": 24,
+    "mean_arity": 2.0,
+    "source_bytes": 12866,
+    "path": "quadruped/quadruped_d5_t3/quadruped_d5_t3.hymeko",
+    "robot_name": "quadruped_d5_t3"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d7_t0",
+    "n_vertices": 30,
+    "n_hyperedges": 29,
+    "mean_arity": 2.0,
+    "source_bytes": 15499,
+    "path": "quadruped/quadruped_d7_t0/quadruped_d7_t0.hymeko",
+    "robot_name": "quadruped_d7_t0"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d7_t3",
+    "n_vertices": 33,
+    "n_hyperedges": 32,
+    "mean_arity": 2.0,
+    "source_bytes": 17024,
+    "path": "quadruped/quadruped_d7_t3/quadruped_d7_t3.hymeko",
+    "robot_name": "quadruped_d7_t3"
+  }
+]

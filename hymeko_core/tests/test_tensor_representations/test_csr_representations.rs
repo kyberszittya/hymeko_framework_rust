@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod test_csr_representations {
-    use hymeko::tensor::tensor::project_sum_over_slices;
+    use hymeko_hnn::tensor::tensor::project_sum_over_slices;
     use hymeko::tensor::representations::tensor_csr::TensorCsr;
-    use hymeko::tensor::representations::tensor_csr_representations::{star_expansion_csr, clique_expansion_csr};
+    use hymeko_hnn::tensor::representations::tensor_csr_representations::{star_expansion_csr, clique_expansion_csr};
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::common::Real;
-    use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
+    use hymeko_hre::expansion::star_expansion_coo;
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
     use log::info;
     use std::time::Instant;

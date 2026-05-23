@@ -1,0 +1,13 @@
+started_utc=2026-05-12T00:40:29Z
+repo_root=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust
+python=/home/kyberszittya/miniconda3/bin/python3
+jsonl=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_lean_bitcoin_overnight_20260512_004029.jsonl
+log=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_lean_bitcoin_overnight_20260512_004029.log
+launcher=/tmp/hsikan_overnight_20260512_004029_Qnx8W8.sh
+rss_cap=16G (systemd-run --user MemoryMax)
+cells_total=90=90
+git_sha=5f14ac08b85824ed82e4d97f8c010e089eda5b98
+Running as unit: run-rddecb84693354dcc8fed6ba5efd0fc40.service
+MainPID=52003
+ActiveState=active
+SubState=running

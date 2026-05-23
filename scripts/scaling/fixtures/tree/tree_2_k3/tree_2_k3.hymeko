@@ -1,0 +1,32 @@
+tree_2_k3_description {
+    @"meta_kinematics.hymeko";
+}
+
+tree_2_k3: meta_kinematics.kinematics.elements,
+        meta_kinematics.kinematics.geometry,
+        meta_kinematics.kinematics.axes
+{
+    l0: meta_kinematics.kinematics.elements.link {
+        mass 4.785;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.179, -0.177, 0.042];
+    }
+    l1: meta_kinematics.kinematics.elements.link {
+        mass 4.194;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.100, 0.100, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.094, 0.068, 0.154];
+    }
+    @j0: meta_kinematics.kinematics.conti_joint {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l1,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+}

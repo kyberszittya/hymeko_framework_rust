@@ -103,7 +103,12 @@ pub trait CommonLexer<'a> {
         self.scan_ident_tail();
         // SAFETY: Identifier characters are exclusively valid ASCII.
         let text = unsafe { std::str::from_utf8_unchecked(&self.bytes()[start..self.pos()]) };
-        Token::Ident(text) // Returns &'a str directly. Zero cost.
+        match text {
+            "using" => Token::Using,
+            "as"    => Token::As,
+            "const" => Token::Const,
+            _       => Token::Ident(text),
+        }
     }
 
     #[inline(always)]
@@ -253,6 +258,11 @@ pub fn next_token<'a, L: CommonLexer<'a>>(lex: &mut L) -> Option<LexItem<'a>> {
             Ok(t) => t,
             Err(e) => return Some(Err(e)),
         },
+        b'?' => Token::Question,
+        b'*' => Token::Star,
+        b'/' => Token::Slash,
+        b'=' => Token::Equals,
+
 
         d if d.is_ascii_digit() => match lex.lex_number(start) {
             Ok(t) => t,
@@ -260,6 +270,7 @@ pub fn next_token<'a, L: CommonLexer<'a>>(lex: &mut L) -> Option<LexItem<'a>> {
         },
 
         a if is_ident_start(a) => lex.lex_ident(start),
+
 
         other => {
             return Some(Err(LexError {

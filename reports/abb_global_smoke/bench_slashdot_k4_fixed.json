@@ -1,0 +1,64 @@
+[load] slashdot …
+[load] |V|=82140 |E|=549202 loaded in 0.69s
+[bench] k=4 m=128 iters=3 warmup=1
+  variant=abb_off  (non-bb filtered_batched)
+    median=12.86s n_cycles=2882256
+  variant=v1_start (lossy bb_batched)
+    median=2.80s n_cycles=610289
+  variant=global ABB gate=1.0
+    median=12.91s n_cycles=2882295
+  variant=global ABB gate=0.5
+    median=12.68s n_cycles=2882321
+  variant=global ABB gate=0.25
+    median=12.79s n_cycles=2882282
+{
+  "dataset": "slashdot",
+  "k": 4,
+  "m": 128,
+  "scorer": "fraction_negative",
+  "pruner": "none",
+  "n_nodes": 82140,
+  "n_edges": 549202,
+  "results": {
+    "abb_off": {
+      "n_cycles": 2882256,
+      "median_s": 12.855443339969497,
+      "min_s": 12.849561386974528,
+      "max_s": 13.247194219962694,
+      "iqr_s": null,
+      "n_iters": 3
+    },
+    "v1_start": {
+      "n_cycles": 610289,
+      "median_s": 2.798025112017058,
+      "min_s": 2.7198593110078946,
+      "max_s": 2.8408379800384864,
+      "iqr_s": null,
+      "n_iters": 3
+    },
+    "global_g10": {
+      "n_cycles": 2882295,
+      "median_s": 12.913970019028056,
+      "min_s": 12.688215364993084,
+      "max_s": 13.273907831986435,
+      "iqr_s": null,
+      "n_iters": 3
+    },
+    "global_g05": {
+      "n_cycles": 2882321,
+      "median_s": 12.680846044037025,
+      "min_s": 12.647069291037042,
+      "max_s": 12.919729263987392,
+      "iqr_s": null,
+      "n_iters": 3
+    },
+    "global_g025": {
+      "n_cycles": 2882282,
+      "median_s": 12.787579758034553,
+      "min_s": 12.7149834340089,
+      "max_s": 13.586083625967149,
+      "iqr_s": null,
+      "n_iters": 3
+    }
+  }
+}

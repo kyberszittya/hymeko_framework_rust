@@ -1,0 +1,11 @@
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+dataset & model & AUC & macro-F1 & binary-F1 & params \\
+\midrule
+Bitcoin Alpha & SignedKAN (sign-aware) & $0.780\pm0.014$ & $\mathbf{0.711}\pm0.011$ & $0.969\pm0.003$ & 60,993 \\
+ & VanillaKAN (sign-blind) & $0.777\pm0.022$ & $0.681\pm0.012$ & $0.966\pm0.002$ & 60,769 \\
+\midrule
+Bitcoin OTC & SignedKAN (sign-aware) & $0.848\pm0.009$ & $\mathbf{0.781}\pm0.010$ & $0.960\pm0.003$ & 94,561 \\
+ & VanillaKAN (sign-blind) & $0.839\pm0.011$ & $0.766\pm0.014$ & $0.958\pm0.004$ & 94,337 \\
+\bottomrule
+\end{tabular}

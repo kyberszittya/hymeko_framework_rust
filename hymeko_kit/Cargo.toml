@@ -1,0 +1,29 @@
+[package]
+name = "hymeko_kit"
+version = "0.1.0"
+edition = "2024"
+description = "Optional umbrella crate: re-exports hymeko_core (`hymeko`) and sibling algorithm / GPU crates behind feature flags."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kyberszittya/hymeko_framework_rust"
+
+[lib]
+name = "hymeko_kit"
+
+[dependencies]
+# `default-features = false` cannot be applied on `{ workspace = true }` for
+# `hymeko_core` (workspace dep has no default-features override); keep a path dep.
+hymeko_core = { path = "../hymeko_core", default-features = false }
+hymeko_clifford = { workspace = true, optional = true }
+hymeko_compute = { workspace = true, optional = true }
+hymeko_graph = { workspace = true, optional = true }
+
+[features]
+default = []
+# Clifford algebra / multivector foundation (no `hymeko_core` dependency inside that crate).
+clifford = ["dep:hymeko_clifford"]
+# Vulkan compute (vulkano); keep off for headless / CI unless needed.
+gpu = ["dep:hymeko_compute"]
+# Signed-graph cycle / walk enumeration.
+graph = ["dep:hymeko_graph"]
+# Convenience meta-feature for local experiments (large compile).
+full = ["clifford", "gpu", "graph"]

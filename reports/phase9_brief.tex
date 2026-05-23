@@ -1,0 +1,206 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lmodern}
+\usepackage{fancyvrb}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{Phase 9 — Composability Test\\[2pt]
+       Entropy regularisation vs. Batch-Norm, Dropout, Weight-Decay}
+\author{thesis-IV working notes (HyMeKo)}
+\date{2026-04-26}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+
+\begin{document}
+\maketitle
+
+\section{Purpose}
+
+Phases 6--8 demonstrated that
+\code{scalar_entropy_normalized} (Path~B) and \code{entropy_target}
+($H^*=0.5$, Path~A) universally Pareto-dominate the original
+\code{scalar_entropy} regulariser across nine datasets and five
+architectures. \textbf{Open question for the manuscript:} is the new
+regulariser \emph{competitive} with mainstream techniques alone, and
+\emph{complementary} when stacked on top of them?
+
+Phase 9 answers that by running paired comparisons
+\code{baseline} vs \code{scalar_entropy_normalized} under each of five
+model + optimiser settings:
+
+\begin{center}
+\small
+\begin{tabular}{@{}llp{8cm}@{}}
+\toprule
+ID & Variant         & Modification \\
+\midrule
+V1 & \code{vanilla}      & base model, Adam(lr=$10^{-3}$). \\
+V2 & \code{dropout}      & + \code{nn.Dropout}($p{=}0.5$) after each ReLU \\
+V3 & \code{batch_norm}   & + \code{nn.BatchNorm1d} after each Linear \\
+V4 & \code{weight_decay} & vanilla model, Adam($\text{wd}{=}10^{-4}$) \\
+V5 & \code{full_stack}   & BN + Dropout + Adam($\text{wd}{=}10^{-4}$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The pair \code{baseline} vs \code{scalar_entropy_normalized} within each
+variant tells us whether entropy adds value \emph{on top of} the existing
+regularisation. Cross-variant comparisons of mean accuracies tell us
+whether entropy alone is competitive.
+
+\section{Configuration matrix}
+
+Five variants $\times$ four datasets = \textbf{20 paired comparisons}
+(40 individual training runs). Estimated wall-clock $\sim$11~h.
+Auto-fires after \texttt{Views PH8 suite finished} marker.
+
+\begin{center}
+\small
+\begin{tabular}{@{}llrr@{}}
+\toprule
+Dataset/arch & Original sign & Seeds & Epochs \\
+\midrule
+\code{spirals}        & strongly + & 100 & 50 \\
+\code{circles}        & sig.\ $-$  & 100 & 50 \\
+\code{mnist_small}    & + (anchor) & 33  & 15 \\
+\code{mnist_capsnet}  & sig.\ $-$  & 33  & 10 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Per-cell bash commands}
+
+For each (dataset, variant, seeds, epochs) configuration the harness
+is invoked exactly as below. The base shell script is
+\code{python/benches/thesis_iv_hard/run_overnight_views_ph9.sh}.
+
+\subsection{Block A: synthetic 2-D (spirals + circles)}
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+# V1 vanilla
+python3 .../run_benchmark.py --datasets spirals \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 100 --epochs 50 --lam 0.1 --reg-every-n 10 --view dataflow
+
+# V2 dropout
+python3 .../run_benchmark.py --datasets spirals_drop \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 100 --epochs 50 --lam 0.1 --reg-every-n 10 --view dataflow
+
+# V3 batch norm
+python3 .../run_benchmark.py --datasets spirals_bn \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 100 --epochs 50 --lam 0.1 --reg-every-n 10 --view dataflow
+
+# V4 weight decay
+python3 .../run_benchmark.py --datasets spirals \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 100 --epochs 50 --lam 0.1 --reg-every-n 10 --view dataflow \
+    --weight-decay 1e-4
+
+# V5 full stack
+python3 .../run_benchmark.py --datasets spirals_full \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 100 --epochs 50 --lam 0.1 --reg-every-n 10 --view dataflow \
+    --weight-decay 1e-4
+\end{Verbatim}
+
+The same five commands repeat with \code{--datasets circles*} for the
+second synthetic block.
+
+\subsection{Block B: MNIST plain MLP}
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+# V1, V2, V3
+python3 .../run_benchmark.py --datasets {mnist_small | _drop | _bn} \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 --view dataflow
+
+# V4 (vanilla + WD)
+python3 .../run_benchmark.py --datasets mnist_small \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 --view dataflow \
+    --weight-decay 1e-4
+
+# V5 full stack
+python3 .../run_benchmark.py --datasets mnist_small_full \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 15 --lam 0.1 --reg-every-n 10 --view dataflow \
+    --weight-decay 1e-4
+\end{Verbatim}
+
+\subsection{Block C: CapsMLP MNIST}
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+# V1, V2, V3
+python3 .../run_benchmark.py --datasets {mnist_capsnet | _drop | _bn} \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 10 --lam 0.1 --reg-every-n 10 --view dataflow
+
+# V4 (vanilla CapsMLP + WD)
+python3 .../run_benchmark.py --datasets mnist_capsnet \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 10 --lam 0.1 --reg-every-n 10 --view dataflow \
+    --weight-decay 1e-4
+
+# V5 full stack
+python3 .../run_benchmark.py --datasets mnist_capsnet_full \
+    --arms baseline scalar_entropy_normalized \
+    --seeds 33 --epochs 10 --lam 0.1 --reg-every-n 10 --view dataflow \
+    --weight-decay 1e-4
+\end{Verbatim}
+
+\section{Hypotheses for the paper claim}
+
+\begin{enumerate}
+  \item \textbf{Composability hypothesis (the killer finding).}
+        The paired $\Delta$ from adding \code{scalar_entropy_normalized}
+        on top of V2--V5 is \emph{at least as positive} as on V1
+        (vanilla). If yes, the regulariser \textbf{stacks} with existing
+        techniques without conflict, which is the core practical claim.
+  \item \textbf{Standalone competitiveness.}
+        The absolute mean accuracy of V1+entropy is comparable to or
+        better than the absolute mean accuracy of V2--V5 standalone
+        (i.e.\ baseline arm under each variant). If yes,
+        \code{scalar_entropy_normalized} on its own is a credible
+        single-tool regulariser.
+  \item \textbf{Failure-mode mitigation.}
+        On the negative datasets (\code{circles}, \code{mnist_capsnet}),
+        none of dropout / BN / WD alone neutralises the failure mode of
+        the original \code{scalar_entropy}. If only V2--V5 \emph{with}
+        entropy do, the regulariser is a unique tool, not a
+        substitutable one.
+  \item \textbf{Variance reduction.}
+        The variance-reduction signature should survive — and ideally
+        compound — when entropy is added on top of dropout / BN / WD.
+\end{enumerate}
+
+\section{Acceptance criteria}
+
+For the paper to claim ``composability with mainstream regularisers'',
+at least 3 of 4 dataset $\times$ variant cells in V5 (full stack) must
+show $\Delta \geq 0$ from adding \code{scalar_entropy_normalized}, and
+at least 2 of those must reach significance ($p < 0.05$).
+
+For the paper to claim ``failure-mode mitigation'', V1, V2, V3, V4
+under \code{baseline} on \code{circles} and \code{mnist_capsnet} must
+all retain a directional negative effect; while V1--V5 under
+\code{scalar_entropy_normalized} must all be null or positive.
+
+\section{After phase 9}
+
+Refresh \code{RESULTS_VIEWS_SUITE.md} via the existing aggregator. The
+new rows will appear under their dataset name. Phase 9 cells are
+identifiable by the \code{*_drop}, \code{*_bn}, \code{*_full} dataset
+suffixes and (where applicable) by the non-zero \texttt{weight\_decay}
+in the per-run config printout.
+\end{document}

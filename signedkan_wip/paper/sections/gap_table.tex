@@ -1,0 +1,20 @@
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+dataset & variant & \multicolumn{2}{c}{SignedKAN} & \multicolumn{2}{c}{Vanilla KAN} \\
+        &         & AUC & macro-$F_1$ & AUC & macro-$F_1$ \\
+\midrule
+Bitcoin Alpha & WiP baseline (100 ep, $G\!=\!5$, full-batch BCE) & $0.790$ & $0.712$ & $0.769$ & $0.679$ \\
+ & + early stopping & $0.808$ & $0.712$ & $0.802$ & $0.675$ \\
+ & + class-weighted BCE & $0.855$ & $0.698$ & $0.856$ & $0.652$ \\
+ & + spline grid $G\!=\!3$ & $0.851$ & $0.657$ & $0.843$ & $0.650$ \\
+ & EC + spectral-entropy reg. & $0.837$ & $0.715$ & $0.837$ & $0.669$ \\
+\midrule
+Bitcoin OTC & WiP baseline (100 ep, $G\!=\!5$, full-batch BCE) & $0.852$ & $0.775$ & $0.842$ & $0.756$ \\
+ & + early stopping & $0.858$ & $0.761$ & $0.855$ & $0.761$ \\
+ & + class-weighted BCE & $0.870$ & $0.746$ & $0.859$ & $0.752$ \\
+ & + spline grid $G\!=\!3$ & $0.866$ & $0.759$ & $0.865$ & $0.752$ \\
+ & EC + spectral-entropy reg. & $0.870$ & $0.758$ & $0.868$ & $0.753$ \\
+\midrule
+SGCN \cite{derr2018sgcn} (published) & --- & \textit{0.93} & \textit{---} & --- & --- \\
+\bottomrule
+\end{tabular}

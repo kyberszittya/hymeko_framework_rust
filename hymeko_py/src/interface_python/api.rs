@@ -6,18 +6,20 @@ use pyo3::prelude::*;
 use pyo3::exceptions::{PyIndexError, PySyntaxError, PyValueError};
 use pyo3::types::PyModule;
 use pyo3::PyRef;
-use iceoryx2::prelude::*;
 
 // The exact Arrow imports required for zero-copy FFI.
 use arrow::array::{Array, Int64Array, Float32Array};
 use arrow::pyarrow::IntoPyArrow;
-use hymeko::engine::hypergraphengine::HypergraphEngine;
-use hymeko::tensor::shared_state::{ExpansionHeader, HypergraphWeights};
+use hymeko_hre::HypergraphEngine;
+use hymeko::tensor::shared_state::ExpansionHeader;
 use hymeko::module_store::module_store::{CompiledProgram, ModuleKey, ModuleStore};
 use hymeko::module_store::source_provider::MemProvider;
 use hymeko::resolution::string_table::StringTable;
 use hymeko::util::real_parser::RealParser;
 use hymeko::writers::cbor_writer::CborPayload;
+use hymeko::common::ids::DeclId;
+use hymeko_formats::urdf::generate_urdf;
+use hymeko_formats::sdf::generate_sdf;
 
 
 #[pyclass]
@@ -177,7 +179,92 @@ impl PyHypergraphIR {
             self.node_count(), self.edge_count(), self.arc_count())
     }
 
+    // -- Codegen --
+
+    /// Emit URDF XML from the compiled IR.
+    pub fn to_urdf(&self, robot_name: &str) -> String {
+        generate_urdf(&self.compiled.ir, &self.strings, robot_name)
+    }
+
+    /// Emit SDF 1.7 XML from the compiled IR.
+    pub fn to_sdf(&self, model_name: &str) -> String {
+        generate_sdf(&self.compiled.ir, &self.strings, model_name)
+    }
+
+    /// Emit a DOT (Graphviz) serialisation of the signed-incidence
+    /// hypergraph — vertices as ellipses, hyperedges as rounded boxes,
+    /// signed arcs colour-coded (blue +1, red −1, grey ~0). Mirrors the
+    /// browser demo's `to_dot` so Python scripts can produce the same
+    /// artefact. Does NOT go through the workspace `transforms/` dir,
+    /// so the output is deterministic and self-contained.
+    pub fn to_dot(&self, graph_name: &str) -> String {
+        emit_dot_graph(&self.compiled.ir, &self.strings, graph_name)
+    }
+
+    /// JSON snapshot of the compiled IR — graph-viewer-ready shape.
+    /// Top-level keys: `node_count`, `edge_count`, `arc_count`,
+    /// `nodes` (list of decl-Node entries), `edges` (list of decl-Edge
+    /// entries with their signed arc refs). Same schema as the browser
+    /// demo's `snapshot_json()`.
+    pub fn snapshot_json(&self) -> PyResult<String> {
+        emit_snapshot_json(&self.compiled.ir, &self.strings)
+            .map_err(|e| PyValueError::new_err(e))
+    }
+
+    // -- Predicate queries --
+
+    /// Run a predicate-string query over the IR and return the list of
+    /// matching decl names. Supported atoms (same surface as
+    /// `queries/standard.qlist`):
+    ///
+    ///   KIND(<name>)                — decl whose first inherited base is <name>
+    ///   INHERITS(<name>)            — decl transitively inheriting <name>
+    ///   SCOPEDIN(<name>)            — decl has an ancestor inheriting <name>
+    ///   HASARCREF(<sign>, <inner>)  — edge with an arc-ref of <sign> (+1/-1)
+    ///                                 pointing at a decl matching <inner>
+    ///   <a> AND <b>                 — conjunction
+    ///   ANY                         — always true
+    pub fn query(&self, predicate: &str) -> Vec<String> {
+        let ir = &self.compiled.ir;
+        let mut out = Vec::new();
+        for i in 0..ir.decl_nodes.len() {
+            let did = DeclId::new(i);
+            if pred_match_expr(predicate, did, ir, &self.strings) {
+                out.push(self.strings.resolve(ir.decl_nodes[i].name).to_string());
+            }
+        }
+        out
+    }
+
+    /// Convenience: return the match count only.
+    pub fn query_count(&self, predicate: &str) -> usize {
+        let ir = &self.compiled.ir;
+        (0..ir.decl_nodes.len())
+            .filter(|i| pred_match_expr(predicate, DeclId::new(*i), ir, &self.strings))
+            .count()
+    }
+
 }
+
+// ================================================
+// Predicate string evaluator — single source of truth lives in
+// hymeko_query::predicate_expr; this module re-exports under the
+// legacy `pred_*` names so existing call-sites compile unchanged.
+// ================================================
+
+use hymeko_query::predicate_expr::match_expr as pred_match_expr;
+
+// ================================================
+// DOT + snapshot emitters — single source of truth in
+// hymeko_formats::snapshot; re-imported under legacy names so the
+// existing `pub fn to_dot` / `snapshot_json` PyMethods compile
+// unchanged.
+// ================================================
+
+use hymeko_formats::snapshot::{
+    emit_dot_graph,
+    snapshot_json as emit_snapshot_json,
+};
 
 /*
 #[pyclass]

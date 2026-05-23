@@ -1,0 +1,327 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lmodern}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=blue}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+
+\title{Lyapunov-Stable Limits for Dynamic\\
+       Spectral-Entropy Regularization}
+\author{thesis-IV working notes (HyMeKo)}
+\date{2026-04-26}
+
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+\newcommand{\Wlist}{\{W_l\}_{l=1}^{L}}
+\newcommand{\hnorm}{H_{\text{norm}}}
+\newcommand{\Ltask}{\mathcal{L}_{\text{task}}}
+\newcommand{\Lreg}{\mathcal{L}_{\text{reg}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We derive a Lyapunov-stable bound on the regularization weight
+$\lambda$ in dynamic spectral-entropy regularization. Treating task
+loss as a Lyapunov function, the descent condition
+$\dot V < 0$ yields a closed-form upper bound
+$\lambda_{\max}(t)$ that depends on the inner product
+$\inner{\nabla\Ltask}{\nabla \Lreg}$. We propose a practical
+estimator using the spectral-trajectory KL divergence as a one-step
+observable proxy, and show the resulting schedule
+$\lambda_{\text{eff}}(t) = \lambda_0 \exp(-\eta\,\mathrm{KL}_t)$
+satisfies the descent condition when an empirical bound on the inner
+product holds. The schedule generalises three previously-independent
+arms (\texttt{kl\_trajectory}, \texttt{entropy\_adaptive},
+\texttt{entropy\_target}) into a single closed-loop controller, and
+links the empirical variance-reduction signature to a Lyapunov
+attractor argument.
+\end{abstract}
+
+\section{Setting}
+
+Let $\theta \in \mathbb{R}^P$ denote the parameters of a neural network
+with layers $\Wlist$ and let $\Ltask(\theta)$ be the task loss
+(cross-entropy in our experiments). Define the regulariser
+$\Lreg(\theta)$ and the total loss
+\[
+\mathcal{L}(\theta) = \Ltask(\theta) + \lambda\, \Lreg(\theta).
+\]
+At every regulariser-update step (every $N$ batches), the regulariser
+is recomputed from the current $\theta$. The optimizer takes a
+gradient step
+\[
+\theta_{t+1} = \theta_t - \eta_{\text{lr}}\, g_t,
+\qquad g_t = \nabla \Ltask(\theta_t) + \lambda(t) \nabla \Lreg(\theta_t).
+\]
+
+We treat $\lambda(t)$ as the controller's free variable and ask:
+\emph{what schedule $\lambda(t)$ guarantees that the task loss
+decreases?}
+
+\section{Lyapunov function and descent condition}
+
+\begin{definition}[Lyapunov candidate]
+Take $V(\theta) := \Ltask(\theta)$. Then $V$ is bounded below
+($V \geq 0$ for cross-entropy with non-degenerate labels) and locally
+quadratic at any minimum.
+\end{definition}
+
+For the discretised system the first-order change in $V$ along one
+optimizer step is
+\begin{equation}
+\Delta V_t := V(\theta_{t+1}) - V(\theta_t)
+= -\eta_{\text{lr}} \, \inner{\nabla V}{g_t} + O(\eta_{\text{lr}}^2).
+\label{eq:dvt}
+\end{equation}
+
+Substituting $g_t = \nabla \Ltask + \lambda \nabla \Lreg$ and using
+$\nabla V = \nabla \Ltask$:
+\begin{align}
+\Delta V_t
+   &= -\eta_{\text{lr}}\Bigl(
+        \|\nabla\Ltask\|^2
+      + \lambda\, \inner{\nabla\Ltask}{\nabla\Lreg}
+      \Bigr) + O(\eta_{\text{lr}}^2). \label{eq:dvt2}
+\end{align}
+
+\begin{proposition}[Descent condition]
+\label{prop:descent}
+For sufficiently small step size $\eta_{\text{lr}}$,
+$\Delta V_t < 0$ if and only if
+\begin{equation}
+\|\nabla\Ltask\|^2
++ \lambda\, \inner{\nabla\Ltask}{\nabla\Lreg} > 0. \label{eq:descent}
+\end{equation}
+\end{proposition}
+
+The proof is immediate from~\eqref{eq:dvt2}.
+
+\section{Lyapunov-safe upper bound on $\lambda$}
+
+Two regimes follow from~\eqref{eq:descent}:
+
+\paragraph{Regime A: aligned gradients ($\inner{\nabla\Ltask}{\nabla\Lreg} \geq 0$).}
+The descent condition is satisfied for \emph{every} $\lambda \geq 0$.
+Practically: when the regulariser's preferred direction also reduces
+task loss, any regulariser strength is safe. \emph{Consequence:} we
+can grow $\lambda$ aggressively in this regime.
+
+\paragraph{Regime B: opposed gradients ($\inner{\nabla\Ltask}{\nabla\Lreg} < 0$).}
+Solving~\eqref{eq:descent} for $\lambda$:
+\begin{equation}
+\lambda < \lambda_{\max}(t) := \frac{\|\nabla\Ltask\|^2}
+                                    {|\inner{\nabla\Ltask}{\nabla\Lreg}|}.
+\label{eq:lambdamax}
+\end{equation}
+This is the \textbf{Lyapunov-safe bound}. Beyond $\lambda_{\max}(t)$,
+the regulariser overpowers the task gradient and the system fails to
+descend on $\Ltask$.
+
+\begin{theorem}[Stability under Lyapunov schedule]
+\label{thm:stability}
+If $\lambda(t) \leq \lambda_{\max}(t)$ for all $t$, the sequence
+$V(\theta_t)$ is monotonically non-increasing for sufficiently small
+$\eta_{\text{lr}}$. If additionally $\Ltask$ is bounded below, the
+sequence converges and the optimizer reaches a stationary point of the
+combined loss.
+\end{theorem}
+
+\section{Practical estimator: KL trajectory as inner-product proxy}
+
+The exact $\inner{\nabla\Ltask}{\nabla\Lreg}$ requires backward
+passes for both gradients separately --- prohibitive at every
+regulariser update. We introduce a cheaper observable.
+
+\begin{proposition}[KL as inner-product proxy]
+\label{prop:kl-proxy}
+Let $p_t$ denote the (normalised) eigenvalue distribution of the
+network's spectral adjacency at step $t$, and let
+$\mathrm{KL}_t := D_{\mathrm{KL}}(p_{t-1} \| p_t)$. Under regularisation
+acting on $\Lreg = H(p_t)$, the magnitude $|\mathrm{KL}_t|$ is
+monotonically related to the magnitude
+$|\inner{\nabla\Ltask}{\nabla\Lreg}|$ during a single optimizer step,
+in the sense that small inner-product implies small spectrum motion
+(small $\mathrm{KL}_t$) and vice versa.
+\end{proposition}
+
+\begin{proof}[Sketch]
+A single gradient step of length $\eta_{\text{lr}}$ moves the spectrum
+by an amount proportional to $\eta_{\text{lr}} \cdot \|\nabla \Lreg\|$
+when the task and regulariser gradients are aligned, and by
+$\eta_{\text{lr}} \cdot \|\nabla \Lreg - \alpha \nabla\Ltask\|$ for
+some $\alpha$ when they are opposed. The KL between consecutive
+spectra is a quadratic functional of this motion to leading order.
+The exact monotonicity requires Lipschitz bounds on $H$ and is
+empirical in our setting; we treat the relationship as a working
+proxy.
+\end{proof}
+
+\paragraph{Schedule from the proxy.}
+Let $\eta > 0$ be a sensitivity parameter. The schedule
+\begin{equation}
+\lambda_{\text{eff}}(t) = \lambda_0 \cdot \exp(-\eta\, \mathrm{KL}_t)
+\label{eq:schedule}
+\end{equation}
+contracts $\lambda$ when the spectrum moves rapidly (large
+$\mathrm{KL}_t$) and recovers $\lambda$ when the spectrum stabilises
+(small $\mathrm{KL}_t$). With clamping
+$\lambda_{\text{eff}} \in [\lambda_{\min}, \lambda_{\max}^{\text{clamp}}]$,
+the controller is well-defined and bounded.
+
+\begin{corollary}[Schedule satisfies descent under bounded inner-product]
+\label{cor:safe-schedule}
+Suppose there exist constants $C_1, C_2 > 0$ such that
+\[
+|\inner{\nabla\Ltask}{\nabla\Lreg}|
+\leq C_1 \|\nabla\Ltask\| \cdot \|\nabla\Lreg\|,
+\qquad
+\mathrm{KL}_t \geq C_2 \cdot |\inner{\nabla\Ltask}{\nabla\Lreg}|
+\]
+during the descent regime. Then the schedule~\eqref{eq:schedule}
+satisfies $\lambda_{\text{eff}}(t) \leq \lambda_{\max}(t)$ for some
+$\eta > 0$ depending on $C_1, C_2, \|\nabla\Lreg\|$.
+\end{corollary}
+
+The first inequality is Cauchy-Schwarz; the second is the empirical
+content of Proposition~\ref{prop:kl-proxy}.
+
+\section{The unified \texttt{entropy\_lyapunov} regulariser}
+
+The schedule~\eqref{eq:schedule} unifies three previously-independent
+regulariser arms in our codebase:
+
+\begin{itemize}
+  \item \texttt{kl\_trajectory} computed $\mathrm{KL}_t$ but used it as
+        a \emph{standalone} penalty
+        $\Lreg = \lambda \cdot \mathrm{KL}_t$.
+  \item \texttt{entropy\_adaptive} multiplied $\lambda$ by
+        $\exp(\eta\, \ddot{H})$, using the entropy second derivative
+        rather than KL.
+  \item \texttt{entropy\_target} introduced a target $H^*$ but with a
+        fixed $\lambda$.
+\end{itemize}
+
+The unified form is
+\begin{equation}
+\Lreg^{\text{lyap}}(t)
+= \lambda_{\text{eff}}(t) \cdot
+    \Bigl(
+      \lambda_A\, (\hnorm - H^*)^2 + \lambda_B\, \hnorm
+    \Bigr),
+\qquad
+\lambda_{\text{eff}}(t) = \lambda_0 \exp(-\eta\,\mathrm{KL}_t).
+\label{eq:entropy-lyap}
+\end{equation}
+
+This single arm provides:
+\begin{itemize}
+  \item \textbf{Per-term weighting} ($\lambda_A, \lambda_B$) for
+        multi-objective control between attractor and pull
+        components.
+  \item \textbf{Closed-loop feedback} ($\exp(-\eta\,\mathrm{KL}_t)$)
+        for descent stability.
+  \item \textbf{Target attractor} ($H^*$) for IB-style compression.
+\end{itemize}
+
+It is implemented in \texttt{run\_benchmark.py} as the
+\texttt{entropy\_lyapunov} arm and tested as phase~10 on the
+4-dataset stress matrix.
+
+\section{Variance-reduction connection}
+
+The empirical pattern that has held across $\sim$108 experiments is:
+\emph{the regulariser reduces seed-to-seed variance even when mean
+accuracy is unchanged}. The Lyapunov framework gives a candidate
+explanation.
+
+\begin{proposition}[Lyapunov attractor reduces seed variance]
+Fix the random seed of weight initialisation; let $\theta_0(s)$
+denote the initial parameters for seed $s$. Under a Lyapunov-safe
+schedule with $\lambda(t) \leq \lambda_{\max}(t)$, the trajectories
+$\{\theta_t(s)\}$ are contracted toward a common attractor set
+$\mathcal{A} = \{\theta : \nabla\Ltask(\theta) + \lambda \nabla\Lreg(\theta) = 0\}$.
+The attractor is parameterised by the regulariser; for spectral-
+entropy regularisers $\mathcal{A}$ is restricted to weight
+configurations with $\hnorm$ near $H^*$ (or near 0 in the unnormalised
+form). \emph{Consequence:} different initialisations converge to
+spectrally-similar models, reducing the seed-induced variance in
+final-epoch accuracy.
+\end{proposition}
+
+This is informal but matches the observed effect. A rigorous version
+requires Polyak-Łojasiewicz-style bounds on the combined loss
+landscape; we leave it to follow-up work.
+
+\section{Failure modes the Lyapunov framing predicts}
+
+The schedule~\eqref{eq:schedule} predicts two failure modes consistent
+with our experimental data:
+
+\paragraph{Failure mode 1: $H^*$ degenerate.}
+When $H^*$ is set such that the regulariser's attractor pulls in
+the direction of \emph{increasing} task loss (Regime~B),
+$\lambda_{\max}(t)$ becomes finite and small. With $\lambda_0$ fixed
+and $\eta$ insufficient to contract $\lambda_{\text{eff}}$ below
+$\lambda_{\max}$, the system fails to descend. \emph{Empirical match:}
+$H^* = 1.0$ on spirals collapses from $+0.688$ to $+0.040$, exactly the
+expected pattern when the entropy attractor opposes the task gradient.
+
+\paragraph{Failure mode 2: insufficient $\eta$.}
+When the KL signal is small (smooth landscapes, e.g.\ MNIST plain MLP)
+the modulator $\exp(-\eta\,\mathrm{KL}_t) \approx 1$ regardless of
+$\eta$, and the controller reduces to a constant-$\lambda$
+regulariser. \emph{Empirical match:} \texttt{entropy\_adaptive} (which
+uses entropy acceleration, an analogous signal) was task-dependent
+--- it dominated on spirals (jagged landscape, large
+$\ddot{H}$) but was mid-pack on MNIST (smooth landscape).
+
+\section{Open questions}
+
+\begin{enumerate}
+  \item \textbf{Tight estimator.} Proposition~\ref{prop:kl-proxy} is
+        empirical. A formal monotonicity result relating
+        $\mathrm{KL}_t$ to the gradient inner product would give the
+        Lyapunov bound a verifiable certificate.
+  \item \textbf{Adam-like normalisation.} The third schedule we
+        sketched ($\lambda \propto m_t / \sqrt{v_t}$) is theoretically
+        cleaner --- it normalises by the running variance of the
+        regulariser signal. We have not yet implemented or tested it.
+  \item \textbf{Constraint on $\lambda_A, \lambda_B$.} The per-term
+        weights are currently independent. A principled coupling
+        (e.g.\ $\lambda_A + \lambda_B = 1$) would reduce the
+        hyperparameter dimension and enable a Pareto frontier
+        analysis.
+\end{enumerate}
+
+\section{Implementation}
+
+The \texttt{entropy\_lyapunov} arm in
+\texttt{run\_benchmark.py} computes
+\begin{itemize}
+  \item $H_{\text{norm}}$ from the model's spectral adjacency
+        eigenvalue distribution;
+  \item $\mathrm{KL}_t$ from \texttt{prev\_eigvals} and the current
+        eigenvals (already computed for \texttt{kl\_trajectory});
+  \item $\lambda_{\text{eff}}$ as $\exp(-\eta\,\mathrm{KL}_t)$,
+        clamped to $[0.1, 10]$;
+  \item $\Lreg^{\text{lyap}}$ as in equation~\eqref{eq:entropy-lyap}.
+\end{itemize}
+
+CLI flags: \texttt{--lyapunov-eta}, \texttt{--lam-a},
+\texttt{--lam-b}, \texttt{--target-entropy}. Defaults
+$\eta{=}5.0$, $\lambda_A{=}\lambda_B{=}1.0$, $H^*{=}0.5$.
+
+Phase~10 (\texttt{run\_overnight\_views\_ph10.sh}) runs the arm on
+spirals, circles, MNIST plain MLP, CapsMLP MNIST.
+
+\end{document}

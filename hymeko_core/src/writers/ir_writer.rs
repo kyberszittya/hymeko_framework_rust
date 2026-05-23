@@ -18,7 +18,7 @@ impl<'a> IrWriter<'a> {
         // Iterate only the roots (items without a parent) directly from the unified nodes
         for (i, node) in self.ir.decl_nodes.iter().enumerate() {
             if node.parent.is_none() {
-                self.write_decl(w, DeclId(i), 0)?;
+                self.write_decl(w, DeclId::new(i), 0)?;
             }
         }
         Ok(())

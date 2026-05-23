@@ -114,7 +114,7 @@ impl Ir {
     pub fn preallocate_from_index(&mut self, total_named_decls: usize) {
         let default_node = DeclNode {
             kind: DeclKind::Node,
-            name: SymId(0),
+            name: SymId::new(0),
             parent: DeclId::NONE,
             first_child: DeclId::NONE,
             last_child: DeclId::NONE,
@@ -130,10 +130,10 @@ impl Ir {
     }
 
     pub fn push_anonymous_arc(&mut self) -> DeclId {
-        let id = DeclId(self.decl_nodes.len());
+        let id = DeclId::new(self.decl_nodes.len());
         self.decl_nodes.push(DeclNode {
             kind: DeclKind::HyperArc,
-            name: SymId(0),
+            name: SymId::new(0),
             parent: DeclId::NONE,
             first_child: DeclId::NONE,
             last_child: DeclId::NONE,
@@ -210,6 +210,32 @@ pub enum SignedRefR {
     Plus(RefAtomR),
     Minus(RefAtomR),
     Neutral(RefAtomR),
+}
+
+impl SignedRefR {
+    // Extract inner atom (RefAtomR) regardless of sign
+    #[inline]
+    pub fn atom(&self) -> &RefAtomR {
+        match self {
+            Self::Plus(r) | Self::Minus(r) | Self::Neutral(r) => r,
+        }
+    }
+
+    // Target 'DeclId' of this reference
+    #[inline]
+    pub fn target(&self) -> DeclId {
+        self.atom().target
+    }
+
+    // Sign as i8
+    #[inline]
+    pub fn sign(&self) -> i8 {
+        match self {
+            Self::Plus(_) => 1,
+            Self::Minus(_) => -1,
+            Self::Neutral(_) => 0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq,

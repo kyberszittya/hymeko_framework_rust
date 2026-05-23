@@ -1,0 +1,59 @@
+# Root uv workspace: one virtualenv for HyMeKo Python (bindings, stubs, native
+# extensions) plus optional dev / ML groups. See `README.md` (Python section).
+[project]
+name = "hymeko-framework"
+version = "0.0.0"
+description = "HyMeKo Rust workspace — uv-managed Python environment (members + tooling)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+# Aligned with `tools.yaml` Python toolchain (major ranges; lockfile pins).
+dev = [
+    "hypothesis>=6,<7",
+    "mypy>=1.11,<2",
+    "pytest>=8,<9",
+    "pytest-benchmark>=4,<5",
+    "pytest-cov>=5,<6",
+    "radon>=6,<7",
+    "ruff>=0.6",
+    "scipy>=1.11,<2",
+    "scikit-learn>=1.4,<2",
+    "cbor2>=5,<6",
+]
+# Matches `CORE.YAML` `dependencies.pinned.python` for reproducible ML smoke.
+ml = [
+    "numpy>=1.26,<2",
+    "torch==2.4.1",
+    "torchvision>=0.19.1,<0.20",
+]
+# `demo` powers `signedkan_wip/src/demo/gui.py` (Gradio GUI + matplotlib +
+# NetworkX subgraph rendering). Opt-in: `uv sync --group ml --group demo`.
+demo = [
+    "gradio>=4,<6",
+    "matplotlib>=3.8,<4",
+    "networkx>=3,<4",
+    "pandas>=2,<3",
+]
+
+[tool.uv.workspace]
+# `ehk_torch_stub` is omitted here: it depends on `torch` and would pull the full
+# CUDA wheel stack into every `uv sync --all-packages`. Install it ad hoc when
+# needed: `uv pip install -e python/ehk_torch_stub` (after `uv sync --group ml`).
+members = ["hymeko_py", "signedkan_wip/signedkan_native"]
+
+[tool.uv]
+package = false
+default-groups = ["dev"]
+
+# Keeps `pytest` runs scoped to real tests; avoids collecting `hymeko_py/smoke_test.py`
+# as a test module and reduces interference from unrelated global pytest plugins.
+[tool.pytest.ini_options]
+testpaths = ["signedkan_wip/tests"]
+python_files = ["test_*.py"]
+addopts = ["-p", "no:randomly"]
+markers = [
+    "slow: optional slow integration tests",
+    "timeout: optional wall-clock bound when pytest-timeout is installed",
+]

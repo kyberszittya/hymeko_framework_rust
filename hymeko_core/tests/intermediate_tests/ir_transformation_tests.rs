@@ -90,12 +90,12 @@ mod basic_transformation_tests {
         let sid_b = interner.intern(SYM_B);
         let sid_c = interner.intern(SYM_C);
 
-        assert_eq!(interner.resolve(SymId(SID_TEST)), SYM_TEST);
-        assert_eq!(interner.resolve(SymId(SID_D)), SYM_D);
-        assert_eq!(interner.resolve(SymId(SID_ROOT)), SYM_ROOT);
-        assert_eq!(interner.resolve(SymId(SID_A)), SYM_A);
-        assert_eq!(interner.resolve(SymId(SID_B)), SYM_B);
-        assert_eq!(interner.resolve(SymId(SID_C)), SYM_C);
+        assert_eq!(interner.resolve(SymId::new(SID_TEST)), SYM_TEST);
+        assert_eq!(interner.resolve(SymId::new(SID_D)), SYM_D);
+        assert_eq!(interner.resolve(SymId::new(SID_ROOT)), SYM_ROOT);
+        assert_eq!(interner.resolve(SymId::new(SID_A)), SYM_A);
+        assert_eq!(interner.resolve(SymId::new(SID_B)), SYM_B);
+        assert_eq!(interner.resolve(SymId::new(SID_C)), SYM_C);
 
         assert_eq!(sid_root.0, SID_ROOT);
         assert_eq!(sid_a.0, SID_A);
@@ -165,12 +165,12 @@ mod basic_transformation_tests {
         let sid_b = interner.intern(SYM_B);
         let sid_c = interner.intern(SYM_C);
 
-        assert_eq!(interner.resolve(SymId(SID_TEST)), SYM_TEST);
-        assert_eq!(interner.resolve(SymId(SID_D)), SYM_D);
-        assert_eq!(interner.resolve(SymId(SID_ROOT)), SYM_ROOT);
-        assert_eq!(interner.resolve(SymId(SID_A)), SYM_A);
-        assert_eq!(interner.resolve(SymId(SID_B)), SYM_B);
-        assert_eq!(interner.resolve(SymId(SID_C)), SYM_C);
+        assert_eq!(interner.resolve(SymId::new(SID_TEST)), SYM_TEST);
+        assert_eq!(interner.resolve(SymId::new(SID_D)), SYM_D);
+        assert_eq!(interner.resolve(SymId::new(SID_ROOT)), SYM_ROOT);
+        assert_eq!(interner.resolve(SymId::new(SID_A)), SYM_A);
+        assert_eq!(interner.resolve(SymId::new(SID_B)), SYM_B);
+        assert_eq!(interner.resolve(SymId::new(SID_C)), SYM_C);
 
         assert_eq!(sid_root.0, SID_ROOT);
         assert_eq!(sid_a.0, SID_A);

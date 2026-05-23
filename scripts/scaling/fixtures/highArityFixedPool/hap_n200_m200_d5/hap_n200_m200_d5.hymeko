@@ -1,0 +1,3409 @@
+hap_n200_m200_d5_description {
+    @"meta_kinematics.hymeko";
+}
+
+hap_n200_m200_d5: meta_kinematics.kinematics.elements,
+        meta_kinematics.kinematics.geometry,
+        meta_kinematics.kinematics.axes
+{
+    v0: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v1: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v2: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v3: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v4: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v5: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v6: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v7: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v8: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v9: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v10: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v11: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v12: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v13: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v14: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v15: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v16: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v17: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v18: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v19: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v20: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v21: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v22: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v23: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v24: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v25: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v26: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v27: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v28: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v29: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v30: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v31: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v32: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v33: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v34: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v35: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v36: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v37: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v38: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v39: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v40: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v41: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v42: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v43: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v44: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v45: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v46: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v47: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v48: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v49: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v50: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v51: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v52: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v53: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v54: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v55: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v56: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v57: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v58: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v59: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v60: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v61: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v62: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v63: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v64: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v65: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v66: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v67: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v68: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v69: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v70: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v71: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v72: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v73: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v74: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v75: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v76: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v77: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v78: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v79: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v80: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v81: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v82: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v83: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v84: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v85: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v86: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v87: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v88: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v89: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v90: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v91: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v92: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v93: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v94: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v95: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v96: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v97: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v98: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v99: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v100: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v101: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v102: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v103: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v104: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v105: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v106: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v107: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v108: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v109: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v110: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v111: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v112: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v113: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v114: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v115: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v116: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v117: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v118: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v119: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v120: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v121: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v122: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v123: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v124: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v125: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v126: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v127: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v128: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v129: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v130: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v131: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v132: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v133: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v134: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v135: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v136: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v137: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v138: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v139: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v140: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v141: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v142: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v143: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v144: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v145: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v146: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v147: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v148: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v149: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v150: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v151: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v152: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v153: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v154: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v155: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v156: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v157: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v158: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v159: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v160: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v161: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v162: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v163: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v164: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v165: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v166: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v167: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v168: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v169: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v170: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v171: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v172: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v173: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v174: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v175: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v176: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v177: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v178: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v179: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v180: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v181: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v182: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v183: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v184: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v185: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v186: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v187: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v188: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v189: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v190: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v191: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v192: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v193: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v194: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v195: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v196: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v197: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v198: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    v199: meta_kinematics.kinematics.elements.link {
+        mass 1.000;
+        link_geometry: meta_kinematics.kinematics.geometry.box {
+            dimension [0.050, 0.050, 0.050];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.000, 0.000, 0.000];
+    }
+    @e0: meta_kinematics.kinematics.conti_joint {
+        (+ v127,
+         + v23,
+         - v18,
+         - v75,
+         - v149,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e1: meta_kinematics.kinematics.conti_joint {
+        (+ v54,
+         + v16,
+         - v42,
+         - v64,
+         - v79,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e2: meta_kinematics.kinematics.conti_joint {
+        (+ v68,
+         + v88,
+         - v27,
+         - v177,
+         - v192,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e3: meta_kinematics.kinematics.conti_joint {
+        (+ v154,
+         + v8,
+         - v4,
+         - v171,
+         - v107,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e4: meta_kinematics.kinematics.conti_joint {
+        (+ v33,
+         + v29,
+         - v37,
+         - v152,
+         - v20,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e5: meta_kinematics.kinematics.conti_joint {
+        (+ v2,
+         + v48,
+         - v104,
+         - v159,
+         - v123,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e6: meta_kinematics.kinematics.conti_joint {
+        (+ v112,
+         + v199,
+         - v132,
+         - v152,
+         - v42,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e7: meta_kinematics.kinematics.conti_joint {
+        (+ v182,
+         + v26,
+         - v92,
+         - v35,
+         - v100,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e8: meta_kinematics.kinematics.conti_joint {
+        (+ v49,
+         + v70,
+         - v189,
+         - v11,
+         - v100,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e9: meta_kinematics.kinematics.conti_joint {
+        (+ v113,
+         + v48,
+         - v189,
+         - v80,
+         - v166,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e10: meta_kinematics.kinematics.conti_joint {
+        (+ v103,
+         + v28,
+         - v76,
+         - v126,
+         - v18,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e11: meta_kinematics.kinematics.conti_joint {
+        (+ v59,
+         + v54,
+         - v35,
+         - v48,
+         - v86,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e12: meta_kinematics.kinematics.conti_joint {
+        (+ v191,
+         + v50,
+         - v151,
+         - v188,
+         - v54,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e13: meta_kinematics.kinematics.conti_joint {
+        (+ v133,
+         + v53,
+         - v2,
+         - v163,
+         - v52,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e14: meta_kinematics.kinematics.conti_joint {
+        (+ v165,
+         + v159,
+         - v82,
+         - v99,
+         - v72,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e15: meta_kinematics.kinematics.conti_joint {
+        (+ v198,
+         + v31,
+         - v10,
+         - v101,
+         - v128,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e16: meta_kinematics.kinematics.conti_joint {
+        (+ v198,
+         + v91,
+         - v199,
+         - v37,
+         - v161,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e17: meta_kinematics.kinematics.conti_joint {
+        (+ v46,
+         + v152,
+         - v80,
+         - v112,
+         - v23,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e18: meta_kinematics.kinematics.conti_joint {
+        (+ v35,
+         + v151,
+         - v159,
+         - v118,
+         - v172,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e19: meta_kinematics.kinematics.conti_joint {
+        (+ v173,
+         + v81,
+         - v54,
+         - v162,
+         - v87,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e20: meta_kinematics.kinematics.conti_joint {
+        (+ v20,
+         + v4,
+         - v37,
+         - v193,
+         - v82,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e21: meta_kinematics.kinematics.conti_joint {
+        (+ v184,
+         + v103,
+         - v49,
+         - v35,
+         - v97,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e22: meta_kinematics.kinematics.conti_joint {
+        (+ v28,
+         + v51,
+         - v1,
+         - v146,
+         - v20,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e23: meta_kinematics.kinematics.conti_joint {
+        (+ v195,
+         + v34,
+         - v5,
+         - v192,
+         - v111,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e24: meta_kinematics.kinematics.conti_joint {
+        (+ v55,
+         + v85,
+         - v159,
+         - v84,
+         - v95,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e25: meta_kinematics.kinematics.conti_joint {
+        (+ v33,
+         + v95,
+         - v169,
+         - v146,
+         - v152,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e26: meta_kinematics.kinematics.conti_joint {
+        (+ v134,
+         + v53,
+         - v115,
+         - v108,
+         - v82,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e27: meta_kinematics.kinematics.conti_joint {
+        (+ v89,
+         + v1,
+         - v83,
+         - v197,
+         - v153,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e28: meta_kinematics.kinematics.conti_joint {
+        (+ v53,
+         + v8,
+         - v36,
+         - v161,
+         - v57,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e29: meta_kinematics.kinematics.conti_joint {
+        (+ v77,
+         + v154,
+         - v95,
+         - v75,
+         - v93,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e30: meta_kinematics.kinematics.conti_joint {
+        (+ v97,
+         + v72,
+         - v6,
+         - v9,
+         - v96,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e31: meta_kinematics.kinematics.conti_joint {
+        (+ v46,
+         + v67,
+         - v88,
+         - v40,
+         - v168,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e32: meta_kinematics.kinematics.conti_joint {
+        (+ v94,
+         + v23,
+         - v100,
+         - v193,
+         - v51,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e33: meta_kinematics.kinematics.conti_joint {
+        (+ v181,
+         + v112,
+         - v167,
+         - v3,
+         - v80,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e34: meta_kinematics.kinematics.conti_joint {
+        (+ v130,
+         + v68,
+         - v21,
+         - v158,
+         - v149,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e35: meta_kinematics.kinematics.conti_joint {
+        (+ v14,
+         + v122,
+         - v19,
+         - v100,
+         - v98,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e36: meta_kinematics.kinematics.conti_joint {
+        (+ v107,
+         + v171,
+         - v112,
+         - v168,
+         - v167,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e37: meta_kinematics.kinematics.conti_joint {
+        (+ v64,
+         + v42,
+         - v80,
+         - v195,
+         - v6,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e38: meta_kinematics.kinematics.conti_joint {
+        (+ v49,
+         + v170,
+         - v172,
+         - v139,
+         - v20,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e39: meta_kinematics.kinematics.conti_joint {
+        (+ v27,
+         + v133,
+         - v72,
+         - v54,
+         - v16,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e40: meta_kinematics.kinematics.conti_joint {
+        (+ v61,
+         + v62,
+         - v117,
+         - v92,
+         - v10,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e41: meta_kinematics.kinematics.conti_joint {
+        (+ v159,
+         + v15,
+         - v107,
+         - v68,
+         - v93,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e42: meta_kinematics.kinematics.conti_joint {
+        (+ v4,
+         + v133,
+         - v183,
+         - v162,
+         - v50,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e43: meta_kinematics.kinematics.conti_joint {
+        (+ v75,
+         + v57,
+         - v33,
+         - v64,
+         - v110,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e44: meta_kinematics.kinematics.conti_joint {
+        (+ v193,
+         + v142,
+         - v42,
+         - v106,
+         - v140,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e45: meta_kinematics.kinematics.conti_joint {
+        (+ v92,
+         + v69,
+         - v169,
+         - v17,
+         - v82,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e46: meta_kinematics.kinematics.conti_joint {
+        (+ v11,
+         + v103,
+         - v16,
+         - v71,
+         - v176,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e47: meta_kinematics.kinematics.conti_joint {
+        (+ v140,
+         + v115,
+         - v86,
+         - v82,
+         - v56,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e48: meta_kinematics.kinematics.conti_joint {
+        (+ v29,
+         + v130,
+         - v38,
+         - v34,
+         - v26,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e49: meta_kinematics.kinematics.conti_joint {
+        (+ v110,
+         + v134,
+         - v35,
+         - v171,
+         - v95,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e50: meta_kinematics.kinematics.conti_joint {
+        (+ v32,
+         + v34,
+         - v155,
+         - v48,
+         - v9,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e51: meta_kinematics.kinematics.conti_joint {
+        (+ v94,
+         + v122,
+         - v188,
+         - v115,
+         - v131,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e52: meta_kinematics.kinematics.conti_joint {
+        (+ v172,
+         + v32,
+         - v13,
+         - v115,
+         - v99,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e53: meta_kinematics.kinematics.conti_joint {
+        (+ v197,
+         + v65,
+         - v153,
+         - v43,
+         - v192,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e54: meta_kinematics.kinematics.conti_joint {
+        (+ v44,
+         + v179,
+         - v111,
+         - v125,
+         - v116,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e55: meta_kinematics.kinematics.conti_joint {
+        (+ v146,
+         + v136,
+         - v10,
+         - v131,
+         - v29,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e56: meta_kinematics.kinematics.conti_joint {
+        (+ v18,
+         + v4,
+         - v120,
+         - v32,
+         - v9,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e57: meta_kinematics.kinematics.conti_joint {
+        (+ v163,
+         + v120,
+         - v44,
+         - v53,
+         - v11,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e58: meta_kinematics.kinematics.conti_joint {
+        (+ v63,
+         + v74,
+         - v94,
+         - v67,
+         - v36,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e59: meta_kinematics.kinematics.conti_joint {
+        (+ v60,
+         + v24,
+         - v150,
+         - v163,
+         - v62,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e60: meta_kinematics.kinematics.conti_joint {
+        (+ v166,
+         + v125,
+         - v169,
+         - v195,
+         - v176,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e61: meta_kinematics.kinematics.conti_joint {
+        (+ v162,
+         + v9,
+         - v19,
+         - v110,
+         - v133,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e62: meta_kinematics.kinematics.conti_joint {
+        (+ v57,
+         + v172,
+         - v108,
+         - v150,
+         - v84,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e63: meta_kinematics.kinematics.conti_joint {
+        (+ v34,
+         + v114,
+         - v81,
+         - v100,
+         - v45,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e64: meta_kinematics.kinematics.conti_joint {
+        (+ v147,
+         + v103,
+         - v164,
+         - v3,
+         - v172,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e65: meta_kinematics.kinematics.conti_joint {
+        (+ v191,
+         + v49,
+         - v129,
+         - v100,
+         - v96,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e66: meta_kinematics.kinematics.conti_joint {
+        (+ v43,
+         + v176,
+         - v96,
+         - v75,
+         - v105,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e67: meta_kinematics.kinematics.conti_joint {
+        (+ v176,
+         + v194,
+         - v133,
+         - v95,
+         - v102,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e68: meta_kinematics.kinematics.conti_joint {
+        (+ v24,
+         + v51,
+         - v130,
+         - v70,
+         - v195,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e69: meta_kinematics.kinematics.conti_joint {
+        (+ v79,
+         + v26,
+         - v131,
+         - v165,
+         - v52,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e70: meta_kinematics.kinematics.conti_joint {
+        (+ v14,
+         + v31,
+         - v171,
+         - v139,
+         - v51,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e71: meta_kinematics.kinematics.conti_joint {
+        (+ v161,
+         + v34,
+         - v107,
+         - v192,
+         - v158,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e72: meta_kinematics.kinematics.conti_joint {
+        (+ v23,
+         + v141,
+         - v161,
+         - v50,
+         - v24,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e73: meta_kinematics.kinematics.conti_joint {
+        (+ v166,
+         + v78,
+         - v71,
+         - v52,
+         - v27,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e74: meta_kinematics.kinematics.conti_joint {
+        (+ v25,
+         + v63,
+         - v58,
+         - v91,
+         - v60,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e75: meta_kinematics.kinematics.conti_joint {
+        (+ v190,
+         + v101,
+         - v134,
+         - v63,
+         - v188,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e76: meta_kinematics.kinematics.conti_joint {
+        (+ v46,
+         + v113,
+         - v196,
+         - v123,
+         - v149,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e77: meta_kinematics.kinematics.conti_joint {
+        (+ v58,
+         + v6,
+         - v91,
+         - v15,
+         - v97,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e78: meta_kinematics.kinematics.conti_joint {
+        (+ v169,
+         + v155,
+         - v145,
+         - v117,
+         - v98,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e79: meta_kinematics.kinematics.conti_joint {
+        (+ v127,
+         + v27,
+         - v192,
+         - v116,
+         - v173,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e80: meta_kinematics.kinematics.conti_joint {
+        (+ v74,
+         + v198,
+         - v38,
+         - v169,
+         - v37,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e81: meta_kinematics.kinematics.conti_joint {
+        (+ v150,
+         + v75,
+         - v23,
+         - v46,
+         - v156,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e82: meta_kinematics.kinematics.conti_joint {
+        (+ v17,
+         + v157,
+         - v148,
+         - v116,
+         - v81,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e83: meta_kinematics.kinematics.conti_joint {
+        (+ v189,
+         + v3,
+         - v143,
+         - v175,
+         - v198,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e84: meta_kinematics.kinematics.conti_joint {
+        (+ v188,
+         + v37,
+         - v88,
+         - v24,
+         - v125,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e85: meta_kinematics.kinematics.conti_joint {
+        (+ v113,
+         + v73,
+         - v44,
+         - v72,
+         - v77,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e86: meta_kinematics.kinematics.conti_joint {
+        (+ v8,
+         + v70,
+         - v5,
+         - v120,
+         - v195,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e87: meta_kinematics.kinematics.conti_joint {
+        (+ v129,
+         + v40,
+         - v93,
+         - v74,
+         - v180,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e88: meta_kinematics.kinematics.conti_joint {
+        (+ v36,
+         + v161,
+         - v156,
+         - v149,
+         - v85,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e89: meta_kinematics.kinematics.conti_joint {
+        (+ v199,
+         + v184,
+         - v144,
+         - v49,
+         - v178,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e90: meta_kinematics.kinematics.conti_joint {
+        (+ v124,
+         + v18,
+         - v156,
+         - v135,
+         - v152,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e91: meta_kinematics.kinematics.conti_joint {
+        (+ v38,
+         + v65,
+         - v174,
+         - v158,
+         - v126,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e92: meta_kinematics.kinematics.conti_joint {
+        (+ v186,
+         + v161,
+         - v32,
+         - v124,
+         - v75,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e93: meta_kinematics.kinematics.conti_joint {
+        (+ v49,
+         + v87,
+         - v9,
+         - v130,
+         - v183,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e94: meta_kinematics.kinematics.conti_joint {
+        (+ v83,
+         + v78,
+         - v196,
+         - v142,
+         - v198,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e95: meta_kinematics.kinematics.conti_joint {
+        (+ v164,
+         + v38,
+         - v179,
+         - v44,
+         - v57,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e96: meta_kinematics.kinematics.conti_joint {
+        (+ v132,
+         + v81,
+         - v175,
+         - v4,
+         - v108,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e97: meta_kinematics.kinematics.conti_joint {
+        (+ v74,
+         + v197,
+         - v15,
+         - v115,
+         - v196,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e98: meta_kinematics.kinematics.conti_joint {
+        (+ v25,
+         + v107,
+         - v37,
+         - v30,
+         - v105,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e99: meta_kinematics.kinematics.conti_joint {
+        (+ v170,
+         + v107,
+         - v24,
+         - v186,
+         - v14,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e100: meta_kinematics.kinematics.conti_joint {
+        (+ v37,
+         + v177,
+         - v167,
+         - v160,
+         - v7,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e101: meta_kinematics.kinematics.conti_joint {
+        (+ v36,
+         + v52,
+         - v4,
+         - v27,
+         - v21,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e102: meta_kinematics.kinematics.conti_joint {
+        (+ v163,
+         + v1,
+         - v79,
+         - v80,
+         - v195,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e103: meta_kinematics.kinematics.conti_joint {
+        (+ v104,
+         + v57,
+         - v91,
+         - v95,
+         - v151,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e104: meta_kinematics.kinematics.conti_joint {
+        (+ v111,
+         + v161,
+         - v176,
+         - v92,
+         - v150,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e105: meta_kinematics.kinematics.conti_joint {
+        (+ v12,
+         + v152,
+         - v46,
+         - v132,
+         - v87,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e106: meta_kinematics.kinematics.conti_joint {
+        (+ v0,
+         + v101,
+         - v93,
+         - v7,
+         - v133,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e107: meta_kinematics.kinematics.conti_joint {
+        (+ v52,
+         + v59,
+         - v117,
+         - v42,
+         - v113,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e108: meta_kinematics.kinematics.conti_joint {
+        (+ v79,
+         + v21,
+         - v99,
+         - v125,
+         - v16,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e109: meta_kinematics.kinematics.conti_joint {
+        (+ v57,
+         + v166,
+         - v40,
+         - v50,
+         - v104,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e110: meta_kinematics.kinematics.conti_joint {
+        (+ v87,
+         + v6,
+         - v25,
+         - v57,
+         - v75,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e111: meta_kinematics.kinematics.conti_joint {
+        (+ v77,
+         + v55,
+         - v51,
+         - v32,
+         - v87,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e112: meta_kinematics.kinematics.conti_joint {
+        (+ v9,
+         + v199,
+         - v60,
+         - v154,
+         - v65,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e113: meta_kinematics.kinematics.conti_joint {
+        (+ v24,
+         + v51,
+         - v135,
+         - v20,
+         - v176,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e114: meta_kinematics.kinematics.conti_joint {
+        (+ v43,
+         + v123,
+         - v133,
+         - v102,
+         - v192,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e115: meta_kinematics.kinematics.conti_joint {
+        (+ v131,
+         + v178,
+         - v65,
+         - v150,
+         - v23,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e116: meta_kinematics.kinematics.conti_joint {
+        (+ v135,
+         + v150,
+         - v92,
+         - v184,
+         - v185,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e117: meta_kinematics.kinematics.conti_joint {
+        (+ v47,
+         + v32,
+         - v18,
+         - v39,
+         - v166,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e118: meta_kinematics.kinematics.conti_joint {
+        (+ v164,
+         + v47,
+         - v68,
+         - v36,
+         - v0,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e119: meta_kinematics.kinematics.conti_joint {
+        (+ v117,
+         + v137,
+         - v21,
+         - v158,
+         - v25,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e120: meta_kinematics.kinematics.conti_joint {
+        (+ v123,
+         + v141,
+         - v104,
+         - v83,
+         - v77,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e121: meta_kinematics.kinematics.conti_joint {
+        (+ v56,
+         + v33,
+         - v109,
+         - v79,
+         - v102,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e122: meta_kinematics.kinematics.conti_joint {
+        (+ v83,
+         + v190,
+         - v128,
+         - v164,
+         - v116,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e123: meta_kinematics.kinematics.conti_joint {
+        (+ v18,
+         + v89,
+         - v38,
+         - v90,
+         - v9,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e124: meta_kinematics.kinematics.conti_joint {
+        (+ v86,
+         + v43,
+         - v137,
+         - v194,
+         - v107,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e125: meta_kinematics.kinematics.conti_joint {
+        (+ v36,
+         + v87,
+         - v170,
+         - v186,
+         - v37,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e126: meta_kinematics.kinematics.conti_joint {
+        (+ v49,
+         + v186,
+         - v118,
+         - v90,
+         - v6,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e127: meta_kinematics.kinematics.conti_joint {
+        (+ v187,
+         + v180,
+         - v1,
+         - v127,
+         - v68,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e128: meta_kinematics.kinematics.conti_joint {
+        (+ v75,
+         + v163,
+         - v111,
+         - v158,
+         - v58,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e129: meta_kinematics.kinematics.conti_joint {
+        (+ v20,
+         + v59,
+         - v40,
+         - v18,
+         - v55,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e130: meta_kinematics.kinematics.conti_joint {
+        (+ v192,
+         + v39,
+         - v199,
+         - v118,
+         - v96,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e131: meta_kinematics.kinematics.conti_joint {
+        (+ v93,
+         + v43,
+         - v53,
+         - v89,
+         - v56,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e132: meta_kinematics.kinematics.conti_joint {
+        (+ v183,
+         + v1,
+         - v20,
+         - v196,
+         - v4,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e133: meta_kinematics.kinematics.conti_joint {
+        (+ v133,
+         + v74,
+         - v156,
+         - v58,
+         - v190,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e134: meta_kinematics.kinematics.conti_joint {
+        (+ v62,
+         + v33,
+         - v43,
+         - v188,
+         - v61,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e135: meta_kinematics.kinematics.conti_joint {
+        (+ v21,
+         + v175,
+         - v135,
+         - v55,
+         - v196,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e136: meta_kinematics.kinematics.conti_joint {
+        (+ v71,
+         + v79,
+         - v160,
+         - v119,
+         - v56,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e137: meta_kinematics.kinematics.conti_joint {
+        (+ v169,
+         + v123,
+         - v172,
+         - v166,
+         - v56,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e138: meta_kinematics.kinematics.conti_joint {
+        (+ v92,
+         + v35,
+         - v17,
+         - v75,
+         - v142,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e139: meta_kinematics.kinematics.conti_joint {
+        (+ v33,
+         + v7,
+         - v162,
+         - v27,
+         - v140,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e140: meta_kinematics.kinematics.conti_joint {
+        (+ v180,
+         + v27,
+         - v146,
+         - v106,
+         - v138,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e141: meta_kinematics.kinematics.conti_joint {
+        (+ v141,
+         + v39,
+         - v49,
+         - v149,
+         - v164,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e142: meta_kinematics.kinematics.conti_joint {
+        (+ v147,
+         + v89,
+         - v76,
+         - v30,
+         - v81,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e143: meta_kinematics.kinematics.conti_joint {
+        (+ v56,
+         + v153,
+         - v74,
+         - v155,
+         - v148,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e144: meta_kinematics.kinematics.conti_joint {
+        (+ v94,
+         + v176,
+         - v46,
+         - v61,
+         - v19,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e145: meta_kinematics.kinematics.conti_joint {
+        (+ v196,
+         + v150,
+         - v65,
+         - v178,
+         - v37,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e146: meta_kinematics.kinematics.conti_joint {
+        (+ v3,
+         + v43,
+         - v136,
+         - v37,
+         - v55,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e147: meta_kinematics.kinematics.conti_joint {
+        (+ v2,
+         + v3,
+         - v24,
+         - v44,
+         - v25,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e148: meta_kinematics.kinematics.conti_joint {
+        (+ v35,
+         + v148,
+         - v162,
+         - v171,
+         - v34,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e149: meta_kinematics.kinematics.conti_joint {
+        (+ v139,
+         + v60,
+         - v189,
+         - v58,
+         - v65,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e150: meta_kinematics.kinematics.conti_joint {
+        (+ v139,
+         + v71,
+         - v104,
+         - v153,
+         - v113,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e151: meta_kinematics.kinematics.conti_joint {
+        (+ v89,
+         + v196,
+         - v85,
+         - v47,
+         - v34,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e152: meta_kinematics.kinematics.conti_joint {
+        (+ v47,
+         + v23,
+         - v3,
+         - v181,
+         - v131,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e153: meta_kinematics.kinematics.conti_joint {
+        (+ v68,
+         + v29,
+         - v6,
+         - v159,
+         - v106,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e154: meta_kinematics.kinematics.conti_joint {
+        (+ v59,
+         + v164,
+         - v105,
+         - v28,
+         - v55,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e155: meta_kinematics.kinematics.conti_joint {
+        (+ v171,
+         + v94,
+         - v16,
+         - v64,
+         - v148,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e156: meta_kinematics.kinematics.conti_joint {
+        (+ v16,
+         + v173,
+         - v181,
+         - v52,
+         - v51,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e157: meta_kinematics.kinematics.conti_joint {
+        (+ v29,
+         + v176,
+         - v110,
+         - v133,
+         - v197,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e158: meta_kinematics.kinematics.conti_joint {
+        (+ v54,
+         + v130,
+         - v173,
+         - v191,
+         - v14,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e159: meta_kinematics.kinematics.conti_joint {
+        (+ v111,
+         + v166,
+         - v23,
+         - v138,
+         - v5,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e160: meta_kinematics.kinematics.conti_joint {
+        (+ v89,
+         + v49,
+         - v57,
+         - v185,
+         - v194,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e161: meta_kinematics.kinematics.conti_joint {
+        (+ v59,
+         + v100,
+         - v144,
+         - v33,
+         - v188,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e162: meta_kinematics.kinematics.conti_joint {
+        (+ v121,
+         + v104,
+         - v139,
+         - v126,
+         - v39,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e163: meta_kinematics.kinematics.conti_joint {
+        (+ v198,
+         + v42,
+         - v8,
+         - v31,
+         - v1,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e164: meta_kinematics.kinematics.conti_joint {
+        (+ v138,
+         + v157,
+         - v121,
+         - v178,
+         - v177,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e165: meta_kinematics.kinematics.conti_joint {
+        (+ v108,
+         + v0,
+         - v166,
+         - v129,
+         - v198,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e166: meta_kinematics.kinematics.conti_joint {
+        (+ v28,
+         + v199,
+         - v22,
+         - v24,
+         - v176,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e167: meta_kinematics.kinematics.conti_joint {
+        (+ v85,
+         + v83,
+         - v71,
+         - v7,
+         - v127,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e168: meta_kinematics.kinematics.conti_joint {
+        (+ v131,
+         + v159,
+         - v91,
+         - v41,
+         - v46,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e169: meta_kinematics.kinematics.conti_joint {
+        (+ v149,
+         + v8,
+         - v36,
+         - v132,
+         - v75,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e170: meta_kinematics.kinematics.conti_joint {
+        (+ v108,
+         + v126,
+         - v167,
+         - v135,
+         - v151,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e171: meta_kinematics.kinematics.conti_joint {
+        (+ v28,
+         + v39,
+         - v31,
+         - v163,
+         - v15,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e172: meta_kinematics.kinematics.conti_joint {
+        (+ v121,
+         + v152,
+         - v98,
+         - v156,
+         - v4,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e173: meta_kinematics.kinematics.conti_joint {
+        (+ v68,
+         + v10,
+         - v176,
+         - v136,
+         - v102,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e174: meta_kinematics.kinematics.conti_joint {
+        (+ v106,
+         + v88,
+         - v13,
+         - v154,
+         - v78,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e175: meta_kinematics.kinematics.conti_joint {
+        (+ v165,
+         + v107,
+         - v156,
+         - v100,
+         - v6,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e176: meta_kinematics.kinematics.conti_joint {
+        (+ v68,
+         + v176,
+         - v14,
+         - v152,
+         - v0,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e177: meta_kinematics.kinematics.conti_joint {
+        (+ v190,
+         + v124,
+         - v21,
+         - v172,
+         - v164,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e178: meta_kinematics.kinematics.conti_joint {
+        (+ v175,
+         + v176,
+         - v54,
+         - v173,
+         - v57,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e179: meta_kinematics.kinematics.conti_joint {
+        (+ v22,
+         + v131,
+         - v35,
+         - v38,
+         - v119,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e180: meta_kinematics.kinematics.conti_joint {
+        (+ v36,
+         + v119,
+         - v35,
+         - v83,
+         - v50,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e181: meta_kinematics.kinematics.conti_joint {
+        (+ v128,
+         + v47,
+         - v11,
+         - v14,
+         - v193,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e182: meta_kinematics.kinematics.conti_joint {
+        (+ v33,
+         + v184,
+         - v2,
+         - v163,
+         - v113,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e183: meta_kinematics.kinematics.conti_joint {
+        (+ v138,
+         + v10,
+         - v82,
+         - v29,
+         - v158,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e184: meta_kinematics.kinematics.conti_joint {
+        (+ v69,
+         + v3,
+         - v160,
+         - v26,
+         - v170,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e185: meta_kinematics.kinematics.conti_joint {
+        (+ v118,
+         + v19,
+         - v191,
+         - v54,
+         - v90,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e186: meta_kinematics.kinematics.conti_joint {
+        (+ v112,
+         + v182,
+         - v140,
+         - v141,
+         - v136,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e187: meta_kinematics.kinematics.conti_joint {
+        (+ v6,
+         + v2,
+         - v148,
+         - v97,
+         - v131,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e188: meta_kinematics.kinematics.conti_joint {
+        (+ v125,
+         + v19,
+         - v76,
+         - v74,
+         - v70,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e189: meta_kinematics.kinematics.conti_joint {
+        (+ v64,
+         + v152,
+         - v6,
+         - v5,
+         - v124,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e190: meta_kinematics.kinematics.conti_joint {
+        (+ v198,
+         + v43,
+         - v126,
+         - v123,
+         - v11,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e191: meta_kinematics.kinematics.conti_joint {
+        (+ v176,
+         + v3,
+         - v44,
+         - v162,
+         - v128,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e192: meta_kinematics.kinematics.conti_joint {
+        (+ v71,
+         + v187,
+         - v182,
+         - v39,
+         - v50,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e193: meta_kinematics.kinematics.conti_joint {
+        (+ v16,
+         + v144,
+         - v196,
+         - v1,
+         - v125,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e194: meta_kinematics.kinematics.conti_joint {
+        (+ v32,
+         + v93,
+         - v138,
+         - v122,
+         - v13,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e195: meta_kinematics.kinematics.conti_joint {
+        (+ v131,
+         + v103,
+         - v38,
+         - v128,
+         - v110,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e196: meta_kinematics.kinematics.conti_joint {
+        (+ v131,
+         + v55,
+         - v43,
+         - v13,
+         - v8,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e197: meta_kinematics.kinematics.conti_joint {
+        (+ v183,
+         + v87,
+         - v62,
+         - v50,
+         - v49,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e198: meta_kinematics.kinematics.conti_joint {
+        (+ v145,
+         + v119,
+         - v62,
+         - v86,
+         - v33,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @e199: meta_kinematics.kinematics.conti_joint {
+        (+ v110,
+         + v129,
+         - v50,
+         - v48,
+         - v8,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+}

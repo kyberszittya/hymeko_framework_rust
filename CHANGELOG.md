@@ -1,6 +1,21 @@
 # Hymeko Framework Changelog
 
 This root changelog summarizes every dated engineering log. Full entries live under `docs/changelog/` for deep dives and diagrams.
+## 2026-04-07 — Query Engine, Tensor Initialization, and Compilation Pipeline Expansion
+- Finalized the query-engine branch by splitting query/codegen/kinematics modules into the dedicated `hymeko_query` crate (`hymeko_query/src/engine.rs`, `hymeko_query/src/interpret.rs`, `hymeko_query/src/codegen.rs`, `hymeko_query/src/formats/`, `hymeko_query/src/kinematics/`) and wiring matching integration tests under `hymeko_query/tests/codegen/`.
+- Reorganized tensor compute surfaces in `hymeko_core/src/tensor/` by modularizing convolution logic (`conv/gcn_clique.rs`, `conv/hgnn.rs`, `conv/signed_hgnn.rs`, `conv/traits.rs`) and adding decomposition + mesh support (`decomposition.rs`, `mesh_nn/mod.rs`).
+- Added deterministic and randomizable weight initializer support in `hymeko_core/src/tensor/conv/weight_init/` (`Xavier`, `Kaiming`, `XavierRandom`, `Zeros`, `Ones`, `Constant`, `van_der_corput`) with targeted coverage in `hymeko_core/tests/computations/test_weight_init.rs`.
+- Updated parser grammar/token handling (`parser/src/hymeko.lalrpop`, `parser/src/lexer/common.rs`, `parser/src/lexer/token.rs`) to align with the new query/model pipeline.
+- Relocated sample datasets from `hymeko_core/data/` to top-level `data/` and refreshed robotics fixtures used by query/codegen scenarios.
+- Added the articulated robotics fixture `data/robotics/anthropomorphic_arm.hymeko` with a full link/joint/control graph (revolute chain, limits, control interfaces, and simulation plugin wiring) for richer kinematics/query validation scenarios.
+- Added `data/robotics/meta_kinematics.hymeko` as a reusable robotics schema layer covering units, joint archetypes, controller/sensor definitions, axis presets, and control/simulation plugin anchors for consistent model authoring.
+- Enhanced `hymeko_core/src/module_store/module_store.rs` with new APIs for ownership-safe IR extraction: `ModuleStore::take_last_ir()` consumes the store to extract owned `Ir` without requiring `Clone`, enabling zero-copy IR hand-offs to daemon/worker threads in `hymeko_daemon/src/worker.rs` (`compile_to_ir_only()`) and Python bindings.
+- Wired `ModuleStore::compile()` step 6b to apply using-alias resolution via `apply_usings()`, ensuring all namespace aliases are resolved during compilation before IR lowering.
+- Added `compile_to_ir_only()` and `deserialize_cbor_ir()` paths in the daemon to decouple IR compilation from tensor expansion scheduling, allowing precompiled/cached IRs to flow through the query/codegen pipeline.
+- Expanded transform ecosystem coverage in `hymeko_query/tests/test_transform_ecosystem.rs` with registry discovery + `emit_all` checks for both Moveo and differential-drive fixtures, cross-format validation (URDF/SDF/MJCF/DOT), MJCF assertions (nested hierarchy, hinge/motor counts, material blocks, radian mode), DOT assertions (edge direction, dashed fixed joints, bold revolute joints, axis labels), and `using ... as` alias-parity scenarios.
+- Added end-to-end generation regression coverage in `hymeko_query/tests/test_generation_engine.rs` for kinematic extraction, URDF/SDF generation, cross-format link/joint parity, query predicate edge cases, and `using ... as` fixture equivalence checks.
+- Details in [`docs/changelog/changelog_20260407.md`](docs/changelog/changelog_20260407.md).
+
 ## 2026-03-11 — Service-Aware Daemon Logging
 - Enriched structured logging in `hymeko_daemon/src/worker.rs` with per-request/service context (`service`, `request_id`, `source`, payload-size/timing, enqueue outcomes, and debug `etag_prefix` correlation).
 - Improved ingress observability in `hymeko_daemon/src/service.rs` with explicit channel/source labels (`zenoh_utf8`, `zenoh_cbor`, `iceoryx2_src`, `iox_ir`) and branch-specific receive/processing failure logs.

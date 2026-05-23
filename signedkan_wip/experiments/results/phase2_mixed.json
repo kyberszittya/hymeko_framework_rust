@@ -1,0 +1,461 @@
+{
+  "runs": [
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3
+      ],
+      "max_k4": 30000,
+      "n_params": 61058,
+      "elapsed_s": 4.080846309661865,
+      "best_epoch": 35,
+      "best_val_auc": 0.8501259596749312,
+      "test_auc": 0.859105634536197,
+      "test_f1_macro": 0.6562123452733049,
+      "alpha": [
+        1.0
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153
+      },
+      "variant": "k3_only"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3
+      ],
+      "max_k4": 30000,
+      "n_params": 61058,
+      "elapsed_s": 3.698354959487915,
+      "best_epoch": 35,
+      "best_val_auc": 0.877946118516859,
+      "test_auc": 0.8649620691591382,
+      "test_f1_macro": 0.6401930671347082,
+      "alpha": [
+        1.0
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153
+      },
+      "variant": "k3_only"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3
+      ],
+      "max_k4": 30000,
+      "n_params": 61058,
+      "elapsed_s": 3.9594058990478516,
+      "best_epoch": 85,
+      "best_val_auc": 0.8509657892947018,
+      "test_auc": 0.8184018869486054,
+      "test_f1_macro": 0.6928999807176655,
+      "alpha": [
+        1.0
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153
+      },
+      "variant": "k3_only"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3
+      ],
+      "max_k4": 30000,
+      "n_params": 94626,
+      "elapsed_s": 5.54499626159668,
+      "best_epoch": 75,
+      "best_val_auc": 0.8761093895582177,
+      "test_auc": 0.8684847396531783,
+      "test_f1_macro": 0.767306148815479,
+      "alpha": [
+        1.0
+      ],
+      "n_tuples_per_arity": {
+        "3": 33493
+      },
+      "variant": "k3_only"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3
+      ],
+      "max_k4": 30000,
+      "n_params": 94626,
+      "elapsed_s": 5.790060758590698,
+      "best_epoch": 60,
+      "best_val_auc": 0.8707973537604458,
+      "test_auc": 0.8693084294631183,
+      "test_f1_macro": 0.7446431608951165,
+      "alpha": [
+        1.0
+      ],
+      "n_tuples_per_arity": {
+        "3": 33493
+      },
+      "variant": "k3_only"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3
+      ],
+      "max_k4": 30000,
+      "n_params": 94626,
+      "elapsed_s": 4.723638534545898,
+      "best_epoch": 120,
+      "best_val_auc": 0.8800339622578002,
+      "test_auc": 0.8609793431989392,
+      "test_f1_macro": 0.7520233911061429,
+      "alpha": [
+        1.0
+      ],
+      "n_tuples_per_arity": {
+        "3": 33493
+      },
+      "variant": "k3_only"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 8.238106489181519,
+      "best_epoch": 80,
+      "best_val_auc": 0.9426187031395562,
+      "test_auc": 0.9323695224477964,
+      "test_f1_macro": 0.7446598560770469,
+      "alpha": [
+        0.15860269963741302,
+        0.8413972854614258
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000
+      },
+      "variant": "k3_k4"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 8.169340133666992,
+      "best_epoch": 115,
+      "best_val_auc": 0.9407289682984205,
+      "test_auc": 0.9349486818035397,
+      "test_f1_macro": 0.8059479574112984,
+      "alpha": [
+        0.15757834911346436,
+        0.8424216508865356
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000
+      },
+      "variant": "k3_k4"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_alpha",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 61059,
+      "elapsed_s": 8.229843139648438,
+      "best_epoch": 60,
+      "best_val_auc": 0.9332236618377202,
+      "test_auc": 0.9337809318877762,
+      "test_f1_macro": 0.7730536217036004,
+      "alpha": [
+        0.10853181779384613,
+        0.8914682269096375
+      ],
+      "n_tuples_per_arity": {
+        "3": 22153,
+        "4": 30000
+      },
+      "variant": "k3_k4"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 0,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 9.70767617225647,
+      "best_epoch": 85,
+      "best_val_auc": 0.9182870664675442,
+      "test_auc": 0.9279272748839371,
+      "test_f1_macro": 0.7665573770491803,
+      "alpha": [
+        0.29580703377723694,
+        0.7041929960250854
+      ],
+      "n_tuples_per_arity": {
+        "3": 33493,
+        "4": 30000
+      },
+      "variant": "k3_k4"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 1,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 9.610414266586304,
+      "best_epoch": 110,
+      "best_val_auc": 0.9214902506963788,
+      "test_auc": 0.9228261099421636,
+      "test_f1_macro": 0.7986783215653326,
+      "alpha": [
+        0.2594309449195862,
+        0.7405690550804138
+      ],
+      "n_tuples_per_arity": {
+        "3": 33493,
+        "4": 30000
+      },
+      "variant": "k3_k4"
+    },
+    {
+      "model": "hsikan_mixed",
+      "dataset": "bitcoin_otc",
+      "hidden": 16,
+      "n_layers": 2,
+      "grid": 3,
+      "seed": 2,
+      "n_epochs": 120,
+      "lr": 0.05,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "coef_smooth_lam": 0.01,
+      "participation_lam": 0.05,
+      "arities": [
+        3,
+        4
+      ],
+      "max_k4": 30000,
+      "n_params": 94627,
+      "elapsed_s": 9.62543773651123,
+      "best_epoch": 75,
+      "best_val_auc": 0.9234679537992121,
+      "test_auc": 0.912744390451739,
+      "test_f1_macro": 0.7869133294011113,
+      "alpha": [
+        0.20961619913578033,
+        0.7903838157653809
+      ],
+      "n_tuples_per_arity": {
+        "3": 33493,
+        "4": 30000
+      },
+      "variant": "k3_k4"
+    }
+  ],
+  "summary": {
+    "k3_only|bitcoin_alpha": {
+      "auc_med": 0.8591,
+      "f1m_med": 0.6562,
+      "elapsed_med_s": 3.96,
+      "n_params": 61058,
+      "auc_seeds": [
+        0.8591,
+        0.865,
+        0.8184
+      ],
+      "f1m_seeds": [
+        0.6562,
+        0.6402,
+        0.6929
+      ]
+    },
+    "k3_only|bitcoin_otc": {
+      "auc_med": 0.8685,
+      "f1m_med": 0.752,
+      "elapsed_med_s": 5.54,
+      "n_params": 94626,
+      "auc_seeds": [
+        0.8685,
+        0.8693,
+        0.861
+      ],
+      "f1m_seeds": [
+        0.7673,
+        0.7446,
+        0.752
+      ]
+    },
+    "k3_k4|bitcoin_alpha": {
+      "auc_med": 0.9338,
+      "f1m_med": 0.7731,
+      "elapsed_med_s": 8.23,
+      "n_params": 61059,
+      "auc_seeds": [
+        0.9324,
+        0.9349,
+        0.9338
+      ],
+      "f1m_seeds": [
+        0.7447,
+        0.8059,
+        0.7731
+      ]
+    },
+    "k3_k4|bitcoin_otc": {
+      "auc_med": 0.9228,
+      "f1m_med": 0.7869,
+      "elapsed_med_s": 9.63,
+      "n_params": 94627,
+      "auc_seeds": [
+        0.9279,
+        0.9228,
+        0.9127
+      ],
+      "f1m_seeds": [
+        0.7666,
+        0.7987,
+        0.7869
+      ]
+    }
+  },
+  "wall_clock_s": 158.2
+}

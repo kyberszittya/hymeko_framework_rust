@@ -1,0 +1,4 @@
+bitcoin_alpha alpha_big_embed 0.8968
+bitcoin_otc otc_wider 0.9253
+slashdot slash_medium 0.9025
+epinions epi_v5_topk128 0.9531

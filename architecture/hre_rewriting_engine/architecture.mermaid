@@ -5,12 +5,14 @@ graph TD
     classDef python fill:#306998,stroke:#FFD43B,stroke-width:2px,color:#fff;
 
     subgraph "Layer 1: Knowledge & Mutation (Rust Core)"
-        AST[(BTreeMap AST)]:::rust
-        HRE[Hypergraph Rewriting Engine<br/>Query & Visitor]:::rust
-        Hash[Blake3 Hasher]:::rust
+        AST[(BTreeMap AST<br/>hymeko_core::ir)]:::rust
+        HRE[Hypergraph Engine<br/>hymeko_hre crate<br/>IR -> TensorCoo expansions]:::rust
+        Rewrite[Rewrite / Query<br/>hymeko_query crate<br/>predicate + template]:::rust
+        Hash[Blake3 Hasher<br/>hymeko_core::ir::hash]:::rust
 
-        HRE -->|Read/Transform| AST
-        HRE -->|Mutate Topology| AST
+        HRE -->|Compiles| AST
+        Rewrite -->|Read/Transform| AST
+        Rewrite -->|Mutate Topology| AST
         AST -->|On Change| Hash
     end
 

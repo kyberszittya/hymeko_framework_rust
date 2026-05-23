@@ -1,0 +1,307 @@
+[
+  {
+    "domain": "bitcoin",
+    "subset": "bitcoin_alpha",
+    "model": "SGCN",
+    "device": "cpu",
+    "n_test": 1413,
+    "setup_ms": 6.931273999725818,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 4.3925660002059885,
+    "fwd_throughput_ms": null,
+    "n_params": 135585
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "bitcoin_alpha",
+    "model": "HSiKAN",
+    "device": "cpu",
+    "n_test": 1413,
+    "setup_ms": 1372.9347179996694,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 160.67716749967076,
+    "fwd_throughput_ms": null,
+    "n_params": 61059
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "bitcoin_alpha",
+    "model": "SGCN",
+    "device": "cuda",
+    "n_test": 1413,
+    "setup_ms": 70.28827099929913,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 0.763539000217861,
+    "fwd_throughput_ms": null,
+    "n_params": 135585
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "bitcoin_alpha",
+    "model": "HSiKAN",
+    "device": "cuda",
+    "n_test": 1413,
+    "setup_ms": 1482.2298330000194,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 6.831648499883158,
+    "fwd_throughput_ms": null,
+    "n_params": 61059
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "bitcoin_otc",
+    "model": "SGCN",
+    "device": "cpu",
+    "n_test": 2150,
+    "setup_ms": 7.557691000329214,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 6.379745999765873,
+    "fwd_throughput_ms": null,
+    "n_params": 202721
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "bitcoin_otc",
+    "model": "HSiKAN",
+    "device": "cpu",
+    "n_test": 2150,
+    "setup_ms": 1250.2590650001366,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 168.16214699974807,
+    "fwd_throughput_ms": null,
+    "n_params": 94627
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "bitcoin_otc",
+    "model": "SGCN",
+    "device": "cuda",
+    "n_test": 2150,
+    "setup_ms": 2.277431000038632,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 0.7551879998572986,
+    "fwd_throughput_ms": null,
+    "n_params": 202721
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "bitcoin_otc",
+    "model": "HSiKAN",
+    "device": "cuda",
+    "n_test": 2150,
+    "setup_ms": 1232.6900530006242,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 6.96729499986759,
+    "fwd_throughput_ms": null,
+    "n_params": 94627
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "slashdot",
+    "model": "SGCN",
+    "device": "cpu",
+    "n_test": 50049,
+    "setup_ms": 127.75753599999007,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 137.425485499989,
+    "fwd_throughput_ms": null,
+    "n_params": 2643009
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "slashdot",
+    "model": "HSiKAN",
+    "device": "cpu",
+    "n_test": 50049,
+    "setup_ms": 6414.95960300017,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 1821.4917890004472,
+    "fwd_throughput_ms": null,
+    "n_params": 1314770
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "slashdot",
+    "model": "SGCN",
+    "device": "cuda",
+    "n_test": 50049,
+    "setup_ms": 22.003734999998414,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 9.439615499559295,
+    "fwd_throughput_ms": null,
+    "n_params": 2643009
+  },
+  {
+    "domain": "bitcoin",
+    "subset": "slashdot",
+    "model": "HSiKAN",
+    "device": "cuda",
+    "n_test": 50049,
+    "setup_ms": 6343.241562000003,
+    "accuracy": {
+      "note": "separate train/eval \u2014 see HSiKAN paper \u00a7V"
+    },
+    "fwd_per_call_ms": 93.36055300036605,
+    "fwd_throughput_ms": null,
+    "n_params": 1314770
+  },
+  {
+    "domain": "sbm",
+    "subset": "sbm_n200",
+    "model": "HSiKAN",
+    "n_nodes": 200,
+    "n_test": 519,
+    "setup_ms": 198.4115320001365,
+    "accuracy": {
+      "auc": 0.533639700306367,
+      "f1m": 0.3639705882352941
+    },
+    "fwd_per_call_ms": 1.1887370001204545,
+    "fwd_throughput_ms": 1.1715525999837457,
+    "n_params": 3763
+  },
+  {
+    "domain": "sbm",
+    "subset": "sbm_n200",
+    "model": "SGCN",
+    "n_nodes": 200,
+    "n_test": 519,
+    "setup_ms": 14.828968000074383,
+    "accuracy": {
+      "auc": 0.5414808748142081,
+      "f1m": 0.5454782605455081
+    },
+    "fwd_per_call_ms": 0.7485060004910338,
+    "fwd_throughput_ms": 0.725485966662139,
+    "n_params": 20929
+  },
+  {
+    "domain": "sbm",
+    "subset": "sbm_n400",
+    "model": "HSiKAN",
+    "n_nodes": 400,
+    "n_test": 2082,
+    "setup_ms": 57.962689000305545,
+    "accuracy": {
+      "auc": 0.5274263265667453,
+      "f1m": 0.3479486376448481
+    },
+    "fwd_per_call_ms": 1.283215499825019,
+    "fwd_throughput_ms": 1.264367966662879,
+    "n_params": 6963
+  },
+  {
+    "domain": "sbm",
+    "subset": "sbm_n400",
+    "model": "SGCN",
+    "n_nodes": 400,
+    "n_test": 2082,
+    "setup_ms": 1.5501830002904171,
+    "accuracy": {
+      "auc": 0.5051154961016184,
+      "f1m": 0.5137769133439993
+    },
+    "fwd_per_call_ms": 1.0795060002237733,
+    "fwd_throughput_ms": 0.7124290000016724,
+    "n_params": 27329
+  },
+  {
+    "domain": "scene",
+    "subset": "synth_vg_k=2",
+    "model": "HSiKAN",
+    "n_train_scenes": 77,
+    "n_test_scenes": 34,
+    "accuracy": {
+      "auc": 1.0,
+      "f1m": 1.0
+    },
+    "fwd_per_call_ms": 2.124065500083816,
+    "fwd_throughput_ms": 2.1048894333337858,
+    "n_edges_per_scene": 4,
+    "n_params": 883
+  },
+  {
+    "domain": "kinematic",
+    "subset": "arity_k=4",
+    "model": "HSiKAN",
+    "n_train": 18,
+    "n_test": 13,
+    "n_nodes_max": 4,
+    "accuracy": {
+      "family_acc": 1.0,
+      "family_f1m": 1.0,
+      "dof_mae": 0.0
+    },
+    "fwd_per_call_ms": 2.081360500142182,
+    "fwd_throughput_ms": 2.068648399987675,
+    "n_params": 887
+  },
+  {
+    "domain": "kinematic",
+    "subset": "arity_k=6",
+    "model": "HSiKAN",
+    "n_train": 26,
+    "n_test": 12,
+    "n_nodes_max": 14,
+    "accuracy": {
+      "family_acc": 1.0,
+      "family_f1m": 1.0,
+      "dof_mae": 0.6300897598266602
+    },
+    "fwd_per_call_ms": 2.0968439998796384,
+    "fwd_throughput_ms": 2.1446613666739722,
+    "n_params": 1047
+  },
+  {
+    "domain": "pose",
+    "subset": "arity_k=4",
+    "model": "HSiKAN",
+    "n_train": 16,
+    "n_test": 12,
+    "n_nodes_max": 4,
+    "accuracy": {
+      "mse_mean": 1.0089571078618367,
+      "mae_mean": 0.42102790623903275
+    },
+    "fwd_per_call_ms": 0.9378885001751769,
+    "fwd_throughput_ms": 0.959445466651232,
+    "n_params": 645
+  },
+  {
+    "domain": "pose",
+    "subset": "arity_k=6",
+    "model": "HSiKAN",
+    "n_train": 16,
+    "n_test": 7,
+    "n_nodes_max": 14,
+    "accuracy": {
+      "mse_mean": 0.022310400381684303,
+      "mae_mean": 0.04816984465079648
+    },
+    "fwd_per_call_ms": 0.9420164997209213,
+    "fwd_throughput_ms": 0.9507316999891675,
+    "n_params": 805
+  }
+]

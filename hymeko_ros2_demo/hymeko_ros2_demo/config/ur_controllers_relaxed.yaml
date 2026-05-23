@@ -1,0 +1,132 @@
+# Relaxed copy of /opt/ros/kilted/share/ur_simulation_gz/config/ur_controllers.yaml
+# tuned for Gazebo simulation.  The upstream defaults are for a real UR
+# (with hardware PID) and treat any deviation as a failure:
+#
+#   goal_time: 0.0          → zero slack for the arm to settle at goal
+#   per-joint goal: 0.1     → 0.1 rad tolerance, tight for sim physics
+#
+# In Gazebo with default PID gains the joints land within 0.05-0.15 rad of
+# the commanded position and may have small residual velocities for a few
+# hundred milliseconds after the trajectory ends.  Without relaxation, the
+# scaled_joint_trajectory_controller reports GOAL_TOLERANCE_VIOLATED and
+# MoveIt's /move_action says the motion failed — even though the trajectory
+# DID execute.
+#
+# This file ONLY relaxes the constraints block.  Everything else is the
+# upstream default.
+
+controller_manager:
+  ros__parameters:
+    update_rate: 500  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    io_and_status_controller:
+      type: ur_controllers/GPIOController
+
+    speed_scaling_state_broadcaster:
+      type: ur_controllers/SpeedScalingStateBroadcaster
+
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    scaled_joint_trajectory_controller:
+      type: ur_controllers/ScaledJointTrajectoryController
+
+    forward_velocity_controller:
+      type: velocity_controllers/JointGroupVelocityController
+
+    forward_position_controller:
+      type: position_controllers/JointGroupPositionController
+
+
+speed_scaling_state_broadcaster:
+  ros__parameters:
+    state_publish_rate: 100.0
+
+
+# RELAXED block ────────────────────────────────────────────────────────
+# goal_time:                 0.0  → 2.0  s (give the arm 2s to settle)
+# stopped_velocity_tolerance: 0.2 → 0.5  rad/s (allow residual velocity)
+# per-joint goal:            0.1  → 0.25 rad (sim physics needs slack)
+# per-joint trajectory:      0.2  → 0.4  rad (less likely to mid-traj abort)
+joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.5
+      goal_time: 2.0
+      shoulder_pan_joint:   { trajectory: 0.4, goal: 0.25 }
+      shoulder_lift_joint:  { trajectory: 0.4, goal: 0.25 }
+      elbow_joint:          { trajectory: 0.4, goal: 0.25 }
+      wrist_1_joint:        { trajectory: 0.4, goal: 0.25 }
+      wrist_2_joint:        { trajectory: 0.4, goal: 0.25 }
+      wrist_3_joint:        { trajectory: 0.4, goal: 0.25 }
+
+
+scaled_joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    speed_scaling_interface_name: ""
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.5
+      goal_time: 2.0
+      shoulder_pan_joint:   { trajectory: 0.4, goal: 0.25 }
+      shoulder_lift_joint:  { trajectory: 0.4, goal: 0.25 }
+      elbow_joint:          { trajectory: 0.4, goal: 0.25 }
+      wrist_1_joint:        { trajectory: 0.4, goal: 0.25 }
+      wrist_2_joint:        { trajectory: 0.4, goal: 0.25 }
+      wrist_3_joint:        { trajectory: 0.4, goal: 0.25 }
+
+
+forward_velocity_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+    interface_name: velocity
+
+
+forward_position_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+    interface_name: position

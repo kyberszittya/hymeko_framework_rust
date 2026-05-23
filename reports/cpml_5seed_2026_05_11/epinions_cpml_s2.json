@@ -1,0 +1,6 @@
+[load] epinions: |V|=131828, |E|=841372
+[cycles] 528641 k=3 cycles in 4.4s
+[model] CPML L=3 cuts=(0.0, 0.3333333333333333, 0.6666666666666666, 1.0) d_in=32 d_layer=32 n_params=4245473
+[tiers] sizes: [43943, 43942, 43943]
+  ep 00  loss=0.7200  val_auc=0.5630  best=0.5630
+  ep 04  loss=0.6663  val_auc=0.5837  best=0.5837

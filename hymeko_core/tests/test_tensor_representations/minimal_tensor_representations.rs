@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod minimal_tensor_representations {
-    use hymeko::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
-    use hymeko::tensor::tensor::{compute_bipartite_degrees, project_sum_over_slices};
+    use hymeko_hre::expansion::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_hnn::tensor::tensor::{compute_bipartite_degrees, project_sum_over_slices};
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;
-    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
     use log::info;
     use std::time::Instant;

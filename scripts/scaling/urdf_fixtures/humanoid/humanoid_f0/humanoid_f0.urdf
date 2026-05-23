@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="humanoid_f0">
+  <link name="L_ankle">
+    <inertial><mass value="0.953"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_elbow">
+    <inertial><mass value="2.263"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_foot">
+    <inertial><mass value="1.423"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_forearm">
+    <inertial><mass value="3.918"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_hand">
+    <inertial><mass value="3.818"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_hip">
+    <inertial><mass value="1.883"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_knee">
+    <inertial><mass value="3.325"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_lower_leg">
+    <inertial><mass value="3.093"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_shoulder">
+    <inertial><mass value="2.658"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_upper_arm">
+    <inertial><mass value="0.692"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_upper_leg">
+    <inertial><mass value="2.564"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="L_wrist">
+    <inertial><mass value="1.150"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_ankle">
+    <inertial><mass value="0.597"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_elbow">
+    <inertial><mass value="3.957"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_foot">
+    <inertial><mass value="3.348"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_forearm">
+    <inertial><mass value="2.068"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_hand">
+    <inertial><mass value="1.744"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_hip">
+    <inertial><mass value="2.692"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_knee">
+    <inertial><mass value="2.480"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_lower_leg">
+    <inertial><mass value="1.201"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_shoulder">
+    <inertial><mass value="2.291"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_upper_arm">
+    <inertial><mass value="0.405"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_upper_leg">
+    <inertial><mass value="2.249"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="R_wrist">
+    <inertial><mass value="3.663"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="head">
+    <inertial><mass value="3.988"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="neck">
+    <inertial><mass value="0.735"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="pelvis">
+    <inertial><mass value="3.792"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <link name="torso">
+    <inertial><mass value="3.509"/><inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual><geometry><box size="0.080 0.080 0.100"/></geometry></visual>
+    <collision><geometry><box size="0.080 0.080 0.100"/></geometry></collision>
+  </link>
+  <joint name="j_pelvis_torso" type="revolute">
+    <parent link="pelvis"/>
+    <child link="torso"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_torso_neck" type="revolute">
+    <parent link="torso"/>
+    <child link="neck"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_neck_head" type="revolute">
+    <parent link="neck"/>
+    <child link="head"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_shoulder" type="revolute">
+    <parent link="torso"/>
+    <child link="L_shoulder"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_upper_arm" type="revolute">
+    <parent link="L_shoulder"/>
+    <child link="L_upper_arm"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_elbow" type="revolute">
+    <parent link="L_upper_arm"/>
+    <child link="L_elbow"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_forearm" type="revolute">
+    <parent link="L_elbow"/>
+    <child link="L_forearm"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_wrist" type="revolute">
+    <parent link="L_forearm"/>
+    <child link="L_wrist"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_hand" type="revolute">
+    <parent link="L_wrist"/>
+    <child link="L_hand"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_shoulder" type="revolute">
+    <parent link="torso"/>
+    <child link="R_shoulder"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_upper_arm" type="revolute">
+    <parent link="R_shoulder"/>
+    <child link="R_upper_arm"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_elbow" type="revolute">
+    <parent link="R_upper_arm"/>
+    <child link="R_elbow"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_forearm" type="revolute">
+    <parent link="R_elbow"/>
+    <child link="R_forearm"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_wrist" type="revolute">
+    <parent link="R_forearm"/>
+    <child link="R_wrist"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_hand" type="revolute">
+    <parent link="R_wrist"/>
+    <child link="R_hand"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_hip" type="revolute">
+    <parent link="pelvis"/>
+    <child link="L_hip"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_upper_leg" type="revolute">
+    <parent link="L_hip"/>
+    <child link="L_upper_leg"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_knee" type="revolute">
+    <parent link="L_upper_leg"/>
+    <child link="L_knee"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_lower_leg" type="revolute">
+    <parent link="L_knee"/>
+    <child link="L_lower_leg"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_ankle" type="revolute">
+    <parent link="L_lower_leg"/>
+    <child link="L_ankle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_L_foot" type="revolute">
+    <parent link="L_ankle"/>
+    <child link="L_foot"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_hip" type="revolute">
+    <parent link="pelvis"/>
+    <child link="R_hip"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_upper_leg" type="revolute">
+    <parent link="R_hip"/>
+    <child link="R_upper_leg"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_knee" type="revolute">
+    <parent link="R_upper_leg"/>
+    <child link="R_knee"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_lower_leg" type="revolute">
+    <parent link="R_knee"/>
+    <child link="R_lower_leg"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_ankle" type="revolute">
+    <parent link="R_lower_leg"/>
+    <child link="R_ankle"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+  <joint name="j_R_foot" type="revolute">
+    <parent link="R_ankle"/>
+    <child link="R_foot"/>
+    <origin xyz="0.000 0.000 0.100" rpy="0.000 0.000 0.000"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+</robot>

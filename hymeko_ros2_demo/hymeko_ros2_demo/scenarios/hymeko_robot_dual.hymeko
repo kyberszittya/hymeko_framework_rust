@@ -1,0 +1,179 @@
+// Niitsuma dual-UR5 scenario — Tier 2 multi-context demo.
+//
+// Plan: docs/plans/2026-05-22-niitsuma-dual-ur5/
+//
+// Three contexts:
+//   1. robot_a_grasping   — paper §4 grasping context, bound to robot A
+//   2. robot_b_grasping   — same shape, bound to robot B
+//   3. scene_context      — shared cross-cutting state (NEW, Tier-2)
+//
+// Plus one arbitration meta-context (computed by arbitration_meta_node,
+// not a hypergraph context — the arbitration policy is a rule, not a
+// signed-incidence flow).
+
+hymeko_robot_dual_description {
+}
+
+hymeko_robot_dual {
+
+    // =====================================================================
+    // Base type schema (copied from hymeko_robot.hymeko)
+    // =====================================================================
+    link {}
+    joint {}
+    sensor {}
+    tool {}
+    payload {}
+    component {}
+    context {}
+    signal {}
+    counter {}
+    mode {}
+    reference {}
+    interpretation {}
+    aggregation {}
+    constraint {}
+
+    grasp_mode {
+        parallel_mode {}
+        envelope_mode {}
+        pinch_mode {}
+    }
+
+    AXIS_Z {}
+    AXIS_Y {}
+
+    // =====================================================================
+    // Robot A — grasping context
+    // =====================================================================
+    robot_a_grasping: + <isa> context {
+        a_robot_pose:       + <isa> signal {}
+        a_active_tool:      + <isa> tool {}
+        a_active_payload:   + <isa> payload {}
+        a_mode_parallel:    + <isa> grasp_mode {}
+        a_grip_force:       + <isa> signal {}
+
+        a_tool_params:      + <isa> signal {}
+        a_payload_params:   + <isa> signal {}
+        a_loaded_state:     + <isa> signal {}
+        a_configuration:    + <isa> signal {}
+        a_force_vector:     + <isa> signal {}
+        a_stability_margin: + <isa> signal {}
+
+        // 6 hyperedges (e_1 .. e_6) per paper eq. grasp_hyperedges
+        @a_derive_tool: + <isa> interpretation {
+            (+ a_active_tool, - a_tool_params);
+        }
+        @a_derive_payload: + <isa> interpretation {
+            (+ a_active_payload, - a_payload_params);
+        }
+        @a_loading_state: + <isa> aggregation {
+            (+ a_tool_params, + a_payload_params, - a_loaded_state);
+        }
+        @a_grasp_config: + <isa> aggregation {
+            (+ a_mode_parallel, + a_payload_params, - a_configuration);
+        }
+        @a_load_force: + <isa> aggregation {
+            (+ a_configuration, + a_robot_pose, - a_force_vector);
+        }
+        @a_grasp_stability: + <isa> aggregation {
+            (+ a_force_vector, + a_grip_force, - a_stability_margin);
+        }
+    }
+
+    // =====================================================================
+    // Robot B — grasping context (structurally identical, b_ prefix)
+    // =====================================================================
+    robot_b_grasping: + <isa> context {
+        b_robot_pose:       + <isa> signal {}
+        b_active_tool:      + <isa> tool {}
+        b_active_payload:   + <isa> payload {}
+        b_mode_parallel:    + <isa> grasp_mode {}
+        b_grip_force:       + <isa> signal {}
+
+        b_tool_params:      + <isa> signal {}
+        b_payload_params:   + <isa> signal {}
+        b_loaded_state:     + <isa> signal {}
+        b_configuration:    + <isa> signal {}
+        b_force_vector:     + <isa> signal {}
+        b_stability_margin: + <isa> signal {}
+
+        @b_derive_tool: + <isa> interpretation {
+            (+ b_active_tool, - b_tool_params);
+        }
+        @b_derive_payload: + <isa> interpretation {
+            (+ b_active_payload, - b_payload_params);
+        }
+        @b_loading_state: + <isa> aggregation {
+            (+ b_tool_params, + b_payload_params, - b_loaded_state);
+        }
+        @b_grasp_config: + <isa> aggregation {
+            (+ b_mode_parallel, + b_payload_params, - b_configuration);
+        }
+        @b_load_force: + <isa> aggregation {
+            (+ b_configuration, + b_robot_pose, - b_force_vector);
+        }
+        @b_grasp_stability: + <isa> aggregation {
+            (+ b_force_vector, + b_grip_force, - b_stability_margin);
+        }
+    }
+
+    // =====================================================================
+    // Scene context — the NEW Tier-2 cross-cutting state.
+    // Reads from both robots' grasping contexts (cross-context arcs);
+    // publishes inter-robot distance, shared-payload identification,
+    // and the arbitration policy's commit signal.
+    //
+    // 3 hyperedges (e_s1 .. e_s3) — see Niitsuma plan §"Interface contracts".
+    // =====================================================================
+    scene_context: + <isa> context {
+        // The scene-context-owned vertices.
+        inter_robot_distance:  + <isa> signal {}
+        shared_payload:        + <isa> signal {}
+        committed_robot:       + <isa> signal {}
+        task_complete:         + <isa> signal {}
+
+        // e_s1: inter-robot distance — derived from both robots' poses.
+        // Cross-context inputs use qualified paths (the safety_context
+        // pattern from hymeko_robot.hymeko).
+        @e_s1_inter_robot_distance: + <isa> aggregation {
+            (+ robot_a_grasping.a_robot_pose,
+             + robot_b_grasping.b_robot_pose,
+             - inter_robot_distance);
+        }
+
+        // e_s2: shared-payload identification — both robots target the
+        // same payload class.  Computed from both robots' payload IDs.
+        @e_s2_shared_payload: + <isa> aggregation {
+            (+ robot_a_grasping.a_active_payload,
+             + robot_b_grasping.b_active_payload,
+             - shared_payload);
+        }
+
+        // e_s3: arbitration policy — the meta-context output.  Reads
+        // shared_payload and both stability margins to pick the
+        // committed robot.  (The actual argmax rule lives in
+        // arbitration_meta_node.py; this hyperedge declares the
+        // structural dependency.)
+        @e_s3_arbitration: + <isa> aggregation {
+            (+ shared_payload,
+             + robot_a_grasping.a_stability_margin,
+             + robot_b_grasping.b_stability_margin,
+             - committed_robot);
+        }
+    }
+
+    // =====================================================================
+    // Cross-context constraints (paper §5.1 pattern).
+    //
+    // Safety invariant: inter_robot_distance MUST stay > 0.30 m.
+    // Encoded as a constraint hyperedge so HTL monitors can observe it.
+    // =====================================================================
+    safety_distance_threshold: + <isa> signal {}
+
+    @safety_distance_constraint: + <isa> constraint <inter_robot_safety> {
+        (+ scene_context.inter_robot_distance,
+         + safety_distance_threshold,
+         - scene_context.task_complete);
+    }
+}

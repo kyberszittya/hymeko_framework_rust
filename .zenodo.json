@@ -1,0 +1,51 @@
+{
+  "title": "HyMeKo — Canonical-Hypergraph Infrastructure for Cross-View Consistency in Cyber-Physical Systems",
+  "description": "Reference implementation, benchmark harness, and 90+ paired-seed result CSVs for the HyMeKo framework paper (IEEE T-SMC: Systems, 2026) and its companion paper on spectral-entropy regularization (IEEE T-SMC: Cybernetics, 2026). Includes the Rust source for the canonical-hypergraph IR, the template-driven emitter dispatchers (URDF, SDF, MJCF, DOT, Gazebo, Mermaid, SysML v2), the PyO3 wheel binding, the WebAssembly browser bundle, the PyTorch backend (`torch_dataflow`), the spectral-entropy regularizer arms (paths A, B, C, E, F, I), the universality benchmark suite, and reproducibility scripts.",
+  "creators": [
+    {
+      "name": "Hajdu, Csaba",
+      "affiliation": "Department of Informatics, Széchenyi István University, Győr, Hungary"
+    },
+    {
+      "name": "Csapó, Ádám Balázs",
+      "affiliation": "Corvinus Institute for Advanced Studies, Corvinus University of Budapest / Hungarian Research Network, Budapest, Hungary"
+    },
+    {
+      "name": "Kovács, Katalin",
+      "affiliation": "Department of Informatics, Széchenyi István University, Győr, Hungary"
+    }
+  ],
+  "keywords": [
+    "cyber-physical systems",
+    "hypergraphs",
+    "cross-view consistency",
+    "canonical hashing",
+    "intermediate representation",
+    "robotic systems",
+    "URDF",
+    "SDF",
+    "MJCF",
+    "Gazebo",
+    "SysML",
+    "model-based systems engineering",
+    "spectral entropy",
+    "regularization",
+    "Lyapunov stability",
+    "Kolmogorov-Arnold representation",
+    "neural networks",
+    "information bottleneck"
+  ],
+  "license": "MIT",
+  "upload_type": "software",
+  "access_right": "open",
+  "language": "eng",
+  "communities": [],
+  "related_identifiers": [
+    {
+      "identifier": "10.48550/arXiv.XXXX.XXXXX",
+      "relation": "isSupplementTo",
+      "scheme": "doi",
+      "resource_type": "publication-preprint"
+    }
+  ]
+}

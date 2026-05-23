@@ -1,3 +1,9 @@
+// APPROVED-CORE-EDIT: core-manifest-and-hymeko-core-clippy — this integration
+// test crate is large and predates strict `clippy -D warnings`; the library
+// uses targeted allows in `src/lib.rs` instead.
+#![allow(warnings)]
+#![allow(clippy::approx_constant, clippy::needless_lifetimes)]
+
 #[path = "minimal_tests/mod.rs"]
 mod minimal_tests;
 
@@ -16,6 +22,7 @@ pub mod test_asserts;
 mod test_tensor_representations;
 mod aggregations;
 mod domain_transformations;
-mod engine;
 mod hash;
 mod benchmarks;
+mod basic;
+mod computations;

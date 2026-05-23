@@ -68,7 +68,7 @@ pub fn print_dense_matrix(m: &[Vec<f32>], title: &str) {
 pub fn find_decl(ir: &Ir, it: &Interner, name: &str, kind: DeclKind) -> DeclId {
     for (i, node) in ir.decl_nodes.iter().enumerate() {
         if node.kind == kind && it.resolve(node.name) == name {
-            return DeclId(i);
+            return DeclId::new(i);
         }
     }
     panic!("decl not found: {}", name);
@@ -79,7 +79,7 @@ pub fn get_node<'a>(
     did: DeclId,
 ) -> &'a NodeRec {
     let nid = ir.as_node(did).expect("decl should be a node");
-    &ir.nodes[nid.0 as usize]
+    &ir.nodes[nid.0]
 }
 
 pub fn has_tag(

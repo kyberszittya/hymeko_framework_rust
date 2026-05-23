@@ -1,0 +1,7 @@
+queued_utc=2026-05-12T07:49:21Z
+jsonl=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_otc_pvk128_h12_5seed_20260512_074921.jsonl
+log=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_otc_pvk128_h12_5seed_20260512_074921.log
+python=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/.venv/bin/python3
+config=bitcoin_otc,pv_k128,h12,seeds0-4,epochs80,device=cpu
+launcher=/tmp/hsikan_otc_5seed_20260512_074921_LN1MQk.sh
+Running as unit: run-rc10371da90e1402e90485274873cead6.service

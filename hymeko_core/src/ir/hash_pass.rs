@@ -15,7 +15,7 @@ pub fn compute_merkle_hashes(ir: &mut Ir, interner: &Interner) {
 
     // Process backwards to ensure children are hashed before parents.
     for i in (0..num_decls).rev() {
-        let did = DeclId(i);
+        let did = DeclId::new(i);
         let mut hasher = Hasher::new();
 
         // Bind the unified node reference once for cache efficiency

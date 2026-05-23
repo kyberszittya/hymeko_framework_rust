@@ -4,8 +4,8 @@ mod tensor_fano {
     use std::collections::{BTreeSet, HashMap, HashSet};
     use hymeko::common::ids::{EdgeId, NodeId};
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko::tensor::representations::tensor_coo_representation::star_expansion_coo;
-    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hre::expansion::star_expansion_coo;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header, print_dense_matrix};
@@ -45,7 +45,7 @@ mod tensor_fano {
         let mut deg = vec![0usize; hg.num_nodes()];
 
         for e in 0..hg.num_edges() {
-            let (a, b) = hg.edge_span(EdgeId(e));
+            let (a, b) = hg.edge_span(EdgeId::new(e));
             assert_eq!(b - a, FANO_EDGE_DEGREE, "Each Fano edge should have degree 3");
 
             for p in a..b {
@@ -66,8 +66,8 @@ mod tensor_fano {
         // Any two distinct edges intersect in exactly 1 incident node.
         for e1 in 0..hg.num_edges() {
             for e2 in (e1 + 1)..hg.num_edges() {
-                let (a1, b1) = hg.edge_span(EdgeId(e1));
-                let (a2, b2) = hg.edge_span(EdgeId(e2));
+                let (a1, b1) = hg.edge_span(EdgeId::new(e1));
+                let (a2, b2) = hg.edge_span(EdgeId::new(e2));
 
                 let s1 = &hg.flat_edge_nodes[a1..b1];
                 let s2 = &hg.flat_edge_nodes[a2..b2];
@@ -117,7 +117,7 @@ mod tensor_fano {
         // check that tensor has the expected directed entry/entries.
         // '+' : node -> edge, '-' : edge -> node, '0' : both
         for e in 0..hg.num_edges() {
-            let (a, b) = hg.edge_span(EdgeId(e));
+            let (a, b) = hg.edge_span(EdgeId::new(e));
             let e_v = edge_base + e;
 
             for p in a..b {
@@ -237,7 +237,7 @@ mod tensor_fano {
         // 2) For each incidence in HyperGraphView, verify expected matrix entry/entries exist
         // and have value 1.0 (sum = 1.0).
         for e in 0..num_edges {
-            let (a, b) = hg.edge_span(EdgeId(e));
+            let (a, b) = hg.edge_span(EdgeId::new(e));
             let e_v = edge_base + e;
 
             // Each edge in the Fano file should be incident to 3 nodes.
@@ -337,7 +337,7 @@ mod tensor_fano {
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let coo = star_expansion_coo(&hg);
-        let proj = hymeko::tensor::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
         let num_edges = hg.num_edges();
@@ -348,7 +348,7 @@ mod tensor_fano {
         let mut expected = vec![vec![0.0f32; dim]; dim];
 
         for e in 0..num_edges {
-            let (a, b) = hg.edge_span(EdgeId(e));
+            let (a, b) = hg.edge_span(EdgeId::new(e));
             let e_v = edge_base + e;
 
             for p in a..b {

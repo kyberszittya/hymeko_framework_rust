@@ -1,0 +1,144 @@
+chain_10_description {
+    @"meta_kinematics.hymeko";
+}
+
+chain_10: meta_kinematics.kinematics.elements,
+        meta_kinematics.kinematics.geometry,
+        meta_kinematics.kinematics.axes
+{
+    l0: meta_kinematics.kinematics.elements.link {
+        mass 2.900;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.014, 0.000, 0.000];
+    }
+    l1: meta_kinematics.kinematics.elements.link {
+        mass 2.933;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.059, 0.000, 0.100];
+    }
+    l2: meta_kinematics.kinematics.elements.link {
+        mass 4.085;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.065, 0.000, 0.200];
+    }
+    l3: meta_kinematics.kinematics.elements.link {
+        mass 3.302;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.068, 0.000, 0.300];
+    }
+    l4: meta_kinematics.kinematics.elements.link {
+        mass 2.651;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.034, 0.000, 0.400];
+    }
+    l5: meta_kinematics.kinematics.elements.link {
+        mass 1.325;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.091, 0.000, 0.500];
+    }
+    l6: meta_kinematics.kinematics.elements.link {
+        mass 4.983;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.091, 0.000, 0.600];
+    }
+    l7: meta_kinematics.kinematics.elements.link {
+        mass 4.315;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.021, 0.000, 0.700];
+    }
+    l8: meta_kinematics.kinematics.elements.link {
+        mass 1.970;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.043, 0.000, 0.800];
+    }
+    l9: meta_kinematics.kinematics.elements.link {
+        mass 3.407;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.009, 0.000, 0.900];
+    }
+    @j0: meta_kinematics.kinematics.conti_joint {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l1,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j1: meta_kinematics.kinematics.conti_joint {
+        (+ l1 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l2,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j2: meta_kinematics.kinematics.conti_joint {
+        (+ l2 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l3,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j3: meta_kinematics.kinematics.conti_joint {
+        (+ l3 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l4,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j4: meta_kinematics.kinematics.conti_joint {
+        (+ l4 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l5,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j5: meta_kinematics.kinematics.conti_joint {
+        (+ l5 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l6,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j6: meta_kinematics.kinematics.conti_joint {
+        (+ l6 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l7,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j7: meta_kinematics.kinematics.conti_joint {
+        (+ l7 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l8,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+    @j8: meta_kinematics.kinematics.conti_joint {
+        (+ l8 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l9,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+}

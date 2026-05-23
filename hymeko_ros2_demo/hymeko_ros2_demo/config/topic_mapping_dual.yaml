@@ -1,0 +1,105 @@
+# Tier-2 dual-robot topic mapping.
+#
+# This file defines two SEPARATE grasping-context bindings (one per
+# robot) and a scene-context binding.  The grasping_context_node is
+# launched twice — once with each robot's binding set — and
+# scene_context_node reads from both.
+#
+# Each binding entry corresponds to one of the grasping_context
+# vertices in scenarios/hymeko_robot_dual.hymeko.
+#
+# The scene_context_node has its own subscriber logic (it's
+# cross-robot by design), so it doesn't use this YAML — it hard-codes
+# the per-robot topic names.
+
+# ──────────────────────────────────────────────────────────────────
+# Binding set A — bound to robot A's grasping_context
+# ──────────────────────────────────────────────────────────────────
+robot_a:
+  context: robot_a_grasping
+
+  inputs:
+    - vertex:   a_robot_pose
+      topic:    /robot_a/tcp_pose
+      msg_type: geometry_msgs/msg/PoseStamped
+      field:    pose.position.z
+    - vertex:   a_active_tool
+      topic:    /robot_a/tool_id
+      msg_type: std_msgs/msg/UInt32
+      field:    data
+    - vertex:   a_active_payload
+      topic:    /robot_a/payload_id
+      msg_type: std_msgs/msg/UInt32
+      field:    data
+    - vertex:   a_mode_parallel
+      topic:    /robot_a/grasp_mode
+      msg_type: std_msgs/msg/UInt32
+      field:    data
+    - vertex:   a_grip_force
+      topic:    /robot_a/wrench
+      msg_type: geometry_msgs/msg/WrenchStamped
+      field:    wrench.force.z
+
+  outputs:
+    - vertex:   a_stability_margin
+      topic:    /robot_a/hymeko/grasping/stability_margin
+      msg_type: std_msgs/msg/Float64
+      field:    data
+    - vertex:   a_configuration
+      topic:    /robot_a/hymeko/grasping/configuration
+      msg_type: std_msgs/msg/Float64
+      field:    data
+    - vertex:   a_force_vector
+      topic:    /robot_a/hymeko/grasping/contact_force
+      msg_type: std_msgs/msg/Float64
+      field:    data
+    - vertex:   a_loaded_state
+      topic:    /robot_a/hymeko/grasping/loaded_state
+      msg_type: std_msgs/msg/Float64
+      field:    data
+
+# ──────────────────────────────────────────────────────────────────
+# Binding set B — bound to robot B's grasping_context
+# ──────────────────────────────────────────────────────────────────
+robot_b:
+  context: robot_b_grasping
+
+  inputs:
+    - vertex:   b_robot_pose
+      topic:    /robot_b/tcp_pose
+      msg_type: geometry_msgs/msg/PoseStamped
+      field:    pose.position.z
+    - vertex:   b_active_tool
+      topic:    /robot_b/tool_id
+      msg_type: std_msgs/msg/UInt32
+      field:    data
+    - vertex:   b_active_payload
+      topic:    /robot_b/payload_id
+      msg_type: std_msgs/msg/UInt32
+      field:    data
+    - vertex:   b_mode_parallel
+      topic:    /robot_b/grasp_mode
+      msg_type: std_msgs/msg/UInt32
+      field:    data
+    - vertex:   b_grip_force
+      topic:    /robot_b/wrench
+      msg_type: geometry_msgs/msg/WrenchStamped
+      field:    wrench.force.z
+
+  outputs:
+    - vertex:   b_stability_margin
+      topic:    /robot_b/hymeko/grasping/stability_margin
+      msg_type: std_msgs/msg/Float64
+      field:    data
+    - vertex:   b_configuration
+      topic:    /robot_b/hymeko/grasping/configuration
+      msg_type: std_msgs/msg/Float64
+      field:    data
+    - vertex:   b_force_vector
+      topic:    /robot_b/hymeko/grasping/contact_force
+      msg_type: std_msgs/msg/Float64
+      field:    data
+    - vertex:   b_loaded_state
+      topic:    /robot_b/hymeko/grasping/loaded_state
+      msg_type: std_msgs/msg/Float64
+      field:    data

@@ -1,0 +1,30 @@
+// Signed-incidence SpMV: y = B * x.
+// One thread per matrix row (= per vertex).
+
+#version 450
+
+layout(local_size_x = 64) in;
+
+layout(set = 0, binding = 0) readonly buffer RowPtr { uint  row_ptr[]; };
+layout(set = 0, binding = 1) readonly buffer ColInd { uint  col_ind[]; };
+layout(set = 0, binding = 2) readonly buffer Val    { float vals[];    };
+layout(set = 0, binding = 3) readonly buffer X      { float x[];       };
+layout(set = 0, binding = 4)          buffer Y      { float y[];       };
+layout(set = 0, binding = 5) readonly buffer Params {
+    uint n_rows;
+    uint pad0;
+    uint pad1;
+    uint pad2;
+} P;
+
+void main() {
+    uint v = gl_GlobalInvocationID.x;
+    if (v >= P.n_rows) return;
+    uint a = row_ptr[v];
+    uint b = row_ptr[v + 1];
+    float acc = 0.0;
+    for (uint k = a; k < b; ++k) {
+        acc += vals[k] * x[col_ind[k]];
+    }
+    y[v] = acc;
+}

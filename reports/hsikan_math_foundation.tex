@@ -1,0 +1,263 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+
+% Convenience macros.
+\newcommand{\KA}{\textsc{ka}}
+\newcommand{\KAN}{\textsc{kan}}
+\newcommand{\HSiKAN}{\textsc{HSiKAN}}
+\newcommand{\HyMeKo}{\textsc{HyMeKo}}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\setlist[itemize]{leftmargin=1.4em,itemsep=2pt,topsep=3pt}
+
+\title{\HSiKAN: Mathematical Foundation\\
+\large {\normalfont Eight layers, eight decades}}
+\author{}
+\date{2026-05-04}
+
+\begin{document}
+\maketitle
+
+\noindent
+\HSiKAN{} (Hypergraph Signed Kolmogorov--Arnold Network) is the
+composition of eight mathematical layers, each pulled from a
+different established literature spanning 1946 to 2024.  This
+document maps the layers in dependency order, naming the source
+results and the role each plays inside the model.
+
+\section*{1.\;Signed-graph theory}
+\textit{Heider 1946 \(\to\) Cartwright \& Harary 1956 \(\to\) Davis 1967}
+
+\begin{itemize}
+\item Signed graph $G = (V, E, s)$ with $s : E \to \{+1, -1\}$.
+\item \textbf{Cycle balance theorem.}\;A cycle $c$ is \emph{balanced}
+  iff
+  \[
+    \prod_{e \in c} s(e) \;=\; +1.
+  \]
+\item \textbf{Structural balance (Cartwright--Harary 1956).}\;A
+  complete signed graph is balanced iff $V$ partitions into two
+  mutually-hostile cliques.  Davis 1967 generalises to
+  $k$-clusterability (weak balance: no all-negative triangle).
+\item \textbf{\HSiKAN's $\sigma$-rule.}\;The per-vertex sign within
+  a cycle is the cycle-product specialised to vertex $i$:
+  \[
+    \sigma_i(c) \;=\; (-1)^{n_i^{-}(c)},
+  \]
+  where $n_i^{-}(c)$ is the count of negative edges incident to
+  vertex $i$ within cycle $c$.
+\end{itemize}
+
+\section*{2.\;Hypergraph theory}
+\textit{Berge 1973; Thesis~2 (this dissertation)}
+
+\begin{itemize}
+\item A $k$-uniform hypergraph generalises edges to $k$-vertex
+  relations.
+\item Two canonical reductions to ordinary graphs:
+  \begin{itemize}
+  \item \textbf{Star expansion.}\;Hyperedge $e \mapsto$ centroid
+    vertex $c_e$ plus $k$ bipartite edges
+    $\{(v_i, c_e) : v_i \in e\}$.  The result is bipartite
+    $\Rightarrow$ only even-$k$ cycles exist in the expansion.
+    \emph{This is \HSiKAN's input format.}
+  \item \textbf{Clique expansion.}\;$k$-edge $\mapsto$
+    $\binom{k}{2}$ pairwise edges.  Discards arity information.
+  \end{itemize}
+\item Sparse signed-incidence buffers enter at training:
+  \[
+    \mathbf{M}_e^{(k)} \in \mathbb{R}^{|E_{\text{test}}| \times |T_k|}
+    \qquad\text{and}\qquad
+    \mathbf{M}_{vt} \in \mathbb{R}^{|V| \times |T|}.
+  \]
+\end{itemize}
+
+\section*{3.\;Kolmogorov--Arnold representation}
+\textit{Kolmogorov 1957 \(\to\) Liu et al.\ 2024 (\KAN)}
+
+\begin{itemize}
+\item \textbf{KA superposition theorem.}\;Any continuous
+  $f : [0, 1]^n \to \mathbb{R}$ admits the decomposition
+  \[
+    f(x) \;=\; \sum_{q=0}^{2n} \Phi_q\!\left(
+      \sum_{p=1}^{n} \psi_{q,p}(x_p)
+    \right)
+  \]
+  with $2n{+}1$ outer and $n(2n{+}1)$ inner univariate functions.
+\item \textbf{\KAN s} parameterise $\Phi_q$ and $\psi_{q,p}$ as
+  splines.
+\item \textbf{KA-rank ladder for signed graphs.}\;Three points on
+  the spectrum:
+  \begin{itemize}
+  \item rank-1: HGNN (linear superposition);
+  \item rank-2: Signed-HGNN;
+  \item full rank: \HSiKAN{} (per-sign nonlinear inner+outer
+    splines).
+  \end{itemize}
+\end{itemize}
+
+\section*{4.\;Spline approximation}
+\textit{Catmull--Rom 1974, de Boor 1978, Kochanek--Bartels 1984}
+
+\begin{itemize}
+\item Inner $\varphi_v^\sigma$ and outer $\varphi_e^\sigma$ are
+  uniform Catmull--Rom cubic splines on $[-1, 1]$:
+  \begin{itemize}
+  \item 4-point gather $(P_{i-1}, P_i, P_{i+1}, P_{i+2})$ per
+    output;
+  \item constant $4 \times 4$ basis matrix $M_{CR}$ folds the
+    Hermite blend coefficients;
+  \item $C^1$-continuous, interpolatory --- the curve passes
+    through the control points.
+  \end{itemize}
+\item Backbone-invariant: B-splines (Cox--de Boor recursion) and
+  Kochanek--Bartels (TCB tension / continuity / bias parameters,
+  reducing to Catmull--Rom at $\mathrm{TCB} = (0, 0, 0)$) yield
+  the same downstream AUCs to within seed noise.
+\end{itemize}
+
+\section*{5.\;Mixed-arity mixing}
+
+The per-arity cycle embeddings are combined by a softmax-normalised
+learnable weight vector $\boldsymbol\alpha$:
+\[
+  \mathbf{H}^{\text{edge}}
+  \;=\; \sum_{k \in \mathcal{K}} \operatorname{softmax}(\boldsymbol\alpha)_k
+        \cdot \mathbf{M}_e^{(k)}\, \mathbf{H}^{(e, k)}.
+\]
+$\alpha_k$ acts as a \textbf{quantitative ethogram-like read-out}:
+which cycle order does this dataset's signed signal live at?
+Empirically: Bitcoin $\to k{=}3$ triads, Slashdot $\to k{=}5$
+($46\%$), SBM $\to k{=}4$ matching its 4-community design.
+
+\section*{6.\;Symbolic distillation (Fourier-style)}
+
+After training, each surviving spline is fit against a six-form
+symbolic library
+\[
+  \{
+    \text{linear},\;
+    \text{quadratic},\;
+    \text{cubic},\;
+    a\sin(\omega x + \varphi) + c,\;
+    \exp,\;
+    \tanh
+  \}
+\]
+via Levenberg--Marquardt least squares.  Approximately $91\%$ of
+survivors fit best as a sinusoid.  Validated on Bitcoin Alpha + OTC
+($3$ seeds, $h{=}16$) against three null baselines:
+
+\begin{center}
+\begin{tabular}{lr}
+\hline
+baseline & sinusoidal fraction \\
+\hline
+trained \HSiKAN          & $0.901 \pm 0.055$ \\
+untrained \HSiKAN        & $0.505 \pm 0.036$ \\
+random spline coefs      & $0.583 \pm 0.045$ \\
+Gaussian-process draws   & $0.499 \pm 0.021$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent
+The $+35$--$40$\,pp gap rules out spline-basis bias and
+grid-sampling artefacts.
+
+\section*{7.\;Cycle enumeration (algorithmic)}
+
+\begin{itemize}
+\item DFS with $\texttt{Vec<u64>}$ bitset visited (8$\times$ smaller
+  than $\texttt{Vec<bool>}$, fits in L1 for graphs up to $\sim
+  500\text{k}$ nodes).
+\item BFS-distance pruning to the start vertex (skip branches that
+  cannot close in the remaining budget).
+\item \textbf{Color-coding (Alon--Yuster--Zwick 1995).}\;
+  Random $k$-colouring of vertices; only rainbow cycles are
+  emitted; per-colouring cost is proportional to
+  $|\{\text{rainbow cycles}\}| / |\{\text{total cycles}\}|$.
+  Probability a fixed $k$-cycle is rainbow $= k!/k^k$.
+\item Vitter reservoir sampling for unbiased cycle subsets.
+\item Canonical form: smallest-vertex rotation $+$ lex orientation
+  tiebreak.
+\item \textbf{Walk-\HSiKAN{} variant.}\;Same DFS, no closure check;
+  open length-$L$ simple walks emitted with
+  $\mathrm{path}[0] \le \mathrm{path}[L]$ canonicalisation.
+\item \textbf{Performance.}\;Slashdot $k{=}4$ in $4.6$\,s for
+  $100$\,k cycles via Rust + rayon + atomic early-stop, vs
+  $\sim 227$\,s for the equivalent serial Python.
+\end{itemize}
+
+\section*{8.\;Information geometry and regularisation}
+
+\begin{itemize}
+\item \textbf{Spectral entropy} as a KA-bound:
+  \[
+    H(W) \;=\; -\sum_i \tilde\lambda_i \log \tilde\lambda_i \big/
+                 \log \operatorname{rank}(W).
+  \]
+\item \textbf{Sanchez--Giraldo matrix-based R\'enyi-$\alpha$
+  entropy} estimator (kernel $\alpha$-norm).
+\item \textbf{Multi-term Lyapunov wrapping}:
+  \[
+    \lambda_{\text{eff}}
+    \;=\; \lambda_0 \exp\!\big(
+      -\eta\, D_{\mathrm{KL}}(\hat\lambda^{(t-1)} \,\|\, \hat\lambda^{(t)})
+    \big).
+  \]
+\item \textbf{Path~I calibration law:}
+  $\lambda_{\text{multi}} \sim \lambda_{\text{scalar}} / L$ ---
+  depth-dependent rescaling.  Empirically validated by ph18c:
+  highway-10 confirmed at $\lambda{=}1.0$ ($+0.092$\,pp,
+  $p<0.05$); resmlp-40 ($L{=}40$) recovers at $\lambda{=}0.5$
+  ($+0.213$\,pp, $p<0.05$), the predicted ratio
+  $\approx 1/4$ of the $L{=}10$ value.
+\end{itemize}
+
+\section*{What today's chicken-aggression work added}
+
+\begin{itemize}
+\item \textbf{Layer~1 reproduces itself in a flock simulator.}\;
+  The Cartwright--Harary structural-balance theorem implies
+  aggressors generate \emph{balanced} triads: the
+  $(\mathrm{aggressor}, v_1, v_2)$ pattern has signs $(-, -, +)$
+  because two victims of the same aggressor are typically
+  peaceful with each other.  Sign product $= +1$, so the cycle
+  is balanced.  Our unsupervised cycle-balance scorer reads off
+  per-vertex aggressor probability directly from this fraction
+  --- \emph{graph theory from 1956 identifying which chicken is
+  the aggressor with zero labels}.
+\item \textbf{Layer~2 generalises to anatomy.}\;The chicken body
+  itself is a hypergraph: 12 keypoints, rigid bones (sign $+1$),
+  flexible joints (sign $-1$), kinematic chains as multi-vertex
+  hyperedges.  Star-expandable through the same machinery.
+  Per-bird anatomy nests inside per-flock interaction --- a
+  multi-scale signed-hypergraph description of an entire flock.
+\end{itemize}
+
+\section*{The aesthetic point}
+
+The stack composes from
+\textbf{1946 (Heider)} $\to$
+\textbf{1956 (Cartwright--Harary)} $\to$
+\textbf{1957 (Kolmogorov)} $\to$
+\textbf{1973 (Berge)} $\to$
+\textbf{1974 (Catmull--Rom)} $\to$
+\textbf{1995 (Alon--Yuster--Zwick)} $\to$
+\textbf{2024 (Liu \KAN)} $\to$
+\textbf{2026 (\HSiKAN)}.
+
+\medskip
+\noindent
+Eighty years of pure mathematics, quietly waiting to read off
+which chicken is the aggressor.
+
+\end{document}

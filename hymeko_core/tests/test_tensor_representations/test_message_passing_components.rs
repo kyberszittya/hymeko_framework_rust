@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod test_message_passing_components
 {
-    use hymeko::tensor::message_passing::{
+    use hymeko_hnn::tensor::message_passing::{
         clique_diag, gather_edges_from_nodes,
         implicit_clique_step, remove_self_effect, scatter_nodes_from_edges, CliqueStepCfg};
-    use hymeko::traversal::hypergraphview::HyperGraphView;
-    use hymeko::tensor::common_traversal::inc_scalar_signed;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hnn::tensor::common_traversal::inc_scalar_signed;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
     use log::info;

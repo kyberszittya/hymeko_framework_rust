@@ -23,7 +23,7 @@ fn parses_minimal_example_context_fields() {
     assert_eq!(context.inner.name, CONTEXT_NODE_NAME);
 
     // context body: node_lev_0, node_lev_1
-    let ctx = body(context);
+    let ctx = body(context).unwrap();
     assert_eq!(ctx.len(), BASIC_CONTEXT_CHILD_COUNT);
     info!("Context child count OK: {}", ctx.len());
 
@@ -31,7 +31,7 @@ fn parses_minimal_example_context_fields() {
     let lev1 = find_node(ctx, "node_lev_1").unwrap();
 
     // node_lev_0 body: node0 (block), node1; node2; node3;
-    let lev0_body = body(lev0);
+    let lev0_body = body(lev0).unwrap();
     assert_eq!(lev0_body.len(), BASIC_LEVEL0_BODY_NAMES.len());
     for (item, expected) in lev0_body.iter().zip(BASIC_LEVEL0_BODY_NAMES.iter()) {
         assert_eq!(as_node(item).unwrap().inner.name, *expected);
@@ -40,14 +40,14 @@ fn parses_minimal_example_context_fields() {
 
     // node0 is a block and contains: node0;
     let node0_block = as_node(&lev0_body[0]).unwrap();
-    let node0_body = body(node0_block);
+    let node0_body = body(node0_block).unwrap();
     assert_eq!(node0_body.len(), BASIC_NODE0_CHILD_COUNT);
     let inner_node0 = as_node(&node0_body[0]).unwrap();
     assert_eq!(inner_node0.inner.name, BASIC_LEVEL0_BODY_NAMES[0]);
     assert!(inner_node0.inner.body.is_none(), "inner node0 should be a statement node");
 
     // node_lev_1 body: node0;
-    let lev1_body = body(lev1);
+    let lev1_body = body(lev1).unwrap();
     assert_eq!(lev1_body.len(), BASIC_LEVEL1_BODY_NAMES.len());
     for (item, expected) in lev1_body.iter().zip(BASIC_LEVEL1_BODY_NAMES.iter()) {
         assert_eq!(as_node(item).unwrap().inner.name, *expected);

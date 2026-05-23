@@ -1,0 +1,61 @@
+\section{Discussion and Future Work}
+\label{sec:discussion}
+
+\paragraph{Where SignedKAN sits.}
+On signed-graph link-sign prediction, SignedKAN's
+trained-from-scratch numbers are competitive with engineered
+baselines: AUC $\approx\!0.85$--$0.88$ on Bitcoin Alpha and OTC
+(comparable to SiNE, DSHGNN, and the lower end of SDGNN's reported
+range), $\sim\!0.05$--$0.07$ below SGCN's published number.
+Macro-$F_1$ on Bitcoin OTC reaches $0.81$ under the bilinear
+endpoint head extension. None of these comparisons is under matched
+training/split conditions, so they are informative rather than
+definitive; the paper reports the regime under which it actually ran.
+
+\paragraph{The differentiating contribution.}
+The four-part claim of Section~\ref{sec:pruning} is what
+distinguishes SignedKAN from engineered signed-GNN baselines:
+(i) competitive trained-from-scratch AUC; (ii) 77--78\% pruning
+resilience with AUC \emph{improving} ($+0.016$ to $+0.021$);
+(iii) 80--91\% sinusoidal symbolic distillation, basis-invariant
+across three spline parameterisations; (iv) sub-minute training time
+on a single GPU. Engineered baselines (SGCN, SDGNN) cannot be
+distilled this cleanly and offer no comparable compression
+guarantee. The model-compression and interpretability properties
+we measure are not architectural ornaments — they are the
+load-bearing claim.
+
+\paragraph{Limitations.}
+We do not provide a formal expressivity result for the three-branch
+sign-conditioned aggregation, nor a closed-form analysis of the
+training dynamics that drive activations toward sinusoidal forms.
+The cross-paper AUC gap to SGCN is structural to the experimental
+regime (no pre-training, no auxiliary supervision) — closing it
+under matched conditions is left to a journal extension that can
+afford a re-implementation of the engineered baselines under our
+split protocol. The Slashdot benchmark is bottlenecked by GPU memory
+at $h\!=\!16+$ and was reported here only at $h\!=\!8$.
+
+\paragraph{Future work — clique clusters and higher-order balance.}
+The signed hypergraph used here is built from $3$-uniform triads
+under Cartwright--Harary balance. The natural next axis is
+\emph{$k$-clique clusters}: signed cliques of size $k\!\geq\!3$
+generalise the balance criterion (Davis~1967, weakly-balanced
+$k$-cycles) and extend the hypergraph IR's arity. Because the
+SignedKAN layer is already arity-agnostic over the sub-aggregation
+loop, supporting $k$-uniform hyperedges only requires extending the
+construction step. A complementary direction is a \emph{clique-level
+entropy regulariser}: per-clique participation entropy as an
+additional term in the spectral-entropy schedule of
+Section~\ref{sec:experiments}, providing structural prior at the
+hyperedge-cluster level rather than only the
+node-embedding-spectrum level.
+
+\paragraph{Hypergraph-IR integration.}
+The SignedKAN architecture maps to a Tier-2 emission target in a
+canonical-hypergraph IR back end with a torch-dataflow code path.
+Defining \texttt{lyr.signedkan\_layer} in the meta library and
+adding a \texttt{SignedKANBlock} to the block-helper library would
+let downstream applications declare SignedKAN topologies in IR
+source and emit the corresponding PyTorch module automatically.
+We sketch this integration but defer the implementation.

@@ -1,0 +1,315 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lmodern}
+\usepackage{fancyvrb}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{HyMeKo Generation \& Emission Framework\\[2pt]
+       Multi-Target Codegen from a Single Hypergraph IR}
+\author{thesis-IV working notes (HyMeKo)}
+\date{2026-04-26}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+HyMeKo describes robotic systems and neural-network architectures in
+a single hypergraph IR. From the same description it can emit
+URDF, SDF~1.7, MJCF, DOT, Mermaid, Gazebo world XML, and
+torch\_dataflow PyTorch source. Each target is realised as a
+\texttt{(queries.hymeko, template.X)} pair under
+\texttt{transforms/<target>/}; the Rust template engine dispatches
+queries against the IR and renders the template. We document the
+architecture, the recently-added Tier~1 (plain MLP) and Tier~2
+(residual / highway) emission paths for the PyTorch backend, and
+the publication venues this systems-level contribution targets
+separately from the entropy-regulariser paper.
+\end{abstract}
+
+\section{What can HyMeKo emit?}
+
+Eight emission targets are currently shipped under
+\code{transforms/}:
+
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Target & Purpose & Status \\
+\midrule
+\code{urdf}            & ROS robot description       & shipped \\
+\code{sdf}             & Gazebo scene description    & shipped \\
+\code{mjcf}            & MuJoCo XML                  & shipped \\
+\code{gazebo}          & Full Gazebo world XML       & shipped \\
+\code{dot}             & Graphviz hypergraph viz     & shipped \\
+\code{mermaid}         & Markdown-renderable graph   & shipped \\
+\code{ros2\_launch}    & ROS~2 launch.py file        & shipped \\
+\code{torch\_dataflow} & PyTorch \code{nn.Module}    & shipped + Tier 1 + Tier 2 (this report) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A single \code{.hymeko} source can be compiled to any subset:
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+hymeko compile data/robotics/anthropomorphic_arm.hymeko \
+    --format urdf -o /tmp/arm.urdf
+
+hymeko compile data/nn/mnist_small.hymeko \
+    --format torch_dataflow --name MnistSmall -o /tmp/mnist_small.py
+\end{Verbatim}
+
+\section{Architecture: queries + template per target}
+
+Every target is a directory \code{transforms/<target>/} with two
+files:
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[\code{queries.hymeko}]  Declares named collections of decls
+    matched by inheritance predicate. Example for
+    \code{torch\_dataflow}:
+    \begin{Verbatim}[fontsize=\small]
+    layers:         meta_layer       {}
+    linear_layers:  linear_layer     {}
+    relu_layers:    relu_layer       {}
+    residual_blocks: residual_block  {}
+    @flows:         dataflow         {}
+    outputs:        t_output         {}
+    \end{Verbatim}
+    Each line \texttt{name: type \{\}} becomes a collection that the
+    template can iterate.
+
+  \item[\code{template.<ext>}]  Render-time template using
+    Handlebars-like syntax: \code{\{\{config:robot\_name\}\}} for
+    config args, \code{\{\{\#each linear\_layers\}\}} to iterate
+    matches, \code{\{\{name\}\}} / \code{\{\{field:d\_in\}\}} for
+    per-decl values, \code{\{\{bind:+:0\}\}} for hyperedge arc
+    bindings.
+\end{description}
+
+This separation has three consequences:
+
+\begin{itemize}
+  \item Adding a new emission target = adding a new directory.
+        No changes to Rust code.
+  \item Per-format expressivity is constrained to what the template
+        engine + queries can express jointly. Multi-input dataflow
+        and conditional emission per inheritance branch are
+        currently supported; arithmetic on field values is not.
+  \item The IR remains the single source of truth: structural
+        consistency across emitted targets is automatic (a robot
+        described in HyMeKo will have the same kinematic chain in its
+        URDF and its MJCF and its DOT).
+\end{itemize}
+
+\section{Recent extension: Tier 1 + Tier 2 PyTorch dataflow}
+
+Until 2026-04-26 the \code{torch\_dataflow} target only emitted
+\code{HypergraphConv} layers --- HGNN-style networks. We extended it
+to cover plain MLPs and residual / highway architectures so the
+networks tested by the entropy-regulariser benchmark can also be
+generated end-to-end from a HyMeKo description.
+
+\subsection{Tier 1 — plain MLP primitives}
+
+\textbf{New \code{meta\_layer} subtypes} added to
+\code{data/nn/meta\_nn.hymeko}:
+
+\begin{itemize}
+  \item \code{linear\_layer}  --- emits \code{torch.nn.Linear(d\_in, d\_out)}
+  \item \code{relu\_layer}    --- emits \code{torch.nn.ReLU()}
+  \item \code{sigmoid\_layer} --- emits \code{torch.nn.Sigmoid()}
+  \item \code{tanh\_layer}    --- emits \code{torch.nn.Tanh()}
+\end{itemize}
+
+\textbf{Example} (\code{data/nn/mnist\_small.hymeko}, 32 lines)
+emits the same 784$\to$16$\to$8$\to$10 MLP that
+\code{run\_benchmark.py}'s \code{MNISTNetSmall} hand-codes. Parameter
+count: 12\,786 in both implementations (verified).
+
+\subsection{Tier 2 — composite blocks}
+
+For residual and gated networks, a fully-structural HyMeKo description
+would need multi-input dataflow hyperedges (the additive skip needs
+two incoming edges). That feature is deferred. Instead, Tier~2 adds
+\textbf{named composite primitives} whose internal structure is
+realised by helper classes shipped in
+\code{python/ehk\_torch\_stub}:
+
+\begin{itemize}
+  \item \code{residual\_block}  --- emits \code{ResidualBlock(hidden=...)};
+        helper class implements $y = x + \text{Linear}(\text{ReLU}(\text{Linear}(x)))$.
+  \item \code{highway\_block}   --- emits \code{HighwayBlock(hidden=...)};
+        helper implements $y = T(x) \odot F(x) + (1-T(x)) \odot x$.
+\end{itemize}
+
+\textbf{Example} (\code{data/nn/mnist\_resmlp\_3.hymeko}, 35 lines)
+emits a 3-block ResMLP equivalent to
+\code{ResMLP(hidden=16, n\_blocks=3)}. Parameter count: 14\,362 in
+both implementations (verified).
+
+\subsection{Why named-block instead of full-structural}
+
+Three reasons:
+
+\begin{enumerate}
+  \item \textbf{Engineering scope.} Multi-input dataflow hyperedges
+        are a real change to the template's iteration semantics
+        (each \code{@flow} currently has a fixed (input, layer, output)
+        shape). Adding multi-input is feasible but non-trivial.
+  \item \textbf{Architectural clarity.} A named block is more
+        readable than the equivalent hypergraph topology with explicit
+        skip vertices. Domain experts describing networks at the
+        \code{.hymeko} level want to write
+        \code{block\_1: lyr.residual\_block { hidden 16; }}, not unwind
+        the additive skip into hypergraph primitives.
+  \item \textbf{Round-trippability.} Named blocks survive the
+        round-trip from .hymeko $\to$ PyTorch $\to$ inspection. A
+        flattened topology would lose the ``this is a residual''
+        annotation needed for higher-level analysis.
+\end{enumerate}
+
+\section{Verification}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+Description (lines) & Emitted module & Hand-coded equivalent & Param count match \\
+\midrule
+\code{mnist\_small.hymeko}    (32) & \code{MnistSmallFromHymeko} & \code{MNISTNetSmall} & 12\,786 / 12\,786 \,$\checkmark$ \\
+\code{mnist\_resmlp\_3.hymeko} (35) & \code{ResMLP3FromHymeko}    & \code{ResMLP(16, 3)} & 14\,362 / 14\,362 \,$\checkmark$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The emitted networks instantiate cleanly and forward-pass end-to-end
+on a $4 \times 784$ input batch, returning the expected
+$4 \times 10$ output.
+
+\section{What this is not yet}
+
+\begin{itemize}
+  \item \textbf{No CapsMLP emission.}  Dynamic routing iterations
+        require either inline Python loop emission or a fully
+        opaque \code{CapsuleRouting} helper. Both are doable; deferred.
+  \item \textbf{No batch-norm / dropout emission.}  These need to be
+        decided at the \code{linear\_layer} level (annotation field?)
+        or as separate single-purpose layer types
+        (\code{batchnorm\_layer}, \code{dropout\_layer}). Trivial to
+        add when the use case requires.
+  \item \textbf{No multi-input dataflow hyperedges.}  Required for
+        fully-structural ResNet / Highway / U-Net descriptions.
+        Targeted for v0.3.
+  \item \textbf{No regulariser-aware emission.}  The emitted PyTorch
+        modules don't expose the \code{spectral\_weights()} method
+        the entropy regulariser needs. Could be auto-emitted from the
+        \code{linear\_layer} list. Trivial; deferred.
+\end{itemize}
+
+\section{Publication venues for the emission framework}
+
+Distinct from the entropy-regulariser paper (which is a methods/
+optimisation contribution at TMLR/NeurIPS/AISTATS scope). The
+generation/emission framework is a \emph{language and systems}
+contribution. Realistic venues:
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[MDPI Technologies (current).] Already submitting the
+        hypergraph IR for robotic systems. Tier 1 / Tier 2 PyTorch
+        emission can be added as a methods extension or a follow-up
+        application paper.
+  \item[Software Impacts (Elsevier).] Short-form journal explicitly
+        for computer-science software contributions. The multi-target
+        codegen architecture fits the format exactly.
+  \item[JOSS (Journal of Open Source Software).] If we publish a
+        version of HyMeKo as a standalone open-source release. Short
+        paper format ($\approx$\,1000 words), the emphasis is on the
+        software's utility and reproducibility.
+  \item[MODELS / ACM SIGPLAN DSL workshops.] Domain-specific
+        languages and model-driven engineering. The HyMeKo grammar +
+        emission targets fit this audience well.
+  \item[ICRA / IROS / RSS — workshop tracks.] For the robotic-
+        systems angle (URDF / SDF / MJCF emission). The Galambos
+        student work on VLM-driven robot descriptions could feed an
+        ICRA workshop submission.
+  \item[ICLR / NeurIPS workshops on compositional AI / DSL for ML.]
+        The PyTorch emission story (especially with regulariser-aware
+        emission added) is a reasonable workshop fit.
+\end{description}
+
+\textbf{Strongest recommendation:} Software Impacts plus a JOSS paper
+in parallel. Both are short, both reward reproducibility (already met
+by the workspace's reproducible-test infrastructure), and both
+provide citable artefacts that downstream ML/robotics work can refer
+to. The MDPI Technologies and ICRA-workshop venues are application
+papers built on top of this systems contribution.
+
+\section{Architecture summary}
+
+The full emission stack (single direction):
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+.hymeko source
+    |
+    | parser (LALRPOP, lexer with SIMD)
+    v
+AST (parser::ast::AstStr<'a>)
+    |
+    | hymeko_core::module_store::ModuleStore::compile
+    v
+Compiled IR (CompiledProgram: nodes, edges, arcs, decl tree, hash)
+    |
+    | hymeko_query::transforms::TransformRegistry
+    | + transforms/<target>/queries.hymeko
+    v
+Per-format query results (Vec<QueryMatch>)
+    |
+    | template engine
+    | + transforms/<target>/template.<ext>
+    v
+Emitted artefact (URDF, MJCF, .py, .dot, ...)
+\end{Verbatim}
+
+The hot extension surface (where Tier 1 / Tier 2 changes landed) is
+on the right edge: the \code{queries.hymeko} and \code{template.py}
+files for the \code{torch\_dataflow} format. Zero changes to Rust
+code; the extension is purely declarative.
+
+\section{Reproducibility}
+
+To regenerate both example emissions from this workspace:
+
+\begin{Verbatim}[fontsize=\small,frame=single]
+target/release/hymeko compile data/nn/mnist_small.hymeko \
+    --format torch_dataflow --name MnistSmallFromHymeko \
+    -o /tmp/mnist_small_emitted.py
+
+target/release/hymeko compile data/nn/mnist_resmlp_3.hymeko \
+    --format torch_dataflow --name ResMLP3FromHymeko \
+    -o /tmp/mnist_resmlp_emitted.py
+
+PYTHONPATH=python/ehk_torch_stub/src python3 -c "
+import torch, importlib.util, sys
+def load(p, n):
+    s = importlib.util.spec_from_file_location(n, p)
+    m = importlib.util.module_from_spec(s); s.loader.exec_module(m); return m
+m1 = load('/tmp/mnist_small_emitted.py', 'm1').MnistSmallFromHymeko()
+m2 = load('/tmp/mnist_resmlp_emitted.py', 'm2').ResMLP3FromHymeko()
+print('p1 =', sum(p.numel() for p in m1.parameters()),
+      ', p2 =', sum(p.numel() for p in m2.parameters()))
+"
+# Expected:  p1 = 12786 , p2 = 14362
+\end{Verbatim}
+
+\end{document}

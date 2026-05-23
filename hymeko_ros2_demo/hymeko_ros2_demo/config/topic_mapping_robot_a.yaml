@@ -1,0 +1,44 @@
+# Per-robot binding for the Tier-2 dual scenario — robot A.
+# (Split from topic_mapping_dual.yaml so the existing
+# grasping_context_node can load it without a YAML-schema change.)
+context: robot_a_grasping
+
+inputs:
+  - vertex:   a_robot_pose
+    topic:    /robot_a/tcp_pose
+    msg_type: geometry_msgs/msg/PoseStamped
+    field:    pose.position.z
+  - vertex:   a_active_tool
+    topic:    /robot_a/tool_id
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   a_active_payload
+    topic:    /robot_a/payload_id
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   a_mode_parallel
+    topic:    /robot_a/grasp_mode
+    msg_type: std_msgs/msg/UInt32
+    field:    data
+  - vertex:   a_grip_force
+    topic:    /robot_a/wrench
+    msg_type: geometry_msgs/msg/WrenchStamped
+    field:    wrench.force.z
+
+outputs:
+  - vertex:   a_stability_margin
+    topic:    /robot_a/hymeko/grasping/stability_margin
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   a_configuration
+    topic:    /robot_a/hymeko/grasping/configuration
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   a_force_vector
+    topic:    /robot_a/hymeko/grasping/contact_force
+    msg_type: std_msgs/msg/Float64
+    field:    data
+  - vertex:   a_loaded_state
+    topic:    /robot_a/hymeko/grasping/loaded_state
+    msg_type: std_msgs/msg/Float64
+    field:    data

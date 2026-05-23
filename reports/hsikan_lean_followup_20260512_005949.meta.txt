@@ -1,0 +1,7 @@
+queued_utc=2026-05-12T00:59:49Z
+waits_for_user_unit=run-rddecb84693354dcc8fed6ba5efd0fc40.service
+launcher=/tmp/hsikan_followup_20260512_005949_8emQ99.sh
+jsonl_out=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_lean_bitcoin_followup_20260512_005949.jsonl
+log=/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/reports/hsikan_lean_followup_20260512_005949.log
+rss_cap=16G MemoryMax on scheduler unit
+Running as unit: run-r510f90ddd54749488a43368229eb050f.service

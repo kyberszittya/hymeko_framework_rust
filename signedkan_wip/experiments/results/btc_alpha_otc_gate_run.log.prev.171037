@@ -1,0 +1,79 @@
+/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/signedkan.py:652: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:760.)
+  return torch.sparse_csr_tensor(
+/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/signedkan.py:652: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /pytorch/aten/src/ATen/SparseCsrTensorImpl.cpp:49.)
+  return torch.sparse_csr_tensor(
+{
+  "citation": "HSIKAN_STATE_2026_05_04.md \u2014 headline 5-seed (3-seed Slashdot/Epinions) test AUC table",
+  "mode": "self"
+}
+{
+  "dataset": "bitcoin_alpha",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "n_seeds": 5,
+  "aucs": [
+    0.9476105502250269,
+    0.9331518799925528,
+    0.9358370230902922,
+    0.9540897461517459,
+    0.9519988606423128
+  ],
+  "mean": 0.9445376120203861,
+  "std_run": 0.008505193568771208,
+  "target_mode": "self",
+  "threshold": 0.9169999999999999,
+  "threshold_label": "self_mean_minus_2sigma",
+  "published_hsikan_mean": 0.939,
+  "published_hsikan_std": 0.011,
+  "pass": true,
+  "published_competitor_mean": 0.899,
+  "published_competitor_name": "SiGAT"
+}
+[PASS] bitcoin_alpha: mean=0.9445 ≥ 0.9170 (self_mean_minus_2sigma)
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/benchmarks/run_hsikan_sota_gate.py", line 155, in <module>
+    "n_seeds": len(aucs),
+    
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/benchmarks/run_hsikan_sota_gate.py", line 92, in main
+            file=sys.stderr,
+              ^^^^^^^^^^^^^^
+    ...<2 lines>...
+    if not torch.cuda.is_available():
+    ^^^^^
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/run_final_cell.py", line 486, in cell_signed_graph
+    edge_emb = model.encode_edges(per_arity_tr, query_edges=q_tr)
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/mixed_arity_signedkan/model.py", line 382, in encode_edges
+    return self._encode_edges_full(per_arity_inputs, query_edges)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/mixed_arity_signedkan/model.py", line 391, in _encode_edges_full
+    return encode_edges_full(self, *args, **kwargs)
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/mixed_arity_signedkan/encoding_full.py", line 44, in encode_edges_full
+    h_t = layer(h_v, triad_v, triad_sigma)    # (T_k, d)
+  File "/home/kyberszittya/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/kyberszittya/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/signedkan.py", line 318, in forward
+    return self._forward_impl(x, triad_v, triad_sigma)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/signedkan.py", line 365, in _forward_impl
+    out_diag = self.outer(agg)                     # (T, S, d)
+  File "/home/kyberszittya/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/kyberszittya/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/splines.py", line 395, in forward
+    return _catmull_rom_eval(coef_b, x, self.grid)
+  File "/home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/signedkan_wip/src/splines.py", line 314, in _catmull_rom_eval
+    return w_m1 * P_m1 + w_0 * P_0 + w_p1 * P_p1 + w_p2 * P_p2
+           ~~~~~~~~~~~~^~~~~~~~~~~
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 26.00 MiB. GPU 0 has a total capacity of 7.60 GiB of which 44.69 MiB is free. Process 54409 has 134.02 MiB memory in use. Including non-PyTorch memory, this process has 6.00 GiB memory in use. Process 171105 has 120.00 MiB memory in use. Of the allocated memory 5.71 GiB is allocated by PyTorch, and 162.98 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)

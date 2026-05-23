@@ -1,0 +1,20 @@
+chain_1_description {
+    @"meta_kinematics.hymeko";
+    using kinematics.elements as el;
+    using kinematics.geometry as geo;
+    using kinematics.axes as ax;
+    using kinematics.conti_joint as cj;
+}
+
+chain_1: el, geo, ax
+{
+    l0: el.link {
+        mass 0.758;
+        link_geometry: geo.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.069, 0.000, 0.000];
+    }
+}

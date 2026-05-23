@@ -15,8 +15,12 @@ Hypergraph Model Cognition Framework is a high-performance Rust-based parsing an
 - [Overview](#overview)
 - [Architecture](#-architecture)
 - [Hypergraph Support](#hypergraph-support)
+- [Query-Driven Transforms](#-query-driven-transforms)
 - [Features](#features)
 - [Quick Start](#quick-start)
+- [SOTA snapshot (link prediction)](docs/SOTA_RESULTS.md)
+- [Handbook (mdBook source)](docs/book/src/SUMMARY.md)
+- [Deploy handbook to GitHub Pages](docs/DEPLOY_GITHUB_PAGES.md)
 - [Project Structure](#project-structure)
 - [Parser Layout FAQ](#-parser-layout-faq)
 - [Development](#development)
@@ -70,6 +74,218 @@ Hymeko Framework provides native support for hypergraph structures:
 - **Hierarchical Queries** - Traverse parent-child and sibling relationships
 - **Path Resolution** - Resolve node references through hierarchical paths
 - **Structure Validation** - Ensure hypergraph integrity and consistency
+
+## 🔁 Query-Driven Transforms
+
+HyMeKo turns a compiled hypergraph into any text-based output — URDF,
+SDF, MJCF, Graphviz DOT, a ROS 2 launch file, or a format you invent —
+through a **query + template** pair. No Rust code, no recompile.
+
+```
+transforms/<name>/
+├── queries.hymeko       what to find in the graph
+└── template.<ext>       how to write the output
+```
+
+Run:
+
+```bash
+hymeko transform robot.hymeko -t urdf -o robot.urdf --name my_robot
+```
+
+Or from the REPL:
+
+```
+hymeko [robot]> tf urdf robot.urdf
+hymeko [robot]> tdir                 # list available transforms
+```
+
+### Pipeline
+
+```
+  your.hymeko ─► compile ─► IR ─┐
+                                │
+    queries.hymeko ─► parse ─► Predicate tree
+                                │                 │
+                                └─► QueryEngine ──┴─► HashMap<label, matches>
+                                                            │
+    template.<ext>  ─► parse template ─► render ────────────┘
+                                                            │
+                                                            ▼
+                                                       output string
+```
+
+Three well-separated layers keep the engine domain-neutral:
+
+| Layer | Module | Knows about |
+|-------|--------|-------------|
+| 1 — Query engine | `hymeko_query::{engine, predicate, interpret}` | Hypergraph IR, predicates |
+| 2 — Rewrite engine | `hymeko_query::rewrite::{template, match_context}` | Matching, field extraction, templates |
+| 3 — Transform specs | `transforms/<name>/` (external files) | URDF / SDF / MJCF / DOT / … |
+
+### Query file format
+
+A query file is a HyMeKo description that groups pattern queries inside
+a `context` block:
+
+```
+my_transform {}
+context
+{
+    links:             link          {}
+    @fixed_joints:     fixed_joint   {}
+    @revolute_joints:  rev_joint     {}
+    heavy_parts:       link { mass <gt> 5.0; }
+}
+```
+
+- `<name>_transform {}` — required header (the parser needs a top-level
+  description).
+- `context { … }` — every child becomes one named query.
+- The **leading identifier is the label** used from the template; it is
+  not a name filter. `links: link {}` means "any node inheriting from
+  `link`, labelled `links`".
+- `@` prefix selects edges. Joints are edges in HyMeKo, so joint queries
+  must use `@`.
+- Nested blocks become containment constraints; `<gt>`, `<lt>`, `<gte>`,
+  `<lte>`, `<eq>`, `<ne>` on a value become numeric comparisons.
+
+### Template file format
+
+A template is plain text (any extension, any target syntax) with
+`{{tags}}` interpolated in. Five kinds of construct:
+
+**1. Literal text** — anything outside `{{…}}` is emitted verbatim.
+
+**2. Interpolation** — `{{expr}}` resolves against the current match:
+
+| Tag | Yields |
+|-----|--------|
+| `{{name}}` | Matched decl's resolved name |
+| `{{kind}}` | `node` / `edge` / `arc` |
+| `{{depth}}` · `{{id}}` | Depth in decl tree · internal DeclId |
+| `{{field:mass}}` | Child named `mass` — its value |
+| `{{field:link_geometry.dimension}}` | Dotted path through children |
+| `{{field:color}}` | Follows references (e.g. `color -> link_color`) |
+| `{{bind:+:0}}` | First `+` arc-binding target (parent for joints) |
+| `{{bind:-:0}}` | First `-` arc-binding target (child for joints) |
+| `{{bind:-:all}}` | All `-` bindings, space-separated |
+| `{{config:robot_name}}` | Value from config map (`--name`, etc.) |
+
+Missing fields render as empty strings. List values (`[0.1, 0.2, 0.3]`)
+render as `"0.1 0.2 0.3"`.
+
+**3. Iteration** — `{{#each label}} … {{/each}}` loops over every match
+of the named query. `label` must match a query label from the
+`context` block.
+
+```xml
+{{#each links}}
+  <link name="{{name}}"/>
+{{/each}}
+```
+
+**4. Conditional** — `{{#if expr}} … {{/if}}` emits the block only when
+the expression resolves to a non-empty string.
+
+```xml
+{{#if field:mass}}
+  <inertial><mass value="{{field:mass}}"/></inertial>
+{{/if}}
+```
+
+**5. Comment** — `{{#comment}} … {{/comment}}` is stripped from output.
+
+### Worked example — the shipped URDF template
+
+`transforms/urdf/queries.hymeko`:
+
+```
+urdf_transform {}
+context
+{
+    links:             link          {}
+    @fixed_joints:     fixed_joint   {}
+    @revolute_joints:  rev_joint     {}
+    @continuous_joints: conti_joint  {}
+    @prismatic_joints: prismatic_joint {}
+    frames:            frame         {}
+}
+```
+
+`transforms/urdf/template.urdf.xml` (excerpt):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="{{config:robot_name}}">
+{{#each links}}
+  <link name="{{name}}">
+{{#if field:mass}}
+    <inertial><mass value="{{field:mass}}"/></inertial>
+{{/if}}
+{{#if field:link_geometry}}
+    <visual>
+{{#if field:origin}}
+      <origin xyz="{{field:origin}}" rpy="0 0 0"/>
+{{/if}}
+      <geometry><cylinder radius="0.05" length="0.1"/></geometry>
+    </visual>
+{{/if}}
+  </link>
+{{/each}}
+
+{{#each revolute_joints}}
+  <joint name="{{name}}" type="revolute">
+    <parent link="{{bind:+:0}}"/>
+    <child  link="{{bind:-:0}}"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+  </joint>
+{{/each}}
+</robot>
+```
+
+Running
+`hymeko transform data/robotics/robot_4wh.hymeko -t urdf --name robot4wh`
+emits a valid URDF with every link and joint wired to its parent/child
+via the signed arc bindings captured at query time.
+
+### Programmatic use
+
+```rust
+use hymeko_query::rewrite::{execute_transform, TransformSpec};
+use std::collections::HashMap;
+
+let spec = TransformSpec {
+    name: "urdf".into(),
+    query_source:    std::fs::read_to_string("transforms/urdf/queries.hymeko")?,
+    template_source: std::fs::read_to_string("transforms/urdf/template.urdf.xml")?,
+};
+
+let mut config = HashMap::new();
+config.insert("robot_name".into(), "my_robot".into());
+
+let urdf = execute_transform(&compiled.ir, &interner, &spec, &config)?;
+```
+
+### Shipped transforms
+
+| Directory | Target | Extension |
+|-----------|--------|-----------|
+| `transforms/urdf/` | ROS/Gazebo URDF | `.urdf` / `.xml` |
+| `transforms/sdf/` | Gazebo SDFormat 1.7 | `.sdf` / `.xml` |
+| `transforms/mjcf/` | MuJoCo MJCF | `.xml` |
+| `transforms/dot/` | Graphviz DOT (visualisation) | `.dot` |
+| `transforms/ros2_launch/` | ROS 2 Python launch file | `.launch.py` |
+
+### Further reading
+
+- [`docs/guides/transforms.md`](docs/guides/transforms.md) — step-by-step
+  guide for new users writing a first transform (query cheatsheet,
+  template cookbook, common-mistakes table).
+- [`docs/plans/04_graph_query/T11_rewrite_engine.md`](docs/plans/04_graph_query/T11_rewrite_engine.md) —
+  architecture note: data flow, integration decisions, file map,
+  capability / roadmap tables.
 
 ## ✨ Features
 
@@ -135,6 +351,23 @@ cargo test --all
 ./target/release/parser hymeko/parser/data/minimal_examples/minimal_example.hymeko
 ```
 
+### SOTA snapshot (link prediction)
+
+Mean AUC bar charts (Bitcoin joint vs cycle, Phase‑8 panel, Slashdot `edge_cr` seeds) and citation tables live in **[`docs/SOTA_RESULTS.md`](docs/SOTA_RESULTS.md)**. Evidence rules: [`docs/RESULTS_DISCIPLINE.md`](docs/RESULTS_DISCIPLINE.md). Repo cold start: [`COLD_START.md`](COLD_START.md).
+
+### Handbook (mdBook)
+
+The same material (plus **abbreviations**, **mathematics**, and **artifact indexes**) is collected for humans and agents in the **mdBook** under `docs/book/` — see **`docs/book/src/SUMMARY.md`** part **Results & evidence**.
+
+**Public site:** enable [GitHub Pages](docs/DEPLOY_GITHUB_PAGES.md) (workflow already builds `_site/`). After the first deploy, open the URL GitHub shows under **Settings → Pages**.
+
+```bash
+cargo install mdbook   # once, see https://github.com/rust-lang/mdBook
+cd docs/book && mdbook build
+```
+
+Then open **`docs/book/book/index.html`** in a browser (or `mdbook serve` for live reload).
+
 ## 📁 Project Structure
 
 ```
@@ -191,6 +424,12 @@ hymeko_framework/
 
 ## 🛠️ Development
 
+### Rust crate layout (workspace + `hymeko_kit`)
+
+All `hymeko_*` crates share the **same Cargo workspace** (root `Cargo.toml`): one resolver, shared `target/`, and `[workspace.dependencies]` for common versions.
+
+For binaries or experiments that want **one dependency** instead of many paths, use the optional umbrella crate **`hymeko_kit`**, which re-exports `hymeko` (from `hymeko_core`) and optionally `hymeko_clifford`, `hymeko_compute`, and `hymeko_graph` behind features `clifford`, `gpu`, and `graph` (meta-feature `full` enables all three). See `hymeko_kit/Cargo.toml` and `hymeko_kit/src/lib.rs`.
+
 ### Development Environment Setup
 
 ```bash
@@ -212,6 +451,23 @@ cargo fmt --all
 
 # Lint code
 cargo clippy --all --all-targets
+```
+
+### Python ([uv](https://docs.astral.sh/uv/))
+
+The repository root is a **uv workspace** (`pyproject.toml`, `uv.lock`) that installs the `hymeko` and `signedkan-native` packages (Maturin) plus dev tools from `tools.yaml` major ranges.
+
+```bash
+# Install uv: https://docs.astral.sh/uv/getting-started/installation/
+
+# Create `.venv/` and install workspace members + dev tools (no PyTorch by default)
+uv sync --all-packages
+
+# Optional: PyTorch + NumPy pinned to match `CORE.YAML` (large download)
+uv sync --group ml --all-packages
+
+# Optional: editable stub that depends on torch (install after `--group ml`)
+uv pip install -e python/ehk_torch_stub
 ```
 
 ### Using Development Scripts
@@ -340,13 +596,13 @@ The project includes comprehensive tests across multiple levels with specific fo
 - Comments handling
 
 ## 📊 Benchmark Harnesses
-- **Parser Grid Sweep:** `py/parsing/benchmarks/grid_expansion_bench.py` sweeps nodes/edges/densities, measures parse plus expansion timings, and writes both summary and raw CSV exports for regression tracking.
+- **Parser Grid Sweep:** `python/benches/parsing/grid_expansion_bench.py` sweeps nodes/edges/densities, measures parse plus expansion timings, and writes both summary and raw CSV exports for regression tracking.
   ```powershell
-  python py/parsing/benchmarks/grid_expansion_bench.py
+  python python/benches/parsing/grid_expansion_bench.py
   ```
-- **COO Tensor Grid Sweep:** `py/coo_tensor/coo_tensor_grid_eval.py` evaluates star and clique expansions end-to-end (parse → extraction → tensor materialization) and records NNZ counts alongside timestamped CSV telemetry.
+- **COO Tensor Grid Sweep:** `python/benches/coo_tensor/coo_tensor_grid_eval.py` evaluates star and clique expansions end-to-end (parse → extraction → tensor materialization) and records NNZ counts alongside timestamped CSV telemetry.
   ```powershell
-  python py/coo_tensor/coo_tensor_grid_eval.py
+  python python/benches/coo_tensor/coo_tensor_grid_eval.py
   ```
 
 ## 🤖 CI/CD Pipeline

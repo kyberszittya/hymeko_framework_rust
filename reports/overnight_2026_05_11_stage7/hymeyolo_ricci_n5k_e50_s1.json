@@ -1,0 +1,11 @@
+
+Phase 1 smoke: n_images=5000  epochs=50  lr=0.003  device=cuda
+  dataset: X=(5000, 3, 64, 64)  counts.mean=1.94
+
+  config                start      end   drop   wall  box_acc circ_acc
+  ------------------  -------  -------  -----  -----  -------  --------
+  baseline            start=  3.565  end=  2.756  drop= 22.7%  wall=365.6s  box_acc=0.25  circ_acc=0.00  mAP50=0.118  mAP50:95=0.039  mIoU=0.385
+  boxes-only          start=  3.586  end=  1.395  drop= 61.1%  wall=352.6s  box_acc=0.56  circ_acc=0.00  mAP50=0.532  mAP50:95=0.204  mIoU=0.479
+  circles-only        start=  3.660  end=  3.060  drop= 16.4%  wall=355.0s  box_acc=0.00  circ_acc=0.06  mAP50=0.027  mAP50:95=0.008  mIoU=0.323
+  boxes+circles       start=  6.996  end=  3.331  drop= 52.4%  wall=527.9s  box_acc=0.50  circ_acc=0.57  mAP50=0.691  mAP50:95=0.223  mIoU=0.533
+  +ricci-mod          start=  7.025  end=  4.429  drop= 37.0%  wall=602.6s  box_acc=0.12  circ_acc=0.57  mAP50=0.336  mAP50:95=0.101  mIoU=0.447

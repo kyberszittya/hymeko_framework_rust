@@ -4,11 +4,11 @@ mod test_tensor_representation {
     use std::marker::PhantomData;
     use hymeko::common::ids::{DeclId, EdgeId, NodeId};
     use hymeko::tensor::common::signed_incidence;
-    use hymeko::tensor::common_traversal::inc_to_real;
-    use hymeko::traversal::hypergraphview::HyperGraphView;
-    use hymeko::tensor::message_passing::{build_explicit_a, clique_diag, implicit_clique_step, print_dense_real, scatter_nodes_from_edges, CliqueStepCfg};
-    use hymeko::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
-    use hymeko::tensor::tensor::{compute_bipartite_degrees, dense_view_slice};
+    use hymeko_hnn::tensor::common_traversal::inc_to_real;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hnn::tensor::message_passing::{build_explicit_a, clique_diag, implicit_clique_step, print_dense_real, scatter_nodes_from_edges, CliqueStepCfg};
+    use hymeko_hre::expansion::{clique_expansion_coo, star_expansion_coo, star_expansion_coo_normalized};
+    use hymeko_hnn::tensor::tensor::{compute_bipartite_degrees, dense_view_slice};
     use hymeko::tensor::tensor_val::{EdgeWScalar, EdgeWeight, ScalarWeightExtractor};
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header, print_dense_matrix};
     use log::info;
@@ -33,7 +33,7 @@ mod test_tensor_representation {
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         let coo = star_expansion_coo(&hg);
-        let proj = hymeko::tensor::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes(); // nálad: root + 5 => 6
         let num_edges = hg.num_edges(); // 4
@@ -141,7 +141,7 @@ mod test_tensor_representation {
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(
             &compiled.ir, &aggcfg, &ex);
         let coo = star_expansion_coo(&hg);
-        let proj = hymeko::tensor::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
         let num_edges = hg.num_edges();
@@ -256,7 +256,7 @@ mod test_tensor_representation {
 
         // 1) "Dense" reference: clique_view -> matrix
         let clique_coo = clique_expansion_coo(&hg);
-        let a = hymeko::tensor::tensor::project_sum_over_slices(&clique_coo);
+        let a = hymeko_hnn::tensor::tensor::project_sum_over_slices(&clique_coo);
 
         let n = hg.num_nodes();
 
@@ -329,7 +329,7 @@ mod test_tensor_representation {
                 }
             }
         }
-        let proj = hymeko::tensor::tensor::project_sum_over_slices(&clique_coo);
+        let proj = hymeko_hnn::tensor::tensor::project_sum_over_slices(&clique_coo);
         print_dense_matrix(&proj, "Clique projection (sum over slices)");
         for (i, (dense, imp)) in y_dense.iter().zip(&y_imp).enumerate() {
             let diff = (dense - imp).abs();
@@ -385,7 +385,7 @@ mod test_tensor_representation {
         let mut b: Vec<Vec<(usize, f32)>> = vec![Vec::new(); m]; // per edge: (v, bve)
 
         for e in 0..m {
-            let (s, eend) = hg.edge_span(EdgeId(e));
+            let (s, eend) = hg.edge_span(EdgeId::new(e));
 
             for p in s..eend {
                 let v = hg.flat_edge_nodes[p].0;
@@ -534,7 +534,7 @@ mod test_tensor_representation {
 
         // normalized star
         let coo = star_expansion_coo_normalized(&hg, true, STAR_NORMALIZATION_EPS);
-        let proj = hymeko::tensor::tensor::project_sum_over_slices(&coo);
+        let proj = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo);
 
         let num_nodes = hg.num_nodes();
         let num_edges = hg.num_edges();
@@ -613,10 +613,10 @@ mod test_tensor_representation {
         for w in &mut hg2.flat_edge_w { *w *= INCIDENCE_SCALE_FACTOR; }
 
         let coo1 = star_expansion_coo_normalized(&hg1, true, STAR_NORMALIZATION_EPS);
-        let proj1 = hymeko::tensor::tensor::project_sum_over_slices(&coo1);
+        let proj1 = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo1);
 
         let coo2 = star_expansion_coo_normalized(&hg2, true, STAR_NORMALIZATION_EPS);
-        let proj2 = hymeko::tensor::tensor::project_sum_over_slices(&coo2);
+        let proj2 = hymeko_hnn::tensor::tensor::project_sum_over_slices(&coo2);
 
         let dim = hg1.num_nodes() + hg1.num_edges();
         assert_eq!(dim, hg2.num_nodes() + hg2.num_edges());
@@ -706,20 +706,20 @@ mod test_tensor_representation {
         // Edge 1 spans Node 1
 
         let hg = HyperGraphView::<f64, EdgeWScalar<f64>, f64> {
-            node_decl: vec![DeclId(0), DeclId(1), DeclId(2)],
-            edge_decl: vec![DeclId(3), DeclId(4)],
+            node_decl: vec![DeclId::new(0), DeclId::new(1), DeclId::new(2)],
+            edge_decl: vec![DeclId::new(3), DeclId::new(4)],
 
             // --- Node to Edge CSR (Not used by compute_degrees, but needed for struct) ---
             node_offsets: vec![0, 0, 2, 3], // Node 0 has 0, Node 1 has 2, Node 2 has 1
-            flat_node_edges: vec![EdgeId(0), EdgeId(1), EdgeId(0)],
+            flat_node_edges: vec![EdgeId::new(0), EdgeId::new(1), EdgeId::new(0)],
             flat_node_sign: vec![1, 1, 1],
             flat_node_w: vec![2.0, 3.5, 4.0],
 
             // --- Edge to Node CSR (The one compute_bipartite_degrees actually uses) ---
             edge_offsets: vec![0, 2, 3], // Edge 0 has 2 nodes, Edge 1 has 1 node
             flat_edge_nodes: vec![
-                NodeId(1), NodeId(2), // Edge 0's nodes
-                NodeId(1)             // Edge 1's nodes
+                NodeId::new(1), NodeId::new(2), // Edge 0's nodes
+                NodeId::new(1)             // Edge 1's nodes
             ],
             flat_edge_sign: vec![1, 1, 1],
 

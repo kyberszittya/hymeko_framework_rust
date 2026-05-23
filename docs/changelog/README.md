@@ -2,6 +2,10 @@
 
 This root changelog tracks every dated log stored in `docs/changelog/` and provides a short summary so you can jump straight to the details you need. Each entry links to the full write-up.
 
+## 2026-04-07 — Query Engine Split, Tensor Modules, and Weight Initializers
+- **Link:** [changelog_20260407.md](changelog_20260407.md)
+- **Highlights:** Finalized the query-engine branch by moving query/codegen/kinematics workflows into `hymeko_query/src/` (plus new helpers/tests), reorganized tensor conv/decomposition surfaces in `hymeko_core/src/tensor/`, introduced deterministic weight initialization in `hymeko_core/src/tensor/conv/weight_init/` with coverage in `hymeko_core/tests/computations/test_weight_init.rs`, updated parser plus sample-data layout (`hymeko_core/data/` -> `data/`), added robotics fixtures (`data/robotics/anthropomorphic_arm.hymeko`, `data/robotics/meta_kinematics.hymeko`) for articulated-model and reusable kinematics schema coverage, enhanced `ModuleStore` with ownership-safe IR extraction APIs (`take_last_ir()`, `compile_to_ir_only()`, `deserialize_cbor_ir()`) plus namespace alias resolution during compilation for decoupled IR/tensor scheduling, expanded `hymeko_query/tests/test_transform_ecosystem.rs` with dual-fixture registry/validation + MJCF/DOT assertion coverage (including alias parity), and added `hymeko_query/tests/test_generation_engine.rs` for extraction/generation/cross-format regression coverage.
+
 ## 2026-03-12 — Multiplexed Daemon Egress and Worker Refactor
 - **Link:** [changelog_20260312.md](changelog_20260312.md)
 - **Highlights:** Added multiplexed daemon dispatch in `hymeko_daemon/src/service.rs` (compiled IR + star tensor + clique tensor publishers), centralized graph-name derivation in `hymeko_daemon/src/worker.rs` via `graph_name_from_ir`, fixed Arrow serialization argument/hash type mismatches, and synced Phase 3 task evidence in `docs/plans/daemon/checklist_task3.md`.

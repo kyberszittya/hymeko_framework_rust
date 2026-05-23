@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod test_coo_builder {
     use hymeko::tensor::representations::tensor_coo::TensorCoo;
-    use hymeko::tensor::representations::tensor_coo_representation::{clique_expansion_coo, star_expansion_coo};
+    use hymeko_hre::expansion::{clique_expansion_coo, star_expansion_coo};
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use crate::test_tensor_representations::constants::{DEFAULT_AGG_CFG, MINIMAL_TENSOR_VALUES_PATH};
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
     use log::info;

@@ -1,0 +1,312 @@
+[
+  {
+    "family": "chain",
+    "name": "chain_2",
+    "n_vertices": 2,
+    "n_hyperedges": 1,
+    "mean_arity": 2.0,
+    "source_bytes": 953,
+    "path": "chain/chain_2/chain_2.urdf",
+    "robot_name": "chain_2"
+  },
+  {
+    "family": "tree",
+    "name": "tree_2_k3",
+    "n_vertices": 2,
+    "n_hyperedges": 1,
+    "mean_arity": 2.0,
+    "source_bytes": 915,
+    "path": "tree/tree_2_k3/tree_2_k3.urdf",
+    "robot_name": "tree_2_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_5",
+    "n_vertices": 5,
+    "n_hyperedges": 4,
+    "mean_arity": 2.0,
+    "source_bytes": 2648,
+    "path": "chain/chain_5/chain_5.urdf",
+    "robot_name": "chain_5"
+  },
+  {
+    "family": "tree",
+    "name": "tree_5_k3",
+    "n_vertices": 5,
+    "n_hyperedges": 4,
+    "mean_arity": 2.0,
+    "source_bytes": 2550,
+    "path": "tree/tree_5_k3/tree_5_k3.urdf",
+    "robot_name": "tree_5_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_10",
+    "n_vertices": 10,
+    "n_hyperedges": 9,
+    "mean_arity": 2.0,
+    "source_bytes": 5474,
+    "path": "chain/chain_10/chain_10.urdf",
+    "robot_name": "chain_10"
+  },
+  {
+    "family": "tree",
+    "name": "tree_10_k3",
+    "n_vertices": 10,
+    "n_hyperedges": 9,
+    "mean_arity": 2.0,
+    "source_bytes": 5276,
+    "path": "tree/tree_10_k3/tree_10_k3.urdf",
+    "robot_name": "tree_10_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_20",
+    "n_vertices": 20,
+    "n_hyperedges": 19,
+    "mean_arity": 2.0,
+    "source_bytes": 11162,
+    "path": "chain/chain_20/chain_20.urdf",
+    "robot_name": "chain_20"
+  },
+  {
+    "family": "tree",
+    "name": "tree_20_k3",
+    "n_vertices": 20,
+    "n_hyperedges": 19,
+    "mean_arity": 2.0,
+    "source_bytes": 10758,
+    "path": "tree/tree_20_k3/tree_20_k3.urdf",
+    "robot_name": "tree_20_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_50",
+    "n_vertices": 50,
+    "n_hyperedges": 49,
+    "mean_arity": 2.0,
+    "source_bytes": 28232,
+    "path": "chain/chain_50/chain_50.urdf",
+    "robot_name": "chain_50"
+  },
+  {
+    "family": "tree",
+    "name": "tree_50_k3",
+    "n_vertices": 50,
+    "n_hyperedges": 49,
+    "mean_arity": 2.0,
+    "source_bytes": 27222,
+    "path": "tree/tree_50_k3/tree_50_k3.urdf",
+    "robot_name": "tree_50_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_100",
+    "n_vertices": 100,
+    "n_hyperedges": 99,
+    "mean_arity": 2.0,
+    "source_bytes": 56683,
+    "path": "chain/chain_100/chain_100.urdf",
+    "robot_name": "chain_100"
+  },
+  {
+    "family": "tree",
+    "name": "tree_100_k3",
+    "n_vertices": 100,
+    "n_hyperedges": 99,
+    "mean_arity": 2.0,
+    "source_bytes": 54666,
+    "path": "tree/tree_100_k3/tree_100_k3.urdf",
+    "robot_name": "tree_100_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_200",
+    "n_vertices": 200,
+    "n_hyperedges": 199,
+    "mean_arity": 2.0,
+    "source_bytes": 113981,
+    "path": "chain/chain_200/chain_200.urdf",
+    "robot_name": "chain_200"
+  },
+  {
+    "family": "tree",
+    "name": "tree_200_k3",
+    "n_vertices": 200,
+    "n_hyperedges": 199,
+    "mean_arity": 2.0,
+    "source_bytes": 109908,
+    "path": "tree/tree_200_k3/tree_200_k3.urdf",
+    "robot_name": "tree_200_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_500",
+    "n_vertices": 500,
+    "n_hyperedges": 499,
+    "mean_arity": 2.0,
+    "source_bytes": 285881,
+    "path": "chain/chain_500/chain_500.urdf",
+    "robot_name": "chain_500"
+  },
+  {
+    "family": "tree",
+    "name": "tree_500_k3",
+    "n_vertices": 500,
+    "n_hyperedges": 499,
+    "mean_arity": 2.0,
+    "source_bytes": 275748,
+    "path": "tree/tree_500_k3/tree_500_k3.urdf",
+    "robot_name": "tree_500_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_1000",
+    "n_vertices": 1000,
+    "n_hyperedges": 999,
+    "mean_arity": 2.0,
+    "source_bytes": 572382,
+    "path": "chain/chain_1000/chain_1000.urdf",
+    "robot_name": "chain_1000"
+  },
+  {
+    "family": "tree",
+    "name": "tree_1000_k3",
+    "n_vertices": 1000,
+    "n_hyperedges": 999,
+    "mean_arity": 2.0,
+    "source_bytes": 552210,
+    "path": "tree/tree_1000_k3/tree_1000_k3.urdf",
+    "robot_name": "tree_1000_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_2000",
+    "n_vertices": 2000,
+    "n_hyperedges": 1999,
+    "mean_arity": 2.0,
+    "source_bytes": 1149380,
+    "path": "chain/chain_2000/chain_2000.urdf",
+    "robot_name": "chain_2000"
+  },
+  {
+    "family": "tree",
+    "name": "tree_2000_k3",
+    "n_vertices": 2000,
+    "n_hyperedges": 1999,
+    "mean_arity": 2.0,
+    "source_bytes": 1108571,
+    "path": "tree/tree_2000_k3/tree_2000_k3.urdf",
+    "robot_name": "tree_2000_k3"
+  },
+  {
+    "family": "chain",
+    "name": "chain_5000",
+    "n_vertices": 5000,
+    "n_hyperedges": 4999,
+    "mean_arity": 2.0,
+    "source_bytes": 2880380,
+    "path": "chain/chain_5000/chain_5000.urdf",
+    "robot_name": "chain_5000"
+  },
+  {
+    "family": "tree",
+    "name": "tree_5000_k3",
+    "n_vertices": 5000,
+    "n_hyperedges": 4999,
+    "mean_arity": 2.0,
+    "source_bytes": 2778941,
+    "path": "tree/tree_5000_k3/tree_5000_k3.urdf",
+    "robot_name": "tree_5000_k3"
+  },
+  {
+    "family": "humanoid",
+    "name": "humanoid_f0",
+    "n_vertices": 28,
+    "n_hyperedges": 27,
+    "mean_arity": 2.0,
+    "source_bytes": 15767,
+    "path": "humanoid/humanoid_f0/humanoid_f0.urdf",
+    "robot_name": "humanoid_f0"
+  },
+  {
+    "family": "humanoid",
+    "name": "humanoid_f2",
+    "n_vertices": 44,
+    "n_hyperedges": 43,
+    "mean_arity": 2.0,
+    "source_bytes": 25423,
+    "path": "humanoid/humanoid_f2/humanoid_f2.urdf",
+    "robot_name": "humanoid_f2"
+  },
+  {
+    "family": "humanoid",
+    "name": "humanoid_f5",
+    "n_vertices": 68,
+    "n_hyperedges": 67,
+    "mean_arity": 2.0,
+    "source_bytes": 39907,
+    "path": "humanoid/humanoid_f5/humanoid_f5.urdf",
+    "robot_name": "humanoid_f5"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d3_t0",
+    "n_vertices": 14,
+    "n_hyperedges": 13,
+    "mean_arity": 2.0,
+    "source_bytes": 7730,
+    "path": "quadruped/quadruped_d3_t0/quadruped_d3_t0.urdf",
+    "robot_name": "quadruped_d3_t0"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d3_t3",
+    "n_vertices": 17,
+    "n_hyperedges": 16,
+    "mean_arity": 2.0,
+    "source_bytes": 9406,
+    "path": "quadruped/quadruped_d3_t3/quadruped_d3_t3.urdf",
+    "robot_name": "quadruped_d3_t3"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d5_t0",
+    "n_vertices": 22,
+    "n_hyperedges": 21,
+    "mean_arity": 2.0,
+    "source_bytes": 12294,
+    "path": "quadruped/quadruped_d5_t0/quadruped_d5_t0.urdf",
+    "robot_name": "quadruped_d5_t0"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d5_t3",
+    "n_vertices": 25,
+    "n_hyperedges": 24,
+    "mean_arity": 2.0,
+    "source_bytes": 13970,
+    "path": "quadruped/quadruped_d5_t3/quadruped_d5_t3.urdf",
+    "robot_name": "quadruped_d5_t3"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d7_t0",
+    "n_vertices": 30,
+    "n_hyperedges": 29,
+    "mean_arity": 2.0,
+    "source_bytes": 16866,
+    "path": "quadruped/quadruped_d7_t0/quadruped_d7_t0.urdf",
+    "robot_name": "quadruped_d7_t0"
+  },
+  {
+    "family": "quadruped",
+    "name": "quadruped_d7_t3",
+    "n_vertices": 33,
+    "n_hyperedges": 32,
+    "mean_arity": 2.0,
+    "source_bytes": 18542,
+    "path": "quadruped/quadruped_d7_t3/quadruped_d7_t3.urdf",
+    "robot_name": "quadruped_d7_t3"
+  }
+]

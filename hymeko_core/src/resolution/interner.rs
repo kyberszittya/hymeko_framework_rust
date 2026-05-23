@@ -15,7 +15,7 @@ impl Interner {
         if let Some(&id) = self.map.get(s) { return id; }
 
         // Slow path: One-time allocation
-        let id = SymId(self.vec.len());
+        let id = SymId::new(self.vec.len());
         let boxed: Box<str> = s.into();
         let static_ref: &'static str = unsafe { &*(boxed.as_ref() as *const str) };
         // Safety: We manage the lifetime of the string in the 'vec'.
@@ -35,7 +35,7 @@ impl Interner {
     pub fn iter(&self) -> impl Iterator<Item = (SymId, &str)> + '_ {
         self.vec.iter().enumerate().map(|(i, s)| {
             // Stable alternative to .as_str()
-            (SymId(i), s.as_ref())
+            (SymId::new(i), s.as_ref())
         })
     }
     

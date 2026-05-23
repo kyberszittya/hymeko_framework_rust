@@ -1,7 +1,9 @@
-use std::sync::Arc;
 use hymeko::ir::ir::Ir;
+use std::sync::Arc;
 
 #[derive(Debug)]
+#[allow(dead_code)]
+// Reserved for alternate ingress wire formats; current paths use `ExecutableQuery` only.
 pub enum IngressPayload {
     RawUtf8(Vec<u8>),
     CborEncoded(Vec<u8>),

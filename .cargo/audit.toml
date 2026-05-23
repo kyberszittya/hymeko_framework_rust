@@ -1,0 +1,16 @@
+# cargo-audit configuration.
+#
+# Ignored advisories must list a real reason on the line above the ID, with
+# a re-evaluation trigger.  No silent ignores.
+
+[advisories]
+ignore = [
+    # RUSTSEC-2023-0071 — rsa 0.9.10 "Marvin Attack" (timing sidechannel, medium 5.9).
+    # No upstream patch released as of 2026-05-23 (advisory open since 2023-11-22).
+    # Pulled transitively via zenoh-transport 1.8.0 -> zenoh 1.8.0 -> hymeko_daemon.
+    # Risk accepted: the daemon's RSA usage is internal to zenoh's transport handshake
+    # and not exposed to attacker-controlled timing oracles in our deployment.
+    # Re-evaluate when the `rsa` crate publishes a fixed release, or when zenoh swaps
+    # to a non-rsa transport.
+    "RUSTSEC-2023-0071",
+]

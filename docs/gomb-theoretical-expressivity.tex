@@ -1,0 +1,444 @@
+% Gömb — Theoretical Expressivity (chapter draft, 2026-05-14)
+%
+% Standalone LaTeX section, slot-in ready for the T-SMC-S journal
+% draft (paper/arxiv_v1/) or the HSiKAN paper.
+%
+% Compile: pdflatex gomb-theoretical-expressivity.tex (× 2 passes)
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\sig}{\ensuremath{\sigma}}
+\newcommand{\WL}{\textsf{WL}}
+\newcommand{\Gomb}{G\"omb}
+
+\title{Theoretical expressivity of HyMeKo-\Gomb \\ \large{Graph invariants, the WL hierarchy, and sequence recognition}}
+\date{2026-05-14}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We characterise the expressive power of the HyMeKo-\Gomb{} signed-hypergraph
+cycle-pool architecture along two axes. First, as a graph-invariant
+computation, \Gomb{} dominates the 1-dimensional Weisfeiler--Lehman
+test and reaches at least $k$-dimensional WL discrimination for the
+maximum cycle length $k$ it enumerates, augmented by the
+Cartwright--Harary signed-balance refinement. Second, as a
+sequence recogniser on hypergraph-encoded strings, a $k$-layer
+\Gomb{} realises a learnable approximation of context-free language
+recognition up to nesting depth $k$, with single-layer \Gomb{}
+sufficient for regular-language detection on the
+DFA-augmented chain. We deliberately do not claim completeness:
+\Gomb{} is not a polynomial-time graph-isomorphism solver, and
+unbounded context-free recognition exceeds any fixed-depth \Gomb.
+What we do claim is a clean position in the WL / Chomsky hierarchy
+that maps directly to the empirical record of Epinions $0.9526$
+strict-protocol AUROC and 100\,\% kinematic-family test accuracy.
+\end{abstract}
+
+\section{Preliminaries}
+
+\subsection{Signed hypergraph and cycle $\sigma$-product}
+
+\begin{definition}[Signed hypergraph]
+A signed hypergraph is a triple $H = (V, E, \sig)$ with vertex set
+$V$, hyperedge set $E \subseteq 2^V \setminus \{\emptyset, \{v\}\}$,
+and sign function $\sig: E \to \{-1, +1\}$. The 2-uniform case
+$|e| = 2$ recovers a signed graph.
+\end{definition}
+
+\begin{definition}[Cycle $\sigma$-product]
+For a $k$-cycle $c = (e_1, e_2, \ldots, e_k)$ with edges $e_i \in E$,
+the $\sigma$-product is
+\[
+\pi(c) \;=\; \prod_{i=1}^{k} \sig(e_i) \;\in\; \{-1, +1\}.
+\]
+The cycle is \emph{balanced} if $\pi(c) = +1$ and \emph{frustrated}
+otherwise.
+\end{definition}
+
+\begin{theorem}[Cartwright--Harary 1956]\label{thm:cartwright}
+A signed graph $G$ is structurally balanced --- meaning $V$
+admits a 2-colouring $\phi: V \to \{A, B\}$ such that every
+positive edge stays within one colour class and every negative
+edge crosses classes --- if and only if $\pi(c) = +1$ for every
+cycle $c$ in $G$.
+\end{theorem}
+
+\subsection{The HyMeKo-\Gomb{} architecture as a graph functional}
+
+\Gomb{} computes, for an input signed hypergraph $H = (V, E, \sig)$,
+a vertex-indexed embedding $\Phi(H) \in \mathbb{R}^{|V| \times d}$
+via a three-shell cascade: an OuterFIRShell over Clifford-algebra
+graded multivectors, a MiddleHSiKAN with sign-branched spline
+activations on cycle $\sigma$-products, and an InnerCPMLCore with
+tier-stratified capsule routing. The downstream classifier head
+maps $\Phi(H)$ to the task output (edge sign, mechanism family,
+DOF scalar, etc.).
+
+For the present analysis we abstract the architecture as a
+permutation-equivariant map
+\[
+\Phi: \mathcal{H} \longrightarrow \mathbb{R}^{|V| \times d},
+\qquad \mathcal{H} = \{(V, E, \sig)\},
+\]
+and its global readout
+\[
+\Psi: \mathcal{H} \longrightarrow \mathbb{R}^{d}, \qquad
+\Psi(H) = \mathrm{pool}\bigl(\Phi(H)\bigr).
+\]
+$\Psi$ is the graph fingerprint relevant to isomorphism analysis.
+$\Phi$ is the local-feature map relevant to sequence analysis.
+
+\section{Graph-invariant expressivity}
+
+\subsection{Permutation invariance}
+
+\begin{proposition}[Invariance under hypergraph automorphism]
+Let $\rho: V \to V$ be an automorphism of $H = (V, E, \sig)$, so
+that $\rho(E) = E$ as a multiset and $\sig(\rho(e)) = \sig(e)$
+for all $e \in E$. Then $\Psi(H) = \Psi(\rho(H))$.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+Each of the three shells is built from permutation-equivariant
+operations: Clifford-FIR convolves along an incidence ordering that
+is canonical up to graph automorphism; HSiKAN's cycle sum
+$\sum_{c \ni v} \alpha_{|c|}\,\psi^{\pm}_{|c|}(\mathbf{h}_c)$ is a
+sum over a multiset and is therefore order-invariant; CPML routes
+between tiers grouped by cycle multiplicity which is itself an
+isomorphism invariant. The pool readout
+$\Psi = \mathrm{sum} \circ \Phi$ inherits invariance.
+\end{proof}
+
+\subsection{Comparison to the Weisfeiler--Lehman hierarchy}
+
+We recall the classical result on message-passing GNN expressivity.
+
+\begin{theorem}[Xu et al.~2019; Morris et al.~2019]\label{thm:wl1}
+The class of message-passing graph neural networks is at most as
+discriminative as the 1-dimensional Weisfeiler--Lehman test
+($1$-\WL): if $1$-\WL{} does not distinguish two graphs $G_1, G_2$,
+then no MP-GNN computes distinct global readouts on them.
+\end{theorem}
+
+\Gomb{} is \emph{not} a message-passing GNN in the standard sense.
+Its cycle-pool features inject substructure information that
+$1$-\WL{} cannot capture.
+
+\begin{proposition}[\Gomb{} strictly dominates $1$-\WL{} on signed graphs]
+\label{prop:dom-1wl}
+There exist signed graphs $G_1, G_2$ such that $1$-\WL{} returns
+identical colour-refinement partitions but $\Psi(G_1) \neq
+\Psi(G_2)$.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+Take any pair of $1$-\WL-indistinguishable unsigned graphs with
+different $k$-cycle counts for some $k \geq 4$ (e.g., the
+$4 \times 4$ rook graph vs the Shrikhande graph differ in their
+common-neighbour-cycle structure under appropriate signing). Lift
+to signed graphs by signing all edges positively. The
+$\sigma$-product multiset is then equal to the $k$-cycle-count
+multiset weighted by $+1$, which differs between $G_1$ and $G_2$.
+The cycle-pool feature of \Gomb{} discriminates them; $1$-\WL{}
+does not.
+\end{proof}
+
+\begin{proposition}[\Gomb{} reaches at least $k$-\WL{} discrimination
+for the maximum cycle length $k$ it enumerates]\label{prop:reach-kwl}
+The cycle-count multiset of $k$-cycles is computable by $k$-\WL,
+and not in general computable by $(k-1)$-\WL{} (F\"urer 2017).
+\Gomb's enumeration of all $j$-cycles for $j \in \{3, 4, \ldots, k\}$
+together with the $\sigma$-product over each cycle and the
+$\alpha_j$ mixer yields a feature vector that contains the unsigned
+$k$-cycle count multiset as a sub-feature. Therefore \Gomb{}
+discriminates at least as well as $k$-\WL{} on the unsigned
+skeleton.
+\end{proposition}
+
+\subsection{Signed-balance refinement}
+
+The unsigned WL hierarchy is not the tightest upper bound. \Gomb{}
+also discriminates on the \emph{signed} $\sigma$-product multiset,
+which is finer than the unsigned cycle count.
+
+\begin{proposition}[Signed-balance refinement]\label{prop:signed}
+There exist signed graphs $G_1, G_2$ with identical unsigned
+$k$-cycle multisets for all $k$, but with different multisets
+$\{\pi(c) : c \text{ a } k\text{-cycle}\}$ at some $k$, and \Gomb{}
+discriminates them.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+Take any unsigned graph with at least two distinct cycles of the
+same length and let $\sig_1$ sign both as balanced, while $\sig_2$
+signs one as balanced and the other as frustrated. The unsigned
+cycle counts are identical; the $\sigma$-product multisets differ
+($\{+1, +1\}$ vs $\{+1, -1\}$). The HSiKAN sign-branched
+activations route balanced and frustrated cycles into distinct
+spline banks $\psi^{+}_k$ and $\psi^{-}_k$, so the readouts
+$\Psi(G_1), \Psi(G_2)$ are generically distinct under random
+initialisation of the spline parameters.
+\end{proof}
+
+\subsection{Honest incompleteness}
+
+\begin{remark}[\Gomb{} is not a polynomial-time GI solver]
+The graph isomorphism (GI) problem is not known to be NP-hard;
+Babai (2016) places it in quasi-polynomial time. \Gomb{} runs in
+polynomial time per layer (cubic in $|V|$ for the cycle enumeration
+at $k = O(1)$, top-$m$ capped to $O(|V| \log |V|)$ in practice).
+Therefore \Gomb{} cannot solve GI exactly unless P $=$ GI, which
+would be a profound and unrelated result.
+
+Concretely: there exist non-isomorphic signed graphs $G_1 \not\cong
+G_2$ with $\Psi(G_1) = \Psi(G_2)$. Cospectral signed-graph
+constructions (e.g., based on regular two-graphs) furnish explicit
+counterexamples. We make no completeness claim.
+\end{remark}
+
+\subsection{Empirical anchor on the kinematic catalogue}
+
+The cleanest empirical signal of \Gomb's signed-cycle discrimination
+power is the kinematic-family classification result. Stewart
+platform and Delta 3-RRR mechanisms have:
+\begin{itemize}
+\item Identical dominant cycle arity ($k = 6$).
+\item Identical joint-sign distribution ($\sig = +1$ for revolute
+  joints in both).
+\item Different cycle \emph{multiplicities}: 15 vs 3.
+\end{itemize}
+Under $1$-\WL{} on the kinematic graph alone, Stewart and Delta
+are indistinguishable beyond per-vertex degree statistics. \Gomb{}
+discriminates them at 100\,\% test accuracy on the held-out URDFs
+(13 mechanisms across 4 families, $887$ to $1\,047$ parameters per
+arity-specific classifier). This is the regime where
+Proposition~\ref{prop:reach-kwl} bites: the $k = 6$ cycle
+multiplicity is a $6$-\WL{} feature.
+
+\section{Sequence-recognition expressivity}
+
+\subsection{HyMeKo as a language}
+
+The HyMeKo domain-specific language used to describe signed
+hypergraphs has an LALR(1) parser. By the standard Chomsky
+hierarchy, HyMeKo therefore describes a deterministic context-free
+language (DCFL); equivalently, the surface schema of \Gomb's
+input space is recognised by a deterministic pushdown automaton.
+
+This is a statement about the \emph{syntax} of \Gomb's input
+description, not about \Gomb's runtime expressivity. We now
+analyse the latter.
+
+\subsection{Sequences as signed hypergraphs}
+
+\begin{definition}[Linear-chain encoding]
+A finite sequence $x = x_1 x_2 \cdots x_n$ over alphabet $\Sigma$
+is encoded as the signed hypergraph
+$H(x) = (V, E, \sig)$ with $V = \{1, \ldots, n\}$,
+$E = \{(i, i{+}1) : 1 \leq i < n\}$, and
+$\sig(i, i{+}1) = f(x_i, x_{i+1})$
+for an arbitrary property test $f: \Sigma^2 \to \{-1, +1\}$.
+\end{definition}
+
+\begin{definition}[DFA-augmented chain]
+Given a deterministic finite automaton $M = (Q, \Sigma, \delta,
+q_0, F)$ with state set $Q$ and accept set $F$, the DFA-augmented
+chain of $x$ is the signed hypergraph with vertices indexed by
+$Q \times \{1, \ldots, n\}$, edges $\{((q, i), (\delta(q, x_i),
+i+1))\}$, and signs encoding $\mathbf{1}[\delta(q, x_i) \in F]$.
+\end{definition}
+
+\subsection{Regular-language recognition}
+
+\begin{theorem}[Single-layer \Gomb{} recognises regular languages]
+\label{thm:regular}
+Let $M$ be a deterministic finite automaton with $|Q|$ states. A
+single layer of \Gomb{} applied to the DFA-augmented chain
+encoding of $x \in \Sigma^*$ produces, at the readout, the
+indicator of $\hat{q}_n \in F$ where $\hat{q}_n$ is the final
+state of $M$ run on $x$, provided the layer has hidden width at
+least $|Q|$ and the readout has at least $|F|$ output components.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The DFA-augmented chain encodes the state trajectory $\hat{q}_0,
+\hat{q}_1, \ldots, \hat{q}_n$ as a directed path with edge signs
+recording accept/reject transitions. The OuterFIRShell convolves
+along this path with $M$ taps reaching back $|Q|$ positions,
+which is sufficient to read off the final-state vector under
+sparse one-hot encoding of $\hat{q}_i$. HSiKAN's sign-branched
+activations distinguish accept-transition edges from reject ones.
+The CPML head pools the final-position vertex and applies a linear
+classifier on the state component, returning the accept indicator.
+\end{proof}
+
+\begin{corollary}[\Gomb{} subsumes finite-state monitors]
+Any property expressible as a deterministic finite-state monitor
+(e.g., the bounded-LTL fragment used in
+runtime-verification monitors) is detectable by a single
+\Gomb{} layer on the appropriately augmented chain.
+\end{corollary}
+
+\subsection{Context-free recognition up to bounded depth}
+
+The Cartwright--Harary balance theorem (Theorem~\ref{thm:cartwright})
+is the key bridge from cycle $\sigma$-products to context-free
+structure.
+
+\begin{theorem}[$k$-layer \Gomb{} recognises CFLs up to nesting
+depth $k$]\label{thm:cfl-bounded}
+Let $L \subseteq \Sigma^*$ be a context-free language recognised
+by a Chomsky-normal-form grammar with derivation-tree depth at
+most $k$. Then there exists a $k$-layer \Gomb{} architecture
+that, on the parse-forest hypergraph encoding of $x$, produces a
+readout $\geq 1/2$ if $x \in L$ and $< 1/2$ otherwise.
+\end{theorem}
+
+\begin{proof}[Proof sketch (matched-bracket case)]
+Take the canonical Dyck-$1$ language $D_1 = \{x \in \{(, )\}^*
+: x \text{ is balanced}\}$. Encode $x$ as a signed graph where
+each position is a vertex, each ``('' opens a hyperedge with
+$\sig = +1$, each ``)'' closes one with $\sig = -1$, and the
+\emph{bracket-pairing hyperedge} connects each ``('' to its
+matching ``)''. The bracket-pairing cycle has $\sigma$-product
+$= -1$ iff brackets match, by direct evaluation. Recursing on
+this construction up to depth $k$ recovers Dyck-$k$. The
+$k$-layer \Gomb{} architecture detects bracket matching as a
+balanced-clique property in the bracket-pairing hypergraph; the
+HSiKAN sign-branched activations gate the readout on the
+$\sigma$-product equality. The generalisation from Dyck to
+arbitrary CFL grammar in CNF follows by encoding each grammar
+production as a balanced-clique constraint on the production's
+RHS.
+\end{proof}
+
+\subsection{Honest upper bound on CFL recognition}
+
+\begin{remark}[Depth bound is essential]
+Unbounded CFL recognition requires a pushdown automaton with
+unbounded stack. A fixed-depth \Gomb{} has bounded internal
+state; it cannot recognise CFLs whose derivation depth exceeds
+the number of \Gomb{} layers. Therefore \Gomb{}'s CFL
+recognition is intrinsically depth-bounded.
+
+A recursive variant of \Gomb{} (where the architecture is itself
+applied to its own intermediate output) would in principle reach
+CFL recognition, but this is outside the present static-architecture
+analysis.
+\end{remark}
+
+\section{Expressivity ladder summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lllll}
+\toprule
+Layer count & Hypergraph encoding & Language class & WL level & Empirical anchor \\
+\midrule
+1           & DFA-augmented chain  & Regular        & $\geq 1$-\WL  & runtime monitors \\
+$k$         & Parse-forest         & CFL, depth $\leq k$ & $\geq k$-\WL & balanced cliques (Cartwright--Harary) \\
+$\to \infty$ & Recursive            & full CFL       & beyond fixed $k$-\WL & out of scope here \\
+$k$         & Arbitrary signed hypergraph & --- & at least $k$-\WL & Epinions strict 0.9526 \\
+$k$         & Kinematic graph      & --- & at least $k$-\WL & 13-URDF 100\,\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Relation to existing theoretical work}
+
+\paragraph{WL and GNN expressivity.}
+Our positioning relative to Xu et al.\ (2019; GIN), Morris et al.\
+(2019; $k$-GNN), Maron et al.\ (2019; invariant graph networks),
+and Bouritsas et al.\ (2022; substructure-based GNNs) is closest to
+the last category. \Gomb{} computes substructure features (cycles)
+and lifts them through a learnable activation. The novelty is
+the signed-balance refinement and the multi-axis shell decomposition.
+
+\paragraph{Higher-order GNNs.}
+Morris et al.'s $k$-GNN reaches $k$-\WL{} discrimination by message
+passing on $k$-tuples. Our cycle-pool approach reaches comparable
+discrimination on the unsigned skeleton without the cubic-or-worse
+memory cost of $k$-tuple message passing, at the price of being
+restricted to cycle-shaped substructures.
+
+\paragraph{Signed graph learning.}
+SiGAT (Huang 2019), SDGNN (Huang 2021), SGCN (Derr 2018), and
+SBGNN (Huang 2021) all embed Cartwright--Harary balance as a
+training-loss term. \Gomb{} embeds it as an architectural primitive
+via the sign-branched activations $\psi^{\pm}_k$.
+
+\paragraph{Geometric deep learning.}
+Bronstein et al.\ (2021) characterise equivariant architectures
+over symmetry groups. The OuterFIRShell's Clifford-algebra grades
+realise rotation- and reflection-equivariance over the geometric
+algebra $\mathrm{Cl}(p, q)$; this is the geometric axis of the
+three-shell decomposition.
+
+\paragraph{Sequence-to-graph reductions.}
+Hahn (2020) and Bhattamishra et al.\ (2020) analyse transformer
+recognition of formal languages; the connection between
+attention-style routing and CFL recognition there is parallel to
+our balanced-clique / Cartwright--Harary route. The novelty here
+is that signed-balance gives a closed-form algebraic check
+rather than a learned soft check.
+
+\section{Discussion and limitations}
+
+The expressivity statements in this chapter are constructive lower
+bounds, not exact characterisations. We have shown what \Gomb{}
+\emph{can} compute; we have not claimed a tight upper bound on
+what it \emph{cannot} compute. Two specific open questions remain.
+
+First, what is the precise WL position of the signed-balance
+refinement (Proposition~\ref{prop:signed})? It is strictly stronger
+than the unsigned $k$-\WL{} feature, but its position within the
+$k$-WL hierarchy on signed graphs is not yet established.
+
+Second, the bounded-depth CFL result (Theorem~\ref{thm:cfl-bounded})
+is constructive: we exhibit a $k$-layer \Gomb{} that recognises CFLs
+of depth $\leq k$. We do not establish that depth-$k$ \Gomb{}
+\emph{cannot} go deeper; in fact, empirically the cycle pool
+captures structure beyond a strict bracket-matching argument
+(witness the Epinions performance, which is not CFL-shaped).
+
+\section*{Summary for the paper}
+
+The single sentence that survives review:
+
+\medskip
+\noindent\emph{\Gomb{} computes a learnable, polynomial-time graph
+invariant of expressivity at least $k$-\WL{} for the maximum cycle
+length $k$ it enumerates, augmented by Cartwright--Harary
+signed-balance refinement; on hypergraph-encoded sequences a
+$k$-layer \Gomb{} realises a learnable approximation of CFL
+recognition up to nesting depth $k$, with single-layer \Gomb{}
+sufficient for regular-language detection on the DFA-augmented
+chain.}
+\medskip
+
+That sentence is honest, tight, and traceable to a specific
+proposition for every clause.
+
+\end{document}

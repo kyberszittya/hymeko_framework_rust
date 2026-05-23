@@ -1,0 +1,40 @@
+[package]
+name = "hymeko_bench"
+version = "0.1.0"
+edition = "2024"
+description = "Scaling-study benchmark harness for the HyMeKo pipeline"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kyberszittya/hymeko_framework_rust"
+
+[[bin]]
+name = "bench_scaling"
+path = "src/bin/bench_scaling.rs"
+
+[[bin]]
+name = "binary_vs_hypergraph"
+path = "src/bin/binary_vs_hypergraph.rs"
+
+[[bin]]
+name = "artifact_generation"
+path = "src/bin/artifact_generation.rs"
+
+[[bin]]
+name = "bench_scaling_tensor"
+path = "src/bin/bench_scaling_tensor.rs"
+
+[[bin]]
+name = "bench_control_cycle"
+path = "src/bin/bench_control_cycle.rs"
+
+[dependencies]
+hymeko_core = { path = "../hymeko_core", default-features = false }
+hymeko_query = { path = "../hymeko_query" }
+hymeko_formats = { path = "../hymeko_formats" }
+hymeko_hre = { path = "../hymeko_hre" }
+hymeko_hnn = { path = "../hymeko_hnn" }
+parser = { path = "../parser", default-features = false }
+clap = { version = "4.6.0", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0"
+csv = "1.3"
+anyhow = "1.0"

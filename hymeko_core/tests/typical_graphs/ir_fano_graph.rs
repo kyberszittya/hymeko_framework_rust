@@ -87,7 +87,7 @@ mod ir_fano_graph {
                 debug!("Checking edge '{ename}' (DeclId: {:?}, EdgeId: {:?})", edge_did, edge_id);
                 for (i, arc_ref) in edge.arcs.iter().enumerate() {
                     let arc_did = ir.decl_to_arc.iter().position(|&aid| aid == Some(*arc_ref))
-                        .map(|idx| DeclId(idx))
+                        .map(|idx| DeclId::new(idx))
                         .unwrap_or_else(|| panic!("ArcId {:?} not mapped to DeclId in IR", arc_ref));
                     debug!("  Arc {i}: DeclId: {:?}, Parent Edge DeclId: {:?}", arc_did, edge_did);
                     let arc = &ir.arcs[arc_ref.0];

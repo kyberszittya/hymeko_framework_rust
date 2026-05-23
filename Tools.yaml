@@ -1,0 +1,225 @@
+# tools.yaml — Development toolchain declaration
+#
+# Read by Claude Code at session start, alongside `CORE.YAML` at repo root.
+# Mirrored in human-readable form by CLAUDE.md §10.
+#
+# Policy:
+#   - `tool` is BINDING. Substituting a different tool for the same
+#     role (e.g. `samply` instead of `cargo flamegraph`) requires
+#     Section 1 approval.
+#   - `major_version` is BINDING. Bumping the major version requires
+#     Section 1 approval. Minor and patch upgrades are free and do
+#     not need to be reflected here.
+#   - `observed` is INFORMATIONAL — the version most recently verified
+#     in CI. Routine drift to newer minor/patch versions is allowed
+#     and expected.
+#   - Versions must be valid semver (MAJOR.MINOR.PATCH). Non-semver
+#     markers (commit hashes, dates, "latest", "nightly") are not
+#     accepted; halt and ask if a tool publishes only such markers.
+#   - For 0.x tools: `major_version: "0"` allows any 0.y.z. This is
+#     deliberately looser than Cargo's caret semantics; the project
+#     trades 0.x-minor-locking for less administrative load.
+#
+# Tools that track an external toolchain (rustup, kernel, LLVM) are
+# left without `major_version`; their version follows the toolchain.
+#
+# This file is distinct from CORE.YAML:
+#   - CORE.YAML pins runtime dependencies (numerical reproducibility,
+#     API stability).
+#   - tools.yaml declares the development toolchain (test, profile,
+#     lint, coverage). Identity fixed; version major-locked.
+
+schema_version: 1
+
+# ---------------------------------------------------------------------
+# Rust
+# ---------------------------------------------------------------------
+rust:
+  test_runner:
+    tool: cargo test
+    notes: tracks rustup toolchain
+
+  benchmark:
+    tool: criterion
+    major_version: "0"
+    observed: "0.5.1"
+
+  profiler_cpu:
+    tool: cargo flamegraph
+    major_version: "0"
+    observed: "0.6.5"
+    output: flamegraph.svg
+
+  profiler_mem:
+    tool: dhat
+    major_version: "0"
+    observed: "0.3.3"
+    notes: pair with heaptrack when native (non-Rust) allocations dominate
+
+  coverage:
+    tool: cargo llvm-cov
+    major_version: "0"
+    observed: "0.6.0"
+    flags: "--lcov"
+    output: lcov
+
+  property_test:
+    tool: proptest
+    major_version: "1"
+    observed: "1.5.0"
+
+  lint:
+    tool: clippy
+    flags: "--all-targets -- -D warnings"
+    notes: tracks rustup toolchain
+
+  format:
+    tool: rustfmt
+    flags: "--check"
+    notes: tracks rustup toolchain
+
+  complexity:
+    tool: rust-code-analysis
+    major_version: "0"
+    observed: "0.0.25"
+
+# ---------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------
+python:
+  environment:
+    tool: uv
+    major_version: "0"
+    observed: "0.11.7"
+    notes: >
+      Root `pyproject.toml` uv workspace (`uv.lock`). Default sync installs
+      members `hymeko_py`, `signedkan_wip/signedkan_native` and `dependency-groups.dev`.
+      Use `--group ml` for CORE-pinned torch/numpy; install `ehk_torch_stub` with
+      `uv pip install -e python/ehk_torch_stub` when needed.
+
+  test_runner:
+    tool: pytest
+    major_version: "8"
+    observed: "8.3.0"
+    flags: "-p no:randomly"
+
+  benchmark:
+    tool: pytest-benchmark
+    major_version: "4"
+    observed: "4.0.0"
+
+  profiler_cpu:
+    tool: py-spy
+    major_version: "0"
+    observed: "0.3.14"
+    flags: "record -o profile.svg --"
+    output: flamegraph.svg
+
+  profiler_mem:
+    tool: memray
+    major_version: "1"
+    observed: "1.13.0"
+    pipeline: "memray run -> memray flamegraph"
+    output: flamegraph.svg
+
+  coverage:
+    tool: pytest-cov
+    major_version: "5"
+    observed: "5.0.0"
+    flags: "--cov --cov-report=lcov"
+    output: lcov
+
+  property_test:
+    tool: hypothesis
+    major_version: "6"
+    observed: "6.100.0"
+
+  lint:
+    tool: ruff
+    major_version: "0"
+    observed: "0.6.0"
+    flags: "check"
+
+  type_check:
+    tool: mypy
+    major_version: "1"
+    observed: "1.11.0"
+    flags: "--strict"
+
+  complexity:
+    tool: radon
+    major_version: "6"
+    observed: "6.0.1"
+    flags: "cc -a -nc"
+
+# ---------------------------------------------------------------------
+# C / C++
+# ---------------------------------------------------------------------
+cpp:
+  test_runner:
+    tool: gtest
+    major_version: "1"
+    observed: "1.14.0"
+
+  benchmark:
+    tool: google/benchmark
+    major_version: "1"
+    observed: "1.8.0"
+
+  profiler_cpu:
+    tool: perf
+    flags: "record -F 999 -g --"
+    postprocess: inferno-flamegraph
+    output: flamegraph.svg
+    notes: tracks Linux kernel
+
+  profiler_mem:
+    tool: heaptrack
+    major_version: "1"
+    observed: "1.5.0"
+
+  coverage:
+    tool: llvm-cov
+    flags: "-fprofile-instr-generate -fcoverage-mapping"
+    output: lcov
+    notes: tracks LLVM toolchain
+
+  property_test:
+    tool: rapidcheck
+    notes: no semver releases; tracks main branch
+
+  lint:
+    tool: cppcheck
+    major_version: "2"
+    observed: "2.14.0"
+    flags: "--enable=all --error-exitcode=1"
+
+  static_analysis:
+    tool: clang-tidy
+    notes: tracks LLVM toolchain
+
+  complexity:
+    tool: lizard
+    major_version: "1"
+    observed: "1.17.0"
+    flags: "-CCN 15 -L 200"
+
+# ---------------------------------------------------------------------
+# Cross-language reporting conventions
+# (echoed from CLAUDE.md §3 and §10)
+# ---------------------------------------------------------------------
+output_formats:
+  profile: flamegraph_svg          # No screenshots, no terminal captures.
+  coverage: lcov                   # Common format for delta tracking.
+  benchmark: median_iqr_worst      # Single-shot wall-clock not accepted.
+
+# ---------------------------------------------------------------------
+# Policies
+# ---------------------------------------------------------------------
+policies:
+  on_tool_substitution: require_section_1_approval
+  on_major_version_bump: require_section_1_approval
+  on_minor_or_patch_drift: allowed
+  on_minor_drift_with_behavior_change: document_in_report
+  on_non_semver_version: halt_and_ask
+  on_missing_tool: halt_and_ask

@@ -1,0 +1,167 @@
+[
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "hidden": 32,
+    "auc": 0.8471448835086772,
+    "f1m": 0.7836330867503574,
+    "fwd_latency_ms": 4.572957000164024,
+    "n_params": 188865,
+    "train_time_s": 1.3482697010040283,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "hidden": 32,
+    "auc": 0.8248622815272212,
+    "f1m": 0.7654451745452613,
+    "fwd_latency_ms": 4.573412999889115,
+    "n_params": 188865,
+    "train_time_s": 1.3476943969726562,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "hidden": 32,
+    "auc": 0.8184334585817181,
+    "f1m": 0.7634490097853452,
+    "fwd_latency_ms": 4.572105501210899,
+    "n_params": 188865,
+    "train_time_s": 1.349395513534546,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "hidden": 24,
+    "auc": 0.8499253704295567,
+    "f1m": 0.7839114279650805,
+    "fwd_latency_ms": 3.4599249993334524,
+    "n_params": 141649,
+    "train_time_s": 4.019221782684326,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "hidden": 24,
+    "auc": 0.8162691951179111,
+    "f1m": 0.7618849271458958,
+    "fwd_latency_ms": 3.479306000372162,
+    "n_params": 141649,
+    "train_time_s": 1.0381386280059814,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "hidden": 24,
+    "auc": 0.8224273577732968,
+    "f1m": 0.7688548057259714,
+    "fwd_latency_ms": 3.4791959997164668,
+    "n_params": 141649,
+    "train_time_s": 1.046717882156372,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "hidden": 16,
+    "auc": 0.8565444202452066,
+    "f1m": 0.7967024046132744,
+    "fwd_latency_ms": 10.873520000131975,
+    "n_params": 94433,
+    "train_time_s": 1.8466894626617432,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "hidden": 16,
+    "auc": 0.8175512192886923,
+    "f1m": 0.7591667786387184,
+    "fwd_latency_ms": 10.86117649992957,
+    "n_params": 94433,
+    "train_time_s": 1.8100364208221436,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "hidden": 16,
+    "auc": 0.8307640886068045,
+    "f1m": 0.7724230615020578,
+    "fwd_latency_ms": 10.86844550081878,
+    "n_params": 94433,
+    "train_time_s": 1.8013253211975098,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "hidden": 8,
+    "auc": 0.844864810098221,
+    "f1m": 0.7773437011375749,
+    "fwd_latency_ms": 5.475848500282154,
+    "n_params": 47217,
+    "train_time_s": 0.9649858474731445,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "hidden": 8,
+    "auc": 0.8174446042201946,
+    "f1m": 0.7594382658581085,
+    "fwd_latency_ms": 5.477280999002687,
+    "n_params": 47217,
+    "train_time_s": 0.9722630977630615,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "hidden": 8,
+    "auc": 0.8162567628618337,
+    "f1m": 0.7666264193284793,
+    "fwd_latency_ms": 5.47284749973187,
+    "n_params": 47217,
+    "train_time_s": 0.9612178802490234,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 0,
+    "hidden": 4,
+    "auc": 0.8584793524855107,
+    "f1m": 0.7929513888888888,
+    "fwd_latency_ms": 2.8055820002919063,
+    "n_params": 23609,
+    "train_time_s": 0.583305835723877,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 1,
+    "hidden": 4,
+    "auc": 0.8177036524031566,
+    "f1m": 0.7546486716277669,
+    "fwd_latency_ms": 2.8012329994453466,
+    "n_params": 23609,
+    "train_time_s": 0.5831575393676758,
+    "h_kept_recommended": 23
+  },
+  {
+    "dataset": "bitcoin_otc",
+    "seed": 2,
+    "hidden": 4,
+    "auc": 0.8244093859156172,
+    "f1m": 0.7738560794044664,
+    "fwd_latency_ms": 2.801914999508881,
+    "n_params": 23609,
+    "train_time_s": 0.5960221290588379,
+    "h_kept_recommended": 23
+  }
+]

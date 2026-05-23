@@ -1,0 +1,215 @@
+# Catalogued "best" checkpoints across HyMeKo's framework families.
+#
+# Loaded by `signedkan_wip.src.demo.registry`. Override location via the
+# `HYMEKO_MODEL_REGISTRY` env var.
+#
+# Each `path` is resolved relative to the repo root unless absolute.
+# Entries whose `path` doesn't exist on disk are still listed in the GUI;
+# they show the `train_cmd` so the user can reproduce them.
+#
+# Numbers (test_auc, n_seeds, n_params) come from the corresponding report
+# in `reports/`. Update both when re-validating.
+
+schema_version: 1
+
+models:
+  # ---------------------------------------------------------------------
+  # HSiKAN family (signedkan_wip/src/mixed_arity_signedkan)
+  # ---------------------------------------------------------------------
+  - id: hsikan_bitcoin_alpha_optuna
+    framework: HSiKAN
+    dataset: bitcoin_alpha
+    label: "HSiKAN — Bitcoin Alpha (Optuna-best, AUC 0.9959)"
+    path: checkpoints/hsikan/bitcoin_alpha_optuna_best.pt
+    metrics:
+      test_auc: 0.9959
+      test_auc_std: 0.0011
+      n_seeds: 10
+      n_params: 30487
+    notes: |
+      Optuna 30-trial best. h=8, mixed tuples c2+c5+w2+w3+w4.
+      Walks-dominant α_κ (66-70%). 10-seed paired Δ +.014 vs joint_mix.
+    report: reports/2026-05-13-bitcoin-optuna-best-10seed.md
+    train_cmd: |
+      HSIKAN_MIXED_TUPLES=c2,c5,w2,w3,w4 \
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_final_cell \
+        --dataset bitcoin_alpha --model HSiKAN --hidden 8 \
+        --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/hsikan/bitcoin_alpha_optuna_best.pt
+
+  - id: hsikan_bitcoin_otc_optuna
+    framework: HSiKAN
+    dataset: bitcoin_otc
+    label: "HSiKAN — Bitcoin OTC (Optuna-best, AUC 0.9933)"
+    path: checkpoints/hsikan/bitcoin_otc_optuna_best.pt
+    metrics:
+      test_auc: 0.9933
+      test_auc_std: 0.0023
+      n_seeds: 10
+      n_params: 23815
+    notes: |
+      Optuna best with h=4 quaternion + per-edge highway. 10-seed paired
+      Δ +.018 vs joint_mix. ~11× faster forward than the Alpha config.
+    report: reports/2026-05-13-bitcoin-optuna-best-10seed.md
+    train_cmd: |
+      HSIKAN_PER_EDGE_GATE=1 \
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_final_cell \
+        --dataset bitcoin_otc --model HSiKAN --hidden 4 \
+        --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/hsikan/bitcoin_otc_optuna_best.pt
+
+  - id: hsikan_slashdot_edge_cr
+    framework: HSiKAN
+    dataset: slashdot
+    label: "HSiKAN — Slashdot (edge_cr SOTA, AUC 0.9067)"
+    path: checkpoints/hsikan/slashdot_edge_cr_seed0.pt
+    metrics:
+      test_auc: 0.9067
+      test_auc_std: 0.0034
+      n_seeds: 5
+      n_params: null
+    notes: |
+      Per-edge Catmull-Rom highway on top of the c5-full configuration.
+      Beats published SGT (0.897) by +0.010 absolute. Kernel-OFF baseline;
+      see `hsikan_slashdot_edge_cr_kernel_on` for the ~1.37× faster path.
+    report: reports/2026-05-09-edge-cr-5seed.md
+    train_cmd: |
+      HYMEKO_CYCLE_CACHE=1 HSIKAN_TOPK_MODE=per_vertex HSIKAN_TOPK_K=128 \
+      HSIKAN_PER_EDGE_GATE=1 \
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_final_cell \
+        --dataset slashdot --model HSiKAN --hidden 4 \
+        --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/hsikan/slashdot_edge_cr_seed0.pt
+
+  - id: hsikan_slashdot_edge_cr_kernel_on
+    framework: HSiKAN
+    dataset: slashdot
+    label: "HSiKAN — Slashdot (edge_cr + Triton fwd/bwd kernel, AUC 0.9070)"
+    path: checkpoints/hsikan/slashdot_edge_cr_kernel_on_seed0.pt
+    metrics:
+      test_auc: 0.9070
+      test_auc_std: 0.0029
+      n_seeds: 5
+      n_params: null
+    notes: |
+      Same edge_cr config; Triton fwd+bwd kernel ON. Paired vs OFF: σ=+1.69
+      (equivalent within noise) at 27% wall-clock saved per 5-seed run.
+    report: reports/2026-05-09-kernel-on-5seed.md
+    train_cmd: |
+      HYMEKO_CYCLE_CACHE=1 HSIKAN_TOPK_MODE=per_vertex HSIKAN_TOPK_K=128 \
+      HSIKAN_PER_EDGE_GATE=1 HSIKAN_TRITON_KERNEL=1 HSIKAN_TRITON_BACKWARD=1 \
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_final_cell \
+        --dataset slashdot --model HSiKAN --hidden 4 \
+        --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/hsikan/slashdot_edge_cr_kernel_on_seed0.pt
+
+  - id: hsikan_epinions_edge_cr
+    framework: HSiKAN
+    dataset: epinions
+    label: "HSiKAN — Epinions (edge_cr, AUC 0.8464)"
+    path: checkpoints/hsikan/epinions_edge_cr_seed0.pt
+    metrics:
+      test_auc: 0.8464
+      test_auc_std: 0.0106
+      n_seeds: 5
+      n_params: null
+    notes: |
+      Architectural ceiling at ~0.85 with current primitives. Highway gates
+      stay near init (~0.05) — attention has not opened on Epinions. SGT
+      gap of −0.10 needs sparse-attention or learnable-incidence work.
+    report: reports/2026-05-10-epinions-edge-cr-5seed-null.md
+    train_cmd: |
+      HYMEKO_CYCLE_CACHE=1 HSIKAN_TOPK_MODE=per_vertex HSIKAN_TOPK_K=128 \
+      HSIKAN_PER_EDGE_GATE=1 \
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_final_cell \
+        --dataset epinions --model HSiKAN --hidden 4 \
+        --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/hsikan/epinions_edge_cr_seed0.pt
+
+  - id: hsikan_joint_mix
+    framework: HSiKAN
+    dataset: bitcoin_alpha
+    label: "HSiKAN — joint-mix baseline (c3+c4+w2+w3, AUC 0.9845)"
+    path: checkpoints/hsikan/joint_mix_bitcoin_alpha_seed0.pt
+    metrics:
+      test_auc: 0.9845
+      test_auc_std: null
+      n_seeds: 5
+      n_params: null
+    notes: |
+      Reference joint-mix config (cycles c3+c4 plus walks w2+w3). Used as
+      the paired-baseline against Optuna-best in the 10-seed report. Walks
+      dominate α (66-70%) when jointly offered.
+    report: reports/2026-05-08-joint-mix.md
+    train_cmd: |
+      HSIKAN_MIXED_TUPLES=c3,c4,w2,w3 \
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_final_cell \
+        --dataset bitcoin_alpha --model HSiKAN --hidden 8 \
+        --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/hsikan/joint_mix_bitcoin_alpha_seed0.pt
+
+  # ---------------------------------------------------------------------
+  # HymeKo-Gömb family (signedkan_wip/src/hymeko_gomb)
+  # ---------------------------------------------------------------------
+  - id: gomb_bitcoin_otc_full
+    framework: HymeKo-Gomb
+    dataset: bitcoin_otc
+    label: "Gömb — Bitcoin OTC (three-shell cascade, AUC 0.9118)"
+    path: checkpoints/gomb/bitcoin_otc_full_seed0.pt
+    metrics:
+      test_auc: 0.9118
+      test_auc_std: 0.0089
+      n_seeds: 5
+      n_params: null
+    notes: |
+      Full three-shell cascade — OuterFIRShell (Clifford-FIR) → MiddleHSiKAN
+      (Catmull-Rom spline) → InnerCPMLCore (tier-stratified). All ablations
+      within σ of the full model — no shell pulls disproportionate weight.
+    report: reports/2026-05-11-hymeko-gomb-feasibility.md
+    train_cmd: |
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_gomb_smoke \
+        --dataset bitcoin_otc --hidden 4 --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/gomb/bitcoin_otc_full_seed0.pt
+
+  - id: gomb_slashdot_full
+    framework: HymeKo-Gomb
+    dataset: slashdot
+    label: "Gömb — Slashdot (three-shell cascade, AUC 0.9031)"
+    path: checkpoints/gomb/slashdot_full_seed0.pt
+    metrics:
+      test_auc: 0.9031
+      test_auc_std: 0.0008
+      n_seeds: 5
+      n_params: null
+    notes: |
+      Three-shell cascade. −2.3σ vs HSiKAN edge_cr 0.9067; the architectural
+      ceiling appears at ~0.903 across 7 Gömb probes. SOTA-break on Slashdot
+      requires the edge_cr + walk-augmented + mixed-arity HSiKAN path.
+    report: reports/2026-05-11-hymeko-gomb-slashdot-5seed.md
+    train_cmd: |
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_gomb_smoke \
+        --dataset slashdot --hidden 4 --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/gomb/slashdot_full_seed0.pt
+
+  # ---------------------------------------------------------------------
+  # Baselines (signedkan_wip/src/baselines/)
+  # ---------------------------------------------------------------------
+  - id: sgcn_bitcoin_alpha
+    framework: SGCN
+    dataset: bitcoin_alpha
+    label: "SGCN — Bitcoin Alpha (baseline)"
+    path: checkpoints/baselines/sgcn_bitcoin_alpha_seed0.pt
+    metrics:
+      test_auc: null
+      test_auc_std: null
+      n_seeds: 5
+      n_params: null
+    notes: |
+      Signed-GCN baseline (Derr et al., ICDM 2018). Paired-baseline against
+      HSiKAN family. Use `--model SGCN` in `run_final_cell.py`.
+    report: null
+    train_cmd: |
+      PYTHONPATH=. uv run python -m signedkan_wip.src.run_final_cell \
+        --dataset bitcoin_alpha --model SGCN --hidden 16 \
+        --n-epochs 80 --seed 0 \
+        --save-checkpoint checkpoints/baselines/sgcn_bitcoin_alpha_seed0.pt

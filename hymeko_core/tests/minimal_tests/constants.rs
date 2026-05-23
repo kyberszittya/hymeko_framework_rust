@@ -36,19 +36,19 @@ pub const MISSING_SEMI_DESC_SRC: &str = r#"
         }
         "#;
 
-pub const MINIMAL_EXAMPLE_PATH: &str = "./data/minimal_examples/minimal_example.hymeko";
-pub const MINIMAL_EXAMPLE_BASE_ELEMENTS_PATH: &str = "./data/minimal_examples/minimal_example_base_elements.hymeko";
-pub const MINIMAL_WITH_FIELDS_PATH: &str = "./data/minimal_examples/minimal_example_with_fields.hymeko";
-pub const MINIMAL_BASIC_HIERARCHY_PATH: &str = "./data/minimal_examples/minimal_example_basic_hierarchy.hymeko";
-pub const MINIMAL_FIELDS_REF_PATH: &str = "./data/minimal_examples/minimal_example_fields_with_reference.hymeko";
-pub const MINIMAL_FIELDS_REF_ALT_PATH: &str = "./data/minimal_examples/minimal_example_fields_with_reference2.hymeko";
-pub const MINIMAL_COMMENTS_WITH_FIELDS_PATH: &str = "./data/minimal_examples/comments/minimal_example_with_fields_with_comments.hymeko";
-pub const MINIMAL_COMMENTS_WITH_LINE_PATH: &str = "./data/minimal_examples/comments/minimal_example_with_fields_with_line_comments.hymeko";
-pub const MINIMAL_COMMENTS_WITH_HEADER_PATH: &str = "./data/minimal_examples/comments/minimal_example_with_fields_with_block_header_comment.hymeko";
-pub const MINIMAL_COMMENTS_WITH_BAD_PATH: &str = "./data/minimal_examples/comments/minimal_example_with_fields_with_bad_comments.hymeko";
-pub const EDGE_REF_VALUES_PATH: &str = "./data/minimal_examples/testing_edges/minimal_example_with_hierarchy_ref_edges_with_values.hymeko";
-pub const TAG_ANNOTATION_PATH: &str = "./data/minimal_examples/tag_annotations/minimal_tag_annotation.hymeko";
-pub const MULTI_TAG_ANNOTATION_PATH: &str = "./data/minimal_examples/tag_annotations/minimal_multi_tag_annotation.hymeko";
+pub const MINIMAL_EXAMPLE_PATH: &str = "../data/minimal_examples/minimal_example.hymeko";
+pub const MINIMAL_EXAMPLE_BASE_ELEMENTS_PATH: &str = "../data/minimal_examples/minimal_example_base_elements.hymeko";
+pub const MINIMAL_WITH_FIELDS_PATH: &str = "../data/minimal_examples/minimal_example_with_fields.hymeko";
+pub const MINIMAL_BASIC_HIERARCHY_PATH: &str = "../data/minimal_examples/minimal_example_basic_hierarchy.hymeko";
+pub const MINIMAL_FIELDS_REF_PATH: &str = "../data/minimal_examples/minimal_example_fields_with_reference.hymeko";
+pub const MINIMAL_FIELDS_REF_ALT_PATH: &str = "../data/minimal_examples/minimal_example_fields_with_reference2.hymeko";
+pub const MINIMAL_COMMENTS_WITH_FIELDS_PATH: &str = "../data/minimal_examples/comments/minimal_example_with_fields_with_comments.hymeko";
+pub const MINIMAL_COMMENTS_WITH_LINE_PATH: &str = "../data/minimal_examples/comments/minimal_example_with_fields_with_line_comments.hymeko";
+pub const MINIMAL_COMMENTS_WITH_HEADER_PATH: &str = "../data/minimal_examples/comments/minimal_example_with_fields_with_block_header_comment.hymeko";
+pub const MINIMAL_COMMENTS_WITH_BAD_PATH: &str = "../data/minimal_examples/comments/minimal_example_with_fields_with_bad_comments.hymeko";
+pub const EDGE_REF_VALUES_PATH: &str = "../data/minimal_examples/testing_edges/minimal_example_with_hierarchy_ref_edges_with_values.hymeko";
+pub const TAG_ANNOTATION_PATH: &str = "../data/minimal_examples/tag_annotations/minimal_tag_annotation.hymeko";
+pub const MULTI_TAG_ANNOTATION_PATH: &str = "../data/minimal_examples/tag_annotations/minimal_multi_tag_annotation.hymeko";
 pub const MODULE_STORE_ROOT_FILE: &str = "root.hmk";
 pub const MODULE_STORE_DEP_FILE: &str = "dep.hmk";
 pub const MODULE_STORE_SIMPLE_ROOT_SRC: &str = r#"

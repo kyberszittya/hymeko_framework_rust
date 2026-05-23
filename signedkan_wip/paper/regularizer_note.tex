@@ -1,0 +1,296 @@
+% SignedKAN — Regulariser, Pruning, and Multi-Layer Technical Note
+% Companion to the WiP paper. Catalogues every accuracy lever explored
+% during development with quantified deltas, plus the combined
+% "kitchen sink" scenario that stacks the working ones.
+
+\documentclass[11pt, a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\title{SignedKAN: Regulariser, Pruning, and Multi-Layer Technical Note}
+\author{Csaba Hajdu}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A companion technical note to the SignedKAN WiP submission,
+catalogues every accuracy lever explored during development
+together with the combined ``kitchen sink'' configuration that
+stacks the working ones. Each lever is reported with its
+measured contribution to AUC and macro-$F_1$ on Bitcoin Alpha
+and Bitcoin OTC. All numbers are trained from scratch, three
+seeds per cell, $h\!=\!32$, $G\!=\!5$, $200$ epochs with early
+stopping on a single mid-range GPU.
+\end{abstract}
+
+\section{The Four-Part Claim}
+
+The headline contribution of the WiP paper is a four-part claim
+about the trained-from-scratch SignedKAN architecture:
+(i) competitive AUC on signed-graph link-sign prediction,
+(ii) 77--78\% pruning resilience with AUC \emph{improving} by
+$+0.016$--$+0.021$, (iii) sinusoidal symbolic distillation in
+80--91\% of surviving activations, basis-invariant across three
+spline parameterisations, (iv) sub-minute training time on a
+single mid-range GPU.
+
+This note adds quantified detail on the regulariser landscape that
+shapes the trained model and the multi-layer architecture that the
+final scenario uses.
+
+\section{Regulariser Landscape}
+
+We tested a family of regularisers, none of which alone closes the
+residual gap to engineered signed-GNN baselines but which compose
+to deliver the macro-$F_1$ wins reported in the WiP paper. Each
+regulariser is independently switchable via a flag in
+\texttt{run\_compare.run\_one}.
+
+\subsection{Spectral entropy with Lyapunov-safe KL feedback}
+\label{sec:reg-entropy}
+
+Acts on the singular-value distribution of the node-embedding
+matrix $\mathbf{A} = \mathrm{node\_embed.weight}$:
+\begin{align*}
+\mathbf{p}_t &= \frac{\sigma_i^2(\mathbf{A}_t)}{\sum_j \sigma_j^2(\mathbf{A}_t)}, \\
+H_{\mathrm{norm}} &= \tfrac{1}{\log_2 \mathrm{rank}(\mathbf{A})} H(\mathbf{p}), \\
+\Delta_{KL}(t) &= D_{KL}(\mathbf{p}_{t-1} \,\|\, \mathbf{p}_t), \\
+\lambda_{\mathrm{eff}}(t) &= \mathrm{clamp}(\lambda_0 e^{-\eta \Delta_{KL}(t)},\ 0.1\lambda_0,\ 10\lambda_0), \\
+\mathcal{L}_H &= \lambda_{\mathrm{eff}} \bigl[\lambda_a (H_{\mathrm{norm}} - H^*)^2 + \lambda_b H_{\mathrm{norm}}\bigr].
+\end{align*}
+The KL-feedback schedule reduces regularisation pressure when the
+spectrum is moving fast (transient training phase) and lets it
+recover when settled (steady-state). At $\lambda_0\!=\!10^{-2}$,
+$H^*\!=\!0.5$, $\eta\!=\!5$: macro-$F_1$ $+0.005$ on Alpha,
+$+0.007$ on OTC; AUC roughly tied.
+
+\subsection{R2 — vertex-degree participation}
+\label{sec:reg-r2}
+
+\[
+\mathcal{L}_{R_2} = \frac{\lambda}{|V|} \sum_v \deg_H(v)^2 \cdot \|\mathbf{h}_v\|_2^2,
+\]
+where $\deg_H(v) = |\{t : v \in t\}|$ is the number of triads
+incident to vertex $v$. Penalises hub vertices that dominate the
+aggregation. At $\lambda\!=\!0.05$, R2 is the only single regulariser
+that delivers a \emph{simultaneous} AUC and macro-$F_1$ win on Alpha
+($+0.005$ AUC, $+0.008$ F1m), plus $+0.020$ macro-$F_1$ on OTC at
+neutral AUC.
+
+\subsection{Hypergraph triad loss (Cartwright--Harary)}
+\label{sec:reg-triad}
+
+Per-triad margin loss with structural balance indicator:
+\[
+s(t) = \sum_{(i, j) \in t} \sigma_{ij}\, \hat{\mathbf{h}}_i \cdot \hat{\mathbf{h}}_j, \quad
+\beta_t = \prod_{(i, j)} \sigma_{ij}, \quad
+\mathcal{L}_T = \mathrm{relu}(m - \beta_t s(t)).
+\]
+At $\alpha\!=\!1.0$, $m\!=\!0.5$ in $\mathcal{L} = \mathcal{L}_{\mathrm{BCE}} + \alpha \mathcal{L}_T$:
+the best macro-$F_1$ on OTC measured anywhere in the saga, $0.775$
+($+0.029$ over EC). Encodes Cartwright--Harary balance theory in the
+loss rather than only in the architecture.
+
+\subsection{Signed-triad attention with attention-entropy}
+\label{sec:reg-attention}
+
+Replace the mean-pool aggregation $\mathbf{h}_e = \tfrac{1}{|T_e|}\sum_t \mathbf{h}_t$
+with $\mathbf{h}_e = \sum_t \tanh(\mathbf{a}^\top [\mathbf{h}_u; \mathbf{h}_v; \mathbf{h}_t]) \mathbf{h}_t$
+(\emph{tanh}, not softmax — signed weights), regularised by
+per-edge attention entropy
+$\mathcal{L}_{ae} = -\lambda_{ae}\,\mathrm{mean}_e\, H(|\boldsymbol{\alpha}_e| / \|\boldsymbol{\alpha}_e\|_1)$
+to prevent collapse onto a single triad. At $\lambda_{ae}\!=\!0.01$:
+the best Alpha macro-$F_1$ measured anywhere, $0.742$ ($+0.044$ over EC).
+
+\subsection{Cross-branch information regulariser}
+\label{sec:reg-crossbranch}
+
+Pairwise cosine penalty between sign-branch coefficient tensors,
+forces the per-sign branches to learn distinct functions:
+\[
+\mathcal{L}_{\mathrm{cross}} = \frac{\lambda}{|\mathrm{pairs}|} \sum_{i < j} \mathrm{mean}_c\, |\cos(\mathbf{c}^{(i)}_{c, :}, \mathbf{c}^{(j)}_{c, :})|.
+\]
+Modest macro-$F_1$ wins ($+0.005$--$+0.020$); does not compose with
+the spectral entropy reg above.
+
+\subsection{Hyperedge-density (HD) regulariser — null result}
+\label{sec:reg-hd}
+
+\[
+\mathcal{L}_{HD} = \frac{\lambda}{|T|} \sum_t d(t) \|\mathbf{h}_t\|^2,
+\]
+$d(t) = $ number of other triads sharing at least one vertex with
+$t$. Across $\lambda \in \{10^{-3}, 10^{-2}, 5\!\times\!10^{-2}\}$:
+roughly neutral on AUC, slightly negative on macro-$F_1$.
+Mechanistic reading: HD is duplicative of spectral entropy
+(both penalise embedding magnitude weighted by a structural
+quantity). Reported here as honest null.
+
+\section{Pruning and Symbolic Distillation}
+
+After training, every $(\sigma\text{-branch}, c)$ inner and outer
+spline has a coefficient vector $\mathbf{c}^{(s, c)}$. Per-spline
+activity is its $L_2$ norm; pruning sets the vector to zero when
+its norm is below a threshold $\tau$.
+
+\textbf{Headline}: at $\tau\!=\!1.8$, $77$--$78\%$ of the $128$
+inner+outer splines are zeroed, AUC \emph{improves} by $+0.021$ on
+Alpha and $+0.016$ on OTC (median over three seeds), macro-$F_1$
+declines modestly. AUC only collapses past $\tau\!=\!2.5$
+($\sim\!85\%$ pruning).
+
+Surviving splines are sampled on a $200$-point grid in $[-1, 1]$
+and fitted to a small symbolic library. \textbf{Headline}:
+$80$--$91\%$ of (branch, channel) splines fit best as
+$a \sin(\omega x + \phi) + c$, with cubics as the runner-up
+($6$--$11\%$). The pattern is invariant across B-spline,
+Catmull--Rom, and Kochanek--Bartels parameterisations.
+
+\section{Multi-Layer with LayerNorm and Weight-Sharing}
+
+The naive multi-layer extension (independent SignedKAN layers,
+mean-pool inter-layer aggregation, classifier sees only last layer)
+is empirically worse than $L\!=\!1$ on this benchmark. Three fixes
+together (Jumping Knowledge across layers, sum-pool inter-layer
+aggregation, LayerNorm on $\mathbf{h}_v$ between layers) deliver
+the multi-layer win, and \emph{weight sharing} across layers --- one
+shared SignedKANLayer applied $L$ times --- adds the
+parameter-efficiency the link-sign benchmark needed.
+
+\textbf{Headline}: $L\!=\!3$ jkCAT-sum + LN + share gives OTC AUC
+$0.8729$ ($+0.0029$ over $L\!=\!1$ EC) and macro-$F_1$ $0.7613$
+($+0.015$), at $\sim\!1\%$ \emph{fewer} parameters than plain
+$L\!=\!2$ due to weight sharing. The recurrent multi-layer view
+(same transform applied $L$ times to refine vertex embeddings)
+beats the depth-stacked view (independent transforms) on this
+benchmark.
+
+\section{Combined Scenario: ``Kitchen Sink''}
+
+We compose the load-bearing levers into a single scenario:
+\begin{itemize}
+\item Class-weighted BCE + early stopping (the EC recipe;
+  closes half the AUC gap to engineered baselines on its own).
+\item Spectral entropy regulariser with Lyapunov-safe KL feedback,
+  $\lambda_0\!=\!10^{-2}$, $H^*\!=\!0.5$, $\eta\!=\!5$.
+\item R2 vertex-degree participation, $\lambda\!=\!0.05$.
+\item Multi-layer $L\!=\!3$ with weight sharing, LayerNorm between
+  layers, and Jumping-Knowledge concatenation.
+\item Threshold pruning at $\tau\!=\!0.5$ post-training (a
+  Pareto-balanced threshold; $\tau\!=\!1.8$ trades macro-$F_1$
+  for additional AUC).
+\end{itemize}
+
+The combined scenario is the recommended deployment configuration
+for SignedKAN on signed-graph link-sign prediction. Its measured
+performance on Bitcoin Alpha and Bitcoin OTC is reported in
+Table~\ref{tab:kitchen-sink} (numbers added on completion of the
+combined-scenario run).
+
+\begin{table}[h]
+\centering
+\caption{Overnight cross-dataset run: $L\!=\!1$ EC baseline,
+$L\!=\!1$ EC$+R_2$ (the cleanest single-regulariser win), and the
+full kitchen-sink scenario. Median over three seeds. Slashdot
+results at $h\!=\!8$ + Catmull--Rom; the kitchen-sink configuration
+on Slashdot OOMed at $h\!=\!8$ even with weight-sharing
+(multi-layer plus the 580k triads exceed the 7.6 GB GPU budget).}
+\label{tab:kitchen-sink}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+recipe & \multicolumn{2}{c}{Bitcoin Alpha} & \multicolumn{2}{c}{Bitcoin OTC} & \multicolumn{2}{c}{Slashdot} \\
+       & AUC & F1m & AUC & F1m & AUC & F1m \\
+\midrule
+$L\!=\!1$ EC (baseline) & $0.8547$ & $0.6975$ & $0.8700$ & $0.7459$ & $0.7601$ & $0.5278$ \\
+$L\!=\!1$ EC$+R_2$      & $\mathbf{0.8593}$ & $\mathbf{0.7051}$ & $0.8687$ & $\mathbf{0.7655}$ & $0.7600$ & $0.5277$ \\
+Kitchen-sink            & $0.8258$ & $0.6537$ & $0.8706$ & $0.7526$ & ---  & ---  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Empirical verdict on the kitchen sink.} Stacking all
+positive-effect levers does not compose into a strict win. The
+multi-layer machinery in the kitchen-sink config over-parameterises
+the small Bitcoin Alpha fixture, costing $-0.029$ AUC and
+$-0.044$ macro-$F_1$ relative to the $L\!=\!1$ baseline; on
+Bitcoin OTC the kitchen-sink ties EC$+R_2$ on AUC and is slightly
+behind on macro-$F_1$. \textbf{The recommended deployment
+configuration is therefore $L\!=\!1$ EC$+R_2$}, not the full
+stack: a single-layer SignedKAN with the EC training recipe and
+the $R_2$ vertex-degree participation regulariser at
+$\lambda\!=\!0.05$. Each additional lever (entropy with KL
+feedback, multi-layer with LayerNorm $+$ weight-sharing,
+heterogeneous skip placement) is worth keeping in the codebase
+as an optional flag for fixtures or metrics where it specifically
+helps, but not all-on by default.
+
+\section{Levers Not in the Headline Scenario}
+
+Several levers worked on individual cells but did not
+unambiguously stack with the rest. They remain in the codebase as
+optional flags; we report them here as honest catalogue entries.
+
+\begin{itemize}
+\item \textbf{Hypergraph triad loss} (\S\ref{sec:reg-triad}). Best
+  macro-$F_1$ on OTC at $0.775$, but the AUC tradeoff on Alpha
+  ($-0.015$) is stronger than R2's. Consider for OTC-only
+  deployments where macro-$F_1$ is the load-bearing metric.
+\item \textbf{Signed-triad attention with attention-entropy}
+  (\S\ref{sec:reg-attention}). Best Alpha macro-$F_1$ at $0.742$,
+  AUC roughly tied on OTC; replaces the mean-pool aggregation with
+  a tanh-attention head.
+\item \textbf{Bilinear endpoint head}. Best simultaneous OTC AUC
+  ($0.8754$) and OTC macro-$F_1$ ($0.8096$) of the entire saga,
+  but high variance on Alpha. Useful when OTC-class fixtures are
+  the deployment target.
+\item \textbf{Heterogeneous skip placement}. (inner: residual,
+  outer: none) gives a free OTC AUC bump ($+0.0033$) with zero
+  added parameters. Validates the CV head-neck-spine analogy
+  (the inner per-vertex spline is the ``backbone'').
+\item \textbf{Catmull--Rom activation}. $11\times$ per-iter
+  speedup at essentially the same accuracy; Section~V of the WiP
+  paper recommends it for cost-sensitive applications.
+\end{itemize}
+
+\section{Negative Results (for Completeness)}
+
+\begin{itemize}
+\item \textbf{Hyperedge-density regulariser} (\S\ref{sec:reg-hd}):
+  duplicative of spectral entropy.
+\item \textbf{$L_1$-sparsity during training}: at $\lambda \geq 10^{-4}$
+  the model collapses to predicting a single class globally.
+  $L_1$ forces zero too hard; cannot reproduce post-hoc
+  threshold-pruning's gentle selective sparsity.
+\item \textbf{Iterative pruning + retraining}: retraining
+  surviving splines after pruning UNDOES the post-hoc pruning
+  regularisation benefit on most seeds. Post-hoc threshold-pruning
+  at $\tau\!=\!1.8$ is genuinely the optimal one-shot intervention.
+\item \textbf{Spectral-Laplacian eigenvector init}: looked
+  promising on a single seed; multi-seed median is roughly neutral.
+  Pre-training is a stronger structural-prior intervention than
+  initialisation alone.
+\end{itemize}
+
+\section{Future Directions}
+
+See \texttt{signedkan\_wip/FUTURE\_DIRECTIONS.md} for the full
+catalogue. Highlights:
+\begin{itemize}
+\item Variable-arity hyperedges (clique clusters, $k$-uniform
+  generalisation; unlocks the structural prior in $R_3$).
+\item LSTM-style gated hyperedge blocks (independent forget /
+  input / output gates, generalising the residual / highway / JK
+  family).
+\item Total-model parameter compression beyond splines (product
+  quantisation, top-$k$ sparse embeddings).
+\item Matched-protocol re-implementation of engineered baselines
+  for a strict apples-to-apples AUC comparison.
+\end{itemize}
+
+\end{document}

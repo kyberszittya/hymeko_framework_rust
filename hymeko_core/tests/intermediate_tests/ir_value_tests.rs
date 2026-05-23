@@ -11,7 +11,7 @@ mod ir_value_tests {
     use hymeko::resolution::resolve::build_index_sym;
     use log::info;
 
-    const MINIMAL_FIELDS_PATH: &str = "./data/minimal_examples/minimal_example_with_fields.hymeko";
+    const MINIMAL_FIELDS_PATH: &str = "../data/minimal_examples/minimal_example_with_fields.hymeko";
     const SYM_CONTEXT: &str = "context";
     const SYM_VAL0: &str = "val0";
     const SYM_VAL1: &str = "val1";

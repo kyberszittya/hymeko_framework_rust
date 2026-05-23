@@ -7,6 +7,7 @@ This index documents every architecture diagram that lives under `architecture/`
 - [How to View the Diagrams](#how-to-view-the-diagrams)
 - [Diagram Catalog](#diagram-catalog)
   - [System Overview](#system-overview)
+  - [Crate Dependency Overview](#crate-dependency-overview)
   - [Layered Architecture View](#layered-architecture-view)
   - [Core Components](#core-components)
   - [Communication Sequence](#communication-sequence)
@@ -66,6 +67,65 @@ graph TD
 ```
 
 > No SysML companion yet—add one here when we capture the same relationships in a formal model.
+
+### Crate Dependency Overview
+
+Workspace-level view of the Rust crates and how they depend on each other after the `hymeko_hre` extraction (2026-04-18). Source: `architecture/overview_crates.mermaid`.
+
+```mermaid
+graph TD
+    classDef rust fill:#B7410E,stroke:#8B0000,stroke-width:2px,color:#fff;
+    classDef hre  fill:#D2691E,stroke:#8B4513,stroke-width:2px,color:#fff;
+    classDef query fill:#CC7722,stroke:#8B4513,stroke-width:2px,color:#fff;
+    classDef daemon fill:#4CAF50,stroke:#2E8B57,stroke-width:2px,color:#fff;
+    classDef ffi fill:#7B68EE,stroke:#483D8B,stroke-width:2px,color:#fff;
+    classDef python fill:#306998,stroke:#FFD43B,stroke-width:2px,color:#fff;
+    classDef cli fill:#555,stroke:#222,stroke-width:2px,color:#fff;
+
+    subgraph "Foundations"
+        Parser[parser<br/>LALRPOP grammar + lexer]:::rust
+        Core[hymeko_core<br/>IR • resolution • module_store<br/>tensor primitives + HGNN/mesh ops<br/>traversal / HyperGraphView<br/>writers]:::rust
+    end
+
+    subgraph "Engine Layer"
+        HRE[hymeko_hre<br/>HypergraphEngine orchestrator<br/>IR -> TensorCoo compilation<br/>star / clique expansions<br/>iceoryx2 subscriber - ipc feature]:::hre
+    end
+
+    subgraph "Query and Codegen"
+        Query[hymeko_query<br/>predicate • engine • interpret<br/>rewrite • formats • kinematics<br/>URDF / SDF / MJCF / DOT / ROS2]:::query
+    end
+
+    subgraph "Runtime"
+        Daemon[hymeko_daemon<br/>worker • IR-CBOR pipeline<br/>shared-memory gates]:::daemon
+        Client[hymeko_client<br/>subscriber shell]:::daemon
+    end
+
+    subgraph "Surfaces"
+        CLI[hymeko_cli<br/>compile + emit transforms]:::cli
+        PyBind[hymeko_py<br/>PyO3 bindings]:::ffi
+    end
+
+    subgraph "External Consumers"
+        PyTorch[PyTorch / DLPack]:::python
+        Export[URDF • SDF • MJCF • DOT<br/>ROS2 launch]:::python
+    end
+
+    Parser --> Core
+    Core --> HRE
+    Core --> Query
+    Core --> Daemon
+    HRE --> Daemon
+    HRE --> CLI
+    HRE --> PyBind
+    HRE --> Client
+    Query --> CLI
+    Query --> Export
+    Daemon --> Client
+    Core --> PyBind
+    PyBind --> PyTorch
+```
+
+See `docs/plans/05_hre_extraction/plan.md` for the extraction rationale and why the split is engine-only rather than also pulling `traversal/`.
 
 ### Layered Architecture View
 

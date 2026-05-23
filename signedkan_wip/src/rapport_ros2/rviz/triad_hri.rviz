@@ -1,0 +1,88 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+      Splitter Ratio: 0.5
+    Tree Height: 240
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/Views
+    Name: Views
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1.0
+      Class: rviz_default_plugins/Grid
+      Color: 160; 160; 160
+      Enabled: true
+      Line Style:
+        Line Width: 0.03
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Rapport Graph
+      Namespaces:
+        agents: true
+        relations: true
+        relation_labels: true
+        sigma_hud: true
+      Topic:
+        Depth: 5
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rapport/markers
+      Value: true
+
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Image Topic: /vision/annotated
+      Min Value: 0
+      Max Value: 255
+      Median window: 5
+      Name: r1 Camera (annotated)
+      Normalize Range: true
+      Reliability Policy: Reliable
+      Unreliable: false
+      Value: true
+
+  Enabled: true
+  Global Options:
+    Background Color: 240; 240; 245
+    Fixed Frame: world
+    Frame Rate: 20
+
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+
+  Value: true
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 5.5
+      Focal Point:
+        X: 0.0
+        Y: 0.0
+        Z: 1.0
+      Name: Current View
+      Near Clip Distance: 0.01
+      Pitch: 0.85
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+      Yaw: 1.57

@@ -1,0 +1,32 @@
+chain_2_description {
+    @"meta_kinematics.hymeko";
+}
+
+chain_2: meta_kinematics.kinematics.elements,
+        meta_kinematics.kinematics.geometry,
+        meta_kinematics.kinematics.axes
+{
+    l0: meta_kinematics.kinematics.elements.link {
+        mass 4.785;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [0.090, 0.000, 0.000];
+    }
+    l1: meta_kinematics.kinematics.elements.link {
+        mass 0.377;
+        link_geometry: meta_kinematics.kinematics.geometry.cylinder {
+            dimension [0.050, 0.100];
+        }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        origin [-0.083, 0.000, 0.100];
+    }
+    @j0: meta_kinematics.kinematics.conti_joint {
+        (+ l0 [[0.000, 0.000, 0.100], [0.000, 0.000, 0.000]],
+         - l1,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+}

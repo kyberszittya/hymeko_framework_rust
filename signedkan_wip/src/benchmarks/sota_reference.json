@@ -1,0 +1,48 @@
+{
+  "citation": "HSIKAN_STATE_2026_05_04.md — headline 5-seed (3-seed Slashdot/Epinions) test AUC table",
+  "metric": "roc_auc_test_edges",
+  "protocol_notes": [
+    "Reproduction harness uses run_final_cell.cell_signed_graph: datasets.split 80/10/10, seed controls split.",
+    "Model path prints as HSiKAN-mixed; arities (3,4) except slashdot (3,4,5).",
+    "Match training recipe to run_final_cell defaults unless CLI overrides hidden / n_epochs."
+  ],
+  "targets": {
+    "bitcoin_alpha": {
+      "hsikan_mean": 0.939,
+      "hsikan_std": 0.011,
+      "best_competitor_mean": 0.899,
+      "best_competitor_name": "SiGAT"
+    },
+    "bitcoin_otc": {
+      "hsikan_mean": 0.93,
+      "hsikan_std": 0.008,
+      "best_competitor_mean": 0.934,
+      "best_competitor_name": "SiGAT"
+    },
+    "slashdot": {
+      "hsikan_mean": 0.861,
+      "hsikan_std": 0.002,
+      "best_competitor_mean": 0.897,
+      "best_competitor_name": "SGT"
+    },
+    "sbm_n200": {
+      "hsikan_mean": 0.911,
+      "hsikan_std": 0.028,
+      "best_competitor_mean": 0.563,
+      "best_competitor_name": "SGT"
+    },
+    "sbm_n400": {
+      "hsikan_mean": 0.962,
+      "hsikan_std": 0.009,
+      "best_competitor_mean": 0.69,
+      "best_competitor_name": "SGT"
+    },
+    "epinions": {
+      "hsikan_mean": 0.606,
+      "hsikan_std": null,
+      "hsikan_note": "single published cell h=16 chunked; treat as lower bound not 5-seed mean",
+      "best_competitor_mean": 0.941,
+      "best_competitor_name": "SGT"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+[package]
+name = "hymeko_server"
+version = "0.1.0"
+edition = "2024"
+description = "Axum static server + REST file I/O for the HyMeKo WASM editor"
+license = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "hymeko_server"
+path = "src/main.rs"
+
+[lib]
+name = "hymeko_server"
+path = "src/lib.rs"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tower = { version = "0.4", features = ["util"] }
+http-body-util = "0.1"

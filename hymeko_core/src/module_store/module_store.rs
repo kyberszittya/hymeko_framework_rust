@@ -12,8 +12,9 @@ use crate::ir::ir::Ir;
 use crate::ir::lower::lower_program_to_ir;
 use crate::module_store::source_provider::SourceProvider;
 use crate::resolution::intern_pass::intern_ast_into_owned;
+use crate::resolution::const_resolve::resolve_consts;
 use crate::resolution::interner::Interner;
-use crate::resolution::resolve::{build_index_sym_with_prefix, Index};
+use crate::resolution::resolve::{apply_usings, build_index_sym_with_prefix, Index};
 
 use crate::sym_ast::AstSym;
 
@@ -143,8 +144,14 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
             .parse(src.as_ref())
             .map_err(ModuleLoadError::Parse)?;
         // 3) intern (közös internerbe!)
-        let ast_sym: AstSym<'static> =
+        let mut ast_sym: AstSym<'static> =
             intern_ast_into_owned(&ast_str, &mut self.it);
+        // 3b) Tier B: resolve top-level `const` decls into numeric
+        // literals before downstream passes (resolve / lower) see the
+        // AST. Any `Value::Expr` or `Value::Ref(<single-segment-const>)`
+        // in value positions is replaced with `Value::Num(eval'd)`.
+        resolve_consts(&mut ast_sym, &self.it)
+            .map_err(|e| ModuleLoadError::Parse(format!("const: {e}")))?;
         // 4) deps from imports
         let base_dir = key.0.parent().unwrap_or(Path::new("../../hymeko/parser"));
         let mut deps = Vec::new();
@@ -224,6 +231,11 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
                 .map_err(|e| ModuleLoadError::Parse(format!("index dep failed: {e:?}")))?;
         }
 
+
+        // 6b) apply using aliases
+        let import_ns: Vec<SymId> = imported.iter().map(|(ns, _)| *ns).collect();
+        apply_usings(&mut idx, &root_ast.usings, &import_ns, &self.it)
+            .map_err(|e| ModuleLoadError::Parse(format!("using alias failed: {e:?}")))?;
 
         // 7) lower program IR (2A) + merkle
         let mut ir = lower_program_to_ir(&root_ast, &imported, &idx, &mut self.it)

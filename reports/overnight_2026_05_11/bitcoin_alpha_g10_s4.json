@@ -1,0 +1,1 @@
+{"dataset": "bitcoin_alpha", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 2420, "arities": [3, 4], "auc": 0.9632984405041658, "f1m": 0.7940314587373412, "fwd_per_call_ms": 69.2958515137434, "n_params": 61092, "seed": 4}

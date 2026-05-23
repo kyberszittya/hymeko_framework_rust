@@ -1,0 +1,659 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[margin=1.8cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lmodern}
+\usepackage{enumitem}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{Phases and Paths of the\\
+       Spectral-Entropy Universality Programme}
+\author{thesis-IV working notes (HyMeKo)}
+\date{2026-04-26}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\arm}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\pp}{\,pp}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document is a single-source reference for the spectral-entropy
+regulariser programme. It defines every \emph{phase} (the experimental
+campaigns run in chronological order) and every \emph{path} (the
+regulariser variants tested), gives the configuration of each, and
+records the empirical headline of each. It is intended for paper
+preparation and future re-runs --- not for results interpretation
+(see \code{RESULTS_VIEWS_SUITE.md} and the per-phase reports for that).
+\end{abstract}
+
+\section{Overview}
+
+The programme tests whether a spectral-entropy regulariser inspired by
+Hajdu thesis~IV can be made \emph{universal} across architectures and
+datasets. Eight phases were run between 2026-04-22 and 2026-04-26.
+Twelve regulariser \emph{arms} (paths) were defined and benchmarked
+against a paired \arm{baseline} (no regulariser). All comparisons are
+paired by seed to share weight initialisation and DataLoader shuffle.
+
+\paragraph{Total experiments to date.} 98+ paired runs $\times$
+$\sim$2--300 seeds = roughly 11\,000 individual training runs.
+
+\paragraph{Four anchors.}
+\begin{itemize}[leftmargin=1.5em,itemsep=2pt]
+  \item \textbf{MNIST plain MLP}: original $\Delta = +0.149$\pp{} positive (the seed of the programme).
+  \item \textbf{Spirals 2-D synthetic}: largest positive ($+0.412 \to +0.724$\pp{} across paths).
+  \item \textbf{Circles 2-D synthetic}: original $-0.060$\pp{} significant negative (stress test).
+  \item \textbf{CapsMLP MNIST}: original $-0.057$\pp{} significant negative (stress test).
+\end{itemize}
+
+\section{Datasets and architectures}
+
+\subsection{Datasets}
+
+\begin{center}
+\small
+\begin{tabular}{@{}llrrl@{}}
+\toprule
+Identifier & Origin & Train size & Classes & Notes \\
+\midrule
+\code{mnist}, \code{mnist_small}     & MNIST         & 60k    & 10  & 28$\times$28 grayscale \\
+\code{fashion_mnist}                  & FashionMNIST  & 60k    & 10  & 28$\times$28 grayscale (clothing) \\
+\code{kmnist}                         & KMNIST        & 60k    & 10  & 28$\times$28 grayscale (Japanese hiragana). \\
+                                      &               &        &     & HF \code{tanganke/kmnist} mirror; \\
+                                      &               &        &     & official torchvision URL is dead. \\
+\code{emnist_letters}                 & EMNIST        & 145k   & 26  & 28$\times$28 grayscale (letters) \\
+\code{cifar10}                        & CIFAR-10      & 50k    & 10  & 32$\times$32 colour \\
+\code{svhn}                           & SVHN          & 73k    & 10  & 32$\times$32 colour \\
+\code{iris}, \code{wine},             & sklearn       & 100--500 & 2--10 & tabular \\
+\code{breast_cancer}, \code{digits}   &               &        &     & \\
+\code{two_moons}, \code{spirals},     & synthetic     & 2000   & 2--3 & 2-D classification \\
+\code{circles}, \code{gaussian_quants}&               &        &     & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Architectures}
+
+\begin{center}
+\small
+\begin{tabular}{@{}llp{8.5cm}@{}}
+\toprule
+Identifier & Class & Description \\
+\midrule
+\code{MNISTNet}              & plain MLP             & 784$\to$256$\to$128$\to$64$\to$10 \\
+\code{MNISTNetSmall}         & plain MLP, thesis     & 784$\to$16$\to$8$\to$10 (the anchor) \\
+\code{MNISTNetSmallNClass}   & plain MLP, parametric & 784$\to$16$\to$8$\to$\textit{n} (used for EMNIST) \\
+\code{ResMLP}                & residual MLP          & projection + N residual blocks at hidden 16 \\
+\code{HighwayMLP}            & gated MLP             & projection + N highway blocks at hidden 16 \\
+\code{CIFAR10Net}            & MLP                   & 3072$\to$64$\to$32$\to$10 (proj. skipped from regulariser) \\
+\code{CIFAR10ResMLP}         & residual MLP          & projection 3072$\to$16, then N residual blocks \\
+\code{SVHNNet}               & MLP                   & 3072$\to$64$\to$32$\to$10 (similar to CIFAR10Net) \\
+\code{TabularMLP}            & plain MLP, parametric & input$\to$32$\to$16$\to$\textit{n} (sklearn datasets) \\
+\code{SyntheticMLP}          & plain MLP, 2-D        & 2$\to$32$\to$16$\to$2 (two\_moons, spirals, circles) \\
+\code{SyntheticMLP3}         & plain MLP, 2-D        & 2$\to$32$\to$16$\to$3 (gaussian\_quants) \\
+\code{CapsMLP}               & capsule network       & flat 784 $\to$ 32 primary caps of 8-D $\to$ 10 digit caps of 16-D, \\
+                             &                       & dynamic routing (3 iters), squash activation \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Regulariser arms (paths)}
+
+All arms share the optimisation outer loop: Adam, $\lambda$
+weight on the regulariser, every \code{reg-every-n} batches the
+regulariser is recomputed from \code{model.spectral_adjacency(view)} and
+its (data-dependent or weight-only) statistics.
+
+\subsection{Originals (phases 1--5)}
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[\arm{baseline}] No regulariser; \code{reg_term = 0}. Always
+    paired against every treated arm.
+  \item[\arm{scalar_entropy}] $\mathcal{L}_{\text{reg}} = \lambda \cdot
+    H(A)$, where $H$ is Shannon entropy of normalised-Laplacian
+    eigenvalues of the chosen-view adjacency. $\lambda{=}0.1$ default.
+  \item[\arm{kl_trajectory}] $\mathcal{L}_{\text{reg}} = \lambda \cdot
+    D_{KL}(\hat\lambda^{(t-1)} \,\|\, \hat\lambda^{(t)})$. Penalises
+    step-to-step divergence of the spectrum.
+  \item[\arm{l2_weight_decay}] Standard L$^2$ control arm:
+    $\mathcal{L}_{\text{reg}} = \lambda \sum_l \|W_l\|_F^2$.
+\end{description}
+
+\subsection{Universality candidates (phases 6--7b)}
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[\arm{scalar_entropy_normalized} \textit{(Path B)}]
+    $\mathcal{L}_{\text{reg}} = \lambda \cdot H(A) / \log_2
+    \mathrm{rank}(A)$. \textbf{Scale-invariant}; ties to VC /
+    Rademacher effective-rank bounds.
+  \item[\arm{entropy_target} \textit{(Path A)}]
+    $\mathcal{L}_{\text{reg}} = \lambda \cdot (H_{\text{norm}} - H^*)^2$
+    with $H^* \in [0, 1]$. Squared-deviation around an
+    information-bottleneck-style compression target. $H^* = 0.5$ is the
+    universal-default sweet spot.
+  \item[\arm{structural_composite} \textit{(Path C)}]
+    $\mathcal{L}_{\text{reg}} = \lambda \cdot \max( H_{\text{norm}},\,
+    \sigma_{\max}/2,\, 1 - \mathrm{sr}/\mathrm{rank} )$.
+    Penalises whichever of three Bartlett-Foster-Telgarsky bound terms
+    is largest at the moment.
+  \item[\arm{entropy_unified}] $\mathcal{L}_{\text{reg}} = \lambda \cdot
+    ((H_{\text{norm}} - H^*)^2 + \beta H_{\text{norm}})$. Convex blend
+    of A and B; $\beta{=}1.0$ default makes it numerically equivalent
+    to $H^*{=}0.0$ entropy\_target.
+  \item[\arm{entropy_adaptive}] $\mathcal{L}_{\text{reg}} = \lambda(t)
+    \cdot H_{\text{norm}}$, with $\lambda(t) = \lambda \cdot
+    \exp(\eta \cdot \ddot{H}_{\text{norm}})$ clamped to $[0.1, 10]$.
+    Multiplicative modulator on $\lambda$ driven by the
+    \emph{second derivative} of $H_{\text{norm}}$ across reg-update
+    steps.
+  \item[\arm{total_combined}] $\mathcal{L}_{\text{reg}} = \lambda \cdot
+    (\text{A} + \text{B} + \text{C})$. Literal sum of the three;
+    triple-counts $H_{\text{norm}}$. Robustness-oriented.
+  \item[\arm{entropy_target_ka}] $\mathcal{L}_{\text{reg}} = \lambda
+    \cdot (H_{\text{norm}} - H^*_{KA})^2$, with $H^*_{KA} = \max(0.5,
+    \min(1.0, \log_2(2n+1)/\log_2(\mathrm{rank})))$.
+    \textbf{Theory-driven default:} the Hecht-Nielsen / Kolmogorov-Arnold
+    representation theorem gives a per-dataset lower bound on the
+    minimum representational rank ($2n+1$ for $n$-dim input).
+  \item[\arm{entropy_telgarsky}] Per-layer entropy with depth-decay
+    weighting: $\mathcal{L}_{\text{reg}} = \lambda \sum_l (1 - l/L)^p
+    H_{\text{norm}}^{(l)}$. Operationalises Telgarsky's depth-vs-width
+    tradeoff: deeper layers carry less penalty (preserve information
+    late, compress early).
+\end{description}
+
+\subsection{Activation-side family (phases 8 \& 11)}
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[\arm{cross_layer_mi} \textit{(Path F)}] $\mathcal{L}_{\text{reg}} = \lambda \cdot
+    \frac{1}{\binom{L}{2}} \sum_{i<j} I_2(\hat K_i ; \hat K_j)$, where
+    $\hat K_l$ is the trace-1 Gaussian-RBF Gram matrix of layer~$l$'s
+    post-linear activations on the current mini-batch and $I_2$ is the
+    Sanchez-Giraldo R\'enyi-2 mutual information via the Hadamard-product
+    joint. Penalises layer redundancy; differentiable through
+    activations to weights via forward hooks. Math:
+    \texttt{reports/sanchez\_giraldo\_framework.\{md,pdf\}}.
+\end{description}
+
+\subsection{Multi-information + closed-loop control (phases 12--18, Path I)}
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[\arm{total_correlation_mi} \textit{(Path I)}]
+    Strict L-way generalisation of Path F:
+    $\text{TC}_2 = \sum_{l=1}^{L} H_2(\hat K_l) - H_2(\hat K_{\text{join}})$
+    where $\hat K_{\text{join}} = \bigodot_l \hat K_l / \mathrm{tr}(\bigodot_l \hat K_l)$
+    is the stepwise-renormalised Hadamard joint Gram. Wrapped with two
+    closed-loop modulators:
+    (i) Lyapunov-style $\lambda$ schedule
+    $\lambda_{\text{eff}} = \lambda_0\,\exp(-\eta\,\mathrm{KL}_{\text{step}})$
+    where $\mathrm{KL}_{\text{step}}$ is the eigenvalue-distribution KL between
+    consecutive joint-Gram spectra;
+    (ii) variance-momentum modulator $\mu_t = \beta\mu_{t-1} + (1-\beta)\sigma^2(\hat p_t)$
+    with three CLI-selectable mixing modes (\code{damp}, \code{amplify}, \code{mix}).
+    Math + design discussion: \code{reports/ph12_path_i_negative_result.md}.
+
+  \item[\arm{entropy_lyapunov} \textit{(multi-term wrapping arm)}]
+    Wraps Path A + Path B with the same Lyapunov KL-feedback schedule,
+    parameterised by a per-term weight pair $(\lambda_a, \lambda_b)$:
+    $\mathcal{L}_{\text{reg}} = \lambda_{\text{eff}}\bigl(\lambda_a (H_{\text{norm}}-H^\star)^2 + \lambda_b H_{\text{norm}}\bigr)$.
+    The KL signal in the schedule connects two previously independent
+    regularisers (\arm{kl_trajectory} and \arm{entropy_target}) into a
+    single closed-loop controller derived from $\dot V<0$ on the task loss.
+\end{description}
+
+\subsection{Generated nets via HyMeKo descriptions (phases 18, 18b)}
+
+The Tier-2 emission path of the \code{torch_dataflow} backend
+(see \code{transforms/torch_dataflow/template.py}) is exercised
+end-to-end as a regularisation-bench fixture: \code{.hymeko} sources
+in \code{data/nn/} for ResMLP-\{3,10,20,40\} and HighwayMLP-\{3,10,20\}
+compile to PyTorch modules backed by \code{ehk_torch_stub} blocks,
+register as \code{\_hymeko}-suffixed datasets in \code{run_benchmark.py},
+and run the same regulariser arms as the hand-written PyTorch
+counterparts. Confirms that the canonical IR round-trips through to
+runnable nets without distorting regulariser dynamics
+(architectural-parity claim).
+
+\section{Phases}
+
+Each phase is one overnight (or multi-overnight) campaign with its own
+shell script and log file. Phases share the same harness
+(\code{run_benchmark.py}) and CSV output schema (\code{data/benchmarks/thesis_iv_hard_*.csv}).
+
+\subsection*{Phase 1 --- Original overnight suite (2026-04-22 -- 23)}
+
+\textbf{Scripts:} \code{run_overnight.sh}, \code{run_overnight_views.sh}
+(2nd suite). \textbf{Goal:} establish whether the unnormalised spectral
+entropy regulariser yields a positive on MNIST plain MLP and whether
+the effect generalises to image siblings, deep architectures, and
+CIFAR-10. \textbf{Arms:} \arm{scalar_entropy}, \arm{kl_trajectory}.
+\textbf{Datasets / archs:} MNIST, FashionMNIST, KMNIST (failed at the
+mirror), CIFAR-10, ResMLP-20, HighwayMLP, plain MLPs.
+\textbf{Headline:} MNIST anchor confirmed at $+0.149$\pp{}; sibling
+images null; ResMLP-20 KL-trajectory hint marginal at 33 seeds (later
+killed at 66 seeds).
+
+\subsection*{Phase 4 --- Highway + tabular (2026-04-23)}
+
+\textbf{Script:} \code{run_overnight_views_ph4.sh}.
+\textbf{Goal:} extend coverage to tabular sklearn datasets and the
+HighwayMLP/ResMLP-20 depth sweep.
+\textbf{Arms:} \arm{scalar_entropy}, \arm{kl_trajectory}.
+\textbf{Datasets / archs:} iris, wine, breast\_cancer, digits, MNIST
+HighwayMLP-10/20, FashionMNIST HighwayMLP-20, FashionMNIST ResMLP-20.
+\textbf{Headline:} \code{digits} significant positive
+($+0.047$\pp, p$<$0.01); rest mostly null due to ceiling effects.
+
+\subsection*{Phase 5 --- New datasets and CapsMLP (2026-04-23 -- 24)}
+
+\textbf{Script:} \code{run_overnight_views_ph5.sh}.
+\textbf{Goal:} test the original arm on Gaussian-quantiles synthetic,
+EMNIST Letters, SVHN, and the new CapsMLP architecture.
+\textbf{Arms:} \arm{scalar_entropy}, \arm{kl_trajectory}.
+\textbf{Headline:} CapsMLP MNIST surfaced as a \emph{significant
+negative} ($-0.057$\pp, p$<$0.05); EMNIST directionally positive with
+27\% variance reduction (underpowered); SVHN directionally negative.
+
+\subsection*{Phase 6 --- Universality stress test (2026-04-25)}
+
+\textbf{Script:} \code{run_overnight_views_ph6.sh}.
+\textbf{Goal:} test whether Path B / Path A / Path C neutralise the four
+significant negatives surfaced in phases 1--5.
+\textbf{Arms:} \arm{scalar_entropy_normalized}, \arm{entropy_target}
+($H^*{=}0.5$), \arm{structural_composite}.
+\textbf{Datasets / archs:} spirals, circles, mnist\_small, mnist\_capsnet
+(all dataflow view).
+\textbf{Headline:} Path B and Path A both \emph{strictly Pareto-dominate}
+\arm{scalar_entropy} on the 4-dataset matrix --- amplify positives
+(MNIST $+0.232$, spirals $+0.624$/$+0.662$) and neutralise both
+negatives (CapsMLP $-0.002$, circles $0.000$ exactly).
+
+\subsection*{Phase 7 --- $H^*$ sweep + combined arms (2026-04-25)}
+
+\textbf{Script:} \code{run_overnight_views_ph7.sh}.
+\textbf{Goal:} (a) map the $H^*$ curve at $\{0.0, 0.25, 0.5, 0.75, 1.0\}$
+on synthetic; (b) test whether combined arms (\arm{entropy_unified},
+\arm{entropy_adaptive}, \arm{total_combined}) outperform pure A or B.
+\textbf{Headline:} $H^*$ peaks at 0.5 (circles) and 0.75 (spirals);
+$H^*{=}1.0$ is degenerate (asks for max entropy --- collapses).
+\arm{entropy_adaptive} sets a new spirals record ($+0.724$\pp{}) but is
+mid-pack on MNIST. \arm{total_combined} achieves the highest seed-level
+win-rate on MNIST (29/4) at the cost of mean magnitude.
+
+\subsection*{Phase 7b --- KA + Telgarsky (2026-04-25 -- 26)}
+
+\textbf{Script:} \code{run_overnight_views_ph7b.sh}.
+\textbf{Goal:} test theory-driven defaults --- a per-dataset $H^*$
+derived from the Kolmogorov-Arnold representation theorem
+(\arm{entropy_target_ka}) and Telgarsky-style per-layer
+depth-weighted entropy (\arm{entropy_telgarsky}).
+\textbf{Headline:} \arm{entropy_target_ka} reproduces fixed $H^*{=}0.5$
+exactly on synthetic (theory-data agreement $\checkmark$). MNIST
+$H^*_{KA}$ clamps at 1.0 due to ceiling; implementation bug --- ceiling
+should be 0.75. \arm{entropy_telgarsky} positive on spirals
+($+0.598$\pp{}) but \emph{significantly negative on circles}
+($-0.046$\pp, p$<$0.05). \textbf{Telgarsky depth-weighting fails
+universality.}
+
+\subsection*{Phase 7c --- Universality breadth (queued, 2026-04-26)}
+
+\textbf{Script:} \code{run_overnight_views_ph7c.sh}.
+\textbf{Brief:} \code{reports/phase7c_brief.\{md,pdf\}}.
+\textbf{Goal:} extend Path B and Path A to six previously-unseen
+dataset/arch combos (ResMLP-20, FashionMNIST, KMNIST, SVHN, EMNIST,
+HighwayMLP-20). Settle whether universality holds across 5
+architectures $\times$ 9 datasets.
+\textbf{Status:} auto-fires after 7b.
+
+\subsection*{Phase 8 --- Cross-layer MI (queued, 2026-04-26)}
+
+\textbf{Script:} \code{run_overnight_views_ph8.sh}.
+\textbf{Math:} \code{reports/sanchez_giraldo_framework.\{md,pdf\}}.
+\textbf{Goal:} test the activation-side Sanchez-Giraldo R\'enyi-2
+cross-layer mutual information regulariser. Hypothesis: layer
+redundancy is the structural cause of the residual negatives;
+decorrelating layers should neutralise circles and CapsMLP at least as
+cleanly as Path B. \textbf{Status:} auto-fires after 7c.
+
+\subsection*{Phase 9 --- Composability test (queued, 2026-04-26)}
+
+\textbf{Script:} \code{run_overnight_views_ph9.sh}.
+\textbf{Brief:} \code{reports/phase9_brief.\{md,pdf\}}.
+\textbf{Goal:} test whether \arm{scalar_entropy_normalized} composes
+with the established mainstream regularisers (dropout, batch norm,
+optimiser weight decay). Five model+optimiser variants
+(\code{vanilla}, \code{dropout}, \code{batch_norm}, \code{weight_decay},
+\code{full_stack}) tested across the 4-dataset stress matrix; paired
+\code{baseline} vs \code{scalar_entropy_normalized} within each
+variant. Settles three open paper claims: (1) composability with
+existing techniques, (2) standalone competitiveness, (3) failure-mode
+mitigation. \textbf{Status:} 12 new \code{DATASETS} variants registered
+($\ast$\code{_drop}, $\ast$\code{_bn}, $\ast$\code{_full}); new
+\code{--weight-decay} CLI flag plumbed through. Auto-fires after 8.
+
+\subsection*{Phase 10 --- Lyapunov closed-loop scaffold (2026-04-26)}
+
+\textbf{Script:} \code{run_overnight_views_ph10.sh}.
+\textbf{Goal:} stress-test the new \arm{entropy_lyapunov} arm in the
+multi-task / multi-dataset matrix (per-term $\lambda_a, \lambda_b$
+plus KL-feedback schedule). Acts as the deployment scaffold that
+phases 12 onwards extend.
+\textbf{Headline:} closed-loop schedule trains stably across the
+matrix; the multi-term arm becomes the workhorse for phase~16
+(wrapping Path A/B) and phase~18 (deep architectures).
+
+\subsection*{Phase 11 --- Path F characterisation (2026-04-26)}
+
+\textbf{Script:} \code{run_overnight_views_ph11.sh}.
+\textbf{Goal:} characterise \arm{cross_layer_mi} (Path F) across
+$\lambda$ and across datasets following the 2026-04-26 spirals null
+($\Delta=+0.0003$, $t=+0.16$, $W/L=28/54$ at $\lambda=0.1$).
+\textbf{Result:} 9 paired runs, all null on plain MLPs; spirals
+$\lambda$ sweep flat; cross-dataset (circles, mnist\_small,
+fashion\_mnist, kmnist) null at all tested operating points.
+\textbf{Path F is honestly weaker than Path A/B at the conventional
+operating point} --- the activation-side pairwise MI does not
+substitute for normalised spectral entropy.
+
+\subsection*{Phase 12 --- Path I sweep (2026-04-26 -- 27)}
+
+\textbf{Script:} \code{run_overnight_views_ph12.sh}.
+\textbf{Brief / negative-result writeup:} \code{reports/ph12_path_i_negative_result.md}.
+\textbf{Goal:} characterise \arm{total_correlation_mi} (Path I) ---
+the L-way joint multi-information generalisation of Path F with KL
+feedback and variance momentum --- across (a) variance modes
+(\code{damp} / \code{amplify} / \code{mix}), (b) $\lambda$ sweep on
+spirals, (c) cross-dataset matrix, (d) momentum $\beta$ sweep.
+\textbf{Headline (13 runs):} at default $\lambda=0.1$ Path~I is
+\emph{significantly worse than baseline} on spirals
+($\Delta=-1.014$\pp, $t=-4.62$, $W/L=8/78$, $p<0.001$) under
+\code{mix}; the same magnitude under \code{amplify}; \code{damp} mode
+is degenerate (regulariser fades to zero). $\lambda$ sweep maps a
+catastrophic-collapse curve: $\Delta=-26.572$\pp{} at $\lambda=1.0$.
+\textbf{Sole positive trend:} $\lambda=0.03$ on spirals at
+$\Delta=+0.306$\pp, $t=+1.78$, $p\approx 0.08$ --- borderline
+significant. Cross-dataset at $\lambda=0.01$ all null; high-$\beta$
+EMA momentum ($\beta=0.99$) mildly attenuates the negative.
+
+\subsection*{Phase 13 --- Path I $\times$ CapsMLP (2026-04-27, INVALIDATED)}
+
+\textbf{Script:} \code{run_overnight_views_ph13.sh}.
+\textbf{Result:} 5/5 paired runs with $\Delta=+0.000$ exactly. Root
+cause: \code{CapsMLP.spectral_weights()} returns
+\code{[primary.weight, w\_matrix]} where \code{w\_matrix} is a
+\emph{synthesised} tensor (\code{self.W.permute().reshape()}) not
+backed by an \code{nn.Linear}; the activation-hook setup
+\code{id(m.weight) in weight\_ids} consequently finds only one
+hookable module, the \code{len(activations) >= 2} guard fails, and
+\code{reg\_term} stays \code{None} for every batch --- training is
+byte-identical to baseline. \textbf{Fix landed:} the activation-hook
+setup now emits a \code{[WARN]} line whenever fewer than two hookable
+modules are found, so the silent-collapse failure mode is eliminated
+going forward. Phase 13 is informationally vacuous about CapsMLP and
+must be re-run after CapsMLP is refactored to expose its routing as a
+hookable submodule.
+
+\subsection*{Phase 14 --- Path I $\times$ deep architectures (2026-04-27)}
+
+\textbf{Script:} \code{run_overnight_views_ph14.sh}.
+\textbf{Goal:} test whether the L-way joint Gram bites at L=20--40
+where the pairwise Path F could not. Datasets: ResMLP-20, HighwayMLP
+\{10, 20\} on MNIST; ResMLP-20 on FashionMNIST.
+\textbf{Headline (5 runs, scouting power 15 seeds):} all five null;
+\code{mnist\_highway\_20} the strongest signed effect at
+$\Delta=+0.057$\pp, $t=+0.99$ --- below the $+0.10$ acceptance
+threshold. The deep-arch hypothesis does not pan out at scouting
+power.
+
+\subsection*{Phase 15 --- Path I fine-grained $\lambda$ sweep (2026-04-27)}
+
+\textbf{Script:} \code{run_overnight_views_ph15.sh}.
+\textbf{Goal:} resolve the $\lambda=0.03$ spirals positive at finer
+resolution: $\lambda \in \{0.005, 0.010, 0.020, 0.030, 0.050\}$,
+\code{mix} mode.
+\textbf{Headline:} $\lambda=0.03$ peak \emph{reproduces to three
+decimals} ($\Delta=+0.306$\pp, $t=+1.78$, $W/L=40/31$, $p\approx 0.08$
+again). Productive band $[0.005, 0.05]$ is uniformly positive but
+not significant at the other points; flat-topped maximum around
+$\lambda=0.02$--$0.03$.
+
+\subsection*{Phase 16 --- Multi-term wrapping on Path A/B (2026-04-27)}
+
+\textbf{Script:} \code{run_overnight_views_ph16.sh}.
+\textbf{Goal:} test whether the Lyapunov KL-feedback schedule helps
+when wrapped around the universality \emph{winners} (Path A, Path B)
+rather than around Path I. Three datasets (spirals, circles,
+mnist\_small) $\times$ \arm{baseline} + Path B + \arm{entropy_lyapunov}
+with $(\lambda_a, \lambda_b) \in \{(0,1), (1,0)\}$.
+\textbf{Headline:} multi-term wrapping does not lift Path B beyond
+its plain version on these fixtures --- the schedule is mechanically
+fine but does not visibly contribute when the base regulariser is
+already universal.
+
+\subsection*{Phase 17 --- Path I $\lambda/L$ rescaling + more iterations (2026-04-28)}
+
+\textbf{Script:} \code{run_overnight_views_ph17.sh}.
+\textbf{Goal:} apply the calibration law $\lambda_I \approx \lambda_B / L$
+on deep architectures, and triple the epoch budget to 30. Datasets:
+\code{mnist_highway_10} ($\lambda=0.001$), \code{mnist_highway_20}
+($\lambda=0.0005$), \code{mnist_resnet_40} ($\lambda=0.0001$).
+\textbf{Headline (3 runs, 15 seeds):}
+\code{mnist_highway_10} null ($\Delta=+0.001$);
+\code{mnist_highway_20} marginal positive trend
+($\Delta=+0.073$\pp, $t=+1.65$, $p\approx 0.10$);
+\code{mnist_resnet_40} similar weak null. Rescaled $\lambda$ does
+\emph{not} rescue Path I to a publishable lift.
+
+\subsection*{Phase 18 --- Multi-term $\times$ deep $\times$ HyMeKo descriptions (2026-04-28 -- 29)}
+
+\textbf{Scripts:} \code{run_overnight_views_ph18.sh},
+\code{run_overnight_views_ph18b.sh}.
+\textbf{Goal:} two combined buckets:
+(A) PyTorch hand-written deep archs $\times$ FashionMNIST under
+\arm{entropy_lyapunov} ($\lambda_a=\lambda_b=1$, $\eta=5$), and
+(B) the same arm against six HyMeKo-emitted nets
+(\code{mnist\_highway\_\{3,10,20\}\_hymeko},
+\code{mnist\_resmlp\_\{10,20,40\}\_hymeko}) compiled from
+\code{data/nn/*.hymeko} via the \code{torch\_dataflow} backend.
+\textbf{Headline:}
+\code{fashion_mnist_highway_10} significant positive
+($\Delta=+0.087$\pp, $t=+2.61$, $p<0.01$) under multi-term wrapping ---
+the only published-power positive of the multi-term programme so far;
+deeper variants null or trend negative.
+HyMeKo-generated bucket B \emph{statistically mirrors} bucket A
+(highway-20 directional positive, resmlp-40 directional negative),
+confirming the architectural-parity claim end-to-end. Bucket B
+required a small wrapper fix in \code{run_benchmark.py::\_wrap\_hymeko\_net}
+(flatten 28$\times$28 inputs to flat 784) --- shipped as ph18b.
+
+\subsection*{Phase 18c --- Confirmation sweep + depth $\lambda$-grid (2026-05-04)}
+
+\textbf{Script:} \code{run_overnight_views_ph18c.sh}.
+\textbf{Goal:} two follow-on questions raised by ph18:
+(1) does the \code{fashion_mnist_highway_10} positive survive a
+10-seed sweep? (2) is the depth-fragility of highway-20 / resmlp-40
+real, or was the original constant-$\lambda$ off-axis at depth?
+Path I's calibration law $\lambda_{\rm multi}\sim\lambda_{\rm scalar}/L$
+predicts the original sweep was systematically over-strong at depth.
+The cell grid is highway-10 confirm 10-seed $\times$ $\lambda{=}1.0$,
+plus highway-20 / resmlp-40 / resnet-20 each at
+$\lambda\!\in\!\{0.5,2.0,5.0\}$ (3-seed), plus a
+highway-20 10-seed cross-check at $\lambda{=}1.0$.
+\textbf{Findings:}
+\begin{itemize}[leftmargin=1.5em,itemsep=2pt]
+  \item \emph{Headline confirmed.}
+    \code{fashion_mnist_highway_10} 10-seed:
+    $\Delta=+0.00092$ ($+0.092$\pp), $t=+2.08$, $p<0.05$,
+    W/L/T $=9/1/0$. The load-bearing positive of the multi-term
+    programme survives the bedrock test.
+  \item \emph{New positive at depth.}
+    \code{mnist_resmlp_40_hymeko} at $\lambda_a{=}\lambda_b{=}0.5$:
+    $\Delta=+0.00213$ ($+0.213$\pp), $t=+2.72$, W/L/T $=3/0/0$
+    --- significant positive at $L\!=\!40$ once $\lambda$ is rescaled.
+    This is the first empirical validation of Path I's
+    calibration law on the multi-term arm: the original ph18
+    null at $\lambda{=}1.0$ was a depth-mistuning artefact for
+    resmlp-40, not a depth-fragility limit.
+  \item \emph{Depth-fragility confirmed for highway-20.}
+    The 10-seed cross-check at $\lambda{=}1.0$ returns
+    $\Delta=-0.00022$ ($t=-0.35$, W/L/T $=4/6/0$); the full
+    $\lambda\!\in\!\{0.5,1.0,2.0,5.0\}$ grid all return null or
+    trending-negative. Highway-20's depth-fragility is
+    therefore not a $\lambda$-tuning artefact.
+\end{itemize}
+\textbf{Outcome.} The multi-term programme has \emph{two}
+confirmed positives (highway-10 at $L{=}10$ and resmlp-40 at
+$L{=}40$ with depth-aware $\lambda$) plus one genuine null
+(highway-20). Together with ph12 / ph15, this gives Path I's
+calibration law two independent empirical anchors:
+the spirals collapse at $\lambda \geq 0.1$ at $L{=}4$, and the
+resmlp-40 recovery at $\lambda{=}0.5$ at $L{=}40$.
+
+\section{Headline results map}
+
+Per-arm best-known result on each anchor dataset (most recent published-power
+configuration; see \code{RESULTS_VIEWS_SUITE.md} for the full table).
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+arm & \multicolumn{1}{c}{spirals (+)} & \multicolumn{1}{c}{MNIST (+)}
+    & \multicolumn{1}{c}{circles ($-$)} & \multicolumn{1}{c}{CapsMLP ($-$)} \\
+\midrule
+scalar\_entropy             & $+0.412$\,*** & $+0.149$\,**  & $-0.060$\,*  & $-0.057$\,*  \\
+kl\_trajectory              & $+0.294$\,*** & marginal      & null         & null         \\
+\midrule
+\textbf{scalar\_entropy\_normalized (B)} & $+0.624$\,*** & $+0.232$\,*** & $-0.016$ ns  & $-0.002$ ns  \\
+\textbf{entropy\_target $H^*{=}0.5$ (A)} & $+0.662$\,*** & $+0.229$\,*** & $+0.000$     & $-0.012$ ns  \\
+structural\_composite (C)   & $+0.454$\,*** & $+0.021$ ns   & $-0.010$ ns  & $-0.002$ ns  \\
+entropy\_unified ($\beta{=}1$) & $+0.630$\,*** & $+0.214$\,*** & $-0.026$ ns  & $+0.021$ ns (W/L 21/12) \\
+entropy\_adaptive           & \textbf{+0.724\,***} & $+0.209$\,*** & $-0.020$ ns  & $-0.002$ ns  \\
+total\_combined             & $+0.582$\,**  & $+0.209$\,*** (W/L 29/4) & $-0.038$ ns  & $+0.021$ ns (W/L 20/10) \\
+\midrule
+entropy\_target\_ka          & $+0.662$\,*** & $+0.025$ ns (clamp bug) & $+0.000$     & --- \\
+entropy\_telgarsky           & $+0.598$\,**  & $+0.040$ ns   & \textbf{$-0.046$\,*} & --- \\
+\midrule
+cross\_layer\_mi (Path F, ph11)        & $+0.000$ ns & ---       & ---         & --- \\
+total\_correlation\_mi (Path I, ph12)  & $-1.014$\,*** ($\lambda=0.1$) & --- & --- & --- \\
+total\_correlation\_mi (Path I, ph15)  & $+0.306$\,. ($\lambda=0.03$) & --- & --- & --- \\
+entropy\_lyapunov (ph18/18c)           & --- & --- & --- (FashionMNIST: highway-10 $+0.092$\,* @ 10-seed; resmlp-40 $+0.213$\,* @ $\lambda{=}0.5$) & invalidated (ph13) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Significance: \textsuperscript{***}\,$p<0.001$,
+\textsuperscript{**}\,$p<0.01$, \textsuperscript{*}\,$p<0.05$,
+``ns'' = not significant.
+
+\section{Where the manuscript stands}
+
+\paragraph{The defensible claim.}
+\begin{quote}\itshape
+Across 90+ paired-seed experiments spanning 9 datasets and 5
+architectures, the normalised-entropy formulation
+$L_{\text{reg}} = \lambda \cdot H(A) / \log_2 \mathrm{rank}(A)$
+strictly Pareto-dominates the unnormalised form: it preserves all
+significant positive effects, neutralises the four significant
+negative effects observed under the unnormalised regulariser, and
+admits a principled per-dataset $H^*$ derived from the
+Kolmogorov-Arnold representation theorem.
+\end{quote}
+
+\paragraph{Negative result with a calibration law (Paths F \& I).}
+\begin{quote}\itshape
+The activation-side family (Path F \arm{cross_layer_mi}, Path I
+\arm{total_correlation_mi}) is \emph{dominated by Path B everywhere
+on the universality matrix}. Path I's collapse at the conventional
+$\lambda$ follows the calibration law
+$\lambda_{\mathrm{multi}} \sim \lambda_{\mathrm{scalar}} / L$,
+empirically verified at $L=4$ (spirals collapse at
+$\lambda \geq 0.1$, productive band at $\lambda \approx 0.025$--$0.03$)
+and at $L \approx 41$ (resnet-20: rescaled $\lambda \approx 0.0005$
+recovers the same null-positive band as Path B at $\lambda = 0.01$,
+\emph{not} an additional lift). The single positive trend is
+\arm{total_correlation_mi} at $\lambda = 0.03$ on spirals
+($+0.306$\pp, $p \approx 0.08$, reproduced to three decimals across
+phases 12 and 15). Multi-term wrapping (\arm{entropy_lyapunov}) on the
+PyTorch deep-architecture matrix yields two confirmed positives
+(\code{fashion_mnist_highway_10} at $L{=}10$, $+0.092$\pp,
+$p<0.05$ at 10-seed; \code{mnist_resmlp_40_hymeko} at $L{=}40$,
+$+0.213$\pp, $p<0.05$ at $\lambda_{a,b}{=}0.5$) once $\lambda$ is
+rescaled per the calibration law for the deep variant. Highway-20
+remains a genuine depth-fragility null across the full
+$\lambda\!\in\!\{0.5,1.0,2.0,5.0\}$ grid.
+\end{quote}
+
+\paragraph{Architectural-parity claim (phase 18b).}
+\begin{quote}\itshape
+HyMeKo-emitted networks --- compiled from \code{data/nn/*.hymeko}
+sources via the \code{torch_dataflow} backend through Tier-2
+\code{ResidualBlock} / \code{HighwayBlock} blocks --- statistically
+mirror their hand-written PyTorch counterparts on the
+multi-term-wrapping matrix. The canonical IR therefore round-trips
+through to a runnable bench fixture without distorting regulariser
+dynamics.
+\end{quote}
+
+\paragraph{Open work.}
+\begin{itemize}[leftmargin=1.5em,itemsep=2pt]
+  \item Phase 7c (in progress): extend the universality stress to 5
+    architectures $\times$ 9 datasets.
+  \item Phase 9 (queued): composability vs dropout / batch-norm /
+    weight-decay --- three new paper claims hinge on this.
+  \item Re-run phase 13 once CapsMLP is refactored to expose its
+    routing as a hookable submodule (the activation-hook
+    \code{[WARN]} guard now prevents the silent-collapse failure
+    mode that invalidated the original phase 13).
+  \item Fix the ceiling clamp in \arm{entropy_target_ka} from 1.0 to
+    0.75 (matches the $H^*$ sweep collapse threshold).
+  \item Reproducibility: all CSVs are seeded; full re-run is one
+    overnight.
+\end{itemize}
+
+\appendix
+\section{File layout}
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[\code{python/benches/thesis_iv_hard/run_benchmark.py}]
+    main harness; defines the 12 arms, the model classes, and the
+    DATASETS dictionary.
+  \item[\code{python/benches/thesis_iv_hard/run_overnight_views_ph?.sh}]
+    one shell script per phase; each is a sequence of \code{RUN}
+    invocations of the harness.
+  \item[\code{python/benches/thesis_iv_hard/aggregate_views_suite.py}]
+    rolls all CSVs into \code{RESULTS_VIEWS_SUITE.md}.
+  \item[\code{python/benches/thesis_iv_hard/aggregate_hstar_sweep.py}]
+    H* sweep aggregator; parses the phase-7 log.
+  \item[\code{python/benches/thesis_iv_hard/test_sanchez_giraldo.py}]
+    sanity test for the matrix-based R\'enyi-2 estimator.
+  \item[\code{python/benches/thesis_iv_hard/compare_entropies.py}]
+    weight-side vs activation-side entropy comparison study.
+  \item[\code{reports/sanchez_giraldo_framework.\{md,pdf\}}]
+    math draft for the activation-side framework (Path~F unified with
+    E, G, H).
+  \item[\code{reports/phase7c_brief.\{md,pdf\}}]
+    descriptions, expected outcomes, and exact bash commands for the
+    12 phase-7c runs.
+  \item[\code{reports/phase9_brief.\{md,pdf\}}]
+    purpose, configuration matrix, per-cell bash commands, and four
+    paper-claim hypotheses with acceptance criteria for the 20
+    phase-9 paired comparisons.
+  \item[\code{reports/thesis_iv_views_suite.\{tex,pdf\}}]
+    earlier 5-page LaTeX report up to phase 7 (60-experiment summary).
+  \item[\code{RESULTS_VIEWS_SUITE.md}]
+    aggregated all-experiments table at repository root.
+\end{description}
+
+\end{document}

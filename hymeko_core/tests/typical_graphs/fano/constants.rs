@@ -1,4 +1,4 @@
-pub const FANO_GRAPH_PATH: &str = "./data/typical_graphs/fano_graph.hymeko";
+pub const FANO_GRAPH_PATH: &str = "../data/typical_graphs/fano_graph.hymeko";
 pub const FANO_DESCRIPTION_NAME: &str = "Fano_graph";
 pub const FANO_BLOCK_NAME: &str = "fano";
 pub const FANO_NODE_PREFIX: &str = "n";

@@ -1,11 +1,28 @@
 
 
 [workspace]
-members = [
+members = ["hymeko_bench",
+    "hymeko_cli",
     "hymeko_client",
     "hymeko_core",
     "hymeko_daemon",
+    "hymeko_emitter",
+    "hymeko_formats",
+    "hymeko_graph",
+    "hymeko_kit",
+    "hymeko_hnn",
+    "hymeko_hre",
+    "hymeko_mcp",
+    "hymeko_monitor",
+    "hymeko_nagare",
+    "hymeko_pgraph",
+    "hymeko_clifford",
+    "hymeko_compute",
     "hymeko_py",
+    "hymeko_query",
+    "hymeko_server",
+    "hymeko_wasm",
+    "hymeko_wire",
     "parser",
 ]
 resolver = "2"
@@ -15,6 +32,9 @@ blake3 = "1.8.3"
 memmap2 = "0.9.10"
 parser = { path = "parser" }
 hymeko_core = { path = "hymeko_core" }
+hymeko_clifford = { path = "hymeko_clifford" }
+hymeko_compute = { path = "hymeko_compute" }
+hymeko_graph = { path = "hymeko_graph" }
 zenoh = "1.7.2"
 serde_cbor = "0.11.2"
 iceoryx2 = "0.8.1"

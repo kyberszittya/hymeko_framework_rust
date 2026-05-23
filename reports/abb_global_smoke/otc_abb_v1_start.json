@@ -1,0 +1,1 @@
+{"dataset": "bitcoin_otc", "model": "HSiKAN-mixed", "hidden": 16, "n_test": 3560, "arities": [3, 4], "auc": 0.9309330508502499, "f1m": 0.7994878661907826, "fwd_per_call_ms": 36.006336013088, "n_params": 94660, "seed": 0}

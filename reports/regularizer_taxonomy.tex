@@ -1,0 +1,316 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{rotating}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lmodern}
+\usepackage{enumitem}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{Entropy Regulariser Taxonomy and Gap Analysis}
+\author{thesis-IV working notes (HyMeKo)}
+\date{2026-04-26}
+
+\newcommand{\arm}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\hnorm}{H_{\text{norm}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We list every regulariser arm currently implemented in the spectral-
+entropy programme and place them on a taxonomy of orthogonal design
+axes. The exercise reveals six well-defined regularizer families that
+are absent from the current implementation but follow naturally from
+the same theoretical framework. Each gap is named, sketched, and
+ranked by likely empirical relevance.
+\end{abstract}
+
+\section{Twelve currently implemented arms}
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lp{6.5cm}p{6cm}@{}}
+\toprule
+Arm & Formula & Notes \\
+\midrule
+\arm{baseline}        & none              & paired control \\
+\arm{l2_weight_decay} & $\lambda \sum_l \|W_l\|_F^2$ & classical L$^2$ control \\
+\arm{scalar_entropy}  & $\lambda \cdot H(A)$ & original Hajdu thesis-IV anchor \\
+\arm{kl_trajectory}   & $\lambda \cdot D_{\text{KL}}(\hat\lambda^{t-1} \| \hat\lambda^t)$ & temporal regulariser, single layer \\
+\addlinespace
+\arm{scalar_entropy_normalized} & $\lambda \cdot H(A) / \log_2 \mathrm{rank}(A)$ & Path B; scale-invariant \\
+\arm{entropy_target}            & $\lambda \cdot (\hnorm - H^*)^2$ & Path A; IB-style attractor \\
+\arm{structural_composite}      & $\lambda \cdot \max(\hnorm, \sigma_{\max}/2, 1{-}\mathrm{sr}/r)$ & Path C; BFT-bound terms \\
+\arm{entropy_unified}           & $\lambda \cdot ((\hnorm - H^*)^2 + \beta \hnorm)$ & A + B blend \\
+\arm{entropy_adaptive}          & $\lambda \cdot \exp(\eta \ddot\hnorm) \cdot \hnorm$ & H-acceleration feedback \\
+\arm{total_combined}            & $\lambda \cdot (A + B + C)$ & literal sum \\
+\arm{entropy_target_ka}         & $\lambda \cdot (\hnorm - H^*_{KA})^2$ & KA-bound H* \\
+\arm{entropy_telgarsky}         & $\lambda \sum_l (1{-}l/L)^p H_{\text{norm}}^{(l)}$ & per-layer, depth-decay \\
+\arm{cross_layer_mi}            & $\lambda \cdot \frac{1}{\binom{L}{2}}\sum_{i<j} I_2(\hat K_i;\hat K_j)$ &
+                                  Sanchez-Giraldo MI on activation Grams \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Taxonomy axes}
+
+Each arm is a point in a multi-dimensional design space. Six axes are
+relevant.
+
+\begin{description}[leftmargin=1.4em, style=nextline, itemsep=2pt]
+  \item[Axis 1 — Statistic source.]
+    \emph{Weight-side} (regulariser is a function of $W$ only) vs
+    \emph{activation-side} (depends on a forward pass through data).
+  \item[Axis 2 — Spatial scope.]
+    Per-layer (one regulariser term per layer) vs
+    full-network adjacency (one term over the whole spectrum).
+  \item[Axis 3 — Pairwise interactions.]
+    Marginal (single-layer or full-network entropy)
+    vs pairwise (mutual information, joint entropy).
+  \item[Axis 4 — Temporal scope.]
+    Single-step (current state only) vs
+    trajectory (depends on history — KL,
+    second derivative).
+  \item[Axis 5 — View aggregation.]
+    Single view (dataflow OR factor)
+    vs joint view (both views combined).
+  \item[Axis 6 — Functional shape.]
+    Linear in entropy ($\lambda H$);
+    quadratic-target ($\lambda(H{-}H^*)^2$);
+    composite (max / sum of multiple terms);
+    feedback / adaptive ($\lambda$ depends on a derived quantity).
+\end{description}
+
+\section{Coverage map}
+
+A matrix of (arm $\times$ axis) showing where each lands. ``$\bullet$''
+means the arm uses that axis; blank means the alternative (or the axis
+is not exercised).
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}l c c c c c c c c c c@{}}
+\toprule
+arm & W & A & per-L & full-A & marg & MI & 1-step & traj & view-J & quad/comp \\
+\midrule
+\arm{scalar_entropy}             & $\bullet$ & & & $\bullet$ & $\bullet$ & & $\bullet$ & & & \\
+\arm{kl_trajectory}              & $\bullet$ & & & $\bullet$ & $\bullet$ & & & $\bullet$ & & \\
+\arm{l2_weight_decay}            & $\bullet$ & & & $\bullet$ & $\bullet$ & & $\bullet$ & & & \\
+\arm{scalar_entropy_normalized}  & $\bullet$ & & & $\bullet$ & $\bullet$ & & $\bullet$ & & & \\
+\arm{entropy_target}             & $\bullet$ & & & $\bullet$ & $\bullet$ & & $\bullet$ & & & $\bullet$ \\
+\arm{structural_composite}       & $\bullet$ & & & $\bullet$ & $\bullet$ & & $\bullet$ & & & $\bullet$ \\
+\arm{entropy_unified}            & $\bullet$ & & & $\bullet$ & $\bullet$ & & $\bullet$ & & & $\bullet$ \\
+\arm{entropy_adaptive}           & $\bullet$ & & & $\bullet$ & $\bullet$ & & & $\bullet$ & & $\bullet$ \\
+\arm{total_combined}             & $\bullet$ & & & $\bullet$ & $\bullet$ & & $\bullet$ & & & $\bullet$ \\
+\arm{entropy_target_ka}          & $\bullet$ & & & $\bullet$ & $\bullet$ & & $\bullet$ & & & $\bullet$ \\
+\arm{entropy_telgarsky}          & $\bullet$ & & $\bullet$ & & $\bullet$ & & $\bullet$ & & & \\
+\arm{cross_layer_mi}             & & $\bullet$ & $\bullet$ & & & $\bullet$ & $\bullet$ & & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Visible imbalance.} The implementation is heavily concentrated
+on \{weight-side, full-network, marginal, single-step\} regulariser
+shapes. Eleven of twelve arms are weight-side; eleven are
+full-network; eleven are marginal (no MI); eleven are
+single-step.
+
+\section{Six unfilled gaps}
+
+\subsection{Gap A — Joint-view entropy regularisation}
+
+\textbf{What it would be.} Compute the trace-1 Gram matrices
+$\hat K_{\text{dataflow}}$ and $\hat K_{\text{factor}}$ from the
+two adjacency expansions of the same network and penalise their
+\emph{joint} entropy:
+\[
+\mathcal{L}_{\text{view}} = \lambda \cdot H_2(\hat K_{\text{dataflow}}
+                                              \odot \hat K_{\text{factor}}).
+\]
+Removes the user choice of view; the regulariser penalises whichever
+view (or combination) currently has highest joint entropy.
+
+\textbf{Why interesting.} On every dataset where we tested both views,
+the magnitudes of the two view-results differed but never disagreed in
+sign. A joint-view regulariser would be at least as informative as
+either view alone, and would be \emph{view-orientation-independent}
+(no longer needs the \code{--view} CLI flag).
+
+\textbf{Effort.} 20 lines of code; reuses existing Hadamard primitive
+from \code{cross_layer_mi}.
+
+\subsection{Gap B — Class-aware entropy target ($\hnorm$ floor)}
+
+\textbf{What it would be.} The current $H^*=0.5$ default is fixed.
+Theory predicts the optimal $H^*$ scales with the task's intrinsic
+representational floor. For an $n$-class classification with adjacency
+rank $r$,
+\[
+H^*_{\text{class}} = \max\!\left(0.5,\; \log_2(n) / \log_2(r)\right).
+\]
+This explains the EMNIST shrinkage we just observed (26 classes
+$\Rightarrow$ floor $\approx 0.48$, but our fixed 0.5 is too aggressive).
+
+\textbf{Why interesting.} Acts as a ``hidden-variable correction'' for
+the residual variation in our 7c results. If it fixes the EMNIST and
+ResMLP-20 underperformance, the universality claim becomes
+\emph{architecture- and task-balanced-independent}.
+
+\textbf{Effort.} 5 lines of code (already have the bookkeeping for
+\code{entropy_target_ka} which is similar). 2 hours of GPU time on the
+4-dataset stress matrix.
+
+\subsection{Gap C — Temporal mutual information}
+
+\textbf{What it would be.} Apply the Sanchez-Giraldo Hadamard joint to
+the SAME layer at two consecutive time steps:
+\[
+\mathcal{L}_{\text{temporal-MI}} =
+\lambda \cdot I_2(\hat K_l^{(t)}; \hat K_l^{(t-1)}).
+\]
+The activation-side analogue of \code{kl_trajectory}, properly framed
+as ``how much new information enters layer $l$ per step''.
+
+\textbf{Why interesting.} \code{kl_trajectory} was null on most
+datasets but gave a (later un-replicated) hint on ResMLP-20. A proper
+temporal MI version may capture the same effect more cleanly because
+it shares the activation-side framework with \code{cross_layer_mi}.
+
+\textbf{Effort.} Need to cache previous-batch activations across reg-
+update steps. Memory cost: $O(B \cdot d_l)$ per layer. ~30 lines of
+code.
+
+\subsection{Gap D — Information bottleneck (full)}
+
+\textbf{What it would be.} Define $\hat K_X$ from the input batch and
+$\hat K_Y$ from labels. For hidden representation $T = a_l(X)$,
+\[
+\mathcal{L}_{\text{IB}} =
+\lambda \cdot I_2(\hat K_X; \hat K_T) - \beta \cdot I_2(\hat K_T; \hat K_Y).
+\]
+This is the matrix-based information-bottleneck of Achille and Soatto.
+
+\textbf{Why interesting.} The most rigorous theoretical framing in the
+deep-learning regularisation literature. Would let the paper say
+``our regulariser is the IB principle realised by the Sanchez-Giraldo
+estimator''.
+
+\textbf{Effort.} ~80 lines of code; needs label-side Gram, can
+double batch-forward cost. Plumbing through harness needs care.
+
+\subsection{Gap E — Per-layer entropy target}
+
+\textbf{What it would be.} Generalise \code{entropy_target} from a
+single $H^*$ to a per-layer target $H^*_l$, allowing different layers
+to be regulated to different entropy levels. The depth schedule could
+be:
+\[
+H^*_l = H^*_{\text{base}} \cdot \alpha^{(l - L/2)},
+\]
+i.e.\ exponential decay or growth around the network middle.
+
+\textbf{Why interesting.} Telgarsky's depth-tradeoff result motivates
+preserving information in late layers. A per-layer target lets us
+encode that explicitly without the depth-weighted sum form
+(\code{entropy_telgarsky}) that broke on circles.
+
+\textbf{Effort.} 15 lines of code. Hyperparameters: $\alpha$ schedule.
+
+\subsection{Gap F — Hessian / Fisher entropy}
+
+\textbf{What it would be.} Penalise the Shannon entropy of the
+\emph{Hessian} or \emph{Fisher information matrix} eigenvalue
+distribution, not the weight adjacency:
+\[
+\mathcal{L}_{\text{hess}} = \lambda \cdot H(\text{eigvals of } \nabla^2 \mathcal{L}).
+\]
+Connects to the ``flat minima'' literature: lower Hessian-spectrum
+entropy means flatter minima, better generalisation
+(Hochreiter \& Schmidhuber 1997).
+
+\textbf{Why interesting.} The variance-reduction signature we
+observed empirically is theoretically tied to flat minima. Regulating
+Hessian entropy directly might be the \emph{actual mechanism} for the
+σ-reduction effect.
+
+\textbf{Effort.} Significant — Hessian computation is expensive
+($O(P^2)$ for $P$ parameters); needs careful approximation
+(diagonal Fisher, low-rank Hutchinson estimator). ~150 lines + numerics.
+
+\section{Ranking by likely impact}
+
+\begin{center}
+\small
+\begin{tabular}{@{}cllrl@{}}
+\toprule
+Rank & Gap & Effort & Hours of GPU & Likely return \\
+\midrule
+1 & B (class-aware $H^*$)        & 5 lines      & 2  & high — fixes residual EMNIST/ResMLP shrinkage \\
+2 & A (joint-view entropy)       & 20 lines     & 3  & medium — eliminates a knob \\
+3 & C (temporal MI)              & 30 lines     & 4  & medium — may revive the ResMLP-20 hint \\
+4 & E (per-layer target)         & 15 lines     & 4  & medium — replaces the broken Telgarsky idea \\
+5 & D (full IB)                  & 80 lines     & 6  & high if it works, but expensive \\
+6 & F (Hessian entropy)          & 150 lines    & 12 & potentially high but engineering risk \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Recommendation}
+
+\textbf{Implement gap B immediately} (class-aware $H^*$). It is the
+hidden-variable correction directly suggested by the phase-7c data;
+2-hour test on the stress matrix will confirm or refute. If it
+explains EMNIST and ResMLP-20, the universality claim is materially
+strengthened.
+
+\textbf{Defer gaps A, C, E to a follow-up paper} or paper appendix.
+They round out the design space but don't address the strongest
+empirical critique (the residual variance in normalised-entropy
+performance).
+
+\textbf{Gap D (information bottleneck) deserves its own paper.} It is
+the most theoretically prestigious regulariser to derive in this
+framework but unrelated to the universality story; would dilute focus.
+
+\textbf{Gap F (Hessian) is a different paper entirely.} The flat-minima
+connection is interesting, but Hessian regularisers are a substantial
+research thread of their own.
+
+\section{Diagram of the design space}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Statistic source} & \textbf{Pairwise interactions} & \textbf{Temporal scope} \\
+\midrule
+weight-side $\bullet$\,11/12 & marginal $\bullet$\,11/12 & single-step $\bullet$\,11/12 \\
+activation-side $\bullet$\,1/12 & MI $\bullet$\,1/12 & trajectory $\bullet$\,2/12 \\
+\midrule
+\textbf{Spatial scope} & \textbf{View aggregation} & \textbf{Functional shape} \\
+\midrule
+full-network $\bullet$\,11/12 & single view $\bullet$\,12/12 & linear $\bullet$\,4/12 \\
+per-layer $\bullet$\,2/12     & joint view $\bullet$\,0/12   & quad/comp $\bullet$\,8/12 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The framework is deeply over-developed in the upper-left of the
+design matrix (weight-side, full-network, marginal, single-step) and
+under-developed everywhere else. The activation-side framework opened
+up by \code{cross_layer_mi} (phase 8) is the most promising direction
+for future expansion --- it unlocks gaps A, C, D, and E by
+\emph{reusing the same Sanchez-Giraldo Hadamard primitive}.
+
+\end{document}

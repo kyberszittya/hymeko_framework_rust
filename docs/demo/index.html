@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HyMeKo — browser demo (M1)</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 960px; margin: 2em auto; padding: 0 1em;
+    color: #222; line-height: 1.45;
+  }
+  header { border-bottom: 1px solid #ddd; padding-bottom: 0.5em; }
+  h1 { margin: 0; font-size: 1.4em; }
+  h2 { margin-top: 1.4em; font-size: 1.05em; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+  .row { display: flex; gap: 1em; flex-wrap: wrap; align-items: center; margin: 0.4em 0; }
+  button, input[type=text] {
+    font: inherit; padding: 4px 10px; border: 1px solid #aaa; border-radius: 4px;
+  }
+  button { cursor: pointer; background: #f4f5f7; }
+  button:hover { background: #e8eaee; }
+  textarea {
+    width: 100%; min-height: 120px; font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px; border: 1px solid #ccc; border-radius: 4px; padding: 6px;
+  }
+  .counts { display: flex; gap: 2em; }
+  .counts div { font-size: 1.25em; }
+  .counts span.label { color: #777; font-size: 0.75em; display: block; }
+  pre {
+    background: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 4px;
+    padding: 8px 10px; font-size: 12px; overflow: auto; max-height: 320px;
+  }
+  .query-list {
+    background: #fffbe6; border: 1px solid #eedc82; border-radius: 4px;
+    padding: 6px 10px; font-family: ui-monospace, Menlo, monospace; font-size: 13px;
+  }
+  .error {
+    color: #b02a2a; background: #fdecec; padding: 8px 10px; border-radius: 4px;
+    border: 1px solid #f0c2c2; font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px; white-space: pre-wrap;
+  }
+  .foot { margin-top: 2.5em; color: #888; font-size: 0.85em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HyMeKo — browser demo</h1>
+  <p style="margin:0.3em 0 0.4em; color:#555;">
+    Parse a <code>.hymeko</code> file directly in the browser via
+    WebAssembly. No server, no install. Milestone&nbsp;1 of the
+    visualisation roadmap — paves the way for interactive graph viewers
+    and live message-passing.
+  </p>
+</header>
+
+<h2>1. Source</h2>
+<div class="row">
+  <input type="file" id="fileInput" accept=".hymeko,.txt">
+  <button id="btnLoadExample">Load canonical example</button>
+  <button id="btnCompile">Compile</button>
+</div>
+<textarea id="source" placeholder="Paste or drop a .hymeko file here…"></textarea>
+<div id="errorBox" class="error" style="display:none"></div>
+
+<h2>2. IR summary</h2>
+<div class="counts" id="counts">
+  <div><span class="label">nodes</span><span id="nodeCount">–</span></div>
+  <div><span class="label">edges</span><span id="edgeCount">–</span></div>
+  <div><span class="label">arcs</span><span id="arcCount">–</span></div>
+</div>
+
+<h2>3. Predicate query</h2>
+<p style="color:#555; margin:0.2em 0 0.4em;">
+  Supported atoms: <code>KIND(x)</code>, <code>INHERITS(x)</code>,
+  <code>SCOPEDIN(x)</code>, <code>HASARCREF(+1, inner)</code>, joined by
+  <code>AND</code>. Anchor example: five predicate queries from
+  <code>queries/standard.qlist</code> match the paper's §4.6 table counts.
+</p>
+<div class="row">
+  <input type="text" id="predicate" size="60"
+         value="KIND(joint) AND HASARCREF(+1, INHERITS(link))">
+  <button id="btnQuery">Run query</button>
+  <span id="queryCount" style="color:#555"></span>
+</div>
+<div id="queryMatches" class="query-list" style="display:none"></div>
+
+<h2>4. Emitted artefacts</h2>
+<div class="row">
+  <button id="btnUrdf">URDF</button>
+  <button id="btnSdf">SDF</button>
+  <button id="btnDot">DOT</button>
+  <button id="btnSnapshot">Snapshot JSON</button>
+</div>
+<pre id="output">emission output appears here…</pre>
+
+<div class="foot">
+  HyMeKo v0.1 — compiled to WebAssembly via
+  <code>wasm-pack build --target web hymeko_wasm</code>.
+  Source: <code>hymeko_wasm/src/compile.rs</code>.
+</div>
+
+<script type="module" src="./demo.js"></script>
+</body>
+</html>

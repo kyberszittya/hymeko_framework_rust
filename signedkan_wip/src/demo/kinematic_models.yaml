@@ -1,0 +1,113 @@
+# Catalogue of URDFs that ship with the repository, surfaced in the demo
+# GUI's Kinematic tab. Edit to add more; the loader resolves paths
+# relative to the repo root.
+#
+# Each entry is purely structural — no trained model, no ground-truth
+# positions. v0 of the kinematic demo is descriptive only (cycle counts,
+# joint signs, balance fingerprint, NetworkX layout). v0.5 will add a
+# trained classifier ("kinematic family from αₖ").
+
+schema_version: 1
+
+urdfs:
+  # ---------------------------------------------------------------------
+  # Parallel mechanisms — these are the ones with closed kinematic loops.
+  # They make the cycle-arity bar chart actually do something.
+  # ---------------------------------------------------------------------
+  - id: four_bar
+    label: "4-bar planar linkage — 4 links, 1 closed loop"
+    path: data/robotics/synthetic_fixtures/four_bar.urdf
+    notes: |
+      Canonical planar parallel mechanism. 1 cycle at k=4; no other
+      arities. Topology signature should report "4-bar / planar
+      parallel". Generated from `kinematic_fixtures.write_fixture`.
+
+  - id: stewart
+    label: "Stewart platform — 14 links, 15 spatial cycles"
+    path: data/robotics/synthetic_fixtures/stewart.urdf
+    notes: |
+      6-DOF spatial parallel manipulator (hexapod). 15 cycles at k=6;
+      the canonical "Stewart spike at k=6" demo case. αₖ should weight
+      k=6 heavily on a trained classifier.
+
+  - id: delta_3rrr
+    label: "Delta 3-RRR — 8 links, 3 cycles at k=6"
+    path: data/robotics/synthetic_fixtures/delta_3rrr.urdf
+    notes: |
+      Spatial delta robot, 3 parallel legs. 3 cycles at k=6; sparser
+      than Stewart but same arity signature. Useful for showing that
+      αₖ is regime-not-magnitude.
+
+  - id: serial_4
+    label: "Synthetic serial arm — 4-DOF"
+    path: data/robotics/synthetic_fixtures/serial_4.urdf
+    notes: |
+      Open serial chain, no cycles. From the same fixture generator
+      that produces the parallel mechanisms — useful as the "null"
+      reference for the classifier.
+
+  - id: serial_7
+    label: "Synthetic serial arm — 7-DOF"
+    path: data/robotics/synthetic_fixtures/serial_7.urdf
+    notes: |
+      7-DOF redundant manipulator (WAM-shaped). Open chain, no cycles.
+
+  # ---------------------------------------------------------------------
+  # Real-world + scaling-study URDFs.
+  # ---------------------------------------------------------------------
+  - id: moveo
+    label: "MoveIt MoveO arm (8 links, 6-DOF serial)"
+    path: generated/gazebo_launch/moveo/moveo.urdf
+    notes: |
+      Real-world educational arm. 6 revolute joints + 1 fixed mount.
+      Open serial chain — expect 0 cycles at any arity.
+
+  - id: chain_5
+    label: "Synthetic serial chain — 5 links"
+    path: scripts/scaling/urdf_fixtures/chain/chain_5/chain_5.urdf
+    notes: |
+      Minimal serial-chain fixture. 4 revolute joints. Used in the
+      scaling-study benchmarks (memory: project_scaling_study_2026_04_20).
+
+  - id: chain_10
+    label: "Synthetic serial chain — 10 links"
+    path: scripts/scaling/urdf_fixtures/chain/chain_10/chain_10.urdf
+    notes: |
+      Larger serial chain for demoing the "open-chain → no cycles"
+      visual signature.
+
+  - id: chain_50
+    label: "Synthetic serial chain — 50 links"
+    path: scripts/scaling/urdf_fixtures/chain/chain_50/chain_50.urdf
+    notes: |
+      Stress test for the layout (50 vertices, spring layout still
+      legible). Useful for showing scaling behaviour live.
+
+  - id: humanoid_f0
+    label: "Synthetic humanoid f0 — 28 links"
+    path: scripts/scaling/urdf_fixtures/humanoid/humanoid_f0/humanoid_f0.urdf
+    notes: |
+      Tree-topology humanoid with bilateral symmetry. No closed loops,
+      so HSiKAN's cycle pool is empty; the topology signature should
+      report "tree".
+
+  - id: humanoid_f5
+    label: "Synthetic humanoid f5 — 68 links"
+    path: scripts/scaling/urdf_fixtures/humanoid/humanoid_f5/humanoid_f5.urdf
+    notes: |
+      Largest in-repo humanoid. Layout becomes dense; useful as the
+      "doesn't scale visually" counterpoint to chain_50 / moveo.
+
+  - id: tree_10
+    label: "Synthetic tree topology — 10 links (k=3)"
+    path: scripts/scaling/urdf_fixtures/tree/tree_10_k3/tree_10_k3.urdf
+    notes: |
+      Branching tree with max degree 3. Topology signature should be
+      "tree" — multiple high-degree vertices, still no cycles.
+
+  - id: mini_arm
+    label: "mini_arm — 2 links / 1 joint (smoke fixture)"
+    path: mini_arm.urdf
+    notes: |
+      Trivial 2-link arm at the repo root. Useful only for smoke
+      testing the loader pipeline.

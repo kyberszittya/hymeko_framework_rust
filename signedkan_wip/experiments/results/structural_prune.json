@@ -1,0 +1,200 @@
+[
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "hidden": 32,
+    "auc": 0.7702545237565828,
+    "f1m": 0.7128946186932541,
+    "fwd_latency_ms": 3.5184039998057415,
+    "n_params": 121729,
+    "train_time_s": 0.9607648849487305,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "hidden": 32,
+    "auc": 0.8166671099565872,
+    "f1m": 0.7378746826791642,
+    "fwd_latency_ms": 3.5216999995100196,
+    "n_params": 121729,
+    "train_time_s": 0.9615435600280762,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "hidden": 32,
+    "auc": 0.7900381734668543,
+    "f1m": 0.7164675962466018,
+    "fwd_latency_ms": 3.5232380005254527,
+    "n_params": 121729,
+    "train_time_s": 0.9638271331787109,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "hidden": 24,
+    "auc": 0.770928619075631,
+    "f1m": 0.710793549199505,
+    "fwd_latency_ms": 2.6996864999091486,
+    "n_params": 91297,
+    "train_time_s": 4.142614841461182,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "hidden": 24,
+    "auc": 0.8089715969371623,
+    "f1m": 0.7259691489976313,
+    "fwd_latency_ms": 2.6978080004482763,
+    "n_params": 91297,
+    "train_time_s": 0.7481637001037598,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "hidden": 24,
+    "auc": 0.7953478026980054,
+    "f1m": 0.7064135419615336,
+    "fwd_latency_ms": 2.7005729998563766,
+    "n_params": 91297,
+    "train_time_s": 0.7470321655273438,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "hidden": 16,
+    "auc": 0.7568429822314666,
+    "f1m": 0.7137756695126144,
+    "fwd_latency_ms": 7.367501000771881,
+    "n_params": 60865,
+    "train_time_s": 1.2776069641113281,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "hidden": 16,
+    "auc": 0.808797236235109,
+    "f1m": 0.7384398496240601,
+    "fwd_latency_ms": 7.36923449949245,
+    "n_params": 60865,
+    "train_time_s": 1.2360217571258545,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "hidden": 16,
+    "auc": 0.7872527518000496,
+    "f1m": 0.7055309734513274,
+    "fwd_latency_ms": 7.365942999967956,
+    "n_params": 60865,
+    "train_time_s": 1.2364776134490967,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "hidden": 12,
+    "auc": 0.7571568094885601,
+    "f1m": 0.710056980322961,
+    "fwd_latency_ms": 5.5811254987929715,
+    "n_params": 45649,
+    "train_time_s": 0.9573519229888916,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "hidden": 12,
+    "auc": 0.8030226462044039,
+    "f1m": 0.7223122071316446,
+    "fwd_latency_ms": 5.570059499405033,
+    "n_params": 45649,
+    "train_time_s": 0.955470085144043,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "hidden": 12,
+    "auc": 0.7819172597864767,
+    "f1m": 0.6993295795086897,
+    "fwd_latency_ms": 5.5707205001453985,
+    "n_params": 45649,
+    "train_time_s": 0.9549016952514648,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "hidden": 8,
+    "auc": 0.7587048363172723,
+    "f1m": 0.7099593451061159,
+    "fwd_latency_ms": 3.785918000176025,
+    "n_params": 30433,
+    "train_time_s": 0.6966683864593506,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "hidden": 8,
+    "auc": 0.8053070669279122,
+    "f1m": 0.7324414715719063,
+    "fwd_latency_ms": 3.784991000429727,
+    "n_params": 30433,
+    "train_time_s": 0.6905863285064697,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "hidden": 8,
+    "auc": 0.7880376872465447,
+    "f1m": 0.7139357687103896,
+    "fwd_latency_ms": 3.786514000239549,
+    "n_params": 30433,
+    "train_time_s": 0.690382719039917,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 0,
+    "hidden": 4,
+    "auc": 0.7390280080272227,
+    "f1m": 0.7000849275302816,
+    "fwd_latency_ms": 1.936999000463402,
+    "n_params": 15217,
+    "train_time_s": 0.4630720615386963,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 1,
+    "hidden": 4,
+    "auc": 0.8053853814805292,
+    "f1m": 0.7348717460811702,
+    "fwd_latency_ms": 1.9335825008965912,
+    "n_params": 15217,
+    "train_time_s": 0.4631333351135254,
+    "h_kept_recommended": 21
+  },
+  {
+    "dataset": "bitcoin_alpha",
+    "seed": 2,
+    "hidden": 4,
+    "auc": 0.75617085988579,
+    "f1m": 0.6958933461316461,
+    "fwd_latency_ms": 1.9345450000400888,
+    "n_params": 15217,
+    "train_time_s": 0.46022844314575195,
+    "h_kept_recommended": 21
+  }
+]

@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\caption{Source bytes a user maintains to cover the same set of emitted formats. HyMeKo's one source authoritatively describes all six targets (Proposition~\ref{prop:alias}); the standard stack needs one file per format with no coherence guarantee. Ratio is URDF-alone bytes over HyMeKo bytes per format emitted.}
+\label{tab:description_length}
+\begin{tabular}{lrrrr}
+\toprule
+Fixture & HyMeKo [B] & URDF [B] & HyMeKo / 6 fmts [B] & Ratio \\
+\midrule
+chain, 100 links & 49416 & 56683 & 8236 & 6.9$\times$ \\
+tree (k=3), 1000 links & 500421 & 552210 & 83404 & 6.6$\times$ \\
+humanoid (Atlas-class) & 14495 & 15767 & 2416 & 6.5$\times$ \\
+humanoid with 5 fingers/hand & 36567 & 39907 & 6094 & 6.5$\times$ \\
+quadruped (Spot/ANYmal-class) & 11342 & 12294 & 1890 & 6.5$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
