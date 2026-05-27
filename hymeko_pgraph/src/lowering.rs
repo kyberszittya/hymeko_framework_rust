@@ -108,12 +108,30 @@ pub struct LoweredPGraph {
     /// dimension. Empty when no tagged cost children are present
     /// (scalar-only path).
     pub cost_vectors: BTreeMap<DeclId, Vec<f64>>,
-    /// Per-unit *consumed* materials (set of M-nodes appearing with
-    /// `-` sign in the unit's hyperarc).
-    pub unit_inputs: BTreeMap<DeclId, BTreeSet<DeclId>>,
-    /// Per-unit *produced* materials (set of M-nodes appearing with
-    /// `+` sign in the unit's hyperarc).
-    pub unit_outputs: BTreeMap<DeclId, BTreeSet<DeclId>>,
+}
+
+impl LoweredPGraph {
+    /// Materials *consumed* by unit `u` — the `-` refs of its hyperarc,
+    /// i.e. the predecessors of `u` in the signed-incidence schema
+    /// (edges `m → u`).
+    ///
+    /// # Postconditions
+    /// Equal to `schema.predecessors(u)`; a unit with no inputs yields
+    /// the empty set. This is a *query* over the single source of truth
+    /// (the directed edge set), not a stored side table.
+    pub fn inputs(&self, u: DeclId) -> &BTreeSet<DeclId> {
+        self.schema.predecessors(u)
+    }
+
+    /// Materials *produced* by unit `u` — the `+` refs of its hyperarc,
+    /// i.e. the successors of `u` in the schema (edges `u → m`).
+    ///
+    /// # Postconditions
+    /// Equal to `schema.successors(u)`; a disposal-sink unit (no
+    /// outputs) yields the empty set.
+    pub fn outputs(&self, u: DeclId) -> &BTreeSet<DeclId> {
+        self.schema.successors(u)
+    }
 }
 
 /// Lower a parsed [`Description`] into a P-graph.
@@ -181,15 +199,11 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
     let mut per_unit_dim_costs: BTreeMap<DeclId, BTreeMap<String, f64>> =
         BTreeMap::new();
     let mut all_dimensions: BTreeSet<String> = BTreeSet::new();
-    let mut unit_inputs: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
-    let mut unit_outputs: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
     let mut next_edge: usize = 0;
 
     for e in &units {
         let unit_id = name_to_decl[e.inner.name];
         let unit_name = e.inner.name.to_string();
-        unit_inputs.entry(unit_id).or_default();
-        unit_outputs.entry(unit_id).or_default();
         per_unit_dim_costs.entry(unit_id).or_default();
 
         // Cost source 1: the edge's value (idiomatic).
@@ -220,10 +234,8 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
                         })?;
                         if sign < 0 {
                             edges.insert(EdgeId::new(next_edge), (mat_id, unit_id));
-                            unit_inputs.get_mut(&unit_id).unwrap().insert(mat_id);
                         } else {
                             edges.insert(EdgeId::new(next_edge), (unit_id, mat_id));
-                            unit_outputs.get_mut(&unit_id).unwrap().insert(mat_id);
                         }
                         next_edge += 1;
                     }
@@ -312,8 +324,6 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
         costs,
         cost_dimensions,
         cost_vectors,
-        unit_inputs,
-        unit_outputs,
     })
 }
 

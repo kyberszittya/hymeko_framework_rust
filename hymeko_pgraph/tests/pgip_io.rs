@@ -1,5 +1,9 @@
 //! Tests for direct .pgip read/write (Stage P-io, 2026-05-19).
 //!
+//! Gated behind the `pgip` feature (on by default) — a `--no-default-features`
+//! build has no `read_pgip`/`write_pgip`.
+#![cfg(feature = "pgip")]
+//!
 //! Three properties to pin:
 //!   1. `read_pgip` on a textbook chapter reproduces the topology
 //!      we previously verified through the .hymeko intermediate.
@@ -103,32 +107,20 @@ fn graphs_equivalent(
         if (ca - cb).abs() > 1e-9 {
             return Err(format!("unit {name} cost differs: a={ca} b={cb}"));
         }
-        // In/out incidence by material-name.
-        let a_in: BTreeSet<&String> = a
-            .unit_inputs
-            .get(ua)
-            .map(|s| s.iter().map(|d| &a.decl_to_name[d]).collect())
-            .unwrap_or_default();
-        let b_in: BTreeSet<&String> = b
-            .unit_inputs
-            .get(ub)
-            .map(|s| s.iter().map(|d| &b.decl_to_name[d]).collect())
-            .unwrap_or_default();
+        // In/out incidence by material-name (derived via the queries).
+        let a_in: BTreeSet<&String> =
+            a.inputs(*ua).iter().map(|d| &a.decl_to_name[d]).collect();
+        let b_in: BTreeSet<&String> =
+            b.inputs(*ub).iter().map(|d| &b.decl_to_name[d]).collect();
         if a_in != b_in {
             return Err(format!(
                 "unit {name} inputs differ:\n  a={a_in:?}\n  b={b_in:?}"
             ));
         }
-        let a_out: BTreeSet<&String> = a
-            .unit_outputs
-            .get(ua)
-            .map(|s| s.iter().map(|d| &a.decl_to_name[d]).collect())
-            .unwrap_or_default();
-        let b_out: BTreeSet<&String> = b
-            .unit_outputs
-            .get(ub)
-            .map(|s| s.iter().map(|d| &b.decl_to_name[d]).collect())
-            .unwrap_or_default();
+        let a_out: BTreeSet<&String> =
+            a.outputs(*ua).iter().map(|d| &a.decl_to_name[d]).collect();
+        let b_out: BTreeSet<&String> =
+            b.outputs(*ub).iter().map(|d| &b.decl_to_name[d]).collect();
         if a_out != b_out {
             return Err(format!(
                 "unit {name} outputs differ:\n  a={a_out:?}\n  b={b_out:?}"

@@ -17,8 +17,15 @@ serde        = { version = "1", features = ["derive"] }
 serde_json   = "1"
 # Stage P-io (2026-05-19): direct .pgip (P-graph Studio SQLite)
 # read/write so users can roundtrip with P-graph Studio.
-# `bundled` feature avoids a system SQLite dependency.
-rusqlite     = { version = "0.32", features = ["bundled"] }
+# `bundled` avoids a system SQLite dependency, but compiles C — so it is
+# gated behind the default `pgip` feature and dropped on wasm32 targets
+# (which have no C toolchain). Disable with `--no-default-features`.
+rusqlite     = { version = "0.32", features = ["bundled"], optional = true }
+
+[features]
+default = ["pgip"]
+# `.pgip` (P-graph Studio SQLite) read/write support. Pulls `rusqlite`.
+pgip = ["dep:rusqlite"]
 
 [dev-dependencies]
 proptest     = "1"
@@ -28,6 +35,15 @@ criterion    = "0.8.2"
 name = "pgraph_bench"
 harness = false
 
+# Both binaries use `.pgip` I/O, so they require the `pgip` feature (on by
+# default). A `--no-default-features` build (e.g. the wasm dependency path)
+# skips them and the rusqlite/C compile entirely.
 [[bin]]
 name = "hymeko_pgraph_dump"
 path = "src/bin/hymeko_pgraph_dump.rs"
+required-features = ["pgip"]
+
+[[bin]]
+name = "pgraph"
+path = "src/bin/pgraph.rs"
+required-features = ["pgip"]

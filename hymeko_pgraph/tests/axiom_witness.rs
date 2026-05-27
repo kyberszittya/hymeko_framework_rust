@@ -72,12 +72,8 @@ fn project_schema(p: &LoweredPGraph, units: &BTreeSet<DeclId>) -> PGraphSchema {
     let mut materials: BTreeSet<DeclId> = BTreeSet::new();
     for u in units {
         kinds.insert(*u, PNodeKind::OperatingUnit);
-        if let Some(ins) = p.unit_inputs.get(u) {
-            materials.extend(ins.iter().copied());
-        }
-        if let Some(outs) = p.unit_outputs.get(u) {
-            materials.extend(outs.iter().copied());
-        }
+        materials.extend(p.inputs(*u).iter().copied());
+        materials.extend(p.outputs(*u).iter().copied());
     }
     materials.extend(p.products.iter().copied());
     for m in &materials {
@@ -376,8 +372,8 @@ fn synthetic_source_unit_canonical_passes_extension_fails() {
 //      ≤ every solution structure enumerated by SSG.
 
 fn brute_force_minimum_cost(p: &LoweredPGraph) -> Option<(BTreeSet<DeclId>, f64)> {
-    let msg = maximal_structure(&p);
-    let ssg = hymeko_pgraph::ssg_enumerate(&p, &msg);
+    let msg = maximal_structure(p);
+    let ssg = hymeko_pgraph::ssg_enumerate(p, &msg);
     let mut best: Option<(BTreeSet<DeclId>, f64)> = None;
     for s in ssg {
         let cost: f64 = s.units.iter().map(|u| p.costs.get(u).copied().unwrap_or(1.0)).sum();

@@ -123,8 +123,7 @@ pub fn is_feasible(p: &LoweredPGraph, sel: &BTreeSet<DeclId>, opts: SsgOptions) 
     //     by another selected unit.
     let producible = close_producible(p, sel, &p.raws);
     for u in sel {
-        let inputs = p.unit_inputs.get(u).cloned().unwrap_or_default();
-        for m in &inputs {
+        for m in p.inputs(*u) {
             if !producible.contains(m) {
                 return false;
             }
@@ -141,15 +140,11 @@ pub fn is_feasible(p: &LoweredPGraph, sel: &BTreeSet<DeclId>, opts: SsgOptions) 
     if opts.strict_no_excess {
         let mut produced: BTreeSet<DeclId> = BTreeSet::new();
         for u in sel {
-            if let Some(out) = p.unit_outputs.get(u) {
-                produced.extend(out.iter().copied());
-            }
+            produced.extend(p.outputs(*u).iter().copied());
         }
         let mut consumed: BTreeSet<DeclId> = BTreeSet::new();
         for u in sel {
-            if let Some(ins) = p.unit_inputs.get(u) {
-                consumed.extend(ins.iter().copied());
-            }
+            consumed.extend(p.inputs(*u).iter().copied());
         }
         for m in &produced {
             if p.products.contains(m) || p.raws.contains(m) {

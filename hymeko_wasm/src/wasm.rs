@@ -13,7 +13,7 @@
 
 use wasm_bindgen::prelude::*;
 
-use crate::compile::{compile_source, CompiledDoc};
+use crate::compile::{CompiledDoc, compile_source};
 use crate::session::EditorSession as NativeSession;
 
 #[wasm_bindgen(start)]
@@ -113,15 +113,23 @@ pub fn parse_and_compile(source: &str) -> Result<CompiledIR, JsValue> {
 #[wasm_bindgen]
 impl CompiledIR {
     #[wasm_bindgen(getter)]
-    pub fn node_count(&self) -> usize { self.inner.node_count() }
+    pub fn node_count(&self) -> usize {
+        self.inner.node_count()
+    }
     #[wasm_bindgen(getter)]
-    pub fn edge_count(&self) -> usize { self.inner.edge_count() }
+    pub fn edge_count(&self) -> usize {
+        self.inner.edge_count()
+    }
     #[wasm_bindgen(getter)]
-    pub fn arc_count(&self) -> usize { self.inner.arc_count() }
+    pub fn arc_count(&self) -> usize {
+        self.inner.arc_count()
+    }
 
     #[wasm_bindgen]
     pub fn snapshot_json(&self) -> Result<String, JsValue> {
-        self.inner.snapshot_json().map_err(|e| JsValue::from_str(&e))
+        self.inner
+            .snapshot_json()
+            .map_err(|e| JsValue::from_str(&e))
     }
 
     #[wasm_bindgen]
@@ -148,4 +156,35 @@ impl CompiledIR {
     pub fn to_dot(&self, graph_name: &str) -> String {
         self.inner.to_dot(graph_name)
     }
+}
+
+// --------------------------------------------------------------------- //
+// P-graph — browser surface for the P-graph engine.
+// --------------------------------------------------------------------- //
+//
+//   pgraph_solve(instance, meta)  →  MSG/SSG/ABB analysis JSON
+//   pgraph_dot(instance, meta)    →  Graphviz DOT
+//
+// `instance` is a meta-model `.hymeko` source (with `@"meta_pgraph.hymeko"`
+// include + `<isa>` typing); `meta` is the meta-model source. A literal-tag
+// instance solves with an empty `meta` (fallback). Both return strings the JS
+// side deserialises, keeping the native core (`crate::pgraph`) unit-testable.
+// --------------------------------------------------------------------- //
+
+/// Solve a P-graph; returns the MSG/SSG/ABB analysis as a JSON string.
+#[wasm_bindgen]
+pub fn pgraph_solve(instance: &str, meta: &str) -> Result<String, JsValue> {
+    crate::pgraph::solve_json(instance, meta).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Render a P-graph as Graphviz DOT.
+#[wasm_bindgen]
+pub fn pgraph_dot(instance: &str, meta: &str) -> Result<String, JsValue> {
+    crate::pgraph::dot(instance, meta).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Render the bipartite P-graph (M/O partition + signed incidence) as text.
+#[wasm_bindgen]
+pub fn pgraph_transform(instance: &str, meta: &str) -> Result<String, JsValue> {
+    crate::pgraph::transform_text(instance, meta).map_err(|e| JsValue::from_str(&e))
 }

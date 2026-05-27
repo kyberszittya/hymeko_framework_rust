@@ -78,12 +78,26 @@ pub struct PGraphSchema {
     nodes: BTreeMap<DeclId, PNodeKind>,
     /// Directed edge endpoints, indexed by HyMeKo IR `EdgeId`.
     /// `(src, dst)` — by construction `kind(src) != kind(dst)`.
+    /// This directed edge set **is** the signed incidence: `m → u`
+    /// records a consumed material (`-` in the unit's hyperarc),
+    /// `u → m` a produced one (`+`).
     edges: BTreeMap<EdgeId, (DeclId, DeclId)>,
     /// Cache: set of declarations that are O-nodes.
     o_nodes: BTreeSet<DeclId>,
     /// Cache: set of declarations that are M-nodes.
     m_nodes: BTreeSet<DeclId>,
+    /// Derived adjacency: for each `dst`, the set of `src` with an edge
+    /// `src → dst`. Computed once from [`Self::edges`]; the single
+    /// source of truth for input/predecessor queries.
+    incoming: BTreeMap<DeclId, BTreeSet<DeclId>>,
+    /// Derived adjacency: for each `src`, the set of `dst` with an edge
+    /// `src → dst`. Computed once from [`Self::edges`].
+    outgoing: BTreeMap<DeclId, BTreeSet<DeclId>>,
 }
+
+/// Shared empty neighbour set returned for declarations with no
+/// incidence on the queried side (avoids allocating per call).
+static EMPTY_NEIGHBOURS: BTreeSet<DeclId> = BTreeSet::new();
 
 impl PGraphSchema {
     /// Construct a [`PGraphSchema`] from explicit kind assignments and
@@ -105,7 +119,10 @@ impl PGraphSchema {
                 }
             }
         }
-        // Bipartite check on edges.
+        // Bipartite check + derive adjacency in a single pass over the
+        // signed incidence (no second iteration, no parallel store).
+        let mut incoming: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
+        let mut outgoing: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
         for (e, (src, dst)) in &edges {
             let src_kind = kinds
                 .get(src)
@@ -130,13 +147,42 @@ impl PGraphSchema {
                     dst_kind,
                 });
             }
+            outgoing.entry(*src).or_default().insert(*dst);
+            incoming.entry(*dst).or_default().insert(*src);
         }
         Ok(Self {
             nodes: kinds,
             edges,
             o_nodes,
             m_nodes,
+            incoming,
+            outgoing,
         })
+    }
+
+    /// Predecessors of `decl`: the set of declarations `s` with an edge
+    /// `s → decl`. For an operating unit this is its consumed materials
+    /// (the `-` refs of its hyperarc); for a material it is the units
+    /// that produce it.
+    ///
+    /// # Postconditions
+    /// Returns exactly `{ s : (s, decl) ∈ edges }`. Absent `decl`
+    /// (no incoming edge) yields the shared empty set. By the bipartite
+    /// invariant every returned decl has the opposite [`PNodeKind`].
+    pub fn predecessors(&self, decl: DeclId) -> &BTreeSet<DeclId> {
+        self.incoming.get(&decl).unwrap_or(&EMPTY_NEIGHBOURS)
+    }
+
+    /// Successors of `decl`: the set of declarations `t` with an edge
+    /// `decl → t`. For an operating unit this is its produced materials
+    /// (the `+` refs of its hyperarc); for a material it is the units
+    /// that consume it.
+    ///
+    /// # Postconditions
+    /// Returns exactly `{ t : (decl, t) ∈ edges }`. Absent `decl`
+    /// (no outgoing edge) yields the shared empty set.
+    pub fn successors(&self, decl: DeclId) -> &BTreeSet<DeclId> {
+        self.outgoing.get(&decl).unwrap_or(&EMPTY_NEIGHBOURS)
     }
 
     /// Return the kind assigned to a declaration, or `None` if the
@@ -293,5 +339,49 @@ mod tests {
         assert_eq!(s.n_operating_units(), 1);
         assert_eq!(s.in_degree(d(2)), 2);
         assert_eq!(s.out_degree(d(2)), 1);
+    }
+
+    /// Adjacency queries read straight off the signed incidence:
+    /// a unit's predecessors are its consumed materials, successors its
+    /// produced ones — and the dual holds for a material.
+    #[test]
+    fn predecessors_successors_match_incidence() {
+        let kinds = BTreeMap::from([
+            (d(0), PNodeKind::Material),      // input A
+            (d(1), PNodeKind::Material),      // input B
+            (d(2), PNodeKind::OperatingUnit), // unit U
+            (d(3), PNodeKind::Material),      // product P
+        ]);
+        let edges = BTreeMap::from([
+            (e(0), (d(0), d(2))), // A → U
+            (e(1), (d(1), d(2))), // B → U
+            (e(2), (d(2), d(3))), // U → P
+        ]);
+        let s = PGraphSchema::try_new(kinds, edges).expect("valid");
+        // Unit U: predecessors = {A, B} (inputs), successors = {P} (output).
+        assert_eq!(*s.predecessors(d(2)), BTreeSet::from([d(0), d(1)]));
+        assert_eq!(*s.successors(d(2)), BTreeSet::from([d(3)]));
+        // Material dual: A is consumed by U; P is produced by U.
+        assert_eq!(*s.successors(d(0)), BTreeSet::from([d(2)]));
+        assert_eq!(*s.predecessors(d(3)), BTreeSet::from([d(2)]));
+    }
+
+    /// Boundary: a decl with no incidence on a side, and a decl absent
+    /// from the schema, both yield the empty neighbour set.
+    #[test]
+    fn empty_and_absent_neighbours() {
+        let kinds = BTreeMap::from([
+            (d(0), PNodeKind::Material),
+            (d(1), PNodeKind::OperatingUnit),
+        ]);
+        let edges = BTreeMap::from([(e(0), (d(0), d(1)))]); // A → U
+        let s = PGraphSchema::try_new(kinds, edges).expect("valid");
+        // U produces nothing (disposal sink): no successors.
+        assert!(s.successors(d(1)).is_empty());
+        // A is consumed by nothing's predecessor: no predecessors.
+        assert!(s.predecessors(d(0)).is_empty());
+        // A decl not in the schema at all.
+        assert!(s.predecessors(d(99)).is_empty());
+        assert!(s.successors(d(99)).is_empty());
     }
 }

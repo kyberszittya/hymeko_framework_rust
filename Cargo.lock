@@ -2219,6 +2219,7 @@ dependencies = [
  "hymeko_core",
  "hymeko_emitter",
  "hymeko_formats",
+ "hymeko_pgraph",
  "hymeko_query",
  "parser",
  "serde",

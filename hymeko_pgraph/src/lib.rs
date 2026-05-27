@@ -46,8 +46,11 @@ pub mod axiom_extensions;
 pub mod axioms;
 pub mod dump;
 pub mod builder;
+pub mod cli;
 pub mod lowering;
+pub mod meta_resolve;
 pub mod msg;
+#[cfg(feature = "pgip")]
 pub mod pgip_io;
 pub mod schema;
 pub mod ssg;
@@ -60,8 +63,14 @@ pub use dump::{
     analyze_source, analyze_source_with_full_options, analyze_source_with_options,
 };
 pub use lowering::{LowerError, LoweredPGraph, lower};
+pub use meta_resolve::{MetaResolveError, compile_sources, compile_to_lowered, lower_resolved};
+pub use cli::{
+    CliError, load_pgraph, render_entities, render_graphviz, render_pgraph, render_solution,
+    to_dot,
+};
 pub use builder::{BuilderError, MaterialKind, PgraphBuilder};
 pub use msg::{MaximalStructure, MaximalStructureOptions, maximal_structure, maximal_structure_with_options};
 pub use schema::{PGraphError, PGraphSchema, PNodeKind};
+#[cfg(feature = "pgip")]
 pub use pgip_io::{PgipError, read_pgip, write_pgip};
 pub use ssg::{SolutionStructure, SsgOptions, enumerate as ssg_enumerate};

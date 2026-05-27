@@ -188,15 +188,9 @@ pub fn read_pgip(path: &Path) -> Result<LoweredPGraph, PgipError> {
     drop(unit_stmt);
 
     // ── Input/Output incidence ─────────────────────────────────────
+    // Build only the directed edge set (the signed incidence); per-unit
+    // input/output sets are derived from it by the schema, not stored.
     let mut edges: BTreeMap<EdgeId, (DeclId, DeclId)> = BTreeMap::new();
-    let mut unit_inputs: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
-    let mut unit_outputs: BTreeMap<DeclId, BTreeSet<DeclId>> = BTreeMap::new();
-    let mut next_edge: usize = 0;
-
-    for u in &units_set {
-        unit_inputs.entry(*u).or_default();
-        unit_outputs.entry(*u).or_default();
-    }
 
     let mut io_stmt = conn.prepare(
         "SELECT unitId, materialId, isInput FROM inputOutput
@@ -204,7 +198,7 @@ pub fn read_pgip(path: &Path) -> Result<LoweredPGraph, PgipError> {
     )?;
     let rows = io_stmt
         .query_map([], |r| Ok::<(i64, i64, i64), _>((r.get(0)?, r.get(1)?, r.get(2)?)))?;
-    for row in rows {
+    for (next_edge, row) in rows.enumerate() {
         let (u_sql, m_sql, is_input) = row?;
         let u = *unit_sqlid_to_decl
             .get(&u_sql)
@@ -214,12 +208,9 @@ pub fn read_pgip(path: &Path) -> Result<LoweredPGraph, PgipError> {
             .ok_or_else(|| PgipError::Schema(format!("inputOutput references unknown material id {m_sql}")))?;
         if is_input != 0 {
             edges.insert(EdgeId::new(next_edge), (m, u));
-            unit_inputs.get_mut(&u).unwrap().insert(m);
         } else {
             edges.insert(EdgeId::new(next_edge), (u, m));
-            unit_outputs.get_mut(&u).unwrap().insert(m);
         }
-        next_edge += 1;
     }
     drop(io_stmt);
 
@@ -255,8 +246,6 @@ pub fn read_pgip(path: &Path) -> Result<LoweredPGraph, PgipError> {
         costs,
         cost_dimensions,
         cost_vectors,
-        unit_inputs,
-        unit_outputs,
     })
 }
 
@@ -432,25 +421,21 @@ pub fn write_pgip(
     // ── inputOutput rows. ──
     for u in &graph.units {
         let u_sql = unit_decl_to_sqlid[u];
-        if let Some(ins) = graph.unit_inputs.get(u) {
-            for m in ins {
-                let m_sql = mat_decl_to_sqlid[m];
-                tx.execute(
-                    "INSERT INTO inputOutput (unitId, materialId, isInput, flowRate)
-                     VALUES (?, ?, 1, 1.0)",
-                    params![u_sql, m_sql],
-                )?;
-            }
+        for m in graph.inputs(*u) {
+            let m_sql = mat_decl_to_sqlid[m];
+            tx.execute(
+                "INSERT INTO inputOutput (unitId, materialId, isInput, flowRate)
+                 VALUES (?, ?, 1, 1.0)",
+                params![u_sql, m_sql],
+            )?;
         }
-        if let Some(outs) = graph.unit_outputs.get(u) {
-            for m in outs {
-                let m_sql = mat_decl_to_sqlid[m];
-                tx.execute(
-                    "INSERT INTO inputOutput (unitId, materialId, isInput, flowRate)
-                     VALUES (?, ?, 0, 1.0)",
-                    params![u_sql, m_sql],
-                )?;
-            }
+        for m in graph.outputs(*u) {
+            let m_sql = mat_decl_to_sqlid[m];
+            tx.execute(
+                "INSERT INTO inputOutput (unitId, materialId, isInput, flowRate)
+                 VALUES (?, ?, 0, 1.0)",
+                params![u_sql, m_sql],
+            )?;
         }
     }
 

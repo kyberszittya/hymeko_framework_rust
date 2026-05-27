@@ -37,8 +37,8 @@ fn decl(p: &hymeko_pgraph::lowering::LoweredPGraph, name: &str) -> DeclId {
         .unwrap_or_else(|| panic!("missing decl {name}"))
 }
 
-fn names<'p>(
-    p: &'p hymeko_pgraph::lowering::LoweredPGraph,
+fn names(
+    p: &hymeko_pgraph::lowering::LoweredPGraph,
     units: &BTreeSet<DeclId>,
 ) -> BTreeSet<String> {
     units

@@ -1,1 +1,98 @@
-Tools.yaml
+# tools.yaml — Pinned toolchain manifest (CLAUDE.md §10)
+#
+# Each entry pins major_version per semver policy. Minor/patch upgrades
+# are free. Major bumps and tool substitution require CORE.YAML approval.
+
+schema_version: 1
+
+test_runners:
+  rust:
+    tool: cargo test
+    major_version: "1"
+  python:
+    tool: pytest
+    major_version: "8"
+    notes: "Run with -p no:randomly for deterministic order."
+  cpp:
+    tool: gtest
+    major_version: "1"
+
+benchmarking:
+  rust:
+    tool: criterion
+    major_version: "0"
+  python:
+    tool: pytest-benchmark
+    major_version: "4"
+  cpp:
+    tool: google-benchmark
+    major_version: "1"
+
+profiling_cpu:
+  rust:
+    tool: cargo flamegraph
+    major_version: "0"
+  python:
+    tool: py-spy
+    major_version: "0"
+  cpp:
+    tool: perf
+    notes: "Followed by inferno-flamegraph; tracks Linux kernel toolchain."
+
+profiling_memory:
+  rust:
+    - tool: dhat
+      major_version: "0"
+    - tool: heaptrack
+      major_version: "0"
+  python:
+    tool: memray
+    major_version: "1"
+  cpp:
+    tool: heaptrack
+    major_version: "0"
+
+coverage:
+  rust:
+    tool: cargo-llvm-cov
+    major_version: "0"
+  python:
+    tool: pytest-cov
+    major_version: "5"
+  cpp:
+    tool: llvm-cov
+    notes: "Requires -fprofile-instr-generate -fcoverage-mapping."
+
+property_testing:
+  rust:
+    tool: proptest
+    major_version: "1"
+  python:
+    tool: hypothesis
+    major_version: "6"
+  cpp:
+    tool: rapidcheck
+    major_version: "2"
+
+static_analysis:
+  rust:
+    - tool: cargo clippy
+      major_version: "0"
+    - tool: rustfmt
+      major_version: "1"
+    - tool: rust-code-analysis
+      major_version: "0"
+  python:
+    - tool: ruff
+      major_version: "0"
+    - tool: mypy
+      major_version: "1"
+    - tool: radon
+      major_version: "6"
+  cpp:
+    - tool: cppcheck
+      major_version: "2"
+    - tool: clang-tidy
+      notes: "Tracks LLVM toolchain."
+    - tool: lizard
+      major_version: "1"

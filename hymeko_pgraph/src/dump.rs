@@ -269,12 +269,8 @@ fn project_subschema(
     let mut materials: BTreeSet<DeclId> = BTreeSet::new();
     for u in surviving_units {
         kinds.insert(*u, PNodeKind::OperatingUnit);
-        if let Some(ins) = p.unit_inputs.get(u) {
-            materials.extend(ins.iter().copied());
-        }
-        if let Some(outs) = p.unit_outputs.get(u) {
-            materials.extend(outs.iter().copied());
-        }
+        materials.extend(p.inputs(*u).iter().copied());
+        materials.extend(p.outputs(*u).iter().copied());
     }
     materials.extend(p.products.iter().copied());
     for m in &materials {

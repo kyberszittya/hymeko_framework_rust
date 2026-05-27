@@ -112,25 +112,16 @@ pub fn maximal_structure_with_options(
         // Forward pass: every input must be raw or producible by some
         // surviving unit.
         let producible: BTreeSet<DeclId> = close_producible(p, &units, &p.raws);
-        units.retain(|u| {
-            let inputs = p.unit_inputs.get(u).cloned().unwrap_or_default();
-            inputs.iter().all(|m| producible.contains(m))
-        });
+        units.retain(|u| p.inputs(*u).iter().all(|m| producible.contains(m)));
 
         // Backward pass: criterion depends on options.
         let consumed_by_surviving: BTreeSet<DeclId> = units
             .iter()
-            .flat_map(|u| {
-                p.unit_inputs
-                    .get(u)
-                    .cloned()
-                    .unwrap_or_default()
-                    .into_iter()
-            })
+            .flat_map(|u| p.inputs(*u).iter().copied())
             .collect();
         let useful: BTreeSet<DeclId> = consumed_by_surviving.union(&p.products).copied().collect();
         units.retain(|u| {
-            let outputs = p.unit_outputs.get(u).cloned().unwrap_or_default();
+            let outputs = p.outputs(*u);
             if opts.strict_no_excess {
                 // Friedler 1992: every output must be useful.
                 outputs.iter().all(|m| useful.contains(m))
@@ -156,12 +147,8 @@ pub fn maximal_structure_with_options(
     // actually consumed and products.
     let mut materials: BTreeSet<DeclId> = BTreeSet::new();
     for u in &units {
-        if let Some(ins) = p.unit_inputs.get(u) {
-            materials.extend(ins.iter().copied());
-        }
-        if let Some(outs) = p.unit_outputs.get(u) {
-            materials.extend(outs.iter().copied());
-        }
+        materials.extend(p.inputs(*u).iter().copied());
+        materials.extend(p.outputs(*u).iter().copied());
     }
     materials.extend(p.products.iter().copied());
 
@@ -179,11 +166,8 @@ pub fn close_producible(
     loop {
         let before = c.len();
         for u in units {
-            let inputs = p.unit_inputs.get(u).cloned().unwrap_or_default();
-            if inputs.iter().all(|m| c.contains(m)) {
-                if let Some(outs) = p.unit_outputs.get(u) {
-                    c.extend(outs.iter().copied());
-                }
+            if p.inputs(*u).iter().all(|m| c.contains(m)) {
+                c.extend(p.outputs(*u).iter().copied());
             }
         }
         if c.len() == before {
@@ -205,11 +189,8 @@ pub fn close_consumable(
     loop {
         let before = c.len();
         for u in units {
-            let outputs = p.unit_outputs.get(u).cloned().unwrap_or_default();
-            if outputs.iter().any(|m| c.contains(m)) {
-                if let Some(ins) = p.unit_inputs.get(u) {
-                    c.extend(ins.iter().copied());
-                }
+            if p.outputs(*u).iter().any(|m| c.contains(m)) {
+                c.extend(p.inputs(*u).iter().copied());
             }
         }
         if c.len() == before {

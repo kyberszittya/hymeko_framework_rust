@@ -15,6 +15,7 @@
 //! ```
 
 pub mod compile;
+pub mod pgraph;
 pub mod session;
 
 #[cfg(target_arch = "wasm32")]

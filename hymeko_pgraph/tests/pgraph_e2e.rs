@@ -45,17 +45,17 @@ fn unit_signatures_lower_correctly() {
     let benzene = p.name_to_decl["Benzene"];
     let methane = p.name_to_decl["Methane"];
 
-    assert_eq!(p.unit_inputs[&mixer], BTreeSet::from([toluene, h2]));
-    assert_eq!(p.unit_outputs[&mixer], BTreeSet::from([mix]));
+    assert_eq!(*p.inputs(mixer), BTreeSet::from([toluene, h2]));
+    assert_eq!(*p.outputs(mixer), BTreeSet::from([mix]));
 
-    assert_eq!(p.unit_inputs[&reactor], BTreeSet::from([mix]));
-    assert_eq!(p.unit_outputs[&reactor], BTreeSet::from([benzene, methane]));
+    assert_eq!(*p.inputs(reactor), BTreeSet::from([mix]));
+    assert_eq!(*p.outputs(reactor), BTreeSet::from([benzene, methane]));
 
-    assert_eq!(p.unit_inputs[&direct], BTreeSet::from([toluene, h2]));
-    assert_eq!(p.unit_outputs[&direct], BTreeSet::from([benzene]));
+    assert_eq!(*p.inputs(direct), BTreeSet::from([toluene, h2]));
+    assert_eq!(*p.outputs(direct), BTreeSet::from([benzene]));
 
-    assert_eq!(p.unit_inputs[&disposal], BTreeSet::from([methane]));
-    assert!(p.unit_outputs[&disposal].is_empty());
+    assert_eq!(*p.inputs(disposal), BTreeSet::from([methane]));
+    assert!(p.outputs(disposal).is_empty());
 
     assert_eq!(p.costs[&mixer], 100.0);
     assert_eq!(p.costs[&reactor], 250.0);
