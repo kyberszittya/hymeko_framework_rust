@@ -28,7 +28,9 @@
 //! let msg = maximal_structure(&graph);
 //! let opts = AbbOptions::default();
 //! let sol = solve_with_options(&graph, &msg, opts).unwrap();
-//! assert!((sol.cost - 400.0).abs() < 1e-9);
+//! // Canonical optimum: Mixer + Reactor = 350 (Methane vented; the
+//! // Disposal sink reaches no product and is not in the maximal structure).
+//! assert!((sol.cost - 350.0).abs() < 1e-9);
 //! ```
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -205,8 +207,7 @@ impl PgraphBuilder {
         //       by the schema; they are not stored on the graph.
         let mut edges: BTreeMap<EdgeId, (DeclId, DeclId)> = BTreeMap::new();
         let mut costs: BTreeMap<DeclId, f64> = BTreeMap::new();
-        let mut per_unit_dim: BTreeMap<DeclId, BTreeMap<String, f64>> =
-            BTreeMap::new();
+        let mut per_unit_dim: BTreeMap<DeclId, BTreeMap<String, f64>> = BTreeMap::new();
         let mut dim_set: BTreeSet<String> = BTreeSet::new();
         let mut next_edge: usize = 0;
 
@@ -214,7 +215,10 @@ impl PgraphBuilder {
             let u_decl = name_to_decl[uname];
             costs.insert(u_decl, def.cost);
             for inp in &def.inputs {
-                let m = *self.materials.get(inp).map(|_| name_to_decl.get(inp).unwrap())
+                let m = *self
+                    .materials
+                    .get(inp)
+                    .map(|_| name_to_decl.get(inp).unwrap())
                     .ok_or_else(|| BuilderError::UnknownMaterial {
                         unit: uname.clone(),
                         target: inp.clone(),
@@ -223,7 +227,10 @@ impl PgraphBuilder {
                 next_edge += 1;
             }
             for out in &def.outputs {
-                let m = *self.materials.get(out).map(|_| name_to_decl.get(out).unwrap())
+                let m = *self
+                    .materials
+                    .get(out)
+                    .map(|_| name_to_decl.get(out).unwrap())
                     .ok_or_else(|| BuilderError::UnknownMaterial {
                         unit: uname.clone(),
                         target: out.clone(),
@@ -249,9 +256,7 @@ impl PgraphBuilder {
 
         // ─── 4. Alphabetise dim names + build cost_vectors. ────────
         let cost_dimensions: Vec<String> = dim_set.iter().cloned().collect();
-        let cost_vectors: BTreeMap<DeclId, Vec<f64>> = if cost_dimensions
-            .is_empty()
-        {
+        let cost_vectors: BTreeMap<DeclId, Vec<f64>> = if cost_dimensions.is_empty() {
             BTreeMap::new()
         } else {
             per_unit_dim

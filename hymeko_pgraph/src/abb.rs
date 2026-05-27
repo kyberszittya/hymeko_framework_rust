@@ -39,7 +39,7 @@ use hymeko::common::ids::DeclId;
 
 use crate::lowering::LoweredPGraph;
 use crate::msg::{MaximalStructure, close_producible};
-use crate::ssg::{SsgOptions, is_feasible};
+use crate::ssg::is_feasible_with_regime;
 
 /// Output of [`solve`]: optimal selection plus its cost.
 #[derive(Debug, Clone)]
@@ -89,7 +89,13 @@ pub struct AbbOptions {
 impl Default for AbbOptions {
     fn default() -> Self {
         Self {
-            strict_no_excess: true,
+            // Canonical default (2026-05-27, Pimentel report): no
+            // no-excess constraint. Byproducts may be vented; this
+            // matches the textbook solution-structures and optima.
+            // The prior `true` default made ABB report `None` or a
+            // suboptimal incumbent on problems with byproducts
+            // (e.g. book Example 14.1 -> None vs optimum 16).
+            strict_no_excess: false,
             max_explored: 1_000_000,
             cost_weights: None,
         }
@@ -125,11 +131,27 @@ pub fn solve(p: &LoweredPGraph, msg: &MaximalStructure) -> Option<AbbSolution> {
     solve_with_options(p, msg, AbbOptions::default())
 }
 
-/// Solve with explicit options.
+/// Solve with explicit options. Adapter: the `strict_no_excess` flag
+/// selects the leaf-feasibility [`Regime`](crate::regime)
+/// (`true → NoExcess`); delegates to [`solve_with_regime`].
 pub fn solve_with_options(
     p: &LoweredPGraph,
     msg: &MaximalStructure,
     opts: AbbOptions,
+) -> Option<AbbSolution> {
+    let regime = crate::regime::from_strict_flag(opts.strict_no_excess);
+    solve_with_regime(p, msg, opts, regime)
+}
+
+/// Solve with explicit options and an explicit leaf-feasibility
+/// [`Regime`](crate::regime). `opts.strict_no_excess` is ignored here —
+/// `regime` governs admissibility; `opts` supplies `max_explored` and
+/// `cost_weights`.
+pub fn solve_with_regime(
+    p: &LoweredPGraph,
+    msg: &MaximalStructure,
+    opts: AbbOptions,
+    regime: &dyn crate::regime::Regime,
 ) -> Option<AbbSolution> {
     let order: Vec<DeclId> = msg.units.iter().copied().collect();
     let mut state = SearchState {
@@ -142,6 +164,7 @@ pub fn solve_with_options(
         pruned_by_inclusion: 0,
         pruned_by_reachability: 0,
         opts,
+        regime,
     };
     branch(p, msg, &mut state, 0);
     state.best.map(|(units, cost)| AbbSolution {
@@ -153,7 +176,7 @@ pub fn solve_with_options(
     })
 }
 
-struct SearchState {
+struct SearchState<'r> {
     order: Vec<DeclId>,
     included: BTreeSet<DeclId>,
     excluded: BTreeSet<DeclId>,
@@ -163,9 +186,10 @@ struct SearchState {
     pruned_by_inclusion: u64,
     pruned_by_reachability: u64,
     opts: AbbOptions,
+    regime: &'r dyn crate::regime::Regime,
 }
 
-fn branch(p: &LoweredPGraph, msg: &MaximalStructure, s: &mut SearchState, depth: usize) {
+fn branch(p: &LoweredPGraph, msg: &MaximalStructure, s: &mut SearchState<'_>, depth: usize) {
     if s.opts.max_explored != 0 && s.explored >= s.opts.max_explored {
         return;
     }
@@ -198,11 +222,7 @@ fn branch(p: &LoweredPGraph, msg: &MaximalStructure, s: &mut SearchState, depth:
 
     // ── Leaf: decide.
     if depth == s.order.len() {
-        let opts = SsgOptions {
-            strict_no_excess: s.opts.strict_no_excess,
-            require_at_least_one_unit: false,
-        };
-        if is_feasible(p, &s.included, opts) {
+        if is_feasible_with_regime(p, &s.included, s.regime) {
             let candidate = (s.included.clone(), s.cost);
             match &s.best {
                 None => s.best = Some(candidate),

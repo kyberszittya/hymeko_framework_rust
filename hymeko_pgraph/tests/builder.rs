@@ -7,8 +7,8 @@
 //! SQLite files. These tests pin:
 //!
 //!   1. Empty builder fails cleanly.
-//!   2. HDA built programmatically reproduces the optimal ABB
-//!      result of $\{$Mixer, Reactor, Disposal$\}$ at cost 400.
+//!   2. HDA built programmatically reproduces the canonical ABB
+//!      optimum $\{$Mixer, Reactor$\}$ at cost 350 (Methane vented).
 //!   3. Multi-cost dimensions are alphabetised at build time.
 //!   4. Unknown material references fail with a named error.
 //!   5. Duplicate names fail.
@@ -77,14 +77,18 @@ fn build_hda_reproduces_textbook_abb_optimum() {
     // {Mixer, Reactor, Disposal} at cost 400.
     let mut b = PgraphBuilder::new();
     b.add_material("Toluene", MaterialKind::Raw).unwrap();
-    b.add_material("H2",      MaterialKind::Raw).unwrap();
-    b.add_material("Mix",     MaterialKind::Intermediate).unwrap();
+    b.add_material("H2", MaterialKind::Raw).unwrap();
+    b.add_material("Mix", MaterialKind::Intermediate).unwrap();
     b.add_material("Benzene", MaterialKind::Product).unwrap();
-    b.add_material("Methane", MaterialKind::Intermediate).unwrap();
-    b.add_unit("Mixer",       &["Toluene", "H2"], &["Mix"],            100.0).unwrap();
-    b.add_unit("Reactor",     &["Mix"],            &["Benzene", "Methane"], 250.0).unwrap();
-    b.add_unit("DirectSynth", &["Toluene", "H2"], &["Benzene"],         800.0).unwrap();
-    b.add_unit("Disposal",    &["Methane"],        &[],                 50.0).unwrap();
+    b.add_material("Methane", MaterialKind::Intermediate)
+        .unwrap();
+    b.add_unit("Mixer", &["Toluene", "H2"], &["Mix"], 100.0)
+        .unwrap();
+    b.add_unit("Reactor", &["Mix"], &["Benzene", "Methane"], 250.0)
+        .unwrap();
+    b.add_unit("DirectSynth", &["Toluene", "H2"], &["Benzene"], 800.0)
+        .unwrap();
+    b.add_unit("Disposal", &["Methane"], &[], 50.0).unwrap();
     let graph = b.build().expect("HDA must build");
 
     // Sanity: 5 materials + 4 units.
@@ -101,12 +105,17 @@ fn build_hda_reproduces_textbook_abb_optimum() {
         .iter()
         .map(|d| graph.decl_to_name[d].clone())
         .collect();
-    let expected: BTreeSet<String> = ["Mixer", "Reactor", "Disposal"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
+    // Canonical optimum: {Mixer, Reactor} at 350 (Methane vented; the
+    // Disposal sink reaches no product and is excluded from the maximal
+    // structure). Pre-2026-05-27 the buggy strict default gave
+    // {Mixer,Reactor,Disposal} at 400.
+    let expected: BTreeSet<String> = ["Mixer", "Reactor"].iter().map(|s| s.to_string()).collect();
     assert_eq!(names, expected);
-    assert!((sol.cost - 400.0).abs() < 1e-9, "cost must be 400, got {}", sol.cost);
+    assert!(
+        (sol.cost - 350.0).abs() < 1e-9,
+        "cost must be 350, got {}",
+        sol.cost
+    );
 }
 
 #[test]
@@ -115,13 +124,12 @@ fn multi_cost_dimensions_alphabetised_at_build_time() {
     b.add_material("a", MaterialKind::Raw).unwrap();
     b.add_material("b", MaterialKind::Product).unwrap();
     // Deliberately add in non-alphabetic order: zulu, alpha, mike.
-    let mc: BTreeMap<String, f64> = [
-        ("zulu", 5.0), ("alpha", 1.0), ("mike", 3.0),
-    ]
-    .iter()
-    .map(|(k, v)| (k.to_string(), *v))
-    .collect();
-    b.add_unit_multi_cost("u1", &["a"], &["b"], 0.0, mc).unwrap();
+    let mc: BTreeMap<String, f64> = [("zulu", 5.0), ("alpha", 1.0), ("mike", 3.0)]
+        .iter()
+        .map(|(k, v)| (k.to_string(), *v))
+        .collect();
+    b.add_unit_multi_cost("u1", &["a"], &["b"], 0.0, mc)
+        .unwrap();
     let graph = b.build().expect("must build");
     assert_eq!(
         graph.cost_dimensions,
@@ -179,18 +187,22 @@ fn multi_cost_with_missing_dim_pads_to_zero() {
 fn programmatic_hda_matches_hymeko_lowered_hda() {
     // The graph we just built programmatically must be semantically
     // equivalent to the one obtained by parsing data/pgraph/hda.hymeko.
-    use std::path::PathBuf;
     use parser::parse_description;
+    use std::path::PathBuf;
     let mut b = PgraphBuilder::new();
     b.add_material("Toluene", MaterialKind::Raw).unwrap();
-    b.add_material("H2",      MaterialKind::Raw).unwrap();
-    b.add_material("Mix",     MaterialKind::Intermediate).unwrap();
+    b.add_material("H2", MaterialKind::Raw).unwrap();
+    b.add_material("Mix", MaterialKind::Intermediate).unwrap();
     b.add_material("Benzene", MaterialKind::Product).unwrap();
-    b.add_material("Methane", MaterialKind::Intermediate).unwrap();
-    b.add_unit("Mixer",       &["Toluene", "H2"], &["Mix"],            100.0).unwrap();
-    b.add_unit("Reactor",     &["Mix"],            &["Benzene", "Methane"], 250.0).unwrap();
-    b.add_unit("DirectSynth", &["Toluene", "H2"], &["Benzene"],         800.0).unwrap();
-    b.add_unit("Disposal",    &["Methane"],        &[],                 50.0).unwrap();
+    b.add_material("Methane", MaterialKind::Intermediate)
+        .unwrap();
+    b.add_unit("Mixer", &["Toluene", "H2"], &["Mix"], 100.0)
+        .unwrap();
+    b.add_unit("Reactor", &["Mix"], &["Benzene", "Methane"], 250.0)
+        .unwrap();
+    b.add_unit("DirectSynth", &["Toluene", "H2"], &["Benzene"], 800.0)
+        .unwrap();
+    b.add_unit("Disposal", &["Methane"], &[], 50.0).unwrap();
     let g_built = b.build().unwrap();
 
     let hda_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

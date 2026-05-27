@@ -11,11 +11,11 @@ use std::str::FromStr;
 use hymeko::common::ids::{DeclId, EdgeId};
 use serde::Serialize;
 
-use crate::abb::{AbbOptions, AbbSolution, solve_with_options};
+use crate::abb::{AbbOptions, AbbSolution, solve_with_regime};
 use crate::axiom_extensions::{ExtensionAxiomBundle, ExtensionAxiomViolation};
 use crate::axioms::{AxiomBundle, AxiomViolation};
 use crate::lowering::{LoweredPGraph, lower};
-use crate::msg::{MaximalStructureOptions, maximal_structure_with_options};
+use crate::msg::{MaximalStructureOptions, maximal_structure_with_regime};
 use crate::schema::{PGraphSchema, PNodeKind};
 use crate::ssg::{SolutionStructure, SsgOptions, enumerate_with_options};
 use parser::parse_description;
@@ -164,10 +164,8 @@ fn canonical_cert(
                 match v {
                     AxiomViolation::MissingProducts { missing } => {
                         tags.push("S1".into());
-                        offenders.push((
-                            "S1".into(),
-                            missing.iter().map(|d| name(p, *d)).collect(),
-                        ));
+                        offenders
+                            .push(("S1".into(), missing.iter().map(|d| name(p, *d)).collect()));
                     }
                     AxiomViolation::RawMaterialDirectionFailures {
                         non_raw_without_producer,
@@ -185,20 +183,16 @@ fn canonical_cert(
                     }
                     AxiomViolation::InvalidUnits { invalid } => {
                         tags.push("S3".into());
-                        offenders.push((
-                            "S3".into(),
-                            invalid.iter().map(|d| name(p, *d)).collect(),
-                        ));
+                        offenders
+                            .push(("S3".into(), invalid.iter().map(|d| name(p, *d)).collect()));
                     }
                     AxiomViolation::UnitsWithoutPathToProduct { offenders: o } => {
                         tags.push("S4".into());
-                        offenders
-                            .push(("S4".into(), o.iter().map(|d| name(p, *d)).collect()));
+                        offenders.push(("S4".into(), o.iter().map(|d| name(p, *d)).collect()));
                     }
                     AxiomViolation::IsolatedMaterials { offenders: o } => {
                         tags.push("S5".into());
-                        offenders
-                            .push(("S5".into(), o.iter().map(|d| name(p, *d)).collect()));
+                        offenders.push(("S5".into(), o.iter().map(|d| name(p, *d)).collect()));
                     }
                 }
             }
@@ -227,10 +221,8 @@ fn extension_cert(
                 match v {
                     ExtensionAxiomViolation::NonReachingMaterials { offenders: o } => {
                         tags.push("E-NoExcess".into());
-                        offenders.push((
-                            "E-NoExcess".into(),
-                            o.iter().map(|d| name(p, *d)).collect(),
-                        ));
+                        offenders
+                            .push(("E-NoExcess".into(), o.iter().map(|d| name(p, *d)).collect()));
                     }
                     ExtensionAxiomViolation::UnitsWithDegreeZero { offenders: o } => {
                         tags.push("E-WellFormed".into());
@@ -239,9 +231,7 @@ fn extension_cert(
                             o.iter().map(|d| name(p, *d)).collect(),
                         ));
                     }
-                    ExtensionAxiomViolation::ConsumedMaterialWithoutProducer {
-                        offenders: o,
-                    } => {
+                    ExtensionAxiomViolation::ConsumedMaterialWithoutProducer { offenders: o } => {
                         tags.push("E-ConsumedHasProducer".into());
                         offenders.push((
                             "E-ConsumedHasProducer".into(),
@@ -261,10 +251,7 @@ fn extension_cert(
 
 /// Project the lowered schema onto a subset of surviving units; used
 /// to validate the ABB-selected sub-schema against both bundles.
-fn project_subschema(
-    p: &LoweredPGraph,
-    surviving_units: &BTreeSet<DeclId>,
-) -> PGraphSchema {
+fn project_subschema(p: &LoweredPGraph, surviving_units: &BTreeSet<DeclId>) -> PGraphSchema {
     let mut kinds: BTreeMap<DeclId, PNodeKind> = BTreeMap::new();
     let mut materials: BTreeSet<DeclId> = BTreeSet::new();
     for u in surviving_units {
@@ -358,12 +345,29 @@ pub fn analyze_source_with_full_options(
     msg_opts: MaximalStructureOptions,
     opts: AbbOptions,
 ) -> PgraphAnalysisJson {
+    analyze_source_with_regime(
+        hymeko_src,
+        algorithm,
+        crate::regime::from_strict_flag(msg_opts.strict_no_excess),
+        opts,
+    )
+}
+
+/// As [`analyze_source_with_full_options`] but driven by an explicit
+/// [`Regime`](crate::regime) (supports composites). Parses, lowers, then
+/// delegates to [`analyze_lowered_with_regime`].
+pub fn analyze_source_with_regime(
+    hymeko_src: &str,
+    algorithm: DumpAlgorithm,
+    regime: &dyn crate::regime::Regime,
+    opts: AbbOptions,
+) -> PgraphAnalysisJson {
     let algo_label = match algorithm {
         DumpAlgorithm::Msg => "msg",
         DumpAlgorithm::Ssg => "ssg",
         DumpAlgorithm::Abb => "abb",
     };
-    let strict_echo = msg_opts.strict_no_excess;
+    let strict_echo = regime.name() != "canonical";
     let cost_weights_echo = opts.cost_weights.clone();
     let desc = parse_description(hymeko_src);
     let d = match desc {
@@ -416,9 +420,7 @@ pub fn analyze_source_with_full_options(
         }
     };
 
-    let (json, _abb) = analyze_lowered_with_full_options(
-        &p, description, algorithm, msg_opts, opts,
-    );
+    let (json, _abb) = analyze_lowered_with_regime(&p, description, algorithm, regime, opts);
     json
 }
 
@@ -436,16 +438,35 @@ pub fn analyze_lowered_with_full_options(
     msg_opts: MaximalStructureOptions,
     opts: AbbOptions,
 ) -> (PgraphAnalysisJson, Option<AbbSolution>) {
+    analyze_lowered_with_regime(
+        p,
+        description,
+        algorithm,
+        crate::regime::from_strict_flag(msg_opts.strict_no_excess),
+        opts,
+    )
+}
+
+/// As [`analyze_lowered_with_full_options`] but driven by an explicit
+/// [`Regime`](crate::regime) (the general path; supports composites). The
+/// JSON `strict_no_excess` echo is `true` for any non-canonical regime.
+pub fn analyze_lowered_with_regime(
+    p: &LoweredPGraph,
+    description: String,
+    algorithm: DumpAlgorithm,
+    regime: &dyn crate::regime::Regime,
+    opts: AbbOptions,
+) -> (PgraphAnalysisJson, Option<AbbSolution>) {
     let algo_label = match algorithm {
         DumpAlgorithm::Msg => "msg",
         DumpAlgorithm::Ssg => "ssg",
         DumpAlgorithm::Abb => "abb",
     };
 
-    let strict_echo = msg_opts.strict_no_excess;
+    let strict_echo = regime.name() != "canonical";
     let cost_weights_echo = opts.cost_weights.clone();
     let cost_dimensions: Vec<String> = p.cost_dimensions.clone();
-    let m = maximal_structure_with_options(p, msg_opts);
+    let m = maximal_structure_with_regime(p, regime);
     let mut msg_units: Vec<String> = m
         .units
         .iter()
@@ -496,7 +517,7 @@ pub fn analyze_lowered_with_full_options(
             }
         }
         DumpAlgorithm::Abb => {
-            if let Some(abb) = solve_with_options(p, &m, opts) {
+            if let Some(abb) = solve_with_regime(p, &m, opts, regime) {
                 // Phase 7: validate the ABB-selected sub-schema
                 // against both bundles. Raws are restricted to
                 // those that survive into the projection.
@@ -507,12 +528,10 @@ pub fn analyze_lowered_with_full_options(
                     .copied()
                     .filter(|r| proj.kind(*r).is_some())
                     .collect();
-                out.canonical_abb_subschema = Some(canonical_cert(
-                    p, &proj, &raws_in_proj, &p.products,
-                ));
-                out.extension_abb_subschema = Some(extension_cert(
-                    p, &proj, &raws_in_proj, &p.products,
-                ));
+                out.canonical_abb_subschema =
+                    Some(canonical_cert(p, &proj, &raws_in_proj, &p.products));
+                out.extension_abb_subschema =
+                    Some(extension_cert(p, &proj, &raws_in_proj, &p.products));
                 // Phase 10: per-dimension cost breakdown of the ABB
                 // selection. Empty when the lowered graph has no
                 // multi-cost dimensions.
@@ -527,9 +546,8 @@ pub fn analyze_lowered_with_full_options(
                             }
                         }
                     }
-                    out.abb_cost_breakdown = Some(
-                        cost_dimensions.iter().cloned().zip(sums).collect()
-                    );
+                    out.abb_cost_breakdown =
+                        Some(cost_dimensions.iter().cloned().zip(sums).collect());
                 }
                 out.abb = Some(abb_to_json(p, &abb));
                 abb_solution = Some(abb);

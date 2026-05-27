@@ -9,10 +9,10 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use hymeko::common::ids::DeclId;
-use parser::parse_description;
 use hymeko_pgraph::abb::{AbbOptions, solve_with_options};
 use hymeko_pgraph::lower;
 use hymeko_pgraph::msg::maximal_structure;
+use parser::parse_description;
 
 fn fixture_path(name: &str) -> PathBuf {
     let manifest = env!("CARGO_MANIFEST_DIR");
@@ -25,8 +25,7 @@ fn fixture_path(name: &str) -> PathBuf {
 
 fn load_methanol() -> hymeko_pgraph::lowering::LoweredPGraph {
     let path = fixture_path("methanol_synthesis.hymeko");
-    let src = std::fs::read_to_string(&path)
-        .expect("methanol_synthesis.hymeko must be present");
+    let src = std::fs::read_to_string(&path).expect("methanol_synthesis.hymeko must be present");
     let desc = parse_description(&src).expect("parse must succeed");
     lower(&desc).expect("lowering must succeed")
 }
@@ -37,10 +36,7 @@ fn decl(p: &hymeko_pgraph::lowering::LoweredPGraph, name: &str) -> DeclId {
         .unwrap_or_else(|| panic!("missing decl {name}"))
 }
 
-fn names(
-    p: &hymeko_pgraph::lowering::LoweredPGraph,
-    units: &BTreeSet<DeclId>,
-) -> BTreeSet<String> {
+fn names(p: &hymeko_pgraph::lowering::LoweredPGraph, units: &BTreeSet<DeclId>) -> BTreeSet<String> {
     units
         .iter()
         .filter_map(|d| p.decl_to_name.get(d).cloned())
@@ -102,29 +98,47 @@ fn abb_scalar_path_byte_identical_when_weights_none() {
         &p,
         &msg,
         AbbOptions {
-            strict_no_excess: true,
+            strict_no_excess: false,
             max_explored: 1_000_000,
             cost_weights: None,
         },
     )
     .expect("scalar ABB must find a solution");
 
-    // The optimal scalar-cost route should pick the cheapest CO2
-    // source (CaptureFlue 800 < CaptureDAC 1900) and the cheapest
-    // H2 route (SMR 600 < Electrolyzer 1400), plus the reactor
-    // chain. Total scalar cost = 800 + 600 + 90 + 1100 + 350 + 180
-    //                          = 3120, plus any obligated
-    // disposal/recycle units (steam comes from SMR → SteamRecycle
-    // is a no-product consumer → required by strict-no-excess).
-    // SteamRecycle = 60 → 3180.
+    // Canonical (no-excess-free) optimum picks the cheapest CO2 source
+    // (CaptureFlue 800 < CaptureDAC 1900) and the cheapest H2 route
+    // (SMR 600 < Electrolyzer 1400) plus the reactor chain:
+    //   {CaptureFlue, SMR, MixerBlue, MeOHReactor, Distillation}
+    //   = 800 + 600 + 90 + 1100 + 350 = 2940.
+    // The waste_water / steam byproduct-consumer sinks (WaterTreatment,
+    // SteamRecycle) reach no product and are excluded from the maximal
+    // structure, so they are not in the optimum (excess is vented).
     let s = names(&p, &sol.units);
-    assert!(s.contains("CaptureFlue"), "scalar should pick CaptureFlue, got {:?}", s);
-    assert!(s.contains("SMR"),         "scalar should pick SMR, got {:?}", s);
-    assert!(s.contains("MixerBlue"),   "scalar should pick MixerBlue (uses SMR's h2_blue)");
+    assert!(
+        s.contains("CaptureFlue"),
+        "scalar should pick CaptureFlue, got {:?}",
+        s
+    );
+    assert!(s.contains("SMR"), "scalar should pick SMR, got {:?}", s);
+    assert!(
+        s.contains("MixerBlue"),
+        "scalar should pick MixerBlue (uses SMR's h2_blue)"
+    );
     assert!(s.contains("MeOHReactor"));
     assert!(s.contains("Distillation"));
-    assert!(s.contains("WaterTreatment"), "WaterTreatment must consume reactor's waste_water");
-    assert!(s.contains("SteamRecycle"),   "SteamRecycle must consume SMR's steam");
+    assert!(
+        (sol.cost - 2940.0).abs() < 1e-9,
+        "canonical scalar optimum is 2940, got {}",
+        sol.cost
+    );
+    assert!(
+        !s.contains("WaterTreatment"),
+        "sink not in canonical maximal structure"
+    );
+    assert!(
+        !s.contains("SteamRecycle"),
+        "sink not in canonical maximal structure"
+    );
     assert!(!s.contains("CaptureDAC"));
     assert!(!s.contains("Electrolyzer"));
     assert!(!s.contains("MixerGreen"));
@@ -146,7 +160,7 @@ fn abb_capex_only_weights_match_scalar_route() {
         &p,
         &msg,
         AbbOptions {
-            strict_no_excess: true,
+            strict_no_excess: false,
             max_explored: 1_000_000,
             cost_weights: Some(weights),
         },
@@ -154,8 +168,14 @@ fn abb_capex_only_weights_match_scalar_route() {
     .expect("CAPEX-only ABB must find a solution");
 
     let s = names(&p, &sol.units);
-    assert!(s.contains("CaptureFlue"), "CAPEX-only should pick CaptureFlue");
-    assert!(s.contains("SMR"),         "CAPEX-only should pick SMR (cheaper CAPEX than Electrolyzer)");
+    assert!(
+        s.contains("CaptureFlue"),
+        "CAPEX-only should pick CaptureFlue"
+    );
+    assert!(
+        s.contains("SMR"),
+        "CAPEX-only should pick SMR (cheaper CAPEX than Electrolyzer)"
+    );
 }
 
 // ─── ABB --- multi-objective: heavy CO2 weight ───────────────────────
@@ -175,7 +195,7 @@ fn abb_co2_heavy_weights_switch_to_green_route() {
         &p,
         &msg,
         AbbOptions {
-            strict_no_excess: true,
+            strict_no_excess: false,
             max_explored: 1_000_000,
             cost_weights: Some(weights),
         },
@@ -216,7 +236,7 @@ fn abb_h2o_heavy_weights_avoid_electrolyzer() {
         &p,
         &msg,
         AbbOptions {
-            strict_no_excess: true,
+            strict_no_excess: false,
             max_explored: 1_000_000,
             cost_weights: Some(weights),
         },
@@ -247,7 +267,7 @@ fn abb_different_weights_pick_different_optima() {
         &p,
         &msg,
         AbbOptions {
-            strict_no_excess: true,
+            strict_no_excess: false,
             max_explored: 1_000_000,
             cost_weights: Some(vec![1.0, 0.0, 0.0, 0.0]),
         },
@@ -258,7 +278,7 @@ fn abb_different_weights_pick_different_optima() {
         &p,
         &msg,
         AbbOptions {
-            strict_no_excess: true,
+            strict_no_excess: false,
             max_explored: 1_000_000,
             cost_weights: Some(vec![0.01, 100.0, 0.01, 0.01]),
         },
@@ -266,8 +286,10 @@ fn abb_different_weights_pick_different_optima() {
     .expect("CO2-heavy ABB");
 
     // The optimal STRUCTURES must differ.
-    assert_ne!(opt_capex.units, opt_co2.units,
-               "weight changes must surface as structural changes");
+    assert_ne!(
+        opt_capex.units, opt_co2.units,
+        "weight changes must surface as structural changes"
+    );
 }
 
 // ─── ABB --- missing-dimension unit defaults to zero contribution ─────
@@ -297,7 +319,7 @@ context {
         &p,
         &msg,
         AbbOptions {
-            strict_no_excess: true,
+            strict_no_excess: false,
             max_explored: 1_000,
             cost_weights: Some(vec![1.0]),
         },
@@ -313,12 +335,15 @@ context {
         &p,
         &msg,
         AbbOptions {
-            strict_no_excess: true,
+            strict_no_excess: false,
             max_explored: 1_000,
             cost_weights: Some(vec![0.0, 100.0]),
         },
     )
     .expect("CO2-only");
-    assert!(s_co2.cost.abs() < 1e-9,
-            "missing dim must contribute zero, got cost={}", s_co2.cost);
+    assert!(
+        s_co2.cost.abs() < 1e-9,
+        "missing dim must contribute zero, got cost={}",
+        s_co2.cost
+    );
 }

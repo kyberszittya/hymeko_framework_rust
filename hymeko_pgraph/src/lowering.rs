@@ -132,6 +132,32 @@ impl LoweredPGraph {
     pub fn outputs(&self, u: DeclId) -> &BTreeSet<DeclId> {
         self.schema.successors(u)
     }
+
+    /// Operating units that *produce* material `x` — the
+    /// $\Delta(x)$ of Friedler's decision-mapping SSG (book Def. 5.1).
+    ///
+    /// A produced edge is `unit → material`, so the producers of a
+    /// material are exactly its schema predecessors. This is the dual
+    /// of [`Self::outputs`] and, like it, a *query* over the single
+    /// directed edge set — not a stored side table.
+    ///
+    /// # Postconditions
+    /// Equal to `schema.predecessors(x)`; a raw material (produced by
+    /// no unit) yields the empty set.
+    pub fn producers(&self, x: DeclId) -> &BTreeSet<DeclId> {
+        self.schema.predecessors(x)
+    }
+
+    /// Operating units that *consume* material `x`. The dual of
+    /// [`Self::inputs`]; a consumed edge is `material → unit`, so the
+    /// consumers of a material are its schema successors.
+    ///
+    /// # Postconditions
+    /// Equal to `schema.successors(x)`; a material consumed by no unit
+    /// yields the empty set.
+    pub fn consumers(&self, x: DeclId) -> &BTreeSet<DeclId> {
+        self.schema.successors(x)
+    }
 }
 
 /// Lower a parsed [`Description`] into a P-graph.
@@ -196,8 +222,7 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
     // NOT modify `costs` (the scalar path stays byte-identical).
     let mut edges: BTreeMap<EdgeId, (DeclId, DeclId)> = BTreeMap::new();
     let mut costs: BTreeMap<DeclId, f64> = BTreeMap::new();
-    let mut per_unit_dim_costs: BTreeMap<DeclId, BTreeMap<String, f64>> =
-        BTreeMap::new();
+    let mut per_unit_dim_costs: BTreeMap<DeclId, BTreeMap<String, f64>> = BTreeMap::new();
     let mut all_dimensions: BTreeSet<String> = BTreeSet::new();
     let mut next_edge: usize = 0;
 
@@ -248,12 +273,8 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
                             // Source 3: tagged `cost <dim> N;` — populates
                             // the named dimension in cost_vectors but
                             // does NOT change the scalar.
-                            let dim_tags: Vec<&str> = child
-                                .anno
-                                .tags
-                                .iter()
-                                .map(|t| t.as_ref())
-                                .collect();
+                            let dim_tags: Vec<&str> =
+                                child.anno.tags.iter().map(|t| t.as_ref()).collect();
                             if dim_tags.is_empty() {
                                 costs.insert(unit_id, *v);
                             } else {
@@ -282,11 +303,8 @@ pub fn lower<'a>(d: &Description<'a, &'a str>) -> Result<LoweredPGraph, LowerErr
     //        default to 0.0 for that dimension (sensible default:
     //        "this unit does not emit CO2" rather than "this unit's
     //        CO2 cost is unspecified").
-    let cost_dimensions: Vec<String> =
-        all_dimensions.iter().cloned().collect();
-    let cost_vectors: BTreeMap<DeclId, Vec<f64>> = if cost_dimensions
-        .is_empty()
-    {
+    let cost_dimensions: Vec<String> = all_dimensions.iter().cloned().collect();
+    let cost_vectors: BTreeMap<DeclId, Vec<f64>> = if cost_dimensions.is_empty() {
         BTreeMap::new()
     } else {
         per_unit_dim_costs

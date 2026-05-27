@@ -27,12 +27,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use hymeko::common::ids::{DeclId, EdgeId};
+use hymeko_pgraph::dump::{DumpAlgorithm, analyze_source_with_full_options};
+use hymeko_pgraph::msg::MaximalStructureOptions;
 use hymeko_pgraph::{
     AbbOptions, AxiomBundle, AxiomViolation, ExtensionAxiomBundle, ExtensionAxiomViolation,
     LoweredPGraph, PGraphSchema, PNodeKind, abb_solve, lower, maximal_structure,
 };
-use hymeko_pgraph::dump::{DumpAlgorithm, analyze_source_with_full_options};
-use hymeko_pgraph::msg::MaximalStructureOptions;
 use parser::parse_description;
 
 const HDA_SRC: &str = include_str!("../../data/pgraph/hda.hymeko");
@@ -60,11 +60,8 @@ fn validate_canonical(p: &LoweredPGraph) -> Result<(), Vec<AxiomViolation>> {
     AxiomBundle::new(p.raws.iter().copied(), []).validate(&p.schema, &p.products)
 }
 
-fn validate_extension(
-    p: &LoweredPGraph,
-) -> Result<(), Vec<ExtensionAxiomViolation>> {
-    ExtensionAxiomBundle::new(p.raws.iter().copied())
-        .validate(&p.schema, &p.products)
+fn validate_extension(p: &LoweredPGraph) -> Result<(), Vec<ExtensionAxiomViolation>> {
+    ExtensionAxiomBundle::new(p.raws.iter().copied()).validate(&p.schema, &p.products)
 }
 
 fn project_schema(p: &LoweredPGraph, units: &BTreeSet<DeclId>) -> PGraphSchema {
@@ -107,7 +104,10 @@ fn validate_subschema_canonical(
     // an unused raw from the original LoweredPGraph doesn't appear in
     // the projection and would otherwise be missing for the
     // S2-reverse check.
-    let raws_in_proj: BTreeSet<DeclId> = p.raws.iter().copied()
+    let raws_in_proj: BTreeSet<DeclId> = p
+        .raws
+        .iter()
+        .copied()
         .filter(|r| sub.kind(*r).is_some())
         .collect();
     AxiomBundle::new(raws_in_proj.iter().copied(), []).validate(sub, &p.products)
@@ -123,36 +123,35 @@ fn chapter6_full_schema_passes_canonical() {
     // unit consumes); MSG correctly prunes the producer of B and
     // the engine output passes BOTH bundles (see next test).
     let p = parse_and_lower(CHAPTER6_1);
-    validate_canonical(&p)
-        .expect("Chapter 6: full schema must satisfy canonical S1..S5");
+    validate_canonical(&p).expect("Chapter 6: full schema must satisfy canonical S1..S5");
     // Extension catches the by-product B.
-    let ext = validate_extension(&p).expect_err(
-        "Chapter 6 full schema has a by-product → extension must flag E-NoExcess",
+    let ext = validate_extension(&p)
+        .expect_err("Chapter 6 full schema has a by-product → extension must flag E-NoExcess");
+    assert!(
+        ext.iter()
+            .any(|x| matches!(x, ExtensionAxiomViolation::NonReachingMaterials { .. }))
     );
-    assert!(ext.iter().any(|x| matches!(
-        x,
-        ExtensionAxiomViolation::NonReachingMaterials { .. }
-    )));
 }
 
 #[test]
-fn chapter6_engine_output_satisfies_canonical_and_extension() {
+fn chapter6_engine_output_satisfies_canonical() {
     let p = parse_and_lower(CHAPTER6_1);
     let msg = maximal_structure(&p);
     let sol = abb_solve(&p, &msg).expect("Chapter 6 must have an ABB solution");
+    // Canonical optimum is {O2,O5,O7} at 9.0 (the buggy strict default
+    // previously returned {O1,O3,O6} at 18.0 from a too-small MSG).
     assert!(
-        (sol.cost - 18.0).abs() < 1e-9,
-        "Chapter 6 cost optimum sanity (got {})",
+        (sol.cost - 9.0).abs() < 1e-9,
+        "Chapter 6 canonical cost optimum (got {})",
         sol.cost
     );
     let proj = project_schema(&p, &sol.units);
     validate_subschema_canonical(&proj, &p)
         .expect("Chapter 6 ABB output must satisfy canonical S1..S5");
-    ExtensionAxiomBundle::new(
-        p.raws.iter().copied().filter(|r| proj.kind(*r).is_some()),
-    )
-    .validate(&proj, &p.products)
-    .expect("Chapter 6 ABB output must satisfy the extension bundle");
+    // Note: canonical ABB does NOT enforce the no-excess extension bundle
+    // (no-excess is not an axiom); a cost-optimal structure may vent a
+    // by-product. The extension bundle is exercised by the strict-mode
+    // tests and `byproduct_filter_phase11`.
 }
 
 // ─── HDA: canonical-S4 fails on Disposal sink (real divergence) ─────
@@ -167,34 +166,48 @@ fn hda_full_schema_violates_canonical_s4_on_disposal_sink() {
     let p = parse_and_lower(HDA_SRC);
     let v = validate_canonical(&p).expect_err("HDA must fail canonical S4");
     let disposal_id = p.name_to_decl["Disposal"];
-    let s4_hit = v.iter().any(|x| matches!(
-        x, AxiomViolation::UnitsWithoutPathToProduct { offenders }
-            if offenders.contains(&disposal_id)
-    ));
+    let s4_hit = v.iter().any(|x| {
+        matches!(
+            x, AxiomViolation::UnitsWithoutPathToProduct { offenders }
+                if offenders.contains(&disposal_id)
+        )
+    });
     assert!(s4_hit, "the canonical violation must name @Disposal: {v:?}");
 }
 
 #[test]
-fn hda_engine_output_under_strict_no_excess_still_violates_canonical_s4() {
-    // The engine's strict_no_excess feasibility predicate REQUIRES
-    // a consumer for the by-product Methane → it includes Disposal.
-    // The selected sub-schema therefore *also* violates canonical
-    // S4 on Disposal. This is the substantive finding: the engine
-    // does not enforce canonical S4 on per-unit basis — it enforces
-    // product-reachability for the *selection as a whole* plus
-    // strict-no-excess. The two notions of feasibility diverge on
-    // disposal-sink units.
+fn hda_engine_output_excludes_disposal_and_passes_canonical_s4() {
+    // Post-2026-05-27: the canonical MSG excludes the Disposal sink (it
+    // reaches no product, axiom S4), so it is not available to ABB in any
+    // mode. The default (canonical) optimum {Mixer,Reactor} therefore
+    // satisfies canonical S4. Even the strict no-waste opt-in can no
+    // longer pull Disposal in (it is not in the maximal structure): the
+    // old strict-vs-canonical S4 divergence on disposal sinks is gone.
     let p = parse_and_lower(HDA_SRC);
     let msg = maximal_structure(&p);
+    let disposal_id = p.name_to_decl["Disposal"];
+    assert!(
+        !msg.units.contains(&disposal_id),
+        "Disposal must be pruned by canonical MSG"
+    );
+
     let sol = abb_solve(&p, &msg).expect("HDA must have an ABB solution under default opts");
     let proj = project_schema(&p, &sol.units);
-    let v = validate_subschema_canonical(&proj, &p)
-        .expect_err("HDA ABB output must fail canonical S4 on Disposal");
-    let disposal_id = p.name_to_decl["Disposal"];
-    assert!(v.iter().any(|x| matches!(
-        x, AxiomViolation::UnitsWithoutPathToProduct { offenders }
-            if offenders.contains(&disposal_id)
-    )));
+    validate_subschema_canonical(&proj, &p)
+        .expect("canonical HDA ABB output must satisfy S1..S5 (no Disposal sink)");
+
+    // Strict no-waste opt-in: also cannot include Disposal (not in MSG),
+    // so its output passes canonical S4 too.
+    let strict = hymeko_pgraph::abb::solve_with_options(
+        &p,
+        &msg,
+        hymeko_pgraph::abb::AbbOptions {
+            strict_no_excess: true,
+            ..Default::default()
+        },
+    )
+    .expect("strict HDA ABB must find the no-waste route");
+    assert!(!strict.units.contains(&disposal_id));
 }
 
 #[test]
@@ -206,16 +219,23 @@ fn hda_engine_output_under_relaxed_no_excess_drops_disposal_and_passes_canonical
     let p = parse_and_lower(HDA_SRC);
     let msg = hymeko_pgraph::msg::maximal_structure_with_options(
         &p,
-        hymeko_pgraph::msg::MaximalStructureOptions { strict_no_excess: false },
+        hymeko_pgraph::msg::MaximalStructureOptions {
+            strict_no_excess: false,
+        },
     );
-    let opts = AbbOptions { strict_no_excess: false, ..AbbOptions::default() };
+    let opts = AbbOptions {
+        strict_no_excess: false,
+        ..AbbOptions::default()
+    };
     let sol = hymeko_pgraph::abb::solve_with_options(&p, &msg, opts)
         .expect("HDA relaxed must be feasible");
     let proj = project_schema(&p, &sol.units);
     // Disposal must not be in the selection.
     let disposal_id = p.name_to_decl["Disposal"];
-    assert!(!sol.units.contains(&disposal_id),
-        "relaxed ABB must drop Disposal under strict_no_excess=false");
+    assert!(
+        !sol.units.contains(&disposal_id),
+        "relaxed ABB must drop Disposal under strict_no_excess=false"
+    );
     validate_subschema_canonical(&proj, &p)
         .expect("HDA relaxed ABB output must satisfy canonical S1..S5");
 }
@@ -231,18 +251,28 @@ fn chapter4_1_full_schema_is_intentionally_messy() {
     let p = parse_and_lower(CHAPTER4_1);
     let v = validate_canonical(&p).expect_err("Chapter 4-1 must surface canonical violations");
     // Expect at least one of each: S2-forward, S2-reverse, S4, S5.
-    let has_s2_fwd = v.iter().any(|x| matches!(
-        x, AxiomViolation::RawMaterialDirectionFailures { non_raw_without_producer, .. }
-            if !non_raw_without_producer.is_empty()
-    ));
-    let has_s2_rev = v.iter().any(|x| matches!(
-        x, AxiomViolation::RawMaterialDirectionFailures { raw_with_producer, .. }
-            if !raw_with_producer.is_empty()
-    ));
-    let has_s4 = v.iter().any(|x| matches!(x, AxiomViolation::UnitsWithoutPathToProduct { .. }));
-    let has_s5 = v.iter().any(|x| matches!(x, AxiomViolation::IsolatedMaterials { .. }));
-    assert!(has_s2_fwd && has_s2_rev && has_s4 && has_s5,
-        "chapter 4-1 surfaces all four canonical violation kinds: {v:?}");
+    let has_s2_fwd = v.iter().any(|x| {
+        matches!(
+            x, AxiomViolation::RawMaterialDirectionFailures { non_raw_without_producer, .. }
+                if !non_raw_without_producer.is_empty()
+        )
+    });
+    let has_s2_rev = v.iter().any(|x| {
+        matches!(
+            x, AxiomViolation::RawMaterialDirectionFailures { raw_with_producer, .. }
+                if !raw_with_producer.is_empty()
+        )
+    });
+    let has_s4 = v
+        .iter()
+        .any(|x| matches!(x, AxiomViolation::UnitsWithoutPathToProduct { .. }));
+    let has_s5 = v
+        .iter()
+        .any(|x| matches!(x, AxiomViolation::IsolatedMaterials { .. }));
+    assert!(
+        has_s2_fwd && has_s2_rev && has_s4 && has_s5,
+        "chapter 4-1 surfaces all four canonical violation kinds: {v:?}"
+    );
 }
 
 #[test]
@@ -256,26 +286,22 @@ fn chapter4_1_engine_output_satisfies_canonical_after_msg_prune() {
 }
 
 #[test]
-fn chapter4_3_msg_prunes_every_unit_strict_mode() {
-    // Chapter 4 example 3 is "messier still": no surviving subset
-    // of operating units satisfies strict-no-excess feasibility for
-    // its declared product set. MSG prunes every unit, and ABB
-    // returns None. (Under relaxed-no-excess the existing
-    // pgraph_e2e::chapter4_3_strict_collapses_relaxed_does_not test
-    // confirms MSG keeps units.) This pins the strict-mode
-    // behaviour as a canonical-feasibility witness: when no
-    // strict-feasible structure exists, the engine reports it
-    // rather than silently producing canonical-incompliant output.
+fn chapter4_3_canonical_msg_keeps_29_units() {
+    // Book Example 3.3 (Fig. 4.13): a non-degenerate maximal structure.
+    // The canonical MSG keeps 29 of the 35 declared units and ABB finds
+    // a feasible (here zero-cost — the .pgip carries no costs) optimum.
+    // Pre-2026-05-27 the buggy strict default wrongly collapsed this to
+    // 0 units and ABB returned None.
     let p = parse_and_lower(CHAPTER4_3);
     let msg = maximal_structure(&p);
     assert_eq!(
         msg.units.len(),
-        0,
-        "Chapter 4-3 strict MSG should prune every unit"
+        29,
+        "Chapter 4-3 canonical MSG must keep 29 units"
     );
     assert!(
-        abb_solve(&p, &msg).is_none(),
-        "ABB on an empty MSG should return None"
+        abb_solve(&p, &msg).is_some(),
+        "ABB on the non-degenerate MSG must find a solution"
     );
 }
 
@@ -288,18 +314,22 @@ fn chapter4_3_engine_output_under_relaxed_satisfies_canonical() {
     let p = parse_and_lower(CHAPTER4_3);
     let msg = hymeko_pgraph::msg::maximal_structure_with_options(
         &p,
-        hymeko_pgraph::msg::MaximalStructureOptions { strict_no_excess: false },
+        hymeko_pgraph::msg::MaximalStructureOptions {
+            strict_no_excess: false,
+        },
     );
-    let opts = AbbOptions { strict_no_excess: false, ..AbbOptions::default() };
+    let opts = AbbOptions {
+        strict_no_excess: false,
+        ..AbbOptions::default()
+    };
     let Some(sol) = hymeko_pgraph::abb::solve_with_options(&p, &msg, opts) else {
         // If even relaxed mode is infeasible, just document that.
         eprintln!("Chapter 4-3: even relaxed-mode is infeasible — no engine output to verify");
         return;
     };
     let proj = project_schema(&p, &sol.units);
-    validate_subschema_canonical(&proj, &p).expect(
-        "Chapter 4-3 relaxed ABB output must satisfy canonical S1..S5",
-    );
+    validate_subschema_canonical(&proj, &p)
+        .expect("Chapter 4-3 relaxed ABB output must satisfy canonical S1..S5");
 }
 
 // ─── Synthetic divergence witnesses (no-fixture-dependence) ─────────
@@ -309,8 +339,12 @@ fn synthetic_byproduct_canonical_passes_extension_fails() {
     // raw R -> U produces both product P and by-product B.
     // Canonical S1..S5 all pass (B is incident to U via U->B);
     // extension E-StrictNoExcess fires (B has no path to P).
-    fn d(i: usize) -> DeclId { DeclId::new(i) }
-    fn e(i: usize) -> EdgeId { EdgeId::new(i) }
+    fn d(i: usize) -> DeclId {
+        DeclId::new(i)
+    }
+    fn e(i: usize) -> EdgeId {
+        EdgeId::new(i)
+    }
     let kinds = BTreeMap::from([
         (d(0), PNodeKind::Material),
         (d(1), PNodeKind::OperatingUnit),
@@ -324,9 +358,11 @@ fn synthetic_byproduct_canonical_passes_extension_fails() {
     ]);
     let schema = PGraphSchema::try_new(kinds, edges).unwrap();
     let products = BTreeSet::from([d(2)]);
-    AxiomBundle::new([d(0)], []).validate(&schema, &products)
+    AxiomBundle::new([d(0)], [])
+        .validate(&schema, &products)
         .expect("canonical accepts a by-product schema");
-    let err = ExtensionAxiomBundle::new([d(0)]).validate(&schema, &products)
+    let err = ExtensionAxiomBundle::new([d(0)])
+        .validate(&schema, &products)
         .expect_err("extension must catch the by-product");
     assert!(err.iter().any(|v| matches!(
         v, ExtensionAxiomViolation::NonReachingMaterials { offenders }
@@ -338,8 +374,12 @@ fn synthetic_byproduct_canonical_passes_extension_fails() {
 fn synthetic_source_unit_canonical_passes_extension_fails() {
     // U has zero inputs but produces P. Canonical S4 satisfied;
     // extension E-UnitWellFormed fires (in-degree 0).
-    fn d(i: usize) -> DeclId { DeclId::new(i) }
-    fn e(i: usize) -> EdgeId { EdgeId::new(i) }
+    fn d(i: usize) -> DeclId {
+        DeclId::new(i)
+    }
+    fn e(i: usize) -> EdgeId {
+        EdgeId::new(i)
+    }
     let kinds = BTreeMap::from([
         (d(1), PNodeKind::OperatingUnit),
         (d(2), PNodeKind::Material),
@@ -347,9 +387,11 @@ fn synthetic_source_unit_canonical_passes_extension_fails() {
     let edges = BTreeMap::from([(e(0), (d(1), d(2)))]);
     let schema = PGraphSchema::try_new(kinds, edges).unwrap();
     let products = BTreeSet::from([d(2)]);
-    AxiomBundle::new([], []).validate(&schema, &products)
+    AxiomBundle::new([], [])
+        .validate(&schema, &products)
         .expect("canonical accepts a source unit");
-    let err = ExtensionAxiomBundle::new([]).validate(&schema, &products)
+    let err = ExtensionAxiomBundle::new([])
+        .validate(&schema, &products)
         .expect_err("extension must flag zero-in-degree unit");
     assert!(err.iter().any(|v| matches!(
         v, ExtensionAxiomViolation::UnitsWithDegreeZero { offenders }
@@ -376,7 +418,11 @@ fn brute_force_minimum_cost(p: &LoweredPGraph) -> Option<(BTreeSet<DeclId>, f64)
     let ssg = hymeko_pgraph::ssg_enumerate(p, &msg);
     let mut best: Option<(BTreeSet<DeclId>, f64)> = None;
     for s in ssg {
-        let cost: f64 = s.units.iter().map(|u| p.costs.get(u).copied().unwrap_or(1.0)).sum();
+        let cost: f64 = s
+            .units
+            .iter()
+            .map(|u| p.costs.get(u).copied().unwrap_or(1.0))
+            .sum();
         match &best {
             None => best = Some((s.units, cost)),
             Some((_, bc)) if cost < *bc => best = Some((s.units, cost)),
@@ -388,16 +434,21 @@ fn brute_force_minimum_cost(p: &LoweredPGraph) -> Option<(BTreeSet<DeclId>, f64)
 
 fn assert_minimality(p: &LoweredPGraph, fixture_name: &str) {
     let msg = maximal_structure(p);
-    let ssg = hymeko_pgraph::ssg_enumerate(p, &msg);
-    // (1) MSG-minimality: MSG units = union of SSG units.
+    // (1) MSG-minimality: the maximal structure IS the union of all
+    //     (structural) solution-structures — book Definition 3.3. Use the
+    //     decision-mapping SSG, which enumerates structural solution-
+    //     structures (axioms S1..S5, cycles admitted). The brute SSG's
+    //     bootstrap-from-raws feasibility would wrongly exclude valid
+    //     cyclic substructures and under-count the union.
+    let dm = hymeko_pgraph::ssg_dm_enumerate(p, &msg);
     let mut ssg_union: BTreeSet<DeclId> = BTreeSet::new();
-    for s in &ssg {
+    for s in &dm {
         ssg_union.extend(s.units.iter().copied());
     }
     assert_eq!(
         msg.units, ssg_union,
         "{fixture_name}: MSG-minimality violated — \
-         msg.units must equal the union of all feasible-structure unit sets"
+         msg.units must equal the union of all solution-structure unit sets"
     );
 
     // (2) ABB-optimality: ABB matches brute-force SSG minimum.
@@ -409,7 +460,8 @@ fn assert_minimality(p: &LoweredPGraph, fixture_name: &str) {
                 (a.cost - bc).abs() < 1e-9,
                 "{fixture_name}: ABB-optimality violated — \
                  ABB cost = {} but brute-force min = {}",
-                a.cost, bc
+                a.cost,
+                bc
             );
         }
         (None, None) => {
@@ -417,7 +469,8 @@ fn assert_minimality(p: &LoweredPGraph, fixture_name: &str) {
         }
         _ => panic!(
             "{fixture_name}: ABB/SSG disagree on feasibility (abb={:?}, brute={:?})",
-            abb.is_some(), brute.is_some()
+            abb.is_some(),
+            brute.is_some()
         ),
     }
 }
@@ -466,8 +519,7 @@ fn hsikan_sweep_full_schema_is_canonical_feasible() {
     // Therefore the SEARCH SPACE the engine traverses is already
     // canonical S1..S5 compliant.
     let p = parse_and_lower(HSIKAN_SWEEP);
-    validate_canonical(&p)
-        .expect("HSIKAN sweep_msg.hymeko must satisfy canonical S1..S5");
+    validate_canonical(&p).expect("HSIKAN sweep_msg.hymeko must satisfy canonical S1..S5");
     validate_extension(&p)
         .expect("HSIKAN sweep_msg.hymeko must satisfy the extension bundle (no by-products)");
 }
@@ -483,8 +535,12 @@ fn hsikan_sweep_engine_output_is_canonical_feasible() {
     let proj = project_schema(&p, &sol.units);
     validate_subschema_canonical(&proj, &p)
         .expect("HSIKAN architecture-search engine output must satisfy canonical S1..S5");
-    let raws_in_proj: BTreeSet<DeclId> = p.raws.iter().copied()
-        .filter(|r| proj.kind(*r).is_some()).collect();
+    let raws_in_proj: BTreeSet<DeclId> = p
+        .raws
+        .iter()
+        .copied()
+        .filter(|r| proj.kind(*r).is_some())
+        .collect();
     ExtensionAxiomBundle::new(raws_in_proj.iter().copied())
         .validate(&proj, &p.products)
         .expect("HSIKAN engine output must satisfy the extension bundle");
@@ -493,10 +549,8 @@ fn hsikan_sweep_engine_output_is_canonical_feasible() {
 #[test]
 fn gomb_sweep_full_schema_is_canonical_feasible() {
     let p = parse_and_lower(GOMB_SWEEP);
-    validate_canonical(&p)
-        .expect("Gömb sweep_msg_gomb.hymeko must satisfy canonical S1..S5");
-    validate_extension(&p)
-        .expect("Gömb sweep_msg_gomb.hymeko must satisfy the extension bundle");
+    validate_canonical(&p).expect("Gömb sweep_msg_gomb.hymeko must satisfy canonical S1..S5");
+    validate_extension(&p).expect("Gömb sweep_msg_gomb.hymeko must satisfy the extension bundle");
 }
 
 #[test]
@@ -507,8 +561,12 @@ fn gomb_sweep_engine_output_is_canonical_feasible() {
     let proj = project_schema(&p, &sol.units);
     validate_subschema_canonical(&proj, &p)
         .expect("Gömb architecture-search engine output must satisfy canonical S1..S5");
-    let raws_in_proj: BTreeSet<DeclId> = p.raws.iter().copied()
-        .filter(|r| proj.kind(*r).is_some()).collect();
+    let raws_in_proj: BTreeSet<DeclId> = p
+        .raws
+        .iter()
+        .copied()
+        .filter(|r| proj.kind(*r).is_some())
+        .collect();
     ExtensionAxiomBundle::new(raws_in_proj.iter().copied())
         .validate(&proj, &p.products)
         .expect("Gömb engine output must satisfy the extension bundle");
@@ -536,10 +594,14 @@ fn diagnostic_dump_canonical_vs_extension_vs_engine() {
         let (canon_eng, ext_eng) = match &abb {
             Some(sol) => {
                 let proj = project_schema(&p, &sol.units);
-                let raws_in_proj: BTreeSet<DeclId> =
-                    p.raws.iter().copied().filter(|r| proj.kind(*r).is_some()).collect();
-                let canon = AxiomBundle::new(raws_in_proj.iter().copied(), [])
-                    .validate(&proj, &p.products);
+                let raws_in_proj: BTreeSet<DeclId> = p
+                    .raws
+                    .iter()
+                    .copied()
+                    .filter(|r| proj.kind(*r).is_some())
+                    .collect();
+                let canon =
+                    AxiomBundle::new(raws_in_proj.iter().copied(), []).validate(&proj, &p.products);
                 let ext = ExtensionAxiomBundle::new(raws_in_proj.iter().copied())
                     .validate(&proj, &p.products);
                 (canon, ext)
@@ -547,13 +609,33 @@ fn diagnostic_dump_canonical_vs_extension_vs_engine() {
             None => (Ok(()), Ok(())),
         };
         writeln!(report, "\n[{name}]").unwrap();
-        writeln!(report, "  full schema    canonical = {}", outcome_brief(&canon_full)).unwrap();
-        writeln!(report, "  full schema    extension = {}", outcome_brief_ext(&ext_full)).unwrap();
+        writeln!(
+            report,
+            "  full schema    canonical = {}",
+            outcome_brief(&canon_full)
+        )
+        .unwrap();
+        writeln!(
+            report,
+            "  full schema    extension = {}",
+            outcome_brief_ext(&ext_full)
+        )
+        .unwrap();
         writeln!(report, "  MSG units = {}", msg.units.len()).unwrap();
         if let Some(s) = &abb {
             writeln!(report, "  ABB units = {} (cost {})", s.units.len(), s.cost).unwrap();
-            writeln!(report, "  engine output  canonical = {}", outcome_brief(&canon_eng)).unwrap();
-            writeln!(report, "  engine output  extension = {}", outcome_brief_ext(&ext_eng)).unwrap();
+            writeln!(
+                report,
+                "  engine output  canonical = {}",
+                outcome_brief(&canon_eng)
+            )
+            .unwrap();
+            writeln!(
+                report,
+                "  engine output  extension = {}",
+                outcome_brief_ext(&ext_eng)
+            )
+            .unwrap();
         } else {
             writeln!(report, "  ABB = NONE (infeasible)").unwrap();
         }
@@ -590,7 +672,9 @@ fn dump_dto_strict_mode_byproduct_emits_canonical_pass_extension_fail() {
     let analysis = analyze_source_with_full_options(
         HSIKAN_BYPRODUCT,
         DumpAlgorithm::Abb,
-        MaximalStructureOptions { strict_no_excess: true },
+        MaximalStructureOptions {
+            strict_no_excess: true,
+        },
         AbbOptions::default(),
     );
     assert!(analysis.ok);
@@ -598,7 +682,12 @@ fn dump_dto_strict_mode_byproduct_emits_canonical_pass_extension_fail() {
     // edge, so S5 still holds); extension E-NoExcess FAIL.
     assert_eq!(analysis.canonical_full.status, "PASS");
     assert_eq!(analysis.extension_full.status, "FAIL");
-    assert!(analysis.extension_full.violation_tags.contains(&"E-NoExcess".to_string()));
+    assert!(
+        analysis
+            .extension_full
+            .violation_tags
+            .contains(&"E-NoExcess".to_string())
+    );
     // ABB sub-schema: canonical PASS (Disposal-style violation
     // doesn't apply — there's no sink unit) and extension PASS
     // (strict mode dropped the producer of the by-product).
@@ -608,8 +697,10 @@ fn dump_dto_strict_mode_byproduct_emits_canonical_pass_extension_fail() {
         .expect("ABB subschema cert must be present in abb mode");
     assert_eq!(cabb.status, "PASS");
     let eabb = analysis.extension_abb_subschema.as_ref().unwrap();
-    assert_eq!(eabb.status, "PASS",
-        "strict mode must drop the by-product producer; extension must accept");
+    assert_eq!(
+        eabb.status, "PASS",
+        "strict mode must drop the by-product producer; extension must accept"
+    );
     // strict_no_excess echo field.
     assert!(analysis.strict_no_excess);
 }
@@ -622,18 +713,27 @@ fn dump_dto_relaxed_mode_byproduct_keeps_byproduct_extension_fails_on_subschema(
     let analysis = analyze_source_with_full_options(
         HSIKAN_BYPRODUCT,
         DumpAlgorithm::Abb,
-        MaximalStructureOptions { strict_no_excess: false },
-        AbbOptions { strict_no_excess: false, ..AbbOptions::default() },
+        MaximalStructureOptions {
+            strict_no_excess: false,
+        },
+        AbbOptions {
+            strict_no_excess: false,
+            ..AbbOptions::default()
+        },
     );
     assert!(analysis.ok);
     assert_eq!(analysis.canonical_full.status, "PASS");
     assert_eq!(analysis.extension_full.status, "FAIL");
     let cabb = analysis.canonical_abb_subschema.as_ref().unwrap();
     let eabb = analysis.extension_abb_subschema.as_ref().unwrap();
-    assert_eq!(cabb.status, "PASS",
-        "canonical S1..S5 still accepts the relaxed selection");
-    assert_eq!(eabb.status, "FAIL",
-        "extension E-NoExcess must fire on the relaxed sub-schema");
+    assert_eq!(
+        cabb.status, "PASS",
+        "canonical S1..S5 still accepts the relaxed selection"
+    );
+    assert_eq!(
+        eabb.status, "FAIL",
+        "extension E-NoExcess must fire on the relaxed sub-schema"
+    );
     assert!(!analysis.strict_no_excess);
 }
 
@@ -642,9 +742,7 @@ fn dump_dto_phase10_multicost_fields_echo() {
     // Phase 10 added cost_dimensions / cost_weights_echo /
     // abb_cost_breakdown to PgraphAnalysisJson. This test pins
     // their behaviour on the new HSIKAN multi-cost fixture.
-    const MULTICOST: &str = include_str!(
-        "../../data/hsikan/sweep_msg_multicost.hymeko"
-    );
+    const MULTICOST: &str = include_str!("../../data/hsikan/sweep_msg_multicost.hymeko");
     // Scalar fallback: no weights supplied → echo is None.
     let scalar = analyze_source_with_full_options(
         MULTICOST,
@@ -654,13 +752,21 @@ fn dump_dto_phase10_multicost_fields_echo() {
     );
     assert_eq!(
         scalar.cost_dimensions,
-        vec!["gpu_cost".to_string(), "quality_drop".to_string(), "time_cost".to_string()],
+        vec![
+            "gpu_cost".to_string(),
+            "quality_drop".to_string(),
+            "time_cost".to_string()
+        ],
         "cost_dimensions must be alphabetised"
     );
-    assert!(scalar.cost_weights_echo.is_none(),
-        "scalar path must echo cost_weights_echo = None");
-    assert!(scalar.abb_cost_breakdown.is_some(),
-        "abb_cost_breakdown must surface even on the scalar path");
+    assert!(
+        scalar.cost_weights_echo.is_none(),
+        "scalar path must echo cost_weights_echo = None"
+    );
+    assert!(
+        scalar.abb_cost_breakdown.is_some(),
+        "abb_cost_breakdown must surface even on the scalar path"
+    );
 
     // Weighted path: (0, 1, 0) weights quality_drop → ABB picks
     // the quality-minimising architecture.
@@ -674,12 +780,20 @@ fn dump_dto_phase10_multicost_fields_echo() {
         },
     );
     assert_eq!(weighted.cost_weights_echo, Some(vec![0.0, 1.0, 0.0]));
-    let breakdown = weighted.abb_cost_breakdown.as_ref().expect("must have breakdown");
+    let breakdown = weighted
+        .abb_cost_breakdown
+        .as_ref()
+        .expect("must have breakdown");
     // Quality-only weight picks m64+h16+long, quality_drop sum = 10.
-    let qd = breakdown.iter()
-        .find(|(d, _)| d == "quality_drop").map(|(_, v)| *v).unwrap();
-    assert!((qd - 10.0).abs() < 1e-9,
-        "quality-weighted ABB must pick quality_drop=10 selection; got {qd}");
+    let qd = breakdown
+        .iter()
+        .find(|(d, _)| d == "quality_drop")
+        .map(|(_, v)| *v)
+        .unwrap();
+    assert!(
+        (qd - 10.0).abs() < 1e-9,
+        "quality-weighted ABB must pick quality_drop=10 selection; got {qd}"
+    );
 }
 
 #[test]
@@ -716,11 +830,9 @@ fn byproduct_sweep_is_canonical_feasible_both_bundles() {
     // it has one, from cycle_topk_m4). The extension bundle's
     // E-StrictNoExcess fires on the by-product.
     let p = parse_and_lower(HSIKAN_BYPRODUCT);
-    validate_canonical(&p)
-        .expect("by-product sweep must satisfy canonical S1..S5");
-    let ext = validate_extension(&p).expect_err(
-        "extension bundle must flag the injected redundancy_byproduct",
-    );
+    validate_canonical(&p).expect("by-product sweep must satisfy canonical S1..S5");
+    let ext = validate_extension(&p)
+        .expect_err("extension bundle must flag the injected redundancy_byproduct");
     assert!(ext.iter().any(|x| matches!(
         x, ExtensionAxiomViolation::NonReachingMaterials { offenders }
             if offenders.iter().any(|m|
@@ -736,22 +848,36 @@ fn engine_selection_diverges_under_strict_vs_relaxed_on_byproduct() {
     // (a) strict_no_excess = true (default).
     let msg_strict = hymeko_pgraph::msg::maximal_structure_with_options(
         &p,
-        hymeko_pgraph::msg::MaximalStructureOptions { strict_no_excess: true },
+        hymeko_pgraph::msg::MaximalStructureOptions {
+            strict_no_excess: true,
+        },
     );
     let sol_strict = hymeko_pgraph::abb::solve_with_options(
-        &p, &msg_strict,
-        AbbOptions { strict_no_excess: true, ..AbbOptions::default() },
-    ).expect("strict mode must still find a solution");
+        &p,
+        &msg_strict,
+        AbbOptions {
+            strict_no_excess: true,
+            ..AbbOptions::default()
+        },
+    )
+    .expect("strict mode must still find a solution");
 
     // (b) strict_no_excess = false.
     let msg_relaxed = hymeko_pgraph::msg::maximal_structure_with_options(
         &p,
-        hymeko_pgraph::msg::MaximalStructureOptions { strict_no_excess: false },
+        hymeko_pgraph::msg::MaximalStructureOptions {
+            strict_no_excess: false,
+        },
     );
     let sol_relaxed = hymeko_pgraph::abb::solve_with_options(
-        &p, &msg_relaxed,
-        AbbOptions { strict_no_excess: false, ..AbbOptions::default() },
-    ).expect("relaxed mode must find a solution");
+        &p,
+        &msg_relaxed,
+        AbbOptions {
+            strict_no_excess: false,
+            ..AbbOptions::default()
+        },
+    )
+    .expect("relaxed mode must find a solution");
 
     // Engine selections must differ in cost (strict pays the
     // by-product penalty; relaxed doesn't).
@@ -759,19 +885,26 @@ fn engine_selection_diverges_under_strict_vs_relaxed_on_byproduct() {
         sol_strict.cost > sol_relaxed.cost,
         "strict cost ({}) must exceed relaxed cost ({}) when a \
          by-product penalises the cheap path",
-        sol_strict.cost, sol_relaxed.cost
+        sol_strict.cost,
+        sol_relaxed.cost
     );
 
     // And the specific divergence: relaxed picks cycle_topk_m4
     // (cost 10); strict drops it and picks cycle_topk_m16 (cost 40).
     let m4 = p.name_to_decl["cycle_topk_m4"];
     let m16 = p.name_to_decl["cycle_topk_m16"];
-    assert!(sol_relaxed.units.contains(&m4),
-        "relaxed mode must pick the cheap cycle_topk_m4");
-    assert!(!sol_strict.units.contains(&m4),
-        "strict mode must drop cycle_topk_m4 (it leaks a by-product)");
-    assert!(sol_strict.units.contains(&m16),
-        "strict mode must fall back to cycle_topk_m16");
+    assert!(
+        sol_relaxed.units.contains(&m4),
+        "relaxed mode must pick the cheap cycle_topk_m4"
+    );
+    assert!(
+        !sol_strict.units.contains(&m4),
+        "strict mode must drop cycle_topk_m4 (it leaks a by-product)"
+    );
+    assert!(
+        sol_strict.units.contains(&m16),
+        "strict mode must fall back to cycle_topk_m16"
+    );
 
     // Both selections satisfy canonical S1..S5 on their own projected
     // sub-schemas (the by-product never makes it into the strict
@@ -779,33 +912,49 @@ fn engine_selection_diverges_under_strict_vs_relaxed_on_byproduct() {
     // cycle_topk_m4 and canonical S5 still accepts it).
     let proj_strict = project_schema(&p, &sol_strict.units);
     let proj_relaxed = project_schema(&p, &sol_relaxed.units);
-    validate_subschema_canonical(&proj_strict, &p)
-        .expect("strict sub-schema canonical-feasible");
-    validate_subschema_canonical(&proj_relaxed, &p)
-        .expect("relaxed sub-schema canonical-feasible");
+    validate_subschema_canonical(&proj_strict, &p).expect("strict sub-schema canonical-feasible");
+    validate_subschema_canonical(&proj_relaxed, &p).expect("relaxed sub-schema canonical-feasible");
 
     // The extension bundle however catches relaxed mode (it still
     // contains the by-product M-node).
-    let raws_relaxed: BTreeSet<DeclId> = p.raws.iter().copied()
-        .filter(|r| proj_relaxed.kind(*r).is_some()).collect();
+    let raws_relaxed: BTreeSet<DeclId> = p
+        .raws
+        .iter()
+        .copied()
+        .filter(|r| proj_relaxed.kind(*r).is_some())
+        .collect();
     let ext_relaxed = ExtensionAxiomBundle::new(raws_relaxed.iter().copied())
         .validate(&proj_relaxed, &p.products);
-    assert!(ext_relaxed.is_err(),
-        "extension bundle must reject relaxed selection (by-product survives)");
+    assert!(
+        ext_relaxed.is_err(),
+        "extension bundle must reject relaxed selection (by-product survives)"
+    );
 
     // And the strict sub-schema is clean under extension too,
     // because cycle_topk_m4 (and therefore the by-product) is gone.
-    let raws_strict: BTreeSet<DeclId> = p.raws.iter().copied()
-        .filter(|r| proj_strict.kind(*r).is_some()).collect();
+    let raws_strict: BTreeSet<DeclId> = p
+        .raws
+        .iter()
+        .copied()
+        .filter(|r| proj_strict.kind(*r).is_some())
+        .collect();
     ExtensionAxiomBundle::new(raws_strict.iter().copied())
         .validate(&proj_strict, &p.products)
         .expect("strict sub-schema must satisfy extension bundle");
 
     eprintln!(
         "[divergence] strict picks {:?} cost={}; relaxed picks {:?} cost={}",
-        sol_strict.units.iter().map(|u| &p.decl_to_name[u]).collect::<Vec<_>>(),
+        sol_strict
+            .units
+            .iter()
+            .map(|u| &p.decl_to_name[u])
+            .collect::<Vec<_>>(),
         sol_strict.cost,
-        sol_relaxed.units.iter().map(|u| &p.decl_to_name[u]).collect::<Vec<_>>(),
+        sol_relaxed
+            .units
+            .iter()
+            .map(|u| &p.decl_to_name[u])
+            .collect::<Vec<_>>(),
         sol_relaxed.cost,
     );
 }
@@ -835,7 +984,10 @@ fn print_hsikan_and_gomb_abb_selection() {
             .collect();
         println!(
             "[{name}] MSG units = {:?} ({}); ABB picks = {:?} (cost {})",
-            msg_names, msg_names.len(), unit_names, sol.cost
+            msg_names,
+            msg_names.len(),
+            unit_names,
+            sol.cost
         );
     }
 }

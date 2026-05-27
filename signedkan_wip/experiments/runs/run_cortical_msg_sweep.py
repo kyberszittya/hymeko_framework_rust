@@ -60,8 +60,13 @@ def run_pgraph_dump(
 ) -> dict[str, Any]:
     bin_path = _find_dump_binary(repo)
     cmd = [str(bin_path), str(pgraph_path), "--algorithm", algorithm]
+    # No-excess regime is the deliberate default for the cortical sweeps
+    # (see run_gomb_msg_sweep). The engine defaults to canonical since
+    # 2026-05-27, so request it explicitly unless --relaxed-msg.
     if relaxed_msg:
         cmd.append("--relaxed-msg")
+    else:
+        cmd.append("--strict-no-excess")
     if weights:
         cmd.extend(["--weights", weights])
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=str(repo))

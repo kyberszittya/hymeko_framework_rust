@@ -32,7 +32,7 @@ fn data_path(name: &str) -> PathBuf {
 // ─── Read path (option D) ────────────────────────────────────────────
 
 #[test]
-fn read_pgip_chapter6_recovers_18_cost_optimum() {
+fn read_pgip_chapter6_canonical_optimum_is_9() {
     let path = data_path("Chapter6/example6_1.pgip");
     if !path.exists() {
         eprintln!("Chapter6 .pgip missing — skipping");
@@ -41,7 +41,8 @@ fn read_pgip_chapter6_recovers_18_cost_optimum() {
     let graph = read_pgip(&path).expect("read_pgip must succeed on Chapter6");
     assert!(!graph.units.is_empty(), "Chapter6 must have units");
     assert_eq!(graph.units.len(), 7, "Chapter6 has 7 operating units");
-    // Strict MSG + scalar ABB → {O1, O3, O6} at cost 18.0.
+    // Canonical MSG (7 units) + scalar ABB → {O2, O5, O7} at cost 9.0.
+    // (Pre-2026-05-27 the buggy strict default returned {O1,O3,O6} at 18.)
     let m = maximal_structure(&graph);
     let abb = solve_with_options(&graph, &m, AbbOptions::default())
         .expect("Chapter6 ABB must find a feasible optimum");
@@ -50,22 +51,30 @@ fn read_pgip_chapter6_recovers_18_cost_optimum() {
         .iter()
         .map(|d| graph.decl_to_name[d].clone())
         .collect();
-    let expected: BTreeSet<String> =
-        ["O1", "O3", "O6"].iter().map(|s| s.to_string()).collect();
-    assert_eq!(names, expected, "Chapter6 strict ABB units must be {{O1,O3,O6}}");
-    assert!((abb.cost - 18.0).abs() < 1e-9, "Chapter6 cost = 18.0 expected, got {}", abb.cost);
+    let expected: BTreeSet<String> = ["O2", "O5", "O7"].iter().map(|s| s.to_string()).collect();
+    assert_eq!(
+        names, expected,
+        "Chapter6 canonical ABB units must be {{O2,O5,O7}}"
+    );
+    assert!(
+        (abb.cost - 9.0).abs() < 1e-9,
+        "Chapter6 cost = 9.0 expected, got {}",
+        abb.cost
+    );
 }
 
 #[test]
-fn read_pgip_chapter3_structural_recovers_3_units_msg() {
+fn read_pgip_chapter3_structural_recovers_7_units_msg() {
     let path = data_path("Chapter3/example3_2.pgip");
     if !path.exists() {
         return;
     }
     let graph = read_pgip(&path).expect("read_pgip must succeed on Chapter3");
     assert_eq!(graph.units.len(), 7);
+    // Canonical MSG keeps all 7 (book Example 3.2 maximal structure,
+    // Fig. 3.6; 19 solution-structures). Pre-fix gave 3.
     let m = maximal_structure(&graph);
-    assert_eq!(m.units.len(), 3, "Chapter3 strict MSG = 3 units");
+    assert_eq!(m.units.len(), 7, "Chapter3 canonical MSG = 7 units");
 }
 
 // ─── Round-trip (read .pgip → write .pgip → read back) ───────────────
@@ -78,12 +87,16 @@ fn graphs_equivalent(
     let a_units: BTreeSet<&String> = a.units.iter().map(|d| &a.decl_to_name[d]).collect();
     let b_units: BTreeSet<&String> = b.units.iter().map(|d| &b.decl_to_name[d]).collect();
     if a_units != b_units {
-        return Err(format!("unit-name sets differ:\n  a={a_units:?}\n  b={b_units:?}"));
+        return Err(format!(
+            "unit-name sets differ:\n  a={a_units:?}\n  b={b_units:?}"
+        ));
     }
     let a_mats: BTreeSet<&String> = a.materials.iter().map(|d| &a.decl_to_name[d]).collect();
     let b_mats: BTreeSet<&String> = b.materials.iter().map(|d| &b.decl_to_name[d]).collect();
     if a_mats != b_mats {
-        return Err(format!("material-name sets differ:\n  a={a_mats:?}\n  b={b_mats:?}"));
+        return Err(format!(
+            "material-name sets differ:\n  a={a_mats:?}\n  b={b_mats:?}"
+        ));
     }
     let a_raws: BTreeSet<&String> = a.raws.iter().map(|d| &a.decl_to_name[d]).collect();
     let b_raws: BTreeSet<&String> = b.raws.iter().map(|d| &b.decl_to_name[d]).collect();
@@ -93,7 +106,9 @@ fn graphs_equivalent(
     let a_prods: BTreeSet<&String> = a.products.iter().map(|d| &a.decl_to_name[d]).collect();
     let b_prods: BTreeSet<&String> = b.products.iter().map(|d| &b.decl_to_name[d]).collect();
     if a_prods != b_prods {
-        return Err(format!("product sets differ:\n  a={a_prods:?}\n  b={b_prods:?}"));
+        return Err(format!(
+            "product sets differ:\n  a={a_prods:?}\n  b={b_prods:?}"
+        ));
     }
     // Per-unit name-keyed cost equality.
     for ua in &a.units {
@@ -108,19 +123,15 @@ fn graphs_equivalent(
             return Err(format!("unit {name} cost differs: a={ca} b={cb}"));
         }
         // In/out incidence by material-name (derived via the queries).
-        let a_in: BTreeSet<&String> =
-            a.inputs(*ua).iter().map(|d| &a.decl_to_name[d]).collect();
-        let b_in: BTreeSet<&String> =
-            b.inputs(*ub).iter().map(|d| &b.decl_to_name[d]).collect();
+        let a_in: BTreeSet<&String> = a.inputs(*ua).iter().map(|d| &a.decl_to_name[d]).collect();
+        let b_in: BTreeSet<&String> = b.inputs(*ub).iter().map(|d| &b.decl_to_name[d]).collect();
         if a_in != b_in {
             return Err(format!(
                 "unit {name} inputs differ:\n  a={a_in:?}\n  b={b_in:?}"
             ));
         }
-        let a_out: BTreeSet<&String> =
-            a.outputs(*ua).iter().map(|d| &a.decl_to_name[d]).collect();
-        let b_out: BTreeSet<&String> =
-            b.outputs(*ub).iter().map(|d| &b.decl_to_name[d]).collect();
+        let a_out: BTreeSet<&String> = a.outputs(*ua).iter().map(|d| &a.decl_to_name[d]).collect();
+        let b_out: BTreeSet<&String> = b.outputs(*ub).iter().map(|d| &b.decl_to_name[d]).collect();
         if a_out != b_out {
             return Err(format!(
                 "unit {name} outputs differ:\n  a={a_out:?}\n  b={b_out:?}"
@@ -184,11 +195,21 @@ fn write_pgip_bakes_abb_result_into_run_history() {
     let cost: f64 = conn
         .query_row("SELECT optimalCost FROM runHistory", [], |r| r.get(0))
         .unwrap();
-    assert!((cost - 400.0).abs() < 1e-9, "HDA optimal cost is 400, got {cost}");
+    // Canonical optimum: {Mixer, Reactor} at 350 (Methane vented;
+    // Disposal is excluded from the maximal structure).
+    assert!(
+        (cost - 350.0).abs() < 1e-9,
+        "HDA optimal cost is 350, got {cost}"
+    );
     let n_units: i64 = conn
-        .query_row("SELECT COUNT(*) FROM unitsInStructure WHERE structureId = 1", [], |r| {
-            r.get(0)
-        })
+        .query_row(
+            "SELECT COUNT(*) FROM unitsInStructure WHERE structureId = 1",
+            [],
+            |r| r.get(0),
+        )
         .unwrap();
-    assert_eq!(n_units, 3, "HDA optimum is 3 units (Mixer, Reactor, Disposal)");
+    assert_eq!(
+        n_units, 2,
+        "HDA canonical optimum is 2 units (Mixer, Reactor)"
+    );
 }

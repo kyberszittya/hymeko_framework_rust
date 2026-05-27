@@ -7,7 +7,10 @@
 //! hymeko_pgraph_dump path/to/graph.{hymeko|pgip}
 //!     [--algorithm msg|ssg|abb]
 //!     [--weights "w1,w2,...,wD"]
-//!     [--relaxed-msg]
+//!     [--strict-no-excess]   (non-canonical no-waste filter; default off)
+//!     [--regime SPEC]        (canonical|no-excess|cost-dominance, '+'-joined,
+//!                             e.g. --regime cost-dominance+no-excess)
+//!     [--relaxed-msg]        (deprecated no-op; canonical is the default)
 //!     [--write-pgip path/to/out.pgip]
 //! ```
 //!
@@ -23,11 +26,25 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use hymeko_pgraph::abb::AbbOptions;
-use hymeko_pgraph::msg::MaximalStructureOptions;
+use hymeko_pgraph::regime::{CANONICAL, COST_DOMINANCE, Composite, NO_EXCESS, Regime};
 use hymeko_pgraph::{
-    DumpAlgorithm, analyze_lowered_with_full_options, analyze_source_with_full_options,
-    read_pgip, write_pgip,
+    DumpAlgorithm, analyze_lowered_with_regime, analyze_source_with_regime, read_pgip, write_pgip,
 };
+
+/// Parse a `--regime` spec: one or more regime names joined by `+`
+/// (e.g. `cost-dominance+no-excess`). Returns the component strategies.
+fn parse_regime_spec(spec: &str) -> Result<Vec<&'static dyn Regime>, String> {
+    spec.split('+')
+        .map(|name| match name.trim() {
+            "canonical" => Ok(&CANONICAL as &dyn Regime),
+            "no-excess" => Ok(&NO_EXCESS as &dyn Regime),
+            "cost-dominance" => Ok(&COST_DOMINANCE as &dyn Regime),
+            other => Err(format!(
+                "unknown regime '{other}' (expected canonical | no-excess | cost-dominance, '+'-joined)"
+            )),
+        })
+        .collect()
+}
 
 fn parse_weights(s: &str) -> Result<Vec<f64>, String> {
     let v: Result<Vec<f64>, _> = s
@@ -62,7 +79,12 @@ fn main() -> std::process::ExitCode {
     let path = argv[0].clone();
     let mut algorithm = DumpAlgorithm::Ssg;
     let mut cost_weights: Option<Vec<f64>> = None;
-    let mut relaxed_msg = false;
+    // Canonical (book) semantics by default (2026-05-27, Pimentel report):
+    // no no-excess rule. Opt into the non-canonical no-waste filter with
+    // `--strict-no-excess`. `--relaxed-msg` is kept as a no-op (the relaxed
+    // regime is now the default).
+    let mut strict_no_excess = false;
+    let mut regime_spec: Option<String> = None;
     let mut write_pgip_path: Option<PathBuf> = None;
     let mut i = 1usize;
     while i < argv.len() {
@@ -118,8 +140,27 @@ fn main() -> std::process::ExitCode {
             i += 1;
             continue;
         }
+        if argv[i] == "--strict-no-excess" {
+            strict_no_excess = true;
+            i += 1;
+            continue;
+        }
+        if argv[i] == "--regime" {
+            if i + 1 >= argv.len() {
+                eprintln!("--regime requires a value (e.g. cost-dominance+no-excess)");
+                return std::process::ExitCode::from(1u8);
+            }
+            regime_spec = Some(argv[i + 1].clone());
+            i += 2;
+            continue;
+        }
+        if let Some(rest) = argv[i].strip_prefix("--regime=") {
+            regime_spec = Some(rest.to_string());
+            i += 1;
+            continue;
+        }
         if argv[i] == "--relaxed-msg" {
-            relaxed_msg = true;
+            // Deprecated no-op: relaxed (canonical) is now the default.
             i += 1;
             continue;
         }
@@ -140,16 +181,40 @@ fn main() -> std::process::ExitCode {
         eprintln!("unexpected argument: {}", argv[i]);
         return std::process::ExitCode::from(1u8);
     }
-    // --relaxed-msg flips BOTH the MSG backward-pass criterion AND the
-    // SSG/ABB leaf-feasibility check; the two must agree to match
-    // P-graph Studio's relaxed-no-excess regime.
     let opts = AbbOptions {
         cost_weights,
-        strict_no_excess: !relaxed_msg,
+        strict_no_excess,
         ..AbbOptions::default()
     };
-    let msg_opts = MaximalStructureOptions {
-        strict_no_excess: !relaxed_msg,
+
+    // Build the solving regime. `--regime <spec>` (one or more of
+    // canonical|no-excess|cost-dominance, '+'-joined) takes precedence;
+    // otherwise the `--strict-no-excess` flag picks no-excess vs canonical.
+    // A single component is used directly (so its name echoes correctly);
+    // multiple components compose into a `Composite`.
+    let components: Vec<&'static dyn Regime> = match &regime_spec {
+        Some(spec) => match parse_regime_spec(spec) {
+            Ok(c) if !c.is_empty() => c,
+            Ok(_) => {
+                eprintln!("--regime: empty spec");
+                return std::process::ExitCode::from(1u8);
+            }
+            Err(e) => {
+                eprintln!("{e}");
+                return std::process::ExitCode::from(1u8);
+            }
+        },
+        None => vec![if strict_no_excess {
+            &NO_EXCESS
+        } else {
+            &CANONICAL
+        }],
+    };
+    let composite = Composite::new(components.clone());
+    let regime: &dyn Regime = if components.len() == 1 {
+        components[0]
+    } else {
+        &composite
     };
 
     // Auto-detect input format by extension. `.pgip` reads the
@@ -174,9 +239,7 @@ fn main() -> std::process::ExitCode {
             .and_then(|s| s.to_str())
             .unwrap_or("pgip_input")
             .to_string();
-        let (json, abb) = analyze_lowered_with_full_options(
-            &graph, description, algorithm, msg_opts, opts,
-        );
+        let (json, abb) = analyze_lowered_with_regime(&graph, description, algorithm, regime, opts);
         (json, abb, Some(graph))
     } else {
         let src = match fs::read_to_string(&path) {
@@ -204,12 +267,10 @@ fn main() -> std::process::ExitCode {
                     return std::process::ExitCode::from(1u8);
                 }
             };
-            let (json, abb) = analyze_lowered_with_full_options(
-                &p, description, algorithm, msg_opts, opts,
-            );
+            let (json, abb) = analyze_lowered_with_regime(&p, description, algorithm, regime, opts);
             (json, abb, Some(p))
         } else {
-            let json = analyze_source_with_full_options(&src, algorithm, msg_opts, opts);
+            let json = analyze_source_with_regime(&src, algorithm, regime, opts);
             (json, None, None)
         }
     };

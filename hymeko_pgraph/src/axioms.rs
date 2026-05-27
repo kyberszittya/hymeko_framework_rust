@@ -431,7 +431,7 @@ mod tests {
             (d(0), PNodeKind::Material),
             (d(1), PNodeKind::OperatingUnit),
             (d(2), PNodeKind::Material),
-            (d(3), PNodeKind::Material), // dangling, non-raw
+            (d(3), PNodeKind::Material),      // dangling, non-raw
             (d(4), PNodeKind::OperatingUnit), // touches d(3) so A5 is silent
         ]);
         let edges = BTreeMap::from([
@@ -461,11 +461,11 @@ mod tests {
         // schema — Friedler's S2 says that's a violation: raws must
         // be an interface to the outside.
         let kinds = BTreeMap::from([
-            (d(0), PNodeKind::Material), // declared raw
+            (d(0), PNodeKind::Material),      // declared raw
             (d(1), PNodeKind::OperatingUnit), // U1 produces d(0)
-            (d(2), PNodeKind::Material), // some intermediate
+            (d(2), PNodeKind::Material),      // some intermediate
             (d(3), PNodeKind::OperatingUnit), // U2 consumes d(0), produces product
-            (d(4), PNodeKind::Material), // product
+            (d(4), PNodeKind::Material),      // product
         ]);
         let edges = BTreeMap::from([
             (e(0), (d(2), d(1))),

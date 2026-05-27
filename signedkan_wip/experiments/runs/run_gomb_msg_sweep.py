@@ -76,8 +76,15 @@ def run_pgraph_dump(
 ) -> dict[str, Any]:
     prefix = _dump_executable(repo)
     tail = [str(pgraph_path), "--algorithm", algorithm]
+    # The HSiKAN/Gömb architecture sweeps use the no-excess regime
+    # deliberately (injected by-products encode "wasted potential" so that
+    # dominated architectures are pruned). Since 2026-05-27 the engine
+    # defaults to the *canonical* regime, so request no-excess explicitly
+    # unless the caller asks for relaxed.
     if relaxed_msg:
         tail.append("--relaxed-msg")
+    else:
+        tail.append("--strict-no-excess")
     if weights:
         tail.extend(["--weights", weights])
     cmd = prefix + tail

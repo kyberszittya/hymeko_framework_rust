@@ -105,13 +105,10 @@ pub fn read_pgip(path: &Path) -> Result<LoweredPGraph, PgipError> {
     let mut mat_sqlid_to_decl: BTreeMap<i64, DeclId> = BTreeMap::new();
 
     let mut next_decl: usize = 0;
-    let mut mat_stmt = conn.prepare(
-        "SELECT id, name, typeId FROM materials ORDER BY id",
-    )?;
-    let rows = mat_stmt
-        .query_map([], |r| {
-            Ok::<(i64, String, i64), _>((r.get(0)?, r.get(1)?, r.get(2)?))
-        })?;
+    let mut mat_stmt = conn.prepare("SELECT id, name, typeId FROM materials ORDER BY id")?;
+    let rows = mat_stmt.query_map([], |r| {
+        Ok::<(i64, String, i64), _>((r.get(0)?, r.get(1)?, r.get(2)?))
+    })?;
     for row in rows {
         let (sql_id, raw_name, type_id) = row?;
         let san = sanitize(&raw_name);
@@ -147,13 +144,17 @@ pub fn read_pgip(path: &Path) -> Result<LoweredPGraph, PgipError> {
                 fixOperatingCost, propOperatingCost
          FROM units ORDER BY id",
     )?;
-    let rows = unit_stmt
-        .query_map([], |r| {
-            Ok::<(i64, String, f64, f64, f64, f64, f64), _>((
-                r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?,
-                r.get(4)?, r.get(5)?, r.get(6)?,
-            ))
-        })?;
+    let rows = unit_stmt.query_map([], |r| {
+        Ok::<(i64, String, f64, f64, f64, f64, f64), _>((
+            r.get(0)?,
+            r.get(1)?,
+            r.get(2)?,
+            r.get(3)?,
+            r.get(4)?,
+            r.get(5)?,
+            r.get(6)?,
+        ))
+    })?;
     for row in rows {
         let (sql_id, raw_name, weight, fc, pc, fo, po) = row?;
         let san = sanitize(&raw_name);
@@ -196,16 +197,19 @@ pub fn read_pgip(path: &Path) -> Result<LoweredPGraph, PgipError> {
         "SELECT unitId, materialId, isInput FROM inputOutput
          ORDER BY unitId, isInput DESC",
     )?;
-    let rows = io_stmt
-        .query_map([], |r| Ok::<(i64, i64, i64), _>((r.get(0)?, r.get(1)?, r.get(2)?)))?;
+    let rows = io_stmt.query_map([], |r| {
+        Ok::<(i64, i64, i64), _>((r.get(0)?, r.get(1)?, r.get(2)?))
+    })?;
     for (next_edge, row) in rows.enumerate() {
         let (u_sql, m_sql, is_input) = row?;
-        let u = *unit_sqlid_to_decl
-            .get(&u_sql)
-            .ok_or_else(|| PgipError::Schema(format!("inputOutput references unknown unit id {u_sql}")))?;
-        let m = *mat_sqlid_to_decl
-            .get(&m_sql)
-            .ok_or_else(|| PgipError::Schema(format!("inputOutput references unknown material id {m_sql}")))?;
+        let u = *unit_sqlid_to_decl.get(&u_sql).ok_or_else(|| {
+            PgipError::Schema(format!("inputOutput references unknown unit id {u_sql}"))
+        })?;
+        let m = *mat_sqlid_to_decl.get(&m_sql).ok_or_else(|| {
+            PgipError::Schema(format!(
+                "inputOutput references unknown material id {m_sql}"
+            ))
+        })?;
         if is_input != 0 {
             edges.insert(EdgeId::new(next_edge), (m, u));
         } else {
@@ -231,9 +235,8 @@ pub fn read_pgip(path: &Path) -> Result<LoweredPGraph, PgipError> {
             .collect()
     };
 
-    let schema = PGraphSchema::try_new(kinds, edges).map_err(|e| {
-        PgipError::Invariant(format!("schema construction failed: {e}"))
-    })?;
+    let schema = PGraphSchema::try_new(kinds, edges)
+        .map_err(|e| PgipError::Invariant(format!("schema construction failed: {e}")))?;
 
     Ok(LoweredPGraph {
         schema,
@@ -264,9 +267,8 @@ pub fn write_pgip(
 ) -> Result<(), PgipError> {
     // Remove any pre-existing file so we start from a clean DB.
     if path.exists() {
-        std::fs::remove_file(path).map_err(|e| {
-            PgipError::Schema(format!("could not remove existing {path:?}: {e}"))
-        })?;
+        std::fs::remove_file(path)
+            .map_err(|e| PgipError::Schema(format!("could not remove existing {path:?}: {e}")))?;
     }
     let mut conn = Connection::open(path)?;
     let tx = conn.transaction()?;

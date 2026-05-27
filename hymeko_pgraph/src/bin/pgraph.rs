@@ -38,7 +38,8 @@ COMMANDS:
 
 SOLVE OPTIONS:
     --algorithm msg|ssg|abb   focus the --json emission (default: abb)
-    --relaxed                 relaxed no-excess regime (MSG + ABB)
+    --strict-no-excess        non-canonical no-waste filter (MSG + ABB); default off
+    --relaxed                 deprecated no-op (canonical/relaxed is the default)
     --weights \"w1,..,wD\"      multi-objective ABB weights
     --json                    emit machine-readable JSON instead of text
 
@@ -110,15 +111,20 @@ fn run_render(
 
 fn run_solve(file: &Path, rest: &[String]) -> ExitCode {
     let mut algorithm = DumpAlgorithm::Abb;
-    let mut relaxed = false;
+    // Canonical (book) semantics by default (2026-05-27, Pimentel report).
+    let mut strict_no_excess = false;
     let mut json = false;
     let mut weights: Option<Vec<f64>> = None;
 
     let mut i = 0;
     while i < rest.len() {
         match rest[i].as_str() {
+            "--strict-no-excess" => {
+                strict_no_excess = true;
+                i += 1;
+            }
             "--relaxed" => {
-                relaxed = true;
+                // Deprecated no-op: relaxed (canonical) is now the default.
                 i += 1;
             }
             "--json" => {
@@ -149,12 +155,10 @@ fn run_solve(file: &Path, rest: &[String]) -> ExitCode {
         Ok(g) => g,
         Err(code) => return code,
     };
-    let msg_opts = MaximalStructureOptions {
-        strict_no_excess: !relaxed,
-    };
+    let msg_opts = MaximalStructureOptions { strict_no_excess };
     let abb_opts = AbbOptions {
         cost_weights: weights,
-        strict_no_excess: !relaxed,
+        strict_no_excess,
         ..AbbOptions::default()
     };
     if json {

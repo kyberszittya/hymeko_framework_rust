@@ -71,7 +71,10 @@ pub struct SsgOptions {
 impl Default for SsgOptions {
     fn default() -> Self {
         Self {
-            strict_no_excess: true,
+            // Canonical default (2026-05-27, Pimentel report): excess
+            // byproducts are allowed (axioms S1-S5 impose no no-excess
+            // rule). Set `true` only for a strict no-waste regime.
+            strict_no_excess: false,
             require_at_least_one_unit: true,
         }
     }
@@ -116,9 +119,10 @@ pub fn enumerate_with_options(
     out
 }
 
-/// True iff `sel` is a combinatorially feasible solution structure
-/// for `p` under `opts`.
-pub fn is_feasible(p: &LoweredPGraph, sel: &BTreeSet<DeclId>, opts: SsgOptions) -> bool {
+/// Base forward-feasibility, independent of regime: every input of every
+/// selected unit is raw or producible from raws using `sel`, and every
+/// required product is producible.
+pub fn is_feasible_base(p: &LoweredPGraph, sel: &BTreeSet<DeclId>) -> bool {
     // (a) Every input of every selected unit must be raw or produced
     //     by another selected unit.
     let producible = close_producible(p, sel, &p.raws);
@@ -135,25 +139,28 @@ pub fn is_feasible(p: &LoweredPGraph, sel: &BTreeSet<DeclId>, opts: SsgOptions) 
             return false;
         }
     }
-    // (c) Strict P-graph rule (optional): every produced non-product
-    //     non-raw material is consumed by some selected unit.
-    if opts.strict_no_excess {
-        let mut produced: BTreeSet<DeclId> = BTreeSet::new();
-        for u in sel {
-            produced.extend(p.outputs(*u).iter().copied());
-        }
-        let mut consumed: BTreeSet<DeclId> = BTreeSet::new();
-        for u in sel {
-            consumed.extend(p.inputs(*u).iter().copied());
-        }
-        for m in &produced {
-            if p.products.contains(m) || p.raws.contains(m) {
-                continue;
-            }
-            if !consumed.contains(m) {
-                return false;
-            }
-        }
-    }
     true
+}
+
+/// True iff `sel` is base-feasible *and* admissible under `regime`
+/// (e.g. [`NoExcess`](crate::regime::NoExcess) additionally requires the
+/// strict no-excess rule). [`Canonical`](crate::regime::Canonical) admits
+/// every base-feasible structure.
+pub fn is_feasible_with_regime(
+    p: &LoweredPGraph,
+    sel: &BTreeSet<DeclId>,
+    regime: &dyn crate::regime::Regime,
+) -> bool {
+    is_feasible_base(p, sel) && regime.structure_admissible(p, sel)
+}
+
+/// True iff `sel` is a combinatorially feasible solution structure for `p`
+/// under `opts`. Adapter over [`is_feasible_with_regime`]: the
+/// `strict_no_excess` flag selects the regime (`true → NoExcess`).
+pub fn is_feasible(p: &LoweredPGraph, sel: &BTreeSet<DeclId>, opts: SsgOptions) -> bool {
+    is_feasible_with_regime(
+        p,
+        sel,
+        crate::regime::from_strict_flag(opts.strict_no_excess),
+    )
 }

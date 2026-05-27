@@ -64,13 +64,21 @@ fn unit_signatures_lower_correctly() {
 }
 
 #[test]
-fn msg_keeps_every_unit_for_hda() {
-    // Every operating unit in the HDA file is forward+backward
-    // feasible, so MSG should preserve all four.
+fn msg_canonical_drops_disposal_sink_for_hda() {
+    // Canonical MSG (book Ch.4 composition phase) keeps only units that
+    // are backward-reachable from a product. Disposal consumes Methane
+    // and produces nothing, so it reaches no product (axiom S4) and is
+    // excluded — even though it is forward-feasible. (Pre-2026-05-27 the
+    // buggy default kept it.)
     let d = parse_description(HDA_SRC).unwrap();
     let p = lower(&d).unwrap();
     let m = maximal_structure(&p);
-    assert_eq!(m.units, p.units, "MSG must preserve every unit");
+    let names: BTreeSet<&str> = m.units.iter().map(|d| p.decl_to_name[d].as_str()).collect();
+    assert_eq!(
+        names,
+        BTreeSet::from(["Mixer", "Reactor", "DirectSynth"]),
+        "canonical maximal structure excludes the Disposal sink"
+    );
     assert!(m.materials.contains(&p.name_to_decl["Benzene"]));
 }
 
@@ -136,36 +144,32 @@ fn ssg_finds_known_feasible_structures() {
     let p = lower(&d).unwrap();
     let m = maximal_structure(&p);
 
-    // SSG with strict no-excess: every produced non-product must be
-    // consumed.  Methane is produced by Reactor but it is neither raw
-    // nor a product — so any structure containing Reactor *must*
-    // also contain Disposal.
+    // Canonical SSG (no no-excess rule): excess Methane is vented, and
+    // the Disposal sink is not even in the maximal structure (it reaches
+    // no product). Solution-structures are enumerated over
+    // {Mixer, Reactor, DirectSynth}.
     let solutions = ssg_enumerate(&p, &m);
 
     let mixer = p.name_to_decl["Mixer"];
     let reactor = p.name_to_decl["Reactor"];
     let direct = p.name_to_decl["DirectSynth"];
-    let disposal = p.name_to_decl["Disposal"];
 
     let by_units = |us: &[_]| {
         let s: BTreeSet<_> = us.iter().copied().collect();
         solutions.iter().any(|sol| sol.units == s)
     };
 
-    // Two-stage route with disposal — feasible.
-    assert!(
-        by_units(&[mixer, reactor, disposal]),
-        "Mixer + Reactor + Disposal must be feasible (strict)"
-    );
-    // One-shot direct synthesis — feasible (no methane produced).
+    // One-shot direct synthesis — feasible.
     assert!(by_units(&[direct]), "DirectSynth alone must be feasible");
-    // Two-stage WITHOUT disposal — infeasible under strict rule.
+    // Two-stage route — feasible (Methane vented, canonical semantics).
     assert!(
-        !by_units(&[mixer, reactor]),
-        "Mixer + Reactor without Disposal violates strict no-excess"
+        by_units(&[mixer, reactor]),
+        "Mixer + Reactor is feasible under canonical (relaxed) semantics"
     );
-    // Disposal alone — infeasible (no Benzene produced).
-    assert!(!by_units(&[disposal]));
+    // Both routes together — feasible.
+    assert!(by_units(&[mixer, reactor, direct]));
+    // Mixer alone cannot produce Benzene.
+    assert!(!by_units(&[mixer]));
 }
 
 #[test]
@@ -199,45 +203,37 @@ fn abb_finds_minimum_cost_route() {
     let mixer = p.name_to_decl["Mixer"];
     let reactor = p.name_to_decl["Reactor"];
     let direct = p.name_to_decl["DirectSynth"];
-    let disposal = p.name_to_decl["Disposal"];
 
+    // Canonical (default) optimum: {Mixer, Reactor} = 100 + 250 = 350,
+    // venting the Methane byproduct. {DirectSynth} = 800 is dearer.
     let sol = abb_solve(&p, &m).expect("ABB must find a solution");
-
-    // Strict path costs:
-    //   {Mixer, Reactor, Disposal} = 100 + 250 + 50 = 400
-    //   {DirectSynth}              = 800
-    // Optimum = the two-stage route.
     assert_eq!(
         sol.units,
-        BTreeSet::from([mixer, reactor, disposal]),
-        "expected the {{Mixer, Reactor, Disposal}} route"
+        BTreeSet::from([mixer, reactor]),
+        "canonical optimum is the Mixer+Reactor route"
     );
     assert!(
-        (sol.cost - 400.0).abs() < 1e-9,
-        "minimum cost is 400, got {}",
+        (sol.cost - 350.0).abs() < 1e-9,
+        "minimum cost is 350, got {}",
         sol.cost
     );
+    assert!(sol.explored > 0);
 
-    // Negate the strict rule: with excess byproducts allowed,
-    // {Mixer, Reactor} (350) becomes feasible and beats 400.
-    let relaxed = hymeko_pgraph::abb::solve_with_options(
+    // Non-canonical strict no-waste opt-in: Methane has no consumer in the
+    // canonical maximal structure (the Disposal sink reaches no product and
+    // is excluded), so {Mixer,Reactor} is strict-infeasible and the strict
+    // optimum is the one-shot DirectSynth route (no byproduct) at 800.
+    let strict = hymeko_pgraph::abb::solve_with_options(
         &p,
         &m,
         AbbOptions {
-            strict_no_excess: false,
-            max_explored: 10_000,
-            cost_weights: None,
+            strict_no_excess: true,
+            ..AbbOptions::default()
         },
     )
-    .expect("relaxed ABB must find a solution");
-    assert_eq!(relaxed.units, BTreeSet::from([mixer, reactor]));
-    assert!((relaxed.cost - 350.0).abs() < 1e-9);
-
-    // ABB diagnostics.
-    assert!(sol.explored > 0);
-
-    // Sanity: DirectSynth should never be the minimum.
-    assert!(!sol.units.contains(&direct));
+    .expect("strict ABB must find the no-waste route");
+    assert_eq!(strict.units, BTreeSet::from([direct]));
+    assert!((strict.cost - 800.0).abs() < 1e-9);
 }
 
 #[test]

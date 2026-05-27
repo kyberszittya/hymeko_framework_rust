@@ -61,90 +61,119 @@ pub struct MaximalStructure {
     pub materials: BTreeSet<DeclId>,
 }
 
-/// MSG knobs (2026-05-19, Stage relaxed-MSG).
+/// MSG knobs.
 ///
-/// `strict_no_excess = true` is the **canonical Friedler 1992** rule:
-/// every output of a surviving unit must be a product *or* consumed
-/// by another surviving unit. This is the right rule for a P-graph
-/// solved under strict no-excess feasibility (no waste streams).
+/// **Correction 2026-05-27 (Pimentel report).** The default is now the
+/// **canonical Friedler maximal structure** (reduction + composition,
+/// book Ch.4): a unit survives iff it is forward-feasible (every input
+/// is raw or produced by some surviving unit — *cycles are admitted*)
+/// **and** backward-reachable from a product. No "no-excess" rule is
+/// applied — it is not among axioms S1–S5. The pre-2026-05-27 default
+/// (`strict_no_excess = true`) was non-canonical: it imposed a
+/// no-excess rule in the backward pass and used a raw-reachability
+/// forward pass that wrongly dropped structurally-valid cycles,
+/// yielding too-small / empty maximal structures (e.g. book Example 4.1
+/// gave 3 units instead of 7; Example 3.3 gave 0 instead of 29).
 ///
-/// `strict_no_excess = false` is the **P-graph Studio default**:
-/// at least one output is product-or-consumed (other outputs are
-/// vented to disposal). This matches the textbook chapter
-/// examples shipped in `data/pgraph/Chapter*/`.
-#[derive(Debug, Clone, Copy)]
+/// `strict_no_excess = true` is retained only as an explicit,
+/// **non-canonical** "no-waste" post-filter on top of the canonical
+/// structure: it additionally drops units that produce any material
+/// that is neither a product nor consumed by another surviving unit.
+/// Use it only when modelling a strict no-waste regime; it does **not**
+/// reproduce the textbook maximal structures.
+#[derive(Debug, Clone, Copy, Default)]
 pub struct MaximalStructureOptions {
-    /// Strict (Friedler 1992) when `true`; relaxed (P-graph Studio
-    /// default) when `false`. See type-level docs for the
-    /// semantic difference.
+    /// When `false` (default) the canonical maximal structure is
+    /// returned. When `true`, an extra non-canonical no-waste filter is
+    /// applied. See type-level docs.
     pub strict_no_excess: bool,
 }
 
-impl Default for MaximalStructureOptions {
-    fn default() -> Self {
-        Self {
-            strict_no_excess: true,
-        }
-    }
-}
-
-/// Back-compat shim: same as [`maximal_structure_with_options`] with
-/// [`MaximalStructureOptions::default()`] (strict no-excess).
+/// Back-compat shim: the canonical maximal structure
+/// ([`maximal_structure_with_options`] with the default options).
 pub fn maximal_structure(p: &LoweredPGraph) -> MaximalStructure {
     maximal_structure_with_options(p, MaximalStructureOptions::default())
 }
 
-/// Compute the maximal structure by alternating forward / backward
-/// trimming to a fixpoint, under explicit options.
-///
-/// Both passes iterate to a fixpoint of the combined operator. The
-/// backward pass's criterion is controlled by
-/// [`MaximalStructureOptions::strict_no_excess`].
+/// Adapter: compute the maximal structure under the `strict_no_excess`
+/// option by mapping it to a [`Regime`](crate::regime) and delegating to
+/// [`maximal_structure_with_regime`]. `false → Canonical` (the textbook
+/// maximal structure), `true → NoExcess` (canonical + no-waste filter).
 pub fn maximal_structure_with_options(
     p: &LoweredPGraph,
     opts: MaximalStructureOptions,
 ) -> MaximalStructure {
-    let mut units: BTreeSet<DeclId> = p.units.clone();
+    maximal_structure_with_regime(p, crate::regime::from_strict_flag(opts.strict_no_excess))
+}
 
+/// Compute the maximal structure by the canonical Friedler **reduction
+/// + composition** procedure (book Ch.4), then apply `regime`'s refinement.
+///
+/// # Preconditions
+/// `p` is a lowered P-graph; `p.raws`, `p.products`, and the incidence
+/// queries [`LoweredPGraph::inputs`]/[`outputs`](LoweredPGraph::outputs)
+/// are consistent with the schema.
+///
+/// # Postconditions
+/// Returns the smallest superstructure containing every solution-structure
+/// (axioms S1–S5): a unit is included iff it is forward-feasible (reduction)
+/// **and** backward-reachable from a product (composition); structurally
+/// valid cycles are retained. The canonical result is then passed through
+/// [`Regime::refine_maximal`](crate::regime::Regime::refine_maximal)
+/// ([`Canonical`](crate::regime::Canonical) is the identity). If no unit
+/// produces a product the result is empty (degenerate maximal structure).
+pub fn maximal_structure_with_regime(
+    p: &LoweredPGraph,
+    regime: &dyn crate::regime::Regime,
+) -> MaximalStructure {
+    // ── Reduction phase (forward feasibility; admits cycles) ──
+    //
+    // Iterate to a fixpoint, removing (1) units that produce a raw
+    // material (axiom S2: raws have no producer), and (2) units with an
+    // input that is neither raw nor produced by *any* surviving unit.
+    // Availability uses "produced by some survivor" — NOT
+    // reachability-from-raws — so a structurally valid cycle (whose
+    // members mutually produce each other's inputs) survives.
+    let mut units: BTreeSet<DeclId> = p.units.clone();
     loop {
         let before = units.len();
-
-        // Forward pass: every input must be raw or producible by some
-        // surviving unit.
-        let producible: BTreeSet<DeclId> = close_producible(p, &units, &p.raws);
-        units.retain(|u| p.inputs(*u).iter().all(|m| producible.contains(m)));
-
-        // Backward pass: criterion depends on options.
-        let consumed_by_surviving: BTreeSet<DeclId> = units
-            .iter()
-            .flat_map(|u| p.inputs(*u).iter().copied())
-            .collect();
-        let useful: BTreeSet<DeclId> = consumed_by_surviving.union(&p.products).copied().collect();
-        units.retain(|u| {
-            let outputs = p.outputs(*u);
-            if opts.strict_no_excess {
-                // Friedler 1992: every output must be useful.
-                outputs.iter().all(|m| useful.contains(m))
-            } else {
-                // P-graph Studio relaxed: at least one output useful
-                // (others are vented to disposal). Empty-output
-                // units (sink consumers) are kept iff the empty
-                // condition vacuously holds — but a Friedler P-graph
-                // unit always has |outset| >= 1, so the `any` test
-                // is meaningful when outputs is non-empty. When
-                // outputs is empty, the unit is a pure disposal sink
-                // and is kept (no constraint).
-                outputs.is_empty() || outputs.iter().any(|m| useful.contains(m))
-            }
-        });
-
+        units.retain(|u| !p.outputs(*u).iter().any(|m| p.raws.contains(m)));
+        let mut available: BTreeSet<DeclId> = p.raws.clone();
+        for u in &units {
+            available.extend(p.outputs(*u).iter().copied());
+        }
+        units.retain(|u| p.inputs(*u).iter().all(|m| available.contains(m)));
         if units.len() == before {
             break;
         }
     }
 
-    // Materials touched by the surviving units, plus raws that are
-    // actually consumed and products.
+    // ── Composition phase (backward reachability from products) ──
+    //
+    // Least fixpoint: a unit is kept iff it produces a required material;
+    // including it makes its non-raw inputs required in turn. Forward-
+    // feasible units that reach no product (dead-end producers) are
+    // dropped here.
+    let mut kept: BTreeSet<DeclId> = BTreeSet::new();
+    let mut needed: BTreeSet<DeclId> = p.products.clone();
+    loop {
+        let new: Vec<DeclId> = units
+            .iter()
+            .copied()
+            .filter(|u| !kept.contains(u) && p.outputs(*u).iter().any(|m| needed.contains(m)))
+            .collect();
+        if new.is_empty() {
+            break;
+        }
+        for u in new {
+            kept.insert(u);
+            needed.extend(p.inputs(u).iter().copied().filter(|m| !p.raws.contains(m)));
+        }
+    }
+    // ── Regime refinement (Canonical = identity; NoExcess = no-waste filter) ──
+    let units = regime.refine_maximal(p, kept);
+
+    // Materials touched by the surviving units, plus the required products.
     let mut materials: BTreeSet<DeclId> = BTreeSet::new();
     for u in &units {
         materials.extend(p.inputs(*u).iter().copied());
