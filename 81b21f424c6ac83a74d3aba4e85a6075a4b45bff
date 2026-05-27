@@ -1,0 +1,7 @@
+APPROVED-CORE-EDIT: torch-cuda13
+
+Core dependency upgrade (torch 2.4.1 -> 2.12.0+cu132; numpy <2 -> >=2) for
+CUDA 13.2 GPU support. Approved by the user in chat (2026-05-27).
+Plan:   docs/plans/2026-05-27-torch-cuda13-upgrade/
+Report: reports/2026-05-27-torch-cuda13-upgrade.md
+GPU smoke + Python parity gate: no torch/numpy regressions.
