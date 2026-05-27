@@ -23,10 +23,12 @@ dev = [
     "cbor2>=5,<6",
 ]
 # Matches `CORE.YAML` `dependencies.pinned.python` for reproducible ML smoke.
+# Upgraded 2026-05-27 for CUDA 13.2 (cu132). APPROVED-CORE-EDIT: torch-cuda13.
+# numpy moved to >=2 as a required cascade (torch 2.12 wheels target NumPy 2).
 ml = [
-    "numpy>=1.26,<2",
-    "torch==2.4.1",
-    "torchvision>=0.19.1,<0.20",
+    "numpy>=2,<3",
+    "torch==2.12.0",
+    "torchvision==0.27.0",
 ]
 # `demo` powers `signedkan_wip/src/demo/gui.py` (Gradio GUI + matplotlib +
 # NetworkX subgraph rendering). Opt-in: `uv sync --group ml --group demo`.
@@ -46,6 +48,18 @@ members = ["hymeko_py", "signedkan_wip/signedkan_native"]
 [tool.uv]
 package = false
 default-groups = ["dev"]
+
+# CUDA 13.2 wheel source for torch/torchvision (APPROVED-CORE-EDIT: torch-cuda13,
+# 2026-05-27). `explicit = true` keeps this index scoped to the packages routed
+# below; everything else still resolves from PyPI.
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu132" }
+torchvision = { index = "pytorch-cu132" }
 
 # Keeps `pytest` runs scoped to real tests; avoids collecting `hymeko_py/smoke_test.py`
 # as a test module and reduces interference from unrelated global pytest plugins.
