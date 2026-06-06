@@ -111,6 +111,13 @@ class AcHsikanConfig:
     # control-point reads per CR (vs 4). Uses the PyTorch reference
     # path -- Triton kernel extension is future work.
     use_2d_cr: bool = False
+    # Candidate temporality (cycle-induced memory direction).
+    # "symmetric": ±K/2 offsets, no time direction (current default).
+    # "past": only t-1, t-2, …, t-K (causal, induces memory through
+    #         walk-op cycle closure back to anchor at time t).
+    # "future": only t+1, … (anti-causal; mostly for ablation).
+    # See docs/plans/2026-06-06-cycle-induced-memory/plan.md
+    candidate_temporality: str = "symmetric"
     pool_scatter_temperature: float = 1.0
     pool_scatter_gate_init: float = 0.0     # initial logit value -- 0 -> 0.5
                                             # gate; both paths start equal
@@ -162,6 +169,17 @@ class AcHsikanConfig:
     use_layer_scale: bool = False
     layer_scale_init: float = 1e-4
 
+    # ── Embedding factorization (ALBERT-style param reduction) ──
+    # 0 = no factorization (default nn.Embedding(V, d_model)).
+    # 1 <= r < d_model = bottleneck: Embedding(V, r) @ Linear(r, d_model).
+    # At V=10000, d=16, r=8: 80,128 vs 160,000 params (−49% total).
+    # At V=10000, d=16, r=4: 40,064 vs 160,000 (−73% total).
+    # Useful when the vocabulary embedding dominates total params (97%
+    # at IMDB smoke). The bottleneck rank caps the embedding's
+    # effective rank but the architecture still sees full d_model
+    # hidden width.
+    embedding_rank: int = 0
+
     # ── Classification head ──────────────────────────────────────
     pool: str = "mean"               # mean | cls | max
 
@@ -195,6 +213,20 @@ class AcHsikanConfig:
             raise ValueError(
                 f"walk_kind must be 'star'|'chain'|'cycle'; "
                 f"got {self.walk_kind!r}"
+            )
+        if self.candidate_temporality not in {"symmetric", "past", "future"}:
+            raise ValueError(
+                f"candidate_temporality must be 'symmetric'|'past'|'future'; "
+                f"got {self.candidate_temporality!r}"
+            )
+        if self.embedding_rank < 0:
+            raise ValueError(
+                f"embedding_rank must be >= 0; got {self.embedding_rank}"
+            )
+        if 0 < self.embedding_rank >= self.d_model:
+            raise ValueError(
+                f"embedding_rank ({self.embedding_rank}) must be < "
+                f"d_model ({self.d_model}); use 0 to disable factorization"
             )
         if self.n_jumps_per_anchor < 0:
             raise ValueError(

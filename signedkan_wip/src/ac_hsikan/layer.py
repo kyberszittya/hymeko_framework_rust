@@ -31,21 +31,41 @@ from .components import (
 from .config import AcHsikanConfig
 
 
-def _local_indices(L: int, K: int, device) -> torch.Tensor:
-    """Per-anchor positions {i±1, ..., i±K/2} clipped to [0, L)."""
-    half = K // 2
-    offsets = torch.tensor(
-        list(range(-half, 0)) + list(range(1, K - half + 1)),
-        device=device, dtype=torch.long,
-    )[:K]
+def _local_indices(L: int, K: int, device,
+                   temporality: str = "symmetric") -> torch.Tensor:
+    """Per-anchor positions; temporality controls direction.
+
+    - "symmetric": ``{i±1, …, i±K/2}`` -- the v1 default.
+    - "past":      ``{i-1, i-2, …, i-K}`` -- causal, induces memory
+                   through walk-op cycle closure.
+    - "future":    ``{i+1, …, i+K}`` -- anti-causal (ablation).
+    """
+    if temporality == "past":
+        offsets = torch.tensor(list(range(-K, 0)),
+                               device=device, dtype=torch.long)
+    elif temporality == "future":
+        offsets = torch.tensor(list(range(1, K + 1)),
+                               device=device, dtype=torch.long)
+    else:
+        half = K // 2
+        offsets = torch.tensor(
+            list(range(-half, 0)) + list(range(1, K - half + 1)),
+            device=device, dtype=torch.long,
+        )[:K]
     anchors = torch.arange(L, device=device, dtype=torch.long).unsqueeze(1)
     return (anchors + offsets.unsqueeze(0)).clamp(0, L - 1)  # (L, K)
 
 
 def _hybrid_indices(L: int, K_local: int, n_jumps: int,
-                    jumps_seed: int, device) -> torch.Tensor:
-    """Local neighbours + deterministic remote jumps. (L, K_local + n_jumps)."""
-    near = _local_indices(L, K_local, device)
+                    jumps_seed: int, device,
+                    temporality: str = "symmetric") -> torch.Tensor:
+    """Local neighbours + deterministic remote jumps. (L, K_local + n_jumps).
+
+    ``temporality`` controls the direction of the local-neighbour set
+    AND the remote jumps (jumps are still drawn from the full sequence,
+    but restricted to the correct half when not symmetric).
+    """
+    near = _local_indices(L, K_local, device, temporality=temporality)
     if n_jumps <= 0:
         return near
     g = torch.Generator(device="cpu").manual_seed(int(jumps_seed))
@@ -104,6 +124,7 @@ class AcHsikanLayer(nn.Module):
                 cfg.n_positions, cfg.top_k_per_position,
                 cfg.n_jumps_per_anchor, cfg.jumps_seed,
                 torch.device("cpu"),
+                temporality=getattr(cfg, "candidate_temporality", "symmetric"),
             ),
             persistent=False,
         )
@@ -228,6 +249,8 @@ class AcHsikanLayer(nn.Module):
                 local = _hybrid_indices(
                     L, K, self.cfg.n_jumps_per_anchor,
                     self.cfg.jumps_seed, x.device,
+                    temporality=getattr(self.cfg, "candidate_temporality",
+                                         "symmetric"),
                 )
             K_total = local.shape[1]
             anchor_to_cand = self.attn.compute_anchor_signs(x_ctx, local)

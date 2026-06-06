@@ -173,6 +173,22 @@ def main(argv: list[str] | None = None) -> int:
                    help="AC walk-op variant. star=product of first k signs; "
                         "chain=chain product; cycle=chain + closing edge "
                         "(real signed cycle).")
+    p.add_argument("--embedding-rank", type=int, default=0,
+                   help="AC: ALBERT-style embedding factorization rank. "
+                        "0 = no factorization. 1 <= r < d_model splits "
+                        "the V x d embedding into V x r + r x d, cutting "
+                        "embedding params from V*d to V*r + r*d. At "
+                        "V=10k, d=16, r=8: 80k + 128 vs 160k (~49% total "
+                        "param cut).")
+    p.add_argument("--candidate-temporality",
+                   choices=["symmetric", "past", "future"],
+                   default="symmetric",
+                   help="AC: per-anchor candidate direction. symmetric=±K/2 "
+                        "(v1 default, no time direction); past=only t-K..t-1 "
+                        "(causal, induces memory through cycle closure back "
+                        "to anchor); future=only t+1..t+K (anti-causal, "
+                        "ablation). See docs/plans/2026-06-06-cycle-induced-"
+                        "memory/plan.md.")
     p.add_argument("--lr-2d-mult", type=float, default=1.0,
                    help="LR multiplier for the 2D CR coef params. <1 slows "
                         "the V-axis deviations from flat-init; useful when "
@@ -243,6 +259,8 @@ def main(argv: list[str] | None = None) -> int:
             long_cycle_prior_alpha=args.long_cycle_prior,
             dynamic_topk_static_k=args.dyn_topk_static_k,
             use_2d_cr=args.use_2d_cr,
+            candidate_temporality=args.candidate_temporality,
+            embedding_rank=args.embedding_rank,
             **({"alpha_init": tuple(float(v) for v in args.arity_bias.split(","))}
                if args.arity_bias else {}),
         )
