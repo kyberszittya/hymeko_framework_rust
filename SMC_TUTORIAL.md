@@ -14,11 +14,12 @@ that realize the constructions described in the paper.
 | Paper section | Repository location |
 |---|---|
 | Definition 1 (HyMeKo structure) | `hymeko_core/src/` — the typed, signed hypergraph IR |
-| Pipeline: compile / project / emit | `hymeko_cli/` (dispatch), `hymeko_core/`, `hymeko_emitter/` |
-| Template dispatcher | `hymeko_emitter/` |
-| Per-format templates | `hymeko_emitter/templates/` |
+| Pipeline: compile / project / emit | `hymeko_cli/` (dispatch), `hymeko_core/`, `hymeko_query/` + `hymeko_formats/` |
+| Template dispatcher | `hymeko_query/src/transforms/mod.rs` (`TransformRegistry::render_from_templates`) |
+| Per-format templates | `transforms/<format>/` at the workspace root — each subdir holds `queries.hymeko` and `template.<ext>` (e.g. `transforms/urdf/template.urdf.xml`, `transforms/sdf/template.sdf.xml`) |
+| Per-format `DomainTransform` impls | `hymeko_formats/src/transforms.rs` (registered via `hymeko_formats::register_defaults`) |
 | Named queries (Section V) | `hymeko_query/` |
-| Robot fixtures | `hymeko_query/tests/fixtures/` and `data/` |
+| Robot fixtures | `data/robotics/` (`mini_arm.hymeko`, `anthropomorphic_arm.hymeko`, `robot_4wh.hymeko`, the `*_using.hymeko` alias variants, and the `meta_*.hymeko` libraries) |
 | Benchmark harness | `hymeko_query/tests/bench_workflow.rs` |
 | Raw benchmark timings | `paper/smc2026/data/workflow_benchmark.csv` |
 | End-to-end Gazebo bundle | `generated/` (generated artefacts) |
@@ -73,8 +74,10 @@ stack.
   `hymeko_core/src/` for the traversal and digest.
 - **Template language.** The three constructs discussed in Section IV-D
   (`repeat q`, `inherits q { … }`, attribute interpolation) are implemented
-  by the single dispatcher in `hymeko_emitter/`. A new target format is a
-  new template in `hymeko_emitter/templates/`, not a new program.
+  by the single dispatcher `TransformRegistry::render_from_templates` in
+  `hymeko_query/src/transforms/mod.rs`. A new target format is a new
+  template directory under `transforms/` plus a thin `DomainTransform`
+  impl in `hymeko_formats/src/transforms.rs`, not a new program.
 - **Named queries.** The predicate algebra used by templates (is-link,
   is-joint, inherits-from, has-tag, has-child, has-ref) lives in
   `hymeko_query/`. The kinematic-link extractor worked example in
@@ -84,12 +87,27 @@ stack.
 
 To add a new target format *f*:
 
-1. Author a template `f.hymeko-template` in `hymeko_emitter/templates/`
-   using `repeat`, `inherits`, and attribute interpolation over the named
-   queries.
-2. Register *f* in the emitter dispatch table.
-3. Add a fixture-level invariance test asserting the format-specific
-   invariants (e.g. link count, joint count) under the shared query bundle.
+1. Create a template directory `transforms/<f>/` at the workspace root
+   with two files: `queries.hymeko` (the named-query bundle the template
+   reads) and `template.<ext>` (the format body, written in the three
+   constructs of Section IV-D: `repeat q`, `inherits q { … }`, and
+   `{{attribute}}` interpolation). The dispatcher discovers the
+   template file by scanning for a single `template.*` entry, so the
+   extension is free — `template.urdf.xml`, `template.world.sdf`,
+   `template.mmd` all coexist without changing the dispatcher.
+2. Add an `<F>Transform` struct in `hymeko_formats/src/transforms.rs`
+   implementing the `DomainTransform` trait
+   (`hymeko_query::transforms::DomainTransform`): `name()`, `extension()`,
+   `accepts()` (`ModelKind::Kinematic` for robotics targets), an optional
+   Rust-string `emit()` fallback, and `template_dir()` returning the
+   subdir name from step 1.
+3. Register it in `hymeko_formats::register_defaults()` next to the
+   existing `reg.register(Box::new(...))` lines.
+4. Add a fixture-level invariance test asserting the format-specific
+   invariants (e.g. link count, joint count) under the shared query
+   bundle. Existing precedents to mirror:
+   `hymeko_query/tests/bench_workflow.rs` (workflow shape) and
+   `hymeko_query/tests/test_gazebo_sim_launch.rs` (format-specific guard).
 
 No dispatcher change is required; Propositions 1–3 lift automatically.
 

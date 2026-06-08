@@ -2165,6 +2165,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "hymeko_pgraph_py"
+version = "0.1.0"
+dependencies = [
+ "hymeko_core",
+ "hymeko_pgraph",
+ "parser",
+ "pyo3",
+]
+
+[[package]]
 name = "hymeko_py"
 version = "0.1.0"
 dependencies = [

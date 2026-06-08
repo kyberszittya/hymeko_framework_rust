@@ -1,117 +1,72 @@
-"""Auto-split from cycle_cache.py 2026-05-11 (CLAUDE.md §6.5 #4)."""
+"""Public ``cached_construct_*`` + ``lazy_load_*`` entries.
+
+Refactored 2026-06-03: the four ``cached_construct_{k,walks,2,triads}``
+functions are now thin wrappers over the Strategy + Adapter pair in
+:mod:`signedkan_wip.src.cycle_cache.strategies`. Cache keys, on-disk
+file format, and the LazyCyclePool return type are preserved
+byte-for-byte so existing cache files remain valid and external
+callers see no surface change.
+
+The refactor closes CLAUDE.md §6.5 anti-patterns #1 (Cartesian
+product), #3 (per-experiment scaffold duplication), #5 (new-axis-as-
+new-function-name) and — as the first natural consequence — closes
+the walk k=5 cold-cache leak that OOM-killed Komondor job 13883876
+(MaxRSS 31.97 GB on bitcoin_alpha HSIKAN_MIXED_TUPLES). The legacy
+walks cold-cache path materialised every Rust-enumerated walk as a
+Python tuple before subsampling; :class:`WalkEnumerator` subsamples
+in numpy space.
+"""
 from __future__ import annotations
-import hashlib
-import json
-import os
 import pathlib
-from dataclasses import dataclass
-from typing import Any
-import numpy as np
 
-from ..runtime_config import get_runtime
-from .config import (_import_n_tuples, _import_walks, _cache_dir,
-                       cache_enabled, _enum_seed, _topk_fingerprint)
+from .config import _cache_dir, cache_enabled, _enum_seed, _topk_fingerprint
 from .key import _hash_graph, _cache_key
-from .pack import _pack_and_drop, _unpack_to_ntuples
-from .format import _cache_format, _save_packed, _load_packed
-from .stats import (CacheStats, LazyCyclePool, stats, reset_stats,
-                      _cache_hit, _cache_miss)
+from .stats import LazyCyclePool
+from .strategies import (
+    CachedEnumerator,
+    CycleEnumerator,
+    WalkEnumerator,
+    TwoCycleEnumerator,
+    TriadEnumerator,
+)
 
-def cached_construct_k(g, k: int, max_cycles: int | None,
-                       model_seed: int = 0, **kwargs):
+
+def cached_construct_k(
+    g, k: int, max_cycles: int | None,
+    model_seed: int = 0, **kwargs,
+):
     """Drop-in replacement for ``n_tuples.construct_k`` with disk cache.
 
     ``model_seed`` is recorded but does NOT affect the enumeration
     when caching is on (uses ``HYMEKO_CYCLE_ENUM_SEED``).
     """
-    nt = _import_n_tuples()
-    if not cache_enabled():
-        return nt.construct_k(g, k=k, max_cycles=max_cycles,
-                               seed=model_seed, **kwargs)
-    enum_seed = _enum_seed()
-    graph_hash = _hash_graph(g)
-    key = _cache_key(graph_hash, "cycle_k", k, max_cycles, enum_seed,
-                      extra=_topk_fingerprint())
-    path = _cache_dir() / f"{key}.npz"
-    hit = _cache_hit(path)
-    if hit is not None:
-        return hit
-    t_list = nt.construct_k(g, k=k, max_cycles=max_cycles,
-                              seed=enum_seed, **kwargs)
-    return _cache_miss(path, t_list)
+    strategy = CycleEnumerator(k, max_cycles, **kwargs)
+    return CachedEnumerator(strategy, model_seed=model_seed)(g)
 
 
-def cached_construct_walks(g, walk_len: int, max_walks: int | None,
-                            model_seed: int = 0):
+def cached_construct_walks(
+    g, walk_len: int, max_walks: int | None,
+    model_seed: int = 0,
+):
     """Drop-in replacement for ``walks.construct_walks`` with disk
-    cache."""
-    wk = _import_walks()
-    if not cache_enabled():
-        return wk.construct_walks(g, walk_len=walk_len,
-                                   max_walks=max_walks, seed=model_seed)
-    enum_seed = _enum_seed()
-    graph_hash = _hash_graph(g)
-    key = _cache_key(graph_hash, "walk", walk_len, max_walks, enum_seed,
-                      extra=_topk_fingerprint())
-    path = _cache_dir() / f"{key}.npz"
-    hit = _cache_hit(path)
-    if hit is not None:
-        return hit
-    t_list = wk.construct_walks(g, walk_len=walk_len,
-                                 max_walks=max_walks, seed=enum_seed)
-    return _cache_miss(path, t_list)
+    cache. Cold-cache path is now numpy-direct via :class:`WalkEnumerator`
+    — closes the Komondor walk k=5 OOM (job 13883876, 2026-06-03)."""
+    strategy = WalkEnumerator(walk_len, max_walks)
+    return CachedEnumerator(strategy, model_seed=model_seed)(g)
 
 
 def cached_construct_2(g):
     """k=2 cycles are deterministic from the graph; cache them too."""
-    nt = _import_n_tuples()
-    if not cache_enabled():
-        return nt.construct_2(g)
-    graph_hash = _hash_graph(g)
-    key = _cache_key(graph_hash, "cycle_k", 2, None, 0)
-    path = _cache_dir() / f"{key}.npz"
-    hit = _cache_hit(path)
-    if hit is not None:
-        return hit
-    t_list = nt.construct_2(g)
-    return _cache_miss(path, t_list)
+    return CachedEnumerator(TwoCycleEnumerator())(g)
 
 
 def cached_construct_triads(g):
     """k=3 triads — fast Rust per_vertex path when ``HSIKAN_TOPK_MODE``
     is set, else the classic ``hyperedges.construct(g)`` Python path.
 
-    The Python triad path enumerates every vertex × every neighbour ×
-    set-intersection in pure Python — at Epinions scale (131k
-    vertices, 841k edges) this is the dominant pre-training cost
-    (tens of minutes).  When the caller has opted into top-K cycle
-    pruning via ``HSIKAN_TOPK_MODE=per_vertex`` (or ``global``), the
-    same env var should also redirect c3 enumeration through the
-    rayon-parallel Rust enumerator that c4/c5 already use, keeping
-    the cycle space treatment uniform across arities and getting
-    triad enumeration off the GIL.
-
-    Returns a list[SignedNTuple] in either branch — all five fields
-    populated, so downstream consumers that read ``.balanced`` /
-    ``.arity`` (e.g. ``hyperedges.stats``) work transparently.
-    """
-    if get_runtime().topk.mode in ("global", "per_vertex"):
-        # Same path as c4/c5: Rust per_vertex enumerator with
-        # top-K pruning.  ``max_cycles=None`` because the per_vertex
-        # path enforces ``n_vertices × m_per_vertex`` directly.
-        return cached_construct_k(g, k=3, max_cycles=None, model_seed=0)
-
-    from ..core.hyperedges import construct as _construct_triads
-    if not cache_enabled():
-        return _construct_triads(g)
-    graph_hash = _hash_graph(g)
-    key = _cache_key(graph_hash, "triads", 3, None, 0)
-    path = _cache_dir() / f"{key}.npz"
-    hit = _cache_hit(path)
-    if hit is not None:
-        return hit
-    t_list = _construct_triads(g)
-    return _cache_miss(path, t_list)
+    Dispatch is inside :class:`TriadEnumerator` so callers don't
+    branch on the env var."""
+    return CachedEnumerator(TriadEnumerator())(g)
 
 
 # ─── Lazy public surface ────────────────────────────────────────────

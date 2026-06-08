@@ -1,0 +1,64 @@
+# Per-cell wall calibration -- ANCHOR-based, no per-dataset hardcoding.
+#
+# The estimator (scripts/estimate_slurm_time.py) reads the actual raw
+# dataset file at call time, counts n_edges, and interpolates the
+# expected wall from the anchors below in log-log space. Adding a new
+# dataset requires zero edits here -- the file count alone drives the
+# estimate, anchored by the calibration measurements we already have.
+#
+# To improve the calibration: add a new measured anchor with
+# `wall_cold` and `wall_warm` populated from an actual seff readout
+# at the production HSiKAN-edge_cr SOTA config.
+
+anchors:
+  - dataset: bitcoin_alpha
+    n_edges:    24186      # measured 2026-06-04 via wc -l raw csv
+    n_nodes:     3783
+    wall_cold:    35       # worst-observed cold wall (s), production config
+    wall_warm:    30
+    source: "chain 13885723 + K-sweep 2026-06-04"
+  - dataset: bitcoin_otc
+    n_edges:    35592
+    n_nodes:     5881
+    wall_cold:    36
+    wall_warm:    30
+    source: "chain 13885739 + K-sweep 2026-06-04"
+  - dataset: slashdot
+    n_edges:   549202
+    n_nodes:    82140
+    wall_cold:   649       # slashdot_shuffle_seed0 K=20 = 10m49s
+    wall_warm:    65       # warm-cache cells across K-sweep
+    source: "K-sweep 2026-06-04"
+  - dataset: epinions
+    n_edges:   841372
+    n_nodes:   131828
+    wall_cold:  8866       # chain 13885723 epinions_real_seed0 = 2h27m46s
+    wall_warm:    65
+    source: "chain 13885723 + K-sweep 2026-06-04"
+
+# Warm-cache wall is dominated by training (production: hidden=4,
+# 80 epochs); the dataset size does NOT meaningfully affect it.
+# Treat as a flat constant + small safety.
+warm_cache_constant_s: 70
+
+# Cold-cache wall is dominated by cycle/walk enumeration; scales
+# super-linearly with n_edges. Model: piecewise log-log linear
+# interpolation between adjacent anchors. Outside the anchor range:
+#   - below smallest:  use smallest anchor's wall (conservative;
+#                      tiny graphs cannot run slower than the
+#                      training floor anyway).
+#   - above largest:   extrapolate using the slope of the last two
+#                      anchors, capped at max_wall_s.
+extrapolation:
+  max_wall_s: 14400   # hard cap at 4h; beyond this, manual sizing
+  min_wall_s: 30      # floor: a cell never completes faster than
+                      # the training+model-init time
+
+# Safety multiplier applied to the interpolated worst-case wall before
+# emitting SLURM --time. 1.20 = 20% headroom.
+safety_multiplier: 1.20
+
+# If the resulting --time would yield TimeEff below this floor on the
+# fastest cell in the class, the estimator refuses and tells the caller
+# to split the class. KIFÜ warning threshold is empirically ~10%.
+min_time_efficiency: 0.20

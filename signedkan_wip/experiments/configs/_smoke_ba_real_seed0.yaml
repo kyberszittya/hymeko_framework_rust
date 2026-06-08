@@ -1,0 +1,50 @@
+# Internal smoke: single cell, used for framework parity check
+# vs prior local measurement (BA real seed 0 -> AUC 0.9946 at
+# per_vertex K=128 + Triton, from run_mv_speedup_smoke_2026_06_04
+# fixed_128 variant, 2026-06-04).
+# Prefix with _ to mark as test fixture.
+
+name: _smoke_ba_real_seed0
+description: Framework parity smoke -- 1 cell on BA, should match prior AUC 0.9946.
+experiment_class: SingleCellExperiment
+
+cells:
+  - { dataset: bitcoin_alpha, mode: real, seed: 0 }
+
+model:
+  family: HSiKAN
+  hidden: 4
+  n_epochs: 80
+  mixed_tuples: [c2, c3, c4, c5, w2, w3]
+  attention_m_e: quaternion
+  attention_highway: true
+  attention_highway_kind: edge_cr
+
+topk:
+  mode: per_vertex
+  k: 128
+  pruner: balance
+  scorer: fraction_negative
+
+kernel:
+  triton: true
+  triton_backward: true
+
+cycle_cache:
+  enabled: true
+  dir: /tmp/_smoke_ba_cache_2026_06_04
+
+env:
+  PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+  MALLOC_ARENA_MAX: "4"
+  OMP_NUM_THREADS: "4"
+
+monitors:
+  - WallMonitor
+  - MemoryMonitor
+  - AUCMonitor
+  - JSONLEmitter
+
+output:
+  jsonl: /tmp/_smoke_ba_real_seed0.jsonl
+  summary: /tmp/_smoke_ba_real_seed0.md

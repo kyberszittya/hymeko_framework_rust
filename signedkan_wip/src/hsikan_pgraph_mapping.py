@@ -44,6 +44,25 @@ HSIKAN_UNIT_TO_KNOBS: dict[str, dict[str, Any]] = {
     "depth_l2": {"n_layers": 2},
     "depth_l4": {"n_layers": 4},
     "depth_l8": {"n_layers": 8},
+    # ---- 2026-05-27: HSiKAN-mixed × protocol-axis sweep
+    # (`data/hsikan/sweep_msg_mixed_protocols.hymeko`). The structural
+    # primitive is fixed to the mixed cycles+walks family; the P-graph
+    # ranges over the *other protocols* layered on top. Each unit maps
+    # to a live RuntimeConfig / cell_signed_graph knob (the driver
+    # translates these keys to HSIKAN_* env vars — see
+    # run_hsikan_mixed_composite_smoke.py::structure_to_env).
+    # Structural primitive (fixed family base): mixed cycles + walks.
+    "struct_mixed": {"mixed_tuples": "c3,c4,w2,w3"},
+    # Attention axis → HSIKAN_ATTENTION_M_E.
+    "attn_none":       {"attention_kind": "none"},
+    "attn_dot":        {"attention_kind": "dot"},
+    "attn_quaternion": {"attention_kind": "quaternion"},
+    # Edge-gate axis → HSIKAN_PER_EDGE_GATE (scalar vs per-edge CR highway).
+    "gate_scalar":  {"per_edge_gate": False},
+    "gate_edge_cr": {"per_edge_gate": True},
+    # Direct-messaging axis → HSIKAN_DIRECT_MESSAGING.
+    "dm_off": {"direct_messaging": False},
+    "dm_on":  {"direct_messaging": True},
 }
 
 

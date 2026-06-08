@@ -1,0 +1,57 @@
+# 5-seed paired AUC on Slashdot, HSiKAN edge_cr SOTA.
+# Replaces: signedkan_wip/experiments/run_slashdot_edge_cr_5seed_2026_05_09.sh
+#
+# Prior benchmark:
+#   Komondor (chain 13885723):   real 0.9058 ± .0033, shuffle 0.8508 ± .0103
+#   Local (2026-05-29 rebench):  real 0.9062 ± .0033, torch 2.11
+#   Local (May-9 baseline):      real 0.9070 ± .0029
+# Cross-environment within ±1σ.
+
+name: slashdot_edge_cr_5seed
+description: |
+  5-seed paired AUC on Slashdot. Reproduces the published SOTA
+  (~0.907) within ±1σ across local RTX 2070 SUPER + Komondor A100.
+experiment_class: SweepExperiment
+
+cells:
+  - { dataset: slashdot, mode: real,    seeds: [0, 1, 2, 3, 4] }
+  - { dataset: slashdot, mode: shuffle, seeds: [0, 1, 2, 3, 4] }
+
+model:
+  family: HSiKAN
+  hidden: 4
+  n_epochs: 80
+  mixed_tuples: [c2, c3, c4, c5, w2, w3]
+  attention_m_e: quaternion
+  attention_highway: true
+  attention_highway_kind: edge_cr
+  max_k4: 200000
+
+topk:
+  mode: per_vertex
+  k: 128
+  pruner: balance
+  scorer: fraction_negative
+
+kernel:
+  triton: true
+  triton_backward: true
+
+cycle_cache:
+  enabled: true
+  dir: .cache/hymeko_cycles
+
+env:
+  PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+  MALLOC_ARENA_MAX: "4"
+  OMP_NUM_THREADS: "4"
+
+monitors:
+  - WallMonitor
+  - MemoryMonitor
+  - AUCMonitor
+  - JSONLEmitter
+
+output:
+  jsonl: experiments/results/${name}.jsonl
+  summary: reports/auto/${name}.md

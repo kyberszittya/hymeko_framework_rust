@@ -18,7 +18,9 @@ use std::process::ExitCode;
 use std::str::FromStr;
 
 use hymeko_pgraph::abb::solve_with_options;
-use hymeko_pgraph::cli::{load_pgraph, render_entities, render_pgraph, render_solution, to_dot};
+use hymeko_pgraph::cli::{
+    load_pgraph, render_entities, render_pgraph, render_solution, to_dot, to_friedler_dot,
+};
 use hymeko_pgraph::dump::{DumpAlgorithm, analyze_lowered_with_full_options};
 use hymeko_pgraph::{
     AbbOptions, LoweredPGraph, MaximalStructureOptions, maximal_structure, write_pgip,
@@ -180,6 +182,10 @@ fn run_solve(file: &Path, rest: &[String]) -> ExitCode {
 fn run_generate(file: &Path, rest: &[String]) -> ExitCode {
     let mut format = String::from("dot");
     let mut out: Option<PathBuf> = None;
+    // 2026-06-03: `default` is the existing debug-style colour-coded
+    // rendering. `friedler` uses canonical PSE notation (circle M-nodes,
+    // bar O-nodes, no fill colours beyond raw/product distinction).
+    let mut style = String::from("default");
     let mut i = 0;
     while i < rest.len() {
         match rest[i].as_str() {
@@ -197,6 +203,13 @@ fn run_generate(file: &Path, rest: &[String]) -> ExitCode {
                 }
                 None => return arg_error("--out requires a path"),
             },
+            "--style" => match rest.get(i + 1) {
+                Some(v) => {
+                    style = v.clone();
+                    i += 2;
+                }
+                None => return arg_error("--style requires a value (default|friedler)"),
+            },
             other => return arg_error(&format!("unexpected argument `{other}`")),
         }
     }
@@ -205,9 +218,19 @@ fn run_generate(file: &Path, rest: &[String]) -> ExitCode {
         Ok(g) => g,
         Err(code) => return code,
     };
+    let render_dot = |g: &_, title: &str| match style.as_str() {
+        "default" => to_dot(g, title),
+        "friedler" | "pse" => to_friedler_dot(g, title),
+        other => panic!("unknown style {other}"),
+    };
+    if !matches!(style.as_str(), "default" | "friedler" | "pse") {
+        return arg_error(&format!(
+            "unknown --style `{style}` (default|friedler|pse)"
+        ));
+    }
     match format.as_str() {
         "dot" => {
-            let dot = to_dot(&g, &title_of(file));
+            let dot = render_dot(&g, &title_of(file));
             match &out {
                 Some(p) => match std::fs::write(p, dot) {
                     Ok(()) => eprintln!("wrote DOT to {}", p.display()),
@@ -217,11 +240,11 @@ fn run_generate(file: &Path, rest: &[String]) -> ExitCode {
             }
             ExitCode::SUCCESS
         }
-        "png" | "svg" => {
+        "png" | "svg" | "pdf" => {
             let Some(p) = out else {
                 return arg_error(&format!("--format {format} requires --out PATH"));
             };
-            let dot = to_dot(&g, &title_of(file));
+            let dot = render_dot(&g, &title_of(file));
             match hymeko_pgraph::render_graphviz(&dot, &format, &p) {
                 Ok(()) => {
                     eprintln!("wrote {format} to {}", p.display());

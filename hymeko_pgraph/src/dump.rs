@@ -31,6 +31,47 @@ pub enum DumpAlgorithm {
     Abb,
 }
 
+/// Which SSG implementation drives the `--algorithm ssg` output.
+///
+/// 2026-06-03 (Pimentel benchmark): the brute path enumerates the
+/// $2^{|O_\mathrm{MSG}|}$ subset lattice and applies forward-DFS
+/// feasibility (the existing default, here for $|O_\mathrm{MSG}| \le 30$).
+/// The decision-mapping path is the canonical Friedler 1992 SSG
+/// (`ssg_dm.rs`, Ch. 5 Def. 5.1) — it generates each solution-structure
+/// exactly once via per-material production decisions and matches the
+/// published structure counts for every example in
+/// *P-graphs for Process Systems Engineering*.
+///
+/// Two outputs can differ when supersets are involved: the brute
+/// algorithm emits both `{O1, O3}` and `{O1, O3, O6}` when both pass
+/// the forward-DFS feasibility check, while the decision-mapping
+/// algorithm consolidates them via the per-material decision recursion.
+/// On `data/pgraph/Chapter6/pimentel_distractors.hymeko` the brute path
+/// returns 25 structures and the decision-mapping path returns the
+/// canonical 19 (matching Pimentel's docx).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SsgAlgorithm {
+    /// Subset-lattice brute force (default, back-compat).
+    Brute,
+    /// Decision-mapping (canonical Friedler 1992).
+    DecisionMapping,
+}
+
+impl FromStr for SsgAlgorithm {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "brute" => Ok(SsgAlgorithm::Brute),
+            "decision-mapping" | "decision_mapping" | "dm" => {
+                Ok(SsgAlgorithm::DecisionMapping)
+            }
+            other => Err(format!(
+                "unknown ssg algorithm '{other}' (use brute | decision-mapping | dm)"
+            )),
+        }
+    }
+}
+
 /// Parse CLI / config spelling: `msg`, `ssg`, `abb`.
 impl FromStr for DumpAlgorithm {
     type Err = String;
@@ -119,6 +160,16 @@ pub struct PgraphAnalysisJson {
     /// the framework picked. `None` when no ABB selection or no
     /// `cost_dimensions`.
     pub abb_cost_breakdown: Option<Vec<(String, f64)>>,
+    /// 2026-06-03 (Pimentel benchmark): top-$k$ feasible structures
+    /// ranked ascending by cost. Populated only when the analysis
+    /// is invoked via the `_topk` entry point with `top_k > 1` (the
+    /// CLI flag is `--top-k N`). The first entry (cost-minimal)
+    /// matches [`Self::abb`] exactly. The decision-mapping SSG
+    /// produces these solutions, so the `explored` / `pruned_*`
+    /// counters are zero on every entry (the recursive B&B
+    /// counters apply only to the single-best [`solve_with_regime`]
+    /// path). `None` ⇒ only the single best is requested.
+    pub abb_top_k: Option<Vec<AbbJson>>,
 }
 
 fn unit_names(p: &LoweredPGraph, sol: &SolutionStructure) -> Vec<String> {
@@ -391,6 +442,7 @@ pub fn analyze_source_with_regime(
                 cost_dimensions: vec![],
                 cost_weights_echo,
                 abb_cost_breakdown: None,
+                abb_top_k: None,
             };
         }
     };
@@ -416,11 +468,171 @@ pub fn analyze_source_with_regime(
                 cost_dimensions: vec![],
                 cost_weights_echo,
                 abb_cost_breakdown: None,
+                abb_top_k: None,
             };
         }
     };
 
     let (json, _abb) = analyze_lowered_with_regime(&p, description, algorithm, regime, opts);
+    json
+}
+
+/// Top-$k$ variant of [`analyze_source_with_regime`]. Same parse +
+/// lower pipeline, then delegates to
+/// [`analyze_lowered_with_regime_topk`]. The CLI binary uses this
+/// path when `--top-k N` is supplied.
+pub fn analyze_source_with_regime_topk(
+    hymeko_src: &str,
+    algorithm: DumpAlgorithm,
+    regime: &dyn crate::regime::Regime,
+    opts: AbbOptions,
+    top_k: usize,
+) -> PgraphAnalysisJson {
+    if top_k <= 1 {
+        return analyze_source_with_regime(hymeko_src, algorithm, regime, opts);
+    }
+    let algo_label = match algorithm {
+        DumpAlgorithm::Msg => "msg",
+        DumpAlgorithm::Ssg => "ssg",
+        DumpAlgorithm::Abb => "abb",
+    };
+    let strict_echo = regime.name() != "canonical";
+    let cost_weights_echo = opts.cost_weights.clone();
+    let desc = parse_description(hymeko_src);
+    let d = match desc {
+        Ok(d) => d,
+        Err(e) => {
+            return PgraphAnalysisJson {
+                ok: false,
+                description: String::new(),
+                algorithm: algo_label.into(),
+                parse_error: Some(format!("{e:?}")),
+                lower_error: None,
+                msg_units: vec![],
+                ssg_structures: None,
+                ssg_note: None,
+                abb: None,
+                canonical_full: empty_cert_with("UNKNOWN"),
+                extension_full: empty_cert_with("UNKNOWN"),
+                canonical_abb_subschema: None,
+                extension_abb_subschema: None,
+                strict_no_excess: strict_echo,
+                cost_dimensions: vec![],
+                cost_weights_echo,
+                abb_cost_breakdown: None,
+                abb_top_k: None,
+            };
+        }
+    };
+    let description = d.name.to_string();
+    let p = match lower(&d) {
+        Ok(p) => p,
+        Err(e) => {
+            return PgraphAnalysisJson {
+                ok: false,
+                description,
+                algorithm: algo_label.into(),
+                parse_error: None,
+                lower_error: Some(e.to_string()),
+                msg_units: vec![],
+                ssg_structures: None,
+                ssg_note: None,
+                abb: None,
+                canonical_full: empty_cert_with("UNKNOWN"),
+                extension_full: empty_cert_with("UNKNOWN"),
+                canonical_abb_subschema: None,
+                extension_abb_subschema: None,
+                strict_no_excess: strict_echo,
+                cost_dimensions: vec![],
+                cost_weights_echo,
+                abb_cost_breakdown: None,
+                abb_top_k: None,
+            };
+        }
+    };
+    let (json, _abb) = analyze_lowered_with_regime_topk(
+        &p, description, algorithm, regime, opts, top_k,
+    );
+    json
+}
+
+/// Source variant of [`analyze_lowered_with_regime_full`]. Parses,
+/// lowers, then delegates with both `top_k` and `ssg_algorithm`. The
+/// CLI binary uses this when `--ssg-algorithm` and/or `--top-k` are
+/// supplied.
+pub fn analyze_source_with_regime_full(
+    hymeko_src: &str,
+    algorithm: DumpAlgorithm,
+    regime: &dyn crate::regime::Regime,
+    opts: AbbOptions,
+    top_k: usize,
+    ssg_algorithm: SsgAlgorithm,
+) -> PgraphAnalysisJson {
+    if top_k <= 1 && matches!(ssg_algorithm, SsgAlgorithm::Brute) {
+        return analyze_source_with_regime(hymeko_src, algorithm, regime, opts);
+    }
+    let algo_label = match algorithm {
+        DumpAlgorithm::Msg => "msg",
+        DumpAlgorithm::Ssg => "ssg",
+        DumpAlgorithm::Abb => "abb",
+    };
+    let strict_echo = regime.name() != "canonical";
+    let cost_weights_echo = opts.cost_weights.clone();
+    let desc = parse_description(hymeko_src);
+    let d = match desc {
+        Ok(d) => d,
+        Err(e) => {
+            return PgraphAnalysisJson {
+                ok: false,
+                description: String::new(),
+                algorithm: algo_label.into(),
+                parse_error: Some(format!("{e:?}")),
+                lower_error: None,
+                msg_units: vec![],
+                ssg_structures: None,
+                ssg_note: None,
+                abb: None,
+                canonical_full: empty_cert_with("UNKNOWN"),
+                extension_full: empty_cert_with("UNKNOWN"),
+                canonical_abb_subschema: None,
+                extension_abb_subschema: None,
+                strict_no_excess: strict_echo,
+                cost_dimensions: vec![],
+                cost_weights_echo,
+                abb_cost_breakdown: None,
+                abb_top_k: None,
+            };
+        }
+    };
+    let description = d.name.to_string();
+    let p = match lower(&d) {
+        Ok(p) => p,
+        Err(e) => {
+            return PgraphAnalysisJson {
+                ok: false,
+                description,
+                algorithm: algo_label.into(),
+                parse_error: None,
+                lower_error: Some(e.to_string()),
+                msg_units: vec![],
+                ssg_structures: None,
+                ssg_note: None,
+                abb: None,
+                canonical_full: empty_cert_with("UNKNOWN"),
+                extension_full: empty_cert_with("UNKNOWN"),
+                canonical_abb_subschema: None,
+                extension_abb_subschema: None,
+                strict_no_excess: strict_echo,
+                cost_dimensions: vec![],
+                cost_weights_echo,
+                abb_cost_breakdown: None,
+                abb_top_k: None,
+            };
+        }
+    };
+    let (json, _abb) = analyze_lowered_with_regime_full(
+        &p, description, algorithm, regime, opts, top_k, ssg_algorithm,
+    );
     json
 }
 
@@ -445,6 +657,81 @@ pub fn analyze_lowered_with_full_options(
         crate::regime::from_strict_flag(msg_opts.strict_no_excess),
         opts,
     )
+}
+
+/// Top-$k$ variant of [`analyze_lowered_with_regime`] — populates
+/// [`PgraphAnalysisJson::abb_top_k`] with the $k$ cost-minimal feasible
+/// structures (ascending by cost). When `top_k == 1` the result is
+/// byte-identical to the single-best path. Added 2026-06-03 for the
+/// Pimentel benchmark CLI verification (`--top-k 3` checks the 2nd-best
+/// and 3rd-best alternatives the docx lists).
+pub fn analyze_lowered_with_regime_topk(
+    p: &LoweredPGraph,
+    description: String,
+    algorithm: DumpAlgorithm,
+    regime: &dyn crate::regime::Regime,
+    opts: AbbOptions,
+    top_k: usize,
+) -> (PgraphAnalysisJson, Option<AbbSolution>) {
+    analyze_lowered_with_regime_full(
+        p, description, algorithm, regime, opts, top_k,
+        SsgAlgorithm::Brute,
+    )
+}
+
+/// Full-options variant of [`analyze_lowered_with_regime`]: accepts both
+/// the top-$k$ for ABB and the SSG implementation choice (brute vs
+/// canonical decision-mapping). Added 2026-06-03 for the Pimentel
+/// benchmark CLI; reproduces the docx-expected 19 solution structures
+/// via `SsgAlgorithm::DecisionMapping`.
+pub fn analyze_lowered_with_regime_full(
+    p: &LoweredPGraph,
+    description: String,
+    algorithm: DumpAlgorithm,
+    regime: &dyn crate::regime::Regime,
+    opts: AbbOptions,
+    top_k: usize,
+    ssg_algorithm: SsgAlgorithm,
+) -> (PgraphAnalysisJson, Option<AbbSolution>) {
+    let (mut out, abb_single) = analyze_lowered_with_regime(
+        p, description, algorithm, regime, opts.clone(),
+    );
+    // Re-emit SSG via decision-mapping if requested; replaces the
+    // brute output that the inner function produced.
+    if matches!(algorithm, DumpAlgorithm::Ssg)
+        && matches!(ssg_algorithm, SsgAlgorithm::DecisionMapping)
+    {
+        let m = maximal_structure_with_regime(p, regime);
+        let dm_sols = crate::ssg_dm::enumerate(p, &m);
+        let structures: Vec<Vec<String>> = dm_sols
+            .iter()
+            .map(|s| {
+                let mut v: Vec<String> = s
+                    .units
+                    .iter()
+                    .map(|d| p.decl_to_name[d].clone())
+                    .collect();
+                v.sort();
+                v
+            })
+            .collect();
+        out.ssg_structures = Some(structures);
+        out.ssg_note = Some("decision-mapping (canonical Friedler)".into());
+    }
+    // Only ABB requests carry a top-K extension; MSG / SSG ignore it.
+    if matches!(algorithm, DumpAlgorithm::Abb) && top_k > 1 {
+        let m = maximal_structure_with_regime(p, regime);
+        let solutions = crate::abb::solve_top_k_with_regime(
+            p, &m, top_k, opts, regime,
+        );
+        out.abb_top_k = Some(
+            solutions
+                .iter()
+                .map(|sol| abb_to_json(p, sol))
+                .collect(),
+        );
+    }
+    (out, abb_single)
 }
 
 /// As [`analyze_lowered_with_full_options`] but driven by an explicit
@@ -498,6 +785,7 @@ pub fn analyze_lowered_with_regime(
         cost_dimensions: cost_dimensions.clone(),
         cost_weights_echo,
         abb_cost_breakdown: None,
+        abb_top_k: None,
     };
 
     let n = m.units.len();

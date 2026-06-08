@@ -1,0 +1,58 @@
+# 5-seed paired AUC on Bitcoin Alpha with the edge_cr highway gate.
+# Replaces: signedkan_wip/experiments/run_btc_alpha_otc_sota_gate.sh
+#           (partial; that script also ran OTC. We split into one
+#            YAML per dataset for clarity; a multi-dataset YAML is
+#            also supported by listing more entries under `cells:`.)
+#
+# Prior benchmark (from Komondor chain 13885739):
+#   real    n=5 auc=0.9868 ± 0.0058
+#   shuffle n=5 auc=0.9662 ± 0.0124
+
+name: bitcoin_alpha_edge_cr_5seed
+description: |
+  5-seed paired AUC on Bitcoin Alpha, HSiKAN edge_cr SOTA config
+  (c2..c5 + w2..w3 + quaternion + edge_cr highway), per_vertex top-K.
+experiment_class: SweepExperiment
+
+cells:
+  - { dataset: bitcoin_alpha, mode: real,    seeds: [0, 1, 2, 3, 4] }
+  - { dataset: bitcoin_alpha, mode: shuffle, seeds: [0, 1, 2, 3, 4] }
+
+model:
+  family: HSiKAN
+  hidden: 4
+  n_epochs: 80
+  mixed_tuples: [c2, c3, c4, c5, w2, w3]
+  attention_m_e: quaternion
+  attention_highway: true
+  attention_highway_kind: edge_cr
+  max_k4: 200000
+
+topk:
+  mode: per_vertex
+  k: 128
+  pruner: balance
+  scorer: fraction_negative
+
+kernel:
+  triton: true
+  triton_backward: true
+
+cycle_cache:
+  enabled: true
+  dir: .cache/hymeko_cycles
+
+env:
+  PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+  MALLOC_ARENA_MAX: "4"
+  OMP_NUM_THREADS: "4"
+
+monitors:
+  - WallMonitor
+  - MemoryMonitor
+  - AUCMonitor
+  - JSONLEmitter
+
+output:
+  jsonl: experiments/results/${name}.jsonl
+  summary: reports/auto/${name}.md

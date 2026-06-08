@@ -176,6 +176,89 @@ pub fn solve_with_regime(
     })
 }
 
+/// Return the top-$k$ cost-minimal feasible structures, ranked
+/// ascending by cost.
+///
+/// Promoted to library API on 2026-06-03 after the Pimentel benchmark
+/// validation (see [`reports/2026-06-03-pimentel-benchmark-validation.md`])
+/// asked for CLI access to the 2nd-best (12) and 3rd-best (13)
+/// alternatives, not just the optimum. Mirrors the `topk()` helper
+/// in [`hymeko_pgraph/tests/topk_sanity.rs`] verbatim — same algorithm
+/// (MSG → decision-mapping SSG enumeration → admissibility filter →
+/// cost-rank-and-truncate), now exposed for callers outside the test.
+///
+/// Returns up to `k` solutions; fewer if the feasible space has fewer
+/// admissible structures (e.g. `k=10` on a problem with 3 distinct
+/// solutions returns 3 entries).
+///
+/// Each returned [`AbbSolution`] carries the same `explored` /
+/// `pruned_*` counters as the single-best [`solve`] path; the
+/// counters reflect the full enumeration walk, not per-solution.
+/// Empty `units` rows are filtered.
+pub fn solve_top_k(
+    p: &LoweredPGraph,
+    msg: &MaximalStructure,
+    k: usize,
+    opts: AbbOptions,
+) -> Vec<AbbSolution> {
+    let regime = crate::regime::from_strict_flag(opts.strict_no_excess);
+    solve_top_k_with_regime(p, msg, k, opts, regime)
+}
+
+/// Top-$k$ variant of [`solve_with_regime`]. The regime governs
+/// admissibility; `opts` supplies `max_explored` and `cost_weights`.
+pub fn solve_top_k_with_regime(
+    p: &LoweredPGraph,
+    msg: &MaximalStructure,
+    k: usize,
+    opts: AbbOptions,
+    regime: &dyn crate::regime::Regime,
+) -> Vec<AbbSolution> {
+    if k == 0 {
+        return Vec::new();
+    }
+    // Enumerate every solution-structure exactly once via the
+    // decision-mapping SSG (Friedler 1992, Ch. 5, Def. 5.1).
+    // Filter by regime admissibility and score by sum of effective
+    // (scalar or multi-objective) costs. This is the exact pipeline
+    // ``tests/topk_sanity.rs::topk`` used; promoted to library API
+    // so CLI / Python callers can verify Pimentel's expected top-K
+    // without reaching into a private test helper.
+    let ssg = crate::ssg_dm::enumerate(p, msg);
+    let mut scored: Vec<(f64, BTreeSet<DeclId>)> = ssg
+        .into_iter()
+        .filter(|s| regime.structure_admissible(p, &s.units))
+        .map(|s| {
+            let cost: f64 = s
+                .units
+                .iter()
+                .map(|u| effective_cost(p, &opts, *u))
+                .sum();
+            (cost, s.units)
+        })
+        .collect();
+    // Ascending by cost. `partial_cmp` cannot return None here
+    // because every `effective_cost` is a finite f64 (NaN would be
+    // a contract violation we should surface upstream).
+    scored.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("non-finite cost"));
+    scored
+        .into_iter()
+        .take(k)
+        .map(|(cost, units)| AbbSolution {
+            units,
+            cost,
+            // The decision-mapping enumeration doesn't track B&B
+            // explored / pruned counters (those are specific to the
+            // recursive `solve_with_regime` branch). Surface them as
+            // zero so the CLI JSON schema stays stable.
+            explored: 0,
+            pruned_by_inclusion: 0,
+            pruned_by_reachability: 0,
+        })
+        .collect()
+}
+
+
 struct SearchState<'r> {
     order: Vec<DeclId>,
     included: BTreeSet<DeclId>,

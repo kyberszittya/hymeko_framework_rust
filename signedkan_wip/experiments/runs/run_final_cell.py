@@ -28,6 +28,7 @@ Auxiliary entropy (optional, via env, added to BCE alongside
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import random
 import statistics
@@ -41,6 +42,47 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
 from signedkan_wip.src.hsikan_device_env import resolve_hsikan_device
+
+
+# ─── glibc heap trim (Komondor mixed-tuples OOM fix 2026-06-03) ───
+#
+# build_me's edge_to_tuples dict allocates O(n_t × k) Python objects per
+# arity (~500K per arity at cap=100K, k=5). When the dict goes out of
+# scope at end of for-loop iteration, CPython refcount frees the objects,
+# but glibc's malloc-arena heap holds the freed pages — RSS stays high
+# across the 5-arity loop and compounds (~6 GB × 5 = 30 GB peak observed
+# on Komondor).
+#
+# malloc_trim(0) asks glibc to release pages above the brk() boundary
+# back to the OS. Combined with an explicit gc.collect() + `del` of the
+# build_me locals, this caps per-arity RSS growth to the kept tensors
+# (triad_v, triad_sigma, M_vt, M_e_tr, M_e_te) — typically <500 MB total
+# across 5 arities at cap=100K.
+#
+# No-op on non-glibc (musl, macOS) — silently returns False so the test
+# suite can drive without platform-specific skips.
+_LIBC = None
+
+
+def _malloc_trim() -> bool:
+    """Best-effort glibc heap trim. Returns True iff trim actually ran."""
+    global _LIBC
+    if _LIBC is False:
+        return False
+    if _LIBC is None:
+        try:
+            import ctypes  # local import; ctypes not needed elsewhere
+            _LIBC = ctypes.CDLL("libc.so.6")
+        except (OSError, AttributeError):
+            _LIBC = False
+            return False
+    try:
+        _LIBC.malloc_trim(0)
+        return True
+    except (AttributeError, OSError):
+        # malloc_trim missing (e.g. musl libc); cache the negative result
+        _LIBC = False
+        return False
 
 
 def time_per_call(fn, n_warmup=15, n_repeats=40, sync=True):
@@ -156,6 +198,15 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         cached_construct_2, cached_construct_k, cached_construct_triads,
         cached_construct_walks,
     )
+    # Lazy variants — avoid materialising the SignedNTuple list when the
+    # cache is warm. Saves ~5× RAM on cache-hit (Komondor/A100 OOM fix
+    # 2026-06-03): the np.array([t.v for t in t_k]) conversion at
+    # lines 374-375 / 936-937 below is the dominant memory cost for
+    # 5-arity x 100k cap configs (~500K cycles → ~40 GB Python objects).
+    from signedkan_wip.src.cycle_cache.api import (
+        lazy_load_construct_k, lazy_load_construct_walks,
+    )
+    from signedkan_wip.src.cycle_cache.stats import LazyCyclePool
     from signedkan_wip.src.datasets import load, deduplicate_pairs, split
     from signedkan_wip.src.datasets import sbm_signed
     from signedkan_wip.src.core.hyperedges import construct  # noqa: F401  (kept for compat; cached_construct_triads is the live path)
@@ -344,40 +395,117 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
         _wg = load_continuous(dataset)
         _arc_lookup = build_edge_weight_lookup(_wg)
 
+    # ─── RSS + CUDA memory profiling (memory-leak hunt 2026-06-03) ───
+    def _rss_gb():
+        try:
+            with open(f"/proc/self/status") as f:
+                for line in f:
+                    if line.startswith("VmRSS:"):
+                        return int(line.split()[1]) / 1024 / 1024
+        except Exception:
+            return 0.0
+        return 0.0
+
+    def _cuda_gb() -> tuple[float, float]:
+        """Return (allocated_GB, reserved_GB) for the current CUDA device.
+        ``reserved`` includes the caching-allocator's idle pool — the
+        upper bound on GPU memory PyTorch is holding. On A100 SXM4 with
+        default ``PYTORCH_CUDA_ALLOC_CONF``, ``reserved`` can be 10s of
+        GB even when ``allocated`` is small; that delta is what mirrors
+        into host RSS via pinned-memory bookkeeping.
+        """
+        if not torch.cuda.is_available():
+            return 0.0, 0.0
+        try:
+            a = torch.cuda.memory_allocated() / (1024 ** 3)
+            r = torch.cuda.memory_reserved() / (1024 ** 3)
+            return a, r
+        except Exception:
+            return 0.0, 0.0
+
+    def _mem_tag() -> str:
+        rss = _rss_gb()
+        a, r = _cuda_gb()
+        if torch.cuda.is_available():
+            return (
+                f"rss={rss:.2f}G cuda_alloc={a:.2f}G cuda_reserved={r:.2f}G"
+            )
+        return f"rss={rss:.2f}G"
+
+    print(f"[MEM] entry to per-arity loop: {_mem_tag()}", flush=True)
+
     per_arity_tr, per_arity_te = [], []
     for kind, k_v, walk_len in tuple_specs:
+        print(f"[MEM] before {kind} k={k_v}: {_mem_tag()}", flush=True)
+        # Try the lazy cache-hit path FIRST: returns a LazyCyclePool
+        # holding only the packed numpy arrays (~5× smaller than
+        # SignedNTuple list materialisation for 500K+ cycle pools).
+        # Falls back to the eager path on cold cache (or k=2/k=3 which
+        # don't have lazy variants yet).
+        t_k = None
         if kind == "walk":
             assert walk_len is not None
-            # Cache-aware: when HYMEKO_CYCLE_CACHE=1, all model seeds
-            # share the same walk subsample (enum_seed-driven).  When
-            # off, falls through to walks.construct_walks(seed=seed).
-            t_k = cached_construct_walks(
+            t_k = lazy_load_construct_walks(
                 g, walk_len=walk_len,
                 max_walks=cap_dict.get(k_v, max_k4),
-                model_seed=seed)
-        elif k_v == 2:
-            t_k = cached_construct_2(g)
-        elif k_v == 3:
-            # cached_construct_triads redirects to the Rust per_vertex
-            # path when HSIKAN_TOPK_MODE is set, else uses the
-            # hyperedges.construct() Python triad enumerator.
-            t_k = cached_construct_triads(g)
-        else:
-            t_k = cached_construct_k(g, k=k_v,
-                                       max_cycles=cap_dict[k_v],
-                                       model_seed=seed)
+                model_seed=seed,
+            )
+        elif k_v not in (2, 3):
+            t_k = lazy_load_construct_k(
+                g, k=k_v, max_cycles=cap_dict[k_v],
+                model_seed=seed,
+            )
+
+        if t_k is None:
+            # Cold cache (or k=2/3): fall through to eager construction.
+            if kind == "walk":
+                t_k = cached_construct_walks(
+                    g, walk_len=walk_len,
+                    max_walks=cap_dict.get(k_v, max_k4),
+                    model_seed=seed)
+            elif k_v == 2:
+                t_k = cached_construct_2(g)
+            elif k_v == 3:
+                t_k = cached_construct_triads(g)
+            else:
+                t_k = cached_construct_k(g, k=k_v,
+                                           max_cycles=cap_dict[k_v],
+                                           model_seed=seed)
         if not t_k:
             continue
         cap = cap_dict.get(k_v, max_k4)
-        if len(t_k) > cap:
-            t_k = subsample_tuples(t_k, cap, seed=seed)
-        triad_v_np = np.array([t.v for t in t_k], dtype=np.int64)
-        triad_sigma_np = np.array([t.sigma for t in t_k], dtype=np.int64)
+
+        # Bulk numpy extraction — bypass SignedNTuple list materialisation
+        # for LazyCyclePool. For eager lists, identical to the previous
+        # np.array([t.v for t in t_k]) construction.
+        if isinstance(t_k, LazyCyclePool):
+            n_full = len(t_k)
+            if n_full > cap:
+                rng = np.random.default_rng(seed)
+                idx = rng.choice(n_full, size=cap, replace=False)
+                triad_v_np = t_k.all_vertices()[idx].astype(np.int64)
+                triad_sigma_np = t_k.all_signs()[idx].astype(np.int64)
+            else:
+                triad_v_np = t_k.all_vertices().astype(np.int64)
+                triad_sigma_np = t_k.all_signs().astype(np.int64)
+        else:
+            if len(t_k) > cap:
+                t_k = subsample_tuples(t_k, cap, seed=seed)
+            triad_v_np = np.array([t.v for t in t_k], dtype=np.int64)
+            triad_sigma_np = np.array([t.sigma for t in t_k], dtype=np.int64)
         triad_v = torch.from_numpy(triad_v_np).to(device)
         triad_sigma = torch.from_numpy(triad_sigma_np).to(device)
         M_vt = build_vertex_triad_incidence(triad_v_np, g.n_nodes, device,
                                               mode="sum")
-        n_t = len(t_k)
+        # Bugfix 2026-06-03: ``n_t`` MUST be the row count of the
+        # subsampled ``triad_v_np``, not ``len(t_k)``. For a
+        # LazyCyclePool where ``n_full > cap`` the pool is sampled
+        # down to ``cap`` rows, but ``len(t_k)`` still reports
+        # ``n_full``, which sent the downstream ``for ti in range(n_t)``
+        # loop past the end of ``triad_v_np`` (IndexError on every
+        # large-graph dataset). Caught by the HSiKAN-mixed audit on
+        # slashdot 2026-06-03 — 24 runs FAIL rc=1 in 4 s each.
+        n_t = triad_v_np.shape[0]
         edge_to_tuples: dict = {}
         # `edge_to_self_idx_k`: map edge-key → set of tuple indices
         # that "leak" the sign of that edge.  Always populated for
@@ -456,7 +584,9 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
             ).coalesce()
 
         M_e_tr = build_me(e_tr)
+        print(f"[MEM] after build_me(e_tr) for {kind} k={k_v} n_t={n_t}: {_mem_tag()}", flush=True)
         M_e_te = build_me(e_te)
+        print(f"[MEM] after build_me(e_te) for {kind} k={k_v}: {_mem_tag()}", flush=True)
         per_arity_tr.append((triad_v, triad_sigma, M_vt, M_e_tr))
         per_arity_te.append((triad_v, triad_sigma, M_vt, M_e_te))
         # --- Phase 22+ arc-weight path -------------------------------
@@ -468,14 +598,51 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
             from signedkan_wip.src.core.arc_weights import (
                 annotate_arc_weights, per_vertex_arc_weights_array,
             )
+            # arc_weights still needs the materialised list; if we got
+            # a LazyCyclePool, pay the unpack cost here (gated on
+            # --use-arc-weights, which is the default-off path).
+            tk_for_arc = (t_k.materialize()
+                          if isinstance(t_k, LazyCyclePool) else t_k)
             annotated = annotate_arc_weights(
-                t_k, _arc_lookup, is_walk=is_walk,
+                tk_for_arc, _arc_lookup, is_walk=is_walk,
             )
             arc_per_vertex_np = per_vertex_arc_weights_array(
                 annotated, is_walk=is_walk,
             )
             arc_t = torch.from_numpy(arc_per_vertex_np).to(device)
             _per_arity_arc_weights.append(arc_t)
+        # ─── Per-arity heap release (Komondor mixed-tuples OOM fix) ───
+        # Drop the transient build state (large dicts + numpy arrays),
+        # force a Python GC pass, then ask glibc to return freed pages
+        # to the OS. Without this, the c2,c5,w2,w3,w4 loop accumulated
+        # ~30 GB peak RSS on Komondor — the kept tensors are <500 MB
+        # total, the rest was glibc heap fragmentation from build_me's
+        # edge_to_tuples dict.
+        del edge_to_tuples, edge_to_self_idx_k
+        del triad_v_np, triad_sigma_np
+        del build_me  # closure captures the dicts above
+        if use_arc_weights:
+            # tk_for_arc only bound on the arc-weight path; annotated /
+            # arc_per_vertex_np are local and would auto-clear, but
+            # tk_for_arc may hold a materialised SignedNTuple list.
+            try:
+                del tk_for_arc, annotated, arc_per_vertex_np
+            except NameError:
+                pass
+        del t_k
+        gc.collect()
+        _malloc_trim()
+        # Also flush the CUDA caching allocator's idle pool — if the
+        # 33 GB Komondor blowup is host pinned-memory mirroring the
+        # GPU reserved pool, ``empty_cache`` brings ``reserved`` back
+        # down to ``allocated`` and the host mirror should follow.
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        print(
+            f"[MEM] after gc+trim+empty_cache {kind} k={k_v}: "
+            f"{_mem_tag()}",
+            flush=True,
+        )
     arities_used = arities[:len(per_arity_tr)]
     # Cycle-batching activates the chunked-forward path
     # (`_encode_edges_batched`) which bounds peak (T, k, S, d)
@@ -812,6 +979,90 @@ def cell_pose(arity: int, hidden: int, n_epochs: int, device):
                   mae=float(np.mean(all_mae)),
                   fwd_per_call_ms=lat,
                   n_params=int(n_params(model)))
+
+
+# ----- CPML for per-vertex pose regression (Shape A, 2026-05-29) -----
+
+def cell_cpml_pose(arity: int, hidden: int, n_epochs: int, device,
+                    tier_l: int = 3,
+                    aggregator_kind: str = "mlp",
+                    topology: str = "route",
+                    tier_organization: str = "structural"):
+    """Per-vertex 3D position regression using CPML (tier-stratified
+    cycle routing) instead of the MixedAritySignedKAN backbone used by
+    ``cell_pose``. Same data pipeline, same metrics; only the model
+    differs — letting a paired comparison isolate the routing
+    contribution. Plan:
+    ``docs/plans/2026-05-29-cpml-pose-regression/``.
+    """
+    from .run_phase12_position_regression import (
+        build_mechanism_with_positions, CPMLPose, _build_input,
+    )
+    from .run_phase11_kinematic_tasks import detect_dominant_arity
+    rng = random.Random(0)
+    torch.manual_seed(0); np.random.seed(0)
+    train, test = [], []
+    for _ in range(150): train.append(build_mechanism_with_positions(rng))
+    for _ in range(50): test.append(build_mechanism_with_positions(rng))
+    cands_tr = [(g, p, fam) for g, p, fam in train
+                 if detect_dominant_arity(g) == arity]
+    cands_te = [(g, p, fam) for g, p, fam in test
+                 if detect_dominant_arity(g) == arity]
+    if not cands_tr or not cands_te:
+        return None
+    n_nodes_max = max(g.n_nodes for g, _, _ in cands_tr + cands_te)
+    train_inputs, test_inputs = [], []
+    for g, pos, _ in cands_tr:
+        inp = _build_input(g, arity, 30000, device, 0, n_nodes_max)
+        if not inp: continue
+        pp = np.zeros((n_nodes_max, 3), dtype=np.float32); pp[:pos.shape[0]] = pos
+        m = np.zeros(n_nodes_max, dtype=np.float32); m[:g.n_nodes] = 1.0
+        train_inputs.append((inp, torch.from_numpy(pp).to(device),
+                                torch.from_numpy(m).to(device)))
+    for g, pos, _ in cands_te:
+        inp = _build_input(g, arity, 30000, device, 0, n_nodes_max)
+        if not inp: continue
+        pp = np.zeros((n_nodes_max, 3), dtype=np.float32); pp[:pos.shape[0]] = pos
+        m = np.zeros(n_nodes_max, dtype=np.float32); m[:g.n_nodes] = 1.0
+        test_inputs.append((inp, torch.from_numpy(pp).to(device),
+                              torch.from_numpy(m).to(device)))
+    model = CPMLPose(
+        n_nodes_max=n_nodes_max, arity=arity, hidden=hidden,
+        tier_l=tier_l, aggregator_kind=aggregator_kind,
+        topology=topology, tier_organization=tier_organization,
+    ).to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=5e-2)
+    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=n_epochs)
+    for _ in range(n_epochs):
+        model.train()
+        perm = torch.randperm(len(train_inputs))
+        for i in perm:
+            inp, pos, mask = train_inputs[i]
+            pred = model(inp)
+            err = (pred - pos) * mask.unsqueeze(-1)
+            loss = err.pow(2).sum() / max(mask.sum().item(), 1.0)
+            opt.zero_grad(); loss.backward(); opt.step()
+        sched.step()
+    model.eval()
+    all_mse, all_mae = [], []
+    with torch.no_grad():
+        for inp, pos, mask in test_inputs:
+            pred = model(inp)
+            err = (pred - pos) * mask.unsqueeze(-1)
+            all_mse.append(float((err.pow(2).sum() / max(mask.sum().item(), 1.0)).item()))
+            all_mae.append(float((err.abs().sum() / max(mask.sum().item(), 1.0) / 3.0).item()))
+    inp_one, _, _ = test_inputs[0]
+    def fwd():
+        with torch.no_grad(): return model(inp_one)
+    lat = time_per_call(fwd)
+    return dict(dataset=f"pose_k{arity}", model="CPMLPose",
+                  hidden=hidden, n_test=len(test_inputs),
+                  mse=float(np.mean(all_mse)),
+                  mae=float(np.mean(all_mae)),
+                  fwd_per_call_ms=lat,
+                  n_params=int(n_params(model)),
+                  tier_l=tier_l, aggregator_kind=aggregator_kind,
+                  topology=topology, tier_organization=tier_organization)
 
 
 # ----- Scene graph (k=2 fallback) -----

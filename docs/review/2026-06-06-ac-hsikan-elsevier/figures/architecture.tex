@@ -1,0 +1,70 @@
+% AC-HSiKAN architecture overview
+\begin{tikzpicture}[
+  every node/.style={font=\small\sffamily, align=center},
+  block/.style   ={rectangle, draw, very thick, rounded corners=2pt,
+                   minimum height=8mm, minimum width=24mm, fill=blue!8},
+  ps/.style      ={rectangle, draw, very thick, rounded corners=2pt,
+                   minimum height=8mm, minimum width=24mm, fill=red!10},
+  walk/.style    ={rectangle, draw, very thick, rounded corners=2pt,
+                   minimum height=8mm, minimum width=24mm, fill=green!10},
+  mix/.style     ={diamond, draw, very thick, fill=yellow!25,
+                   minimum height=10mm, minimum width=15mm},
+  rotor/.style   ={ellipse, draw, very thick, fill=orange!20,
+                   minimum height=8mm, minimum width=22mm},
+  arr/.style     ={->, >=stealth, thick},
+  arr2/.style    ={->, >=stealth, thick, dashed, orange!80!black},
+]
+
+% Input
+\node[block] (x)                              {input $x$};
+\node[block, right=4mm of x]   (ctx)         {context\\encoder};
+\node[block, right=4mm of ctx] (signs)       {sign-attn\\$(B, L, L)$};
+
+% Mixed selection
+\node[block, below=4mm of signs, fill=teal!15] (sel) {mixed top-K\\$K_s$ pos $+$ $K_d$ dyn};
+
+% Walk-op path (rhythm)
+\node[walk, below=8mm of sel]  (walk) {walk-op\\$\prod \mathrm{sign}$\\$\alpha_k$-weighted};
+
+% Pool-scatter path (synaptic)
+\node[ps, right=12mm of walk]  (ps)   {pool-scatter\\$Q\otimes K \rightarrow$ CR};
+\node[rotor, right=4mm of ps]  (rotor) {Hamilton rotor\\$M = e^{\beta H \mathbf{n}}$};
+
+% Dual-path mixing
+\node[mix, below=10mm of $(walk)!0.5!(ps)$, anchor=center] (gate) {$g\cdot \mathrm{ps}\,+\,(1{-}g)\cdot \mathrm{walk}$};
+
+% Output
+\node[block, below=4mm of gate, fill=blue!8] (ln)  {LayerNorm $\oplus$ residual};
+\node[block, below=4mm of ln]                (out) {to next layer / classifier head};
+
+% Wires - top section
+\draw[arr] (x) -- (ctx);
+\draw[arr] (ctx) -- (signs);
+\draw[arr] (signs) -- (sel);
+
+% Sel feeds both paths
+\draw[arr] (sel.south west) to[bend right=10] (walk.north);
+\draw[arr] (sel.south east) to[bend left=10]  (ps.north);
+
+% Entropy feedback into rotor
+\draw[arr2] (walk.east) -- node[above, font=\tiny]{$\mathcal{H}(\alpha, g)$} (rotor.west |- walk.east) ;
+\draw[arr2] (rotor.north) -- (rotor.north |- ctx.east);
+
+% Pool-scatter through rotor
+\draw[arr] (ps.east) -- (rotor.west);
+
+% Mixing
+\draw[arr] (walk.south) to[bend right=10] (gate.north west);
+\draw[arr] (rotor.south) to[bend left=20] (gate.north east);
+
+% Down
+\draw[arr] (gate) -- (ln);
+\draw[arr] (ln) -- (out);
+
+% Residual from x to LN
+\draw[arr, dashed] (x.south) to[bend right=30] node[left, font=\tiny]{$x$ residual} (ln.west);
+
+% Path-gate label
+\node[font=\tiny, right=2mm of gate] {path-gate $g = \sigma(\cdot)$};
+
+\end{tikzpicture}

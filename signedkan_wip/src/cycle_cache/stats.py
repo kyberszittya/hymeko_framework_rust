@@ -105,6 +105,36 @@ class LazyCyclePool:
             )
         return self._materialised
 
+    def all_vertices(self) -> np.ndarray:
+        """Return the full (N, k) vertex-index array WITHOUT materialising
+        SignedNTuple objects. Equivalent to
+        ``np.array([t.v for t in pool.materialize()])`` but ~5× less RAM
+        because no Python-object list is built. Caller may safely cast
+        to int64 if the downstream consumer (e.g. ``torch.from_numpy``)
+        needs it."""
+        return self._v
+
+    def all_signs(self) -> np.ndarray:
+        """Return the full (N, k) per-vertex sign array (int8). For
+        downstream consumers that need the sigma channel without
+        materialising the SignedNTuple list."""
+        return self._sigma
+
+    def all_edge_signs(self) -> np.ndarray | None:
+        """Return the full (N, k) edge-sign array or None if the cache
+        file pre-dates edge_signs storage."""
+        return self._edge_signs
+
+    def __iter__(self):
+        """Backward compatibility: ``for t in pool`` yields SignedNTuples
+        one at a time (no full materialisation). Allows code paths that
+        previously consumed a list to keep working after the cache
+        layer transitioned to returning LazyCyclePool (2026-06-03)."""
+        return self.iter()
+
+    def __bool__(self) -> bool:
+        return len(self) > 0
+
     def iter(self):
         """Yield SignedNTuples one at a time without ever materialising
         the full list.  For one-pass streaming consumers."""
@@ -167,9 +197,16 @@ def reset_stats() -> None:
 
 
 def _cache_hit(path: pathlib.Path):
-    """Try to load a cache file. Returns the unpacked SignedNTuple
-    list on success, or None if the file is corrupt (also unlinks it)
-    or missing."""
+    """Try to load a cache file. Returns a ``LazyCyclePool`` on
+    success, or None if the file is corrupt (also unlinks it) or
+    missing.
+
+    Memory fix 2026-06-03: previously returned ``_unpack_to_ntuples(...)``
+    which materialised a SignedNTuple list (~5× the raw numpy size,
+    ~40 GB peak for 500K-cycle pools). The LazyCyclePool defers
+    materialisation until ``.materialize()`` is called explicitly,
+    keeping warm-cache RSS bounded to the on-disk file size.
+    """
     if not path.exists():
         return None
     try:
@@ -179,21 +216,33 @@ def _cache_hit(path: pathlib.Path):
         return None
     _STATS.hits += 1
     _STATS.bytes_loaded += path.stat().st_size
-    return _unpack_to_ntuples(v, sigma, edge_signs)
+    return LazyCyclePool(path, v, sigma, edge_signs)
 
 
 def _cache_miss(path: pathlib.Path, t_list):
     """Pack ``t_list`` (releasing its entries as we go), save to disk,
-    drop the original list, and return a fresh SignedNTuple list
-    rebuilt from the packed arrays.
+    drop the original list, and return a ``LazyCyclePool`` handle
+    holding only the packed numpy arrays.
 
-    Peak memory cost vs the no-cache path is one set of (v, sigma,
-    edge_signs) numpy arrays — never two simultaneous Python lists.
+    Memory fix 2026-06-03 (Komondor/A100 OOM): previously this returned
+    ``_unpack_to_ntuples(...)`` — a freshly rebuilt SignedNTuple list,
+    which doubles peak RSS for large pools (~500K cycles ⇒ ~40 GB
+    Python objects). Returning a ``LazyCyclePool`` instead lets cold-
+    cache callers benefit from the same bulk-numpy access path that
+    warm-cache callers use via ``lazy_load_construct_k`` — without
+    paying the materialisation cost twice.
+
+    Callers expecting an eager list:
+      - get a LazyCyclePool now, which supports ``len()`` and
+        ``iter()`` (yields SignedNTuples one at a time, no full
+        materialisation).
+      - can call ``.materialize()`` explicitly if they need the
+        list.
     """
     _STATS.misses += 1
     v, sigma, edge_signs = _pack_and_drop(t_list)
     del t_list
     _save_packed(path, v, sigma, edge_signs)
     _STATS.bytes_written += path.stat().st_size
-    return _unpack_to_ntuples(v, sigma, edge_signs)
+    return LazyCyclePool(path, v, sigma, edge_signs)
 

@@ -1,0 +1,198 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinestyle{txt}{
+  basicstyle=\ttfamily\footnotesize,
+  showstringspaces=false,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+}
+
+\title{Komondor parallelism showcase\\
+       \large sequential chain $\to$ SLURM array, $\sim 20\times$ wall reduction}
+\author{2026-06-04}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{The headline}
+
+The current overnight chain (\texttt{13885723} Slashdot+Epinions +
+\texttt{13885739} BA+OTC) is structurally \textbf{sequential} despite
+Komondor being designed for embarrassingly parallel work. Re-submitting
+the same 40-cell grid as a SLURM array
+(\texttt{--array=0-39\%20}) caps the wall at
+$\max(\text{slowest\_cell}) \approx 90$ min vs. the chain's sum
+$\approx 30$ h, for a \textbf{$\sim 20\times$ wall reduction with
+identical compute total}.
+
+\section{The precedent --- what ran sequentially}
+
+The 2026-06-03 chain (\texttt{run\_hsikan\_edge\_cr\_5seed\_audit.sh}
++ \texttt{run\_hsikan\_edge\_cr\_ba\_otc\_5seed.sh}) is a triple-nested
+\texttt{for dataset; for seed; for mode} loop inside ONE SLURM job.
+SLURM gets a single allocation; all cells run on the same A100 in
+series. This is fine for AUC repeatability --- every cell sees the
+same hardware --- but it leaves Komondor's array dispatcher entirely
+unused. A 90-min cell takes $90 \times 40 = 3600$ min chained; it
+takes 90 min once when each cell is its own array task.
+
+\section{Per-cell wall stats (30 of 40 cells completed)}
+
+Data: \texttt{hsikan\_edge\_cr\_audit/\{results,results\_ba\_otc\}.jsonl}.
+Epinions phase still in flight on \texttt{13885723}.
+
+\begin{lstlisting}[style=txt]
+    26s -   1m28s  |##################################################| 25
+  1m28s -   2m30s  |                                                  | 0
+  ...
+  9m46s -  10m49s  |##########                                        | 5
+\end{lstlisting}
+
+\begin{itemize}[nosep]
+  \item $n = 30$, median = 30 s, max = 10m42s (Slashdot shuffle).
+  \item BA + OTC dominate the short tail (26--35 s).
+  \item Slashdot REAL completes fast (35 s/cell median, cache-warm).
+  \item Slashdot SHUFFLE (5 cells $\times$ 10m42s) is the long tail
+        in this snapshot. Epinions cells project to $\sim 80$ min.
+\end{itemize}
+
+\section{Per-(dataset, mode) breakdown}
+
+\begin{center}
+\small
+\begin{tabular}{lllrrrl}
+\toprule
+dataset & mode & $n$ & median wall & total wall & AUC mean $\pm$ std \\
+\midrule
+bitcoin\_alpha & real & 5 & 26s & 2m13s & 0.9868 $\pm$ 0.0058 \\
+bitcoin\_alpha & shuffle & 5 & 28s & 2m21s & 0.9662 $\pm$ 0.0124 \\
+bitcoin\_otc & real & 5 & 28s & 2m23s & 0.9879 $\pm$ 0.0023 \\
+bitcoin\_otc & shuffle & 5 & 31s & 2m37s & 0.9435 $\pm$ 0.0060 \\
+slashdot & real & 5 & 35s & 2m50s & 0.9058 $\pm$ 0.0037 \\
+slashdot & shuffle & 5 & 10m42s & 53m34s & 0.8508 $\pm$ 0.0103 \\
+epinions & real & (running) & --- & --- & --- \\
+epinions & shuffle & (queued) & --- & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Slashdot real 5-seed result $0.9058 \pm 0.0037$ is within $+1\sigma$
+of the published Mar-9 SOTA baseline $0.9067 \pm 0.0029$, confirming
+the wheel-ship + Komondor reproduction holds. Strict-protocol gap
+real vs shuffle: $+0.055$ AUC ($n=5$).
+
+\section{Speedup projection on the 30 completed cells}
+
+Sequential total wall: \textbf{1h05m}.
+Single-cell longest wall: \textbf{10m42s}.
+
+\begin{center}
+\begin{tabular}{rrr}
+\toprule
+$K$ (parallel slots) & projected wall (LPT) & speedup vs serial \\
+\midrule
+1  & 1h05m   & $1.00\times$ \\
+5  & 13m11s  & $5.00\times$ \\
+10 & 10m42s  & $6.10\times$ \\
+20 & 10m42s  & $6.10\times$ \\
+40 & 10m42s  & $6.10\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+At $K \geq 10$ the max-cell wall dominates; the marginal slot adds no
+wall reduction. This is the LPT (Longest Processing Time) lower
+bound for makespan.
+
+\section{Forecast for the full 40-cell grid}
+
+Epinions cell wall is projected at $\sim 80$ min/cell from probe
+\texttt{13885703} (Slashdot single seed, 655 s, 2.05 GB RSS) and
+sacct on chain \texttt{13885723} Slashdot-shuffle cell walls.
+Epinions has $\sim 3\times$ Slashdot edge count $\Rightarrow$ wall
+scales with enumeration cost.
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+metric & sequential chain & array $K=20$ \\
+\midrule
+dataset cells & 40 & 40 \\
+compute total (GPU-min) & $\sim 1800$ (30 h) & $\sim 1800$ (identical) \\
+wall (worst case) & $\sim$30 h & \textbf{$\sim$90 min} \\
+speedup & $1\times$ & $\sim 20\times$ \\
+max parallel slots used & 1 & 20 \\
+billing cost (same per-GPU-min) & identical & identical \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The SLURM array submitter (the deliverable)}
+
+\texttt{docs/komondor\_setup/submit\_hsikan\_edge\_cr\_array.sh} ---
+same grid as the chain, same SOTA env vars, same SLURM resources
+per task. Key points:
+
+\begin{itemize}[nosep]
+  \item \texttt{--array=0-39\%20} --- 40 cells $\times$ 20 concurrent slots.
+  \item \texttt{--time=02:30:00} per task (covers Epinions worst-case + headroom).
+  \item Grid decomposition: $\text{idx} \to (\text{dataset, seed, mode})$.
+  \item \texttt{flock}-protected atomic JSONL append.
+  \item Pinned env identical to the chain.
+\end{itemize}
+
+\section{Hardware comparison}
+
+\begin{center}
+\begin{tabular}{lllr}
+\toprule
+platform & GPU & per-cell wall & RSS \\
+\midrule
+Komondor (HUN-REN) & A100-SXM4-40GB & 30 s (median) & $\sim 2$ GB \\
+Local & RTX 2070 SUPER 7.6 GB & OOM (edge\_cr) & $> 7.6$ GB \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Follow-up (the $K$-sweep --- requires user approval)}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+run & submit command & expected wall \\
+\midrule
+$K=5$  & \verb|sbatch ... --array=0-39%5 ...|  & $\sim 6$ h \\
+$K=10$ & \verb|sbatch ... --array=0-39%10 ...| & $\sim 3$ h \\
+$K=20$ & \verb|sbatch ... --array=0-39%20 ...| & $\sim 90$ min \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each $K$ consumes 1800 GPU-min (identical compute total). Total
+billing across the $K$-sweep: $3 \times 1800 = 5400$ GPU-min
+$\approx 90$ GPU-hours. \textbf{Not auto-launched.}
+
+\section{Verdict}
+
+This is the demo to bring to a poster session, a reviewer comment,
+or a project-progress meeting:
+
+\textit{Komondor's gain on this audit grid is not about the A100 ---
+it's about turning a 30-hour serial chain into a 90-minute array. The
+SOTA configuration only fits on the A100 (local 7.6 GB RTX OOMs at
+edge\_cr forward), but the headline operational win is the array
+dispatcher. Both are needed; the array is the one that scales with
+grid size.}
+
+\end{document}

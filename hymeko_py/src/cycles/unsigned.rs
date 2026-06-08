@@ -447,3 +447,73 @@ pub fn enumerate_k_walks_rs(
         },
     )
 }
+
+/// Top-$K$ signed-walk enumeration with admissible-upper-bound DFS
+/// pruning. PyO3 binding of
+/// [`hymeko_graph::topk_walks::enumerate_top_k_walks_batch`]; promoted
+/// 2026-06-03 as the production runner for
+/// `signedkan_wip.src.cycle_cache.strategies.ABBWalkEnumerator`.
+///
+/// Parameters
+/// ----------
+/// edges_u, edges_v, edges_s
+///     Edge endpoints + signs (``±1``); `len(edges_u) == len(edges_v) ==
+///     len(edges_s)``.
+/// n_nodes
+///     Vertex count.
+/// walk_len
+///     Number of edges per walk; vertex count is ``walk_len + 1``.
+/// top_k
+///     Cap on returned walks.
+/// score_kind
+///     One of ``"balance"`` | ``"fraction_negative"`` |
+///     ``"sign_product_abs"``. Each is admissibly-upper-bounded so the
+///     ABB DFS prune is sound.
+///
+/// Returns
+/// -------
+/// (walks_2d, signs_2d, scores_1d) — shapes ``(N, walk_len + 1)``
+/// ``u32`` / ``(N, walk_len)`` ``i8`` / ``(N,)`` ``f64``.
+#[pyfunction]
+#[pyo3(signature = (edges_u, edges_v, edges_s, n_nodes, walk_len, top_k,
+                      score_kind="balance"))]
+pub fn enumerate_top_k_walks_rs(
+    py: Python<'_>,
+    edges_u: Vec<u32>,
+    edges_v: Vec<u32>,
+    edges_s: Vec<i8>,
+    n_nodes: u32,
+    walk_len: usize,
+    top_k: usize,
+    score_kind: &str,
+) -> PyResult<(Py<numpy::PyArray2<u32>>, Py<numpy::PyArray2<i8>>, Py<numpy::PyArray1<f64>>)> {
+    use crate::cycles::io::{
+        build_signed_graph, BalanceScorer, FractionNegativeScorer,
+        SignProductAbsScorer,
+    };
+    use hymeko_graph::topk_walks::{enumerate_top_k_walks_batch, TopKWalksBatch};
+    use ndarray::Array2;
+    use numpy::IntoPyArray;
+
+    let g = build_signed_graph(&edges_u, &edges_v, &edges_s, n_nodes)?;
+    let kind = score_kind.to_string();
+    let batch: TopKWalksBatch = py.detach(move || match kind.as_str() {
+        "balance" => Ok(enumerate_top_k_walks_batch(&g, walk_len, top_k, &BalanceScorer)),
+        "fraction_negative" => Ok(enumerate_top_k_walks_batch(&g, walk_len, top_k, &FractionNegativeScorer)),
+        "sign_product_abs" => Ok(enumerate_top_k_walks_batch(&g, walk_len, top_k, &SignProductAbsScorer)),
+        other => Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "unknown score_kind '{other}' (use balance | fraction_negative | sign_product_abs)"
+        ))),
+    })?;
+
+    let n = batch.len();
+    let walks_arr = Array2::from_shape_vec((n, walk_len + 1), batch.walks)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("walks reshape: {e}")))?;
+    let signs_arr = Array2::from_shape_vec((n, walk_len), batch.signs)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("signs reshape: {e}")))?;
+    Ok((
+        walks_arr.into_pyarray(py).unbind(),
+        signs_arr.into_pyarray(py).unbind(),
+        batch.scores.into_pyarray(py).unbind(),
+    ))
+}

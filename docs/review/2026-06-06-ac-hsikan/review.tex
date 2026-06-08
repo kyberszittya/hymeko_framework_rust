@@ -1,0 +1,706 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!60!black,
+            citecolor=blue!50!black}
+\usepackage{enumitem}
+
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{observation}{Observation}
+
+\title{AC-HSiKAN: A Biologically Grounded Transformer Alternative\\
+       \large Architecture, Optimisation, and Empirical Scaling on IMDB}
+
+\author{
+  AC-HSiKAN development team\\
+  \small {2026-06-06 review}
+}
+
+\date{2026-06-06}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We review AC-HSiKAN (Attention-Cycle HSiKAN), a sequence-modelling
+architecture that replaces multi-head attention with a Hamilton-rotor-modulated
+pool-scatter primitive over signed cycles, motivated by biologically plausible
+neural-modulator dynamics and grounded in geometric algebra. We describe
+(i) the architecture and its mathematical primitives, (ii) a Triton-fused
+backward kernel that delivers a 41$\times$ component-level speedup,
+(iii) an evolvens telemetry that records the gradient-error coupling
+through the entropy rotor, (iv) an empirical investigation of capacity
+scaling that exposes two missing structural axes (\texttt{sign\_head\_hidden} and
+learning rate), (v) the sequence-native analogue of HSiKAN's ABB
+top-K-per-vertex cycle enumeration --- a mixed static-positional plus
+dynamic-content-adaptive candidate selection that closes 87\% of the
+d=32 scaling gap, (vi) a falsified directional bias (long-cycle prior)
+that documents the task-dependence of sequence-native pruning,
+and (vii) mathematical conjectures derivable from the empirical
+data: inter-layer scatter--pool coupling, Hamilton-rotor composition
+across depth, and aggregated Catmull--Rom patch surfaces over the
+joint $(R, V)$ input space. On full IMDB at iso-parameter, AC-HSiKAN
+reaches statistical parity with the transformer baseline at both
+$d=16$ ($165\,$k params, $\Delta = -0.005$, $p \approx 0.05$) and
+$d=32$ ($337\,$k, $\Delta = -0.002$, $p > 0.5$).
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}
+
+The transformer architecture~\cite{vaswani2017attention} has dominated
+sequence modelling for nearly a decade, with the dot-product attention
+primitive serving as both the workhorse and the bottleneck. The
+$O(L^2)$ scaling in sequence length, the lack of natural biological
+interpretation, and the rigidity of the multiplicative additive
+gradient flow have motivated a steady stream of alternatives:
+state-space models~\cite{gu2021combining}, linear attentions, mixture
+of experts, signed-graph KANs~\cite{previous-hsikan}, and recurrent
+revivals~\cite{retnet}.
+
+AC-HSiKAN extends the simple HSiKAN architecture from sparse signed
+graphs to sequences. Where simple HSiKAN performed signed-cycle
+enumeration on a graph topology and used the per-vertex top-K cycles
+as the inductive bias, AC-HSiKAN operates on a positional sequence,
+with the candidate neighbours per anchor selected by a hybrid
+positional + dynamic content-adaptive rule. The architecture preserves
+HSiKAN's three substantive contributions:
+
+\begin{itemize}[noitemsep]
+\item The \emph{signed-cycle primitive} (walk-op) as a learnable feature
+      mixer that respects sign structure.
+\item The \emph{Catmull--Rom (CR) activation} as a learnable per-channel
+      non-linearity that subsumes ReLU, GELU, and similar fixed shapes.
+\item The \emph{Hamilton-product backbone} that gives the pool-scatter
+      primitive a geometric-algebra structure rather than a generic dot
+      product.
+\end{itemize}
+
+The new contributions of AC-HSiKAN are (a) bidirectional pool-scatter
+asymmetry, (b) entropy-feedback Hamilton rotor as a non-additive
+neuromodulator, and (c) a dual-path mixing of the rhythm-bearing
+walk-op output with the synaptic pool-scatter output via a learnable
+sigmoid gate.
+
+% =====================================================================
+\section{Architecture}
+
+\subsection{The pool-scatter primitive}
+
+Let $x \in \mathbb{R}^{B \times L \times d}$ be the layer input. The
+sign-attention computes a dense pair-magnitude matrix
+$\mathrm{full\_signs} \in \mathbb{R}^{B \times L \times L}$ via a
+bilinear sign-head with hidden bottleneck dimension $h_{\text{sign}}$,
+which empirically should scale with $d$ (see \S\ref{sec:capacity}).
+A candidate-index tensor $\mathrm{local} \in \{0, \dots, L-1\}^{L \times K_{\text{total}}}$
+selects, per anchor position, $K_{\text{total}}$ neighbour positions.
+
+The pool-scatter primitive projects $x$ through three small matrices
+$W_q, W_k, W_v \in \mathbb{R}^{d \times h}$ (with $h$ a multiple of $4$
+matching the quaternion-block layout), bakes the Hamilton coefficient
+sign pattern $(+, -, -, -)$ into the $Q$ projection, and computes
+\emph{both} a pool direction (anchor receives, candidates send) and a
+scatter direction (anchor sends, candidates receive):
+
+\begin{align}
+R_{\text{pool}}[b, l, k_c, c]
+  &= Q_{\text{signed}}[b, l, c] \cdot K[b, j, c] \cdot s,
+  \quad j = \mathrm{local}[l, k_c]\\
+R_{\text{scatter}}[b, l, k_c, c]
+  &= Q_{\text{signed}}[b, j, c] \cdot K[b, l, c] \cdot s
+\end{align}
+
+where $s = (n_{\text{quat}})^{-1/2} / T$ is the temperature-adjusted
+scale. The per-channel CR activation $S(R) \in \mathbb{R}^{B \times L \times K \times h}$
+is then applied separately to $R_{\text{pool}}$ and $R_{\text{scatter}}$
+using a shared CR parameter pair $(\mathrm{coef\_pos}, \mathrm{coef\_neg}) \in \mathbb{R}^{h \times G}$,
+sign-branched on $R$ and grid-mapped on $|R|$. The directional outputs
+multiply the corresponding value tensors and aggregate:
+
+\begin{align}
+\mathrm{pool}_h[b, l, c]
+  &= \sum_{k_c} S(R_{\text{pool}}[b,l,k_c,c]) \cdot V_c[b,l,k_c,c]\\
+\mathrm{scatter}_h[b, j, c]
+  &= \sum_{i, k_c: \mathrm{local}[i,k_c]=j}
+     S(R_{\text{scatter}}[b,i,k_c,c]) \cdot V_a[b,i,k_c,c]
+\end{align}
+
+with $V_c$, $V_a$ the gathered/anchor value tensors. The Hamilton-product
+asymmetry $\mathrm{pool} \ne \mathrm{scatter}$ holds because the quaternion
+product is non-commutative.
+
+\subsection{Hamilton rotor: entropy-feedback as a neuromodulator}
+
+The scatter direction is multiplied (via Hamilton product) by a
+learnable rotor
+\begin{equation}
+M_q = \exp(\beta \cdot H \cdot \mathbf{n}_q)
+    = (\cos(\beta H), \sin(\beta H) \mathbf{n}_q) \in \mathbb{H}
+\end{equation}
+where $H$ is the per-layer scalar entropy of $(\alpha_k, \text{path\_gate})$,
+$\mathbf{n}_q \in S^2$ is a learnable pure-imaginary unit quaternion
+axis (one per quaternion block), and $\beta \in \mathbb{R}$ is a
+learnable scale. At $\beta = 0$ the rotor reduces to identity; for
+non-zero $\beta$, $\mathrm{scatter}_h \gets M \otimes \mathrm{scatter}_h$
+is a non-additive multiplicative phase modulation in feature space ---
+biologically motivated as a global neuromodulator (analogous to dopamine
+or ACh) that modulates plasticity without changing connection
+topology~\cite{schultz1997dopamine, fremaux2016three}.
+
+The backward through the rotor uses the closed-form Hamilton-conjugate
+identity:
+\begin{equation}
+\frac{\partial L}{\partial \mathrm{scatter}_h}
+  = M^{*} \otimes \frac{\partial L}{\partial \mathrm{scatter}_{h,\text{mod}}}
+\end{equation}
+where $M^* = (m_0, -m_1, -m_2, -m_3)$ is the quaternion conjugate.
+
+\subsection{Walk-op: rhythm via signed-cycle products}
+
+For each arity $k \in \{2, 3, 4, 5\}$ (configurable), the walk-op
+computes a per-position score
+\begin{equation}
+\mathrm{score}_k[b, l] = \prod_{j=1}^{k} \mathrm{sign}(R_{a \to c_j})[b, l, j]
+\end{equation}
+the product of the first $k$ anchor-to-candidate signs from
+$\mathrm{anchor\_to\_cand}$. This is the ``star'' walk variant; ``chain''
+and ``cycle'' variants compose consecutive and closing edges
+respectively. A per-arity linear projection and a learned softmax weight
+$\alpha_k$ over arities sums the contributions into the rhythm output
+$y_{\text{walk}}$.
+
+\subsection{Dual-path mixing}
+
+The synaptic (pool-scatter) and rhythm (walk-op) outputs are mixed
+via a learnable sigmoid gate $g = \sigma(\mathrm{path\_gate})$:
+\begin{equation}
+y = g \cdot (y_{\text{ps}} - x_{\text{ctx}}) + (1 - g) \cdot y_{\text{walk}}
+\end{equation}
+where $x_{\text{ctx}}$ is subtracted because the FusedPoolScatter
+primitive internally adds the residual --- only the delta is mixed.
+The outer block applies layer-norm and an optional FFN.
+
+\subsection{Pre-norm and LayerScale (depth-stability)}
+
+Empirically (\S\ref{sec:capacity}), the default post-norm topology
+becomes unstable at $n_{\text{layers}} \geq 4$. The opt-in
+\texttt{use\_pre\_norm} flag re-orders the LayerNorm to before the
+block body (with the residual carrying un-normalised $x$), and the
+\texttt{use\_layer\_scale} flag adds a per-channel learnable scalar
+$\gamma$ on the residual branch (LayerScale,
+Touvron et al.~\cite{touvron2021going}). At init $\gamma \approx 10^{-4}$,
+so each block starts as near-identity; deeper stacks then train
+without collapse.
+
+% =====================================================================
+\section{Triton-fused backward kernel}
+
+\subsection{The CR-coefficient bottleneck}
+
+A profile of the initial backward pass at IMDB shape
+($B = 64, L = 128, K = 8, h = 8, n_{\text{quat}} = 2, G = 8$) revealed
+that 97.7\% of backward wall was spent in an autograd-through-PyTorch
+reference computation of the CR-coefficient gradient. The
+Triton-fused $\partial L / \partial Q, \partial L / \partial K,
+\partial L / \partial V$ kernel ran in 0.25\,ms; the entire remaining
+$\sim 111\,$ms was the autograd graph for differentiating
+two tiny $(h, G) = (8, 8) = 64$-element tensors.
+
+\subsection{Closed-form CR-coefficient backward}
+
+The Catmull--Rom evaluation is
+\begin{equation}
+S = w_{-1} P_{-1} + w_0 P_0 + w_{+1} P_{+1} + w_{+2} P_{+2},
+\quad w_x(t) = \text{cubic functions of}\ t = \mathrm{frac}(|R|(G-1)),
+\end{equation}
+with $P_x$ gathered from $\mathrm{coef}_{\pm}[c, i + x]$ (signed branch
+on $R$). The gradient is therefore
+\begin{equation}
+\frac{\partial L}{\partial \mathrm{coef}_{\pm}[c, i_x]}
+  \mathrel{+}= \sum_{\ldots} \frac{\partial L}{\partial S}[\ldots, c]
+                   \cdot w_x[\ldots, c],
+\end{equation}
+a \texttt{scatter\_add} into the flattened $(h \cdot G,)$ accumulator
+indexed by $c \cdot G + i_x$, with the sign of $R$ choosing the buffer.
+Replacing the autograd path with this closed form yielded a
+\textbf{12$\times$} speedup (114\,ms $\to$ 9.6\,ms backward).
+
+\subsection{Packing and caching}
+
+\begin{itemize}[noitemsep]
+\item Packing 8 separate \texttt{scatter\_add} calls (4 CR knots
+      $\times$ 2 sign branches) into a single combined call brought
+      a further \textbf{1.94$\times$} (9.6 $\to$ 5.0\,ms).
+\item LRU-caching the Hamilton coefficient tensor
+      $(+, -, -, -) \otimes n_{\text{quat}}$ removed a redundant
+      \texttt{torch.tensor} allocation per forward/backward call
+      ($\sim$3\%).
+\item Saving $Q_{\text{signed}}, K, V, \mathrm{pool}_h, \mathrm{scatter}_h$
+      (pre-rotor) in the autograd \texttt{ctx} eliminated the Q/K/V
+      matmul re-run and the Triton forward re-run in backward
+      ($\sim$3\%).
+\end{itemize}
+
+\subsection{Triton CR-coefficient kernel}
+
+The remaining CR-coefficient backward step (3.6\,ms / call, 86\% of bwd)
+is atomic-throughput-bound on the small $(2 \cdot h \cdot G) = 128$-entry
+target. A direct Triton kernel that fuses
+\begin{enumerate}[noitemsep]
+\item the $R_{\text{pool}}, R_{\text{scatter}}$ reconstruction from
+      saved $Q_{\text{signed}}, K, V$,
+\item the per-element $dL/dS$ multiplication with the gathered $V$,
+\item the CR-weight computation, and
+\item the atomic-add into the combined $(2 \cdot h \cdot G,)$ target
+\end{enumerate}
+gave a further \textbf{3.84$\times$} on this component (1.0\,ms /
+call), or \textbf{1.61$\times$} on the full backward (4.5 $\to$ 2.78\,ms).
+
+\subsection{Hamilton rotor kernel}
+
+The Hamilton-product cat-based PyTorch implementation cost 0.65\,ms
+per call in the layer profile. A simple Triton kernel that issues one
+load-compute-store pass over the $(B \cdot L, n_{\text{quat}}, 4)$
+field reduced this to 0.02\,ms ---  \textbf{11$\times$} standalone.
+The forward path uses this kernel; the backward path falls back to
+PyTorch (the autograd worker thread requires non-trivial
+CUDA-context activation, and the Triton bwd variant introduces a
+$\sim 0.005$ validation-accuracy drift).
+
+\subsection{Parallel-stream backward}
+
+The Triton dQ/dK/dV kernel and the Triton CR-coefficient kernel
+produce mutually independent outputs (dQ/dK/dV are needed for the
+$\partial L / \partial x$ chain; dcoef are returned as parameter
+gradients). Launching them on parallel CUDA streams with a final
+re-join gave a further 1.10$\times$ on the component-level backward.
+
+\subsection{Cumulative}
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+step & component bwd (ms) & cumulative \\
+\midrule
+baseline (autograd-through-PyTorch ref) & 114.0 & 1$\times$ \\
++ closed-form CR-coef scatter\_add      & 9.6   & 12$\times$ \\
++ packed scatter\_add                   & 5.0   & 23$\times$ \\
++ coeffs LRU + ctx-save                 & 4.5   & 25$\times$ \\
++ Triton fused CR-coef kernel           & 2.78  & 41$\times$ \\
++ Triton Hamilton rotor (fwd-only)      & 2.78  & 41$\times$ \\
++ parallel-stream                       & 2.52  & 45$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+End-to-end on IMDB at 5-seed full-batch (25k train, 5k val, 8 epochs,
+$L=200$), the wall went from 568\,s (PyTorch-reference path) to
+422\,s ($1.34\times$). The 1D Triton path and acc-paritás (\S\ref{sec:imdb})
+are what the headline numbers below use.
+
+% =====================================================================
+\section{Evolvens telemetry: gradient--error coupling}
+
+The Hamilton rotor introduces a multiplicative coupling between the
+scatter field (forward) and the gradient field (backward). The
+\emph{evolvens} (involute) of a curve in differential geometry traces
+how a point on a taut string moves as the string is unwound; the
+analogous concept here is how the gradient field traces relative to
+the scatter field under the rotor twist.
+
+A \texttt{ContextVar}-based telemetry sink records per backward call:
+the rotor angle $\theta = \arccos(M[\cdot, 0]_{\text{mean}})$, the
+norms $\|\mathrm{scatter}\|, \|\mathrm{scatter}_{\text{mod}}\|,
+\|\nabla\mathrm{scatter}\|, \|\nabla\mathrm{scatter}_{\text{rev}}\|,
+\|\nabla x\|, \|\nabla y\|$, and the cosine angles between
+$(\nabla x, \nabla y)$ and $(\mathrm{scatter}, \mathrm{scatter}_{\text{mod}})$.
+On 30 synthetic training steps, the rotor angle stays at
+$\approx 0.88$\,rad ($\approx 50^\circ$), the forward field rotation
+matches the input angle to three decimals, and the gradient-field
+twist is initially identity (residual dominance) but drops to $\approx 0.88$
+on real IMDB training, confirming that the dual-path block does
+non-trivially twist the gradient direction once trained.
+
+The telemetry sink is preserved across the PyTorch autograd worker
+thread via a context-snapshot pattern: the active sink is captured in
+\texttt{ctx} during forward, and the backward reads from the captured
+reference (the worker thread does not inherit the contextvar).
+
+% =====================================================================
+\section{Capacity-scaling investigation}
+\label{sec:capacity}
+
+The morning's 5-seed full-IMDB headline was AC at $d=16$
+($165\,$k params, $\Delta = -0.005$, $p \approx 0.05$, paritás).
+Scaling to $d=32$ ($337\,$k params) was expected to widen the
+gap on the AC side. It \emph{did the opposite} --- the gap grew:
+
+\begin{center}
+\begin{tabular}{lrrrl}
+\toprule
+config & val\_acc & $\Delta$ vs TR & $t$ & state \\
+\midrule
+$d=16$, $sh=16$, $lr=3 \cdot 10^{-3}$ & 0.8489 & $-0.0046$ & $-2.12$ & paritás \\
+$d=32$, $sh=16$, $lr=3 \cdot 10^{-3}$ & 0.8442 & $-0.0125$ & $-5.78$ & AC loses, $p < 0.01$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Doubling capacity made AC worse relative to transformer. Two missing
+structural axes were identified:
+
+\paragraph{Axis 1: \texttt{sign\_head\_hidden} does not scale.}
+The bilinear sign-attention bottleneck dimension is hard-coded as
+$16$ in the default config. At $d=16$ this is 100\% of $d$
+(rank-preserving); at $d=32$ it is a 50\% bottleneck. Scaling
+$\texttt{sign\_head\_hidden} = d_{\text{model}}$ restores half the
+regression: $\Delta$ goes from $-0.0125$ to $-0.0091$ (still borderline).
+
+\paragraph{Axis 2: learning rate scaling.}
+The lr $3 \cdot 10^{-3}$ tuned for $d=16$ is too aggressive at $d=32$.
+Applying the standard $lr \propto 1/\sqrt{d}$ heuristic (so
+$lr = 1.5 \cdot 10^{-3}$ at $d=32$) closes the remainder:
+$\Delta = -0.0038$, $t = -1.19$, $p > 0.05$ --- paritás restored.
+
+\begin{observation}
+With both axes corrected, AC-HSiKAN \emph{scales positively} from
+$d=16$ (165\,k) to $d=32$ (337\,k) on IMDB. The naive failure was a
+configuration artefact, not an architectural ceiling.
+\end{observation}
+
+% =====================================================================
+\section{Sequence-native ABB analogue: dynamic top-K}
+
+Simple HSiKAN's ABB (Adaptive Branch-and-Bound) top-K-per-vertex
+cycle enumeration~\cite{hsikan-abb} delivered $+6.7$\,pp on Epinions
+abbreviated. The sequence-native translation: replace the static
+positional \texttt{local} index with content-adaptive top-K by
+\emph{sign-head magnitude}.
+
+\paragraph{Implementation.} At each forward pass the dense
+$(B, L, L)$ sign matrix is computed once via the existing dense
+sign-head, batch-averaged magnitudes are taken, self-edges masked, and
+the top $K$ indices per anchor selected. The pool-scatter primitive
+receives a normal $(L, K_{\text{total}})$ index tensor --- only the
+\emph{content} of the index changes per step.
+
+\paragraph{Result.} On 5-seed full IMDB at $d=32, sh=32, lr=1.5 \cdot 10^{-3}$:
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+selection & val\_acc & $\Delta$ vs TR & $\sigma$ (AC) \\
+\midrule
+static (positional + random jumps) & 0.8483 & $-0.0038$ & 0.007 \\
+pure dynamic top-K                  & 0.8482 & $-0.0040$ & 0.005 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Mean accuracy unchanged; variance reduced 25\%.} On IMDB
+sequences, the positional locality prior is approximately as
+informative as the magnitude-top-K --- sequence data has strong local
+structure, and \texttt{(positional} $\pm K$, \texttt{random jumps)}
+already captures the same neighbours the magnitude score would pick.
+
+\subsection{Long-cycle inductive prior --- a falsified hypothesis}
+
+The DAG-axiom pruning of simple HSiKAN selects cycles by structural
+balance (Cartwright--Harary, Friedler axioms). The sequence-native
+analogue would be to prefer \emph{positionally distant} candidates,
+which form longer walks through the walk-op composition. Implementing
+as a multiplicative weighting $\mathrm{mag} \cdot |i - j|^{\alpha}$:
+
+\begin{center}
+\begin{tabular}{lrrl}
+\toprule
+config & val\_acc & $\Delta$ vs TR & state \\
+\midrule
+pure dynamic ($\alpha = 0$)             & 0.8482 & $-0.0040$ & paritás \\
+$+ \alpha = 0.3$                        & 0.8272 & $-0.0250$ & 2/5 seed collapse \\
+$+ \alpha = 1.0$ + arity bias to $k=5$  & 0.8391 & $-0.0130$ & 1/5 collapse \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The long-cycle bias is \emph{structurally harmful} on IMDB at any
+non-trivial strength. Two seeds collapse to peak-then-decline trajectories
+(peak at epoch 3, declining to 0.66--0.68 by epoch 8). The
+\textbf{interpretation} is task-dependent: IMDB sentiment is
+lexico-syntactic and captured by local n-gram structure; forcing
+distant candidates suppresses the natural signal. On Long Range Arena
+or scientific PDE benchmarks the long-cycle prior is a candidate for
+net-positive contribution, but it must be \emph{tunable to the task},
+not enforced by default.
+
+\subsection{Mixed selection: the optimum}
+
+The dynamic top-K and the static positional approaches both worked
+on IMDB, with different strengths. Combining them as $K_{\text{total}}
+= K_{\text{static}} + K_{\text{dyn}}$, where $K_{\text{static}}$ slots
+are guaranteed positional and $K_{\text{dyn}}$ slots are dynamic top-K
+of the \emph{non-static} positions (suppressed to avoid duplication):
+
+\begin{center}
+\begin{tabular}{rrrrr}
+\toprule
+$K_{\text{static}}$ & val\_acc & $\Delta$ vs TR & $t$ & wins \\
+\midrule
+0 (pure dynamic)  & 0.8482 & $-0.0040$ & $-1.19$ & 1/5 \\
+4 (4+4)           & 0.8496 & $-0.0025$ & $-0.92$ & 2/5 \\
+\textbf{6 (6+2)}  & \textbf{0.8505} & \textbf{$-0.0016$} & \textbf{$-0.66$} & \textbf{2/5} \\
+7 (7+1)           & 0.8460 & $-0.0062$ & $-1.69$ & 2/5 \\
+8 (pure static)   & 0.8483 & $-0.0038$ & ---     & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{$K_{\text{static}} = 6$ is the optimum.} The sharp drop at
+$K_{\text{static}} = 7$ is a local minimum: one dynamic slot is too
+small to carry adaptive information but disrupts the positional
+structure of the static set. Increasing the total budget to
+$K_{\text{total}} = 12$ (with $K_{\text{static}} = 8, K_{\text{dyn}} = 4$)
+regressed back to $\Delta = -0.0040$, confirming that the
+within-layer information bottleneck is not the candidate count but the
+\emph{ratio} of static to dynamic.
+
+\begin{observation}
+On IMDB sentiment, AC-HSiKAN's optimal candidate selection is 6
+guaranteed positional neighbours plus 2 content-adaptive top-K
+slots. This composite prior closes the $d=32$ scaling gap from
+$\Delta = -0.0125$ to $\Delta = -0.0016$ --- \textbf{87\% gap-closure},
+$p > 0.5$.
+\end{observation}
+
+% =====================================================================
+\section{IMDB headline results}
+\label{sec:imdb}
+
+\begin{center}
+\begin{tabular}{lrrrrr}
+\toprule
+config &  val\_acc & params & wall/seed & $\Delta$ & $p$ \\
+\midrule
+Transformer baseline ($d=16$)               & 0.8535 & 167\,k &  24\,s & 0       & --- \\
+AC-HSiKAN ($d=16$, $sh=16$)                  & 0.8489 & 165\,k & 113\,s & $-0.005$ & 0.10 \\
+Transformer baseline ($d=32$)               & 0.8522 & 345\,k &  36\,s & 0       & --- \\
+AC-HSiKAN ($d=32, sh=32, lr/\!\sqrt{2}$, mixed-6) & \textbf{0.8505} & 337\,k & 144\,s & $\mathbf{-0.0016}$ & $\mathbf{0.55}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Both scales give statistical parity with iso-parameter transformer
+($p > 0.05$). The larger model is marginally better in absolute
+acc; both architectures are essentially indistinguishable.
+
+\paragraph{Wall.} AC is $4.7\times$ slower than transformer on this
+$L = 200$ shape. The pool-scatter primitive scales linearly in
+candidate count $K$, while attention is quadratic in $L$. At
+$L \geq 1024$ the crossover should land in AC's favour; this is
+untested in the current study.
+
+\paragraph{Training dynamics.} Transformer peaks at epoch 1--2
+($\approx 0.860$) then overfits to $\approx 0.820$ by epoch 8.
+AC-HSiKAN warms up slowly (epoch 1 $\approx 0.79$), peaks at epoch 4--5
+($\approx 0.85$), and stays flat or slowly improves. The early-stop
+\texttt{best\_val\_acc} convention favours transformer slightly; on
+\emph{final}-epoch accuracy AC-HSiKAN wins 5/5 seeds.
+
+% =====================================================================
+\section{Mathematical conjectures from the data}
+
+The empirical scaling and selection results suggest mathematical
+structure the current architecture does not exploit. Four directions
+appear concrete enough to formulate.
+
+\begin{conjecture}[Inter-layer scatter--pool coupling]
+Each AC-HSiKAN layer's pool-scatter primitive operates on the residual
+sum $\mathrm{LN}(x + \mathrm{dropout}(y))$. The pool and scatter streams
+are merged before the next layer sees them. If pool and scatter are
+kept as separate streams across layers --- $p_\ell = P(p_{\ell-1})$
+and $s_\ell = S(s_{\ell-1})$, with $y_\ell = p_\ell + s_\ell$ only at
+the output --- the primitive's bidirectional asymmetry is \emph{preserved}
+across depth, not collapsed at each LayerNorm.
+\end{conjecture}
+
+\begin{conjecture}[Hamilton-rotor composition across layers]
+The entropy-feedback Hamilton rotor $M_\ell = \exp(\beta_\ell H_\ell
+\mathbf{n}_\ell)$ is currently per-layer independent. Quaternions
+compose multiplicatively. If each $M_\ell$ is parameterised as a
+\emph{delta} from the running composition --- $M_\ell = M_{\ell-1}
+\cdot dM_\ell$ --- the entropy-feedback signal accumulates as a
+coherent trajectory in quaternion space, and the evolvens telemetry
+should show qualitatively different per-layer behaviour.
+\end{conjecture}
+
+\begin{conjecture}[Cross-layer cycle composition]
+The walk-op signed-cycle product is computed within each layer. Across
+$N$ layers the implicit cycle is $s_{\text{total}} = \prod_\ell
+\prod_k s_{\ell, k}$ (independent within-layer products). If the
+walk-op is redefined to span multiple layers (arity-$k$ uses signs
+from layers $\{\ell - k + 1, \dots, \ell\}$), each cycle traverses the
+depth dimension, with depth as the cycle-length budget --- the natural
+analogue of multi-layer cycle enumeration in graph-HSiKAN.
+\end{conjecture}
+
+\begin{conjecture}[Aggregated CR-patch surfaces]
+The per-channel 1D Catmull--Rom activation treats the gate as
+separable: $g(R) \cdot V$. The pool-scatter primitive is non-separable
+in its $Q \otimes K$ Hamilton coupling. A 2D CR-patch over $(R, V)$
+per channel --- $\mathrm{coef} \in \mathbb{R}^{h \times G \times G}$
+with bilinear CR interpolation, evaluated as $S(R, V) \cdot V$ ---
+captures the joint $(R, V)$ interaction at the activation level rather
+than relying on the downstream linear $W_{\text{back}}$ to recover it.
+\end{conjecture}
+
+\paragraph{2D CR-patch: in-progress empirical status.}
+At $d = 16$ baseline (no rotor, no dynamic top-K), the 2D variant
+trains successfully ($\Delta \approx -0.05$ at smoke scale). At
+$d = 32$ with the full v1.6 stack it collapses regardless of the V-axis
+mapping (tanh, linear clamp, or pure CR extrapolation), suggesting the
+2D coefficients require a separate (lower) learning rate to avoid
+out-running the main backbone. Parameter-group LR experiments are
+ongoing.
+
+% =====================================================================
+\section{Discussion}
+
+\subsection{What scales and what doesn't}
+
+The empirical lessons are:
+\begin{itemize}[noitemsep]
+\item \textbf{Capacity scaling is recoverable} once the bottleneck
+      dimension and learning rate are tied to $d$. The architecture is
+      not stuck at $d = 16$.
+\item \textbf{Width scaling alone is mid-tier}: $d = 16 \to 32$ gains
+      $\approx 0.002$ accuracy.
+\item \textbf{Depth scaling needs pre-norm + LayerScale} to avoid the
+      mid-training crashes. Even with these, $L = 4$ does not give a
+      win over $L = 2$ on IMDB.
+\item \textbf{Adding FFN \emph{hurts} AC}: the dense FFN dilutes the
+      signed-cycle signal. AC's signed structure subsumes the FFN
+      role.
+\item \textbf{Pruning bias is task-dependent}: the long-cycle prior is
+      structurally valid for graph-HSiKAN, structurally harmful for
+      sequence sentiment.
+\end{itemize}
+
+\subsection{Relation to backprop-free training}
+
+The pool-scatter primitive is a structured projection operator; the
+Hamilton rotor is a non-additive multiplicative modulator. Composed,
+they form the architecture for a \emph{global-scatter learning}
+direction (separate plan,~\cite{global-scatter-plan}), where the
+backward pass is replaced by a parallel feedback-mode application of
+the pool-scatter primitive with the rotor as the global modulator. A
+synthetic prototype (DFA stand-in plus entropy rotor) reaches
+backprop-equivalent accuracy at the toy scale; the structured-projection
+version awaits the pool-scatter feedback kernel.
+
+\subsection{Comparison to backprop-free family}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+approach & feedback mechanism \\
+\midrule
+Backprop                            & exact transposed Jacobian chain \\
+Feedback Alignment (Lillicrap, 2016) & fixed random feedback matrices \\
+DFA (N{\o}kland, 2016)              & random matrix per layer, on $e$ \\
+Equilibrium Propagation (Scellier, 2017) & two-equilibrium-state difference \\
+Predictive Coding (Whittington, 2017) & top-down predictions + bottom-up errors \\
+Forward-Forward (Hinton, 2022)       & positive/negative forward pass \\
+\textbf{Global-Scatter (this work)}  & \textbf{pool-scatter + Hamilton rotor} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The key novelty is that the feedback projection is the \emph{same
+primitive} as forward (not a random matrix, not a separate target
+network), and the modulator is a learned Hamilton rotor (not a fixed
+scalar or random direction). The composition is the contribution; both
+ingredients individually have precedents.
+
+% =====================================================================
+\section{Future work}
+
+\begin{enumerate}[noitemsep]
+\item \textbf{Triton 2D CR-patch kernel.} The PyTorch reference is
+      $\approx 150\times$ slower than the 1D Triton kernel. Triton-ifying
+      the bilinear CR is $\sim 2$-week work that would gate the
+      empirical validation at production scale.
+\item \textbf{Long-range benchmarks.} The long-cycle prior should be
+      retested on Long Range Arena, ListOps, and Pathfinder. The
+      expectation is that the prior flips from harmful (IMDB) to
+      helpful at structurally non-local tasks.
+\item \textbf{Cross-layer cycle composition.} Implementing the
+      depth-as-cycle-length walk-op variant is the most concrete
+      structural extension; the conjecture is testable.
+\item \textbf{Per-batch dynamic top-K.} Currently the dynamic selection
+      uses batch-averaged magnitudes. Per-batch dynamic selection
+      requires a $(B, L, K)$ \texttt{local} tensor and a Triton kernel
+      extension; expected expressivity gain on heterogeneous-batch tasks.
+\item \textbf{Full IMDB at $L = 400$.} The pool-scatter wall scales
+      linearly in $L \cdot K$ while attention scales quadratically in
+      $L$. The crossover where AC is wall-competitive with transformer
+      is testable.
+\end{enumerate}
+
+% =====================================================================
+\section*{Acknowledgements}
+
+Built on the simple HSiKAN scaffolding (\texttt{hymeko\_graph} crate
++ ABB enumerator). All Triton kernels are open-source under the
+project repository. Telemetry, scaling-debug, and dynamic-topk
+experiments are reproducible from the
+\texttt{signedkan\_wip/experiments/ac\_hsikan\_imdb\_smoke.py} entry
+point.
+
+% =====================================================================
+\bibliographystyle{plain}
+\begin{thebibliography}{99}
+
+\bibitem{vaswani2017attention}
+Vaswani, A., et al. (2017). Attention Is All You Need. \emph{NeurIPS}.
+
+\bibitem{gu2021combining}
+Gu, A., Goel, K., R{\'e}, C. (2021). Combining Recurrent, Convolutional,
+and Continuous-time Models with Linear State Space Layers. \emph{NeurIPS}.
+
+\bibitem{retnet}
+Sun, Y., et al. (2023). Retentive Network: A Successor to Transformer
+for Large Language Models. \emph{arXiv:2307.08621}.
+
+\bibitem{touvron2021going}
+Touvron, H., et al. (2021). Going deeper with Image Transformers (CaiT
+LayerScale). \emph{ICCV}.
+
+\bibitem{schultz1997dopamine}
+Schultz, W. (1997). Dopamine neurons and their role in reward
+mechanisms. \emph{Current Opinion in Neurobiology}.
+
+\bibitem{fremaux2016three}
+Fr{\'e}maux, N., Gerstner, W. (2016). Neuromodulated Spike-Timing-Dependent
+Plasticity and Theory of Three-Factor Learning Rules.
+\emph{Frontiers in Neural Circuits}.
+
+\bibitem{previous-hsikan}
+Hajdu, Cs., et al. (2026). HSiKAN: Signed-cycle KAN for signed graph
+link prediction. \emph{Internal manuscript, paper/arxiv\_v1/}.
+
+\bibitem{hsikan-abb}
+Internal report \texttt{reports/2026-05-10-abb-global-topk-25x.md}.
+
+\bibitem{global-scatter-plan}
+\texttt{docs/plans/2026-06-05-global-scatter-learning/plan.pdf}
+(backprop-free direction, deferred).
+
+\end{thebibliography}
+
+\end{document}

@@ -28,7 +28,12 @@ use std::str::FromStr;
 use hymeko_pgraph::abb::AbbOptions;
 use hymeko_pgraph::regime::{CANONICAL, COST_DOMINANCE, Composite, NO_EXCESS, Regime};
 use hymeko_pgraph::{
-    DumpAlgorithm, analyze_lowered_with_regime, analyze_source_with_regime, read_pgip, write_pgip,
+    DumpAlgorithm, SsgAlgorithm,
+    analyze_lowered_with_regime, analyze_lowered_with_regime_full,
+    analyze_lowered_with_regime_topk,
+    analyze_source_with_regime, analyze_source_with_regime_full,
+    analyze_source_with_regime_topk,
+    read_pgip, write_pgip,
 };
 
 /// Parse a `--regime` spec: one or more regime names joined by `+`
@@ -86,6 +91,17 @@ fn main() -> std::process::ExitCode {
     let mut strict_no_excess = false;
     let mut regime_spec: Option<String> = None;
     let mut write_pgip_path: Option<PathBuf> = None;
+    // 2026-06-03 (Pimentel benchmark): expose top-K ABB so the CLI
+    // returns the 2nd-best / 3rd-best alternatives, not just the
+    // single optimum. `top_k <= 1` keeps the legacy single-best
+    // JSON schema unchanged.
+    let mut top_k: usize = 1;
+    // 2026-06-03 (Pimentel benchmark): SSG algorithm choice.
+    // `brute` (default, back-compat) enumerates the 2^|O_MSG| subset
+    // lattice via forward-DFS feasibility. `decision-mapping` (or `dm`)
+    // uses the canonical Friedler 1992 SSG that matches the book's
+    // published structure counts.
+    let mut ssg_algorithm: SsgAlgorithm = SsgAlgorithm::Brute;
     let mut i = 1usize;
     while i < argv.len() {
         if argv[i] == "--algorithm" {
@@ -164,6 +180,58 @@ fn main() -> std::process::ExitCode {
             i += 1;
             continue;
         }
+        if argv[i] == "--top-k" {
+            if i + 1 >= argv.len() {
+                eprintln!("--top-k requires a positive integer");
+                return std::process::ExitCode::from(1u8);
+            }
+            match argv[i + 1].parse::<usize>() {
+                Ok(k) if k >= 1 => top_k = k,
+                _ => {
+                    eprintln!("--top-k: expected a positive integer, got {:?}", argv[i + 1]);
+                    return std::process::ExitCode::from(1u8);
+                }
+            }
+            i += 2;
+            continue;
+        }
+        if argv[i] == "--ssg-algorithm" {
+            if i + 1 >= argv.len() {
+                eprintln!("--ssg-algorithm requires a value (brute | decision-mapping | dm)");
+                return std::process::ExitCode::from(1u8);
+            }
+            match SsgAlgorithm::from_str(argv[i + 1].trim()) {
+                Ok(s) => ssg_algorithm = s,
+                Err(e) => {
+                    eprintln!("{e}");
+                    return std::process::ExitCode::from(1u8);
+                }
+            }
+            i += 2;
+            continue;
+        }
+        if let Some(rest) = argv[i].strip_prefix("--ssg-algorithm=") {
+            match SsgAlgorithm::from_str(rest.trim()) {
+                Ok(s) => ssg_algorithm = s,
+                Err(e) => {
+                    eprintln!("{e}");
+                    return std::process::ExitCode::from(1u8);
+                }
+            }
+            i += 1;
+            continue;
+        }
+        if let Some(rest) = argv[i].strip_prefix("--top-k=") {
+            match rest.parse::<usize>() {
+                Ok(k) if k >= 1 => top_k = k,
+                _ => {
+                    eprintln!("--top-k: expected a positive integer, got {rest:?}");
+                    return std::process::ExitCode::from(1u8);
+                }
+            }
+            i += 1;
+            continue;
+        }
         if argv[i] == "--write-pgip" {
             if i + 1 >= argv.len() {
                 eprintln!("--write-pgip requires a path argument");
@@ -239,7 +307,15 @@ fn main() -> std::process::ExitCode {
             .and_then(|s| s.to_str())
             .unwrap_or("pgip_input")
             .to_string();
-        let (json, abb) = analyze_lowered_with_regime(&graph, description, algorithm, regime, opts);
+        let need_full = top_k > 1
+            || matches!(ssg_algorithm, SsgAlgorithm::DecisionMapping);
+        let (json, abb) = if need_full {
+            analyze_lowered_with_regime_full(
+                &graph, description, algorithm, regime, opts, top_k, ssg_algorithm,
+            )
+        } else {
+            analyze_lowered_with_regime(&graph, description, algorithm, regime, opts)
+        };
         (json, abb, Some(graph))
     } else {
         let src = match fs::read_to_string(&path) {
@@ -267,10 +343,26 @@ fn main() -> std::process::ExitCode {
                     return std::process::ExitCode::from(1u8);
                 }
             };
-            let (json, abb) = analyze_lowered_with_regime(&p, description, algorithm, regime, opts);
+            let need_full = top_k > 1
+                || matches!(ssg_algorithm, SsgAlgorithm::DecisionMapping);
+            let (json, abb) = if need_full {
+                analyze_lowered_with_regime_full(
+                    &p, description, algorithm, regime, opts, top_k, ssg_algorithm,
+                )
+            } else {
+                analyze_lowered_with_regime(&p, description, algorithm, regime, opts)
+            };
             (json, abb, Some(p))
         } else {
-            let json = analyze_source_with_regime(&src, algorithm, regime, opts);
+            let need_full = top_k > 1
+                || matches!(ssg_algorithm, SsgAlgorithm::DecisionMapping);
+            let json = if need_full {
+                analyze_source_with_regime_full(
+                    &src, algorithm, regime, opts, top_k, ssg_algorithm,
+                )
+            } else {
+                analyze_source_with_regime(&src, algorithm, regime, opts)
+            };
             (json, None, None)
         }
     };

@@ -62,12 +62,18 @@ pub use axiom_extensions::{ExtensionAxiomBundle, ExtensionAxiomViolation};
 pub use axioms::{AxiomBundle, AxiomTrace, AxiomViolation};
 pub use builder::{BuilderError, MaterialKind, PgraphBuilder};
 pub use cli::{
-    CliError, load_pgraph, render_entities, render_graphviz, render_pgraph, render_solution, to_dot,
+    CliError, load_pgraph, render_entities, render_graphviz, render_pgraph,
+    render_solution, to_dot, to_friedler_dot,
 };
 pub use dump::{
-    DumpAlgorithm, PgraphAnalysisJson, analyze_lowered_with_full_options,
-    analyze_lowered_with_regime, analyze_source, analyze_source_with_full_options,
+    DumpAlgorithm, PgraphAnalysisJson, SsgAlgorithm,
+    analyze_lowered_with_full_options,
+    analyze_lowered_with_regime, analyze_lowered_with_regime_full,
+    analyze_lowered_with_regime_topk,
+    analyze_source, analyze_source_with_full_options,
     analyze_source_with_options, analyze_source_with_regime,
+    analyze_source_with_regime_full,
+    analyze_source_with_regime_topk,
 };
 pub use lowering::{LowerError, LoweredPGraph, lower};
 pub use meta_resolve::{MetaResolveError, compile_sources, compile_to_lowered, lower_resolved};

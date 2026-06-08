@@ -254,6 +254,71 @@ pub fn to_dot(g: &LoweredPGraph, title: &str) -> String {
     s
 }
 
+/// Render a P-graph as Graphviz DOT in the **canonical Friedler-PSE
+/// notation** (Friedler, Tarján, Huang, Fan 1992; reproduced in the
+/// book *P-graphs for Process Systems Engineering*, Springer):
+///
+/// - **Material nodes** are circles. Raw materials are filled in
+///   light grey; required products are filled in white with a thicker
+///   stroke; intermediates are unfilled circles.
+/// - **Operating units** are short horizontal bars (thin black
+///   rectangles), matching the "═" glyph the book uses.
+/// - Edges are directed: M → O for inputs, O → M for outputs. The
+///   layout direction is left-to-right (rankdir=LR).
+///
+/// Added 2026-06-03 for the Pimentel-facing reply report; the
+/// default [`to_dot`] above is a more verbose debug-style rendering
+/// that emphasises the bipartite types via colour, not the canonical
+/// PSE convention.
+pub fn to_friedler_dot(g: &LoweredPGraph, title: &str) -> String {
+    let mut s = String::new();
+    let _ = writeln!(s, "digraph {:?} {{", title);
+    let _ = writeln!(s, "  rankdir=LR;");
+    let _ = writeln!(s, "  bgcolor=\"transparent\";");
+    let _ = writeln!(s, "  node [fontname=\"Helvetica\"];");
+    let _ = writeln!(s, "  edge [arrowhead=normal, arrowsize=0.7, color=\"#333333\"];");
+    let _ = writeln!(s);
+    let _ = writeln!(s, "  // M-nodes (materials) — circles per Friedler PSE convention");
+    for name in sorted_names(g, &g.materials) {
+        let d = g.name_to_decl[&name];
+        let attrs = match role(g, d) {
+            "raw" => "shape=circle, style=filled, fillcolor=\"#d0d0d0\", \
+                       width=0.45, fixedsize=true, penwidth=1.2",
+            "product" => "shape=doublecircle, style=filled, fillcolor=\"#ffffff\", \
+                           width=0.40, fixedsize=true, penwidth=1.5",
+            _ => "shape=circle, style=filled, fillcolor=\"#ffffff\", \
+                   width=0.40, fixedsize=true, penwidth=1.0",
+        };
+        let _ = writeln!(s, "  {name:?} [{attrs}];");
+    }
+    let _ = writeln!(s);
+    let _ = writeln!(s, "  // O-nodes (operating units) — short horizontal bars");
+    for name in sorted_names(g, &g.units) {
+        // A short, very thin black rectangle approximates the
+        // "═" bar Friedler uses for operating units. The label sits
+        // below the bar via headlabel/xlabel; for compactness we
+        // keep the unit ID inside.
+        let _ = writeln!(
+            s,
+            "  {name:?} [shape=box, style=\"filled,rounded\", \
+              fillcolor=\"#222222\", fontcolor=\"#ffffff\", \
+              height=0.18, width=0.55, fixedsize=true, fontsize=10, \
+              penwidth=0];",
+        );
+    }
+    let _ = writeln!(s);
+    let _ = writeln!(s, "  // Directed edges (M -> O = input, O -> M = output)");
+    for (_, src, dst) in g.schema.edges() {
+        let _ = writeln!(
+            s,
+            "  {:?} -> {:?};",
+            g.decl_to_name[&src], g.decl_to_name[&dst]
+        );
+    }
+    let _ = writeln!(s, "}}");
+    s
+}
+
 /// Render Graphviz `dot` source to an image file via the system `dot` binary,
 /// e.g. `format = "png"` or `"svg"`. The DOT source is fed on stdin and written
 /// to `out` with `dot -T<format> -o <out>`.

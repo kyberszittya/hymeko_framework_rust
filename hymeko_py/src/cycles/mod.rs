@@ -25,5 +25,6 @@ pub use per_vertex::enumerate_cycles_rs;
 pub use top_k::{enumerate_top_k_cycles_entropy_rs, enumerate_top_k_cycles_rs};
 pub use unsigned::{
     enumerate_k_cycles_color_coded_rs, enumerate_k_cycles_path_closure_rs,
-    enumerate_k_cycles_rs, enumerate_k_walks_rs, enumerate_unsigned_rs,
+    enumerate_k_cycles_rs, enumerate_k_walks_rs, enumerate_top_k_walks_rs,
+    enumerate_unsigned_rs,
 };

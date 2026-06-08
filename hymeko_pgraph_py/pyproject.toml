@@ -1,0 +1,24 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "hymeko-pgraph"
+version = "0.1.0"
+description = "HyMeKo P-graph (Friedler MSG / SSG / ABB) Python bindings."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Máté Hajdu", email = "gemeauxrapace@gmail.com" },
+]
+license = { text = "MIT OR Apache-2.0" }
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering",
+    "Intended Audience :: Science/Research",
+]
+
+[tool.maturin]
+module-name = "hymeko_pgraph_py"
+features = ["pyo3/extension-module"]

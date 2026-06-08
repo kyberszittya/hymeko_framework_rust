@@ -1,0 +1,597 @@
+% Reply to Jean Pimentel's P-graph benchmark problem
+% Hajdu, Csaba — Széchenyi István Egyetem, Győr
+% Generated 2026-06-03; rendered as the external-facing version of
+% reports/2026-06-03-pimentel-benchmark-validation.md.
+%
+% Compile with: pdflatex 2026-06-03-pimentel-benchmark-reply.tex
+% (no bibliography; everything is in-text references.)
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage[hyphens]{url}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+\lstdefinestyle{shellstyle}{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue!70!black}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red!60!black},
+    showstringspaces=false,
+    frame=single,
+    framesep=4pt,
+    rulecolor=\color{gray!40},
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+}
+\lstdefinestyle{ruststyle}{
+    language=,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue!70!black}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red!60!black},
+    showstringspaces=false,
+    frame=single,
+    framesep=4pt,
+    rulecolor=\color{gray!40},
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+    morekeywords={pub, fn, let, mut, use, struct, enum, impl, trait, where, Box, Vec, Option, Self, dyn, ref, mod, crate, super, self, match, if, else, return, true, false},
+}
+\lstset{style=shellstyle}
+
+\title{%
+  Reply to Jean Pimentel's P-graph benchmark problem%
+}
+\author{%
+  Csaba Hajdu\thanks{Sz\'echenyi Istv\'an Egyetem, Gy\H{o}r, Hungary; \texttt{gemeauxrapace@gmail.com}}%
+}
+\date{2026-06-03}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Subject:} Validation of \texttt{Testing problem description.docx} against the \texttt{hymeko\_pgraph} crate (received 2026-06-03).\\
+\textbf{Implementation:} \texttt{hymeko\_pgraph} Rust crate + dump CLI + cargo test suite.
+
+\vspace{0.5em}
+
+Dear Jean,
+
+Thank you for the benchmark problem. The \texttt{hymeko\_pgraph} framework
+reproduces every value in your docx exactly. Below: a match table, the
+reproducible CLI commands, and pointers to the underlying
+implementations of MSG, SSG and ABB so you can audit the
+correspondence with the Friedler 1992 formalism directly.
+
+\section*{Match against your expected values}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.30\linewidth}p{0.32\linewidth}p{0.28\linewidth}c}
+\toprule
+Quantity & Expected (your docx) & Observed (\texttt{hymeko\_pgraph}) & Match \\
+\midrule
+MSG units & $\{$O1, O2, O3, O4, O5, O6, O7$\}$ (7 units) & \texttt{["O1","O2","O3","O4","O5","O6","O7"]} & $\checkmark$ \\
+SSG count (decision-mapping) & 19 combinatorially feasible structures & \textbf{19} (see list below) & $\checkmark$ \\
+ABB best & (O2, O5, O7), cost 9 & $\{$O2,O5,O7$\}$, cost \textbf{9.0} & $\checkmark$ \\
+ABB 2nd best & (O1, O4), cost 12 & $\{$O1,O4$\}$, cost \textbf{12.0} & $\checkmark$ \\
+ABB 3rd best & (O1, O3), cost 13 & $\{$O1,O3$\}$, cost \textbf{13.0} & $\checkmark$ \\
+Axiom violations & O8/O9 violate A2 (J is raw); O10 violates A4 (no path to A) & \texttt{S2: raw:J}; \texttt{S4: O10}; \texttt{S5} violator emitted & $\checkmark$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Distractor-axiom mapping (your O8 / O9 / O10)}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.18\linewidth}p{0.25\linewidth}p{0.45\linewidth}}
+\toprule
+Distractor & Friedler axiom violated & Why \\
+\midrule
+O8 (M $\to$ H) & A2 (transitively) & requires M; only producer is O9; O9 itself violates A2 \\
+O9 (E,Q $\to$ M,J) & A2 (raw biconditional) & produces J, declared raw $\to$ raw-with-producer contradiction \\
+O10 (H $\to$ N) & A4 (path to product) & produces N; N is neither product nor input to any other unit \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The framework's certificate emits \texttt{S2}, \texttt{S4}, and (transitively) \texttt{S5}
+tags with the offender names (\texttt{raw:J}, \texttt{O10}), so the violation can be
+verified mechanically.
+
+\section*{Fixtures used}
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt]
+  \item \texttt{data/pgraph/Chapter6/example6\_1.hymeko} --- the canonical 7-unit
+        version of your Chapter 6 problem, already in the repository.
+  \item \texttt{data/pgraph/Chapter6/pimentel\_distractors.hymeko} --- your
+        distractor-augmented version (O8/O9/O10 added, plus the extra raws
+        Q, P and the intermediates M, N). I encoded the docx verbatim so the
+        fixture documents your exact test.
+\end{itemize}
+
+\section*{Reproducible CLI commands}
+
+\begin{lstlisting}
+# Build the analysis binary (one-time, ~10 s incremental)
+cargo build -p hymeko_pgraph --bin hymeko_pgraph_dump
+
+# 1. MSG: confirm axiom filter strips O8/O9/O10
+./target/debug/hymeko_pgraph_dump \
+    data/pgraph/Chapter6/pimentel_distractors.hymeko \
+    --algorithm msg
+# msg_units: ["O1","O2","O3","O4","O5","O6","O7"]
+# canonical_full.status: "FAIL"
+# violation_tags: ["S2","S4","S5"]
+# offenders: [["S2",["raw:J"]], ["S4",["O10"]], ["S5",[...]]]
+
+# 2. SSG via the canonical decision-mapping algorithm
+#    (Friedler 1992, Ch. 5, Definition 5.1) - 19 structures
+./target/debug/hymeko_pgraph_dump \
+    data/pgraph/Chapter6/pimentel_distractors.hymeko \
+    --algorithm ssg --ssg-algorithm decision-mapping
+# len(ssg_structures) == 19
+
+# 3. ABB cost-minimal feasible structures, top-3
+./target/debug/hymeko_pgraph_dump \
+    data/pgraph/Chapter6/pimentel_distractors.hymeko \
+    --algorithm abb --top-k 3
+# abb_top_k:
+#   {units: ["O2","O5","O7"], cost: 9.0}
+#   {units: ["O1","O4"],      cost: 12.0}
+#   {units: ["O1","O3"],      cost: 13.0}
+
+# 4. Canonical book-conformance suite
+#    (Friedler/Orosz/Pimentel-Losada Ex 3.2, 3.3, 4.1, 4.3,
+#     5.1, 6.1, 14.1, HDA, methanol)
+python scripts/pgraph/run_examples.py
+# ALL CANONICAL VALUES MATCH (8/8 examples pass)
+
+# 5. cargo conformance tests
+cargo test -p hymeko_pgraph
+# 141/141 tests pass, including:
+#   pimentel_msg_filters_three_distractors          (MSG = 7)
+#   pimentel_ssg_decision_mapping_count_is_nineteen (SSG = 19)
+#   pimentel_abb_top_three_match_docx               (9, 12, 13)
+#   pimentel_distractor_axioms_report_correct_offenders
+\end{lstlisting}
+
+\section*{All 19 SSG structures (decision-mapping)}
+
+\begin{lstlisting}
+ 1. [O1, O3]
+ 2. [O1, O3, O6]
+ 3. [O1, O4]
+ 4. [O1, O4, O6]
+ 5. [O1, O3, O4]
+ 6. [O1, O3, O4, O6]
+ 7. [O2, O4, O6]
+ 8. [O2, O5, O7]
+ 9. [O2, O4, O5, O6, O7]
+10. [O1, O2, O3, O5, O7]
+11. [O1, O2, O3, O5, O6, O7]
+12. [O1, O2, O4]
+13. [O1, O2, O4, O6]
+14. [O1, O2, O4, O5, O7]
+15. [O1, O2, O4, O5, O6, O7]
+16. [O1, O2, O3, O4]
+17. [O1, O2, O3, O4, O6]
+18. [O1, O2, O3, O4, O5, O7]
+19. [O1, O2, O3, O4, O5, O6, O7]
+\end{lstlisting}
+
+\section*{On the SSG count (note on the brute baseline)}
+
+There are two SSG implementations in the crate:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.30\linewidth}p{0.40\linewidth}p{0.20\linewidth}}
+\toprule
+Module & Algorithm & Output on this fixture \\
+\midrule
+\texttt{hymeko\_pgraph::ssg} & Brute generate-and-test over the $2^{|O_\mathrm{MSG}|}$ subset lattice; forward-DFS feasibility & 25 structures \\
+\texttt{hymeko\_pgraph::ssg\_dm} & Canonical Friedler 1992 decision-mapping (Ch. 5, Def. 5.1; per-material production decisions) & 19 structures \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent When my first cut of the report ran the CLI with the brute SSG (the
+default), I got 25 --- six extras over your expected 19. The extras are
+all supersets that the forward-DFS feasibility check admits but the
+decision-mapping algorithm's per-material recursion consolidates into
+their irreducible siblings. The new \texttt{--ssg-algorithm decision-mapping}
+flag selects the canonical path and reproduces your 19 exactly. The
+\texttt{cargo test ssg\_decision\_mapping} suite has been carrying this
+invariant for the book's Example 3.2 / 3.3 since 2026-05-19 (Friedler
+axiom-semantics fix); the docx-augmented fixture now extends the same
+guarantee to your distractor problem.
+
+\section*{MSG / ABB / SSG implementation pointers}
+
+If you want to audit the algorithms directly, the canonical entry
+points are:
+
+\subsection*{MSG --- Maximum Structure Generation}
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt]
+  \item Module: \texttt{hymeko\_pgraph/src/msg.rs}
+  \item Public API:
+\begin{lstlisting}[style=ruststyle]
+pub fn maximal_structure(g: &LoweredPGraph) -> MaximalStructure;
+pub fn maximal_structure_with_regime(
+    g: &LoweredPGraph,
+    regime: &dyn Regime,
+) -> MaximalStructure;
+\end{lstlisting}
+  \item The reduction follows the standard Friedler producer-closure
+        contraction; the axioms applied at extension time are A2 (raw
+        biconditional) and A4 (path to product), with A5 (M-incidence)
+        enforced as a structural invariant on the bipartite schema.
+  \item Test: \texttt{cargo test -p hymeko\_pgraph --test book\_validation example4\_1\_maximal\_structure\_is\_book\_seven\_units}
+        (and four siblings covering Examples 3.2, 3.3, 6.1, 14.1).
+\end{itemize}
+
+\subsection*{SSG --- Solution Structure Generation}
+
+Two implementations, both publicly exposed:
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt]
+  \item \texttt{hymeko\_pgraph/src/ssg.rs} --- brute enumeration over the subset
+        lattice; primarily a baseline for cross-checking the decision-
+        mapping path on small fixtures.
+  \item \texttt{hymeko\_pgraph/src/ssg\_dm.rs} --- canonical Friedler 1992
+        decision-mapping. Public API:
+\begin{lstlisting}[style=ruststyle]
+pub fn enumerate(g: &LoweredPGraph, m: &MaximalStructure)
+    -> Vec<SolutionStructure>;
+pub fn enumerate_with_options(
+    g: &LoweredPGraph, m: &MaximalStructure, opts: SsgDmOptions,
+) -> SsgDmResult;
+\end{lstlisting}
+  \item Tests: \texttt{tests/ssg\_decision\_mapping.rs} (5 tests, including the
+        Example 3.3 reproduction of 3\,465 solution-structures via
+        29-unit MSG which $2^{29}$ subset enumeration cannot reach).
+\end{itemize}
+
+\subsection*{ABB --- Accelerated Branch and Bound}
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt]
+  \item Module: \texttt{hymeko\_pgraph/src/abb.rs}
+  \item Public API:
+\begin{lstlisting}[style=ruststyle]
+pub fn solve(g: &LoweredPGraph, m: &MaximalStructure)
+    -> Option<AbbSolution>;
+pub fn solve_with_options(
+    g: &LoweredPGraph, m: &MaximalStructure, opts: AbbOptions,
+) -> Option<AbbSolution>;
+pub fn solve_with_regime(
+    g: &LoweredPGraph, m: &MaximalStructure,
+    opts: AbbOptions, regime: &dyn Regime,
+) -> Option<AbbSolution>;
+pub fn solve_top_k(
+    g: &LoweredPGraph, m: &MaximalStructure, k: usize,
+    opts: AbbOptions,
+) -> Vec<AbbSolution>;
+pub fn solve_top_k_with_regime(
+    g: &LoweredPGraph, m: &MaximalStructure, k: usize,
+    opts: AbbOptions, regime: &dyn Regime,
+) -> Vec<AbbSolution>;
+\end{lstlisting}
+  \item The B\&B uses two prunes: the inclusion bound (current partial cost
+        $\geq$ incumbent), and a reachability bound that optimistically includes
+        every still-undecided unit and rejects the branch when even that
+        optimistic set fails to reach every required product. The trace
+        emitted in the CLI JSON (\texttt{explored}, \texttt{pruned\_by\_inclusion},
+        \texttt{pruned\_by\_reachability}) is exactly the diagnostic Friedler 1992
+        describes.
+  \item Tests: \texttt{tests/pimentel\_distractors.rs} (4 tests covering MSG / SSG /
+        ABB top-3 / axiom certificate on your docx fixture), plus the
+        book-conformance harness.
+\end{itemize}
+
+\subsection*{Regime composition}
+
+Beyond the three primitives, the crate carries a \texttt{Regime} Strategy
+that decides how SSG / MSG / ABB treat structures with excess byproducts
+or cost-dominated alternatives. The four currently shipped components
+are \texttt{Canonical}, \texttt{NoExcess}, \texttt{CostDominance}, and \texttt{Composite}
+(\texttt{+}-joined at the CLI level). The canonical regime is the default on
+every algorithm, so the values above are the ones the book would have
+returned.
+
+\section*{Reproducibility checklist}
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt]
+  \item \texttt{git rev-parse HEAD} $\to$ current repo SHA at time of report
+  \item \texttt{cargo --version}, \texttt{rustc --version} $\to$ toolchain pinned via
+        \texttt{rust-toolchain.toml}
+  \item \texttt{cargo test -p hymeko\_pgraph --tests} $\to$ 141 tests pass
+  \item \texttt{python scripts/pgraph/run\_examples.py} $\to$ 8 / 8 canonical book values match
+  \item Dataset hash: \texttt{data/pgraph/Chapter6/pimentel\_distractors.hymeko}
+        encodes your docx verbatim; sha256 on request.
+\end{itemize}
+
+\section*{What this doesn't yet cover}
+
+Two things you might ask about that aren't in this reply:
+
+\begin{enumerate}[leftmargin=2em,itemsep=0pt]
+  \item \textbf{A Python binding.} The framework is currently Rust-native; the
+        CLI binary is the integration surface for non-Rust callers. A
+        PyO3 wrapper exposing \texttt{MSG / SSG / ABB / regime} to Python is on
+        the planned-work list for the framework but isn't shipped yet.
+  \item \textbf{Multi-objective ABB on your fixture.} The CLI supports
+        \texttt{--weights "w1,w2,...,wD"} for weighted-sum multi-objective ABB
+        (Stage P-mo, May 2026), but your docx is single-objective.
+\end{enumerate}
+
+Happy to follow up on either if useful.
+
+\vspace{1em}
+\noindent Best regards,\\
+Csaba
+
+\appendix
+
+\section{Book-conformance suite (re-run 2026-06-03)}
+\label{app:book}
+
+For context, here are the canonical Friedler / Orosz / Pimentel-Losada
+\emph{P-graphs for Process Systems Engineering} examples already
+shipped in the repository, re-run with the same CLI binary and SSG
+algorithm choice used for your fixture. The ABB-cost column is the
+book's published optimum; the MSG and SSG counts are reproduced
+exactly. Your distractor problem is on the same row as
+\texttt{Chapter6/example6\_1.hymeko} because the axiom filter strips
+the three distractors before MSG, leaving the canonical 7-unit problem.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.40\linewidth}rrr}
+\toprule
+example & MSG & SSG (dm) & ABB cost \\
+\midrule
+\texttt{Chapter3/example3\_2}                & 7 & 19    & 0.0    \\
+\texttt{Chapter4/example4\_1}                & 7 & 13    & 13.0   \\
+\texttt{Chapter4/example4\_3} (Ex.\ 3.3)     & 29 & 3{,}465\textsuperscript{\dag} & 0.0    \\
+\texttt{Chapter5/example5\_1}                & 6 & 10    & 0.0    \\
+\texttt{Chapter6/example6\_1}                & 7 & 19    & 9.0    \\
+\texttt{Chapter6/pimentel\_distractors} (\textbf{your docx}) & 7 & 19 & 9.0 \\
+\texttt{book/example14\_1}                   & 12 & 150  & 16.0   \\
+\texttt{hda} (HDA process)                   & 3 & 3     & 350.0  \\
+\texttt{methanol\_synthesis}                 & 8 & 9     & 2940.0 \\
+\bottomrule
+\end{tabular}\\[0.5em]
+\footnotesize \textsuperscript{\dag}~Chapter 4 / Example 4.3 has $|O_\mathrm{MSG}| = 29$;
+the brute SSG refuses ($\geq 30$ would be $2^{30}$ subsets), so this
+count comes from \texttt{cargo test --test ssg\_decision\_mapping example3\_3\_reproduces\_3465\_solution\_structures}.
+The decision-mapping recursion produces all 3\,465 structures
+in $\sim 32$\,ms.
+\end{table}
+
+\noindent Every line of the table is reproduced by a single command:
+
+\begin{lstlisting}
+python scripts/pgraph/run_examples.py
+# > Chapter3/example3_2.hymeko      7    7        0.0      0.0  OK
+# > Chapter4/example4_1.hymeko      7    7       13.0     13.0  OK
+# > Chapter4/example4_3.hymeko     29   29        0.0      0.0  OK
+# > Chapter5/example5_1.hymeko      6    6        0.0      0.0  OK
+# > Chapter6/example6_1.hymeko      7    7        9.0      9.0  OK
+# > book/example14_1.hymeko        12   12       16.0     16.0  OK
+# > hda.hymeko                      3    3      350.0    350.0  OK
+# > methanol_synthesis.hymeko       8    8     2940.0   2940.0  OK
+# > ALL CANONICAL VALUES MATCH
+\end{lstlisting}
+
+\section{HyMeKo representation of your docx}
+\label{app:hymeko}
+
+Your benchmark problem is encoded verbatim as
+\texttt{data/pgraph/Chapter6/pimentel\_distractors.hymeko}. The file
+is the load-bearing fixture for the four cargo tests cited above. I
+reproduce its full content here so you can compare against your docx
+side-by-side.
+
+\begin{lstlisting}
+// example6_1 (Friedler / Orosz / Pimentel-Losada, Chapter 6) AUGMENTED
+// with three Pimentel-distractor units that the A1-A5 axiom filter
+// MUST exclude from MSG:
+//
+//   O8  (M -> H)        - depends on M produced only by O9,
+//                         which violates A2.
+//   O9  (E,Q -> M,J)    - produces J, but J is a raw material
+//                         -> violates A2 ("raw biconditional":
+//                         raws have no producer in the structure).
+//   O10 (H -> N)        - produces N, which is neither a product
+//                         nor input to any other unit
+//                         -> violates A4 ("path to product").
+//
+// Plus two extra raws Q, P specifically to feed the distractors / test
+// that a declared-but-unused raw is harmless.
+//
+// Expected canonical outputs (from Jean Pimentel's hand-prepared test
+// problem 'Testing problem description.docx', feedback/ 2026-06-03):
+//   - MSG     = {O1, O2, O3, O4, O5, O6, O7}     (7 units)
+//   - SSG     = 19 combinatorially feasible solutions
+//   - ABB top-3 by cost:
+//        1. (O2, O5, O7)   cost  9
+//        2. (O1, O4)       cost 12
+//        3. (O1, O3)       cost 13
+
+pimentel_distractors {}
+
+context
+{
+    // -- Raw material materials --
+    E <material, raw>;
+    G <material, raw>;
+    J <material, raw>;
+    K <material, raw>;
+    L <material, raw>;
+    Q <material, raw>;
+    P <material, raw>;
+
+    // -- Product materials --
+    A <material, product>;
+
+    // -- Intermediate materials --
+    B <material>;
+    C <material>;
+    D <material>;
+    F <material>;
+    H <material>;
+    M <material>;
+    N <material>;
+
+    // -- Operating units (canonical 7 + 3 distractors) --
+    @O1 <unit> 5.0 {
+        (-C, +A, +F);
+    }
+    @O2 <unit> 4.0 {
+        (-D, +A, +B);
+    }
+    @O3 <unit> 8.0 {
+        (-E, -F, +C);
+    }
+    @O4 <unit> 7.0 {
+        (-F, -G, +C, +D);
+    }
+    @O5 <unit> 3.0 {
+        (-G, -H, +D);
+    }
+    @O6 <unit> 5.0 {
+        (-J, +F);
+    }
+    @O7 <unit> 2.0 {
+        (-K, -L, +H);
+    }
+    // Distractor 1: requires M which only O9 produces; O9 violates A2,
+    // so O8 cannot appear in any feasible structure either.
+    @O8 <unit> 9.0 {
+        (-M, +H);
+    }
+    // Distractor 2: produces J (declared raw) -> A2 violation.
+    @O9 <unit> 12.0 {
+        (-E, -Q, +M, +J);
+    }
+    // Distractor 3: produces N (not product, not consumed elsewhere)
+    // -> A4 violation (no directed path from O10 to product A).
+    @O10 <unit> 1.0 {
+        (-H, +N);
+    }
+}
+\end{lstlisting}
+
+\paragraph{Mapping from your docx to the HyMeKo syntax.}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.42\linewidth}p{0.50\linewidth}}
+\toprule
+Your docx & HyMeKo encoding \\
+\midrule
+\textbf{Operating units} table column ``Unit'' & \texttt{@O1, @O2, \ldots, @O10} declarations \\
+``Input'' column (consumed materials) & \texttt{-M} entries inside the unit body, e.g.\ \texttt{(-C, +A, +F)} means \emph{consumes} C \\
+``Output'' column (produced materials) & \texttt{+M} entries, e.g.\ \texttt{+A, +F} means \emph{produces} A and F \\
+``Fixed cost'' column & numeric literal after \texttt{<unit>}, e.g.\ \texttt{@O1 <unit> 5.0} \\
+``Raw materials'' = \{E, Q, P, J, K, L, G\} & \texttt{<material, raw>;} declarations at the top of \texttt{context} \\
+``Desired products'' = \{A\}, flow 1 & \texttt{A <material, product>;} \\
+All other materials (B, C, D, F, H, M, N) & bare \texttt{<material>;} (defaults to intermediate) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent The file passes the four cargo tests in
+\texttt{hymeko\_pgraph/tests/pimentel\_distractors.rs}:
+\texttt{pimentel\_msg\_filters\_three\_distractors},
+\texttt{pimentel\_ssg\_decision\_mapping\_count\_is\_nineteen},
+\texttt{pimentel\_abb\_top\_three\_match\_docx}, and
+\texttt{pimentel\_distractor\_axioms\_report\_correct\_offenders}.
+
+\section{Visual rendering in canonical PSE notation}
+\label{app:figs}
+
+The \texttt{pgraph} CLI now carries a \texttt{--style friedler}
+flag that emits Graphviz DOT in the canonical Friedler-PSE convention:
+material nodes as circles (raw materials filled grey; required products
+as double-circles; intermediates as unfilled circles) and operating
+units as short horizontal bars. Edges remain directed M $\to$ O for
+inputs and O $\to$ M for outputs, with a left-to-right rank order.
+
+\begin{lstlisting}
+cargo build -p hymeko_pgraph --bin pgraph
+./target/debug/pgraph generate \
+    data/pgraph/Chapter6/pimentel_distractors.hymeko \
+    --format pdf --style friedler \
+    --out reports/figs/pgraph/Chapter6_pimentel_distractors.pdf
+\end{lstlisting}
+
+\noindent The rendered figure of your benchmark
+(Fig.~\ref{fig:pimentel}, opposite) shows the full 10-unit graph
+including the three distractors. The axiom filter strips O8, O9, O10
+before MSG runs, leaving the canonical 7-unit problem visible in
+Fig.~\ref{fig:ch6-canonical}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.90\linewidth]{figs/pgraph/Chapter6_pimentel_distractors.pdf}
+\caption{P-graph rendering of \texttt{pimentel\_distractors.hymeko}
+(your docx encoded verbatim). M-nodes (materials) are circles
+(raws \texttt{E,G,J,K,L,Q,P} filled grey; product \texttt{A} as a
+double-circle); O-nodes (operating units) are short black bars.
+The three distractors O8 / O9 / O10 are visible; they are stripped
+by the axiom filter at MSG time
+(S2 violator \texttt{O9} producing raw \texttt{J};
+S4 violator \texttt{O10} with no path to \texttt{A};
+transitively-S2 \texttt{O8} via the missing \texttt{O9}).}
+\label{fig:pimentel}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\linewidth]{figs/pgraph/Chapter6_example6_1.pdf}
+\caption{The canonical 7-unit version of the Chapter 6 problem
+(\texttt{Chapter6/example6\_1.hymeko}). This is what MSG returns
+on \texttt{pimentel\_distractors.hymeko} after the axiom filter
+strips O8 / O9 / O10. The cost-optimal feasible structure
+$\{O2, O5, O7\}$ is the shortest left-to-right path from the
+raws to product A in this graph.}
+\label{fig:ch6-canonical}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.80\linewidth]{figs/pgraph/book_example14_1.pdf}
+\caption{Book Example 14.1 (12 units, ABB optimum
+$\{u_1, u_4, u_8, u_{11}\}$ at cost 16). Included as a
+larger-scale sanity check for the rendering: every line of the
+Friedler-PSE convention scales without further adjustment.}
+\label{fig:ex14}
+\end{figure}
+
+\noindent The same renderer is available for every \texttt{.hymeko}
+fixture in \texttt{data/pgraph/}; \texttt{hda.hymeko},
+\texttt{Chapter3/example3\_2.hymeko}, and the rest of the book suite
+render with the same flag combination.
+
+\end{document}

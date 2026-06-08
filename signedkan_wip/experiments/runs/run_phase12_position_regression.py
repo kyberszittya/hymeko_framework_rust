@@ -152,6 +152,109 @@ class PositionRegHSiKAN(nn.Module):
         return self.pos_head(h_v_new)            # (V, 3)
 
 
+# ─── CPMLPose (2026-05-29 follow-up: Shape A from the scoping note) ──
+
+
+class _CPMLPoseBackbone:  # forward-declared; real definition below the import.
+    pass
+
+
+class CPMLPose(nn.Module):
+    """CPML adapted for per-vertex 3D position regression.
+
+    Drop-in replacement for ``PositionRegHSiKAN`` in pose cells. Wraps a
+    CPML backbone (tier-stratified cycle routing — currently used for
+    per-edge sign classification in the Gömb cascade) with a per-vertex
+    Linear head to xyz, and a learnable node embedding (same pattern as
+    CPML's standalone runners). The CPML internals are unchanged; only
+    the edge-logits head is overridden to project per-vertex.
+
+    Tier_of is derived from per-vertex cycle-incidence count (proxy for
+    structural degree, since the cell pipeline doesn't pass graph
+    degrees directly). Defaults: L=3 tiers, MLP aggregator, route
+    topology + structural organization.
+
+    Plan: ``docs/plans/2026-05-29-cpml-pose-regression/``.
+    """
+
+    def __init__(self, n_nodes_max: int, arity: int,
+                 hidden: int = 16, tier_l: int = 3,
+                 aggregator_kind: str = "mlp",
+                 topology: str = "route",
+                 tier_organization: str = "structural"):
+        super().__init__()
+        # Lazy import: cpml.py is heavy (transformer/clifford submodules
+        # constructed eagerly) — keep at-import lightness for callers
+        # that never instantiate CPMLPose.
+        from signedkan_wip.src.core.cpml import (
+            CPML,
+            CPMLConfig,
+            TierSpec,
+        )
+
+        self.n_nodes_max = n_nodes_max
+        self.arity = arity
+        # Learnable node embedding; CPML expects (N, d_in) base features.
+        self.node_embed = nn.Embedding(n_nodes_max, hidden)
+        nn.init.normal_(self.node_embed.weight, std=0.05)
+
+        # TierSpec is degree-percentile cuts; evenly space for tier_l tiers.
+        cuts = tuple(i / tier_l for i in range(tier_l + 1))
+        cfg = CPMLConfig(
+            tier_spec=TierSpec(cuts=cuts),
+            d_in=hidden, d_layer=hidden, d_predictor_hidden=hidden,
+            aggregator_kind=aggregator_kind,
+            cycle_k=arity,
+            n_nodes=n_nodes_max,  # required by hsikan aggregator if used
+            topology=topology,
+            tier_organization=tier_organization,
+        )
+        self._tier_spec = cfg.tier_spec
+
+        # Subclass CPML to override _edge_logits → per-vertex projection.
+        class _Backbone(CPML):
+            def __init__(self_inner, _cfg):  # noqa: N805
+                super().__init__(_cfg)
+                # x_final has per-vertex dim = self.head[0].in_features // 2.
+                # The parent head is Linear(2*final_dim, predictor_hidden);
+                # we project a single vertex's features instead of an edge's.
+                final_dim = self_inner.head[0].in_features // 2
+                self_inner.pos_head_pose = nn.Linear(final_dim, 3)
+
+            def _edge_logits(self_inner, x_final, edges_to_score):  # noqa: ARG002
+                return self_inner.pos_head_pose(x_final)            # (N, 3)
+
+            def _edge_logits_simple(self_inner, x_final, edges_to_score):  # noqa: ARG002
+                return self_inner.pos_head_pose(x_final)            # (N, 3)
+
+        self.cpml = _Backbone(cfg)
+
+    def forward(self, per_arity_input):
+        """Same input format as ``PositionRegHSiKAN`` — a single-arity
+        list whose element is ``(triad_v, triad_sigma, M_vt, M_e)``.
+        Returns ``(n_nodes_max, 3)`` predicted xyz per vertex."""
+        triad_v, triad_sigma, _M_vt, _M_e = per_arity_input[0]
+        device = triad_v.device
+        # Per-vertex tier assignment via cycle-incidence count proxy
+        # (graph degree isn't passed through the cell pipeline).
+        deg = torch.zeros(self.n_nodes_max, device=device)
+        if triad_v.numel() > 0:
+            flat = triad_v.view(-1).long()
+            ones = torch.ones_like(flat, dtype=torch.float32)
+            deg.scatter_add_(0, flat, ones)
+        tier_np = self._tier_spec.assign(deg.detach().cpu().numpy())
+        tier_of = torch.from_numpy(tier_np).to(device).long()
+        # CPML's overridden head ignores edges_to_score; pass a dummy.
+        dummy_edges = torch.zeros(1, 2, dtype=torch.long, device=device)
+        return self.cpml(
+            self.node_embed.weight,           # (N, hidden)
+            triad_v.long(),                    # (M, k)
+            triad_sigma.long(),                # (M, k)
+            tier_of,                            # (N,)
+            dummy_edges,                        # ignored by override
+        )                                       # (N, 3)
+
+
 def _build_input(g: SignedGraph, arity: int, max_per: int, device,
                    seed: int, n_nodes_pad: int):
     if arity == 3:

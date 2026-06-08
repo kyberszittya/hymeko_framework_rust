@@ -81,6 +81,7 @@ pub mod rand_lcg;
 pub mod signed_graph;
 pub mod spine;
 pub mod topk_cycles;
+pub mod topk_walks;
 pub mod traversal;
 pub mod traversal_heuristic;
 pub mod unsigned_cycles;
@@ -106,6 +107,9 @@ pub use spine::{
     fir_cycle_forward, fir_cycle_scatter_mean,
 };
 pub use topk_cycles::{tiered_m_v_by_degree, WeightedSumScorer};
+pub use topk_walks::{
+    enumerate_top_k_walks, enumerate_top_k_walks_batch, TopKWalk, TopKWalksBatch,
+};
 pub use topk_cycles::{
     EntropyGainScorer, HybridScorer, InverseDegreeScorer, TopKBuilder, TopKCycle,
     UniformityHeuristic, UniformityState, degree_adaptive_m_v, enumerate_top_k_cycles,

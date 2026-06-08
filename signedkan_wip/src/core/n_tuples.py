@@ -73,9 +73,14 @@ def _cycle_edges(adj: dict[int, dict[int, int]],
     return tuple(out)
 
 
-def enumerate_k_cycles(adj: dict[int, dict[int, int]],
-                        k: int) -> list[tuple[int, ...]]:
-    """Enumerate all unique chordless or non-chordless $k$-cycles.
+def enumerate_k_cycles(
+    adj: dict[int, dict[int, int]],
+    k: int,
+    max_cycles: int | None = None,
+    seed: int = 0,
+) -> list[tuple[int, ...]]:
+    """Enumerate unique $k$-cycles, optionally reservoir-sampled to
+    ``max_cycles`` for bounded memory.
 
     Uses a DFS from each starting vertex with rooted-cycle
     canonicalisation: starting from the smallest vertex of the cycle,
@@ -86,9 +91,20 @@ def enumerate_k_cycles(adj: dict[int, dict[int, int]],
 
     Complexity: $O(|E| \\cdot d^{k-1})$, tractable for $k \\leq 5$
     on Bitcoin-scale fixtures.
+
+    Memory: with ``max_cycles=N``, the retained ``out`` list is capped
+    at N via :class:`ReservoirSampler` (Vitter Algo R). The ``seen``
+    canonical-form dedup set still grows with the number of distinct
+    cycles, but that's bounded by the graph's cycle space — for k≤5
+    on bitcoin / OTC / Slashdot fixtures it stays in the low-MB range.
+    Defensive change 2026-06-03: even when the caller forgets to cap,
+    the legacy unbounded ``out`` list grew to 30+ GB on Komondor under
+    the hymeko-wheel-missing fallback (probe 13883886). Setting
+    ``max_cycles`` enforces a budget regardless.
     """
     if k < 3:
         return []
+    from .reservoir import ReservoirSampler
     nbrs = {v: sorted(d.keys()) for v, d in adj.items()}
 
     def _canonical(cycle: tuple[int, ...]) -> tuple[int, ...]:
@@ -101,7 +117,9 @@ def enumerate_k_cycles(adj: dict[int, dict[int, int]],
         return min(fwd, rev)
 
     seen: set[tuple[int, ...]] = set()
-    out: list[tuple[int, ...]] = []
+    sampler: ReservoirSampler[tuple[int, ...]] = ReservoirSampler(
+        max_cycles, seed=seed,
+    )
     for start in adj:
         # DFS up to depth k from start. Only continue when each new
         # vertex is > start (cycle root must be smallest); the
@@ -115,7 +133,7 @@ def enumerate_k_cycles(adj: dict[int, dict[int, int]],
                     cyc = _canonical(tuple(path))
                     if cyc not in seen:
                         seen.add(cyc)
-                        out.append(cyc)
+                        sampler.offer(cyc)
                 continue
             tail = path[-1]
             for nxt in nbrs.get(tail, ()):
@@ -124,7 +142,7 @@ def enumerate_k_cycles(adj: dict[int, dict[int, int]],
                 if nxt in visited:
                     continue
                 stack.append((path + [nxt], visited | {nxt}))
-    return out
+    return sampler.items
 
 
 def _vertex_negative_count(cycle: tuple[int, ...],
@@ -312,12 +330,53 @@ def _enumerate_cycles_fast(g: SignedGraph, k: int,
     except ImportError:
         pass
     adj = _adjacency(g, directed=directed)
-    cycles = enumerate_k_cycles(adj, k)
+    # Pass the cap down so the DFS itself stays memory-bounded via the
+    # reservoir sampler. Without this, walk-/cycle-rich graphs on the
+    # hymeko-wheel-missing fallback (Komondor 2026-06-03) OOM-killed
+    # at 32 GB. The post-DFS subsample remains for safety in case a
+    # caller passes a None / very-large cap to ``enumerate_k_cycles``
+    # but a real one to ``_enumerate_cycles_fast``.
+    cycles = enumerate_k_cycles(adj, k, max_cycles=cap, seed=seed)
     if cap is not None and len(cycles) > cap:
         rng = np.random.RandomState(seed)
         idx = rng.choice(len(cycles), size=cap, replace=False)
         cycles = [cycles[int(i)] for i in idx]
     return cycles
+
+
+def construct_2_arrays(g: SignedGraph) -> tuple:
+    """Memory-optimised k=2 constructor: returns ``(v, sigma, edge_signs)``
+    packed numpy arrays directly, bypassing the SignedNTuple-list
+    materialisation of :func:`construct_2`. Trivial wrapper of
+    ``g.edges`` / ``g.signs`` — no enumeration, no subsampling.
+
+    Used by the Strategy-pattern :class:`TwoCycleEnumerator` so the
+    k=2 cache path mirrors cycles / walks (numpy in, numpy out).
+
+    Returns
+    -------
+    v : (E, 2) int32
+        Edge endpoints (u, v) per row.
+    sigma : (E, 2) int8
+        Both endpoints share parity: ``σ_u = σ_v = +1`` if the edge is
+        positive, ``-1`` if negative (Davis-style k=2 convention).
+    edge_signs : (E, 2) int8
+        Both columns equal to ``g.signs`` (the cycle has one edge
+        used both ways under the modular-wrap interpretation; mirroring
+        gives downstream consumers the same shape they get from k≥3).
+    """
+    edges = np.ascontiguousarray(g.edges, dtype=np.int32)
+    signs = np.ascontiguousarray(g.signs, dtype=np.int8)
+    n = edges.shape[0]
+    v = edges.copy()
+    # Both endpoints take the edge sign as their σ (matches the
+    # ``sigma_v = +1 if s == 1 else -1`` rule in construct_2).
+    sigma = np.stack([signs, signs], axis=1).astype(np.int8)
+    # Width-2 edge_signs to keep the (N, arity) shape contract uniform
+    # with k≥3 cycles. The two columns are the same edge sign
+    # mirrored — the k=2 cycle wraps the single edge twice.
+    edge_signs = np.stack([signs, signs], axis=1).astype(np.int8)
+    return v, sigma, edge_signs
 
 
 def construct_2(g: SignedGraph) -> list[SignedNTuple]:
@@ -350,6 +409,85 @@ def construct_2(g: SignedGraph) -> list[SignedNTuple]:
     return out
 
 
+def _classify_k_arrays(g: SignedGraph, cycles_arr) -> tuple:
+    """Vectorised σ + balance + edge_signs computation from a (N, k)
+    numpy array of cycle vertex indices. Returns (v, sigma, edge_signs)
+    as parallel (N_valid, k) numpy arrays — bypassing the SignedNTuple
+    list materialisation that costs ~5× peak RSS on 500K+ cycle pools.
+
+    Memory fix 2026-06-03 (Komondor/A100): the original
+    ``construct_k`` Python loop built one ``SignedNTuple`` dataclass
+    instance per cycle (~400 bytes each → ~22 GB for 55M Slashdot k=4
+    cycles, ~30 GB for 500K Bitcoin c2+c5+w2+w3+w4 cycles). All of
+    that downstream is consumed as packed numpy arrays anyway. This
+    helper produces those arrays directly.
+    """
+    import numpy as _np
+    if hasattr(cycles_arr, "shape"):
+        cyc_np = _np.asarray(cycles_arr, dtype=_np.int64)
+    else:
+        # Came from the Python DFS fallback — list of tuples.
+        cyc_np = _np.asarray(list(cycles_arr), dtype=_np.int64)
+    if cyc_np.size == 0:
+        empty_i = _np.zeros((0, 0), dtype=_np.int32)
+        empty_s = _np.zeros((0, 0), dtype=_np.int8)
+        return empty_i, empty_s, empty_s.copy()
+    N, k = cyc_np.shape
+
+    # Build a sparse edge → sign lookup. SignedGraph.edges is (E, 2),
+    # signs is (E,). Symmetrise for undirected lookups (both
+    # directions present).
+    e = _np.asarray(g.edges, dtype=_np.int64)
+    s = _np.asarray(g.signs, dtype=_np.int8)
+    n_nodes = int(g.n_nodes)
+    # Linear key = u * n_nodes + v. Pack both directions.
+    keys_fwd = e[:, 0] * n_nodes + e[:, 1]
+    keys_rev = e[:, 1] * n_nodes + e[:, 0]
+    all_keys = _np.concatenate([keys_fwd, keys_rev])
+    all_signs = _np.concatenate([s, s])
+    # Sort + searchsorted for O(log E) lookup.
+    order = _np.argsort(all_keys, kind="stable")
+    sorted_keys = all_keys[order]
+    sorted_signs = all_signs[order]
+
+    # For each cycle row, build the k (u,v) pairs in cycle order and
+    # look up their signs.
+    next_idx = _np.arange(k)
+    next_idx = (next_idx + 1) % k
+    u_mat = cyc_np                       # (N, k)
+    v_mat = cyc_np[:, next_idx]          # (N, k)
+    query_keys = u_mat * n_nodes + v_mat # (N, k)
+    pos = _np.searchsorted(sorted_keys, query_keys.ravel())
+    pos = _np.clip(pos, 0, sorted_keys.size - 1)
+    found = sorted_keys[pos] == query_keys.ravel()
+    edge_signs_flat = _np.where(found, sorted_signs[pos], 0).astype(_np.int8)
+    edge_signs = edge_signs_flat.reshape(N, k)
+    # Filter rows that have a non-edge (any zero in edge_signs).
+    valid = (edge_signs != 0).all(axis=1)
+    if not valid.all():
+        cyc_np = cyc_np[valid]
+        edge_signs = edge_signs[valid]
+        N = cyc_np.shape[0]
+        if N == 0:
+            empty_i = _np.zeros((0, k), dtype=_np.int32)
+            empty_s = _np.zeros((0, k), dtype=_np.int8)
+            return empty_i, empty_s, empty_s.copy()
+
+    # σ_i = +1 if vertex i sees an even number of negatives in the
+    # cycle, -1 otherwise. Vertex i is incident to edge (i-1, i) and
+    # (i, i+1) → the i-th vertex's negative count is the sum of
+    # edge_signs at positions i-1 and i (in cycle order), counted as
+    # "is negative" flags.
+    is_neg = (edge_signs == -1).astype(_np.int8)
+    prev_idx = (_np.arange(k) - 1) % k
+    neg_counts = is_neg + is_neg[:, prev_idx]
+    sigma = _np.where((neg_counts % 2) == 0, 1, -1).astype(_np.int8)
+
+    # Output dtypes match what LazyCyclePool / _pack_and_drop expect.
+    v_out = cyc_np.astype(_np.int32)
+    return v_out, sigma, edge_signs
+
+
 def construct_k(g: SignedGraph, k: int,
                  max_cycles: int | None = None,
                  seed: int = 0,
@@ -367,22 +505,60 @@ def construct_k(g: SignedGraph, k: int,
     ``max_cycles`` subsamples the raw cycle list **before**
     classification — essential when classification of all cycles would
     OOM (Slashdot k=4 = 55M cycles → ~25GB of SignedNTuple wrappers).
+
+    Memory-optimised: per-cycle classification is now vectorised via
+    ``_classify_k_arrays``; this function reconstructs the legacy
+    SignedNTuple list for callers that need it. For memory-bound
+    callers, prefer ``construct_k_arrays`` (returns the packed numpy
+    arrays directly, no list materialisation).
     """
     if k < 3:
         raise ValueError(f"k must be >= 3, got {k}")
-    adj = _adjacency(g, directed=directed)
-    # Push the cap into the enumerator so we never materialise more
-    # than ``max_cycles`` Python tuples in memory.
+    v_arr, sigma_arr, es_arr = construct_k_arrays(
+        g, k, max_cycles=max_cycles, seed=seed,
+        directed=directed, early_stop=early_stop,
+    )
+    # Materialise the SignedNTuple list (legacy API).
+    out = []
+    for i in range(v_arr.shape[0]):
+        out.append(SignedNTuple(
+            v=tuple(int(x) for x in v_arr[i]),
+            sigma=tuple(int(x) for x in sigma_arr[i]),
+            edge_signs=tuple(int(x) for x in es_arr[i]),
+            balanced=bool(int(es_arr[i].astype(_np_int_for_balance()).prod()) == 1),
+            arity=int(v_arr.shape[1]),
+        ))
+    return out
+
+
+def _np_int_for_balance():
+    """Tiny helper to avoid importing numpy at module top in the
+    legacy ``construct_k`` path; kept local."""
+    import numpy as _np
+    return _np.int32
+
+
+def construct_k_arrays(g: SignedGraph, k: int,
+                        max_cycles: int | None = None,
+                        seed: int = 0,
+                        directed: bool = False,
+                        early_stop: bool = False) -> tuple:
+    """Memory-optimised entry point: returns ``(v, sigma, edge_signs)``
+    packed numpy arrays of shape ``(N, k)`` directly, skipping the
+    SignedNTuple list materialisation. ``cached_construct_k`` uses
+    this path when ``HYMEKO_CYCLE_CACHE`` is enabled so the cache
+    layer can return a ``LazyCyclePool`` without ever holding the
+    eager list.
+
+    Identical math semantics to ``construct_k``; the legacy
+    function now wraps this one.
+    """
+    if k < 3:
+        raise ValueError(f"k must be >= 3, got {k}")
     cycles = _enumerate_cycles_fast(g, k, max_cycles=max_cycles,
                                        seed=seed, directed=directed,
                                        early_stop=early_stop)
-    out = []
-    for cyc in cycles:
-        es = _cycle_edges(adj, cyc)
-        if es is None:
-            continue
-        out.append(_classify_n_tuple(cyc, es))
-    return out
+    return _classify_k_arrays(g, cycles)
 
 
 def stats(tuples: list[SignedNTuple]) -> dict:

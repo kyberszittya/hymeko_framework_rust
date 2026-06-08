@@ -37,6 +37,9 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_color_coded_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_cycles_path_closure_rs, m)?)?;
     m.add_function(wrap_pyfunction!(crate::cycles::enumerate_k_walks_rs, m)?)?;
+    // Top-K signed-walk enumeration with admissible-UB DFS pruning
+    // (2026-06-03). Production runner for ABBWalkEnumerator.
+    m.add_function(wrap_pyfunction!(crate::cycles::enumerate_top_k_walks_rs, m)?)?;
     // Unified entries (Strategy refactor 2026-05-11; CLAUDE.md §6.5 #1).
     // - enumerate_cycles_rs:           per-vertex (replaces 8 legacy)
     // - enumerate_top_k_cycles_rs:     top-K global, regular scorers (replaces 2 legacy)

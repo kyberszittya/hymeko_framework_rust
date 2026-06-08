@@ -2,6 +2,10 @@
 # 5-seed paired AUC validation: degree-adaptive m_v (c=1) vs the
 # fixed-m=128 baseline at the Epinions PRODUCTION config.
 #
+# USAGE
+#   sbatch signedkan_wip/experiments/run_adaptive_mv_5seed_2026_05_10.sh
+#   (or local: bash signedkan_wip/experiments/run_adaptive_mv_5seed_2026_05_10.sh)
+#
 # Acceptance gate (per plan):
 #   - Paired-mean AUC within ±0.005 of fixed-m baseline (or HIGHER —
 #     the smoke result was +6.7pp at the abbreviated config, so we
@@ -11,15 +15,44 @@
 # Production config: c2,c3,c4,c5,w2,w3, h=4, 80 epochs, balance
 # pruner, edge_cr highway gate, fraction_negative scorer.
 #
+# Wall: cold-cache fixed Epinions ~2.5 h + cold-cache adaptive Epinions
+# ~1.6 h + 8 × ~1 min warm-cache seeds ≈ 4.2 h sequential. --time=06:00:00
+# gives ~70% TimeEff.
+#
 # Plan: docs/plans/2026-05-10-degree-adaptive-mv/plan.tex
 # Smoke report: reports/2026-05-10-degree-adaptive-mv.md
-#
-# Wall budget: ~2-4 min/seed × 5 seeds × 2 variants ≈ 30-60 min
-# total (estimated from prior epinions edge_cr 5-seed run timing).
+
+#SBATCH --job-name=hsikan-adaptive-mv-5seed
+#SBATCH --output=slurm_logs/hsikan-adaptive-mv-5seed-%j.out
+#SBATCH --error=slurm_logs/hsikan-adaptive-mv-5seed-%j.err
+#SBATCH --time=06:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=24G
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:1
+#SBATCH --account=pr_szevis
 
 set -u
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT"
+
+# Komondor path: pivot REPO_ROOT into the /workspace bind if running
+# under Singularity from sbatch context. Local: unchanged.
+if [ -n "${SLURM_JOB_ID:-}" ] && [ -f "$REPO_ROOT/hymeko_signedkan.sif" ]; then
+    module purge 2>/dev/null || true
+    module load singularity 2>/dev/null || true
+    # Re-exec ourselves inside the Singularity container so the python
+    # invocations below resolve against the SIF environment.
+    if [ -z "${INSIDE_SIF:-}" ]; then
+        exec singularity exec --nv \
+            --bind "$REPO_ROOT:/workspace" \
+            --env INSIDE_SIF=1 \
+            "$REPO_ROOT/hymeko_signedkan.sif" \
+            bash -c "cd /workspace && bash signedkan_wip/experiments/run_adaptive_mv_5seed_2026_05_10.sh"
+    fi
+fi
 
 LOG_DIR="/tmp/adaptive_mv_5seed_2026_05_10"
 mkdir -p "$LOG_DIR"

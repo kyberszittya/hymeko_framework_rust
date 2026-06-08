@@ -1,0 +1,51 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{listings}
+\usepackage{xcolor}
+\usetikzlibrary{positioning, arrows.meta, calc, shapes.geometric, fit, matrix}
+
+\title{Experiment Runner Framework -- design + UML class diagram}
+\author{2026-06-04 (Aiko / Csaba)}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Scope}
+Replace 221 launcher scripts in \texttt{signedkan\_wip/experiments/}
+with one runner framework + YAML configs. CLAUDE.md \S6.5 \#3 has
+mandated this since 2026-05-11; this is the implementation.
+
+The full design narrative is in
+\texttt{runner\_architecture.md} (in the same directory).
+This LaTeX wrapper carries the formal UML class diagram below.
+
+\section*{Class diagram}
+\begin{figure}[h]
+  \centering
+  \input{runner_class_diagram.tikz}
+  \caption{Experiment runner framework. \textit{Italic} = abstract /
+    protocol. Concrete subclasses fan out to the three deployment
+    targets (single-cell, multi-seed sweep, Komondor array).
+    \texttt{ExperimentConfig} is a composition of existing
+    \texttt{runtime\_config.py} dataclasses
+    (\texttt{TopKConfig}, \texttt{KernelConfig}, \dots), extended
+    with cell / model / output specifications. Monitors are an
+    Observer pattern attached to every \texttt{Experiment}; the
+    registry maps YAML \texttt{experiment\_class} names to concrete
+    \texttt{Experiment} subclasses.}
+\end{figure}
+
+\section*{Mermaid version}
+A browsable Mermaid version of the same diagram is at
+\texttt{runner\_class\_diagram.mmd} (compatible with GitHub
+rendering and the user's IDE).
+
+\end{document}

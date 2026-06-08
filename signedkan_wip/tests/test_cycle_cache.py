@@ -263,9 +263,20 @@ def test_cached_construct_walks_resolves_walks_module():
     """Regression 2026-05-12: ``cycle_cache.config`` must import
     ``signedkan_wip.src.core.walks``, not a non-existent ``cycle_cache.walks``.
     Otherwise ``HSIKAN_MIXED_TUPLES=…,w2,…`` (joint_ba) raises
-    ImportError before any training."""
+    ImportError before any training.
+
+    Return-type updated 2026-06-03: ``cached_construct_walks`` now
+    returns a :class:`LazyCyclePool` (mirroring the post-fix
+    ``cached_construct_k`` behaviour) instead of a list, so the
+    cold-cache walk path uses the same numpy-direct surface that
+    closed the walk-k=5 Komondor OOM. Backward-compat for consumers
+    that previously iterated the list: ``LazyCyclePool.__iter__``
+    yields :class:`SignedNTuple` values one at a time.
+    """
     g = _toy_graph()
     out = cycle_cache.cached_construct_walks(
         g, walk_len=2, max_walks=200, model_seed=0,
     )
-    assert isinstance(out, list)
+    # Either a LazyCyclePool (new path) or a list[SignedNTuple]
+    # (legacy fallback when the env disables caching mid-test).
+    assert isinstance(out, (cycle_cache.LazyCyclePool, list))
