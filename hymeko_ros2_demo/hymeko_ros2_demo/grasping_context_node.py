@@ -19,7 +19,7 @@ from __future__ import annotations
 import importlib
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import rclpy
 from rclpy.node import Node
@@ -38,7 +38,7 @@ except ImportError as exc:
 from hymeko_ros2_demo.topic_binding import (
     BindingConfig,
     Hyperedge,
-    aggregate_grasp_stability,
+    evaluate_context,
     extract_hyperedges,
     find_context_block,
     load_yaml_config,
@@ -203,16 +203,11 @@ class GraspingContextNode(Node):
     def _tick(self):
         """Evaluate the hyperedges and publish the outputs."""
         # Topological evaluation: each edge's outputs become available
-        # for subsequent edges in the same tick.  The file ordering
-        # already encodes a valid topological sort for grasping_context.
-        for edge in self.edges:
-            bound: Dict[str, float] = {
-                inp: float(self._v_global.get(inp, 0.0)) for inp in edge.inputs
-            }
-            out_value = self._aggregate(edge, bound)
-            # Write outputs back into V_global so downstream edges see them.
-            for out_name in edge.outputs:
-                self._v_global[out_name] = out_value
+        # for subsequent edges in the same tick (the file ordering is a
+        # valid topological sort for grasping_context). The evaluation
+        # core is the pure `evaluate_context` so it can be unit-tested
+        # and benchmarked without rclpy (see bench_tick_latency.py).
+        evaluate_context(self.edges, self._v_global)
 
         # Publish whatever the config asked for.
         for vertex, (pub, field) in self._pubs.items():
@@ -271,26 +266,6 @@ class GraspingContextNode(Node):
             cur = getattr(cur, piece)
         setattr(cur, parts[-1], float(value))
         return msg
-
-    def _aggregate(self, edge: Hyperedge, inputs: Dict[str, float]) -> float:
-        """Placeholder per-edge aggregation function.
-
-        Special-cases the stability edge (uses the practitioner-style
-        1/(1+|F_l - F_g|) formula); all other edges use the
-        clamped-mean default.  See ``topic_binding.aggregate_*`` for
-        the rationale (the paper does not pin closed forms).
-        """
-
-        if "stability" in edge.name or edge.name == "grasp_stability":
-            out = aggregate_grasp_stability(inputs)
-            if "stability_margin" in out:
-                return out["stability_margin"]
-        # Default: mean clipped to [0, 1].
-        if not inputs:
-            return 0.0
-        vals = [float(v) for v in inputs.values()]
-        m = sum(vals) / len(vals)
-        return max(0.0, min(1.0, m))
 
 
 def main(args=None):

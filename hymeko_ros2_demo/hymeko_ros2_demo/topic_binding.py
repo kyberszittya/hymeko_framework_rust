@@ -233,6 +233,60 @@ def aggregate_grasp_stability(inputs: Dict[str, float]) -> Dict[str, float]:
     return {"stability_margin": max(0.0, min(1.0, margin))}
 
 
+# -------------------------------------------------------------------
+# Per-tick contextual evaluation (the control-cycle core)
+# -------------------------------------------------------------------
+
+
+def default_edge_aggregate(edge: Hyperedge, inputs: Dict[str, float]) -> float:
+    """The placeholder per-edge map used by the live demo.
+
+    Special-cases the grasp-stability edge (practitioner
+    ``1/(1+6|F_l-F_g|^{1.5})`` form); every other edge uses the
+    clamped mean of its bound inputs. This is the single source of the
+    aggregation rule shared by :class:`GraspingContextNode` and the
+    per-cycle benchmark (no duplication).
+    """
+    if "stability" in edge.name or edge.name == "grasp_stability":
+        out = aggregate_grasp_stability(inputs)
+        if "stability_margin" in out:
+            return out["stability_margin"]
+    if not inputs:
+        return 0.0
+    vals = [float(v) for v in inputs.values()]
+    mean = sum(vals) / len(vals)
+    return max(0.0, min(1.0, mean))
+
+
+def evaluate_context(
+    edges: List[Hyperedge],
+    v_global: Dict[str, float],
+    aggregate: Optional[Callable[[Hyperedge, Dict[str, float]], float]] = None,
+) -> Dict[str, float]:
+    """Topologically evaluate signed hyperedges in place over ``v_global``.
+
+    This is the pure per-control-cycle computation extracted from
+    ``GraspingContextNode._tick`` so it can be unit-tested and
+    benchmarked without rclpy. Each edge binds its ``+`` inputs from
+    the current ``v_global``, aggregates them to a scalar, and writes
+    that scalar to its ``-`` outputs, which become visible to later
+    edges in the same cycle (the file ordering is a valid topological
+    sort).
+
+    Preconditions: ``edges`` ordered so each edge's inputs are produced
+    by an earlier edge or are external bindings. Postconditions:
+    ``v_global`` is updated in place and returned; external input keys
+    are never overwritten.
+    """
+    agg = aggregate or default_edge_aggregate
+    for edge in edges:
+        bound = {inp: float(v_global.get(inp, 0.0)) for inp in edge.inputs}
+        out_value = agg(edge, bound)
+        for out_name in edge.outputs:
+            v_global[out_name] = out_value
+    return v_global
+
+
 __all__ = [
     "Hyperedge",
     "find_context_block",
@@ -242,4 +296,6 @@ __all__ = [
     "load_yaml_config",
     "aggregate_default",
     "aggregate_grasp_stability",
+    "default_edge_aggregate",
+    "evaluate_context",
 ]
