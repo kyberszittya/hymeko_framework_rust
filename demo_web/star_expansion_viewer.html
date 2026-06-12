@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HyMeKo · Star-expansion viewer</title>
+<style>
+  :root { --purple:#7F77DD; --green:#1D9E75; --blue:#378ADD; --ink:#201A40; --muted:#6B6690; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; font-family: "Segoe UI", system-ui, Arial, sans-serif; background:#0F0C20; }
+  #sxv-wrap { position:relative; width:100%; height:100vh; overflow:hidden; background:#1A1633; }
+  #sxv-canvas { display:block; width:100%; height:100%; }
+  .panel { position:absolute; background:rgba(255,255,255,0.94); color:var(--ink); border-radius:12px; padding:12px 14px; font-size:13px; box-shadow:0 6px 24px rgba(20,16,48,0.35); }
+  #sxv-panel { top:14px; left:14px; width:236px; }
+  #sxv-panel h1 { font-size:15px; margin:0 0 2px; color:var(--purple); font-weight:700; }
+  #sxv-panel .sub { font-size:11px; color:var(--muted); margin:0 0 10px; }
+  #sxv-panel label { display:block; font-size:11px; color:var(--muted); margin:8px 0 3px; font-weight:600; letter-spacing:.02em; }
+  #sxv-panel select, #sxv-panel input[type=range] { width:100%; }
+  .modes { display:flex; gap:6px; margin-top:4px; }
+  .modes button { flex:1; padding:7px 0; border:1px solid #d7d2ec; background:#fff; border-radius:8px; color:var(--ink); font-size:12px; font-weight:600; cursor:pointer; }
+  .modes button.active { color:#fff; border-color:transparent; }
+  .modes button.star.active { background:var(--blue); }
+  .modes button.clique.active { background:var(--purple); }
+  .row { display:flex; align-items:center; gap:8px; }
+  .row span { min-width:26px; text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
+  .btn { width:100%; margin-top:10px; padding:8px 0; border:1px solid #d7d2ec; background:#fff; border-radius:8px; color:var(--ink); font-weight:600; cursor:pointer; }
+  .btn:hover { background:#f3f1fb; }
+  #sxv-stats { top:14px; right:14px; width:210px; }
+  #sxv-stats .k { color:var(--muted); font-size:11px; }
+  #sxv-stats .big { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; }
+  #sxv-stats .star { color:var(--blue); }
+  #sxv-stats .clique { color:var(--purple); }
+  #sxv-stats .ratio { margin-top:8px; font-size:12px; color:var(--ink); }
+  #sxv-legend { bottom:14px; left:14px; display:flex; gap:16px; padding:9px 14px; font-size:12px; }
+  #sxv-legend i { display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+  #sxv-tip { position:absolute; pointer-events:none; display:none; background:#201A40; color:#fff; font-size:12px; padding:4px 8px; border-radius:6px; }
+  #sxv-hint { bottom:14px; right:14px; font-size:11px; color:rgba(255,255,255,0.6); background:none; box-shadow:none; }
+</style>
+</head>
+<body>
+<div id="sxv-wrap">
+  <canvas id="sxv-canvas"></canvas>
+  <div id="sxv-panel" class="panel">
+    <h1>Star-expansion viewer</h1>
+    <p class="sub">HyMeKo · hypergraph incidence in 3D</p>
+    <label>Hypergraph</label>
+    <select id="sxv-preset">
+      <option value="hymeko">HyMeKo source (engine)</option>
+      <option value="fano">Sandbox: Fano plane (7 pts, 7 lines)</option>
+      <option value="tetra">Sandbox: Tetrahedron faces (3-uniform)</option>
+      <option value="quad">Sandbox: 4-ary chain</option>
+      <option value="random">Sandbox: Random…</option>
+    </select>
+    <div id="sxv-rand" style="display:none">
+      <label>Vertices <b id="sxv-nv">14</b></label>
+      <input id="sxv-nodes" type="range" min="4" max="40" value="14" step="1" />
+      <label>Hyperedges <b id="sxv-ne">8</b></label>
+      <input id="sxv-edges" type="range" min="1" max="30" value="8" step="1" />
+      <label>Max arity <b id="sxv-na">4</b></label>
+      <input id="sxv-arity" type="range" min="2" max="8" value="4" step="1" />
+      <button class="btn" id="sxv-regen">Regenerate</button>
+    </div>
+    <label>Expansion</label>
+    <div class="modes">
+      <button id="sxv-star" class="star active">Star</button>
+      <button id="sxv-clique" class="clique">Clique</button>
+    </div>
+    <button class="btn" id="sxv-reheat">Reheat layout</button>
+  </div>
+  <div id="sxv-stats" class="panel">
+    <div class="k">vertices |V| · hyperedges |E|</div>
+    <div class="big" id="sxv-ve">– · –</div>
+    <div style="margin-top:10px" class="k">star incidences &nbsp;O(|E|·d)</div>
+    <div class="big star" id="sxv-starn">–</div>
+    <div style="margin-top:8px" class="k">clique edges &nbsp;O(|E|·d²)</div>
+    <div class="big clique" id="sxv-cliquen">–</div>
+    <div class="ratio" id="sxv-ratio"></div>
+    <div class="ratio" id="sxv-prov" style="margin-top:8px;font-size:11px;word-break:break-all;"></div>
+  </div>
+  <div id="sxv-legend" class="panel">
+    <span><i style="background:#7F77DD"></i>vertex</span>
+    <span><i style="background:#1D9E75"></i>hyperedge hub</span>
+  </div>
+  <div id="sxv-tip"></div>
+  <div id="sxv-hint" class="panel">drag to orbit · scroll to zoom · hover a node</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Engine-exported data: emitted by export_star_expansion.py. <script src> works under file:// (no CORS). -->
+<script src="star_expansion_data.js"></script>
+<script>
+//SXV-START
+(function () {
+  var wrap = document.getElementById('sxv-wrap');
+  var canvas = document.getElementById('sxv-canvas');
+  var tip = document.getElementById('sxv-tip');
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1A1633);
+  var camera = new THREE.PerspectiveCamera(55, 1, 0.1, 6000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+  var dir = new THREE.DirectionalLight(0xffffff, 0.55); dir.position.set(1, 1, 1); scene.add(dir);
+
+  var theta = 0.7, phi = 1.05, radius = 340, target = new THREE.Vector3(0, 0, 0), autoRot = true;
+  function updateCam() {
+    camera.position.set(
+      target.x + radius * Math.sin(phi) * Math.cos(theta),
+      target.y + radius * Math.cos(phi),
+      target.z + radius * Math.sin(phi) * Math.sin(theta));
+    camera.lookAt(target);
+  }
+  function resize() {
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+
+  var vGeo = new THREE.SphereGeometry(5, 18, 18);
+  var hGeo = new THREE.OctahedronGeometry(7.5);
+  var vMat = new THREE.MeshLambertMaterial({ color: 0x7F77DD });
+  var hMat = new THREE.MeshLambertMaterial({ color: 0x1D9E75 });
+  var hot = new THREE.MeshLambertMaterial({ color: 0xE7B84B });
+
+  var H = { n: 0, edges: [] };
+  var mode = 'star';
+  var P = [], Vel = [], incid = [], meshes = [], lineSeg = null, temp = 1.0;
+
+  function buildGraph(g) {
+    H = g;
+    var nHub = H.edges.length, N = H.n + nHub, i;
+    P = []; Vel = [];
+    for (i = 0; i < N; i++) {
+      P.push(new THREE.Vector3((Math.random() - 0.5) * 220, (Math.random() - 0.5) * 220, (Math.random() - 0.5) * 220));
+      Vel.push(new THREE.Vector3());
+    }
+    incid = [];
+    H.edges.forEach(function (e, ei) { var hub = H.n + ei; e.forEach(function (v) { incid.push([hub, v]); }); });
+    temp = 1.0;
+    rebuildMeshes(); rebuildLines(); setHubVisibility(); updateStats();
+  }
+  function rebuildMeshes() {
+    meshes.forEach(function (m) { scene.remove(m.mesh); });
+    meshes = [];
+    var i;
+    for (i = 0; i < H.n; i++) { var mv = new THREE.Mesh(vGeo, vMat); scene.add(mv); meshes.push({ mesh: mv, isHub: false, idx: i }); }
+    for (i = 0; i < H.edges.length; i++) { var mh = new THREE.Mesh(hGeo, hMat); scene.add(mh); meshes.push({ mesh: mh, isHub: true, idx: i }); }
+  }
+  function setHubVisibility() { meshes.forEach(function (m) { if (m.isHub) m.mesh.visible = (mode === 'star'); }); }
+  function currentSegments() {
+    var segs = [];
+    if (mode === 'star') {
+      H.edges.forEach(function (e, ei) { var hub = H.n + ei; e.forEach(function (v) { segs.push([hub, v]); }); });
+    } else {
+      H.edges.forEach(function (e) { for (var i = 0; i < e.length; i++) for (var j = i + 1; j < e.length; j++) segs.push([e[i], e[j]]); });
+    }
+    return segs;
+  }
+  function rebuildLines() {
+    if (lineSeg) { scene.remove(lineSeg); lineSeg.geometry.dispose(); lineSeg = null; }
+    var segs = currentSegments();
+    var pos = new Float32Array(Math.max(1, segs.length) * 6);
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    var mat = new THREE.LineBasicMaterial({ color: mode === 'star' ? 0x378ADD : 0xAFA9EC, transparent: true, opacity: mode === 'star' ? 0.6 : 0.4 });
+    lineSeg = new THREE.LineSegments(g, mat); lineSeg.userData.segs = segs; scene.add(lineSeg);
+  }
+  function updateLines() {
+    if (!lineSeg) return;
+    var segs = lineSeg.userData.segs, arr = lineSeg.geometry.attributes.position.array, k = 0, s, a, b;
+    for (s = 0; s < segs.length; s++) { a = P[segs[s][0]]; b = P[segs[s][1]]; arr[k++] = a.x; arr[k++] = a.y; arr[k++] = a.z; arr[k++] = b.x; arr[k++] = b.y; arr[k++] = b.z; }
+    lineSeg.geometry.attributes.position.needsUpdate = true;
+  }
+  function layoutStep() {
+    var N = P.length, krep = 1500, kspr = 0.02, rest = 48, grav = 0.012, damp = 0.86, i, j;
+    for (i = 0; i < N; i++) {
+      for (j = i + 1; j < N; j++) {
+        var dx = P[i].x - P[j].x, dy = P[i].y - P[j].y, dz = P[i].z - P[j].z;
+        var d2 = dx * dx + dy * dy + dz * dz + 0.05, d = Math.sqrt(d2), f = krep / d2 * temp;
+        var ux = dx / d, uy = dy / d, uz = dz / d;
+        Vel[i].x += ux * f; Vel[i].y += uy * f; Vel[i].z += uz * f;
+        Vel[j].x -= ux * f; Vel[j].y -= uy * f; Vel[j].z -= uz * f;
+      }
+    }
+    for (i = 0; i < incid.length; i++) {
+      var a = incid[i][0], b = incid[i][1];
+      var ex = P[b].x - P[a].x, ey = P[b].y - P[a].y, ez = P[b].z - P[a].z;
+      var ed = Math.sqrt(ex * ex + ey * ey + ez * ez) + 1e-3, sf = kspr * (ed - rest);
+      var sx = ex / ed, sy = ey / ed, sz = ez / ed;
+      Vel[a].x += sx * sf; Vel[a].y += sy * sf; Vel[a].z += sz * sf;
+      Vel[b].x -= sx * sf; Vel[b].y -= sy * sf; Vel[b].z -= sz * sf;
+    }
+    for (i = 0; i < N; i++) {
+      Vel[i].x -= P[i].x * grav; Vel[i].y -= P[i].y * grav; Vel[i].z -= P[i].z * grav;
+      Vel[i].multiplyScalar(damp); P[i].add(Vel[i]);
+    }
+    temp = Math.max(0.04, temp * 0.99);
+  }
+  function syncMeshes() {
+    meshes.forEach(function (m) { var idx = m.isHub ? (H.n + m.idx) : m.idx; m.mesh.position.copy(P[idx]); });
+  }
+  function updateStats() {
+    var V = H.n, E = H.edges.length, inc = 0, cliq = 0;
+    H.edges.forEach(function (e) { inc += e.length; cliq += e.length * (e.length - 1) / 2; });
+    document.getElementById('sxv-ve').textContent = V + ' · ' + E;
+    document.getElementById('sxv-starn').textContent = inc;
+    document.getElementById('sxv-cliquen').textContent = cliq;
+    var r = inc > 0 ? (cliq / inc) : 0;
+    document.getElementById('sxv-ratio').innerHTML = 'clique is <b>' + (Math.round(r * 10) / 10) + '×</b> the star edge count';
+    var prov = document.getElementById('sxv-prov');
+    if (activeData) {
+      // Display the engine's counts; verify the JS-derived ones agree (no drift).
+      var eInc = activeData.star.incidence_nnz, eClq = activeData.clique.edge_count;
+      var agree = (eInc === inc && eClq === cliq);
+      prov.innerHTML = 'source: <b>' + activeData.source + '</b><br>'
+        + 'hash: ' + activeData.canonical_hash + '<br>'
+        + 'engine: inc ' + eInc + ' · clique ' + eClq
+        + (agree ? ' <b style="color:#1D9E75">✓ JS agrees</b>'
+                 : ' <b style="color:#d33">✗ drift</b>');
+    } else {
+      prov.innerHTML = '<span style="color:var(--muted)">sandbox (synthetic) — layout is for legibility, not geometry</span>';
+    }
+  }
+
+  var ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), hovered = null;
+  function hoverPick(ev) {
+    var r = canvas.getBoundingClientRect();
+    mouse.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+    mouse.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+    ray.setFromCamera(mouse, camera);
+    var objs = []; meshes.forEach(function (m) { if (m.mesh.visible) objs.push(m.mesh); });
+    var hit = ray.intersectObjects(objs, false);
+    if (hovered) { hovered.m.mesh.material = hovered.m.isHub ? hMat : vMat; hovered = null; }
+    if (hit.length) {
+      var mm = meshes.filter(function (m) { return m.mesh === hit[0].object; })[0];
+      if (mm) {
+        mm.mesh.material = hot; hovered = { m: mm };
+        tip.style.display = 'block';
+        tip.style.left = (ev.clientX - r.left + 12) + 'px';
+        tip.style.top = (ev.clientY - r.top + 12) + 'px';
+        tip.textContent = mm.isHub ? ('hyperedge ' + mm.idx + ' · arity ' + H.edges[mm.idx].length) : ('vertex ' + mm.idx);
+      }
+    } else { tip.style.display = 'none'; }
+  }
+
+  var dragging = false, lx = 0, ly = 0;
+  canvas.addEventListener('pointerdown', function (e) { dragging = true; autoRot = false; lx = e.clientX; ly = e.clientY; });
+  window.addEventListener('pointerup', function () { dragging = false; });
+  window.addEventListener('pointermove', function (e) {
+    if (dragging) {
+      theta -= (e.clientX - lx) * 0.005;
+      phi = Math.max(0.16, Math.min(Math.PI - 0.16, phi - (e.clientY - ly) * 0.005));
+      lx = e.clientX; ly = e.clientY;
+    } else { hoverPick(e); }
+  });
+  canvas.addEventListener('wheel', function (e) { e.preventDefault(); radius = Math.max(90, Math.min(1400, radius * (1 + (e.deltaY > 0 ? 0.09 : -0.09)))); }, { passive: false });
+
+  function randomH() {
+    var n = +document.getElementById('sxv-nodes').value, m = +document.getElementById('sxv-edges').value, K = +document.getElementById('sxv-arity').value;
+    var edges = [], i;
+    for (i = 0; i < m; i++) {
+      var k = Math.min(n, 2 + Math.floor(Math.random() * (K - 1))), set = {};
+      var arr = []; while (arr.length < k) { var v = Math.floor(Math.random() * n); if (!set[v]) { set[v] = 1; arr.push(v); } }
+      edges.push(arr);
+    }
+    return { n: n, edges: edges };
+  }
+  // Engine-exported data (window.SXV_DATA from star_expansion_data.js, or
+  // fetched at boot). `activeData` is the loaded blob while the HyMeKo graph
+  // is shown, else null (synthetic sandbox).
+  var LOADED = (typeof window !== 'undefined' && window.SXV_DATA) ? window.SXV_DATA : null;
+  var activeData = null;
+  function dataToH(d) { return { n: d.n_vertices, edges: d.hyperedges.map(function (e) { return e.members; }) }; }
+
+  var PRESETS = {
+    hymeko: function () { activeData = LOADED; return LOADED ? dataToH(LOADED) : PRESETS.fano(); },
+    fano: function () { activeData = null; return { n: 7, edges: [[0, 1, 2], [0, 3, 4], [0, 5, 6], [1, 3, 5], [1, 4, 6], [2, 3, 6], [2, 4, 5]] }; },
+    tetra: function () { activeData = null; return { n: 4, edges: [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]] }; },
+    quad: function () { activeData = null; return { n: 8, edges: [[0, 1, 2, 3], [2, 3, 4, 5], [4, 5, 6, 7], [6, 7, 0, 1]] }; },
+    random: function () { activeData = null; return randomH(); }
+  };
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('sxv-star').classList.toggle('active', m === 'star');
+    document.getElementById('sxv-clique').classList.toggle('active', m === 'clique');
+    setHubVisibility(); rebuildLines();
+  }
+  document.getElementById('sxv-star').addEventListener('click', function () { setMode('star'); });
+  document.getElementById('sxv-clique').addEventListener('click', function () { setMode('clique'); });
+  document.getElementById('sxv-reheat').addEventListener('click', function () { temp = 1.0; autoRot = true; });
+  document.getElementById('sxv-regen').addEventListener('click', function () { buildGraph(randomH()); });
+  ['sxv-nodes', 'sxv-edges', 'sxv-arity'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', function () {
+      document.getElementById('sxv-nv').textContent = document.getElementById('sxv-nodes').value;
+      document.getElementById('sxv-ne').textContent = document.getElementById('sxv-edges').value;
+      document.getElementById('sxv-na').textContent = document.getElementById('sxv-arity').value;
+    });
+  });
+  document.getElementById('sxv-preset').addEventListener('change', function (e) {
+    var v = e.target.value;
+    document.getElementById('sxv-rand').style.display = (v === 'random') ? 'block' : 'none';
+    buildGraph(PRESETS[v]());
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    layoutStep(); syncMeshes(); updateLines();
+    if (autoRot) theta += 0.0016;
+    updateCam(); renderer.render(scene, camera);
+  }
+  function selectPreset(v) { document.getElementById('sxv-preset').value = v; document.getElementById('sxv-rand').style.display = (v === 'random') ? 'block' : 'none'; }
+  function boot() {
+    resize(); updateCam(); animate();
+    if (LOADED) { selectPreset('hymeko'); buildGraph(PRESETS.hymeko()); return; }
+    // No file:// blob — try HTTP fetch, else fall back to the sandbox.
+    fetch('star_expansion_data.json')
+      .then(function (r) { return r.json(); })
+      .then(function (d) { LOADED = d; selectPreset('hymeko'); buildGraph(PRESETS.hymeko()); })
+      .catch(function () { selectPreset('fano'); buildGraph(PRESETS.fano()); });
+  }
+  boot();
+})();
+//SXV-END
+</script>
+</body>
+</html>

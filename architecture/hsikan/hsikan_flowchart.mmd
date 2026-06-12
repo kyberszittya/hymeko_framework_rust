@@ -1,0 +1,28 @@
+%% HSiKAN — most important steps of the forward pass (structure -> sign).
+%% Companion to hsikan_forward.gif (dataflow) and hsikan_neurons.gif (KAN neurons).
+flowchart LR
+    G["Signed graph<br/>(+ trust / − distrust)"] --> Q["Query edge u–v<br/>(sign unknown)"]
+    Q --> FIR["FIR stage<br/>enumerate cycles &amp; walks<br/>through u–v, per arity k"]
+
+    FIR --> T2["k=2 tuples"]
+    FIR --> T3["k=3 tuples"]
+    FIR --> Tk["… k=K tuples"]
+
+    T2 --> S["HSiKAN-CR middle shell<br/>SignedKAN: learnable spline φ<br/>on every edge (Catmull–Rom)"]
+    T3 --> S
+    Tk --> S
+
+    S --> AGG["aggregate per arity<br/>(pool / attention)"]
+    AGG --> ALPHA{"αₖ regime mix<br/>softmax over arities<br/>= learned structural prior"}
+    ALPHA --> EMB["edge embedding"]
+    EMB --> CPML["CPML classifier<br/>logit → p(sign=+1)"]
+    CPML --> OUT["predicted sign ±<br/>+ confidence"]
+
+    classDef inp fill:#eef,stroke:#4472C4;
+    classDef shell fill:#efe1ff,stroke:#7a4fb5;
+    classDef mix fill:#fff3df,stroke:#e08a00;
+    classDef out fill:#e1f5e1,stroke:#3a8f3a;
+    class G,Q inp;
+    class S,AGG shell;
+    class ALPHA mix;
+    class CPML,OUT out;

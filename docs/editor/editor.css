@@ -128,6 +128,15 @@ main {
   color: #9ca3af;
   font-style: italic;
 }
+.palette .vrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #4b5563;
+  cursor: pointer;
+}
+.palette .vrow input { margin: 0; }
 
 /* Selection / properties panel */
 
@@ -161,17 +170,155 @@ main {
 }
 #selectionPanel .danger:hover { background: #dc2626; }
 
-/* ── Canvas pane ──────────────────────────────────────────── */
+/* ── Canvas pane: tab bar + stacked view panes ────────────── */
 
 .canvas-pane {
   flex: 1;
   position: relative;
+  display: flex;
+  flex-direction: column;
   background: #fafafa;
 }
-#cy {
-  width: 100%;
-  height: 100%;
+.view-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px 0;
+  background: #eef1f5;
+  border-bottom: 1px solid #e5e7eb;
 }
+.view-tab {
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+  background: #f3f4f6;
+  color: #4b5563;
+  padding: 6px 14px;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 13px;
+}
+.view-tab:hover { background: #e5e7eb; }
+.view-tab.active {
+  background: #fafafa;
+  color: #1f2937;
+  font-weight: 600;
+  border-color: #cbd5e1;
+}
+.view-stack {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+.view-pane {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+.view-pane.active { display: block; }
+#cy { width: 100%; height: 100%; }
+#view-hyper3d, #view-kinematic { width: 100%; height: 100%; }
+
+/* 3D view chrome (shared) */
+.view3d-canvas { width: 100%; height: 100%; display: block; }
+.view3d-toolbar {
+  position: absolute;
+  top: 10px; left: 10px;
+  display: flex; gap: 6px;
+  z-index: 5;
+}
+.view3d-btn {
+  background: rgba(31,41,55,0.82);
+  color: #e5e7eb;
+  border: 1px solid #475569;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.view3d-btn:hover { background: rgba(55,65,81,0.92); }
+.view3d-btn.off { opacity: 0.55; }
+.view3d-stats {
+  position: absolute;
+  bottom: 10px; left: 12px;
+  color: #9fb4d0;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  z-index: 5;
+  text-shadow: 0 1px 3px #000;
+}
+/* Attribute-colour legend (top-right) */
+.view3d-legend {
+  position: absolute;
+  top: 10px; right: 12px;
+  display: flex; flex-direction: column; gap: 3px;
+  background: rgba(18,16,31,0.72);
+  border: 1px solid #2b2950;
+  border-radius: 6px;
+  padding: 6px 8px;
+  z-index: 5;
+  max-height: 45%;
+  overflow-y: auto;
+}
+.legend-row { display: flex; align-items: center; gap: 6px; }
+.legend-sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #0008; flex: none; }
+.legend-tx { color: #c7d2e8; font-size: 11px; font-family: ui-monospace, monospace; }
+.legend-head { color: #9fb4d0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+/* Relationship-type legend (bottom-left, above the stats line) */
+.view3d-rel {
+  position: absolute;
+  bottom: 34px; left: 12px;
+  display: flex; flex-direction: column; gap: 3px;
+  background: rgba(18,16,31,0.72);
+  border: 1px solid #2b2950;
+  border-radius: 6px;
+  padding: 6px 8px;
+  z-index: 5;
+}
+/* Hover tooltip + click-selection box */
+.view3d-tip, .view3d-sel {
+  position: absolute;
+  display: none;
+  background: rgba(12,14,26,0.92);
+  border: 1px solid #3b3a66;
+  border-radius: 6px;
+  padding: 6px 9px;
+  color: #e8eefc;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  z-index: 6;
+  pointer-events: none;
+  max-width: 280px;
+}
+.view3d-tip { white-space: nowrap; }
+.view3d-sel { bottom: 36px; left: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+.view3d-sel b, .view3d-tip b { color: #fde68a; }
+
+/* Kinematic view: robot 3D main + regime side panels */
+.kin-root { display: flex; width: 100%; height: 100%; }
+.kin-main { position: relative; flex: 1; min-width: 0; }
+.kin-canvas { width: 100%; height: 100%; display: block; }
+.kin-note {
+  position: absolute;
+  bottom: 10px; left: 12px;
+  color: #9fb4d0; font-size: 12px;
+  font-family: ui-monospace, monospace;
+  text-shadow: 0 1px 3px #000;
+}
+.kin-side {
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  background: #0e1320;
+  border-left: 1px solid #1a2740;
+}
+.kin-panel { flex: 1; display: flex; flex-direction: column; padding: 8px; min-height: 0; }
+.kin-h {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7d90ad;
+}
+.kin-mini { flex: 1; width: 100%; min-height: 0; }
 
 .error-box {
   position: absolute;
@@ -188,36 +335,91 @@ main {
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* ── Source pane (footer) ─────────────────────────────────── */
+/* ── Source pane: floating, collapsible panel over the views ──── */
 
-footer {
+.source-float {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 560px; height: 46vh;
+  min-width: 300px; min-height: 90px; max-width: 92%;
+  background: rgba(255,255,255,0.97);
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.20);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  resize: both;            /* drag the bottom-right corner to resize */
+}
+.source-float.collapsed {
+  height: auto !important;
+  resize: none;
+}
+.source-head {
+  flex: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: #eef1f5;
+  color: #374151;
+  font-size: 12px;
+  user-select: none;
+  cursor: move;            /* drag the header to move */
+  border-bottom: 1px solid #e5e7eb;
+}
+.source-float.collapsed .source-head { border-bottom: none; }
+.source-toggle {
+  flex: none;
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  color: #374151;
   background: #fff;
-  border-top: 1px solid #e5e7eb;
-  max-height: 40vh;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.source-toggle:hover { background: #e5e7eb; }
+/* Highlight overlay: a coloured <pre> behind a transparent <textarea>. Both
+   share identical text metrics so the caret aligns over the coloured tokens. */
+.source-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
-footer details {
-  padding: 0;
-}
-footer summary {
-  padding: 8px 16px;
-  cursor: pointer;
-  font-size: 12px;
-  color: #6b7280;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  user-select: none;
-}
-#source {
-  width: 100%;
-  height: 25vh;
+.source-hl, .source-float #source {
+  position: absolute;
+  inset: 0;
+  margin: 0;
   border: none;
-  padding: 12px 16px;
+  padding: 10px 12px;
   font-family: ui-monospace, monospace;
-  font-size: 12px;
-  resize: vertical;
-  outline: none;
+  font-size: 13px;
+  line-height: 1.5;
+  tab-size: 4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow: auto;
 }
+.source-hl { pointer-events: none; z-index: 0; color: #1f2937; background: transparent; }
+.source-float #source {
+  z-index: 1;
+  resize: none;
+  outline: none;
+  color: transparent;
+  background: transparent;
+  caret-color: #111;
+}
+.source-float.collapsed .source-wrap { display: none; }
+/* token colours */
+.hl-comment { color: #6a9955; font-style: italic; }
+.hl-string  { color: #0a7d3c; }
+.hl-number  { color: #1668b3; }
+.hl-kw      { color: #7c3aed; font-weight: 600; }
+.hl-tag     { color: #b45309; }
+.hl-op      { color: #64748b; }
+.hl-ident   { color: #1f2937; }
 
 /* ── Modal ────────────────────────────────────────────────── */
 

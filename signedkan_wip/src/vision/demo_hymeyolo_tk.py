@@ -3,7 +3,16 @@
 Loads a trained HyMeYOLO checkpoint (or trains a quick model on the
 fly) and shows live detection on Cluttered MNIST images.
 
-Run:
+The inference + rendering core (``load_or_train``, ``predict``,
+``render_axes``) lives in :mod:`signedkan_wip.src.vision.demo_hymeyolo_core`
+and is backend-agnostic. This module is the **interactive** entry point;
+for non-interactive seminar slide capture (static panels + an honest
+mAP/latency line) use::
+
+    python -m signedkan_wip.src.vision.demo_hymeyolo_core \
+        --checkpoint <ckpt> --headless 6
+
+Run the GUI:
     python -m signedkan_wip.src.vision.demo_hymeyolo_tk
         [--checkpoint <path>]
         [--n-train-quick <int>]   # if no checkpoint, how many images
@@ -29,258 +38,26 @@ Architecture notes:
 from __future__ import annotations
 
 import argparse
-import os
-import sys
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 
-import numpy as np
 import torch
-import torch.nn.functional as F
 
-# Matplotlib uses the TkAgg backend; pin it before importing pyplot.
+# This module owns the interactive GUI; pin the Tk backend here. The
+# core module deliberately forces no backend so it stays headless-safe.
 import matplotlib
 matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from matplotlib.patches import Rectangle
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from signedkan_wip.src.vision.cluttered_mnist import (
     make_cluttered_mnist_hungarian_format,
 )
-from signedkan_wip.src.vision.hymeyolo_circles_ricci import (
-    RicciHyMeYOLOMulti,
+from signedkan_wip.src.vision.demo_hymeyolo_core import (
+    load_or_train,
+    predict,
+    render_axes,
 )
-
-
-# ─── Model load / quick-train ─────────────────────────────────────────
-
-
-def load_or_train(
-    checkpoint: str | None,
-    n_train_quick: int,
-    device: str,
-) -> tuple[torch.nn.Module, dict]:
-    """Return (model, meta_dict).
-
-    If `checkpoint` is a valid path, load it and return. Otherwise
-    train a fresh small `RicciHyMeYOLOMulti` for a short time on a
-    small Cluttered MNIST split — enough to produce visible
-    detections.
-    """
-    if checkpoint is not None and os.path.isfile(checkpoint):
-        print(f"[load] {checkpoint}", file=sys.stderr)
-        ckpt = torch.load(checkpoint, map_location=device, weights_only=False)
-        cls_name = ckpt.get("model_class", "RicciHyMeYOLOMulti")
-        if cls_name != "RicciHyMeYOLOMulti":
-            raise NotImplementedError(
-                f"this demo only supports RicciHyMeYOLOMulti checkpoints; "
-                f"got {cls_name}"
-            )
-        backbone = ckpt.get("backbone", "tiny")
-        fpn = ckpt.get("fpn", "none")
-        model = RicciHyMeYOLOMulti(
-            n_box_queries=4, n_circle_queries=2, circle_k=8,
-            n_classes=10, d_hidden=32,
-            ricci_modulation=True,
-            ricci_scale=float(ckpt.get("ricci_scale", 1.0)),
-            use_layernorm=bool(ckpt.get("use_layernorm", False)),
-            backbone=backbone,
-            fpn=fpn,
-        )
-        model.load_state_dict(ckpt["state_dict"])
-        model = model.to(device).eval()
-        return model, dict(
-            source="checkpoint",
-            path=checkpoint,
-            label=ckpt.get("label", "?"),
-            epochs=ckpt.get("epochs", "?"),
-            ricci_scale=ckpt.get("ricci_scale", 1.0),
-            schedule=ckpt.get("schedule", "?"),
-            warm_start=ckpt.get("warm_start", "?"),
-            backbone=backbone,
-            fpn=fpn,
-        )
-
-    # No checkpoint — quick train.
-    print(f"[quick-train] training fresh model on {n_train_quick} images "
-          f"for 30 epochs (device={device})", file=sys.stderr)
-    from signedkan_wip.src.vision.train_circles_ricci import (
-        combined_set_loss,
-    )
-    Xn, boxes_n, classes_n, counts_n = make_cluttered_mnist_hungarian_format(
-        n=n_train_quick, canvas=64, max_objects=3, seed=0, rgb=True,
-    )
-    X = torch.from_numpy(Xn).to(device)
-    boxes = torch.from_numpy(boxes_n).to(device)
-    classes = torch.from_numpy(classes_n).to(device)
-    counts = torch.from_numpy(counts_n).to(device)
-
-    torch.manual_seed(0)
-    model = RicciHyMeYOLOMulti(
-        n_box_queries=4, n_circle_queries=2, circle_k=8,
-        n_classes=10, d_hidden=32,
-        ricci_modulation=True, ricci_scale=1.0,
-        use_layernorm=False,
-    ).to(device)
-
-    # Saliency-driven warm-start (the Stage A-1 lever).
-    try:
-        from signedkan_wip.src.vision.hymeyolo_warmstart import (
-            warmstart_query_corners,
-        )
-        warmstart_query_corners(
-            model, X[:min(128, n_train_quick)], seed=0,
-        )
-        print("[quick-train] warm-start applied", file=sys.stderr)
-    except Exception as e:
-        print(f"[quick-train] warm-start skipped: {e}", file=sys.stderr)
-
-    opt = torch.optim.Adam(model.parameters(), lr=3e-3)
-    model.train()
-    bs = 32
-    n = X.shape[0]
-    for ep in range(30):
-        perm = torch.randperm(n, device=device)
-        ep_losses = []
-        for s in range(0, n, bs):
-            idx = perm[s:s + bs]
-            xb, bb, cb, kb = X[idx], boxes[idx], classes[idx], counts[idx]
-            pred = model(xb)
-            loss, _ = combined_set_loss(pred, bb, cb, kb, n_classes=10)
-            opt.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
-            opt.step()
-            ep_losses.append(float(loss.detach()))
-        if (ep + 1) % 5 == 0:
-            mean_loss = sum(ep_losses) / max(1, len(ep_losses))
-            print(f"  ep {ep+1:2d}/30  loss={mean_loss:.4f}",
-                  file=sys.stderr)
-
-    model.eval()
-    return model, dict(
-        source="quick-train",
-        path="(none)",
-        label="+ricci-mod (quick)",
-        epochs=30,
-        ricci_scale=1.0,
-        schedule="constant",
-        warm_start=True,
-    )
-
-
-# ─── Inference + visualisation ─────────────────────────────────────────
-
-
-def _aabb_from_corners(corners: torch.Tensor) -> torch.Tensor:
-    """(M, k, 2) → (M, 4) AABB (x0, y0, x1, y1)."""
-    return torch.stack([
-        corners[..., 0].min(dim=-1).values,
-        corners[..., 1].min(dim=-1).values,
-        corners[..., 0].max(dim=-1).values,
-        corners[..., 1].max(dim=-1).values,
-    ], dim=-1)
-
-
-@torch.no_grad()
-def predict(model, img: torch.Tensor, device: str) -> dict:
-    """One-image inference. Returns a dict with per-query AABB + class
-    + score for box queries and circle queries separately, plus the
-    raw corner positions for visualisation."""
-    model.eval()
-    x = img.unsqueeze(0).to(device)
-    out = model(x)
-    box_corners = out["box_corners"][0]      # (Nb, 4, 2)
-    box_logits = out["box_cls"][0]           # (Nb, C+1)
-    circ_corners = out["circle_corners"][0]  # (Nc, k, 2)
-    circ_logits = out["circle_cls"][0]       # (Nc, C+1)
-    n_classes = box_logits.shape[-1] - 1     # last slot = no-object
-
-    def _decode(corners, logits):
-        if corners.numel() == 0:
-            return dict(aabb=torch.zeros(0, 4), score=torch.zeros(0),
-                        cls=torch.zeros(0, dtype=torch.long))
-        probs = F.softmax(logits, dim=-1)
-        obj = probs[:, :n_classes]
-        score, cls = obj.max(dim=-1)
-        aabb = _aabb_from_corners(corners).clamp(0.0, 1.0)
-        return dict(
-            aabb=aabb.cpu(), score=score.cpu(),
-            cls=cls.cpu(), corners=corners.cpu(),
-        )
-
-    return dict(
-        box=_decode(box_corners, box_logits),
-        circle=_decode(circ_corners, circ_logits),
-    )
-
-
-def render_axes(
-    ax_input, ax_pred,
-    img_np: np.ndarray,
-    gt_boxes: np.ndarray, gt_classes: np.ndarray, gt_count: int,
-    pred: dict,
-    score_threshold: float,
-    canvas_px: int = 64,
-) -> None:
-    """Render the input image + the prediction overlay on a (1, 2) figure."""
-    for ax in (ax_input, ax_pred):
-        ax.clear()
-        ax.set_xlim(0, canvas_px)
-        ax.set_ylim(canvas_px, 0)
-        ax.set_aspect("equal")
-        ax.set_xticks([]); ax.set_yticks([])
-
-    # Input image (HWC, [0, 1]).
-    img_show = np.transpose(img_np, (1, 2, 0))
-    img_show = (img_show - img_show.min()) / max(
-        1e-9, img_show.max() - img_show.min(),
-    )
-    ax_input.imshow(img_show)
-    ax_input.set_title("Input — Cluttered MNIST")
-
-    # GT boxes on input panel (faint cyan).
-    for gi in range(gt_count):
-        x0, y0, x1, y1 = (gt_boxes[gi] * canvas_px).astype(int)
-        ax_input.add_patch(Rectangle(
-            (x0, y0), x1 - x0, y1 - y0,
-            linewidth=1.2, edgecolor="cyan", facecolor="none", alpha=0.6,
-        ))
-        ax_input.text(
-            x0, y0 - 1, f"GT {int(gt_classes[gi])}",
-            fontsize=7, color="cyan",
-        )
-
-    # Predictions on right panel.
-    ax_pred.imshow(img_show)
-    ax_pred.set_title(
-        f"Predictions  (threshold = {score_threshold:.2f})"
-    )
-
-    # Box queries (red); circle queries (orange).
-    for kind, color in (("box", "red"), ("circle", "orange")):
-        d = pred[kind]
-        if len(d["score"]) == 0:
-            continue
-        for i in range(len(d["score"])):
-            s = float(d["score"][i])
-            if s < score_threshold:
-                continue
-            x0, y0, x1, y1 = (d["aabb"][i].numpy() * canvas_px)
-            ax_pred.add_patch(Rectangle(
-                (x0, y0), x1 - x0, y1 - y0,
-                linewidth=1.4, edgecolor=color, facecolor="none",
-            ))
-            cls_id = int(d["cls"][i])
-            ax_pred.text(
-                x0, y0 - 1.5,
-                f"{kind[0]}{i}: {cls_id} ({s:.2f})",
-                fontsize=7, color=color,
-                bbox=dict(facecolor="white", alpha=0.4, pad=0.5,
-                          edgecolor="none"),
-            )
 
 
 # ─── Tk app ───────────────────────────────────────────────────────────

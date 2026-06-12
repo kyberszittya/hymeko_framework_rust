@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <title>HyMeKo Editor — visual hypergraph design</title>
   <link rel="stylesheet" href="editor.css" />
-  <!-- Cytoscape.js for the canvas (vanilla JS, no build step) -->
+  <!-- Cytoscape.js for the 2D graph canvas (vanilla JS, no build step) -->
   <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+  <!-- three.js r128 (global THREE) for the 3D views; same version as the
+       demo_web star-expansion viewer. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
@@ -49,6 +52,9 @@
       <li>Arcs:  <span id="arcCount">–</span></li>
     </ul>
 
+    <h3>View</h3>
+    <label class="vrow"><input type="checkbox" id="toggleIsa" checked> show &lt;isa&gt; (meta) lines</label>
+
     <h3>Query</h3>
     <input type="text" id="predicate" value="INHERITS(link)" />
     <button id="btnQuery">Run</button>
@@ -56,17 +62,30 @@
   </aside>
 
   <section class="canvas-pane">
-    <div id="cy"></div>
-    <div id="errorBox" class="error-box" style="display: none"></div>
+    <div class="view-tabs">
+      <button class="view-tab active" data-view="graph" title="Cytoscape topology graph">Graph</button>
+      <button class="view-tab" data-view="hyper3d" title="three.js star/clique hypergraph">Hypergraph 3D</button>
+      <button class="view-tab" data-view="kinematic" title="robot render + αₖ regime">Kinematic</button>
+    </div>
+    <div class="view-stack">
+      <div id="view-graph" class="view-pane active"><div id="cy"></div></div>
+      <div id="view-hyper3d" class="view-pane"></div>
+      <div id="view-kinematic" class="view-pane"></div>
+      <div id="errorBox" class="error-box" style="display: none"></div>
+    </div>
+    <!-- Floating source panel — draggable (by the header), resizable, collapsible. -->
+    <div id="sourcePanel" class="source-float">
+      <div class="source-head" id="sourceHead">
+        <button id="sourceToggle" class="source-toggle" title="Collapse / expand">▾</button>
+        <span class="source-title">Source (.hymeko) — drag to move</span>
+      </div>
+      <div class="source-wrap">
+        <pre id="sourceHL" class="source-hl" aria-hidden="true"></pre>
+        <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      </div>
+    </div>
   </section>
 </main>
-
-<footer>
-  <details open>
-    <summary>Source (.hymeko) — single source of truth, edits update this directly</summary>
-    <textarea id="source" spellcheck="false"></textarea>
-  </details>
-</footer>
 
 <!-- Modal for adding link/joint -->
 <div id="modal" class="modal" style="display: none">
@@ -80,6 +99,6 @@
   </div>
 </div>
 
-<script type="module" src="editor.js"></script>
+<script type="module" src="editor.js?v=13"></script>
 </body>
 </html>

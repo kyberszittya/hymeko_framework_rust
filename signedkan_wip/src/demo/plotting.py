@@ -4,7 +4,7 @@ Jupyter) can display them.
 """
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Any, Iterable
 
 import matplotlib
 matplotlib.use("Agg")  # headless backend; safe inside a GUI server
@@ -162,4 +162,105 @@ def subgraph_figure(
     return fig
 
 
-__all__ = ["roc_figure", "alpha_figure", "subgraph_figure"]
+# ─── Signed-balance / frustrated-cycle view ─────────────────────────
+
+
+def _cycle_elements(
+    cycles: Iterable[Iterable[int]],
+) -> tuple[set[int], set[tuple[int, int]]]:
+    """Vertices and undirected edges spanned by a set of cycles."""
+    nodes: set[int] = set()
+    edges: set[tuple[int, int]] = set()
+    for cyc in cycles:
+        seq = [int(x) for x in cyc]
+        nodes.update(seq)
+        for j in range(len(seq)):
+            a, b = seq[j], seq[(j + 1) % len(seq)]
+            edges.add((min(a, b), max(a, b)))
+    return nodes, edges
+
+
+def _prune_for_legibility(
+    G: "nx.Graph", max_nodes: int, must_keep: set[int],
+) -> "nx.Graph":
+    """Subgraph of the ``max_nodes`` highest-degree vertices plus ``must_keep``."""
+    if G.number_of_nodes() <= max_nodes:
+        return G
+    deg = dict(G.degree())
+    ranked = sorted(G.nodes, key=lambda n: -deg[n])[:max_nodes]
+    return G.subgraph(set(ranked) | must_keep).copy()
+
+
+def frustration_figure(
+    edges: np.ndarray,                 # (E, 2) graph edges
+    signs: np.ndarray,                 # (E,)   signs in {-1, +1}
+    frustrated_cycles: Iterable[Iterable[int]],  # vertex sequences
+    n_nodes: int,
+    balance: float | None = None,
+    max_nodes: int = 80,
+    title: str = "",
+) -> "plt.Figure":
+    """Draw the signed graph with the frustrated cycles overlaid in bold.
+
+    Positive edges are solid blue, negative edges dashed red; every edge of a
+    frustrated (negative sign-product) cycle is over-drawn thick black and its
+    vertices highlighted. Presentation only — the balance statistic itself is
+    computed upstream (no algorithm logic here, CLAUDE.md §6.5 #2).
+
+    Preconditions: ``edges`` is (E, 2); ``signs`` aligns with ``edges`` and is
+    in {-1, +1}; each cycle's consecutive vertices (with wraparound) are graph
+    edges. Postconditions: returns a Figure; if the graph exceeds ``max_nodes``
+    it is pruned to the highest-degree nodes plus all frustrated-cycle vertices.
+    """
+    cyc_nodes, cyc_edges = _cycle_elements(frustrated_cycles)
+    G = nx.Graph()
+    G.add_nodes_from(range(int(n_nodes)))
+    for (u, v), s in zip(edges, signs):
+        G.add_edge(int(u), int(v), sign=int(s))
+    H = _prune_for_legibility(G, max_nodes, cyc_nodes)
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    pos = nx.spring_layout(H, seed=0, k=0.5, iterations=60)
+    _draw_signed_edges(H, pos, ax, cyc_edges)
+    _draw_nodes(H, pos, ax, cyc_nodes)
+
+    head = title or "Signed-graph balance"
+    sub = f"balance = {balance:.3f}" if balance is not None else ""
+    sub2 = f"{len(cyc_edges)} frustrated-cycle edges (bold)" if cyc_edges \
+        else "no frustration"
+    ax.set_title(f"{head}\n{sub}   {sub2}".rstrip())
+    ax.set_axis_off()
+    fig.tight_layout()
+    return fig
+
+
+def _draw_signed_edges(
+    H: Any, pos: Any, ax: Any, bold_edges: set[tuple[int, int]],
+) -> None:
+    """Solid-blue positive, dashed-red negative, thick-black bold overlay."""
+    pos_e = [(u, v) for u, v, d in H.edges(data=True) if d["sign"] == 1]
+    neg_e = [(u, v) for u, v, d in H.edges(data=True) if d["sign"] == -1]
+    nx.draw_networkx_edges(H, pos, edgelist=pos_e, edge_color="#4472C4",
+                           width=1.0, alpha=0.6, ax=ax)
+    nx.draw_networkx_edges(H, pos, edgelist=neg_e, edge_color="#C00000",
+                           width=1.0, alpha=0.6, style="dashed", ax=ax)
+    bold = [(u, v) for (u, v) in H.edges() if (min(u, v), max(u, v)) in bold_edges]
+    if bold:
+        nx.draw_networkx_edges(H, pos, edgelist=bold, edge_color="black",
+                               width=3.0, ax=ax)
+
+
+def _draw_nodes(H: Any, pos: Any, ax: Any, highlight: set[int]) -> None:
+    """White nodes, with the highlighted (frustrated) vertices amber + larger."""
+    other = [n for n in H.nodes if n not in highlight]
+    nx.draw_networkx_nodes(H, pos, nodelist=other, node_size=60,
+                           node_color="#FFFFFF", edgecolors="black",
+                           linewidths=0.4, ax=ax)
+    inside = sorted(highlight & set(H.nodes))
+    if inside:
+        nx.draw_networkx_nodes(H, pos, nodelist=inside, node_size=200,
+                               node_color="#FFC000", edgecolors="black",
+                               linewidths=1.2, ax=ax)
+
+
+__all__ = ["roc_figure", "alpha_figure", "subgraph_figure", "frustration_figure"]

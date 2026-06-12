@@ -1,0 +1,19 @@
+{
+  "_comment": "Phase-1 schema example for the star-expansion 3D viewer. Hand-written reference for the Fano plane (data/typical_graphs/fano_graph.hymeko). Counts are exact and hand-verifiable: 7 hyperedges x arity 3 -> star incidence_nnz = 21; clique edge_count = 7 x C(3,2) = 21. The real exporter (export_star_expansion.py) fills canonical_hash and star.coo from the HyMeKo engine; this example omits the optional star.coo. The 3D layout is force-directed in-browser for legibility, NOT geometric ground truth.",
+  "schema": 1,
+  "source": "data/typical_graphs/fano_graph.hymeko",
+  "canonical_hash": "blake3:<filled-by-engine>",
+  "n_vertices": 7,
+  "vertex_labels": ["n0", "n1", "n2", "n3", "n4", "n5", "n6"],
+  "hyperedges": [
+    { "label": "e0", "members": [0, 1, 3], "sign": 1, "arity": 3 },
+    { "label": "e1", "members": [0, 2, 6], "sign": 1, "arity": 3 },
+    { "label": "e2", "members": [0, 4, 5], "sign": 1, "arity": 3 },
+    { "label": "e3", "members": [1, 2, 4], "sign": 1, "arity": 3 },
+    { "label": "e4", "members": [2, 3, 5], "sign": 1, "arity": 3 },
+    { "label": "e5", "members": [3, 4, 6], "sign": 1, "arity": 3 },
+    { "label": "e6", "members": [1, 5, 6], "sign": 1, "arity": 3 }
+  ],
+  "star": { "incidence_nnz": 21 },
+  "clique": { "edge_count": 21 }
+}

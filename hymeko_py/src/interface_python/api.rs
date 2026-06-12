@@ -49,6 +49,21 @@ impl PyHypergraphIR {
         self.compiled.ir.arcs.len()
     }
 
+    /// Canonical structural fingerprint (WL-ordering + Blake3, 32 bytes),
+    /// hex-encoded with a `blake3:` prefix. Isomorphic-but-reordered inputs
+    /// share this fingerprint; a one-edge structural change does not. This is
+    /// the same `canon_hash` the compiler stores on the program; exposed for
+    /// the seminar HIVE / star-expansion demos.
+    #[getter]
+    pub fn canonical_hash(&self) -> String {
+        let mut s = String::with_capacity(7 + 64);
+        s.push_str("blake3:");
+        for b in self.compiled.canon_hash.0.iter() {
+            s.push_str(&format!("{:02x}", b));
+        }
+        s
+    }
+
     // -- Name Resolution --
 
     /// Maps a CSR matrix row/col index back to its string identifier

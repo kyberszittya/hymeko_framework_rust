@@ -81,7 +81,8 @@ def main() -> None:
     p.add_argument("--warmup-epochs", type=int, default=2)
     p.add_argument("--min-lr-ratio", type=float, default=0.01)
     p.add_argument("--backbone",
-                    choices=["resnet", "resnet18_imagenet", "hsikan"],
+                    choices=["resnet", "resnet18_imagenet",
+                             "resnet18_imagenet_l3", "hsikan"],
                     default="resnet",
                     help="Backbone name; 'resnet' = Stage D (from-scratch "
                          "ResNet-tiny); 'resnet18_imagenet' = Stage D-1 "
@@ -123,6 +124,14 @@ def main() -> None:
     p.add_argument("--gate-focal-gamma", type=float, default=2.0,
                     help="Focal gamma for --gate-loss-kind=focal. "
                          "Default 2.0 (standard focal-loss value).")
+    p.add_argument("--lam-entropy", type=float, default=0.0,
+                    help="Confidence-penalty entropy regularisation weight "
+                         "(Pereyra et al. 2017): maximises per-query class "
+                         "entropy to curb over-confident predictions. 0.0 "
+                         "(default) = off; 0.05-0.5 is the usual range.")
+    p.add_argument("--weight-decay", type=float, default=0.0,
+                    help="Adam weight decay (L2). 0.0 (default) = off; "
+                         "1e-4 is a standard mild regulariser.")
     p.add_argument("--backbone-checkpoint", action="store_true",
                     help="Stage D-3-quinquies: enable PyTorch activation "
                          "checkpointing on the backbone (currently only "
@@ -247,13 +256,15 @@ def main() -> None:
         lam_gate_match_cost_override=args.lam_gate_match_cost,
         gate_loss_kind=args.gate_loss_kind,
         gate_focal_gamma=args.gate_focal_gamma,
+        lam_entropy=args.lam_entropy,
+        weight_decay=args.weight_decay,
     )
 
     det = result.get("det_metrics", {})
     loss_drop_pct = (result["losses"][0] - result["losses"][-1]) \
                     / max(1e-9, result["losses"][0]) * 100.0
 
-    print(f"\n=== Stage D result ===")
+    print("\n=== Stage D result ===")
     print(f"  loss_start={result['losses'][0]:.4f}  "
           f"loss_end={result['losses'][-1]:.4f}  "
           f"drop={loss_drop_pct:.1f}%")
@@ -283,6 +294,10 @@ def main() -> None:
             "n_box_queries": int(args.n_box_queries),
             "n_classes": n_classes,
             "input_size": int(args.input_size),
+            # Self-describing arch: the nodelet head adds gate params, so
+            # the loader must know the head kind to rebuild the matching
+            # state_dict (else a B9 nodelet ckpt reloads as hungarian).
+            "query_head_kind": args.query_head_kind,
             "state_dict": model.state_dict(),
             "model_class": "RicciHyMeYOLOMulti",
             "dataset": f"voc{args.year}_{args.image_set}",

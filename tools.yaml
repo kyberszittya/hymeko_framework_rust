@@ -83,6 +83,17 @@ rust:
     major_version: "0"
     observed: "0.0.25"
 
+  wasm_build:
+    tool: wasm-pack
+    major_version: "0"
+    observed: "0.15.0"
+    flags: "build --target web --release"
+    notes: >
+      Builds the hymeko_wasm crate into docs/editor/pkg/ for the in-browser
+      editor. Requires the wasm32-unknown-unknown rustup target. Added with
+      §1 approval (2026-06-12) when the editor needed the relationship-enriched
+      snapshot rebuilt.
+
 # ---------------------------------------------------------------------
 # Python
 # ---------------------------------------------------------------------

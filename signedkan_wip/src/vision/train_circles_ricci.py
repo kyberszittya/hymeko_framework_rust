@@ -26,7 +26,6 @@ import argparse
 import math
 import time
 
-import numpy as np
 import torch
 import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
@@ -251,6 +250,7 @@ def combined_set_loss(
     lam_gate_match_cost_override: float | None = None,
     gate_loss_kind: str = "bce",
     gate_focal_gamma: float = 2.0,
+    lam_entropy: float = 0.0,
 ):
     """Box loss (corners vs corners) + Circle loss (AABB vs box).  Both
     branches see the SAME GT box set; both can match independently.
@@ -333,11 +333,19 @@ def combined_set_loss(
 
     if bx_loss is None and circ_loss is None:
         raise ValueError("no queries in model")
-    if bx_loss is None:
-        return circ_loss, dict(box_cls_acc=0.0, circ_cls_acc=circ_cls_acc)
-    if circ_loss is None:
-        return bx_loss, dict(box_cls_acc=box_cls_acc, circ_cls_acc=0.0)
-    return bx_loss + circ_loss, dict(
+    total = sum(t for t in (bx_loss, circ_loss) if t is not None)
+
+    # Confidence-penalty entropy regularisation (Pereyra et al. 2017):
+    # maximise the entropy of the per-query class distribution to
+    # discourage the over-confident, peaked predictions a memorising
+    # model produces (total <- total - lam_entropy * H). lam_entropy=0
+    # (default) is byte-identical to the prior behaviour.
+    if lam_entropy > 0.0 and out["box_corners"].shape[1] > 0:
+        logp = F.log_softmax(out["box_cls"], dim=-1)
+        mean_entropy = -(logp.exp() * logp).sum(dim=-1).mean()
+        total = total - lam_entropy * mean_entropy
+
+    return total, dict(
         box_cls_acc=box_cls_acc, circ_cls_acc=circ_cls_acc,
     )
 
@@ -612,6 +620,7 @@ def train_one_config(
     lam_gate_match_cost_override: float | None = None,
     gate_loss_kind: str = "bce",
     gate_focal_gamma: float = 2.0,
+    lam_entropy: float = 0.0,
 ) -> dict:
     """Minibatched trainer; epoch = one full pass over the dataset.
 
@@ -710,6 +719,7 @@ def train_one_config(
                     lam_gate_match_cost_override=lam_gate_match_cost_override,
                     gate_loss_kind=gate_loss_kind,
                     gate_focal_gamma=gate_focal_gamma,
+                    lam_entropy=lam_entropy,
                 )
             else:
                 B_, M_ = bb.shape[:2]

@@ -29,6 +29,13 @@ ml = [
     "numpy>=2,<3",
     "torch==2.12.0",
     "torchvision==0.27.0",
+    # Windows-only: torch's Linux wheels pull `triton` transitively, but the
+    # Windows wheels do not. The HSiKAN kernel package imports `triton` at
+    # module load; without it the model can't even be unpickled. The CPU
+    # forward never invokes a kernel (gated on `x.is_cuda`), so CPU parity is
+    # unchanged; GPU fused kernels execute on CUDA. APPROVED-CORE-EDIT:
+    # triton-windows-import-unblock (2026-06-10, user chat).
+    "triton-windows==3.7.0.post26 ; sys_platform == 'win32'",
 ]
 # `demo` powers `signedkan_wip/src/demo/gui.py` (Gradio GUI + matplotlib +
 # NetworkX subgraph rendering). Opt-in: `uv sync --group ml --group demo`.

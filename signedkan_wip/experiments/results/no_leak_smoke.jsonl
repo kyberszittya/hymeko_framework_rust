@@ -1,0 +1,4 @@
+{"dataset": "bitcoin_alpha", "model": "gomb", "seed": 0, "shuffle": false, "auc": 0.8834012754487212, "n_params": 251234, "width": 16, "depth": 8, "wall_s": 34.8977082001511}
+{"dataset": "bitcoin_alpha", "model": "gomb", "seed": 0, "shuffle": true, "auc": 0.4890952535150249, "n_params": 251234, "width": 16, "depth": 8, "wall_s": 35.73970609996468}
+{"dataset": "bitcoin_alpha", "model": "SGCN", "seed": 0, "shuffle": false, "auc": 0.8757356645679176, "n_params": 135585, "width": 32, "depth": 1, "wall_s": 15.143487599911168}
+{"dataset": "bitcoin_alpha", "model": "SGCN", "seed": 0, "shuffle": true, "auc": 0.5264797025536813, "n_params": 135585, "width": 32, "depth": 1, "wall_s": 4.068179500056431}

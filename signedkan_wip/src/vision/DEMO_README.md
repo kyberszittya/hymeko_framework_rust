@@ -16,6 +16,31 @@ First launch: ~50 s of CPU training (no checkpoint provided →
 quick-trains a fresh 30-epoch model on 1000 images). Subsequent
 launches with `--checkpoint <path>` skip training.
 
+## Headless slide capture (no GUI)
+
+For the seminar deck — static panels + one honest, reproducible
+metric line, no display required:
+
+```bash
+python -m signedkan_wip.src.vision.demo_hymeyolo_core \
+    --checkpoint checkpoints/hymeyolo_demo/b_hsikan/ricci-mod_seed0.pt \
+    --headless 6 --n-eval 200 --out-dir demo_out/yolo
+```
+
+Writes `demo_out/yolo/panel_NN_seed0.png` (GT cyan / pred red+orange,
+same layout as the GUI) and prints:
+
+```
+[headless] mAP_50=0.904 mAP_50_95=0.793 mean_iou=0.792 | \
+  fwd_ms median=49.6 iqr=1.1 worst=50.3 | peak_rss=1040MB wall=12.7s | \
+  panels=6 eval=200 ckpt=+ricci-mod (epochs=100)
+```
+
+The `mAP_50` is the corrected consumed-GT COCO metric (the published
+0.903 ± 0.009 band), **not** the pre-2026-05-16 bug-inflated 0.723.
+`demo_hymeyolo_core` is tkinter-free; the GUI module re-exports its
+`load_or_train` / `predict` / `render_axes` for back-compat.
+
 ## What you'll see
 
 Two side-by-side panels:

@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 # ─── Catmull-Rom basis activation (HSiKAN primitive) ─────────────────
@@ -453,6 +452,99 @@ class ResNet18ImageNetBackbone(nn.Module):
         return self.proj_p4(p4), self.proj_p8(p8)
 
 
+def _load_resnet18(pretrained: bool):
+    """Load torchvision ResNet18, ImageNet weights when available.
+
+    Returns a random-init net (with a warning) if the weights download
+    is unreachable, so CI without network still constructs. Production
+    runs must have the torchvision cache populated.
+    """
+    from torchvision.models import resnet18
+    if not pretrained:
+        return resnet18(weights=None)
+    try:
+        from torchvision.models import ResNet18_Weights
+        return resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+    except Exception as e:  # offline / CI without network  # noqa: BLE001
+        import warnings
+        warnings.warn(
+            f"ResNet18 ImageNet weights unavailable ({e}); random init. "
+            f"Production runs MUST have the cache populated."
+        )
+        return resnet18(weights=None)
+
+
+class ResNet18ImageNetBackboneL3(nn.Module):
+    """ImageNet ResNet18 carried through **layer3** (stride 16, 256 ch).
+
+    The capacity lever (2026-06-10): :class:`ResNet18ImageNetBackbone`
+    truncates at layer2 (stride 8), discarding the layer3/layer4
+    semantic stages that ImageNet pretraining provides and that
+    detection relies on. This variant restores layer3, the deepest
+    stage that still fits the 8 GB / 320 px regime at batch 8.
+
+    It keeps the same two-scale ``multi_scale_features`` contract as the
+    layer2 backbone---``(P_fine, P_coarse)`` both at ``c_out`` channels
+    ---but the scales are **deeper**: ``P_fine`` = layer2 (/8, 128 ch),
+    ``P_coarse`` = layer3 (/16, 256 ch). It is therefore a drop-in for
+    ``fpn='2level'`` with no model change.
+
+    # Preconditions: ``c_in == 3``.
+    # Postconditions: ``forward`` returns (B, c_out, H/16, W/16);
+    #   ``multi_scale_features`` returns (/8, /16) maps at c_out channels.
+    """
+
+    IMAGENET_MEAN = (0.485, 0.456, 0.406)
+    IMAGENET_STD = (0.229, 0.224, 0.225)
+
+    def __init__(self, c_in: int = 3, c_out: int = 32,
+                 pretrained: bool = True) -> None:
+        super().__init__()
+        if c_in != 3:
+            raise ValueError(
+                f"ResNet18ImageNetBackboneL3 requires c_in=3 (RGB); got {c_in}"
+            )
+        self.c_out = c_out
+        net = _load_resnet18(pretrained)
+        self.stem = nn.Sequential(net.conv1, net.bn1, net.relu, net.maxpool)
+        self.layer1 = net.layer1   # 64 ch, stride 4
+        self.layer2 = net.layer2   # 128 ch, stride 8
+        self.layer3 = net.layer3   # 256 ch, stride 16
+        self.proj_p8 = nn.Conv2d(128, c_out, kernel_size=1, bias=False)
+        self.proj_p16 = nn.Conv2d(256, c_out, kernel_size=1, bias=False)
+        for proj in (self.proj_p8, self.proj_p16):
+            nn.init.kaiming_normal_(proj.weight, mode="fan_out",
+                                    nonlinearity="relu")
+        self.register_buffer(
+            "_mean", torch.tensor(self.IMAGENET_MEAN, dtype=torch.float32
+                                  ).view(1, 3, 1, 1), persistent=False)
+        self.register_buffer(
+            "_std", torch.tensor(self.IMAGENET_STD, dtype=torch.float32
+                                 ).view(1, 3, 1, 1), persistent=False)
+
+    def _normalise(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self._mean) / self._std
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self._normalise(x)
+        x = self.stem(x)
+        x = self.layer1(x)
+        x = self.layer2(x)         # B × 128 × H/8 × W/8
+        x = self.layer3(x)         # B × 256 × H/16 × W/16
+        return self.proj_p16(x)    # B × c_out × H/16 × W/16
+
+    def multi_scale_features(
+        self, x: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return (P_/8, P_/16) deep features, both at c_out channels."""
+        x = self._normalise(x)
+        x = self.stem(x)
+        x = self.layer1(x)
+        p8 = self.layer2(x)        # B × 128 × H/8 × W/8
+        p16 = self.layer3(p8)      # B × 256 × H/16 × W/16
+        return self.proj_p8(p8), self.proj_p16(p16)
+
+
 def build_backbone(name: str, c_in: int = 3, c_out: int = 32,
                     *, use_checkpoint: bool = False) -> nn.Module:
     """Dispatch on a string name. Used by RicciHyMeYOLOMulti's
@@ -480,7 +572,10 @@ def build_backbone(name: str, c_in: int = 3, c_out: int = 32,
                                     use_checkpoint=use_checkpoint)
     if name == "resnet18_imagenet":
         return ResNet18ImageNetBackbone(c_in=c_in, c_out=c_out)
+    if name == "resnet18_imagenet_l3":
+        return ResNet18ImageNetBackboneL3(c_in=c_in, c_out=c_out)
     raise ValueError(
         f"unknown backbone {name!r}; expected one of "
-        f"'tiny', 'resnet', 'hsikan', 'resnet18_imagenet'"
+        f"'tiny', 'resnet', 'hsikan', 'resnet18_imagenet', "
+        f"'resnet18_imagenet_l3'"
     )

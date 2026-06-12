@@ -11,6 +11,9 @@
 // the .hymeko text expresses is what gets emitted by URDF/SDF/DOT.
 
 import init, { parse_and_compile } from "./pkg/hymeko_wasm.js";
+import { createHypergraphView } from "./views/hypergraph3d.js?v=13";
+import { createKinematicView } from "./views/kinematic.js?v=13";
+import { highlightHymeko } from "./views/highlight.js?v=13";
 await init();
 
 // ── State ────────────────────────────────────────────────────────────
@@ -18,14 +21,28 @@ let lastIR = null;        // CompiledIR handle
 let lastSnapshot = null;  // parsed snapshot JSON
 let cy = null;            // Cytoscape instance
 let selected = null;      // {type: 'node'|'edge', name: ...} or null
+let showIsa = true;       // graph-view <isa> (meta) edge visibility
 
 // ── DOM refs ─────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 const sourceEl   = $("source");
+const sourceHL   = $("sourceHL");
 const errorBox   = $("errorBox");
 const nodeCountEl = $("nodeCount");
 const edgeCountEl = $("edgeCount");
 const arcCountEl  = $("arcCount");
+
+// Repaint the syntax-highlight layer from the textarea, and keep it scroll-synced.
+function updateHighlight() {
+  if (sourceHL) sourceHL.innerHTML = highlightHymeko(sourceEl.value);
+}
+if (sourceEl && sourceHL) {
+  sourceEl.addEventListener("input", updateHighlight);
+  sourceEl.addEventListener("scroll", () => {
+    sourceHL.scrollTop = sourceEl.scrollTop;
+    sourceHL.scrollLeft = sourceEl.scrollLeft;
+  });
+}
 
 // ── Cytoscape init ───────────────────────────────────────────────────
 cy = cytoscape({
@@ -74,6 +91,18 @@ cy = cytoscape({
       style: { "line-color": "#888", "target-arrow-color": "#888" } },
     { selector: "edge:selected",
       style: { "line-color": "#dc2626", "target-arrow-color": "#dc2626", "width": 3 } },
+    // Template / inheritance (<isa>) relationships: dashed, hollow arrow.
+    { selector: "edge.isa",
+      style: {
+        "line-color": "#9ca3af",
+        "line-style": "dashed",
+        "width": 1.2,
+        "curve-style": "bezier",
+        "target-arrow-shape": "triangle-tee",
+        "target-arrow-color": "#9ca3af",
+        "target-arrow-fill": "hollow",
+        "label": "",
+      } },
   ],
   layout: { name: "cose", animate: false, padding: 30 },
   wheelSensitivity: 0.2,
@@ -105,13 +134,14 @@ function showError(msg) {
 
 function recompile() {
   clearError();
+  updateHighlight();
   try {
     lastIR = parse_and_compile(sourceEl.value);
     lastSnapshot = JSON.parse(lastIR.snapshot_json());
     nodeCountEl.textContent = lastIR.node_count;
     edgeCountEl.textContent = lastIR.edge_count;
     arcCountEl.textContent  = lastIR.arc_count;
-    renderGraph();
+    renderActiveView();
   } catch (e) {
     lastIR = null;
     lastSnapshot = null;
@@ -157,9 +187,110 @@ function renderGraph() {
       });
     }
   }
+  // Template / inheritance (<isa>) edges: a dashed line from each decl to the
+  // first-level base type it inherits. Bases are resolved names; map them to a
+  // drawn decl by name (a base not drawn as a node is simply skipped).
+  const nameToCyId = new Map();
+  for (const n of lastSnapshot.nodes) nameToCyId.set(n.name, `n${n.id}`);
+  for (const e of lastSnapshot.edges) if (!nameToCyId.has(e.name)) nameToCyId.set(e.name, `e${e.id}`);
+  const addIsaEdges = (decl, srcId) => {
+    for (const base of (decl.bases || [])) {
+      const baseId = nameToCyId.get(base);
+      if (!baseId || baseId === srcId) continue;
+      elements.push({
+        data: { id: `isa_${srcId}_${baseId}`, source: srcId, target: baseId },
+        classes: "isa",
+      });
+    }
+  };
+  for (const n of lastSnapshot.nodes) addIsaEdges(n, `n${n.id}`);
+  for (const e of lastSnapshot.edges) addIsaEdges(e, `e${e.id}`);
+
   cy.elements().remove();
   cy.add(elements);
   cy.layout({ name: "cose", animate: false, padding: 30 }).run();
+  applyIsaVisibility();
+}
+
+function applyIsaVisibility() {
+  if (cy) cy.elements(".isa").style("display", showIsa ? "element" : "none");
+}
+
+// ── View tabs: graph (Cytoscape) | hypergraph 3D | kinematic ─────────
+// Each view satisfies { name, mount(container), render(snapshot, ir),
+// unmount() }. The graph view wraps the persistent Cytoscape instance; the 3D
+// views are mounted lazily and unmounted on leave so only one render loop runs.
+const graphView = {
+  name: "Graph",
+  mount() { if (cy) cy.resize(); },
+  render() { renderGraph(); if (cy) cy.resize(); },
+  unmount() {},
+};
+const VIEWS = {
+  graph:     { view: graphView,             pane: "view-graph" },
+  hyper3d:   { view: createHypergraphView(), pane: "view-hyper3d" },
+  kinematic: { view: createKinematicView(),  pane: "view-kinematic" },
+};
+let activeView = "graph";
+const mounted = { graph: true }; // Cytoscape created at load
+graphView.mount();
+
+function renderActiveView() {
+  const entry = VIEWS[activeView];
+  if (!mounted[activeView]) { entry.view.mount($(entry.pane)); mounted[activeView] = true; }
+  if (lastSnapshot) entry.view.render(lastSnapshot, lastIR);
+}
+
+function showView(name) {
+  if (!VIEWS[name] || name === activeView) return;
+  // Stop / free the 3D views on leave (graph stays alive — cy is reused).
+  if (activeView !== "graph") { VIEWS[activeView].view.unmount(); mounted[activeView] = false; }
+  Object.values(VIEWS).forEach(({ pane }) => $(pane).classList.remove("active"));
+  document.querySelectorAll(".view-tab").forEach(
+    (b) => b.classList.toggle("active", b.dataset.view === name));
+  $(VIEWS[name].pane).classList.add("active");
+  activeView = name;
+  renderActiveView();
+}
+
+document.querySelectorAll(".view-tab").forEach((b) => {
+  b.onclick = () => showView(b.dataset.view);
+});
+
+const isaToggle = $("toggleIsa");
+if (isaToggle) isaToggle.onchange = () => { showIsa = isaToggle.checked; applyIsaVisibility(); };
+
+// ── Floating source panel: collapse + drag (by the header) ──────────
+const sourcePanel = $("sourcePanel");
+const sourceHead = $("sourceHead");
+const sourceToggle = $("sourceToggle");
+if (sourceToggle && sourcePanel) {
+  sourceToggle.onclick = (e) => {
+    e.stopPropagation();
+    const collapsed = sourcePanel.classList.toggle("collapsed");
+    sourceToggle.textContent = collapsed ? "▸" : "▾";
+  };
+}
+if (sourceHead && sourcePanel) {
+  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  sourceHead.addEventListener("pointerdown", (e) => {
+    if (e.target === sourceToggle) return;
+    const pr = sourcePanel.parentElement.getBoundingClientRect();
+    const r = sourcePanel.getBoundingClientRect();
+    ox = r.left - pr.left; oy = r.top - pr.top; sx = e.clientX; sy = e.clientY;
+    sourcePanel.style.left = ox + "px"; sourcePanel.style.top = oy + "px"; sourcePanel.style.right = "auto";
+    dragging = true; sourceHead.setPointerCapture(e.pointerId);
+  });
+  sourceHead.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const pr = sourcePanel.parentElement.getBoundingClientRect();
+    const nx = Math.max(0, Math.min(ox + (e.clientX - sx), pr.width - 60));
+    const ny = Math.max(0, Math.min(oy + (e.clientY - sy), pr.height - 30));
+    sourcePanel.style.left = nx + "px"; sourcePanel.style.top = ny + "px";
+  });
+  const stop = (e) => { dragging = false; try { sourceHead.releasePointerCapture(e.pointerId); } catch { /* ignore */ } };
+  sourceHead.addEventListener("pointerup", stop);
+  sourceHead.addEventListener("pointercancel", stop);
 }
 
 // ── Source-text mutations ────────────────────────────────────────────
@@ -186,7 +317,7 @@ function insertIntoMainContext(block) {
 }
 
 function addLink({ name, mass }) {
-  let block = `    ${name}: el.link {\n`;
+  let block = `    ${name}: kit.elements.link {\n`;
   if (mass !== undefined && mass !== "") {
     block += `        mass ${mass};\n`;
   }
@@ -195,9 +326,10 @@ function addLink({ name, mass }) {
 }
 
 function addJoint({ name, kind, parent, child }) {
-  // Joint kinds: rev_joint, conti_joint, prismatic_joint, fixed_joint.
+  // Joint kinds: rev_joint, conti_joint, prismatic_joint, fixed_joint —
+  // resolved through the inline `kit.joints` namespace (see EXAMPLE).
   // Convention: edge body is a single arc with `+` parent, `-` child.
-  const block = `    @${name}: + <isa> ${kind} {\n` +
+  const block = `    @${name}: + <isa> kit.joints.${kind} {\n` +
                 `        (+ ${parent}, - ${child});\n` +
                 `    }\n`;
   insertIntoMainContext(block);
@@ -463,23 +595,44 @@ sourceEl.oninput = () => {
 
 // ── Example loader ───────────────────────────────────────────────────
 
-const EXAMPLE = `mini_arm_description {
-    @"meta_kinematics.hymeko";
-    using kinematics.elements as el;
-    using kinematics.geometry as geo;
-    using kinematics.axes as ax;
+// Self-contained: the kinematics kinds are defined inline as the `kit`
+// namespace, so the editor needs no `@"…"` include (the WASM compiles a
+// single in-memory source — it cannot resolve file includes in the
+// browser). To use the full kinematics stdlib instead, the WASM must carry
+// meta_kinematics.hymeko in its MemProvider (a Rust-side change + rebuild).
+const EXAMPLE = `hymeko_editor_example {}
+
+kit {
+    elements {
+        meta_element {}
+        link: + <isa> meta_element {}
+    }
+    joints {
+        meta_joint {}
+        rev_joint: + <isa> meta_joint {}
+        conti_joint: + <isa> meta_joint {}
+        prismatic_joint: + <isa> meta_joint {}
+        fixed_joint: + <isa> meta_joint {}
+    }
+    geometry { box {} cylinder {} sphere {} }
 }
 
-mini_arm: el, geo, ax {
-    base_link: el.link {
+robot: kit.elements, kit.joints, kit.geometry {
+    base_link: kit.elements.link {
         mass 5.0;
+        link_geometry: kit.geometry.cylinder { dimension [0.05, 0.2]; }
+        visual -> link_geometry;
+        origin [0.0, 0.0, 0.1];
     }
-    spinner: el.link {
+    spinner: kit.elements.link {
         mass 1.0;
+        link_geometry: kit.geometry.box { dimension [0.1, 0.1, 0.1]; }
+        visual -> link_geometry;
+        origin [0.0, 0.0, 0.25];
     }
 
-    @spin_joint: + <isa> ax.conti_joint {
-        (+ base_link, - spinner);
+    @spin_joint: + <isa> kit.joints.conti_joint {
+        (+ base_link [[0.0, 0.0, 0.2], [0.0, 0.0, 0.0]], - spinner);
     }
 }
 `;
