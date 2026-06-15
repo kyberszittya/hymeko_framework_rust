@@ -1,15 +1,15 @@
 #[cfg(test)]
 mod ir_value_tests {
-    use std::f64;
-    use std::time::Instant;
     use crate::test_helpers::{log_test_footer, log_test_header};
     use hymeko::common::pathkey::PathKey;
-    use hymeko::resolution::intern_pass::Interned;
-    use hymeko::ir::ir::{ValueR};
+    use hymeko::ir::ir::ValueR;
     use hymeko::ir::lower::lower_to_ir;
     use hymeko::resolution::intern_pass;
+    use hymeko::resolution::intern_pass::Interned;
     use hymeko::resolution::resolve::build_index_sym;
     use log::info;
+    use std::f64;
+    use std::time::Instant;
 
     const MINIMAL_FIELDS_PATH: &str = "../data/minimal_examples/minimal_example_with_fields.hymeko";
     const SYM_CONTEXT: &str = "context";
@@ -41,7 +41,8 @@ mod ir_value_tests {
             "ir_value_resolution",
             "Verifies tag/value lowering for scalars, vectors, and undef nodes.",
         );
-        let source_code = parser::read_source_file(MINIMAL_FIELDS_PATH).expect("failed to read source file");
+        let source_code =
+            parser::read_source_file(MINIMAL_FIELDS_PATH).expect("failed to read source file");
         let desc = parser::parse_description(&source_code).unwrap();
         // Intern and resolve as needed, then lower to IR.
         let Interned { ast, mut interner } = intern_pass::intern_ast(&desc);
@@ -53,32 +54,65 @@ mod ir_value_tests {
         let sid_val1 = interner.intern(SYM_VAL1);
         let sid_vector = interner.intern(SYM_VECTOR);
 
-        let did_context = *idx.by_path.get(&PathKey(vec![sid_context])).expect("context missing");
-        let did_val0 = *idx.by_path.get(&PathKey(vec![sid_context, sid_val0])).expect("val0 missing");
-        let did_val1 = *idx.by_path.get(&PathKey(vec![sid_context, sid_val1])).expect("val1 missing");
-        let did_vector = *idx.by_path.get(&PathKey(vec![sid_context, sid_vector])).expect("vector missing");
+        let did_context = *idx
+            .by_path
+            .get(&PathKey(vec![sid_context]))
+            .expect("context missing");
+        let did_val0 = *idx
+            .by_path
+            .get(&PathKey(vec![sid_context, sid_val0]))
+            .expect("val0 missing");
+        let did_val1 = *idx
+            .by_path
+            .get(&PathKey(vec![sid_context, sid_val1]))
+            .expect("val1 missing");
+        let did_vector = *idx
+            .by_path
+            .get(&PathKey(vec![sid_context, sid_vector]))
+            .expect("vector missing");
 
         // tags + value
         let sid_int = interner.intern(TAG_INT);
         assert!(ir.decl_nodes[did_val0.0].anno.tags.contains(&sid_int));
-        assert_eq!(ir.decl_nodes[did_val0.0].anno.value, Some(ValueR::Num(56.0)));
+        assert_eq!(
+            ir.decl_nodes[did_val0.0].anno.value,
+            Some(ValueR::Num(56.0))
+        );
 
         let sid_string = interner.intern(TAG_STRING);
         let sid_vakond = interner.intern(STR_VAKOND);
         assert!(ir.decl_nodes[did_val1.0].anno.tags.contains(&sid_string));
-        assert_eq!(ir.decl_nodes[did_val1.0].anno.value, Some(ValueR::Str(sid_vakond)));
+        assert_eq!(
+            ir.decl_nodes[did_val1.0].anno.value,
+            Some(ValueR::Str(sid_vakond))
+        );
 
         // negative scalar
         let sid_val_neg = interner.intern(SYM_VAL_NEG);
-        let did_val_neg = *idx.by_path.get(&PathKey(vec![sid_context, sid_val_neg])).expect("val_neg missing");
-        assert_eq!(ir.decl_nodes[did_val_neg.0].anno.value, Some(ValueR::Num(-42.0)));
+        let did_val_neg = *idx
+            .by_path
+            .get(&PathKey(vec![sid_context, sid_val_neg]))
+            .expect("val_neg missing");
+        assert_eq!(
+            ir.decl_nodes[did_val_neg.0].anno.value,
+            Some(ValueR::Num(-42.0))
+        );
 
         // vector list
-        match ir.decl_nodes[did_vector.0].anno.value.as_ref().expect("vector has no value") {
+        match ir.decl_nodes[did_vector.0]
+            .anno
+            .value
+            .as_ref()
+            .expect("vector has no value")
+        {
             ValueR::List(xs) => {
                 assert_eq!(xs.len(), VECTOR_EXPECTED_LEN);
                 if let Some(ValueR::Num(v)) = xs.get(1) {
-                    assert!((*v - VECTOR_SECOND_VALUE).abs() <= EPS_F64, "second element should be {}, got {v}", VECTOR_SECOND_VALUE);
+                    assert!(
+                        (*v - VECTOR_SECOND_VALUE).abs() <= EPS_F64,
+                        "second element should be {}, got {v}",
+                        VECTOR_SECOND_VALUE
+                    );
                 } else {
                     panic!("second vector element should be numeric");
                 }
@@ -89,7 +123,10 @@ mod ir_value_tests {
         // val_undef: tags ok, value None
         let sid_val_undef = interner.intern(SYM_VAL_UNDEF);
         let sid_real = interner.intern(TAG_REAL);
-        let did_val_undef = *idx.by_path.get(&PathKey(vec![sid_context, sid_val_undef])).expect("val_undef missing");
+        let did_val_undef = *idx
+            .by_path
+            .get(&PathKey(vec![sid_context, sid_val_undef]))
+            .expect("val_undef missing");
         assert!(ir.decl_nodes[did_val_undef.0].anno.tags.contains(&sid_real));
         assert!(ir.decl_nodes[did_val_undef.0].anno.value.is_none());
 
@@ -97,14 +134,12 @@ mod ir_value_tests {
         let _ = did_context;
         info!(
             "Resolved vector len={}, second value ~{:.2}",
-            VECTOR_EXPECTED_LEN,
-            VECTOR_SECOND_VALUE
+            VECTOR_EXPECTED_LEN, VECTOR_SECOND_VALUE
         );
         finish(
             "ir_value_resolution",
             timer,
             "Scalar, vector, and undefined annotations matched the golden fixture.",
         );
-
     }
- }
+}

@@ -1,7 +1,7 @@
-use std::marker::PhantomData;
 use crate::common::ids::{EdgeId, NodeId};
-use crate::tensor::common::{Real};
+use crate::tensor::common::Real;
 use crate::tensor::tensor_val::IncVal;
+use std::marker::PhantomData;
 
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
@@ -79,7 +79,12 @@ impl Default for TensorBuildCfg {
 }
 impl<F: Real> TensorCoo<F> {
     pub fn new(num_slices: usize, dim_i: usize, dim_j: usize) -> Self {
-        Self { num_slices, dim_i, dim_j, entries: Vec::new() }
+        Self {
+            num_slices,
+            dim_i,
+            dim_j,
+            entries: Vec::new(),
+        }
     }
 
     #[inline(always)]
@@ -89,7 +94,6 @@ impl<F: Real> TensorCoo<F> {
             dim_i,
             dim_j,
             entries: Vec::new(),
-
         }
     }
 
@@ -113,10 +117,14 @@ impl<F: Real> TensorCoo<F> {
     }
 
     #[inline(always)]
-    pub fn len(&self) -> usize { self.entries.len() }
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
 
     #[inline(always)]
-    pub fn is_empty(&self) -> bool { self.entries.is_empty() }
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
 
     pub fn into_soa(self) -> CooSoa<F> {
         let n = self.entries.len();
@@ -140,7 +148,6 @@ impl<F: Real> TensorCoo<F> {
             i,
             j,
             v,
-
         }
     }
 }

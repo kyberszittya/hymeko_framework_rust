@@ -6,6 +6,8 @@ import {
   snapshotToHyperedges,
   snapshotToKinematicGraph,
   snapshotRelationships,
+  scopeDepths,
+  bidirectionalEdgeIds,
   cycleArity,
   parseUrdf,
 } from "./adapters.js";
@@ -164,4 +166,48 @@ test("parseUrdf: links without geometry → null; joint without origin/axis → 
   assert.equal(links[0].geometry, null);
   assert.deepEqual(joints[0].origin_xyz, [0, 0, 0]);
   assert.equal(joints[0].axis, null);
+});
+
+test("scopeDepths: chain a⊃b⊃c gives depths 0/1/2; multi-root each 0", () => {
+  const snap = {
+    nodes: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 7 }],
+    edges: [{ id: 5 }],
+    relationships: [
+      { kind: "scope", from: 1, to: 0 }, // b in a
+      { kind: "scope", from: 2, to: 1 }, // c in b
+      { kind: "scope", from: 5, to: 0 }, // edge 5 in a
+      { kind: "isa", from: 2, to: 9 },   // non-scope ignored
+      { kind: "scope", from: 7, to: 7 }, // self-scope ignored
+    ],
+  };
+  const d = scopeDepths(snap);
+  assert.equal(d.get(0), 0); // root container
+  assert.equal(d.get(1), 1);
+  assert.equal(d.get(2), 2);
+  assert.equal(d.get(5), 1); // edge nested one level
+  assert.equal(d.get(7), 0); // self-scope → still a root
+});
+
+test("scopeDepths: empty / no-relationship snapshots", () => {
+  assert.equal(scopeDepths({}).size, 0);
+  const d = scopeDepths({ nodes: [{ id: 0 }, { id: 1 }], edges: [] });
+  assert.equal(d.get(0), 0);
+  assert.equal(d.get(1), 0);
+});
+
+test("bidirectionalEdgeIds: only reciprocal pairs, no self-loops or one-way", () => {
+  const edges = [
+    { id: "x", source: "a", target: "b" },  // reciprocal with y
+    { id: "y", source: "b", target: "a" },
+    { id: "z", source: "a", target: "c" },  // one-way
+    { id: "p", source: "a", target: "b" },  // parallel same-dir as x (still bidir: b->a exists)
+    { id: "s", source: "d", target: "d" },  // self-loop
+  ];
+  const ids = bidirectionalEdgeIds(edges);
+  assert.ok(ids.has("x") && ids.has("y"));
+  assert.ok(ids.has("p")); // a->b with a reverse b->a present is bidirectional
+  assert.ok(!ids.has("z"));
+  assert.ok(!ids.has("s"));
+  assert.equal(bidirectionalEdgeIds([]).size, 0);
+  assert.equal(bidirectionalEdgeIds(undefined).size, 0);
 });

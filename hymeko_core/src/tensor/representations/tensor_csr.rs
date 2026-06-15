@@ -4,8 +4,8 @@ pub struct TensorCsrBuilder<F> {
     pub dim_i: usize,
     pub dim_j: usize,
     pub uncoalesced_row_ptr: Vec<usize>, // Length: dim_i
-    pub cols: Vec<usize>, // Length: nnz (number of non-zeros)
-    pub vals: Vec<F>,         // Length: nnz
+    pub cols: Vec<usize>,                // Length: nnz (number of non-zeros)
+    pub vals: Vec<F>,                    // Length: nnz
 }
 
 #[derive(Debug, Clone)]
@@ -100,7 +100,6 @@ impl<F: Real> TensorCsr<F> {
     }
 }
 
-
 // ==========================================
 // UTILITY: Universal Prefix Sum
 // ==========================================
@@ -116,4 +115,3 @@ pub fn build_row_ptr(counts: &[usize]) -> (Vec<usize>, usize) {
     row_ptr[dim] = total;
     (row_ptr, total)
 }
-

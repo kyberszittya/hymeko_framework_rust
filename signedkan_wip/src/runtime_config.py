@@ -139,6 +139,7 @@ class TrainingConfig:
     direct_messaging:  bool              = False
     spline_kind:       str               = "catmull_rom"
     strict_protocol:   bool              = False
+    reach_topo:        bool              = False  # R_topo: test-edge cycles kept (topology) but their sign withheld from σ
     sparse_attn_k:     int               = 0     # top-K sparse attention
 
 
@@ -244,6 +245,7 @@ def _parse_training() -> TrainingConfig:
         direct_messaging=_env_bool("HSIKAN_DIRECT_MESSAGING", False),
         spline_kind=_env_str("HSIKAN_SPLINE_KIND", "catmull_rom"),
         strict_protocol=_env_bool("HSIKAN_STRICT_PROTOCOL", False),
+        reach_topo=_env_bool("HSIKAN_REACH_TOPO", False),
         sparse_attn_k=_env_int("HSIKAN_SPARSE_ATTN_K", 0),
     )
 

@@ -1,24 +1,30 @@
 #[cfg(test)]
-mod test_message_passing_components
-{
-    use hymeko_hnn::tensor::message_passing::{
-        clique_diag, gather_edges_from_nodes,
-        implicit_clique_step, remove_self_effect, scatter_nodes_from_edges, CliqueStepCfg};
-    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
-    use hymeko_hnn::tensor::common_traversal::inc_scalar_signed;
-    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+mod test_message_passing_components {
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
+    use crate::test_tensor_representations::constants::*;
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko_hnn::tensor::common_traversal::inc_scalar_signed;
+    use hymeko_hnn::tensor::message_passing::{
+        CliqueStepCfg, clique_diag, gather_edges_from_nodes, implicit_clique_step,
+        remove_self_effect, scatter_nodes_from_edges,
+    };
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use log::info;
     use std::time::Instant;
-    use crate::test_tensor_representations::constants::*;
-
-
 
     fn assert_vec_close(a: &[f32], b: &[f32], eps: f32, msg: &str) {
         assert_eq!(a.len(), b.len(), "len mismatch: {}", msg);
         for i in 0..a.len() {
             let d = (a[i] - b[i]).abs();
-            assert!(d <= eps, "{} at i={} a={} b={} diff={}", msg, i, a[i], b[i], d);
+            assert!(
+                d <= eps,
+                "{} at i={} a={} b={} diff={}",
+                msg,
+                i,
+                a[i],
+                b[i],
+                d
+            );
         }
     }
 
@@ -41,7 +47,9 @@ mod test_message_passing_components
 
         // deterministic x
         let mut x = vec![0.0f32; n];
-        for i in 0..n { x[i] = 1.0 + (i as f32) * 0.1; }
+        for i in 0..n {
+            x[i] = 1.0 + (i as f32) * 0.1;
+        }
 
         let mut x_edges = vec![0.0f32; m];
         gather_edges_from_nodes(&hg, &x, &mut x_edges, use_abs);
@@ -60,8 +68,16 @@ mod test_message_passing_components
             x_edges_ref[e] = acc;
         }
 
-        assert_vec_close(&x_edges, &x_edges_ref, EPS_F32_DEFAULT, "gather_edges_from_nodes mismatch");
-        info!("Gather matched manual computation for {} nodes / {} edges", n, m);
+        assert_vec_close(
+            &x_edges,
+            &x_edges_ref,
+            EPS_F32_DEFAULT,
+            "gather_edges_from_nodes mismatch",
+        );
+        info!(
+            "Gather matched manual computation for {} nodes / {} edges",
+            n, m
+        );
         log_test_footer(
             "test_gather_matches_manual_btx",
             Some(start.elapsed()),
@@ -88,7 +104,9 @@ mod test_message_passing_components
 
         // deterministic x_edges
         let mut x_edges = vec![0.0f32; m];
-        for e in 0..m { x_edges[e] = 0.5 + (e as f32) * 0.2; }
+        for e in 0..m {
+            x_edges[e] = 0.5 + (e as f32) * 0.2;
+        }
 
         let mut y = vec![0.0f32; n];
         scatter_nodes_from_edges(&hg, &x_edges, &mut y, use_abs);
@@ -106,8 +124,16 @@ mod test_message_passing_components
             }
         }
 
-        assert_vec_close(&y, &y_ref, EPS_F32_DEFAULT, "scatter_nodes_from_edges mismatch");
-        info!("Scatter matched manual computation for {} nodes / {} edges", n, m);
+        assert_vec_close(
+            &y,
+            &y_ref,
+            EPS_F32_DEFAULT,
+            "scatter_nodes_from_edges mismatch",
+        );
+        info!(
+            "Scatter matched manual computation for {} nodes / {} edges",
+            n, m
+        );
         log_test_footer(
             "test_scatter_matches_manual_bxe",
             Some(start.elapsed()),
@@ -168,11 +194,7 @@ mod test_message_passing_components
 
         remove_self_effect(&mut y, &diag, &x);
 
-        let expected = vec![
-            100.0 - 10.0 * 1.0,
-            100.0 - 0.5 * 2.0,
-            100.0 - 2.0 * 3.0,
-        ];
+        let expected = vec![100.0 - 10.0 * 1.0, 100.0 - 0.5 * 2.0, 100.0 - 2.0 * 3.0];
         assert_vec_close(&y, &expected, EPS_F32_ULTRA, "remove_self_effect mismatch");
         info!("remove_self_effect updated {} entries", x.len());
         log_test_footer(
@@ -198,9 +220,14 @@ mod test_message_passing_components
         let n = hg.num_nodes();
         let m = hg.num_edges();
         let mut x = vec![0.0f32; n];
-        for i in 0..n { x[i] = 1.0 + (i as f32) * 0.1; }
+        for i in 0..n {
+            x[i] = 1.0 + (i as f32) * 0.1;
+        }
 
-        let cfg = CliqueStepCfg { use_abs: true, include_self: false };
+        let cfg = CliqueStepCfg {
+            use_abs: true,
+            include_self: false,
+        };
 
         // orchestrator
         let diag = clique_diag(&hg, cfg.use_abs);
@@ -216,8 +243,16 @@ mod test_message_passing_components
         let diag = clique_diag(&hg, cfg.use_abs);
         remove_self_effect(&mut y2, &diag, &x);
 
-        assert_vec_close(&y1, &y2, EPS_F32_DEFAULT, "implicit_clique_step != pipeline");
-        info!("Implicit clique step matched explicit pipeline for {} nodes", n);
+        assert_vec_close(
+            &y1,
+            &y2,
+            EPS_F32_DEFAULT,
+            "implicit_clique_step != pipeline",
+        );
+        info!(
+            "Implicit clique step matched explicit pipeline for {} nodes",
+            n
+        );
         log_test_footer(
             "test_implicit_clique_step_equals_pipeline",
             Some(start.elapsed()),

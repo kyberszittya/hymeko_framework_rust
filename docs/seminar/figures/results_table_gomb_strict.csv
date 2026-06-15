@@ -1,0 +1,5 @@
+dataset,mean,pstd,n_seeds,provenance,per_seed
+Bitcoin Alpha,,,0,[pending] Gömb-strict (OOM on local GPU — re-run on Komondor/GCP),
+Bitcoin OTC,,,0,[pending] Gömb-strict (OOM on local GPU — re-run on Komondor/GCP),
+Slashdot,,,0,[pending] Gömb-strict (OOM on local GPU — re-run on Komondor/GCP),
+Epinions,,,0,[pending] Gömb-strict (OOM on local GPU — re-run on Komondor/GCP),

@@ -31,6 +31,7 @@
 
 pub mod ops;
 pub mod optimizer;
+pub mod runtime;
 
 pub use ops::adam::{adam_step, AdamState};
 pub use ops::clifford_fir::{
@@ -39,3 +40,4 @@ pub use ops::clifford_fir::{
 pub use ops::linear::{linear_backward, linear_forward, LinearLayer};
 pub use ops::loss::{bce_with_logits_backward, bce_with_logits_forward};
 pub use ops::scatter::{scatter_mean_backward, scatter_mean_forward};
+pub use runtime::NagareRuntime;

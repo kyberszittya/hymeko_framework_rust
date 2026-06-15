@@ -1,27 +1,31 @@
-use std::hash::{Hash, Hasher};
-use crate::common::ids::{Id};
-use std::fmt;
+use crate::common::ids::Id;
 use serde::{Deserialize, Serialize};
-
-
+use std::fmt;
+use std::hash::{Hash, Hasher};
 
 impl<T> Copy for Id<T> {}
 
 impl<T> Clone for Id<T> {
     #[inline(always)]
-    fn clone(&self) -> Self { *self }
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 impl<T> PartialEq for Id<T> {
     #[inline(always)]
-    fn eq(&self, other: &Self) -> bool { self.0 == other.0 }
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
 }
 
 impl<T> Eq for Id<T> {}
 
 impl<T> Hash for Id<T> {
     #[inline(always)]
-    fn hash<H: Hasher>(&self, state: &mut H) { self.0.hash(state); }
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
 }
 
 impl<T> PartialOrd for Id<T> {
@@ -62,10 +66,14 @@ impl<'de, T> Deserialize<'de> for Id<T> {
 
 impl<T> From<usize> for Id<T> {
     #[inline(always)]
-    fn from(raw: usize) -> Self { Self::new(raw) }
+    fn from(raw: usize) -> Self {
+        Self::new(raw)
+    }
 }
 
 impl<T> From<Id<T>> for usize {
     #[inline(always)]
-    fn from(id: Id<T>) -> usize { id.0 }
+    fn from(id: Id<T>) -> usize {
+        id.0
+    }
 }

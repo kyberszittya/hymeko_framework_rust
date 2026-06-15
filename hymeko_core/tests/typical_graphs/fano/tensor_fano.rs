@@ -1,19 +1,25 @@
 #[cfg(test)]
 
 mod tensor_fano {
-    use std::collections::{BTreeSet, HashMap, HashSet};
+    use crate::test_helpers::{
+        load_and_lower, log_test_footer, log_test_header, print_dense_matrix,
+    };
+    use crate::typical_graphs::fano::constants::*;
     use hymeko::common::ids::{EdgeId, NodeId};
     use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
-    use hymeko_hre::expansion::star_expansion_coo;
-    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
     use hymeko::tensor::util::print_dense_block;
-    use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header, print_dense_matrix};
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hre::expansion::star_expansion_coo;
     use log::info;
+    use std::collections::{BTreeSet, HashMap, HashSet};
     use std::time::Instant;
-    use crate::typical_graphs::fano::constants::*;
 
-    const AGG_CFG: AggCfg = AggCfg { weight: WeightAgg::Sum, sign: SignAgg::PreferNonNeutral, clamp01: false };
+    const AGG_CFG: AggCfg = AggCfg {
+        weight: WeightAgg::Sum,
+        sign: SignAgg::PreferNonNeutral,
+        clamp01: false,
+    };
 
     #[inline(always)]
     fn node_u(n: NodeId) -> usize {
@@ -46,7 +52,11 @@ mod tensor_fano {
 
         for e in 0..hg.num_edges() {
             let (a, b) = hg.edge_span(EdgeId::new(e));
-            assert_eq!(b - a, FANO_EDGE_DEGREE, "Each Fano edge should have degree 3");
+            assert_eq!(
+                b - a,
+                FANO_EDGE_DEGREE,
+                "Each Fano edge should have degree 3"
+            );
 
             for p in a..b {
                 let u = node_u(hg.flat_edge_nodes[p]);
@@ -56,11 +66,18 @@ mod tensor_fano {
         }
 
         // The Fano plane has exactly 7 incident point nodes.
-        assert_eq!(incident.len(), FANO_INCIDENT_NODE_COUNT, "Fano: 7 incident point nodes");
+        assert_eq!(
+            incident.len(),
+            FANO_INCIDENT_NODE_COUNT,
+            "Fano: 7 incident point nodes"
+        );
 
         // Each incident point has degree 3.
         for &u in &incident {
-            assert_eq!(deg[u], FANO_NODE_DEGREE, "Each incident node should have degree 3");
+            assert_eq!(
+                deg[u], FANO_NODE_DEGREE,
+                "Each incident node should have degree 3"
+            );
         }
 
         // Any two distinct edges intersect in exactly 1 incident node.
@@ -130,18 +147,27 @@ mod tensor_fano {
                 // Scan COO entries for this slice (small in Fano, fine for test).
                 for idx in 0..coo.len() {
                     let entry = coo.entry(idx);
-                    if entry.k != e { continue; }
+                    if entry.k != e {
+                        continue;
+                    }
                     let i = entry.i;
                     let j = entry.j;
 
-                    if i == u && j == e_v { has_ne = true; }
-                    if i == e_v && j == u { has_en = true; }
+                    if i == u && j == e_v {
+                        has_ne = true;
+                    }
+                    if i == e_v && j == u {
+                        has_en = true;
+                    }
                 }
 
                 match s {
                     1 => assert!(has_ne && !has_en, "Expected '+' to be node->edge only"),
                     -1 => assert!(has_en && !has_ne, "Expected '-' to be edge->node only"),
-                    _ => assert!(has_ne && has_en, "Expected neutral to include both directions"),
+                    _ => assert!(
+                        has_ne && has_en,
+                        "Expected neutral to include both directions"
+                    ),
                 }
             }
         }
@@ -195,7 +221,6 @@ mod tensor_fano {
         );
     }
 
-
     #[test]
     fn fano_star_tensor_has_correct_matrix_entries() {
         log_test_header(
@@ -244,8 +269,8 @@ mod tensor_fano {
             assert_eq!(b - a, 3);
 
             for p in a..b {
-                let u = hg.flat_edge_nodes[p].0;   // node vertex index in V*
-                let s = hg.flat_edge_sign[p];      // +1 / -1 / 0
+                let u = hg.flat_edge_nodes[p].0; // node vertex index in V*
+                let s = hg.flat_edge_sign[p]; // +1 / -1 / 0
 
                 let m = &slice_maps[e];
 
@@ -254,16 +279,34 @@ mod tensor_fano {
 
                 match s {
                     1 => {
-                        assert!((ne - 1.0).abs() <= FANO_TOLERANCE, "Expected '+' incidence to create (node,edge)=1.0");
-                        assert!(en.abs() <= FANO_TOLERANCE, "Expected '+' incidence NOT to create (edge,node)");
+                        assert!(
+                            (ne - 1.0).abs() <= FANO_TOLERANCE,
+                            "Expected '+' incidence to create (node,edge)=1.0"
+                        );
+                        assert!(
+                            en.abs() <= FANO_TOLERANCE,
+                            "Expected '+' incidence NOT to create (edge,node)"
+                        );
                     }
                     -1 => {
-                        assert!((en - 1.0).abs() <= FANO_TOLERANCE, "Expected '-' incidence to create (edge,node)=1.0");
-                        assert!(ne.abs() <= FANO_TOLERANCE, "Expected '-' incidence NOT to create (node,edge)");
+                        assert!(
+                            (en - 1.0).abs() <= FANO_TOLERANCE,
+                            "Expected '-' incidence to create (edge,node)=1.0"
+                        );
+                        assert!(
+                            ne.abs() <= FANO_TOLERANCE,
+                            "Expected '-' incidence NOT to create (node,edge)"
+                        );
                     }
                     _ => {
-                        assert!((ne - 1.0).abs() <= FANO_TOLERANCE, "Expected neutral incidence to create (node,edge)=1.0");
-                        assert!((en - 1.0).abs() <= FANO_TOLERANCE, "Expected neutral incidence to create (edge,node)=1.0");
+                        assert!(
+                            (ne - 1.0).abs() <= FANO_TOLERANCE,
+                            "Expected neutral incidence to create (node,edge)=1.0"
+                        );
+                        assert!(
+                            (en - 1.0).abs() <= FANO_TOLERANCE,
+                            "Expected neutral incidence to create (edge,node)=1.0"
+                        );
                     }
                 }
             }
@@ -277,8 +320,12 @@ mod tensor_fano {
                 let u = hg.flat_edge_nodes[p].0;
                 let s = hg.flat_edge_sign[p];
                 match s {
-                    1 => { allowed.insert((u, e_v)); }
-                    -1 => { allowed.insert((e_v, u)); }
+                    1 => {
+                        allowed.insert((u, e_v));
+                    }
+                    -1 => {
+                        allowed.insert((e_v, u));
+                    }
                     _ => {
                         allowed.insert((u, e_v));
                         allowed.insert((e_v, u));
@@ -292,7 +339,10 @@ mod tensor_fano {
                     "Unexpected matrix entry in slice {e}: ({i},{j}) = {val}"
                 );
                 // Optional: assert it's exactly 1.0 (or 2.0 if duplicates happen).
-                assert!((val - 1.0).abs() <= FANO_TOLERANCE, "Unexpected value in slice {e}: ({i},{j}) = {val}");
+                assert!(
+                    (val - 1.0).abs() <= FANO_TOLERANCE,
+                    "Unexpected value in slice {e}: ({i},{j}) = {val}"
+                );
             }
         }
         log_test_footer(
@@ -314,7 +364,10 @@ mod tensor_fano {
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &AGG_CFG, &ex);
 
         let coo = star_expansion_coo(&hg);
-        assert!(coo.len() > 0, "Star tensor should contain entries for Fano graph");
+        assert!(
+            coo.len() > 0,
+            "Star tensor should contain entries for Fano graph"
+        );
 
         // Print slice 0 as a sanity check (14x14 would still be OK, but let's show all).
         print_dense_block(&coo, 0, 0, 0, coo.dim_i, coo.dim_j);
@@ -357,13 +410,16 @@ mod tensor_fano {
                 let w: f32 = 1.0;
 
                 match s {
-                    1 => { // '+' : node -> edge
+                    1 => {
+                        // '+' : node -> edge
                         expected[u][e_v] += w;
                     }
-                    -1 => { // '-' : edge -> node
+                    -1 => {
+                        // '-' : edge -> node
                         expected[e_v][u] += w;
                     }
-                    _ => { // neutral: both
+                    _ => {
+                        // neutral: both
                         expected[u][e_v] += w;
                         expected[e_v][u] += w;
                     }
@@ -376,7 +432,10 @@ mod tensor_fano {
             for j in 0..dim {
                 let a = proj[i][j];
                 let b = expected[i][j];
-                assert!((a - b).abs() <= FANO_TOLERANCE, "Mismatch at ({i},{j}): got {a}, expected {b}");
+                assert!(
+                    (a - b).abs() <= FANO_TOLERANCE,
+                    "Mismatch at ({i},{j}): got {a}, expected {b}"
+                );
             }
         }
         print_dense_matrix(&proj, "Projected star matrix (sum over slices)");
@@ -386,4 +445,4 @@ mod tensor_fano {
             "Projected star matrix matched directly accumulated incidence weights.",
         );
     }
- }
+}

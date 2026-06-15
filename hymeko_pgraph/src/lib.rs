@@ -52,6 +52,7 @@ pub mod meta_resolve;
 pub mod msg;
 #[cfg(feature = "pgip")]
 pub mod pgip_io;
+pub mod reachability;
 pub mod regime;
 pub mod schema;
 pub mod ssg;

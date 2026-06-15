@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   attributeValue, categoricalColorMap, newellNormal, prismPositions, treePositions,
-  coneTreePositions, PALETTE,
+  coneTreePositions, depthSizes, hubSize, scopeMembership, PALETTE,
 } from "./geometry3d.js";
 
 test("attributeValue: first base / first tag / fallback", () => {
@@ -63,6 +63,50 @@ test("treePositions: barycentric composition tree (root over its children)", () 
 test("treePositions: a node with no parent is a root at depth 0", () => {
   const { depth } = treePositions(3, [[1, 0]]); // 2 is isolated
   assert.equal(depth[0], 0); assert.equal(depth[1], 1); assert.equal(depth[2], 0);
+});
+
+test("depthSizes: roots largest, descendants shrink, floored at min", () => {
+  // 0 ⊃ {1,2}; 1 ⊃ {3,4}. scope edges are [child, parent].
+  const { depth, size } = depthSizes(5, [[1, 0], [2, 0], [3, 1], [4, 1]],
+    { base: 2, falloff: 0.5, min: 0.4 });
+  assert.deepEqual([...depth], [0, 1, 1, 2, 2]);
+  assert.equal(size[0], 2);                 // root = base (largest)
+  assert.equal(size[1], 1); assert.equal(size[2], 1); // depth 1 = base·0.5
+  assert.equal(size[3], 0.5);               // depth 2 = base·0.25 = 0.5
+  assert.ok(size[0] > size[1] && size[1] > size[3], "monotone by depth");
+});
+
+test("depthSizes: deep node floors at min, isolated node is a root", () => {
+  // chain 0⊃1⊃2⊃3 (deep) + isolated 4. base·falloff^3 = 2·0.125 = 0.25 < min.
+  const { depth, size } = depthSizes(5, [[1, 0], [2, 1], [3, 2]],
+    { base: 2, falloff: 0.5, min: 0.6 });
+  assert.equal(size[3], 0.6, "deep node clamped to min");
+  assert.equal(depth[4], 0); assert.equal(size[4], 2, "isolated node is a root");
+});
+
+test("scopeMembership: every node maps to its top-level description root", () => {
+  // Two namespaces: 0 ⊃ {1, 2⊃3};  4 ⊃ 5. scope edges are [child, parent].
+  const { depth, root, roots } = scopeMembership(6, [[1, 0], [2, 0], [3, 2], [5, 4]]);
+  assert.deepEqual([...root], [0, 0, 0, 0, 4, 4]); // node→its root
+  assert.deepEqual([...depth], [0, 1, 1, 2, 0, 1]);
+  assert.deepEqual(roots, [0, 4]);                 // two distinct descriptions
+});
+
+test("scopeMembership: isolated node is its own root; 2-cycle is guarded", () => {
+  const a = scopeMembership(3, [[1, 0]]); // 2 isolated
+  assert.deepEqual([...a.root], [0, 0, 2]);
+  assert.deepEqual(a.roots, [0, 2]);
+  const b = scopeMembership(2, [[0, 1], [1, 0]]); // a→b, b→a (first-parent each)
+  assert.ok(b.root[0] >= 0 && b.root[1] >= 0);    // terminates, no hang
+});
+
+test("hubSize: binary edge = reference, higher arity grows, clamped", () => {
+  assert.equal(hubSize(2), 1);                          // binary = reference scale
+  assert.equal(hubSize(0), 1); assert.equal(hubSize(1), 1); // ≤2 members → base
+  assert.ok(hubSize(3) > hubSize(2));                   // monotone in arity
+  assert.ok(Math.abs(hubSize(4) - (1 + 2 * 0.22)) < 1e-9);
+  assert.equal(hubSize(100), 2.4);                      // clamped at max
+  assert.equal(hubSize(2, { base: 1, per: 0.5, min: 0.5, max: 3 }), 1); // opts honoured
 });
 
 test("coneTreePositions: root sits at the 3D barycentre of its subtree", () => {

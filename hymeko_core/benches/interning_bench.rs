@@ -1,11 +1,11 @@
 // Criterion harness entry; keep clippy permissive for micro-benchmark noise.
 #![allow(warnings)]
 
-use criterion::{criterion_group, criterion_main, Criterion, Throughput};
-use std::hint::black_box;
+use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use hymeko::resolution::intern_pass::intern_ast;
 use parser::lexer::simd::{Avx2Lexer, CoreLexer, ScalarLexer};
 use parser::parse_description;
+use std::hint::black_box;
 
 fn generate_large_hypergraph(nodes: usize) -> String {
     let mut s = String::from("Description{} Benchmark_Graph {\n");
@@ -36,12 +36,16 @@ fn bench_interning_performance(c: &mut Criterion) {
             {
                 if std::is_x86_feature_detected!("avx2") {
                     let lex = Avx2Lexer(core);
-                    for tok in lex { let _ = black_box(tok); }
+                    for tok in lex {
+                        let _ = black_box(tok);
+                    }
                     return;
                 }
             }
             let lex = ScalarLexer(core);
-            for tok in lex { let _ = black_box(tok); }
+            for tok in lex {
+                let _ = black_box(tok);
+            }
         })
     });
 

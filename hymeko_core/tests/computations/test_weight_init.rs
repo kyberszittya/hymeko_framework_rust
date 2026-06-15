@@ -2,7 +2,9 @@
 
 #[cfg(test)]
 mod tests {
-    use hymeko::tensor::conv::weight_init::weight_init::{Constant, Kaiming, Ones, WeightInit, Xavier, XavierRandom, Zeros};
+    use hymeko::tensor::conv::weight_init::weight_init::{
+        Constant, Kaiming, Ones, WeightInit, Xavier, XavierRandom, Zeros,
+    };
     use hymeko::tensor::conv::weight_init::weight_init_impl::van_der_corput;
 
     #[test]

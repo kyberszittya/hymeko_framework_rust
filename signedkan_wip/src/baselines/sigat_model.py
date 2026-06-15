@@ -23,6 +23,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from ._attention import build_csr, segment_attention
+
 
 def _build_neighbour_lists(edges, signs, n_nodes: int):
     """Return per-node lists of (neighbour, sign-bucket) pairs.
@@ -33,12 +35,20 @@ def _build_neighbour_lists(edges, signs, n_nodes: int):
     pos_buckets: list[list[int]] = [[] for _ in range(n_nodes)]
     neg_buckets: list[list[int]] = [[] for _ in range(n_nodes)]
     for (u, v), s in zip(edges, signs):
-        if s == 1:
-            pos_buckets[int(u)].append(int(v))
-            pos_buckets[int(v)].append(int(u))
-        else:
-            neg_buckets[int(u)].append(int(v))
-            neg_buckets[int(v)].append(int(u))
+        u, v = int(u), int(v)
+        # Sign 0 = topology-only (R_topo): reachable as a connection, sign
+        # withheld → both buckets. ±1 unchanged; no caller passes 0 normally.
+        if s >= 1:
+            pos_buckets[u].append(v)
+            pos_buckets[v].append(u)
+        if s <= -1:
+            neg_buckets[u].append(v)
+            neg_buckets[v].append(u)
+        if s == 0:
+            pos_buckets[u].append(v)
+            pos_buckets[v].append(u)
+            neg_buckets[u].append(v)
+            neg_buckets[v].append(u)
     return pos_buckets, neg_buckets
 
 
@@ -59,49 +69,30 @@ class MotifAttention(nn.Module):
         self.W_K = nn.Linear(dim, dim, bias=False)
         self.W_V = nn.Linear(dim, dim, bias=False)
         self.W_O = nn.Linear(dim, dim, bias=False)
+        # Per-instance CSR cache: (key, seg, nbr). Built once per run — this
+        # attention instance always sees the same neighbour buckets object.
+        self._csr_cache: tuple | None = None
+
+    def _csr(self, neighbour_lists, device):
+        key = (id(neighbour_lists), device)
+        if self._csr_cache is None or self._csr_cache[0] != key:
+            seg, nbr, _ = build_csr(neighbour_lists, device)
+            self._csr_cache = (key, seg, nbr)
+        return self._csr_cache[1], self._csr_cache[2]
 
     def forward(self, h: torch.Tensor, neighbour_lists: list[list[int]]) -> torch.Tensor:
         """h: (n_nodes, dim). Returns (n_nodes, dim).
 
-        Per-node attention over its motif-typed neighbour set.
+        Per-node attention over its motif-typed neighbour set, vectorized as a
+        cached segment (CSR) attention (no per-forward by-length loop).
         """
         n_nodes = h.shape[0]
         Q = self.W_Q(h).view(n_nodes, self.n_heads, self.head_dim)
-        K_all = self.W_K(h).view(n_nodes, self.n_heads, self.head_dim)
-        V_all = self.W_V(h).view(n_nodes, self.n_heads, self.head_dim)
-
-        out = torch.zeros_like(h.view(n_nodes, self.n_heads, self.head_dim))
-
-        # Group nodes by neighbour-list length to batch-process buckets
-        # of similar sizes. For small graphs the per-node Python loop is
-        # fine; for Bitcoin/Slashdot we group.
-        from collections import defaultdict
-        by_len: dict[int, list[int]] = defaultdict(list)
-        for i, lst in enumerate(neighbour_lists):
-            if lst:
-                by_len[len(lst)].append(i)
-
-        scale = 1.0 / (self.head_dim ** 0.5)
-        device = h.device
-        for L, nodes in by_len.items():
-            nodes_t = torch.tensor(nodes, dtype=torch.long, device=device)
-            # neighbour matrix (B, L)
-            nbr_idx = torch.tensor(
-                [neighbour_lists[i] for i in nodes],
-                dtype=torch.long, device=device,
-            )
-            # Q: (B, H, D), K/V: (B, L, H, D)
-            Qb = Q[nodes_t]                     # (B, H, D)
-            Kb = K_all[nbr_idx]                 # (B, L, H, D)
-            Vb = V_all[nbr_idx]                 # (B, L, H, D)
-            # scores: (B, H, L)
-            scores = torch.einsum('bhd,blhd->bhl', Qb, Kb) * scale
-            attn = F.softmax(scores, dim=-1)
-            # weighted: (B, H, D)
-            agg = torch.einsum('bhl,blhd->bhd', attn, Vb)
-            out[nodes_t] = agg
-
-        return self.W_O(out.view(n_nodes, self.dim))
+        K = self.W_K(h).view(n_nodes, self.n_heads, self.head_dim)
+        V = self.W_V(h).view(n_nodes, self.n_heads, self.head_dim)
+        seg, nbr = self._csr(neighbour_lists, h.device)
+        out = segment_attention(Q, K, V, seg, nbr, n_nodes)
+        return self.W_O(out.reshape(n_nodes, self.dim))
 
 
 class SiGATAttn(nn.Module):

@@ -25,6 +25,24 @@ from pathlib import Path
 import numpy as np
 
 from ..datasets import SignedGraph
+from .registry import GraphMeta, HParams, SignedLinkBaseline, register
+
+
+@register("sgcn")
+class SGCNBaseline(SignedLinkBaseline):
+    """Derr 2018 signed GCN — strict, train-only B/U aggregation."""
+
+    def build_model(self, meta: GraphMeta, hp: HParams):
+        from .sgcn_model import SGCN
+        return SGCN(n_nodes=meta.n_nodes, hidden_dim=hp.hidden,
+                    n_layers=hp.n_layers)
+
+    def build_context(self, edges, signs, n_nodes, device):
+        from .sgcn_model import build_signed_adj
+        return build_signed_adj(edges, signs, n_nodes, device)
+
+    def default_hparams(self) -> HParams:
+        return HParams(hidden=32, n_layers=2)
 
 
 def export_for_sgcn(g: SignedGraph, out_path: Path,

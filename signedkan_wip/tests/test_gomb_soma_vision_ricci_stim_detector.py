@@ -27,6 +27,40 @@ def test_rejects_bad_image_shape():
         d(torch.zeros(28, 28))
 
 
+def test_upgrade_flags_add_aggregators_and_stay_differentiable():
+    """The backbone aggregator upgrade (mixer + highway + pyramid) must reach the
+    detector path: enabling the flags instantiates the three modules, raises the
+    parameter count over the bare-sum baseline, and the combined detector loss
+    still propagates end-to-end."""
+    torch.manual_seed(0)
+    common = dict(
+        image_h=16, image_w=16, patch_size_initial=4, patch_size_min=2,
+        max_depth=1, max_anchors=64, d_hidden=8, n_classes=3,
+        bochner_alpha=0.1, bochner_beta=0.1,
+    )
+    baseline = RicciStimDetector(**common)
+    upgraded = RicciStimDetector(
+        **common, use_arity_mixer=True, use_highway=True, use_pyramid=True,
+    )
+    # The three modules are present and add parameters.
+    assert upgraded.backbone.branch_mixer is not None
+    assert upgraded.backbone.highway is not None
+    assert upgraded.backbone.pyramid is not None
+    assert upgraded.n_parameters() > baseline.n_parameters()
+
+    img = torch.randn(1, 16, 16)
+    out = upgraded(img)
+    cls_loss = torch.nn.functional.cross_entropy(
+        out.cls_logits, torch.zeros(out.n_anchors, dtype=torch.long),
+    )
+    loss = cls_loss + out.bbox_offsets.abs().sum()
+    loss.backward()
+    # At least one upgrade module received gradient.
+    assert any(
+        p.grad is not None for p in upgraded.backbone.branch_mixer.parameters()
+    )
+
+
 # ---------------------------------------------------------------------
 # Forward shape
 # ---------------------------------------------------------------------

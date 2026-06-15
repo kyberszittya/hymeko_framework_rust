@@ -1,6 +1,6 @@
-use blake3::Hasher;
 use crate::common::ids::DeclId;
 use crate::ir::ir::{AnnoR, Ir, SignedRefR, ValueR};
+use blake3::Hasher;
 
 // Assuming HashId wraps a [u8; 32]
 use crate::ir::hash::HashId;

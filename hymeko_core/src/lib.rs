@@ -25,65 +25,63 @@
     clippy::type_complexity,
     clippy::unnecessary_cast,
     clippy::unnecessary_sort_by,
-    clippy::wrong_self_convention,
+    clippy::wrong_self_convention
 )]
 
-use parser::ast::{EdgeDecl, HyperItem, NodeDecl};
 use crate::common::ids::SymId;
+use parser::ast::{EdgeDecl, HyperItem, NodeDecl};
 
 pub mod common;
+pub mod generators;
 pub mod ir;
-pub mod writers;
-pub mod sym_ast;
-pub mod resolution;
-pub mod util;
 pub mod module_store;
+pub mod resolution;
+pub mod sym_ast;
 pub mod tensor;
+pub mod util;
+pub mod writers;
 
 pub fn find_node<'ast, 'slice>(
     items: &'slice [HyperItem<'ast, &'ast str>],
-    name: &str
+    name: &str,
 ) -> Option<&'slice NodeDecl<'ast, &'ast str>> {
     items.iter().find_map(|it| match it {
-            HyperItem::Node(n) if n.inner.name == name => Some(n),
-            _ => None,
-        })
-        
+        HyperItem::Node(n) if n.inner.name == name => Some(n),
+        _ => None,
+    })
 }
 
-
-
-pub fn as_node<'ast, 'slice, Id>(it: &'slice HyperItem<'ast, Id>) -> Option<&'slice NodeDecl<'ast, Id>> {
+pub fn as_node<'ast, 'slice, Id>(
+    it: &'slice HyperItem<'ast, Id>,
+) -> Option<&'slice NodeDecl<'ast, Id>> {
     match it {
         HyperItem::Node(n) => Some(n),
         _ => None,
     }
 }
 
-pub fn body<'ast, 'slice>(n: &'slice NodeDecl<'ast, &'ast str>) -> Option<&'slice [HyperItem<'ast, &'ast str>]> {
-    n.inner
-        .body
-        .as_deref()
-        
+pub fn body<'ast, 'slice>(
+    n: &'slice NodeDecl<'ast, &'ast str>,
+) -> Option<&'slice [HyperItem<'ast, &'ast str>]> {
+    n.inner.body.as_deref()
 }
 
 pub fn find_edge<'ast, 'slice>(
-    items: &'slice [HyperItem<'ast, SymId>], 
-    name: SymId
+    items: &'slice [HyperItem<'ast, SymId>],
+    name: SymId,
 ) -> Option<&'slice EdgeDecl<'ast, SymId>> {
     items.iter().find_map(|it| match it {
         HyperItem::Edge(e) if e.inner.name == name => Some(e),
-        _ => None
+        _ => None,
     })
 }
 
 pub fn find_node_id<'ast, 'slice>(
-    items: &'slice [HyperItem<'ast, SymId>], 
-    name: SymId
+    items: &'slice [HyperItem<'ast, SymId>],
+    name: SymId,
 ) -> Option<&'slice NodeDecl<'ast, SymId>> {
     items.iter().find_map(|it| match it {
         HyperItem::Node(n) if n.inner.name == name => Some(n),
-        _ => None
+        _ => None,
     })
 }
-

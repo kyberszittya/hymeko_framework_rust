@@ -1,0 +1,25 @@
+[package]
+name = "hymeko_hive"
+version = "0.1.0"
+edition = "2024"
+description = "HIVE canonical signed-hypergraph store: transactions, deltas, hashes, and verification gates"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "hymeko_hive"
+crate-type = ["rlib"]
+
+[dependencies]
+# hymeko_core (lib name `hymeko`) owns the canonical combinatorial generators;
+# this crate delegates to them (APPROVED-CORE-EDIT: generators-in-core, 2026-06-16).
+hymeko_core = { path = "../hymeko_core" }
+blake3 = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+thiserror = "1"
+
+[dev-dependencies]
+criterion = "0.8"
+
+[[bench]]
+name = "query_bench"
+harness = false

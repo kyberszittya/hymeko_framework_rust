@@ -53,6 +53,9 @@ class RicciStimClassifier(nn.Module):
         use_sdrf: bool = False,
         sdrf_max_iters: int = 5,
         sdrf_kappa_target: float = -2.0,
+        use_arity_mixer: bool = False,
+        use_highway: bool = False,
+        use_pyramid: bool = False,
     ) -> None:
         super().__init__()
         self.backbone = RicciStimBackbone(
@@ -67,6 +70,9 @@ class RicciStimClassifier(nn.Module):
             use_sdrf=use_sdrf,
             sdrf_max_iters=sdrf_max_iters,
             sdrf_kappa_target=sdrf_kappa_target,
+            use_arity_mixer=use_arity_mixer,
+            use_highway=use_highway,
+            use_pyramid=use_pyramid,
         )
         self.n_classes = n_classes
         self.head = nn.Linear(d_hidden, n_classes)

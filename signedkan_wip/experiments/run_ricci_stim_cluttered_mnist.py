@@ -83,6 +83,16 @@ def main() -> None:
     ap.add_argument("--bbox-weight", type=float, default=1.0)
     ap.add_argument("--device", default=None)
     ap.add_argument("--out-jsonl", default=None)
+    ap.add_argument(
+        "--upgrade", action="store_true",
+        help="enable the backbone aggregator upgrade "
+             "(learned branch mixer + highway gate + cross-scale pyramid)",
+    )
+    ap.add_argument(
+        "--cache", action="store_true",
+        help="reuse the per-image stim-graph geometry across epochs "
+             "(topology cache; only valid without SDRF)",
+    )
     args = ap.parse_args()
 
     device = torch.device(
@@ -124,6 +134,10 @@ def main() -> None:
             max_depth=3,
             max_anchors=256,
             in_channels=1, d_hidden=16, n_classes=10,
+            use_arity_mixer=args.upgrade,
+            use_highway=args.upgrade,
+            use_pyramid=args.upgrade,
+            cache_geometry=args.cache,
             **cfg,
         )
 
@@ -138,6 +152,8 @@ def main() -> None:
 
     record = {
         "config": args.config,
+        "upgrade": args.upgrade,
+        "cache": args.cache,
         "seed": args.seed,
         "n_train": args.n_train,
         "n_eval": args.n_eval,

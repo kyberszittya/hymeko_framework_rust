@@ -95,6 +95,66 @@ export function treePositions(n, scopeSegs) {
 }
 
 /**
+ * Per-node visual size + force-layout mass by containment depth. Root elements
+ * (depth 0) are the largest and heaviest; descendants shrink geometrically.
+ * One quantity drives both the sphere scale and the force gravity, so a root
+ * reads as a heavy anchor its subtree orbits ("bigger size, bigger gravity").
+ * Reuses the same first-parent scope tree as the layouts (no duplicate walk).
+ * Preconditions: scopeSegs = [[childIdx, parentIdx], …], indices in [0,n).
+ * Postconditions: { depth:Int32Array(n), size:Float64Array(n) } with
+ *   size[i] = max(min, base·falloff^depth[i]); roots = base (max), leaves → min.
+ *   Unreached / multi-parent nodes are treated as depth 0 (first parent wins).
+ */
+export function depthSizes(n, scopeSegs, { base = 1.9, falloff = 0.62, min = 0.7 } = {}) {
+  const { parent, children } = buildScopeTree(n, scopeSegs);
+  const depth = new Int32Array(n);
+  const seen = new Uint8Array(n);
+  const visit = (u, d) => {
+    if (seen[u]) return;
+    seen[u] = 1; depth[u] = d;
+    for (const c of children[u]) visit(c, d + 1);
+  };
+  for (let i = 0; i < n; i++) if (parent[i] === -1) visit(i, 0);
+  for (let i = 0; i < n; i++) if (!seen[i]) { seen[i] = 1; depth[i] = 0; }
+  const size = new Float64Array(n);
+  for (let i = 0; i < n; i++) size[i] = Math.max(min, base * Math.pow(falloff, depth[i]));
+  return { depth, size };
+}
+
+/**
+ * Scope (description / namespace) membership for each node: the depth-0 ancestor
+ * it ultimately sits under (its top-level root), following the containment chain,
+ * plus the node's depth. Reuses the same first-parent scope tree as the layouts.
+ * A root is its own root. Cycle-guarded (first-parent-wins can still form a 2-cycle).
+ * Preconditions: scopeSegs = [[childIdx, parentIdx], …], indices in [0,n).
+ * Postconditions: { depth:Int32Array(n), root:Int32Array(n), roots:number[] }
+ *   where roots is the distinct top-level root indices, ascending.
+ */
+export function scopeMembership(n, scopeSegs) {
+  const { parent } = buildScopeTree(n, scopeSegs);
+  const depth = new Int32Array(n);
+  const root = new Int32Array(n);
+  for (let i = 0; i < n; i++) {
+    let u = i, d = 0, guard = 0;
+    while (parent[u] !== -1 && guard++ < n) { u = parent[u]; d++; }
+    root[i] = u; depth[i] = d;
+  }
+  const roots = [...new Set(Array.from(root))].sort((a, b) => a - b);
+  return { depth, root, roots };
+}
+
+/**
+ * Cube scale for a hyperedge hub by its arity: higher-arity edges render larger,
+ * so a glance conveys how many members an edge binds. Binary edges (arity 2) sit
+ * at the reference scale 1; each extra member grows the cube, clamped at `max`.
+ * Preconditions: arity ≥ 0 (a number).
+ * Postconditions: clamp(base + max(0, arity − 2)·per, min, max).
+ */
+export function hubSize(arity, { base = 1, per = 0.22, min = 0.7, max = 2.4 } = {}) {
+  return Math.max(min, Math.min(max, base + Math.max(0, arity - 2) * per));
+}
+
+/**
  * 3D barycentric cone-tree layout from scope (containment) edges. Leaves sit on
  * a ring whose radius grows with depth (deeper → wider); each internal node is
  * placed at the **3D centroid (barycentre) of its children** in the X–Z plane,

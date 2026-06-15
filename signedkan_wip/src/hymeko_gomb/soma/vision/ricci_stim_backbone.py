@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from signedkan_wip.src.hymeko_gomb.soma import (
     BochnerHypergraphConv,
@@ -43,6 +42,11 @@ from signedkan_wip.src.hymeko_gomb.soma.vision.sdrf import (
 )
 from signedkan_wip.src.hymeko_gomb.soma.vision.stim_graph import (
     StimulusGraphBuilder,
+)
+from signedkan_wip.src.hymeko_gomb.soma.vision.aggregators import (
+    CrossScalePyramid,
+    HighwayGate,
+    LearnedBranchMixer,
 )
 
 
@@ -85,6 +89,10 @@ class RicciStimBackbone(nn.Module):
         use_sdrf: bool = False,
         sdrf_max_iters: int = 5,
         sdrf_kappa_target: float = -2.0,
+        use_arity_mixer: bool = False,
+        use_highway: bool = False,
+        use_pyramid: bool = False,
+        cache_geometry: bool = False,
     ) -> None:
         super().__init__()
         self.image_h = image_h
@@ -93,6 +101,27 @@ class RicciStimBackbone(nn.Module):
         self.d_hidden = d_hidden
         self.patch_fixed_size = 4
         self.use_sdrf = use_sdrf
+        # Aggregator upgrade (opt-in; default off = the original bare-sum
+        # baseline, so the A/B comparison is faithful).
+        self.use_arity_mixer = use_arity_mixer
+        self.use_highway = use_highway
+        self.use_pyramid = use_pyramid
+        self.branch_mixer = LearnedBranchMixer(3) if use_arity_mixer else None
+        self.highway = HighwayGate(d_hidden) if use_highway else None
+        self.pyramid = CrossScalePyramid(d_hidden) if use_pyramid else None
+
+        # Optional per-image geometry cache. The stim-graph topology is a pure
+        # function of the image geometry (only edge signs depend on the learned
+        # features), so it is fixed across epochs and can be built once and
+        # reused. Off by default; bypassed when ``use_sdrf`` rewires the topology
+        # from features. State is an explicit instance attribute (no globals).
+        # Correctness precondition: the dataset returns identical tensors per
+        # index across epochs (no per-epoch augmentation).
+        self._geometry_cache: dict[int, tuple] | None = (
+            {} if cache_geometry else None
+        )
+        self._cache_hits = 0
+        self._cache_misses = 0
 
         self.quadtree = AdaptiveQuadtree(
             image_h=image_h, image_w=image_w,
@@ -147,36 +176,75 @@ class RicciStimBackbone(nn.Module):
             raise ValueError(
                 f"expected (C, H, W); got shape {tuple(image.shape)}"
             )
-        tree = self.quadtree(image)
-        features = self._encode_anchors(image, tree)
-        sg = self.graph_builder(tree, features)
-        if self.use_sdrf:
-            # SDRF takes the initial edge set, adds shortcut rewiring.
-            # If no shortcuts were added (e.g., on paths/stars where
-            # the Forman κ heuristic finds no monotone improvement),
-            # the rewired edge set is identical to the initial set —
-            # the second graph_builder pass would produce a bit-identical
-            # StimulusGraph. Skip it.
-            sdrf_out = self.sdrf(
-                sg.edges, n_vertices=tree.n_anchors,
-                anchor_features=features, edge_signs=sg.edge_signs,
-            )
-            if sdrf_out.n_added > 0:
-                sg = self.graph_builder(
-                    tree, features,
-                    edges_override=sdrf_out.edges,
-                    edge_signs_override=sdrf_out.edge_signs,
+        if self._geometry_cache is not None and not self.use_sdrf:
+            # Fast path: reuse the per-image geometry, recompute only the cheap
+            # feature-dependent signs. (SDRF rewires from features, so it is
+            # excluded above — its topology is not epoch-invariant.)
+            key = self._image_key(image)
+            cached = self._geometry_cache.get(key)
+            if cached is None:
+                self._cache_misses += 1
+                tree = self.quadtree(image)
+                geometry = self.graph_builder.build_geometry(tree)
+                self._geometry_cache[key] = (tree, geometry)
+            else:
+                self._cache_hits += 1
+                tree, geometry = cached
+            features = self._encode_anchors(image, tree)
+            sg = self.graph_builder.apply_signs(geometry, features)
+        else:
+            tree = self.quadtree(image)
+            features = self._encode_anchors(image, tree)
+            sg = self.graph_builder(tree, features)
+            if self.use_sdrf:
+                # SDRF takes the initial edge set, adds shortcut rewiring.
+                # If no shortcuts were added (e.g., on paths/stars where
+                # the Forman κ heuristic finds no monotone improvement),
+                # the rewired edge set is identical to the initial set —
+                # the second graph_builder pass would produce a bit-identical
+                # StimulusGraph. Skip it.
+                sdrf_out = self.sdrf(
+                    sg.edges, n_vertices=tree.n_anchors,
+                    anchor_features=features, edge_signs=sg.edge_signs,
                 )
-        h = (
-            self._walk_branch(features, sg)
-            + self._poly_branch(features, sg)
-            + self._tri_branch(features, sg)
-        )
+                if sdrf_out.n_added > 0:
+                    sg = self.graph_builder(
+                        tree, features,
+                        edges_override=sdrf_out.edges,
+                        edge_signs_override=sdrf_out.edge_signs,
+                    )
+        branches = [
+            self._walk_branch(features, sg),
+            self._poly_branch(features, sg),
+            self._tri_branch(features, sg),
+        ]
+        # Combine: learned-αₖ mixer if enabled, else the original bare sum.
+        if self.branch_mixer is not None:
+            h = self.branch_mixer(branches)
+        else:
+            h = branches[0] + branches[1] + branches[2]
+        # Highway-gated residual with the encoder features as the skip.
+        if self.highway is not None:
+            h = self.highway(h, features)
+        # Top-down cross-scale pyramid fusion over the anchor tree.
+        if self.pyramid is not None:
+            h = self.pyramid(h, tree.parent_indices, tree.scales)
         return h, tree
 
     # -----------------------------------------------------------------
     # Helpers
     # -----------------------------------------------------------------
+
+    @staticmethod
+    def _image_key(image: torch.Tensor) -> int:
+        """Content-addressed cache key for an image.
+
+        Hashes the raw bytes; equal content (the dataset returns identical
+        tensors per index across epochs) yields an equal key. The hash cost
+        (~µs over a small tensor) is negligible against the per-image graph
+        build it avoids.
+        """
+        return hash(image.detach().to("cpu").contiguous().numpy().tobytes())
 
     def _encode_anchors(
         self, image: torch.Tensor, tree: AnchorTree,

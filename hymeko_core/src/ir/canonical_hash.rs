@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
-use std::collections::{HashMap, BinaryHeap};
+use std::collections::{BinaryHeap, HashMap};
 
-use crate::common::ids::{DeclId};
+use crate::common::ids::DeclId;
 use crate::common::pathkey::PathKey;
 use crate::ir::hash::HashId;
 use crate::ir::ir::{DeclKind, DeclNode, Ir, SignedRefR};
@@ -18,17 +18,16 @@ pub struct CanonHashCfg {
 
 impl Default for CanonHashCfg {
     fn default() -> Self {
-        Self { schema_version: 1, algo_version: 1, flags: 0 }
+        Self {
+            schema_version: 1,
+            algo_version: 1,
+            flags: 0,
+        }
     }
 }
 
 /// Top-level: H( header || H(skeleton_prufer) || H(incidence_bytes) )
-pub fn canonical_program_hash(
-    cfg: CanonHashCfg,
-    idx: &Index,
-    ir: &Ir,
-    it: &Interner,
-) -> HashId {
+pub fn canonical_program_hash(cfg: CanonHashCfg, idx: &Index, ir: &Ir, it: &Interner) -> HashId {
     // 1) reverse map: DeclId -> PathKey (első találat elég)
     let did_to_path = build_did_to_path(idx, ir.decl_nodes.len());
 
@@ -63,7 +62,7 @@ pub fn canonical_program_hash(
 // -----------------------------
 fn write_header(h: &mut blake3::Hasher, cfg: CanonHashCfg, domain: [u8; 8]) {
     h.update(b"HYMEKOCN"); // 8B magic
-    h.update(&domain);    // 8B domain
+    h.update(&domain); // 8B domain
     h.update(&cfg.schema_version.to_le_bytes());
     h.update(&cfg.algo_version.to_le_bytes());
     h.update(&cfg.flags.to_le_bytes());
@@ -100,7 +99,12 @@ fn build_skeleton_forest(
     idx: &Index,
     ir: &Ir,
     did_to_path: &[Option<PathKey>],
-) -> (Vec<DeclId>, Vec<Option<DeclId>>, Vec<Vec<DeclId>>, Vec<DeclId>) {
+) -> (
+    Vec<DeclId>,
+    Vec<Option<DeclId>>,
+    Vec<Vec<DeclId>>,
+    Vec<DeclId>,
+) {
     // collect skeleton vertices
     let mut verts = Vec::new();
     for &did in idx.by_path.values() {
@@ -123,7 +127,9 @@ fn build_skeleton_forest(
     // compute parent by nearest prefix
     let mut parent: Vec<Option<DeclId>> = vec![None; ir.decl_nodes.len()];
     for &did in &verts {
-        let Some(pk) = &did_to_path[did.0 as usize] else { continue; };
+        let Some(pk) = &did_to_path[did.0 as usize] else {
+            continue;
+        };
         // walk prefixes: [a,b,c] -> [a,b] -> [a] -> []
         for cut in (0..pk.0.len()).rev() {
             let pref = PathKey(pk.0[..cut].to_vec());
@@ -153,8 +159,6 @@ fn build_skeleton_forest(
     (verts, parent, children, roots)
 }
 
-
-
 /// Proper subtree hash computation with decl kinds supplied.
 fn compute_subtree_hashes_with_kinds(
     cfg: CanonHashCfg,
@@ -168,7 +172,7 @@ fn compute_subtree_hashes_with_kinds(
         match kind {
             DeclKind::Node => *b"SKNOD\0\0\0",
             DeclKind::Edge => *b"SKEDG\0\0\0",
-            DeclKind::HyperArc  => *b"SKARC\0\0\0",
+            DeclKind::HyperArc => *b"SKARC\0\0\0",
         }
     }
 
@@ -179,7 +183,9 @@ fn compute_subtree_hashes_with_kinds(
         children: &[Vec<DeclId>],
         memo: &mut [Option<HashId>],
     ) -> HashId {
-        if let Some(h) = memo[v.0 as usize] { return h; }
+        if let Some(h) = memo[v.0 as usize] {
+            return h;
+        }
 
         let mut ch: Vec<[u8; 32]> = children[v.0 as usize]
             .iter()
@@ -205,7 +211,9 @@ fn compute_subtree_hashes_with_kinds(
     }
 
     // fill missing (shouldn't happen) with zero
-    memo.into_iter().map(|x| x.unwrap_or(HashId([0; 32]))).collect()
+    memo.into_iter()
+        .map(|x| x.unwrap_or(HashId([0; 32])))
+        .collect()
 }
 
 // -----------------------------
@@ -225,12 +233,14 @@ fn compute_tiebreak(
             write_header(&mut h, cfg, *b"TIEBRK\0\0");
             // stable: stringify path
             for (j, seg) in pk.0.iter().enumerate() {
-                if j > 0 { h.update(b"."); }
+                if j > 0 {
+                    h.update(b".");
+                }
                 h.update(it.resolve(*seg).as_bytes());
             }
             let bytes = h.finalize();
             let b = bytes.as_bytes();
-            tb[i] = u64::from_le_bytes([b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]]);
+            tb[i] = u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]);
         }
     }
     tb
@@ -295,7 +305,9 @@ fn prufer_from_forest(
         }
     }
     impl PartialOrd for Leaf {
-        fn partial_cmp(&self, other: &Self) -> Option<Ordering> { Some(self.cmp(other)) }
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            Some(self.cmp(other))
+        }
     }
 
     let super_hash = canonical_chunk_hash(cfg, *b"ROOTNODE", b"ROOT").0;
@@ -314,7 +326,11 @@ fn prufer_from_forest(
     for v in 0..=super_idx {
         if deg[v] == 1 {
             let (h, t) = label(v);
-            heap.push(Leaf { key_hash: h, key_tie: t, v });
+            heap.push(Leaf {
+                key_hash: h,
+                key_tie: t,
+                v,
+            });
         }
     }
 
@@ -325,11 +341,17 @@ fn prufer_from_forest(
     for _ in 0..total.saturating_sub(2) {
         let leaf = loop {
             let x = heap.pop().expect("heap empty");
-            if alive[x.v] && deg[x.v] == 1 { break x; }
+            if alive[x.v] && deg[x.v] == 1 {
+                break x;
+            }
         };
 
         let v = leaf.v;
-        let u = adj[v].iter().copied().find(|&u| alive[u]).expect("leaf had no neighbor");
+        let u = adj[v]
+            .iter()
+            .copied()
+            .find(|&u| alive[u])
+            .expect("leaf had no neighbor");
 
         // token = neighbor hash
         let (tok, _) = label(u);
@@ -341,7 +363,11 @@ fn prufer_from_forest(
 
         if deg[u] == 1 {
             let (h, t) = label(u);
-            heap.push(Leaf { key_hash: h, key_tie: t, v: u });
+            heap.push(Leaf {
+                key_hash: h,
+                key_tie: t,
+                v: u,
+            });
         }
     }
 
@@ -365,7 +391,11 @@ fn canonical_incidence_bytes(
     let mut did_path_str: Vec<String> = vec![String::new(); did_to_path.len()];
     for (i, pk) in did_to_path.iter().enumerate() {
         if let Some(pk) = pk {
-            did_path_str[i] = pk.0.iter().map(|&sid| it.resolve(sid)).collect::<Vec<_>>().join(".");
+            did_path_str[i] =
+                pk.0.iter()
+                    .map(|&sid| it.resolve(sid))
+                    .collect::<Vec<_>>()
+                    .join(".");
         } else {
             did_path_str[i] = format!("DeclId({})", i);
         }
@@ -425,7 +455,8 @@ fn canonical_incidence_bytes(
 
     // 4. sort_unstable_by is faster than sort_by, and safe here because keys are unique
     recs.sort_unstable_by(|a, b| {
-        a.edge_path.cmp(b.edge_path)
+        a.edge_path
+            .cmp(b.edge_path)
             .then_with(|| a.arc_idx.cmp(&b.arc_idx))
             .then_with(|| a.slot.cmp(&b.slot))
     });

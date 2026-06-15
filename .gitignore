@@ -12,6 +12,9 @@
 .DS_Store
 Thumbs.db
 
+# MS Office lock/temp files (created while a doc is open, e.g. in PowerPoint)
+~$*
+
 # Build artifacts
 *.rlib
 *.rmeta

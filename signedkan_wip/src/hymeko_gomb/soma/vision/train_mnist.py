@@ -98,6 +98,17 @@ def build_model(model_type: str, device: torch.device) -> nn.Module:
         )
     elif model_type == "linear":
         m = LinearBaseline()
+    elif model_type in ("ricci_stim", "ricci_stim_up"):
+        # Baseline (bare-sum) vs upgraded (learned mixer + highway + pyramid)
+        # RicciStim backbone — the A/B for the 2026-06-15 backbone upgrade.
+        from signedkan_wip.src.hymeko_gomb.soma.vision.ricci_stim_classifier import (
+            RicciStimClassifier,
+        )
+        up = model_type == "ricci_stim_up"
+        m = RicciStimClassifier(
+            image_h=28, image_w=28, d_hidden=16, n_classes=10, max_depth=1,
+            use_arity_mixer=up, use_highway=up, use_pyramid=up,
+        )
     else:
         raise SystemExit(f"unknown model_type {model_type!r}")
     return m.to(device)
@@ -170,7 +181,7 @@ def train_one_seed(
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", choices=("gomb_soma", "linear"),
+    ap.add_argument("--model", choices=("gomb_soma", "linear", "ricci_stim", "ricci_stim_up"),
                      default="gomb_soma")
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
     ap.add_argument("--n-train", type=int, default=5000)

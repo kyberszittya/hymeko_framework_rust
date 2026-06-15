@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod basic_transformation_tests {
+    use crate::test_helpers::{log_test_footer, log_test_header};
     use hymeko::common::ids::{DeclId, SymId};
     use hymeko::common::pathkey::PathKey;
-    use hymeko::resolution::intern_pass::{intern_ast, Interned};
     use hymeko::ir::common::{ref_sign, ref_target};
-    use hymeko::ir::ir::{DeclKind};
+    use hymeko::ir::ir::DeclKind;
     use hymeko::ir::lower::lower_to_ir;
-    use parser::parse_description;
+    use hymeko::resolution::intern_pass::{Interned, intern_ast};
     use hymeko::resolution::resolve::build_index_sym;
     use log::info;
+    use parser::parse_description;
     use std::time::Instant;
-    use crate::test_helpers::{log_test_footer, log_test_header};
 
     const SIMPLE_CHAIN_SRC: &str = r#"
         test{}
@@ -106,10 +106,22 @@ mod basic_transformation_tests {
         assert_eq!(sid_d.0, SID_D, "D SymId should match expectation");
 
         let did_d = *idx.by_path.get(&PathKey(vec![sid_d])).expect("missing D");
-        let did_root = *idx.by_path.get(&PathKey(vec![sid_d, sid_root])).expect("missing D.Root");
-        let did_a = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_a])).expect("missing D.Root.A");
-        let did_b = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_b])).expect("missing D.Root.B");
-        let did_c = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_c])).expect("missing D.Root.C");
+        let did_root = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root]))
+            .expect("missing D.Root");
+        let did_a = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_a]))
+            .expect("missing D.Root.A");
+        let did_b = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_b]))
+            .expect("missing D.Root.B");
+        let did_c = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_c]))
+            .expect("missing D.Root.C");
 
         // Assert Index paths match expected DeclIds
         assert_eq!(did_d.0, 0, "D DeclId should be 0");
@@ -117,31 +129,34 @@ mod basic_transformation_tests {
         assert_eq!(did_a.0, 2, "D.Root.A DeclId should be 2");
         assert_eq!(did_b.0, 3, "D.Root.B DeclId should be 3");
         assert_eq!(did_c.0, 4, "D.Root.C DeclId should be 4");
-        assert_eq!(idx.by_path.len(), SIMPLE_INDEX_LEN, "Index should contain expected number of paths");
+        assert_eq!(
+            idx.by_path.len(),
+            SIMPLE_INDEX_LEN,
+            "Index should contain expected number of paths"
+        );
 
         // Root must be a node in IR
         let _root_nid = ir.decl_to_node[did_root.0].expect("Root not lowered as node");
 
         // first_child points to A, and A->B->C via next_sibling
-        assert_eq!(ir.first_child(did_root), did_a, "Root.first_child should be Root.A");
+        assert_eq!(
+            ir.first_child(did_root),
+            did_a,
+            "Root.first_child should be Root.A"
+        );
 
-        assert_eq!(
-            ir.next_sibling(did_a),
-            did_b,
-            "A.next_sibling should be B"
-        );
-        assert_eq!(
-            ir.next_sibling(did_b),
-            did_c,
-            "B.next_sibling should be C"
-        );
+        assert_eq!(ir.next_sibling(did_a), did_b, "A.next_sibling should be B");
+        assert_eq!(ir.next_sibling(did_b), did_c, "B.next_sibling should be C");
         assert_eq!(
             ir.next_sibling(did_c),
             DeclId::NONE,
             "C.next_sibling should be None"
         );
         let children: Vec<_> = ir.children(did_root).collect();
-        info!("Root children sequence = {:?}", children.iter().map(|d| d.0).collect::<Vec<_>>());
+        info!(
+            "Root children sequence = {:?}",
+            children.iter().map(|d| d.0).collect::<Vec<_>>()
+        );
         finish(
             "node_child_chain_order_is_body_order",
             timer,
@@ -181,13 +196,34 @@ mod basic_transformation_tests {
         assert_eq!(sid_d.0, SID_D, "D SymId should match expectation");
 
         let did_d = *idx.by_path.get(&PathKey(vec![sid_d])).expect("missing D");
-        let did_root = *idx.by_path.get(&PathKey(vec![sid_d, sid_root])).expect("missing D.Root");
-        let did_root_a = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_a])).expect("missing D.Root.A");
-        let did_root_a_a = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_a, sid_a])).expect("missing D.Root.A.A");
-        let did_root_a_b = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_a, sid_b])).expect("missing D.Root.A.B");
-        let did_root_a_c = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_a, sid_c])).expect("missing D.Root.A.C");
-        let did_root_b = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_b])).expect("missing D.Root.B");
-        let did_root_c = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_c])).expect("missing D.Root.C");
+        let did_root = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root]))
+            .expect("missing D.Root");
+        let did_root_a = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_a]))
+            .expect("missing D.Root.A");
+        let did_root_a_a = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_a, sid_a]))
+            .expect("missing D.Root.A.A");
+        let did_root_a_b = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_a, sid_b]))
+            .expect("missing D.Root.A.B");
+        let did_root_a_c = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_a, sid_c]))
+            .expect("missing D.Root.A.C");
+        let did_root_b = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_b]))
+            .expect("missing D.Root.B");
+        let did_root_c = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_c]))
+            .expect("missing D.Root.C");
 
         assert_eq!(did_d.0, 0, "D DeclId should be 0");
         assert_eq!(did_root.0, 1, "D.Root DeclId should be 1");
@@ -197,13 +233,21 @@ mod basic_transformation_tests {
         assert_eq!(did_root_a_c.0, 5, "D.Root.A.C DeclId should be 5");
         assert_eq!(did_root_b.0, 6, "D.Root.B DeclId should be 6");
         assert_eq!(did_root_c.0, 7, "D.Root.C DeclId should be 7");
-        assert_eq!(idx.by_path.len(), DUP_INDEX_LEN, "Index should contain expected number of paths");
+        assert_eq!(
+            idx.by_path.len(),
+            DUP_INDEX_LEN,
+            "Index should contain expected number of paths"
+        );
 
         // Root must be a node in IR
         let _root_nid = ir.decl_to_node[did_root.0].expect("Root not lowered as node");
 
         // first_child points to Root.A, and Root.A->Root.B->Root.C via next_sibling
-        assert_eq!(ir.first_child(did_root), did_root_a, "Root.first_child should be Root.A");
+        assert_eq!(
+            ir.first_child(did_root),
+            did_root_a,
+            "Root.first_child should be Root.A"
+        );
 
         let root_a_nid = ir.decl_to_node[did_root_a.0].expect("Root.A not lowered as node");
         let _root_b_nid = ir.decl_to_node[did_root_b.0].expect("Root.B not lowered as node");
@@ -227,7 +271,11 @@ mod basic_transformation_tests {
 
         // Root.A must also have children: Root.A.A->Root.A.B->Root.A.C
         let _root_a_rec = &ir.nodes[root_a_nid.0];
-        assert_eq!(ir.first_child(did_root_a), did_root_a_a, "Root.A.first_child should be Root.A.A");
+        assert_eq!(
+            ir.first_child(did_root_a),
+            did_root_a_a,
+            "Root.A.first_child should be Root.A.A"
+        );
 
         let root_a_a_nid = ir.decl_to_node[did_root_a_a.0].expect("Root.A.A not lowered as node");
         let root_a_b_nid = ir.decl_to_node[did_root_a_b.0].expect("Root.A.B not lowered as node");
@@ -278,46 +326,81 @@ mod basic_transformation_tests {
         let idx = build_index_sym(&ast, &interner).expect("index build failed");
         let ir = lower_to_ir(&ast, &idx, &mut interner).expect("lower_to_ir failed");
 
-
         let sid_d = interner.intern(SYM_D);
         let sid_root = interner.intern(SYM_ROOT);
         let sid_root0 = interner.intern(SYM_ROOT0);
-        let sid_e    = interner.intern(SYM_E);
+        let sid_e = interner.intern(SYM_E);
 
-        let did_root  = *idx.by_path.get(&PathKey(vec![sid_d, sid_root]))
+        let did_root = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root]))
             .expect("missing D.Root");
-        let did_root0 = *idx.by_path.get(&PathKey(vec![sid_d, sid_root0]))
+        let did_root0 = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root0]))
             .expect("missing D.Root0");
-        let did_edge = *idx.by_path.get(&PathKey(vec![sid_d, sid_root, sid_e])).unwrap();
-
+        let did_edge = *idx
+            .by_path
+            .get(&PathKey(vec![sid_d, sid_root, sid_e]))
+            .unwrap();
 
         // 1) Edge children (decl-level) contains exactly one Arc decl
         let kids: Vec<DeclId> = ir.decl_children(did_edge).collect();
-        assert_eq!(kids.len(), 1, "edge should have exactly one decl-child (the arc)");
+        assert_eq!(
+            kids.len(),
+            1,
+            "edge should have exactly one decl-child (the arc)"
+        );
 
         let arc_decl = kids[0];
-        assert_eq!(ir.decl_nodes[arc_decl.0].kind, DeclKind::HyperArc, "child should be Arc");
+        assert_eq!(
+            ir.decl_nodes[arc_decl.0].kind,
+            DeclKind::HyperArc,
+            "child should be Arc"
+        );
 
         // 2) Downcast: Arc decl -> ArcId -> ArcRec
-        let arc_id = ir.decl_to_arc[arc_decl.0]
-            .expect("arc decl should map to ArcId via decl_to_arc");
+        let arc_id =
+            ir.decl_to_arc[arc_decl.0].expect("arc decl should map to ArcId via decl_to_arc");
         let arc = &ir.arcs[arc_id.0];
 
         // Arc decl konzisztencia (ArcRec-ben nincs `decl`, ezért mappinget tesztelünk)
-        assert_eq!(ir.decl_nodes[arc_decl.0].kind, DeclKind::HyperArc, "child decl should be Arc");
-        assert_eq!(ir.decl_nodes[arc_decl.0].parent, did_edge, "Arc decl parent should be the edge");
+        assert_eq!(
+            ir.decl_nodes[arc_decl.0].kind,
+            DeclKind::HyperArc,
+            "child decl should be Arc"
+        );
+        assert_eq!(
+            ir.decl_nodes[arc_decl.0].parent, did_edge,
+            "Arc decl parent should be the edge"
+        );
 
-        assert_eq!(arc.in_edge, did_edge, "ArcRec.in_edge should be the edge decl");
+        assert_eq!(
+            arc.in_edge, did_edge,
+            "ArcRec.in_edge should be the edge decl"
+        );
 
         // Refs: (+Root, -Root0) sorrendben
         assert_eq!(arc.refs.len(), 2, "arc should have 2 refs");
 
-        assert_eq!(ref_sign(&arc.refs[0]),  1, "first ref should be +");
-        assert_eq!(ref_target(&arc.refs[0]), did_root, "first ref should target Root");
+        assert_eq!(ref_sign(&arc.refs[0]), 1, "first ref should be +");
+        assert_eq!(
+            ref_target(&arc.refs[0]),
+            did_root,
+            "first ref should target Root"
+        );
 
         assert_eq!(ref_sign(&arc.refs[1]), -1, "second ref should be -");
-        assert_eq!(ref_target(&arc.refs[1]), did_root0, "second ref should target Root0");
-        info!("Arc decl {:?} resolved to refs {:?}", arc_decl.0, arc.refs.len());
+        assert_eq!(
+            ref_target(&arc.refs[1]),
+            did_root0,
+            "second ref should target Root0"
+        );
+        info!(
+            "Arc decl {:?} resolved to refs {:?}",
+            arc_decl.0,
+            arc.refs.len()
+        );
         finish(
             "edge_children_include_arcs_as_decls",
             timer,

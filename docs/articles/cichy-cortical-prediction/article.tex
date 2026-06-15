@@ -1,0 +1,169 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{\textbf{Brain-predictivity as the honest test:\\
+the Cichy-92 benchmark for the G\"omb--Soma vision model}}
+\author{Csaba Hajdu \\ \small Kato Laboratory \quad (working note, 2026-06-15)}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+The G\"omb--Soma vision stack --- a signed-hypergraph object model built on an
+adaptive quadtree, Forman--Ricci curvature, Hodge decomposition and
+curvature-driven rewiring --- does \emph{not} win at small-scale image
+classification: in a fair re-benchmark it trails even a plain MLP on MNIST and
+Fashion-MNIST. That is a falsification of the \emph{accuracy} hypothesis, not of
+the model's reason to exist. This note argues that the right test for a
+structurally-grounded, brain-inspired vision model is not classification accuracy
+but \emph{brain-predictivity}: how well its internal representations explain
+measured cortical activity. We describe the Cichy~92-image MEG/fMRI benchmark
+\cite{cichy2014}, the representational-similarity and Brain-Score methodology
+\cite{kriegeskorte2008,schrimpf2018}, the parameter-matched protocol already
+implemented in this repository, and the single missing piece --- the real fMRI
+data --- needed to run it.
+\end{abstract}
+
+\section{Why this benchmark, and why now}
+A vision model can be judged on two very different axes. The first is
+\emph{task performance} (does it classify/detect well?). On this axis the
+G\"omb--Soma family is, honestly, a negative result at the scales we can afford:
+the 2026-05-28 re-benchmark (CNN, MLP, HSiKAN, NeocogHGNN, RicciStim on
+MNIST/Fashion-MNIST, 15 epochs $\times$ 3 seeds) places RicciStim and the
+hypergraph operators \emph{below} a vanilla MLP, and the differential-geometric
+machinery does not recover the gap. The structural prior, on natural-image
+classification at small scale, hurts.
+
+The second axis is \emph{representational alignment with biological vision}: a
+model is interesting to neuroscience if its layer activations linearly predict
+the responses of visual cortex, \emph{independently} of whether it tops a
+classification leaderboard. Many high-accuracy networks are poor cortical
+predictors, and some lower-accuracy models align surprisingly well; accuracy and
+brain-predictivity are related but distinct \cite{yamins2014,schrimpf2018}. Since
+G\"omb--Soma is explicitly motivated by cortical structure --- coarse-to-fine
+receptive fields, signed lateral interactions, curvature/flow on a retinotopic
+graph --- the fair question is the second one. The Cichy-92 benchmark is the
+standard, compact instrument for asking it.
+
+\section{The Cichy 92-image dataset}
+Cichy, Pantazis and Oliva \cite{cichy2014} presented 92 isolated object images
+(human bodies, faces, animals, natural and artificial objects) to human
+participants while recording \textbf{both} MEG (millisecond temporal resolution)
+and fMRI (millimetre spatial resolution). The two modalities are fused through
+\emph{representational similarity analysis} (RSA) \cite{kriegeskorte2008}: each
+modality, region and time point yields a $92\times 92$ \emph{representational
+dissimilarity matrix} (RDM) over the image pairs, and models are compared to
+brains in this common RDM space rather than in raw activations. For the spatial
+(fMRI) side the canonical regions of interest are early visual cortex
+(V1) through higher object-selective cortex (e.g.\ IT/LOC), which makes the
+dataset a natural probe for a \emph{hierarchical} model: a coarse-to-fine feature
+stack should map onto the early-to-late cortical gradient.
+
+The set is small (92 conditions), which is a feature: it is large enough for
+stable RDM estimation with split-half noise ceilings, and small enough that a
+parameter-light model and a parameter-matched baseline can be compared
+end-to-end in seconds-to-minutes per seed.
+
+\section{Scoring methodology (Brain-Score protocol)}
+We follow the Brain-Score pipeline \cite{schrimpf2018}, implemented here without
+the external \texttt{brainscore} package (no network dependency):
+\begin{enumerate}[nosep]
+  \item \textbf{Feature extraction.} For each of the 92 images, take a model's
+        per-stage activations and bin them retinotopically (per quadtree depth
+        for G\"omb--Soma; per residual block for the ResNet baseline).
+  \item \textbf{Dimensionality reduction.} PLS regression compresses model
+        features toward the neural target, guarding against the
+        high-dimensional-features / few-conditions regime.
+  \item \textbf{Per-voxel / per-ROI ridge mapping.} A cross-validated linear
+        (ridge) map from model features to each ROI's responses; the score is the
+        held-out predictivity (Pearson $r$ or $R^2$).
+  \item \textbf{Noise-ceiling correction.} Split-half reliability of the neural
+        data bounds the achievable score; reported predictivity is normalised by
+        this ceiling so the number is interpretable as ``fraction of explainable
+        variance captured''.
+\end{enumerate}
+The comparison is \emph{parameter-matched}: a $\sim$30k-parameter ResNet-tiny is
+scored against the $\sim$30k-parameter G\"omb--Soma backbone on the identical
+pipeline, so any difference reflects representational geometry rather than
+capacity.
+
+\section{The G\"omb--Soma cortical hypothesis}
+The model offers three concrete, cortically-motivated features whose
+brain-predictivity is testable:
+\begin{itemize}[nosep]
+  \item \textbf{Per-depth anchors as a V1$\to$V4 gradient.} The adaptive quadtree
+        subdivides the image where salience/variance is high; shallow depths are
+        coarse and uniform (V1-like), deep depths are fine and content-driven
+        (V4/IT-like). Per-depth binned features are the model's ``cortical
+        stages''.
+  \item \textbf{Forman--Ricci curvature \cite{forman2003}} on the patch graph as a
+        boundary/edge descriptor --- a candidate correlate of contour and
+        figure-ground signals in early/mid visual areas.
+  \item \textbf{Hodge eigenmodes} of the patch-graph Laplacian as global shape
+        descriptors, and signed lateral edges (the $\sigma$ structure) as a model
+        of excitatory/inhibitory lateral interaction.
+\end{itemize}
+The hypothesis is falsifiable and sharp: \emph{at matched parameters, the
+G\"omb--Soma per-depth features predict V1/V2/V4 fMRI RDMs at least as well as a
+ResNet-tiny}, with a paired bootstrap over the 92 conditions giving the
+significance. A negative result here --- no better than ResNet --- would retire
+the cortical-prototype framing; a positive result would be the model's first
+genuine win, on the axis it was actually designed for.
+
+\section{Implementation status and what is missing}
+The scoring pipeline is built and tested in
+\texttt{signedkan\_wip/src/cortical/}: \texttt{CorticalFeatureExtractor}
+(per-depth retinotopic binning), \texttt{BrainScorer} (PLS\,$\to$\,ridge\,$\to$\,
+$k$-fold CV\,$\to$\,split-half noise ceiling), a parameter-matched
+\texttt{ResNetTinyCortical} baseline, and a shape-faithful \emph{synthetic}
+Cichy-92 generator that drives an end-to-end smoke (92 images $\times$ 16
+subjects in $\sim$22\,s/seed, 21 unit tests). The API is deliberately
+dataset-agnostic: ingesting the real data is ``one new adapter function''.
+
+The one missing piece is the \textbf{real Cichy-92 fMRI data}. The synthetic
+generator validates shapes and the pipeline, but \emph{cannot} test the
+hypothesis: whichever model scores higher on generated RDMs is an artefact of the
+generator. Running the real benchmark requires (i) the published Cichy-92 fMRI
+RDMs (or beta maps) in a known format, and (ii) the $\sim$50-line adapter that
+maps them onto the existing \texttt{BrainScorer} interface. Both are small once
+the data source is fixed.
+
+\section{Conclusion}
+G\"omb--Soma should not be defended as a classifier --- the evidence says it is
+not one. Its honest evaluation is brain-predictivity, and Cichy-92 is the compact,
+standard instrument for it. The protocol, baseline and code are ready; the next
+concrete step is acquiring the real fMRI RDMs and writing the adapter, after
+which a single parameter-matched run settles whether the cortical-prototype
+framing survives.
+
+\begin{thebibliography}{9}
+\bibitem{cichy2014} R.~M. Cichy, D.~Pantazis, A.~Oliva.
+  \emph{Resolving human object recognition in space and time.}
+  Nature Neuroscience, 17(3):455--462, 2014.
+\bibitem{kriegeskorte2008} N.~Kriegeskorte, M.~Mur, P.~Bandettini.
+  \emph{Representational similarity analysis -- connecting the branches of
+  systems neuroscience.} Frontiers in Systems Neuroscience, 2:4, 2008.
+\bibitem{yamins2014} D.~L.~K. Yamins, H.~Hong, C.~Cadieu, E.~Solomon, D.~Seibert,
+  J.~DiCarlo. \emph{Performance-optimized hierarchical models predict neural
+  responses in higher visual cortex.} PNAS, 111(23):8619--8624, 2014.
+\bibitem{schrimpf2018} M.~Schrimpf et al.
+  \emph{Brain-Score: which artificial neural network for object recognition is
+  most brain-like?} bioRxiv 407007, 2018 (and subsequent Neuron, 2020).
+\bibitem{forman2003} R.~Forman.
+  \emph{Bochner's method for cell complexes and combinatorial Ricci curvature.}
+  Discrete \& Computational Geometry, 29(3):323--374, 2003.
+\end{thebibliography}
+
+\noindent\footnotesize\emph{Note on citations:} bibliographic details follow the
+standard references for each method; verify exact pages/venues against the
+project bib files (\texttt{paper/*/references.bib}) before external use.
+\end{document}

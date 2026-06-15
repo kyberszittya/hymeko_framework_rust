@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use hymeko::common::ids::{DeclId};
+    use hymeko::common::ids::DeclId;
     use hymeko::common::pathkey::PathKey;
-    use hymeko::ir::hash::{hash_doc, HashId};
+    use hymeko::ir::hash::{HashId, hash_doc};
     use hymeko::resolution::interner::Interner;
     use hymeko::resolution::resolve::Index;
-    use std::time::Instant;
     use log::info;
+    use std::time::Instant;
 
     const SYMBOL_FANO: &str = "fano";
     const SYMBOL_NODE_0: &str = "n0";
@@ -15,7 +15,7 @@ mod tests {
     const MASSIVE_NODE_COUNT: usize = 10_000;
     const HASH_RUNS: usize = 100;
     const PERF_BUDGET_MS: u128 = 2000;
-    const PERF_BUDGET_MS_MASSIVE : u128 = 1500000;
+    const PERF_BUDGET_MS_MASSIVE: u128 = 1500000;
     const PERF_AVG_BUDGET_MS: f64 = 50.0;
     const PERF_AVG_BUDGET_MS_MASSIVE: f64 = 300.0;
 
@@ -116,7 +116,9 @@ mod tests {
         let mut massive_idx = Index::default();
         for i in 0..MASSIVE_NODE_COUNT {
             let s_node = it.intern(&format!("node_{}", i));
-            massive_idx.by_path.insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId::new(i));
+            massive_idx
+                .by_path
+                .insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId::new(i));
         }
 
         let start = Instant::now();
@@ -133,30 +135,40 @@ mod tests {
         // Log the telemetry (aligning with your recent CI telemetry cleanup)
         info!(
             "Hashing 10,000 nodes 100 times took: {:?} (avg {:.3} ms/run)",
-            elapsed,
-            avg_ms
+            elapsed, avg_ms
         );
 
         // Basic sanity check to ensure it actually computed something
         assert_ne!(last_hash.0, [0; 32]);
 
         // We expect this to be well under a few milliseconds per run
-        assert!(elapsed.as_millis() < PERF_BUDGET_MS,
-                "Hashing is suspiciously slow! Elapsed: {:?} exceeds budget of {} ms", elapsed, PERF_BUDGET_MS);
-        assert!(avg_ms < PERF_AVG_BUDGET_MS, "Average hash runtime {:.3} ms exceeds budget", avg_ms);
+        assert!(
+            elapsed.as_millis() < PERF_BUDGET_MS,
+            "Hashing is suspiciously slow! Elapsed: {:?} exceeds budget of {} ms",
+            elapsed,
+            PERF_BUDGET_MS
+        );
+        assert!(
+            avg_ms < PERF_AVG_BUDGET_MS,
+            "Average hash runtime {:.3} ms exceeds budget",
+            avg_ms
+        );
     }
 
     #[test]
     fn test_hash_doc_performance_benchmark_multiple_nodes() {
         let (mut it, paths) = setup_mock_env();
         // Test hashing performance across a range of node counts to see how it scales
-        let node_counts = [10, 100, 200, 500, 1_000, 2_000, 2_500,
-            5_000, 10_000, 20_000, 25_000, 50_000, 100_000];
+        let node_counts = [
+            10, 100, 200, 500, 1_000, 2_000, 2_500, 5_000, 10_000, 20_000, 25_000, 50_000, 100_000,
+        ];
         // Collect telemetry for each node count to analyze scaling behavior
         let mut telemetry = Vec::with_capacity(node_counts.len());
         // Store rows as numeric tuples to avoid per-run string formatting in the hot loop.
-        let mut run_rows: Vec<(usize, usize, f64)> = Vec::with_capacity(node_counts.len() * HASH_RUNS);
-        let mut summary_rows: Vec<(usize, f64, f64, f64, f64, f64, f64, f64)> = Vec::with_capacity(node_counts.len());
+        let mut run_rows: Vec<(usize, usize, f64)> =
+            Vec::with_capacity(node_counts.len() * HASH_RUNS);
+        let mut summary_rows: Vec<(usize, f64, f64, f64, f64, f64, f64, f64)> =
+            Vec::with_capacity(node_counts.len());
         // Test each node count in the range, ensuring we stay within reasonable performance bounds
         for &count in node_counts.iter() {
             info!("Testing hash performance with {} nodes...", count);
@@ -165,7 +177,9 @@ mod tests {
             let mut massive_idx = Index::default();
             for i in 0..count {
                 let s_node = it.intern(&format!("node_{}", i));
-                massive_idx.by_path.insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId::new(i));
+                massive_idx
+                    .by_path
+                    .insert(PathKey(vec![paths[3].0.0[0], s_node]), DeclId::new(i));
             }
 
             let start = Instant::now();
@@ -192,13 +206,7 @@ mod tests {
 
             info!(
                 "Hashing {} nodes {} times took: {:?} (avg {:.3} ms/run, median {:.3} ms, p95 {:.3} ms, stddev {:.3} ms)",
-                count,
-                HASH_RUNS,
-                elapsed,
-                avg_ms,
-                median_ms,
-                p95_ms,
-                stddev_ms
+                count, HASH_RUNS, elapsed, avg_ms, median_ms, p95_ms, stddev_ms
             );
             // Collect telemetry for analysis
             telemetry.push((count, elapsed, avg_ms, median_ms, stddev_ms));
@@ -245,8 +253,10 @@ mod tests {
 
         // Analyze scaling across adjacent buckets to catch pathological regressions.
         for window in telemetry.windows(2) {
-            let (prev_count, _prev_elapsed, prev_avg_ms, prev_median_ms, _prev_stddev_ms) = window[0];
-            let (curr_count, _curr_elapsed, curr_avg_ms, curr_median_ms, _curr_stddev_ms) = window[1];
+            let (prev_count, _prev_elapsed, prev_avg_ms, prev_median_ms, _prev_stddev_ms) =
+                window[0];
+            let (curr_count, _curr_elapsed, curr_avg_ms, curr_median_ms, _curr_stddev_ms) =
+                window[1];
             let count_ratio = curr_count as f64 / prev_count as f64;
             // Use median, not avg, so a single jittery sample on a shared CI runner
             // cannot push the smallest-bucket ratio over threshold.
@@ -257,12 +267,7 @@ mod tests {
 
             info!(
                 "Scale {} -> {} nodes: avg {:.4} -> {:.4} ms/run | runtime x{:.3}, normalized x{:.3}",
-                prev_count,
-                curr_count,
-                prev_avg_ms,
-                curr_avg_ms,
-                runtime_ratio,
-                normalized_ratio
+                prev_count, curr_count, prev_avg_ms, curr_avg_ms, runtime_ratio, normalized_ratio
             );
 
             // Cap runtime growth at 2x the count growth, with an additive +2.0 grace
@@ -310,9 +315,8 @@ mod tests {
             "node_count,elapsed_seconds,avg_ms_per_run,median_ms_per_run,p95_ms_per_run,min_ms_per_run,max_ms_per_run,stddev_ms_per_run\n{}",
             summary_rows
                 .iter()
-                .map(|(count, elapsed_seconds, avg_ms, median_ms, p95_ms, min_ms, max_ms, stddev_ms)| {
-                    format!(
-                        "{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6}",
+                .map(
+                    |(
                         count,
                         elapsed_seconds,
                         avg_ms,
@@ -320,9 +324,21 @@ mod tests {
                         p95_ms,
                         min_ms,
                         max_ms,
-                        stddev_ms
-                    )
-                })
+                        stddev_ms,
+                    )| {
+                        format!(
+                            "{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6}",
+                            count,
+                            elapsed_seconds,
+                            avg_ms,
+                            median_ms,
+                            p95_ms,
+                            min_ms,
+                            max_ms,
+                            stddev_ms
+                        )
+                    }
+                )
                 .collect::<Vec<_>>()
                 .join("\n")
         );

@@ -1,0 +1,19 @@
+// Editor profile root — HRI coalition. The vocabulary lives outside this file
+// (imported from meta_hri.hymeko), so the meta elements are organised in the
+// shared "space", not inline. Mirrors data/coalitions/triad_hri.hymeko.
+hri_cell_description {
+    @"meta_hri.hymeko";
+    using hri_meta as hri;
+}
+
+hri_cell: hri {
+    alice: hri.human {}
+    bob:   hri.human {}
+    r1:    hri.robot {}
+
+    // Relations are signed hyperedges over the agents (a coalition triangle),
+    // not property nodes. All-positive arcs → a balanced σ-cycle.
+    @r_ab: + <isa> hri.interpersonal { (+ alice, + bob); }
+    @r_ar: + <isa> hri.hri_relation  { (+ alice, + r1); }
+    @r_br: + <isa> hri.hri_relation  { (+ bob,   + r1); }
+}

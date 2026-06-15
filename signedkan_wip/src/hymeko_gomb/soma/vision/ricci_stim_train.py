@@ -211,6 +211,54 @@ def _greedy_nms(
 # ---------------------------------------------------------------------
 
 
+def match_f1_at_iou50(
+    pred_boxes_xyxy: torch.Tensor,   # (P, 4)
+    pred_classes: torch.Tensor,      # (P,)
+    gt_boxes_xyxy: torch.Tensor,     # (G, 4)
+    gt_labels: torch.Tensor,         # (G,)
+    iou_thresh: float = 0.5,
+) -> float:
+    """Per-image F1 at IoU > `iou_thresh` with class match — the **shared**
+    detection metric.
+
+    A prediction is a true positive if it has IoU > `iou_thresh` with an
+    as-yet-unmatched GT box of the SAME class (greedy, in prediction order).
+    Returns the harmonic mean of precision and recall (0.0 if there are no
+    predictions / no GT / no qualifying overlap).
+
+    This is the exact metric `evaluate_map50` used inline; it is factored out so
+    the RicciStim detector and the DETR baseline are scored by **identical** code
+    — the fairness precondition for the parameter-efficiency comparison
+    (plan: docs/plans/2026-06-16-detr-baseline/).
+    """
+    n_pred = int(pred_boxes_xyxy.shape[0])
+    n_gt = int(gt_boxes_xyxy.shape[0])
+    if n_pred == 0 or n_gt == 0:
+        return 0.0
+    ious = _iou_boxes_xyxy(pred_boxes_xyxy.cpu(), gt_boxes_xyxy.float().cpu())
+    gt_used = torch.zeros(n_gt, dtype=torch.bool)
+    tp = 0
+    for p_idx in range(n_pred):
+        best_gt_iou = -1.0
+        best_gt_idx = -1
+        for g_idx in range(n_gt):
+            if gt_used[g_idx]:
+                continue
+            if int(pred_classes[p_idx].item()) != int(gt_labels[g_idx].item()):
+                continue
+            if ious[p_idx, g_idx].item() > best_gt_iou:
+                best_gt_iou = ious[p_idx, g_idx].item()
+                best_gt_idx = g_idx
+        if best_gt_idx >= 0 and best_gt_iou > iou_thresh:
+            gt_used[best_gt_idx] = True
+            tp += 1
+    precision = tp / max(1, n_pred)
+    recall = tp / max(1, n_gt)
+    if precision + recall == 0:
+        return 0.0
+    return 2 * precision * recall / (precision + recall)
+
+
 def evaluate_map50(
     model: nn.Module,
     eval_loader,
@@ -266,34 +314,9 @@ def evaluate_map50(
                 if pb.shape[0] == 0:
                     image_aps.append(0.0)
                     continue
-                ious = _iou_boxes_xyxy(pb.cpu(), gt_boxes.float())
-                # A prediction is correct if it has IoU>0.5 with a GT
-                # of matching class.
-                gt_used = torch.zeros(gt_boxes.shape[0], dtype=torch.bool)
-                tp = 0
-                for p_idx in range(pb.shape[0]):
-                    best_gt_iou = -1.0
-                    best_gt_idx = -1
-                    for g_idx in range(gt_boxes.shape[0]):
-                        if gt_used[g_idx]:
-                            continue
-                        if pred_classes[p_idx].item() != gt_labels[g_idx].item():
-                            continue
-                        if ious[p_idx, g_idx].item() > best_gt_iou:
-                            best_gt_iou = ious[p_idx, g_idx].item()
-                            best_gt_idx = g_idx
-                    if best_gt_idx >= 0 and best_gt_iou > 0.5:
-                        gt_used[best_gt_idx] = True
-                        tp += 1
-                precision = tp / max(1, pb.shape[0])
-                recall = tp / max(1, gt_boxes.shape[0])
-                # mAP50 proxy: harmonic mean (F1 at IoU 0.5).
-                if precision + recall == 0:
-                    image_aps.append(0.0)
-                else:
-                    image_aps.append(
-                        2 * precision * recall / (precision + recall)
-                    )
+                image_aps.append(
+                    match_f1_at_iou50(pb, pred_classes, gt_boxes, gt_labels)
+                )
     return float(sum(image_aps) / max(1, len(image_aps)))
 
 

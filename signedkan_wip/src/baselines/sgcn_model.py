@@ -42,8 +42,12 @@ def _build_signed_adj(edges, signs, n_nodes: int, device: torch.device):
     Symmetrised — undirected aggregation, matching Derr 2018."""
     pos_mask = signs == 1
     neg_mask = signs == -1
-    e_pos = edges[pos_mask]
-    e_neg = edges[neg_mask]
+    # Sign 0 = topology-only (R_topo, reachability.py NEUTRAL_SIGN): the edge is
+    # reachable for message passing but its sign is withheld, so it enters BOTH
+    # channels (sign-agnostic). No effect under strict/full (signs are ±1).
+    neu_mask = signs == 0
+    e_pos = edges[pos_mask | neu_mask]
+    e_neg = edges[neg_mask | neu_mask]
 
     def _make(e_arr):
         if len(e_arr) == 0:

@@ -5,8 +5,8 @@
 // from the snapshot via the pure adapters.
 //
 // View contract: { name, mount(container), render(snapshot, ir), unmount() }.
-import { snapshotToKinematicGraph, cycleArity, parseUrdf } from "./adapters.js?v=13";
-import { Compass, Topo } from "./regime_classes.js?v=13";
+import { snapshotToKinematicGraph, cycleArity, parseUrdf } from "./adapters.js?v=19";
+import { Compass, Topo } from "./regime_classes.js?v=19";
 
 const LINK_COLOR = 0x7dd3fc;
 
@@ -15,7 +15,7 @@ export function createKinematicView() {
   let THREE, scene, camera, renderer, raf = 0;
   let robotGroup = null, compass = null, topo = null;
   let theta = 0.8, phi = 1.1, radius = 3, target = null, autoRot = true;
-  let drag = false, lx = 0, ly = 0, moved = false;
+  let drag = false, panning = false, lx = 0, ly = 0, moved = false;
   let t0 = 0, light = true;
   let onUp = null, onMove = null; // window handlers, removed on unmount
   let raycaster = null, pointer = null, tooltip = null, selBox = null;
@@ -192,18 +192,38 @@ export function createKinematicView() {
   }
 
   function bindPointer() {
-    robotCanvas.addEventListener("pointerdown", (e) => { drag = true; moved = false; lx = e.clientX; ly = e.clientY; autoRot = false; });
+    // Right-button or shift+drag pans (translates the look-at target); plain drag
+    // orbits, wheel zooms — mirrors the hypergraph3d view's controls.
+    robotCanvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    robotCanvas.addEventListener("pointerdown", (e) => {
+      moved = false; lx = e.clientX; ly = e.clientY; autoRot = false;
+      if (e.button === 2 || e.shiftKey) panning = true; else drag = true;
+    });
     robotCanvas.addEventListener("wheel", (e) => { e.preventDefault(); radius = Math.max(0.2, radius + e.deltaY * 0.002 * radius); }, { passive: false });
-    onUp = () => { drag = false; };
+    onUp = () => { drag = false; panning = false; };
     onMove = (e) => {
+      const dx = e.clientX - lx, dy = e.clientY - ly;
+      if (panning) { moved = true; panCamera(dx, dy); lx = e.clientX; ly = e.clientY; return; }
       if (!drag) return;
       moved = true;
-      theta += (e.clientX - lx) * 0.01;
-      phi = Math.max(0.15, Math.min(3.0, phi - (e.clientY - ly) * 0.008));
+      theta += dx * 0.01;
+      phi = Math.max(0.15, Math.min(3.0, phi - dy * 0.008));
       lx = e.clientX; ly = e.clientY;
     };
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointermove", onMove);
+  }
+
+  // Translate the look-at target in the camera's screen plane (right/up vectors),
+  // scaled by distance so the pan feels consistent at any zoom.
+  function panCamera(dx, dy) {
+    if (!camera || !target) return;
+    const f = new THREE.Vector3().subVectors(target, camera.position).normalize();
+    const right = new THREE.Vector3().crossVectors(f, camera.up).normalize();
+    const up = new THREE.Vector3().crossVectors(right, f).normalize();
+    const k = radius * 0.0016;
+    target.addScaledVector(right, -dx * k);
+    target.addScaledVector(up, dy * k);
   }
 
   // ── Hover tooltip + click selection on robot links ────────────────

@@ -43,6 +43,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "akoire"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "parser",
+]
+
+[[package]]
 name = "alloca"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2088,6 +2096,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "hymeko_hive"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "criterion",
+ "hymeko_core",
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "hymeko_hive_query"
+version = "0.1.0"
+dependencies = [
+ "hymeko_hive",
+ "lalrpop",
+ "lalrpop-util",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "hymeko_hnn"
 version = "0.1.0"
 dependencies = [
@@ -2139,15 +2168,6 @@ version = "0.1.0"
 dependencies = [
  "approx",
  "thiserror 2.0.18",
-]
-
-[[package]]
-name = "hymeko_nagare"
-version = "0.1.0"
-dependencies = [
- "hymeko_graph",
- "rand 0.9.2",
- "rayon",
 ]
 
 [[package]]

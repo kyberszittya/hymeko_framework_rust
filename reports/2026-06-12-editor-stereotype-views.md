@@ -232,6 +232,54 @@ The "group all relationships" request needed data the snapshot didn't carry, so
   visible-text round-trip and keyword-vs-identifier; **23 JS tests** total. Cache
   `?v=11`; no WASM change.
 
+## Enhancement batch 8 (2026-06-13) — root sizing + compositional dotted lines + default labels
+User-requested Hypergraph-3D refinements, all client-side (no WASM change):
+- **Root elements bigger + bigger gravity.** New pure `depthSizes(n, scopeSegs,
+  {base,falloff,min})` in `views/geometry3d.js` (reuses the existing
+  `buildScopeTree` walk — no duplicate parent/depth builder) returns a per-node
+  size/mass by containment depth: roots (depth 0) largest, descendants shrink
+  geometrically, floored at `min`. The view scales each vertex sphere by it
+  **and** uses it as force-layout mass (`a = F/m` via `addScaledVector`), so heavy
+  roots anchor the cloud while lighter descendants orbit them — that inertia is
+  the "gravity". **2 new unit tests** (monotone-by-depth + floored; deep-node
+  clamp + isolated-node-is-root). 26 JS tests total, all pass.
+- **Compositional relationships as dotted lines, on by default.** The `scope`
+  (containment) layer now defaults **on** (`relOn.scope = true`) and draws with a
+  **dotted** style (`dashSize 1.5 / gapSize 4`) vs the dashed isa/ref layers;
+  each `REL_KINDS` entry carries its own `dash` spec consumed in `buildRelLayers`.
+- **Node labels visible by default** (`showLabels = true`; the toggle and its
+  button state still work). Label sprites are lifted clear of the larger root
+  spheres (`5 + size·6`).
+- Memory hygiene unchanged: spheres reuse the shared geometry (per-mesh
+  `.scale`), nest/label/rel objects still disposed in `clearObjects`. Import chain
+  bumped to `?v=14` across `editor.js`, `index.html`, `hypergraph3d.js`,
+  `kinematic.js`. `node --check` clean on all modules; all `?v=14` URLs serve 200.
+- **Hyperedge hubs are cubes (2026-06-13 follow-up):** `hGeo` swapped from
+  `SphereGeometry(3.4)` to `BoxGeometry(5.5³)` so vertices (spheres) vs hyperedges
+  (cubes) read distinctly. Import chain bumped to `?v=15`.
+- **Hub cube grows with arity (2026-06-13):** new pure `hubSize(arity)` in
+  `geometry3d.js` (binary=reference 1, +0.22/extra member, clamped [0.7, 2.4]);
+  each hub mesh `.scale.setScalar(hubSize(e.length))`. **1 unit test** (binary
+  reference, monotone, clamp, opts). Import chain `?v=16`.
+- **Description-wise viewpoint selection (2026-06-13):** the Hypergraph-3D view
+  gained a **selectable, multi-toggle** filter — the MDSD move (one model, composed
+  viewpoints), not a single cycle. A second toolbar row holds **one show/hide
+  toggle per top-level description namespace** (keyed by namespace *name* so the
+  selection survives the per-keystroke recompile), plus a **Roots only** switch;
+  the two compose. Membership is by **scope (containment)**, not literal import
+  provenance — a true `imported` flag would need `hymeko_core`/`parser` (both
+  `lockdown: full`) and the in-browser compiler can't resolve external `@"file"`
+  includes anyway, so the honest unit is the namespace root. New pure
+  `scopeMembership(n, scopeSegs)` in `geometry3d.js` → per-node `{depth, root,
+  roots}` (cycle-guarded); **2 unit tests** (two-namespace mapping; isolated-node +
+  2-cycle termination). The view computes `visV`/`visE` (an edge is visible iff all
+  its members are) and applies them to vertex spheres, hub cubes, labels,
+  structural lines, relationship layers, prisms, **and the force layout** (hidden
+  nodes exert no force, don't drift) — plus `pickables()` (three.js raycasts ignore
+  `.visible`). The toggle bar rebuilds only when the namespace set changes; CSS
+  `.view3d-filterbar`/`.view3d-filterhead` added. Stats show filtered counts. 29 JS
+  tests total, all pass. Import chain `?v=18`.
+
 ## Open issues / follow-ups
 - Browser render is not auto-verified — a future headless smoke (playwright)
   would close this, but that is a dependency add (§1).

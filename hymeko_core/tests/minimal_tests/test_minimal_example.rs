@@ -1,16 +1,18 @@
-use parser::parse_description;
-use parser::ast::*;
-use log::info;
-use std::time::Instant;
-use crate::test_helpers::{log_test_footer, log_test_header};
 use super::constants::*;
+use crate::test_helpers::{log_test_footer, log_test_header};
+use log::info;
+use parser::ast::*;
+use parser::parse_description;
+use std::time::Instant;
 
 fn must_parse<'a>(input: &'a str) -> AstStr<'a> {
     parse_description(input).unwrap()
 }
 
 // EdgeArcs now filters based on the reference lifetime
-fn edge_arcs<'ast, 'slice>(e: &'slice EdgeDecl<'ast, &'ast str>) -> Vec<&'slice HyperArc<'ast, &'ast str>> {
+fn edge_arcs<'ast, 'slice>(
+    e: &'slice EdgeDecl<'ast, &'ast str>,
+) -> Vec<&'slice HyperArc<'ast, &'ast str>> {
     e.inner
         .body
         .iter()
@@ -77,8 +79,7 @@ fn fails_if_arc_missing_semicolon() {
         "Verifies the parser rejects arcs missing trailing semicolons.",
     );
     let start = Instant::now();
-    let err = parse_description(MISSING_SEMI_DESC_SRC)
-        .unwrap_err();
+    let err = parse_description(MISSING_SEMI_DESC_SRC).unwrap_err();
 
     let _ = err;
     log_test_footer(

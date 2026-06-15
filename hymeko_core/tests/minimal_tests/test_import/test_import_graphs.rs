@@ -1,18 +1,17 @@
 #![cfg(test)]
-mod test_import_graphs
-{
-    use std::path::Path;
+mod test_import_graphs {
+    use crate::minimal_tests::TestParser;
+    use crate::test_helpers::{log_test_footer, log_test_header};
     use hymeko::common::pathkey::PathKey;
     use hymeko::ir::hash_pass::compute_merkle_hashes;
     use hymeko::ir::ir::{DeclKind, SignedRefR};
     use hymeko::ir::lower::lower_to_ir;
     use hymeko::module_store::module_store::ModuleStore;
-    use hymeko::resolution::intern_pass::{intern_ast, Interned};
-    use hymeko::resolution::resolve::build_index_sym;
     use hymeko::module_store::source_provider::StdFsProvider;
-    use crate::minimal_tests::TestParser;
-    use crate::test_helpers::{log_test_footer, log_test_header};
+    use hymeko::resolution::intern_pass::{Interned, intern_ast};
+    use hymeko::resolution::resolve::build_index_sym;
     use log::info;
+    use std::path::Path;
     use std::time::Instant;
 
     #[test]
@@ -38,20 +37,36 @@ mod test_import_graphs
         let sid_operand2 = interner.intern("operand2");
         let sid_operator = interner.intern("operator");
 
-        let did_elements = *idx.by_path.get(&PathKey(vec![sid_elements])).expect("elements missing");
+        let did_elements = *idx
+            .by_path
+            .get(&PathKey(vec![sid_elements]))
+            .expect("elements missing");
         assert_eq!(ir.decl_nodes[did_elements.0].kind, DeclKind::Node);
 
-        let did_operand = *idx.by_path.get(&PathKey(vec![sid_elements, sid_operand])).expect("operand missing");
-        let did_operand2 = *idx.by_path.get(&PathKey(vec![sid_elements, sid_operand2])).expect("operand2 missing");
+        let did_operand = *idx
+            .by_path
+            .get(&PathKey(vec![sid_elements, sid_operand]))
+            .expect("operand missing");
+        let did_operand2 = *idx
+            .by_path
+            .get(&PathKey(vec![sid_elements, sid_operand2]))
+            .expect("operand2 missing");
         assert_eq!(ir.decl_nodes[did_operand.0].kind, DeclKind::Node);
         assert_eq!(ir.decl_nodes[did_operand2.0].kind, DeclKind::Node);
 
-        let did_operator = *idx.by_path.get(&PathKey(vec![sid_elements, sid_operator])).expect("operator edge missing");
+        let did_operator = *idx
+            .by_path
+            .get(&PathKey(vec![sid_elements, sid_operator]))
+            .expect("operator edge missing");
         assert_eq!(ir.decl_nodes[did_operator.0].kind, DeclKind::Edge);
 
         let edge_id = ir.decl_to_edge[did_operator.0].expect("operator not lowered as edge");
         let edge_rec = &ir.edges[edge_id.0];
-        assert_eq!(edge_rec.arcs.len(), 1, "operator edge should contain one arc");
+        assert_eq!(
+            edge_rec.arcs.len(),
+            1,
+            "operator edge should contain one arc"
+        );
 
         let arc_id = edge_rec.arcs[0];
         let arc = &ir.arcs[arc_id.0];
@@ -59,14 +74,25 @@ mod test_import_graphs
 
         match (&arc.refs[0], &arc.refs[1]) {
             (SignedRefR::Plus(lhs), SignedRefR::Minus(rhs)) => {
-                assert_eq!(lhs.target, did_operand, "+ operand should target operand node");
-                assert_eq!(rhs.target, did_operand, "- operand should target operand node");
+                assert_eq!(
+                    lhs.target, did_operand,
+                    "+ operand should target operand node"
+                );
+                assert_eq!(
+                    rhs.target, did_operand,
+                    "- operand should target operand node"
+                );
                 assert!(lhs.weights.as_ref().is_some(), "lhs weight missing");
                 assert!(rhs.weights.as_ref().is_some(), "rhs weight missing");
             }
             other => panic!("unexpected arc refs ordering: {other:?}"),
         }
-        info!("{} lowered to IR with {} nodes and {} edges", path, ir.nodes.len(), ir.edges.len());
+        info!(
+            "{} lowered to IR with {} nodes and {} edges",
+            path,
+            ir.nodes.len(),
+            ir.edges.len()
+        );
         log_test_footer(
             "check_import_graph_library",
             Some(start.elapsed()),
@@ -82,10 +108,10 @@ mod test_import_graphs
         );
         let start = Instant::now();
         // ugyanaz a root file, mint eddig
-        let root_path = Path::new("../data/minimal_examples/import_examples/minimal_example_import.hymeko");
+        let root_path =
+            Path::new("../data/minimal_examples/import_examples/minimal_example_import.hymeko");
 
         // Parser adapter a LALRPOP-hoz (igazítsd a modulneveket, ha kell)
-
 
         let mut ms = ModuleStore::new(StdFsProvider::new(), TestParser);
 
@@ -94,19 +120,32 @@ mod test_import_graphs
         let ns = ms.it.intern("basic_library");
         let elements = ms.it.intern("elements");
         let operand = ms.it.intern("operand");
-        assert!(compiled.idx.by_path.contains_key(&PathKey(vec![ns, elements, operand])));
+        assert!(
+            compiled
+                .idx
+                .by_path
+                .contains_key(&PathKey(vec![ns, elements, operand]))
+        );
 
         assert!(
-            compiled.imports.iter().any(|(ns, _)| *ns == ms.it.intern("basic_library")),
+            compiled
+                .imports
+                .iter()
+                .any(|(ns, _)| *ns == ms.it.intern("basic_library")),
             "expected imported namespace basic_library"
         );
 
-        let did = *compiled.idx.by_path
+        let did = *compiled
+            .idx
+            .by_path
             .get(&PathKey(vec![ns, elements, operand]))
             .expect("missing basic_library.elements.operand in global index");
 
         let kind = compiled.ir.decl_nodes[did.0].kind;
-        assert!(matches!(kind, DeclKind::Node|DeclKind::Edge|DeclKind::HyperArc));
+        assert!(matches!(
+            kind,
+            DeclKind::Node | DeclKind::Edge | DeclKind::HyperArc
+        ));
 
         let mut referenced = false;
         for arc in &compiled.ir.arcs {
@@ -119,9 +158,14 @@ mod test_import_graphs
                     break;
                 }
             }
-            if referenced { break; }
+            if referenced {
+                break;
+            }
         }
-        assert!(referenced, "expected at least one arc ref to target basic_library.elements.operand");
+        assert!(
+            referenced,
+            "expected at least one arc ref to target basic_library.elements.operand"
+        );
         assert!(
             compiled.ir.decl_hash.get(did.0).and_then(|x| *x).is_some(),
             "expected decl hash for operand to be computed"

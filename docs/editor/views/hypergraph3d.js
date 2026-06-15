@@ -8,8 +8,8 @@
 // Fed by snapshotToHyperedges(snapshot); pure math in geometry3d.js.
 //
 // View contract: { name, mount(container), render(snapshot, ir), unmount() }.
-import { snapshotToHyperedges, snapshotRelationships } from "./adapters.js?v=13";
-import { attributeValue, categoricalColorMap, prismPositions, treePositions, coneTreePositions } from "./geometry3d.js?v=13";
+import { snapshotToHyperedges, snapshotRelationships } from "./adapters.js?v=24";
+import { attributeValue, categoricalColorMap, prismPositions, treePositions, coneTreePositions, depthSizes, hubSize, scopeMembership } from "./geometry3d.js?v=19";
 
 const HUB_POS = 0x38bdf8, HUB_NEG = 0xf472b6; // hyperedge sign colours
 const LINE_COLOR = 0x4a6ba0;
@@ -21,18 +21,31 @@ const NEST_COLORS = [0x60a5fa, 0x34d399, 0xfbbf24, 0xf472b6, 0xc084fc, 0xf87171]
 // Named, annotated relationship layers from snapshot.relationships. Membership
 // (signed arcs) is the primary hyperedge structure; these are the secondary
 // structural relations, each a toggleable colour-coded layer.
+// Each kind carries its own line style: `dash` for inheritance/reference,
+// `dot` (short on, long gap) for the compositional containment layer so
+// stacked elements read as dotted links.
 const REL_KINDS = [
-  { key: "isa", color: 0xf59e0b, label: "isa" },     // template / inheritance
-  { key: "ref", color: 0xc084fc, label: "ref" },     // field reference (a -> b)
-  { key: "scope", color: 0x34d399, label: "scope" }, // containment / nesting
+  { key: "isa", color: 0xf59e0b, label: "isa", dash: { dashSize: 7, gapSize: 5 } },   // template / inheritance
+  { key: "ref", color: 0xc084fc, label: "ref", dash: { dashSize: 7, gapSize: 5 } },   // field reference (a -> b)
+  { key: "scope", color: 0x34d399, label: "scope", dash: { dashSize: 1.5, gapSize: 4 } }, // composition / nesting (dotted)
 ];
 
 export function createHypergraphView() {
-  let host, canvas, stats, legend, relLegend, modeBtn, colorBtn, labelBtn;
+  let host, canvas, stats, legend, relLegend, modeBtn, colorBtn, labelBtn, rootsBtn, filterBar;
   let THREE, scene, camera, renderer, raf = 0;
-  let mode = "star", colorBy = "base", showLabels = false, light = true, layout = "force";
+  let mode = "star", colorBy = "base", showLabels = true, light = true, layout = "force";
   let treeSrc = "scope", showNest = false;
-  let relOn = { isa: true, ref: true, scope: false };
+  let relOn = { isa: true, ref: true, scope: true };
+  let sizes = [];              // per-vertex scale/mass by containment depth (root = biggest)
+  // Description-wise viewpoint selection. Membership is by SCOPE (containment):
+  // every vertex belongs to a top-level namespace root. The user toggles which
+  // descriptions are shown (`nsHidden`, keyed by namespace NAME so the choice
+  // survives recompiles) and an optional roots-only switch. visV/visE drive both
+  // rendering and the force layout.
+  let rootsOnly = false, nsHidden = new Set(), rootList = [], visV = [], visE = [];
+  let lastRootSig = "";        // namespace-set signature, to rebuild the toggle bar only on change
+  const idxVisible = (i) => i < H.n ? (visV[i] !== false) : (visE[i - H.n] !== false);
+  const segVisible = (s) => idxVisible(s[0]) && idxVisible(s[1]);
   let nestBoxes = []; // { desc:[vertexIdx], mesh } translucent containment volumes
   let hyper = { n_vertices: 0, vertices: [], hyperedges: [] };
   let relSegs = {};            // kind -> [[fromIdx,toIdx], ...]
@@ -42,7 +55,8 @@ export function createHypergraphView() {
   let lineSeg = null, vGeo = null, hGeo = null, colorMap = new Map();
   const BG_DARK = 0x12101f, BG_LIGHT = 0xf7f7f8;
   let theta = 0.7, phi = 1.05, radius = 340, autoRot = true;
-  let drag = false, lx = 0, ly = 0, onUp = null, onMove = null, moved = false;
+  let target = { x: 0, y: 0, z: 0 };   // camera look-at / pan focus
+  let drag = false, panning = false, lx = 0, ly = 0, onUp = null, onMove = null, moved = false;
   let raycaster = null, pointer = null, tooltip = null, selBox = null, selectedMesh = null;
 
   function mount(container) {
@@ -50,7 +64,8 @@ export function createHypergraphView() {
     const tb = el("div", "view3d-toolbar");
     modeBtn = btn("Mode: Star", () => { mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length]; modeBtn.textContent = "Mode: " + cap(mode); rebuild(); });
     colorBtn = btn("Color: base", () => { colorBy = COLOR_BYS[(COLOR_BYS.indexOf(colorBy) + 1) % COLOR_BYS.length]; colorBtn.textContent = "Color: " + colorBy; rebuild(); });
-    labelBtn = btn("Labels: off", () => { showLabels = !showLabels; labelBtn.textContent = "Labels: " + (showLabels ? "on" : "off"); labelBtn.classList.toggle("off", !showLabels); rebuild(); });
+    labelBtn = btn("Labels: " + (showLabels ? "on" : "off"), () => { showLabels = !showLabels; labelBtn.textContent = "Labels: " + (showLabels ? "on" : "off"); labelBtn.classList.toggle("off", !showLabels); rebuild(); });
+    if (!showLabels) labelBtn.classList.add("off");
     const relBtns = REL_KINDS.map((rk) => {
       const b = btn(`${rk.label}: ${relOn[rk.key] ? "on" : "off"}`, () => {
         relOn[rk.key] = !relOn[rk.key];
@@ -80,16 +95,25 @@ export function createHypergraphView() {
       rebuild();
     });
     nestBtn.classList.add("off");
+    rootsBtn = btn("Roots only: off", () => {
+      rootsOnly = !rootsOnly;
+      rootsBtn.textContent = "Roots only: " + (rootsOnly ? "on" : "off");
+      rootsBtn.classList.toggle("off", !rootsOnly);
+      rebuild();
+    });
+    rootsBtn.classList.add("off");
     const bgBtn = btn("BG", () => { light = !light; if (scene) scene.background = new THREE.Color(light ? BG_LIGHT : BG_DARK); });
     const rotBtn = btn("⟳ spin", () => { autoRot = !autoRot; rotBtn.classList.toggle("off", !autoRot); });
-    tb.append(modeBtn, colorBtn, labelBtn, ...relBtns, layoutBtn, treeBtn, nestBtn, bgBtn, rotBtn);
+    tb.append(modeBtn, colorBtn, labelBtn, ...relBtns, layoutBtn, treeBtn, nestBtn, rootsBtn, bgBtn, rotBtn);
+    // Second row: one show/hide toggle per description namespace (built per snapshot).
+    filterBar = el("div", "view3d-toolbar view3d-filterbar");
     stats = el("div", "view3d-stats");
     legend = el("div", "view3d-legend");
     tooltip = el("div", "view3d-tip");
     selBox = el("div", "view3d-sel");
     relLegend = el("div", "view3d-rel");
     canvas = el("canvas", "view3d-canvas");
-    host.append(tb, canvas, stats, legend, relLegend, tooltip, selBox);
+    host.append(tb, filterBar, canvas, stats, legend, relLegend, tooltip, selBox);
 
     THREE = globalThis.THREE;
     if (!THREE) { stats.textContent = "three.js failed to load (offline?)"; return; }
@@ -99,6 +123,7 @@ export function createHypergraphView() {
     scene.add(new THREE.AmbientLight(0xffffff, 0.8));
     const dir = new THREE.DirectionalLight(0xffffff, 0.7); dir.position.set(1, 1, 1); scene.add(dir);
     raycaster = new THREE.Raycaster(); pointer = new THREE.Vector2();
+    target = { x: 0, y: 0, z: 0 };   // recentre the pan focus on (re)mount
     bindPointer();
     bindPicking();
     loop();
@@ -144,9 +169,48 @@ export function createHypergraphView() {
     meshes = []; hubMeshes = []; prismMeshes = []; sprites = [];
   }
 
+  // Recompute description-wise visibility from the SCOPE (containment) tree.
+  // visV[i] per vertex, visE[ei] per hyperedge (visible iff all its members are).
+  const nsName = (rootIdx) => hyper.vertices[rootIdx]?.label ?? ("ns" + rootIdx);
+
+  function computeFilter() {
+    const mem = scopeMembership(H.n, relSegs.scope || []);
+    rootList = mem.roots;
+    const sig = rootList.map(nsName).join("|");
+    if (sig !== lastRootSig) { lastRootSig = sig; buildFilterBar(); } // namespaces changed → rebuild toggles
+    visV = new Array(H.n);
+    for (let i = 0; i < H.n; i++) {
+      visV[i] = (!rootsOnly || mem.depth[i] === 0) && !nsHidden.has(nsName(mem.root[i]));
+    }
+    visE = H.edges.map((members) => members.every((v) => visV[v] !== false));
+  }
+
+  // One show/hide toggle per top-level description namespace. Keyed by name so the
+  // selection survives a recompile (every keystroke debounce rebuilds the snapshot).
+  function buildFilterBar() {
+    if (!filterBar) return;
+    filterBar.innerHTML = "";
+    if (rootList.length <= 1) return; // a single (or no) namespace — nothing to separate
+    const head = el("span", "view3d-filterhead"); head.textContent = "Show:"; filterBar.append(head);
+    for (const r of rootList) {
+      const name = nsName(r);
+      const b = btn(name, () => {
+        if (nsHidden.has(name)) nsHidden.delete(name); else nsHidden.add(name);
+        b.classList.toggle("off", nsHidden.has(name));
+        rebuild();
+      });
+      if (nsHidden.has(name)) b.classList.add("off");
+      filterBar.append(b);
+    }
+  }
+
   function rebuild() {
     if (!THREE || !scene) return;
     clearObjects();
+    // Root containers of the tree-source hierarchy get a bigger sphere AND a
+    // bigger force-mass — so they anchor the layout and their subtree orbits.
+    sizes = depthSizes(H.n, relSegs[treeSrc] || []).size;
+    computeFilter();                                     // visV/visE (must precede the prism settle loop)
     if (layout === "tree") applyTreeLayout();            // flat composition tree
     else if (layout === "cone") applyConeLayout();       // 3D barycentric cone tree
     else if (mode === "prism") for (let i = 0; i < 160; i++) step(); // settle prisms
@@ -157,13 +221,16 @@ export function createHypergraphView() {
     for (let i = 0; i < H.n; i++) {
       const col = colorMap.get(attributeValue(hyper.vertices[i], colorBy)) ?? 0x9fd6ff;
       const m = new THREE.Mesh(vGeo, new THREE.MeshLambertMaterial({ color: col }));
+      m.scale.setScalar(sizes[i] || 1); // root elements larger (depth-scaled)
+      m.visible = visV[i] !== false;     // description filter
       m.userData = { kind: "vertex", i }; scene.add(m); meshes.push(m);
     }
-    hGeo = new THREE.SphereGeometry(3.4, 12, 12);
+    hGeo = new THREE.BoxGeometry(5.5, 5.5, 5.5); // hyperedge hubs are cubes (vertices stay spheres)
     const showHubs = mode === "star";
-    H.edges.forEach((_e, ei) => {
+    H.edges.forEach((e, ei) => {
       const m = new THREE.Mesh(hGeo, new THREE.MeshLambertMaterial({ color: H.signs[ei] < 0 ? HUB_NEG : HUB_POS }));
-      m.userData = { kind: "edge", ei }; m.visible = showHubs; scene.add(m); hubMeshes.push(m);
+      m.scale.setScalar(hubSize(e.length)); // cube grows with hyperedge arity
+      m.userData = { kind: "edge", ei }; m.visible = showHubs && (visE[ei] !== false); scene.add(m); hubMeshes.push(m);
     });
 
     if (mode === "prism") buildPrisms(); else rebuildLines();
@@ -175,7 +242,7 @@ export function createHypergraphView() {
   }
 
   function rebuildLines() {
-    const segs = currentSegments();
+    const segs = currentSegments().filter(segVisible);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(segs.length * 6), 3));
     lineSeg = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: LINE_COLOR, transparent: true, opacity: 0.5 }));
@@ -187,6 +254,7 @@ export function createHypergraphView() {
     // → a thin connector line. Static (the layout is frozen in prism mode).
     const lines = [];
     H.edges.forEach((members, ei) => {
+      if (visE[ei] === false) return; // description filter
       if (members.length < 3) { if (members.length === 2) lines.push([members[0], members[1]]); return; }
       // Expand the cross-section out from its centroid so the prism visibly
       // encloses the member spheres, and extrude thicker — "bigger" prisms.
@@ -214,7 +282,7 @@ export function createHypergraphView() {
   }
 
   function buildLabels() {
-    for (let i = 0; i < H.n; i++) sprites.push(makeLabel(hyper.vertices[i].label, i));
+    for (let i = 0; i < H.n; i++) if (visV[i] !== false) sprites.push(makeLabel(hyper.vertices[i].label, i));
     for (const s of sprites) scene.add(s);
   }
 
@@ -316,11 +384,12 @@ export function createHypergraphView() {
   function buildRelLayers() {
     for (const rk of REL_KINDS) {
       if (!showRel(rk.key)) continue;
-      const segs = relSegs[rk.key];
-      if (!segs || !segs.length) continue;
+      const segs = (relSegs[rk.key] || []).filter(segVisible);
+      if (!segs.length) continue;
       const geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(segs.length * 6), 3));
-      const mat = new THREE.LineDashedMaterial({ color: rk.color, dashSize: 7, gapSize: 5, transparent: true, opacity: 0.85 });
+      const d = rk.dash || { dashSize: 7, gapSize: 5 };
+      const mat = new THREE.LineDashedMaterial({ color: rk.color, dashSize: d.dashSize, gapSize: d.gapSize, transparent: true, opacity: 0.85 });
       const seg = new THREE.LineSegments(geo, mat);
       seg._segs = segs; scene.add(seg); relSegMeshes[rk.key] = seg;
     }
@@ -341,30 +410,42 @@ export function createHypergraphView() {
 
   function step() {
     const total = P.length; if (!total) return;
-    for (let i = 0; i < total; i++) for (let j = i + 1; j < total; j++) {
-      const d = P[i].clone().sub(P[j]); const dist = d.length() || 0.01;
-      d.multiplyScalar(1400 / (dist * dist) / dist); Vel[i].add(d); Vel[j].sub(d);
+    // a = F/m: heavier (root) nodes accelerate less, so they anchor the cloud
+    // while lighter descendants orbit them — that inertia is the "gravity".
+    const m = (i) => sizes[i] || 1; // edge hubs (i ≥ H.n) and unsized nodes → 1
+    for (let i = 0; i < total; i++) {
+      if (!idxVisible(i)) continue;
+      for (let j = i + 1; j < total; j++) {
+        if (!idxVisible(j)) continue;
+        const d = P[i].clone().sub(P[j]); const dist = d.length() || 0.01;
+        d.multiplyScalar(1400 / (dist * dist) / dist);
+        Vel[i].addScaledVector(d, 1 / m(i)); Vel[j].addScaledVector(d, -1 / m(j));
+      }
     }
     for (const [a, b] of currentSegments()) {
+      if (!idxVisible(a) || !idxVisible(b)) continue;
       const d = P[b].clone().sub(P[a]); const dist = d.length() || 0.01;
-      d.multiplyScalar((dist - 60) * 0.02 / dist); Vel[a].add(d); Vel[b].sub(d);
+      d.multiplyScalar((dist - 60) * 0.02 / dist);
+      Vel[a].addScaledVector(d, 1 / m(a)); Vel[b].addScaledVector(d, -1 / m(b));
     }
     // Enabled relationship layers also pull related nodes together (so the
     // structure is visible, not scattered in the floating space).
     for (const rk of REL_KINDS) {
       if (!relOn[rk.key]) continue;
       for (const [a, b] of relSegs[rk.key] || []) {
+        if (!idxVisible(a) || !idxVisible(b)) continue;
         const d = P[b].clone().sub(P[a]); const dist = d.length() || 0.01;
-        d.multiplyScalar((dist - 64) * 0.02 / dist); Vel[a].add(d); Vel[b].sub(d);
+        d.multiplyScalar((dist - 64) * 0.02 / dist);
+        Vel[a].addScaledVector(d, 1 / m(a)); Vel[b].addScaledVector(d, -1 / m(b));
       }
     }
-    for (let i = 0; i < total; i++) { Vel[i].add(P[i].clone().multiplyScalar(-0.002)); Vel[i].multiplyScalar(0.82); P[i].add(Vel[i]); }
+    for (let i = 0; i < total; i++) { if (!idxVisible(i)) continue; Vel[i].add(P[i].clone().multiplyScalar(-0.002)); Vel[i].multiplyScalar(0.82); P[i].add(Vel[i]); }
   }
 
   function sync() {
     for (let i = 0; i < meshes.length; i++) meshes[i].position.copy(P[i]);
     for (let i = 0; i < hubMeshes.length; i++) hubMeshes[i].position.copy(P[H.n + i]);
-    for (const s of sprites) s.position.copy(P[s._idx]).add(new THREE.Vector3(0, 9, 0));
+    for (const s of sprites) s.position.copy(P[s._idx]).add(new THREE.Vector3(0, 5 + (sizes[s._idx] || 1) * 6, 0));
     if (lineSeg && lineSeg._segs && mode !== "prism") {
       const attr = lineSeg.geometry.getAttribute("position");
       lineSeg._segs.forEach(([a, b], k) => { attr.setXYZ(k * 2, P[a].x, P[a].y, P[a].z); attr.setXYZ(k * 2 + 1, P[b].x, P[b].y, P[b].z); });
@@ -380,9 +461,13 @@ export function createHypergraphView() {
   }
 
   function updateLegendAndStats() {
-    const nSeg = mode === "prism" ? prismMeshes.length : currentSegments().length;
+    const nSeg = mode === "prism" ? prismMeshes.length : currentSegments().filter(segVisible).length;
     const unit = mode === "prism" ? "prisms" : "edges";
-    stats.textContent = `${H.n} vertices · ${H.edges.length} hyperedges · ${mode} (${nSeg} ${unit})`;
+    const filtering = rootsOnly || nsHidden.size > 0;
+    const nV = filtering ? visV.filter((v) => v !== false).length : H.n;
+    const nE = filtering ? visE.filter((v) => v !== false).length : H.edges.length;
+    const filt = filtering ? ` · filtered ${nV}/${H.n} vtx${rootsOnly ? ", roots" : ""}` : "";
+    stats.textContent = `${nV} vertices · ${nE} hyperedges · ${mode} (${nSeg} ${unit})${filt}`;
     legend.innerHTML = "";
     if (colorBy !== "uniform") for (const [val, col] of colorMap) legend.append(legendRow(col, val));
 
@@ -409,8 +494,12 @@ export function createHypergraphView() {
     resize();
     if (P.length && mode !== "prism" && layout === "force") { step(); sync(); }
     if (autoRot) theta += 0.0016;
-    camera.position.set(radius * Math.sin(phi) * Math.cos(theta), radius * Math.cos(phi), radius * Math.sin(phi) * Math.sin(theta));
-    camera.lookAt(0, 0, 0);
+    camera.position.set(
+      target.x + radius * Math.sin(phi) * Math.cos(theta),
+      target.y + radius * Math.cos(phi),
+      target.z + radius * Math.sin(phi) * Math.sin(theta),
+    );
+    camera.lookAt(target.x, target.y, target.z);
     renderer.render(scene, camera);
   }
 
@@ -424,11 +513,38 @@ export function createHypergraphView() {
   }
 
   function bindPointer() {
-    canvas.addEventListener("pointerdown", (e) => { drag = true; moved = false; lx = e.clientX; ly = e.clientY; });
+    // Right-button or shift+drag pans (translates the look-at focus); plain drag
+    // orbits, wheel zooms — so existing controls are unchanged.
+    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    canvas.addEventListener("pointerdown", (e) => {
+      moved = false; lx = e.clientX; ly = e.clientY;
+      if (e.button === 2 || e.shiftKey) panning = true; else drag = true;
+    });
     canvas.addEventListener("wheel", (e) => { e.preventDefault(); radius = Math.max(120, Math.min(900, radius + e.deltaY * 0.4)); }, { passive: false });
-    onUp = () => { drag = false; };
-    onMove = (e) => { if (!drag) return; moved = true; theta += (e.clientX - lx) * 0.01; autoRot = false; phi = Math.max(0.15, Math.min(3.0, phi - (e.clientY - ly) * 0.008)); lx = e.clientX; ly = e.clientY; };
+    onUp = () => { drag = false; panning = false; };
+    onMove = (e) => {
+      const dx = e.clientX - lx, dy = e.clientY - ly;
+      if (panning) { moved = true; panCamera(dx, dy); lx = e.clientX; ly = e.clientY; return; }
+      if (!drag) return;
+      moved = true; autoRot = false;
+      theta += dx * 0.01;
+      phi = Math.max(0.15, Math.min(3.0, phi - dy * 0.008));
+      lx = e.clientX; ly = e.clientY;
+    };
     window.addEventListener("pointerup", onUp); window.addEventListener("pointermove", onMove);
+  }
+
+  // Translate the look-at focus in the camera's screen plane (right/up vectors),
+  // scaled by distance so the pan feels consistent at any zoom.
+  function panCamera(dx, dy) {
+    if (!camera) return;
+    const f = new THREE.Vector3(target.x - camera.position.x, target.y - camera.position.y, target.z - camera.position.z).normalize();
+    const right = new THREE.Vector3().crossVectors(f, camera.up).normalize();
+    const up = new THREE.Vector3().crossVectors(right, f).normalize();
+    const k = radius * 0.0016;
+    target.x += -dx * k * right.x + dy * k * up.x;
+    target.y += -dx * k * right.y + dy * k * up.y;
+    target.z += -dx * k * right.z + dy * k * up.z;
   }
 
   // ── Hover tooltip + click selection (raycasting) ──────────────────
@@ -453,7 +569,7 @@ export function createHypergraphView() {
   }
 
   function pickables() {
-    return meshes.concat(hubMeshes.filter((m) => m.visible), prismMeshes);
+    return meshes.filter((m) => m.visible).concat(hubMeshes.filter((m) => m.visible), prismMeshes);
   }
 
   function pick(clientX, clientY) {

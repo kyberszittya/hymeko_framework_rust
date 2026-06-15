@@ -40,6 +40,22 @@ cargo clippy --all-targets -- -D warnings   # gate if you touch Rust
 
 Crates are `hymeko_*`, `parser`, `hymeko_cli`, etc. — see root `Cargo.toml` / `README.md` “Project structure”.
 
+### Artifact discovery before creation
+
+Before adding a new crate, module, script, fixture, report, generator, or query
+surface, discover existing artifacts first:
+
+```bash
+rg -n "<concept>|<key term>" .
+rg --files | rg "<concept>|<nearby name>"
+```
+
+Then read the closest existing files and extend/refactor them when possible.
+This mirrors `CLAUDE.md` sections 0, 6.1, and 6.5 #12, and is especially
+important for HIVE / HyMeKo work where related artifacts may already exist in
+`hymeko_core`, `docs/editor/views`, `data/typical_graphs`, `hymeko_query`, or
+`reports/`.
+
 ---
 
 ## 2. Python (`signedkan_wip`, benches)

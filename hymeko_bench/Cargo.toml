@@ -15,6 +15,10 @@ name = "binary_vs_hypergraph"
 path = "src/bin/binary_vs_hypergraph.rs"
 
 [[bin]]
+name = "bench_ablation"
+path = "src/bin/bench_ablation.rs"
+
+[[bin]]
 name = "artifact_generation"
 path = "src/bin/artifact_generation.rs"
 

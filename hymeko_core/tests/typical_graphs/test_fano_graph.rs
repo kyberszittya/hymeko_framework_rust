@@ -1,10 +1,9 @@
+use crate::test_helpers::{log_test_footer, log_test_header};
 use crate::typical_graphs::fano::constants::*;
 use hymeko::{body, find_node};
-use parser::ast::*;
 use log::info;
+use parser::ast::*;
 use std::time::Instant;
-use crate::test_helpers::{log_test_footer, log_test_header};
-
 
 #[test]
 fn parse_fano_graph() {
@@ -14,7 +13,8 @@ fn parse_fano_graph() {
     );
     let start = Instant::now();
 
-    let source_code = parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
+    let source_code =
+        parser::read_source_file(FANO_GRAPH_PATH).expect("failed to read source file");
 
     // 2. Parse it, tying the AST lifetimes to the String
     let desc = parser::parse_description(&source_code).unwrap();
@@ -26,7 +26,11 @@ fn parse_fano_graph() {
     // Top-levelben legyen a fano block (NodeDecl body-val)
     let fano = find_node(&desc.items, FANO_BLOCK_NAME).unwrap();
     let fano_body = body(fano).unwrap();
-    assert_eq!(fano_body.len(), FANO_BODY_ITEM_COUNT, "Expected 14 items in fano body (7 nodes + 7 edges)");
+    assert_eq!(
+        fano_body.len(),
+        FANO_BODY_ITEM_COUNT,
+        "Expected 14 items in fano body (7 nodes + 7 edges)"
+    );
 
     // 7 node: n0..n6
     for i in 0..FANO_POINT_NODE_COUNT {
@@ -86,7 +90,10 @@ fn parse_fano_graph() {
         !fano_body.iter().any(|it| matches!(it, HyperItem::Arc(_))),
         "Did not expect HyperArc directly under `fano graph`"
     );
-    info!("Validated {} nodes and {} edges for the Fano graph", FANO_POINT_NODE_COUNT, FANO_EDGE_COUNT);
+    info!(
+        "Validated {} nodes and {} edges for the Fano graph",
+        FANO_POINT_NODE_COUNT, FANO_EDGE_COUNT
+    );
     log_test_footer(
         "parse_fano_graph",
         Some(start.elapsed()),

@@ -33,10 +33,11 @@ impl<F: Real> TensorCsrBuilder<F> {
 
             // Extract just the columns and values for this specific row
             row_entries.clear();
-            row_entries.extend(self.cols[start..end]
-                .iter()
-                .copied()
-                .zip(self.vals[start..end].iter().copied())
+            row_entries.extend(
+                self.cols[start..end]
+                    .iter()
+                    .copied()
+                    .zip(self.vals[start..end].iter().copied()),
             );
             // Sort locally by column index
             row_entries.sort_unstable_by_key(|a| a.0);

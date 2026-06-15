@@ -1,6 +1,5 @@
 use crate::tensor::common::Real;
 
-
 /// Weight initialization strategy.
 ///
 /// Implementations produce a `Vec<F>` of length `fan_in * fan_out`
@@ -63,5 +62,3 @@ pub struct XavierRandom {
 pub struct KaimingRandom {
     pub seed: u64,
 }
-
-

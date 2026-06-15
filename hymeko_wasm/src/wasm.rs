@@ -13,7 +13,7 @@
 
 use wasm_bindgen::prelude::*;
 
-use crate::compile::{CompiledDoc, compile_source};
+use crate::compile::{compile_source, compile_sources, CompiledDoc};
 use crate::session::EditorSession as NativeSession;
 
 #[wasm_bindgen(start)]
@@ -110,6 +110,20 @@ pub fn parse_and_compile(source: &str) -> Result<CompiledIR, JsValue> {
     Ok(CompiledIR { inner: doc })
 }
 
+/// Compile a multi-file `.hymeko` "space" and return the IR for the file at
+/// `root`. `files_json` is a JSON object mapping virtual filename → source; a
+/// `@"name"` include in any file resolves against it. Lets the editor keep meta
+/// vocabularies (profiles) in separate files. Throws on bad JSON or any
+/// compile / unresolved-include error.
+#[wasm_bindgen]
+pub fn parse_and_compile_files(root: &str, files_json: &str) -> Result<CompiledIR, JsValue> {
+    let map: std::collections::HashMap<String, String> = serde_json::from_str(files_json)
+        .map_err(|e| JsValue::from_str(&format!("files JSON: {e}")))?;
+    let files: Vec<(&str, &str)> = map.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+    let doc = compile_sources(root, &files).map_err(|e| JsValue::from_str(&e))?;
+    Ok(CompiledIR { inner: doc })
+}
+
 #[wasm_bindgen]
 impl CompiledIR {
     #[wasm_bindgen(getter)]
@@ -155,6 +169,11 @@ impl CompiledIR {
     #[wasm_bindgen]
     pub fn to_dot(&self, graph_name: &str) -> String {
         self.inner.to_dot(graph_name)
+    }
+
+    #[wasm_bindgen]
+    pub fn to_sysml(&self, model_name: &str) -> String {
+        self.inner.to_sysml(model_name)
     }
 }
 

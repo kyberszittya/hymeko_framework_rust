@@ -1,0 +1,37 @@
+// meta_llm_persona.hymeko -- vocabulary for LLM persona/profile graphs.
+//
+// Nodes are identity, personality, operating attributes, constraints, contexts,
+// and response behaviors. Relations are rules: signed hyperedges where positive
+// endpoints enable/support, negative endpoints constrain/avoid, and neutral
+// endpoints provide context or modulation.
+
+meta_llm_persona_description {}
+
+llm_persona {
+    elements {
+        meta_element {}
+
+        agent:       + <isa> meta_element {}
+        identity:    + <isa> meta_element {}
+        trait:       + <isa> meta_element {}
+        value:       + <isa> meta_element {}
+        capability:  + <isa> meta_element {}
+        boundary:    + <isa> meta_element {}
+        context:     + <isa> meta_element {}
+        behavior:    + <isa> meta_element {}
+        tone:        + <isa> meta_element {}
+        memory:      + <isa> meta_element {}
+        objective:   + <isa> meta_element {}
+    }
+
+    relations {
+        @has_attribute {}
+        @prioritizes {}
+        @responds_with {}
+        @constrains {}
+        @escalates_to_question {}
+        @balances {}
+        @suppresses {}
+        @commits_to {}
+    }
+}

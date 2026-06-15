@@ -21,4 +21,3 @@ pub const AGG_CFG: AggCfg = AggCfg {
     sign: SignAgg::PreferNonNeutral,
     clamp01: false,
 };
-

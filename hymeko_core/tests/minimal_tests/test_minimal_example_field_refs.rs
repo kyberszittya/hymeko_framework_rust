@@ -1,10 +1,10 @@
-use hymeko::body;
-use parser::ast::*;
-use log::info;
-use std::time::Instant;
-use crate::test_helpers::{log_test_footer, log_test_header};
 use super::constants::*;
 use super::helpers::assert_expected_fields;
+use crate::test_helpers::{log_test_footer, log_test_header};
+use hymeko::body;
+use log::info;
+use parser::ast::*;
+use std::time::Instant;
 
 #[test]
 fn parses_legacy_context_with_refs() {
@@ -40,7 +40,10 @@ fn run_field_ref_fixture(title: &str, path: &str, details: &str) {
 
     let ctx = body(context).unwrap();
     assert_expected_fields(ctx, FIELD_REF_EXPECTATIONS);
-    info!("Verified {} reference fields for {path}", FIELD_REF_EXPECTATIONS.len());
+    info!(
+        "Verified {} reference fields for {path}",
+        FIELD_REF_EXPECTATIONS.len()
+    );
     log_test_footer(
         title,
         Some(start.elapsed()),

@@ -86,11 +86,13 @@ pub fn compute_degree<F: Real, V: IncVal<F>>(
 /// Inverse square root of degree: D^{-1/2}
 #[inline]
 pub fn inv_sqrt_degree<F: Real>(deg: &[F]) -> Vec<F> {
-    deg.iter().map(|&d| {
-        if d > F::zero() {
-            F::one() / d.sqrt()
-        } else {
-            F::zero()
-        }
-    }).collect()
+    deg.iter()
+        .map(|&d| {
+            if d > F::zero() {
+                F::one() / d.sqrt()
+            } else {
+                F::zero()
+            }
+        })
+        .collect()
 }

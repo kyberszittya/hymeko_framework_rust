@@ -1,11 +1,9 @@
-use std::borrow::Borrow;
-use serde::{Deserialize, Serialize};
 use crate::common::ids::SymId;
+use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd,
-    Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct PathKey(pub Vec<SymId>);
-
 
 impl PathKey {
     #[inline]
@@ -14,7 +12,8 @@ impl PathKey {
     }
 }
 
-
 impl Borrow<[SymId]> for PathKey {
-    fn borrow(&self) -> &[SymId] { &self.0 }
+    fn borrow(&self) -> &[SymId] {
+        &self.0
+    }
 }

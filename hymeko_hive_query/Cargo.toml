@@ -1,0 +1,18 @@
+[package]
+name = "hymeko_hive_query"
+version = "0.1.0"
+edition = "2024"
+description = "LALRPOP parser for the HIVE association-query language subset"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "hymeko_hive_query"
+crate-type = ["rlib"]
+
+[build-dependencies]
+lalrpop = ">=0.22.2"
+
+[dependencies]
+hymeko_hive = { path = "../hymeko_hive" }
+lalrpop-util = { version = ">=0.22.2", features = ["lexer", "unicode"] }
+thiserror = "1"

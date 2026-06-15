@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod test_parse_files {
-    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use crate::test_helpers::{find_decl, load_and_lower, log_test_footer, log_test_header};
     use hymeko::common::ids::DeclId;
-    use hymeko_hnn::tensor::tensor::compute_bipartite_degrees;
-    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use hymeko::ir::ir::DeclKind;
-    use crate::test_helpers::{load_and_lower, find_decl, log_test_footer, log_test_header};
+    use hymeko::tensor::aggregation::{AggCfg, SignAgg, WeightAgg};
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko_hnn::tensor::tensor::compute_bipartite_degrees;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
     use log::info;
     use std::time::Instant;
 
@@ -46,14 +46,24 @@ mod test_parse_files {
         );
         let (store, compiled) = load_and_lower(META_KINEMATICS_PATH).unwrap();
 
-        let aggcfg = AggCfg { weight: AGG_WEIGHT_SUM, sign: AGG_SIGN_NON_NEUTRAL, clamp01: CLAMP_DISABLED };
+        let aggcfg = AggCfg {
+            weight: AGG_WEIGHT_SUM,
+            sign: AGG_SIGN_NON_NEUTRAL,
+            clamp01: CLAMP_DISABLED,
+        };
         let ex = ScalarWeightExtractor::default();
         let hg = HyperGraphView::<f32, EdgeWScalar<f32>, f32>::from_ir(&compiled.ir, &aggcfg, &ex);
 
         let node_count = hg.num_nodes();
         let edge_count = hg.num_edges();
-        assert_eq!(node_count, META_EXPECTED_NODE_COUNT, "meta kinematics node count drifted");
-        assert_eq!(edge_count, META_EXPECTED_EDGE_COUNT, "meta kinematics edge count drifted");
+        assert_eq!(
+            node_count, META_EXPECTED_NODE_COUNT,
+            "meta kinematics node count drifted"
+        );
+        assert_eq!(
+            edge_count, META_EXPECTED_EDGE_COUNT,
+            "meta kinematics edge count drifted"
+        );
 
         let (deg_v, deg_e) = compute_bipartite_degrees(&hg, USE_ABS_DEFAULT);
         assert_eq!(deg_v.len(), node_count, "node degree slice mismatch");
@@ -70,7 +80,10 @@ mod test_parse_files {
 
         let it = &store.it;
         let has_base = |decl: DeclId, expected: DeclId| -> bool {
-            let nid = compiled.ir.as_node(decl).expect("decl should lower to node");
+            let nid = compiled
+                .ir
+                .as_node(decl)
+                .expect("decl should lower to node");
             compiled.ir.nodes[nid.0].bases.iter().any(|r| match r {
                 hymeko::ir::ir::SignedRefR::Plus(atom)
                 | hymeko::ir::ir::SignedRefR::Minus(atom)
@@ -110,7 +123,10 @@ mod test_parse_files {
 
         for name in PASSIVE_SENSOR_DECLS {
             let decl = find_decl(&compiled.ir, it, name, DeclKind::Node);
-            let nid = compiled.ir.as_node(decl).expect("decl should lower to node");
+            let nid = compiled
+                .ir
+                .as_node(decl)
+                .expect("decl should lower to node");
             assert!(
                 compiled.ir.nodes[nid.0].bases.is_empty(),
                 "passive sensor `{}` unexpectedly gained inheritance",
@@ -132,4 +148,4 @@ mod test_parse_files {
             "Meta kinematics degrees and inheritance chains remained stable.",
         );
     }
- }
+}

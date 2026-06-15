@@ -1,0 +1,6 @@
+{"model": "ricci_stim", "seed": 0, "n_train": 1500, "n_test": 500, "n_epochs": 4, "batch_size": 64, "lr": 0.003, "n_params": 4736, "test_acc": 0.228, "wall_s": 373.7070541998837}
+{"model": "ricci_stim", "seed": 1, "n_train": 1500, "n_test": 500, "n_epochs": 4, "batch_size": 64, "lr": 0.003, "n_params": 4736, "test_acc": 0.284, "wall_s": 353.2931196000427}
+{"model": "ricci_stim", "seed": 2, "n_train": 1500, "n_test": 500, "n_epochs": 4, "batch_size": 64, "lr": 0.003, "n_params": 4736, "test_acc": 0.304, "wall_s": 311.8865664000623}
+{"model": "ricci_stim_up", "seed": 0, "n_train": 1500, "n_test": 500, "n_epochs": 4, "batch_size": 64, "lr": 0.003, "n_params": 5811, "test_acc": 0.296, "wall_s": 325.4126556001138}
+{"model": "ricci_stim_up", "seed": 1, "n_train": 1500, "n_test": 500, "n_epochs": 4, "batch_size": 64, "lr": 0.003, "n_params": 5811, "test_acc": 0.304, "wall_s": 360.3572193}
+{"model": "ricci_stim_up", "seed": 2, "n_train": 1500, "n_test": 500, "n_epochs": 4, "batch_size": 64, "lr": 0.003, "n_params": 5811, "test_acc": 0.31, "wall_s": 355.11414350010455}

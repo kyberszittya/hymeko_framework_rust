@@ -1,11 +1,10 @@
-use std::sync::Arc;
 use crate::common::ids::SymId;
 use crate::resolution::interner::Interner;
+use std::sync::Arc;
 
 // ================================================
 // StringTable: lightweight wrapper around the Interner for Python access (frozen interner snapshot)
 // ================================================
-
 
 #[derive(Clone, Debug)]
 pub struct StringTable(Arc<Vec<String>>);

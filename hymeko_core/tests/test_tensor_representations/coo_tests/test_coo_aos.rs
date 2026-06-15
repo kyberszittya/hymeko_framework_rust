@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test_tensor_coo_aos {
-    use hymeko::tensor::representations::tensor_coo::{TensorCoo};
     use crate::test_helpers::{log_test_footer, log_test_header};
+    use hymeko::tensor::representations::tensor_coo::TensorCoo;
     use log::info;
     use std::time::Instant;
 
@@ -37,7 +37,10 @@ mod test_tensor_coo_aos {
 
     #[test]
     fn test_coo_empty() {
-        log_test_header("test_coo_empty", "Empty tensor has len 0 and is_empty true.");
+        log_test_header(
+            "test_coo_empty",
+            "Empty tensor has len 0 and is_empty true.",
+        );
         let start = Instant::now();
 
         let t: TensorCoo<f32> = TensorCoo::with_meta(5, 10, 10);
@@ -52,7 +55,10 @@ mod test_tensor_coo_aos {
 
     #[test]
     fn test_coo_push_and_len() {
-        log_test_header("test_coo_push_and_len", "Push entries and verify len grows.");
+        log_test_header(
+            "test_coo_push_and_len",
+            "Push entries and verify len grows.",
+        );
         let start = Instant::now();
 
         let mut t = TensorCoo::with_meta(2, 3, 3);
@@ -65,12 +71,19 @@ mod test_tensor_coo_aos {
         t.push(1, 0, 0, 2.71);
         assert_eq!(t.len(), 2);
 
-        log_test_footer("test_coo_push_and_len", Some(start.elapsed()), "Push/len OK.");
+        log_test_footer(
+            "test_coo_push_and_len",
+            Some(start.elapsed()),
+            "Push/len OK.",
+        );
     }
 
     #[test]
     fn test_coo_entry_accessor() {
-        log_test_header("test_coo_entry_accessor", "Indexed entry access returns correct values.");
+        log_test_header(
+            "test_coo_entry_accessor",
+            "Indexed entry access returns correct values.",
+        );
         let start = Instant::now();
 
         let t = make_known_coo();
@@ -81,21 +94,33 @@ mod test_tensor_coo_aos {
             assert_eq!(e.k, ek, "entry({}).k mismatch", idx);
             assert_eq!(e.i, ei, "entry({}).i mismatch", idx);
             assert_eq!(e.j, ej, "entry({}).j mismatch", idx);
-            assert!((e.v - ev).abs() < 1e-9, "entry({}).v mismatch: {} vs {}", idx, e.v, ev);
+            assert!(
+                (e.v - ev).abs() < 1e-9,
+                "entry({}).v mismatch: {} vs {}",
+                idx,
+                e.v,
+                ev
+            );
         }
 
-        log_test_footer("test_coo_entry_accessor", Some(start.elapsed()), "Entry accessor OK.");
+        log_test_footer(
+            "test_coo_entry_accessor",
+            Some(start.elapsed()),
+            "Entry accessor OK.",
+        );
     }
 
     #[test]
     fn test_coo_iter() {
-        log_test_header("test_coo_iter", "Iterator visits all entries in push order.");
+        log_test_header(
+            "test_coo_iter",
+            "Iterator visits all entries in push order.",
+        );
         let start = Instant::now();
 
         let t = make_known_coo();
-        let collected: Vec<(usize, usize, usize, f32)> = t.iter()
-            .map(|e| (e.k, e.i, e.j, e.v))
-            .collect();
+        let collected: Vec<(usize, usize, usize, f32)> =
+            t.iter().map(|e| (e.k, e.i, e.j, e.v)).collect();
 
         assert_eq!(collected.len(), KNOWN_ENTRIES.len());
         for (got, &expected) in collected.iter().zip(KNOWN_ENTRIES.iter()) {
@@ -109,7 +134,7 @@ mod test_tensor_coo_aos {
     fn test_coo_ordering_preserved() {
         log_test_header(
             "test_coo_ordering_preserved",
-            "Push order is preserved exactly — no sorting, no reordering."
+            "Push order is preserved exactly — no sorting, no reordering.",
         );
         let start = Instant::now();
 
@@ -123,12 +148,19 @@ mod test_tensor_coo_aos {
         assert_eq!(t.entry(1).i, 0);
         assert_eq!(t.entry(2).i, 50);
 
-        log_test_footer("test_coo_ordering_preserved", Some(start.elapsed()), "Order preserved OK.");
+        log_test_footer(
+            "test_coo_ordering_preserved",
+            Some(start.elapsed()),
+            "Order preserved OK.",
+        );
     }
 
     #[test]
     fn test_coo_reserve_does_not_change_len() {
-        log_test_header("test_coo_reserve_does_not_change_len", "Reserve allocates but does not change len.");
+        log_test_header(
+            "test_coo_reserve_does_not_change_len",
+            "Reserve allocates but does not change len.",
+        );
         let start = Instant::now();
 
         let mut t: TensorCoo<f64> = TensorCoo::with_meta(1, 10, 10);
@@ -139,7 +171,11 @@ mod test_tensor_coo_aos {
         t.push(0, 0, 0, 1.0);
         assert_eq!(t.len(), 1);
 
-        log_test_footer("test_coo_reserve_does_not_change_len", Some(start.elapsed()), "Reserve OK.");
+        log_test_footer(
+            "test_coo_reserve_does_not_change_len",
+            Some(start.elapsed()),
+            "Reserve OK.",
+        );
     }
 
     // ========================================================
@@ -150,7 +186,7 @@ mod test_tensor_coo_aos {
     fn test_coo_into_soa_roundtrip() {
         log_test_header(
             "test_coo_into_soa_roundtrip",
-            "into_soa() produces matching separate arrays with correct metadata."
+            "into_soa() produces matching separate arrays with correct metadata.",
         );
         let start = Instant::now();
 
@@ -172,12 +208,19 @@ mod test_tensor_coo_aos {
             assert!((soa.v[idx] - ev).abs() < 1e-9, "soa.v[{}] mismatch", idx);
         }
 
-        log_test_footer("test_coo_into_soa_roundtrip", Some(start.elapsed()), "SOA roundtrip OK.");
+        log_test_footer(
+            "test_coo_into_soa_roundtrip",
+            Some(start.elapsed()),
+            "SOA roundtrip OK.",
+        );
     }
 
     #[test]
     fn test_coo_into_soa_empty() {
-        log_test_header("test_coo_into_soa_empty", "into_soa() on empty tensor produces empty arrays.");
+        log_test_header(
+            "test_coo_into_soa_empty",
+            "into_soa() on empty tensor produces empty arrays.",
+        );
         let start = Instant::now();
 
         let t: TensorCoo<f32> = TensorCoo::with_meta(5, 10, 10);
@@ -188,7 +231,11 @@ mod test_tensor_coo_aos {
         assert_eq!(soa.num_slices, 5);
         assert_eq!(soa.dim_i, 10);
 
-        log_test_footer("test_coo_into_soa_empty", Some(start.elapsed()), "Empty SOA OK.");
+        log_test_footer(
+            "test_coo_into_soa_empty",
+            Some(start.elapsed()),
+            "Empty SOA OK.",
+        );
     }
 
     // ========================================================
@@ -199,7 +246,7 @@ mod test_tensor_coo_aos {
     fn test_coo_dense_view_slice_correctness() {
         log_test_header(
             "test_coo_dense_view_slice_correctness",
-            "dense_view_slice produces the expected matrix for each slice."
+            "dense_view_slice produces the expected matrix for each slice.",
         );
         let start = Instant::now();
 
@@ -209,8 +256,16 @@ mod test_tensor_coo_aos {
         let m0 = hymeko_hnn::tensor::tensor::dense_view_slice(&t, 0);
         assert_eq!(m0.len(), 4);
         assert_eq!(m0[0].len(), 4);
-        assert!((m0[0][1] - 1.0).abs() < 1e-9, "m0[0][1] should be 1.0, got {}", m0[0][1]);
-        assert!((m0[1][0] - 1.0).abs() < 1e-9, "m0[1][0] should be 1.0, got {}", m0[1][0]);
+        assert!(
+            (m0[0][1] - 1.0).abs() < 1e-9,
+            "m0[0][1] should be 1.0, got {}",
+            m0[0][1]
+        );
+        assert!(
+            (m0[1][0] - 1.0).abs() < 1e-9,
+            "m0[1][0] should be 1.0, got {}",
+            m0[1][0]
+        );
         // Everything else in slice 0 should be zero
         assert!((m0[0][0]).abs() < 1e-9);
         assert!((m0[2][3]).abs() < 1e-9);
@@ -240,7 +295,7 @@ mod test_tensor_coo_aos {
     fn test_coo_project_sum_over_slices() {
         log_test_header(
             "test_coo_project_sum_over_slices",
-            "Summing all slices produces the correct aggregate matrix."
+            "Summing all slices produces the correct aggregate matrix.",
         );
         let start = Instant::now();
 
@@ -275,19 +330,23 @@ mod test_tensor_coo_aos {
     fn test_coo_duplicate_entries_coalesce_in_dense() {
         log_test_header(
             "test_coo_duplicate_entries_coalesce_in_dense",
-            "Multiple pushes to the same (k,i,j) should sum in dense view."
+            "Multiple pushes to the same (k,i,j) should sum in dense view.",
         );
         let start = Instant::now();
 
         let mut t = TensorCoo::with_meta(1, 3, 3);
         t.push(0, 1, 2, 1.0);
-        t.push(0, 1, 2, 0.5);  // duplicate coordinate
+        t.push(0, 1, 2, 0.5); // duplicate coordinate
         t.push(0, 1, 2, 0.25); // triple
 
         let m = hymeko_hnn::tensor::tensor::dense_view_slice(&t, 0);
         let expected = 1.75f32;
         let eps = 1e-6f32;
-        assert!((m[1][2] - expected).abs() < eps, "Expected 1.0+0.5+0.25=1.75, got {}", m[1][2]);
+        assert!(
+            (m[1][2] - expected).abs() < eps,
+            "Expected 1.0+0.5+0.25=1.75, got {}",
+            m[1][2]
+        );
 
         // The COO itself should have 3 entries (not coalesced)
         assert_eq!(t.len(), 3);
@@ -305,7 +364,10 @@ mod test_tensor_coo_aos {
 
     #[test]
     fn test_coo_f64_precision() {
-        log_test_header("test_coo_f64_precision", "f64 entries maintain full precision through push/entry/soa.");
+        log_test_header(
+            "test_coo_f64_precision",
+            "f64 entries maintain full precision through push/entry/soa.",
+        );
         let start = Instant::now();
 
         let mut t: TensorCoo<f64> = TensorCoo::with_meta(1, 2, 2);
@@ -317,7 +379,11 @@ mod test_tensor_coo_aos {
         let soa = t.into_soa();
         assert_eq!(soa.v[0], precise_val, "into_soa lost precision");
 
-        log_test_footer("test_coo_f64_precision", Some(start.elapsed()), "f64 precision OK.");
+        log_test_footer(
+            "test_coo_f64_precision",
+            Some(start.elapsed()),
+            "f64 precision OK.",
+        );
     }
 
     // ========================================================
@@ -328,7 +394,7 @@ mod test_tensor_coo_aos {
     fn test_coo_large_construction() {
         log_test_header(
             "test_coo_large_construction",
-            "Push 1M entries, verify len, spot-check first/last/middle."
+            "Push 1M entries, verify len, spot-check first/last/middle.",
         );
         let start = Instant::now();
 
@@ -362,12 +428,18 @@ mod test_tensor_coo_aos {
         assert_eq!(em.i, mid % 1000);
 
         let elapsed = start.elapsed();
-        info!("Constructed and verified 1M entries in {:.3}ms", elapsed.as_secs_f64() * 1000.0);
+        info!(
+            "Constructed and verified 1M entries in {:.3}ms",
+            elapsed.as_secs_f64() * 1000.0
+        );
 
         log_test_footer(
             "test_coo_large_construction",
             Some(elapsed),
-            &format!("1M entries: push + verify in {:.1}ms", elapsed.as_secs_f64() * 1000.0),
+            &format!(
+                "1M entries: push + verify in {:.1}ms",
+                elapsed.as_secs_f64() * 1000.0
+            ),
         );
     }
 
@@ -375,7 +447,7 @@ mod test_tensor_coo_aos {
     fn test_coo_large_into_soa() {
         log_test_header(
             "test_coo_large_into_soa",
-            "into_soa on 1M entries: verify length and spot-check consistency."
+            "into_soa on 1M entries: verify length and spot-check consistency.",
         );
         let start = Instant::now();
 
@@ -400,12 +472,18 @@ mod test_tensor_coo_aos {
         assert_eq!(soa.i[n - 1], (n - 1) % 1000);
         assert_eq!(soa.j[n / 2], ((n / 2) * 7) % 1000);
 
-        info!("into_soa for 1M entries took {:.3}ms", soa_elapsed.as_secs_f64() * 1000.0);
+        info!(
+            "into_soa for 1M entries took {:.3}ms",
+            soa_elapsed.as_secs_f64() * 1000.0
+        );
 
         log_test_footer(
             "test_coo_large_into_soa",
             Some(start.elapsed()),
-            &format!("SOA transpose: {:.1}ms for 1M entries", soa_elapsed.as_secs_f64() * 1000.0),
+            &format!(
+                "SOA transpose: {:.1}ms for 1M entries",
+                soa_elapsed.as_secs_f64() * 1000.0
+            ),
         );
     }
 
@@ -417,7 +495,7 @@ mod test_tensor_coo_aos {
     fn test_coo_construction_throughput() {
         log_test_header(
             "test_coo_construction_throughput",
-            "Push 5M entries with reserve. Should complete well under 1 second."
+            "Push 5M entries with reserve. Should complete well under 1 second.",
         );
 
         let n = 5_000_000usize;
@@ -458,7 +536,7 @@ mod test_tensor_coo_aos {
     fn test_coo_iteration_throughput() {
         log_test_header(
             "test_coo_iteration_throughput",
-            "Iterate 5M entries and accumulate. Should complete well under 500ms."
+            "Iterate 5M entries and accumulate. Should complete well under 500ms.",
         );
 
         let n = 5_000_000usize;
@@ -499,7 +577,10 @@ mod test_tensor_coo_aos {
         log_test_footer(
             "test_coo_iteration_throughput",
             Some(elapsed),
-            &format!("{:.0}M entries/sec (sum_k={}, sum_v={:.0})", throughput_m, sum_k, sum_v),
+            &format!(
+                "{:.0}M entries/sec (sum_k={}, sum_v={:.0})",
+                throughput_m, sum_k, sum_v
+            ),
         );
     }
 
@@ -507,7 +588,7 @@ mod test_tensor_coo_aos {
     fn test_coo_construction_without_reserve() {
         log_test_header(
             "test_coo_construction_without_reserve",
-            "Push 1M entries WITHOUT reserve — measures amortized realloc cost."
+            "Push 1M entries WITHOUT reserve — measures amortized realloc cost.",
         );
 
         let n = 1_000_000usize;

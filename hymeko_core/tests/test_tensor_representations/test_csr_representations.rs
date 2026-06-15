@@ -1,18 +1,22 @@
 #[cfg(test)]
 mod test_csr_representations {
-    use hymeko_hnn::tensor::tensor::project_sum_over_slices;
-    use hymeko::tensor::representations::tensor_csr::TensorCsr;
-    use hymeko_hnn::tensor::representations::tensor_csr_representations::{star_expansion_csr, clique_expansion_csr};
-    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
-    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
-    use hymeko::tensor::common::Real;
-    use hymeko_hre::expansion::star_expansion_coo;
     use crate::test_helpers::{load_and_lower, log_test_footer, log_test_header};
+    use crate::test_tensor_representations::constants::*;
+    use hymeko::tensor::common::Real;
+    use hymeko::tensor::representations::tensor_csr::TensorCsr;
+    use hymeko::tensor::tensor_val::{EdgeWScalar, ScalarWeightExtractor};
+    use hymeko_hnn::tensor::representations::tensor_csr_representations::{
+        clique_expansion_csr, star_expansion_csr,
+    };
+    use hymeko_hnn::tensor::tensor::project_sum_over_slices;
+    use hymeko_hnn::traversal::hypergraphview::HyperGraphView;
+    use hymeko_hre::expansion::star_expansion_coo;
     use log::info;
     use std::time::Instant;
-    use crate::test_tensor_representations::constants::*;
 
-    fn approx_eq(a: f32, b: f32, eps: f32) -> bool { (a - b).abs() <= eps }
+    fn approx_eq(a: f32, b: f32, eps: f32) -> bool {
+        (a - b).abs() <= eps
+    }
 
     /// Helper utility to project a 2D CSR tensor into a dense matrix for easy comparison.
     fn project_csr_to_dense<F: Real>(csr: &TensorCsr<F>) -> Vec<Vec<F>> {
@@ -49,7 +53,11 @@ mod test_csr_representations {
         let dim = hg.num_nodes() + hg.num_edges();
         assert_eq!(csr.num_rows, dim, "CSR row dimension mismatch");
         assert_eq!(csr.num_cols, dim, "CSR col dimension mismatch");
-        assert_eq!(csr.row_ptr.len(), dim + 1, "row_ptr array size must be dim + 1");
+        assert_eq!(
+            csr.row_ptr.len(),
+            dim + 1,
+            "row_ptr array size must be dim + 1"
+        );
 
         // Project both to dense matrices and assert strict equality
         let a_coo = project_sum_over_slices(&coo);
@@ -60,7 +68,11 @@ mod test_csr_representations {
             for j in 0..dim {
                 assert!(
                     approx_eq(a_coo[i][j], a_csr[i][j], eps),
-                    "Mismatch at ({},{}): COO={}, CSR={}", i, j, a_coo[i][j], a_csr[i][j]
+                    "Mismatch at ({},{}): COO={}, CSR={}",
+                    i,
+                    j,
+                    a_coo[i][j],
+                    a_csr[i][j]
                 );
             }
         }
@@ -103,7 +115,12 @@ mod test_csr_representations {
             for j in 0..n {
                 // Ensure the diagonal remains cleanly zeroed
                 if i == j {
-                    assert!(approx_eq(a_csr[i][j], 0.0, eps), "Diagonal must be 0 at ({},{})", i, j);
+                    assert!(
+                        approx_eq(a_csr[i][j], 0.0, eps),
+                        "Diagonal must be 0 at ({},{})",
+                        i,
+                        j
+                    );
                     continue;
                 }
 
@@ -116,7 +133,8 @@ mod test_csr_representations {
 
         // We expect exactly ONE directed connection between the two incident nodes
         assert_eq!(
-            nz.len(), 1,
+            nz.len(),
+            1,
             "Clique projection failed to maintain strict directionality: found {} non-zeros instead of exactly 1",
             nz.len()
         );
@@ -158,7 +176,11 @@ mod test_csr_representations {
 
                 assert!(
                     approx_eq(v_coo, v_csr, eps),
-                    "Fano mismatch at ({},{}): COO={}, CSR={}", i, j, v_coo, v_csr
+                    "Fano mismatch at ({},{}): COO={}, CSR={}",
+                    i,
+                    j,
+                    v_coo,
+                    v_csr
                 );
 
                 if v_csr.abs() > eps {
@@ -168,12 +190,18 @@ mod test_csr_representations {
         }
 
         // Ensure we actually mapped the topology and didn't just compare two empty matrices
-        assert!(non_zero_count > 0, "Fano matrix projection resulted in an entirely zero matrix");
-        assert_eq!(csr.val.len(), non_zero_count, "CSR nnz count differs from actual projected non-zeros");
+        assert!(
+            non_zero_count > 0,
+            "Fano matrix projection resulted in an entirely zero matrix"
+        );
+        assert_eq!(
+            csr.val.len(),
+            non_zero_count,
+            "CSR nnz count differs from actual projected non-zeros"
+        );
         info!(
             "Fano CSR star validated with dim {} and nnz={}",
-            dim,
-            non_zero_count
+            dim, non_zero_count
         );
         log_test_footer(
             "csr_star_expansion_scales_to_fano_graph",

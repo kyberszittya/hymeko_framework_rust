@@ -21,7 +21,8 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
+from ._attention import build_csr, segment_attention
 
 
 def _build_signed_neighbours(edges, signs, n_nodes: int):
@@ -37,8 +38,10 @@ def _build_signed_neighbours(edges, signs, n_nodes: int):
     sgns: list[list[int]] = [[] for _ in range(n_nodes)]
     for (u, v), s in zip(edges, signs):
         u, v, s = int(u), int(v), int(s)
-        nbrs[u].append(v); sgns[u].append(s)
-        nbrs[v].append(u); sgns[v].append(s)
+        nbrs[u].append(v)
+        sgns[u].append(s)
+        nbrs[v].append(u)
+        sgns[v].append(s)
     return nbrs, sgns
 
 
@@ -64,53 +67,34 @@ class SignedAttention(nn.Module):
         # Per-head scalar bias for + / -.  +1 → bias_pos, -1 → bias_neg.
         self.bias_pos = nn.Parameter(torch.zeros(n_heads))
         self.bias_neg = nn.Parameter(torch.zeros(n_heads))
+        # Per-instance CSR cache: (key, seg, nbr, sgn) — built once per run.
+        self._csr_cache: tuple | None = None
+
+    def _csr(self, nbrs, sgns, device):
+        key = (id(nbrs), device)
+        if self._csr_cache is None or self._csr_cache[0] != key:
+            seg, nbr, sgn = build_csr(nbrs, device, signs=sgns)
+            self._csr_cache = (key, seg, nbr, sgn)
+        return self._csr_cache[1], self._csr_cache[2], self._csr_cache[3]
 
     def forward(self, h: torch.Tensor, nbrs: list[list[int]],
                   sgns: list[list[int]]) -> torch.Tensor:
+        """Vectorized sign-biased segment attention (no per-forward by-len loop)."""
         n = h.shape[0]
-        device = h.device
         Q = self.W_Q(h).view(n, self.n_heads, self.head_dim)
         K = self.W_K(h).view(n, self.n_heads, self.head_dim)
         V = self.W_V(h).view(n, self.n_heads, self.head_dim)
 
-        out = torch.zeros_like(Q)
-        scale = 1.0 / (self.head_dim ** 0.5)
+        seg, nbr, sgn = self._csr(nbrs, sgns, h.device)
+        # Sign-conditional per-incidence bias: (E, H). +1 → bias_pos, -1 → bias_neg.
+        bias = None
+        if sgn is not None and sgn.numel() > 0:
+            pos = (sgn > 0).float().unsqueeze(-1)        # (E, 1)
+            neg = (sgn < 0).float().unsqueeze(-1)
+            bias = pos * self.bias_pos.unsqueeze(0) + neg * self.bias_neg.unsqueeze(0)
 
-        # Group nodes by their neighbour-list length so each group can
-        # be processed as a single dense (B, L, ...) batch.  Tested up
-        # to ~150 unique lengths on Slashdot — well under the 1k-len
-        # limit beyond which Python overhead bites.
-        from collections import defaultdict
-        by_len: dict[int, list[int]] = defaultdict(list)
-        for i, lst in enumerate(nbrs):
-            if lst:
-                by_len[len(lst)].append(i)
-
-        for L, nodes_list in by_len.items():
-            nodes = torch.tensor(nodes_list, dtype=torch.long, device=device)
-            nbr_idx = torch.tensor(
-                [nbrs[i] for i in nodes_list],
-                dtype=torch.long, device=device,
-            )                                            # (B, L)
-            nbr_sgn = torch.tensor(
-                [sgns[i] for i in nodes_list],
-                dtype=torch.float32, device=device,
-            )                                            # (B, L)
-            Qb = Q[nodes]                                # (B, H, D)
-            Kb = K[nbr_idx]                              # (B, L, H, D)
-            Vb = V[nbr_idx]                              # (B, L, H, D)
-            scores = torch.einsum('bhd,blhd->bhl', Qb, Kb) * scale
-            # Sign-conditional bias: nbr_sgn ∈ {+1, -1}.
-            pos_mask = (nbr_sgn > 0).float().unsqueeze(1)      # (B,1,L)
-            neg_mask = (nbr_sgn < 0).float().unsqueeze(1)
-            bias = (pos_mask * self.bias_pos.view(1, -1, 1)
-                    + neg_mask * self.bias_neg.view(1, -1, 1))
-            scores = scores + bias
-            attn = F.softmax(scores, dim=-1)             # (B, H, L)
-            agg = torch.einsum('bhl,blhd->bhd', attn, Vb)
-            out[nodes] = agg
-
-        return self.W_O(out.view(n, self.dim))
+        out = segment_attention(Q, K, V, seg, nbr, n, bias_per_inc=bias)
+        return self.W_O(out.reshape(n, self.dim))
 
 
 class SGTBlock(nn.Module):
@@ -174,3 +158,21 @@ def build_signed_neighbours(edges, signs, n_nodes: int):
     the per-node neighbour buckets without importing the private
     underscore-prefixed helper."""
     return _build_signed_neighbours(edges, signs, n_nodes)
+
+
+from .registry import GraphMeta, HParams, SignedLinkBaseline, register  # noqa: E402
+
+
+@register("sgt")
+class SGTBaseline(SignedLinkBaseline):
+    """Signed Graph Transformer — sign-biased sparse attention over 1-hop."""
+
+    def build_model(self, meta: GraphMeta, hp: HParams):
+        return SGT(n_nodes=meta.n_nodes, hidden_dim=hp.hidden,
+                   n_heads=hp.n_heads, n_layers=hp.n_layers)
+
+    def build_context(self, edges, signs, n_nodes, device):
+        return _build_signed_neighbours(edges, signs, n_nodes)
+
+    def default_hparams(self) -> HParams:
+        return HParams(hidden=32, n_layers=2, n_heads=4)

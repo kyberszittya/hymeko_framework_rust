@@ -1,10 +1,9 @@
 use crate::tensor::common::Real;
-use crate::tensor::conv::weight_init::weight_init::{Constant, Kaiming, KaimingRandom, LeCun, Ones, WeightInit, Xavier, XavierRandom, Zeros};
-
-
+use crate::tensor::conv::weight_init::weight_init::{
+    Constant, Kaiming, KaimingRandom, LeCun, Ones, WeightInit, Xavier, XavierRandom, Zeros,
+};
 
 // ─── Deterministic initializers (no RNG needed) ───────────────────────────
-
 
 impl<F: Real> WeightInit<F> for Xavier {
     fn init(&self, fan_in: usize, fan_out: usize, out: &mut [F]) {
@@ -18,9 +17,6 @@ impl<F: Real> WeightInit<F> for Xavier {
     }
 }
 
-
-
-
 impl<F: Real> WeightInit<F> for Kaiming {
     fn init(&self, fan_in: usize, _fan_out: usize, out: &mut [F]) {
         let scale = F::from_other((6.0 / fan_in as f64).sqrt());
@@ -30,7 +26,6 @@ impl<F: Real> WeightInit<F> for Kaiming {
         }
     }
 }
-
 
 impl<F: Real> WeightInit<F> for LeCun {
     fn init(&self, fan_in: usize, _fan_out: usize, out: &mut [F]) {
@@ -42,10 +37,11 @@ impl<F: Real> WeightInit<F> for LeCun {
     }
 }
 
-
 impl Constant {
     pub fn xavier_scale(fan_in: usize) -> Self {
-        Self { value: 1.0 / (fan_in as f64).sqrt() }
+        Self {
+            value: 1.0 / (fan_in as f64).sqrt(),
+        }
     }
 }
 
@@ -56,22 +52,17 @@ impl<F: Real> WeightInit<F> for Constant {
     }
 }
 
-
-
 impl<F: Real> WeightInit<F> for Zeros {
     fn init(&self, _fan_in: usize, _fan_out: usize, out: &mut [F]) {
         out.fill(F::zero());
     }
 }
 
-
-
 impl<F: Real> WeightInit<F> for Ones {
     fn init(&self, _fan_in: usize, _fan_out: usize, out: &mut [F]) {
         out.fill(F::one());
     }
 }
-
 
 impl<F: Real> WeightInit<F> for XavierRandom {
     fn init(&self, fan_in: usize, fan_out: usize, out: &mut [F]) {
@@ -83,7 +74,6 @@ impl<F: Real> WeightInit<F> for XavierRandom {
         }
     }
 }
-
 
 // ─── Minimal embedded PRNG (no external dependency) ───────────────────────
 
@@ -136,9 +126,6 @@ impl<F: Real> WeightInit<F> for KaimingRandom {
     }
 }
 
-
-
-
 // ─── Van der Corput sequence (deterministic quasi-random) ─────────────────
 
 /// Radical-inverse base 2. Maps integers to [0, 1) with low discrepancy.
@@ -152,4 +139,3 @@ pub fn van_der_corput(mut n: u32) -> f64 {
     n = ((n & 0x00FF00FF) << 8) | ((n & 0xFF00FF00) >> 8);
     n as f64 / (1u64 << 32) as f64
 }
-

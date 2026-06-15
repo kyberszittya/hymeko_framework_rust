@@ -79,6 +79,37 @@ class StimulusGraph:
     n_anchors: int
 
 
+@dataclass
+class StimulusGeometry:
+    """Image-geometry-derived part of a `StimulusGraph` — everything that does
+    NOT depend on the learned anchor features, and is therefore fixed across
+    training epochs and cacheable per image.
+
+    Holds the edge set, Forman curvatures, the primitive families
+    (walks/polygons/triangles) together with their constituent edge-index maps
+    (`*_eidx`, used to recompute signs), the incidence matrices, the primitive
+    curvatures, and the Hodge Laplacian. The four sign tensors (which DO depend
+    on features) are produced separately by `StimulusGraphBuilder.apply_signs`.
+    """
+
+    edges: torch.Tensor
+    edge_curvatures: torch.Tensor
+    walks: torch.Tensor
+    walk_eidx: torch.Tensor
+    M_v_walks: torch.Tensor
+    walk_curvatures: torch.Tensor
+    polygons: torch.Tensor
+    polygon_eidx: torch.Tensor
+    M_v_polygons: torch.Tensor
+    polygon_curvatures: torch.Tensor
+    triangles: torch.Tensor
+    triangle_eidx: torch.Tensor
+    M_v_triangles: torch.Tensor
+    triangle_curvatures: torch.Tensor
+    hodge_laplacian_0: torch.Tensor
+    n_anchors: int
+
+
 class StimulusGraphBuilder(nn.Module):
     """Build a `StimulusGraph` from an `AnchorTree` + per-anchor features.
 
@@ -139,9 +170,6 @@ class StimulusGraphBuilder(nn.Module):
                 f"anchor_features must have shape ({n}, d), got "
                 f"{tuple(anchor_features.shape)}"
             )
-        device = anchor_features.device
-
-        # ---- 1. Build edges (or use override) ----
         if edges_override is not None:
             if edge_signs_override is None:
                 raise ValueError(
@@ -154,9 +182,36 @@ class StimulusGraphBuilder(nn.Module):
                     f"!= edge_signs_override length "
                     f"{edge_signs_override.shape[0]}"
                 )
+        geometry = self.build_geometry(anchor_tree, edges_override=edges_override)
+        return self.apply_signs(
+            geometry, anchor_features, edge_signs_override=edge_signs_override,
+        )
+
+    # -----------------------------------------------------------------
+    # Geometry (feature-independent; cacheable per image)
+    # -----------------------------------------------------------------
+
+    def build_geometry(
+        self,
+        anchor_tree: AnchorTree,
+        edges_override: torch.Tensor | None = None,
+    ) -> StimulusGeometry:
+        """Build the feature-INDEPENDENT part of the stimulus graph.
+
+        Everything here is a pure function of the anchor geometry (and the
+        optional `edges_override`): the edge set, Forman curvatures, the
+        walk/polygon/triangle families with their constituent edge-index maps,
+        the incidence matrices, the primitive curvatures, and the Hodge
+        Laplacian. None of it depends on the learned anchor features, so the
+        result is fixed across epochs and may be cached per image. The
+        feature-dependent signs are applied separately by `apply_signs`.
+        """
+        n = anchor_tree.n_anchors
+        device = anchor_tree.positions.device
+
+        # ---- 1. Build edges (or use override) ----
+        if edges_override is not None:
             edges = edges_override.to(device)
-            n_edges = edges.shape[0]
-            edge_signs = edge_signs_override.to(device)
         else:
             same = self._same_scale_edges(anchor_tree)
             cross = self._cross_scale_edges(anchor_tree)
@@ -168,19 +223,7 @@ class StimulusGraphBuilder(nn.Module):
             # its own sort+unique pass.
             if edges.shape[0] > 0:
                 edges, _ = torch.sort(edges, dim=1)
-            n_edges = edges.shape[0]
-
-            # ---- 2. Edge signs from feature inner products ----
-            if n_edges == 0:
-                edge_signs = torch.zeros(0, dtype=torch.long, device=device)
-            else:
-                u, v = edges[:, 0], edges[:, 1]
-                dot = (anchor_features[u] * anchor_features[v]).sum(dim=-1)
-                edge_signs = torch.where(
-                    dot >= self.sign_threshold,
-                    torch.ones(n_edges, dtype=torch.long, device=device),
-                    -torch.ones(n_edges, dtype=torch.long, device=device),
-                )
+        n_edges = edges.shape[0]
 
         # ---- 3. Edge curvatures (Forman κ) ----
         if n_edges == 0:
@@ -224,10 +267,8 @@ class StimulusGraphBuilder(nn.Module):
             walks = walks[: self.max_walks]
             walk_eidx = walk_eidx[: self.max_walks]
         if walks.shape[0] > 0:
-            walk_signs = edge_signs[walk_eidx].prod(dim=1).to(torch.long)
             walk_curv = edge_curv[walk_eidx].float().mean(dim=1)
         else:
-            walk_signs = torch.zeros(0, dtype=torch.long, device=device)
             walk_curv = torch.zeros(0, device=device)
         M_v_walks = self._build_M_v(walks, n, k=3, device=device)
 
@@ -240,11 +281,10 @@ class StimulusGraphBuilder(nn.Module):
             poly_eidx = torch.tensor(
                 poly_eidx_list, dtype=torch.long, device=device,
             )
-            poly_signs = edge_signs[poly_eidx].prod(dim=1).to(torch.long)
             poly_curv = edge_curv[poly_eidx].mean(dim=1)
         else:
             polys = torch.zeros((0, 4), dtype=torch.long, device=device)
-            poly_signs = torch.zeros(0, dtype=torch.long, device=device)
+            poly_eidx = torch.zeros((0, 4), dtype=torch.long, device=device)
             poly_curv = torch.zeros(0, device=device)
         M_v_polys = self._build_M_v(polys, n, k=4, device=device)
 
@@ -256,41 +296,104 @@ class StimulusGraphBuilder(nn.Module):
             tris = tris[: self.max_triangles]
             tri_eidx = tri_eidx[: self.max_triangles]
         if tris.shape[0] > 0:
-            tri_signs = edge_signs[tri_eidx].prod(dim=1).to(torch.long)
             tri_curv = edge_curv[tri_eidx].float().mean(dim=1)
         else:
-            tri_signs = torch.zeros(0, dtype=torch.long, device=device)
             tri_curv = torch.zeros(0, device=device)
         M_v_tris = self._build_M_v(tris, n, k=3, device=device)
 
         # ---- 8. Hodge Laplacian Δ_0 ----
-        # In the non-override branch we canonicalised `edges` above
+        # In the non-override branch the edges were canonicalised above
         # (sorted rows, no self-loops, no duplicates by construction).
-        # In the override branch the caller is SDRF, which produces
-        # rows in arbitrary order; we cannot assume canonicality.
+        # In the override branch the caller is SDRF, which produces rows
+        # in arbitrary order; we cannot assume canonicality.
         hodge_out = self.hodge(
             edges, n_vertices=n,
             triangles=tris if tris.shape[0] > 0 else None,
             edges_already_canonical=(edges_override is None),
         )
 
-        return StimulusGraph(
+        return StimulusGeometry(
             edges=edges,
-            edge_signs=edge_signs,
             edge_curvatures=edge_curv,
             walks=walks,
-            walk_signs=walk_signs,
+            walk_eidx=walk_eidx,
             M_v_walks=M_v_walks,
             walk_curvatures=walk_curv,
             polygons=polys,
-            polygon_signs=poly_signs,
+            polygon_eidx=poly_eidx,
             M_v_polygons=M_v_polys,
             polygon_curvatures=poly_curv,
             triangles=tris,
-            triangle_signs=tri_signs,
+            triangle_eidx=tri_eidx,
             M_v_triangles=M_v_tris,
             triangle_curvatures=tri_curv,
             hodge_laplacian_0=hodge_out.laplacian_0,
+            n_anchors=n,
+        )
+
+    # -----------------------------------------------------------------
+    # Signs (feature-dependent; cheap, recomputed every epoch)
+    # -----------------------------------------------------------------
+
+    def apply_signs(
+        self,
+        geometry: StimulusGeometry,
+        anchor_features: torch.Tensor,
+        edge_signs_override: torch.Tensor | None = None,
+    ) -> StimulusGraph:
+        """Attach feature-dependent signs to a cached `StimulusGeometry`.
+
+        Edge signs come from the feature inner products
+        ``σ(u,v) = sign(⟨f_u, f_v⟩ − θ)`` (or from `edge_signs_override`); each
+        primitive's sign is the product of its constituent edge signs, read off
+        the geometry's stored ``*_eidx`` maps. This is the only per-epoch cost
+        when the geometry is cached.
+        """
+        n = geometry.n_anchors
+        if anchor_features.ndim != 2 or anchor_features.shape[0] != n:
+            raise ValueError(
+                f"anchor_features must have shape ({n}, d), got "
+                f"{tuple(anchor_features.shape)}"
+            )
+        device = anchor_features.device
+        edges = geometry.edges
+        n_edges = edges.shape[0]
+
+        if edge_signs_override is not None:
+            edge_signs = edge_signs_override.to(device)
+        elif n_edges == 0:
+            edge_signs = torch.zeros(0, dtype=torch.long, device=device)
+        else:
+            u, v = edges[:, 0], edges[:, 1]
+            dot = (anchor_features[u] * anchor_features[v]).sum(dim=-1)
+            edge_signs = torch.where(
+                dot >= self.sign_threshold,
+                torch.ones(n_edges, dtype=torch.long, device=device),
+                -torch.ones(n_edges, dtype=torch.long, device=device),
+            )
+
+        def primitive_signs(eidx: torch.Tensor) -> torch.Tensor:
+            if eidx.shape[0] == 0:
+                return torch.zeros(0, dtype=torch.long, device=device)
+            return edge_signs[eidx].prod(dim=1).to(torch.long)
+
+        return StimulusGraph(
+            edges=edges,
+            edge_signs=edge_signs,
+            edge_curvatures=geometry.edge_curvatures,
+            walks=geometry.walks,
+            walk_signs=primitive_signs(geometry.walk_eidx),
+            M_v_walks=geometry.M_v_walks,
+            walk_curvatures=geometry.walk_curvatures,
+            polygons=geometry.polygons,
+            polygon_signs=primitive_signs(geometry.polygon_eidx),
+            M_v_polygons=geometry.M_v_polygons,
+            polygon_curvatures=geometry.polygon_curvatures,
+            triangles=geometry.triangles,
+            triangle_signs=primitive_signs(geometry.triangle_eidx),
+            M_v_triangles=geometry.M_v_triangles,
+            triangle_curvatures=geometry.triangle_curvatures,
+            hodge_laplacian_0=geometry.hodge_laplacian_0,
             n_anchors=n,
         )
 
@@ -457,7 +560,6 @@ class StimulusGraphBuilder(nn.Module):
             )
         # Canonical-order mask: a < b < c.
         idx = torch.arange(n, device=device)
-        lt_ab = idx.unsqueeze(0) < idx.unsqueeze(1)   # (n, n): row > col is False, etc.
         # We want a < b: idx[a] < idx[b]. With a as dim-0, b as dim-1: a < b → row idx < col idx.
         a_lt_b = idx.unsqueeze(1) < idx.unsqueeze(0)  # (n, n): a_lt_b[a, b] = a < b
         # Mask: a < b AND b < c

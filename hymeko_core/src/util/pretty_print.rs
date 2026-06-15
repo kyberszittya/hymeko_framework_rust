@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use crate::common::ids::{DeclId, SymId};
 use crate::common::pathkey::PathKey;
 use crate::ir::hash::HashId;
@@ -6,6 +5,7 @@ use crate::ir::ir::{DeclKind, Ir, SignedRefR};
 use crate::module_store::module_store::CompiledProgram;
 use crate::resolution::interner::Interner;
 use crate::resolution::resolve::Index;
+use std::collections::BTreeMap;
 
 // ----------------------
 // Pretty print helpers
@@ -60,11 +60,7 @@ struct TrieNode {
     did: Option<DeclId>,
 }
 
-fn insert_path(
-    root: &mut TrieNode,
-    path: &[SymId],
-    did: DeclId,
-) {
+fn insert_path(root: &mut TrieNode, path: &[SymId], did: DeclId) {
     let mut cur = root;
     for &seg in path {
         cur = cur.children.entry(seg).or_default();
@@ -119,11 +115,7 @@ fn print_trie(
     }
 }
 
-fn fmt_decl(
-    it: &Interner,
-    did_to_path: &[Option<PathKey>],
-    did: DeclId,
-) -> String {
+fn fmt_decl(it: &Interner, did_to_path: &[Option<PathKey>], did: DeclId) -> String {
     let i = did.0 as usize;
     if let Some(Some(pk)) = did_to_path.get(i) {
         // pk.0 = Vec<SymId> (ha nálad más, igazítsd)
@@ -140,7 +132,6 @@ fn fmt_edge_arcs(
     did_to_path: &[Option<PathKey>],
     edge_did: DeclId,
 ) -> String {
-
     let ei = edge_did.0 as usize;
     let Some(eid) = ir.decl_to_edge.get(ei).and_then(|x| *x) else {
         return " (edge_rec missing)".to_string();
@@ -154,11 +145,13 @@ fn fmt_edge_arcs(
         out.push_str(&format!("\n\t\t- arc#{ai}: "));
 
         for (ri, r) in arc.refs.iter().enumerate() {
-            if ri > 0 { out.push_str(", "); }
+            if ri > 0 {
+                out.push_str(", ");
+            }
 
             let (sgn, target) = match r {
-                SignedRefR::Plus(a)    => ("+", a.target),
-                SignedRefR::Minus(a)   => ("-", a.target),
+                SignedRefR::Plus(a) => ("+", a.target),
+                SignedRefR::Minus(a) => ("-", a.target),
                 SignedRefR::Neutral(a) => ("0", a.target),
             };
 
@@ -170,10 +163,7 @@ fn fmt_edge_arcs(
     out
 }
 
-pub fn pretty_print_compiled(
-    it: &Interner,
-    compiled: &CompiledProgram,
-) {
+pub fn pretty_print_compiled(it: &Interner, compiled: &CompiledProgram) {
     println!("=== HyMeKo compile ===");
     println!("Canonical program hash: {}", to_hex(&compiled.canon_hash.0));
     println!("Root: {}", compiled.root.0.display());

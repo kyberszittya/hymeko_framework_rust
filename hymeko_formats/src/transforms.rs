@@ -237,6 +237,55 @@ impl DomainTransform for SysmlTransform {
     }
 }
 
+// ─── Requirements traceability (SysML v2 + DOT) — SMC #5 witness ───────────
+
+/// SysML v2 requirements-traceability emission (paper witness, SMC #5).
+/// Template-only: rendered via `render_from_templates` from
+/// `transforms/requirements_sysml/` — it consumes requirement/block decls and
+/// signed trace hyperedges, not a kinematic model, so `emit()` has no Rust
+/// fallback. The same template is reused in the WASM editor via `include_str!`.
+pub struct RequirementsSysmlTransform;
+
+impl DomainTransform for RequirementsSysmlTransform {
+    fn name(&self) -> &'static str {
+        "requirements_sysml"
+    }
+    fn extension(&self) -> &'static str {
+        "sysml"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic // unused on the template path; no kinematic extraction occurs
+    }
+    fn emit(&self, _model: &ModelView, _config: &TransformConfig) -> Option<String> {
+        None // template-only — see render_from_templates("requirements_sysml", …)
+    }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("requirements_sysml")
+    }
+}
+
+/// DOT traceability-graph emission for the same requirements witness (SMC #5).
+/// Template-only, paired with [`RequirementsSysmlTransform`].
+pub struct RequirementsDotTransform;
+
+impl DomainTransform for RequirementsDotTransform {
+    fn name(&self) -> &'static str {
+        "requirements_dot"
+    }
+    fn extension(&self) -> &'static str {
+        "dot"
+    }
+    fn accepts(&self) -> ModelKind {
+        ModelKind::Kinematic // unused on the template path
+    }
+    fn emit(&self, _model: &ModelView, _config: &TransformConfig) -> Option<String> {
+        None // template-only — see render_from_templates("requirements_dot", …)
+    }
+    fn template_dir(&self) -> Option<&'static str> {
+        Some("requirements_dot")
+    }
+}
+
 // ─── Gazebo world (gz sim) ────────────────────────────────────────────────
 
 /// `DomainTransform` front-end for the Gazebo world emitter.

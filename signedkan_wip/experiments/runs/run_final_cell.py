@@ -381,6 +381,21 @@ def cell_signed_graph(dataset: str, model_name: str, hidden: int,
     # (only k=2 cycles excluded; higher cycles / walks may contain
     # the test edge).
     strict_protocol = _train.strict_protocol
+    # R_topo (reachability rule, 2026-06-15): keep test-edge cycles in the pool
+    # (so a test edge HAS topology features — unlike strict, which excludes them)
+    # but withhold the test edge's SIGN from the σ-products by masking it to the
+    # product identity (+1) before enumeration. The eval target (s_te / y_te) was
+    # captured above from the true signs, so evaluation is unaffected; only the
+    # cycle σ-products lose the test-edge sign. This isolates STRUCTURAL leakage
+    # (does cycle topology alone predict the held-out sign?) from the direct
+    # σ-sign channel that R_full carries. Requires strict_protocol off.
+    if _train.reach_topo:
+        if strict_protocol:
+            raise ValueError("HSIKAN_REACH_TOPO requires HSIKAN_STRICT_PROTOCOL off "
+                             "(R_topo keeps test-edge cycles; strict excludes them)")
+        g.signs[te_idx] = 1
+        print(f"[R_topo] {len(te_idx)} test-edge signs masked to +1 in cycle "
+              f"sigma-products; cycle topology retained.", flush=True)
     # Build the undirected (u, v) → arc-weight lookup ONCE when arc
     # weights are requested. We use the WeightedSignedGraph loader so
     # Bitcoin Alpha's [−10, +10] trust scores arrive normalised to
