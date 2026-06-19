@@ -77,6 +77,10 @@ htmlcov/
 # One-off archive
 /archive.zip
 
+# Galambos collaborator scenario: handwritten sketch + private chat notes,
+# kept local-only (collaborator IP / unpublished demo spec).
+/docs/demo/galambos_scenario/
+
 # Claude scheduling lock
 /.claude/scheduled_tasks.lock
 

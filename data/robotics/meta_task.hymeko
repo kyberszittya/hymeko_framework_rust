@@ -155,4 +155,16 @@ task {
         @place_pose: + <isa> task.scene_element {}
     }
 
+    // === Termination conditions (episode-ending predicates over the safety state) ===
+    // A termination_spec bundles conditions; the episode ends ("death") if ANY holds. This lets
+    // the .hymeko model — beside the reward — declare what counts as failure, instead of the env
+    // hard-coding it. The env binds each kind to a predicate over its live SafetyState.
+    @termination_spec {}    // a bundle of conditions = the death predicate
+    termination {
+        // A robot link / effector contacts the ground plane.
+        @ground_contact: + <isa> task.condition {}
+        // Two non-adjacent robot links collide.
+        @self_collision: + <isa> task.condition {}
+    }
+
 }

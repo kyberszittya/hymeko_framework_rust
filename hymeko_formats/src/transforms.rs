@@ -420,16 +420,42 @@ fn emit_mjcf(model: &KinematicModel, config: &TransformConfig) -> String {
     let ctx = MjcfCtx::build(model);
 
     out.push_str("  <worldbody>\n");
-    let roots = find_roots(model);
+    // MuJoCo's <worldbody> *is* the world frame; emitting a `<body name="world">` collides
+    // with the implicit worldbody ("repeated name 'world'"). Map a root `world` frame onto
+    // it: emit its children as the top-level bodies (each child's incoming fixed-joint
+    // origin is preserved by emit_mjcf_body_open). Non-world roots pass through unchanged.
+    let roots: Vec<String> = find_roots(model)
+        .into_iter()
+        .flat_map(|r| {
+            if r == "world" {
+                model
+                    .joints
+                    .iter()
+                    .filter(|j| j.parent_link == "world")
+                    .map(|j| j.child_link.clone())
+                    .collect::<Vec<_>>()
+            } else {
+                vec![r]
+            }
+        })
+        .collect();
     emit_mjcf_body_stack(&mut out, &ctx, &roots);
     out.push_str("  </worldbody>\n\n");
 
     out.push_str("  <actuator>\n");
     for j in &model.joints {
         if j.joint_type != JointType::Fixed {
+            // Bound the torque to the joint's declared effort limit (N·m); an unlimited
+            // joint leaves ctrlrange off (the consumer supplies its own default).
+            let ctrl = j
+                .limits
+                .as_ref()
+                .filter(|lim| lim.effort > 0.0)
+                .map(|lim| format!(" ctrlrange=\"{:.4} {:.4}\"", -lim.effort, lim.effort))
+                .unwrap_or_default();
             out.push_str(&format!(
-                "    <motor name=\"act_{}\" joint=\"{}\" gear=\"1\"/>\n",
-                j.name, j.name
+                "    <motor name=\"act_{}\" joint=\"{}\" gear=\"1\"{}/>\n",
+                j.name, j.name, ctrl
             ));
         }
     }
@@ -500,11 +526,21 @@ fn emit_mjcf_body_open(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, ind
     out.push_str(">\n");
 
     if let Some(link) = ctx.link.get(link_name).copied() {
+        // The link's geometry centroid (its `origin [x y z]` offset) — used for both the COM and
+        // the geom pos, so the mass sits at the rod's centre and the geom spans from the joint.
+        let centroid = link
+            .origin
+            .as_ref()
+            .filter(|o| o.len() >= 3)
+            .map(|o| format!("{} {} {}", o[0], o[1], o[2]))
+            .unwrap_or_else(|| "0 0 0".to_string());
         if let Some(mass) = link.mass {
             let i = mass * 0.01;
+            // <inertial> COM at the geometry centroid (not the joint), so a link's mass is centred
+            // on its rod. A richer inertia tensor can refine the diaginertia later.
             out.push_str(&format!(
-                "{}<inertial mass=\"{}\" diaginertia=\"{} {} {}\"/>\n",
-                pad2, mass, i, i, i
+                "{}<inertial mass=\"{}\" pos=\"{}\" diaginertia=\"{} {} {}\"/>\n",
+                pad2, mass, centroid, i, i, i
             ));
         }
         if let Some(ref geom) = link.geometry {
@@ -533,7 +569,11 @@ fn emit_mjcf_body_open(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, ind
                     .as_ref()
                     .map(|_| format!(" material=\"mat_{}\"", link.name))
                     .unwrap_or_default();
-                out.push_str(&format!("{}<geom {}{}/>  \n", pad2, gs, mat));
+                // geom centred at the link's geometry centroid (the `origin` offset), so a link
+                // describes a rod spanning from its joint toward the next joint (a connected arm),
+                // not a stub at the joint.
+                out.push_str(&format!(
+                    "{}<geom {} pos=\"{}\"{}/>  \n", pad2, gs, centroid, mat));
             }
         }
     }

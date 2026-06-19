@@ -414,10 +414,12 @@ mod test_transform_ecosystem {
             let dot = DotTransform;
             let output = dot.emit(&ModelView::Kinematic(model), &config).unwrap();
 
-            // Joint labels should include axis letter
+            // Joint labels should include axis letter. The canonical anthropomorphic arm uses
+            // only local X and Z tokens (world Y comes from j1's 90° twist), so DOT shows (X)/(Z)
+            // and no (Y).
             assert!(output.contains("(Z)"), "DOT should show Z axis joints");
             assert!(output.contains("(X)"), "DOT should show X axis joints");
-            assert!(output.contains("(Y)"), "DOT should show Y axis joints");
+            assert!(!output.contains("(Y)"), "corrected arm has no local Y-axis joint label");
         }
 
         #[test]

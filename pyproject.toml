@@ -38,12 +38,25 @@ ml = [
     "triton-windows==3.7.0.post26 ; sys_platform == 'win32'",
 ]
 # `demo` powers `signedkan_wip/src/demo/gui.py` (Gradio GUI + matplotlib +
-# NetworkX subgraph rendering). Opt-in: `uv sync --group ml --group demo`.
+# NetworkX subgraph rendering) and the `hymeko_rl` rollout video encoder.
+# Opt-in: `uv sync --group ml --group demo`.
 demo = [
     "gradio>=4,<6",
     "matplotlib>=3.8,<4",
     "networkx>=3,<4",
     "pandas>=2,<3",
+    # MP4 (H.264) encoding for hymeko_rl/render_reach.py.
+    # APPROVED-CORE-EDIT: imageio-mp4-render (2026-06-19, user chat).
+    "imageio>=2,<3",
+    "imageio-ffmpeg>=0.5,<1",
+]
+# `rl` powers `hymeko_rl` (MuJoCo physics + Gymnasium env API for the reaching/grasping
+# demos and the interactive viewer). PPO/BC are in-repo — no stable-baselines3. Opt-in:
+# `uv sync --group ml --group rl` (ml supplies torch for the HSiKAN policy).
+# APPROVED-CORE-EDIT: rl-deps-group (2026-06-19, user chat).
+rl = [
+    "mujoco>=3,<4",
+    "gymnasium>=1,<2",
 ]
 
 [tool.uv.workspace]

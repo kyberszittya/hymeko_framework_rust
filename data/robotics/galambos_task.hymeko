@@ -1,0 +1,34 @@
+// galambos_task.hymeko — the planar two-finger grasping reward, declaratively.
+//
+// Two planar arms pull a disk into a target zone. The reward (Σ weight·term):
+//   - reach_distance : dense -‖disk - zone‖ (the env passes disk_to_zone as the distance)
+//   - both_contact   : +0.5 when both fingers touch the disk (encourages a two-sided grasp)
+//   - in_zone        : +10 sparse success when the disk rests in the zone
+//   - action_cost    : small control-effort penalty
+// Pure PPO learns against this (no scripted expert). Validates via `hymeko inspect`.
+
+galambos_task_description {
+    @"meta_kinematics.hymeko";
+    @"meta_reward.hymeko";
+    using kinematics.elements as el;
+    using reward.terms        as rew;
+    using reward              as r;
+}
+
+galambos_task: el, rew, r
+{
+    disk:        el.frame {}
+    target_zone: el.frame {}
+
+    // Dense shaping: pull the disk toward the zone (env supplies disk_to_zone as the distance).
+    @pull: rew.reach_distance { weight 1.0; (+ disk, - target_zone); }
+
+    // Two-sided grasp bonus + sparse success + control penalty.
+    @both: rew.both_contact { weight 0.5; }
+    @zone: rew.in_zone      { weight 10.0; }
+    @cost: rew.action_cost  { weight 0.01; }
+
+    @grasp_reward: r.reward_spec {
+        (+ pull, + both, + zone, + cost);
+    }
+}
