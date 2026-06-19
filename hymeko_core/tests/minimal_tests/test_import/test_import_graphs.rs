@@ -100,6 +100,48 @@ mod test_import_graphs {
         );
     }
 
+    /// Cross-profile instance references (APPROVED-CORE-EDIT: xprofile-instance-refs, 2026-06-19).
+    ///
+    /// `xprofile_importer` imports `xprofile_shared` — a *profile* (not a bare vocab file): it has a
+    /// `_description` wrapper with `using basic_library.elements as el`, and its `shared_thing` decl
+    /// uses that alias as a base. Against the prior `compile()`, the dep's `using` was never applied
+    /// (only the root's), so `el.operand` raised `UnresolvedRef` and compile failed. With the fix the
+    /// shared profile lowers and its instance decl is referenceable cross-profile (`xs.shared_thing`).
+    #[test]
+    fn check_xprofile_instance_ref() {
+        let root_path =
+            Path::new("../data/minimal_examples/import_examples/xprofile_importer.hymeko");
+        let mut ms = ModuleStore::new(StdFsProvider::new(), TestParser);
+        let compiled = ms.compile(root_path).expect("cross-profile compile failed");
+
+        // the shared profile's instance decl is indexed at [desc, content, shared_thing].
+        let desc = ms.it.intern("xprofile_shared_description");
+        let content = ms.it.intern("xprofile_shared");
+        let thing = ms.it.intern("shared_thing");
+        let did = *compiled
+            .idx
+            .by_path
+            .get(&PathKey(vec![desc, content, thing]))
+            .expect("shared_thing not indexed cross-profile");
+
+        // the importer's E1 arc references it (proof the cross-profile ref resolved).
+        let mut referenced = false;
+        for arc in &compiled.ir.arcs {
+            for r in &arc.refs {
+                let tgt = match r {
+                    SignedRefR::Plus(a) | SignedRefR::Minus(a) | SignedRefR::Neutral(a) => a.target,
+                };
+                if tgt == did {
+                    referenced = true;
+                }
+            }
+        }
+        assert!(
+            referenced,
+            "importer arc should reference the shared profile's shared_thing (cross-profile)"
+        );
+    }
+
     #[test]
     fn check_import_graph_library_with_import() {
         log_test_header(

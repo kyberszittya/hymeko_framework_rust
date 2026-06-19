@@ -234,6 +234,20 @@ impl<'a, P: SourceProvider, R: HymekoParser> ModuleStore<P, R> {
         apply_usings(&mut idx, &root_ast.usings, &import_ns, &self.it)
             .map_err(|e| ModuleLoadError::Parse(format!("using alias failed: {e:?}")))?;
 
+        // 6c) cross-profile instance references (APPROVED-CORE-EDIT: xprofile-instance-refs,
+        // 2026-06-19). Also apply each imported *profile*'s own `using` aliases into the shared
+        // index, so its arcs/bases lower and its instance decls become referenceable from the
+        // importer (e.g. `using <desc>.<content> as arr; (+ arr.dist)`). Best-effort and
+        // per-statement: an alias that does not resolve against the available import namespaces is
+        // skipped (a genuinely-needed one surfaces later as a clear UnresolvedRef on the dep's arc),
+        // so this is strictly additive — meta-only imports (no usings) are a no-op, and no existing
+        // program's resolution or canonical hash changes.
+        for (_ns, dep_ast) in imported.iter() {
+            for u in &dep_ast.usings {
+                let _ = apply_usings(&mut idx, std::slice::from_ref(u), &import_ns, &self.it);
+            }
+        }
+
         // 7) lower program IR (2A) + merkle
         let mut ir = lower_program_to_ir(&root_ast, &imported, &idx, &mut self.it)
             .map_err(|e| ModuleLoadError::Parse(format!("lower failed: {e:?}")))?;
