@@ -93,6 +93,11 @@ def main() -> None:
         help="reuse the per-image stim-graph geometry across epochs "
              "(topology cache; only valid without SDRF)",
     )
+    ap.add_argument(
+        "--ablate-structural-branches", action="store_true",
+        help="Step-1 diagnostic: zero the walk/poly/tri branches so the head "
+             "sees the encoder-only path (the 'walks ≈ MLP' test)",
+    )
     args = ap.parse_args()
 
     device = torch.device(
@@ -138,6 +143,7 @@ def main() -> None:
             use_highway=args.upgrade,
             use_pyramid=args.upgrade,
             cache_geometry=args.cache,
+            ablate_structural_branches=args.ablate_structural_branches,
             **cfg,
         )
 
@@ -154,6 +160,7 @@ def main() -> None:
         "config": args.config,
         "upgrade": args.upgrade,
         "cache": args.cache,
+        "ablate_structural_branches": args.ablate_structural_branches,
         "seed": args.seed,
         "n_train": args.n_train,
         "n_eval": args.n_eval,

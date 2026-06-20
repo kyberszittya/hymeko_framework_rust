@@ -413,8 +413,12 @@ def compute_detection_metrics(
     iou_levels = [0.5 + 0.05 * i for i in range(10)]  # 0.50..0.95
     # 2026-05-22 Phase 7: X may now be a CPU tensor (lazy-loader path
     # for VOC at 320+ px).  Take the device from the model so the
-    # per-batch slices below land on the right device.
-    device = next(model.parameters()).device
+    # per-batch slices below land on the right device. A parameter-less
+    # model (a fixed/stub predictor, e.g. in tests) has no parameters to
+    # read a device from — fall back to the input's own device, which
+    # makes the `.to(device)` below a no-op. (Fixes StopIteration.)
+    first_param = next(model.parameters(), None)
+    device = first_param.device if first_param is not None else X.device
     # Accumulate (score, is_tp_at_iou_threshold) per class, per IoU level.
     per_class_records: dict[int, list[tuple[float, list[bool]]]] = {
         c: [] for c in range(n_classes)

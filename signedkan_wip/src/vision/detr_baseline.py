@@ -272,6 +272,7 @@ def train_one_seed(
     batch_size: int,
     lr: float,
     device: torch.device,
+    grad_clip: float = 1.0,
 ) -> dict:
     set_seed(seed)
     n_classes = 10
@@ -298,12 +299,23 @@ def train_one_seed(
             gt_corners, gt_classes, gt_counts = _pad_targets(
                 bboxes_list, labels_list, canvas, n_classes, device)
             corners, cls_logits = model(images)
+            # l1giou (= corner-L1 + AABB-GIoU): pure GIoU saturates at IoU≈0.46,
+            # just under the 0.5 the metric needs; the L1 term drives it past.
+            # Diagnosed by the overfit guard — reports/2026-06-16-detr-overfit-fix.md.
             loss, _cls_acc, _n = hungarian_set_loss(
                 corners, cls_logits, gt_corners, gt_classes, gt_counts,
-                n_classes=n_classes, box_loss_kind="giou",
+                n_classes=n_classes, box_loss_kind="l1giou",
             )
             opt.zero_grad()
             loss.backward()
+            # Grad-norm clip. NOTE the regime split (reports/2026-06-16-detr-
+            # overfit-fix.md + …-clip-sweep): the 16-image overfit GUARD needs a
+            # tight clip 0.1 (lr 1e-3 diverges otherwise), but on the full 5000-
+            # image run clip 0.1 strangles learning (clips every mini-batch grad
+            # to ~0 → flat loss). The full-run default is 1.0 (stable AND learns;
+            # 0 learns marginally faster but is less safe over 40 ep unattended).
+            if grad_clip is not None and grad_clip > 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
             opt.step()
             ep_loss += float(loss.item())
             n_b += 1
@@ -330,6 +342,9 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--grad-clip", type=float, default=1.0,
+                    help="grad-norm clip (0 disables); 1.0 for the full run "
+                         "(0.1 strangles it — see detr-overfit-fix report)")
     ap.add_argument("--device", default=None)
     ap.add_argument("--out-jsonl", default=None)
     args = ap.parse_args()
@@ -340,7 +355,8 @@ def main() -> None:
           f"n_eval={args.n_eval} n_epochs={args.n_epochs}", flush=True)
     rec = train_one_seed(args.size, args.seed, args.n_train, args.n_eval,
                          args.n_epochs, args.canvas, args.max_digits,
-                         args.batch_size, args.lr, device)
+                         args.batch_size, args.lr, device,
+                         grad_clip=args.grad_clip)
     print(f"[detr] DONE size={args.size} n_params={rec['n_params']} "
           f"final_mAP50_proxy={rec['final_mAP50_proxy']} "
           f"wall={rec['wall_s']:.1f}s", flush=True)

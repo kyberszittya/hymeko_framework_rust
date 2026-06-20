@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HyMeKo WASM Emergent Agent</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="board-panel">
+      <div class="topbar">
+        <div>
+          <h1>HyMeKo Emergent Agent</h1>
+          <p id="status">Loading WASM solver...</p>
+          <label class="world-picker" for="worldSelect">
+            <span>World</span>
+            <select id="worldSelect">
+              <option value="grid4">4x4 grid</option>
+              <option value="grid6">6x6 grid</option>
+              <option value="hex">Hexaworld</option>
+              <option value="adversarial">Adversarial CA</option>
+              <option value="virus">Virus CA</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+          <div class="custom-world">
+            <label for="customTopology">
+              <span>Topology</span>
+              <select id="customTopology">
+                <option value="square">Square</option>
+                <option value="hex">Hex</option>
+              </select>
+            </label>
+            <label for="worldWidth">
+              <span>W</span>
+              <input id="worldWidth" type="number" min="2" max="16" value="8" />
+            </label>
+            <label for="worldHeight">
+              <span>H</span>
+              <input id="worldHeight" type="number" min="2" max="16" value="8" />
+            </label>
+            <button id="btnGenerateWorld" type="button">Generate</button>
+            <button id="btnRandomizeWorld" type="button">Randomize</button>
+          </div>
+        </div>
+        <div class="stats">
+          <span><b id="gate">-</b> gate</span>
+          <span><b id="states">-</b> states</span>
+          <span><b id="edges">-</b> policy</span>
+        </div>
+      </div>
+
+      <div class="board-stage">
+        <details class="plot-panel" open>
+          <summary>Learning plot</summary>
+          <svg id="evolutionPlot" class="evolution-plot" viewBox="0 0 220 360" role="img" aria-label="Policy evolution plot"></svg>
+        </details>
+        <div id="board" class="board" aria-label="Solved 4 by 4 game board"></div>
+      </div>
+
+      <div class="simbar">
+        <div class="sim-actions">
+          <button id="btnReset" title="Reset trace">Reset</button>
+          <button id="btnStep" title="Advance trace">Step</button>
+          <button id="btnPlay" title="Play trace">Play</button>
+        </div>
+        <div class="sim-readout">
+          <span id="simState">-</span>
+          <progress id="simProgress" value="0" max="1"></progress>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i class="swatch start"></i>start</span>
+        <span><i class="swatch ego"></i>EGO</span>
+        <span><i class="swatch goal"></i>goal</span>
+        <span><i class="swatch pit"></i>pit</span>
+        <span><i class="swatch wall"></i>wall</span>
+        <span><i class="swatch path"></i>learned trace</span>
+        <span><i class="swatch rival"></i>Kage</span>
+        <span><i class="swatch automaton"></i>automaton</span>
+        <span><i class="swatch virus"></i>virus</span>
+      </div>
+    </section>
+
+    <section class="side-panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="policy">Policy</button>
+        <button class="tab" data-tab="evolution">Evolution</button>
+        <button class="tab" data-tab="mdp">MDP</button>
+        <button class="tab" data-tab="source">HyMeKo</button>
+        <button class="tab" data-tab="graph">Graph</button>
+      </div>
+      <pre id="policy" class="pane active"></pre>
+      <div id="evolution" class="pane evolution-pane">
+        <div class="evolution-controls">
+          <label for="evolutionSlider">Learning stage</label>
+          <input id="evolutionSlider" type="range" min="0" max="0" value="0" />
+          <span id="evolutionLabel">-</span>
+        </div>
+        <pre id="evolutionPolicy" class="evolution-policy"></pre>
+        <pre id="evolutionSource" class="evolution-source"></pre>
+      </div>
+      <div id="mdp" class="pane mdp-pane"></div>
+      <pre id="source" class="pane"></pre>
+      <pre id="graph" class="pane"></pre>
+    </section>
+  </main>
+
+  <script type="module" src="wasm_game.js"></script>
+</body>
+</html>

@@ -283,6 +283,13 @@ export function createHypergraphView() {
 
   function buildLabels() {
     for (let i = 0; i < H.n; i++) if (visV[i] !== false) sprites.push(makeLabel(hyper.vertices[i].label, i));
+    // Hyperedge labels (sprite idx = H.n + ei) — sign-tinted so they read as
+    // hyperedges, not vertices. Positioned at the member centroid in sync().
+    H.edges.forEach((_, ei) => {
+      if (visE[ei] === false) return;
+      const bg = H.signs[ei] < 0 ? "rgba(150,32,82,0.74)" : "rgba(20,72,120,0.74)";
+      sprites.push(makeLabel(hyper.hyperedges[ei].label, H.n + ei, bg));
+    });
     for (const s of sprites) scene.add(s);
   }
 
@@ -395,13 +402,13 @@ export function createHypergraphView() {
     }
   }
 
-  function makeLabel(text, idx) {
+  function makeLabel(text, idx, bg = "rgba(12,14,26,0.66)") {
     const cv = document.createElement("canvas"); const ctx = cv.getContext("2d");
     const fs = 44; ctx.font = `${fs}px Segoe UI`;
-    cv.width = Math.ceil(ctx.measureText(text).width) + 18; cv.height = fs + 14;
+    cv.width = Math.ceil(ctx.measureText(text || "").width) + 18; cv.height = fs + 14;
     ctx.font = `${fs}px Segoe UI`;
-    ctx.fillStyle = "rgba(12,14,26,0.66)"; roundRect(ctx, 0, 0, cv.width, cv.height, 10); ctx.fill();
-    ctx.fillStyle = "#e8eefc"; ctx.textBaseline = "middle"; ctx.fillText(text, 9, cv.height / 2 + 1);
+    ctx.fillStyle = bg; roundRect(ctx, 0, 0, cv.width, cv.height, 10); ctx.fill();
+    ctx.fillStyle = "#e8eefc"; ctx.textBaseline = "middle"; ctx.fillText(text || "", 9, cv.height / 2 + 1);
     const tex = new THREE.CanvasTexture(cv);
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
     spr.scale.set(cv.width * 0.16, cv.height * 0.16, 1);
@@ -445,7 +452,18 @@ export function createHypergraphView() {
   function sync() {
     for (let i = 0; i < meshes.length; i++) meshes[i].position.copy(P[i]);
     for (let i = 0; i < hubMeshes.length; i++) hubMeshes[i].position.copy(P[H.n + i]);
-    for (const s of sprites) s.position.copy(P[s._idx]).add(new THREE.Vector3(0, 5 + (sizes[s._idx] || 1) * 6, 0));
+    for (const s of sprites) {
+      if (s._idx >= H.n) {
+        // hyperedge label → member centroid (robust across star/clique/prism)
+        const members = H.edges[s._idx - H.n] || [];
+        let cx = 0, cy = 0, cz = 0;
+        for (const v of members) { cx += P[v].x; cy += P[v].y; cz += P[v].z; }
+        const k = members.length || 1;
+        s.position.set(cx / k, cy / k + 9, cz / k);
+      } else {
+        s.position.copy(P[s._idx]).add(new THREE.Vector3(0, 5 + (sizes[s._idx] || 1) * 6, 0));
+      }
+    }
     if (lineSeg && lineSeg._segs && mode !== "prism") {
       const attr = lineSeg.geometry.getAttribute("position");
       lineSeg._segs.forEach(([a, b], k) => { attr.setXYZ(k * 2, P[a].x, P[a].y, P[a].z); attr.setXYZ(k * 2 + 1, P[b].x, P[b].y, P[b].z); });

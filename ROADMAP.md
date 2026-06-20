@@ -21,19 +21,63 @@ performance log is append-only: one dated snapshot per milestone.
 
 ---
 
+## Resume here (2026-06-16 NIGHT snapshot)
+
+> **Night-session line — Cayley-rotor embedding (the evening's main result).**
+> One Cayley-optimized quaternion rotor primitive ([[project-cayley-rotor-idea]]),
+> unifying (A) an inductive, leakage-free, param-light **embedding** and (B) a
+> proposed structured **ANN index projection**. Built + tested + measured tonight.
+>
+> - **What's proven (measured):** the inductive rotor embedding vs the transductive
+>   `nn.Embedding` table in a signed GNN (DADSGNN body held fixed), strict
+>   leakage-audit protocol, 5 seeds × 3 datasets: **competitive-to-better AUROC at
+>   9–16× fewer params, constant 15,761 params** (vs the table growing with the
+>   graph), honest under sign-shuffle.
+> - **Big-graph result (DONE; 5 seeds × {epinions,slashdot} × 4 baselines,
+>   `reports/rotor_biggraph_20260616.jsonl`):** the rotor (15,761 params) **beats
+>   DADSGNN and SGCN** at ~170–270× fewer params (Epin. 0.924 vs 0.902/0.911;
+>   Slash. 0.882 vs 0.870/0.872) but **SiGAT beats it by ~0.02** (Epin. 0.944,
+>   Slash. 0.899) at that ~270× param cost. **Honest framing = Pareto-efficiency
+>   (near-best AUROC at 1/270th size), NOT accuracy win.** Figs:
+>   `docs/seminar/figures/rotor_{param_efficiency,pareto}.png`.
+> - **Artifacts:** code `signedkan_wip/src/embeddings/cayley_rotor.py` +
+>   `src/baselines/cayley_rotor_baseline.py` (+ tests, all green); article
+>   `docs/articles/cayley-rotor-embeddings/article.{tex,pdf}` (6pp, figures, 5-seed
+>   table); plan `docs/plans/2026-06-16-soma-structural-highway/` (denoted
+>   assumption + input-layer swap + leakage-free corollary + convergence rationale);
+>   numbers `reports/rotor_multiseed_20260616.jsonl`; seminar PNG
+>   `docs/seminar/figures/rotor_param_efficiency.png` (+ `make_rotor_param_figure.py`).
+> - **RESUME STEP 1 — DONE (aggregated while user away):** big-graph table added to
+>   article §5; both seminar PNGs regenerated (param-efficiency + the honest Pareto
+>   scatter). Article rebuilds clean (6pp). Honest Pareto framing applied throughout.
+> - **RESUME STEP 2 (the build, needs the user — daytime):** the **k-cycle branch**
+>   (HSiKAN cycle aggregation) on top of the rotor embedding **+ highway jumps** —
+>   the convergence architecture: *cheap inductive rotor node feature → (k-walk +
+>   k-cycle) branches → highway to the head*. Step-1 ablation already gave the green
+>   light (vision walks contribute only +12% over the encoder → "walks ≈ MLP").
+> - **Honest debts before any external claim:** prior-art sweep for the ANN-projection
+>   novelty (focused search done; exhaustive pending); add the remaining baselines
+>   (sgt) / more datasets if a full Table-1 is wanted.
+> - **Convergence thesis:** *don't spend capacity on identity; spend it on structure.*
+>
+> _(The earlier 2026-06-16 EOD threads below — DETR, stacking, GCP quota — remain open.)_
+
 ## Resume here (2026-06-16 EOD snapshot)
 
 Open threads for the next session, highest-leverage first:
 
-- **DETR baseline — finish making it FAIR (open).** `vision/detr_baseline.py`
-  (`MiniDETR`, standard + param-matched tiny) + tests are written; the
-  set-loss/metric are reused (`hungarian_set_loss`, `match_f1_at_iou50`). The
-  **overfit fairness guard FAILS** (mAP50_proxy 0.149 @ 200 steps) and is
-  `xfail`'d. **Next:** get the from-scratch DETR to actually overfit
-  (tune steps/lr/box-head init; the guard now uses single-object/600 steps as a
-  starting point) → remove the `xfail` → run standard + tiny at 5000/40 →
-  head-to-head vs RicciStim **0.228 @ 5 896 params**. **No parity claim until the
-  guard passes** (a strawman DETR would be dishonest).
+- **DETR baseline — head-to-head DONE (2026-06-16); the efficiency-win is FALSIFIED.**
+  Fair, param-matched **DETR-tiny (10 815 p) = 0.376 mAP > RicciStim (5 896 p) =
+  0.228**, same data/budget/metric-core (`reports/2026-06-16-detr-overfit-fix.md`).
+  A competent tiny transformer detector beats RicciStim on accuracy at ~1.8× the
+  params → RicciStim is **not** Pareto-optimal; "structure wins at fewer params"
+  does not survive a fair baseline. Path here: overfit guard fixed (`l1giou` box
+  loss + lr 1e-3/clip; was `xfail`), then the first full run was *strangled* by an
+  overfit-tuned `grad-clip 0.1` default (caught, fixed → clip 1.0). **DETR-standard
+  (1.24M) collapsed (0.041) — large-transformer fragility, NOT a valid number; do
+  not cite.** **Next:** (a) DETR-standard re-run w/ lr warmup for a valid big-model
+  number; (b) multi-seed both; (c) rewrite the TPAMI efficiency framing toward
+  robustness/accountability, not accuracy-per-param.
 - **Stacking idea (user, 2026-06-16) — promising, needs a plan + measurement.**
   "The model is tiny (5.9k) → stack K of them orthogonally or radially for more
   streamlined calculation." My initial read: **orthogonal** = K decorrelated
@@ -135,6 +179,19 @@ linked report for provenance.
 
 ### 2026-06-16
 
+- **DETR head-to-head** (`reports/2026-06-16-detr-overfit-fix.md`) — **the honest
+  number, and it falsifies the param-efficiency win.** Fair param-matched
+  **DETR-tiny (10 815 p) = 0.376 > RicciStim (5 896 p) = 0.228** (same
+  ClutteredMNIST split / 40 ep / seed 0 / shared `match_f1_at_iou50` metric core,
+  NMS architecture-appropriate). A competent tiny transformer beats RicciStim on
+  accuracy at ~1.8× params; RicciStim is not Pareto-optimal. Getting there
+  required: (1) overfit-guard fix — `l1giou` box loss (pure GIoU saturates at
+  IoU≈0.46) + lr 1e-3/clip → guard mAP 1.0, was `xfail`; (2) catching a *strangled*
+  first full run (overfit-tuned `grad-clip 0.1` default clipped every mini-batch
+  grad → flat; fixed → 1.0). 18 fast tests + 2 new branch tests green; `giou`/`l1`
+  branches byte-for-byte unchanged (RicciStim parity held). **Caveats:**
+  DETR-standard (1.24M) collapsed (0.041, large-transformer fragility — not a valid
+  number, needs warmup); single-seed.
 - **Generators-in-core** (`reports/2026-06-16-generators-into-core.md`): algorithm
   single-sourced in `hymeko::generators`; `hymeko_core` 10 tests + `hymeko_hive`
   18 tests pass; clippy/fmt clean both. `S(2,3,25)` builds ≪ 100 ms.

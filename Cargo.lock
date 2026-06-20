@@ -47,6 +47,7 @@ name = "akoire"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "hymeko_hive",
  "parser",
 ]
 

@@ -13,7 +13,7 @@
 
 use wasm_bindgen::prelude::*;
 
-use crate::compile::{compile_source, compile_sources, CompiledDoc};
+use crate::compile::{CompiledDoc, compile_source, compile_sources};
 use crate::session::EditorSession as NativeSession;
 
 #[wasm_bindgen(start)]
@@ -206,4 +206,64 @@ pub fn pgraph_dot(instance: &str, meta: &str) -> Result<String, JsValue> {
 #[wasm_bindgen]
 pub fn pgraph_transform(instance: &str, meta: &str) -> Result<String, JsValue> {
     crate::pgraph::transform_text(instance, meta).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve the 4x4 grid game and return the gated representation as JSON.
+#[wasm_bindgen]
+pub fn solved_grid_game_json() -> Result<String, JsValue> {
+    crate::game::solved_grid_game_json().map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a named grid/hex world and return the gated representation as JSON.
+#[wasm_bindgen]
+pub fn solved_world_json(world_id: &str) -> Result<String, JsValue> {
+    crate::game::solved_world_json(world_id).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a named grid/hex world with a seeded random EGO start.
+#[wasm_bindgen]
+pub fn randomized_world_json(world_id: &str, seed: u32) -> Result<String, JsValue> {
+    crate::game::randomized_world_json(world_id, seed).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a generated world with caller-provided dimensions.
+#[wasm_bindgen]
+pub fn generated_world_json(topology: &str, width: i32, height: i32) -> Result<String, JsValue> {
+    crate::game::generated_world_json(topology, width, height).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a generated world with caller-provided dimensions and random EGO start.
+#[wasm_bindgen]
+pub fn generated_random_world_json(
+    topology: &str,
+    width: i32,
+    height: i32,
+    seed: u32,
+) -> Result<String, JsValue> {
+    crate::game::generated_random_world_json(topology, width, height, seed)
+        .map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve the adversarial Hikari-vs-Kage cellular-automaton arena.
+#[wasm_bindgen]
+pub fn adversarial_world_json() -> Result<String, JsValue> {
+    crate::game::adversarial_world_json().map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a seeded adversarial Hikari-vs-Kage cellular-automaton arena.
+#[wasm_bindgen]
+pub fn adversarial_world_seed_json(seed: u32) -> Result<String, JsValue> {
+    crate::game::adversarial_world_seed_json(seed).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve the virus cellular-automaton gameplay arena.
+#[wasm_bindgen]
+pub fn virus_world_json() -> Result<String, JsValue> {
+    crate::game::virus_world_json().map_err(|e| JsValue::from_str(&e))
+}
+
+/// Solve a seeded virus cellular-automaton gameplay arena.
+#[wasm_bindgen]
+pub fn virus_world_seed_json(seed: u32) -> Result<String, JsValue> {
+    crate::game::virus_world_seed_json(seed).map_err(|e| JsValue::from_str(&e))
 }

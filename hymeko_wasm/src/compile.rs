@@ -115,7 +115,7 @@ impl CompiledDoc {
     /// straight to the in-process `execute_transform`. This is the editor's
     /// SysML lens (SMC #5 Phase 2).
     pub fn to_sysml(&self, model_name: &str) -> String {
-        use hymeko_query::rewrite::template::{execute_transform, TransformSpec};
+        use hymeko_query::rewrite::template::{TransformSpec, execute_transform};
         let spec = TransformSpec {
             name: "sysml".to_string(),
             query_source: include_str!("../../transforms/sysml/queries.hymeko").to_string(),

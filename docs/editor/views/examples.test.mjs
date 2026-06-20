@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-import { EXAMPLES, exampleById, FIXTURE_OF } from "./examples.js";
+import { EXAMPLES, exampleById, examplesByGroup, FIXTURE_OF } from "./examples.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // docs/editor/views → repo root is three levels up.
@@ -50,6 +50,26 @@ test("the four classic hypergraphs are present and jump to the 3D view", () => {
     assert.ok(e, `missing hypergraph example: ${id}`);
     assert.equal(e.view, "hyper3d", `${id} should switch to hyper3d`);
   }
+});
+
+test("the Galambos RL state is present and renders in the 3D view", () => {
+  const e = exampleById("galambos");
+  assert.ok(e, "missing galambos RL-state example");
+  assert.equal(e.view, "hyper3d");
+  assert.equal(e.group, "Galambos (RL grasp)");
+  // self-contained: no `@\"…\"` imports (the browser cannot fetch them).
+  assert.ok(!/@\"/.test(e.source), "galambos source must be self-contained (no @\"…\" import)");
+});
+
+test("examplesByGroup buckets every entry into exactly one project group", () => {
+  const groups = examplesByGroup();
+  const names = groups.map((g) => g.group);
+  assert.ok(names.includes("Galambos (RL grasp)"), "Galambos project group present");
+  assert.equal(new Set(names).size, names.length, "duplicate group");
+  const flat = groups.flatMap((g) => g.entries);
+  assert.equal(flat.length, EXAMPLES.length, "every entry in exactly one group");
+  const comb = groups.find((g) => g.group === "Combinatorial hypergraphs");
+  assert.deepEqual(comb.entries.map((e) => e.id), ["fano", "sunflower", "k4_3", "generic"]);
 });
 
 test("embedded hypergraph sources match data/typical_graphs fixtures", () => {

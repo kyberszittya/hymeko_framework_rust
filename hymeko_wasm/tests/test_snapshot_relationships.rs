@@ -17,17 +17,34 @@ fn snapshot_emits_scope_isa_and_ref_relationships() {
     let json = doc.snapshot_json().expect("snapshot_json");
     let v: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
 
-    let rels = v["relationships"].as_array().expect("relationships is an array");
-    assert!(!rels.is_empty(), "expected non-empty relationships:\n{json}");
+    let rels = v["relationships"]
+        .as_array()
+        .expect("relationships is an array");
+    assert!(
+        !rels.is_empty(),
+        "expected non-empty relationships:\n{json}"
+    );
 
     let kinds: std::collections::HashSet<&str> =
         rels.iter().filter_map(|r| r["kind"].as_str()).collect();
-    assert!(kinds.contains("scope"), "expected scope (containment) relationships");
-    assert!(kinds.contains("isa"), "expected isa relationships (thing <isa> meta)");
-    assert!(kinds.contains("ref"), "expected ref relationships (pointer -> target_decl)");
+    assert!(
+        kinds.contains("scope"),
+        "expected scope (containment) relationships"
+    );
+    assert!(
+        kinds.contains("isa"),
+        "expected isa relationships (thing <isa> meta)"
+    );
+    assert!(
+        kinds.contains("ref"),
+        "expected ref relationships (pointer -> target_decl)"
+    );
 
     // Every relationship references valid usize endpoints.
     for r in rels {
-        assert!(r["from"].is_u64() && r["to"].is_u64(), "endpoints must be ids: {r}");
+        assert!(
+            r["from"].is_u64() && r["to"].is_u64(),
+            "endpoints must be ids: {r}"
+        );
     }
 }

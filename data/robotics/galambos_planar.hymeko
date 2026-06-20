@@ -73,11 +73,13 @@ galambos_planar: meta_kinematics.kinematics.elements, meta_kinematics.kinematics
     }
 
     // === Fixed joints: world -> bases. Yaw +90° (arm reaches +Y); z lifts it onto the table. ===
+    // Bases at x = ±0.18 (a wider stance than the original ±0.14 — an added reach difficulty;
+    // still inside both-arm reach for a central zone: (0,0.19) is 0.26 m < 0.30 m reach from each).
     @fix_left: meta_kinematics.kinematics.fixed_joint {
-        (+ world [[-0.14, -0.02, 0.04], [0.0, 0.0, 90.0]], - base_left);
+        (+ world [[-0.18, -0.02, 0.04], [0.0, 0.0, 90.0]], - base_left);
     }
     @fix_right: meta_kinematics.kinematics.fixed_joint {
-        (+ world [[0.14, -0.02, 0.04], [0.0, 0.0, 90.0]], - base_right);
+        (+ world [[0.18, -0.02, 0.04], [0.0, 0.0, 90.0]], - base_right);
     }
 
     // === Revolute joints (all AXIS_Z → planar XY sweep). jl2/jr2 sit at the end of the upper rod. ===

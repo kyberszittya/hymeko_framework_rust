@@ -2,7 +2,9 @@
 *From declarative hypergraph structure to structural-prior learning.*
 
 PhD seminar · Kato Laboratory · Csaba Hajdu · June 2026
-Deck: `docs/seminar/HyMeKo_Seminar.pptx` (33 slides, self-contained — embedded video + figures).
+Base deck: `docs/seminar/HyMeKo_Seminar.pptx` (34 slides, self-contained).
+Kato-ready generated deck: `docs/seminar/HyMeKo_Seminar.with_refs.pptx`
+(43 slides: front framing, references/publications/future work, demo/collaboration/Q&A).
 
 ---
 
@@ -32,7 +34,7 @@ broader transform targets, and larger-scale signed-graph and vision corpora.
 
 ---
 
-## Section-by-section (33 slides)
+## Section-by-section (base 34 slides)
 
 **Framing (1–6).** Why hypergraphs (n-ary relations, clique blow-up); a hyperedge
 and its signed Levi/Berge incidence (= the star expansion); the one-substrate /

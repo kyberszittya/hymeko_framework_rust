@@ -11,13 +11,14 @@
 // the .hymeko text expresses is what gets emitted by URDF/SDF/DOT.
 
 import init, { parse_and_compile, parse_and_compile_files } from "./pkg/hymeko_wasm.js";
-import { createHypergraphView } from "./views/hypergraph3d.js?v=24";
+import { createHypergraphView } from "./views/hypergraph3d.js?v=25";
 import { createKinematicView } from "./views/kinematic.js?v=20";
 import { createSysmlView } from "./views/sysml.js?v=19";
 import { highlightHymeko } from "./views/highlight.js?v=19";
-import { EXAMPLES, exampleById } from "./views/examples.js?v=20";
+import { EXAMPLES, exampleById, examplesByGroup } from "./views/examples.js?v=21";
 import { createGeneratorView } from "./views/generator_view.js?v=21";
 import { PROFILES, profileById, ROOT_NAME } from "./views/profiles.js?v=26";
+import { PROJECTS, projectById, projectFile, spaceForFile } from "./views/projects.js?v=1";
 import { parseArcTuple, rewriteArcTuple } from "./views/arcs.js?v=23";
 import { scopeDepths, bidirectionalEdgeIds } from "./views/adapters.js?v=27";
 await init();
@@ -778,11 +779,16 @@ sourceEl.oninput = () => {
 // (for the classic hypergraphs) jumps to the 3D view.
 const exampleSelect = $("exampleSelect");
 if (exampleSelect) {
-  for (const ex of EXAMPLES) {
-    const o = document.createElement("option");
-    o.value = ex.id;
-    o.textContent = ex.label;
-    exampleSelect.appendChild(o);
+  for (const { group, entries } of examplesByGroup()) {
+    const og = document.createElement("optgroup");
+    og.label = group;
+    for (const ex of entries) {
+      const o = document.createElement("option");
+      o.value = ex.id;
+      o.textContent = ex.label;
+      og.appendChild(o);
+    }
+    exampleSelect.appendChild(og);
   }
   exampleSelect.onchange = () => {
     const ex = exampleById(exampleSelect.value);
@@ -794,6 +800,75 @@ if (exampleSelect) {
     if (ex.view) showView(ex.view);
   };
 }
+
+// ── Project tree (multi-file MDP) ─────────────────────────────────────
+// A project (views/projects.js) is several editable instance files sharing a meta vocabulary,
+// rendered in the left palette as a collapsible tree: the project header toggles its file list;
+// clicking a file loads it as the compile root with its `@"…"`-imported metas in the `space`.
+const projectTreeEl = $("projectTree");
+let activeProjectFileBtn = null;
+function loadProjectFile(project, fileName, fileBtn) {
+  const f = projectFile(project, fileName);
+  if (!f) return;
+  space = spaceForFile(project, fileName);   // the metas THIS file imports
+  sourceEl.value = f.source;
+  recompile();
+  if (f.view) showView(f.view);
+  if (activeProjectFileBtn) activeProjectFileBtn.classList.remove("active");
+  if (fileBtn) {
+    fileBtn.classList.add("active");
+    activeProjectFileBtn = fileBtn;
+  }
+}
+function buildProjectTree() {
+  if (!projectTreeEl) return;
+  projectTreeEl.replaceChildren();
+  for (const p of PROJECTS) {
+    const node = document.createElement("div");
+    node.className = "proj-node";
+    node.dataset.project = p.id;
+    const header = document.createElement("button");
+    header.className = "proj-header";
+    header.setAttribute("aria-expanded", "true");
+    header.textContent = p.label;
+    header.onclick = () => {
+      const open = header.getAttribute("aria-expanded") === "true";
+      header.setAttribute("aria-expanded", String(!open));
+      node.classList.toggle("collapsed", open);
+    };
+    const list = document.createElement("ul");
+    list.className = "proj-files";
+    for (const f of p.files) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.className = "proj-file";
+      btn.textContent = f.label;
+      btn.title = f.name;
+      btn.onclick = () => loadProjectFile(p, f.name, btn);
+      li.appendChild(btn);
+      list.appendChild(li);
+    }
+    node.append(header, list);
+    projectTreeEl.appendChild(node);
+  }
+}
+// Open a project's first file (used by the ?project= deep-link), highlighting it in the tree.
+function openProject(id) {
+  const p = projectById(id);
+  if (!p || !p.files.length) return;
+  const firstBtn = projectTreeEl?.querySelector(`[data-project="${id}"] .proj-file`);
+  loadProjectFile(p, p.files[0].name, firstBtn);
+}
+buildProjectTree();
+
+// Left palette tabs: "Project" (outline tree) / "Tools" (element palette, stats, query).
+const paletteTabs = [...document.querySelectorAll(".palette-tab")];
+function showPaletteTab(name) {
+  for (const t of paletteTabs) t.classList.toggle("active", t.dataset.tab === name);
+  for (const pane of document.querySelectorAll(".palette-tabpane"))
+    pane.classList.toggle("active", pane.id === `tab-${name}`);
+}
+for (const tab of paletteTabs) tab.onclick = () => showPaletteTab(tab.dataset.tab);
 
 // ── Profile picker ───────────────────────────────────────────────────
 // A profile is a vocabulary: it loads its meta file(s) into the compile space
@@ -832,6 +907,12 @@ if (_initProfile && profileById(_initProfile)) {
   if (profileSelect) profileSelect.value = _initProfile;
   setProfile(_initProfile);
 }
+// ?project=<id> loads a multi-file project (its first file), overriding the default profile.
+const _initProject = _params.get("project");
+if (_initProject && projectById(_initProject)) openProject(_initProject);
+// ?tab=<outline|tools> selects which left-palette tab is shown on load.
+const _initTab = _params.get("tab");
+if (_initTab) showPaletteTab(_initTab);
 const _initView = _params.get("view");
 if (_initView && VIEWS[_initView]) showView(_initView);
 // ?layout=concentric|cose selects the 2D graph layout on load.

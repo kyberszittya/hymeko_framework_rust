@@ -80,6 +80,71 @@ def _term_in_zone(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
     return 1.0 if (m is not None and m.in_zone) else 0.0
 
 
+def _term_grasp_approach(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Dense approach shaping: -(mean of the two arms' nearest-link distances to the coin). Rises
+    toward 0 as *both* arms close on the coin, giving PPO the gradient to convert 'near' into the
+    two-finger contact the sparse ``both_contact`` cliff alone cannot bootstrap. 0 on a non-planar
+    env (no ``_planar_metrics``)."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    return -0.5 * (float(m.left_tip_dist) + float(m.right_tip_dist))
+
+
+def _term_settle(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Overshoot brake: penalise the coin's speed **only once it is inside the zone**, so the policy
+    slows it to a stop there instead of pushing it straight through (the measured ep4 overshoot).
+    The gate is ``dist < zone_half`` — braking during *approach* was measured to cause the opposite
+    failure (undershoot, the coin stalling at the zone boundary), so the coin is left free to move
+    until it is actually in the zone. ``dist`` is the disk→zone distance. 0 on a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    zone_half = float(getattr(env, "_zone_half", 0.055))
+    return -float(m.disk_speed) if dist < zone_half else 0.0
+
+
+# v_min: below this total arm joint speed (rad/s, summed over joints) the arm counts as stationary.
+_ARM_STALL_VMIN = 1.0
+
+
+def _term_arm_motion(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Anti-stall: penalise an idle arm so the policy keeps exploring instead of freezing (the
+    failure that the removed ``action_cost`` term actively rewarded). 0 once the arm moves at
+    ``_ARM_STALL_VMIN``; down to ``-_ARM_STALL_VMIN`` when fully frozen. 0 on a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    return -max(0.0, _ARM_STALL_VMIN - float(m.arm_speed))
+
+
+def _term_arm_collision(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Penalise the two arms colliding with each other (left-arm geom touching right-arm geom):
+    -1 while they are in mutual contact, 0 otherwise. Keeps the fingers from crashing together
+    instead of cooperating. 0 on a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    return -1.0 if m.arm_self_contact else 0.0
+
+
+def _term_out_of_bounds(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Penalise knocking the disk out of the workspace (a death): -1 on the step the disk leaves the
+    table, 0 otherwise. Death only terminating left over-pushing unpunished. 0 on a non-planar env."""
+    return -1.0 if getattr(env, "_disk_out", False) else 0.0
+
+
+def _term_center_bonus(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Graded precision bonus: rises from 0 at the zone edge to 1 at the exact centre, so the
+    policy is rewarded for *centring* the coin (the precision the sparse ``in_zone`` does not
+    grade), within the zone-half tolerance. ``dist`` is the disk→zone distance. 0 on a non-planar
+    env (no ``_zone_half``)."""
+    zone_half = float(getattr(env, "_zone_half", 0.0))
+    if zone_half <= 0.0 or dist >= zone_half:
+        return 0.0
+    return 1.0 - dist / zone_half
+
+
 # kind -> extractor. Defaults match meta_reward.hymeko.
 _REWARD_TERMS: dict[str, RewardTerm] = {
     "reach_distance": _term_reach_distance,
@@ -91,6 +156,12 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "below_ground_penalty": _term_below_ground_penalty,
     "both_contact": _term_both_contact,
     "in_zone": _term_in_zone,
+    "grasp_approach": _term_grasp_approach,
+    "settle": _term_settle,
+    "arm_motion": _term_arm_motion,
+    "center_bonus": _term_center_bonus,
+    "arm_collision": _term_arm_collision,
+    "out_of_bounds": _term_out_of_bounds,
 }
 
 

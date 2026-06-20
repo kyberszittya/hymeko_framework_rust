@@ -195,3 +195,36 @@ def test_split_konect_prefilled_deterministic(isolated_data_dir: Path) -> None:
     tr2, va2, te2 = datasets.split(g, seed=11)
     assert np.array_equal(tr, tr2)
     assert len(tr) + len(va) + len(te) == g.edges.shape[0]
+
+
+# --- true-held-out dedup helpers (datasets layer) --------------------------
+
+def test_undirected_pair_is_orientation_invariant() -> None:
+    assert datasets.undirected_pair((3, 1)) == (1, 3)
+    assert datasets.undirected_pair((1, 3)) == (1, 3)
+    # accepts a numpy row and returns plain python ints
+    p = datasets.undirected_pair(np.array([7, 2]))
+    assert p == (2, 7) and all(isinstance(x, int) for x in p)
+
+
+def test_drop_train_pairs_drops_mirror_and_repeat() -> None:
+    """A test edge whose mirror/repeat is a train pair is the leak this drops."""
+    edges = np.array([[2, 1], [4, 5], [9, 8]], dtype=np.int64)  # (1,2) mirror, (4,5), (8,9)
+    signs = np.array([1, -1, 1], dtype=np.int64)
+    train_pairs = {(1, 2), (8, 9)}  # (1,2) overlaps row 0 (mirror); (8,9) overlaps row 2
+    e, s = datasets.drop_train_pairs(edges, signs, train_pairs)
+    assert e.tolist() == [[4, 5]] and s.tolist() == [-1]
+
+
+def test_drop_train_pairs_no_overlap_is_identity() -> None:
+    edges = np.array([[0, 1], [2, 3]], dtype=np.int64)
+    signs = np.array([1, -1], dtype=np.int64)
+    e, s = datasets.drop_train_pairs(edges, signs, {(5, 6)})
+    assert np.array_equal(e, edges) and np.array_equal(s, signs)
+
+
+def test_drop_train_pairs_empty_is_noop() -> None:
+    e = np.empty((0, 2), dtype=np.int64)
+    s = np.empty((0,), dtype=np.int64)
+    e2, s2 = datasets.drop_train_pairs(e, s, {(0, 1)})
+    assert e2.shape == (0, 2) and s2.shape == (0,)

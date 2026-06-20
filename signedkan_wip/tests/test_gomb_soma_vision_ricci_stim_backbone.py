@@ -137,5 +137,52 @@ def test_param_count_excludes_head():
     assert n_bb == 4566
 
 
+def test_ablate_structural_branches_ignores_branch_params():
+    """With ``ablate_structural_branches=True`` the walk/poly/tri branches are
+    zeroed, so the head input must be invariant to the branch sub-modules'
+    parameters (it depends only on the encoder path via the highway skip). This
+    is the Step-1 diagnostic toggle (plan 2026-06-16-soma-structural-highway):
+    a regression that would fail if the zeroing were dropped while the branches
+    produce a non-zero signal."""
+    torch.manual_seed(0)
+    bb = RicciStimBackbone(
+        image_h=24, image_w=24, patch_size_initial=8,
+        patch_size_min=2, max_depth=2, max_anchors=64,
+        d_hidden=8, bochner_alpha=0.1, bochner_beta=0.1,
+        use_highway=True, ablate_structural_branches=True,
+    ).eval()
+    # A structured image so the stim-graph (and thus the branches, pre-ablation)
+    # is non-trivial — the test would be vacuous on a near-empty graph.
+    img = torch.zeros(1, 24, 24)
+    img[0, 4:12, 4:12] = 1.0
+    img[0, 14:20, 14:20] = 1.0
+    with torch.no_grad():
+        h0, _ = bb(img)
+        n_touched = 0
+        for name, p in bb.named_parameters():
+            if any(k in name for k in ("walk_layer", "poly_layer", "tri_layer")):
+                p.add_(torch.randn_like(p))
+                n_touched += 1
+        h1, _ = bb(img)
+    assert n_touched > 0, "no structural-branch params matched — test is vacuous"
+    assert torch.allclose(h0, h1), "ablated output changed when branch params did"
+
+
+def test_ablate_default_off_preserves_behaviour():
+    """The flag defaults off, so a backbone built without it is byte-identical to
+    one with ``ablate_structural_branches=False`` (contract preservation)."""
+    kw = dict(image_h=16, image_w=16, patch_size_initial=4, patch_size_min=1,
+              max_depth=2, max_anchors=64, d_hidden=8)
+    a = RicciStimBackbone(**kw).eval()
+    b = RicciStimBackbone(ablate_structural_branches=False, **kw).eval()
+    b.load_state_dict(a.state_dict())
+    torch.manual_seed(3)
+    img = torch.randn(1, 16, 16)
+    with torch.no_grad():
+        ha, _ = a(img)
+        hb, _ = b(img)
+    assert torch.equal(ha, hb)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

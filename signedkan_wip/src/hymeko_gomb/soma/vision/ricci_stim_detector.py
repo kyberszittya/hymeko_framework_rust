@@ -58,6 +58,7 @@ class RicciStimDetector(nn.Module):
         use_highway: bool = False,
         use_pyramid: bool = False,
         cache_geometry: bool = False,
+        ablate_structural_branches: bool = False,
     ) -> None:
         super().__init__()
         self.backbone = RicciStimBackbone(
@@ -76,6 +77,7 @@ class RicciStimDetector(nn.Module):
             use_highway=use_highway,
             use_pyramid=use_pyramid,
             cache_geometry=cache_geometry,
+            ablate_structural_branches=ablate_structural_branches,
         )
         self.n_classes = n_classes
         # +1 for background class.

@@ -91,6 +91,45 @@ pick_place_cell: sysml_trace.elements {
 }
 `;
 
+// ── Galambos RL state (the hypergraph the policy reads) ───────────────
+// The per-vertex *state* the HSiKAN actor/critic message-passes over: the two
+// planar grasper arms as one signed kinematic hypergraph — six link vertices
+// (base/upper/lower × left/right) joined by four revolute hyperedges
+// `(+ parent, - child, - AXIS_Z)`. Self-contained (inline `kit` vocab) so the
+// in-browser WASM compiles it as a single source; this is the structure the RL
+// observation broadcasts joint/pose/disk features onto. Renders in Hypergraph 3D.
+const GALAMBOS_STATE = `galambos_state {}
+
+kit {
+    elements {
+        meta_element {}
+        link: + <isa> meta_element {}
+    }
+    joints {
+        meta_joint {}
+        rev_joint: + <isa> meta_joint {}
+    }
+    axes {
+        axis_definition {}
+        AXIS_Z: + <isa> axis_definition { ax [0.0, 0.0, 1.0]; }
+    }
+}
+
+galambos: kit.elements, kit.joints, kit.axes {
+    base_left:   kit.elements.link {}
+    upper_left:  kit.elements.link {}
+    lower_left:  kit.elements.link {}
+    base_right:  kit.elements.link {}
+    upper_right: kit.elements.link {}
+    lower_right: kit.elements.link {}
+
+    @jl1: + <isa> kit.joints.rev_joint { (+ base_left,   - upper_left,  - kit.axes.AXIS_Z); }
+    @jl2: + <isa> kit.joints.rev_joint { (+ upper_left,  - lower_left,  - kit.axes.AXIS_Z); }
+    @jr1: + <isa> kit.joints.rev_joint { (+ base_right,  - upper_right, - kit.axes.AXIS_Z); }
+    @jr2: + <isa> kit.joints.rev_joint { (+ upper_right, - lower_right, - kit.axes.AXIS_Z); }
+}
+`;
+
 // ── Classic combinatorial hypergraphs ─────────────────────────────────
 // Pure undirected hypergraphs (neutral `~` arcs). Embedded VERBATIM from
 // data/typical_graphs/*.hymeko — keep these byte-faithful; the consistency
@@ -176,15 +215,30 @@ generic
 }
 `;
 
-/** Built-in example catalog, in gallery order. */
+/** Built-in example catalog, in gallery order. ``group`` buckets entries into
+ *  projects for the gallery's <optgroup> rendering. */
 export const EXAMPLES = [
-  { id: "kinematic", label: "Kinematic arm",                 source: KINEMATIC,   view: null },
-  { id: "trace",     label: "Requirements trace (SysML)",    source: REQ_TRACE,   view: null },
-  { id: "fano",      label: "Fano plane — S(2,3,7)",         source: FANO,        view: "hyper3d" },
-  { id: "sunflower", label: "Sunflower (Δ-system)",          source: SUNFLOWER,   view: "hyper3d" },
-  { id: "k4_3",      label: "K₄ complete 3-uniform",         source: K4_3UNIFORM, view: "hyper3d" },
-  { id: "generic",   label: "Generic hypergraph",            source: GENERIC,     view: "hyper3d" },
+  { id: "kinematic", label: "Kinematic arm",              group: "Robotics",                source: KINEMATIC,      view: null },
+  { id: "galambos",  label: "Galambos grasper — RL state", group: "Galambos (RL grasp)",    source: GALAMBOS_STATE, view: "hyper3d" },
+  { id: "trace",     label: "Requirements trace (SysML)", group: "Systems engineering",     source: REQ_TRACE,      view: null },
+  { id: "fano",      label: "Fano plane — S(2,3,7)",      group: "Combinatorial hypergraphs", source: FANO,        view: "hyper3d" },
+  { id: "sunflower", label: "Sunflower (Δ-system)",       group: "Combinatorial hypergraphs", source: SUNFLOWER,   view: "hyper3d" },
+  { id: "k4_3",      label: "K₄ complete 3-uniform",      group: "Combinatorial hypergraphs", source: K4_3UNIFORM, view: "hyper3d" },
+  { id: "generic",   label: "Generic hypergraph",         group: "Combinatorial hypergraphs", source: GENERIC,     view: "hyper3d" },
 ];
+
+/** Catalog grouped by project, preserving first-seen group order. Used by the gallery to
+ *  render <optgroup>s. */
+export function examplesByGroup() {
+  const groups = [];
+  const byName = new Map();
+  for (const e of EXAMPLES) {
+    const name = e.group ?? "Other";
+    if (!byName.has(name)) { byName.set(name, []); groups.push(name); }
+    byName.get(name).push(e);
+  }
+  return groups.map((name) => ({ group: name, entries: byName.get(name) }));
+}
 
 /**
  * Look up an example by id.

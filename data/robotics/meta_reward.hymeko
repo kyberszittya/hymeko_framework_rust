@@ -43,10 +43,35 @@ reward {
         @below_ground_penalty:   + <isa> reward.reward_term { weight 0.0; }
 
         // === Planar grasping (Galambos) ===
+        // Dense approach: -weight·½(‖nearest_left_link - disk‖ + ‖nearest_right_link - disk‖).
+        // Bridges 'arms near the coin' → 'two-finger contact' (the gradient the sparse
+        // both_contact cliff cannot supply on its own).
+        @grasp_approach: + <isa> reward.reward_term { weight 0.0; }
+
         // +weight when both fingers touch the disk (encourages a two-sided grasp).
         @both_contact: + <isa> reward.reward_term { weight 0.0; }
 
         // +weight (sparse success) when the disk rests inside the target zone.
         @in_zone:      + <isa> reward.reward_term { weight 0.0; }
+
+        // Overshoot brake: -weight·‖disk velocity‖ while the disk is near the zone, so the policy
+        // decelerates it into the zone instead of pushing it through.
+        @settle:       + <isa> reward.reward_term { weight 0.0; }
+
+        // Anti-stall: -weight·max(0, v_min - arm joint speed) — penalises an idle arm so the policy
+        // keeps exploring instead of freezing.
+        @arm_motion:   + <isa> reward.reward_term { weight 0.0; }
+
+        // Centring bonus: +weight·(1 - dist/zone_half) inside the zone — grades precision toward the
+        // exact zone centre (denser than the binary in_zone success).
+        @center_bonus: + <isa> reward.reward_term { weight 0.0; }
+
+        // Arm-arm collision: -weight while the two arms touch each other (keep the fingers from
+        // crashing together instead of cooperating).
+        @arm_collision: + <isa> reward.reward_term { weight 0.0; }
+
+        // Out-of-bounds: -weight when the disk is knocked off the table (death) — discourages
+        // ballistic over-pushing.
+        @out_of_bounds: + <isa> reward.reward_term { weight 0.0; }
     }
 }

@@ -1,0 +1,37 @@
+Ami nagyon erős benne: most már nem a sebességre van felhúzva a fő claim, hanem arra, hogy a cross-view consistency algebrai tulajdonságként jelenik meg. Ez okos húzás. A szöveg külön szétválasztja, hogy a reprezentációs döntés adja a correctness-contributiont, míg az in-process dispatcher architektúra adja a wall-clock gyorsulást. Ez pont az a fajta “honest attribution”, amit egy szigorú reviewer szeret látni.
+
+A validáció is sokkal érettebb lett. Van robotics case study, hat target formátum, alias-invariance teszt, scaling sweep, realistic humanoid/quadruped morphology check, head-to-head a xacro → gz sdf → mujoco stack ellen, plusz külön threat-to-validity rész, ahol kimondod, hogy a benchmark single-threaded, disk I/O nélkül fut, és hogy a competitor stack nem teljesen ugyanazt a problémát oldja meg. Ez review-szempontból életmentő, mert előre elveszed a “de ez nem fair” típusú ütéseket.
+
+A related work rész is jobb lett: EMF, Xtext, ATL, VIATRA, LLVM/MLIR, Chisel, CWL, ROS toolchain, HyperNetX/PyG — ez már kirajzolja, hogy nem a levegőben lóg a cikk. A Table IV/V összehasonlítás külön hasznos, mert kimondja, hogy HyMeKo nem egyetlen dimenzióban akar nyerni, hanem a kombinációval: content hash + n-ary IR + algebraic argument + multi-target + in-process + template-driven.
+
+A fő veszély szerintem nem a technikai gyengeség, hanem a reviewer framing. Egy MDE-s reviewer azt fogja mondani: “central metamodel + code generation + templates, ezt ismerjük.” Erre a válaszodnak pengeélesnek kell lennie: nem az a novelty, hogy van IR és emitter, hanem hogy az IR signed typed hypergraph, canonical hash-sel, és a cross-view invariánsok nem tesztkonvenciók, hanem a pipeline struktúrájából következnek. Ezt már mondod, de még jobban előre kell tolni.
+
+A második kockázat: a “projection-emission commutativity” szóhasználat. Matematikailag picit támadható, mert π és ε más codomainbe mennek; nem klasszikus kommutatív diagram, inkább factorization / shared-denotation property / compile amortization property. Én vagy átnevezném “projection-emission independence”-re, vagy explicit diagramot adnék: mindkettő ugyanabból a H-ból indul, ezért k formátum nem k compile. Reviewernél egy rossz név is tud vérszagot kelteni, mint a cápa a tanszéki kávézóban.
+
+A harmadik: a learning/project ág még inkább ígéret, mint empirikus contribution. A cikk azt mondja, hogy project sparse tensor/star/clique expansion formába megy hypergraph-aware learning pipeline-okhoz, de a validation főleg code generation. Ez nem baj, csak vigyázni kell: vagy demotáld ezt “supported interface”-nek, vagy tegyél be egy minimális micro-demo-t: például export PyG/DLPack/COO shape, checksum, zero-copy proof-of-life, nem feltétlenül ML accuracy.
+
+A negyedik: a nem-robotikai witness jó, de még vékony. A SysML traceability példa hasznos, viszont a conclusion maga is kimondja, hogy industrial-scale EDA és SysML v2 artefactok nincsenek mérve. Ez korrekt, de T-SMC-nél egy reviewer kérheti: “akkor miért ilyen széles a claim?” Én a broad claimet megtartanám, de mindenhol úgy fogalmaznék: the pipeline is domain-agnostic; the empirical validation is robotics-centered, with a minimal non-robotics witness. Így nem túlígéret.
+
+Konkrétan mit módosítanék leadás előtt:
+
+Rövidíteném a címet. Most brutál hosszú. Például:
+HyMeKo: A Canonical Signed Hypergraph IR for Cross-View Consistent CPS Engineering
+Az “Intermediate Representation for Multi-Target Code Generation” mehet subtitle-ba vagy abstractbe.
+A contribution listát tenném explicit, számozott formába az Introduction végére.
+Most benne van a szövegben, de reviewernél aranyat ér a tiszta lista:
+C1 canonical signed-typed hypergraph IR;
+C2 algebraic consistency properties;
+C3 template/query dispatcher;
+C4 robotics validation + scaling + reproducibility.
+A proof assumptions legyenek egy kis táblában.
+Például: deterministic canonicalization, insertion-order-stable emitters, total templates on support, query bundle fixed, hash collision assumption. Ez lezárja a “proof sketch túl informális” támadást.
+Az alias-invariance proof ne csak supplementary legyen.
+A conclusion szerint Proposition 1 proof supplementary-ben van, miközben ez az egyik legfontosabb property. Legalább egy 8–10 soros main-text proof sketch menjen be.
+A benchmarkot ne a legelső számokkal add el, hanem a consistency-vel.
+A sub-ms és 100× nagyon szexi, de veszélyes. A fő üzenet: correctness architecture. A speed: consequence. Ezt most jól mondod, csak még következetesebben tartsd.
+Tegyél be egy “What HyMeKo does not solve” bekezdést.
+Pl. semantic completeness of target formats, physical validation, mesh/resource handling, closed-loop kinematics, target-specific simulator quirks. Ez nem gyengít, hanem éretté teszi.
+
+Az én verdictem: erős major-review-kompatibilis állapot, és kis tightening után akár T-SMC-ben is vállalható. Nem mondanám, hogy automatikus accept — ez nem a mikulásvonat, itt vérre menő MDE/robotics reviewer is beeshet —, de már van egy tiszta, védhető “thesis”:
+
+HyMeKo nem gyors konverter akar lenni, hanem egy algebrailag rendezett canonical IR, amelyből a konverziók már csak következmények.

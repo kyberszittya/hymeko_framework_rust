@@ -178,12 +178,14 @@ _BACKBONES: dict[str, Callable[..., tuple[nn.Module, int]]] = {
     "mlp": mlp_backbone, "hsikan": hsikan_backbone}
 
 
-def build_policy(kind: str, obs_dim: int, action_dim: int, **backbone_kw: object,
-                 ) -> ActorCritic:
+def build_policy(kind: str, obs_dim: int, action_dim: int, *, log_std_init: float = -1.6,
+                 **backbone_kw: object) -> ActorCritic:
     """Construct an ``ActorCritic`` with the requested backbone (the ablation switch).
 
     ``mlp`` takes a flat ``obs_dim``; ``hsikan`` takes the per-vertex feature dim plus a
     required ``hg_state=`` (the kinematic hypergraph). The two share the actor+critic heads.
+    ``log_std_init`` sets the initial action-noise scale (the exploration tactic; ``std =
+    exp(log_std_init)``).
 
     # Preconditions ``kind in POLICY_KINDS``.
     # Errors ``ValueError`` on an unknown kind; ``TypeError`` if ``hsikan`` is built
@@ -193,4 +195,5 @@ def build_policy(kind: str, obs_dim: int, action_dim: int, **backbone_kw: object
         raise ValueError(f"unknown policy kind {kind!r}; expected one of {POLICY_KINDS}")
     actor_backbone, feat_dim = _BACKBONES[kind](obs_dim, **backbone_kw)
     critic_backbone, _ = _BACKBONES[kind](obs_dim, **backbone_kw)   # independent network
-    return ActorCritic(actor_backbone, critic_backbone, feat_dim, action_dim)
+    return ActorCritic(actor_backbone, critic_backbone, feat_dim, action_dim,
+                       log_std_init=log_std_init)

@@ -75,18 +75,19 @@ def test_match_f1_partial_precision() -> None:
 
 # ── FAIRNESS GUARD: the model must be able to overfit ─────────────────
 
-@pytest.mark.xfail(
-    reason="DETR overfit guard: the baseline is not yet trained to overfit "
-           "(got mAP50_proxy=0.149 at 200 steps, 2026-06-16) — getting the "
-           "from-scratch DETR to converge on IoU>0.5 localisation is the OPEN "
-           "task (see ROADMAP 'Resume' note). Remove this xfail once it passes; "
-           "until then NO RicciStim-vs-DETR parity claim is valid.",
-    strict=False,
-)
+@pytest.mark.slow
 def test_detr_overfits_small_set() -> None:
     """A correct DETR overfits a tiny train set to a high F1. A strawman
     (broken loss / heads / matching) would stay near zero — which would make the
-    parity comparison dishonest, so this is a hard gate before any headline."""
+    parity comparison dishonest, so this is a hard gate before any headline.
+
+    Recipe (diagnosed 2026-06-16, reports/2026-06-16-detr-overfit-fix.md): the
+    box loss must be ``l1giou`` (pure GIoU saturates at IoU≈0.46, just under the
+    0.5 the metric needs), the lr must be 1e-3 (3e-3 diverges past ~step 400),
+    and grad-norm clipping at 0.1 stabilises it. Under this recipe the model
+    reaches mAP50_proxy=1.0 by ~step 450; the gate below is 0.4 with margin.
+    This is a deliberately heavy guard (≈600 train steps) — hence ``slow``.
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(0)
     # Single-object images (easiest to memorise → a clean pipeline-correctness
@@ -95,7 +96,7 @@ def test_detr_overfits_small_set() -> None:
     loader = DataLoader(ds, batch_size=16, shuffle=True,
                         collate_fn=collate_cluttered)
     model = build_detr("standard", canvas=64, n_classes=10).to(device)
-    opt = torch.optim.Adam(model.parameters(), lr=3e-3)
+    opt = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     from signedkan_wip.src.vision.detr_baseline import _pad_targets
     from signedkan_wip.src.vision.hymeyolo_hungarian import hungarian_set_loss
@@ -107,9 +108,10 @@ def test_detr_overfits_small_set() -> None:
             gc, gcl, gcnt = _pad_targets(bb, lb, 64, 10, device)
             corners, cls = model(images)
             loss, _, _ = hungarian_set_loss(
-                corners, cls, gc, gcl, gcnt, n_classes=10, box_loss_kind="giou")
+                corners, cls, gc, gcl, gcnt, n_classes=10, box_loss_kind="l1giou")
             opt.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
             opt.step()
     final = evaluate_detr_map50(model, loader, device, canvas=64)
     assert final > init + 0.1, f"DETR did not learn: init={init:.3f} final={final:.3f}"

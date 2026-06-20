@@ -93,6 +93,7 @@ class RicciStimBackbone(nn.Module):
         use_highway: bool = False,
         use_pyramid: bool = False,
         cache_geometry: bool = False,
+        ablate_structural_branches: bool = False,
     ) -> None:
         super().__init__()
         self.image_h = image_h
@@ -106,6 +107,9 @@ class RicciStimBackbone(nn.Module):
         self.use_arity_mixer = use_arity_mixer
         self.use_highway = use_highway
         self.use_pyramid = use_pyramid
+        # Step-1 diagnostic flag (plan 2026-06-16-soma-structural-highway): zero
+        # the walk/poly/tri structural branches to isolate the encoder-only path.
+        self.ablate_structural_branches = ablate_structural_branches
         self.branch_mixer = LearnedBranchMixer(3) if use_arity_mixer else None
         self.highway = HighwayGate(d_hidden) if use_highway else None
         self.pyramid = CrossScalePyramid(d_hidden) if use_pyramid else None
@@ -218,6 +222,11 @@ class RicciStimBackbone(nn.Module):
             self._poly_branch(features, sg),
             self._tri_branch(features, sg),
         ]
+        # Step-1 ablation: zero the structural branches so the head sees only the
+        # encoder features (via the highway skip). mAP(full) - mAP(ablated)
+        # measures the structural contribution — the "walks ≈ MLP" test.
+        if self.ablate_structural_branches:
+            branches = [torch.zeros_like(b) for b in branches]
         # Combine: learned-αₖ mixer if enabled, else the original bare sum.
         if self.branch_mixer is not None:
             h = self.branch_mixer(branches)

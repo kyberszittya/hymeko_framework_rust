@@ -23,6 +23,7 @@ mod test_gazebo_world;
 mod test_generation_engine;
 mod test_helpers;
 mod test_imported_real;
+mod test_mdsd_reuse;
 mod test_mermaid;
 mod test_prop_witnesses;
 mod test_split;

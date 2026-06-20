@@ -22,7 +22,8 @@ CLI
 ---
     python -m signedkan_wip.experiments.runs.run_baseline_audit \
         --model sgcn --dataset bitcoin_alpha --seed 0 --n-epochs 120 \
-        [--shuffle-train-signs] [--hidden H --n-layers L --n-heads Hd --lr LR]
+        [--shuffle-train-signs] [--dedup] \
+        [--hidden H --n-layers L --n-heads Hd --lr LR]
 """
 from __future__ import annotations
 
@@ -43,7 +44,12 @@ from signedkan_wip.src.baselines.registry import (
     get_baseline,
     list_baselines,
 )
-from signedkan_wip.src.datasets import load, split
+from signedkan_wip.src.datasets import (
+    drop_train_pairs,
+    load,
+    split,
+    undirected_pair,
+)
 
 SHUFFLE_SEED_OFFSET = 100003  # identical to run_gomb_smoke, for comparability
 
@@ -55,7 +61,11 @@ def _evaluate(
     signs: np.ndarray,
     device: torch.device,
 ) -> tuple[float, float]:
-    """Held-out (AUROC, macro-F1). AUROC is ``nan`` if the slice is one-class."""
+    """Held-out (AUROC, macro-F1). AUROC is ``nan`` if the slice is one-class;
+    both metrics are ``nan`` if the slice is empty (a possible ``--dedup``
+    outcome) — an undefined metric, not a crash (sklearn raises on empty input)."""
+    if len(signs) == 0:
+        return float("nan"), float("nan")
     model.eval()
     with torch.no_grad():
         z = model.encode_nodes(*ctx)
@@ -69,61 +79,28 @@ def _evaluate(
     return float(auc), float(f1m)
 
 
-def run_audit(
-    model_name: str,
-    dataset: str,
-    seed: int,
-    n_epochs: int | None = None,
-    *,
-    shuffle_train_signs: bool = False,
-    reachability: ReachabilityRule = ReachabilityRule.STRICT,
-    overrides: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Train one (model, dataset, seed) cell under a reachability rule.
+def _train(
+    model: torch.nn.Module,
+    hp: HParams,
+    ctx: tuple,
+    e_tr: np.ndarray,
+    s_tr: np.ndarray,
+    e_va: np.ndarray,
+    s_va: np.ndarray,
+    device: torch.device,
+) -> tuple[torch.nn.Module, float, int, float]:
+    """Train ``model`` in place (BCE + optional class-weight + early-stop).
 
-    Preconditions: ``model_name`` is a registered baseline; ``dataset`` loads via
-    ``datasets.load``; ``seed >= 0``.
-    Postconditions: dict carries ``test_auroc`` (held-out, may be ``nan`` on a
-    one-class slice) and ``n_params``. The encoder's message-passing context is
-    seeded by ``reachability``: STRICT (default) = training edges only, so the
-    result is bit-identical to the prior strict-only behaviour; TRANSDUCTIVE_*
-    additionally admit test-edge topology / signs (the leak experiment).
+    Preconditions: ``model`` exposes ``encode_nodes``/``edge_logits``/``aux_loss``;
+    ``ctx`` is its built context; ``e_tr``/``s_tr`` (and ``e_va``/``s_va`` for
+    early-stop) are train-only arrays. Postconditions: returns
+    ``(model, best_val_auroc, best_epoch, elapsed_s)``; if ``hp.early_stopping`` the
+    best-val state is loaded. Behaviour-preserving extraction of the loop
+    ``run_audit`` used — and the single training path the transfer driver reuses
+    (§6.5 #3, no train-loop dup).
     """
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    strat = get_baseline(model_name)
-    hp: HParams = strat.default_hparams().merged(
-        n_epochs=n_epochs, **(overrides or {})
-    )
-
-    g = load(dataset)
-    tr_idx, va_idx, te_idx = split(g, seed=seed)
-    # Strict invariant: train/test edge index sets are disjoint (split contract);
-    # the context is built from train edges only, so no test-edge sign leaks.
-    assert not (set(tr_idx.tolist()) & set(te_idx.tolist())), \
-        "train/test edge overlap — strict protocol violated"
-
-    e_tr, s_tr = g.edges[tr_idx], g.signs[tr_idx].copy()
-    e_va, s_va = g.edges[va_idx], g.signs[va_idx]
-    e_te, s_te = g.edges[te_idx], g.signs[te_idx]
-
-    if shuffle_train_signs:
-        perm = np.random.default_rng(seed + SHUFFLE_SEED_OFFSET).permutation(len(s_tr))
-        s_tr = s_tr[perm]
-
-    # Reachability rule seeds the message-passing closure. STRICT → (e_tr, s_tr)
-    # exactly (reduction); TRANSDUCTIVE_* admit test topology/signs. Built from
-    # the post-shuffle train signs so the audit semantics compose.
-    adj_edges, adj_signs = reachable_edges(reachability, e_tr, s_tr, e_te, s_te)
-    meta = GraphMeta(n_nodes=g.n_nodes)
-    ctx = strat.build_context(adj_edges, adj_signs, g.n_nodes, device)
-    model = strat.build_model(meta, hp).to(device)
-    n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     opt = torch.optim.Adam(model.parameters(), lr=hp.lr,
                            weight_decay=hp.weight_decay)
-
     e_tr_t = torch.from_numpy(e_tr.astype(np.int64)).to(device)
     target_tr = torch.from_numpy((s_tr == 1).astype(np.float32)).to(device)
     s_tr_t = torch.from_numpy(s_tr.astype(np.float32)).to(device)
@@ -165,14 +142,90 @@ def run_audit(
                 if hp.patience is not None and stale >= hp.patience:
                     break
     elapsed = time.time() - t0
-
     if hp.early_stopping and best_state is not None:
         model.load_state_dict(best_state)
+    return model, best_val_auc, best_epoch, elapsed
+
+
+def run_audit(
+    model_name: str,
+    dataset: str,
+    seed: int,
+    n_epochs: int | None = None,
+    *,
+    shuffle_train_signs: bool = False,
+    dedup: bool = False,
+    reachability: ReachabilityRule = ReachabilityRule.STRICT,
+    overrides: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Train one (model, dataset, seed) cell under a reachability rule.
+
+    Preconditions: ``model_name`` is a registered baseline; ``dataset`` loads via
+    ``datasets.load``; ``seed >= 0``.
+    Postconditions: dict carries ``test_auroc`` (held-out, may be ``nan`` on a
+    one-class slice) and ``n_params``. The encoder's message-passing context is
+    seeded by ``reachability``: STRICT (default) = training edges only, so the
+    result is bit-identical to the prior strict-only behaviour; TRANSDUCTIVE_*
+    additionally admit test-edge topology / signs (the leak experiment).
+
+    ``dedup`` (default False) applies the *true held-out* filter
+    (:func:`datasets.drop_train_pairs`): val/test rows whose undirected ``(u, v)``
+    also appears as a train pair are dropped before scoring, matching the
+    ``run_hsikan_rotor --dedup`` protocol so the rotor line and the SiGAT
+    baselines are compared like-for-like. With ``dedup=False`` the harness is
+    bit-identical to its prior behaviour (the rollback path).
+    """
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    strat = get_baseline(model_name)
+    hp: HParams = strat.default_hparams().merged(
+        n_epochs=n_epochs, **(overrides or {})
+    )
+
+    g = load(dataset)
+    tr_idx, va_idx, te_idx = split(g, seed=seed)
+    # Strict invariant: train/test edge index sets are disjoint (split contract);
+    # the context is built from train edges only, so no test-edge sign leaks.
+    assert not (set(tr_idx.tolist()) & set(te_idx.tolist())), \
+        "train/test edge overlap — strict protocol violated"
+
+    e_tr, s_tr = g.edges[tr_idx], g.signs[tr_idx].copy()
+    e_va, s_va = g.edges[va_idx], g.signs[va_idx]
+    e_te, s_te = g.edges[te_idx], g.signs[te_idx]
+
+    if shuffle_train_signs:
+        perm = np.random.default_rng(seed + SHUFFLE_SEED_OFFSET).permutation(len(s_tr))
+        s_tr = s_tr[perm]
+
+    # True-held-out dedup (opt-in): drop val/test rows whose undirected pair is a
+    # train pair. The shuffle permutes only train *signs*, not edges, so the pair
+    # set is shuffle-invariant — placement here just keeps it beside the split.
+    n_va_pre, n_te_pre = len(e_va), len(e_te)
+    if dedup:
+        train_pairs = {undirected_pair(e) for e in e_tr}
+        e_va, s_va = drop_train_pairs(e_va, s_va, train_pairs)
+        e_te, s_te = drop_train_pairs(e_te, s_te, train_pairs)
+
+    # Reachability rule seeds the message-passing closure. STRICT → (e_tr, s_tr)
+    # exactly (reduction); TRANSDUCTIVE_* admit test topology/signs. Built from
+    # the post-shuffle train signs so the audit semantics compose.
+    adj_edges, adj_signs = reachable_edges(reachability, e_tr, s_tr, e_te, s_te)
+    meta = GraphMeta(n_nodes=g.n_nodes)
+    ctx = strat.build_context(adj_edges, adj_signs, g.n_nodes, device)
+    model = strat.build_model(meta, hp).to(device)
+    n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    model, best_val_auc, best_epoch, elapsed = _train(
+        model, hp, ctx, e_tr, s_tr, e_va, s_va, device)
 
     test_auc, test_f1m = _evaluate(model, ctx, e_te, s_te, device)
     return dict(
         model=model_name, dataset=dataset, seed=seed,
-        shuffle=shuffle_train_signs, reachability=reachability.value,
+        shuffle=shuffle_train_signs, dedup=dedup,
+        n_test=len(e_te), n_test_dropped=n_te_pre - len(e_te),
+        n_val_dropped=n_va_pre - len(e_va),
+        reachability=reachability.value,
         n_epochs=hp.n_epochs,
         hidden=hp.hidden, n_layers=hp.n_layers, n_heads=hp.n_heads, lr=hp.lr,
         n_params=int(n_params), elapsed_s=round(elapsed, 2),
@@ -192,6 +245,9 @@ def main() -> None:
     ap.add_argument("--n-epochs", type=int, default=120)
     ap.add_argument("--shuffle-train-signs", action="store_true",
                     help="permute train signs (audit control); test intact")
+    ap.add_argument("--dedup", action="store_true",
+                    help="true held-out: drop val/test rows whose undirected pair "
+                         "is a train pair (matches run_hsikan_rotor --dedup)")
     ap.add_argument("--reachability", default="strict",
                     choices=[r.value for r in ReachabilityRule],
                     help="message-passing closure: strict|topo|full (default strict)")
@@ -213,10 +269,11 @@ def main() -> None:
     r = run_audit(args.model, args.dataset, args.seed,
                   n_epochs=args.n_epochs,
                   shuffle_train_signs=args.shuffle_train_signs,
+                  dedup=args.dedup,
                   reachability=ReachabilityRule.from_str(args.reachability),
                   overrides=overrides)
     print(f"  {args.model:<10} {args.dataset:<14} seed={args.seed} "
-          f"shuffle={args.shuffle_train_signs}  "
+          f"shuffle={args.shuffle_train_signs} dedup={args.dedup}  "
           f"AUROC={r['test_auroc']:.4f}  F1m={r['test_f1_macro']:.4f}  "
           f"params={r['n_params']:,}  {r['elapsed_s']:.1f}s")
     print(json.dumps(r))  # last line: parsed by run_no_leak_benchmark

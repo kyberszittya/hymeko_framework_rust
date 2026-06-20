@@ -193,7 +193,7 @@ def test_hungarian_set_loss_accepts_a3_kwargs() -> None:
     gt_classes = torch.randint(0, n_classes, (B, M))
     gt_counts = torch.tensor([M, M], dtype=torch.long)
     for cls_k in ("ce", "focal"):
-        for box_k in ("l1", "giou"):
+        for box_k in ("l1", "giou", "l1giou"):
             loss, _, _ = hungarian_set_loss(
                 pred_corners, pred_cls, gt_corners,
                 gt_classes, gt_counts, n_classes=n_classes,
@@ -202,6 +202,42 @@ def test_hungarian_set_loss_accepts_a3_kwargs() -> None:
             assert torch.isfinite(loss), (
                 f"non-finite loss for cls={cls_k} box={box_k}: {loss}"
             )
+
+
+def test_l1giou_box_term_is_l1_plus_giou() -> None:
+    """The ``l1giou`` box term (added 2026-06-16 to make MiniDETR competent) is
+    exactly the sum of the ``l1`` and ``giou`` box terms. Zeroing the class
+    weights isolates the box term and pins the additive identity — a regression
+    that the single-branch ``l1``/``giou`` behaviour stays byte-for-byte intact
+    (the matching cost never depended on ``box_loss_kind``)."""
+    from signedkan_wip.src.vision.hymeyolo_hungarian import hungarian_set_loss
+    torch.manual_seed(1)
+    B, N, M, n_classes = 2, 4, 2, 10
+    pred_corners = torch.randn(B, N, 4, 2)
+    pred_cls = torch.randn(B, N, n_classes + 1)
+    gt_corners = torch.randn(B, M, 4, 2)
+    gt_classes = torch.randint(0, n_classes, (B, M))
+    gt_counts = torch.tensor([M, M], dtype=torch.long)
+    box_only = dict(n_classes=n_classes, lam_cls=0.0, lam_no_obj=0.0)
+    args = (pred_corners, pred_cls, gt_corners, gt_classes, gt_counts)
+    l1, _, _ = hungarian_set_loss(*args, box_loss_kind="l1", **box_only)
+    giou, _, _ = hungarian_set_loss(*args, box_loss_kind="giou", **box_only)
+    l1giou, _, _ = hungarian_set_loss(*args, box_loss_kind="l1giou", **box_only)
+    assert l1giou.item() == pytest.approx((l1 + giou).item(), abs=1e-5)
+
+
+def test_hungarian_rejects_unknown_box_kind() -> None:
+    """An unknown ``box_loss_kind`` raises rather than silently falling through
+    to L1 (CLAUDE.md §6.4 — no silent failure)."""
+    from signedkan_wip.src.vision.hymeyolo_hungarian import hungarian_set_loss
+    pred_corners = torch.randn(1, 2, 4, 2)
+    pred_cls = torch.randn(1, 2, 4)
+    gt_corners = torch.randn(1, 1, 4, 2)
+    gt_classes = torch.zeros(1, 1, dtype=torch.long)
+    gt_counts = torch.tensor([1], dtype=torch.long)
+    with pytest.raises(ValueError, match="box_loss_kind"):
+        hungarian_set_loss(pred_corners, pred_cls, gt_corners, gt_classes,
+                           gt_counts, n_classes=3, box_loss_kind="bogus")
 
 
 if __name__ == "__main__":

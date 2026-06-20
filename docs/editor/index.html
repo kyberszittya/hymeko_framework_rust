@@ -41,6 +41,20 @@
 
 <main>
   <aside class="palette">
+    <div class="palette-tabs">
+      <button class="palette-tab active" data-tab="outline" type="button">Outline</button>
+      <button class="palette-tab" data-tab="tools" type="button">Tools</button>
+    </div>
+
+    <!-- Tab: outline — multi-file MDP projects as a collapsible tree (editor.js). A project =
+         robot + env + reward + strategy sharing a meta vocabulary; click a file to edit it as the
+         compile root. -->
+    <div class="palette-tabpane active" id="tab-outline">
+      <div id="projectTree" class="project-tree"></div>
+    </div>
+
+    <!-- Tab: tools — element palette, selection, stats, view options, query. -->
+    <div class="palette-tabpane" id="tab-tools">
     <h3>Add</h3>
     <!-- Palette buttons are built from the active profile (editor.js). -->
     <div id="paletteAdd"></div>
@@ -70,6 +84,7 @@
     <input type="text" id="predicate" value="INHERITS(link)" />
     <button id="btnQuery">Run</button>
     <div id="queryResult"></div>
+    </div>
   </aside>
 
   <section class="canvas-pane">

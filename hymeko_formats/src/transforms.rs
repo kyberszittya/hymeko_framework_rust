@@ -442,6 +442,31 @@ fn emit_mjcf(model: &KinematicModel, config: &TransformConfig) -> String {
     emit_mjcf_body_stack(&mut out, &ctx, &roots);
     out.push_str("  </worldbody>\n\n");
 
+    // Adjacent links meet at their shared joint, so their collision geoms overlap there; the
+    // resulting self-contact applies a force that can pin the joint between them (measured on the
+    // planar grasper: a shoulder joint frozen at 0 under a ±1.2 rad command, tracking error
+    // 1.19 rad). Emit an explicit parent→child exclusion per joint so every consumer of the MJCF
+    // gets a physically self-consistent scene. `world` is the implicit worldbody (not an emitted
+    // body), so world-rooted joints have no parent body to exclude against and are skipped.
+    let mut seen = std::collections::HashSet::new();
+    let mut contact = String::new();
+    for j in &model.joints {
+        if j.parent_link == "world" {
+            continue;
+        }
+        if seen.insert((j.parent_link.as_str(), j.child_link.as_str())) {
+            contact.push_str(&format!(
+                "    <exclude body1=\"{}\" body2=\"{}\"/>\n",
+                j.parent_link, j.child_link
+            ));
+        }
+    }
+    if !contact.is_empty() {
+        out.push_str("  <contact>\n");
+        out.push_str(&contact);
+        out.push_str("  </contact>\n\n");
+    }
+
     out.push_str("  <actuator>\n");
     for j in &model.joints {
         if j.joint_type != JointType::Fixed {
@@ -963,5 +988,44 @@ mod mjcf_emit_tests {
         assert!(xml.contains("</mujoco>"));
         let closes = xml.matches("</body>").count();
         assert_eq!(closes, 600, "expected one </body> per link");
+    }
+
+    /// Adjacent links overlap at their shared joint; the emitter must exclude each parent→child
+    /// contact so the self-contact does not pin the joint (the planar-grasper frozen-shoulder bug).
+    #[test]
+    fn mjcf_emits_parent_child_contact_excludes() {
+        let model = deep_chain_model(4); // L0→L1→L2→L3, 3 parent→child joints, no `world`
+        let cfg = hymeko_query::transforms::TransformConfig::default().with_name("chain");
+        let xml = emit_mjcf(&model, &cfg);
+        assert!(xml.contains("<contact>"), "expected a <contact> block");
+        assert!(xml.contains("<exclude body1=\"L0\" body2=\"L1\"/>"));
+        assert!(xml.contains("<exclude body1=\"L2\" body2=\"L3\"/>"));
+        assert_eq!(xml.matches("<exclude").count(), 3, "one exclude per parent→child joint");
+    }
+
+    /// `world` is the implicit worldbody, not an emitted body: world-rooted joints must NOT emit an
+    /// exclude (it would name a nonexistent body and fail to load).
+    #[test]
+    fn mjcf_skips_world_rooted_contact_exclude() {
+        let mut model = deep_chain_model(3); // L0→L1→L2
+        // Re-root the chain at `world`: world → L0.
+        model.joints.insert(
+            0,
+            JointInfo {
+                did: DeclId::new(2000),
+                name: "fix_world".to_string(),
+                joint_type: JointType::Fixed,
+                parent_link: "world".to_string(),
+                child_link: "L0".to_string(),
+                axis: None,
+                origin_xyz: Some([0.0, 0.0, 0.0]),
+                origin_rpy_deg: None,
+                limits: None,
+            },
+        );
+        let cfg = hymeko_query::transforms::TransformConfig::default().with_name("chain");
+        let xml = emit_mjcf(&model, &cfg);
+        assert!(!xml.contains("body1=\"world\""), "world must not appear in an exclude");
+        assert!(xml.contains("<exclude body1=\"L0\" body2=\"L1\"/>"));
     }
 }

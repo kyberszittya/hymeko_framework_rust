@@ -1,10 +1,13 @@
 // galambos_task.hymeko — the planar two-finger grasping reward, declaratively.
 //
 // Two planar arms pull a disk into a target zone. The reward (Σ weight·term):
+//   - grasp_approach : dense, both arms' nearest-link proximity to the coin (bridges near->contact)
 //   - reach_distance : dense -‖disk - zone‖ (the env passes disk_to_zone as the distance)
 //   - both_contact   : +0.5 when both fingers touch the disk (encourages a two-sided grasp)
 //   - in_zone        : +10 sparse success when the disk rests in the zone
-//   - action_cost    : small control-effort penalty
+//   - center_bonus   : graded +closeness to the exact zone centre (precision)
+//   - arm_motion     : anti-stall — penalises an idle arm (exploration)
+// `action_cost` was REMOVED: it rewarded stationarity and induced the freeze-then-timeout failure.
 // Pure PPO learns against this (no scripted expert). Validates via `hymeko inspect`.
 
 galambos_task_description {
@@ -20,15 +23,30 @@ galambos_task: el, rew, r
     disk:        el.frame {}
     target_zone: el.frame {}
 
-    // Dense shaping: pull the disk toward the zone (env supplies disk_to_zone as the distance).
-    @pull: rew.reach_distance { weight 1.0; (+ disk, - target_zone); }
+    // Dense shaping, two stages of the causal chain:
+    //   approach : bring both arms TO the coin (bridges 'near' -> 'contact')
+    //   pull     : once moving, drag the coin toward the zone
+    @approach: rew.grasp_approach { weight 2.0; }
+    @pull:     rew.reach_distance { weight 1.0; (+ disk, - target_zone); }
 
-    // Two-sided grasp bonus + sparse success + control penalty.
+    // Two-sided grasp bonus + sparse success.
     @both: rew.both_contact { weight 0.5; }
     @zone: rew.in_zone      { weight 10.0; }
-    @cost: rew.action_cost  { weight 0.01; }
 
+    // Precision (graded toward the exact centre) + anti-stall (keep the arm exploring, no freezing).
+    @center:  rew.center_bonus { weight 5.0; }
+    @explore: rew.arm_motion   { weight 0.5; }
+
+    // Penalise the two arms colliding with each other (cooperate, don't crash together).
+    @noclash: rew.arm_collision { weight 1.0; }
+
+    // Penalise knocking the disk off the table (death) — stop ballistic over-pushing.
+    @oob: rew.out_of_bounds { weight 5.0; }
+
+    // NOTE: `settle` (overshoot-brake) was tried (near- and in-zone gatings) and measured WORSE
+    // (4/8 vs 5/8 on the easy task); kept as opt-in vocabulary only. `action_cost` was dropped here
+    // because it rewarded stationarity (the freeze-then-timeout failure).
     @grasp_reward: r.reward_spec {
-        (+ pull, + both, + zone, + cost);
+        (+ approach, + pull, + both, + zone, + center, + explore, + noclash, + oob);
     }
 }

@@ -11,7 +11,7 @@ No heavy RL dependency: ~1 file over the pinned torch.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import torch
@@ -136,12 +136,16 @@ def _collect(env: ArmReachEnv, ac: ActorCritic, obs: np.ndarray, n_steps: int,
 
 
 def _update(ac: ActorCritic, opt: torch.optim.Optimizer, buf: dict[str, Any],
-            adv: np.ndarray, ret: np.ndarray, cfg: PPOConfig) -> None:
+            adv: np.ndarray, ret: np.ndarray, cfg: PPOConfig) -> dict[str, float]:
+    """One PPO update over the rollout; returns the mean diagnostics across minibatches
+    (policy/value loss, entropy, approx-KL, clip fraction) for tracing the training curves."""
     obs, act, old_logp = buf["obs"], buf["act"], buf["logp"]
     adv_t = torch.as_tensor((adv - adv.mean()) / (adv.std() + 1e-8))
     ret_t = torch.as_tensor(ret)
     n = len(obs)
     idx = np.arange(n)
+    pl = vl = en = kl = cf = 0.0
+    nb = 0
     for _ in range(cfg.update_epochs):
         np.random.shuffle(idx)
         for s in range(0, n, cfg.minibatch):
@@ -150,16 +154,37 @@ def _update(ac: ActorCritic, opt: torch.optim.Optimizer, buf: dict[str, Any],
             ratio = (logp - old_logp[mb]).exp()
             surr = torch.min(ratio * adv_t[mb],
                              torch.clamp(ratio, 1 - cfg.clip, 1 + cfg.clip) * adv_t[mb])
-            loss = (-surr.mean() + cfg.vf_coef * F.mse_loss(val, ret_t[mb])
-                    - cfg.ent_coef * ent.mean())
+            ploss = -surr.mean()
+            vloss = F.mse_loss(val, ret_t[mb])
+            entm = ent.mean()
+            loss = ploss + cfg.vf_coef * vloss - cfg.ent_coef * entm
             opt.zero_grad()
             loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
             torch.nn.utils.clip_grad_norm_(ac.parameters(), cfg.max_grad_norm)
             opt.step()
+            with torch.no_grad():
+                pl += float(ploss.item())
+                vl += float(vloss.item())
+                en += float(entm.item())
+                kl += float((old_logp[mb] - logp).mean().item())        # approx KL(old||new)
+                cf += float(((ratio - 1.0).abs() > cfg.clip).float().mean().item())
+            nb += 1
+    inv = 1.0 / max(1, nb)
+    return {"policy_loss": pl * inv, "value_loss": vl * inv, "entropy": en * inv,
+            "approx_kl": kl * inv, "clip_frac": cf * inv}
 
 
-def train_ppo(ac: ActorCritic, env: ArmReachEnv, cfg: PPOConfig) -> list[float]:
-    """Train ``ac`` on ``env`` with PPO. Returns the per-iteration mean episodic return."""
+def train_ppo(ac: ActorCritic, env: ArmReachEnv, cfg: PPOConfig,
+              *, on_iteration: Callable[[int, int], None] | None = None,
+              metrics_out: list[dict[str, float]] | None = None) -> list[float]:
+    """Train ``ac`` on ``env`` with PPO. Returns the per-iteration mean episodic return.
+
+    ``on_iteration(i, n_iters)`` (Observer) is called before each of the ``n_iters`` iterations —
+    the seat for a curriculum that mutates ``env`` (e.g. its start-state difficulty) as training
+    progresses. It is called exactly ``cfg.n_iters`` times with ``i`` in ``0..n_iters-1``.
+
+    If ``metrics_out`` is given, one diagnostics dict per iteration is appended (return, losses,
+    entropy, approx-KL, clip fraction, action std, curriculum difficulty) for tracing the curves."""
     opt = torch.optim.Adam(ac.parameters(), lr=cfg.lr)
     # Seed the env RNG so the reaching targets (hence returns) are reproducible; the
     # subsequent in-loop resets advance the same generator deterministically. Without this,
@@ -168,11 +193,19 @@ def train_ppo(ac: ActorCritic, env: ArmReachEnv, cfg: PPOConfig) -> list[float]:
     if cfg.value_warmup > 0:
         obs = _warmup_critic(ac, env, obs, cfg)
     history: list[float] = []
-    for _ in range(cfg.n_iters):
+    for i in range(cfg.n_iters):
+        if on_iteration is not None:
+            on_iteration(i, cfg.n_iters)
         buf, obs, last_val, mean_ret = _collect(env, ac, obs, cfg.n_steps, cfg.gamma)
         adv, ret = _gae(buf["rew"], buf["val"], buf["done"], last_val, cfg.gamma, cfg.lam)
-        _update(ac, opt, buf, adv, ret, cfg)
+        upd = _update(ac, opt, buf, adv, ret, cfg)
         history.append(mean_ret)
+        if metrics_out is not None:
+            metrics_out.append({
+                "iter": float(i), "return": float(mean_ret),
+                "action_std": float(ac.log_std.exp().mean().item()),
+                "difficulty": float(getattr(env, "difficulty", 1.0)),
+                "mean_adv": float(adv.mean()), **upd})
     return history
 
 

@@ -49,6 +49,35 @@ def test_ppo_improves_return() -> None:
     assert np.mean(history[-3:]) > history[0]
 
 
+def test_on_iteration_hook_called_per_iter_with_indices() -> None:
+    """The ``on_iteration`` Observer (the curriculum seat) fires exactly once per iteration with
+    ascending indices and the correct total — so a curriculum can anneal env state on schedule."""
+    torch.manual_seed(0)
+    np.random.seed(0)
+    env = ArmReachEnv(control_mode="position", max_steps=8)
+    ac = _make_policy("hsikan", env, hidden=16)
+    calls: list[tuple[int, int]] = []
+    train_ppo(ac, env, PPOConfig(n_iters=3, n_steps=32, minibatch=16),
+              on_iteration=lambda i, n: calls.append((i, n)))
+    assert calls == [(0, 3), (1, 3), (2, 3)]
+
+
+def test_metrics_out_traces_per_iteration_diagnostics() -> None:
+    """``metrics_out`` collects one finite diagnostics dict per iteration (return, losses, entropy,
+    approx-KL, clip fraction, action std) — the data the training-curve plot traces."""
+    torch.manual_seed(0)
+    np.random.seed(0)
+    env = ArmReachEnv(control_mode="position", max_steps=8)
+    ac = _make_policy("hsikan", env, hidden=16)
+    metrics: list[dict[str, float]] = []
+    train_ppo(ac, env, PPOConfig(n_iters=3, n_steps=32, minibatch=16), metrics_out=metrics)
+    assert len(metrics) == 3
+    for m in metrics:
+        for k in ("return", "policy_loss", "value_loss", "entropy", "approx_kl", "clip_frac",
+                  "action_std"):
+            assert k in m and np.isfinite(m[k])
+
+
 def test_value_warmup_runs_and_keeps_finite_history() -> None:
     """The critic-warm-up path (the cold-critic fix) runs and PPO still produces a finite
     return history; the warmed critic is non-trivial (not the cold all-zero predictor)."""

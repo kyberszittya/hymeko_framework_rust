@@ -15,11 +15,12 @@
 //! ```
 
 pub mod compile;
+pub mod game;
 pub mod pgraph;
 pub mod session;
 
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
 
-pub use compile::{compile_source, CompiledDoc, SnapshotDto};
+pub use compile::{CompiledDoc, SnapshotDto, compile_source};
 pub use session::{EditorSession, SessionError};

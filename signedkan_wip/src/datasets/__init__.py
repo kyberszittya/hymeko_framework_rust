@@ -44,7 +44,9 @@ from .legacy import (
     download,
     load,
     deduplicate_pairs,
+    drop_train_pairs,
     split,
+    undirected_pair,
 )
 from .continuous import (
     WeightedSignedGraph,
@@ -75,7 +77,9 @@ __all__ = [
     "download",
     "load",
     "deduplicate_pairs",
+    "drop_train_pairs",
     "split",
+    "undirected_pair",
     # continuous.py
     "WeightedSignedGraph",
     "load_continuous",

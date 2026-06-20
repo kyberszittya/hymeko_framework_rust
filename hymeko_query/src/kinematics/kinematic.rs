@@ -319,13 +319,70 @@ fn check_inherits_simple<R: NameResolver>(
     false
 }
 
+/// Find a direct child named `name` whose value is a resolved `Ref`, returning the ref
+/// target; if absent on `did`, walk `did`'s bases (node and edge) up to `depth` — a joint
+/// declares its `limit` directly (`@j0: rev_joint { limit -> joint0_limit; }`) **or**
+/// inherits it from `rev_joint`/`prismatic_joint`. Unresolved refs are skipped.
+///
+/// # Preconditions
+/// `depth` bounds the inheritance walk (cycle/overflow guard).
+/// # Postconditions
+/// Returns `Some(target)` for the nearest `name`-named ref (own children before bases),
+/// else `None`.
+fn find_inherited_ref_target<R: NameResolver>(
+    ir: &Ir, res: &R, did: DeclId, name: &str, depth: usize,
+) -> Option<DeclId> {
+    if did.is_none() || depth == 0 {
+        return None;
+    }
+    for cid in ir.decl_children(did) {
+        let child = &ir.decl_nodes[cid.0];
+        if res.resolve(child.name) == name {
+            if let Some(ValueR::Ref(target)) = &child.anno.value {
+                if !target.is_none() {
+                    return Some(*target);
+                }
+            }
+        }
+    }
+    if let Some(nid) = ir.as_node(did) {
+        for base in &ir.nodes[nid.0].bases {
+            if let Some(t) = find_inherited_ref_target(ir, res, base.target(), name, depth - 1) {
+                return Some(t);
+            }
+        }
+    }
+    if let Some(eid) = ir.as_edge(did) {
+        for base in &ir.edges[eid.0].bases {
+            if let Some(t) = find_inherited_ref_target(ir, res, base.target(), name, depth - 1) {
+                return Some(t);
+            }
+        }
+    }
+    None
+}
+
 fn extract_joint_limits<R: NameResolver>(
     ir: &Ir, res: &R, did: DeclId,
 ) -> Option<JointLimits> {
-    let lower = find_child_num(ir, res, did, "limit_lower");
-    let upper = find_child_num(ir, res, did, "limit_upper");
-    let effort = find_child_num(ir, res, did, "limit_effort");
-    let velocity = find_child_num(ir, res, did, "limit_velocity");
+    // Legacy form: `limit_lower`/`limit_upper`/... as direct children of the joint.
+    let mut lower = find_child_num(ir, res, did, "limit_lower");
+    let mut upper = find_child_num(ir, res, did, "limit_upper");
+    let mut effort = find_child_num(ir, res, did, "limit_effort");
+    let mut velocity = find_child_num(ir, res, did, "limit_velocity");
+
+    // Referenced form: `limit -> joint_rev_limit { lower; upper; effort; velocity; }`,
+    // declared on the joint or inherited from its base joint type. Follow the `limit` ref
+    // and read the fields off the target node (named without the `limit_` prefix). Without
+    // this the emitted joints are unlimited and the actuators carry no ctrlrange.
+    if lower.is_none() && upper.is_none() {
+        if let Some(limit_did) = find_inherited_ref_target(ir, res, did, "limit", 4) {
+            lower = find_child_num(ir, res, limit_did, "lower");
+            upper = find_child_num(ir, res, limit_did, "upper");
+            effort = find_child_num(ir, res, limit_did, "effort");
+            velocity = find_child_num(ir, res, limit_did, "velocity");
+        }
+    }
 
     // Only produce limits if at least lower+upper are present
     match (lower, upper) {

@@ -19,6 +19,7 @@ parser = { path = "../parser" }
 # major "0", which permits any 0.y.z.
 [dev-dependencies]
 criterion = "0.8"
+hymeko_hive = { path = "../hymeko_hive" }
 
 [[bench]]
 name = "loop_bench"

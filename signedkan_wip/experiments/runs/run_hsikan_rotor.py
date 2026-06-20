@@ -19,6 +19,7 @@ import argparse
 import copy
 import json
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -29,21 +30,32 @@ from sklearn.metrics import roc_auc_score
 
 from signedkan_wip.src.baselines.cayley_rotor_baseline import (
     STRUCT_DIM,
-    _structural_features,
+    build_node_features,
+    feature_dim,
 )
 from signedkan_wip.src.core.geometric_triad_attention import (
     GeometricTriadAttentionPool,
     build_vertex_triad_pairs,
 )
+from signedkan_wip.src.core.bilinear_head import ComplexDiagonalHead
 from signedkan_wip.src.core.hyperedges import construct
+from signedkan_wip.src.core.n_tuples import construct_k_arrays
+from signedkan_wip.src.core.rotor_relative_head import RotorGeodesicHead, RotorRelativeHead
 from signedkan_wip.src.core.signedkan import (
     MultiLayerSignedKAN,
     MultiLayerSignedKANConfig,
     build_vertex_triad_incidence,
 )
 from signedkan_wip.src.core.train import build_edge_to_triads
-from signedkan_wip.src.datasets import SignedGraph, load, split
+from signedkan_wip.src.datasets import (
+    SignedGraph,
+    drop_train_pairs,
+    load,
+    split,
+    undirected_pair,
+)
 from signedkan_wip.src.embeddings.cayley_rotor import CayleyRotorEmbedding
+from signedkan_wip.src.embeddings.signed_rotor_propagation import SignedRotorPropagation
 
 SHUFFLE_SEED_OFFSET = 100003  # same as run_baseline_audit, for comparability
 
@@ -69,32 +81,53 @@ def _edge_incidence(edges, e2t, n_triads, device):
 
 
 class RotorInjector(nn.Module):
-    """structural features → Cayley-rotor → proj to ``hidden`` = ``initial_h_v``."""
+    """structural features → Cayley-rotor → proj to ``hidden`` = ``initial_h_v``.
 
-    def __init__(self, hidden: int):
+    ``n_refs`` is forwarded to the rotor embedding: ``n_refs >= 2`` makes the full
+    rotation observable from the flattened ``e = R v0`` (route B), so the existing
+    bilinear head can project all of it instead of the lossy 1-ref shadow."""
+
+    def __init__(self, hidden: int, n_refs: int = 1, prop_rounds: int = 0,
+                 prop_self_weight: float = 1.0, prop_learnable: bool = False,
+                 struct_dim: int = STRUCT_DIM,
+                 edges: torch.Tensor | None = None,
+                 signs: torch.Tensor | None = None):
         super().__init__()
         self.emb = CayleyRotorEmbedding(n_blocks=max(1, hidden // 3),
-                                        in_features=STRUCT_DIM)
+                                        in_features=struct_dim, n_refs=n_refs)
         self.proj = nn.Linear(self.emb.embedding_dim, hidden)
+        self.prop_rounds = int(prop_rounds)
+        if self.prop_rounds > 0:
+            if edges is None or signs is None:
+                raise ValueError("prop_rounds>0 requires train edges + signs")
+            # Learnable mode replaces the fixed sw with a per-block retention,
+            # initialised at prop_self_weight (parity) — see SignedRotorPropagation.
+            self.prop = SignedRotorPropagation(
+                rounds=self.prop_rounds, self_weight=prop_self_weight,
+                learnable=prop_learnable, n_blocks=self.emb.n_blocks)
+            self.register_buffer("edges", edges)
+            self.register_buffer("signs", signs)
+
+    def propagated_rotors(self, struct: torch.Tensor) -> torch.Tensor:
+        """The per-node rotors after optional signed propagation, ``(N, blk, 4)``
+        — the rotors the model actually uses. Rotor-relative / geodesic heads
+        must read *these* (not the un-propagated own-feature rotors)."""
+        q = self.emb.rotors(struct)                  # (N, n_blocks, 4) own-feature rotors
+        if self.prop_rounds > 0:
+            # Manifold-aware signed propagation: each node absorbs its neighbours'
+            # rotors on S³ before embedding (fixes the degree-only input).
+            q = self.prop(q, self.edges, self.signs)
+        return q
 
     def forward(self, struct: torch.Tensor) -> torch.Tensor:
-        return self.proj(self.emb(struct))
+        return self.proj(self.emb.embed_rotors(self.propagated_rotors(struct)))
 
 
-def _pair(e):
-    return (min(int(e[0]), int(e[1])), max(int(e[0]), int(e[1])))
-
-
-def _drop_train_pairs(edges, signs, tr_pairs):
-    """Drop rows whose undirected (u,v) is also a train edge (true held-out set).
-
-    Preconditions: ``len(edges) == len(signs)``; ``tr_pairs`` holds ``_pair``
-    tuples. Postcondition: returned arrays are a row-aligned subset.
-    """
-    if len(edges) == 0:
-        return edges, signs
-    keep = np.array([_pair(e) not in tr_pairs for e in edges])
-    return edges[keep], signs[keep]
+# True-held-out dedup lives in the datasets layer (single source of truth, shared
+# with run_baseline_audit + run_rotor_head_ablation). Kept under the historical
+# private names so existing importers (tests, ablation) need no change.
+_pair = undirected_pair
+_drop_train_pairs = drop_train_pairs
 
 
 def _pos_weight(s_tr, device):
@@ -135,6 +168,24 @@ class TrainConfig:
     patience: int = 5               # early-stop patience, in eval steps
     eval_every: int = 5             # epochs between val evaluations
     n_epochs: int = 120
+
+
+@dataclass(frozen=True)
+class GeomTrainedState:
+    """Trained ``geom_attn`` handles handed to a ``run`` ``on_trained`` callback.
+
+    A read-only snapshot for post-training diagnostics (e.g.
+    ``geometric_triad_attention.summarise_gate``) — the pool plus the trained node
+    and triad embeddings and the incidence index pairs, all in eval mode under
+    ``no_grad``. Only populated for ``head == 'geom_attn'``.
+    """
+
+    pool: GeometricTriadAttentionPool
+    h_v: torch.Tensor
+    temb: torch.Tensor
+    inc_vertex: torch.Tensor
+    inc_triad: torch.Tensor
+    inc_balance: torch.Tensor | None = None
 
 
 def _optimise(opt, train_loss, val_auroc, modules, cfg: TrainConfig) -> float:
@@ -185,8 +236,14 @@ def _optimise(opt, train_loss, val_auroc, modules, cfg: TrainConfig) -> float:
 def run(dataset: str, seed: int, embed: str, shuffle: bool,
         hidden: int = 32, head: str = "incidence", dedup: bool = False,
         geom_channel: str = "both", geom_temperature: float = 1.0,
-        geom_residual: bool = True,
-        cfg: TrainConfig = TrainConfig()) -> dict:
+        geom_residual: bool = True, geom_init_scale: float = 0.1,
+        geom_learn_scale: bool = False, geom_sign_aware: bool = False,
+        n_refs: int = 1, cycle_k: int | None = None,
+        max_cycles: int | None = None, rotor_prop_rounds: int = 0,
+        rotor_prop_self_weight: float = 1.0, rotor_prop_learnable: bool = False,
+        feature_spec: tuple[str, ...] = ("degree",),
+        cfg: TrainConfig = TrainConfig(),
+        on_trained: Callable[[GeomTrainedState], None] | None = None) -> dict:
     """``head``: 'incidence' (edge-triad pool — can't reach held-out edges) or
     'bilinear' (node-embedding endpoint head, n_layers=2 so the M_vt pool flows
     cycle info into h_v — reaches held-out edges). ``dedup``: drop test edges
@@ -209,27 +266,57 @@ def run(dataset: str, seed: int, embed: str, shuffle: bool,
         e_va, s_va = _drop_train_pairs(e_va, s_va, tr_pairs)
         e_te, s_te = _drop_train_pairs(e_te, s_te, tr_pairs)
 
-    # STRICT: triads + features from TRAIN edges (post-shuffle) only.
+    # STRICT: hyperedges + features from TRAIN edges (post-shuffle) only.
     g_tr = SignedGraph(edges=e_tr, signs=s_tr, n_nodes=g.n_nodes)
-    triads = construct(g_tr)
-    triad_v = torch.tensor([t.v for t in triads], dtype=torch.long, device=device)
-    triad_sigma = torch.tensor([t.sigma for t in triads], dtype=torch.long, device=device)
-    n_tri = len(triads)
+    if cycle_k is not None:
+        # Richer signed neighbourhoods: closed k-cycles via the existing Rust-
+        # backed enumerator (no rebuild). edge_signs.prod gives the balance sign.
+        v_arr, sigma_arr, es_arr = construct_k_arrays(
+            g_tr, cycle_k, max_cycles=max_cycles, seed=seed)
+        if v_arr.shape[0] == 0:
+            raise ValueError(f"no {cycle_k}-cycles found for {dataset} seed={seed} "
+                             f"(graph too sparse or cap too small)")
+        triads = None
+        triad_v = torch.from_numpy(v_arr.astype(np.int64)).to(device)
+        triad_sigma = torch.from_numpy(sigma_arr.astype(np.int64)).to(device)
+        balance = np.where(es_arr.astype(np.int64).prod(axis=1) == 1, 1.0, -1.0)
+        triad_balance = torch.from_numpy(balance.astype(np.float32)).to(device)
+        n_tri = int(v_arr.shape[0])
+    else:
+        triads = construct(g_tr)
+        triad_v = torch.tensor([t.v for t in triads], dtype=torch.long, device=device)
+        triad_sigma = torch.tensor([t.sigma for t in triads], dtype=torch.long, device=device)
+        # Per-triad balance sign (+1 balanced / -1 unbalanced) for the sign-aware
+        # readout — built from TRAIN triads only, leakage-safe like the triads.
+        triad_balance = torch.tensor([1.0 if t.balanced else -1.0 for t in triads],
+                                     dtype=torch.float32, device=device)
+        n_tri = len(triads)
 
-    # Endpoint heads ('bilinear', 'geom_attn') predict from node-endpoint
-    # embeddings (reach held-out edges); 'incidence' pools triads into edges.
-    use_endpoint = head in {"bilinear", "geom_attn"}
+    # Endpoint heads predict from node-endpoint embeddings (reach held-out edges);
+    # 'incidence' pools triads. Head ablation (real→complex→quaternion→rotation):
+    #   bilinear (real), complex (ComplEx), geom_attn / rotor_rel (quaternion),
+    #   rotate (RotatE/geodesic). complex REPLACES the bilinear head; rotor_rel /
+    #   rotate ADD a rotor term to bilinear; geom_attn pools then bilinear.
+    use_endpoint = head in {"bilinear", "geom_attn", "rotor_rel", "complex", "rotate"}
     geom = head == "geom_attn"
+    rotrel = head == "rotor_rel"
+    cplx = head == "complex"
+    rotate = head == "rotate"
     n_layers = 2 if use_endpoint else 1
     model_cfg = MultiLayerSignedKANConfig(n_nodes=g.n_nodes, n_layers=n_layers,
                                           hidden_dim=hidden, grid=5, k=3,
-                                          use_bilinear=use_endpoint)
+                                          use_bilinear=use_endpoint and not cplx)
     model = MultiLayerSignedKAN(model_cfg).to(device)
-    geom_pool = None
+    geom_pool = complex_head = rotate_head = None
     if use_endpoint:
         # The dead-start gamma (1e-3) is for joint training with a spline loss;
         # here the bilinear head is the only objective, so activate it.
-        model.bilinear.gamma.data.fill_(1.0)
+        if model.bilinear is not None:
+            model.bilinear.gamma.data.fill_(1.0)
+        if cplx:
+            complex_head = ComplexDiagonalHead(hidden, gamma_init=1.0).to(device)
+        if rotate:
+            rotate_head = RotorGeodesicHead(max(1, hidden // 3)).to(device)
         M_vt = build_vertex_triad_incidence(triad_v.cpu().numpy(), g.n_nodes, device)
         e_tr_t = torch.from_numpy(e_tr.astype(np.int64)).to(device)
         e_va_t = torch.from_numpy(e_va.astype(np.int64)).to(device)
@@ -237,21 +324,47 @@ def run(dataset: str, seed: int, embed: str, shuffle: bool,
         M_va = M_te = None
         if geom:
             inc_vertex, inc_triad = build_vertex_triad_pairs(triad_v)
+            inc_balance = triad_balance[inc_triad]     # (P,) per-incidence b_t
             geom_pool = GeometricTriadAttentionPool(
                 d_node=hidden, d_triad=hidden, hidden=hidden, d_out=hidden,
-                channel=geom_channel, temperature=geom_temperature).to(device)
+                channel=geom_channel, temperature=geom_temperature,
+                score_init_scale=geom_init_scale, learn_scale=geom_learn_scale,
+                sign_aware=geom_sign_aware).to(device)
     else:
+        if triads is None:
+            raise ValueError("--cycle-k requires an endpoint head "
+                             "(bilinear/geom_attn/rotor_rel); the incidence head "
+                             "needs the SignedTriad list")
         e2t = build_edge_to_triads(triads)
         M_tr = _edge_incidence(e_tr, e2t, n_tri, device)
         M_va = _edge_incidence(e_va, e2t, n_tri, device)
         M_te = _edge_incidence(e_te, e2t, n_tri, device)
         e_va_t = e_te_t = None
 
-    inj = RotorInjector(hidden).to(device) if embed == "rotor" else None
-    struct_t = (torch.from_numpy(_structural_features(e_tr, s_tr, g.n_nodes)).to(device)
+    _prop = embed == "rotor" and rotor_prop_rounds > 0
+    prop_edges = torch.from_numpy(e_tr.astype(np.int64)).to(device) if _prop else None
+    prop_signs = torch.from_numpy(np.where(s_tr > 0, 1.0, -1.0).astype(np.float32)).to(device) if _prop else None
+    inj = (RotorInjector(hidden, n_refs=n_refs, prop_rounds=rotor_prop_rounds,
+                         prop_self_weight=rotor_prop_self_weight,
+                         prop_learnable=rotor_prop_learnable,
+                         struct_dim=feature_dim(feature_spec),
+                         edges=prop_edges, signs=prop_signs).to(device)
+           if embed == "rotor" else None)
+    # Leakage-free node input (degree by default; enrich via the feature registry).
+    struct_t = (torch.from_numpy(
+                    build_node_features(feature_spec, e_tr, s_tr, g.n_nodes)).to(device)
                 if embed == "rotor" else None)
+    rotor_rel_head = None
+    if rotrel:
+        if inj is None:
+            raise ValueError("head='rotor_rel' requires embed='rotor' (needs the rotor q)")
+        rotor_rel_head = RotorRelativeHead(inj.emb.n_blocks).to(device)
+    if rotate and inj is None:
+        raise ValueError("head='rotate' requires embed='rotor' (needs the rotor q)")
+    extra_heads = [h for h in (geom_pool, rotor_rel_head, complex_head, rotate_head)
+                   if h is not None]
     params = (list(model.parameters()) + (list(inj.parameters()) if inj else [])
-              + (list(geom_pool.parameters()) if geom_pool is not None else []))
+              + [p for h in extra_heads for p in h.parameters()])
     opt = torch.optim.Adam(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
     tgt = torch.from_numpy((s_tr == 1).astype(np.float32)).to(device)
     pos_weight = _pos_weight(s_tr, device) if cfg.class_weight else None
@@ -262,18 +375,26 @@ def run(dataset: str, seed: int, embed: str, shuffle: bool,
             temb, h_v = model.encode_triads(triad_v, triad_sigma, M_vt,
                                             return_h_v=True, initial_h_v=ihv)
             if geom:
-                pooled = geom_pool(h_v, temb, inc_vertex, inc_triad)
+                pooled = geom_pool(h_v, temb, inc_vertex, inc_triad, inc_balance)
                 # Residual (default): attention refines the rotor node embedding
                 # instead of erasing it. 'replace' is kept for ablation.
                 node = h_v + pooled if geom_residual else pooled
             else:
                 node = h_v
-            return model.bilinear(node[edges_t[:, 0]], node[edges_t[:, 1]])
+            u, v = node[edges_t[:, 0]], node[edges_t[:, 1]]
+            # complex REPLACES bilinear (real→complex readout on the same h_v);
+            # rotor_rel / rotate ADD a rotor term on the PROPAGATED endpoint rotors.
+            base = complex_head(u, v) if cplx else model.bilinear(u, v)
+            if rotrel or rotate:
+                q_all = inj.propagated_rotors(struct_t)
+                q_u, q_v = q_all[edges_t[:, 0]], q_all[edges_t[:, 1]]
+                term = rotor_rel_head if rotrel else rotate_head
+                base = base + term(q_u, q_v)
+            return base
         temb = model.encode_triads(triad_v, triad_sigma, None, initial_h_v=ihv)
         return model.classifier(torch.sparse.mm(M, temb)).squeeze(-1)
 
-    modules = ([model] + ([inj] if inj is not None else [])
-               + ([geom_pool] if geom_pool is not None else []))
+    modules = [model] + ([inj] if inj is not None else []) + extra_heads
 
     def train_loss():
         logits = logits_for(e_tr_t, None) if use_endpoint else logits_for(None, M_tr)
@@ -292,6 +413,16 @@ def run(dataset: str, seed: int, embed: str, shuffle: bool,
 
     val_sel = _optimise(opt, train_loss, val_auroc, modules, cfg)
 
+    # Observer hook: hand the trained geom pool + embeddings to a diagnostic
+    # (e.g. summarise_gate). Default None -> zero behaviour change for production.
+    if on_trained is not None and geom:
+        with torch.no_grad():
+            ihv = inj(struct_t) if inj is not None else None
+            temb_t, h_v_t = model.encode_triads(triad_v, triad_sigma, M_vt,
+                                                return_h_v=True, initial_h_v=ihv)
+        on_trained(GeomTrainedState(geom_pool, h_v_t, temb_t, inc_vertex,
+                                    inc_triad, inc_balance))
+
     with torch.no_grad():
         te_logits = logits_for(e_te_t, None) if use_endpoint else logits_for(None, M_te)
         probs = torch.sigmoid(te_logits).cpu().numpy()
@@ -305,23 +436,68 @@ def run(dataset: str, seed: int, embed: str, shuffle: bool,
                 lr=cfg.lr, weight_decay=cfg.weight_decay, grad_clip=cfg.grad_clip,
                 class_weight=cfg.class_weight, early_stop=cfg.early_stop,
                 n_epochs=cfg.n_epochs,
+                n_refs=(n_refs if embed == "rotor" else None),
+                rotor_prop_rounds=(rotor_prop_rounds if embed == "rotor" else None),
+                rotor_prop_self_weight=(rotor_prop_self_weight
+                                        if (embed == "rotor" and rotor_prop_rounds > 0)
+                                        else None),
+                rotor_prop_learnable=(rotor_prop_learnable
+                                      if (embed == "rotor" and rotor_prop_rounds > 0)
+                                      else None),
+                feature_spec=(list(feature_spec) if embed == "rotor" else None),
+                cycle_k=cycle_k, max_cycles=max_cycles,
                 geom_channel=(geom_channel if geom else None),
-                geom_residual=(geom_residual if geom else None))
+                geom_residual=(geom_residual if geom else None),
+                geom_init_scale=(geom_init_scale if geom else None),
+                geom_learn_scale=(geom_learn_scale if geom else None),
+                geom_sign_aware=(geom_sign_aware if geom else None))
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", default="bitcoin_otc")
     ap.add_argument("--embed", choices=["table", "rotor"], default="rotor")
-    ap.add_argument("--head", choices=["incidence", "bilinear", "geom_attn"],
+    ap.add_argument("--head",
+                    choices=["incidence", "bilinear", "geom_attn", "rotor_rel",
+                             "complex", "rotate"],
                     default="incidence",
-                    help="bilinear = node-endpoint head; geom_attn = geometric "
-                         "(quaternion+Clifford) triad-attention pool + bilinear")
+                    help="endpoint head ablation: bilinear (real); complex "
+                         "(ComplEx, replaces bilinear); geom_attn (geometric pool "
+                         "+ bilinear); rotor_rel (bilinear + projected relative "
+                         "rotor, QuatE); rotate (bilinear + geodesic angle, RotatE)")
+    ap.add_argument("--n-refs", type=int, default=1,
+                    help="rotor embedding reference vectors per block "
+                         "(>=2 makes the full rotation observable from e=R·v0)")
+    ap.add_argument("--rotor-prop-rounds", type=int, default=0,
+                    help="rounds of signed slerp/nlerp rotor propagation over the "
+                         "train graph (0=off; gives nodes a neighbourhood-aware rotor)")
+    ap.add_argument("--rotor-prop-self-weight", type=float, default=1.0,
+                    help="self-retention weight in rotor propagation "
+                         "(higher = keep more of the node's own rotor; curbs over-smoothing)")
+    ap.add_argument("--rotor-prop-learnable", action="store_true",
+                    help="learn a per-block self-retention (init at --rotor-prop-self-weight; "
+                         "removes the dataset-specific sw tuning)")
+    ap.add_argument("--feature-spec", default="degree",
+                    help="comma-separated leakage-free node features for the rotor input "
+                         "(e.g. degree,walk_k3,cycle_k3; see structural_features registry)")
+    ap.add_argument("--cycle-k", type=int, default=None,
+                    help="pool closed signed k-cycles (k>=3) instead of triads "
+                         "(reuses construct_k_arrays; endpoint head only)")
+    ap.add_argument("--max-cycles", type=int, default=None,
+                    help="cap on enumerated cycles before classification "
+                         "(mandatory for k>3 on large graphs)")
     ap.add_argument("--geom-channel", choices=["both", "quaternion", "clifford"],
                     default="both", help="geom_attn score channel(s)")
     ap.add_argument("--geom-temperature", type=float, default=1.0)
     ap.add_argument("--geom-replace", action="store_true",
                     help="geom_attn: replace h_v with the pool (default: residual)")
+    ap.add_argument("--geom-init-scale", type=float, default=0.1,
+                    help="geom_attn: W_q/W_k init shrink (0.1=legacy, 1.0=woken)")
+    ap.add_argument("--geom-learn-scale", action="store_true",
+                    help="geom_attn: learnable log-scale on the score")
+    ap.add_argument("--geom-sign-aware", action="store_true",
+                    help="geom_attn: w = balance_sign * sigmoid(score) "
+                         "(balance-signed relevance readout)")
     ap.add_argument("--dedup", action="store_true",
                     help="drop test edges whose (u,v) is also a train edge "
                          "(the true held-out set)")
@@ -343,7 +519,14 @@ def main() -> None:
     r = run(args.dataset, args.seed, args.embed, args.shuffle_train_signs,
             head=args.head, dedup=args.dedup,
             geom_channel=args.geom_channel, geom_temperature=args.geom_temperature,
-            geom_residual=not args.geom_replace,
+            geom_residual=not args.geom_replace, geom_init_scale=args.geom_init_scale,
+            geom_learn_scale=args.geom_learn_scale,
+            geom_sign_aware=args.geom_sign_aware, n_refs=args.n_refs,
+            cycle_k=args.cycle_k, max_cycles=args.max_cycles,
+            rotor_prop_rounds=args.rotor_prop_rounds,
+            rotor_prop_self_weight=args.rotor_prop_self_weight,
+            rotor_prop_learnable=args.rotor_prop_learnable,
+            feature_spec=tuple(s.strip() for s in args.feature_spec.split(",") if s.strip()),
             cfg=cfg)
     print(f"  HSiKAN[{r['embed']:5s}/{r['head']:9s} dedup={int(r['dedup'])}] "
           f"{r['dataset']:<14} seed={r['seed']} shuffle={r['shuffle']}  "

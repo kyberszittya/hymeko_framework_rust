@@ -166,7 +166,7 @@ def hungarian_set_loss(
     lam_no_obj: float = 0.5,
     *,
     cls_loss_kind: str = "ce",    # "ce" | "focal" (Stage A-3)
-    box_loss_kind: str = "l1",    # "l1" | "giou" (Stage A-3)
+    box_loss_kind: str = "l1",    # "l1" | "giou" | "l1giou"
 ):
     """DETR-style set-prediction loss with per-image Hungarian
     matching.
@@ -179,8 +179,22 @@ def hungarian_set_loss(
             matched corners instead of L1 on the corner positions
             (better for box regression — aligned with the eval mAP@0.5
             metric, which uses IoU).
+        box_loss_kind="l1giou" → sum of the corner-L1 and the AABB-GIoU
+            terms (the canonical DETR box loss). GIoU's gradient
+            saturates as boxes approach overlap; the L1 term supplies a
+            non-vanishing gradient that drives IoU past the 0.5 mark a
+            pure-GIoU box head plateaus under. Added 2026-06-16 to make
+            the from-scratch MiniDETR baseline competent (overfit guard).
     Defaults preserve pre-2026-05-16 behaviour (ce + L1).
+
+    Preconditions: ``box_loss_kind`` ∈ {"l1", "giou", "l1giou"};
+    ``cls_loss_kind`` ∈ {"ce", "focal"}. An unknown box kind raises
+    ``ValueError`` (no silent fall-through to L1).
     """
+    if box_loss_kind not in ("l1", "giou", "l1giou"):
+        raise ValueError(
+            f"box_loss_kind must be 'l1' | 'giou' | 'l1giou'; got {box_loss_kind!r}"
+        )
     # Lazy import: avoid a circular dependency at module load.
     from .train_circles_ricci import focal_loss_ce, giou_loss_xyxy
 
@@ -191,26 +205,29 @@ def hungarian_set_loss(
             )
         return F.cross_entropy(logits, targets, reduction=reduction)
 
+    def _aabb_from_corners(corners):
+        """(…, 4, 2) corners → (…, 4) = (x0, y0, x1, y1) axis-aligned box."""
+        return torch.stack([
+            corners[..., 0].min(dim=-1).values,
+            corners[..., 1].min(dim=-1).values,
+            corners[..., 0].max(dim=-1).values,
+            corners[..., 1].max(dim=-1).values,
+        ], dim=-1)
+
     def _box_loss_on_matched(matched_pred_corners, matched_gt_corners):
-        if box_loss_kind == "giou":
-            # Box-loss term computes GIoU on the AABB derived from
-            # each (4-corner) prediction vs the AABB of each GT
-            # 4-corner set. Same input dimensionality as the L1
-            # branch; just different reduction.
-            pred_aabb = torch.stack([
-                matched_pred_corners[..., 0].min(dim=-1).values,
-                matched_pred_corners[..., 1].min(dim=-1).values,
-                matched_pred_corners[..., 0].max(dim=-1).values,
-                matched_pred_corners[..., 1].max(dim=-1).values,
-            ], dim=-1)
-            gt_aabb = torch.stack([
-                matched_gt_corners[..., 0].min(dim=-1).values,
-                matched_gt_corners[..., 1].min(dim=-1).values,
-                matched_gt_corners[..., 0].max(dim=-1).values,
-                matched_gt_corners[..., 1].max(dim=-1).values,
-            ], dim=-1)
-            return giou_loss_xyxy(pred_aabb, gt_aabb, reduction="mean")
-        return (matched_pred_corners - matched_gt_corners).abs().mean()
+        # Each term is a mean over the matched set; "l1giou" sums them
+        # (the canonical DETR combination). The single-branch "l1"/"giou"
+        # behaviour is byte-for-byte preserved for existing callers.
+        loss = matched_pred_corners.new_zeros(())
+        if box_loss_kind in ("giou", "l1giou"):
+            loss = loss + giou_loss_xyxy(
+                _aabb_from_corners(matched_pred_corners),
+                _aabb_from_corners(matched_gt_corners),
+                reduction="mean",
+            )
+        if box_loss_kind in ("l1", "l1giou"):
+            loss = loss + (matched_pred_corners - matched_gt_corners).abs().mean()
+        return loss
     B, N = pred_corners.shape[:2]
     device = pred_corners.device
     pred_probs = F.softmax(pred_cls, dim=-1)        # (B, N, n_classes+1)

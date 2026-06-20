@@ -154,6 +154,7 @@ _REGISTRY: dict[str, SignedLinkBaseline] = {}
 _STRATEGY_MODULES = (
     "sgcn", "sigat", "sgt",          # legacy wraps
     "sgcl", "sigformer", "sesgformer", "dadsgnn",  # Phase B reimplementations
+    "cayley_rotor_baseline",         # inductive Cayley-rotor embedding (2026-06-16)
 )
 _loaded = False
 

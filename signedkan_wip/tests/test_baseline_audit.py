@@ -14,12 +14,16 @@ import torch
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+import math
+
 from signedkan_wip.src.baselines.registry import (
     GraphMeta,
     HParams,
     get_baseline,
     list_baselines,
 )
+from signedkan_wip.src.datasets import SignedGraph
+from signedkan_wip.experiments.runs import run_baseline_audit as rba
 from signedkan_wip.experiments.runs.run_baseline_audit import (
     SHUFFLE_SEED_OFFSET,
     run_audit,
@@ -113,3 +117,46 @@ def test_determinism_same_seed(monkeypatch: pytest.MonkeyPatch) -> None:
     b = run_audit("sgcn", SYNTH_DATASET, 1, n_epochs=8)
     assert a["test_auroc"] == b["test_auroc"]
     assert a["n_params"] == b["n_params"]
+
+
+# --- dedup (true held-out) regression -------------------------------------
+
+def _repeated_pair_graph() -> SignedGraph:
+    """Every edge is one of two undirected pairs, repeated with alternating signs.
+
+    With an 80/10/10 split both pairs land in train, so under ``--dedup`` *every*
+    val/test row is a train pair and must be dropped — a deterministic oracle for
+    the held-out filter that does not depend on the split RNG's exact placement.
+    """
+    rows = ([(0, 1)] * 20) + ([(2, 3)] * 20)
+    edges = np.asarray(rows, dtype=np.int64)
+    signs = np.asarray([1 if i % 2 == 0 else -1 for i in range(len(rows))],
+                       dtype=np.int64)
+    return SignedGraph(edges=edges, signs=signs, n_nodes=4)
+
+
+def test_dedup_off_is_noop_and_keeps_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Default (dedup off): nothing dropped, prior split survives, AUROC defined."""
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(rba, "load", lambda name: _repeated_pair_graph())
+    r = run_audit("sgcn", "repeated_pairs", 0, n_epochs=5)
+    assert r["dedup"] is False
+    assert r["n_test_dropped"] == 0 and r["n_val_dropped"] == 0
+    assert r["n_test"] > 0
+    # AUROC is a float (may be nan on a one-class slice of this tiny fixture);
+    # the point of this test is the no-op + key presence, not the value.
+    assert math.isnan(r["test_auroc"]) or 0.0 <= r["test_auroc"] <= 1.0
+
+
+def test_dedup_drops_train_overlapping_heldout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``--dedup`` drops every val/test row whose pair is in train (regression:
+    these keys + this branch did not exist before)."""
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(rba, "load", lambda name: _repeated_pair_graph())
+    r = run_audit("sgcn", "repeated_pairs", 0, n_epochs=5, dedup=True)
+    assert r["dedup"] is True
+    assert r["n_test_dropped"] > 0       # both pairs are in train → all held-out drop
+    assert r["n_test"] == 0
+    assert math.isnan(r["test_auroc"])   # empty held-out slice → AUROC undefined

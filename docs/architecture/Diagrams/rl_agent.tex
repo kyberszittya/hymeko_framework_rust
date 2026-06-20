@@ -1,0 +1,47 @@
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\begin{document}
+\begin{tikzpicture}[
+  font=\small, >={Stealth[]}, node distance=6mm and 14mm,
+  st/.style={draw, rounded corners, fill=blue!9,   align=center, inner sep=4pt, minimum height=8mm},
+  nn/.style={draw, rounded corners, fill=purple!12, align=center, inner sep=4pt, minimum height=8mm},
+  ac/.style={draw, rounded corners, fill=orange!13, align=center, inner sep=4pt, minimum height=8mm},
+  rw/.style={draw, rounded corners, fill=green!13,  align=center, inner sep=4pt, minimum height=8mm}]
+
+  % observation
+  \node[st] (obs) {observation\\per-vertex hypergraph\\$(6 \times 8)$: joint $q,\dot q$,\\link xy, link$\to$disk, disk$\to$zone};
+
+  % two SEPARATE HSiKAN backbones
+  \node[nn, above right=8mm and 16mm of obs] (actorb) {HSiKAN actor\\backbone};
+  \node[nn, below right=16mm and 16mm of obs] (criticb){HSiKAN critic\\backbone\\(independent)};
+
+  \node[ac, right=14mm of actorb] (head) {$\mu = $ \texttt{actor\_mean}\\$\sigma = e^{\log\_std}$\\$\Rightarrow \mathcal{N}(\mu,\sigma)$};
+  \node[ac, right=14mm of criticb] (val) {value $V(s)$};
+
+  \node[st, right=14mm of head] (act) {action\\4 joint targets};
+
+  % environment + reward
+  \node[st, below=14mm of act] (mj) {MuJoCo step\\(disk dynamics)};
+  \node[rw, below=8mm of mj] (rew) {reward (declarative terms)\\approach $\cdot$ pull $\cdot$ contact\\$\cdot$ in\_zone $\cdot$ centre\\$\cdot$ anti-stall $\cdot$ \textbf{arm-arm penalty}};
+
+  \draw[->] (obs) -- (actorb); \draw[->] (obs) -- (criticb);
+  \draw[->] (actorb) -- (head); \draw[->] (criticb) -- (val);
+  \draw[->] (head) -- (act);
+  \draw[->] (act) -- (mj);
+  \draw[->] (mj) -- (rew);
+  \draw[->, rounded corners] (mj.south) -- ++(0,-3.4)
+        node[pos=0.85, below, font=\scriptsize] {next obs} -| (obs.south);
+
+  % PPO update note
+  \node[ac, below right=10mm and 2mm of val] (ppo) {PPO update\\clipped surrogate + GAE\\(actor $\leftarrow$ policy grad,\\critic $\leftarrow$ value loss)};
+  \draw[->] (val) -- (ppo);
+  \draw[->] (rew.east) to[bend right=20] (ppo.south west);
+  \draw[->, dashed] (ppo.north) to[bend right=10] (head.south east);
+
+  \begin{scope}[on background layer]
+    \node[draw, dashed, rounded corners, fit=(actorb)(criticb)(head)(val), inner sep=6pt,
+          label={[font=\small\itshape]above:HSiKAN actor + critic (separate nets, shared obs)}] {};
+  \end{scope}
+\end{tikzpicture}
+\end{document}

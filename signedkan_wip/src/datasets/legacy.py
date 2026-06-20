@@ -14,8 +14,8 @@ from __future__ import annotations
 import argparse
 import csv
 import gzip
-import io
 import urllib.request
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -241,7 +241,8 @@ def load(name: str) -> SignedGraph:
                 v = _node_id_for(fields[1])
                 edges.append((u, v))
                 signs.append(1 if sentiment > 0 else -1)
-                nodes.add(u); nodes.add(v)
+                nodes.add(u)
+                nodes.add(v)
             # Skip the generic reader loop below.
             reader = iter(())
         else:  # SNAP signed (tab-separated)
@@ -263,7 +264,8 @@ def load(name: str) -> SignedGraph:
                 continue
             edges.append((s, t))
             signs.append(1 if rf > 0 else -1)
-            nodes.add(s); nodes.add(t)
+            nodes.add(s)
+            nodes.add(t)
     # Re-index to 0..N-1.
     node_list = sorted(nodes)
     remap = {n: i for i, n in enumerate(node_list)}
@@ -320,6 +322,39 @@ def deduplicate_pairs(g: SignedGraph,
     return SignedGraph(
         edges=out_edges, signs=out_signs, n_nodes=g.n_nodes,
     )
+
+
+def undirected_pair(e: "Sequence[int] | np.ndarray") -> tuple[int, int]:
+    """Canonical ``(min, max)`` int key for an undirected edge.
+
+    Preconditions: ``e`` is indexable with two endpoints (``e[0]``, ``e[1]``).
+    Postcondition: returns ``(min(u, v), max(u, v))`` so ``(u, v)`` and ``(v, u)``
+    collapse to one key — the comparison key used by both
+    :func:`deduplicate_pairs` and :func:`drop_train_pairs`.
+    """
+    return (min(int(e[0]), int(e[1])), max(int(e[0]), int(e[1])))
+
+
+def drop_train_pairs(
+    edges: np.ndarray, signs: np.ndarray, train_pairs: set[tuple[int, int]],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Drop rows whose undirected ``(u, v)`` also appears in ``train_pairs``.
+
+    This is the *true held-out* filter: an edge split is already index-disjoint,
+    but a test edge ``(u, v)`` whose mirror/repeat ``(v, u)`` sits in train still
+    leaks its endpoint pair into a transductive encoder. Dropping such rows makes
+    the held-out slice strictly harder (and honest), independent of the encoder.
+
+    Preconditions: ``len(edges) == len(signs)``; ``train_pairs`` holds
+    :func:`undirected_pair` keys.
+    Postconditions: returns a *row-aligned* subset of ``(edges, signs)`` — every
+    surviving row's undirected pair is absent from ``train_pairs``; row order is
+    preserved; an empty input is returned unchanged (no-op).
+    """
+    if len(edges) == 0:
+        return edges, signs
+    keep = np.array([undirected_pair(e) not in train_pairs for e in edges])
+    return edges[keep], signs[keep]
 
 
 def split(g: SignedGraph, train: float = 0.8, val: float = 0.1,
