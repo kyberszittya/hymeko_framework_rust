@@ -19,8 +19,6 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
-from signed_kan.splines import catmull_rom as _catmull_rom_core
-
 
 def cox_de_boor(x: torch.Tensor, knots: torch.Tensor, k: int) -> torch.Tensor:
     """Cox--de Boor recursion. Vectorised over an arbitrary leading
@@ -254,10 +252,66 @@ def _maybe_compile(fn):
 # the matrix in a module-level dict, but that aliasing breaks
 # torch.compile's `mode='reduce-overhead'` (cudagraphs) — the cached
 # tensor's storage gets reported as overwritten between graph runs.
-# The canonical Catmull-Rom evaluator now lives once in ``signed_kan.splines`` (shared verbatim with hymeko_rl —
-# the gather body was moved there). It is kept here behind the same ``torch.compile`` wrapper so the vision
-# line's cudagraph fast-path is unchanged; bit-identical to the prior in-file body.
-_catmull_rom_eval = _maybe_compile(_catmull_rom_core)
+@_maybe_compile
+def _catmull_rom_eval(coef: torch.Tensor, x: torch.Tensor,
+                      grid: int) -> torch.Tensor:
+    """Uniform Catmull-Rom cubic interpolating spline on $[-1, 1]$.
+
+    coef: (..., C, G) per-channel control points.
+    x   : (..., C)    inputs in $[-1, 1]$.
+    Returns the spline value of shape ``(..., C)``.
+
+    Memory-friendly form (post-2026-05-04 rewrite):
+      - Basis weights computed via the closed-form CR polynomial
+        ($w_{-1} = (-t^3 + 2t^2 - t)/2$ etc.).  No intermediate
+        ``t_powers`` stack and no $4{\\times}4$ matmul — each
+        weight is a single fused expression in ``t``.
+      - Four separate gathers (one per control point) instead of
+        a stacked-index single gather.  Trades one kernel launch
+        for a $\\sim 4\\times$ smaller index tensor (no
+        ``(\\ldots, C, 4)`` int64 stack), which is the dominant
+        autograd-retained intermediate at large $T$.
+
+    The compiled (lever 2) form sits one level up: the
+    ``BatchedCatmullRomActivation`` modules wrap the call in
+    ``torch.compile`` once at module construction; the lower
+    intermediate count here lets ``torch.compile`` fuse more
+    aggressively in the cudagraph capture.
+    """
+    G = grid
+    x = x.clamp(min=-1.0, max=1.0)
+    u = (x + 1.0) * 0.5 * (G - 1)
+    i = u.floor().long().clamp(max=G - 2)
+    t = u - i.to(x.dtype)
+    t2 = t * t
+    t3 = t2 * t
+
+    # Closed-form Catmull-Rom blend weights (each (..., C)):
+    #   w_m1 = 0.5 * (-t^3 + 2t^2 - t)
+    #   w_0  = 0.5 * (3t^3 - 5t^2 + 2)
+    #   w_p1 = 0.5 * (-3t^3 + 4t^2 + t)
+    #   w_p2 = 0.5 * (t^3 - t^2)
+    w_m1 = 0.5 * (-t3 + 2.0 * t2 - t)
+    w_0  = 0.5 * ( 3.0 * t3 - 5.0 * t2 + 2.0)
+    w_p1 = 0.5 * (-3.0 * t3 + 4.0 * t2 + t)
+    w_p2 = 0.5 * ( t3 - t2)
+
+    # Gather indices — int64 but kept as separate (..., C) tensors,
+    # so we never materialise a (..., C, 4) int64 stack
+    # (which is 8 bytes/element × 4 = the dominant memory chunk in
+    # the prior path).
+    idx_m1 = (i - 1).clamp(min=0, max=G - 1).unsqueeze(-1)        # (..., C, 1)
+    idx_0  = i.unsqueeze(-1)
+    idx_p1 = (i + 1).clamp(min=0, max=G - 1).unsqueeze(-1)
+    idx_p2 = (i + 2).clamp(min=0, max=G - 1).unsqueeze(-1)
+    coef_b = coef.expand(*x.shape, G)
+
+    P_m1 = coef_b.gather(-1, idx_m1).squeeze(-1)                  # (..., C)
+    P_0  = coef_b.gather(-1, idx_0).squeeze(-1)
+    P_p1 = coef_b.gather(-1, idx_p1).squeeze(-1)
+    P_p2 = coef_b.gather(-1, idx_p2).squeeze(-1)
+
+    return w_m1 * P_m1 + w_0 * P_0 + w_p1 * P_p1 + w_p2 * P_p2
 
 
 class CatmullRomActivation(nn.Module):
