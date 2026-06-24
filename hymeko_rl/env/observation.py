@@ -123,7 +123,7 @@ def read_channels(profile_path: str | Path) -> tuple[str, ...]:
     rejected by :class:`ObservationSpec`).
     # Errors ``FileNotFoundError``; ``ValueError`` (no/!1 observation_space, undeclared member).
     """
-    return tuple(kind for _name, kind, _body in read_bundle(profile_path, "observation_space"))
+    return tuple(kind for _name, kind, _body, _w in read_bundle(profile_path, "observation_space"))
 
 
 # The reaching task's default observation: per-joint [qpos, qvel] + broadcast

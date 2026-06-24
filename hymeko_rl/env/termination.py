@@ -54,7 +54,7 @@ class TerminationSpec:
         # Errors ``FileNotFoundError``; ``ValueError`` (no/multiple ``termination_spec``).
         """
         return cls(conditions=tuple(
-            kind for _name, kind, _body in read_bundle(profile_path, "termination_spec")))
+            kind for _name, kind, _body, _w in read_bundle(profile_path, "termination_spec")))
 
 
 # The default death predicate when a profile declares none — ground contact or self-collision

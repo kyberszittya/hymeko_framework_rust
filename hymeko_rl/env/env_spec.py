@@ -53,7 +53,7 @@ class EnvSpec:
 
         # Errors ``FileNotFoundError``; ``ValueError`` (no/multiple ``env_spec``, missing term kind).
         """
-        terms = {kind: body for _name, kind, body in read_bundle(env_profile, "env_spec")}
+        terms = {kind: body for _name, kind, body, _w in read_bundle(env_profile, "env_spec")}
         required = {"target_zone", "coin_spawn", "workspace", "success", "disk"}
         missing = required - terms.keys()
         if missing:

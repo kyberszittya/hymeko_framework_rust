@@ -145,8 +145,117 @@ def _term_center_bonus(env: "ArmReachEnv", dist: float, action: np.ndarray) -> f
     return 1.0 - dist / zone_half
 
 
+# ── generic goal-reaching + fast-and-smooth terms ────────────────────────────
+def _term_goal_progress(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Dense locomotion driver: ``+(prev_dist - dist)`` — how much closer to the goal this step got. A
+    scale-free per-step forward signal (telescopes to total distance closed), far stronger for learning a
+    gait than the flat ``-dist``. Reads ``env._prev_dist`` (the distance at the previous step); 0 on the
+    first step or if the env does not track it."""
+    prev = getattr(env, "_prev_dist", None)
+    return 0.0 if prev is None else float(prev - dist)
+
+
+def _term_time_penalty(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Constant per-step cost: reaching the goal in fewer steps incurs less total penalty → go FAST.
+    -1 every step; the .hymeko ``weight`` sets the time pressure."""
+    return -1.0
+
+
+def _actuated_qvel(env: Any) -> np.ndarray | None:
+    dofs = getattr(env, "_act_dofs", None)
+    if dofs is None or len(dofs) == 0:
+        return None
+    v: np.ndarray = np.asarray(env.data.qvel, dtype=np.float64)[dofs]
+    return v
+
+
+def _term_joint_velocity(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Smoothness: ``-Σ q̇²`` over the actuated joints — penalise thrashing the joints fast. 0 if the env
+    does not expose ``_act_dofs``."""
+    v = _actuated_qvel(env)
+    return 0.0 if v is None else -float(v @ v)
+
+
+def _term_joint_acceleration(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Smoothness/jerk: ``-Σ (Δq̇)²`` over the actuated joints — penalise jerky motion (large velocity
+    change between steps). The **bounded** discrete-acceleration proxy: instantaneous ``qacc`` spikes to
+    millions for a position servo chasing a jumped target, so the step-over-step velocity change is used
+    instead. Reads the env's ``_prev_act_qvel`` (the actuated joints' velocity at the previous step); 0
+    until the env has taken one step or if ``_act_dofs`` is absent."""
+    v = _actuated_qvel(env)
+    prev = getattr(env, "_prev_act_qvel", None)
+    if v is None or prev is None:
+        return 0.0
+    dv = v - prev
+    return -float(dv @ dv)
+
+
+# ── pick-and-place terms (read the env's PickMetrics; 0 on a non-pick env) ───
+@dataclass(frozen=True)
+class PickMetrics:
+    """The pick-and-place state the reward terms read (cached by ``PickPlaceEnv.step``)."""
+    approach: float          # ‖tool - object‖
+    left: float              # left-finger contact indicator (0/1)
+    right: float             # right-finger contact indicator (0/1)
+    lifted: float            # object height above the surface
+    lift_thresh: float       # the lift-success threshold
+    to_target: float         # ‖object - target‖ (xy)
+    reached: bool            # lifted AND within the place radius
+    approach_contact: bool   # arm/gripper hit a surface while NOT over the object
+    pre_grasp_disturb: float = 0.0   # object xy displacement before it is ever grasped (no nudging)
+
+
+CLEAN_PICK = PickMetrics(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, False, False, 0.0)
+
+
+def _pm(env: Any) -> PickMetrics:
+    return getattr(env, "_pick_metrics", None) or CLEAN_PICK
+
+
+def _term_pick_approach(env: Any, dist: float, action: np.ndarray) -> float:
+    return -_pm(env).approach
+
+
+def _term_pick_contact(env: Any, dist: float, action: np.ndarray) -> float:
+    m = _pm(env)
+    return m.left + m.right
+
+
+def _term_pick_lift(env: Any, dist: float, action: np.ndarray) -> float:
+    m = _pm(env)
+    return min(m.lifted, m.lift_thresh)
+
+
+def _term_pick_place_distance(env: Any, dist: float, action: np.ndarray) -> float:
+    m = _pm(env)
+    return -m.to_target if m.lifted > 0.02 else 0.0
+
+
+def _term_pick_place_bonus(env: Any, dist: float, action: np.ndarray) -> float:
+    return 1.0 if _pm(env).reached else 0.0
+
+
+def _term_pick_approach_penalty(env: Any, dist: float, action: np.ndarray) -> float:
+    return -1.0 if _pm(env).approach_contact else 0.0
+
+
+def _term_pick_disturbance(env: Any, dist: float, action: np.ndarray) -> float:
+    return -_pm(env).pre_grasp_disturb
+
+
 # kind -> extractor. Defaults match meta_reward.hymeko.
 _REWARD_TERMS: dict[str, RewardTerm] = {
+    "pick_approach": _term_pick_approach,
+    "pick_contact": _term_pick_contact,
+    "pick_lift": _term_pick_lift,
+    "pick_place_distance": _term_pick_place_distance,
+    "pick_place_bonus": _term_pick_place_bonus,
+    "pick_approach_penalty": _term_pick_approach_penalty,
+    "pick_disturbance": _term_pick_disturbance,
+    "goal_progress": _term_goal_progress,
+    "time_penalty": _term_time_penalty,
+    "joint_velocity": _term_joint_velocity,
+    "joint_acceleration": _term_joint_acceleration,
     "reach_distance": _term_reach_distance,
     "success_bonus": _term_success_bonus,
     "action_cost": _term_action_cost,
@@ -197,15 +306,21 @@ class RewardSpec:
 def read_reward_terms(profile_path: str | Path) -> tuple[tuple[str, float], ...]:
     """Read a profile's ``reward_spec`` → ordered ``(term_kind, weight)`` pairs.
 
-    The weight is each term instance's ``weight`` field (default ``1.0`` if absent). See
+    The weight is the bundle arc's numeric annotation — ``@grasp_reward { (+ approach 4.0, …); }`` —
+    so the hyperedge defines each term's weight, not the term node. For backward compatibility a term
+    with no arc weight falls back to its body ``weight`` field, then to ``1.0``. See
     :func:`hymeko_rl.env._profile.read_bundle` for the (narrow, B-003-bridge) parse.
 
     # Errors ``FileNotFoundError``; ``ValueError`` (no/!1 reward_spec, undeclared member).
     """
     out: list[tuple[str, float]] = []
-    for _name, kind, body in read_bundle(profile_path, "reward_spec"):
-        match = re.search(r"weight\s+(-?[\d.]+)", body)
-        out.append((kind, float(match.group(1)) if match else 1.0))
+    for _name, kind, body, arc_weight in read_bundle(profile_path, "reward_spec"):
+        if arc_weight is not None:
+            weight = arc_weight
+        else:
+            match = re.search(r"weight\s+(-?[\d.]+)", body)
+            weight = float(match.group(1)) if match else 1.0
+        out.append((kind, weight))
     return tuple(out)
 
 

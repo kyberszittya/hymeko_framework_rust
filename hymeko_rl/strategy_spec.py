@@ -58,7 +58,7 @@ class StrategySpec:
 
         # Errors ``FileNotFoundError``; ``ValueError`` (no/multiple ``strategy_spec``, missing term).
         """
-        terms = {kind: body for _name, kind, body in read_bundle(profile, "strategy_spec")}
+        terms = {kind: body for _name, kind, body, _w in read_bundle(profile, "strategy_spec")}
         missing = {"exploration", "exploitation"} - terms.keys()
         if missing:
             raise ValueError(f"{profile}: strategy_spec missing config term(s) {sorted(missing)}")

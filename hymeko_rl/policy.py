@@ -15,10 +15,15 @@ from typing import TYPE_CHECKING, Any
 import torch
 import torch.nn as nn
 
+from signed_kan import SignedKANBackbone
+# Re-exported so ``hymeko_rl.policy._catmull_rom`` / ``CatmullRomActivation`` keep working (the Triton
+# ``cr_kernel`` + the CR parity tests import them); the implementation lives once, in the core.
+from signed_kan.splines import CatmullRomActivation, catmull_rom as _catmull_rom  # noqa: F401
+
 if TYPE_CHECKING:
     from hymeko_rl.hypergraph_state import HypergraphState
 
-POLICY_KINDS = ("mlp", "hsikan")
+POLICY_KINDS = ("mlp", "hsikan", "signedkan")
 
 
 class ActorCritic(nn.Module):
@@ -87,7 +92,7 @@ class ActorCritic(nn.Module):
 
 def mlp_backbone(obs_dim: int, *, hidden: int = 64, depth: int = 2,
                  ) -> tuple[nn.Module, int]:
-    """A plain ``tanh`` MLP backbone (the ablation baseline). Returns ``(module, feat_dim)``.
+    """A plain ``ReLU`` MLP backbone (the ablation baseline). Returns ``(module, feat_dim)``.
 
     Leads with ``Flatten(start_dim=1)`` so it consumes the *same* node-feature obs
     ``(B, N, feat)`` the HSiKAN backbone reads (here ``obs_dim == N * feat``) — the
@@ -100,82 +105,65 @@ def mlp_backbone(obs_dim: int, *, hidden: int = 64, depth: int = 2,
     layers: list[nn.Module] = [nn.Flatten(start_dim=1)]
     d = obs_dim
     for _ in range(depth):
-        layers += [nn.Linear(d, hidden), nn.Tanh()]
+        layers += [nn.Linear(d, hidden), nn.ReLU()]
         d = hidden
     return nn.Sequential(*layers), hidden
 
 
-class _SignedConv(nn.Module):
-    """One signed graph-conv layer: self + signed-positive + signed-negative aggregation.
+class HSiKANBackbone(SignedKANBackbone):
+    """HSiKAN (Highway Signed KAN) backbone for the RL line — the kinematic-``hg_state`` adapter over the
+    shared :class:`signed_kan.SignedKANBackbone` core. ``hg_state`` (the MJCF-derived signed adjacency) and
+    the dense/batched aggregation are the RL specifics; the signed-KAN layer, incidence modes, skip/highway,
+    and pooling all live once, in :mod:`signed_kan`. Input is per-vertex features ``(B, N, in_feat)``; output
+    is the pooled graph embedding ``(B, hidden)``. Inherits ``a_pos``/``a_neg``/``w_pos_arc``/``_effective_adj``
+    /``node_activations``/``n_vertices`` from the core.
 
-    The SGCN idea (``signedkan_wip`` ``SGCNLayer`` is the sparse, transductive sibling)
-    as a small *dense, batched* variant — kinematic graphs are tiny and the obs is a
-    rollout batch ``(B, N, d)`` the sparse ``mm`` cannot batch over.
-    """
-
-    def __init__(self, in_dim: int, out_dim: int) -> None:
-        super().__init__()
-        self.w_self = nn.Linear(in_dim, out_dim)
-        self.w_pos = nn.Linear(in_dim, out_dim)
-        self.w_neg = nn.Linear(in_dim, out_dim)
-
-    def forward(self, x: torch.Tensor, a_pos: torch.Tensor,
-                a_neg: torch.Tensor) -> torch.Tensor:
-        agg_pos = torch.einsum("nm,bmd->bnd", a_pos, x)
-        agg_neg = torch.einsum("nm,bmd->bnd", a_neg, x)
-        return torch.tanh(self.w_self(x) + self.w_pos(agg_pos) + self.w_neg(agg_neg))
-
-
-class HSiKANBackbone(nn.Module):
-    """Signed message passing over the robot's kinematic hypergraph → pooled features.
-
-    The backbone that *reads the compiled hypergraph*: the signed adjacency comes from
-    ``hg_state`` (the MJCF-derived kinematic graph), not raw joints. Input is per-vertex
-    features ``(B, N, in_feat)`` (the dynamic state on the structure); output is a graph
-    embedding ``(B, hidden)`` (mean-pooled). Swapping this for ``mlp_backbone`` is the
-    architecture ablation.
-
-    # Preconditions ``in_feat, hidden, n_layers >= 1``; ``hg_state.n_vertices >= 1``.
+    # Preconditions ``in_feat, hidden, n_layers >= 1``; ``hg_state`` exposes ``dense_signed_adj`` +
+    ``n_vertices``; ``incidence`` in :data:`signed_kan.INCIDENCE_MODES`; ``skip`` in :data:`signed_kan.SKIP_MODES`.
     """
 
     def __init__(self, in_feat: int, hidden: int, n_layers: int,
-                 hg_state: "HypergraphState",
-                 device: torch.device | str = "cpu") -> None:
-        super().__init__()
-        if in_feat < 1 or hidden < 1 or n_layers < 1:
-            raise ValueError(
-                f"in_feat/hidden/n_layers must be >= 1; got {in_feat}/{hidden}/{n_layers}")
+                 hg_state: "HypergraphState", device: torch.device | str = "cpu", *,
+                 incidence: str = "fixed", activation: str = "cr", skip: str = "none") -> None:
         a_pos, a_neg = hg_state.dense_signed_adj(device)
-        self.register_buffer("a_pos", a_pos)
-        self.register_buffer("a_neg", a_neg)
-        self.n_vertices = hg_state.n_vertices
-        dims = [in_feat] + [hidden] * n_layers
-        self.layers = nn.ModuleList(
-            [_SignedConv(dims[i], dims[i + 1]) for i in range(n_layers)])
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.dim() != 3 or x.shape[1] != self.n_vertices:
-            raise ValueError(
-                f"expected (B, {self.n_vertices}, in_feat); got {tuple(x.shape)}")
-        for layer in self.layers:
-            x = layer(x, self.a_pos, self.a_neg)
-        return x.mean(dim=1)
+        super().__init__(in_feat, hidden, n_layers, a_pos, a_neg,
+                         incidence=incidence, activation=activation, skip=skip)
 
 
 def hsikan_backbone(in_feat: int, *, hg_state: "HypergraphState", hidden: int = 64,
                     n_layers: int = 2, device: torch.device | str = "cpu",
+                    incidence: str = "fixed", activation: str = "cr", skip: str = "none",
                     ) -> tuple[nn.Module, int]:
-    """The HSiKAN/Gömb backbone over the kinematic hypergraph. Returns ``(module, feat_dim)``.
+    """The HSiKAN (Highway Signed KAN) backbone over the kinematic hypergraph. Returns ``(module, feat_dim)``.
 
-    # Preconditions ``hg_state`` exposes ``dense_signed_adj`` + ``n_vertices``.
+    ``incidence`` selects how the signed incidence A± carries its arc weights:
+    ``"fixed"`` (default — the binary kinematic structure), ``"learned"`` (the ``signedkan`` variant: the
+    full A± is trainable), or ``"weighted"`` (free real-valued weights on the *fixed* structural arcs,
+    init 1.0 = parity with ``"fixed"``) — the signed-hypergraph premise of real arc weights without
+    discarding the kinematic sparsity prior. ``skip`` selects the per-layer skip: ``"none"`` (default,
+    parity with a plain signed-conv), ``"residual"``, or ``"highway"`` (the Schmidhuber gate — the H in
+    HSiKAN). ``activation`` selects the edge nonlinearity: ``"cr"`` (the Catmull-Rom KAN spline), or
+    ``"relu"``/``"tanh"`` for ablation.
+
+    # Preconditions ``hg_state`` exposes ``dense_signed_adj`` + ``n_vertices``; ``incidence`` in
+    :data:`signed_kan.INCIDENCE_MODES`; ``skip`` in :data:`signed_kan.SKIP_MODES`.
     """
-    return HSiKANBackbone(in_feat, hidden, n_layers, hg_state, device), hidden
+    return HSiKANBackbone(in_feat, hidden, n_layers, hg_state, device,
+                          incidence=incidence, activation=activation, skip=skip), hidden
+
+
+def signedkan_backbone(in_feat: int, **kw: object) -> tuple[nn.Module, int]:
+    """HSiKAN with a fully *learned* signed incidence — the trained (dense) weights are the star edges.
+    For real weights on the *fixed* structural arcs instead (keeping the sparsity prior), pass
+    ``incidence="weighted"`` to :func:`hsikan_backbone` / ``build_policy("hsikan", …)``."""
+    return hsikan_backbone(in_feat, incidence="learned", **kw)  # type: ignore[arg-type]
 
 
 # Backbone Strategy registry (§6.5 #1/#9: one dispatch, no per-kind wrappers). The
-# HSiKAN/Gömb backbone reads the kinematic hypergraph; the MLP baseline reads a flat obs.
+# HSiKAN/Gömb backbone reads the kinematic hypergraph; the MLP baseline reads a flat obs;
+# ``signedkan`` is HSiKAN with the incidence itself learned.
 _BACKBONES: dict[str, Callable[..., tuple[nn.Module, int]]] = {
-    "mlp": mlp_backbone, "hsikan": hsikan_backbone}
+    "mlp": mlp_backbone, "hsikan": hsikan_backbone, "signedkan": signedkan_backbone}
 
 
 def build_policy(kind: str, obs_dim: int, action_dim: int, *, log_std_init: float = -1.6,

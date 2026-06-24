@@ -8,7 +8,11 @@
 //   - center_bonus   : graded +closeness to the exact zone centre (precision)
 //   - arm_motion     : anti-stall — penalises an idle arm (exploration)
 // `action_cost` was REMOVED: it rewarded stationarity and induced the freeze-then-timeout failure.
-// Pure PPO learns against this (no scripted expert). Validates via `hymeko inspect`.
+//
+// WEIGHTS ARE ON THE HYPEREDGE ARCS. Each term node is just a typed reward signal; the reward bundle
+// `@grasp_reward` defines the weight of each relationship as an arc weight `(+ term <weight>)`, not as
+// a `weight` attribute on the term node. The same term can thus be reused in another bundle with a
+// different weight. Pure PPO learns against this (no scripted expert).
 
 galambos_task_description {
     @"meta_kinematics.hymeko";
@@ -23,30 +27,38 @@ galambos_task: el, rew, r
     disk:        el.frame {}
     target_zone: el.frame {}
 
-    // Dense shaping, two stages of the causal chain:
+    // Term nodes — typed reward signals (no weights here; the bundle's arcs carry them).
     //   approach : bring both arms TO the coin (bridges 'near' -> 'contact')
-    //   pull     : once moving, drag the coin toward the zone
-    @approach: rew.grasp_approach { weight 2.0; }
-    @pull:     rew.reach_distance { weight 1.0; (+ disk, - target_zone); }
+    //   pull     : once moving, drag the coin toward the zone (its own edge: + disk, - target_zone)
+    @approach: rew.grasp_approach {}
+    @pull:     rew.reach_distance { (+ disk, - target_zone); }
 
     // Two-sided grasp bonus + sparse success.
-    @both: rew.both_contact { weight 0.5; }
-    @zone: rew.in_zone      { weight 10.0; }
+    @both: rew.both_contact {}
+    @zone: rew.in_zone      {}
 
     // Precision (graded toward the exact centre) + anti-stall (keep the arm exploring, no freezing).
-    @center:  rew.center_bonus { weight 5.0; }
-    @explore: rew.arm_motion   { weight 0.5; }
+    @center:  rew.center_bonus {}
+    @explore: rew.arm_motion   {}
 
     // Penalise the two arms colliding with each other (cooperate, don't crash together).
-    @noclash: rew.arm_collision { weight 1.0; }
+    @noclash: rew.arm_collision {}
 
     // Penalise knocking the disk off the table (death) — stop ballistic over-pushing.
-    @oob: rew.out_of_bounds { weight 5.0; }
+    @oob: rew.out_of_bounds {}
 
-    // NOTE: `settle` (overshoot-brake) was tried (near- and in-zone gatings) and measured WORSE
-    // (4/8 vs 5/8 on the easy task); kept as opt-in vocabulary only. `action_cost` was dropped here
-    // because it rewarded stationarity (the freeze-then-timeout failure).
+    // Fast + smooth: pay per step (reach the zone quickly), and penalise thrashing the joints fast
+    // (q̇²) and jerkily (q̈²) — so the grasp is brisk but not violent.
+    @timecost: rew.time_penalty       {}
+    @smoothv:  rew.joint_velocity     {}
+    @smootha:  rew.joint_acceleration {}
+
+    // The reward bundle: Σ weight·term, with the weight carried by each arc.
+    //   approach 4.0 (CLOSENESS emphasized, was 2.0) · both 3.0 (CONTACT emphasized, was 0.5)
+    // NOTE: `settle` (overshoot-brake) measured WORSE (4/8 vs 5/8) and `action_cost` rewarded
+    // stationarity — both kept out of the bundle (vocabulary-only).
     @grasp_reward: r.reward_spec {
-        (+ approach, + pull, + both, + zone, + center, + explore, + noclash, + oob);
+        (+ approach 4.0, + pull 1.0, + both 3.0, + zone 10.0, + center 5.0, + explore 0.5,
+         + noclash 1.0, + oob 5.0, + timecost 0.10, + smoothv 0.005, + smootha 0.01);
     }
 }

@@ -68,6 +68,67 @@ def test_reader_parses_weights_and_order(tmp_path: Path) -> None:
     assert read_reward_terms(prof) == (("reach_distance", 0.5), ("success_bonus", 3.0))
 
 
+def test_reader_parses_arc_weights(tmp_path: Path) -> None:
+    """Weights live on the bundle ARC (the hyperedge); the term nodes carry none."""
+    prof = tmp_path / "arc.hymeko"
+    prof.write_text(
+        "p {\n"
+        "  @d: rew.reach_distance { (+ f, - t); }\n"
+        "  @b: rew.success_bonus {}\n"
+        "  @s: r.reward_spec { (+ d 0.5, + b 3.0); }\n"
+        "}\n")
+    assert read_reward_terms(prof) == (("reach_distance", 0.5), ("success_bonus", 3.0))
+
+
+def test_arc_weight_overrides_body_then_defaults(tmp_path: Path) -> None:
+    """Arc weight wins over a body weight; absent arc weight falls back to body, then to 1.0."""
+    prof = tmp_path / "mix.hymeko"
+    prof.write_text(
+        "p {\n"
+        "  @a: rew.reach_distance { weight 9.0; }\n"   # body 9.0 but arc 0.5 -> 0.5 wins
+        "  @b: rew.success_bonus { weight 3.0; }\n"    # no arc weight -> body 3.0
+        "  @c: rew.action_cost {}\n"                   # neither -> default 1.0
+        "  @s: r.reward_spec { (+ a 0.5, + b, + c); }\n"
+        "}\n")
+    assert read_reward_terms(prof) == (
+        ("reach_distance", 0.5), ("success_bonus", 3.0), ("action_cost", 1.0))
+
+
+def test_reworked_task_profiles_have_arc_weights() -> None:
+    """The reworked Galambos + FANUC rewards declare every weight on the bundle arc (regression:
+    the values match the pre-rework body weights exactly)."""
+    gala = read_reward_terms(_REPO / "data" / "robotics" / "galambos_task.hymeko")
+    assert gala == (
+        ("grasp_approach", 4.0), ("reach_distance", 1.0), ("both_contact", 3.0),
+        ("in_zone", 10.0), ("center_bonus", 5.0), ("arm_motion", 0.5),
+        ("arm_collision", 1.0), ("out_of_bounds", 5.0), ("time_penalty", 0.10),
+        ("joint_velocity", 0.005), ("joint_acceleration", 0.01))
+    pick = read_reward_terms(_REPO / "data" / "robotics" / "pick_place_task.hymeko")
+    assert pick == (
+        ("pick_approach", 1.0), ("pick_contact", 0.5), ("pick_lift", 5.0),
+        ("pick_place_distance", 1.0), ("pick_place_bonus", 20.0),
+        ("pick_approach_penalty", 2.0), ("pick_disturbance", 3.0))
+
+
+def test_read_arc_weights_general(tmp_path: Path) -> None:
+    """The general arc-weight capability: signed arcs + weights of any named hyperedge."""
+    from hymeko_rl.env._profile import read_arc_weights
+    prof = tmp_path / "e.hymeko"
+    prof.write_text("p {\n  @e: ns.kind { (+ a 4.0, - b, ~ c 0.5); }\n}\n")
+    assert read_arc_weights(prof, "e") == [("+", "a", 4.0), ("-", "b", None), ("~", "c", 0.5)]
+    with pytest.raises(ValueError, match="no hyperedge"):
+        read_arc_weights(prof, "nope")
+
+
+def test_read_arc_weights_on_reward_bundle() -> None:
+    """Reads the weights straight off the Galambos reward hyperedge's arcs."""
+    from hymeko_rl.env._profile import read_arc_weights
+    arcs = read_arc_weights(_REPO / "data" / "robotics" / "galambos_task.hymeko", "grasp_reward")
+    assert ("+", "approach", 4.0) in arcs
+    assert ("+", "zone", 10.0) in arcs
+    assert all(sign == "+" for sign, _m, _w in arcs)
+
+
 def test_reader_rejects_missing_reward_spec(tmp_path: Path) -> None:
     bad = tmp_path / "no_spec.hymeko"
     bad.write_text("p { @d: rew.reach_distance { weight 1.0; (+ f); } }")

@@ -18,8 +18,9 @@ arm_reach_task_description {
 
 arm_reach_task: r, arr
 {
-    // The assembled scalar reward = the shared dense reach-distance term.
+    // The assembled scalar reward = the shared dense reach-distance term, weighted on the arc (the
+    // hyperedge carries the weight; the imported `dist` term node does not).
     @reach_reward: r.reward_spec {
-        (+ arr.dist);
+        (+ arr.dist 1.0);
     }
 }
