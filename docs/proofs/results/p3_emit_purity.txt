@@ -1,0 +1,10 @@
+  fano_graph.hymeko              deterministic=True  reorder-invariant DOT 0/100
+  generic_hypergraph.hymeko      deterministic=True  reorder-invariant DOT 0/100
+  k4_3uniform.hymeko             deterministic=True  reorder-invariant DOT 0/100
+  sunflower_delta_system.hymeko  deterministic=True  reorder-invariant DOT 0/100
+
+P1-output / P3-purity vs the REAL compiler:
+  emitter determinism (fresh-engine re-emit identical): 4/4 fixtures
+  DOT byte-equal under sibling reordering              : 0/400 reorderings
+  => emitters are pure functions of the canonical IR (Lemma 3); output is alias-invariant (Prop.1),
+     so k formats can be emitted from ONE compile without cross-talk (Prop.3 independence).

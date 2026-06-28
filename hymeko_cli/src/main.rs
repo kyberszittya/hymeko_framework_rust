@@ -448,30 +448,42 @@ fn run_command(cmd: Commands) {
                     );
                     std::process::exit(1);
                 };
-                if t.accepts() == ModelKind::Kinematic {
+                // Kinematic transforms with a real Rust emitter (urdf/sdf/mjcf/dot) take the model
+                // path. A transform that is *template-only* (emit() returns None but it declares a
+                // `template_dir`, e.g. requirements_sysml/requirements_dot) falls through to the file
+                // templates. Only a kinematic transform with neither output nor a template_dir is a
+                // genuine extraction failure.
+                let model_output = if t.accepts() == ModelKind::Kinematic {
                     let model_view = extract_kinematic(&compiled.ir, &ms.it, &name);
-                    t.emit(&model_view, &cfg).unwrap_or_else(|| {
+                    t.emit(&model_view, &cfg)
+                } else {
+                    None
+                };
+                match model_output {
+                    Some(rendered) => rendered,
+                    None if t.accepts() == ModelKind::Kinematic && t.template_dir().is_none() => {
                         eprintln!(
                             "Emit for `{format}` returned no output (model extraction failed)."
                         );
                         std::process::exit(1);
-                    })
-                } else {
-                    let transforms_root = PathBuf::from(&transforms_dir);
-                    reg.render_from_templates(
-                        &format, &compiled.ir, &ms.it, &cfg, &transforms_root,
-                    )
-                    .unwrap_or_else(|| {
-                        eprintln!(
-                            "Unknown format: `{format}`. Registered template-driven formats: {:?}",
-                            reg.available()
-                        );
-                        std::process::exit(1);
-                    })
-                    .unwrap_or_else(|e| {
-                        eprintln!("Render failed: {e}");
-                        std::process::exit(1);
-                    })
+                    }
+                    None => {
+                        let transforms_root = PathBuf::from(&transforms_dir);
+                        reg.render_from_templates(
+                            &format, &compiled.ir, &ms.it, &cfg, &transforms_root,
+                        )
+                        .unwrap_or_else(|| {
+                            eprintln!(
+                                "Unknown format: `{format}`. Registered template-driven formats: {:?}",
+                                reg.available()
+                            );
+                            std::process::exit(1);
+                        })
+                        .unwrap_or_else(|e| {
+                            eprintln!("Render failed: {e}");
+                            std::process::exit(1);
+                        })
+                    }
                 }
             };
 

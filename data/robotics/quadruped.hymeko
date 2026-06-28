@@ -1,0 +1,69 @@
+// quadruped.hymeko — a proper four-legged robot (torso + 4 two-link legs), described in HyMeKo.
+//
+// A torso box with four legs at its bottom corners; each leg is a thigh + shin (revolute hip + knee, both
+// about AXIS_Y so the leg flexes in its sagittal plane). Crouching (bending hip+knee) loads the legs;
+// extending them together pushes the feet into the ground and launches the torso UP — the jump.
+//
+// world --fix(+0.42 z)--> torso --hip_X(Y)--> thigh_X --knee_X(Y)--> shin_X   (X in {fl,fr,bl,br})
+//
+// The torso is fixed to world here (emitter has no free joint); QuadrupedJumpEnv post-processes a
+// <freejoint> onto the torso (floating base) + a floor, so it can fall, push off, and jump.
+// Validates via `hymeko validate`.
+
+quadruped_description {
+    @"meta_kinematics.hymeko";
+}
+
+quadruped: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geometry, meta_kinematics.kinematics.axes
+{
+    world: meta_kinematics.kinematics.elements.frame {}
+
+    torso_color [0.25, 0.45, 0.85, 1.0];
+    leg_color   [0.85, 0.55, 0.20, 1.0];
+
+    // === Torso ===
+    torso: meta_kinematics.kinematics.elements.link {
+        mass 1.8;
+        link_geometry: meta_kinematics.kinematics.geometry.box { dimension [0.30, 0.20, 0.08]; }
+        visual    -> link_geometry;
+        collision -> link_geometry;
+        color     -> quadruped.torso_color;
+        origin [0.0, 0.0, 0.0];
+    }
+
+    // === Legs (thigh + shin, cylinders pointing down; origin = mid-link) ===
+    // front-left
+    thigh_fl: meta_kinematics.kinematics.elements.link { mass 0.3; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.022, 0.18]; } visual -> link_geometry; collision -> link_geometry; color -> quadruped.leg_color; origin [0.0, 0.0, -0.09]; }
+    shin_fl:  meta_kinematics.kinematics.elements.link { mass 0.2; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.018, 0.18]; } visual -> link_geometry; collision -> link_geometry; color -> quadruped.leg_color; origin [0.0, 0.0, -0.09]; }
+    // front-right
+    thigh_fr: meta_kinematics.kinematics.elements.link { mass 0.3; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.022, 0.18]; } visual -> link_geometry; collision -> link_geometry; color -> quadruped.leg_color; origin [0.0, 0.0, -0.09]; }
+    shin_fr:  meta_kinematics.kinematics.elements.link { mass 0.2; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.018, 0.18]; } visual -> link_geometry; collision -> link_geometry; color -> quadruped.leg_color; origin [0.0, 0.0, -0.09]; }
+    // back-left
+    thigh_bl: meta_kinematics.kinematics.elements.link { mass 0.3; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.022, 0.18]; } visual -> link_geometry; collision -> link_geometry; color -> quadruped.leg_color; origin [0.0, 0.0, -0.09]; }
+    shin_bl:  meta_kinematics.kinematics.elements.link { mass 0.2; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.018, 0.18]; } visual -> link_geometry; collision -> link_geometry; color -> quadruped.leg_color; origin [0.0, 0.0, -0.09]; }
+    // back-right
+    thigh_br: meta_kinematics.kinematics.elements.link { mass 0.3; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.022, 0.18]; } visual -> link_geometry; collision -> link_geometry; color -> quadruped.leg_color; origin [0.0, 0.0, -0.09]; }
+    shin_br:  meta_kinematics.kinematics.elements.link { mass 0.2; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.018, 0.18]; } visual -> link_geometry; collision -> link_geometry; color -> quadruped.leg_color; origin [0.0, 0.0, -0.09]; }
+
+    // === World fixation / base joint — DECLARED here, not injected by the environment ===
+    // This joint is the explicit attachment of the robot to the world, at rest height 0.42 m.
+    // The environment reads it BY NAME ("base") and sets the base mode (QuadrupedJumpEnv(base=...)):
+    //   * "free"  -> promote to a MuJoCo <freejoint>: a 6-DOF floating base, required to jump.
+    //   * "fixed" -> weld the torso to the world (stationary test rig).
+    // It is declared as a conti_joint (the non-fixed carrier that keeps the torso a *movable body*, so
+    // the env can promote it) because meta_kinematics has no free-joint primitive — adding one is a CORE
+    // change to hymeko_query's JointType (lockdown: implementation), deferred pending approval.
+    @base: meta_kinematics.kinematics.conti_joint {
+        (+ world [[0.0, 0.0, 0.42], [0.0, 0.0, 0.0]], - torso, - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
+
+    // === Hips (torso corner -> thigh) + knees (thigh end -> shin), all AXIS_Y (sagittal flex) ===
+    @hip_fl:  meta_kinematics.kinematics.rev_joint { (+ torso [[ 0.13,  0.08, -0.04], [0.0,0.0,0.0]], - thigh_fl, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @knee_fl: meta_kinematics.kinematics.rev_joint { (+ thigh_fl [[0.0, 0.0, -0.18], [0.0,0.0,0.0]], - shin_fl, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @hip_fr:  meta_kinematics.kinematics.rev_joint { (+ torso [[ 0.13, -0.08, -0.04], [0.0,0.0,0.0]], - thigh_fr, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @knee_fr: meta_kinematics.kinematics.rev_joint { (+ thigh_fr [[0.0, 0.0, -0.18], [0.0,0.0,0.0]], - shin_fr, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @hip_bl:  meta_kinematics.kinematics.rev_joint { (+ torso [[-0.13,  0.08, -0.04], [0.0,0.0,0.0]], - thigh_bl, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @knee_bl: meta_kinematics.kinematics.rev_joint { (+ thigh_bl [[0.0, 0.0, -0.18], [0.0,0.0,0.0]], - shin_bl, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @hip_br:  meta_kinematics.kinematics.rev_joint { (+ torso [[-0.13, -0.08, -0.04], [0.0,0.0,0.0]], - thigh_br, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @knee_br: meta_kinematics.kinematics.rev_joint { (+ thigh_br [[0.0, 0.0, -0.18], [0.0,0.0,0.0]], - shin_br, - meta_kinematics.kinematics.axes.AXIS_Y); }
+}

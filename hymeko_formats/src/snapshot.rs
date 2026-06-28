@@ -37,8 +37,39 @@ pub struct NodeDto {
     pub bases: Vec<String>,
     /// Annotation tags attached at declaration (e.g. `<temperature>`).
     pub tags: Vec<String>,
+    /// The decl's rendered field value, if any (e.g. `"m"`, `[1, 0, 0]`, `1.5`, or a referenced
+    /// decl's name). Lets a viewer show leaf "attribute" decls on a node's HUD instead of as
+    /// separate vertices. `None` when the decl carries no value.
+    #[serde(default)]
+    pub value: Option<String>,
     /// Signed arc references — populated only for Edge decls.
     pub arcs: Vec<ArcDto>,
+}
+
+/// Render a field value to a compact display string for a node's HUD. Pure; refs resolve to the
+/// target decl's name (the structural link is already in `relationships`).
+fn render_value(v: &ValueR, ir: &Ir, st: &StringTable) -> String {
+    match v {
+        ValueR::Str(s) => format!("\"{}\"", st.resolve(*s)),
+        ValueR::Num(n) => {
+            if n.fract() == 0.0 && n.abs() < 1e15 {
+                format!("{}", *n as i64)
+            } else {
+                format!("{n}")
+            }
+        }
+        ValueR::List(items) => {
+            let parts: Vec<String> = items.iter().map(|it| render_value(it, ir, st)).collect();
+            format!("[{}]", parts.join(", "))
+        }
+        ValueR::Ref(d) => {
+            if d.is_none() {
+                "?".to_string()
+            } else {
+                st.resolve(ir.decl_nodes[d.0].name).to_string()
+            }
+        }
+    }
 }
 
 /// A named, annotated relationship between two decls, by `DeclId`.
@@ -138,7 +169,8 @@ pub fn snapshot(ir: &Ir, st: &StringTable) -> SnapshotDto {
                 }
             }
         }
-        NodeDto { id: did.0, name, kind: kind_str.to_string(), bases, tags, arcs }
+        let value = decl.anno.value.as_ref().map(|v| render_value(v, ir, st));
+        NodeDto { id: did.0, name, kind: kind_str.to_string(), bases, tags, value, arcs }
     };
 
     let mut nodes = Vec::with_capacity(ir.nodes.len());

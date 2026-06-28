@@ -1,12 +1,77 @@
 # HyMeKo — Done (completed work)
 
-**Last updated:** 2026-06-18 · Companion: [BACKLOG.md](BACKLOG.md) (open work).
+**Last updated:** 2026-06-21 · Companion: [BACKLOG.md](BACKLOG.md) (open work).
 
 Curated milestone log. The **full archive is `reports/`** (~250 reports — every
 completed task has one); this file is the human-scannable highlight reel, newest
 first. When a backlog item lands, move its line here with the report link.
 
 ---
+
+## 2026-06-21 — Cart-pole HSiKAN actor-critic, vectorized PPO, editor attribute-HUD
+
+- ✅ **PPO is the RL BASELINE (saved).** On-policy clipped-surrogate + GAE, diagonal-Gaussian actor over a
+  HyMeKo-described cart-pole (`data/robotics/inverted_pendulum.hymeko`; `hg_state` from the .hymeko). The
+  reference for all future RL-algorithm work (DDPG/TD3/SAC): **5-seed, vec N=16, 120 iters** — HSiKAN
+  **192.0 ± 15.3** upright-steps/200 (5/5 learn). Artifact: `reports/2026-06-21-cartpole-multiseed.jsonl`.
+- ⚠️ **Structure is NOT load-bearing on cart-pole (control overturned the first read).** A params-matched
+  MLP (26.7k ≈ HSiKAN's 26.2k) ties HSiKAN: **195.2 ± 8.4, 5/5 learn**; over-param MLP (135k) = 200±0. The
+  earlier "MLP fails 3/5 → HSiKAN robustness win" was an **under-parameterized baseline** (9k params), not
+  structure — same trap/verdict as the 2026-06-18 rotor-vs-MLP-embed ablation. Caveat: a 2-vertex graph has
+  no topology to exploit, so cart-pole is the wrong task to judge the architecture; a fair test needs the
+  6-DOF arm or Galambos. Control artifact: `reports/2026-06-21-cartpole-controls.jsonl`.
+  `reports/2026-06-21-cartpole-hsikan-wirein.md`
+- ✅ **Vectorized PPO rollout — 3.1× faster wall, learning preserved.** Measured the batch-1 forward at 87%
+  of the rollout (dispatch-bound, not FLOPs); `_collect_vec` batches the forward over N lock-step envs →
+  iter 3.08 s→0.93 s (N=16), 120-iter run 452 s→147 s, upright 144→161. Single-env reach path untouched.
+  `reports/2026-06-21-vectorized-ppo-rollout.md`
+- ✅ **Provenance + `--save` + auto-labeled render (train→store→render chain).** Stored `.hymeko` carries a
+  `provenance {algo,backbone,upright,seed}` block (`policy_to_hymeko(meta=…)`, `read_provenance`); every trainer
+  got `--save`; `load_policy_from_hymeko` generalized to reconstruct PPO/DDPG/SAC actors bit-exact (dispatch on
+  keys; `GreedyPolicy` Protocol); render self-labels (HUD + `cartpole_<algo>_<backbone>.gif`) from provenance,
+  no `--algo`. The gif HUD also shows step/return/pole/cart/force/status. 46-test suite green.
+  `reports/2026-06-21-sim-interface-and-t2.md`
+- ✅ **SAC — max-entropy off-policy + the entropy-feedback seat.** Squashed-Gaussian actor + twin soft-Q +
+  auto-temperature α (`sac.py`, reuses the off-policy scaffolding). **Strongest learner:** solves cart-pole in
+  **~4k steps** (curve `196·200·200·200·122` — held 200 8k–16k; final-snapshot metric noisy under late dips,
+  curve is the truer signal). The `α·H` term is the explicit seat where the user's **TD-k / entropy-feedback**
+  idea lands: 3 interchangeable signals — policy-entropy (SAC, done) · critic-ensemble disagreement (TD-k =
+  `n_critics` config) · **structural entropy** (HyMeKo `hymeko entropy`, the novel bet). 4 tests.
+  `reports/2026-06-21-sac-and-entropy-seat.md`
+- ✅ **TD3 (P3) — as 3 config axes of the DDPG core, not a fork (§6.5#1).** `n_critics=2` (clipped double-Q) +
+  `policy_delay=2` + `target_noise` (smoothing); one `train_offpolicy`/`OffPolicyConfig`, DDPG = degenerate
+  preset; `--algo {ddpg,td3}`. Honest non-result: on cart-pole TD3 shows **no advantage over DDPG** (single
+  seed: TD3 final 114 vs DDPG 199, curve oscillates) — its robustness benefit is multi-seed/harder-task
+  territory, which the easy cart-pole can't show. 7 tests + 33-test regression clean. Next: SAC.
+  `reports/2026-06-21-td3.md`
+- ✅ **DDPG — first off-policy actor-critic (P2) + off-policy RL survey report.** Replay buffer + Q-critic +
+  deterministic actor + Polyak targets + DPG/Bellman + Gaussian exploration; same swappable backbone. mlp DDPG
+  **27→199 upright, solved in ~8k env steps** (vs PPO's ~2M) — **~250× more sample-efficient** (PPO still wins
+  wall, being vectorised). `eval_balance` retyped to a `GreedyPolicy` Protocol (PPO + DDPG share one eval). 11
+  tests. Survey: `reports/2026-06-21-offpolicy-rl-survey.pdf` (DDPG/TD3/SAC + REDQ/TQC/DroQ/CrossQ/TD7 +
+  safe-RL). Next: TD3 (P3), then SAC. `reports/2026-06-21-ddpg-offpolicy.md`
+- ✅ **Runnable+visualizable sim interface + binary storage T0/T1/T2 complete.** `render_inverted_pendulum.py`
+  loads a policy **from its `.hymeko`** (architecture inferred from tensor shapes), runs it, renders a GIF
+  (cart-pole balancing 200/200) + trajectory PNG — the storage loop closed. Binary tiers: **T0** decimal
+  332 KB / **T1** base64 142 KB / **auto** 148 KB / **T2** content-addressed npz blob (**9 KB** .hymeko +
+  sha256-verified blob, tamper-rejecting). All bit-exact + valid HyMeKo. 38 tests.
+  `reports/2026-06-21-sim-interface-and-t2.md`
+- ✅ **`signedkan` — learned-incidence policy (the trained weights ARE the star edges).** `learn_incidence`
+  flag makes `a_pos/a_neg` trainable `nn.Parameter`s (init = kinematic); new `"signedkan"` kind. Incidence
+  drifts 0.026 from init (genuinely learned), round-trips bit-exact as a valid `.hymeko`. Honest: 39.9 vs
+  hsikan 56.8 upright — parity, no structural gain on 2-vtx (mechanism demo, not a perf claim). +fig7. 13
+  policy tests. Binary-storage **plan** (T0/T1/T2 tiers) written, not built.
+  `reports/2026-06-21-signedkan-learned-incidence.md`
+- ✅ **Trained policy stored AS a HyMeKo hypergraph (storage thesis → artifact).** A weight matrix is the
+  star expansion of a weighted hypergraph (incidence $B_{ij}=W_{ij}$), so a trained cart-pole HSiKAN
+  actor-critic round-trips `state_dict ⇄ .hymeko`: 332 KB **valid HyMeKo**
+  ([data/nn/cartpole_hsikan_policy.hymeko](data/nn/cartpole_hsikan_policy.hymeko)), **bit-exact** (max |Δ|
+  0.00 over 26 259 weights), reconstructed policy eval identical. 6-figure battery in
+  `docs/figures/2026-06-21-policy-storage/`. `hymeko_rl/policy_store.py`, 11 tests.
+  `reports/2026-06-21-policy-weight-storage.md`
+- ✅ **Editor: hyperedge-on-hyperedge rendering** (strategy.hymeko bundles now visible) +
+  **attribute-on-HUD folding** (leaf value-decls fold onto a node's HUD with values; `NodeDto.value` +
+  WASM rebuild). `reports/2026-06-21-editor-hyperedge-on-hyperedge.md`, `reports/2026-06-21-editor-attribute-hud.md`
 
 ## 2026-06-18 — Rotor signed-link: input enrichment + inductive transfer + the rotor ablation
 

@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import shutil
 import subprocess
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -107,6 +108,88 @@ class HypergraphState:
             raise RuntimeError(
                 f"hymeko emit -f mjcf failed (exit {proc.returncode}): {proc.stderr[:300]}")
         return cls.from_mjcf(proc.stdout, is_path=False)
+
+    def star_expansion(self) -> "HypergraphState":
+        """The bipartite **star-expansion**: each joint becomes a HUB node mediating its parent and child, so
+        the graph carries the original vertices PLUS one hyperedge-hub per joint, and message passing flows
+        ``vertex → hub → vertex``. The result is a drop-in :class:`HypergraphState` for the HSiKAN backbone — a
+        richer structural prior in which the joints (the actuated DOF) are first-class nodes, not just edges.
+
+        Each kinematic joint here is binary, so every hub has degree 2; the *form* generalises unchanged to
+        higher-arity hubs once the canonical ``.hymeko`` star-expansion (true ``>2`` hyperedges) is available via
+        the engine's transitive-import resolver (memory ``project-engine-transitive-imports``).
+
+        # Preconditions ``self`` has ``>= 1`` down-chain (``+1``) arc (i.e. at least one joint).
+        # Postconditions ``n_vertices == N + J`` (``J`` = #joints); each hub ``N+k`` connects exactly its
+          parent and child, the down(``+1``)/up(``-1``) signs routed through it; ``topo_hash`` is suffixed
+          ``":star"`` so a re-encode gate distinguishes it.
+        """
+        n = self.n_vertices
+        joints = [(int(p), int(c)) for (p, c), s in zip(self.edges, self.signs) if s > 0]
+        if not joints:
+            raise ValueError("star_expansion requires >= 1 down-chain (+1) arc (a joint)")
+        labels = list(self.vertex_labels) + [
+            f"hub:{self.vertex_labels[p]}~{self.vertex_labels[c]}" for p, c in joints]
+        edges: list[tuple[int, int]] = []
+        signs: list[int] = []
+        for k, (p, c) in enumerate(joints):
+            hub = n + k
+            edges += [(p, hub), (hub, c)]   # down-chain  parent → hub → child   (+1)
+            signs += [1, 1]
+            edges += [(c, hub), (hub, p)]   # up-chain    child  → hub → parent  (-1)
+            signs += [-1, -1]
+        return HypergraphState(
+            vertex_labels=tuple(labels),
+            edges=np.asarray(edges, dtype=np.int64),
+            signs=np.asarray(signs, dtype=np.int64),
+            topo_hash=self.topo_hash + ":star",
+        )
+
+    def with_task_hyperedges(self, *, new_entities: Sequence[str],
+                             hyperedges: Sequence[tuple[str, Sequence[int]]]) -> "HypergraphState":
+        """Augment with a **task layer**: add ``new_entities`` as vertices (e.g. the manipulated object and the
+        goal), then add each hyperedge as a HUB node joined to its members — so non-robot entities and the
+        relations that decide the task (a GRASP hyperedge ``{fingers, object}``, a GOAL hyperedge
+        ``{object, target}``) become first-class graph structure the HSiKAN message-passes over, instead of flat
+        broadcast features. This is the fix for the Galambos HSiKAN==MLP tie: the coin and zone were absent from
+        the graph, so the structural prior had nothing task-relevant to reason over (memory
+        ``project-galambos-hsikan-tie-rootcause``).
+
+        Members are indices into the **augmented** vertex set: base vertices ``0..N-1``, then ``new_entities`` in
+        order, then earlier hubs (so a hyperedge may reference an earlier hub — edge-on-edge incidence). Each
+        member↔hub incidence mirrors :meth:`star_expansion`'s signing (member→hub ``+1``, hub→member ``-1``).
+
+        # Preconditions every member index is ``< `` the number of vertices defined before its hub
+          (base + entities + earlier hubs); each hyperedge has ``>= 1`` member.
+        # Postconditions ``n_vertices == N + len(new_entities) + len(hyperedges)``; ``topo_hash`` suffixed
+          ``":task"`` (re-encode gate).
+        # Errors ``ValueError`` on an empty or out-of-range hyperedge.
+        """
+        labels = list(self.vertex_labels) + list(new_entities)
+        edges = [list(map(int, e)) for e in self.edges.tolist()]
+        signs = [int(s) for s in self.signs.tolist()]
+        next_idx = self.n_vertices + len(new_entities)
+        for hub_label, members in hyperedges:
+            if not members:
+                raise ValueError(f"task hyperedge {hub_label!r} has no members")
+            if any(not 0 <= int(m) < next_idx for m in members):
+                raise ValueError(
+                    f"task hyperedge {hub_label!r} references an out-of-range member "
+                    f"(only {next_idx} vertices defined before it)")
+            hub = next_idx
+            next_idx += 1
+            labels.append(hub_label)
+            for m in members:
+                edges.append([int(m), hub])
+                signs.append(1)         # member → hub  (+1, into the relation)
+                edges.append([hub, int(m)])
+                signs.append(-1)        # hub → member  (-1, out of the relation)
+        return HypergraphState(
+            vertex_labels=tuple(labels),
+            edges=np.asarray(edges, dtype=np.int64).reshape(-1, 2),
+            signs=np.asarray(signs, dtype=np.int64),
+            topo_hash=self.topo_hash + ":task",
+        )
 
     def dense_signed_adj(self, device: torch.device | str = "cpu",
                          ) -> tuple[torch.Tensor, torch.Tensor]:

@@ -1,0 +1,12 @@
+per-pair collision probability        = 2**(-b)   (= 2^-b)
+birthday bound  P(any among N)        <= 2**(-b - 1)*N**2   (= N^2 / 2^(b+1))
+
+for b=256: P(collision) <= 2^-128  while  N <= 18446744073709551616*sqrt(2)  (= 2^64.5)
+=> the birthday work factor is 2^(b/2) = 2^128 hashes; below that, collisions are negligible.
+   N = 2^32 :  P(collision) <= 2^-193.0
+   N = 2^64 :  P(collision) <= 2^-129.0
+   N = 2^100:  P(collision) <= 2^-57.0
+
+PROPOSITION 2 (collision bound): machine-verified symbolically.
+  Caveat (honest): the random-oracle premise for Blake3 is a cryptographic ASSUMPTION, not proved here;
+  and a 256-bit digest cannot be injective (pigeonhole) -- equality-by-hash is practical, not absolute.

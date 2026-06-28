@@ -28,16 +28,16 @@ def test_planar_reward_terms_registered() -> None:
 
 def test_galambos_task_parses() -> None:
     spec = RewardSpec.from_hymeko(_TASK)
-    # action_cost dropped (rewarded stationarity); center_bonus (precision), arm_motion (anti-stall),
-    # arm_collision (no arm-arm crash) and out_of_bounds (no knock-out) added.
+    # SIMPLIFIED 2026-06-28 (the complex reward was a frustrated term-graph that could not grasp; four core terms
+    # raised grasp-fraction 0.10->0.615) + nofinger (narrow finger-finger collision penalty, the "proper noclash").
     assert [k for k, _ in spec.terms] == [
-        "grasp_approach", "reach_distance", "both_contact", "in_zone", "center_bonus", "arm_motion",
-        "arm_collision", "out_of_bounds"]
+        "grasp_approach", "both_contact", "in_zone", "out_of_bounds", "fingers_collision"]
+    assert dict(spec.terms)["both_contact"] == 5.0
     assert dict(spec.terms)["in_zone"] == 10.0
-    assert dict(spec.terms)["center_bonus"] == 5.0
-    assert dict(spec.terms)["arm_collision"] == 1.0
-    assert dict(spec.terms)["out_of_bounds"] == 5.0
+    assert dict(spec.terms)["out_of_bounds"] == 2.0
+    assert dict(spec.terms)["fingers_collision"] == 1.0   # narrow finger-finger penalty (proper noclash)
     assert "action_cost" not in dict(spec.terms)
+    assert "arm_collision" not in dict(spec.terms)        # the grasp-killing arm-wide penalty stays dropped
 
 
 def _metrics(*, tipl: float = 0.0, tipr: float = 0.0, speed: float = 0.0, arm_speed: float = 0.0,
@@ -143,6 +143,73 @@ def test_planar_metrics_expose_tip_distances() -> None:
     assert m.left_tip_dist >= 0.0 and m.right_tip_dist >= 0.0
     # the reward now responds to the arms' proximity to the coin.
     assert "grasp_approach" in [k for k, _ in env.reward_spec.terms]
+
+
+def test_fingertip_sites_injected_and_idempotent() -> None:
+    """The emitted planar arm ships NO fingertip site; ``with_fingertip_sites`` adds ``tip_left`` /
+    ``tip_right``, is idempotent, and leaves the hand-authored scene (which declares its own) intact."""
+    from hymeko_rl.env.arm_world import emit_arm_mjcf
+    from hymeko_rl.env.planar_grasp_env import with_fingertip_sites
+
+    emitted = emit_arm_mjcf("data/robotics/galambos_planar.hymeko", name="galambos",
+                            control_mode="position")
+    assert "tip_left" not in emitted and "tip_right" not in emitted   # ships no fingertip site
+    fixed = with_fingertip_sites(emitted)
+    m = mujoco.MjModel.from_xml_string(fixed)
+    assert mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SITE, "tip_left") >= 0
+    assert mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SITE, "tip_right") >= 0
+    assert with_fingertip_sites(fixed).count('name="tip_left"') == 1   # idempotent
+    assert with_fingertip_sites(make_planar_arms_mjcf()).count('name="tip_left"') == 1  # not duplicated
+
+
+def test_fingertip_injection_preserves_dynamics() -> None:
+    """A site is massless and collisionless: injecting the tips changes only ``nsite`` — bodies,
+    DOFs, and actuators (the compiled dynamics) are bit-identical, so training physics is unchanged."""
+    from hymeko_rl.env.arm_world import emit_arm_mjcf
+    from hymeko_rl.env.planar_grasp_env import with_fingertip_sites
+
+    raw = emit_arm_mjcf("data/robotics/galambos_planar.hymeko", name="galambos", control_mode="position")
+    m0 = mujoco.MjModel.from_xml_string(raw)
+    m1 = mujoco.MjModel.from_xml_string(with_fingertip_sites(raw))
+    assert (m1.nq, m1.nv, m1.nu, m1.nbody) == (m0.nq, m0.nv, m0.nu, m0.nbody)
+    assert m1.nsite == m0.nsite + 2
+
+
+def test_approach_distance_is_tip_dominant_blend_not_body_min() -> None:
+    """Regression: each arm's approach distance is ``0.75·fingertip + 0.25·elbow`` (the true tool
+    point), NOT the min over body origins. On seed 2 the fingertip is far while the elbow is near the
+    coin, so the blend strictly exceeds the per-arm body-min — this assertion fails against the
+    pre-2026-06-26 ``_nearest`` metric (which returned the body-min and ignored the tip)."""
+    env = PlanarGraspEnv.from_hymeko(max_steps=10, difficulty=0.3)
+    env.reset(seed=2)
+    m = env._metrics()
+    disk = np.asarray(env.data.xpos[env._disk_body][:2], np.float64)
+
+    def pdist(p: np.ndarray) -> float:
+        return float(np.hypot(p[0] - disk[0], p[1] - disk[1]))
+
+    for tip_site, elbow_body, bodies, got in (
+            (env._tip_sites[0], env._elbow_bodies[0], env._left_bodies, m.left_tip_dist),
+            (env._tip_sites[1], env._elbow_bodies[1], env._right_bodies, m.right_tip_dist)):
+        d_tip = pdist(env.data.site_xpos[tip_site])
+        d_elbow = pdist(env.data.xpos[elbow_body])
+        assert abs(got - (0.75 * d_tip + 0.25 * d_elbow)) < 1e-6   # the exact tip-dominant blend
+        body_min = min(pdist(env.data.xpos[b]) for b in bodies)
+        assert got >= body_min - 1e-9                              # blend never below the body-min
+    # the right arm's elbow is the nearest body at seed 2, so its tip-true blend strictly exceeds it:
+    rbody_min = min(pdist(env.data.xpos[b]) for b in env._right_bodies)
+    assert m.right_tip_dist > rbody_min + 1e-3, "the fix must be observable (tip farther than elbow)"
+
+
+def test_extract_arms_resolves_fingertip_site() -> None:
+    """Demonstrator regression: ``_extract_arms`` resolves a real tip site per arm. Pre-fix it fell
+    back to ``tip_site=-1`` on the emitted arm, so ``_tip_xy`` silently read ``target_zone``."""
+    from hymeko_rl.galambos_demo import _extract_arms
+
+    env = PlanarGraspEnv.from_hymeko(max_steps=10, difficulty=0.3)
+    env.reset(seed=0)
+    arms = _extract_arms(env.model)
+    assert arms["left"].tip_site >= 0 and arms["right"].tip_site >= 0
 
 
 def test_scene_is_connected_planar_table() -> None:

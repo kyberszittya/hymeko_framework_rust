@@ -55,9 +55,17 @@ reward {
         // +weight (sparse success) when the disk rests inside the target zone.
         @in_zone:      + <isa> reward.reward_term {}
 
+        // +weight (grasp-GATED success) when the disk is in the zone AND was genuinely grasped (both
+        // fingertips contacted it at some point). A knock (disk shoved in without a two-finger grasp) earns 0.
+        @grasp_deliver: + <isa> reward.reward_term {}
+
         // Overshoot brake: -weight·‖disk velocity‖ while the disk is near the zone, so the policy
         // decelerates it into the zone instead of pushing it through.
         @settle:       + <isa> reward.reward_term {}
+
+        // Pre-grasp stillness: -weight·‖coin velocity‖ until both fingers grasp the coin, then 0 —
+        // gentle, controlled corralling (no flinging) without punishing the slow corral the task needs.
+        @coin_pregrasp_still: + <isa> reward.reward_term {}
 
         // Anti-stall: -weight·max(0, v_min - arm joint speed) — penalises an idle arm so the policy
         // keeps exploring instead of freezing.
@@ -70,6 +78,11 @@ reward {
         // Arm-arm collision: -weight while the two arms touch each other (keep the fingers from
         // crashing together instead of cooperating).
         @arm_collision: + <isa> reward.reward_term {}
+
+        // Finger-finger collision: -weight only when the two FINGERTIP links touch EACH OTHER (a crash, not a
+        // coin-pinch). Narrower than arm_collision (which suppressed the whole approach at weight) — does not fire
+        // during a real grasp (coin between the fingertips).
+        @fingers_collision: + <isa> reward.reward_term {}
 
         // Out-of-bounds: -weight when the disk is knocked off the table (death) — discourages
         // ballistic over-pushing.

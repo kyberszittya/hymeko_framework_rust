@@ -1,0 +1,68 @@
+{
+  "petersen": {
+    "petersen (graph, h=24)": {
+      "mse": 0.0638,
+      "iqr": 0.0494,
+      "params": 2209
+    },
+    "petersen_h (hyper, h=24)": {
+      "mse": 1.1717,
+      "iqr": 0.1754,
+      "params": 2209
+    },
+    "petersen_h (hyper, h=12 param-matched)": {
+      "mse": 0.9675,
+      "iqr": 0.2246,
+      "params": 673
+    },
+    "chain (baseline, h=24)": {
+      "mse": 0.7636,
+      "iqr": 0.0931,
+      "params": 2209
+    }
+  },
+  "expander": {
+    "expander (graph, h=24)": {
+      "mse": 0.0116,
+      "iqr": 0.0044,
+      "params": 2209
+    },
+    "expander_h (hyper, h=24)": {
+      "mse": 0.4461,
+      "iqr": 0.0922,
+      "params": 2209
+    },
+    "expander_h (hyper, h=12 param-matched)": {
+      "mse": 0.4034,
+      "iqr": 0.073,
+      "params": 673
+    },
+    "chain (baseline, h=24)": {
+      "mse": 0.1747,
+      "iqr": 0.0413,
+      "params": 2209
+    }
+  },
+  "ring": {
+    "ring (graph, h=24)": {
+      "mse": 0.0085,
+      "iqr": 0.0028,
+      "params": 2209
+    },
+    "ring_h (hyper, h=24)": {
+      "mse": 0.1862,
+      "iqr": 0.0221,
+      "params": 2209
+    },
+    "ring_h (hyper, h=12 param-matched)": {
+      "mse": 0.1717,
+      "iqr": 0.0188,
+      "params": 673
+    },
+    "chain (baseline, h=24)": {
+      "mse": 0.111,
+      "iqr": 0.0157,
+      "params": 2209
+    }
+  }
+}

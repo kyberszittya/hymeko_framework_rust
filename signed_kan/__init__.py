@@ -12,14 +12,25 @@ from __future__ import annotations
 from .backbone import INCIDENCE_MODES, POOL_MODES, SignedKANBackbone
 from .backends import AggregationBackend, DenseBatchedBackend, SparseSignedBackend
 from .graph_model import SignedGraphHSiKAN
+from .graphs import build_signed_adjacency
 from .heads import EdgeSignHead, GraphHead
 from .layer import SKIP_MODES, HighwaySkip, SignedKANLayer
-from .splines import CatmullRomActivation, EdgeActivation, catmull_rom, make_activation
+from .splines import (
+    BSplineActivation,
+    CatmullRomActivation,
+    ChebyshevCRActivation,
+    EdgeActivation,
+    catmull_rom,
+    cox_de_boor,
+    make_activation,
+    make_uniform_knots,
+)
 
 __all__ = [
     "SignedKANBackbone", "INCIDENCE_MODES", "POOL_MODES",
     "SignedKANLayer", "SKIP_MODES", "HighwaySkip",
     "AggregationBackend", "DenseBatchedBackend", "SparseSignedBackend",
-    "EdgeSignHead", "GraphHead", "SignedGraphHSiKAN",
-    "CatmullRomActivation", "EdgeActivation", "catmull_rom", "make_activation",
+    "EdgeSignHead", "GraphHead", "SignedGraphHSiKAN", "build_signed_adjacency",
+    "CatmullRomActivation", "ChebyshevCRActivation", "BSplineActivation", "EdgeActivation",
+    "catmull_rom", "cox_de_boor", "make_uniform_knots", "make_activation",
 ]

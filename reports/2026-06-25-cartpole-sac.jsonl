@@ -1,0 +1,2 @@
+{"key": "cartpole/sac/hsikan/0", "task": "cartpole", "algo": "sac", "backbone": "hsikan", "seed": 0, "timestamp": "2026-06-25 19:16:25", "curve": [165.2, 200.0, 200.0, 200.0, 200.0], "curve_max": 200.0, "final": 200.0, "n_params": 13826}
+{"key": "cartpole/sac/mlp/0", "task": "cartpole", "algo": "sac", "backbone": "mlp", "seed": 0, "timestamp": "2026-06-25 19:23:19", "curve": [165.45, 116.5, 74.8, 92.55, 200.0], "curve_max": 200.0, "final": 200.0, "n_params": 13910}

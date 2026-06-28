@@ -19,28 +19,8 @@ import torch
 import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
 
-from signed_kan import SignedGraphHSiKAN, SparseSignedBackend
+from signed_kan import SignedGraphHSiKAN, SparseSignedBackend, build_signed_adjacency
 from signedkan_wip.src.datasets.legacy import load, split
-
-
-def build_signed_adj(edges: np.ndarray, signs: np.ndarray, n_nodes: int,
-                     ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Symmetric, row-normalised sparse ``(a_pos, a_neg)`` from the given (train) edges only — no test leakage.
-    ``a[i, j]`` = receiver ``i`` aggregates neighbour ``j``; each row sums to 1 within its sign."""
-    e = torch.tensor(edges, dtype=torch.long)
-    s = torch.tensor(signs, dtype=torch.long)
-
-    def build(mask: torch.Tensor) -> torch.Tensor:
-        sub = e[mask]
-        i = torch.cat([sub[:, 0], sub[:, 1]])             # symmetric (undirected signed graph)
-        j = torch.cat([sub[:, 1], sub[:, 0]])
-        idx = torch.stack([i, j])
-        a = torch.sparse_coo_tensor(idx, torch.ones(idx.shape[1]), (n_nodes, n_nodes)).coalesce()
-        deg = torch.sparse.sum(a, dim=1).to_dense().clamp(min=1.0)
-        rows = a.indices()[0]
-        return torch.sparse_coo_tensor(a.indices(), a.values() / deg[rows], (n_nodes, n_nodes)).coalesce()
-
-    return build(s == 1), build(s == -1)
 
 
 def run_one(dataset: str, activation: str, *, seed: int, hidden: int, n_layers: int, skip: str,
@@ -49,7 +29,7 @@ def run_one(dataset: str, activation: str, *, seed: int, hidden: int, n_layers: 
     np.random.seed(seed)
     g = load(dataset)
     tr, _va, te = split(g, seed=seed)
-    a_pos, a_neg = build_signed_adj(g.edges[tr], g.signs[tr], g.n_nodes)   # train-only adjacency
+    a_pos, a_neg = build_signed_adjacency(g.edges[tr], g.signs[tr], g.n_nodes)   # train-only adjacency (no leakage)
 
     model = SignedGraphHSiKAN(g.n_nodes, a_pos, a_neg, hidden=hidden, n_layers=n_layers,
                               incidence="fixed", activation=activation, skip=skip,

@@ -1,0 +1,63 @@
+{
+  "hsikan_hidden": 32,
+  "mlp_hidden": 64,
+  "n_train": 512,
+  "seeds": 5,
+  "epochs": 300,
+  "ratio_poolexpand_over_pernode": 3723.462,
+  "winner": "per_node_global",
+  "rows": [
+    {
+      "config": "pool_expand",
+      "n_params": 3911,
+      "mse_median": 0.48405,
+      "mse_iqr": 0.04919,
+      "per_seed": [
+        0.45231,
+        0.45973,
+        0.48405,
+        0.50892,
+        0.60702
+      ]
+    },
+    {
+      "config": "per_node",
+      "n_params": 3713,
+      "mse_median": 0.00013,
+      "mse_iqr": 0.00013,
+      "per_seed": [
+        6e-05,
+        7e-05,
+        0.00013,
+        0.0002,
+        0.00023
+      ]
+    },
+    {
+      "config": "per_node_global",
+      "n_params": 3745,
+      "mse_median": 0.0001,
+      "mse_iqr": 8e-05,
+      "per_seed": [
+        7e-05,
+        8e-05,
+        0.0001,
+        0.00015,
+        0.0002
+      ]
+    },
+    {
+      "config": "mlp",
+      "n_params": 5127,
+      "mse_median": 0.00328,
+      "mse_iqr": 0.00048,
+      "per_seed": [
+        0.0025,
+        0.00284,
+        0.00328,
+        0.00332,
+        0.00345
+      ]
+    }
+  ]
+}

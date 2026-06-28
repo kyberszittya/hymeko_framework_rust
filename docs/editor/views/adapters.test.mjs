@@ -6,6 +6,7 @@ import {
   snapshotToHyperedges,
   snapshotToKinematicGraph,
   snapshotRelationships,
+  foldAttributes,
   scopeDepths,
   bidirectionalEdgeIds,
   cycleArity,
@@ -49,7 +50,87 @@ test("snapshotToHyperedges: arcs to non-vertex targets are dropped, not invented
     ] }],
   };
   const h = snapshotToHyperedges(snap);
-  assert.deepEqual(h.hyperedges[0].members, [0]); // 999 unknown → skipped
+  assert.deepEqual(h.hyperedges[0].members, [0]); // 999 unknown (no node/edge) → skipped
+});
+
+// Bundle-of-bundles: a hyperedge whose arcs target OTHER hyperedges — the
+// galambos_strategy.hymeko shape (@strategy_spec (+ explore, + exploit)) that
+// previously rendered as an empty view. No plain vertices at all (n=0).
+test("snapshotToHyperedges: edge-on-edge incidence renders as hub members", () => {
+  const snap = {
+    nodes: [],
+    edges: [
+      { id: 30, name: "explore", arcs: [] },                 // 0-member config term
+      { id: 31, name: "exploit", arcs: [] },                 // 0-member config term
+      { id: 32, name: "strategy_spec", arcs: [
+        { sign: 1, target_id: 30 }, { sign: 1, target_id: 31 },
+      ] },
+    ],
+  };
+  const h = snapshotToHyperedges(snap);
+  assert.equal(h.n_vertices, 0);
+  // All three edges kept: explore/exploit because they are referenced; strategy_spec
+  // because it references edges. Kept order = snapshot edge order.
+  assert.deepEqual(h.hyperedges.map((e) => e.label), ["explore", "exploit", "strategy_spec"]);
+  // strategy_spec members are the explore/exploit HUBS, encoded as n_vertices + edgeIndex.
+  assert.deepEqual(h.hyperedges[2].members, [0, 1]); // n=0, so n+0 and n+1
+  assert.equal(h.hyperedges[2].arity, 2);
+  assert.deepEqual(h.hyperedges[0].members, []);     // explore: standalone hub
+  assert.deepEqual(h.hyperedges[1].members, []);     // exploit: standalone hub
+});
+
+test("snapshotToHyperedges: a stray zero-member edge (no bundle) is still dropped", () => {
+  const snap = {
+    nodes: [{ id: 1, name: "v" }],
+    edges: [
+      { id: 2, name: "real", arcs: [{ sign: 1, target_id: 1 }] }, // has a vertex member
+      { id: 3, name: "type_root", arcs: [] },                     // unreferenced, no arcs
+    ],
+  };
+  const h = snapshotToHyperedges(snap);
+  assert.deepEqual(h.hyperedges.map((e) => e.label), ["real"]); // type_root dropped
+});
+
+test("snapshotToHyperedges: vertex-only snapshots are byte-identical to the prior behaviour", () => {
+  // back-compat: with no edge-to-edge arcs, members index only into [0, n).
+  const h = snapshotToHyperedges(SNAP);
+  assert.ok(h.hyperedges.every((e) => e.members.every((m) => m < h.n_vertices)));
+});
+
+test("foldAttributes: leaf value-decls fold onto their owner; structural nodes stay", () => {
+  // 0=link (a hyperedge member, structural), 1=mass, 2=origin (leaf attribute children of link).
+  const hyperedges = [{ label: "joint", members: [0], sign: 1, arity: 1 }];
+  const scope = [[1, 0], [2, 0]];            // mass→link, origin→link
+  const vertices = [
+    { label: "link", value: null },
+    { label: "mass", value: "1.5" },
+    { label: "origin", value: "[0, 0, 0]" },
+  ];
+  const { isAttr, attrsOf } = foldAttributes(3, hyperedges, scope, vertices);
+  assert.deepEqual(isAttr, [false, true, true]);     // link structural; mass/origin folded
+  assert.deepEqual(attrsOf.get(0), [
+    { name: "mass", value: "1.5" }, { name: "origin", value: "[0, 0, 0]" },
+  ]);
+});
+
+test("foldAttributes: members, containers, and roots are never attributes", () => {
+  // 0=root container (no parent, has a child), 1=member, 2=container (has child 3), 3=leaf under 2.
+  const hyperedges = [{ label: "e", members: [1], sign: 1, arity: 1 }];
+  const scope = [[1, 0], [2, 0], [3, 2]];
+  const vertices = [
+    { label: "root", value: null }, { label: "m", value: null },
+    { label: "geom", value: null }, { label: "dim", value: "[1, 2]" },
+  ];
+  const { isAttr, attrsOf } = foldAttributes(4, hyperedges, scope, vertices);
+  assert.deepEqual(isAttr, [false, false, false, true]); // only the leaf 'dim' folds
+  assert.deepEqual(attrsOf.get(2), [{ name: "dim", value: "[1, 2]" }]); // onto 'geom'
+});
+
+test("foldAttributes: a pure-hyperedge / flat graph folds nothing", () => {
+  const { isAttr, attrsOf } = foldAttributes(
+    2, [{ label: "e", members: [0, 1], sign: 1, arity: 2 }], [], [{ label: "a" }, { label: "b" }]);
+  assert.deepEqual(isAttr, [false, false]);
+  assert.equal(attrsOf.size, 0);
 });
 
 test("snapshotToKinematicGraph: (+parent,−child) → directed link pair", () => {

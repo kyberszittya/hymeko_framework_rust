@@ -1,0 +1,136 @@
+{
+  "avg_ctrl": {
+    "chain": 0.3909,
+    "ring": 0.5632,
+    "star": 0.5646,
+    "tree": 0.4227,
+    "complete": 0.5065,
+    "small_world": 0.4536,
+    "random": 0.4161,
+    "petersen": 0.5416,
+    "expander": 0.4042
+  },
+  "coherence": {
+    "chain": 0.707,
+    "ring": 0.5,
+    "star": 1.0,
+    "tree": 1.0,
+    "complete": 0.667,
+    "small_world": 0.5,
+    "random": 0.577,
+    "petersen": 0.333,
+    "expander": 0.667
+  },
+  "best": {
+    "chain": "chain",
+    "ring": "ring",
+    "star": "star",
+    "tree": "tree",
+    "complete": "complete",
+    "small_world": "small_world",
+    "random": "random",
+    "petersen": "petersen",
+    "expander": "expander"
+  },
+  "matrix": {
+    "chain": {
+      "chain": 0.00689,
+      "ring": 0.06836,
+      "star": 0.16241,
+      "tree": 0.14423,
+      "complete": 0.16341,
+      "small_world": 0.05597,
+      "random": 0.06559,
+      "petersen": 0.17236,
+      "expander": 0.11046
+    },
+    "ring": {
+      "chain": 0.08051,
+      "ring": 0.01022,
+      "star": 0.27911,
+      "tree": 0.21399,
+      "complete": 0.1999,
+      "small_world": 0.05933,
+      "random": 0.09227,
+      "petersen": 0.28176,
+      "expander": 0.12815
+    },
+    "star": {
+      "chain": 0.45689,
+      "ring": 1.06313,
+      "star": 0.00166,
+      "tree": 0.24255,
+      "complete": 0.20504,
+      "small_world": 0.80586,
+      "random": 0.60632,
+      "petersen": 0.77092,
+      "expander": 0.20439
+    },
+    "tree": {
+      "chain": 0.6254,
+      "ring": 1.00693,
+      "star": 0.71602,
+      "tree": 0.0228,
+      "complete": 0.96391,
+      "small_world": 0.98456,
+      "random": 0.69402,
+      "petersen": 1.13119,
+      "expander": 0.70734
+    },
+    "complete": {
+      "chain": 0.61042,
+      "ring": 0.53427,
+      "star": 0.48731,
+      "tree": 0.59439,
+      "complete": 0.00847,
+      "small_world": 0.58791,
+      "random": 0.75219,
+      "petersen": 0.94681,
+      "expander": 0.19643
+    },
+    "small_world": {
+      "chain": 0.32356,
+      "ring": 0.31767,
+      "star": 1.02895,
+      "tree": 0.67586,
+      "complete": 0.76226,
+      "small_world": 0.0104,
+      "random": 0.44454,
+      "petersen": 0.71799,
+      "expander": 0.52663
+    },
+    "random": {
+      "chain": 0.57543,
+      "ring": 0.6204,
+      "star": 0.80287,
+      "tree": 0.65849,
+      "complete": 0.72188,
+      "small_world": 0.46724,
+      "random": 0.03457,
+      "petersen": 0.40019,
+      "expander": 0.50942
+    },
+    "petersen": {
+      "chain": 0.66546,
+      "ring": 1.22831,
+      "star": 1.30319,
+      "tree": 1.00801,
+      "complete": 1.15889,
+      "small_world": 0.90981,
+      "random": 0.86014,
+      "petersen": 0.06739,
+      "expander": 1.24014
+    },
+    "expander": {
+      "chain": 0.17391,
+      "ring": 0.21962,
+      "star": 0.29979,
+      "tree": 0.24425,
+      "complete": 0.37472,
+      "small_world": 0.20117,
+      "random": 0.19487,
+      "petersen": 0.38557,
+      "expander": 0.01504
+    }
+  }
+}

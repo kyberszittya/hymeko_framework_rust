@@ -1,0 +1,231 @@
+{
+  "n_nodes": 9,
+  "names": [
+    "chain",
+    "ring",
+    "star",
+    "tree",
+    "grid",
+    "small_world",
+    "random",
+    "complete"
+  ],
+  "seeds": 3,
+  "epochs": 250,
+  "matrix": {
+    "chain": {
+      "chain": 0.00406,
+      "ring": 0.08642,
+      "star": 0.24114,
+      "tree": 0.12731,
+      "grid": 0.11013,
+      "small_world": 0.0837,
+      "random": 0.07015,
+      "complete": 0.193
+    },
+    "ring": {
+      "chain": 0.1105,
+      "ring": 0.00884,
+      "star": 0.33715,
+      "tree": 0.23009,
+      "grid": 0.21092,
+      "small_world": 0.1121,
+      "random": 0.20965,
+      "complete": 0.24375
+    },
+    "star": {
+      "chain": 0.42086,
+      "ring": 0.75987,
+      "star": 0.00081,
+      "tree": 0.14971,
+      "grid": 1.11445,
+      "small_world": 0.45181,
+      "random": 0.84987,
+      "complete": 0.3583
+    },
+    "tree": {
+      "chain": 0.57532,
+      "ring": 1.16986,
+      "star": 0.92106,
+      "tree": 0.01778,
+      "grid": 1.14689,
+      "small_world": 1.05518,
+      "random": 0.99545,
+      "complete": 1.32152
+    },
+    "grid": {
+      "chain": 0.40201,
+      "ring": 0.6199,
+      "star": 1.22506,
+      "tree": 0.74131,
+      "grid": 0.02765,
+      "small_world": 0.45718,
+      "random": 0.33519,
+      "complete": 1.16653
+    },
+    "small_world": {
+      "chain": 0.45552,
+      "ring": 0.38644,
+      "star": 0.64633,
+      "tree": 0.45982,
+      "grid": 0.5452,
+      "small_world": 0.01252,
+      "random": 0.61588,
+      "complete": 0.54268
+    },
+    "random": {
+      "chain": 1.18496,
+      "ring": 0.57767,
+      "star": 1.62381,
+      "tree": 1.23984,
+      "grid": 0.92715,
+      "small_world": 0.69234,
+      "random": 0.02623,
+      "complete": 1.52295
+    },
+    "complete": {
+      "chain": 0.29255,
+      "ring": 0.43987,
+      "star": 0.91163,
+      "tree": 0.52127,
+      "grid": 1.07322,
+      "small_world": 0.2748,
+      "random": 0.71885,
+      "complete": 0.01771
+    }
+  },
+  "iqr": {
+    "chain": {
+      "chain": 0.00434,
+      "ring": 0.0172,
+      "star": 0.073,
+      "tree": 0.02749,
+      "grid": 0.03802,
+      "small_world": 0.01377,
+      "random": 0.00559,
+      "complete": 0.07436
+    },
+    "ring": {
+      "chain": 0.0166,
+      "ring": 0.00287,
+      "star": 0.09539,
+      "tree": 0.05737,
+      "grid": 0.00759,
+      "small_world": 0.02273,
+      "random": 0.04772,
+      "complete": 0.00935
+    },
+    "star": {
+      "chain": 0.03229,
+      "ring": 0.14789,
+      "star": 0.00158,
+      "tree": 0.04169,
+      "grid": 0.17207,
+      "small_world": 0.08071,
+      "random": 0.30901,
+      "complete": 0.04608
+    },
+    "tree": {
+      "chain": 0.13176,
+      "ring": 0.16755,
+      "star": 0.13013,
+      "tree": 0.01363,
+      "grid": 0.28187,
+      "small_world": 0.50724,
+      "random": 0.39491,
+      "complete": 0.26817
+    },
+    "grid": {
+      "chain": 0.03069,
+      "ring": 0.06673,
+      "star": 0.28002,
+      "tree": 0.03981,
+      "grid": 0.00838,
+      "small_world": 0.12384,
+      "random": 0.11243,
+      "complete": 0.09179
+    },
+    "small_world": {
+      "chain": 0.11639,
+      "ring": 0.02167,
+      "star": 0.08418,
+      "tree": 0.08222,
+      "grid": 0.06195,
+      "small_world": 0.00756,
+      "random": 0.03568,
+      "complete": 0.03032
+    },
+    "random": {
+      "chain": 0.2987,
+      "ring": 0.1086,
+      "star": 0.26853,
+      "tree": 0.13394,
+      "grid": 0.17695,
+      "small_world": 0.2515,
+      "random": 0.02096,
+      "complete": 0.27989
+    },
+    "complete": {
+      "chain": 0.05276,
+      "ring": 0.07024,
+      "star": 0.06988,
+      "tree": 0.10197,
+      "grid": 0.16054,
+      "small_world": 0.11941,
+      "random": 0.06163,
+      "complete": 0.01651
+    }
+  },
+  "best_controller": {
+    "chain": "chain",
+    "ring": "ring",
+    "star": "star",
+    "tree": "tree",
+    "grid": "grid",
+    "small_world": "small_world",
+    "random": "random",
+    "complete": "complete"
+  },
+  "diagonal_is_best": {
+    "chain": true,
+    "ring": true,
+    "star": true,
+    "tree": true,
+    "grid": true,
+    "small_world": true,
+    "random": true,
+    "complete": true
+  },
+  "edge_counts": {
+    "chain": 8,
+    "ring": 9,
+    "star": 8,
+    "tree": 8,
+    "grid": 12,
+    "small_world": 12,
+    "random": 13,
+    "complete": 36
+  },
+  "equivariance": [
+    {
+      "topology": "chain",
+      "residual": 1e-08,
+      "equivariant": true
+    },
+    {
+      "topology": "star",
+      "residual": 1e-08,
+      "equivariant": true
+    },
+    {
+      "topology": "small_world",
+      "residual": 2e-08,
+      "equivariant": true
+    },
+    {
+      "topology": "complete",
+      "residual": 1e-08,
+      "equivariant": true
+    }
+  ]
+}

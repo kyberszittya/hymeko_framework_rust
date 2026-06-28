@@ -4,6 +4,15 @@ You are working on a research codebase. The following rules are **mandatory**. I
 
 A task is not complete until every applicable section of this document has been satisfied and a report has been written.
 
+> **⛔ REPLY-FORMAT HARD GATE (added 2026-06-28, user-enforced after repeated misses in-session).** Every chat
+> reply — *no exceptions* — MUST begin with a real-clock timestamp line `[YYYY-MM-DD HH:MM TZ]`, obtained from the
+> system clock (PowerShell `Get-Date`), never guessed. It is the **first text written**, before any other word.
+> A reply that does not start with the stamp is a protocol violation of the **same severity as shipping untested
+> code or skipping the report**. If you realise a previous reply omitted it, stamp the next one without preamble
+> and do not repeat the lapse. Do not batch-guess stamps across a session — re-read the clock when time has
+> meaningfully passed (a long tool run, a new sub-task). This gate exists because the stamp was dropped for an
+> entire session on 2026-06-28 despite the policy below; treat it as load-bearing, not decorative.
+
 ---
 
 ## Persona
@@ -26,10 +35,12 @@ Coding/engineering preferences (same setting):
 
 These hold above any individual section. If a specific rule below appears to permit a shortcut, it does not.
 
+- **Timestamp everything (added 2026-06-27, user policy).** Prefix every chat reply with the local time `[YYYY-MM-DD HH:MM TZ]`. Date every plan (`Created-at`) and report. Every plan carries an **ETA** (§2). When a reply reports a run's state, include the wall-clock and what time it is, so progress is legible against the estimate. Get the real local time (don't guess it) when a precise stamp matters.
 - **Be systematic, not lazy.** When a procedure exists in this document, follow it. Shortcuts accumulate into broken experiments. If a rule feels inconvenient, that is a sign the rule is doing work — not a sign to skip it.
 - **Write the plans down.** Plans live on disk (Section 2), not in the working memory of a single chat turn. An unwritten plan has no continuity, no review surface, and no audit trail.
 - **No improvisation under pressure.** "I'll just try it and see" is the failure mode this document exists to prevent.
 - **Analyze, don't declare; no premature certainty (no "superstitions").** When diagnosing a failure, interpreting a measurement, or choosing a design, do **not** assert a single "most likely" cause or "the answer" as if it were settled. Enumerate the plausible hypotheses or options, state the evidence that would distinguish them, and run the **discriminating test before concluding**. A confident-sounding single explanation that has not been isolated is a guess in a lab coat — and on this codebase (signed-link leakage, FP kernels, OOM bugs) the convenient first explanation is often wrong. Reserve "this *is* the cause" for *after* the test that rules out the alternatives; until then, present the option space and the experiment that would collapse it. Always distinguish, in writing, what is **measured**, what is **inferred**, and what is **still a hypothesis**.
+- **Search before claiming novelty or prior art (added 2026-06-28, user policy after a novelty-assessment miss).** Before asserting that an idea is novel, or that it "has been done" / "already exists" / "is incremental" / "is old," run a **brief search** (`WebSearch`, the `paper_search` MCP, a repo/literature `grep`) and either cite a concrete instance or state explicitly that a focused search found none. This is the literature-side of the discriminating-test rule: an unevidenced "it's been done" is the same failure as a "most likely cause" that was never isolated. Three hard sub-rules: (1) **never conflate a primitive existing in another field** (e.g. hypergraphs in ML, signed graphs in spectral theory) **with prior art for the specific contribution** — name the work that does *this* thing, or admit there isn't one; (2) **absence in a bounded search is "none found," not "proven novel"** — say which, and note the search was not exhaustive; (3) **distinguish the generic pattern from the specific claim** ("one IR, many emitters" is old; "machine-verified cross-view consistency over a signed canonical hypergraph IR" may not be). On-record miss (2026-06-28): asserted the contribution was "moderate novelty, hypergraph IRs already exist" without a search; a 4-query search then found the nearest works were the user's *own* precursor (Hajdu \& Hegyi 2025) and HyperGraphOS — neither pre-empting the claim — and surfaced two must-cite related works that were missing from the draft.
 - **The user is an experienced engineer/researcher, not a casual programmer.** Calibrate accordingly. Architectural complexity that eliminates duplication and surfaces invariants is *preferred* over flat code that repeats. Reach for traits, generics, associated types, sealed enums-with-data, builder/strategy/visitor patterns without hesitation if they reduce a Cartesian product or unify a duplicated scaffold. The reader is fluent in Rust, modern Python typing, and standard GoF/DDD patterns. The floor is "no needless repetition." The ceiling is "no easier than necessary." Dumbing code down to look beginner-friendly is the same failure mode as copy-paste — it costs the user tokens and dignity for nothing.
 - **Preferred paradigm hierarchy.** When you have a choice of paradigm, prefer in this order: **(1) trait-/struct-based programming** (Rust traits + impl, Python ABCs / Protocols, C++ concepts) to make the *contract* explicit; **(2) object-oriented** composition (classes that bundle state with behaviour, small inheritance trees only where they remove duplication, never for taxonomy alone); **(3) functional** (pure functions, immutable data, iterator pipelines, `map`/`filter`/`fold`, `Result`/`Option` combinators, ADTs) — preferred over imperative loops when the data flow is one-way; **(4) clean-code mechanics** (intention-revealing names, single-responsibility functions, depth-of-nesting ≤ 3, no commented-out code, no `tmp_` / `tmp2_` / `_new` suffixes left in tree). **Flat free-function dumps are the last resort**, acceptable only for: (a) the binary entry point (`main`), (b) one-off scripts that will be deleted within the week, (c) plain numerical helpers with no state, no error path, no swappable strategy. If a free function grows a `_kind: &str` argument, that's a missed trait. If it grows past 80 LOC, that's a missed method. If two free functions share 60% of their body, that's a missed `impl` block sharing a private helper. Apply the same hierarchy across Rust, Python, C++.
 
@@ -82,6 +93,8 @@ The plan must be produced in **all four** formats:
 
 The plan must state, at minimum:
 
+- **Created-at timestamp** — `YYYY-MM-DD HH:MM` (local), at the top of the plan (added 2026-06-27, user policy).
+- **Estimated time of completion (ETA)** — a wall-clock estimate to finish the work, *with the basis* (e.g. "≈45 min: 3 supervised cells × ~12 min each + write-up"); for runs, the expected wall and seed/step budget. State it up front so progress can be tracked against it (added 2026-06-27, user policy).
 - **Scope** and goal.
 - **Affected files** (full list).
 - **CORE.YAML items touched** — must be the empty list, or escalate per Section 1.
@@ -129,9 +142,10 @@ Every change ships with tests, and tests are executed and pass before reporting 
 
 ### Determinism and reproducibility
 
-- Every test and experiment fixes its random seed explicitly. No reliance on system entropy.
+- Every test and experiment **sets** its random seed explicitly (for resume, debugging, and provenance). No reliance on system entropy for *which* seed is used.
+- **RL / stochastic-training carve-out (added 2026-06-26, user policy).** Reinforcement-learning and other inherently high-variance training runs are **not** required to be *bit-exact* reproducible. Expecting bit-identical outcomes from a stochastic optimiser over a stochastic environment is scientifically unjustified, and forcing single-threaded BLAS to chase it costs ~3× wall time for no gain. For these runs: set the seed (so a run can be resumed and labelled), but rest every quantitative claim on **multi-seed median/IQR** — not single-run reproduction (this is already the benchmark discipline below). **Multi-threading / parallel BLAS is permitted and encouraged for speed**, and independent cells (configs, seeds) *should* be parallelised across cores. Report the seed(s) and the thread setting; do **not** assert a single RL run's exact numbers as bit-reproducible.
+- **Strict (bit-exact) determinism is still required** for: deterministic unit tests of pure functions; floating-point parity with published benchmarks or RTL golden fixtures (pin BLAS thread count, math mode `MKL_CBWR` / `CUBLAS_WORKSPACE_CONFIG`, library versions); and **supervised comparisons where reproducibility is the point** (e.g. an A/B of two model variants on a fixed dataset — seed before each build, as `hymeko_rl/structural_probe.py` does). Document the pinning in the test or report.
 - Tests must be order-independent. If `pytest -p no:randomly` or `cargo test` parallelism breaks them, the tests are wrong, not the runner.
-- Floating-point determinism: where parity with prior runs matters (RTL fixtures, published benchmarks), pin BLAS thread count, math mode (`MKL_CBWR`, `CUBLAS_WORKSPACE_CONFIG`), and library versions; document in the test or the report.
 - Test inputs are either generated deterministically from a seed, or committed as fixtures with content hash.
 
 ### Benchmark stability
@@ -389,6 +403,26 @@ The report contains, at minimum:
   - **For in-flight experiments referenced in the report:** the corresponding log file path and PID (or jobspec). ID-only references with no on-disk anchor are not acceptable — they evaporate when the chat session closes and leave the next session unable to verify.
 
 A task with no report is an incomplete task. The report is the unit of acceptance, not the diff.
+
+### Graphical output (mandatory for experiments)
+
+Numbers alone underserve the audience. Every experiment or campaign that produces measurements emits its result in
+**three forms**, not one:
+
+1. **Numerical** — the values (JSON / journal / a markdown table in the report). Always.
+2. **Plotted** — the comparison as a figure (curves, grouped bars, median/IQR), saved as a `.png`/`.svg` next to
+   the report. Always, when there is more than one number to compare.
+3. **Animated** — for any task with a spatial / temporal / control character (robotics, RL, simulation, a policy
+   acting), a **`.gif`** of the behaviour (the trained policy and/or the demonstrator). Render it; do not describe
+   it.
+
+This is an *inherent strategy*, not a nicety: a result that can be watched and plotted is legible to a graphical
+audience and presentation-ready; a bare scalar is not. Wire the three outputs into the campaign/experiment script
+itself (a `--gif` / `--plot` path, on by default where cheap) so they are produced **every run**, not bolted on
+afterward. Reuse the shared helpers — `evaluate.render_episode_gif` / `compare_gif`, the `plot_*` scripts, and
+`campaign_viz` — never re-implement rendering or plotting (§6.1). Prefer **higher resolution** for anything that
+may reach a slide (≥ 960×720 for GIFs). Artifacts live next to the report (`reports/…` or a `results/{figures,gifs}/`
+tree) and are referenced from it.
 
 ---
 

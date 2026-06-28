@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-06-25 19:23:19",
+  "tasks": [
+    "cartpole"
+  ],
+  "algos": [
+    "sac"
+  ],
+  "mode": "full",
+  "seeds": [
+    0
+  ],
+  "hidden": {
+    "cartpole": {
+      "hsikan": 64,
+      "signedkan": 64,
+      "mlp": 114
+    }
+  },
+  "wall_s": 2586.7,
+  "rss_mb": 707.5,
+  "result": {
+    "cartpole/sac/hsikan": {
+      "n_params": 13826,
+      "n_seeds": 1,
+      "curve_max_median": 200.0,
+      "curve_max_iqr": 0.0,
+      "curve_max_worst": 200.0,
+      "curve_max_best": 200.0,
+      "per_seed_max": [
+        200.0
+      ],
+      "per_seed_final": [
+        200.0
+      ]
+    },
+    "cartpole/sac/mlp": {
+      "n_params": 13910,
+      "n_seeds": 1,
+      "curve_max_median": 200.0,
+      "curve_max_iqr": 0.0,
+      "curve_max_worst": 200.0,
+      "curve_max_best": 200.0,
+      "per_seed_max": [
+        200.0
+      ],
+      "per_seed_final": [
+        200.0
+      ]
+    }
+  }
+}

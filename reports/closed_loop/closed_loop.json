@@ -1,0 +1,14 @@
+{
+  "chain9": {
+    "n": 9,
+    "lqr_cost": 50.365,
+    "actor_rho": 1.093,
+    "mlp_rho": 1.002
+  },
+  "steiner9": {
+    "n": 21,
+    "lqr_cost": 99.597,
+    "actor_rho": 1.063,
+    "mlp_rho": 1.001
+  }
+}

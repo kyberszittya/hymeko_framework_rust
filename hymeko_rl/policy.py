@@ -9,7 +9,7 @@ parameterisation).
 """
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 import torch
@@ -18,12 +18,16 @@ import torch.nn as nn
 from signed_kan import SignedKANBackbone
 # Re-exported so ``hymeko_rl.policy._catmull_rom`` / ``CatmullRomActivation`` keep working (the Triton
 # ``cr_kernel`` + the CR parity tests import them); the implementation lives once, in the core.
-from signed_kan.splines import CatmullRomActivation, catmull_rom as _catmull_rom  # noqa: F401
+from signed_kan.splines import (  # noqa: F401  (CatmullRomActivation/_catmull_rom re-exported for the CR parity tests)
+    CatmullRomActivation,
+    catmull_rom as _catmull_rom,
+    make_activation,
+)
 
 if TYPE_CHECKING:
     from hymeko_rl.hypergraph_state import HypergraphState
 
-POLICY_KINDS = ("mlp", "hsikan", "signedkan")
+POLICY_KINDS = ("mlp", "hsikan", "signedkan", "sa_hsikan")
 
 
 class ActorCritic(nn.Module):
@@ -88,6 +92,39 @@ class ActorCritic(nn.Module):
 
     def n_parameters(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+
+class PerNodeActionHead(nn.Module):
+    """A per-actuator readout over a backbone's per-vertex activations — the non-collapsing actor head.
+
+    Each actuated joint's scalar comes from **its own** message-passed node embedding concatenated with the
+    broadcast global pool: ``out[a] = Linear([h[:, v(a)] ; mean_v h])``. This keeps the joint↔node
+    correspondence a mean-pool readout destroys; the supervised probe measured collapse-then-expand at 3723×
+    worse than this shape, and a per-node head beating a params-matched MLP (``reports/2026-06-26-multidim-readout``).
+
+    # Preconditions ``act_vertices`` are valid vertex indices ``[0, N)``, one per actuator.
+    # Postconditions ``forward((B, N, hidden)) -> (B, A)`` finite; ``A == len(act_vertices)``.
+    """
+
+    act_vertices: torch.Tensor   # declared so mypy uses Tensor (not nn.Module.__getattr__'s union) for indexing
+
+    def __init__(self, hidden: int, act_vertices: Sequence[int]) -> None:
+        super().__init__()
+        verts = torch.as_tensor([int(v) for v in act_vertices], dtype=torch.long)
+        if verts.ndim != 1 or verts.numel() < 1:
+            raise ValueError("act_vertices must be a non-empty 1-D index array")
+        self.register_buffer("act_vertices", verts)             # travels with .to(device)
+        self.head = nn.Linear(2 * hidden, 1)
+        self.action_dim = int(verts.numel())
+
+    def forward(self, node_acts: torch.Tensor) -> torch.Tensor:
+        if node_acts.dim() != 3:
+            raise ValueError(f"expected per-vertex activations (B, N, H); got {tuple(node_acts.shape)}")
+        pool = node_acts.mean(dim=1, keepdim=True)              # (B, 1, H) — global context
+        gathered = node_acts[:, self.act_vertices, :]           # (B, A, H) — each actuator's own vertex
+        ctx = pool.expand(-1, gathered.shape[1], -1)            # (B, A, H)
+        out: torch.Tensor = self.head(torch.cat([gathered, ctx], dim=-1)).squeeze(-1)   # (B, A)
+        return out
 
 
 def mlp_backbone(obs_dim: int, *, hidden: int = 64, depth: int = 2,
@@ -159,11 +196,64 @@ def signedkan_backbone(in_feat: int, **kw: object) -> tuple[nn.Module, int]:
     return hsikan_backbone(in_feat, incidence="learned", **kw)  # type: ignore[arg-type]
 
 
+class StructuralActorBackbone(nn.Module):
+    """SA-HSiKAN (Structural-Actor HSiKAN) backbone — HSiKAN's iterated signed message-pass COLLAPSED to one
+    precomputed holonomy matmul. Over a FIXED topology the signed L-hop transport is a constant operator
+    ``Bᴸ = matrix_power(A₊ − A₋, walk_len)`` (the walk sign-products = the Z₂ holonomy), so the forward is one
+    ``Bᴸx`` einsum + one HSiKAN cell (Catmull-Rom) readout — a handful of large ops instead of L layers of
+    spline-per-edge message-passing (the launch-bound fix; ``reports/2026-06-28-hsikan-launch-bound-bug.md``).
+    Same structural prior, a fraction of the dispatch cost. Exposes the HSiKAN backbone interface so both actor
+    heads drive it: ``forward -> (B, hidden)`` pooled, ``node_activations -> (B, N, hidden)`` per-vertex.
+
+    # Preconditions ``in_feat, hidden >= 1``; ``hg_state`` exposes ``dense_signed_adj`` + ``n_vertices``.
+    # Postconditions ``forward((B, N, in_feat)) -> (B, hidden)``; ``node_activations -> (B, N, hidden)``."""
+
+    bl: torch.Tensor
+
+    def __init__(self, in_feat: int, hidden: int, hg_state: "HypergraphState", walk_len: int = 2,
+                 device: torch.device | str = "cpu", *, activation: str = "cr", pool: str = "mean") -> None:
+        super().__init__()
+        if in_feat < 1 or hidden < 1:
+            raise ValueError(f"in_feat/hidden must be >= 1; got {in_feat}/{hidden}")
+        a_pos, a_neg = hg_state.dense_signed_adj(device)
+        bl = torch.matrix_power(a_pos - a_neg, walk_len)          # Bᴸ: the signed L-hop holonomy operator
+        self.register_buffer("bl", bl)
+        self.n_vertices = int(bl.shape[0])
+        self.pool = pool
+        act = make_activation(activation, hidden)        # the HSiKAN cell (cr / cr_cheby / tanh) over the holonomy
+        self.node_head = nn.Sequential(nn.Linear(in_feat, hidden), act)
+
+    def node_activations(self, x: torch.Tensor) -> torch.Tensor:
+        """Per-vertex activations ``(B, N, hidden)`` — one ``Bᴸx`` gather then the HSiKAN-cell readout."""
+        if x.dim() != 3 or x.shape[1] != self.n_vertices:
+            raise ValueError(f"expected (B, {self.n_vertices}, in_feat); got {tuple(x.shape)}")
+        node_agg = torch.einsum("ne,bef->bnf", self.bl, x)       # (B, N, F) = Bᴸx in ONE precomputed matmul
+        h: torch.Tensor = self.node_head(node_agg)
+        return h
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = self.node_activations(x)
+        pooled: torch.Tensor = h.mean(dim=1) if self.pool == "mean" else h.sum(dim=1)
+        return pooled
+
+
+def sa_hsikan_backbone(in_feat: int, *, hg_state: "HypergraphState", hidden: int = 64, walk_len: int = 2,
+                       device: torch.device | str = "cpu", activation: str = "cr_cheby",
+                       **_ignored: object) -> tuple[nn.Module, int]:
+    """SA-HSiKAN backbone over the fixed kinematic hypergraph — the Bᴸ-collapse of HSiKAN. Defaults to the
+    ``cr_cheby`` cell (band-limited Chebyshev control points; the deploy-Chebyshev fast path applies). Returns
+    ``(module, feat_dim)``. Ignores HSiKAN-only kwargs (``skip``/``incidence``): the holonomy operator is a
+    structural constant, not a learned/gated message-pass."""
+    return StructuralActorBackbone(in_feat, hidden, hg_state, walk_len=walk_len, device=device,
+                                   activation=activation), hidden
+
+
 # Backbone Strategy registry (§6.5 #1/#9: one dispatch, no per-kind wrappers). The
 # HSiKAN/Gömb backbone reads the kinematic hypergraph; the MLP baseline reads a flat obs;
 # ``signedkan`` is HSiKAN with the incidence itself learned.
 _BACKBONES: dict[str, Callable[..., tuple[nn.Module, int]]] = {
-    "mlp": mlp_backbone, "hsikan": hsikan_backbone, "signedkan": signedkan_backbone}
+    "mlp": mlp_backbone, "hsikan": hsikan_backbone, "signedkan": signedkan_backbone,
+    "sa_hsikan": sa_hsikan_backbone}
 
 
 def build_policy(kind: str, obs_dim: int, action_dim: int, *, log_std_init: float = -1.6,
@@ -174,6 +264,12 @@ def build_policy(kind: str, obs_dim: int, action_dim: int, *, log_std_init: floa
     required ``hg_state=`` (the kinematic hypergraph). The two share the actor+critic heads.
     ``log_std_init`` sets the initial action-noise scale (the exploration tactic; ``std =
     exp(log_std_init)``).
+
+    GPU speedup: these models are tiny and launch-bound on GPU, so ``torch.compile(mode="reduce-overhead")``
+    is a large win (~10x measured on a 3070). Apply it at the **call site**, not here — e.g.
+    ``fast = torch.compile(ac.action_mean, mode="reduce-overhead")`` — so the saved model stays eager and
+    checkpoints round-trip. Compiling the backbone *in place* prefixes state-dict keys with ``_orig_mod.`` and
+    breaks checkpoint loading (verified), so ``build_policy`` deliberately does not bake compile into the model.
 
     # Preconditions ``kind in POLICY_KINDS``.
     # Errors ``ValueError`` on an unknown kind; ``TypeError`` if ``hsikan`` is built

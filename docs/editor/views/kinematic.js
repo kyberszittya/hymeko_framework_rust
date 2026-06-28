@@ -5,7 +5,7 @@
 // from the snapshot via the pure adapters.
 //
 // View contract: { name, mount(container), render(snapshot, ir), unmount() }.
-import { snapshotToKinematicGraph, cycleArity, parseUrdf } from "./adapters.js?v=19";
+import { snapshotToKinematicGraph, cycleArity, parseUrdf } from "./adapters.js?v=28";
 import { Compass, Topo } from "./regime_classes.js?v=19";
 
 const LINK_COLOR = 0x7dd3fc;

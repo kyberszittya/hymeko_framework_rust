@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-06-26 14:59:48",
+  "mode": "smoke",
+  "seed": 0,
+  "steps": 2000,
+  "wall_s": 594.2,
+  "rss_mb": 791.7,
+  "result": {
+    "flat": {
+      "delivery": 0.0,
+      "mean_return": -239.25,
+      "deaths": 0,
+      "htl_verdict_satisfied": 0.0,
+      "n_eval": 12
+    },
+    "htl": {
+      "delivery": 0.0,
+      "mean_return": -22.86,
+      "deaths": 0,
+      "htl_verdict_satisfied": 0.0,
+      "n_eval": 12
+    }
+  }
+}

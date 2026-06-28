@@ -1,0 +1,98 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!50!black}
+
+\newcommand{\sev}[1]{\textbf{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+
+\title{Review --- HyMeKo: A Canonical Hypergraph IR\\\large (IEEE T-SMC submission)}
+\author{Aiko (Claude Code) for Dr.\ Cs.\ Hajdu}
+\date{2026-06-28}
+
+\begin{document}
+\maketitle
+
+\noindent\textit{Note on the journal.} The submission directory is named \file{smc\_02}. Here ``SMC'' denotes the target journal, \emph{IEEE Transactions on Systems, Man \& Cybernetics}, and \emph{not} sliding-mode control. The paper is a model-driven-engineering (MDE) contribution; the abbreviation should not be misread.
+
+\section{Summary \& readiness}
+
+HyMeKo is presented as a hub-and-spoke MDE architecture. A single authoritative, signed/typed hypergraph intermediate representation (IR) --- built on Levi/Berge incidence with a Blake3 content hash --- replaces the usual mesh of pairwise format converters. The IR is manipulated through three operations:
+\begin{itemize}
+  \item \textbf{compile} (text $\rightarrow$ IR),
+  \item \textbf{project} (IR $\rightarrow$ sparse tensor),
+  \item \textbf{emit} (IR $\rightarrow$ target text).
+\end{itemize}
+
+\noindent The paper claims four algebraic properties, each backed by a proof \emph{sketch} in the appendices:
+\begin{enumerate}
+  \item alias invariance,
+  \item content-addressability,
+  \item projection--emission independence,
+  \item bounded storage overhead.
+\end{enumerate}
+
+\noindent\textbf{Validation.} One IR emits six robot formats (URDF, SDF, Gazebo, MJCF, DOT, Mermaid) at sub-millisecond per robot, reported as $100$--$700\times$ faster than the \texttt{xacro}\,$\rightarrow$\,\texttt{gz sdf}\,$\rightarrow$\,\texttt{mujoco} subprocess stack, alongside a capability gap (the MuJoCo importer fails on long kinematic chains).
+
+\noindent\textbf{State.} Late-stage, near submission-ready. The document compiles clean and all 37 bibliography entries resolve. The prior reviewer's hard contradiction on storage overhead ($\rho < 0.7$ asserted in prose vs.\ $\rho = 2.00$ in the table) has been \emph{fixed}: property A4 now reports $\rho$ improving $2.00 \rightarrow 1.01$.
+
+\section{Prioritized findings}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{0.05\linewidth} p{0.30\linewidth} p{0.46\linewidth} p{0.10\linewidth}@{}}
+\toprule
+\textbf{ID} & \textbf{Location} & \textbf{Issue} & \textbf{Severity} \\
+\midrule
+P1 & \file{07\_eval\_scaling.tex} vs \file{figures/scaling/head\_to\_head.tex} & Prose ``$103\times$'' speed-up at $|V|{=}1000$ contradicts the table ($34.585\,\text{ms}\rightarrow 4136.6\,\text{ms} = 120\times$); inconsistent rounding. & \sev{High} \\
+\addlinespace
+P2 & \file{tab:head\_to\_head} & The ``$700\times$'' ($|V|{=}10{,}5000$) and the MuJoCo-FAIL capability gap ($|V|{\geq}2000$) are claimed in prose, but the table lists only $|V|\in\{10,100,1000\}$ --- no FAIL row, no 5000 row. & \sev{High} \\
+\addlinespace
+P3 & appendix (Prop.\ 1 alias-invariance proof) & Prop.\ 1's proof is exiled to supplementary, yet the A2/A3 proofs explicitly depend on it $\Rightarrow$ the visible appendices are not self-contained. & \sev{High} (structural soundness) \\
+\addlinespace
+P4 & \file{05\_codegen.tex}, \S V, abstract & ``Cross-view discrepancy is impossible'' cites Proposition~3 (projection--emission \emph{independence}, a cost-factoring claim) --- the wrong proposition; value-agreement follows from Prop.~1 (alias invariance) applied per shared query. ``By construction/impossible'' is overstated. & \sev{High} \\
+\addlinespace
+P5 & \file{fig\_pairwise\_vs\_hub.tex} & Integer inconsistency: caption ``$N{+}M{=}9$'', panel draws 8 boxes, left $5{\times}5$ implies $N{+}M{=}10$. & \sev{Medium} \\
+\addlinespace
+P6 & \file{fig\_sota\_comparison.tex} (Table V) & The ``Approx.\ impl.\ surface [LoC/fmt]'' column ($\sim$50 HyMeKo vs $\sim$2000) is marketing-scented and self-admittedly ``not a controlled measurement''; soften or drop (also clears a 23pt overfull box). & \sev{Medium} \\
+\addlinespace
+P7 & abstract / intro & Sweep for residual ``decidable'' phrasing (body already hedged to ``practical structural equality''); final-consistency only. & \sev{Low} \\
+\addlinespace
+P8 & \file{04\_hre.tex} & ``Compilation is idempotent ($\text{compile}\circ\text{lift}=\mathrm{id}_H$)'' mislabels a round-trip/left-inverse identity (idempotence is $f\circ f=f$). & \sev{Low} \\
+\addlinespace
+P9 & presentation & Overfull \texttt{\textbackslash hbox} 23pt in Table V $+$ cosmetic underfull boxes in \S VI. & \sev{Low} \\
+\bottomrule
+\end{tabular}
+\caption{Prioritized review findings, ordered by severity.}
+\label{tab:findings}
+\end{table}
+
+\section{Technical errors (precise)}
+
+\begin{enumerate}
+  \item \textbf{Wrong proposition cited.} Cross-view value agreement is attributed to Proposition~3 (projection--emission independence, a cost-factoring statement). It should follow from Proposition~1 (alias invariance) applied per shared query. (P4)
+  \item \textbf{``Idempotent'' mislabels a round-trip identity.} $\text{compile}\circ\text{lift}=\mathrm{id}_H$ is a left-inverse / round-trip property, not idempotence ($f\circ f=f$). (P8)
+  \item \textbf{$103\times$ vs $120\times$.} The headline speed-up at $|V|{=}1000$ is arithmetically inconsistent with the paper's own table ($34.585\,\text{ms}\rightarrow 4136.6\,\text{ms} = 120\times$). (P1)
+  \item \textbf{Figure integer inconsistency.} In \file{fig\_pairwise\_vs\_hub.tex}, caption, drawn box count, and the left-panel grid disagree ($9$ vs $8$ vs $10$). (P5)
+  \item \textbf{Unsupported capability-gap claim.} The MuJoCo-FAIL gap (and the $|V|{=}5000$ ``$700\times$'') has no supporting in-body table row. (P2)
+\end{enumerate}
+
+\noindent\textbf{On the propositions overall.} The four ``propositions'' are honest proof-sketches-by-inspection, and the paper now says so. The storage-overhead proof (A4) is the most rigorous of the four and is correct.
+
+\section{Top 3 highest-leverage improvements}
+
+\begin{enumerate}
+  \item \textbf{Restore Prop.~1's proof to the body} (or inline its lemmas) so the correctness story is self-contained. This is the single most important fix: A2/A3 depend on Prop.~1, so exiling it to supplementary leaves the visible appendices unable to stand alone.
+  \item \textbf{Make every headline number match its table.} Correct $103\times \rightarrow 120\times$, and add the $|V|{=}5000$ and FAIL rows. Quantitative inconsistency erodes trust in \emph{all} the reported numbers.
+  \item \textbf{Align ``by construction / impossible'' language with what the propositions actually prove}, and fix the Prop.~3\,$\rightarrow$\,Prop.~1 miscitation for cross-view value agreement.
+\end{enumerate}
+
+\section*{Overall}
+
+Near submission-ready. The required changes are surgical fixes, not restructuring. None requires re-running the benchmark --- except, optionally, pulling the already-collected $|V|{=}2000/5000$ CSV rows into the table.
+
+\end{document}

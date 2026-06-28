@@ -1,0 +1,110 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[magyar]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{accent}{HTML}{1F4E79}
+\titleformat{\section}{\large\bfseries\color{accent}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\setlist{itemsep=2pt,topsep=3pt}
+
+\title{\vspace{-1.2cm}\color{accent}\Large Heti összefoglaló --- HSiKAN, megfogás és struktúra}
+\author{Hajdu Csaba dr. \\ \small Kati részére}
+\date{2026.\ június 26.}
+
+\begin{document}
+\maketitle
+\vspace{-0.6cm}
+
+\noindent\textit{A heti munka a megfogás (grasping) / strukturált tanulás vonalon.
+Megkülönböztetve, ami \textbf{mért}, ami \textbf{következtetett}, és ami még \textbf{hipotézis}.}
+
+\section{A fő eredmény --- az ,,HSiKAN veszít az MLP ellen'' kérdés tisztázva}
+
+A visszatérő aggály az volt, hogy a HSiKAN a robotikai RL-feladatokon legjobb esetben is csak
+\emph{döntetlenre} hozza ki a sima MLP-vel szemben. Ez a hét lezárta a kérdést: \textbf{nem hiba}
+--- sem a bekötésben, sem a backbone-ban.
+
+\begin{itemize}
+  \item \textbf{Bekötési audit (mért):} cartpole / arm6dof / négylábú / pick-place / FANUC --- mind
+        tiszta. Nincs megfigyelés$\leftrightarrow$csúcs eltolódás, nincs elfajult sor, ép előreterjesztés.
+        A cartpole HSiKAN megtanulja: 200/200.
+  \item \textbf{Strukturális próba (mért):} felügyelt, RL-mentes, paraméter-illesztett HSiKAN vs.\ MLP.
+        A backbone egészséges. \emph{Meglepetés:} a HSiKAN valódi előnye \textbf{elsősorban a poolingból}
+        jön (csúcsonkénti aktiváció + átlag-pooling = Deep-Sets előfeltevés): egy szeparálható
+        összegző célon akár \textbf{52$\times$}. Az előjeles 2-lépéses (signed 2-hop) előny másodlagos
+        (kb.\ 1,5--3$\times$, adatigényes). Mindkét előny \emph{nő} az adattal $\Rightarrow$ reprezentációs,
+        nem pusztán mintahatékonysági nyereség.
+  \item \textbf{Újraértelmezés (következtetett):} a robotikai döntetlen egy
+        \textbf{előfeltevés$\leftrightarrow$célfüggvény eltérés}, nem alkalmatlanság. A jelenlegi
+        jutalmak mellett a robot érték-/policy-függvénye nem poololt/előjeles-strukturális alak, így a
+        HSiKAN-nek nincs mit kamatoztatnia. \emph{Következtetés:} nem elvetni a HSiKAN-t, hanem olyan
+        struktúrát adni neki, amit ki tud használni.
+\end{itemize}
+
+\section{Valódi jutalom-hiba a közös (kétkarú) jelenetben --- megtalálva és javítva}
+
+Ez közvetlenül a közös megfogási feladaton van. A sűrű közelítési jutalom a \textbf{legközelebbi
+kartestet} mérte (könyök, vagy rosszabb esetben a \emph{mozdíthatatlan} alaptest), nem az
+\textbf{ujjhegyet} --- az emittált kar egyáltalán nem szállított ujjhegy-pontot (site). Egy seednél ez
+\emph{konstans} értéket mért $\Rightarrow$ \textbf{nulla gradiens} az ujjhegy érme felé vezetéséhez.
+Pontosan a megfigyelt tünet: ,,a robot pozícióját jutalmazzuk, nem a kar végét''.
+
+\medskip
+\noindent\textbf{Javítás:} tömeg nélküli \texttt{tip\_\{side\}} site-ok injektálása; a jutalom egy
+ujjhegy-domináns keverék (0,75$\cdot$ujjhegy $+$ 0,25$\cdot$könyök). A fordított dinamika bitre azonos.
+Egy változtatás három dolgot javított: a jutalom-metrikát, a BC-demonstrátort és a kar-hossz feloldást.
+26 teszt zöld, köztük egy regresszió, amely a \emph{régi} metrikára megbukik.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{cccc}
+\toprule
+seed & érme & régi (legközelebbi test) & valódi ujjhegy \\
+\midrule
+2 & (0,13;\,0,07) & 0,091 m (könyök)        & 0,220 m \\
+4 & (0,19;\,0,07) & 0,076 m (könyök)        & 0,216 m \\
+5 & ($-$0,04;\,0,06) & 0,230 m (\textbf{rögzített} alap) & 0,310 m \\
+\bottomrule
+\end{tabular}
+\caption{A régi metrika ,,közelinek'' jelezte a kart (0,076--0,091 m), miközben az ujjhegy 0,22 m-re
+volt --- a kar \emph{behajlítását} jutalmazta, nem a nyúlást.}
+\end{table}
+
+\section{További elkészült munka a héten (tesztelve, nem-core, CPU)}
+
+\begin{itemize}
+  \item \textbf{HTL-robusztusság mint jutalom (PoC):} egy \texttt{.htl} formula $\to$ egyszerre sűrű
+        jutalom és monitor-ítélet, a meglévő HTL-kiértékelőt újrahasználva. Ez a híd az
+        elszámoltathatósági réteg és a jutalom-formálás között.
+  \item \textbf{RL-algoritmusvonal lezárva:} DDPG / TD3 / SAC immár a kódbázisban (a DDPG kb.\
+        250$\times$ mintahatékonyság a PPO-hoz képest az off-policy vonalon).
+\end{itemize}
+
+\section{Javasolt következő lépés}
+
+A kérdést végleg lezáró döntő kísérlet a \textbf{kiolvasó (readout) ablação}: a HSiKAN átlag-poolingját
+--- ami a szeparálható összegeknél segít, de a vezérléshez szükséges \emph{ízületközi koordinációt}
+összeomlaszthatja --- lecserélni konkatenáló / figyelmi (attention) kiolvasásra, egyetlen robotfeladaton.
+Ha a döntetlen átfordul, a szűk keresztmetszet a pooling volt, nem a strukturális érvelés. Ezt egy
+\textbf{strukturális robot-jutalommal} párosítva (feladatgráf-hiperélek + HTL-prediká\-tumok), hogy a
+strukturális előfeltevésnek végre legyen olyan célfüggvény, amely jutalmazza.
+
+\section*{Őszinteségi megjegyzés}
+
+Két háttérfutás (HTL teljes A/B; a determinizmus-javítás utáni próba-söprés) újraindításkor leállt,
+ezeket újra kell futtatni. A javított jutalmú közös szállítási arányt még nem mértük újra a 0,208-as
+alaphoz képest. Tehát az ujjhegy-javítás egység- és dinamika-szinten igazolt, de a végponttól végpontig
+mért javulás még függőben.
+
+\end{document}

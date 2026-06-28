@@ -25,6 +25,7 @@ from hymeko_rl.bc import _make_policy, behaviour_clone, collect_demos
 from hymeko_rl.env.arm_reach_env import ArmReachEnv
 from hymeko_rl.env.arm_world import CONTROL_MODES, emit_arm_mjcf
 from hymeko_rl.env.scene_style import SceneStyle, beautify_mjcf
+from hymeko_rl.evaluate import _stamp_frames, now_stamp
 from hymeko_rl.policy import ActorCritic
 
 # The default robot to render: the 6-DOF anthropomorphic arm (the showcase morphology).
@@ -148,9 +149,11 @@ _ENCODERS: dict[str, tuple[str, Callable[[list[np.ndarray], Path, int], None]]] 
 }
 
 
-def encode(frames: list[np.ndarray], out: str | Path, fps: int, kind: str) -> Path:
+def encode(frames: list[np.ndarray], out: str | Path, fps: int, kind: str,
+           *, stamp: str | None = None) -> Path:
     """Encode ``frames`` to ``out`` using encoder ``kind`` (the file extension is forced to
-    match). Returns the written path.
+    match). Returns the written path. ``stamp`` is a bottom-right provenance label drawn on every
+    frame (``None`` auto-stamps the current time, ``""`` disables).
 
     # Preconditions ``frames`` non-empty; ``kind in _ENCODERS``.
     # Errors ``ValueError`` (empty frames / unknown kind); ``RuntimeError`` (mp4 without dep).
@@ -159,6 +162,7 @@ def encode(frames: list[np.ndarray], out: str | Path, fps: int, kind: str) -> Pa
         raise ValueError("no frames to encode")
     if kind not in _ENCODERS:
         raise ValueError(f"unknown encoder {kind!r}; expected one of {sorted(_ENCODERS)}")
+    frames = _stamp_frames(frames, now_stamp() if stamp is None else stamp)
     suffix, fn = _ENCODERS[kind]
     path = Path(out).with_suffix(suffix)
     path.parent.mkdir(parents=True, exist_ok=True)

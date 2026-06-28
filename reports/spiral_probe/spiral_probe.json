@@ -1,0 +1,47 @@
+{
+  "n_train": 256,
+  "seeds": 3,
+  "epochs": 400,
+  "rows": [
+    {
+      "k_paths": 1,
+      "spiral_mse": 0.0,
+      "spiral_params": 3,
+      "highway_mlp_mse": 0.32464,
+      "highway_mlp_params": 470,
+      "mlp_mse": 0.21957,
+      "mlp_params": 4610,
+      "mlp_over_spiral": 219570000.0
+    },
+    {
+      "k_paths": 2,
+      "spiral_mse": 0.0,
+      "spiral_params": 6,
+      "highway_mlp_mse": 0.56377,
+      "highway_mlp_params": 606,
+      "mlp_mse": 0.61895,
+      "mlp_params": 4738,
+      "mlp_over_spiral": 618950000.0
+    },
+    {
+      "k_paths": 4,
+      "spiral_mse": 0.0,
+      "spiral_params": 12,
+      "highway_mlp_mse": 0.58835,
+      "highway_mlp_params": 878,
+      "mlp_mse": 0.47079,
+      "mlp_params": 4994,
+      "mlp_over_spiral": 470790000.0
+    },
+    {
+      "k_paths": 8,
+      "spiral_mse": 0.0,
+      "spiral_params": 24,
+      "highway_mlp_mse": 0.34783,
+      "highway_mlp_params": 1422,
+      "mlp_mse": 0.27596,
+      "mlp_params": 5506,
+      "mlp_over_spiral": 275960000.0
+    }
+  ]
+}

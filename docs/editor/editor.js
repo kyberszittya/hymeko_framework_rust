@@ -11,7 +11,7 @@
 // the .hymeko text expresses is what gets emitted by URDF/SDF/DOT.
 
 import init, { parse_and_compile, parse_and_compile_files } from "./pkg/hymeko_wasm.js";
-import { createHypergraphView } from "./views/hypergraph3d.js?v=25";
+import { createHypergraphView } from "./views/hypergraph3d.js?v=26";
 import { createKinematicView } from "./views/kinematic.js?v=20";
 import { createSysmlView } from "./views/sysml.js?v=19";
 import { highlightHymeko } from "./views/highlight.js?v=19";
@@ -20,7 +20,7 @@ import { createGeneratorView } from "./views/generator_view.js?v=21";
 import { PROFILES, profileById, ROOT_NAME } from "./views/profiles.js?v=26";
 import { PROJECTS, projectById, projectFile, spaceForFile } from "./views/projects.js?v=1";
 import { parseArcTuple, rewriteArcTuple } from "./views/arcs.js?v=23";
-import { scopeDepths, bidirectionalEdgeIds } from "./views/adapters.js?v=27";
+import { scopeDepths, bidirectionalEdgeIds } from "./views/adapters.js?v=28";
 await init();
 
 // Older bundles lack the multi-file binding; feature-detect so the editor still

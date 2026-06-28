@@ -42,6 +42,29 @@ def test_weighted_terms_sum() -> None:
     assert spec.evaluate(env, 0.5, np.zeros(2)) == pytest.approx(-0.5)
 
 
+def test_coin_pregrasp_still_gates_on_grasp() -> None:
+    """The pre-grasp stillness term penalises the coin's speed only until it is grasped, then 0."""
+    from hymeko_rl.env.reward import _term_coin_pregrasp_still
+    env = SimpleNamespace(_planar_metrics=SimpleNamespace(disk_speed=0.4), _ever_grasped=False)
+    assert _term_coin_pregrasp_still(env, 0.0, np.zeros(4)) == pytest.approx(-0.4)   # not grasped → -speed
+    env._ever_grasped = True
+    assert _term_coin_pregrasp_still(env, 0.0, np.zeros(4)) == pytest.approx(0.0)     # grasped → off
+    assert _term_coin_pregrasp_still(SimpleNamespace(), 0.0, np.zeros(4)) == pytest.approx(0.0)  # non-planar
+
+
+def test_grasp_deliver_gates_success_on_an_actual_grasp() -> None:
+    """Grasp-gated success: +1 only when the coin is in the zone AND was grasped — a knock (in-zone but never
+    grasped) earns 0, closing the shortcut the bare in_zone bonus rewarded."""
+    from hymeko_rl.env.reward import _term_grasp_deliver
+    knock = SimpleNamespace(_planar_metrics=SimpleNamespace(in_zone=True), _ever_grasped=False)
+    assert _term_grasp_deliver(knock, 0.0, np.zeros(4)) == pytest.approx(0.0)        # knock → no success
+    grasped = SimpleNamespace(_planar_metrics=SimpleNamespace(in_zone=True), _ever_grasped=True)
+    assert _term_grasp_deliver(grasped, 0.0, np.zeros(4)) == pytest.approx(1.0)      # grasp + in zone → success
+    not_yet = SimpleNamespace(_planar_metrics=SimpleNamespace(in_zone=False), _ever_grasped=True)
+    assert _term_grasp_deliver(not_yet, 0.0, np.zeros(4)) == pytest.approx(0.0)      # grasped but not delivered
+    assert _term_grasp_deliver(SimpleNamespace(), 0.0, np.zeros(4)) == pytest.approx(0.0)  # non-planar env
+
+
 def test_unknown_or_empty_rejected() -> None:
     with pytest.raises(ValueError, match="unknown reward term"):
         RewardSpec((("reach_distance", 1.0), ("nope", 1.0)))
@@ -98,16 +121,39 @@ def test_reworked_task_profiles_have_arc_weights() -> None:
     """The reworked Galambos + FANUC rewards declare every weight on the bundle arc (regression:
     the values match the pre-rework body weights exactly)."""
     gala = read_reward_terms(_REPO / "data" / "robotics" / "galambos_task.hymeko")
-    assert gala == (
-        ("grasp_approach", 4.0), ("reach_distance", 1.0), ("both_contact", 3.0),
-        ("in_zone", 10.0), ("center_bonus", 5.0), ("arm_motion", 0.5),
-        ("arm_collision", 1.0), ("out_of_bounds", 5.0), ("time_penalty", 0.10),
-        ("joint_velocity", 0.005), ("joint_acceleration", 0.01))
+    assert gala == (   # SIMPLIFIED 2026-06-28: the complex 14-term reward was a frustrated signed term-graph and
+                       # could not grasp; reducing to four core terms raised grasp-fraction 0.10->0.615 and the
+                       # causal test (re-add the conflicting pair -> 0.333) fixed conflict magnitude as the predictor.
+        ("grasp_approach", 4.0), ("both_contact", 5.0), ("in_zone", 10.0), ("out_of_bounds", 2.0),
+        ("fingers_collision", 1.0))   # + nofinger: narrow finger-finger collision penalty (proper noclash, 2026-06-28)
     pick = read_reward_terms(_REPO / "data" / "robotics" / "pick_place_task.hymeko")
     assert pick == (
         ("pick_approach", 1.0), ("pick_contact", 0.5), ("pick_lift", 5.0),
         ("pick_place_distance", 1.0), ("pick_place_bonus", 20.0),
         ("pick_approach_penalty", 2.0), ("pick_disturbance", 3.0))
+
+
+def test_fingers_collision_term() -> None:
+    """The narrow finger-finger collision term: -1 only when the two fingertip links touch each other, else 0;
+    inert on a non-planar env. (Regression for the 'proper noclash' that replaced the grasp-killing arm-wide one.)"""
+    import dataclasses
+
+    import numpy as np
+
+    from hymeko_rl.env.planar_grasp_env import CLEAN_PLANAR
+    from hymeko_rl.env.reward import _REWARD_TERMS
+
+    fn = _REWARD_TERMS["fingers_collision"]
+
+    class _E:
+        pass
+
+    e = _E()
+    assert fn(e, 0.0, np.zeros(2)) == 0.0                                   # no _planar_metrics -> inert
+    e._planar_metrics = CLEAN_PLANAR                                        # fingers_self_contact False (default)
+    assert fn(e, 0.0, np.zeros(2)) == 0.0
+    e._planar_metrics = dataclasses.replace(CLEAN_PLANAR, fingers_self_contact=True)
+    assert fn(e, 0.0, np.zeros(2)) == -1.0                                  # fingers crashing -> -1
 
 
 def test_read_arc_weights_general(tmp_path: Path) -> None:
@@ -125,7 +171,9 @@ def test_read_arc_weights_on_reward_bundle() -> None:
     from hymeko_rl.env._profile import read_arc_weights
     arcs = read_arc_weights(_REPO / "data" / "robotics" / "galambos_task.hymeko", "grasp_reward")
     assert ("+", "approach", 4.0) in arcs
-    assert ("+", "zone", 10.0) in arcs
+    assert ("+", "both", 5.0) in arcs              # SIMPLIFIED 2026-06-28: strong contact reward
+    assert ("+", "zone", 10.0) in arcs             # ungated clean delivery (the 4-term reward)
+    assert ("+", "oob", 2.0) in arcs
     assert all(sign == "+" for sign, _m, _w in arcs)
 
 

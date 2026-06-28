@@ -80,11 +80,23 @@ def _term_in_zone(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
     return 1.0 if (m is not None and m.in_zone) else 0.0
 
 
+def _term_grasp_deliver(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Grasp-GATED success: +1 only when the coin is in the zone AND it was genuinely grasped at some point
+    (``env._ever_grasped``, the latch set when both fingertips contact the coin). A *knock* (coin shoved into
+    the zone without a two-finger grasp) earns **0** — closing the degenerate shortcut the bare ``in_zone``
+    bonus rewarded (2026-06-27 diagnostic: 94% of deliveries were knocks). 0 on a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    return 1.0 if (m.in_zone and bool(getattr(env, "_ever_grasped", False))) else 0.0
+
+
 def _term_grasp_approach(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
-    """Dense approach shaping: -(mean of the two arms' nearest-link distances to the coin). Rises
-    toward 0 as *both* arms close on the coin, giving PPO the gradient to convert 'near' into the
-    two-finger contact the sparse ``both_contact`` cliff alone cannot bootstrap. 0 on a non-planar
-    env (no ``_planar_metrics``)."""
+    """Dense approach shaping: -(mean of the two arms' fingertip→coin approach distances). Each arm's
+    distance is the tip-dominant blend ``0.75·fingertip + 0.25·elbow`` (``PlanarGraspMetrics`` —
+    shaping the true grasping point, not a body origin). Rises toward 0 as *both* arms close on the
+    coin, giving PPO the gradient to convert 'near' into the two-finger contact the sparse
+    ``both_contact`` cliff alone cannot bootstrap. 0 on a non-planar env (no ``_planar_metrics``)."""
     m = getattr(env, "_planar_metrics", None)
     if m is None:
         return 0.0
@@ -102,6 +114,21 @@ def _term_settle(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
         return 0.0
     zone_half = float(getattr(env, "_zone_half", 0.055))
     return -float(m.disk_speed) if dist < zone_half else 0.0
+
+
+def _term_coin_pregrasp_still(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Gentle pre-grasp handling: ``-‖coin velocity‖`` until BOTH fingers have grasped the coin, then 0.
+
+    Discourages flinging/knocking the coin across the table before a controlled grasp, while leaving a
+    *slow* corral cheap (low speed → small penalty) and the post-grasp pull-to-zone phase entirely free.
+    Speed- (not displacement-) based on purpose: the Galambos task *requires* corralling an out-of-band
+    coin, so a displacement penalty would punish the task itself; a speed penalty only bites on ballistic
+    knocks. Distinct from ``settle`` (zone-gated brake) and the removed ``action_cost`` (which penalised
+    the ARM and froze it). 0 on a non-planar env or once ``env._ever_grasped``."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None or getattr(env, "_ever_grasped", True):
+        return 0.0
+    return -float(m.disk_speed)
 
 
 # v_min: below this total arm joint speed (rad/s, summed over joints) the arm counts as stationary.
@@ -126,6 +153,18 @@ def _term_arm_collision(env: "ArmReachEnv", dist: float, action: np.ndarray) -> 
     if m is None:
         return 0.0
     return -1.0 if m.arm_self_contact else 0.0
+
+
+def _term_fingers_collision(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Penalise ONLY the two fingers crashing into each other (the fingertip-bearing distal links in mutual
+    contact): -1 while they touch, else 0. Narrower than ``arm_collision`` (which fires on any left↔right body
+    pair and, at weight 2.0, suppressed the whole approach — grasp-fraction 0.615→0.0, 2026-06-28). A clean
+    coin-pinch keeps the fingers apart with the coin between them, so this does NOT fire during a real grasp; it
+    bites only on a no-coin crash. 0 on a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    return -1.0 if getattr(m, "fingers_self_contact", False) else 0.0
 
 
 def _term_out_of_bounds(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
@@ -265,11 +304,14 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "below_ground_penalty": _term_below_ground_penalty,
     "both_contact": _term_both_contact,
     "in_zone": _term_in_zone,
+    "grasp_deliver": _term_grasp_deliver,
     "grasp_approach": _term_grasp_approach,
     "settle": _term_settle,
+    "coin_pregrasp_still": _term_coin_pregrasp_still,
     "arm_motion": _term_arm_motion,
     "center_bonus": _term_center_bonus,
     "arm_collision": _term_arm_collision,
+    "fingers_collision": _term_fingers_collision,
     "out_of_bounds": _term_out_of_bounds,
 }
 

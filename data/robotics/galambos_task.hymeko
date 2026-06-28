@@ -37,6 +37,11 @@ galambos_task: el, rew, r
     @both: rew.both_contact {}
     @zone: rew.in_zone      {}
 
+    // Grasp-GATED success (added 2026-06-27): the disk in the zone AND genuinely grasped. The 2026-06-27
+    // contact diagnostic found 94% of deliveries were KNOCKS (disk shoved in, fingers never both touched it);
+    // gating the big success bonus on an actual grasp closes that shortcut. `@zone` stays as a small bootstrap.
+    @graspzone: rew.grasp_deliver {}
+
     // Precision (graded toward the exact centre) + anti-stall (keep the arm exploring, no freezing).
     @center:  rew.center_bonus {}
     @explore: rew.arm_motion   {}
@@ -44,8 +49,19 @@ galambos_task: el, rew, r
     // Penalise the two arms colliding with each other (cooperate, don't crash together).
     @noclash: rew.arm_collision {}
 
+    // Penalise ONLY the two fingers crashing into EACH OTHER (narrow, not the whole arm): a coin-pinch keeps the
+    // fingertips apart with the coin between them, so this does not fire on a real grasp — the targeted fix after
+    // arm-wide `noclash` at 2.0 killed grasping (0.615 -> 0.0). Used at a modest weight.
+    @nofinger: rew.fingers_collision {}
+
     // Penalise knocking the disk off the table (death) — stop ballistic over-pushing.
     @oob: rew.out_of_bounds {}
+
+    // Gentle coin handling (added 2026-06-26): brake the coin to REST in the zone (settle, zone-gated),
+    // and discourage flinging it before a controlled grasp (stillcoin, off once grasped). Small weights:
+    // `settle` measured worse at large weight historically, so it is re-introduced lightly.
+    @settle:    rew.settle              {}
+    @stillcoin: rew.coin_pregrasp_still {}
 
     // Fast + smooth: pay per step (reach the zone quickly), and penalise thrashing the joints fast
     // (q̇²) and jerkily (q̈²) — so the grasp is brisk but not violent.
@@ -54,11 +70,26 @@ galambos_task: el, rew, r
     @smootha:  rew.joint_acceleration {}
 
     // The reward bundle: Σ weight·term, with the weight carried by each arc.
-    //   approach 4.0 (CLOSENESS emphasized, was 2.0) · both 3.0 (CONTACT emphasized, was 0.5)
-    // NOTE: `settle` (overshoot-brake) measured WORSE (4/8 vs 5/8) and `action_cost` rewarded
-    // stationarity — both kept out of the bundle (vocabulary-only).
+    // SIMPLIFIED (2026-06-28, user hypothesis: the grasp-gate was too strict & 14 terms gave conflicting
+    // gradients). Four core terms only — approach (get fingertips to the coin) · both (STRONG contact reward,
+    // 3->5) · zone (clean delivery, ungated) · oob (don't knock it off the table). All shaping/penalty terms
+    // (pull/center/explore/noclash/settle/stillcoin/smoothness/time, and the strict graspzone gate) dropped to
+    // vocabulary-only. Tests the "simpler reward → real grasping" idea against the gated run's ~0.10 grasp.
     @grasp_reward: r.reward_spec {
-        (+ approach 4.0, + pull 1.0, + both 3.0, + zone 10.0, + center 5.0, + explore 0.5,
-         + noclash 1.0, + oob 5.0, + timecost 0.10, + smoothv 0.005, + smootha 0.01);
+        // SIMPLIFIED (2026-06-28) — four core terms: approach (reach the coin) · both·5 (STRONG contact) · zone
+        // (clean delivery) · oob (don't knock it off). grasp-fraction 0.615 vs the complex reward's 0.10.
+        // CAUSAL TEST (2026-06-28) confirmed conflict hurts: re-adding the conflicting pair explore(arm_motion) +
+        // smoothv(joint_velocity) — pairwise conflict grasp_approach×arm_motion = -0.45 on the reward hypergraph —
+        // drops grasp-fraction to 0.333. Conflict MAGNITUDE (not frustration-cycle topology) predicts grasping;
+        // keep the negative-edge weight low. The dropped shaping/penalty terms stay vocabulary-only.
+        // NOCLASH TEST (2026-06-28): + noclash 2.0 (arm-arm collision penalty) DESTROYED grasping
+        // (0.615 -> 0.0 grasp-fraction, ZERO contact) — at 2.0 the arms avoid each other so completely they never
+        // pinch the coin (14 knocks, 0 grasps). Confirms the conflict thesis: arm_collision conflicts with the
+        // close-arm config a pinch needs. Reverted. To add no-self-collision PROPERLY: redefine arm_collision to
+        // exclude the FINGERTIP geoms (penalise only the upper-arm bodies crashing), or use a far lower weight.
+        // PROPER NOCLASH (2026-06-28, user): + nofinger 1.0 — penalise ONLY the two fingers crashing into each
+        // other (narrow `fingers_collision`), modest weight, so the safety constraint is added without suppressing
+        // the pinch. The grasp keeps the coin between the fingertips, so this should not fire on a real grasp.
+        (+ approach 4.0, + both 5.0, + zone 10.0, + oob 2.0, + nofinger 1.0);
     }
 }

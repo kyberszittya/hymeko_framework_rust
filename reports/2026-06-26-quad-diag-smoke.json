@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-06-26 02:21:08",
+  "tasks": [
+    "quadruped"
+  ],
+  "algos": [
+    "sac"
+  ],
+  "mode": "smoke",
+  "seeds": [
+    0
+  ],
+  "hidden": {
+    "quadruped": {
+      "hsikan": 64,
+      "signedkan": 64,
+      "mlp": 104
+    }
+  },
+  "wall_s": 399.4,
+  "rss_mb": 743.1,
+  "result": {
+    "quadruped/sac/hsikan": {
+      "n_params": 14736,
+      "n_seeds": 1,
+      "curve_max_median": -24.822,
+      "curve_max_iqr": 0.0,
+      "curve_max_worst": -24.822,
+      "curve_max_best": -24.822,
+      "per_seed_max": [
+        -24.822
+      ],
+      "per_seed_final": [
+        -29.544
+      ]
+    },
+    "quadruped/sac/mlp": {
+      "n_params": 14576,
+      "n_seeds": 1,
+      "curve_max_median": -28.518,
+      "curve_max_iqr": 0.0,
+      "curve_max_worst": -28.518,
+      "curve_max_best": -28.518,
+      "per_seed_max": [
+        -28.518
+      ],
+      "per_seed_final": [
+        -38.112
+      ]
+    }
+  }
+}

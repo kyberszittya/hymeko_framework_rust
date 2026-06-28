@@ -1,0 +1,8 @@
+Second domain (requirements traceability) - cross-view square X_sysml = X_dot = Q, with coverage:
+
+  OK pick_place_cell    req=4 blocks=4 edges=7 coverage=4/4  | views-agree=True coverage-agree=True derive-DAG=True Q-anchored=True
+  OK sysml_cell         req=2 blocks=2 edges=2 coverage=2/2  | views-agree=True coverage-agree=True derive-DAG=True Q-anchored=True
+
+  Commuting square holds on 2/2 fixtures; coverage agrees across views on 2/2.
+  The coverage invariant is a query over one IR, recovered identically from the SysML and DOT views ---
+  a cross-view discrepancy (a requirement covered in one view, uncovered in the other) is impossible.

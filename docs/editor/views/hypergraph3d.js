@@ -8,7 +8,7 @@
 // Fed by snapshotToHyperedges(snapshot); pure math in geometry3d.js.
 //
 // View contract: { name, mount(container), render(snapshot, ir), unmount() }.
-import { snapshotToHyperedges, snapshotRelationships } from "./adapters.js?v=24";
+import { snapshotToHyperedges, snapshotRelationships, foldAttributes } from "./adapters.js?v=28";
 import { attributeValue, categoricalColorMap, prismPositions, treePositions, coneTreePositions, depthSizes, hubSize, scopeMembership } from "./geometry3d.js?v=19";
 
 const HUB_POS = 0x38bdf8, HUB_NEG = 0xf472b6; // hyperedge sign colours
@@ -36,6 +36,10 @@ export function createHypergraphView() {
   let mode = "star", colorBy = "base", showLabels = true, light = true, layout = "force";
   let treeSrc = "scope", showNest = false;
   let relOn = { isa: true, ref: true, scope: true };
+  // Attribute folding: leaf value-decls (mass, dimension, ax, type…) are hidden as spheres and shown
+  // on their owner node's HUD instead. On by default — the declutter the user asked for.
+  let foldAttrs = true;
+  let fold = { isAttr: [], attrsOf: new Map() };
   let sizes = [];              // per-vertex scale/mass by containment depth (root = biggest)
   // Description-wise viewpoint selection. Membership is by SCOPE (containment):
   // every vertex belongs to a top-level namespace root. The user toggles which
@@ -102,9 +106,15 @@ export function createHypergraphView() {
       rebuild();
     });
     rootsBtn.classList.add("off");
+    const attrBtn = btn("Attributes: HUD", () => {
+      foldAttrs = !foldAttrs;
+      attrBtn.textContent = "Attributes: " + (foldAttrs ? "HUD" : "nodes");
+      attrBtn.classList.toggle("off", !foldAttrs);
+      rebuild();
+    });
     const bgBtn = btn("BG", () => { light = !light; if (scene) scene.background = new THREE.Color(light ? BG_LIGHT : BG_DARK); });
     const rotBtn = btn("⟳ spin", () => { autoRot = !autoRot; rotBtn.classList.toggle("off", !autoRot); });
-    tb.append(modeBtn, colorBtn, labelBtn, ...relBtns, layoutBtn, treeBtn, nestBtn, rootsBtn, bgBtn, rotBtn);
+    tb.append(modeBtn, colorBtn, labelBtn, ...relBtns, layoutBtn, treeBtn, nestBtn, rootsBtn, attrBtn, bgBtn, rotBtn);
     // Second row: one show/hide toggle per description namespace (built per snapshot).
     filterBar = el("div", "view3d-toolbar view3d-filterbar");
     stats = el("div", "view3d-stats");
@@ -133,6 +143,7 @@ export function createHypergraphView() {
     if (!THREE) return;
     hyper = snapshotToHyperedges(snapshot || {});
     relSegs = snapshotRelationships(snapshot || {});
+    fold = foldAttributes(hyper.n_vertices, hyper.hyperedges, relSegs.scope || [], hyper.vertices);
     H = { n: hyper.n_vertices, edges: hyper.hyperedges.map((e) => e.members), signs: hyper.hyperedges.map((e) => e.sign) };
     const total = H.n + H.edges.length;
     P = []; Vel = [];
@@ -180,7 +191,8 @@ export function createHypergraphView() {
     if (sig !== lastRootSig) { lastRootSig = sig; buildFilterBar(); } // namespaces changed → rebuild toggles
     visV = new Array(H.n);
     for (let i = 0; i < H.n; i++) {
-      visV[i] = (!rootsOnly || mem.depth[i] === 0) && !nsHidden.has(nsName(mem.root[i]));
+      visV[i] = (!rootsOnly || mem.depth[i] === 0) && !nsHidden.has(nsName(mem.root[i]))
+        && !(foldAttrs && fold.isAttr[i]);   // attribute leaves folded onto their owner's HUD
     }
     visE = H.edges.map((members) => members.every((v) => visV[v] !== false));
   }
@@ -481,7 +493,7 @@ export function createHypergraphView() {
   function updateLegendAndStats() {
     const nSeg = mode === "prism" ? prismMeshes.length : currentSegments().filter(segVisible).length;
     const unit = mode === "prism" ? "prisms" : "edges";
-    const filtering = rootsOnly || nsHidden.size > 0;
+    const filtering = rootsOnly || nsHidden.size > 0 || foldAttrs;
     const nV = filtering ? visV.filter((v) => v !== false).length : H.n;
     const nE = filtering ? visE.filter((v) => v !== false).length : H.edges.length;
     const filt = filtering ? ` · filtered ${nV}/${H.n} vtx${rootsOnly ? ", roots" : ""}` : "";
@@ -602,15 +614,24 @@ export function createHypergraphView() {
     const u = obj.userData;
     if (u.kind === "vertex") {
       const v = hyper.vertices[u.i];
+      // Folded attribute leaves (mass, dimension, ax…) shown as "name = value" on the owner's HUD.
+      const attrs = (foldAttrs && fold.attrsOf.get(u.i)) || [];
       return { title: v.label, lines: [
         v.bases.length ? "isa: " + v.bases.join(", ") : null,
         v.tags.length ? "tags: " + v.tags.join(", ") : null,
+        v.value != null ? "= " + v.value : null,
+        ...attrs.map((a) => (a.value != null ? `${a.name} = ${a.value}` : a.name)),
       ].filter(Boolean) };
     }
     const e = hyper.hyperedges[u.ei];
+    // A member index ≥ H.n is another hyperedge (a bundle-of-bundles member);
+    // label it from the hyperedge list, not vertices[] (which would be undefined).
+    const memberLabel = (m) => m < H.n
+      ? hyper.vertices[m].label
+      : (hyper.hyperedges[m - H.n]?.label ?? "?");
     return { title: e.label, lines: [
       `hyperedge · sign ${e.sign > 0 ? "+" : "−"} · arity ${e.arity}`,
-      "members: " + e.members.map((m) => hyper.vertices[m].label).join(", "),
+      "members: " + e.members.map(memberLabel).join(", "),
     ] };
   }
 

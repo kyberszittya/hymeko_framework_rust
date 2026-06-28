@@ -1,0 +1,27 @@
+digraph hymeko_composition {
+  rankdir=LR;
+  node [shape=box, style=rounded, fontsize=10, fontname="Helvetica"];
+  edge [color="#2a8a55"];
+  "pick_place_scenario.hymeko" [label="pick_place_scenario.hymeko\n1 decl(s)"];
+  compose0 [shape=point, width=0.07, color="#2a8a55"];   // composition hyperedge
+  "pick_place_scenario.hymeko" -> compose0 [arrowhead=none];
+  compose0 -> "meta_scenario.hymeko";
+  compose0 -> "arm_gripper_fanuc_import.hymeko";
+  compose0 -> "pick_place_task.hymeko";
+  "meta_scenario.hymeko" [label="meta_scenario.hymeko\n0 decl(s)"];
+  "arm_gripper_fanuc_import.hymeko" [label="arm_gripper_fanuc_import.hymeko\n2 decl(s)"];
+  compose1 [shape=point, width=0.07, color="#2a8a55"];   // composition hyperedge
+  "arm_gripper_fanuc_import.hymeko" -> compose1 [arrowhead=none];
+  compose1 -> "meta_kinematics.hymeko";
+  compose1 -> "fanuc_lrmate.hymeko";
+  "meta_kinematics.hymeko" [label="meta_kinematics.hymeko\n0 decl(s)"];
+  "fanuc_lrmate.hymeko" [label="fanuc_lrmate.hymeko\n7 decl(s)"];
+  compose2 [shape=point, width=0.07, color="#2a8a55"];   // composition hyperedge
+  "fanuc_lrmate.hymeko" -> compose2 [arrowhead=none];
+  compose2 -> "meta_kinematics.hymeko";
+  "pick_place_task.hymeko" [label="pick_place_task.hymeko\n8 decl(s)"];
+  compose3 [shape=point, width=0.07, color="#2a8a55"];   // composition hyperedge
+  "pick_place_task.hymeko" -> compose3 [arrowhead=none];
+  compose3 -> "meta_reward.hymeko";
+  "meta_reward.hymeko" [label="meta_reward.hymeko\n0 decl(s)"];
+}

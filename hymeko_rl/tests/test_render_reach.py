@@ -39,7 +39,9 @@ def test_encode_rejects_empty_and_unknown(tmp_path: Path) -> None:
 
 def test_encode_gif_roundtrips(tmp_path: Path) -> None:
     frames = [np.full((8, 8, 3), v, dtype=np.uint8) for v in (0, 80, 160, 240)]
-    path = encode(frames, tmp_path / "clip", fps=10, kind="gif")
+    # stamp="" disables the provenance overlay: this test checks the encoder preserves every frame,
+    # which a baked-in label (covering the degenerate 8x8 fixture) would defeat.
+    path = encode(frames, tmp_path / "clip", fps=10, kind="gif", stamp="")
     assert path.suffix == ".gif" and path.is_file()
     with Image.open(path) as im:
         assert getattr(im, "n_frames", 1) == len(frames)

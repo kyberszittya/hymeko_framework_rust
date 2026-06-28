@@ -1,0 +1,20 @@
+{
+  "n_episodes": 50,
+  "outcomes": {
+    "delivered_grasp": 0,
+    "delivered_knock": 0,
+    "death": 0,
+    "timeout": 50
+  },
+  "delivery_rate": 0.0,
+  "grasp_fraction_of_deliveries": null,
+  "any_grasp_delivery": false,
+  "median_contact_steps_per_delivery": 0,
+  "total_contact_steps": 0,
+  "kind": "hsikan",
+  "task_graph": true,
+  "steps": 15000,
+  "design": "none",
+  "k": 2,
+  "difficulty": 0.3
+}

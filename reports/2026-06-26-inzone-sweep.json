@@ -1,0 +1,19 @@
+{
+  "term": "in_zone",
+  "seed": 0,
+  "refine": 15000,
+  "results": {
+    "10": {
+      "bc_deliv": 0.125,
+      "rl_deliv": 0.25
+    },
+    "50": {
+      "bc_deliv": 0.125,
+      "rl_deliv": 0.0417
+    },
+    "200": {
+      "bc_deliv": 0.125,
+      "rl_deliv": 0.0417
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "n_train": 512,
+  "seeds": 3,
+  "epochs": 500,
+  "rows": [
+    {
+      "theta": 0.0,
+      "spike_gated_mse": 0.0,
+      "order_blind_mse": 0.0,
+      "mlp_mse": 0.00024,
+      "blind_over_gated": 0.0
+    },
+    {
+      "theta": 0.3,
+      "spike_gated_mse": 0.0,
+      "order_blind_mse": 0.00132,
+      "mlp_mse": 0.00043,
+      "blind_over_gated": 1320000.0
+    },
+    {
+      "theta": 0.6,
+      "spike_gated_mse": 0.0,
+      "order_blind_mse": 0.02004,
+      "mlp_mse": 0.00049,
+      "blind_over_gated": 20040000.0
+    },
+    {
+      "theta": 0.9,
+      "spike_gated_mse": 0.0,
+      "order_blind_mse": 0.09136,
+      "mlp_mse": 0.00099,
+      "blind_over_gated": 91360000.0
+    },
+    {
+      "theta": 1.2,
+      "spike_gated_mse": 0.0,
+      "order_blind_mse": 0.24167,
+      "mlp_mse": 0.00112,
+      "blind_over_gated": 241670000.0
+    },
+    {
+      "theta": 1.5,
+      "spike_gated_mse": 0.0,
+      "order_blind_mse": 0.44805,
+      "mlp_mse": 0.00118,
+      "blind_over_gated": 448050000.0
+    }
+  ]
+}

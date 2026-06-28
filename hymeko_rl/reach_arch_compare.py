@@ -27,6 +27,7 @@ from hymeko_rl.env.arm_reach_env import ArmReachEnv
 from hymeko_rl.env.arm_world import emit_arm_mjcf
 from hymeko_rl.env.observation import ObservationSpec
 from hymeko_rl.env.reward import RewardSpec
+from hymeko_rl.evaluate import now_stamp
 
 _REPO = Path(__file__).resolve().parents[1]
 # The tractable canonical arm: a 4-DOF .hymeko robot, position-controlled, sized so BC clones
@@ -115,8 +116,8 @@ def main(argv: list[str] | None = None) -> int:
         rss_mb = None
 
     report: dict[str, Any] = dict(
-        mode=a.mode, arm="reach_arm (emitted, 4-DOF, position-controlled)", seeds=seeds,
-        n_epochs=a.epochs, hidden=a.hidden, wall_s=round(wall, 1), rss_mb=rss_mb,
+        timestamp=now_stamp(), mode=a.mode, arm="reach_arm (emitted, 4-DOF, position-controlled)",
+        seeds=seeds, n_epochs=a.epochs, hidden=a.hidden, wall_s=round(wall, 1), rss_mb=rss_mb,
         result=result)
     print(json.dumps(report, indent=2))
     if a.out:

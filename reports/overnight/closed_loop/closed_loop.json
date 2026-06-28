@@ -1,0 +1,26 @@
+{
+  "chain9": {
+    "n": 9,
+    "lqr_cost": 50.365,
+    "actor_rho": 1.093,
+    "mlp_rho": 1.002
+  },
+  "kuniform3": {
+    "n": 17,
+    "lqr_cost": 81.114,
+    "actor_rho": 1.087,
+    "mlp_rho": 1.001
+  },
+  "steiner9": {
+    "n": 21,
+    "lqr_cost": 99.597,
+    "actor_rho": 1.062,
+    "mlp_rho": 1.001
+  },
+  "sunflower": {
+    "n": 11,
+    "lqr_cost": 53.348,
+    "actor_rho": 1.126,
+    "mlp_rho": 1.001
+  }
+}

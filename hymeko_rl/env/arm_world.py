@@ -15,9 +15,11 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
 
 import mujoco
+import numpy as np
 
 _REPO = Path(__file__).resolve().parents[2]
 
@@ -130,6 +132,83 @@ def slim_arm_collision(mjcf: str, scale: float = 0.4) -> str:
         return f'size="{radius * scale:g} {half}"'
 
     return re.sub(r'size="([\d.]+) ([\d.]+)"', shrink, mjcf)
+
+
+def decorate_scene(mjcf: str) -> str:
+    """Add render decoration to an MJCF — a gradient skybox, a checkered ground material, soft lighting and
+    haze — so the offscreen render is not a black void. Visual-only (no DOF added), so a model built from the
+    decorated MJCF shares the original's ``qpos`` and can be driven by the undecorated env's state.
+
+    # Preconditions ``mjcf`` has an ``<asset>`` block (emitted robots do). # Postconditions returns a valid
+    MJCF that renders with a sky + (where a floor plane exists) a textured ground.
+    """
+    visual = ('  <visual>\n'
+              '    <headlight diffuse="0.55 0.55 0.55" ambient="0.45 0.45 0.45" specular="0.1 0.1 0.1"/>\n'
+              '    <rgba haze="0.72 0.81 0.92 1"/>\n'
+              '    <global azimuth="140" elevation="-22"/>\n'
+              '  </visual>')
+    assets = ('    <texture type="skybox" builtin="gradient" rgb1="0.45 0.62 0.82" rgb2="0.85 0.9 0.96"'
+              ' width="512" height="512"/>\n'
+              '    <texture name="grid" type="2d" builtin="checker" rgb1="0.52 0.55 0.6"'
+              ' rgb2="0.7 0.72 0.77" width="300" height="300"/>\n'
+              '    <material name="grid" texture="grid" texrepeat="12 12" reflectance="0.05"/>')
+    light = ('    <light pos="1.0 -1.0 3.0" dir="-0.3 0.3 -1" diffuse="0.7 0.7 0.7"'
+             ' specular="0.2 0.2 0.2"/>')
+    out = re.sub(r"(<option[^>]*/>)", r"\1\n" + visual, mjcf, count=1)
+    out = out.replace("<asset>", "<asset>\n" + assets, 1)
+    out = out.replace("<worldbody>", "<worldbody>\n" + light, 1)
+    out = out.replace('type="plane"', 'type="plane" material="grid"', 1)   # texture an existing floor
+    return out
+
+
+def strip_actuators(mjcf: str, joint_names: "Iterable[str]") -> str:
+    """Remove the ``<motor>`` actuators that drive the named joints — leaving those joints *passive*.
+
+    The emitter actuates **every** non-fixed joint, but the canonical inverted pendulum is
+    under-actuated: only the cart's rail is driven, the pole hinge swings freely. Dropping the pole's
+    motor here (rather than in the ``.hymeko``) keeps the source description canonical and confines the
+    emitter quirk to the env layer — the same pattern as :func:`with_collision_floor` /
+    :func:`slim_arm_collision`.
+
+    # Preconditions ``mjcf`` is a valid scene; each name in ``joint_names`` is a joint with a
+    ``<motor joint="name" …/>`` actuator.
+    # Postconditions exactly the motors whose ``joint=`` is in ``joint_names`` are removed; every other
+    actuator is intact (so the model's ``nu`` drops by the number of distinct names actually matched).
+    """
+    targets = set(joint_names)
+    if not targets:
+        return mjcf
+    # A self-closing <motor .../> whose joint= attribute is one of the targets (attribute order-agnostic).
+    pattern = re.compile(r'\s*<motor\b[^>]*\bjoint="([^"]+)"[^>]*/>')
+    return pattern.sub(lambda m: "" if m.group(1) in targets else m.group(0), mjcf)
+
+
+def actuated_dof_addrs(model: "mujoco.MjModel") -> np.ndarray:
+    """The ``qvel``/``qacc`` addresses of the joints driven by actuators (transmission type ``joint``).
+
+    Lets a reward term read the *actuated* joints' velocities/accelerations (for smoothness/effort penalties)
+    without each env re-deriving the mapping. # Postconditions returns an ``int64`` array of length ``nu``
+    (one dof address per actuator) for single-dof (hinge/slide) transmissions."""
+    out = []
+    for i in range(int(model.nu)):
+        if int(model.actuator_trntype[i]) == int(mujoco.mjtTrn.mjTRN_JOINT):
+            out.append(int(model.jnt_dofadr[int(model.actuator_trnid[i, 0])]))
+    return np.asarray(out, dtype=np.int64)
+
+
+def actuator_vertices(model: "mujoco.MjModel") -> np.ndarray:
+    """Each actuator's **hypergraph vertex** — the driven joint's child body remapped ``b -> b-1`` (the same
+    body->vertex convention as :meth:`hymeko_rl.hypergraph_state.HypergraphState.from_mjcf`).
+
+    Lets a per-node actor head read each joint's action from *its own* graph vertex. # Preconditions every
+    actuator is a single-dof ``joint`` transmission. # Postconditions returns an ``int64`` array of length
+    ``nu``, each entry in ``[0, nbody-1)``."""
+    out = []
+    for i in range(int(model.nu)):
+        if int(model.actuator_trntype[i]) != int(mujoco.mjtTrn.mjTRN_JOINT):
+            raise ValueError(f"actuator {i} is not a joint transmission; per-node mapping needs joint actuators")
+        out.append(int(model.jnt_bodyid[int(model.actuator_trnid[i, 0])]) - 1)
+    return np.asarray(out, dtype=np.int64)
 
 
 def load_arm(control_mode: str = "torque") -> tuple[mujoco.MjModel, mujoco.MjData]:
