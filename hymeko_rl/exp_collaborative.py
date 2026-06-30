@@ -28,11 +28,14 @@ from hymeko_rl.policy import build_policy
 from hymeko_rl.ppo import PPOConfig, train_ppo
 
 
-def _refine(policy: Any, env: PlanarGraspEnv, refine: int, seed: int) -> None:
+def _refine(policy: Any, env: PlanarGraspEnv, refine: int, seed: int, *, bc_coef: float = 0.0,
+            bc_data: "tuple[Any, Any] | None" = None) -> None:
     """PPO-refine a BC-warm-started policy in place (the CTDE policy trains as cooperative CTDE under the shared
-    trainer — it exposes act/value/evaluate). ``refine`` = PPO iterations; 0 = BC only."""
+    trainer — it exposes act/value/evaluate). ``refine`` = PPO iterations; 0 = BC only. ``bc_coef`` keeps the
+    refine near the demos (the BC anchor cross-ported from pick-place)."""
     if refine > 0:
-        train_ppo(policy, env, PPOConfig(n_iters=refine, n_steps=2048, seed=seed, ent_coef=0.003))
+        train_ppo(policy, env, PPOConfig(n_iters=refine, n_steps=2048, seed=seed, ent_coef=0.003,
+                                         bc_coef=bc_coef), bc_data=bc_data)
 
 
 def _env(difficulty: float, task_graph: bool) -> PlanarGraspEnv:
@@ -40,7 +43,7 @@ def _env(difficulty: float, task_graph: bool) -> PlanarGraspEnv:
 
 
 def run(*, seed: int, n_demos: int, bc_epochs: int, hidden: int, difficulty: float, n_eval: int,
-        task_graph: bool, refine: int = 0, gif_dir: str | None = None) -> dict[str, Any]:
+        task_graph: bool, refine: int = 0, gif_dir: str | None = None, bc_coef: float = 0.0) -> dict[str, Any]:
     torch.manual_seed(seed)
     np.random.seed(seed)
     env = _env(difficulty, task_graph)
@@ -51,13 +54,13 @@ def run(*, seed: int, n_demos: int, bc_epochs: int, hidden: int, difficulty: flo
 
     hs = build_policy("hsikan", obs_dim=feat, action_dim=n_act, hg_state=env.hg, hidden=hidden)
     behaviour_clone(hs, obs, acts, n_epochs=bc_epochs, seed=seed)
-    _refine(hs, env, refine, seed)
+    _refine(hs, env, refine, seed, bc_coef=bc_coef, bc_data=(obs, acts))
     out["hsikan_single"] = {"deliv": eval_delivery(_env(difficulty, task_graph), hs, n_eval, 9000),
                             "params": hs.n_parameters()}
 
     coll = build_collaborative(env, kind="hsikan", hidden=hidden)
     behaviour_clone(coll, obs, acts, n_epochs=bc_epochs, seed=seed)   # type: ignore[arg-type]  # duck-typed on action_mean
-    _refine(coll, env, refine, seed)
+    _refine(coll, env, refine, seed, bc_coef=bc_coef, bc_data=(obs, acts))
     out["collab_ctde"] = {"deliv": eval_delivery(_env(difficulty, task_graph), coll, n_eval, 9000),
                           "params": coll.n_parameters(), "agents": list(coll.agent_action_dims)}
 
@@ -85,13 +88,14 @@ def main() -> int:
     ap.add_argument("--task-graph", action="store_true")
     ap.add_argument("--refine", type=int, default=0, help="PPO iterations to refine past BC (0 = BC only)")
     ap.add_argument("--gif", default=None, help="render GIFs of the trained policies into this dir (§9 animated)")
+    ap.add_argument("--bc-coef", type=float, default=0.0, help="BC-anchor weight for the PPO refine (cross-port)")
     ap.add_argument("--smoke", action="store_true")
     a = ap.parse_args()
     if a.smoke:
         a.n_demos, a.bc_epochs, a.n_eval = 40, 40, 8
     print(json.dumps(run(seed=a.seed, n_demos=a.n_demos, bc_epochs=a.bc_epochs, hidden=a.hidden,
                          difficulty=a.difficulty, n_eval=a.n_eval, task_graph=a.task_graph, refine=a.refine,
-                         gif_dir=a.gif), indent=2), flush=True)
+                         gif_dir=a.gif, bc_coef=a.bc_coef), indent=2), flush=True)
     return 0
 
 

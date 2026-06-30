@@ -1,0 +1,6 @@
+{"model": "ricci_stim_tree", "seed": 0, "n_train": 2000, "n_test": 1000, "n_epochs": 3, "batch_size": 64, "lr": 0.003, "n_params": 8753, "test_acc": 0.303, "wall_s": 241.941839600011, "dataset": "cluttered", "canvas": 48}
+{"model": "ricci_stim_tree", "seed": 1, "n_train": 2000, "n_test": 1000, "n_epochs": 3, "batch_size": 64, "lr": 0.003, "n_params": 8753, "test_acc": 0.304, "wall_s": 276.3600485000061, "dataset": "cluttered", "canvas": 48}
+{"model": "ricci_stim_tree", "seed": 2, "n_train": 2000, "n_test": 1000, "n_epochs": 3, "batch_size": 64, "lr": 0.003, "n_params": 8753, "test_acc": 0.269, "wall_s": 554.2621921999962, "dataset": "cluttered", "canvas": 48}
+{"model": "ricci_stim_enc_tree", "seed": 0, "n_train": 2000, "n_test": 1000, "n_epochs": 3, "batch_size": 64, "lr": 0.003, "n_params": 8753, "test_acc": 0.218, "wall_s": 255.01362190002692, "dataset": "cluttered", "canvas": 48}
+{"model": "ricci_stim_enc_tree", "seed": 1, "n_train": 2000, "n_test": 1000, "n_epochs": 3, "batch_size": 64, "lr": 0.003, "n_params": 8753, "test_acc": 0.21, "wall_s": 235.65952609997476, "dataset": "cluttered", "canvas": 48}
+{"model": "ricci_stim_enc_tree", "seed": 2, "n_train": 2000, "n_test": 1000, "n_epochs": 3, "batch_size": 64, "lr": 0.003, "n_params": 8753, "test_acc": 0.209, "wall_s": 243.3538846000156, "dataset": "cluttered", "canvas": 48}

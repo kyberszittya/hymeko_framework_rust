@@ -60,7 +60,7 @@ def build(kind: str, env: PickEnv, hidden: int) -> ActorCritic:
     if kind == "mlp":
         return build_policy("mlp", obs_dim=env.hg.n_vertices * feat,
                             action_dim=env.n_actions, hidden=hidden)
-    return build_policy("hsikan", obs_dim=feat, action_dim=env.n_actions,
+    return build_policy(kind, obs_dim=feat, action_dim=env.n_actions,   # hsikan / signedkan / sa_hsikan / mixture
                         hg_state=env.hg, hidden=hidden)
 
 

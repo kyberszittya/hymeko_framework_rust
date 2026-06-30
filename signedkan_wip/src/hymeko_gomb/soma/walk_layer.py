@@ -42,12 +42,30 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
+from signed_kan import CatmullRomActivation, ChebyshevCRActivation
 
 from signedkan_wip.src.hymeko_gomb.soma.hg_conv import (
     HypergraphConv,
     HypergraphConvConfig,
+    MessageActivation,
 )
+
+
+def _build_message_activation(kind: MessageActivation, n_channels: int) -> nn.Module:
+    """Map a ``MessageActivation`` to a per-channel activation module.
+
+    ``CR`` / ``CHEBY_CR`` reuse the ``signed_kan`` HSiKAN spline cells (no new
+    spline code — §6.1). The spline cells softly bound / clamp their input to
+    the ``[-1, 1]`` domain internally, so unbounded messages are safe.
+
+    # Preconditions ``n_channels >= 1``.
+    """
+    if kind is MessageActivation.GELU:
+        return nn.GELU()
+    if kind is MessageActivation.CR:
+        return CatmullRomActivation(n_channels)
+    return ChebyshevCRActivation(n_channels)
 
 
 class WalkConvLayer(HypergraphConv):
@@ -83,6 +101,11 @@ class WalkConvLayer(HypergraphConv):
             )
         else:
             self.register_parameter("bias_p", None)
+        # Per-channel message activation, built once (Strategy module, not a
+        # forward-time flag — §6.5 #8). GELU (default) reproduces prior behaviour.
+        self.activation = _build_message_activation(
+            config.message_activation, self.out_features,
+        )
         self._reset_parameters()
 
     def _reset_parameters(self) -> None:
@@ -118,36 +141,30 @@ class WalkConvLayer(HypergraphConv):
         -------
         Tensor[n_walks, out_features]
         """
-        # Gather position-wise vertex features: (n_walks, k_arity, in)
-        gathered = x[primitives]
-
+        # Per-walk position-wise feature gather + per-branch position-aware
+        # matmul. Handles x = (n_nodes, in) per-image, or (B, n_nodes, in)
+        # batched — the grid topology (primitives) is shared across the batch.
+        batched = x.ndim == 3
         if self.use_sign_branching:
-            # Branch index: 0 for σ=+1, 1 for σ=-1.
-            branch_idx = (primitive_signs < 0).to(torch.long)
+            branch_idx = (primitive_signs < 0).to(torch.long)   # (..., n_walks)
         else:
             branch_idx = torch.zeros(
-                primitives.shape[0], dtype=torch.long, device=primitives.device
+                primitive_signs.shape, dtype=torch.long, device=primitives.device
             )
-
-        # We want, per walk c with branch b(c) and positions i = 0..k-1:
-        #     msg(c) = ψ( Σ_i W[b(c), i] @ x_{v_i^c} + bias[b(c)] )
-        # Vectorise via per-branch matmul:
-        #     contrib[c, i, :] = x_{v_i^c} @ W[b(c), i]
-        # Then sum over i.
-
-        # Gather the per-walk weight tensor: (n_walks, k_arity, in, out).
-        # Index W (n_branches, k_arity, in, out) at axis 0 by branch_idx.
-        W_per_walk = self.W[branch_idx]  # (n_walks, k_arity, in, out)
-        # contrib[c, i] = x_{v_i^c} @ W_per_walk[c, i]
-        # einsum: 'nki,nkij->nkj'
-        contrib = torch.einsum("nki,nkij->nkj", gathered, W_per_walk)
-        msg = contrib.sum(dim=1)  # (n_walks, out)
+        W_per_walk = self.W[branch_idx]              # (..., n_walks, k, in, out)
+        if batched:
+            gathered = x[:, primitives]              # (B, n_walks, k, in)
+            contrib = torch.einsum("bnki,bnkij->bnkj", gathered, W_per_walk)
+        else:
+            gathered = x[primitives]                 # (n_walks, k, in)
+            contrib = torch.einsum("nki,nkij->nkj", gathered, W_per_walk)
+        msg = contrib.sum(dim=-2)                    # (..., n_walks, out)
 
         if self.bias_p is not None:
             msg = msg + self.bias_p[branch_idx]
 
-        # Sign-branched activation: GELU on each branch independently.
-        # (Identical activation here; the per-branch separation is
-        # already in W and bias_p. Distinct ψ_± would be a phase-3
-        # extension.)
-        return F.gelu(msg)
+        # Per-channel message activation (GELU by default; CR / Chebyshev-CR
+        # when the config selects the HSiKAN cell). The per-branch separation is
+        # already carried by W and bias_p; a distinct ψ_± per branch would be a
+        # later extension.
+        return self.activation(msg)

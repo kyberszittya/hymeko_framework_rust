@@ -73,13 +73,43 @@ def render_pick(out_dir: str = "reports/gifs", *, seed: int = 2, fps: int = 25,
                               width=width, height=height, fps=fps, camera=pick_camera(), overlay=_hud)
 
 
+def trained_action_fn(ac: Any) -> Callable[[PickPlaceEnv, np.ndarray], np.ndarray]:
+    """An ``action_fn(env, obs)`` driving a TRAINED policy (the deterministic ``action_mean``)."""
+    import torch
+
+    def fn(_env: PickPlaceEnv, obs: np.ndarray) -> np.ndarray:
+        with torch.no_grad():
+            return ac.action_mean(torch.as_tensor(obs[None], dtype=torch.float32)).squeeze(0).numpy()
+    return fn
+
+
+def render_trained(checkpoint: str, kind: str = "hsikan", *, out_dir: str = "reports/gifs",
+                   label: "str | None" = None, seed: int = 2, fps: int = 25, width: int = 480,
+                   height: int = 360, hidden: int = 64) -> Any:
+    """Render a TRAINED pick policy's episode to ``<out_dir>/<label>.gif`` (mirrors the demonstrator render,
+    swapping the scripted expert for the loaded policy). # Preconditions ``checkpoint`` is a saved state_dict."""
+    import torch
+
+    from hymeko_rl.gripper_pick_bc import build
+    env = fanuc_pick_env()
+    ac = build(kind, env, hidden)
+    ac.load_state_dict(torch.load(checkpoint, map_location="cpu", weights_only=True))
+    ac.eval()
+    return render_episode_gif(env, trained_action_fn(ac), f"{out_dir}/{label or f'fanuc_pick_{kind}'}",
+                              seed=seed, width=width, height=height, fps=fps, camera=pick_camera(), overlay=_hud)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--seed", type=int, default=2, help="episode seed (2 lifts ~25 cm)")
     ap.add_argument("--out", default="reports/gifs")
     ap.add_argument("--fps", type=int, default=25)
+    ap.add_argument("--checkpoint", default=None, help="trained policy .pt to render (omit = scripted expert)")
+    ap.add_argument("--kind", default="hsikan", choices=("hsikan", "mlp", "mixture", "sa_hsikan"))
+    ap.add_argument("--label", default=None, help="GIF filename stem (default: fanuc_pick[_kind])")
     a = ap.parse_args(argv)
-    gif = render_pick(a.out, seed=a.seed, fps=a.fps)
+    gif = (render_trained(a.checkpoint, a.kind, out_dir=a.out, label=a.label, seed=a.seed, fps=a.fps)
+           if a.checkpoint else render_pick(a.out, seed=a.seed, fps=a.fps))
     print(f"wrote {gif}")
     return 0
 

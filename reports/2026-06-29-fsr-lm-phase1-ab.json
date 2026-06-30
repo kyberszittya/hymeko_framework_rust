@@ -1,0 +1,42 @@
+{
+  "mode": "full",
+  "device": "cuda",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "fsr_sphere": {
+    "val_bpb_median": 2.7702,
+    "val_bpb_iqr": 0.0362,
+    "tokens_per_s_median": 11780.3,
+    "n_params": 367328,
+    "per_seed_bpb": [
+      2.7634,
+      2.7702,
+      2.7996
+    ]
+  },
+  "fsr_prenorm": {
+    "val_bpb_median": 2.4791,
+    "val_bpb_iqr": 0.0426,
+    "tokens_per_s_median": 11160.7,
+    "n_params": 368960,
+    "per_seed_bpb": [
+      2.4528,
+      2.4791,
+      2.4954
+    ]
+  },
+  "xfmr": {
+    "val_bpb_median": 2.5698,
+    "val_bpb_iqr": 0.0436,
+    "tokens_per_s_median": 35080.1,
+    "n_params": 369324,
+    "per_seed_bpb": [
+      2.563,
+      2.6066,
+      2.5698
+    ]
+  }
+}

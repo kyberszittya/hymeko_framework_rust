@@ -1,0 +1,41 @@
+{
+  "plant": "pendulum",
+  "steps": 1500,
+  "seeds": 1,
+  "wall_s": 135.9,
+  "results": {
+    "kinematic": {
+      "return_median": 27.8,
+      "return_iqr": 0.0,
+      "per_seed_return": [
+        27.8
+      ],
+      "n_vertices": 2,
+      "kind": "hsikan",
+      "design": null,
+      "n_seeds": 1
+    },
+    "sunflower_aug": {
+      "return_median": 26.5,
+      "return_iqr": 0.0,
+      "per_seed_return": [
+        26.5
+      ],
+      "n_vertices": 3,
+      "kind": "hsikan",
+      "design": "sunflower",
+      "n_seeds": 1
+    },
+    "mlp": {
+      "return_median": 27.3,
+      "return_iqr": 0.0,
+      "per_seed_return": [
+        27.3
+      ],
+      "n_vertices": 2,
+      "kind": "mlp",
+      "design": null,
+      "n_seeds": 1
+    }
+  }
+}

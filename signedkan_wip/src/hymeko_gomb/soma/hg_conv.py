@@ -22,11 +22,47 @@ conditions are documented and asserted in debug builds.
 from __future__ import annotations
 
 import abc
+import enum
 from dataclasses import dataclass, field
-from typing import Optional
 
 import torch
 import torch.nn as nn
+
+
+class Aggregation(enum.Enum):
+    """How per-primitive messages are pooled back to vertices.
+
+    ``SUM`` — sign-as-routing: plain ``M_v @ messages``. The walk sign is
+    consumed upstream (e.g. WalkConv's dual sign-branched banks); the pool
+    itself is sign-blind. This is the historical default and the operator the
+    2026-06-15 MNIST walk-vision falsification tested.
+
+    ``HOLONOMY`` — sign-as-connection: ``M_v @ (sigma ⊙ messages)``, where
+    ``sigma`` is each primitive's σ-product (its Z₂ holonomy). The sign is a
+    multiplicative parallel-transport factor, reproducing the signed L-hop
+    operator ``Bᴸ`` that a sign-blind sum cannot (cf.
+    ``hymeko_rl/structural_actor.py``, ``docs/theory/gauge_holonomy_signed_hsikan``).
+    Pair with a single (unbranched) message bank so sign enters only as transport.
+    """
+
+    SUM = "sum"
+    HOLONOMY = "holonomy"
+
+
+class MessageActivation(enum.Enum):
+    """The per-channel nonlinearity applied to a layer's primitive messages.
+
+    ``GELU`` — the historical fixed activation (the 2026-06-15 / 2026-06-29
+    walk-vision falsification used this). ``CR`` — a learnable Catmull-Rom KAN
+    spline (the HSiKAN cell). ``CHEBY_CR`` — the band-limited Chebyshev-CR cell
+    (the ``cr_cheby`` StructuralActor uses): a CR spline whose control points are
+    a degree-``k`` Chebyshev expansion (param-efficient, smoother). The two
+    spline modes are reused from ``signed_kan.splines`` — no new spline code.
+    """
+
+    GELU = "gelu"
+    CR = "cr"
+    CHEBY_CR = "cheby_cr"
 
 
 @dataclass
@@ -53,6 +89,15 @@ class HypergraphConvConfig:
         that consume signed primitives.
     bias : bool
         Include a learnable bias on the output projection.
+    aggregation : Aggregation
+        How per-primitive messages pool back to vertices. ``SUM`` (default,
+        sign-blind) preserves the historical behaviour; ``HOLONOMY`` weights
+        each message by its σ-product (sign-as-connection). See ``Aggregation``.
+    message_activation : MessageActivation
+        The per-channel nonlinearity on primitive messages. ``GELU`` (default)
+        is the historical fixed activation; ``CR`` / ``CHEBY_CR`` are the
+        learnable HSiKAN spline cells. See ``MessageActivation``. (A concrete
+        layer reads this when it builds its activation module.)
     """
 
     in_features: int
@@ -60,6 +105,8 @@ class HypergraphConvConfig:
     k_arity: int
     use_sign_branching: bool = True
     bias: bool = True
+    aggregation: Aggregation = Aggregation.SUM
+    message_activation: MessageActivation = MessageActivation.GELU
     extra: dict[str, object] = field(default_factory=dict)
 
     def validate(self) -> None:
@@ -168,23 +215,44 @@ class HypergraphConv(nn.Module, abc.ABC):
     def _aggregate(
         self,
         messages: torch.Tensor,
+        primitive_signs: torch.Tensor,
         M_v: torch.Tensor,
     ) -> torch.Tensor:
         """Aggregate per-primitive messages back to vertices.
 
-        Default: sparse-matmul sum-pool ``M_v @ messages``. Subclasses
-        may override (e.g., to add normalisation or routing).
+        Dispatch on ``config.aggregation``:
+
+        * ``SUM`` — sparse-matmul sum-pool ``M_v @ messages`` (sign-blind).
+        * ``HOLONOMY`` — ``M_v @ (sigma ⊙ messages)``: each message is scaled
+          by its primitive's σ-product (the Z₂ holonomy) before pooling, so the
+          sign enters as multiplicative transport. Reproduces the signed L-hop
+          operator that a sign-blind sum cannot.
+
+        The sparse-aware invariant (no dense ``|V|×|P|`` materialisation) holds
+        for both: holonomy is an elementwise scale followed by the *same*
+        ``torch.sparse.mm``.
 
         Parameters
         ----------
         messages : Tensor[n_prim, out_features]
+        primitive_signs : Tensor[n_prim]
+            σ-product per primitive, in {-1, +1}. Consumed only by ``HOLONOMY``.
         M_v : torch.sparse.Tensor[n_nodes, n_prim]
 
         Returns
         -------
         Tensor[n_nodes, out_features]
         """
-        return torch.sparse.mm(M_v, messages)
+        if self.config.aggregation is Aggregation.HOLONOMY:
+            messages = primitive_signs.to(messages.dtype).unsqueeze(-1) * messages
+        if messages.ndim == 2:                                  # (n_prim, out)
+            return torch.sparse.mm(M_v, messages)
+        # Batched (B, n_prim, out): one sparse.mm over the whole batch by packing
+        # the batch into the column axis (M_v is shared across the batch).
+        b, p, o = messages.shape
+        packed = messages.transpose(0, 1).reshape(p, b * o)    # (n_prim, B·out)
+        y = torch.sparse.mm(M_v, packed)                       # (n_nodes, B·out)
+        return y.reshape(-1, b, o).transpose(0, 1)             # (B, n_nodes, out)
 
     # -----------------------------------------------------------------
     # Sealed forward path
@@ -199,7 +267,7 @@ class HypergraphConv(nn.Module, abc.ABC):
     ) -> torch.Tensor:
         self._check_preconditions(x, primitives, primitive_signs, M_v)
         messages = self._forward_messages(x, primitives, primitive_signs)
-        y = self._aggregate(messages, M_v)
+        y = self._aggregate(messages, primitive_signs, M_v)
         self._check_postconditions(x, y)
         return y
 
@@ -214,33 +282,32 @@ class HypergraphConv(nn.Module, abc.ABC):
         primitive_signs: torch.Tensor,
         M_v: torch.Tensor,
     ) -> None:
-        if x.ndim != 2 or x.shape[1] != self.in_features:
+        # x is (n_nodes, in) per-image, or (B, n_nodes, in) batched. The grid
+        # topology (primitives, M_v) is shared across the batch.
+        if x.ndim not in (2, 3) or x.shape[-1] != self.in_features:
             raise ValueError(
                 f"x has shape {tuple(x.shape)}, expected "
-                f"(n_nodes, {self.in_features})"
+                f"(n_nodes, {self.in_features}) or (B, n_nodes, {self.in_features})"
             )
         if primitives.ndim != 2 or primitives.shape[1] != self.k_arity:
             raise ValueError(
                 f"primitives has shape {tuple(primitives.shape)}, "
                 f"expected (n_prim, {self.k_arity})"
             )
-        if primitive_signs.ndim != 1 or (
-            primitive_signs.shape[0] != primitives.shape[0]
-        ):
+        if primitive_signs.shape[-1] != primitives.shape[0] or primitive_signs.ndim > 2:
             raise ValueError(
                 f"primitive_signs has shape {tuple(primitive_signs.shape)}, "
-                f"expected ({primitives.shape[0]},)"
+                f"expected (n_prim,) or (B, n_prim) with n_prim={primitives.shape[0]}"
             )
         # M_v can be coalesced or not; check shape only.
-        if M_v.shape != (x.shape[0], primitives.shape[0]):
+        if M_v.shape != (x.shape[-2], primitives.shape[0]):
             raise ValueError(
                 f"M_v has shape {tuple(M_v.shape)}, expected "
-                f"({x.shape[0]}, {primitives.shape[0]})"
+                f"({x.shape[-2]}, {primitives.shape[0]})"
             )
         # Sign validity: must be in {-1, +1}. Skip if empty.
         if primitive_signs.numel() > 0:
             uniq = torch.unique(primitive_signs.to(torch.int64))
-            allowed = torch.tensor([-1, 1], device=uniq.device)
             extra = torch.tensor(
                 [v.item() for v in uniq if v.item() not in (-1, 1)],
                 device=uniq.device,
@@ -256,10 +323,10 @@ class HypergraphConv(nn.Module, abc.ABC):
         x: torch.Tensor,
         y: torch.Tensor,
     ) -> None:
-        if y.shape != (x.shape[0], self.out_features):
+        if y.shape != (*x.shape[:-1], self.out_features):
             raise ValueError(
                 f"output has shape {tuple(y.shape)}, expected "
-                f"({x.shape[0]}, {self.out_features})"
+                f"({tuple(x.shape[:-1])}, {self.out_features})"
             )
 
     # -----------------------------------------------------------------

@@ -162,12 +162,15 @@ class ChebyshevCRActivation(EdgeActivation):
             terms.append(2 * knots * terms[-1] - terms[-2])
         self.register_buffer("t_knots", torch.stack(terms[:k], dim=-1), persistent=False)   # (grid, k) cached
         self.coef = nn.Parameter(torch.randn(n_channels, k) * init_scale)                    # (C, k) Chebyshev coeffs
+        self.deploy = False     # train-CR / deploy-Chebyshev: when True, forward() takes the fast Chebyshev path
 
     def control_points(self) -> torch.Tensor:
         """The band-limited spline control points ``(C, grid) = coef · T_knots^{T}``."""
         return self.coef @ self.t_knots.t()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.deploy:                                 # deploy fast path (cheap matmul, ~3x at B=1; approx CR)
+            return self.chebyshev_forward(x)
         return catmull_rom(self.control_points(), x, self.grid)
 
     def chebyshev_forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -179,6 +182,18 @@ class ChebyshevCRActivation(EdgeActivation):
             terms.append(2 * x * terms[-1] - terms[-2])
         tk = torch.stack(terms[:self.k], dim=-1)        # (..., C, k)
         return (tk * self.coef).sum(-1)
+
+
+def set_deploy_mode(model: nn.Module, deploy: bool = True) -> int:
+    """Switch every :class:`ChebyshevCRActivation` in ``model`` to its Chebyshev deploy fast path (or back to the
+    CR train path). Returns the count switched. The deploy path *approximates* the CR forward — validate the
+    tolerance for accuracy-critical use; it is exact-enough for the inference-latency win (~3x at ``B=1``)."""
+    n = 0
+    for m in model.modules():
+        if isinstance(m, ChebyshevCRActivation):
+            m.deploy = deploy
+            n += 1
+    return n
 
 
 def make_activation(kind: str, n_channels: int, *, grid: int = 5) -> nn.Module:

@@ -1,0 +1,4 @@
+config,delivery,mean_return,deaths,n_params,n_eval
+mlp,0.0,-260.49,0,15296,6
+hsikan_pooled,0.0,-244.93,0,15368,6
+hsikan_pernode,0.0,-222.84,0,15106,6

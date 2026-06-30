@@ -1,0 +1,4 @@
+config,delivery_median,delivery_iqr,delivery_worst,delivery_best,per_seed_delivery,return_median,n_seeds,skip,n_params
+hsikan_pooled,0.0,0.2,0.0,0.2,"[0.0, 0.0, 0.2]",-189.0,3,none,15368
+hsikan_pernode,0.15,0.1,0.05,0.15,"[0.05, 0.15, 0.15]",-156.75,3,none,15106
+mlp,0.45,0.2,0.25,0.45,"[0.25, 0.45, 0.45]",-91.57,3,none,15296

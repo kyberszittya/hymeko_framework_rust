@@ -1,0 +1,329 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+
+\title{\textbf{HyMeKo Exploration Summary}\\[3pt]
+\large Results, documents, research venues, and reachable potential}
+\author{Codex summary for Dr. Csaba Hajdu}
+\date{2026-06-30}
+
+\newcommand{\pathref}[1]{\nolinkurl{#1}}
+\newcommand{\good}{\textcolor{green!45!black}{strong}}
+\newcommand{\mixed}{\textcolor{orange!70!black}{mixed}}
+\newcommand{\open}{\textcolor{blue!60!black}{open}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document consolidates the broad repository exploration performed on
+2026-06-30. The short conclusion is that HyMeKo is now best understood as three
+things at once: a mature signed-hypergraph infrastructure stack, a disciplined
+experimental lab for testing whether structure helps learning and control, and
+a paper/evidence production system. The cleanest near-term contribution is the
+machine-verified cross-view consistency kernel. The highest-upside research
+lines are topology/arity matching for control, multiplicative holonomy/transport,
+and the new Fiber-Spike-Rotor language model. The RL line is promising but not
+yet a clean ``HSiKAN wins control'' story.
+\end{abstract}
+
+\section{Executive read}
+
+\textbf{The strongest current claim} is not that HSiKAN beats every baseline.
+The strongest claim is that HyMeKo provides one canonical signed-hypergraph
+source of truth, emits many concrete views, and machine-checks that invariants
+recovered from those emitted views agree.
+
+That claim is backed by the cross-view consistency work:
+\begin{itemize}[nosep]
+  \item \pathref{reports/2026-06-28-cross-view-consistency.md}
+  \item \pathref{reports/2026-06-29-acceptance-novelty-execution.md}
+  \item \pathref{verification/cross_view_consistency/}
+\end{itemize}
+
+The research layer is more volatile but unusually healthy: negative results are
+recorded, confounds are named, and the best follow-ups are discriminator tests
+rather than ``train larger'' guesses.
+
+\section{What the repository contains}
+
+\begin{table}[h]\centering\small
+\begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}
+\toprule
+Area & Observed state \\
+\midrule
+Rust framework & Workspace crates for parser, core IR, query engine, transforms, HRE,
+emitters, WASM/editor, server, MCP, wire protocol, formats, monitoring, graph,
+P-graph, Clifford, and Python bindings. \\
+Evidence system & Plans under \pathref{docs/plans/}; acceptance records under
+\pathref{reports/}; milestone indexes in \pathref{DONE.md}, \pathref{BACKLOG.md},
+and \pathref{ROADMAP.md}. \\
+Transforms and views & URDF, SDF, MJCF, DOT, Mermaid, ROS2 launch, SysML-style
+requirements views, Gazebo/MuJoCo-related emitters, torch-dataflow templates. \\
+Learning side & Signed-link, HSiKAN/SignedKAN/Gomb, Soma/RicciStim vision,
+HyMeYOLO, RL/control, StructuralActor, and the new \pathref{hymeko_lm/}. \\
+Artifacts & Benchmark CSVs, checkpoints, generated figures, GIFs, PDFs, LaTeX
+reports, and experiment JSON/JSONL logs. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Mature infrastructure}
+
+The framework layer looks mature enough to support papers and demos. The
+architecture is documented in \pathref{architecture/README.md}; the workspace
+uses a parser/IR/query/emit separation; benchmark CSVs in
+\pathref{hymeko_bench/results/} show compilation and expansion measurements;
+and the cross-view harness drives the real CLI emitters rather than a toy
+emitter.
+
+The most valuable engineering property is the hub-and-spoke model:
+\[
+  X_f(\epsilon_f(H)) = Q(H)
+\]
+where an emitted concrete view is parsed back into a common invariant and
+checked against the IR-level query. This turns ``views should agree'' into a
+testable commuting-square claim.
+
+\section{Core results}
+
+\begin{table}[h]\centering\small
+\begin{tabular}{p{0.22\linewidth}p{0.50\linewidth}p{0.18\linewidth}}
+\toprule
+Line & Current finding & Status \\
+\midrule
+Cross-view IR & 16 robotics fixtures across five views, plus systems-engineering
+requirements fixtures; drift-prevention demo; Z3/sympy proof support. & \good \\
+Topology matching & Matched controller topology wins 8/8 supervised plant
+targets; dense complete graph is not a universal winner. & \good \\
+Arity matching & Hypergraph lift hurts graph plants but wins decisively on
+hypergraph plants. Match controller arity to plant arity. & \good \\
+Signed-link & Strict/leakage-audited line is valuable; rotor geometry itself was
+not load-bearing in AUROC ablations. Structural features and protocol discipline
+are the real contribution. & \mixed \\
+Vision/Soma & Mean-pool falsification was partly a readout artifact. Spatial
+pyramid/tree readout gives a scalable position-aware compromise. & \mixed \\
+FSR language model & TinyShakespeare PoC: FSR pre-norm beats matched small
+transformer on bpb; sparse top-k fixes the quadratic wall; sphere residual loses. & \open \\
+RL/control & Infrastructure is serious, BC works, PPO success collapses, and no
+clean HSiKAN-over-MLP control win is established yet. & \open \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Vision line}
+
+The vision story is no longer a simple failure or success. Earlier mean-pool
+Soma/RicciStim results underperformed conventional controls. The June 29--30
+readout work changes the diagnosis: the bottleneck was often positional
+compression.
+
+Key result from \pathref{reports/2026-06-29-soma-spatial-tree-readout.md}:
+\begin{center}\small
+\begin{tabular}{lrr}
+\toprule
+Readout & Parameters & Cluttered-MNIST accuracy \\
+\midrule
+Mean-pool & 2010 & 0.314 \\
+Attention & 2027 & 0.466 \\
+Spatial tree & 5227 & 0.537 \\
+Flatten & 24890 & 0.617 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The useful principle is that a flatten readout over a spatial field can be
+compressed into a multi-scale spatial-pyramid pool: roughly one fifth the
+parameters for roughly ninety percent of the accuracy, with scale and
+variable-anchor support. This is exportable to HyMeYOLO heads, RL vision, and
+positioned graph/point readouts.
+
+\section{FSR language model}
+
+The new \pathref{hymeko_lm/} package is a clean-slate language-model experiment.
+The Fiber-Spike-Rotor mixer replaces softmax attention with a causal,
+signed, rotor-transported, spike-gated gather. The channel mixer uses HSiKAN/CR
+or Chebyshev-CR style machinery.
+
+Reported Phase 1 result in \pathref{reports/2026-06-29-fsr-lm-phase1.md}:
+\begin{center}\small
+\begin{tabular}{lrr}
+\toprule
+Model & Validation bpb & Throughput \\
+\midrule
+Transformer control & 2.570 & 35.1k tok/s \\
+FSR sphere & 2.770 & 11.8k tok/s \\
+FSR pre-norm & 2.479 & 11.2k tok/s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The honest interpretation is important. The positive result belongs to the FSR
+mixer plus HSiKAN channel mix with a standard pre-norm residual. The Gomb sphere
+residual does not currently earn its place on this task. The speed report
+\pathref{reports/2026-06-29-fsr-lm-speed.md} adds hard top-k sparsity:
+\pathref{spike_k=16} preserves or improves quality and makes long context
+feasible, but absolute throughput still trails fused transformer attention.
+
+\section{Holonomy}
+
+The holonomy-discriminator line is the sharpest recent scientific update. The
+initial plan was to test whether cycle holonomy is load-bearing. The current
+implementation in \pathref{hymeko_rl/holonomy_probe.py} distinguishes additive
+signed-walk aggregation from multiplicative transport.
+
+Verification run performed during this summary session:
+\begin{center}\small
+\begin{tabular}{lrr}
+\toprule
+Arm & Accuracy & Parameters \\
+\midrule
+Transport / rotor-like multiplicative reader & 1.000 & 49 \\
+Additive signed-walk reader & 0.4805 & 225 \\
+MLP & 0.5913 & 1505 \\
+Linear confound guard & 0.5054 & 13 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+This is a useful but sobering result. It supports the idea that pure cycle
+holonomy is multiplicative/transport-like, but it downgrades expectations that
+plain additive HSiKAN message passing will solve parity-style holonomy tasks.
+
+\section{RL and control}
+
+The RL part is promising, but it is not yet a clean ``HSiKAN wins RL'' story.
+It should be described as an experimental substrate plus a developing theory of
+when structure should matter.
+
+\subsection*{What is built}
+
+\begin{itemize}[nosep]
+  \item MuJoCo/Gym-style tasks: reaching, pick-and-place, Galambos/collaborative,
+  quadruped/walker variants, sanity worlds.
+  \item PPO, BC warm-starts, off-policy experiments, rendering, checkpoints, and
+  policy builders for MLP, HSiKAN, SA-HSiKAN, and mixtures.
+  \item Fast testbeds in \pathref{hymeko_rl/sanity_rl.py} and
+  \pathref{hymeko_rl/sanity_worlds.py}: bandit, grid, hex, and collaborative.
+  \item A pre-screen entry in \pathref{hymeko_rl/rl_prescreen.py}.
+\end{itemize}
+
+\subsection*{Current empirical state}
+
+From \pathref{reports/2026-06-29-rl-overnight.md}, BC is the reliable worker:
+pick-and-place after BC reaches useful lift/place success. PPO then improves
+scalar return while collapsing actual task success to near zero. That is a
+reward-alignment problem, not yet an architecture win.
+
+\begin{center}\small
+\begin{tabular}{lcc}
+\toprule
+Policy & After BC lift/place & After PPO lift/place \\
+\midrule
+HSiKAN & 0.875 / 0.625 & 0.000 / 0.000 \\
+MLP & 1.000 / 0.500 & 0.125 / 0.000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The right near-term RL claim is therefore not performance superiority. It is:
+\begin{quote}
+HyMeKo provides a structural, declarative substrate for control experiments; the
+standing hypothesis is that structure helps when the controller topology/arity
+matches the plant and task invariant.
+\end{quote}
+
+\subsection*{Main blockers}
+
+\begin{enumerate}[nosep]
+  \item \textbf{PPO success collapse.} Scalar return can improve while success
+  gets worse. The fix path is BC anchoring, success-aligned terminal rewards,
+  and reporting task success separately from return.
+  \item \textbf{Launch-bound HSiKAN.} Vanilla HSiKAN is slow in rollout because
+  the forward is many tiny tensor operations. SA-HSiKAN and structural collapse
+  are the right directions.
+  \item \textbf{Wrong tasks can hide structure.} Linear/local tasks let MLP tie.
+  Holonomy, contact cycles, gait, and matched topology are better discriminators.
+\end{enumerate}
+
+\subsection*{Best RL moves}
+
+\begin{itemize}[nosep]
+  \item Use the fast toy lab before every slow MuJoCo run.
+  \item Lead demos with BC policies until PPO refinement stops degrading success.
+  \item Use SA-HSiKAN for rollout-heavy tasks.
+  \item Validate topology matching in closed loop, not only supervised structural
+  proxies.
+  \item Reserve rotor/transport backbones for cyclic or holonomy-heavy tasks.
+\end{itemize}
+
+\section{Best venues}
+
+\begin{table}[h]\centering\small
+\begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}
+\toprule
+Venue family & Best matching story \\
+\midrule
+IEEE T-SMC / IEEE SMC & Canonical hypergraph IR, machine-verified cross-view
+consistency, robotics plus SysML witnesses, drift-prevention demo. \\
+Formal methods / MDE & Consistency by convention versus machine-verified
+commuting diagram over real emitters. \\
+Control / CPS & Topology and arity matching: the controller should match the
+plant's structural coupling, not merely have more edges or parameters. \\
+Graph ML / signed networks & Leakage-audited structural features, strict
+protocols, and inductive signed-link learning. \\
+ML architecture workshop & FSR language model with rotor transport, spike top-k,
+and HSiKAN channel mix; must scale beyond TinyShakespeare before strong claims. \\
+Vision / neuro / perception & Spatial-pyramid readout, RicciStim structure
+diagnostics, and possible brain-predictivity rather than raw accuracy claims. \\
+Robotics collaboration & Declarative control scenarios, BC-anchor refinement,
+matched topology, affect/reward models, and Kato-style collaborative grasping. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Recommended next sequence}
+
+\begin{enumerate}
+  \item \textbf{Ship the cross-view consistency paper first.} It is the cleanest
+  evidence package and the strongest novelty claim.
+  \item \textbf{Turn topology/arity matching into a closed-loop control result.}
+  This is the natural next high-value RL/control discriminator.
+  \item \textbf{Make multiplicative holonomy the gauge mechanism.} Do not expect
+  additive HSiKAN alone to solve parity-like holonomy.
+  \item \textbf{Repair RL refinement.} BC anchor plus success-aligned reward must
+  precede more architecture claims.
+  \item \textbf{Scale FSR carefully.} Lead with \pathref{spike_k=16}; treat Gomb
+  sphere as currently negative on byte-LM.
+  \item \textbf{Extract and reuse SpatialPyramidPool.} It is a practical component
+  with obvious export routes.
+\end{enumerate}
+
+\section{Verification performed for this summary}
+
+The first attempt used system Python and failed because \pathref{torch} and
+\pathref{pytest} were unavailable. Retrying through the project virtual
+environment succeeded:
+\begin{verbatim}
+.\.venv\Scripts\python.exe -m hymeko_rl.holonomy_probe --ring-size 12 --seeds 2
+.\.venv\Scripts\python.exe -m pytest -q ^
+  hymeko_rl/tests/test_holonomy_probe.py hymeko_rl/tests/test_rl_prescreen.py
+\end{verbatim}
+
+Result: transport solved the holonomy probe, additive/MLP/linear stayed near
+chance, and the two test files passed: \textbf{4 passed in 14.85 s}.
+
+\section{Final judgement}
+
+HyMeKo has one publishable formal-methods core now, several high-ceiling research
+programs, and a useful habit of recording falsification. The highest potential is
+not in claiming universal structural superiority. It is in showing exactly when
+structure is load-bearing: verified cross-view invariants, matched controller
+topology, matched arity, and multiplicative holonomy transport.
+
+\end{document}

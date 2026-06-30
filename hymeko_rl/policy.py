@@ -27,7 +27,7 @@ from signed_kan.splines import (  # noqa: F401  (CatmullRomActivation/_catmull_r
 if TYPE_CHECKING:
     from hymeko_rl.hypergraph_state import HypergraphState
 
-POLICY_KINDS = ("mlp", "hsikan", "signedkan", "sa_hsikan")
+POLICY_KINDS = ("mlp", "hsikan", "signedkan", "sa_hsikan", "mixture")
 
 
 class ActorCritic(nn.Module):
@@ -248,12 +248,54 @@ def sa_hsikan_backbone(in_feat: int, *, hg_state: "HypergraphState", hidden: int
                                    activation=activation), hidden
 
 
+class MixtureBackbone(nn.Module):
+    """HSiKAN + MLP **mixture-of-experts**: a per-state learned gate ``g∈(0,1)`` blends the structural HSiKAN
+    expert with the structure-blind MLP expert — ``g·HSiKAN(x) + (1−g)·MLP(x)``. The gate (a linear read of the
+    flat obs → sigmoid) lets one policy lean on structure where it helps and on the dense MLP where it does not
+    — the deliberative/reflexive hybrid in a single network. Both experts read the same ``(B, N, in_feat)`` obs;
+    output is the pooled ``(B, hidden)`` embedding.
+
+    # Preconditions ``in_feat, hidden >= 1``; ``hg_state`` exposes ``dense_signed_adj`` + ``n_vertices``.
+    # Postconditions ``forward((B, N, in_feat)) -> (B, hidden)``; ``gate_value`` is in ``(0, 1)``."""
+
+    def __init__(self, in_feat: int, hidden: int, hg_state: "HypergraphState",
+                 *, n_layers: int = 2, device: torch.device | str = "cpu") -> None:
+        super().__init__()
+        if in_feat < 1 or hidden < 1:
+            raise ValueError(f"in_feat/hidden must be >= 1; got {in_feat}/{hidden}")
+        self.n_vertices, self.in_feat = hg_state.n_vertices, in_feat
+        self.hsikan, _ = hsikan_backbone(in_feat, hg_state=hg_state, hidden=hidden, n_layers=n_layers,
+                                         device=device)
+        self.mlp, _ = mlp_backbone(self.n_vertices * in_feat, hidden=hidden)
+        self.gate = nn.Linear(self.n_vertices * in_feat, 1)        # per-state HSiKAN-vs-MLP mixing weight
+
+    def _as_3d(self, x: torch.Tensor) -> torch.Tensor:
+        return x if x.dim() == 3 else x.view(x.shape[0], self.n_vertices, self.in_feat)
+
+    def gate_value(self, x: torch.Tensor) -> torch.Tensor:
+        """The per-sample mixing weight ``g∈(0,1)`` (1 = all HSiKAN, 0 = all MLP). # Postconditions ``(B, 1)``."""
+        x3 = self._as_3d(x)
+        return torch.sigmoid(self.gate(x3.reshape(x3.shape[0], -1)))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x3 = self._as_3d(x)
+        g = self.gate_value(x3)
+        return g * self.hsikan(x3) + (1.0 - g) * self.mlp(x3)
+
+
+def mixture_backbone(in_feat: int, *, hg_state: "HypergraphState", hidden: int = 64, n_layers: int = 2,
+                     device: torch.device | str = "cpu", **_ignored: object) -> tuple[nn.Module, int]:
+    """HSiKAN + MLP gated mixture-of-experts over the kinematic hypergraph (same call signature as
+    :func:`hsikan_backbone`). Returns ``(module, feat_dim)``."""
+    return MixtureBackbone(in_feat, hidden, hg_state, n_layers=n_layers, device=device), hidden
+
+
 # Backbone Strategy registry (§6.5 #1/#9: one dispatch, no per-kind wrappers). The
 # HSiKAN/Gömb backbone reads the kinematic hypergraph; the MLP baseline reads a flat obs;
-# ``signedkan`` is HSiKAN with the incidence itself learned.
+# ``signedkan`` is HSiKAN with the incidence itself learned; ``mixture`` gates HSiKAN against MLP.
 _BACKBONES: dict[str, Callable[..., tuple[nn.Module, int]]] = {
     "mlp": mlp_backbone, "hsikan": hsikan_backbone, "signedkan": signedkan_backbone,
-    "sa_hsikan": sa_hsikan_backbone}
+    "sa_hsikan": sa_hsikan_backbone, "mixture": mixture_backbone}
 
 
 def build_policy(kind: str, obs_dim: int, action_dim: int, *, log_std_init: float = -1.6,

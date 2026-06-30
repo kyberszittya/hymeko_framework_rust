@@ -54,6 +54,8 @@ class PPOConfig:
     max_grad_norm: float = 0.5
     value_warmup: int = 0   # critic-only warm-up iterations before joint PPO
     seed: int = 0           # seeds the env RNG (reaching targets) for reproducible runs
+    bc_coef: float = 0.0    # BC-anchor weight: keeps PPO near the demos (TD3+BC's lesson) so a warm-started
+    #                         policy does not drift off the precise grasp/place skill the rollout rarely reinforces
 
 
 def _gae(rews: np.ndarray, vals: np.ndarray, dones: np.ndarray, last_val: float,
@@ -151,12 +153,19 @@ def _collect(env: RolloutEnv, ac: ActorCritic, obs: np.ndarray, n_steps: int,
 
 
 def _update(ac: ActorCritic, opt: torch.optim.Optimizer, buf: dict[str, Any],
-            adv: np.ndarray, ret: np.ndarray, cfg: PPOConfig) -> dict[str, float]:
+            adv: np.ndarray, ret: np.ndarray, cfg: PPOConfig,
+            bc_data: "tuple[np.ndarray, np.ndarray] | None" = None) -> dict[str, float]:
     """One PPO update over the rollout; returns the mean diagnostics across minibatches
-    (policy/value loss, entropy, approx-KL, clip fraction) for tracing the training curves."""
+    (policy/value loss, entropy, approx-KL, clip fraction) for tracing the training curves.
+
+    When ``cfg.bc_coef > 0`` and ``bc_data`` (demo obs, acts) is given, a behaviour-cloning anchor
+    ``bc_coef * MSE(action_mean(demo_obs), demo_act)`` is added to each minibatch loss (TD3+BC-style)."""
     obs, act, old_logp = buf["obs"], buf["act"], buf["logp"]
     adv_t = torch.as_tensor((adv - adv.mean()) / (adv.std() + 1e-8))
     ret_t = torch.as_tensor(ret)
+    anchor = cfg.bc_coef > 0.0 and bc_data is not None
+    bc_obs = torch.as_tensor(bc_data[0], dtype=torch.float32) if (anchor and bc_data is not None) else None
+    bc_act = torch.as_tensor(bc_data[1], dtype=torch.float32) if (anchor and bc_data is not None) else None
     n = len(obs)
     idx = np.arange(n)
     pl = vl = en = kl = cf = 0.0
@@ -173,6 +182,9 @@ def _update(ac: ActorCritic, opt: torch.optim.Optimizer, buf: dict[str, Any],
             vloss = F.mse_loss(val, ret_t[mb])
             entm = ent.mean()
             loss = ploss + cfg.vf_coef * vloss - cfg.ent_coef * entm
+            if anchor and bc_obs is not None and bc_act is not None:    # keep the policy near the demos
+                bi = np.random.randint(0, len(bc_obs), size=min(cfg.minibatch, len(bc_obs)))
+                loss = loss + cfg.bc_coef * F.mse_loss(ac.action_mean(bc_obs[bi]), bc_act[bi])
             opt.zero_grad()
             loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
             torch.nn.utils.clip_grad_norm_(ac.parameters(), cfg.max_grad_norm)
@@ -270,7 +282,8 @@ def _collect_vec(envs: "list[RolloutEnv]", ac: ActorCritic, obs: np.ndarray, cfg
 def train_ppo(ac: ActorCritic, env: RolloutEnv, cfg: PPOConfig,
               *, on_iteration: Callable[[int, int], None] | None = None,
               metrics_out: list[dict[str, float]] | None = None,
-              n_envs: int = 1, make_env: "Callable[[], RolloutEnv] | None" = None) -> list[float]:
+              n_envs: int = 1, make_env: "Callable[[], RolloutEnv] | None" = None,
+              bc_data: "tuple[np.ndarray, np.ndarray] | None" = None) -> list[float]:
     """Train ``ac`` on ``env`` with PPO. Returns the per-iteration mean episodic return.
 
     ``on_iteration(i, n_iters)`` (Observer) is called before each of the ``n_iters`` iterations —
@@ -315,7 +328,7 @@ def train_ppo(ac: ActorCritic, env: RolloutEnv, cfg: PPOConfig,
         else:
             buf, obs, last_val, mean_ret = _collect(env, ac, obs, cfg.n_steps, cfg.gamma)
             adv, ret = _gae(buf["rew"], buf["val"], buf["done"], last_val, cfg.gamma, cfg.lam)
-        upd = _update(ac, opt, buf, adv, ret, cfg)
+        upd = _update(ac, opt, buf, adv, ret, cfg, bc_data=bc_data)
         history.append(mean_ret)
         if metrics_out is not None:
             metrics_out.append({

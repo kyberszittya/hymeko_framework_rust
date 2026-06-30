@@ -14,7 +14,29 @@ from signed_kan.splines import (
     cox_de_boor,
     make_activation,
     make_uniform_knots,
+    set_deploy_mode,
 )
+
+
+def test_deploy_mode_switches_to_chebyshev_fast_path() -> None:
+    """train-CR / deploy-Chebyshev: set_deploy_mode flips forward() to the Chebyshev fast path, which approximates
+    the CR train path closely and restores cleanly."""
+    torch.manual_seed(0)
+    act = ChebyshevCRActivation(4, grid=8)
+    x = torch.randn(64, 4).clamp(-1.0, 1.0)
+    train = act(x)
+    assert set_deploy_mode(act, True) == 1 and act.deploy
+    deploy = act(x)
+    assert torch.allclose(deploy, act.chebyshev_forward(x))          # forward now IS the fast path
+    assert (train - deploy).abs().mean() < 0.05                      # closely approximates the CR train output
+    assert set_deploy_mode(act, False) == 1 and not act.deploy
+    assert torch.allclose(act(x), train)                            # restored exactly
+
+
+def test_set_deploy_mode_only_touches_cr_cheby() -> None:
+    import torch.nn as nn
+    model = nn.Sequential(CatmullRomActivation(4), ChebyshevCRActivation(4, grid=8), nn.Linear(4, 2))
+    assert set_deploy_mode(model, True) == 1                         # only the one cr_cheby cell
 
 
 # ── CR-Chebyshev (the Chebyshev-control-point view on Catmull-Rom) ────────────

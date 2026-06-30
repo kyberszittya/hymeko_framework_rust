@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-06-27 00:57:46",
+  "task": "galambos",
+  "mode": "full",
+  "seed": 0,
+  "steps": 20000,
+  "wall_s": 6352.7,
+  "rss_mb": 276.7,
+  "result": {
+    "mlp": {
+      "delivery": 0.45,
+      "mean_return": -116.0,
+      "deaths": 4,
+      "skip": "none",
+      "n_params": 15296,
+      "n_eval": 20
+    },
+    "hsikan_pooled": {
+      "delivery": 0.0,
+      "mean_return": -177.28,
+      "deaths": 0,
+      "skip": "none",
+      "n_params": 15368,
+      "n_eval": 20
+    },
+    "hsikan_pernode": {
+      "delivery": 0.2,
+      "mean_return": -130.35,
+      "deaths": 0,
+      "skip": "none",
+      "n_params": 15106,
+      "n_eval": 20
+    },
+    "hsikan_pernode_hw": {
+      "delivery": 0.2,
+      "mean_return": -158.02,
+      "deaths": 1,
+      "skip": "highway",
+      "n_params": 20418,
+      "n_eval": 20
+    }
+  }
+}

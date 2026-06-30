@@ -182,6 +182,24 @@ class PatchGraphBuilder:
         # shape: (h_patches, w_patches, C, P, P)
         return unfolded.view(self.n_patches, -1)
 
+    def patchify_batch(self, images: torch.Tensor) -> torch.Tensor:
+        """Batched patchify: ``(B, C, H, W) → (B, n_patches, C·P²)`` in one op
+        (the grid topology is shared, so the whole batch unfolds together)."""
+        if images.ndim != 4:
+            raise ValueError(
+                f"expected (B, C, H, W), got shape {tuple(images.shape)}"
+            )
+        b, c, h, w = images.shape
+        if h != self.image_h or w != self.image_w:
+            raise ValueError(
+                f"image shape ({h}, {w}) doesn't match builder "
+                f"({self.image_h}, {self.image_w})"
+            )
+        u = images.unfold(2, self.patch_size, self.patch_size).unfold(
+            3, self.patch_size, self.patch_size)        # (B,C,h_p,w_p,P,P)
+        u = u.permute(0, 2, 3, 1, 4, 5).contiguous()    # (B,h_p,w_p,C,P,P)
+        return u.view(b, self.n_patches, -1)
+
     def edge_signs(self, patches: torch.Tensor) -> torch.Tensor:
         """For each edge (src→dst), σ = +1 if mean(src) ≥ mean(dst) else -1.
 
@@ -193,25 +211,23 @@ class PatchGraphBuilder:
         -------
         LongTensor[n_edges]
         """
-        if patches.shape[0] != self.n_patches:
+        if patches.shape[-2] != self.n_patches:
             raise ValueError(
-                f"patches has {patches.shape[0]} rows, expected "
+                f"patches has {patches.shape[-2]} rows, expected "
                 f"{self.n_patches}"
             )
-        brightness = patches.mean(dim=-1)
+        brightness = patches.mean(dim=-1)                  # (..., n_patches)
         src = self.edges[:, 0].to(patches.device)
         dst = self.edges[:, 1].to(patches.device)
-        return torch.where(
-            brightness[src] >= brightness[dst],
-            torch.ones(src.shape[0], dtype=torch.long, device=patches.device),
-            -torch.ones(src.shape[0], dtype=torch.long, device=patches.device),
-        )
+        # ``[..., idx]`` works for (N,) per-image and (B, N) batched alike.
+        ge = brightness[..., src] >= brightness[..., dst]  # (..., n_edges)
+        return ge.to(torch.long) * 2 - 1                   # {-1, +1}
 
     def walk_signs(self, edge_signs: torch.Tensor) -> torch.Tensor:
-        """σ-product of each walk's two constituent edges."""
+        """σ-product of each walk's two constituent edges (batch-safe)."""
         e1 = self.walk_edge_idx[:, 0].to(edge_signs.device)
         e2 = self.walk_edge_idx[:, 1].to(edge_signs.device)
-        return edge_signs[e1] * edge_signs[e2]
+        return edge_signs[..., e1] * edge_signs[..., e2]
 
     def encode(
         self,

@@ -24,6 +24,7 @@ from .splines import (
     cox_de_boor,
     make_activation,
     make_uniform_knots,
+    set_deploy_mode,
 )
 
 __all__ = [
@@ -32,5 +33,5 @@ __all__ = [
     "AggregationBackend", "DenseBatchedBackend", "SparseSignedBackend",
     "EdgeSignHead", "GraphHead", "SignedGraphHSiKAN", "build_signed_adjacency",
     "CatmullRomActivation", "ChebyshevCRActivation", "BSplineActivation", "EdgeActivation",
-    "catmull_rom", "cox_de_boor", "make_uniform_knots", "make_activation",
+    "catmull_rom", "cox_de_boor", "make_uniform_knots", "make_activation", "set_deploy_mode",
 ]

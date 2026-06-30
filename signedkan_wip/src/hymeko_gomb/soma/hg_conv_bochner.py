@@ -162,11 +162,12 @@ class BochnerHypergraphConv(HypergraphConv):
     def _aggregate(
         self,
         messages: torch.Tensor,
+        primitive_signs: torch.Tensor,
         M_v: torch.Tensor,
     ) -> torch.Tensor:
         """Delegate to inner's aggregator so any inner-specific
-        aggregation (e.g., normalisation, routing) is preserved."""
-        return self.inner._aggregate(messages, M_v)
+        aggregation (e.g., normalisation, holonomy, routing) is preserved."""
+        return self.inner._aggregate(messages, primitive_signs, M_v)
 
     # -----------------------------------------------------------------
     # Introspection
