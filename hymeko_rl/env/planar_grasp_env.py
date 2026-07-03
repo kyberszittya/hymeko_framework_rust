@@ -23,6 +23,7 @@ import numpy as np
 from gymnasium import spaces
 
 from hymeko_rl.env.arm_world import actuated_dof_addrs, emit_arm_mjcf, with_collision_floor
+from hymeko_rl.env.constants import Collision, Physics
 from hymeko_rl.env.env_spec import DEFAULT_ENV, EnvSpec
 from hymeko_rl.env.reward import RewardSpec
 from hymeko_rl.agents.hypergraph_state import HypergraphState
@@ -48,19 +49,19 @@ def make_planar_arms_mjcf(*, base_x: float = 0.14, l1: float = 0.16, l2: float =
           <body name="link2_{nm}" pos="0 {l1:g} 0">
             <joint name="j2_{nm}" type="hinge" axis="0 0 1" range="-4.0 4.0"/>
             <geom type="capsule" fromto="0 0 0 0 {l2:g} 0" size="0.01" rgba="0.4 0.6 0.95 1"/>
-            <geom name="fingertip_{nm}" type="sphere" size="0.014" pos="0 {l2:g} 0" rgba="0.9 0.7 0.1 1" contype="1" conaffinity="3"/>
+            <geom name="fingertip_{nm}" type="sphere" size="0.014" pos="0 {l2:g} 0" rgba="0.9 0.7 0.1 1" {Collision.attr(Collision.FINGERTIP)}/>
             <site name="tip_{nm}" pos="0 {l2:g} 0" size="0.013" rgba="0.9 0.7 0.1 1"/>
           </body>
         </body>
       </body>'''
     return f'''<mujoco model="galambos_planar">
   <compiler angle="radian"/>
-  <option timestep="0.002" integrator="implicitfast" gravity="0 0 -9.81"/>
+  <option {Physics.option_attrs()}/>
   <visual><headlight diffuse="0.7 0.7 0.7" ambient="0.4 0.4 0.4"/></visual>
   <default><joint damping="1.5"/><geom rgba="0.2 0.5 0.9 1" friction="1 0.05 0.001"/></default>
   <worldbody>
     <light pos="0 0.1 1.2" dir="0 0 -1" diffuse="0.6 0.6 0.6"/>
-    <geom name="floor" type="plane" size="1 1 0.05" rgba="0.82 0.82 0.85 1" conaffinity="3"/>
+    <geom name="floor" type="plane" size="1 1 0.05" rgba="0.82 0.82 0.85 1" conaffinity="{int(Collision.Affinity.ANY)}"/>
     {arm(-1, "left")}
     {arm(1, "right")}
   </worldbody>
@@ -141,7 +142,8 @@ def with_fingertip_sites(arm_mjcf: str) -> str:
         # (not the arm links, MuJoCo-default 1/1) can touch the coin (bit 2). Mirrors the hand-authored scene.
         ET.SubElement(leaf, "geom", {"name": f"fingertip_{side}", "type": "sphere", "size": "0.014",
                                      "pos": farstr, "rgba": "0.9 0.7 0.1 1",
-                                     "contype": "1", "conaffinity": "3"})
+                                     "contype": str(int(Collision.FINGERTIP[0])),
+                                     "conaffinity": str(int(Collision.FINGERTIP[1]))})
         changed = True
     return ET.tostring(root, encoding="unicode") if changed else arm_mjcf
 
@@ -170,7 +172,7 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
     # Collision bitmask (Galambos 2026-07-03): the coin is on bit 2 ONLY, so arm links (MuJoCo default 1/1)
     # cannot touch it — only the fingertip geoms (conaffinity 3) and the floor (conaffinity 3) can. The coin is
     # thus moved ONLY by the yellow fingertips, never knocked by an arm body. `cc` is applied to the manipuland.
-    cc = ' contype="2" conaffinity="2"'
+    cc = " " + Collision.attr(Collision.COIN)
     if coin_shape == "box":
         geom = (f'<geom name="disk" type="box" size="{disk_radius:g} {disk_radius:g} {disk_half:g}" '
                 f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
@@ -359,7 +361,7 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         # DETONATE on contact under aggressive actions (|qacc| ~8e3 -> bodies ejected, which can knock the coin
         # into the zone = a false delivery). Shrink the sub-step and raise the substep count so the control
         # interval (frame_skip * timestep) is preserved EXACTLY; trained weights transfer unchanged.
-        _stable_dt = 5e-4
+        _stable_dt = Physics.STABLE_DT
         _control_dt = self.model.opt.timestep * int(frame_skip)
         if self.model.opt.timestep > _stable_dt:
             substeps = max(1, round(_control_dt / _stable_dt))

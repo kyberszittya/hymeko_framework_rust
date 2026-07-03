@@ -21,6 +21,8 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
+from hymeko_rl.env.constants import Physics
+
 _REPO = Path(__file__).resolve().parents[2]
 
 N_JOINTS = 4
@@ -77,7 +79,7 @@ def make_arm_mjcf(control_mode: str = "torque") -> str:
         f'<{tag} name="m{i}" joint="j{i}"/>' for i in range(1, N_JOINTS + 1))
     return f"""<mujoco model="hymeko_grasping_arm">
   <compiler angle="radian"/>
-  <option timestep="0.002" integrator="implicitfast" gravity="0 0 -9.81"/>
+  <option {Physics.option_attrs()}/>
   <default>
     <joint damping="2.0" limited="true" range="-2.5 2.5"/>
     <geom friction="0.8 0.05 0.0005"/>

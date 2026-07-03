@@ -11,6 +11,8 @@ kinematic hypergraph is derived from the gripper MJCF by ``HypergraphState.from_
 """
 from __future__ import annotations
 
+from hymeko_rl.env.constants import Collision, Physics
+
 
 def make_gripper_mjcf(*, open_gap: float = 0.035, finger_len: float = 0.06, base_z: float = 0.22) -> str:
     """A hand-authored gripper-only fallback — the CLI-free mirror of ``gripper.hymeko``.
@@ -122,7 +124,7 @@ def compose_pick_place_scene(gripper_mjcf: str, *, box_half: float = 0.02, box_m
     if pedestal > 0.0:                                 # cosmetic stand under the (raised) arm base
         ph = pedestal / 2.0
         stand = (f'<geom name="pedestal" type="box" pos="0 0 {ph:g}" size="0.10 0.10 {ph:g}" '
-                 f'rgba="0.30 0.30 0.34 1" contype="0" conaffinity="0"/>')
+                 f'rgba="0.30 0.30 0.34 1" {Collision.attr(Collision.VISUAL)}/>')
     # Render quality: lit scene (the emitted MJCF has no lights → dark), so two fill lights go in the
     # worldbody unconditionally; a sky-gradient skybox + checker-floor material; soft headlight + haze.
     lights = ('<light pos="0.4 0.2 1.6" dir="-0.25 -0.1 -1" directional="false" diffuse="0.7 0.7 0.7" '
@@ -148,6 +150,6 @@ def compose_pick_place_scene(gripper_mjcf: str, *, box_half: float = 0.02, box_m
             '<map shadowclip="2"/></visual>\n  <worldbody>', 1)
     if "<option" not in scene:                          # ensure gravity (the hand-authored gripper omits it)
         scene = scene.replace("<worldbody>",
-                              '<option timestep="0.002" integrator="implicitfast" gravity="0 0 -9.81"/>\n'
+                              f'<option {Physics.option_attrs()}/>\n'
                               '  <worldbody>', 1)
     return scene

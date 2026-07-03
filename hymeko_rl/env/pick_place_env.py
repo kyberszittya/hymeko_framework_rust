@@ -23,6 +23,7 @@ import numpy as np
 from gymnasium import spaces
 
 from hymeko_rl.env.arm_world import emit_arm_mjcf
+from hymeko_rl.env.constants import Physics
 from hymeko_rl.env.gripper_world import compose_pick_place_scene
 from hymeko_rl.env.ik import DampedPoseIK
 from hymeko_rl.env.reward import PickMetrics, RewardSpec
@@ -81,7 +82,7 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         # silently inflated eval_success from a true 0.125 to 0.875). Halve the sub-step and raise the substep
         # count so the control interval (frame_skip * timestep) is preserved EXACTLY; the policy sees an
         # identical control interface, so trained weights transfer without re-training.
-        _stable_dt = 5e-4
+        _stable_dt = Physics.STABLE_DT
         _control_dt = self.model.opt.timestep * int(frame_skip)
         if self.model.opt.timestep > _stable_dt:
             substeps = max(1, round(_control_dt / _stable_dt))
