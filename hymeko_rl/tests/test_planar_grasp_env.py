@@ -75,7 +75,7 @@ def test_galambos_task_parses() -> None:
     assert dict(spec.terms)["in_zone"] == 10.0
     assert dict(spec.terms)["out_of_bounds"] == 2.0
     assert dict(spec.terms)["finger_contact"] == 1.5      # denser per-fingertip contact reward
-    assert dict(spec.terms)["arm_body_collision"] == 2.0  # upper-arm collision (excludes the pinch config)
+    assert dict(spec.terms)["arm_body_collision"] == 0.5  # LIGHT upper-arm collision (A/B: 2.0 suppressed delivery)
     assert "action_cost" not in dict(spec.terms)
     assert "arm_collision" not in dict(spec.terms)        # the grasp-killing WHOLE-arm penalty stays dropped
 

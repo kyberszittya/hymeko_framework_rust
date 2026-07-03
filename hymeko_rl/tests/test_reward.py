@@ -125,7 +125,7 @@ def test_reworked_task_profiles_have_arc_weights() -> None:
                        # finger_contact (denser per-fingertip reward) and arm_body_collision (upper-arm-only, the
                        # two-agent coordination constraint that excludes the pinch — not the grasp-killing 2.0).
         ("grasp_approach", 4.0), ("both_contact", 5.0), ("finger_contact", 1.5), ("in_zone", 10.0),
-        ("out_of_bounds", 2.0), ("arm_body_collision", 2.0))
+        ("out_of_bounds", 2.0), ("arm_body_collision", 0.5))
     pick = read_reward_terms(_REPO / "data" / "robotics" / "pick_place_task.hymeko")
     assert pick == (
         ("pick_approach", 1.0), ("pick_contact", 0.5), ("pick_lift", 5.0),

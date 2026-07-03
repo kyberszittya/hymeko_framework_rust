@@ -117,11 +117,12 @@ galambos_task: el, rew, r
         // grips nofinger fires on the very closing motion it needs (the same failure as noclash 2.0 -> 0.0). oob
         // KEPT: it does NOT conflict (corr with approach +0.15, positive) and it prevents the coin off-table.
         // This restores the validated 4-core (approach·both·zone·oob = 0.615 grasp-fraction).
-        // COLLAB EXTENSION (2026-07-03, user): + fingertouch 1.5 (denser per-fingertip contact reward, kept modest
-        // to avoid a per-step contact-farming optimum) and + armcol 2.0 (upper-arm collision penalty). armcol is at
-        // the SAME weight that killed the WHOLE-arm `arm_collision` (0.615->0.0) — the DISCRIMINATING TEST of the
-        // fingertip-excluding redesign: if delivery holds near the 0.40 collab baseline while arm-crashes drop, the
-        // exclusion made 2.0 safe (the pinch config never triggers it); if delivery collapses, exclusion isn't enough.
-        (+ approach 4.0, + both 5.0, + fingertouch 1.5, + zone 10.0, + oob 2.0, + armcol 2.0);
+        // COLLAB EXTENSION (2026-07-03, user): + fingertouch 1.5 (denser per-fingertip contact reward) and
+        // + armcol 0.5 (LIGHT upper-arm collision penalty). A/B VERDICT (armcol 2.0, seed 0): even with the
+        // fingertip-exclusion, 2.0 cut arm-crashes ~4x (4.5%->~1%) BUT suppressed delivery ~3x (0.40->0.14 peak) —
+        // the historical reward-penalty tension. So armcol is dialed DOWN to 0.5 (light arm-arm awareness only);
+        // the arm-vs-COIN knock is solved in the PHYSICS (fingertip-only collision masks, planar_grasp_env), not
+        // by a reward penalty — Galambos-sensei's route. armcol here now only nudges the two arms apart, gently.
+        (+ approach 4.0, + both 5.0, + fingertouch 1.5, + zone 10.0, + oob 2.0, + armcol 0.5);
     }
 }
