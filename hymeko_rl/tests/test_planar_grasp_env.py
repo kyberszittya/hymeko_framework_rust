@@ -26,18 +26,58 @@ def test_planar_reward_terms_registered() -> None:
         assert k in _REWARD_TERMS
 
 
+def test_only_fingertip_can_touch_the_coin() -> None:
+    """Galambos 2026-07-03: ONLY the yellow fingertip may contact the cylinder — the arm links must NOT be able
+    to. Enforced by collision bitmasks: coin on bit 2 (arm links are MuJoCo-default 1/1 → cannot touch it), a
+    fingertip geom on conaffinity 3 (→ touches the coin), floor on conaffinity 3 (→ the coin still rests). Two
+    geoms collide iff (contype_a & conaffinity_b) | (contype_b & conaffinity_a)."""
+    env = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3)
+    m = env.model
+
+    def mask(name: str) -> tuple[int, int]:
+        gid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, name)
+        assert gid >= 0, f"geom {name} missing"
+        return int(m.geom_contype[gid]), int(m.geom_conaffinity[gid])
+
+    def collide(a: tuple[int, int], b: tuple[int, int]) -> bool:
+        return bool((a[0] & b[1]) or (b[0] & a[1]))
+
+    disk, tip, floor = mask("disk"), mask("fingertip_left"), mask("floor")
+    arm = (1, 1)                                                    # arm-link capsules use the MuJoCo default
+    assert disk == (2, 2) and tip == (1, 3)
+    assert not collide(arm, disk), "arm links must NOT be able to touch the coin (Galambos: a kar ne ütközzön)"
+    assert collide(tip, disk), "the yellow fingertip must contact the coin"
+    assert collide(disk, floor), "the coin must still rest on the table"
+    assert collide(mask("fingertip_left"), mask("fingertip_right")), "fingers still collide (fingers_collision)"
+
+
+def test_coin_frictionloss_is_opt_in_and_sets_joint_threshold() -> None:
+    """The two-arm-force lever (Galambos): dry friction on the coin's slide joints — a FORCE threshold below
+    which the coin will not move. 0 (default) = the original free-sliding coin; > 0 raises a jointer frictionloss."""
+    free = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3, coin_frictionloss=0.0)
+    heavy = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3, coin_frictionloss=8.0)
+
+    def joint_frictionloss(env: PlanarGraspEnv) -> float:
+        jid = mujoco.mj_name2id(env.model, mujoco.mjtObj.mjOBJ_JOINT, "disk_x")
+        return float(env.model.dof_frictionloss[env.model.jnt_dofadr[jid]])
+
+    assert joint_frictionloss(free) == 0.0
+    assert joint_frictionloss(heavy) == pytest.approx(8.0)         # the declared force threshold reaches the joint
+
+
 def test_galambos_task_parses() -> None:
     spec = RewardSpec.from_hymeko(_TASK)
-    # SIMPLIFIED 2026-06-28 (the complex reward was a frustrated term-graph that could not grasp; four core terms
-    # raised grasp-fraction 0.10->0.615) + nofinger (narrow finger-finger collision penalty, the "proper noclash").
+    # 4-core (approach·both·zone·oob, grasp-fraction 0.615) + the COLLAB extension 2026-07-03: finger_contact
+    # (denser per-fingertip reward) and arm_body_collision (upper-arm-only collision, collision-forward at 2.0).
     assert [k for k, _ in spec.terms] == [
-        "grasp_approach", "both_contact", "in_zone", "out_of_bounds", "fingers_collision"]
+        "grasp_approach", "both_contact", "finger_contact", "in_zone", "out_of_bounds", "arm_body_collision"]
     assert dict(spec.terms)["both_contact"] == 5.0
     assert dict(spec.terms)["in_zone"] == 10.0
     assert dict(spec.terms)["out_of_bounds"] == 2.0
-    assert dict(spec.terms)["fingers_collision"] == 1.0   # narrow finger-finger penalty (proper noclash)
+    assert dict(spec.terms)["finger_contact"] == 1.5      # denser per-fingertip contact reward
+    assert dict(spec.terms)["arm_body_collision"] == 2.0  # upper-arm collision (excludes the pinch config)
     assert "action_cost" not in dict(spec.terms)
-    assert "arm_collision" not in dict(spec.terms)        # the grasp-killing arm-wide penalty stays dropped
+    assert "arm_collision" not in dict(spec.terms)        # the grasp-killing WHOLE-arm penalty stays dropped
 
 
 def _metrics(*, tipl: float = 0.0, tipr: float = 0.0, speed: float = 0.0, arm_speed: float = 0.0,
@@ -312,23 +352,23 @@ def test_planar_env_from_hymeko_matches_spec() -> None:
 
 
 def test_coin_at_fingertip_registers_contact() -> None:
-    """Reach + contact detection align: a coin placed at the left distal link touches the left arm."""
+    """Reach + contact detection align: a coin at the left FINGERTIP registers a left-only contact — and ONLY
+    the fingertip does (Galambos 2026-07-03: arm links can no longer touch the coin, so contact = a real
+    fingertip touch, not an arm knock)."""
     env = PlanarGraspEnv()
     env.reset(seed=0)
     mujoco.mj_forward(env.model, env.data)
-    lower_left = mujoco.mj_name2id(env.model, mujoco.mjtObj.mjOBJ_BODY, "lower_left")
-    g = next(gg for gg in range(env.model.ngeom)
-             if int(env.model.geom_bodyid[gg]) == lower_left)
-    pos = env.data.geom_xpos[g]            # the distal link's geom centroid (fingertip region)
-    # place the coin overlapping the link off-centre (concentric placement is a degenerate contact).
-    env.data.qpos[env._disk_x_adr] = float(pos[0]) + 0.025
+    tip = mujoco.mj_name2id(env.model, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    assert tip >= 0, "the emitted arm must carry a fingertip collision geom"
+    pos = env.data.geom_xpos[tip]          # the yellow fingertip — the only geom that can touch the coin now
+    env.data.qpos[env._disk_x_adr] = float(pos[0]) + 0.02
     env.data.qpos[env._disk_y_adr] = float(pos[1])
     left = False
     for _ in range(5):                     # step a few frames so the contact registers
         mujoco.mj_step(env.model, env.data)
         m = env._metrics()
         left = left or (m.left_contact and not m.right_contact)
-    assert left, "a coin overlapping the left distal link should register a left-only contact"
+    assert left, "a coin at the left fingertip should register a left-only contact"
 
 
 def test_shoulder_joint_is_not_frozen_by_self_contact() -> None:
@@ -387,3 +427,22 @@ def test_coin_planted_in_zone_terminates() -> None:
         if truncated:
             break
     assert terminated, "coin at the zone centre should be in-zone and terminate"
+
+
+def test_terminate_on_success_false_holds_the_episode() -> None:
+    """De-farm (oracle-verified): with ``terminate_on_success=False`` a coin held in the zone does NOT end the
+    episode (so holding, not oscillating, is optimal). Regression against the default, which DOES terminate."""
+    env = PlanarGraspEnv(max_steps=40, env=EnvSpec(success_steps=3), terminate_on_success=False)
+    env.reset(seed=0)
+    env.data.qpos[env._disk_x_adr] = env._zone_x
+    env.data.qpos[env._disk_y_adr] = env._zone_y
+    mujoco.mj_forward(env.model, env.data)
+    zero = np.zeros(env.n_actions, dtype=np.float32)
+    seen_in_zone = False
+    for _ in range(40):
+        _o, _r, terminated, truncated, info = env.step(zero)
+        seen_in_zone = seen_in_zone or bool(info["in_zone"])
+        assert not terminated, "terminate_on_success=False must not end the episode on sustained delivery"
+        if truncated:
+            break
+    assert seen_in_zone, "coin planted at the zone centre should register in_zone"

@@ -121,11 +121,11 @@ def test_reworked_task_profiles_have_arc_weights() -> None:
     """The reworked Galambos + FANUC rewards declare every weight on the bundle arc (regression:
     the values match the pre-rework body weights exactly)."""
     gala = read_reward_terms(_REPO / "data" / "robotics" / "galambos_task.hymeko")
-    assert gala == (   # SIMPLIFIED 2026-06-28: the complex 14-term reward was a frustrated signed term-graph and
-                       # could not grasp; reducing to four core terms raised grasp-fraction 0.10->0.615 and the
-                       # causal test (re-add the conflicting pair -> 0.333) fixed conflict magnitude as the predictor.
-        ("grasp_approach", 4.0), ("both_contact", 5.0), ("in_zone", 10.0), ("out_of_bounds", 2.0),
-        ("fingers_collision", 1.0))   # + nofinger: narrow finger-finger collision penalty (proper noclash, 2026-06-28)
+    assert gala == (   # 4-core (approach·both·zone·oob, grasp-fraction 0.615) + the COLLAB extension 2026-07-03:
+                       # finger_contact (denser per-fingertip reward) and arm_body_collision (upper-arm-only, the
+                       # two-agent coordination constraint that excludes the pinch — not the grasp-killing 2.0).
+        ("grasp_approach", 4.0), ("both_contact", 5.0), ("finger_contact", 1.5), ("in_zone", 10.0),
+        ("out_of_bounds", 2.0), ("arm_body_collision", 2.0))
     pick = read_reward_terms(_REPO / "data" / "robotics" / "pick_place_task.hymeko")
     assert pick == (
         ("pick_approach", 1.0), ("pick_contact", 0.5), ("pick_lift", 5.0),
@@ -154,6 +154,48 @@ def test_fingers_collision_term() -> None:
     assert fn(e, 0.0, np.zeros(2)) == 0.0
     e._planar_metrics = dataclasses.replace(CLEAN_PLANAR, fingers_self_contact=True)
     assert fn(e, 0.0, np.zeros(2)) == -1.0                                  # fingers crashing -> -1
+
+
+def test_arm_body_collision_term() -> None:
+    """Upper-arm collision (2026-07-03, collab coordination): -1 when the two arms crash at a NON-fingertip body,
+    but 0 on the coin-pinch (arms not touching) AND 0 when only the fingertips touch (that is `fingers_collision`'s
+    narrow job) — so it adds the two-agent 'don't slam together' constraint WITHOUT fighting the grasp, unlike the
+    whole-arm `arm_collision` that at 2.0 drove grasp-fraction 0.615->0.0. Inert on a non-planar env."""
+    import dataclasses
+
+    import numpy as np
+
+    from hymeko_rl.env.planar_grasp_env import CLEAN_PLANAR
+    from hymeko_rl.env.reward import _REWARD_TERMS
+
+    fn = _REWARD_TERMS["arm_body_collision"]
+    assert fn(SimpleNamespace(), 0.0, np.zeros(2)) == 0.0                             # no _planar_metrics -> inert
+    assert fn(SimpleNamespace(_planar_metrics=CLEAN_PLANAR), 0.0, np.zeros(2)) == 0.0  # no contact
+    crash = dataclasses.replace(CLEAN_PLANAR, arm_self_contact=True)                  # arms crash (non-fingertip)
+    assert fn(SimpleNamespace(_planar_metrics=crash), 0.0, np.zeros(2)) == -1.0
+    pinch = dataclasses.replace(CLEAN_PLANAR, left_contact=True, right_contact=True)  # grasping: arms NOT touching
+    assert fn(SimpleNamespace(_planar_metrics=pinch), 0.0, np.zeros(2)) == 0.0        # THE point: no penalty on a grasp
+    fingertip_only = dataclasses.replace(CLEAN_PLANAR, arm_self_contact=True, fingers_self_contact=True)
+    assert fn(SimpleNamespace(_planar_metrics=fingertip_only), 0.0, np.zeros(2)) == 0.0   # fingertip pair EXCLUDED
+
+
+def test_finger_contact_term() -> None:
+    """Graded per-fingertip coin contact (2026-07-03): +1 per touching fingertip (0/1/2) — denser than the
+    all-or-nothing `both_contact`, so one fingertip on the coin already pays. Inert on a non-planar env."""
+    import dataclasses
+
+    import numpy as np
+
+    from hymeko_rl.env.planar_grasp_env import CLEAN_PLANAR
+    from hymeko_rl.env.reward import _REWARD_TERMS
+
+    fn = _REWARD_TERMS["finger_contact"]
+    assert fn(SimpleNamespace(), 0.0, np.zeros(2)) == 0.0                             # non-planar -> inert
+    assert fn(SimpleNamespace(_planar_metrics=CLEAN_PLANAR), 0.0, np.zeros(2)) == 0.0  # no contact -> 0
+    one = dataclasses.replace(CLEAN_PLANAR, left_contact=True)
+    assert fn(SimpleNamespace(_planar_metrics=one), 0.0, np.zeros(2)) == 1.0          # one fingertip -> +1
+    both = dataclasses.replace(CLEAN_PLANAR, left_contact=True, right_contact=True)
+    assert fn(SimpleNamespace(_planar_metrics=both), 0.0, np.zeros(2)) == 2.0         # both fingertips -> +2
 
 
 def test_read_arc_weights_general(tmp_path: Path) -> None:

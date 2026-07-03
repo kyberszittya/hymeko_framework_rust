@@ -41,6 +41,7 @@ _REPO = Path(__file__).resolve().parents[2]
 _DEFAULT_HYMEKO = _REPO / "data" / "robotics" / "quadruped.hymeko"
 
 BaseMode = Literal["free", "fixed", "planar"]
+TaskMode = Literal["goal", "stand"]
 
 # Default "reach the goal fast and smooth" reward: dense −dist + a big sparse success bonus, with time
 # pressure and the velocity/jerk smoothness penalties. Weights chosen so distance/success dominate and the
@@ -51,6 +52,21 @@ GOAL_REWARD = RewardSpec((
     ("time_penalty", 0.1),          # −0.1 / step → minimise time, not just distance
     ("joint_velocity", 0.0005),     # −Σ q̇²  : gentle (don't suppress gait exploration)
     ("joint_acceleration", 0.002),  # −Σ(Δq̇)²: gentle smoothness / jerk
+))
+
+# "Stand at nominal height and don't fall" reward (task="stand"). Redesigned 2026-07-03 (Hajdu): the prior
+# spec paid an UNCONDITIONAL `alive` bonus + upright, so a crouched/collapsed-but-not-inverted robot scored
+# ~as high as a standing one (flip_cos=−0.2 rarely terminates), and height (`torso_height`) was dominated —
+# falling was not penalised and Z was not the point, so stand_rate stayed ~0 while the policy "learned". The
+# fix makes the reward's argmax the graded success predicate: the dominant `standing` term is +1 iff
+# (upright > stand_cos AND |z − stand_height| < tol) — identical to the DwellMetric — so crouch/collapse/flop
+# score 0, and `torso_height` (up-weighted) gives the dense pull toward standing height. reward ≡ metric.
+STAND_REWARD = RewardSpec((
+    ("standing", 5.0),           # +1 iff upright AND at nominal height — the EXACT success predicate (dominant)
+    ("torso_height", 3.0),       # −|z − stand_height|: dense gradient to the standing height (Z is the point)
+    ("upright", 1.0),            # +cos(tilt): dense gradient to a level torso
+    ("stand_still", 0.1),        # −|v_x|: hold ground, don't drift/walk off
+    ("joint_velocity", 0.001),   # −Σ q̇²: gentle, don't thrash the legs to balance
 ))
 
 
@@ -95,8 +111,14 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
     # Invariants ``observation`` is ``(n_vertices, 2)`` float32: the torso vertex carries
     ``[signed_dx_to_goal, forward_velocity]``, each leg vertex its joint ``[qpos, qvel]``; ``action`` is the
     8 leg-motor commands normalised to ``[-1, 1]`` and scaled to ``±ctrl_range`` N·m internally.
-    # Postconditions (``step``) ``terminated`` iff the goal is reached (``dist < reach_radius``) or the torso
-    tips past ``flip_cos``; ``reward`` is the configured :class:`RewardSpec` over ``dist`` and the action.
+    # Postconditions (``step``) ``terminated`` iff the goal is reached (``task="goal"`` and
+    ``dist < reach_radius``) or the free-base torso tips past ``flip_cos``; ``reward`` is the configured
+    :class:`RewardSpec` over ``dist`` and the action. ``info["standing"]`` is True iff the torso is upright
+    (``> stand_cos``) at its nominal height (task-agnostic; the ``task="stand"`` success signal).
+
+    # Tasks ``task="goal"`` reaches a point in front (default). ``task="stand"`` balances in place — use it
+    with ``base="free"`` (the torso must be able to fall for standing to be a task) and it defaults to
+    :data:`STAND_REWARD`.
     """
 
     metadata = {"render_modes": []}
@@ -105,11 +127,20 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
                  base_joint: str = "base", goal_distance: float = 1.5, reach_radius: float = 0.3,
                  ctrl_range: float = 50.0, frame_skip: int = 5, max_steps: int = 250,
                  init_noise: float = 0.02, leg_damping: float = 0.8, leg_armature: float = 0.02,
-                 flip_cos: float = -0.2, reward_spec: RewardSpec | None = None) -> None:
+                 flip_cos: float = -0.2, task: TaskMode = "goal", stand_cos: float = 0.9,
+                 stand_height_tol: float = 0.08, reward_spec: RewardSpec | None = None) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1 or ctrl_range <= 0 or goal_distance <= 0 or reach_radius <= 0:
             raise ValueError("frame_skip/max_steps>=1, ctrl_range/goal_distance/reach_radius>0 required")
-        self.reward_spec = reward_spec if reward_spec is not None else GOAL_REWARD
+        if stand_cos <= 0 or stand_height_tol <= 0:
+            raise ValueError("stand_cos, stand_height_tol > 0 required")
+        # Task selects the default reward: "goal" reaches a point in front (GOAL_REWARD); "stand" balances in
+        # place (STAND_REWARD). A standing task is only meaningful with a base that CAN fall — use base="free".
+        self.task: TaskMode = task
+        self.stand_cos = float(stand_cos)
+        self.stand_height_tol = float(stand_height_tol)
+        default_reward = STAND_REWARD if task == "stand" else GOAL_REWARD
+        self.reward_spec = reward_spec if reward_spec is not None else default_reward
         # One source -> scene + hypergraph. The base attachment is DECLARED in the .hymeko; we set its mode.
         mjcf = set_base_mode(emit_arm_mjcf(hymeko_path, name="quad"), base_joint, base)
         mjcf = self._tune_legs(mjcf, leg_damping, leg_armature)
@@ -141,6 +172,9 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
         self._step = 0
         self._q0 = self.data.qpos.copy()
         mujoco.mj_forward(self.model, self.data)
+        # Nominal standing height = the torso z at the rest pose. The stand reward/metric pay for holding it.
+        self._stand_height = float(self.data.xpos[self.torso, 2])
+        self._standing = False                                 # success predicate, refreshed each step() (stand task)
         self.goal = np.array([float(self.data.xpos[self.torso, 0]) + self.goal_distance, 0.0], np.float32)
         self._prev_act_qvel = self.data.qvel[self._act_dofs].copy()
         self._prev_dist = self.dist_to_goal()
@@ -173,10 +207,13 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
                               self.data.xpos[self.torso, 1] - self.goal[1]))
 
     def node_features(self) -> np.ndarray:
-        """Per-vertex ``(N, 2)`` obs: torso vertex ``[dx_to_goal, vx]``, each leg vertex ``[qpos, qvel]``.
+        """Per-vertex ``(N, 2)`` obs. Each leg vertex carries ``[qpos, qvel]``; the torso vertex carries the
+        **task-relevant** state, so the policy observes what it optimises:
 
-        Base-agnostic: the torso vertex carries the goal direction + forward speed regardless of base mode
-        (free / planar / fixed); leg joints carry their angle + rate; passive base joints are skipped."""
+          * ``task="goal"``  → ``[dx_to_goal, vx]`` (goal direction + forward speed).
+          * ``task="stand"`` → ``[z - stand_height, upright]`` (height error + torso levelness).
+
+        Base-agnostic (free / planar / fixed); passive base joints are skipped."""
         feat = np.zeros((self.hg.n_vertices, 2), dtype=np.float32)
         for j in range(self.model.njnt):
             v = int(self._jnt_vtx[j])
@@ -185,8 +222,12 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
             qa, da = int(self._jnt_qadr[j]), int(self._jnt_dadr[j])
             feat[v, 0] = float(self.data.qpos[qa])                # leg joint: angle
             feat[v, 1] = float(self.data.qvel[da])                # leg joint: rate
-        feat[self._torso_vtx, 0] = self.goal[0] - float(self.data.xpos[self.torso, 0])
-        feat[self._torso_vtx, 1] = self._vx
+        if self.task == "stand":
+            feat[self._torso_vtx, 0] = float(self.data.xpos[self.torso, 2]) - self._stand_height
+            feat[self._torso_vtx, 1] = self._torso_uprightness()
+        else:
+            feat[self._torso_vtx, 0] = self.goal[0] - float(self.data.xpos[self.torso, 0])
+            feat[self._torso_vtx, 1] = self._vx
         return feat
 
     def _torso_uprightness(self) -> float:
@@ -218,14 +259,24 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
         self._vx = (x - self._prev_x) / (self.frame_skip * float(self.model.opt.timestep))  # base-agnostic
         self._prev_x = x
         dist = self.dist_to_goal()
+        # Pose predicates BEFORE the reward: the stand reward's `standing` term reads self._standing, so it must
+        # reflect THIS step's post-physics pose (else it lags one step). Standing = torso level (upright) AND near
+        # its nominal height — identical to the DwellMetric the stand task is graded on.
+        upright = self._torso_uprightness()
+        self._standing = bool(upright > self.stand_cos
+                              and abs(float(self.data.xpos[self.torso, 2]) - self._stand_height)
+                              < self.stand_height_tol)
         reward = self.reward_spec.evaluate(self, dist, a)              # goal_progress reads self._prev_dist
         self._prev_dist = dist                                        # advance for next step's progress
         self._prev_act_qvel = self.data.qvel[self._act_dofs].copy()    # for next step's jerk term
-        upright = self._torso_uprightness()
-        reached = dist < self.reach_radius
-        # Flip-terminate only the free (jump) base. The planar walker is HalfCheetah-style: NO termination
+        # Goal is only "reached" in the goal task; the stand task has no goal point to arrive at (it balances
+        # in place, so its only terminal is a fall).
+        reached = bool(self.task == "goal" and dist < self.reach_radius)
+        standing = self._standing
+        # Flip-terminate only the free (jump/stand) base. The planar walker is HalfCheetah-style: NO termination
         # on tipping — it gets the whole horizon to make forward progress and can recover from a pitch.
         terminated = bool(reached or (self.base == "free" and upright < self.flip_cos))
         truncated = self._step >= self.max_steps
-        info = {"dist": dist, "vx": self._vx, "reached": reached, "upright": upright, "x": x}
+        info = {"dist": dist, "vx": self._vx, "reached": reached, "upright": upright, "x": x,
+                "standing": standing}
         return self.node_features(), reward, terminated, truncated, info

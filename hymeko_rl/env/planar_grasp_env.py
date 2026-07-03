@@ -48,6 +48,7 @@ def make_planar_arms_mjcf(*, base_x: float = 0.14, l1: float = 0.16, l2: float =
           <body name="link2_{nm}" pos="0 {l1:g} 0">
             <joint name="j2_{nm}" type="hinge" axis="0 0 1" range="-4.0 4.0"/>
             <geom type="capsule" fromto="0 0 0 0 {l2:g} 0" size="0.01" rgba="0.4 0.6 0.95 1"/>
+            <geom name="fingertip_{nm}" type="sphere" size="0.014" pos="0 {l2:g} 0" rgba="0.9 0.7 0.1 1" contype="1" conaffinity="3"/>
             <site name="tip_{nm}" pos="0 {l2:g} 0" size="0.013" rgba="0.9 0.7 0.1 1"/>
           </body>
         </body>
@@ -59,7 +60,7 @@ def make_planar_arms_mjcf(*, base_x: float = 0.14, l1: float = 0.16, l2: float =
   <default><joint damping="1.5"/><geom rgba="0.2 0.5 0.9 1" friction="1 0.05 0.001"/></default>
   <worldbody>
     <light pos="0 0.1 1.2" dir="0 0 -1" diffuse="0.6 0.6 0.6"/>
-    <geom name="floor" type="plane" size="1 1 0.05" rgba="0.82 0.82 0.85 1"/>
+    <geom name="floor" type="plane" size="1 1 0.05" rgba="0.82 0.82 0.85 1" conaffinity="3"/>
     {arm(-1, "left")}
     {arm(1, "right")}
   </worldbody>
@@ -133,26 +134,62 @@ def with_fingertip_sites(arm_mjcf: str) -> str:
         axis = int(np.argmax(size))                       # the link's long axis
         far = pos.copy()
         far[axis] = pos[axis] + math.copysign(size[axis], pos[axis] if pos[axis] != 0.0 else 1.0)
-        ET.SubElement(leaf, "site", {"name": f"tip_{side}",
-                                     "pos": f"{far[0]:g} {far[1]:g} {far[2]:g}",
+        farstr = f"{far[0]:g} {far[1]:g} {far[2]:g}"
+        ET.SubElement(leaf, "site", {"name": f"tip_{side}", "pos": farstr,
                                      "size": "0.012", "rgba": "0.9 0.7 0.1 1"})
+        # The COLLISION fingertip (Galambos 2026-07-03): a small geom on conaffinity 3 so ONLY the fingertip
+        # (not the arm links, MuJoCo-default 1/1) can touch the coin (bit 2). Mirrors the hand-authored scene.
+        ET.SubElement(leaf, "geom", {"name": f"fingertip_{side}", "type": "sphere", "size": "0.014",
+                                     "pos": farstr, "rgba": "0.9 0.7 0.1 1",
+                                     "contype": "1", "conaffinity": "3"})
         changed = True
     return ET.tostring(root, encoding="unicode") if changed else arm_mjcf
 
 
 def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half: float = 0.02,
                          zone_x: float = 0.0, zone_y: float = 0.16, zone_half: float = 0.055,
-                         plane_z: float = _PLANE_Z) -> str:
-    """Inject a planar table coin (slide-x/slide-y/hinge-z, confined to the arms' plane; placed, not
-    dropped) + a target-zone marker site into a two-arm MJCF. Appended before ``</worldbody>``."""
+                         plane_z: float = _PLANE_Z, coin_damping: float = 2.5,
+                         coin_density: float | None = None, coin_shape: str = "cylinder",
+                         spin_damping: float = 0.8, coin_frictionloss: float = 0.0) -> str:
+    """Inject a planar table object (slide-x/slide-y/hinge-z, confined to the arms' plane; placed, not
+    dropped) + a target-zone marker site into a two-arm MJCF. Appended before ``</worldbody>``.
+
+    ``coin_damping`` is the slide-joint resistance — for a planar slide-joint object this **is** the table
+    friction. HIGHER (e.g. 8–12) makes it **hard to shove**: a knock/impulse dissipates almost at once, so
+    only a *sustained two-finger grip-and-drag* moves it — this kills the ``knock'' shortcut (2026-06-27: 94% of
+    deliveries were knocks, fingers never both touching) and makes delivery require real contact. ``coin_density``
+    (kg/m³, HIGHER = heavier object, needs a firmer grip). Defaults reproduce the original (easy-to-shove) coin.
+
+    ``coin_shape`` selects the manipuland: ``"cylinder"`` = the original round coin — which **rolls out of a
+    two-finger clamp when dragged perpendicular** (a point contact on a circle is an unstable antipodal grasp;
+    documented in ``galambos_bc``). ``"box"`` = a square prism whose **flat faces give the fingertips a stable
+    contact** so the clamp holds under a drag — the graspable object (a cube-like puck). ``spin_damping`` is the
+    ``disk_rz`` hinge resistance (raise it to further suppress the object spinning out of the clamp)."""
     arm_mjcf = with_collision_floor(arm_mjcf, z=0.0)   # emitted arms carry no floor
+    dens = f' density="{coin_density:g}"' if coin_density is not None else ""
+    # Collision bitmask (Galambos 2026-07-03): the coin is on bit 2 ONLY, so arm links (MuJoCo default 1/1)
+    # cannot touch it — only the fingertip geoms (conaffinity 3) and the floor (conaffinity 3) can. The coin is
+    # thus moved ONLY by the yellow fingertips, never knocked by an arm body. `cc` is applied to the manipuland.
+    cc = ' contype="2" conaffinity="2"'
+    if coin_shape == "box":
+        geom = (f'<geom name="disk" type="box" size="{disk_radius:g} {disk_radius:g} {disk_half:g}" '
+                f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
+    elif coin_shape == "cylinder":
+        geom = (f'<geom name="disk" type="cylinder" size="{disk_radius:g} {disk_half:g}" '
+                f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
+    else:
+        raise ValueError(f"coin_shape must be 'cylinder' or 'box'; got {coin_shape!r}")
+    # `frictionloss` is DRY (Coulomb) friction on the slide joints — a FORCE THRESHOLD, not a rate: the coin does
+    # not move until the applied push exceeds it. Set between one arm's and two arms' push force → a SINGLE arm
+    # cannot move the coin, only two together (Galambos 2026-07-03: "két robot ereje kelljen a henger
+    # megmozdításához"). 0 = the original free-sliding coin (unchanged default).
+    fl = f' frictionloss="{coin_frictionloss:g}"' if coin_frictionloss > 0.0 else ""
     coin = (
         f'<body name="disk" pos="0 0 {plane_z:g}">'
-        f'<joint name="disk_x" type="slide" axis="1 0 0" damping="2.5"/>'
-        f'<joint name="disk_y" type="slide" axis="0 1 0" damping="2.5"/>'
-        f'<joint name="disk_rz" type="hinge" axis="0 0 1" damping="0.8"/>'
-        f'<geom name="disk" type="cylinder" size="{disk_radius:g} {disk_half:g}" '
-        f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"/>'
+        f'<joint name="disk_x" type="slide" axis="1 0 0" damping="{coin_damping:g}"{fl}/>'
+        f'<joint name="disk_y" type="slide" axis="0 1 0" damping="{coin_damping:g}"{fl}/>'
+        f'<joint name="disk_rz" type="hinge" axis="0 0 1" damping="{spin_damping:g}"/>'
+        f'{geom}'
         f'</body>'
     )
     zone = (
@@ -256,7 +293,11 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
 
     def __init__(self, *, robot: str | None = _PLANAR_ARM, reward_spec: RewardSpec | None = None,
                  env: EnvSpec = DEFAULT_ENV, frame_skip: int = 5, max_steps: int = 160,
-                 difficulty: float = 1.0, task_graph: bool = False) -> None:
+                 difficulty: float = 1.0, task_graph: bool = False,
+                 coin_damping: float = 2.5, coin_density: float | None = None,
+                 coin_shape: str = "cylinder", spin_damping: float = 0.8,
+                 coin_frictionloss: float = 0.0,
+                 terminate_on_success: bool = True) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
@@ -270,6 +311,12 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         self._coin_clearance, self._randomize_zone = env.coin_clearance, env.randomize_zone
         self._out_bound, self._y_min, self._y_max = env.out_bound, env.y_min, env.y_max
         self.success_steps = env.success_steps
+        # De-farm (2026-07-02, oracle-verified): ending the episode on sustained in-zone forfeits the per-step
+        # in-zone annuity, so the reward-optimum FARMS (oscillates in/out) instead of committing. With
+        # `terminate_on_success=False` the episode runs the full horizon, holding-in-zone becomes optimal
+        # (annuity for all remaining steps > oscillating), and the farm incentive vanishes. Default True
+        # preserves the historical behaviour; the de-farmed task sets it False. Death/out-of-bounds still ends.
+        self.terminate_on_success = bool(terminate_on_success)
         self.difficulty = difficulty
         # The robot is DESCRIBED IN HYMEKO (galambos_planar.hymeko) and emitted; `robot=None` falls
         # back to the hand-authored baseline (make_planar_arms_mjcf).
@@ -298,13 +345,26 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         # The emitter now emits parent→child <contact><exclude> directly (hymeko_formats), so the
         # adjacent-link self-contact no longer pins the shoulder joint — no env-level workaround.
         mjcf = compose_planar_scene(arm_mjcf, zone_x=env.zone_x, zone_y=env.zone_y,
-                                    zone_half=env.zone_half, disk_radius=env.disk_radius)
+                                    zone_half=env.zone_half, disk_radius=env.disk_radius,
+                                    coin_damping=coin_damping, coin_density=coin_density,
+                                    coin_shape=coin_shape, spin_damping=spin_damping,
+                                    coin_frictionloss=coin_frictionloss)
         self._mjcf = mjcf   # kept so the renderer can re-skin the scene (decorate_scene)
         self.model = mujoco.MjModel.from_xml_string(mjcf)
         self.data = mujoco.MjData(self.model)
         self._act_dofs = actuated_dof_addrs(self.model)   # for joint-velocity/acceleration reward terms
         self.reward_spec = reward_spec if reward_spec is not None else \
             RewardSpec.from_hymeko(_PLANAR_TASK)
+        # Stable integration (blow-up fix, measured 2026-06-30): the 2e-3 s sub-step lets the planar arms
+        # DETONATE on contact under aggressive actions (|qacc| ~8e3 -> bodies ejected, which can knock the coin
+        # into the zone = a false delivery). Shrink the sub-step and raise the substep count so the control
+        # interval (frame_skip * timestep) is preserved EXACTLY; trained weights transfer unchanged.
+        _stable_dt = 5e-4
+        _control_dt = self.model.opt.timestep * int(frame_skip)
+        if self.model.opt.timestep > _stable_dt:
+            substeps = max(1, round(_control_dt / _stable_dt))
+            self.model.opt.timestep = _control_dt / substeps
+            frame_skip = substeps
         self.frame_skip, self.max_steps = frame_skip, max_steps
 
         self._disk_body = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "disk")
@@ -327,6 +387,14 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
             (float(self.model.body_pos[b][0]), float(self.model.body_pos[b][1]))
             for b in sorted(self._left_bodies | self._right_bodies)
             if int(self.model.body_parentid[b]) == 0]
+        # Coin-clearance: the arms reset to the home pose (qpos=0), so freeze every arm-link geom's XY there.
+        # The coin must NOT spawn inside a link (measured 2026-06-30: it could, and the penetration impulse +
+        # the policy's first motion flung it toward the zone, making a non-toss read as a delivery).
+        _arm_bodies = self._left_bodies | self._right_bodies
+        _arm_geoms = [g for g in range(self.model.ngeom) if int(self.model.geom_bodyid[g]) in _arm_bodies]
+        mujoco.mj_forward(self.model, self.data)                  # qpos=0 home pose → arm-link geom XY
+        self._rest_arm_xy = self.data.geom_xpos[_arm_geoms, :2].copy()
+        self._coin_arm_clear = float(env.disk_radius) + 0.025     # coin radius + a link half-width margin
         self._arm_joints = [
             j for j in range(self.model.njnt)
             if not (mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_JOINT, j)
@@ -408,6 +476,11 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         """True if at least one arm base is within reach of ``(x, y)`` (so an arm can fetch it)."""
         return any(np.hypot(x - cx, y - cy) <= _ARM_REACH for cx, cy in self._reach_centers)
 
+    def _clear_of_arms(self, x: float, y: float) -> bool:
+        """True if ``(x, y)`` clears every arm link at the home pose — the coin must not spawn inside an arm."""
+        return bool(np.all(np.hypot(self._rest_arm_xy[:, 0] - x, self._rest_arm_xy[:, 1] - y)
+                           > self._coin_arm_clear))
+
     def _sample_zone_xy(self) -> tuple[float, float]:
         """A small target zone re-placed each episode, kept within reach of **both** arms (so the
         coin can be delivered there). Falls back to the central point if rejection sampling fails."""
@@ -432,7 +505,7 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
             x = float(self.np_random.uniform(rx_lo, rx_hi))
             y = float(self.np_random.uniform(ry_lo, ry_hi))
             d = float(np.hypot(x - self._zone_x, y - self._zone_y))
-            if inner <= d <= cap and self._reachable_by_any(x, y):
+            if inner <= d <= cap and self._reachable_by_any(x, y) and self._clear_of_arms(x, y):
                 return x, y
         return self._zone_x + inner + 0.01, self._zone_y   # reachable, just outside the zone
 
@@ -481,7 +554,7 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         self._prev_act_qvel = self.data.qvel[self._act_dofs].copy()   # for next step's jerk term
         death = self._disk_out
         self._success = self._success + 1 if self._planar_metrics.in_zone else 0
-        terminated = bool(self._success >= self.success_steps or death)
+        terminated = bool((self._success >= self.success_steps and self.terminate_on_success) or death)
         truncated = self._step >= self.max_steps
         return (self.node_features(), reward, terminated, truncated,
                 {"disk_to_zone": self._planar_metrics.disk_to_zone,

@@ -57,6 +57,16 @@ galambos_task: el, rew, r
     // Penalise knocking the disk off the table (death) — stop ballistic over-pushing.
     @oob: rew.out_of_bounds {}
 
+    // COLLABORATIVE coordination (2026-07-03, user): the two arms must not crash into EACH OTHER. Uses the
+    // principled upper-arm term (arm_self_contact EXCLUDING the fingertip pair) that the 4-core note prescribed —
+    // it does NOT fire on the coin-pinch (fingers on opposite sides of the coin, arms not touching), so it adds
+    // the safety/coordination constraint without the whole-arm `arm_collision`-at-2.0 collapse (0.615->0.0).
+    @armcol: rew.arm_body_collision {}
+
+    // Reward EACH fingertip touching the coin (graded 0/1/2), denser than the all-or-nothing `both` cliff —
+    // "reward more when the fingertip touches the coin" (2026-07-03, user).
+    @fingertouch: rew.finger_contact {}
+
     // Gentle coin handling (added 2026-06-26): brake the coin to REST in the zone (settle, zone-gated),
     // and discourage flinging it before a controlled grasp (stillcoin, off once grasped). Small weights:
     // `settle` measured worse at large weight historically, so it is re-introduced lightly.
@@ -90,6 +100,28 @@ galambos_task: el, rew, r
         // PROPER NOCLASH (2026-06-28, user): + nofinger 1.0 — penalise ONLY the two fingers crashing into each
         // other (narrow `fingers_collision`), modest weight, so the safety constraint is added without suppressing
         // the pinch. The grasp keeps the coin between the fingertips, so this should not fire on a real grasp.
-        (+ approach 4.0, + both 5.0, + zone 10.0, + oob 2.0, + nofinger 1.0);
+        // PULL A/B (2026-07-02, user obs "the coin distracts the arms"). Hypothesis: restoring the transport
+        // gradient `pull` (reach_distance = -‖disk-zone‖) would un-stick the arms. TESTED single-variable
+        // (3 seeds × 60k, diff 0.3): delivery median 0.12 -> 0.18 (WITHIN seed variance — seed 2 reversed it),
+        // coin still drifts AWAY from the zone in all 6 cells. VERDICT: `pull` is a marginal knob, NOT the lever
+        // — reverted (no clean win). The reward-oracle predicted this in <1s: the approach/pull BALANCE is
+        // second-order; the real reward flaw is FARMING (env terminates on sustained in-zone + per-step in-zone
+        // annuity -> optimum oscillates; needs a terminal delivery bonus / one-shot in-zone, NOT a rebalance),
+        // and the dominant blocker is PHYSICS (the arms cannot transport the round free-spinning coin). See
+        // reports/2026-07-02-methodology-cheap-tests-before-expensive-runs.md.
+        // CONFLICT REMOVED (2026-07-02, user "remove the reward terms that are contradicting each other"):
+        // dropped `nofinger` (fingers_collision). Co-movement on the round coin (20 demo eps, 3356 samples):
+        // fingers_collision mean 0.000 / std 0.000 — it NEVER fires on a clean grasp (dead weight), and by
+        // construction it CONTRADICTS `both`: both drives the two fingertips onto the coin, nofinger penalises
+        // them being close — but pinching a small ROUND coin needs them close, so on the RL policy's fumbled
+        // grips nofinger fires on the very closing motion it needs (the same failure as noclash 2.0 -> 0.0). oob
+        // KEPT: it does NOT conflict (corr with approach +0.15, positive) and it prevents the coin off-table.
+        // This restores the validated 4-core (approach·both·zone·oob = 0.615 grasp-fraction).
+        // COLLAB EXTENSION (2026-07-03, user): + fingertouch 1.5 (denser per-fingertip contact reward, kept modest
+        // to avoid a per-step contact-farming optimum) and + armcol 2.0 (upper-arm collision penalty). armcol is at
+        // the SAME weight that killed the WHOLE-arm `arm_collision` (0.615->0.0) — the DISCRIMINATING TEST of the
+        // fingertip-excluding redesign: if delivery holds near the 0.40 collab baseline while arm-crashes drop, the
+        // exclusion made 2.0 safe (the pinch config never triggers it); if delivery collapses, exclusion isn't enough.
+        (+ approach 4.0, + both 5.0, + fingertouch 1.5, + zone 10.0, + oob 2.0, + armcol 2.0);
     }
 }

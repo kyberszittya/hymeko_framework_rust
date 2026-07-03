@@ -155,6 +155,26 @@ def _term_arm_collision(env: "ArmReachEnv", dist: float, action: np.ndarray) -> 
     return -1.0 if m.arm_self_contact else 0.0
 
 
+def _term_arm_body_collision(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Penalise the two arms crashing into each other at a NON-fingertip body: ``-1`` while they are in mutual
+    contact BUT the touch is not merely the two fingertips. Excludes the fingertip pair, so it does NOT fire on
+    the coin-pinch (fingers close on opposite sides of the coin) — the principled 'hands collision' the 4-core
+    note prescribed after whole-arm ``arm_collision`` at 2.0 killed grasping (0.615→0.0, 2026-06-28). This is the
+    two-agent coordination constraint for the collaborative coin-toss: the arms must cooperate, not slam together.
+    0 on a non-planar env. # Postconditions 0 during a real grasp (fingertips near the coin, arms not touching)."""
+    m = getattr(env, "_planar_metrics", None)
+    return -1.0 if (m is not None and m.arm_self_contact and not m.fingers_self_contact) else 0.0
+
+
+def _term_finger_contact(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Reward EACH fingertip touching the coin: ``+1`` per contacting fingertip (0/1/2). Denser than
+    ``both_contact`` (which pays only when BOTH touch simultaneously) — a graded pull toward the two-finger
+    grasp that already rewards one fingertip on the coin before the second arrives, so the policy is not stuck
+    on the all-or-nothing both-contact cliff. 0 on a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    return (float(m.left_contact) + float(m.right_contact)) if m is not None else 0.0
+
+
 def _term_fingers_collision(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
     """Penalise ONLY the two fingers crashing into each other (the fingertip-bearing distal links in mutual
     contact): -1 while they touch, else 0. Narrower than ``arm_collision`` (which fires on any left↔right body
@@ -229,6 +249,56 @@ def _term_joint_acceleration(env: "ArmReachEnv", dist: float, action: np.ndarray
     return -float(dv @ dv)
 
 
+# ── standing / balance terms (read the torso pose; 0 on an env with no torso) ─
+# These appear only in STAND_REWARD (quadruped_env). They are getattr-guarded so a spec that includes one on
+# a non-quadruped env contributes 0 rather than raising — the same duck-typed contract as the pick terms.
+def _term_upright(env: Any, dist: float, action: np.ndarray) -> float:
+    """Torso levelness: ``cos`` between the torso local ``+z`` and world ``+z`` (1 = level, 0 = on its side,
+    <0 = inverted). Reads ``env._torso_uprightness()``; 0 on an env with no torso."""
+    fn = getattr(env, "_torso_uprightness", None)
+    return float(fn()) if callable(fn) else 0.0
+
+
+def _term_torso_height(env: Any, dist: float, action: np.ndarray) -> float:
+    """Height keeping: ``-|z_torso - stand_height|`` — penalise deviating from the nominal standing height
+    (crouching or collapsing). Reads ``env.torso`` / ``env.data.xpos`` and ``env._stand_height`` (the rest-pose
+    torso height); 0 if the env declares no standing height."""
+    h = getattr(env, "_stand_height", None)
+    torso = getattr(env, "torso", None)
+    if h is None or torso is None:
+        return 0.0
+    return -abs(float(env.data.xpos[torso, 2]) - float(h))
+
+
+def _term_alive(env: Any, dist: float, action: np.ndarray) -> float:
+    """Survival bonus: ``+1`` every step the episode is still alive. With fall-termination, a policy that keeps
+    the torso upright accrues more total reward than one that falls early → surviving is strictly preferred.
+
+    WARNING: unconditional — a collapsed-but-not-inverted robot still collects it while ``flip_cos`` is
+    permissive, so it does NOT distinguish standing from crouching. Prefer :func:`_term_standing` (gated on the
+    success predicate) for the stand task; ``alive`` is kept for envs that genuinely want raw survival."""
+    return 1.0
+
+
+def _term_standing(env: Any, dist: float, action: np.ndarray) -> float:
+    """The success predicate AS a reward: ``+1`` iff the torso is upright (``> stand_cos``) AND at its nominal
+    height (``|z − stand_height| < stand_height_tol``) — i.e. the exact ``DwellMetric('standing')`` condition the
+    stand task is graded on. This makes the reward's argmax the success state, so crouching/collapsing/flopping
+    (which the unconditional ``alive`` bonus rewarded) score 0 here. Reads ``env._standing`` (cached in ``step``
+    just before the reward is evaluated); 0 on an env that declares no standing predicate.
+
+    # Preconditions ``env._standing`` reflects the CURRENT post-physics pose (see the step() reorder).
+    # Postconditions returns ``1.0`` exactly at the graded success condition, else ``0.0`` (reward ≡ metric)."""
+    return 1.0 if getattr(env, "_standing", False) else 0.0
+
+
+def _term_stand_still(env: Any, dist: float, action: np.ndarray) -> float:
+    """Stay-put: ``-|v_x|`` — a standing robot should hold its ground, not drift/walk off. Reads ``env._vx``
+    (the base-agnostic forward speed); 0 if absent."""
+    v = getattr(env, "_vx", None)
+    return -abs(float(v)) if v is not None else 0.0
+
+
 # ── pick-and-place terms (read the env's PickMetrics; 0 on a non-pick env) ───
 @dataclass(frozen=True)
 class PickMetrics:
@@ -295,6 +365,11 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "time_penalty": _term_time_penalty,
     "joint_velocity": _term_joint_velocity,
     "joint_acceleration": _term_joint_acceleration,
+    "upright": _term_upright,
+    "torso_height": _term_torso_height,
+    "alive": _term_alive,
+    "standing": _term_standing,
+    "stand_still": _term_stand_still,
     "reach_distance": _term_reach_distance,
     "success_bonus": _term_success_bonus,
     "action_cost": _term_action_cost,
@@ -311,6 +386,8 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "arm_motion": _term_arm_motion,
     "center_bonus": _term_center_bonus,
     "arm_collision": _term_arm_collision,
+    "arm_body_collision": _term_arm_body_collision,
+    "finger_contact": _term_finger_contact,
     "fingers_collision": _term_fingers_collision,
     "out_of_bounds": _term_out_of_bounds,
 }
