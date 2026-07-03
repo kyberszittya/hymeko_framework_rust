@@ -54,7 +54,7 @@ hypergraph — and the same structure that makes it expensive makes it **acceler
 drop-in to principled:
 1. **Op-vectorisation** (eager, no toolchain): batch the spline + message-pass → few large ops. Recovers most of
    the 76 % overhead anywhere, Windows included.
-2. **Fused Triton kernel:** `signedkan_wip/triton_kernels` already has a `cr_kernel`; one launch for the whole
+2. **Fused Triton kernel:** `hymeko_neuro/triton_kernels` already has a `cr_kernel`; one launch for the whole
    signed-spline-message-pass (GPU).
 3. **`torch.compile` / CUDA-graphs:** ~10× drop-in where `cl`/Inductor is available (Linux/GPU box).
 4. **SA-HSiKAN (B^L collapse):** for a *fixed* topology the entire iterated message-pass precomputes to one matmul

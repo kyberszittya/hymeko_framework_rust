@@ -73,7 +73,7 @@ echo ""
 # ─── The run ────────────────────────────────────────────────────
 t0=$(date +%s)
 singularity exec --nv --bind "$REPO:/workspace" "$SIF" \
-    bash -c "cd /workspace && PYTHONPATH=. python -m signedkan_wip.experiments.runs.run_final_cell \
+    bash -c "cd /workspace && PYTHONPATH=. python -m hymeko_neuro.experiments.runs.run_final_cell \
         --dataset $DATASET --model SGCN --hidden 32 --seed $SEED --n-epochs 120 \
         $EXTRA_FLAGS"
 rc=$?

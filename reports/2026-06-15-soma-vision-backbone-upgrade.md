@@ -82,23 +82,23 @@ matrix), to be sized and checkpointed before launch.
 
 | File | Note |
 |------|------|
-| `signedkan_wip/src/hymeko_gomb/soma/vision/aggregators.py` | new — 3 modules |
+| `hymeko_neuro/models/hymeko_gomb/soma/vision/aggregators.py` | new — 3 modules |
 | `…/vision/ricci_stim_backbone.py` | flags `use_arity_mixer/use_highway/use_pyramid`; combine replaces bare sum |
 | `…/vision/ricci_stim_classifier.py` | threads the flags through |
 | `…/vision/ricci_stim_detector.py` | threads the flags through (detection path) |
 | `…/vision/train_mnist.py` | `ricci_stim` / `ricci_stim_up` model types + argparse choices |
 | `experiments/run_ricci_stim_cluttered_mnist.py` | `--upgrade` flag; records `upgrade` in JSONL |
-| `signedkan_wip/tests/test_soma_aggregators.py` | new — 9 unit/smoke tests |
+| `hymeko_neuro/tests/test_soma_aggregators.py` | new — 9 unit/smoke tests |
 | `…/tests/test_gomb_soma_vision_ricci_stim_detector.py` | +1 regression test (upgrade reaches detector) |
 | `reports/ricci_stim_upgrade_ab_20260615.jsonl` | classification A/B raw rows (6) |
 | `reports/ricci_stim_detect_ab_smoke_20260615.jsonl` | detection A/B smoke rows (2) |
 
-CORE.YAML: none (`signedkan_wip` is non-core). No new dependency (torch already
+CORE.YAML: none (`hymeko_neuro` is non-core). No new dependency (torch already
 CORE-pinned).
 
 ## Test results
 
-- `pytest -p no:randomly signedkan_wip/tests/test_soma_aggregators.py` — **9
+- `pytest -p no:randomly hymeko_neuro/tests/test_soma_aggregators.py` — **9
   passed**: mixer simplex weights + uniform-init = mean (not sum) + wrong-branch-
   count rejection; highway carries the skip when `T→0` + differentiable; pyramid
   fuses parent→child, true 2-level cascade, no-op when parentless, differentiable;
@@ -118,7 +118,7 @@ CORE-pinned).
 ## Experiment provenance
 
 - Git SHA `9684f09`; **working tree dirty** (this is an active dev tree — the
-  `hymeko_hive` generators work and many `signedkan_wip` edits are uncommitted;
+  `hymeko_hive` generators work and many `hymeko_neuro` edits are uncommitted;
   the A/B used the in-tree `aggregators.py` + `ricci_stim_*` as listed above).
 - Device: CPU. Seeds: 0, 1, 2. n_train=1500, n_test=500, n_epochs=4, batch_size
   default, Adam lr 3e-3.

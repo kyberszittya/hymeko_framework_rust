@@ -79,7 +79,7 @@ CORE.YAML: **none touched.** New dependency: **none** (torch CORE-pinned). Exter
 - `pytest hymeko_lm/tests` — **18 passed** (incl. the lag-copy *and* associative-recall learning tests,
   which still pass after the readout-scale/residual changes). 220 s (recall training is the long pole).
 - `ruff check hymeko_lm` clean; `mypy --strict` clean on all `hymeko_lm` files (6 pre-existing errors in
-  the reused `signedkan_wip/cayley_rotor.py`, not modified). Suppressions: scoped `# type: ignore[no-untyped-call]`
+  the reused `hymeko_neuro/cayley_rotor.py`, not modified). Suppressions: scoped `# type: ignore[no-untyped-call]`
   on `Tensor.backward()` (torch stub), each with a reason.
 
 ## Performance

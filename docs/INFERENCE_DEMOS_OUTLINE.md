@@ -6,7 +6,7 @@ this document says what to *reuse*, what to *finish*, and the acceptance gate
 for each. **Do not rebuild what is listed under "Already on disk."**
 
 > Ground rules (from `CLAUDE.md`)
-> - Discovery pass before any new file; extend the `signedkan_wip/src/demo/` package, do not fork it.
+> - Discovery pass before any new file; extend the `hymeko_neuro/experiments/demo/` package, do not fork it.
 > - Fixed seeds, deterministic output, peak-RSS + wall-time reported on exit.
 > - Honest reporting: every printed number maps to a checkpoint/artifact path; absolute latency is reported next to accuracy, not in place of it.
 > - 16 GB RSS cap; demos must run on CPU (cuda optional, auto-detected).
@@ -17,14 +17,14 @@ for each. **Do not rebuild what is listed under "Already on disk."**
 
 | Component | Path | Role |
 |---|---|---|
-| `ModelBundle`, `predict_test_edges` | `signedkan_wip/src/demo/inference.py` | load checkpoint → run forward → AUC/F1, ROC, αₖ vector |
-| `load_checkpoint`, `CheckpointMeta`, `InferenceBundle` | `signedkan_wip/src/demo/checkpoint.py` | checkpoint (de)serialisation |
-| model registry | `signedkan_wip/src/demo/registry.py`, `models.yaml`, `kinematic_models.yaml` | name → constructor + checkpoint path |
-| plotting helpers | `signedkan_wip/src/demo/plotting.py`, `kinematic_plotting.py` | ROC / αₖ / pose figures |
+| `ModelBundle`, `predict_test_edges` | `hymeko_neuro/experiments/demo/inference.py` | load checkpoint → run forward → AUC/F1, ROC, αₖ vector |
+| `load_checkpoint`, `CheckpointMeta`, `InferenceBundle` | `hymeko_neuro/experiments/demo/checkpoint.py` | checkpoint (de)serialisation |
+| model registry | `hymeko_neuro/experiments/demo/registry.py`, `models.yaml`, `kinematic_models.yaml` | name → constructor + checkpoint path |
+| plotting helpers | `hymeko_neuro/experiments/demo/plotting.py`, `kinematic_plotting.py` | ROC / αₖ / pose figures |
 | checkpoints | `checkpoints/hsikan/bitcoin_{alpha,otc}_optuna_best.pt`, `checkpoints/kinematic/family_classifier_k{4,6}.pt`, `checkpoints/hymeyolo_demo/b_hsikan/ricci-mod_seed0.pt` | trained weights |
 
 **Gap to close once, used by all demos:** a single thin CLI entry
-`python -m signedkan_wip.src.demo` (mode argument: `link | latency | kinematic | yolo | signature`)
+`python -m hymeko_neuro.experiments.demo` (mode argument: `link | latency | kinematic | yolo | signature`)
 that dispatches to the demos below. One file with a mode arg — not five scripts
 (CLAUDE.md §6.5 #13).
 
@@ -36,10 +36,10 @@ that dispatches to the demos below. One file with a mode arg — not five script
 - **What it shows:** load a trained checkpoint, predict held-out edge signs, print AUC/F1, draw the ROC, and surface the learned αₖ "regime" vector.
 - **Already on disk:** `demo/inference.py::predict_test_edges`, both Bitcoin checkpoints, `demo/plotting.py`.
 - **To finish:**
-  - CLI wrapper: `python -m signedkan_wip.src.demo link --dataset bitcoin_otc --checkpoint checkpoints/hsikan/bitcoin_otc_optuna_best.pt`.
+  - CLI wrapper: `python -m hymeko_neuro.experiments.demo link --dataset bitcoin_otc --checkpoint checkpoints/hsikan/bitcoin_otc_optuna_best.pt`.
   - Print a table: dataset · n_test · AUC · F1 · n_params · fwd_ms.
   - Save `ROC.png` + `alpha_k.png` to `demo_out/link/<dataset>/`.
-- **Inputs:** `checkpoints/hsikan/bitcoin_{alpha,otc}_optuna_best.pt`; datasets via `signedkan_wip/src/datasets.load`.
+- **Inputs:** `checkpoints/hsikan/bitcoin_{alpha,otc}_optuna_best.pt`; datasets via `hymeko_neuro/data/datasets.load`.
 - **Acceptance:** reproduces the committed AUC for that checkpoint within ±0.002 over the fixed test split; figure files written; exits with peak-RSS + wall-time line.
 - **Honest note:** these checkpoints are the `optuna_best` (transductive convention) — label the figure as such; the strict-protocol number is the architectural baseline.
 
@@ -49,7 +49,7 @@ that dispatches to the demos below. One file with a mode arg — not five script
 **Slide:** "SOTA range — at a fraction of the cost" (18)
 
 - **What it shows:** measured forward-pass latency — SGCN vs HSiKAN-lean (h4) vs HSiKAN-joint (h16) per (dataset, device).
-- **On disk:** `signedkan_wip/experiments/runs/run_inference_bench.py` (extended), `bench_to_png.py` (renderer), `experiments/results/inference_bench.json` + `inference_bench_{cpu,cuda}.png`. See `reports/2026-06-11-latency-bench-extension.md`.
+- **On disk:** `hymeko_neuro/experiments/runs/run_inference_bench.py` (extended), `bench_to_png.py` (renderer), `experiments/results/inference_bench.json` + `inference_bench_{cpu,cuda}.png`. See `reports/2026-06-11-latency-bench-extension.md`.
 - **Done:**
   - Two HSiKAN width cells per dataset, **lean (h=4)** and **joint (h=16)**, width as a config axis; cycle pool built once and shared.
   - Re-emitted `inference_bench.json`; `bench_to_png.py` renders the slide-18 horizontal bars.
@@ -64,7 +64,7 @@ that dispatches to the demos below. One file with a mode arg — not five script
 **Slide:** "From structure to inductive prior" (12) / "The bridge" (19)
 
 - **What it shows:** (a) cycle-arity compass (four-bar→k4, delta/Stewart→k6, serial→flat); (b) family classification from topology; (c) HSiKAN graph-only XYZ vs MuJoCo (~5 cm L2).
-- **Already on disk:** `signedkan_wip/demos/demo_kinematic_mujoco.py`, `demo_kinematic_pose.py`, `examples/pose_demo.py`, `demo/kinematic_classifier.py`, `checkpoints/kinematic/family_classifier_k{4,6}.pt`, web demo `demo_web/` (compass + 3D), and the existing render `demo_video/hsikan_mujoco_4dof.mp4`.
+- **Already on disk:** `hymeko_neuro/demos/demo_kinematic_mujoco.py`, `demo_kinematic_pose.py`, `examples/pose_demo.py`, `demo/kinematic_classifier.py`, `checkpoints/kinematic/family_classifier_k{4,6}.pt`, web demo `demo_web/` (compass + 3D), and the existing render `demo_video/hsikan_mujoco_4dof.mp4`.
 - **To finish:**
   - Wire `family_classifier_k{4,6}.pt` into a `kinematic` mode that loads the checkpoint (skip training) and prints predicted family + αₖ compass per mechanism.
   - Regenerate `demo_out/sim.mp4` headless (EGL) and confirm the overlay L2 stays ≈ 5 cm.
@@ -78,7 +78,7 @@ that dispatches to the demos below. One file with a mode arg — not five script
 **Slide:** "The primitive transfers: HyMeYOLO" (18→ vision slide)
 
 - **What it shows:** the `+ricci-mod` + HSiKAN-CR detector finding digits in Cluttered MNIST; boxes + per-image mAP + forward latency.
-- **Already on disk:** `signedkan_wip/src/vision/demo_hymeyolo_tk.py`, `vision/DEMO_README.md`, `vision/launch_demo.sh`, `checkpoints/hymeyolo_demo/b_hsikan/ricci-mod_seed0.pt`.
+- **Already on disk:** `hymeko_neuro/experiments/vision/demo_hymeyolo_tk.py`, `vision/DEMO_README.md`, `vision/launch_demo.sh`, `checkpoints/hymeyolo_demo/b_hsikan/ricci-mod_seed0.pt`.
 - **To finish:**
   - Ensure `--checkpoint checkpoints/hymeyolo_demo/b_hsikan/ricci-mod_seed0.pt` **skips training** (README says no-checkpoint path quick-trains 30 epochs — for the demo always pass the checkpoint).
   - Add a headless mode that renders N example panels (GT cyan / pred red) to `demo_out/yolo/` plus a mAP_50 + latency line, for slide capture.
@@ -91,7 +91,7 @@ that dispatches to the demos below. One file with a mode arg — not five script
 **Slide:** "Honesty as a protocol" (17→ honesty slide) / "Gömb" (16)
 
 - **What it shows:** the strict cycle-pool signature for a positive / negative / boundary query, and the **label-shuffle collapse to ≈0.540** that proves the prior is structural, not leakage.
-- **Already on disk:** `signedkan_wip/experiments/runs/demo_gomb_signature.py`, `demo_fuzzy_signature.py`; shuffle flags `run_final_cell.py --shuffle-train-signs`, `run_gomb_smoke.py --shuffle-train-signs`.
+- **Already on disk:** `hymeko_neuro/experiments/runs/demo_gomb_signature.py`, `demo_fuzzy_signature.py`; shuffle flags `run_final_cell.py --shuffle-train-signs`, `run_gomb_smoke.py --shuffle-train-signs`.
 - **To finish:** a `signature` mode that runs one real-label inference and one shuffled-label inference back to back and prints both AUCs side by side (real ≈ 0.94 vs shuffled ≈ 0.54).
 - **Acceptance:** shuffled AUC within ±0.02 of chance; figures to `reports/figures/gomb_signature_*/`.
 
@@ -116,7 +116,7 @@ that dispatches to the demos below. One file with a mode arg — not five script
 6. **Demo 6** (transform) — optional framework-side closer.
 
 ## Cross-cutting acceptance (every demo)
-- Single CLI: `python -m signedkan_wip.src.demo <mode> [...]`, `--device auto`, `--seed 0`.
+- Single CLI: `python -m hymeko_neuro.experiments.demo <mode> [...]`, `--device auto`, `--seed 0`.
 - Deterministic: seed fixed, no system entropy; outputs reproducible.
 - On exit: print peak RSS + wall time; assert RSS < 16 GB.
 - Each demo writes to `demo_out/<mode>/` and prints the artifact paths it produced.

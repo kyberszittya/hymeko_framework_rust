@@ -15,10 +15,10 @@ from typing import TYPE_CHECKING, Any
 import torch
 import torch.nn as nn
 
-from signed_kan import SignedKANBackbone
+from hymeko_neuro.core import SignedKANBackbone
 # Re-exported so ``hymeko_rl.agents.policy._catmull_rom`` / ``CatmullRomActivation`` keep working (the Triton
 # ``cr_kernel`` + the CR parity tests import them); the implementation lives once, in the core.
-from signed_kan.splines import (  # noqa: F401  (CatmullRomActivation/_catmull_rom re-exported for the CR parity tests)
+from hymeko_neuro.core.splines import (  # noqa: F401  (CatmullRomActivation/_catmull_rom re-exported for the CR parity tests)
     CatmullRomActivation,
     catmull_rom as _catmull_rom,
     make_activation,
@@ -39,7 +39,7 @@ def deploy_policy(model: nn.Module, probe: torch.Tensor, *, tol: float = 5e-2) -
 
     The switch is **validated**: the max ``|Chebyshev − CR|`` output error on ``probe`` must stay ``< tol``, else
     the model is reverted to the exact CR path and ``ValueError`` is raised — the caller never unknowingly ships a
-    too-loose approximation. Reuses :func:`signed_kan.splines.set_deploy_mode` (§6.1; no re-implementation).
+    too-loose approximation. Reuses :func:`hymeko_neuro.core.splines.set_deploy_mode` (§6.1; no re-implementation).
 
     # Preconditions ``probe`` is a valid forward input for ``model``; ``tol > 0``.
     # Postconditions on success every ``cr_cheby`` cell is in deploy mode and the returned error ``< tol``; on
@@ -181,14 +181,14 @@ def mlp_backbone(obs_dim: int, *, hidden: int = 64, depth: int = 2,
 
 class HSiKANBackbone(SignedKANBackbone):
     """HSiKAN (Highway Signed KAN) backbone for the RL line — the kinematic-``hg_state`` adapter over the
-    shared :class:`signed_kan.SignedKANBackbone` core. ``hg_state`` (the MJCF-derived signed adjacency) and
+    shared :class:`hymeko_neuro.core.SignedKANBackbone` core. ``hg_state`` (the MJCF-derived signed adjacency) and
     the dense/batched aggregation are the RL specifics; the signed-KAN layer, incidence modes, skip/highway,
-    and pooling all live once, in :mod:`signed_kan`. Input is per-vertex features ``(B, N, in_feat)``; output
+    and pooling all live once, in :mod:`hymeko_neuro.core`. Input is per-vertex features ``(B, N, in_feat)``; output
     is the pooled graph embedding ``(B, hidden)``. Inherits ``a_pos``/``a_neg``/``w_pos_arc``/``_effective_adj``
     /``node_activations``/``n_vertices`` from the core.
 
     # Preconditions ``in_feat, hidden, n_layers >= 1``; ``hg_state`` exposes ``dense_signed_adj`` +
-    ``n_vertices``; ``incidence`` in :data:`signed_kan.INCIDENCE_MODES`; ``skip`` in :data:`signed_kan.SKIP_MODES`.
+    ``n_vertices``; ``incidence`` in :data:`hymeko_neuro.core.INCIDENCE_MODES`; ``skip`` in :data:`hymeko_neuro.core.SKIP_MODES`.
     """
 
     def __init__(self, in_feat: int, hidden: int, n_layers: int,
@@ -215,7 +215,7 @@ def hsikan_backbone(in_feat: int, *, hg_state: "HypergraphState", hidden: int = 
     ``"relu"``/``"tanh"`` for ablation.
 
     # Preconditions ``hg_state`` exposes ``dense_signed_adj`` + ``n_vertices``; ``incidence`` in
-    :data:`signed_kan.INCIDENCE_MODES`; ``skip`` in :data:`signed_kan.SKIP_MODES`.
+    :data:`hymeko_neuro.core.INCIDENCE_MODES`; ``skip`` in :data:`hymeko_neuro.core.SKIP_MODES`.
     """
     return HSiKANBackbone(in_feat, hidden, n_layers, hg_state, device,
                           incidence=incidence, activation=activation, skip=skip), hidden

@@ -22,15 +22,15 @@ transformer on a real byte corpus is the next, separate experiment).
 | `hymeko_lm/config.py` | 50 | `FSRConfig` (frozen dataclass), `Activation` enum (§6.5#7) |
 | `hymeko_lm/sphere.py` | 56 | Gömb: `l2_normalize`, `spherical_residual`, `SphereEmbedding` |
 | `hymeko_lm/sequence_mixer.py` | 75 | `FiberSpikeRotorMixer` — the novel core |
-| `hymeko_lm/channel_mixer.py` | 34 | `HSiKANChannelMixer` (wraps `signed_kan` `cr_cheby`) |
+| `hymeko_lm/channel_mixer.py` | 34 | `HSiKANChannelMixer` (wraps `hymeko_neuro.core` `cr_cheby`) |
 | `hymeko_lm/block.py` | 30 | `FSRBlock` |
 | `hymeko_lm/model.py` | 50 | `FSRLanguageModel` (AR stack) |
 | `hymeko_lm/data.py` | 38 | lag-copy toy |
 | `hymeko_lm/smoke.py` | 86 | Phase-0 smoke entry (`--mode smoke\|full`, §6.5#13) |
 | `hymeko_lm/tests/test_fsr_lm.py` | 160 | 15 tests |
 
-**Reuse (no duplication, §6.1):** rotor algebra from `signedkan_wip.src.embeddings.cayley_rotor`
-(`cayley_to_unit_quat`, `quat_rotate`); CR-Chebyshev cell from `signed_kan.splines.make_activation('cr_cheby')`
+**Reuse (no duplication, §6.1):** rotor algebra from `hymeko_neuro.graph.embeddings.cayley_rotor`
+(`cayley_to_unit_quat`, `quat_rotate`); CR-Chebyshev cell from `hymeko_neuro.core.splines.make_activation('cr_cheby')`
 (already existed — the planned "additive ChebyshevActivation hunk" was **unnecessary**); holonomy idiom
 mirrored from `hymeko_rl.structural_actor`.
 
@@ -81,7 +81,7 @@ config/data validation), a **causality** test (logits at ≤k invariant to token
 
 - `ruff check hymeko_lm` — clean.
 - `mypy --strict hymeko_lm` — **clean on all `hymeko_lm` files.** 6 pre-existing errors remain in the
-  *reused* `signedkan_wip/src/embeddings/cayley_rotor.py` (a file I did not modify; out of scope).
+  *reused* `hymeko_neuro/graph/embeddings/cayley_rotor.py` (a file I did not modify; out of scope).
 - Suppressions introduced: 3 × `# type: ignore[no-untyped-call]` on `Tensor.backward()` (torch stub
   leaves it untyped), each with an inline reason (§6.3). No complexity-gate waivers.
 

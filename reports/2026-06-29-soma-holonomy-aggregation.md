@@ -55,17 +55,17 @@ differ; not tested, and not prioritised given this null.
 
 | file | change | ± |
 |---|---|---|
-| `signedkan_wip/src/hymeko_gomb/soma/hg_conv.py` | `Aggregation` enum; `aggregation` config field; signs into `_aggregate`; holonomy branch; removed 2 pre-existing dead lines (`allowed`, `Optional`) | +35 / −4 |
-| `signedkan_wip/src/hymeko_gomb/soma/hg_conv_bochner.py` | `_aggregate` override matches new signature (delegates inward) | +3 / −2 |
-| `signedkan_wip/src/hymeko_gomb/soma/vision/walk_conv_classifier.py` | thread `aggregation` arg into the layer config | +16 / −3 |
-| `signedkan_wip/src/hymeko_gomb/soma/vision/train_mnist.py` | `gomb_soma_holonomy` arm | +14 / −1 |
-| `signedkan_wip/experiments/runs/soma_holonomy_ab_plot.py` | new: A/B accuracy bar (pure `summarize` + `render`) | +135 |
-| `signedkan_wip/tests/test_gomb_soma_holonomy_aggregation.py` | new: 9 aggregation/contract/integration tests | +180 |
-| `signedkan_wip/tests/test_soma_holonomy_ab_plot.py` | new: 4 plot-shaper tests | +47 |
+| `hymeko_neuro/models/hymeko_gomb/soma/hg_conv.py` | `Aggregation` enum; `aggregation` config field; signs into `_aggregate`; holonomy branch; removed 2 pre-existing dead lines (`allowed`, `Optional`) | +35 / −4 |
+| `hymeko_neuro/models/hymeko_gomb/soma/hg_conv_bochner.py` | `_aggregate` override matches new signature (delegates inward) | +3 / −2 |
+| `hymeko_neuro/models/hymeko_gomb/soma/vision/walk_conv_classifier.py` | thread `aggregation` arg into the layer config | +16 / −3 |
+| `hymeko_neuro/models/hymeko_gomb/soma/vision/train_mnist.py` | `gomb_soma_holonomy` arm | +14 / −1 |
+| `hymeko_neuro/experiments/runs/soma_holonomy_ab_plot.py` | new: A/B accuracy bar (pure `summarize` + `render`) | +135 |
+| `hymeko_neuro/tests/test_gomb_soma_holonomy_aggregation.py` | new: 9 aggregation/contract/integration tests | +180 |
+| `hymeko_neuro/tests/test_soma_holonomy_ab_plot.py` | new: 4 plot-shaper tests | +47 |
 
 ## CORE.YAML items touched
 
-None. All edits are in `signedkan_wip/` (non-core, editable). No pinned
+None. All edits are in `hymeko_neuro/` (non-core, editable). No pinned
 dependency, grammar, or core type touched.
 
 ## Test results

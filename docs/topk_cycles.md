@@ -93,7 +93,7 @@ scorer with a strong pruner doesn't double-count work.
 
 ## Env-var integration with HSiKAN
 
-`signedkan_wip/src/n_tuples.py` reads four env vars to switch the
+`hymeko_neuro/n_tuples.py` reads four env vars to switch the
 existing `_enumerate_cycles_fast` over to the top-K paths:
 
 ```bash
@@ -106,7 +106,7 @@ HSIKAN_TOPK_PRUNER=none                # see Axiom pruners above
 Then run training as normal:
 
 ```bash
-PYTHONPATH=signedkan_wip python3 -m src.run_final_cell \
+PYTHONPATH=hymeko_neuro python3 -m src.run_final_cell \
     --dataset slashdot --model HSiKAN --hidden 16 --n-epochs 20 --seed 0
 ```
 
@@ -167,9 +167,9 @@ assert hasattr(hymeko, "enumerate_top_k_per_vertex_cycles_signed_rs")
 | BFS-distance pruning | same file, `bfs_distances_capped` |
 | per-axiom counters | `hymeko_graph/src/pruner.rs` (`CountingPruner`, `CompositePruner`) |
 | PyO3 bridge | `hymeko_py/src/cycles.rs` (search for `enumerate_top_k_*_signed_rs`) |
-| HSiKAN integration | `signedkan_wip/src/n_tuples.py`, `_enumerate_cycles_fast` |
+| HSiKAN integration | `hymeko_neuro/n_tuples.py`, `_enumerate_cycles_fast` |
 | analysis CLI (Rust) | `hymeko_graph/examples/cycle_stats.rs` |
-| Python coverage demo | `signedkan_wip/src/topk_cycle_demo.py` |
+| Python coverage demo | `hymeko_neuro/experiments/topk_cycle_demo.py` |
 | PDF report | `reports/topk_cycles_brief.pdf` |
 
 ## Running the benches
@@ -183,7 +183,7 @@ cargo run --release --example axiom_effect -p hymeko_graph
 
 # Full-graph cycle statistics on a real signed-edge file
 cargo run --release --example cycle_stats -p hymeko_graph -- \
-    signedkan_wip/data/slashdot.txt 600 3
+    hymeko_neuro/assets/data/slashdot.txt 600 3
 ```
 
 ## Open work

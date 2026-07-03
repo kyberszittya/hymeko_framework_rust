@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-27
 **Plan:** `docs/plans/2026-05-27-pgraph-regime-strategy/` (tex/pdf/tikz/mmd)
-**Crate:** `hymeko_pgraph` (non-core) + `signedkan_wip` drivers (non-core)
+**Crate:** `hymeko_pgraph` (non-core) + `hymeko_neuro` drivers (non-core)
 
 ## Summary
 
@@ -83,7 +83,7 @@ demonstration of mixing canonical + two specific refinements in one solve.
   `SearchState<'r>` holds `&'r dyn Regime`; `solve_with_options` is the adapter.
 - `src/lib.rs` — `pub mod regime`; re-export `Regime, Canonical, NoExcess,
   maximal_structure_with_regime`.
-- `signedkan_wip/experiments/runs/{run_gomb_msg_sweep,run_cortical_msg_sweep,
+- `hymeko_neuro/experiments/runs/{run_gomb_msg_sweep,run_cortical_msg_sweep,
   run_hsikan_msg_sweep}.py` — pass `--strict-no-excess` by default (the `NoExcess`
   regime), restoring HSiKAN's intended behaviour under the canonical-default engine.
 
@@ -91,7 +91,7 @@ No new public symbol removed; the bool APIs remain for back-compat.
 
 ## CORE.YAML items touched
 
-**None.** `hymeko_pgraph` and `signedkan_wip` are non-core. No pinned-dependency change.
+**None.** `hymeko_pgraph` and `hymeko_neuro` are non-core. No pinned-dependency change.
 
 ## Test results
 

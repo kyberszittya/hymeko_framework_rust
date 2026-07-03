@@ -1,7 +1,7 @@
 # HSIKAN control 5-seed validation — 2026-05-22
 
 **Date:** 2026-05-22
-**Plan:** signedkan_wip/experiments/run_hsikan_control_5seed_2026_05_22.sh
+**Plan:** hymeko_neuro/experiments/run_hsikan_control_5seed_2026_05_22.sh
 **Verdict:** **Architectural claim survives in softened form.** 5 seeds × 4
 controllers × 3 tracks confirm HSIKAN sits structurally between LQR/MPC
 and Pure Pursuit — better than PP by 1.6–5× RMSE, **worse** than LQR/MPC
@@ -78,10 +78,10 @@ is where LQR is *guaranteed* to be near-optimal.
 
 | file | role |
 |---|---|
-| `signedkan_wip/experiments/run_hsikan_control_5seed_2026_05_22.sh` | orchestrator |
-| `signedkan_wip/experiments/results/hsikan_control_5seed_20260522T014618Z/` | JSONLs + per-seed logs + aggregator output |
-| `signedkan_wip/src/control/{bicycle,controllers,benchmark,tracks}.py` | implementation (unchanged from 2026-05-21) |
-| `signedkan_wip/tests/test_control.py` | 12/12 unit tests (unchanged) |
+| `hymeko_neuro/experiments/run_hsikan_control_5seed_2026_05_22.sh` | orchestrator |
+| `hymeko_neuro/experiments/results/hsikan_control_5seed_20260522T014618Z/` | JSONLs + per-seed logs + aggregator output |
+| `hymeko_neuro/experiments/control/{bicycle,controllers,benchmark,tracks}.py` | implementation (unchanged from 2026-05-21) |
+| `hymeko_neuro/tests/test_control.py` | 12/12 unit tests (unchanged) |
 | `reports/2026-05-22-hsikan-control-5seed-validation.md` | this file |
 
 ## 6. CORE.YAML items touched

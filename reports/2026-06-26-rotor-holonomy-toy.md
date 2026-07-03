@@ -46,7 +46,7 @@ sin²Φ; analytic overlay matching). JSON: `reports/rotor_probe/rotor_probe.json
 Motivates **rotor-as-connection** in HSiKAN: where a task's signal lives in the continuous holonomy of the
 signed graph (not just its balance), a rotor message-passing layer can represent it and the signed conv cannot.
 The production realization already exists (quaternion/SO(3) `RotorInjector` / `CayleyRotorEmbedding` /
-`SignedRotorPropagation` in `signedkan_wip/.../run_hsikan_rotor.py`) — this toy isolates *why* it should help.
+`SignedRotorPropagation` in `hymeko_neuro/.../run_hsikan_rotor.py`) — this toy isolates *why* it should help.
 
 **Spikes (next toy, designed not built):** SO(2) is abelian, so holonomy is order-independent — spikes do
 nothing here. They earn their keep with a **non-abelian** (SO(3)/quaternion) connection, where a walk's holonomy
@@ -57,7 +57,7 @@ the paths and loses it, a spike-gated reader selects the timed one.
 ## Files (CORE.YAML: none)
 - **New** `hymeko_rl/rotor_probe.py` — `rot_matrix`, `make_holonomy_data`, `RotorTransport`/`SignedTransport`,
   `run_rotor_probe`, `plot_rotor_probe`, CLI. **New** `hymeko_rl/tests/test_rotor_probe.py` — 5 tests pass.
-- Reuse/cite (no edit): the production quaternion rotor in `signedkan_wip`. ruff clean. Supervised A/B on fixed
+- Reuse/cite (no edit): the production quaternion rotor in `hymeko_neuro`. ruff clean. Supervised A/B on fixed
   data → strict-deterministic (CLAUDE.md §3 carve-out).
 
 ## Provenance

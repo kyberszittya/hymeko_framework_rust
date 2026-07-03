@@ -32,7 +32,7 @@ This repository includes **`.github/workflows/docs.yml`**, which on every push t
 
 ### Triggers (paths)
 
-The workflow runs when `docs/book/**`, **`docs/SOTA_RESULTS.md`**, **`docs/RESULTS_DISCIPLINE.md`**, **`COLD_START.md`**, editor/demo, Rust sources, or the workflow file itself change. If you edit only `signedkan_wip/` results JSON, add that path to `docs.yml` or use **workflow_dispatch**.
+The workflow runs when `docs/book/**`, **`docs/SOTA_RESULTS.md`**, **`docs/RESULTS_DISCIPLINE.md`**, **`COLD_START.md`**, editor/demo, Rust sources, or the workflow file itself change. If you edit only `hymeko_neuro/` results JSON, add that path to `docs.yml` or use **workflow_dispatch**.
 
 ---
 

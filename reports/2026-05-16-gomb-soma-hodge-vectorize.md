@@ -62,9 +62,9 @@ adjacent CUDA work in the original forward.
 
 | File | Lines (+ / −) | Change |
 |---|---:|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/hodge.py](../signedkan_wip/src/hymeko_gomb/soma/vision/hodge.py) | +193 / −47 | new `_build_boundary_2_vectorised` static helper; `edges_already_canonical` flag on `forward`; doc reformatting in `forward` |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py](../signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py) | +14 / −96 | removed `_adjacency`, `_enumerate_walks`, `_enumerate_triangles` dead methods (~110 LOC); removed dead `adj = self._adjacency(...)` call; added `torch.sort(edges, dim=1)` canonical-row pass; passes `edges_already_canonical=True` into hodge |
-| [signedkan_wip/tests/test_gomb_soma_vision_hodge.py](../signedkan_wip/tests/test_gomb_soma_vision_hodge.py) | +112 / 0 | `test_hodge_canonical_flag_invariance` (5 seeds, parametrised); `test_hodge_boundary_2_vectorised_drops_missing_edges`; `test_hodge_boundary_2_vectorised_partial_d_squared_zero` |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/hodge.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/hodge.py) | +193 / −47 | new `_build_boundary_2_vectorised` static helper; `edges_already_canonical` flag on `forward`; doc reformatting in `forward` |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py) | +14 / −96 | removed `_adjacency`, `_enumerate_walks`, `_enumerate_triangles` dead methods (~110 LOC); removed dead `adj = self._adjacency(...)` call; added `torch.sort(edges, dim=1)` canonical-row pass; passes `edges_already_canonical=True` into hodge |
+| [hymeko_neuro/tests/test_gomb_soma_vision_hodge.py](../hymeko_neuro/tests/test_gomb_soma_vision_hodge.py) | +112 / 0 | `test_hodge_canonical_flag_invariance` (5 seeds, parametrised); `test_hodge_boundary_2_vectorised_drops_missing_edges`; `test_hodge_boundary_2_vectorised_partial_d_squared_zero` |
 
 Net diff: +319 / −143 over three files. Removed ~110 LOC of dead
 code; added ~80 LOC of vectorised replacement; added 112 LOC of
@@ -74,29 +74,29 @@ regression tests.
 
 None.
 
-The change is confined to `signedkan_wip/` (non-core). No edits to
+The change is confined to `hymeko_neuro/` (non-core). No edits to
 `hymeko_core`, `hymeko_query`, `parser`, dependency manifests, or any
 pinned-dependency surface.
 
 ## 4. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_hodge.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_hodge.py -v
 ============== 25 passed in 1.71s ==============
 
 $ python -m pytest \
-    signedkan_wip/tests/test_gomb_soma_vision_hodge.py \
-    signedkan_wip/tests/test_gomb_soma_vision_stim_graph.py \
-    signedkan_wip/tests/test_gomb_soma_vision_sdrf.py \
-    signedkan_wip/tests/test_gomb_soma_vision_sdrf_wiring.py \
-    signedkan_wip/tests/test_gomb_soma_vision_forman.py \
-    signedkan_wip/tests/test_gomb_soma_vision_quadtree.py \
-    signedkan_wip/tests/test_gomb_soma_vision_patch_graph.py \
-    signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_classifier.py \
-    signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_backbone.py \
-    signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_detector.py \
-    signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_train.py \
-    signedkan_wip/tests/test_gomb_soma_bochner_conv.py
+    hymeko_neuro/tests/test_gomb_soma_vision_hodge.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_stim_graph.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_sdrf.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_sdrf_wiring.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_forman.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_quadtree.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_patch_graph.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_classifier.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_backbone.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_detector.py \
+    hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_train.py \
+    hymeko_neuro/tests/test_gomb_soma_bochner_conv.py
 ============== 168 passed in 15.27s ==============
 ```
 
@@ -215,7 +215,7 @@ keeping a dual-path API" trade-off, documented here.
 ### 7.3 Ablation result vs. the plan's decision tree
 
 The 2026-05-15 ablation
-([`ricci_stim_ablation_20260514T225345Z/`](../signedkan_wip/experiments/results/ricci_stim_ablation_20260514T225345Z/ablation.jsonl))
+([`ricci_stim_ablation_20260514T225345Z/`](../hymeko_neuro/experiments/results/ricci_stim_ablation_20260514T225345Z/ablation.jsonl))
 landed mAP50_proxy in [0.14, 0.17]:
 
 | Config | mAP50_proxy | Wall (s) | Settings           |
@@ -251,9 +251,9 @@ default Config E definition).
 * **Git SHA:** `2ccaa4d12fae1ff9cd533bd91cd84b28f11c3dab`
   ("Gomb reaches SOTA. By large", 2026-05-14). Working tree dirty,
   specifically:
-  * `M signedkan_wip/src/hymeko_gomb/soma/vision/hodge.py` (this pass)
-  * `M signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py` (this pass)
-  * `M signedkan_wip/tests/test_gomb_soma_vision_hodge.py` (this pass)
+  * `M hymeko_neuro/models/hymeko_gomb/soma/vision/hodge.py` (this pass)
+  * `M hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py` (this pass)
+  * `M hymeko_neuro/tests/test_gomb_soma_vision_hodge.py` (this pass)
   * `?? docs/plans/2026-05-16-gomb-soma-hodge-vectorize/` (this pass)
   * Plus a large unstaged `docs/book/book/**` regeneration (orthogonal
     mdbook rebuild, not driven by this report).
@@ -271,7 +271,7 @@ default Config E definition).
   uses `--seed 0` (CLI default for this report).
 * **Dataset hash:** Cluttered MNIST is generated on the fly from
   `torchvision`-provided MNIST + the
-  `signedkan_wip/src/vision/cluttered_mnist.py` deterministic
+  `hymeko_neuro/experiments/vision/cluttered_mnist.py` deterministic
   generator. No new data ingested.
 
 ## 9. §6.5 anti-pattern review

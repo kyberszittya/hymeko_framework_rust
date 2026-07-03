@@ -89,12 +89,12 @@ echo ""
 t0=$(date +%s)
 if [ "$EXEC_MODE" = "singularity" ]; then
     singularity exec --nv --bind "$REPO:/workspace" "$SIF" \
-        bash -c "cd /workspace && PYTHONPATH=. python -m signedkan_wip.experiments.runs.run_final_cell \
+        bash -c "cd /workspace && PYTHONPATH=. python -m hymeko_neuro.experiments.runs.run_final_cell \
             --dataset bitcoin_alpha --model SGCN --hidden 32 --seed 0 --n-epochs 120"
     rc=$?
 else
     export PYTHONPATH=.
-    python -m signedkan_wip.experiments.runs.run_final_cell \
+    python -m hymeko_neuro.experiments.runs.run_final_cell \
         --dataset bitcoin_alpha --model SGCN --hidden 32 --seed 0 --n-epochs 120
     rc=$?
 fi

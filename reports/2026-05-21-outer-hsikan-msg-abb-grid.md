@@ -30,7 +30,7 @@ predicted memory / wall *before* GPU dispatch.
 
 ## MSG / ABB / SSG implementation
 
-New `signedkan_wip/src/arch_search/` package:
+New `hymeko_neuro/eval/arch_search/` package:
 
 ```python
 @dataclass(frozen=True)
@@ -132,10 +132,10 @@ a 2-3× wall margin that could be tightened.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/arch_search/__init__.py` | new | 28 |
-| `signedkan_wip/src/arch_search/abb.py` | new | 220 (`ArchCandidate`, `msg_enumerate`, `abb_prune`, `ssg_pareto`) |
-| `signedkan_wip/tests/test_arch_search_abb.py` | new | 152 (8 unit tests) |
-| `signedkan_wip/experiments/runs/run_outer_hsikan_msg_abb_grid.py` | new | 245 (MSG→ABB→SSG→run→aggregate driver) |
+| `hymeko_neuro/eval/arch_search/__init__.py` | new | 28 |
+| `hymeko_neuro/eval/arch_search/abb.py` | new | 220 (`ArchCandidate`, `msg_enumerate`, `abb_prune`, `ssg_pareto`) |
+| `hymeko_neuro/tests/test_arch_search_abb.py` | new | 152 (8 unit tests) |
+| `hymeko_neuro/experiments/runs/run_outer_hsikan_msg_abb_grid.py` | new | 245 (MSG→ABB→SSG→run→aggregate driver) |
 | `docs/plans/2026-05-21-msg-abb-arch-search/{plan.tex,plan.pdf,plan.tikz,plan_figure.pdf,plan.mmd}` | new | 4-format plan |
 | `reports/2026-05-21-outer-hsikan-msg-abb-grid.md` | new | this file |
 
@@ -147,7 +147,7 @@ None.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_arch_search_abb.py` | **8 / 8 pass** |
+| `pytest hymeko_neuro/tests/test_arch_search_abb.py` | **8 / 8 pass** |
 | All prior outer-HSIKAN / Gömb-signature / stacked / arc-weight suites | no regression |
 | MSG enumeration produces correct cartesian-product count | ✓ |
 | ABB drops candidates over memory / wall caps | ✓ |
@@ -228,10 +228,10 @@ follow-up would clarify.
 - **GPU:** RTX 2070 SUPER 8 GiB.
 - **Total wall:** 375 s for 27 cells (Bitcoin Alpha 18 cells + OTC 6 + Epinions 3 failed) + ~20 s for OTC baseline.
 - **JSONL:**
-  - Grid results: `signedkan_wip/experiments/results/outer_hsikan_msg_abb_2026_05_21.jsonl`
-  - Plain Gömb OTC baseline (3 seeds): `signedkan_wip/experiments/results/plain_gomb_otc_3seed_2026_05_21.jsonl`
+  - Grid results: `hymeko_neuro/experiments/results/outer_hsikan_msg_abb_2026_05_21.jsonl`
+  - Plain Gömb OTC baseline (3 seeds): `hymeko_neuro/experiments/results/plain_gomb_otc_3seed_2026_05_21.jsonl`
 - **Baselines:** plain Gömb 3-seed at Gömb-strict-bench config from
-  `signedkan_wip/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl` (BA) and the new file (OTC).
+  `hymeko_neuro/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl` (BA) and the new file (OTC).
 - **Seeds:** [0, 1, 2] across all cells.
 
 ## Acceptance check

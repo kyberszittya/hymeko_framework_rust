@@ -17,7 +17,7 @@
 
 **Parity** (mathematical identity, not just statistical): 9 tests pass —
 forward output AND gradient w.r.t. control points match the legacy path
-to **1e-7** (`signedkan_wip/tests/test_cractivation_parity.py`).
+to **1e-7** (`hymeko_neuro/tests/test_cractivation_parity.py`).
 
 ## What I got wrong, then corrected
 
@@ -70,10 +70,10 @@ solely so the parity test can target it.
 
 | File | Status | Lines |
 |:--|:--|--:|
-| `signedkan_wip/src/vision/hsikan_vision.py` | modified (CRActivation.forward + `_forward_legacy` kept for testing) | +34/−13 |
-| `signedkan_wip/tests/test_cractivation_parity.py` | new | 60 |
-| `signedkan_wip/experiments/runs/probe_hsikan_torch_profiler.py` | new (the profiling probe) | 45 |
-| `signedkan_wip/experiments/runs/probe_vision_gpu_memory.py` | new (the GPU memory probe) | 56 |
+| `hymeko_neuro/experiments/vision/hsikan_vision.py` | modified (CRActivation.forward + `_forward_legacy` kept for testing) | +34/−13 |
+| `hymeko_neuro/tests/test_cractivation_parity.py` | new | 60 |
+| `hymeko_neuro/experiments/runs/probe_hsikan_torch_profiler.py` | new (the profiling probe) | 45 |
+| `hymeko_neuro/experiments/runs/probe_vision_gpu_memory.py` | new (the GPU memory probe) | 56 |
 | `reports/2026-05-29-hsikan-cractivation-speedup.md` | new | this |
 
 No edits to other modules; no dependency changes; no Rust touched.

@@ -135,7 +135,7 @@ reduction-order changes in fused kernels) hurt training trajectory.
 
 ## Files touched
 
-- [signedkan_wip/src/ac_hsikan/components/pool_scatter.py](../signedkan_wip/src/ac_hsikan/components/pool_scatter.py)
+- [hymeko_neuro/models/ac_hsikan/components/pool_scatter.py](../hymeko_neuro/models/ac_hsikan/components/pool_scatter.py)
   - new `_hamilton_coeffs` LRU helper
   - new `_cr_coef_backward` (closed-form, packed scatter_add)
   - new `_cr_coef_backward_both` (kept as a helper, unused — tried, no win)
@@ -144,22 +144,22 @@ reduction-order changes in fused kernels) hurt training trajectory.
   - `_FusedPoolScatterTritonFn.forward` now saves Q_signed/K/V/pool_h/scatter_h(pre-rotor).
   - `_FusedPoolScatterTritonFn.backward` skips matmul + Triton fwd re-run;
     calls `_cr_coef_backward` instead of autograd-through-reference.
-- [signedkan_wip/src/ac_hsikan/layer.py](../signedkan_wip/src/ac_hsikan/layer.py)
+- [hymeko_neuro/models/ac_hsikan/layer.py](../hymeko_neuro/models/ac_hsikan/layer.py)
   - `_local_indices_cache` buffer pre-computed at `__init__` from `cfg.n_positions`.
     Fast path used when `L == cfg.n_positions` (the IMDB case).
-- [signedkan_wip/experiments/ac_hsikan_imdb_smoke.py](../signedkan_wip/experiments/ac_hsikan_imdb_smoke.py)
+- [hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py](../hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py)
   - new `--compile` flag (defaults off; included for benchmarking).
 
 ## Tests
 
-- `signedkan_wip/tests/test_pool_scatter_rotor_parity.py` (3 tests) — all pass
+- `hymeko_neuro/tests/test_pool_scatter_rotor_parity.py` (3 tests) — all pass
   - `test_forward_parity_with_rotor` — Triton fwd vs PyTorch ref < 1e-4
   - `test_backward_parity_with_rotor` — 9-parameter gradient parity to numerical
     noise (max 1e-10 on W_q/W_k/W_v, 0 on coef_pos/neg/x/entropy_beta,
     4.5e-13 on entropy_axis)
   - `test_rotor_identity_when_beta_zero`
-- `signedkan_wip/tests/test_evolvent_telemetry.py` (6 tests) — all pass
-- `signedkan_wip/tests/test_ac_hsikan.py` (41 tests) — all pass
+- `hymeko_neuro/tests/test_evolvent_telemetry.py` (6 tests) — all pass
+- `hymeko_neuro/tests/test_ac_hsikan.py` (41 tests) — all pass
 - End-to-end IMDB val_acc parity verified: 0.7452 (before) → 0.7455 (after CR-coef fix)
   → 0.7430 (after full stack). Within seed noise (σ ≈ 0.006-0.011).
 
@@ -181,4 +181,4 @@ reduction-order changes in fused kernels) hurt training trajectory.
 
 ## CORE.YAML items touched
 
-None. `signedkan_wip/` is non-core.
+None. `hymeko_neuro/` is non-core.

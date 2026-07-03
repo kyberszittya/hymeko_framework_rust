@@ -1,12 +1,12 @@
 //! Profiling harness for the per-vertex top-K cycle enumeration with
 //! the Cartwright-Harary balance pruner — exactly the path exercised
-//! by `signedkan_wip/experiments/run_epinions_balance_5seed_2026_05_10.sh`
+//! by `hymeko_neuro/experiments/run_epinions_balance_5seed_2026_05_10.sh`
 //! at the Rust side.
 //!
 //! Usage:
 //! ```bash
 //! cargo flamegraph -p hymeko_graph --example profile_topk_balance --release \
-//!     -- signedkan_wip/data/epinions.txt 4 128
+//!     -- hymeko_neuro/assets/data/epinions.txt 4 128
 //! # → flamegraph.svg in CWD
 //! ```
 //!

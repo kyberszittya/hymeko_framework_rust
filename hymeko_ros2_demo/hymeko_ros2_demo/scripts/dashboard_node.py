@@ -44,15 +44,9 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64, String
 
-# HTL package — ships in signedkan_wip/src/htl.  Add that to sys.path
-# so the dashboard finds it when run under a ROS workspace.
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-_SIGNEDKAN_SRC = _REPO_ROOT / "signedkan_wip" / "src"
-if str(_SIGNEDKAN_SRC) not in sys.path:
-    sys.path.insert(0, str(_SIGNEDKAN_SRC))
-
+# HTL package now ships in hymeko_neuro.eval.htl — a direct import (no sys.path bridge).
 try:
-    from htl import HtlMonitor, HypergraphEvent, satisfied  # type: ignore
+    from hymeko_neuro.eval.htl import HtlMonitor, HypergraphEvent, satisfied  # type: ignore
     _HTL_OK = True
 except Exception as exc:  # noqa: BLE001
     print(f"[dashboard] HTL import failed ({exc!r}); HTL panel disabled.")

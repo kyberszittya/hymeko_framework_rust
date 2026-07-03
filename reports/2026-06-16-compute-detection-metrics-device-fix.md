@@ -10,7 +10,7 @@ against every caller of the shared `hungarian_set_loss`, a full caller-test swee
 Attribution check (`git stash` of the DETR change → the 4 tests fail identically on the
 clean tree) confirmed this is a **pre-existing bug, not a regression from the DETR work**.
 
-`compute_detection_metrics` ([train_circles_ricci.py:417](../signedkan_wip/src/vision/train_circles_ricci.py#L417))
+`compute_detection_metrics` ([train_circles_ricci.py:417](../hymeko_neuro/experiments/vision/train_circles_ricci.py#L417))
 read the compute device with `next(model.parameters()).device`. For a **parameter-less
 model** — a fixed/stub predictor such as the tests' `_FixedPredictionModel`, which returns
 hard-coded predictions and registers no `nn.Parameter` — `next(...)` raises
@@ -30,14 +30,14 @@ device = first_param.device if first_param is not None else X.device
 
 | File | Δ | What |
 |---|---|---|
-| [signedkan_wip/src/vision/train_circles_ricci.py](../signedkan_wip/src/vision/train_circles_ricci.py) | +4 / −1 | device lookup defaults to `X.device` for parameter-less models; contract noted in comment |
+| [hymeko_neuro/experiments/vision/train_circles_ricci.py](../hymeko_neuro/experiments/vision/train_circles_ricci.py) | +4 / −1 | device lookup defaults to `X.device` for parameter-less models; contract noted in comment |
 
 No test file changed — the **4 pre-existing tests are the regression suite** (they failed
 before, pass after; each would have failed against the prior implementation, satisfying §3).
 
 ## CORE.YAML items touched
 
-**None.** `train_circles_ricci.py` is `signedkan_wip` application code.
+**None.** `train_circles_ricci.py` is `hymeko_neuro` application code.
 
 ## Test results
 

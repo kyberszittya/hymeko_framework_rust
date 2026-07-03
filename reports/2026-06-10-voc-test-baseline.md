@@ -24,9 +24,9 @@ for the slide framing (structural transfer, not accuracy).
 
 | File | Change | Lines |
 |---|---|---|
-| `signedkan_wip/src/vision/eval_voc.py` | **new** — held-out eval + VOC panel render | +228 |
-| `signedkan_wip/tests/test_eval_voc.py` | **new** — 6 tests (unit/integ/cuda regression) | +175 |
-| `signedkan_wip/src/vision/train_voc_stagec.py` | edit — save `query_head_kind`; fix F541 | +4/−1 |
+| `hymeko_neuro/experiments/vision/eval_voc.py` | **new** — held-out eval + VOC panel render | +228 |
+| `hymeko_neuro/tests/test_eval_voc.py` | **new** — 6 tests (unit/integ/cuda regression) | +175 |
+| `hymeko_neuro/experiments/vision/train_voc_stagec.py` | edit — save `query_head_kind`; fix F541 | +4/−1 |
 | `docs/plans/2026-06-10-voc-test-baseline/` | **new** — 4 plan artifacts | — |
 
 `eval_voc` reuses `VocPersonDetector` (model reconstruction + nodelet
@@ -57,7 +57,7 @@ catch it; fixed in `eval_checkpoint_on_split`).
   loader bounds RSS structurally (X stays on CPU); peak monitored via
   `_peak_rss_mb` ctypes probe. Unicode `→` print crash fixed with
   `PYTHONIOENCODING=utf-8`.
-- Checkpoint: `signedkan_wip/experiments/results/voc_b9_ep60_seed0/stage_d1_voc_seed0.pt`
+- Checkpoint: `hymeko_neuro/experiments/results/voc_b9_ep60_seed0/stage_d1_voc_seed0.pt`
   (label `stage_d1_voc`, ep60, nodelet, resnet18_imagenet, 320px).
 - Panels: `demo_out/voc/voc_panel_{00..05}.png` (gitignored, threshold 0.10).
 - Seed 0; git SHA `af803ee` (dirty tree — this change set).

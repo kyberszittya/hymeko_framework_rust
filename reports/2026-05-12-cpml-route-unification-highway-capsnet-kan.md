@@ -15,12 +15,12 @@
 | `docs/book/src/results/mathematics.md` | CPML bullets |
 | `docs/math/cpml-route-unification.md` | Pointer |
 | `docs/book/src/results/abbreviations.md` | CPML route / pyramid / capsule_soft |
-| `signedkan_wip/src/cpml.py` | `CPMLConfig.tier_organization`, router, forwards |
-| `signedkan_wip/src/hymeko_gomb/cascade.py` | `GombConfig.cpml_tier_organization`, `cpml_capsule_route_hidden` |
-| `signedkan_wip/src/hymeko_gomb/shells.py` | `InnerCPMLCore` kwargs |
-| `signedkan_wip/src/hymeko_gomb/__init__.py` | Package doc |
-| `signedkan_wip/src/run_gomb_smoke.py` | CLI + JSON + early exit |
-| `signedkan_wip/tests/test_cpml.py` | Forward/backward grid + `pyramid`/`capsule_soft` rejection |
+| `hymeko_neuro/cpml.py` | `CPMLConfig.tier_organization`, router, forwards |
+| `hymeko_neuro/models/hymeko_gomb/cascade.py` | `GombConfig.cpml_tier_organization`, `cpml_capsule_route_hidden` |
+| `hymeko_neuro/models/hymeko_gomb/shells.py` | `InnerCPMLCore` kwargs |
+| `hymeko_neuro/models/hymeko_gomb/__init__.py` | Package doc |
+| `hymeko_neuro/run_gomb_smoke.py` | CLI + JSON + early exit |
+| `hymeko_neuro/tests/test_cpml.py` | Forward/backward grid + `pyramid`/`capsule_soft` rejection |
 | `reports/2026-05-12-cpml-route-unification-highway-capsnet-kan.md` | This report |
 
 ## CORE.YAML
@@ -29,8 +29,8 @@ No items touched.
 
 ## Test results
 
-- `PYTHONPATH=. pytest -q signedkan_wip/tests/test_cpml.py` — **23** passed (includes `capsule_soft` forward/backward + mutual exclusion test).
-- `PYTHONPATH=. pytest -q signedkan_wip/tests/test_hymeko_gomb.py signedkan_wip/tests/test_sota_smoke.py` — **41** passed (includes CUDA AUROC regressions).
+- `PYTHONPATH=. pytest -q hymeko_neuro/tests/test_cpml.py` — **23** passed (includes `capsule_soft` forward/backward + mutual exclusion test).
+- `PYTHONPATH=. pytest -q hymeko_neuro/tests/test_hymeko_gomb.py hymeko_neuro/tests/test_sota_smoke.py` — **41** passed (includes CUDA AUROC regressions).
 
 **64** tests across `test_cpml.py` + the two files above — all green in this session.
 

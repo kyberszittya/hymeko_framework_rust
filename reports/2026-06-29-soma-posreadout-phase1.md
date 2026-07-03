@@ -88,14 +88,14 @@ is logged as the scalable-readout follow-up.
 
 | file | change |
 |---|---|
-| `signedkan_wip/src/hymeko_gomb/soma/vision/walk_conv_classifier.py` | `Readout.ATTENTION`/`POS_ATTENTION` + `_AttentionReadout`/`_PosAttentionReadout` |
-| `signedkan_wip/src/vision/cluttered_classification.py` | new: single-digit Cluttered-MNIST classification adapter (wraps `ClutteredMNIST`) |
-| `signedkan_wip/src/hymeko_gomb/soma/vision/train_mnist.py` | `gomb_soma_attn` arm; `--dataset {mnist,cluttered}`, `--canvas`; image-size parametrized |
-| `signedkan_wip/experiments/runs/soma_holonomy_ab_plot.py` | attention arm in ARM maps; `title`/`caption` params |
-| `signedkan_wip/tests/test_soma_position_aware_readout.py` | new: 10 attention/adapter tests |
+| `hymeko_neuro/models/hymeko_gomb/soma/vision/walk_conv_classifier.py` | `Readout.ATTENTION`/`POS_ATTENTION` + `_AttentionReadout`/`_PosAttentionReadout` |
+| `hymeko_neuro/experiments/vision/cluttered_classification.py` | new: single-digit Cluttered-MNIST classification adapter (wraps `ClutteredMNIST`) |
+| `hymeko_neuro/models/hymeko_gomb/soma/vision/train_mnist.py` | `gomb_soma_attn` arm; `--dataset {mnist,cluttered}`, `--canvas`; image-size parametrized |
+| `hymeko_neuro/experiments/runs/soma_holonomy_ab_plot.py` | attention arm in ARM maps; `title`/`caption` params |
+| `hymeko_neuro/tests/test_soma_position_aware_readout.py` | new: 10 attention/adapter tests |
 
 ## CORE.YAML items touched
-None. All in `signedkan_wip/`. Reuses `ClutteredMNIST`; no new dependency.
+None. All in `hymeko_neuro/`. Reuses `ClutteredMNIST`; no new dependency.
 
 ## Test results
 - 10 new tests (attention softmax/scale-free/convex/perm-invariant/trainable;

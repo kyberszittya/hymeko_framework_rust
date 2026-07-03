@@ -11,7 +11,7 @@ separate, unrelated bugs**:
    `enumerate_cycles_rs` — it always has. The installed
    site-packages wheel was just out of date. Rebuilding with
    `maturin develop --release` exposed it.
-2. **`_repo_root()` in `run_gomb_msg_sweep.py` returned `signedkan_wip/`
+2. **`_repo_root()` in `run_gomb_msg_sweep.py` returned `hymeko_neuro/`
    instead of the repo root.** A `parents[2]` typo (should be
    `parents[3]`). The bug stayed hidden because the binary-lookup
    helper falls back to `cargo run` if the path is wrong, but
@@ -27,7 +27,7 @@ on the same JSONL row as the training metrics.
 | File | Status | Change |
 | --- | --- | --- |
 | installed `hymeko` wheel | rebuilt | `maturin develop --release` from `hymeko_py/`; no code change |
-| `signedkan_wip/experiments/runs/run_gomb_msg_sweep.py` | minor | `_repo_root()` returns `parents[3]` (repo root), not `parents[2]` (signedkan_wip/). Comment names the bug. |
+| `hymeko_neuro/experiments/runs/run_gomb_msg_sweep.py` | minor | `_repo_root()` returns `parents[3]` (repo root), not `parents[2]` (hymeko_neuro/). Comment names the bug. |
 
 ## CORE.YAML items touched
 
@@ -55,7 +55,7 @@ Full sweep:
 ## Quantitative result — end-to-end Gömb sweep
 
 ```
-$ python -m signedkan_wip.experiments.runs.run_gomb_msg_sweep \
+$ python -m hymeko_neuro.experiments.runs.run_gomb_msg_sweep \
       --pgraph data/hsikan/sweep_msg_gomb.hymeko \
       --algorithm abb --dataset sbm_n200 --device cpu \
       --seed 0 --max-runs 1
@@ -114,10 +114,10 @@ Memory entry below.
 
 ## Open issues and follow-up items
 
-1. **The other 4 `signedkan_wip/data/...` references in the Gömb
+1. **The other 4 `hymeko_neuro/assets/data/...` references in the Gömb
    driver.** Search showed only the training-file path in
    `run_gomb_msg_sweep.py:245` hits this; the dataset CSVs DO live
-   under `signedkan_wip/data/` (correctly so). No further wiring
+   under `hymeko_neuro/assets/data/` (correctly so). No further wiring
    required.
 2. **Phase 10 (multi-objective ABB)** — still on disk; ready for
    implementation. The Phase 8 regime-crossover result (m=16 wins

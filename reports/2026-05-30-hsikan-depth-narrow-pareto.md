@@ -79,7 +79,7 @@ Deeper HSiKAN is *more stable* across seeds, not less — consistent with the re
 
 ## Engineering finding (bug + fix)
 
-The first chain attempt false-positive-skipped configs 2–6 because the orchestrator's resume key was `(model, dataset, seed)` — single-config sweeps were fine, multi-config sweeps to one jsonl turned the resume gate into a "skip after first config" gate. Fixed in `signedkan_wip/experiments/runs/run_vision_hypergraph_vs_cnn.py`: `full_cell_key` now includes `hidden`, `n_layers`, `spatial_filter`, `tie_we`, `n_epochs`, `train_subset`, `compile`, `amp`. Regression test in `signedkan_wip/tests/test_vision_bench.py::test_full_cell_key_includes_config_axes`. 8 tests + 51 pre-existing pass.
+The first chain attempt false-positive-skipped configs 2–6 because the orchestrator's resume key was `(model, dataset, seed)` — single-config sweeps were fine, multi-config sweeps to one jsonl turned the resume gate into a "skip after first config" gate. Fixed in `hymeko_neuro/experiments/runs/run_vision_hypergraph_vs_cnn.py`: `full_cell_key` now includes `hidden`, `n_layers`, `spatial_filter`, `tie_we`, `n_epochs`, `train_subset`, `compile`, `amp`. Regression test in `hymeko_neuro/tests/test_vision_bench.py::test_full_cell_key_includes_config_axes`. 8 tests + 51 pre-existing pass.
 
 ## Files / tests
 

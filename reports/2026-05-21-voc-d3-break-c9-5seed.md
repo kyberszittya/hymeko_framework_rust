@@ -31,7 +31,7 @@
 ## 2. The recipe (drop-in CLI)
 
 ```
-python -m signedkan_wip.src.vision.train_voc_stagec \
+python -m hymeko_neuro.experiments.vision.train_voc_stagec \
   --image-set trainval --epochs 90 --input-size 224 \
   --batch-size 8 --n-box-queries 6 \
   --lr 0.003 --seed {0..4} \
@@ -79,7 +79,7 @@ The remaining 2.5× gap to the visit gate (0.20) will come from the *next* axis:
 ## 5. Next-axis sweep — input resolution (launching)
 
 Plan: `docs/plans/2026-05-21-voc-input-resolution/` (4-format, parallel writeup).
-Script: `signedkan_wip/experiments/run_voc_input_resolution_sweep_2026_05_21.sh`.
+Script: `hymeko_neuro/experiments/run_voc_input_resolution_sweep_2026_05_21.sh`.
 
 Three single-seed cells at the C9 recipe:
 
@@ -100,9 +100,9 @@ Falsifier (built into the orchestrator):
 
 | File | Status |
 |---|---|
-| `signedkan_wip/experiments/run_voc_c9_5seed_2026_05_21.sh` | new (5-seed orchestrator) |
-| `signedkan_wip/experiments/results/voc_c9_5seed_20260521T170711Z/` | new (JSONL artefacts) |
-| `signedkan_wip/experiments/run_voc_input_resolution_sweep_2026_05_21.sh` | new (next-axis sweep) |
+| `hymeko_neuro/experiments/run_voc_c9_5seed_2026_05_21.sh` | new (5-seed orchestrator) |
+| `hymeko_neuro/experiments/results/voc_c9_5seed_20260521T170711Z/` | new (JSONL artefacts) |
+| `hymeko_neuro/experiments/run_voc_input_resolution_sweep_2026_05_21.sh` | new (next-axis sweep) |
 | `docs/plans/2026-05-21-voc-input-resolution/` | new (4-format plan for sweep) |
 | `reports/2026-05-21-voc-d3-break-c9-5seed.md` | new (this report) |
 

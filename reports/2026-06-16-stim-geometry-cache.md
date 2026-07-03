@@ -60,9 +60,9 @@ negating *both* edge endpoints preserves `⟨f_u,f_v⟩`, so it is not a valid
 | `…/vision/ricci_stim_backbone.py` | `cache_geometry` flag, `_image_key`, cached/uncached forward branch, SDRF guard |
 | `…/vision/ricci_stim_detector.py` | `cache_geometry` passthrough |
 | `experiments/run_ricci_stim_cluttered_mnist.py` | `--cache` flag; records `cache` in JSONL |
-| `signedkan_wip/tests/test_stim_geometry_cache.py` | **new** — 5 correctness tests |
+| `hymeko_neuro/tests/test_stim_geometry_cache.py` | **new** — 5 correctness tests |
 
-CORE.YAML: none (`signedkan_wip` non-core). No new dependency.
+CORE.YAML: none (`hymeko_neuro` non-core). No new dependency.
 
 ## Test results
 

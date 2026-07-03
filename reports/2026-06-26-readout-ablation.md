@@ -56,13 +56,13 @@ wiring fault (the audit cleared the wiring). The chain is now closed:
 ## Next step (RL, the payoff test)
 
 Swap the RL backbone's mean-pool for a non-collapsing readout and re-run one robot task (galambos or
-quadruped), params-matched vs the MLP. `signed_kan.SignedKANBackbone` exposes `node_activations` (the
+quadruped), params-matched vs the MLP. `hymeko_neuro.core.SignedKANBackbone` exposes `node_activations` (the
 non-collapsing seam) but `POOL_MODES` is only `("mean","sum")` — a non-collapsing/attention readout is a
-small **non-core** addition in `signed_kan` (or a wrapper in `hymeko_rl`). Prediction: the robot tie narrows
+small **non-core** addition in `hymeko_neuro.core` (or a wrapper in `hymeko_rl`). Prediction: the robot tie narrows
 or flips. If it does, the architecture story is complete; if not, the remaining suspect is RL optimisation
 noise at the small obs sizes.
 
-## Files touched (CORE.YAML: none — `signed_kan` consumed via `node_activations`, no edit)
+## Files touched (CORE.YAML: none — `hymeko_neuro.core` consumed via `node_activations`, no edit)
 
 - **Extended** `hymeko_rl/structural_probe.py` — `make_dataset` `kind="local"`; `_NodeConcat` readout +
   `readout=` on `build_model`; `run_readout_ablation` + `plot_ablation`; CLI `--ablation`.

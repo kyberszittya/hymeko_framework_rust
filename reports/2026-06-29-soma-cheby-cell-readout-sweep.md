@@ -69,18 +69,18 @@ the architectural lever that actually mattered.
 
 | file | change |
 |---|---|
-| `signedkan_wip/src/hymeko_gomb/soma/hg_conv.py` | `MessageActivation` enum + `message_activation` config field |
-| `signedkan_wip/src/hymeko_gomb/soma/walk_layer.py` | build activation module at init (Strategy), `_build_message_activation` |
-| `signedkan_wip/src/hymeko_gomb/soma/vision/walk_conv_classifier.py` | `PatchEncoder`/`Readout` enums + Strategy modules (`_Mean/_Flatten` readout, CR patch encoder), head width from readout |
-| `signedkan_wip/src/hymeko_gomb/soma/vision/train_mnist.py` | 3 new arms (cheby / flat / cheby_flat) |
-| `signedkan_wip/experiments/runs/soma_holonomy_ab_plot.py` | extend ARM_ORDER/LABEL/COLOR (reuse shaper+renderer) |
-| `signedkan_wip/tests/test_gomb_soma_cheby_cell_readout.py` | new: 10 cell/readout tests |
-| `signedkan_wip/tests/test_soma_holonomy_ab_plot.py` | 2 assertions relaxed to present-arm subset |
+| `hymeko_neuro/models/hymeko_gomb/soma/hg_conv.py` | `MessageActivation` enum + `message_activation` config field |
+| `hymeko_neuro/models/hymeko_gomb/soma/walk_layer.py` | build activation module at init (Strategy), `_build_message_activation` |
+| `hymeko_neuro/models/hymeko_gomb/soma/vision/walk_conv_classifier.py` | `PatchEncoder`/`Readout` enums + Strategy modules (`_Mean/_Flatten` readout, CR patch encoder), head width from readout |
+| `hymeko_neuro/models/hymeko_gomb/soma/vision/train_mnist.py` | 3 new arms (cheby / flat / cheby_flat) |
+| `hymeko_neuro/experiments/runs/soma_holonomy_ab_plot.py` | extend ARM_ORDER/LABEL/COLOR (reuse shaper+renderer) |
+| `hymeko_neuro/tests/test_gomb_soma_cheby_cell_readout.py` | new: 10 cell/readout tests |
+| `hymeko_neuro/tests/test_soma_holonomy_ab_plot.py` | 2 assertions relaxed to present-arm subset |
 
 ## CORE.YAML items touched
 
-None. All edits in `signedkan_wip/`. `ChebyshevCRActivation` reused from
-`signed_kan/splines.py` — no new spline code, no new dependency.
+None. All edits in `hymeko_neuro/`. `ChebyshevCRActivation` reused from
+`hymeko_neuro/core/splines.py` — no new spline code, no new dependency.
 
 ## Test results
 

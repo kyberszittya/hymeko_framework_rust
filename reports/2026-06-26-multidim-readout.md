@@ -60,7 +60,7 @@ Prediction: the tie flips to an HSiKAN win. The critic can keep a global pool (a
 aggregate); only the actor needs the per-node head. Map joint→vertex via the existing `_jnt_vtx` (the actuated
 joints' child vertices).
 
-## Files touched (CORE.YAML: none — `signed_kan` consumed via `node_activations`)
+## Files touched (CORE.YAML: none — `hymeko_neuro.core` consumed via `node_activations`)
 
 - **Extended** `hymeko_rl/structural_probe.py` — `pernode` target; `_PoolExpand`/`_PerNode`/`_PerNodeGlobal`/
   `_MlpMultiDim` heads + `build_multidim_model`; `run_multidim_probe` + `plot_multidim`; CLI `--multidim`.

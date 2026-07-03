@@ -69,12 +69,12 @@ at $R_{\text{full}}$, where the held-out label is reachable in the σ-product.
 
 | Path | Action | Lines |
 |---|---|---|
-| `signedkan_wip/src/runtime_config.py` | add `reach_topo` field + `HSIKAN_REACH_TOPO` env parse (mirrors `strict_protocol`) | +2 |
-| `signedkan_wip/experiments/runs/run_final_cell.py` | R_topo mask: `g.signs[te_idx]=1` after eval target captured; guard vs strict | +13 |
+| `hymeko_neuro/runtime/runtime_config.py` | add `reach_topo` field + `HSIKAN_REACH_TOPO` env parse (mirrors `strict_protocol`) | +2 |
+| `hymeko_neuro/experiments/runs/run_final_cell.py` | R_topo mask: `g.signs[te_idx]=1` after eval target captured; guard vs strict | +13 |
 
 ## CORE.YAML items touched
 
-**None.** `signedkan_wip/` is not in `CORE.YAML`. Additive, env-gated (default
+**None.** `hymeko_neuro/` is not in `CORE.YAML`. Additive, env-gated (default
 off → all prior runs bit-identical), reversible.
 
 ## Method / verification

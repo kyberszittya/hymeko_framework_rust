@@ -1,0 +1,60 @@
+# 5-seed paired AUC on Epinions, HSiKAN edge_cr SOTA.
+# Replaces: hymeko_neuro/experiments/run_epinions_edge_cr_5seed_2026_05_09.sh
+#
+# Prior benchmark (Komondor K-sweep 2026-06-04, jobs 13885808/9/10):
+#   real    n=5 auc=0.8829 ± 0.0128  (NEW SOTA candidate vs cycle-only 0.7392)
+#   shuffle n=1 auc=0.8643             (4 cells TIMEOUT-ed; v1 submitter bug)
+#
+# Cold-cache wall on Komondor A100: ~2h 27min per cell.
+# Local OOM history: fits with per_vertex K=128 + Triton kernel
+# (memory: project_epinions_ceiling_2026_05_09).
+
+name: epinions_edge_cr_5seed
+description: |
+  5-seed paired AUC on Epinions. Cold-cache cells are ~2.5h each
+  on Komondor A100; locally feasible only with per_vertex K=128 +
+  Triton kernel. Headline: real-mode 5-seed 0.8829 ± 0.0128.
+experiment_class: SweepExperiment
+
+cells:
+  - { dataset: epinions, mode: real,    seeds: [0, 1, 2, 3, 4] }
+  - { dataset: epinions, mode: shuffle, seeds: [0, 1, 2, 3, 4] }
+
+model:
+  family: HSiKAN
+  hidden: 4
+  n_epochs: 80
+  mixed_tuples: [c2, c3, c4, c5, w2, w3]
+  attention_m_e: quaternion
+  attention_highway: true
+  attention_highway_kind: edge_cr
+  max_k4: 200000
+
+topk:
+  mode: per_vertex
+  k: 128
+  pruner: balance
+  scorer: fraction_negative
+
+kernel:
+  triton: true
+  triton_backward: true
+
+cycle_cache:
+  enabled: true
+  dir: .cache/hymeko_cycles
+
+env:
+  PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+  MALLOC_ARENA_MAX: "4"
+  OMP_NUM_THREADS: "4"
+
+monitors:
+  - WallMonitor
+  - MemoryMonitor
+  - AUCMonitor
+  - JSONLEmitter
+
+output:
+  jsonl: experiments/results/${name}.jsonl
+  summary: reports/auto/${name}.md

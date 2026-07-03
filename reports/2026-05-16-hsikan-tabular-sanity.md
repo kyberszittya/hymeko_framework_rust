@@ -23,8 +23,8 @@ intrinsic. The right question: does HSiKAN's σ-cycle bias add
 value when applied to k-NN-derived graphs on tabular features?
 
 The tabular harness was already in tree
-([`signedkan_wip/src/run_tabular_smoke.py`](../signedkan_wip/src/run_tabular_smoke.py),
-[`signedkan_wip/src/run_tabular_regression.py`](../signedkan_wip/src/run_tabular_regression.py))
+([`hymeko_neuro/run_tabular_smoke.py`](../hymeko_neuro/run_tabular_smoke.py),
+[`hymeko_neuro/run_tabular_regression.py`](../hymeko_neuro/run_tabular_regression.py))
 from a 2026-05-09 plan
 (`docs/plans_hsikan_tabular_benchmarks_2026_05_09.md`) but the
 import paths were stale after the 2026-05-11 `mixed_arity_signedkan`
@@ -35,8 +35,8 @@ source changes.
 
 | File | Change |
 |------|--------|
-| [`signedkan_wip/src/run_tabular_smoke.py`](../signedkan_wip/src/run_tabular_smoke.py) | Stale import fix: `MultiLayerSignedKANConfig` moved to `.signedkan` in the 2026-05-11 refactor; the tabular harness still imported from `.mixed_arity_signedkan`. Net change: one import block. |
-| [`signedkan_wip/src/run_tabular_regression.py`](../signedkan_wip/src/run_tabular_regression.py) | Same fix. |
+| [`hymeko_neuro/run_tabular_smoke.py`](../hymeko_neuro/run_tabular_smoke.py) | Stale import fix: `MultiLayerSignedKANConfig` moved to `.signedkan` in the 2026-05-11 refactor; the tabular harness still imported from `.mixed_arity_signedkan`. Net change: one import block. |
+| [`hymeko_neuro/run_tabular_regression.py`](../hymeko_neuro/run_tabular_regression.py) | Same fix. |
 
 **CORE.YAML items touched:** none.
 

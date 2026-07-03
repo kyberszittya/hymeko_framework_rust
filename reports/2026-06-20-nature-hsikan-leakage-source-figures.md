@@ -31,8 +31,8 @@ numbers invented; no panel omitted (all intended data present).
 ## Figures produced (paths)
 
 ```
-signedkan_wip/paper/figures/leakage_lattice.{pdf,png,eps}
-signedkan_wip/paper/figures/leakage_source_contrast.{pdf,png,eps}
+hymeko_neuro/assets/paper/figures/leakage_lattice.{pdf,png,eps}
+hymeko_neuro/assets/paper/figures/leakage_source_contrast.{pdf,png,eps}
 ```
 
 EPS emitted for Springer (a cosmetic "PostScript backend does not support
@@ -81,30 +81,30 @@ rows — cycle method real 0.822/0.877, shuffle 0.482/0.703.
 
 | File | Rows | Distinct cells used |
 |---|---|---|
-| `signedkan_wip/experiments/results/cycle_reachability_grid.jsonl` | 60 | 60 (clean, 1/cell) |
-| `signedkan_wip/experiments/results/no_leak_baselines.jsonl` | 350 | 350 (clean, 1/cell) |
-| `signedkan_wip/experiments/results/no_leak_baselines_topo.jsonl` | 420 | 350 after dedup (70 seed-0 re-run rows folded last-wins) |
+| `hymeko_neuro/experiments/results/cycle_reachability_grid.jsonl` | 60 | 60 (clean, 1/cell) |
+| `hymeko_neuro/experiments/results/no_leak_baselines.jsonl` | 350 | 350 (clean, 1/cell) |
+| `hymeko_neuro/experiments/results/no_leak_baselines_topo.jsonl` | 420 | 350 after dedup (70 seed-0 re-run rows folded last-wins) |
 
 ## Files touched
 
 | Path | Action | Lines |
 |---|---|---|
-| `signedkan_wip/src/paperkit/build_leakage_source_figure.py` | new module (2 builders + loaders + self-check) | +320 |
-| `signedkan_wip/tests/test_build_leakage_source_figure.py` | new test suite | +154 |
-| `signedkan_wip/paper/figures/leakage_lattice.{pdf,png,eps}` | new figure | — |
-| `signedkan_wip/paper/figures/leakage_source_contrast.{pdf,png,eps}` | new figure | — |
+| `hymeko_neuro/paperkit/build_leakage_source_figure.py` | new module (2 builders + loaders + self-check) | +320 |
+| `hymeko_neuro/tests/test_build_leakage_source_figure.py` | new test suite | +154 |
+| `hymeko_neuro/assets/paper/figures/leakage_lattice.{pdf,png,eps}` | new figure | — |
+| `hymeko_neuro/assets/paper/figures/leakage_source_contrast.{pdf,png,eps}` | new figure | — |
 | `docs/plans/2026-06-20-nature-hsikan-leakage-source-figures/plan.{tex,pdf,tikz,mmd}` | plan | — |
 | `reports/2026-06-20-nature-hsikan-leakage-source-figures.md` | this report | — |
 
 ## CORE.YAML items touched
 
-**None.** `signedkan_wip/`, `paper/figures/`, `reports/`, `docs/plans/` are not in
+**None.** `hymeko_neuro/`, `paper/figures/`, `reports/`, `docs/plans/` are not in
 `CORE.YAML`. Purely additive; no existing file modified.
 
 ## Test results
 
 Runner: `uv run python -m pytest -p no:randomly` (the `-m pytest` form is required
-so the repo root is on `sys.path`; `signedkan_wip` resolves as a namespace package).
+so the repo root is on `sys.path`; `hymeko_neuro` resolves as a namespace package).
 
 - **10 passed in ~9 s.** Layers:
   - unit: `Arm` mean/std/count, NaN+None filtering, all-non-finite → None;
@@ -150,6 +150,6 @@ string-typed config crossing into logic (rules are a fixed ordered list).
 - Git SHA: `b5a1f64` (working tree dirty — pre-existing; this change adds the files
   listed above and does not modify tracked sources).
 - Host: Windows 11, Python 3.12 (uv-managed venv), matplotlib Agg backend.
-- Data: measured JSONL under `signedkan_wip/experiments/results/` (see counts
+- Data: measured JSONL under `hymeko_neuro/experiments/results/` (see counts
   above); no seeds drawn at plot time (figures are deterministic functions of the
   committed data). Self-check uses fixed synthetic constants.

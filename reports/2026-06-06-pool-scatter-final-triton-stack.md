@@ -103,23 +103,23 @@ deferred (estimated ≤ 2× upper bound for 200-300 LOC of kernel work).
 
 ## Files touched (across the two-day arc)
 
-- [signedkan_wip/src/ac_hsikan/components/pool_scatter.py](../signedkan_wip/src/ac_hsikan/components/pool_scatter.py) —
+- [hymeko_neuro/models/ac_hsikan/components/pool_scatter.py](../hymeko_neuro/models/ac_hsikan/components/pool_scatter.py) —
   closed-form CR-coef bwd, packed scatter_add, ctx-save, Triton
   CR-coef + Hamilton dispatch, MainThread guard for worker-thread
   fallback.
-- [signedkan_wip/src/triton_kernels/fused_pool_scatter.py](../signedkan_wip/src/triton_kernels/fused_pool_scatter.py) —
+- [hymeko_neuro/kernels/triton_kernels/fused_pool_scatter.py](../hymeko_neuro/kernels/triton_kernels/fused_pool_scatter.py) —
   new `_cr_coef_backward_kernel`, new `_hamilton_rotate_kernel`,
   Python wrappers `cr_coef_backward_triton` + `hamilton_rotate_triton`.
-- [signedkan_wip/src/ac_hsikan/layer.py](../signedkan_wip/src/ac_hsikan/layer.py) —
+- [hymeko_neuro/models/ac_hsikan/layer.py](../hymeko_neuro/models/ac_hsikan/layer.py) —
   pre-norm + LayerScale opt-in (deep-stability fix), `_local_indices`
   buffer-cache, entropy-scalar pass to pool_scatter rotor.
-- [signedkan_wip/src/ac_hsikan/config.py](../signedkan_wip/src/ac_hsikan/config.py) —
+- [hymeko_neuro/models/ac_hsikan/config.py](../hymeko_neuro/models/ac_hsikan/config.py) —
   `use_pool_scatter_rotor`, `use_pre_norm`, `use_layer_scale`,
   `layer_scale_init` flags.
-- [signedkan_wip/src/ac_hsikan/telemetry.py](../signedkan_wip/src/ac_hsikan/telemetry.py) —
+- [hymeko_neuro/models/ac_hsikan/telemetry.py](../hymeko_neuro/models/ac_hsikan/telemetry.py) —
   `EvolventTelemetry` context manager + JSONL sink + ctx-snapshot
   pattern to survive PyTorch's autograd worker thread.
-- [signedkan_wip/experiments/ac_hsikan_imdb_smoke.py](../signedkan_wip/experiments/ac_hsikan_imdb_smoke.py) —
+- [hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py](../hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py) —
   new `--pool-scatter`, `--rotor`, `--telemetry-out`, `--clifford-fir`,
   `--fused-walk`, `--sparse-sign-head`, `--compile`, `--d-model`,
   `--n-layers`, `--pre-norm`, `--layer-scale` flags.
@@ -128,7 +128,7 @@ deferred (estimated ≤ 2× upper bound for 200-300 LOC of kernel work).
 
 ## CORE.YAML items touched
 
-None. `signedkan_wip/` is non-core.
+None. `hymeko_neuro/` is non-core.
 
 ## Open / next
 

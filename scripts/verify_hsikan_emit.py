@@ -8,7 +8,7 @@ Pipeline exercised:
      structure tensors + per-arity M_e incidence).
   2. The emitted module imports cleanly and instantiates without error.
   3. forward(x, triad_v_kK, triad_sigma_kK, M_e_kK) routes to the real
-     signedkan_wip.src.core.signedkan.SignedKANLayer per arity, then the
+     hymeko_neuro.hyperedge.signedkan.SignedKANLayer per arity, then the
      ArityMixer applies M_e_kK · cyc_emb_kK weighted by softmax(αₖ).
   4. A forward + backward + optimiser step reduces loss on a synthetic
      target.  Confirms autograd is intact through both the real
@@ -89,8 +89,8 @@ def main():
         print(f"  wrote {out.stat().st_size} bytes")
 
         print("\n── 2. import + instantiate ──")
-        # ehk_torch_stub.SignedKANLayer pulls in signedkan_wip lazily; make
-        # signedkan_wip importable from the repo root.
+        # ehk_torch_stub.SignedKANLayer pulls in hymeko_neuro lazily; make
+        # hymeko_neuro importable from the repo root.
         sys.path.insert(0, str(REPO))
         sys.path.insert(0, str(REPO / "python" / "ehk_torch_stub" / "src"))
         spec = importlib.util.spec_from_file_location("hsikan_emitted", out)

@@ -79,14 +79,14 @@ Self CUDA time total: 4.443 s
 
 | File | Status | Notes |
 |:--|:--|:--|
-| `signedkan_wip/src/vision/hsikan_vision.py` | modified | CRActivation forward + `_forward_legacy` + `_cr_offset` buffer; `SignedBranchConv(..., tie_we)`; `HSiKANVisionLayer(..., tie_we)`; `HSiKANVisionClassifier(..., tie_we)` |
-| `signedkan_wip/src/vision/vision_bench_cell.py` | modified | `--compile`, `--amp`, `--tie-we` flags; threaded into `train_and_eval` and recorded in result rows |
-| `signedkan_wip/experiments/runs/run_vision_hypergraph_vs_cnn.py` | modified | `--compile`, `--amp`, `--tie-we` orchestrator flags propagated to cells |
-| `signedkan_wip/experiments/runs/probe_hsikan_torch_profiler.py` | new | CUDA-kernel-attribution probe |
-| `signedkan_wip/experiments/runs/probe_hsikan_tier1.py` | new | Tier-1 lever sweep |
-| `signedkan_wip/experiments/runs/probe_vision_gpu_memory.py` | new | per-model GPU memory probe |
-| `signedkan_wip/tests/test_cractivation_parity.py` | new | 9 parity tests (1e-7) |
-| `signedkan_wip/tests/test_hsikan_tie_we.py` | new | 4 tie_we plumbing tests |
+| `hymeko_neuro/experiments/vision/hsikan_vision.py` | modified | CRActivation forward + `_forward_legacy` + `_cr_offset` buffer; `SignedBranchConv(..., tie_we)`; `HSiKANVisionLayer(..., tie_we)`; `HSiKANVisionClassifier(..., tie_we)` |
+| `hymeko_neuro/experiments/vision/vision_bench_cell.py` | modified | `--compile`, `--amp`, `--tie-we` flags; threaded into `train_and_eval` and recorded in result rows |
+| `hymeko_neuro/experiments/runs/run_vision_hypergraph_vs_cnn.py` | modified | `--compile`, `--amp`, `--tie-we` orchestrator flags propagated to cells |
+| `hymeko_neuro/experiments/runs/probe_hsikan_torch_profiler.py` | new | CUDA-kernel-attribution probe |
+| `hymeko_neuro/experiments/runs/probe_hsikan_tier1.py` | new | Tier-1 lever sweep |
+| `hymeko_neuro/experiments/runs/probe_vision_gpu_memory.py` | new | per-model GPU memory probe |
+| `hymeko_neuro/tests/test_cractivation_parity.py` | new | 9 parity tests (1e-7) |
+| `hymeko_neuro/tests/test_hsikan_tie_we.py` | new | 4 tie_we plumbing tests |
 
 ## Test results
 

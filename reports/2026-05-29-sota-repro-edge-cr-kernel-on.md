@@ -2,8 +2,8 @@
 
 **Date:** 2026-05-29
 **Predecessor SOTA:** memory `project_kernel_on_5seed_2026_05_09` (May-9, mean AUC 0.9070 ± .0029).
-**Recipe source:** `signedkan_wip/experiments/run_slashdot_edge_cr_kernel_on_2026_05_09.sh` (bit-identical env vars, lines 41-53).
-**Repro script:** `signedkan_wip/experiments/run_slashdot_edge_cr_kernel_on_repro_2026_05_28.sh` (preserves the May-9 jsonl).
+**Recipe source:** `hymeko_neuro/experiments/run_slashdot_edge_cr_kernel_on_2026_05_09.sh` (bit-identical env vars, lines 41-53).
+**Repro script:** `hymeko_neuro/experiments/run_slashdot_edge_cr_kernel_on_repro_2026_05_28.sh` (preserves the May-9 jsonl).
 **CORE.YAML items touched:** none.
 
 ## Headline — **reproduces, with a 40 % wall speedup at identical AUC**
@@ -34,7 +34,7 @@ Best explanation: torch 2.11 + driver 580.x + 4 weeks of code churn (Triton kern
 
 - 5/5 seeds completed; 0 failures.
 - Recipe is bit-identical to May-9 (verified by `diff`-ing the env-var blocks).
-- Both jsonls preserved at `signedkan_wip/experiments/results/`:
+- Both jsonls preserved at `hymeko_neuro/experiments/results/`:
   - `slashdot_edge_cr_kernel_on_2026_05_09.jsonl` (untouched historical record)
   - `slashdot_edge_cr_kernel_on_2026_05_28_repro.jsonl` (today)
 

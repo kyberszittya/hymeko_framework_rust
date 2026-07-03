@@ -9,13 +9,13 @@ provenance.
 
 ```bash
 # Single training cell driven by .hymeko config:
-python3 -m signedkan_wip.src.hymeko_driver \
+python3 -m hymeko_neuro.hymeko.hymeko_driver \
     --arch     data/hsikan/arch_mixed_k34.hymeko \
     --training data/hsikan/training.hymeko \
     --dataset  bitcoin_alpha
 
 # Grid sweep:
-python3 -m signedkan_wip.src.hymeko_driver \
+python3 -m hymeko_neuro.hymeko.hymeko_driver \
     --sweep    data/hsikan/sweep_grid.hymeko \
     --arch     data/hsikan/arch_mixed_k34.hymeko \
     --training data/hsikan/training.hymeko \
@@ -33,7 +33,7 @@ python3 -m signedkan_wip.src.hymeko_driver \
 | `data/hsikan/sweep_grid.hymeko` | Cartesian-product hyperparameter sweep |
 | `data/hsikan/sweep_genetic.hymeko` | GA-driven search |
 | `data/hsikan/sweep_msg.hymeko` | P-graph axiom-feasibility (MSG/SSG/ABB) |
-| `signedkan_wip/src/hymeko_driver.py` | parse → instantiate → train |
+| `hymeko_neuro/hymeko/hymeko_driver.py` | parse → instantiate → train |
 | `hymeko_py/src/hymeko_parse.rs` | PyO3 bridge wrapping `parser::parse_description` |
 
 ## Schema

@@ -16,9 +16,9 @@ Params-matched HSiKAN vs MLP, K seeds, held-out test MSE. The decisive predictio
 ``MSE_struct(HSiKAN) ≪ MSE_struct(MLP)`` while ``MSE_bag(HSiKAN) ≈ MSE_bag(MLP)``. Then: HSiKAN wins on
 struct ⇒ the backbone forward is correct (bug hypothesis falsified) *and* structure helps when load-bearing;
 the bag tie ⇒ the gap is structural, not capacity. If HSiKAN cannot beat the MLP even on ``structural``, the
-backbone forward is buggy — localise in ``signed_kan/backbone.py``.
+backbone forward is buggy — localise in ``hymeko_neuro/core/backbone.py``.
 
-Reuses the production backbones (no rebuild, §6.1): :class:`signed_kan.SignedKANBackbone` and
+Reuses the production backbones (no rebuild, §6.1): :class:`hymeko_neuro.core.SignedKANBackbone` and
 :func:`hymeko_rl.agents.policy.mlp_backbone`.
 """
 from __future__ import annotations
@@ -36,7 +36,7 @@ import torch.nn as nn
 
 from hymeko_rl.agents.hypergraph_state import HypergraphState
 from hymeko_rl.agents.policy import mlp_backbone
-from signed_kan import SignedKANBackbone
+from hymeko_neuro.core import SignedKANBackbone
 
 Target = Literal["structural", "bag", "local", "pernode"]
 Backbone = Literal["hsikan", "mlp"]

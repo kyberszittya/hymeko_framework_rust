@@ -109,12 +109,12 @@ def _try_load_real_signedkan():
     """Lazy import of the real Option-C SignedKANLayer.
 
     Returned on success: tuple (SignedKANLayer, SignedKANConfig).
-    Returns None if signedkan_wip is not on the import path — in which
+    Returns None if hymeko_neuro is not on the import path — in which
     case SignedKANLayer below falls back to its stub linear+tanh+linear
     math, preserving the codegen smoke test's "importable" guarantee.
     """
     try:
-        from signedkan_wip.src.core.signedkan import (
+        from hymeko_neuro.hyperedge.signedkan import (
             SignedKANLayer as _Real,
             SignedKANConfig as _Cfg,
         )
@@ -124,14 +124,14 @@ def _try_load_real_signedkan():
 
 
 class SignedKANLayer(nn.Module):
-    """Tier-3 ``signedkan_layer`` — delegates to the real signedkan_wip
+    """Tier-3 ``signedkan_layer`` — delegates to the real hymeko_neuro
     Option-C signed-incidence layer when its inputs are present.
 
     Forward signatures:
       * ``forward(x, triad_v, triad_sigma)`` — real path.  ``triad_v``
         is ``(n_cycles, k)`` of vertex IDs and ``triad_sigma`` is
         ``(n_cycles, k)`` ∈ {+1, -1}.  Output: ``(n_cycles, hidden)``.
-        Mirrors signedkan_wip.src.core.signedkan.SignedKANLayer.forward.
+        Mirrors hymeko_neuro.hyperedge.signedkan.SignedKANLayer.forward.
       * ``forward(x)`` — stub fallback for codegen smoke tests.
 
     The real layer's per-sign Option-C aggregation is:

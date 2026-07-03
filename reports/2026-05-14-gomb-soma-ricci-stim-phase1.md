@@ -24,9 +24,9 @@ later phases.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/forman.py](../signedkan_wip/src/hymeko_gomb/soma/vision/forman.py) | 152 | `FormanCurvatureHead` + `FormanCurvature` dataclass |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | +6 / -2 | re-export |
-| [signedkan_wip/tests/test_gomb_soma_vision_forman.py](../signedkan_wip/tests/test_gomb_soma_vision_forman.py) | 235 | 16 tests against classical graph invariants |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/forman.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/forman.py) | 152 | `FormanCurvatureHead` + `FormanCurvature` dataclass |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | +6 / -2 | re-export |
+| [hymeko_neuro/tests/test_gomb_soma_vision_forman.py](../hymeko_neuro/tests/test_gomb_soma_vision_forman.py) | 235 | 16 tests against classical graph invariants |
 
 No edits to Gömb / Phase 1-3-G / Phase 3-V / CORE.YAML.
 
@@ -53,7 +53,7 @@ Per-vertex κ_v is the mean of incident edge κ values.
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_forman.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_forman.py -v
 =========== 16 passed in 2.03s ===========
 ```
 
@@ -139,7 +139,7 @@ tests pass.
 ## 9. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/forman.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/forman.py
    (clean)
 ```
 
@@ -194,15 +194,15 @@ budget or depth bound is reached. Tests:
 * Total-anchor budget cap.
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/vision/quadtree.py`
-* `signedkan_wip/tests/test_gomb_soma_vision_quadtree.py`
+* `hymeko_neuro/models/hymeko_gomb/soma/vision/quadtree.py`
+* `hymeko_neuro/tests/test_gomb_soma_vision_quadtree.py`
 
 No phase 2 work in this commit, per the one-phase-per-session rule.
 
 ## 14. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import FormanCurvatureHead
+from hymeko_neuro.models.hymeko_gomb.soma.vision import FormanCurvatureHead
 
 head = FormanCurvatureHead()
 out = head(edges_tensor, n_nodes=N)

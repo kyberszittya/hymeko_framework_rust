@@ -1,7 +1,7 @@
 //! Reachability rules over the P-graph producibility closure.
 //!
 //! The audit-side analogue lives at
-//! `signedkan_wip/src/baselines/reachability.py`; the unifying argument is in
+//! `hymeko_neuro/baselines/reachability.py`; the unifying argument is in
 //! `docs/plans/2026-06-14-reachability-rules-audit-pgraph/argument.md`. A
 //! *reachability rule* decides which units seed the producibility closure
 //! [`crate::msg::close_producible`] — the same closure the ABB reachability

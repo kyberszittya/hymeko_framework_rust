@@ -76,8 +76,8 @@ Legend for the four `bar` rows (top to bottom):
 
 | Dataset | Optuna best (single trial) | Source log (tail / best line) |
 |---------|---------------------------:|--------------------------------|
-| bitcoin_otc | **0.9956569** | `signedkan_wip/experiments/results/follow_optuna_20260513T003359Z.log` (also early segment of Alpha+Slashdot preset) |
-| bitcoin_alpha | **0.9972248** | `signedkan_wip/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log` (study completed 30 trials) |
+| bitcoin_otc | **0.9956569** | `hymeko_neuro/experiments/results/follow_optuna_20260513T003359Z.log` (also early segment of Alpha+Slashdot preset) |
+| bitcoin_alpha | **0.9972248** | `hymeko_neuro/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log` (study completed 30 trials) |
 
 **Reference means** (do not merge protocols—see SOTA file):
 
@@ -91,13 +91,13 @@ Legend for the four `bar` rows (top to bottom):
 
 | Role | Path |
 |------|------|
-| Alpha+Slashdot serial log | `signedkan_wip/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log` |
-| Four-graph serial log (OTC complete, Alpha partial) | `signedkan_wip/experiments/results/follow_optuna_20260513T003359Z.log` |
-| SQLite **Alpha+Slashdot** stamp | `signedkan_wip/experiments/results/optuna_serial_20260513T010510Z.db` |
-| SQLite **four-graph** stamp | `signedkan_wip/experiments/results/optuna_serial_20260513T010159Z.db` |
-| Serial driver | `signedkan_wip/experiments/run_optuna_serial_datasets.sh` |
-| Preset OTC→Alpha→Slashdot→Epinions | `signedkan_wip/experiments/run_optuna_core_signed_graphs_serial.sh` |
-| CUDA flock + queue helper | `signedkan_wip/experiments/run_after_experiment.sh`, `signedkan_wip/experiments/wait_until_no_optuna_search.sh` |
+| Alpha+Slashdot serial log | `hymeko_neuro/experiments/results/optuna_alpha_slashdot_20260513T010509Z.log` |
+| Four-graph serial log (OTC complete, Alpha partial) | `hymeko_neuro/experiments/results/follow_optuna_20260513T003359Z.log` |
+| SQLite **Alpha+Slashdot** stamp | `hymeko_neuro/experiments/results/optuna_serial_20260513T010510Z.db` |
+| SQLite **four-graph** stamp | `hymeko_neuro/experiments/results/optuna_serial_20260513T010159Z.db` |
+| Serial driver | `hymeko_neuro/experiments/run_optuna_serial_datasets.sh` |
+| Preset OTC→Alpha→Slashdot→Epinions | `hymeko_neuro/experiments/run_optuna_core_signed_graphs_serial.sh` |
+| CUDA flock + queue helper | `hymeko_neuro/experiments/run_after_experiment.sh`, `hymeko_neuro/experiments/wait_until_no_optuna_search.sh` |
 | mdBook snapshot page | `docs/book/src/results/bitcoin-optuna-vs-sota.md` |
 | Interactive canvas (IDE) | `~/.cursor/projects/home-kyberszittya-hakiko-ws-hymeko-hymeko-framework-rust/canvases/optuna-handoff-slashdot.canvas.tsx` (grouped bar chart + Slashdot env table) |
 
@@ -106,7 +106,7 @@ Study naming (from `run_optuna_serial_datasets.sh`): **`{dataset}_{OPTUNA_STAMP}
 
 ## Power outage impact
 
-- Running `python -m signedkan_wip.src.run_optuna_search` processes **die**;
+- Running `python -m hymeko_neuro.run_optuna_search` processes **die**;
   SQLite studies typically **resume** when relaunched with the same
   `--storage` and study name until `n_trials` is satisfied **per study**.
 - **Alpha+Slashdot** log ends immediately after
@@ -133,21 +133,21 @@ export HSIKAN_CYCLE_BATCH="${HSIKAN_CYCLE_BATCH:-2000}"
 export N_TRIALS="${N_TRIALS:-30}"
 export N_EPOCHS="${N_EPOCHS:-80}"
 export OPTUNA_STAMP="20260513T010510Z"
-export OPTUNA_STORAGE="sqlite:///signedkan_wip/experiments/results/optuna_serial_${OPTUNA_STAMP}.db"
+export OPTUNA_STORAGE="sqlite:///hymeko_neuro/experiments/results/optuna_serial_${OPTUNA_STAMP}.db"
 export OPTUNA_DATASETS="slashdot"
-bash signedkan_wip/experiments/run_optuna_serial_datasets.sh \
-  >> signedkan_wip/experiments/results/optuna_slashdot_resume_${OPTUNA_STAMP}.log 2>&1
+bash hymeko_neuro/experiments/run_optuna_serial_datasets.sh \
+  >> hymeko_neuro/experiments/results/optuna_slashdot_resume_${OPTUNA_STAMP}.log 2>&1
 ```
 
-Optional: wrap with `signedkan_wip/experiments/run_after_experiment.sh` and/or
+Optional: wrap with `hymeko_neuro/experiments/run_after_experiment.sh` and/or
 `wait_until_no_optuna_search.sh` if other GPU jobs may still exist.
 
 After Slashdot, optionally append **epinions** with:
 
 ```bash
 export OPTUNA_DATASETS="epinions"
-bash signedkan_wip/experiments/run_optuna_serial_datasets.sh \
-  >> signedkan_wip/experiments/results/optuna_epinions_resume_${OPTUNA_STAMP}.log 2>&1
+bash hymeko_neuro/experiments/run_optuna_serial_datasets.sh \
+  >> hymeko_neuro/experiments/results/optuna_epinions_resume_${OPTUNA_STAMP}.log 2>&1
 ```
 
 ### Option B — **Repair** the four-graph DB (`…010159Z`)
@@ -156,10 +156,10 @@ If you insist on a **single** SQLite file for all four datasets:
 
 ```bash
 export OPTUNA_STAMP="20260513T010159Z"
-export OPTUNA_STORAGE="sqlite:///signedkan_wip/experiments/results/optuna_serial_${OPTUNA_STAMP}.db"
+export OPTUNA_STORAGE="sqlite:///hymeko_neuro/experiments/results/optuna_serial_${OPTUNA_STAMP}.db"
 export OPTUNA_DATASETS="bitcoin_alpha slashdot epinions"
-bash signedkan_wip/experiments/run_optuna_serial_datasets.sh \
-  >> signedkan_wip/experiments/results/optuna_serial_repair_${OPTUNA_STAMP}.log 2>&1
+bash hymeko_neuro/experiments/run_optuna_serial_datasets.sh \
+  >> hymeko_neuro/experiments/results/optuna_serial_repair_${OPTUNA_STAMP}.log 2>&1
 ```
 
 Optuna should **continue** the partially filled `bitcoin_alpha_20260513T010159Z`
@@ -168,7 +168,7 @@ concurrently on the same GPU without understanding the CUDA flock behavior.
 
 ### Hygiene before launch
 
-1. `pgrep -af signedkan_wip.src.run_optuna_search` — expect **empty** before a new launch.
+1. `pgrep -af hymeko_neuro.run_optuna_search` — expect **empty** before a new launch.
 2. Confirm no stale consumer holds `.cuda_job_serial.lock` if the flock blocks unexpectedly.
 3. For small VRAM: keep / set `HSIKAN_OPTUNA_SKIP_EXPENSIVE_ATTENTION=1` or
    `HSIKAN_OPTUNA_ATTENTION_KINDS=none` if OOM dominates Slashdot trials.
@@ -179,7 +179,7 @@ concurrently on the same GPU without understanding the CUDA flock behavior.
 flowchart TB
   env["Env: N_TRIALS N_EPOCHS OPTUNA_STORAGE OPTUNA_STAMP OPTUNA_DATASETS"]
   loop["run_optuna_serial_datasets.sh"]
-  ro["python -m signedkan_wip.src.run_optuna_search"]
+  ro["python -m hymeko_neuro.run_optuna_search"]
   sql[(SQLite studies)]
   env --> loop --> ro --> sql
 ```

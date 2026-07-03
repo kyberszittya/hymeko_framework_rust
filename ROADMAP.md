@@ -40,7 +40,7 @@ performance log is append-only: one dated snapshot per milestone.
 >   Slash. 0.899) at that ~270× param cost. **Honest framing = Pareto-efficiency
 >   (near-best AUROC at 1/270th size), NOT accuracy win.** Figs:
 >   `docs/seminar/figures/rotor_{param_efficiency,pareto}.png`.
-> - **Artifacts:** code `signedkan_wip/src/embeddings/cayley_rotor.py` +
+> - **Artifacts:** code `hymeko_neuro/graph/embeddings/cayley_rotor.py` +
 >   `src/baselines/cayley_rotor_baseline.py` (+ tests, all green); article
 >   `docs/articles/cayley-rotor-embeddings/article.{tex,pdf}` (6pp, figures, 5-seed
 >   table); plan `docs/plans/2026-06-16-soma-structural-highway/` (denoted

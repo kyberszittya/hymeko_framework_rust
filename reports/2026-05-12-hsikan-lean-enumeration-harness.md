@@ -14,10 +14,10 @@ without torch.  A **90-cell Bitcoin Alpha/OTC overnight sweep** was queued under
 
 | Path | Notes |
 |------|--------|
-| `signedkan_wip/src/run_hsikan_lean_profile.py` | Harness + `--python` + `lean_python` in JSONL. |
-| `signedkan_wip/docs/HSiKAN_lean_enumeration.md` | Strategy + usage. |
-| `signedkan_wip/experiments/run_hsikan_lean_bitcoin.sh` | Executable wrapper. |
-| `signedkan_wip/tests/test_hsikan_lean_profile.py` | 3 tests. |
+| `hymeko_neuro/run_hsikan_lean_profile.py` | Harness + `--python` + `lean_python` in JSONL. |
+| `hymeko_neuro/assets/docs/HSiKAN_lean_enumeration.md` | Strategy + usage. |
+| `hymeko_neuro/experiments/run_hsikan_lean_bitcoin.sh` | Executable wrapper. |
+| `hymeko_neuro/tests/test_hsikan_lean_profile.py` | 3 tests. |
 
 ## CORE.YAML items touched
 
@@ -29,11 +29,11 @@ None.
 
 ## Test results
 
-- Command: `PYTHONPATH=. pytest -p no:randomly signedkan_wip/tests/test_hsikan_lean_profile.py -q`
+- Command: `PYTHONPATH=. pytest -p no:randomly hymeko_neuro/tests/test_hsikan_lean_profile.py -q`
 - Result: **3 passed** in ~0.02 s (host: session dev machine).
 
-**Note:** Full `signedkan_wip/tests` collection from repo root without
-`PYTHONPATH=.` fails with `ModuleNotFoundError: signedkan_wip` in this
+**Note:** Full `hymeko_neuro/tests` collection from repo root without
+`PYTHONPATH=.` fails with `ModuleNotFoundError: hymeko_neuro` in this
 environment; the documented invocation uses `PYTHONPATH=.` (see
 `docs/topk_cycles.md`).
 
@@ -91,7 +91,7 @@ and matching `.log.aborted_no_torch`; notes in
 - When the overnight JSONL is complete (90 lines), compare **AUC vs `n_params`**
   across `hidden` and profiles; attach a short summary table to the next report.
 - Optional: wire a one-line pointer from `DECISIONS.md` or training docs to
-  `signedkan_wip/docs/HSiKAN_lean_enumeration.md`.
+  `hymeko_neuro/assets/docs/HSiKAN_lean_enumeration.md`.
 
 ## Experiment provenance (smoke)
 
@@ -99,4 +99,4 @@ and matching `.log.aborted_no_torch`; notes in
   paths at report time.
 - **Seed:** `0`
 - **Command:**  
-  `PYTHONPATH=. python3 -m signedkan_wip.src.run_hsikan_lean_profile ...`
+  `PYTHONPATH=. python3 -m hymeko_neuro.run_hsikan_lean_profile ...`

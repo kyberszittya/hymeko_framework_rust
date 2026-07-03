@@ -6,7 +6,7 @@ from enum import Enum
 
 
 class Activation(str, Enum):
-    """Edge-activation kind for the HSiKAN channel mixer (maps to ``signed_kan.make_activation``)."""
+    """Edge-activation kind for the HSiKAN channel mixer (maps to ``hymeko_neuro.core.make_activation``)."""
 
     CR = "cr"
     CR_CHEBY = "cr_cheby"

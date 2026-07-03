@@ -114,15 +114,15 @@ All standard, all available via UCR archive / [Zhou et al. ETT GitHub](https://g
 
 ## Implementation notes
 
-- New `signedkan_wip/src/sequence_signed_graph.py` (~200 LOC):
+- New `hymeko_neuro/sequence_signed_graph.py` (~200 LOC):
   - `build_sequence_signed_graph(x, dilations=[1, 2, 4, 8])` → constructs the temporal-edge graph
   - Multi-scale dilated edge addition
   - Per-edge sign from local trend
-- New `signedkan_wip/src/frequency_attention.py` (~150 LOC):
+- New `hymeko_neuro/frequency_attention.py` (~150 LOC):
   - `_FrequencyAttentionM_e` — replaces embedding-space attention with FFT-based scoring
   - Compatible with existing Hamilton-product / Highway gate machinery
   - Cycle-batched (memory-bounded forward)
-- New runner `signedkan_wip/src/run_time_series.py` (~250 LOC):
+- New runner `hymeko_neuro/run_time_series.py` (~250 LOC):
   - UCR / ETT loader
   - Forecasting / classification loop
   - Comparison against baselines via `aeon` or hand-coded

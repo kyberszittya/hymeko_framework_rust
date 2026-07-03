@@ -15,9 +15,9 @@ per the one-phase-per-session rule (CLAUDE.md §6.5 anti-pattern #11).
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/__init__.py) | 27 | package boundary, re-exports |
-| [signedkan_wip/src/hymeko_gomb/soma/hg_conv.py](../signedkan_wip/src/hymeko_gomb/soma/hg_conv.py) | 235 | `HypergraphConv` ABC + `HypergraphConvConfig` dataclass |
-| [signedkan_wip/tests/test_gomb_soma_hg_conv.py](../signedkan_wip/tests/test_gomb_soma_hg_conv.py) | 218 | 11 unit tests including permutation-equivariance |
+| [hymeko_neuro/models/hymeko_gomb/soma/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/__init__.py) | 27 | package boundary, re-exports |
+| [hymeko_neuro/models/hymeko_gomb/soma/hg_conv.py](../hymeko_neuro/models/hymeko_gomb/soma/hg_conv.py) | 235 | `HypergraphConv` ABC + `HypergraphConvConfig` dataclass |
+| [hymeko_neuro/tests/test_gomb_soma_hg_conv.py](../hymeko_neuro/tests/test_gomb_soma_hg_conv.py) | 218 | 11 unit tests including permutation-equivariance |
 
 No edits to Gömb files. No edits to CORE.YAML-protected items.
 
@@ -54,7 +54,7 @@ message function and (optionally) the aggregator.
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_hg_conv.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_hg_conv.py -v
 test_abc_cannot_be_instantiated                       PASSED
 test_config_validates_dimensions                      PASSED
 test_concrete_subclass_runs                           PASSED
@@ -99,7 +99,7 @@ atol 1e-5, well within FP32 round-off.
 ## 8. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/
    (clean)
 ```
 
@@ -144,8 +144,8 @@ All acceptance criteria met.
 $w_k$ for $k = 2, 3, \ldots$, signed by the σ-product of their
 constituent edges. Adds:
 
-- `signedkan_wip/src/hymeko_gomb/soma/walk_layer.py`
-- `signedkan_wip/tests/test_gomb_soma_walk_layer.py`
+- `hymeko_neuro/models/hymeko_gomb/soma/walk_layer.py`
+- `hymeko_neuro/tests/test_gomb_soma_walk_layer.py`
 - synthetic SBM smoke
 
 No phase 2 work in this commit, per the rule.
@@ -154,10 +154,10 @@ No phase 2 work in this commit, per the rule.
 
 ```bash
 # Run the tests:
-python -m pytest signedkan_wip/tests/test_gomb_soma_hg_conv.py -v
+python -m pytest hymeko_neuro/tests/test_gomb_soma_hg_conv.py -v
 
 # Use the ABC in a downstream layer:
-from signedkan_wip.src.hymeko_gomb.soma import (
+from hymeko_neuro.models.hymeko_gomb.soma import (
     HypergraphConv, HypergraphConvConfig,
 )
 

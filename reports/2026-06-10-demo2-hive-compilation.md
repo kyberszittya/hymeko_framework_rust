@@ -1,12 +1,12 @@
 # Seminar demo program — build-item 3: Demo 2 (HIVE compilation)
 
 **Date:** 2026-06-10 · **Plan:** `docs/plans/2026-06-10-seminar-demo-program/`
-· **Spec:** `signedkan_wip/demos/SEMINAR_DEMOS.md` §2
+· **Spec:** `hymeko_neuro/demos/SEMINAR_DEMOS.md` §2
 
 ## Summary
 Added the `hive` demo to the seminar package: surface `.hymeko` → IR →
 star COO / clique matrix encodings + the **canonicalisation** punchline. Runs as
-`python -m signedkan_wip.demos.seminar hive --src <file>`. Pure transform, no
+`python -m hymeko_neuro.demos.seminar hive --src <file>`. Pure transform, no
 model, no torch (0.03 s compute). Reuses the `canonical_hash` getter added in
 build-item 2.
 
@@ -18,9 +18,9 @@ hash **equal**; a one-edge structural change hashes **different** → emits
 ## Files touched
 | LOC | File | |
 |---:|---|---|
-| 200 | `signedkan_wip/demos/seminar/demos/hive.py` | new — `HiveDemo` |
-| 79 | `signedkan_wip/tests/test_seminar_hive.py` | new — tests |
-| +2 | `signedkan_wip/demos/seminar/demos/__init__.py` | register `HiveDemo` |
+| 200 | `hymeko_neuro/demos/seminar/demos/hive.py` | new — `HiveDemo` |
+| 79 | `hymeko_neuro/tests/test_seminar_hive.py` | new — tests |
+| +2 | `hymeko_neuro/demos/seminar/demos/__init__.py` | register `HiveDemo` |
 
 ## CORE.YAML items touched
 **None.** Reuses the engine via `hymeko` and the (build-item-2, non-core)

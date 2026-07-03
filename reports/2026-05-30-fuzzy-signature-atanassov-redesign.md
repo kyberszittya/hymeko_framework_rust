@@ -39,15 +39,15 @@ tested, and the four ordered fallbacks for the next iteration.
 | [docs/plans/2026-05-30-fuzzy-signature-layer/plan.tex](docs/plans/2026-05-30-fuzzy-signature-layer/plan.tex) | REWRITTEN | revision 2 |
 | [docs/plans/2026-05-30-fuzzy-signature-layer/plan.tikz](docs/plans/2026-05-30-fuzzy-signature-layer/plan.tikz) | REWRITTEN | Atanassov pair box |
 | [docs/plans/2026-05-30-fuzzy-signature-layer/plan.mmd](docs/plans/2026-05-30-fuzzy-signature-layer/plan.mmd) | REWRITTEN | new dataflow |
-| [signedkan_wip/src/vision/fuzzy_signature.py](signedkan_wip/src/vision/fuzzy_signature.py) | REWRITTEN | 246 LOC; revision-1 abandoned |
-| [signedkan_wip/tests/test_fuzzy_signature_layer.py](signedkan_wip/tests/test_fuzzy_signature_layer.py) | REWRITTEN | 44 tests (was 39) |
+| [hymeko_neuro/experiments/vision/fuzzy_signature.py](hymeko_neuro/experiments/vision/fuzzy_signature.py) | REWRITTEN | 246 LOC; revision-1 abandoned |
+| [hymeko_neuro/tests/test_fuzzy_signature_layer.py](hymeko_neuro/tests/test_fuzzy_signature_layer.py) | REWRITTEN | 44 tests (was 39) |
 
 PDFs regenerated: `background.pdf` (20 pp, 410 KB), `plan.pdf` (7 pp, 318 KB).
 No core files touched.
 
 ## CORE.YAML items touched
 
-**None.** `signedkan_wip/` and `docs/` are non-core paths.
+**None.** `hymeko_neuro/` and `docs/` are non-core paths.
 
 ## Architecture (proposed in revision 2)
 
@@ -531,8 +531,8 @@ None of these are tested. The next session should pick one direction
 
 | File | Purpose |
 |---|---|
-| `signedkan_wip/src/vision/fuzzy_signature.py` | added 3 axes |
-| `signedkan_wip/tests/test_fuzzy_signature_layer.py` | 69/69 pass |
+| `hymeko_neuro/experiments/vision/fuzzy_signature.py` | added 3 axes |
+| `hymeko_neuro/tests/test_fuzzy_signature_layer.py` | 69/69 pass |
 | `docs/plans/2026-05-30-fuzzy-signature-layer/plan.tex` | rev 3 |
 | `docs/plans/2026-05-30-fuzzy-signature-layer/plan.pdf` | 8 pp |
 | `/tmp/fuzzy_smoke_2026_05_30/run_ramp_init_smoke.py` | scratch |
@@ -784,8 +784,8 @@ Log: `/tmp/fuzzy_smoke_2026_05_30/rev5_long_smoke.log`.
 
 | File | Change |
 |---|---|
-| `signedkan_wip/src/vision/fuzzy_signature.py` | +`additive_centered` residual; +`fuzzification_kind` axis |
-| `signedkan_wip/tests/test_fuzzy_signature_layer.py` | +11 rev-5 tests (105/105 pass) |
+| `hymeko_neuro/experiments/vision/fuzzy_signature.py` | +`additive_centered` residual; +`fuzzification_kind` axis |
+| `hymeko_neuro/tests/test_fuzzy_signature_layer.py` | +11 rev-5 tests (105/105 pass) |
 | `/tmp/fuzzy_smoke_2026_05_30/run_rev5_smoke.py` | smoke script |
 | `/tmp/fuzzy_smoke_2026_05_30/run_rev5_long_smoke.py` | 60-ep follow-up |
 | `/tmp/fuzzy_smoke_2026_05_30/rev5_smoke.log` | 30-ep results (this addendum) |

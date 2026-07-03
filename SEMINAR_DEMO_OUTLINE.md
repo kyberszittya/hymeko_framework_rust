@@ -29,11 +29,11 @@ efficiency · honesty · transfer) → bridge → contributions → outlook.
 | Star-expansion 3D viewer | `demo_web/star_expansion_viewer.html` | prototype (synthetic data) |
 | Regime-compass web demo | `demo_web/index.html` + `kinematic_data.json` | ready |
 | Trained weights | `checkpoints/hsikan/*`, `checkpoints/kinematic/*`, `checkpoints/hymeyolo_demo/*` | ready |
-| Inference harness | `signedkan_wip/src/demo/` (`inference.py`, `checkpoint.py`, registry) | partial |
-| Latency bench | `signedkan_wip/experiments/runs/run_inference_bench.py` + `inference_bench.json` | partial |
+| Inference harness | `hymeko_neuro/experiments/demo/` (`inference.py`, `checkpoint.py`, registry) | partial |
+| Latency bench | `hymeko_neuro/experiments/runs/run_inference_bench.py` + `inference_bench.json` | partial |
 
 ## Detailed specs (build instructions for Claude Code)
-- **Five seminar demos** → `signedkan_wip/demos/SEMINAR_DEMOS.md`
+- **Five seminar demos** → `hymeko_neuro/demos/SEMINAR_DEMOS.md`
 - **Inference harness / per-demo gates** → `docs/INFERENCE_DEMOS_OUTLINE.md`
 - **Star-expansion viewer (phased, live option)** → `demo_web/STAR_EXPANSION_VIEWER_OUTLINE.md`
 
@@ -66,7 +66,7 @@ precomputed/checkpointed path.
 ---
 
 ## Shared conventions (all demos)
-- Single entry: `python -m signedkan_wip.demos.seminar <demo> --device auto --seed 0`; one file with a mode arg, not N scripts (CLAUDE.md §6.5 #13).
+- Single entry: `python -m hymeko_neuro.demos.seminar <demo> --device auto --seed 0`; one file with a mode arg, not N scripts (CLAUDE.md §6.5 #13).
 - Pretrained weights / fixed inputs only — **no training in the room**.
 - Deterministic (fixed seed); on exit print peak RSS + wall time; assert RSS < 16 GB.
 - Outputs to `demo_out/<demo>/`; every printed number names the checkpoint/fixture it came from.

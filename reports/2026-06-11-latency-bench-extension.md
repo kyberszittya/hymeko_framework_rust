@@ -25,11 +25,11 @@ deck's headline number needs a decision from the user before the slide ships.
 **New:**
 | LOC | File |
 |---:|---|
-| 110 | `signedkan_wip/experiments/runs/bench_to_png.py` — slide-18 renderer (pure shaping + draw) |
-| 152 | `signedkan_wip/tests/test_inference_bench.py` — 12 tests |
+| 110 | `hymeko_neuro/experiments/runs/bench_to_png.py` — slide-18 renderer (pure shaping + draw) |
+| 152 | `hymeko_neuro/tests/test_inference_bench.py` — 12 tests |
 
 **Modified:**
-- `signedkan_wip/experiments/runs/run_inference_bench.py` — split
+- `hymeko_neuro/experiments/runs/run_inference_bench.py` — split
   `build_hsikan_inputs` → `build_hsikan_data` (width-independent) +
   `build_hsikan_model` (per-width); added `_summarize` (median/IQR/worst),
   `HSIKAN_VARIANTS`, `_bench_sgcn`/`_bench_hsikan`/`_bench_cell`/`_print_summary`
@@ -38,9 +38,9 @@ deck's headline number needs a decision from the user before the slide ships.
   fields on every row.
 
 **Regenerated artifacts:**
-- `signedkan_wip/experiments/results/inference_bench.json` — 12 rows (2 graphs ×
+- `hymeko_neuro/experiments/results/inference_bench.json` — 12 rows (2 graphs ×
   2 devices × {SGCN, HSiKAN-lean, HSiKAN-joint}). Prior version is in git.
-- `signedkan_wip/experiments/results/inference_bench_{cpu,cuda}.png`.
+- `hymeko_neuro/experiments/results/inference_bench_{cpu,cuda}.png`.
 
 ## CORE.YAML items touched
 **None.** Changes are confined to `experiments/` and `tests/`.
@@ -85,10 +85,10 @@ talking points to the measured same-device **~3.5× CPU** width gap, keeping the
 records (`docs/SOTA_RESULTS.md`, `sota-snapshot.html`, the 2026-05-13 report)
 are left untouched — they correctly document the optuna experiment and its AUC.
 Re-labeled: `SEMINAR_DEMO_OUTLINE.md`, `docs/seminar/SEMINAR_SUMMARY.md`,
-`signedkan_wip/demos/PRESENTER_RUNBOOK.md`, `docs/INFERENCE_DEMOS_OUTLINE.md`.
+`hymeko_neuro/demos/PRESENTER_RUNBOOK.md`, `docs/INFERENCE_DEMOS_OUTLINE.md`.
 
 ## Test results
-- `pytest -p no:randomly signedkan_wip/tests/test_inference_bench.py`:
+- `pytest -p no:randomly hymeko_neuro/tests/test_inference_bench.py`:
   **12 passed**, 15.1 s. Layers:
   - Unit (pure): `_summarize` median/IQR/worst + invariants + empty/`n_te`
     guards (4); `bars_from_rows` device filter, MODEL_ORDER, unknown-model skip,

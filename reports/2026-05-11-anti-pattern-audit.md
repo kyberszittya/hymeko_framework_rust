@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-11
 **Trigger:** user-authorized §6.5 (Anti-Patterns) amendment to CLAUDE.md; this is the first sweep applying it.
-**Scope:** `hymeko_graph/`, `hymeko_py/`, `hymeko_nagare/`, `hymeko_monitor/`, `hymeko_compute/`, `hymeko_wasm/`, `signedkan_wip/`.
+**Scope:** `hymeko_graph/`, `hymeko_py/`, `hymeko_nagare/`, `hymeko_monitor/`, `hymeko_compute/`, `hymeko_wasm/`, `hymeko_neuro/`.
 **Method:** mechanical greps + targeted reads per anti-pattern listed in CLAUDE.md §6.5; severity assigned by (count × reach).
 
 ## Severity legend
@@ -18,7 +18,7 @@
 |---|---|---|---|---|
 | 1 | Cartesian-product PyO3 surface | **C** | 17 `#[pyfunction]` in `cycles.rs` | `hymeko_py/src/cycles.rs` |
 | 2 | Algorithm code behind PyO3 boundary | **C** | 20 / 42 free fns in `cycles.rs` are pure-Rust | `hymeko_py/src/cycles.rs` |
-| 3 | Per-experiment scaffold duplication | **C** | 98 `run_*.py`; 32 reimplement AUC eval; 4 reimplement `train_val_split` | `signedkan_wip/src/run_*.py` |
+| 3 | Per-experiment scaffold duplication | **C** | 98 `run_*.py`; 32 reimplement AUC eval; 4 reimplement `train_val_split` | `hymeko_neuro/run_*.py` |
 | 4 | Long single-file modules ≥ 400 LOC | **M** | 8 Rust + 15 Python | `topk_cycles.rs` (4129), `triton_kernels.py` (1345) |
 | 5 | New axis = new function name | **C** | rolled into #1 (same evidence) | — |
 | 6 | `clippy::too_many_arguments` allow | **m** | 17 (9 in `cycles.rs`) | `cycles.rs` |
@@ -51,11 +51,11 @@ Plan: separate refactor PR after the Strategy collapse lands. Move the listed fn
 
 ### #3 — Per-experiment scaffold duplication (CRITICAL)
 
-- **98** `run_*.py` files in `signedkan_wip/src/`.
+- **98** `run_*.py` files in `hymeko_neuro/`.
 - **4** of them re-implement `train_val_split` (different signatures + names: `_train_val_split`, `train_val_split`, ad-hoc inline permutations).
 - **32** of them call `roc_auc_score` directly in their own eval loops (per-script reinvention of train+eval+log scaffold).
 
-Refactor target: introduce `signedkan_wip/src/experiment.py` exposing `train_signed_link_prediction(config, model_factory)` that owns: dataset loading, train/val split (configurable seed), epoch loop, AUC eval per epoch, JSON output schema. Each `run_*.py` becomes a ≤ 30-LOC config builder + model factory call. Migration is mechanical but touches many files; recommend a dedicated PR with one example migration first (e.g., `run_gomb_smoke.py`).
+Refactor target: introduce `hymeko_neuro/experiment.py` exposing `train_signed_link_prediction(config, model_factory)` that owns: dataset loading, train/val split (configurable seed), epoch loop, AUC eval per epoch, JSON output schema. Each `run_*.py` becomes a ≤ 30-LOC config builder + model factory call. Migration is mechanical but touches many files; recommend a dedicated PR with one example migration first (e.g., `run_gomb_smoke.py`).
 
 ### #4 — Long single-file modules ≥ 400 LOC (MAJOR)
 
@@ -75,21 +75,21 @@ Refactor target: introduce `signedkan_wip/src/experiment.py` exposing `train_sig
 **Python (15 files):**
 
 ```
-1345  signedkan_wip/src/triton_kernels.py            — multiple kernel families; decompose by family
-1247  signedkan_wip/src/mixed_arity_signedkan.py     — needs audit; likely 2-3 concerns
- 780  signedkan_wip/src/run_final_cell.py            — partly rolls into #3 (experiment scaffold)
- 758  signedkan_wip/src/run_phase2_mixed_arity.py    — partly rolls into #3
- 714  signedkan_wip/src/cycle_cache.py               — packer + cacher + public API in one file
- 698  signedkan_wip/src/run_multi_domain_perf_bench.py — rolls into #3
- 696  signedkan_wip/src/signedkan.py                  — 5 classes, focused; OK
- 644  signedkan_wip/src/splines.py                    — multiple spline kinds; could decompose
- 589  signedkan_wip/src/run_compare.py                — rolls into #3
- 587  signedkan_wip/src/vision/hymeyolo_q_smoke.py    — q-cycle vision; needs review
- 555  signedkan_wip/src/vision/train_circles_ricci.py — model + training in one; partly rolls into #3
- 527  signedkan_wip/src/n_tuples.py                   — multi-mode dispatch (rolls into #11)
- 489  signedkan_wip/src/run_multi_domain_perf_deep.py — rolls into #3
- 469  signedkan_wip/src/chicken/unsupervised.py       — domain module; review later
- 455  signedkan_wip/src/cpml.py                       — CPML architecture; cohesive
+1345  hymeko_neuro/kernels/triton_kernels.py            — multiple kernel families; decompose by family
+1247  hymeko_neuro/models/mixed_arity_signedkan.py     — needs audit; likely 2-3 concerns
+ 780  hymeko_neuro/run_final_cell.py            — partly rolls into #3 (experiment scaffold)
+ 758  hymeko_neuro/run_phase2_mixed_arity.py    — partly rolls into #3
+ 714  hymeko_neuro/graph/cycle_cache.py               — packer + cacher + public API in one file
+ 698  hymeko_neuro/run_multi_domain_perf_bench.py — rolls into #3
+ 696  hymeko_neuro/signedkan.py                  — 5 classes, focused; OK
+ 644  hymeko_neuro/splines.py                    — multiple spline kinds; could decompose
+ 589  hymeko_neuro/run_compare.py                — rolls into #3
+ 587  hymeko_neuro/experiments/vision/hymeyolo_q_smoke.py    — q-cycle vision; needs review
+ 555  hymeko_neuro/experiments/vision/train_circles_ricci.py — model + training in one; partly rolls into #3
+ 527  hymeko_neuro/n_tuples.py                   — multi-mode dispatch (rolls into #11)
+ 489  hymeko_neuro/run_multi_domain_perf_deep.py — rolls into #3
+ 469  hymeko_neuro/experiments/chicken/unsupervised.py       — domain module; review later
+ 455  hymeko_neuro/cpml.py                       — CPML architecture; cohesive
 ```
 
 Action: AFTER #3's `Experiment` framework lands, ~6 `run_*.py` files drop below 200 LOC mechanically. Then decompose `triton_kernels.py`, `mixed_arity_signedkan.py`, `cycle_cache.py`, `splines.py` per concern.
@@ -134,7 +134,7 @@ impl FromStr for ScoreKind { /* parse at the PyO3 boundary, exactly once */ }
 
 ### #8 — Forward-time flags for structural variants (CLEAN)
 
-Greps for `if self.no_*:`, `if self.disable_*:`, `if self.skip_*:` returned zero hits across `signedkan_wip/src/`. The HymeKo-Gömb ablations (`GombNoOuter`, `GombNoMiddle`, `GombNoInner`) and the parallel `MixedArityGomb` correctly use *separate model classes*, not forward-time flags. Good.
+Greps for `if self.no_*:`, `if self.disable_*:`, `if self.skip_*:` returned zero hits across `hymeko_neuro/`. The HymeKo-Gömb ablations (`GombNoOuter`, `GombNoMiddle`, `GombNoInner`) and the parallel `MixedArityGomb` correctly use *separate model classes*, not forward-time flags. Good.
 
 ### #9 — Bypassing existing Strategy traits at a layer boundary (MAJOR)
 
@@ -143,8 +143,8 @@ Greps for `if self.no_*:`, `if self.disable_*:`, `if self.skip_*:` returned zero
 ### #10 — `ulimit -v` on CUDA workloads (minor)
 
 2 scripts still use `ulimit -v`:
-- `signedkan_wip/experiments/run_voc_gomb_matrix_2026_05_11.sh` — created today; *does not actually call ulimit -v inside* (Stage 1 and 2 have no `ulimit` — false positive from comment header). Verified.
-- `signedkan_wip/experiments/run_overnight_abb_validation_2026_05_11.sh` — older script; should be migrated to `systemd-run --user -p MemoryMax=16G` per CLAUDE.md §4.
+- `hymeko_neuro/experiments/run_voc_gomb_matrix_2026_05_11.sh` — created today; *does not actually call ulimit -v inside* (Stage 1 and 2 have no `ulimit` — false positive from comment header). Verified.
+- `hymeko_neuro/experiments/run_overnight_abb_validation_2026_05_11.sh` — older script; should be migrated to `systemd-run --user -p MemoryMax=16G` per CLAUDE.md §4.
 
 Action: cleanup pass on `run_overnight_abb_validation_2026_05_11.sh` only.
 
@@ -152,7 +152,7 @@ Action: cleanup pass on `run_overnight_abb_validation_2026_05_11.sh` only.
 
 **Rust side: clean.** Zero `static mut`, zero `lazy_static!`, zero `once_cell::sync::Lazy` across all hymeko crates.
 
-**Python side: heavy.** 42 `os.environ.get("HSIKAN_*"|"HYMEKO_*", …)` reads in `signedkan_wip/src/`. **58** of these reads sit *inside class methods or deep helper functions*, not at process startup.
+**Python side: heavy.** 42 `os.environ.get("HSIKAN_*"|"HYMEKO_*", …)` reads in `hymeko_neuro/`. **58** of these reads sit *inside class methods or deep helper functions*, not at process startup.
 
 Top offenders:
 ```
@@ -176,7 +176,7 @@ Concrete bad cases (read inside hot paths):
 
 **Recommended fix:**
 
-1. Introduce `signedkan_wip/src/runtime_config.py` exposing one frozen `@dataclass(frozen=True) class RuntimeConfig` populated from `os.environ` exactly once at module load.
+1. Introduce `hymeko_neuro/runtime/runtime_config.py` exposing one frozen `@dataclass(frozen=True) class RuntimeConfig` populated from `os.environ` exactly once at module load.
 2. Replace every `os.environ.get("HSIKAN_*", …)` site with `config.hsikan.<field>`.
 3. The `config` instance is passed explicitly down the call chain — never imported as a module-level singleton.
 4. For backward-compat with current shell-script callers: `RuntimeConfig.from_env(cls)` factory.
@@ -197,7 +197,7 @@ In execution order (each unlocks the next):
 6. **(P3)** #4 — decompose `triton_kernels.py`, `mixed_arity_signedkan.py`, `cycle_cache.py`, `splines.py` after #3.
 7. **(P3)** #10 — single-script ulimit cleanup.
 
-CORE.YAML implications: **none of these touch protected paths** — `hymeko_graph`, `hymeko_py`, `signedkan_wip` are all outside the (currently aspirational, not-yet-existing) `crates/hymeko_*` Core protection list. Plan-level approval requested for each P0 PR per CLAUDE.md §2.
+CORE.YAML implications: **none of these touch protected paths** — `hymeko_graph`, `hymeko_py`, `hymeko_neuro` are all outside the (currently aspirational, not-yet-existing) `crates/hymeko_*` Core protection list. Plan-level approval requested for each P0 PR per CLAUDE.md §2.
 
 ## Provenance
 

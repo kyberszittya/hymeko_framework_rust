@@ -9,7 +9,7 @@
 
 Three small actions executed under auto mode after the ABB landing:
 
-1. **A: PyO3 binding + Python route + 1-seed Epinions smoke test.** Added `enumerate_top_k_cycles_signed_bb_rs` to `hymeko_py`, plumbed `HSIKAN_TOPK_MODE=global_bb` into `signedkan_wip/src/n_tuples.py`. Smoke-tested 1-seed Epinions vs the per-vertex baseline at matched abbreviated config (c3+c4, h=4, 20 epochs).
+1. **A: PyO3 binding + Python route + 1-seed Epinions smoke test.** Added `enumerate_top_k_cycles_signed_bb_rs` to `hymeko_py`, plumbed `HSIKAN_TOPK_MODE=global_bb` into `hymeko_neuro/n_tuples.py`. Smoke-tested 1-seed Epinions vs the per-vertex baseline at matched abbreviated config (c3+c4, h=4, 20 epochs).
    - **Result: ABB 2.6× faster end-to-end (57 s vs 149 s) but −6.7 pp AUC (0.575 vs 0.642).** Cause: at K=10 000, all retained cycles are score-1.0 all-negative; the M_e has zero score variance and no per-vertex coverage in the long tail. Verified by trying K=100 000 — AUC dropped further (0.548) as more dilution hit.
    - **Conclusion:** ABB is a 25× win for global top-K consumers but does not transfer as a drop-in for HSiKAN, which needs vertex-uniform cycles.
 2. **`TopKBuilder` Strategy/Builder refactor** of the enumeration variants (per CLAUDE.md §7). Wraps the eight `enumerate_top_k_cycles*` free functions behind a fluent terminal-method API; existing call sites untouched, additive only. 3 new tests verify each builder method matches its underlying free function.
@@ -35,11 +35,11 @@ All gates green: 49 unit + 9 ABB integration + 3 cycle_cache + 7 friedler tests 
 | `hymeko_py/src/cycles.rs` | Import `BalanceScorer` / `FractionNegativeScorer` / `LowRootScorer` / `SignProductAbsScorer` / `enumerate_top_k_cycles_par_bb` from `hymeko_graph` |
 | `hymeko_py/src/lib.rs` | Register new `enumerate_top_k_cycles_signed_bb_rs` Python symbol |
 | `hymeko_graph/src/lib.rs` | Re-export `TopKBuilder` |
-| `signedkan_wip/src/n_tuples.py::construct_k` | New `HSIKAN_TOPK_MODE=global_bb` branch routing through the ABB binding |
+| `hymeko_neuro/n_tuples.py::construct_k` | New `HSIKAN_TOPK_MODE=global_bb` branch routing through the ABB binding |
 
 ## CORE.YAML items touched
 
-**None.** `hymeko_graph` and `hymeko_py` are not core; `signedkan_wip` is research code (not in CORE.YAML at all). No new dependencies.
+**None.** `hymeko_graph` and `hymeko_py` are not core; `hymeko_neuro` is research code (not in CORE.YAML at all). No new dependencies.
 
 ## Test results
 
@@ -95,7 +95,7 @@ The 25× wall-time improvement for `enumerate_top_k_cycles_par_bb` measured in t
 | Python | 3.13 (miniconda3) |
 | `hymeko` wheel | re-installed via `maturin develop --release` after Rust changes |
 | Random seed | 0 (single-seed smoke) |
-| Dataset | `signedkan_wip/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` |
+| Dataset | `hymeko_neuro/assets/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` |
 | Workload | `--dataset epinions --hidden 4 --n-epochs 20`, `HSIKAN_MIXED_TUPLES=c3,c4`, `HSIKAN_TOPK_PRUNER=balance`, `HSIKAN_TOPK_SCORER=fraction_negative` |
 | Suppressions | None |
 

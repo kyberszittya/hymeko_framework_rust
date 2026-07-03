@@ -11,7 +11,7 @@ This file exists so **nobody** (human or assistant) has to re-argue what is alre
 | What | Path |
 |------|------|
 | **SOTA charts + tables (link prediction)** | **`docs/SOTA_RESULTS.md`** |
-| SignedKAN / HSiKAN experiment tree | `signedkan_wip/experiments/results/AGGREGATE_index.md` |
+| SignedKAN / HSiKAN experiment tree | `hymeko_neuro/experiments/results/AGGREGATE_index.md` |
 | Orchestration + narrative reports | `reports/AGGREGATE_index.md` |
 | Thesis IV entropy suite (111 paired rows) | `RESULTS_VIEWS_SUITE.md` (repo root) |
 
@@ -21,7 +21,7 @@ This file exists so **nobody** (human or assistant) has to re-argue what is alre
 
 These are **not interchangeable**. Say which row you mean.
 
-**Joint mix Bitcoin (tuples `c3,c4,w2,w3`, `run_final_cell` style runs)** — `signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl`
+**Joint mix Bitcoin (tuples `c3,c4,w2,w3`, `run_final_cell` style runs)** — `hymeko_neuro/experiments/results/joint_mix_5seed_2026_05_08.jsonl`
 
 | Label | Dataset | Mean test AUC (file as committed) |
 |-------|---------|-----------------------------------|
@@ -30,7 +30,7 @@ These are **not interchangeable**. Say which row you mean.
 | `cycle_ba` / `cycle_otc` | (paired baselines) | lower; see JSONL |
 | `*_strict` | either | **0.5000** — strict protocol row, not default |
 
-**Phase-8 multi-arch panel (HSiKAN `hsikan_mixed_leanest`, k=3 and k=4, `max_k4=30000`, …)** — `signedkan_wip/experiments/results/phase8_bitcoin_5seed.json`
+**Phase-8 multi-arch panel (HSiKAN `hsikan_mixed_leanest`, k=3 and k=4, `max_k4=30000`, …)** — `hymeko_neuro/experiments/results/phase8_bitcoin_5seed.json`
 
 | Arch | bitcoin_otc mean `test_auc` (5 seeds) |
 |------|----------------------------------------|
@@ -40,9 +40,9 @@ These are **not interchangeable**. Say which row you mean.
 
 So: **never** say “HSiKAN fails on OTC” without naming **joint** vs **lean panel** (or another named config). Joint OTC in the committed artifact is **~0.98**, not ~0.85.
 
-**Slashdot `edge_cr` reference** — `signedkan_wip/experiments/results/slashdot_edge_cr_5seed_2026_05_09.jsonl` → mean **≈ 0.9067**.
+**Slashdot `edge_cr` reference** — `hymeko_neuro/experiments/results/slashdot_edge_cr_5seed_2026_05_09.jsonl` → mean **≈ 0.9067**.
 
-**Architecture table (multi-dataset)** — `signedkan_wip/experiments/results/master_table.md`.
+**Architecture table (multi-dataset)** — `hymeko_neuro/experiments/results/master_table.md`.
 
 ---
 

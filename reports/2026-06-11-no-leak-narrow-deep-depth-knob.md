@@ -42,12 +42,12 @@ JSONL once at the end" path is gone.
 
 | File | +/− | Note |
 |:--|:--|:--|
-| `signedkan_wip/experiments/runs/run_no_leak_benchmark.py` | +95 / −28 | `Cell` gains `width`/`depth` + `make`; both runners thread the arch; `SGCN_HIDDEN` removed; resumable per-arm checkpointing + seed loop; `--seed`→`--seeds` |
-| `signedkan_wip/tests/test_no_leak_benchmark.py` | +150 / 0 | new; regression + unit + resume tests |
+| `hymeko_neuro/experiments/runs/run_no_leak_benchmark.py` | +95 / −28 | `Cell` gains `width`/`depth` + `make`; both runners thread the arch; `SGCN_HIDDEN` removed; resumable per-arm checkpointing + seed loop; `--seed`→`--seeds` |
+| `hymeko_neuro/tests/test_no_leak_benchmark.py` | +150 / 0 | new; regression + unit + resume tests |
 
 ## Test results
 
-`pytest -p no:randomly signedkan_wip/tests/test_no_leak_benchmark.py` — **12 passed, 9.51 s**.
+`pytest -p no:randomly hymeko_neuro/tests/test_no_leak_benchmark.py` — **12 passed, 9.51 s**.
 
 - **Regression** (`test_subprocess_command_carries_narrow_deep_flags`): the Gömb
   command must carry `--d-middle 16 --middle-n-layers 8`. Fails against the prior
@@ -100,8 +100,8 @@ SGCN's on alpha (0.0044 vs 0.0142), consistent with
 Significance/win-rate and the larger graphs (Epinions/Slashdot) remain for the
 next step before any headline claim — Bitcoin is near-ceiling and small.
 
-- **Log (on-disk anchor, §3):** `signedkan_wip/experiments/results/no_leak_e1.log`
-- **Output JSONL:** `signedkan_wip/experiments/results/no_leak_e1.jsonl` (40 rows)
+- **Log (on-disk anchor, §3):** `hymeko_neuro/experiments/results/no_leak_e1.log`
+- **Output JSONL:** `hymeko_neuro/experiments/results/no_leak_e1.jsonl` (40 rows)
 - **Background task id:** `b13pqpgls` (exit 0)
 
 ## Static analysis
@@ -138,4 +138,4 @@ single `Cell.make` avoids per-cell duplication (#1, #3); no new file/v-suffix
   `git status`; the only files this task touched are the two above).
 - **Interpreter:** miniconda3 / torch 2.11.0+cu130. **GPU:** RTX 2070 SUPER 8 GiB.
 - **Seed:** 0. **Dataset:** bitcoin_alpha (19 348 train edges after split).
-- **Artifact:** `signedkan_wip/experiments/results/no_leak_smoke.jsonl` (4 rows).
+- **Artifact:** `hymeko_neuro/experiments/results/no_leak_smoke.jsonl` (4 rows).

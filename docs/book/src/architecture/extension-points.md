@@ -16,7 +16,7 @@ Define in `hymeko_query::predicate` (typed) or call `match_expr` directly with a
 
 ## Adding a new training-graph op
 
-Register a handler in `signedkan_wip/src/hymeko_train_walker.py` via `@register("kind")`. See [HyMeKo-controlled training](../quickstart/09-hsikan-training.md).
+Register a handler in `hymeko_neuro/experiments/hymeko_train_walker.py` via `@register("kind")`. See [HyMeKo-controlled training](../quickstart/09-hsikan-training.md).
 
 ## Adding a new IR analysis
 

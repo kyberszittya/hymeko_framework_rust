@@ -29,7 +29,7 @@ def _toy_hg() -> HypergraphState:
 
 
 def test_catmull_rom_parity_with_signedkan() -> None:
-    """The self-contained CR activation matches signedkan_wip's canonical ``_catmull_rom_eval``
+    """The self-contained CR activation matches hymeko_neuro's canonical ``_catmull_rom_eval``
     (so the HSiKAN backbone's KAN nonlinearity is consistent with the rest of the framework)."""
     from hymeko_rl.agents.policy import _catmull_rom
     torch.manual_seed(0)
@@ -38,9 +38,9 @@ def test_catmull_rom_parity_with_signedkan() -> None:
     x = torch.randn(4, n_channels) * 2.0   # outside [-1,1] — exercises the clamp
     mine = _catmull_rom(coef, x, grid)
     try:
-        from signedkan_wip.src.core.splines import _catmull_rom_eval
+        from hymeko_neuro.hyperedge.splines import _catmull_rom_eval
     except Exception:  # noqa: BLE001 - cross-package import is environment-dependent
-        pytest.skip("signedkan_wip not importable in this environment")
+        pytest.skip("hymeko_neuro not importable in this environment")
     ref = _catmull_rom_eval(coef.unsqueeze(0).expand(x.shape[0], -1, -1), x, grid)
     assert torch.allclose(mine, ref, atol=1e-6)
 

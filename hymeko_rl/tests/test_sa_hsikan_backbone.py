@@ -46,7 +46,7 @@ def test_sa_hsikan_as_sac_actor() -> None:
 
 def test_deploy_policy_switches_and_validates() -> None:
     from hymeko_rl.agents.policy import deploy_policy
-    from signed_kan.splines import ChebyshevCRActivation
+    from hymeko_neuro.core.splines import ChebyshevCRActivation
     mod, _ = sa_hsikan_backbone(2, hg_state=_StubHG(), hidden=8, walk_len=2)   # cr_cheby default -> deployable
     err = deploy_policy(mod, torch.randn(4, 3, 2), tol=1.0)                    # generous tol -> switches
     cheby = [m for m in mod.modules() if isinstance(m, ChebyshevCRActivation)]
@@ -56,7 +56,7 @@ def test_deploy_policy_switches_and_validates() -> None:
 def test_deploy_policy_reverts_when_too_loose() -> None:
     import pytest
     from hymeko_rl.agents.policy import deploy_policy
-    from signed_kan.splines import ChebyshevCRActivation
+    from hymeko_neuro.core.splines import ChebyshevCRActivation
     mod, _ = sa_hsikan_backbone(2, hg_state=_StubHG(), hidden=8, walk_len=2)
     with pytest.raises(ValueError):
         deploy_policy(mod, torch.randn(4, 3, 2), tol=1e-9)                     # impossibly tight -> raise + revert

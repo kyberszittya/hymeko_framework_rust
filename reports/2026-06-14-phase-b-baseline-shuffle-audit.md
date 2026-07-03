@@ -49,29 +49,29 @@ commitment that needs an explicit go-ahead (see Open Issues).
 
 | Path | Action | Lines |
 |---|---|---|
-| `signedkan_wip/src/baselines/registry.py` | new | 212 |
-| `signedkan_wip/src/baselines/sgcl.py` | new | 62 |
-| `signedkan_wip/src/baselines/sigformer.py` | new | 75 |
-| `signedkan_wip/src/baselines/sesgformer.py` | new | 66 |
-| `signedkan_wip/src/baselines/dadsgnn.py` | new | 58 |
-| `signedkan_wip/experiments/runs/run_baseline_audit.py` | new | 213 |
-| `signedkan_wip/tests/test_baseline_audit.py` | new | 115 |
-| `signedkan_wip/src/baselines/sgcn.py` | modify (+strategy wrap, −unused import) | +18 |
-| `signedkan_wip/src/baselines/sigat.py` | modify (+strategy wrap) | +19 |
-| `signedkan_wip/src/baselines/sgt.py` | modify (+strategy wrap, semicolon cleanup) | +24/−4 |
-| `signedkan_wip/experiments/runs/run_no_leak_benchmark.py` | modify (Runner + grid mode) | +79/−20 |
+| `hymeko_neuro/baselines/registry.py` | new | 212 |
+| `hymeko_neuro/baselines/sgcl.py` | new | 62 |
+| `hymeko_neuro/baselines/sigformer.py` | new | 75 |
+| `hymeko_neuro/baselines/sesgformer.py` | new | 66 |
+| `hymeko_neuro/baselines/dadsgnn.py` | new | 58 |
+| `hymeko_neuro/experiments/runs/run_baseline_audit.py` | new | 213 |
+| `hymeko_neuro/tests/test_baseline_audit.py` | new | 115 |
+| `hymeko_neuro/baselines/sgcn.py` | modify (+strategy wrap, −unused import) | +18 |
+| `hymeko_neuro/baselines/sigat.py` | modify (+strategy wrap) | +19 |
+| `hymeko_neuro/baselines/sgt.py` | modify (+strategy wrap, semicolon cleanup) | +24/−4 |
+| `hymeko_neuro/experiments/runs/run_no_leak_benchmark.py` | modify (Runner + grid mode) | +79/−20 |
 
 Total new Rust/Python: ~801 new + ~140 modified lines.
 
 ## CORE.YAML items touched
 
-**None.** `CORE.YAML` does not list `signedkan_wip/`, `src/baselines/`, or
+**None.** `CORE.YAML` does not list `hymeko_neuro/`, `src/baselines/`, or
 `experiments/`. No dependency added, removed, or version-changed — all four
 reimplementations are plain PyTorch reusing existing modules.
 
 ## Test results
 
-`pytest -p no:randomly signedkan_wip/tests/test_baseline_audit.py` — **14 passed**
+`pytest -p no:randomly hymeko_neuro/tests/test_baseline_audit.py` — **14 passed**
 in 16.0 s (1 pre-existing torch sparse-invariant UserWarning, not ours).
 
 | Layer | Tests | Coverage |
@@ -172,4 +172,4 @@ Git SHA: working tree dirty (this change + prior uncommitted Nature/SMC edits;
 see `git status`). Host: Windows 11, RTX 3070 Laptop 8 GB, torch 2.12.0+cu132,
 Python 3.12.13, CUDA 13.2 driver. Seeds: 0 (smokes), 1 (determinism test).
 Datasets: bitcoin_alpha (SNAP), epinions (SNAP, downloaded this session).
-Smoke artifacts: `signedkan_wip/experiments/results/no_leak_smoke_regression.jsonl`.
+Smoke artifacts: `hymeko_neuro/experiments/results/no_leak_smoke_regression.jsonl`.

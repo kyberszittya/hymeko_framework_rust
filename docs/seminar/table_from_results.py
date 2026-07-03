@@ -20,7 +20,7 @@ import statistics as st
 from dataclasses import dataclass, field
 from pathlib import Path
 
-RESULTS = Path(__file__).resolve().parents[2] / "signedkan_wip" / "experiments" / "results"
+RESULTS = Path(__file__).resolve().parents[2] / "hymeko_neuro" / "experiments" / "results"
 OUT = Path(__file__).resolve().parent / "figures"
 METRIC_KEYS = ("test_auroc", "val_auroc", "val_auc_best", "auc")
 

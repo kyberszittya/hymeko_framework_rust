@@ -59,10 +59,10 @@ hid a clean win behind a confounding regression.
 
 ### Modified
 
-- [`signedkan_wip/src/vision/nodelet_head.py`](../signedkan_wip/src/vision/nodelet_head.py) — added `gate_loss_kind: str = "bce"` and `gate_focal_gamma: float = 2.0` kwargs to `hungarian_set_loss_gated`. New `_gate_neg_loss` helper dispatches between BCE and focal. Diagnostics dict now includes `gate_loss_kind`, `gate_focal_gamma`, `lam_gate_match_cost` for visibility. Invalid `gate_loss_kind` raises `ValueError` (no silent fallback).
-- [`signedkan_wip/src/vision/train_circles_ricci.py`](../signedkan_wip/src/vision/train_circles_ricci.py) — threaded three new kwargs through `combined_set_loss` and `train_one_config`. All preserve byte-identical legacy paths.
-- [`signedkan_wip/src/vision/train_voc_stagec.py`](../signedkan_wip/src/vision/train_voc_stagec.py) — added `--lam-gate-match-cost`, `--gate-loss-kind`, `--gate-focal-gamma` CLI flags.
-- [`signedkan_wip/tests/test_nodelet_head.py`](../signedkan_wip/tests/test_nodelet_head.py) — 5 new tests:
+- [`hymeko_neuro/experiments/vision/nodelet_head.py`](../hymeko_neuro/experiments/vision/nodelet_head.py) — added `gate_loss_kind: str = "bce"` and `gate_focal_gamma: float = 2.0` kwargs to `hungarian_set_loss_gated`. New `_gate_neg_loss` helper dispatches between BCE and focal. Diagnostics dict now includes `gate_loss_kind`, `gate_focal_gamma`, `lam_gate_match_cost` for visibility. Invalid `gate_loss_kind` raises `ValueError` (no silent fallback).
+- [`hymeko_neuro/experiments/vision/train_circles_ricci.py`](../hymeko_neuro/experiments/vision/train_circles_ricci.py) — threaded three new kwargs through `combined_set_loss` and `train_one_config`. All preserve byte-identical legacy paths.
+- [`hymeko_neuro/experiments/vision/train_voc_stagec.py`](../hymeko_neuro/experiments/vision/train_voc_stagec.py) — added `--lam-gate-match-cost`, `--gate-loss-kind`, `--gate-focal-gamma` CLI flags.
+- [`hymeko_neuro/tests/test_nodelet_head.py`](../hymeko_neuro/tests/test_nodelet_head.py) — 5 new tests:
   - `test_focal_gate_differs_from_bce` — sanity
   - `test_focal_gate_gamma_zero_recovers_bce` — γ=0 ↔ BCE
   - `test_focal_gate_suppresses_easy_more_than_borderline` — focal mechanism (the very property that hurt mAP)

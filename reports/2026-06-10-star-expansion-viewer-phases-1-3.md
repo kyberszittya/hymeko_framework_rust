@@ -26,7 +26,7 @@ To support this (and Demo 2), built the `hymeko` PyO3 module and added a small
 | LOC | File |
 |---:|---|
 | 268 | `demo_web/export_star_expansion.py` — exporter (engine + fallback Strategy) |
-| 137 | `signedkan_wip/tests/test_star_expansion_export.py` — tests |
+| 137 | `hymeko_neuro/tests/test_star_expansion_export.py` — tests |
 | 19 | `demo_web/star_expansion_data.example.json` — Phase-1 schema example |
 | — | `demo_web/star_expansion_data.{json,js}` — generated (Fano) |
 
@@ -48,7 +48,7 @@ Engine-backed tests require the built `hymeko`; run with the venv interpreter
 (`uv run --group` re-syncs and drops the editable install):
 
     PYTHONPATH=. .venv/Scripts/python.exe -m pytest -p no:randomly \
-        signedkan_wip/tests/test_star_expansion_export.py
+        hymeko_neuro/tests/test_star_expansion_export.py
 
 | Layer | Tests | Result |
 |---|---|---|

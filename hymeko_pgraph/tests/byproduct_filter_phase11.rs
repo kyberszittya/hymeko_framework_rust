@@ -13,7 +13,7 @@
 //!   * extension E-NoExcess FAILS on the two by-product M-nodes.
 //!
 //! The 5-seed training-time AUC validation lives in
-//! `signedkan_wip/tests/test_byproduct_filter_e2e.py` (Python).
+//! `hymeko_neuro/tests/test_byproduct_filter_e2e.py` (Python).
 
 use std::collections::BTreeSet;
 

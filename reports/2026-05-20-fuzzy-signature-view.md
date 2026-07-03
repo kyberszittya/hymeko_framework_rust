@@ -39,11 +39,11 @@ conflict is now visible.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/interpret/__init__.py` | new | 23 |
-| `signedkan_wip/src/interpret/fuzzy_signature.py` | new | 332 (dataclasses + extractor + plot) |
-| `signedkan_wip/src/mixed_arity_signedkan/encoding_full.py` | extended | +22 (side-channel capture hook) |
-| `signedkan_wip/tests/test_fuzzy_signature.py` | new | 219 (10 unit tests) |
-| `signedkan_wip/experiments/runs/demo_fuzzy_signature.py` | new | 207 (Bitcoin Alpha demo) |
+| `hymeko_neuro/eval/interpret/__init__.py` | new | 23 |
+| `hymeko_neuro/eval/interpret/fuzzy_signature.py` | new | 332 (dataclasses + extractor + plot) |
+| `hymeko_neuro/models/mixed_arity_signedkan/encoding_full.py` | extended | +22 (side-channel capture hook) |
+| `hymeko_neuro/tests/test_fuzzy_signature.py` | new | 219 (10 unit tests) |
+| `hymeko_neuro/experiments/runs/demo_fuzzy_signature.py` | new | 207 (Bitcoin Alpha demo) |
 | `docs/plans/2026-05-20-fuzzy-signature-view/{plan.tex,plan.pdf,plan.tikz,plan_figure.pdf,plan.mmd}` | new | 4 plan formats |
 | `reports/2026-05-20-fuzzy-signature-view.md` | new | this file |
 | `reports/figures/fuzzy_signature_bitcoin_alpha/{*.png,summary.json}` | new | 3 demo figures + JSON |
@@ -184,7 +184,7 @@ contribute < 5% each at this configuration. This matches the
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_fuzzy_signature.py` | **10 / 10 pass** |
+| `pytest hymeko_neuro/tests/test_fuzzy_signature.py` | **10 / 10 pass** |
 | All prior side / mixed-arity / Phase 22 suites | no regression (13 + 12 + 22 + ...) |
 | `cargo test -p hymeko_pgraph` | 96 / 96 + 1 ignored doctest |
 

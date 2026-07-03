@@ -63,7 +63,7 @@ run_one() {
         --env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         --env MALLOC_ARENA_MAX=4 \
         --env OMP_NUM_THREADS=4 \
-        "$SIF" bash -c "cd /workspace && PYTHONPATH=. python -m signedkan_wip.experiments.runs.run_final_cell \
+        "$SIF" bash -c "cd /workspace && PYTHONPATH=. python -m hymeko_neuro.experiments.runs.run_final_cell \
             --dataset $dataset --hidden $HIDDEN --seed $seed \
             --n-epochs $N_EPOCHS --max-k4 $MAX_K $extra" \
         > "$cell_log" 2>&1

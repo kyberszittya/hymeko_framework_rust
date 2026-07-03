@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-13
 **Git SHA:** `0c55fa81d0df99ed6a96566e3317ea122553d6ce`
-**Storage:** `signedkan_wip/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl` (20 rows: 10 seeds × 2 datasets)
+**Storage:** `hymeko_neuro/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl` (20 rows: 10 seeds × 2 datasets)
 **Wall:** 16:34 → 17:19 CEST = **45 min** for 20 runs.
 
 ## Summary
@@ -10,7 +10,7 @@
 The Optuna best-trial configs from
 [reports/2026-05-13-optuna-handoff-slashdot-continuation.md](2026-05-13-optuna-handoff-slashdot-continuation.md)
 were validated at **10 seeds** vs the existing 5-seed `joint_mix` baseline
-([signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl](../signedkan_wip/experiments/results/joint_mix_5seed_2026_05_08.jsonl)).
+([hymeko_neuro/experiments/results/joint_mix_5seed_2026_05_08.jsonl](../hymeko_neuro/experiments/results/joint_mix_5seed_2026_05_08.jsonl)).
 
 **Headline:** the 0.997 / 0.996 single-trial maxima from this morning are
 **not seed luck** — they survive a 10-seed paired sweep with **6–7σ paired
@@ -143,16 +143,16 @@ None.
   from `--seed`; could be added in a follow-up jsonl emit).
 - **GPU:** NVIDIA RTX 2070 SUPER, 8 GiB, driver 580.126.09.
 - **Random seeds:** 0–9, deterministic.
-- **Script:** [signedkan_wip/experiments/run_bitcoin_optuna_best_5seed_2026_05_13.sh](../signedkan_wip/experiments/run_bitcoin_optuna_best_5seed_2026_05_13.sh)
+- **Script:** [hymeko_neuro/experiments/run_bitcoin_optuna_best_5seed_2026_05_13.sh](../hymeko_neuro/experiments/run_bitcoin_optuna_best_5seed_2026_05_13.sh)
   (filename retains `_5seed_` for git-history continuity; loop body
   is 10 seeds).
-- **Storage:** [signedkan_wip/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl](../signedkan_wip/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl)
+- **Storage:** [hymeko_neuro/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl](../hymeko_neuro/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl)
   (20 rows, one per (config × seed)).
-- **Queue log:** [signedkan_wip/experiments/results/bitcoin_optuna_best_10seed_2026_05_13.queue.log](../signedkan_wip/experiments/results/bitcoin_optuna_best_10seed_2026_05_13.queue.log).
+- **Queue log:** [hymeko_neuro/experiments/results/bitcoin_optuna_best_10seed_2026_05_13.queue.log](../hymeko_neuro/experiments/results/bitcoin_optuna_best_10seed_2026_05_13.queue.log).
 
 ## CORE.YAML items touched
 
-None. All work is in `signedkan_wip/experiments/` (allowlist per
+None. All work is in `hymeko_neuro/experiments/` (allowlist per
 CORE.YAML) and the result is a new jsonl + report under `reports/`.
 
 ## Cross-references

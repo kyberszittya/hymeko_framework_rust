@@ -14,9 +14,9 @@
 //!
 //! ```bash
 //! cargo run --release --example cycle_stats -p hymeko_graph -- \
-//!   signedkan_wip/data/slashdot.txt 600 3
+//!   hymeko_neuro/assets/data/slashdot.txt 600 3
 //! cargo run --release --example cycle_stats -p hymeko_graph -- \
-//!   signedkan_wip/data/epinions.txt 600 3
+//!   hymeko_neuro/assets/data/epinions.txt 600 3
 //! ```
 //!
 //! Args: `<edge-file> <top_n_vertices> <k_len>`.

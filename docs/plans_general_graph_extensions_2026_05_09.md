@@ -138,8 +138,8 @@ Total: ~7-9 days for all four.  Each is independently publishable as a workshop 
 
 ## Files
 
-- Each extension adds one runner: `signedkan_wip/src/run_node_class.py`, `run_contrastive.py`, `run_masked_cycle.py`, `run_bipartite_match.py`
-- Shared head modules: `signedkan_wip/src/heads.py` (~100 LOC for all four)
+- Each extension adds one runner: `hymeko_neuro/run_node_class.py`, `run_contrastive.py`, `run_masked_cycle.py`, `run_bipartite_match.py`
+- Shared head modules: `hymeko_neuro/heads.py` (~100 LOC for all four)
 - Eval harnesses per task: ~50 LOC each
 - Total: ~700 LOC + 4 task runners
 

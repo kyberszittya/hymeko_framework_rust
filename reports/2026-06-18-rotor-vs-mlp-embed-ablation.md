@@ -60,10 +60,10 @@ the same features ⇒ the line's wins are the *features*, not the rotor.
 
 ## Files touched
 
-- `signedkan_wip/src/baselines/cayley_rotor_baseline.py` — `_MLPEmbed`,
+- `hymeko_neuro/baselines/cayley_rotor_baseline.py` — `_MLPEmbed`,
   `MLPEmbedSignedModel` (rotor-embedding ablation control; shares proj/SGCN/
   classifier via the spec-driven base), registered `mlp_embed` / `mlp_embed_walk`.
-- `signedkan_wip/tests/test_cayley_rotor_baseline.py` — control test (fair: same
+- `hymeko_neuro/tests/test_cayley_rotor_baseline.py` — control test (fair: same
   embedding_dim, ≥ rotor params, inductive, forward shape). Removed a pre-existing
   unused import.
 - Artifact: `rotor_vs_mlp_embed_ab.jsonl` (80 rows).

@@ -3,7 +3,7 @@
 **Date**: 2026-05-22 (evening)
 **Slug**: `voc-stepcount-phase8`
 **Git SHA**: `507d7e24d1cf03d359504bf14819b8e2274380e9`
-**Orchestrator log**: `signedkan_wip/experiments/results/voc_320px_stepcount_20260522T182304Z/orchestrator.log`
+**Orchestrator log**: `hymeko_neuro/experiments/results/voc_320px_stepcount_20260522T182304Z/orchestrator.log`
 **Predecessor**: `reports/2026-05-22-voc-lazy-loader-phase7.md`
 
 ---
@@ -68,7 +68,7 @@ So the lever is not "step count" — it is **specifically epochs**.  Batch=4 wit
 - B9 wall: 5245 s training + ~100 s data load = 5345 s = 89 min (vs 83 min projected; +7%, within noise).
 - B10 wall: 2902 s + ~30 s load = 49 min (vs 63 min projected; -22%, slightly faster than projection because b=4 is more launch-bound than compute-bound).
 - Both peak RSS within 16 GiB cap (orchestrator gates with `systemd-run`).
-- Grid JSONL: `signedkan_wip/experiments/results/voc_320px_stepcount_20260522T182304Z/grid.jsonl`.
+- Grid JSONL: `hymeko_neuro/experiments/results/voc_320px_stepcount_20260522T182304Z/grid.jsonl`.
 - Per-cell JSONL + logs in the same dir.
 - Seed: 0 (single seed per cell — Phase 8 was a falsifier between two hypotheses).
 
@@ -83,7 +83,7 @@ The 320 px lever is real.  Single-seed B9 of 0.1213 places HymeYOLO at:
 - Still ~4× below YOLOv5n on VOC2007 (~0.50 absolute) — HymeYOLO is not "competitive with YOLO," but that was never the framework's claim.
 
 **Phase 9 (5-seed of B9)** launched at 22:42 immediately after B10 completed (sentinel-queued via `pgrep`).  Orchestrator:
-`signedkan_wip/experiments/run_voc_b9_5seed_2026_05_22.sh`, stamp
+`hymeko_neuro/experiments/run_voc_b9_5seed_2026_05_22.sh`, stamp
 `20260522T202340Z`.  Five seeds × 89 min = ~7.4 h, ETA ~06:11 CEST 2026-05-23.
 
 Aggregator pre-registers the publishable bar:

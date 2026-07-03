@@ -25,19 +25,19 @@ Plan: [docs/plans/2026-05-14-gomb-unrestricted/plan.tex](../docs/plans/2026-05-1
 
 | File | LOC delta | Notes |
 |---|---|---|
-| [signedkan_wip/src/run_gomb_smoke.py](../signedkan_wip/src/run_gomb_smoke.py) | +19 / −3 | `--unrestricted-cycles` flag + cycle-edge-set rebinding |
-| [signedkan_wip/tests/test_gomb_unrestricted_flag.py](../signedkan_wip/tests/test_gomb_unrestricted_flag.py) | +110 / 0 | 5 unit tests (flag wiring + synthetic-triangle bridge test) |
-| [signedkan_wip/experiments/run_gomb_epinions_unrestricted_2026_05_14.sh](../signedkan_wip/experiments/run_gomb_epinions_unrestricted_2026_05_14.sh) | new | 5-seed runner, v5_combined config, 80 epochs |
+| [hymeko_neuro/run_gomb_smoke.py](../hymeko_neuro/run_gomb_smoke.py) | +19 / −3 | `--unrestricted-cycles` flag + cycle-edge-set rebinding |
+| [hymeko_neuro/tests/test_gomb_unrestricted_flag.py](../hymeko_neuro/tests/test_gomb_unrestricted_flag.py) | +110 / 0 | 5 unit tests (flag wiring + synthetic-triangle bridge test) |
+| [hymeko_neuro/experiments/run_gomb_epinions_unrestricted_2026_05_14.sh](../hymeko_neuro/experiments/run_gomb_epinions_unrestricted_2026_05_14.sh) | new | 5-seed runner, v5_combined config, 80 epochs |
 | [docs/plans/2026-05-14-gomb-unrestricted/](../docs/plans/2026-05-14-gomb-unrestricted/) | 4 files | plan.tex / plan.pdf / plan.tikz / plan.mmd |
 
 ## 3. CORE.YAML items touched
 
-None. `signedkan_wip` is not listed in `CORE.YAML`.
+None. `hymeko_neuro` is not listed in `CORE.YAML`.
 
 ## 4. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_unrestricted_flag.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_unrestricted_flag.py -v
 test_unrestricted_flag_is_registered             PASSED [ 20%]
 test_strict_default_path_uses_train_edges        PASSED [ 40%]
 test_unrestricted_branch_uses_full_edges         PASSED [ 60%]
@@ -114,13 +114,13 @@ None.
 
 ```bash
 # Strict (baseline):
-python -m signedkan_wip.src.run_gomb_smoke --dataset epinions --seed 0 \
+python -m hymeko_neuro.run_gomb_smoke --dataset epinions --seed 0 \
     --n-epochs 80 --edge-split 80_10_10 --joint-mix --device cuda \
     --d-embed 32 --M-outer 8 --d-outer 8 --d-middle 8 --d-core 8 \
     --n-tiers 3 --topk 64 --lr 0.003
 
 # Unrestricted (this work):
-python -m signedkan_wip.src.run_gomb_smoke --dataset epinions --seed 0 \
+python -m hymeko_neuro.run_gomb_smoke --dataset epinions --seed 0 \
     --n-epochs 80 --edge-split 80_10_10 --joint-mix --device cuda \
     --unrestricted-cycles \
     --d-embed 32 --M-outer 8 --d-outer 8 --d-middle 8 --d-core 8 \

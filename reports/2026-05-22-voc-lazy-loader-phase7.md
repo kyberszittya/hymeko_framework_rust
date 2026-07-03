@@ -3,7 +3,7 @@
 **Date**: 2026-05-22
 **Slug**: `voc-lazy-loader-phase7`
 **Git SHA**: `507d7e24d1cf03d359504bf14819b8e2274380e9` (working tree dirty: see §Provenance)
-**Orchestrator log**: `signedkan_wip/experiments/results/voc_lazy_loader_20260522T160858Z/orchestrator.log`
+**Orchestrator log**: `hymeko_neuro/experiments/results/voc_lazy_loader_20260522T160858Z/orchestrator.log`
 **Plan reference**: implicit refactor — driven by Phase 6 verdict
   (`reports/2026-05-22-voc-backbone-shrink-phase6.md`)
 
@@ -94,7 +94,7 @@ This is **not** an architectural ceiling on 320 px; it's an
 - B8 wall 2500 s training + 56 s data load + dump = 2556 s end-to-end.
 - B7 wall 1684 s training + 38 s data load + dump = 1723 s end-to-end.
 - Grid JSONL:
-  `signedkan_wip/experiments/results/voc_lazy_loader_20260522T160858Z/grid.jsonl`
+  `hymeko_neuro/experiments/results/voc_lazy_loader_20260522T160858Z/grid.jsonl`
 - Per-cell JSONL: `B7_lazy_224.jsonl`, `B8_lazy_320.jsonl`.
 - Logs: `B7_lazy_224.log`, `B8_lazy_320.log`, `orchestrator.log`.
 - Seed: 0 (single seed per cell — Phase 7 was a sanity + falsifier,

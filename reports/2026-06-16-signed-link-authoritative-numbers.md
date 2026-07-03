@@ -15,8 +15,8 @@ HSiKAN **edge_cr 5-seed paired** — computed from the on-disk JSONLs:
 
 | Dataset | AUROC mean ± pstd | source JSONL |
 |---|---|---|
-| Slashdot | **0.907 ± 0.003** | `signedkan_wip/experiments/results/slashdot_edge_cr_5seed_2026_05_09.jsonl` (5 seeds) |
-| Epinions | **0.846 ± 0.009** | `signedkan_wip/experiments/results/epinions_edge_cr_5seed_2026_05_09.jsonl` (5 seeds) |
+| Slashdot | **0.907 ± 0.003** | `hymeko_neuro/experiments/results/slashdot_edge_cr_5seed_2026_05_09.jsonl` (5 seeds) |
+| Epinions | **0.846 ± 0.009** | `hymeko_neuro/experiments/results/epinions_edge_cr_5seed_2026_05_09.jsonl` (5 seeds) |
 | Bitcoin Alpha | **[pending]** | no `*bitcoin*edge_cr*` file in repo |
 | Bitcoin OTC | **[pending]** | no `*otc*edge_cr*` file in repo |
 

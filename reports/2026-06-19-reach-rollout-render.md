@@ -27,7 +27,7 @@ tested, and produced a GIF. The MP4 path is written but inert pending the depend
 | `docs/plans/2026-06-19-reach-rollout-render/{plan.tex,pdf,tikz,mmd}` | — | NEW plan (4 formats, compiles) |
 
 Reuses `plot_reach.py`'s rollout pattern and `bc.py` helpers; no edits to existing files.
-The `signedkan_wip/.../render_mujoco_video.py` pipeline was used as a **reference only**
+The `hymeko_neuro/.../render_mujoco_video.py` pipeline was used as a **reference only**
 (sinusoid-driven, different scene, hand-rolled fovy projection) — not imported, to keep
 `hymeko_rl` isolated.
 

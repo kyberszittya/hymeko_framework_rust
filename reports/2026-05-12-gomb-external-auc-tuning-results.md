@@ -13,7 +13,7 @@ HSiKAN headline rows (~0.94 Alpha) are **not** the success criterion here.
 
 ## What was run
 
-Driver: **`signedkan_wip/experiments/run_gomb_external_auc_tuning.sh`**  
+Driver: **`hymeko_neuro/experiments/run_gomb_external_auc_tuning.sh`**  
 Settings: `TRIALS=8`, `NEPOCHS=38`, `DEVICE=cuda`, `80_10_10`, `data_seed=0`.
 
 | Envelope | Search seeds | JSONL |
@@ -51,7 +51,7 @@ Several trials scored `−inf` (`returncode` ≠ 0); joint OTC had multiple CUDA
 
 - Plan: `docs/plans/2026-05-12-gomb-external-auc-tuning/plan.{tex,pdf,mmd,tikz}`
 - Logs: `reports/gomb_tune_external_joint.jsonl`, `reports/gomb_tune_external_vanilla.jsonl`
-- Script: `signedkan_wip/experiments/run_gomb_external_auc_tuning.sh`
+- Script: `hymeko_neuro/experiments/run_gomb_external_auc_tuning.sh`
 
 ---
 

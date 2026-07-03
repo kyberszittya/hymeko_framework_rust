@@ -30,23 +30,23 @@ rotor-HSiKAN trails SiGAT by ~0.04 while being **larger** (125k–192k vs 16k pa
 
 ## Files touched
 
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` (~ +95 / −15 LOC)
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` (~ +95 / −15 LOC)
   - New `TrainConfig` dataclass (lr, weight_decay, grad_clip, class_weight, early_stop, patience, eval_every, n_epochs). **Defaults reproduce the 2026-06-17 verify recipe exactly** → prior numbers stay reproducible.
   - New helpers: `_optimise` (epoch loop + grad-clip + val-based early-stop with best-state restore), `_pos_weight` (class-balanced `pos_weight = n_neg/n_pos`), `_drop_train_pairs` (dedup refactor, was inline-duplicated).
   - `run()` threads the config; builds a val split for early-stopping; emits the knobs + selected `val_auroc` in the result dict (provenance).
   - `main()` exposes `--lr --weight-decay --grad-clip --class-weight --early-stop`.
   - **Untouched:** the load-bearing strict train-only triad construction + `--shuffle-train-signs` leakage gate.
   - Fixed one pre-existing `E702` (line 56, formatting-only; declared per §3).
-- `signedkan_wip/tests/test_hsikan_rotor.py` (new, ~155 LOC) — 8 unit (TrainConfig defaults, `_pos_weight` balance/degenerate, `_drop_train_pairs` overlap/empty, `_optimise` epoch-assert / early-stop-restores-best / no-early-stop-nan) + 3 integration (table & rotor smoke, tuned-recipe path).
+- `hymeko_neuro/tests/test_hsikan_rotor.py` (new, ~155 LOC) — 8 unit (TrainConfig defaults, `_pos_weight` balance/degenerate, `_drop_train_pairs` overlap/empty, `_optimise` epoch-assert / early-stop-restores-best / no-early-stop-nan) + 3 integration (table & rotor smoke, tuned-recipe path).
 
 ## CORE.YAML items touched
 
-None. Confirmed CORE.YAML protects only `hymeko_core/` (Rust); `signedkan_wip` python is application code.
+None. Confirmed CORE.YAML protects only `hymeko_core/` (Rust); `hymeko_neuro` python is application code.
 
 ## Test results
 
 - **ruff check** (changed files): **PASS** ("All checks passed!").
-- **pytest** `signedkan_wip/tests/test_hsikan_rotor.py`: **11 passed in 9.16 s** (8 unit + 3 integration). 2 warnings are torch-internal sparse-CSR-beta notices from pre-existing `signedkan.py:753`, not this change.
+- **pytest** `hymeko_neuro/tests/test_hsikan_rotor.py`: **11 passed in 9.16 s** (8 unit + 3 integration). 2 warnings are torch-internal sparse-CSR-beta notices from pre-existing `signedkan.py:753`, not this change.
 
 ## Performance
 
@@ -77,12 +77,12 @@ A/B baseline vs tuned + leakage gate on the cheap fixtures:
 ```
 # baseline (verify recipe) vs tuned, both + shuffle gate, 5 seeds, CPU-safe:
 for d in bitcoin_alpha bitcoin_otc; do for s in 0 1 2 3 4; do
-  python -m signedkan_wip.experiments.runs.run_hsikan_rotor --dataset $d --embed rotor --head bilinear --dedup --seed $s            # baseline
-  python -m signedkan_wip.experiments.runs.run_hsikan_rotor --dataset $d --embed rotor --head bilinear --dedup --seed $s \
+  python -m hymeko_neuro.experiments.runs.run_hsikan_rotor --dataset $d --embed rotor --head bilinear --dedup --seed $s            # baseline
+  python -m hymeko_neuro.experiments.runs.run_hsikan_rotor --dataset $d --embed rotor --head bilinear --dedup --seed $s \
          --weight-decay 1e-4 --grad-clip 1.0 --class-weight --early-stop      # tuned
 done; done
 # gate (must hit ~0.5 under the tuned recipe too):
-python -m signedkan_wip.experiments.runs.run_hsikan_rotor --dataset bitcoin_otc --embed rotor --head bilinear --dedup --seed 0 \
+python -m hymeko_neuro.experiments.runs.run_hsikan_rotor --dataset bitcoin_otc --embed rotor --head bilinear --dedup --seed 0 \
        --weight-decay 1e-4 --grad-clip 1.0 --class-weight --early-stop --shuffle-train-signs
 ```
 

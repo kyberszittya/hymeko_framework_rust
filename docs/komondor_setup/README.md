@@ -1,6 +1,6 @@
 # Komondor HPC setup — probe-first staging
 
-**Goal:** stand up enough of the signedkan_wip environment on Komondor
+**Goal:** stand up enough of the hymeko_neuro environment on Komondor
 (KIFÜ HPC at HUN-REN, `komondor.hpc.dkf.hu`) to submit ONE SGCN smoke
 run via SLURM, confirm it produces the expected JSON, then decide on
 the bigger NComms Phase B sweep.
@@ -101,7 +101,7 @@ ssh komondor 'mkdir -p /scratch/pr_szevis/hajdu/hymeko/'
 # 2. rsync from workstation (NOT inside the repo dir):
 rsync -avz --exclude='target/' --exclude='.venv/' --exclude='.venv-rapport-ros2/' \
       --exclude='*.pdf' --exclude='__pycache__' \
-      --exclude='signedkan_wip/experiments/results/' \
+      --exclude='hymeko_neuro/experiments/results/' \
       --exclude='.git/' \
       /home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust/ \
       komondor:/scratch/pr_szevis/hajdu/hymeko/hymeko_framework_rust/

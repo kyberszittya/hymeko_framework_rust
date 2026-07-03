@@ -27,9 +27,9 @@ for Bochner-coupled message passing.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/hodge.py](../signedkan_wip/src/hymeko_gomb/soma/vision/hodge.py) | 200 | `HodgeLaplacian` + `HodgeOperators` dataclass |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | +7 / -0 | re-exports |
-| [signedkan_wip/tests/test_gomb_soma_vision_hodge.py](../signedkan_wip/tests/test_gomb_soma_vision_hodge.py) | 290 | 18 tests including Hodge-decomposition reconstruction |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/hodge.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/hodge.py) | 200 | `HodgeLaplacian` + `HodgeOperators` dataclass |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | +7 / -0 | re-exports |
+| [hymeko_neuro/tests/test_gomb_soma_vision_hodge.py](../hymeko_neuro/tests/test_gomb_soma_vision_hodge.py) | 290 | 18 tests including Hodge-decomposition reconstruction |
 
 ## 3. CORE.YAML items touched
 
@@ -63,7 +63,7 @@ $D - A$. Verified by test on a triangle and a path.
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_hodge.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_hodge.py -v
 =========== 18 passed in 1.94s ===========
 ```
 
@@ -173,7 +173,7 @@ atol $10^{-5}$ (FP32 noise floor).
 ## 10. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/hodge.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/hodge.py
    (clean)
 ```
 
@@ -223,8 +223,8 @@ produces bit-identical output to the existing Phase 1–3-G
 additive.
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/hg_conv_bochner.py`
-* `signedkan_wip/tests/test_gomb_soma_bochner_conv.py`
+* `hymeko_neuro/models/hymeko_gomb/soma/hg_conv_bochner.py`
+* `hymeko_neuro/tests/test_gomb_soma_bochner_conv.py`
 * Phase-4 acceptance criterion: α=β=0 regression test against
   `WalkConvLayer` / `PolygonConvLayer`.
 
@@ -233,7 +233,7 @@ No phase 4 work in this commit, per the one-phase-per-session rule.
 ## 14. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import HodgeLaplacian
+from hymeko_neuro.models.hymeko_gomb.soma.vision import HodgeLaplacian
 
 h = HodgeLaplacian()
 out = h(edges, n_vertices=N, triangles=triangles)  # all torch.long

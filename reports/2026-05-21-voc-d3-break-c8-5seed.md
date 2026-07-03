@@ -40,7 +40,7 @@ turned that single-seed win into a publication-quality claim:
 ## 2. The winning recipe (drop-in CLI)
 
 ```
-python -m signedkan_wip.src.vision.train_voc_stagec \
+python -m hymeko_neuro.experiments.vision.train_voc_stagec \
   --image-set trainval --epochs 60 --input-size 224 \
   --batch-size 8 --n-box-queries 6 \
   --lr 0.003 --seed {0..4} \
@@ -116,9 +116,9 @@ This is the headline argument for Phase 3 cell C9 (90 epochs).
 ## 5. Phase 3 — 3-cell extrapolation grid (running)
 
 Launched 2026-05-21 17:48 CEST as PID 941355 from
-`signedkan_wip/experiments/run_voc_d3_break_phase3_2026_05_21.sh`.
+`hymeko_neuro/experiments/run_voc_d3_break_phase3_2026_05_21.sh`.
 Log dir
-`signedkan_wip/experiments/results/voc_d3_break_phase3_20260521T154837Z/`.
+`hymeko_neuro/experiments/results/voc_d3_break_phase3_20260521T154837Z/`.
 
 | cell | $\lambda_{\text{gate}^-}$ | epochs | $n_q$ | tests |
 |---|---|---|---|---|
@@ -139,10 +139,10 @@ Wall budget ~75-85 min (C9: ~33 min, C10: ~22 min, C11: ~22 min).
 | File | Status | LOC |
 |---|---|---|
 | `docs/plans/2026-05-21-voc-d3-break-phase3/{plan.tex,plan.pdf,plan.tikz,plan.mmd}` | new | 4-format plan |
-| `signedkan_wip/experiments/run_voc_c8_5seed_2026_05_21.sh` | new | 5-seed validation orchestrator (already done) |
-| `signedkan_wip/experiments/run_voc_d3_break_phase3_2026_05_21.sh` | new | Phase 3 orchestrator |
-| `signedkan_wip/experiments/results/voc_c8_5seed_20260521T101436Z/` | new | 5-seed result JSONL |
-| `signedkan_wip/experiments/results/voc_d3_break_phase3_20260521T154837Z/` | running | Phase 3 result JSONL |
+| `hymeko_neuro/experiments/run_voc_c8_5seed_2026_05_21.sh` | new | 5-seed validation orchestrator (already done) |
+| `hymeko_neuro/experiments/run_voc_d3_break_phase3_2026_05_21.sh` | new | Phase 3 orchestrator |
+| `hymeko_neuro/experiments/results/voc_c8_5seed_20260521T101436Z/` | new | 5-seed result JSONL |
+| `hymeko_neuro/experiments/results/voc_d3_break_phase3_20260521T154837Z/` | running | Phase 3 result JSONL |
 | `reports/2026-05-21-voc-d3-break-c8-5seed.md` | new | this report |
 
 ## 7. CORE.YAML items touched

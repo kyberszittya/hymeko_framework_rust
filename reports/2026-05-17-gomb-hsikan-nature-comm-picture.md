@@ -52,7 +52,7 @@ pitch has a real chance.
 | Epinions | 5 | **0.9425** | 0.0034 | **92.61% ± 0.43** | 0.8418 | ~600 s |
 | **Reddit Hyperlinks (NEW)** | **5** | **0.7612** | **0.0042** | TBD | 0.4720 | **~210 s** |
 
-Source: `signedkan_wip/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/` (Bitcoin/Slashdot/Epinions) and `phase_c_20260517T172421Z/` (Reddit).
+Source: `hymeko_neuro/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/` (Bitcoin/Slashdot/Epinions) and `phase_c_20260517T172421Z/` (Reddit).
 
 ### 2.2  HSiKAN-Optuna (transductive convention, 10-seed)
 
@@ -61,7 +61,7 @@ Source: `signedkan_wip/experiments/results/gomb_strict_benchmark_tuned_20260514T
 | Bitcoin-Alpha | 10 | **0.9959** | 0.0011 | 0.9144 ± 0.0068 | 30 k | ~250 s |
 | Bitcoin-OTC | 10 | **0.9933** | 0.0023 | 0.8901 ± 0.0243 | ~50 k | ~250 s |
 
-Source: `signedkan_wip/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl` (10-seed despite the filename).
+Source: `hymeko_neuro/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl` (10-seed despite the filename).
 
 ### 2.3  Label-shuffle audit (real vs shuffled-label AUC, Bitcoin-Alpha + Reddit)
 
@@ -305,7 +305,7 @@ SOTA, on a single consumer GPU.
 | Gömb-strict | Epinions | 2,127,896 | slim config; ~2.1M is node_embed |
 | **Gömb-strict** | **Reddit (NEW)** | **883,848** | **865,200 node_embed + 18,648 cascade** |
 
-Source: jsonl rows in `signedkan_wip/experiments/results/{gomb_strict_benchmark_tuned_20260514T010516Z, phase_c_20260517T172421Z, bitcoin_optuna_best_5seed_2026_05_13}.jsonl` (`n_params` field).
+Source: jsonl rows in `hymeko_neuro/experiments/results/{gomb_strict_benchmark_tuned_20260514T010516Z, phase_c_20260517T172421Z, bitcoin_optuna_best_5seed_2026_05_13}.jsonl` (`n_params` field).
 
 ### 7.2  Architecture-only decomposition (Reddit, the cleanest case)
 
@@ -390,13 +390,13 @@ total, and disclose this in the methods section.
 
 ### 7.1  Gömb-strict numbers
 
-* Bitcoin-Alpha / OTC / Slashdot / Epinions 5-seed: `signedkan_wip/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/step{1..4}_*_seed{0..4}.log`
-* Reddit Hyperlinks 5-seed + shuffle: `signedkan_wip/experiments/results/phase_c_20260517T172421Z/step1_reddit_title_seed{0..4}.log` and `step1b_reddit_shuffle_seed0.log`
+* Bitcoin-Alpha / OTC / Slashdot / Epinions 5-seed: `hymeko_neuro/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/step{1..4}_*_seed{0..4}.log`
+* Reddit Hyperlinks 5-seed + shuffle: `hymeko_neuro/experiments/results/phase_c_20260517T172421Z/step1_reddit_title_seed{0..4}.log` and `step1b_reddit_shuffle_seed0.log`
 * Bitcoin-Alpha shuffle audit (older): documented in `project_gomb_strict_4dataset_2026_05_14.md` memory
 
 ### 7.2  HSiKAN-Optuna numbers
 
-* 10-seed validated: `signedkan_wip/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl` (10 alpha + 10 OTC rows)
+* 10-seed validated: `hymeko_neuro/experiments/results/bitcoin_optuna_best_5seed_2026_05_13.jsonl` (10 alpha + 10 OTC rows)
 * Memory entry: `project_bitcoin_optuna_best_10seed_2026_05_13.md`
 
 ### 7.3  Audit reference numbers (from earlier sessions)

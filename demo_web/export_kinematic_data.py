@@ -10,7 +10,7 @@ trees stay flat (no closed loops).
 
 Two code paths, picked at runtime:
 
-* **real pipeline** — if ``signedkan_wip.src.kinematic`` imports
+* **real pipeline** — if ``hymeko_neuro.experiments.kinematic`` imports
   (i.e. the full torch/numpy stack is installed), the cycle histogram
   is taken from the canonical ``kinematic_loop_summary`` so the numbers
   match every other report in the repo verbatim.
@@ -35,7 +35,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_PATH = Path(__file__).resolve().parent / "kinematic_data.json"
 MAX_K = 6
 
-# Sign convention mirrors signedkan_wip/src/kinematic/graph.py::JOINT_SIGN.
+# Sign convention mirrors hymeko_neuro/experiments/kinematic/graph.py::JOINT_SIGN.
 JOINT_SIGN: dict[str, int] = {
     "revolute": +1,
     "continuous": +1,
@@ -166,7 +166,7 @@ def count_simple_cycles_by_arity(
     canonicalise the ordered vertex ring under rotation + reflection).
 
     Matches the semantics of
-    ``signedkan_wip/src/kinematic/graph.py::kinematic_loop_summary``'s
+    ``hymeko_neuro/experiments/kinematic/graph.py::kinematic_loop_summary``'s
     ``cycles_per_arity`` for the small mechanisms in the catalogue.
     """
     adj = _adjacency(n_nodes, edges)
@@ -212,7 +212,7 @@ def cycles_via_real_pipeline(path: Path) -> dict[int, int] | None:
         import sys
         if str(REPO_ROOT) not in sys.path:
             sys.path.insert(0, str(REPO_ROOT))
-        from signedkan_wip.src.kinematic import (  # type: ignore
+        from hymeko_neuro.experiments.kinematic import (  # type: ignore
             kinematic_loop_summary, urdf_to_signed_graph,
         )
     except Exception:

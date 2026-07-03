@@ -152,19 +152,19 @@ For full audit, the following all live on disk under the
 2026-05-16 git working tree (SHA `2ccaa4d`, dirty with today's
 patches):
 
-1. **Metric-bug fix** — `signedkan_wip/src/vision/train_circles_ricci.py`
+1. **Metric-bug fix** — `hymeko_neuro/experiments/vision/train_circles_ricci.py`
    `compute_detection_metrics`, plus 12 unit tests in
    `test_hymeyolo_ricci_scale.py` that pin the cap at mAP_50 ≤ 1
    and the GT-consumed-at-most-once invariant.
 2. **Honest baseline measurement** — 30-row ricci-scale sweep
    results in
-   `signedkan_wip/experiments/results/hymeyolo_ricci_scale_sweep_20260516T002116Z/`.
+   `hymeko_neuro/experiments/results/hymeyolo_ricci_scale_sweep_20260516T002116Z/`.
    Report: [`2026-05-16-hymeyolo-ricci-weight-sweep.md`](2026-05-16-hymeyolo-ricci-weight-sweep.md).
 3. **Stage A-1 (warm-start)** — 5 rows in
-   `signedkan_wip/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/`.
+   `hymeko_neuro/experiments/results/hymeyolo_warmstart_5seed_20260516T101835Z/`.
    Report: [`2026-05-16-hymeyolo-warmstart-5seed.md`](2026-05-16-hymeyolo-warmstart-5seed.md).
 4. **Stage A-2 (cosine + warmup + e=100)** — 5 rows in
-   `signedkan_wip/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/`.
+   `hymeko_neuro/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/`.
    Report: [`2026-05-16-hymeyolo-stage-a2-5seed.md`](2026-05-16-hymeyolo-stage-a2-5seed.md).
 
 Each step is paired-by-seed; no seed cherry-picking; same dataset

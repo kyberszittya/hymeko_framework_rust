@@ -1,7 +1,7 @@
 # Stage D-3-BREAK Phase 6 — backbone shrink
 
 **Date:** 2026-05-22
-**Plan:** `signedkan_wip/experiments/run_voc_backbone_shrink_2026_05_22.sh`
+**Plan:** `hymeko_neuro/experiments/run_voc_backbone_shrink_2026_05_22.sh`
 **Verdict:** **Backbone-shrink HURTS mAP at this hardware budget; ResNet18-IN at 224 px is the right backbone for the C9 ladder. The input-resolution axis is structurally blocked by data-preload OOM (not model OOM); the next architectural lever is a lazy-data-loader refactor of `train_voc_stagec.py`.**
 
 ## 1. Per-cell table
@@ -72,8 +72,8 @@ If the lazy-loader refactor unblocks 320 px AND the result lifts mAP, that's the
 
 | file | role |
 |-|-|
-| `signedkan_wip/experiments/run_voc_backbone_shrink_2026_05_22.sh` | orchestrator |
-| `signedkan_wip/experiments/results/voc_backbone_shrink_20260522T014614Z/` | per-cell logs + jsonls + grid.jsonl + orchestrator.log |
+| `hymeko_neuro/experiments/run_voc_backbone_shrink_2026_05_22.sh` | orchestrator |
+| `hymeko_neuro/experiments/results/voc_backbone_shrink_20260522T014614Z/` | per-cell logs + jsonls + grid.jsonl + orchestrator.log |
 | `reports/2026-05-22-voc-backbone-shrink-phase6.md` | this file |
 
 No code changes (only orchestration); CORE.YAML items touched = 0.

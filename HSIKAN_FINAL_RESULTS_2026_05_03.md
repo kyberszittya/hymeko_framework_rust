@@ -6,8 +6,8 @@ pollution. RTX 2070 SUPER (sm_75 Turing). `HSIKAN_TORCH_COMPILE=1`
 with `reduce-overhead` mode (cudagraphs) by default; Slashdot uses
 `default` mode because cycle batching breaks cudagraph capture.
 
-Source: `signedkan_wip/src/run_final_table.sh` →
-`signedkan_wip/experiments/results/final_table.jsonl` (35 rows).
+Source: `hymeko_neuro/assets/scripts/run_final_table.sh` →
+`hymeko_neuro/experiments/results/final_table.jsonl` (35 rows).
 
 ---
 
@@ -196,9 +196,9 @@ inference. This is the regularization-as-pruning story in action.
 
 ## Files
 
-- `signedkan_wip/src/run_final_cell.py` — single-cell isolated runner
-- `signedkan_wip/src/run_final_table.sh` — driver (~28 cells)
-- `signedkan_wip/experiments/results/final_table.jsonl` — raw 35
+- `hymeko_neuro/run_final_cell.py` — single-cell isolated runner
+- `hymeko_neuro/assets/scripts/run_final_table.sh` — driver (~28 cells)
+- `hymeko_neuro/experiments/results/final_table.jsonl` — raw 35
   cells (extra rows = SGCN baselines)
 - `HSIKAN_PERFORMANCE_REPORT_2026_05_03.md` — companion narrative
   with the cycle-enum + inference-speedup history

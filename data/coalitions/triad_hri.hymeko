@@ -8,7 +8,7 @@
 // crosses configured thresholds.
 //
 // Plan:   docs/plans/2026-05-18-rapport-coherence-demo-nagoya/
-// Loader: signedkan_wip/src/rapport/coalition.py
+// Loader: hymeko_neuro/experiments/rapport/coalition.py
 
 triad_hri_description {
     @"meta_hri.hymeko";
@@ -121,7 +121,7 @@ triad_hri: hri {
         // zone). r1 now detects persons via a HyMeYOLO-family network
         // trained on real VOC images, not by HSV-blob colour matching.
         detector_kind   "voc_person";
-        checkpoint      "signedkan_wip/experiments/results/stage_h_voc_person_20260518T151704Z/checkpoints/stage_h_voc_person_seed0.pt";
+        checkpoint      "hymeko_neuro/experiments/results/stage_h_voc_person_20260518T151704Z/checkpoints/stage_h_voc_person_seed0.pt";
         score_threshold 0.20;
     }
 }

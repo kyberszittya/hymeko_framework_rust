@@ -308,7 +308,7 @@ sensor-msgs-py==5.5.2
 service-msgs==2.3.1
 setuptools==78.1.1
 shape-msgs==5.5.2
--e git+https://github.com/kyberszittya/hymeko_framework_rust.git@8fd8187c7dc3e9c7bda67c01c10364f416127e54#egg=signedkan_native&subdirectory=signedkan_wip/signedkan_native
+-e git+https://github.com/kyberszittya/hymeko_framework_rust.git@8fd8187c7dc3e9c7bda67c01c10364f416127e54#egg=signedkan_native&subdirectory=hymeko_neuro/assets/signedkan_native
 simulation-interfaces==1.3.0
 six==1.17.0
 soupsieve==2.8.3

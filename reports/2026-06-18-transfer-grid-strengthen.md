@@ -66,22 +66,22 @@ cannot make (they cannot index an unseen graph at all).
 ## Files touched
 
 **Modified (2, mine — both created earlier today, uncommitted):**
-- `signedkan_wip/experiments/runs/run_inductive_transfer.py` (+~95 / −~40): `Arm`
+- `hymeko_neuro/experiments/runs/run_inductive_transfer.py` (+~95 / −~40): `Arm`
   enum (maps each arm to its `(shuffle_train_signs, train)` pair; `Arm.of` inverse);
   `ARMS_GATE`/`ARMS_DECOMP`, `HARD_PAIRS`, `DECOMP_MODELS`; unified `run_grid(models,
   pairs, seeds, arms, out, *, label)` with a captured `cell` closure (resume-or-compute
   per arm); arm-aware `_row_key` (fixes the real↔random-init collision); `main` now
   delegates to `run_grid`; new `main_decomp` + `--decomp`/`--pairs`/`--models` CLI;
   `_parse_pairs`. `transfer_cell` **unchanged** (preserves the existing tests).
-- `signedkan_wip/tests/test_inductive_transfer.py` (+~55): `Arm` round-trip
+- `hymeko_neuro/tests/test_inductive_transfer.py` (+~55): `Arm` round-trip
   (parametrized over all arms), arm-flag mapping, and the **resumption regression**
   (`run_grid(ARMS_DECOMP)` keys 3 arms distinctly and resumes idempotently — fails
   under the old shuffle-bool key where real≡random-init).
 
 **New artifacts:**
 - `docs/plans/2026-06-18-transfer-grid-strengthen/{plan.tex,plan.pdf,plan.tikz,plan.mmd}`.
-- `signedkan_wip/experiments/results/inductive_transfer_decomp_hard.jsonl` (120 rows).
-- `signedkan_wip/experiments/results/decomp_hard_run.log` (grid stdout).
+- `hymeko_neuro/experiments/results/inductive_transfer_decomp_hard.jsonl` (120 rows).
+- `hymeko_neuro/experiments/results/decomp_hard_run.log` (grid stdout).
 
 **CORE.YAML items touched:** none. No new dependency. Datasets cached
 (`slashdot.txt`, `epinions.txt` present) → no network, no persistent-state mutation.

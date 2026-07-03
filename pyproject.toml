@@ -40,7 +40,7 @@ ml = [
     # triton-windows-import-unblock (2026-06-10, user chat).
     "triton-windows==3.7.0.post26 ; sys_platform == 'win32'",
 ]
-# `demo` powers `signedkan_wip/src/demo/gui.py` (Gradio GUI + matplotlib +
+# `demo` powers `hymeko_neuro/experiments/demo/gui.py` (Gradio GUI + matplotlib +
 # NetworkX subgraph rendering) and the `hymeko_rl` rollout video encoder.
 # Opt-in: `uv sync --group ml --group demo`.
 demo = [
@@ -66,7 +66,7 @@ rl = [
 # `ehk_torch_stub` is omitted here: it depends on `torch` and would pull the full
 # CUDA wheel stack into every `uv sync --all-packages`. Install it ad hoc when
 # needed: `uv pip install -e python/ehk_torch_stub` (after `uv sync --group ml`).
-members = ["hymeko_py", "signedkan_wip/signedkan_native"]
+members = ["hymeko_py", "hymeko_neuro/assets/signedkan_native"]
 
 [tool.uv]
 package = false
@@ -87,7 +87,7 @@ torchvision = { index = "pytorch-cu132" }
 # Keeps `pytest` runs scoped to real tests; avoids collecting `hymeko_py/smoke_test.py`
 # as a test module and reduces interference from unrelated global pytest plugins.
 [tool.pytest.ini_options]
-testpaths = ["signedkan_wip/tests"]
+testpaths = ["hymeko_neuro/tests"]
 python_files = ["test_*.py"]
 addopts = ["-p", "no:randomly"]
 markers = [

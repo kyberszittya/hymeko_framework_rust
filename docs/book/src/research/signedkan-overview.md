@@ -1,6 +1,6 @@
-# Research: signedkan_wip overview
+# Research: hymeko_neuro overview
 
-`signedkan_wip/` is the research-grade workspace for the **HSiKAN family** — Hypergraph Signed Kolmogorov–Arnold Networks. It accreted fast during 2026-04 / 2026-05 and is mostly Python, separate from the Rust crates' production surface.
+`hymeko_neuro/` is the research-grade workspace for the **HSiKAN family** — Hypergraph Signed Kolmogorov–Arnold Networks. It accreted fast during 2026-04 / 2026-05 and is mostly Python, separate from the Rust crates' production surface.
 
 ## What's stable
 
@@ -27,7 +27,7 @@
 ## How to navigate
 
 ```
-signedkan_wip/src/
+hymeko_neuro/
 ├── hymeko_ir.py            # shared HyMeKo-IR parse helpers (driver + walker)
 ├── hymeko_driver.py        # legacy: parses .hymeko, extracts knobs, calls cell_signed_graph
 ├── hymeko_train_walker.py  # NEW: walks training.hymeko's dataflow, dispatches per-op
@@ -50,8 +50,8 @@ signedkan_wip/src/
 
 - `docs/plans_*.md` — plans by date
 - `docs/results/` — locked-in claims
-- `signedkan_wip/HSIKAN_STATE_*.md` — research state per date
-- `signedkan_wip/HSIKAN_FINAL_RESULTS_*.md` — the paper-ready numbers
+- `hymeko_neuro/HSIKAN_STATE_*.md` — research state per date
+- `hymeko_neuro/HSIKAN_FINAL_RESULTS_*.md` — the paper-ready numbers
 
 ## See also
 

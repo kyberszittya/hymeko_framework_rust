@@ -8,7 +8,7 @@ From: nvidia/cuda:12.6.0-cudnn-runtime-ubuntu24.04
 # 3.10-3.13 wheels; pip picks the right one for the active interpreter).
 # CUDA 12.6 is forward-compatible with the cu124 torch wheels below.
 
-# Singularity definition for the signedkan_wip experiment env.
+# Singularity definition for the hymeko_neuro experiment env.
 # Spec is the standard Singularity .def syntax; works with Apptainer
 # (identical syntax) if ever needed.
 #
@@ -32,7 +32,7 @@ From: nvidia/cuda:12.6.0-cudnn-runtime-ubuntu24.04
 #   singularity exec --nv \
 #     --bind /scratch/<PROJECT>/hymeko/hymeko_framework_rust:/workspace \
 #     hymeko_signedkan.sif \
-#     bash -c "cd /workspace && PYTHONPATH=. python -m signedkan_wip.experiments.runs.run_final_cell --dataset bitcoin_alpha --model SGCN --hidden 32 --seed 0 --n-epochs 120"
+#     bash -c "cd /workspace && PYTHONPATH=. python -m hymeko_neuro.experiments.runs.run_final_cell --dataset bitcoin_alpha --model SGCN --hidden 32 --seed 0 --n-epochs 120"
 #
 # The image hash (`singularity inspect --labels hymeko_signedkan.sif`
 # → `org.hymeko.*` labels + base-image digest) is the citation pin for
@@ -44,7 +44,7 @@ From: nvidia/cuda:12.6.0-cudnn-runtime-ubuntu24.04
 # re-runs" for the audit's reproducibility guarantee.
 
 %labels
-    org.hymeko.project          signedkan_wip
+    org.hymeko.project          hymeko_neuro
     org.hymeko.purpose          NComms Phase B + HSiKAN-family experiments
     org.hymeko.python           3.12  (base ubuntu24.04; venv at /opt/venv)
     org.hymeko.torch            2.6.0  (cu124; cluster-pragmatic; local is 2.11.0+cu130)
@@ -61,7 +61,7 @@ From: nvidia/cuda:12.6.0-cudnn-runtime-ubuntu24.04
     export CUBLAS_WORKSPACE_CONFIG=:4096:8
     # Make tqdm play nice in non-tty SLURM logs
     export TQDM_DISABLE=1
-    # signedkan_wip's repo will be bind-mounted at /workspace
+    # hymeko_neuro's repo will be bind-mounted at /workspace
     export PYTHONPATH=/workspace:$PYTHONPATH
     # Use the in-container venv (avoids debian's system pip + PEP-668)
     export PATH=/opt/venv/bin:$PATH
@@ -168,7 +168,7 @@ From: nvidia/cuda:12.6.0-cudnn-runtime-ubuntu24.04
     # ─── hymeko Rust extension (2026-06-04 ship) ───────────────────
     # The wheel was copied into /tmp via %files above; install it into
     # the venv. Without this step, every cycle / walk enumeration call
-    # in signedkan_wip silently falls through to the unbounded pure-
+    # in hymeko_neuro silently falls through to the unbounded pure-
     # Python DFS, which OOM-killed every prior Komondor probe at
     # 32 GB MaxRSS (see reports/2026-06-03-*-pimentel-* + the reservoir
     # fallback memory note).
@@ -203,7 +203,7 @@ PYCHECK
     echo ">>> hymeko_signedkan singularity image"
     echo ">>> Workspace expected at /workspace (bind-mount the repo there)"
     echo ">>> Example:"
-    echo ">>>   singularity exec --nv --bind \$PWD:/workspace hymeko_signedkan.sif python -m signedkan_wip.experiments.runs.run_final_cell --dataset bitcoin_alpha --model SGCN --hidden 32 --seed 0 --n-epochs 120"
+    echo ">>>   singularity exec --nv --bind \$PWD:/workspace hymeko_signedkan.sif python -m hymeko_neuro.experiments.runs.run_final_cell --dataset bitcoin_alpha --model SGCN --hidden 32 --seed 0 --n-epochs 120"
     # %environment is active in %runscript (unlike %post / %test), so
     # bare `python` resolves to /opt/venv/bin/python via PATH.
     python -c "import torch; print('torch=', torch.__version__, 'cuda=', torch.cuda.is_available())"

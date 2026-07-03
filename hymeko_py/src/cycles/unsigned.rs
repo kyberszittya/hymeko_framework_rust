@@ -452,7 +452,7 @@ pub fn enumerate_k_walks_rs(
 /// pruning. PyO3 binding of
 /// [`hymeko_graph::topk_walks::enumerate_top_k_walks_batch`]; promoted
 /// 2026-06-03 as the production runner for
-/// `signedkan_wip.src.cycle_cache.strategies.ABBWalkEnumerator`.
+/// `hymeko_neuro.graph.cycle_cache.strategies.ABBWalkEnumerator`.
 ///
 /// Parameters
 /// ----------

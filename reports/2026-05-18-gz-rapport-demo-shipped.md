@@ -23,7 +23,7 @@ that achieves it.
 | Property | Value |
 |:---|:---|
 | Components | gz sim + ros_gz_bridge + 5 ROS 2 nodes + RViz |
-| Launch | one command (`python -m signedkan_wip.src.rapport_ros2.launch_triad --gui --rviz`) |
+| Launch | one command (`python -m hymeko_neuro.experiments.rapport_ros2.launch_triad --gui --rviz`) |
 | Topics live | 15 (incl. /rapport/sigma, /rapport/markers, /vision/{detections,annotated}) |
 | Rapport pipeline reuse | 100 % — same modules as the Tk demo, no math changes |
 | HyMeKo file as single source of truth | yes — bridge YAML auto-generated from it |
@@ -37,7 +37,7 @@ data/coalitions/triad_hri.hymeko  ─── single declarative source of truth
                                         gz_bindings, observation_thresholds,
                                         vision_config)
         │
-        │  parse_hymeko_rs (Rust PyO3) + signedkan_wip.src.rapport.coalition
+        │  parse_hymeko_rs (Rust PyO3) + hymeko_neuro.experiments.rapport.coalition
         ▼
 +──────────────────────────────────────────────────────────────────+
 │                                                                  │
@@ -76,7 +76,7 @@ data/coalitions/triad_hri.hymeko  ─── single declarative source of truth
 | Decision | Justification |
 |:---|:---|
 | **One HyMeKo file declares everything** (agents, σ-cycle, policy thresholds, ROS 2 topic mapping, observation thresholds, detector kind) | Same parser drives architecture, training, ontology, and now physical-sim bindings — the "HyMeKo as declarative substrate" thread from 2026-05-18 morning |
-| **`ros_gz_bridge` config auto-generated** by `signedkan_wip.src.rapport_ros2.bridge_config` | One source of truth — editing `triad_hri.hymeko` updates the bridge YAML with one command |
+| **`ros_gz_bridge` config auto-generated** by `hymeko_neuro.experiments.rapport_ros2.bridge_config` | One source of truth — editing `triad_hri.hymeko` updates the bridge YAML with one command |
 | **Rapport pipeline modules (estimator, coherence, policy) unchanged from the Tk demo** | Tk's 50-seed falsifier-test holds; only the boundary translators (GzObserver, GzRobotController) are new |
 | **Separate venv `.venv-rapport-ros2`** with `--system-site-packages` | Inherits ROS 2 Kilted Python 3.12 packages + adds hymeko cp312 wheel + numpy + matplotlib in one clean Python interpreter |
 | **GZ Harmonic (9.5.0) + ROS 2 Kilted (May 2025 LTS)** | Modern stack already installed via `/opt/ros/kilted/`; no Gazebo-Classic legacy |
@@ -126,7 +126,7 @@ triad_hri: hri {
     // ─── Vision sidecar detector selection ───
     vision_r1: hri.vision_config {
         detector_kind   "voc_person";   // upgraded from hsv_blob 2026-05-19
-        checkpoint      "signedkan_wip/.../stage_h_voc_person_seed0.pt";
+        checkpoint      "hymeko_neuro/.../stage_h_voc_person_seed0.pt";
         score_threshold 0.20;
     }
 }
@@ -140,20 +140,20 @@ triad_hri: hri {
 - `data/worlds/triad_hri.sdf` — SDFormat 1.10 world.
 - `data/models/triad_human/{model.sdf, model.config}` — agent model (later regenerated from HyMeKo, see [HyMeKo → SDF report](2026-05-18-hymeko-sdf-gz-loop-closed.md)).
 - `data/models/triad_r1/{model.sdf, model.config}` — robot model.
-- `signedkan_wip/src/rapport_ros2/__init__.py`
-- `signedkan_wip/src/rapport_ros2/bridge_config.py` (~80 LOC) — auto-generates ros_gz_bridge YAML from HyMeKo.
-- `signedkan_wip/src/rapport_ros2/observation_math.py` (~150 LOC) — pure-Python pose → ObservationEvent.
-- `signedkan_wip/src/rapport_ros2/gz_observer_node.py` (~180 LOC) — rclpy.Node wrapping observation_math.
-- `signedkan_wip/src/rapport_ros2/rapport_pipeline_node.py` (~155 LOC) — wraps CoalitionEstimator + PolicyEngine.
-- `signedkan_wip/src/rapport_ros2/gz_robot_controller_node.py` (~175 LOC) — policy actions → cmd_vel.
-- `signedkan_wip/src/rapport_ros2/rapport_viz_node.py` (~245 LOC) — MarkerArray for RViz.
-- `signedkan_wip/src/rapport_ros2/vision_sidecar_node.py` (~280 LOC) — HSV blob detector + Stage H/D-3 dispatch.
-- `signedkan_wip/src/rapport_ros2/launch_triad.py` (~190 LOC) — single-command launcher.
-- `signedkan_wip/src/rapport_ros2/rviz/triad_hri.rviz` (~80 lines) — RViz layout.
-- `signedkan_wip/tests/test_rapport_*.py` (4 test files, 38 tests).
+- `hymeko_neuro/experiments/rapport_ros2/__init__.py`
+- `hymeko_neuro/experiments/rapport_ros2/bridge_config.py` (~80 LOC) — auto-generates ros_gz_bridge YAML from HyMeKo.
+- `hymeko_neuro/experiments/rapport_ros2/observation_math.py` (~150 LOC) — pure-Python pose → ObservationEvent.
+- `hymeko_neuro/experiments/rapport_ros2/gz_observer_node.py` (~180 LOC) — rclpy.Node wrapping observation_math.
+- `hymeko_neuro/experiments/rapport_ros2/rapport_pipeline_node.py` (~155 LOC) — wraps CoalitionEstimator + PolicyEngine.
+- `hymeko_neuro/experiments/rapport_ros2/gz_robot_controller_node.py` (~175 LOC) — policy actions → cmd_vel.
+- `hymeko_neuro/experiments/rapport_ros2/rapport_viz_node.py` (~245 LOC) — MarkerArray for RViz.
+- `hymeko_neuro/experiments/rapport_ros2/vision_sidecar_node.py` (~280 LOC) — HSV blob detector + Stage H/D-3 dispatch.
+- `hymeko_neuro/experiments/rapport_ros2/launch_triad.py` (~190 LOC) — single-command launcher.
+- `hymeko_neuro/experiments/rapport_ros2/rviz/triad_hri.rviz` (~80 lines) — RViz layout.
+- `hymeko_neuro/tests/test_rapport_*.py` (4 test files, 38 tests).
 
 ### Modified
-- `signedkan_wip/src/rapport/coalition.py` — extended with `GzBinding`, `ObservationThreshold`, `VisionConfig` dataclasses + loader.
+- `hymeko_neuro/experiments/rapport/coalition.py` — extended with `GzBinding`, `ObservationThreshold`, `VisionConfig` dataclasses + loader.
 
 ### CORE.YAML items touched
 None. ROS 2 Kilted and GZ Harmonic are external system packages (`/opt/ros/kilted/`); the rapport_ros2 subpackage is non-CORE.

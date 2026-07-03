@@ -29,11 +29,11 @@ default.
 
 | File | Change |
 |---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py](../signedkan_wip/src/hymeko_gomb/soma/vision/stim_graph.py) | +30 / −5 — `edges_override` + `edge_signs_override` kwargs on `forward`; defensive polygon-edge lookup |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_backbone.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_backbone.py) | +25 / −3 — `use_sdrf` + SDRF integration in forward |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_classifier.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_classifier.py) | +9 / −0 — propagate `use_sdrf` kwargs |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_detector.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_detector.py) | +9 / −0 — propagate `use_sdrf` kwargs |
-| [signedkan_wip/tests/test_gomb_soma_vision_sdrf_wiring.py](../signedkan_wip/tests/test_gomb_soma_vision_sdrf_wiring.py) | NEW — 11 wiring tests |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/stim_graph.py) | +30 / −5 — `edges_override` + `edge_signs_override` kwargs on `forward`; defensive polygon-edge lookup |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_backbone.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_backbone.py) | +25 / −3 — `use_sdrf` + SDRF integration in forward |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_classifier.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_classifier.py) | +9 / −0 — propagate `use_sdrf` kwargs |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_detector.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_detector.py) | +9 / −0 — propagate `use_sdrf` kwargs |
+| [hymeko_neuro/tests/test_gomb_soma_vision_sdrf_wiring.py](../hymeko_neuro/tests/test_gomb_soma_vision_sdrf_wiring.py) | NEW — 11 wiring tests |
 
 ## 3. CORE.YAML items touched
 
@@ -88,14 +88,14 @@ across re-runs at the same seed.
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_sdrf_wiring.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_sdrf_wiring.py -v
 =========== 11 passed in 6.10s ===========
 ```
 
 Full Ricci-Stim suite (phases 1–10):
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_*.py signedkan_wip/tests/test_gomb_soma_bochner_conv.py
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_*.py hymeko_neuro/tests/test_gomb_soma_bochner_conv.py
 =========== 139 passed in 33.56s ===========
 ```
 
@@ -167,7 +167,7 @@ on the per-image anchor count (~50–200), so overhead is manageable.
 ## 7. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/{stim_graph,ricci_stim_backbone,ricci_stim_classifier,ricci_stim_detector}.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/{stim_graph,ricci_stim_backbone,ricci_stim_classifier,ricci_stim_detector}.py
    (clean)
 ```
 
@@ -229,7 +229,7 @@ This is the right ablation grid for the falsification report.
 ## 12. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import (
+from hymeko_neuro.models.hymeko_gomb.soma.vision import (
     RicciStimBackbone, RicciStimClassifier, RicciStimDetector,
 )
 

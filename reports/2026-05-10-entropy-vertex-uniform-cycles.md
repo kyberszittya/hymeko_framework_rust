@@ -35,11 +35,11 @@ The implementation is correct (9 integration tests pass, including admissibility
 | `hymeko_graph/src/lib.rs` | +4 / -3 | Re-exports |
 | `hymeko_py/src/cycles.rs` | +90 / -1 | `enumerate_top_k_cycles_signed_entropy_rs` PyO3 binding (heuristic × pruner matrix dispatch via macros) |
 | `hymeko_py/src/lib.rs` | +1 | Register new symbol |
-| `signedkan_wip/src/n_tuples.py` | +18 | `HSIKAN_TOPK_MODE=entropy` route + `HSIKAN_TOPK_HEURISTIC` env-var |
+| `hymeko_neuro/n_tuples.py` | +18 | `HSIKAN_TOPK_MODE=entropy` route + `HSIKAN_TOPK_HEURISTIC` env-var |
 
 ## CORE.YAML items touched
 
-**None.** `hymeko_graph` and `hymeko_py` not in the lockdown list; `signedkan_wip` isn't in CORE.YAML at all. No new dependencies (entropy uses only `f64::ln`).
+**None.** `hymeko_graph` and `hymeko_py` not in the lockdown list; `hymeko_neuro` isn't in CORE.YAML at all. No new dependencies (entropy uses only `f64::ln`).
 
 ## Test results
 
@@ -153,7 +153,7 @@ or a stratified per-vertex selection where each vertex's quota is degree-adaptiv
 | Python | 3.13 (miniconda3) |
 | `hymeko` wheel | rebuilt via `maturin develop --release` |
 | Random seed | 0 (single-seed smoke per plan's smoke gate) |
-| Dataset | `signedkan_wip/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` |
+| Dataset | `hymeko_neuro/assets/data/epinions.txt` — sha256 `8120d06a0bb4e65d4b821eba1072647ef3429e4e0a3c02e72bf0c534664f6fee` |
 | Workload | `--dataset epinions --hidden 4 --n-epochs 20 --seed 0`, `HSIKAN_MIXED_TUPLES=c3,c4`, `HSIKAN_TOPK_PRUNER=balance` |
 | Suppressions | None |
 

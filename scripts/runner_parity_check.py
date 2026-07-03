@@ -7,7 +7,7 @@ numerical AUC as the old shell-script path it replaces.
 
 Usage:
   python3 scripts/runner_parity_check.py \\
-      --config signedkan_wip/experiments/configs/_smoke_ba_real_seed0.yaml \\
+      --config hymeko_neuro/experiments/configs/_smoke_ba_real_seed0.yaml \\
       --baseline-auc 0.9946 \\
       --tolerance 0.005
 
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     import subprocess
     print(f"[parity] running framework on {args.config.name} ...")
     rc = subprocess.call([
-        sys.executable, "-m", "signedkan_wip.experiments.run",
+        sys.executable, "-m", "hymeko_neuro.experiments.run",
         "--config", str(args.config),
     ], env={**__import__("os").environ, "PYTHONPATH": "."})
     if rc != 0:

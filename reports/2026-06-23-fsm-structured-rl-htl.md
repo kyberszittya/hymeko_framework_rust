@@ -12,7 +12,7 @@ We propose to stop training reinforcement-learning (RL) policies that must *disc
 long-horizon manipulation task, and instead **declare that structure as a concurrent state machine, let RL
 optimize only the leaf controllers, and declare what to monitor in Hypergraph Temporal Logic (HTL)**. The three
 layers — structure, control, specification/monitoring — all live over the existing HyMeKo signed-incidence
-hypergraph IR, and three of the four pieces (`hymeko_monitor`, `signedkan_wip/src/htl`, HSiKAN + off-policy RL)
+hypergraph IR, and three of the four pieces (`hymeko_monitor`, `hymeko_neuro/eval/htl`, HSiKAN + off-policy RL)
 already exist. The contribution is the *unification*: a single model from which task structure, learned control,
 reward, and runtime-verifiable accountability properties are all read.
 
@@ -142,9 +142,9 @@ declaration, used to *act* and to *verify*.
 | --- | --- | --- |
 | Structure | scripted expert = implicit FSM (if-ladder) | `pick_place_machine.hymeko`, `env/task_machine.py` (load + drive expert) |
 | Control | HSiKAN backbone, DDPG/SAC, declarative `RewardSpec` (parity-tested), Markovian phase obs | `fsm_policy.py` (state-conditioned), per-state reward terms |
-| Spec/monitor | `hymeko_monitor` (Rust robustness), `signedkan_wip/src/htl` (Python), HTL design sketch | `pick_place_spec.htl`, `htl_monitor.py` (rollout adapter) |
+| Spec/monitor | `hymeko_monitor` (Rust robustness), `hymeko_neuro/eval/htl` (Python), HTL design sketch | `pick_place_spec.htl`, `htl_monitor.py` (rollout adapter) |
 
-CORE.YAML: untouched (`hymeko_monitor`, `hymeko_rl`, `signedkan_wip`, `data/` are non-core; core crates not
+CORE.YAML: untouched (`hymeko_monitor`, `hymeko_rl`, `hymeko_neuro`, `data/` are non-core; core crates not
 modified). The if-ladder refactor retires anti-pattern §6.5 #8 (forward-time flags for structural variants) into
 a declared machine.
 

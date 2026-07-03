@@ -11,7 +11,7 @@ geometric margin** — so one declared formula yields *both* the dense training 
 verdict (`sign ρ`). This collapses reward shaping (`reward.py`) and runtime accountability (`hymeko_monitor`
 / HTL) into a single artifact.
 
-**Reuse, not rebuild (§6.1).** The HTL evaluator already exists, non-core, in `signedkan_wip/src/htl/`
+**Reuse, not rebuild (§6.1).** The HTL evaluator already exists, non-core, in `hymeko_neuro/eval/htl/`
 (`parse`, `robustness_at`, `HtlMonitor`, `HypergraphEvent`; `AND/OR/NOT/G[a,b]/F[a,b]` over `ScalarPred`,
 robust-STL min/max). This change is a thin **adapter** plus a `.htl` spec — no new logic engine. The bridge
 to that package mirrors the existing `hymeko_ros2_demo/.../dashboard_node.py` `sys.path` pattern. The
@@ -46,7 +46,7 @@ AND (disk_to_zone > 0.055 OR disk_speed < 0.3)
 - **New** `hymeko_rl/exp_htl_reward_ab.py` — flat-vs-HTL A/B (reuses SAC trainer, `evaluate`,
   `render_actor_gif`, `plot_scoreboard`; §9 three-form). (~120 LOC.)
 - **New** `hymeko_rl/tests/test_htl_reward.py` — 6 tests.
-- **No change** to `planar_grasp_env.py` or `signedkan_wip/src/htl/` (consumed as-is).
+- **No change** to `planar_grasp_env.py` or `hymeko_neuro/eval/htl/` (consumed as-is).
 
 ## Test results
 

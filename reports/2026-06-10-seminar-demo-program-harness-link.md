@@ -5,7 +5,7 @@
 ## Summary
 First slice of the seminar demo program (`SEMINAR_DEMO_OUTLINE.md`, build order
 #1). Built the single inference-only entry point
-`python -m signedkan_wip.demos.seminar <demo>` as a package with a
+`python -m hymeko_neuro.demos.seminar <demo>` as a package with a
 Strategy/Command dispatch (`SeminarDemo` Protocol + `DemoRunner` enforcing
 seed / device / peak-RSS / 16 GB cap), and wired **Demo 3 — signed-graph link
 prediction** through it. The demo reuses the existing `src/demo/{inference,
@@ -16,7 +16,7 @@ triton import wall (approved core dependency add) and a stale pickled module
 path in the committed checkpoints (non-core compat adapter).
 
 ## Files touched
-**New — seminar package (`signedkan_wip/demos/seminar/`), 616 LOC:**
+**New — seminar package (`hymeko_neuro/demos/seminar/`), 616 LOC:**
 | LOC | File |
 |---:|---|
 | 203 | `base.py` — `SeminarDemo` Protocol, `DemoRunner`, device/seed/cap |
@@ -98,7 +98,7 @@ per-checkpoint reference is the checkpoint's own recorded score).
 1. **Triton import wall** — resolved via the approved dependency above. All
    inference demos (latency, mesh, bridge) inherit the fix.
 2. **Stale checkpoint module path** — committed checkpoints were pickled with
-   `signedkan_wip.src.signedkan`, since moved to `...src.core.signedkan`.
+   `hymeko_neuro.signedkan`, since moved to `...src.core.signedkan`.
    `compat.register_legacy_checkpoint_aliases()` registers the alias before
    `torch.load`; reused by every checkpoint-loading demo.
 3. **cp125x console** — `αₖ`/`≈` crash the Windows console; `cli._force_utf8_console`
@@ -116,7 +116,7 @@ No other adds/removes.
 - Seed: 0 (fixed). Deterministic.
 - Fixtures (blake2b-64): checkpoint `d623871960a8ef32`
   `checkpoints/hsikan/bitcoin_otc_optuna_best.pt`; dataset `587f2fbb17eae696`
-  `signedkan_wip/data/bitcoin_otc.csv`.
+  `hymeko_neuro/assets/data/bitcoin_otc.csv`.
 - Artifacts: `demo_out/link/{ROC_bitcoin_otc.png, alpha_k_bitcoin_otc.png}`.
 
 ## Open issues / follow-ups

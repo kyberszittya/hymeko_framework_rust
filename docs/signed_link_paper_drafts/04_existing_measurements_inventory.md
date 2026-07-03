@@ -205,7 +205,7 @@ overnight. **3 days if a second GPU is borrowed.**
 ## Open coordination questions
 
 > **[CW]** Where are the BA/OTC/Slashdot/Epinions strict-protocol
-> split files currently? `signedkan_wip/data/`? `scripts/split/`?
+> split files currently? `hymeko_neuro/assets/data/`? `scripts/split/`?
 > Need a single location for the package.
 
 > **[CW]** Is the joint-mix HSiKAN 0.500-under-strict result from

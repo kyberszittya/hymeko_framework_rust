@@ -39,9 +39,9 @@ including the quadtree-derived sparse graph operations.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_classifier.py](../signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_classifier.py) | 240 | `RicciStimClassifier` |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | +4 / -0 | re-export |
-| [signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_classifier.py](../signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_classifier.py) | 268 | 11 tests including overfit-2-samples |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_classifier.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_classifier.py) | 240 | `RicciStimClassifier` |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | +4 / -0 | re-export |
+| [hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_classifier.py](../hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_classifier.py) | 268 | 11 tests including overfit-2-samples |
 
 ## 3. CORE.YAML items touched
 
@@ -101,7 +101,7 @@ over-squashing-related failures.
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_classifier.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_classifier.py -v
 =========== 11 passed in 22.41s ===========
 ```
 
@@ -185,7 +185,7 @@ Forward: `adaptive_avg_pool2d → Linear → Bochner branches (Linear + GELU + s
 ## 10. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_classifier.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_classifier.py
    (clean)
 ```
 
@@ -244,8 +244,8 @@ against the HyMeYOLO baselines (target ≥ 0.72 mAP50 vs `+ricci-mod`
 0.723).
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_detector.py`
-* `signedkan_wip/experiments/run_ricci_stim_cluttered_mnist_*.sh`
+* `hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_detector.py`
+* `hymeko_neuro/experiments/run_ricci_stim_cluttered_mnist_*.sh`
 * Falsification report
 
 Phase 7-bench (an MNIST classification benchmark, no detection) is
@@ -256,7 +256,7 @@ No phase 8 work in this commit, per the one-phase-per-session rule.
 ## 15. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import RicciStimClassifier
+from hymeko_neuro.models.hymeko_gomb.soma.vision import RicciStimClassifier
 
 m = RicciStimClassifier(
     image_h=28, image_w=28, patch_size_initial=4,

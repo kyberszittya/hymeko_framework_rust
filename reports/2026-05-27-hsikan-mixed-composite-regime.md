@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-27
 **Plan:** `docs/plans/2026-05-27-hsikan-mixed-composite-regime/` (tex/pdf/tikz/mmd)
-**Crates / packages touched:** `signedkan_wip`, `data/hsikan` (all non-core)
+**Crates / packages touched:** `hymeko_neuro`, `data/hsikan` (all non-core)
 **CORE.YAML items touched:** **none** (see provenance for the torch
 dependency-drift caveat — pre-existing, not introduced here).
 
@@ -51,9 +51,9 @@ cycle-batching. The driver now applies that cap automatically.
 | File | Status | LOC |
 |:--|:--|--:|
 | `data/hsikan/sweep_msg_mixed_protocols.hymeko` | new | 107 |
-| `signedkan_wip/experiments/runs/run_hsikan_mixed_composite_smoke.py` | new | 361 |
-| `signedkan_wip/tests/test_mixed_composite_regime.py` | new | 232 |
-| `signedkan_wip/src/hsikan_pgraph_mapping.py` | +19 (additive dict keys) | — |
+| `hymeko_neuro/experiments/runs/run_hsikan_mixed_composite_smoke.py` | new | 361 |
+| `hymeko_neuro/tests/test_mixed_composite_regime.py` | new | 232 |
+| `hymeko_neuro/experiments/hsikan_pgraph_mapping.py` | +19 (additive dict keys) | — |
 | `docs/plans/2026-05-27-hsikan-mixed-composite-regime/{tex,pdf,tikz,mmd}` | new | — |
 | `reports/2026-05-27-hsikan-mixed-composite-regime.md` | new | — |
 
@@ -123,7 +123,7 @@ None.
 ## Experiment provenance
 
 - **Git SHA:** `8fd8187` (working tree **dirty**). Files changed by this
-  task: `signedkan_wip/src/hsikan_pgraph_mapping.py` (M, additive) plus
+  task: `hymeko_neuro/experiments/hsikan_pgraph_mapping.py` (M, additive) plus
   three new untracked files (sweep, driver, test). `scripts/pgraph/verify.sh`
   also shows as modified but **predates this task** (not touched here).
 - **Smoke interpreter:** `/home/kyberszittya/miniconda3/bin/python` 3.13.5,

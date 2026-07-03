@@ -41,7 +41,7 @@ refinement once bug 1 is fixed.
   normalisation, hash stability, and the HSiKAN policy reading `(B, N, in_feat)`.
 **Modified (mine):**
 - `hymeko_rl/policy.py` — `_SignedConv` + `HSiKANBackbone` (batched dense signed message
-  passing; the sparse transductive sibling is `signedkan_wip` `SGCNLayer`) + `hsikan_backbone`;
+  passing; the sparse transductive sibling is `hymeko_neuro` `SGCNLayer`) + `hsikan_backbone`;
   registered `hsikan` in the backbone registry; `build_policy("hsikan", …, hg_state=…)` now
   works (the old `NotImplementedError` is gone). `policy` stays mujoco-free (`TYPE_CHECKING`
   import of `HypergraphState`, duck-typed at runtime).

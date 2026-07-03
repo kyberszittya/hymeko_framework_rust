@@ -11,7 +11,7 @@ The `hymeko_train_walker` runs a complete training cell where the **dataflow ord
 ## Run
 
 ```bash
-PYTHONPATH=signedkan_wip python3 -m src.hymeko_train_walker \
+PYTHONPATH=hymeko_neuro python3 -m src.hymeko_train_walker \
     --arch     data/hsikan/arch_mixed_k34.hymeko \
     --training data/hsikan/training.hymeko \
     --dataset  bitcoin_alpha \
@@ -42,7 +42,7 @@ Output (truncated):
 
 1. **Parsed** `training.hymeko` into a list of `FlowEdge` objects (each with `+inputs`, `~op`, `-outputs`).
 2. **Topologically sorted** them by tensor input/output dependency. The `@load_dataset` edge has `+[]`, so it fires first. `@enumerate_cycles` waits for `+[edges]`. And so on.
-3. **Dispatched** each kind (`dataset`, `cycle_enum`, `loss`, `optimizer`, `epoch_loop`, …) to a registered handler in `signedkan_wip/src/hymeko_train_walker.py`'s `OPS` dict.
+3. **Dispatched** each kind (`dataset`, `cycle_enum`, `loss`, `optimizer`, `epoch_loop`, …) to a registered handler in `hymeko_neuro/experiments/hymeko_train_walker.py`'s `OPS` dict.
 4. **The `epoch_loop` handler** fired the actual inner training kernel (`cell_signed_graph`) with the env-vars + ctx state set by prior ops.
 
 Reordering or removing edges in `training.hymeko` changes the walker's dispatch — order is no longer hardcoded.
@@ -88,7 +88,7 @@ The walker will pick it up automatically based on tensor dependency ordering.
 
 ## Limitations
 
-- The walker's `epoch_loop` handler currently delegates the whole forward+loss+backward+step block to `cell_signed_graph` (a 500-line monolith from `signedkan_wip/src/run_final_cell.py`). Decomposing that into per-step ops would let you reorder inner operations from HyMeKo too. Future work.
+- The walker's `epoch_loop` handler currently delegates the whole forward+loss+backward+step block to `cell_signed_graph` (a 500-line monolith from `hymeko_neuro/run_final_cell.py`). Decomposing that into per-step ops would let you reorder inner operations from HyMeKo too. Future work.
 - `forward` and `backward` ops are currently no-ops (declarations only) — they exist for dataflow shape but inner training is delegated.
 
 ## Next

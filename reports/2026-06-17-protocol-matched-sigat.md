@@ -57,37 +57,37 @@ the follow-up; not run here (out of plan scope).
 ## Files touched
 
 **New (4):**
-- `signedkan_wip/experiments/runs/run_protocol_matched_sigat.py` (+205) — focused
+- `hymeko_neuro/experiments/runs/run_protocol_matched_sigat.py` (+205) — focused
   in-process driver; Strategy-closure per model (audit registry via `run_audit`,
   rotor-HSiKAN via `run_hsikan_rotor.run`) so the grid loop never branches on
   family (§6.5 #9); reuses the gate/RSS helpers from `run_no_leak_benchmark` (no
   re-definition, no train-loop dup, §6.5 #1/#3); resumable JSONL; `--smoke/--full`.
-- `signedkan_wip/experiments/eval/aggregate_protocol_match.py` (+135) — pure-stdlib
+- `hymeko_neuro/experiments/eval/aggregate_protocol_match.py` (+135) — pure-stdlib
   aggregator → the model×protocol gap table above.
-- `signedkan_wip/tests/test_protocol_matched_sigat.py` (+150) — 9 tests (grid
+- `hymeko_neuro/tests/test_protocol_matched_sigat.py` (+150) — 9 tests (grid
   construction, real 3-epoch arm + resume, aggregation maths/gate/gap).
-- `signedkan_wip/experiments/results/protocol_matched_full.jsonl` — 160 result rows.
+- `hymeko_neuro/experiments/results/protocol_matched_full.jsonl` — 160 result rows.
 
 **Modified (mine; tree was already dirty from the session):**
-- `signedkan_wip/src/datasets/legacy.py` — added `undirected_pair` +
+- `hymeko_neuro/data/datasets/legacy.py` — added `undirected_pair` +
   `drop_train_pairs` (the canonical true-held-out filter) beside `split`/
   `deduplicate_pairs`; incidental: cleared 3 pre-existing ruff errors in the file
   (unused top-level `import io` — shadowed by a local re-import; two `;`-joined
   lines in the KONECT reader).
-- `signedkan_wip/src/datasets/__init__.py` — re-export the two helpers.
-- `signedkan_wip/experiments/runs/run_baseline_audit.py` — `--dedup` flag + `dedup`
+- `hymeko_neuro/data/datasets/__init__.py` — re-export the two helpers.
+- `hymeko_neuro/experiments/runs/run_baseline_audit.py` — `--dedup` flag + `dedup`
   param threaded through `run_audit`; records `dedup`/`n_test`/`n_test_dropped`/
   `n_val_dropped`; hardened `_evaluate` to return `(nan, nan)` on an empty
   held-out slice (a possible dedup outcome; sklearn raises on empty).
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` — replaced the local
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` — replaced the local
   `_pair`/`_drop_train_pairs` **defs** with imports from the datasets layer, kept
   the names as thin aliases (single source of truth; §6.5 #1). `run_rotor_head_ablation`
   and `test_hsikan_rotor` import these names unchanged.
-- `signedkan_wip/tests/test_baseline_audit.py` — `--dedup` regression (drops
+- `hymeko_neuro/tests/test_baseline_audit.py` — `--dedup` regression (drops
   train-overlapping held-out; new result keys; dedup-off no-op).
-- `signedkan_wip/tests/test_konect_datasets.py` — datasets-layer unit tests for
+- `hymeko_neuro/tests/test_konect_datasets.py` — datasets-layer unit tests for
   the two new functions (orientation invariance, mirror/repeat drop, no-op cases).
-- `signedkan_wip/tests/test_hsikan_rotor.py` — single-source guard (`_drop_train_pairs
+- `hymeko_neuro/tests/test_hsikan_rotor.py` — single-source guard (`_drop_train_pairs
   is datasets.drop_train_pairs`).
 
 **CORE.YAML items touched:** none. `run_baseline_audit`/`run_hsikan_rotor`/
@@ -126,12 +126,12 @@ per concern with a mode arg (§6.5 #13). No new globals, no env-flag reads.
 
 - Git SHA `7d16ad0` (working tree dirty from the ongoing session; my touched
   files listed above).
-- Datasets: cached SNAP `bitcoin_alpha`, `bitcoin_otc` under `signedkan_wip/data/`
+- Datasets: cached SNAP `bitcoin_alpha`, `bitcoin_otc` under `hymeko_neuro/assets/data/`
   (no network). Seeds 0–4. Device: CUDA (torch 2.12.0+cu132). Split: 80/10/10
   via `datasets.split(seed=seed)`; strict train-only message passing.
-- Artifact: `signedkan_wip/experiments/results/protocol_matched_full.jsonl` (160
+- Artifact: `hymeko_neuro/experiments/results/protocol_matched_full.jsonl` (160
   rows; on disk). Aggregate via
-  `python -m signedkan_wip.experiments.eval.aggregate_protocol_match --in <that file>`.
+  `python -m hymeko_neuro.experiments.eval.aggregate_protocol_match --in <that file>`.
 
 ## Open issues / follow-ups
 

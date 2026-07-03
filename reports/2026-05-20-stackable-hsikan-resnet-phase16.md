@@ -22,10 +22,10 @@ hidden=8 / n_epochs=30 config.
 | File | Status | LOC | Notes |
 | --- | --- | --- | --- |
 | `docs/plans/2026-05-20-stackable-hsikan-resnet/plan.{tex,pdf,mmd,tikz}` | new | 4-format plan (3 pp PDF) | Written before code |
-| `signedkan_wip/src/core/stacked_signedkan.py` | **new** | 195 | `SignedKANResidualBlock` + `StackedSignedKAN` + `StackedSignedKANConfig` (thin ResNet-style wrapper over `MultiLayerSignedKAN`) |
-| `signedkan_wip/tests/test_stacked_signedkan.py` | **new** | 120 | 6 unit tests: forward/backward, shape at L=1/2/4/8, depth-1 equivalence to inner, node_embed back-compat, param-count scaling |
+| `hymeko_neuro/hyperedge/stacked_signedkan.py` | **new** | 195 | `SignedKANResidualBlock` + `StackedSignedKAN` + `StackedSignedKANConfig` (thin ResNet-style wrapper over `MultiLayerSignedKAN`) |
+| `hymeko_neuro/tests/test_stacked_signedkan.py` | **new** | 120 | 6 unit tests: forward/backward, shape at L=1/2/4/8, depth-1 equivalence to inner, node_embed back-compat, param-count scaling |
 | `data/hsikan/sweep_msg_depth.hymeko` | **new** | 45 | 4-unit depth axis for P-graph |
-| `signedkan_wip/src/hsikan_pgraph_mapping.py` | extended | +10 | `depth_l{1,2,4,8}` units + `n_layers` kwarg |
+| `hymeko_neuro/experiments/hsikan_pgraph_mapping.py` | extended | +10 | `depth_l{1,2,4,8}` units + `n_layers` kwarg |
 
 ## CORE.YAML items touched
 

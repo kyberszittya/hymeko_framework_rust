@@ -1,7 +1,7 @@
 # HSiKAN-Optuna rescore + Gömb-strict label-shuffle audit
 
 **Date:** 2026-05-17
-**Run dir:** `signedkan_wip/experiments/results/hsikan_rescore_audit_20260517T191841Z/`
+**Run dir:** `hymeko_neuro/experiments/results/hsikan_rescore_audit_20260517T191841Z/`
 **Git SHA:** `2ccaa4d12fae1ff9cd533bd91cd84b28f11c3dab`
 **Wall:** 52 min total (21:18 → 22:10 local)
 **Budget:** 4 h (came in at 22% of budget; cycle-cache hits made
@@ -143,26 +143,26 @@ have a documented shuffle-audit floor.
 
 ### New
 
-- `signedkan_wip/experiments/run_hsikan_rescore_and_audit_2026_05_17.sh`
+- `hymeko_neuro/experiments/run_hsikan_rescore_and_audit_2026_05_17.sh`
   (160 lines) — orchestrator for both tasks.
-- `signedkan_wip/experiments/results/hsikan_rescore_audit_20260517T191841Z/`
+- `hymeko_neuro/experiments/results/hsikan_rescore_audit_20260517T191841Z/`
   - `task_a_hsikan_rescore.jsonl` (20 lines, 10 alpha + 10 otc)
   - `task_b_shuffle_audit.jsonl` (3 lines, 1 per dataset)
   - `orchestrator.log` + 23 per-run logs.
 
 ### Modified (pre-this-task patch, used here)
 
-- `signedkan_wip/src/run_final_cell.py` — added
+- `hymeko_neuro/run_final_cell.py` — added
   `--emit-full-metrics` flag and threaded `emit_full_metrics`
   kwarg through `cell_signed_graph` at the two HSiKAN-mixed
   return-dict sites.  Uses
-  `signedkan_wip/src/eval_metrics_full.py:full_binary_metrics`.
+  `hymeko_neuro/eval_metrics_full.py:full_binary_metrics`.
 
 ### CORE.YAML items touched
 
 None.  No new dependencies; no new crates; no editor changes.
-Reuses existing `signedkan_wip.src.run_final_cell`,
-`signedkan_wip.src.run_gomb_smoke`, and the Optuna-best configs
+Reuses existing `hymeko_neuro.run_final_cell`,
+`hymeko_neuro.run_gomb_smoke`, and the Optuna-best configs
 from the 2026-05-13 / 2026-05-14 runs.
 
 ## 5. Test results

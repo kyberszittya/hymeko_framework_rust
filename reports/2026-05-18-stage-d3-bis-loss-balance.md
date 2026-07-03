@@ -42,9 +42,9 @@ shapes — just one optional float threaded through
 
 ### Modified
 
-- [`signedkan_wip/src/vision/train_circles_ricci.py`](../signedkan_wip/src/vision/train_circles_ricci.py) — added `lam_gate_neg_override: float | None = None` to `combined_set_loss` and `train_one_config`; passes through to `hungarian_set_loss_gated.lam_gate_neg`. Default `None` preserves D-3 auto-balance byte-identical.
-- [`signedkan_wip/src/vision/train_voc_stagec.py`](../signedkan_wip/src/vision/train_voc_stagec.py) — added `--lam-gate-neg` CLI flag (default `None`).
-- [`signedkan_wip/tests/test_nodelet_head.py`](../signedkan_wip/tests/test_nodelet_head.py) — extended with 4 override tests.
+- [`hymeko_neuro/experiments/vision/train_circles_ricci.py`](../hymeko_neuro/experiments/vision/train_circles_ricci.py) — added `lam_gate_neg_override: float | None = None` to `combined_set_loss` and `train_one_config`; passes through to `hungarian_set_loss_gated.lam_gate_neg`. Default `None` preserves D-3 auto-balance byte-identical.
+- [`hymeko_neuro/experiments/vision/train_voc_stagec.py`](../hymeko_neuro/experiments/vision/train_voc_stagec.py) — added `--lam-gate-neg` CLI flag (default `None`).
+- [`hymeko_neuro/tests/test_nodelet_head.py`](../hymeko_neuro/tests/test_nodelet_head.py) — extended with 4 override tests.
 
 ### New
 

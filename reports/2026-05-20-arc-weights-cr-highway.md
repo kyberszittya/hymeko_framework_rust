@@ -39,14 +39,14 @@ to a plain CR-only highway.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/core/n_tuples.py` | extended | +14 (`arc_weights` field on `SignedNTuple`, default None) |
-| `signedkan_wip/src/core/signedkan.py` | extended | +93 (new `inner_skip="cr_highway"` mode + `arc_weights` kwarg threaded through `SignedKANLayer.forward`, `MultiLayerSignedKAN.encode_triads`, `SignedKAN.encode_triads`) |
-| `signedkan_wip/src/core/arc_weights.py` | new | 138 (`build_edge_weight_lookup`, `annotate_arc_weights`, `per_vertex_arc_weights_array`) |
-| `signedkan_wip/src/mixed_arity_signedkan/model.py` | extended | +9 (`per_arity_arc_weights` kwarg + pending stash on `encode_edges`) |
-| `signedkan_wip/src/mixed_arity_signedkan/encoding_full.py` | extended | +10 (per-arity arc-weight read in the layer loop) |
-| `signedkan_wip/src/core/side_signedkan.py` | extended | +3 (`per_arity_arc_weights` plumbing through `SideMixedArity` wrapper) |
-| `signedkan_wip/experiments/runs/run_final_cell.py` | extended | +60 (CLI `--use-arc-weights`; loads `WeightedSignedGraph`; annotates per-arity tuples; switches `inner_skip` to `cr_highway`; threads `per_arity_arc_weights` through every `encode_edges` call) |
-| `signedkan_wip/tests/test_arc_weights_cr_highway.py` | new | 165 (9 unit tests) |
+| `hymeko_neuro/hyperedge/n_tuples.py` | extended | +14 (`arc_weights` field on `SignedNTuple`, default None) |
+| `hymeko_neuro/hyperedge/signedkan.py` | extended | +93 (new `inner_skip="cr_highway"` mode + `arc_weights` kwarg threaded through `SignedKANLayer.forward`, `MultiLayerSignedKAN.encode_triads`, `SignedKAN.encode_triads`) |
+| `hymeko_neuro/hyperedge/arc_weights.py` | new | 138 (`build_edge_weight_lookup`, `annotate_arc_weights`, `per_vertex_arc_weights_array`) |
+| `hymeko_neuro/models/mixed_arity_signedkan/model.py` | extended | +9 (`per_arity_arc_weights` kwarg + pending stash on `encode_edges`) |
+| `hymeko_neuro/models/mixed_arity_signedkan/encoding_full.py` | extended | +10 (per-arity arc-weight read in the layer loop) |
+| `hymeko_neuro/hyperedge/side_signedkan.py` | extended | +3 (`per_arity_arc_weights` plumbing through `SideMixedArity` wrapper) |
+| `hymeko_neuro/experiments/runs/run_final_cell.py` | extended | +60 (CLI `--use-arc-weights`; loads `WeightedSignedGraph`; annotates per-arity tuples; switches `inner_skip` to `cr_highway`; threads `per_arity_arc_weights` through every `encode_edges` call) |
+| `hymeko_neuro/tests/test_arc_weights_cr_highway.py` | new | 165 (9 unit tests) |
 | `docs/plans/2026-05-20-arc-weights-cr-highway/{plan.tex,plan.pdf,plan.tikz,plan_figure.pdf,plan.mmd}` | new | 4-format plan per CLAUDE.md §2 |
 | `reports/2026-05-20-arc-weights-cr-highway.md` | new | this file |
 
@@ -128,7 +128,7 @@ baseline.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_arc_weights_cr_highway.py` | **9 / 9 pass** |
+| `pytest hymeko_neuro/tests/test_arc_weights_cr_highway.py` | **9 / 9 pass** |
 | All prior side / mixed-arity / fuzzy-signature suites | 44 / 44 (no regression) |
 | `cargo test -p hymeko_pgraph` | 96 / 96 + 1 ignored doctest |
 | Bitcoin Alpha seed-0 smoke with `--use-arc-weights` | AUC 0.9970 (tied with baseline) |

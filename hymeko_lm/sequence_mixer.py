@@ -23,7 +23,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from signedkan_wip.src.embeddings.cayley_rotor import cayley_to_unit_quat, quat_rotate
+from hymeko_neuro.graph.embeddings.cayley_rotor import cayley_to_unit_quat, quat_rotate
 
 from hymeko_lm.config import GateMode
 

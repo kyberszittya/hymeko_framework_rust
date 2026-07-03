@@ -21,7 +21,7 @@
 // answers: does the hypergraph backbone match the CNN backbone
 // on synthetic Cichy-92 r²?
 //
-// Mapping: signedkan_wip/src/cortical_pgraph_mapping.py
+// Mapping: hymeko_neuro/experiments/cortical_pgraph_mapping.py
 // Driver:  run_cortical_msg_sweep.py --backend gomb
 
 Cortical_Gomb_Sweep_MSG {}

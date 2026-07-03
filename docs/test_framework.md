@@ -17,13 +17,13 @@ classes** by construction.
 ## Layout
 
 ```
-signedkan_wip/src/test_harness/
+hymeko_neuro/eval/test_harness/
 ├── __init__.py                   # public API
 ├── env_var_audit.py              # 4 env-var positive-controls, ~190 lines
 ├── result_capture.py             # CellResult + run_cell + run_cells, ~120 lines
 └── invariant_check.py            # 1-epoch smoke + memory probe, ~75 lines
 
-signedkan_wip/tests/
+hymeko_neuro/tests/
 └── test_pipeline_integrity.py    # pytest entry, parametrised over audit cases
 ```
 
@@ -32,7 +32,7 @@ signedkan_wip/tests/
 ### Before any sweep — env-var audit (1.4 s)
 
 ```bash
-pytest signedkan_wip/tests/test_pipeline_integrity.py -v -k env_var
+pytest hymeko_neuro/tests/test_pipeline_integrity.py -v -k env_var
 ```
 
 Expected output:
@@ -51,7 +51,7 @@ If a wiring bug returns, this fails immediately with the offending env var named
 
 ```bash
 HSIKAN_TOPK_K=64 HSIKAN_TOPK_PRUNER=balance \
-  python -m signedkan_wip.src.test_harness.invariant_check \
+  python -m hymeko_neuro.eval.test_harness.invariant_check \
   --dataset bitcoin_alpha --epochs 1
 ```
 
@@ -60,11 +60,11 @@ Catches NaN, finite, and (with `--max-gpu-gb 6.0`) OOM-likely configs.
 ### Inside a sweep script — robust capture
 
 ```python
-from signedkan_wip.src.test_harness import run_cells
+from hymeko_neuro.eval.test_harness import run_cells
 
 specs = [
     ("ba m=64 balance",
-     ["python", "-m", "signedkan_wip.src.run_final_cell",
+     ["python", "-m", "hymeko_neuro.run_final_cell",
       "--dataset", "bitcoin_alpha", "--model", "HSiKAN",
       "--hidden", "16", "--n-epochs", "30", "--seed", "0"],
      {"HSIKAN_TOPK_MODE": "per_vertex", "HSIKAN_TOPK_K": "64",

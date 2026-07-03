@@ -8,8 +8,8 @@
 
 ### Code
 
-- **4 235 LOC** under `signedkan_wip/src/hymeko_gomb/soma/`.
-- **204 tests** in `signedkan_wip/tests/test_gomb_soma*.py` — **all passing** as of today's audit.
+- **4 235 LOC** under `hymeko_neuro/models/hymeko_gomb/soma/`.
+- **204 tests** in `hymeko_neuro/tests/test_gomb_soma*.py` — **all passing** as of today's audit.
 - Architecture stack (10 phases, complete):
   - Forman κ per anchor (Phase 1–2)
   - AdaptiveQuadtree (Phase 3) — **ported to Rust** via `hymeko.build_quadtree_rs` (2026-05-16), 3.9× to 9.8× CPU speedup, set-equal vs Python ref
@@ -125,4 +125,4 @@ If you'd rather pick option A (SDRF sweep) or B (sober writeup), say which and I
 - Plan (4-format): [`docs/plans/2026-05-16-gomb-soma-cortical-benchmark/`](../docs/plans/2026-05-16-gomb-soma-cortical-benchmark/)
 - Architecture reports: [`reports/2026-05-14-gomb-soma-ricci-stim-phase{1..10}.md`](../reports/) + Phase 8-bench + sdrf-optimisation
 - Optimisation reports: [`reports/2026-05-16-gomb-soma-hodge-vectorize.md`](2026-05-16-gomb-soma-hodge-vectorize.md), [`reports/2026-05-16-gomb-soma-quadtree-rust.md`](2026-05-16-gomb-soma-quadtree-rust.md), [`reports/2026-05-16-sdrf-net-negative-cluttered-mnist.md`](2026-05-16-sdrf-net-negative-cluttered-mnist.md)
-- Source: [`signedkan_wip/src/hymeko_gomb/soma/`](../signedkan_wip/src/hymeko_gomb/soma/) (4 235 LOC, 204 tests)
+- Source: [`hymeko_neuro/models/hymeko_gomb/soma/`](../hymeko_neuro/models/hymeko_gomb/soma/) (4 235 LOC, 204 tests)

@@ -62,17 +62,17 @@ becomes practical on a single GPU; the Python reference does not.**
 |------|------:|--------|
 | [`hymeko_py/src/quadtree.rs`](../hymeko_py/src/quadtree.rs) | +302 / 0 (new) | Rust state machine + Forman κ inline + 5 unit tests for the κ helper |
 | [`hymeko_py/src/lib.rs`](../hymeko_py/src/lib.rs) | +6 / 0 | Module decl + `m.add_function(...)` registration |
-| [`signedkan_wip/src/hymeko_gomb/soma/vision/quadtree_rust.py`](../signedkan_wip/src/hymeko_gomb/soma/vision/quadtree_rust.py) | +170 / 0 (new) | `AdaptiveQuadtreeRust` wrapper class; Python-side `score_callback` does the GPU variance pass |
-| [`signedkan_wip/tests/test_quadtree_rust.py`](../signedkan_wip/tests/test_quadtree_rust.py) | +220 / 0 (new) | 17 tests: set-equality (×11 variants), tree-validity invariants, budget cap, determinism, constructor sanity |
+| [`hymeko_neuro/models/hymeko_gomb/soma/vision/quadtree_rust.py`](../hymeko_neuro/models/hymeko_gomb/soma/vision/quadtree_rust.py) | +170 / 0 (new) | `AdaptiveQuadtreeRust` wrapper class; Python-side `score_callback` does the GPU variance pass |
+| [`hymeko_neuro/tests/test_quadtree_rust.py`](../hymeko_neuro/tests/test_quadtree_rust.py) | +220 / 0 (new) | 17 tests: set-equality (×11 variants), tree-validity invariants, budget cap, determinism, constructor sanity |
 
 Net diff: ~700 LOC, all additive; existing Python `AdaptiveQuadtree`
 unchanged.
 
 ## 3. CORE.YAML items touched
 
-None. `hymeko_py` is a non-core PyO3 binding crate; `signedkan_wip/`
+None. `hymeko_py` is a non-core PyO3 binding crate; `hymeko_neuro/`
 is non-core; the Rust unit tests live alongside the algorithm in
-`quadtree.rs`. The Python tests under `signedkan_wip/tests/` follow
+`quadtree.rs`. The Python tests under `hymeko_neuro/tests/` follow
 the existing test-organisation convention.
 
 ## 4. Test results
@@ -98,7 +98,7 @@ vertex. Each test asserts the exact closed-form
 ### 4.2 Python integration tests (set-equality + invariants)
 
 ```
-$ python -m pytest signedkan_wip/tests/test_quadtree_rust.py -v
+$ python -m pytest hymeko_neuro/tests/test_quadtree_rust.py -v
 ============================== 17 passed in 9.48s ==============================
 ```
 

@@ -14,8 +14,8 @@ Implement and run Experiment E1: a Catmull–Rom-parametrized spectral filter on
 
 1. Read `CORE.YAML`, `tools.yaml`, the E1 spec PDF (or its `.tex` next to it).
 2. Discovery pass before creating ANY artifact:
-   - `grep -rin "cheby\|spectral\|laplacian\|polynomial filter" signedkan_wip/src/ hymeko_graph/src/`
-   - `ls signedkan_wip/experiments/results/ | grep -i "spectral\|cheby"`
+   - `grep -rin "cheby\|spectral\|laplacian\|polynomial filter" hymeko_neuro/ hymeko_graph/src/`
+   - `ls hymeko_neuro/experiments/results/ | grep -i "spectral\|cheby"`
    - Locate the existing strict-protocol masked-matrix path (M_tr assembly) used by the Gömb-strict benchmark — REUSE it, do not rewrite.
    - Locate the existing shared train/eval harness. The repo has a documented anti-pattern (#3) of 98 `run_*.py` scripts re-implementing train loops; you add a **model class + ~20-line config**, never a new training loop.
 3. If discovery finds existing spectral-filter scaffolding: extend it and say so in the report. Do not duplicate.
@@ -47,7 +47,7 @@ Implement and run Experiment E1: a Catmull–Rom-parametrized spectral filter on
 - Comparators from existing JSONLs (`gomb_strict_benchmark_tuned_20260514T010516Z/`, HSiKAN-strict cells) — do NOT re-run them.
 - Optuna: 30 trials, TPE, validation AUC, strict features only.
 - Label-shuffle audit: **train-only shuffle** definition exactly as `reports/2026-05-17-hsikan-rescore-and-shuffle-audit.md` §3.1.
-- Every cell → JSONL with git SHA, seed, dataset hash, config dict, peak RSS, wall (under `signedkan_wip/experiments/results/e1_spectral_cr_<UTC>/`).
+- Every cell → JSONL with git SHA, seed, dataset hash, config dict, peak RSS, wall (under `hymeko_neuro/experiments/results/e1_spectral_cr_<UTC>/`).
 
 ## Step 5 — Verdict (pre-registered, from the spec)
 

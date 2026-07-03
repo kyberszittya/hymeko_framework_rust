@@ -21,9 +21,9 @@ into a no-op rather than silently corrupting the graph.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/sdrf.py](../signedkan_wip/src/hymeko_gomb/soma/vision/sdrf.py) | 218 | `SDRFRewiring` + `SDRFOutput` dataclass |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | +6 / -0 | re-exports |
-| [signedkan_wip/tests/test_gomb_soma_vision_sdrf.py](../signedkan_wip/tests/test_gomb_soma_vision_sdrf.py) | 215 | 16 tests including butterfly-graph κ-rise |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/sdrf.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/sdrf.py) | 218 | `SDRFRewiring` + `SDRFOutput` dataclass |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | +6 / -0 | re-exports |
+| [hymeko_neuro/tests/test_gomb_soma_vision_sdrf.py](../hymeko_neuro/tests/test_gomb_soma_vision_sdrf.py) | 215 | 16 tests including butterfly-graph κ-rise |
 
 ## 3. CORE.YAML items touched
 
@@ -73,7 +73,7 @@ Pinned by `test_determinism`.
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_sdrf.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_sdrf.py -v
 =========== 16 passed in 3.80s ===========
 ```
 
@@ -176,7 +176,7 @@ exact integers and the slack never bites.
 ## 10. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/sdrf.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/sdrf.py
    (clean)
 ```
 
@@ -239,8 +239,8 @@ into a working image classifier:
 * Aggregate → Linear classifier head
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/vision/ricci_stim_classifier.py`
-* `signedkan_wip/tests/test_gomb_soma_vision_ricci_stim_classifier.py`
+* `hymeko_neuro/models/hymeko_gomb/soma/vision/ricci_stim_classifier.py`
+* `hymeko_neuro/tests/test_gomb_soma_vision_ricci_stim_classifier.py`
 * Smoke train on MNIST
 
 No phase 7 work in this commit, per the one-phase-per-session rule.
@@ -248,7 +248,7 @@ No phase 7 work in this commit, per the one-phase-per-session rule.
 ## 15. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import SDRFRewiring
+from hymeko_neuro.models.hymeko_gomb.soma.vision import SDRFRewiring
 
 sdrf = SDRFRewiring(max_iters=10, min_kappa_target=-2.0)
 out = sdrf(

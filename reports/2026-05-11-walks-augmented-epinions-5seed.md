@@ -53,14 +53,14 @@ Stage 5 5-seed BA paired (warm cache after Stage 4): kitchen-sink ~142–147 s/s
 
 ## Files staged this round
 
-- `signedkan_wip/experiments/run_overnight_stage5_2026_05_11.sh`
-- `signedkan_wip/experiments/run_overnight_stage6_2026_05_11.sh` (cancelled; left on disk as future work seed)
-- `signedkan_wip/src/analyze_paired_5seed.py` (5-seed paired analyzer)
+- `hymeko_neuro/experiments/run_overnight_stage5_2026_05_11.sh`
+- `hymeko_neuro/experiments/run_overnight_stage6_2026_05_11.sh` (cancelled; left on disk as future work seed)
+- `hymeko_neuro/analyze_paired_5seed.py` (5-seed paired analyzer)
 - `reports/overnight_2026_05_11_stage5/` (all per-seed JSONs)
-- `signedkan_wip/src/cycle_cache.py` (fingerprint fix)
+- `hymeko_neuro/graph/cycle_cache.py` (fingerprint fix)
 - `hymeko_graph/src/topk_cycles.rs` (fullness-gate normalisation; CPG doc rename)
 - `hymeko_py/src/cycles.rs` (CPG-aware tiered_bb_global_batched binding)
-- `signedkan_wip/src/n_tuples.py` (tiered+ABB dispatch)
+- `hymeko_neuro/n_tuples.py` (tiered+ABB dispatch)
 
 ## Provenance
 

@@ -16,10 +16,10 @@ import torch
 
 import hymeko
 from hymeko_lm.sequence_mixer import FiberSpikeRotorMixer
-from signed_kan import CatmullRomActivation
-from signedkan_wip.src.embeddings.cayley_rotor import cayley_to_unit_quat
-from signedkan_wip.src.hymeko_gomb import GombConfig, HymeKoGomb, MiddleHSiKAN
-from signedkan_wip.src.hymeko_gomb.soma import HypergraphConvConfig, WalkConvLayer
+from hymeko_neuro.core import CatmullRomActivation
+from hymeko_neuro.graph.embeddings.cayley_rotor import cayley_to_unit_quat
+from hymeko_neuro.models.hymeko_gomb import GombConfig, HymeKoGomb, MiddleHSiKAN
+from hymeko_neuro.models.hymeko_gomb.soma import HypergraphConvConfig, WalkConvLayer
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -847,8 +847,8 @@ def _structure_search_levers() -> dict[str, Any]:
             "cached sparse-incidence generation for fixed-topology speedups",
         ],
         "existing_repo_hooks": [
-            "signedkan_wip/src/hsikan_pgraph_mapping.py",
-            "signedkan_wip/src/gomb_pgraph_mapping.py",
+            "hymeko_neuro/experiments/hsikan_pgraph_mapping.py",
+            "hymeko_neuro/experiments/gomb_pgraph_mapping.py",
             "hymeko_pgraph::msg / ssg / abb_solve via hymeko_pgraph_dump",
         ],
     }

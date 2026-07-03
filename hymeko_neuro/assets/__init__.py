@@ -1,0 +1,1 @@
+"""hymeko_neuro assets."""

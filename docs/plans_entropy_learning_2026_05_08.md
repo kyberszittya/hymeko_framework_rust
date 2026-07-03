@@ -48,7 +48,7 @@ Sign: minimising the negative-entropy term *maximises* H(α), i.e., keeps the ro
 
 ### Variant A2 — per-edge attention entropy
 
-Already exists in `signedkan_wip/src/attention.py::attention_entropy_loss` for the old `SignedTriadAttention` path. NOT wired into the current `_QuaternionAttentionM_e` / `_AttentionM_e` Highway path.
+Already exists in `hymeko_neuro/attention.py::attention_entropy_loss` for the old `SignedTriadAttention` path. NOT wired into the current `_QuaternionAttentionM_e` / `_AttentionM_e` Highway path.
 
 For each edge $e$ and its incident attention distribution $a^{(\kappa)}_{e, \cdot}$ (already softmax-normalized inside `_QuaternionAttentionM_e.forward`), the per-edge entropy is
 
@@ -230,14 +230,14 @@ Phase A in total: ~5 days. Phase B in total: ~3 weeks. Combined: ~4 weeks.
 # Files this plan will touch when executed
 
 ```
-signedkan_wip/src/run_final_cell.py             — wire Phase-A env-vars into training loop
-signedkan_wip/src/mixed_arity_signedkan.py      — expose per-arity intermediates for A2/A3
-signedkan_wip/src/attention.py                  — extend attention_entropy_loss to new path
-signedkan_wip/src/entropy_reg.py                — generalise EntropyRegulariser to per-arity cycle embeddings
-signedkan_wip/src/balance_kl.py                 — NEW, A4 only
-signedkan_wip/src/predictive_coding.py          — NEW, B only
-signedkan_wip/src/run_pc_train.py               — NEW, B only
-signedkan_wip/experiments/run_phaseA_5seed_*.sh — measurement scripts per variant
+hymeko_neuro/run_final_cell.py             — wire Phase-A env-vars into training loop
+hymeko_neuro/models/mixed_arity_signedkan.py      — expose per-arity intermediates for A2/A3
+hymeko_neuro/attention.py                  — extend attention_entropy_loss to new path
+hymeko_neuro/entropy_reg.py                — generalise EntropyRegulariser to per-arity cycle embeddings
+hymeko_neuro/balance_kl.py                 — NEW, A4 only
+hymeko_neuro/predictive_coding.py          — NEW, B only
+hymeko_neuro/run_pc_train.py               — NEW, B only
+hymeko_neuro/experiments/run_phaseA_5seed_*.sh — measurement scripts per variant
 docs/plans_entropy_learning_2026_05_08.md       — this file (close out with results)
 ```
 

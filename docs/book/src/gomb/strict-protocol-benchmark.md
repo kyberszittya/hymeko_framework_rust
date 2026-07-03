@@ -82,17 +82,17 @@ tuple (which is the leakage path) or (b) architectural changes
 ## Reproducibility
 
 All artifacts in
-[`signedkan_wip/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/`](../../../../signedkan_wip/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/)
+[`hymeko_neuro/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/`](../../../../hymeko_neuro/experiments/results/gomb_strict_benchmark_tuned_20260514T010516Z/)
 (main benchmark) +
-[`gomb_epinions_finetune_20260514T014021Z/`](../../../../signedkan_wip/experiments/results/gomb_epinions_finetune_20260514T014021Z/)
+[`gomb_epinions_finetune_20260514T014021Z/`](../../../../hymeko_neuro/experiments/results/gomb_epinions_finetune_20260514T014021Z/)
 (Epinions fine-tune) +
-[`gomb_sota_push_20260514T082642Z/`](../../../../signedkan_wip/experiments/results/gomb_sota_push_20260514T082642Z/)
+[`gomb_sota_push_20260514T082642Z/`](../../../../hymeko_neuro/experiments/results/gomb_sota_push_20260514T082642Z/)
 (SOTA-push sweep). Each directory contains:
 
 - `orchestrator.log` — full per-seed timing + result lines
 - `<step>_seed<N>.log` — per-run training output
 - Reproducible via the runner scripts in
-  [`signedkan_wip/experiments/run_gomb_*_2026_05_14.sh`](../../../../signedkan_wip/experiments/).
+  [`hymeko_neuro/experiments/run_gomb_*_2026_05_14.sh`](../../../../hymeko_neuro/experiments/).
 
 ## Cross-references
 

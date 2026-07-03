@@ -49,17 +49,17 @@ problem. The discriminator was the box term and training stability.
 
 | File | Δ | What |
 |---|---|---|
-| [signedkan_wip/src/vision/hymeyolo_hungarian.py](../signedkan_wip/src/vision/hymeyolo_hungarian.py) | +37 / −20 | new `l1giou` box branch (additive); factored `_aabb_from_corners` helper; explicit `ValueError` on unknown `box_loss_kind` (§6.4); contract in docstring |
-| [signedkan_wip/src/vision/detr_baseline.py](../signedkan_wip/src/vision/detr_baseline.py) | +13 / −2 | `train_one_seed` uses `l1giou`; `grad_clip=0.1` param + `--grad-clip` CLI; clip applied in loop |
-| [signedkan_wip/tests/test_detr_baseline.py](../signedkan_wip/tests/test_detr_baseline.py) | +15 / −9 | overfit guard: `xfail` removed → `@pytest.mark.slow`; recipe → `l1giou` + lr 1e-3 + clip 0.1; recipe rationale in docstring |
-| [signedkan_wip/tests/test_hymeyolo_stage_a3.py](../signedkan_wip/tests/test_hymeyolo_stage_a3.py) | +35 / −3 | `l1giou` added to the variant-finiteness loop; new `test_l1giou_box_term_is_l1_plus_giou` (additive identity); new `test_hungarian_rejects_unknown_box_kind` |
+| [hymeko_neuro/experiments/vision/hymeyolo_hungarian.py](../hymeko_neuro/experiments/vision/hymeyolo_hungarian.py) | +37 / −20 | new `l1giou` box branch (additive); factored `_aabb_from_corners` helper; explicit `ValueError` on unknown `box_loss_kind` (§6.4); contract in docstring |
+| [hymeko_neuro/experiments/vision/detr_baseline.py](../hymeko_neuro/experiments/vision/detr_baseline.py) | +13 / −2 | `train_one_seed` uses `l1giou`; `grad_clip=0.1` param + `--grad-clip` CLI; clip applied in loop |
+| [hymeko_neuro/tests/test_detr_baseline.py](../hymeko_neuro/tests/test_detr_baseline.py) | +15 / −9 | overfit guard: `xfail` removed → `@pytest.mark.slow`; recipe → `l1giou` + lr 1e-3 + clip 0.1; recipe rationale in docstring |
+| [hymeko_neuro/tests/test_hymeyolo_stage_a3.py](../hymeko_neuro/tests/test_hymeyolo_stage_a3.py) | +35 / −3 | `l1giou` added to the variant-finiteness loop; new `test_l1giou_box_term_is_l1_plus_giou` (additive identity); new `test_hungarian_rejects_unknown_box_kind` |
 
 Total **100 insertions / 34 deletions**, 4 files. One-off diagnostic
 (`scripts/dev/detr_overfit_diag.py`) written and **deleted** after use (no tree residue).
 
 ## CORE.YAML items touched
 
-**None.** `hymeko_hungarian.py` / `detr_baseline.py` are `signedkan_wip` application code,
+**None.** `hymeko_hungarian.py` / `detr_baseline.py` are `hymeko_neuro` application code,
 not listed in any CORE.YAML crate / file / glob. No dependency change.
 
 ## Test results

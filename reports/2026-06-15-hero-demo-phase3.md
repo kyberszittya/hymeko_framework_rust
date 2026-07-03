@@ -65,7 +65,7 @@ running the module remains the user's step).
 "Structural" parity asserts the **layer set + names** (the emit realises every
 declared layer), **not** trained weights or numeric behaviour — the full
 runnable round-trip was the explicitly-rejected option (it pulls torch). The
-faithful Soma internals (Hodge/stim/patch) live in `signedkan_wip` and remain a
+faithful Soma internals (Hodge/stim/patch) live in `hymeko_neuro` and remain a
 later round-trip item; `soma_vision.hymeko` is the minimal patch→walk→classify
 skeleton in the Soma family.
 

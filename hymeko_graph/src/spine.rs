@@ -27,7 +27,7 @@
 //! - **Compute-bound only at low `d`**; memory-bandwidth-bound for
 //!   `d >= 32` since each cycle reads `K * d * 4` bytes of features.
 //! - **Forward-only**: backward needs a custom autograd path
-//!   (analogous to the Triton kernels already in `signedkan_wip`).
+//!   (analogous to the Triton kernels already in `hymeko_neuro`).
 //! - **Drop-in for HSiKAN inference**: same SoA cycle layout, same
 //!   sign convention, same input feature buffer.
 //!

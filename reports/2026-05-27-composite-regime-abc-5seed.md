@@ -55,10 +55,10 @@ architecture (kept only `dm=off`), missing the actual winner by −0.026.
 
 | File | Status | LOC |
 |:--|:--|--:|
-| `signedkan_wip/experiments/runs/run_regime_abc_5seed.py` | new | 297 |
-| `signedkan_wip/tests/test_regime_abc.py` | new | 152 |
-| `signedkan_wip/experiments/runs/run_hsikan_mixed_composite_smoke.py` | modified | +27/−13 (RSS-measurement fix; see below) |
-| `signedkan_wip/tests/test_mixed_composite_regime.py` | modified | +14 (RSS parser tests) |
+| `hymeko_neuro/experiments/runs/run_regime_abc_5seed.py` | new | 297 |
+| `hymeko_neuro/tests/test_regime_abc.py` | new | 152 |
+| `hymeko_neuro/experiments/runs/run_hsikan_mixed_composite_smoke.py` | modified | +27/−13 (RSS-measurement fix; see below) |
+| `hymeko_neuro/tests/test_mixed_composite_regime.py` | modified | +14 (RSS parser tests) |
 | `docs/plans/2026-05-27-composite-regime-abc-5seed/{tex,pdf,tikz,mmd}` | new | — |
 | `reports/2026-05-27-composite-regime-abc-5seed.md` | new | — |
 

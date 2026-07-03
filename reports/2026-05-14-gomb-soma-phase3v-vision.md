@@ -28,11 +28,11 @@ of the sensorimotor stack actually runs on a vision task.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | 27 | subpackage init |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/patch_graph.py](../signedkan_wip/src/hymeko_gomb/soma/vision/patch_graph.py) | 198 | `PatchGraphBuilder` — image → signed patch graph |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/walk_conv_classifier.py](../signedkan_wip/src/hymeko_gomb/soma/vision/walk_conv_classifier.py) | 113 | end-to-end image classifier |
-| [signedkan_wip/tests/test_gomb_soma_vision_patch_graph.py](../signedkan_wip/tests/test_gomb_soma_vision_patch_graph.py) | 124 | 11 tests on the encoder |
-| [signedkan_wip/tests/test_gomb_soma_vision_walk_conv_classifier.py](../signedkan_wip/tests/test_gomb_soma_vision_walk_conv_classifier.py) | 113 | 7 tests on the classifier |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | 27 | subpackage init |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/patch_graph.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/patch_graph.py) | 198 | `PatchGraphBuilder` — image → signed patch graph |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/walk_conv_classifier.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/walk_conv_classifier.py) | 113 | end-to-end image classifier |
+| [hymeko_neuro/tests/test_gomb_soma_vision_patch_graph.py](../hymeko_neuro/tests/test_gomb_soma_vision_patch_graph.py) | 124 | 11 tests on the encoder |
+| [hymeko_neuro/tests/test_gomb_soma_vision_walk_conv_classifier.py](../hymeko_neuro/tests/test_gomb_soma_vision_walk_conv_classifier.py) | 113 | 7 tests on the classifier |
 
 No edits to Gömb / Phase-1 ABC / Phase-2 WalkConvLayer / CORE.YAML.
 
@@ -81,8 +81,8 @@ Param count at MNIST defaults (P=4, d_hidden=16, n_classes=10):
 ## 5. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_patch_graph.py \
-                   signedkan_wip/tests/test_gomb_soma_vision_walk_conv_classifier.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_patch_graph.py \
+                   hymeko_neuro/tests/test_gomb_soma_vision_walk_conv_classifier.py -v
 =========== 18 passed in 3.37s ===========
 ```
 
@@ -134,7 +134,7 @@ test reaches 100 % at loss < 0.01, no NaNs.
 ## 8. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/
    (clean)
 ```
 
@@ -193,7 +193,7 @@ and stop. The user picks next.
 ## 13. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import (
+from hymeko_neuro.models.hymeko_gomb.soma.vision import (
     PatchGraphBuilder, WalkConvImageClassifier,
 )
 

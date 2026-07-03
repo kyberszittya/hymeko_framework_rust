@@ -8,8 +8,8 @@ Implemented **(A)** `hymeko_driver --backend gomb` (single smoke + grid sweep wi
 
 - `hymeko_pgraph`: `src/dump.rs`, `src/bin/hymeko_pgraph_dump.rs`, `Cargo.toml` (serde/serde_json, bin), `tests/gomb_dump_msg.rs`
 - `data/hsikan/gomb_training.hymeko`, `sweep_msg_gomb.hymeko`, `sweep_grid_gomb.hymeko`
-- `signedkan_wip/src/hymeko_driver.py`, `gomb_pgraph_mapping.py`, `run_gomb_msg_sweep.py`, `tests/test_gomb_pgraph_driver.py`
-- `signedkan_wip/docs/gomb_cycle_abb_optimization.md` (see-also)
+- `hymeko_neuro/hymeko/hymeko_driver.py`, `gomb_pgraph_mapping.py`, `run_gomb_msg_sweep.py`, `tests/test_gomb_pgraph_driver.py`
+- `hymeko_neuro/assets/docs/gomb_cycle_abb_optimization.md` (see-also)
 
 ## CORE.YAML
 
@@ -18,15 +18,15 @@ No protected items edited.
 ## Tests
 
 - `cargo test -p hymeko_pgraph gomb_toy`
-- `pytest signedkan_wip/tests/test_gomb_pgraph_driver.py` (5 passed)
+- `pytest hymeko_neuro/tests/test_gomb_pgraph_driver.py` (5 passed)
 - `cargo clippy -p hymeko_pgraph --all-targets -- -D warnings`
 
 ## Usage
 
 ```bash
 cargo build -p hymeko_pgraph --bin hymeko_pgraph_dump
-python -m signedkan_wip.src.hymeko_driver --backend gomb --device cpu
-python -m signedkan_wip.src.run_gomb_msg_sweep \
+python -m hymeko_neuro.hymeko.hymeko_driver --backend gomb --device cpu
+python -m hymeko_neuro.run_gomb_msg_sweep \
   --pgraph data/hsikan/sweep_msg_gomb.hymeko --algorithm ssg --device cpu --max-runs 2
 ```
 

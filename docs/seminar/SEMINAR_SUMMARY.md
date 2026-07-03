@@ -92,7 +92,7 @@ outlook.
 - Figures — `docs/architecture/Diagrams/` (rendered article TikZ, drawio HSiKAN /
   Gömb, Catmull–Rom, Forman κ, learned αₖ + ROC; `yolo_panels/` detections)
 - 3D star-expansion viewer — `demo_web/star_expansion_viewer.html`
-- Demo build specs — `SEMINAR_DEMO_OUTLINE.md`, `signedkan_wip/demos/SEMINAR_DEMOS.md`,
+- Demo build specs — `SEMINAR_DEMO_OUTLINE.md`, `hymeko_neuro/demos/SEMINAR_DEMOS.md`,
   `docs/INFERENCE_DEMOS_OUTLINE.md`, `demo_web/STAR_EXPANSION_VIEWER_OUTLINE.md`
 
 ## Notes

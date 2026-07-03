@@ -50,5 +50,5 @@ python demo_web/export_kinematic_data.py
 
 Writes `kinematic_data.json` + `kinematic_data.js`. If the full research
 stack (torch/numpy) is importable, cycle counts come from the canonical
-`signedkan_wip/src/kinematic/graph.py::kinematic_loop_summary`; otherwise
+`hymeko_neuro/experiments/kinematic/graph.py::kinematic_loop_summary`; otherwise
 a dependency-free enumerator reproduces the same numbers.

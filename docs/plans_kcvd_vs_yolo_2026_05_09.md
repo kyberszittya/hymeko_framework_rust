@@ -10,7 +10,7 @@
 
 
 
-The signed-cycle inductive bias that wins HSiKAN on Slashdot also fits the vision-detection problem: a triangulated keypoint graph over an image *induces* candidate detection regions (faces / k-cycles) directly from the image's own structure, rather than imposing a fixed grid of YOLO-style anchors.  This plan extends the existing kCVD v1 scaffold (`signedkan_wip/src/vision/kcycle_detection.py`, 2026-05-07) into a real detection pipeline benchmarked against YOLO on PASCAL VOC and a COCO subset, with the structural-Kolmogorov--Arnold $\alpha_\kappa$ routing as the per-image-class interpretability handle.
+The signed-cycle inductive bias that wins HSiKAN on Slashdot also fits the vision-detection problem: a triangulated keypoint graph over an image *induces* candidate detection regions (faces / k-cycles) directly from the image's own structure, rather than imposing a fixed grid of YOLO-style anchors.  This plan extends the existing kCVD v1 scaffold (`hymeko_neuro/experiments/vision/kcycle_detection.py`, 2026-05-07) into a real detection pipeline benchmarked against YOLO on PASCAL VOC and a COCO subset, with the structural-Kolmogorov--Arnold $\alpha_\kappa$ routing as the per-image-class interpretability handle.
 
 The goal is the strongest applied paper claim from this session's work: **k-cycle detection reaches YOLO-comparable mAP at competitive parameter budget on standard object-detection benchmarks, with a fundamentally different inductive bias (faces from image structure, not anchor grids).**
 
@@ -37,7 +37,7 @@ Most-similar prior art: graph-based detection (HyperGraph Object Detection, etc.
 
 ## Existing scaffold (2026-05-07)
 
-`signedkan_wip/src/vision/kcycle_detection.py` (~280 LOC) ships:
+`hymeko_neuro/experiments/vision/kcycle_detection.py` (~280 LOC) ships:
 
 - `make_image_graph(H, W, n_keypoints)` → perturbed-grid keypoints → Delaunay triangulation
 - `vertex_features(img, graph)` → 5-channel per-keypoint patch features (mean RGB, gradient mag/angle)
@@ -135,12 +135,12 @@ DETR / Deformable DETR are anchor-free transformers.  kCVD is anchor-free hyperg
 
 ## Implementation notes
 
-Building on `signedkan_wip/src/vision/kcycle_detection.py`:
+Building on `hymeko_neuro/experiments/vision/kcycle_detection.py`:
 
-- Add `signedkan_wip/src/vision/keypoint_detector.py` (~150 LOC):
+- Add `hymeko_neuro/experiments/vision/keypoint_detector.py` (~150 LOC):
   - SuperPoint wrapper (or ORB fallback if no PyTorch SuperPoint available)
   - Returns (n_kp, 2) keypoint coordinates + (n_kp, descriptor_dim) features
-- Add `signedkan_wip/src/vision/resnet_features.py` (~100 LOC):
+- Add `hymeko_neuro/experiments/vision/resnet_features.py` (~100 LOC):
   - Frozen ResNet18 backbone
   - Per-keypoint patch crop + forward + descriptor
 - Extend `kcycle_detection.py` with:
@@ -148,9 +148,9 @@ Building on `signedkan_wip/src/vision/kcycle_detection.py`:
   - Highway-quat attention for per-face aggregation (re-use existing `_QuaternionAttentionM_e`)
   - α-entropy aux loss hook
 - New runners:
-  - `signedkan_wip/src/vision/run_voc_train.py` (~250 LOC): VOC dataloader, training loop, eval
-  - `signedkan_wip/src/vision/run_coco_small.py` (~200 LOC): COCO subset training + eval
-  - `signedkan_wip/src/vision/run_alpha_class_correlation.py` (~150 LOC): V4 routing readout
+  - `hymeko_neuro/experiments/vision/run_voc_train.py` (~250 LOC): VOC dataloader, training loop, eval
+  - `hymeko_neuro/experiments/vision/run_coco_small.py` (~200 LOC): COCO subset training + eval
+  - `hymeko_neuro/experiments/vision/run_alpha_class_correlation.py` (~150 LOC): V4 routing readout
 - Optional dependency: `torchvision`, `pycocotools` (both standard)
 - Total: ~1000 LOC new code on top of v1
 
@@ -210,12 +210,12 @@ Total: ~4-5 weeks to a CVPR-shape submission.
 
 ## Files this plan will touch when executed
 
-- `signedkan_wip/src/vision/kcycle_detection.py` — extended with Highway attention + α aux + higher arity
-- `signedkan_wip/src/vision/keypoint_detector.py` — new
-- `signedkan_wip/src/vision/resnet_features.py` — new
-- `signedkan_wip/src/vision/run_voc_train.py` — new
-- `signedkan_wip/src/vision/run_coco_small.py` — new
-- `signedkan_wip/src/vision/run_alpha_class_correlation.py` — new
+- `hymeko_neuro/experiments/vision/kcycle_detection.py` — extended with Highway attention + α aux + higher arity
+- `hymeko_neuro/experiments/vision/keypoint_detector.py` — new
+- `hymeko_neuro/experiments/vision/resnet_features.py` — new
+- `hymeko_neuro/experiments/vision/run_voc_train.py` — new
+- `hymeko_neuro/experiments/vision/run_coco_small.py` — new
+- `hymeko_neuro/experiments/vision/run_alpha_class_correlation.py` — new
 - `paper/kcvd_vs_yolo/main.tex` — new venue submission directory
 - `docs/plans_kcvd_vs_yolo_2026_05_09.md` — this file (close out with results)
 
@@ -252,7 +252,7 @@ The user's prior HyMeKoConv / HyMeYOLO work substantially predates this plan and
 | Math report | `notes/hymekoconv_math.pdf` (5 pp) | shipped |
 | Implementation plan | `IMPLEMENTATION_PLAN.md` | Phase 4 = VOC, Phase 5 = Triton |
 
-The HyMeYOLO design is **already** the object-as-hyperedge alternative to YOLO's grid head.  The kCVD vision scaffold in this repo (`signedkan_wip/src/vision/kcycle_detection.py`) was a parallel, smaller-scope exploration --- the right move is to **consolidate** the two: take HSiKAN's $\alpha$-mixer + Highway-quat sparse-attention contributions from the SMC paper / 2026-05-08 SOTA-beating work, and plug them into the HyMeYOLO head as new $\Theta_\tau$ types and per-query attention scoring.
+The HyMeYOLO design is **already** the object-as-hyperedge alternative to YOLO's grid head.  The kCVD vision scaffold in this repo (`hymeko_neuro/experiments/vision/kcycle_detection.py`) was a parallel, smaller-scope exploration --- the right move is to **consolidate** the two: take HSiKAN's $\alpha$-mixer + Highway-quat sparse-attention contributions from the SMC paper / 2026-05-08 SOTA-beating work, and plug them into the HyMeYOLO head as new $\Theta_\tau$ types and per-query attention scoring.
 
 ### Updated execution path (replaces §"Order of operations" above)
 

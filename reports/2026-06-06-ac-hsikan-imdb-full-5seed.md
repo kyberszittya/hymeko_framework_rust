@@ -95,13 +95,13 @@ contributes ≈ 7 s / epoch / seed.
 ## Provenance
 
 - Git SHA: not committed (USER handles commits per CLAUDE.md).
-- Working tree: changes to `signedkan_wip/src/ac_hsikan/components/pool_scatter.py`,
-  `signedkan_wip/src/ac_hsikan/layer.py`,
-  `signedkan_wip/src/ac_hsikan/config.py`,
-  `signedkan_wip/experiments/ac_hsikan_imdb_smoke.py`, plus new
-  `signedkan_wip/src/ac_hsikan/telemetry.py`,
-  `signedkan_wip/tests/test_pool_scatter_rotor_parity.py`,
-  `signedkan_wip/tests/test_evolvent_telemetry.py`, and
+- Working tree: changes to `hymeko_neuro/models/ac_hsikan/components/pool_scatter.py`,
+  `hymeko_neuro/models/ac_hsikan/layer.py`,
+  `hymeko_neuro/models/ac_hsikan/config.py`,
+  `hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py`, plus new
+  `hymeko_neuro/models/ac_hsikan/telemetry.py`,
+  `hymeko_neuro/tests/test_pool_scatter_rotor_parity.py`,
+  `hymeko_neuro/tests/test_evolvent_telemetry.py`, and
   `docs/plans/2026-06-05-global-scatter-learning/`.
 - Hardware: RTX 2070 SUPER (8 GiB), driver via local CUDA 12.1, torch 2.4.1+cu121.
 - Seeds: {0, 1, 2, 3, 4} (per-seed init + per-seed sub-sample).
@@ -133,7 +133,7 @@ all now affordable:
 
 ## CORE.YAML items touched
 
-None. `signedkan_wip/` is non-core.
+None. `hymeko_neuro/` is non-core.
 
 ## Files for follow-up
 

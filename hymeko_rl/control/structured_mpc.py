@@ -7,7 +7,7 @@ The question: does topology-match matter *more* for constrained MPC than it did 
 where it was a marginal 2–5%)?
 
 Reuses ``topology_zoo`` and ``structured_control.make_plant`` / ``unconstrained_lqr`` (the LQR baseline + the
-oracle). The existing ``signedkan_wip/src/control`` MPCController is bicycle-nonlinear-specific (single input) —
+oracle). The existing ``hymeko_neuro/experiments/control`` MPCController is bicycle-nonlinear-specific (single input) —
 not reusable for this networked linear MPC; built fresh, not duplicated. See
 ``docs/plans/2026-06-27-isomorphic-controllers-from-hypergraphs/phase2b-structured-mpc.md``.
 """

@@ -20,7 +20,7 @@ Analytic prediction (verified by the run): the signed model's best scalar is ``c
 the sign cannot*.
 
 The **production** rotor is the quaternion/SO(3) ``RotorInjector`` / ``CayleyRotorEmbedding`` /
-``SignedRotorPropagation`` in ``signedkan_wip/.../run_hsikan_rotor.py``; this is a deliberately minimal SO(2)
+``SignedRotorPropagation`` in ``hymeko_neuro/.../run_hsikan_rotor.py``; this is a deliberately minimal SO(2)
 isolation of the holonomy *principle* for a clean ablation figure, not a reimplementation of that head.
 See ``docs/plans/2026-06-26-rotor-spikes-ablation/``.
 """

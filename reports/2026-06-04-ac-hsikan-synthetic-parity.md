@@ -2,10 +2,10 @@
 
 Date: 2026-06-04
 Plan: `docs/plans/2026-06-04-ac-hsikan/plan.{md,tex,pdf,tikz,mmd}`
-Code: `signedkan_wip/src/ac_hsikan/` (~440 LOC, 11/11 pytest GREEN)
+Code: `hymeko_neuro/models/ac_hsikan/` (~440 LOC, 11/11 pytest GREEN)
 Smoke harnesses:
-  - `signedkan_wip/experiments/ac_hsikan_synthetic_smoke.py` (T1)
-  - `signedkan_wip/experiments/ac_hsikan_imdb_smoke.py` (T2)
+  - `hymeko_neuro/experiments/ac_hsikan_synthetic_smoke.py` (T1)
+  - `hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py` (T2)
 
 ## TL;DR
 
@@ -58,7 +58,7 @@ signed-cycle pool literally computes `prod(signs)` over each cycle.
   top_k_per_position=min(8, L-1), n_layers=2, dropout=0`.
 - Transformer: `IMDBTransformerBaseline(vocab_size=2, d_model=16,
   n_heads=2, dim_ff=64, n_layers=2)` (existing baseline at
-  `signedkan_wip/src/sequence/iso_param_transformer.py`).
+  `hymeko_neuro/experiments/sequence/iso_param_transformer.py`).
 - Both seeded identically per-seed (torch + data); paired.
 
 ## Per-seed breakdown
@@ -114,10 +114,10 @@ Notes:
 
 ## What this commit ships
 
-- New package `signedkan_wip/src/ac_hsikan/`: `config.py`, `sign_head.py`,
+- New package `hymeko_neuro/models/ac_hsikan/`: `config.py`, `sign_head.py`,
   `layer.py`, `model.py`, `__init__.py` (~440 LOC total).
-- Smoke harness `signedkan_wip/experiments/ac_hsikan_synthetic_smoke.py`.
-- Unit tests `signedkan_wip/tests/test_ac_hsikan.py` (11 tests, all
+- Smoke harness `hymeko_neuro/experiments/ac_hsikan_synthetic_smoke.py`.
+- Unit tests `hymeko_neuro/tests/test_ac_hsikan.py` (11 tests, all
   green: SignHead shape/range/grad/STE; layer shape/residual/alpha/grad;
   classifier forward shape, alpha list, grad flow; iso-param vs
   IMDBTransformerBaseline within 30%).
@@ -196,12 +196,12 @@ bias is partially mis-aligned.
 ## Reproduction
 
 ```bash
-PYTHONPATH=. python -m signedkan_wip.experiments.ac_hsikan_synthetic_smoke \
+PYTHONPATH=. python -m hymeko_neuro.experiments.ac_hsikan_synthetic_smoke \
     --seq-len 4 --n-train 4000 --n-val 1000 --n-epochs 30 \
     --batch-size 256 --seeds 0 1 2 --device cpu \
     --out /tmp/ac_parity_L4.json
 
-PYTHONPATH=. python -m signedkan_wip.experiments.ac_hsikan_synthetic_smoke \
+PYTHONPATH=. python -m hymeko_neuro.experiments.ac_hsikan_synthetic_smoke \
     --seq-len 8 --n-train 8000 --n-val 2000 --n-epochs 30 \
     --batch-size 128 --seeds 0 1 2 --device cpu \
     --out /tmp/ac_parity_L8.json
@@ -218,10 +218,10 @@ Total wall: ~2 min combined on a laptop CPU.
    real signed-semantic task. Should be the strongest niche-task
    demonstration.
 3. **YAML config integration**: write
-   `signedkan_wip/experiments/configs/ac_hsikan_imdb.yaml` and
+   `hymeko_neuro/experiments/configs/ac_hsikan_imdb.yaml` and
    `transformer_imdb_isoparam.yaml` for the runner framework
    built earlier today. Then both benchmarks become
-   `python -m signedkan_wip.experiments.run --config X.yaml`.
+   `python -m hymeko_neuro.experiments.run --config X.yaml`.
 4. **Paper note**: this synthetic result is publishable as a
    "minimum demonstrator" figure in a follow-up paper on
    HSiKAN-Sequence. Not in scope for the Nature submission (which

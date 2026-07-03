@@ -9,7 +9,7 @@ mujoco/gymnasium-dependent build (env, PPO, HSiKAN backbone) is the next increme
 ## Summary
 Honoured the user's directive to isolate the RL work in "another crate or folder": since
 the policy/critic are HSiKAN/torch and the loop is Python, the idiomatic home is a
-**folder** (a top-level Python package, importable from repo root like `signedkan_wip`),
+**folder** (a top-level Python package, importable from repo root like `hymeko_neuro`),
 not a Rust crate. Created `hymeko_rl/` with the unification expressed *in code*: one
 `ActorCritic` backbone feeds **both** the actor and critic heads, so the planned
 architecture ablation (HSiKAN-on-hypergraph vs MLP) is a backbone swap under one shared

@@ -18,12 +18,12 @@ Beneath every component sits one mathematical object: **G-SPHF (Generalized Sign
 |---|---|---|---|---|
 | **HIVE** | Canonical substrate: signed typed hypergraph IR + canonical hash; compile · project · emit | L0 | implemented | `hymeko_core/src/ir/ir.rs`, `module_store` |
 | **AKOIRE** | Transaction protocol: render → propose (LLM) → parse/lower → evaluate ⟂ → commit. **Sole door for structural mutation.** | L0↔L2 bridge | spec v0.1, renderer ~10–15 % grammar | `01_analysis/akoire_prompt_template.md`, `akoire_ambience_renderer_spec.md`; `architecture/akoire/` |
-| **Gömb** | Three-shell inference cascade (perception/judgement) | L2 perception | implemented | `signedkan_wip/src/hymeko_gomb/cascade.py` |
-| — Clifford-FIR | Outer shell: grade assignment + FIR ring conv (edge decoration) | — | implemented | `signedkan_wip/src/hymeko_gomb/` |
-| — HSiKAN | Middle shell: mixed-arity signed cycle pool, Catmull–Rom splines; standalone-capable | — | implemented | `signedkan_wip/src/` |
-| — CPML | Inner core: grade-preserving polynomial layers, grade-0 readout ⟨·⟩₀ | — | implemented | `signedkan_wip/src/hymeko_gomb/` |
+| **Gömb** | Three-shell inference cascade (perception/judgement) | L2 perception | implemented | `hymeko_neuro/models/hymeko_gomb/cascade.py` |
+| — Clifford-FIR | Outer shell: grade assignment + FIR ring conv (edge decoration) | — | implemented | `hymeko_neuro/models/hymeko_gomb/` |
+| — HSiKAN | Middle shell: mixed-arity signed cycle pool, Catmull–Rom splines; standalone-capable | — | implemented | `hymeko_neuro/` |
+| — CPML | Inner core: grade-preserving polynomial layers, grade-0 readout ⟨·⟩₀ | — | implemented | `hymeko_neuro/models/hymeko_gomb/` |
 | **HOTARU** | Planner / graph sequencer: policy over HIVE-delta space | L2 deliberation | **planned — this doc is its first disk artifact** | — |
-| **Soma-Chordex** | Reflex lane: fastest transport exteroception → actuators, ≤10 ms budget | L1 | Soma vision backbone implemented (quadtree, Hodge ∂₂, stim graphs); Chordex transport planned | `signedkan_wip/src/hymeko_gomb/soma/vision/` |
+| **Soma-Chordex** | Reflex lane: fastest transport exteroception → actuators, ≤10 ms budget | L1 | Soma vision backbone implemented (quadtree, Hodge ∂₂, stim graphs); Chordex transport planned | `hymeko_neuro/models/hymeko_gomb/soma/vision/` |
 | **Clifford-FIR membrane** | Architecture-wide synaptic transport: every inter-component signal is a Cl(p,q) multivector through a learned per-synapse FIR bank | cross-cutting | planned (promotion of the shell to shared module) | must be its own module, imported by the Gömb shell — no duplication (§6.1) |
 | **NAGARE (流れ)** | Dataflow execution substrate: SoA cycle pools as universal datatype, closed-form Clifford (fwd, bwd) operator pairs, no autograd, commutative MapReduce over cycles, lockless atomic grad accumulation | cross-cutting (runs-on) | skeleton: 579 LOC, ops for linear/scatter/BCE/Adam, Clifford-FIR stub; backends + tests empty | `hymeko_nagare/`; plan `docs/plans/2026-05-11-hymeko-nagare-flow/`; frozen compiler plan `docs/plans/CRITICAL-nagare-to-hsmm-compiler/` |
 

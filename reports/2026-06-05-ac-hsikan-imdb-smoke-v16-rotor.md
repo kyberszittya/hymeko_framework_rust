@@ -96,13 +96,13 @@ visible-but-tiny extra work.
 
 ## Files
 
-- [signedkan_wip/src/ac_hsikan/config.py](../signedkan_wip/src/ac_hsikan/config.py)
+- [hymeko_neuro/models/ac_hsikan/config.py](../hymeko_neuro/models/ac_hsikan/config.py)
   — added `use_pool_scatter_rotor: bool = False`.
-- [signedkan_wip/src/ac_hsikan/layer.py](../signedkan_wip/src/ac_hsikan/layer.py)
+- [hymeko_neuro/models/ac_hsikan/layer.py](../hymeko_neuro/models/ac_hsikan/layer.py)
   — compute per-layer H from (α, gate), pass to `FusedPoolScatter`.
-- [signedkan_wip/experiments/ac_hsikan_imdb_smoke.py](../signedkan_wip/experiments/ac_hsikan_imdb_smoke.py)
+- [hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py](../hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py)
   — new `--pool-scatter`, `--rotor`, `--telemetry-out` flags.
-- [signedkan_wip/src/ac_hsikan/telemetry.py](../signedkan_wip/src/ac_hsikan/telemetry.py)
+- [hymeko_neuro/models/ac_hsikan/telemetry.py](../hymeko_neuro/models/ac_hsikan/telemetry.py)
   — `EvolventTelemetry` context manager (see 2026-06-05 telemetry note).
 
 ## Result artefacts (transient, on /tmp)
@@ -114,7 +114,7 @@ visible-but-tiny extra work.
 
 ## CORE.YAML items touched
 
-None. `signedkan_wip/` is non-core.
+None. `hymeko_neuro/` is non-core.
 
 ## Open / next
 

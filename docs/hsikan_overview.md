@@ -3,7 +3,7 @@
 **HSiKAN = Highway Signed KAN.** Signed-hypergraph message passing whose edge activations are **K**olmogorov–
 **A**rnold **N**etwork splines (Catmull-Rom), with **Highway** gating (Srivastava, Greff & Schmidhuber, 2015) so
 deep signed message passing does not degrade. One body, two conventions (RL control + signed-graph link-sign),
-unified in the pure-torch `signed_kan/` package.
+unified in the pure-torch `hymeko_neuro/core/` package.
 
 ---
 
@@ -26,10 +26,10 @@ h' = skip( σ_CR( W_self·h + W₊·(A⁺h) + W₋·(A⁻h) ), h )
 
 | axis | values | where |
 |---|---|---|
-| **aggregation backend** | `DenseBatchedBackend` · `SparseSignedBackend` · (Triton, legacy) | `signed_kan/backends.py` |
-| **edge spline** | Catmull-Rom (`cr`) · ReLU/tanh (ablation) · B-spline/KB (legacy) | `signed_kan/splines.py` |
-| **skip / highway** | `none` · `residual` · `highway` | `signed_kan/layer.py` |
-| **incidence** | `fixed` · `learned` · `weighted` | `signed_kan/backbone.py` |
+| **aggregation backend** | `DenseBatchedBackend` · `SparseSignedBackend` · (Triton, legacy) | `hymeko_neuro/core/backends.py` |
+| **edge spline** | Catmull-Rom (`cr`) · ReLU/tanh (ablation) · B-spline/KB (legacy) | `hymeko_neuro/core/splines.py` |
+| **skip / highway** | `none` · `residual` · `highway` | `hymeko_neuro/core/layer.py` |
+| **incidence** | `fixed` · `learned` · `weighted` | `hymeko_neuro/core/backbone.py` |
 
 **Incidence modes** (how `A±` carries its arc weights):
 - `fixed` — the binary kinematic/graph structure (sign + row-normalised magnitude).
@@ -40,13 +40,13 @@ h' = skip( σ_CR( W_self·h + W₊·(A⁺h) + W₋·(A⁻h) ), h )
 
 ## 3. One body, changeable head (the unification)
 
-The body — `signed_kan.SignedKANBackbone` (CR + highway + weighted incidence) — is shared; only the **input
+The body — `hymeko_neuro.core.SignedKANBackbone` (CR + highway + weighted incidence) — is shared; only the **input
 adapter** and the **head** change per convention:
 
 | convention | input adapter | head | output |
 |---|---|---|---|
 | **RL control** | dynamic per-vertex features `(B, N, feat)` | pooled actor/critic (`hymeko_rl.ActorCritic`) | action mean + value |
-| **signed graph** | transductive node embeddings (`SignedGraphHSiKAN`) | `signed_kan.EdgeSignHead` | per-edge sign logit |
+| **signed graph** | transductive node embeddings (`SignedGraphHSiKAN`) | `hymeko_neuro.core.EdgeSignHead` | per-edge sign logit |
 
 So a signed-graph link-sign task runs on the **same CR HSiKAN** as the robot controller — `SignedGraphHSiKAN`
 = `Embedding → SignedKANBackbone(cr) → EdgeSignHead`, scalable via `SparseSignedBackend`.
@@ -55,14 +55,14 @@ So a signed-graph link-sign task runs on the **same CR HSiKAN** as the robot con
 
 | file | role |
 |---|---|
-| `signed_kan/splines.py` | the canonical Catmull-Rom evaluator (shared by all lines) + `CatmullRomActivation` |
-| `signed_kan/backends.py` | aggregation Strategy: dense (RL), sparse (large graphs) |
-| `signed_kan/layer.py` | `SignedKANLayer` + `HighwaySkip` |
-| `signed_kan/backbone.py` | `SignedKANBackbone` (incidence + stack + pool) |
-| `signed_kan/heads.py` | `EdgeSignHead` (signed-graph head) |
-| `signed_kan/graph_model.py` | `SignedGraphHSiKAN` (signed-graph convention assembly) |
+| `hymeko_neuro/core/splines.py` | the canonical Catmull-Rom evaluator (shared by all lines) + `CatmullRomActivation` |
+| `hymeko_neuro/core/backends.py` | aggregation Strategy: dense (RL), sparse (large graphs) |
+| `hymeko_neuro/core/layer.py` | `SignedKANLayer` + `HighwaySkip` |
+| `hymeko_neuro/core/backbone.py` | `SignedKANBackbone` (incidence + stack + pool) |
+| `hymeko_neuro/core/heads.py` | `EdgeSignHead` (signed-graph head) |
+| `hymeko_neuro/core/graph_model.py` | `SignedGraphHSiKAN` (signed-graph convention assembly) |
 | `hymeko_rl/policy.py` | `HSiKANBackbone` = thin `hg_state` adapter over the core; `ActorCritic` (RL head) |
-| `signedkan_wip/src/core/signedkan.py` | **legacy** k-uniform triad + dual-spline layer (owns the current OTC numbers; imports the shared CR) |
+| `hymeko_neuro/hyperedge/signedkan.py` | **legacy** k-uniform triad + dual-spline layer (owns the current OTC numbers; imports the shared CR) |
 
 ## 5. Capabilities summary
 

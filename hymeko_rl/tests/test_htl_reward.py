@@ -1,6 +1,6 @@
 """Tests for the HTL-robustness reward adapter (hymeko_rl/htl_reward.py).
 
-The adapter reuses the non-core HTL evaluator in signedkan_wip/src/htl; these tests pin the galambos
+The adapter reuses the non-core HTL evaluator in hymeko_neuro/eval/htl; these tests pin the galambos
 spec, the metrics→signals mapping, the robustness sign, the RewardSpec duck-typing (drop-in, no env
 change), and the per-episode delivery verdict.
 """

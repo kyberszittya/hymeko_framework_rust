@@ -7,11 +7,11 @@
 
 | Component | State | Where |
 |:--|:--|:--|
-| **CPML layer** | Fully implemented + 23 tests; in active use as inner shell of Gömb cascade | `signedkan_wip/src/core/cpml.py` (~985 LOC). Forward: cycles → degree-tiered aggregators → per-edge logits (BCE). |
-| **Kinematic graph datasets** | Procedurally generated, four families (four_bar k=4 / stewart k=6 / delta k=6 / serial N-DOF k=0) | `signedkan_wip/src/kinematic/__init__.py`. 120 train + 40 test mechanisms, k-filtered. |
+| **CPML layer** | Fully implemented + 23 tests; in active use as inner shell of Gömb cascade | `hymeko_neuro/hyperedge/cpml.py` (~985 LOC). Forward: cycles → degree-tiered aggregators → per-edge logits (BCE). |
+| **Kinematic graph datasets** | Procedurally generated, four families (four_bar k=4 / stewart k=6 / delta k=6 / serial N-DOF k=0) | `hymeko_neuro/experiments/kinematic/__init__.py`. 120 train + 40 test mechanisms, k-filtered. |
 | **Per-vertex 3D position regression** | Working as `cell_pose(arity, hidden, n_epochs, device)` — MSE on synthetic xyz coordinates | `run_final_cell.py:750-814`. Model = `PositionRegHSiKAN` (MixedAritySignedKAN backbone + per-vertex Linear(h, 3) head). |
 | **Kinematic classification + DOF regression** | Working as `cell_kinematic(...)` — family classification + DOF MAE | `run_final_cell.py:685-747`. Model = `GraphLevelHSiKAN`. |
-| **URDF → SignedGraph parser** | drchubo (52-link Atlas-class) + WAM (7-DOF) imported | `scripts/scaling/urdf_to_hymeko.py`, `signedkan_wip/src/kinematic/__init__.py:urdf_to_signed_graph`. |
+| **URDF → SignedGraph parser** | drchubo (52-link Atlas-class) + WAM (7-DOF) imported | `scripts/scaling/urdf_to_hymeko.py`, `hymeko_neuro/experiments/kinematic/__init__.py:urdf_to_signed_graph`. |
 
 ## What's missing (the ceiling)
 

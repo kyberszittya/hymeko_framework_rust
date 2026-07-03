@@ -187,7 +187,7 @@ norm.
 ### H3 — Signed-cycle pool prior, trained on solved plans, gives a learned plan-completion bias that outperforms a vanilla GNN at iso-parameter
 
 **Claim:** train HSiKAN (the signed-cycle architecture, already
-shipped in `signedkan_wip`) on a corpus of (planning problem,
+shipped in `hymeko_neuro`) on a corpus of (planning problem,
 solved plan) pairs. The σ-product score of a candidate
 action-sequence, under the trained cycle weights, predicts
 "this action is in a successful plan from this state" better
@@ -322,10 +322,10 @@ function that supplies it:
 | SpherePlanner component                                   | Reuse                                                                                                                | New code                                                  |
 |------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
 | State-action hypergraph IR                                 | `hymeko_core::Ir`, `meta_task.hymeko`                                                                                 | Domain-specific preconditions / effects (extend `meta_task`) |
-| Forman κ computation                                       | `signedkan_wip/src/hymeko_gomb/soma/vision/forman.py`, vectorised Rust                                                | Adapter from planning-IR to (edges, n_nodes)              |
-| Hodge Δ_0, Δ_1 spectral analysis                            | `signedkan_wip/src/hymeko_gomb/soma/vision/hodge.py`                                                                  | Δ_1 cycle-component norm extractor                       |
+| Forman κ computation                                       | `hymeko_neuro/models/hymeko_gomb/soma/vision/forman.py`, vectorised Rust                                                | Adapter from planning-IR to (edges, n_nodes)              |
+| Hodge Δ_0, Δ_1 spectral analysis                            | `hymeko_neuro/models/hymeko_gomb/soma/vision/hodge.py`                                                                  | Δ_1 cycle-component norm extractor                       |
 | Top-k signed cycles per state                              | `hymeko_py.enumerate_top_k_cycles_rs`                                                                                 | Per-state caching layer                                   |
-| σ-product evaluation of plan fragments                     | HSiKAN forward (`signedkan_wip.src.signedkan_layer`)                                                                  | Plan-fragment → cycle-pool adapter                        |
+| σ-product evaluation of plan fragments                     | HSiKAN forward (`hymeko_neuro.signedkan_layer`)                                                                  | Plan-fragment → cycle-pool adapter                        |
 | Learned heuristic training (H3)                            | The 2026-05-16 ricci-scale sweep harness as a Sweep template                                                          | Plan-corpus dataset loader                                |
 | Branch-and-bound search                                    | `BoundedScorer` trait in `hymeko_graph`                                                                               | A*-frontier priority queue                                |
 | Multi-format emit of the resulting plan                    | `transforms/` infrastructure                                                                                          | `transforms/plan_sequence/` template (one of: BT, PDDL, ROS) |

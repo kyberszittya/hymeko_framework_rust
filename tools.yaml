@@ -104,7 +104,7 @@ python:
     observed: "0.11.7"
     notes: >
       Root `pyproject.toml` uv workspace (`uv.lock`). Default sync installs
-      members `hymeko_py`, `signedkan_wip/signedkan_native` and `dependency-groups.dev`.
+      members `hymeko_py`, `hymeko_neuro/assets/signedkan_native` and `dependency-groups.dev`.
       Use `--group ml` for CORE-pinned torch/numpy; install `ehk_torch_stub` with
       `uv pip install -e python/ehk_torch_stub` when needed.
 

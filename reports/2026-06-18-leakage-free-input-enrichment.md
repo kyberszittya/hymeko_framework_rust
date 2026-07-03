@@ -57,25 +57,25 @@ seed-0 0.913 "beats pure SiGAT" — did not replicate.
 ## Files touched
 
 **New (2):**
-- `signedkan_wip/src/baselines/structural_features.py` (+250) — leakage-free
+- `hymeko_neuro/baselines/structural_features.py` (+250) — leakage-free
   `StructuralFeature` registry (Strategy, §6.5 #1/#9). Extractors: `degree` (moved,
   canonical), `cycle_k3`/`cycle_k34` (moved), **`walk_k3`** (new: exact signed/total
   `A^k` reach + ratio via sparse mat-vecs, no cap), **`ratios`** (new: signed/unsigned
   local clustering via `diag(A^3)=(A∘A²)·1`). `build_node_features(spec, …)` derives
   `STRUCT_DIM` from the spec; `("degree",)` reproduces the legacy features exactly.
-- `signedkan_wip/tests/test_structural_features.py` (+150) — 13 tests: default-spec
+- `hymeko_neuro/tests/test_structural_features.py` (+150) — 13 tests: default-spec
   parity, exact `A^k` vs brute force, all-positive ⇒ unit ratio, clustering bounds +
   planted triangle, signed-clustering balance flip, registry failure cases, purity.
 
 **Modified (mine):**
-- `signedkan_wip/src/baselines/cayley_rotor_baseline.py` — degree/cycle features
+- `hymeko_neuro/baselines/cayley_rotor_baseline.py` — degree/cycle features
   **single-sourced** into the registry (re-exported for existing importers); 3 new
   spec-driven baselines (`cayley_rotor_walk`, `_cyc_walk`, `_full`) via one
   parameterised base (no per-variant `build_context` copy).
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` — `feature_spec` threaded
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` — `feature_spec` threaded
   through `run()`/`RotorInjector` (`struct_dim` derived); `--feature-spec` CLI;
   provenance. Default `("degree",)` reproduces prior.
-- `signedkan_wip/tests/test_hsikan_rotor.py` — enriched-input smoke + provenance.
+- `hymeko_neuro/tests/test_hsikan_rotor.py` — enriched-input smoke + provenance.
 
 **Artifacts:** `rotor_feature_enrichment_ab.jsonl` (80 rows), `rotorprop_walk_enrichment_ab.jsonl` (40 rows).
 **CORE.YAML items touched:** none.

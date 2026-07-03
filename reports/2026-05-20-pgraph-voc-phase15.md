@@ -3,7 +3,7 @@
 ## Summary
 
 Brought the HyMeYOLO Stage-D VOC2007 trainer
-(`signedkan_wip/src/vision/train_voc_stagec.py`) under the P-graph
+(`hymeko_neuro/experiments/vision/train_voc_stagec.py`) under the P-graph
 framework as a 4th sister of the HSIKAN / Gömb / cortical drivers.
 **Phase 15 is infrastructure-only**: the prior Stage-D mAP_50=0.007
 on full trainval (architectural synthetic→natural-image transfer
@@ -23,9 +23,9 @@ gap) is **out of scope** here. What Phase 15 delivers is:
 | --- | --- | --- |
 | `docs/plans/2026-05-20-pgraph-voc-sweep/plan.{tex,pdf,mmd,tikz}` | new | 4-format plan (2 pp PDF) |
 | `data/hsikan/sweep_msg_voc.hymeko` | **new** | 75 |
-| `signedkan_wip/src/voc_pgraph_mapping.py` | **new** | 105 |
-| `signedkan_wip/experiments/runs/run_voc_msg_sweep.py` | **new** | 240 |
-| `signedkan_wip/tests/test_voc_pgraph_mapping.py` | **new** | 60 |
+| `hymeko_neuro/experiments/voc_pgraph_mapping.py` | **new** | 105 |
+| `hymeko_neuro/experiments/runs/run_voc_msg_sweep.py` | **new** | 240 |
+| `hymeko_neuro/tests/test_voc_pgraph_mapping.py` | **new** | 60 |
 
 ## CORE.YAML items touched
 

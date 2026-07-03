@@ -57,7 +57,7 @@ The three shells transform the same per-cycle σ-products differently:
 
 Gömb's cycle pool enumerates over **training edges only**
 (`enumerate_top_k_cycles_rs(e_tr, s_tr, ...)` in
-[run_gomb_smoke.py](../../../../signedkan_wip/src/run_gomb_smoke.py)). Test
+[run_gomb_smoke.py](../../../../hymeko_neuro/run_gomb_smoke.py)). Test
 edges never participate in σ-products. This means:
 
 - No transductive σ-leakage (which the canonical Bitcoin/Slashdot
@@ -74,7 +74,7 @@ the canonical-but-leaky convention.
 
 ## Variants
 
-The [`signedkan_wip/src/hymeko_gomb/`](../../../../signedkan_wip/src/hymeko_gomb/)
+The [`hymeko_neuro/models/hymeko_gomb/`](../../../../hymeko_neuro/models/hymeko_gomb/)
 package exposes four ablation classes:
 
 - `HymeKoGomb` — full three-shell cascade.

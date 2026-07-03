@@ -92,7 +92,7 @@ Pair every `.json` with same-stem `.err` under overnight dirs for full logs.
 - **`2026-05-11-clippy-workspace-green.md`** — Workspace `cargo clippy -- -D warnings` brought to green.
 - **`2026-05-11-hymeko-gomb-sphere.md`** — Gömb three-shell cascade feasibility; tests + smoke + OTC 5-seed + ablations.
 - **`2026-05-11-hymeko-gomb-slashdot-sota-attempt.md`** — Slashdot vs `edge_cr` SOTA: **loss ~−2.3σ**, Gömb mean **~0.9031** vs **0.9067** reference; architectural ceiling note.
-- **`2026-05-11-phase2-runtimeconfig.md`** — All `HSIKAN_*` / `HYMEKO_*` reads in `signedkan_wip/src/` routed through `runtime_config.RuntimeConfig`.
+- **`2026-05-11-phase2-runtimeconfig.md`** — All `HSIKAN_*` / `HYMEKO_*` reads in `hymeko_neuro/` routed through `runtime_config.RuntimeConfig`.
 - **`2026-05-11-walks-augmented-epinions-5seed.md`** — Epinions 5-seed: baseline **0.7392** vs kitchen-sink **0.8145**, paired Δ **+0.0753**; single-seed ablation table for walks / CPG / h.
 - **`2026-05-12-gomb-outer-perf.md`** — Batched Gömb outer FIR + `scatter_mean`; benchmark `gomb_outer_timing`; optional `torch.compile`.
 - **`2026-05-12-hsikan-lean-enumeration-harness.md`** — `run_hsikan_lean_profile.py` + shell wrapper; JSONL harness; 90-cell Bitcoin overnight + `--python` for systemd/cron.
@@ -114,5 +114,5 @@ Built papers and briefs live alongside markdown; includes `phase7c_brief.pdf`, `
 
 1. **Human narrative:** start at §5 by date or subsystem name.  
 2. **Numbers:** thesis IV table → `RESULTS_VIEWS_SUITE.md`; HSiKAN / Gömb / overnight grids → §2–§3 JSON(+`.err`).  
-3. **SignedKAN experiment JSON/JSONL ledger (parallel programmes):** `signedkan_wip/experiments/results/AGGREGATE_index.md`.  
+3. **SignedKAN experiment JSON/JSONL ledger (parallel programmes):** `hymeko_neuro/experiments/results/AGGREGATE_index.md`.  
 4. **Regenerate §1 counts** whenever the tree changes; §5 prose is hand-curated and can drift — prefer the source `.md` for detail.

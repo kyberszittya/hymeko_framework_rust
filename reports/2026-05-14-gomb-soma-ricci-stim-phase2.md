@@ -20,9 +20,9 @@ parent-child links.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/vision/quadtree.py](../signedkan_wip/src/hymeko_gomb/soma/vision/quadtree.py) | 198 | `AdaptiveQuadtree` + `AnchorTree` dataclass |
-| [signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/vision/__init__.py) | +7 / -0 | re-exports |
-| [signedkan_wip/tests/test_gomb_soma_vision_quadtree.py](../signedkan_wip/tests/test_gomb_soma_vision_quadtree.py) | 261 | 17 unit tests |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/quadtree.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/quadtree.py) | 198 | `AdaptiveQuadtree` + `AnchorTree` dataclass |
+| [hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/vision/__init__.py) | +7 / -0 | re-exports |
+| [hymeko_neuro/tests/test_gomb_soma_vision_quadtree.py](../hymeko_neuro/tests/test_gomb_soma_vision_quadtree.py) | 261 | 17 unit tests |
 
 ## 3. CORE.YAML items touched
 
@@ -48,7 +48,7 @@ The implementation therefore makes the score a **hybrid** with configurable weig
 ## 6. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_vision_quadtree.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_vision_quadtree.py -v
 =========== 17 passed in 1.96s ===========
 ```
 
@@ -144,7 +144,7 @@ and sizes is exact.
 ## 10. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/vision/quadtree.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/vision/quadtree.py
    (clean)
 ```
 
@@ -190,15 +190,15 @@ dimension. Unit tests including:
 * `Δ₀` reduces to the standard graph Laplacian on vertices.
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/vision/hodge.py`
-* `signedkan_wip/tests/test_gomb_soma_vision_hodge.py`
+* `hymeko_neuro/models/hymeko_gomb/soma/vision/hodge.py`
+* `hymeko_neuro/tests/test_gomb_soma_vision_hodge.py`
 
 No phase 3 work in this commit, per the one-phase-per-session rule.
 
 ## 14. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma.vision import AdaptiveQuadtree
+from hymeko_neuro.models.hymeko_gomb.soma.vision import AdaptiveQuadtree
 
 qt = AdaptiveQuadtree(
     image_h=28, image_w=28, patch_size_initial=4,

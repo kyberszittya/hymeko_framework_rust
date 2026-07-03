@@ -1,14 +1,14 @@
 """HSiKAN channel mixer — replaces the transformer FFN.
 
 A per-token KAN cell ``Linear -> edge activation -> Linear`` whose nonlinearity is the
-canonical CR-Chebyshev cell from ``signed_kan`` (``make_activation('cr_cheby')``):
+canonical CR-Chebyshev cell from ``hymeko_neuro.core`` (``make_activation('cr_cheby')``):
 train-CR / deploy-Chebyshev, GPU-friendly. No new basis code (the cell already exists).
 """
 from __future__ import annotations
 
 import torch
 import torch.nn as nn
-from signed_kan.splines import make_activation
+from hymeko_neuro.core.splines import make_activation
 
 from hymeko_lm.config import Activation
 

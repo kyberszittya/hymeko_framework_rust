@@ -60,7 +60,7 @@ CORE.YAML: none. New dependency: none.
 ## Tests / static analysis
 
 - `pytest hymeko_lm/tests` — **21 passed** (was 18; +3 sparse). ruff clean; `mypy --strict` clean on all
-  `hymeko_lm` files (6 pre-existing errors in the reused `signedkan_wip/cayley_rotor.py`).
+  `hymeko_lm` files (6 pre-existing errors in the reused `hymeko_neuro/cayley_rotor.py`).
 
 ## Provenance
 

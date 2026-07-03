@@ -5,11 +5,11 @@
 **Status:** ✅ implemented (reuse, no new enumerator) + tested + 5-seed A/B + gate. ⚠️ **negative** — pooling closed 4-cycles instead of 3-triads does not move the rotor line. Combined with the three comparison-side negatives, this localises the SiGAT gap to a **common root cause**, not any single architectural lever.
 
 ## What was built (minimal — the enumerator already existed)
-Discovery (Explore sweep) found the closed-signed-cycle enumerator is **already built, Rust-backed, and tested** — a new `hymeko_hre` Berge enumerator would have duplicated `hymeko_graph::cycle_enum` (and `berge.rs` is an *open* traversal, not a cycle enumerator, nor Python-bound). Reused as-is: `signedkan_wip/src/core/n_tuples.py::construct_k_arrays(g, k, max_cycles, seed)` (→ `enumerate_k_cycles_rs` → `hymeko_graph::cycle_enum`, Davis-balance classify); `build_vertex_triad_incidence` and `encode_triads` are already arity-agnostic. **New work:** one `--cycle-k`/`--max-cycles` branch on `run_hsikan_rotor.py` swapping the triad source — the rotor (leakage-free) × k>3 combination, which the existing transductive k-tuple runners never crossed.
+Discovery (Explore sweep) found the closed-signed-cycle enumerator is **already built, Rust-backed, and tested** — a new `hymeko_hre` Berge enumerator would have duplicated `hymeko_graph::cycle_enum` (and `berge.rs` is an *open* traversal, not a cycle enumerator, nor Python-bound). Reused as-is: `hymeko_neuro/hyperedge/n_tuples.py::construct_k_arrays(g, k, max_cycles, seed)` (→ `enumerate_k_cycles_rs` → `hymeko_graph::cycle_enum`, Davis-balance classify); `build_vertex_triad_incidence` and `encode_triads` are already arity-agnostic. **New work:** one `--cycle-k`/`--max-cycles` branch on `run_hsikan_rotor.py` swapping the triad source — the rotor (leakage-free) × k>3 combination, which the existing transductive k-tuple runners never crossed.
 
 ## Files touched
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` (+~20 LOC: `--cycle-k`/`--max-cycles` branch via `construct_k_arrays`, balance from `edge_signs.prod`, incidence-head guard, provenance)
-- `signedkan_wip/tests/test_hsikan_rotor.py` (+2 tests: k=4 smoke+provenance, cycle_k-requires-endpoint guard)
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` (+~20 LOC: `--cycle-k`/`--max-cycles` branch via `construct_k_arrays`, balance from `edge_signs.prod`, incidence-head guard, provenance)
+- `hymeko_neuro/tests/test_hsikan_rotor.py` (+2 tests: k=4 smoke+provenance, cycle_k-requires-endpoint guard)
 - `docs/plans/2026-06-17-berge-kcycle-rotor/plan.{tex,pdf,tikz,mmd}` (new)
 - CORE.YAML items touched: **none** (reused Rust already built+bound; no Cargo change).
 

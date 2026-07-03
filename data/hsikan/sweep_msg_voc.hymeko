@@ -17,8 +17,8 @@
 // transfer gap (prior 5011-image 30-epoch run at mAP_50=0.007) is
 // architectural and out of Phase 15's scope.
 //
-// Mapping: signedkan_wip/src/voc_pgraph_mapping.py
-// Driver:  signedkan_wip/experiments/runs/run_voc_msg_sweep.py
+// Mapping: hymeko_neuro/experiments/voc_pgraph_mapping.py
+// Driver:  hymeko_neuro/experiments/runs/run_voc_msg_sweep.py
 
 VOC_Stage_D_Sweep_MSG {}
 

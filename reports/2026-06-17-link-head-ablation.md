@@ -31,9 +31,9 @@ On the same quaternion representation, the **real bilinear readout wins**; the a
 **Side finding:** real-bilinear on `q` *alone* (0.849/0.874) is within ~0.005 of the full triad-encoder pipeline (0.850/0.879) — the propagated rotor carries almost all the signal; the triad encoder adds little. A candidate model simplification.
 
 ## Files touched
-- `signedkan_wip/src/core/bilinear_head.py` (`ComplexDiagonalHead`), `core/rotor_relative_head.py` (`RotorGeodesicHead`)
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` (`--head {complex,rotate}`, `RotorInjector.propagated_rotors`, propagated-rotor routing — fixes the latent bug where `rotor_rel` read un-propagated rotors)
-- `signedkan_wip/experiments/runs/run_rotor_head_ablation.py` (new fair harness, reuses `_optimise`/`_pos_weight`/`_drop_train_pairs`/`RotorInjector`)
+- `hymeko_neuro/hyperedge/bilinear_head.py` (`ComplexDiagonalHead`), `core/rotor_relative_head.py` (`RotorGeodesicHead`)
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` (`--head {complex,rotate}`, `RotorInjector.propagated_rotors`, propagated-rotor routing — fixes the latent bug where `rotor_rel` read un-propagated rotors)
+- `hymeko_neuro/experiments/runs/run_rotor_head_ablation.py` (new fair harness, reuses `_optimise`/`_pos_weight`/`_drop_train_pairs`/`RotorInjector`)
 - tests: `test_bilinear_head.py` (new), `test_rotor_relative_head.py` (+geodesic), `test_rotor_head_ablation.py` (new), `test_hsikan_rotor.py` (+head smokes)
 - CORE.YAML items touched: **none**.
 

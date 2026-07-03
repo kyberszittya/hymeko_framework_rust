@@ -57,7 +57,7 @@ def test_mixer_shape() -> None:
 def test_mixer_rotor_identity_at_init() -> None:
     """Zero-init bivector => identity rotor [1,0,0,0]; the mixer starts as a pure signed gather."""
     mix = FiberSpikeRotorMixer(n_blocks=4, max_seq_len=16, gate_rank=8)
-    from signedkan_wip.src.embeddings.cayley_rotor import cayley_to_unit_quat
+    from hymeko_neuro.graph.embeddings.cayley_rotor import cayley_to_unit_quat
 
     q = cayley_to_unit_quat(mix.offset_bivec)
     ident = torch.zeros_like(q)

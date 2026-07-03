@@ -12,13 +12,13 @@ One place to find **enumerator-first HSiKAN** work: k-pools, ABB, SSG-as-vertex-
 
 | What | Path |
 |------|------|
-| Strategy (k-enum, ABB, SSG mapping, `--python` under systemd) | `signedkan_wip/docs/HSiKAN_lean_enumeration.md` |
-| Subprocess grid driver (`PROFILE_ENV`, JSONL, `--python`, `--device`) | `signedkan_wip/src/run_hsikan_lean_profile.py` |
-| Bitcoin Alpha/OTC shell (`HSIKAN_LEAN_DEVICE`, **UV-first**; override via `PYTHON`) | `signedkan_wip/experiments/run_hsikan_lean_bitcoin.sh` |
-| Wait for `systemd --user` units, then lean sweep or custom cmd | `signedkan_wip/experiments/schedule_hsikan_lean_after_units.sh` |
-| **Pro scheduler** (UV-enforced, lockfile, CUDA guard, wait timeout) | `signedkan_wip/experiments/schedule_hsikan_lean_pro.sh` |
-| After-chain line-count witness | `signedkan_wip/experiments/hsikan_chain_witness.sh` |
-| Unit tests (env scrubber + device injection) | `signedkan_wip/tests/test_hsikan_lean_profile.py` , `signedkan_wip/tests/test_run_final_cell_device.py` |
+| Strategy (k-enum, ABB, SSG mapping, `--python` under systemd) | `hymeko_neuro/assets/docs/HSiKAN_lean_enumeration.md` |
+| Subprocess grid driver (`PROFILE_ENV`, JSONL, `--python`, `--device`) | `hymeko_neuro/run_hsikan_lean_profile.py` |
+| Bitcoin Alpha/OTC shell (`HSIKAN_LEAN_DEVICE`, **UV-first**; override via `PYTHON`) | `hymeko_neuro/experiments/run_hsikan_lean_bitcoin.sh` |
+| Wait for `systemd --user` units, then lean sweep or custom cmd | `hymeko_neuro/experiments/schedule_hsikan_lean_after_units.sh` |
+| **Pro scheduler** (UV-enforced, lockfile, CUDA guard, wait timeout) | `hymeko_neuro/experiments/schedule_hsikan_lean_pro.sh` |
+| After-chain line-count witness | `hymeko_neuro/experiments/hsikan_chain_witness.sh` |
+| Unit tests (env scrubber + device injection) | `hymeko_neuro/tests/test_hsikan_lean_profile.py` , `hymeko_neuro/tests/test_run_final_cell_device.py` |
 
 ---
 
@@ -56,11 +56,11 @@ No additional **`HSiKAN-mixed`** JSONL besides `hsikan_lean_bitcoin_overnight_20
 ```bash
 # Wait for two units, then full grid (CPU)
 export HSIKAN_LEAN_DEVICE=cpu HSIKAN_LEAN_OUT=reports/my_followup.jsonl
-./signedkan_wip/experiments/schedule_hsikan_lean_after_units.sh run-<a>.service run-<b>.service
+./hymeko_neuro/experiments/schedule_hsikan_lean_after_units.sh run-<a>.service run-<b>.service
 
 # Wait for two units, then only a witness script (no third sweep)
-export HSIKAN_LEAN_AFTER_CMD="bash signedkan_wip/experiments/hsikan_chain_witness.sh reports/w.txt reports/a.jsonl reports/b.jsonl"
-./signedkan_wip/experiments/schedule_hsikan_lean_after_units.sh run-<a>.service run-<b>.service
+export HSIKAN_LEAN_AFTER_CMD="bash hymeko_neuro/experiments/hsikan_chain_witness.sh reports/w.txt reports/a.jsonl reports/b.jsonl"
+./hymeko_neuro/experiments/schedule_hsikan_lean_after_units.sh run-<a>.service run-<b>.service
 ```
 
 ---
@@ -110,8 +110,8 @@ Then dev tools and tests need no manual `activate`:
 
 ```bash
 export PYTHONPATH=.
-uv run ruff check signedkan_wip/src/run_hsikan_lean_profile.py signedkan_wip/tests/test_hsikan_lean_profile.py
-uv run pytest -p no:randomly signedkan_wip/tests/test_hsikan_lean_profile.py signedkan_wip/tests/test_run_final_cell_device.py -q
+uv run ruff check hymeko_neuro/run_hsikan_lean_profile.py hymeko_neuro/tests/test_hsikan_lean_profile.py
+uv run pytest -p no:randomly hymeko_neuro/tests/test_hsikan_lean_profile.py hymeko_neuro/tests/test_run_final_cell_device.py -q
 ```
 
 If `uv run` fails with an invalid `.venv`, delete `.venv` and re-run `uv sync --group ml --all-packages`.
@@ -126,8 +126,8 @@ If `uv run` fails with an invalid `.venv`, delete `.venv` and re-run `uv sync --
 export PYTHONPATH=.
 PY="$(uv run python -c "import sys, torch; print(sys.executable)" 2>/dev/null || true)"
 if [[ -z "${PY}" ]]; then PY="${HOME}/miniconda3/bin/python3"; fi
-"${PY}" -m signedkan_wip.src.run_hsikan_lean_profile --python "${PY}" --help
-./signedkan_wip/experiments/run_hsikan_lean_bitcoin.sh   # auto-picks uv .venv if torch works
+"${PY}" -m hymeko_neuro.run_hsikan_lean_profile --python "${PY}" --help
+./hymeko_neuro/experiments/run_hsikan_lean_bitcoin.sh   # auto-picks uv .venv if torch works
 ```
 
 **Or** invoke the harness entirely through uv (same interpreter for parent + `--python` default):
@@ -135,7 +135,7 @@ if [[ -z "${PY}" ]]; then PY="${HOME}/miniconda3/bin/python3"; fi
 ```bash
 export PYTHONPATH=.
 PY="$(uv run python -c "import sys, torch; print(sys.executable)")"
-uv run python -m signedkan_wip.src.run_hsikan_lean_profile \
+uv run python -m hymeko_neuro.run_hsikan_lean_profile \
   --python "${PY}" \
   --datasets bitcoin_alpha --seeds 0 --hidden 8 --profiles clean_baseline \
   --n-epochs 1 --timeout-s 3600 --out /tmp/hsikan_smoke.jsonl

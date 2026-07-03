@@ -52,17 +52,17 @@ the first-pass "structural prior ≈ 0.75 at random-init" hypothesis (random-ini
 ## Files touched
 
 **New (2):**
-- `signedkan_wip/experiments/runs/run_inductive_transfer.py` (+200) — cross-graph
+- `hymeko_neuro/experiments/runs/run_inductive_transfer.py` (+200) — cross-graph
   transfer driver; trains on A and evaluates the frozen model on B; reuses
   `run_baseline_audit._train` + `_evaluate` + dedup (§6.5 #3, no train-loop dup);
   `train=False` (random-init) and `shuffle_train_signs` controls; transductive failure
   caught as "cannot transfer" via a *specific* `(IndexError, RuntimeError)` catch (§6.4).
-- `signedkan_wip/tests/test_inductive_transfer.py` (+90) — 5 tests: rotor transfers
+- `hymeko_neuro/tests/test_inductive_transfer.py` (+90) — 5 tests: rotor transfers
   across distinct graphs, eval set is from the eval graph (exact count), shuffle/walk
   arms, unknown-model failure.
 
 **Modified (mine):**
-- `signedkan_wip/experiments/runs/run_baseline_audit.py` — extracted the BCE+early-stop
+- `hymeko_neuro/experiments/runs/run_baseline_audit.py` — extracted the BCE+early-stop
   loop into a reusable `_train(model, hp, ctx, e_tr, s_tr, e_va, s_va, device)`;
   `run_audit` calls it. **Behaviour-preserving** — the determinism regression test is the
   oracle and passes unchanged.

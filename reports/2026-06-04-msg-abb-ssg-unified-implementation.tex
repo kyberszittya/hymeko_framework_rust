@@ -226,7 +226,7 @@ hymeko_py/src/cycles/unsigned.rs     extended
                                           FractionNegative |
                                           SignProductAbsScorer)
 
-signedkan_wip/src/core/
+hymeko_neuro/hyperedge/
 |-- reservoir.py                   NEW   ReservoirSampler (Vitter Algo R)
 |                                        + NumpyReservoirSampler
 |                                        (Algo L, numpy buffer, zero
@@ -246,7 +246,7 @@ signedkan_wip/src/core/
                                          even on hymeko-missing
                                          fallback)
 
-signedkan_wip/src/cycle_cache/strategies.py  NEW
+hymeko_neuro/graph/cycle_cache/strategies.py  NEW
     EnumeratedArrays                Output dataclass
                                     (v, sigma, edge_signs, is_closed)
     TupleEnumerator (ABC)           enumerate + cache_key_params
@@ -384,7 +384,7 @@ python scripts/pgraph/run_examples.py --regimes
 \subsection{HSiKAN cycle / walk pool (Python)}
 
 \begin{lstlisting}[style=pythonstyle]
-from signedkan_wip.src.cycle_cache import cached_construct
+from hymeko_neuro.graph.cycle_cache import cached_construct
 
 # MSG (uniform reservoir sample)
 pool = cached_construct(g, "msg_walk",

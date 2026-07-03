@@ -50,7 +50,7 @@ except ImportError:
 
 REPO = Path(__file__).resolve().parents[1]
 CALIB_PATH = REPO / "docs" / "komondor_setup" / "wall_calibration.yaml"
-RAW_DATA_DIR = REPO / "signedkan_wip" / "data"
+RAW_DATA_DIR = REPO / "hymeko_neuro" / "data"
 
 # Map dataset slug -> raw file in RAW_DATA_DIR.
 RAW_FILENAME = {

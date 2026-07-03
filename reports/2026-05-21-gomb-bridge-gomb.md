@@ -39,10 +39,10 @@ architecture on Bitcoin Alpha.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/hymeko_gomb/cascade.py` | extended | +180 (`HymeKoGomb.encode_per_vertex` + new `GombBridgeGomb` class) |
-| `signedkan_wip/src/hymeko_gomb/__init__.py` | extended | +2 (re-export) |
-| `signedkan_wip/experiments/runs/run_gomb_smoke.py` | extended | +1 (`_MODELS["gomb_bridge_gomb"] = GombBridgeGomb`) |
-| `signedkan_wip/tests/test_gomb_bridge_gomb.py` | new | 144 (8 unit tests) |
+| `hymeko_neuro/models/hymeko_gomb/cascade.py` | extended | +180 (`HymeKoGomb.encode_per_vertex` + new `GombBridgeGomb` class) |
+| `hymeko_neuro/models/hymeko_gomb/__init__.py` | extended | +2 (re-export) |
+| `hymeko_neuro/experiments/runs/run_gomb_smoke.py` | extended | +1 (`_MODELS["gomb_bridge_gomb"] = GombBridgeGomb`) |
+| `hymeko_neuro/tests/test_gomb_bridge_gomb.py` | new | 144 (8 unit tests) |
 | `docs/plans/2026-05-21-gomb-bridge-gomb/{plan.tex,plan.pdf,plan.tikz,plan_figure.pdf,plan.mmd}` | new | 4-format plan |
 | `reports/2026-05-21-gomb-bridge-gomb.md` | new | this file |
 
@@ -139,7 +139,7 @@ current configs.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_gomb_bridge_gomb.py` | **8 / 8 pass** |
+| `pytest hymeko_neuro/tests/test_gomb_bridge_gomb.py` | **8 / 8 pass** |
 | All prior suites | no regression |
 | Bitcoin Alpha 5-seed × 2 depth grid | 10 / 10 cells succeeded |
 
@@ -176,7 +176,7 @@ Clean.
 - **GPU:** RTX 2070 SUPER 8 GiB.
 - **5-seed BA grid:** L ∈ {2, 4} × seeds {0, 1, 2, 3, 4} =
   10 cells, ~12 s/cell, ~2 min total.
-- **JSONL:** `signedkan_wip/experiments/results/gomb_bridge_gomb_5seed_ba_2026_05_21.jsonl`
+- **JSONL:** `hymeko_neuro/experiments/results/gomb_bridge_gomb_5seed_ba_2026_05_21.jsonl`
 - **Baseline:** plain Gömb 5-seed BA at strict-bench config
   (0.9034 mean, mixed from earlier files).
 

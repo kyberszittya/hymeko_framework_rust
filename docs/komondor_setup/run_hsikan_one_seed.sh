@@ -3,7 +3,7 @@
 # Run HSiKAN on Komondor. ONE process, ONE seed, ONE GPU, NOT an array.
 #
 # Direct port of one iteration of the project's working local script
-# `signedkan_wip/experiments/run_bitcoin_optuna_best_5seed_2026_05_13.sh`.
+# `hymeko_neuro/experiments/run_bitcoin_optuna_best_5seed_2026_05_13.sh`.
 # That local script uses `run_final_cell` (a single training run with
 # fixed hyperparameters that were previously found by Optuna), NOT
 # `run_optuna_search` (which would actually invoke Optuna at runtime).
@@ -59,7 +59,7 @@ singularity exec --nv --bind "$REPO:/workspace" \
     --env HSIKAN_ALPHA_ENTROPY_LAMBDA=0.09660950681178301 \
     --env HYMEKO_CYCLE_CACHE=1 \
     --env HSIKAN_CYCLE_BATCH=2000 \
-    "$SIF" bash -c "cd /workspace && PYTHONPATH=. python -m signedkan_wip.experiments.runs.run_final_cell \
+    "$SIF" bash -c "cd /workspace && PYTHONPATH=. python -m hymeko_neuro.experiments.runs.run_final_cell \
         --dataset bitcoin_alpha --hidden 8 --seed 0 --n-epochs 80 --max-k4 100000"
 rc=$?
 t1=$(date +%s)

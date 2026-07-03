@@ -29,9 +29,9 @@ threading; per-model topology neutral-sign handling) is scoped as follow-up.
   obligations (reduction; admissibility) and the empirical refinement (§5a).
 - **`plan.{tex,pdf,tikz,mmd}`** — phased implementation plan (Phase 1 audit arm,
   Phase 2 pgraph regime), all four formats compile.
-- **`signedkan_wip/src/baselines/reachability.py`** — `ReachabilityRule` enum +
+- **`hymeko_neuro/baselines/reachability.py`** — `ReachabilityRule` enum +
   `reachable_edges` / `reachable_nodes`; the audit-side rule semantics.
-- **`signedkan_wip/experiments/runs/run_baseline_audit.py`** — `reachability`
+- **`hymeko_neuro/experiments/runs/run_baseline_audit.py`** — `reachability`
   param + `--reachability {strict,topo,full}`; default `strict` keeps every call
   bit-identical (reduction).
 - **`hymeko_pgraph/src/reachability.rs`** — `ReachabilityRule` +
@@ -73,7 +73,7 @@ the standalone article. `argument.md` §5a records this.
 ## CORE.YAML items touched
 
 **None.** `CORE.YAML` lists only `docs/spec/g_sphf_axioms.tex` (GGK K1–K4) — not
-`hymeko_pgraph`, not `signedkan_wip`. No dependency added. Additive throughout
+`hymeko_pgraph`, not `hymeko_neuro`. No dependency added. Additive throughout
 (new enum, new module, new CLI flag, default-`strict` preserves behaviour),
 mirroring the additive `axiom_extensions.rs` precedent.
 
@@ -83,9 +83,9 @@ mirroring the additive `axiom_extensions.rs` precedent.
 |---|---|---|
 | `docs/plans/2026-06-14-reachability-rules-audit-pgraph/argument.md` | new | — |
 | `docs/plans/.../plan.{tex,tikz,mmd}` (+pdfs) | new | — |
-| `signedkan_wip/src/baselines/reachability.py` | new | 99 |
-| `signedkan_wip/tests/test_reachability.py` | new | 104 |
-| `signedkan_wip/experiments/runs/run_baseline_audit.py` | modify (rule param + CLI) | +~20 |
+| `hymeko_neuro/baselines/reachability.py` | new | 99 |
+| `hymeko_neuro/tests/test_reachability.py` | new | 104 |
+| `hymeko_neuro/experiments/runs/run_baseline_audit.py` | modify (rule param + CLI) | +~20 |
 | `hymeko_pgraph/src/reachability.rs` | new | 188 |
 | `hymeko_pgraph/src/lib.rs` | modify (+1 `pub mod`) | +1 |
 

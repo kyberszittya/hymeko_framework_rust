@@ -32,9 +32,9 @@ L(D,A,C,F)
 
 **Operational meaning:** “orthogonal” = **statistical independence of factors** in the experiment — *not* “perpendicular vectors in \(\mathbb{R}^d\)” unless you deliberately add that regulariser (meaning C below overlaps only by analogy).
 
-**Code / harness:** factorial runners (e.g. `signedkan_wip/src/run_cpml_factorial.py`) and the plan directory **`docs/plans/2026-05-11-hsikan-cpml-fir-orthogonal/`**.
+**Code / harness:** factorial runners (e.g. `hymeko_neuro/run_cpml_factorial.py`) and the plan directory **`docs/plans/2026-05-11-hsikan-cpml-fir-orthogonal/`**.
 
-**Related CPML knob:** inside a **single** CPML stack, `aggregator_kind` makes **HSiKAN vs MLP** an axis **orthogonal to** “flat vs tiered topology” — a **2×2** design at the CPML layer (`signedkan_wip/src/cpml.py`, `CPMLConfig` docstring).
+**Related CPML knob:** inside a **single** CPML stack, `aggregator_kind` makes **HSiKAN vs MLP** an axis **orthogonal to** “flat vs tiered topology” — a **2×2** design at the CPML layer (`hymeko_neuro/cpml.py`, `CPMLConfig` docstring).
 
 **CPML readout sub-axis (independent of the factorial \(C\) bit):** when CPML is **on**, `topology ∈ {route, pyramid}` selects **tier routing** (default **route**: each tier’s aggregator always reads the **same base** vertex tensor; **pyramid**: legacy widening concat). Maths + **Highway / Capsule / KAN** reading: **[CPML routes: Highway · Capsule · KAN](./cpml-routing-highway-capsule-kan.md)**.
 
@@ -52,7 +52,7 @@ So in Gömb:
 - **Middle shell:** **one** HSiKAN (Catmull–Rom) pass on `[embed ∥ outer]`.  
 - **Inner core:** **one** CPML pass (default stub: MLP tiers) on `[embed ∥ outer ∥ middle]`.
 
-Forward path (see `signedkan_wip/src/hymeko_gomb/cascade.py`):
+Forward path (see `hymeko_neuro/models/hymeko_gomb/cascade.py`):
 
 \[
 X \;\to\; H_{\mathrm{outer}} \;\to\; H_{\mathrm{middle}} \;\to\; H_{\mathrm{core}} \;\to\; \text{edge head}.
@@ -162,7 +162,7 @@ A **different** use of “orthogonal” appears in **risk mitigation** for the o
 
 Here “orthogonal” is closer to the **linear-algebraic** idea: coefficient vectors (or their spans) across banks should stay **separated** — a **training prior**, not the factorial \(2^3\) design.
 
-Implementation today relies primarily on **staggered initialisation** of \((a^{(m)}, b^{(m)})\) across banks (`OuterFIRShell` in `signedkan_wip/src/hymeko_gomb/shells.py`); explicit **\(\langle w^{(m)}, w^{(m')}\rangle = 0\)** penalties are a plan-level option, not a hard-coded invariant.
+Implementation today relies primarily on **staggered initialisation** of \((a^{(m)}, b^{(m)})\) across banks (`OuterFIRShell` in `hymeko_neuro/models/hymeko_gomb/shells.py`); explicit **\(\langle w^{(m)}, w^{(m')}\rangle = 0\)** penalties are a plan-level option, not a hard-coded invariant.
 
 ---
 

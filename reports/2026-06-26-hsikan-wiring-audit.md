@@ -57,7 +57,7 @@ parity, or reaching along a hidden path defined over the hypergraph). Then:
 - HSiKAN **wins** there → the backbone is correct, and the robot-task ties are **real** (verdict **a**): the
   structural prior simply isn't load-bearing for these objectives — not a bug.
 - HSiKAN **loses** there → the backbone forward is silently buggy (verdict **b**) — localise in
-  `signed_kan/backbone.py` against a hand-computation.
+  `hymeko_neuro/core/backbone.py` against a hand-computation.
 
 One test collapses the question. This is the handoff's own proposed discriminating test, now the *correct*
 next step precisely because the wiring is cleared: "a real architecture wins somewhere" must be tested where

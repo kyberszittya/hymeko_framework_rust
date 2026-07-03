@@ -52,9 +52,9 @@ Caveat: absolute level (~0.49–0.53) is below the earlier `gomb_soma_flat` (0.6
 the **relative** ranking across the 4 arms (same settings) is the result.
 
 ## Files
-- `signedkan_wip/src/hymeko_gomb/soma/vision/holonomy_walk.py` (new: Holonomy enum,
+- `hymeko_neuro/models/hymeko_gomb/soma/vision/holonomy_walk.py` (new: Holonomy enum,
   `HolonomyWalkConv`, `HolonomyClassifier`; reuses `PatchGraphBuilder`).
-- `signedkan_wip/src/hymeko_gomb/soma/vision/train_mnist.py` (`holo_{none,routing,z2,u1}` arms).
-- `signedkan_wip/tests/test_holonomy_walk.py` (9 tests).
+- `hymeko_neuro/models/hymeko_gomb/soma/vision/train_mnist.py` (`holo_{none,routing,z2,u1}` arms).
+- `hymeko_neuro/tests/test_holonomy_walk.py` (9 tests).
 - jsonl `reports/soma_holonomy_group_ablation_20260629.jsonl`; figure as above.
 - No CORE.YAML items; no new dependency.

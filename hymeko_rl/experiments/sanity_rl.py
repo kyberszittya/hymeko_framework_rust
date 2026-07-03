@@ -22,7 +22,7 @@ from typing import Any
 
 import torch
 
-from signed_kan import set_deploy_mode
+from hymeko_neuro.core import set_deploy_mode
 
 from hymeko_rl.agents.policy import ActorCritic, build_policy
 from hymeko_rl.control.topology_zoo import ring

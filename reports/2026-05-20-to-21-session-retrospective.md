@@ -65,19 +65,19 @@ papers but matters for reproducibility.
 
 ## What we built (engineering, not numbers)
 
-- **`signedkan_wip/src/interpret/`** package — HSIKAN +
+- **`hymeko_neuro/eval/interpret/`** package — HSIKAN +
   Gömb fuzzy signature view with per-cycle vote/firing/arc-
   weight breakdown. 23 + 308 LOC, 18/18 tests.
-- **`signedkan_wip/src/core/arc_weights.py`** — weighted-
+- **`hymeko_neuro/hyperedge/arc_weights.py`** — weighted-
   graph plumbing for the CR-highway mode. 138 LOC.
-- **`signedkan_wip/src/hymeko_gomb/`** extensions —
+- **`hymeko_neuro/models/hymeko_gomb/`** extensions —
   `StackedMiddleHSiKAN` + `GombWithOuterHSIKAN` +
   `--outer-hsikan-grad-checkpoint`. ~280 LOC across the
   cascade.py + shells.py + run_gomb_smoke.py edits.
-- **`signedkan_wip/src/arch_search/`** package —
+- **`hymeko_neuro/eval/arch_search/`** package —
   MSG/ABB/SSG framework. 220 LOC + 8/8 tests + 245 LOC
   orchestrator.
-- **Memory fixes** in `signedkan_wip/src/core/cpml.py` —
+- **Memory fixes** in `hymeko_neuro/hyperedge/cpml.py` —
   factored matmul (1 GiB saved on Slashdot) + edge-batched
   + per-chunk checkpoint at Epinions scale.
 
@@ -209,15 +209,15 @@ research move.
 - `docs/plans/2026-05-21-hypergraph-temporal-logic/` (design sketch only)
 
 **JSONLs:**
-- `signedkan_wip/experiments/results/phase21_side_mixed_5seed_2026_05_20.jsonl`
-- `signedkan_wip/experiments/results/phase22_slashdot_5seed_2026_05_20.jsonl`
-- `signedkan_wip/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl`
-- `signedkan_wip/experiments/results/stacked_gomb_overnight_slashdot_2026_05_20.jsonl`
-- `signedkan_wip/experiments/results/outer_hsikan_gomb_overnight_2026_05_20.jsonl`
-- `signedkan_wip/experiments/results/outer_hsikan_gomb_residual_2026_05_20.jsonl`
-- `signedkan_wip/experiments/results/outer_hsikan_msg_abb_2026_05_21.jsonl`
-- `signedkan_wip/experiments/results/outer_hsikan_msg_abb_ext_2026_05_21.jsonl` (in progress)
-- `signedkan_wip/experiments/results/plain_gomb_otc_3seed_2026_05_21.jsonl`
+- `hymeko_neuro/experiments/results/phase21_side_mixed_5seed_2026_05_20.jsonl`
+- `hymeko_neuro/experiments/results/phase22_slashdot_5seed_2026_05_20.jsonl`
+- `hymeko_neuro/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl`
+- `hymeko_neuro/experiments/results/stacked_gomb_overnight_slashdot_2026_05_20.jsonl`
+- `hymeko_neuro/experiments/results/outer_hsikan_gomb_overnight_2026_05_20.jsonl`
+- `hymeko_neuro/experiments/results/outer_hsikan_gomb_residual_2026_05_20.jsonl`
+- `hymeko_neuro/experiments/results/outer_hsikan_msg_abb_2026_05_21.jsonl`
+- `hymeko_neuro/experiments/results/outer_hsikan_msg_abb_ext_2026_05_21.jsonl` (in progress)
+- `hymeko_neuro/experiments/results/plain_gomb_otc_3seed_2026_05_21.jsonl`
 
 **Memory entries** (10):
 - 10 new memory entries plus MEMORY.md index updates.

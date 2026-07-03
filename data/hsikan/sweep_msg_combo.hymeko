@@ -27,7 +27,7 @@
 //   (0,1,0) quality-only  → ABB picks the lowest-quality-drop survivor
 //   (1,5,1) balanced      → Pareto pick
 //
-// Mapping: signedkan_wip/src/hsikan_pgraph_mapping.py (unchanged;
+// Mapping: hymeko_neuro/experiments/hsikan_pgraph_mapping.py (unchanged;
 // the same unit names are mapped).
 
 HSiKAN_Sweep_Combo {}

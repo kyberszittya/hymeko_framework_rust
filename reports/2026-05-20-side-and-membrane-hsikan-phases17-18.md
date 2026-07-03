@@ -29,9 +29,9 @@ documented honestly in the open-issues section.
 | File | Status | LOC |
 | --- | --- | --- |
 | `docs/plans/2026-05-20-side-stacked-hsikan/plan.{tex,pdf,mmd,tikz}` | new | 4-format plan (3 pp PDF) |
-| `signedkan_wip/src/core/side_signedkan.py` | **new** | 290 (Side + Membrane) |
-| `signedkan_wip/tests/test_side_signedkan.py` | **new** | 220 (12 tests) |
-| `signedkan_wip/experiments/runs/run_side_vs_depth.py` | **new** | 195 (training loop is unoptimized — see Open issues) |
+| `hymeko_neuro/hyperedge/side_signedkan.py` | **new** | 290 (Side + Membrane) |
+| `hymeko_neuro/tests/test_side_signedkan.py` | **new** | 220 (12 tests) |
+| `hymeko_neuro/experiments/runs/run_side_vs_depth.py` | **new** | 195 (training loop is unoptimized — see Open issues) |
 
 ## CORE.YAML items touched
 

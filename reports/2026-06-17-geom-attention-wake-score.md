@@ -16,10 +16,10 @@ Three opt-in knobs on the existing `GeometricTriadAttentionPool` (config fields,
 `summarise_gate`, `run_hsikan_rotor.run()` (`--geom-init-scale/-learn-scale/-sign-aware`, per-incidence `inc_balance`, provenance fields) and the `GeomTrainedState` snapshot were extended; `_score` refactored into `_raw_score`/`_score`/`_weights` (no duplication).
 
 ## Files touched
-- `signedkan_wip/src/core/geometric_triad_attention.py` (+~55 LOC: knobs, `_raw_score`/`_weights`, `summarise_gate` inc_balance)
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` (+~25 LOC: `triad_balance`/`inc_balance`, 3 CLI knobs, run() params, provenance)
-- `signedkan_wip/experiments/runs/inspect_geom_gate.py` (inc_balance pass-through)
-- `signedkan_wip/tests/test_geometric_triad_attention.py` (+7 tests), `signedkan_wip/tests/test_hsikan_rotor.py` (+1 woken integration test)
+- `hymeko_neuro/hyperedge/geometric_triad_attention.py` (+~55 LOC: knobs, `_raw_score`/`_weights`, `summarise_gate` inc_balance)
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` (+~25 LOC: `triad_balance`/`inc_balance`, 3 CLI knobs, run() params, provenance)
+- `hymeko_neuro/experiments/runs/inspect_geom_gate.py` (inc_balance pass-through)
+- `hymeko_neuro/tests/test_geometric_triad_attention.py` (+7 tests), `hymeko_neuro/tests/test_hsikan_rotor.py` (+1 woken integration test)
 - `docs/plans/2026-06-17-geom-attention-wake-score/plan.{tex,pdf,tikz,mmd}` (new)
 - CORE.YAML items touched: **none** (only `hymeko_core/` Rust is protected).
 

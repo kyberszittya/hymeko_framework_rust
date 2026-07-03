@@ -198,8 +198,8 @@ The Niitsuma narrative pivots from "0.996 AUC headline" to:
 - Bitcoin Alpha dataset: 24,186 edges, ~3,783 nodes
 - Dataset hash: covered by `_hash_graph` in cycle cache
 - Logs: `/tmp/label_shuffle_*.log`, `/tmp/audit_*.log` (should be moved
-  to `signedkan_wip/experiments/results/`)
-- `--shuffle-train-signs` flag added to `signedkan_wip/src/run_final_cell.py`
+  to `hymeko_neuro/experiments/results/`)
+- `--shuffle-train-signs` flag added to `hymeko_neuro/run_final_cell.py`
 
 ## CORE.YAML items touched
 

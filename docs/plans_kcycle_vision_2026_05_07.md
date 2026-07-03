@@ -24,7 +24,7 @@ This composes cleanly with what's already in the repo:
 
 | component | reuse |
 |---|---|
-| **HSiKAN signed-cycle aggregation** (`signedkan_wip/src/signedkan.py`) | The Option-C `φ_e^s ∘ Σ φ_v^s` factorisation extends to vision faces. The "sign" becomes a polarity feature (above/below local mean intensity, or gradient direction). |
+| **HSiKAN signed-cycle aggregation** (`hymeko_neuro/signedkan.py`) | The Option-C `φ_e^s ∘ Σ φ_v^s` factorisation extends to vision faces. The "sign" becomes a polarity feature (above/below local mean intensity, or gradient direction). |
 | **αₖ mixer** (`mixed_arity_signedkan.py`) | Mix per-arity face embeddings — small triangles for fine detail, larger 5–6 cycles for coarser objects. |
 | **k-cycle Rust enumerator** (`hymeko_py::enumerate_top_k_cycles_rs`) | Reuse for face enumeration on the SLIC graph. |
 | **HOSVD** (`hymeko_core::tensor::decomposition`) | Compress the per-face feature tensor. |
@@ -89,7 +89,7 @@ If mAP > 0.5 on synthetic polygons, scale to PASCAL VOC or a small-object subset
 
 ## Order of operations
 
-1. Module scaffold: `signedkan_wip/src/vision/kcycle_detection.py` with SLIC graph builder, face enumerator, KCycleDetector class
+1. Module scaffold: `hymeko_neuro/experiments/vision/kcycle_detection.py` with SLIC graph builder, face enumerator, KCycleDetector class
 2. Synthetic-polygon dataset generator (~30 lines numpy)
 3. End-to-end smoke training (1 epoch, single seed, just check loss decreases)
 4. **If smoke is green**: 5-seed run on synthetic, compare to a tiny CNN at matched param budget
@@ -117,7 +117,7 @@ The previous open Ádám direction was "**learn k-enumeration with a separate ar
 
 ## v1 smoke result (2026-05-07, ~03:05)
 
-`signedkan_wip/src/vision/kcycle_detection.py::smoke()` runs end-to-end on 32 synthetic 256×256 polygon images:
+`hymeko_neuro/experiments/vision/kcycle_detection.py::smoke()` runs end-to-end on 32 synthetic 256×256 polygon images:
 
 ```
 [smoke] N=32 n_v=196 n_e=574 n_t=379
@@ -146,7 +146,7 @@ None of these change the architectural claim (faces from the image → hypergrap
 ## Files shipped (v1 scaffold)
 
 ```
-signedkan_wip/src/vision/kcycle_detection.py     ~280 LOC, runs on CPU
+hymeko_neuro/experiments/vision/kcycle_detection.py     ~280 LOC, runs on CPU
 docs/plans_kcycle_vision_2026_05_07.md           this file
 ```
 

@@ -2,7 +2,7 @@
 
 Goal: extend the framework's schema with a new layer type (e.g. `attention_layer`, `lstm_layer`). After this you can write `.hymeko` descriptions that use it, and they'll round-trip through the `torch_dataflow` codegen path.
 
-This is the recipe for the **research-side** extension (`signedkan_wip`-flavoured KAN layers). For domain-format extensions (URDF-style layer kinds), see [Add a new format](./add-a-format.md).
+This is the recipe for the **research-side** extension (`hymeko_neuro`-flavoured KAN layers). For domain-format extensions (URDF-style layer kinds), see [Add a new format](./add-a-format.md).
 
 ## The 4 places to touch
 
@@ -96,7 +96,7 @@ class AttentionLayer(nn.Module):
         return attn @ v
 ```
 
-For Phase-1 codegen delegation (real math), have the stub lazily import from the corresponding `signedkan_wip` module — see `SignedKANLayer` in `__init__.py` for the pattern.
+For Phase-1 codegen delegation (real math), have the stub lazily import from the corresponding `hymeko_neuro` module — see `SignedKANLayer` in `__init__.py` for the pattern.
 
 ## Step 5: write a `.hymeko` and emit
 

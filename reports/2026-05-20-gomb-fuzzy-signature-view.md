@@ -53,12 +53,12 @@ Two findings that the signature exposes and that AUC cannot:
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/interpret/gomb_signature.py` | new | 308 (`GombCycleContribution`, `GombFuzzySignature`, `extract_gomb_signature`, `plot_gomb_signature`) |
-| `signedkan_wip/src/interpret/__init__.py` | extended | +8 (re-exports) |
-| `signedkan_wip/src/hymeko_gomb/shells.py` | extended | +18 (capture side-channels on `OuterFIRShell` and `MiddleHSiKAN`) |
-| `signedkan_wip/src/core/arc_weights.py` | extended | +4 (`annotate_arc_weights` now works on both `SignedTriad` and `SignedNTuple` via `getattr(t, "arity", len(verts))`) |
-| `signedkan_wip/tests/test_gomb_signature.py` | new | 184 (8 unit tests) |
-| `signedkan_wip/experiments/runs/demo_gomb_signature.py` | new | 188 (Bitcoin Alpha demo + 3 signatures) |
+| `hymeko_neuro/eval/interpret/gomb_signature.py` | new | 308 (`GombCycleContribution`, `GombFuzzySignature`, `extract_gomb_signature`, `plot_gomb_signature`) |
+| `hymeko_neuro/eval/interpret/__init__.py` | extended | +8 (re-exports) |
+| `hymeko_neuro/models/hymeko_gomb/shells.py` | extended | +18 (capture side-channels on `OuterFIRShell` and `MiddleHSiKAN`) |
+| `hymeko_neuro/hyperedge/arc_weights.py` | extended | +4 (`annotate_arc_weights` now works on both `SignedTriad` and `SignedNTuple` via `getattr(t, "arity", len(verts))`) |
+| `hymeko_neuro/tests/test_gomb_signature.py` | new | 184 (8 unit tests) |
+| `hymeko_neuro/experiments/runs/demo_gomb_signature.py` | new | 188 (Bitcoin Alpha demo + 3 signatures) |
 | `docs/plans/2026-05-20-gomb-fuzzy-signature/{plan.tex,plan.pdf,plan.tikz,plan_figure.pdf,plan.mmd}` | new | 4-format plan |
 | `reports/2026-05-20-gomb-fuzzy-signature-view.md` | new | this file |
 | `reports/figures/gomb_signature_bitcoin_alpha/{*.png,summary.json}` | new | 3 figures + JSON |
@@ -127,7 +127,7 @@ black box.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_gomb_signature.py` | **8 / 8 pass** |
+| `pytest hymeko_neuro/tests/test_gomb_signature.py` | **8 / 8 pass** |
 | All prior interpret / side / mixed-arity / arc-weight suites | 47 / 47 (no regression) |
 | Bitcoin Alpha demo (120 epochs, lightweight Gömb) | completes in 2 s |
 
@@ -150,7 +150,7 @@ Clean.
    convolutions; capturing the pre-routing per-cycle state
    would close the only remaining black box in the cascade.
    Estimated: half day, mostly reading
-   `signedkan_wip/src/hymeko_gomb/soma/cpml.py`.
+   `hymeko_neuro/models/hymeko_gomb/soma/cpml.py`.
 2. **Side-by-side HSIKAN vs Gömb on the same query.** The
    interfaces are now compatible at the level of (sigma,
    alpha-like magnitude, arc weights). A wrapper that runs

@@ -4,8 +4,8 @@ Large inventories are **not** duplicated here — open the generated indexes in 
 
 ## SignedKAN / HSiKAN experiment results
 
-**Path:** `signedkan_wip/experiments/results/`  
-**Index:** `signedkan_wip/experiments/results/AGGREGATE_index.md`
+**Path:** `hymeko_neuro/experiments/results/`  
+**Index:** `hymeko_neuro/experiments/results/AGGREGATE_index.md`
 
 Snapshot facts (see index for exact counts):
 
@@ -21,7 +21,7 @@ Contains overnight **`.json` + `.err` pairs**, LaTeX/PDF briefs, and dated **`re
 
 ## Thesis IV entropy suite (separate programme)
 
-**Path:** `RESULTS_VIEWS_SUITE.md` (repository root, **not** under `signedkan_wip/`).
+**Path:** `RESULTS_VIEWS_SUITE.md` (repository root, **not** under `hymeko_neuro/`).
 
 111 paired regulariser experiments — **do not conflate** with link-prediction JSONLs above.
 
@@ -30,7 +30,7 @@ Contains overnight **`.json` + `.err` pairs**, LaTeX/PDF briefs, and dated **`re
 ```mermaid
 flowchart TB
   Q[Question type?]
-  Q -->|Link prediction AUC| A[signedkan_wip/.../results/*.jsonl]
+  Q -->|Link prediction AUC| A[hymeko_neuro/.../results/*.jsonl]
   Q -->|Multi-arch table| M[master_table.md]
   Q -->|Entropy regularisers| T[RESULTS_VIEWS_SUITE.md]
   Q -->|Run logs / PDF reports| R[reports/]

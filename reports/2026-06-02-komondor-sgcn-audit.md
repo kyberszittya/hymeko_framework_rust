@@ -99,7 +99,7 @@ test for label-leakage (`A_leak` ↔ `S_leak`).
 | `epinions` | **0.9314 ± 0.0025** | **0.4874 ± 0.0099** | −0.4440 | ✓ |
 
 Every cell drops to chance (AUC ≈ 0.5) under label shuffle.
-Cross-check against [`sgcn_baseline.json`](../signedkan_wip/experiments/results/sgcn_baseline.json):
+Cross-check against [`sgcn_baseline.json`](../hymeko_neuro/experiments/results/sgcn_baseline.json):
 local BA real AUC (3-seed median) was 0.8704; Komondor 3-seed mean is
 0.8685. Local OTC median 0.9044; Komondor mean 0.9037. Container ↔
 local agreement is within noise for both.

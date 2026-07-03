@@ -54,8 +54,8 @@ htmlcov/
 /data/benchmarks/
 
 # Dataset / ML caches (local or downloaded; regenerable — do not add new blobs)
-# SignedKAN: `datasets.load` / `python -m signedkan_wip.src.datasets --download …`
-/signedkan_wip/data/
+# SignedKAN: `datasets.load` / `python -m hymeko_neuro.data.datasets --download …`
+/hymeko_neuro/assets/data/
 # Repo-root `data/`: local caches only (tracked trees: minimal_examples/, nn/, hsikan/, robotics*)
 /data/torchvision/
 /data/ntuples_cache/
@@ -85,7 +85,7 @@ htmlcov/
 /.claude/scheduled_tasks.lock
 
 # GPU driver flock (pid audit tail; local mutex — not source of truth)
-/signedkan_wip/experiments/results/.cuda_job_serial.lock
+/hymeko_neuro/experiments/results/.cuda_job_serial.lock
 
 # Rust subcrate build artifacts
 **/target/

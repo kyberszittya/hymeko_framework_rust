@@ -5,10 +5,10 @@ User idea, 2026-05-05 evening:
 > clusters based on information theory"
 
 This connects to four existing threads in the codebase:
-- `signedkan_wip/src/run_path_i_total_correlation.py` — Path I total
+- `hymeko_neuro/run_path_i_total_correlation.py` — Path I total
   correlation MI experiments (memory entry from 2026-04-26)
-- `signedkan_wip/src/cross_branch_reg.py` — cross-branch info regulariser
-- `signedkan_wip/src/entropy_reg.py` — Lyapunov-safe spectral entropy
+- `hymeko_neuro/cross_branch_reg.py` — cross-branch info regulariser
+- `hymeko_neuro/entropy_reg.py` — Lyapunov-safe spectral entropy
 - The empirical "regime split" we locked in today: balance vs unbalanced
   axiom is graph-conditional
 

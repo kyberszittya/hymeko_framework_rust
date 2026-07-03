@@ -2,9 +2,9 @@
 
 Date: 2026-06-04
 Plan: `docs/plans/2026-06-04-klp-skyline/plan.{tex,pdf,tikz,mmd}`
-Implementation: `signedkan_wip/src/core/abb_walks.py`
+Implementation: `hymeko_neuro/hyperedge/abb_walks.py`
                 (`_ssg_pareto_filter_sweep_2d`, `_ssg_pareto_filter_brute`)
-Tests: `signedkan_wip/tests/test_ssg_pareto_filter.py` — **31/31 PASSED**
+Tests: `hymeko_neuro/tests/test_ssg_pareto_filter.py` — **31/31 PASSED**
 
 ## 0. Headline
 
@@ -63,7 +63,7 @@ bottleneck of the SSG-walk pipeline.
 
 ## 3. Test inventory (31/31 PASSED)
 
-`signedkan_wip/tests/test_ssg_pareto_filter.py`:
+`hymeko_neuro/tests/test_ssg_pareto_filter.py`:
 
 ### Equivalence (15 + 6 + 2 = 23)
 
@@ -123,7 +123,7 @@ the reference specification:
 
 ## 6. CORE.YAML preservation
 
-No CORE.YAML items touched. `signedkan_wip` is not core-protected;
+No CORE.YAML items touched. `hymeko_neuro` is not core-protected;
 the public function signature `ssg_pareto_filter(walks_v,
 walks_signs, score_axes)` is unchanged.
 
@@ -131,8 +131,8 @@ walks_signs, score_axes)` is unchanged.
 
 | file | change |
 |---|---|
-| `signedkan_wip/src/core/abb_walks.py` | refactored `ssg_pareto_filter` to dispatch; added `_ssg_pareto_filter_brute` (extracted from original) + `_ssg_pareto_filter_sweep_2d` (new) |
-| `signedkan_wip/tests/test_ssg_pareto_filter.py` | new test module (31 tests) |
+| `hymeko_neuro/hyperedge/abb_walks.py` | refactored `ssg_pareto_filter` to dispatch; added `_ssg_pareto_filter_brute` (extracted from original) + `_ssg_pareto_filter_sweep_2d` (new) |
+| `hymeko_neuro/tests/test_ssg_pareto_filter.py` | new test module (31 tests) |
 | `docs/plans/2026-06-04-klp-skyline/plan.{tex,pdf,tikz,mmd}` | new plan (4-format) |
 | `reports/2026-06-04-klp-skyline.md` (this) | new report |
 
@@ -140,7 +140,7 @@ walks_signs, score_axes)` is unchanged.
 
 - `reports/2026-06-04-msg-abb-ssg-unified-implementation.{md,tex,pdf}`
   (App. A.8: the brute `ssg_pareto_filter` listing it replaces).
-- `signedkan_wip/src/core/abb_walks.py` source comment
+- `hymeko_neuro/hyperedge/abb_walks.py` source comment
   `# O(N²·D) brute force; fine for top_k ~ 10⁴ walks. Vectorising to
   # an O(N log N) skyline requires axis-specific sort + sweep that
   # we can write later if profiling demands it.`

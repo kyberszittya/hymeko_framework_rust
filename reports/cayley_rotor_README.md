@@ -31,10 +31,10 @@ removal of the leakage channel.
 
 ## Contents
 
-- `signedkan_wip/src/embeddings/cayley_rotor.py` — the primitive (+ tests).
-- `signedkan_wip/src/baselines/cayley_rotor_baseline.py` — signed-link strategies
+- `hymeko_neuro/graph/embeddings/cayley_rotor.py` — the primitive (+ tests).
+- `hymeko_neuro/baselines/cayley_rotor_baseline.py` — signed-link strategies
   (rotor, rotor+cycles, jumped cycles, SiGAT-with-rotor) for the audit harness.
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` — HSiKAN injection driver
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` — HSiKAN injection driver
   (`--head bilinear --dedup`), with the leakage shuffle-gate.
 - `docs/articles/cayley-rotor-embeddings/article.{tex,pdf}` — the write-up.
 - `docs/plans/2026-06-1{6,7}-*` — plans.
@@ -45,10 +45,10 @@ removal of the leakage channel.
 
 ```
 # signed-link audit (strict + shuffle gate), any registered model:
-python -m signedkan_wip.experiments.runs.run_baseline_audit \
+python -m hymeko_neuro.experiments.runs.run_baseline_audit \
     --model cayley_rotor --dataset bitcoin_otc --seed 0 [--shuffle-train-signs]
 # HSiKAN with the rotor, honest held-out protocol:
-python -m signedkan_wip.experiments.runs.run_hsikan_rotor \
+python -m hymeko_neuro.experiments.runs.run_hsikan_rotor \
     --dataset bitcoin_otc --embed rotor --head bilinear --dedup --seed 0
 ```
 

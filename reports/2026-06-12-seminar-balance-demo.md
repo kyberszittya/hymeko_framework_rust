@@ -1,7 +1,7 @@
 # Seminar demo program — plan-item 5: `balance` demo (affective structural balance)
 
 **Date:** 2026-06-12 · **Plan:** `docs/plans/2026-06-10-seminar-demos-remaining/` §Item 5
-· **Spec:** `signedkan_wip/demos/SEMINAR_DEMOS.md` §1
+· **Spec:** `hymeko_neuro/demos/SEMINAR_DEMOS.md` §1
 
 ## Summary
 Added the `balance` demo — the seminar opener (slide 12). Loads a signed
@@ -9,7 +9,7 @@ Added the `balance` demo — the seminar opener (slide 12). Loads a signed
 `enumerate_top_k_cycles_rs` path, classifies each cycle by **sign-product**, and
 reports **structural balance** = fraction of cycles with positive sign-product;
 frustration = 1 − balance. The most-frustrated cycles are surfaced and drawn.
-Runs as `python -m signedkan_wip.demos.seminar balance [--graph planted|camps|karate]`.
+Runs as `python -m hymeko_neuro.demos.seminar balance [--graph planted|camps|karate]`.
 
 The per-cycle sign-product is a Python reduction over the Rust-enumerated pool
 (CLAUDE.md §6.5 #2: enumeration is the Rust algorithm; the reduction is trivial
@@ -21,11 +21,11 @@ cap; a binding cap is detected and reported as a lower-bound caveat (§2 contrac
 ## Files touched
 | LOC | File | |
 |---:|---|---|
-| 246 | `signedkan_wip/demos/seminar/demos/balance.py` | new — `BalanceDemo`, `balance_statistics`, `cycle_sign_products`, fixtures |
-| +60 | `signedkan_wip/src/demo/plotting.py` | new `frustration_figure` + 3 private draw/prune helpers |
-| 152 | `signedkan_wip/tests/test_seminar_balance.py` | new — 13 tests |
-| +2 | `signedkan_wip/demos/seminar/demos/__init__.py` | register `BalanceDemo` |
-| ±6 | `signedkan_wip/demos/PRESENTER_RUNBOOK.md` | balance + latency → READY |
+| 246 | `hymeko_neuro/demos/seminar/demos/balance.py` | new — `BalanceDemo`, `balance_statistics`, `cycle_sign_products`, fixtures |
+| +60 | `hymeko_neuro/experiments/demo/plotting.py` | new `frustration_figure` + 3 private draw/prune helpers |
+| 152 | `hymeko_neuro/tests/test_seminar_balance.py` | new — 13 tests |
+| +2 | `hymeko_neuro/demos/seminar/demos/__init__.py` | register `BalanceDemo` |
+| ±6 | `hymeko_neuro/demos/PRESENTER_RUNBOOK.md` | balance + latency → READY |
 
 ## CORE.YAML items touched
 **None.** `src/demo/plotting.py`, `datasets`, and `demos/seminar` are all

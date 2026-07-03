@@ -72,7 +72,7 @@ step; torch is a §1 CORE-pinned dep).
   already exits non-zero on failure; the orchestrator now uses the exit code as
   the authoritative gate signal (`reports/2026-06-15-hero-demo-gate-exitcode.md`).
 - Phase 3 (Gömb/Soma perception) — needs Soma vision round-tripped through
-  `.hymeko` (currently Python-only in `signedkan_wip`).
+  `.hymeko` (currently Python-only in `hymeko_neuro`).
 - Optional: a single scenario that pairs a robot *and* its perception net in one
   source (today robots and learners are separate scenarios under one gate).
 

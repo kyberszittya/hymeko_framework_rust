@@ -94,11 +94,11 @@ dataset is doing what it's going to do.
 
 | File | Status | LOC |
 | --- | --- | --- |
-| `signedkan_wip/src/hymeko_gomb/cascade.py` | extended | +160 (new `GombWithOuterHSIKAN` class + 4 `GombConfig` fields) |
-| `signedkan_wip/src/hymeko_gomb/__init__.py` | extended | +3 (export) |
-| `signedkan_wip/experiments/runs/run_gomb_smoke.py` | extended | +30 (`--model outer_hsikan_gomb` + 4 CLI flags) |
-| `signedkan_wip/tests/test_outer_hsikan_gomb.py` | new | 162 (8 unit tests) |
-| `signedkan_wip/experiments/run_outer_hsikan_gomb_overnight_2026_05_20.sh` | new | 118 |
+| `hymeko_neuro/models/hymeko_gomb/cascade.py` | extended | +160 (new `GombWithOuterHSIKAN` class + 4 `GombConfig` fields) |
+| `hymeko_neuro/models/hymeko_gomb/__init__.py` | extended | +3 (export) |
+| `hymeko_neuro/experiments/runs/run_gomb_smoke.py` | extended | +30 (`--model outer_hsikan_gomb` + 4 CLI flags) |
+| `hymeko_neuro/tests/test_outer_hsikan_gomb.py` | new | 162 (8 unit tests) |
+| `hymeko_neuro/experiments/run_outer_hsikan_gomb_overnight_2026_05_20.sh` | new | 118 |
 | `docs/plans/2026-05-20-outer-hsikan-gomb/{plan.tex,plan.pdf,plan.tikz,plan_figure.pdf,plan.mmd}` | new | 4-format plan |
 | `reports/2026-05-20-outer-hsikan-gomb.md` | new | this file |
 
@@ -110,7 +110,7 @@ None.
 
 | Suite | Result |
 | --- | --- |
-| `pytest signedkan_wip/tests/test_outer_hsikan_gomb.py` | **8 / 8 pass** |
+| `pytest hymeko_neuro/tests/test_outer_hsikan_gomb.py` | **8 / 8 pass** |
 | All prior interpret / side / arity / fuzzy / stacked-middle / gomb-signature suites | 71 / 71 (no regression) |
 | Bitcoin Alpha smoke at outer-d ∈ {1, 2, 4} | all complete |
 | Slashdot grid: 6/9 cells complete (d=4 × 3 seeds OOM at CR spline) | — |
@@ -169,9 +169,9 @@ Clean.
 - **Total wall:** ~5 minutes (Gömb is fast).
 - **GPU:** RTX 2070 SUPER 8 GiB.
 - **JSONL:**
-  `signedkan_wip/experiments/results/outer_hsikan_gomb_overnight_2026_05_20.jsonl`
+  `hymeko_neuro/experiments/results/outer_hsikan_gomb_overnight_2026_05_20.jsonl`
 - **Plain-Gömb baseline:** taken from
-  `signedkan_wip/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl`
+  `hymeko_neuro/experiments/results/stacked_gomb_overnight_2026_05_20.jsonl`
   (the depth=1 cells from this morning).
 
 ## Acceptance check

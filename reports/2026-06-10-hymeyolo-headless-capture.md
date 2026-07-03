@@ -33,10 +33,10 @@ goal. The GUI module re-exports `load_or_train` / `predict` /
 
 | File | Change | Lines |
 |---|---|---|
-| `signedkan_wip/src/vision/demo_hymeyolo_core.py` | **new** — moved inference/render core + headless capture | +544 |
-| `signedkan_wip/src/vision/demo_hymeyolo_tk.py` | edit — import core, drop moved fns + unused imports | 432→213 (-240/+17) |
-| `signedkan_wip/tests/test_demo_headless.py` | **new** — unit/integ/perf/regression tests | +159 |
-| `signedkan_wip/src/vision/DEMO_README.md` | edit — document headless mode | +27 |
+| `hymeko_neuro/experiments/vision/demo_hymeyolo_core.py` | **new** — moved inference/render core + headless capture | +544 |
+| `hymeko_neuro/experiments/vision/demo_hymeyolo_tk.py` | edit — import core, drop moved fns + unused imports | 432→213 (-240/+17) |
+| `hymeko_neuro/tests/test_demo_headless.py` | **new** — unit/integ/perf/regression tests | +159 |
+| `hymeko_neuro/experiments/vision/DEMO_README.md` | edit — document headless mode | +27 |
 | `docs/plans/2026-06-10-hymeyolo-headless-capture/{plan.tex,pdf,tikz,mmd}` | **new** — plan artifacts | — |
 
 Net algorithm code is roughly flat: the 544-line core is ~310 lines
@@ -45,7 +45,7 @@ moved verbatim from the GUI + ~230 new (headless capture + helpers).
 ## CORE.YAML items touched
 
 **None.** `CORE.YAML` freezes only the Rust core (parser, query LALR
-layer, HSMM ISA); nothing under `signedkan_wip/` is listed.
+layer, HSMM ISA); nothing under `hymeko_neuro/` is listed.
 
 ## New / removed dependencies
 
@@ -141,7 +141,7 @@ path.
 
 ## Open issues / follow-up
 
-- The unified `python -m signedkan_wip.src.demo <mode>` dispatcher
+- The unified `python -m hymeko_neuro.experiments.demo <mode>` dispatcher
   (Demo 1–6 in `docs/INFERENCE_DEMOS_OUTLINE.md`) is still unbuilt; this
   delivers Demo 4 standalone. Wiring `yolo` into that dispatcher is a
   later step.

@@ -43,18 +43,18 @@ features beyond degree (signed triangle participation, local balance/frustration
 ## Files touched
 
 **Modified (mine):**
-- `signedkan_wip/src/embeddings/signed_rotor_propagation.py` — learnable per-block
+- `hymeko_neuro/graph/embeddings/signed_rotor_propagation.py` — learnable per-block
   retention `α_b = retention_floor + exp(θ_b)` (`learnable`, `n_blocks`,
   `retention_floor` ctor args; `self_retention()`); init-at-`self_weight` parity;
   fixed-scalar path unchanged (default).
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` — `RotorInjector` +
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` — `RotorInjector` +
   `run()` thread `prop_learnable`/`rotor_prop_learnable`; `--rotor-prop-learnable`
   CLI flag; provenance field.
-- `signedkan_wip/tests/test_signed_rotor_propagation.py` — 6 new: init parity,
+- `hymeko_neuro/tests/test_signed_rotor_propagation.py` — 6 new: init parity,
   on-sphere, gradient-to-retention, n_blocks-required, block-mismatch, floor bound.
-- `signedkan_wip/tests/test_hsikan_rotor.py` — learnable-path run smoke + provenance.
+- `hymeko_neuro/tests/test_hsikan_rotor.py` — learnable-path run smoke + provenance.
 
-**Artifacts:** `signedkan_wip/experiments/results/rotorprop_learnable_ab.jsonl`
+**Artifacts:** `hymeko_neuro/experiments/results/rotorprop_learnable_ab.jsonl`
 (40 rows, 5-seed Phase-1 A/B). Phase-2 rounds scan is seed-0 diagnostic (stdout).
 
 **CORE.YAML items touched:** none.

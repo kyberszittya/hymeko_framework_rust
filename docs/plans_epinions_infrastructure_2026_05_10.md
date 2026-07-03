@@ -60,7 +60,7 @@ If this test fails, the infrastructure is wrong. If this test passes, deploy on 
 
 ### Implementation sketch
 
-1. New module `signedkan_wip/src/sparse_attention.py`. Adds a `SparseAttentionPool(nn.Module)` parallel to the existing dense attention path.
+1. New module `hymeko_neuro/sparse_attention.py`. Adds a `SparseAttentionPool(nn.Module)` parallel to the existing dense attention path.
 2. Per-query scoring head: `score = h_query @ W_score @ h_cycle + b` (cheap, $O(d \cdot d')$ per cycle).
 3. Top-K selection: `torch.topk(scores, K)` with a straight-through estimator for gradient flow ($\partial K / \partial \text{score}$ ignored; standard practice). Optional: differentiable Gumbel-top-K for full gradient flow if straight-through stalls training.
 4. Full attention computed only over the K selected cycles per query.
@@ -101,7 +101,7 @@ A graph where cycle importance depends on **vertex features**, not just cycle st
 
 ### Implementation sketch
 
-1. New module `signedkan_wip/src/learnable_incidence.py`.
+1. New module `hymeko_neuro/learnable_incidence.py`.
 2. Several variants:
    - **Linear**: $M_e^{learned}[v, c] = M_e^{fixed}[v, c] \cdot \sigma(W \cdot h_v + b)$. Cheapest; one scalar per vertex.
    - **Bilinear**: $M_e^{learned}[v, c] = M_e^{fixed}[v, c] \cdot \sigma(h_v^{T} W h_c)$ where $h_c$ is a per-cycle embedding. Captures interaction.
@@ -124,7 +124,7 @@ Estimated effort: **2 days** (more involved than Path A; requires touching the e
 
 ## Synthetic test harness — common to A and B
 
-One generator script: `signedkan_wip/src/synthetic_signed_graphs.py`.
+One generator script: `hymeko_neuro/data/synthetic_signed_graphs.py`.
 
 | dataset | size | role |
 |---|---|---|
@@ -165,8 +165,8 @@ edge_cr + balance + cache 5-seed result on Epinions
 
 ## What lands this morning regardless of result
 
-1. `signedkan_wip/src/synthetic_signed_graphs.py` — generator with three test sets + oracle baselines.
-2. `signedkan_wip/tests/test_synthetic_signed_graphs.py` — sanity tests for the generator itself (does the SBM look like an SBM? Are signal cycles labelled correctly?).
+1. `hymeko_neuro/data/synthetic_signed_graphs.py` — generator with three test sets + oracle baselines.
+2. `hymeko_neuro/tests/test_synthetic_signed_graphs.py` — sanity tests for the generator itself (does the SBM look like an SBM? Are signal cycles labelled correctly?).
 3. This document, frozen.
 
 These are useful even if Epinions breaks through — they become the standard regression suite for any future architectural lever (e.g., the Triton kernel work could have been validated against `easy_sbm` before going to Slashdot).
@@ -176,7 +176,7 @@ These are useful even if Epinions breaks through — they become the standard re
 ## Files of record
 
 - `docs/plans_epinions_infrastructure_2026_05_10.md` — this document
-- `signedkan_wip/src/synthetic_signed_graphs.py` — generator (to land)
-- `signedkan_wip/tests/test_synthetic_signed_graphs.py` — generator tests (to land)
-- `signedkan_wip/src/sparse_attention.py` — Path A implementation (planned)
-- `signedkan_wip/src/learnable_incidence.py` — Path B implementation (planned)
+- `hymeko_neuro/data/synthetic_signed_graphs.py` — generator (to land)
+- `hymeko_neuro/tests/test_synthetic_signed_graphs.py` — generator tests (to land)
+- `hymeko_neuro/sparse_attention.py` — Path A implementation (planned)
+- `hymeko_neuro/learnable_incidence.py` — Path B implementation (planned)

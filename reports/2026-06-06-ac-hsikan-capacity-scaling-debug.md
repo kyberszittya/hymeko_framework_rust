@@ -300,9 +300,9 @@ count grows ~4×, accuracy either improves or doesn't). Worth running.
 
 ## Files touched
 
-- [signedkan_wip/src/ac_hsikan/config.py](../signedkan_wip/src/ac_hsikan/config.py) — `use_dynamic_topk`, `dynamic_topk_static_k`, `long_cycle_prior_alpha`.
-- [signedkan_wip/src/ac_hsikan/layer.py](../signedkan_wip/src/ac_hsikan/layer.py) — mixed-selection candidate index path; long-cycle prior weighting.
-- [signedkan_wip/experiments/ac_hsikan_imdb_smoke.py](../signedkan_wip/experiments/ac_hsikan_imdb_smoke.py) — `--dynamic-topk`, `--dyn-topk-static-k`, `--long-cycle-prior`, `--arity-bias`, `--top-k`, `--lr-schedule`, `--grad-clip`, `--weight-decay`, `--sign-head-hidden`.
+- [hymeko_neuro/models/ac_hsikan/config.py](../hymeko_neuro/models/ac_hsikan/config.py) — `use_dynamic_topk`, `dynamic_topk_static_k`, `long_cycle_prior_alpha`.
+- [hymeko_neuro/models/ac_hsikan/layer.py](../hymeko_neuro/models/ac_hsikan/layer.py) — mixed-selection candidate index path; long-cycle prior weighting.
+- [hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py](../hymeko_neuro/experiments/ac_hsikan_imdb_smoke.py) — `--dynamic-topk`, `--dyn-topk-static-k`, `--long-cycle-prior`, `--arity-bias`, `--top-k`, `--lr-schedule`, `--grad-clip`, `--weight-decay`, `--sign-head-hidden`.
 
 ## Result artefacts
 
@@ -320,7 +320,7 @@ count grows ~4×, accuracy either improves or doesn't). Worth running.
 
 ## CORE.YAML items touched
 
-None. `signedkan_wip/` is non-core.
+None. `hymeko_neuro/` is non-core.
 
 ## What this enables for the paper
 

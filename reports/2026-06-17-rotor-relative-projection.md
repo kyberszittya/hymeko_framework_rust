@@ -13,10 +13,10 @@ The woken geom_attn readout still lost to bilinear. The steer: bilinear `γ h_u^
 - `run_hsikan_rotor.py`: `--head rotor_rel` (route A: bilinear + relative-rotor term, fed by `inj.emb.rotors`), `--n-refs` (route B), provenance fields.
 
 ## Files touched
-- `signedkan_wip/src/embeddings/cayley_rotor.py` (+~45 LOC: `quat_mul`/`quat_conjugate`/`rotors`/`n_refs`; `forward` refactor)
-- `signedkan_wip/src/core/rotor_relative_head.py` (new, ~60 LOC)
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` (+~20 LOC: head, n_refs, wiring, provenance)
-- `signedkan_wip/tests/test_cayley_rotor.py` (+6 tests; 1 shape test updated for the `n_refs` axis), `test_rotor_relative_head.py` (new, 5 tests), `test_hsikan_rotor.py` (+3 tests)
+- `hymeko_neuro/graph/embeddings/cayley_rotor.py` (+~45 LOC: `quat_mul`/`quat_conjugate`/`rotors`/`n_refs`; `forward` refactor)
+- `hymeko_neuro/hyperedge/rotor_relative_head.py` (new, ~60 LOC)
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` (+~20 LOC: head, n_refs, wiring, provenance)
+- `hymeko_neuro/tests/test_cayley_rotor.py` (+6 tests; 1 shape test updated for the `n_refs` axis), `test_rotor_relative_head.py` (new, 5 tests), `test_hsikan_rotor.py` (+3 tests)
 - `docs/plans/2026-06-17-rotor-relative-projection/plan.{tex,pdf,tikz,mmd}` (new)
 - CORE.YAML items touched: **none**. (Verified `hymeko_hre` is *not* in CORE.YAML — protected crates are `hymeko_core`/`hymeko_query`/`hymeko_client`/`hymeko_daemon`/`parser`; `on_unknown_path: treat_as_non_core`. No new Cargo/pip dep — algebra is plain torch.)
 

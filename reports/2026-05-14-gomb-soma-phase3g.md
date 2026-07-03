@@ -22,9 +22,9 @@ gate) → abstractions.
 
 | File | LOC | Notes |
 |---|---|---|
-| [signedkan_wip/src/hymeko_gomb/soma/polygon_layer.py](../signedkan_wip/src/hymeko_gomb/soma/polygon_layer.py) | 121 | `PolygonConvLayer` — cyclic/reflection invariant, sign-branched |
-| [signedkan_wip/src/hymeko_gomb/soma/__init__.py](../signedkan_wip/src/hymeko_gomb/soma/__init__.py) | +1 / -0 | re-export |
-| [signedkan_wip/tests/test_gomb_soma_polygon_layer.py](../signedkan_wip/tests/test_gomb_soma_polygon_layer.py) | 210 | 10 unit tests including planted-4-cycle SBM smoke |
+| [hymeko_neuro/models/hymeko_gomb/soma/polygon_layer.py](../hymeko_neuro/models/hymeko_gomb/soma/polygon_layer.py) | 121 | `PolygonConvLayer` — cyclic/reflection invariant, sign-branched |
+| [hymeko_neuro/models/hymeko_gomb/soma/__init__.py](../hymeko_neuro/models/hymeko_gomb/soma/__init__.py) | +1 / -0 | re-export |
+| [hymeko_neuro/tests/test_gomb_soma_polygon_layer.py](../hymeko_neuro/tests/test_gomb_soma_polygon_layer.py) | 210 | 10 unit tests including planted-4-cycle SBM smoke |
 
 ## 3. CORE.YAML items touched
 
@@ -82,7 +82,7 @@ cyclic symmetry.
 ## 6. Test results
 
 ```
-$ python -m pytest signedkan_wip/tests/test_gomb_soma_polygon_layer.py -v
+$ python -m pytest hymeko_neuro/tests/test_gomb_soma_polygon_layer.py -v
 test_rejects_k_arity_below_3                  PASSED
 test_construction_and_param_count             PASSED
 test_param_count_independent_of_k_arity       PASSED
@@ -130,7 +130,7 @@ well-conditioned averaging operation.
 ## 9. Static analysis
 
 ```
-$ ruff check signedkan_wip/src/hymeko_gomb/soma/polygon_layer.py
+$ ruff check hymeko_neuro/models/hymeko_gomb/soma/polygon_layer.py
    (clean)
 ```
 
@@ -187,8 +187,8 @@ is small enough that the full vertex-tuple (not just the mean) is
 worth exploiting.
 
 Adds:
-* `signedkan_wip/src/hymeko_gomb/soma/triangle_layer.py`
-* `signedkan_wip/tests/test_gomb_soma_triangle_layer.py`
+* `hymeko_neuro/models/hymeko_gomb/soma/triangle_layer.py`
+* `hymeko_neuro/tests/test_gomb_soma_triangle_layer.py`
 * SBM smoke with planted balanced/frustrated triads.
 
 No phase 4 work in this commit, per the rule.
@@ -196,7 +196,7 @@ No phase 4 work in this commit, per the rule.
 ## 14. Reproducibility
 
 ```python
-from signedkan_wip.src.hymeko_gomb.soma import (
+from hymeko_neuro.models.hymeko_gomb.soma import (
     HypergraphConvConfig, PolygonConvLayer,
 )
 

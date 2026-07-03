@@ -18,10 +18,10 @@ cost-minimum by **+0.087 mean r²** averaged over V1/V2/V4.
 | --- | --- | --- | --- |
 | `docs/plans/2026-05-20-pgraph-cortical-sweep/plan.{tex,pdf,mmd,tikz}` | new | 4-format plan (2 pp PDF) | Written before code |
 | `data/hsikan/sweep_msg_cortical.hymeko` | **new** | 65 | 7-unit P-graph: 3 widths × 2 binning depths × 2 PLS ranks |
-| `signedkan_wip/src/cortical_pgraph_mapping.py` | **new** | 100 | Unit-name → `CorticalBenchmarkExperiment` kwargs |
-| `signedkan_wip/experiments/runs/run_cortical_msg_sweep.py` | **new** | 195 | Driver; dry-run by default, `--train` runs Slice 1 |
-| `signedkan_wip/src/cortical/scoring.py` | minor fix | +3/-1 | n_components clip widened to also subtract from `n_features` and use `n_train_per_fold` (sklearn 1.8+ stricter) |
-| `signedkan_wip/tests/test_cortical_pgraph_mapping.py` | **new** | 65 | 5 unit tests pinning the unit→kwargs translation |
+| `hymeko_neuro/experiments/cortical_pgraph_mapping.py` | **new** | 100 | Unit-name → `CorticalBenchmarkExperiment` kwargs |
+| `hymeko_neuro/experiments/runs/run_cortical_msg_sweep.py` | **new** | 195 | Driver; dry-run by default, `--train` runs Slice 1 |
+| `hymeko_neuro/experiments/cortical/scoring.py` | minor fix | +3/-1 | n_components clip widened to also subtract from `n_features` and use `n_train_per_fold` (sklearn 1.8+ stricter) |
+| `hymeko_neuro/tests/test_cortical_pgraph_mapping.py` | **new** | 65 | 5 unit tests pinning the unit→kwargs translation |
 
 ## CORE.YAML items touched
 
@@ -76,7 +76,7 @@ No regressions on Phase 1-11 suites.
 ### New driver
 
 ```bash
-python -m signedkan_wip.experiments.runs.run_cortical_msg_sweep \
+python -m hymeko_neuro.experiments.runs.run_cortical_msg_sweep \
     --pgraph data/hsikan/sweep_msg_cortical.hymeko \
     --algorithm abb \
     --seed 0 \

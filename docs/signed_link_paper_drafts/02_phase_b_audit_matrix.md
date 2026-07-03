@@ -79,7 +79,7 @@ For each (method, dataset, protocol, seed) combination, the
 exact reproduction command is:
 
 ```bash
-PYTHONPATH=. python signedkan_wip/src/benchmarks/run_audit_cell.py \
+PYTHONPATH=. python hymeko_neuro/eval/benchmarks/run_audit_cell.py \
     --method   {sgcn|sigat|sgcl|sigformer|sesgformer|dadsgnn|gomb_strict|hsikan} \
     --dataset  {bitcoin_alpha|bitcoin_otc|slashdot|epinions|reddit_hyperlinks} \
     --protocol {leaky|strict} \

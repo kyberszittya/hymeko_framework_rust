@@ -7,10 +7,10 @@ single declared formula yields *both* the dense training signal (``ρ``) *and* t
 into one artifact. See ``docs/plans/2026-06-26-htl-reward-poc/``.
 
 This module is a thin **adapter**: it reuses the existing non-core HTL evaluator under
-``signedkan_wip/src/htl`` (``parse`` / ``robustness_at`` / ``HtlMonitor`` / ``HypergraphEvent``; operators
+``hymeko_neuro/eval/htl`` (``parse`` / ``robustness_at`` / ``HtlMonitor`` / ``HypergraphEvent``; operators
 ``AND/OR/NOT/G[a,b]/F[a,b]`` over ``ScalarPred``, robust-STL min/max semantics). It does **not**
 re-implement the logic engine. The bridge to that package mirrors the established
-``hymeko_ros2_demo/.../dashboard_node.py`` pattern (add ``signedkan_wip/src`` to ``sys.path``). The
+``hymeko_ros2_demo/.../dashboard_node.py`` pattern (add ``hymeko_neuro`` to ``sys.path``). The
 module-level predicate *registry* in that package is **not** used (CLAUDE.md §6.5 #11): metrics are passed
 through ``event.scalar_signals``, which ``signal_value`` resolves directly — the adapter mutates no global.
 
@@ -23,27 +23,18 @@ whole rollout) is non-Markovian (a reward machine) and is exposed only as the pe
 """
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 
-_REPO = Path(__file__).resolve().parents[2]   # hymeko_rl/control/htl_reward.py -> repo root
-# Bridge to the non-core HTL evaluator (same pattern as the ros2 dashboard). Insert once, only if absent.
-_HTL_SRC = _REPO / "signedkan_wip" / "src"
-if str(_HTL_SRC) not in sys.path:
-    sys.path.insert(0, str(_HTL_SRC))
-try:
-    from htl import HtlMonitor, HypergraphEvent, parse, robustness_at  # type: ignore[import-not-found]
-except ImportError as exc:  # a clear failure at import time, not deep inside a step
-    raise ImportError(
-        f"HTL evaluator not importable from {_HTL_SRC} — expected signedkan_wip/src/htl. "
-        f"Original error: {exc}") from exc
+# The HTL evaluator now lives in the merged package (hymeko_neuro.eval.htl) — a direct import, no sys.path bridge.
+from hymeko_neuro.eval.htl import HtlMonitor, HypergraphEvent, parse, robustness_at
 
 if TYPE_CHECKING:
-    from htl import HtlNode
+    from hymeko_neuro.eval.htl import HtlNode
 
+_REPO = Path(__file__).resolve().parents[2]   # hymeko_rl/control/htl_reward.py -> repo root
 _DEFAULT_SPEC = _REPO / "data" / "robotics" / "galambos_spec.htl"
 # The per-episode delivery verdict (temporal): did the coin ever reach the zone? Reported, not rewarded.
 _DELIVERY_VERDICT = "F[0,200](in_zone > 0.5)"

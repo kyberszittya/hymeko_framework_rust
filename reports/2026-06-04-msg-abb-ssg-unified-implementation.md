@@ -12,7 +12,7 @@ The dossier explained *what the algorithms are*; this document
 explains *where they live in the source tree, how they are wired
 together, and what tests / CLI tools / Python bindings expose them*.
 Updated 2026-06-04 with the walk-side trio that landed on 2026-06-03
-(`signedkan_wip/src/core/abb_walks.py` reference + `hymeko_graph::
+(`hymeko_neuro/hyperedge/abb_walks.py` reference + `hymeko_graph::
 topk_walks` Rust port + PyO3 binding).
 
 ## 1. Three application domains, one algorithmic trio
@@ -67,7 +67,7 @@ invariant:
 A non-admissible bound silently produces a wrong top-K result. The
 framework surfaces admissibility as a property-based test fixture
 (`tests/abb_global_topk.rs::ub_admissible_*` for cycles;
-`signedkan_wip/tests/test_abb_msg_ssg.py::test_path_scorer_admissibility`
+`hymeko_neuro/tests/test_abb_msg_ssg.py::test_path_scorer_admissibility`
 for walks). Four lemmas in
 `paper/abb_msg_ssg_signed_walks/algorithms.tex §4.4` prove
 admissibility for the four walk-side `PathScorer` implementations.
@@ -144,7 +144,7 @@ hymeko_graph/src/
 └── cycle_enum.rs                enumerate_simple_cycles + serial reference
 ```
 
-Python: `signedkan_wip/src/cycle_cache/api.py::cached_construct_k` →
+Python: `hymeko_neuro/graph/cycle_cache/api.py::cached_construct_k` →
 routes to `hymeko.enumerate_top_k_cycles_rs` /
 `enumerate_top_k_per_vertex_cycles_*` per `HSIKAN_TOPK_MODE` env.
 
@@ -162,7 +162,7 @@ hymeko_py/src/cycles/unsigned.rs     extended
                                          (BalanceScorer | FractionNegative
                                           | SignProductAbsScorer)
 
-signedkan_wip/src/core/
+hymeko_neuro/hyperedge/
 ├── reservoir.py                   NEW   ReservoirSampler (Vitter Algo R,
 │                                        Python objects) +
 │                                        NumpyReservoirSampler (Algo L,
@@ -182,7 +182,7 @@ signedkan_wip/src/core/
                                             even on hymeko-missing
                                             fallback)
 
-signedkan_wip/src/cycle_cache/strategies.py  NEW
+hymeko_neuro/graph/cycle_cache/strategies.py  NEW
     EnumeratedArrays                Output dataclass (v, sigma,
                                     edge_signs, is_closed)
     TupleEnumerator (ABC)           enumerate + cache_key_params
@@ -203,7 +203,7 @@ signedkan_wip/src/cycle_cache/strategies.py  NEW
     cached_construct(g, kind, **kw) Single-line dispatcher
 ```
 
-Tests: `signedkan_wip/tests/test_abb_msg_ssg.py` (16 tests),
+Tests: `hymeko_neuro/tests/test_abb_msg_ssg.py` (16 tests),
 `test_reservoir.py` (20 tests), `test_tuple_enumerator.py` (18 tests),
 `hymeko_graph::topk_walks::tests` (8 Rust tests including brute-force
 equivalence over walk_len × top_k matrix).
@@ -231,7 +231,7 @@ edge is found); the walk DFS calls it at the canonical-form check
 
 ### 4.2 The Python `PathScorer` ABC mirrors `BoundedScorer`
 
-`signedkan_wip/src/core/path_scorers.py::PathScorer` is the Python-
+`hymeko_neuro/hyperedge/path_scorers.py::PathScorer` is the Python-
 side analog:
 
 ```python
@@ -272,15 +272,15 @@ the migration sketch.
 | P-graph decision-mapping SSG | `hymeko_pgraph/tests/ssg_decision_mapping.rs` | 5 | Including Example 3.3 = 3,465 structures via the decision-mapping recursion |
 | Pimentel distractor fixture | `hymeko_pgraph/tests/pimentel_distractors.rs` | 4 | MSG=7, SSG=19, ABB top-3 = 9/12/13, S2/S4 offender names |
 | Walk ABB Rust | `hymeko_graph/src/topk_walks.rs::tests` | 8 | Brute-force equivalence over walk_len ∈ {2,3} × top_k ∈ {1,3,7,100} |
-| Walk MSG / ABB / SSG Python | `signedkan_wip/tests/test_abb_msg_ssg.py` | 16 | Admissibility on random fixtures, ABB-vs-brute, SSG Pareto, strategy round-trips |
-| Reservoir samplers | `signedkan_wip/tests/test_reservoir.py` | 20 | Algorithm R + L correctness, hot-path no-alloc white-box probe |
-| Strategy adapters | `signedkan_wip/tests/test_tuple_enumerator.py` | 18 | Strategy + Adapter round-trips, legacy wrapper equivalence (byte-identical cache keys) |
-| Cycle cache | `signedkan_wip/tests/test_cycle_cache.py` | 13 | LazyCyclePool semantics, pack/unpack symmetry |
-| malloc_trim helper | `signedkan_wip/tests/test_malloc_trim.py` | 5 | Glibc heap release behaviour |
+| Walk MSG / ABB / SSG Python | `hymeko_neuro/tests/test_abb_msg_ssg.py` | 16 | Admissibility on random fixtures, ABB-vs-brute, SSG Pareto, strategy round-trips |
+| Reservoir samplers | `hymeko_neuro/tests/test_reservoir.py` | 20 | Algorithm R + L correctness, hot-path no-alloc white-box probe |
+| Strategy adapters | `hymeko_neuro/tests/test_tuple_enumerator.py` | 18 | Strategy + Adapter round-trips, legacy wrapper equivalence (byte-identical cache keys) |
+| Cycle cache | `hymeko_neuro/tests/test_cycle_cache.py` | 13 | LazyCyclePool semantics, pack/unpack symmetry |
+| malloc_trim helper | `hymeko_neuro/tests/test_malloc_trim.py` | 5 | Glibc heap release behaviour |
 | Pre-existing Rust | `hymeko_graph/src/*.rs::tests` | ~75 | Cycle enumerators, balance pruners, vertex filters, Friedler P-graph axiom pruner |
 
 **Total reproducible:** 141 hymeko_pgraph tests + 113 hymeko_graph
-tests + 72 signedkan_wip tests = 326 tests across the three layers,
+tests + 72 hymeko_neuro tests = 326 tests across the three layers,
 all green at the 2026-06-03 freeze.
 
 ## 6. CLI surface (reproducible without Python imports)
@@ -321,7 +321,7 @@ python scripts/pgraph/run_examples.py --regimes   # regime comparison
 ### 6.4 HSiKAN cycle / walk pool (Python)
 
 ```python
-from signedkan_wip.src.cycle_cache import cached_construct
+from hymeko_neuro.graph.cycle_cache import cached_construct
 
 # MSG (uniform reservoir sample)
 pool = cached_construct(g, "msg_walk", walk_len=4, max_walks=100_000)
@@ -850,7 +850,7 @@ fn dfs<S: BoundedScorer>(
 
 ### A.5 NumpyReservoirSampler — Vitter Algorithm L on a numpy buffer
 
-Source: `signedkan_wip/src/core/reservoir.py`. The walk-side MSG
+Source: `hymeko_neuro/hyperedge/reservoir.py`. The walk-side MSG
 primitive: zero per-offer Python allocation, expected RNG cost
 O(K log(N/K)) via Algorithm L. The hot path on a rejected offer is a
 single integer compare and an increment.
@@ -922,7 +922,7 @@ class NumpyReservoirSampler:
 
 ### A.6 PathScorer ABC + the four concrete scorers
 
-Source: `signedkan_wip/src/core/path_scorers.py`. Each scorer must
+Source: `hymeko_neuro/hyperedge/path_scorers.py`. Each scorer must
 satisfy the admissibility postcondition; the four admissibility
 proofs appear in §5 of the paper.
 
@@ -1011,8 +1011,8 @@ class ShannonEntropyScorer(PathScorer):
 
 ### A.7 Python `ABBWalkEnumerator` strategy + Rust delegation
 
-Sources: `signedkan_wip/src/cycle_cache/strategies.py` (strategy
-class) + `signedkan_wip/src/core/abb_walks.py` (`abb_enumerate_walks`
+Sources: `hymeko_neuro/graph/cycle_cache/strategies.py` (strategy
+class) + `hymeko_neuro/hyperedge/abb_walks.py` (`abb_enumerate_walks`
 with the Rust delegation shim).
 
 ```python
@@ -1116,7 +1116,7 @@ def _try_rust_top_k_walks(
 
 ### A.8 SSG-walk Pareto filter (multi-axis)
 
-Source: `signedkan_wip/src/core/abb_walks.py`. The brute O(N² D)
+Source: `hymeko_neuro/hyperedge/abb_walks.py`. The brute O(N² D)
 skyline filter on the ABB(primary) pool.
 
 ```python

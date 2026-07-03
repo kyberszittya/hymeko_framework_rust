@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-16
 **Plan:** [docs/plans/2026-05-16-hymeyolo-ricci-weight-sweep/](../docs/plans/2026-05-16-hymeyolo-ricci-weight-sweep/) (tex/pdf/tikz/mmd)
-**Results dir:** [`signedkan_wip/experiments/results/hymeyolo_ricci_scale_sweep_20260516T002116Z/`](../signedkan_wip/experiments/results/hymeyolo_ricci_scale_sweep_20260516T002116Z/) (30 jsonl rows, orchestrator log)
+**Results dir:** [`hymeko_neuro/experiments/results/hymeyolo_ricci_scale_sweep_20260516T002116Z/`](../hymeko_neuro/experiments/results/hymeyolo_ricci_scale_sweep_20260516T002116Z/) (30 jsonl rows, orchestrator log)
 **Sweep window:** 2026-05-16 **02:21:16 → 06:53:50 CEST** (4 h 32 min total; mean per-run wall ≈ 543 s)
 **Verdict:** **No ricci-scale beats `s = 1.0` at significance; the sweep's headline finding is the mAP-bug correction itself.**
 
@@ -17,7 +17,7 @@ Two changes shipped together as the night's source patch:
   byte-identical to pre-patch behaviour (pinned by a unit test).
 
 * **mAP@0.5 GT-consumption fix** in `compute_detection_metrics`
-  (`signedkan_wip/src/vision/train_circles_ricci.py` lines
+  (`hymeko_neuro/experiments/vision/train_circles_ricci.py` lines
   ~290–320). The prior implementation never marked GTs as
   consumed during greedy matching, so multiple predictions
   could all be credited TP against the same GT — recall climbed
@@ -87,24 +87,24 @@ queued (see §5) but its expected lift on a 0.504 baseline at
 
 | File | + / − | Change |
 |------|------:|--------|
-| [`signedkan_wip/src/vision/hymeyolo_circles_ricci.py`](../signedkan_wip/src/vision/hymeyolo_circles_ricci.py) | +24 / −2 | `ricci_scale: float = 1.0` kwarg; multiply Ricci features by it on the box + circle paths |
-| [`signedkan_wip/src/vision/hymeyolo_ricci_kcycle.py`](../signedkan_wip/src/vision/hymeyolo_ricci_kcycle.py) | +12 / −1 | same `ricci_scale` mirror for API consistency |
-| [`signedkan_wip/src/vision/train_circles_ricci.py`](../signedkan_wip/src/vision/train_circles_ricci.py) | +60 / −15 | mAP greedy-match fix; `--ricci-scale` + `--warm-start` + `--warmstart-bootstrap-n` CLI; jsonl persistence of all three |
-| [`signedkan_wip/tests/test_hymeyolo_ricci_scale.py`](../signedkan_wip/tests/test_hymeyolo_ricci_scale.py) | +258 / 0 | 12 unit tests (param count, byte-identical at default, scale=0 kills Ricci gradient, mAP cap at 1.0, GT consumed once, partial-match correctness, FPS spread, Gaussian smooth properties) |
-| [`signedkan_wip/experiments/run_hymeyolo_ricci_scale_sweep_2026_05_16.sh`](../signedkan_wip/experiments/run_hymeyolo_ricci_scale_sweep_2026_05_16.sh) | new | sweep orchestrator |
-| [`signedkan_wip/experiments/analyse_ricci_scale_sweep_2026_05_16.py`](../signedkan_wip/experiments/analyse_ricci_scale_sweep_2026_05_16.py) | new | aggregator + paired-Δ + mAP > 1 sanity check |
+| [`hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py`](../hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py) | +24 / −2 | `ricci_scale: float = 1.0` kwarg; multiply Ricci features by it on the box + circle paths |
+| [`hymeko_neuro/experiments/vision/hymeyolo_ricci_kcycle.py`](../hymeko_neuro/experiments/vision/hymeyolo_ricci_kcycle.py) | +12 / −1 | same `ricci_scale` mirror for API consistency |
+| [`hymeko_neuro/experiments/vision/train_circles_ricci.py`](../hymeko_neuro/experiments/vision/train_circles_ricci.py) | +60 / −15 | mAP greedy-match fix; `--ricci-scale` + `--warm-start` + `--warmstart-bootstrap-n` CLI; jsonl persistence of all three |
+| [`hymeko_neuro/tests/test_hymeyolo_ricci_scale.py`](../hymeko_neuro/tests/test_hymeyolo_ricci_scale.py) | +258 / 0 | 12 unit tests (param count, byte-identical at default, scale=0 kills Ricci gradient, mAP cap at 1.0, GT consumed once, partial-match correctness, FPS spread, Gaussian smooth properties) |
+| [`hymeko_neuro/experiments/run_hymeyolo_ricci_scale_sweep_2026_05_16.sh`](../hymeko_neuro/experiments/run_hymeyolo_ricci_scale_sweep_2026_05_16.sh) | new | sweep orchestrator |
+| [`hymeko_neuro/experiments/analyse_ricci_scale_sweep_2026_05_16.py`](../hymeko_neuro/experiments/analyse_ricci_scale_sweep_2026_05_16.py) | new | aggregator + paired-Δ + mAP > 1 sanity check |
 
 ## 3. CORE.YAML items touched
 
-None. All changes confined to `signedkan_wip/` (non-core).
+None. All changes confined to `hymeko_neuro/` (non-core).
 
 ## 4. Test results
 
 ```
 $ env -i HOME=$HOME PATH=/usr/bin:/bin .venv/bin/python -m pytest \
-    signedkan_wip/tests/ -q \
-    --ignore=signedkan_wip/tests/test_hsikan_optuna_chase.py \
-    --ignore=signedkan_wip/tests/test_run_optuna_search_attention.py \
+    hymeko_neuro/tests/ -q \
+    --ignore=hymeko_neuro/tests/test_hsikan_optuna_chase.py \
+    --ignore=hymeko_neuro/tests/test_run_optuna_search_attention.py \
     -k 'ricci or hymeyolo or circle or kcycle or detection_metric'
 ========== 76 passed, 461 deselected, 1 warning in 16.62s ==========
 ```

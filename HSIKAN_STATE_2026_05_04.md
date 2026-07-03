@@ -159,7 +159,7 @@ favour $k{=}4$ matching their 4-community structure.
   a 40\,GB A100 the published recipe should run uncrowded.
 
 **Baselines:**
-- SGT (Signed Graph Transformer) — `signedkan_wip/src/baselines/sgt.py`
+- SGT (Signed Graph Transformer) — `hymeko_neuro/baselines/sgt.py`
   (NEW today): pre-LayerNorm encoder + sign-aware sparse
   self-attention + position-wise FFN.  3-seed sweep across 6
   datasets.
@@ -186,7 +186,7 @@ real data):**
   skeleton with rigid bones (sign $+1$) + flexible joints
   (sign $-1$) + 4 kinematic chains.  47 star-edges; 47 cycles
   at $k{=}6$ matching the 4 anatomical regions.
-- `signedkan_wip/src/chicken/` — flock simulator + trajectory →
+- `hymeko_neuro/experiments/chicken/` — flock simulator + trajectory →
   signed-graph converter + supervised aggressor classifier +
   unsupervised aggressor scoring (negative-out-degree baseline,
   Cartwright-Harary cycle-balance, HSiKAN self-supervised,
@@ -231,7 +231,7 @@ Eight layers, eight decades of theory.  Detailed PDF at
 - Komondor SLURM run — script written, account/partition not yet
   filled in.
 - Real-AUC HSiKAN-from-HyMeKo emit (Item #4 final) — week-long;
-  needs real `signedkan_wip` Tier-3 helpers in
+  needs real `hymeko_neuro` Tier-3 helpers in
   `ehk_torch_stub` instead of stubs.
 
 **Architectural extensions queued:**
@@ -264,14 +264,14 @@ Eight layers, eight decades of theory.  Detailed PDF at
 - `HSIKAN_ROADMAP_2026_05_04.md` — day-by-day deliverable log
   with all timestamps.
 - `HSIKAN_STATE_2026_05_04.md` — this file.
-- `signedkan_wip/src/chicken/README.md` — chicken-aggression
+- `hymeko_neuro/experiments/chicken/README.md` — chicken-aggression
   pipeline walkthrough.
 - `data/anatomy/chicken_anatomy.hymeko` — 12-keypoint anatomical
   hypergraph.
-- `signedkan_wip/src/baselines/sgt.py` — Signed Graph Transformer
+- `hymeko_neuro/baselines/sgt.py` — Signed Graph Transformer
   baseline.
-- `signedkan_wip/src/run_sgt_sweep.py` — multi-seed runner.
-- `signedkan_wip/src/run_sinusoid_controls.py` — symbolic-control
+- `hymeko_neuro/run_sgt_sweep.py` — multi-seed runner.
+- `hymeko_neuro/run_sinusoid_controls.py` — symbolic-control
   sweep.
 - `scripts/hymeko_to_signed_graph.py` — HyMeKo → star expansion.
 - `scripts/verify_hsikan_emit.py`, `scripts/verify_walks.py` —

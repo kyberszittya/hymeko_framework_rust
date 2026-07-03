@@ -3,7 +3,7 @@
 A composition crate over the existing HyMeKo primitives (no new algorithm code):
 the sequence mixer replaces softmax self-attention with a causal, signed,
 rotor-transported, spike-gated walk-holonomy over token positions; the channel
-mixer is the HSiKAN CR-Chebyshev cell (``signed_kan.make_activation('cr_cheby')``);
+mixer is the HSiKAN CR-Chebyshev cell (``hymeko_neuro.core.make_activation('cr_cheby')``);
 the residual stream lives on the unit hypersphere (Gömb).
 
 Plan: ``docs/plans/2026-06-29-gomb-hsikan-fsr-llm/``. Phase 0 = forward/backward

@@ -49,11 +49,11 @@ read_arc_weights("data/robotics/galambos_task.hymeko", "grasp_reward")
 - **Reward** — `reward.read_reward_terms` reads the arc weight (falls back to a legacy body `weight`, then
   `1.0`), so the scalar reward is `Σ wᵢ·termᵢ` with the weights on the bundle's arcs. Files:
   `data/robotics/{galambos_task,pick_place_task,arm_reach_task}.hymeko`.
-- **HSiKAN incidence** — `signed_kan` `incidence="weighted"` lifts the binary `{0,±1}` signed incidence to **free
+- **HSiKAN incidence** — `hymeko_neuro.core` `incidence="weighted"` lifts the binary `{0,±1}` signed incidence to **free
   real arc weights** on the existing structure (init 1.0 → parity). This is the model-side counterpart: the arc
   weight is the *strength* of a signed message. See [`hsikan_overview.md`](hsikan_overview.md).
 - **HSiKAN highway gate** — the legacy `cr_highway` mode threads per-arc weights into the gate
-  (`signedkan_wip`), i.e. the arc weight perturbs the highway transform gate.
+  (`hymeko_neuro`), i.e. the arc weight perturbs the highway transform gate.
 
 ## Why (the design rationale)
 

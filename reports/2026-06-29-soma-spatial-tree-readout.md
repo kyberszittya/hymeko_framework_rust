@@ -87,7 +87,7 @@ enc-tree = **+0.080**, matching Phase 2's +0.083 under mean-pool). Figure:
 pyramid pool** — ≈1/5 the parameters for ≈90 % of the accuracy, *plus*
 scale-invariance and variable-item-count support. The compression is structural
 (the pyramid), not learned (the gate). Extracted as a **domain-agnostic**
-`SpatialPyramidPool` (`signedkan_wip/src/vision/spatial_pyramid.py`): its input is
+`SpatialPyramidPool` (`hymeko_neuro/experiments/vision/spatial_pyramid.py`): its input is
 just `(features (N,d), positions∈[0,1]²)`, so any model with positioned features
 can drop it in for flatten — the Gömb-Soma patch grid and RicciStim anchors both
 now delegate to it (one implementation, no duplication).
@@ -183,9 +183,9 @@ attention is the flatten-matching, scale-free, variable-size readout** (the
 spatial tree is the simpler runner-up).
 
 ## Files
-- `signedkan_wip/src/hymeko_gomb/soma/vision/walk_conv_classifier.py` —
+- `hymeko_neuro/models/hymeko_gomb/soma/vision/walk_conv_classifier.py` —
   `Readout.SPATIAL_TREE` + `_SpatialTreeReadout`; `_build_readout` now takes grid dims.
-- `signedkan_wip/src/hymeko_gomb/soma/vision/train_mnist.py` — `gomb_soma_tree` arm.
-- `signedkan_wip/tests/test_soma_position_aware_readout.py` — 5 spatial-tree tests.
+- `hymeko_neuro/models/hymeko_gomb/soma/vision/train_mnist.py` — `gomb_soma_tree` arm.
+- `hymeko_neuro/tests/test_soma_position_aware_readout.py` — 5 spatial-tree tests.
 - jsonl `reports/soma_spatial_tree_cluttered_20260629.jsonl`; figure as above.
 - No CORE.YAML items; no new dependency.

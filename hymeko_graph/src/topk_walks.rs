@@ -14,7 +14,7 @@
 //!
 //! Promoted to library API on 2026-06-03 to close the framework story
 //! the Python reference at
-//! [`signedkan_wip::src::core::abb_walks::abb_enumerate_walks`] sketches.
+//! [`hymeko_neuro::src::core::abb_walks::abb_enumerate_walks`] sketches.
 //! The Python path stays the correctness specification; this Rust path
 //! is the production runner that drops the per-walk Python object
 //! allocation cost.

@@ -36,7 +36,7 @@ bottleneck. This is the single experiment that closes §0. (Pool mode is a param
 | Work | Files | Report / Plan |
 |---|---|---|
 | **Fingertip reward fix** (collaborative): dense approach measured nearest body/base, not the tip → inject `tip_{side}` sites + tip+elbow blend | `hymeko_rl/env/planar_grasp_env.py`, `reward.py`, tests | `reports/2026-06-26-galambos-fingertip-reward.md`, plan `…-galambos-fingertip-reward` |
-| **HTL-robustness-as-reward PoC**: one `.htl` formula → dense reward + monitor verdict; reuses `signedkan_wip/src/htl` | `hymeko_rl/htl_reward.py`, `data/robotics/galambos_spec.htl`, `exp_htl_reward_ab.py`, tests | `reports/2026-06-26-htl-reward-poc.md`, plan `…-htl-reward-poc` |
+| **HTL-robustness-as-reward PoC**: one `.htl` formula → dense reward + monitor verdict; reuses `hymeko_neuro/eval/htl` | `hymeko_rl/htl_reward.py`, `data/robotics/galambos_spec.htl`, `exp_htl_reward_ab.py`, tests | `reports/2026-06-26-htl-reward-poc.md`, plan `…-htl-reward-poc` |
 | **Wiring audit** (read-only) | (introspection) | `reports/2026-06-26-hsikan-wiring-audit.md` |
 | **Structural probe** + data-scaling sweep | `hymeko_rl/structural_probe.py`, tests | `reports/2026-06-26-structural-probe.md`, plan `…-structural-probe` |
 
@@ -69,8 +69,8 @@ All tests pass (26 planar, 6 htl_reward, 7 structural_probe + collateral). ruff 
 ## 4. Orientation (key files this session)
 - Probe: `hymeko_rl/structural_probe.py` (`run_probe`, `sweep_n_train`, `build_toy_graph`).
 - HTL reward: `hymeko_rl/htl_reward.py` (`HtlRewardSpec` duck-types `RewardSpec.evaluate`); evaluator reused
-  from `signedkan_wip/src/htl/` (bridge = `sys.path` insert, cf `dashboard_node.py`).
-- Backbones: `signed_kan/backbone.py` (`SignedKANBackbone`, `pool=` mode — the readout-ablation lever),
+  from `hymeko_neuro/eval/htl/` (bridge = `sys.path` insert, cf `dashboard_node.py`).
+- Backbones: `hymeko_neuro/core/backbone.py` (`SignedKANBackbone`, `pool=` mode — the readout-ablation lever),
   `hymeko_rl/policy.py` (`mlp_backbone`, `build_policy`).
 - Reward/metrics: `hymeko_rl/env/planar_grasp_env.py` (`with_fingertip_sites`, `compute_planar_metrics`),
   `hymeko_rl/env/reward.py`.

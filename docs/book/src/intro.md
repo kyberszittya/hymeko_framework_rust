@@ -31,7 +31,7 @@ A single hypergraph IR feeds all of these via the **template-driven codegen pipe
 - **[Architecture](./architecture/crate-map.md)** — how the crates fit together, where extension points live.
 - **[Concepts](./concepts/ir.md)** — the IR, queries, templates, codegen pipeline.
 - **[Extension recipes](./recipes/add-a-format.md)** — adding formats, layer kinds, queries.
-- **[Research code](./research/signedkan-overview.md)** — `signedkan_wip/` orientation; what's stable vs WIP.
+- **[Research code](./research/signedkan-overview.md)** — `hymeko_neuro/` orientation; what's stable vs WIP.
 - **[Results & evidence](./results/overview.md)** — abbreviations, math, **SOTA charts**, evidence contract, artifact indexes (for humans **and** agents).
 
 ## Build status & links

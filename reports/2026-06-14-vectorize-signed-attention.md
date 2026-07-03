@@ -48,14 +48,14 @@ modules (§6.1).
 
 | Path | Action | Lines |
 |---|---|---|
-| `signedkan_wip/src/baselines/_attention.py` | new (`build_csr` + `segment_attention`) | 99 |
-| `signedkan_wip/src/baselines/sigat_model.py` | modify (`MotifAttention.forward` → primitive + cache) | +25/−40 |
-| `signedkan_wip/src/baselines/sgt.py` | modify (`SignedAttention.forward` → primitive + cache, drop unused `F`) | +22/−41 |
-| `signedkan_wip/tests/test_vectorized_attention.py` | new (parity/boundary/determinism) | 110 |
+| `hymeko_neuro/baselines/_attention.py` | new (`build_csr` + `segment_attention`) | 99 |
+| `hymeko_neuro/baselines/sigat_model.py` | modify (`MotifAttention.forward` → primitive + cache) | +25/−40 |
+| `hymeko_neuro/baselines/sgt.py` | modify (`SignedAttention.forward` → primitive + cache, drop unused `F`) | +22/−41 |
+| `hymeko_neuro/tests/test_vectorized_attention.py` | new (parity/boundary/determinism) | 110 |
 
 ## CORE.YAML items touched
 
-**None.** `signedkan_wip/` is not in `CORE.YAML`. No new dependency
+**None.** `hymeko_neuro/` is not in `CORE.YAML`. No new dependency
 (`scatter_reduce`/`index_add` are core torch, verified in 2.12).
 
 ## Test results

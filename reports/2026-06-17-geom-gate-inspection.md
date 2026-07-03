@@ -30,16 +30,16 @@ Seed 0 only, but the signal is structural (gate exactly 0.500, dead fraction exa
 
 ## What was built
 A pure, testable analysis function + a generic Observer hook, reusing the existing driver setup (no duplication):
-- `signedkan_wip/src/core/geometric_triad_attention.py` — `summarise_gate(pool, h_node, h_triad, inc_vertex, inc_triad) -> dict` (~45 LOC): `@torch.no_grad`, read-only; reports σ(gate), signed-weight saturation (`w_abs_mean/std`, `w_frac_dead/saturated`), pool-vs-h_v residual magnitude, and projection norms.
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` — added `GeomTrainedState` (frozen dataclass) + an optional `on_trained: Callable | None = None` Observer hook to `run()` (default `None` → zero behaviour change; fires only for `head='geom_attn'`). Reuses all training/setup — the diagnostic does not re-implement the driver.
-- `signedkan_wip/experiments/runs/inspect_geom_gate.py` (new, ~70 LOC) — drives `run()` with the tuned recipe over the small bitcoin fixtures, captures `summarise_gate` via the callback, emits one merged jsonl row per cell + a stderr table.
+- `hymeko_neuro/hyperedge/geometric_triad_attention.py` — `summarise_gate(pool, h_node, h_triad, inc_vertex, inc_triad) -> dict` (~45 LOC): `@torch.no_grad`, read-only; reports σ(gate), signed-weight saturation (`w_abs_mean/std`, `w_frac_dead/saturated`), pool-vs-h_v residual magnitude, and projection norms.
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` — added `GeomTrainedState` (frozen dataclass) + an optional `on_trained: Callable | None = None` Observer hook to `run()` (default `None` → zero behaviour change; fires only for `head='geom_attn'`). Reuses all training/setup — the diagnostic does not re-implement the driver.
+- `hymeko_neuro/experiments/runs/inspect_geom_gate.py` (new, ~70 LOC) — drives `run()` with the tuned recipe over the small bitcoin fixtures, captures `summarise_gate` via the callback, emits one merged jsonl row per cell + a stderr table.
 
 ## Files touched
-- `signedkan_wip/src/core/geometric_triad_attention.py` (+~50 LOC: `summarise_gate`)
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` (+~25 LOC: `GeomTrainedState`, `on_trained` hook, `Callable` import)
-- `signedkan_wip/experiments/runs/inspect_geom_gate.py` (new)
-- `signedkan_wip/tests/test_geometric_triad_attention.py` (+3 tests: ranges/init, zero-query-kills-weights, gate σ tracks param)
-- `signedkan_wip/tests/test_hsikan_rotor.py` (+2 tests: on_trained fires+aligned for geom_attn, ignored for bilinear)
+- `hymeko_neuro/hyperedge/geometric_triad_attention.py` (+~50 LOC: `summarise_gate`)
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` (+~25 LOC: `GeomTrainedState`, `on_trained` hook, `Callable` import)
+- `hymeko_neuro/experiments/runs/inspect_geom_gate.py` (new)
+- `hymeko_neuro/tests/test_geometric_triad_attention.py` (+3 tests: ranges/init, zero-query-kills-weights, gate σ tracks param)
+- `hymeko_neuro/tests/test_hsikan_rotor.py` (+2 tests: on_trained fires+aligned for geom_attn, ignored for bilinear)
 - CORE.YAML items touched: **none** (CORE.YAML protects only `hymeko_core/` Rust).
 
 ## Tests

@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-16
 **Plan:** [docs/plans/2026-05-16-hymeyolo-stage-a2-cosine/](../docs/plans/2026-05-16-hymeyolo-stage-a2-cosine/) (tex/pdf/tikz/mmd)
-**Results dir:** [`signedkan_wip/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/`](../signedkan_wip/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/)
+**Results dir:** [`hymeko_neuro/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/`](../hymeko_neuro/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/)
 **Sweep window:** 13:56 → 15:25 CEST (~1 h 29 min)
 **Verdict:** ✅ **WIN — paired Δ = +0.118 at z = +14.01; 5/5 seeds beat their paired Stage-A-1 control.** Plan predicted +0.04; delivered +0.118. The cosine-LR + longer-training lever lifted the honest baseline from 0.628 (Stage A-1) to **0.746 (Stage A-2)** on a 5-seed paired comparison.
 
@@ -85,16 +85,16 @@ seed actually find the bottom of that basin.
 | Item | Status |
 |---|---|
 | Source patch (cosine LR + warmup + epochs CLI in `train_circles_ricci.py`) | shipped (88 ricci-adjacent tests still green) |
-| Orchestrator [`run_hymeyolo_stage_a2_5seed_2026_05_16.sh`](../signedkan_wip/experiments/run_hymeyolo_stage_a2_5seed_2026_05_16.sh) | shipped |
-| Analyser [`analyse_stage_a2_5seed_2026_05_16.py`](../signedkan_wip/experiments/analyse_stage_a2_5seed_2026_05_16.py) | shipped |
+| Orchestrator [`run_hymeyolo_stage_a2_5seed_2026_05_16.sh`](../hymeko_neuro/experiments/run_hymeyolo_stage_a2_5seed_2026_05_16.sh) | shipped |
+| Analyser [`analyse_stage_a2_5seed_2026_05_16.py`](../hymeko_neuro/experiments/analyse_stage_a2_5seed_2026_05_16.py) | shipped |
 | Plan dir [`docs/plans/2026-05-16-hymeyolo-stage-a2-cosine/`](../docs/plans/2026-05-16-hymeyolo-stage-a2-cosine/) (4 formats) | compiled |
-| Results dir [`hymeyolo_stage_a2_5seed_20260516T115649Z/`](../signedkan_wip/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/) | 5 jsonl rows + orchestrator.log |
+| Results dir [`hymeyolo_stage_a2_5seed_20260516T115649Z/`](../hymeko_neuro/experiments/results/hymeyolo_stage_a2_5seed_20260516T115649Z/) | 5 jsonl rows + orchestrator.log |
 | Smoke output [`/tmp/stage_a2_smoke/smoke.jsonl`](/tmp/stage_a2_smoke/smoke.jsonl) | single-seed at 0.7415 (preserved 22 % under the 5-seed mean — protocol-noise consistent) |
 
 ## 5. CORE.YAML items touched
 
 None. The cosine-schedule code is internal to
-`signedkan_wip/src/vision/train_circles_ricci.py` (non-core); no
+`hymeko_neuro/experiments/vision/train_circles_ricci.py` (non-core); no
 template, no parser, no `lockdown` file edited.
 
 ## 6. Experiment provenance

@@ -8,17 +8,17 @@
 Close the ~0.04 leakage-free AUROC gap to SiGAT (alpha 0.884 / otc 0.902) on rotor-HSiKAN signed-link prediction. The gap is "partly attention, not cycles", so the lever tried here is a stronger attention *readout*.
 
 ## What was built
-- New [signedkan_wip/src/core/geometric_triad_attention.py](../signedkan_wip/src/core/geometric_triad_attention.py): `GeometricTriadAttentionPool` — pools per-triad embeddings into per-vertex embeddings by **signed attention** whose score is a learned-gate mix of two geometric channels over the same projected features:
+- New [hymeko_neuro/hyperedge/geometric_triad_attention.py](../hymeko_neuro/hyperedge/geometric_triad_attention.py): `GeometricTriadAttentionPool` — pools per-triad embeddings into per-vertex embeddings by **signed attention** whose score is a learned-gate mix of two geometric channels over the same projected features:
   - **quaternion**: Hamilton-product real part, signature (+,−,−,−);
   - **Clifford**: Cl(2,0) geometric-product scalar part, signature (+,+,+,−), reusing `sequence/clifford.py::geometric_product`.
   - `tanh` signed weights (balanced triads vote +, unbalanced −), magnitude-normalized `index_add` scatter; vertices in no triad get a zero row. Reuses the existing Clifford primitive — no rebuild.
-- Wired into [run_hsikan_rotor.py](../signedkan_wip/experiments/runs/run_hsikan_rotor.py) as `--head geom_attn` (`--geom-channel both|quaternion|clifford`, `--geom-temperature`, `--geom-replace`). Endpoint head reuses the existing bilinear predictor (reaches held-out edges). **No edits to `core/signedkan.py`** — driver-level readout over `encode_triads`' existing outputs.
+- Wired into [run_hsikan_rotor.py](../hymeko_neuro/experiments/runs/run_hsikan_rotor.py) as `--head geom_attn` (`--geom-channel both|quaternion|clifford`, `--geom-temperature`, `--geom-replace`). Endpoint head reuses the existing bilinear predictor (reaches held-out edges). **No edits to `core/signedkan.py`** — driver-level readout over `encode_triads`' existing outputs.
 
 ## Files touched
-- `signedkan_wip/src/core/geometric_triad_attention.py` (new, ~135 LOC)
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` (+geom_attn head, residual/replace, geom CLI)
-- `signedkan_wip/tests/test_geometric_triad_attention.py` (new, 13 tests)
-- `signedkan_wip/tests/test_hsikan_rotor.py` (+ geom_attn integration test)
+- `hymeko_neuro/hyperedge/geometric_triad_attention.py` (new, ~135 LOC)
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` (+geom_attn head, residual/replace, geom CLI)
+- `hymeko_neuro/tests/test_geometric_triad_attention.py` (new, 13 tests)
+- `hymeko_neuro/tests/test_hsikan_rotor.py` (+ geom_attn integration test)
 - `docs/plans/2026-06-17-geometric-attention-head/plan.{tex,pdf,tikz,mmd}` (new)
 - CORE.YAML items touched: **none** (only `hymeko_core/` Rust is protected).
 

@@ -93,7 +93,7 @@ Figures: `reports/structural_probe/structural_probe.png` (bars), `…_sweep.png`
    a probe where the graph varies per sample (requiring `incidence="learned"`/`"weighted"`) would test the
    structural prior where the MLP *cannot* memorise one operator.
 
-## Files touched (CORE.YAML: none — `signed_kan` consumed via public API, no edit)
+## Files touched (CORE.YAML: none — `hymeko_neuro.core` consumed via public API, no edit)
 
 - **New** `hymeko_rl/structural_probe.py` — toy graph, two-target dataset, `ProbeModel` (reusing
   `SignedKANBackbone` + `policy.mlp_backbone`), train/eval, `run_probe`, `sweep_n_train`, plots, CLI. (~270 LOC.)

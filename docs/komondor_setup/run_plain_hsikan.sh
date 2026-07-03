@@ -66,7 +66,7 @@ singularity exec --nv --bind "$REPO:/workspace" \
     --env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:256,garbage_collection_threshold:0.8 \
     --env MALLOC_ARENA_MAX=4 \
     --env OMP_NUM_THREADS=4 \
-    "$SIF" bash -c "cd /workspace && PYTHONPATH=. python -m signedkan_wip.experiments.runs.run_final_cell \
+    "$SIF" bash -c "cd /workspace && PYTHONPATH=. python -m hymeko_neuro.experiments.runs.run_final_cell \
         --dataset bitcoin_alpha --hidden 8 --seed 0 --n-epochs 80 --max-k4 100000"
 rc=$?
 t1=$(date +%s)

@@ -14,7 +14,7 @@ queue already running.
 
 ### 3. Hypergraph convolution on visual datasets (Neocognitron-style)
 
-`signedkan_wip/src/vision/neocog_hgnn.py` (built tonight, 200 lines).
+`hymeko_neuro/experiments/vision/neocog_hgnn.py` (built tonight, 200 lines).
 
 - Architecture: 2-layer HGNN classifier
   - S₁: 5×5 receptive fields, stride 2 → first hyperedge layer

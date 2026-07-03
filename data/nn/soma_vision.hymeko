@@ -11,7 +11,7 @@
 // It compiles + validates (the A1–A5 gate) and emits a torch.nn.Module via the
 // torch_dataflow transform; the hero demo checks structural parity (every
 // declared layer is realised). The faithful Hodge-/stim-graph internals live in
-// signedkan_wip/src/hymeko_gomb/soma/vision and are a later round-trip item.
+// hymeko_neuro/models/hymeko_gomb/soma/vision and are a later round-trip item.
 
 soma_vision_description {
     @"meta_nn.hymeko";

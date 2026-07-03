@@ -52,7 +52,7 @@ For the gated head, **a high cls confidence + a near-zero gate
 should produce a near-zero effective score** — but the eval was
 treating cls confidence as the whole story.
 
-**The fix** (`signedkan_wip/src/vision/train_circles_ricci.py`):
+**The fix** (`hymeko_neuro/experiments/vision/train_circles_ricci.py`):
 
 ```python
 # Gates default to ones for legacy heads — backward compat preserved.
@@ -125,16 +125,16 @@ Either is ~10 LOC change.
 ## 5. Stage D-3 file inventory
 
 ### New
-- `signedkan_wip/src/vision/nodelet_head.py` (~250 LOC) — `NodeletQueryHead`-style heads + `hungarian_set_loss_gated` matcher/loss + `filter_predictions_by_gate` inference helper.
-- `signedkan_wip/tests/test_nodelet_head.py` (7 tests) — head shape, gate range, gradient flow, matcher cost, curriculum behaviour, inference filter, dispatch.
+- `hymeko_neuro/experiments/vision/nodelet_head.py` (~250 LOC) — `NodeletQueryHead`-style heads + `hungarian_set_loss_gated` matcher/loss + `filter_predictions_by_gate` inference helper.
+- `hymeko_neuro/tests/test_nodelet_head.py` (7 tests) — head shape, gate range, gradient flow, matcher cost, curriculum behaviour, inference filter, dispatch.
 
 ### Modified
-- `signedkan_wip/src/vision/hymeyolo_circles_ricci.py` — added `query_head_kind` kwarg; when `"nodelet"`, class head emits `n_classes` only (no +1 slot) and an extra gate head emits one sigmoid scalar per query. Forward emits `box_gates` / `circle_gates` in the output dict.
-- `signedkan_wip/src/vision/train_circles_ricci.py`:
+- `hymeko_neuro/experiments/vision/hymeyolo_circles_ricci.py` — added `query_head_kind` kwarg; when `"nodelet"`, class head emits `n_classes` only (no +1 slot) and an extra gate head emits one sigmoid scalar per query. Forward emits `box_gates` / `circle_gates` in the output dict.
+- `hymeko_neuro/experiments/vision/train_circles_ricci.py`:
   - `combined_set_loss` dispatches to `hungarian_set_loss_gated` when `box_gates` present.
   - `compute_detection_metrics` multiplies per-query score by gate (the bugfix from §2).
   - Both changes default to legacy behaviour when gates absent (byte-identical CMNIST regression-safe).
-- `signedkan_wip/src/vision/train_voc_stagec.py` — `--query-head-kind` flag + `hsikan` added to `--backbone` choices.
+- `hymeko_neuro/experiments/vision/train_voc_stagec.py` — `--query-head-kind` flag + `hsikan` added to `--backbone` choices.
 
 ### CORE.YAML items touched
 None.

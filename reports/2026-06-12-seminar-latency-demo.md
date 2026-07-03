@@ -7,7 +7,7 @@ Wired the already-measured forward-latency benchmark into the seminar CLI as a
 `latency` `SeminarDemo`, completing plan-item 4. The measurement itself (Demo 2,
 `run_inference_bench.py` + `bench_to_png.py`, ≥5 repeats after warm-up) was done
 2026-06-11; this change makes it a one-command room demo
-(`python -m signedkan_wip.demos.seminar latency`) that **reads** the committed
+(`python -m hymeko_neuro.demos.seminar latency`) that **reads** the committed
 `inference_bench.json`, surfaces the within-family lean(h=4)→joint(h=16) width
 ratio per (dataset, device), renders the slide-18 bars, and prints the honest
 framing. Inference-only — no re-measurement in the room (that stays
@@ -20,9 +20,9 @@ seed/device/peak-RSS/16 GB cap are inherited from `DemoRunner` by construction.
 ## Files touched
 | LOC | File | |
 |---:|---|---|
-| 165 | `signedkan_wip/demos/seminar/demos/latency.py` | new — `LatencyDemo` + `width_ratios` |
-| 118 | `signedkan_wip/tests/test_seminar_latency.py` | new — unit + integration |
-| +2 | `signedkan_wip/demos/seminar/demos/__init__.py` | register `LatencyDemo` |
+| 165 | `hymeko_neuro/demos/seminar/demos/latency.py` | new — `LatencyDemo` + `width_ratios` |
+| 118 | `hymeko_neuro/tests/test_seminar_latency.py` | new — unit + integration |
+| +2 | `hymeko_neuro/demos/seminar/demos/__init__.py` | register `LatencyDemo` |
 
 ## CORE.YAML items touched
 **None.** Additive demo layer; reads a committed result file and reuses
@@ -86,7 +86,7 @@ otc/cuda 1.29×. Artifacts: `demo_out/latency/latency_{cpu,cuda}.png`.
   the three files above).
 - Python 3.12.13; ruff/mypy/radon per `tools.yaml`. OS Windows 11 Pro 26200.
 - Seed 0 (fixed); deterministic (reads a frozen json, no RNG in the path).
-- Input: `signedkan_wip/experiments/results/inference_bench.json` (measured
+- Input: `hymeko_neuro/experiments/results/inference_bench.json` (measured
   2026-06-11, commit context in `reports/2026-06-11-latency-bench-extension.md`).
 
 ## Open issues / follow-ups

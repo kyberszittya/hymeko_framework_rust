@@ -27,8 +27,8 @@ plan → edge-weighted hyperedges (reward + HSiKAN incidence) → decision to un
 11. **Insight:** binary {0,±1} incidence defeats the signed-hypergraph premise (real weights) — a candidate cause
     for the weak vision results, and the motivation for weighted incidence.
 12. **Highway clarification:** HSiKAN = *Highway* Signed KAN (Srivastava/Greff/**Schmidhuber** 2015). The canonical
-    `signedkan_wip` has the highway gate; the **RL backbone does not** (it is a truncated HSiKAN).
-13. **Decision: generalize.** The sparse/transductive (`signedkan_wip`) and dense/inductive (`hymeko_rl`) HSiKANs
+    `hymeko_neuro` has the highway gate; the **RL backbone does not** (it is a truncated HSiKAN).
+13. **Decision: generalize.** The sparse/transductive (`hymeko_neuro`) and dense/inductive (`hymeko_rl`) HSiKANs
     are variations of one abstraction → unify under a single signed-KAN core. User chose **full cross-package
     unification** ("all these"). Plan in progress.
 
@@ -66,7 +66,7 @@ plan → edge-weighted hyperedges (reward + HSiKAN incidence) → decision to un
   backbone missing HSiKAN's defining pieces — a confound, not a verdict on HSiKAN as designed.
 - **Arc weights already parse** in HyMeKo (`RefAtom.anno.value` admits `Value::Num`) — no parser/CORE change.
 - **The two HSiKANs are one abstraction.** Only deep difference = aggregation backend (sparse-scatter/transductive
-  vs dense-einsum/inductive/batched); spline/skip/incidence/pool are shared config. `signedkan_wip` already
+  vs dense-einsum/inductive/batched); spline/skip/incidence/pool are shared config. `hymeko_neuro` already
   dispatches `catmull_rom` and has `cr_highway` (highway gate + arc weights) — the design is validated there.
 
 ---
@@ -78,7 +78,7 @@ plan → edge-weighted hyperedges (reward + HSiKAN incidence) → decision to un
   reflexive), edge-weighted hyperedges. 3 open decisions for Kato; arc-weight CORE risk **resolved** (already parses).
 - `docs/plans/2026-06-24-unify-hsikan-signed-kan-core/` — **IN PROGRESS** (this is the current task). One signed-KAN
   core + pluggable aggregation backend (dense-batched ‖ sparse-scatter ‖ Triton); phase 1 extract core, phase 2
-  migrate `hymeko_rl` (gets highway + weighted incidence for free), phase 3 migrate `signedkan_wip` **gated on the
+  migrate `hymeko_rl` (gets highway + weighted incidence for free), phase 3 migrate `hymeko_neuro` **gated on the
   OTC AUC ≥ 0.8738 regression**, Triton kept as an optional backend.
 
 ---

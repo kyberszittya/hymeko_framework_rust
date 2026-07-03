@@ -46,14 +46,14 @@ shuffled 0.5027), peak RSS 524 MB, wall 42 s.
 **New:**
 | LOC | File |
 |---:|---|
-| 145 | `signedkan_wip/experiments/runs/run_no_leak_benchmark.py` — E1 driver: `STRICT_RUNNERS` dispatch, `--smoke`/`--full`, shuffle gate, JSONL |
+| 145 | `hymeko_neuro/experiments/runs/run_no_leak_benchmark.py` — E1 driver: `STRICT_RUNNERS` dispatch, `--smoke`/`--full`, shuffle gate, JSONL |
 
 **Plan updated:** `docs/plans/2026-06-11-no-leakage-structural-benchmark/plan.tex`
 — added the "Incorporated findings & pinned components" section (narrow-deep
 Pareto, CPML, Clifford-FIR kernel-ON, the ABB/Friedler/cycle-basis enumeration
 triad = Lever 1, 2/3 shipped); PDF recompiled.
 
-**Artifacts:** `signedkan_wip/experiments/results/no_leak_smoke.jsonl`.
+**Artifacts:** `hymeko_neuro/experiments/results/no_leak_smoke.jsonl`.
 
 ## CORE.YAML items touched
 **None.** Driver is new under `experiments/runs/`; strict runners reused unmodified.

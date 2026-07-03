@@ -13,7 +13,7 @@ CNN catches up at d≥8 and edges ahead at the maximum architecture.
 
 | File | Status |
 | --- | --- |
-| `signedkan_wip/experiments/runs/run_cortical_exhaustive_sweep.py` | **new** (180 LOC) |
+| `hymeko_neuro/experiments/runs/run_cortical_exhaustive_sweep.py` | **new** (180 LOC) |
 | `reports/cortical_exhaustive_2026_05_20.jsonl` | **new** (120 rows) |
 | `reports/cortical_exhaustive_2026_05_20.summary.json` | **new** |
 
@@ -186,7 +186,7 @@ it's a 12-line lookup table, not a Cartesian function family.
   rows).
 - **Summary:** `reports/cortical_exhaustive_2026_05_20.summary.json`.
 - **Reproducible:** `python -m
-  signedkan_wip.experiments.runs.run_cortical_exhaustive_sweep`.
+  hymeko_neuro.experiments.runs.run_cortical_exhaustive_sweep`.
 
 ## Acceptance check
 

@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-from signed_kan import CatmullRomActivation                     # the HSiKAN cell's learnable CR spline
+from hymeko_neuro.core import CatmullRomActivation                     # the HSiKAN cell's learnable CR spline
 
 from hymeko_rl.experiments.structural_probe import _standardised_split, build_chain_graph, build_model, train_eval
 

@@ -13,10 +13,10 @@ Root cause (`reports/2026-06-17-*` chain): four readout/comparison levers landed
 `align(q_j,q_i)=sign⟨q_j,q_i⟩·q_j` (double-cover hemisphere fix) and `s_ij∈{±1}` the edge sign (signed propagation). nlerp = the cheap, autograd-clean slerp that stays on S³. Built from **train** edges/signs → leakage-safe; the shuffle gate must hit chance. Parameter-free (no weights).
 
 ## Files touched
-- `signedkan_wip/src/embeddings/signed_rotor_propagation.py` (new, ~70 LOC)
-- `signedkan_wip/src/embeddings/cayley_rotor.py` (factor `forward` → `rotors()` + `embed_rotors()`; parity-tested)
-- `signedkan_wip/experiments/runs/run_hsikan_rotor.py` (`RotorInjector` propagation + `propagated_rotors()`; `--rotor-prop-rounds`, `--rotor-prop-self-weight`; provenance)
-- `signedkan_wip/tests/test_signed_rotor_propagation.py` (new, 7), `test_multidim_preservation.py` (new, 3 — guards no scalar-collapse in propagation/pool), `test_cayley_rotor.py` (+embed_rotors parity, +algebra/`n_refs`), `test_hsikan_rotor.py` (+prop smoke)
+- `hymeko_neuro/graph/embeddings/signed_rotor_propagation.py` (new, ~70 LOC)
+- `hymeko_neuro/graph/embeddings/cayley_rotor.py` (factor `forward` → `rotors()` + `embed_rotors()`; parity-tested)
+- `hymeko_neuro/experiments/runs/run_hsikan_rotor.py` (`RotorInjector` propagation + `propagated_rotors()`; `--rotor-prop-rounds`, `--rotor-prop-self-weight`; provenance)
+- `hymeko_neuro/tests/test_signed_rotor_propagation.py` (new, 7), `test_multidim_preservation.py` (new, 3 — guards no scalar-collapse in propagation/pool), `test_cayley_rotor.py` (+embed_rotors parity, +algebra/`n_refs`), `test_hsikan_rotor.py` (+prop smoke)
 - CORE.YAML items touched: **none**.
 
 ## Tests

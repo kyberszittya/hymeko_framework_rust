@@ -1,11 +1,11 @@
 # Nonlinear reward, strategy & action models — a handout
 
-*HSiKAN / Kato collaboration · 2026-06-24 · hymeko_rl + signed_kan*
+*HSiKAN / Kato collaboration · 2026-06-24 · hymeko_rl + hymeko_neuro.core*
 
 ## The one idea
 
 The framework already owns the right nonlinear primitive — the **KAN univariate edge function** (a learnable
-Catmull-Rom spline, `signed_kan.CatmullRomActivation` / `EdgeActivation`). Today it lives **only inside the
+Catmull-Rom spline, `hymeko_neuro.core.CatmullRomActivation` / `EdgeActivation`). Today it lives **only inside the
 message-passing backbone**. Everywhere a value is *read out* or *combined*, the pipeline is still **linear**:
 
 | site | today (linear) | the gap |
@@ -39,7 +39,7 @@ r = Σ φᵢ(termᵢ)            # linear weight is the special case φ(x) = w·
 }
 ```
 `φ` = a **named op** (`square`, `abs`, `clip`, `tanh`, `gate`) for an interpretable, readable reward — **or** an
-opt-in **learnable Catmull-Rom spline** (reuse `signed_kan`) for a true KAN-reward. The reward becomes a
+opt-in **learnable Catmull-Rom spline** (reuse `hymeko_neuro.core`) for a true KAN-reward. The reward becomes a
 Kolmogorov–Arnold sum of univariate nonlinearities over the term hyperedge.
 
 **(b) Cross-term combinator (structural).** A reward node that combines *several* terms nonlinearly:
@@ -51,19 +51,19 @@ The linear sum gives partial credit for *either* contact *or* in-zone; a **produ
 hyperedge (product / min / max / gated-sum).
 
 **Reuse:** the arc-weight reader (`_profile.read_bundle`, `reward.read_reward_terms`) — the payload generalises
-from one number to `(op, weight)`; `signed_kan.CatmullRomActivation` for the learnable variant.
+from one number to `(op, weight)`; `hymeko_neuro.core.CatmullRomActivation` for the learnable variant.
 
 ---
 
 ## 2. Nonlinear action model
 
 - **KAN actor head.** Replace `actor_mean = Linear(feat, action_dim)` with a **Catmull-Rom readout**
-  (`signed_kan` edge functions feat→action). The action map becomes nonlinear end-to-end, not just the trunk.
+  (`hymeko_neuro.core` edge functions feat→action). The action map becomes nonlinear end-to-end, not just the trunk.
   (This is the "defuzzification head" idea — a KAN/rotor readout that collapses features to a bounded action.)
 - **Squash / bounded transform.** SAC already squashes (`a = scale·tanh(μ+σε)`, with the tanh change-of-vars).
   Generalise the option to PPO and the deterministic actors so the action model is bounded + nonlinear uniformly.
 
-**Reuse:** `signed_kan.CatmullRomActivation`/`EdgeActivation`; SAC's `SquashedGaussianActor` (the bounded
+**Reuse:** `hymeko_neuro.core.CatmullRomActivation`/`EdgeActivation`; SAC's `SquashedGaussianActor` (the bounded
 nonlinear transform already exists off-policy).
 
 ---
@@ -83,7 +83,7 @@ nonlinear transform already exists off-policy).
 ## Where it lands (all non-core)
 
 ```
-signed_kan/            ← the nonlinear primitive lives here (CatmullRomActivation, EdgeActivation)
+hymeko_neuro/core/            ← the nonlinear primitive lives here (CatmullRomActivation, EdgeActivation)
   ├─ used by: backbone (today)
   └─ extend to ──► reward φ ops      (hymeko_rl/env/reward.py + _profile.py)
                 ► KAN actor head     (hymeko_rl/policy.py ActorCritic)
@@ -99,7 +99,7 @@ learnable KAN splines** (more expressive, but a partly *learned* reward is unusu
 ## Suggested order
 
 1. **Nonlinear reward** (bounded, testable, continues the arc-weight work) — named ops + product/gate combinator.
-2. **KAN actor head** (reuse `signed_kan`, parity-init so it starts ≈ the linear head).
+2. **KAN actor head** (reuse `hymeko_neuro.core`, parity-init so it starts ≈ the linear head).
 3. **Strategy schedules** (declarative anneal/curriculum).
 
 Each ships with parity-preserving defaults (linear weight / linear head / constant schedule reproduce today's

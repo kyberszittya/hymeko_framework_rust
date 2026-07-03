@@ -3,8 +3,8 @@
 **Date:** 2026-06-24 · **Branch:** soma-vision · **Plan:** `docs/plans/2026-06-24-unify-hsikan-signed-kan-core/`
 
 ## Decision
-Phase 3 (fold `signedkan_wip`'s layer onto the shared core) is **halted before any benchmark code was touched**.
-Reading the actual implementation (`signedkan_wip/src/core/signedkan.py`, `SignedKANLayer._forward_impl`) falsifies
+Phase 3 (fold `hymeko_neuro`'s layer onto the shared core) is **halted before any benchmark code was touched**.
+Reading the actual implementation (`hymeko_neuro/hyperedge/signedkan.py`, `SignedKANLayer._forward_impl`) falsifies
 the plan's central assumption that *"the only deep difference is the aggregation backend."*
 
 ## Evidence
@@ -29,7 +29,7 @@ duplication (the RL had its own `_SignedConv` + CR copy) and gave the RL line a 
 
 ## Corrected scope (what is actually shareable)
 - **Spline primitives only.** `catmull_rom` is bit-parity-confirmed across both lines; `bspline`/`kochanek_bartels`
-  could be re-homed into `signed_kan` as the single source, both lines importing them — pure functions, bounded,
+  could be re-homed into `hymeko_neuro.core` as the single source, both lines importing them — pure functions, bounded,
   gated on bit-parity (note: OTC uses `bspline`, so re-homing CR alone does not touch the OTC path).
 - **The highway-gate formula** is conceptually shared but applied at different points (per-arc inner gate with
   `cr_highway` in the vision line; per-layer skip in the RL line) — keep both, do not force one module.
@@ -37,6 +37,6 @@ duplication (the RL had its own `_SignedConv` + CR copy) and gave the RL line a 
   transductive net). This is correct, not a shortfall.
 
 ## Recommendation
-Do **not** merge the layers. If a narrow DRY win is wanted, re-home the spline evaluators into `signed_kan` behind a
+Do **not** merge the layers. If a narrow DRY win is wanted, re-home the spline evaluators into `hymeko_neuro.core` behind a
 bit-parity gate (separate, small task). Otherwise close the unification at phases 1–2. The plan doc should be amended
 to record the falsified premise.

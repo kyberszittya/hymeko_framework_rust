@@ -64,7 +64,7 @@ for ds in $DATASETS; do
         PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         MALLOC_ARENA_MAX=4 \
         OMP_NUM_THREADS=4 \
-        PYTHONPATH=. "$PY" -m signedkan_wip.experiments.runs.run_final_cell \
+        PYTHONPATH=. "$PY" -m hymeko_neuro.experiments.runs.run_final_cell \
             --dataset "$ds" --hidden 4 --n-epochs 80 \
             --max-k4 200000 --seed 0 \
             > "$log" 2>&1

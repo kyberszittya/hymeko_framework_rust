@@ -29,21 +29,21 @@ on the measured plot.
 **New:**
 | LOC | File |
 |---:|---|
-| 142 | `signedkan_wip/experiments/runs/sota_compare.py` — committed-accuracy loaders (pure) |
-| 130 | `signedkan_wip/tests/test_sota_compare.py` — 13 tests (loaders + Pareto + table) |
+| 142 | `hymeko_neuro/experiments/runs/sota_compare.py` — committed-accuracy loaders (pure) |
+| 130 | `hymeko_neuro/tests/test_sota_compare.py` — 13 tests (loaders + Pareto + table) |
 
 **Modified:**
-- `signedkan_wip/experiments/runs/run_inference_bench.py` — baseline registry
+- `hymeko_neuro/experiments/runs/run_inference_bench.py` — baseline registry
   (`BenchUnit`, `build_{sgcn,sigat,sgt,mlp}_unit`, `BASELINES`,
   `_bench_baselines`) replacing the SGCN-specific path; `h_baseline=32` in
   CONFIGS to config-match phase8; summary + honest note updated.
-- `signedkan_wip/experiments/runs/bench_to_png.py` — extended bar palette;
+- `hymeko_neuro/experiments/runs/bench_to_png.py` — extended bar palette;
   `pareto_points` / `render_pareto`; `table_rows` / `write_table`; `main_all`
   orchestrator + `--all` CLI.
-- `signedkan_wip/tests/test_inference_bench.py` — baseline-registry build/run
+- `hymeko_neuro/tests/test_inference_bench.py` — baseline-registry build/run
   test; bar-order test relaxed to relative order.
 
-**Regenerated artifacts** (`signedkan_wip/experiments/results/`): `inference_bench.json`
+**Regenerated artifacts** (`hymeko_neuro/experiments/results/`): `inference_bench.json`
 (24 rows: 2 graphs × 2 devices × {SGCN, SiGAT, SGT, MLP-blind, HSiKAN-lean,
 HSiKAN-joint}); `inference_bench_{cpu,cuda}.png`;
 `inference_bench_pareto_bitcoin_{alpha,otc}.png`;

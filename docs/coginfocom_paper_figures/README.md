@@ -109,7 +109,7 @@ with Kóczy fuzzy signatures).
 ```bash
 cd /home/kyberszittya/hakiko-ws/hymeko/hymeko_framework_rust
 CUDA_VISIBLE_DEVICES=""  PYTHONPATH=. python \
-    signedkan_wip/examples/cr_spline_render.py \
+    hymeko_neuro/examples/cr_spline_render.py \
     --n-epochs 15
 # Outputs to /tmp/cr_spline_render/ — copy to docs/coginfocom_paper_figures/
 ```
@@ -119,7 +119,7 @@ final paper submission, not the 15-epoch draft):
 
 ```bash
 # After the overnight smoke chain frees the GPU:
-PYTHONPATH=. python signedkan_wip/examples/cr_spline_render.py \
+PYTHONPATH=. python hymeko_neuro/examples/cr_spline_render.py \
     --n-epochs 60 \
     --channels 0 1 2 3 4 5 \
     --n-layers-show 8
@@ -163,7 +163,7 @@ PYTHONPATH=. python signedkan_wip/examples/cr_spline_render.py \
 
 ## Related artifacts
 
-- Code: [`signedkan_wip/examples/cr_spline_render.py`](../../signedkan_wip/examples/cr_spline_render.py)
+- Code: [`hymeko_neuro/examples/cr_spline_render.py`](../../hymeko_neuro/examples/cr_spline_render.py)
 - Mathematical background: [`docs/plans/2026-05-30-fuzzy-signature-layer/background.tex`](../plans/2026-05-30-fuzzy-signature-layer/background.tex)
-- Pose model definition: [`signedkan_wip/src/vision/fuzzy_pose.py`](../../signedkan_wip/src/vision/fuzzy_pose.py)
-- Pose detection example app: [`signedkan_wip/examples/pose_demo.py`](../../signedkan_wip/examples/pose_demo.py)
+- Pose model definition: [`hymeko_neuro/experiments/vision/fuzzy_pose.py`](../../hymeko_neuro/experiments/vision/fuzzy_pose.py)
+- Pose detection example app: [`hymeko_neuro/examples/pose_demo.py`](../../hymeko_neuro/examples/pose_demo.py)

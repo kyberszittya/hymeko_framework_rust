@@ -77,7 +77,7 @@ Until a leverage task is in place, the dual-loop's *architecture* benefit is unt
 
 ## Provenance
 
-Git: branch `fix-hsikan`, working tree dirty (this change + the session's signed_kan/dual_rate work). Seeds 0,1,2;
+Git: branch `fix-hsikan`, working tree dirty (this change + the session's hymeko_neuro/core/dual_rate work). Seeds 0,1,2;
 demo seed = run seed; eval seed = 9000. Demonstrator = `GalambosDemonstrator`, `only_success=True`. Log:
 `reports/2026-06-25-dual-rate-galambos.log`. Host: Windows 11, RTX 3070 (unused — CPU run).
 

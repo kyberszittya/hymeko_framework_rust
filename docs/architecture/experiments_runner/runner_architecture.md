@@ -5,7 +5,7 @@ Date: 2026-06-04
 ## Why
 
 The repo currently has **221 launcher scripts** (106 shell, 115 python)
-under `signedkan_wip/experiments/`, with massive overlap. Each new
+under `hymeko_neuro/experiments/`, with massive overlap. Each new
 experiment got a new file rather than a new config — exact violation
 of CLAUDE.md §6.5 #3 ("per-experiment scaffold duplication") which
 has been on the books since 2026-05-11 and only grew worse.
@@ -17,10 +17,10 @@ Existing scripts get migrated incrementally (this commit ships
 
 ## Scope of this commit
 
-- Create `signedkan_wip/src/experiments/` package:
+- Create `hymeko_neuro/experiments/lib/` package:
   `runner.py`, `config.py`, `monitors.py`, `registry.py`
-- Create `signedkan_wip/experiments/configs/` for YAML configs
-- Add CLI entry `python -m signedkan_wip.experiments.run`
+- Create `hymeko_neuro/experiments/configs/` for YAML configs
+- Add CLI entry `python -m hymeko_neuro.experiments.run`
 - Migrate 3 representative experiments (Bitcoin Alpha edge_cr 5-seed,
   Slashdot edge_cr 5-seed, Epinions edge_cr 5-seed)
 - Delete the 3 corresponding shell launchers
@@ -107,7 +107,7 @@ JSONL row).
 ## YAML config schema
 
 ```yaml
-# signedkan_wip/experiments/configs/<name>.yaml
+# hymeko_neuro/experiments/configs/<name>.yaml
 name: bitcoin_alpha_edge_cr_5seed
 description: 5-seed paired AUC on Bitcoin Alpha with edge_cr highway.
 experiment_class: SweepExperiment       # registry lookup
@@ -159,14 +159,14 @@ output:
 
 ```bash
 # Run a single experiment by config name
-python -m signedkan_wip.experiments.run \
-    --config signedkan_wip/experiments/configs/bitcoin_alpha_edge_cr_5seed.yaml
+python -m hymeko_neuro.experiments.run \
+    --config hymeko_neuro/experiments/configs/bitcoin_alpha_edge_cr_5seed.yaml
 
 # List registered experiments
-python -m signedkan_wip.experiments.run --list
+python -m hymeko_neuro.experiments.run --list
 
 # Compare to a prior measurement
-python -m signedkan_wip.experiments.run \
+python -m hymeko_neuro.experiments.run \
     --config X.yaml --compare-to results/Y.jsonl
 ```
 
@@ -174,9 +174,9 @@ python -m signedkan_wip.experiments.run \
 
 CLAUDE.md §6.5 #3 already mandates this. **Reinforcement going forward:**
 
-- **No new `signedkan_wip/experiments/run_*.{sh,py}`** files unless they fall
+- **No new `hymeko_neuro/experiments/run_*.{sh,py}`** files unless they fall
   outside the SignedLinkPrediction / Komondor pattern.
-- New experiment = new YAML config in `signedkan_wip/experiments/configs/`.
+- New experiment = new YAML config in `hymeko_neuro/experiments/configs/`.
 - The existing 221 scripts get migrated **as they are touched**, not
   in a single batch.
 - This commit migrates 3 (BA, Slashdot, Epinions edge_cr 5-seed) as
