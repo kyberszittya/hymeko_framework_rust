@@ -1,7 +1,7 @@
 """Side-by-side MLP-vs-HSiKAN comparison GIFs, per task (cart-pole / coin-grasp / quadruped).
 
 Renders each backbone's greedy episode (same seed/camera) and stitches them side-by-side with a HUD naming
-the backbone. Reuses hymeko_rl.evaluate.{render_episode_frames, compare_gif}.
+the backbone. Reuses hymeko_rl.eval.evaluate.{render_episode_frames, compare_gif}.
 
     uv run python scripts/compare_backbones_gif.py --task all
 """
@@ -19,8 +19,8 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 torch.set_num_threads(1)
 
-from hymeko_rl.evaluate import compare_gif, render_episode_frames  # noqa: E402
-from hymeko_rl.policy import ActorCritic, build_policy  # noqa: E402
+from hymeko_rl.eval.evaluate import compare_gif, render_episode_frames  # noqa: E402
+from hymeko_rl.agents.policy import ActorCritic, build_policy  # noqa: E402
 
 OUT = REPO / "reports" / "gifs" / "compare"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -65,8 +65,8 @@ def _panels(env_factory: Any, policies: list[tuple[str, ActorCritic]], *, camera
 # ── cart-pole ────────────────────────────────────────────────────────────────
 def task_cartpole(seed: int) -> Path:
     from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
-    from hymeko_rl.ppo import PPOConfig, train_ppo
-    from hymeko_rl.render_inverted_pendulum import load_policy_from_hymeko, side_camera
+    from hymeko_rl.train.ppo import PPOConfig, train_ppo
+    from hymeko_rl.viz.render_inverted_pendulum import load_policy_from_hymeko, side_camera
     mj = emit_cartpole_mjcf()
     hs = load_policy_from_hymeko(REPO / "data" / "nn" / "cartpole_hsikan_policy.hymeko",
                                  InvertedPendulumEnv(mjcf=mj))
@@ -84,7 +84,7 @@ def task_cartpole(seed: int) -> Path:
 # ── coin-grasp (Galambos) ────────────────────────────────────────────────────
 def task_coin(seed: int) -> Path:
     from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-    from hymeko_rl.render_planar_gifs import topdown_camera
+    from hymeko_rl.viz.render_planar_gifs import topdown_camera
     def mk() -> Any:
         return PlanarGraspEnv.from_hymeko(max_steps=120)
     probe = mk()
@@ -102,7 +102,7 @@ def task_quad(seed: int) -> Path:
     import mujoco
 
     from hymeko_rl.env.quadruped_env import QuadrupedJumpEnv
-    from hymeko_rl.ppo import PPOConfig, train_ppo
+    from hymeko_rl.train.ppo import PPOConfig, train_ppo
     def mk() -> Any:
         return QuadrupedJumpEnv(base="free", max_steps=200)
     probe = mk()

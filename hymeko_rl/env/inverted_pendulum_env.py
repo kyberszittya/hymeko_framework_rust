@@ -8,7 +8,7 @@ Galambos grasp task.
 
 A *separate class* from :class:`ArmReachEnv` (the task is structurally different — balancing, not
 reaching), but it speaks the same gymnasium contract and the same per-vertex obs shape ``(N, feat)``, so
-the **shared** PPO loop (``hymeko_rl.ppo.train_ppo``) and the **shared** backbone swap
+the **shared** PPO loop (``hymeko_rl.train.ppo.train_ppo``) and the **shared** backbone swap
 (``build_policy("hsikan" | "mlp")``) drive it unchanged: fix the algorithm, ablate the architecture.
 
 The emitter actuates every non-fixed joint; the canonical inverted pendulum is under-actuated, so the
@@ -25,7 +25,7 @@ import numpy as np
 from gymnasium import spaces
 
 from hymeko_rl.env.arm_world import emit_arm_mjcf, strip_actuators
-from hymeko_rl.hypergraph_state import HypergraphState
+from hymeko_rl.agents.hypergraph_state import HypergraphState
 
 _REPO = Path(__file__).resolve().parents[2]
 _DEFAULT_HYMEKO = _REPO / "data" / "robotics" / "inverted_pendulum.hymeko"

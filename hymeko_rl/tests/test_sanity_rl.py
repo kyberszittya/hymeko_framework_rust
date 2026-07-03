@@ -3,7 +3,7 @@ import math
 
 import torch
 
-from hymeko_rl.sanity_rl import BanditConfig, ContextualBandit, run_bandit_sanity
+from hymeko_rl.experiments.sanity_rl import BanditConfig, ContextualBandit, run_bandit_sanity
 
 
 def test_optimal_action_is_zero_reward() -> None:

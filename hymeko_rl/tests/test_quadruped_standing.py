@@ -22,8 +22,8 @@ from hymeko_rl.env.reward import (
     _term_torso_height,
     _term_upright,
 )
-from hymeko_rl.evaluate import DwellMetric, eval_metric
-from hymeko_rl.tasks import best_arch, get_task
+from hymeko_rl.eval.evaluate import DwellMetric, eval_metric
+from hymeko_rl.eval.tasks import best_arch, get_task
 
 
 def _zero_action(env: object, _obs: np.ndarray) -> np.ndarray:

@@ -11,12 +11,12 @@ from pathlib import Path
 import pytest
 import torch
 
-from hymeko_rl.ddpg import build_offpolicy
+from hymeko_rl.train.ddpg import build_offpolicy
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
-from hymeko_rl.policy import build_policy
-from hymeko_rl.policy_store import policy_to_hymeko
-from hymeko_rl.render_inverted_pendulum import load_policy_from_hymeko, render_run
-from hymeko_rl.sac import build_sac
+from hymeko_rl.agents.policy import build_policy
+from hymeko_rl.agents.policy_store import policy_to_hymeko
+from hymeko_rl.viz.render_inverted_pendulum import load_policy_from_hymeko, render_run
+from hymeko_rl.train.sac import build_sac
 
 _MJCF = emit_cartpole_mjcf()
 

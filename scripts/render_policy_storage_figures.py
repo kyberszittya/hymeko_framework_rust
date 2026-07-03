@@ -185,7 +185,7 @@ def fig6_roundtrip() -> None:
     """Round-trip verification: stored .hymeko reconstructs the weights bit-exact."""
     import sys
     sys.path.insert(0, str(REPO))
-    from hymeko_rl.policy_store import hymeko_to_policy
+    from hymeko_rl.agents.policy_store import hymeko_to_policy
     sd2 = hymeko_to_policy(REPO / "data" / "nn" / "cartpole_hsikan_policy.hymeko")
     orig = np.concatenate([SD[k].numpy().ravel() for k in SD])
     recon = np.concatenate([sd2[k].numpy().ravel() for k in SD])

@@ -21,7 +21,7 @@ Dependencies ``mujoco`` + ``gymnasium`` added under approval token
 """
 from __future__ import annotations
 
-from hymeko_rl.agent import AgentSpec
-from hymeko_rl.policy import ActorCritic, POLICY_KINDS, build_policy
+from hymeko_rl.agents.agent import AgentSpec
+from hymeko_rl.agents.policy import ActorCritic, POLICY_KINDS, build_policy
 
 __all__ = ["ActorCritic", "build_policy", "POLICY_KINDS", "AgentSpec"]

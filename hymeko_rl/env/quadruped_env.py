@@ -35,7 +35,7 @@ from hymeko_rl.env.arm_world import (
     with_collision_floor,
 )
 from hymeko_rl.env.reward import RewardSpec
-from hymeko_rl.hypergraph_state import HypergraphState
+from hymeko_rl.agents.hypergraph_state import HypergraphState
 
 _REPO = Path(__file__).resolve().parents[2]
 _DEFAULT_HYMEKO = _REPO / "data" / "robotics" / "quadruped.hymeko"

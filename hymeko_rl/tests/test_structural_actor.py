@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 import torch
 
-from hymeko_rl.structural_actor import StructuralActor
-from hymeko_rl.structural_probe import _standardised_split, build_chain_graph, train_eval
+from hymeko_rl.agents.structural_actor import StructuralActor
+from hymeko_rl.experiments.structural_probe import _standardised_split, build_chain_graph, train_eval
 
 
 def _raw_signed_adj(hg) -> np.ndarray:

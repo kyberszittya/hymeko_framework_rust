@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 
 from hymeko_rl.env.gripper_pick_env import GripperPickEnv
-from hymeko_rl.gripper_pick_bc import run_gripper_bc
+from hymeko_rl.experiments.gripper_pick_bc import run_gripper_bc
 
 
 def test_env_builds_and_shapes() -> None:

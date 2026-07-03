@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 import torch
 
-from hymeko_rl.dual_rate import DualRateController, RateAsymmetricLoop, build_dual_rate
+from hymeko_rl.train.dual_rate import DualRateController, RateAsymmetricLoop, build_dual_rate
 
 
 class _HG:

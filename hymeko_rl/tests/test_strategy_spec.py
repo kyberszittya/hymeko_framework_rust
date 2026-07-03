@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from hymeko_rl.strategy_spec import StrategySpec
+from hymeko_rl.agents.strategy_spec import StrategySpec
 
 _STRATEGY = "data/robotics/galambos_strategy.hymeko"
 

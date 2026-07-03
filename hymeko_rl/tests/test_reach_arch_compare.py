@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from hymeko_rl.env.arm_world import _hymeko_cli
-from hymeko_rl.reach_arch_compare import (
+from hymeko_rl.experiments.reach_arch_compare import (
     _iqr,
     compare_backbones,
     emitted_arm_factory,

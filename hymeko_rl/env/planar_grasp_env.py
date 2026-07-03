@@ -25,7 +25,7 @@ from gymnasium import spaces
 from hymeko_rl.env.arm_world import actuated_dof_addrs, emit_arm_mjcf, with_collision_floor
 from hymeko_rl.env.env_spec import DEFAULT_ENV, EnvSpec
 from hymeko_rl.env.reward import RewardSpec
-from hymeko_rl.hypergraph_state import HypergraphState
+from hymeko_rl.agents.hypergraph_state import HypergraphState
 
 _PLANAR_ARM = "data/robotics/galambos_planar.hymeko"
 _PLANAR_ENV = "data/robotics/galambos_env.hymeko"

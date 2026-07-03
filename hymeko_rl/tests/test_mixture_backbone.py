@@ -2,8 +2,8 @@
 structure-blind (MLP) expert in one policy."""
 import torch
 
-from hymeko_rl.policy import POLICY_KINDS, MixtureBackbone, build_policy
-from hymeko_rl.structural_probe import build_chain_graph
+from hymeko_rl.agents.policy import POLICY_KINDS, MixtureBackbone, build_policy
+from hymeko_rl.experiments.structural_probe import build_chain_graph
 
 
 def test_mixture_registered() -> None:

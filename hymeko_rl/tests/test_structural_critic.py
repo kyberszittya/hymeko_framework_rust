@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 import torch
 
-from hymeko_rl.hypergraph_state import HypergraphState
-from hymeko_rl.policy import hsikan_backbone
-from hymeko_rl.structural_critic import (
+from hymeko_rl.agents.hypergraph_state import HypergraphState
+from hymeko_rl.agents.policy import hsikan_backbone
+from hymeko_rl.agents.structural_critic import (
     AGGREGATIONS,
     POOLINGS,
     StructuralCritic,

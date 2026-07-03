@@ -7,9 +7,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from hymeko_rl.bc import behaviour_clone, collect_demos, run_bc
+from hymeko_rl.train.bc import behaviour_clone, collect_demos, run_bc
 from hymeko_rl.env.arm_reach_env import _NODE_FEAT, ArmReachEnv
-from hymeko_rl.policy import build_policy
+from hymeko_rl.agents.policy import build_policy
 
 
 @pytest.mark.parametrize("mode", ["torque", "position", "velocity"])

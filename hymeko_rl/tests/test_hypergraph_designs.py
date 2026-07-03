@@ -6,10 +6,10 @@ import itertools
 import pytest
 import torch
 
-from hymeko_rl.hypergraph_designs import (
+from hymeko_rl.control.hypergraph_designs import (
     DESIGNS, design_to_state, k_uniform_random, steiner_triple_system, sunflower,
 )
-from hymeko_rl.structural_probe import build_model
+from hymeko_rl.experiments.structural_probe import build_model
 
 
 def _blocks(hg, n_base: int) -> list[tuple[int, ...]]:

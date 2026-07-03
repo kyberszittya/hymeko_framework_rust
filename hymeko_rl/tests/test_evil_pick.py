@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from hymeko_rl.evil_pick import evil_config, make_evil_env
+from hymeko_rl.experiments.evil_pick import evil_config, make_evil_env
 
 
 def test_evil_config_monotonically_harder() -> None:

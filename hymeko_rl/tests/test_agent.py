@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from hymeko_rl.agent import AgentSpec
+from hymeko_rl.agents.agent import AgentSpec
 from hymeko_rl.env.arm_world import _hymeko_cli
 
 _REACH = "data/robotics/reach_arm.hymeko"

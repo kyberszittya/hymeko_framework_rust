@@ -12,7 +12,7 @@ from PIL import Image
 
 import csv as _csv
 
-from hymeko_rl.evaluate import (
+from hymeko_rl.eval.evaluate import (
     EvalStats, _stamp_frames, compare_gif, experiment_dir, now_stamp, plot_scoreboard, results_to_csv,
 )
 

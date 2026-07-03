@@ -13,8 +13,8 @@ import pytest
 import torch
 
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
-from hymeko_rl.ppo import PPOConfig, _collect, _collect_vec, train_ppo
-from hymeko_rl.train_inverted_pendulum import _make_balance_policy
+from hymeko_rl.train.ppo import PPOConfig, _collect, _collect_vec, train_ppo
+from hymeko_rl.train.train_inverted_pendulum import _make_balance_policy
 
 # One shared scene → cheap env construction across the suite (no per-env CLI subprocess).
 _MJCF = emit_cartpole_mjcf()
@@ -82,6 +82,26 @@ def test_train_ppo_vec_runs_and_is_finite() -> None:
     hist = train_ppo(ac, env, PPOConfig(n_iters=3, n_steps=256, seed=0),
                      n_envs=8, make_env=lambda: InvertedPendulumEnv(mjcf=_MJCF))
     assert len(hist) == 3 and all(np.isfinite(hist))
+
+
+# ── regression: the vec path is backbone-agnostic (CTDE has no `actor_mean`) ──
+def test_collect_vec_works_with_multichannel_ctde() -> None:
+    """`_collect_vec` sized its action buffer from ``ac.actor_mean.out_features`` — an ``ActorCritic``
+    internal the collaborative policies lack (they expose ``action_mean`` as a *method*). The fix reads
+    the action dim from ``ac.log_std`` (shared by every Gaussian AC). This drives a MultiChannelCTDE
+    through the vectorized rollout — it would raise ``AttributeError`` against the prior implementation."""
+    from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
+    from hymeko_rl.agents.multichannel_ctde import build_multichannel_collaborative
+
+    def _mk() -> PlanarGraspEnv:
+        return PlanarGraspEnv(robot=None, max_steps=20, difficulty=0.3, task_graph=True)
+
+    envs = [_mk() for _ in range(4)]
+    ac = build_multichannel_collaborative(envs[0], kind="sa_hsikan", hidden=32)
+    obs = np.stack([e.reset(seed=i)[0] for i, e in enumerate(envs)]).astype(np.float32)
+    buf, _, mean_ret = _collect_vec(envs, ac, obs, PPOConfig(n_steps=32, seed=0))
+    assert buf["act"].shape == (32, int(ac.log_std.numel())) and np.isfinite(mean_ret)
+    assert np.all(np.isfinite(np.asarray(buf["ret"])))
 
 
 # ── performance: vec rollout beats single-env at equal total transitions ──────

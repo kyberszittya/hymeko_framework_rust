@@ -9,11 +9,11 @@ import numpy as np
 import pytest
 import torch
 
-from hymeko_rl.ddpg import (
+from hymeko_rl.train.ddpg import (
     DeterministicActor, OffPolicyConfig, QCritic, build_offpolicy, td3_config, train_offpolicy,
 )
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
-from hymeko_rl.replay import ReplayBuffer
+from hymeko_rl.train.replay import ReplayBuffer
 
 _MJCF = emit_cartpole_mjcf()
 

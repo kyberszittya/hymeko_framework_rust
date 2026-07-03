@@ -10,7 +10,7 @@ import math
 
 import torch
 
-from hymeko_rl.spike_probe import (
+from hymeko_rl.experiments.spike_probe import (
     OrderBlind, SpikeGated, SpikeMlp, WalkMlp, WalkSpikeGated, make_spike_data, make_walk_data, rot_x,
     rot_y, run_spike_probe, run_spike_walks,
 )

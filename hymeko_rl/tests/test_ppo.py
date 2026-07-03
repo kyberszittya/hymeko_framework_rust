@@ -7,9 +7,9 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from hymeko_rl.bc import _make_policy
+from hymeko_rl.train.bc import _make_policy
 from hymeko_rl.env.arm_reach_env import ArmReachEnv
-from hymeko_rl.ppo import PPOConfig, _collect, _gae, train_ppo
+from hymeko_rl.train.ppo import PPOConfig, _collect, _gae, train_ppo
 
 
 def test_collect_handles_truncation_bootstrap() -> None:

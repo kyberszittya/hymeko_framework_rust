@@ -14,8 +14,8 @@ import torch
 
 from hymeko_rl.env.arm_world import emit_arm_mjcf, strip_actuators
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv
-from hymeko_rl.ppo import PPOConfig, train_ppo
-from hymeko_rl.train_inverted_pendulum import _make_balance_policy, run_balance
+from hymeko_rl.train.ppo import PPOConfig, train_ppo
+from hymeko_rl.train.train_inverted_pendulum import _make_balance_policy, run_balance
 
 _HYMEKO = "data/robotics/inverted_pendulum.hymeko"
 

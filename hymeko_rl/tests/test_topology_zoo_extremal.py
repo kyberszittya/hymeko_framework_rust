@@ -1,9 +1,9 @@
 """The extremal topologies (Phase 4): Petersen, Kneser, Grötzsch (Mycielskian), expander — verified by the graph
 invariants that make them interesting (strong-regularity, triangle-freeness, regularity). Plus the hypergraph
 LIFTS (Phase 4b): the closed-neighbourhood hypergraph version of each regular graph."""
-from hymeko_rl.hypergraph_designs import closed_neighbourhood_blocks, graph_to_kuniform
-from hymeko_rl.topology_invariants import invariants
-from hymeko_rl.topology_zoo import HYPER_TOPOLOGIES, TOPOLOGIES, petersen
+from hymeko_rl.control.hypergraph_designs import closed_neighbourhood_blocks, graph_to_kuniform
+from hymeko_rl.control.topology_invariants import invariants
+from hymeko_rl.control.topology_zoo import HYPER_TOPOLOGIES, TOPOLOGIES, petersen
 
 
 def _adj(hg):

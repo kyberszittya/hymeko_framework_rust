@@ -7,7 +7,7 @@ import pytest
 import torch
 import torch.nn as nn
 
-from hymeko_rl.collaborative import (
+from hymeko_rl.agents.collaborative import (
     CTDEActorCritic,
     CollaborativeGalambos,
     arm_action_partition,

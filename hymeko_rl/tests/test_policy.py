@@ -8,9 +8,9 @@ import numpy as np
 import pytest
 import torch
 
-from hymeko_rl.agent import AgentSpec
-from hymeko_rl.hypergraph_state import HypergraphState
-from hymeko_rl.policy import (
+from hymeko_rl.agents.agent import AgentSpec
+from hymeko_rl.agents.hypergraph_state import HypergraphState
+from hymeko_rl.agents.policy import (
     POLICY_KINDS,
     ActorCritic,
     build_policy,
@@ -31,7 +31,7 @@ def _toy_hg() -> HypergraphState:
 def test_catmull_rom_parity_with_signedkan() -> None:
     """The self-contained CR activation matches signedkan_wip's canonical ``_catmull_rom_eval``
     (so the HSiKAN backbone's KAN nonlinearity is consistent with the rest of the framework)."""
-    from hymeko_rl.policy import _catmull_rom
+    from hymeko_rl.agents.policy import _catmull_rom
     torch.manual_seed(0)
     n_channels, grid = 6, 5
     coef = torch.randn(n_channels, grid)

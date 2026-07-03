@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-from hymeko_rl.multichannel_ctde import (
+from hymeko_rl.agents.multichannel_ctde import (
     DeterministicMultiChannelActor,
     build_collaborative_offpolicy,
     build_multichannel_collaborative,
@@ -122,7 +122,7 @@ def test_collaborative_offpolicy_trains_finite() -> None:
     # Integration: the deterministic CTDE actor + centralized twin critics train through train_offpolicy (pure
     # TD3, tiny budget) on the real PlanarGraspEnv — stays finite and the actor moves. Would fail before the
     # action_dim / backbone-optional generalization of the trainer.
-    from hymeko_rl.ddpg import td3_config, train_offpolicy
+    from hymeko_rl.train.ddpg import td3_config, train_offpolicy
 
     env = _env()
     actor, critics = build_collaborative_offpolicy(env, kind="hsikan", hidden=32, n_critics=2)

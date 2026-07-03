@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from hymeko_rl.env.scenario import ScenarioSpec
-from hymeko_rl.render_pick_place import fanuc_pick_env
+from hymeko_rl.viz.render_pick_place import fanuc_pick_env
 
 _SCENARIO = "data/robotics/pick_place_scenario.hymeko"
 

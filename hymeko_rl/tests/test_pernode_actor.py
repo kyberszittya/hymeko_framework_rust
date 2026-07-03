@@ -10,8 +10,8 @@ import torch
 
 from hymeko_rl.env.arm_world import actuator_vertices
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-from hymeko_rl.policy import PerNodeActionHead
-from hymeko_rl.sac import PerNodeSquashedGaussianActor, SquashedGaussianActor, build_sac
+from hymeko_rl.agents.policy import PerNodeActionHead
+from hymeko_rl.train.sac import PerNodeSquashedGaussianActor, SquashedGaussianActor, build_sac
 
 
 def _galambos():  # type: ignore[no-untyped-def]

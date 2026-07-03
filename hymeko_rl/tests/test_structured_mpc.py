@@ -7,11 +7,11 @@ import numpy as np
 import pytest
 from scipy.linalg import solve_discrete_are
 
-from hymeko_rl.structured_control import make_plant, mask_from_topology, unconstrained_lqr
-from hymeko_rl.structured_mpc import (
+from hymeko_rl.control.structured_control import make_plant, mask_from_topology, unconstrained_lqr
+from hymeko_rl.control.structured_mpc import (
     SaturatedLQR, StructuredMPC, discretize, run_mpc_topology_map, simulate_closed_loop,
 )
-from hymeko_rl.topology_zoo import TOPOLOGIES
+from hymeko_rl.control.topology_zoo import TOPOLOGIES
 
 _N = 9
 _Q = np.eye(_N)

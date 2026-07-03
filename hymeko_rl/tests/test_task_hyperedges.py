@@ -5,8 +5,8 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from hymeko_rl.hypergraph_state import HypergraphState
-from hymeko_rl.policy import HSiKANBackbone
+from hymeko_rl.agents.hypergraph_state import HypergraphState
+from hymeko_rl.agents.policy import HSiKANBackbone
 
 
 def _galambos_arms() -> HypergraphState:

@@ -14,7 +14,7 @@ import pytest
 
 from hymeko_rl.env.arm_world import emit_arm_mjcf
 from hymeko_rl.env.scene_style import SceneStyle, beautify_mjcf
-from hymeko_rl.hypergraph_state import HypergraphState
+from hymeko_rl.agents.hypergraph_state import HypergraphState
 
 _MINIMAL = """<mujoco model="t">
   <asset><material name="mat_a" rgba="0.2 0.3 0.4 1"/></asset>

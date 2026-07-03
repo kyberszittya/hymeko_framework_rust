@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 import torch
 
-from hymeko_rl.hypergraph_state import HypergraphState
-from hymeko_rl.policy import ActorCritic, build_policy
+from hymeko_rl.agents.hypergraph_state import HypergraphState
+from hymeko_rl.agents.policy import ActorCritic, build_policy
 
 _REPO = Path(__file__).resolve().parents[2]
 # The hero-emitted faithful arm MJCF (compiled from data/robotics/anthropomorphic_arm.hymeko).

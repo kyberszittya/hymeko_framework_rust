@@ -4,7 +4,7 @@ The minimal witness of *HyMeKo as a declarative control substrate* (memory
 ``project-hymeko-as-control-substrate``): a point-mass reach task where the **state space**, the **observed
 channels**, the **dynamics parameters**, and the **objective** (reward ``Σ weight·term`` + success radius) are
 read from a single ``.hymeko`` profile — no bespoke reward code, the *same* :class:`RewardSpec` the robots use.
-Solved here by the *same* off-policy TD3 (:func:`hymeko_rl.ddpg.train_offpolicy`) — one substrate, robots and toys.
+Solved here by the *same* off-policy TD3 (:func:`hymeko_rl.train.ddpg.train_offpolicy`) — one substrate, robots and toys.
 
 The dynamics are a D-dimensional point mass (``D = action_dim``): state ``[pos(D), vel(D)]`` (so
 ``state_dim = 2·D``), ``v ← v + (force_gain·f − damping·v)·dt``, ``p ← p + v·dt``. The reward is evaluated by the

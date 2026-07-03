@@ -6,10 +6,10 @@ import math
 import numpy as np
 import pytest
 
-from hymeko_rl.structured_control import (
+from hymeko_rl.control.structured_control import (
     lqr_cost, make_plant, mask_from_topology, run_structured_map, structured_lqr, unconstrained_lqr,
 )
-from hymeko_rl.topology_zoo import TOPOLOGIES
+from hymeko_rl.control.topology_zoo import TOPOLOGIES
 
 _N = 9
 _Q = np.eye(_N)

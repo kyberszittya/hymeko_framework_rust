@@ -4,7 +4,7 @@ from __future__ import annotations
 import mujoco
 import numpy as np
 
-from hymeko_rl.render_pick_place import fanuc_pick_env
+from hymeko_rl.viz.render_pick_place import fanuc_pick_env
 
 
 def test_fanuc_env_builds_and_shapes() -> None:

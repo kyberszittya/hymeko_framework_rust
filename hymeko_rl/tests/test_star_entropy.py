@@ -10,9 +10,9 @@ import math
 import numpy as np
 import torch
 
-from hymeko_rl.hypergraph_state import HypergraphState
-from hymeko_rl.policy import HSiKANBackbone
-from hymeko_rl.star_entropy import mean_star_entropy, star_expansion_entropy
+from hymeko_rl.agents.hypergraph_state import HypergraphState
+from hymeko_rl.agents.policy import HSiKANBackbone
+from hymeko_rl.agents.star_entropy import mean_star_entropy, star_expansion_entropy
 
 
 def test_uniform_activation_is_max_entropy() -> None:

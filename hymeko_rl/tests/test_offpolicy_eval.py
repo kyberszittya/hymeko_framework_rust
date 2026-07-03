@@ -9,16 +9,16 @@ import math
 
 import pytest
 
-from hymeko_rl.ddpg import OffPolicyConfig, build_offpolicy, train_offpolicy
+from hymeko_rl.train.ddpg import OffPolicyConfig, build_offpolicy, train_offpolicy
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
-from hymeko_rl.offpolicy_eval import (
+from hymeko_rl.eval.offpolicy_eval import (
     Budget,
     aggregate_records,
     compare_offpolicy,
     greedy_return_eval,
 )
-from hymeko_rl.offpolicy_tables import to_latex, to_markdown
-from hymeko_rl.sac import SACConfig, build_sac, train_sac
+from hymeko_rl.eval.offpolicy_tables import to_latex, to_markdown
+from hymeko_rl.train.sac import SACConfig, build_sac, train_sac
 
 
 def _rec(task: str, algo: str, backbone: str, seed: int, curve_max: float, params: int) -> dict:

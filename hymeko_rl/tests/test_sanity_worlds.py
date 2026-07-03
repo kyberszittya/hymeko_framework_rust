@@ -2,7 +2,7 @@
 train through the sequential / cooperative loop."""
 import torch
 
-from hymeko_rl.sanity_worlds import (
+from hymeko_rl.experiments.sanity_worlds import (
     CollabBandit,
     LatticeNav,
     WorldConfig,

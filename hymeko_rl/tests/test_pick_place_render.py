@@ -3,8 +3,8 @@
 import numpy as np
 import torch
 
-from hymeko_rl.gripper_pick_bc import build
-from hymeko_rl.render_pick_place import fanuc_pick_env, trained_action_fn
+from hymeko_rl.experiments.gripper_pick_bc import build
+from hymeko_rl.viz.render_pick_place import fanuc_pick_env, trained_action_fn
 
 
 def test_trained_action_fn_shape_and_finite() -> None:

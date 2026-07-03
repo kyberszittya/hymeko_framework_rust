@@ -198,7 +198,7 @@ def actuated_dof_addrs(model: "mujoco.MjModel") -> np.ndarray:
 
 def actuator_vertices(model: "mujoco.MjModel") -> np.ndarray:
     """Each actuator's **hypergraph vertex** — the driven joint's child body remapped ``b -> b-1`` (the same
-    body->vertex convention as :meth:`hymeko_rl.hypergraph_state.HypergraphState.from_mjcf`).
+    body->vertex convention as :meth:`hymeko_rl.agents.hypergraph_state.HypergraphState.from_mjcf`).
 
     Lets a per-node actor head read each joint's action from *its own* graph vertex. # Preconditions every
     actuator is a single-dof ``joint`` transmission. # Postconditions returns an ``int64`` array of length

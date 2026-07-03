@@ -13,7 +13,7 @@ import pytest
 from PIL import Image
 
 from hymeko_rl.env.arm_reach_env import ArmReachEnv
-from hymeko_rl.render_reach import encode, expert_source, render_rollout
+from hymeko_rl.viz.render_reach import encode, expert_source, render_rollout
 
 
 def _can_render() -> bool:
@@ -83,7 +83,7 @@ def test_render_rollout_is_deterministic() -> None:
 @requires_gl
 def test_target_marker_adds_a_scene_geom() -> None:
     """The target marker increments the rendered scene's geom count (it is drawn)."""
-    from hymeko_rl.render_reach import CameraView, _draw_target
+    from hymeko_rl.viz.render_reach import CameraView, _draw_target
 
     env = ArmReachEnv(control_mode="torque")
     _obs, info = env.reset(seed=1)

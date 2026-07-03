@@ -1,7 +1,7 @@
 """Unified off-policy framework: TD3+BC config + the k-critic / mixed-HSiKAN axes + the BC-term integration."""
 import numpy as np
 
-from hymeko_rl.ddpg import (
+from hymeko_rl.train.ddpg import (
     adaptive_bc_config,
     build_offpolicy,
     td3_bc_config,
@@ -140,7 +140,7 @@ def test_hetero_dual_critic_builds_and_trains() -> None:
     # cadence (1, 4), stays finite. Exercises the per-critic optimizer + per-cadence target-polyak path.
     import torch
 
-    from hymeko_rl.ddpg import build_hetero_offpolicy
+    from hymeko_rl.train.ddpg import build_hetero_offpolicy
 
     env, nv, feat = _cartpole()
     actor, critics = build_hetero_offpolicy("sa_hsikan", ["mlp", "sa_hsikan"], obs_dim=feat, flat_dim=nv * feat,
@@ -156,7 +156,7 @@ def test_hetero_dual_critic_builds_and_trains() -> None:
 def test_hetero_critic_update_every_length_checked() -> None:
     import pytest
 
-    from hymeko_rl.ddpg import build_hetero_offpolicy
+    from hymeko_rl.train.ddpg import build_hetero_offpolicy
 
     env, nv, feat = _cartpole()
     actor, critics = build_hetero_offpolicy("mlp", ["mlp", "mlp"], obs_dim=feat, flat_dim=nv * feat,
@@ -169,7 +169,7 @@ def test_critic_layernorm_present_and_trains() -> None:
     # The anti-overestimation LayerNorm: opt-in (default off = unchanged), present when requested, trains finite.
     import torch
 
-    from hymeko_rl.ddpg import QCritic
+    from hymeko_rl.train.ddpg import QCritic
 
     env, nv, feat = _cartpole()
     _a0, c0 = build_offpolicy("mlp", obs_dim=feat, flat_dim=nv * feat, action_dim=1, action_scale=env.force_mag,
@@ -256,7 +256,7 @@ def test_polyak_foreach_matches_loop() -> None:
 
     import torch
 
-    from hymeko_rl.ddpg import _polyak
+    from hymeko_rl.train.ddpg import _polyak
 
     torch.manual_seed(0)
     src = torch.nn.Sequential(torch.nn.Linear(4, 8), torch.nn.ReLU(), torch.nn.Linear(8, 3))

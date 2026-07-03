@@ -7,7 +7,7 @@ import mujoco
 import numpy as np
 
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-from hymeko_rl.galambos_demo import planar_2link_ik
+from hymeko_rl.experiments.galambos_demo import planar_2link_ik
 
 # make_planar_arms_mjcf defaults: bases at (±0.14, -0.02), l1=0.16, l2=0.14.
 _L1, _L2 = 0.16, 0.14

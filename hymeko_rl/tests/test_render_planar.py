@@ -12,9 +12,9 @@ import pytest
 from PIL import Image
 
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-from hymeko_rl.evaluate import render_episode_gif
-from hymeko_rl.policy import build_policy
-from hymeko_rl.render_planar_gifs import policy_action_fn, topdown_camera
+from hymeko_rl.eval.evaluate import render_episode_gif
+from hymeko_rl.agents.policy import build_policy
+from hymeko_rl.viz.render_planar_gifs import policy_action_fn, topdown_camera
 
 
 def _can_render() -> bool:

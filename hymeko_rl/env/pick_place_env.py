@@ -26,7 +26,7 @@ from hymeko_rl.env.arm_world import emit_arm_mjcf
 from hymeko_rl.env.gripper_world import compose_pick_place_scene
 from hymeko_rl.env.ik import DampedPoseIK
 from hymeko_rl.env.reward import PickMetrics, RewardSpec
-from hymeko_rl.hypergraph_state import HypergraphState
+from hymeko_rl.agents.hypergraph_state import HypergraphState
 
 _ARM = "data/robotics/arm_gripper_import.hymeko"   # imports anthropomorphic_arm + attaches the gripper (no dup)
 # per-vertex features: [qpos, qvel, x, y, z, (object-vertex)(3), grasping, lifted_norm]. The last two are
@@ -76,6 +76,17 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         _base = int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "base_link"))
         if _base >= 0:
             self.model.body_pos[_base, 2] += self.mount_height
+        # Stable integration (blow-up fix, measured 2026-06-30): the emitted ~1e-3 s sub-step lets the position
+        # servo DETONATE on contact penetration (qacc ~1e4 -> the box is ejected upward -> a false "lift" that
+        # silently inflated eval_success from a true 0.125 to 0.875). Halve the sub-step and raise the substep
+        # count so the control interval (frame_skip * timestep) is preserved EXACTLY; the policy sees an
+        # identical control interface, so trained weights transfer without re-training.
+        _stable_dt = 5e-4
+        _control_dt = self.model.opt.timestep * int(frame_skip)
+        if self.model.opt.timestep > _stable_dt:
+            substeps = max(1, round(_control_dt / _stable_dt))
+            self.model.opt.timestep = _control_dt / substeps
+            frame_skip = substeps
         self.data = mujoco.MjData(self.model)
         self.frame_skip, self.max_steps = int(frame_skip), int(max_steps)
         self.box_half, self.table_z = box_half, float(table_z)

@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from hymeko_rl.env.arm_reach_env import ArmReachEnv
-from hymeko_rl.viewer import (
+from hymeko_rl.viz.viewer import (
     draw_target, drive_viewer, expert_source, random_source, zero_source,
 )
 

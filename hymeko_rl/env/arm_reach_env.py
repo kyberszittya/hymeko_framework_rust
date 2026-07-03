@@ -30,7 +30,7 @@ from hymeko_rl.env.observation import REACH_OBSERVATION, ObservationSpec
 from hymeko_rl.env.reward import REACH_REWARD, RewardSpec
 from hymeko_rl.env.safety import CLEAN_SAFETY, SafetyState, compute_safety
 from hymeko_rl.env.termination import DEATH_ON_CONTACT, TerminationSpec
-from hymeko_rl.hypergraph_state import HypergraphState
+from hymeko_rl.agents.hypergraph_state import HypergraphState
 
 # The default reaching obs width (per vertex): [qpos, qvel, target(3), ee_error(3)] = 8.
 # Derived from the spec so the two never drift; kept as a module constant because

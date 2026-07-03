@@ -9,9 +9,9 @@ import numpy as np
 import pytest
 import torch
 
-from hymeko_rl.ddpg import QCritic
+from hymeko_rl.train.ddpg import QCritic
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
-from hymeko_rl.sac import SACConfig, SquashedGaussianActor, build_sac, train_sac
+from hymeko_rl.train.sac import SACConfig, SquashedGaussianActor, build_sac, train_sac
 
 _MJCF = emit_cartpole_mjcf()
 

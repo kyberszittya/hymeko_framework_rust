@@ -4,8 +4,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from hymeko_rl.controller_bench import equivariance_check, run_topology_map
-from hymeko_rl.topology_zoo import TOPOLOGIES, permuted
+from hymeko_rl.eval.controller_bench import equivariance_check, run_topology_map
+from hymeko_rl.control.topology_zoo import TOPOLOGIES, permuted
 
 
 @pytest.mark.parametrize("name", list(TOPOLOGIES))

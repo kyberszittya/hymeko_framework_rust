@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from hymeko_rl.campaign import Campaign, CampaignConfig, compare, tee_stdout
-from hymeko_rl.ddpg import build_offpolicy
+from hymeko_rl.train.campaign import Campaign, CampaignConfig, compare, tee_stdout
+from hymeko_rl.train.ddpg import build_offpolicy
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
 
 _MJCF = emit_cartpole_mjcf()

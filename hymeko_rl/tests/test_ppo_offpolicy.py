@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from hymeko_rl.offpolicy_eval import _ALGOS, Budget, compare_offpolicy
-from hymeko_rl.ppo import build_ppo
+from hymeko_rl.eval.offpolicy_eval import _ALGOS, Budget, compare_offpolicy
+from hymeko_rl.train.ppo import build_ppo
 
 
 def test_ppo_registered_in_algos() -> None:

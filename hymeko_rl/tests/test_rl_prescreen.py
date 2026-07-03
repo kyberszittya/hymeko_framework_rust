@@ -1,5 +1,5 @@
 """The fast RL architecture pre-screen: returns a per-backbone rank, a recommendation, and an honest caveat."""
-from hymeko_rl.rl_prescreen import prescreen
+from hymeko_rl.eval.rl_prescreen import prescreen
 
 
 def test_prescreen_ranks_recommends_and_caveats() -> None:

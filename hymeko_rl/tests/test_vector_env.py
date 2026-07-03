@@ -2,7 +2,7 @@
 import numpy as np
 
 from hymeko_rl.env.vector_env import VectorizedEnv
-from hymeko_rl.replay import ReplayBuffer
+from hymeko_rl.train.replay import ReplayBuffer
 
 
 class _StubEnv:

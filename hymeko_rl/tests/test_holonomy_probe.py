@@ -3,7 +3,7 @@ transport (rotor) but NOT by additive message-passing (B^N / HSiKAN), the MLP, o
 import pytest
 import torch
 
-from hymeko_rl.holonomy_probe import make_parity_data, run_holonomy_probe
+from hymeko_rl.experiments.holonomy_probe import make_parity_data, run_holonomy_probe
 
 
 def test_parity_data_is_the_cycle_holonomy() -> None:

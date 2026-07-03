@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from hymeko_rl.htl_reward import HtlRewardSpec, signals_from_planar
+from hymeko_rl.control.htl_reward import HtlRewardSpec, signals_from_planar
 
 
 def _metrics(*, disk_to_zone: float = 0.1, tipl: float = 0.2, tipr: float = 0.2,

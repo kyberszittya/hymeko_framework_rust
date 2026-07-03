@@ -4,8 +4,8 @@ from __future__ import annotations
 import pytest
 import torch
 
-from hymeko_rl.cr_kernel import _HAVE_TRITON, FusedCatmullRom, fused_catmull_rom
-from hymeko_rl.policy import _catmull_rom
+from hymeko_rl.agents.cr_kernel import _HAVE_TRITON, FusedCatmullRom, fused_catmull_rom
+from hymeko_rl.agents.policy import _catmull_rom
 
 _GPU = _HAVE_TRITON and torch.cuda.is_available()
 

@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-from hymeko_rl.policy import HSiKANBackbone
+from hymeko_rl.agents.policy import HSiKANBackbone
 
 
 def test_baseline_unchanged() -> None:

@@ -1,6 +1,6 @@
 """Topology invariants (the walk-structure measures): frame coherence, balance frustration, spectral gap."""
-from hymeko_rl.topology_invariants import balance_frustration, invariants, run_invariants
-from hymeko_rl.topology_zoo import TOPOLOGIES
+from hymeko_rl.control.topology_invariants import balance_frustration, invariants, run_invariants
+from hymeko_rl.control.topology_zoo import TOPOLOGIES
 
 
 def test_petersen_is_tight_frame() -> None:

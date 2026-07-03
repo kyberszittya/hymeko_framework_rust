@@ -9,8 +9,8 @@ import math
 
 import torch
 
-from hymeko_rl.rotor_probe import rot_matrix
-from hymeko_rl.spiral_probe import (
+from hymeko_rl.experiments.rotor_probe import rot_matrix
+from hymeko_rl.experiments.spiral_probe import (
     FlatMlp, HighwayMlp, SpiralModel, make_spiral_data, run_spiral_probe, theta_graph_walks,
 )
 

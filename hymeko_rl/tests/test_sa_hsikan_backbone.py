@@ -1,7 +1,7 @@
 """SA-HSiKAN backbone — the B^L holonomy-collapse of HSiKAN as a SAC backbone (the launch-bound fix)."""
 import torch
 
-from hymeko_rl.policy import POLICY_KINDS, StructuralActorBackbone, sa_hsikan_backbone
+from hymeko_rl.agents.policy import POLICY_KINDS, StructuralActorBackbone, sa_hsikan_backbone
 
 
 class _StubHG:
@@ -34,7 +34,7 @@ def test_sa_hsikan_backbone_shapes_and_holonomy() -> None:
 
 
 def test_sa_hsikan_as_sac_actor() -> None:
-    from hymeko_rl.sac import build_sac
+    from hymeko_rl.train.sac import build_sac
     actor, critics = build_sac("sa_hsikan", obs_dim=2, flat_dim=6, action_dim=2, action_scale=1.0,
                                hidden=4, hg_state=_StubHG())
     x = torch.randn(5, 3, 2)
@@ -42,3 +42,29 @@ def test_sa_hsikan_as_sac_actor() -> None:
     action, log_prob = actor.sample(x)                       # reparameterised
     assert action.shape == (5, 2) and log_prob.shape == (5,)
     assert len(critics) == 2
+
+
+def test_deploy_policy_switches_and_validates() -> None:
+    from hymeko_rl.agents.policy import deploy_policy
+    from signed_kan.splines import ChebyshevCRActivation
+    mod, _ = sa_hsikan_backbone(2, hg_state=_StubHG(), hidden=8, walk_len=2)   # cr_cheby default -> deployable
+    err = deploy_policy(mod, torch.randn(4, 3, 2), tol=1.0)                    # generous tol -> switches
+    cheby = [m for m in mod.modules() if isinstance(m, ChebyshevCRActivation)]
+    assert cheby and all(m.deploy for m in cheby) and err >= 0.0              # cells in the Chebyshev fast path
+
+
+def test_deploy_policy_reverts_when_too_loose() -> None:
+    import pytest
+    from hymeko_rl.agents.policy import deploy_policy
+    from signed_kan.splines import ChebyshevCRActivation
+    mod, _ = sa_hsikan_backbone(2, hg_state=_StubHG(), hidden=8, walk_len=2)
+    with pytest.raises(ValueError):
+        deploy_policy(mod, torch.randn(4, 3, 2), tol=1e-9)                     # impossibly tight -> raise + revert
+    cheby = [m for m in mod.modules() if isinstance(m, ChebyshevCRActivation)]
+    assert cheby and all(not m.deploy for m in cheby)                          # reverted to the exact CR path
+
+
+def test_deploy_policy_noop_for_cr_cell() -> None:
+    from hymeko_rl.agents.policy import deploy_policy
+    mod, _ = sa_hsikan_backbone(2, hg_state=_StubHG(), hidden=8, walk_len=2, activation="cr")  # no cr_cheby cell
+    assert deploy_policy(mod, torch.randn(4, 3, 2)) == 0.0                     # nothing to switch/approximate

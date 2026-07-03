@@ -244,7 +244,7 @@ def test_approach_distance_is_tip_dominant_blend_not_body_min() -> None:
 def test_extract_arms_resolves_fingertip_site() -> None:
     """Demonstrator regression: ``_extract_arms`` resolves a real tip site per arm. Pre-fix it fell
     back to ``tip_site=-1`` on the emitted arm, so ``_tip_xy`` silently read ``target_zone``."""
-    from hymeko_rl.galambos_demo import _extract_arms
+    from hymeko_rl.experiments.galambos_demo import _extract_arms
 
     env = PlanarGraspEnv.from_hymeko(max_steps=10, difficulty=0.3)
     env.reset(seed=0)

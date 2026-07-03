@@ -9,8 +9,8 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from hymeko_rl.hypergraph_state import HypergraphState
-from hymeko_rl.structural_probe import (
+from hymeko_rl.agents.hypergraph_state import HypergraphState
+from hymeko_rl.experiments.structural_probe import (
     _LOCAL_NODE, _MULTIDIM_CONFIGS, READOUT_MODES, build_chain_graph, build_model, build_multidim_model,
     build_toy_graph, make_dataset, match_mlp_hidden, run_chain_probe, run_multidim_probe, run_probe,
     run_readout_ablation, run_readout_bakeoff, sweep_n_train,

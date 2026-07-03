@@ -17,7 +17,7 @@ from gymnasium import spaces
 
 from hymeko_rl.env.arm_world import emit_arm_mjcf
 from hymeko_rl.env.gripper_world import compose_pick_place_scene, make_gripper_mjcf
-from hymeko_rl.hypergraph_state import HypergraphState
+from hymeko_rl.agents.hypergraph_state import HypergraphState
 
 _GRIPPER = "data/robotics/gripper.hymeko"
 _FEAT = 8

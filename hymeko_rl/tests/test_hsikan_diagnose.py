@@ -5,8 +5,8 @@ from __future__ import annotations
 import torch
 
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-from hymeko_rl.hsikan_diagnose import diagnose, format_diagnosis
-from hymeko_rl.policy import build_policy
+from hymeko_rl.experiments.hsikan_diagnose import diagnose, format_diagnosis
+from hymeko_rl.agents.policy import build_policy
 
 
 def _policy_and_obs() -> tuple[object, torch.Tensor]:

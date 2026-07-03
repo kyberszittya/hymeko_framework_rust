@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 import torch
 
-from hymeko_rl.policy_store import (
+from hymeko_rl.agents.policy_store import (
     _decode_b64, _encode_b64, _fnum, hymeko_to_policy, hypergraph_to_weight, policy_to_hymeko,
     read_provenance, weight_to_hypergraph,
 )

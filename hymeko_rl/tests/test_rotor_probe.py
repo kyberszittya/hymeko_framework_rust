@@ -9,7 +9,7 @@ import math
 
 import torch
 
-from hymeko_rl.rotor_probe import (
+from hymeko_rl.experiments.rotor_probe import (
     RotorTransport, SignedTransport, make_holonomy_data, rot_matrix, run_rotor_probe,
 )
 

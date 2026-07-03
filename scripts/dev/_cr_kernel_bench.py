@@ -5,8 +5,8 @@ import time
 
 import torch
 
-from hymeko_rl.cr_kernel import fused_catmull_rom
-from hymeko_rl.policy import _catmull_rom
+from hymeko_rl.agents.cr_kernel import fused_catmull_rom
+from hymeko_rl.agents.policy import _catmull_rom
 
 DEV = "cuda"
 C, G = 64, 5
