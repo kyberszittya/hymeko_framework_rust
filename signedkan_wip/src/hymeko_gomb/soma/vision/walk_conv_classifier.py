@@ -80,6 +80,7 @@ class Readout(enum.Enum):
     POS_ATTENTION = "pos_attention"
     SPATIAL_TREE = "spatial_tree"
     SPATIAL_TREE_STATIC = "spatial_tree_static"  # same pyramid, no learned gate
+    MULTI_QUERY = "multi_query"                  # K learned queries, K·d pool
 
 
 class _MeanPoolReadout(nn.Module):
@@ -178,6 +179,28 @@ class _SpatialTreeReadout(nn.Module):
         return self.pool(x)                                      # (..., out_dim)
 
 
+class _MultiQueryReadout(nn.Module):
+    """Multi-query attention pool: ``n_queries`` learned query vectors each
+    attend (softmax) over the patches → ``n_queries`` pooled vectors, concatenated.
+    ``out_dim = n_queries·d`` — independent of the patch count (scale-free, like
+    the spatial tree) but content-based rather than grid-binned. K=1 recovers the
+    single-query attention pool; K>1 gives multiple content "slots".
+
+    # Postconditions ``forward((..., N, d)) -> (..., n_queries·d)``; each slot is
+    a softmax-convex combination of patch features. Batch-safe."""
+
+    def __init__(self, n_patches: int, d_hidden: int, n_queries: int = 8) -> None:
+        super().__init__()
+        self.queries = nn.Parameter(torch.randn(n_queries, d_hidden) * 0.1)
+        self.out_dim = n_queries * d_hidden
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        scores = torch.einsum("kd,...nd->...kn", self.queries, x)   # (..., K, N)
+        w = torch.softmax(scores, dim=-1)                           # over patches
+        pooled = torch.einsum("...kn,...nd->...kd", w, x)           # (..., K, d)
+        return pooled.reshape(*pooled.shape[:-2], -1)               # (..., K·d)
+
+
 def _build_patch_encoder(kind: PatchEncoder, patch_dim: int, d_hidden: int) -> nn.Module:
     """Linear patch embed, optionally followed by a Chebyshev-CR HSiKAN cell."""
     embed = nn.Linear(patch_dim, d_hidden)
@@ -197,6 +220,8 @@ def _build_readout(kind: Readout, h_patches: int, w_patches: int,
         return _AttentionReadout(n_patches, d_hidden)
     if kind is Readout.POS_ATTENTION:
         return _PosAttentionReadout(n_patches, d_hidden)
+    if kind is Readout.MULTI_QUERY:
+        return _MultiQueryReadout(n_patches, d_hidden)
     return _SpatialTreeReadout(h_patches, w_patches, d_hidden,
                                dynamic=kind is Readout.SPATIAL_TREE)
 

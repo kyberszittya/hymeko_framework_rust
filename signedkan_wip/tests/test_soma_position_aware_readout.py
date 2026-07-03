@@ -12,6 +12,7 @@ from signedkan_wip.src.hymeko_gomb.soma.vision.walk_conv_classifier import (
     Readout,
     WalkConvImageClassifier,
     _AttentionReadout,
+    _MultiQueryReadout,
     _PosAttentionReadout,
     _SpatialTreeReadout,
     _build_readout,
@@ -195,6 +196,43 @@ def test_batched_forward_parity_with_cheby_and_holonomy() -> None:
         batched = model(imgs)
         looped = torch.stack([model._forward_single(imgs[b]) for b in range(4)])
     assert torch.allclose(batched, looped, atol=1e-5)
+
+
+# ---------------------------------------------------------------------
+# Multi-query attention pool
+# ---------------------------------------------------------------------
+
+
+def test_multi_query_out_dim_and_scale_free() -> None:
+    ro = _MultiQueryReadout(49, 16, n_queries=8)
+    assert ro.out_dim == 8 * 16
+    assert _MultiQueryReadout(9999, 16, n_queries=8).out_dim == 8 * 16   # grid-free
+
+
+def test_multi_query_each_slot_is_convex() -> None:
+    """Each of the K slots is a softmax-convex combination of patch features."""
+    ro = _MultiQueryReadout(6, 4, n_queries=3)
+    x = torch.randn(6, 4, generator=torch.Generator().manual_seed(0))
+    out = ro(x).view(3, 4)
+    for k in range(3):
+        assert torch.all(out[k] <= x.max(dim=0).values + 1e-5)
+        assert torch.all(out[k] >= x.min(dim=0).values - 1e-5)
+
+
+def test_multi_query_batched_matches_loop() -> None:
+    ro = _MultiQueryReadout(12, 8, n_queries=4)
+    x = torch.randn(5, 12, 8, generator=torch.Generator().manual_seed(1))
+    batched = ro(x)
+    looped = torch.stack([ro(x[b]) for b in range(5)])
+    assert batched.shape == (5, 32) and torch.allclose(batched, looped, atol=1e-6)
+
+
+def test_multi_query_classifier_forward() -> None:
+    m = WalkConvImageClassifier(
+        image_h=28, image_w=28, patch_size=4, in_channels=1,
+        d_hidden=16, n_classes=10, readout=Readout.MULTI_QUERY)
+    assert m.head.in_features == 8 * 16
+    assert m(torch.randn(3, 1, 28, 28)).shape == (3, 10)
 
 
 # ---------------------------------------------------------------------

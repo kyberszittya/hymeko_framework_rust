@@ -57,3 +57,25 @@ class FSRLanguageModel(nn.Module):
 
     def n_parameters(self) -> int:
         return sum(p.numel() for p in self.parameters())
+
+    @torch.no_grad()
+    def generate(self, ids: torch.Tensor, max_new_tokens: int, *, temperature: float = 1.0,
+                 top_k: int | None = None, generator: torch.Generator | None = None) -> torch.Tensor:
+        """Autoregressive sampling. Context is cropped to ``max_seq_len``.
+
+        # Preconditions ``ids: (B, T0)`` long; ``max_new_tokens >= 0``; ``temperature > 0``.
+        # Postconditions returns ``(B, T0 + max_new_tokens)``; the new tokens are sampled causally.
+        """
+        if temperature <= 0:
+            raise ValueError(f"temperature must be > 0; got {temperature}")
+        self.eval()
+        for _ in range(max_new_tokens):
+            ctx = ids[:, -self.cfg.max_seq_len:]
+            logits = self(ctx)[:, -1, :] / temperature
+            if top_k is not None:
+                kth = torch.topk(logits, min(top_k, logits.shape[-1]), dim=-1).values[:, -1:]
+                logits = logits.masked_fill(logits < kth, float("-inf"))
+            probs = F.softmax(logits, dim=-1)
+            nxt = torch.multinomial(probs, num_samples=1, generator=generator)
+            ids = torch.cat([ids, nxt], dim=1)
+        return ids

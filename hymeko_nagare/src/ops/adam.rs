@@ -42,9 +42,7 @@ impl AdamState {
 ///   m̂ ← m / (1-β1^t),   v̂ ← v / (1-β2^t)
 ///   θ ← θ − lr · m̂ / (√v̂ + ε)
 /// ```
-pub fn adam_step(
-    params: &mut [f32], grad: &[f32], state: &mut AdamState, lr: f32,
-) {
+pub fn adam_step(params: &mut [f32], grad: &[f32], state: &mut AdamState, lr: f32) {
     assert_eq!(params.len(), grad.len());
     assert_eq!(state.m.len(), params.len());
     state.t += 1;
@@ -91,7 +89,10 @@ mod tests {
         // v = 0.001·9 = 0.009; v̂ = 0.009 / 0.001 = 9.0; √v̂ = 3.0
         // Δθ = 1.0 · 3.0 / (3.0 + 1e-8) ≈ 1.0
         // p was 0.0, gradient was +3 → minimize → p decreases by ~1.0.
-        assert!((p[0] - (-1.0)).abs() < 1e-3,
-            "expected θ ≈ -1.0 after 1 Adam step, got {}", p[0]);
+        assert!(
+            (p[0] - (-1.0)).abs() < 1e-3,
+            "expected θ ≈ -1.0 after 1 Adam step, got {}",
+            p[0]
+        );
     }
 }

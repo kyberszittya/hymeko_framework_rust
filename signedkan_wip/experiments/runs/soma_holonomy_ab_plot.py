@@ -22,7 +22,7 @@ from typing import Any
 # Stable arm order (cheapest-structure → richest) + labels + deck palette.
 ARM_ORDER = (
     "linear", "gomb_soma", "gomb_soma_holonomy",
-    "gomb_soma_cheby", "gomb_soma_attn", "gomb_soma_posattn",
+    "gomb_soma_cheby", "gomb_soma_attn", "gomb_soma_posattn", "gomb_soma_mq",
     "gomb_soma_tree", "gomb_soma_flat", "gomb_soma_cheby_flat",
 )
 ARM_LABEL = {
@@ -32,6 +32,7 @@ ARM_LABEL = {
     "gomb_soma_cheby": "Cheby-CR cell\n(mean-pool)",
     "gomb_soma_attn": "attention pool\n(scale-free)",
     "gomb_soma_posattn": "pos-attention\n(what + where)",
+    "gomb_soma_mq": "multi-query\n(K slots)",
     "gomb_soma_tree": "spatial tree\n(dynamic quadtree)",
     "gomb_soma_flat": "flatten\n(full spatial map)",
     "gomb_soma_cheby_flat": "Cheby-CR cell\n(flatten)",
@@ -43,6 +44,7 @@ ARM_COLOR = {
     "gomb_soma_cheby": "#5c6bc0",          # indigo: expressivity axis
     "gomb_soma_attn": "#00897b",           # teal: scale-free attention pool
     "gomb_soma_posattn": "#3949ab",        # indigo: positional attention
+    "gomb_soma_mq": "#6a1b9a",             # purple: multi-query
     "gomb_soma_tree": "#00695c",           # deep teal: dynamic spatial tree
     "gomb_soma_flat": "#ef6c00",           # orange: full spatial map
     "gomb_soma_cheby_flat": "#8e24aa",     # purple: both axes

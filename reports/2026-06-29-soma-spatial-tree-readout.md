@@ -155,6 +155,33 @@ CPU was already compute-bound, so it gains less. Figure:
 `reports/walk_conv_batched_bench_20260630.json`. This realises the end-to-end
 GPU win the readout optimisation pointed at.
 
+## Multi-query pool (2026-06-30): the scalable readout that *matches* flatten
+
+The remaining candidate: K learned query vectors, each attending (softmax) over
+the patches → K pooled "content slots", concatenated (``out_dim = K·d``,
+grid-independent; K=1 = single-query attention). Re-ran the scalable readouts on
+one identical GPU+resident harness (cluttered 48, 5 seeds × 5 ep × 5000) for an
+apples-to-apples ladder:
+
+| readout | params | acc |
+|---|---:|---|
+| attention (K=1) | 2027 | 0.467 ± 0.022 |
+| spatial tree | 5227 | 0.553 ± 0.023 |
+| **multi-query (K=8)** | **3258** | **0.605 ± 0.045** |
+| flatten (full map) | 24890 | 0.605 ± 0.016 |
+
+**Multi-query matches flatten (0.605 ≈ 0.605) at ~1/8 the parameters, and is
+scale-free** — the readout we were after. It beats the spatial tree (0.553) and
+the single-query plateau (0.467), reaches the ceiling without flatten's
+``n_patches·d`` head, and (unlike flatten) handles a variable item count. (The
+attention arm reproduced its earlier 0.466 → the GPU+resident harness is
+consistent, so the ladder is sound.) Cost: higher seed variance (±0.045 vs
+flatten's ±0.016). Figure: `reports/figures/soma_multiquery_ladder_20260630.png`;
+data `reports/soma_multiquery_ladder_20260630.jsonl`. Batched + parity-tested
+like the others. So the scalable-readout question is answered: **multi-query
+attention is the flatten-matching, scale-free, variable-size readout** (the
+spatial tree is the simpler runner-up).
+
 ## Files
 - `signedkan_wip/src/hymeko_gomb/soma/vision/walk_conv_classifier.py` —
   `Readout.SPATIAL_TREE` + `_SpatialTreeReadout`; `_build_readout` now takes grid dims.

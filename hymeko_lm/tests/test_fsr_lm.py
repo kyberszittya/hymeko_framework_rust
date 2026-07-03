@@ -18,6 +18,7 @@ from hymeko_lm import (
     l2_normalize,
     spherical_residual,
 )
+from hymeko_lm.checkpoint import load_checkpoint, save_checkpoint
 from hymeko_lm.data import make_associative_recall_batch, make_lag_copy_batch
 
 
@@ -93,6 +94,43 @@ def test_model_is_causal_with_spike_k() -> None:
 def test_config_rejects_bad_spike_k() -> None:
     with pytest.raises(ValueError, match="spike_k"):
         FSRConfig(vocab_size=16, spike_k=0)
+
+
+# ----- generation + checkpoint -----
+
+def test_generate_extends_and_is_deterministic() -> None:
+    cfg = _cfg()
+    model = FSRLanguageModel(cfg).eval()
+    ids = torch.randint(0, cfg.vocab_size, (2, 4))
+    g1 = torch.Generator().manual_seed(0)
+    g2 = torch.Generator().manual_seed(0)
+    o1 = model.generate(ids, 5, generator=g1)
+    o2 = model.generate(ids, 5, generator=g2)
+    assert o1.shape == (2, 9)
+    assert torch.equal(o1, o2)            # same seed -> same samples
+    assert torch.equal(o1[:, :4], ids)    # prefix preserved
+
+
+def test_generate_rejects_bad_temperature() -> None:
+    model = FSRLanguageModel(_cfg())
+    with pytest.raises(ValueError, match="temperature"):
+        model.generate(torch.zeros(1, 2, dtype=torch.long), 1, temperature=0.0)
+
+
+def test_checkpoint_roundtrip(tmp_path: object) -> None:
+    cfg = FSRConfig(vocab_size=16, n_blocks=8, n_layers=2, max_seq_len=16, gate_rank=8, spike_k=4)
+    model = FSRLanguageModel(cfg).eval()
+    ids = torch.randint(0, 16, (2, 10))
+    with torch.no_grad():
+        y0 = model(ids)
+    path = str(tmp_path) + "/ckpt.pt"  # type: ignore[operator]
+    save_checkpoint(path, model, step=42, extra={"val_bpb": 1.25})
+    model2, step, extra = load_checkpoint(path)
+    model2.eval()
+    with torch.no_grad():
+        y1 = model2(ids)
+    assert step == 42 and extra["val_bpb"] == 1.25
+    assert torch.allclose(y0, y1, atol=1e-6)
 
 
 # ----- model: causality, shape, grads -----

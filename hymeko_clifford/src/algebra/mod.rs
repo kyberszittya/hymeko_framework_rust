@@ -12,8 +12,10 @@
 
 mod blade;
 mod multivector;
+mod rotor;
 mod signature;
 
 pub use blade::{blade_product, canonical_reorder_sign};
 pub use multivector::Multivector;
+pub use rotor::{cayley_to_unit_quat, quat_conjugate, quat_mul, quat_rotate};
 pub use signature::Signature;

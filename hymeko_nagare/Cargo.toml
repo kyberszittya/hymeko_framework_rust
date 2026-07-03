@@ -13,6 +13,7 @@ name = "hymeko_nagare"
 [dependencies]
 rayon = "1.10"
 rand = "0.9"
+hymeko_clifford = { path = "../hymeko_clifford" }
 hymeko_graph = { path = "../hymeko_graph" }
 
 [dev-dependencies]

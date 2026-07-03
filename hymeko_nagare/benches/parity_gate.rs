@@ -40,7 +40,7 @@ fn make_synthetic_batch(n_vertices: usize, n_cycles: usize, k: usize) -> TopKCyc
     TopKCyclesBatch {
         cycles,
         signs,
-        scores: vec![0.0f32; n_cycles],
+        scores: vec![0.0f64; n_cycles],
         k,
     }
 }

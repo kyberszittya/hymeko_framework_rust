@@ -147,7 +147,7 @@ def build_model(model_type: str, device: torch.device,
             readout=(Readout.FLATTEN if flat else Readout.MEAN_POOL),
         )
     elif model_type in ("gomb_soma_attn", "gomb_soma_posattn", "gomb_soma_tree",
-                         "gomb_soma_tree_static"):
+                         "gomb_soma_tree_static", "gomb_soma_mq"):
         # Scalable position-aware readouts (out_dim independent of grid size).
         # ATTENTION = content-weighted set pool; POS_ATTENTION adds a learned
         # per-patch positional embedding; SPATIAL_TREE = dynamic quadtree-pyramid
@@ -159,7 +159,8 @@ def build_model(model_type: str, device: torch.device,
         ro = {"gomb_soma_attn": Readout.ATTENTION,
               "gomb_soma_posattn": Readout.POS_ATTENTION,
               "gomb_soma_tree": Readout.SPATIAL_TREE,
-              "gomb_soma_tree_static": Readout.SPATIAL_TREE_STATIC}[model_type]
+              "gomb_soma_tree_static": Readout.SPATIAL_TREE_STATIC,
+              "gomb_soma_mq": Readout.MULTI_QUERY}[model_type]
         m = WalkConvImageClassifier(
             image_h=image_h, image_w=image_w, patch_size=4,
             in_channels=1, d_hidden=16, n_classes=10,
@@ -226,6 +227,38 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> floa
     return n_correct / max(1, n_total)
 
 
+def _materialize(loader: DataLoader, device: torch.device):
+    """Drain a loader once into GPU-resident ``(X, Y)`` tensors. Removes the
+    per-batch DataLoader/collate/host→device cost from the training loop — the
+    dominant overhead once the model forward is batched (the dataset is small)."""
+    xs, ys = [], []
+    for x, y in loader:
+        xs.append(x)
+        ys.append(y)
+    return torch.cat(xs).to(device), torch.cat(ys).to(device)
+
+
+def _resident_batches(x: torch.Tensor, y: torch.Tensor, batch_size: int,
+                      shuffle: bool):
+    """Mini-batches by slicing device-resident tensors (no DataLoader)."""
+    n = x.shape[0]
+    idx = (torch.randperm(n, device=x.device) if shuffle
+           else torch.arange(n, device=x.device))
+    for i in range(0, n, batch_size):
+        b = idx[i:i + batch_size]
+        yield x[b], y[b]
+
+
+def _evaluate_resident(model: nn.Module, x: torch.Tensor, y: torch.Tensor,
+                       batch_size: int) -> float:
+    model.eval()
+    correct = 0
+    with torch.no_grad():
+        for xb, yb in _resident_batches(x, y, batch_size, shuffle=False):
+            correct += (model(xb).argmax(dim=-1) == yb).sum().item()
+    return correct / max(1, x.shape[0])
+
+
 def train_one_seed(
     model_type: str,
     seed: int,
@@ -237,6 +270,7 @@ def train_one_seed(
     device: torch.device,
     dataset: str = "mnist",
     canvas: int = 48,
+    resident: bool = False,
 ) -> dict:
     set_seed(seed)
     if dataset == "cluttered":
@@ -250,28 +284,43 @@ def train_one_seed(
     opt = torch.optim.Adam(model.parameters(), lr=lr)
     n_params = sum(p.numel() for p in model.parameters())
 
+    # GPU-resident fast path: materialize the (small) dataset to device tensors
+    # once, then mini-batch by slicing — no per-batch DataLoader overhead.
+    if resident:
+        x_tr, y_tr = _materialize(train_loader, device)
+        x_te, y_te = _materialize(test_loader, device)
+
     t0 = time.perf_counter()
     for epoch in range(n_epochs):
         model.train()
-        ep_loss, n_steps = 0.0, 0
-        for x, y in train_loader:
-            x, y = x.to(device), y.to(device)
+        # Accumulate the loss on-device and sync once per epoch — a per-batch
+        # ``loss.item()`` forces a GPU→CPU stall every step, serialising the
+        # otherwise-async pipeline.
+        ep_loss = torch.zeros((), device=device)
+        n_steps = 0
+        if resident:
+            batches = _resident_batches(x_tr, y_tr, batch_size, shuffle=True)
+        else:
+            batches = ((x.to(device), y.to(device)) for x, y in train_loader)
+        for x, y in batches:
             opt.zero_grad()
             logits = model(x)
             loss = F.cross_entropy(logits, y)
             loss.backward()
             opt.step()
-            ep_loss += loss.item()
+            ep_loss = ep_loss + loss.detach()
             n_steps += 1
-        train_loss = ep_loss / max(1, n_steps)
-        test_acc = evaluate(model, test_loader, device)
+        train_loss = (ep_loss / max(1, n_steps)).item()
+        test_acc = (_evaluate_resident(model, x_te, y_te, batch_size) if resident
+                    else evaluate(model, test_loader, device))
         print(
             f"  [seed={seed}] epoch {epoch + 1}/{n_epochs} "
             f"loss={train_loss:.4f} test_acc={test_acc:.4f}",
             flush=True,
         )
     wall = time.perf_counter() - t0
-    final_acc = evaluate(model, test_loader, device)
+    final_acc = (_evaluate_resident(model, x_te, y_te, batch_size) if resident
+                 else evaluate(model, test_loader, device))
     return {
         "model": model_type,
         "seed": seed,
@@ -294,7 +343,8 @@ def main() -> None:
                                           "gomb_soma_cheby", "gomb_soma_flat",
                                           "gomb_soma_cheby_flat", "gomb_soma_attn",
                                           "gomb_soma_posattn", "gomb_soma_tree",
-                                          "gomb_soma_tree_static", "linear",
+                                          "gomb_soma_tree_static", "gomb_soma_mq",
+                                          "linear",
                                           "ricci_stim", "ricci_stim_up",
                                           "ricci_stim_attn", "ricci_stim_enc",
                                           "ricci_stim_enc_attn",
@@ -316,6 +366,8 @@ def main() -> None:
                      help="cuda / cpu; auto-detect if omitted")
     ap.add_argument("--out-jsonl", default=None,
                      help="append per-seed records to this JSONL")
+    ap.add_argument("--resident", action="store_true",
+                     help="GPU-resident training (materialize data to device, no DataLoader)")
     args = ap.parse_args()
 
     device = torch.device(
@@ -334,7 +386,7 @@ def main() -> None:
         rec = train_one_seed(
             args.model, seed, args.n_train, args.n_test,
             args.n_epochs, args.batch_size, args.lr, device,
-            dataset=args.dataset, canvas=args.canvas,
+            dataset=args.dataset, canvas=args.canvas, resident=args.resident,
         )
         rows.append(rec)
         if args.out_jsonl:

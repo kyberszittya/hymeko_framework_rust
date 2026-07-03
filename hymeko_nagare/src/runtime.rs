@@ -28,13 +28,11 @@
 //! This module is the **programming model** tier: it takes a compiled
 //! cycle pool (= HIVE's hypergraph structure) and runs it end-to-end.
 
-use hymeko_graph::{
-    CliffordFIR, TopKCyclesBatch, clifford_fir_backward, clifford_fir_forward,
-};
+use hymeko_graph::{clifford_fir_backward, clifford_fir_forward, CliffordFIR, TopKCyclesBatch};
 
 use crate::ops::{
-    adam::{AdamState, adam_step},
-    linear::{LinearLayer, linear_backward, linear_forward},
+    adam::{adam_step, AdamState},
+    linear::{linear_backward, linear_forward, LinearLayer},
     loss::{bce_with_logits_backward, bce_with_logits_forward},
     scatter::{scatter_mean_backward, scatter_mean_forward},
 };
@@ -107,11 +105,9 @@ impl NagareRuntime {
         features: &[f32],
         n_vertices: usize,
     ) -> Vec<f32> {
-        let per_cycle =
-            clifford_fir_forward(batch, features, n_vertices, self.d_in, &self.fir);
-        let (h, _) = scatter_mean_forward(
-            &batch.cycles, batch.k, &per_cycle, self.d_in, n_vertices,
-        );
+        let per_cycle = clifford_fir_forward(batch, features, n_vertices, self.d_in, &self.fir);
+        let (h, _) =
+            scatter_mean_forward(&batch.cycles, batch.k, &per_cycle, self.d_in, n_vertices);
         linear_forward(&self.head, &h)
     }
 
@@ -135,11 +131,9 @@ impl NagareRuntime {
         );
 
         // ── Forward ────────────────────────────────────────────────────
-        let per_cycle =
-            clifford_fir_forward(batch, features, n_vertices, self.d_in, &self.fir);
-        let (h, counts) = scatter_mean_forward(
-            &batch.cycles, batch.k, &per_cycle, self.d_in, n_vertices,
-        );
+        let per_cycle = clifford_fir_forward(batch, features, n_vertices, self.d_in, &self.fir);
+        let (h, counts) =
+            scatter_mean_forward(&batch.cycles, batch.k, &per_cycle, self.d_in, n_vertices);
         let logits = linear_forward(&self.head, &h);
         let loss = bce_with_logits_forward(&logits, targets);
 
@@ -147,10 +141,20 @@ impl NagareRuntime {
         let grad_logits = bce_with_logits_backward(&logits, targets);
         let (grad_h, grad_head) = linear_backward(&self.head, &h, &grad_logits);
         let grad_per_cycle = scatter_mean_backward(
-            &batch.cycles, batch.k, &grad_h, self.d_in, &counts, n_vertices,
+            &batch.cycles,
+            batch.k,
+            &grad_h,
+            self.d_in,
+            &counts,
+            n_vertices,
         );
         let (_grad_x, grad_fir) = clifford_fir_backward(
-            batch, features, n_vertices, self.d_in, &self.fir, &grad_per_cycle,
+            batch,
+            features,
+            n_vertices,
+            self.d_in,
+            &self.fir,
+            &grad_per_cycle,
         );
 
         // ── Adam (4 param groups) ──────────────────────────────────────
@@ -183,7 +187,7 @@ impl NagareRuntime {
         let correct = logits
             .iter()
             .zip(targets.iter())
-            .filter(|(&l, &t)| {
+            .filter(|&(&l, &t)| {
                 let pred = if l > 0.0 { 1.0f32 } else { 0.0 };
                 (pred - t).abs() < 0.5
             })
@@ -200,7 +204,12 @@ mod tests {
     /// Helper: build a trivial cycle pool from flat arrays.
     fn make_batch(cycles: Vec<u32>, signs: Vec<i8>, k: usize) -> TopKCyclesBatch {
         let n = cycles.len() / k;
-        TopKCyclesBatch { cycles, signs, scores: vec![0.0; n], k }
+        TopKCyclesBatch {
+            cycles,
+            signs,
+            scores: vec![0.0; n],
+            k,
+        }
     }
 
     #[test]
@@ -210,7 +219,7 @@ mod tests {
         let rt = NagareRuntime::new(3, 3, 1, 1e-3, 42);
         let features = vec![0.1f32; 4 * 3];
         let logits = rt.predict(&batch, &features, 4);
-        assert_eq!(logits.len(), 4 * 1, "logit shape = n_vertices × d_out");
+        assert_eq!(logits.len(), 4, "logit shape = n_vertices × d_out");
     }
 
     #[test]
@@ -220,8 +229,14 @@ mod tests {
         let features: Vec<f32> = (0..4 * 4).map(|i| i as f32 * 0.1).collect();
         let targets = vec![1.0, 0.0, 1.0, 0.0];
         let loss = rt.step(&batch, &features, 4, &targets);
-        assert!(loss.is_finite(), "step() must return finite loss, got {loss}");
-        assert!(loss > 0.0, "BCE loss must be positive for non-trivial targets");
+        assert!(
+            loss.is_finite(),
+            "step() must return finite loss, got {loss}"
+        );
+        assert!(
+            loss > 0.0,
+            "BCE loss must be positive for non-trivial targets"
+        );
     }
 
     #[test]
@@ -236,10 +251,10 @@ mod tests {
             3,
         );
         let features = vec![
-            1.0f32, 0.0,  // v0
-            0.0, 1.0,     // v1
-            1.0, 0.0,     // v2
-            0.0, 1.0,     // v3
+            1.0f32, 0.0, // v0
+            0.0, 1.0, // v1
+            1.0, 0.0, // v2
+            0.0, 1.0, // v3
         ];
         let targets = vec![1.0f32, 0.0, 1.0, 0.0];
         let mut rt = NagareRuntime::new(3, 2, 1, 5e-2, 99);
@@ -260,6 +275,9 @@ mod tests {
         let logits = vec![1.0f32, -1.0, 0.5, -0.5];
         let targets = vec![1.0f32, 0.0, 1.0, 0.0];
         let acc = NagareRuntime::accuracy(&logits, &targets);
-        assert!((acc - 1.0).abs() < 1e-6, "perfect prediction should be 1.0, got {acc}");
+        assert!(
+            (acc - 1.0).abs() < 1e-6,
+            "perfect prediction should be 1.0, got {acc}"
+        );
     }
 }

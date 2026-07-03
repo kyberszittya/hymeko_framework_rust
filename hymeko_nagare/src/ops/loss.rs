@@ -30,7 +30,9 @@ fn sigmoid(s: f32) -> f32 {
 pub fn bce_with_logits_forward(logits: &[f32], targets: &[f32]) -> f32 {
     assert_eq!(logits.len(), targets.len());
     let n = logits.len();
-    if n == 0 { return 0.0; }
+    if n == 0 {
+        return 0.0;
+    }
     let mut sum = 0.0f64;
     for (&s, &y) in logits.iter().zip(targets.iter()) {
         let abs = s.abs();
@@ -73,12 +75,20 @@ mod tests {
         let grad = bce_with_logits_backward(&logits, &targets);
         let eps = 1e-3;
         for i in 0..logits.len() {
-            let mut lp = logits.clone(); lp[i] += eps;
-            let mut lm = logits.clone(); lm[i] -= eps;
+            let mut lp = logits.clone();
+            lp[i] += eps;
+            let mut lm = logits.clone();
+            lm[i] -= eps;
             let num = (bce_with_logits_forward(&lp, &targets)
-                       - bce_with_logits_forward(&lm, &targets)) / (2.0 * eps);
-            assert!((grad[i] - num).abs() < 1e-3,
-                "logit[{}]: ana={} num={}", i, grad[i], num);
+                - bce_with_logits_forward(&lm, &targets))
+                / (2.0 * eps);
+            assert!(
+                (grad[i] - num).abs() < 1e-3,
+                "logit[{}]: ana={} num={}",
+                i,
+                grad[i],
+                num
+            );
         }
     }
 

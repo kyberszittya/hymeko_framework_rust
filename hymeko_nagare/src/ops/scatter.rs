@@ -31,7 +31,10 @@ use rayon::prelude::*;
 /// `(per_vertex_features, counts)` — counts is `(n_vertices,)` so
 /// backward can reproduce the mean denominator.
 pub fn scatter_mean_forward(
-    cycles: &[u32], k: usize, per_cycle_features: &[f32], d: usize,
+    cycles: &[u32],
+    k: usize,
+    per_cycle_features: &[f32],
+    d: usize,
     n_vertices: usize,
 ) -> (Vec<f32>, Vec<u32>) {
     let n_cycles = cycles.len() / k;
@@ -65,15 +68,20 @@ pub fn scatter_mean_forward(
 /// Scatter-mean backward. Given `∂L/∂H` (per-vertex grad), compute
 /// `∂L/∂per_cycle` (per-cycle grad).
 pub fn scatter_mean_backward(
-    cycles: &[u32], k: usize, grad_per_vertex: &[f32], d: usize,
-    counts: &[u32], n_vertices: usize,
+    cycles: &[u32],
+    k: usize,
+    grad_per_vertex: &[f32],
+    d: usize,
+    counts: &[u32],
+    n_vertices: usize,
 ) -> Vec<f32> {
     let n_cycles = cycles.len() / k;
     assert_eq!(grad_per_vertex.len(), n_vertices * d);
     assert_eq!(counts.len(), n_vertices);
     let mut out = vec![0.0f32; n_cycles * d];
     // Compute 1 / count[v] once per vertex.
-    let inv_counts: Vec<f32> = counts.iter()
+    let inv_counts: Vec<f32> = counts
+        .iter()
         .map(|&c| if c > 0 { 1.0 / c as f32 } else { 0.0 })
         .collect();
     out.par_chunks_mut(d).enumerate().for_each(|(ci, gpc)| {
@@ -99,7 +107,7 @@ mod tests {
         // 2 cycles (0,1,2) and (1,2,3), features all 1s → vertex 0 has
         // 1 cycle, 1,2 have 2, 3 has 1. Mean = 1.0 everywhere.
         let cycles = vec![0, 1, 2, 1, 2, 3];
-        let pcf = vec![1.0; 2 * 4];   // (2 cycles, d=4)
+        let pcf = vec![1.0; 2 * 4]; // (2 cycles, d=4)
         let (out, counts) = scatter_mean_forward(&cycles, 3, &pcf, 4, 4);
         assert_eq!(counts, vec![1, 2, 2, 1]);
         for v in 0..4 {
@@ -125,16 +133,24 @@ mod tests {
         let n_cycles = pcf.len() / d;
         for ci in 0..n_cycles {
             for j in 0..d {
-                let mut pcf_p = pcf.clone(); pcf_p[ci * d + j] += eps;
-                let mut pcf_m = pcf.clone(); pcf_m[ci * d + j] -= eps;
+                let mut pcf_p = pcf.clone();
+                pcf_p[ci * d + j] += eps;
+                let mut pcf_m = pcf.clone();
+                pcf_m[ci * d + j] -= eps;
                 let (h_p, _) = scatter_mean_forward(&cycles, k, &pcf_p, d, n_v);
                 let (h_m, _) = scatter_mean_forward(&cycles, k, &pcf_m, d, n_v);
                 let l_p: f32 = h_p.iter().sum();
                 let l_m: f32 = h_m.iter().sum();
                 let num = (l_p - l_m) / (2.0 * eps);
                 let ana = grad_pc[ci * d + j];
-                assert!((ana - num).abs() < 1e-2,
-                    "cycle {} dim {}: ana={} num={}", ci, j, ana, num);
+                assert!(
+                    (ana - num).abs() < 1e-2,
+                    "cycle {} dim {}: ana={} num={}",
+                    ci,
+                    j,
+                    ana,
+                    num
+                );
             }
         }
     }
