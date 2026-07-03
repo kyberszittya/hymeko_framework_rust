@@ -49,6 +49,10 @@ reward {
         // both_contact cliff cannot supply on its own).
         @grasp_approach: + <isa> reward.reward_term {}
 
+        // Coordination shaping: -max(left,right) fingertip→coin distance. Penalises the FARTHER arm, so
+        // both fingertips must close simultaneously (the compensable mean `grasp_approach` cannot).
+        @both_approach: + <isa> reward.reward_term {}
+
         // +weight when both fingers touch the disk (encourages a two-sided grasp).
         @both_contact: + <isa> reward.reward_term {}
 

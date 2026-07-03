@@ -103,6 +103,20 @@ def _term_grasp_approach(env: "ArmReachEnv", dist: float, action: np.ndarray) ->
     return -0.5 * (float(m.left_tip_dist) + float(m.right_tip_dist))
 
 
+def _term_both_approach(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Coordination shaping: ``-max(left_tip_dist, right_tip_dist)`` — minus the *farther* arm's
+    fingertip→coin distance. Unlike ``grasp_approach`` (the *mean*, where a close arm compensates for a
+    far one and there is no pressure for simultaneity), this penalises the lagging arm, so the only way
+    to raise it is to bring **both** fingertips close **at the same time** — the coordination gradient the
+    compensable mean and the sparse ``both_contact`` cliff both lack. The two-arm ``coin_frictionloss``
+    mechanism needs simultaneous force, so this targets the measured bottleneck (both_contact ≈ 0.02).
+    0 on a non-planar env (no ``_planar_metrics``)."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    return -max(float(m.left_tip_dist), float(m.right_tip_dist))
+
+
 def _term_settle(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
     """Overshoot brake: penalise the coin's speed **only once it is inside the zone**, so the policy
     slows it to a stop there instead of pushing it straight through (the measured ep4 overshoot).
@@ -381,6 +395,7 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "in_zone": _term_in_zone,
     "grasp_deliver": _term_grasp_deliver,
     "grasp_approach": _term_grasp_approach,
+    "both_approach": _term_both_approach,
     "settle": _term_settle,
     "coin_pregrasp_still": _term_coin_pregrasp_still,
     "arm_motion": _term_arm_motion,

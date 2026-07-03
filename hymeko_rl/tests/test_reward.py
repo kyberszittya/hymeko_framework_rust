@@ -236,3 +236,28 @@ def test_env_reward_matches_minus_dist() -> None:
     env.reset(seed=4)
     _, reward, _, _, info = env.step(np.zeros(env.n_actions, dtype=np.float32))
     assert reward == pytest.approx(-info["dist"])
+
+
+def test_both_approach_penalises_the_farther_arm() -> None:
+    """`both_approach` = -max(left,right) is the coordination gradient the mean `grasp_approach` lacks:
+    with one arm close and one far, the mean is compensable but the max is dominated by the FAR arm.
+    Would fail against a mean-based implementation."""
+    from hymeko_rl.env.reward import _term_both_approach, _term_grasp_approach
+
+    a = np.zeros(4, dtype=np.float32)
+    lopsided = SimpleNamespace(_planar_metrics=SimpleNamespace(left_tip_dist=0.0, right_tip_dist=0.4))
+    both_close = SimpleNamespace(_planar_metrics=SimpleNamespace(left_tip_dist=0.2, right_tip_dist=0.2))
+    # mean is identical for the two configs (0.2) — cannot tell them apart:
+    assert _term_grasp_approach(lopsided, 0.0, a) == pytest.approx(_term_grasp_approach(both_close, 0.0, a))
+    # both_approach STRICTLY prefers the simultaneous config (penalises the lagging arm):
+    assert _term_both_approach(both_close, 0.0, a) > _term_both_approach(lopsided, 0.0, a)
+    assert _term_both_approach(lopsided, 0.0, a) == pytest.approx(-0.4)
+    assert _term_both_approach(SimpleNamespace(), 0.0, a) == 0.0   # 0 on a non-planar env
+
+
+def test_coord_hymeko_adds_only_both_approach() -> None:
+    """The A/B variant `.hymeko` is the baseline reward + `both_approach` (weight 4.0), nothing else."""
+    base = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task.hymeko").terms)
+    coord = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_coord.hymeko").terms)
+    assert set(coord) - set(base) == {"both_approach"}
+    assert coord["both_approach"] == pytest.approx(4.0)
