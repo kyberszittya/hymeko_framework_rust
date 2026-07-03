@@ -87,7 +87,7 @@ def tee_stdout(path: Path) -> Iterator[None]:
 
     handle = path.open("w", encoding="utf-8")
     prev = sys.stdout
-    sys.stdout = _Tee(prev, handle)          # type: ignore[assignment]
+    sys.stdout = _Tee(prev, handle)
     try:
         yield
     finally:
