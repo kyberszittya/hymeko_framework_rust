@@ -63,6 +63,10 @@ reward {
         // fingertips contacted it at some point). A knock (disk shoved in without a two-finger grasp) earns 0.
         @grasp_deliver: + <isa> reward.reward_term {}
 
+        // ONE-SHOT terminal delivery bonus: +weight exactly on the step that COMPLETES the held-in-zone dwell,
+        // 0 otherwise. The anti-farming term — pays for COMPLETING delivery, not for holding contact (annuity).
+        @terminal_deliver: + <isa> reward.reward_term {}
+
         // Overshoot brake: -weight·‖disk velocity‖ while the disk is near the zone, so the policy
         // decelerates it into the zone instead of pushing it through.
         @settle:       + <isa> reward.reward_term {}

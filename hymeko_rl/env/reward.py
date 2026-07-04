@@ -91,6 +91,25 @@ def _term_grasp_deliver(env: "ArmReachEnv", dist: float, action: np.ndarray) -> 
     return 1.0 if (m.in_zone and bool(getattr(env, "_ever_grasped", False))) else 0.0
 
 
+def _term_terminal_deliver(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """ONE-SHOT terminal delivery bonus: +1 exactly on the step that COMPLETES the held-in-zone dwell (the
+    delivery moment, when ``_success`` reaches ``success_steps``), 0 on every other step. This is the anti-FARMING
+    term: the dense per-step contact rewards (both/fingertouch/approach) form an *annuity* the policy collects by
+    grasping-and-holding without delivering — and since the episode ends on success, delivering *early* forgoes
+    the remaining annuity, so farming wins. A one-shot bonus paid only for *completing* delivery (not for holding)
+    is what tips the optimum toward carry-to-zone. Fires once per completion (rising edge of the dwell), so it is
+    an event bonus, not another annuity. 0 on a non-planar env (no ``_planar_metrics``).
+
+    # Preconditions ``env`` exposes ``_planar_metrics`` (with ``in_zone``), ``_success`` (int), ``success_steps``.
+    # Postconditions in ``{0.0, 1.0}``; 1.0 only on the exact step ``_success`` transitions to ``success_steps``."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    success_steps = int(getattr(env, "success_steps", 1))
+    success = int(getattr(env, "_success", 0))   # counter BEFORE this step's update (reward is evaluated first)
+    return 1.0 if (m.in_zone and success + 1 == success_steps) else 0.0
+
+
 def _term_grasp_approach(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
     """Dense approach shaping: -(mean of the two arms' fingertip→coin approach distances). Each arm's
     distance is the tip-dominant blend ``0.75·fingertip + 0.25·elbow`` (``PlanarGraspMetrics`` —
@@ -394,6 +413,7 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "both_contact": _term_both_contact,
     "in_zone": _term_in_zone,
     "grasp_deliver": _term_grasp_deliver,
+    "terminal_deliver": _term_terminal_deliver,
     "grasp_approach": _term_grasp_approach,
     "both_approach": _term_both_approach,
     "settle": _term_settle,

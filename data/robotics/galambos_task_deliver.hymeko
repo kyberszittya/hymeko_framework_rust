@@ -1,0 +1,54 @@
+// galambos_task_deliver.hymeko — the DELIVERY-DOMINANT variant of galambos_task.hymeko (2026-07-04).
+//
+// Identical to galambos_task.hymeko except it ADDS one term to the reward bundle:
+//   + terminal_deliver 30.0  — one-shot bonus on the step that COMPLETES the held-in-zone dwell.
+//
+// Rationale (measured): the 5x-data run FARMED — delivery fell 0.14->0.04 while both_contact rose 0.021->0.060.
+// The dense per-step contact rewards (both/fingertouch/approach) are an ANNUITY the policy collects by
+// grasping-and-holding; since the episode ends on success, delivering EARLY forgoes the remaining annuity, so
+// farming wins. `terminal_deliver` pays for COMPLETING delivery (not for holding), tipping the optimum toward
+// carry-to-zone. ORACLE FINDING (reward_oracle.certify, ms-fast backward DP): the baseline optimum does NOT
+// deliver (farming confirmed analytically), and a *pure* terminal bonus must reach ~1630 to beat the ~300-step
+// contact annuity — a training-unstable spike. So the weight below is a SEED, not a hand-tuned final value: the
+// reward-shape optimization (manifold-opt over weights + graph-search over the reward hypergraph;
+// docs/plans/2026-07-04-reward-shape-optimization/) finds the well-conditioned delivering shape (cut annuity +
+// modest bonus), scored by the oracle in ms and A/B-certified by RL on the top candidates.
+
+galambos_task_description {
+    @"meta_kinematics.hymeko";
+    @"meta_reward.hymeko";
+    using kinematics.elements as el;
+    using reward.terms        as rew;
+    using reward              as r;
+}
+
+galambos_task_deliver: el, rew, r
+{
+    disk:        el.frame {}
+    target_zone: el.frame {}
+
+    // Term nodes — typed reward signals (no weights here; the bundle's arcs carry them).
+    @approach:        rew.grasp_approach {}
+    @pull:            rew.reach_distance { (+ disk, - target_zone); }
+    @both:            rew.both_contact   {}
+    @zone:            rew.in_zone        {}
+    @graspzone:       rew.grasp_deliver  {}
+    @terminaldeliver: rew.terminal_deliver {}   // the one-shot anti-farming delivery bonus (the addition)
+    @center:          rew.center_bonus   {}
+    @explore:         rew.arm_motion     {}
+    @noclash:         rew.arm_collision  {}
+    @nofinger:        rew.fingers_collision {}
+    @oob:             rew.out_of_bounds  {}
+    @armcol:          rew.arm_body_collision {}
+    @fingertouch:     rew.finger_contact {}
+    @settle:          rew.settle              {}
+    @stillcoin:       rew.coin_pregrasp_still {}
+    @timecost:        rew.time_penalty       {}
+    @smoothv:         rew.joint_velocity     {}
+    @smootha:         rew.joint_acceleration {}
+
+    // The validated 4-core + collab terms + the ONE-SHOT terminal delivery bonus (terminaldeliver 30).
+    @grasp_reward: r.reward_spec {
+        (+ approach 4.0, + both 5.0, + fingertouch 1.5, + zone 10.0, + oob 2.0, + armcol 0.5, + terminaldeliver 30.0);
+    }
+}

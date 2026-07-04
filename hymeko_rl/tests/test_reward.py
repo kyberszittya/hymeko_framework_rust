@@ -261,3 +261,27 @@ def test_coord_hymeko_adds_only_both_approach() -> None:
     coord = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_coord.hymeko").terms)
     assert set(coord) - set(base) == {"both_approach"}
     assert coord["both_approach"] == pytest.approx(4.0)
+
+
+def test_terminal_deliver_is_one_shot_on_completion_not_an_annuity() -> None:
+    """`terminal_deliver` fires +1 EXACTLY on the step that completes the dwell (reward is evaluated before the
+    `_success++`, so that step has `_success == success_steps-1`), and 0 while holding past it — the anti-farming
+    property. Would fire every held step (an annuity) under a naive `_success >= success_steps` implementation."""
+    from hymeko_rl.env.reward import _term_terminal_deliver
+
+    a = np.zeros(4, dtype=np.float32)
+    def env(in_zone: bool, success: int, ss: int = 5) -> SimpleNamespace:
+        return SimpleNamespace(_planar_metrics=SimpleNamespace(in_zone=in_zone),
+                               _success=success, success_steps=ss)
+    assert _term_terminal_deliver(env(True, 4), 0.0, a) == 1.0    # completing step (after ++ = 5 = terminate)
+    assert _term_terminal_deliver(env(True, 3), 0.0, a) == 0.0    # not yet
+    assert _term_terminal_deliver(env(True, 5), 0.0, a) == 0.0    # HELD past completion — no annuity
+    assert _term_terminal_deliver(env(False, 4), 0.0, a) == 0.0   # out of zone
+    assert _term_terminal_deliver(object(), 0.0, a) == 0.0         # non-planar env
+
+
+def test_deliver_hymeko_adds_only_terminal_deliver() -> None:
+    base = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task.hymeko").terms)
+    dlv = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_deliver.hymeko").terms)
+    assert set(dlv) - set(base) == {"terminal_deliver"}
+    assert dlv["terminal_deliver"] == pytest.approx(30.0)
