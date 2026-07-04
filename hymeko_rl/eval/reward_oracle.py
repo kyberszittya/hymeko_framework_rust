@@ -44,10 +44,13 @@ _PHASE_METRICS = {
 class _AbstractEnv:
     """Duck-typed env exposing exactly what :meth:`RewardSpec.evaluate` reads for one abstract phase."""
 
-    def __init__(self, phase: Phase, ever_grasped: bool, zone_half: float = 0.055) -> None:
+    def __init__(self, phase: Phase, ever_grasped: bool, zone_half: float = 0.055,
+                 success: int = 0, success_steps: int = 5) -> None:
         self._planar_metrics = _PHASE_METRICS[phase]
         self._ever_grasped = ever_grasped
         self._zone_half = zone_half
+        self._success = success              # abstract dwell -> dwell-dependent terms (terminal_deliver) can score
+        self.success_steps = success_steps
 
 
 @dataclass(frozen=True)
@@ -64,13 +67,15 @@ class AlignmentReport:
         return f"reward-optimal {verb} | return={self.optimal_return:.1f} | {head}"
 
 
-def _phase_reward(spec: RewardSpec, phase: Phase, ever_grasped: bool, n_actions: int) -> float:
-    """The declared reward evaluated on an abstract phase (the SAME RewardSpec that scores the live env)."""
-    env = _AbstractEnv(phase, ever_grasped)
+def _phase_reward(spec: RewardSpec, phase: Phase, ever_grasped: bool, n_actions: int,
+                  success: int = 0, success_steps: int = 5) -> float:
+    """The declared reward on an abstract ``(phase, dwell)`` — the SAME RewardSpec that scores the live env.
+    ``success`` is the abstract dwell so dwell-dependent terms (``terminal_deliver``) fire at the completing step."""
+    env = _AbstractEnv(phase, ever_grasped, success=success, success_steps=success_steps)
     return spec.evaluate(env, _PHASE_METRICS[phase].disk_to_zone, np.zeros(n_actions, dtype=np.float32))
 
 
-def _actions(phase: Phase, dwell: int) -> "list[tuple[Phase, int, str]]":
+def _actions(phase: Phase, dwell: int, success_steps: int = 5) -> "list[tuple[Phase, int, str]]":
     """Available ``(next_phase, next_dwell, name)`` — advance toward delivery, or hold/farm in place."""
     if phase == Phase.FAR:
         return [(Phase.FAR, 0, "wait"), (Phase.NEAR, 0, "approach")]
@@ -78,7 +83,12 @@ def _actions(phase: Phase, dwell: int) -> "list[tuple[Phase, int, str]]":
         return [(Phase.NEAR, 0, "wait"), (Phase.GRASPED_OUT, 0, "grasp")]
     if phase == Phase.GRASPED_OUT:
         return [(Phase.GRASPED_OUT, 0, "farm"), (Phase.GRASPED_IN, 0, "carry_in")]
-    return [(Phase.GRASPED_IN, dwell + 1, "hold"), (Phase.GRASPED_OUT, 0, "release")]   # GRASPED_IN
+    # GRASPED_IN: on the COMPLETING step (dwell == success_steps-1) the coin is in-zone, so the env auto-increments
+    # `_success` to `success_steps` and terminates THIS step — the policy cannot collect the completing-step reward
+    # (e.g. terminal_deliver) and then release. So release is only available BEFORE the completing step.
+    if dwell >= success_steps - 1:
+        return [(Phase.GRASPED_IN, dwell + 1, "hold")]                                   # forced to complete
+    return [(Phase.GRASPED_IN, dwell + 1, "hold"), (Phase.GRASPED_OUT, 0, "release")]
 
 
 def certify(spec: RewardSpec, *, n_actions: int = 4, gamma: float = 0.99, horizon: int = 300,
@@ -92,7 +102,18 @@ def certify(spec: RewardSpec, *, n_actions: int = 4, gamma: float = 0.99, horizo
     # Postconditions ``delivers`` is True iff the arg-max trajectory reaches ``dwell >= success_steps``."""
     if horizon < 1 or success_steps < 1 or not (0.0 < gamma <= 1.0):
         raise ValueError("need horizon>=1, success_steps>=1, 0<gamma<=1")
-    reward = {(p, eg): _phase_reward(spec, p, eg, n_actions) for p in Phase for eg in (False, True)}
+    # Dwell-aware reward cache: the reward now varies with the abstract dwell (a dwell-dependent term like
+    # terminal_deliver fires only on the completing step), so it is keyed by (phase, eg, dwell-clamped).
+    rcache: dict[tuple[Phase, bool, int], float] = {}
+
+    def phase_r(phase: Phase, eg: bool, dwell: int) -> float:
+        k = (phase, eg, min(dwell, success_steps))
+        v = rcache.get(k)
+        if v is None:
+            v = _phase_reward(spec, phase, eg, n_actions, success=dwell, success_steps=success_steps)
+            rcache[k] = v
+        return v
+
     memo: dict[tuple[Phase, int, bool, int], tuple[float, list[str]]] = {}
 
     def value(phase: Phase, dwell: int, eg: bool, t: int) -> tuple[float, list[str]]:
@@ -104,9 +125,9 @@ def certify(spec: RewardSpec, *, n_actions: int = 4, gamma: float = 0.99, horizo
         cached = memo.get(key)
         if cached is not None:
             return cached
-        r = reward[(phase, eg)]
+        r = phase_r(phase, eg, dwell)
         best: tuple[float, list[str]] = (-1e18, [])
-        for nphase, ndwell, name in _actions(phase, dwell):
+        for nphase, ndwell, name in _actions(phase, dwell, success_steps):
             neg = eg or nphase in (Phase.GRASPED_OUT, Phase.GRASPED_IN)
             vn, tn = value(nphase, ndwell, neg, t + 1)
             val = r + gamma * vn

@@ -49,3 +49,25 @@ def test_certify_validates_inputs() -> None:
     import pytest
     with pytest.raises(ValueError):
         certify(_spec(), gamma=1.5)
+
+
+def test_terminal_deliver_term_is_scored_and_de_annuitization_delivers() -> None:
+    """P0 (2026-07-04): the oracle is now dwell-aware, so a dwell-dependent reward TERM (`terminal_deliver`) is
+    scored, and the completing-step reward cannot be collected-then-released (release forbidden at dwell==ss-1,
+    matching the env's auto-increment-and-terminate). Result: a per-step in_zone/both ANNUITY is oscillation-
+    farmable, so DE-ANNUITIZING (annuity ~0) + a MODEST terminal bonus delivers, while the annuity needs a huge
+    (training-unstable) bonus to overcome — the well-conditioning argument for reshaping over single-knob tuning."""
+    def cert(terms: "list[tuple[str, float]]") -> bool:
+        return certify(RewardSpec(tuple(terms))).delivers
+
+    # de-annuitized (no per-step in_zone/both) + a MODEST terminal bonus -> delivers
+    assert cert([("grasp_approach", 4.0), ("out_of_bounds", 2.0), ("terminal_deliver", 30.0)]) is True
+    # the SAME modest bonus with the per-step annuity restored -> still farms (a modest bonus can't beat it)
+    assert cert([("grasp_approach", 4.0), ("both_contact", 5.0), ("in_zone", 10.0),
+                 ("out_of_bounds", 2.0), ("terminal_deliver", 30.0)]) is False
+    assert cert([("grasp_approach", 4.0), ("both_contact", 5.0), ("in_zone", 10.0),
+                 ("out_of_bounds", 2.0), ("terminal_deliver", 300.0)]) is False
+    # a HUGE bonus (2000) DOES beat the annuity -- but at ~60x the weight the de-annuitized shape needed (30),
+    # a training-unstable spike. The conditioning argument for de-annuitizing, certified.
+    assert cert([("grasp_approach", 4.0), ("both_contact", 5.0), ("in_zone", 10.0),
+                 ("out_of_bounds", 2.0), ("terminal_deliver", 2000.0)]) is True
