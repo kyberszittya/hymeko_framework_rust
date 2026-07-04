@@ -441,7 +441,19 @@ def train_offpolicy(actor: DeterministicActor, critics: list[QCritic], env: Any,
         now = time.perf_counter()
         rate = (step - step_last) / max(1e-9, now - t_last)
         eta = (cfg.total_steps - step) / max(1e-9, rate)
-        print(f"  [offpolicy] step {step:>7}/{cfg.total_steps} | crit={last_c:.3g} act={last_a:.3g} | "
+        # Decompose the actor objective: act = -Q + bc_coef*BC fuses two unrelated signals. Q is the divergence
+        # tripwire (Q -> +/-inf = a real Q-scale blow-up); bc is the anchor pull (grows benignly as the policy
+        # outgrows the demo). Logging them fused hides which is moving. Cheap (one forward per log line, no_grad).
+        diag = ""
+        if buf.size >= 64:
+            with torch.no_grad():
+                sd = buf.sample(min(256, buf.size), generator=rng)[0].to(dev)
+                diag = f" Q={float(critics[0](sd, actor(sd)).mean()):+.3g}"
+                if bc_obs is not None and bc_act is not None:
+                    m = min(256, int(bc_obs.shape[0]))
+                    bi = torch.randint(0, int(bc_obs.shape[0]), (m,), device=dev)
+                    diag += f" bc={float(F.mse_loss(actor(bc_obs[bi]), bc_act[bi])):.3g}"
+        print(f"  [offpolicy] step {step:>7}/{cfg.total_steps} | crit={last_c:.3g} act={last_a:.3g}{diag} | "
               f"{rate:5.0f} steps/s | ETA {eta/60:5.1f} min | buf={buf.size}", flush=True)
         t_last, step_last = now, step
 

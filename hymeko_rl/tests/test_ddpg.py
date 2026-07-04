@@ -80,3 +80,21 @@ def test_train_offpolicy_runs_and_returns_finite_curve(algo_cfg: OffPolicyConfig
                                      action_scale=10.0, n_critics=algo_cfg.n_critics, hidden=16)
     hist = train_offpolicy(actor, critics, env, algo_cfg)
     assert len(hist) == 2 and all(np.isfinite(hist))           # two evals at 150, 300
+
+
+def test_offpolicy_log_decomposes_actor_loss_into_q_and_bc(capsys: "pytest.CaptureFixture[str]") -> None:
+    """Regression: the ``[offpolicy]`` line splits the fused actor loss into ``Q=`` (the divergence tripwire —
+    Q→±inf is a real Q-scale blow-up) and ``bc=`` (the benign anchor pull that grows as the policy outgrows the
+    demo). Logging them fused hid a genuine Q-drift behind BC growth (2026-07-04). Would fail on the old format."""
+    from hymeko_rl.train.ddpg import td3_bc_config
+    torch.manual_seed(0)
+    env = _env(max_steps=50)
+    nv = env.hg.n_vertices
+    actor, critics = build_offpolicy("mlp", obs_dim=2, flat_dim=nv * 2, action_dim=1,
+                                     action_scale=10.0, n_critics=2, hidden=16)
+    demos = (np.zeros((16, nv, 2), dtype=np.float32), np.zeros((16, 1), dtype=np.float32))
+    cfg = td3_bc_config(total_steps=5200, start_steps=50, batch_size=16, capacity=1000,
+                        eval_every=5200, n_eval=1, log_every=5000, critic_warmup=10, seed=0)
+    train_offpolicy(actor, critics, env, cfg, offline_data=demos)
+    out = capsys.readouterr().out
+    assert "Q=" in out and "bc=" in out, f"decomposed Q=/bc= missing from the [offpolicy] log:\n{out[-300:]}"
