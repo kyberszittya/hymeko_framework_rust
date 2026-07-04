@@ -315,3 +315,31 @@ def test_pbrs_hymeko_is_task_plus_potential_shaping() -> None:
     dlv = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_pbrs.hymeko").terms)
     assert set(dlv) == {"terminal_deliver", "out_of_bounds", "zone_progress", "grasp_progress"}
     assert dlv["terminal_deliver"] == pytest.approx(30.0)
+
+
+def test_conjunctive_progress_gates_on_the_worst_axis() -> None:
+    """The nonlinear conjunctive PBRS potential Φ=-max(zone,l_tip,r_tip) pays ONLY for reducing the WORST axis, so
+    the policy cannot earn progress by one-finger pushing (improving zone while a fingertip stays far). Forces
+    grasp AND carry together. Would fail against the linear zone_progress+grasp_progress sum."""
+    from types import SimpleNamespace
+
+    from hymeko_rl.env.reward import _term_conjunctive_progress
+
+    a = np.zeros(4, dtype=np.float32)
+    def env(z: float, lt: float, rt: float) -> SimpleNamespace:
+        return SimpleNamespace(_planar_metrics=SimpleNamespace(disk_to_zone=z, left_tip_dist=lt, right_tip_dist=rt))
+
+    # tips are the worst (0.30) — improving the zone (already near) is NOT the max, so ~no credit:
+    e = env(0.05, 0.30, 0.30); _term_conjunctive_progress(e, 0.0, a)          # init
+    e._planar_metrics = SimpleNamespace(disk_to_zone=0.0, left_tip_dist=0.30, right_tip_dist=0.30)
+    assert abs(_term_conjunctive_progress(e, 0.0, a)) < 0.02                   # improving non-worst pays ~0
+
+    e2 = env(0.05, 0.30, 0.30); _term_conjunctive_progress(e2, 0.0, a)         # init
+    e2._planar_metrics = SimpleNamespace(disk_to_zone=0.05, left_tip_dist=0.15, right_tip_dist=0.15)
+    assert _term_conjunctive_progress(e2, 0.0, a) > 0.05                       # improving the WORST (tips) pays
+    assert _term_conjunctive_progress(object(), 0.0, a) == 0.0                 # non-planar env
+
+
+def test_conj_hymeko_is_task_plus_conjunctive_shaping() -> None:
+    c = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_conj.hymeko").terms)
+    assert set(c) == {"terminal_deliver", "out_of_bounds", "conjunctive_progress"}

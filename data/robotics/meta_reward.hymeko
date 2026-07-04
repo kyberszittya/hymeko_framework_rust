@@ -57,6 +57,9 @@ reward {
         // it CANNOT be farmed (telescopes to Φ(end)-Φ(start)). Replaces the farmable in_zone/both annuities.
         @zone_progress:  + <isa> reward.reward_term {}   // Φ = -disk_to_zone   (progress toward the zone)
         @grasp_progress: + <isa> reward.reward_term {}   // Φ = -max(l,r) tip   (progress toward the grasp)
+        // NONLINEAR conjunction: Φ = -max(disk_to_zone, l_tip, r_tip). Progress requires grasp AND carry TOGETHER
+        // (the worst of the three gates), so the policy can't earn zone-progress by one-finger pushing. Farm-proof.
+        @conjunctive_progress: + <isa> reward.reward_term {}
 
         // +weight when both fingers touch the disk (encourages a two-sided grasp).
         @both_contact: + <isa> reward.reward_term {}

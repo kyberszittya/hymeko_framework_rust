@@ -174,6 +174,23 @@ def _term_grasp_progress(env: "ArmReachEnv", dist: float, action: np.ndarray) ->
     return _pbrs_shaping(env, -max(float(m.left_tip_dist), float(m.right_tip_dist)), "_pbrs_prev_grasp")
 
 
+def _term_conjunctive_progress(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """NONLINEAR **conjunctive** PBRS potential ``Φ = −max(disk_to_zone, left_tip, right_tip)`` — dominated by the
+    WORST of {coin far from zone, either fingertip far from the coin}. Raising Φ forces reducing the *worst* one,
+    so the policy must improve the grasp AND the carry TOGETHER; there is no credit for advancing one while
+    neglecting another (the coupling the linear ``zone_progress + grasp_progress`` split lets the policy dodge by
+    one-finger pushing — measured both_contact≈0). ``max`` is nonlinear, so this is a genuine conjunction, yet it
+    is still a *potential over state* → ``γΦ(s')−Φ(s)`` telescopes → farm-proof (Ng-Harada-Russell). 0 on a
+    non-planar env.
+
+    # Postconditions the shaping is 0 on the first step of an episode; else ``γΦ(s')−Φ(s)`` with the max potential."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    phi = -max(float(m.disk_to_zone), float(m.left_tip_dist), float(m.right_tip_dist))
+    return _pbrs_shaping(env, phi, "_pbrs_prev_conj")
+
+
 def _term_settle(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
     """Overshoot brake: penalise the coin's speed **only once it is inside the zone**, so the policy
     slows it to a stop there instead of pushing it straight through (the measured ep4 overshoot).
@@ -456,6 +473,7 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "both_approach": _term_both_approach,
     "zone_progress": _term_zone_progress,       # PBRS: policy-invariant progress toward the zone
     "grasp_progress": _term_grasp_progress,     # PBRS: policy-invariant progress toward the grasp
+    "conjunctive_progress": _term_conjunctive_progress,   # PBRS: NONLINEAR conjunction (grasp AND carry together)
     "settle": _term_settle,
     "coin_pregrasp_still": _term_coin_pregrasp_still,
     "arm_motion": _term_arm_motion,

@@ -531,6 +531,7 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         self._ever_grasped = False                                    # gates the pre-grasp stillness term
         self._pbrs_prev_zone = None                                   # PBRS potentials re-initialise each episode
         self._pbrs_prev_grasp = None                                  # (Ng-Harada-Russell: γΦ(s')-Φ(s), see reward.py)
+        self._pbrs_prev_conj = None                                   # conjunctive potential Φ=-max(zone,tips)
         return self.node_features(), {"disk_to_zone": self._planar_metrics.disk_to_zone}
 
     def step(self, action: np.ndarray,
