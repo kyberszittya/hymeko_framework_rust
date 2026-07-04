@@ -9,6 +9,7 @@ structural prior should pay off).
 """
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 
 import numpy as np
@@ -40,15 +41,20 @@ def collect_demos(env: ArmReachEnv, n_episodes: int, seed: int,
 
 def behaviour_clone(ac: ActorCritic, obs: np.ndarray, acts: np.ndarray, *,
                     n_epochs: int = 150, lr: float = 1e-3, batch: int = 128,
-                    seed: int = 0) -> list[float]:
-    """Fit ``ac``'s actor mean to the expert actions (MSE). Returns per-epoch loss."""
+                    seed: int = 0, log_every: int = 25) -> list[float]:
+    """Fit ``ac``'s actor mean to the expert actions (MSE). Returns per-epoch loss.
+
+    Never run blind (§3): emits a flushed ``[bc]`` progress line (epoch, MSE loss, epochs/s, ETA) every
+    ``log_every`` epochs so the BC phase is not a dark gap before off-policy training. ``log_every=0`` silences it.
+    """
     torch.manual_seed(seed)
     obs_t = torch.as_tensor(obs, dtype=torch.float32)
     act_t = torch.as_tensor(acts, dtype=torch.float32)
     opt = torch.optim.Adam(ac.parameters(), lr=lr)
     n = len(obs_t)
     losses: list[float] = []
-    for _ in range(n_epochs):
+    t0 = time.perf_counter()
+    for ep in range(n_epochs):
         perm = torch.randperm(n)
         ep_loss, n_batch = 0.0, 0
         for i in range(0, n, batch):
@@ -61,6 +67,10 @@ def behaviour_clone(ac: ActorCritic, obs: np.ndarray, acts: np.ndarray, *,
             ep_loss += float(loss.item())
             n_batch += 1
         losses.append(ep_loss / max(1, n_batch))
+        if log_every and ((ep + 1) % log_every == 0 or ep + 1 == n_epochs):
+            rate = (ep + 1) / max(1e-9, time.perf_counter() - t0)
+            print(f"  [bc] epoch {ep + 1:>4}/{n_epochs} | loss={losses[-1]:.4g} "
+                  f"| {rate:4.1f} ep/s | ETA {(n_epochs - ep - 1) / max(1e-9, rate):4.0f}s", flush=True)
     return losses
 
 
