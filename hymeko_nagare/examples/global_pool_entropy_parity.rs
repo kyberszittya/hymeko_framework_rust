@@ -11,7 +11,9 @@ use std::{
     time::Instant,
 };
 
-use hymeko_nagare::{linear_forward, LinearLayer};
+use hymeko_nagare::{
+    FusedEntropyUpdateShape, LinearLayer, fused_entropy_update_forward, linear_forward,
+};
 
 #[derive(Clone, Debug)]
 pub struct TensorBlock {
@@ -245,9 +247,20 @@ pub fn forward_case(case: &FixtureCase) -> ForwardOutput {
     alloc.add_f32(logits_first.len());
     let entropy = entropy_feature(&logits_first);
     alloc.add_f32(entropy.len());
-    let update_x = update_input(&h, &pooled, &entropy, batch, points, hidden);
-    alloc.add_f32(update_x.len());
-    let update_pre = linear_forward(&update, &update_x);
+    // Fused path: the wide `[h, pooled, entropy]` broadcast row is never
+    // materialised (the 2026-07-01 parity run measured that materialisation
+    // as the latency gap vs PyTorch).
+    let update_pre = fused_entropy_update_forward(
+        &update,
+        &h,
+        &pooled,
+        &entropy,
+        FusedEntropyUpdateShape {
+            batch,
+            points,
+            hidden,
+        },
+    );
     alloc.add_f32(update_pre.len());
     let h2 = relu(&update_pre);
     alloc.add_f32(h2.len());
@@ -308,29 +321,6 @@ fn entropy_feature(logits: &[f32]) -> Vec<f32> {
         let p0 = ea / (ea + ec);
         let p1 = ec / (ea + ec);
         out[b] = -(p0 * p0.max(1.0e-12).ln() + p1 * p1.max(1.0e-12).ln()) / std::f32::consts::LN_2;
-    }
-    out
-}
-
-fn update_input(
-    h: &[f32],
-    pooled: &[f32],
-    entropy: &[f32],
-    batch: usize,
-    points: usize,
-    hidden: usize,
-) -> Vec<f32> {
-    let in_dim = 4 * hidden + 1;
-    let mut out = vec![0.0; batch * points * in_dim];
-    for b in 0..batch {
-        for p in 0..points {
-            let dst = (b * points + p) * in_dim;
-            let src_h = (b * points + p) * hidden;
-            out[dst..dst + hidden].copy_from_slice(&h[src_h..src_h + hidden]);
-            out[dst + hidden..dst + 4 * hidden]
-                .copy_from_slice(&pooled[b * 3 * hidden..(b + 1) * 3 * hidden]);
-            out[dst + 4 * hidden] = entropy[b];
-        }
     }
     out
 }

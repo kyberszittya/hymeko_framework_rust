@@ -2,7 +2,7 @@
 #[allow(dead_code)]
 mod global_pool_entropy_toys;
 
-use global_pool_entropy_toys::{global_pool, make_dataset, run_suite, Config, Task};
+use global_pool_entropy_toys::{Config, Task, global_pool, make_dataset, run_suite};
 
 #[test]
 fn generated_toy_dataset_has_expected_shape() {

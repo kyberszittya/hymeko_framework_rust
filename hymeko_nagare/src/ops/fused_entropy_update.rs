@@ -4,6 +4,8 @@
 //! input `[h_row, pooled_batch, entropy_batch]`, without materialising that
 //! wide broadcast tensor.
 
+use rayon::prelude::*;
+
 use crate::ops::linear::LinearLayer;
 
 /// Shape for a fused entropy-update call.
@@ -51,13 +53,16 @@ pub fn fused_entropy_update_forward(
     assert_eq!(pooled.len(), batch * 3 * hidden);
     assert_eq!(entropy.len(), batch);
     let mut out = vec![0.0; batch * points * layer.out_dim];
-    for b in 0..batch {
-        let pooled_row = &pooled[b * 3 * hidden..(b + 1) * 3 * hidden];
-        let ent = entropy[b];
-        for p in 0..points {
-            let h_row = &h[(b * points + p) * hidden..(b * points + p + 1) * hidden];
-            let out_row =
-                &mut out[(b * points + p) * layer.out_dim..(b * points + p + 1) * layer.out_dim];
+    // Parallel over rows like `linear_forward` (each output row is
+    // independent, so the per-row accumulation order — and hence the
+    // result — is bit-identical to the serial loop).
+    out.par_chunks_mut(layer.out_dim)
+        .enumerate()
+        .for_each(|(row, out_row)| {
+            let b = row / points;
+            let pooled_row = &pooled[b * 3 * hidden..(b + 1) * 3 * hidden];
+            let ent = entropy[b];
+            let h_row = &h[row * hidden..(row + 1) * hidden];
             for (j, slot) in out_row.iter_mut().enumerate() {
                 let mut acc = layer.b[j];
                 for (i, &v) in h_row.iter().enumerate() {
@@ -69,8 +74,7 @@ pub fn fused_entropy_update_forward(
                 acc += ent * layer.w[(4 * hidden) * layer.out_dim + j];
                 *slot = acc;
             }
-        }
-    }
+        });
     out
 }
 

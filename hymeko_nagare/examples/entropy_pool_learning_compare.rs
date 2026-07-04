@@ -1,4 +1,8 @@
 //! Compare entropy-pool local learning with the backprop-like holonomy toy.
+//!
+//! Orchestration shell only: the learner, projection, pooling, features,
+//! datasets, and metrics live in `hymeko_nagare::holonomy`; the
+//! backprop-like baseline lives in the `holonomy_entropy_toys` example.
 
 use std::{
     env,
@@ -13,18 +17,11 @@ use std::{
 #[path = "holonomy_entropy_toys.rs"]
 mod holonomy_entropy_toys;
 
-use holonomy_entropy_toys::{
-    clifford_probability_error, quaternion_periodic_features, run_suite as run_backprop_suite,
-    Config as BackpropConfig, Dataset,
+use holonomy_entropy_toys::{Config as BackpropConfig, run_suite as run_backprop_suite};
+use hymeko_nagare::holonomy::{
+    Dataset, EntropyPoolLocalLearner, GateMode, Metrics, Task, Timing, corrupt_dataset,
+    evaluate_local, make_dataset,
 };
-pub use holonomy_entropy_toys::{make_dataset, Task};
-use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
-
-const VERTEX_FEATURES: usize = 7;
-const STRUCTURAL_FEATURES: usize = 4 * VERTEX_FEATURES;
-const LOCAL_FEATURES: usize = STRUCTURAL_FEATURES + 1;
-const PROJECTION_RANK: usize = 6;
-const PROJECTION_ALPHA: f32 = 0.72;
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -58,21 +55,6 @@ impl Default for Config {
 }
 
 #[derive(Clone, Debug)]
-pub struct Metrics {
-    pub acc: f32,
-    pub loss: f32,
-    pub entropy: f32,
-    pub clifford_error: f32,
-}
-
-#[derive(Clone, Debug)]
-pub struct Timing {
-    pub median_us_per_sample: f64,
-    pub mean_us_per_sample: f64,
-    pub max_us_per_sample: f64,
-}
-
-#[derive(Clone, Debug)]
 pub struct CompareRow {
     pub task: Task,
     pub local: Metrics,
@@ -82,23 +64,6 @@ pub struct CompareRow {
     pub backprop_timing_median_us: f64,
     pub local_params: usize,
     pub backprop_params: usize,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum GateMode {
-    Entropy,
-    Constant,
-    Projection,
-}
-
-impl GateMode {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Entropy => "entropy",
-            Self::Constant => "constant",
-            Self::Projection => "projection",
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -158,148 +123,6 @@ pub struct StressRow {
     pub projection_params: usize,
 }
 
-#[derive(Clone, Debug)]
-pub struct EntropyPoolLocalLearner {
-    w: Vec<f32>,
-    b: [f32; 2],
-    gate_mode: GateMode,
-    projection_basis: [[f32; STRUCTURAL_FEATURES]; PROJECTION_RANK],
-}
-
-impl EntropyPoolLocalLearner {
-    pub fn new(seed: u64) -> Self {
-        Self::new_with_gate(seed, GateMode::Entropy)
-    }
-
-    pub fn new_with_gate(seed: u64, gate_mode: GateMode) -> Self {
-        let mut rng = StdRng::seed_from_u64(seed);
-        let mut w = vec![0.0; LOCAL_FEATURES * 2];
-        for value in &mut w {
-            *value = (rng.random::<f32>() * 2.0 - 1.0) * 0.01;
-        }
-        Self {
-            w,
-            b: [0.0, 0.0],
-            gate_mode,
-            projection_basis: default_holonomy_projection_basis(),
-        }
-    }
-
-    pub fn logits_one(&self, phi: &[f32]) -> [f32; 2] {
-        assert_eq!(phi.len(), LOCAL_FEATURES);
-        let mut out = self.b;
-        for (i, &v) in phi.iter().enumerate() {
-            out[0] += v * self.w[2 * i];
-            out[1] += v * self.w[2 * i + 1];
-        }
-        out
-    }
-
-    pub fn predict_dataset(&self, data: &Dataset) -> Vec<f32> {
-        let structural = structural_pool_features(data);
-        let mut logits = vec![0.0; data.samples * 2];
-        for sample in 0..data.samples {
-            let phi = entropy_augmented_phi(
-                self,
-                &structural[sample * STRUCTURAL_FEATURES..(sample + 1) * STRUCTURAL_FEATURES],
-            );
-            let row = self.logits_one(&phi);
-            logits[2 * sample] = row[0];
-            logits[2 * sample + 1] = row[1];
-        }
-        logits
-    }
-
-    pub fn train(&mut self, data: &Dataset, epochs: usize, batch_size: usize, lr: f32, seed: u64) {
-        let structural = structural_pool_features(data);
-        if self.gate_mode == GateMode::Projection {
-            self.projection_basis = learn_holonomy_projection_basis(&structural, &data.y);
-        }
-        let mut rng = StdRng::seed_from_u64(seed);
-        let mut indices: Vec<usize> = (0..data.samples).collect();
-        for _ in 0..epochs {
-            indices.shuffle(&mut rng);
-            for chunk in indices.chunks(batch_size) {
-                for &sample in chunk {
-                    let base = sample * STRUCTURAL_FEATURES;
-                    let phi =
-                        entropy_augmented_phi(self, &structural[base..base + STRUCTURAL_FEATURES]);
-                    let logits = self.logits_one(&phi);
-                    let (p0, p1) = softmax2(logits[0], logits[1]);
-                    let y0 = f32::from(data.y[sample] == 0);
-                    let y1 = f32::from(data.y[sample] == 1);
-                    let entropy = entropy2(p0, p1);
-                    let gate = match self.gate_mode {
-                        GateMode::Entropy => 0.25 + entropy,
-                        GateMode::Constant | GateMode::Projection => 1.0,
-                    };
-                    let delta = [y0 - p0, y1 - p1];
-                    for (i, &value) in phi.iter().enumerate() {
-                        self.w[2 * i] += lr * gate * value * delta[0];
-                        self.w[2 * i + 1] += lr * gate * value * delta[1];
-                    }
-                    self.b[0] += lr * gate * delta[0];
-                    self.b[1] += lr * gate * delta[1];
-                }
-            }
-        }
-    }
-
-    pub fn n_params(&self) -> usize {
-        let projection_params = if self.gate_mode == GateMode::Projection {
-            STRUCTURAL_FEATURES * PROJECTION_RANK
-        } else {
-            0
-        };
-        self.w.len() + self.b.len() + projection_params
-    }
-}
-
-pub fn structural_pool_features(data: &Dataset) -> Vec<f32> {
-    let lifted = quaternion_periodic_features(&data.x, data.samples, data.points);
-    let mut out = vec![0.0; data.samples * STRUCTURAL_FEATURES];
-    let inv_points = 1.0 / data.points as f32;
-    for sample in 0..data.samples {
-        for channel in 0..VERTEX_FEATURES {
-            let mut sum = 0.0;
-            let mut max_value = f32::NEG_INFINITY;
-            let mut positive = 0usize;
-            for point in 0..data.points {
-                let value = lifted[(sample * data.points + point) * VERTEX_FEATURES + channel];
-                sum += value;
-                max_value = max_value.max(value);
-                positive += usize::from(value >= 0.0);
-            }
-            let mean = sum * inv_points;
-            let mut var = 0.0;
-            for point in 0..data.points {
-                let value = lifted[(sample * data.points + point) * VERTEX_FEATURES + channel];
-                let d = value - mean;
-                var += d * d;
-            }
-            let pos = positive as f32 * inv_points;
-            let sign_entropy = binary_entropy(pos);
-            let base = sample * STRUCTURAL_FEATURES;
-            out[base + channel] = mean;
-            out[base + VERTEX_FEATURES + channel] = (var * inv_points + 1.0e-6).sqrt();
-            out[base + 2 * VERTEX_FEATURES + channel] = max_value;
-            out[base + 3 * VERTEX_FEATURES + channel] = sign_entropy;
-        }
-    }
-    out
-}
-
-pub fn evaluate_local(model: &EntropyPoolLocalLearner, data: &Dataset) -> Metrics {
-    let logits = model.predict_dataset(data);
-    let ce = cross_entropy(&logits, &data.y);
-    Metrics {
-        acc: ce.acc,
-        loss: ce.loss,
-        entropy: ce.entropy,
-        clifford_error: clifford_probability_error(&logits, &data.y),
-    }
-}
-
 pub fn run_suite(cfg: &Config) -> Vec<CompareRow> {
     let bp_cfg = BackpropConfig {
         tasks: cfg.tasks.clone(),
@@ -348,160 +171,6 @@ pub fn run_suite(cfg: &Config) -> Vec<CompareRow> {
             }
         })
         .collect()
-}
-
-fn entropy_augmented_phi(model: &EntropyPoolLocalLearner, structural: &[f32]) -> Vec<f32> {
-    let mut warm = vec![0.0; LOCAL_FEATURES];
-    warm[..STRUCTURAL_FEATURES].copy_from_slice(structural);
-    warm[STRUCTURAL_FEATURES] = 1.0;
-    let logits = model.logits_one(&warm);
-    let (p0, p1) = softmax2(logits[0], logits[1]);
-    warm[STRUCTURAL_FEATURES] = match model.gate_mode {
-        GateMode::Entropy => entropy2(p0, p1),
-        GateMode::Constant | GateMode::Projection => 1.0,
-    };
-    if model.gate_mode == GateMode::Projection {
-        project_onto_holonomy_subspace(&mut warm, &model.projection_basis);
-    }
-    warm
-}
-
-pub fn project_onto_holonomy_axis(phi: &mut [f32]) {
-    let basis = default_holonomy_projection_basis();
-    project_onto_holonomy_subspace(phi, &basis);
-}
-
-pub fn project_onto_holonomy_subspace(
-    phi: &mut [f32],
-    basis: &[[f32; STRUCTURAL_FEATURES]; PROJECTION_RANK],
-) {
-    assert_eq!(phi.len(), LOCAL_FEATURES);
-    let mut projected = [0.0f32; STRUCTURAL_FEATURES];
-    for axis in basis {
-        let norm2 = axis.iter().map(|v| v * v).sum::<f32>();
-        if norm2 <= 1.0e-12 {
-            continue;
-        }
-        let dot = phi[..STRUCTURAL_FEATURES]
-            .iter()
-            .zip(axis.iter())
-            .map(|(&a, &b)| a * b)
-            .sum::<f32>();
-        let scale = dot / norm2;
-        for (dst, &axis_value) in projected.iter_mut().zip(axis.iter()) {
-            *dst += scale * axis_value;
-        }
-    }
-    for i in 0..STRUCTURAL_FEATURES {
-        phi[i] = PROJECTION_ALPHA * projected[i] + (1.0 - PROJECTION_ALPHA) * phi[i];
-    }
-}
-
-pub fn learn_holonomy_projection_basis(
-    structural: &[f32],
-    labels: &[usize],
-) -> [[f32; STRUCTURAL_FEATURES]; PROJECTION_RANK] {
-    assert_eq!(structural.len(), labels.len() * STRUCTURAL_FEATURES);
-    let mut class_sum = [[0.0f32; STRUCTURAL_FEATURES]; 2];
-    let mut class_count = [0usize; 2];
-    for (sample, &label) in labels.iter().enumerate() {
-        let label = label.min(1);
-        class_count[label] += 1;
-        let base = sample * STRUCTURAL_FEATURES;
-        for i in 0..STRUCTURAL_FEATURES {
-            class_sum[label][i] += structural[base + i];
-        }
-    }
-    for label in 0..2 {
-        let scale = 1.0 / class_count[label].max(1) as f32;
-        for value in &mut class_sum[label] {
-            *value *= scale;
-        }
-    }
-    let mut candidates = [[0.0f32; STRUCTURAL_FEATURES]; PROJECTION_RANK + 2];
-    for i in 0..STRUCTURAL_FEATURES {
-        candidates[0][i] = class_sum[1][i] - class_sum[0][i];
-        candidates[1][i] = 0.5 * (class_sum[0][i] + class_sum[1][i]);
-    }
-    let class_delta = candidates[0];
-    copy_channel_group(&mut candidates[2], &class_delta, &[0, 1, 2]);
-    copy_channel_group(&mut candidates[3], &class_delta, &[3, 4]);
-    copy_channel_group(&mut candidates[4], &class_delta, &[5, 6]);
-    for channel in 0..VERTEX_FEATURES {
-        candidates[5][VERTEX_FEATURES + channel] =
-            class_sum[0][VERTEX_FEATURES + channel] + class_sum[1][VERTEX_FEATURES + channel];
-        candidates[5][3 * VERTEX_FEATURES + channel] = class_sum[0][3 * VERTEX_FEATURES + channel]
-            + class_sum[1][3 * VERTEX_FEATURES + channel];
-    }
-    let defaults = default_holonomy_projection_basis();
-    candidates[6] = defaults[2];
-    candidates[7] = defaults[4];
-    orthonormalize_candidates(&candidates)
-}
-
-fn copy_channel_group(dst: &mut [f32; STRUCTURAL_FEATURES], src: &[f32], channels: &[usize]) {
-    for &channel in channels {
-        dst[channel] = src[channel];
-        dst[VERTEX_FEATURES + channel] = src[VERTEX_FEATURES + channel];
-        dst[2 * VERTEX_FEATURES + channel] = src[2 * VERTEX_FEATURES + channel];
-        dst[3 * VERTEX_FEATURES + channel] = src[3 * VERTEX_FEATURES + channel];
-    }
-}
-
-fn default_holonomy_projection_basis() -> [[f32; STRUCTURAL_FEATURES]; PROJECTION_RANK] {
-    let mut candidates = [[0.0f32; STRUCTURAL_FEATURES]; PROJECTION_RANK];
-    copy_channel_group(&mut candidates[0], &[1.0; STRUCTURAL_FEATURES], &[0, 1, 2]);
-    copy_channel_group(&mut candidates[1], &[1.0; STRUCTURAL_FEATURES], &[3, 4]);
-    copy_channel_group(&mut candidates[2], &[1.0; STRUCTURAL_FEATURES], &[5, 6]);
-    for channel in 0..VERTEX_FEATURES {
-        candidates[3][VERTEX_FEATURES + channel] = 1.0;
-        candidates[4][2 * VERTEX_FEATURES + channel] = 1.0;
-        candidates[5][3 * VERTEX_FEATURES + channel] = 1.0;
-    }
-    orthonormalize_candidates(&candidates)
-}
-
-fn orthonormalize_candidates<const N: usize>(
-    candidates: &[[f32; STRUCTURAL_FEATURES]; N],
-) -> [[f32; STRUCTURAL_FEATURES]; PROJECTION_RANK] {
-    let mut basis = [[0.0f32; STRUCTURAL_FEATURES]; PROJECTION_RANK];
-    let mut rank = 0usize;
-    for candidate in candidates {
-        if rank == PROJECTION_RANK {
-            break;
-        }
-        let mut vector = *candidate;
-        for _ in 0..2 {
-            for axis in basis.iter().take(rank) {
-                remove_axis_component(&mut vector, axis);
-            }
-        }
-        let norm = vector.iter().map(|v| v * v).sum::<f32>().sqrt();
-        if norm <= 1.0e-7 {
-            continue;
-        }
-        for (dst, value) in basis[rank].iter_mut().zip(vector.iter()) {
-            *dst = *value / norm;
-        }
-        rank += 1;
-    }
-    basis
-}
-
-fn remove_axis_component(vector: &mut [f32; STRUCTURAL_FEATURES], axis: &[f32]) {
-    let norm2 = axis.iter().map(|v| v * v).sum::<f32>();
-    if norm2 <= 1.0e-12 {
-        return;
-    }
-    let dot = vector
-        .iter()
-        .zip(axis.iter())
-        .map(|(&a, &b)| a * b)
-        .sum::<f32>();
-    let scale = dot / norm2;
-    for (value, &axis_value) in vector.iter_mut().zip(axis.iter()) {
-        *value -= scale * axis_value;
-    }
 }
 
 pub fn run_stress_ablation(cfg: &Config) -> Vec<StressRow> {
@@ -589,25 +258,9 @@ pub fn run_stress_ablation(cfg: &Config) -> Vec<StressRow> {
     rows
 }
 
-pub fn corrupt_dataset(data: &Dataset, noise_std: f32, missing_rate: f32, seed: u64) -> Dataset {
-    let mut rng = StdRng::seed_from_u64(seed);
-    let mut out = data.clone();
-    for sample in 0..out.samples {
-        for point in 0..out.points {
-            let base = (sample * out.points + point) * 2;
-            if rng.random::<f32>() < missing_rate {
-                out.x[base] = 0.0;
-                out.x[base + 1] = 0.0;
-            } else if noise_std > 0.0 {
-                out.x[base] += normalish(&mut rng) * noise_std;
-                out.x[base + 1] += normalish(&mut rng) * noise_std;
-            }
-        }
-    }
-    out
-}
-
 fn forward_timing(model: &EntropyPoolLocalLearner, data: &Dataset, repeats: usize) -> Timing {
+    // Kept local (not the shared closure protocol) so the timed body stays
+    // byte-identical with the 2026-07-02 measurements this example anchors.
     for _ in 0..20 {
         let _ = model.predict_dataset(data);
     }
@@ -622,62 +275,6 @@ fn forward_timing(model: &EntropyPoolLocalLearner, data: &Dataset, repeats: usiz
         median_us_per_sample: values[values.len() / 2],
         mean_us_per_sample: values.iter().sum::<f64>() / values.len() as f64,
         max_us_per_sample: values[values.len() - 1],
-    }
-}
-
-#[derive(Clone, Debug)]
-struct CeOut {
-    loss: f32,
-    acc: f32,
-    entropy: f32,
-}
-
-fn cross_entropy(logits: &[f32], labels: &[usize]) -> CeOut {
-    let mut loss = 0.0;
-    let mut correct = 0usize;
-    let mut entropy = 0.0;
-    for i in 0..labels.len() {
-        let (p0, p1) = softmax2(logits[2 * i], logits[2 * i + 1]);
-        loss += if labels[i] == 0 { -p0.ln() } else { -p1.ln() };
-        correct += usize::from((p1 > p0) == (labels[i] == 1));
-        entropy += entropy2(p0, p1);
-    }
-    CeOut {
-        loss: loss / labels.len() as f32,
-        acc: correct as f32 / labels.len() as f32,
-        entropy: entropy / labels.len() as f32,
-    }
-}
-
-fn binary_entropy(p: f32) -> f32 {
-    let q = 1.0 - p;
-    -(p * p.max(1.0e-12).ln() + q * q.max(1.0e-12).ln()) / std::f32::consts::LN_2
-}
-
-fn normalish(rng: &mut StdRng) -> f32 {
-    let mut sum = 0.0;
-    for _ in 0..6 {
-        sum += rng.random::<f32>() - 0.5;
-    }
-    sum * 0.816_496_6
-}
-
-fn entropy2(p0: f32, p1: f32) -> f32 {
-    -(p0 * p0.max(1.0e-12).ln() + p1 * p1.max(1.0e-12).ln()) / std::f32::consts::LN_2
-}
-
-fn softmax2(a: f32, b: f32) -> (f32, f32) {
-    let m = a.max(b);
-    let ea = (a - m).exp();
-    let eb = (b - m).exp();
-    (ea / (ea + eb), eb / (ea + eb))
-}
-
-fn task_name(task: Task) -> &'static str {
-    match task {
-        Task::Moons => "moons",
-        Task::Spiral => "spiral",
-        Task::Xor => "xor",
     }
 }
 
@@ -703,7 +300,7 @@ fn write_json(
     for (idx, row) in rows.iter().enumerate() {
         let comma = if idx + 1 == rows.len() { "" } else { "," };
         writeln!(file, "    {{")?;
-        writeln!(file, "      \"task\": \"{}\",", task_name(row.task))?;
+        writeln!(file, "      \"task\": \"{}\",", row.task.as_str())?;
         writeln!(file, "      \"local_acc\": {:.6},", row.local.acc)?;
         writeln!(file, "      \"local_loss\": {:.6},", row.local.loss)?;
         writeln!(file, "      \"local_entropy\": {:.6},", row.local.entropy)?;
@@ -747,7 +344,7 @@ fn write_json(
             ","
         };
         writeln!(file, "    {{")?;
-        writeln!(file, "      \"task\": \"{}\",", task_name(row.task))?;
+        writeln!(file, "      \"task\": \"{}\",", row.task.as_str())?;
         writeln!(file, "      \"stress\": \"{}\",", row.stress.as_str())?;
         writeln!(
             file,
@@ -881,7 +478,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for row in &rows {
         println!(
             "{} local acc={:.3} median_us={:.2}; backprop acc={:.3} median_us={:.2}",
-            task_name(row.task),
+            row.task.as_str(),
             row.local.acc,
             row.local_timing.median_us_per_sample,
             row.backprop_acc,
@@ -891,7 +488,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for row in &stress_rows {
         println!(
             "{} {} entropy acc={:.3}; constant acc={:.3}; projection acc={:.3}",
-            task_name(row.task),
+            row.task.as_str(),
             row.stress.as_str(),
             row.entropy_metrics.acc,
             row.constant_metrics.acc,

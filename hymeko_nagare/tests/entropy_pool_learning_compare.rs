@@ -2,10 +2,11 @@
 #[path = "../examples/entropy_pool_learning_compare.rs"]
 mod entropy_pool_learning_compare;
 
-use entropy_pool_learning_compare::{
-    corrupt_dataset, evaluate_local, learn_holonomy_projection_basis, make_dataset,
-    project_onto_holonomy_axis, run_stress_ablation, run_suite, structural_pool_features, Config,
-    EntropyPoolLocalLearner, GateMode, Task,
+use entropy_pool_learning_compare::{Config, run_stress_ablation, run_suite};
+use hymeko_nagare::holonomy::{
+    EntropyPoolLocalLearner, GateMode, PROJECTION_ALPHA, STRUCTURAL_FEATURES, Task,
+    corrupt_dataset, default_holonomy_basis, evaluate_local, fit_class_mean_basis, make_dataset,
+    structural_pool_features,
 };
 
 #[test]
@@ -48,13 +49,13 @@ fn projection_gate_update_reduces_loss_on_tiny_batch() {
 
 #[test]
 fn projection_gate_preserves_shape_and_finiteness() {
-    let mut phi = vec![0.1; 29];
+    let mut phi = vec![0.1; STRUCTURAL_FEATURES];
     phi[3] = 0.4;
     phi[4] = -0.2;
     phi[5] = 0.8;
     phi[6] = 0.3;
-    project_onto_holonomy_axis(&mut phi);
-    assert_eq!(phi.len(), 29);
+    default_holonomy_basis().apply_alpha_mix(&mut phi, PROJECTION_ALPHA);
+    assert_eq!(phi.len(), STRUCTURAL_FEATURES);
     assert!(phi.iter().all(|v| v.is_finite()));
 }
 
@@ -62,12 +63,13 @@ fn projection_gate_preserves_shape_and_finiteness() {
 fn learned_projection_basis_is_finite_and_orthogonal() {
     let data = make_dataset(Task::Moons, 24, 8, 13);
     let structural = structural_pool_features(&data);
-    let basis = learn_holonomy_projection_basis(&structural, &data.y);
-    assert!(basis.iter().flatten().all(|v| v.is_finite()));
-    for (i, lhs) in basis.iter().enumerate() {
+    let basis = fit_class_mean_basis(&structural, &data.y);
+    let rows: Vec<&[f32]> = basis.vectors().chunks(basis.dim()).collect();
+    assert!(rows.iter().all(|row| row.iter().all(|v| v.is_finite())));
+    for (i, lhs) in rows.iter().enumerate() {
         let lhs_norm = lhs.iter().map(|v| v * v).sum::<f32>();
         assert!(lhs_norm <= 1.0001);
-        for rhs in basis.iter().skip(i + 1) {
+        for rhs in rows.iter().skip(i + 1) {
             let dot = lhs
                 .iter()
                 .zip(rhs.iter())

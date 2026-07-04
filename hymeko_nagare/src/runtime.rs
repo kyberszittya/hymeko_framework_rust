@@ -28,11 +28,11 @@
 //! This module is the **programming model** tier: it takes a compiled
 //! cycle pool (= HIVE's hypergraph structure) and runs it end-to-end.
 
-use hymeko_graph::{clifford_fir_backward, clifford_fir_forward, CliffordFIR, TopKCyclesBatch};
+use hymeko_graph::{CliffordFIR, TopKCyclesBatch, clifford_fir_backward, clifford_fir_forward};
 
 use crate::ops::{
-    adam::{adam_step, AdamState},
-    linear::{linear_backward, linear_forward, LinearLayer},
+    adam::{AdamState, adam_step},
+    linear::{LinearLayer, linear_backward, linear_forward},
     loss::{bce_with_logits_backward, bce_with_logits_forward},
     scatter::{scatter_mean_backward, scatter_mean_forward},
 };

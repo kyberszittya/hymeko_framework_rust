@@ -13,8 +13,8 @@ use std::{
     time::Instant,
 };
 
-use hymeko_nagare::{adam_step, linear_backward, linear_forward, AdamState, LinearLayer};
-use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
+use hymeko_nagare::{AdamState, LinearLayer, adam_step, linear_backward, linear_forward};
+use rand::{Rng, SeedableRng, rngs::StdRng, seq::SliceRandom};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Task {

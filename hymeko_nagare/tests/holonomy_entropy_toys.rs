@@ -2,8 +2,9 @@
 #[path = "../examples/holonomy_entropy_toys.rs"]
 mod holonomy_entropy_toys;
 
-use holonomy_entropy_toys::{
-    clifford_probability_error, make_dataset, quaternion_periodic_features, run_suite, Config, Task,
+use holonomy_entropy_toys::{Config, run_suite};
+use hymeko_nagare::holonomy::{
+    Task, clifford_probability_error, make_dataset, quaternion_periodic_features,
 };
 
 #[test]

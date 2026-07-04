@@ -8,7 +8,7 @@ use std::{
     time::Instant,
 };
 
-use hymeko_nagare::{chebyshev_deploy_forward, linear_forward, LinearLayer};
+use hymeko_nagare::{LinearLayer, chebyshev_deploy_forward, linear_forward};
 
 const CHEBYSHEV_DOMAIN_SCALE: f32 = 0.5;
 

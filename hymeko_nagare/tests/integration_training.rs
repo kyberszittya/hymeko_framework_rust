@@ -6,12 +6,17 @@
 //! composition (FIR → scatter-mean → linear → BCE → backward → Adam).
 
 use hymeko_graph::TopKCyclesBatch;
-use hymeko_nagare::ops::loss::bce_with_logits_forward;
 use hymeko_nagare::NagareRuntime;
+use hymeko_nagare::ops::loss::bce_with_logits_forward;
 
 fn make_batch(cycles: Vec<u32>, signs: Vec<i8>, k: usize) -> TopKCyclesBatch {
     let n = cycles.len() / k;
-    TopKCyclesBatch { cycles, signs, scores: vec![0.0; n], k }
+    TopKCyclesBatch {
+        cycles,
+        signs,
+        scores: vec![0.0; n],
+        k,
+    }
 }
 
 /// Trivial separable task: vertices 0, 2 → label 1; vertices 1, 3 → label 0.
@@ -32,9 +37,9 @@ fn loss_decreases_on_separable_task() {
     );
     let features = vec![
         1.0f32, 0.0, // v0 — label 1
-        0.0, 1.0,   // v1 — label 0
-        1.0, 0.0,   // v2 — label 1
-        0.0, 1.0,   // v3 — label 0
+        0.0, 1.0, // v1 — label 0
+        1.0, 0.0, // v2 — label 1
+        0.0, 1.0, // v3 — label 0
     ];
     let targets = vec![1.0f32, 0.0, 1.0, 0.0];
 
@@ -87,7 +92,9 @@ fn repeated_steps_stay_finite() {
     );
     let n_v = 6;
     let features: Vec<f32> = (0..n_v * 8).map(|i| (i as f32) * 0.05 - 1.0).collect();
-    let targets: Vec<f32> = (0..n_v).map(|v| if v % 2 == 0 { 1.0 } else { 0.0 }).collect();
+    let targets: Vec<f32> = (0..n_v)
+        .map(|v| if v % 2 == 0 { 1.0 } else { 0.0 })
+        .collect();
     let mut rt = NagareRuntime::new(3, 8, 1, 1e-2, 5);
     for step in 0..50 {
         let loss = rt.step(&batch, &features, n_v, &targets);
@@ -97,7 +104,16 @@ fn repeated_steps_stay_finite() {
         );
     }
     // Parameters must be finite after 50 steps.
-    assert!(rt.fir.a.iter().all(|x| x.is_finite()), "fir.a contains NaN/Inf");
-    assert!(rt.fir.b.iter().all(|x| x.is_finite()), "fir.b contains NaN/Inf");
-    assert!(rt.head.w.iter().all(|x| x.is_finite()), "head.w contains NaN/Inf");
+    assert!(
+        rt.fir.a.iter().all(|x| x.is_finite()),
+        "fir.a contains NaN/Inf"
+    );
+    assert!(
+        rt.fir.b.iter().all(|x| x.is_finite()),
+        "fir.b contains NaN/Inf"
+    );
+    assert!(
+        rt.head.w.iter().all(|x| x.is_finite()),
+        "head.w contains NaN/Inf"
+    );
 }

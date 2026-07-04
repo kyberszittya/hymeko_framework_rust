@@ -13,8 +13,8 @@
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use hymeko_graph::{CliffordFIR, TopKCyclesBatch, clifford_fir_forward};
-use hymeko_nagare::ops::scatter::scatter_mean_forward;
 use hymeko_nagare::NagareRuntime;
+use hymeko_nagare::ops::scatter::scatter_mean_forward;
 
 // ── Synthetic data helpers ────────────────────────────────────────────────────
 
@@ -68,21 +68,17 @@ fn bench_fir_forward(c: &mut Criterion) {
     let mut group = c.benchmark_group("fir_forward/n_cycles");
     for &n_cycles in &[1_000usize, 10_000, 100_000, 500_000] {
         let batch = make_synthetic_batch(N_VERTICES, n_cycles, K);
-        group.bench_with_input(
-            BenchmarkId::from_parameter(n_cycles),
-            &n_cycles,
-            |b, _| {
-                b.iter(|| {
-                    clifford_fir_forward(
-                        black_box(&batch),
-                        black_box(&features),
-                        black_box(N_VERTICES),
-                        black_box(D),
-                        black_box(&fir),
-                    )
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(n_cycles), &n_cycles, |b, _| {
+            b.iter(|| {
+                clifford_fir_forward(
+                    black_box(&batch),
+                    black_box(&features),
+                    black_box(N_VERTICES),
+                    black_box(D),
+                    black_box(&fir),
+                )
+            });
+        });
     }
     group.finish();
 }
@@ -133,5 +129,10 @@ fn bench_runtime_predict(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_fir_forward, bench_scatter_mean, bench_runtime_predict);
+criterion_group!(
+    benches,
+    bench_fir_forward,
+    bench_scatter_mean,
+    bench_runtime_predict
+);
 criterion_main!(benches);

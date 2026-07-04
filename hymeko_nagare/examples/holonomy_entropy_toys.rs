@@ -6,55 +6,20 @@ use std::{
     io::{self, Write},
     path::PathBuf,
     str::FromStr,
-    time::Instant,
 };
 
-use hymeko_clifford::{cayley_to_unit_quat, quat_mul, quat_rotate, Multivector, Signature};
+use hymeko_nagare::holonomy::{
+    Dataset, Metrics, Task, Timing, VERTEX_FEATURES, clifford_probability_error,
+    forward_timing as shared_forward_timing, gather_batch, make_dataset,
+    quaternion_periodic_features, softmax2,
+};
 use hymeko_nagare::{
-    adam_step, fused_entropy_update_backward, fused_entropy_update_forward, linear_backward,
-    linear_forward, AdamState, FusedEntropyUpdateShape, LinearLayer,
+    AdamState, FusedEntropyUpdateShape, LinearLayer, adam_step, fused_entropy_update_backward,
+    fused_entropy_update_forward, linear_backward, linear_forward,
 };
-use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
+use rand::{SeedableRng, rngs::StdRng, seq::SliceRandom};
 
-const FEATURE_DIM: usize = 7;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Task {
-    Moons,
-    Spiral,
-    Xor,
-}
-
-impl Task {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Moons => "moons",
-            Self::Spiral => "spiral",
-            Self::Xor => "xor",
-        }
-    }
-}
-
-impl FromStr for Task {
-    type Err = String;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value {
-            "moons" => Ok(Self::Moons),
-            "spiral" => Ok(Self::Spiral),
-            "xor" => Ok(Self::Xor),
-            other => Err(format!("unknown task '{other}'")),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Dataset {
-    pub x: Vec<f32>,
-    pub y: Vec<usize>,
-    pub samples: usize,
-    pub points: usize,
-}
+const FEATURE_DIM: usize = VERTEX_FEATURES;
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -85,21 +50,6 @@ impl Default for Config {
             out: None,
         }
     }
-}
-
-#[derive(Clone, Debug)]
-pub struct Metrics {
-    pub acc: f32,
-    pub loss: f32,
-    pub entropy: f32,
-    pub clifford_error: f32,
-}
-
-#[derive(Clone, Debug)]
-pub struct Timing {
-    pub median_us_per_sample: f64,
-    pub mean_us_per_sample: f64,
-    pub max_us_per_sample: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -314,49 +264,6 @@ impl HolonomySetNet {
     }
 }
 
-/// Quaternion periodic feature lift for `(x, y)` point sets.
-pub fn quaternion_periodic_features(x: &[f32], batch: usize, points: usize) -> Vec<f32> {
-    assert_eq!(x.len(), batch * points * 2);
-    let mut out = vec![0.0; batch * points * FEATURE_DIM];
-    for b in 0..batch {
-        let mut hol = [1.0, 0.0, 0.0, 0.0];
-        for p in 0..points {
-            let src = (b * points + p) * 2;
-            let px = x[src];
-            let py = x[src + 1];
-            let r = (px * px + py * py).sqrt();
-            let angle = py.atan2(px);
-            let q = cayley_to_unit_quat([0.0, 0.0, 0.5 * angle.sin()]);
-            hol = quat_mul(hol, q);
-            let rotated = quat_rotate(q, [px, py, r]);
-            let dst = (b * points + p) * FEATURE_DIM;
-            out[dst] = px;
-            out[dst + 1] = py;
-            out[dst + 2] = r;
-            out[dst + 3] = rotated[0];
-            out[dst + 4] = rotated[1];
-            out[dst + 5] = hol[0];
-            out[dst + 6] = hol[3];
-        }
-    }
-    out
-}
-
-/// Clifford \(Cl(2,0)\) probability-vector squared error.
-pub fn clifford_probability_error(logits: &[f32], labels: &[usize]) -> f32 {
-    assert_eq!(logits.len(), labels.len() * 2);
-    let sig = Signature::euclidean(2);
-    let mut sum = 0.0;
-    for b in 0..labels.len() {
-        let (p0, p1) = softmax2(logits[2 * b], logits[2 * b + 1]);
-        let mut err = Multivector::zero(2);
-        err.components[1] = (p0 - f32::from(labels[b] == 0)) as f64;
-        err.components[2] = (p1 - f32::from(labels[b] == 1)) as f64;
-        sum += err.geo(&err, &sig).components[0] as f32;
-    }
-    sum / labels.len() as f32
-}
-
 fn global_pool(input: &[f32], batch: usize, points: usize, hidden: usize) -> Vec<f32> {
     global_pool_with_cache(input, batch, points, hidden).0
 }
@@ -473,13 +380,6 @@ fn entropy_feature(logits: &[f32]) -> Vec<f32> {
     out
 }
 
-fn softmax2(a: f32, b: f32) -> (f32, f32) {
-    let m = a.max(b);
-    let ea = (a - m).exp();
-    let eb = (b - m).exp();
-    (ea / (ea + eb), eb / (ea + eb))
-}
-
 fn train_model(
     mut model: HolonomySetNet,
     train: &Dataset,
@@ -527,102 +427,9 @@ fn evaluate(model: &HolonomySetNet, data: &Dataset) -> Metrics {
 }
 
 fn forward_timing(model: &HolonomySetNet, data: &Dataset, repeats: usize) -> Timing {
-    for _ in 0..20 {
+    shared_forward_timing(data.samples, repeats, || {
         let _ = model.logits(&data.x, data.samples, data.points);
-    }
-    let mut values = Vec::with_capacity(repeats);
-    for _ in 0..repeats {
-        let start = Instant::now();
-        let _ = model.logits(&data.x, data.samples, data.points);
-        values.push(start.elapsed().as_secs_f64() * 1.0e6 / data.samples as f64);
-    }
-    values.sort_by(|a, b| a.total_cmp(b));
-    Timing {
-        median_us_per_sample: values[values.len() / 2],
-        mean_us_per_sample: values.iter().sum::<f64>() / values.len() as f64,
-        max_us_per_sample: values[values.len() - 1],
-    }
-}
-
-pub fn make_dataset(task: Task, samples: usize, points: usize, seed: u64) -> Dataset {
-    let mut rng = StdRng::seed_from_u64(seed);
-    let mut x = Vec::with_capacity(samples * points * 2);
-    let mut y = Vec::with_capacity(samples);
-    for sample in 0..samples {
-        let label = sample % 2;
-        y.push(label);
-        match task {
-            Task::Moons => sample_moons(label, points, &mut rng, &mut x),
-            Task::Spiral => sample_spiral(label, points, &mut rng, &mut x),
-            Task::Xor => sample_xor(label, points, &mut rng, &mut x),
-        }
-    }
-    Dataset {
-        x,
-        y,
-        samples,
-        points,
-    }
-}
-
-fn sample_moons(label: usize, points: usize, rng: &mut StdRng, out: &mut Vec<f32>) {
-    for _ in 0..points {
-        let theta = rng.random::<f32>() * std::f32::consts::PI;
-        let (x, y) = if label == 0 {
-            (theta.cos(), theta.sin())
-        } else {
-            (1.0 - theta.cos(), 0.45 - theta.sin())
-        };
-        out.push(x + normalish(rng) * 0.055);
-        out.push(y + normalish(rng) * 0.055);
-    }
-}
-
-fn sample_spiral(label: usize, points: usize, rng: &mut StdRng, out: &mut Vec<f32>) {
-    for point in 0..points {
-        let t =
-            point as f32 / points as f32 * 3.5 * std::f32::consts::PI + rng.random::<f32>() * 0.15;
-        let phase = if label == 0 {
-            0.0
-        } else {
-            std::f32::consts::PI
-        };
-        let radius = 0.12 + 0.08 * t;
-        out.push(radius * (t + phase).cos() + normalish(rng) * 0.04);
-        out.push(radius * (t + phase).sin() + normalish(rng) * 0.04);
-    }
-}
-
-fn sample_xor(label: usize, points: usize, rng: &mut StdRng, out: &mut Vec<f32>) {
-    let centers = if label == 0 {
-        [(-0.75, -0.75), (0.75, 0.75)]
-    } else {
-        [(-0.75, 0.75), (0.75, -0.75)]
-    };
-    for _ in 0..points {
-        let (cx, cy) = centers[rng.random_range(0..2)];
-        out.push(cx + normalish(rng) * 0.12);
-        out.push(cy + normalish(rng) * 0.12);
-    }
-}
-
-fn normalish(rng: &mut StdRng) -> f32 {
-    let mut sum = 0.0;
-    for _ in 0..6 {
-        sum += rng.random::<f32>() - 0.5;
-    }
-    sum * 0.816_496_6
-}
-
-fn gather_batch(data: &Dataset, indices: &[usize]) -> (Vec<f32>, Vec<usize>) {
-    let row = data.points * 2;
-    let mut x = Vec::with_capacity(indices.len() * row);
-    let mut y = Vec::with_capacity(indices.len());
-    for &idx in indices {
-        x.extend_from_slice(&data.x[idx * row..(idx + 1) * row]);
-        y.push(data.y[idx]);
-    }
-    (x, y)
+    })
 }
 
 pub fn run_suite(cfg: &Config) -> Vec<TaskResult> {

@@ -5,9 +5,9 @@
 //! the data-dependent selection is outside this closed-form kernel.
 
 use crate::ops::cayley_rotor::{cayley_rotor_backward, cayley_rotor_forward};
-use crate::ops::linear::{linear_backward, linear_forward, LinearLayer};
+use crate::ops::linear::{LinearLayer, linear_backward, linear_forward};
 use crate::ops::signed_scatter::{
-    signed_scatter_backward, signed_scatter_forward, SignedScatterLanes, SignedScatterLayout,
+    SignedScatterLanes, SignedScatterLayout, signed_scatter_backward, signed_scatter_forward,
 };
 
 /// Routed top-k sequence pairs for an FSR mixer call.

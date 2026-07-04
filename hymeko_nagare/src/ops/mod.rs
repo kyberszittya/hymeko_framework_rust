@@ -19,5 +19,6 @@ pub mod fsr_mixer;
 pub mod fused_entropy_update;
 pub mod linear;
 pub mod loss;
+pub mod project_alpha_mix;
 pub mod scatter;
 pub mod signed_scatter;
