@@ -29,6 +29,7 @@ galambos_task_deliver: el, rew, r
 
     // Term nodes — typed reward signals (no weights here; the bundle's arcs carry them).
     @approach:        rew.grasp_approach {}
+    @bothapproach:    rew.both_approach  {}   // dense coordination gradient (-max(l,r)); NOT a farmable annuity
     @pull:            rew.reach_distance { (+ disk, - target_zone); }
     @both:            rew.both_contact   {}
     @zone:            rew.in_zone        {}
@@ -47,8 +48,12 @@ galambos_task_deliver: el, rew, r
     @smoothv:         rew.joint_velocity     {}
     @smootha:         rew.joint_acceleration {}
 
-    // The validated 4-core + collab terms + the ONE-SHOT terminal delivery bonus (terminaldeliver 30).
+    // ORACLE-CERTIFIED DELIVERING shape (reward_oracle.certify, ms): DE-ANNUITIZED — the farmable per-step
+    // contact/zone annuity (both/zone/fingertouch) is DROPPED; the grasp gradient is carried by `bothapproach`
+    // (-max(l,r) distance, dense but NOT farmable) + `approach`, and `terminaldeliver 30` (one-shot) pays for
+    // completing. certify: this optimum DELIVERS (no oscillation); adding any per-step contact annuity flips it
+    // back to farming. `oob` keeps the coin on the table. This is the P3 A/B treatment vs the farming baseline.
     @grasp_reward: r.reward_spec {
-        (+ approach 4.0, + both 5.0, + fingertouch 1.5, + zone 10.0, + oob 2.0, + armcol 0.5, + terminaldeliver 30.0);
+        (+ approach 4.0, + bothapproach 4.0, + oob 2.0, + terminaldeliver 30.0);
     }
 }
