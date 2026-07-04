@@ -52,6 +52,9 @@ def collect_galambos_demos(env: PlanarGraspEnv, n_episodes: int, seed: int, *,
         if delivered or not only_success:
             obs_all.extend(traj_o)
             act_all.extend(traj_a)
+        if (ep + 1) % 200 == 0:   # never collect blind (§3): flush progress every 200 rollouts
+            print(f"  [demos] {ep + 1}/{n_episodes} rolled | {n_success} delivered "
+                  f"| {len(obs_all)} samples kept", flush=True)
     if not obs_all:
         raise RuntimeError(f"collected no demos ({n_success}/{n_episodes} delivered); lower only_success or seed")
     return np.asarray(obs_all, dtype=np.float32), np.asarray(act_all, dtype=np.float32)
