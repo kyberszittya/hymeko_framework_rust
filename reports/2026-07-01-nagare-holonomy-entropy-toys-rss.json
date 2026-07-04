@@ -1,0 +1,53 @@
+{
+  "engine": "hymeko_nagare",
+  "feature_lift": "quaternion_periodic_holonomy",
+  "error_metric": "clifford_probability_error_cl_2_0",
+  "n_train": 192,
+  "n_test": 96,
+  "n_points": 32,
+  "hidden": 24,
+  "tasks": [
+    {
+      "task": "moons",
+      "test_acc": 1.000000,
+      "test_loss": 0.000033,
+      "test_entropy": 0.000515,
+      "test_clifford_error": 0.000000,
+      "median_us_per_sample": 322.942708,
+      "mean_us_per_sample": 620.371602,
+      "max_us_per_sample": 3757.395833,
+      "n_params": 2836,
+      "param_bytes": 11344,
+      "materialized_update_bytes": 1191936,
+      "fused_update_bytes": 294912
+    },
+    {
+      "task": "spiral",
+      "test_acc": 1.000000,
+      "test_loss": 0.000046,
+      "test_entropy": 0.000697,
+      "test_clifford_error": 0.000000,
+      "median_us_per_sample": 234.423958,
+      "mean_us_per_sample": 267.972214,
+      "max_us_per_sample": 655.123958,
+      "n_params": 2836,
+      "param_bytes": 11344,
+      "materialized_update_bytes": 1191936,
+      "fused_update_bytes": 294912
+    },
+    {
+      "task": "xor",
+      "test_acc": 1.000000,
+      "test_loss": 0.000086,
+      "test_entropy": 0.001237,
+      "test_clifford_error": 0.000000,
+      "median_us_per_sample": 234.202083,
+      "mean_us_per_sample": 254.249375,
+      "max_us_per_sample": 555.218750,
+      "n_params": 2836,
+      "param_bytes": 11344,
+      "materialized_update_bytes": 1191936,
+      "fused_update_bytes": 294912
+    }
+  ]
+}

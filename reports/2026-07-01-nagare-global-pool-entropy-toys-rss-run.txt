@@ -1,0 +1,3 @@
+moons baseline acc=1.000 median_us=15.64; entropy_feedback acc=1.000 median_us=108.32
+rings baseline acc=1.000 median_us=14.05; entropy_feedback acc=1.000 median_us=91.41
+xor baseline acc=1.000 median_us=14.33; entropy_feedback acc=1.000 median_us=103.25

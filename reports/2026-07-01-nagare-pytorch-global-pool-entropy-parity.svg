@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="420" viewBox="0 0 980 420">
+  <rect width="980" height="420" fill="#fff"/>
+  <text x="30" y="34" font-family="Arial, sans-serif" font-size="20" fill="#222">Exact forward parity: PyTorch vs Nagare/Rust CPU</text>
+  <text x="30" y="58" font-family="Arial, sans-serif" font-size="12" fill="#555">96 samples, 48 points, hidden 32, identical inputs and weights</text>
+  <line x1="150" y1="335" x2="900" y2="335" stroke="#333"/>
+  <line x1="150" y1="90" x2="150" y2="335" stroke="#333"/>
+  <text x="120" y="339" font-family="Arial, sans-serif" font-size="11" fill="#555">0</text>
+  <text x="110" y="216" font-family="Arial, sans-serif" font-size="11" fill="#555">50</text>
+  <text x="104" y="94" font-family="Arial, sans-serif" font-size="11" fill="#555">100 us</text>
+  <line x1="145" y1="212" x2="900" y2="212" stroke="#ddd"/>
+  <line x1="145" y1="90" x2="900" y2="90" stroke="#ddd"/>
+  <text x="42" y="128" font-family="Arial, sans-serif" font-size="14" fill="#222">moons</text>
+  <rect x="150" y="105" width="454" height="24" fill="#6366f1"/>
+  <rect x="150" y="135" width="710" height="24" fill="#10b981"/>
+  <text x="612" y="122" font-family="Arial, sans-serif" font-size="12" fill="#222">PyTorch 60.49</text>
+  <text x="868" y="152" font-family="Arial, sans-serif" font-size="12" fill="#222">Nagare 94.61</text>
+  <text x="42" y="218" font-family="Arial, sans-serif" font-size="14" fill="#222">rings</text>
+  <rect x="150" y="195" width="416" height="24" fill="#6366f1"/>
+  <rect x="150" y="225" width="699" height="24" fill="#10b981"/>
+  <text x="574" y="212" font-family="Arial, sans-serif" font-size="12" fill="#222">PyTorch 55.51</text>
+  <text x="857" y="242" font-family="Arial, sans-serif" font-size="12" fill="#222">Nagare 93.24</text>
+  <text x="42" y="308" font-family="Arial, sans-serif" font-size="14" fill="#222">xor</text>
+  <rect x="150" y="285" width="468" height="24" fill="#6366f1"/>
+  <rect x="150" y="315" width="686" height="24" fill="#10b981"/>
+  <text x="626" y="302" font-family="Arial, sans-serif" font-size="12" fill="#222">PyTorch 62.36</text>
+  <text x="844" y="332" font-family="Arial, sans-serif" font-size="12" fill="#222">Nagare 91.54</text>
+  <rect x="690" y="30" width="16" height="16" fill="#6366f1"/>
+  <text x="712" y="43" font-family="Arial, sans-serif" font-size="12" fill="#222">PyTorch</text>
+  <rect x="790" y="30" width="16" height="16" fill="#10b981"/>
+  <text x="812" y="43" font-family="Arial, sans-serif" font-size="12" fill="#222">Nagare/Rust</text>
+</svg>

@@ -1,0 +1,56 @@
+{
+  "cases": [
+    {
+      "forward_us": {
+        "max_us_per_sample": 232.98958333333334,
+        "mean_us_per_sample": 64.69806597222222,
+        "median_us_per_sample": 60.491145833333334,
+        "min_us_per_sample": 42.07395833333333
+      },
+      "hidden": 32,
+      "logits_checksum": -15.807323455810547,
+      "n_params": 4644,
+      "param_bytes": 18576,
+      "points": 48,
+      "profiler_cpu_memory_bytes": 4926736,
+      "samples": 96,
+      "task": "moons"
+    },
+    {
+      "forward_us": {
+        "max_us_per_sample": 515.5395833333333,
+        "mean_us_per_sample": 61.25200347222222,
+        "median_us_per_sample": 55.51145833333334,
+        "min_us_per_sample": 40.290625
+      },
+      "hidden": 32,
+      "logits_checksum": 11.912924766540527,
+      "n_params": 4644,
+      "param_bytes": 18576,
+      "points": 48,
+      "profiler_cpu_memory_bytes": 4926736,
+      "samples": 96,
+      "task": "rings"
+    },
+    {
+      "forward_us": {
+        "max_us_per_sample": 324.1166666666667,
+        "mean_us_per_sample": 73.53957291666667,
+        "median_us_per_sample": 62.36145833333333,
+        "min_us_per_sample": 38.229166666666664
+      },
+      "hidden": 32,
+      "logits_checksum": -3.166168689727783,
+      "n_params": 4644,
+      "param_bytes": 18576,
+      "points": 48,
+      "profiler_cpu_memory_bytes": 4926736,
+      "samples": 96,
+      "task": "xor"
+    }
+  ],
+  "engine": "pytorch",
+  "fixture": "reports\\2026-07-01-nagare-pytorch-global-pool-entropy-parity-fixture.txt",
+  "threads": 8,
+  "torch": "2.12.0+cu132"
+}

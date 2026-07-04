@@ -1,0 +1,44 @@
+{
+  "engine": "hymeko_nagare",
+  "cases": [
+    {
+      "task": "moons",
+      "max_abs_logits": 8.940696716e-8,
+      "max_abs_logits_first": 1.788139343e-7,
+      "max_abs_entropy": 1.788139343e-7,
+      "median_us_per_sample": 94.612500,
+      "mean_us_per_sample": 101.374378,
+      "max_us_per_sample": 371.143750,
+      "allocation_bytes_per_forward": 4812672,
+      "allocation_count_per_forward": 10,
+      "n_params": 4644,
+      "param_bytes": 18576
+    },
+    {
+      "task": "rings",
+      "max_abs_logits": 1.043081284e-7,
+      "max_abs_logits_first": 1.788139343e-7,
+      "max_abs_entropy": 1.788139343e-7,
+      "median_us_per_sample": 93.235417,
+      "mean_us_per_sample": 95.730733,
+      "max_us_per_sample": 196.378125,
+      "allocation_bytes_per_forward": 4812672,
+      "allocation_count_per_forward": 10,
+      "n_params": 4644,
+      "param_bytes": 18576
+    },
+    {
+      "task": "xor",
+      "max_abs_logits": 1.043081284e-7,
+      "max_abs_logits_first": 1.490116119e-7,
+      "max_abs_entropy": 1.788139343e-7,
+      "median_us_per_sample": 91.538542,
+      "mean_us_per_sample": 96.532455,
+      "max_us_per_sample": 214.531250,
+      "allocation_bytes_per_forward": 4812672,
+      "allocation_count_per_forward": 10,
+      "n_params": 4644,
+      "param_bytes": 18576
+    }
+  ]
+}

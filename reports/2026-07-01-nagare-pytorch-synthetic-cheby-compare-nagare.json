@@ -1,0 +1,35 @@
+{
+  "engine": "hymeko_nagare",
+  "cases": [
+    {
+      "task": "moons",
+      "max_abs_logits": 7.450580597e-8,
+      "acc_random_weights": 0.500000,
+      "median_us_per_sample": 2.176562500,
+      "mean_us_per_sample": 2.573584635,
+      "max_us_per_sample": 15.682031250,
+      "n_params": 322,
+      "param_bytes": 1288
+    },
+    {
+      "task": "spiral",
+      "max_abs_logits": 8.940696716e-8,
+      "acc_random_weights": 0.500000,
+      "median_us_per_sample": 3.096875000,
+      "mean_us_per_sample": 3.726510417,
+      "max_us_per_sample": 24.682812500,
+      "n_params": 322,
+      "param_bytes": 1288
+    },
+    {
+      "task": "xor",
+      "max_abs_logits": 1.043081284e-7,
+      "acc_random_weights": 0.476562,
+      "median_us_per_sample": 2.542578125,
+      "mean_us_per_sample": 3.828695313,
+      "max_us_per_sample": 26.748046875,
+      "n_params": 322,
+      "param_bytes": 1288
+    }
+  ]
+}

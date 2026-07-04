@@ -1,0 +1,80 @@
+{
+  "engine": "hymeko_nagare",
+  "global_pool": "concat(mean,std,max)",
+  "n_train": 192,
+  "n_test": 96,
+  "n_points": 48,
+  "hidden": 32,
+  "epochs": 80,
+  "tasks": [
+    {
+      "task": "moons",
+      "baseline": {
+        "test_acc": 1.000000,
+        "test_loss": 0.001694,
+        "test_entropy": 0.017723,
+        "median_us_per_sample": 200.411458,
+        "mean_us_per_sample": 201.048307,
+        "max_us_per_sample": 229.877083,
+        "n_params": 290,
+        "param_bytes": 1160
+      },
+      "entropy_feedback": {
+        "test_acc": 1.000000,
+        "test_loss": 0.000024,
+        "test_entropy": 0.000384,
+        "median_us_per_sample": 1344.222917,
+        "mean_us_per_sample": 1353.058802,
+        "max_us_per_sample": 1530.879167,
+        "n_params": 4644,
+        "param_bytes": 18576
+      }
+    },
+    {
+      "task": "rings",
+      "baseline": {
+        "test_acc": 1.000000,
+        "test_loss": 0.007673,
+        "test_entropy": 0.064207,
+        "median_us_per_sample": 202.765625,
+        "mean_us_per_sample": 203.186345,
+        "max_us_per_sample": 247.506250,
+        "n_params": 290,
+        "param_bytes": 1160
+      },
+      "entropy_feedback": {
+        "test_acc": 1.000000,
+        "test_loss": 0.000012,
+        "test_entropy": 0.000207,
+        "median_us_per_sample": 1416.378125,
+        "mean_us_per_sample": 1426.988776,
+        "max_us_per_sample": 1745.753125,
+        "n_params": 4644,
+        "param_bytes": 18576
+      }
+    },
+    {
+      "task": "xor",
+      "baseline": {
+        "test_acc": 1.000000,
+        "test_loss": 0.001505,
+        "test_entropy": 0.016248,
+        "median_us_per_sample": 199.795833,
+        "mean_us_per_sample": 198.256753,
+        "max_us_per_sample": 239.706250,
+        "n_params": 290,
+        "param_bytes": 1160
+      },
+      "entropy_feedback": {
+        "test_acc": 1.000000,
+        "test_loss": 0.000037,
+        "test_entropy": 0.000590,
+        "median_us_per_sample": 1327.552083,
+        "mean_us_per_sample": 1339.242995,
+        "max_us_per_sample": 1525.578125,
+        "n_params": 4644,
+        "param_bytes": 18576
+      }
+    }
+  ]
+}

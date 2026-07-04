@@ -1,0 +1,56 @@
+{
+  "cases": [
+    {
+      "acc_random_weights": 0.5,
+      "forward_us": {
+        "max_us_per_sample": 338.301953125,
+        "mean_us_per_sample": 32.6872578125,
+        "median_us_per_sample": 19.75390625,
+        "min_us_per_sample": 5.96015625
+      },
+      "hidden": 32,
+      "k": 5,
+      "logits_checksum": -2.857693672180176,
+      "n_params": 322,
+      "n_samples": 256,
+      "param_bytes": 1288,
+      "task": "moons"
+    },
+    {
+      "acc_random_weights": 0.49609375,
+      "forward_us": {
+        "max_us_per_sample": 215.643359375,
+        "mean_us_per_sample": 22.94084375,
+        "median_us_per_sample": 13.46953125,
+        "min_us_per_sample": 4.18046875
+      },
+      "hidden": 32,
+      "k": 5,
+      "logits_checksum": -54.307533264160156,
+      "n_params": 322,
+      "n_samples": 256,
+      "param_bytes": 1288,
+      "task": "spiral"
+    },
+    {
+      "acc_random_weights": 0.4765625,
+      "forward_us": {
+        "max_us_per_sample": 503.101953125,
+        "mean_us_per_sample": 29.38765234375,
+        "median_us_per_sample": 16.3689453125,
+        "min_us_per_sample": 4.709765625
+      },
+      "hidden": 32,
+      "k": 5,
+      "logits_checksum": 14.777456283569336,
+      "n_params": 322,
+      "n_samples": 256,
+      "param_bytes": 1288,
+      "task": "xor"
+    }
+  ],
+  "engine": "pytorch",
+  "fixture": "reports\\2026-07-01-nagare-pytorch-synthetic-cheby-compare-fixture.txt",
+  "threads": 8,
+  "torch": "2.12.0+cu132"
+}
