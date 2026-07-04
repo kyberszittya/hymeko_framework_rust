@@ -53,6 +53,11 @@ reward {
         // both fingertips must close simultaneously (the compensable mean `grasp_approach` cannot).
         @both_approach: + <isa> reward.reward_term {}
 
+        // POTENTIAL-BASED reward shaping (Ng-Harada-Russell 1999): γΦ(s')-Φ(s), provably policy-invariant, so
+        // it CANNOT be farmed (telescopes to Φ(end)-Φ(start)). Replaces the farmable in_zone/both annuities.
+        @zone_progress:  + <isa> reward.reward_term {}   // Φ = -disk_to_zone   (progress toward the zone)
+        @grasp_progress: + <isa> reward.reward_term {}   // Φ = -max(l,r) tip   (progress toward the grasp)
+
         // +weight when both fingers touch the disk (encourages a two-sided grasp).
         @both_contact: + <isa> reward.reward_term {}
 

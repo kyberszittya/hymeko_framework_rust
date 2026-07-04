@@ -280,8 +280,38 @@ def test_terminal_deliver_is_one_shot_on_completion_not_an_annuity() -> None:
     assert _term_terminal_deliver(object(), 0.0, a) == 0.0         # non-planar env
 
 
-def test_deliver_hymeko_adds_only_terminal_deliver() -> None:
-    base = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task.hymeko").terms)
+def test_deliver_hymeko_is_the_oracle_certified_de_annuitized_shape() -> None:
+    """The deliver variant is the ORACLE-CERTIFIED de-annuitized shape: the farmable per-step in_zone/both/
+    fingertouch annuity is DROPPED; the grasp gradient is carried by both_approach (dense, not farmable) +
+    approach, plus the one-shot terminal_deliver. No in_zone/both_contact/finger_contact (all farmable)."""
     dlv = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_deliver.hymeko").terms)
-    assert set(dlv) - set(base) == {"terminal_deliver"}
+    assert set(dlv) == {"grasp_approach", "both_approach", "out_of_bounds", "terminal_deliver"}
+    assert dlv["terminal_deliver"] == pytest.approx(30.0)
+    assert "in_zone" not in dlv and "both_contact" not in dlv and "finger_contact" not in dlv  # no annuity
+
+
+def test_pbrs_shaping_is_progress_and_telescopes_unfarmable() -> None:
+    """Potential-based shaping (Ng-Harada-Russell): F = γΦ(s')-Φ(s). First call inits Φ(s0) (returns 0); a step
+    of progress (coin nearer the zone) pays >0; and dipping in-then-out telescopes to ~0 (the γ<1 residual only),
+    so it CANNOT be farmed like the per-step in_zone annuity. Would fail against a raw per-step -dist term."""
+    from types import SimpleNamespace
+
+    from hymeko_rl.env.reward import _PBRS_GAMMA, _term_zone_progress
+
+    a = np.zeros(4, dtype=np.float32)
+    env = SimpleNamespace(_planar_metrics=SimpleNamespace(disk_to_zone=0.20))
+    assert _term_zone_progress(env, 0.0, a) == 0.0                      # first call inits Φ(s0), no shaping
+    env._planar_metrics = SimpleNamespace(disk_to_zone=0.15)            # progress toward zone
+    f_prog = _term_zone_progress(env, 0.0, a)
+    assert f_prog == pytest.approx(_PBRS_GAMMA * (-0.15) - (-0.20))     # exact γΦ(s')-Φ(s)
+    assert f_prog > 0.0                                                  # progress pays
+    env._planar_metrics = SimpleNamespace(disk_to_zone=0.20)           # back out
+    f_back = _term_zone_progress(env, 0.0, a)
+    assert abs(f_prog + f_back) < 0.01                                  # in->out telescopes ~0 (unfarmable)
+    assert _term_zone_progress(object(), 0.0, a) == 0.0                 # non-planar env
+
+
+def test_pbrs_hymeko_is_task_plus_potential_shaping() -> None:
+    dlv = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_pbrs.hymeko").terms)
+    assert set(dlv) == {"terminal_deliver", "out_of_bounds", "zone_progress", "grasp_progress"}
     assert dlv["terminal_deliver"] == pytest.approx(30.0)

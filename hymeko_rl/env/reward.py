@@ -136,6 +136,44 @@ def _term_both_approach(env: "ArmReachEnv", dist: float, action: np.ndarray) -> 
     return -max(float(m.left_tip_dist), float(m.right_tip_dist))
 
 
+# ── Potential-based reward shaping (Ng, Harada & Russell 1999) ─────────────────
+# F(s,s') = γ·Φ(s') − Φ(s) leaves the optimal policy INVARIANT (telescopes to Φ(terminal)−Φ(start), path-
+# independent), so it CANNOT be farmed — unlike the per-step Φ annuity (in_zone/both) that the policy oscillates
+# to milk. The dense guidance (progress toward zone / grasp) is preserved; the farming incentive is removed by
+# construction. The previous potential is tracked per-episode on the env (cleared in reset()); the FIRST step of
+# an episode returns 0 (initialises Φ(s0)). γ must match the training discount for exact policy-invariance.
+_PBRS_GAMMA = 0.99
+
+
+def _pbrs_shaping(env: "ArmReachEnv", potential_now: float, attr: str) -> float:
+    """The potential-based shaping ``γΦ(s') − Φ(s)`` with ``Φ(s)`` tracked on the env under ``attr``.
+
+    # Preconditions ``attr`` is cleared to ``None`` on ``env.reset`` (so each episode re-initialises Φ(s0)).
+    # Postconditions returns 0.0 on the first call of an episode; else the exact PBRS shaping term."""
+    prev = getattr(env, attr, None)
+    setattr(env, attr, potential_now)
+    return 0.0 if prev is None else _PBRS_GAMMA * potential_now - float(prev)
+
+
+def _term_zone_progress(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """PBRS progress toward the zone, potential ``Φ = −disk_to_zone``. Rewards *net* progress (unfarmable — dipping
+    in/out of the zone telescopes to zero), the policy-invariant replacement for the farmable ``in_zone`` annuity.
+    0 on a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    return _pbrs_shaping(env, -float(m.disk_to_zone), "_pbrs_prev_zone")
+
+
+def _term_grasp_progress(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """PBRS progress toward the grasp, potential ``Φ = −max(left_tip, right_tip)`` (both fingertips close at once).
+    Unfarmable coordination gradient replacing the farmable per-step ``both_contact`` annuity. 0 on a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    return _pbrs_shaping(env, -max(float(m.left_tip_dist), float(m.right_tip_dist)), "_pbrs_prev_grasp")
+
+
 def _term_settle(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
     """Overshoot brake: penalise the coin's speed **only once it is inside the zone**, so the policy
     slows it to a stop there instead of pushing it straight through (the measured ep4 overshoot).
@@ -416,6 +454,8 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "terminal_deliver": _term_terminal_deliver,
     "grasp_approach": _term_grasp_approach,
     "both_approach": _term_both_approach,
+    "zone_progress": _term_zone_progress,       # PBRS: policy-invariant progress toward the zone
+    "grasp_progress": _term_grasp_progress,     # PBRS: policy-invariant progress toward the grasp
     "settle": _term_settle,
     "coin_pregrasp_still": _term_coin_pregrasp_still,
     "arm_motion": _term_arm_motion,
