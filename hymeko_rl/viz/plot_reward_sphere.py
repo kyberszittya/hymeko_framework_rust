@@ -79,12 +79,17 @@ def plot(out: Path, axes: "tuple[str, str, str]" = _AXES, n: int = 46) -> Path:
         wn = w / np.linalg.norm(w)
         ax.scatter(*wn, c="black", s=90, marker="*", edgecolors="white", zorder=5)
         ax.text(wn[0], wn[1], wn[2] + 0.04, lbl, fontsize=8, ha="center")
-    ax.set_xlabel(axes[0]); ax.set_ylabel(axes[1]); ax.set_zlabel(axes[2])
+    ax.set_xlabel(axes[0])
+    ax.set_ylabel(axes[1])
+    ax.set_zlabel(axes[2])
     ax.set_title("Reward-alignment sphere — each point is a reward direction, oracle-certified\n"
                  f"(green = its optimum delivers; red = farms; delivering fraction {frac:.0%})", fontsize=10)
-    ax.legend(loc="upper left"); ax.view_init(elev=28, azim=38)
+    ax.legend(loc="upper left")
+    ax.view_init(elev=28, azim=38)
     out.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout(); fig.savefig(out, dpi=130); plt.close(fig)
+    fig.tight_layout()
+    fig.savefig(out, dpi=130)
+    plt.close(fig)
     return out
 
 
