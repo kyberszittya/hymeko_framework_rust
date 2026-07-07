@@ -1,0 +1,524 @@
+{
+  "mlp_s0": {
+    "stages": [
+      {
+        "stage": "bc0",
+        "val_ftdom": 0.083,
+        "test": {
+          "raw_delivery": 0.104,
+          "fingertip_dominant_delivery": 0.083,
+          "zero_body_contact_delivery": 0.062,
+          "body_assisted_delivery": 0.021,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -222.6,
+          "final_dist": 0.1609,
+          "dist_delta": -0.0485,
+          "coin_vel_to_zone": -0.0169,
+          "fingertip_contact": 0.163,
+          "both_contact": 0.037,
+          "arm_body_contact_rate": 0.646,
+          "body_only_progress_to_target": 0.0021
+        }
+      },
+      {
+        "stage": "d1",
+        "val_ftdom": 0.292,
+        "test": {
+          "raw_delivery": 0.229,
+          "fingertip_dominant_delivery": 0.208,
+          "zero_body_contact_delivery": 0.042,
+          "body_assisted_delivery": 0.021,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -219.01,
+          "final_dist": 0.1119,
+          "dist_delta": 0.0005,
+          "coin_vel_to_zone": -0.0007,
+          "fingertip_contact": 0.078,
+          "both_contact": 0.022,
+          "arm_body_contact_rate": 0.625,
+          "body_only_progress_to_target": 0.0012
+        }
+      },
+      {
+        "stage": "d2",
+        "val_ftdom": 0.417,
+        "test": {
+          "raw_delivery": 0.562,
+          "fingertip_dominant_delivery": 0.438,
+          "zero_body_contact_delivery": 0.062,
+          "body_assisted_delivery": 0.125,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -144.53,
+          "final_dist": 0.0956,
+          "dist_delta": 0.0167,
+          "coin_vel_to_zone": 0.0066,
+          "fingertip_contact": 0.163,
+          "both_contact": 0.029,
+          "arm_body_contact_rate": 0.792,
+          "body_only_progress_to_target": 0.0019
+        }
+      },
+      {
+        "stage": "d3",
+        "val_ftdom": 0.25,
+        "test": {
+          "raw_delivery": 0.354,
+          "fingertip_dominant_delivery": 0.333,
+          "zero_body_contact_delivery": 0.083,
+          "body_assisted_delivery": 0.021,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -176.81,
+          "final_dist": 0.1051,
+          "dist_delta": 0.007,
+          "coin_vel_to_zone": 0.0019,
+          "fingertip_contact": 0.121,
+          "both_contact": 0.01,
+          "arm_body_contact_rate": 0.729,
+          "body_only_progress_to_target": 0.0019
+        }
+      }
+    ],
+    "best_stage": "d2",
+    "best_test_ftdom": 0.438,
+    "val_selected_stage": "d2",
+    "val_selected_test_ftdom": 0.438,
+    "val_selection_optimal": true
+  },
+  "mlp_s1": {
+    "stages": [
+      {
+        "stage": "bc0",
+        "val_ftdom": 0.167,
+        "test": {
+          "raw_delivery": 0.312,
+          "fingertip_dominant_delivery": 0.25,
+          "zero_body_contact_delivery": 0.125,
+          "body_assisted_delivery": 0.042,
+          "body_driven_exploit_delivery": 0.021,
+          "total_reward": -198.09,
+          "final_dist": 0.128,
+          "dist_delta": -0.0156,
+          "coin_vel_to_zone": -0.0066,
+          "fingertip_contact": 0.257,
+          "both_contact": 0.083,
+          "arm_body_contact_rate": 0.708,
+          "body_only_progress_to_target": 0.0036
+        }
+      },
+      {
+        "stage": "d1",
+        "val_ftdom": 0.208,
+        "test": {
+          "raw_delivery": 0.479,
+          "fingertip_dominant_delivery": 0.25,
+          "zero_body_contact_delivery": 0.042,
+          "body_assisted_delivery": 0.167,
+          "body_driven_exploit_delivery": 0.062,
+          "total_reward": -185.82,
+          "final_dist": 0.1156,
+          "dist_delta": -0.0032,
+          "coin_vel_to_zone": -0.003,
+          "fingertip_contact": 0.082,
+          "both_contact": 0.015,
+          "arm_body_contact_rate": 0.917,
+          "body_only_progress_to_target": 0.0042
+        }
+      },
+      {
+        "stage": "d2",
+        "val_ftdom": 0.292,
+        "test": {
+          "raw_delivery": 0.479,
+          "fingertip_dominant_delivery": 0.479,
+          "zero_body_contact_delivery": 0.083,
+          "body_assisted_delivery": 0.0,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -161.81,
+          "final_dist": 0.0904,
+          "dist_delta": 0.0218,
+          "coin_vel_to_zone": 0.0077,
+          "fingertip_contact": 0.146,
+          "both_contact": 0.027,
+          "arm_body_contact_rate": 0.771,
+          "body_only_progress_to_target": 0.001
+        }
+      },
+      {
+        "stage": "d3",
+        "val_ftdom": 0.458,
+        "test": {
+          "raw_delivery": 0.667,
+          "fingertip_dominant_delivery": 0.625,
+          "zero_body_contact_delivery": 0.125,
+          "body_assisted_delivery": 0.042,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -134.35,
+          "final_dist": 0.0847,
+          "dist_delta": 0.0274,
+          "coin_vel_to_zone": 0.0117,
+          "fingertip_contact": 0.139,
+          "both_contact": 0.026,
+          "arm_body_contact_rate": 0.75,
+          "body_only_progress_to_target": 0.0009
+        }
+      }
+    ],
+    "best_stage": "d3",
+    "best_test_ftdom": 0.625,
+    "val_selected_stage": "d3",
+    "val_selected_test_ftdom": 0.625,
+    "val_selection_optimal": true
+  },
+  "mlp_s2": {
+    "stages": [
+      {
+        "stage": "bc0",
+        "val_ftdom": 0.375,
+        "test": {
+          "raw_delivery": 0.312,
+          "fingertip_dominant_delivery": 0.292,
+          "zero_body_contact_delivery": 0.125,
+          "body_assisted_delivery": 0.021,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -198.76,
+          "final_dist": 0.1354,
+          "dist_delta": -0.0228,
+          "coin_vel_to_zone": -0.0101,
+          "fingertip_contact": 0.241,
+          "both_contact": 0.061,
+          "arm_body_contact_rate": 0.688,
+          "body_only_progress_to_target": 0.0017
+        }
+      },
+      {
+        "stage": "d1",
+        "val_ftdom": 0.333,
+        "test": {
+          "raw_delivery": 0.583,
+          "fingertip_dominant_delivery": 0.479,
+          "zero_body_contact_delivery": 0.125,
+          "body_assisted_delivery": 0.083,
+          "body_driven_exploit_delivery": 0.021,
+          "total_reward": -196.97,
+          "final_dist": 0.1148,
+          "dist_delta": -0.0023,
+          "coin_vel_to_zone": -0.0045,
+          "fingertip_contact": 0.14,
+          "both_contact": 0.032,
+          "arm_body_contact_rate": 0.812,
+          "body_only_progress_to_target": 0.0071
+        }
+      },
+      {
+        "stage": "d2",
+        "val_ftdom": 0.292,
+        "test": {
+          "raw_delivery": 0.479,
+          "fingertip_dominant_delivery": 0.438,
+          "zero_body_contact_delivery": 0.083,
+          "body_assisted_delivery": 0.042,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -169.47,
+          "final_dist": 0.0939,
+          "dist_delta": 0.0183,
+          "coin_vel_to_zone": 0.0063,
+          "fingertip_contact": 0.146,
+          "both_contact": 0.026,
+          "arm_body_contact_rate": 0.75,
+          "body_only_progress_to_target": 0.0017
+        }
+      },
+      {
+        "stage": "d3",
+        "val_ftdom": 0.167,
+        "test": {
+          "raw_delivery": 0.292,
+          "fingertip_dominant_delivery": 0.167,
+          "zero_body_contact_delivery": 0.083,
+          "body_assisted_delivery": 0.125,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -200.59,
+          "final_dist": 0.1063,
+          "dist_delta": 0.0061,
+          "coin_vel_to_zone": 0.001,
+          "fingertip_contact": 0.112,
+          "both_contact": 0.02,
+          "arm_body_contact_rate": 0.667,
+          "body_only_progress_to_target": 0.0023
+        }
+      }
+    ],
+    "best_stage": "d1",
+    "best_test_ftdom": 0.479,
+    "val_selected_stage": "bc0",
+    "val_selected_test_ftdom": 0.292,
+    "val_selection_optimal": false
+  },
+  "sa_hsikan_s0": {
+    "stages": [
+      {
+        "stage": "bc0",
+        "agg_samples": 16115,
+        "val_ftdom": 0.167,
+        "test": {
+          "raw_delivery": 0.208,
+          "fingertip_dominant_delivery": 0.208,
+          "zero_body_contact_delivery": 0.104,
+          "body_assisted_delivery": 0.0,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -231.1,
+          "final_dist": 0.1291,
+          "dist_delta": -0.0169,
+          "coin_vel_to_zone": -0.0061,
+          "fingertip_contact": 0.144,
+          "both_contact": 0.056,
+          "arm_body_contact_rate": 0.688,
+          "body_only_progress_to_target": 0.0009
+        }
+      },
+      {
+        "stage": "d1",
+        "agg_samples": 27047,
+        "val_ftdom": 0.333,
+        "test": {
+          "raw_delivery": 0.375,
+          "fingertip_dominant_delivery": 0.312,
+          "zero_body_contact_delivery": 0.062,
+          "body_assisted_delivery": 0.042,
+          "body_driven_exploit_delivery": 0.021,
+          "total_reward": -195.24,
+          "final_dist": 0.1091,
+          "dist_delta": 0.0031,
+          "coin_vel_to_zone": 0.0006,
+          "fingertip_contact": 0.071,
+          "both_contact": 0.01,
+          "arm_body_contact_rate": 0.667,
+          "body_only_progress_to_target": 0.0021
+        }
+      },
+      {
+        "stage": "d2",
+        "agg_samples": 37576,
+        "val_ftdom": 0.208,
+        "test": {
+          "raw_delivery": 0.188,
+          "fingertip_dominant_delivery": 0.188,
+          "zero_body_contact_delivery": 0.083,
+          "body_assisted_delivery": 0.0,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -199.13,
+          "final_dist": 0.1274,
+          "dist_delta": -0.0151,
+          "coin_vel_to_zone": -0.0062,
+          "fingertip_contact": 0.09,
+          "both_contact": 0.015,
+          "arm_body_contact_rate": 0.562,
+          "body_only_progress_to_target": 0.0021
+        }
+      },
+      {
+        "stage": "d3",
+        "agg_samples": 48555,
+        "val_ftdom": 0.208,
+        "test": {
+          "raw_delivery": 0.25,
+          "fingertip_dominant_delivery": 0.229,
+          "zero_body_contact_delivery": 0.146,
+          "body_assisted_delivery": 0.021,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -209.88,
+          "final_dist": 0.1174,
+          "dist_delta": -0.0054,
+          "coin_vel_to_zone": -0.0027,
+          "fingertip_contact": 0.053,
+          "both_contact": 0.008,
+          "arm_body_contact_rate": 0.479,
+          "body_only_progress_to_target": 0.0011
+        }
+      }
+    ],
+    "best_stage": "d1",
+    "best_test_ftdom": 0.312,
+    "val_selected_stage": "d1",
+    "val_selected_test_ftdom": 0.312,
+    "val_selection_optimal": true
+  },
+  "sa_hsikan_s1": {
+    "stages": [
+      {
+        "stage": "bc0",
+        "agg_samples": 16148,
+        "val_ftdom": 0.208,
+        "test": {
+          "raw_delivery": 0.188,
+          "fingertip_dominant_delivery": 0.188,
+          "zero_body_contact_delivery": 0.042,
+          "body_assisted_delivery": 0.0,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -241.4,
+          "final_dist": 0.1339,
+          "dist_delta": -0.0216,
+          "coin_vel_to_zone": -0.0077,
+          "fingertip_contact": 0.173,
+          "both_contact": 0.058,
+          "arm_body_contact_rate": 0.75,
+          "body_only_progress_to_target": 0.0027
+        }
+      },
+      {
+        "stage": "d1",
+        "agg_samples": 27211,
+        "val_ftdom": 0.208,
+        "test": {
+          "raw_delivery": 0.312,
+          "fingertip_dominant_delivery": 0.271,
+          "zero_body_contact_delivery": 0.125,
+          "body_assisted_delivery": 0.021,
+          "body_driven_exploit_delivery": 0.021,
+          "total_reward": -218.81,
+          "final_dist": 0.1155,
+          "dist_delta": -0.0028,
+          "coin_vel_to_zone": -0.002,
+          "fingertip_contact": 0.06,
+          "both_contact": 0.009,
+          "arm_body_contact_rate": 0.521,
+          "body_only_progress_to_target": 0.001
+        }
+      },
+      {
+        "stage": "d2",
+        "agg_samples": 37649,
+        "val_ftdom": 0.083,
+        "test": {
+          "raw_delivery": 0.146,
+          "fingertip_dominant_delivery": 0.146,
+          "zero_body_contact_delivery": 0.062,
+          "body_assisted_delivery": 0.0,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -294.54,
+          "final_dist": 0.1658,
+          "dist_delta": -0.0534,
+          "coin_vel_to_zone": -0.02,
+          "fingertip_contact": 0.059,
+          "both_contact": 0.007,
+          "arm_body_contact_rate": 0.667,
+          "body_only_progress_to_target": 0.002
+        }
+      },
+      {
+        "stage": "d3",
+        "agg_samples": 46790,
+        "val_ftdom": 0.042,
+        "test": {
+          "raw_delivery": 0.188,
+          "fingertip_dominant_delivery": 0.125,
+          "zero_body_contact_delivery": 0.042,
+          "body_assisted_delivery": 0.042,
+          "body_driven_exploit_delivery": 0.021,
+          "total_reward": -213.78,
+          "final_dist": 0.1284,
+          "dist_delta": -0.0161,
+          "coin_vel_to_zone": -0.0066,
+          "fingertip_contact": 0.092,
+          "both_contact": 0.015,
+          "arm_body_contact_rate": 0.688,
+          "body_only_progress_to_target": 0.0019
+        }
+      }
+    ],
+    "best_stage": "d1",
+    "best_test_ftdom": 0.271,
+    "val_selected_stage": "bc0",
+    "val_selected_test_ftdom": 0.188,
+    "val_selection_optimal": false
+  },
+  "sa_hsikan_s2": {
+    "stages": [
+      {
+        "stage": "bc0",
+        "agg_samples": 16005,
+        "val_ftdom": 0.25,
+        "test": {
+          "raw_delivery": 0.292,
+          "fingertip_dominant_delivery": 0.25,
+          "zero_body_contact_delivery": 0.167,
+          "body_assisted_delivery": 0.042,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -215.1,
+          "final_dist": 0.1258,
+          "dist_delta": -0.0132,
+          "coin_vel_to_zone": -0.0058,
+          "fingertip_contact": 0.203,
+          "both_contact": 0.044,
+          "arm_body_contact_rate": 0.688,
+          "body_only_progress_to_target": 0.0009
+        }
+      },
+      {
+        "stage": "d1",
+        "agg_samples": 26690,
+        "val_ftdom": 0.208,
+        "test": {
+          "raw_delivery": 0.312,
+          "fingertip_dominant_delivery": 0.188,
+          "zero_body_contact_delivery": 0.062,
+          "body_assisted_delivery": 0.125,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -205.42,
+          "final_dist": 0.1277,
+          "dist_delta": -0.0152,
+          "coin_vel_to_zone": -0.0055,
+          "fingertip_contact": 0.104,
+          "both_contact": 0.02,
+          "arm_body_contact_rate": 0.729,
+          "body_only_progress_to_target": 0.0032
+        }
+      },
+      {
+        "stage": "d2",
+        "agg_samples": 36489,
+        "val_ftdom": 0.083,
+        "test": {
+          "raw_delivery": 0.167,
+          "fingertip_dominant_delivery": 0.125,
+          "zero_body_contact_delivery": 0.062,
+          "body_assisted_delivery": 0.042,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -214.41,
+          "final_dist": 0.134,
+          "dist_delta": -0.0215,
+          "coin_vel_to_zone": -0.0079,
+          "fingertip_contact": 0.118,
+          "both_contact": 0.02,
+          "arm_body_contact_rate": 0.562,
+          "body_only_progress_to_target": 0.0028
+        }
+      },
+      {
+        "stage": "d3",
+        "agg_samples": 47987,
+        "val_ftdom": 0.25,
+        "test": {
+          "raw_delivery": 0.583,
+          "fingertip_dominant_delivery": 0.479,
+          "zero_body_contact_delivery": 0.125,
+          "body_assisted_delivery": 0.104,
+          "body_driven_exploit_delivery": 0.0,
+          "total_reward": -154.32,
+          "final_dist": 0.0889,
+          "dist_delta": 0.0234,
+          "coin_vel_to_zone": 0.0089,
+          "fingertip_contact": 0.136,
+          "both_contact": 0.021,
+          "arm_body_contact_rate": 0.75,
+          "body_only_progress_to_target": 0.0026
+        }
+      }
+    ],
+    "best_stage": "d3",
+    "best_test_ftdom": 0.479,
+    "val_selected_stage": "bc0",
+    "val_selected_test_ftdom": 0.25,
+    "val_selection_optimal": false
+  }
+}

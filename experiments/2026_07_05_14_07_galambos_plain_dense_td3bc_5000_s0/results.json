@@ -1,0 +1,41 @@
+{
+  "name": "galambos_plain_dense_td3bc_5000_s0",
+  "select": "delivery",
+  "total_steps": 5000,
+  "delivery_median": 0.3,
+  "delivery_per_seed": [
+    0.3
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "delivery": 0.3,
+        "step": 0.0,
+        "stage": "bc_step0",
+        "both_contact": 0.0459
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "stage": "bc_step0",
+          "delivery": 0.3,
+          "both_contact": 0.0459
+        },
+        {
+          "step": 2500.0,
+          "stage": "rl_refined",
+          "delivery": 0.3,
+          "both_contact": 0.0459
+        },
+        {
+          "step": 5000.0,
+          "stage": "rl_refined",
+          "delivery": 0.0,
+          "both_contact": 0.0
+        }
+      ],
+      "wall_s": 66.6
+    }
+  ]
+}

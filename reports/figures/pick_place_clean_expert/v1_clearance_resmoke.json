@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "episodes": 4,
+  "seed0": 50000,
+  "horizon": "env.max_steps (620)",
+  "per_episode": [
+    {
+      "seed": 50000,
+      "lift": 1,
+      "place": 1,
+      "obj_to_target": 0.0749,
+      "length": 478,
+      "first_finger_table_step": 51,
+      "first_gripper_table_step": null,
+      "first_over_object_step": 225,
+      "min_transit_clearance": -0.02577,
+      "forbidden_pre_object": true,
+      "transit_finger_contact_frac": 0.4464,
+      "phase": null,
+      "diverged": false
+    },
+    {
+      "seed": 50001,
+      "lift": 1,
+      "place": 0,
+      "obj_to_target": 0.1438,
+      "length": 620,
+      "first_finger_table_step": 51,
+      "first_gripper_table_step": null,
+      "first_over_object_step": 149,
+      "min_transit_clearance": -0.02476,
+      "forbidden_pre_object": true,
+      "transit_finger_contact_frac": 0.3333,
+      "phase": null,
+      "diverged": false
+    },
+    {
+      "seed": 50002,
+      "lift": 1,
+      "place": 1,
+      "obj_to_target": 0.0747,
+      "length": 487,
+      "first_finger_table_step": 53,
+      "first_gripper_table_step": null,
+      "first_over_object_step": 161,
+      "min_transit_clearance": -0.02515,
+      "forbidden_pre_object": true,
+      "transit_finger_contact_frac": 0.5687,
+      "phase": null,
+      "diverged": false
+    },
+    {
+      "seed": 50003,
+      "lift": 1,
+      "place": 1,
+      "obj_to_target": 0.075,
+      "length": 506,
+      "first_finger_table_step": 52,
+      "first_gripper_table_step": null,
+      "first_over_object_step": 217,
+      "min_transit_clearance": -0.02334,
+      "forbidden_pre_object": true,
+      "transit_finger_contact_frac": 0.4676,
+      "phase": null,
+      "diverged": false
+    }
+  ],
+  "aggregate": {
+    "episodes": 4,
+    "lift_rate": 1.0,
+    "place_rate": 0.75,
+    "forbidden_pre_object_rate": 1.0,
+    "transit_finger_contact_rate": 0.454,
+    "min_clearance_min": -0.02577,
+    "min_clearance_mean": -0.02475,
+    "diverged_rate": 0.0
+  },
+  "gate": {
+    "crit1_no_early_strike": false,
+    "crit2_transit_contact_near_zero": false,
+    "crit3_positive_min_clearance": false,
+    "pref4_lift_ge_0_90": true,
+    "pref5_place_ge_0_80": false,
+    "pass": false
+  }
+}

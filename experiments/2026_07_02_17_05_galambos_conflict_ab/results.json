@@ -1,0 +1,66 @@
+{
+  "config": {
+    "difficulty": 0.3,
+    "steps": 60000,
+    "single_variable": "drop fingers_collision (nofinger)",
+    "coin": "round (canonical)"
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "arm": "nofinger",
+      "delivery": 0.08,
+      "both_contact_frac": 0.0122,
+      "coin_toward_zone_m": 0.1261,
+      "wall_s": 496
+    },
+    {
+      "seed": 0,
+      "arm": "core4",
+      "delivery": 0.04,
+      "both_contact_frac": 0.0363,
+      "coin_toward_zone_m": 0.1378,
+      "wall_s": 466
+    },
+    {
+      "seed": 1,
+      "arm": "nofinger",
+      "delivery": 0.12,
+      "both_contact_frac": 0.0011,
+      "coin_toward_zone_m": 0.0627,
+      "wall_s": 511
+    },
+    {
+      "seed": 1,
+      "arm": "core4",
+      "delivery": 0.12,
+      "both_contact_frac": 0.0019,
+      "coin_toward_zone_m": 0.1036,
+      "wall_s": 464
+    },
+    {
+      "seed": 2,
+      "arm": "nofinger",
+      "delivery": 0.26,
+      "both_contact_frac": 0.0054,
+      "coin_toward_zone_m": 0.0962,
+      "wall_s": 455
+    },
+    {
+      "seed": 2,
+      "arm": "core4",
+      "delivery": 0.04,
+      "both_contact_frac": 0.0071,
+      "coin_toward_zone_m": 0.1205,
+      "wall_s": 507
+    }
+  ],
+  "nofinger": {
+    "delivery_median": 0.12,
+    "both_contact_median": 0.0054
+  },
+  "core4": {
+    "delivery_median": 0.04,
+    "both_contact_median": 0.0071
+  }
+}

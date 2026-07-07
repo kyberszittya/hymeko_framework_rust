@@ -1,0 +1,106 @@
+{
+  "mode": "synthetic",
+  "seed": 0,
+  "n": 600,
+  "true_edges": [
+    [
+      "approach_error",
+      "both_contact",
+      -1
+    ],
+    [
+      "both_contact",
+      "dist_reduction",
+      1
+    ],
+    [
+      "dist_reduction",
+      "delivery",
+      1
+    ]
+  ],
+  "recovered_true_edges": [
+    [
+      "approach_error",
+      "both_contact",
+      -1
+    ],
+    [
+      "both_contact",
+      "dist_reduction",
+      1
+    ],
+    [
+      "dist_reduction",
+      "delivery",
+      1
+    ]
+  ],
+  "spurious_edges": [],
+  "missed_edges": [],
+  "edge_recall": 1.0,
+  "diagnosis": {
+    "causal_order": [
+      "reward_progress_disagreement",
+      "approach_error",
+      "both_contact",
+      "dist_reduction",
+      "delivery"
+    ],
+    "strongest_edges": [
+      [
+        "dist_reduction",
+        "delivery",
+        0.750227
+      ],
+      [
+        "approach_error",
+        "both_contact",
+        -0.638238
+      ],
+      [
+        "both_contact",
+        "dist_reduction",
+        0.620935
+      ]
+    ],
+    "failure_ranking": [
+      {
+        "variable": "reward_progress_disagreement",
+        "mean_disagreement": 0.849933,
+        "max_disagreement": 1.731009,
+        "candidate_cause": "reward_farming_candidate",
+        "top_rollouts": [
+          53,
+          290,
+          159,
+          341,
+          442
+        ]
+      }
+    ],
+    "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term).",
+    "ablation_plan": [
+      "Decider: A/B the suspected reward term on/off; the monitor-success delta decides whether it is farming.",
+      "Ablate/intervene on 'dist_reduction'; LiNGAM proposes it increases 'delivery' (w=+0.750) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'approach_error'; LiNGAM proposes it decreases 'both_contact' (w=-0.638) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'both_contact'; LiNGAM proposes it increases 'dist_reduction' (w=+0.621) \u2014 controlled A/B decides if the edge is real."
+    ],
+    "provenance": {
+      "n_rollouts": 600,
+      "continuous_used": [
+        "approach_error",
+        "both_contact",
+        "dist_reduction",
+        "delivery",
+        "reward_progress_disagreement"
+      ],
+      "continuous_dropped": {},
+      "categorical_strata": [
+        "method"
+      ],
+      "lingam": "fit: n=600, d=5"
+    },
+    "_disclaimer": "DirectLiNGAM PROPOSES structure; controlled ablations DECIDE. Not proof of causality."
+  }
+}

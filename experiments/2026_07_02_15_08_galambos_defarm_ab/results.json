@@ -1,0 +1,54 @@
+{
+  "config": {
+    "difficulty": 0.3,
+    "steps": 60000,
+    "single_variable": "terminate_on_success True(baseline) vs False(de-farm)",
+    "reward": "canonical no-pull"
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "arm": "baseline_term",
+      "delivery": 0.08,
+      "coin_toward_zone_m": 0.1261,
+      "wall_s": 605
+    },
+    {
+      "seed": 0,
+      "arm": "defarm_noterm",
+      "delivery": 0.06,
+      "coin_toward_zone_m": 0.123,
+      "wall_s": 591
+    },
+    {
+      "seed": 1,
+      "arm": "baseline_term",
+      "delivery": 0.12,
+      "coin_toward_zone_m": 0.0627,
+      "wall_s": 599
+    },
+    {
+      "seed": 1,
+      "arm": "defarm_noterm",
+      "delivery": 0.1,
+      "coin_toward_zone_m": 0.0406,
+      "wall_s": 565
+    },
+    {
+      "seed": 2,
+      "arm": "baseline_term",
+      "delivery": 0.26,
+      "coin_toward_zone_m": 0.0962,
+      "wall_s": 478
+    },
+    {
+      "seed": 2,
+      "arm": "defarm_noterm",
+      "delivery": 0.06,
+      "coin_toward_zone_m": 0.1125,
+      "wall_s": 516
+    }
+  ],
+  "baseline_delivery_median": 0.12,
+  "defarm_delivery_median": 0.06
+}

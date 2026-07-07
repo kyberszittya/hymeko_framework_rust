@@ -1,0 +1,62 @@
+{
+  "name": "coin_arch_ab_hsikan",
+  "select": "delivery",
+  "total_steps": 30000,
+  "delivery_median": 0.4167,
+  "delivery_per_seed": [
+    0.4167
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "delivery": 0.4167,
+        "step": 0.0,
+        "stage": "bc_step0",
+        "both_contact": 0.0626,
+        "fingertip_contact": 0.2403,
+        "coin_vel_to_zone": 0.0105,
+        "dist_delta": 0.03
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "stage": "bc_step0",
+          "delivery": 0.4167,
+          "both_contact": 0.0626,
+          "fingertip_contact": 0.2403,
+          "coin_vel_to_zone": 0.0105,
+          "dist_delta": 0.03
+        },
+        {
+          "step": 10000.0,
+          "stage": "rl_refined",
+          "delivery": 0.0417,
+          "both_contact": 0.0053,
+          "fingertip_contact": 0.0684,
+          "coin_vel_to_zone": -0.0198,
+          "dist_delta": -0.0607
+        },
+        {
+          "step": 20000.0,
+          "stage": "rl_refined",
+          "delivery": 0.1667,
+          "both_contact": 0.0089,
+          "fingertip_contact": 0.0662,
+          "coin_vel_to_zone": -0.007,
+          "dist_delta": -0.0225
+        },
+        {
+          "step": 30000.0,
+          "stage": "rl_refined",
+          "delivery": 0.2917,
+          "both_contact": 0.0161,
+          "fingertip_contact": 0.0551,
+          "coin_vel_to_zone": -0.0005,
+          "dist_delta": -0.002
+        }
+      ],
+      "wall_s": 343.9
+    }
+  ]
+}

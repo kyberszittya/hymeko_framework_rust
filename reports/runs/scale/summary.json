@@ -1,0 +1,59 @@
+{
+  "preset": "scale",
+  "device": "cuda",
+  "n_params": 1189312,
+  "final_val_bpb": 2.2233,
+  "curve": [
+    [
+      250,
+      3.1852
+    ],
+    [
+      500,
+      2.6978
+    ],
+    [
+      750,
+      2.5333
+    ],
+    [
+      1000,
+      2.4388
+    ],
+    [
+      1250,
+      2.3705
+    ],
+    [
+      1500,
+      2.3051
+    ],
+    [
+      1750,
+      2.2729
+    ],
+    [
+      2000,
+      2.2494
+    ],
+    [
+      2250,
+      2.2237
+    ],
+    [
+      2500,
+      2.2251
+    ],
+    [
+      2750,
+      2.2173
+    ],
+    [
+      3000,
+      2.2233
+    ]
+  ],
+  "wall_s": 1377.2,
+  "peak_mb": 1996.7,
+  "sample": "oop! who, what have leds meeting. See.\nA thousand this and this beats and blunt,\nTo send you to heaven me mine.\n\nMENENIUS:\nThou shalt stay of her.\n\nSICINIUS:\nSir, I shall have her once.\n\nSecond Capule"
+}

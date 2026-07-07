@@ -1,0 +1,37 @@
+{
+  "name": "galambos_coord_ab_dx_lownoise",
+  "select": "delivery",
+  "total_steps": 50000,
+  "delivery_median": 0.32,
+  "delivery_per_seed": [
+    0.32
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "delivery": 0.32,
+        "step": 0.0,
+        "both_contact": 0.0519
+      },
+      "curve": [
+        {
+          "step": 0.0,
+          "delivery": 0.32,
+          "both_contact": 0.0519
+        },
+        {
+          "step": 25000.0,
+          "delivery": 0.04,
+          "both_contact": 0.0075
+        },
+        {
+          "step": 50000.0,
+          "delivery": 0.02,
+          "both_contact": 0.0003
+        }
+      ],
+      "wall_s": 498.8
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "name": "pick_place_dagger_hsikan",
+  "algorithm": "dagger",
+  "select": "place",
+  "profile": "data/robotics/pick_place_dagger.hymeko",
+  "label_sanity": {
+    "finite": true,
+    "in_bounds": true,
+    "deterministic": true,
+    "latch_coherent": true,
+    "max_over_box_ranges": 0.4,
+    "n_steps": 1118,
+    "committed_steps": 456,
+    "ok": true
+  },
+  "place_median": 0.7917,
+  "place_per_seed": [
+    0.7917,
+    0.7917,
+    0.9167
+  ],
+  "final_place_median": 0.7917,
+  "budget": {
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "n_demos": 18,
+    "bc_epochs": 80,
+    "dagger_iters": 4,
+    "rollouts_per_iter": 12,
+    "beta": 0.5,
+    "beta_decay": 0.5,
+    "expert_replay_ratio": 1.0,
+    "n_eval": 24
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "place": 0.7917,
+        "round": 2,
+        "stage": "d2",
+        "agg_size": 20901,
+        "lift": 0.7917
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 33332,
+        "lift": 0.75,
+        "place": 0.5
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 8386,
+          "lift": 0.7917,
+          "place": 0.5417
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 14561,
+          "lift": 0.7083,
+          "place": 0.5
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 20901,
+          "lift": 0.7917,
+          "place": 0.7917
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 27049,
+          "lift": 0.8333,
+          "place": 0.7083
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 33332,
+          "lift": 0.75,
+          "place": 0.5
+        }
+      ]
+    },
+    {
+      "seed": 1,
+      "peak": {
+        "place": 0.9167,
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 33554,
+        "lift": 0.9167
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 33554,
+        "lift": 0.9167,
+        "place": 0.9167
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 8404,
+          "lift": 0.75,
+          "place": 0.6667
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 14569,
+          "lift": 0.9167,
+          "place": 0.8333
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 20886,
+          "lift": 0.4583,
+          "place": 0.4167
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 27247,
+          "lift": 0.625,
+          "place": 0.4167
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 33554,
+          "lift": 0.9167,
+          "place": 0.9167
+        }
+      ]
+    },
+    {
+      "seed": 2,
+      "peak": {
+        "place": 0.7917,
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 34288,
+        "lift": 0.8333
+      },
+      "final": {
+        "round": 4,
+        "stage": "d4",
+        "agg_size": 34288,
+        "lift": 0.8333,
+        "place": 0.7917
+      },
+      "curve": [
+        {
+          "round": 0,
+          "stage": "bc0",
+          "agg_size": 8938,
+          "lift": 0.6667,
+          "place": 0.4167
+        },
+        {
+          "round": 1,
+          "stage": "d1",
+          "agg_size": 14871,
+          "lift": 0.1667,
+          "place": 0.1667
+        },
+        {
+          "round": 2,
+          "stage": "d2",
+          "agg_size": 21268,
+          "lift": 0.6667,
+          "place": 0.625
+        },
+        {
+          "round": 3,
+          "stage": "d3",
+          "agg_size": 27803,
+          "lift": 0.8333,
+          "place": 0.7083
+        },
+        {
+          "round": 4,
+          "stage": "d4",
+          "agg_size": 34288,
+          "lift": 0.8333,
+          "place": 0.7917
+        }
+      ]
+    }
+  ]
+}

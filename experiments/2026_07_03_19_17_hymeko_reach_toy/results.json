@@ -1,0 +1,27 @@
+{
+  "task": "hymeko_reach (declared in toy_reach.hymeko)",
+  "algo": "td3 (mlp, off-policy)",
+  "steps": 40000,
+  "p_controller_floor": "11/20=0.55",
+  "reach_rate_median": 0.96,
+  "rows": [
+    {
+      "seed": 0,
+      "reach_untrained": 0.1,
+      "reach_trained": 0.96,
+      "wall_s": 560
+    },
+    {
+      "seed": 1,
+      "reach_untrained": 0.0,
+      "reach_trained": 0.74,
+      "wall_s": 548
+    },
+    {
+      "seed": 2,
+      "reach_untrained": 0.02,
+      "reach_trained": 1.0,
+      "wall_s": 538
+    }
+  ]
+}

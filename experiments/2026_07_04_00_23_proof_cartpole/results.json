@@ -1,0 +1,37 @@
+{
+  "name": "proof_cartpole",
+  "select": "upright_steps",
+  "total_steps": 8000,
+  "upright_steps_median": 200.0,
+  "upright_steps_per_seed": [
+    200.0
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "upright_steps": 200.0,
+        "step": 4000.0
+      },
+      "curve": [
+        {
+          "step": 2000.0,
+          "upright_steps": 6.3
+        },
+        {
+          "step": 4000.0,
+          "upright_steps": 200.0
+        },
+        {
+          "step": 6000.0,
+          "upright_steps": 152.0
+        },
+        {
+          "step": 8000.0,
+          "upright_steps": 180.1
+        }
+      ],
+      "wall_s": 52.7
+    }
+  ]
+}

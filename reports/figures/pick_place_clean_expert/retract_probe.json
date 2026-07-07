@@ -1,0 +1,360 @@
+{
+  "episodes": [
+    {
+      "seed": 50000,
+      "obj_radius": 0.306,
+      "z_hover": 0.305,
+      "candidates": [
+        {
+          "name": "arm_home",
+          "tool_xyz": [
+            0.669,
+            0.0,
+            0.387
+          ],
+          "radius": 0.669,
+          "horiz_to_obj": 0.421,
+          "seed_clearance": 0.2116,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": 0.2116,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": 0.0,
+            "first_forbidden": null,
+            "steps": 8,
+            "ok": true
+          },
+          "hover_final_horiz": 0.0156,
+          "feasible": true
+        },
+        {
+          "name": "cf_hover",
+          "tool_xyz": [
+            0.273,
+            -0.139,
+            0.305
+          ],
+          "radius": 0.306,
+          "horiz_to_obj": 0.0,
+          "seed_clearance": 0.06345,
+          "seed_collision_free": true,
+          "home_to_seed": {
+            "min_clearance": 0.0,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": Infinity,
+            "first_forbidden": null,
+            "steps": 1,
+            "ok": true
+          },
+          "hover_final_horiz": 0.0002,
+          "feasible": true
+        },
+        {
+          "name": "cf_mid_retract",
+          "tool_xyz": [
+            0.15,
+            -0.077,
+            0.365
+          ],
+          "radius": 0.169,
+          "horiz_to_obj": 0.138,
+          "seed_clearance": 0.0,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": 0.0,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": false,
+          "seed_to_hover": {
+            "min_clearance": 0.0,
+            "first_forbidden": null,
+            "steps": 200,
+            "ok": true
+          },
+          "hover_final_horiz": 0.0316,
+          "feasible": false
+        },
+        {
+          "name": "manual_elbow_up",
+          "tool_xyz": [
+            0.486,
+            0.0,
+            0.037
+          ],
+          "radius": 0.486,
+          "horiz_to_obj": 0.255,
+          "seed_clearance": -0.01469,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": -0.06179,
+            "first_forbidden": 23,
+            "steps": 41,
+            "ok": false
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": -0.08388,
+            "first_forbidden": 0,
+            "steps": 6,
+            "ok": false
+          },
+          "hover_final_horiz": 0.0003,
+          "feasible": false
+        }
+      ],
+      "best_seed": "cf_hover",
+      "home_retract_feasible": true
+    },
+    {
+      "seed": 50001,
+      "obj_radius": 0.393,
+      "z_hover": 0.305,
+      "candidates": [
+        {
+          "name": "arm_home",
+          "tool_xyz": [
+            0.669,
+            0.0,
+            0.387
+          ],
+          "radius": 0.669,
+          "horiz_to_obj": 0.327,
+          "seed_clearance": 0.2116,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": 0.2116,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": 0.0,
+            "first_forbidden": null,
+            "steps": 7,
+            "ok": true
+          },
+          "hover_final_horiz": 0.0008,
+          "feasible": true
+        },
+        {
+          "name": "cf_hover",
+          "tool_xyz": [
+            0.37,
+            0.132,
+            0.305
+          ],
+          "radius": 0.393,
+          "horiz_to_obj": 0.0,
+          "seed_clearance": 0.0636,
+          "seed_collision_free": true,
+          "home_to_seed": {
+            "min_clearance": 0.0,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": Infinity,
+            "first_forbidden": null,
+            "steps": 1,
+            "ok": true
+          },
+          "hover_final_horiz": 0.0002,
+          "feasible": true
+        },
+        {
+          "name": "cf_mid_retract",
+          "tool_xyz": [
+            0.204,
+            0.072,
+            0.365
+          ],
+          "radius": 0.216,
+          "horiz_to_obj": 0.177,
+          "seed_clearance": 0.12372,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": 0.12372,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": 0.0,
+            "first_forbidden": null,
+            "steps": 4,
+            "ok": true
+          },
+          "hover_final_horiz": 0.0006,
+          "feasible": true
+        },
+        {
+          "name": "manual_elbow_up",
+          "tool_xyz": [
+            0.486,
+            0.0,
+            0.037
+          ],
+          "radius": 0.486,
+          "horiz_to_obj": 0.175,
+          "seed_clearance": -0.01469,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": -0.06179,
+            "first_forbidden": 23,
+            "steps": 41,
+            "ok": false
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": -0.08388,
+            "first_forbidden": 0,
+            "steps": 4,
+            "ok": false
+          },
+          "hover_final_horiz": 0.0139,
+          "feasible": false
+        }
+      ],
+      "best_seed": "cf_hover",
+      "home_retract_feasible": true
+    },
+    {
+      "seed": 50002,
+      "obj_radius": 0.379,
+      "z_hover": 0.305,
+      "candidates": [
+        {
+          "name": "arm_home",
+          "tool_xyz": [
+            0.669,
+            0.0,
+            0.387
+          ],
+          "radius": 0.669,
+          "horiz_to_obj": 0.302,
+          "seed_clearance": 0.2116,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": 0.2116,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": 0.06494,
+            "first_forbidden": null,
+            "steps": 7,
+            "ok": true
+          },
+          "hover_final_horiz": 0.001,
+          "feasible": true
+        },
+        {
+          "name": "cf_hover",
+          "tool_xyz": [
+            0.374,
+            -0.06,
+            0.305
+          ],
+          "radius": 0.379,
+          "horiz_to_obj": 0.0,
+          "seed_clearance": 0.06363,
+          "seed_collision_free": true,
+          "home_to_seed": {
+            "min_clearance": 0.0,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": Infinity,
+            "first_forbidden": null,
+            "steps": 1,
+            "ok": true
+          },
+          "hover_final_horiz": 0.0001,
+          "feasible": true
+        },
+        {
+          "name": "cf_mid_retract",
+          "tool_xyz": [
+            0.205,
+            -0.033,
+            0.365
+          ],
+          "radius": 0.208,
+          "horiz_to_obj": 0.171,
+          "seed_clearance": 0.1237,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": 0.1237,
+            "first_forbidden": null,
+            "steps": 41,
+            "ok": true
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": 0.06293,
+            "first_forbidden": null,
+            "steps": 4,
+            "ok": true
+          },
+          "hover_final_horiz": 0.0006,
+          "feasible": true
+        },
+        {
+          "name": "manual_elbow_up",
+          "tool_xyz": [
+            0.486,
+            0.0,
+            0.037
+          ],
+          "radius": 0.486,
+          "horiz_to_obj": 0.128,
+          "seed_clearance": -0.01469,
+          "seed_collision_free": false,
+          "home_to_seed": {
+            "min_clearance": -0.06179,
+            "first_forbidden": 23,
+            "steps": 41,
+            "ok": false
+          },
+          "seed_to_hover_reached": true,
+          "seed_to_hover": {
+            "min_clearance": -0.08365,
+            "first_forbidden": 0,
+            "steps": 5,
+            "ok": false
+          },
+          "hover_final_horiz": 0.0002,
+          "feasible": false
+        }
+      ],
+      "best_seed": "cf_mid_retract",
+      "home_retract_feasible": true
+    }
+  ],
+  "verdict": {
+    "episodes": 3,
+    "feasible_episodes": 3,
+    "home_retract_or_preshape_justified": true
+  }
+}

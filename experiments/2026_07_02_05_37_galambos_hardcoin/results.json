@@ -1,0 +1,42 @@
+{
+  "config": {
+    "coin_damping": 5.0,
+    "coin_density": 2000.0,
+    "difficulty": 0.0,
+    "metric": "grasp-gated (in_zone AND both fingers gripping) \u2014 knocks rejected"
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "grasp_bc": 0.03,
+      "grasp_refine": 0.0,
+      "inzone_refine_knock_incl": 0.05,
+      "grasp_gif_seed": null,
+      "coin_damping": 5.0,
+      "coin_density": 2000.0,
+      "wall_s": 822
+    },
+    {
+      "seed": 1,
+      "grasp_bc": 0.04,
+      "grasp_refine": 0.0,
+      "inzone_refine_knock_incl": 0.24,
+      "grasp_gif_seed": null,
+      "coin_damping": 5.0,
+      "coin_density": 2000.0,
+      "wall_s": 739
+    },
+    {
+      "seed": 2,
+      "grasp_bc": 0.02,
+      "grasp_refine": 0.0,
+      "inzone_refine_knock_incl": 0.14,
+      "grasp_gif_seed": null,
+      "coin_damping": 5.0,
+      "coin_density": 2000.0,
+      "wall_s": 764
+    }
+  ],
+  "grasp_delivery_median": 0.0,
+  "inzone_knock_incl_median": 0.14
+}

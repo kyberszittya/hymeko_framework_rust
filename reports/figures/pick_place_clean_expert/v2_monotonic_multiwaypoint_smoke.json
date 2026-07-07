@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "episodes": 4,
+  "seed0": 50000,
+  "horizon": "env.max_steps (620)",
+  "per_episode": [
+    {
+      "seed": 50000,
+      "lift": 0,
+      "place": 0,
+      "obj_to_target": 0.1052,
+      "length": 620,
+      "first_finger_table_step": 310,
+      "first_gripper_table_step": null,
+      "first_over_object_step": 181,
+      "min_transit_clearance": 0.0,
+      "forbidden_pre_object": false,
+      "transit_finger_contact_frac": 0.0,
+      "phase": null,
+      "diverged": false
+    },
+    {
+      "seed": 50001,
+      "lift": 0,
+      "place": 0,
+      "obj_to_target": 0.1353,
+      "length": 620,
+      "first_finger_table_step": null,
+      "first_gripper_table_step": null,
+      "first_over_object_step": 325,
+      "min_transit_clearance": 0.0,
+      "forbidden_pre_object": false,
+      "transit_finger_contact_frac": 0.0,
+      "phase": null,
+      "diverged": false
+    },
+    {
+      "seed": 50002,
+      "lift": 0,
+      "place": 0,
+      "obj_to_target": 0.0693,
+      "length": 620,
+      "first_finger_table_step": null,
+      "first_gripper_table_step": null,
+      "first_over_object_step": 483,
+      "min_transit_clearance": 0.0,
+      "forbidden_pre_object": false,
+      "transit_finger_contact_frac": 0.0,
+      "phase": null,
+      "diverged": false
+    },
+    {
+      "seed": 50003,
+      "lift": 0,
+      "place": 0,
+      "obj_to_target": 0.0624,
+      "length": 620,
+      "first_finger_table_step": 232,
+      "first_gripper_table_step": null,
+      "first_over_object_step": 185,
+      "min_transit_clearance": 0.0,
+      "forbidden_pre_object": false,
+      "transit_finger_contact_frac": 0.0,
+      "phase": null,
+      "diverged": false
+    }
+  ],
+  "aggregate": {
+    "episodes": 4,
+    "lift_rate": 0.0,
+    "place_rate": 0.0,
+    "forbidden_pre_object_rate": 0.0,
+    "transit_finger_contact_rate": 0.0,
+    "min_clearance_min": 0.0,
+    "min_clearance_mean": 0.0,
+    "diverged_rate": 0.0
+  },
+  "gate": {
+    "crit1_no_early_strike": true,
+    "crit2_transit_contact_near_zero": true,
+    "crit3_positive_min_clearance": false,
+    "pref4_lift_ge_0_90": false,
+    "pref5_place_ge_0_80": false,
+    "pass": false
+  }
+}

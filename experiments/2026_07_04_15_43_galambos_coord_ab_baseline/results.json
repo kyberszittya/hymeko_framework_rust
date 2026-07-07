@@ -1,0 +1,19 @@
+{
+  "name": "galambos_coord_ab_baseline",
+  "select": "delivery",
+  "total_steps": 12000,
+  "delivery_median": -1e+18,
+  "delivery_per_seed": [
+    -1e+18
+  ],
+  "seeds": [
+    {
+      "seed": 0,
+      "peak": {
+        "delivery": -1e+18
+      },
+      "curve": [],
+      "wall_s": 130.2
+    }
+  ]
+}
