@@ -1,9 +1,19 @@
-"""Property-test the emitter-purity core of Propositions 1 (output byte-equality) and 3 (projection-emission
-independence) against the REAL compiler. Two checks per fixture: (a) DETERMINISM -- compiling the same source in
-two fresh engines emits byte-identical DOT (emitters are pure functions of H, no hidden state); (b) OUTPUT
-ALIAS-INVARIANCE -- a sibling-reordered source emits byte-identical DOT (the full Prop.1 claim
-e_f(compile(s1)) = e_f(compile(s2)), combining IR-invariance with emitter purity). Independence (Prop.3) then
-follows: a pure emitter that ignores other emitters' outputs can be run k times off one compile."""
+"""Property-test emitter determinism for Proposition 3 against the real compiler.
+
+Two checks are reported per fixture:
+
+(a) Determinism: compiling the same source in two fresh engines emits byte-identical
+    DOT. This is the executable evidence for emitter purity: no hidden mutable state
+    leaks into emission.
+(b) Sibling-reorder byte equality: compiling a source whose top-level declarations
+    were permuted and comparing DOT bytes. This is a diagnostic for a stronger
+    serialization claim, not a requirement of Proposition 3. It currently fails
+    because DOT internal IDs are source-order assigned; the canonical hash remains
+    invariant under these reorderings (see p1_alias_invariance.py).
+
+Projection-emission independence follows from the deterministic/pure-emitter result:
+each emitter reads the compiled IR and does not consume another emitter's output.
+"""
 import glob
 import random
 
@@ -85,8 +95,10 @@ for f in fixtures:
             pass
     print(f"  {f.split(chr(92))[-1]:30} deterministic={determinism}  reorder-invariant DOT {finv}/{N_PERMS}")
 
-print(f"\nP1-output / P3-purity vs the REAL compiler:")
+print(f"\nP3 emitter purity vs the REAL compiler:")
 print(f"  emitter determinism (fresh-engine re-emit identical): {det_ok}/{len(fixtures)} fixtures")
-print(f"  DOT byte-equal under sibling reordering              : {inv_ok}/{inv_total} reorderings")
-print("  => emitters are pure functions of the canonical IR (Lemma 3); output is alias-invariant (Prop.1),")
-print("     so k formats can be emitted from ONE compile without cross-talk (Prop.3 independence).")
+print(f"  diagnostic: DOT byte-equal under sibling reordering : {inv_ok}/{inv_total} reorderings")
+print("  => verified: emitters are deterministic for the same compiled source, supporting Prop. 3")
+print("     projection-emission independence (k formats can be emitted from one compile without cross-talk).")
+print("  => caveat: sibling-reordered sources are not byte-identical in DOT today; internal DOT IDs")
+print("     are source-order assigned. Do not cite this script as proving universal byte-equal emission.")
