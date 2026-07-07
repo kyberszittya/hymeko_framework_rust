@@ -16,20 +16,26 @@ import torch
 from hymeko_rl.train.bc import behaviour_clone
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
 from hymeko_rl.eval.evaluate import DwellMetric, eval_metric, greedy_action_fn
-from hymeko_rl.experiments.galambos_demo import GalambosDemonstrator
+from hymeko_rl.experiments.galambos_demo import PushDemonstrator
 from hymeko_rl.agents.policy import build_policy
 from hymeko_rl.train.ppo import PPOConfig, train_ppo
 
 
 def collect_galambos_demos(env: PlanarGraspEnv, n_episodes: int, seed: int, *,
-                           only_success: bool = True) -> tuple[np.ndarray, np.ndarray]:
+                           only_success: bool = True,
+                           demonstrator: Any | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Roll the scripted demonstrator for ``n_episodes`` and return ``(obs, actions)`` for cloning.
 
-    With ``only_success`` only the trajectories that delivered the coin are kept (clean demos).
+    With ``only_success`` only trajectories that **held** the coin in the zone for the env's ``success_steps``
+    are kept — the same dwell rule every delivery eval grades by (filter criterion ≡ grading criterion, §3;
+    the old momentary-``in_zone`` filter trained clones on touch-and-roll-out trajectories).
+    ``demonstrator`` is any ``reset()``/``action(env)`` controller; default the push controller (measured 0.8 vs the
+    pinch-carry's 0.2 delivery, 2026-07-05 — the measured winner is the default, §6.5 #19).
 
     # Postconditions ``obs`` is ``(M, n_vertices, feat)``, ``actions`` ``(M, n_actions)``; ``M >= 1`` (raises if
       no demos collected). # Errors ``RuntimeError`` if nothing was collected (e.g. 0 successes)."""
-    demo = GalambosDemonstrator(env)
+    demo = PushDemonstrator(env) if demonstrator is None else demonstrator
+    dwell_need = int(getattr(env, "success_steps", 1))
     obs_all: list[np.ndarray] = []
     act_all: list[np.ndarray] = []
     n_success = 0
@@ -38,13 +44,15 @@ def collect_galambos_demos(env: PlanarGraspEnv, n_episodes: int, seed: int, *,
         demo.reset()
         traj_o: list[np.ndarray] = []
         traj_a: list[np.ndarray] = []
+        consec = 0
         delivered = False
         for _ in range(env.max_steps):
             action = demo.action(env)
             traj_o.append(obs)
             traj_a.append(action)
             obs, _r, term, trunc, info = env.step(action)
-            delivered = delivered or bool(info["in_zone"])
+            consec = consec + 1 if bool(info["in_zone"]) else 0
+            delivered = delivered or consec >= dwell_need
             if term or trunc:
                 break
         if delivered:
@@ -93,22 +101,27 @@ def run_galambos_bc(*, kind: str = "sa_hsikan", hidden: int = 64, difficulty: fl
     if algo == "ppo":
         ac: Any = (build_policy("mlp", obs_dim=flat, action_dim=env.n_actions, hidden=hidden) if kind == "mlp"
                    else build_policy(kind, obs_dim=feat, action_dim=env.n_actions, hg_state=env.hg, hidden=hidden))
-    else:                                             # ddpg / td3: off-policy deterministic actor + twin critics
+    else:                                             # ddpg / td3 / sac: off-policy actor + twin critics
         from gymnasium.spaces import Box
-
-        from hymeko_rl.train.ddpg import build_offpolicy
         space = env.action_space
         assert isinstance(space, Box)
         scale = float(np.max(np.abs(space.high)))
         kw: dict[str, Any] = {} if kind == "mlp" else {"hg_state": env.hg}
-        ac, critics = build_offpolicy(kind, obs_dim=feat, flat_dim=flat, action_dim=env.n_actions,
-                                      action_scale=scale, n_critics=2, hidden=hidden,
-                                      critic_layernorm=critic_layernorm, **kw)
+        if algo == "sac":                             # stochastic squashed-Gaussian actor (entropy-regularised)
+            from hymeko_rl.train.sac import build_sac
+            ac, critics = build_sac(kind, obs_dim=feat, flat_dim=flat, action_dim=env.n_actions,
+                                    action_scale=scale, n_critics=2, hidden=hidden, **kw)
+        else:
+            from hymeko_rl.train.ddpg import build_offpolicy
+            ac, critics = build_offpolicy(kind, obs_dim=feat, flat_dim=flat, action_dim=env.n_actions,
+                                          action_scale=scale, n_critics=2, hidden=hidden,
+                                          critic_layernorm=critic_layernorm, **kw)
     # Live feedback across the whole pipeline (never run blind — the demo/BC/eval preamble is otherwise dark).
     print(f"  [galambos:{kind}/{algo} seed {seed}] collecting {n_demos} demo episodes...", flush=True)
     obs, acts = collect_galambos_demos(env, n_demos, seed, only_success=only_success)
     print(f"  [galambos] {len(obs)} demo transitions; BC-cloning {bc_epochs} epochs...", flush=True)
-    bc_losses = behaviour_clone(ac, obs, acts, n_epochs=bc_epochs, seed=seed)
+    bc_losses = behaviour_clone(ac, obs, acts, n_epochs=bc_epochs, seed=seed,
+                                batch=512 if device != "cpu" else 128, device=device)
     print(f"  [galambos] BC done (loss={bc_losses[-1]:.4f}); evaluating clone delivery...", flush=True)
     bc_deliv = eval_delivery(PlanarGraspEnv(robot=robot, max_steps=300, difficulty=difficulty), ac, 24, 9000)
     print(f"  [galambos] bc_delivery={bc_deliv:.3f}; refining {refine} steps ({algo})..." if refine > 0
@@ -122,6 +135,14 @@ def run_galambos_bc(*, kind: str = "sa_hsikan", hidden: int = 64, difficulty: fl
                       n_envs=n_envs,
                       make_env=(lambda: PlanarGraspEnv(robot=robot, max_steps=300, difficulty=difficulty))
                       if n_envs > 1 else None)
+        elif algo == "sac":
+            from hymeko_rl.train.sac import SACConfig, train_sac
+            # Live delivery curve as the eval hook (the default eval_balance is cart-pole-specific).
+            def sac_eval(_e: Any, actor: Any) -> float:
+                return eval_delivery(PlanarGraspEnv(robot=robot, max_steps=300, difficulty=difficulty),
+                                     actor, 12, 9000)
+            train_sac(ac, critics, env, SACConfig(total_steps=refine, seed=seed, eval_every=10_000),
+                      eval_fn=sac_eval)
         else:
             from hymeko_rl.train.ddpg import OffPolicyConfig, td3_bc_config, train_offpolicy
             # TD3+BC anti-collapse (2026-07-01 pivot): the BC anchor ||mu(s) - a_demo||^2 over the demos holds
@@ -164,8 +185,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--difficulty", type=float, default=0.3)
     ap.add_argument("--n-demos", type=int, default=200)
     ap.add_argument("--bc-epochs", type=int, default=200)
-    ap.add_argument("--algo", default="td3", choices=["td3", "ddpg", "ppo"],
-                    help="off-policy td3/ddpg (default); ppo deprecated (2026-07-01 pivot — it collapses BC)")
+    ap.add_argument("--algo", default="td3", choices=["td3", "ddpg", "sac", "ppo"],
+                    help="off-policy td3/ddpg/sac (td3 default); ppo deprecated (2026-07-01 — it collapses BC)")
     ap.add_argument("--refine", type=int, default=0, help="off-policy env steps (td3/ddpg) or PPO iters (ppo)")
     ap.add_argument("--ppo-iters", type=int, default=None,
                     help="deprecated alias for --algo ppo --refine N (kept so the in-flight overnight loop runs)")

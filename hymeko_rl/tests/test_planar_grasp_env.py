@@ -11,11 +11,80 @@ import mujoco
 import numpy as np
 import pytest
 
+from hymeko_rl.env.constants import Collision
 from hymeko_rl.env.env_spec import EnvSpec
 from hymeko_rl.env.planar_grasp_env import (
     PlanarGraspEnv, compose_planar_scene, make_planar_arms_mjcf,
 )
 from hymeko_rl.env.reward import _REWARD_TERMS, RewardSpec
+
+
+# ── collision for BOTH arm geometries: fingertip sphere collides with the coin, arm-link capsule does NOT ──
+# (the sim shows the coin passing through the arm bodies — this pins that behaviour at the compiled-model +
+# physics level, one geometry per assertion, above the bitmask-predicate test in test_env_constants.py.)
+
+def _geom_channel(model: object, g: int) -> tuple[int, int]:
+    return (int(model.geom_contype[g]), int(model.geom_conaffinity[g]))   # type: ignore[attr-defined]
+
+
+def _capsule_geoms(model: object) -> list[int]:
+    return [g for g in range(int(model.ngeom))                            # type: ignore[attr-defined]
+            if int(model.geom_type[g]) == int(mujoco.mjtGeom.mjGEOM_CAPSULE)]   # type: ignore[attr-defined]
+
+
+def test_compiled_model_coin_collides_with_fingertip_not_arm_capsule() -> None:
+    """On the actual compiled model: the coin geom's channel collides with the fingertip geom's channel and
+    with NONE of the arm-link capsule channels (the fingertip-only manipulation invariant, at model level)."""
+    env = PlanarGraspEnv(robot=None, max_steps=10, difficulty=0.3)
+    env.reset(seed=0)
+    model = env.model
+    disk = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "disk"))
+    ft = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left"))
+    assert disk >= 0 and ft >= 0
+    coin_ch = _geom_channel(model, disk)
+    assert Collision.collide(coin_ch, _geom_channel(model, ft))           # FINGERTIP geometry: collides
+    caps = _capsule_geoms(model)
+    assert caps, "expected arm-link capsule geoms in the compiled model"
+    for g in caps:                                                        # ARM geometry: never collides
+        assert not Collision.collide(coin_ch, _geom_channel(model, g)), \
+            f"arm capsule geom {g} would collide with the coin (mask leak)"
+    env.close()
+
+
+def test_coin_passes_through_arm_capsule_but_contacts_fingertip() -> None:
+    """Dynamic (mj_forward at overlapping poses): the coin placed ON a fingertip generates a coin-fingertip
+    contact, but the coin placed ON an arm capsule generates NO coin-arm contact — it passes through, exactly
+    what the simulation showed. Tests the collision for both geometries via real MuJoCo contact generation."""
+    env = PlanarGraspEnv(robot=None, max_steps=10, difficulty=0.3)
+    env.reset(seed=0)
+    model, data = env.model, env.data
+    disk = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "disk"))
+    ft = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left"))
+    caps = set(_capsule_geoms(model))
+    data.qpos[:] = 0.0                                                    # home the arms
+    mujoco.mj_forward(model, data)
+    ft_xy = data.geom_xpos[ft][:2].copy()
+    cap_geom = min(caps)
+    cap_xy = data.geom_xpos[cap_geom][:2].copy()
+
+    def _place_coin(xy: np.ndarray) -> None:
+        data.qpos[:] = 0.0
+        data.qpos[env._disk_x_adr] = float(xy[0])
+        data.qpos[env._disk_y_adr] = float(xy[1])
+        mujoco.mj_forward(model, data)
+
+    def _pairs(pred: object) -> int:
+        return sum(1 for i in range(int(data.ncon))
+                   if pred(int(data.contact[i].geom1), int(data.contact[i].geom2)))   # type: ignore[operator]
+
+    _place_coin(ft_xy)                                                    # coin ON the fingertip
+    assert _pairs(lambda a, b: {a, b} == {disk, ft}) >= 1, "coin should contact the fingertip"
+
+    _place_coin(cap_xy)                                                   # coin ON an arm capsule
+    assert _pairs(lambda a, b: disk in (a, b) and (a in caps or b in caps)) == 0, \
+        "coin must pass THROUGH the arm capsule (no coin-arm contact)"
+    env.close()
+
 
 _TASK = "data/robotics/galambos_task.hymeko"
 
@@ -84,7 +153,8 @@ def _metrics(*, tipl: float = 0.0, tipr: float = 0.0, speed: float = 0.0, arm_sp
              self_contact: bool = False, dz: float = 0.1):  # type: ignore[no-untyped-def]
     from hymeko_rl.env.planar_grasp_env import PlanarGraspMetrics
     return PlanarGraspMetrics(
-        np.zeros(2, np.float32), dz, False, False, False, tipl, tipr, speed, arm_speed, self_contact)
+        np.zeros(2, np.float32), dz, False, False, False, tipl, tipr, speed, arm_speed, self_contact,
+        np.zeros(2, np.float32))
 
 
 class _Stub:
@@ -446,3 +516,154 @@ def test_terminate_on_success_false_holds_the_episode() -> None:
         if truncated:
             break
     assert seen_in_zone, "coin planted at the zone centre should register in_zone"
+
+
+# ── privileged state z(s) for the asymmetric-CTDE (MADDPG) critic + coin velocity in the metrics ──
+
+
+def test_privileged_state_shape_and_phase_onehot() -> None:
+    env = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3)
+    env.reset(seed=0)
+    z = env.privileged_state()
+    assert z.shape == (env.privileged_dim,) == (5,) and z.dtype == np.float32
+    assert set(np.unique(z[:2]).tolist()).issubset({0.0, 1.0})   # contact bits are 0/1
+    assert float(z[2:].sum()) == 1.0                             # exactly one phase bit set (one-hot)
+    assert float(z[2]) == 1.0                                    # fresh reset: not grasped, not in zone -> reaching
+
+
+def test_privileged_state_phase_transitions() -> None:
+    env = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3)
+    env.reset(seed=1)
+    env._ever_grasped = True                                     # carrying: latch grasp, coin still outside zone
+    assert not env._planar_metrics.in_zone
+    assert float(env.privileged_state()[3]) == 1.0              # phase = carrying
+    env.data.qpos[env._disk_x_adr] = env._zone_x                # in_zone dominates: plant coin at the zone centre
+    env.data.qpos[env._disk_y_adr] = env._zone_y
+    mujoco.mj_forward(env.model, env.data)
+    env._planar_metrics = env._metrics()
+    assert env._planar_metrics.in_zone
+    assert float(env.privileged_state()[4]) == 1.0             # phase = in_zone takes precedence over carrying
+
+
+def test_privileged_state_contact_bits_track_metrics() -> None:
+    from dataclasses import replace
+    env = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3)
+    env.reset(seed=2)
+    env._planar_metrics = replace(env._planar_metrics, left_contact=True, right_contact=False)
+    z = env.privileged_state()
+    assert float(z[0]) == 1.0 and float(z[1]) == 0.0           # z carries per-arm contact
+
+
+def test_disk_vel_in_metrics_consistent_with_speed() -> None:
+    env = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3)
+    env.reset(seed=3)
+    m = env._planar_metrics
+    assert np.asarray(m.disk_vel).shape == (2,)                # in-plane coin velocity vector
+    assert abs(float(m.disk_speed) - float(np.hypot(m.disk_vel[0], m.disk_vel[1]))) < 1e-6
+
+
+# ── v2 contact-legality (graded contact-quality model) ───────────────────────────────────────────────
+
+def _park_coin_in_zone_one_short(env: PlanarGraspEnv) -> None:
+    """Park the coin at the zone centre and set ``_success`` one short of a held delivery, so the NEXT
+    in-zone step completes it — a deterministic delivery probe independent of physics/control."""
+    env.data.qpos[env._disk_x_adr] = env._zone_x
+    env.data.qpos[env._disk_y_adr] = env._zone_y
+    mujoco.mj_forward(env.model, env.data)
+    env._success = env.success_steps - 1
+
+
+def test_v2_arm_capsules_collide_with_coin() -> None:
+    """v2 (contact_legality on): the arm-link capsules DO collide with the coin at the mask level — the
+    opposite of the v1 passthrough (test_compiled_model_coin_collides_with_fingertip_not_arm_capsule)."""
+    env = PlanarGraspEnv(robot=None, max_steps=10, difficulty=0.3, contact_legality=True)
+    env.reset(seed=0)
+    m = env.model
+    coin_ch = _geom_channel(m, int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "disk")))
+    caps = _capsule_geoms(m)
+    assert caps
+    for g in caps:
+        assert Collision.collide(coin_ch, _geom_channel(m, g)), f"v2: arm capsule {g} must collide with the coin"
+    env.close()
+
+
+def test_v2_graded_arm_body_does_not_void_delivery() -> None:
+    """GRADED mode (default): an arm-body↔coin contact is tracked but does NOT void a held delivery."""
+    env = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3, contact_legality=True)
+    env.reset(seed=1)
+    env._arm_body_ever = True                                  # simulate an earlier arm-body contact
+    _park_coin_in_zone_one_short(env)
+    _o, _r, term, _tr, info = env.step(np.zeros(env.n_actions, np.float32))
+    assert info["in_zone"] is True
+    assert info["arm_body_contact"] is True                    # tracked ...
+    assert info["delivered"] is True                           # ... but the delivery still counts (graded)
+    env.close()
+
+
+def test_v2_strict_arm_body_invalidates_and_terminates() -> None:
+    """STRICT mode: the same arm-body contact voids the delivery and terminates the episode."""
+    from dataclasses import replace
+
+    from hymeko_rl.env.env_spec import DEFAULT_ENV
+    env = PlanarGraspEnv(robot=None, env=replace(DEFAULT_ENV, contact_mode="strict"),
+                         max_steps=60, difficulty=0.3, contact_legality=True)
+    env.reset(seed=1)
+    env._arm_body_ever = True
+    _park_coin_in_zone_one_short(env)
+    _o, _r, term, _tr, info = env.step(np.zeros(env.n_actions, np.float32))
+    assert info["delivered"] is False                          # STRICT: arm-body contact voids the delivery
+    assert term is True                                        # ... and terminates
+    env.close()
+
+
+def test_v1_legality_none_and_info_defaults() -> None:
+    """v1 (default): no contact spec, ``legality`` is None, and the arm-body info columns default off."""
+    env = PlanarGraspEnv(robot=None, max_steps=10, difficulty=0.3)
+    env.reset(seed=0)
+    assert env._contact_spec is None
+    _o, _r, _t, _tr, info = env.step(np.zeros(env.n_actions, np.float32))
+    assert env._planar_metrics.legality is None
+    assert info["arm_body_contact"] is False and info["arm_body_contact_steps"] == 0
+    env.close()
+
+
+def test_v2_tracks_arm_body_duration_and_impulse() -> None:
+    """The env accumulates per-episode arm-body contact duration (steps) and summed impulse from the state."""
+    import dataclasses
+
+    from hymeko_rl.env.contact_legality import ContactLegalityState
+    env = PlanarGraspEnv(robot=None, max_steps=10, difficulty=0.3, contact_legality=True)
+    env.reset(seed=0)
+    forced = dataclasses.replace(
+        env._metrics(), legality=ContactLegalityState(arm_body_contact=True, arm_body_contact_count=2,
+                                                      arm_body_contact_impulse=1.5))
+    env._metrics = lambda: forced                              # type: ignore[method-assign]
+    info: dict = {}
+    for _ in range(3):
+        _o, _r, term, trunc, info = env.step(np.zeros(env.n_actions, np.float32))
+        if term or trunc:
+            break
+    assert env._arm_body_ever is True
+    assert env._arm_body_steps == 3 and info["arm_body_contact_steps"] == 3
+    assert env._arm_body_impulse_sum == pytest.approx(4.5)     # 3 steps x 1.5
+    env.close()
+
+
+def test_arm_body_coin_contact_reward_penalizes_body_only_not_grasp() -> None:
+    """The graded reward term penalises a body-only push (arm-body contact, NO fingertip) but not a hand touch
+    during a fingertip grasp — so it does not fight the only feasible grasp."""
+    import dataclasses
+
+    from hymeko_rl.env.contact_legality import ContactLegalityState
+    from hymeko_rl.env.reward import _REWARD_TERMS
+    term = _REWARD_TERMS["arm_body_coin_contact"]
+    a = np.zeros(4, np.float32)
+
+    def env_with(legality: object) -> object:
+        return _Stub(dataclasses.replace(_metrics(), legality=legality))
+
+    assert term(env_with(ContactLegalityState(arm_body_contact=True)), 0.1, a) == -1.0            # body-only push
+    assert term(env_with(ContactLegalityState(arm_body_contact=True,                              # hand during grasp
+                                              left_fingertip_contact=True)), 0.1, a) == 0.0
+    assert term(env_with(ContactLegalityState()), 0.1, a) == 0.0                                  # no contact
+    assert term(env_with(None), 0.1, a) == 0.0                                                    # v1: no legality

@@ -50,27 +50,46 @@ def _gather_decls(path: Path, _seen: set[Path] | None = None) -> dict[str, tuple
     return decls
 
 
+FieldValue = "float | tuple[float, ...] | str"
+
+
+def parse_fields(body: str) -> "dict[str, float | tuple[float, ...] | str]":
+    """Parse a declaration body's ``name value;`` fields → ``{field: scalar | tuple | str}``.
+
+    The HyMeKo value forms used across profiles: ``name 0.12;`` (scalar), ``name [a, b, c];`` (vector),
+    and ``name "text";`` (string — e.g. a referenced profile path or an arm label). Same documented
+    bridge status as :func:`read_bundle` (regex over the profile shape, not a full parse).
+
+    # Postconditions one entry per field, in body order; bracketed → ``tuple[float, …]``, quoted → ``str``,
+      bare number → ``float``.
+    """
+    out: "dict[str, float | tuple[float, ...] | str]" = {}
+    for fm in re.finditer(r'(\w+)\s+(\[[^\]]*\]|"[^"]*"|-?[\d.]+)\s*;', body):
+        name, val = fm.group(1), fm.group(2)
+        if val.startswith("["):
+            out[name] = tuple(float(x) for x in val[1:-1].split(","))
+        elif val.startswith('"'):
+            out[name] = val[1:-1]
+        else:
+            out[name] = float(val)
+    return out
+
+
 def read_scene_fields(profile: str | Path, kind: str = "scene") -> dict[str, float | tuple[float, ...]]:
     """Read a scenario profile's single ``@name: ns.<kind> { … }`` body → ``{field: scalar | tuple}``.
 
-    Field syntax is the HyMeKo value form already used by scene/robot profiles: ``name 0.12;`` (scalar) and
-    ``name [a, b, c];`` (vector). A bracketed value becomes a ``tuple[float, …]``; a bare number a ``float``.
-    This is the same documented bridge as :func:`read_bundle` (regex over the profile shape, not a full parse).
+    Field syntax per :func:`parse_fields` (numeric forms only here — scene/robot bodies carry no strings;
+    a string field in a scene profile is ignored to preserve this reader's historical contract).
 
     # Preconditions ``profile`` exists and declares exactly one ``<kind>`` instance.
-    # Postconditions Returns one entry per ``name value;`` field, in file order.
+    # Postconditions Returns one entry per numeric ``name value;`` field, in file order.
     # Errors ``FileNotFoundError``; ``ValueError`` (no ``<kind>`` declaration).
     """
     text = _strip_comments(Path(profile).read_text(encoding="utf-8"))
     decl = re.search(rf"@\w+\s*:\s*[\w.]*\.{kind}\s*\{{(.*?)\}}", text, re.DOTALL)
     if decl is None:
         raise ValueError(f"{profile}: no '{kind}' declaration found")
-    out: dict[str, float | tuple[float, ...]] = {}
-    for fm in re.finditer(r"(\w+)\s+(\[[^\]]*\]|-?[\d.]+)\s*;", decl.group(1)):
-        name, val = fm.group(1), fm.group(2)
-        out[name] = (tuple(float(x) for x in val[1:-1].split(",")) if val.startswith("[")
-                     else float(val))
-    return out
+    return {k: v for k, v in parse_fields(decl.group(1)).items() if not isinstance(v, str)}
 
 
 def read_imports(profile: str | Path) -> list[Path]:

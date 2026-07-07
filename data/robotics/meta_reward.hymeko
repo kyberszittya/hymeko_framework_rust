@@ -119,6 +119,17 @@ reward {
         // Joint-acceleration smoothness (jerk): -weight·Σ q̈² over the actuated joints — smooth, not snappy.
         @joint_acceleration:  + <isa> reward.reward_term {}
 
+        // ── Quadruped STANDING / balance terms (read the env's torso pose; 0 on a torso-less env) ──
+        // Gated success predicate: +weight iff the torso is upright (cos > stand_cos) AND at nominal height
+        // (|z − h| < tol) — identical to the DwellMetric the task is graded on (reward ≡ metric). Dominant term.
+        @standing:      + <isa> reward.reward_term {}
+        // Dense height shaping: -weight·|z − stand_height| — the gradient pulling the torso to standing height.
+        @torso_height:  + <isa> reward.reward_term {}
+        // Dense levelness: +weight·cos(tilt) — gradient toward a level (upright) torso.
+        @upright:       + <isa> reward.reward_term {}
+        // Anti-drift: -weight·|v_x| — hold the ground, don't walk off while balancing.
+        @stand_still:   + <isa> reward.reward_term {}
+
         // ── pick-and-place terms (read the env's PickMetrics; 0 on a non-pick env) ──
         // Dense approach: -‖tool - object‖ (the tool descends toward the object to grasp it).
         @pick_approach:        + <isa> reward.reward_term {}

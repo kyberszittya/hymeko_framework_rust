@@ -82,6 +82,55 @@ def test_train_offpolicy_runs_and_returns_finite_curve(algo_cfg: OffPolicyConfig
     assert len(hist) == 2 and all(np.isfinite(hist))           # two evals at 150, 300
 
 
+def test_critic_targets_update_during_actor_warmup(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regression (2026-07-05): critic warmup must not train against stale target critics.
+
+    The actor branch is disabled by ``critic_warmup`` here. Non-hetero critic targets still need to Polyak-track
+    every critic update; previously they were gated behind the actor branch, so this count stayed zero.
+    """
+    import hymeko_rl.train.ddpg as ddpg
+
+    torch.manual_seed(0)
+    env = _env(max_steps=30)
+    actor, critics = build_offpolicy("mlp", obs_dim=2, flat_dim=env.hg.n_vertices * 2, action_dim=1,
+                                     action_scale=10.0, n_critics=2, hidden=16)
+    calls = 0
+    original = ddpg._polyak
+
+    def counted_polyak(target: torch.nn.Module, source: torch.nn.Module, tau: float) -> None:
+        nonlocal calls
+        calls += 1
+        original(target, source, tau)
+
+    monkeypatch.setattr(ddpg, "_polyak", counted_polyak)
+    cfg = td3_config(total_steps=80, start_steps=10, batch_size=16, capacity=200,
+                     eval_every=80, n_eval=1, log_every=0, critic_warmup=10_000, seed=0)
+    train_offpolicy(actor, critics, env, cfg)
+    assert calls > 0
+
+
+def test_critic_warmup_freezes_actor_but_updates_critic() -> None:
+    """Toy invariant: warmup protects a cloned actor while the critic learns.
+
+    This is the cheap version of the Galambos failure mode. If an RL refinement phase is supposed to start from
+    a BC clone, ``critic_warmup`` must not move that clone at all; only critic-side parameters should change.
+    """
+    torch.manual_seed(0)
+    env = _env(max_steps=30)
+    actor, critics = build_offpolicy("mlp", obs_dim=2, flat_dim=env.hg.n_vertices * 2, action_dim=1,
+                                     action_scale=10.0, n_critics=2, hidden=16)
+    actor_before = [p.detach().clone() for p in actor.parameters()]
+    critic_before = [[p.detach().clone() for p in c.parameters()] for c in critics]
+    cfg = td3_config(total_steps=80, start_steps=10, batch_size=16, capacity=200,
+                     eval_every=80, n_eval=1, log_every=0, critic_warmup=10_000, seed=0,
+                     warm_start=True)
+    train_offpolicy(actor, critics, env, cfg)
+    assert all(torch.allclose(p0, p1.detach()) for p0, p1 in zip(actor_before, actor.parameters()))
+    assert any(not torch.allclose(p0, p1.detach())
+               for before, c in zip(critic_before, critics)
+               for p0, p1 in zip(before, c.parameters()))
+
+
 def test_offpolicy_log_decomposes_actor_loss_into_q_and_bc(capsys: "pytest.CaptureFixture[str]") -> None:
     """Regression: the ``[offpolicy]`` line splits the fused actor loss into ``Q=`` (the divergence tripwire —
     Q→±inf is a real Q-scale blow-up) and ``bc=`` (the benign anchor pull that grows as the policy outgrows the

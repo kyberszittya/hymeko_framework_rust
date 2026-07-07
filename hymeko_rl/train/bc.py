@@ -41,22 +41,33 @@ def collect_demos(env: ArmReachEnv, n_episodes: int, seed: int,
 
 def behaviour_clone(ac: ActorCritic, obs: np.ndarray, acts: np.ndarray, *,
                     n_epochs: int = 150, lr: float = 1e-3, batch: int = 128,
-                    seed: int = 0, log_every: int = 25) -> list[float]:
+                    seed: int = 0, log_every: int = 25,
+                    device: "torch.device | str" = "cpu") -> list[float]:
     """Fit ``ac``'s actor mean to the expert actions (MSE). Returns per-epoch loss.
+
+    ``device``: ``"cpu"`` (default), ``"cuda"``, or ``"auto"`` (cuda if available) — same convention as
+    :class:`hymeko_rl.train.ddpg.OffPolicyConfig`. The whole demo corpus is moved to the device once (a BC
+    corpus is small — tens of MB); the model is moved for training and returned to the CPU after, so eval
+    and ``state_dict`` consumers see the usual CPU module. The per-epoch loss is accumulated **on device**
+    and synced once per epoch (a per-batch ``.item()`` would serialise every GPU step).
 
     Never run blind (§3): emits a flushed ``[bc]`` progress line (epoch, MSE loss, epochs/s, ETA) every
     ``log_every`` epochs so the BC phase is not a dark gap before off-policy training. ``log_every=0`` silences it.
     """
     torch.manual_seed(seed)
-    obs_t = torch.as_tensor(obs, dtype=torch.float32)
-    act_t = torch.as_tensor(acts, dtype=torch.float32)
+    dev = torch.device("cuda" if (device == "auto" and torch.cuda.is_available())
+                       else ("cpu" if device == "auto" else device))
+    ac.to(dev)
+    obs_t = torch.as_tensor(obs, dtype=torch.float32, device=dev)
+    act_t = torch.as_tensor(acts, dtype=torch.float32, device=dev)
     opt = torch.optim.Adam(ac.parameters(), lr=lr)
     n = len(obs_t)
     losses: list[float] = []
     t0 = time.perf_counter()
     for ep in range(n_epochs):
-        perm = torch.randperm(n)
-        ep_loss, n_batch = 0.0, 0
+        perm = torch.randperm(n, device=dev)
+        ep_loss = torch.zeros((), device=dev)
+        n_batch = 0
         for i in range(0, n, batch):
             idx = perm[i:i + batch]
             pred = ac.action_mean(obs_t[idx])
@@ -64,13 +75,14 @@ def behaviour_clone(ac: ActorCritic, obs: np.ndarray, acts: np.ndarray, *,
             opt.zero_grad()
             loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
             opt.step()
-            ep_loss += float(loss.item())
+            ep_loss += loss.detach()
             n_batch += 1
-        losses.append(ep_loss / max(1, n_batch))
+        losses.append(float(ep_loss.item()) / max(1, n_batch))
         if log_every and ((ep + 1) % log_every == 0 or ep + 1 == n_epochs):
             rate = (ep + 1) / max(1e-9, time.perf_counter() - t0)
             print(f"  [bc] epoch {ep + 1:>4}/{n_epochs} | loss={losses[-1]:.4g} "
                   f"| {rate:4.1f} ep/s | ETA {(n_epochs - ep - 1) / max(1e-9, rate):4.0f}s", flush=True)
+    ac.to(torch.device("cpu"))
     return losses
 
 

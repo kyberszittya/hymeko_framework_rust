@@ -283,11 +283,18 @@ def test_terminal_deliver_is_one_shot_on_completion_not_an_annuity() -> None:
 def test_deliver_hymeko_is_the_oracle_certified_de_annuitized_shape() -> None:
     """The deliver variant is the ORACLE-CERTIFIED de-annuitized shape: the farmable per-step in_zone/both/
     fingertouch annuity is DROPPED; the grasp gradient is carried by both_approach (dense, not farmable) +
-    approach, plus the one-shot terminal_deliver. No in_zone/both_contact/finger_contact (all farmable)."""
-    dlv = dict(RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_deliver.hymeko").terms)
-    assert set(dlv) == {"grasp_approach", "both_approach", "out_of_bounds", "terminal_deliver"}
+    approach, plus the one-shot terminal_deliver, plus `zone_progress` (PBRS coin->zone gradient — farm-proof,
+    added 2026-07-05 as the target-direction learning aid). No in_zone/both_contact/finger_contact (all farmable),
+    and the optimum still DELIVERS (PBRS is policy-invariant, so the gradient cannot re-introduce farming)."""
+    from hymeko_rl.eval.reward_oracle import certify
+
+    spec = RewardSpec.from_hymeko(_REPO / "data" / "robotics" / "galambos_task_deliver.hymeko")
+    dlv = dict(spec.terms)
+    assert set(dlv) == {"grasp_approach", "both_approach", "out_of_bounds", "terminal_deliver", "zone_progress"}
     assert dlv["terminal_deliver"] == pytest.approx(30.0)
+    assert dlv["zone_progress"] == pytest.approx(10.0)                     # the target-direction gradient
     assert "in_zone" not in dlv and "both_contact" not in dlv and "finger_contact" not in dlv  # no annuity
+    assert certify(spec).delivers is True                                 # optimum is STILL delivery, not farming
 
 
 def test_pbrs_shaping_is_progress_and_telescopes_unfarmable() -> None:

@@ -60,22 +60,29 @@ impl LinearLayer {
 }
 
 /// Linear forward. `x` is `(n, in_dim)` flat; returns `(n, out_dim)` flat.
+///
+/// Uses `ikj` (SAXPY) accumulation: initialise each output row with the bias,
+/// then for each input `i` broadcast `x[i]` and add the *contiguous* W-row into
+/// the *contiguous* output row. The inner j-loop writes distinct slots (no
+/// reduction), so it autovectorises; and for a fixed j the additions run in
+/// i-order, so the result is bit-identical to a scalar-accumulate form.
 pub fn linear_forward(layer: &LinearLayer, x: &[f32]) -> Vec<f32> {
     let n = x.len() / layer.in_dim;
     assert_eq!(x.len(), n * layer.in_dim);
-    let mut out = vec![0.0f32; n * layer.out_dim];
-    out.par_chunks_mut(layer.out_dim)
-        .enumerate()
-        .for_each(|(ni, row)| {
-            let x_row = &x[ni * layer.in_dim..(ni + 1) * layer.in_dim];
-            for (j, slot) in row.iter_mut().enumerate() {
-                let mut a = layer.b[j];
-                for (i, &xi) in x_row.iter().enumerate() {
-                    a += xi * layer.w[i * layer.out_dim + j];
-                }
-                *slot = a;
+    let out_dim = layer.out_dim;
+    let mut out = vec![0.0f32; n * out_dim];
+    out.par_chunks_mut(out_dim).enumerate().for_each(|(ni, row)| {
+        let x_row = &x[ni * layer.in_dim..(ni + 1) * layer.in_dim];
+        row.copy_from_slice(&layer.b);
+        let mut w_base = 0usize;
+        for &xi in x_row {
+            let w_row = &layer.w[w_base..w_base + out_dim];
+            for (slot, &w) in row.iter_mut().zip(w_row.iter()) {
+                *slot += xi * w;
             }
-        });
+            w_base += out_dim;
+        }
+    });
     out
 }
 

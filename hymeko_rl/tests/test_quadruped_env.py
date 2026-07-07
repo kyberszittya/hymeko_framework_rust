@@ -42,7 +42,10 @@ def test_set_base_mode_missing_joint_raises() -> None:
 def test_free_and_fixed_dof_counts() -> None:
     free, fixed = QuadrupedGoalEnv(base="free"), QuadrupedGoalEnv(base="fixed")
     assert int(free.model.njnt) == int(fixed.model.njnt) + 1     # free base adds one (free) joint
-    assert int(free.model.nu) == int(fixed.model.nu) == 8        # 8 leg motors either way
+    # The 22-DOF Aibo: RL controls the 12 leg motors; the 10 expressive DOF are passively spring-held, so only
+    # the 12 leg torque motors remain (either base mode).
+    assert free.n_actions == fixed.n_actions == 12
+    assert int(free.model.nu) == int(fixed.model.nu) == 12
 
 
 # ── reward wiring: distance + time + smoothness terms present and finite ──────
@@ -78,17 +81,18 @@ def test_goal_geometry_and_obs() -> None:
 
 # ── physical sanity: stands, goal/flip terminate ─────────────────────────────
 def test_stands_under_gravity() -> None:
-    """Zero control: the damped legs hold the torso up (do not collapse to the floor)."""
+    """Zero control: the damped legs bear the load briefly — the torso does not *immediately* collapse. Over the
+    full horizon it eventually sinks (that non-triviality is asserted in ``test_quadruped_aibo_plant``); here we
+    only check the legs carry weight for a short window, so the plant is not a rag-doll at reset."""
     env = QuadrupedGoalEnv(base="free", max_steps=200)
     env.reset(seed=0)
     rest_z = float(env.data.xpos[env.torso, 2])
-    z = rest_z
-    for _ in range(150):
+    for _ in range(60):
         _o, _r, term, trunc, _i = env.step(np.zeros(env.n_actions, dtype=np.float32))
-        z = float(env.data.xpos[env.torso, 2])
         if term or trunc:
             break
-    assert z > rest_z - 0.15, f"torso collapsed to {z:.3f} (rest {rest_z:.3f})"
+    z = float(env.data.xpos[env.torso, 2])
+    assert z > rest_z - 0.10, f"torso collapsed too fast to {z:.3f} (rest {rest_z:.3f})"
 
 
 def test_reaching_goal_terminates() -> None:

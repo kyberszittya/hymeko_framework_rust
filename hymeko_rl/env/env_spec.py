@@ -46,6 +46,16 @@ class EnvSpec:
     y_max: float = 0.45
     success_steps: int = 5
     disk_radius: float = 0.02
+    # Contact-quality contract (v2 physics; declared by an optional `contact` config term). Off by default
+    # → v1 abstract fingertip-only prototype (the coin passes through the arm bodies). On → arm bodies
+    # physically collide with the coin; a non-fingertip arm↔coin contact is a non-preferred contact, tracked
+    # and reward-penalised, and used to grade a delivery (clean/assisted/exploit). `contact_mode`: "graded"
+    # (default — never voids the episode) or "strict" (voids/terminates, for clean-paper validation). The
+    # role split (fingertip vs arm-body) is built once into a ContactLegalitySpec; `valid_contact_prefix` is
+    # the fingertip geom-name convention.
+    contact_legality: bool = False
+    contact_mode: str = "graded"
+    valid_contact_prefix: str = "fingertip"
 
     @classmethod
     def from_hymeko(cls, env_profile: str | Path) -> "EnvSpec":
@@ -60,6 +70,7 @@ class EnvSpec:
             raise ValueError(f"{env_profile}: env_spec missing config term(s) {sorted(missing)}")
         z, s, w, su = (terms["target_zone"], terms["coin_spawn"],
                        terms["workspace"], terms["success"])
+        c = terms.get("contact", "")          # optional: declares the v2 contact-legality contract
         return cls(
             disk_radius=_num(terms["disk"], "radius", 0.02),
             zone_half=_num(z, "half", 0.04),
@@ -73,6 +84,8 @@ class EnvSpec:
             y_min=_num(w, "y_min", -0.08),
             y_max=_num(w, "y_max", 0.45),
             success_steps=int(_num(su, "steps", 5.0)),
+            contact_legality=_num(c, "legality", 0.0) > 0.5,
+            contact_mode="strict" if _num(c, "strict", 0.0) > 0.5 else "graded",
         )
 
 

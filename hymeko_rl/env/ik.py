@@ -89,6 +89,20 @@ class DampedPoseIK:
                 break
         return q.astype(np.float32)
 
+    def fk_tool(self, q: np.ndarray) -> np.ndarray:
+        """Forward-kinematics tool-body position for arm config ``q`` (its first ``n_joints`` DOFs).
+
+        Lets a waypoint controller measure where a *candidate/seed* config places the tool without mutating the
+        live simulation (uses the internal scratch ``MjData``).
+
+        # Preconditions ``len(q) >= n_joints``. # Postconditions returns the length-3 tool xpos; live data intact.
+        """
+        d = self._scratch
+        d.qpos[:] = 0.0
+        d.qpos[: self.n] = np.asarray(q[: self.n], dtype=np.float64)
+        mujoco.mj_kinematics(self.model, d)
+        return np.array(d.xpos[self.ee], dtype=np.float64)
+
     def solve_collision_free(self, q_seed: np.ndarray, target_pos: np.ndarray,
                              is_valid: Callable[[mujoco.MjData], bool], *, down: bool = True,
                              n_starts: int = 16, iters: int = 80, accept_pos: float = 5e-2) -> np.ndarray:

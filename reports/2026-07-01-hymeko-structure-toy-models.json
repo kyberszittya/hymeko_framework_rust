@@ -1,0 +1,76 @@
+{
+  "fixed_gomb": {
+    "finite": true,
+    "max_abs_delta_vs_gomb": 3.725290298461914e-09,
+    "mean": -0.04075721278786659,
+    "n_params": 5181,
+    "scores": [
+      -0.04795268550515175,
+      -0.03594936802983284,
+      -0.03836958110332489
+    ],
+    "shape": [
+      3
+    ]
+  },
+  "fsr": {
+    "finite": true,
+    "n_params": 194,
+    "shape": [
+      1,
+      6,
+      6
+    ],
+    "std": 0.3282744288444519,
+    "sum": 0.2637821137905121
+  },
+  "gomb": {
+    "finite": true,
+    "mean": -0.040757209062576294,
+    "n_params": 5181,
+    "scores": [
+      -0.04795268550515175,
+      -0.03594936430454254,
+      -0.03836958110332489
+    ],
+    "shape": [
+      3
+    ]
+  },
+  "gomb_soma": {
+    "finite": true,
+    "n_params": 208,
+    "shape": [
+      6,
+      8
+    ],
+    "std": 0.22123983502388,
+    "sum": 3.6164333820343018
+  },
+  "hsikan": {
+    "finite": true,
+    "n_params": 200,
+    "shape": [
+      6,
+      8
+    ],
+    "std": 0.09231197088956833,
+    "sum": 2.8669896125793457
+  },
+  "n_cycles": 4,
+  "n_edges": 3,
+  "n_nodes": 6,
+  "n_walks": 4,
+  "sa_hsikan": {
+    "finite": true,
+    "n_params": 80,
+    "shape": [
+      6,
+      8
+    ],
+    "std": 0.08234366029500961,
+    "sum": 3.076603889465332
+  },
+  "sequence_len": 6,
+  "source": "D:\\hakiko_ai_ws\\03_implementation\\hymeko_framework_rust\\scripts\\dev\\hymeko_structure_toy.hymeko"
+}

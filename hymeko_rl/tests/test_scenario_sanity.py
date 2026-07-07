@@ -37,8 +37,8 @@ SCENARIOS: list[ScenarioSpec] = [
     ScenarioSpec("cartpole", lambda: InvertedPendulumEnv(), n_vertices=2, n_actions=1, obs_feat=2),
     ScenarioSpec("coingrasp", lambda: PlanarGraspEnv.from_hymeko(max_steps=60), n_vertices=6,
                  n_actions=4, obs_feat=8),
-    ScenarioSpec("quadruped", lambda: QuadrupedGoalEnv(base="free", max_steps=60), n_vertices=9,
-                 n_actions=8, obs_feat=2),
+    ScenarioSpec("quadruped", lambda: QuadrupedGoalEnv(base="free", max_steps=60), n_vertices=33,
+                 n_actions=12, obs_feat=2),   # faithful 22-DOF Aibo: 12 RL-controlled legs, expressive held
 ]
 _IDS = [s.name for s in SCENARIOS]
 

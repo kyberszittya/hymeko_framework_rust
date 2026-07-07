@@ -68,7 +68,11 @@ class Collision:
     FINGERTIP = (Type.DEFAULT, Affinity.ANY)     # 1 / 3 — touches coin(2) and floor
     COIN = (Type.COIN, Affinity.COIN)            # 2 / 2 — only affinity-2 geoms move it
     FLOOR = (Type.DEFAULT, Affinity.ANY)         # 1 / 3
-    ARM_DEFAULT = (Type.DEFAULT, Affinity.DEFAULT)  # 1 / 1 — MuJoCo default (arm links)
+    ARM_DEFAULT = (Type.DEFAULT, Affinity.DEFAULT)  # 1 / 1 — v1 prototype: coin passes through arm links
+    ARM_LEGALITY = (Type.DEFAULT, Affinity.ANY)  # 1 / 3 — v2: arm links physically collide with coin(2). The mask
+                                                 # only *enables* the contact; whether a given arm–coin contact is
+                                                 # legal (fingertip) or forbidden (any other arm geom) is decided in
+                                                 # software by geom id in ``compute_planar_metrics`` — not by the mask.
     VISUAL = (Type.VISUAL, Affinity.NONE)        # 0 / 0 — non-colliding decoration
 
     @staticmethod

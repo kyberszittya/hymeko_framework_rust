@@ -24,6 +24,9 @@ from gymnasium import spaces
 
 from hymeko_rl.env.arm_world import actuated_dof_addrs, emit_arm_mjcf, with_collision_floor
 from hymeko_rl.env.constants import Collision, Physics
+from hymeko_rl.env.contact_legality import (
+    ContactLegalitySpec, ContactLegalityState, ContactMode, classify_contacts,
+)
 from hymeko_rl.env.env_spec import DEFAULT_ENV, EnvSpec
 from hymeko_rl.env.reward import RewardSpec
 from hymeko_rl.agents.hypergraph_state import HypergraphState
@@ -148,6 +151,38 @@ def with_fingertip_sites(arm_mjcf: str) -> str:
     return ET.tostring(root, encoding="unicode") if changed else arm_mjcf
 
 
+def with_arm_coin_collision(arm_mjcf: str) -> str:
+    """v2 physics: make the arm-body geoms physically collide with the coin (they pass through it in v1).
+
+    Sets :data:`Collision.ARM_LEGALITY` (``1/3``) on every geom under an arm body so MuJoCo generates
+    arm--coin contacts; the fingertip geoms are already ``1/3`` so this is a no-op for them. This function
+    only *enables* the contact at the physics layer — **which** contacts are legal (fingertip) versus
+    forbidden (any other arm link) is the declarative :class:`ContactLegalitySpec`'s job, decided by geom
+    role downstream, never by the mask or by a name check here.
+
+    # Preconditions ``arm_mjcf`` has top-level arm bodies named ``*_left``/``*_right`` bearing geoms.
+    # Postconditions every geom under those arms carries ``contype=1 conaffinity=3``; the coin, floor,
+      zone, joints, and inertials are untouched. Idempotent.
+    """
+    root = ET.fromstring(arm_mjcf)
+    worldbody = root.find("worldbody")
+    if worldbody is None:
+        return arm_mjcf
+    ct, ca = str(int(Collision.ARM_LEGALITY[0])), str(int(Collision.ARM_LEGALITY[1]))
+    changed = False
+    for arm in list(worldbody):
+        if arm.tag != "body":
+            continue
+        name = arm.get("name", "")
+        if not (name.endswith("_left") or name.endswith("_right")):
+            continue
+        for geom in arm.iter("geom"):
+            geom.set("contype", ct)
+            geom.set("conaffinity", ca)
+            changed = True
+    return ET.tostring(root, encoding="unicode") if changed else arm_mjcf
+
+
 def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half: float = 0.02,
                          zone_x: float = 0.0, zone_y: float = 0.16, zone_half: float = 0.055,
                          plane_z: float = _PLANE_Z, coin_damping: float = 2.5,
@@ -218,11 +253,17 @@ class PlanarGraspMetrics:
     disk_speed: float
     arm_speed: float
     arm_self_contact: bool
+    disk_vel: np.ndarray                  # in-plane coin velocity (vx, vy) — projects onto coin→zone for the
+                                          # target-directed delivery-progress metric (eval, not reward)
     fingers_self_contact: bool = False   # the two FINGERTIP links touching EACH OTHER (a crash) — NOT a coin-pinch
+    # v2 contact-legality result (None in v1): the classified object contacts against the declarative
+    # ContactLegalitySpec — carries the forbidden-contact flag/count/impulse and both-fingertip state.
+    legality: "ContactLegalityState | None" = None
 
 
 CLEAN_PLANAR = PlanarGraspMetrics(
-    np.zeros(2, dtype=np.float32), 0.0, False, False, False, 0.0, 0.0, 0.0, 0.0, False)
+    np.zeros(2, dtype=np.float32), 0.0, False, False, False, 0.0, 0.0, 0.0, 0.0, False,
+    np.zeros(2, dtype=np.float32))
 
 
 def compute_planar_metrics(model: Any, data: Any, *, disk_body: int, disk_geom: int,
@@ -230,28 +271,44 @@ def compute_planar_metrics(model: Any, data: Any, *, disk_body: int, disk_geom: 
                            zone_x: float, zone_y: float, zone_half: float,
                            disk_dofx: int, disk_dofy: int, arm_dofs: tuple[int, ...],
                            tip_sites: tuple[int, int], elbow_bodies: tuple[int, int],
-                           tip_blend: float = _TIP_BLEND) -> PlanarGraspMetrics:
+                           tip_blend: float = _TIP_BLEND,
+                           contact_spec: "ContactLegalitySpec | None" = None) -> PlanarGraspMetrics:
     """Derive :class:`PlanarGraspMetrics` from a stepped ``(model, data)`` — all in the table plane.
 
     ``tip_sites`` / ``elbow_bodies`` are the ``(left, right)`` fingertip-site and distal-link-body ids;
     the approach distance is ``tip_blend·d(tip) + (1-tip_blend)·d(elbow)`` — the fingertip is the
     grasping point, the elbow keeps a far-field gradient when the arm is fully extended.
 
-    # Preconditions ``tip_sites`` are valid site ids (``>= 0``); ``elbow_bodies`` valid body ids;
-      ``0 <= tip_blend <= 1``.  # Postconditions ``left/right_tip_dist`` are finite and ``>= 0``."""
+    ``contact_spec`` selects the contact-legality mode. **None (v1 prototype):** only fingertips can
+    physically touch the coin (the ``2/2`` bitmask), so a coin contact on any arm body is a fingertip
+    contact — classified body-level, no forbidden contact possible, ``legality is None``. **A spec (v2):**
+    arm links physically collide with the coin, so :func:`classify_contacts` decides legality per geom-role
+    (fingertip = valid left/right, any other arm geom = forbidden) and returns a :class:`ContactLegalityState`.
+    Arm self-contact (a crash) is classified here in either mode — it is not a coin-legality concern.
+
+    # Preconditions ``tip_sites`` valid site ids (``>= 0``); ``elbow_bodies`` valid body ids;
+      ``0 <= tip_blend <= 1``; ``contact_spec`` (if given) was built for this ``model``.
+    # Postconditions ``left/right_tip_dist`` finite ``>= 0``; ``legality`` is ``None`` iff ``contact_spec``
+      is ``None`` (v1 parity)."""
     pos = data.xpos[disk_body]
     disk_xy = np.array([float(pos[0]), float(pos[1])], dtype=np.float32)
     to_zone = float(np.hypot(pos[0] - zone_x, pos[1] - zone_y))
-    disk_speed = float(np.hypot(data.qvel[disk_dofx], data.qvel[disk_dofy]))
+    disk_vel = np.array([float(data.qvel[disk_dofx]), float(data.qvel[disk_dofy])], dtype=np.float32)
+    disk_speed = float(np.hypot(disk_vel[0], disk_vel[1]))
     arm_speed = float(sum(abs(float(data.qvel[d])) for d in arm_dofs))
     left = right = arm_self_contact = fingers_self_contact = False
     finger_pair = {int(elbow_bodies[0]), int(elbow_bodies[1])}   # the two fingertip-bearing distal links
+    # v2: the declarative spec owns coin-contact legality (valid fingertip vs forbidden arm link).
+    legality: "ContactLegalityState | None" = None
+    if contact_spec is not None:
+        legality = classify_contacts(model, data, contact_spec)
+        left, right = legality.left_fingertip_contact, legality.right_fingertip_contact
     for i in range(int(data.ncon)):
         con = data.contact[i]
         g1, g2 = int(con.geom1), int(con.geom2)
         b1, b2 = int(model.geom_bodyid[g1]), int(model.geom_bodyid[g2])
-        if g1 == disk_geom or g2 == disk_geom:
-            ob = b2 if g1 == disk_geom else b1
+        if contact_spec is None and (g1 == disk_geom or g2 == disk_geom):
+            ob = b2 if g1 == disk_geom else b1                   # v1: only fingertips can touch → body-level
             if ob in left_bodies:
                 left = True
             elif ob in right_bodies:
@@ -276,7 +333,7 @@ def compute_planar_metrics(model: Any, data: Any, *, disk_body: int, disk_geom: 
     return PlanarGraspMetrics(disk_xy, to_zone, left, right, to_zone < zone_half,
                               _approach(tip_sites[0], elbow_bodies[0]),
                               _approach(tip_sites[1], elbow_bodies[1]), disk_speed, arm_speed,
-                              arm_self_contact, fingers_self_contact)
+                              arm_self_contact, disk_vel, fingers_self_contact, legality=legality)
 
 
 class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
@@ -292,6 +349,7 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
 
     metadata = {"render_modes": []}
     _FEAT = 8
+    privileged_dim = 5   # asymmetric-CTDE critic state z(s): [left_contact, right_contact, phase-onehot(3)]
 
     def __init__(self, *, robot: str | None = _PLANAR_ARM, reward_spec: RewardSpec | None = None,
                  env: EnvSpec = DEFAULT_ENV, frame_skip: int = 5, max_steps: int = 160,
@@ -299,7 +357,8 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                  coin_damping: float = 2.5, coin_density: float | None = None,
                  coin_shape: str = "cylinder", spin_damping: float = 0.8,
                  coin_frictionloss: float = 0.0,
-                 terminate_on_success: bool = True) -> None:
+                 terminate_on_success: bool = True,
+                 contact_legality: bool | None = None) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
@@ -319,6 +378,14 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         # (annuity for all remaining steps > oscillating), and the farm incentive vanishes. Default True
         # preserves the historical behaviour; the de-farmed task sets it False. Death/out-of-bounds still ends.
         self.terminate_on_success = bool(terminate_on_success)
+        # v2 contact legality (2026-07-06): in v1 the coin passes through the arm bodies (an abstract
+        # fingertip-only prototype). v2 makes the arm bodies physically collide with the coin and treats any
+        # non-fingertip arm↔coin contact as a FORBIDDEN constraint violation that HARD-invalidates delivery
+        # (a reward penalty alone is farmable). The contract is declared in EnvSpec (`contact` term);
+        # `contact_legality` here overrides it (None → use the declared value). Off by default keeps v1
+        # bit-reproducible (§6.5 #19: no metric-changing default flip before the scripted baseline re-validates).
+        self._contact_legality = env.contact_legality if contact_legality is None else bool(contact_legality)
+        self._contact_spec: "ContactLegalitySpec | None" = None   # built once below (v2 only)
         self.difficulty = difficulty
         # The robot is DESCRIBED IN HYMEKO (galambos_planar.hymeko) and emitted; `robot=None` falls
         # back to the hand-authored baseline (make_planar_arms_mjcf).
@@ -328,6 +395,11 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         # approach reward (and the BC demonstrator) shape the true tool point, not a body origin. Massless
         # → dynamics unchanged. Idempotent on the hand-authored scene (it declares its tips already).
         arm_mjcf = with_fingertip_sites(arm_mjcf)
+        # v2 only: give the arm-link geoms a coin-collidable mask so the coin cannot pass through them.
+        # Collision-mask change only (the hypergraph reads body/joint structure, not masks) → the graph is
+        # unaffected; legality is still decided by geom id at metric time.
+        if self._contact_legality:
+            arm_mjcf = with_arm_coin_collision(arm_mjcf)
         self.hg = HypergraphState.from_mjcf(arm_mjcf, is_path=False)
         # `task_graph` (the discriminating ablation): put the COIN and ZONE in the graph as vertices joined to
         # the robot by a GRASP hyperedge {fingertips, coin} + a GOAL hyperedge {coin, zone}, so the structural
@@ -383,6 +455,17 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                            mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "tip_right"))
         self._elbow_bodies = (self._distal_body(self._left_bodies),
                               self._distal_body(self._right_bodies))
+        # v2 only: build the declarative contact contract ONCE from the compiled model (geom roles assigned
+        # inside ContactLegalitySpec.from_model, not scattered here). None in v1 → compute_planar_metrics
+        # falls back to the abstract body-level fingertip-only classification. Fail-loud if unsatisfiable.
+        # GRADED (default): arm-body↔coin contact is allowed, tracked, and reward-penalised, never voids the
+        # episode. STRICT: additionally invalidates the delivery / terminates (clean-paper validation).
+        if self._contact_legality:
+            self._contact_spec = ContactLegalitySpec.from_model(
+                self.model, object_geoms={self._disk_geom},
+                arm_bodies_left=self._left_bodies, arm_bodies_right=self._right_bodies,
+                fingertip_prefix=env.valid_contact_prefix,
+                mode=ContactMode(env.contact_mode))
         # Each arm's base (a direct child of the worldbody) anchors its reach circle; read from the
         # model so zone/coin sampling tracks the .hymeko stance (e.g. the wider ±0.18 bases).
         self._reach_centers = [
@@ -419,19 +502,23 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         self._disk_out = False
         self._step = 0
         self._success = 0
+        self._reset_contact_accum()   # v2 arm-body↔coin contact accumulators (ever / duration / impulse)
 
     @classmethod
     def from_hymeko(cls, *, robot: str = _PLANAR_ARM, env: str = _PLANAR_ENV,
                     task: str = _PLANAR_TASK, max_steps: int = 160,
-                    difficulty: float = 1.0, task_graph: bool = False) -> "PlanarGraspEnv":
+                    difficulty: float = 1.0, task_graph: bool = False,
+                    contact_legality: bool | None = None) -> "PlanarGraspEnv":
         """Build the whole MDP from three ``.hymeko`` sources — the robot, the environment scene,
         and the reward task. The env geometry (zone, coin spawn, workspace, success) comes from
         ``env`` via :class:`EnvSpec`; the reward from ``task`` via :class:`RewardSpec`. Mirrors
         :meth:`hymeko_rl.env.arm_reach_env.ArmReachEnv.from_hymeko` — one source per concern.
-        ``task_graph`` puts the coin+zone in the graph (grasp/goal hyperedges) — the structural ablation."""
+        ``task_graph`` puts the coin+zone in the graph (grasp/goal hyperedges) — the structural ablation.
+        ``contact_legality`` selects v2 physics (arm bodies collide with the coin; a non-fingertip
+        arm↔coin contact is forbidden and hard-invalidates delivery)."""
         return cls(robot=robot, reward_spec=RewardSpec.from_hymeko(task),
                    env=EnvSpec.from_hymeko(env), max_steps=max_steps, difficulty=difficulty,
-                   task_graph=task_graph)
+                   task_graph=task_graph, contact_legality=contact_legality)
 
     def _distal_body(self, bodies: frozenset[int]) -> int:
         """The arm's distal (leaf) body — the fingertip-bearing link, nobody's parent within ``bodies``.
@@ -444,13 +531,26 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
             raise ValueError("arm body set has no leaf (cyclic?) — cannot resolve the distal link")
         return leaves[-1]
 
+    def _reset_contact_accum(self) -> None:
+        """Reset the per-episode arm-body↔coin contact accumulators (v2). ``_arm_body_ever`` is the latch,
+        ``_arm_body_steps`` the contact duration (in env steps), ``_arm_body_impulse_sum`` the summed force.
+        ``_fingertip_progress``/``_body_progress`` accumulate the coin's toward-zone displacement attributed to
+        fingertip vs body-only contact — the grade signal a contact-quality-gated reward reads."""
+        self._arm_body_ever = False
+        self._arm_body_steps = 0
+        self._arm_body_impulse_sum = 0.0
+        self._prev_disk_to_zone: float | None = None
+        self._fingertip_progress = 0.0
+        self._body_progress = 0.0
+
     def _metrics(self) -> PlanarGraspMetrics:
         return compute_planar_metrics(
             self.model, self.data, disk_body=self._disk_body, disk_geom=self._disk_geom,
             left_bodies=self._left_bodies, right_bodies=self._right_bodies,
             zone_x=self._zone_x, zone_y=self._zone_y, zone_half=self._zone_half,
             disk_dofx=self._disk_dofx, disk_dofy=self._disk_dofy, arm_dofs=self._arm_dofs,
-            tip_sites=self._tip_sites, elbow_bodies=self._elbow_bodies)
+            tip_sites=self._tip_sites, elbow_bodies=self._elbow_bodies,
+            contact_spec=self._contact_spec)
 
     def node_features(self) -> np.ndarray:
         feat = np.zeros((self.hg.n_vertices, self._FEAT), dtype=np.float32)
@@ -473,6 +573,25 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
             feat[self._zone_vtx, 2], feat[self._zone_vtx, 3] = self._zone_x, self._zone_y
             feat[self._zone_vtx, 4], feat[self._zone_vtx, 5] = cx - self._zone_x, cy - self._zone_y
         return feat
+
+    def privileged_state(self) -> np.ndarray:
+        """Privileged global state ``z(s)`` for the centralized (asymmetric CTDE / MADDPG) critic — read by the
+        critic ONLY, never by the decentralized actors, and NOT written into :meth:`node_features` (so
+        decentralized execution needs only the geometry obs). It carries what the geometry obs cannot supply:
+        both arms' coin **contact** (needs contact forces) and the coarse task **phase** (the
+        ``_ever_grasped`` history latch).
+
+        # Preconditions the env has been ``reset`` (``_planar_metrics`` populated).
+        # Postconditions float32 ``(5,)`` = ``[left_contact, right_contact, onehot(reach, carry, in_zone)]``;
+          exactly one phase bit set; contact bits in ``{0, 1}``.
+        """
+        m = self._planar_metrics
+        phase = 2 if m.in_zone else (1 if getattr(self, "_ever_grasped", False) else 0)
+        z = np.zeros(self.privileged_dim, dtype=np.float32)
+        z[0] = 1.0 if m.left_contact else 0.0
+        z[1] = 1.0 if m.right_contact else 0.0
+        z[2 + phase] = 1.0
+        return z
 
     def _reachable_by_any(self, x: float, y: float) -> bool:
         """True if at least one arm base is within reach of ``(x, y)`` (so an arm can fetch it)."""
@@ -528,6 +647,7 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         self._prev_act_qvel = self.data.qvel[self._act_dofs].copy()   # jerk term baseline
         self._step = 0
         self._success = 0
+        self._reset_contact_accum()                                   # v2: reset arm-body contact accumulators
         self._ever_grasped = False                                    # gates the pre-grasp stillness term
         self._pbrs_prev_zone = None                                   # PBRS potentials re-initialise each episode
         self._pbrs_prev_grasp = None                                  # (Ng-Harada-Russell: γΦ(s')-Φ(s), see reward.py)
@@ -549,20 +669,57 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                                               "both_contact": False, "physics_failure": True}
         self._step += 1
         self._planar_metrics = self._metrics()
-        if self._planar_metrics.left_contact and self._planar_metrics.right_contact:
+        m = self._planar_metrics
+        both_fingertip = m.left_contact and m.right_contact
+        if both_fingertip:
             self._ever_grasped = True                                 # latch: pre-grasp stillness turns off
+        lg = m.legality                                               # v2 contact-legality state (None in v1)
+        spec = self._contact_spec
+        arm_body_now = lg.arm_body_contact if lg is not None else False
+        if arm_body_now:                                             # v2: track the non-preferred contact
+            self._arm_body_ever = True                              # (GRADED: tracked+penalised, not fatal)
+            self._arm_body_steps += 1                               # duration (# of steps in contact)
+            self._arm_body_impulse_sum += lg.arm_body_contact_impulse
+        # Attribute the coin's toward-zone displacement THIS step to fingertip vs body-only contact (BEFORE the
+        # reward, so a contact-quality-gated terminal term sees the up-to-now grade). Fingertip contact wins the
+        # attribution when both a fingertip and an arm body touch (the grasp is doing the work).
+        if self._prev_disk_to_zone is not None:
+            toward = max(0.0, self._prev_disk_to_zone - m.disk_to_zone)
+            if m.left_contact or m.right_contact:
+                self._fingertip_progress += toward
+            elif arm_body_now:
+                self._body_progress += toward                       # body-only push (no fingertip this step)
+        self._prev_disk_to_zone = m.disk_to_zone
         # Compute out-of-bounds BEFORE the reward so the `out_of_bounds` term can penalise it (the
         # disk knocked off the table). Death only terminating was not enough — over-pushing was free.
-        cx, cy = float(self._planar_metrics.disk_pos[0]), float(self._planar_metrics.disk_pos[1])
+        cx, cy = float(m.disk_pos[0]), float(m.disk_pos[1])
         self._disk_out = abs(cx) > self._out_bound or cy < self._y_min or cy > self._y_max
-        reward = self.reward_spec.evaluate(self, self._planar_metrics.disk_to_zone, ctrl)
+        reward = self.reward_spec.evaluate(self, m.disk_to_zone, ctrl)   # arm-body penalty is a declared reward term
         self._prev_act_qvel = self.data.qvel[self._act_dofs].copy()   # for next step's jerk term
         death = self._disk_out
-        self._success = self._success + 1 if self._planar_metrics.in_zone else 0
-        terminated = bool((self._success >= self.success_steps and self.terminate_on_success) or death)
+        self._success = self._success + 1 if m.in_zone else 0
+        held = self._success >= self.success_steps
+        # STRICT mode only: an arm-body contact voids the delivery and (if asked) terminates. GRADED (default)
+        # never voids — the delivery still counts as raw, and the arm-body contact grades it (clean/assisted/
+        # exploit) at eval time and is penalised by the reward. In v1 (no spec) this reduces to the old rule.
+        invalidated = self._arm_body_ever and spec is not None and spec.invalidates_on_arm_body
+        delivered = held and not invalidated
+        strict_term = (self._arm_body_ever and spec is not None
+                       and spec.invalidates_on_arm_body and spec.strict_terminate)
+        terminated = bool((delivered and self.terminate_on_success) or death or strict_term)
         truncated = self._step >= self.max_steps
         return (self.node_features(), reward, terminated, truncated,
-                {"disk_to_zone": self._planar_metrics.disk_to_zone,
-                 "in_zone": self._planar_metrics.in_zone, "death": death,
-                 "both_contact": self._planar_metrics.left_contact
-                 and self._planar_metrics.right_contact})
+                {"disk_to_zone": m.disk_to_zone, "in_zone": m.in_zone, "death": death,
+                 "both_contact": both_fingertip, "both_fingertip_contact": both_fingertip,
+                 "fingertip_contact": m.left_contact or m.right_contact,
+                 "arm_body_contact": self._arm_body_ever, "arm_body_contact_this_step": arm_body_now,
+                 "arm_body_contact_count": lg.arm_body_contact_count if lg is not None else 0,
+                 "arm_body_contact_steps": self._arm_body_steps,
+                 "arm_body_contact_impulse": lg.arm_body_contact_impulse if lg is not None else 0.0,
+                 "arm_body_impulse_sum": self._arm_body_impulse_sum,
+                 "delivered": delivered, "delivered_valid": delivered})
+
+    def close(self) -> None:
+        self.data = None
+        self.model = None
+        super().close()

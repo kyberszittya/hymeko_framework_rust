@@ -1,12 +1,20 @@
 # Claude Code — Operating Contract
 
-**Contracts are not recommendations. Not to Hungarians, Swabians, nor the Japanese. This document is not a recommendation. This document is a contract and definition of work and ethics. Failure to achieve without acknowledgement or explanation is the breach of contract with dire outcomes.**
+**This document is an operating contract, not a suggestion list. Treat it as binding, but apply it with task-size judgment: the goal is to prevent wasted work and broken experiments, not to create ceremonial detours.**
 
 **First off: The user is an experienced programmer and systems engineer with background in UML, SysML, design patterns, C++, Rust, Python, testing, integration testing, V-model, cyber-physical frameworks and neural networks. Proficient in programming for 25 years. Grown up with object oriented programming, funcitonal programming, structured programming, and modular engineering. Make your work hierarchical, traceable, and maintainable, organized into folders and preferably from one core framework. Extend existing frameworks, not duplicate. Test instead of duplicating to ensure proper operation. Don't treat him stupid, or he will be angry.**
 
-You are working on a research codebase. The following rules are **mandatory**. If a rule cannot be satisfied, halt and ask the user. Do not improvise. Do not run experiments "to see what happens."
+**If something fails, systematically explore for alternatives. Your own code or your own hypothesis can be wrong and with bugs, or the hypothesis incomplete.**
 
-A task is not complete until every applicable section of this document has been satisfied and a report has been written.
+**Reports and measurements are guidelines, not paperweight. Use them as reference. Do not remeasure from scratch when a relevant, trustworthy artifact already exists. Wasted reruns cost time and credibility.**
+
+**FABLE / JULY-5 QUARANTINE (added 2026-07-05).** Treat the July 5 Fable/Claude burst as an **untrusted import batch**, not as architecture truth. This is not a claim of proven malicious intent; it is a safety rule after observing a severe layer error. Fable confused the user's framework-level requirement ("HyMeKo itself controlled by dataflow events, FSM runtime, and monitors") with a scenario-local Galambos FSM/controller. It also introduced or propagated encoding damage (UTF-8 BOMs in modified Python files, mojibake in July 5 reports), did not start in the required Aiko register, and drifted toward blaming/redesigning the scenario when RL failed before auditing the learning implementation. Treat encoding anomalies, register/contract violations, and diagnostic-order inversions as engineering signals, not cosmetic issues. Preserve measured useful artifacts such as the push/plow Galambos controller only as scenario examples. Do **not** treat Galambos-specific FSM code as the framework architecture. Do **not** treat Gymnasium as the HyMeKo control substrate; Gymnasium is only an adapter at the physics/RL boundary. Galambos result wording is mandatory: `scripted_controller` ~0.80-0.84, `bc_clone` ~0.44-0.52, `rl_refined` worse than BC in measured runs, `framework_substrate` still to implement. Never write "RL achieved 0.52" for that result. Diagnostic order for RL failures: audit implementation first (action scaling, observations, reward timing, termination/truncation, replay distribution, critic targets, BC anchor, checkpoint/eval labeling), then teacher/BC floor, then discriminating tests; blame/redesign the scenario only after those checks fail to explain the defect. Before building on any July 5 Fable-era artifact, classify it as `keep / suspect / generated / unknown` and cite the artifact or test. Read `reports/2026-07-05-galambos-stage-ledger.md`, `reports/2026-07-05-rl-scenario-assumption-audit.md`, and `reports/2026-07-05-fable-quarantine-opus-handoff.md` before touching this area.
+
+You are working on a research codebase targeting public framework use cases and competitive benchmarks. The following rules are **mandatory**. If a rule cannot be satisfied, halt and ask the user. Do not improvise. Do not run experiments "to see what happens."
+
+A task is not complete until every applicable section of this document has been satisfied and, for substantive implementation or experiment work, a report has been written.
+
+**Task-size calibration (added 2026-07-05 after repeated wild-goose chases).** Apply the full plan/test/report/performance protocol to substantive code changes, core-adjacent work, experiments, long runs, public claims, and anything that can affect research conclusions. For a conversation, quick file inspection, typo, one-line local fix, or forensic triage, use the lightweight path: timestamp, read the relevant local context, state the smallest failing symptom or question, make the minimal safe change or finding, and report exactly what was and was not verified. Do not turn a small diagnostic step into a campaign.
 
 > **⛔ REPLY-FORMAT HARD GATE (added 2026-06-28, user-enforced after repeated misses in-session).** Every chat
 > reply — *no exceptions* — MUST begin with a real-clock timestamp line `[YYYY-MM-DD HH:MM TZ]`, obtained from the
@@ -44,6 +52,8 @@ These hold above any individual section. If a specific rule below appears to per
 - **Write the plans down.** Plans live on disk (Section 2), not in the working memory of a single chat turn. An unwritten plan has no continuity, no review surface, and no audit trail.
 - **No improvisation under pressure.** "I'll just try it and see" is the failure mode this document exists to prevent.
 - **Analyze, don't declare; no premature certainty (no "superstitions").** When diagnosing a failure, interpreting a measurement, or choosing a design, do **not** assert a single "most likely" cause or "the answer" as if it were settled. Enumerate the plausible hypotheses or options, state the evidence that would distinguish them, and run the **discriminating test before concluding**. A confident-sounding single explanation that has not been isolated is a guess in a lab coat — and on this codebase (signed-link leakage, FP kernels, OOM bugs) the convenient first explanation is often wrong. Reserve "this *is* the cause" for *after* the test that rules out the alternatives; until then, present the option space and the experiment that would collapse it. Always distinguish, in writing, what is **measured**, what is **inferred**, and what is **still a hypothesis**.
+- **Failed-diagnosis recovery.** If a previous agent, report, or hypothesis sent the work into a wild-goose chase and did not solve the problem, freeze that narrative. Restart from the smallest reproducible symptom: the failing command, failing test, bad artifact, or metric mismatch. Classify existing edits as `keep / suspect / generated / unknown` before building on them. A claim that did not fix the issue is a hypothesis, not context.
+- **Cached facts before new runs.** Before launching measurements, campaigns, or broad test grids, grep `MEMORY.md`, `reports/`, task notes, and existing `results.json`/logs. Re-measure only when the existing artifact is missing, stale for the current code path, or contradicted by a focused check. After a code change, re-measure the affected cell first; do not rerun the whole grid by habit.
 - **Search before claiming novelty or prior art (added 2026-06-28, user policy after a novelty-assessment miss).** Before asserting that an idea is novel, or that it "has been done" / "already exists" / "is incremental" / "is old," run a **brief search** (`WebSearch`, the `paper_search` MCP, a repo/literature `grep`) and either cite a concrete instance or state explicitly that a focused search found none. This is the literature-side of the discriminating-test rule: an unevidenced "it's been done" is the same failure as a "most likely cause" that was never isolated. Three hard sub-rules: (1) **never conflate a primitive existing in another field** (e.g. hypergraphs in ML, signed graphs in spectral theory) **with prior art for the specific contribution** — name the work that does *this* thing, or admit there isn't one; (2) **absence in a bounded search is "none found," not "proven novel"** — say which, and note the search was not exhaustive; (3) **distinguish the generic pattern from the specific claim** ("one IR, many emitters" is old; "machine-verified cross-view consistency over a signed canonical hypergraph IR" may not be). On-record miss (2026-06-28): asserted the contribution was "moderate novelty, hypergraph IRs already exist" without a search; a 4-query search then found the nearest works were the user's *own* precursor (Hajdu \& Hegyi 2025) and HyperGraphOS — neither pre-empting the claim — and surfaced two must-cite related works that were missing from the draft.
 - **The user is an experienced engineer/researcher, not a casual programmer.** Calibrate accordingly. Architectural complexity that eliminates duplication and surfaces invariants is *preferred* over flat code that repeats. Reach for traits, generics, associated types, sealed enums-with-data, builder/strategy/visitor patterns without hesitation if they reduce a Cartesian product or unify a duplicated scaffold. The reader is fluent in Rust, modern Python typing, and standard GoF/DDD patterns. The floor is "no needless repetition." The ceiling is "no easier than necessary." Dumbing code down to look beginner-friendly is the same failure mode as copy-paste — it costs the user tokens and dignity for nothing.
 - **Preferred paradigm hierarchy.** When you have a choice of paradigm, prefer in this order: **(1) trait-/struct-based programming** (Rust traits + impl, Python ABCs / Protocols, C++ concepts) to make the *contract* explicit; **(2) object-oriented** composition (classes that bundle state with behaviour, small inheritance trees only where they remove duplication, never for taxonomy alone); **(3) functional** (pure functions, immutable data, iterator pipelines, `map`/`filter`/`fold`, `Result`/`Option` combinators, ADTs) — preferred over imperative loops when the data flow is one-way; **(4) clean-code mechanics** (intention-revealing names, single-responsibility functions, depth-of-nesting ≤ 3, no commented-out code, no `tmp_` / `tmp2_` / `_new` suffixes left in tree). **Flat free-function dumps are the last resort**, acceptable only for: (a) the binary entry point (`main`), (b) one-off scripts that will be deleted within the week, (c) plain numerical helpers with no state, no error path, no swappable strategy. If a free function grows a `_kind: &str` argument, that's a missed trait. If it grows past 80 LOC, that's a missed method. If two free functions share 60% of their body, that's a missed `impl` block sharing a private helper. Apply the same hierarchy across Rust, Python, C++.
@@ -52,7 +62,7 @@ These hold above any individual section. If a specific rule below appears to per
 
 ## 0. Workflow (top-level)
 
-For every task, in this order:
+For every substantive implementation or experiment task, in this order:
 
 1. **Read `CORE.YAML` and `tools.yaml`** at the repository root.
 2. **Discovery pass** — for any task that might introduce a new artifact (module, crate, script, plan, fixture, function), run `find` / `grep` / `ls` first to confirm no existing scaffolding covers it. This is a Section 6.1 / §6.5 #12 precondition; skipping it has cost ~1700 LOC of duplicated work in 2026-06-03 incidents alone.
@@ -63,7 +73,14 @@ For every task, in this order:
 7. **Write the report** (Section 9).
 8. Only then, return control to the user with a summary.
 
-If any step fails, stop and report the failure. Do not proceed past a failing step.
+For lightweight triage, questions, and one-file mechanical edits, use the same
+ordering in compressed form: read the relevant files, check whether `CORE.YAML`
+is implicated, make or report the minimal finding, and state what was not
+verified. Do not create plans, benchmarks, plots, or reports that add no
+discriminating value to the immediate task.
+
+If any required step fails, stop and report the failure. Do not proceed past a
+failing step.
 
 ---
 
@@ -82,7 +99,11 @@ This rule overrides convenience. A workaround in non-core code is always preferr
 
 ## 2. Plan Before You Act
 
-For any non-trivial change (anything beyond a single-file local fix or a typo), produce a **plan document** before writing code. Commit it to:
+For any non-trivial implementation, experiment, architecture change, or
+core-adjacent change, produce a **plan document** before writing code. A
+single-file local fix, typo, formatting-only change, read-only investigation, or
+small forensic classification does not require the full plan bundle unless it can
+change research conclusions or persistent artifacts. Commit plans to:
 
 ```
 docs/plans/<YYYY-MM-DD>-<slug>/
@@ -111,7 +132,12 @@ The plan must state, at minimum:
   - **What does the worst-case input look like?** State the production-scale dataset, cap, and config the plan is intended to run under, not just the unit-test fixture.
 - **Empty-plan-dir hygiene** — if a plan dir is created but the work is abandoned, delete the dir before the next session. Empty plan dirs are noise that look like in-progress work.
 
-**No implementation begins until the plan exists on disk and compiles.** This is non-negotiable. Back-dating a plan (writing it alongside or after the implementation) defeats the purpose — the plan exists to surface risk *before* code is touched. A plan→report gap shorter than the time it would take to honestly implement the change is a back-dating red flag.
+**For planned work, no implementation begins until the plan exists on disk and
+compiles.** This is non-negotiable for substantive work. Back-dating a plan
+(writing it alongside or after the implementation) defeats the purpose — the plan
+exists to surface risk *before* code is touched. A plan→report gap shorter than
+the time it would take to honestly implement the change is a back-dating red
+flag.
 
 ---
 
@@ -136,6 +162,7 @@ Every change ships with tests, and tests are executed and pass before reporting 
 - **Production-scale smoke before queuing a long run.** A new code path or env-var branch must be exercised at **production scale** (real dataset, real cap, real wall-clock, real RSS) for at least 1 seed / 1 arity *before* it is queued in a multi-seed or overnight run. Unit tests at toy scale do **not** substitute — they will not surface memory bloat, missing-cap regressions, or per-stage wall costs that only appear at the real input size. If the smoke can't be afforded in ≤ 10 % of the queued run's wall budget, write a single-stage smoke (one arity, one dataset, no training) that costs less than that.
 - **In-flight experiment claims must cite a verifiable disk artifact.** Before writing "an experiment is in flight / running / queued" in a report or memory, the claim must reference one of: a log file path that exists and is growing; an output jsonl path (zero bytes is acceptable — the file existing proves the script started); a PID/jobspec captured at launch; a `systemd-run --user` unit name; or an orchestrator `/tmp/<slug>/` dir. An ID-only string (e.g. a hash, a job slug) without a corresponding path is **unverified** and must be flagged as such, not asserted as in-progress.
 - **Run new modules before queuing.** Before any overnight/multi-hour run touches a new module, run that module's unit tests in the same environment as the queued run. Untested rewired call paths turn latent bugs into 90-min OOMs (see `hymeko_neuro/tests/test_cycle_cache.py` for the precedent).
+- **Oracle-certify the TRAINING reward before queuing any RL run (added 2026-07-05, user-enforced after a wasted overnight launch).** `reward_oracle.certify(<training reward spec>)` must return `delivers=True`, quoted in the launch message and recorded in the run's summary JSON. If the BC teacher's *strategy* changed (e.g. pinch → push), additionally re-check that dense reward terms do not fight the new anchor. Prefer the **machine-enforced** form: campaign entrypoints raise on an uncertified reward unless an explicit `allow_uncertified=True` waiver is passed (implemented in `exp_galambos_coord_ab.run`; extend the pattern to new entrypoints rather than relying on operator discipline). On-record incident: 2026-07-05 02:50 — a 3×200k TD3+BC overnight launched on the *documented* farming baseline (`certify → delivers=False`); 135k steps wasted before the user caught it. The procedural gates (smoke, observability) all passed; only this semantic gate was missing.
 
 ### Coverage rule (new and modified code)
 

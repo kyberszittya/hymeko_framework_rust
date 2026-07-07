@@ -275,6 +275,74 @@ def _term_fingers_collision(env: "ArmReachEnv", dist: float, action: np.ndarray)
     return -1.0 if getattr(m, "fingers_self_contact", False) else 0.0
 
 
+def _term_arm_body_coin_contact(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Penalise a NON-FINGERTIP arm link *pushing* the coin (v2 graded contact quality): ``-1`` per step while
+    an arm-body↔coin contact is present AND **no** fingertip is on the coin — i.e. the body is moving the coin
+    on its own (a shove), not merely grazing it during a fingertip grasp. This aligns the reward with the
+    metric's progress-attribution grade (which credits body-only steps to ``body_progress``): a sustained
+    body-only shove (an exploit) accrues a strong penalty; the clean two-fingertip grasp — where the hand
+    incidentally touches the coin *while the fingertips grip* — pays nothing, so the penalty does not fight the
+    only feasible grasp (cf. whole-arm ``arm_collision`` 2.0 which killed grasping, 0.615→0.0, 2026-06-28). 0
+    on v1 / a non-planar env. # Postconditions ``<= 0``; identically 0 whenever contact legality is off or a
+    fingertip is in contact."""
+    m = getattr(env, "_planar_metrics", None)
+    lg = getattr(m, "legality", None) if m is not None else None
+    return -1.0 if (lg is not None and lg.arm_body_contact and not lg.fingertip_contact) else 0.0
+
+
+# v2b calibration constants (2026-07-07): epsilon on body-only toward-zone speed to ignore numerical noise, and
+# the negligible-body-progress threshold below which a delivery grades fingertip-dominant (matches the eval's
+# _NEGLIGIBLE_BODY_EPS in exp_galambos_coord_ab).
+_BODY_PROGRESS_EPS = 0.002
+_CLEAN_BODY_PROGRESS = 0.005
+
+
+def _term_body_progress_penalty(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Penalise the coin being *pushed toward the zone* by a NON-fingertip arm link (v2b): the negative of the
+    toward-zone coin speed during a body-ONLY contact (arm body on the coin, NO fingertip), above a small
+    epsilon that ignores numerical noise. This is the PROGRESS-scaled replacement for the step-count
+    ``arm_body_coin_contact`` penalty: an incidental distal-link graze that does not move the coin costs ~0,
+    while a body shove that drives the coin at the target is penalised in proportion to how fast it moves it —
+    the discriminating signal is body-only PROGRESS, not contact-step count (which mis-hit the scripted
+    demonstrator's incidental graze, calibration 2026-07-07). 0 on v1 / when a fingertip is in contact.
+    # Postconditions ``<= 0``; identically 0 when contact legality is off or any fingertip touches the coin."""
+    m = getattr(env, "_planar_metrics", None)
+    lg = getattr(m, "legality", None) if m is not None else None
+    if lg is None or not lg.arm_body_contact or lg.fingertip_contact:
+        return 0.0
+    to_zone = np.array([env._zone_x - float(m.disk_pos[0]), env._zone_y - float(m.disk_pos[1])], np.float64)
+    d = float(np.hypot(to_zone[0], to_zone[1]))
+    if d < 1e-6:
+        return 0.0
+    vel_to_zone = float(np.dot(m.disk_vel, to_zone / d))       # + = coin moving toward the zone
+    return -max(0.0, vel_to_zone - _BODY_PROGRESS_EPS)         # penalise ONLY positive body-driven progress
+
+
+def _term_terminal_deliver_graded(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
+    """Contact-quality-gated terminal delivery bonus (v2b): like ``terminal_deliver`` (+1 on the step that
+    COMPLETES the held-in-zone dwell), but SCALED by HOW the coin was delivered, read from the env's accumulated
+    fingertip vs body-only progress:
+      - ``+1.0`` — fingertip-dominant (body-only progress <= ``_CLEAN_BODY_PROGRESS``): the clean delivery;
+      - ``+0.2`` — body-assisted (some body help, fingertips still moved most of the coin);
+      - ``-0.5`` — body-driven exploit (the body moved most of the coin): a PENALTY, not a bonus.
+    So a body-shove delivery cannot earn the clean delivery reward (calibration 2026-07-07). ``raw`` delivery is
+    still logged as a metric; only the *reward* is gated. 0 off the completing step / a non-planar env."""
+    m = getattr(env, "_planar_metrics", None)
+    if m is None:
+        return 0.0
+    success_steps = int(getattr(env, "success_steps", 1))
+    success = int(getattr(env, "_success", 0))                 # counter BEFORE this step's update
+    if not (m.in_zone and success + 1 == success_steps):       # only on the delivery-completing step
+        return 0.0
+    bp = float(getattr(env, "_body_progress", 0.0))
+    fp = float(getattr(env, "_fingertip_progress", 0.0))
+    if bp <= _CLEAN_BODY_PROGRESS:
+        return 1.0                                             # fingertip-dominant → full bonus
+    if bp > fp:
+        return -0.5                                            # body-driven exploit → penalty
+    return 0.2                                                 # body-assisted → reduced bonus
+
+
 def _term_out_of_bounds(env: "ArmReachEnv", dist: float, action: np.ndarray) -> float:
     """Penalise knocking the disk out of the workspace (a death): -1 on the step the disk leaves the
     table, 0 otherwise. Death only terminating left over-pushing unpunished. 0 on a non-planar env."""
@@ -480,6 +548,9 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "center_bonus": _term_center_bonus,
     "arm_collision": _term_arm_collision,
     "arm_body_collision": _term_arm_body_collision,
+    "arm_body_coin_contact": _term_arm_body_coin_contact,   # v2 graded: penalise a non-fingertip arm link on the coin
+    "body_progress_penalty": _term_body_progress_penalty,   # v2b: penalise body-only PROGRESS (not contact count)
+    "terminal_deliver_graded": _term_terminal_deliver_graded,  # v2b: terminal bonus gated by contact-quality grade
     "finger_contact": _term_finger_contact,
     "fingers_collision": _term_fingers_collision,
     "out_of_bounds": _term_out_of_bounds,

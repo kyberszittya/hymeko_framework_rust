@@ -60,3 +60,10 @@ class VectorizedEnv:
                 np.asarray(rew, dtype=np.float32),
                 np.asarray(term, dtype=np.float32),
                 np.asarray(trunc, dtype=np.float32))
+
+    def close(self) -> None:
+        for env in self.envs:
+            close = getattr(env, "close", None)
+            if callable(close):
+                close()
+        self.envs = []

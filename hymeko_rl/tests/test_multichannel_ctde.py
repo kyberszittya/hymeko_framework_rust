@@ -7,6 +7,7 @@ import torch
 
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
 from hymeko_rl.agents.multichannel_ctde import (
+    DeterministicMLPMultiActor,
     DeterministicMultiChannelActor,
     build_collaborative_offpolicy,
     build_multichannel_collaborative,
@@ -99,13 +100,91 @@ def test_det_ctde_no_single_backbone_attr() -> None:
 
 
 def test_build_collaborative_offpolicy_critics() -> None:
+    # Asymmetric-CTDE (MADDPG) is the DEFAULT: on a privileged-capable env the centralized critics carry
+    # priv_dim = env.privileged_dim and ingest z alongside the FULL joint action.
     env = _env()
     actor, critics = build_collaborative_offpolicy(env, kind="hsikan", hidden=32, n_critics=2)
     assert isinstance(actor, DeterministicMultiChannelActor) and len(critics) == 2
-    ob = torch.as_tensor(env.reset(seed=0)[0][None], dtype=torch.float32)
-    q = critics[0](ob, actor(ob))                                    # centralized critic ingests the FULL joint action
+    assert [c.priv_dim for c in critics] == [env.privileged_dim, env.privileged_dim]
+    obs, _ = env.reset(seed=0)
+    ob = torch.as_tensor(obs[None], dtype=torch.float32)
+    z = torch.as_tensor(env.privileged_state()[None], dtype=torch.float32)
+    q = critics[0](ob, actor(ob), z)                                 # critic ingests joint action + privileged z
     assert q.shape == (1,)
     assert any(isinstance(m, torch.nn.LayerNorm) for m in critics[0].modules())   # anti-overestimation default ON
+
+
+def test_collaborative_offpolicy_symmetric_flag_disables_priv() -> None:
+    # privileged=False → the symmetric-critic baseline: no privileged width, forward takes (obs, action) only.
+    env = _env()
+    actor, critics = build_collaborative_offpolicy(env, kind="hsikan", hidden=32, privileged=False)
+    assert all(c.priv_dim == 0 for c in critics)
+    ob = torch.as_tensor(env.reset(seed=0)[0][None], dtype=torch.float32)
+    assert critics[0](ob, actor(ob)).shape == (1,)                   # 2-arg forward, no z
+
+
+def test_collaborative_offpolicy_actor_is_decentralized() -> None:
+    # The actor is UNTOUCHED by the privileged critic: it exposes no priv width and reads only the geometry obs
+    # (its action_dim is the joint width, its forward takes obs alone) — decentralized execution needs no z.
+    env = _env()
+    actor, _ = build_collaborative_offpolicy(env, kind="hsikan", hidden=32)
+    assert not hasattr(actor, "priv_dim")
+    ob = torch.as_tensor(env.reset(seed=0)[0][None], dtype=torch.float32)
+    assert actor(ob).shape == (1, env.n_actions)                    # actor forward is obs-only
+
+
+def test_collaborative_offpolicy_priv_trains_finite_vec() -> None:
+    # Integration: the asymmetric-CTDE priv critic path trains finite through train_offpolicy with VECTORIZED
+    # collection on the real env (the production n_envs>1 path that stores/samples z, z').
+    from hymeko_rl.train.ddpg import td3_config, train_offpolicy
+
+    env = _env()
+    actor, critics = build_collaborative_offpolicy(env, kind="hsikan", hidden=32, n_critics=2)
+    assert critics[0].priv_dim == env.privileged_dim
+    mk = _env
+    cfg = td3_config(total_steps=160, start_steps=16, batch_size=16, eval_every=9_999, n_eval=1,
+                     update_every=2, seed=0)
+    hist = train_offpolicy(actor, critics, mk(), cfg, n_envs=4, make_env=mk)
+    assert isinstance(hist, list)
+    assert all(torch.isfinite(p).all() for p in actor.parameters())
+    assert all(torch.isfinite(p).all() for c in critics for p in c.parameters())
+
+
+# ── MLP collaborative BASELINE (structure-blind MADDPG): separate per-arm MLP actors + centralized priv critic ──
+
+
+def test_build_collaborative_offpolicy_mlp_baseline() -> None:
+    env = _env()
+    actor, critics = build_collaborative_offpolicy(env, kind="mlp", hidden=32, n_critics=2)
+    assert isinstance(actor, DeterministicMLPMultiActor)
+    assert actor.action_dim == env.n_actions
+    assert [c.priv_dim for c in critics] == [env.privileged_dim, env.privileged_dim]   # centralized priv critic
+    assert getattr(actor, "backbone", None) is None                                    # non-shared trainer path
+    assert len(actor.arm_actors) == 2                                                  # SEPARATE per-arm actors
+    ob = torch.as_tensor(env.reset(seed=0)[0][None], dtype=torch.float32)
+    a = actor(ob)
+    assert a.shape == (1, env.n_actions) and bool((a.abs() <= _scale(env) + 1e-5).all())   # bounded (tanh)
+
+
+def test_mlp_collab_gradients_reach_both_arm_actors() -> None:
+    env = _env()
+    actor, _ = build_collaborative_offpolicy(env, kind="mlp", hidden=32)
+    ob = torch.as_tensor(env.reset(seed=0)[0][None], dtype=torch.float32)
+    actor(ob).sum().backward()
+    assert any(p.grad is not None for p in actor.arm_actors[0].parameters())
+    assert any(p.grad is not None for p in actor.arm_actors[1].parameters())
+
+
+def test_mlp_collab_trains_finite() -> None:
+    from hymeko_rl.train.ddpg import td3_config, train_offpolicy
+
+    env = _env()
+    actor, critics = build_collaborative_offpolicy(env, kind="mlp", hidden=32, n_critics=2)
+    cfg = td3_config(total_steps=160, start_steps=16, batch_size=16, eval_every=9_999, n_eval=1,
+                     update_every=2, seed=0)
+    hist = train_offpolicy(actor, critics, _env(), cfg, n_envs=4, make_env=_env)
+    assert isinstance(hist, list)
+    assert all(torch.isfinite(p).all() for p in actor.parameters())
 
 
 def test_det_ctde_gradients_reach_both_arms_and_channel() -> None:

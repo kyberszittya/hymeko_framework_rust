@@ -1,0 +1,403 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\newcommand{\meas}{\textcolor{blue}{[measured]}}
+\newcommand{\interp}{\textcolor{purple}{[interpretation]}}
+\newcommand{\frozen}{\textcolor{teal}{\textbf{[FROZEN]}}}
+\newcommand{\prov}{\textcolor{orange}{\textbf{[PROVISIONAL]}}}
+\newcommand{\fn}[1]{\texttt{#1}}
+\setlength{\parskip}{4pt}\setlength{\parindent}{0pt}
+
+\title{\textbf{Collaborative contact-rich coin-pushing:\\
+imitation, DAgger, and the MLP-vs-HSiKAN architecture question}\\[4pt]
+\large Structured technical report (source-of-truth, not a paper)}
+\author{HyMeKo RL line}
+\date{Started 2026-07-06. Continuously appended; do not overwrite earlier results.}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Conventions.} \meas{} = measured fact; \interp{} = interpretation; \frozen{} = frozen result;
+\prov{} = provisional. Every results table carries a \emph{Provenance} line (command, seeds, reward file, eval
+episode count, artifacts). Both fixed-stage and best-checkpoint views are given where relevant. Negative results
+are kept. This is precise/reproducible source, not polished prose.
+
+Companion markdown record: \fn{reports/2026-07-05-coin-collab-mlp-vs-hsikan.md} (kept; this \LaTeX{} report is
+now the main scientific record).
+
+% =====================================================================
+\section{Introduction / motivation}
+The task is \textbf{collaborative contact-rich coin-pushing}: two planar 2-link arms must push a cylinder
+(``coin'') into a target zone. It is a minimal testbed for \emph{cooperative} contact manipulation where a single
+agent is physically insufficient.
+
+\textbf{Why closed-loop imitation failure matters.} A behaviour-cloned (BC) policy can have tiny per-step action
+error yet fail catastrophically at deployment through closed-loop compounding (covariate shift). Diagnosing this
+is a prerequisite to any reinforcement learning (RL): if the imitation prior is unstable, RL refinement inherits
+and amplifies the instability.
+
+\textbf{Why reward/physics validation is required before RL.} An RL run is only meaningful if (i) the physics
+actually requires the intended behaviour (here: two coordinated fingertips), and (ii) the reward's optimum is the
+intended task (delivery), not a farmable proxy. We gate every RL launch on these before spending compute.
+
+% =====================================================================
+\section{Task and simulation}
+\textbf{Environment.} \fn{PlanarGraspEnv} (\fn{hymeko\_rl/env/planar\_grasp\_env.py}): two hand-authored 2-link
+$+Z$-hinge arms on a table; a coin (cylinder, radius $0.035$) on slide-x/slide-y/hinge-z joints; a target zone
+(radius $0.055$). Observation is per-vertex features on the two-arm hypergraph $(N,8)$; action is $4$ joint-position
+targets. Episodes end on sustained in-zone dwell (success), coin knocked out of bounds (death), or
+\fn{max\_steps}$=300$.
+
+\textbf{Two-fingertip requirement (collision design).} \meas{} The coin collides \emph{only} with the fingertip
+geoms (bitmask: coin \fn{contype/conaffinity}$=2/2$, arm links MuJoCo default $1/1$, fingertips $1/3$); the arm
+\emph{bodies pass through} the coin by design. \fn{coin\_frictionloss} defaults to $0$ (free slide, only
+velocity-damping $2.5$). Thus the two-arm requirement is enforced by \emph{contact geometry} (a single point
+contact on a round free coin is laterally unstable), \interp{} not by a friction force threshold (see \S3).
+
+\textbf{Scripted controller.} \fn{PushDemonstrator} (\fn{hymeko\_rl/experiments/galambos\_demo.py}): $k$ fingertips
+form a slot fan behind the coin along the coin$\to$zone ray and plow it in; press scales down inside
+\fn{brake\_dist} so the coin settles. FSM declared in \fn{data/robotics/galambos\_push.hymeko} (phases
+\fn{approach}, \fn{push}, \fn{hold}).
+
+\textbf{Phases (analysis buckets).} APPROACH ($=$\fn{approach}, orbit to slots) / CONTACT (both fingertips
+touching) / PUSH ($=$\fn{push}, dist $\ge$ \fn{brake\_dist}$=0.06$) / BRAKE ($=$\fn{push} near-zone $+$ \fn{hold}).
+
+\textbf{Evaluation protocol.} Delivery $=$ fraction of episodes where the coin is \emph{held} in the zone for
+\fn{success\_steps} (dwell, not a momentary touch). Auxiliary per-step metrics: \fn{dist\_delta} $=d_0-d_{\text{final}}$
+(coin$\to$zone, $>0$ closer), \fn{coin\_vel\_to\_zone} $=\mathbb{}$ mean $\dot{x}_{\text{coin}}\cdot\hat{u}_{\text{zone}}$
+($>0$ toward target), \fn{fingertip\_contact}, \fn{both\_contact}. Reward for all coin RL/BC below:
+\fn{data/robotics/galambos\_task\_deliver.hymeko} (deliver $+$ \fn{zone\_progress}, oracle certify $=$ True).
+
+% =====================================================================
+\section{Validation gates \frozen}
+\subsection*{3.1 Physics affordance (one vs two fingertip)}
+\meas{} Scripted push, one dead-behind fingertip (other arm parked) vs two coordinated fingertips:
+
+\begin{center}\begin{tabular}{lccccc}
+\toprule
+condition & delivery & dist\_delta & coin\_vel$\cdot$target & fingertip & both\_contact\\
+\midrule
+two-fingertip (fl$=0$) & \textbf{0.854} & $+0.067$ & $+0.062$ & 0.356 & 0.180\\
+one-fingertip (fl$=0$) & \textbf{0.083} & $-0.078$ & $-0.055$ & 0.280 & 0.000\\
+two-fingertip (fl$=8$) & 0.854 & --- & $+0.046$ & --- & ---\\
+one-fingertip (fl$=8$) & \textbf{0.583} & --- & $+0.009$ & --- & ---\\
+\bottomrule
+\end{tabular}\end{center}
+\emph{Provenance:} \fn{scratchpad/affordance.py}; $N=48$ episodes, seed0 $=9000$, difficulty $0.3$; reward file
+\fn{galambos\_task\_deliver.hymeko} (scripted is reward-independent). No persisted artifact dir (diagnostic).
+
+\interp{} At the real config (fl$=0$) one fingertip fails and pushes the coin \emph{away}; two succeed with
+target-directed velocity. Friction \emph{weakens} the requirement (fl$=8 \Rightarrow$ one-fingertip $0.583$), so
+the two-arm affordance is enforced by \textbf{contact geometry}, not friction. Committed regression:
+\fn{hymeko\_rl/tests/test\_affordance.py}.
+
+\subsection*{3.2 Reward validity}
+\meas{} Oracle \fn{certify}: \fn{galambos\_task\_deliver.hymeko} ($+$\fn{zone\_progress}) $\Rightarrow$
+\textbf{delivers $=$ True}; the farming baseline \fn{galambos\_task.hymeko} $\Rightarrow$ delivers $=$ False
+(negative control, left unchanged). \fn{zone\_progress} is PBRS $\Phi=-\text{dist}$ ($\gamma\Phi'-\Phi$): closing
+rewarded ($+0.052$), receding penalised ($-0.098$); policy-invariant, so it supplies the coin$\to$zone gradient
+without changing the delivery optimum. \interp{} PBRS is necessary-not-sufficient: it cannot de-farm a farming
+optimum; the de-farm is \fn{terminal\_deliver} $+$ dropping the per-step annuity (only the deliver profile has it).
+
+\subsection*{3.3 Scripted baseline}
+\meas{} \textbf{Scripted two-fingertip delivery $=0.854$}; the best controller. dist\_delta $+0.067$,
+coin\_vel$\cdot$target $+0.062$, fingertip 0.356, both 0.180.
+\emph{Provenance:} \fn{scratchpad/measure\_push.py} / \fn{affordance.py}; $N=48$, seed0 $=9000$.
+
+% =====================================================================
+\section{Naive BC experiments \frozen}
+Collaborative CTDE actors: MLP $=$ separate per-arm MLP actors (MADDPG baseline); HSiKAN $=$ per-arm SA-HSiKAN
+backbones $+$ MultiTreeChannel; both with a centralized privileged (asymmetric-CTDE) twin Q-critic. Naive BC clones
+the scripted demonstrator; ``post-RL'' is TD3$+$BC refinement (the RL result, kept for record; RL now frozen).
+
+\begin{center}\begin{tabular}{lccccc}
+\toprule
+condition & delivery & dist\_delta & coin\_vel$\cdot$target & fingertip & both\_contact\\
+\midrule
+scripted 2-fingertip & \textbf{0.854} & $+0.067$ & $+0.062$ & 0.356 & 0.180\\
+MLP BC0 & 0.208 & $-0.016$ & $-0.005$ & 0.224 & 0.050\\
+MLP post-RL (30k) & 0.125 & $-0.037$ & $-0.015$ & 0.120 & 0.005\\
+HSiKAN BC0 & \textbf{0.417} & $+0.030$ & $+0.011$ & 0.240 & 0.063\\
+HSiKAN post-RL (30k) & 0.292 & $-0.002$ & $-0.001$ & 0.055 & 0.016\\
+\bottomrule
+\end{tabular}\end{center}
+\emph{Provenance:} \fn{scratchpad/coin\_arch\_ab.py}; 1 seed; reward \fn{galambos\_task\_deliver.hymeko}
+(certify True); delivery over $N=48$ eval eps, other metrics over $12$; TD3$+$BC $30$k steps; artifacts
+\fn{experiments/2026\_07\_05\_18\_34\_coin\_arch\_ab\_mlp/}, \fn{...\_18\_42\_coin\_arch\_ab\_hsikan/} (results.json,
+GIFs). Best checkpoint (peak on delivery) $=$ BC0 for both; RL never beat its own clone.
+
+\meas{} \textbf{Open-loop} per-step action error is small ($<2\%$ of action\_scale, \S5); \textbf{closed-loop}
+delivery collapses (0.208 / 0.417 $\ll$ 0.854). \interp{} HSiKAN BC0 $>$ MLP BC0 and has positive target-direction
+metrics: the structural prior helps imitation on this genuinely relational two-arm task; but per-step fidelity
+does not predict delivery (HSiKAN has higher per-step error yet higher delivery) $\Rightarrow$ the failure is
+closed-loop, not representational.
+
+% =====================================================================
+\section{BC fidelity audit \frozen}
+\meas{} \textbf{Per-phase action error} $\lVert$scripted $-$ BC$\rVert$ on scripted states (\% of action\_scale $4.0$):
+\begin{center}\begin{tabular}{lcc}
+\toprule
+phase & MLP (L/R) & HSiKAN (L/R)\\
+\midrule
+APPROACH & $1.0\%/1.2\%$ & $1.4\%/1.6\%$\\
+CONTACT & $0.2\%/0.4\%$ & $0.5\%/0.5\%$\\
+PUSH & $0.3\%/0.4\%$ & $0.5\%/0.6\%$\\
+BRAKE & $0.2\%/0.3\%$ & $0.6\%/0.4\%$\\
+\bottomrule
+\end{tabular}\end{center}
+
+\meas{} \textbf{Hybrid phase/arm replacement} (delivery):
+\begin{center}\begin{tabular}{lcc}
+\toprule
+mode & MLP & HSiKAN\\
+\midrule
+scripted & 0.917 & 0.917\\
+bc (pure clone) & 0.208 & 0.417\\
+scripted-APPROACH $+$ BC-PUSH & \textbf{0.833} & 0.500\\
+BC-APPROACH $+$ scripted-PUSH & 0.542 & 0.583\\
+left-scripted / right-BC & 0.417 & 0.583\\
+right-scripted / left-BC & 0.417 & 0.625\\
+\bottomrule
+\end{tabular}\end{center}
+\emph{Provenance:} \fn{scratchpad/bc\_fidelity.py}; $N=24$ eps, seed0 $=9000$; BC clones from
+\fn{experiments/2026\_07\_05\_18\_34\_coin\_arch\_ab\_mlp/policies/*.pt} and \fn{...\_hsikan/policies/*.pt}; reward
+\fn{galambos\_task\_deliver.hymeko}.
+
+\interp{} \textbf{Diagnosis: closed-loop covariate shift, not action-representation capacity.} Per-step fidelity
+is high ($<2\%$) yet delivery collapses. For MLP the collapse is \emph{concentrated in APPROACH} (scripted-APPROACH
+$+$ BC-PUSH recovers to $0.833$); arm replacement is symmetric ($0.417/0.417$: both arms couple). For HSiKAN it is
+\emph{distributed} (no single phase/arm dominates). Remedy indicated: distribution correction (DAgger), not RL, a
+bigger net, or lower action MSE.
+
+% =====================================================================
+\section{DAgger experiments \frozen}
+Controlled 3-seed DAgger: roll the current BC clone $\to$ query the scripted expert (closed-loop FSM) on the
+clone-visited states $\to$ aggregate $\to$ retrain BC only, 3 iterations. No RL.
+
+\subsection*{6.1 Fixed-stage view (delivery, mean $\pm$ std, $n=3$)}
+\begin{center}\begin{tabular}{lcc}
+\toprule
+stage & MLP & HSiKAN\\
+\midrule
+BC0 & $0.278\pm0.153$ & $0.514\pm0.109$\\
+DAgger-1 & $0.403\pm0.071$ & $0.417\pm0.170$\\
+DAgger-2 & $0.486\pm0.138$ & $0.556\pm0.175$\\
+DAgger-3 & $\mathbf{0.625\pm0.090}$ & $0.486\pm0.071$\\
+\bottomrule
+\end{tabular}\end{center}
+
+\subsection*{6.2 Best-checkpoint view (diagnostic; not a deployable selector without a validation rule)}
+\begin{center}\begin{tabular}{lcc}
+\toprule
+ & MLP & HSiKAN\\
+\midrule
+per-seed best & 0.542 / 0.750 / 0.667 & 0.500 / \textbf{0.792} / 0.417\\
+best stage & D3 / D3 / D2 & D2 / D2 / D1\\
+best-ckpt mean $\pm$ std & $\mathbf{0.653\pm0.085}$ & $0.570\pm0.161$\\
+\bottomrule
+\end{tabular}\end{center}
+\emph{Provenance:} \fn{scratchpad/dagger.py multiseed}; seeds $\{0,1,2\}$; $200$ demos, $150$ BC epochs, $60$
+DAgger rollout eps/iter; reward \fn{galambos\_task\_deliver.hymeko}; delivery over $N=24$ eval eps; scripted
+baseline $0.854$; no persisted artifact dir (diagnostic; full log \fn{scratchpad/dagger\_ms.log}).
+
+\interp{} DAgger is the confirmed BC covariate-shift correction. \textbf{MLP$+$DAgger} improves BC0 in all 3 seeds
+(0.278$\to$0.653 best-ckpt), roughly monotonic, low variance. \textbf{HSiKAN$+$DAgger} has the \emph{highest
+observed learned peak} (seed 1: $0.417\to0.792$, near scripted $0.854$) but is high-variance and non-monotonic
+(D3 mean $0.486$ falls below BC0 $0.514$). On the \emph{mean} (both views) MLP$+$DAgger $\ge$ HSiKAN$+$DAgger, so
+the main lever is DAgger / distribution correction, not architecture. Distance to scripted $0.854$: MLP best-ckpt
+$-0.20$; HSiKAN best-ckpt $-0.28$ but peak $-0.06$.
+
+% =====================================================================
+\section{HSiKAN frozen-trunk stability variant \frozen{} (negative)}
+Variant (HSiKAN only): lower LR on DAgger retrains ($10^{-3}\to3\times10^{-4}$), preserved expert-demo replay
+ratio (D0 oversampled to $\sim50\%$), \textbf{trunk frozen / heads-only for DAgger-1} then unfrozen for D2/D3,
+warm-start continual.
+
+\begin{center}\begin{tabular}{lcccc}
+\toprule
+seed & BC0 & D1 (frozen) & D2 & D3\\
+\midrule
+0 & 0.667 & 0.125 & 0.208 & 0.500\\
+1 & 0.417 & 0.208 & 0.708 & 0.708\\
+2 & 0.458 & 0.125 & 0.208 & 0.375\\
+\midrule
+mean$\pm$std & $0.514\pm0.109$ & $\mathbf{0.153\pm0.039}$ & $0.375\pm0.236$ & $0.528\pm0.137$\\
+\bottomrule
+\end{tabular}\end{center}
+best-checkpoint mean $=0.528\pm0.137$ (vs plain HSiKAN $0.570$, MLP $0.653$).
+\emph{Provenance:} \fn{scratchpad/dagger.py variant}; seeds $\{0,1,2\}$; $200$ demos, $150$ BC epochs, $60$ DAgger
+eps/iter; reward \fn{galambos\_task\_deliver.hymeko}; delivery over $N=24$; log \fn{scratchpad/dagger\_variant.log}.
+
+\interp{} \textbf{Negative mechanism finding: frozen-trunk heads-only DAgger-1 is harmful / too restrictive.} D1
+craters to $0.153$ (vs plain $0.417$) in all seeds; the variant suppresses the peak (best-ckpt $0.528<0.570$) and
+does not beat MLP$+$DAgger. It does marginally damp the D3 over-correction (fixed-D3 $0.528$ vs plain $0.486$,
+within noise), attributable to lower-LR $+$ replay, not the freeze. \textbf{This is NOT ``HSiKAN$+$DAgger does not
+work''} --- plain HSiKAN$+$DAgger reaches $0.792$; the problem is instability/variance, and the specific negative
+is the trunk-freeze.
+
+% =====================================================================
+\section{HSiKAN no-freeze stabilization variant \frozen{} (peak preserved, but negative on the mean and not val-selectable)}
+Variant (HSiKAN only --- the frozen-trunk fix \emph{without} the freeze): lower LR on DAgger retrains
+($10^{-3}\to3\times10^{-4}$), expert-demo replay ratio preserved (D0 oversampled to $\sim50\%$),
+APPROACH-prioritized sampling ($2\times$), \textbf{trunk never frozen} (full-network warm-start continual),
+held-out validation checkpoint selection ($N_\text{val}=12$; test $N=24$). Device \fn{cuda}, serial seeds.
+
+\begin{center}\begin{tabular}{lccccc}
+\toprule
+seed & BC0 & D1 & D2 & D3 & best-ckpt\\
+\midrule
+0 & 0.667 & 0.042 & 0.333 & 0.208 & 0.667\\
+1 & 0.417 & 0.292 & 0.625 & \textbf{0.792} & 0.792\\
+2 & 0.458 & 0.125 & 0.250 & 0.417 & 0.458\\
+\midrule
+fixed-stage mean$\pm$std & $0.514\pm0.109$ & $0.153\pm0.104$ & $0.403\pm0.161$ & $0.472\pm0.242$ & $\mathbf{0.639\pm0.138}$\\
+\bottomrule
+\end{tabular}\end{center}
+
+\textbf{Validation-selected checkpoint} (select on held-out val, report test): all three seeds select \emph{BC0}
+(val $0.25/0.333/0.167$); selected test delivery $0.667/0.417/0.458=0.514\pm0.109$. On seed~1 the val tie
+(BC0$=$D3$=0.333$) broke toward BC0 and \emph{discarded} the genuine D3 peak $0.792$.
+\emph{Provenance:} \fn{scratchpad/dagger.py nofreeze}; seeds $\{0,1,2\}$; reward \fn{galambos\_task\_deliver.hymeko};
+lr0 $10^{-3}$, lr\_dagger $3\times10^{-4}$, ratio $0.5$, approach\_factor $2.0$, val\_seed $5000$, val\_n $12$;
+delivery over $N=24$; result key \fn{NOFREEZE\_RESULT}; log \fn{scratchpad/dagger\_nofreeze.log}; task \fn{by20ct82i}.
+
+\interp{} Four-part verdict against the pre-registered questions:
+\begin{itemize}[nosep]
+\item \textbf{Preserves the peak? YES.} Best-checkpoint mean $0.639>$ plain $0.570>$ frozen $0.528$; seed~1 again
+reaches $0.792$. No-freeze \emph{raises} the best-checkpoint mean above plain HSiKAN --- it removes the frozen-trunk
+peak suppression.
+\item \textbf{Improves reliability? NO.} D1 collapses in every seed ($0.153$ mean, seed~0 $0.042$); D3 std $0.242$
+is the highest of any variant; the trajectory is non-monotonic. Variance is not reduced.
+\item \textbf{Beats MLP$+$DAgger? NO.} Best-ckpt $0.639$ vs $0.653$ (statistical tie, marginally below);
+val-selected $0.514\ll0.653$. The mean lever is still DAgger/distribution correction, not the HSiKAN architecture.
+\item \textbf{Reduces D3 over-correction? NO / not reliably.} Fixed-D3 $0.472\approx$ plain $0.486$; seed~0 D3
+$0.208\ll$ BC0 $0.667$ is the single worst over-correction across all three variants.
+\end{itemize}
+\textbf{Structural negative:} under honest held-out checkpoint selection, no-freeze DAgger yields \emph{zero} net
+benefit over BC0 for HSiKAN (all three seeds select BC0), and the one seed reaching $0.792$ is not val-selectable.
+The HSiKAN$+$DAgger advantage remains a high-variance, non-selectable peak. This removes the frozen-trunk pathology
+(best-ckpt $0.639>0.528$) but does not overturn MLP$+$DAgger's reliability on the mean.
+
+% =====================================================================
+\section{Runtime profile \frozen}
+\meas{} Component wall-time of the HSiKAN$+$DAgger pipeline (rate-based; separates rate from volume), full-pipeline
+estimate for 3 seeds $\times$ 4 stages:
+\begin{center}\begin{tabular}{lcc}
+\toprule
+component & time (min) & share\\
+\midrule
+BC training & \textbf{46.6} & \textbf{74.1\%}\\
+rollout collection (relabel$+$infer$+$physics) & 7.8 & 12.4\%\\
+\quad -- expert relabeling (subset) & 0.4 & 0.7\%\\
+evaluation & 6.4 & 10.1\%\\
+metric logging / serialization & $\sim0$ & 0.0\%\\
+demo collection & 2.2 & 3.5\%\\
+\midrule
+TOTAL (est., uncontended) & 62.9 & --- (measured variant wall $\sim$110)\\
+\bottomrule
+\end{tabular}\end{center}
+BC rate: $1.20$ s/epoch @ $27$k samples $\to 2.34$ s/epoch @ $100$k (dataset-size-dependent). Rollout/ep: relabel
+$0.05$s, clone B$=1$ infer $0.42$s, physics $0.40$s. Eval/stage: measure $24$s $+$ phase\_err $7.8$s.
+\emph{Provenance:} \fn{scratchpad/profile\_dagger.py}; \fn{sa\_hsikan}; measured on a quiet machine.
+
+\interp{} \textbf{Dominant component: dataset-size-dependent HSiKAN BC training} ($\sim74\%$ uncontended,
+$\sim80\%+$ in the replay-preserved/contended real run --- the 63$\to$110 min gap is BC inflation). The simulator
+is NOT the bottleneck; relabeling and logging are negligible; evaluation is secondary; rollout B$=1$ inference is
+batchable but small. \textbf{Safe engineering optimizations} (no metric/seed/reward/eval/DAgger-protocol change):
+parallelize seeds if the box has headroom; clean GPU BC path (verify numerical consistency, \S10); cache scripted
+demos; cache aggregated DAgger datasets where it does not change the data; avoid re-parsing / static hypergraph
+reconstruction; batch rollout inference (secondary). \textbf{Protocol-changing variants} (treated as new
+controlled variants, NOT speed opts): bounding replay-dataset growth; APPROACH-prioritized sampling; dataset
+subsampling; checkpoint-based early stopping.
+
+% =====================================================================
+\section{Current interpretation}
+\interp{}
+\begin{enumerate}[nosep]
+\item DAgger is the \textbf{confirmed} correction for BC covariate shift (MLP: BC0 $0.278\to$ best-ckpt $0.653$,
+all 3 seeds).
+\item \textbf{MLP$+$DAgger is reliable on the mean} (best-ckpt $0.653\pm0.085$; lower variance).
+\item \textbf{HSiKAN$+$DAgger has a higher observed peak} ($0.792$, near scripted $0.854$) \textbf{but high
+variance} (best-ckpt $0.570\pm0.161$); the architecture advantage under naive BC is partly a covariate-shift
+artifact, and its post-DAgger superiority is \emph{not} established.
+\item \textbf{Frozen-trunk DAgger is harmful} (D1 crater; negative mechanism result).
+\item \textbf{No-freeze DAgger removes the frozen-trunk pathology but is negative on the mean}: best-ckpt
+$0.639\pm0.138$ (ties MLP $0.653$, above plain $0.570$ and frozen $0.528$), yet held-out val-selection picks BC0 in
+all 3 seeds ($\Rightarrow$ selected $=0.514$, no net gain), and the $0.792$ peak is not val-selectable.
+\item \textbf{RL remains frozen} until imitation is stable (no learned collaborative RL has beaten the scripted
+$0.854$; best learned so far $0.792$, a single HSiKAN$+$DAgger seed).
+\end{enumerate}
+
+% =====================================================================
+\section{Next experiments}
+\begin{enumerate}[nosep]
+\item \textbf{Safe engineering check} (in progress): CPU-vs-GPU BC-training consistency on HSiKAN (same
+data/seed/architecture/eval/metrics). Result appended below when complete.
+\item \textbf{No-freeze HSiKAN stabilization} (new controlled variant): HSiKAN$+$DAgger, \emph{no} trunk freeze,
+lower LR, expert-demo replay ratio, APPROACH-prioritized sampling, validation checkpoint selection.
+\item \textbf{Later: conservative / residual RL} (only once imitation is stable) --- no TD3/SAC/AWAC/residual until
+then.
+\item \textbf{CIP / DirectLiNGAM} directions (separate line).
+\end{enumerate}
+
+\subsection*{10.1 CPU-vs-GPU BC consistency (engineering) --- \meas}
+\emph{Provenance:} \fn{scratchpad/gpu\_consistency.py}; \fn{sa\_hsikan}, $60$ epochs, seed $0$, $D_0=27{,}475$
+samples, reward \fn{galambos\_task\_deliver.hymeko}, delivery over $N=24$ eval eps; device $=$ RTX 3070 Laptop GPU
+vs CPU.
+
+(a) FORWARD, identical weights: $\max|\Delta| = 1.79\times10^{-7}$, $\text{mean}|\Delta| = 4.55\times10^{-8}$
+(float32 rounding level).
+
+(b) TRAINING (same seed/data/epochs):
+\begin{center}\begin{tabular}{lcccccc}
+\toprule
+device & final loss & delivery & dist\_delta & coin\_vel & fingertip & both\\
+\midrule
+CPU & 0.001295 & 0.375 & 0.0209 & 0.0066 & 0.176 & 0.047\\
+CUDA & 0.001293 & 0.375 & 0.0043 & 0.0015 & 0.189 & 0.031\\
+\bottomrule
+\end{tabular}\end{center}
+mean$|$action $\Delta|$ (CPU-trained vs GPU-trained, same states) $= 0.0128$ ($0.32\%$ of action\_scale);
+delivery $\Delta = 0.000$.
+
+\interp{} \textbf{GPU acceleration is numerically consistent and does not change learned policy behavior
+meaningfully.} Forward matches to float32 rounding; CPU/GPU-trained policies have \emph{identical} delivery
+($0.375$), near-identical loss, and $0.32\%$ action divergence (expected from separate CPU/CUDA RNG streams and FP
+non-associativity; auxiliary metrics vary within noise). GPU BC training is a \emph{safe} speed lever (\S8), no
+protocol/metric change. Status: \frozen{} engineering check passed.
+
+% =====================================================================
+\section{Evidence-completeness rule and checkpoint-persistence gap}
+\textbf{Rule (2026-07-06).} A learned-policy experiment is \emph{evidence-complete} only if it persists: policy
+checkpoint, architecture/config, seed, reward file, eval protocol, artifact path, aggregate metrics, and
+representative rollout evidence (trajectory $+$ distance-over-time $+$ GIF/frames).
+
+\textbf{Gap (recorded --- NOT a failure of the scientific result).} \meas{} The DAgger diagnostic harness
+(\fn{scratchpad/dagger.py}) recorded delivery numbers but did not call \fn{torch.save}. The DAgger-stage
+checkpoints (MLP$+$DAgger best, plain HSiKAN$+$DAgger best, no-freeze selected, frozen-trunk) were never
+persisted. The frozen \emph{numeric} results (\S6, \S7) stand; the \emph{exact} visual/rollout evidence for those
+specific checkpoints cannot be reconstructed --- CUDA is non-deterministic, so a re-run \emph{replicates}
+statistically, not bit-identically. Available exact policies: scripted (re-rollable), MLP BC0 and HSiKAN BC0
+(\fn{experiments/2026\_07\_05\_18\_34\_coin\_arch\_ab\_mlp/policies/coin\_arch\_ab\_mlp\_s0.pt};
+\fn{...\_18\_42\_...\_hsikan/policies/coin\_arch\_ab\_hsikan\_s0.pt}).
+
+\textbf{Fix forward.} \fn{dagger.py} now saves per-stage checkpoints (\fn{\_save\_ckpt} $\to$
+\fn{experiments/dagger\_ckpts/}); future runs are evidence-complete automatically. Do \emph{not} re-run all
+experiments for visuals; if learned-policy visual evidence is needed, run a \emph{scoped} checkpoint-saving
+re-run for only the key methods (no-freeze selected, plain HSiKAN best, optionally MLP$+$DAgger best) and report
+the new delivery as \emph{replicated} runs, not as bit-identical evidence for the earlier frozen numbers.
+
+\subsection*{11.1 Target-zone evidence package (scripted $+$ saved BC0) --- \prov{} pending post-no-freeze}
+After the active no-freeze run completes, the exact evidence package (aggregate over ALL eval episodes $+$
+representative visuals, kept separate --- anti-cherry-picking) will be produced for the \emph{available} policies
+(scripted, MLP BC0, HSiKAN BC0): delivery, final coin$\to$zone distance mean$\pm$std, min final distance,
+successes/total, zone threshold, coin-XY trajectory plot (zone circle, start/final, fingertip paths),
+distance-over-time plot (threshold line), representative success/failure GIF/frames, and artifact paths.
+Collector: \fn{scratchpad/evidence\_pkg.py} (prepared; runs only post-no-freeze). DAgger-method visual evidence:
+unavailable (gap above).
+
+\end{document}

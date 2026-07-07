@@ -29,7 +29,7 @@ from hymeko_rl.env.observation import ObservationSpec
 from hymeko_rl.env.reward import RewardSpec
 from hymeko_rl.eval.evaluate import now_stamp
 
-_REPO = Path(__file__).resolve().parents[1]
+_REPO = Path(__file__).resolve().parents[2]
 # The tractable canonical arm: a 4-DOF .hymeko robot, position-controlled, sized so BC clones
 # reliably (arm_world-equivalent kinematics, but emitted from .hymeko). The 6-DOF
 # anthropomorphic arm under torque is not BC-learnable (compounding) — see the report.

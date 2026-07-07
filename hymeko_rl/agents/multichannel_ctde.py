@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 
 from hymeko_rl.agents.collaborative import arm_action_partition
-from hymeko_rl.agents.policy import _BACKBONES
+from hymeko_rl.agents.policy import _BACKBONES, mlp_backbone
 from hymeko_rl.agents.tree_channel import MultiTreeChannel, adjacency_from_hg
 
 
@@ -131,16 +131,67 @@ class DeterministicMultiChannelActor(nn.Module):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
 
+class DeterministicMLPMultiActor(nn.Module):
+    """Collaborative (MADDPG) **MLP baseline** actor: ``n_actors`` SEPARATE per-arm MLP actors, each reading the
+    full flattened observation and emitting its arm's action slice, coordinated ONLY through the centralized
+    critic — the structure-blind control for :class:`DeterministicMultiChannelActor`. There is deliberately
+    **no** coordination channel and **no** ``node_activations``: the MLP flattens the per-vertex obs, so the only
+    thing that couples the two arms during training is the shared centralized Q (classic MADDPG). Separate
+    networks (not one trunk with per-arm heads) keep it non-vacuously multi-agent — a shared MLP trunk with
+    per-arm heads is just a wider single actor.
+
+    Satisfies the :func:`~hymeko_rl.train.ddpg.train_offpolicy` actor contract by duck-typing (``forward`` /
+    ``action_mean`` / ``action_scale`` / ``action_dim``) and exposes **no** single ``backbone`` attribute, so the
+    trainer's shared-trunk detection takes the non-shared path.
+
+    # Preconditions each ``arm_actor`` maps ``(B, N, feat) -> (B, dim_i)``; ``len == len(agent_action_dims) >= 1``.
+    # Postconditions ``forward(obs) -> (B, sum(agent_action_dims))`` bounded in ``[-action_scale, action_scale]``.
+    """
+
+    def __init__(self, arm_actors: "list[nn.Module]", agent_action_dims: "tuple[int, ...]",
+                 action_scale: float) -> None:
+        super().__init__()
+        if len(arm_actors) != len(agent_action_dims) or not agent_action_dims:
+            raise ValueError("one arm actor per action-dim group; dims non-empty")
+        if any(d < 1 for d in agent_action_dims):
+            raise ValueError(f"all agent action dims must be >= 1; got {agent_action_dims}")
+        self.arm_actors = nn.ModuleList(arm_actors)
+        self.agent_action_dims = tuple(agent_action_dims)
+        self.action_scale = float(action_scale)
+
+    @property
+    def action_dim(self) -> int:
+        return sum(self.agent_action_dims)
+
+    def forward(self, obs: torch.Tensor) -> torch.Tensor:
+        means = torch.cat([a(obs) for a in self.arm_actors], dim=-1)   # each arm's slice, concatenated
+        out: torch.Tensor = self.action_scale * torch.tanh(means)
+        return out
+
+    def action_mean(self, obs: torch.Tensor) -> torch.Tensor:
+        """Alias of :meth:`forward` (the deterministic policy IS its mean — BC + greedy eval reuse)."""
+        return self.forward(obs)
+
+    def n_parameters(self) -> int:
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+
 def build_collaborative_offpolicy(env: Any, *, kind: str = "hsikan", hidden: int = 64, n_layers: int = 2,
                                   incidence: str = "fixed", skip: str = "highway", n_critics: int = 2,
-                                  critic_layernorm: bool = True,
-                                  ) -> "tuple[DeterministicMultiChannelActor, list[nn.Module]]":
+                                  critic_layernorm: bool = True, privileged: bool = True,
+                                  ) -> "tuple[nn.Module, list[nn.Module]]":
     """Build the off-policy (TD3) collaborative coin-toss: a :class:`DeterministicMultiChannelActor` (per-arm
     backbones + coordination channel) + ``n_critics`` centralized :class:`~hymeko_rl.train.ddpg.QCritic` twins over the
     joint action. LayerNorm critics default ON (the round-coin late Q-overestimation collapse — anti-overestimation
     matters). Drop-in for :func:`~hymeko_rl.train.ddpg.train_offpolicy` / the BC→TD3+BC pipeline.
 
+    ``privileged`` (default on) makes the centralized critics **asymmetric-CTDE (MADDPG)**: when ``env`` exposes
+    ``privileged_state``/``privileged_dim``, each critic reads that global state ``z`` (both arms' contact + task
+    phase) in addition to the joint action — the actor stays decentralized (geometry obs only). Set ``False`` for
+    the symmetric-critic baseline. When the env has no privileged state, this is a no-op (``priv_dim=0``).
+
     # Preconditions ``kind in _BACKBONES``; ``env`` exposes ``hg`` + arm-separable actuators; ``n_critics >= 1``.
+    # Postconditions when privileged and supported, ``critics[j].priv_dim == env.privileged_dim``.
     """
     from gymnasium.spaces import Box
 
@@ -151,10 +202,25 @@ def build_collaborative_offpolicy(env: Any, *, kind: str = "hsikan", hidden: int
         raise ValueError(f"n_critics must be >= 1; got {n_critics}")
     feat = int(env.observation_space.shape[1])
     dims = tuple(s.stop - s.start for s in arm_action_partition(env))
-    adj = adjacency_from_hg(env.hg)
     space = env.action_space
     assert isinstance(space, Box)
     scale = float(np.max(np.abs(space.high)))
+    action_dim = sum(dims)
+    # Asymmetric-CTDE privileged width: only when the env can actually SUPPLY z (has privileged_state), so the
+    # critic's head width and the data fed to it always agree (train_offpolicy gates on the same predicate).
+    priv_dim = int(getattr(env, "privileged_dim", 0)) if (privileged and hasattr(env, "privileged_state")) else 0
+
+    if kind == "mlp":                                       # structure-blind MADDPG baseline (per-arm MLP actors +
+        flat = int(env.hg.n_vertices) * feat               # centralized MLP critics); no channel, no node graph.
+        arm_actors: list[nn.Module] = [
+            nn.Sequential(mlp_backbone(flat, hidden=hidden)[0], nn.Linear(hidden, d)) for d in dims]
+        actor_mlp = DeterministicMLPMultiActor(arm_actors, dims, scale)
+        critics_mlp: list[nn.Module] = [
+            QCritic(mlp_backbone(flat, hidden=hidden)[0], hidden, action_dim, layernorm=critic_layernorm,
+                    priv_dim=priv_dim) for _ in range(n_critics)]
+        return actor_mlp, critics_mlp
+
+    adj = adjacency_from_hg(env.hg)
 
     def _bb() -> "tuple[nn.Module, int]":
         mod, fdim = _BACKBONES[kind](feat, hg_state=env.hg, hidden=hidden, n_layers=n_layers,
@@ -162,12 +228,11 @@ def build_collaborative_offpolicy(env: Any, *, kind: str = "hsikan", hidden: int
         return mod, int(fdim)
 
     actors = [_bb()[0] for _ in dims]
-    action_dim = sum(dims)
     actor = DeterministicMultiChannelActor(actors, hidden, adj, dims, scale)
     critics: list[nn.Module] = []
-    for _ in range(n_critics):                              # centralized twins: each sees the FULL joint action
+    for _ in range(n_critics):                              # centralized twins: each sees the FULL joint action + z
         cb, cfeat = _bb()
-        critics.append(QCritic(cb, cfeat, action_dim, layernorm=critic_layernorm))
+        critics.append(QCritic(cb, cfeat, action_dim, layernorm=critic_layernorm, priv_dim=priv_dim))
     return actor, critics
 
 

@@ -35,5 +35,11 @@ env {
 
         // The manipulated object: `radius` of the disk (a small disk, not a coin).
         @disk:        + <isa> env.param {}
+
+        // Contact-quality contract (v2 physics, optional): `legality` (>0.5 = arm bodies physically collide
+        // with the coin, a non-fingertip arm↔coin contact is tracked+penalised+graded) and `strict` (>0.5 =
+        // STRICT mode: an arm-body contact voids/terminates the delivery, for clean-paper validation; default
+        // 0 = GRADED, for training and normal evaluation).
+        @contact:     + <isa> env.param {}
     }
 }

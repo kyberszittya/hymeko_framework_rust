@@ -16,7 +16,7 @@ def _metrics(*, disk_to_zone: float = 0.1, tipl: float = 0.2, tipr: float = 0.2,
              arm_self: bool = False):  # type: ignore[no-untyped-def]
     from hymeko_rl.env.planar_grasp_env import PlanarGraspMetrics
     return PlanarGraspMetrics(np.zeros(2, np.float32), disk_to_zone, lc, rc, in_zone,
-                              tipl, tipr, speed, 0.0, arm_self)
+                              tipl, tipr, speed, 0.0, arm_self, np.zeros(2, np.float32))
 
 
 class _Stub:

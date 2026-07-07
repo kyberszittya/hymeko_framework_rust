@@ -44,6 +44,12 @@ Measure = Callable[[MakeEnv, Any], "dict[str, float]"]
 Demos = Callable[[Any, int, int], "tuple[np.ndarray, np.ndarray]"]
 
 
+def _close_env(env: Any) -> None:
+    close = getattr(env, "close", None)
+    if callable(close):
+        close()
+
+
 @dataclass(frozen=True)
 class CampaignConfig:
     """What a campaign needs beyond its closures. ``select`` is the metric best-checkpoint maximises."""
@@ -57,14 +63,17 @@ class CampaignConfig:
     n_eval: int = 50
     n_envs: int = 8
     device: str = "auto"
+    offpolicy: "dict[str, float] | None" = None   # off-policy knob overrides (noise_scale, bc_coef, …) — comes
+                                               # from the experiment profile's @offpolicy term; None = defaults
+    bc_batch: int = 128                        # BC minibatch (512 + device="auto" = the measured GPU 3.9×)
 
 
 @dataclass
 class SeedResult:
     """One seed's outcome: the best-checkpoint metrics (``peak``) and the full eval ``curve``."""
     seed: int
-    peak: "dict[str, float]"
-    curve: "list[dict[str, float]]" = field(default_factory=list)
+    peak: "dict[str, Any]"
+    curve: "list[dict[str, Any]]" = field(default_factory=list)
     wall_s: float = 0.0
 
 
@@ -115,19 +124,31 @@ class Campaign:
         self.gif = gif
 
     def _train_seed(self, seed: int, exp: Path) -> SeedResult:
-        offline = self.demos(self.make_env(), self.cfg.n_demos, seed) if self.demos is not None else None
+        demo_env = self.make_env()
+        try:
+            offline = self.demos(demo_env, self.cfg.n_demos, seed) if self.demos is not None else None
+        finally:
+            _close_env(demo_env)
         torch.manual_seed(seed)
         np.random.seed(seed)
-        actor, critics = self.build(self.make_env())
+        build_env = self.make_env()
+        try:
+            actor, critics = self.build(build_env)
+        finally:
+            _close_env(build_env)
         if offline is not None:
-            behaviour_clone(actor, offline[0], offline[1], n_epochs=self.cfg.bc_epochs, seed=seed)
-        curve: "list[dict[str, float]]" = []
-        best: "dict[str, float]" = {self.cfg.select: -1e18}
+            behaviour_clone(actor, offline[0], offline[1], n_epochs=self.cfg.bc_epochs, seed=seed,
+                            batch=self.cfg.bc_batch, device=self.cfg.device)
+        curve: "list[dict[str, Any]]" = []
+        best: "dict[str, Any]" = {self.cfg.select: -1e18}
         best_path = exp / "policies" / f"{self.cfg.name}_s{seed}.pt"
 
         def eval_fn(_env: Any, ac: Any) -> float:
             snapshot = copy.deepcopy(ac).cpu().eval()
-            pt: "dict[str, float]" = {"step": float((len(curve) + 1) * self.cfg.eval_every)}
+            stage = ("bc_step0" if offline is not None and not curve
+                     else "rl_refined" if offline is not None
+                     else "rl_from_scratch")
+            pt: "dict[str, Any]" = {"step": float(len(curve) * self.cfg.eval_every), "stage": stage}
             pt.update({k: round(v, 4) for k, v in self.measure(self.make_env, snapshot).items()})
             curve.append(pt)
             print(f"CURVE {self.cfg.name} s{seed} " + json.dumps(pt), flush=True)
@@ -138,10 +159,13 @@ class Campaign:
 
         op: OffPolicyConfig = (td3_bc_config if offline is not None else td3_config)(
             total_steps=self.cfg.total_steps, seed=seed, update_every=2,
-            eval_every=self.cfg.eval_every, device=self.cfg.device)
+            eval_every=self.cfg.eval_every, device=self.cfg.device, **(self.cfg.offpolicy or {}))
         print(f"\n===== {self.cfg.name} seed {seed} =====", flush=True)
+        if offline is not None:
+            eval_fn(None, actor)   # step-0 point: the BC warm-start floor must be in the curve/checkpoint race
         t0 = time.perf_counter()
-        train_offpolicy(actor, critics, self.make_env(), op, eval_fn=eval_fn, offline_data=offline,
+        train_env = self.make_env()
+        train_offpolicy(actor, critics, train_env, op, eval_fn=eval_fn, offline_data=offline,
                         n_envs=self.cfg.n_envs, make_env=self.make_env)
         wall = time.perf_counter() - t0
         print(f"{self.cfg.name} s{seed} DONE peak[{self.cfg.select}]={best[self.cfg.select]} ({wall:.0f}s)",
@@ -172,10 +196,18 @@ class Campaign:
         best = max(rows, key=lambda r: r.peak[self.cfg.select])
         try:
             from hymeko_rl.viz.campaign_viz import render_actor_gif
-            actor, _ = self.build(self.make_env())
+            build_env = self.make_env()
+            try:
+                actor, _ = self.build(build_env)
+            finally:
+                _close_env(build_env)
             actor.load_state_dict(torch.load(exp / "policies" / f"{self.cfg.name}_s{best.seed}.pt",
                                              map_location="cpu"))
-            render_actor_gif(self.make_env(), actor, str(exp / "gifs" / f"{self.cfg.name}_s{best.seed}"), seed=9000)
+            gif_env = self.make_env()
+            try:
+                render_actor_gif(gif_env, actor, str(exp / "gifs" / f"{self.cfg.name}_s{best.seed}"), seed=9000)
+            finally:
+                _close_env(gif_env)
         except Exception as exc:   # noqa: BLE001 — viz is best-effort; a GL/camera failure must not fail the run
             print(f"  [gif {self.cfg.name} skipped: {type(exc).__name__}: {exc}]", flush=True)
 

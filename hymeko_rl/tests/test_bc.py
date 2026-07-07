@@ -35,3 +35,17 @@ def test_behaviour_clone_logs_progress_every_log_every(capsys: "pytest.CaptureFi
     ac2, obs2, acts2 = _tiny()
     behaviour_clone(ac2, obs2, acts2, n_epochs=30, log_every=0)
     assert "[bc]" not in capsys.readouterr().out                        # 0 silences it
+
+
+def test_behaviour_clone_device_path_returns_cpu_model() -> None:
+    """Regression (2026-07-05 GPU lever): ``device="auto"`` trains (cuda when available, else cpu) and the
+    model comes back ON THE CPU, so downstream eval/state_dict consumers are unaffected."""
+    import torch
+
+    ac, obs, acts = _tiny()
+    losses = behaviour_clone(ac, obs, acts, n_epochs=10, log_every=0, device="auto")
+    assert len(losses) == 10 and all(np.isfinite(losses)) and losses[-1] <= losses[0]
+    assert all(p.device.type == "cpu" for p in ac.parameters()), "model must return to CPU after BC"
+    # greedy eval path (CPU tensors) must work immediately after a device-trained clone
+    out = ac.action_mean(torch.zeros(1, 2))
+    assert out.shape == (1, 2) and bool(torch.isfinite(out).all())

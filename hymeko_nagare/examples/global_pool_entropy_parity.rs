@@ -11,6 +11,8 @@ use std::{
     time::Instant,
 };
 
+use rayon::prelude::*;
+
 use hymeko_nagare::{
     FusedEntropyUpdateShape, LinearLayer, fused_entropy_update_forward, linear_forward,
 };
@@ -286,26 +288,29 @@ pub fn global_pool(input: &[f32], batch: usize, points: usize, hidden: usize) ->
     assert_eq!(input.len(), batch * points * hidden);
     let mut out = vec![0.0; batch * hidden * 3];
     let inv_points = 1.0 / points as f32;
-    for b in 0..batch {
-        for h in 0..hidden {
-            let mut sum = 0.0;
-            let mut max_val = f32::NEG_INFINITY;
-            for p in 0..points {
-                let v = input[(b * points + p) * hidden + h];
-                sum += v;
-                max_val = max_val.max(v);
+    // Parallel over batch (each set independent) — bit-identical to serial.
+    out.par_chunks_mut(hidden * 3)
+        .enumerate()
+        .for_each(|(b, chunk)| {
+            for h in 0..hidden {
+                let mut sum = 0.0;
+                let mut max_val = f32::NEG_INFINITY;
+                for p in 0..points {
+                    let v = input[(b * points + p) * hidden + h];
+                    sum += v;
+                    max_val = max_val.max(v);
+                }
+                let mu = sum * inv_points;
+                let mut var = 0.0;
+                for p in 0..points {
+                    let d = input[(b * points + p) * hidden + h] - mu;
+                    var += d * d;
+                }
+                chunk[h] = mu;
+                chunk[hidden + h] = (var * inv_points).sqrt();
+                chunk[2 * hidden + h] = max_val;
             }
-            let mu = sum * inv_points;
-            let mut var = 0.0;
-            for p in 0..points {
-                let d = input[(b * points + p) * hidden + h] - mu;
-                var += d * d;
-            }
-            out[b * hidden * 3 + h] = mu;
-            out[b * hidden * 3 + hidden + h] = (var * inv_points).sqrt();
-            out[b * hidden * 3 + 2 * hidden + h] = max_val;
-        }
-    }
+        });
     out
 }
 

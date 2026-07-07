@@ -56,26 +56,40 @@ pub fn fused_entropy_update_forward(
     // Parallel over rows like `linear_forward` (each output row is
     // independent, so the per-row accumulation order — and hence the
     // result — is bit-identical to the serial loop).
-    out.par_chunks_mut(layer.out_dim)
-        .enumerate()
-        .for_each(|(row, out_row)| {
-            let b = row / points;
-            let pooled_row = &pooled[b * 3 * hidden..(b + 1) * 3 * hidden];
-            let ent = entropy[b];
-            let h_row = &h[row * hidden..(row + 1) * hidden];
-            for (j, slot) in out_row.iter_mut().enumerate() {
-                let mut acc = layer.b[j];
-                for (i, &v) in h_row.iter().enumerate() {
-                    acc += v * layer.w[i * layer.out_dim + j];
-                }
-                for (i, &v) in pooled_row.iter().enumerate() {
-                    acc += v * layer.w[(hidden + i) * layer.out_dim + j];
-                }
-                acc += ent * layer.w[(4 * hidden) * layer.out_dim + j];
-                *slot = acc;
-            }
-        });
+    let out_dim = layer.out_dim;
+    out.par_chunks_mut(out_dim).enumerate().for_each(|(row, out_row)| {
+        let b = row / points;
+        let pooled_row = &pooled[b * 3 * hidden..(b + 1) * 3 * hidden];
+        let ent = entropy[b];
+        let h_row = &h[row * hidden..(row + 1) * hidden];
+        // `ikj` (SAXPY) accumulation: for each input i, broadcast x[i] and add a
+        // *contiguous* W-row into the *contiguous* out_row. The inner j-loop is
+        // element-wise into distinct slots (no reduction), so it autovectorizes.
+        // For a fixed j the additions still run in i-order, so the result is
+        // bit-identical to the scalar-accumulate form.
+        //
+        // Row layout of the implicit input: [h(hidden) | pooled(3*hidden) | ent(1)].
+        out_row.copy_from_slice(&layer.b);
+        let mut w_base = 0usize;
+        for &v in h_row {
+            saxpy(out_row, &layer.w[w_base..w_base + out_dim], v);
+            w_base += out_dim;
+        }
+        for &v in pooled_row {
+            saxpy(out_row, &layer.w[w_base..w_base + out_dim], v);
+            w_base += out_dim;
+        }
+        saxpy(out_row, &layer.w[w_base..w_base + out_dim], ent);
+    });
     out
+}
+
+/// `y += a * x` over contiguous slices (autovectorizes to a broadcast-FMA loop).
+#[inline(always)]
+fn saxpy(y: &mut [f32], x: &[f32], a: f32) {
+    for (yi, &xi) in y.iter_mut().zip(x.iter()) {
+        *yi += a * xi;
+    }
 }
 
 /// Fused update backward.

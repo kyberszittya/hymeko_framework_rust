@@ -29,19 +29,26 @@ import numpy as np
 from gymnasium import spaces
 
 from hymeko_rl.env.arm_world import (
-    actuated_dof_addrs,
     emit_arm_mjcf,
     strip_actuators,
     with_collision_floor,
 )
+from hymeko_rl.env._profile import read_scene_fields
 from hymeko_rl.env.reward import RewardSpec
 from hymeko_rl.agents.hypergraph_state import HypergraphState
 
 _REPO = Path(__file__).resolve().parents[2]
 _DEFAULT_HYMEKO = _REPO / "data" / "robotics" / "quadruped.hymeko"
+_DEFAULT_STAND_SCENARIO = _REPO / "data" / "robotics" / "quadruped_stand.hymeko"
 
 BaseMode = Literal["free", "fixed", "planar"]
 TaskMode = Literal["goal", "stand"]
+
+# The RL-controlled leg joints (hip_abduct/hip_flex/knee × 4). Every OTHER emitted joint on the Aibo plant is
+# an ERS-1000 expressive DOF (head 3 / neck / waist / mouth / ears 2 / tail 2), held at neutral by a position
+# servo (see QuadrupedGoalEnv._hold_expressive_joints) so the action space is the 12 legs. Name PREFIXES: the
+# per-leg suffix (fl/fr/bl/br) varies.
+_LEG_JOINT_PREFIXES = ("hip_abduct", "hip_flex", "knee")
 
 # Default "reach the goal fast and smooth" reward: dense −dist + a big sparse success bonus, with time
 # pressure and the velocity/jerk smoothness penalties. Weights chosen so distance/success dominate and the
@@ -128,7 +135,8 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
                  ctrl_range: float = 50.0, frame_skip: int = 5, max_steps: int = 250,
                  init_noise: float = 0.02, leg_damping: float = 0.8, leg_armature: float = 0.02,
                  flip_cos: float = -0.2, task: TaskMode = "goal", stand_cos: float = 0.9,
-                 stand_height_tol: float = 0.08, reward_spec: RewardSpec | None = None) -> None:
+                 stand_height_tol: float = 0.08, pd_kp: float = 40.0, pd_kd: float = 2.0,
+                 reward_spec: RewardSpec | None = None) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1 or ctrl_range <= 0 or goal_distance <= 0 or reach_radius <= 0:
             raise ValueError("frame_skip/max_steps>=1, ctrl_range/goal_distance/reach_radius>0 required")
@@ -145,6 +153,7 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
         mjcf = set_base_mode(emit_arm_mjcf(hymeko_path, name="quad"), base_joint, base)
         mjcf = self._tune_legs(mjcf, leg_damping, leg_armature)
         mjcf = self._seat_floor(mjcf)
+        mjcf = self._hold_expressive_joints(mjcf)   # 10 expressive DOF held at neutral; RL drives the 12 legs
         self._mjcf = mjcf                 # kept so the renderer can re-skin the scene (decorate_scene)
         self.base = base
         self.model = mujoco.MjModel.from_xml_string(mjcf)
@@ -153,8 +162,19 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
         self.torso = int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "torso"))
         if self.torso < 0:
             raise ValueError("expected a 'torso' body in the emitted quadruped")
-        self.n_actions = int(self.model.nu)
-        self._act_dofs = actuated_dof_addrs(self.model)        # leg joints (for smoothness terms)
+        # The RL action space is the CONTROLLED (leg) actuators only; the expressive actuators are position
+        # servos holding neutral (see _hold_expressive_joints). `_leg_ctrl_idx` maps the action to those motors.
+        self._leg_ctrl_idx = self._controlled_actuators()
+        self.n_actions = int(self._leg_ctrl_idx.size)
+        if self.n_actions == 0:
+            raise ValueError("no leg actuators found — is the quadruped plant emitted with leg joints?")
+        self._act_dofs = np.array(                             # leg dofs (for smoothness terms + obs)
+            [int(self.model.jnt_dofadr[int(self.model.actuator_trnid[i, 0])]) for i in self._leg_ctrl_idx],
+            dtype=np.int64)
+        self._leg_qadr = np.array(                              # leg qpos addresses (for the PD-hold expert)
+            [int(self.model.jnt_qposadr[int(self.model.actuator_trnid[i, 0])]) for i in self._leg_ctrl_idx],
+            dtype=np.int64)
+        self.pd_kp, self.pd_kd = float(pd_kp), float(pd_kd)
         self._torso_vtx = self.torso - 1                       # torso's hypergraph vertex (body b -> b-1)
         # joint -> hypergraph vertex (child body b -> vertex b-1) + qpos/dof addresses.
         self._jnt_vtx = np.array([int(self.model.jnt_bodyid[j]) - 1
@@ -183,12 +203,55 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
         self.observation_space = spaces.Box(-np.inf, np.inf, (self.hg.n_vertices, 2), np.float32)
         self.action_space = spaces.Box(-1.0, 1.0, (self.n_actions,), np.float32)
 
+    @classmethod
+    def from_hymeko(cls, scenario: str | Path = _DEFAULT_STAND_SCENARIO, *,
+                    hymeko_path: str | Path = _DEFAULT_HYMEKO) -> "QuadrupedGoalEnv":
+        """Build the standing MDP END-TO-END from a ``.hymeko`` scenario — the declarative-substrate entry.
+
+        The ``scenario`` file declares the balance-env tuning (its ``scene`` scalars) and the objective (its
+        ``reward_spec``, read by :meth:`RewardSpec.from_hymeko`); the plant is the imported Aibo robot
+        (``hymeko_path``, emitted separately). ``base="free"`` / ``task="stand"`` are structural to a standing
+        task (a fixed base cannot fall) and are fixed here. The training strategy declared in the *same* file is
+        read separately by :meth:`hymeko_rl.experiments.training_spec.TrainingSpec.from_hymeko` (the trainer, not
+        the env), so one ``.hymeko`` carries plant + tuning + objective + strategy.
+
+        # Preconditions ``scenario`` declares one ``scene`` bundle and one ``reward_spec`` bundle.
+        # Postconditions returns a stand-mode env whose reward and tuning come entirely from ``scenario``.
+        # Errors ``FileNotFoundError``; ``ValueError`` (missing/multiple ``scene``/``reward_spec``, bad field).
+        """
+        f = read_scene_fields(scenario, "scene")
+
+        def scalar(name: str, default: float) -> float:
+            """A scene scalar; a vector-valued field here is a declaration error, not a silent coercion."""
+            v = f.get(name, default)
+            if isinstance(v, tuple):
+                raise ValueError(f"{scenario}: scene field {name!r} must be a scalar, got a vector {v}")
+            return float(v)
+
+        return cls(
+            hymeko_path=hymeko_path, base="free", task="stand",
+            stand_cos=scalar("stand_cos", 0.9),
+            stand_height_tol=scalar("stand_height_tol", 0.08),
+            ctrl_range=scalar("ctrl_range", 50.0),
+            frame_skip=int(scalar("frame_skip", 5)),
+            max_steps=int(scalar("max_steps", 250)),
+            flip_cos=scalar("flip_cos", -0.2),
+            leg_damping=scalar("leg_damping", 0.8),
+            leg_armature=scalar("leg_armature", 0.02),
+            init_noise=scalar("init_noise", 0.02),
+            reward_spec=RewardSpec.from_hymeko(scenario),
+        )
+
     @staticmethod
     def _tune_legs(mjcf: str, damping: float, armature: float) -> str:
         """Add joint damping + armature to the leg hinges (simulation tuning the .hymeko geometry can't
-        carry). Without damping the un-sprung legs fold under the torso instead of holding a stance."""
+        carry). Without damping the un-sprung legs fold under the torso instead of holding a stance.
+
+        Matches the Aibo dog's three leg-joint families (``hip_abduct`` / ``hip_flex`` / ``knee``), each
+        suffixed by a two-letter leg id (``fl``/``fr``/``bl``/``br``); the passive ``base`` carrier is left
+        untouched (it is promoted/stripped by :func:`set_base_mode`)."""
         return re.sub(
-            r'(<joint name="(?:hip|knee)_[a-z]{2}" type="hinge" axis="[^"]*" range="[^"]*)"/>',
+            r'(<joint name="(?:hip_abduct|hip_flex|knee)_[a-z]{2}" type="hinge" axis="[^"]*" range="[^"]*)"/>',
             rf'\1" damping="{damping}" armature="{armature}"/>', mjcf)
 
     @staticmethod
@@ -200,6 +263,46 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
         bottoms = [float(d.geom_xpos[g, 2] - m.geom_rbound[g]) for g in range(m.ngeom)
                    if int(m.geom_bodyid[g])]
         return with_collision_floor(mjcf, z=min(bottoms) - 0.01)
+
+    @staticmethod
+    def _hold_expressive_joints(mjcf: str, stiffness: float = 8.0, damping: float = 0.8,
+                                armature: float = 0.02) -> str:
+        """Hold every non-leg joint at its neutral pose *passively* (spring-to-neutral) instead of RL-driving it.
+
+        The emitter motors every non-fixed joint, but the ERS-1000's 10 expressive DOF (head/neck/waist/mouth/
+        ears/tail) must not be RL-driven at leg-scale torque — a 50 N·m command on a ~10 g ear yields absurd
+        accelerations that blow up the reward. Rather than a stiff position servo (numerically unstable on the
+        near-massless head-gimbal links — QACC blow-up), each expressive joint is made **passive**: its torque
+        motor is stripped and the joint element gets a ``stiffness`` spring to neutral (``springref`` 0), plus
+        ``damping`` and — critically — ``armature`` (reflected rotor inertia) so the stiff hold on a light link
+        stays stable. This keeps the Aibo posture (head up, ears up, tail up) and confines the action space to the
+        12 legs. The expressive set is derived from the emitted joints (any non-leg ``<joint>``), so it needs no
+        hardcoded list. # Postconditions non-leg motors removed; non-leg joints spring-held; leg joints untouched.
+        """
+        expressive = [j for j in re.findall(r'<joint name="([^"]+)"', mjcf)
+                      if not j.startswith(_LEG_JOINT_PREFIXES)]
+        if not expressive:
+            return mjcf
+        mjcf = strip_actuators(mjcf, expressive)                  # make the expressive joints passive
+        held = set(expressive)
+        hold = f' stiffness="{stiffness}" damping="{damping}" armature="{armature}"/>'
+
+        def spring(m: "re.Match[str]") -> str:
+            return m.group(0)[:-2] + hold if m.group("name") in held else m.group(0)
+
+        return re.sub(r'<joint name="(?P<name>[^"]+)"[^>]*/>', spring, mjcf)
+
+    def _controlled_actuators(self) -> np.ndarray:
+        """The ``ctrl`` indices of the leg (torque) actuators — the RL action space (the expressive joints are
+        passive springs, not actuators). # Postconditions int64 array of the leg-motor ctrl indices.
+        """
+        idx = []
+        for i in range(int(self.model.nu)):
+            jid = int(self.model.actuator_trnid[i, 0])
+            jname = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_JOINT, jid) or ""
+            if jname.startswith(_LEG_JOINT_PREFIXES):
+                idx.append(i)
+        return np.asarray(idx, dtype=np.int64)
 
     def dist_to_goal(self) -> float:
         """Planar distance from the torso to the goal point."""
@@ -234,6 +337,22 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
         """Cosine between the torso's local +z and world +z (1 = level, 0 = on its side, <0 = inverted)."""
         return float(self.data.xmat[self.torso].reshape(3, 3)[2, 2])
 
+    @property
+    def expert_action(self) -> np.ndarray:
+        """A scripted **PD-hold-q0 standing demonstrator**: leg torques that hold each leg joint at its rest
+        angle (the standing stance), normalised to the ``[-1, 1]`` action space. This is the standing-task BC
+        demo source — the motivated lever after pure TD3 was *measured* to diverge on this task
+        (``reports/2026-07-03-quadruped-gpu-cudagraph-fix.md``). Only the 12 legs are commanded; the expressive
+        joints are spring-held by the plant.
+
+        ``tau = clip(-kp·(q_leg − q0_leg) − kd·q̇_leg) / ctrl_range``.
+        # Postconditions returns shape ``(n_actions,)`` in ``[-1, 1]``.
+        """
+        q = self.data.qpos[self._leg_qadr]
+        qd = self.data.qvel[self._act_dofs]
+        tau = -self.pd_kp * (q - self._q0[self._leg_qadr]) - self.pd_kd * qd
+        return np.asarray(np.clip(tau / self.ctrl_range, -1.0, 1.0), dtype=np.float32)
+
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None,
               ) -> tuple[np.ndarray, dict[str, Any]]:
         super().reset(seed=seed)
@@ -251,7 +370,8 @@ class QuadrupedGoalEnv(gym.Env[np.ndarray, np.ndarray]):
 
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         a = np.clip(np.asarray(action, dtype=np.float32), -1.0, 1.0)   # normalised command in [-1, 1]
-        self.data.ctrl[:] = a * self.ctrl_range                        # scaled to N·m
+        self.data.ctrl[self._leg_ctrl_idx] = a * self.ctrl_range       # torque to the 12 legs; expressive held
+
         for _ in range(self.frame_skip):
             mujoco.mj_step(self.model, self.data)
         self._step += 1

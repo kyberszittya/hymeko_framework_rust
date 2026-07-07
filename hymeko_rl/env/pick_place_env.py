@@ -59,10 +59,19 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
                  arm_home: tuple[float, ...] | None = None,
                  lift_thresh: float = 0.06, place_radius: float = 0.06,
                  ground_penalty: float = 2.0, finger_friction: float = 3.0,
-                 reward_profile: str | None = None, target_bin: bool = False) -> None:
+                 reward_profile: str | None = None, target_bin: bool = False,
+                 expert_version: int = 1) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
+        if expert_version not in (1, 2):
+            raise ValueError("expert_version must be 1 (original contact-exploiting) or 2 (clearance-valid)")
+        # Which scripted expert trajectory `expert_action` runs. v1 (default): the original — descends fast and
+        # relies on the table as a mechanical stop (finger↔table on ~48% of approach steps; the dirty baseline).
+        # v2: clearance-valid — rise to a safe altitude before traversing, then a damped descent that stops at
+        # grasp_z by trajectory (no table-stop exploitation). Scene/object/reward are identical; only the
+        # trajectory is versioned. Kept as a param so the v1 baseline stays reproducible.
+        self._expert_version = int(expert_version)
         arm_gripper = emit_arm_mjcf(robot, name="arm_gripper", control_mode="position")  # arm+gripper, one source
         self.hg = HypergraphState.from_mjcf(arm_gripper, is_path=False)
         self._mjcf = compose_pick_place_scene(arm_gripper, box_half=box_half, box_mass=box_mass,
@@ -82,7 +91,15 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         # silently inflated eval_success from a true 0.125 to 0.875). Halve the sub-step and raise the substep
         # count so the control interval (frame_skip * timestep) is preserved EXACTLY; the policy sees an
         # identical control interface, so trained weights transfer without re-training.
-        _stable_dt = Physics.STABLE_DT
+        # v2's stiffer arm servo (below) needs finer integration to stay stable — halve the sub-step for v2 so the
+        # position gain does not detonate the integrator (measured: kp=90 at STABLE_DT blows qacc to ~1e6). v1
+        # keeps STABLE_DT BYTE-IDENTICAL. Either way the control interval (frame_skip * timestep) is preserved, so
+        # the control interface is unchanged.
+        # v2's stiffer arm servo (below) needs finer integration to stay stable — halve the sub-step for v2 so the
+        # position gain does not detonate the integrator (measured: at STABLE_DT the stiffer servo blows qacc up
+        # and ejects the object). v1 keeps STABLE_DT BYTE-IDENTICAL. Either way the control interval
+        # (frame_skip * timestep) is preserved, so the control interface is unchanged.
+        _stable_dt = Physics.STABLE_DT * 0.5 if self._expert_version == 2 else Physics.STABLE_DT
         _control_dt = self.model.opt.timestep * int(frame_skip)
         if self.model.opt.timestep > _stable_dt:
             substeps = max(1, round(_control_dt / _stable_dt))
@@ -127,7 +144,12 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
             b = bid(nm)
             if b >= 0:
                 self.model.body_gravcomp[b] = 1.0
-        gains = {j: (45.0, 9.0) for j in _ARM_JOINTS}                  # tuned for reliable grasp+lift
+        # v2 (a NEW benchmark version) uses a STIFFER arm servo so the physical wrist tracks the clearance-aware
+        # waypoint command without the ~cm sag/lag that dipped the fingers into the table on the catch-up to the
+        # hover (isolated tracking-gain fix, 2026-07-07; gravity-comp is already full = 1.0, so this is purely the
+        # position/velocity gain). v1 KEEPS its original 45/9 tuning BYTE-IDENTICAL (frozen baseline).
+        arm_kp, arm_kv = (60.0, 15.0) if self._expert_version == 2 else (45.0, 9.0)
+        gains = {j: (arm_kp, arm_kv) for j in _ARM_JOINTS}             # tuned for reliable grasp+lift
         gains.update({"grip_l": (250.0, 10.0), "grip_r": (250.0, 10.0)})  # firm squeeze to hold the box on lift
         for jn, (kp, kv) in gains.items():
             a = self._act_of.get(jn, -1)
@@ -177,6 +199,19 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         self._pick_metrics: PickMetrics | None = None
         self._grasped_ever = False                     # latched once both fingers first hold the box
         self._spawn_xy = (0.0, 0.0)                     # object xy at reset (for the pre-grasp disturbance penalty)
+        self._v2_seed: "np.ndarray | None" = None       # v2 expert: previous un-folded IK solution (seed chain)
+        self._v2_preshape_seq: "list[np.ndarray] | None" = None  # v2 expert: cached route [cf_mid_retract, cf_hover]
+        self._v2_preshape_idx = 0                        # v2 expert: 0 = home→cf_mid (+hold), 1 = cf_mid→cf_hover
+        self._v2_preshape_hold = 0                       # v2 expert: cf_mid HOLD counter (let the physical arm catch up)
+        self._v2_preshaped = False                       # v2 expert: latched once the command reaches cf_hover
+        self._v2_committed = False                       # v2 expert: latched grasp — carry stays committed through flicker
+        self._v2_over_latched = False                    # v2 expert: latched once physically over the object (→ grasp seq)
+        self._v2_align_corr = np.zeros(2)                # v2 expert: INTEGRAL finger-centre recentre correction (xy)
+        self._v2_scratch = mujoco.MjData(self.model)     # v2 expert: scratch for COMMANDED-clearance validation
+        self._v2_table_geom = int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "table"))
+        self._v2_finger_geoms = [g for b in (self._b_fl, self._b_fr)
+                                 for g in range(int(self.model.body_geomadr[b]),
+                                                int(self.model.body_geomadr[b]) + int(self.model.body_geomnum[b]))]
 
     def set_difficulty(self, d: float) -> None:
         """Curriculum knob in [0, 1]: widens the object spawn from the configured easy range toward the reach
@@ -270,6 +305,14 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         self._step = 0
         self._grasp_hold = 0
         self._lift_xy = None
+        self._v2_seed = None
+        self._v2_preshape_seq = None
+        self._v2_preshape_idx = 0
+        self._v2_preshape_hold = 0
+        self._v2_preshaped = False
+        self._v2_committed = False
+        self._v2_over_latched = False
+        self._v2_align_corr = np.zeros(2)
         self._grasped_ever = False
         o0 = self._obj_xyz()
         self._spawn_xy = (float(o0[0]), float(o0[1]))
@@ -287,9 +330,22 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
     def expert_action(self) -> np.ndarray:
         """A scripted reach→grasp→lift→transport→place demonstrator (for behaviour cloning, Phase 1).
 
-        A converged DLS pose IK (:class:`DampedPoseIK`) drives the tool to a staged target with the gripper
-        held **top-down** (tool z-axis → world −z); the grip opens/closes per phase. Phase is read from state
-        (above-object, grasped, lifted, at-target), so it is a single-valued closed-loop function of state."""
+        Dispatches on ``expert_version``: v1 (original — descends fast, relies on the table as a mechanical
+        stop; the contact-exploiting baseline) or v2 (clearance-valid — rise to a safe altitude before
+        traversing, then a damped descent that stops at ``grasp_z`` by trajectory). A single-valued closed-loop
+        function of state (phase read from above-object / grasped / lifted / at-target)."""
+        return self._expert_action_v2() if self._expert_version == 2 else self._expert_action_v1()
+
+    def _ik_step(self, tgt: np.ndarray, grip: float, rate: float) -> np.ndarray:
+        """Solve DLS pose IK to ``tgt`` (top-down) and rate-limit the JOINT step (a Cartesian-waypoint target
+        starves the position term when the orientation correction is large). Shared by both expert versions."""
+        q_now = np.asarray(self.data.qpos[:len(_ARM_JOINTS)], dtype=np.float64)
+        q_des = self._ik.solve(q_now, tgt, down=True, iters=120)
+        q_des = q_now + np.clip(q_des - q_now, -rate, rate)
+        return np.asarray(np.concatenate([q_des, [grip]]), dtype=np.float32)
+
+    def _expert_action_v1(self) -> np.ndarray:
+        """The original contact-exploiting expert (unchanged; kept for the dirty baseline)."""
         obj = self._obj_xyz()
         tool = np.asarray(self.data.xpos[self._b_tool], dtype=np.float64)
         grasped = all(self._both_contact())
@@ -322,15 +378,226 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
             tgt, grip = np.array([obj[0], obj[1], grasp_z]), _OPEN
         else:                                                # at the object: close
             tgt, grip = np.array([obj[0], obj[1], grasp_z]), _GRIP
+        # Fast on the free approach, gentle while carrying so the lift does not slip the box.
+        return self._ik_step(tgt, grip, 0.28 if committed else 0.4)
 
-        q_now = np.asarray(self.data.qpos[:len(_ARM_JOINTS)], dtype=np.float64)
-        # Solve the full staged goal (strong position + down-orientation) and rate-limit the JOINT step (a
-        # Cartesian-waypoint target starves the position term when the orientation correction is large). Fast
-        # on the free approach, gentle while carrying so the lift does not slip the box.
-        q_des = self._ik.solve(q_now, tgt, down=True, iters=120)
-        rate = 0.28 if committed else 0.4
-        q_des = q_now + np.clip(q_des - q_now, -rate, rate)
+    # v2 deterministic clearance-aware waypoint controller (design bundle
+    # docs/plans/2026-07-07-pick-place-v2-waypoint-planner/; retracted-seed direction from
+    # reports/2026-07-07-pick-place-v2-retract-probe.md). It validates the PATH, not just the final IK target: it
+    # first PRESHAPES out of the over-extended arm_home into a table-clear multi-start hover config (fixing the
+    # inward-retraction stall), then descends to grasp_z only once centred. Two levers keep the DLS un-folded:
+    # SHORT Cartesian hops and IK SEEDING from the previous un-folded solution. Reach-phase PROGRESSION keys off the
+    # COMMANDED tool (fk_tool of the seed), NOT the sagged physical z (which mis-fired the old rise branch); the
+    # physical clearance/contact harness stays the SAFETY authority — the controller never self-certifies clearance.
+    _V2_HOVER_DZ = 0.05        # reachable clearance hover over the object (≤ the measured self-collide ceiling +0.06)
+    _V2_LIFT_CLEAR_DZ = 0.14
+    _V2_CENTER_RATE = 0.22     # joint rate for transit/align (< v1's 0.4) → less downward overshoot
+    _V2_DESCEND_RATE = 0.10    # damped rate for the final descent / grasp / carry
+    _V2_TRANSIT_KP = 60.0      # v2 arm position gain during transit (preshape/hold-hover) — the clean base
+    _V2_TRANSIT_KV = 15.0
+    _V2_GRASP_KP = 75.0        # v2 arm position gain once OVER the object (descent/grasp/carry): moderate, phase-
+    _V2_GRASP_KV = 18.0        # scoped (transit keeps kp60). NB: raising it lifts the TOOL, not the box — the box
+    #                            slips out regardless of arm gain, so this is not the lift bottleneck (see report)
+    _V2_HOP = 0.06             # max Cartesian target step per env-step (short hops keep each DLS solve un-folded)
+    _V2_OVER_HORIZ = 0.06      # PHYSICAL over-object gate: descend only once the physical tool arrives over the
+    #                            object (xy — sag-INDEPENDENT, never the sagged z), so the physical transit holds
+    #                            the clearance hover instead of dragging low
+    _V2_ALIGN_TOL = 0.012      # FINGER-CENTRE lateral tolerance over the object before closing — the fingers must
+    #                            straddle the box centre (box half = 2 cm), not close ~3 cm to the side and shove it
+    #                            out. The INTEGRAL recentre drives the residual to ~0, so a tight tolerance holds
+    _V2_ALIGN_KI = 0.5         # integral gain for the finger-centre recentre — eliminates the proportional residual
+    _V2_PRESHAPE_RATE = 0.10   # joint rate for the preshape. The whole route is high-z & clearance-safe, so this is
+    #                            faster than the earlier 0.05 to free horizon budget for the descend/grasp/lift/place
+    #                            tail (pacing fix, 2026-07-07) without dipping the transit
+    _V2_PRESHAPE_TOL = 0.03    # commanded-config L2 distance at which the preshape target (cf_hover) is reached
+    _V2_CLEAR_FLOOR = 0.04     # commanded finger-table clearance floor (m); the monotonic route stays well above it
+    #                            (cf_mid ~+15 cm, cf_hover ~+6 cm) — a validation guard, not an oscillating lift-loop
+    _V2_MID_RETRACT_DZ = 0.08  # cf_mid_retract height above the hover (near base → generous clearance margin)
+    _V2_MID_RETRACT_R = 0.5    # cf_mid_retract radius as a fraction of the object radius (retracted toward the base)
+    _V2_PRESHAPE_HOLD = 8      # steps to HOLD at cf_mid so the physical arm catches up (trimmed from 20 — pacing)
+    _V2_CART_XY = 0.05         # cf_mid→cf_hover Cartesian XY step cap (short hops, monotonic; high-z clearance-safe)
+    _V2_CART_Z = 0.03          # cf_mid→cf_hover Cartesian Z step cap (monotonic descent — no lift-up oscillation)
+
+    def _v2_ik_step(self, waypoint: np.ndarray, grip: float, rate: float) -> np.ndarray:
+        """A clearance-preserving IK step computed ENTIRELY in the commanded-config frame (so the seed never
+        diverges from the target frame). The commanded config ``_v2_seed`` (chained from ``arm_home``) is advanced
+        by a SHORT Cartesian hop toward ``waypoint`` — the hop is measured from the seed's own tool pose
+        (``fk_tool``), the DLS solve is seeded from that same config (so it stays in the un-folded basin), and the
+        command steps toward the solution rate-limited. The physical servo tracks the command; because the hop
+        shrinks to zero as the seed reaches a segment's waypoint, physical and command re-sync at each waypoint.
+
+        # Preconditions ``waypoint`` is a length-3 top-down tool target. # Postconditions returns a
+        ``(6 arm + grip)`` action; ``_v2_seed`` advances one rate-limited step toward the waypoint."""
+        seed = (self._v2_seed if self._v2_seed is not None
+                else np.asarray(self.data.qpos[:len(_ARM_JOINTS)], dtype=np.float64))
+        tool_seed = self._ik.fk_tool(seed)                   # where the COMMANDED config currently places the tool
+        tgt = tool_seed + np.clip(np.asarray(waypoint, dtype=np.float64) - tool_seed, -self._V2_HOP, self._V2_HOP)
+        q_sol = np.asarray(self._ik.solve(seed, tgt, down=True, iters=120), dtype=np.float64)
+        q_des = seed + np.clip(q_sol - seed, -rate, rate)    # advance the commanded config toward the solution
+        self._v2_seed = q_des
         return np.asarray(np.concatenate([q_des, [grip]]), dtype=np.float32)
+
+    def _v2_preshape_waypoints(self, obj: np.ndarray, z_hover: float) -> "list[np.ndarray]":
+        """The MONOTONIC preshape ROUTE (cached once/episode): ``[cf_mid_retract, cf_hover]``. ``cf_mid_retract`` is
+        a HIGH, retracted multi-start config near the base (generous table clearance); ``cf_hover`` is the multi-start
+        config at the object hover. Routing the PHYSICAL arm high through the retracted intermediate — rather than
+        toward one far target — avoids the servo's dipping path and the down/up oscillation. If the multi-start
+        ``cf_mid`` comes back low, it is lifted ONCE (cached) so the whole route stays above the clearance floor."""
+        if self._v2_preshape_seq is not None:
+            return self._v2_preshape_seq
+        home = np.asarray(self._arm_home, dtype=np.float64)
+        mid = np.array([self._V2_MID_RETRACT_R * obj[0], self._V2_MID_RETRACT_R * obj[1],
+                        z_hover + self._V2_MID_RETRACT_DZ])
+        cf_mid = np.asarray(self._ik.solve_collision_free(home, mid, self._ik_pose_valid, down=True, n_starts=40),
+                            dtype=np.float64)
+        if self._v2_cmd_clearance(cf_mid) < self._V2_CLEAR_FLOOR:    # multi-start returned a low config → lift once
+            t = self._ik.fk_tool(cf_mid)
+            cf_mid = np.asarray(self._ik.solve(cf_mid, np.array([t[0], t[1], t[2] + 0.05]), down=True, iters=120),
+                                dtype=np.float64)
+        cf_hover = np.asarray(self._ik.solve_collision_free(home, np.array([obj[0], obj[1], z_hover]),
+                                                            self._ik_pose_valid, down=True, n_starts=40),
+                              dtype=np.float64)
+        self._v2_preshape_seq = [cf_mid, cf_hover]
+        return self._v2_preshape_seq
+
+    def _v2_set_arm_gains(self, kp: float, kv: float) -> None:
+        """Set the ARM position-servo gains at runtime (v2 phase-scoped tracking; grip gains untouched). Lets the
+        controller run transit gains during preshape/hold-hover and stronger tracking once over the object. v1 never
+        calls this, so v1's servo stays byte-identical."""
+        for jn in _ARM_JOINTS:
+            a = self._act_of.get(jn, -1)
+            if a >= 0:
+                self.model.actuator_gainprm[a, 0] = kp
+                self.model.actuator_biasprm[a, 1] = -kp
+                self.model.actuator_biasprm[a, 2] = -kv
+
+    def _v2_cmd_clearance(self, q: np.ndarray) -> float:
+        """COMMANDED finger-table clearance for arm config ``q`` — a controller-side WAYPOINT validation (the
+        physical ``pick_clearance`` harness stays the final safety authority). Uses a scratch ``MjData``; the live
+        data is never touched. Returns ``inf`` if the table geom is unnamed."""
+        if self._v2_table_geom < 0:
+            return float("inf")
+        d = self._v2_scratch
+        d.qpos[:] = self.data.qpos
+        d.qpos[:len(_ARM_JOINTS)] = np.asarray(q[:len(_ARM_JOINTS)], dtype=np.float64)
+        mujoco.mj_kinematics(self.model, d)
+        return min(float(mujoco.mj_geomDistance(self.model, d, g, self._v2_table_geom, 1.0, None))
+                   for g in self._v2_finger_geoms)
+
+    def _v2_preshape_step(self, obj: np.ndarray, z_hover: float) -> np.ndarray:
+        """HOME_RETRACT_OR_PRESHAPE — MONOTONIC multi-waypoint route (no down/up oscillation). (1) joint-space SLOW
+        move to ``cf_mid_retract`` (high, no descent); (2) HOLD there so the physical arm catches up; (3) SHORT
+        Cartesian hops (capped xy/z, seeded from the previous command) down to ``cf_hover``, z clamped ≥ the
+        clearance floor. Fingers open; latch on arrival at ``cf_hover``. Controller logic only — the physical
+        ``pick_clearance`` harness stays the safety authority."""
+        seq = self._v2_preshape_waypoints(obj, z_hover)
+        seed = (self._v2_seed if self._v2_seed is not None
+                else np.asarray(self.data.qpos[:len(_ARM_JOINTS)], dtype=np.float64))
+        if self._v2_preshape_idx == 0:                       # 1-2 HOME_RETRACT → cf_mid, then HOLD (physical catch-up)
+            target = seq[0]
+            q_cmd = seed + np.clip(target - seed, -self._V2_PRESHAPE_RATE, self._V2_PRESHAPE_RATE)
+            self._v2_seed = q_cmd
+            if float(np.linalg.norm(q_cmd - target)) < self._V2_PRESHAPE_TOL:
+                self._v2_preshape_hold += 1
+                if self._v2_preshape_hold >= self._V2_PRESHAPE_HOLD:
+                    self._v2_preshape_idx = 1
+            return np.asarray(np.concatenate([q_cmd, [_OPEN]]), dtype=np.float32)
+        # 3 CF_MID_TO_CF_HOVER: short capped Cartesian hops, monotonic descent, z clamped ≥ the clearance floor
+        z_floor = self._surf + self.box_half + self._GRASP_TOOL_DZ + (self._V2_HOVER_DZ - 0.02)
+        goal = self._ik.fk_tool(seq[1])
+        tool = self._ik.fk_tool(seed)
+        cap = np.array([self._V2_CART_XY, self._V2_CART_XY, self._V2_CART_Z])
+        tgt = tool + np.clip(goal - tool, -cap, cap)
+        tgt[2] = max(float(tgt[2]), z_floor)                 # never command below the clearance floor (clamp, no osc)
+        q_sol = np.asarray(self._ik.solve(seed, tgt, down=True, iters=120), dtype=np.float64)
+        q_cmd = seed + np.clip(q_sol - seed, -self._V2_PRESHAPE_RATE, self._V2_PRESHAPE_RATE)
+        self._v2_seed = q_cmd
+        if float(np.linalg.norm(self._ik.fk_tool(q_cmd) - goal)) < 0.02:
+            self._v2_preshaped = True
+        return np.asarray(np.concatenate([q_cmd, [_OPEN]]), dtype=np.float32)
+
+    def _expert_action_v2(self) -> np.ndarray:
+        """Deterministic clearance-aware waypoint expert. Reach-phase PROGRESSION keys off the COMMANDED tool
+        (``fk_tool`` of the seed) so a sagging physical wrist cannot stall it; GRASP keys off PHYSICAL contact (a
+        grasp is a physical event). Scene/object/reward identical to v1; only the trajectory differs. The physical
+        clearance/contact harness — not this controller — decides whether the trajectory is valid.
+
+        Segments: 0 HOME_RETRACT_OR_PRESHAPE · 2 TRANSIT_ABOVE_TABLE · 3 ABOVE_OBJECT_ALIGN · 4 VERTICAL_DESCENT ·
+        5 GRASP · 6 LIFT · 7 PLACE_TRANSIT · 8 PLACE_DESCEND_RELEASE."""
+        obj = self._obj_xyz()
+        both = all(self._both_contact())
+        grasp_z = self._surf + self.box_half + self._GRASP_TOOL_DZ
+        z_hover = grasp_z + self._V2_HOVER_DZ
+        # LATCH the commit: once both fingers have held for the dwell, STAY committed (grip closed, lifting) through
+        # a momentary contact flicker — release only if the object is clearly DROPPED (fell below the surface). This
+        # stops the CARRY→un-commit→open-grip oscillation that let the object slip during the slow lift (diagnosed
+        # 2026-07-07). CARRY uses v1's proven, fast, un-folded lift/carry mechanics (`_ik_step`, rate 0.28) — the
+        # slow `_v2_ik_step` toward an above-ceiling target barely lifted and drifted the fingers off the box.
+        if both and self._grasp_hold >= 12:
+            self._v2_committed = True
+        if self._v2_committed and obj[2] < (self._surf + self._box_zhalf) - 0.03:   # object clearly dropped
+            self._v2_committed = False
+        committed = self._v2_committed
+        # phase-scoped tracking (v2 only): stronger arm gains once OVER the object (descent/grasp/carry) for tighter
+        # centring + a firmer lift; transit gains during preshape/hold-hover (clean, unchanged). v1 servo untouched.
+        tool_phys = np.asarray(self.data.xpos[self._b_tool], dtype=np.float64)
+        over_obj = float(np.hypot(tool_phys[0] - obj[0], tool_phys[1] - obj[1])) <= self._V2_OVER_HORIZ
+        if committed or both or (self._v2_preshaped and over_obj):
+            self._v2_set_arm_gains(self._V2_GRASP_KP, self._V2_GRASP_KV)
+        else:
+            self._v2_set_arm_gains(self._V2_TRANSIT_KP, self._V2_TRANSIT_KV)
+        if not committed:
+            self._lift_xy = None
+        if committed:                                        # 6-8 LIFT / PLACE_TRANSIT / PLACE_DESCEND_RELEASE
+            tool = np.asarray(self.data.xpos[self._b_tool], dtype=np.float64)
+            lifted = bool(obj[2] - (self._surf + self._box_zhalf) > 0.04)
+            waypoint, grip = self._v2_carry_target(obj, tool, grasp_z, lifted)
+            return self._ik_step(waypoint, grip, 0.28)       # v1's proven lift/carry mechanics (fast, un-folded)
+        if both:                                             # 5 GRASP dwell (PHYSICAL grasp event): hold + squeeze
+            return self._v2_ik_step(np.array([obj[0], obj[1], grasp_z]), _GRIP, self._V2_DESCEND_RATE)
+        if not self._v2_preshaped:                           # 0 HOME_RETRACT_OR_PRESHAPE (joint space, sag-free)
+            return self._v2_preshape_step(obj, z_hover)
+        # After preshape the command sits at the clearance hover OVER the object. HOLD the hover until the PHYSICAL
+        # tool arrives over the object (physical XY, sag-independent); then LATCH and run the grasp sequence keyed
+        # off the FINGER CENTRE, not the tool. Diagnosed 2026-07-07: the tool's IK/gripper offset closed the fingers
+        # ~3 cm to the side and shoved the box out, so recentre the FINGER CENTRE over the object (closed-loop:
+        # command the tool to 2*obj − fingercentre) at the hover BEFORE descending, and keep the correction through
+        # the descent + close. Recentring happens at the clearance hover (high z), so transit stays clean.
+        phys = np.asarray(self.data.xpos[self._b_tool], dtype=np.float64)
+        if not self._v2_over_latched:
+            if float(np.hypot(phys[0] - obj[0], phys[1] - obj[1])) > self._V2_OVER_HORIZ:   # 2 TRANSIT: hold hover
+                return self._v2_ik_step(np.array([obj[0], obj[1], z_hover]), _OPEN, self._V2_CENTER_RATE)
+            self._v2_over_latched = True
+        fc = 0.5 * (np.asarray(self.data.xpos[self._b_fl], dtype=np.float64)
+                    + np.asarray(self.data.xpos[self._b_fr], dtype=np.float64))
+        self._v2_align_corr = np.clip(self._v2_align_corr + self._V2_ALIGN_KI * (obj[:2] - fc[:2]),
+                                      -0.06, 0.06)             # INTEGRAL recentre → residual → ~0 (anti-windup clip)
+        gx, gy = obj[0] + self._v2_align_corr[0], obj[1] + self._v2_align_corr[1]
+        lat = float(np.hypot(fc[0] - obj[0], fc[1] - obj[1]))
+        cmd = self._ik.fk_tool(self._v2_seed)
+        if lat > self._V2_ALIGN_TOL and cmd[2] > grasp_z + 0.02:   # 3 ABOVE_OBJECT_ALIGN: recentre fingers at hover
+            return self._v2_ik_step(np.array([gx, gy, z_hover]), _OPEN, self._V2_CENTER_RATE)
+        if cmd[2] > grasp_z + 0.01:                          # 4 VERTICAL_DESCENT (keeping the finger-centre correction)
+            return self._v2_ik_step(np.array([gx, gy, grasp_z]), _OPEN, self._V2_DESCEND_RATE)
+        return self._v2_ik_step(np.array([gx, gy, grasp_z]), _GRIP, self._V2_DESCEND_RATE)  # 5 GRASP: close, centred
+
+    def _v2_carry_target(self, obj: np.ndarray, tool: np.ndarray, grasp_z: float,
+                         lifted: bool) -> tuple[np.ndarray, float]:
+        """The committed lift→transport→place waypoint (v2): lift STRAIGHT UP OVER THE OBJECT to a high lift-clear
+        (box + fingers clear the table), transport at that height, then lower and release. The lift xy is captured
+        ONCE from the OBJECT centre (not the slightly-off-centre tool), so lifting re-centres a ~2 cm-off grasp and
+        keeps BOTH fingers on the box instead of shifting the gripper off and losing a finger (diagnosed 2026-07-07)."""
+        if self._lift_xy is None:
+            self._lift_xy = (float(obj[0]), float(obj[1]))
+        lx, ly = self._lift_xy
+        tx, ty = self.target_xy
+        lift_clear = grasp_z + self._V2_LIFT_CLEAR_DZ
+        near_place = float(np.hypot(obj[0] - tx, obj[1] - ty)) < 0.05
+        if tool[2] < lift_clear - 0.02 and not lifted:
+            return np.array([lx, ly, lift_clear]), _GRIP
+        if not near_place:
+            return np.array([tx, ty, lift_clear]), _GRIP
+        return np.array([tx, ty, grasp_z]), (_GRIP if not lifted else 0.0)
 
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         a = np.clip(np.asarray(action, dtype=np.float32), self._a_lo, self._a_hi)

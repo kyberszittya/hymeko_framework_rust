@@ -184,6 +184,38 @@ def test_critic_layernorm_present_and_trains() -> None:
     assert len(hist) >= 1 and all(np.isfinite(h) for h in hist)
 
 
+def test_critic_huber_wired_default_off_and_changes_optimization() -> None:
+    # The Huber critic-loss option (framework fix for the spiky-terminal-reward critic overshoot,
+    # report 2026-07-05-qterm-collapse-rootcause): default OFF (MSE, existing runs bit-unchanged), settable via
+    # config, and — trained under identical seeds — it must produce a DIFFERENT (finite) actor than MSE, proving
+    # the loss is actually swapped (not a no-op). smooth_l1 is 0.5·x² in the |δ|<1 region vs MSE's x², so the
+    # critic gradient differs even on cartpole's non-spiky reward.
+    import torch
+
+    from hymeko_rl.train.ddpg import OffPolicyConfig
+
+    assert OffPolicyConfig().critic_huber is False               # default = MSE (no behaviour change)
+    assert td3_config(critic_huber=True).critic_huber is True     # settable
+
+    def _run(huber: bool) -> list[torch.Tensor]:
+        env = InvertedPendulumEnv(mjcf=emit_cartpole_mjcf())
+        ss = env.observation_space.shape
+        assert ss is not None
+        nv, feat = int(ss[0]), int(ss[1])
+        torch.manual_seed(0)
+        np.random.seed(0)
+        actor, critics = build_offpolicy("mlp", obs_dim=feat, flat_dim=nv * feat, action_dim=1,
+                                         action_scale=env.force_mag, n_critics=2)
+        cfg = td3_config(total_steps=120, start_steps=16, batch_size=16, eval_every=9_999, n_eval=1,
+                         warm_start=True, update_every=1, seed=0, critic_huber=huber)
+        train_offpolicy(actor, critics, env, cfg)
+        return [p.detach().clone() for p in actor.parameters()]
+
+    mse, hub = _run(False), _run(True)
+    assert all(torch.isfinite(p).all() for p in mse + hub)                       # both paths stay finite
+    assert any(not torch.allclose(m, h) for m, h in zip(mse, hub))               # Huber actually changes training
+
+
 def test_vec_offpolicy_rejects_without_make_env() -> None:
     import pytest
 
@@ -268,3 +300,40 @@ def test_polyak_foreach_matches_loop() -> None:
             tp.mul_(1 - tau).add_(sp, alpha=tau)
     _polyak(tgt, src, tau)                                       # the fused foreach path
     assert all(torch.allclose(a, b, atol=1e-7) for a, b in zip(tgt.parameters(), tgt_ref.parameters()))
+
+
+# ── asymmetric-CTDE (MADDPG) privileged critic ──
+
+
+def test_priv_critic_forward_two_and_three_arg() -> None:
+    # Unit: priv_dim=0 critic is the plain Q(s,a) (2-arg); priv_dim>0 critic ingests z (3-arg), head wider by z.
+    import torch
+
+    from hymeko_rl.train.ddpg import QCritic
+
+    class _BB(torch.nn.Module):
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x.reshape(x.shape[0], -1)[:, :6]
+
+    c0 = QCritic(_BB(), 6, 4, priv_dim=0)
+    cp = QCritic(_BB(), 6, 4, priv_dim=5)
+    obs, a, z = torch.zeros(2, 3, 2), torch.zeros(2, 4), torch.zeros(2, 5)
+    assert c0(obs, a).shape == (2,) and cp(obs, a, z).shape == (2,)
+    assert c0.priv_dim == 0 and cp.priv_dim == 5
+    lin0 = next(m for m in c0.head if isinstance(m, torch.nn.Linear))
+    linp = next(m for m in cp.head if isinstance(m, torch.nn.Linear))
+    assert linp.in_features - lin0.in_features == 5          # exactly priv_dim wider
+
+
+def test_priv_critic_on_nonpriv_env_raises() -> None:
+    # Fail-loud guard: a critic with priv_dim>0 on an env that cannot supply z (cart-pole has no
+    # privileged_state) must raise a clear error, not crash deep in a cat shape-mismatch.
+    import pytest
+
+    env, nv, feat = _cartpole()
+    actor, critics = build_offpolicy("mlp", obs_dim=feat, flat_dim=nv * feat, action_dim=1,
+                                     action_scale=env.force_mag, n_critics=2)
+    critics[0].priv_dim = 5                                  # simulate a mis-wired privileged critic
+    cfg = td3_config(total_steps=40, start_steps=8, batch_size=16, eval_every=9_999, n_eval=1, seed=0)
+    with pytest.raises(ValueError, match="privileged_state"):
+        train_offpolicy(actor, critics, env, cfg)

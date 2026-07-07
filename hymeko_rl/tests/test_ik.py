@@ -22,6 +22,18 @@ def _downness(model: mujoco.MjModel, ee_body: int, q: np.ndarray) -> float:
     return -float(d.xmat[ee_body].reshape(3, 3)[2, 2])
 
 
+def test_fk_tool_matches_kinematics() -> None:
+    """``fk_tool`` returns the tool position an independent ``mj_kinematics`` FK gives for the same config."""
+    env, ik = _arm_ik()
+    q = np.array([0.2, -0.6, 0.6, 0.1, 0.4, 0.0])
+    tool = ik.fk_tool(q)
+    d = mujoco.MjData(env.model)
+    d.qpos[:6] = q
+    mujoco.mj_kinematics(env.model, d)
+    assert tool.shape == (3,)
+    assert np.allclose(tool, np.asarray(d.xpos[env._b_tool]), atol=1e-9)
+
+
 def test_solve_converges_in_position() -> None:
     """A guaranteed-reachable target (the FK image of a known config) is hit to mm precision."""
     env, ik = _arm_ik()

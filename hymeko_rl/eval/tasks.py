@@ -121,10 +121,11 @@ def _quadruped_env() -> Any:
 
 
 def _quadruped_stand_env() -> Any:
-    # Standing needs a base that CAN fall (free), so balance is a real task; task="stand" swaps in STAND_REWARD
-    # and the height/upright torso obs.
+    # SINGLE SOURCE OF TRUTH: the whole balance MDP (plant + tuning + reward + strategy) is declared in
+    # data/robotics/quadruped_stand.hymeko; from_hymeko reads the scene tuning + reward_spec (base="free" and
+    # task="stand" are structural to a standing task). The env holds the 10 expressive DOF and RL drives the 12 legs.
     from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
-    return QuadrupedGoalEnv(base="free", task="stand", max_steps=250)
+    return QuadrupedGoalEnv.from_hymeko()
 
 
 def _register_builtins() -> None:

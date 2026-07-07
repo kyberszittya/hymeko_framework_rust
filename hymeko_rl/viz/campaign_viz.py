@@ -88,3 +88,48 @@ def plot_metric(records: Sequence[dict[str, Any]], out_path: str | Path, *, metr
     fig.savefig(out, dpi=140)
     plt.close(fig)
     return out
+
+
+def plot_curve_overlay(runs: "Sequence[tuple[str, dict[str, Any]]]", out_path: "str | Path", *,
+                       metric: str = "delivery", seed_reduce: str = "median",
+                       title: str | None = None) -> Path:
+    """Overlay one ``metric``-vs-step curve per labelled run (each a campaign ``results.json`` dict) — the
+    plotted comparison for A/Bs like *baseline-collapse vs framework-fix* (§9). Per run, the metric is reduced
+    across seeds at each step (``median``/``mean``); a horizontal marker is drawn for the step-0 value (the BC
+    floor) so a refine that merely holds the floor is visually distinct from one that climbs.
+
+    # Preconditions each run dict has ``seeds: [{curve: [{step, <metric>}, …]}, …]``; ``len(runs) >= 1``.
+    # Postconditions one ``.png`` (dpi 140) written; returns its path.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    if not runs:
+        raise ValueError("plot_curve_overlay needs at least one run")
+    reduce = {"median": st.median, "mean": lambda xs: float(np.mean(xs))}[seed_reduce]
+    fig, ax = plt.subplots(figsize=(7.0, 4.2))
+    for label, res in runs:
+        by_step: dict[float, list[float]] = {}
+        for sd in res.get("seeds", []):
+            for pt in sd.get("curve", []):
+                if metric in pt:
+                    by_step.setdefault(float(pt["step"]), []).append(float(pt[metric]))
+        if not by_step:
+            continue
+        steps = sorted(by_step)
+        vals = [reduce(by_step[s]) for s in steps]
+        line, = ax.plot(steps, vals, marker="o", label=f"{label} (peak {max(vals):.2f})")
+        ax.axhline(vals[0], color=line.get_color(), ls=":", alpha=0.5)   # the step-0 / BC floor
+    ax.set_xlabel("environment steps")
+    ax.set_ylabel(metric)
+    ax.set_ylim(bottom=0.0)
+    ax.set_title(title or f"{metric} vs step (seed {seed_reduce})")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    fig.tight_layout()
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=140)
+    plt.close(fig)
+    return out

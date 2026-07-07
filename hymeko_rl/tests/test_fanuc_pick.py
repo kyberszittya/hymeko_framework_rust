@@ -55,3 +55,34 @@ def test_fanuc_expert_grasps_lifts_and_places() -> None:
     assert lifted_max > 0.035, f"box not lifted clear of the table (max {lifted_max:.3f} m)"
     assert placed, "box not transported into the target zone"
     assert not floor_hit, "tool dropped below the ground plane"
+
+
+def test_v2_expert_path_runs_and_is_deterministic() -> None:
+    """The clearance-aware v2 waypoint expert produces valid, deterministic actions and advances its IK seed
+    chain. It does NOT yet pass the clearance gate (retraction stall from the extended home pose; see
+    reports/2026-07-07-pick-place-v2-waypoint-controller.md) — this guards the CONTROL PATH, not task success."""
+    env = fanuc_pick_env(expert_version=2, max_steps=30)
+    env.reset(seed=0)
+    assert env._v2_seed is None                         # seed chain starts empty
+    a0 = env.expert_action
+    assert a0.shape == (env.n_actions,) and np.isfinite(a0).all()
+    for _ in range(30):
+        a = env.expert_action
+        assert a.shape == (7,) and np.isfinite(a).all()
+        env.step(a)
+    assert env._v2_seed is not None and env._v2_seed.shape == (6,)   # seed chain advanced (un-folded commands)
+
+    env2 = fanuc_pick_env(expert_version=2, max_steps=30)
+    env2.reset(seed=0)
+    assert np.allclose(env2.expert_action, a0)          # deterministic: same seed → same first action
+
+
+def test_v2_preserves_v1_default_and_dispatch() -> None:
+    """``expert_version`` defaults to 1 and dispatches correctly; v1's action is unchanged by the v2 addition
+    (deterministic, same seed → same v1 action across instances)."""
+    e1a = fanuc_pick_env(max_steps=10)
+    e1b = fanuc_pick_env(expert_version=1, max_steps=10)
+    e1a.reset(seed=0)
+    e1b.reset(seed=0)
+    assert e1a._expert_version == 1                     # default is the dirty v1 baseline
+    assert np.allclose(e1a.expert_action, e1b.expert_action)

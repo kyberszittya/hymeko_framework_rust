@@ -7,6 +7,7 @@ from __future__ import annotations
 import dataclasses
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from hymeko_rl.train.campaign import Campaign, CampaignConfig, compare, tee_stdout
@@ -82,6 +83,21 @@ def test_best_checkpoint_keeps_the_peak_not_the_endpoint(tmp_path: Path) -> None
     curve = [p["score"] for p in seed["curve"]]
     assert seed["peak"]["score"] == max(curve)
     assert seed["peak"]["score"] == 0.9                    # the middle peak, not the endpoint
+
+
+def test_bc_warm_start_curve_is_stage_labeled(tmp_path: Path) -> None:
+    """Regression (2026-07-05 cleanup): a step-0 BC floor must be labeled separately from RL refinement."""
+
+    def demos(env: InvertedPendulumEnv, _n: int, seed: int) -> tuple[np.ndarray, np.ndarray]:
+        obs, _ = env.reset(seed=seed)
+        return np.repeat(obs[None, ...], 4, axis=0).astype(np.float32), np.zeros((4, 1), dtype=np.float32)
+
+    out = Campaign(_cfg("stage", total_steps=60, eval_every=30, bc_epochs=1), _make_env, _build,
+                   _seq_measure([0.8, 0.2, 0.1]), demos=demos, gif=False).run(base=tmp_path)
+    curve = out["seeds"][0]["curve"]
+    assert curve[0]["stage"] == "bc_step0" and curve[0]["step"] == 0.0
+    assert all(p["stage"] == "rl_refined" for p in curve[1:])
+    assert out["seeds"][0]["peak"]["stage"] == "bc_step0"
 
 
 def test_compare_runs_each_architecture(tmp_path: Path) -> None:

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import time
 import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -188,9 +189,10 @@ class SACConfig:
     eval_every: int = 5_000
     n_eval: int = 10
     seed: int = 0
+    log_every: int = 5_000            # flushed [sac] progress line cadence (0 silences; §3 never-run-blind)
 
 
-def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: InvertedPendulumEnv,
+def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: Any,
               cfg: SACConfig, *,
               eval_fn: Callable[[Any, Any], float] | None = None) -> list[float]:
     """Train SAC on ``env``; returns the periodic eval curve.
@@ -199,8 +201,11 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: In
     a reparameterised actor maximising ``min_i Q_i(s,a) − α·logπ(a)``; auto-tuned ``α`` to ``target_entropy``.
     Truncation is stored as non-terminal (bootstrap past the time limit), as in DDPG/TD3.
 
-    ``eval_fn`` scores the curve: ``None`` (default) uses :func:`eval_balance` (cart-pole upright-steps,
-    behaviour unchanged); a real-topology task injects a return-based eval. Called ``eval_fn(env, actor)``.
+    ``env`` is any gym-5-tuple env whose observation matches ``observation_space.shape`` (the trainer body is
+    env-agnostic — same contract as ``train_offpolicy``; the historical ``InvertedPendulumEnv`` annotation was
+    an accident of birth). ``eval_fn`` scores the curve: ``None`` (default) uses :func:`eval_balance`
+    (cart-pole upright-steps, behaviour unchanged); a real-topology task injects its own eval. Called
+    ``eval_fn(env, actor)``. Emits a flushed ``[sac]`` progress line every ``cfg.log_every`` steps (§3).
     """
     rng = np.random.default_rng(cfg.seed)
     torch.manual_seed(cfg.seed)
@@ -219,6 +224,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: In
     history: list[float] = []
     reward_rms = RunningRMS()                                       # bounds the Q-scale (anti-divergence)
     obs, _ = env.reset(seed=cfg.seed)
+    t0 = time.perf_counter()
+    last_c, last_a = float("nan"), float("nan")
     for step in range(1, cfg.total_steps + 1):
         if step <= cfg.start_steps:
             action = rng.uniform(-scale, scale, size=action_dim).astype(np.float32)
@@ -260,10 +267,18 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: In
 
             for tc, c in zip(t_critics, critics):
                 _polyak(tc, c, cfg.tau)
+            # c_loss is sum() of ≥1 tensors, so the int-0 branch of sum()'s type is unreachable here
+            last_c, last_a = float(c_loss.item()), float(a_loss.item())  # type: ignore[union-attr]
 
+        if cfg.log_every and step % cfg.log_every == 0:             # §3: never run blind
+            rate = step / max(1e-9, time.perf_counter() - t0)
+            print(f"  [sac] step {step:>7}/{cfg.total_steps} | crit={last_c:.3g} act={last_a:.3g} "
+                  f"alpha={float(log_alpha.exp().item()):.3g} | {rate:5.0f} steps/s "
+                  f"| ETA {(cfg.total_steps - step) / max(1e-9, rate) / 60:4.1f} min | buf={buf.size}", flush=True)
         if step % cfg.eval_every == 0:
             history.append(eval_balance(env, actor, cfg.n_eval, seed=20_000)
                            if eval_fn is None else eval_fn(env, actor))
+            print(f"  [sac] eval @ {step}: {history[-1]:.4g}", flush=True)
     return history
 
 
