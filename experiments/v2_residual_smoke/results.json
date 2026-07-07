@@ -1,0 +1,107 @@
+{
+  "step": "residual_smoke",
+  "epsilon": 0.03,
+  "critic_tier": "STRONG_PASS",
+  "critic_margins": {
+    "tier": "STRONG_PASS",
+    "margin_exploit": 12.139,
+    "margin_one_fingertip": 6.95,
+    "ood_gap": 15.128,
+    "spearman_q_monitor": 0.771,
+    "spearman_q_mc": 0.543,
+    "perturbation_ok": true,
+    "tensor_contract_pass": true,
+    "policy_provenance_pass": true,
+    "reasons": []
+  },
+  "init_matches_dagger": true,
+  "baseline": {
+    "reward": -115.2,
+    "ft_dom": 0.75,
+    "raw": 0.792,
+    "exploit": 0.0,
+    "assisted": 0.042,
+    "body_progress": 0.0009,
+    "monitor_pass": 0.417,
+    "monitor_score": 0.2779,
+    "violation_reason": "no_right_fingertip_contact",
+    "residual_norm_contact": 0.0,
+    "residual_norm_approach": 0.0,
+    "gate_fraction": 0.28
+  },
+  "after": {
+    "reward": -133.6,
+    "ft_dom": 0.542,
+    "raw": 0.625,
+    "exploit": 0.0,
+    "assisted": 0.083,
+    "body_progress": 0.002,
+    "monitor_pass": 0.167,
+    "monitor_score": 0.1431,
+    "violation_reason": "fingertips_never_approached",
+    "residual_norm_contact": 0.03592,
+    "residual_norm_approach": 0.0,
+    "gate_fraction": 0.133
+  },
+  "residual_train": {
+    "aborted": null,
+    "final_residual_normalized": 0.00892,
+    "final_saturation": 0.5811
+  },
+  "q_dagger_pre": -11.888,
+  "q_dagger_post": -12.542,
+  "critic_vs_monitor": {
+    "critic_Q": {
+      "mlp_dagger_selected": -12.542,
+      "body_shove_exploit": -24.172,
+      "one_fingertip": -19.531
+    },
+    "monitor_score": {
+      "mlp_dagger_selected": 0.278,
+      "body_shove_exploit": -0.202,
+      "one_fingertip": -0.273
+    },
+    "ranking": [
+      "mlp_dagger_selected",
+      "one_fingertip",
+      "body_shove_exploit"
+    ],
+    "inverted": true,
+    "violations": [
+      "Q ranks one_fingertip above body_shove_exploit but monitor prefers body_shove_exploit"
+    ]
+  },
+  "reward_vs_monitor": {
+    "aligned": false,
+    "concordance": 0.333,
+    "violations": [
+      "reward prefers body_shove_exploit but monitor prefers mlp_dagger_selected",
+      "reward prefers body_shove_exploit but monitor prefers residual_smoke"
+    ]
+  },
+  "tensor_contract": "PASS",
+  "policy_provenance": "PASS",
+  "actor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+  "selected_dagger_stage": "d3",
+  "acceptance": {
+    "ft_dom_ge_baseline_tol": false,
+    "monitor_pass_ge_baseline": false,
+    "monitor_score_not_worse": false,
+    "no_body_driven_rise": false,
+    "residual_bounded": true,
+    "q_not_inverted": true,
+    "no_q_runaway": true,
+    "tensor_contract_pass": true,
+    "policy_provenance_pass": true
+  },
+  "abort_conditions": {
+    "whole_policy_drift": false,
+    "residual_saturated": false,
+    "monitor_score_drop": true,
+    "ft_dom_collapse": true,
+    "q_scale_runaway": false,
+    "gate_open_in_approach": false,
+    "exploit_or_assisted_up": true
+  },
+  "PASS": false
+}

@@ -1,0 +1,113 @@
+{
+  "critic_tier": "STRONG_PASS",
+  "part_a_epsilon_sweep": {
+    "eps_0.00": {
+      "ft_dom": 0.75,
+      "delivery_raw": 0.792,
+      "reward": -115.2,
+      "exploit": 0.0,
+      "assisted": 0.042,
+      "gate_frac": 0.28,
+      "residual_mean": 0.0,
+      "residual_max": 0.0,
+      "residual_norm_approach": 0.0,
+      "both_contact_rate": 0.025,
+      "engagement_duration": 4.17,
+      "anti_exploit_score": 0.6172,
+      "monitor_pass": 0.417,
+      "monitor_score": 0.2779,
+      "saturation": 0.0
+    },
+    "eps_0.01": {
+      "ft_dom": 0.708,
+      "delivery_raw": 0.792,
+      "reward": -110.3,
+      "exploit": 0.0,
+      "assisted": 0.083,
+      "gate_frac": 0.22,
+      "residual_mean": 0.01676,
+      "residual_max": 0.01999,
+      "residual_norm_approach": 0.0,
+      "both_contact_rate": 0.02,
+      "engagement_duration": 3.12,
+      "anti_exploit_score": 0.5821,
+      "monitor_pass": 0.292,
+      "monitor_score": 0.2504,
+      "saturation": 0.8577
+    },
+    "eps_0.02": {
+      "ft_dom": 0.5,
+      "delivery_raw": 0.708,
+      "reward": -122.7,
+      "exploit": 0.0,
+      "assisted": 0.208,
+      "gate_frac": 0.177,
+      "residual_mean": 0.03041,
+      "residual_max": 0.03965,
+      "residual_norm_approach": 0.0,
+      "both_contact_rate": 0.015,
+      "engagement_duration": 2.46,
+      "anti_exploit_score": 0.5455,
+      "monitor_pass": 0.25,
+      "monitor_score": 0.2063,
+      "saturation": 0.7618
+    },
+    "eps_0.03": {
+      "ft_dom": 0.417,
+      "delivery_raw": 0.75,
+      "reward": -123.7,
+      "exploit": 0.083,
+      "assisted": 0.25,
+      "gate_frac": 0.15,
+      "residual_mean": 0.03723,
+      "residual_max": 0.05776,
+      "residual_norm_approach": 0.0,
+      "both_contact_rate": 0.007,
+      "engagement_duration": 1.12,
+      "anti_exploit_score": 0.4415,
+      "monitor_pass": 0.208,
+      "monitor_score": 0.1568,
+      "saturation": 0.6724
+    }
+  },
+  "part_b_gradient_probe": {
+    "dagger": {
+      "dQ": 0.0,
+      "progress": -0.01654,
+      "both": 0.045,
+      "body": 0.08
+    },
+    "plus_grad": {
+      "dQ": 0.37954,
+      "progress": -0.01569,
+      "both": 0.01,
+      "body": 0.095
+    },
+    "minus_grad": {
+      "dQ": -0.70729,
+      "progress": -0.01693,
+      "both": 0.025,
+      "body": 0.07
+    },
+    "random": {
+      "dQ": -0.43928,
+      "progress": -0.01614,
+      "both": 0.035,
+      "body": 0.075
+    },
+    "KEY_TEST": {
+      "plus_grad_raises_Q": true,
+      "plus_grad_lowers_progress": false,
+      "plus_grad_lowers_both_contact": true,
+      "minus_grad_raises_progress": false,
+      "GRADIENT_MONITOR_MISALIGNED": true,
+      "n_states": 200
+    }
+  },
+  "interpretation": {
+    "eps0_reproduces_baseline": true,
+    "every_eps_gt0_degrades": true,
+    "eps001_preserves_or_improves": false,
+    "any_eps_improves": false
+  }
+}

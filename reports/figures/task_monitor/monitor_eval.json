@@ -1,0 +1,195 @@
+{
+  "policies": {
+    "scripted_v2b": {
+      "total_reward": -98.8,
+      "fingertip_dominant_delivery": 0.792,
+      "raw_delivery": 0.792,
+      "exploit_delivery": 0.0,
+      "monitor_pass_rate": 0.5,
+      "monitor_score": 0.345,
+      "approach": 0.035,
+      "contact": -0.038,
+      "progress": 0.355,
+      "delivery": 0.688,
+      "anti_exploit": 0.684,
+      "top_violation": "no_right_fingertip_contact",
+      "violations": {
+        "no_right_fingertip_contact": 5,
+        "fingertips_never_approached": 5,
+        "no_left_fingertip_contact": 1,
+        "never_delivered": 1
+      }
+    },
+    "one_fingertip": {
+      "total_reward": -330.4,
+      "fingertip_dominant_delivery": 0.042,
+      "raw_delivery": 0.042,
+      "exploit_delivery": 0.0,
+      "monitor_pass_rate": 0.0,
+      "monitor_score": -0.273,
+      "approach": -0.076,
+      "contact": -1.0,
+      "progress": 0.01,
+      "delivery": -0.438,
+      "anti_exploit": 0.139,
+      "top_violation": "no_left_fingertip_contact",
+      "violations": {
+        "no_left_fingertip_contact": 10,
+        "fingertips_never_approached": 10,
+        "coin_displaced_before_approach": 3,
+        "coin_pushed_away_during_approach": 1
+      }
+    },
+    "body_shove_exploit": {
+      "total_reward": -111.4,
+      "fingertip_dominant_delivery": 0.125,
+      "raw_delivery": 0.542,
+      "exploit_delivery": 0.333,
+      "monitor_pass_rate": 0.083,
+      "monitor_score": -0.202,
+      "approach": -0.299,
+      "contact": -0.844,
+      "progress": 0.13,
+      "delivery": 0.312,
+      "anti_exploit": -0.31,
+      "top_violation": "fingertips_never_approached",
+      "violations": {
+        "fingertips_never_approached": 17,
+        "coin_displaced_before_approach": 3,
+        "no_left_fingertip_contact": 2
+      }
+    },
+    "mlp_bc0": {
+      "total_reward": -209.1,
+      "fingertip_dominant_delivery": 0.208,
+      "raw_delivery": 0.25,
+      "exploit_delivery": 0.0,
+      "monitor_pass_rate": 0.125,
+      "monitor_score": 0.086,
+      "approach": -0.04,
+      "contact": 0.085,
+      "progress": -0.068,
+      "delivery": -0.125,
+      "anti_exploit": 0.578,
+      "top_violation": "fingertips_never_approached",
+      "violations": {
+        "fingertips_never_approached": 7,
+        "never_delivered": 4,
+        "coin_not_closer_to_target": 4,
+        "coin_pushed_away_during_approach": 2,
+        "no_both_fingertip_engagement": 1,
+        "body_only_progress_too_high": 1,
+        "no_right_fingertip_contact": 1,
+        "entered_but_unstable": 1
+      }
+    },
+    "mlp_dagger_selected": {
+      "total_reward": -115.2,
+      "fingertip_dominant_delivery": 0.75,
+      "raw_delivery": 0.792,
+      "exploit_delivery": 0.0,
+      "monitor_pass_rate": 0.417,
+      "monitor_score": 0.278,
+      "approach": 0.004,
+      "contact": -0.318,
+      "progress": 0.398,
+      "delivery": 0.688,
+      "anti_exploit": 0.617,
+      "top_violation": "no_right_fingertip_contact",
+      "violations": {
+        "no_right_fingertip_contact": 7,
+        "fingertips_never_approached": 5,
+        "no_both_fingertip_engagement": 1,
+        "no_left_fingertip_contact": 1
+      }
+    },
+    "mlp_dagger_best": {
+      "total_reward": -115.2,
+      "fingertip_dominant_delivery": 0.75,
+      "raw_delivery": 0.792,
+      "exploit_delivery": 0.0,
+      "monitor_pass_rate": 0.417,
+      "monitor_score": 0.278,
+      "approach": 0.004,
+      "contact": -0.318,
+      "progress": 0.398,
+      "delivery": 0.688,
+      "anti_exploit": 0.617,
+      "top_violation": "no_right_fingertip_contact",
+      "violations": {
+        "no_right_fingertip_contact": 7,
+        "fingertips_never_approached": 5,
+        "no_both_fingertip_engagement": 1,
+        "no_left_fingertip_contact": 1
+      }
+    },
+    "failed_ctde_td3bc": {
+      "total_reward": -343.0,
+      "fingertip_dominant_delivery": 0.042,
+      "raw_delivery": 0.208,
+      "exploit_delivery": 0.125,
+      "monitor_pass_rate": 0.042,
+      "monitor_score": -0.31,
+      "approach": 0.016,
+      "contact": -0.763,
+      "progress": -0.316,
+      "delivery": -0.188,
+      "anti_exploit": -0.299,
+      "top_violation": "fingertips_never_approached",
+      "violations": {
+        "fingertips_never_approached": 6,
+        "coin_pushed_away_during_approach": 5,
+        "coin_displaced_before_approach": 5,
+        "no_both_fingertip_engagement": 2,
+        "no_left_fingertip_contact": 2,
+        "coin_not_closer_to_target": 1,
+        "no_right_fingertip_contact": 1,
+        "never_delivered": 1
+      }
+    }
+  },
+  "tensor_contract_env": {
+    "name": "tensor_contract:env",
+    "passed": true,
+    "score": 1.0,
+    "violations": [],
+    "time_indices": [],
+    "slices": []
+  },
+  "reward_vs_monitor": {
+    "name": "reward_consistency:reward",
+    "passed": false,
+    "score": 0.7143,
+    "violations": [
+      "reward prefers body_shove_exploit but monitor prefers mlp_bc0",
+      "reward prefers body_shove_exploit but monitor prefers mlp_dagger_selected",
+      "reward prefers body_shove_exploit but monitor prefers mlp_dagger_best"
+    ],
+    "time_indices": [
+      2,
+      2,
+      2
+    ],
+    "slices": []
+  },
+  "critic_vs_monitor": {
+    "name": "reward_consistency:critic",
+    "passed": false,
+    "score": 0.3333,
+    "violations": [
+      "Q ranks body_shove_exploit above mlp_dagger_selected but monitor prefers mlp_dagger_selected"
+    ],
+    "time_indices": [],
+    "slices": [],
+    "critic_Q": {
+      "mlp_dagger_selected": -5.65,
+      "one_fingertip": -5.95,
+      "body_shove_exploit": -4.997
+    },
+    "monitor_score": {
+      "mlp_dagger_selected": 0.278,
+      "one_fingertip": -0.273,
+      "body_shove_exploit": -0.202
+    }
+  }
+}

@@ -1,0 +1,356 @@
+{
+  "guards": {
+    "provenance": true,
+    "tensor_contract": true
+  },
+  "class_metrics": {
+    "scripted_v2b": {
+      "mc_return": -60.0,
+      "reward": -106.9,
+      "ft_dom": 0.75,
+      "monitor_pass": 0.5,
+      "monitor_score": 0.273,
+      "violation": "fingertips_never_approached"
+    },
+    "mlp_dagger_selected": {
+      "mc_return": -57.7,
+      "reward": -108.3,
+      "ft_dom": 0.75,
+      "monitor_pass": 0.417,
+      "monitor_score": 0.294,
+      "violation": "no_right_fingertip_contact"
+    },
+    "mlp_bc0": {
+      "mc_return": -75.5,
+      "reward": -190.0,
+      "ft_dom": 0.333,
+      "monitor_pass": 0.25,
+      "monitor_score": 0.136,
+      "violation": "coin_pushed_away_during_approach"
+    },
+    "body_shove_exploit": {
+      "mc_return": -64.5,
+      "reward": -122.3,
+      "ft_dom": 0.083,
+      "monitor_pass": 0.083,
+      "monitor_score": -0.209,
+      "violation": "fingertips_never_approached"
+    },
+    "one_fingertip": {
+      "mc_return": -118.1,
+      "reward": -335.9,
+      "ft_dom": 0.0,
+      "monitor_pass": 0.0,
+      "monitor_score": -0.274,
+      "violation": "no_left_fingertip_contact"
+    },
+    "failed_ctde_td3bc": {
+      "mc_return": -127.1,
+      "reward": -369.1,
+      "ft_dom": 0.0,
+      "monitor_pass": 0.0,
+      "monitor_score": -0.41,
+      "violation": "fingertips_never_approached"
+    }
+  },
+  "variants": {
+    "A": {
+      "class_q_onpolicy": {
+        "scripted_v2b": -10.876,
+        "mlp_dagger_selected": -10.855,
+        "mlp_bc0": -9.565,
+        "body_shove_exploit": -16.58,
+        "one_fingertip": -15.124,
+        "failed_ctde_td3bc": -15.842
+      },
+      "calibration": {
+        "spearman_q_mc": 0.371,
+        "kendall_q_mc": 0.333,
+        "spearman_q_monitor": 0.657,
+        "kendall_q_monitor": 0.467
+      },
+      "counterfactual": {
+        "Q_by_action": {
+          "mlp_dagger_selected": -10.855,
+          "body_shove_exploit": -10.908,
+          "one_fingertip": -12.134
+        },
+        "ranking_best_to_worst": [
+          "mlp_dagger_selected",
+          "body_shove_exploit",
+          "one_fingertip"
+        ],
+        "Q_dagger_gt_exploit": true,
+        "Q_dagger_gt_one_fingertip": true,
+        "spearman_q_monitor_counterfactual": 1.0
+      },
+      "ood": {
+        "Q_dagger": -10.855,
+        "Q_random": -13.126,
+        "Q_random_below_dagger": true,
+        "Q_by_perturbation": {
+          "0.1": -10.889,
+          "0.25": -11.399,
+          "0.5": -12.139,
+          "1.0": -12.546
+        },
+        "Q_decreases_with_perturbation": true,
+        "Q_largest_perturb_below_dagger": true
+      },
+      "phasewise": {
+        "by_phase": {
+          "APPROACH": {
+            "Q_dagger": -11.053,
+            "Q_exploit": -11.105,
+            "dagger_gt_exploit": true
+          },
+          "CONTACT": {
+            "Q_dagger": -8.014,
+            "Q_exploit": -8.215,
+            "dagger_gt_exploit": true
+          },
+          "DELIVERY": {
+            "Q_dagger": -3.52,
+            "Q_exploit": -3.546,
+            "dagger_gt_exploit": true
+          }
+        },
+        "misranked_phases": []
+      },
+      "acceptance": {
+        "q_dagger_gt_exploit": true,
+        "q_dagger_gt_one_fingertip": true,
+        "q_not_high_on_ood": true,
+        "spearman_q_monitor_positive": true,
+        "spearman_q_mc_positive": true,
+        "tensor_contract_pass": true,
+        "policy_provenance_pass": true,
+        "passed": true
+      }
+    },
+    "B": {
+      "class_q_onpolicy": {
+        "scripted_v2b": -11.225,
+        "mlp_dagger_selected": -11.125,
+        "mlp_bc0": -10.209,
+        "body_shove_exploit": -20.279,
+        "one_fingertip": -15.916,
+        "failed_ctde_td3bc": -18.189
+      },
+      "calibration": {
+        "spearman_q_mc": 0.371,
+        "kendall_q_mc": 0.333,
+        "spearman_q_monitor": 0.657,
+        "kendall_q_monitor": 0.467
+      },
+      "counterfactual": {
+        "Q_by_action": {
+          "mlp_dagger_selected": -11.125,
+          "body_shove_exploit": -16.95,
+          "one_fingertip": -14.004
+        },
+        "ranking_best_to_worst": [
+          "mlp_dagger_selected",
+          "one_fingertip",
+          "body_shove_exploit"
+        ],
+        "Q_dagger_gt_exploit": true,
+        "Q_dagger_gt_one_fingertip": true,
+        "spearman_q_monitor_counterfactual": 0.5
+      },
+      "ood": {
+        "Q_dagger": -11.125,
+        "Q_random": -20.162,
+        "Q_random_below_dagger": true,
+        "Q_by_perturbation": {
+          "0.1": -14.44,
+          "0.25": -18.449,
+          "0.5": -20.395,
+          "1.0": -21.219
+        },
+        "Q_decreases_with_perturbation": true,
+        "Q_largest_perturb_below_dagger": true
+      },
+      "phasewise": {
+        "by_phase": {
+          "APPROACH": {
+            "Q_dagger": -11.344,
+            "Q_exploit": -17.142,
+            "dagger_gt_exploit": true
+          },
+          "CONTACT": {
+            "Q_dagger": -7.468,
+            "Q_exploit": -13.886,
+            "dagger_gt_exploit": true
+          },
+          "DELIVERY": {
+            "Q_dagger": -3.426,
+            "Q_exploit": -10.073,
+            "dagger_gt_exploit": true
+          }
+        },
+        "misranked_phases": []
+      },
+      "acceptance": {
+        "q_dagger_gt_exploit": true,
+        "q_dagger_gt_one_fingertip": true,
+        "q_not_high_on_ood": true,
+        "spearman_q_monitor_positive": true,
+        "spearman_q_mc_positive": true,
+        "tensor_contract_pass": true,
+        "policy_provenance_pass": true,
+        "passed": true
+      }
+    },
+    "C": {
+      "class_q_onpolicy": {
+        "scripted_v2b": -12.525,
+        "mlp_dagger_selected": -12.315,
+        "mlp_bc0": -11.298,
+        "body_shove_exploit": -19.724,
+        "one_fingertip": -16.351,
+        "failed_ctde_td3bc": -20.298
+      },
+      "calibration": {
+        "spearman_q_mc": 0.543,
+        "kendall_q_mc": 0.467,
+        "spearman_q_monitor": 0.771,
+        "kendall_q_monitor": 0.6
+      },
+      "counterfactual": {
+        "Q_by_action": {
+          "mlp_dagger_selected": -12.315,
+          "body_shove_exploit": -23.889,
+          "one_fingertip": -19.623
+        },
+        "ranking_best_to_worst": [
+          "mlp_dagger_selected",
+          "one_fingertip",
+          "body_shove_exploit"
+        ],
+        "Q_dagger_gt_exploit": true,
+        "Q_dagger_gt_one_fingertip": true,
+        "spearman_q_monitor_counterfactual": 0.5
+      },
+      "ood": {
+        "Q_dagger": -12.315,
+        "Q_random": -29.085,
+        "Q_random_below_dagger": true,
+        "Q_by_perturbation": {
+          "0.1": -20.266,
+          "0.25": -26.572,
+          "0.5": -29.283,
+          "1.0": -30.466
+        },
+        "Q_decreases_with_perturbation": true,
+        "Q_largest_perturb_below_dagger": true
+      },
+      "phasewise": {
+        "by_phase": {
+          "APPROACH": {
+            "Q_dagger": -12.533,
+            "Q_exploit": -24.044,
+            "dagger_gt_exploit": true
+          },
+          "CONTACT": {
+            "Q_dagger": -9.26,
+            "Q_exploit": -21.771,
+            "dagger_gt_exploit": true
+          },
+          "DELIVERY": {
+            "Q_dagger": -4.162,
+            "Q_exploit": -18.071,
+            "dagger_gt_exploit": true
+          }
+        },
+        "misranked_phases": []
+      },
+      "acceptance": {
+        "q_dagger_gt_exploit": true,
+        "q_dagger_gt_one_fingertip": true,
+        "q_not_high_on_ood": true,
+        "spearman_q_monitor_positive": true,
+        "spearman_q_mc_positive": true,
+        "tensor_contract_pass": true,
+        "policy_provenance_pass": true,
+        "passed": true
+      }
+    },
+    "E": {
+      "class_q_onpolicy": {
+        "scripted_v2b": -11.804,
+        "mlp_dagger_selected": -11.669,
+        "mlp_bc0": -10.43,
+        "body_shove_exploit": -18.26,
+        "one_fingertip": -16.257,
+        "failed_ctde_td3bc": -19.187
+      },
+      "calibration": {
+        "spearman_q_mc": 0.543,
+        "kendall_q_mc": 0.467,
+        "spearman_q_monitor": 0.771,
+        "kendall_q_monitor": 0.6
+      },
+      "counterfactual": {
+        "Q_by_action": {
+          "mlp_dagger_selected": -11.669,
+          "body_shove_exploit": -11.177,
+          "one_fingertip": -13.236
+        },
+        "ranking_best_to_worst": [
+          "body_shove_exploit",
+          "mlp_dagger_selected",
+          "one_fingertip"
+        ],
+        "Q_dagger_gt_exploit": false,
+        "Q_dagger_gt_one_fingertip": true,
+        "spearman_q_monitor_counterfactual": 0.5
+      },
+      "ood": {
+        "Q_dagger": -11.669,
+        "Q_random": -12.061,
+        "Q_random_below_dagger": true,
+        "Q_by_perturbation": {
+          "0.1": -11.313,
+          "0.25": -10.701,
+          "0.5": -10.595,
+          "1.0": -10.493
+        },
+        "Q_decreases_with_perturbation": false,
+        "Q_largest_perturb_below_dagger": false
+      },
+      "phasewise": {
+        "by_phase": {
+          "APPROACH": {
+            "Q_dagger": -12.324,
+            "Q_exploit": -11.651,
+            "dagger_gt_exploit": false
+          },
+          "CONTACT": {
+            "Q_dagger": -7.863,
+            "Q_exploit": -7.981,
+            "dagger_gt_exploit": true
+          },
+          "DELIVERY": {
+            "Q_dagger": 16.775,
+            "Q_exploit": 9.066,
+            "dagger_gt_exploit": true
+          }
+        },
+        "misranked_phases": [
+          "APPROACH"
+        ]
+      },
+      "acceptance": {
+        "q_dagger_gt_exploit": false,
+        "q_dagger_gt_one_fingertip": true,
+        "q_not_high_on_ood": false,
+        "spearman_q_monitor_positive": true,
+        "spearman_q_mc_positive": true,
+        "tensor_contract_pass": true,
+        "policy_provenance_pass": true,
+        "passed": false
+      }
+    }
+  }
+}

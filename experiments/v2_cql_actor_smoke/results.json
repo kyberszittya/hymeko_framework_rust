@@ -1,0 +1,90 @@
+{
+  "step": "cql_actor_smoke",
+  "reward": -234.07,
+  "ft_dom": 0.0,
+  "monitor_pass": 0.0,
+  "monitor_score": -0.2493,
+  "violation_reason": "coin_pushed_away_during_approach",
+  "reward_vs_monitor_consistency": {
+    "aligned": false,
+    "concordance": 0.667,
+    "violations": [
+      "reward prefers body_shove_exploit but monitor prefers mlp_dagger_selected"
+    ]
+  },
+  "critic_vs_monitor_consistency": {
+    "critic_Q": {
+      "mlp_dagger_selected": -174.766,
+      "body_shove_exploit": -193.744,
+      "one_fingertip": -180.3
+    },
+    "monitor_score": {
+      "mlp_dagger_selected": 0.278,
+      "body_shove_exploit": -0.202,
+      "one_fingertip": -0.273
+    },
+    "ranking": [
+      "mlp_dagger_selected",
+      "one_fingertip",
+      "body_shove_exploit"
+    ],
+    "inverted": true,
+    "violations": [
+      "Q ranks one_fingertip above body_shove_exploit but monitor prefers body_shove_exploit"
+    ]
+  },
+  "tensor_contract": "PASS",
+  "policy_provenance": "PASS",
+  "actor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+  "anchor_checkpoint_hash": "edf4fe81f04bbda26393ca9f230828b9",
+  "selected_dagger_stage": "d3",
+  "reward_file": "data/robotics/galambos_task_deliver_v2b.hymeko",
+  "env_file": "PlanarGraspEnv(contact_legality=True, difficulty=0.3, max_steps=300)  # v2 graded scene",
+  "critic_tier": "STRONG_PASS",
+  "critic_margins": {
+    "tier": "STRONG_PASS",
+    "margin_exploit": 12.706,
+    "margin_one_fingertip": 7.778,
+    "ood_gap": 16.284,
+    "spearman_q_monitor": 0.771,
+    "spearman_q_mc": 0.543,
+    "perturbation_ok": true,
+    "tensor_contract_pass": true,
+    "policy_provenance_pass": true,
+    "reasons": []
+  },
+  "baseline": {
+    "reward": -115.15,
+    "ft_dom": 0.75,
+    "raw": 0.792,
+    "exploit": 0.0,
+    "assisted": 0.042,
+    "body_progress": 0.0009,
+    "monitor_pass": 0.417,
+    "monitor_score": 0.2779,
+    "violation_reason": "no_right_fingertip_contact"
+  },
+  "phase_drift": {
+    "APPROACH": 0.4473,
+    "CONTACT": 0.3776,
+    "DELIVERY": 0.5419
+  },
+  "acceptance": {
+    "ft_dom_ge_baseline": false,
+    "monitor_pass_ge_baseline": false,
+    "monitor_score_not_worse": false,
+    "no_body_driven_rise": false,
+    "q_not_inverted": false,
+    "tensor_contract_pass": true,
+    "policy_provenance_pass": true
+  },
+  "abort_conditions": {
+    "reward_up_monitor_down": false,
+    "raw_up_ftdom_not": false,
+    "q_flip_exploit_over_dagger": false,
+    "delivery_collapse": true,
+    "drift_concentrated_in_contact_push": false,
+    "guard_fail": false
+  },
+  "PASS": false
+}
