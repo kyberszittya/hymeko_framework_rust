@@ -20,6 +20,7 @@ from .contact_reward_ablation import (
     recompute_variant_reward,
     reward_delivery_alignment,
 )
+from .metaworld_cip import TEMPLATES, TaskTemplate, run_metaworld_cip
 
 __all__ = [
     "CONTACT_TERMS",
@@ -30,4 +31,7 @@ __all__ = [
     "recompute_variant_reward",
     "directed_edge_weight",
     "reward_delivery_alignment",
+    "TEMPLATES",
+    "TaskTemplate",
+    "run_metaworld_cip",
 ]

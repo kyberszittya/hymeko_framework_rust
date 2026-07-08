@@ -1,0 +1,14 @@
+MetaWorldDialTurn{}
+metaworlddialturn
+{
+    progress_score {}
+    engage_error {}
+    rotation_fraction {}
+    reward_proxy {}
+
+    @c0{ (+rotation_fraction, +progress_score); }
+    @c1{ (+engage_error, -rotation_fraction); }
+    @c2{ (+progress_score, +reward_proxy); }
+    @c3{ (+engage_error, -reward_proxy); }
+    @c4{ (+rotation_fraction, +reward_proxy); }
+}
