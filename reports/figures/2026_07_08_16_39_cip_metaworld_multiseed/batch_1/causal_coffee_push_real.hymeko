@@ -1,0 +1,12 @@
+MetaWorldCoffeePushReal{}
+metaworldcoffeepushreal
+{
+    progress_score {}
+    action_noise {}
+    near_fraction {}
+    total_reward {}
+
+    @c0{ (+progress_score, +near_fraction); }
+    @c1{ (+action_noise, -total_reward); }
+    @c2{ (+near_fraction, +total_reward); }
+}

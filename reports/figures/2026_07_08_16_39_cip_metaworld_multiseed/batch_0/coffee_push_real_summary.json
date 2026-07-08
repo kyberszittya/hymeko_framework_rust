@@ -1,0 +1,105 @@
+{
+  "task": "coffee_push",
+  "source": "real-env (metaworld scripted policy + action noise)",
+  "scope": "real MetaWorld rollouts through the HyMeKo monitor \u2014 the Phase-2 analog",
+  "n": 80,
+  "seed": 0,
+  "monitor_pass_rate": 0.5125,
+  "mw_success_rate": 0.925,
+  "reward_monitor_disagreement": 0.363924,
+  "continuous_kept": [
+    "progress_score",
+    "action_noise",
+    "near_fraction",
+    "total_reward"
+  ],
+  "continuous_dropped": {
+    "stagnation_duration": "all_missing",
+    "forbidden_contact_count": "all_missing",
+    "clearance_min": "all_missing",
+    "reward_progress_disagreement": "all_missing"
+  },
+  "diagnosis": {
+    "causal_order": [
+      "progress_score",
+      "action_noise",
+      "total_reward",
+      "near_fraction"
+    ],
+    "strongest_edges": [
+      [
+        "total_reward",
+        "near_fraction",
+        0.962091
+      ],
+      [
+        "progress_score",
+        "total_reward",
+        0.804625
+      ]
+    ],
+    "failure_ranking": [],
+    "next_intervention": "Reward and monitor agree \u2014 no dominant disagreement; prioritize the causal ordering's outcome leaf and its strongest proposed parent.",
+    "ablation_plan": [
+      "Decider: Ablate the strongest proposed parent edge and measure the outcome leaf (controlled A/B).",
+      "Ablate/intervene on 'total_reward'; LiNGAM proposes it increases 'near_fraction' (w=+0.962) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'progress_score'; LiNGAM proposes it increases 'total_reward' (w=+0.805) \u2014 controlled A/B decides if the edge is real."
+    ],
+    "provenance": {
+      "n_rollouts": 80,
+      "continuous_used": [
+        "progress_score",
+        "action_noise",
+        "near_fraction",
+        "total_reward"
+      ],
+      "continuous_dropped": {
+        "stagnation_duration": "all_missing",
+        "forbidden_contact_count": "all_missing",
+        "clearance_min": "all_missing",
+        "reward_progress_disagreement": "all_missing"
+      },
+      "categorical_strata": [
+        "success_monitor_pass",
+        "stagnated",
+        "phase_transition_failure",
+        "task",
+        "mw_success"
+      ],
+      "lingam": "fit: n=80, d=4"
+    },
+    "_disclaimer": "DirectLiNGAM PROPOSES structure; controlled ablations DECIDE. Not proof of causality."
+  },
+  "_disclaimer": "PROPOSED structure over real rollouts; controlled ablation decides. Cross-view proves declared \u2261 engine tensor view, not causal truth.",
+  "causal_order": [
+    "progress_score",
+    "action_noise",
+    "total_reward",
+    "near_fraction"
+  ],
+  "strongest_edges": [
+    [
+      "total_reward",
+      "near_fraction",
+      0.962091
+    ],
+    [
+      "progress_score",
+      "total_reward",
+      0.804625
+    ]
+  ],
+  "cross_view": {
+    "agree": true,
+    "backend": "engine",
+    "canonical_hash": "blake3:d2b52f2e736f476472ed3cd056ea562f53c6933d6ded54f5c4155b4e47dac2e9",
+    "n_edges_declared": 2,
+    "n_edges_engine": 2,
+    "star_nnz": 4,
+    "clique_nnz": 4,
+    "sum_arities": 4,
+    "edges_match": true,
+    "counts_match": true,
+    "notes": []
+  }
+}

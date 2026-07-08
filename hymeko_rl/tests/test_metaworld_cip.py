@@ -76,3 +76,54 @@ def test_real_env_unknown_task_raises(tmp_path) -> None:
     from hymeko_rl.eval.cip.metaworld_cip import run_metaworld_cip_real
     with pytest.raises(ValueError, match="no real-env mapping"):
         run_metaworld_cip_real("dial_turn", n=4, seed=0, out_dir=tmp_path)
+
+
+# --- multi-seed aggregation (pure logic — no metaworld needed) --------------------------------------------------
+def _fake_batch(near_w: float, prog_w: float, pass_rate: float, dis: float, agree: bool = True) -> dict:
+    return {"monitor_pass_rate": pass_rate, "reward_monitor_disagreement": dis,
+            "cross_view": {"agree": agree},
+            "strongest_edges": [["near_fraction", "total_reward", near_w],
+                                ["progress_score", "total_reward", prog_w]]}
+
+
+def test_edge_in_finds_either_direction() -> None:
+    from hymeko_rl.eval.cip.metaworld_cip import _edge_in
+    edges = [["near_fraction", "total_reward", 0.9], ["total_reward", "progress_score", -0.4]]
+    assert _edge_in(edges, "near_fraction", "total_reward") == (0.9, "near_fraction->total_reward")
+    assert _edge_in(edges, "progress_score", "total_reward") == (-0.4, "total_reward->progress_score")  # reversed
+    assert _edge_in(edges, "action_noise", "total_reward") == (None, None)
+
+
+def test_aggregate_marks_recurrent_sign_consistent_edge_stable() -> None:
+    from hymeko_rl.eval.cip.metaworld_cip import _aggregate_batches
+    batches = [_fake_batch(0.95, 0.80, 0.50, 0.4), _fake_batch(0.97, 0.82, 0.42, 0.5),
+               _fake_batch(0.96, 0.05, 0.53, 0.45)]        # progress edge weak in batch 3
+    agg = _aggregate_batches(batches, min_presence=0.6)
+    near = agg["edges"]["near_fraction--total_reward"]
+    assert near["presence"] == 1.0 and near["sign_consistent"] and near["stable"]
+    assert near["dominant_direction"] == "near_fraction->total_reward"
+    assert agg["cross_view_all_pass"]
+    assert "near_fraction--total_reward" in agg["stable_edges"]
+    assert agg["monitor_pass_rate"]["n"] == 3
+
+
+def test_aggregate_unstable_when_cross_view_fails_or_edge_absent() -> None:
+    from hymeko_rl.eval.cip.metaworld_cip import _aggregate_batches
+    # one batch missing the near edge and one cross-view failure
+    batches = [_fake_batch(0.9, 0.8, 0.5, 0.4),
+               {"monitor_pass_rate": 0.4, "reward_monitor_disagreement": 0.5, "cross_view": {"agree": False},
+                "strongest_edges": [["progress_score", "total_reward", 0.7]]}]
+    agg = _aggregate_batches(batches, min_presence=0.6)
+    assert not agg["cross_view_all_pass"]
+    assert agg["edges"]["near_fraction--total_reward"]["presence"] == 0.5   # present in 1 of 2
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_multiseed_runs_and_aggregates(tmp_path) -> None:
+    from hymeko_rl.eval.cip.metaworld_cip import run_metaworld_multiseed
+    out = run_metaworld_multiseed("coffee_push", batches=2, n=16, seed0=0, out_dir=tmp_path)
+    assert out["batches"] == 2 and len(out["per_batch"]) == 2
+    assert (tmp_path / "coffee_push_multiseed_summary.json").exists()
+    assert (tmp_path / "batch_0" / "causal_coffee_push_real.hymeko").exists()
+    assert "near_fraction--total_reward" in out["aggregate"]["edges"]
+    assert isinstance(out["aggregate"]["cross_view_all_pass"], bool)

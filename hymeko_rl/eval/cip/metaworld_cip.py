@@ -113,7 +113,8 @@ def _fit_declare_render(frame: Any, task: str, out_dir: Path, summary: dict[str,
     render_dag(result.order, result.adjacency, kept, out_dir / f"dag_{task}.png",
                f"MetaWorld {task} causal ({note}, N={matrix.shape[0]}, PROPOSED)")
     summary["causal_order"] = result.ordered_names()
-    summary["strongest_edges"] = [[c, e, round(w, 6)] for c, e, w in result.strongest_edges(6)]
+    # store ALL discovered edges (not just a top-k) so the multi-seed aggregation never misses a key edge
+    summary["strongest_edges"] = [[c, e, round(w, 6)] for c, e, w in result.strongest_edges(64)]
     summary["cross_view"] = xview.as_dict()
     print(f"[cip-mw] {task}: order={result.ordered_names()} | cross-view agree={xview.agree} "
           f"hash={xview.canonical_hash[:24]}", flush=True)
@@ -199,15 +200,10 @@ def _real_rollout(env_key: str, policy_name: str, seed: int, noise: float, max_s
     return rollout, success
 
 
-def run_metaworld_cip_real(task: str, n: int, seed: int, out_dir: Path, noise_max: float = 0.7) -> "dict[str, Any]":
-    """Real-env CIP: roll a scripted MetaWorld policy (+per-episode action noise) → monitor → DAG + cross-view.
-
-    The Phase-2 analog for MetaWorld: real physics, real dense reward, the reward-independent monitor. Action
-    noise is the OBSERVED exogenous input (no hidden confounder). # Preconditions ``task in _REAL_TASKS``;
-    the ``metaworld`` package is importable.
-    """
-    from hymeko_rl.eval.causal import CausalDiagnosis, RolloutFrame
-
+def _roll_real_batch(task: str, n: int, seed: int, noise_max: float,
+                     ) -> "tuple[list[_Rollout], list[int], np.ndarray]":
+    """Roll ``n`` real MetaWorld episodes (scripted policy + per-episode action noise). Returns
+    ``(rollouts, mw_successes, noises)``. # Preconditions ``task in _REAL_TASKS``; ``metaworld`` importable."""
     if task not in _REAL_TASKS:
         raise ValueError(f"no real-env mapping for {task!r}; available: {sorted(_REAL_TASKS)}")
     env_key, policy_name = _REAL_TASKS[task]
@@ -222,7 +218,27 @@ def run_metaworld_cip_real(task: str, n: int, seed: int, out_dir: Path, noise_ma
         print(f"[cip-mw-real] {task} ep {i + 1:3d}/{n} | noise={noises[i]:.2f} pass={int(ro.verdict.monitor_pass)} "
               f"prog={ro.verdict.progress_score:+.3f} reward={ro.continuous['total_reward']:.0f} "
               f"mw_success={succ}", flush=True)
+    return rollouts, successes, noises
 
+
+def _reward_monitor_disagreement(rollouts: "list[_Rollout]", task: str) -> float:
+    """Reward↔monitor disagreement (``1 − concordance``) over the batch, from the RewardConsistencyMonitor (§6.1)."""
+    from hymeko_rl.eval.task_monitor.consistency import RewardConsistencyMonitor
+    rows = [{"policy": f"{task}_{i}", "total_reward": r.continuous["total_reward"],
+             "monitor_score": float(r.verdict.monitor_score)} for i, r in enumerate(rollouts)]
+    return round(1.0 - float(RewardConsistencyMonitor().check_reward_alignment(rows).score), 6)
+
+
+def run_metaworld_cip_real(task: str, n: int, seed: int, out_dir: Path, noise_max: float = 0.7) -> "dict[str, Any]":
+    """Real-env CIP: roll a scripted MetaWorld policy (+per-episode action noise) → monitor → DAG + cross-view.
+
+    The Phase-2 analog for MetaWorld: real physics, real dense reward, the reward-independent monitor. Action
+    noise is the OBSERVED exogenous input (no hidden confounder). # Preconditions ``task in _REAL_TASKS``;
+    the ``metaworld`` package is importable.
+    """
+    from hymeko_rl.eval.causal import CausalDiagnosis, RolloutFrame
+
+    rollouts, successes, _noises = _roll_real_batch(task, n, seed, noise_max)
     extra_names = list(rollouts[0].continuous)
     maps = [r.verdict.as_dict() for r in rollouts]
     extra = {name: [r.continuous[name] for r in rollouts] for name in extra_names}
@@ -234,16 +250,138 @@ def run_metaworld_cip_real(task: str, n: int, seed: int, out_dir: Path, noise_ma
         "task": task, "source": "real-env (metaworld scripted policy + action noise)",
         "scope": "real MetaWorld rollouts through the HyMeKo monitor — the Phase-2 analog", "n": n, "seed": seed,
         "monitor_pass_rate": float(np.mean([r.verdict.monitor_pass for r in rollouts])),
-        "mw_success_rate": float(np.mean(successes)), "continuous_kept": kept, "continuous_dropped": dropped,
-        "diagnosis": report.as_dict(),
+        "mw_success_rate": float(np.mean(successes)),
+        "reward_monitor_disagreement": _reward_monitor_disagreement(rollouts, task),
+        "continuous_kept": kept, "continuous_dropped": dropped, "diagnosis": report.as_dict(),
         "_disclaimer": "PROPOSED structure over real rollouts; controlled ablation decides. Cross-view proves "
                        "declared ≡ engine tensor view, not causal truth.",
     }
     _fit_declare_render(frame, f"{task}_real", out_dir, summary, note="real MetaWorld rollouts")
     (out_dir / f"{task}_real_summary.json").write_text(json.dumps(summary, indent=2))
     print(f"[cip-mw-real] {task}: pass_rate={summary['monitor_pass_rate']:.2f} "
-          f"mw_success={summary['mw_success_rate']:.2f} -> wrote to {out_dir}", flush=True)
+          f"mw_success={summary['mw_success_rate']:.2f} disagreement={summary['reward_monitor_disagreement']:.3f} "
+          f"-> wrote to {out_dir}", flush=True)
     return summary
+
+
+# Unordered key variable pairs whose edge (either direction) the multi-seed aggregation tracks (coffee-push vars).
+_KEY_PAIRS: tuple[tuple[str, str], ...] = (
+    ("near_fraction", "total_reward"),
+    ("progress_score", "total_reward"),
+    ("action_noise", "total_reward"),
+    ("progress_score", "near_fraction"),
+    ("action_noise", "near_fraction"),
+    ("action_noise", "progress_score"),
+)
+
+
+def _edge_in(edges: "list[list[Any]]", a: str, b: str) -> "tuple[float, str] | tuple[None, None]":
+    """The signed weight + direction (``"a->b"``) of the edge between ``a`` and ``b`` in ``edges``, else (None, None)."""
+    for cause, effect, weight in edges:
+        if {cause, effect} == {a, b} and float(weight) != 0.0:
+            return float(weight), f"{cause}->{effect}"
+    return None, None
+
+
+def _median_iqr(values: "list[float]") -> "dict[str, Any]":
+    arr = np.asarray(values, dtype=np.float64)
+    return {"median": float(np.median(arr)), "iqr": [float(np.percentile(arr, 25)), float(np.percentile(arr, 75))],
+            "n": int(arr.size)}
+
+
+def _collect_edge(summaries: "list[dict[str, Any]]", a: str, b: str) -> "tuple[list[float], list[str]]":
+    """Collect the (weight, direction) of the ``a``–``b`` edge across each batch that has it."""
+    weights: list[float] = []
+    directions: list[str] = []
+    for s in summaries:
+        w, d = _edge_in(s.get("strongest_edges", []), a, b)
+        if w is not None and d is not None:
+            weights.append(w)
+            directions.append(d)
+    return weights, directions
+
+
+def _aggregate_edge(summaries: "list[dict[str, Any]]", a: str, b: str, min_presence: float) -> "dict[str, Any]":
+    """Aggregate one key edge across batch summaries → presence, median/IQR weight, direction split, stability."""
+    weights, directions = _collect_edge(summaries, a, b)
+    presence = len(weights) / max(1, len(summaries))
+    if not weights:
+        return {"presence": 0.0, "n_present": 0, "stable": False}
+    arr = np.asarray(weights)
+    lo, hi = float(np.percentile(arr, 25)), float(np.percentile(arr, 75))
+    iqr_excludes_zero = (lo > 0 and hi > 0) or (lo < 0 and hi < 0)
+    dir_counts = {d: directions.count(d) for d in set(directions)}
+    return {"presence": round(presence, 3), "n_present": len(weights),
+            "median_weight": round(float(np.median(arr)), 4), "iqr": [round(lo, 4), round(hi, 4)],
+            "directions": dir_counts, "dominant_direction": max(dir_counts, key=lambda k: dir_counts[k]),
+            "sign_consistent": bool(np.all(arr > 0) or np.all(arr < 0)),
+            "stable": bool(presence >= min_presence and iqr_excludes_zero)}
+
+
+def _aggregate_batches(summaries: "list[dict[str, Any]]", key_pairs: "tuple[tuple[str, str], ...]" = _KEY_PAIRS,
+                       min_presence: float = 0.6) -> "dict[str, Any]":
+    """Aggregate per-batch summaries → edge stability + median/IQR of pass-rate & disagreement + cross-view-all-pass.
+
+    A key edge is ``stable`` iff it appears in ``>= min_presence`` of batches AND its weight IQR does not cross zero.
+    """
+    edges = {f"{a}--{b}": _aggregate_edge(summaries, a, b, min_presence) for a, b in key_pairs}
+    cross_view_all = all(s.get("cross_view", {}).get("agree", False) for s in summaries) and bool(summaries)
+    return {
+        "n_batches": len(summaries),
+        "edges": edges,
+        "monitor_pass_rate": _median_iqr([s["monitor_pass_rate"] for s in summaries if "monitor_pass_rate" in s]),
+        "reward_monitor_disagreement": _median_iqr(
+            [s["reward_monitor_disagreement"] for s in summaries if "reward_monitor_disagreement" in s]),
+        "cross_view_all_pass": cross_view_all,
+        "stable_edges": [k for k, v in edges.items() if v.get("stable")],
+    }
+
+
+def run_metaworld_multiseed(task: str, batches: int, n: int, seed0: int, out_dir: Path, noise_max: float = 0.7,
+                            ) -> "dict[str, Any]":
+    """Multi-seed real-env aggregation: run ``batches`` independent coffee-push batches, aggregate edge stability.
+
+    Each batch is an independent real-env run (its own seed) written to ``out_dir/batch_<b>/`` (prior single-run
+    artifacts are never overwritten). # Preconditions ``task in _REAL_TASKS``; ``metaworld`` importable.
+    """
+    if task not in _REAL_TASKS:
+        raise ValueError(f"no real-env mapping for {task!r}; available: {sorted(_REAL_TASKS)}")
+    batch_summaries: list[dict[str, Any]] = []
+    for b in range(batches):
+        bdir = out_dir / f"batch_{b}"
+        bdir.mkdir(parents=True, exist_ok=True)
+        print(f"[cip-mw-multiseed] === batch {b + 1}/{batches} (seed {seed0 + b * 1000}) ===", flush=True)
+        batch_summaries.append(run_metaworld_cip_real(task, n, seed0 + b * 1000, bdir, noise_max=noise_max))
+
+    aggregate = _aggregate_batches(batch_summaries)
+    out = {
+        "task": task, "kind": "multi-seed real-env aggregation (NO training)", "batches": batches, "n_per_batch": n,
+        "seed0": seed0, "noise_max": noise_max,
+        "per_batch": [{"batch": b, "seed": seed0 + b * 1000, "monitor_pass_rate": s.get("monitor_pass_rate"),
+                       "reward_monitor_disagreement": s.get("reward_monitor_disagreement"),
+                       "cross_view_agree": s.get("cross_view", {}).get("agree"),
+                       "causal_order": s.get("causal_order"),
+                       "edges": {f"{a}--{c}": _edge_in(s.get("strongest_edges", []), a, c)[0] for a, c in _KEY_PAIRS}}
+                      for b, s in enumerate(batch_summaries)],
+        "aggregate": aggregate,
+        "_disclaimer": "PROPOSED; a key edge is called stable only if it recurs across batches with a sign-consistent "
+                       "IQR that excludes zero AND cross-view passes for every batch. MetaWorld env randomisation is "
+                       "seed-uncontrolled, so batches are the replication unit.",
+    }
+    (out_dir / f"{task}_multiseed_summary.json").write_text(json.dumps(out, indent=2))
+    print(f"[cip-mw-multiseed] {task}: {batches}x{n} | stable edges={aggregate['stable_edges']} | "
+          f"cross_view_all_pass={aggregate['cross_view_all_pass']} -> {out_dir}", flush=True)
+    return out
+
+
+def _run_single(source: str, task: str, n: "int | None", seed: int, out_dir: Path) -> None:
+    """Dispatch a single (non-multiseed) run: real metaworld rollouts or synthetic templates."""
+    if source == "real":
+        for t in (list(_REAL_TASKS) if task == "all" else [task]):
+            run_metaworld_cip_real(t, n if n is not None else 80, seed, out_dir)
+    else:
+        for t in (list(TEMPLATES) if task == "all" else [task]):
+            run_metaworld_cip(t, n if n is not None else 120, seed, out_dir)
 
 
 def main(argv: "list[str] | None" = None) -> int:
@@ -254,19 +392,18 @@ def main(argv: "list[str] | None" = None) -> int:
     parser.add_argument("--source", choices=["synthetic", "real"], default="synthetic",
                         help="synthetic templates (no metaworld dep) or real metaworld rollouts")
     parser.add_argument("--task", choices=[*TEMPLATES, *_REAL_TASKS, "all"], default="all")
-    parser.add_argument("--n", type=int, default=None, help="rollouts per task (synthetic 120 / real 80)")
+    parser.add_argument("--n", type=int, default=None, help="rollouts per task/batch (synthetic 120 / real 80)")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--multiseed", type=int, default=0,
+                        help="number of independent real-env batches to aggregate (0 = single run)")
     parser.add_argument("--out", type=str, default="reports/figures")
     args = parser.parse_args(argv)
-    out_dir = experiment_dir(args.out, f"cip_metaworld_{args.source}")
-    if args.source == "real":
-        tasks = list(_REAL_TASKS) if args.task == "all" else [args.task]
-        for task in tasks:
-            run_metaworld_cip_real(task, args.n if args.n is not None else 80, int(args.seed), out_dir)
-    else:
-        tasks = list(TEMPLATES) if args.task == "all" else [args.task]
-        for task in tasks:
-            run_metaworld_cip(task, args.n if args.n is not None else 120, int(args.seed), out_dir)
+    if args.multiseed > 0:
+        out_dir = experiment_dir(args.out, "cip_metaworld_multiseed")
+        task = "coffee_push" if args.task == "all" else args.task
+        run_metaworld_multiseed(task, args.multiseed, args.n if args.n is not None else 80, int(args.seed), out_dir)
+        return 0
+    _run_single(args.source, args.task, args.n, int(args.seed), experiment_dir(args.out, f"cip_metaworld_{args.source}"))
     return 0
 
 
