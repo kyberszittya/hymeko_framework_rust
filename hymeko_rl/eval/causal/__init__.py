@@ -32,6 +32,12 @@ from .lingam import (
     PairwiseEntropyMeasure,
     sample_linear_sem,
 )
+from .mechanism_factorization import (
+    MechanismFactorization,
+    build_pairwise_b,
+    factorize_from_proposals,
+    score_mechanism_set,
+)
 from .mechanism_proposal import (
     MechanismProposal,
     propose_common_child,
@@ -67,4 +73,8 @@ __all__ = [
     "propose_reward_terms",
     "propose_monitor_contract",
     "proposals_to_causal_hypergraph",
+    "MechanismFactorization",
+    "build_pairwise_b",
+    "factorize_from_proposals",
+    "score_mechanism_set",
 ]
