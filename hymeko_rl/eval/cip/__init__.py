@@ -27,6 +27,7 @@ from .metaworld_cip import (
     run_metaworld_cip_real,
     run_metaworld_multiseed,
 )
+from .metaworld_gifs import make_coffee_push_gifs, render_coffee_push_gif
 
 __all__ = [
     "CONTACT_TERMS",
@@ -42,4 +43,6 @@ __all__ = [
     "run_metaworld_cip",
     "run_metaworld_cip_real",
     "run_metaworld_multiseed",
+    "render_coffee_push_gif",
+    "make_coffee_push_gifs",
 ]

@@ -119,6 +119,14 @@ def test_aggregate_unstable_when_cross_view_fails_or_edge_absent() -> None:
 
 
 @pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_render_coffee_push_gif(tmp_path) -> None:
+    from hymeko_rl.eval.cip.metaworld_gifs import render_coffee_push_gif
+    path, _success, frames = render_coffee_push_gif(0, 0.0, tmp_path / "g.gif", max_steps=16, stride=2, downsample=4)
+    assert path.exists() and path.suffix == ".gif"
+    assert len(frames) > 0 and frames[0].ndim == 3 and frames[0].shape[2] == 3
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
 def test_multiseed_runs_and_aggregates(tmp_path) -> None:
     from hymeko_rl.eval.cip.metaworld_cip import run_metaworld_multiseed
     out = run_metaworld_multiseed("coffee_push", batches=2, n=16, seed0=0, out_dir=tmp_path)
