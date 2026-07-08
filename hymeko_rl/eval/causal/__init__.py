@@ -15,6 +15,12 @@ from __future__ import annotations
 
 from .diagnose import CausalDiagnosis, DiagnosisReport
 from .frame import CIP_VAR_KINDS, RolloutFrame, VarKind
+from .hymeko_emit import (
+    CausalHypergraph,
+    CrossViewReport,
+    cross_view_verify,
+    to_hymeko_source,
+)
 from .lingam import (
     DirectLiNGAM,
     IndependenceMeasure,
@@ -39,4 +45,8 @@ __all__ = [
     "PrioritizedFinding",
     "CausalDiagnosis",
     "DiagnosisReport",
+    "CausalHypergraph",
+    "CrossViewReport",
+    "to_hymeko_source",
+    "cross_view_verify",
 ]

@@ -1,0 +1,203 @@
+{
+  "stage": "A",
+  "kind": "cached-rollout reward recomputation (NO training)",
+  "n_episodes_per_arch": 30,
+  "seed0": 9000,
+  "downweight": 0.25,
+  "recorded_terms": [
+    "arm_body_collision",
+    "both_contact",
+    "finger_contact",
+    "grasp_approach",
+    "grasp_deliver",
+    "in_zone",
+    "out_of_bounds"
+  ],
+  "variants": {
+    "original": {
+      "grasp_approach": 4.0,
+      "both_contact": 5.0,
+      "finger_contact": 1.5,
+      "in_zone": 10.0,
+      "out_of_bounds": 2.0,
+      "arm_body_collision": 0.5
+    },
+    "contact_off": {
+      "grasp_approach": 4.0,
+      "both_contact": 0.0,
+      "finger_contact": 0.0,
+      "in_zone": 10.0,
+      "out_of_bounds": 2.0,
+      "arm_body_collision": 0.5
+    },
+    "contact_downweighted": {
+      "grasp_approach": 4.0,
+      "both_contact": 1.25,
+      "finger_contact": 0.375,
+      "in_zone": 10.0,
+      "out_of_bounds": 2.0,
+      "arm_body_collision": 0.5
+    },
+    "delivery_aligned": {
+      "grasp_approach": 4.0,
+      "both_contact": 0.0,
+      "finger_contact": 0.0,
+      "in_zone": 20.0,
+      "out_of_bounds": 2.0,
+      "arm_body_collision": 0.5,
+      "grasp_deliver": 2.5
+    }
+  },
+  "note": "delivery_score/contact_score are IDENTICAL across variants (policy unchanged) \u2014 only total_reward and its disagreement change. Stage A tests the reward COMPUTATION, not a delivery delta.",
+  "outcomes": {
+    "mlp": {
+      "original": {
+        "architecture": "mlp",
+        "variant": "original",
+        "contact_edge_weight": 0.687823,
+        "reward_monitor_disagreement": 0.588506,
+        "reward_delivery_alignment": -0.042211,
+        "causal_order": [
+          "delivery_score",
+          "contact_score",
+          "anti_exploit_score",
+          "progress_score",
+          "approach_score",
+          "total_reward"
+        ],
+        "cross_view_agree": true,
+        "canonical_hash": "blake3:44726db00f64cada1f6d6e6b3121663b54c3bf6aa658212dd4ce4d7985c758d3",
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term)."
+      },
+      "contact_off": {
+        "architecture": "mlp",
+        "variant": "contact_off",
+        "contact_edge_weight": 0.0,
+        "reward_monitor_disagreement": 0.432184,
+        "reward_delivery_alignment": 0.855363,
+        "causal_order": [
+          "delivery_score",
+          "contact_score",
+          "anti_exploit_score",
+          "total_reward",
+          "progress_score",
+          "approach_score"
+        ],
+        "cross_view_agree": true,
+        "canonical_hash": "blake3:1a4db59ea0e4c424943153a95d5647d446a334b765c3486f6f58c7044fa09ad3",
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term)."
+      },
+      "contact_downweighted": {
+        "architecture": "mlp",
+        "variant": "contact_downweighted",
+        "contact_edge_weight": 0.707024,
+        "reward_monitor_disagreement": 0.436782,
+        "reward_delivery_alignment": 0.432492,
+        "causal_order": [
+          "delivery_score",
+          "contact_score",
+          "progress_score",
+          "approach_score",
+          "anti_exploit_score",
+          "total_reward"
+        ],
+        "cross_view_agree": true,
+        "canonical_hash": "blake3:62cc52147cc78c1ecf648c5f2230266677bce9b6c76e4a3be2588e4e82aa4561",
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term)."
+      },
+      "delivery_aligned": {
+        "architecture": "mlp",
+        "variant": "delivery_aligned",
+        "contact_edge_weight": 0.0,
+        "reward_monitor_disagreement": 0.427586,
+        "reward_delivery_alignment": 0.937893,
+        "causal_order": [
+          "delivery_score",
+          "contact_score",
+          "anti_exploit_score",
+          "total_reward",
+          "progress_score",
+          "approach_score"
+        ],
+        "cross_view_agree": true,
+        "canonical_hash": "blake3:e0547ab222011b9eda056d998d0b29abca24c9578d97139f3de8a04eefd8db4e",
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term)."
+      }
+    },
+    "hsikan": {
+      "original": {
+        "architecture": "hsikan",
+        "variant": "original",
+        "contact_edge_weight": 0.691121,
+        "reward_monitor_disagreement": 0.565517,
+        "reward_delivery_alignment": 0.342915,
+        "causal_order": [
+          "anti_exploit_score",
+          "progress_score",
+          "contact_score",
+          "approach_score",
+          "total_reward",
+          "delivery_score"
+        ],
+        "cross_view_agree": true,
+        "canonical_hash": "blake3:9cb39fc02a2abafc49cbbc0e38fa49f3169463ba5671c77bf63620ea987bbaba",
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term)."
+      },
+      "contact_off": {
+        "architecture": "hsikan",
+        "variant": "contact_off",
+        "contact_edge_weight": 0.0,
+        "reward_monitor_disagreement": 0.275862,
+        "reward_delivery_alignment": 0.801898,
+        "causal_order": [
+          "anti_exploit_score",
+          "contact_score",
+          "progress_score",
+          "delivery_score",
+          "total_reward",
+          "approach_score"
+        ],
+        "cross_view_agree": true,
+        "canonical_hash": "blake3:137c9b735e55ac0e4ef221bfd421dfee49edfcfb71226690f3463171bb9a0135",
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term)."
+      },
+      "contact_downweighted": {
+        "architecture": "hsikan",
+        "variant": "contact_downweighted",
+        "contact_edge_weight": 0.446698,
+        "reward_monitor_disagreement": 0.252874,
+        "reward_delivery_alignment": 0.644806,
+        "causal_order": [
+          "anti_exploit_score",
+          "progress_score",
+          "contact_score",
+          "total_reward",
+          "delivery_score",
+          "approach_score"
+        ],
+        "cross_view_agree": true,
+        "canonical_hash": "blake3:7e4c953f4889de856c8114b560098c2733afed6d81cec8bef790042d9718f579",
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term)."
+      },
+      "delivery_aligned": {
+        "architecture": "hsikan",
+        "variant": "delivery_aligned",
+        "contact_edge_weight": 0.0,
+        "reward_monitor_disagreement": 0.271264,
+        "reward_delivery_alignment": 0.900575,
+        "causal_order": [
+          "anti_exploit_score",
+          "progress_score",
+          "contact_score",
+          "delivery_score",
+          "total_reward",
+          "approach_score"
+        ],
+        "cross_view_agree": true,
+        "canonical_hash": "blake3:dd1ff446856f0a1032beb5c113c1657ca31a4247aebef8240a5b8b417b54255a",
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term)."
+      }
+    }
+  },
+  "_disclaimer": "PROPOSED until intervention evidence. Stage A can support the hypothesis at the reward-computation level only; a policy-learning claim needs Stage B (training smoke)."
+}

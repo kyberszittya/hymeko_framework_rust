@@ -1,0 +1,17 @@
+CoinHsikanContactDownweighted{}
+coinhsikancontactdownweighted
+{
+    progress_score {}
+    approach_score {}
+    contact_score {}
+    delivery_score {}
+    anti_exploit_score {}
+    total_reward {}
+
+    @c0{ (+anti_exploit_score, +approach_score); }
+    @c1{ (+anti_exploit_score, +contact_score); }
+    @c2{ (+progress_score, +delivery_score); }
+    @c3{ (+total_reward, +delivery_score); }
+    @c4{ (+contact_score, +total_reward); }
+    @c5{ (+anti_exploit_score, +total_reward); }
+}

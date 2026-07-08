@@ -1,0 +1,238 @@
+{
+  "mode": "coin",
+  "n_episodes_per_arch": 30,
+  "seed0": 9000,
+  "architectures": [
+    "mlp",
+    "hsikan"
+  ],
+  "reward_monitor_disagreement": {
+    "mlp": 0.588506,
+    "hsikan": 0.565517
+  },
+  "checkpoints": {
+    "mlp": "experiments/2026_07_05_18_34_coin_arch_ab_mlp/policies/coin_arch_ab_mlp_s0.pt",
+    "hsikan": "experiments/2026_07_05_18_42_coin_arch_ab_hsikan/policies/coin_arch_ab_hsikan_s0.pt"
+  },
+  "strata": {
+    "mlp": {
+      "diagnosis": {
+        "causal_order": [
+          "delivery_score",
+          "contact_score",
+          "anti_exploit_score",
+          "progress_score",
+          "approach_score",
+          "total_reward"
+        ],
+        "strongest_edges": [
+          [
+            "contact_score",
+            "total_reward",
+            0.687823
+          ],
+          [
+            "contact_score",
+            "anti_exploit_score",
+            0.681124
+          ],
+          [
+            "delivery_score",
+            "progress_score",
+            0.492631
+          ],
+          [
+            "anti_exploit_score",
+            "progress_score",
+            0.452895
+          ]
+        ],
+        "failure_ranking": [
+          {
+            "variable": "reward_progress_disagreement",
+            "mean_disagreement": 0.588506,
+            "max_disagreement": 0.588506,
+            "candidate_cause": "reward_farming_candidate",
+            "top_rollouts": [
+              0,
+              27,
+              26,
+              25,
+              24
+            ]
+          }
+        ],
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term).",
+        "ablation_plan": [
+          "Decider: A/B the suspected reward term on/off; the monitor-success delta decides whether it is farming.",
+          "Ablate/intervene on 'contact_score'; LiNGAM proposes it increases 'total_reward' (w=+0.688) \u2014 controlled A/B decides if the edge is real.",
+          "Ablate/intervene on 'contact_score'; LiNGAM proposes it increases 'anti_exploit_score' (w=+0.681) \u2014 controlled A/B decides if the edge is real.",
+          "Ablate/intervene on 'delivery_score'; LiNGAM proposes it increases 'progress_score' (w=+0.493) \u2014 controlled A/B decides if the edge is real.",
+          "Ablate/intervene on 'anti_exploit_score'; LiNGAM proposes it increases 'progress_score' (w=+0.453) \u2014 controlled A/B decides if the edge is real."
+        ],
+        "provenance": {
+          "n_rollouts": 30,
+          "continuous_used": [
+            "progress_score",
+            "approach_score",
+            "contact_score",
+            "delivery_score",
+            "anti_exploit_score",
+            "total_reward"
+          ],
+          "continuous_dropped": {
+            "stagnation_duration": "all_missing",
+            "forbidden_contact_count": "all_missing",
+            "clearance_min": "all_missing",
+            "reward_progress_disagreement": "constant"
+          },
+          "categorical_strata": [
+            "success_monitor_pass",
+            "stagnated",
+            "phase_transition_failure",
+            "architecture"
+          ],
+          "lingam": "fit: n=30, d=6"
+        },
+        "_disclaimer": "DirectLiNGAM PROPOSES structure; controlled ablations DECIDE. Not proof of causality."
+      },
+      "continuous_kept": [
+        "progress_score",
+        "approach_score",
+        "contact_score",
+        "delivery_score",
+        "anti_exploit_score",
+        "total_reward"
+      ],
+      "continuous_dropped": {
+        "stagnation_duration": "all_missing",
+        "forbidden_contact_count": "all_missing",
+        "clearance_min": "all_missing",
+        "reward_progress_disagreement": "constant"
+      },
+      "cross_view": {
+        "agree": true,
+        "backend": "engine",
+        "canonical_hash": "blake3:0054312c89c9250d32621efe3bb6d4c784692cfec206341ed0ece122237a1411",
+        "n_edges_declared": 4,
+        "n_edges_engine": 4,
+        "star_nnz": 8,
+        "clique_nnz": 8,
+        "sum_arities": 8,
+        "edges_match": true,
+        "counts_match": true,
+        "notes": []
+      }
+    },
+    "hsikan": {
+      "diagnosis": {
+        "causal_order": [
+          "anti_exploit_score",
+          "progress_score",
+          "contact_score",
+          "approach_score",
+          "total_reward",
+          "delivery_score"
+        ],
+        "strongest_edges": [
+          [
+            "contact_score",
+            "total_reward",
+            0.691121
+          ],
+          [
+            "progress_score",
+            "delivery_score",
+            0.56259
+          ],
+          [
+            "anti_exploit_score",
+            "approach_score",
+            0.53569
+          ],
+          [
+            "anti_exploit_score",
+            "contact_score",
+            0.483786
+          ]
+        ],
+        "failure_ranking": [
+          {
+            "variable": "reward_progress_disagreement",
+            "mean_disagreement": 0.565517,
+            "max_disagreement": 0.565517,
+            "candidate_cause": "reward_farming_candidate",
+            "top_rollouts": [
+              0,
+              27,
+              26,
+              25,
+              24
+            ]
+          }
+        ],
+        "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term).",
+        "ablation_plan": [
+          "Decider: A/B the suspected reward term on/off; the monitor-success delta decides whether it is farming.",
+          "Ablate/intervene on 'contact_score'; LiNGAM proposes it increases 'total_reward' (w=+0.691) \u2014 controlled A/B decides if the edge is real.",
+          "Ablate/intervene on 'progress_score'; LiNGAM proposes it increases 'delivery_score' (w=+0.563) \u2014 controlled A/B decides if the edge is real.",
+          "Ablate/intervene on 'anti_exploit_score'; LiNGAM proposes it increases 'approach_score' (w=+0.536) \u2014 controlled A/B decides if the edge is real.",
+          "Ablate/intervene on 'anti_exploit_score'; LiNGAM proposes it increases 'contact_score' (w=+0.484) \u2014 controlled A/B decides if the edge is real."
+        ],
+        "provenance": {
+          "n_rollouts": 30,
+          "continuous_used": [
+            "progress_score",
+            "approach_score",
+            "contact_score",
+            "delivery_score",
+            "anti_exploit_score",
+            "total_reward"
+          ],
+          "continuous_dropped": {
+            "stagnation_duration": "all_missing",
+            "forbidden_contact_count": "all_missing",
+            "clearance_min": "all_missing",
+            "reward_progress_disagreement": "constant"
+          },
+          "categorical_strata": [
+            "success_monitor_pass",
+            "stagnated",
+            "phase_transition_failure",
+            "architecture"
+          ],
+          "lingam": "fit: n=30, d=6"
+        },
+        "_disclaimer": "DirectLiNGAM PROPOSES structure; controlled ablations DECIDE. Not proof of causality."
+      },
+      "continuous_kept": [
+        "progress_score",
+        "approach_score",
+        "contact_score",
+        "delivery_score",
+        "anti_exploit_score",
+        "total_reward"
+      ],
+      "continuous_dropped": {
+        "stagnation_duration": "all_missing",
+        "forbidden_contact_count": "all_missing",
+        "clearance_min": "all_missing",
+        "reward_progress_disagreement": "constant"
+      },
+      "cross_view": {
+        "agree": true,
+        "backend": "engine",
+        "canonical_hash": "blake3:a44be06fbf14d1055388ac8ca3d3ae22e83924d1c5988987be59d98ca7ff5307",
+        "n_edges_declared": 4,
+        "n_edges_engine": 4,
+        "star_nnz": 8,
+        "clique_nnz": 8,
+        "sum_arities": 8,
+        "edges_match": true,
+        "counts_match": true,
+        "notes": []
+      }
+    }
+  },
+  "_disclaimer": "DirectLiNGAM PROPOSES structure over real rollouts; controlled ablations DECIDE. The .hymeko cross-view proves the declared DAG == the engine's tensor view, not causality."
+}

@@ -1,0 +1,15 @@
+CoinCausalMlp{}
+coincausalmlp
+{
+    progress_score {}
+    approach_score {}
+    contact_score {}
+    delivery_score {}
+    anti_exploit_score {}
+    total_reward {}
+
+    @c0{ (+delivery_score, +progress_score); }
+    @c1{ (+anti_exploit_score, +progress_score); }
+    @c2{ (+contact_score, +anti_exploit_score); }
+    @c3{ (+contact_score, +total_reward); }
+}
