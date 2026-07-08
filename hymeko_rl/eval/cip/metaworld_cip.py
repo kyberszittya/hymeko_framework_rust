@@ -96,7 +96,8 @@ TEMPLATES: dict[str, TaskTemplate] = {
 }
 
 
-def _fit_declare_render(frame: Any, task: str, out_dir: Path, summary: dict[str, Any]) -> None:
+def _fit_declare_render(frame: Any, task: str, out_dir: Path, summary: dict[str, Any],
+                        note: str = "synthetic template") -> None:
     """Fit DirectLiNGAM, declare the DAG as ``.hymeko`` (cross-view verified), render it, and record into summary.
 
     A frame with too few varying continuous columns leaves ``summary`` without the causal fields (diagnosis only)."""
@@ -110,7 +111,7 @@ def _fit_declare_render(frame: Any, task: str, out_dir: Path, summary: dict[str,
     cg = CausalHypergraph.from_lingam(result, f"MetaWorld{task.title().replace('_', '')}")
     xview = cross_view_verify(cg, out_dir / f"causal_{task}.hymeko")
     render_dag(result.order, result.adjacency, kept, out_dir / f"dag_{task}.png",
-               f"MetaWorld {task} causal (synthetic template, N={matrix.shape[0]}, PROPOSED)")
+               f"MetaWorld {task} causal ({note}, N={matrix.shape[0]}, PROPOSED)")
     summary["causal_order"] = result.ordered_names()
     summary["strongest_edges"] = [[c, e, round(w, 6)] for c, e, w in result.strongest_edges(6)]
     summary["cross_view"] = xview.as_dict()
@@ -154,20 +155,118 @@ def run_metaworld_cip(task: str, n: int, seed: int, out_dir: Path) -> "dict[str,
     return summary
 
 
+# ── real-env path (requires the `metaworld` package; coffee-push maps cleanly obs→monitor schema) ─────────────
+# coffee-push is a PUSH task (grasp never fires), so `near_object` is the contact/approach proxy; the scripted
+# V3 policy is perturbed with per-episode action noise = the OBSERVED exogenous input (no hidden confounder).
+_REAL_TASKS: dict[str, tuple[str, str]] = {
+    "coffee_push": ("coffee-push-v3-goal-observable", "SawyerCoffeePushV3Policy"),
+}
+
+
+def _real_rollout(env_key: str, policy_name: str, seed: int, noise: float, max_steps: int = 200,
+                  ) -> "tuple[_Rollout, int]":
+    """One real MetaWorld coffee-push episode (scripted policy + action noise) → (monitor rollout, mw_success)."""
+    import warnings
+
+    import metaworld.policies as mp
+    from metaworld import ALL_V3_ENVIRONMENTS_GOAL_OBSERVABLE as ENVS  # type: ignore[attr-defined]  # no py.typed
+
+    from hymeko_rl.eval.task_monitor import CoffeePushMonitor
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        env = ENVS[env_key](render_mode=None)
+        policy = getattr(mp, policy_name)()
+        obs, _ = env.reset(seed=seed)
+        rng = np.random.default_rng(seed)
+        traj: list[dict[str, Any]] = []
+        total = 0.0
+        near = success = steps = 0
+        for _ in range(max_steps):
+            act = np.clip(np.asarray(policy.get_action(obs), np.float32)
+                          + rng.normal(0, noise, 4).astype(np.float32), -1.0, 1.0)
+            obs, reward, terminated, truncated, info = env.step(act)
+            total += float(reward)
+            steps += 1
+            near += int(info.get("near_object", 0))
+            success = max(success, int(info.get("success", 0)))
+            traj.append({"object_xy": [float(obs[4]), float(obs[5])], "target_xy": [float(obs[-3]), float(obs[-2])],
+                         "gripper_xy": [float(obs[0]), float(obs[1])], "contact": bool(info.get("near_object", 0))})
+            if terminated or truncated:
+                break
+    verdict = CoffeePushMonitor(success_radius=0.05, min_progress=0.01).evaluate(traj)
+    rollout = _Rollout(verdict, {"action_noise": float(noise), "near_fraction": near / max(1, steps),
+                                 "total_reward": total})
+    return rollout, success
+
+
+def run_metaworld_cip_real(task: str, n: int, seed: int, out_dir: Path, noise_max: float = 0.7) -> "dict[str, Any]":
+    """Real-env CIP: roll a scripted MetaWorld policy (+per-episode action noise) → monitor → DAG + cross-view.
+
+    The Phase-2 analog for MetaWorld: real physics, real dense reward, the reward-independent monitor. Action
+    noise is the OBSERVED exogenous input (no hidden confounder). # Preconditions ``task in _REAL_TASKS``;
+    the ``metaworld`` package is importable.
+    """
+    from hymeko_rl.eval.causal import CausalDiagnosis, RolloutFrame
+
+    if task not in _REAL_TASKS:
+        raise ValueError(f"no real-env mapping for {task!r}; available: {sorted(_REAL_TASKS)}")
+    env_key, policy_name = _REAL_TASKS[task]
+    rng = np.random.default_rng(seed)
+    noises = rng.uniform(0.0, noise_max, n)
+    rollouts: list[_Rollout] = []
+    successes: list[int] = []
+    for i in range(n):
+        ro, succ = _real_rollout(env_key, policy_name, seed + i, float(noises[i]))
+        rollouts.append(ro)
+        successes.append(succ)
+        print(f"[cip-mw-real] {task} ep {i + 1:3d}/{n} | noise={noises[i]:.2f} pass={int(ro.verdict.monitor_pass)} "
+              f"prog={ro.verdict.progress_score:+.3f} reward={ro.continuous['total_reward']:.0f} "
+              f"mw_success={succ}", flush=True)
+
+    extra_names = list(rollouts[0].continuous)
+    maps = [r.verdict.as_dict() for r in rollouts]
+    extra = {name: [r.continuous[name] for r in rollouts] for name in extra_names}
+    frame = RolloutFrame.from_verdicts(maps, extra_continuous=extra,
+                                       categoricals={"task": [task] * n, "mw_success": [bool(s) for s in successes]})
+    report = CausalDiagnosis().run(frame)
+    _matrix, kept, dropped = frame.continuous_matrix()
+    summary: dict[str, Any] = {
+        "task": task, "source": "real-env (metaworld scripted policy + action noise)",
+        "scope": "real MetaWorld rollouts through the HyMeKo monitor — the Phase-2 analog", "n": n, "seed": seed,
+        "monitor_pass_rate": float(np.mean([r.verdict.monitor_pass for r in rollouts])),
+        "mw_success_rate": float(np.mean(successes)), "continuous_kept": kept, "continuous_dropped": dropped,
+        "diagnosis": report.as_dict(),
+        "_disclaimer": "PROPOSED structure over real rollouts; controlled ablation decides. Cross-view proves "
+                       "declared ≡ engine tensor view, not causal truth.",
+    }
+    _fit_declare_render(frame, f"{task}_real", out_dir, summary, note="real MetaWorld rollouts")
+    (out_dir / f"{task}_real_summary.json").write_text(json.dumps(summary, indent=2))
+    print(f"[cip-mw-real] {task}: pass_rate={summary['monitor_pass_rate']:.2f} "
+          f"mw_success={summary['mw_success_rate']:.2f} -> wrote to {out_dir}", flush=True)
+    return summary
+
+
 def main(argv: "list[str] | None" = None) -> int:
     import argparse
 
     from hymeko_rl.eval.evaluate import experiment_dir
-    parser = argparse.ArgumentParser(description="CIP over MetaWorld task templates (coffee-push, dial-turn)")
-    parser.add_argument("--task", choices=[*TEMPLATES, "all"], default="all")
-    parser.add_argument("--n", type=int, default=120, help="synthetic rollouts per task")
+    parser = argparse.ArgumentParser(description="CIP over MetaWorld tasks (coffee-push, dial-turn)")
+    parser.add_argument("--source", choices=["synthetic", "real"], default="synthetic",
+                        help="synthetic templates (no metaworld dep) or real metaworld rollouts")
+    parser.add_argument("--task", choices=[*TEMPLATES, *_REAL_TASKS, "all"], default="all")
+    parser.add_argument("--n", type=int, default=None, help="rollouts per task (synthetic 120 / real 80)")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--out", type=str, default="reports/figures")
     args = parser.parse_args(argv)
-    out_dir = experiment_dir(args.out, "cip_metaworld")
-    tasks = list(TEMPLATES) if args.task == "all" else [args.task]
-    for task in tasks:
-        run_metaworld_cip(task, int(args.n), int(args.seed), out_dir)
+    out_dir = experiment_dir(args.out, f"cip_metaworld_{args.source}")
+    if args.source == "real":
+        tasks = list(_REAL_TASKS) if args.task == "all" else [args.task]
+        for task in tasks:
+            run_metaworld_cip_real(task, args.n if args.n is not None else 80, int(args.seed), out_dir)
+    else:
+        tasks = list(TEMPLATES) if args.task == "all" else [args.task]
+        for task in tasks:
+            run_metaworld_cip(task, args.n if args.n is not None else 120, int(args.seed), out_dir)
     return 0
 
 

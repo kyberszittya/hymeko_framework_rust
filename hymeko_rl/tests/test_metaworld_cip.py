@@ -6,6 +6,7 @@ the outcome in the causal order). The real monitors are exercised unchanged (rea
 """
 from __future__ import annotations
 
+import importlib.util
 import sys
 
 import numpy as np
@@ -52,3 +53,26 @@ def test_pipeline_runs_and_cross_view_agrees(task, tmp_path) -> None:
 def test_unknown_task_raises(tmp_path) -> None:
     with pytest.raises(ValueError, match="unknown task"):
         run_metaworld_cip("pick_place", n=10, seed=0, out_dir=tmp_path)
+
+
+_HAS_METAWORLD = importlib.util.find_spec("metaworld") is not None
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_real_env_pipeline_runs_and_cross_view_agrees(tmp_path) -> None:
+    """Real MetaWorld coffee-push rollouts → monitor → DirectLiNGAM → .hymeko cross-view (Phase-2 analog)."""
+    from hymeko_rl.eval.cip.metaworld_cip import run_metaworld_cip_real
+    summary = run_metaworld_cip_real("coffee_push", n=16, seed=0, out_dir=tmp_path)
+    assert summary["source"].startswith("real-env")
+    assert 0.0 < summary["monitor_pass_rate"] < 1.0          # action noise induces a real spread
+    assert (tmp_path / "causal_coffee_push_real.hymeko").exists()
+    assert summary["cross_view"]["agree"], summary["cross_view"]
+    # total_reward and near_fraction are among the discovered variables (the reward's exact rank is N-dependent —
+    # a measured finding at N=80, not a small-N invariant, so it is not asserted here).
+    assert {"total_reward", "near_fraction"} <= set(summary["causal_order"])
+
+
+def test_real_env_unknown_task_raises(tmp_path) -> None:
+    from hymeko_rl.eval.cip.metaworld_cip import run_metaworld_cip_real
+    with pytest.raises(ValueError, match="no real-env mapping"):
+        run_metaworld_cip_real("dial_turn", n=4, seed=0, out_dir=tmp_path)

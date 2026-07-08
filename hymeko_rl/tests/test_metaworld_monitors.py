@@ -213,10 +213,15 @@ def test_dial_cip_export_reads_verdict():
 
 
 def test_no_metaworld_dependency():
-    import sys
-    # the real MetaWorld package is not required or imported by the monitor module (our submodule key is the
-    # dotted path 'hymeko_rl.eval.task_monitor.metaworld', not the top-level 'metaworld' package)
-    assert "metaworld" not in sys.modules
+    # The monitor MODULE does not depend on the heavy `metaworld` package. (A global `sys.modules` check is no
+    # longer valid: the package may be installed for the real-env CIP path, `hymeko_rl.eval.cip.metaworld_cip`,
+    # and imported elsewhere in the session — so assert the monitor module's OWN source has no metaworld import.)
+    import inspect
+    import re
+
+    from hymeko_rl.eval.task_monitor import metaworld as monitor_module
+    src = inspect.getsource(monitor_module)
+    assert re.search(r"^\s*(import metaworld|from metaworld)", src, re.MULTILINE) is None
     from hymeko_rl.eval.task_monitor import DialTurnMonitor as _D   # importable without MetaWorld installed
     assert _D is not None
 
