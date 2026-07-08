@@ -32,6 +32,13 @@ from .lingam import (
     PairwiseEntropyMeasure,
     sample_linear_sem,
 )
+from .mechanism_proposal import (
+    MechanismProposal,
+    propose_common_child,
+    propose_monitor_contract,
+    propose_reward_terms,
+    proposals_to_causal_hypergraph,
+)
 from .prioritize import CipPrioritizer, PrioritizedFinding
 
 __all__ = [
@@ -55,4 +62,9 @@ __all__ = [
     "AcyclicityResult",
     "to_hymeko_source",
     "cross_view_verify",
+    "MechanismProposal",
+    "propose_common_child",
+    "propose_reward_terms",
+    "propose_monitor_contract",
+    "proposals_to_causal_hypergraph",
 ]
