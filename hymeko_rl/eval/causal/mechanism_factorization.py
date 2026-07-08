@@ -126,4 +126,32 @@ def factorize_from_proposals(variables: "Sequence[str]", pairwise_edges: "Sequen
                                   sigma=sigma, b_hat=b_hat, residual=residual, metrics=metrics)
 
 
-__all__ = ["MechanismFactorization", "build_pairwise_b", "score_mechanism_set", "factorize_from_proposals"]
+def fit_sigma_least_squares(variables: "Sequence[str]", pairwise_edges: "Sequence[tuple[str, str, float]]",
+                            proposals: "Sequence[MechanismProposal]") -> MechanismFactorization:
+    """Solve the mechanism strengths ``Σ`` by (deterministic, closed-form) least squares instead of using the
+    proposal ``sign·strength`` verbatim.
+
+    One rank-1 basis ``A_out[:,k] · A_in[:,k]ᵀ`` per proposal (0/1 incidence); ``Σ`` = ``lstsq`` solution of
+    ``Σ_k σ_k · basis_k ≈ B``. The proposal signs are preserved as metadata; the *fitted* ``σ`` may disagree —
+    ``metrics["n_sign_mismatch"]`` counts the mechanisms whose fitted sign contradicts the proposed sign.
+    """
+    universe = _variable_universe(variables, pairwise_edges, proposals)
+    b = build_pairwise_b(universe, pairwise_edges)
+    d, m = len(universe), len(proposals)
+    a_in, a_out, _default = _build_factors(universe, proposals, normalize=False)   # 0/1 indicator incidence
+    if m == 0:
+        b_hat = np.zeros((d, d), dtype=np.float64)
+        metrics = {**score_mechanism_set(b, b_hat, n_mechanisms=0, n_parameters=0), "n_sign_mismatch": 0.0}
+        return MechanismFactorization(tuple(universe), (), a_in, a_out, np.zeros((0, 0)), b_hat, b, metrics)
+    basis = np.stack([np.outer(a_out[:, k], a_in[:, k]).ravel() for k in range(m)], axis=1)  # (d², m)
+    sigma_fit, *_ = np.linalg.lstsq(basis, b.ravel(), rcond=None)
+    b_hat = (basis @ sigma_fit).reshape(d, d)
+    n_mismatch = sum(1 for k, p in enumerate(proposals)
+                     if sigma_fit[k] != 0.0 and int(np.sign(sigma_fit[k])) != p.sign)
+    metrics = {**score_mechanism_set(b, b_hat, n_mechanisms=m, n_parameters=m), "n_sign_mismatch": float(n_mismatch)}
+    return MechanismFactorization(tuple(universe), tuple(proposals), a_in, a_out, np.diag(sigma_fit), b_hat,
+                                  b - b_hat, metrics)
+
+
+__all__ = ["MechanismFactorization", "build_pairwise_b", "score_mechanism_set", "factorize_from_proposals",
+           "fit_sigma_least_squares"]
