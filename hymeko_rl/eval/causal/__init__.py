@@ -16,8 +16,11 @@ from __future__ import annotations
 from .diagnose import CausalDiagnosis, DiagnosisReport
 from .frame import CIP_VAR_KINDS, RolloutFrame, VarKind
 from .hymeko_emit import (
+    AcyclicityResult,
     CausalHypergraph,
     CrossViewReport,
+    Mechanism,
+    StarProjection,
     cross_view_verify,
     to_hymeko_source,
 )
@@ -47,6 +50,9 @@ __all__ = [
     "DiagnosisReport",
     "CausalHypergraph",
     "CrossViewReport",
+    "Mechanism",
+    "StarProjection",
+    "AcyclicityResult",
     "to_hymeko_source",
     "cross_view_verify",
 ]
