@@ -269,6 +269,10 @@ class _GaussianMLP:
     def parameters(self) -> Any:
         return [*self.net.parameters(), *self.mean.parameters(), self.log_std]
 
+    def state_dict(self) -> "dict[str, Any]":
+        """The FULL actor state (trunk + mean head + log_std) — a loadable checkpoint for post-eval."""
+        return {"net": self.net.state_dict(), "mean": self.mean.state_dict(), "log_std": self.log_std.detach()}
+
     def _dist(self, obs: np.ndarray) -> Any:
         t = self._torch
         h = self.net(t.as_tensor(np.asarray(obs, np.float32)))
@@ -356,9 +360,10 @@ def launch(cfg: StageBConfig, *, launch_training: bool = False, allow_uncertifie
         cfg.log_dir(name).mkdir(parents=True, exist_ok=True)
         env = make_training_env(cfg, spec)
         out = _train_reward_smoke(cfg, env, cfg.seed, log=lambda m, _n=name: print(f"[stage-b {_n}] {m}", flush=True))
-        torch.save(out["policy"].net.state_dict(), cfg.checkpoint_path(name))
+        torch.save(out["policy"].state_dict(), cfg.checkpoint_path(name))     # FULL actor, loadable for post-eval
         summary["results"][name] = {"certification": cert, "episodes": out["episodes"], "env_steps": out["env_steps"],
-                                    "wall_s": out["wall_s"], "final_return": out["returns"][-1] if out["returns"] else None,
+                                    "wall_s": out["wall_s"], "returns": out["returns"],
+                                    "final_return": out["returns"][-1] if out["returns"] else None,
                                     "checkpoint": str(cfg.checkpoint_path(name)), "eval_command": cfg.eval_command(name)}
     (cfg.out_dir / "stage_b_train.json").write_text(json.dumps(summary, indent=2, default=float))
     return summary

@@ -1,8 +1,9 @@
-# MetaWorld Stage B — bounded training-smoke setup (GATED, no training run)
+# MetaWorld Stage B — bounded training-smoke (GATED harness + authorized smoke run)
 
 **Date:** 2026-07-09 · Aiko · branch `hymeko-neuro-migration`
-**Status:** setup/dry-run only. A gated, bounded training-smoke harness for the reward ablation is in place and the
-dry-run validates end-to-end. **No training was launched.**
+**Status:** harness built + dry-run validated + **the bounded smoke was run (user-authorized).** The smoke verifies
+the harness runs **end-to-end** (gate → certify → reward-override env → REINFORCE → checkpoint, live-logged); it
+**does not demonstrate learning** (3000-step from-scratch REINFORCE cannot, by design). See *Smoke result* below.
 
 ---
 
@@ -28,6 +29,7 @@ new, not a duplicate).
 | `hymeko_rl/experiments/exp_metaworld_reward_stageb.py` | **new** — `StageBConfig`, `HymekoRewardMetaWorld`, `dry_run`, `launch` (gated), `_scripted_delivers` (certification), `_GaussianMLP` + `_train_reward_smoke` (bounded REINFORCE) |
 | `hymeko_rl/tests/test_metaworld_stageb.py` | **new** — 7 tests (gate, profiles, paths, eval cmd, REINFORCE plumbing, dry-run) |
 | `reports/figures/2026_07_09_metaworld_stageb_dry_run/stage_b_dry_run.json` | dry-run validation artifact |
+| `reports/figures/2026_07_09_metaworld_stageb_train/` | smoke run: full-actor checkpoints, `stage_b_train.json`, return-curve PNG |
 
 CORE.YAML / `pyproject.toml` / `metaworld_reward.hymeko` / FANUC `PickPlaceEnv` / coin-collab untouched. No dependency added.
 
@@ -108,22 +110,70 @@ without training. 17/17 reward-ablation + Stage-B green; 90/90 causal/LiNGAM-SH 
 mypy `--strict` (my file) clean. **Pre-existing, unrelated:** `test_quadruped_from_hymeko.py` 6 failures on clean
 HEAD (quadruped_env) — untouched.
 
+## Smoke result (training RUN — user-authorized 2026-07-09)
+
+Command (RUN):
+
+```
+python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --launch-training \
+  --profiles original mw_in_place_off --out reports/figures/2026_07_09_metaworld_stageb_train
+```
+
+![smoke returns](figures/2026_07_09_metaworld_stageb_train/stage_b_smoke_returns.png)
+
+**Plumbing: verified end-to-end.** Both profiles ran 17 episodes / 3060 env steps in ~1 s each (≈3200 steps/s),
+live-logged every 5 episodes, checkpoints written; the gate and certification passed inside `launch`.
+
+| profile | certify (delivers / succ) | episodes | env steps | final return | checkpoint |
+|---|---|---:|---:|---:|---|
+| `original` | True / 7·12 | 17 | 3060 | −253.9 | `…/original/policy.pt` |
+| `mw_in_place_off` | True / 6·12 | 17 | 3060 | −441.2 | `…/mw_in_place_off/policy.pt` |
+
+**Honest reading — three findings:**
+
+1. **No learning (expected).** Returns are flat across the 17 episodes (original −254 plateau; off −441 plateau).
+   From-scratch REINFORCE with no baseline/warm-start cannot learn a 7-DOF pick-place in 3000 steps. The smoke's
+   job is to prove the harness runs, not to solve the task — and it does.
+2. **The reward override genuinely feeds through — discriminating test run.** The two trained checkpoints are
+   **distinct** (mean-head max|Δ| = 0.0035, trunk max|Δ| = 0.0066; different SHA-256) — so ablating `mw_in_place`
+   really does change the gradient and the resulting policy. No plumbing bug. The reward-level gap (original −254
+   vs off −441) reflects the removed `in_place` term, as predicted.
+3. **The divergence is marginal (17 gradient steps).** The policies differ only slightly, so this bounded smoke
+   **does not yet answer the Stage-B behavioural question** ("do the two policies *behave* differently?"). That
+   needs a real learning signal — a BC warm-start (as `pick_place_ppo` uses) + more steps — which is the actual
+   Stage-B experiment, not a smoke.
+
+**Gap the smoke exposed and I fixed:** the first checkpoint saved only the MLP trunk (`policy.net`); it now saves
+the **full actor** (trunk + mean head + log_std), a loadable artifact. Still **not** wired: `--post-eval` (load the
+checkpoint, roll episodes, run `run_reward_ablation_comparison` on the trained policy's rollouts) — deferred to the
+real Stage-B run, since a flat/untrained policy has nothing to evaluate.
+
 ## Runtime-verified vs unverified (honest)
 
-- **Verified now:** reward profiles, env construction, the reward-override signal, certification (discriminating),
-  logging paths, eval-command generation, the REINFORCE update on synthetic data, the safety gate.
-- **Unverified until first `--launch-training`:** the REINFORCE optimizer *loop on the env* (never run per the
-  no-training constraint). Per CLAUDE.md §3, the first `--launch-training` run **is** the production-scale smoke: 1
-  seed, short budget, live-logged — watch the loss/return the whole way.
+- **Verified now (incl. the authorized smoke):** reward profiles, env construction, the reward-override signal,
+  certification (discriminating), logging paths, eval-command generation, the REINFORCE update on synthetic data,
+  the safety gate, **and the full REINFORCE loop on the env end-to-end** (runs, live-logs, checkpoints; the reward
+  provably changes the trained policy).
+- **Still unverified:** *learning* (the smoke deliberately can't) and the `--post-eval` path (not yet wired).
 
 ## Next decision required
 
-**Do you authorise the bounded training smoke** (`--launch-training`, 1 seed, ≤10 min, live-logged)? The dry-run
-already predicts a ~50× weaker delivery signal under `mw_in_place_off` — the smoke would confirm the plumbing runs
-end-to-end and give the first behavioural read; a multi-seed Stage-B run would follow only if the smoke is clean.
+The smoke is clean (plumbing verified). To actually answer the Stage-B question, the next run must produce a
+*competent* policy so the reward difference has something to act on. Recommended real Stage-B experiment (gated,
+more compute):
+
+1. **BC warm-start** each profile from scripted demos (reuse the pattern in `pick_place_ppo` / `behaviour_clone`),
+   then fine-tune under the profile's reward — a from-scratch policy never grasps, so RL needs the imitation anchor.
+2. **Wire `--post-eval`** — load the checkpoint, roll episodes, run `run_reward_ablation_comparison` on the trained
+   policy's own rollouts + render a GIF per profile (§9), so the behavioural difference is measured and watchable.
+3. **Multi-seed** once single-seed shows a signal.
+
+**Decision:** authorise the real (BC-warm-started) Stage-B run, or stop at the verified plumbing? This is a larger
+compute step than the smoke, so it waits on your go-ahead.
 
 ## Constraints honored
 
-No training launched · no production ablation · FANUC v2 / coin-collab v2b / `CORE.YAML` / `metaworld_reward.hymeko`
-/ `pyproject.toml` untouched · no existing report/artifact overwritten · quadruped failures left untouched
-(mentioned only as pre-existing) · no policy-learning claim made.
+Only the **user-authorized** bounded smoke was run (1 seed, 3000 steps, ~1 s/profile, into a fresh dir) · no
+production/multi-seed training · no policy-learning claim (the smoke explicitly does not learn) · FANUC v2 /
+coin-collab v2b / `CORE.YAML` / `metaworld_reward.hymeko` / `pyproject.toml` untouched · no existing report/artifact
+overwritten · quadruped failures left untouched (mentioned only as pre-existing).
