@@ -90,8 +90,10 @@ def render_policy_gif(cfg: Any, spec: AblatedRewardSpec, policy: Any, out_path: 
 
 
 def evaluate_and_render(cfg: Any, name: str, spec: AblatedRewardSpec, policy: Any, orig_weights: np.ndarray,
-                        out_dir: Path) -> "dict[str, Any]":
-    """Full post-eval of a trained policy: behaviour metrics, reward mechanism (reuses ``_condition``), and a GIF."""
+                        out_dir: Path, *, render: bool = True) -> "dict[str, Any]":
+    """Full post-eval of a trained policy: behaviour metrics, reward mechanism (reuses ``_condition``), and a GIF.
+
+    ``render=False`` skips the GIF (used per-seed in multi-seed sweeps; render only the representative seed)."""
     from hymeko_rl.eval.cip.metaworld_reward import reward_mechanism_proposal
     from hymeko_rl.eval.cip.reward_ablation_metaworld import _condition
 
@@ -103,7 +105,11 @@ def evaluate_and_render(cfg: Any, name: str, spec: AblatedRewardSpec, policy: An
     prof_dir.mkdir(parents=True, exist_ok=True)
     prop = reward_mechanism_proposal(spec.source, available=[*rec["cip"], "total_reward"])
     cond = _condition(rec["cip"], reward_own, rec["task_score"], prop, f"{name}_trained", prof_dir)
-    gif_path, gif_ok = render_policy_gif(cfg, spec, policy, prof_dir / "rollout.gif")
+    gif_path: "str | None" = None
+    gif_ok = False
+    if render:
+        gp, gif_ok = render_policy_gif(cfg, spec, policy, prof_dir / "rollout.gif")
+        gif_path = str(gp)
     cipvars = rec["cip"]
     return {"success_rate": round(rec["success_rate"], 4),
             "near_fraction": round(float(np.mean(cipvars["near_fraction"])), 4),
@@ -114,7 +120,7 @@ def evaluate_and_render(cfg: Any, name: str, spec: AblatedRewardSpec, policy: An
             "reward_under_original_mean": round(float(np.mean(reward_orig)), 4),
             "reward_monitor_disagreement": cond["reward_monitor_disagreement"],
             "loadings": cond["loadings"], "cross_view_agree": cond["cross_view_agree"],
-            "reward_reconstruction_r2": cond["reward_reconstruction_r2"], "gif": str(gif_path), "gif_success": gif_ok}
+            "reward_reconstruction_r2": cond["reward_reconstruction_r2"], "gif": gif_path, "gif_success": gif_ok}
 
 
 def compare_profiles(results: "dict[str, dict[str, Any]]") -> "dict[str, Any]":

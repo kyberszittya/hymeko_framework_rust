@@ -1,22 +1,29 @@
 # MetaWorld reward-ablation Stage A→B — executive brief (Ito+Kato)
 
 **Date:** 2026-07-09 · Aiko · branch `hymeko-neuro-migration` · closure commit `a92a8c6`
-**Audience:** Kato / Ito. Read-only consolidation of the Stage A→B arc. **No new experiments were run for this
-brief.**
+**Audience:** Kato / Ito. Read-only consolidation of the Stage A→B arc, **updated after a 5-seed Stage-B run.**
+
+> **⚠️ MULTI-SEED UPDATE (5 seeds).** The single-seed Stage-B *success* collapse (62.5%→0%) is **NOT robust** — it
+> reverses on seed 4 (`mw_in_place_off` 1.00 vs original 0.29); the success axis is dominated by BC + REINFORCE
+> variance. **Robust across 5/5 seeds:** reward↔monitor **disagreement** is higher under `mw_in_place_off` (median
+> 0.254 vs 0.087). See [multiseed report](2026-07-09-metaworld-stageb-multiseed-result.md). The Stage-B section
+> below is corrected accordingly; Stage A is unaffected.
 
 ---
 
-## Headline
+## Headline (corrected after multi-seed)
 
 Using the HyMeKo `.hymeko` reward as the single source of truth, we ablated one declared reward term
 (`mw_in_place`) on MetaWorld pick-place and traced the consequence through two levels. At the
 **reward-computation level** (fixed rollouts, no training) `mw_in_place` is the dominant reward driver — ablating
 it collapses its CIP/LiNGAM-SH mechanism loading (1918→373, 5.1×) and doubles the reward↔monitor disagreement,
-robust across 5 seeds; `mw_grasp` is inert (a clean negative control) and `mw_dist` is a weak secondary. At the
-**policy-learning level** (BC warm-start + reward fine-tune, single seed), from an *identical* cloned start,
-training under the full reward reaches 62.5% success while training under `mw_in_place_off` collapses to **0%** —
-the policy never grasps and barely approaches the object. `mw_in_place` is load-bearing both in what the reward
-*computes* and in what a policy trained on it can *achieve*.
+**robust across 5 seeds**; `mw_grasp` is inert (a clean negative control) and `mw_dist` is a weak secondary. At the
+**policy-learning level** (BC warm-start + reward fine-tune, **5 seeds**), a policy trained under `mw_in_place_off`
+robustly shows **higher reward↔monitor disagreement** (5/5 seeds) — the reward stops tracking the task — but the
+raw *success* contrast is **not robust** (the single favorable seed 0 showed 62.5%→0%; the 5-seed median leans
+original 0.29 vs 0.04 with a full reversal on seed 4, dominated by optimizer variance). `mw_in_place` is
+load-bearing in what the reward *computes* and disrupts reward↔task *alignment* when trained on — but a robust
+*success* claim needs a stronger optimizer than the REINFORCE smoke.
 
 ## Stage A — reward-computation level (no training)
 
@@ -36,19 +43,25 @@ offline on fixed scripted rollouts, then re-running CIP/DirectLiNGAM + weighted 
   is a genuine positive (dominant, collapses sharply); `mw_dist` is a real-but-weak secondary — reported, not
   overclaimed.
 
-## Stage B — policy-learning level (BC warm-start + reward fine-tune, 1 seed)
+## Stage B — policy-learning level (BC warm-start + reward fine-tune, 5 seeds)
 
-From the **same** BC-cloned, reward-agnostic base policy (fair shared start), fine-tune REINFORCE under each reward:
+From the **same** BC-cloned start per seed (fair within-seed), fine-tune REINFORCE under each reward. **5-seed
+aggregate (median [IQR]):**
 
-| trained under | success | grasp | near (approaches object) | reward↔monitor disagreement | reward under TRUE reward |
-|---|---:|---:|---:|---:|---:|
-| **original** | **0.625** | 0.494 | 0.555 | 0.145 | **+749** |
-| **`mw_in_place_off`** | **0.000** | 0.000 | 0.010 | 0.312 | **−218** |
-| Δ (off − original) | −0.625 | −0.494 | −0.545 | +0.167 | — |
+| metric | original | `mw_in_place_off` | robust? |
+|---|---|---|---|
+| success rate | 0.292 [0.083, 0.667] | 0.042 [0.000, 0.208] | **no** — IQRs overlap; seed 4 reverses (off 1.00) |
+| grasp fraction | 0.413 [0.100, 0.471] | 0.000 [0.000, 0.121] | no |
+| **reward↔monitor disagreement** | **0.087 [0.080, 0.109]** | **0.254 [0.188, 0.261]** | **YES — off higher 5/5** |
+| reward under TRUE reward | 710 [80, 746] | −104 [−134, 205] | leans original, wide IQR |
 
-**Policy-learning verdict: SUPPORTED (single seed).** Removing `mw_in_place` does not merely lower performance — it
-collapses the policy: no grasp, almost no approach, 0% delivery, and reward↔monitor disagreement doubles. The same
-start under the full reward learns to 62.5%.
+Per-seed success contrast (orig−off): **[+0.67, +0.08, 0.00, +0.54, −0.71]**.
+
+**Policy-learning verdict: NOT_ROBUST for success; ROBUST for reward↔monitor disagreement.** The single-seed run
+(seed 0: 62.5% vs 0%) was a favorable seed — the success axis is dominated by BC-quality variance (BC success
+0.29–1.00 across seeds) and REINFORCE variance (original *collapsed* to 0.04 from a perfect BC base on seed 2). The
+part that holds up: under `mw_in_place_off` the reward stops tracking the task monitor in **every** seed (higher
+disagreement), even on seed 4 where the off policy happens to succeed (its disagreement is the highest, 0.435).
 
 ## The observation-normalization correction (fairness)
 
@@ -63,39 +76,41 @@ dead clone. The "covariate-shift wall" was a normalization bug, not a fundamenta
 
 ## Honest caveats
 
-- **Stage B is single-seed.** The effect is large and mechanistically coherent, but not yet median/IQR. Env
-  randomization is seed-uncontrolled (BC-eval success itself varies 0.46–0.95 run-to-run) — which is exactly why
-  the two arms share **one** BC start: the comparison is within-run controlled.
-- **REINFORCE is a bounded smoke optimizer, not the final RL algorithm.** The result is the *contrast* under a
-  fair, shared, bounded protocol — not an SOTA absolute pick-place number. A stronger optimizer (PPO) would raise
-  both ceilings; the ablation contrast is the claim, not the 62.5%.
-- **Reward-computation → policy-learning is a bridge, not a substitution.** Stage B is a policy-level claim
-  consistent with Stage A, on one task (pick-place), one seed.
+- **Stage-B success is not robust (5-seed).** BC-quality is seed-dependent (0.29–1.00) and REINFORCE is
+  high-variance — it collapsed the *original* arm to 0.04 from a perfect BC base on seed 2, and drove the *off*
+  arm to 1.00 on seed 4. The two arms share a start **within** a seed (fair), but the fine-tune outcome is
+  optimizer-noise-dominated at this budget. The single-seed 62.5%→0% was a favorable seed.
+- **REINFORCE is a bounded smoke optimizer, not the final RL algorithm.** A stronger optimizer (PPO) or larger
+  budget is needed before any *success* claim is defensible.
+- **What is robust:** reward↔monitor disagreement is higher under `mw_in_place_off` in 5/5 seeds — the policy-level
+  echo of Stage A. And Stage A (reward-computation level) never depended on training.
 
-## Claim discipline (three tiers)
+## Claim discipline (three tiers, post multi-seed)
 
 **A — safe to claim now:**
 - The HyMeKo `.hymeko` reward SoT can drive reward-term ablation (deterministic, non-mutating).
 - Runtime monitors expose reward/task disagreement (reward↔monitor concordance).
-- LiNGAM-SH mechanism grouping can be intervened on (ablate a term → re-fit → cross-view).
-- `mw_in_place` is load-bearing **in reward computation** (5-seed SUPPORTED) **and in a single-seed policy-learning
-  smoke** (62.5% → 0%).
+- LiNGAM-SH mechanism grouping can be intervened on (ablate a term → re-fit → cross-view; 100 % cross-view).
+- `mw_in_place` is load-bearing **in reward computation** (5-seed SUPPORTED).
+- Under `mw_in_place_off`, a trained policy's **reward↔monitor disagreement is robustly higher** (5/5 seeds).
 
 **B — claim only with the caveat attached:**
-- The Stage-B policy consequence is supported **but single-seed**.
-- The REINFORCE result shows a **contrast**, not final-optimizer performance.
+- The Stage-B success **median** leans original (0.29 vs 0.04) **but the contrast is not robust** — never quote the
+  median without the non-robustness.
+- `mw_dist` is a weak/secondary driver (SECONDARY 2 / NOT_SUPPORTED 3), not a positive.
 
-**C — do not claim yet:**
-- Multi-seed policy-learning robustness (not run).
+**C — do not claim (multi-seed refuted the strong form):**
+- ❌ A robust policy-learning *success* collapse — refuted at this optimizer/budget (reverses on seed 4).
 - PPO-level / SOTA performance (not run).
 - Generalization across all MetaWorld tasks (only pick-place studied).
 - Theorem-level LiNGAM-SH identifiability (empirical mechanism grouping, not an identifiability proof).
 
 ## Next gated decisions (nothing runs automatically)
 
-1. **Multi-seed Stage B** (3–5 seeds → median/IQR) to upgrade the policy-level claim from "supported, single-seed"
-   to a robust published result. Larger compute; requires go-ahead.
-2. **PPO instead of REINFORCE** to raise both arms' ceilings and show the contrast survives a stronger optimizer.
-   Larger compute; requires go-ahead.
+1. **PPO (or larger budget) instead of REINFORCE**, then re-run multi-seed — the only path to a defensible
+   *success* claim (current optimizer variance swamps the reward signal). Larger compute; requires go-ahead.
+2. The **disagreement** claim is already robust (5/5) and needs no further compute.
 
-Neither is run here. Artifact map: `reports/2026-07-09-metaworld-stageA-B-artifact-index.md`.
+Multi-seed Stage B is **done** (this update). Artifact map:
+`reports/2026-07-09-metaworld-stageA-B-artifact-index.md`; multi-seed detail:
+`reports/2026-07-09-metaworld-stageb-multiseed-result.md`.

@@ -27,7 +27,7 @@ import argparse
 import json
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -487,7 +487,8 @@ def _original_weights(cfg: StageBConfig) -> np.ndarray:
 
 
 def _run_profile(cfg: StageBConfig, name: str, spec: AblatedRewardSpec, *, base_state: "dict[str, Any] | None",
-                 orig_weights: np.ndarray, allow_uncertified: bool, torch: Any) -> "dict[str, Any]":
+                 orig_weights: np.ndarray, allow_uncertified: bool, torch: Any, render: bool = True,
+                 ) -> "dict[str, Any]":
     """Certify → fine-tune (warm-started if ``base_state``) → checkpoint → post-eval one reward profile."""
     from .stage_b_eval import evaluate_and_render
     cert = _scripted_delivers(cfg, spec)
@@ -500,7 +501,7 @@ def _run_profile(cfg: StageBConfig, name: str, spec: AblatedRewardSpec, *, base_
     out = _train_reward_smoke(cfg, env, cfg.seed, init_state=base_state,
                               log=lambda m, _n=name: print(f"[stage-b {_n}] {m}", flush=True))
     torch.save(out["policy"].state_dict(), cfg.checkpoint_path(name))     # FULL actor, loadable for post-eval
-    ev = evaluate_and_render(cfg, name, spec, out["policy"], orig_weights, cfg.out_dir)
+    ev = evaluate_and_render(cfg, name, spec, out["policy"], orig_weights, cfg.out_dir, render=render)
     print(f"[stage-b {name}] post-eval: success {ev['success_rate']:.2f} | grasp {ev['grasp_fraction']:.3f} | "
           f"progress {ev['progress_score']:.3f} | disagree {ev['reward_monitor_disagreement']:.3f} | "
           f"xview {ev['cross_view_agree']} | gif_success {ev['gif_success']}", flush=True)
@@ -554,6 +555,72 @@ def post_eval(cfg: StageBConfig, name: str, checkpoint: str) -> "dict[str, Any]"
     return ev
 
 
+_SB_METRICS = ("success_rate", "grasp_fraction", "near_fraction", "progress_score",
+               "reward_monitor_disagreement", "reward_under_original_mean")
+
+
+def _aggregate_profile(per_seed: "list[dict[str, Any]]", name: str, median_iqr: Any) -> "dict[str, Any]":
+    """One profile's median/IQR across seeds for each Stage-B metric + its cross-view pass rate."""
+    seeds_with = [sd for sd in per_seed if name in sd["profiles"]]
+    m: dict[str, Any] = {k: median_iqr([sd["profiles"][name]["eval"][k] for sd in seeds_with]) for k in _SB_METRICS}
+    xv = [bool(sd["profiles"][name]["eval"]["cross_view_agree"]) for sd in seeds_with]
+    m["cross_view_pass_rate"] = round(sum(xv) / max(1, len(xv)), 4)
+    return m
+
+
+def _aggregate_stageb(per_seed: "list[dict[str, Any]]", profiles: "Sequence[str]", median_iqr: Any) -> "dict[str, Any]":
+    """Median/IQR per profile per metric across seeds + the per-seed original−off success contrast + robustness."""
+    agg: dict[str, Any] = {name: _aggregate_profile(per_seed, name, median_iqr) for name in profiles}
+    contrasts = [round(sd["profiles"]["original"]["eval"]["success_rate"]
+                       - sd["profiles"]["mw_in_place_off"]["eval"]["success_rate"], 4)
+                 for sd in per_seed if {"original", "mw_in_place_off"} <= set(sd["profiles"])]
+    agg["_contrast"] = {"success_original_minus_off_per_seed": contrasts,
+                        "median": median_iqr(contrasts)["median"] if contrasts else None,
+                        "all_seeds_original_gt_off": all(c > 0 for c in contrasts) if contrasts else None}
+    return agg
+
+
+def run_stage_b_multiseed(cfg: StageBConfig, *, seeds: "Sequence[int]", launch_training: bool = False,
+                          allow_uncertified: bool = True, render_seed: int = 0) -> "dict[str, Any]":
+    """Multi-seed Stage B — GATED. Per seed: shared BC start → fine-tune both profiles → post-eval. Aggregate IQR.
+
+    # Preconditions ``launch_training`` is True. # Postconditions per-seed results + median/IQR aggregate + verdict."""
+    if not launch_training:
+        raise StageBGateError("refusing to train: pass launch_training=True (--launch-training).")
+    import torch
+
+    from hymeko_rl.eval.cip.reward_ablation_metaworld import _median_iqr
+    orig_weights = _original_weights(cfg)
+    per_seed: list[dict[str, Any]] = []
+    for s in seeds:
+        print(f"[stage-b-ms] seed {s} ({seeds.index(s) + 1}/{len(seeds)})", flush=True)
+        cfg_s = replace(cfg, seed=s, out_dir=cfg.out_dir / f"seed_{s}")
+        base_policy, bc_info = _bc_base_policy(cfg_s)
+        base_state = base_policy.state_dict()               # shared reward-agnostic start for BOTH arms this seed
+        seed_res: dict[str, Any] = {"seed": s, "bc": bc_info, "profiles": {}}
+        for name, spec in build_reward_profiles(cfg_s).items():
+            r = _run_profile(cfg_s, name, spec, base_state=base_state, orig_weights=orig_weights,
+                             allow_uncertified=allow_uncertified, torch=torch, render=(s == render_seed))
+            seed_res["profiles"][name] = {"eval": r["eval"], "final_return": r["final_return"],
+                                          "cert_delivers": r["certification"]["delivers"]}
+        per_seed.append(seed_res)
+    aggregate = _aggregate_stageb(per_seed, cfg.profiles, _median_iqr)
+    c = aggregate["_contrast"]
+    verdict = "SUPPORTED_ROBUST" if (c["all_seeds_original_gt_off"] and (c["median"] or 0) > 0) else "NOT_ROBUST"
+    summary = {"stage": "B", "mode": "multiseed", "seeds": list(seeds), "budget": cfg.total_env_steps,
+               "per_seed": per_seed, "aggregate": aggregate, "verdict": verdict}
+    cfg.out_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.out_dir / "stage_b_multiseed.json").write_text(json.dumps(summary, indent=2, default=float))
+    for name in cfg.profiles:
+        a = aggregate[name]
+        print(f"[stage-b-ms] {name:16s} success {a['success_rate']['median']:.3f}"
+              f"[{a['success_rate']['q1']:.3f},{a['success_rate']['q3']:.3f}] grasp {a['grasp_fraction']['median']:.3f}"
+              f" xview {a['cross_view_pass_rate']:.0%}", flush=True)
+    print(f"[stage-b-ms] contrast(orig-off) per seed {c['success_original_minus_off_per_seed']} | "
+          f"verdict={verdict}", flush=True)
+    return summary
+
+
 def main(argv: "list[str] | None" = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--task", default="pick-place")
@@ -567,6 +634,7 @@ def main(argv: "list[str] | None" = None) -> int:
     ap.add_argument("--post-eval", action="store_true", help="evaluate a trained checkpoint (needs --profile --checkpoint)")
     ap.add_argument("--profile", default="original", help="profile name for --post-eval")
     ap.add_argument("--checkpoint", default=None, help="checkpoint path for --post-eval")
+    ap.add_argument("--multiseed", type=int, default=0, help="SAFETY GATE: run N seeds (0..N-1) and aggregate median/IQR")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
     cfg = StageBConfig(task=a.task, profiles=tuple(a.profiles), seed=a.seed, total_env_steps=a.total_env_steps)
@@ -576,6 +644,11 @@ def main(argv: "list[str] | None" = None) -> int:
         if not a.checkpoint:
             ap.error("--post-eval requires --checkpoint")
         post_eval(cfg, a.profile, a.checkpoint)
+        return 0
+    if a.multiseed > 0:
+        s = run_stage_b_multiseed(cfg, seeds=list(range(a.multiseed)), launch_training=True,
+                                  allow_uncertified=a.allow_uncertified)
+        print(json.dumps({k: v for k, v in s.items() if k != "per_seed"}, indent=2, default=str))
         return 0
     if a.launch_training:
         print(json.dumps(launch(cfg, launch_training=True, allow_uncertified=a.allow_uncertified),

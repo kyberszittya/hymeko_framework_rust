@@ -15,8 +15,10 @@ paths are repo-relative and verified to exist (see the *Path verification* secti
 | [reports/2026-07-09-metaworld-reward-ablation-positive-control.md](2026-07-09-metaworld-reward-ablation-positive-control.md) | `mw_in_place_off` positive control + `mw_dist_off` secondary |
 | [reports/2026-07-09-metaworld-reward-ablation-multiseed.md](2026-07-09-metaworld-reward-ablation-multiseed.md) | 5×N=80 median/IQR robustness (controls confirmed) |
 | [reports/2026-07-09-metaworld-stageb-training-smoke-setup.md](2026-07-09-metaworld-stageb-training-smoke-setup.md) | Stage B gated harness + smoke run (plumbing) |
-| [reports/2026-07-09-metaworld-stageb-training-result.md](2026-07-09-metaworld-stageb-training-result.md) | **Stage B result: 62.5% → 0% policy collapse** |
-| [reports/2026-07-09-metaworld-stageA-B-kato-brief.md](2026-07-09-metaworld-stageA-B-kato-brief.md) | Executive brief (this consolidation) |
+| [reports/2026-07-09-metaworld-stageb-training-result.md](2026-07-09-metaworld-stageb-training-result.md) | Stage B **single-seed** result (seed 0: 62.5% → 0%) |
+| [reports/2026-07-09-metaworld-stageb-multiseed-result.md](2026-07-09-metaworld-stageb-multiseed-result.md) | **Stage B 5-seed: success NOT robust; disagreement robust** (corrects single-seed) |
+| [reports/2026-07-09-metaworld-stageA-B-kato-brief.md](2026-07-09-metaworld-stageA-B-kato-brief.md) | Executive brief (updated post multi-seed) |
+| [reports/2026-07-09-metaworld-stageA-B-claim-discipline.md](2026-07-09-metaworld-stageA-B-claim-discipline.md) | 3-tier claim discipline (updated post multi-seed) |
 
 ## Stage A figures + JSON
 
@@ -43,6 +45,14 @@ Base dir: `reports/figures/2026_07_09_metaworld_stageb_real/`
 | Mechanism `.hymeko` — mw_in_place_off (cross-view ✅) | `reports/figures/2026_07_09_metaworld_stageb_real/mw_in_place_off/reward_mechanism_mw_in_place_off_trained.hymeko` |
 | Checkpoint — original | `reports/figures/2026_07_09_metaworld_stageb_real/original/policy.pt` |
 | Checkpoint — mw_in_place_off | `reports/figures/2026_07_09_metaworld_stageb_real/mw_in_place_off/policy.pt` |
+
+### Multi-seed (5 seeds) — the robustness pass
+
+| Artifact | Path |
+|---|---|
+| **Multi-seed JSON** (per-seed + aggregate + verdict) | `reports/figures/2026_07_09_metaworld_stageb_multiseed/stage_b_multiseed.json` |
+| **Multi-seed panel PNG** | `reports/figures/2026_07_09_metaworld_stageb_multiseed/stage_b_multiseed_panel.png` |
+| Seed-0 GIFs + mechanisms (representative) | `reports/figures/2026_07_09_metaworld_stageb_multiseed/seed_0/` |
 
 ## Code
 

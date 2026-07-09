@@ -122,6 +122,34 @@ def test_compare_profiles_deltas() -> None:
     assert compare_profiles({"original": results["original"]})["comparable"] is False
 
 
+def test_aggregate_stageb_medians_and_contrast() -> None:
+    """M. multi-seed aggregation yields per-profile medians, the per-seed contrast, and a robustness flag."""
+    from hymeko_rl.eval.cip.reward_ablation_metaworld import _median_iqr
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import _aggregate_stageb
+
+    def _mk(orig_succ: float, off_succ: float) -> dict:
+        ev_o = {"success_rate": orig_succ, "grasp_fraction": 0.5, "near_fraction": 0.5, "progress_score": 0.5,
+                "reward_monitor_disagreement": 0.14, "reward_under_original_mean": 700.0, "cross_view_agree": True}
+        ev_a = {"success_rate": off_succ, "grasp_fraction": 0.0, "near_fraction": 0.0, "progress_score": 0.1,
+                "reward_monitor_disagreement": 0.31, "reward_under_original_mean": -200.0, "cross_view_agree": True}
+        return {"profiles": {"original": {"eval": ev_o}, "mw_in_place_off": {"eval": ev_a}}}
+
+    per_seed = [_mk(0.6, 0.0), _mk(0.5, 0.05), _mk(0.7, 0.0)]
+    agg = _aggregate_stageb(per_seed, ("original", "mw_in_place_off"), _median_iqr)
+    assert agg["original"]["success_rate"]["median"] == 0.6
+    assert agg["mw_in_place_off"]["success_rate"]["median"] == 0.0
+    assert agg["original"]["cross_view_pass_rate"] == 1.0
+    assert agg["_contrast"]["all_seeds_original_gt_off"] is True
+    assert agg["_contrast"]["success_original_minus_off_per_seed"] == [0.6, 0.45, 0.7]
+
+
+def test_multiseed_gate_blocks_without_flag(tmp_path) -> None:
+    """N. the multi-seed entry is gated too — no flag, no training."""
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import run_stage_b_multiseed
+    with pytest.raises(StageBGateError):
+        run_stage_b_multiseed(StageBConfig(out_dir=tmp_path), seeds=[0, 1], launch_training=False)
+
+
 @pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
 def test_full_launch_warm_start_eval_and_gif(tmp_path) -> None:
     """L. the real Stage-B path runs BC→fine-tune→post-eval→compare at tiny scale and emits GIFs + a comparison."""

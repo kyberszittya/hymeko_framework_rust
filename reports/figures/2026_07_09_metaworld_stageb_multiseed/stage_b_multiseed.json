@@ -1,0 +1,397 @@
+{
+  "stage": "B",
+  "mode": "multiseed",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "budget": 6000,
+  "per_seed": [
+    {
+      "seed": 0,
+      "bc": {
+        "demo_steps": 4320,
+        "demo_success_episodes": 24,
+        "bc_final_loss": 0.00318,
+        "bc_success_rate": 1.0
+      },
+      "profiles": {
+        "original": {
+          "eval": {
+            "success_rate": 0.6667,
+            "near_fraction": 0.497,
+            "grasp_fraction": 0.4127,
+            "obj_to_target_delta": 0.1421,
+            "progress_score": 0.5614,
+            "reward_own_mean": 710.094,
+            "reward_under_original_mean": 710.094,
+            "reward_monitor_disagreement": 0.07971,
+            "loadings": {
+              "progress_score": 2098.7383,
+              "grasp_fraction": -32.0822,
+              "near_fraction": 335.2282,
+              "obj_to_target_delta": -469.5623
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.9976,
+            "gif": "reports/figures/2026_07_09_metaworld_stageb_multiseed/seed_0/original/rollout.gif",
+            "gif_success": true
+          },
+          "final_return": -129.42081692280576,
+          "cert_delivers": true
+        },
+        "mw_in_place_off": {
+          "eval": {
+            "success_rate": 0.0,
+            "near_fraction": 0.0032,
+            "grasp_fraction": 0.0,
+            "obj_to_target_delta": 0.0051,
+            "progress_score": 0.2149,
+            "reward_own_mean": -443.2008,
+            "reward_under_original_mean": -133.8104,
+            "reward_monitor_disagreement": 0.26087,
+            "loadings": {
+              "progress_score": 477.6156,
+              "near_fraction": 2185.5822,
+              "obj_to_target_delta": 757.3092
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.8061,
+            "gif": "reports/figures/2026_07_09_metaworld_stageb_multiseed/seed_0/mw_in_place_off/rollout.gif",
+            "gif_success": false
+          },
+          "final_return": -528.920161284706,
+          "cert_delivers": true
+        }
+      }
+    },
+    {
+      "seed": 1,
+      "bc": {
+        "demo_steps": 4320,
+        "demo_success_episodes": 24,
+        "bc_final_loss": 0.00378,
+        "bc_success_rate": 0.2917
+      },
+      "profiles": {
+        "original": {
+          "eval": {
+            "success_rate": 0.0833,
+            "near_fraction": 0.1407,
+            "grasp_fraction": 0.0995,
+            "obj_to_target_delta": 0.0594,
+            "progress_score": 0.3069,
+            "reward_own_mean": 79.7422,
+            "reward_under_original_mean": 79.7422,
+            "reward_monitor_disagreement": 0.086957,
+            "loadings": {
+              "progress_score": 2094.9538,
+              "grasp_fraction": -222.8765,
+              "near_fraction": 495.0475,
+              "obj_to_target_delta": -99.0085
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.989,
+            "gif": null,
+            "gif_success": false
+          },
+          "final_return": 470.8945645164235,
+          "cert_delivers": true
+        },
+        "mw_in_place_off": {
+          "eval": {
+            "success_rate": 0.0,
+            "near_fraction": 0.0037,
+            "grasp_fraction": 0.0,
+            "obj_to_target_delta": 0.0319,
+            "progress_score": 0.1853,
+            "reward_own_mean": -476.1854,
+            "reward_under_original_mean": -209.3425,
+            "reward_monitor_disagreement": 0.188406,
+            "loadings": {
+              "progress_score": 2048.2241,
+              "near_fraction": 53.7893,
+              "obj_to_target_delta": -1357.9955
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.7374,
+            "gif": null,
+            "gif_success": false
+          },
+          "final_return": -565.7015836784755,
+          "cert_delivers": true
+        }
+      }
+    },
+    {
+      "seed": 2,
+      "bc": {
+        "demo_steps": 4320,
+        "demo_success_episodes": 24,
+        "bc_final_loss": 0.00336,
+        "bc_success_rate": 1.0
+      },
+      "profiles": {
+        "original": {
+          "eval": {
+            "success_rate": 0.0417,
+            "near_fraction": 0.0132,
+            "grasp_fraction": 0.0,
+            "obj_to_target_delta": 0.03,
+            "progress_score": 0.2049,
+            "reward_own_mean": -156.3643,
+            "reward_under_original_mean": -156.3643,
+            "reward_monitor_disagreement": 0.065217,
+            "loadings": {
+              "progress_score": 2659.9562,
+              "near_fraction": -3102.2166,
+              "obj_to_target_delta": 105.7509
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.9539,
+            "gif": null,
+            "gif_success": false
+          },
+          "final_return": -435.04779725314415,
+          "cert_delivers": true
+        },
+        "mw_in_place_off": {
+          "eval": {
+            "success_rate": 0.0417,
+            "near_fraction": 0.0164,
+            "grasp_fraction": 0.0,
+            "obj_to_target_delta": 0.0494,
+            "progress_score": 0.2259,
+            "reward_own_mean": -429.0752,
+            "reward_under_original_mean": -103.8453,
+            "reward_monitor_disagreement": 0.181159,
+            "loadings": {
+              "progress_score": 906.1,
+              "near_fraction": -915.284,
+              "obj_to_target_delta": 441.7009
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.7795,
+            "gif": null,
+            "gif_success": false
+          },
+          "final_return": -492.1713999854945,
+          "cert_delivers": true
+        }
+      }
+    },
+    {
+      "seed": 3,
+      "bc": {
+        "demo_steps": 4320,
+        "demo_success_episodes": 24,
+        "bc_final_loss": 0.00373,
+        "bc_success_rate": 1.0
+      },
+      "profiles": {
+        "original": {
+          "eval": {
+            "success_rate": 0.75,
+            "near_fraction": 0.7917,
+            "grasp_fraction": 0.6405,
+            "obj_to_target_delta": 0.1735,
+            "progress_score": 0.7025,
+            "reward_own_mean": 1033.0012,
+            "reward_under_original_mean": 1033.0012,
+            "reward_monitor_disagreement": 0.108696,
+            "loadings": {
+              "progress_score": 3253.6605,
+              "grasp_fraction": -6.7017,
+              "near_fraction": -550.5899,
+              "obj_to_target_delta": -180.1055
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.9885,
+            "gif": null,
+            "gif_success": false
+          },
+          "final_return": 1057.0180262801264,
+          "cert_delivers": true
+        },
+        "mw_in_place_off": {
+          "eval": {
+            "success_rate": 0.2083,
+            "near_fraction": 0.2655,
+            "grasp_fraction": 0.1213,
+            "obj_to_target_delta": 0.0563,
+            "progress_score": 0.3496,
+            "reward_own_mean": -298.9388,
+            "reward_under_original_mean": 204.5142,
+            "reward_monitor_disagreement": 0.253623,
+            "loadings": {
+              "progress_score": 547.4839,
+              "grasp_fraction": -173.4875,
+              "near_fraction": 241.0586,
+              "obj_to_target_delta": 373.6976
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.9391,
+            "gif": null,
+            "gif_success": false
+          },
+          "final_return": -475.4164459176656,
+          "cert_delivers": true
+        }
+      }
+    },
+    {
+      "seed": 4,
+      "bc": {
+        "demo_steps": 4320,
+        "demo_success_episodes": 24,
+        "bc_final_loss": 0.00307,
+        "bc_success_rate": 0.5
+      },
+      "profiles": {
+        "original": {
+          "eval": {
+            "success_rate": 0.2917,
+            "near_fraction": 0.634,
+            "grasp_fraction": 0.4715,
+            "obj_to_target_delta": 0.1486,
+            "progress_score": 0.5506,
+            "reward_own_mean": 746.3239,
+            "reward_under_original_mean": 746.3239,
+            "reward_monitor_disagreement": 0.108696,
+            "loadings": {
+              "progress_score": 2032.1613,
+              "grasp_fraction": -48.1432,
+              "near_fraction": 440.5176,
+              "obj_to_target_delta": -582.4732
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.9963,
+            "gif": null,
+            "gif_success": false
+          },
+          "final_return": 1154.8385672575075,
+          "cert_delivers": true
+        },
+        "mw_in_place_off": {
+          "eval": {
+            "success_rate": 1.0,
+            "near_fraction": 0.8738,
+            "grasp_fraction": 0.7525,
+            "obj_to_target_delta": 0.2424,
+            "progress_score": 0.7755,
+            "reward_own_mean": 86.6381,
+            "reward_under_original_mean": 1203.373,
+            "reward_monitor_disagreement": 0.434783,
+            "loadings": {
+              "progress_score": 2060.119,
+              "grasp_fraction": 6.9529,
+              "near_fraction": -274.3365,
+              "obj_to_target_delta": 77.7705
+            },
+            "cross_view_agree": true,
+            "reward_reconstruction_r2": 0.8637,
+            "gif": null,
+            "gif_success": false
+          },
+          "final_return": 19.09550453103473,
+          "cert_delivers": true
+        }
+      }
+    }
+  ],
+  "aggregate": {
+    "original": {
+      "success_rate": {
+        "median": 0.2917,
+        "q1": 0.0833,
+        "q3": 0.6667,
+        "iqr": 0.5834
+      },
+      "grasp_fraction": {
+        "median": 0.4127,
+        "q1": 0.0995,
+        "q3": 0.4715,
+        "iqr": 0.372
+      },
+      "near_fraction": {
+        "median": 0.497,
+        "q1": 0.1407,
+        "q3": 0.634,
+        "iqr": 0.4933
+      },
+      "progress_score": {
+        "median": 0.5506,
+        "q1": 0.3069,
+        "q3": 0.5614,
+        "iqr": 0.2545
+      },
+      "reward_monitor_disagreement": {
+        "median": 0.087,
+        "q1": 0.0797,
+        "q3": 0.1087,
+        "iqr": 0.029
+      },
+      "reward_under_original_mean": {
+        "median": 710.094,
+        "q1": 79.7422,
+        "q3": 746.3239,
+        "iqr": 666.5817
+      },
+      "cross_view_pass_rate": 1.0
+    },
+    "mw_in_place_off": {
+      "success_rate": {
+        "median": 0.0417,
+        "q1": 0.0,
+        "q3": 0.2083,
+        "iqr": 0.2083
+      },
+      "grasp_fraction": {
+        "median": 0.0,
+        "q1": 0.0,
+        "q3": 0.1213,
+        "iqr": 0.1213
+      },
+      "near_fraction": {
+        "median": 0.0164,
+        "q1": 0.0037,
+        "q3": 0.2655,
+        "iqr": 0.2618
+      },
+      "progress_score": {
+        "median": 0.2259,
+        "q1": 0.2149,
+        "q3": 0.3496,
+        "iqr": 0.1347
+      },
+      "reward_monitor_disagreement": {
+        "median": 0.2536,
+        "q1": 0.1884,
+        "q3": 0.2609,
+        "iqr": 0.0725
+      },
+      "reward_under_original_mean": {
+        "median": -103.8453,
+        "q1": -133.8104,
+        "q3": 204.5142,
+        "iqr": 338.3246
+      },
+      "cross_view_pass_rate": 1.0
+    },
+    "_contrast": {
+      "success_original_minus_off_per_seed": [
+        0.6667,
+        0.0833,
+        0.0,
+        0.5417,
+        -0.7083
+      ],
+      "median": 0.0833,
+      "all_seeds_original_gt_off": false
+    }
+  },
+  "verdict": "NOT_ROBUST"
+}
