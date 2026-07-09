@@ -1,0 +1,11 @@
+MetaWorldDoorOpenGeneric{}
+metaworlddooropengeneric
+{
+    action_noise {}
+    near_fraction {}
+    grasp_fraction {}
+    total_reward {}
+
+    @c0{ (+grasp_fraction, -action_noise); }
+    @c1{ (+total_reward, +near_fraction); }
+}

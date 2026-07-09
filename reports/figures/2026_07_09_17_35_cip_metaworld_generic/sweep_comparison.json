@@ -1,0 +1,112 @@
+{
+  "kind": "generic MetaWorld CIP sweep",
+  "tasks": [
+    "push",
+    "pick-place",
+    "door-open",
+    "button-press",
+    "reach"
+  ],
+  "n_per_task": 80,
+  "seed": 0,
+  "per_task": {
+    "push": {
+      "causal_order": [
+        "grasp_fraction",
+        "near_fraction",
+        "total_reward",
+        "obj_to_target_delta",
+        "action_noise"
+      ],
+      "reward_parents": [
+        [
+          "near_fraction",
+          "total_reward",
+          0.780705
+        ]
+      ],
+      "reward_monitor_disagreement": 0.205063,
+      "mw_success_rate": 0.6125,
+      "cross_view_agree": true,
+      "canonical_hash": "blake3:b3fd11c0f82ec10f1fa19df0cf93842c38918f603eb2fb08aa4709c5ddd81698",
+      "continuous_dropped": {
+        "reward_progress_disagreement": "constant"
+      }
+    },
+    "pick-place": {
+      "causal_order": [
+        "near_fraction",
+        "total_reward",
+        "grasp_fraction",
+        "obj_to_target_delta",
+        "action_noise"
+      ],
+      "reward_parents": [
+        [
+          "near_fraction",
+          "total_reward",
+          0.749758
+        ]
+      ],
+      "reward_monitor_disagreement": 0.244304,
+      "mw_success_rate": 0.8875,
+      "cross_view_agree": true,
+      "canonical_hash": "blake3:b21ce06c00eb6c9c936ff507071e93b03d8a8ce9324049429a3c5dde5ba7b0f1",
+      "continuous_dropped": {
+        "reward_progress_disagreement": "constant"
+      }
+    },
+    "door-open": {
+      "causal_order": [
+        "grasp_fraction",
+        "total_reward",
+        "action_noise",
+        "near_fraction"
+      ],
+      "reward_parents": [],
+      "reward_monitor_disagreement": 0.003797,
+      "mw_success_rate": 0.9375,
+      "cross_view_agree": true,
+      "canonical_hash": "blake3:35c1afd0f6d54ec3b9094b2a3843602522c686df934de3f330c9d9a46d08c8d8",
+      "continuous_dropped": {
+        "obj_to_target_delta": "constant",
+        "reward_progress_disagreement": "constant"
+      }
+    },
+    "button-press": {
+      "causal_order": [
+        "total_reward",
+        "obj_to_target_delta",
+        "action_noise"
+      ],
+      "reward_parents": [],
+      "reward_monitor_disagreement": 1.06519,
+      "mw_success_rate": 1.0,
+      "cross_view_agree": true,
+      "canonical_hash": "blake3:1a585ff11c9cf737a4685cd21c2d4ff380bc931721fd4dde31b5d235ff038971",
+      "continuous_dropped": {
+        "near_fraction": "constant",
+        "grasp_fraction": "constant",
+        "reward_progress_disagreement": "constant"
+      }
+    },
+    "reach": {
+      "causal_order": [
+        "obj_to_target_delta",
+        "total_reward",
+        "action_noise"
+      ],
+      "reward_parents": [],
+      "reward_monitor_disagreement": 0.43481,
+      "mw_success_rate": 1.0,
+      "cross_view_agree": true,
+      "canonical_hash": "blake3:a75112f1ed1ed1aacf30b1a508491989716bdbab3c15ecc71a04569cf64bef98",
+      "continuous_dropped": {
+        "near_fraction": "constant",
+        "grasp_fraction": "constant",
+        "reward_progress_disagreement": "constant"
+      }
+    }
+  },
+  "cross_view_all_pass": true
+}

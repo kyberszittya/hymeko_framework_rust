@@ -1,0 +1,9 @@
+MetaWorldButtonPressGeneric{}
+metaworldbuttonpressgeneric
+{
+    action_noise {}
+    obj_to_target_delta {}
+    total_reward {}
+
+    @c0{ (+total_reward, -action_noise); }
+}

@@ -1,0 +1,14 @@
+MetaWorldPushGeneric{}
+metaworldpushgeneric
+{
+    action_noise {}
+    near_fraction {}
+    grasp_fraction {}
+    obj_to_target_delta {}
+    total_reward {}
+
+    @c0{ (+grasp_fraction, -action_noise); }
+    @c1{ (+total_reward, -action_noise); }
+    @c2{ (+total_reward, +obj_to_target_delta); }
+    @c3{ (+near_fraction, +total_reward); }
+}

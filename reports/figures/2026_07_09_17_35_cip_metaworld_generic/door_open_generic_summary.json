@@ -1,0 +1,111 @@
+{
+  "task": "door-open",
+  "source": "generic MetaWorld info-signals (scripted policy + action noise)",
+  "n": 80,
+  "seed": 0,
+  "policy": "SawyerDoorOpenV3Policy",
+  "mw_success_rate": 0.9375,
+  "reward_monitor_disagreement": 0.003797,
+  "continuous_kept": [
+    "action_noise",
+    "near_fraction",
+    "grasp_fraction",
+    "total_reward"
+  ],
+  "continuous_dropped": {
+    "obj_to_target_delta": "constant",
+    "reward_progress_disagreement": "constant"
+  },
+  "diagnosis": {
+    "causal_order": [
+      "grasp_fraction",
+      "total_reward",
+      "action_noise",
+      "near_fraction"
+    ],
+    "strongest_edges": [
+      [
+        "total_reward",
+        "near_fraction",
+        0.952532
+      ],
+      [
+        "grasp_fraction",
+        "action_noise",
+        -0.806665
+      ]
+    ],
+    "failure_ranking": [
+      {
+        "variable": "reward_progress_disagreement",
+        "mean_disagreement": 0.003797,
+        "max_disagreement": 0.003797,
+        "candidate_cause": "reward_farming_candidate",
+        "top_rollouts": [
+          0,
+          57,
+          56,
+          55,
+          54
+        ]
+      }
+    ],
+    "next_intervention": "Reward rises without monitor progress \u2014 audit reward vs task BEFORE spending RL budget (action scaling, reward timing, anchor, add the monitor term).",
+    "ablation_plan": [
+      "Decider: A/B the suspected reward term on/off; the monitor-success delta decides whether it is farming.",
+      "Ablate/intervene on 'total_reward'; LiNGAM proposes it increases 'near_fraction' (w=+0.953) \u2014 controlled A/B decides if the edge is real.",
+      "Ablate/intervene on 'grasp_fraction'; LiNGAM proposes it decreases 'action_noise' (w=-0.807) \u2014 controlled A/B decides if the edge is real."
+    ],
+    "provenance": {
+      "n_rollouts": 80,
+      "continuous_used": [
+        "action_noise",
+        "near_fraction",
+        "grasp_fraction",
+        "total_reward"
+      ],
+      "continuous_dropped": {
+        "obj_to_target_delta": "constant",
+        "reward_progress_disagreement": "constant"
+      },
+      "categorical_strata": [
+        "task",
+        "mw_success"
+      ],
+      "lingam": "fit: n=80, d=4"
+    },
+    "_disclaimer": "DirectLiNGAM PROPOSES structure; controlled ablations DECIDE. Not proof of causality."
+  },
+  "_disclaimer": "PROPOSED; task-truth is MetaWorld-native (not a HyMeKo monitor); single run is a point estimate (env randomisation is seed-uncontrolled). Cross-view proves representation only.",
+  "causal_order": [
+    "grasp_fraction",
+    "total_reward",
+    "action_noise",
+    "near_fraction"
+  ],
+  "strongest_edges": [
+    [
+      "total_reward",
+      "near_fraction",
+      0.952532
+    ],
+    [
+      "grasp_fraction",
+      "action_noise",
+      -0.806665
+    ]
+  ],
+  "cross_view": {
+    "agree": true,
+    "backend": "engine",
+    "canonical_hash": "blake3:35c1afd0f6d54ec3b9094b2a3843602522c686df934de3f330c9d9a46d08c8d8",
+    "n_edges_declared": 2,
+    "n_edges_engine": 2,
+    "star_nnz": 4,
+    "clique_nnz": 3,
+    "sum_arities": 4,
+    "edges_match": true,
+    "counts_match": true,
+    "notes": []
+  }
+}
