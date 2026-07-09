@@ -33,10 +33,10 @@ def _pairwise_proposals(edges: "Sequence[tuple[str, str, float]]") -> list[Any]:
 
 
 def _score(variables: "Sequence[str]", edges: "Sequence[tuple[str, str, float]]", proposals: list[Any],
-           ) -> "dict[str, Any]":
-    """Least-squares fit of a candidate set → its reconstruction metrics of ``B``."""
-    from hymeko_rl.eval.causal import fit_sigma_least_squares
-    fac = fit_sigma_least_squares(variables, edges, proposals)
+           *, weighted: bool = False) -> "dict[str, Any]":
+    """Least-squares fit of a candidate set → its reconstruction metrics of ``B`` (binary Σ or per-tail loadings)."""
+    from hymeko_rl.eval.causal import fit_loadings_least_squares, fit_sigma_least_squares
+    fac = (fit_loadings_least_squares if weighted else fit_sigma_least_squares)(variables, edges, proposals)
     m = fac.metrics
     return {"n_mechanisms": len(proposals), "n_parameters": int(m["n_parameters"]),
             "fro_error": m["fro_error"], "explained_energy": m["explained_energy"],
@@ -63,6 +63,8 @@ def compare_reward_mechanisms(variables: "Sequence[str]", edges: "Sequence[tuple
         "none": [], "raw_pairwise": _pairwise_proposals(edges),
         "common_child": common, "hymeko_reward": [reward_prop]}
     scores = {name: _score(variables, edges, props) for name, props in candidates.items()}
+    # the same HyMeKo reward mechanism, but with per-tail loadings (Step 4A weighted fit)
+    scores["hymeko_reward_weighted"] = _score(variables, edges, [reward_prop], weighted=True)
 
     # cross-view the HyMeKo reward mechanism (representation + engine verification)
     cg = proposals_to_causal_hypergraph(variables, [reward_prop], name="HymekoRewardMechanism")

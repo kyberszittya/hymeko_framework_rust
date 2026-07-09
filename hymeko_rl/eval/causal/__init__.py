@@ -36,6 +36,7 @@ from .mechanism_factorization import (
     MechanismFactorization,
     build_pairwise_b,
     factorize_from_proposals,
+    fit_loadings_least_squares,
     fit_sigma_least_squares,
     score_mechanism_set,
 )
@@ -79,6 +80,7 @@ __all__ = [
     "build_pairwise_b",
     "factorize_from_proposals",
     "fit_sigma_least_squares",
+    "fit_loadings_least_squares",
     "score_mechanism_set",
     "MechanismSelectionResult",
     "select_mechanism_subset",

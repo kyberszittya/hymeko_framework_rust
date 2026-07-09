@@ -153,5 +153,80 @@ def fit_sigma_least_squares(variables: "Sequence[str]", pairwise_edges: "Sequenc
                                   b - b_hat, metrics)
 
 
+def _tail_columns(variables: "Sequence[str]", proposals: "Sequence[MechanismProposal]",
+                  ) -> "tuple[list[tuple[int, str]], np.ndarray, dict[str, int]]":
+    """Per-(mechanism, tail-var) loading bases: each column reconstructs ``head_indicator ⊗ e_tail`` (one loading
+    per tail, shared across the mechanism's heads). Returns ``(keys, design (d²×n_loadings), idx)``."""
+    idx = {v: i for i, v in enumerate(variables)}
+    d = len(variables)
+    keys: list[tuple[int, str]] = []
+    columns: list[np.ndarray] = []
+    for k, p in enumerate(proposals):
+        for t in p.tail:
+            mat = np.zeros((d, d), dtype=np.float64)
+            for h in p.head:
+                mat[idx[h], idx[t]] = 1.0
+            keys.append((k, t))
+            columns.append(mat.ravel())
+    design = np.stack(columns, axis=1) if columns else np.zeros((d * d, 0))
+    return keys, design, idx
+
+
+def _declared_loading(proposal: MechanismProposal, tail_var: str) -> "float | None":
+    """The declared per-tail loading from a proposal's evidence (``evidence['loadings'][tail]``), else ``None``."""
+    loadings = (proposal.evidence or {}).get("loadings")
+    if isinstance(loadings, dict) and tail_var in loadings:
+        return float(loadings[tail_var])
+    return None
+
+
+def fit_loadings_least_squares(variables: "Sequence[str]", pairwise_edges: "Sequence[tuple[str, str, float]]",
+                               proposals: "Sequence[MechanismProposal]", *, use_declared: bool = False,
+                               ) -> MechanismFactorization:
+    """**Weighted** mechanism fit: real-valued per-tail loadings (``A_in`` real, ``Σ = I``), so one mechanism
+    can carry asymmetric tail contributions. ``B_hat = A_out · A_inᵀ``; for a single-output mechanism the fitted
+    loading of tail ``x`` equals ``B[y, x]`` (exact — the per-tail generalization of the shared strength).
+
+    ``use_declared`` uses each proposal's declared loadings (``evidence['loadings']``, from the HyMeKo reward SoT)
+    instead of fitting. ``metrics['n_sign_mismatch']`` counts tails whose fitted loading sign contradicts the
+    declared one. The mechanism *structure* is unchanged — loadings are metadata, not new DAG edges.
+    """
+    universe = _variable_universe(variables, pairwise_edges, proposals)
+    b = build_pairwise_b(universe, pairwise_edges)
+    d, m = len(universe), len(proposals)
+    keys, design, idx = _tail_columns(universe, proposals)
+    a_in = np.zeros((d, m), dtype=np.float64)
+    a_out = np.zeros((d, m), dtype=np.float64)
+    for k, p in enumerate(proposals):
+        for h in p.head:
+            a_out[idx[h], k] = 1.0
+    if not keys:
+        b_hat = np.zeros((d, d), dtype=np.float64)
+        metrics = {**score_mechanism_set(b, b_hat, n_mechanisms=m, n_parameters=0), "n_sign_mismatch": 0.0}
+        return MechanismFactorization(tuple(universe), tuple(proposals), a_in, a_out, np.eye(m), b_hat, b, metrics)
+    if use_declared:
+        loadings = np.array([_declared_loading(proposals[k], t) or 0.0 for k, t in keys], dtype=np.float64)
+    else:
+        loadings, *_ = np.linalg.lstsq(design, b.ravel(), rcond=None)
+    for (k, t), load in zip(keys, loadings):
+        a_in[idx[t], k] = float(load)
+    b_hat = a_out @ a_in.T                       # Σ = I; loadings live in A_in
+    metrics = {**score_mechanism_set(b, b_hat, n_mechanisms=m, n_parameters=len(keys)),
+               "n_sign_mismatch": float(_count_loading_sign_mismatch(proposals, keys, loadings))}
+    return MechanismFactorization(tuple(universe), tuple(proposals), a_in, a_out, np.eye(m), b_hat, b - b_hat,
+                                  metrics)
+
+
+def _count_loading_sign_mismatch(proposals: "Sequence[MechanismProposal]", keys: "list[tuple[int, str]]",
+                                 loadings: np.ndarray) -> int:
+    """Tails whose fitted loading sign contradicts the proposal's declared loading (``evidence['loadings']``)."""
+    n = 0
+    for (k, t), load in zip(keys, loadings):
+        declared = _declared_loading(proposals[k], t)
+        if load != 0.0 and declared is not None and int(np.sign(load)) != int(np.sign(declared)):
+            n += 1
+    return n
+
+
 __all__ = ["MechanismFactorization", "build_pairwise_b", "score_mechanism_set", "factorize_from_proposals",
-           "fit_sigma_least_squares"]
+           "fit_sigma_least_squares", "fit_loadings_least_squares"]

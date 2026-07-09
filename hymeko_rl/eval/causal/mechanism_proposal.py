@@ -93,13 +93,15 @@ def _explicit_proposal(tail_vars: "Sequence[str]", output: str, *, weights: "Map
     tail = tuple(dict.fromkeys(tail_vars))              # de-dup, preserve order
     if not tail:
         raise ValueError(f"{source} proposal needs at least one tail variable")
+    evidence: dict[str, Any] = {"tail": list(tail), "output": output, "explicit": True}
     if weights is not None:
         strength, sign = _aggregate_weights([float(weights[t]) for t in tail])
+        # keep the per-tail declared weights (loadings) so the weighted factorization can init / sign-check them
+        evidence["loadings"] = {t: float(weights[t]) for t in tail}
     else:
         strength, sign = 1.0, 1
     return MechanismProposal(name=name, tail=tail, head=(output,), strength=round(strength, 6), sign=sign,
-                             confidence=1.0, source=source,
-                             evidence={"tail": list(tail), "output": output, "explicit": True})
+                             confidence=1.0, source=source, evidence=evidence)
 
 
 def propose_reward_terms(terms: "Sequence[str]", output: str = "total_reward", *,

@@ -1,0 +1,13 @@
+HymekoRewardMechanism{}
+hymekorewardmechanism
+{
+    near_fraction {}
+    total_reward {}
+    action_noise {}
+    progress_score {}
+    hymeko_reward_mechanism {}
+
+    @c0{ (+progress_score, +hymeko_reward_mechanism); }
+    @c1{ (+near_fraction, +hymeko_reward_mechanism); }
+    @c2{ (+hymeko_reward_mechanism, +total_reward); }
+}

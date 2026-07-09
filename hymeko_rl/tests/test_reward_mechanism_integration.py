@@ -40,9 +40,11 @@ def test_compare_reward_mechanisms_scores_and_cross_view(tmp_path) -> None:
     variables = ["near_fraction", "progress_score", "total_reward"]
     edges = [("near_fraction", "total_reward", 0.9), ("progress_score", "total_reward", 0.7)]
     res = compare_reward_mechanisms(variables, edges, out_path=tmp_path / "cmp.json")
-    assert set(res["scores"]) == {"none", "raw_pairwise", "common_child", "hymeko_reward"}
+    assert set(res["scores"]) == {"none", "raw_pairwise", "common_child", "hymeko_reward", "hymeko_reward_weighted"}
     assert res["scores"]["none"]["explained_energy"] == 0.0
     assert res["scores"]["hymeko_reward"]["explained_energy"] > 0.0     # the reward mechanism explains B
+    # weighted (per-tail loadings) reconstructs the two-parent reward at least as well as binary shared-strength
+    assert res["scores"]["hymeko_reward_weighted"]["explained_energy"] >= res["scores"]["hymeko_reward"]["explained_energy"]
     assert set(res["reward_mechanism"]["tail"]) == {"near_fraction", "progress_score"}
     assert res["cross_view"]["agree"] and res["cross_view"]["acyclic"]  # star-expanded, engine-verified
     assert (tmp_path / "cmp.json").exists()

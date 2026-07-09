@@ -7,7 +7,6 @@ the outcome in the causal order). The real monitors are exercised unchanged (rea
 from __future__ import annotations
 
 import importlib.util
-import sys
 
 import numpy as np
 import pytest
@@ -16,8 +15,14 @@ from hymeko_rl.eval.cip.metaworld_cip import TEMPLATES, _coffee_rollout, _dial_r
 
 
 def test_no_metaworld_dependency() -> None:
-    """The template CIP path imports and runs without the real metaworld package."""
-    assert "metaworld" not in sys.modules
+    """The synthetic template path does not import the metaworld package. (A global sys.modules check is no longer
+    valid — metaworld is installed for the real-env path — so assert the synthetic functions' own source.)"""
+    import inspect
+    import re
+
+    from hymeko_rl.eval.cip.metaworld_cip import _coffee_rollout, _dial_rollout, run_metaworld_cip
+    for fn in (_coffee_rollout, _dial_rollout, run_metaworld_cip):
+        assert re.search(r"^\s*(import metaworld|from metaworld)", inspect.getsource(fn), re.M) is None
 
 
 @pytest.mark.parametrize("gen", [_coffee_rollout, _dial_rollout])

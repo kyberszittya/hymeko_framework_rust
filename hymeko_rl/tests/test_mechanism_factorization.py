@@ -117,6 +117,73 @@ def test_factorization_converts_to_hypergraph_and_cross_view(tmp_path) -> None:
     assert report.agree, report.notes
 
 
+def _reward_prop(tail: tuple[str, ...], loadings: "dict[str, float] | None" = None) -> MechanismProposal:
+    ev: dict = {"tail": list(tail), "output": "y"}
+    if loadings is not None:
+        ev["loadings"] = loadings
+    strength = sum(abs(v) for v in (loadings or {}).values()) / max(1, len(loadings or {})) if loadings else 1.0
+    return MechanismProposal(name="rm", tail=tail, head=("y",), strength=strength, sign=1,
+                             confidence=1.0, source="reward_terms", evidence=ev)
+
+
+def test_weighted_beats_binary_on_asymmetric_two_parent(tmp_path) -> None:
+    """A. per-tail loadings reconstruct an asymmetric {x1,x2}→{y} reward better than the shared-strength binary fit."""
+    from hymeko_rl.eval.causal import fit_loadings_least_squares
+    edges = [("x1", "y", 0.95), ("x2", "y", 0.20)]                    # asymmetric parents
+    prop = _reward_prop(("x1", "x2"))
+    binary = factorize_from_proposals(["x1", "x2", "y"], edges, [prop])
+    weighted = fit_loadings_least_squares(["x1", "x2", "y"], edges, [prop])
+    assert weighted.metrics["explained_energy"] > binary.metrics["explained_energy"]
+    assert weighted.metrics["explained_energy"] == pytest.approx(1.0, abs=1e-9)   # exact for single-output
+
+
+def test_weighted_equals_raw_pairwise_single_output() -> None:
+    """B. with all parents in the tail, per-tail loadings equal the pairwise weights (B[y,x_i])."""
+    from hymeko_rl.eval.causal import fit_loadings_least_squares
+    edges = [("x1", "y", 0.9), ("x2", "y", 0.7)]
+    fac = fit_loadings_least_squares(["x1", "x2", "y"], edges, [_reward_prop(("x1", "x2"))])
+    i = fac.variables.index
+    assert fac.a_in[i("x1"), 0] == pytest.approx(0.9) and fac.a_in[i("x2"), 0] == pytest.approx(0.7)
+    assert fac.metrics["fro_error"] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_binary_mode_unchanged() -> None:
+    """C. the binary shared-strength lstsq path is unchanged (one strength = mean over the two entries)."""
+    from hymeko_rl.eval.causal import fit_sigma_least_squares
+    edges = [("x1", "y", 0.9), ("x2", "y", 0.7)]
+    fac = fit_sigma_least_squares(["x1", "x2", "y"], edges, [_reward_prop(("x1", "x2"))])
+    assert float(fac.sigma[0, 0]) == pytest.approx(0.8)              # (0.9+0.7)/2, one shared strength
+
+
+def test_declared_loadings_used_when_requested() -> None:
+    """D. declared reward weights (evidence['loadings']) can be used as loadings instead of fitting."""
+    from hymeko_rl.eval.causal import fit_loadings_least_squares
+    edges = [("x1", "y", 0.9), ("x2", "y", 0.7)]
+    prop = _reward_prop(("x1", "x2"), loadings={"x1": 3.0, "x2": 5.0})
+    fac = fit_loadings_least_squares(["x1", "x2", "y"], edges, [prop], use_declared=True)
+    i = fac.variables.index
+    assert fac.a_in[i("x1"), 0] == pytest.approx(3.0) and fac.a_in[i("x2"), 0] == pytest.approx(5.0)
+
+
+def test_weighted_sign_mismatch_reported() -> None:
+    """E. a fitted loading whose sign disagrees with the declared loading is counted."""
+    from hymeko_rl.eval.causal import fit_loadings_least_squares
+    edges = [("x1", "y", -0.8)]                                       # true edge negative
+    prop = _reward_prop(("x1",), loadings={"x1": 1.0})               # declared positive
+    fac = fit_loadings_least_squares(["x1", "y"], edges, [prop])
+    assert fac.metrics["n_sign_mismatch"] == pytest.approx(1.0)
+
+
+def test_weighted_converts_and_cross_view(tmp_path) -> None:
+    """F+G. the weighted mechanism (same structure) converts to a CausalHypergraph and cross-view-verifies."""
+    from hymeko_rl.eval.causal import cross_view_verify, fit_loadings_least_squares
+    edges = [("x1", "y", 0.9), ("x2", "y", 0.7)]
+    fac = fit_loadings_least_squares(["x1", "x2", "y"], edges, [_reward_prop(("x1", "x2"))])
+    cg = fac.to_causal_hypergraph("Weighted")
+    assert cg.check_acyclicity().acyclic
+    assert cross_view_verify(cg, tmp_path / "w.hymeko").agree
+
+
 def test_score_mechanism_set_baseline() -> None:
     b = np.array([[0.0, 0.5], [0.0, 0.0]])
     scores = score_mechanism_set(b, np.zeros_like(b), n_mechanisms=0, n_parameters=0)
