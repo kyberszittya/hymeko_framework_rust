@@ -56,6 +56,37 @@ def test_dropped_term_absent_from_active_terms() -> None:
     assert {"mw_in_place", "mw_near", "mw_dist"} <= {k for k, _w in spec.active_terms()}
 
 
+def test_poscontrol_verdict_supported_when_dominant_collapses() -> None:
+    """H. the positive-control verdict is SUPPORTED iff the dominant loading collapses and beats the negative control."""
+    from hymeko_rl.eval.cip.reward_ablation_metaworld import _poscontrol_verdict
+    term_to_var = {"mw_in_place": "progress_score"}
+    variants = {
+        "original": {"loadings": {"progress_score": 1800.0, "near_fraction": 40.0}},
+        "mw_grasp_off": {"reward_change": 0.13, "loadings": {"progress_score": 1750.0}},
+        "mw_in_place_off": {"reward_change": 0.98, "cross_view_agree": True,
+                            "loadings": {"progress_score": 120.0, "near_fraction": 45.0}},
+    }
+    verdict, _reason = _poscontrol_verdict(variants, term_to_var)
+    assert verdict == "SUPPORTED_at_reward_computation_level"
+    # if the dominant loading does NOT collapse, it is NOT supported
+    variants["mw_in_place_off"]["loadings"]["progress_score"] = 1700.0
+    verdict2, _r2 = _poscontrol_verdict(variants, term_to_var)
+    assert verdict2 == "NOT_SUPPORTED"
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_comparison_panel_positive_control(tmp_path) -> None:
+    """I. the comparison panel runs original + 3 ablations, all cross-view-verify, and sets a verdict."""
+    from hymeko_rl.eval.cip.reward_ablation_metaworld import run_reward_ablation_comparison
+    s = run_reward_ablation_comparison("pick-place", n=16, seed=0, out_dir=tmp_path)
+    assert set(s["variants"]) == {"original", "mw_grasp_off", "mw_in_place_off", "mw_dist_off"}
+    # dropping the dominant term must move the reward far more than dropping the minor grasp term
+    assert s["variants"]["mw_in_place_off"]["reward_change"] > s["variants"]["mw_grasp_off"]["reward_change"]
+    assert all(v["cross_view_agree"] for v in s["variants"].values())
+    assert s["verdict"] in ("SUPPORTED_at_reward_computation_level", "NOT_SUPPORTED")
+    assert (tmp_path / "reward_ablation_comparison.json").exists()
+
+
 @pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
 def test_stage_a_runs_recomputes_and_cross_view(tmp_path) -> None:
     """F+G. the full Stage-A run recomputes offline, the mechanism graphs cross-view-verify, and the verdict is set."""

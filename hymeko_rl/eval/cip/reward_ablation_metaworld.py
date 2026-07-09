@@ -225,6 +225,78 @@ def run_reward_ablation_stage_a(task: str = "pick-place", spec_path: str = _DEFA
     return summary
 
 
+def _variant_metrics(cond: "dict[str, Any]") -> "dict[str, Any]":
+    """The per-variant metrics extracted from a `_condition` result (+ the dominant reward driver by |loading|)."""
+    loadings = cond["loadings"]
+    dominant = max(loadings, key=lambda k: abs(loadings[k])) if loadings else None
+    return {"loadings": loadings, "dominant_driver": dominant,
+            "reward_reconstruction_r2": cond["reward_reconstruction_r2"],
+            "weighted_explained_energy": cond["weighted_explained_energy"],
+            "reward_monitor_disagreement": cond["reward_monitor_disagreement"],
+            "cross_view_agree": cond["cross_view_agree"]}
+
+
+def run_reward_ablation_comparison(task: str = "pick-place", spec_path: str = _DEFAULT_SPEC, *,
+                                   drops: "Sequence[Sequence[str]]" = (("mw_grasp",), ("mw_in_place",), ("mw_dist",)),
+                                   n: int = 60, seed: int = 0, out_dir: "Path | None" = None,
+                                   noise_max: float = 0.7) -> "dict[str, Any]":
+    """Ablate several reward terms (offline) and compare original vs each — the positive/negative-control panel."""
+    from hymeko_rl.eval.evaluate import experiment_dir
+    from .metaworld_generic_cip import GENERIC_TASKS
+    from .metaworld_reward import _TERM_TO_CIP_VARIABLE, fit_reward_weights, hymeko_reward_terms, reward_mechanism_proposal
+
+    out = out_dir or experiment_dir("reports/figures", "cip_reward_ablation_poscontrol")
+    out.mkdir(parents=True, exist_ok=True)
+    kinds = [k for k, _w in hymeko_reward_terms(spec_path)]
+    rec = _record_ablation_rollouts(task, GENERIC_TASKS[task], kinds, n, seed + 9_000, noise_max)
+    fitted, r2 = fit_reward_weights(rec["x_step"], rec["y_step"])
+    reward_orig = rec["totals"] @ fitted
+    prop = reward_mechanism_proposal(spec_path, available=[*rec["cip"], "total_reward"])
+
+    variants: dict[str, Any] = {"original": {"drop": [], "reward_change": 0.0,
+                                             **_variant_metrics(_condition(rec["cip"], reward_orig, rec["task_score"],
+                                                                          prop, "original", out))}}
+    for drop in drops:
+        tag = "_".join(drop) + "_off"
+        ablated_w = np.array([0.0 if k in set(drop) else fitted[i] for i, k in enumerate(kinds)])
+        reward_ablt = rec["totals"] @ ablated_w
+        cond = _condition(rec["cip"], reward_ablt, rec["task_score"], prop, tag, out)
+        variants[tag] = {"drop": list(drop), "reward_change": round(_relative_change(reward_orig, reward_ablt), 4),
+                         **_variant_metrics(cond)}
+
+    verdict, reason = _poscontrol_verdict(variants, _TERM_TO_CIP_VARIABLE)
+    summary = {"task": task, "spec": spec_path, "n": n, "seed": seed, "reward_fidelity_r2": round(r2, 4),
+               "fitted_weights": {k: round(float(w), 4) for k, w in zip(kinds, fitted)}, "variants": variants,
+               "verdict": verdict, "verdict_reason": reason,
+               "_disclaimer": "Reward-computation-level only (policy fixed; NO policy-learning claim)."}
+    (out / "reward_ablation_comparison.json").write_text(json.dumps(summary, indent=2, default=float))
+    for name, v in variants.items():
+        print(f"[reward-abl-cmp] {name:16s} reward_change={v['reward_change']:.3f} "
+              f"dominant={v['dominant_driver']} xview={v['cross_view_agree']}", flush=True)
+    print(f"[reward-abl-cmp] verdict={verdict} :: {reason}", flush=True)
+    return summary
+
+
+def _poscontrol_verdict(variants: "dict[str, Any]", term_to_var: "Mapping[str, str]") -> "tuple[str, str]":
+    """SUPPORTED iff mw_in_place_off collapses the progress loading, moves the reward a lot, and beats mw_grasp."""
+    orig = variants["original"]["loadings"]
+    pos = variants.get("mw_in_place_off")
+    if pos is None:
+        return "NOT_SUPPORTED", "mw_in_place_off variant not present"
+    var = term_to_var.get("mw_in_place", "progress_score")
+    l_orig = abs(float(orig.get(var, 0.0)))
+    l_pos = abs(float(pos["loadings"].get(var, 0.0)))
+    collapsed = l_orig > 1e-6 and l_pos < 0.5 * l_orig
+    stronger = pos["reward_change"] > variants.get("mw_grasp_off", {}).get("reward_change", 0.0)
+    ok = collapsed and pos["reward_change"] > 0.3 and pos["cross_view_agree"] and stronger
+    if ok:
+        return "SUPPORTED_at_reward_computation_level", (
+            f"dropping mw_in_place moves the reward {pos['reward_change']:.1%} (vs "
+            f"{variants.get('mw_grasp_off', {}).get('reward_change', 0.0):.1%} for mw_grasp) and collapses the "
+            f"{var} loading {l_orig:.1f} → {l_pos:.1f}")
+    return "NOT_SUPPORTED", f"{var} loading {l_orig:.1f} → {l_pos:.1f}; reward_change {pos['reward_change']:.1%}"
+
+
 def _verdict(g_orig: float, g_ablt: float, reward_change: float, dominant: str, fitted: "Mapping[str, float]",
              cross_view_ok: bool) -> "tuple[str, str]":
     """Decision rule: SUPPORTED iff the grasp loading collapses AND the reward moved materially AND cross-view ok."""

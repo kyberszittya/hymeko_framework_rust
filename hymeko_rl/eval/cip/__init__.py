@@ -41,6 +41,7 @@ from .metaworld_reward import (
 from .reward_ablation_metaworld import (
     AblatedRewardSpec,
     ablate_reward_spec,
+    run_reward_ablation_comparison,
     run_reward_ablation_stage_a,
 )
 from .reward_mechanism_integration import compare_reward_mechanisms
@@ -77,4 +78,5 @@ __all__ = [
     "AblatedRewardSpec",
     "ablate_reward_spec",
     "run_reward_ablation_stage_a",
+    "run_reward_ablation_comparison",
 ]
