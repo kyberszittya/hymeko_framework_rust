@@ -28,6 +28,14 @@ from .metaworld_cip import (
     run_metaworld_multiseed,
 )
 from .metaworld_generic_cip import GENERIC_TASKS, run_generic_cip, run_generic_sweep
+from .metaworld_reward import (
+    RewardFidelity,
+    ablate_reward,
+    evaluate_reward_fidelity,
+    fit_reward_weights,
+    hymeko_reward,
+    run_reward_fidelity_sweep,
+)
 from .metaworld_gifs import make_coffee_push_gifs, render_coffee_push_gif
 
 __all__ = [
@@ -49,4 +57,10 @@ __all__ = [
     "GENERIC_TASKS",
     "run_generic_cip",
     "run_generic_sweep",
+    "RewardFidelity",
+    "hymeko_reward",
+    "fit_reward_weights",
+    "ablate_reward",
+    "evaluate_reward_fidelity",
+    "run_reward_fidelity_sweep",
 ]
