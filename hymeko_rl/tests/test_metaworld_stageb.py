@@ -150,6 +150,18 @@ def test_multiseed_gate_blocks_without_flag(tmp_path) -> None:
         run_stage_b_multiseed(StageBConfig(out_dir=tmp_path), seeds=[0, 1], launch_training=False)
 
 
+def test_running_norm_matches_numpy() -> None:
+    """Q. streaming Welford obs-norm equals batch numpy mean/std (single and multi-batch), for from-scratch RL."""
+    from hymeko_rl.experiments.stage_b_ppo import _RunningNorm
+    rng = np.random.default_rng(0)
+    data = rng.normal(3.0, 2.0, (500, 4)).astype(np.float64)
+    rn = _RunningNorm(4)
+    for chunk in np.array_split(data, 7):                    # fed in uneven chunks
+        rn.update(chunk)
+    assert np.allclose(rn.mean, data.mean(0), atol=1e-9)
+    assert np.allclose(rn.std(), data.std(0), atol=1e-6)
+
+
 def test_gae_matches_monte_carlo_at_lambda_one() -> None:
     """O. GAE at λ=γ=1 reduces to the Monte-Carlo advantage (return − value) — a closed-form check."""
     from hymeko_rl.experiments.stage_b_ppo import _gae

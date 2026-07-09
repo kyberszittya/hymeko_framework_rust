@@ -44,8 +44,11 @@ State the number and the caveat in the same breath; never quote one without the 
    is not robust (reverses on seed 4) and 5-seed PPO gives **both profiles ~100% success** (contrast median 0.0).
    Do **not** say "training without `mw_in_place` collapses/changes the policy's success." A BC-anchored policy is
    not disabled by the ablation.
-2. **That `mw_in_place` is needed to *learn* pick-place.** Not tested — that needs from-scratch RL (no BC), a
-   separate, harder experiment. The BC-anchored study cannot speak to it.
+2. **That `mw_in_place` is needed to *learn* pick-place.** OPEN — from-scratch RL (no BC) was attempted and is
+   **inconclusive**: neither reward learns the task at bounded scale (both 0%, random-init exploration never
+   reaches the object), so it cannot discriminate them. A fair test needs research-scale RL (SAC+replay or a
+   curriculum, 1–2 M steps). Do not claim either way. See
+   [from-scratch report](2026-07-09-metaworld-stageb-from-scratch.md).
 3. **Generalization across MetaWorld tasks.** Only pick-place was studied (coffee-push never grasps, so `mw_grasp`
    was not even in-frame there).
 4. **Theorem-level LiNGAM-SH identifiability.** The mechanism grouping is an empirical, cross-view-checked

@@ -14,6 +14,33 @@ from typing import Any
 import numpy as np
 
 
+class _RunningNorm:
+    """Streaming (Chan's parallel Welford) obs mean/std — the from-scratch substitute for BC-fit normalization."""
+
+    def __init__(self, dim: int) -> None:
+        self.n = 0
+        self.mean = np.zeros(dim, dtype=np.float64)
+        self.m2 = np.zeros(dim, dtype=np.float64)
+
+    def update(self, batch: np.ndarray) -> None:
+        b_n = len(batch)
+        if b_n == 0:
+            return
+        b_mean = batch.mean(0)
+        b_m2 = batch.var(0) * b_n
+        if self.n == 0:
+            self.mean, self.m2, self.n = b_mean.copy(), b_m2.copy(), b_n
+            return
+        delta = b_mean - self.mean
+        tot = self.n + b_n
+        self.mean += delta * b_n / tot
+        self.m2 += b_m2 + delta ** 2 * self.n * b_n / tot
+        self.n = tot
+
+    def std(self) -> np.ndarray:
+        return np.sqrt(self.m2 / max(1, self.n)) if self.n else np.ones_like(self.mean)
+
+
 class _ValueMLP:
     """A small obs-standardized value critic V(s) for GAE — mirrors the actor's input normalization."""
 
@@ -130,12 +157,20 @@ def train_ppo_flat(cfg: Any, env: Any, init_state: "dict[str, Any] | None", seed
         actor.load_state_dict(init_state)
     critic = _ValueMLP(obs_dim, cfg.hidden, seed)
     critic.set_obs_norm(actor.obs_mean, actor.obs_std)
+    # from scratch (no BC): estimate obs normalization online (no demos to fit it); warm-started keeps the BC norm.
+    running = _RunningNorm(obs_dim) if init_state is None else None
     opt = torch.optim.Adam([*actor.parameters(), *critic.parameters()], lr=cfg.ppo_lr)
     history: list[float] = []
     steps = it = 0
     t0 = time.time()
     while steps < cfg.total_env_steps and (time.time() - t0) < cfg.wall_time_cap_s:
         buf = _collect_rollout(cfg, env, actor, critic, seed + it)
+        if running is not None:
+            running.update(buf["obs"])
+            norm = (torch.as_tensor(running.mean, dtype=torch.float32),
+                    torch.as_tensor(np.maximum(running.std(), 1e-3), dtype=torch.float32))
+            actor.obs_mean, actor.obs_std = norm
+            critic.set_obs_norm(*norm)
         steps += len(buf["rew"])
         adv, ret = _gae(buf, cfg.gamma, cfg.ppo_gae_lambda)
         _ppo_update(cfg, actor, critic, opt, buf, adv, ret, seed + it)
