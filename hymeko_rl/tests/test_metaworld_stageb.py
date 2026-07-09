@@ -150,6 +150,34 @@ def test_multiseed_gate_blocks_without_flag(tmp_path) -> None:
         run_stage_b_multiseed(StageBConfig(out_dir=tmp_path), seeds=[0, 1], launch_training=False)
 
 
+def test_diag_parse_and_reach_action() -> None:
+    """R. obs parsing extracts hand/object/goal, and the reach oracle drives toward the object."""
+    from hymeko_rl.experiments.stage_b_diag import _parse, reach_action
+    obs = np.zeros(39, np.float32)
+    obs[:3] = [0.0, 0.6, 0.2]           # hand
+    obs[4:7] = [0.2, 0.6, 0.2]          # object (to the +x of the hand)
+    obs[-3:] = [0.1, 0.9, 0.1]          # goal
+    hand, _g, obj, goal = _parse(obs)
+    assert np.allclose(hand, [0.0, 0.6, 0.2]) and np.allclose(obj, [0.2, 0.6, 0.2]) and np.allclose(goal, [0.1, 0.9, 0.1])
+    act = reach_action(obs)
+    assert act[0] > 0.5 and act[3] == -1.0    # move +x toward the object, gripper open
+
+
+def test_diagnose_categories() -> None:
+    """S. the A/B/C/D diagnosis follows the probe outcomes."""
+    from hymeko_rl.experiments.stage_b_diag import _diagnose
+    good_scr = {"frac_within_0.05": 1.0, "frac_ever_near": 1.0}
+    good_bc = {"success_rate": 0.94, "frac_ever_near": 0.97}
+    rnd = {"min_hand_obj_median": 0.16, "frac_ever_near": 0.02}
+    bad_reach = {"min_hand_obj_median": 0.15, "frac_ever_near": 0.0}
+    ok_reach = {"min_hand_obj_median": 0.05, "frac_ever_near": 0.5}
+    z: dict = {}
+    assert _diagnose(z, rnd, {"frac_within_0.05": 0.0, "frac_ever_near": 0.0}, good_bc, bad_reach, 0.0)[0] == "A"
+    assert _diagnose(z, rnd, good_scr, good_bc, bad_reach, 0.0)[0] == "B"
+    assert _diagnose(z, rnd, good_scr, good_bc, ok_reach, 0.0)[0] == "C"
+    assert _diagnose(z, rnd, good_scr, good_bc, ok_reach, 0.5)[0] == "D"
+
+
 def test_running_norm_matches_numpy() -> None:
     """Q. streaming Welford obs-norm equals batch numpy mean/std (single and multi-batch), for from-scratch RL."""
     from hymeko_rl.experiments.stage_b_ppo import _RunningNorm

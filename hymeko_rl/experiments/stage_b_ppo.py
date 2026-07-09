@@ -151,7 +151,8 @@ def train_ppo_flat(cfg: Any, env: Any, init_state: "dict[str, Any] | None", seed
     obs_dim = int(np.prod(env.observation_space.shape))
     act_dim = int(np.prod(env.action_space.shape))
     scale = float(np.max(np.abs(np.asarray(env.action_space.high, np.float64))))
-    log_std_init = float(np.log(cfg.explore_std)) if init_state is not None else 0.0
+    log_std_init = (float(np.log(cfg.explore_std)) if init_state is not None
+                    else float(np.log(cfg.ppo_from_scratch_std)))     # from-scratch: tunable initial exploration
     actor = _GaussianMLP(obs_dim, act_dim, cfg.hidden, scale, seed=seed, log_std_init=log_std_init)
     if init_state is not None:
         actor.load_state_dict(init_state)

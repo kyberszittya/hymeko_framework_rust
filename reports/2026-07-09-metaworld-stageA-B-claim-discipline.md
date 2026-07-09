@@ -44,11 +44,13 @@ State the number and the caveat in the same breath; never quote one without the 
    is not robust (reverses on seed 4) and 5-seed PPO gives **both profiles ~100% success** (contrast median 0.0).
    Do **not** say "training without `mw_in_place` collapses/changes the policy's success." A BC-anchored policy is
    not disabled by the ablation.
-2. **That `mw_in_place` is needed to *learn* pick-place.** OPEN — from-scratch RL (no BC) was attempted and is
-   **inconclusive**: neither reward learns the task at bounded scale (both 0%, random-init exploration never
-   reaches the object), so it cannot discriminate them. A fair test needs research-scale RL (SAC+replay or a
-   curriculum, 1–2 M steps). Do not claim either way. See
-   [from-scratch report](2026-07-09-metaworld-stageb-from-scratch.md).
+2. **That `mw_in_place` is needed to *learn* pick-place.** OPEN — from-scratch RL was attempted and is **invalid
+   as a reward test**: sanity diagnostics show the from-scratch PPO cannot learn even the trivial *reach* reward at
+   its default exploration setting, while the harness/metrics/control are provably correct (scripted reach fires
+   `near` 100 %, BC succeeds 0.94). The 0%-vs-0% measured **PPO-setup inadequacy** (diagnosis B, fixable via
+   exploration-std/budget), not the reward. A valid test first needs an optimizer that learns reach→grasp from
+   scratch (tuned PPO or SAC). Do not claim either way. See
+   [sanity diagnostics](2026-07-09-pick-place-from-scratch-sanity-diagnostics.md).
 3. **Generalization across MetaWorld tasks.** Only pick-place was studied (coffee-push never grasps, so `mw_grasp`
    was not even in-frame there).
 4. **Theorem-level LiNGAM-SH identifiability.** The mechanism grouping is an empirical, cross-view-checked

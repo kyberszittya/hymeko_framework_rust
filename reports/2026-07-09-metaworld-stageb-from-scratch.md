@@ -1,9 +1,18 @@
 # MetaWorld Stage B — from-scratch RL (no BC): inconclusive by design
 
 **Date:** 2026-07-09 · Aiko · branch `hymeko-neuro-migration`
-**Status:** done, and honestly negative-inconclusive. **From-scratch PPO (no BC) does not learn pick-place under
-*either* reward** (both 0% success), so it cannot test whether `mw_in_place` is needed to *learn* the task. The
-question stays open; this run characterizes the setup, not the reward.
+**Status:** done, but **REVISED by the sanity diagnostics** (see
+[2026-07-09-pick-place-from-scratch-sanity-diagnostics.md](2026-07-09-pick-place-from-scratch-sanity-diagnostics.md)).
+
+> **⚠️ REVISED — diagnosis B (PPO setup), not a wall.** The sanity suite proved the harness/metrics/control are
+> correct (scripted reach closes to 0.026, `near` fires 100 %; BC succeeds 0.94), and that the from-scratch PPO
+> **cannot learn even the trivial reach reward** at its default exploration std=1 (fixable — std=0.3 starts
+> reaching). So the 0%-vs-0% below measured **PPO-setup inadequacy, not the reward and not a true exploration
+> wall.** Do not read this run as "from-scratch RL can't learn pick-place." It cannot test the reward at all until
+> the optimizer is fixed.
+
+**Original (now-superseded) framing:** from-scratch PPO (no BC) does not learn pick-place under *either* reward
+(both 0% success), so it cannot test whether `mw_in_place` is needed to *learn* the task.
 
 ![from-scratch returns](figures/2026_07_09_metaworld_stageb_fromscratch/from_scratch_returns.png)
 

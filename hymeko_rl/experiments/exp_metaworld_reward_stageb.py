@@ -86,6 +86,7 @@ class StageBConfig:
     ppo_entropy_coef: float = 0.0        # 0 → stay near the BC skill (low exploration fine-tune)
     ppo_gae_lambda: float = 0.95
     ppo_lr: float = 3e-4
+    ppo_from_scratch_std: float = 1.0    # initial action std when training from scratch (no BC); 1.0 = very noisy
     out_dir: Path = field(default_factory=lambda: _default_out_dir())
 
     @property
