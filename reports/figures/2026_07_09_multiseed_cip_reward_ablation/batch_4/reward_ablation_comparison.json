@@ -1,0 +1,84 @@
+{
+  "task": "pick-place",
+  "spec": "data/robotics/metaworld_reward.hymeko",
+  "n": 80,
+  "seed": 4,
+  "reward_fidelity_r2": 0.8873,
+  "fitted_weights": {
+    "mw_in_place": 8.5846,
+    "mw_grasp": 0.8584,
+    "mw_near": -0.1717,
+    "mw_dist": 4.6412
+  },
+  "variants": {
+    "original": {
+      "drop": [],
+      "reward_change": 0.0,
+      "loadings": {
+        "progress_score": 1917.704,
+        "grasp_fraction": -31.607,
+        "near_fraction": 24.9768,
+        "obj_to_target_delta": 5.7769
+      },
+      "dominant_driver": "progress_score",
+      "reward_reconstruction_r2": 0.9973,
+      "weighted_explained_energy": 1.0,
+      "reward_monitor_disagreement": 0.118354,
+      "cross_view_agree": true
+    },
+    "mw_grasp_off": {
+      "drop": [
+        "mw_grasp"
+      ],
+      "reward_change": 0.1017,
+      "loadings": {
+        "progress_score": 1830.8433,
+        "grasp_fraction": -22.4981,
+        "near_fraction": -11.8039,
+        "obj_to_target_delta": -70.4649
+      },
+      "dominant_driver": "progress_score",
+      "reward_reconstruction_r2": 0.9985,
+      "weighted_explained_energy": 1.0,
+      "reward_monitor_disagreement": 0.068987,
+      "cross_view_agree": true
+    },
+    "mw_in_place_off": {
+      "drop": [
+        "mw_in_place"
+      ],
+      "reward_change": 1.0036,
+      "loadings": {
+        "progress_score": 372.482,
+        "grasp_fraction": -31.607,
+        "near_fraction": 24.9768,
+        "obj_to_target_delta": 5.7769
+      },
+      "dominant_driver": "progress_score",
+      "reward_reconstruction_r2": 0.9289,
+      "weighted_explained_energy": 1.0,
+      "reward_monitor_disagreement": 0.289873,
+      "cross_view_agree": true
+    },
+    "mw_dist_off": {
+      "drop": [
+        "mw_dist"
+      ],
+      "reward_change": 0.1215,
+      "loadings": {
+        "progress_score": 1632.0827,
+        "grasp_fraction": -9.1088,
+        "near_fraction": 5.8688,
+        "obj_to_target_delta": 76.2418
+      },
+      "dominant_driver": "progress_score",
+      "reward_reconstruction_r2": 0.9979,
+      "weighted_explained_energy": 1.0,
+      "reward_monitor_disagreement": 0.118987,
+      "cross_view_agree": true
+    }
+  },
+  "verdict": "SUPPORTED_at_reward_computation_level",
+  "verdict_reason": "dropping mw_in_place moves the reward 100.4% (vs 10.2% for mw_grasp) and collapses the progress_score loading 1917.7 \u2192 372.5",
+  "_disclaimer": "Reward-computation-level only (policy fixed; NO policy-learning claim)."
+}

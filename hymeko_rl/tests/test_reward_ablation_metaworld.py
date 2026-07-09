@@ -74,6 +74,31 @@ def test_poscontrol_verdict_supported_when_dominant_collapses() -> None:
     assert verdict2 == "NOT_SUPPORTED"
 
 
+def test_median_iqr_and_variant_classification() -> None:
+    """J. the median/IQR helper and per-variant driver classifier are correct on known inputs."""
+    from hymeko_rl.eval.cip.reward_ablation_metaworld import _classify_variant, _median_iqr
+    m = _median_iqr([1.0, 2.0, 3.0, 4.0, 5.0])
+    assert m["median"] == 3.0 and m["iqr"] == 2.0
+    assert _median_iqr([]) == {"median": 0.0, "q1": 0.0, "q3": 0.0, "iqr": 0.0}
+    assert _classify_variant(1.0, 2000.0, 300.0) == "SUPPORTED"      # big reward change + loading collapse
+    assert _classify_variant(0.14, 59.0, 12.0) == "SECONDARY"        # moderate change + collapse (mw_dist-like)
+    assert _classify_variant(0.01, 41.0, 39.0) == "NOT_SUPPORTED"    # inert (mw_grasp-like)
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_multiseed_aggregates_and_stabilizes(tmp_path) -> None:
+    """K. the multi-seed run aggregates median/IQR and per-variant verdicts across independent batches."""
+    from hymeko_rl.eval.cip.reward_ablation_metaworld import run_reward_ablation_multiseed
+    s = run_reward_ablation_multiseed("pick-place", batches=3, n=24, seed0=0, out_dir=tmp_path)
+    assert s["batches"] == 3 and len(s["per_batch"]) == 3
+    agg = s["aggregate"]
+    # dominant term must aggregate to a larger median reward change than the inert grasp term
+    assert agg["mw_in_place_off"]["reward_change"]["median"] > agg["mw_grasp_off"]["reward_change"]["median"]
+    assert agg["mw_in_place_off"]["cross_view_pass_rate"] == 1.0
+    assert "verdict_mode" in agg["mw_grasp_off"]
+    assert (tmp_path / "reward_ablation_multiseed.json").exists()
+
+
 @pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
 def test_comparison_panel_positive_control(tmp_path) -> None:
     """I. the comparison panel runs original + 3 ablations, all cross-view-verify, and sets a verdict."""

@@ -297,6 +297,94 @@ def _poscontrol_verdict(variants: "dict[str, Any]", term_to_var: "Mapping[str, s
     return "NOT_SUPPORTED", f"{var} loading {l_orig:.1f} → {l_pos:.1f}; reward_change {pos['reward_change']:.1%}"
 
 
+def _median_iqr(values: "Sequence[float]") -> "dict[str, float]":
+    """Median, Q1, Q3, IQR of a sample (empty → zeros)."""
+    if not values:
+        return {"median": 0.0, "q1": 0.0, "q3": 0.0, "iqr": 0.0}
+    a = np.asarray(values, dtype=float)
+    q1, med, q3 = (float(np.percentile(a, p)) for p in (25, 50, 75))
+    return {"median": round(med, 4), "q1": round(q1, 4), "q3": round(q3, 4), "iqr": round(q3 - q1, 4)}
+
+
+def _classify_variant(reward_change: float, l_orig: float, l_ablt: float) -> str:
+    """Per-variant driver verdict: SUPPORTED (dominant), SECONDARY (moderate), or NOT_SUPPORTED (inert)."""
+    collapsed = abs(l_orig) > 1e-6 and abs(l_ablt) < 0.5 * abs(l_orig)
+    if reward_change > 0.30 and collapsed:
+        return "SUPPORTED"
+    if reward_change > 0.05 and collapsed:
+        return "SECONDARY"
+    return "NOT_SUPPORTED"
+
+
+def _aggregate_variant(tag: str, per_batch: "Sequence[dict[str, Any]]", term_to_var: "Mapping[str, str]",
+                       ) -> "dict[str, Any]":
+    """Aggregate one variant's metrics across batches: reward-change / loading / disagreement median-IQR + verdicts."""
+    var = term_to_var.get(tag[:-4], "") if tag.endswith("_off") else ""
+    rc, dis, l_orig, l_ablt, dominant, xview, verdicts = [], [], [], [], [], [], []
+    for b in per_batch:
+        v = b["variants"][tag]
+        rc.append(v["reward_change"])
+        dis.append(v["reward_monitor_disagreement"])
+        dominant.append(v["dominant_driver"])
+        xview.append(bool(v["cross_view_agree"]))
+        lo = abs(float(b["variants"]["original"]["loadings"].get(var, 0.0))) if var else 0.0
+        la = abs(float(v["loadings"].get(var, 0.0))) if var else 0.0
+        l_orig.append(lo)
+        l_ablt.append(la)
+        if tag != "original":
+            verdicts.append(_classify_variant(v["reward_change"], lo, la))
+    verdict_freq: dict[str, int] = {}
+    for verdict in verdicts:
+        verdict_freq[verdict] = verdict_freq.get(verdict, 0) + 1
+    dominant_freq: dict[str, int] = {}
+    for d in dominant:
+        dominant_freq[str(d)] = dominant_freq.get(str(d), 0) + 1
+    return {"tracked_var": var, "reward_change": _median_iqr(rc), "disagreement": _median_iqr(dis),
+            "loading_original": _median_iqr(l_orig), "loading_ablated": _median_iqr(l_ablt),
+            "dominant_driver_freq": dominant_freq, "cross_view_pass_rate": round(sum(xview) / len(xview), 4),
+            "verdict_freq": verdict_freq,
+            "verdict_mode": max(verdict_freq, key=lambda k: verdict_freq[k]) if verdict_freq else "n/a"}
+
+
+def run_reward_ablation_multiseed(task: str = "pick-place", spec_path: str = _DEFAULT_SPEC, *,
+                                  drops: "Sequence[Sequence[str]]" = (("mw_grasp",), ("mw_in_place",), ("mw_dist",)),
+                                  batches: int = 5, n: int = 80, seed0: int = 0, out_dir: "Path | None" = None,
+                                  noise_max: float = 0.7) -> "dict[str, Any]":
+    """Run the reward-ablation comparison over ``batches`` independent rollout batches; aggregate median/IQR."""
+    from hymeko_rl.eval.evaluate import experiment_dir
+    from .metaworld_reward import _TERM_TO_CIP_VARIABLE
+
+    out = out_dir or experiment_dir("reports/figures", "cip_reward_ablation_multiseed")
+    out.mkdir(parents=True, exist_ok=True)
+    per_batch: list[dict[str, Any]] = []
+    for b in range(batches):
+        print(f"[reward-abl-ms] batch {b + 1}/{batches} (seed={seed0 + b}, n={n})", flush=True)
+        s = run_reward_ablation_comparison(task, spec_path, drops=drops, n=n, seed=seed0 + b,
+                                           out_dir=out / f"batch_{b}", noise_max=noise_max)
+        per_batch.append(s)
+
+    tags = ["original", *("_".join(d) + "_off" for d in drops)]
+    aggregate = {tag: _aggregate_variant(tag, per_batch, _TERM_TO_CIP_VARIABLE) for tag in tags}
+    panel_verdicts = [b["verdict"] for b in per_batch]
+    panel_freq: dict[str, int] = {}
+    for pv in panel_verdicts:
+        panel_freq[pv] = panel_freq.get(pv, 0) + 1
+    summary = {"task": task, "spec": spec_path, "batches": batches, "n": n, "seed0": seed0,
+               "per_batch": [{"seed": seed0 + i, "verdict": b["verdict"], "reward_fidelity_r2": b["reward_fidelity_r2"],
+                              "variants": {t: {"reward_change": b["variants"][t]["reward_change"],
+                                               "disagreement": b["variants"][t]["reward_monitor_disagreement"],
+                                               "cross_view": b["variants"][t]["cross_view_agree"]}
+                                           for t in tags}} for i, b in enumerate(per_batch)],
+               "aggregate": aggregate, "panel_verdict_freq": panel_freq}
+    (out / "reward_ablation_multiseed.json").write_text(json.dumps(summary, indent=2, default=float))
+    for tag in tags:
+        a = aggregate[tag]
+        print(f"[reward-abl-ms] {tag:16s} rc={a['reward_change']['median']:.3f}"
+              f"[{a['reward_change']['q1']:.3f},{a['reward_change']['q3']:.3f}] "
+              f"verdict={a['verdict_mode']} ({a['verdict_freq']}) xview={a['cross_view_pass_rate']:.0%}", flush=True)
+    return summary
+
+
 def _verdict(g_orig: float, g_ablt: float, reward_change: float, dominant: str, fitted: "Mapping[str, float]",
              cross_view_ok: bool) -> "tuple[str, str]":
     """Decision rule: SUPPORTED iff the grasp loading collapses AND the reward moved materially AND cross-view ok."""

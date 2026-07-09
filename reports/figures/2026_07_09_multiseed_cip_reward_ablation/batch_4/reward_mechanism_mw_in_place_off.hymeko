@@ -1,0 +1,16 @@
+PickPlaceRewardMw_In_Place_Off{}
+pickplacerewardmw_in_place_off
+{
+    progress_score {}
+    grasp_fraction {}
+    near_fraction {}
+    obj_to_target_delta {}
+    total_reward {}
+    hymeko_reward_mechanism {}
+
+    @c0{ (+progress_score, +hymeko_reward_mechanism); }
+    @c1{ (+grasp_fraction, +hymeko_reward_mechanism); }
+    @c2{ (+near_fraction, +hymeko_reward_mechanism); }
+    @c3{ (+obj_to_target_delta, +hymeko_reward_mechanism); }
+    @c4{ (+hymeko_reward_mechanism, +total_reward); }
+}
