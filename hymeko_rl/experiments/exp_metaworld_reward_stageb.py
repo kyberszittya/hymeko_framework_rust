@@ -69,6 +69,13 @@ class StageBConfig:
     wall_time_cap_s: float = 600.0       # hard 10-min cap on the smoke
     cert_noise_max: float = 0.7          # action noise in certification so failures appear (a discriminating gate)
     cert_rollouts: int = 12
+    # --- real Stage-B (BC warm-start + reward fine-tune) ---
+    warm_start: bool = True              # BC-clone a competent base policy before RL fine-tune (else from scratch)
+    bc_demos: int = 24                   # scripted-expert demo episodes for the BC anchor
+    bc_epochs: int = 150
+    bc_lr: float = 1e-3
+    explore_std: float = 0.1             # fine-tune action noise (small → preserve the BC skill)
+    eval_episodes_post: int = 24         # trained-policy post-eval rollouts
     out_dir: Path = field(default_factory=lambda: _default_out_dir())
 
     @property
@@ -256,7 +263,8 @@ def dry_run(cfg: StageBConfig, *, n_certify: int = 8) -> "dict[str, Any]":
 class _GaussianMLP:
     """A tiny tanh-squashed Gaussian policy over flat obs — the minimal actor for the bounded REINFORCE smoke."""
 
-    def __init__(self, obs_dim: int, act_dim: int, hidden: int, act_scale: float, *, seed: int) -> None:
+    def __init__(self, obs_dim: int, act_dim: int, hidden: int, act_scale: float, *, seed: int,
+                 log_std_init: float = 0.0) -> None:
         import torch
         torch.manual_seed(seed)
         self._torch = torch
@@ -264,27 +272,156 @@ class _GaussianMLP:
         self.net = torch.nn.Sequential(torch.nn.Linear(obs_dim, hidden), torch.nn.Tanh(),
                                        torch.nn.Linear(hidden, hidden), torch.nn.Tanh())
         self.mean = torch.nn.Linear(hidden, act_dim)
-        self.log_std = torch.nn.Parameter(torch.zeros(act_dim))
+        self.log_std = torch.nn.Parameter(torch.full((act_dim,), float(log_std_init)))
+        self.obs_mean = torch.zeros(obs_dim)     # obs standardization — MetaWorld obs are unnormalized (buffers)
+        self.obs_std = torch.ones(obs_dim)
 
     def parameters(self) -> Any:
         return [*self.net.parameters(), *self.mean.parameters(), self.log_std]
 
+    def set_obs_norm(self, mean: np.ndarray, std: np.ndarray) -> None:
+        """Fit input standardization from the BC demos so a raw-obs tanh-MLP actually responds."""
+        self.obs_mean = self._torch.as_tensor(np.asarray(mean, np.float32))
+        self.obs_std = self._torch.as_tensor(np.maximum(np.asarray(std, np.float32), 1e-3))
+
     def state_dict(self) -> "dict[str, Any]":
-        """The FULL actor state (trunk + mean head + log_std) — a loadable checkpoint for post-eval."""
-        return {"net": self.net.state_dict(), "mean": self.mean.state_dict(), "log_std": self.log_std.detach()}
+        """The FULL actor state (trunk + mean head + log_std + obs norm) — a loadable checkpoint for post-eval."""
+        return {"net": self.net.state_dict(), "mean": self.mean.state_dict(), "log_std": self.log_std.detach(),
+                "obs_mean": self.obs_mean, "obs_std": self.obs_std}
 
-    def _dist(self, obs: np.ndarray) -> Any:
-        t = self._torch
-        h = self.net(t.as_tensor(np.asarray(obs, np.float32)))
-        return t.distributions.Normal(self.mean(h), self.log_std.exp())
+    def load_state_dict(self, state: "dict[str, Any]") -> None:
+        self.net.load_state_dict(state["net"])
+        self.mean.load_state_dict(state["mean"])
+        with self._torch.no_grad():
+            self.log_std.copy_(state["log_std"])
+        self.obs_mean = state.get("obs_mean", self.obs_mean)
+        self.obs_std = state.get("obs_std", self.obs_std)
 
-    def sample(self, obs: np.ndarray) -> "tuple[np.ndarray, Any]":
+    def _hidden(self, obs: Any) -> Any:
         t = self._torch
-        dist = self._dist(obs)
+        x = obs if t.is_tensor(obs) else t.as_tensor(np.asarray(obs, np.float32))
+        return self.net((x - self.obs_mean) / self.obs_std)
+
+    def action_mean(self, obs: Any) -> Any:
+        """The deterministic (greedy) action — tanh-squashed mean. Used for BC targets and post-eval rollouts."""
+        return self._torch.tanh(self.mean(self._hidden(obs))) * self._scale
+
+    def greedy(self, obs: Any) -> np.ndarray:
+        arr: np.ndarray = self.action_mean(obs).detach().numpy().astype(np.float32)
+        return arr
+
+    def sample(self, obs: Any) -> "tuple[np.ndarray, Any]":
+        t = self._torch
+        dist = t.distributions.Normal(self.mean(self._hidden(obs)), self.log_std.exp())
         raw = dist.sample()                 # DETACHED sample — REINFORCE needs the score-function gradient of
         logp = dist.log_prob(raw).sum()     # log_prob w.r.t. the params; a reparameterized rsample() would cancel it
         act = t.tanh(raw) * self._scale
         return act.detach().numpy().astype(np.float32), logp
+
+
+def collect_scripted_demos(cfg: StageBConfig, spec: AblatedRewardSpec, n_episodes: int, *, only_success: bool = True,
+                           ) -> "tuple[np.ndarray, np.ndarray, int]":
+    """Roll the scripted expert → (obs, action) pairs from (successful) episodes — the BC anchor. Reward-agnostic."""
+    import warnings
+
+    from hymeko_rl.eval.cip.metaworld_generic_cip import GENERIC_TASKS
+    policy_name = GENERIC_TASKS[cfg.task]
+    obs_all: list[np.ndarray] = []
+    act_all: list[np.ndarray] = []
+    n_success = 0
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import metaworld.policies as mp
+        for i in range(n_episodes):
+            env = make_training_env(cfg, spec)
+            expert = getattr(mp, policy_name)()
+            obs, _ = env.reset(seed=cfg.seed + 5_000 + i)
+            ep_obs: list[np.ndarray] = []
+            ep_act: list[np.ndarray] = []
+            ok = False
+            for _ in range(cfg.max_steps):
+                act = np.asarray(expert.get_action(obs), np.float32)
+                ep_obs.append(np.asarray(obs, np.float32))
+                ep_act.append(np.clip(act, -1.0, 1.0))
+                obs, _r, term, trunc, info = env.step(act)
+                ok = ok or bool(info.get("success", 0.0))
+                if term or trunc:
+                    break
+            if ok:
+                n_success += 1
+            if ok or not only_success:
+                obs_all.extend(ep_obs)
+                act_all.extend(ep_act)
+    return np.asarray(obs_all, np.float32), np.asarray(act_all, np.float32), n_success
+
+
+def bc_clone(policy: "_GaussianMLP", obs: np.ndarray, acts: np.ndarray, *, epochs: int, lr: float, seed: int,
+             batch: int = 256) -> "list[float]":
+    """Fit the policy's greedy action to the expert actions by MSE (behaviour cloning). Returns per-epoch loss."""
+    import torch
+    torch.manual_seed(seed)
+    rng = np.random.default_rng(seed)
+    opt = torch.optim.Adam(policy.parameters(), lr=lr)
+    obs_t = torch.as_tensor(obs)
+    act_t = torch.as_tensor(acts)
+    n = len(obs)
+    losses: list[float] = []
+    for _ in range(epochs):
+        idx = rng.permutation(n)
+        ep_loss = 0.0
+        nb = 0
+        for s in range(0, n, batch):
+            b = idx[s:s + batch]
+            pred = policy.action_mean(obs_t[b])
+            loss = ((pred - act_t[b]) ** 2).mean()
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            ep_loss += float(loss)
+            nb += 1
+        losses.append(ep_loss / max(1, nb))
+    return losses
+
+
+def _policy_success_rate(cfg: StageBConfig, spec: AblatedRewardSpec, policy: "_GaussianMLP", *, n: int,
+                         seed0: int = 20_000) -> float:
+    """Greedy success rate of a trained policy over ``n`` fresh episodes (the task monitor for pick-place)."""
+    import warnings
+    ok = 0
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for i in range(n):
+            env = make_training_env(cfg, spec)
+            obs, _ = env.reset(seed=seed0 + i)
+            done = False
+            for _ in range(cfg.max_steps):
+                obs, _r, term, trunc, info = env.step(policy.greedy(obs))
+                done = done or bool(info.get("success", 0.0))
+                if term or trunc:
+                    break
+            ok += int(done)
+    return ok / max(1, n)
+
+
+def _bc_base_policy(cfg: StageBConfig) -> "tuple[_GaussianMLP, dict[str, Any]]":
+    """Collect scripted demos and BC-clone one competent base policy (shared, reward-agnostic start for all arms)."""
+    spec = ablate_reward_spec(cfg.spec_path)                 # original reward — BC ignores reward, needs only dims
+    obs, acts, n_succ = collect_scripted_demos(cfg, spec, cfg.bc_demos)
+    if len(obs) == 0:
+        raise RuntimeError("BC collected zero demo steps (no successful scripted episodes) — cannot warm-start")
+    env = make_training_env(cfg, spec)
+    obs_dim = int(np.prod(env.observation_space.shape))
+    act_dim = int(np.prod(env.action_space.shape))
+    scale = float(np.max(np.abs(np.asarray(env.action_space.high, np.float64))))
+    policy = _GaussianMLP(obs_dim, act_dim, cfg.hidden, scale, seed=cfg.seed, log_std_init=float(np.log(cfg.explore_std)))
+    policy.set_obs_norm(obs.mean(axis=0), obs.std(axis=0))    # standardize inputs from the demo distribution
+    losses = bc_clone(policy, obs, acts, epochs=cfg.bc_epochs, lr=cfg.bc_lr, seed=cfg.seed)
+    succ = _policy_success_rate(cfg, spec, policy, n=cfg.eval_episodes)
+    info = {"demo_steps": len(obs), "demo_success_episodes": n_succ, "bc_final_loss": round(losses[-1], 5),
+            "bc_success_rate": round(succ, 4)}
+    print(f"[stage-b BC] demos={n_succ}/{cfg.bc_demos} eps, {len(obs)} steps | bc_loss {losses[-1]:.4f} | "
+          f"BC success {succ:.2f}", flush=True)
+    return policy, info
 
 
 def _returns_to_go(rewards: "list[float]", gamma: float) -> np.ndarray:
@@ -296,10 +433,11 @@ def _returns_to_go(rewards: "list[float]", gamma: float) -> np.ndarray:
     return out
 
 
-def _train_reward_smoke(cfg: StageBConfig, env: Any, seed: int, *, log: Any) -> "dict[str, Any]":
-    """A bounded REINFORCE smoke on the reward-override env. RUNTIME-UNVERIFIED until the first ``--launch-training``.
+def _train_reward_smoke(cfg: StageBConfig, env: Any, seed: int, *, log: Any,
+                        init_state: "dict[str, Any] | None" = None) -> "dict[str, Any]":
+    """Bounded REINFORCE on the reward-override env, optionally warm-started from a BC state.
 
-    Live-logged per §3 (episode, step k/total, return, loss, steps/s). NOT run during setup."""
+    Live-logged per §3 (episode, step k/total, return, loss, steps/s)."""
     import time
 
     import torch
@@ -307,7 +445,10 @@ def _train_reward_smoke(cfg: StageBConfig, env: Any, seed: int, *, log: Any) -> 
     obs_dim = int(np.prod(env.observation_space.shape))
     act_dim = int(np.prod(env.action_space.shape))
     scale = float(np.max(np.abs(np.asarray(env.action_space.high, np.float64))))
-    policy = _GaussianMLP(obs_dim, act_dim, cfg.hidden, scale, seed=seed)
+    log_std_init = float(np.log(cfg.explore_std)) if init_state is not None else 0.0
+    policy = _GaussianMLP(obs_dim, act_dim, cfg.hidden, scale, seed=seed, log_std_init=log_std_init)
+    if init_state is not None:
+        policy.load_state_dict(init_state)                  # BC warm-start: fine-tune AROUND the cloned skill
     opt = torch.optim.Adam(policy.parameters(), lr=cfg.lr)
     history: list[float] = []
     steps = ep = 0
@@ -339,34 +480,78 @@ def _train_reward_smoke(cfg: StageBConfig, env: Any, seed: int, *, log: Any) -> 
             "wall_s": round(time.time() - t0, 1)}
 
 
+def _original_weights(cfg: StageBConfig) -> np.ndarray:
+    """The declared (un-ablated) reward weights — the reference for 'reward recomputed under the original'."""
+    w: np.ndarray = np.asarray(ablate_reward_spec(cfg.spec_path).ablated_weights(), dtype=np.float64)
+    return w
+
+
+def _run_profile(cfg: StageBConfig, name: str, spec: AblatedRewardSpec, *, base_state: "dict[str, Any] | None",
+                 orig_weights: np.ndarray, allow_uncertified: bool, torch: Any) -> "dict[str, Any]":
+    """Certify → fine-tune (warm-started if ``base_state``) → checkpoint → post-eval one reward profile."""
+    from .stage_b_eval import evaluate_and_render
+    cert = _scripted_delivers(cfg, spec)
+    if not cert["delivers"] and not allow_uncertified:
+        raise StageBUncertifiedError(
+            f"profile {name!r} reward does not rank success above failure ({cert}); pass allow_uncertified=True "
+            f"(--allow-uncertified) to train on it deliberately (this is the mw_in_place_off hypothesis).")
+    cfg.log_dir(name).mkdir(parents=True, exist_ok=True)
+    env = make_training_env(cfg, spec)
+    out = _train_reward_smoke(cfg, env, cfg.seed, init_state=base_state,
+                              log=lambda m, _n=name: print(f"[stage-b {_n}] {m}", flush=True))
+    torch.save(out["policy"].state_dict(), cfg.checkpoint_path(name))     # FULL actor, loadable for post-eval
+    ev = evaluate_and_render(cfg, name, spec, out["policy"], orig_weights, cfg.out_dir)
+    print(f"[stage-b {name}] post-eval: success {ev['success_rate']:.2f} | grasp {ev['grasp_fraction']:.3f} | "
+          f"progress {ev['progress_score']:.3f} | disagree {ev['reward_monitor_disagreement']:.3f} | "
+          f"xview {ev['cross_view_agree']} | gif_success {ev['gif_success']}", flush=True)
+    return {"certification": cert, "episodes": out["episodes"], "env_steps": out["env_steps"], "wall_s": out["wall_s"],
+            "returns": out["returns"], "final_return": out["returns"][-1] if out["returns"] else None,
+            "checkpoint": str(cfg.checkpoint_path(name)), "eval": ev, "eval_command": cfg.eval_command(name)}
+
+
 def launch(cfg: StageBConfig, *, launch_training: bool = False, allow_uncertified: bool = False) -> "dict[str, Any]":
-    """Train the Stage-B profiles — GATED. Raises unless ``launch_training`` (and, per profile, certified or waived).
+    """Real Stage B — GATED. BC warm-start (shared) → per-profile reward fine-tune → post-eval → compare.
 
     # Preconditions ``launch_training`` is True; each profile's reward delivers, or ``allow_uncertified`` is set.
-    # Postconditions returns a per-profile summary; a checkpoint is written per profile."""
+    # Postconditions returns per-profile training+eval + the original-vs-ablated behavioural comparison."""
     if not launch_training:
         raise StageBGateError(
             "refusing to train: pass launch_training=True (--launch-training). Stage B is gated by design.")
     import torch
 
+    from .stage_b_eval import compare_profiles
     profiles = build_reward_profiles(cfg)
-    summary: dict[str, Any] = {"stage": "B", "mode": "train", "trained": True, "results": {}}
+    orig_weights = _original_weights(cfg)
+    base_state: "dict[str, Any] | None" = None
+    bc_info: "dict[str, Any] | None" = None
+    if cfg.warm_start:
+        base_policy, bc_info = _bc_base_policy(cfg)
+        base_state = base_policy.state_dict()               # a fair, reward-agnostic shared start for every arm
+    summary: dict[str, Any] = {"stage": "B", "mode": "train", "trained": True, "warm_start": cfg.warm_start,
+                               "bc": bc_info, "budget": {"total_env_steps": cfg.total_env_steps}, "results": {}}
     for name, spec in profiles.items():
-        cert = _scripted_delivers(cfg, spec)
-        if not cert["delivers"] and not allow_uncertified:
-            raise StageBUncertifiedError(
-                f"profile {name!r} reward does not rank success above failure ({cert}); pass allow_uncertified=True "
-                f"(--allow-uncertified) to train on it deliberately (this is the mw_in_place_off hypothesis).")
-        cfg.log_dir(name).mkdir(parents=True, exist_ok=True)
-        env = make_training_env(cfg, spec)
-        out = _train_reward_smoke(cfg, env, cfg.seed, log=lambda m, _n=name: print(f"[stage-b {_n}] {m}", flush=True))
-        torch.save(out["policy"].state_dict(), cfg.checkpoint_path(name))     # FULL actor, loadable for post-eval
-        summary["results"][name] = {"certification": cert, "episodes": out["episodes"], "env_steps": out["env_steps"],
-                                    "wall_s": out["wall_s"], "returns": out["returns"],
-                                    "final_return": out["returns"][-1] if out["returns"] else None,
-                                    "checkpoint": str(cfg.checkpoint_path(name)), "eval_command": cfg.eval_command(name)}
+        summary["results"][name] = _run_profile(cfg, name, spec, base_state=base_state, orig_weights=orig_weights,
+                                                 allow_uncertified=allow_uncertified, torch=torch)
+    summary["comparison"] = compare_profiles(summary["results"])
     (cfg.out_dir / "stage_b_train.json").write_text(json.dumps(summary, indent=2, default=float))
     return summary
+
+
+def post_eval(cfg: StageBConfig, name: str, checkpoint: str) -> "dict[str, Any]":
+    """Load a trained checkpoint and run the full post-eval (behaviour metrics + reward mechanism + GIF)."""
+    import torch
+
+    from .stage_b_eval import evaluate_and_render
+    spec = ablate_reward_spec(cfg.spec_path, drop=cfg.drop_for(name))
+    env = make_training_env(cfg, spec)
+    obs_dim = int(np.prod(env.observation_space.shape))
+    act_dim = int(np.prod(env.action_space.shape))
+    scale = float(np.max(np.abs(np.asarray(env.action_space.high, np.float64))))
+    policy = _GaussianMLP(obs_dim, act_dim, cfg.hidden, scale, seed=cfg.seed)
+    policy.load_state_dict(torch.load(checkpoint))
+    ev = evaluate_and_render(cfg, name, spec, policy, _original_weights(cfg), cfg.out_dir)
+    print(json.dumps(ev, indent=2, default=float))
+    return ev
 
 
 def main(argv: "list[str] | None" = None) -> int:
@@ -376,17 +561,24 @@ def main(argv: "list[str] | None" = None) -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--total-env-steps", type=int, default=3_000)
     ap.add_argument("--dry-run", action="store_true", help="validate profiles/env/paths/eval and exit before optimizer")
-    ap.add_argument("--launch-training", action="store_true", help="SAFETY GATE: actually train (bounded smoke)")
+    ap.add_argument("--launch-training", action="store_true", help="SAFETY GATE: actually train (BC warm-start + fine-tune)")
     ap.add_argument("--allow-uncertified", action="store_true",
                     help="train even if a reward does not rank success above failure (the mw_in_place_off hypothesis)")
+    ap.add_argument("--post-eval", action="store_true", help="evaluate a trained checkpoint (needs --profile --checkpoint)")
+    ap.add_argument("--profile", default="original", help="profile name for --post-eval")
+    ap.add_argument("--checkpoint", default=None, help="checkpoint path for --post-eval")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
     cfg = StageBConfig(task=a.task, profiles=tuple(a.profiles), seed=a.seed, total_env_steps=a.total_env_steps)
     if a.out:
         cfg = replace(cfg, out_dir=Path(a.out))
+    if a.post_eval:
+        if not a.checkpoint:
+            ap.error("--post-eval requires --checkpoint")
+        post_eval(cfg, a.profile, a.checkpoint)
+        return 0
     if a.launch_training:
-        print(json.dumps({k: v for k, v in launch(cfg, launch_training=True,
-                                                  allow_uncertified=a.allow_uncertified).items() if k != "policy"},
+        print(json.dumps(launch(cfg, launch_training=True, allow_uncertified=a.allow_uncertified),
                          indent=2, default=str))
         return 0
     if not a.dry_run:
