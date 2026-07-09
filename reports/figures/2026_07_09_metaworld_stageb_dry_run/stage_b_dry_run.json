@@ -1,0 +1,92 @@
+{
+  "stage": "B",
+  "mode": "dry-run",
+  "trained": false,
+  "task": "pick-place",
+  "env_id": "pick-place-v3-goal-observable",
+  "seed": 0,
+  "budget": {
+    "total_env_steps": 3000,
+    "max_steps": 180,
+    "eval_episodes": 24,
+    "wall_time_cap_s": 600.0
+  },
+  "profiles": {
+    "original": {
+      "dropped": [],
+      "weights": {
+        "mw_in_place": 8.0,
+        "mw_grasp": 1.2,
+        "mw_near": 1.0,
+        "mw_dist": 10.0
+      },
+      "reward_finite": true,
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 3,
+        "n_rollouts": 8,
+        "mean_return_success": 970.193,
+        "mean_return_failure": -248.0086
+      },
+      "eval_command": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile original --checkpoint reports/figures/2026_07_09_metaworld_stageb_dry_run/original/policy.pt"
+    },
+    "mw_in_place_off": {
+      "dropped": [
+        "mw_in_place"
+      ],
+      "weights": {
+        "mw_in_place": 0.0,
+        "mw_grasp": 1.2,
+        "mw_near": 1.0,
+        "mw_dist": 10.0
+      },
+      "reward_finite": true,
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 4,
+        "n_rollouts": 8,
+        "mean_return_success": 18.2919,
+        "mean_return_failure": -312.4595
+      },
+      "eval_command": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile mw_in_place_off --checkpoint reports/figures/2026_07_09_metaworld_stageb_dry_run/mw_in_place_off/policy.pt"
+    },
+    "mw_grasp_off": {
+      "dropped": [
+        "mw_grasp"
+      ],
+      "weights": {
+        "mw_in_place": 8.0,
+        "mw_grasp": 0.0,
+        "mw_near": 1.0,
+        "mw_dist": 10.0
+      },
+      "reward_finite": true,
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 3,
+        "n_rollouts": 8,
+        "mean_return_success": 991.9671,
+        "mean_return_failure": -168.7865
+      },
+      "eval_command": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile mw_grasp_off --checkpoint reports/figures/2026_07_09_metaworld_stageb_dry_run/mw_grasp_off/policy.pt"
+    }
+  },
+  "paths": {
+    "out_dir": "reports/figures/2026_07_09_metaworld_stageb_dry_run",
+    "collides_with_stage_a": false,
+    "overwrites_existing": false,
+    "log_dirs": {
+      "original": "reports/figures/2026_07_09_metaworld_stageb_dry_run/original",
+      "mw_in_place_off": "reports/figures/2026_07_09_metaworld_stageb_dry_run/mw_in_place_off",
+      "mw_grasp_off": "reports/figures/2026_07_09_metaworld_stageb_dry_run/mw_grasp_off"
+    }
+  },
+  "post_eval_commands": {
+    "original": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile original --checkpoint reports/figures/2026_07_09_metaworld_stageb_dry_run/original/policy.pt",
+    "mw_in_place_off": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile mw_in_place_off --checkpoint reports/figures/2026_07_09_metaworld_stageb_dry_run/mw_in_place_off/policy.pt",
+    "mw_grasp_off": "python -m hymeko_rl.experiments.exp_metaworld_reward_stageb --post-eval --task pick-place --profile mw_grasp_off --checkpoint reports/figures/2026_07_09_metaworld_stageb_dry_run/mw_grasp_off/policy.pt"
+  }
+}
