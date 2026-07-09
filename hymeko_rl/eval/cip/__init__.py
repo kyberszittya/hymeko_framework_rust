@@ -34,8 +34,11 @@ from .metaworld_reward import (
     evaluate_reward_fidelity,
     fit_reward_weights,
     hymeko_reward,
+    hymeko_reward_terms,
+    reward_mechanism_proposal,
     run_reward_fidelity_sweep,
 )
+from .reward_mechanism_integration import compare_reward_mechanisms
 from .metaworld_gifs import make_coffee_push_gifs, render_coffee_push_gif
 
 __all__ = [
@@ -63,4 +66,7 @@ __all__ = [
     "ablate_reward",
     "evaluate_reward_fidelity",
     "run_reward_fidelity_sweep",
+    "hymeko_reward_terms",
+    "reward_mechanism_proposal",
+    "compare_reward_mechanisms",
 ]

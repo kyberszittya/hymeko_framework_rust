@@ -17,7 +17,7 @@ bit-exact (MetaWorld's reward is computed inside the env with an un-exposed reac
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 
@@ -28,7 +28,40 @@ _TERM_TO_COMPONENT: dict[str, tuple[str, float]] = {
     "mw_near": ("near_object", 1.0),
     "mw_dist": ("obj_to_target", -1.0),   # -weight·distance
 }
+# HyMeKo reward-term kind → the CIP rollout-frame variable it corresponds to (for the LiNGAM-SH mechanism bridge).
+_TERM_TO_CIP_VARIABLE: dict[str, str] = {
+    "mw_near": "near_fraction",
+    "mw_grasp": "grasp_fraction",
+    "mw_in_place": "progress_score",       # in_place ≈ the monitor's task-progress score
+    "mw_dist": "obj_to_target_delta",
+}
 _DEFAULT_SPEC = "data/robotics/metaworld_reward.hymeko"
+
+
+def hymeko_reward_terms(spec_path: str = _DEFAULT_SPEC) -> "list[tuple[str, float]]":
+    """The declared ``(term_kind, weight)`` pairs of the HyMeKo MetaWorld reward (via ``read_reward_terms``)."""
+    from hymeko_rl.env.reward import read_reward_terms
+    return list(read_reward_terms(spec_path))
+
+
+def reward_mechanism_proposal(spec_path: str = _DEFAULT_SPEC, *, available: "Sequence[str] | None" = None,
+                              output: str = "total_reward", name: str = "hymeko_reward_mechanism") -> Any:
+    """Build the ``{reward terms} → {output}`` mechanism proposal from the HyMeKo reward declaration.
+
+    Extracts the declared terms, maps each to its CIP frame variable (:data:`_TERM_TO_CIP_VARIABLE`), and (if
+    ``available`` is given) keeps only the terms whose variable is present in the frame. The declared weights carry
+    through to the proposal. # Preconditions ``output`` and at least one mapped term are usable.
+    """
+    from hymeko_rl.eval.causal import propose_reward_terms
+    mapped = [(_TERM_TO_CIP_VARIABLE[k], float(w)) for k, w in hymeko_reward_terms(spec_path)
+              if k in _TERM_TO_CIP_VARIABLE]
+    if available is not None:
+        allow = set(available)
+        mapped = [(v, w) for v, w in mapped if v in allow]
+    if not mapped:
+        raise ValueError(f"no HyMeKo reward term maps to an available variable ({available})")
+    tail = [v for v, _w in mapped]
+    return propose_reward_terms(tail, output=output, weights={v: w for v, w in mapped}, name=name)
 
 
 @dataclass(frozen=True)
