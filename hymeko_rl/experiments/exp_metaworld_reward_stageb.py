@@ -76,6 +76,16 @@ class StageBConfig:
     bc_lr: float = 1e-3
     explore_std: float = 0.1             # fine-tune action noise (small → preserve the BC skill)
     eval_episodes_post: int = 24         # trained-policy post-eval rollouts
+    # --- optimizer: "reinforce" (bounded smoke) or "ppo" (on-policy, low-variance, corrects covariate shift) ---
+    optimizer: str = "reinforce"
+    ppo_rollout_steps: int = 2048
+    ppo_epochs: int = 10
+    ppo_minibatch: int = 256
+    ppo_clip: float = 0.2
+    ppo_value_coef: float = 0.5
+    ppo_entropy_coef: float = 0.0        # 0 → stay near the BC skill (low exploration fine-tune)
+    ppo_gae_lambda: float = 0.95
+    ppo_lr: float = 3e-4
     out_dir: Path = field(default_factory=lambda: _default_out_dir())
 
     @property
@@ -318,6 +328,21 @@ class _GaussianMLP:
         act = t.tanh(raw) * self._scale
         return act.detach().numpy().astype(np.float32), logp
 
+    def sample_raw(self, obs: Any) -> "tuple[Any, np.ndarray, float]":
+        """PPO collection: return the pre-tanh ``raw`` (to recompute log-prob later), the applied action, and log π."""
+        t = self._torch
+        dist = t.distributions.Normal(self.mean(self._hidden(obs)), self.log_std.exp())
+        raw = dist.sample()
+        logp = float(dist.log_prob(raw).sum().detach())
+        act: np.ndarray = (t.tanh(raw) * self._scale).detach().numpy().astype(np.float32)
+        return raw.detach(), act, logp
+
+    def log_prob_raw(self, obs_batch: Any, raw_batch: Any) -> Any:
+        """Log-prob (+ entropy) of stored pre-tanh actions under the CURRENT params — the PPO ratio numerator."""
+        t = self._torch
+        dist = t.distributions.Normal(self.mean(self._hidden(obs_batch)), self.log_std.exp())
+        return dist.log_prob(raw_batch).sum(-1), dist.entropy().sum(-1)
+
 
 def collect_scripted_demos(cfg: StageBConfig, spec: AblatedRewardSpec, n_episodes: int, *, only_success: bool = True,
                            ) -> "tuple[np.ndarray, np.ndarray, int]":
@@ -498,8 +523,14 @@ def _run_profile(cfg: StageBConfig, name: str, spec: AblatedRewardSpec, *, base_
             f"(--allow-uncertified) to train on it deliberately (this is the mw_in_place_off hypothesis).")
     cfg.log_dir(name).mkdir(parents=True, exist_ok=True)
     env = make_training_env(cfg, spec)
-    out = _train_reward_smoke(cfg, env, cfg.seed, init_state=base_state,
-                              log=lambda m, _n=name: print(f"[stage-b {_n}] {m}", flush=True))
+
+    def _logf(m: str, _n: str = name) -> None:
+        print(f"[stage-b {_n}] {m}", flush=True)
+    if cfg.optimizer == "ppo":
+        from .stage_b_ppo import train_ppo_flat
+        out = train_ppo_flat(cfg, env, base_state, cfg.seed, log=_logf)
+    else:
+        out = _train_reward_smoke(cfg, env, cfg.seed, init_state=base_state, log=_logf)
     torch.save(out["policy"].state_dict(), cfg.checkpoint_path(name))     # FULL actor, loadable for post-eval
     ev = evaluate_and_render(cfg, name, spec, out["policy"], orig_weights, cfg.out_dir, render=render)
     print(f"[stage-b {name}] post-eval: success {ev['success_rate']:.2f} | grasp {ev['grasp_fraction']:.3f} | "
@@ -635,9 +666,11 @@ def main(argv: "list[str] | None" = None) -> int:
     ap.add_argument("--profile", default="original", help="profile name for --post-eval")
     ap.add_argument("--checkpoint", default=None, help="checkpoint path for --post-eval")
     ap.add_argument("--multiseed", type=int, default=0, help="SAFETY GATE: run N seeds (0..N-1) and aggregate median/IQR")
+    ap.add_argument("--optimizer", default="reinforce", choices=("reinforce", "ppo"), help="fine-tune optimizer")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
-    cfg = StageBConfig(task=a.task, profiles=tuple(a.profiles), seed=a.seed, total_env_steps=a.total_env_steps)
+    cfg = StageBConfig(task=a.task, profiles=tuple(a.profiles), seed=a.seed, total_env_steps=a.total_env_steps,
+                       optimizer=a.optimizer)
     if a.out:
         cfg = replace(cfg, out_dir=Path(a.out))
     if a.post_eval:

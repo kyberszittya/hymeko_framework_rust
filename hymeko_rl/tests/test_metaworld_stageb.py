@@ -150,6 +150,30 @@ def test_multiseed_gate_blocks_without_flag(tmp_path) -> None:
         run_stage_b_multiseed(StageBConfig(out_dir=tmp_path), seeds=[0, 1], launch_training=False)
 
 
+def test_gae_matches_monte_carlo_at_lambda_one() -> None:
+    """O. GAE at λ=γ=1 reduces to the Monte-Carlo advantage (return − value) — a closed-form check."""
+    from hymeko_rl.experiments.stage_b_ppo import _gae
+    buf = {"rew": np.array([1.0, 1.0]), "val": np.array([0.0, 0.0]), "done": np.array([0.0, 1.0]), "last_val": 0.0}
+    adv, ret = _gae(buf, gamma=1.0, lam=1.0)
+    assert np.allclose(adv, [2.0, 1.0]) and np.allclose(ret, [2.0, 1.0])   # ep return-to-go, episode ends at t=1
+
+
+@pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
+def test_ppo_optimizer_runs_and_preserves_schema(tmp_path) -> None:
+    """P. the PPO optimizer path runs end-to-end at tiny scale and returns the same result schema as REINFORCE."""
+    from dataclasses import replace as _replace
+
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import launch
+    cfg = StageBConfig(out_dir=tmp_path, optimizer="ppo", bc_demos=4, bc_epochs=15, ppo_rollout_steps=256,
+                       ppo_epochs=3, total_env_steps=512, eval_episodes=4, eval_episodes_post=8)
+    cfg = _replace(cfg, cert_rollouts=6)
+    s = launch(cfg, launch_training=True, allow_uncertified=True)
+    for name in cfg.profiles:
+        assert 0.0 <= s["results"][name]["eval"]["success_rate"] <= 1.0
+        assert s["results"][name]["episodes"] >= 1                        # at least one PPO iteration ran
+    assert s["comparison"]["comparable"] is True
+
+
 @pytest.mark.skipif(not _HAS_METAWORLD, reason="metaworld package not installed")
 def test_full_launch_warm_start_eval_and_gif(tmp_path) -> None:
     """L. the real Stage-B path runs BC→fine-tune→post-eval→compare at tiny scale and emits GIFs + a comparison."""

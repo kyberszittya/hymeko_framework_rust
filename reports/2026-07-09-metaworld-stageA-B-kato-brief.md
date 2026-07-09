@@ -3,11 +3,12 @@
 **Date:** 2026-07-09 · Aiko · branch `hymeko-neuro-migration` · closure commit `a92a8c6`
 **Audience:** Kato / Ito. Read-only consolidation of the Stage A→B arc, **updated after a 5-seed Stage-B run.**
 
-> **⚠️ MULTI-SEED UPDATE (5 seeds).** The single-seed Stage-B *success* collapse (62.5%→0%) is **NOT robust** — it
-> reverses on seed 4 (`mw_in_place_off` 1.00 vs original 0.29); the success axis is dominated by BC + REINFORCE
-> variance. **Robust across 5/5 seeds:** reward↔monitor **disagreement** is higher under `mw_in_place_off` (median
-> 0.254 vs 0.087). See [multiseed report](2026-07-09-metaworld-stageb-multiseed-result.md). The Stage-B section
-> below is corrected accordingly; Stage A is unaffected.
+> **⚠️ MULTI-SEED + PPO UPDATE.** The single-seed Stage-B *success* collapse (62.5%→0%) is **refuted**: 5-seed
+> REINFORCE is not robust (reverses on seed 4), and **5-seed PPO gives both profiles ~100% success** — a
+> BC-anchored policy is not disabled by the ablation under a stable optimizer. **What survives:** reward↔monitor
+> **disagreement** is ~2.3× higher under `mw_in_place_off` (REINFORCE 5/5, PPO 4/5) — the reward mis-aligns with
+> the task even when the policy succeeds. See the [multiseed](2026-07-09-metaworld-stageb-multiseed-result.md) and
+> [PPO](2026-07-09-metaworld-stageb-ppo-multiseed.md) reports. Stage A (reward-computation) is unaffected.
 
 ---
 

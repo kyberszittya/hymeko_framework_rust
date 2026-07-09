@@ -16,7 +16,8 @@ paths are repo-relative and verified to exist (see the *Path verification* secti
 | [reports/2026-07-09-metaworld-reward-ablation-multiseed.md](2026-07-09-metaworld-reward-ablation-multiseed.md) | 5×N=80 median/IQR robustness (controls confirmed) |
 | [reports/2026-07-09-metaworld-stageb-training-smoke-setup.md](2026-07-09-metaworld-stageb-training-smoke-setup.md) | Stage B gated harness + smoke run (plumbing) |
 | [reports/2026-07-09-metaworld-stageb-training-result.md](2026-07-09-metaworld-stageb-training-result.md) | Stage B **single-seed** result (seed 0: 62.5% → 0%) |
-| [reports/2026-07-09-metaworld-stageb-multiseed-result.md](2026-07-09-metaworld-stageb-multiseed-result.md) | **Stage B 5-seed: success NOT robust; disagreement robust** (corrects single-seed) |
+| [reports/2026-07-09-metaworld-stageb-multiseed-result.md](2026-07-09-metaworld-stageb-multiseed-result.md) | Stage B 5-seed REINFORCE: success NOT robust; disagreement robust |
+| [reports/2026-07-09-metaworld-stageb-ppo-multiseed.md](2026-07-09-metaworld-stageb-ppo-multiseed.md) | **Stage B 5-seed PPO: success refuted (both ~100%); disagreement survives** |
 | [reports/2026-07-09-metaworld-stageA-B-kato-brief.md](2026-07-09-metaworld-stageA-B-kato-brief.md) | Executive brief (updated post multi-seed) |
 | [reports/2026-07-09-metaworld-stageA-B-claim-discipline.md](2026-07-09-metaworld-stageA-B-claim-discipline.md) | 3-tier claim discipline (updated post multi-seed) |
 
@@ -53,6 +54,15 @@ Base dir: `reports/figures/2026_07_09_metaworld_stageb_real/`
 | **Multi-seed JSON** (per-seed + aggregate + verdict) | `reports/figures/2026_07_09_metaworld_stageb_multiseed/stage_b_multiseed.json` |
 | **Multi-seed panel PNG** | `reports/figures/2026_07_09_metaworld_stageb_multiseed/stage_b_multiseed_panel.png` |
 | Seed-0 GIFs + mechanisms (representative) | `reports/figures/2026_07_09_metaworld_stageb_multiseed/seed_0/` |
+
+### PPO multi-seed (5 seeds) — the decisive optimizer pass
+
+| Artifact | Path |
+|---|---|
+| **PPO multi-seed JSON** | `reports/figures/2026_07_09_metaworld_stageb_ppo_multiseed/stage_b_multiseed.json` |
+| **REINFORCE-vs-PPO synthesis PNG** | `reports/figures/2026_07_09_metaworld_stageb_ppo_multiseed/stage_b_optimizer_synthesis.png` |
+| Seed-0 GIFs (both profiles succeed) | `reports/figures/2026_07_09_metaworld_stageb_ppo_multiseed/seed_0/` |
+| PPO trainer | `hymeko_rl/experiments/stage_b_ppo.py` |
 
 ## Code
 
