@@ -1,0 +1,14 @@
+PickPlaceRewardReparented{}
+pickplacerewardreparented
+{
+    progress_score {}
+    near_fraction {}
+    obj_to_target_delta {}
+    total_reward {}
+    hymeko_reward_reparented {}
+
+    @c0{ (+progress_score, +hymeko_reward_reparented); }
+    @c1{ (+near_fraction, +hymeko_reward_reparented); }
+    @c2{ (+obj_to_target_delta, +hymeko_reward_reparented); }
+    @c3{ (+hymeko_reward_reparented, +total_reward); }
+}

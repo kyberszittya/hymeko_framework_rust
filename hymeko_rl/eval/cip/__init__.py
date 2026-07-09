@@ -38,6 +38,11 @@ from .metaworld_reward import (
     reward_mechanism_proposal,
     run_reward_fidelity_sweep,
 )
+from .reward_ablation_metaworld import (
+    AblatedRewardSpec,
+    ablate_reward_spec,
+    run_reward_ablation_stage_a,
+)
 from .reward_mechanism_integration import compare_reward_mechanisms
 from .metaworld_gifs import make_coffee_push_gifs, render_coffee_push_gif
 
@@ -69,4 +74,7 @@ __all__ = [
     "hymeko_reward_terms",
     "reward_mechanism_proposal",
     "compare_reward_mechanisms",
+    "AblatedRewardSpec",
+    "ablate_reward_spec",
+    "run_reward_ablation_stage_a",
 ]

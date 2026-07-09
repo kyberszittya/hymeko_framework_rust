@@ -1,0 +1,100 @@
+{
+  "task": "pick-place",
+  "spec": "data/robotics/metaworld_reward.hymeko",
+  "dropped": [
+    "mw_grasp"
+  ],
+  "n": 60,
+  "seed": 0,
+  "reward_fidelity_r2": 0.9149,
+  "fitted_weights": {
+    "mw_in_place": 8.5444,
+    "mw_grasp": 1.0467,
+    "mw_near": -0.3256,
+    "mw_dist": 4.8639
+  },
+  "reward_change_fraction": 0.1291,
+  "reward_change_fraction_dominant_term": {
+    "mw_in_place": 1.0049
+  },
+  "grasp_loading_original": -38.5222,
+  "grasp_loading_ablated": -49.514,
+  "original": {
+    "tail": [
+      "progress_score",
+      "grasp_fraction",
+      "near_fraction",
+      "obj_to_target_delta"
+    ],
+    "loadings": {
+      "progress_score": 1974.5125,
+      "grasp_fraction": -38.5222,
+      "near_fraction": -24.6001,
+      "obj_to_target_delta": -27.0782
+    },
+    "reward_reconstruction_r2": 0.9982,
+    "weighted_explained_energy": 1.0,
+    "causal_order": [
+      "near_fraction",
+      "progress_score",
+      "grasp_fraction",
+      "obj_to_target_delta",
+      "total_reward"
+    ],
+    "reward_monitor_disagreement": 0.066667,
+    "cross_view_agree": true,
+    "acyclic": true
+  },
+  "grasp_off": {
+    "tail": [
+      "progress_score",
+      "grasp_fraction",
+      "near_fraction",
+      "obj_to_target_delta"
+    ],
+    "loadings": {
+      "progress_score": 1880.0157,
+      "grasp_fraction": -49.514,
+      "near_fraction": -87.3304,
+      "obj_to_target_delta": -87.4249
+    },
+    "reward_reconstruction_r2": 0.9983,
+    "weighted_explained_energy": 1.0,
+    "causal_order": [
+      "near_fraction",
+      "progress_score",
+      "grasp_fraction",
+      "obj_to_target_delta",
+      "total_reward"
+    ],
+    "reward_monitor_disagreement": 0.073446,
+    "cross_view_agree": true,
+    "acyclic": true
+  },
+  "reparented": {
+    "tail": [
+      "progress_score",
+      "near_fraction",
+      "obj_to_target_delta"
+    ],
+    "loadings": {
+      "progress_score": 1834.2987,
+      "near_fraction": -86.6314,
+      "obj_to_target_delta": -119.8912
+    },
+    "reward_reconstruction_r2": 0.9981,
+    "weighted_explained_energy": 1.0,
+    "causal_order": [
+      "near_fraction",
+      "progress_score",
+      "obj_to_target_delta",
+      "total_reward"
+    ],
+    "reward_monitor_disagreement": 0.073446,
+    "cross_view_agree": true,
+    "acyclic": true
+  },
+  "verdict": "NOT_SUPPORTED",
+  "verdict_reason": "mw_grasp is a minor reward term (fitted 1.05 vs dominant mw_in_place 8.54); ablation moves the reward only 12.9% and the grasp loading does not collapse.",
+  "_disclaimer": "Reward-computation-level only (policy fixed; NO policy-learning claim). Cross-view proves representation, not causal truth."
+}
