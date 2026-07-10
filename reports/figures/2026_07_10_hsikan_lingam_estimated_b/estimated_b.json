@@ -1,0 +1,276 @@
+{
+  "config": {
+    "seeds": 3,
+    "n": 16,
+    "samples": 800,
+    "density": 0.35,
+    "sign_balance": 0.6,
+    "hsikan_hidden": 24,
+    "n_layers": 2,
+    "epochs": 200,
+    "conditions": [
+      "linear",
+      "nonlinear",
+      "flat"
+    ]
+  },
+  "threshold": 0.0,
+  "conditions": {
+    "linear": {
+      "condition": "linear",
+      "models": {
+        "linear": {
+          "test_median": 0.17307,
+          "r2_median": 0.8242,
+          "n_params": 0,
+          "per_seed_test": [
+            0.12815,
+            0.17307,
+            0.19327
+          ]
+        },
+        "mlp": {
+          "test_median": 0.3569,
+          "r2_median": 0.6375,
+          "n_params": 2167,
+          "per_seed_test": [
+            0.26559,
+            0.3569,
+            0.37074
+          ]
+        },
+        "deepsets": {
+          "test_median": 0.95564,
+          "r2_median": 0.0293,
+          "n_params": 2206,
+          "per_seed_test": [
+            0.97905,
+            0.95564,
+            0.90328
+          ]
+        },
+        "hsikan_gt": {
+          "test_median": 0.46851,
+          "r2_median": 0.5181,
+          "n_params": 2209,
+          "per_seed_test": [
+            0.3696,
+            0.47438,
+            0.46851
+          ]
+        },
+        "hsikan_est": {
+          "test_median": 0.41326,
+          "r2_median": 0.5802,
+          "n_params": 2209,
+          "per_seed_test": [
+            0.32414,
+            0.41326,
+            0.46139
+          ]
+        },
+        "hsikan_est_scrambled": {
+          "test_median": 0.6172,
+          "r2_median": 0.3577,
+          "n_params": 2209,
+          "per_seed_test": [
+            0.6021,
+            0.80943,
+            0.6172
+          ]
+        }
+      },
+      "recovery": {
+        "support_precision": 0.974,
+        "support_recall": 1.0,
+        "support_f1": 0.987,
+        "sign_agreement": 1.0,
+        "pearson": 0.938,
+        "spearman": 0.857,
+        "topk_overlap": 1.0,
+        "n_edges_true": 40,
+        "n_edges_hat": 42
+      },
+      "gap_est_vs_mlp": -0.05636,
+      "gap_est_vs_linear": -0.24019,
+      "collapse_est_frac": 0.493,
+      "degradation_est_vs_gt_frac": -0.118
+    },
+    "nonlinear": {
+      "condition": "nonlinear",
+      "models": {
+        "linear": {
+          "test_median": 2.03297,
+          "r2_median": 0.3374,
+          "n_params": 0,
+          "per_seed_test": [
+            2.03297,
+            6.84411,
+            0.38926
+          ]
+        },
+        "mlp": {
+          "test_median": 1.50072,
+          "r2_median": 0.3008,
+          "n_params": 2167,
+          "per_seed_test": [
+            1.50072,
+            7.22194,
+            0.70392
+          ]
+        },
+        "deepsets": {
+          "test_median": 1.15987,
+          "r2_median": 0.0907,
+          "n_params": 2206,
+          "per_seed_test": [
+            1.10284,
+            9.39187,
+            1.15987
+          ]
+        },
+        "hsikan_gt": {
+          "test_median": 0.65304,
+          "r2_median": 0.4979,
+          "n_params": 2209,
+          "per_seed_test": [
+            0.5816,
+            8.63151,
+            0.65304
+          ]
+        },
+        "hsikan_est": {
+          "test_median": 0.81096,
+          "r2_median": 0.3765,
+          "n_params": 2209,
+          "per_seed_test": [
+            0.70537,
+            8.65295,
+            0.81096
+          ]
+        },
+        "hsikan_est_scrambled": {
+          "test_median": 1.39541,
+          "r2_median": 0.1452,
+          "n_params": 2209,
+          "per_seed_test": [
+            1.39541,
+            8.82902,
+            0.94869
+          ]
+        }
+      },
+      "recovery": {
+        "support_precision": 0.733,
+        "support_recall": 0.892,
+        "support_f1": 0.805,
+        "sign_agreement": 1.0,
+        "pearson": 0.925,
+        "spearman": 0.829,
+        "topk_overlap": 0.838,
+        "n_edges_true": 40,
+        "n_edges_hat": 45
+      },
+      "gap_est_vs_mlp": 0.68976,
+      "gap_est_vs_linear": 1.22201,
+      "collapse_est_frac": 0.721,
+      "degradation_est_vs_gt_frac": 0.242
+    },
+    "flat": {
+      "condition": "flat",
+      "models": {
+        "linear": {
+          "test_median": 1.33618,
+          "r2_median": -0.0274,
+          "n_params": 0,
+          "per_seed_test": [
+            1.24544,
+            10.39319,
+            1.33618
+          ]
+        },
+        "mlp": {
+          "test_median": 2.95729,
+          "r2_median": -1.0429,
+          "n_params": 2167,
+          "per_seed_test": [
+            2.95729,
+            11.9917,
+            2.65689
+          ]
+        },
+        "deepsets": {
+          "test_median": 1.30856,
+          "r2_median": -0.0061,
+          "n_params": 2206,
+          "per_seed_test": [
+            1.2825,
+            10.37936,
+            1.30856
+          ]
+        },
+        "hsikan_gt": {
+          "test_median": 2.00016,
+          "r2_median": -0.5379,
+          "n_params": 2209,
+          "per_seed_test": [
+            1.82653,
+            11.37923,
+            2.00016
+          ]
+        },
+        "hsikan_est": {
+          "test_median": 2.41189,
+          "r2_median": -0.6965,
+          "n_params": 2209,
+          "per_seed_test": [
+            1.98002,
+            11.20847,
+            2.41189
+          ]
+        },
+        "hsikan_est_scrambled": {
+          "test_median": 2.39975,
+          "r2_median": -0.6452,
+          "n_params": 2209,
+          "per_seed_test": [
+            2.39975,
+            10.94975,
+            2.13968
+          ]
+        }
+      },
+      "recovery": {
+        "support_precision": 0.733,
+        "support_recall": 0.892,
+        "support_f1": 0.805,
+        "sign_agreement": 1.0,
+        "pearson": 0.925,
+        "spearman": 0.829,
+        "topk_overlap": 0.838,
+        "n_edges_true": 40,
+        "n_edges_hat": 45
+      },
+      "gap_est_vs_mlp": 0.5454,
+      "gap_est_vs_linear": -1.07571,
+      "collapse_est_frac": -0.005,
+      "degradation_est_vs_gt_frac": 0.206
+    }
+  },
+  "verdict": {
+    "case": "A_strong",
+    "coffee_push_gate": "PASS",
+    "checks": {
+      "estimated_beats_mlp_on_nonlinear": true,
+      "scramble_of_estimated_collapses": true,
+      "estimated_close_to_ground_truth": true,
+      "no_flat_false_positive": true
+    },
+    "thresholds": {
+      "advantage_frac": 0.05,
+      "collapse_frac": 0.2,
+      "close_to_gt": 0.5
+    },
+    "note": "Case A/B \u21d2 discovery yields a useful operator; C \u21d2 oracle-only (discovery insufficient here); D \u21d2 estimation injects spurious structure. Claim A (operator usefulness) is independent of B (discovery quality)."
+  }
+}
