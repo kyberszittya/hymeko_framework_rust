@@ -11,6 +11,8 @@ import pytest
 from hymeko_rl.agents.hypergraph_state import HypergraphState
 from hymeko_rl.experiments.incidence_scramble import (
     _undirected_signed_edges,
+    directed_signed_degree_sequences,
+    scramble_directed_signed_incidence,
     scramble_signed_incidence,
     scramble_stats,
     signed_degree_sequences,
@@ -117,3 +119,53 @@ def test_negative_swaps_rejected() -> None:
     hg = build_toy_graph()
     with pytest.raises(ValueError, match="swaps_per_edge"):
         scramble_signed_incidence(hg, seed=0, swaps_per_edge=-1)
+
+
+# ── directed scramble (for causal hypergraphs) ──────────────────────────────────────────────────────────
+def _causal_like() -> HypergraphState:
+    # a directed signed graph with swap room: 3 independent + arcs (distinct tails/heads) + 2 - arcs.
+    # star-shaped-into-one-sink graphs admit few degree-preserving directed swaps by construction; this doesn't.
+    edges = np.asarray([(0, 1), (2, 3), (4, 5), (0, 3), (4, 1)], np.int64)
+    signs = np.asarray([+1, +1, +1, -1, -1], np.int64)
+    return HypergraphState(vertex_labels=tuple("abcdef"), edges=edges, signs=signs, topo_hash="causal-like")
+
+
+def test_directed_scramble_preserves_signed_in_out_degree() -> None:
+    hg = _causal_like()
+    d0 = directed_signed_degree_sequences(hg)
+    for seed in range(6):
+        assert directed_signed_degree_sequences(scramble_directed_signed_incidence(hg, seed=seed)) == d0
+
+
+def test_directed_scramble_changes_arcs_and_is_deterministic() -> None:
+    hg = _causal_like()
+    orig = {(int(a), int(b)) for a, b in hg.edges}
+    changed = False
+    for seed in range(6):
+        scr = scramble_directed_signed_incidence(hg, seed=seed)
+        if {(int(a), int(b)) for a, b in scr.edges} != orig:
+            changed = True
+    assert changed
+    a = scramble_directed_signed_incidence(hg, seed=3)
+    b = scramble_directed_signed_incidence(hg, seed=3)
+    assert np.array_equal(a.edges, b.edges) and np.array_equal(a.signs, b.signs)
+
+
+def test_directed_scramble_stays_simple_and_finite() -> None:
+    import torch
+    hg = _causal_like()
+    for seed in range(6):
+        scr = scramble_directed_signed_incidence(hg, seed=seed)
+        arcs = [(int(a), int(b)) for a, b in scr.edges]
+        assert all(a != b for a, b in arcs), "self-loop introduced"
+        assert len(arcs) == len(set(arcs)), "duplicate arc introduced"
+        a_pos, a_neg = scr.dense_signed_adj()
+        assert bool(torch.isfinite(a_pos).all()) and bool(torch.isfinite(a_neg).all())
+
+
+def test_directed_scramble_rejects_self_loop_input() -> None:
+    edges = np.asarray([(0, 0), (1, 2)], np.int64)
+    signs = np.asarray([+1, +1], np.int64)
+    hg = HypergraphState(vertex_labels=("a", "b", "c"), edges=edges, signs=signs, topo_hash="loop")
+    with pytest.raises(ValueError, match="self-loop"):
+        scramble_directed_signed_incidence(hg, seed=0)

@@ -156,6 +156,92 @@ def scramble_signed_incidence(hg: HypergraphState, *, seed: int, swaps_per_edge:
     return _to_hypergraph(hg.vertex_labels, scrambled, hg.topo_hash + f":scramble:{seed}")
 
 
+def directed_signed_degree_sequences(hg: HypergraphState,
+                                     ) -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+    """Sorted per-node ``(out+, in+, out-, in-)`` degree sequences — the invariant the *directed* swap preserves.
+
+    For a directed signed graph (e.g. a DirectLiNGAM causal hypergraph, cause→effect arcs), the meaningful
+    invariant is per-node out/in degree *per sign*, not the undirected degree. # Postconditions four length-``N``
+    tuples, each sorted ascending."""
+    n = hg.n_vertices
+    out_p, in_p, out_n, in_n = ([0] * n for _ in range(4))
+    for (src, dst), s in zip(hg.edges, hg.signs):
+        (out_p if s > 0 else out_n)[int(src)] += 1
+        (in_p if s > 0 else in_n)[int(dst)] += 1
+    return tuple(sorted(out_p)), tuple(sorted(in_p)), tuple(sorted(out_n)), tuple(sorted(in_n))
+
+
+def _directed_swap(arcs: list[tuple[int, int]], rng: np.random.Generator, n_swaps: int,
+                   occupied: set[tuple[int, int]]) -> int:
+    """Directed degree-preserving double-edge swap **in place** on one sign class; returns #accepted swaps.
+
+    Picks two arcs ``a→b, c→d`` and rewires to ``a→d, c→b`` iff no self-loop and neither target arc already
+    exists (``occupied`` is the ordered-pair set across *all* signs → the result stays a simple directed signed
+    graph). Each node's out- and in-degree within this sign class is invariant.
+    """
+    if len(arcs) < 2:
+        return 0
+    accepted = 0
+    for _ in range(n_swaps):
+        i, j = rng.integers(0, len(arcs), size=2)
+        if i == j:
+            continue
+        a, b = arcs[i]
+        c, d = arcs[j]
+        if a == d or c == b:                         # would create a self-loop
+            continue
+        new_i, new_j = (a, d), (c, b)
+        if new_i in occupied or new_j in occupied or new_i == new_j:
+            continue
+        occupied.discard(arcs[i])
+        occupied.discard(arcs[j])
+        arcs[i] = new_i
+        arcs[j] = new_j
+        occupied.add(new_i)
+        occupied.add(new_j)
+        accepted += 1
+    return accepted
+
+
+def scramble_directed_signed_incidence(hg: HypergraphState, *, seed: int, swaps_per_edge: int = 20,
+                                       ) -> HypergraphState:
+    """Directed degree/sign-preserving scramble of a **directed** signed graph (e.g. a causal hypergraph).
+
+    Unlike :func:`scramble_signed_incidence` (symmetric), this keeps arcs directed and preserves each node's
+    per-sign **out- and in-degree** while randomising which cause connects to which effect — the H2 causal
+    control for the LiNGAM-SH → HSiKAN mechanism model. Deterministic in ``seed``.
+
+    # Preconditions ``hg`` is a simple directed signed graph (no self-loops, no duplicate arc of the same sign);
+      ``swaps_per_edge >= 0``.
+    # Postconditions identical ``vertex_labels``; identical ``(out±, in±)`` degree sequences; ``topo_hash``
+      suffixed ``":dscramble:{seed}"``.
+    """
+    if swaps_per_edge < 0:
+        raise ValueError("swaps_per_edge must be >= 0")
+    rng = np.random.default_rng(seed)
+    arcs_by_sign: dict[int, list[tuple[int, int]]] = {+1: [], -1: []}
+    occupied: set[tuple[int, int]] = set()
+    for (src, dst), s in zip(hg.edges, hg.signs):
+        a = (int(src), int(dst))
+        if a[0] == a[1]:
+            raise ValueError(f"self-loop arc {a} — not a simple directed graph")
+        if a in occupied:
+            raise ValueError(f"duplicate arc {a} — not a simple directed graph")
+        occupied.add(a)
+        arcs_by_sign[int(np.sign(s)) or 1].append(a)
+    for s in (+1, -1):
+        _directed_swap(arcs_by_sign[s], rng, swaps_per_edge * max(1, len(arcs_by_sign[s])), occupied)
+    edges: list[tuple[int, int]] = []
+    signs: list[int] = []
+    for s in (+1, -1):
+        for a in arcs_by_sign[s]:
+            edges.append(a)
+            signs.append(s)
+    return HypergraphState(vertex_labels=hg.vertex_labels,
+                           edges=np.asarray(edges, np.int64), signs=np.asarray(signs, np.int64),
+                           topo_hash=hg.topo_hash + f":dscramble:{seed}")
+
+
 def scramble_stats(original: HypergraphState, scrambled: HypergraphState) -> ScrambleStats:
     """Preserved/destroyed diagnostics comparing an original graph to its scramble (drives the §5 report table)."""
     o_edges = {(u, v, s) for u, v, s in _undirected_signed_edges(original)}
