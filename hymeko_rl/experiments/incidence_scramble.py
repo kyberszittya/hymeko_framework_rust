@@ -1,0 +1,173 @@
+"""Stage 0 — degree/sign-preserving scramble of a signed graph's incidence (the H2 causal ablation).
+
+The structural-leverage hypothesis (``reports/2026-07-10-hsikan-gomb-soma-structural-leverage-hypothesis-prep.md``)
+needs a control that **destroys the task-relevant structure while preserving the easy marginal statistics**, so a
+HSiKAN advantage that survives it cannot be attributed to structure. This module is that control.
+
+The operation is a **signed double-edge swap** (the standard degree-preserving rewiring, hand-rolled — no networkx
+dependency, §1): within each sign class independently, repeatedly replace two undirected edges ``(a,b),(c,d)`` by
+``(a,d),(c,b)`` when that introduces no self-loop or duplicate. This is applied to the *undirected* signed graph
+(the structural-probe / symmetric form) and re-expanded to the two-arc-per-edge representation
+:class:`~hymeko_rl.agents.hypergraph_state.HypergraphState` uses.
+
+**Preserved (exactly):** node count; positive-edge count; negative-edge count; the per-node *signed degree
+sequence* (each node keeps its number of ``+`` and ``-`` incident edges); the symmetric two-arc encoding.
+**Destroyed:** *which* endpoints carry each signed relation — so cycles, the frustrated triangle, and the ``B²x``
+reachability pattern the ``structural`` target depends on are randomised. Easy marginals (degree, sign balance,
+node count) are held fixed; higher-order signed structure is not.
+
+Directed/antisymmetric graphs (e.g. the kinematic ``from_mjcf`` hypergraph, where a joint's two arcs carry
+*opposite* signs) are rejected — they need a directed-swap variant, deferred until a structural rung requires it.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+from hymeko_rl.agents.hypergraph_state import HypergraphState
+
+# An undirected signed edge: (u, v, sign) with u < v and sign in {+1, -1}.
+_UEdge = tuple[int, int, int]
+
+
+def _undirected_signed_edges(hg: HypergraphState) -> list[_UEdge]:
+    """Collapse the two-arc-per-edge encoding to undirected signed edges, asserting symmetry.
+
+    # Preconditions the graph is a *symmetric* signed graph: for every arc ``(a,b,s)`` the mirror ``(b,a,s)``
+      is present with the **same** sign, and no unordered pair carries two different signs (no self-loops).
+    # Postconditions returns one ``(min,max,sign)`` per undirected edge, deduplicated and sorted.
+    # Raises ``ValueError`` if the graph is not a symmetric signed graph.
+    """
+    arcs = {(int(a), int(b), int(s)) for (a, b), s in zip(hg.edges, hg.signs)}
+    sign_of: dict[tuple[int, int], int] = {}
+    for a, b, s in arcs:
+        if a == b:
+            raise ValueError(f"self-loop arc ({a},{b}) — not a simple signed graph")
+        if (b, a, s) not in arcs:
+            raise ValueError(
+                "scramble requires a symmetric signed graph (missing mirror arc); directed/antisymmetric "
+                "kinematic graphs need the directed-swap variant, not yet implemented")
+        key = (min(a, b), max(a, b))
+        if sign_of.setdefault(key, s) != s:
+            raise ValueError(f"edge {key} carries two signs — not a well-signed graph")
+    return sorted((u, v, sg) for (u, v), sg in sign_of.items())
+
+
+def _double_edge_swap(edges: list[tuple[int, int]], rng: np.random.Generator, n_swaps: int,
+                      occupied: set[frozenset]) -> int:
+    """Degree-preserving double-edge swap **in place** on a single sign class; returns #accepted swaps.
+
+    Picks two distinct edges ``(a,b),(c,d)``, rewires to ``(a,d),(c,b)`` iff no self-loop and neither target
+    pair is already used **by any sign** — ``occupied`` (shared across sign classes) tracks every used unordered
+    pair, so the result is a *simple signed graph*: no pair carries two edges (in particular no ``+``/``−``
+    parallel edge). Each node's degree within this sign class is invariant under the swap.
+
+    # Invariants ``len(edges)`` and every node's per-sign degree are unchanged; ``occupied`` stays consistent
+      with ``edges`` (old pairs removed, new pairs added); the global edge set stays simple.
+    """
+    if len(edges) < 2:
+        return 0
+    accepted = 0
+    for _ in range(n_swaps):
+        i, j = rng.integers(0, len(edges), size=2)
+        if i == j:
+            continue
+        a, b = edges[i]
+        c, d = edges[j]
+        if rng.random() < 0.5:                       # randomise which endpoints pair up
+            c, d = d, c
+        if len({a, b, c, d}) < 4:                    # shared endpoint → would self-loop or collapse
+            continue
+        new_i, new_j = frozenset((a, d)), frozenset((c, b))
+        if new_i in occupied or new_j in occupied or new_i == new_j:
+            continue
+        occupied.discard(frozenset(edges[i]))
+        occupied.discard(frozenset(edges[j]))
+        edges[i] = (a, d)
+        edges[j] = (c, b)
+        occupied.add(new_i)
+        occupied.add(new_j)
+        accepted += 1
+    return accepted
+
+
+@dataclass(frozen=True)
+class ScrambleStats:
+    """What the scramble preserved vs destroyed (for the report and the tests)."""
+
+    n_vertices: int
+    n_pos_edges: int
+    n_neg_edges: int
+    signed_degree_preserved: bool
+    n_edges_changed: int
+    frac_incidence_changed: float
+    accepted_swaps: int
+
+
+def signed_degree_sequences(hg: HypergraphState) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """Sorted per-node ``(positive-degree, negative-degree)`` sequences — the invariant the swap preserves.
+
+    # Postconditions two length-``n_vertices`` tuples, each sorted ascending (order-independent comparison)."""
+    n = hg.n_vertices
+    pos = [0] * n
+    neg = [0] * n
+    for u, v, s in _undirected_signed_edges(hg):
+        tgt = pos if s > 0 else neg
+        tgt[u] += 1
+        tgt[v] += 1
+    return tuple(sorted(pos)), tuple(sorted(neg))
+
+
+def _to_hypergraph(vertex_labels: tuple[str, ...], uedges: list[_UEdge], topo_hash: str) -> HypergraphState:
+    """Re-expand undirected signed edges to the two-arc-per-edge :class:`HypergraphState` encoding."""
+    edges: list[tuple[int, int]] = []
+    signs: list[int] = []
+    for u, v, s in uedges:
+        edges += [(u, v), (v, u)]
+        signs += [s, s]
+    return HypergraphState(vertex_labels=vertex_labels,
+                           edges=np.asarray(edges, np.int64), signs=np.asarray(signs, np.int64),
+                           topo_hash=topo_hash)
+
+
+def scramble_signed_incidence(hg: HypergraphState, *, seed: int, swaps_per_edge: int = 20,
+                              ) -> HypergraphState:
+    """Return a degree/sign-preserving scramble of ``hg`` (a new symmetric :class:`HypergraphState`).
+
+    Signed double-edge swaps within each sign class randomise which endpoints carry each relation while holding
+    node count, per-sign edge counts, and the per-node signed degree sequence fixed. Deterministic in ``seed``.
+
+    # Preconditions ``hg`` is a symmetric signed graph (see :func:`_undirected_signed_edges`); ``swaps_per_edge >= 0``.
+    # Postconditions the result has identical ``vertex_labels`` and signed degree sequences; ``topo_hash`` is
+      suffixed ``":scramble:{seed}"``; the same ``seed`` yields the same scramble.
+    """
+    if swaps_per_edge < 0:
+        raise ValueError("swaps_per_edge must be >= 0")
+    rng = np.random.default_rng(seed)
+    uedges = _undirected_signed_edges(hg)
+    occupied = {frozenset((u, v)) for u, v, _s in uedges}   # shared across sign classes → no parallel signed edge
+    by_sign: dict[int, list[tuple[int, int]]] = {+1: [], -1: []}
+    for u, v, s in uedges:
+        by_sign[s].append((u, v))
+    for s in (+1, -1):                               # swap each sign class (per-sign degree preserved; shared occupancy)
+        _double_edge_swap(by_sign[s], rng, swaps_per_edge * max(1, len(by_sign[s])), occupied)
+    scrambled = sorted([(min(u, v), max(u, v), s) for s in (+1, -1) for (u, v) in by_sign[s]])
+    return _to_hypergraph(hg.vertex_labels, scrambled, hg.topo_hash + f":scramble:{seed}")
+
+
+def scramble_stats(original: HypergraphState, scrambled: HypergraphState) -> ScrambleStats:
+    """Preserved/destroyed diagnostics comparing an original graph to its scramble (drives the §5 report table)."""
+    o_edges = {(u, v, s) for u, v, s in _undirected_signed_edges(original)}
+    s_edges = {(u, v, s) for u, v, s in _undirected_signed_edges(scrambled)}
+    o_pos, o_neg = signed_degree_sequences(original)
+    s_pos, s_neg = signed_degree_sequences(scrambled)
+    changed = len(o_edges ^ s_edges) // 2            # symmetric-difference edges, halved (each change = -1 old +1 new)
+    n_pos = sum(1 for _u, _v, s in o_edges if s > 0)
+    n_neg = len(o_edges) - n_pos
+    return ScrambleStats(
+        n_vertices=original.n_vertices, n_pos_edges=n_pos, n_neg_edges=n_neg,
+        signed_degree_preserved=(o_pos == s_pos and o_neg == s_neg),
+        n_edges_changed=changed,
+        frac_incidence_changed=round(changed / max(1, len(o_edges)), 4),
+        accepted_swaps=changed)
