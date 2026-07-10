@@ -7,6 +7,12 @@ Local task-monitor-aligned reward wrapper — no claim that MetaWorld is globall
 
 ![R2](figures/2026_07_10_monitor_aligned_reward/monitor_aligned_r2_comparison.png)
 
+> **Update (2026-07-10):** the anti-farming validation
+> ([report](2026-07-10-monitor-aligned-anti-farming-validation.md)) found a hold-aloft farming vector and the
+> reward was improved to a **potential-based lift** (reward *raising*, not *holding*). R2 re-run with the improved
+> reward: monitor_aligned disagreement still **0.000**, densest (std 2566), cross-view ✅, corr_delivery **0.81**
+> (up from 0.73) — conclusions unchanged; the tables below are from the initial reward.
+
 ---
 
 ## Repaired reward (formula + components)

@@ -2,61 +2,61 @@
   "task": "pick-place",
   "n": 60,
   "seed": 0,
-  "reward_fidelity_r2": 0.8965,
+  "reward_fidelity_r2": 0.9265,
   "fitted_weights": {
-    "mw_in_place": 8.5501,
-    "mw_grasp": 1.413,
-    "mw_near": -0.6651,
-    "mw_dist": 4.806
+    "mw_in_place": 8.9552,
+    "mw_grasp": 0.6676,
+    "mw_near": -0.2135,
+    "mw_dist": 4.7739
   },
   "monitor": "success",
   "variants": {
     "original": {
-      "reward_monitor_disagreement": 0.00678,
-      "corr_delivery": 0.7839,
-      "corr_progress": 0.9976,
-      "corr_contact_proximity": 0.8062,
-      "reward_farming_candidate": 0.0223,
+      "reward_monitor_disagreement": 0.0,
+      "corr_delivery": 0.834,
+      "corr_progress": 0.9986,
+      "corr_contact_proximity": 0.7753,
+      "reward_farming_candidate": -0.0587,
       "loadings": {
-        "progress_score": 2007.9829,
-        "grasp_fraction": -43.2314,
-        "near_fraction": -6.29,
-        "obj_to_target_delta": -6.6527
+        "progress_score": 1989.0684,
+        "grasp_fraction": -24.4003,
+        "near_fraction": -21.0082,
+        "obj_to_target_delta": -31.1396
       },
       "strongest_incoming_edge": "progress_score",
-      "reward_std": 467.3706,
+      "reward_std": 471.516,
       "cross_view_agree": true
     },
     "mw_in_place_off": {
-      "reward_monitor_disagreement": 0.00678,
-      "corr_delivery": 0.7298,
-      "corr_progress": 0.951,
-      "corr_contact_proximity": 0.7266,
-      "reward_farming_candidate": -0.0032,
+      "reward_monitor_disagreement": 0.00113,
+      "corr_delivery": 0.777,
+      "corr_progress": 0.9561,
+      "corr_contact_proximity": 0.7007,
+      "reward_farming_candidate": -0.0763,
       "loadings": {
-        "progress_score": 468.9727,
-        "grasp_fraction": -43.2314,
-        "near_fraction": -6.29,
-        "obj_to_target_delta": -6.6527
+        "progress_score": 377.1265,
+        "grasp_fraction": -24.4003,
+        "near_fraction": -21.0082,
+        "obj_to_target_delta": -31.1396
       },
       "strongest_incoming_edge": "progress_score",
-      "reward_std": 104.7368,
+      "reward_std": 84.4288,
       "cross_view_agree": true
     },
     "monitor_aligned": {
       "reward_monitor_disagreement": 0.0,
-      "corr_delivery": 0.7298,
-      "corr_progress": 0.9659,
-      "corr_contact_proximity": 0.8256,
-      "reward_farming_candidate": 0.0958,
+      "corr_delivery": 0.8053,
+      "corr_progress": 0.9826,
+      "corr_contact_proximity": 0.7587,
+      "reward_farming_candidate": -0.0466,
       "loadings": {
-        "progress_score": 10592.3196,
-        "grasp_fraction": 1031.6698,
-        "near_fraction": 1016.2749,
-        "obj_to_target_delta": -4027.0612
+        "progress_score": 10960.6188,
+        "grasp_fraction": -155.8997,
+        "near_fraction": 389.9364,
+        "obj_to_target_delta": -1469.5171
       },
       "strongest_incoming_edge": "progress_score",
-      "reward_std": 2657.1148,
+      "reward_std": 2566.2207,
       "cross_view_agree": true
     }
   }

@@ -1,0 +1,433 @@
+{
+  "classes": [
+    "far",
+    "approach",
+    "hover_farm",
+    "bare_contact_farm",
+    "grasp_lift_no_delivery",
+    "delivery",
+    "success",
+    "proxy_exploit"
+  ],
+  "declared_weights": {
+    "in_place": 8.0,
+    "grasp": 1.2,
+    "near": 1.0,
+    "dist": 10.0
+  },
+  "per_class": {
+    "far": {
+      "original": {
+        "total": -52.0,
+        "mean": -2.6,
+        "max": -2.6,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -52.0,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.05,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 2.6,
+        "component_entropy": null
+      },
+      "mw_in_place_off": {
+        "total": -60.0,
+        "mean": -3.0,
+        "max": -3.0,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -60.0,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.05,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 3.0,
+        "component_entropy": null
+      },
+      "monitor_aligned": {
+        "total": 0.0,
+        "mean": 0.0,
+        "max": 0.0,
+        "nonzero_fraction": 0.0,
+        "pre_success_total": 0.0,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.05,
+        "dense_pre_success": 0.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 0.0,
+        "component_entropy": 0.0
+      }
+    },
+    "approach": {
+      "original": {
+        "total": -46.263,
+        "mean": -2.3132,
+        "max": -1.24,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -46.263,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.05,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.2745,
+        "pre_success_reward_mean_abs": 2.3132,
+        "component_entropy": null
+      },
+      "mw_in_place_off": {
+        "total": -54.263,
+        "mean": -2.7132,
+        "max": -1.64,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -54.263,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.05,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.2745,
+        "pre_success_reward_mean_abs": 2.7132,
+        "component_entropy": null
+      },
+      "monitor_aligned": {
+        "total": -0.55,
+        "mean": -0.0275,
+        "max": 0.024,
+        "nonzero_fraction": 0.95,
+        "pre_success_total": -0.55,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.05,
+        "dense_pre_success": 0.95,
+        "pre_success_reward_std": 0.2177,
+        "pre_success_reward_mean_abs": 0.0701,
+        "component_entropy": 0.619
+      }
+    },
+    "hover_farm": {
+      "original": {
+        "total": -6.4,
+        "mean": -0.32,
+        "max": -0.32,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -6.4,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.15,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 0.32,
+        "component_entropy": null
+      },
+      "mw_in_place_off": {
+        "total": -30.4,
+        "mean": -1.52,
+        "max": -1.52,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -30.4,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.15,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 1.52,
+        "component_entropy": null
+      },
+      "monitor_aligned": {
+        "total": -20.0,
+        "mean": -1.0,
+        "max": -1.0,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -20.0,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.15,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 1.0,
+        "component_entropy": -0.0
+      }
+    },
+    "bare_contact_farm": {
+      "original": {
+        "total": 8.8,
+        "mean": 0.44,
+        "max": 0.44,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 8.8,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.2,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 0.44,
+        "component_entropy": null
+      },
+      "mw_in_place_off": {
+        "total": -23.2,
+        "mean": -1.16,
+        "max": -1.16,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -23.2,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.2,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 1.16,
+        "component_entropy": null
+      },
+      "monitor_aligned": {
+        "total": 2.0,
+        "mean": 0.1,
+        "max": 0.1,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 2.0,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.2,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 0.1,
+        "component_entropy": -0.0
+      }
+    },
+    "grasp_lift_no_delivery": {
+      "original": {
+        "total": 24.8,
+        "mean": 1.24,
+        "max": 1.24,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 24.8,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.3,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 1.24,
+        "component_entropy": null
+      },
+      "mw_in_place_off": {
+        "total": -23.2,
+        "mean": -1.16,
+        "max": -1.16,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -23.2,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.3,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 1.16,
+        "component_entropy": null
+      },
+      "monitor_aligned": {
+        "total": 5.45,
+        "mean": 0.2725,
+        "max": 0.6,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 5.45,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.3,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.2353,
+        "pre_success_reward_mean_abs": 0.2725,
+        "component_entropy": 0.365
+      }
+    },
+    "delivery": {
+      "original": {
+        "total": 86.8,
+        "mean": 4.34,
+        "max": 7.44,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 86.8,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.22,
+        "progress_score": 0.55,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 1.8816,
+        "pre_success_reward_mean_abs": 4.34,
+        "component_entropy": null
+      },
+      "mw_in_place_off": {
+        "total": -1.2,
+        "mean": -0.06,
+        "max": 1.04,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -1.2,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.22,
+        "progress_score": 0.55,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.6677,
+        "pre_success_reward_mean_abs": 0.5792,
+        "component_entropy": null
+      },
+      "monitor_aligned": {
+        "total": 11.8,
+        "mean": 0.59,
+        "max": 0.616,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 11.8,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.22,
+        "progress_score": 0.55,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.1124,
+        "pre_success_reward_mean_abs": 0.59,
+        "component_entropy": 0.481
+      }
+    },
+    "success": {
+      "original": {
+        "total": 108.8,
+        "mean": 5.44,
+        "max": 9.64,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 89.962,
+        "success_bonus": 0.0,
+        "monitor_success": 1,
+        "delivery_score": 0.28,
+        "progress_score": 0.65,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 2.2937,
+        "pre_success_reward_mean_abs": 4.9979,
+        "component_entropy": null
+      },
+      "mw_in_place_off": {
+        "total": 4.8,
+        "mean": 0.24,
+        "max": 1.64,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 1.667,
+        "success_bonus": 0.0,
+        "monitor_success": 1,
+        "delivery_score": 0.28,
+        "progress_score": 0.65,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.7646,
+        "pre_success_reward_mean_abs": 0.6653,
+        "component_entropy": null
+      },
+      "monitor_aligned": {
+        "total": 112.4,
+        "mean": 5.62,
+        "max": 50.647,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 11.105,
+        "success_bonus": 100.0,
+        "monitor_success": 1,
+        "delivery_score": 0.28,
+        "progress_score": 0.65,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.1254,
+        "pre_success_reward_mean_abs": 0.617,
+        "component_entropy": 0.534
+      }
+    },
+    "proxy_exploit": {
+      "original": {
+        "total": 88.8,
+        "mean": 4.44,
+        "max": 4.44,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 88.8,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.7,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 4.44,
+        "component_entropy": null
+      },
+      "mw_in_place_off": {
+        "total": -23.2,
+        "mean": -1.16,
+        "max": -1.16,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": -23.2,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.7,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 1.16,
+        "component_entropy": null
+      },
+      "monitor_aligned": {
+        "total": 2.0,
+        "mean": 0.1,
+        "max": 0.1,
+        "nonzero_fraction": 1.0,
+        "pre_success_total": 2.0,
+        "success_bonus": 0.0,
+        "monitor_success": 0,
+        "delivery_score": 0.0,
+        "progress_score": 0.7,
+        "dense_pre_success": 1.0,
+        "pre_success_reward_std": 0.0,
+        "pre_success_reward_mean_abs": 0.1,
+        "component_entropy": -0.0
+      }
+    }
+  },
+  "task_quality": {
+    "far": 0.0,
+    "approach": 0.0,
+    "hover_farm": 0.0,
+    "bare_contact_farm": 0.0,
+    "grasp_lift_no_delivery": 0.0,
+    "delivery": 0.22,
+    "success": 2.28,
+    "proxy_exploit": 0.0
+  },
+  "global": {
+    "original": {
+      "disagreement": 0.0714,
+      "proxy_over_success_ratio": 0.816,
+      "farming_over_delivery_ratio": 0.35
+    },
+    "mw_in_place_off": {
+      "disagreement": 0.0,
+      "proxy_over_success_ratio": -4.833,
+      "farming_over_delivery_ratio": 21.333
+    },
+    "monitor_aligned": {
+      "disagreement": 0.0,
+      "proxy_over_success_ratio": 0.018,
+      "farming_over_delivery_ratio": -0.452
+    }
+  },
+  "verdict": {
+    "checks": {
+      "1_dense_pre_success_shaping": true,
+      "2_delivery_beats_farming": true,
+      "3_success_strongest": true,
+      "4_farming_reward_capped_low": true,
+      "5_lower_disagreement_than_original": true
+    },
+    "healthy": true
+  }
+}

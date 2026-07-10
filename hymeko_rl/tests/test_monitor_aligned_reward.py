@@ -136,3 +136,18 @@ def test_r2_comparison_runs_and_cross_view(tmp_path) -> None:
     for v in s["variants"].values():
         assert v["cross_view_agree"] in (True, False) and v["reward_std"] > 0.0
     assert (tmp_path / "monitor_aligned_comparison.json").exists()
+
+
+def test_hold_aloft_does_not_farm() -> None:
+    """Potential-based lift: holding the object aloft (no height gain) does not accumulate lift reward."""
+    raising = _sig(d=0.03, d_prev=0.03, grasp=1.0, near=1.0, obj_z=0.10, obj_z0=0.02)     # obj_z_prev defaults to 0.02
+    holding = {**_sig(d=0.03, d_prev=0.03, grasp=1.0, near=1.0, obj_z=0.10, obj_z0=0.02), "obj_z_prev": 0.10}
+    assert monitor_aligned_step(raising) > monitor_aligned_step(holding)                  # raising rewarded, holding not
+    assert monitor_aligned_step(holding) < 0.3                                            # held-aloft contact is capped
+
+
+def test_components_sum_to_step() -> None:
+    """The component breakdown sums to the scalar per-step reward."""
+    from hymeko_rl.eval.cip.monitor_aligned_reward import monitor_aligned_components
+    sig = _sig(d=0.03, d_prev=0.05, grasp=1.0, near=1.0, obj_z=0.10, obj_z0=0.02, ott=0.20, ott_prev=0.25)
+    assert sum(monitor_aligned_components(sig).values()) == pytest.approx(monitor_aligned_step(sig), abs=1e-6)

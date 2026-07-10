@@ -46,16 +46,34 @@ def monitor_aligned_step(sig: "Mapping[str, float]", w: MonitorAlignedWeights = 
     """
     approach = float(sig["d_prev"] - sig["d"])                    # potential-based; telescopes to (d0 − dT)
     grasp = float(sig["grasp"])
-    lift = max(0.0, float(sig["obj_z"] - sig["obj_z0"]))
-    established = grasp > 0.5 or lift > _LIFT_EPS                  # real-manipulation gate
-    delivery = float(sig["ott_prev"] - sig["ott"])                # reduction in object→target distance
-    obj_moving = abs(delivery) > _MOVE_EPS or lift > _LIFT_EPS
+    obj_z_prev = float(sig.get("obj_z_prev", sig["obj_z0"]))
+    lift_gain = max(0.0, float(sig["obj_z"]) - obj_z_prev)        # potential-based: reward RAISING, not HOLDING
+    lifted = float(sig["obj_z"] - sig["obj_z0"]) > _LIFT_EPS      # currently aloft (for the delivery gate)
+    established = grasp > 0.5 or lifted                           # real-manipulation gate
+    delivery = float(sig["ott_prev"] - sig["ott"])               # reduction in object→target distance
+    obj_moving = abs(delivery) > _MOVE_EPS or lift_gain > _MOVE_EPS
     gated_delivery = delivery if established else 0.0             # delivery only counts after grasp/lift
-    gated_lift = lift * grasp                                     # lifting counts only while grasped
-    contact_capped = grasp * (1.0 if obj_moving else 0.2)         # anti-farming: bare contact (no motion) is capped
+    gated_lift = lift_gain * grasp                               # raising counts only while grasped (can't farm by holding)
+    contact_capped = grasp * (1.0 if obj_moving else 0.2)         # anti-farming: bare/held contact (no motion) is capped
     stagnation = 1.0 if (sig["near"] > 0.5 and grasp < 0.5 and not obj_moving) else 0.0   # hover-farming penalty
     return (w.approach * approach + w.contact * contact_capped + w.lift * gated_lift
             + w.delivery * gated_delivery + w.success * float(sig["success"]) - w.stagnation * stagnation)
+
+
+def monitor_aligned_components(sig: "Mapping[str, float]", w: MonitorAlignedWeights = DEFAULT_WEIGHTS,
+                               ) -> "dict[str, float]":
+    """The per-component contributions of :func:`monitor_aligned_step` (for density / component-share diagnostics)."""
+    grasp = float(sig["grasp"])
+    lift_gain = max(0.0, float(sig["obj_z"]) - float(sig.get("obj_z_prev", sig["obj_z0"])))
+    lifted = float(sig["obj_z"] - sig["obj_z0"]) > _LIFT_EPS
+    established = grasp > 0.5 or lifted
+    delivery = float(sig["ott_prev"] - sig["ott"])
+    obj_moving = abs(delivery) > _MOVE_EPS or lift_gain > _MOVE_EPS
+    return {"approach": w.approach * float(sig["d_prev"] - sig["d"]),
+            "contact": w.contact * grasp * (1.0 if obj_moving else 0.2),
+            "lift": w.lift * lift_gain * grasp, "delivery": w.delivery * (delivery if established else 0.0),
+            "success": w.success * float(sig["success"]),
+            "stagnation": -w.stagnation * (1.0 if (sig["near"] > 0.5 and grasp < 0.5 and not obj_moving) else 0.0)}
 
 
 class MonitorAlignedReward:
@@ -66,6 +84,7 @@ class MonitorAlignedReward:
         self._d_prev: float = 0.0
         self._ott_prev: float = 0.0
         self._obj_z0: float = 0.0
+        self._obj_z_prev: float = 0.0
 
     @staticmethod
     def _geom(obs: np.ndarray, info: "Mapping[str, Any]") -> "tuple[float, float, float]":
@@ -74,14 +93,15 @@ class MonitorAlignedReward:
 
     def reset(self, obs: np.ndarray, info: "Mapping[str, Any]") -> None:
         self._d_prev, self._obj_z0, self._ott_prev = self._geom(obs, info)
+        self._obj_z_prev = self._obj_z0
 
     def step(self, obs: np.ndarray, info: "Mapping[str, Any]") -> float:
         d, obj_z, ott = self._geom(obs, info)
-        sig = {"d": d, "d_prev": self._d_prev, "obj_z": obj_z, "obj_z0": self._obj_z0, "ott": ott,
-               "ott_prev": self._ott_prev, "grasp": float(info.get("grasp_success", 0.0)),
+        sig = {"d": d, "d_prev": self._d_prev, "obj_z": obj_z, "obj_z0": self._obj_z0, "obj_z_prev": self._obj_z_prev,
+               "ott": ott, "ott_prev": self._ott_prev, "grasp": float(info.get("grasp_success", 0.0)),
                "near": float(info.get("near_object", 0.0)), "success": float(info.get("success", 0.0))}
         r = monitor_aligned_step(sig, self.w)
-        self._d_prev, self._ott_prev = d, ott
+        self._d_prev, self._ott_prev, self._obj_z_prev = d, ott, obj_z
         return r
 
 
