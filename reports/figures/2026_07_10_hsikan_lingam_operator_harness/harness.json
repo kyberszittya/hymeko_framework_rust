@@ -1,0 +1,241 @@
+{
+  "config": {
+    "seeds": 3,
+    "n": 16,
+    "samples": 800,
+    "density": 0.35,
+    "sign_balance": 0.6,
+    "hsikan_hidden": 24,
+    "n_layers": 2,
+    "epochs": 200,
+    "conditions": [
+      "linear",
+      "nonlinear",
+      "flat"
+    ]
+  },
+  "conditions": {
+    "linear": {
+      "condition": "linear",
+      "models": {
+        "linear": {
+          "test_median": 0.17307,
+          "test_mean": 0.16483,
+          "r2_median": 0.8242,
+          "n_params": 0,
+          "per_seed_test": [
+            0.12815,
+            0.17307,
+            0.19327
+          ]
+        },
+        "mlp": {
+          "test_median": 0.3569,
+          "test_mean": 0.33108,
+          "r2_median": 0.6375,
+          "n_params": 2167,
+          "per_seed_test": [
+            0.26559,
+            0.3569,
+            0.37074
+          ]
+        },
+        "deepsets": {
+          "test_median": 0.95564,
+          "test_mean": 0.94599,
+          "r2_median": 0.0293,
+          "n_params": 2206,
+          "per_seed_test": [
+            0.97905,
+            0.95564,
+            0.90328
+          ]
+        },
+        "hsikan_correct": {
+          "test_median": 0.46851,
+          "test_mean": 0.4375,
+          "r2_median": 0.5181,
+          "n_params": 2209,
+          "per_seed_test": [
+            0.3696,
+            0.47438,
+            0.46851
+          ]
+        },
+        "hsikan_scrambled": {
+          "test_median": 0.95331,
+          "test_mean": 1.03318,
+          "r2_median": 0.008,
+          "n_params": 2209,
+          "per_seed_test": [
+            1.37367,
+            0.77257,
+            0.95331
+          ]
+        }
+      },
+      "gap_vs_mlp": -0.11161,
+      "gap_vs_linear": -0.29544,
+      "scramble_collapse": 0.4848,
+      "scramble_collapse_frac": 1.035,
+      "leakage": {
+        "leaky_test": 0.0008395027252845466,
+        "masked_test": 0.265592098236084,
+        "guard_ok": true
+      }
+    },
+    "nonlinear": {
+      "condition": "nonlinear",
+      "models": {
+        "linear": {
+          "test_median": 2.03297,
+          "test_mean": 3.08878,
+          "r2_median": 0.3374,
+          "n_params": 0,
+          "per_seed_test": [
+            2.03297,
+            6.84411,
+            0.38926
+          ]
+        },
+        "mlp": {
+          "test_median": 1.50072,
+          "test_mean": 3.14219,
+          "r2_median": 0.3008,
+          "n_params": 2167,
+          "per_seed_test": [
+            1.50072,
+            7.22194,
+            0.70392
+          ]
+        },
+        "deepsets": {
+          "test_median": 1.15987,
+          "test_mean": 3.88486,
+          "r2_median": 0.0907,
+          "n_params": 2206,
+          "per_seed_test": [
+            1.10284,
+            9.39187,
+            1.15987
+          ]
+        },
+        "hsikan_correct": {
+          "test_median": 0.65304,
+          "test_mean": 3.28872,
+          "r2_median": 0.4979,
+          "n_params": 2209,
+          "per_seed_test": [
+            0.5816,
+            8.63151,
+            0.65304
+          ]
+        },
+        "hsikan_scrambled": {
+          "test_median": 1.7624,
+          "test_mean": 3.94772,
+          "r2_median": 0.1018,
+          "n_params": 2209,
+          "per_seed_test": [
+            1.7624,
+            8.91258,
+            1.16818
+          ]
+        }
+      },
+      "gap_vs_mlp": 0.84768,
+      "gap_vs_linear": 1.37993,
+      "scramble_collapse": 1.10936,
+      "scramble_collapse_frac": 1.699,
+      "leakage": {
+        "leaky_test": 0.004434564150869846,
+        "masked_test": 1.5007210969924927,
+        "guard_ok": true
+      }
+    },
+    "flat": {
+      "condition": "flat",
+      "models": {
+        "linear": {
+          "test_median": 1.33618,
+          "test_mean": 4.32493,
+          "r2_median": -0.0274,
+          "n_params": 0,
+          "per_seed_test": [
+            1.24544,
+            10.39319,
+            1.33618
+          ]
+        },
+        "mlp": {
+          "test_median": 2.95729,
+          "test_mean": 5.86863,
+          "r2_median": -1.0429,
+          "n_params": 2167,
+          "per_seed_test": [
+            2.95729,
+            11.9917,
+            2.65689
+          ]
+        },
+        "deepsets": {
+          "test_median": 1.30856,
+          "test_mean": 4.32347,
+          "r2_median": -0.0061,
+          "n_params": 2206,
+          "per_seed_test": [
+            1.2825,
+            10.37936,
+            1.30856
+          ]
+        },
+        "hsikan_correct": {
+          "test_median": 2.00016,
+          "test_mean": 5.06864,
+          "r2_median": -0.5379,
+          "n_params": 2209,
+          "per_seed_test": [
+            1.82653,
+            11.37923,
+            2.00016
+          ]
+        },
+        "hsikan_scrambled": {
+          "test_median": 2.04269,
+          "test_mean": 5.01296,
+          "r2_median": -0.4502,
+          "n_params": 2209,
+          "per_seed_test": [
+            2.04269,
+            11.11006,
+            1.88614
+          ]
+        }
+      },
+      "gap_vs_mlp": 0.95713,
+      "gap_vs_linear": -0.66398,
+      "scramble_collapse": 0.04253,
+      "scramble_collapse_frac": 0.021,
+      "leakage": {
+        "leaky_test": 2.516763210296631,
+        "masked_test": 2.957285165786743,
+        "guard_ok": false
+      }
+    }
+  },
+  "verdict": {
+    "label": "SUPPORTED",
+    "checks": {
+      "linear_baseline_matches_hsikan": true,
+      "hsikan_beats_mlp_on_nonlinear": true,
+      "hsikan_beats_linear_on_nonlinear": true,
+      "scramble_collapses_on_nonlinear": true,
+      "flat_operator_irrelevant": true,
+      "leakage_guard_ok": true
+    },
+    "thresholds": {
+      "advantage_frac": 0.05,
+      "collapse_frac": 0.2
+    }
+  }
+}

@@ -242,6 +242,80 @@ def scramble_directed_signed_incidence(hg: HypergraphState, *, seed: int, swaps_
                            topo_hash=hg.topo_hash + f":dscramble:{seed}")
 
 
+def _weighted_directed_swap(arcs: list[list[float]], rng: np.random.Generator, n_swaps: int,
+                            occupied: set[tuple[int, int]]) -> int:
+    """Weight-carrying directed double-edge swap **in place** on one sign class; returns #accepted swaps.
+
+    Each arc is ``[src, dst, weight]``. Swapping ``a→b, c→d`` to ``a→d, c→b`` carries each arc's weight with its
+    **source** (``a`` keeps its outgoing weight, now to ``d``), so per-node out-degree, in-degree, and the weight
+    multiset are all preserved while the cause→effect wiring is randomised. ``occupied`` (ordered pairs, all signs)
+    keeps the result a simple directed graph.
+    """
+    if len(arcs) < 2:
+        return 0
+    accepted = 0
+    for _ in range(n_swaps):
+        i, j = rng.integers(0, len(arcs), size=2)
+        if i == j:
+            continue
+        a, b, _wi = arcs[i]
+        c, d, _wj = arcs[j]
+        ai, bi, ci, di = int(a), int(b), int(c), int(d)
+        if ai == di or ci == bi:                     # would create a self-loop
+            continue
+        new_i, new_j = (ai, di), (ci, bi)
+        if new_i in occupied or new_j in occupied or new_i == new_j:
+            continue
+        occupied.discard((ai, bi))
+        occupied.discard((ci, di))
+        arcs[i][1] = di                              # a → d (weight arcs[i][2] unchanged)
+        arcs[j][1] = bi                              # c → b (weight arcs[j][2] unchanged)
+        occupied.add(new_i)
+        occupied.add(new_j)
+        accepted += 1
+    return accepted
+
+
+def scramble_signed_operator(a_pos: np.ndarray, a_neg: np.ndarray, *, seed: int, swaps_per_edge: int = 20,
+                             ) -> tuple[np.ndarray, np.ndarray]:
+    """Degree/sign/weight-preserving directed scramble of a signed causal operator ``(A⁺, A⁻)``.
+
+    The matrix convention is ``A[dst, src] = A[effect, cause]`` (HSiKAN's receiver-from-sender, matching LiNGAM's
+    ``B[effect, cause]``). Within each sign matrix, arcs ``cause → effect`` are rewired by a weight-carrying directed
+    double-edge swap: per-node out-/in-degree **and** the weight multiset are preserved; which cause drives which
+    effect is randomised. Deterministic in ``seed``. This is the H2 decider for the operator harness.
+
+    # Preconditions ``a_pos, a_neg`` are square ``(n, n)`` with the same shape, nonnegative, disjoint support
+      (``a_pos * a_neg == 0``), zero diagonal; ``swaps_per_edge >= 0``.
+    # Postconditions same shape; same per-sign nonzero count; same nonzero-value multiset per sign; zero diagonal.
+    """
+    if a_pos.shape != a_neg.shape or a_pos.ndim != 2 or a_pos.shape[0] != a_pos.shape[1]:
+        raise ValueError("a_pos and a_neg must be square matrices of equal shape")
+    if swaps_per_edge < 0:
+        raise ValueError("swaps_per_edge must be >= 0")
+    rng = np.random.default_rng(seed)
+    occupied: set[tuple[int, int]] = set()
+    arcs_by_sign: dict[int, list[list[float]]] = {+1: [], -1: []}
+    for mat, sign in ((a_pos, +1), (a_neg, -1)):
+        rows, cols = np.nonzero(mat)
+        for i, j in zip(rows, cols):                 # i = effect (dst), j = cause (src)
+            if int(i) == int(j):
+                raise ValueError("operator has a nonzero diagonal (self-loop) — zero it first")
+            arc = (int(j), int(i))
+            if arc in occupied:
+                raise ValueError(f"duplicate arc {arc} across signs — supports must be disjoint")
+            occupied.add(arc)
+            arcs_by_sign[sign].append([float(j), float(i), float(mat[i, j])])
+    for sign in (+1, -1):
+        _weighted_directed_swap(arcs_by_sign[sign], rng, swaps_per_edge * max(1, len(arcs_by_sign[sign])), occupied)
+    out_pos = np.zeros_like(a_pos)
+    out_neg = np.zeros_like(a_neg)
+    for sign, out in ((+1, out_pos), (-1, out_neg)):
+        for src, dst, w in arcs_by_sign[sign]:
+            out[int(dst), int(src)] = w              # A[effect, cause] = weight
+    return out_pos, out_neg
+
+
 def scramble_stats(original: HypergraphState, scrambled: HypergraphState) -> ScrambleStats:
     """Preserved/destroyed diagnostics comparing an original graph to its scramble (drives the §5 report table)."""
     o_edges = {(u, v, s) for u, v, s in _undirected_signed_edges(original)}
