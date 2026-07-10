@@ -143,10 +143,34 @@ def _ppo_update(cfg: Any, actor: Any, critic: Any, opt: Any, buf: "dict[str, Any
             opt.step()
 
 
-def train_ppo_flat(cfg: Any, env: Any, init_state: "dict[str, Any] | None", seed: int, *, log: Any) -> "dict[str, Any]":
-    """Warm-started (BC) flat-obs PPO on the reward-override env. Live-logged. Returns the same schema as REINFORCE."""
-    import torch
+def _norm_tensors(running: "_RunningNorm", torch: Any) -> "tuple[Any, Any]":
+    """The (mean, std) obs-norm tensors, with the std floored so near-constant dims are not amplified into noise."""
+    return (torch.as_tensor(running.mean, dtype=torch.float32),
+            torch.as_tensor(np.maximum(running.std(), 0.05), dtype=torch.float32))
 
+
+def _set_norm(actor: Any, critic: Any, running: "_RunningNorm", torch: Any) -> None:
+    mean, std = _norm_tensors(running, torch)
+    actor.obs_mean, actor.obs_std = mean, std
+    critic.set_obs_norm(mean, std)
+
+
+def _apply_std_control(cfg: Any, actor: Any, progress: float, torch: Any) -> None:
+    """Hold or anneal the from-scratch action std (overwriting the learned log_std) — precision-vs-exploration control."""
+    if cfg.ppo_std_mode == "fixed":
+        target = float(np.log(cfg.ppo_from_scratch_std))
+    elif cfg.ppo_std_mode == "anneal":
+        std = cfg.ppo_from_scratch_std + (cfg.ppo_std_final - cfg.ppo_from_scratch_std) * min(1.0, progress)
+        target = float(np.log(max(std, 1e-3)))
+    else:
+        return
+    with torch.no_grad():
+        actor.log_std.fill_(target)
+
+
+def _ppo_setup(cfg: Any, env: Any, init_state: "dict[str, Any] | None", seed: int, torch: Any,
+               ) -> "tuple[Any, _ValueMLP, _RunningNorm | None, Any]":
+    """Build the (BC-warm-started or from-scratch) actor + value critic + online obs-norm + optimizer."""
     from .exp_metaworld_reward_stageb import _GaussianMLP
     obs_dim = int(np.prod(env.observation_space.shape))
     act_dim = int(np.prod(env.action_space.shape))
@@ -160,25 +184,41 @@ def train_ppo_flat(cfg: Any, env: Any, init_state: "dict[str, Any] | None", seed
     critic.set_obs_norm(actor.obs_mean, actor.obs_std)
     # from scratch (no BC): estimate obs normalization online (no demos to fit it); warm-started keeps the BC norm.
     running = _RunningNorm(obs_dim) if init_state is None else None
+    if running is not None:                                     # seed the norm from one warmup rollout (not trained on)
+        running.update(_collect_rollout(cfg, env, actor, critic, seed + 9_999)["obs"])
+        _set_norm(actor, critic, running, torch)
     opt = torch.optim.Adam([*actor.parameters(), *critic.parameters()], lr=cfg.ppo_lr)
+    return actor, critic, running, opt
+
+
+def train_ppo_flat(cfg: Any, env: Any, init_state: "dict[str, Any] | None", seed: int, *, log: Any,
+                   on_iter: Any = None) -> "dict[str, Any]":
+    """Warm-started (BC) or from-scratch flat-obs PPO on the reward-override env. Live-logged. REINFORCE schema.
+
+    ``on_iter(it, steps, buf, actor)`` is invoked after each PPO update (diagnostics/plots); std-control (fixed/
+    anneal) applies only from scratch."""
+    import torch
+    actor, critic, running, opt = _ppo_setup(cfg, env, init_state, seed, torch)
+    scratch = init_state is None
     history: list[float] = []
     steps = it = 0
     t0 = time.time()
     while steps < cfg.total_env_steps and (time.time() - t0) < cfg.wall_time_cap_s:
-        buf = _collect_rollout(cfg, env, actor, critic, seed + it)
-        if running is not None:
-            running.update(buf["obs"])
-            norm = (torch.as_tensor(running.mean, dtype=torch.float32),
-                    torch.as_tensor(np.maximum(running.std(), 1e-3), dtype=torch.float32))
-            actor.obs_mean, actor.obs_std = norm
-            critic.set_obs_norm(*norm)
+        buf = _collect_rollout(cfg, env, actor, critic, seed + it)   # collected under the CURRENT obs-norm
         steps += len(buf["rew"])
         adv, ret = _gae(buf, cfg.gamma, cfg.ppo_gae_lambda)
-        _ppo_update(cfg, actor, critic, opt, buf, adv, ret, seed + it)
+        _ppo_update(cfg, actor, critic, opt, buf, adv, ret, seed + it)   # update uses the SAME norm as collection
+        if running is not None:                                     # advance the norm for the NEXT rollout only
+            running.update(buf["obs"])
+            _set_norm(actor, critic, running, torch)
+        if scratch:
+            _apply_std_control(cfg, actor, steps / max(1, cfg.total_env_steps), torch)
         it += 1
         mean_ret = float(np.mean(buf["ep_returns"])) if buf["ep_returns"] else float("nan")
         history.append(mean_ret)
-        log(f"iter {it} step {steps}/{cfg.total_env_steps} ep_ret {mean_ret:.1f} "
+        if on_iter is not None:
+            on_iter(it, steps, buf, actor)
+        log(f"iter {it} step {steps}/{cfg.total_env_steps} ep_ret {mean_ret:.1f} std {float(actor.log_std.exp().mean()):.3f} "
             f"eps {len(buf['ep_returns'])} {steps / max(1e-6, time.time() - t0):.0f} st/s")
     return {"policy": actor, "returns": history, "env_steps": steps, "episodes": it,
             "wall_s": round(time.time() - t0, 1)}

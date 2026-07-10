@@ -178,6 +178,35 @@ def test_diagnose_categories() -> None:
     assert _diagnose(z, rnd, good_scr, good_bc, ok_reach, 0.5)[0] == "D"
 
 
+def test_repair_gates_and_labels() -> None:
+    """T. the optimizer-repair gates (reach/reaches/pregrasp) and A/B/C/D labels follow the metrics."""
+    from hymeko_rl.experiments.stage_b_ppo_repair import _label, _pregrasp_pass, _reach_pass, _reaches
+    good = {"min_hand_obj_median": 0.04, "near_fraction": 0.35, "grasp_frac": 0.2}
+    reaches_only = {"min_hand_obj_median": 0.06, "near_fraction": 0.10, "grasp_frac": 0.0}
+    broken = {"min_hand_obj_median": 0.16, "near_fraction": 0.0, "grasp_frac": 0.0}
+    assert _reach_pass(good) and not _reach_pass(reaches_only)
+    assert _reaches(reaches_only) and not _reaches(broken)
+    assert _pregrasp_pass({"near_fraction": 0.2, "grasp_frac": 0.0, "min_hand_obj_median": 0.3})
+    assert not _pregrasp_pass(broken)
+    assert _label(False, None)[0] == "C"
+    assert _label(True, None)[0] == "B"
+    assert _label(True, {"eval": good})[0] == "A"
+
+
+def test_apply_std_control_fixed_and_anneal() -> None:
+    """U. std-control holds the std at 'fixed' and interpolates it under 'anneal'."""
+    import torch
+    from dataclasses import replace as _replace
+    from hymeko_rl.experiments.exp_metaworld_reward_stageb import _GaussianMLP
+    from hymeko_rl.experiments.stage_b_ppo import _apply_std_control
+    actor = _GaussianMLP(4, 2, 8, 1.0, seed=0)
+    _apply_std_control(_replace(StageBConfig(), ppo_std_mode="fixed", ppo_from_scratch_std=0.3), actor, 0.5, torch)
+    assert float(actor.log_std.exp().mean()) == pytest.approx(0.3, abs=1e-5)
+    cfg = _replace(StageBConfig(), ppo_std_mode="anneal", ppo_from_scratch_std=0.6, ppo_std_final=0.1)
+    _apply_std_control(cfg, actor, 1.0, torch)                       # fully annealed → std_final
+    assert float(actor.log_std.exp().mean()) == pytest.approx(0.1, abs=1e-5)
+
+
 def test_running_norm_matches_numpy() -> None:
     """Q. streaming Welford obs-norm equals batch numpy mean/std (single and multi-batch), for from-scratch RL."""
     from hymeko_rl.experiments.stage_b_ppo import _RunningNorm

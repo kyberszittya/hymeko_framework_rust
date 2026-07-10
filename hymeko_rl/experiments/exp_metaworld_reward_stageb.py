@@ -87,6 +87,8 @@ class StageBConfig:
     ppo_gae_lambda: float = 0.95
     ppo_lr: float = 3e-4
     ppo_from_scratch_std: float = 1.0    # initial action std when training from scratch (no BC); 1.0 = very noisy
+    ppo_std_mode: str = "learned"        # "learned" (log_std trained) | "fixed" (held at init) | "anneal" (init→final)
+    ppo_std_final: float = 0.1           # target std for the "anneal" schedule
     out_dir: Path = field(default_factory=lambda: _default_out_dir())
 
     @property
