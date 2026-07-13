@@ -111,3 +111,6 @@ htmlcov/
 *.fdb_latexmk
 *.synctex.gz
 .torchinductor_cache/
+
+# secrets — never commit
+.keys/
