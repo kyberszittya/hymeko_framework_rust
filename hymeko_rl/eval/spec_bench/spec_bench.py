@@ -210,12 +210,12 @@ class GateResult:
 
 
 def propose_and_gate(model: ChatModel, base_prompt: str, verif: list[Rollout], *, k: int = 3, retries: int = 2,
-                     system: str = "", calibrate: bool = True) -> GateResult:
-    """Propose ``k`` HTL formulas; **parse-gate** each (repair + on failure feed the parser error back for
-    ``retries`` retries); optionally **calibrate** each candidate's thresholds to the verification split (keep the
-    LLM's structure, fit its constants); **faithfulness-select** the best on verification.
+                     system: str = "", calibrate: bool = True, prune: bool = True) -> GateResult:
+    """Propose ``k`` HTL formulas; **parse-gate** each (repair + error-loop); **refine** each — ``prune`` reduces
+    conjunct-selection to a ``hymeko_pgraph`` SSG solution (drop noise conjuncts) and ``calibrate`` fits the
+    thresholds to the verification split; then **faithfulness-select** the best on verification.
 
-    # Postconditions returns the max-verification-F1 (calibrated) candidate, or ``None`` if nothing parsed;
+    # Postconditions returns the max-verification-F1 refined candidate, or ``None`` if nothing parsed;
       ``n_attempts`` counts every model call so the raw parse-success rate is measurable."""
     candidates: list[str] = []
     attempts = 0
@@ -232,7 +232,11 @@ def propose_and_gate(model: ChatModel, base_prompt: str, verif: list[Rollout], *
                       f"F(...)/G(...), == for equality, uppercase AND/OR/NOT. Output one formula only. Fix it.")
     if not candidates:
         return GateResult(formula=None, candidates=[], n_attempts=attempts, parsed_any=False)
-    refined = [calibrate_thresholds(c, verif) if calibrate else c for c in candidates]
+    if prune:
+        from hymeko_rl.eval.spec_bench.pgraph_refine import refine_via_pgraph   # late: avoids import cycle
+        refined = [refine_via_pgraph(c, verif, calibrate=calibrate) for c in candidates]
+    else:
+        refined = [calibrate_thresholds(c, verif) if calibrate else c for c in candidates]
     best = max(refined, key=lambda f: formula_f1(f, verif))
     return GateResult(formula=best, candidates=candidates, n_attempts=attempts, parsed_any=True)
 

@@ -16,88 +16,88 @@
       "model": "llama3.2:1b",
       "size_gb": 1.32,
       "raw_f1": 0.0,
-      "gate_f1": 0.8675,
-      "gate_minus_raw": 0.8675,
+      "gate_f1": 0.9302,
+      "gate_minus_raw": 0.9302,
       "raw_parse_rate": 0.0,
       "raw_formula": null,
-      "gate_formula": "F(near_object >= 0.733 AND obj_to_target <= 0.236 AND in_place > 0.8) OR F(grasp_success == 1 AND near_object < 0.3)",
+      "gate_formula": "F(obj_to_target <= 0.118)",
       "gate_attempts": 4,
       "perf": {
         "calls": 8.0,
-        "rtt_ms_median": 398.0,
-        "eval_ms_median": 269.1,
-        "load_ms_median": 111.0,
-        "tokens_per_s_median": 163.54
+        "rtt_ms_median": 280.9,
+        "eval_ms_median": 152.3,
+        "load_ms_median": 114.0,
+        "tokens_per_s_median": 169.77
       }
     },
     {
       "model": "gemma2:2b",
       "size_gb": 1.63,
       "raw_f1": 0.0,
-      "gate_f1": 0.0,
-      "gate_minus_raw": 0.0,
+      "gate_f1": 0.9398,
+      "gate_minus_raw": 0.9398,
       "raw_parse_rate": 1.0,
-      "raw_formula": "F[0,5](obj_to_target <= 0.1 AND in_place >= 0.9 AND near_object >= 0.8 AND grasp_success == 1)",
-      "gate_formula": "F[0,5](obj_to_target <= 0.1 AND in_place >= 0.9 AND near_object >= 0.7 AND grasp_success == 1)",
+      "raw_formula": "F[0,5](obj_to_target <= 0.1 AND in_place >= 0.9 AND near_object >= 0.7 AND grasp_success == 1)",
+      "gate_formula": "F(obj_to_target <= 0.1)",
       "gate_attempts": 4,
       "perf": {
         "calls": 8.0,
-        "rtt_ms_median": 517.3,
-        "eval_ms_median": 378.2,
-        "load_ms_median": 116.0,
-        "tokens_per_s_median": 118.97
+        "rtt_ms_median": 527.2,
+        "eval_ms_median": 370.6,
+        "load_ms_median": 124.2,
+        "tokens_per_s_median": 121.44
       }
     },
     {
       "model": "phi3:3.8b",
       "size_gb": 2.18,
       "raw_f1": 0.0,
-      "gate_f1": 0.9091,
-      "gate_minus_raw": 0.9091,
+      "gate_f1": 0.9302,
+      "gate_minus_raw": 0.9302,
       "raw_parse_rate": 0.0,
       "raw_formula": null,
-      "gate_formula": "(F[0,5](grasp_success == 1) AND in_place > 0.9) OR (obj_to_target <= 0.236)",
-      "gate_attempts": 8,
+      "gate_formula": "F(obj_to_target <= 0.118)",
+      "gate_attempts": 9,
       "perf": {
-        "calls": 12.0,
-        "rtt_ms_median": 451.3,
-        "eval_ms_median": 395.1,
-        "load_ms_median": 18.2,
-        "tokens_per_s_median": 93.91
+        "calls": 13.0,
+        "rtt_ms_median": 547.6,
+        "eval_ms_median": 471.1,
+        "load_ms_median": 18.0,
+        "tokens_per_s_median": 98.07
       }
     },
     {
       "model": "qwen2.5:3b",
       "size_gb": 1.93,
       "raw_f1": 0.0,
-      "gate_f1": 0.6435,
-      "gate_minus_raw": 0.6435,
+      "gate_f1": 0.625,
+      "gate_minus_raw": 0.625,
       "raw_parse_rate": 0.0,
       "raw_formula": null,
-      "gate_formula": "G(F(in_place > 0 OR obj_to_target <= 1.18))",
+      "gate_formula": "G(obj_to_target <= 1.18)",
       "gate_attempts": 4,
       "perf": {
         "calls": 8.0,
-        "rtt_ms_median": 288.4,
-        "eval_ms_median": 184.2,
-        "load_ms_median": 90.9,
-        "tokens_per_s_median": 108.56
+        "rtt_ms_median": 305.8,
+        "eval_ms_median": 181.9,
+        "load_ms_median": 101.4,
+        "tokens_per_s_median": 109.95
       }
     },
     {
       "model": "openai:gpt-4o-mini",
       "size_gb": null,
       "raw_f1": 0.0,
-      "gate_f1": 0.9412,
-      "gate_minus_raw": 0.9412,
+      "gate_f1": 0.9302,
+      "gate_minus_raw": 0.9302,
       "raw_parse_rate": 1.0,
       "raw_formula": "F(in_place >= 1 AND obj_to_target <= 0)",
-      "gate_formula": "F(in_place >= 0.9 AND obj_to_target <= 0.59)",
+      "gate_formula": "F(obj_to_target <= 0.118)",
       "gate_attempts": 4,
       "perf": {
         "calls": 8.0,
-        "rtt_ms_median": 914.2,
-        "tokens_per_s_median": 15.37
+        "rtt_ms_median": 1152.1,
+        "tokens_per_s_median": 12.16
       }
     }
   ]
