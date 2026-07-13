@@ -47,9 +47,10 @@ def predicates_to_pgraph_hymeko(preds: list[tuple[str, str]], name: str = "spec"
     return "\n".join(lines)
 
 
-def solve_ssg(hymeko_src: str, *, binary: Path = _PGRAPH_BIN, timeout: float = 30.0) -> "list[list[str]] | None":
-    """Run ``hymeko_pgraph`` SSG on the ``.hymeko`` source; return the feasible solution structures (unit-name
-    subsets), or ``None`` if the binary is unavailable / the solve fails."""
+def solve_pgraph(hymeko_src: str, *, algorithm: str = "ssg", binary: Path = _PGRAPH_BIN,
+                 timeout: float = 60.0) -> "dict | None":
+    """Run ``hymeko_pgraph solve`` on the ``.hymeko`` source; return the parsed JSON (``ssg_structures`` for ssg,
+    ``abb`` for abb), or ``None`` if the binary is unavailable / the solve fails."""
     if not binary.exists():
         return None
     path = None
@@ -57,16 +58,22 @@ def solve_ssg(hymeko_src: str, *, binary: Path = _PGRAPH_BIN, timeout: float = 3
         with tempfile.NamedTemporaryFile("w", suffix=".hymeko", delete=False) as f:
             f.write(hymeko_src)
             path = f.name
-        out = subprocess.run([str(binary), "solve", path, "--algorithm", "ssg", "--json"],
+        out = subprocess.run([str(binary), "solve", path, "--algorithm", algorithm, "--json"],
                              capture_output=True, text=True, timeout=timeout)
         data = json.loads(out.stdout)
-        structures = data.get("ssg_structures")
-        return structures if isinstance(structures, list) else None
+        return data if isinstance(data, dict) else None
     except (subprocess.SubprocessError, json.JSONDecodeError, OSError):
         return None
     finally:
         if path:
             Path(path).unlink(missing_ok=True)
+
+
+def solve_ssg(hymeko_src: str, *, binary: Path = _PGRAPH_BIN, timeout: float = 60.0) -> "list[list[str]] | None":
+    """The feasible SSG solution structures (unit-name subsets), or ``None``."""
+    data = solve_pgraph(hymeko_src, algorithm="ssg", binary=binary, timeout=timeout)
+    structures = data.get("ssg_structures") if data else None
+    return structures if isinstance(structures, list) else None
 
 
 def _subsets_fallback(n: int) -> list[list[str]]:

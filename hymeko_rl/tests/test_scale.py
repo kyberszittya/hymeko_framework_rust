@@ -1,9 +1,11 @@
 """Tests for scaled temporal-form refinement via a coverage P-graph (our hymeko_pgraph)."""
 from __future__ import annotations
 
+from hymeko_rl.eval.spec_bench.pgraph_refine import _PGRAPH_BIN
 from hymeko_rl.eval.spec_bench.scale import (
     coverage_pgraph_hymeko,
     refine_scaled,
+    refine_scaled_abb,
     synth_conj_temporal,
     synth_single_settle,
     temporal_variants,
@@ -50,3 +52,13 @@ def test_conj_temporal_ground_truth_faithful() -> None:
 
 def test_refine_scaled_no_aspects_returns_none() -> None:
     assert refine_scaled([], synth_single_settle(20, seed=1)) is None
+
+
+def test_abb_cost_anti_f1_selects_and_prunes() -> None:
+    # axis-2: ABB under cost=anti-F1 finds the faithful variant via branch-and-bound (measurable pruning).
+    verif, test = synth_single_settle(80, seed=100), synth_single_settle(120, seed=200)
+    refined, stats = refine_scaled_abb(["obj_to_target"], verif)
+    assert refined is not None and "G[0,4]" in refined
+    assert formula_f1(refined, test) > 0.95
+    if _PGRAPH_BIN.exists() and not stats.get("fallback"):
+        assert int(stats.get("pruned_by_inclusion", 0)) > 0     # bounding actually pruned structures

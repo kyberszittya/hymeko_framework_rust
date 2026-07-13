@@ -6,10 +6,11 @@ late-window `G[0,4]`) — over a large candidate pool, via a **coverage** P-grap
 Addresses the two threads "structural refinement beyond conjuncts" (1) and "scale the P-graph" (2). Code:
 `hymeko_rl/eval/spec_bench/scale.py`.
 
-> **Honest verdict up front.** Axis 1 (temporal-form selection) is **demonstrated**; axis 2 (scale) is **partial**
-> — the coverage model produces a genuinely large SSG space, but the search is SSG-enumerate + minimal-filter +
-> F1-rank; **ABB's cost-bounding is not exercised** (F1 is not a native P-graph cost). And the conjunction task I
-> first built does *not* isolate temporal value — `F(A AND B)` solves it, so flat pruning already hits 1.0 there.
+> **Honest verdict up front.** Axis 1 (temporal-form selection) is **demonstrated**; axis 2 (scale) is now
+> **demonstrated too** via a `cost = anti-F1` model so **ABB's branch-and-bound does the pruning** (measurable
+> `explored`/`pruned` counts). The one recorded caveat: the conjunction task I first built does *not* isolate
+> temporal value — `F(A AND B)` solves it, so flat pruning already hits 1.0 there; the single-signal task is the
+> valid discriminator.
 
 ## The reduction
 
@@ -33,14 +34,21 @@ drifts away by the end. No second signal, so `F(A AND B)` cannot rescue `F`.
 The temporal-variant search over the coverage P-graph **selects the late-window `G`** from the pool and reaches the
 ceiling — the structural refinement calibration and conjunct-pruning cannot do.
 
-## Axis 2 — scale: PARTIAL (honest)
+## Axis 2 — scale via ABB `cost = anti-F1`: DEMONSTRATED
 
-The coverage model *is* combinatorial: for 2 aspects × 6 variants, SSG returns **3969** feasible structures (all
-subsets of the alternative producers). So the P-graph reduction genuinely scales, and the first naive version was
-too slow (calibrating ~4000 supersets). The fix: filter to the **minimal** structures (one variant per aspect →
-36), calibrate + F1-rank. **But this uses SSG-enumerate + filter, not ABB's cost-bounding** — because F1 is not a
-P-graph cost. Genuinely exercising ABB's axiom-bounding needs a `cost ≈ anti-F1` model (a further step), and the
-payoff is at a candidate pool far larger than a robotics monitor set.
+The coverage model is genuinely combinatorial (SSG returns **3969** structures for 2 aspects × 6 variants). To make
+**ABB's branch-and-bound** do the work rather than enumerate, each variant unit's `@U <unit> COST` is set to its
+**anti-faithfulness** `1 − F1(calibrated variant, verif)`, so the cost-optimal structure is the most-faithful
+variant per aspect. ABB (`solve --algorithm abb`) then finds it *and prunes*:
+
+| pool | ABB result | test F1 | explored | pruned |
+|---|---|--:|--:|--:|
+| 1 aspect (6 variants) | `G[0,4](obj_to_target <= 0.14)` | 1.000 | 67 | 26 |
+| 2 aspects (12 variants) | `(G[0,4](in_place>=0.665) AND G[0,4](obj_to_target<=0.157))` | 0.992 | 527 | 230 |
+
+ABB agrees with SSG+F1-rank (correctness) but reaches it by **cost-bounding** — `pruned_by_inclusion` +
+`pruned_by_reachability` are non-zero and grow with the pool (26/67 → 230/527), i.e. the bounding bites and its
+advantage over enumeration widens with scale. (`refine_scaled_abb` in `scale.py`.)
 
 ## The conjunction task does NOT isolate temporal value (recorded so it is not misread)
 
@@ -54,8 +62,9 @@ the valid discriminator.
 
 - **Not** "the scaled P-graph beats flat pruning" — on the conjunction task flat wins; the scaled machinery's value
   is specifically temporal-form selection, shown only on the single-signal task.
-- **ABB cost-bounding is not demonstrated** — SSG-enumerate + minimal-filter + F1-rank; ABB is future work.
-- Synthetic; no RL; no real coffee-push.
+- ABB's cost is a *proxy* (`1 − F1` of each variant in isolation) — it selects the best variant *per aspect*
+  (separable) and matches SSG+F1-rank here; it is not a global-F1 optimum guarantee for interacting aspects.
+- Synthetic; no RL; no real coffee-push (that is the next step).
 
 ## Changed / new files
 

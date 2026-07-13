@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from hymeko_rl.eval.spec_bench.pgraph_refine import solve_ssg
+from hymeko_rl.eval.spec_bench.pgraph_refine import solve_pgraph, solve_ssg
 from hymeko_rl.eval.spec_bench.spec_bench import Rollout, calibrate_thresholds, formula_f1
 
 _SIGNALS = ("in_place", "obj_to_target", "near_object", "grasp_success")
@@ -89,9 +89,12 @@ def temporal_variants(signal: str, *, seed_threshold: float = 0.5) -> list[str]:
     return [tpl.format(s=signal, c=c, t=seed_threshold) for c in _CMPS for tpl in _VARIANT_TEMPLATES]
 
 
-def coverage_pgraph_hymeko(aspects: list[str], name: str = "spec") -> "tuple[str, dict[str, str]]":
+def coverage_pgraph_hymeko(aspects: list[str], name: str = "spec", *, costs: "dict[str, float] | None" = None,
+                           ) -> "tuple[str, dict[str, str]]":
     """A coverage P-graph: each aspect's temporal variants are alternative producers of ``<aspect>_ok``; ``success``
-    consumes every ``<aspect>_ok``. Returns the ``.hymeko`` source + a map ``unit-name -> variant formula``."""
+    consumes every ``<aspect>_ok``. Per-unit ``costs`` (default 1.0) become the ``@U <unit> COST`` field that ABB
+    minimises. Returns the ``.hymeko`` source + a map ``unit-name -> variant formula``."""
+    costs = costs or {}
     lines = [f"{name} {{}}", "", "context", "{"]
     lines += [f"    {s} <material, raw>;" for s in aspects]
     lines += [f"    {s}_ok <material>;" for s in aspects]
@@ -101,10 +104,38 @@ def coverage_pgraph_hymeko(aspects: list[str], name: str = "spec") -> "tuple[str
         for vi, formula in enumerate(temporal_variants(asp)):
             u = f"U{ai}_{vi}"
             unit_formula[u] = formula
-            lines.append(f"    @{u} <unit> 1.0 {{ (-{asp}, +{asp}_ok); }}")
+            lines.append(f"    @{u} <unit> {costs.get(u, 1.0):g} {{ (-{asp}, +{asp}_ok); }}")
     lines.append(f"    @SUCCESS <unit> 0.0 {{ ({', '.join(f'-{s}_ok' for s in aspects)}, +success); }}")
     lines.append("}")
     return "\n".join(lines), unit_formula
+
+
+def _variant_costs(unit_formula: dict[str, str], verif: list[Rollout]) -> dict[str, float]:
+    """Per-unit **cost = anti-faithfulness** = ``1 - F1`` of that (calibrated) variant on ``verif`` — so ABB's
+    cost-minimisation picks the most faithful variant per aspect (and its branch-and-bound prunes the rest)."""
+    return {u: round(max(0.0, 1.0 - formula_f1(calibrate_thresholds(f, verif), verif)), 4)
+            for u, f in unit_formula.items()}
+
+
+def refine_scaled_abb(aspects: list[str], verif: list[Rollout]) -> "tuple[str | None, dict[str, object]]":
+    """Axis-2: solve the coverage P-graph with **ABB** under ``cost = anti-F1`` — the cost-optimal structure is the
+    most-faithful variant per aspect, found by branch-and-bound (not full enumeration). Returns
+    ``(refined_formula, abb_stats)`` where stats include ``explored`` / ``pruned_*`` (the bounding that bit)."""
+    if not aspects:
+        return None, {}
+    _, unit_formula = coverage_pgraph_hymeko(aspects)
+    costs = _variant_costs(unit_formula, verif)
+    src, _ = coverage_pgraph_hymeko(aspects, costs=costs)
+    data = solve_pgraph(src, algorithm="abb")
+    abb = data.get("abb") if data else None
+    if not isinstance(abb, dict):                       # binary/solve unavailable → SSG fallback
+        return refine_scaled(aspects, verif), {"fallback": True}
+    formulas = [unit_formula[u] for u in abb.get("units", []) if u in unit_formula]
+    if not formulas:
+        return None, dict(abb)
+    spec = formulas[0] if len(formulas) == 1 else "(" + " AND ".join(formulas) + ")"
+    stats = {k: abb.get(k) for k in ("cost", "explored", "pruned_by_inclusion", "pruned_by_reachability")}
+    return calibrate_thresholds(spec, verif), stats
 
 
 def refine_scaled(aspects: list[str], verif: list[Rollout], *, max_structures: int = 400) -> "str | None":
