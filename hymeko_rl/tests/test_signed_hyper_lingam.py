@@ -101,6 +101,22 @@ def test_config_is_immutable_and_defaulted() -> None:
         cfg.parsimony = 0.1                                                  # frozen dataclass
 
 
+def test_hsikan_over_discovered_operator_models_the_joint(tmp_path: "object") -> None:
+    """Discovery → modeling: HSiKAN over SHL's operator models the joint sink mechanism; over DirectLiNGAM's (which
+    missed the joint edges) and the linear baseline it cannot."""
+    from pathlib import Path
+
+    from hymeko_rl.experiments.exp_signed_hyper_lingam import run_hsikan_modeling
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        s = run_hsikan_modeling(seeds=(0, 1), n_split=600, epochs=100, out_dir=Path(str(tmp_path)))
+    r2 = s["sink_r2"]
+    assert r2["hsikan_over_shl"]["median"] > 0.7                      # SHL operator + HSiKAN model the joint
+    assert r2["hsikan_over_shl"]["median"] > r2["hsikan_over_directlingam"]["median"] + 0.3
+    assert r2["hsikan_over_shl"]["median"] > r2["linear"]["median"] + 0.3
+    assert s["shl_operator_lets_hsikan_model_the_joint"] is True
+
+
 def test_head_to_head_runner_smoke(tmp_path: "object") -> None:
     from pathlib import Path
 

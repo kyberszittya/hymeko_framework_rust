@@ -48,6 +48,25 @@ HyMeKo premise, demonstrated on causal discovery. Figure:
   joint SEM keeps mechanisms mild enough that the order holds — reported, not hidden).
 - **Doctrine unchanged:** it PROPOSES structure; ablations decide. Observational discovery, not proof.
 
+## Discovery → modeling: HSiKAN over the discovered operator (the payoff)
+
+Recovering the joint *structure* is only half the doctrine ("LiNGAM proposes, **HSiKAN models**"). On a
+joint-sink SEM (`x_sink = x₀·x₁`), we fit HSiKAN over each method's discovered signed operator `(A⁺,A⁻)` and read
+the sink R² (leakage-guarded, TRAIN-standardised — reusing `build_hsikan_operator` + the harness's
+`_standardise_splits`/`_score`/`_fit_linear`):
+
+| model | sink R² (median [IQR], 6 seeds) |
+|---|--:|
+| **HSiKAN over SignedHyperLiNGAM operator** | **0.978** [0.977, 0.979] |
+| HSiKAN over DirectLiNGAM operator | −0.001 [−0.008, 0.000] |
+| linear predictor | −0.008 |
+
+**SignedHyperLiNGAM discovers the joint hyperedge `{0,1}→sink` that pairwise DirectLiNGAM misses, and HSiKAN over
+that operator models the joint mechanism (R² 0.98) — where HSiKAN over DirectLiNGAM's operator (no joint edges to
+message-pass along) and the linear predictor both fail (R² ≈ 0).** This is the full chain: better *proposal*
+(hyperedge discovery) → better *model* (nonlinear mechanism over it). Runner `--hsikan`; JSON
+`reports/figures/…_signed_hyper_lingam_hsikan/`. Test `test_hsikan_over_discovered_operator_models_the_joint`.
+
 ## Files (new, non-core; worktree `feat/spec-reward-close-loop`)
 
 | file | LOC | note |

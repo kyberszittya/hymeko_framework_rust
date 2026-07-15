@@ -12,6 +12,7 @@ output: a JSON table + a grouped-bar recall plot.
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 from pathlib import Path
 from typing import Any, Sequence
@@ -120,16 +121,79 @@ def _plot(agg: "dict[str, Any]", out_path: Path) -> "Path | None":
     return out_path
 
 
+def _joint_sink_b(n_vars: int) -> "np.ndarray":
+    """A SEM support whose sink (``n_vars-1``) has a joint mechanism over two independent roots {0,1}."""
+    b = np.zeros((n_vars, n_vars), dtype=float)
+    b[n_vars - 1, 0], b[n_vars - 1, 1] = 0.9, 0.8          # sink <- {0,1}  (made a joint product downstream)
+    b[2, 0] = 0.7                                          # an additive edge for structure
+    if n_vars > 3:
+        b[3, 1] = -0.6
+    return b
+
+
+def run_hsikan_modeling(*, n_vars: int = 5, n_split: int = 1200, seeds: "Sequence[int]" = tuple(range(6)),
+                        hidden: int = 24, n_layers: int = 2, epochs: int = 200, out_dir: "Path | None" = None,
+                        ) -> "dict[str, Any]":
+    """Discovery → modeling: on a joint-sink SEM, does HSiKAN over **SignedHyperLiNGAM's** discovered operator model
+    the joint mechanism better than over **DirectLiNGAM's** (which misses the joint edges) or a linear predictor?
+
+    The ``hsikan_mechanism`` doctrine (LiNGAM proposes, HSiKAN models) with a *better proposal*: SHL recovers the
+    joint hyperedge ``{0,1}→sink`` so HSiKAN can model ``x_sink = x_0·x_1``; DirectLiNGAM's operator lacks those
+    edges, so HSiKAN over it — like the linear baseline — cannot."""
+    from hymeko_rl.eval.causal.hsikan_mechanism import signed_adjacency_split
+    from hymeko_rl.eval.causal.lingam_estimated_b_robustness import estimate_b
+    from hymeko_rl.eval.causal.lingam_operator_harness import (
+        _fit_linear,
+        _score,
+        _standardise_splits,
+        build_hsikan_operator,
+    )
+    from hymeko_rl.eval.evaluate import experiment_dir, now_stamp
+    out = out_dir or experiment_dir("reports/figures", "signed_hyper_lingam_hsikan")
+    out.mkdir(parents=True, exist_ok=True)
+    sink = n_vars - 1
+    b = _joint_sink_b(n_vars)
+    rows: "dict[str, list[float]]" = {"hsikan_over_shl": [], "hsikan_over_directlingam": [], "linear": []}
+    for seed in seeds:
+        x = sample_interaction_sem(b, n_split * 3, seed=100 + seed, joint_frac=1.0)
+        xs = [x[:n_split], x[n_split:2 * n_split], x[2 * n_split:]]
+        prep = _standardise_splits(xs, [s[:, sink] for s in xs], sink)
+        operators = {"hsikan_over_directlingam": estimate_b(xs[0]),
+                     "hsikan_over_shl": SignedHyperLiNGAM().fit(xs[0]).adjacency}
+        for name, badj in operators.items():
+            a_pos, a_neg = signed_adjacency_split(badj)
+            builder = functools.partial(build_hsikan_operator, a_pos, a_neg, hidden, n_layers, sink)
+            rows[name].append(_score(builder, prep[0], prep[1], prep[2], epochs=epochs, seed=seed)["r2_test"])
+        rows["linear"].append(_fit_linear(prep[0], prep[2])["r2_test"])
+    agg = {name: _median_iqr(vals) for name, vals in rows.items()}
+    shl_wins = (agg["hsikan_over_shl"]["median"] > agg["hsikan_over_directlingam"]["median"] + 0.1
+                and agg["hsikan_over_shl"]["median"] > agg["linear"]["median"] + 0.1)
+    summary: "dict[str, Any]" = {"kind": "HSiKAN over discovered operator (joint-sink SEM)", "stamp": now_stamp(),
+                                 "n_vars": n_vars, "sink": sink, "seeds": list(seeds), "sink_r2": agg,
+                                 "shl_operator_lets_hsikan_model_the_joint": shl_wins}
+    (out / "signed_hyper_lingam_hsikan.json").write_text(json.dumps(summary, indent=2, default=float))
+    for name in ("hsikan_over_shl", "hsikan_over_directlingam", "linear"):
+        a = agg[name]
+        print(f"[shl-hsikan] {name:26s} sink R2 median={a['median']:.3f} [{a['q1']:.3f},{a['q3']:.3f}]", flush=True)
+    print(f"[shl-hsikan] SHL-operator lets HSiKAN model the joint mechanism = {shl_wins} -> {out}", flush=True)
+    return summary
+
+
 def main(argv: "list[str] | None" = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--n-vars", type=int, default=6)
     ap.add_argument("--density", type=float, default=0.4)
     ap.add_argument("--n-samples", type=int, default=3500)
     ap.add_argument("--seeds", type=int, default=10)
+    ap.add_argument("--hsikan", action="store_true", help="run the HSiKAN-over-discovered-operator modeling study")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
+    out = Path(a.out) if a.out else None
+    if a.hsikan:
+        run_hsikan_modeling(seeds=tuple(range(a.seeds)), out_dir=out)
+        return 0
     run_head_to_head(n_vars=a.n_vars, density=a.density, n_samples=a.n_samples, seeds=tuple(range(a.seeds)),
-                     out_dir=Path(a.out) if a.out else None)
+                     out_dir=out)
     return 0
 
 
