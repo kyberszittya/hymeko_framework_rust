@@ -656,6 +656,32 @@
    ]
   },
   {
+   "id": "F-PP-010",
+   "claim": "The 0.792 feedforward residual-clone gap (vs reactive-teacher oracle 1.000) is EXECUTION-HARD at the contact discontinuity, NOT a temporal/history-information deficit. Multi-seed (3 seeds x 24 eval) over FF, history-stack K in {2,4,8}, and LSTM residual clones: ALL cluster at 0.75-0.83 median with overlapping ranges, NONE reaches base 0.875 (best Hist4 median 0.833), none reaches 0.95. More memory is not monotonically better; MSE is decoupled from closed-loop score. Mechanism (failure-mode inspection): the teacher residual is small on average (|r|~0.06-0.09) but has near-full-range discontinuities at contact-mode switches (grasp step-jump max 0.733); a smooth NN clone cannot reproduce the spike, so its executed-action error is largest at grasp (0.060 rad) and the dominant failure is grasp-then-DROP (irreversible). Side signal (weak, single-seed): LSTM reached 2.39cm precision (base 4.69, expert 2.16) -> recurrence may recover the expert's precision integral even where it does not lift the success rate.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-15 recurrent/history residual-clone gap test (Step 1 after F-PP-009)",
+   "raw_evidence": [
+    "reports/2026-07-15-recurrent-residual-clone-gap.md",
+    "scratchpad/residual_clone_gap.py (multi-seed FF/Hist{2,4,8}/LSTM) + scratchpad/clone_failure_inspect.py",
+    "multi-seed medians FF .750 Hist2 .792 Hist4 .833 Hist8 .792 LSTM .792 (all < base .875); grasp max-jump 0.733"
+   ],
+   "confidence": "measured (3 seeds x 24 eval, fixed eval tasks; ranges overlap -> architectures indistinguishable)",
+   "scope": "residual imitation clone of a contact-rich (grasp) task; the contact-discontinuity execution-hardness is general to residual clones over frozen bases on hypersensitive contact tasks",
+   "limitations": "3 seeds; GRU dropped from multi-seed after worst single-seed; the precision (2.39cm) signal is single-seed and not confirmed",
+   "framework_consequence": "GATE for warm-starting RL from an imitation clone on a contact task: the clone must reach base BEFORE adding a critic. Here no history/recurrent clone reaches base -> TD3+BC is NOT justified (would warm-start below base, hit the same contact-spike wall, and F-PP-009 critic over-estimation would drag it off). Recurrence helps PRECISION (place-err) not SUCCESS RATE on contact tasks -> pick the metric with headroom. Candidate levers not yet run: mode-gated residual (zero residual during grasp/lift via active_modes), or a precision track. Do NOT close the residual line; do change the target.",
+   "code_changes": [
+    "scratchpad only (residual-clone comparison harness reuses pick_place_recurrent_clone._make_rnn/FlexLSTM + residual infra); no repo code changed"
+   ],
+   "regression_tests": [
+    "(covered by test_residual_abstraction: zero-residual==base; reactive-target>=base)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Does a mode-gated residual (RL only in smooth approach/place-align phases) preserve base while removing the grasp-spike failure?",
+    "Does the LSTM 2.39cm precision replicate across seeds (precision track vs success track)?"
+   ]
+  },
+  {
    "id": "F-SAC-7",
    "claim": "Rollout-state DAgger (query the reactive teacher on the policy's OWN visited states, aggregate, re-clone) CLOSES the flat-action covariate collapse: BC 0.417 -> DAgger 0.75 median (0.625-0.792), 3 seeds, zero harmful, on the floorless PlanarGrasp coin-delivery (Gate 0 teacher-recovery 0.917).",
    "classification": "NEW_CANONICAL_CAPABILITY",
