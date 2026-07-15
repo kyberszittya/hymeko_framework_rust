@@ -309,6 +309,34 @@ class LiftPlaceMetric:
         return int(self.lifted), int(self.placed)
 
 
+class PlacementPrecisionMetric:
+    """``(placed?, error_at_settle)`` — the object-to-target-**centre** distance at the first stable-place, for
+    scoring placement PRECISION beyond binary success (binary stable-place saturates at 0.875; the base settles
+    ~4.7 cm from centre, so precision is where the headroom is). Same divergence guard as :class:`LiftPlaceMetric`
+    (an exploded "settle" is not counted). ``error_at_settle`` is ``nan`` if the episode never settled."""
+
+    def __init__(self, *, diverge_qacc: float = 5_000.0) -> None:
+        self.diverge_qacc = diverge_qacc
+        self.placed = False
+        self.err = float("nan")
+
+    def reset(self) -> None:
+        self.placed = False
+        self.err = float("nan")
+
+    def on_step(self, env: Any, info: "dict[str, Any]", _r: float, _done: bool) -> bool:
+        qacc = float(np.abs(env.data.qacc).max())
+        if not np.isfinite(qacc) or qacc > self.diverge_qacc:
+            return True                                            # diverged — a blow-up cannot fake a settle
+        if info["reached"] and not self.placed:
+            self.placed = True
+            self.err = float(info["obj_to_target"])                # centre distance at the settle instant
+        return False
+
+    def finalize(self) -> "tuple[int, float]":
+        return int(self.placed), self.err
+
+
 def plot_scoreboard(stats: list[EvalStats], out_path: str | Path, *, title: str) -> Path:
     """Grouped bar chart (goals/deaths/timeouts per source) + a per-episode return strip → PNG."""
     import matplotlib

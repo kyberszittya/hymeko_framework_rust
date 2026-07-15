@@ -65,6 +65,67 @@ def build(kind: str, env: PickEnv, hidden: int) -> ActorCritic:
                         hg_state=env.hg, hidden=hidden)
 
 
+class PickPolicyIncompatible(RuntimeError):
+    """A pick-place checkpoint does not match the env it is being loaded into (obs schema / action dim / policy
+    family / observe_target). Raised instead of silently mis-loading a state_dict or falling back to an untrained
+    model. Assimilates the 2026-07-14 provenance findings (metadata-blind FF ckpts, obs-72 vs obs-90, 4 loaders)."""
+
+
+def _env_obs_dim(env: PickEnv) -> int:
+    return env.hg.n_vertices * int(env.observation_space.shape[-1])
+
+
+def load_pick_actor(path: str, env: PickEnv, *, kind: str = "hsikan", hidden: int = 64) -> ActorCritic:
+    """Load a raw **feedforward** ActorCritic checkpoint with FAIL-LOUD compatibility validation. A shape mismatch
+    (e.g. the June obs-72 graph loaded into the current obs-90 config) raises :class:`PickPolicyIncompatible` rather
+    than mis-loading. # Preconditions ``path`` is a raw FF ``state_dict`` (not a recurrent-metadata blob)."""
+    blob = torch.load(path, map_location="cpu", weights_only=False)
+    if isinstance(blob, dict) and blob.get("kind") == "recurrent_clone":
+        raise PickPolicyIncompatible(f"{path}: recurrent checkpoint — use load_pick_policy(), not load_pick_actor()")
+    ac = build(kind, env, hidden)
+    try:
+        ac.load_state_dict(blob)
+    except (RuntimeError, KeyError) as err:                             # shape/key mismatch = wrong obs/action schema
+        raise PickPolicyIncompatible(
+            f"{path}: feedforward checkpoint incompatible with env (kind={kind}, obs_dim={_env_obs_dim(env)}, "
+            f"n_actions={env.n_actions}): {err}") from err
+    return ac.eval()
+
+
+def load_pick_policy(path: str, env: PickEnv, *, kind: str = "hsikan"):
+    """THE canonical pick-place checkpoint loader → a deterministic ``action_fn(env, obs) -> action``. Dispatches a
+    recurrent-metadata blob (``kind=="recurrent_clone"``) vs a raw feedforward ``state_dict``, validating obs schema /
+    action dim / ``observe_target`` against ``env`` and FAILING LOUD on mismatch (never a silent mis-load or untrained
+    fallback). Used by the GUI, the renderer, and the residual base — the single loader replacing 4 ad-hoc ones."""
+    blob = torch.load(path, map_location="cpu", weights_only=False)
+    if isinstance(blob, dict) and blob.get("kind") == "recurrent_clone":
+        from hymeko_rl.experiments.pick_place_recurrent_clone import RecurrentActionFn, RecurrentPickActor
+        want, got = int(blob["obs_dim"]), _env_obs_dim(env)
+        if want != got:
+            raise PickPolicyIncompatible(
+                f"{path}: recurrent obs_dim {want} != env {got} — observe_target mismatch "
+                f"(env observe_target={getattr(env, '_observe_target', None)}, ckpt={blob.get('observe_target')})")
+        if int(blob["action_dim"]) != env.n_actions:
+            raise PickPolicyIncompatible(f"{path}: recurrent action_dim {blob['action_dim']} != env {env.n_actions}")
+        actor = RecurrentPickActor(blob["obs_dim"], blob["action_dim"], blob["hidden"], cell=blob["cell"])
+        actor.load_state_dict(blob["state_dict"])
+        return RecurrentActionFn(actor)
+    if isinstance(blob, dict) and blob.get("kind") == "residual_clone":          # base + bounded RL residual
+        from hymeko_rl.env.residual_pick_env import ResidualActionAdapter
+        base = load_pick_actor(blob["base_ckpt"], env, kind=blob.get("base_kind", "hsikan"))
+        residual = build(blob.get("residual_kind", "hsikan"), env, int(blob.get("hidden", 64)))
+        try:
+            residual.load_state_dict(blob["residual_state_dict"])
+        except (RuntimeError, KeyError) as err:
+            raise PickPolicyIncompatible(f"{path}: residual checkpoint incompatible with env: {err}") from err
+        residual.eval()
+        lo, hi = np.asarray(env.action_space.low), np.asarray(env.action_space.high)
+        adapter = ResidualActionAdapter(base, residual, delta_scale=blob["delta_scale"],
+                                        grip_scale=blob["grip_scale"], action_dim=env.n_actions, lo=lo, hi=hi)
+        return greedy_action_fn(adapter)
+    return greedy_action_fn(load_pick_actor(path, env, kind=kind))
+
+
 _DIVERGE_QACC = 5_000.0   # |qacc| above this = the sim has blown up (normal contact is ~1e2); see below.
 
 

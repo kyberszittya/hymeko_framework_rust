@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import enum
 import time
 import json
 from collections.abc import Callable, Sequence
@@ -169,6 +170,37 @@ def build_sac(kind: str, *, obs_dim: int, flat_dim: int, action_dim: int, action
     return actor, critics
 
 
+class AlphaMode(str, enum.Enum):
+    """Entropy-temperature (α) schedule for the SAC actor — the 2026-07-15 correction axis.
+
+    The integrity audit (``reports/canonical_integration/sac_rehab/integrity_tests.py``) measured the entropy
+    gradient (|g|≈0.205) as the LARGEST actor-loss component and one that *opposes* the BC anchor (cos≈−0.20)
+    — the mechanism by which SAC degrades a working BC clone while TD3+BC (no entropy term) does not (v16c
+    0.673). These modes remove or anneal the entropy pressure to test that diagnosis; ``str``-mixin so a mode
+    round-trips through JSON/CLI as its value (§6.5 #7: an enum at the boundary, not a bare string in internals).
+    """
+
+    AUTO = "auto"      # classic SAC: auto-tune α to target_entropy (the term the audit implicates)
+    FIXED = "fixed"    # constant α = init_alpha (low α ⇒ near-deterministic actor, TD3+BC-like)
+    ANNEAL = "anneal"  # linear α: init_alpha → alpha_final over anneal_frac·total_steps, then hold
+
+
+def scheduled_alpha(mode: AlphaMode, step: int, total_steps: int, init_alpha: float,
+                    alpha_final: float, anneal_frac: float) -> float:
+    """The scheduled (non-learned) entropy temperature for FIXED/ANNEAL modes.
+
+    # Preconditions ``mode`` is FIXED or ANNEAL (AUTO tracks the learned ``log_alpha`` instead); ``step>=0``,
+      ``total_steps>=1``, ``0<anneal_frac<=1``. # Postconditions returns α≥0; FIXED is constant ``init_alpha``;
+      ANNEAL is a clamped linear ``init_alpha→alpha_final`` reaching ``alpha_final`` at ``anneal_frac·total_steps``
+      and holding after. # Errors ``ValueError`` for AUTO (the learned path does not go through here)."""
+    if mode is AlphaMode.FIXED:
+        return float(init_alpha)
+    if mode is AlphaMode.ANNEAL:
+        frac = min(1.0, step / max(1.0, anneal_frac * total_steps))
+        return float(init_alpha * (1.0 - frac) + alpha_final * frac)
+    raise ValueError(f"scheduled_alpha is for FIXED/ANNEAL; AUTO tracks the learned log_alpha (mode={mode})")
+
+
 @dataclass(frozen=True)
 class SACConfig:
     """SAC hyperparameters (cart-pole defaults)."""
@@ -186,15 +218,33 @@ class SACConfig:
     capacity: int = 100_000
     n_critics: int = 2
     target_entropy: float | None = None   # default: -action_dim (the SAC heuristic)
+    init_alpha: float = 1.0                # initial entropy temperature α₀. The v26 stable stack uses 0.1 (10× lower);
+    #                                        α₀=1.0 injects large early exploration → drift/divergence (audit #1, 2026-07-15).
+    alpha_mode: AlphaMode = AlphaMode.AUTO  # entropy-temperature schedule (2026-07-15 correction); AUTO = classic SAC
+    alpha_final: float = 0.005             # ANNEAL target α — entropy pressure ~removed by the end of the schedule
+    anneal_frac: float = 0.6               # ANNEAL reaches alpha_final at this fraction of total_steps (then holds)
     eval_every: int = 5_000
     n_eval: int = 10
     seed: int = 0
     log_every: int = 5_000            # flushed [sac] progress line cadence (0 silences; §3 never-run-blind)
+    bc_coef: float = 0.0              # weight on ||action_mean(s) - a_demo||^2 over the demos (the TD3+BC anchor,
+    #                                   adapted to the squashed-Gaussian actor). 0 = plain SAC (drifts off a BC warm
+    #                                   start — measured 2026-07-14); >0 holds the clone through the entropy refine.
+    rollout_anchor_coef: float = 0.0  # weight on ||action_mean(o) - teacher(o)||^2 over the actor's OWN visited states
+    #                                   (rollout-state DAgger anchor, 2026-07-15). The demo anchor above only covers demo
+    #                                   states; this covers the rollout states where the covariate collapse occurs.
+    rollout_anchor_capacity: int = 4_000   # recent teacher-labelled rollout-state ring buffer size
+    rollout_anchor_every: int = 1          # query the (reactive) teacher every N env steps
+    greedy_rollout: bool = False           # step the env with action_mean (no exploration) instead of a sample — makes
+    #                                        the rollout-anchor states self-consistent with the greedy-EVAL states, the
+    #                                        F-SAC-9 discriminator (isolates exploration-covariate from the -Q term).
 
 
 def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: Any,
               cfg: SACConfig, *,
-              eval_fn: Callable[[Any, Any], float] | None = None) -> list[float]:
+              eval_fn: Callable[[Any, Any], float] | None = None,
+              offline_data: "tuple[np.ndarray, np.ndarray] | None" = None,
+              dagger_teacher: Any = None) -> list[float]:
     """Train SAC on ``env``; returns the periodic eval curve.
 
     Twin soft-Q critics with the entropy-augmented target ``y = r + γ(1-d)(min_i Q̄_i(s',a') − α·logπ(a'))``;
@@ -210,17 +260,39 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     rng = np.random.default_rng(cfg.seed)
     torch.manual_seed(cfg.seed)
     dev = next(actor.parameters()).device                          # CPU or CUDA — alpha, batches, inference follow it
+    demo_s = demo_a = None                                          # the BC anchor's demo tensors (TD3+BC analogue)
+    if cfg.bc_coef > 0.0 and offline_data is not None:
+        demo_s = torch.as_tensor(np.asarray(offline_data[0], dtype=np.float32), device=dev)
+        demo_a = torch.as_tensor(np.asarray(offline_data[1], dtype=np.float32), device=dev)
     t_critics = [copy.deepcopy(c) for c in critics]
     a_opt = torch.optim.Adam(actor.parameters(), lr=cfg.actor_lr)
     c_opt = torch.optim.Adam([p for c in critics for p in c.parameters()], lr=cfg.critic_lr)
-    log_alpha = torch.zeros(1, requires_grad=True, device=dev)
+    log_alpha = torch.full((1,), float(np.log(cfg.init_alpha)), requires_grad=True, device=dev)
     al_opt = torch.optim.Adam([log_alpha], lr=cfg.alpha_lr)
     action_dim = actor.action_dim                                  # both actor variants expose this
     target_entropy = cfg.target_entropy if cfg.target_entropy is not None else -float(action_dim)
+
+    def _alpha_at(step: int) -> torch.Tensor:
+        """Entropy temperature α used at ``step`` (2026-07-15 correction; see :class:`AlphaMode`).
+        AUTO tracks the learned ``log_alpha``; FIXED/ANNEAL delegate to the pure :func:`scheduled_alpha`."""
+        if cfg.alpha_mode is AlphaMode.AUTO:
+            return log_alpha.exp()
+        return torch.as_tensor(scheduled_alpha(cfg.alpha_mode, step, cfg.total_steps, cfg.init_alpha,
+                                               cfg.alpha_final, cfg.anneal_frac), device=dev)
+
     scale = actor.action_scale
     space_shape = env.observation_space.shape
     assert space_shape is not None
     buf = ReplayBuffer(cfg.capacity, tuple(int(d) for d in space_shape), action_dim)
+    # rollout-state DAgger anchor (2026-07-15): a recent ring of (obs, teacher_action) over the actor's OWN visited
+    # states, refreshed live from the reactive teacher. Inactive (buffer stays empty) unless a teacher is supplied.
+    obs_shape = tuple(int(d) for d in space_shape)
+    ra_cap = cfg.rollout_anchor_capacity if dagger_teacher is not None else 0
+    ra_obs = np.zeros((ra_cap, *obs_shape), np.float32)
+    ra_act = np.zeros((ra_cap, action_dim), np.float32)
+    ra_ptr = ra_size = 0
+    if dagger_teacher is not None:
+        dagger_teacher.reset()
     history: list[float] = []
     reward_rms = RunningRMS()                                       # bounds the Q-scale (anti-divergence)
     obs, _ = env.reset(seed=cfg.seed)
@@ -229,17 +301,32 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     for step in range(1, cfg.total_steps + 1):
         if step <= cfg.start_steps:
             action = rng.uniform(-scale, scale, size=action_dim).astype(np.float32)
+        elif cfg.greedy_rollout:                                    # no-exploration rollout: env stepped with the mean
+            with torch.no_grad():
+                action = actor.action_mean(torch.as_tensor(obs[None], dtype=torch.float32, device=dev),
+                                           ).squeeze(0).cpu().numpy()
         else:
             with torch.no_grad():
                 action = actor.sample(torch.as_tensor(obs[None], dtype=torch.float32, device=dev),
                                       )[0].squeeze(0).cpu().numpy()
+        if dagger_teacher is not None and step % cfg.rollout_anchor_every == 0:
+            ta = np.asarray(dagger_teacher.action(env), dtype=np.float32)   # teacher label on the CURRENT visited state
+            ra_obs[ra_ptr] = obs
+            ra_act[ra_ptr] = ta
+            ra_ptr = (ra_ptr + 1) % ra_cap
+            ra_size = min(ra_size + 1, ra_cap)
         nobs, rew, terminated, truncated, _ = env.step(action)
         buf.add(obs, action, float(rew), nobs, bool(terminated))
-        obs = nobs if not (terminated or truncated) else env.reset()[0]
+        if terminated or truncated:
+            obs = env.reset()[0]
+            if dagger_teacher is not None:
+                dagger_teacher.reset()                                     # keep the teacher's FSM in sync with episodes
+        else:
+            obs = nobs
 
         if buf.size >= cfg.batch_size and step > cfg.start_steps:
             s, a, r, s2, d = (x.to(dev) for x in buf.sample(cfg.batch_size, generator=rng))
-            alpha = log_alpha.exp()
+            alpha = _alpha_at(step)
             with torch.no_grad():
                 a2, logp2 = actor.sample(s2)
                 q_next = torch.stack([tc(s2, a2) for tc in t_critics], 0).amin(0) - alpha * logp2
@@ -255,15 +342,24 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
             ap, logp = actor.sample(s)
             q_pi = torch.stack([c(s, ap) for c in critics], 0).amin(0)
             a_loss = (alpha.detach() * logp - q_pi).mean()
+            if demo_s is not None and demo_a is not None:          # TD3+BC-style anchor: hold action_mean near the demos
+                idx = rng.integers(0, demo_s.shape[0], size=min(cfg.batch_size, demo_s.shape[0]))
+                a_loss = a_loss + cfg.bc_coef * ((actor.action_mean(demo_s[idx]) - demo_a[idx]) ** 2).mean()
+            if cfg.rollout_anchor_coef > 0.0 and ra_size >= 1:     # rollout-state DAgger anchor: hold action_mean near the
+                ridx = rng.integers(0, ra_size, size=min(cfg.batch_size, ra_size))  # teacher on the actor's OWN states
+                ro_obs = torch.as_tensor(ra_obs[ridx], device=dev)
+                ro_act = torch.as_tensor(ra_act[ridx], device=dev)
+                a_loss = a_loss + cfg.rollout_anchor_coef * ((actor.action_mean(ro_obs) - ro_act) ** 2).mean()
             a_opt.zero_grad()
             a_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
             torch.nn.utils.clip_grad_norm_(actor.parameters(), cfg.max_grad_norm)
             a_opt.step()
 
-            alpha_loss = -(log_alpha * (logp + target_entropy).detach()).mean()
-            al_opt.zero_grad()
-            alpha_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
-            al_opt.step()
+            if cfg.alpha_mode is AlphaMode.AUTO:            # only classic SAC learns α; FIXED/ANNEAL schedule it
+                alpha_loss = -(log_alpha * (logp + target_entropy).detach()).mean()
+                al_opt.zero_grad()
+                alpha_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
+                al_opt.step()
 
             for tc, c in zip(t_critics, critics):
                 _polyak(tc, c, cfg.tau)
@@ -273,7 +369,7 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
         if cfg.log_every and step % cfg.log_every == 0:             # §3: never run blind
             rate = step / max(1e-9, time.perf_counter() - t0)
             print(f"  [sac] step {step:>7}/{cfg.total_steps} | crit={last_c:.3g} act={last_a:.3g} "
-                  f"alpha={float(log_alpha.exp().item()):.3g} | {rate:5.0f} steps/s "
+                  f"alpha={float(_alpha_at(step).item()):.3g}[{cfg.alpha_mode.value}] | {rate:5.0f} steps/s "
                   f"| ETA {(cfg.total_steps - step) / max(1e-9, rate) / 60:4.1f} min | buf={buf.size}", flush=True)
         if step % cfg.eval_every == 0:
             history.append(eval_balance(env, actor, cfg.n_eval, seed=20_000)

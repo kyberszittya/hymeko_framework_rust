@@ -56,16 +56,21 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
                  mount_height: float = 0.45,
                  obj_radius: tuple[float, float] = (0.10, 0.18),
                  obj_angle: tuple[float, float] = (-0.5, 0.5),
+                 object_xy: tuple[float, float] | None = None,
+                 observe_target: bool = False,
                  arm_home: tuple[float, ...] | None = None,
                  lift_thresh: float = 0.06, place_radius: float = 0.06,
                  ground_penalty: float = 2.0, finger_friction: float = 3.0,
                  reward_profile: str | None = None, target_bin: bool = False,
-                 expert_version: int = 1) -> None:
+                 expert_version: int = 1, require_settle: bool = False,
+                 settle_dwell: int = 10, settle_vel: float = 0.05, settle_z_tol: float = 0.02) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
-        if expert_version not in (1, 2):
-            raise ValueError("expert_version must be 1 (original contact-exploiting) or 2 (clearance-valid)")
+        if expert_version not in (1, 2, 3):
+            raise ValueError("expert_version must be 1 (original contact-exploiting), 2 (clearance-valid, "
+                             "low-yield) or 3 (clean transit routed to v1's grasp basin + v1 grasp: clean AND "
+                             "high-yield)")
         # Which scripted expert trajectory `expert_action` runs. v1 (default): the original — descends fast and
         # relies on the table as a mechanical stop (finger↔table on ~48% of approach steps; the dirty baseline).
         # v2: clearance-valid — rise to a safe altitude before traversing, then a damped descent that stops at
@@ -115,6 +120,9 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         self.target_xy = (float(target_xy[0]), float(target_xy[1]))
         self.obj_radius = (float(obj_radius[0]), float(obj_radius[1]))
         self.obj_angle = (float(obj_angle[0]), float(obj_angle[1]))
+        # optional PINNED object spawn (the interactive placer): when set, every reset spawns the object here
+        # (unless overridden per-reset by options["object_xy"]); None → the sampled ring spawn (default, unchanged).
+        self._pinned_obj_xy = None if object_xy is None else (float(object_xy[0]), float(object_xy[1]))
         # a bent, non-singular "ready" posture to reset to (the all-zeros vertical home is a kinematic
         # singularity where IK steps sideways); None keeps the zero home (back-compat for the old arm).
         self._arm_home = None if arm_home is None else np.asarray(arm_home, dtype=np.float64)
@@ -129,6 +137,16 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         self._b_obj, self._b_tool = bid("object"), bid("tool")
         self._b_fl, self._b_fr = bid("finger_l"), bid("finger_r")
         self._obj_qadr = int(self.model.jnt_qposadr[jid("obj")])
+        self._obj_vadr = int(self.model.jnt_dofadr[jid("obj")])   # object free-joint dof (for the at-rest check)
+        # require_settle: success = the object is STABLY PLACED (set down at rest on the surface within the place
+        # radius, released, for `settle_dwell` consecutive steps) — a genuine pick-AND-place. Default False keeps
+        # the legacy "delivered to above the target" success/termination byte-identical.
+        self.require_settle = bool(require_settle)
+        self.settle_dwell = int(settle_dwell)
+        self.settle_vel, self.settle_z_tol = float(settle_vel), float(settle_z_tol)
+        self._settle_dwell = 0                                    # consecutive steps the object has been settled
+        self._placed_latch = False                               # expert: object placed+released → retract, no re-grasp
+        self._place_int = np.zeros(2)                            # expert: integral of the object→target-centre error
         # actuator-id per joint (robust to emit order); gripper joints + arm joints.
         self._act_of: dict[str, int] = {}
         for a in range(self.model.nu):
@@ -178,7 +196,12 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         self._a_lo = np.array(lo + [0.0], np.float32)
         self._a_hi = np.array(hi + [_GRIP], np.float32)
         self.action_space = spaces.Box(self._a_lo, self._a_hi)
-        self.observation_space = spaces.Box(-np.inf, np.inf, (self.hg.n_vertices, _FEAT), np.float32)
+        # Target feedback ("a camera that sees the target"): with observe_target, node_features appends the
+        # object→target displacement (2 cols, broadcast to every vertex), so a policy can PLACE at an arbitrary
+        # target instead of memorising a fixed one. Default off → the observation is byte-identical.
+        self._observe_target = bool(observe_target)
+        self._feat = _FEAT + (2 if self._observe_target else 0)
+        self.observation_space = spaces.Box(-np.inf, np.inf, (self.hg.n_vertices, self._feat), np.float32)
         self.n_actions = len(_ARM_JOINTS) + 1            # 6 arm joint targets + grip (BC/policy sizing)
         self._ik = DampedPoseIK(self.model, self._b_tool, len(_ARM_JOINTS))
         self._manip = {bid(n) for n in ("base_link", "link_0", "link_1", "link_2", "link_3", "link_4",
@@ -270,7 +293,7 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         return False
 
     def node_features(self) -> np.ndarray:
-        feat = np.zeros((self.hg.n_vertices, _FEAT), dtype=np.float32)
+        feat = np.zeros((self.hg.n_vertices, self._feat), dtype=np.float32)
         ox, oy, oz = (float(c) for c in self._obj_xyz())
         for v, qadr, dadr in self._jnt:
             if 0 <= v < self.hg.n_vertices:
@@ -286,6 +309,9 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         lifted = max(0.0, oz - (self._surf + self._box_zhalf))
         feat[:, 8] = grasping
         feat[:, 9] = float(np.clip(lifted / max(self.lift_thresh, 1e-6), 0.0, 2.0))
+        if self._observe_target:                             # target feedback: object→target displacement (per vertex)
+            feat[:, 10] = self.target_xy[0] - ox
+            feat[:, 11] = self.target_xy[1] - oy
         return feat
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None,
@@ -295,11 +321,17 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         self.data.qvel[:] = 0.0
         if self._arm_home is not None:
             self.data.qpos[:len(_ARM_JOINTS)] = self._arm_home
-        # a spot on the table within the arm's TOP-DOWN reach envelope (smaller than its planar reach).
-        r = float(self.np_random.uniform(*self.obj_radius))
-        th = float(self.np_random.uniform(*self.obj_angle))
+        # a spot on the table within the arm's TOP-DOWN reach envelope (smaller than its planar reach). A caller may
+        # PLACE the object explicitly via ``options["object_xy"]`` (the interactive GUI); otherwise it is sampled.
         q = self._obj_qadr
-        self.data.qpos[q:q + 3] = [r * np.cos(th), r * np.sin(th), self._surf + self._box_zhalf]
+        placed = (options or {}).get("object_xy", self._pinned_obj_xy)
+        if placed is not None:
+            ox, oy = float(placed[0]), float(placed[1])
+        else:
+            r = float(self.np_random.uniform(*self.obj_radius))
+            th = float(self.np_random.uniform(*self.obj_angle))
+            ox, oy = r * np.cos(th), r * np.sin(th)
+        self.data.qpos[q:q + 3] = [ox, oy, self._surf + self._box_zhalf]
         self.data.qpos[q + 3:q + 7] = [1.0, 0.0, 0.0, 0.0]
         mujoco.mj_forward(self.model, self.data)
         self._step = 0
@@ -313,6 +345,9 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         self._v2_committed = False
         self._v2_over_latched = False
         self._v2_align_corr = np.zeros(2)
+        self._settle_dwell = 0
+        self._placed_latch = False
+        self._place_int = np.zeros(2)
         self._grasped_ever = False
         o0 = self._obj_xyz()
         self._spawn_xy = (float(o0[0]), float(o0[1]))
@@ -334,6 +369,8 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         stop; the contact-exploiting baseline) or v2 (clearance-valid — rise to a safe altitude before
         traversing, then a damped descent that stops at ``grasp_z`` by trajectory). A single-valued closed-loop
         function of state (phase read from above-object / grasped / lifted / at-target)."""
+        if self._expert_version == 3:
+            return self._expert_action_v3()
         return self._expert_action_v2() if self._expert_version == 2 else self._expert_action_v1()
 
     def _ik_step(self, tgt: np.ndarray, grip: float, rate: float) -> np.ndarray:
@@ -358,18 +395,36 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
 
         hover_z = grasp_z + 0.14                              # hover well ABOVE the box, descend straight down
         lift_clear = grasp_z + 0.13                           # clearance height to lift to before transporting
-        if not committed:
+        if not committed and not self._placed_latch:
             self._lift_xy = None                             # re-capture the grasp xy on the next commit
-        if committed:
+        if self._placed_latch:                               # PLACED: retract straight up over the target, grip OPEN,
+            tgt, grip = np.array([tx, ty, lift_clear]), _OPEN   # hold clear — never re-grasp the box just set down
+        elif committed:
             if self._lift_xy is None:                        # capture the grasp xy ONCE (lift from a FIXED
                 self._lift_xy = (float(tool[0]), float(tool[1]))  # point — never chase the drifting tool xy)
             lx, ly = self._lift_xy
-            if tool[2] < lift_clear - 0.02 and not lifted:   # 1) lift STRAIGHT UP from the captured grasp xy
-                tgt, grip = np.array([lx, ly, lift_clear]), _GRIP
-            elif not near_place:                             # 2) transport at height
-                tgt, grip = np.array([tx, ty, lift_clear]), _GRIP
-            else:                                            # 3) lower + release
-                tgt, grip = np.array([tx, ty, grasp_z]), (_GRIP if not lifted else 0.0)
+            at_surface = bool(obj[2] <= self._surf + self._box_zhalf + 0.015)   # box has been set down on the surface
+            # OBJECT-CENTERING feedback (PI): command the tool so the OBJECT (not the tool) reaches the target
+            # centre — the proportional term compensates the grasp offset, the INTEGRAL drives out the steady-state
+            # reach shortfall (a one-step P leaves ~2 cm; the arm undershoots the command at the far target). Without
+            # this the box lands on the near edge of the zone, not its centre. The integral accrues only while
+            # placing and is clamped (anti-windup).
+            if near_place:
+                self._place_int = np.clip(self._place_int + 0.12 * np.array([tx - obj[0], ty - obj[1]]),
+                                          -0.08, 0.08)
+            cx = tx - (float(obj[0]) - float(tool[0])) + float(self._place_int[0])
+            cy = ty - (float(obj[1]) - float(tool[1])) + float(self._place_int[1])
+            if not near_place and tool[2] < lift_clear - 0.02 and not lifted:   # 1) lift STRAIGHT UP (pre-transport
+                tgt, grip = np.array([lx, ly, lift_clear]), _GRIP               # only; near the target this would
+                #                                                                fight the place-lower — oscillating
+                #                                                                at the lift threshold, never setting down
+            elif not near_place:                             # 2) transport at height (object → target centre)
+                tgt, grip = np.array([cx, cy, lift_clear]), _GRIP
+            elif not at_surface:                             # 3) lower to the surface, object centred on the target
+                tgt, grip = np.array([cx, cy, grasp_z]), _GRIP
+            else:                                            # 4) box on the surface → RELEASE + latch (retract next);
+                self._placed_latch = True                    # NOT the old `_GRIP if not lifted` which re-clamped it
+                tgt, grip = np.array([cx, cy, grasp_z]), _OPEN
         elif grasped:                                        # DWELL: hold position + keep squeezing to settle
             tgt, grip = np.array([obj[0], obj[1], grasp_z]), _GRIP
         elif horiz > 0.025:                                  # get above the object (centered), fingers WIDE
@@ -378,7 +433,7 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
             tgt, grip = np.array([obj[0], obj[1], grasp_z]), _OPEN
         else:                                                # at the object: close
             tgt, grip = np.array([obj[0], obj[1], grasp_z]), _GRIP
-        # Fast on the free approach, gentle while carrying so the lift does not slip the box.
+        # Fast on the free approach / retract, gentle while carrying so the lift does not slip the box.
         return self._ik_step(tgt, grip, 0.28 if committed else 0.4)
 
     # v2 deterministic clearance-aware waypoint controller (design bundle
@@ -599,6 +654,44 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
             return np.array([tx, ty, lift_clear]), _GRIP
         return np.array([tx, ty, grasp_z]), (_GRIP if not lifted else 0.0)
 
+    def _expert_action_v3(self) -> np.ndarray:
+        """Clean-AND-high-yield expert: v2's clearance-safe retract→hover transit routed into **v1's grasp basin**,
+        then v1's robust descend-grasp-lift-place.
+
+        The v3 investigation (reports/2026-07-12-pick-place-v2-clearance-gate.md) found the defect that capped v2 at
+        place 0.50: v2's multi-start collision-free IK lands the hover in a **wrist-flipped joint basin** from which
+        the grasp slips, while v1's firm-grasp basin (reachable by seeding the IK from ``arm_home`` — the v1 seed) is
+        itself collision-free (+0.15 m clearance at the hover). So v3 reuses v2's clean short-hop preshape mechanics
+        (``_v2_preshape_step``) but with the waypoint route pinned to the v1-basin IK, then delegates the grasp to
+        ``_expert_action_v1`` (unchanged, Markov, robust). No arm-gain mutation (v1's servo is used throughout).
+
+        Measured N=32 (seeds 50000–50031): transit finger↔table 0.0, no penetration, place ~0.78 — clean like v2,
+        yield near v1's 0.875.
+
+        # Preconditions object spawned on the table, arm at ``arm_home``. # Postconditions returns a
+        ``(6 arm + grip)`` action; ``_v2_preshape_seq`` caches the v1-basin route on first call."""
+        obj = self._obj_xyz()
+        grasp_z = self._surf + self.box_half + self._GRASP_TOOL_DZ
+        z_hover = grasp_z + self._V2_HOVER_DZ
+        # Once the clean transit has reached the v1-basin hover (or a grasp is already live), hand to v1's robust
+        # descend-grasp-lift-place — a pure function of physical state (phase is state-derived, not latched). The
+        # firmer transit servo (v2's kp60, set on the transit steps below) is KEPT through the grasp: the clean
+        # v1-basin hover config needs it to hold the box on the lift (at the env's soft default kp45 the grasp
+        # slips: place 0.78 with kp60 vs 0.38 with kp45; measured 2026-07-13). v1's own logic is unchanged.
+        if self._v2_preshaped or all(self._both_contact()):
+            self._v2_set_arm_gains(self._V2_TRANSIT_KP, self._V2_TRANSIT_KV)
+            return self._expert_action_v1()
+        if self._v2_preshape_seq is None:                    # pin the clean route to v1's UNFLIPPED grasp basin
+            home = np.asarray(self._arm_home, dtype=np.float64)
+            cf_hover = np.asarray(self._ik.solve(home, np.array([obj[0], obj[1], z_hover]), down=True, iters=120),
+                                  dtype=np.float64)
+            cf_mid = np.asarray(self._ik.solve(home, np.array([0.5 * obj[0], 0.5 * obj[1], z_hover + 0.08]),
+                                               down=True, iters=120), dtype=np.float64)
+            self._v2_preshape_seq = [cf_mid, cf_hover]
+        # Drive the transit with v2's FULL clearance-safe controller (short hops + phase-scoped gains), which routes
+        # the physical arm to the v1-basin hover cleanly; only the waypoint route (above) is pinned to v1's basin.
+        return self._expert_action_v2()
+
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         a = np.clip(np.asarray(action, dtype=np.float32), self._a_lo, self._a_hi)
         grip = float(a[-1])
@@ -620,8 +713,18 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         self._grasp_hold = self._grasp_hold + 1 if (left and right) else 0
         lifted = float(max(0.0, o[2] - (self._surf + self._box_zhalf)))
         to_target = self._obj_to_target()
-        reached = bool(lifted > self.lift_thresh and to_target < self.place_radius)
+        delivered = bool(lifted > self.lift_thresh and to_target < self.place_radius)  # legacy: held above target
         grasping = bool(left and right)
+        # STABLE-PLACE predicate: object AT REST on the surface within the place radius, and released (not clamped
+        # by both fingers) — a genuine set-down, not "held above the target". Guarded against a bounce/blow-up by
+        # the velocity bound (a diverging object has large qvel). Requires `settle_dwell` consecutive settled steps.
+        obj_vel = float(np.linalg.norm(self.data.qvel[self._obj_vadr:self._obj_vadr + 3]))
+        settled = bool(to_target < self.place_radius
+                       and o[2] < self._surf + self._box_zhalf + self.settle_z_tol
+                       and obj_vel < self.settle_vel and not grasping)
+        self._settle_dwell = self._settle_dwell + 1 if settled else 0
+        placed_stable = self._settle_dwell >= self.settle_dwell
+        reached = placed_stable if self.require_settle else delivered   # mode-appropriate success (reward + eval)
         if grasping:
             self._grasped_ever = True
         on_ground = self._ground_contact()                 # arm/gripper touching the floor OR table
@@ -650,5 +753,6 @@ class PickPlaceEnv(gym.Env[np.ndarray, np.ndarray]):
         truncated = self._step >= self.max_steps
         info = {"obj_to_target": to_target, "lifted": lifted, "both_contact": grasping,
                 "reached": reached, "death": death, "on_ground": on_ground,
-                "approach_contact": approach_contact}
+                "approach_contact": approach_contact,
+                "delivered": delivered, "settled": settled, "placed_stable": placed_stable}
         return self.node_features(), float(reward), terminated, truncated, info

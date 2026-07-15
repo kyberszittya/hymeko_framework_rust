@@ -74,27 +74,20 @@ def render_pick(out_dir: str = "reports/gifs", *, seed: int = 2, fps: int = 25,
 
 
 def trained_action_fn(ac: Any) -> Callable[[PickPlaceEnv, np.ndarray], np.ndarray]:
-    """An ``action_fn(env, obs)`` driving a TRAINED policy (the deterministic ``action_mean``)."""
-    import torch
-
-    def fn(_env: PickPlaceEnv, obs: np.ndarray) -> np.ndarray:
-        with torch.no_grad():
-            return ac.action_mean(torch.as_tensor(obs[None], dtype=torch.float32)).squeeze(0).numpy()
-    return fn
+    """An ``action_fn(env, obs)`` driving a TRAINED policy — the canonical `eval.greedy_action_fn` (kept as a
+    named re-export so callers read intent; no duplicated adapter body)."""
+    from hymeko_rl.eval.evaluate import greedy_action_fn
+    return greedy_action_fn(ac)
 
 
 def render_trained(checkpoint: str, kind: str = "hsikan", *, out_dir: str = "reports/gifs",
                    label: "str | None" = None, seed: int = 2, fps: int = 25, width: int = 480,
                    height: int = 360, hidden: int = 64) -> Any:
-    """Render a TRAINED pick policy's episode to ``<out_dir>/<label>.gif`` (mirrors the demonstrator render,
-    swapping the scripted expert for the loaded policy). # Preconditions ``checkpoint`` is a saved state_dict."""
-    import torch
-
-    from hymeko_rl.experiments.gripper_pick_bc import build
+    """Render a TRAINED pick policy's episode to ``<out_dir>/<label>.gif`` via the canonical, compat-validated
+    loader (fails loud on an incompatible checkpoint). # Preconditions ``checkpoint`` is a feedforward state_dict."""
+    from hymeko_rl.experiments.gripper_pick_bc import load_pick_actor
     env = fanuc_pick_env()
-    ac = build(kind, env, hidden)
-    ac.load_state_dict(torch.load(checkpoint, map_location="cpu", weights_only=True))
-    ac.eval()
+    ac = load_pick_actor(checkpoint, env, kind=kind, hidden=hidden)
     return render_episode_gif(env, trained_action_fn(ac), f"{out_dir}/{label or f'fanuc_pick_{kind}'}",
                               seed=seed, width=width, height=height, fps=fps, camera=pick_camera(), overlay=_hud)
 
