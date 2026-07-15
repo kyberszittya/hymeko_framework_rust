@@ -1,0 +1,136 @@
+{
+  "kind": "SignedHyperLiNGAM vs DirectLiNGAM structural recovery",
+  "stamp": "2026-07-15 19:27:03",
+  "n_vars": 6,
+  "density": 0.4,
+  "n_samples": 3500,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "aggregate": {
+    "linear": {
+      "DirectLiNGAM": {
+        "support_recall": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        },
+        "support_f1": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        },
+        "sign_agreement": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        }
+      },
+      "SignedHyperLiNGAM": {
+        "support_recall": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        },
+        "support_f1": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        },
+        "sign_agreement": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        }
+      }
+    },
+    "nonlinear": {
+      "DirectLiNGAM": {
+        "support_recall": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        },
+        "support_f1": {
+          "median": 1.0,
+          "q1": 0.985,
+          "q3": 1.0
+        },
+        "sign_agreement": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        }
+      },
+      "SignedHyperLiNGAM": {
+        "support_recall": {
+          "median": 0.938,
+          "q1": 0.8,
+          "q3": 1.0
+        },
+        "support_f1": {
+          "median": 0.967,
+          "q1": 0.889,
+          "q3": 1.0
+        },
+        "sign_agreement": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        }
+      }
+    },
+    "joint": {
+      "DirectLiNGAM": {
+        "support_recall": {
+          "median": 0.732,
+          "q1": 0.6,
+          "q3": 1.0
+        },
+        "support_f1": {
+          "median": 0.845,
+          "q1": 0.75,
+          "q3": 1.0
+        },
+        "sign_agreement": {
+          "median": 1.0,
+          "q1": 1.0,
+          "q3": 1.0
+        }
+      },
+      "SignedHyperLiNGAM": {
+        "support_recall": {
+          "median": 1.0,
+          "q1": 0.713,
+          "q3": 1.0
+        },
+        "support_f1": {
+          "median": 1.0,
+          "q1": 0.75,
+          "q3": 1.0
+        },
+        "sign_agreement": {
+          "median": 1.0,
+          "q1": 0.958,
+          "q3": 1.0
+        }
+      }
+    }
+  },
+  "verdicts": {
+    "linear": "TIE",
+    "nonlinear": "DirectLiNGAM_WINS",
+    "joint": "SignedHyperLiNGAM_WINS"
+  }
+}
