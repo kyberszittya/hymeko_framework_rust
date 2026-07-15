@@ -682,6 +682,32 @@
    ]
   },
   {
+   "id": "F-PP-011",
+   "claim": "Mode-gating the pick-place residual is separable at GRASP but not at LIFT. Gated-oracle sweep (reactive teacher): ALL=1.000; all_but(grasp)=0.875 (=base, residual separable at grasp -> base handles grasp); all_but(grasp,lift)=0.708 (<base -> the lift residual, |r|~0.095 + discontinuous, is LOAD-BEARING and un-gate-able). A grasp-gated FF clone (3 seeds) rises to median 0.792 [0.75,0.833] from non-gated 0.708 (gating removes the grasp-then-drop failure) but STILL < base 0.875 (the now-active lift discontinuity becomes the bottleneck). Lever-1 ceiling = base; it can preserve/protect but NOT beat base.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "2026-07-15 mode-gated residual (lever 1) sweep + grasp-gated clone",
+   "raw_evidence": [
+    "reports/2026-07-15-recurrent-residual-clone-gap.md (Lever 1 section)",
+    "scratchpad/mode_gated_sweep.py (oracle by mode-set) + scratchpad/mode_gated_clone.py (3-seed grasp-gated clone)",
+    "all_but(grasp)=0.875, all_but(grasp,lift)=0.708; grasp-gated clone median 0.792 vs non-gated 0.708"
+   ],
+   "confidence": "measured (oracle sweep deterministic-ish n=24; clone 3 seeds)",
+   "scope": "residual over the frozen pick-place base; the grasp-separable/lift-load-bearing split is task-structural (contact coupling)",
+   "limitations": "grasp-gated SAC (RL, not clone) not run -- its ceiling is already base, so it cannot beat base regardless; single mode-set family tested",
+   "framework_consequence": "Improving stable-place RATE via a residual over this frozen base is EXHAUSTED -- three independent angles converge: off-policy critic over-estimation (F-PP-009), execution-hard clone gap at contact discontinuities (F-PP-010), and the un-gate-able load-bearing lift residual (this finding). Mode-gating (the coin-toss 'structured residual' regime) preserves/protects base but CANNOT beat it here because pick-place phases are contact-coupled (unlike coin-toss). Do NOT close the residual line; CHANGE THE TARGET to precision (place-error), the only metric with headroom (LSTM 2.39cm vs base 4.69, expert 2.16) -- lever 2.",
+   "code_changes": [
+    "scratchpad only; reused ResidualPickEnv.active_modes + HybridAutomaton (no repo code changed)"
+   ],
+   "regression_tests": [
+    "(covered by test_residual_abstraction)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Does grasp-gated SAC HOLD base (neutralize the F-PP-009 collapse) even though it cannot beat base? (structural, not improvement)",
+    "Precision track (lever 2): does the LSTM 2.39cm precision replicate multi-seed?"
+   ]
+  },
+  {
    "id": "F-SAC-7",
    "claim": "Rollout-state DAgger (query the reactive teacher on the policy's OWN visited states, aggregate, re-clone) CLOSES the flat-action covariate collapse: BC 0.417 -> DAgger 0.75 median (0.625-0.792), 3 seeds, zero harmful, on the floorless PlanarGrasp coin-delivery (Gate 0 teacher-recovery 0.917).",
    "classification": "NEW_CANONICAL_CAPABILITY",

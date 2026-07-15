@@ -107,6 +107,41 @@ success-rate is not.
   3. Accept the base (0.875) as the deployable policy; the oracle's 1.000 is a recompute-from-state controller, not
      a learnable one on this metric.
 
+## Lever 1 result — mode-gated residual (chosen next; characterized, capped at base)
+
+The residual env's `active_modes` gates the residual to a subset of hybrid-automaton phases (base runs the rest
+exactly). Gated-oracle sweep (reactive teacher, base 0.875, ungated oracle 1.000):
+
+```text
+ALL (ungated)                = 1.000
+all_but(grasp)               = 0.875   ← gating out grasp ALONE = base exactly (residual separable at grasp)
+all_but(grasp,lift)          = 0.708   ← gating out lift too drops BELOW base (lift residual is load-bearing)
+approach(reach,descend) only = 0.708
+```
+
+The residual is **separable at grasp but not at lift**: the base handles grasp fine, but the lift residual (largest,
+|r|=0.095, discontinuous) is load-bearing — gate it out and even the perfect residual falls to 0.708. So lever 1's
+**ceiling is base (0.875), never above** — the 1.000 needs the un-clonable grasp+lift discontinuities.
+
+Grasp-gated FF clone (3 seeds, ceiling = base 0.875):
+
+```text
+grasp-gated CLONE  median 0.792  [0.75, 0.833]   (per-seed 0.833, 0.792, 0.750)
+non-gated  CLONE   median 0.708  [0.625, 0.708]
+```
+
+Grasp-gating **helps** (+0.08 median, every seed improves — it removes the grasp-then-drop failure) but the clone
+**still does not reach base** (0.792 < 0.875): with grasp protected, the now-active **lift** discontinuity becomes
+the bottleneck. So lever 1 buys "safer, closer to base" but not "reaches or beats base."
+
+**Lever-1 verdict.** Mode-gating can preserve base and make the residual safe, but it **cannot beat base**, and the
+learned clone still falls short (0.792). The TD3+BC gate ("clone reaches/beats base") remains **unmet**. Three
+independent angles now converge on the same wall: the residual clone gap is execution-hard at contact
+discontinuities (F-PP-010), the load-bearing lift residual is un-gate-able (this sweep), and off-policy RL over-values
+OOD residuals (F-PP-009). **Improving stable-place *rate* via a residual over this frozen base is exhausted.** The
+residual line is NOT closed — the target must change: the only headroom is **precision** (place-error), where the
+LSTM showed 2.39 cm (base 4.69, expert 2.16) — lever 2.
+
 ## Provenance
 - Git: branch `integration/fanuc-pick-place-canonical`, audit checkpoint `6b90ca8`; base ckpt
   `experiments/hybrid_dagger_gif/policies/hybrid_dagger_hsikan_s0_best.pt`.
