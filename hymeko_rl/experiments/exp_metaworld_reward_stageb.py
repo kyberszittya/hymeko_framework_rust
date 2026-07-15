@@ -55,6 +55,8 @@ class StageBUncertifiedError(RuntimeError):
 class StageBConfig:
     """The bounded Stage-B training-smoke plan. All budgets are deliberately short — this proves plumbing, not skill."""
     task: str = "pick-place"
+    policy_name: "str | None" = None     # scripted-expert policy override; None → GENERIC_TASKS[task] (decouples
+    #                                      tasks like coffee-push that are not in the generic-CIP registry)
     profiles: tuple[str, ...] = ("original", "mw_in_place_off")
     spec_path: str = _DEFAULT_SPEC
     seed: int = 0
@@ -116,6 +118,13 @@ def _default_out_dir() -> Path:
     from hymeko_rl.eval.evaluate import experiment_dir
     # a Stage-B-specific dir — never collides with Stage A's *cip_reward_ablation* artifacts
     return experiment_dir("reports/figures", "metaworld_stageb_reward_ab")
+
+
+def _scripted_policy_name(cfg: StageBConfig) -> str:
+    """The scripted-expert policy for ``cfg`` — an explicit ``cfg.policy_name`` override, else the generic-CIP
+    registry entry for ``cfg.task``. Lets tasks outside ``GENERIC_TASKS`` (e.g. coffee-push) reuse this harness."""
+    from hymeko_rl.eval.cip.metaworld_generic_cip import GENERIC_TASKS
+    return cfg.policy_name or GENERIC_TASKS[cfg.task]
 
 
 def build_reward_profiles(cfg: StageBConfig) -> "dict[str, AblatedRewardSpec]":
@@ -205,9 +214,8 @@ def _scripted_delivers(cfg: StageBConfig, spec: AblatedRewardSpec, *, n: "int | 
     ``delivers`` is only meaningful when both success and failure episodes appear; ``discriminating`` flags that."""
     import warnings
 
-    from hymeko_rl.eval.cip.metaworld_generic_cip import GENERIC_TASKS
     n = n if n is not None else cfg.cert_rollouts
-    policy_name = GENERIC_TASKS[cfg.task]
+    policy_name = _scripted_policy_name(cfg)
     succ_ret: list[float] = []
     fail_ret: list[float] = []
     with warnings.catch_warnings():
@@ -352,8 +360,7 @@ def collect_scripted_demos(cfg: StageBConfig, spec: AblatedRewardSpec, n_episode
     """Roll the scripted expert → (obs, action) pairs from (successful) episodes — the BC anchor. Reward-agnostic."""
     import warnings
 
-    from hymeko_rl.eval.cip.metaworld_generic_cip import GENERIC_TASKS
-    policy_name = GENERIC_TASKS[cfg.task]
+    policy_name = _scripted_policy_name(cfg)
     obs_all: list[np.ndarray] = []
     act_all: list[np.ndarray] = []
     n_success = 0
