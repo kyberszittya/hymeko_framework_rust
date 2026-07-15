@@ -53,6 +53,22 @@ over-engineered for toys"*: the ABB branch-and-bound genuinely prunes, but on *c
 baseline ties it on F1 — the SSG/ABB earns its keep on search feasibility at scale, not on a small-pool accuracy
 win. Figure: `reports/figures/compositional_bench/compositional_spec_benchmark.png`.
 
+## Unification note — why greedy ties the SSG here but loses in the causal setting (the calibration escape)
+
+I tried to build the regime where greedy *provably stalls* and the SSG wins on **accuracy**: a **luring
+distractor** engineered to be the best single predictor (so forward-greedy picks it first). It is the best single
+in **8/8 seeds** — yet greedy still ties the SSG (median F1 **0.982 vs 1.000**). The reason is diagnostic: greedy's
+recovered spec is `F(true_0≥0.653 AND true_1≥0.658 AND lure≥0)` — threshold **calibration drives the lure conjunct
+to a vacuous `≥0`**, neutralising it. In the spec-conjunction language a bad conjunct can *always* be calibrated
+into harmlessness, so greedy never truly stalls; there is no local optimum to trap it.
+
+This gives **one** explanation for both threads: the SSG beats a greedy/marginal method on **accuracy only where
+there is no neutralisation escape** — i.e. a genuine **causal interaction** mechanism (`x_a·x_b`, which no
+threshold can neutralise), exactly Thread B (`SignedHyperLiNGAM`: recall 1.0 vs pairwise 0.73). In
+spec-conjunction-selection the escape exists, so greedy+calibration matches the SSG and the SSG/ABB's value is
+*scale/feasibility*, not accuracy. Captured by `test_calibration_escape_greedy_matches_ssg_on_lure`
+(with `synth_compositional_lure`).
+
 ## Files (new/extended; worktree `feat/spec-reward-close-loop`)
 
 | file | note |

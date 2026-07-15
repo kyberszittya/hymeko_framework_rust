@@ -12,6 +12,7 @@ from hymeko_rl.eval.spec_bench.scale import (
     compositional_ground_truth,
     compositional_raw_spec,
     synth_compositional,
+    synth_compositional_lure,
 )
 from hymeko_rl.eval.spec_bench.spec_bench import formula_f1
 from hymeko_rl.eval.spec_bench.spec_reward import spec_reward_separation
@@ -66,6 +67,23 @@ def test_greedy_baseline_recovers_and_ties_or_loses_to_pgraph() -> None:
     pgraph_f1 = formula_f1(refine_via_pgraph(raw, verif), test)
     assert greedy_f1 >= 0.85                                          # greedy recovers
     assert pgraph_f1 >= greedy_f1 - 0.02                              # pgraph ties or beats (never much worse)
+
+
+def test_calibration_escape_greedy_matches_ssg_on_lure() -> None:
+    """The unification's honest core: a luring distractor is the best single predictor (so greedy picks it first),
+    yet greedy ties the SSG — because threshold *calibration* neutralises the lure conjunct (drives it vacuous).
+    So the SSG has NO accuracy win over greedy in the spec-conjunction language; its accuracy advantage is reserved
+    for non-neutralisable interaction (causal joint mechanisms — SignedHyperLiNGAM)."""
+    verif = synth_compositional_lure(2, 140, seed=0)
+    test = synth_compositional_lure(2, 140, seed=50)
+    signals = ["true_0", "true_1", "lure"]
+    best_single = max(signals, key=lambda s: spec_reward_separation(f"F({s} >= 0.9)", test).auc)
+    assert best_single == "lure"                                     # the lure DOES lure greedy (best single)
+    raw = "F(true_0 >= 0.9 AND true_1 >= 0.9 AND lure >= 0.9)"
+    greedy_f1 = formula_f1(greedy_conjunct_select(raw, verif), test)
+    pgraph_f1 = formula_f1(refine_via_pgraph(raw, verif), test)
+    assert abs(greedy_f1 - pgraph_f1) < 0.06                         # calibration escape: greedy ties the SSG
+    assert greedy_f1 >= 0.88                                         # greedy still reaches ~ceiling despite the lure
 
 
 def test_greedy_single_predicate_just_calibrates() -> None:

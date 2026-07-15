@@ -135,6 +135,30 @@ def synth_compositional(k_true: int, d_distract: int, n: int, *, seed: int, step
     return out
 
 
+def synth_compositional_lure(k_true: int, n: int, *, seed: int, lure_pos: float = 0.9, lure_neg: float = 0.1,
+                             steps: int = 20, noise: float = 0.05) -> list[Rollout]:
+    """``k_true`` necessary conjuncts + a single **luring distractor** ``lure`` that is the *best single* predictor
+    (high on ``lure_pos`` of positives, ``lure_neg`` of negatives) yet is not a true conjunct.
+
+    Used to probe the greedy-vs-SSG *accuracy* question: greedy (best-single seed, forward-only) picks the lure
+    first — but in the spec-conjunction language **threshold calibration neutralises it** (drives ``lure >= θ`` to a
+    vacuous ``θ ≈ 0``), so greedy still reaches ~ceiling and the SSG does **not** win on accuracy here. The SSG's
+    accuracy advantage needs a *non-neutralisable* interaction (a causal joint mechanism — see SignedHyperLiNGAM),
+    which the threshold grammar cannot express. Signal keys ``true_0..true_{k-1}``, ``lure``."""
+    if k_true < 1 or n < 4:
+        raise ValueError("need k_true>=1, n>=4")
+    rng = np.random.default_rng(seed)
+    names = (*(f"true_{i}" for i in range(k_true)), "lure")
+    out: list[Rollout] = []
+    for idx in range(n):
+        positive = idx % 2 == 0
+        violated = -1 if positive else int(rng.integers(k_true))
+        highs = [positive or i != violated for i in range(k_true)]
+        highs.append(rng.random() < (lure_pos if positive else lure_neg))
+        out.append(Rollout(trace=_compositional_trace(rng, names, highs, steps, noise), success=positive))
+    return out
+
+
 def _compositional_trace(rng: np.random.Generator, names: "tuple[str, ...]", highs: "list[bool]", steps: int,
                          noise: float) -> "list[dict[str, float]]":
     """A per-step trace where each signal ramps to ``high`` (≈1.0) or ``low`` (≈0.4) over the episode."""
