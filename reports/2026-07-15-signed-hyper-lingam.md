@@ -28,7 +28,7 @@ so the two are tested head-to-head (the user's "both alive, so we can test them"
 | SEM regime | DirectLiNGAM | SignedHyperLiNGAM | verdict |
 |---|--:|--:|---|
 | linear | 1.00 [1.0, 1.0] | 1.00 [1.0, 1.0] | **TIE** |
-| additive-nonlinear (per-edge monotone) | 1.00 [1.0, 1.0] | 0.94 [0.8, 1.0] | slight DirectLiNGAM edge |
+| additive-nonlinear (per-edge monotone) | 1.00 [1.0, 1.0] | 1.00 [1.0, 1.0] | **TIE** (after the monotone-basis fix below) |
 | **joint-interaction** (`x_i = x_a·x_b + …`) | **0.73** [0.6, 1.0] | **1.00** [0.71, 1.0] | **SignedHyperLiNGAM WINS** |
 
 The win is the contribution: on a **joint-interaction** mechanism a parent's *marginal* effect vanishes
@@ -39,10 +39,10 @@ HyMeKo premise, demonstrated on causal discovery. Figure:
 `reports/figures/2026_07_15_19_27_signed_hyper_lingam/signed_hyper_lingam.png`.
 
 **Honest scope (do not overclaim):**
-- On **additive** SEMs the two **tie** (linear) or DirectLiNGAM is *slightly* ahead (additive-nonlinear, 0.94 vs
-  1.0). DirectLiNGAM already recovers additive support perfectly — **no headroom**; the 0.94 is a minor cost of
-  SignedHyperLiNGAM's interaction-aware parsimony occasionally dropping a weak monotone edge. The win is **only**
-  where mechanisms are genuinely **non-additive**.
+- On **additive** SEMs the two **tie** — both linear and additive-nonlinear now recover support 1.0. (The earlier
+  0.94 on additive-nonlinear was SignedHyperLiNGAM's interaction-aware parsimony dropping a purely-monotone edge;
+  the *follow-up below* — a per-column monotone basis in the tail scorer — closed it to 1.0 without touching the
+  joint win.) The win is **only** where mechanisms are genuinely **non-additive**.
 - The ordering is **reused from DirectLiNGAM**, so SignedHyperLiNGAM inherits its non-Gaussian ordering
   assumptions; a mechanism whose non-additivity breaks the ordering caps recall regardless of tail selection (the
   joint SEM keeps mechanisms mild enough that the order holds — reported, not hidden).
@@ -105,9 +105,10 @@ passes.
 
 ## Open issues / follow-ups
 
-1. **Additive-nonlinear tie:** add the per-column monotone basis (`tanh`/signed-square/softsign) to the
-   interaction-R² so SignedHyperLiNGAM also captures purely-monotone edges and closes the 0.94→1.0 gap — a
-   principled improvement, deferred to avoid over-tuning against the joint result.
+1. **Additive-nonlinear tie — DONE (follow-up 2026-07-16).** Added a per-column monotone basis (`identity`/`tanh`/
+   signed-square/softsign) to both the tail scorer (`_interaction_r2`) and the member attribution (`_fit_members`,
+   via a shared `_design`), so a purely-monotone edge is fully fit and not dropped by parsimony. Additive-nonlinear
+   recall closed **0.94 → 1.00** and the joint win is unchanged (0.73 vs 1.0). 11 tests still green.
 2. **HSiKAN over the discovered hyperedge:** the natural downstream — fit `build_hsikan_operator` over
    SignedHyperLiNGAM's `(A⁺,A⁻)` to *model* the joint mechanism (the `hsikan_mechanism` doctrine); wire the sink-R²
    comparison vs the linear operator.

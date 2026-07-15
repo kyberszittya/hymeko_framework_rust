@@ -21,12 +21,19 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass, field
-from typing import Sequence
+from typing import Callable, Sequence
 
 import numpy as np
 
 from hymeko_rl.eval.causal.lingam import DirectLiNGAM, LingamConfig, _standardize
 from hymeko_rl.eval.spec_bench.pgraph_refine import predicates_to_pgraph_hymeko, solve_ssg
+
+# Per-column feature basis (identity + monotone nonlinearities, the harness's per-edge family). The identity term
+# carries the sign and the linear part; the monotone terms let a purely-nonlinear additive edge (e.g. signed-square)
+# be fully fit — so tail-scoring does not drop it, and its member weight is not zeroed by a linear-only statistic.
+_BASIS: "tuple[Callable[[np.ndarray], np.ndarray], ...]" = (
+    lambda z: z, np.tanh, lambda z: np.sign(z) * z * z, lambda z: z / (1.0 + np.abs(z)))
+_N_BASIS = len(_BASIS)
 
 
 @dataclass(frozen=True)
@@ -141,21 +148,20 @@ class SignedHyperLiNGAM:
         cols = list(tail)
         if not cols:
             return []
-        pairs = list(itertools.combinations(range(len(cols)), 2))
-        raw = [xs[:, c] for c in cols]
-        inter = [xs[:, cols[a]] * xs[:, cols[b]] for a, b in pairs]
-        design = np.column_stack([*raw, *inter, np.ones(xs.shape[0])])
+        design, pairs = self._design(xs, cols)
         coef, *_ = np.linalg.lstsq(design, xs[:, target], rcond=None)
-        lin = coef[: len(cols)]
-        inter_c = coef[len(cols): len(cols) + len(pairs)]
+        inter_c = coef[_N_BASIS * len(cols): _N_BASIS * len(cols) + len(pairs)]
         members: "list[tuple[int, int, float, bool]]" = []
         for k, c in enumerate(cols):
+            mono = coef[k * _N_BASIS: (k + 1) * _N_BASIS]                 # this col's basis coefs (mono[0] = linear)
+            id_coef = float(mono[0])
+            w_mono = float(np.abs(mono).sum())                           # additive-monotone contribution
             w_int = sum(abs(float(inter_c[p])) for p, (a, b) in enumerate(pairs) if k in (a, b))
-            weight = abs(float(lin[k])) + w_int
+            weight = w_mono + w_int
             if weight < self.config.weight_floor:
                 continue
-            is_joint = abs(float(lin[k])) < self.config.joint_sign_eps
-            sign = 0 if is_joint else (1 if lin[k] > 0 else -1)
+            is_joint = w_int > w_mono                                    # dominated by interaction ⇒ pure-joint
+            sign = 0 if (is_joint or abs(id_coef) < self.config.joint_sign_eps) else (1 if id_coef > 0 else -1)
             members.append((c, sign, weight, is_joint))
         return members
 
@@ -168,14 +174,24 @@ class SignedHyperLiNGAM:
         ``2^m`` search for large ``d`` (the dropped predecessors, if any, are the most causally distant)."""
         return list(preds) if len(preds) <= self.config.max_predecessors else list(preds[-self.config.max_predecessors:])
 
+    @staticmethod
+    def _design(xs: np.ndarray, cols: Sequence[int]) -> "tuple[np.ndarray, list[tuple[int, int]]]":
+        """Design matrix ``[per-col monotone basis | pairwise products | intercept]`` for a candidate tail.
+
+        Columns are laid out col-major: col ``k``'s ``_N_BASIS`` basis features occupy ``[k·_N_BASIS, …)``, then the
+        pairwise products (interaction), then a constant — so a member's contribution is attributable by slice."""
+        col_feats = [f(xs[:, c]) for c in cols for f in _BASIS]
+        pairs = list(itertools.combinations(range(len(cols)), 2))
+        products = [xs[:, cols[a]] * xs[:, cols[b]] for a, b in pairs]
+        return np.column_stack([*col_feats, *products, np.ones(xs.shape[0])]), pairs
+
     def _interaction_r2(self, xs: np.ndarray, target: int, cols: Sequence[int]) -> float:
-        """Penalised R² of an interaction-aware OLS (raw cols + pairwise products) predicting the target."""
+        """Penalised R² of an OLS over the per-column monotone basis + pairwise products predicting the target."""
         if not cols:
             return -1e9
-        feats = [xs[:, c] for c in cols] + [xs[:, a] * xs[:, b] for a, b in itertools.combinations(cols, 2)]
-        p = np.column_stack([*feats, np.ones(xs.shape[0])])
-        coef, *_ = np.linalg.lstsq(p, xs[:, target], rcond=None)
-        resid = xs[:, target] - p @ coef
+        design, _pairs = self._design(xs, cols)
+        coef, *_ = np.linalg.lstsq(design, xs[:, target], rcond=None)
+        resid = xs[:, target] - design @ coef
         r2 = 1.0 - float(resid @ resid) / float(xs[:, target] @ xs[:, target] + 1e-12)
         return r2 - self.config.parsimony * len(cols)
 
