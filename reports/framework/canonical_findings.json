@@ -120,7 +120,7 @@
    "confidence": "measured (demonstrator 0.000 -> 0.9 after fix)",
    "scope": "all coin-toss / flat delivery evaluation",
    "limitations": "specific to dwell-graded delivery tasks",
-   "framework_consequence": "Canonical delivery metric (eval_delivery / flat_metrics) reads success_steps, never a literal. Measure the demonstrator ceiling before ranking a policy (CLAUDE.md eval-integrity rule, now with a concrete on-record catch).",
+   "framework_consequence": "Canonical delivery metric (eval_delivery / flat_metrics) reads success_steps, never a literal. Measure the demonstrator ceiling before ranking a policy (CLAUDE.md eval-integrity rule, now with a concrete on-record catch). NOW DECLARABLE: meta_evaluation.hymeko carries grade_dwell + ceiling_first + disjoint cohorts; enforcement (validate grade_dwell==env.success.steps) is the follow-up.",
    "code_changes": [
     "reports/canonical_integration/sac_rehab/integrity_tests.py: dwell = int(getattr(env,'success_steps',1))"
    ],
@@ -259,7 +259,7 @@
    "confidence": "measured (discovery over ~200 checkpoints; obs-72 vs obs-90 confirmed by tensor shapes)",
    "scope": "all pick-place checkpoint loading",
    "limitations": "provenance sidecar for the metadata-blind FF base still recommended (deferred).",
-   "framework_consequence": "loader.load_pick_policy (+ load_pick_actor + PickPolicyIncompatible) is now THE loader used by build_scene / render_trained / residual_rl._load_base; it FAILS LOUD on obs/action/observe_target mismatch (never a silent mis-load). Also: reports/models/campaign/* are galambos, NOT pick-place -> excluded from the manifest.",
+   "framework_consequence": "loader.load_pick_policy (+ load_pick_actor + PickPolicyIncompatible) is now THE loader used by build_scene / render_trained / residual_rl._load_base; it FAILS LOUD on obs/action/observe_target mismatch (never a silent mis-load). Also: reports/models/campaign/* are galambos, NOT pick-place -> excluded from the manifest. NOW DECLARABLE: meta_provenance.hymeko carries the load recipe (kind/algo/arch_signature) + reward_hash/seed/eval_cohort; loader-reads-provenance (vs the GUI filename guess) is the follow-up.",
    "code_changes": [
     "gripper_pick_bc.py: load_pick_policy, load_pick_actor, PickPolicyIncompatible",
     "gui/pick_place_scene.py, viz/render_pick_place.py, pick_place_residual_rl.py routed through it",
@@ -733,6 +733,57 @@
    ]
   },
   {
+   "id": "F-PP-013",
+   "claim": "The pick-place stable-place success metric (placed_stable/reached, used arc-wide via LiftPlaceMetric) has a ~0.458 IDLE-inflation floor: a zero-action policy scores reached=0.458 while ever-grasped=0.000 (verified 2026-07-16). Cause: placed_stable requires only the box within place_radius (6cm) at rest for settle_dwell -- NOT grasping or lifting -- and the object spawns within place_radius of the target ~46% of episodes. The FF-DAgger base scores reached=0.875 but the clean lift-requiring 'delivered' (legacy, held-above-target) =0.000 and its ever-grasped=0.50. A SKILL-ISOLATING metric = placed_stable AND ever-grasped zeroes the floor (idle -> 0).",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "2026-07-16 SignedHypergraphLiNGAM role-1 diagnostic (surfaced the confound) + idle/base verification",
+   "raw_evidence": [
+    "reports/2026-07-16-signed-hypergraph-lingam-diagnosis.md",
+    "verified: FF base reached=0.875/grasp=0.50/delivered=0.00; IDLE reached=0.458/grasp=0.00 (N=24, seed0=20000)",
+    "env pick_place_env.py:716-727 (placed_stable = box in place_radius at rest, no lift/grasp required)"
+   ],
+   "confidence": "measured (idle + base, N=24; converges with from-scratch untrained place=0.375)",
+   "scope": "the FANUC pick-place stable-place metric; object spawn sector overlaps the target",
+   "limitations": "a single benchmark's spawn geometry; the floor value (~0.4-0.46) varies with seed set",
+   "framework_consequence": "GUIDELINE, NOT A HARD GATE (user directive 2026-07-16). When interpreting pick-place stable-place numbers, be AWARE of the ~0.458 idle floor and PREFER reporting a skill-isolating metric (placed_stable AND ever-grasped) or the idle floor alongside the absolute number. Do NOT hard-fail evals on it. The arc's QUALITATIVE findings HOLD (walls, SAC destructive, clones cap, expert dominates -- relative comparisons on the same metric); the absolute numbers overstate skill by ~the floor. This SHARPENS F-PP-009: 'SAC collapse to 0.458' = collapse to the do-nothing floor = TOTAL skill destruction (grasp->0), not 'holds half'. Future benchmark revisions could widen the spawn-target separation to remove the floor at source.",
+   "code_changes": [
+    "none (diagnostic + verification only)"
+   ],
+   "regression_tests": [
+    "(advisory guideline; no hard gate per user)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Re-express the arc's key numbers (base/clones/oracle) on the skill-isolating metric for a clean ladder?"
+   ]
+  },
+  {
+   "id": "F-PP-014",
+   "claim": "SignedHypergraphLiNGAM role-1 diagnosis: on the skill-isolating metric (placed_stable AND ever-grasped), ONLY the DAgger'd base has real skill (0.42, grasp 0.56). The LSTM BC-only clone = 0.00 (NEVER grasps -- BC covariate shift; its cached 'reliability 0.917' was pure metric inflation) and the collapsed residual SAC = 0.00 (grasps 0.12, never completes; its '0.458' ~ the idle floor). The per-policy signed causal hypergraph (DirectLiNGAM -> A+/A-) formally confirms ONLY the base has a real grasp->success chain (grasp->target +1.49); the LSTM and SAC have DEGENERATE DAGs (grasp/success constant-0 -> dropped). The pooled deviation->grasp F-PP-009 probe is CONFOUNDED by policy heterogeneity (edge +0.000; reverse grasp->deviation -0.59) -- a clean causal test needs within-policy deviation variation, not cross-policy aggregates.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-16 SignedHypergraphLiNGAM role-1 diagnostic (skill-isolating metric)",
+   "raw_evidence": [
+    "reports/2026-07-16-signed-hypergraph-lingam-diagnosis.md",
+    "scratchpad/signed_hypergraph_lingam_diag.py (reuses hymeko_rl.eval.causal + lingam_to_signed_adjacency; N=48/policy)",
+    "FF skill 0.42 grasp 0.56; LSTM/SAC skill 0.00; per-policy DAGs; pooled deviation->grasp +0.000"
+   ],
+   "confidence": "measured (N=48/policy, single seed set; DAG edges are PROPOSALS per CIP doctrine)",
+   "scope": "pick-place FF-DAgger/LSTM/SAC; the causal machinery over rollout aggregates",
+   "limitations": "single seed set; DirectLiNGAM proposes (ablations decide); the F-PP-009 probe is confounded (unanswered here)",
+   "framework_consequence": "(1) The framework's signed causal hypergraph WORKS as a control diagnostic -- it surfaced the metric confound (F-PP-013) and formally shows only the DAgger'd base has a real skill chain. (2) A causal GATE/ENSEMBLE over {FF,LSTM,SAC} (the user's roles 2/3) is UNDERCUT: only FF has real skill (0.42), LSTM/SAC ~0, so a gate would just pick FF -- mixing buys nothing until a SECOND policy has real complementary skill. (3) BC clones roll out to ~0 real grasp (covariate shift, the known BC failure) and the inflated metric MASKED this (re-examine clone claims on the skill metric). (4) To causally test F-PP-009, use within-policy deviation variation; the direct Q-ranking evidence for F-PP-009 stands independently.",
+   "code_changes": [
+    "scratchpad only (reuses hymeko_rl.eval.causal; no repo code changed)"
+   ],
+   "regression_tests": [
+    "(diagnostic; no gate)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Within-SAC deviation-variation causal test of F-PP-009 (deviation -> grasp loss)?",
+    "Does a DAgger'd LSTM (fix the BC covariate shift) reach real grasp skill, unlike the BC-only LSTM?"
+   ]
+  },
+  {
    "id": "F-SAC-7",
    "claim": "Rollout-state DAgger (query the reactive teacher on the policy's OWN visited states, aggregate, re-clone) CLOSES the flat-action covariate collapse: BC 0.417 -> DAgger 0.75 median (0.625-0.792), 3 seeds, zero harmful, on the floorless PlanarGrasp coin-delivery (Gate 0 teacher-recovery 0.917).",
    "classification": "NEW_CANONICAL_CAPABILITY",
@@ -1091,6 +1142,52 @@
    "regression_tests": [
     "hymeko_rl/tests/test_constraint_schema_c4.py::test_verdict_fails_when_flat_suffices",
     "::test_verdict_fails_when_swap_does_not_degrade"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-CSB-13",
+   "claim": "The hidden mechanical schema (box mass) is NOT load-bearing for the continuous pivot-to-a-target-face. The pivot EXECUTES (passes through EDGE_PIVOT 100%, tips one face 0.99) but an adequate FIXED force + the OBSERVABLE balance-point release tips one face for ANY mass: N=40 oracle 0.99 = schema 0.99 = flat 0.99 >> open_loop 0.84 (no feedback); frozen=swapped 0.50 (a WRONG force fails, so force magnitude matters at the extremes, but a single max-adequate force (2.2N) covers both classes). So the pivot is controllable from observable geometry + an adequate action; hidden-parameter (mass) recognition earns no control credit. Echoes C3 (pose-determined projector); contrasts C4 (hidden friction WAS load-bearing for the single-step slide, swapped->0).",
+   "classification": "NEGATIVE_RESULT_CLOSING_A_DIRECTION",
+   "source_experiment": "constraint-schema-benchmark-c5 (2026-07-16)",
+   "raw_evidence": [
+    "reports/2026-07-16-constraint-schema-benchmark-c5.md",
+    "reports/figures/2026-07-16-constraint-schema-c5.json",
+    "reports/framework/assimilations/constraint-schema-benchmark-c5.md"
+   ],
+   "confidence": "measured (N=40 held-out seeds; 9 tests; deterministic pivot verified run1=run2)",
+   "scope": "the minimal external-wrench one-face-pivot task; closure scoped -- a harder pivot regime (narrow corridor / slip-during-pivot / obstacle) is untested (C5-prime)",
+   "limitations": "1-face pivot with a calibrated lookup controller; not MPC; not a universal impossibility.",
+   "framework_consequence": "Closes hidden-schema-conditioned pivot control for this task. GUARD: a schema-CONTROL claim must include an OPEN-LOOP (no-feedback) arm + an observability check -- if a fixed adequate action + observable feedback suffices, the hidden schema is not load-bearing. The balance-release pivot controller (realises the Galambos mode transition) is experiment-resident; extract if a C5-prime reuses it.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c5.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c5.py::test_c5_gate_honest_verdict",
+    "::test_verdict_hidden_schema_not_load_bearing"
+   ],
+   "superseded_findings": null,
+   "open_questions": "A harder pivot regime where observable feedback fails and the hidden schema could earn control credit (C5-prime)."
+  },
+  {
+   "id": "F-CSB-14",
+   "claim": "The hidden schema's CONTROL value is TASK-SPECIFIC across the C0-C5 arc: it is load-bearing for RECOGNITION (C1 identifiable / C2 recogniser) and for SLIDE control under genuine ambiguity (C4, swapped-belief->0.00), but NOT for the POSE-DETERMINED projector (C3) or the OBSERVABLE-FEEDBACK pivot (C5, schema=flat=oracle). The hidden schema earns CONTROL credit only where the action is a fine parameter choice under ambiguity the observation cannot resolve; where observable feedback + an adequate action suffice, it does not.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "constraint-schema-benchmark C0-C5 synthesis (2026-07-16)",
+   "raw_evidence": [
+    "reports/2026-07-16-constraint-schema-benchmark-c5.md",
+    "reports/framework/canonical_findings.json (F-CSB-2/7/9/11/13)"
+   ],
+   "confidence": "measured across five gates (C1-C5)",
+   "scope": "the constraint-schema benchmark; the principle (hidden-schema control value = ambiguity the observation cannot resolve) generalizes to schema/belief-conditioned control",
+   "limitations": "synthesized from this benchmark's tasks; the boundary (when is the control-relevant quantity observable) is task-dependent.",
+   "framework_consequence": "DESIGN PRINCIPLE + METHOD for schema-control gates: (1) include an open-loop / observable-only baseline; (2) claim schema-control value only when the control-relevant quantity is NOT observable and freeze/swap degrades. Directs future gates toward regimes with genuine observation-unresolvable ambiguity.",
+   "code_changes": [
+    "(cross-gate synthesis; method recorded)"
+   ],
+   "regression_tests": [
+    "the C1-C5 gate tests collectively (test_constraint_probe / _c2 / _c3 / _c4 / _c5)"
    ],
    "superseded_findings": null,
    "open_questions": null
