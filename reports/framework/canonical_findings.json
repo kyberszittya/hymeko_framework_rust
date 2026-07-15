@@ -708,6 +708,31 @@
    ]
   },
   {
+   "id": "F-PP-012",
+   "claim": "From-scratch (non-residual) RL on 7-DOF pick-place hits an OPTIMIZER-AGNOSTIC exploration wall. Cached from-scratch PPO (2026-07-09/10) never grasps ('reward can't bootstrap pre-grasp'). New: from-scratch SAC (off-policy replay + AUTO-entropy exploration + dense pick_place_aligned reward, symmetric critic, 80k steps) ALSO never grasps AND never even reaches (reach=grasp=lift=0.00 from untrained through 80k). The place=0.375 is a metric-inflation artifact (boxes spawn near target; idle arm trips placed_stable; grasp=0 disproves real placing). An asymmetric critic cannot fix this -- exploration, not value-learning, is the blocker (symmetric SAC never reached). Random exploration cannot discover a grasp on 7-DOF contact; replay cannot learn a grasp never in the buffer.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "2026-07-15 from-scratch SAC exploration-wall test (capstone of the pick-place RL arc)",
+   "raw_evidence": [
+    "reports/2026-07-15-from-scratch-rl-exploration-wall.md",
+    "scratchpad/from_scratch_sac.py (NormActionEnv, build_sac symmetric AUTO-alpha, pick_place_aligned reward)",
+    "reports/2026-07-09-pick-place-from-scratch-sanity-diagnostics.md + 2026-07-10-pick-place-ppo-optimizer-repair.md (cached PPO wall)"
+   ],
+   "confidence": "measured (single 80k SAC run, converges with cached multi-run PPO failure + theory)",
+   "scope": "from-scratch RL on 7-DOF contact manipulation; the exploration wall is general to sparse-discovery contact tasks",
+   "limitations": "single SAC run at 80k (smoke budget); a vastly larger budget is not justified given cached PPO failure + dominating scripted expert",
+   "framework_consequence": "The pick-place RL space is FULLY MAPPED and bounded by two structural walls: (1) SETPOINT wall -- residual RL holds base 0.875 but cannot beat it (F-PP-009/010/011); (2) EXPLORATION wall -- from-scratch RL never discovers a grasp, optimizer-agnostic (PPO+SAC). Imitation->RL (BC warm-start) is the ONLY viable learned path and IS the deployed base. No RL lever with real headroom remains. Deploy the scripted v3 expert (0.958/2.16cm, dominates) for best performance, or the FF-DAgger base / LSTM-BC clone for a learned policy; residual RL only to HOLD base safely (structured+mode-gated+conservative critic), never to beat it. GUARD: do not re-propose from-scratch RL for this task class without a demonstration/curriculum that seeds the grasp.",
+   "code_changes": [
+    "scratchpad only (NormActionEnv + from-scratch SAC harness); no repo code changed"
+   ],
+   "regression_tests": [
+    "(none -- negative result; the guard is this finding)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Would a curriculum / demonstration-seeded exploration (e.g. RRT-seeded replay, grasp-primitive bootstrap) break the exploration wall? (out of scope; the scripted expert already dominates)"
+   ]
+  },
+  {
    "id": "F-SAC-7",
    "claim": "Rollout-state DAgger (query the reactive teacher on the policy's OWN visited states, aggregate, re-clone) CLOSES the flat-action covariate collapse: BC 0.417 -> DAgger 0.75 median (0.625-0.792), 3 seeds, zero harmful, on the floorless PlanarGrasp coin-delivery (Gate 0 teacher-recovery 0.917).",
    "classification": "NEW_CANONICAL_CAPABILITY",
@@ -759,9 +784,9 @@
     "reports/canonical_integration/sac_rehab/rollout_dagger/rollout_dagger_results.json (arm_b controls: demo_bc_loss/rollout_teacher_bc_loss/cos_vs_full)",
     "reports/canonical_integration/sac_rehab/rollout_dagger/fsac8_val_decay.png"
    ],
-   "confidence": "MEASURED discriminants (demo 0.004 vs rollout 0.10 bc-loss, cos 0.965, val decay, 3 seeds); INFERRED exploration-covariate mechanism (not directly isolated)",
+   "confidence": "MEASURED discriminants (demo 0.004 vs rollout 0.10 bc-loss, cos 0.965, val decay, 3 seeds); INFERRED exploration-covariate mechanism (not directly isolated) — EXPLORATION HYPOTHESIS REFUTED by Arm C (F-SAC-10).",
    "scope": "RL refinement of an imitation-optimal policy on a floorless task",
-   "limitations": "The isolating cell — rollout-anchored SAC with sigma->0 (greedy rollouts) — is UNTESTED (hard stop). F-SAC-4 already showed sigma->0 WITHOUT the anchor collapses; sigma->0 WITH the anchor is the open discriminator.",
+   "limitations": "REFUTED by the Arm C greedy-rollout discriminator (F-SAC-10): greedy rollouts do NOT rescue the policy (median 0.21 vs DAgger 0.75), so exploration/self-consistency was NOT the cause. The exploration hypothesis here is retained as the motivated-but-wrong inference; the confirmed mechanism is F-SAC-10.",
    "framework_consequence": "Generalizes: exploration-based RL is self-defeating on an imitation-optimal floorless policy — exploration re-introduces the covariate shift imitation removed, and an anchor on the stochastic-rollout distribution cannot close a gap defined on the greedy-eval distribution. Guard: do not expect on-policy RL to refine a DAgger-optimal flat policy; the self-consistent greedy-DAgger loop (imitation.rollout_state_dagger) is the lever. Deepens/subsumes F-SAC-8's 'anchor dominant yet loses' into a covariate explanation.",
    "code_changes": [
     "reports/framework/assimilations/rollout-state-dagger.md (deepened); fsac8_val_decay.png"
@@ -770,7 +795,305 @@
     "hymeko_rl/tests/test_rollout_dagger.py"
    ],
    "superseded_findings": null,
-   "open_questions": "Does sigma->0 + rollout anchor hold ~DAgger (Outcome C), confirming exploration (not -Q) as the culprit? Untested by the hard stop."
+   "open_questions": "Answered by F-SAC-10 (the -Q/critic term, not exploration)."
+  },
+  {
+   "id": "F-CSB-1",
+   "claim": "The mechanical constraint schema is DERIVABLE per-step from the MuJoCo contact solver (not hand labels): active contacts -> constraint Jacobian J_m via mj_jac -> SVD rank/nullspace -> motion projector P_m=V0 V0^T, stick/slip, pivot axis, guards. On a passive tip the admissible-motion dimension walks d_perp = 6 -> 3 -> 1 -> 0 (FREE -> sticking-vertex -> EDGE_PIVOT 1-DOF hinge -> FACE_REST 0-DOF); projector idempotency ||P-P^2|| <= 3.3e-16 every frame (3 seeds); derived guard-crossings agree with the simulator's own contact events within debounce; labels bit-reproducible.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "constraint-schema-benchmark-c0 (2026-07-14)",
+   "raw_evidence": [
+    "reports/2026-07-14-constraint-schema-benchmark-c0.md",
+    "reports/figures/2026-07-14-constraint-schema-c0-seed0.json"
+   ],
+   "confidence": "measured (3 seeds, deterministic; 23 tests)",
+   "scope": "single rigid freejoint body on a plane in MuJoCo",
+   "limitations": "AMBIGUOUS rank-transition path unit-tested only (0/200 on the fast drop); TWO_SUPPORT/JAMMED reserved not emitted on a single surface.",
+   "framework_consequence": "schema.constraint_extractor registered CANONICAL; the benchmark's ground truth is physics-derived, not annotated. Future C-gates import extract_schema for the privileged schema/projector.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_schema.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "AMBIGUOUS in situ needs a slow controlled pivot (a later gate)."
+  },
+  {
+   "id": "F-CSB-2",
+   "claim": "Counterfactual identifiability of a hidden physical schema is achievable on the cuboid substrate: the sliding friction mu is invisible in BOTH the raw kinematics AND the instantaneous derived mode (a resting box is FACE_REST for any mu; mu is latent below the mode). Measured (N=24 matched pairs): R0 flat AUC 0.500 CI(0.5,0.5) with obs-match 0.0 (matched pairs byte-identical), privileged AUC 1.0; R1 a bounded reversible probe recovers it (mu_lo slides ~8.7mm vs mu_hi ~0.30mm, ~29x, probe AUC perfect, 100% reversible/no tip); R2 passive-wait |d|max 6.84e-9mm below sensing resolution -> the probe is NECESSARY. The anti-'flat-reveals-everything' guard for the benchmark.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "constraint-schema-benchmark-c1 (2026-07-14)",
+   "raw_evidence": [
+    "reports/2026-07-14-constraint-schema-benchmark-c1.md",
+    "reports/figures/2026-07-14-constraint-schema-c1.json"
+   ],
+   "confidence": "measured (N=24 matched pairs, bootstrap CIs; 10 tests)",
+   "scope": "hidden sliding-friction schema on a cuboid on a plane; the matched-counterfactual+probe pattern generalizes to other hidden physical parameters",
+   "limitations": "identifiability only; recognition from PARTIAL/NOISY observation (a learned estimator) is C2, not shown here.",
+   "framework_consequence": "probe.constraint_counterfactual registered CANONICAL; C2 (schema recognition from partial obs) is authorized and constrained by this finding (a flat instantaneous observer is at chance -> a learned recogniser must beat it).",
+   "code_changes": [
+    "hymeko_rl/env/constraint_probe.py",
+    "hymeko_rl/experiments/exp_constraint_schema_c1.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Is mu recognisable from ProbeResponse.com_traj under partial+noisy sensing (C2)?"
+  },
+  {
+   "id": "F-CSB-3",
+   "claim": "A tip must be measured as an ORIENTATION change (up-axis tilt > threshold), NOT a schema-mode transition. A sliding flat box transiently shows FREE/EDGE derived modes from contact-point sampling flicker WITHOUT rotating; a mode-based tip detector would falsely flag it tipped and mis-score reversibility.",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "constraint-schema-benchmark-c1 (2026-07-14, measured fix)",
+   "raw_evidence": [
+    "hymeko_rl/env/constraint_probe.py::_uptilt_deg (comment: measured 2026-07-14)",
+    "hymeko_rl/tests/test_constraint_probe.py::test_high_mu_sticks_low_mu_slips_reversibly"
+   ],
+   "confidence": "measured (independently rediscovered by a de-risk pass in a second session)",
+   "scope": "any tip/topple detection over a contact-mode signal",
+   "limitations": "orientation threshold (15 deg) is a calibrated cutoff.",
+   "framework_consequence": "GUARD: tip detection uses _uptilt_deg / ProbeResponse.tipped (orientation), never a mode-label transition. Regression pins that the sliding low-mu box is NOT tipped.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_probe.py::_uptilt_deg, ProbeResponse.tipped, ProbeSpec.tip_tilt_deg"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py::test_high_mu_sticks_low_mu_slips_reversibly (not tipped)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-CSB-4",
+   "claim": "A 'signal below the noise floor' claim must be a MAGNITUDE test, not a scale-blind rank statistic. Rank-AUC (Mann-Whitney) is scale-invariant, so on the numerically-zero passive-wait displacement (~1e-9 of the probe signal) it reports a spurious ~0.30 separation; the physically meaningful statement is that a passive observer sees nothing resolvable (passive |d|max < sensing resolution AND << probe median).",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "constraint-schema-benchmark-c1 (2026-07-14, measured fix)",
+   "raw_evidence": [
+    "hymeko_rl/experiments/exp_constraint_schema_c1.py::_verdict (R2 magnitude gate, comment measured 2026-07-14)",
+    "reports/figures/2026-07-14-constraint-schema-c1.json (passive |d|max 6.84e-9mm)"
+   ],
+   "confidence": "measured",
+   "scope": "any 'necessity / signal-vs-noise-floor' evaluation; general to scale-invariant rank metrics on near-zero signals",
+   "limitations": "resolution threshold (0.1mm) is a stated sensing bound.",
+   "framework_consequence": "GUARD: the R2 'probe necessary' verdict gates on magnitude (passive_max < resolution_m AND < 0.05*probe_median); passive AUC is reported but explicitly NOT gated on. Reusable rule: do not use rank-AUC to argue a signal is absent.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c1.py::_verdict"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py::test_c1_gate_passes_on_small_n (R2)",
+    "::test_auc_identical_is_chance_separated_is_one"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-CSB-5",
+   "claim": "MuJoCo combines contact friction as the MAX of the two geoms' friction, so setting a hidden mu on the object alone is overridden by the floor's friction (the effective friction stays pinned by the load-path contact). The variable hidden-friction schema must be set on the LOAD-PATH contact (floor + object).",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "constraint-schema-benchmark-c1 (2026-07-14, de-risk catch)",
+   "raw_evidence": [
+    "hymeko_rl/env/constraint_probe.py::contact_geoms (returns object + floor)",
+    "de-risk: object-only mu -> no slide separation; floor+object mu -> Coulomb separation"
+   ],
+   "confidence": "measured (de-risk sweep: effective friction pinned at 1.0 until floor mu lowered)",
+   "scope": "any MuJoCo env with a hidden per-body friction schema",
+   "limitations": "MuJoCo-specific (friction-combination = elementwise max unless geom priority is set).",
+   "framework_consequence": "GUARD: set_sliding_mu is applied to contact_geoms = object + floor; a friction-schema env must vary the load-path contact, not one geom. Reusable MuJoCo gotcha.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_probe.py::contact_geoms, set_sliding_mu"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py::test_set_sliding_mu_touches_only_column0",
+    "::test_high_mu_sticks_low_mu_slips_reversibly (separation proves both geoms set)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-CSB-6",
+   "claim": "Tip-vs-slide under a SUSTAINED push is NOT cleanly friction-separable in MuJoCo: dynamics/momentum dominate and the box tips across a wide mu range (measured: identical tip outcome for mu 0.12-0.9 at F=2.5N). The friction-separable constraint-schema transition is SLIDE-vs-STAY (FACE_REST d_perp=0 <-> FACE_SLIDE d_perp=3) under a bounded sub-tipping COM push, matching Coulomb theory (boundary mu~0.46 at F=0.9N, predicted 0.459).",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "constraint-schema-benchmark-c1 de-risk (2026-07-14)",
+   "raw_evidence": [
+    "de-risk sweep (scratchpad): sustained top-push tips for all mu; bounded COM push separates slide/stay at mu~0.46"
+   ],
+   "confidence": "measured (de-risk sweep over mu x force)",
+   "scope": "friction counterfactual design for the constraint-schema benchmark; general to sustained-push vs quasi-static contact",
+   "limitations": "scoped to the sustained-wrench probe; a quasi-static controller could make tip-vs-slide separable.",
+   "framework_consequence": "DESIGN CONSTRAINT: a friction counterfactual must use slide-vs-stay, not tip-vs-slide; tip/pivot-feasibility counterfactuals require a quasi-static controller (a later gate). Constrains future C-gate probe design.",
+   "code_changes": [
+    "informs constraint_probe design (safe_probe_force sub-tipping window); no separate code artifact"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_probe.py::test_high_mu_sticks_low_mu_slips_reversibly (slide-vs-stay, not tip)"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Is tip/pivot feasibility separable under a quasi-static controller (a later gate)?"
+  },
+  {
+   "id": "F-CSB-7",
+   "claim": "A learned estimator recovers the constraint schema (stick/slip verdict under a standard probe, boundary mu*=F/N=0.70) from a PARTIAL, NOISY observation of the probe response (COM trajectory + Gaussian position noise), beating the flat baseline and approaching the privileged ceiling. First benchmark gate closed by a FITTED model. Measured (N=60, mu~U(0.20,1.20) continuous, 5-fold held-out): probe 0.906 balanced-acc at sigma->0 vs flat 0.500 (chance), approaching privileged ceiling 0.891 (R1); probe-flat CI(0.182,0.517) excludes 0 at 2mm noise (R0); graceful degradation 0.906->0.888(2mm)->0.808(5)->0.688(10)->0.647(20), above flat throughout (R2). The 5-trajectory-feature learned estimator slightly EXCEEDS the 1-feature (exact-disp) privileged at low noise (shape carries boundary info); the sub-1.0 ceiling is boundary-blending near mu*, the honest signature of a non-trivial task.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "constraint-schema-benchmark-c2 (2026-07-14)",
+   "raw_evidence": [
+    "reports/2026-07-14-constraint-schema-benchmark-c2.md",
+    "reports/figures/2026-07-14-constraint-schema-c2.json",
+    "reports/framework/assimilations/constraint-schema-benchmark-c2.md"
+   ],
+   "confidence": "measured (N=60, 5-fold held-out, 7-sigma sweep; 9 tests)",
+   "scope": "binary stick/slip schema recognition on the cuboid substrate; the partial-observation recognition pattern generalizes",
+   "limitations": "recovers a BINARY verdict, not the continuous projector P_m (that is C3); one probe direction, one fixed force; featurization+classifier experiment-resident (extraction flagged for C3).",
+   "framework_consequence": "probe.constraint_counterfactual bumped to 1.1 (com_traj/tangential_traj = the partial-observation signal). C3 (projector estimation) authorized; C3 lands the probe_features extraction so C2/C3 share one observation model.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_probe.py (ProbeResponse.com_traj, tangential_traj)",
+    "hymeko_rl/experiments/exp_constraint_schema_c2.py (observation model + standardized-logistic estimator + sigma-sweep)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c2.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Can the continuous projector P_m / d_perp / pivot axis be recovered from partial state (C3)?"
+  },
+  {
+   "id": "F-CSB-8",
+   "claim": "A linear classifier on physical-unit (metre-scale, ~1e-3) features MUST be standardized (StandardScaler in the pipeline); an unscaled LogisticRegression under default L2 underfits to the majority class and returns EXACTLY 0.500 even on cleanly-separable privileged input. The bug was caught because the PRIVILEGED CEILING (which must be near-perfect) was implausibly at chance: the privileged/oracle observer is a sanity tripwire -- if it is at chance, the harness is broken, not the task.",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "constraint-schema-benchmark-c2 (2026-07-14, measured bug fix)",
+   "raw_evidence": [
+    "reports/2026-07-14-constraint-schema-benchmark-c2.md (Part: one measured bug fixed)",
+    "hymeko_rl/experiments/exp_constraint_schema_c2.py::_classifier"
+   ],
+   "confidence": "measured (privileged 0.500 -> 0.891 after adding the scaler)",
+   "scope": "any linear classifier on physical-unit features; general to scale-sensitive estimators + oracle-ceiling sanity checks",
+   "limitations": "specific to scale-sensitive linear models (tree/standardized models unaffected).",
+   "framework_consequence": "GUARD: schema recognizers use make_pipeline(StandardScaler(), LogisticRegression()); the privileged/oracle ceiling is a required sanity tripwire (measure it first; at-chance oracle => harness bug). Generalizes the eval-integrity 'measure the ceiling first' rule with a concrete scaling catch.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c2.py::_classifier (make_pipeline StandardScaler+LogisticRegression)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c2.py (pipeline-contains-StandardScaler test)"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
+  },
+  {
+   "id": "F-SAC-10",
+   "claim": "The greedy-rollout ablation (Arm C, single-variable vs Arm B: env stepped with action_mean, no exploration) REFUTES the exploration hypothesis (F-SAC-9): greedy-online median 0.208 vs DAgger 0.75, 0/3 hold, no better than stochastic Arm B (0.25). Restoring rollout self-consistency does NOT rescue the policy. The culprit is the -Q / off-policy CRITIC, not exploration: the DAgger policy is an IMITATION optimum, not the critic's Q-optimum, and the -Q gradient (a critic that extrapolates badly off the narrow DAgger manifold, still probed by the sampled-action actor loss even under greedy rollouts) pulls the actor off the DAgger optimum faster than the demo+rollout anchors (coef 2.5) hold it. RL refinement of an imitation-optimal flat policy fails at VALUE ESTIMATION, not exploration.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "Arm C greedy-rollout discriminator (flat_sac_rollout_state_dagger_anchor, 2026-07-15)",
+   "raw_evidence": [
+    "reports/canonical_integration/sac_rehab/rollout_dagger_armC/arm_c_results.json",
+    "reports/canonical_integration/sac_rehab/rollout_dagger_armC/fsac10_greedy_ablation.png"
+   ],
+   "confidence": "MEASURED single-variable 3-seed ablation (0/3 greedy hold; median 0.21 vs 0.75). The precise -Q-sampling-vs-critic split not fully isolated (a deterministic -Q ablation would pin it further).",
+   "scope": "off-policy actor-critic refinement of an imitation-optimal flat policy",
+   "limitations": "greedy_rollout changed only the ENV STEP; the actor loss still samples actions for -Q, so 'exploration' at the actor-loss level is not fully removed. But the ROLLOUT-covariate hypothesis is cleanly refuted.",
+   "framework_consequence": "Corrects F-SAC-9. Same failure class as F-PP-002 (offline actor-critic collapses the pick-place clone) -> a general guard: do NOT refine an imitation-optimal policy with off-policy actor-critic on a floorless task; the value drift degrades it regardless of exploration. Lever = the self-consistent DAgger loop (imitation.rollout_state_dagger). greedy_rollout added to SACConfig as a reusable diagnostic.",
+   "code_changes": [
+    "hymeko_rl/train/sac.py: SACConfig.greedy_rollout (diagnostic)",
+    "hymeko_rl/experiments/exp_flat_sac_rollout_dagger.py: run_arm_c / arm_b_dagger_sac(greedy=...)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_sac.py::test_train_sac_greedy_rollout_runs_finite"
+   ],
+   "superseded_findings": [
+    "F-SAC-9 exploration hypothesis (refuted)"
+   ],
+   "open_questions": "Would a deterministic -Q (DDPG-style, no actor-loss sampling) or a constrained/pessimistic critic (CQL/IQL) hold DAgger? (out of scope by the hard stop)"
+  },
+  {
+   "id": "F-CSB-9",
+   "claim": "The mechanical-schema motion projector P_m (d_perp, nullspace V0) is a DISCONTINUOUS function of pose at contact boundaries (adding/removing a contact changes d_perp discontinuously), so pose-only projector estimation is FRAGILE to sensor noise at the contact-detection scale. Measured (N=40 passive drops, sigma-sweep 0-20mm): naive geometric d_perp balanced accuracy 1.000 at sigma=0 (projector Frobenius error 0.000); the projector error JUMPS 0.000->0.933 at just 1mm (contact eps=2mm) -> 0.986 at 2mm; principal angle -> 37deg at 2mm; naive d_perp acc collapses to 0.498 at 20mm. A learned standardized-logistic classifier is noise-FLAT (~0.73): it robustifies above ~2-5mm but caps below the clean geometric extractor (1.00) and the privileged ceiling, worst on the rare transient (edge/vertex) modes.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "constraint-schema-benchmark-c3 (2026-07-15)",
+   "raw_evidence": [
+    "reports/2026-07-15-constraint-schema-benchmark-c3.md",
+    "reports/figures/2026-07-15-constraint-schema-c3.json",
+    "reports/framework/assimilations/constraint-schema-benchmark-c3.md"
+   ],
+   "confidence": "measured (N=40 drops, 6-sigma sweep; 9 tests)",
+   "scope": "pose-only projector/d_perp estimation on the passive cuboid substrate; the discontinuity is general to contact-mode schemas",
+   "limitations": "pose-only (Option A); a probe-informed estimator is untested; the loaded/slip projector is flicker-noisy (de-risk).",
+   "framework_consequence": "schema.constraint_extractor bumped to 1.1 (projector_frobenius_error + principal_angles_deg metrics). Motivates a probe-informed projector estimator (force/contact sensing) rather than pose-only for the loaded projector. Does NOT refute the probe -- the fragile regime is exactly the contact transitions where the C1/C2 probe is the natural signal.",
+   "code_changes": [
+    "hymeko_rl/env/constraint_schema.py (projector_frobenius_error, principal_angles_deg)",
+    "hymeko_rl/experiments/exp_constraint_schema_c3.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c3.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Does a probe-informed projector estimator (com_traj + probe_features) beat the pose-only fragility?"
+  },
+  {
+   "id": "F-CSB-10",
+   "claim": "Pose-only projector / admissible-subspace estimation must NOT be trusted near contact transitions: the projector is discontinuous there (F-CSB-9), so any pose-sensor noise at the contact scale jerks the projector error to ~1 and flips d_perp. Robust recovery of the loaded projector needs force/contact sensing (the C1/C2 probe), not pose alone.",
+   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
+   "source_experiment": "constraint-schema-benchmark-c3 (2026-07-15)",
+   "raw_evidence": [
+    "reports/2026-07-15-constraint-schema-benchmark-c3.md",
+    "hymeko_rl/tests/test_constraint_schema_c3.py::test_noise_corrupts_the_geometric_projector"
+   ],
+   "confidence": "measured (proj err 0.93 at 1mm across 40 drops)",
+   "scope": "pose-only projector estimation on the passive substrate; scoped closure -- NOT a universal impossibility (probe-informed Option B untested)",
+   "limitations": "the loaded/slip projector is flicker-noisy (de-risk); a quasi-static controller could clean it.",
+   "framework_consequence": "GUARD: a future projector estimator should use force/contact sensing near contact transitions, not pose alone. The probe-informed estimator (reuse com_traj + land probe_features) is the recorded open lever (C4/C5).",
+   "code_changes": [
+    "(guard recorded; no default changed)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c3.py::test_noise_corrupts_the_geometric_projector",
+    "::test_c3_verdict_projector_pose_fragile"
+   ],
+   "superseded_findings": null,
+   "open_questions": "probe-informed projector estimation (the direct next lever)."
+  },
+  {
+   "id": "F-CSB-11",
+   "claim": "The recognised mechanical schema is CAUSALLY LOAD-BEARING for control. A supervised schema-conditioned controller (probe -> fitted belief -> calibrated push force) on a push-to-target-band task (net COM disp in [30,45]mm, no tip; the correct force depends on hidden mu) matches the oracle and dominates every schema-blind / belief-ablated arm. Measured (N=40 held-out): oracle 0.925 = schema 0.925 (recognition 0.99) >> flat 0.500 > frozen 0.425 >> swapped 0.000; placement error schema 4.0mm vs swapped 36.7mm; F_A=0.90N F_B=1.40N. The swapped-belief collapse to 0 (worse than schema-blind flat 0.50) is the decisive signature: success is a FUNCTION of the belief (a wrong belief is worse than no belief). First positive CONTROL gate; supervised (no RL).",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "constraint-schema-benchmark-c4 (2026-07-15)",
+   "raw_evidence": [
+    "reports/2026-07-15-constraint-schema-benchmark-c4.md",
+    "reports/figures/2026-07-15-constraint-schema-c4.json",
+    "reports/framework/assimilations/constraint-schema-benchmark-c4.md"
+   ],
+   "confidence": "measured (N=40 held-out seeds, calibration held out; 8 tests)",
+   "scope": "schema application on the robust 1-D slide-vs-stay mechanism (F-CSB-6) with a calibrated force-per-class controller; the causal method generalizes",
+   "limitations": "1-D lookup controller (not MPC); supervised calibration; schema application, not continuous multi-phase execution (C5).",
+   "framework_consequence": "C1->C2->C4 closes the recognition->application loop for the friction schema. The schema-conditioned controller pattern (probe->belief->calibrated force + freeze/swap ablations) is demonstrated; the controller is experiment-resident (extract when C5 reuses it). RL (C6) must beat this supervised ceiling to be authorised.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c4.py"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c4.py"
+   ],
+   "superseded_findings": null,
+   "open_questions": "Continuous multi-phase execution (C5); a projector-informed controller where C3 pose is fragile."
+  },
+  {
+   "id": "F-CSB-12",
+   "claim": "A schema-application / control gate must include belief FREEZE + counterfactual-SWAP ablations to prove the schema is causally LOAD-BEARING (not merely correlated/present). A schema that is present but not load-bearing would still let a flat/frozen controller succeed; the decisive signature is SWAPPED-WORSE-THAN-FLAT (inverting the belief inverts the action -> worse than no belief, C4: swapped 0.00 < flat 0.50).",
+   "classification": "NEW_EVALUATION_REQUIREMENT",
+   "source_experiment": "constraint-schema-benchmark-c4 (2026-07-15)",
+   "raw_evidence": [
+    "reports/2026-07-15-constraint-schema-benchmark-c4.md",
+    "hymeko_rl/tests/test_constraint_schema_c4.py (honest-negative verdict branches)"
+   ],
+   "confidence": "measured (the verdict's two honest-negative branches are regression-locked)",
+   "scope": "any schema-application/control gate in the benchmark (and generally, causal attribution of a belief/representation to a control decision)",
+   "limitations": "the ablation proves causal dependence, not optimality; the belief must be manipulable (freeze/swap).",
+   "framework_consequence": "GUARD/METHOD: schema-controllers must be evaluated with freeze + counterfactual-swap belief ablations; report swapped vs flat. Registered as the causal-attribution method for the constraint-schema control gates.",
+   "code_changes": [
+    "hymeko_rl/experiments/exp_constraint_schema_c4.py::_verdict (freeze/swap degrade check)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_constraint_schema_c4.py::test_verdict_fails_when_flat_suffices",
+    "::test_verdict_fails_when_swap_does_not_degrade"
+   ],
+   "superseded_findings": null,
+   "open_questions": null
   }
  ]
 }
