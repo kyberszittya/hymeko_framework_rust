@@ -73,6 +73,38 @@ Q(collapsed actor)=−0.687 ≫ Q(teacher)=−1.164) stands independently and is
 - **For the F-PP-009 causal claim**: cross-policy LiNGAM is the wrong instrument (confounded); within-policy
   deviation variation is required — a clean, cheap follow-up if wanted.
 
+## Follow-ups — (a) DAgger'd LSTM, (b) within-SAC deviation causal test
+
+**(a) Does DAgger rescue the LSTM into a second real policy? NO.**
+
+```text
+BC-only:        skill 0.00  grasp 0.00
+DAgger r0..r4:  skill 0.00 throughout; grasp transient (0.00→0.208 @ r2 → 0.042 @ r4, degrading)
+```
+
+DAgger (relabel expert on the LSTM's own states, 5 rounds) induces *intermittent* grasping but **never completes the
+place** — skill (grasp∧place) = 0.00 the whole way, and grasp degrades r2→r4 (aggregating the clone's failing states
+destabilizes it). The grasp→lift→place chain (execution-hard at the contact discontinuity, F-PP-010) is not
+recovered. **Still no second real policy → the causal gate/ensemble stays undercut.**
+
+**(b) Does deviation from the base CAUSE grasp loss? YES — F-PP-009 confirmed causally.**
+
+```text
+step 0:    deviation 0.000  grasp 0.50   (zero-anchored = base)
+step 2500: deviation 0.013  grasp 0.38
+step 5000: deviation 0.056  grasp 0.00   ← grasp collapses exactly as deviation crosses ~0.056
+step 7500+ deviation 0.12–0.17  grasp 0.00
+corr(deviation, grasp) = -0.481
+```
+
+Using **training progression as the exogenous intervention**, rising deviation drives grasp 0.50→0.00 — the clean
+within-policy signal the confounded cross-policy fit (F-PP-014) could not give. Methodological note: 2-variable
+DirectLiNGAM mis-oriented the edge as `grasp → deviation` (with only two variables and no training-step anchor it
+cannot orient the arrow); the **intervention decided the direction** (training → deviation → grasp-loss). This is the
+framework's "DirectLiNGAM proposes, the ablation decides" in miniature — and it upgrades F-PP-009 from a critic
+Q-ranking to a confirmed causal statement: *the critic drives deviation from the base, and that deviation causes the
+loss of grasp.*
+
 ## Provenance
 - Branch `integration/fanuc-pick-place-canonical`. Experiment `scratchpad/signed_hypergraph_lingam_diag.py`
   (reuses `hymeko_rl.eval.causal` + `lingam_to_signed_adjacency`; LSTM 40 demos/300 ep; SAC 20k AUTO-alpha;

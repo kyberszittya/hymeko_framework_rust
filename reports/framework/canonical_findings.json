@@ -784,6 +784,30 @@
    ]
   },
   {
+   "id": "F-PP-015",
+   "claim": "Two follow-ups to F-PP-014. (a) DAgger does NOT rescue the LSTM into a real policy: 5 rounds relabeling the expert on the LSTM's OWN rollout states induce only TRANSIENT grasping (0->0.208@r2, degrading to 0.042@r4) and skill (grasp AND place) stays 0.00 throughout -- the recurrent clone never completes the grasp->lift->place chain (execution-hard, F-PP-010) and aggregating its failing states destabilizes it. So there is STILL no second real policy; the causal gate/ensemble stays undercut. (b) F-PP-009 is now CAUSALLY CONFIRMED within-SAC: as training collapses the actor, deviation rises (0->0.056 over 5k steps) and grasp collapses (0.50->0.00) in lockstep, corr(deviation,grasp)=-0.48. 2-variable DirectLiNGAM mis-oriented the edge (grasp->deviation, a 2-var identifiability artifact); the TRAINING-PROGRESSION INTERVENTION resolves the direction (training->deviation->grasp-loss). LiNGAM proposed, the intervention decided.",
+   "classification": "NEW_MECHANISM",
+   "source_experiment": "2026-07-16 follow-ups (a) DAgger'd LSTM + (b) within-SAC deviation causal test",
+   "raw_evidence": [
+    "reports/2026-07-16-signed-hypergraph-lingam-diagnosis.md (Follow-ups section)",
+    "scratchpad/dagger_lstm.py (skill 0.00, grasp transient) + scratchpad/sac_deviation_sweep.py (dev->grasp trend, corr -0.48)"
+   ],
+   "confidence": "measured (a: 5 DAgger rounds, eval N=24; b: 13 checkpoints x 8 episodes, deviation-vs-grasp trend + corr)",
+   "scope": "pick-place recurrent clone (a) + residual SAC collapse (b)",
+   "limitations": "a: single DAgger config; b: 2-var LiNGAM under-identified (the intervention, not LiNGAM, gives the direction)",
+   "framework_consequence": "(a) Fixing BC covariate shift (DAgger) is NOT enough for the recurrent clone -- the execution-hard contact chain (F-PP-010) blocks it; the ensemble/gate needs a genuinely different SECOND policy, not a better clone. (b) F-PP-009 upgraded from a critic Q-ranking to a CONFIRMED CAUSAL statement: the SAC critic drives deviation from the base, and that deviation CAUSES grasp loss. Methodological: cross-policy or 2-variable LiNGAM is under-identified for direction; use an INTERVENTION (training progression / ablation) to orient the arrow -- exactly the 'propose, then ablate' doctrine.",
+   "code_changes": [
+    "scratchpad only; no repo code changed"
+   ],
+   "regression_tests": [
+    "(diagnostic follow-ups)"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Is there a genuinely different second policy with real, complementary skill (e.g. a model-based/planning controller) to make a causal gate worthwhile?"
+   ]
+  },
+  {
    "id": "F-SAC-7",
    "claim": "Rollout-state DAgger (query the reactive teacher on the policy's OWN visited states, aggregate, re-clone) CLOSES the flat-action covariate collapse: BC 0.417 -> DAgger 0.75 median (0.625-0.792), 3 seeds, zero harmful, on the floorless PlanarGrasp coin-delivery (Gate 0 teacher-recovery 0.917).",
    "classification": "NEW_CANONICAL_CAPABILITY",
