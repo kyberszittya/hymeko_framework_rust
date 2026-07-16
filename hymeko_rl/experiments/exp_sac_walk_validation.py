@@ -27,11 +27,13 @@ _H = 300
 def _greedy(actor: Any) -> Callable[[Any], np.ndarray]:
     import torch
 
+    dev = next(actor.parameters()).device            # match the actor's device (CPU or cuda)
+
     def fn(env: Any) -> np.ndarray:
         with torch.no_grad():
-            o = torch.as_tensor(env.node_features()[None], dtype=torch.float32)
+            o = torch.as_tensor(env.node_features()[None], dtype=torch.float32, device=dev)
             mean = actor.action_mean(o) if hasattr(actor, "action_mean") else actor.act(o)[0]
-            return np.asarray(np.reshape(mean.squeeze(0).numpy(), (-1,)), dtype=np.float32)
+            return np.asarray(np.reshape(mean.squeeze(0).cpu().numpy(), (-1,)), dtype=np.float32)
     return fn
 
 
