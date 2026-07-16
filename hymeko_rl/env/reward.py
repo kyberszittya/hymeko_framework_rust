@@ -455,6 +455,24 @@ def _term_stand_still(env: Any, dist: float, action: np.ndarray) -> float:
     return -abs(float(v)) if v is not None else 0.0
 
 
+def _term_vertical_bounce(env: Any, dist: float, action: np.ndarray) -> float:
+    """CIP-informed anti-bounce (added 2026-07-16): ``-v_z²`` of the free base — penalise pumping leg energy
+    into VERTICAL bounce instead of forward progress. A DirectLiNGAM diagnosis of the Aibo trot found the
+    dominant causal edge ``leg_speed ⇒ torso_height`` (+0.50) while ``leg_speed ⇒ forward_vx`` was weak (+0.12):
+    the gait bounces, it does not propel. This routes the reward gradient toward forward-converting gaits.
+    Reads the free base's linear-z velocity (dof index cached lazily on the env); 0 on an env with no free base."""
+    dofz = getattr(env, "_base_vz_dof", None)
+    if dofz is None:
+        # mjtJoint.mjJNT_FREE == 0; the free base's first 3 dofs are linear (x, y, z).
+        dofz = next((int(env.model.jnt_dofadr[j]) + 2 for j in range(env.model.njnt)
+                     if int(env.model.jnt_type[j]) == 0), -1)
+        env._base_vz_dof = dofz
+    if dofz < 0:
+        return 0.0
+    vz = float(env.data.qvel[dofz])
+    return -vz * vz
+
+
 # ── pick-and-place terms (read the env's PickMetrics; 0 on a non-pick env) ───
 @dataclass(frozen=True)
 class PickMetrics:
@@ -526,6 +544,7 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "alive": _term_alive,
     "standing": _term_standing,
     "stand_still": _term_stand_still,
+    "vertical_bounce": _term_vertical_bounce,   # CIP-informed: penalise the bounce channel DirectLiNGAM found
     "reach_distance": _term_reach_distance,
     "success_bonus": _term_success_bonus,
     "action_cost": _term_action_cost,
