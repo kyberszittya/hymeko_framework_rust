@@ -734,7 +734,7 @@
   },
   {
    "id": "F-PP-013",
-   "claim": "The pick-place stable-place success metric (placed_stable/reached, used arc-wide via LiftPlaceMetric) has a ~0.458 IDLE-inflation floor: a zero-action policy scores reached=0.458 while ever-grasped=0.000 (verified 2026-07-16). Cause: placed_stable requires only the box within place_radius (6cm) at rest for settle_dwell -- NOT grasping or lifting -- and the object spawns within place_radius of the target ~46% of episodes. The FF-DAgger base scores reached=0.875 but the clean lift-requiring 'delivered' (legacy, held-above-target) =0.000 and its ever-grasped=0.50. A SKILL-ISOLATING metric = placed_stable AND ever-grasped zeroes the floor (idle -> 0).",
+   "claim": "[REFINED 2026-07-16] The ~0.458 'floor' on placed_stable is BENCHMARK TRIVIALITY, not inflation of a failing policy: ~42% of episodes spawn the box already within place_radius of the target (no pick-place needed; a good policy correctly leaves them -- grasp 0.00 there is RIGHT). The pick-place stable-place success metric (placed_stable/reached, used arc-wide via LiftPlaceMetric) has a ~0.458 IDLE-inflation floor: a zero-action policy scores reached=0.458 while ever-grasped=0.000 (verified 2026-07-16). Cause: placed_stable requires only the box within place_radius (6cm) at rest for settle_dwell -- NOT grasping or lifting -- and the object spawns within place_radius of the target ~46% of episodes. The FF-DAgger base scores reached=0.875 but the clean lift-requiring 'delivered' (legacy, held-above-target) =0.000 and its ever-grasped=0.50. A SKILL-ISOLATING metric = placed_stable AND ever-grasped zeroes the floor (idle -> 0).",
    "classification": "NEW_EVALUATION_REQUIREMENT",
    "source_experiment": "2026-07-16 SignedHypergraphLiNGAM role-1 diagnostic (surfaced the confound) + idle/base verification",
    "raw_evidence": [
@@ -745,7 +745,7 @@
    "confidence": "measured (idle + base, N=24; converges with from-scratch untrained place=0.375)",
    "scope": "the FANUC pick-place stable-place metric; object spawn sector overlaps the target",
    "limitations": "a single benchmark's spawn geometry; the floor value (~0.4-0.46) varies with seed set",
-   "framework_consequence": "GUIDELINE, NOT A HARD GATE (user directive 2026-07-16). When interpreting pick-place stable-place numbers, be AWARE of the ~0.458 idle floor and PREFER reporting a skill-isolating metric (placed_stable AND ever-grasped) or the idle floor alongside the absolute number. Do NOT hard-fail evals on it. The arc's QUALITATIVE findings HOLD (walls, SAC destructive, clones cap, expert dominates -- relative comparisons on the same metric); the absolute numbers overstate skill by ~the floor. This SHARPENS F-PP-009: 'SAC collapse to 0.458' = collapse to the do-nothing floor = TOTAL skill destruction (grasp->0), not 'holds half'. Future benchmark revisions could widen the spawn-target separation to remove the floor at source.",
+   "framework_consequence": "GUIDELINE (advisory): measure pick-place skill on the FAR-SPAWN subset (box > place_radius from target) or via grasp∧place, NOT the raw placed_stable metric. On far-spawn the scripted expert = 1.00 grasp / 0.89 place and the FF-DAgger base = 0.96 / 0.75 -- both genuinely pick-and-place. The raw metric mixes ~42% trivial + real episodes; do not read the trivial floor as policy failure NOR as inflation of skill. Not a hard gate.",
    "code_changes": [
     "none (diagnostic + verification only)"
    ],
@@ -805,6 +805,31 @@
    "superseded_findings": [],
    "open_questions": [
     "Is there a genuinely different second policy with real, complementary skill (e.g. a model-based/planning controller) to make a causal gate worthwhile?"
+   ]
+  },
+  {
+   "id": "F-PP-016",
+   "claim": "CAPSTONE: pick-place WORKS on the task that requires it. Split by spawn distance (N=48): on FAR-spawn episodes (58%, box > place_radius from target) the scripted v3 expert grasps 1.00 / places 0.89 and the learned FF-DAgger base grasps 0.96 / places 0.75 -- both are genuine pick-and-place controllers. Clones (LSTM) and collapsed SAC fail (0.00 grasp on far-spawn). The scripted expert is the deployable best; the DAgger'd base is a real 75% learned policy.",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "2026-07-16 pick-place capstone (far-spawn split + arc synthesis)",
+   "raw_evidence": [
+    "reports/2026-07-16-pick-place-capstone.md",
+    "far-spawn: expert grasp 1.00/reached 0.89; base grasp 0.96/reached 0.75; near-spawn both grasp 0.00/reached 1.00 (trivial)"
+   ],
+   "confidence": "measured (N=48 @ seed0=20000; far-spawn n=28)",
+   "scope": "FANUC pick-place; the capability + the 5 generalized lessons of the RL/causal arc",
+   "limitations": "single seed set; near/far split at place_radius=0.07m",
+   "framework_consequence": "DEPLOYABLE PICK-PLACE: scripted v3 expert (fanuc_pick_env(expert_version=3, require_settle=True) + expert_action_fn, 0.89 on the real task) is the best controller; the FF-DAgger base checkpoint (load_pick_policy, 0.75) is the learned option. GENERALIZED LESSONS: (1) split benchmarks by task difficulty (do-nothing floor != skill); (2) two walls bound learned control over a good demonstrator (setpoint + exploration) -> imitation->RL is the only viable learned path; (3) a scripted/model-based controller beats learned on contact manipulation; (4) causal attribution needs an intervention (LiNGAM proposes, ablation decides); (5) an ensemble needs a genuinely different second policy, not another clone.",
+   "code_changes": [
+    "none (capability already in tree: fanuc_pick_env/expert_action_fn, load_pick_policy, the GUI)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_residual_abstraction.py"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "A second complementary controller (model-based/planning) to make a causal gate worthwhile?",
+    "Widen the spawn-target separation in a benchmark revision to remove the trivial floor at source?"
    ]
   },
   {
