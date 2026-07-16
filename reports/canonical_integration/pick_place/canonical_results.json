@@ -1,0 +1,47 @@
+{
+  "scripted_v3_expert": {
+    "reached_full": 0.9375,
+    "reached_far": 0.9167,
+    "grasped_far": 1.0,
+    "placed_real_far": 0.9167,
+    "safety_no_divergence": 1.0,
+    "mean_episode_steps": 354.4,
+    "n": 48,
+    "n_far": 12,
+    "seed0": 20000
+  },
+  "ff_dagger_base": {
+    "reached_full": 0.8542,
+    "reached_far": 0.5,
+    "grasped_far": 1.0,
+    "placed_real_far": 0.5,
+    "safety_no_divergence": 1.0,
+    "mean_episode_steps": 389.3,
+    "n": 48,
+    "n_far": 12,
+    "seed0": 20000
+  },
+  "td3bc_s0": {
+    "reached_full": 0.6667,
+    "reached_far": 0.1667,
+    "grasped_far": 1.0,
+    "placed_real_far": 0.1667,
+    "safety_no_divergence": 1.0,
+    "mean_episode_steps": 408.1,
+    "n": 48,
+    "n_far": 12,
+    "seed0": 20000
+  },
+  "residual_ppo_hold": {
+    "reached_full": 0.8542,
+    "reached_far": 0.5,
+    "grasped_far": 1.0,
+    "placed_real_far": 0.5,
+    "safety_no_divergence": 1.0,
+    "mean_episode_steps": 389.3,
+    "n": 48,
+    "n_far": 12,
+    "seed0": 20000
+  },
+  "plain_sac_negative": "SKIPPED \u2014 documented-only (F-PP-009 negative); no checkpoint, no new training"
+}

@@ -123,6 +123,24 @@ def load_pick_policy(path: str, env: PickEnv, *, kind: str = "hsikan"):
         adapter = ResidualActionAdapter(base, residual, delta_scale=blob["delta_scale"],
                                         grip_scale=blob["grip_scale"], action_dim=env.n_actions, lo=lo, hi=hi)
         return greedy_action_fn(adapter)
+    if (isinstance(blob, dict) and blob.get("kind") is None and "head.weight" in blob      # TD3+BC / DDPG off-policy
+            and "actor_mean.weight" not in blob and "log_std" not in blob):                 # DeterministicActor (μ head)
+        from hymeko_rl.train.ddpg import build_offpolicy                                     # closes G1 (2026-07-16)
+        shape = env.observation_space.shape
+        assert shape is not None
+        nv, feat = int(shape[0]), int(shape[1])
+        hidden = int(blob["head.weight"].shape[1])                                           # infer hidden from μ head
+        scale = float(np.max(np.abs(np.asarray(env.action_space.high))))
+        kw = {} if kind == "mlp" else {"hg_state": env.hg}
+        actor, _ = build_offpolicy(kind, obs_dim=feat, flat_dim=nv * feat, action_dim=env.n_actions,
+                                   action_scale=scale, n_critics=2, hidden=hidden, **kw)
+        try:
+            actor.load_state_dict(blob)
+        except (RuntimeError, KeyError) as err:
+            raise PickPolicyIncompatible(f"{path}: TD3+BC/DeterministicActor incompatible with env "
+                                         f"(obs {nv}x{feat}, action_dim {env.n_actions}): {err}") from err
+        actor.eval()
+        return greedy_action_fn(actor)
     return greedy_action_fn(load_pick_actor(path, env, kind=kind))
 
 

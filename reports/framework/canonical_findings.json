@@ -860,6 +860,35 @@
    ]
   },
   {
+   "id": "F-PP-018",
+   "claim": "RECONCILIATION of the 0.875-vs-0.167 pick-place discrepancy = OUTCOME B (different protocols) + C (integration gap, now fixed). 0.875 = FF-DAgger base placed_stable on the FULL distribution (idle floor ~0.458; and it is the SEED-0 value of a median-0.833 3-seed run). 0.167 = TD3+BC far-spawn grasp∧place. Under ONE canonical evaluator (hymeko_rl/experiments/canonical_pick_place.py, N=48 seed0=20000): scripted expert 0.938 full / 0.917 far; FF-DAgger base 0.854 / 0.500; TD3+BC s0 0.667 / 0.167; residual-PPO=base (holds, setpoint-bound); plain SAC=documented negative (F-PP-009, collapses to idle floor). Ranking CONSISTENT on every metric -> 0.167 does NOT supersede 0.875; my earlier narrative inverted the evidence by headlining the strictest metric against the loosest. TD3+BC's cached '0.75' was a BC warm-start step-0 floor that RL DEGRADED to 0.0; LSTM-BC '0.917' is single-seed (multi-seed 0.792). No scripted-expert fallback exists (routing-verified).",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "2026-07-16 pick-place lineage recovery + source integration (canonical_integration/pick_place)",
+   "raw_evidence": [
+    "reports/canonical_integration/pick_place/result_discrepancy_matrix.md + missing_assimilation.md",
+    "reports/canonical_integration/pick_place/canonical_manifest.json + canonical_results.json",
+    "canonical eval: expert 0.938/0.917, base 0.854/0.500, td3bc 0.667/0.167, residual=base"
+   ],
+   "confidence": "measured (one canonical evaluator, N=48; reproduced under a clean loader with no fallback)",
+   "scope": "the whole pick-place benchmark; the evaluator + loader + registry are shared code",
+   "limitations": "single 48-seed cohort; plain-SAC negative is documented (no checkpoint, no new training)",
+   "framework_consequence": "USE hymeko_rl.experiments.canonical_pick_place as the ONE pick-place benchmark: a REGISTRY of every artifact with provenance + a canonical evaluator that reports reached/grasped/placed on FULL and FAR-SPAWN separately -- NEVER one ambiguous 'success'. G1 CLOSED: load_pick_policy now loads a TD3+BC DeterministicActor (fail-loud, no fallback). G2 CLOSED: far/near split in shared code. G6: test_canonical_pick_place guards the loader + split so the pipeline cannot silently revert. Deployable ladder: scripted expert (0.917 far, reference) > FF-DAgger base (0.500 far, strongest LEARNED) > TD3+BC (0.167 far, learned RL, fragile) >> plain SAC (idle floor). Follow-up: GUI list_checkpoints should read the REGISTRY (loader already handles it).",
+   "code_changes": [
+    "hymeko_rl/experiments/gripper_pick_bc.py: load_pick_policy handles TD3+BC DeterministicActor (G1)",
+    "hymeko_rl/experiments/canonical_pick_place.py: registry + canonical evaluator + entry point (NEW, G2/G4/G5)",
+    "hymeko_rl/tests/test_canonical_pick_place.py: loader + split regression guards (NEW, G6)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_canonical_pick_place.py"
+   ],
+   "superseded_findings": [
+    "(corrects this session's over-claim that TD3+BC 0.167 was 'the final learned result' — it is one protocol; 0.875 stands on its own)"
+   ],
+   "open_questions": [
+    "Wire GUI list_checkpoints to the REGISTRY; persist the residual-PPO-hold as a residual_clone .pt (G3)."
+   ]
+  },
+  {
    "id": "F-SAC-7",
    "claim": "Rollout-state DAgger (query the reactive teacher on the policy's OWN visited states, aggregate, re-clone) CLOSES the flat-action covariate collapse: BC 0.417 -> DAgger 0.75 median (0.625-0.792), 3 seeds, zero harmful, on the floorless PlanarGrasp coin-delivery (Gate 0 teacher-recovery 0.917).",
    "classification": "NEW_CANONICAL_CAPABILITY",
@@ -871,7 +900,7 @@
    "confidence": "measured, 3 seeds, all positive",
    "scope": "flat-action reactive-teacher coin-delivery; the covariate mechanism (F-SAC-5) is general",
    "limitations": "imitation recovers the teacher ceiling (~0.75 at beta=0), does not surpass it; the general loop is train.dagger.Dagger, not the experiment's private copy",
-   "framework_consequence": "On-policy imitation on visited states is the flat-action rescue. Canonical component = hymeko_rl/train/dagger.py::Dagger (imitation.rollout_state_dagger).",
+   "framework_consequence": "On-policy imitation on visited states is the flat-action rescue. Canonical component = hymeko_rl/train/dagger.py::Dagger (imitation.rollout_state_dagger). ASSIMILATED: arm_a refactored onto train.dagger.Dagger (duplicate removed; expert_reset+BC-error+teacher_recovery+provenance added); refactor reproduces DAgger 0.708. reports/framework/assimilations/coin_toss_rollout_dagger_final.md",
    "code_changes": [
     "hymeko_rl/experiments/exp_flat_sac_rollout_dagger.py::arm_a_dagger (overlaps train/dagger.py — consolidation flagged)"
    ],
