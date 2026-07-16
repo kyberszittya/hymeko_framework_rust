@@ -833,6 +833,33 @@
    ]
   },
   {
+   "id": "F-PP-017",
+   "claim": "ASSIMILATION of the SAC correction (was copied 3x: coin-toss configs, pick_place_residual_rl --sac-rehab, a scratchpad). Now a SINGLE source: SACConfig.stable() in hymeko_rl/train/sac.py bundles the coin-toss-validated F-SAC-1 'v26 stable stack' (init_alpha 0.1, ANNEAL, alpha_final 0.005, actor_lr=critic_lr=3e-4; reward_norm + grad-clip already default). The raw SACConfig defaults stay AUTO so the F-SAC-9 collapse discriminators still reproduce the collapse. CRITICAL: consulting the coin-toss findings shows the SAC DELIVERY collapse is NOT SAC-correctable -- F-SAC-4 (entropy control doesn't rescue), F-SAC-7 (rollout-state DAgger DOES: 0.417->0.75), F-SAC-8/9/10 (DAgger-ANCHORED SAC drifts 25x on its own rollout states even with a DOMINANT anchor; greedy doesn't rescue) -> 'accept closure'. So the pick-place SAC collapse (F-PP-009) is the SAME uncorrectable within-SAC rollout covariate shift; my attempted 'corrected SAC' (strong anchor coef 20/50) was re-deriving this known coin-toss negative and was killed (cached-facts violation).",
+   "classification": "NEW_CANONICAL_CAPABILITY",
+   "source_experiment": "2026-07-16 assimilation of the coin-toss F-SAC correction into SACConfig.stable()",
+   "raw_evidence": [
+    "hymeko_rl/train/sac.py SACConfig.stable() + hymeko_rl/tests/test_sac.py (13 pass)",
+    "coin-toss findings F-SAC-1/4/7/8/9/10 (already validated); pick_place_residual_rl refactored to use .stable()"
+   ],
+   "confidence": "assimilated (preset + regression test; the closure is the coin-toss arc's validated conclusion)",
+   "scope": "the shared SAC trainer; the correction + its scope apply to every SAC caller",
+   "limitations": "stable() encodes the F-SAC-1 critic fix; it deliberately does NOT claim to hold the collapse (that is closed)",
+   "framework_consequence": "USE SACConfig.stable() for a bounded critic -- never re-type the stack (§6.1). Do NOT expect SAC to HOLD an off-policy collapse: that is a CLOSED direction (coin-toss F-SAC-4/8/9/10, pick-place F-PP-009). The working fix for the covariate collapse is ROLLOUT-STATE DAgger (imitation, F-SAC-7) -- which IS the deployed pick-place base (DAgger'd, 0.75 far-spawn). Before proposing any new SAC 'correction', read the F-SAC findings first (this was a cached-facts violation: a dominant-anchor SAC was launched that F-SAC-8 already refuted).",
+   "code_changes": [
+    "hymeko_rl/train/sac.py: +SACConfig.stable() factory",
+    "hymeko_rl/experiments/pick_place_residual_rl.py: use .stable() (removed inline copy + AlphaMode import)",
+    "hymeko_rl/tests/test_sac.py: +test_stable_config_is_the_single_source_of_the_correction",
+    "deleted scratchpad sac_corrected.py / sac_train_save.py (the 3rd copies)"
+   ],
+   "regression_tests": [
+    "hymeko_rl/tests/test_sac.py::test_stable_config_is_the_single_source_of_the_correction"
+   ],
+   "superseded_findings": [],
+   "open_questions": [
+    "Refactor the coin-toss SAC callers to .stable() too (complete the consolidation)?"
+   ]
+  },
+  {
    "id": "F-SAC-7",
    "claim": "Rollout-state DAgger (query the reactive teacher on the policy's OWN visited states, aggregate, re-clone) CLOSES the flat-action covariate collapse: BC 0.417 -> DAgger 0.75 median (0.625-0.792), 3 seeds, zero harmful, on the floorless PlanarGrasp coin-delivery (Gate 0 teacher-recovery 0.917).",
    "classification": "NEW_CANONICAL_CAPABILITY",

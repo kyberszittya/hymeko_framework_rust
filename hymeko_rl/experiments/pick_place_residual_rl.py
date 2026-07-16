@@ -25,7 +25,7 @@ from hymeko_rl.env.residual_pick_env import ResidualPickEnv
 from hymeko_rl.eval.evaluate import PlacementPrecisionMetric, eval_metric, greedy_action_fn
 from hymeko_rl.experiments.gripper_pick_bc import build, eval_success, load_pick_actor
 from hymeko_rl.train.ppo import PPOConfig, train_ppo
-from hymeko_rl.train.sac import AlphaMode, SACConfig, build_sac, train_sac
+from hymeko_rl.train.sac import SACConfig, build_sac, train_sac
 from hymeko_rl.viz.render_pick_place import fanuc_pick_env
 
 _ENV = dict(expert_version=3, require_settle=True, max_steps=1000)
@@ -140,9 +140,11 @@ def _sac_residual(kind: str, seed: int, base, cfg: ResidualCfg, *, total_steps: 
     # this alone still collapsed to 0.458, critic bounded). rollout_anchor (F-SAC-5): + a rollout-state DAgger anchor
     # to the expert on the actor's OWN visited states — the isolated remaining cause (off-policy covariate shift).
     rehab = sac_rehab or rollout_anchor
-    scfg = (SACConfig(total_steps=total_steps, start_steps=500, seed=seed, init_alpha=0.1,
-                      actor_lr=3e-4, critic_lr=3e-4, alpha_mode=AlphaMode.ANNEAL, alpha_final=0.005,
-                      rollout_anchor_coef=(anchor_coef if rollout_anchor else 0.0))
+    # SACConfig.stable() = the coin-toss-validated correction (F-SAC-1), single source of truth — NOT re-typed here.
+    # Scope (F-SAC-4/8/9/10 / F-PP-009): fixes the critic divergence, does NOT hold the off-policy collapse; the
+    # working fix is rollout-state DAgger, not SAC. Kept here as the audit/discriminator path.
+    scfg = (SACConfig.stable(total_steps=total_steps, seed=seed, start_steps=500,
+                             rollout_anchor_coef=(anchor_coef if rollout_anchor else 0.0))
             if rehab else SACConfig(total_steps=total_steps, start_steps=500, seed=seed))
     teacher = PickResidualExpertTeacher() if rollout_anchor else None
     tag = f"-ANCHOR×{anchor_coef:g}" if rollout_anchor else ("-REHAB" if sac_rehab else "")

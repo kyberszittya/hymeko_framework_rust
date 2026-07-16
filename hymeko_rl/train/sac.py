@@ -239,6 +239,26 @@ class SACConfig:
     #                                        the rollout-anchor states self-consistent with the greedy-EVAL states, the
     #                                        F-SAC-9 discriminator (isolates exploration-covariate from the -Q term).
 
+    @classmethod
+    def stable(cls, *, total_steps: int, seed: int = 0, rollout_anchor_coef: float = 0.0,
+               bc_coef: float = 0.0, **overrides: object) -> "SACConfig":
+        """The coin-toss-validated **'v26 stable stack'** — the SINGLE source of the SAC correction (F-SAC-1).
+
+        Bundles the critic-divergence fix so it is never re-typed per experiment (§6.1): ``init_alpha 0.1`` +
+        ``alpha_mode ANNEAL`` (→ ``alpha_final 0.005``) + ``actor_lr = critic_lr = 3e-4`` (``reward_norm`` /
+        ``max_grad_norm`` are already the safe defaults). Call this instead of hand-typing the stack. The raw
+        ``SACConfig`` defaults stay AUTO so the F-SAC-9 collapse *discriminators* still reproduce the collapse.
+
+        # SCOPE — do NOT mis-read as a full fix (coin-toss F-SAC-4/8/9/10, transferred to pick-place F-PP-009):
+        # the stable stack fixes the critic DIVERGENCE, it does *not* fix the off-policy DELIVERY COLLAPSE. Even a
+        # DOMINANT rollout anchor drifts the actor 25× on its own rollout states (F-SAC-8/9); greedy rollouts do not
+        # rescue it (F-SAC-10). The working fix for the covariate collapse is ROLLOUT-STATE DAgger (imitation,
+        # F-SAC-7), NOT SAC. ``.stable()`` gives a bounded critic — not a policy that holds.
+        """
+        return cls(total_steps=total_steps, seed=seed, init_alpha=0.1, alpha_mode=AlphaMode.ANNEAL,
+                   actor_lr=3e-4, critic_lr=3e-4, rollout_anchor_coef=rollout_anchor_coef,
+                   bc_coef=bc_coef, **overrides)  # type: ignore[arg-type]
+
 
 def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: Any,
               cfg: SACConfig, *,
