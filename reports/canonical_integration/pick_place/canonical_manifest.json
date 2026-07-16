@@ -13,6 +13,7 @@
     "fallback": "none",
     "loadable": true,
     "note": "the deployable-best REFERENCE; not a learned policy",
+    "train_budget": "none (hand-authored planner)",
     "metrics": {
       "reached_full": 0.9375,
       "reached_far": 0.9167,
@@ -39,6 +40,7 @@
     "fallback": "none",
     "loadable": true,
     "note": "strongest LEARNED (imitation) policy",
+    "train_budget": "BC 80 epochs x 40 demos + 4 DAgger rounds (8 rollouts/round)",
     "metrics": {
       "reached_full": 0.8542,
       "reached_far": 0.5,
@@ -65,6 +67,7 @@
     "fallback": "none",
     "loadable": true,
     "note": "strongest LEARNED RL (fragile: 1/3 seeds); RL degrades the BC floor",
+    "train_budget": "100000 env steps (BC warm-start + TD3, off-policy)",
     "metrics": {
       "reached_full": 0.6667,
       "reached_far": 0.1667,
@@ -84,20 +87,48 @@
     "action_abstraction": "residual-on-base",
     "obs_schema": "9x10 node-features",
     "env_version": "fanuc_pick_env v3 require_settle",
-    "checkpoint": "experiments/hybrid_dagger_gif/policies/hybrid_dagger_hsikan_s0_best.pt",
-    "source_experiment": "residual_hsikan_d0.05_settle_place-release.json ([0.875,0.875,0.875])",
+    "checkpoint": "experiments/pick_place_gui/ppo_residual_hsikan_d0.05_settle.pt",
+    "source_experiment": "pick_place_residual_rl \u03b40.05 settle place+release ([0.875,0.875,0.875])",
     "seed": "0,1,2",
-    "selection_rule": "zero-anchored residual = base; PPO holds, cannot beat (setpoint-bound)",
+    "selection_rule": "zero-anchored residual; PPO holds base, cannot beat (setpoint-bound)",
     "fallback": "none",
     "loadable": true,
-    "note": "residual PPO HOLDS the base (0.875 full); reproduced by the base under zero residual (G3)",
+    "note": "learned RL that HOLDS 0.875 (mode-gated residual PPO); reproduced + persisted 2026-07-16 (G3)",
+    "train_budget": "60 PPO iters x 2048 = 122880 env steps (residual over frozen base)",
     "metrics": {
       "reached_full": 0.8542,
       "reached_far": 0.5,
       "grasped_far": 1.0,
       "placed_real_far": 0.5,
       "safety_no_divergence": 1.0,
-      "mean_episode_steps": 389.3,
+      "mean_episode_steps": 416.5,
+      "n": 48,
+      "n_far": 12,
+      "seed0": 20000
+    }
+  },
+  {
+    "name": "lstm_bc",
+    "method": "bc",
+    "architecture": "lstm_recurrent",
+    "action_abstraction": "absolute-joint+grip",
+    "obs_schema": "9x10 node-features",
+    "env_version": "fanuc_pick_env v3 require_settle",
+    "checkpoint": "experiments/pick_place_gui/lstm_bc_s.pt",
+    "source_experiment": "pick_place_recurrent_clone --cell lstm (odyssey reliability winner)",
+    "seed": "0,1,2",
+    "selection_rule": "best-seed recurrent BC clone",
+    "fallback": "none",
+    "loadable": true,
+    "note": "learned recurrent \u2014 high on reached (0.917) but grasp_far 0 (reached-not-grasped); reproduced 2026-07-16",
+    "train_budget": "300 BC epochs (BPTT) x 36 demo sequences",
+    "metrics": {
+      "reached_full": 0.875,
+      "reached_far": 0.6667,
+      "grasped_far": 0.0,
+      "placed_real_far": 0.0,
+      "safety_no_divergence": 1.0,
+      "mean_episode_steps": 237.4,
       "n": 48,
       "n_far": 12,
       "seed0": 20000
@@ -117,6 +148,7 @@
     "fallback": "none",
     "loadable": false,
     "note": "documented negative (F-PP-009); no deployable checkpoint (would need training \u2014 deferred)",
+    "train_budget": "~20000 env steps (collapses to idle floor)",
     "evaluation": "SKIPPED \u2014 documented-only (F-PP-009 negative); no checkpoint, no new training"
   }
 ]

@@ -43,36 +43,47 @@ class ArtifactSpec:
     fallback: str             # "none" — verified no silent scripted fallback
     loadable: bool            # can the canonical loader build it?
     note: str = ""
+    train_budget: str = "n/a"  # iteration/step count that produced the checkpoint
 
 
 REGISTRY: tuple[ArtifactSpec, ...] = (
     ArtifactSpec("scripted_v3_expert", "scripted", "scripted", "scripted-ik", "9x10 node-features",
                  "fanuc_pick_env v3 require_settle", None, "hand-authored v3 planner", "n/a",
                  "N/A (reference ceiling; off-limits for the learned demo)", "none", True,
-                 "the deployable-best REFERENCE; not a learned policy"),
+                 "the deployable-best REFERENCE; not a learned policy", train_budget="none (hand-authored planner)"),
     ArtifactSpec("ff_dagger_base", "dagger", "ff_actorcritic", "absolute-joint+grip", "9x10 node-features",
                  "fanuc_pick_env v3 require_settle",
                  "experiments/hybrid_dagger_gif/policies/hybrid_dagger_hsikan_s0_best.pt",
                  "2026-07-13 hybrid-DAgger (stabilized)", 0,
                  "best seed-0 ckpt of a 3-seed run (median 0.833; per-seed 0.750/0.833/0.875)", "none", True,
-                 "strongest LEARNED (imitation) policy"),
+                 "strongest LEARNED (imitation) policy",
+                 train_budget="BC 80 epochs x 40 demos + 4 DAgger rounds (8 rollouts/round)"),
     ArtifactSpec("td3bc_s0", "td3_bc", "deterministic_actor", "absolute-joint+grip (env-clipped)", "9x10 node-features",
                  "fanuc_pick_env v3 require_settle",
                  "experiments/2026_07_13_02_55_fanuc_pick_td3bc_hsikan/policies/fanuc_pick_td3bc_hsikan_s0.pt",
                  "2026-07-13 pick_place_td3bc (BC warm-start + TD3 refine)", 0,
                  "best-ckpt-on-place; s0 (s1/s2 collapse to ~0)", "none", True,
-                 "strongest LEARNED RL (fragile: 1/3 seeds); RL degrades the BC floor"),
+                 "strongest LEARNED RL (fragile: 1/3 seeds); RL degrades the BC floor",
+                 train_budget="100000 env steps (BC warm-start + TD3, off-policy)"),
     ArtifactSpec("residual_ppo_hold", "residual_ppo", "ff_actorcritic+residual", "residual-on-base", "9x10 node-features",
                  "fanuc_pick_env v3 require_settle",
-                 "experiments/hybrid_dagger_gif/policies/hybrid_dagger_hsikan_s0_best.pt",
-                 "residual_hsikan_d0.05_settle_place-release.json ([0.875,0.875,0.875])", "0,1,2",
-                 "zero-anchored residual = base; PPO holds, cannot beat (setpoint-bound)", "none", True,
-                 "residual PPO HOLDS the base (0.875 full); reproduced by the base under zero residual (G3)"),
+                 "experiments/pick_place_gui/ppo_residual_hsikan_d0.05_settle.pt",
+                 "pick_place_residual_rl δ0.05 settle place+release ([0.875,0.875,0.875])", "0,1,2",
+                 "zero-anchored residual; PPO holds base, cannot beat (setpoint-bound)", "none", True,
+                 "learned RL that HOLDS 0.875 (mode-gated residual PPO); reproduced + persisted 2026-07-16 (G3)",
+                 train_budget="60 PPO iters x 2048 = 122880 env steps (residual over frozen base)"),
+    ArtifactSpec("lstm_bc", "bc", "lstm_recurrent", "absolute-joint+grip", "9x10 node-features",
+                 "fanuc_pick_env v3 require_settle", "experiments/pick_place_gui/lstm_bc_s.pt",
+                 "pick_place_recurrent_clone --cell lstm (odyssey reliability winner)", "0,1,2",
+                 "best-seed recurrent BC clone", "none", True,
+                 "learned recurrent — high on reached (0.917) but grasp_far 0 (reached-not-grasped); reproduced 2026-07-16",
+                 train_budget="300 BC epochs (BPTT) x 36 demo sequences"),
     ArtifactSpec("plain_sac_negative", "sac", "squashed_gaussian", "residual-on-base", "9x10 node-features",
                  "fanuc_pick_env v3 require_settle", None,
                  "pick_place_residual_rl (AUTO alpha) / F-PP-009", "0",
                  "NEGATIVE CONTROL — off-policy critic overestimation collapses to the idle floor", "none", False,
-                 "documented negative (F-PP-009); no deployable checkpoint (would need training — deferred)"),
+                 "documented negative (F-PP-009); no deployable checkpoint (would need training — deferred)",
+                 train_budget="~20000 env steps (collapses to idle floor)"),
 )
 
 

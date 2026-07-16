@@ -38,7 +38,18 @@
     "grasped_far": 1.0,
     "placed_real_far": 0.5,
     "safety_no_divergence": 1.0,
-    "mean_episode_steps": 389.3,
+    "mean_episode_steps": 416.5,
+    "n": 48,
+    "n_far": 12,
+    "seed0": 20000
+  },
+  "lstm_bc": {
+    "reached_full": 0.875,
+    "reached_far": 0.6667,
+    "grasped_far": 0.0,
+    "placed_real_far": 0.0,
+    "safety_no_divergence": 1.0,
+    "mean_episode_steps": 237.4,
     "n": 48,
     "n_far": 12,
     "seed0": 20000
