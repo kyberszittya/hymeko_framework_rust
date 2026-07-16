@@ -62,7 +62,9 @@ def run_cell(make: Callable[[], Any], actor_kind: str, seed: int, *, steps: int)
     cfg = SACConfig(total_steps=steps, start_steps=2000, batch_size=256, eval_every=steps, n_eval=1,
                     log_every=max(2000, steps // 10), seed=seed, bc_coef=0.0)     # bc_coef 0 = pure scratch
     t0 = time.time()
-    train_sac(actor, critics, env, cfg)
+    # No-op eval_fn: skip train_sac's default greedy eval (its CPU obs mismatches a cuda actor on GPU); the
+    # real measurement is cip_diagnose below (device-safe via _greedy).
+    train_sac(actor, critics, env, cfg, eval_fn=lambda env, actor: 0.0)
     d = cip_diagnose(make, _greedy(actor), seeds=4, steps=_H)
     return {"actor": kind, "seed": seed, "steps": steps, "wall_s": time.time() - t0,
             "dx": d["mean_dx"], "propel_edge": d["propel_edge"], "bounce_edge": d["bounce_edge"]}
