@@ -2,7 +2,7 @@
 title: Compiled + rate-decoupled SAC update — the profile-corrected way to make the structural actor feasible
 date: 2026-07-17
 slug: sac-compiled-update
-status: implemented + CPU-verified; GPU speedup gated on a kato15 smoke
+status: implemented + GPU-verified on kato61 (RTX 4090, sm_89): 5.79× update / 3.2× end-to-end, trains finite
 core_yaml_touched: none
 branch: integration/fanuc-pick-place-canonical
 ---
@@ -83,22 +83,33 @@ Plus the CIP anti-bounce reward A/B that motivated the campaign (the 2026-07-17 
 
 - **Profile (the finding):** structural per-step = 99.9% update / 0.1% rollout (table above). Vectorizing the
   rollout would buy ~0; compiling the update is the lever.
-- **Expected GPU win:** `train_offpolicy` measured 8.25× on the analogous compiled update; if it carries,
-  structural ~40 → ~200–320 steps/s on kato15 (800k ~40–65 min/cell → the grid is feasible). **Not yet measured on
-  GPU** — see open issues.
+- **Measured GPU win (kato61, RTX 4090, sm_89 = same Ada arch as the RTX 6000 Ada grid, free box):**
+  - Isolated structural update: eager **9.42 ms** → compiled **1.63 ms** = **5.79×** (both finite). Close to
+    `train_offpolicy`'s 8.25× on its TD3 update.
+  - Real `train_sac` (hsikan, hidden 256, cartpole, 8k steps, campaign-style no-op eval): eager **81.9 s** →
+    compiled **25.5 s** = **3.2× end-to-end** *including* the one-time compile cold-start; both `params_finite=True`
+    (no divergence, no CUDA-graph crash — the reparam-RNG-in-graph concern is retired). At 800k the cold-start
+    amortizes and end-to-end approaches the ~5.8× update figure. Projected: structural ~40 → ~230 steps/s on the
+    RTX 6000 Ada → 800k ≈ 58 min/cell (grid feasible).
+- **Bug found + fixed by the GPU smoke (CPU could not catch it — compile is a CPU no-op):** the first two kato61
+  runs raised *"accessing tensor output of CUDAGraphs that has been overwritten by a subsequent run."* Two causes,
+  both fixed to match `train_offpolicy`: (1) I `mark_step_begin()` **between** the critic and actor graphs — a mark
+  mid-update roots a fresh step and corrupts the shared critic's buffers; the mark must be **once per update**
+  before both. (2) I read `c_loss.item()` at the **end** of `_update_once`, after the actor graph replayed over its
+  pool — the loss must be consumed to a host float **immediately after its own backward**. This is precisely the
+  §3 "production-scale smoke on real hardware" rule earning its keep.
 - Back-compat path (`compile=False, update_every=1`) is byte-identical (verified); flat path unchanged.
 - Peak RSS: single-env SAC ≪ 16 GB cap (§4).
 
 ## Open issues / follow-up
 
-1. **GPU speedup + correctness are a kato15 smoke, not verified here.** The CUDA-graph benefit is GPU-only and can't
-   be measured on the Mac. Run `bash scripts/kato15/run_sac_walk.sh gpu-smoke` (1 structural cell, compiled) and
-   read steps/s + that the loss stays finite (the SAC reparam RNG lives inside the graph — `reduce-overhead`
-   functionalizes it, torch 2.11 supports it, but the smoke is the proof). `update_every` is the compile-free
-   fallback if the graph is finicky.
-2. **Then the grid:** `bash scripts/kato15/run_sac_walk.sh bounce-ab` — `{flat,structural}×{bounce 3,8}×{Aibo,
-   humanoid}×5 seeds×800k`, compiled. Answers: does anti-bounce=8 help the tall bodies walk, and does structural
-   beat flat once the body walks (the campaign's open question, now affordable).
+1. ~~GPU speedup + correctness verification~~ **DONE** on kato61 (RTX 4090, sm_89): 5.79× update, 3.2× end-to-end,
+   trains finite. Bug found + fixed (above). kato85's GT 1030 is sm_61, incompatible with the cu128 build; kato61's
+   4090 is the same Ada arch as the RTX 6000 Ada grid target, so the number transfers.
+2. **The grid remains to launch:** `bash scripts/kato15/run_sac_walk.sh bounce-ab` — `{flat,structural}×{bounce 3,8}
+   ×{Aibo,humanoid}×5 seeds×800k`, compiled. ~40 cells; structural ~58 min/cell projected → ~30–35 h on one box,
+   so split across free Adas (kato61 now + kato15/kato14 when they free) or drop to 3 seeds. Answers: does
+   anti-bounce=8 help the tall bodies walk, and does structural beat flat once the body walks.
 3. `update_every>1` sample-efficiency A/B remains unrun (deliberately — it changes the policy; only if wall is still tight).
 
 ## Provenance

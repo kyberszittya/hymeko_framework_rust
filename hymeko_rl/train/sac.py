@@ -378,19 +378,21 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     def _update_once(step: int) -> None:
         """One gradient update (critic → actor → α → polyak). Shared by every update_every cadence."""
         nonlocal last_c, last_a
+        if _use_compile:
+            torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]  # ONE fresh CUDA-graph step
+            #   per update: the critic+actor graphs then share non-aliasing memory (train_offpolicy pattern). A mark
+            #   BETWEEN them roots a step mid-update and corrupts the shared critic's buffers (measured on kato61 2026-07-17).
         s, a, r, s2, d = (x.to(dev) for x in buf.sample(cfg.batch_size, generator=rng))
         alpha_d = _alpha_at(step).detach()                         # value only; α is optimised eager below
         if cfg.reward_norm:
             r = reward_rms.normalize(r)                            # bounded-scale reward → bounded Q-target (eager)
-        if _use_compile:
-            torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]  # root a fresh CUDA-graph step
         c_loss = _critic_loss(s, a, r, s2, d, alpha_d)
         c_opt.zero_grad()
         c_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
         torch.nn.utils.clip_grad_norm_([p for c in critics for p in c.parameters()], cfg.max_grad_norm)
         c_opt.step()
-        if _use_compile:
-            torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]
+        last_c = float(c_loss.detach())      # consume to host NOW — a CUDA-graph output must not be held across
+        #                                      the actor graph replay (it reuses the same static pool, ref bug 2026-07-17)
         a_loss, logp = _actor_terms(s, alpha_d)
         if demo_s is not None and demo_a is not None:              # TD3+BC-style anchor (eager; see _anchored above)
             idx = rng.integers(0, demo_s.shape[0], size=min(cfg.batch_size, demo_s.shape[0]))
@@ -404,6 +406,7 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
         a_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
         torch.nn.utils.clip_grad_norm_(actor.parameters(), cfg.max_grad_norm)
         a_opt.step()
+        last_a = float(a_loss.detach())      # consume before the α update / next replay (same CUDA-graph rule)
         if cfg.alpha_mode is AlphaMode.AUTO:            # only classic SAC learns α; FIXED/ANNEAL schedule it
             alpha_loss = -(log_alpha * (logp + target_entropy).detach()).mean()
             al_opt.zero_grad()
@@ -411,7 +414,6 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
             al_opt.step()
         for tc, c in zip(t_critics, critics):
             _polyak(tc, c, cfg.tau)
-        last_c, last_a = float(c_loss.item()), float(a_loss.item())
 
     obs, _ = env.reset(seed=cfg.seed)
     t0 = time.perf_counter()
