@@ -30,6 +30,8 @@ GENERIC_TASKS: dict[str, str] = {
     "door-open": "SawyerDoorOpenV3Policy",     # articulated / hinge
     "button-press": "SawyerButtonPressV3Policy",  # contact → press
     "reach": "SawyerReachV3Policy",            # approach only (no contact term)
+    "coffee-push": "SawyerCoffeePushV3Policy",  # Ito CIP main task (push family, no grasp)
+    "dial-turn": "SawyerDialTurnV3Policy",      # Ito CIP control task (articulated dial rotation)
 }
 # Continuous CIP variables read from MetaWorld info; action_noise is the observed exogenous input, total_reward the
 # sink under test. in_place_reward is used only for the reward↔task disagreement (kept out of the frame — it is

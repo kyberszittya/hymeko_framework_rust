@@ -63,21 +63,28 @@ def _fit_obs_norm(cfg: Any, spec: Any, n: int = 12) -> "tuple[np.ndarray, np.nda
     return obs.mean(axis=0), obs.std(axis=0)
 
 
-def _sac_success_eval(device: Any, n: int = 12, max_steps: int = 180) -> Any:
-    """An ``eval_fn(env, actor)`` returning the greedy success rate over ``n`` episodes (the MetaWorld task monitor)."""
+def _sac_success_eval(device: Any, n: int = 12, max_steps: int = 180, eval_env: Any = None) -> Any:
+    """An ``eval_fn(env, actor)`` returning the greedy success rate over ``n`` episodes (the MetaWorld task monitor).
+
+    ``eval_env``: evaluate on this *dedicated* env instead of the training env passed by ``train_sac``. This is
+    **required for MetaWorld**, whose raw goal-observable env enforces a manual-reset-after-truncation contract —
+    sharing the training env leaves it truncated after the eval's last episode, so the training loop's next
+    ``step`` raises. Pass a fresh env (default ``None`` keeps the legacy shared-env behaviour, fine for cart-pole).
+    """
     import torch
 
     def fn(env: Any, actor: Any) -> float:
+        e = eval_env if eval_env is not None else env
         ok = 0
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             for _ in range(n):
-                obs, _ = env.reset()
+                obs, _ = e.reset()
                 done = False
                 for _ in range(max_steps):
                     with torch.no_grad():
                         a = actor.action_mean(torch.as_tensor(obs[None], dtype=torch.float32, device=device))
-                    obs, _r, term, trunc, info = env.step(a.squeeze(0).cpu().numpy())
+                    obs, _r, term, trunc, info = e.step(a.squeeze(0).cpu().numpy())
                     done = done or bool(info.get("success", 0.0))
                     if term or trunc:
                         break

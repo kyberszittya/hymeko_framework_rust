@@ -22,7 +22,7 @@ import time
 import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 import torch
@@ -37,6 +37,22 @@ from hymeko_rl.train.replay import ReplayBuffer
 from hymeko_rl.train.train_inverted_pendulum import eval_balance
 
 _LOG_STD_MIN, _LOG_STD_MAX = -20.0, 2.0
+
+
+@runtime_checkable
+class ReplayAugmentor(Protocol):
+    """Strategy/Observer seat for periodic replay-buffer augmentation during off-policy training.
+
+    ``train_sac`` calls :meth:`maybe_augment` once per env step *after* the SAC update; the strategy owns its
+    own cadence (no-op off its refresh schedule) so the trainer carries no augmentation-specific branch (§6.5
+    #8 — no forward-time flags for what is a swappable behaviour). The canonical implementation is
+    :class:`hymeko_rl.eval.cip.cip_augment.CipReplayAugmentor` (Cao/Ito CIP counterfactual data augmentation),
+    but the seat is generic (HER, symmetry, etc. would slot in unchanged). ``augmentor=None`` (the default)
+    leaves the trainer byte-identical to the pre-seat behaviour.
+    """
+
+    def maybe_augment(self, buf: ReplayBuffer, step: int) -> None:  # pragma: no cover - protocol
+        ...
 
 
 class _SquashedGaussianActorBase(nn.Module):
@@ -264,7 +280,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
               cfg: SACConfig, *,
               eval_fn: Callable[[Any, Any], float] | None = None,
               offline_data: "tuple[np.ndarray, np.ndarray] | None" = None,
-              dagger_teacher: Any = None) -> list[float]:
+              dagger_teacher: Any = None,
+              augmentor: "ReplayAugmentor | None" = None) -> list[float]:
     """Train SAC on ``env``; returns the periodic eval curve.
 
     Twin soft-Q critics with the entropy-augmented target ``y = r + γ(1-d)(min_i Q̄_i(s',a') − α·logπ(a'))``;
@@ -385,6 +402,9 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
                 _polyak(tc, c, cfg.tau)
             # c_loss is sum() of ≥1 tensors, so the int-0 branch of sum()'s type is unreachable here
             last_c, last_a = float(c_loss.item()), float(a_loss.item())  # type: ignore[union-attr]
+
+        if augmentor is not None:            # periodic replay augmentation (Cao/Ito CIP-CDS); no-op off its cadence
+            augmentor.maybe_augment(buf, step)
 
         if cfg.log_every and step % cfg.log_every == 0:             # §3: never run blind
             rate = step / max(1e-9, time.perf_counter() - t0)
