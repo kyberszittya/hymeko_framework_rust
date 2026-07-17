@@ -1,0 +1,64 @@
+[
+  {
+    "impl": "hymeko_rl.train.sac.train_sac (augmentor=None, no CIP)",
+    "config": "matched_sb3like",
+    "cfg": {
+      "init_alpha": 1.0,
+      "alpha_mode": "auto",
+      "reward_norm": false
+    },
+    "env": "Pendulum-v1",
+    "seed": 42,
+    "steps": 50000,
+    "return_before_mean": -1438.81,
+    "return_before_std": 220.53,
+    "return_after_mean": -147.11,
+    "return_after_std": 71.11,
+    "improvement": 1291.7,
+    "eval_curve": [
+      -370.6,
+      -137.5,
+      -136.4,
+      -135.4,
+      -133.4,
+      -133.2,
+      -135.8,
+      -135.6,
+      -133.4,
+      -133.9
+    ],
+    "final_action_std_sampled": 1.6183,
+    "PASS": true
+  },
+  {
+    "impl": "hymeko_rl.train.sac.train_sac (augmentor=None, no CIP)",
+    "config": "coffeepush_config",
+    "cfg": {
+      "init_alpha": 0.2,
+      "alpha_mode": "auto",
+      "reward_norm": true
+    },
+    "env": "Pendulum-v1",
+    "seed": 42,
+    "steps": 50000,
+    "return_before_mean": -1438.81,
+    "return_before_std": 220.53,
+    "return_after_mean": -145.18,
+    "return_after_std": 68.21,
+    "improvement": 1293.63,
+    "eval_curve": [
+      -135.0,
+      -133.6,
+      -134.6,
+      -135.6,
+      -134.9,
+      -133.7,
+      -133.1,
+      -135.1,
+      -134.2,
+      -134.0
+    ],
+    "final_action_std_sampled": 1.6962,
+    "PASS": true
+  }
+]

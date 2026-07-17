@@ -1,0 +1,15 @@
+{
+  "impl": "stable_baselines3",
+  "sb3_version": "2.9.0",
+  "env": "Pendulum-v1",
+  "seed": 42,
+  "steps": 50000,
+  "return_before_mean": -1341.39,
+  "return_before_std": 197.24,
+  "return_after_mean": -154.77,
+  "return_after_std": 79.17,
+  "improvement": 1186.62,
+  "final_action_std_sampled": 0.855,
+  "any_nan": false,
+  "PASS": true
+}
