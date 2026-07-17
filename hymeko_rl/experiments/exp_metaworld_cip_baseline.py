@@ -65,7 +65,8 @@ def _fit_native_obs_norm(env_id: str, policy_name: str, *, n: int = 8, max_steps
 def run_cip_seed(task: str = "coffee-push", *, cip: bool = True, seed: int = 0, steps: int = 20_000,
                  device: str = "cpu", hidden: int = 256, horizon: int = 500, out_dir: "Path | None" = None,
                  refresh_every: int = 10_000, sample_n: int = 1500, n_swap_dims: int = 1,
-                 eval_every: "int | None" = None, stable: bool = False) -> "dict[str, Any]":
+                 eval_every: "int | None" = None, stable: bool = False,
+                 corrected: bool = False) -> "dict[str, Any]":
     """One SAC seed on the native-reward MetaWorld task, with (``cip=True``) or without the CIP CDS augmentor.
 
     Returns the run summary (success curve + provenance + augmentor stats); checkpoints the actor.
@@ -80,6 +81,7 @@ def run_cip_seed(task: str = "coffee-push", *, cip: bool = True, seed: int = 0, 
     from hymeko_rl.eval.evaluate import experiment_dir
     from hymeko_rl.experiments.exp_metaworld_sac import _ObsNorm, _sac_success_eval
     from hymeko_rl.train.sac import SACConfig, build_sac, train_sac
+    from hymeko_rl.train.flat_critic import build_flat_sac
 
     env_id = f"{task}-v3-goal-observable"
     policy_name = GENERIC_TASKS[task]
@@ -96,14 +98,22 @@ def run_cip_seed(task: str = "coffee-push", *, cip: bool = True, seed: int = 0, 
         act_dim = int(np.prod(env.action_space.shape))
         scale = float(np.max(np.abs(np.asarray(env.action_space.high, np.float64))))
 
-    actor, critics = build_sac("mlp", obs_dim=obs_dim, flat_dim=obs_dim, action_dim=act_dim, action_scale=scale,
-                               hidden=hidden, device=device)
-    # stable long-run stack (standard SAC, anti-divergence): lower init-alpha + lr, auto-alpha + reward-norm kept.
-    # The default init_alpha=1.0 @ lr 1e-3 diverges on some 1M-step seeds (SAC audit 2026-07-15).
-    stable_kw = dict(init_alpha=0.2, actor_lr=3e-4, critic_lr=3e-4) if stable else {}
+    if corrected:
+        # Coffee-Push-CORRECTED stack (2026-07-18 SB3 cross-impl audit). Two demonstrated fixes over the old --stable:
+        #   (1) reward_norm=False  -> removes the +60 Q-vs-MC calibration inflation on dense reward (was +60, now +5);
+        #   (2) early-concat flat critic (build_flat_sac) -> restores dQ/da -> reach-and-HOLD (fixes reach-then-regress);
+        #   + SB3-matched auto-alpha (init 1.0, lr 3e-4). Took S1 fixed-mug reach 0/4 -> 2/4 (vs SB3 4/4; residual = init/variance).
+        actor, critics = build_flat_sac(obs_dim, act_dim, scale, hidden=hidden, device=device)
+        cfg_kw: dict = dict(init_alpha=1.0, actor_lr=3e-4, critic_lr=3e-4, alpha_lr=3e-4, reward_norm=False)
+    else:
+        actor, critics = build_sac("mlp", obs_dim=obs_dim, flat_dim=obs_dim, action_dim=act_dim, action_scale=scale,
+                                   hidden=hidden, device=device)
+        # OLD stable stack (reproduces kato14/15). WARNING: carries BOTH audited defects — reward_norm Q-inflation +
+        # late-action-fusion QCritic (reach-then-regress). Kept only to reproduce the historical runs. Prefer --corrected.
+        cfg_kw = dict(init_alpha=0.2, actor_lr=3e-4, critic_lr=3e-4) if stable else {}
     sac_cfg = SACConfig(total_steps=steps, seed=seed, log_every=max(1000, steps // 100),
                         eval_every=eval_every if eval_every is not None else max(2000, steps // 10),
-                        start_steps=min(5000, steps // 4), **stable_kw)  # type: ignore[arg-type]
+                        start_steps=min(5000, steps // 4), **cfg_kw)  # type: ignore[arg-type]
     augmentor = None
     if cip:
         augmentor = CdsReplayAugmentor(obs_dim, act_dim, CipAugmentConfig(
@@ -142,13 +152,15 @@ def main(argv: "list[str] | None" = None) -> int:
     ap.add_argument("--sample-n", type=int, default=1500)
     ap.add_argument("--n-swap-dims", type=int, default=1)
     ap.add_argument("--eval-every", type=int, default=None, help="eval cadence (default steps//10)")
-    ap.add_argument("--stable", action="store_true", help="stable long-run SAC (init_alpha 0.2, lr 3e-4)")
+    ap.add_argument("--stable", action="store_true", help="OLD stable stack (init_alpha 0.2, lr 3e-4) — reproduces kato14/15 (defective)")
+    ap.add_argument("--corrected", action="store_true",
+                    help="CORRECTED stack (2026-07-18 audit): reward_norm off + early-concat flat critic + init_alpha 1.0")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
     run_cip_seed(a.task, cip=a.cds, seed=a.seed, steps=a.steps, device=a.device, hidden=a.hidden,
                  horizon=a.horizon, out_dir=Path(a.out) if a.out else None,
                  refresh_every=a.refresh_every, sample_n=a.sample_n, n_swap_dims=a.n_swap_dims,
-                 eval_every=a.eval_every, stable=a.stable)
+                 eval_every=a.eval_every, stable=a.stable, corrected=a.corrected)
     return 0
 
 

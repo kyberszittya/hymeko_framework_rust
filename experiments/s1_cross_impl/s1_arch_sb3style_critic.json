@@ -1,0 +1,83 @@
+{
+  "config": "sb3style_critic",
+  "n_seeds_stable_contact": 2,
+  "PASS_3of4": false,
+  "per_seed": [
+    {
+      "seed": 0,
+      "contact_curve": [
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min_d_curve": [
+        0.0951,
+        0.0624,
+        0.0696,
+        0.0606,
+        0.0648
+      ],
+      "stable_contact_final3": 1.0,
+      "Q_minus_MC_bias_final": 8.6
+    },
+    {
+      "seed": 1,
+      "contact_curve": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "min_d_curve": [
+        0.0907,
+        0.0839,
+        0.081,
+        0.0753,
+        0.0772
+      ],
+      "stable_contact_final3": 0.0,
+      "Q_minus_MC_bias_final": 6.82
+    },
+    {
+      "seed": 2,
+      "contact_curve": [
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "min_d_curve": [
+        0.0903,
+        0.1181,
+        0.0676,
+        0.0762,
+        0.0828
+      ],
+      "stable_contact_final3": 0.333,
+      "Q_minus_MC_bias_final": 8.57
+    },
+    {
+      "seed": 3,
+      "contact_curve": [
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min_d_curve": [
+        0.0943,
+        0.0943,
+        0.0507,
+        0.0709,
+        0.0705
+      ],
+      "stable_contact_final3": 1.0,
+      "Q_minus_MC_bias_final": 8.23
+    }
+  ]
+}

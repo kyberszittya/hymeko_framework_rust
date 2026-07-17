@@ -1,0 +1,338 @@
+[
+  {
+    "config": "ours_auto_rnorm_ON",
+    "reward_norm": true,
+    "n_seeds_stable_contact": 0,
+    "median_bias_final": 60.36,
+    "per_seed": [
+      {
+        "seed": 0,
+        "first_contact_step": null,
+        "stable_contact_final3": 0.0,
+        "final_contact": 0.0,
+        "min_d_curve": [
+          0.0867,
+          0.1155,
+          0.0841,
+          0.0818,
+          0.0821
+        ],
+        "contact_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "entropy_curve": [
+          2.337,
+          -2.316,
+          -1.487,
+          -4.03,
+          -4.029
+        ],
+        "logstd_curve": [
+          -0.203,
+          -0.383,
+          -0.414,
+          -0.789,
+          -0.915
+        ],
+        "empirical_return_final": 308.17,
+        "Q_final": 170.42,
+        "MC_return_final": 81.1,
+        "Q_minus_MC_bias_final": 89.32,
+        "q1_q2_disagreement_final": 0.617,
+        "corr_Q_MC_final": -0.121
+      },
+      {
+        "seed": 1,
+        "first_contact_step": null,
+        "stable_contact_final3": 0.0,
+        "final_contact": 0.0,
+        "min_d_curve": [
+          0.1105,
+          0.0932,
+          0.0832,
+          0.077,
+          0.0809
+        ],
+        "contact_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "entropy_curve": [
+          2.631,
+          0.68,
+          -2.986,
+          -4.741,
+          -3.247
+        ],
+        "logstd_curve": [
+          -0.135,
+          -0.293,
+          -0.723,
+          -1.192,
+          -1.502
+        ],
+        "empirical_return_final": 335.59,
+        "Q_final": 140.02,
+        "MC_return_final": 81.34,
+        "Q_minus_MC_bias_final": 58.68,
+        "q1_q2_disagreement_final": 0.268,
+        "corr_Q_MC_final": -0.144
+      },
+      {
+        "seed": 2,
+        "first_contact_step": 8000,
+        "stable_contact_final3": 0.333,
+        "final_contact": 0.0,
+        "min_d_curve": [
+          0.0682,
+          0.0295,
+          0.1054,
+          0.0661,
+          0.0768
+        ],
+        "contact_curve": [
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "entropy_curve": [
+          2.507,
+          -1.119,
+          -2.184,
+          -2.725,
+          -3.216
+        ],
+        "logstd_curve": [
+          -0.143,
+          -0.445,
+          -0.577,
+          -1.011,
+          -0.982
+        ],
+        "empirical_return_final": 133.88,
+        "Q_final": 128.28,
+        "MC_return_final": 66.24,
+        "Q_minus_MC_bias_final": 62.04,
+        "q1_q2_disagreement_final": 1.477,
+        "corr_Q_MC_final": 0.524
+      },
+      {
+        "seed": 3,
+        "first_contact_step": 8000,
+        "stable_contact_final3": 0.333,
+        "final_contact": 0.0,
+        "min_d_curve": [
+          0.0593,
+          0.1199,
+          0.1127,
+          0.0731,
+          0.0854
+        ],
+        "contact_curve": [
+          1.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "entropy_curve": [
+          2.643,
+          -1.4,
+          -2.522,
+          -2.008,
+          -2.162
+        ],
+        "logstd_curve": [
+          -0.143,
+          -0.39,
+          -0.491,
+          -0.529,
+          -0.489
+        ],
+        "empirical_return_final": 154.87,
+        "Q_final": 105.98,
+        "MC_return_final": 76.42,
+        "Q_minus_MC_bias_final": 29.56,
+        "q1_q2_disagreement_final": 3.475,
+        "corr_Q_MC_final": 0.332
+      }
+    ]
+  },
+  {
+    "config": "ours_auto_rnorm_OFF",
+    "reward_norm": false,
+    "n_seeds_stable_contact": 1,
+    "median_bias_final": 4.02,
+    "per_seed": [
+      {
+        "seed": 0,
+        "first_contact_step": 16000,
+        "stable_contact_final3": 0.333,
+        "final_contact": 0.0,
+        "min_d_curve": [
+          0.0957,
+          0.0739,
+          0.0982,
+          0.0704,
+          0.1098
+        ],
+        "contact_curve": [
+          0.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "entropy_curve": [
+          2.708,
+          -0.225,
+          -2.323,
+          -4.123,
+          -4.429
+        ],
+        "logstd_curve": [
+          -0.138,
+          -0.327,
+          -0.391,
+          -0.684,
+          -1.086
+        ],
+        "empirical_return_final": 248.84,
+        "Q_final": 49.05,
+        "MC_return_final": 40.36,
+        "Q_minus_MC_bias_final": 8.69,
+        "q1_q2_disagreement_final": 0.046,
+        "corr_Q_MC_final": -0.038
+      },
+      {
+        "seed": 1,
+        "first_contact_step": null,
+        "stable_contact_final3": 0.0,
+        "final_contact": 0.0,
+        "min_d_curve": [
+          0.1848,
+          0.1171,
+          0.0758,
+          0.1363,
+          0.1011
+        ],
+        "contact_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "entropy_curve": [
+          2.72,
+          -0.03,
+          -1.949,
+          -2.415,
+          -3.277
+        ],
+        "logstd_curve": [
+          -0.142,
+          -0.338,
+          -0.628,
+          -0.797,
+          -1.062
+        ],
+        "empirical_return_final": 285.68,
+        "Q_final": 45.7,
+        "MC_return_final": 46.55,
+        "Q_minus_MC_bias_final": -0.85,
+        "q1_q2_disagreement_final": 0.154,
+        "corr_Q_MC_final": -0.097
+      },
+      {
+        "seed": 2,
+        "first_contact_step": 32000,
+        "stable_contact_final3": 0.333,
+        "final_contact": 0.0,
+        "min_d_curve": [
+          0.176,
+          0.0914,
+          0.0934,
+          0.0712,
+          0.1032
+        ],
+        "contact_curve": [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "entropy_curve": [
+          2.729,
+          0.126,
+          -0.318,
+          -0.198,
+          -2.227
+        ],
+        "logstd_curve": [
+          -0.143,
+          -0.306,
+          -0.341,
+          -0.42,
+          -0.345
+        ],
+        "empirical_return_final": 278.11,
+        "Q_final": 45.55,
+        "MC_return_final": 45.47,
+        "Q_minus_MC_bias_final": 0.08,
+        "q1_q2_disagreement_final": 0.404,
+        "corr_Q_MC_final": -0.013
+      },
+      {
+        "seed": 3,
+        "first_contact_step": 24000,
+        "stable_contact_final3": 0.667,
+        "final_contact": 0.0,
+        "min_d_curve": [
+          0.0954,
+          0.096,
+          0.0694,
+          0.07,
+          0.1675
+        ],
+        "contact_curve": [
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "entropy_curve": [
+          2.733,
+          1.421,
+          -1.2,
+          -0.432,
+          -1.697
+        ],
+        "logstd_curve": [
+          -0.118,
+          -0.253,
+          -0.536,
+          -0.484,
+          -1.236
+        ],
+        "empirical_return_final": 204.07,
+        "Q_final": 41.2,
+        "MC_return_final": 33.23,
+        "Q_minus_MC_bias_final": 7.97,
+        "q1_q2_disagreement_final": 0.128,
+        "corr_Q_MC_final": -0.169
+      }
+    ]
+  }
+]
