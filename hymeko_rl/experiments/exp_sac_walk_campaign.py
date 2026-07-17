@@ -31,7 +31,8 @@ from hymeko_rl.experiments.exp_cip_verification_campaign import LEGGED_CIP_REWAR
 from hymeko_rl.experiments.exp_sac_walk_validation import _greedy
 
 _DEVICE = os.environ.get("HYMEKO_DEVICE", "cpu")   # kato15 launch script exports HYMEKO_DEVICE=cuda
-_OUT = Path("experiments/2026_07_16_sac_walk_campaign")
+# Per-box output dir (kato14/kato15 share an NFS home, so give each its own JSONL to avoid concurrent writes).
+_OUT = Path(os.environ.get("HYMEKO_OUT", "experiments/2026_07_16_sac_walk_campaign"))
 _H = 300
 
 

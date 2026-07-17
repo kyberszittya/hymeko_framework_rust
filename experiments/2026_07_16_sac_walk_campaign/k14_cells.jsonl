@@ -1,0 +1,12 @@
+{"scenario": "aibo_goal", "actor": "flat", "seed": 3, "steps": 200000, "wall_s": 646.1708798408508, "dx": -0.05244772644765534, "propel_edge": 0.0, "bounce_edge": 0.0}
+{"scenario": "aibo_goal", "actor": "flat", "seed": 4, "steps": 200000, "wall_s": 674.994106054306, "dx": -0.02934556532529258, "propel_edge": 0.0, "bounce_edge": 0.0}
+{"scenario": "aibo_goal", "actor": "structural", "seed": 3, "steps": 200000, "wall_s": 4956.557169437408, "dx": 0.10566836128020207, "propel_edge": 0.0, "bounce_edge": 0.5284365179261798}
+{"scenario": "aibo_goal", "actor": "structural", "seed": 4, "steps": 200000, "wall_s": 4950.712033748627, "dx": -0.11235497889842476, "propel_edge": 0.0, "bounce_edge": 0.29616587194964844}
+{"scenario": "humanoid_walk", "actor": "flat", "seed": 3, "steps": 200000, "wall_s": 680.5823986530304, "dx": -0.0701060453733503, "propel_edge": -0.7462185932902985, "bounce_edge": 0.0}
+{"scenario": "humanoid_walk", "actor": "flat", "seed": 4, "steps": 200000, "wall_s": 685.6749107837677, "dx": 0.09351471971049047, "propel_edge": 0.20581324999568434, "bounce_edge": 0.0}
+{"scenario": "humanoid_walk", "actor": "structural", "seed": 3, "steps": 200000, "wall_s": 2745.404552936554, "dx": 0.10880846385095116, "propel_edge": 0.32226490084463005, "bounce_edge": 0.0}
+{"scenario": "humanoid_walk", "actor": "structural", "seed": 4, "steps": 200000, "wall_s": 2765.432234287262, "dx": -0.0737357929670757, "propel_edge": -0.5724479998574155, "bounce_edge": 0.0}
+{"scenario": "cheetah_run", "actor": "flat", "seed": 3, "steps": 200000, "wall_s": 695.0962767601013, "dx": 0.07965343769035409, "propel_edge": -0.12001753508807564, "bounce_edge": 0.14540150738270324}
+{"scenario": "cheetah_run", "actor": "flat", "seed": 4, "steps": 200000, "wall_s": 700.4129464626312, "dx": -0.036507247170688, "propel_edge": 0.0, "bounce_edge": 0.0}
+{"scenario": "cheetah_run", "actor": "structural", "seed": 3, "steps": 200000, "wall_s": 2720.074956893921, "dx": 0.1770402772278515, "propel_edge": 0.28803273183827005, "bounce_edge": 0.0}
+{"scenario": "cheetah_run", "actor": "structural", "seed": 4, "steps": 200000, "wall_s": 2711.7253975868225, "dx": 0.0655472588811633, "propel_edge": 0.0, "bounce_edge": 0.0}

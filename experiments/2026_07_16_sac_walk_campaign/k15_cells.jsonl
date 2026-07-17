@@ -1,0 +1,18 @@
+{"scenario": "aibo_goal", "actor": "flat", "seed": 0, "steps": 200000, "wall_s": 635.1610722541809, "dx": -0.13431132860335443, "propel_edge": 0.0, "bounce_edge": 0.0}
+{"scenario": "aibo_goal", "actor": "flat", "seed": 1, "steps": 200000, "wall_s": 668.6838488578796, "dx": 0.10235917654022986, "propel_edge": -0.1892185717707829, "bounce_edge": 0.6502676302841797}
+{"scenario": "aibo_goal", "actor": "flat", "seed": 2, "steps": 200000, "wall_s": 672.1471025943756, "dx": -0.20871764980245328, "propel_edge": 0.0, "bounce_edge": 0.09634230735050738}
+{"scenario": "aibo_goal", "actor": "structural", "seed": 0, "steps": 200000, "wall_s": 5149.4049916267395, "dx": -0.07660217480208012, "propel_edge": 0.0, "bounce_edge": 0.4996632197498843}
+{"scenario": "aibo_goal", "actor": "structural", "seed": 1, "steps": 200000, "wall_s": 4852.118630409241, "dx": 0.03189577014683822, "propel_edge": -0.3648271620006301, "bounce_edge": 0.7379009135606189}
+{"scenario": "aibo_goal", "actor": "structural", "seed": 2, "steps": 200000, "wall_s": 4850.724483013153, "dx": -0.033694772853711474, "propel_edge": 0.0, "bounce_edge": 0.37738161302794}
+{"scenario": "humanoid_walk", "actor": "flat", "seed": 0, "steps": 200000, "wall_s": 672.6853544712067, "dx": 0.120969426840112, "propel_edge": 0.6719030770386657, "bounce_edge": 0.0}
+{"scenario": "humanoid_walk", "actor": "flat", "seed": 1, "steps": 200000, "wall_s": 675.4119362831116, "dx": 0.1096149333642162, "propel_edge": 0.4668371471290305, "bounce_edge": 0.0}
+{"scenario": "humanoid_walk", "actor": "flat", "seed": 2, "steps": 200000, "wall_s": 682.8284015655518, "dx": -0.1975396734870328, "propel_edge": 0.0, "bounce_edge": 0.23085622202542683}
+{"scenario": "humanoid_walk", "actor": "structural", "seed": 0, "steps": 200000, "wall_s": 2560.435997724533, "dx": 0.13136838919389748, "propel_edge": 0.0, "bounce_edge": 0.0}
+{"scenario": "humanoid_walk", "actor": "structural", "seed": 1, "steps": 200000, "wall_s": 2566.07816362381, "dx": 0.10693900352678049, "propel_edge": 0.25199428747645203, "bounce_edge": 0.0}
+{"scenario": "humanoid_walk", "actor": "structural", "seed": 2, "steps": 200000, "wall_s": 2552.493928194046, "dx": 0.10545554090740644, "propel_edge": 0.5993845564959238, "bounce_edge": 0.0}
+{"scenario": "cheetah_run", "actor": "flat", "seed": 0, "steps": 200000, "wall_s": 651.4254276752472, "dx": -0.026960900262248635, "propel_edge": -0.42763872487106636, "bounce_edge": 0.7928462772931278}
+{"scenario": "cheetah_run", "actor": "flat", "seed": 1, "steps": 200000, "wall_s": 647.5407168865204, "dx": 0.2329411606020047, "propel_edge": 0.0, "bounce_edge": 0.0}
+{"scenario": "cheetah_run", "actor": "flat", "seed": 2, "error": "ValueError: Expected parameter loc (Tensor of shape (1, 6)) of distribution Normal(loc: torch.Size([1, 6]), scale: torch.Size([1, 6])) to satisfy the constraint Real(), but found invalid values:\ntensor([[nan, nan, nan, nan, nan, nan]], device='cuda:0')"}
+{"scenario": "cheetah_run", "actor": "structural", "seed": 0, "steps": 200000, "wall_s": 2492.696000814438, "dx": 0.1723562431044658, "propel_edge": 0.0, "bounce_edge": 0.0}
+{"scenario": "cheetah_run", "actor": "structural", "seed": 1, "steps": 200000, "wall_s": 2502.2747917175293, "dx": 0.4031895745653913, "propel_edge": 0.47422667030783217, "bounce_edge": -0.3246124885129124}
+{"scenario": "cheetah_run", "actor": "structural", "seed": 2, "steps": 200000, "wall_s": 2498.405007123947, "dx": 0.34262536479540207, "propel_edge": 0.11481318865182914, "bounce_edge": -0.06623223680432966}
