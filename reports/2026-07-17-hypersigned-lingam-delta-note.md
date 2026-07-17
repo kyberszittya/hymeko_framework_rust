@@ -57,6 +57,28 @@ A 3-seed smoke showed a spurious `0.60/0.60` TIE on the joint regime; at 60 seed
 The *correct signed mechanism* structure lets a downstream KAN model the joint mechanism (R²≈0.96); the *pairwise*
 structure and a linear model do not (R²≈0). IQR is wide — median-strong, not universal.
 
+## 2b. Stage-4 first real-frame result (Mac, this session) — honest NEGATIVE, bounds the claim
+
+Ran SHL vs DirectLiNGAM on **real** MetaWorld reward frames (scripted policy + action noise, `_generic_rollout`,
+50 rollouts, `total_reward` sink):
+
+| task | DirectLiNGAM reward parents | SHL reward mechanism | joint? |
+|---|---|---|---|
+| coffee-push | near_fraction 0.965, action_noise −0.107 | {near_fraction +} | **no** (additive) |
+| pick-place | near_fraction 0.802 | {near_fraction −} | **no** (additive) |
+| door-open | near_fraction 0.986 | {near_fraction +} | **no** (additive) |
+
+All three are **single-driver, proximity-dominated, additive** — even pick-place's grasp is not a reward parent
+(consistent with the CIP finding `near_fraction↔total_reward ≈ 0.97` everywhere). SHL finds **no joint-interaction
+member** and **ties** pairwise DirectLiNGAM. So SHL's synthetic-SEM accuracy win (§2) does **not** transfer to
+MetaWorld's info-signal reward: here its value is **representation/provenance** (grouping into one hyperedge), not
+recovery accuracy — same shape as Peter-schema Stage 4A. A genuine accuracy test of SHL on real data needs either
+(a) a task with real joint reward structure, or (b) the **monitor-side** multi-driver mechanism
+(`{drivers}→monitor_pass`), which needs a frame carrying a per-rollout monitor verdict + several genuine drivers
+(the current info-signal frame is proximity-dominated and its disagreement column is constant → dropped). This is
+the honest scope: **do not claim SHL improves real MetaWorld reward causal recovery — it does not, because that
+reward is additive.**
+
 ## 3. Allowed claim (now evidence-backed)
 
 > SignedHyperLiNGAM provides a signed mechanism-level projection of pairwise LiNGAM evidence. It **ties**
