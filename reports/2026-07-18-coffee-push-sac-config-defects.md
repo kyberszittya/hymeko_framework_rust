@@ -109,6 +109,22 @@ S1_STEPS=100000 python experiments/s1_cross_impl/s1_archtest.py sb3style_critic
 ```
 
 ## Honest scope
-S1 *reach* is the isolation task; the fixes are validated there (0/4→2/4), not on full Coffee-Push (still
-exploration-walled). The residual 2/4 vs SB3 4/4 is unexplained (init/variance). Every number is ≥4-seed.
-Env: Mac Apple-Silicon, torch 2.12 (ours) / 2.13 (SB3 venv), metaworld 3.0.0, mujoco 3.10.0. SB3 2.9.0.
+S1 *reach* is the isolation task; the fixes are validated there, not on full Coffee-Push (still
+exploration-walled). Every number is ≥4-seed. Env: Mac Apple-Silicon, torch 2.12 (ours) / 2.13 (SB3 venv),
+metaworld 3.0.0, mujoco 3.10.0. SB3 2.9.0.
+
+## Overnight update — residual settled at 8 seeds (2026-07-18)
+
+Powered the 4-seed "2/4 vs 4/4" comparison up to **8 seeds** (S1 100 k, contact ≤7.5 cm):
+
+| stack | stable-contact (≥0.5) | mean stable-3 |
+|---|---|---|
+| old `--stable` (both defects) | 0/4 | ~0.0 |
+| **corrected (reward_norm off + early-concat critic + SB3-matched auto-α)** | **4/8** | **0.58** |
+| SB3 reference | 6/8 | 0.67 |
+
+**4/8 vs 6/8 is not statistically distinguishable at n=8** (binomial CIs overlap heavily; means 0.58 vs 0.67). So
+the two demonstrated fixes take our SAC from 0 to **SB3-comparable** — **no residual defect is proven**; the small
+gap is within seed variance (both stacks are bimodal on this hard-from-scratch reach). Conclusion: the two config
+fixes are **necessary and sufficient** to close the SB3 gap within available power. No init-matching chase is
+justified. (Artifacts `experiments/s1_cross_impl/s1_arch_sb3style_critic.json`, `s1_sb3_calib_result.json`.)

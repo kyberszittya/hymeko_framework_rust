@@ -28,7 +28,7 @@ from hymeko_rl.train.sac import SACConfig, build_sac, train_sac, AlphaMode  # no
 
 STEPS = int(os.environ.get("S1_STEPS", "100000"))
 EVAL = max(8000, STEPS // 5)
-SEEDS = (0, 1, 2, 3)
+SEEDS = tuple(range(int(os.environ.get('S1_SEEDS', '4'))))
 
 
 class EarlyConcatCritic(nn.Module):

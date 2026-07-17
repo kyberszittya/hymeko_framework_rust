@@ -23,7 +23,7 @@ from stable_baselines3.common.callbacks import BaseCallback  # noqa: E402
 STEPS = int(os.environ.get("S1_STEPS", "40000"))
 EVAL = max(8000, STEPS // 5)
 CONTACT_OK = 0.075
-SEEDS = (0, 1, 2, 3)
+SEEDS = tuple(range(int(os.environ.get('S1_SEEDS', '4'))))
 
 
 def eval_sb3_calib(model, env, gamma, n=8):
