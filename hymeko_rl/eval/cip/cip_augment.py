@@ -153,8 +153,12 @@ class CipAugmentConfig:
     lingam: LingamConfig = field(default_factory=LingamConfig)
 
 
-class CipReplayAugmentor:
-    """Cao/Ito CIP counterfactual data augmentation as a ``ReplayAugmentor`` (Strategy over the SAC replay buffer).
+class CdsReplayAugmentor:
+    """Cao/Ito **CDS** (counterfactual data source) augmentation as a ``ReplayAugmentor`` over the SAC replay buffer.
+
+    **This is CDS ONLY — not "full CIP".** Full CIP additionally carries the empowerment term (reverse/source
+    policy + causal-weighted intrinsic reward), which is *not implemented here* (see the module fidelity note).
+    The experiment arm that attaches this augmentor is therefore `sac_cds` / `sac_cda`, NOT `cip_full`.
 
     Implements the :class:`hymeko_rl.train.sac.ReplayAugmentor` protocol. Holds its own RNG + DirectLiNGAM
     (immutable config); no global state. Exposes ``last`` (the most recent :class:`CipWeights`), ``last_fit_ms``,
@@ -227,3 +231,8 @@ class CipReplayAugmentor:
             "last_w_s": [round(float(v), 4) for v in w.w_s] if w else None,
             "last_w_r": [round(float(v), 4) for v in w.w_r] if w else None,
         }
+
+
+# Deprecated alias: the augmentor is CDS-only. The old name conflated it with "full CIP" (which additionally needs
+# the empowerment term). Kept so pre-existing imports/checkpoints keep working; new code should use CdsReplayAugmentor.
+CipReplayAugmentor = CdsReplayAugmentor

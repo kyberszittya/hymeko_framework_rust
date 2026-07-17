@@ -1,8 +1,9 @@
 """CIP baseline (Cao et al. ICLR 2025; Ito et al., katolab) on MetaWorld — SAC + counterfactual data augmentation.
 
-Reproduces the **CIP** learning curve on the Ito tasks: ``coffee-push-v2`` (where CIP helps) with ``dial-turn-v2``
-as the control (Ito reports no gain there). Plain-SAC vs CIP-SAC is an A/B through the ``ReplayAugmentor`` seat on
-``train_sac`` — the only difference between the two arms is whether :class:`CipReplayAugmentor` is attached, so the
+**Arms: `plain` (canonical SAC) vs `cds` (SAC + counterfactual data augmentation).** The augmented arm is **CDS
+ONLY — NOT full CIP**: it does not implement Cao's empowerment term (reverse/source policy + causal-weighted
+intrinsic reward). Do not report it as "CIP"/"full CIP". A/B is through the ``ReplayAugmentor`` seat on
+``train_sac`` — the only difference between the two arms is whether :class:`CdsReplayAugmentor` is attached, so the
 comparison is clean (same trainer, same env, same obs-norm, same seed).
 
 This is Direction **A** of the CIP-continuation arc (*get the baseline*); the LLM correction (Ito's contribution)
@@ -12,7 +13,7 @@ piece is the CIP augmentation (:mod:`hymeko_rl.eval.cip.cip_augment`).
 
 Phase-1 use (Mac, watched smoke — proves the mechanism, not the curve)::
 
-    python -m hymeko_rl.experiments.exp_metaworld_cip_baseline --task coffee-push --cip --steps 20000 --seed 0
+    python -m hymeko_rl.experiments.exp_metaworld_cip_baseline --task coffee-push --cds --steps 20000 --seed 0
     python -m hymeko_rl.experiments.exp_metaworld_cip_baseline --task coffee-push        --steps 20000 --seed 0
 
 Phase-2 (kato15, gated): the same entry point at ``--steps 1000000`` over 8 seeds × {plain, cip} × {coffee-push,
@@ -64,7 +65,7 @@ def _fit_native_obs_norm(env_id: str, policy_name: str, *, n: int = 8, max_steps
 def run_cip_seed(task: str = "coffee-push", *, cip: bool = True, seed: int = 0, steps: int = 20_000,
                  device: str = "cpu", hidden: int = 256, horizon: int = 500, out_dir: "Path | None" = None,
                  refresh_every: int = 10_000, sample_n: int = 1500, n_swap_dims: int = 1,
-                 eval_every: "int | None" = None) -> "dict[str, Any]":
+                 eval_every: "int | None" = None, stable: bool = False) -> "dict[str, Any]":
     """One SAC seed on the native-reward MetaWorld task, with (``cip=True``) or without the CIP CDS augmentor.
 
     Returns the run summary (success curve + provenance + augmentor stats); checkpoints the actor.
@@ -74,7 +75,7 @@ def run_cip_seed(task: str = "coffee-push", *, cip: bool = True, seed: int = 0, 
     """
     import torch
 
-    from hymeko_rl.eval.cip.cip_augment import CipAugmentConfig, CipReplayAugmentor
+    from hymeko_rl.eval.cip.cip_augment import CdsReplayAugmentor, CipAugmentConfig
     from hymeko_rl.eval.cip.metaworld_generic_cip import GENERIC_TASKS
     from hymeko_rl.eval.evaluate import experiment_dir
     from hymeko_rl.experiments.exp_metaworld_sac import _ObsNorm, _sac_success_eval
@@ -84,7 +85,7 @@ def run_cip_seed(task: str = "coffee-push", *, cip: bool = True, seed: int = 0, 
     policy_name = GENERIC_TASKS[task]
     out = out_dir or experiment_dir("reports/figures", f"metaworld_cip_{task}")
     out.mkdir(parents=True, exist_ok=True)
-    tag = f"{'cip' if cip else 'plain'}_{task}_seed{seed}"
+    tag = f"{'cds' if cip else 'plain'}_{task}_seed{seed}"   # 'cds' = SAC + counterfactual data aug (NOT full CIP)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -97,37 +98,41 @@ def run_cip_seed(task: str = "coffee-push", *, cip: bool = True, seed: int = 0, 
 
     actor, critics = build_sac("mlp", obs_dim=obs_dim, flat_dim=obs_dim, action_dim=act_dim, action_scale=scale,
                                hidden=hidden, device=device)
+    # stable long-run stack (standard SAC, anti-divergence): lower init-alpha + lr, auto-alpha + reward-norm kept.
+    # The default init_alpha=1.0 @ lr 1e-3 diverges on some 1M-step seeds (SAC audit 2026-07-15).
+    stable_kw = dict(init_alpha=0.2, actor_lr=3e-4, critic_lr=3e-4) if stable else {}
     sac_cfg = SACConfig(total_steps=steps, seed=seed, log_every=max(1000, steps // 100),
                         eval_every=eval_every if eval_every is not None else max(2000, steps // 10),
-                        start_steps=min(5000, steps // 4))
+                        start_steps=min(5000, steps // 4), **stable_kw)  # type: ignore[arg-type]
     augmentor = None
     if cip:
-        augmentor = CipReplayAugmentor(obs_dim, act_dim, CipAugmentConfig(
+        augmentor = CdsReplayAugmentor(obs_dim, act_dim, CipAugmentConfig(
             refresh_every=refresh_every, sample_n=sample_n, n_swap_dims=n_swap_dims, seed=seed))
 
-    print(f"[cip-run] task={task} arm={'CIP' if cip else 'plain'} seed={seed} steps={steps} "
+    print(f"[cds-run] task={task} arm={'CDS' if cip else 'plain'} seed={seed} steps={steps} "
           f"obs_dim={obs_dim} act_dim={act_dim} device={device}", flush=True)
     curve = train_sac(actor, critics, env, sac_cfg,
                       eval_fn=_sac_success_eval(device, max_steps=horizon, eval_env=eval_env), augmentor=augmentor)
     torch.save(actor.state_dict(), out / f"{tag}.pt")
     summary: dict[str, Any] = {
-        "task": task, "arm": "cip" if cip else "plain", "seed": seed, "steps": steps, "device": device,
+        "task": task, "arm": "cds" if cip else "plain", "seed": seed, "steps": steps, "device": device,
         "hidden": hidden, "horizon": horizon, "obs_dim": obs_dim, "action_dim": act_dim,
         "success_curve": [round(c, 4) for c in curve],
         "final_success": round(curve[-1], 4) if curve else None,
         "best_success": round(max(curve), 4) if curve else None,
-        "cip": augmentor.summary() if augmentor is not None else None,
+        "cds": augmentor.summary() if augmentor is not None else None,
     }
     (out / f"{tag}.json").write_text(json.dumps(summary, indent=2, default=float))
-    print(f"[cip-run] {tag} done | final={summary['final_success']} best={summary['best_success']} "
-          f"| cip={summary['cip']}", flush=True)
+    print(f"[cds-run] {tag} done | final={summary['final_success']} best={summary['best_success']} "
+          f"| cds={summary['cds']}", flush=True)
     return summary
 
 
 def main(argv: "list[str] | None" = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--task", default="coffee-push", help="coffee-push | dial-turn | any GENERIC_TASKS key")
-    ap.add_argument("--cip", action="store_true", help="attach the CIP CDS augmentor (else plain SAC)")
+    ap.add_argument("--cds", "--cip", dest="cds", action="store_true",
+                    help="attach the CDS counterfactual-data-augmentation arm (--cip = deprecated alias); else plain SAC")
     ap.add_argument("--steps", type=int, default=20_000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cpu")
@@ -137,12 +142,13 @@ def main(argv: "list[str] | None" = None) -> int:
     ap.add_argument("--sample-n", type=int, default=1500)
     ap.add_argument("--n-swap-dims", type=int, default=1)
     ap.add_argument("--eval-every", type=int, default=None, help="eval cadence (default steps//10)")
+    ap.add_argument("--stable", action="store_true", help="stable long-run SAC (init_alpha 0.2, lr 3e-4)")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
-    run_cip_seed(a.task, cip=a.cip, seed=a.seed, steps=a.steps, device=a.device, hidden=a.hidden,
+    run_cip_seed(a.task, cip=a.cds, seed=a.seed, steps=a.steps, device=a.device, hidden=a.hidden,
                  horizon=a.horizon, out_dir=Path(a.out) if a.out else None,
                  refresh_every=a.refresh_every, sample_n=a.sample_n, n_swap_dims=a.n_swap_dims,
-                 eval_every=a.eval_every)
+                 eval_every=a.eval_every, stable=a.stable)
     return 0
 
 

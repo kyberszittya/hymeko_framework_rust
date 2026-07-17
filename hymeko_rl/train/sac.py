@@ -48,8 +48,8 @@ class ReplayAugmentor(Protocol):
     ``train_sac`` calls :meth:`maybe_augment` once per env step *after* the SAC update; the strategy owns its
     own cadence (no-op off its refresh schedule) so the trainer carries no augmentation-specific branch (§6.5
     #8 — no forward-time flags for what is a swappable behaviour). The canonical implementation is
-    :class:`hymeko_rl.eval.cip.cip_augment.CipReplayAugmentor` (Cao/Ito CIP counterfactual data augmentation),
-    but the seat is generic (HER, symmetry, etc. would slot in unchanged). ``augmentor=None`` (the default)
+    :class:`hymeko_rl.eval.cip.cip_augment.CdsReplayAugmentor` (Cao/Ito CDS counterfactual data augmentation —
+    CDS only, not full CIP), but the seat is generic (HER, symmetry, etc. would slot in unchanged). ``augmentor=None`` (the default)
     leaves the trainer byte-identical to the pre-seat behaviour.
     """
 

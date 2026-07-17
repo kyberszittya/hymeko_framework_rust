@@ -1,7 +1,7 @@
 """Tests for the CIP counterfactual-augmentation baseline (Cao/Ito) — unit, integration, performance.
 
 Covers the pure helpers (:func:`softmax_rescale`, :func:`estimate_cip_weights`, :func:`counterfactual_swap`),
-the :class:`CipReplayAugmentor` strategy (cadence, buffer growth, degenerate/constant-column robustness), the
+the :class:`CdsReplayAugmentor` strategy (cadence, buffer growth, degenerate/constant-column robustness), the
 ``ReplayAugmentor`` seam on ``train_sac`` (byte-identical when the strategy no-ops), an end-to-end few-hundred-step
 CIP-SAC run on a toy flat env, and the DirectLiNGAM fit-time budget. Run: ``pytest -p no:randomly``.
 """
@@ -17,7 +17,7 @@ import pytest
 from hymeko_rl.eval.causal.lingam import DirectLiNGAM, sample_linear_sem
 from hymeko_rl.eval.cip.cip_augment import (
     CipAugmentConfig,
-    CipReplayAugmentor,
+    CdsReplayAugmentor,
     counterfactual_swap,
     estimate_cip_weights,
     softmax_rescale,
@@ -134,12 +134,12 @@ def test_estimate_weights_constant_column_does_not_raise_and_is_uncontrollable()
 
 
 # --------------------------------------------------------------------------------------------------------------
-# unit: CipReplayAugmentor cadence + buffer growth + robustness
+# unit: CdsReplayAugmentor cadence + buffer growth + robustness
 # --------------------------------------------------------------------------------------------------------------
 def test_augmentor_respects_cadence() -> None:
     buf = ReplayBuffer(20_000, (10,), 3)
     _fill_buffer(buf, 3000, 10, 3, seed=7)
-    aug = CipReplayAugmentor(10, 3, CipAugmentConfig(refresh_every=1000, sample_n=800, min_buffer=2000, log=False))
+    aug = CdsReplayAugmentor(10, 3, CipAugmentConfig(refresh_every=1000, sample_n=800, min_buffer=2000, log=False))
     before = buf.size
     aug.maybe_augment(buf, step=999)                    # off-cadence → nothing
     assert aug.n_refresh == 0 and buf.size == before
@@ -153,7 +153,7 @@ def test_augmentor_respects_cadence() -> None:
 def test_augmentor_cold_buffer_is_noop() -> None:
     buf = ReplayBuffer(20_000, (10,), 3)
     _fill_buffer(buf, 500, 10, 3, seed=8)               # below min_buffer
-    aug = CipReplayAugmentor(10, 3, CipAugmentConfig(refresh_every=100, min_buffer=2000, log=False))
+    aug = CdsReplayAugmentor(10, 3, CipAugmentConfig(refresh_every=100, min_buffer=2000, log=False))
     aug.maybe_augment(buf, step=100)
     assert aug.n_refresh == 0
 
@@ -166,7 +166,7 @@ def test_augmentor_rejects_non_flat_obs() -> None:
                   rng.standard_normal(2500).astype(np.float32),
                   rng.standard_normal((2500, 4, 3)).astype(np.float32),
                   np.zeros(2500, np.float32))
-    aug = CipReplayAugmentor(4, 2, CipAugmentConfig(refresh_every=1, min_buffer=2000, log=False))
+    aug = CdsReplayAugmentor(4, 2, CipAugmentConfig(refresh_every=1, min_buffer=2000, log=False))
     with pytest.raises(ValueError, match="flat obs"):
         aug.maybe_augment(buf, step=1)
 
@@ -174,7 +174,7 @@ def test_augmentor_rejects_non_flat_obs() -> None:
 def test_augmentor_bounded_growth() -> None:
     buf = ReplayBuffer(20_000, (12, ), 4)
     _fill_buffer(buf, 5000, 12, 4, seed=11)
-    aug = CipReplayAugmentor(12, 4, CipAugmentConfig(refresh_every=1000, sample_n=1500, min_buffer=2000, log=False))
+    aug = CdsReplayAugmentor(12, 4, CipAugmentConfig(refresh_every=1000, sample_n=1500, min_buffer=2000, log=False))
     aug.maybe_augment(buf, step=1000)
     assert aug.n_augmented <= 1500                      # never more than sample_n per refresh
 
@@ -222,7 +222,7 @@ def test_cip_sac_end_to_end_toy() -> None:
     torch.manual_seed(0)
     env = _ToyFlatEnv(obs_dim=39, act_dim=4, horizon=25, seed=1)   # MetaWorld-shaped flat obs
     actor, critics = build_sac("mlp", obs_dim=39, flat_dim=39, action_dim=4, action_scale=1.0, hidden=32)
-    aug = CipReplayAugmentor(39, 4, CipAugmentConfig(refresh_every=300, sample_n=600, min_buffer=400, seed=0,
+    aug = CdsReplayAugmentor(39, 4, CipAugmentConfig(refresh_every=300, sample_n=600, min_buffer=400, seed=0,
                                                      log=False))
     cfg = SACConfig(total_steps=900, start_steps=200, batch_size=64, eval_every=900, log_every=0, seed=0)
     curve = train_sac(actor, critics, env, cfg, eval_fn=lambda _e, _a: 0.0, augmentor=aug)
