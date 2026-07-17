@@ -10,5 +10,5 @@ export TORCHINDUCTOR_CACHE_DIR="$HOME/hymeko_framework_rust/.torchinductor_cache
 export HYMEKO_OUT="experiments/2026_07_17_humanoid_scaleup_${HOST}"     # per-box dir (NFS shared; avoid concurrent writes)
 export HYMEKO_SEEDS="${HYMEKO_SEEDS:-0,1,2,3,4}"
 mkdir -p "$HYMEKO_OUT"
-setsid nohup .venv_stand/bin/python scaleup_launch.py > "$HYMEKO_OUT/scaleup.log" 2>&1 < /dev/null &
+setsid nohup .venv_stand/bin/python "$HOME/hymeko_framework_rust/scripts/kato15/scaleup_launch.py" > "$HYMEKO_OUT/scaleup.log" 2>&1 < /dev/null &
 echo "scaleup launched on $HOST pid=$! seeds=$HYMEKO_SEEDS -> $HYMEKO_OUT/scaleup.log"

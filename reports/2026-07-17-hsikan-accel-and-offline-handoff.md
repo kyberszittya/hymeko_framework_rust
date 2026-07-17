@@ -38,6 +38,11 @@ launchers are pushed to `origin` and on the shared katolab NFS home (visible fro
   like 200k was, the structural comparison is premature and the finding is "Aibo needs >800k / a real gait teacher".
 - **Watch:** the first flat cell's crit/act loss was climbing (0.88→28) — could be flat-MLP Q-drift at 800k. The
   `cip_diagnose` dx/propel in `cells.jsonl` is the arbiter (walk vs diverge); the metric is divergence-guarded.
+- **First result (cell 1, `aibo/flat/bounce=3/seed0/800k`, wall 1554 s):** `dx=+0.103, propel_edge=0.0,
+  bounce_edge=0.541`. It **moves forward a little** (+0.10 vs ~0 at 200k) but by **bouncing** (bounce-edge 0.54),
+  **not propelling** (propel 0) — exactly the bounce-domination the CIP discovery predicted. So the body is on the
+  edge of walking, and the bounce=8 cells (later in the run) are the live test of whether up-weighting the
+  anti-bounce term converts that bounce into forward propulsion. Hypothesis intact.
 
 ## 2. Humanoid scale-up — READY, launch when kato15/kato14 free
 
