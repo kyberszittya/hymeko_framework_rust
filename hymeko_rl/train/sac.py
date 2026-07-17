@@ -256,11 +256,14 @@ class SACConfig:
     greedy_rollout: bool = False           # step the env with action_mean (no exploration) instead of a sample — makes
     #                                        the rollout-anchor states self-consistent with the greedy-EVAL states, the
     #                                        F-SAC-9 discriminator (isolates exploration-covariate from the -Q term).
-    compile: bool = False             # torch.compile the update hot path (critic/actor loss) into CUDA graphs
-    #                                   (reduce-overhead); CUDA-only, no-op on CPU. Pure speedup — identical update
-    #                                   math + update-to-data ratio, so the learned policy is UNCHANGED (mirrors
-    #                                   train_offpolicy's 8.25× on the structural update; the 2026-07-17 profile
-    #                                   showed the B=256 update is 99.9% of the structural per-step cost).
+    compile: bool = False             # torch.compile the update hot path (critic/actor loss) into CUDA graphs;
+    #                                   CUDA-only, no-op on CPU. Pure speedup — identical update math + update-to-data
+    #                                   ratio, so the learned policy is UNCHANGED (2026-07-17 profile: the B=256 update
+    #                                   is 99.9% of the structural per-step cost; measured 5.79× on kato61 RTX 4090).
+    compile_mode: str = "reduce-overhead"   # torch.compile mode. "reduce-overhead" = fast cold compile (~40s),
+    #                                   good for smokes. "max-autotune" = ~24% faster steady-state on the structural
+    #                                   update (measured 1.24× vs reduce-overhead, kato61) but a slower cold compile —
+    #                                   worth it only for LONG cells (800k) where the compile amortises.
     update_every: int = 1             # do ONE update per `update_every` env steps (1 = current: every step). >1 is
     #                                   FEWER gradient steps — a sample-EFFICIENCY change (§6.5 #19), never a silent
     #                                   default: use only behind an explicit A/B.
@@ -372,8 +375,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     if _use_compile:
         os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR",
                               str(Path(__file__).resolve().parent.parent / ".torchinductor_cache"))
-        _critic_loss = torch.compile(_critic_loss, mode="reduce-overhead")
-        _actor_terms = torch.compile(_actor_terms, mode="reduce-overhead")
+        _critic_loss = torch.compile(_critic_loss, mode=cfg.compile_mode)
+        _actor_terms = torch.compile(_actor_terms, mode=cfg.compile_mode)
 
     def _update_once(step: int) -> None:
         """One gradient update (critic → actor → α → polyak). Shared by every update_every cadence."""

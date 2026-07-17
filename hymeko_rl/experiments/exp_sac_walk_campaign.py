@@ -50,11 +50,12 @@ def scenarios(bounce: float = 3.0, bodies: "tuple[str, ...] | None" = None) -> l
 
 
 def run_cell(make: Callable[[], Any], actor_kind: str, seed: int, *, steps: int,
-             compile: bool = False, update_every: int = 1) -> dict:
+             compile: bool = False, update_every: int = 1, compile_mode: str = "reduce-overhead") -> dict:
     """Pure SAC from scratch with a {flat|structural} actor → dx + CIP propel-edge of the learned policy.
 
-    ``compile`` torch.compiles the update (CUDA-only, no-op on CPU — the structural 8.25× lever, 2026-07-17);
-    ``update_every>1`` trades sample efficiency for wall (§6.5 #19)."""
+    ``compile`` torch.compiles the update (CUDA-only, no-op on CPU — the structural speed lever, 2026-07-17);
+    ``compile_mode`` "max-autotune" is ~24% faster than "reduce-overhead" on long cells; ``update_every>1``
+    trades sample efficiency for wall (§6.5 #19)."""
     from hymeko_rl.train.sac import SACConfig, build_sac, train_sac
     env = make()
     flat = int(np.prod(env.observation_space.shape))
@@ -70,8 +71,10 @@ def run_cell(make: Callable[[], Any], actor_kind: str, seed: int, *, steps: int,
                                    action_scale=1.0, n_critics=2, hidden=256, device=_DEVICE)
         kind = actor_kind if actor_kind == "flat" else "flat(fallback)"
     cfg = SACConfig(total_steps=steps, start_steps=2000, batch_size=256, eval_every=steps, n_eval=1,
-                    log_every=max(2000, steps // 10), seed=seed, bc_coef=0.0,       # bc_coef 0 = pure scratch
-                    compile=compile, update_every=update_every)
+                    # §3 never-blind: cap the interval so even a slow structural cell logs every ~20-60s of wall,
+                    # not every ~15 min (the old steps//10 = 80k for an 800k run went dark past the 10-min rule).
+                    log_every=min(5000, max(2000, steps // 10)), seed=seed, bc_coef=0.0,   # bc_coef 0 = pure scratch
+                    compile=compile, update_every=update_every, compile_mode=compile_mode)
     t0 = time.time()
     # No-op eval_fn: skip train_sac's default greedy eval (its CPU obs mismatches a cuda actor on GPU); the
     # real measurement is cip_diagnose below (device-safe via _greedy).
@@ -83,7 +86,8 @@ def run_cell(make: Callable[[], Any], actor_kind: str, seed: int, *, steps: int,
 
 def run(*, steps: int = 500_000, seeds: tuple = (0, 1, 2, 3, 4),
         bounce_weights: tuple = (3.0,), bodies: "tuple[str, ...] | None" = None,
-        actors: tuple = ("flat", "structural"), compile: bool = False, update_every: int = 1) -> dict:
+        actors: tuple = ("flat", "structural"), compile: bool = False, update_every: int = 1,
+        compile_mode: str = "reduce-overhead") -> dict:
     """Pure-SAC-from-scratch grid over {body × actor × seed × anti-bounce weight}.
 
     Defaults reproduce the original 30-cell (bounce=3.0, all bodies, both actors) grid. The 2026-07-17 reward
@@ -104,7 +108,8 @@ def run(*, steps: int = 500_000, seeds: tuple = (0, 1, 2, 3, 4),
                 continue
             try:
                 rec = {"scenario": sc["name"], "bounce": b,
-                       **run_cell(sc["make"], k, s, steps=steps, compile=compile, update_every=update_every)}
+                       **run_cell(sc["make"], k, s, steps=steps, compile=compile,
+                                  update_every=update_every, compile_mode=compile_mode)}
             except Exception as exc:
                 rec = {"scenario": sc["name"], "bounce": b, "actor": k, "seed": s,
                        "error": f"{type(exc).__name__}: {exc}"}
