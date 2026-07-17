@@ -53,6 +53,23 @@ def legged_cip_reward(bounce: float = 3.0) -> RewardSpec:
 LEGGED_CIP_REWARD = legged_cip_reward()     # back-compat constant: the bounce=3.0 default
 
 
+def humanoid_run_reward(target_speed: float = 3.0) -> RewardSpec:
+    """Fast-running humanoid reward (2026-07-17): drive forward CENTROIDAL momentum (``forward_momentum`` is linear
+    in speed → *faster is better*, unbounded) under a control-Lyapunov stability stack (``capture_point`` up-weighted
+    — running is unstable, the lateral DCM is the fall mode; ``centroidal_angular_momentum`` for balance;
+    ``energy_regulation`` softly pins the high-speed orbit). Set ``env.target_speed = target_speed`` so the energy
+    reference matches the running speed."""
+    return RewardSpec((
+        ("forward_momentum", 12.0),                 # DRIVE: reward forward speed (linear, unbounded)
+        ("alive", 2.0),                             # stay up (load-bearing at running speed)
+        ("capture_point", 3.0),                     # lateral DCM fall-bound (running is unstable → up-weight)
+        ("centroidal_angular_momentum", 1.0),       # balance
+        ("transverse_momentum", 1.0),               # forward, not sideways/up
+        ("energy_regulation", 0.2),                 # soft: pin the running-orbit energy (H_ref at target_speed)
+        ("joint_acceleration", 0.001),              # light smoothness (don't over-damp a dynamic gait)
+    ))
+
+
 def _aibo(goal_distance: float, horizon: int) -> Callable[[], Any]:
     return lambda: CipAiboEnv(goal_distance=goal_distance, max_steps=horizon)
 
