@@ -44,9 +44,18 @@ launchers are pushed to `origin` and on the shared katolab NFS home (visible fro
   edge of walking, and the bounce=8 cells (later in the run) are the live test of whether up-weighting the
   anti-bounce term converts that bounce into forward propulsion. Hypothesis intact.
 
-## 2. Humanoid scale-up — READY, launch when kato15/kato14 free
+## 2. Humanoid scale-up — kato15 RUNNING (seeds 0,1,2); kato14 pending (seeds 3,4)
 
-The pilot covers the Aibo. The humanoid is the missing body. When your job frees a box:
+**Update 22:4x JST:** kato15 freed → humanoid scale-up **launched** there (seeds 0,1,2, max-autotune, validated:
+first flat cell finite at ~283 steps/s). Output `experiments/2026_07_17_humanoid_scaleup_kato15/`. **kato14 is still
+busy** — when it frees, launch seeds 3,4 there for the full 5-seed humanoid:
+```bash
+ssh kato14 'bash -lc "export HYMEKO_SEEDS=3,4; bash ~/hymeko_framework_rust/scripts/kato15/scaleup_run.sh"'
+```
+Note: pass seeds via `export HYMEKO_SEEDS=...; bash ...` (the katolab login shell is **csh**, so inline
+`HYMEKO_SEEDS=.. bash ..` fails — use `export` or `env`).
+
+The pilot covers the Aibo. The humanoid is the missing body. Original launch recipe (both boxes):
 
 ```bash
 # on kato15 (seeds 0-2) and kato14 (seeds 3-4) — split for speed; each writes its own per-box dir
