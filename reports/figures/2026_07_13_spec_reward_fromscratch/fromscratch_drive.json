@@ -1,0 +1,7 @@
+{
+  "kind": "from-scratch fixed-task drive (seed 0, 400k)",
+  "native_final": 1.0,
+  "arbitrated_final": 1.0,
+  "raw_final": 0.0,
+  "note": "native ignites 133k; arbitrated ignites 80k, stabilizes 213k+; raw flat 0. Single seed \u2014 multi-seed pending."
+}

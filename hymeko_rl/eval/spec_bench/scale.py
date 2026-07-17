@@ -84,6 +84,95 @@ def synth_single_settle(n: int, *, seed: int, steps: int = 20) -> list[Rollout]:
     return out
 
 
+# ── scalable compositional-success benchmark (K true conjuncts + D distractors) ──────────────────────────────
+def compositional_signals(k_true: int, d_distract: int) -> "tuple[list[str], list[str]]":
+    """The signal names: ``k_true`` true conjuncts + ``d_distract`` distractors."""
+    return [f"true_{i}" for i in range(k_true)], [f"dist_{j}" for j in range(d_distract)]
+
+
+def compositional_ground_truth(k_true: int, *, threshold: float = 0.9) -> str:
+    """The formal-ceiling spec: ``F(true_0>=θ AND … AND true_{k-1}>=θ)`` — exactly the true conjuncts."""
+    inner = " AND ".join(f"true_{i} >= {threshold}" for i in range(k_true))
+    return f"F({inner})" if k_true > 1 else f"F(true_0 >= {threshold})"
+
+
+def compositional_raw_spec(k_true: int, d_distract: int, *, threshold: float = 0.9) -> str:
+    """An over-constrained LLM-style raw spec: ``F(AND over ALL k_true+d_distract signals)`` — the arbiter must
+    prune the ``d_distract`` distractor conjuncts back to the ``k_true`` true ones."""
+    trues, dists = compositional_signals(k_true, d_distract)
+    inner = " AND ".join(f"{s} >= {threshold}" for s in (*trues, *dists))
+    return f"F({inner})"
+
+
+def synth_compositional(k_true: int, d_distract: int, n: int, *, seed: int, steps: int = 20, noise: float = 0.05,
+                        distractor_pos_rate: float = 0.7, distractor_neg_rate: float = 0.4) -> list[Rollout]:
+    """Balanced (~50%) rollouts whose success is a genuine ``k_true``-way conjunction — the regime MetaWorld's
+    single-proxy interface cannot provide.
+
+    Ground truth: ``F(AND_i true_i >= 0.9)`` (every true signal must eventually reach high). **Compositional
+    necessity** is enforced by the negatives: each negative violates *exactly one* true conjunct (a uniformly
+    chosen ``true_j`` stays low), so any ``(k_true-1)``-subset that drops conjunct ``j`` false-accepts the
+    negatives that violate ``j`` — no proper subset reaches ceiling, and no single signal separates the classes
+    for ``k_true >= 2``. The ``d_distract`` distractors correlate with success (high on ``distractor_pos_rate`` of
+    positives, ``distractor_neg_rate`` of negatives) but are **not decisive**: including a distractor conjunct
+    drops recall on the positives where it happens to be low. So the unique F1-ceiling subset is exactly the
+    ``k_true`` true conjuncts, and the arbiter's job (drop the distractors, calibrate) is real.
+
+    # Preconditions ``k_true>=1``, ``d_distract>=0``, ``n>=4``. # Postconditions ``len==n``; both classes present;
+      deterministic in ``seed``; signal keys ``true_0..true_{k-1}``, ``dist_0..dist_{d-1}``."""
+    if k_true < 1 or d_distract < 0 or n < 4:
+        raise ValueError("need k_true>=1, d_distract>=0, n>=4")
+    rng = np.random.default_rng(seed)
+    trues, dists = compositional_signals(k_true, d_distract)
+    names = (*trues, *dists)
+    out: list[Rollout] = []
+    for idx in range(n):
+        positive = idx % 2 == 0
+        violated = -1 if positive else int(rng.integers(k_true))     # the single true conjunct this negative breaks
+        highs = [positive or i != violated for i in range(k_true)] + [
+            rng.random() < (distractor_pos_rate if positive else distractor_neg_rate) for _ in range(d_distract)]
+        out.append(Rollout(trace=_compositional_trace(rng, names, highs, steps, noise), success=positive))
+    return out
+
+
+def synth_compositional_lure(k_true: int, n: int, *, seed: int, lure_pos: float = 0.9, lure_neg: float = 0.1,
+                             steps: int = 20, noise: float = 0.05) -> list[Rollout]:
+    """``k_true`` necessary conjuncts + a single **luring distractor** ``lure`` that is the *best single* predictor
+    (high on ``lure_pos`` of positives, ``lure_neg`` of negatives) yet is not a true conjunct.
+
+    Used to probe the greedy-vs-SSG *accuracy* question: greedy (best-single seed, forward-only) picks the lure
+    first — but in the spec-conjunction language **threshold calibration neutralises it** (drives ``lure >= θ`` to a
+    vacuous ``θ ≈ 0``), so greedy still reaches ~ceiling and the SSG does **not** win on accuracy here. The SSG's
+    accuracy advantage needs a *non-neutralisable* interaction (a causal joint mechanism — see SignedHyperLiNGAM),
+    which the threshold grammar cannot express. Signal keys ``true_0..true_{k-1}``, ``lure``."""
+    if k_true < 1 or n < 4:
+        raise ValueError("need k_true>=1, n>=4")
+    rng = np.random.default_rng(seed)
+    names = (*(f"true_{i}" for i in range(k_true)), "lure")
+    out: list[Rollout] = []
+    for idx in range(n):
+        positive = idx % 2 == 0
+        violated = -1 if positive else int(rng.integers(k_true))
+        highs = [positive or i != violated for i in range(k_true)]
+        highs.append(rng.random() < (lure_pos if positive else lure_neg))
+        out.append(Rollout(trace=_compositional_trace(rng, names, highs, steps, noise), success=positive))
+    return out
+
+
+def _compositional_trace(rng: np.random.Generator, names: "tuple[str, ...]", highs: "list[bool]", steps: int,
+                         noise: float) -> "list[dict[str, float]]":
+    """A per-step trace where each signal ramps to ``high`` (≈1.0) or ``low`` (≈0.4) over the episode."""
+    trace: list[dict[str, float]] = []
+    for st in range(steps):
+        frac = st / max(1, steps - 1)
+        step: dict[str, float] = {}
+        for name, high in zip(names, highs):
+            target = rng.uniform(0.92, 1.05) if high else rng.uniform(0.2, 0.55)
+            step[name] = float(np.clip(target * frac + rng.normal(0, noise), 0.0, 1.2))
+        trace.append(step)
+    return trace
+
+
 def temporal_variants(signal: str, *, seed_threshold: float = 0.5) -> list[str]:
     """All `{F,G,G[0,4]} × {>=,<=}` variant formulas for ``signal`` (seed threshold; calibrated downstream)."""
     return [tpl.format(s=signal, c=c, t=seed_threshold) for c in _CMPS for tpl in _VARIANT_TEMPLATES]

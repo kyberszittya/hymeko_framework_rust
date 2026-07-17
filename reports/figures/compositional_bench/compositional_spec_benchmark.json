@@ -1,0 +1,66 @@
+{
+  "kind": "compositional-spec benchmark (K-conjunction + D distractors)",
+  "stamp": "2026-07-15 19:44:56",
+  "K": 3,
+  "d_values": [
+    2,
+    4,
+    6
+  ],
+  "n": 100,
+  "seed": 0,
+  "cells": [
+    {
+      "K": 3,
+      "D": 2,
+      "n_candidates": 5,
+      "best_single_auc": 0.6908,
+      "ceiling_f1": 0.9474,
+      "raw_f1": 0.3607,
+      "greedy_f1": 1.0,
+      "pgraph_f1": 1.0,
+      "pgraph_spec": "F(true_0 >= 0.659 AND true_1 >= 0.643 AND true_2 >= 0.663)",
+      "arbiter_wall_s": 12.09,
+      "abb_aspects": 5,
+      "abb_aspects_capped": false,
+      "abb_explored": 220765,
+      "abb_pruned": 110294
+    },
+    {
+      "K": 3,
+      "D": 4,
+      "n_candidates": 7,
+      "best_single_auc": 0.7292,
+      "ceiling_f1": 0.913,
+      "raw_f1": 0.2143,
+      "greedy_f1": 0.9474,
+      "pgraph_f1": 0.9474,
+      "pgraph_spec": "F(true_0 >= 0.661 AND true_1 >= 0.9 AND true_2 >= 0.9)",
+      "arbiter_wall_s": 63.64,
+      "abb_aspects": 5,
+      "abb_aspects_capped": true,
+      "abb_explored": 180615,
+      "abb_pruned": 90214
+    },
+    {
+      "K": 3,
+      "D": 6,
+      "n_candidates": 9,
+      "best_single_auc": 0.688,
+      "ceiling_f1": 0.8889,
+      "raw_f1": 0.1818,
+      "greedy_f1": 0.9709,
+      "pgraph_f1": 0.9709,
+      "pgraph_spec": "F(true_0 >= 0.581 AND true_1 >= 0.578 AND true_2 >= 0.9)",
+      "arbiter_wall_s": 363.0,
+      "abb_aspects": 5,
+      "abb_aspects_capped": true,
+      "abb_explored": 175611,
+      "abb_pruned": 87706
+    }
+  ],
+  "non_trivial_all_cells": true,
+  "arbiter_recovers_ceiling": true,
+  "pgraph_beats_greedy_on_f1": false,
+  "_note": "Success is genuinely K-compositional (best single-signal AUC < 0.8 \u2014 the regime MetaWorld's single in_place proxy cannot provide). The arbiter recovers the true K-conjunct spec (raw \u2192 ceiling). pgraph vs greedy: reported honestly \u2014 the P-graph's payoff is ABB search feasibility at scale (explored/pruned), not necessarily an F1 win over greedy on pure conjunctions."
+}

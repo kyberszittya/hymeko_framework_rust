@@ -104,3 +104,41 @@ def refine_via_pgraph(formula: str, verif: list[Rollout], *, calibrate: bool = T
     calibrated_original = calibrate_thresholds(formula, verif) if calibrate else formula
     candidates.append(calibrated_original)
     return max(candidates, key=lambda f: formula_f1(f, verif))
+
+
+def greedy_conjunct_select(formula: str, verif: list[Rollout], *, calibrate: bool = True) -> str:
+    """Forward-greedy conjunct selection — the O(n²) baseline the P-graph SSG is measured against.
+
+    Seeds with the single best conjunct, then repeatedly adds the remaining conjunct with the largest F1 gain,
+    stopping when none improves F1. Unlike the SSG (which enumerates all feasible subsets), greedy can stall in a
+    local optimum when a conjunct only helps *in combination*. This is the honest comparator for "does the P-graph
+    earn its keep": if greedy ties the SSG everywhere, the P-graph's value is its axioms/scale, not an F1 win.
+
+    # Preconditions ``formula`` parses. # Postconditions parse-valid; F1 >= the best single conjunct's."""
+    preds = _predicates(formula)
+    if len(preds) < 2:
+        return calibrate_thresholds(formula, verif) if calibrate else formula
+    op = _outer_op(formula)
+
+    def build(idxs: list[int]) -> str:
+        return f"{op}(" + " AND ".join(preds[i][0] for i in sorted(idxs)) + ")"
+
+    def score(idxs: list[int]) -> float:
+        spec = build(idxs)
+        return formula_f1(calibrate_thresholds(spec, verif) if calibrate else spec, verif)
+
+    remaining = list(range(len(preds)))
+    seed = max(remaining, key=lambda i: score([i]))
+    chosen = [seed]
+    remaining.remove(seed)
+    best_f1 = score(chosen)
+    while remaining:
+        cand = max(remaining, key=lambda i: score([*chosen, i]))
+        f1 = score([*chosen, cand])
+        if f1 <= best_f1 + 1e-9:
+            break
+        chosen.append(cand)
+        remaining.remove(cand)
+        best_f1 = f1
+    final = build(chosen)
+    return calibrate_thresholds(final, verif) if calibrate else final

@@ -1,0 +1,319 @@
+{
+  "kind": "spec-reward drive A/B (from-scratch SAC, coffee-push)",
+  "stamp": "2026-07-14 15:57:31",
+  "arms": [
+    "native",
+    "spec_arbitrated",
+    "spec_raw"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "steps": 400000,
+  "hidden": 256,
+  "device": "cuda",
+  "aggregate": {
+    "native": {
+      "final_success": {
+        "median": 1.0,
+        "q1": 0.5,
+        "q3": 1.0,
+        "iqr": 0.5
+      },
+      "best_success": {
+        "median": 1.0,
+        "q1": 0.5,
+        "q3": 1.0,
+        "iqr": 0.5
+      },
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 10,
+        "n": 12,
+        "mean_ret_success": 642.53,
+        "mean_ret_failure": 63.088
+      }
+    },
+    "spec_arbitrated": {
+      "final_success": {
+        "median": 0.0,
+        "q1": 0.0,
+        "q3": 0.5,
+        "iqr": 0.5
+      },
+      "best_success": {
+        "median": 1.0,
+        "q1": 0.5,
+        "q3": 1.0,
+        "iqr": 0.5
+      },
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 10,
+        "n": 12,
+        "mean_ret_success": -4.0234,
+        "mean_ret_failure": -13.5344
+      }
+    },
+    "spec_raw": {
+      "final_success": {
+        "median": 0.0,
+        "q1": 0.0,
+        "q3": 0.0,
+        "iqr": 0.0
+      },
+      "best_success": {
+        "median": 0.0,
+        "q1": 0.0,
+        "q3": 0.0,
+        "iqr": 0.0
+      },
+      "certification": {
+        "delivers": true,
+        "discriminating": true,
+        "n_success": 10,
+        "n": 12,
+        "mean_ret_success": -144.0,
+        "mean_ret_failure": -146.0005
+      }
+    }
+  },
+  "winner": "native",
+  "per_seed": {
+    "native": [
+      {
+        "arm": "native",
+        "seed": 0,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "final_success": 0.0,
+        "best_success": 0.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_native_seed0.pt"
+      },
+      {
+        "arm": "native",
+        "seed": 1,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "final_success": 1.0,
+        "best_success": 1.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_native_seed1.pt"
+      },
+      {
+        "arm": "native",
+        "seed": 2,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "final_success": 1.0,
+        "best_success": 1.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_native_seed2.pt"
+      }
+    ],
+    "spec_arbitrated": [
+      {
+        "arm": "spec_arbitrated",
+        "seed": 0,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "final_success": 1.0,
+        "best_success": 1.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_spec_arbitrated_seed0.pt"
+      },
+      {
+        "arm": "spec_arbitrated",
+        "seed": 1,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "final_success": 0.0,
+        "best_success": 0.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_spec_arbitrated_seed1.pt"
+      },
+      {
+        "arm": "spec_arbitrated",
+        "seed": 2,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "final_success": 0.0,
+        "best_success": 1.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_spec_arbitrated_seed2.pt"
+      }
+    ],
+    "spec_raw": [
+      {
+        "arm": "spec_raw",
+        "seed": 0,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "final_success": 0.0,
+        "best_success": 0.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_spec_raw_seed0.pt"
+      },
+      {
+        "arm": "spec_raw",
+        "seed": 1,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "final_success": 0.0,
+        "best_success": 0.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_spec_raw_seed1.pt"
+      },
+      {
+        "arm": "spec_raw",
+        "seed": 2,
+        "steps": 400000,
+        "success_curve": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "final_success": 0.0,
+        "best_success": 0.0,
+        "checkpoint": "reports/figures/kato_fromscratch_sweep/sac_spec_raw_seed2.pt"
+      }
+    ]
+  }
+}
