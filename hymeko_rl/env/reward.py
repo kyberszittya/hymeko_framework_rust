@@ -473,6 +473,126 @@ def _term_vertical_bounce(env: Any, dist: float, action: np.ndarray) -> float:
     return -vz * vz
 
 
+# ── Hamiltonian / centroidal-momentum + Lyapunov terms (underactuated locomotion, 2026-07-17) ──────
+# For a floating-base underactuated robot the 6 unactuated base DOF are governed by the CENTROIDAL momenta
+# (COM linear momentum p_com, centroidal angular momentum CAM) — quantities the joints can shape only through
+# the contact forces they induce (ṗ_com = Σf − mg, ĊAM = Σ(pᵢ−c)×fᵢ). These terms reward the RIGHT momentum
+# distribution (forward p_x; not lateral/vertical) and add a control-Lyapunov certificate
+# V_L = ½(H−H_ref)² + ½‖CAM_xy‖² + ½ξ_lat² (energy-orbit + balance + capture-point) so the optimizer stays on
+# the certified-stable manifold. `transverse_momentum` GENERALISES `vertical_bounce` (= −v_z², its z-only case).
+# All quantities are MuJoCo-native: mj_energy{Pos,Vel} (H = T+V), mj_subtreeVel (centroidal p_com/CAM/z_com).
+@dataclass(frozen=True)
+class _Centroidal:
+    """Whole-body centroidal state read once per physics step (shared by the ≤5 Hamiltonian terms)."""
+    p_com: np.ndarray      # COM linear momentum [x_forward, y_lateral, z_up]  (kg·m/s)
+    cam: np.ndarray        # centroidal angular momentum [roll, pitch, yaw]
+    H: float               # Hamiltonian = total mechanical energy T + V
+    z_com: float           # COM height (capture-point ω = √(g/z_c))
+    ok: bool               # False on an env with no free base / uncomputable → terms return 0
+
+
+def _centroidal(env: Any) -> _Centroidal:
+    """Centroidal momenta + energy from the live MuJoCo state, cached per step on ``env._centroidal_c``
+    (keyed by ``data.time`` so all Hamiltonian terms in one reward evaluation share a single compute)."""
+    m = getattr(env, "model", None)
+    d = getattr(env, "data", None)
+    key = float(d.time) if d is not None else -1.0
+    cache = getattr(env, "_centroidal_c", None)
+    if cache is not None and cache[0] == key:
+        return cache[1]  # type: ignore[no-any-return]
+    if m is None or d is None or not any(int(m.jnt_type[j]) == 0 for j in range(m.njnt)):
+        c = _Centroidal(np.zeros(3), np.zeros(3), 0.0, 1.0, False)
+    else:
+        try:
+            import mujoco  # type: ignore[import-untyped]
+            mujoco.mj_subtreeVel(m, d)                      # fills subtree_linvel / subtree_angmom / subtree_com
+            mujoco.mj_energyPos(m, d)
+            mujoco.mj_energyVel(m, d)
+            tm = float(getattr(env, "_ham_mass", 0.0)) or float(m.body_mass.sum())
+            env._ham_mass = tm
+            v_com = np.asarray(d.subtree_linvel[0], dtype=float)   # world subtree = whole-body COM
+            c = _Centroidal(tm * v_com, np.asarray(d.subtree_angmom[0], dtype=float),
+                            float(np.sum(d.energy)), max(1e-3, float(d.subtree_com[0][2])), True)
+        except Exception:                                  # any MuJoCo API/shape gap → graceful no-op
+            c = _Centroidal(np.zeros(3), np.zeros(3), 0.0, 1.0, False)
+    env._centroidal_c = (key, c)
+    return c
+
+
+def _ham_scales(env: Any) -> "tuple[float, float, float, float]":
+    """Characteristic (momentum ``p0=m·v*``, ang-momentum ``l0=m·v*·z``, energy ``e0=m·g·z``, length ``z``)
+    scales from the plant + ``target_speed`` — so every Hamiltonian term is DIMENSIONLESS O(1) and the reward
+    WEIGHTS (not raw physical units) set their balance. Cached on ``env._ham_scales_c``."""
+    s: "tuple[float, float, float, float] | None" = getattr(env, "_ham_scales_c", None)
+    if s is not None:
+        return s
+    tm = float(getattr(env, "_ham_mass", 0.0)) or float(getattr(env, "model").body_mass.sum())
+    vt = float(getattr(env, "target_speed", 0.6))
+    z = max(1e-2, _centroidal(env).z_com)
+    s = (max(1e-6, tm * vt), max(1e-6, tm * vt * z), max(1e-6, tm * 9.81 * z), z)
+    env._ham_scales_c = s
+    return s
+
+
+def _term_forward_momentum(env: Any, dist: float, action: np.ndarray) -> float:
+    """``+ p_com,x / (m·v*)`` — COM forward momentum, normalised to the target (≈1 at ``target_speed``).
+    Propulsion as a *physical* momentum (the CIP propel-edge, formalised) — the reward the locomotion spec was
+    missing. 0 on an env with no free base."""
+    c = _centroidal(env)
+    return float(c.p_com[0]) / _ham_scales(env)[0] if c.ok else 0.0
+
+
+def _term_transverse_momentum(env: Any, dist: float, action: np.ndarray) -> float:
+    """``- (p_y² + p_z²)/(m·v*)²`` — non-forward COM momentum (normalised). Generalises ``vertical_bounce`` (its
+    z-only special case) to lateral + vertical: leg energy should go forward, not sideways or up."""
+    c = _centroidal(env)
+    if not c.ok:
+        return 0.0
+    p0 = _ham_scales(env)[0]
+    return -(float(c.p_com[1]) ** 2 + float(c.p_com[2]) ** 2) / (p0 * p0)
+
+
+def _term_centroidal_angular_momentum(env: Any, dist: float, action: np.ndarray) -> float:
+    """``- ‖CAM_xy‖²/(m·v*·z)²`` — roll/pitch centroidal angular momentum (normalised). ``CAM → 0`` is the
+    balance condition of centroidal dynamics; a nonzero tipping moment is a fall precursor (Lyapunov balance)."""
+    c = _centroidal(env)
+    if not c.ok:
+        return 0.0
+    l0 = _ham_scales(env)[1]
+    return -(float(c.cam[0]) ** 2 + float(c.cam[1]) ** 2) / (l0 * l0)
+
+
+def _term_energy_regulation(env: Any, dist: float, action: np.ndarray) -> float:
+    """``- ((H − H_ref)/(m·g·z))²`` — the energy-shaping (Spong) Lyapunov term (normalised by the COM potential
+    scale). Pins total mechanical energy to the walking-orbit level ``H_ref = V_nominal + ½ m v*²``
+    (self-parameterised: ``V_nominal`` = the first evaluation's potential, ``v*`` = ``env.target_speed``, default
+    0.6 m/s). Keeps the gait on its energy manifold rather than pumping bounce."""
+    c = _centroidal(env)
+    if not c.ok:
+        return 0.0
+    href = getattr(env, "_ham_href", None)
+    if href is None:
+        tm = float(getattr(env, "_ham_mass", 0.0)) or 1.0
+        vt = float(getattr(env, "target_speed", 0.6))
+        href = float(env.data.energy[0]) + 0.5 * tm * vt * vt      # potential(≈nominal) + kinetic(target)
+        env._ham_href = href
+    e0 = _ham_scales(env)[2]
+    return -((c.H - float(href)) / e0) ** 2
+
+
+def _term_capture_point(env: Any, dist: float, action: np.ndarray) -> float:
+    """``- (ξ_lat/z)²`` — the LATERAL divergent-component-of-motion ``ξ_y = v_com,y·√(z/g)`` normalised by COM
+    height: the sideways fall predictor (the dominant tipping mode of a forward-walking quadruped). Bounds falls
+    WITHOUT fighting forward speed (the forward DCM is left to ``forward_momentum``). 0 on a fixed-base env."""
+    c = _centroidal(env)
+    if not c.ok:
+        return 0.0
+    tm = float(getattr(env, "_ham_mass", 0.0)) or 1.0
+    z = _ham_scales(env)[3]
+    xi_lat = (float(c.p_com[1]) / tm) / float((9.81 / c.z_com) ** 0.5)
+    return -float((xi_lat / z) ** 2)
+
+
 # ── pick-and-place terms (read the env's PickMetrics; 0 on a non-pick env) ───
 @dataclass(frozen=True)
 class PickMetrics:
@@ -545,6 +665,12 @@ _REWARD_TERMS: dict[str, RewardTerm] = {
     "standing": _term_standing,
     "stand_still": _term_stand_still,
     "vertical_bounce": _term_vertical_bounce,   # CIP-informed: penalise the bounce channel DirectLiNGAM found
+    # Hamiltonian / centroidal-momentum + Lyapunov (underactuated locomotion, 2026-07-17):
+    "forward_momentum": _term_forward_momentum,                     # + p_com,x (propulsion as momentum)
+    "transverse_momentum": _term_transverse_momentum,               # − (p_y²+p_z²) (generalises vertical_bounce)
+    "centroidal_angular_momentum": _term_centroidal_angular_momentum,  # − ‖CAM_xy‖² (balance certificate)
+    "energy_regulation": _term_energy_regulation,                   # − (H−H_ref)² (energy-shaping Lyapunov)
+    "capture_point": _term_capture_point,                           # − ξ_lat² (DCM fall-predictor bound)
     "reach_distance": _term_reach_distance,
     "success_bonus": _term_success_bonus,
     "action_cost": _term_action_cost,

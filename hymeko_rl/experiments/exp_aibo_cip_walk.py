@@ -46,13 +46,45 @@ CIP_GOAL_REWARD = cip_goal_reward()     # back-compat constant: the bounce=3.0 d
 _CVARS = ("action_energy", "forward_vx", "uprightness", "torso_height", "leg_speed")
 
 
+# Hamiltonian-momenta + Lyapunov reward (underactuated control, 2026-07-17): the principled generalisation of the
+# CIP anti-bounce term. Rewards forward CENTROIDAL momentum + a control-Lyapunov certificate (energy-orbit +
+# balance/CAM + capture-point) so the optimiser stays on the certified-stable manifold — and it supplies the
+# forward-velocity reward the CIP-bounce spec was missing (the mined "reward pays for bounce-avoidance but not
+# propulsion" gap). All terms are O(1)-normalised, so these weights set the balance.
+def hamiltonian_goal_reward(target_speed: float = 0.6) -> RewardSpec:
+    """Full-stack Hamiltonian-Lyapunov Aibo goal reward. ``target_speed`` (m/s) parameterises H_ref via the env."""
+    return RewardSpec((
+        ("goal_progress", 20.0),                    # keep the task objective (reach the goal)
+        ("success_bonus", 50.0),
+        ("forward_momentum", 8.0),                  # + p_com,x — propulsion as momentum (the missing forward reward)
+        ("transverse_momentum", 2.0),               # − (p_y²+p_z²) — subsumes vertical_bounce + lateral
+        ("centroidal_angular_momentum", 1.0),       # − ‖CAM_xy‖² — balance (tipping) certificate
+        ("energy_regulation", 0.5),                 # − (H−H_ref)² — energy-shaping Lyapunov
+        ("capture_point", 2.0),                     # − ξ_lat² — lateral DCM fall-predictor bound
+        ("alive", 1.0),
+        ("joint_acceleration", 0.002),
+    ))
+
+
+HAMILTONIAN_GOAL_REWARD = hamiltonian_goal_reward()
+
+
 class CipAiboEnv(QuadrupedGoalEnv):
     """Aibo goal-reach env with the CIP-informed reward + a privileged state for the asymmetric CTDE critic.
 
-    ``bounce`` sets the anti-vertical-bounce reward weight (default 3.0 reproduces prior runs)."""
+    ``bounce`` sets the anti-vertical-bounce reward weight (default 3.0 reproduces prior runs). ``hamiltonian``
+    swaps in the full-stack Hamiltonian-momenta + Lyapunov reward (underactuated control); ``target_speed`` (m/s)
+    parameterises its energy reference H_ref (read by ``energy_regulation``/``capture_point``)."""
 
-    def __init__(self, *, cip_reward: bool = True, bounce: float = 3.0, **kw: Any) -> None:
-        spec = cip_goal_reward(bounce) if cip_reward else None
+    def __init__(self, *, cip_reward: bool = True, bounce: float = 3.0, hamiltonian: bool = False,
+                 target_speed: float = 0.6, **kw: Any) -> None:
+        self.target_speed = float(target_speed)          # read by the Hamiltonian reward terms (H_ref, ω)
+        if hamiltonian:
+            spec: "RewardSpec | None" = hamiltonian_goal_reward(target_speed)
+        elif cip_reward:
+            spec = cip_goal_reward(bounce)
+        else:
+            spec = None
         super().__init__(base="free", task="goal", reward_spec=spec, **kw)
 
     def privileged_state(self) -> np.ndarray:

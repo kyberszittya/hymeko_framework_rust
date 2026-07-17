@@ -119,16 +119,16 @@ reward {
         // Joint-acceleration smoothness (jerk): -weight·Σ q̈² over the actuated joints — smooth, not snappy.
         @joint_acceleration:  + <isa> reward.reward_term {}
 
-        // ── Quadruped STANDING / balance terms (read the env's torso pose; 0 on a torso-less env) ──
-        // Gated success predicate: +weight iff the torso is upright (cos > stand_cos) AND at nominal height
-        // (|z − h| < tol) — identical to the DwellMetric the task is graded on (reward ≡ metric). Dominant term.
-        @standing:      + <isa> reward.reward_term {}
-        // Dense height shaping: -weight·|z − stand_height| — the gradient pulling the torso to standing height.
-        @torso_height:  + <isa> reward.reward_term {}
-        // Dense levelness: +weight·cos(tilt) — gradient toward a level (upright) torso.
-        @upright:       + <isa> reward.reward_term {}
-        // Anti-drift: -weight·|v_x| — hold the ground, don't walk off while balancing.
-        @stand_still:   + <isa> reward.reward_term {}
+        // ── Hamiltonian / centroidal-momentum + Lyapunov terms (underactuated locomotion, 2026-07-17) ──
+        // Reward the RIGHT centroidal momentum distribution + a control-Lyapunov certificate. All MuJoCo-native
+        // (mj_energy* / mj_subtreeVel), normalised to O(1) so the reward_spec weights set the balance. The 6
+        // unactuated free-base DOF are shaped only through contact forces the joints induce → reward their momenta.
+        @vertical_bounce:                + <isa> reward.reward_term {}   // -v_z² (CIP anti-bounce; z-only special case)
+        @forward_momentum:               + <isa> reward.reward_term {}   // + p_com,x/(m·v*)   (propulsion as momentum)
+        @transverse_momentum:            + <isa> reward.reward_term {}   // -(p_y²+p_z²)/(m·v*)² (generalises bounce)
+        @centroidal_angular_momentum:    + <isa> reward.reward_term {}   // -‖CAM_xy‖²/(m·v*·z)² (balance certificate)
+        @energy_regulation:              + <isa> reward.reward_term {}   // -((H-H_ref)/(m·g·z))² (energy-shaping Lyap.)
+        @capture_point:                  + <isa> reward.reward_term {}   // -(ξ_lat/z)²         (DCM fall-predictor)
 
         // ── pick-and-place terms (read the env's PickMetrics; 0 on a non-pick env) ──
         // Dense approach: -‖tool - object‖ (the tool descends toward the object to grasp it).
