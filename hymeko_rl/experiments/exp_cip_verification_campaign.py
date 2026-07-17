@@ -35,12 +35,22 @@ from hymeko_rl.experiments.exp_aibo_cip_walk import CipAiboEnv, cip_diagnose
 _OUT = Path("experiments/2026_07_16_cip_verification")
 
 # CIP-informed forward reward for the legged runners (my LeggedLocomotionEnv): forward driver + anti-bounce.
-LEGGED_CIP_REWARD = RewardSpec((
-    ("goal_progress", 60.0),
-    ("vertical_bounce", 3.0),       # CIP anti-bounce (same term)
-    ("alive", 1.0),
-    ("action_cost", 0.05),
-))
+# `bounce` is the anti-vertical-bounce weight; the 2026-07-17 teacher CIP discovery measured the humanoid CpG as
+# 3.0× bounce-dominated (bounce-edge 0.766 ≫ propel-edge 0.254), motivating the bounce ∈ {3, 8} A/B.
+def legged_cip_reward(bounce: float = 3.0) -> RewardSpec:
+    """CIP-informed legged forward reward with a configurable anti-bounce weight.
+
+    # Preconditions ``bounce >= 0``.  # Postconditions ``vertical_bounce`` term carries ``bounce``; others fixed;
+    ``bounce=3.0`` reproduces the original ``LEGGED_CIP_REWARD``."""
+    return RewardSpec((
+        ("goal_progress", 60.0),
+        ("vertical_bounce", bounce),    # CIP anti-bounce (A/B axis)
+        ("alive", 1.0),
+        ("action_cost", 0.05),
+    ))
+
+
+LEGGED_CIP_REWARD = legged_cip_reward()     # back-compat constant: the bounce=3.0 default
 
 
 def _aibo(goal_distance: float, horizon: int) -> Callable[[], Any]:

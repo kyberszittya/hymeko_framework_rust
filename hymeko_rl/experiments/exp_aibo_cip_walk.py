@@ -26,21 +26,34 @@ from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
 from hymeko_rl.env.reward import RewardSpec
 
 # CIP-informed goal reward: up-weighted forward driver + the anti-bounce term DirectLiNGAM motivated.
-CIP_GOAL_REWARD = RewardSpec((
-    ("goal_progress", 30.0),        # forward driver (CIP: forward is under-served vs bounce)
-    ("success_bonus", 50.0),
-    ("vertical_bounce", 3.0),       # NEW (CIP): −v_z² — penalise the bounce channel
-    ("time_penalty", 0.1),
-    ("joint_acceleration", 0.002),
-))
+# `bounce` is the anti-vertical-bounce weight (−v_z²). The 2026-07-17 teacher CIP discovery measured the Aibo
+# trot as 3.7× bounce-dominated (bounce-edge 0.451 ≫ propel-edge 0.122), motivating an A/B of bounce ∈ {3, 8}.
+def cip_goal_reward(bounce: float = 3.0) -> RewardSpec:
+    """CIP-informed Aibo goal reward with a configurable anti-bounce weight.
+
+    # Preconditions ``bounce >= 0``.  # Postconditions returns a :class:`RewardSpec` whose ``vertical_bounce``
+    term carries ``bounce``; all other terms fixed. ``bounce=3.0`` reproduces the original ``CIP_GOAL_REWARD``."""
+    return RewardSpec((
+        ("goal_progress", 30.0),        # forward driver (CIP: forward is under-served vs bounce)
+        ("success_bonus", 50.0),
+        ("vertical_bounce", bounce),    # CIP: −v_z² — penalise the bounce channel (A/B axis)
+        ("time_penalty", 0.1),
+        ("joint_acceleration", 0.002),
+    ))
+
+
+CIP_GOAL_REWARD = cip_goal_reward()     # back-compat constant: the bounce=3.0 default
 _CVARS = ("action_energy", "forward_vx", "uprightness", "torso_height", "leg_speed")
 
 
 class CipAiboEnv(QuadrupedGoalEnv):
-    """Aibo goal-reach env with the CIP-informed reward + a privileged state for the asymmetric CTDE critic."""
+    """Aibo goal-reach env with the CIP-informed reward + a privileged state for the asymmetric CTDE critic.
 
-    def __init__(self, *, cip_reward: bool = True, **kw: Any) -> None:
-        super().__init__(base="free", task="goal", reward_spec=(CIP_GOAL_REWARD if cip_reward else None), **kw)
+    ``bounce`` sets the anti-vertical-bounce reward weight (default 3.0 reproduces prior runs)."""
+
+    def __init__(self, *, cip_reward: bool = True, bounce: float = 3.0, **kw: Any) -> None:
+        spec = cip_goal_reward(bounce) if cip_reward else None
+        super().__init__(base="free", task="goal", reward_spec=spec, **kw)
 
     def privileged_state(self) -> np.ndarray:
         return np.concatenate([self.data.qpos, self.data.qvel]).astype(np.float32)

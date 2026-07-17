@@ -64,6 +64,41 @@ def test_cip_vertical_bounce_reward_and_env() -> None:
     assert term(env, 0.0, np.zeros(env.n_actions)) < 0.0
 
 
+def _bounce_weight(spec: object) -> float:
+    return {k: w for k, w in spec.terms}["vertical_bounce"]      # type: ignore[attr-defined]
+
+
+def test_cip_reward_bounce_weight_parameterization() -> None:
+    """The CIP anti-bounce weight is configurable via the reward factories; the default (3.0) reproduces the
+    back-compat constants, and `CipAiboEnv(bounce=...)` threads it into the env's reward spec (2026-07-17 A/B)."""
+    from hymeko_rl.experiments.exp_aibo_cip_walk import CIP_GOAL_REWARD, CipAiboEnv, cip_goal_reward
+    from hymeko_rl.experiments.exp_cip_verification_campaign import LEGGED_CIP_REWARD, legged_cip_reward
+
+    assert _bounce_weight(cip_goal_reward()) == 3.0                  # default reproduces the constant
+    assert _bounce_weight(CIP_GOAL_REWARD) == 3.0
+    assert _bounce_weight(cip_goal_reward(8.0)) == 8.0              # A/B value carried through
+    assert _bounce_weight(legged_cip_reward()) == 3.0
+    assert _bounce_weight(LEGGED_CIP_REWARD) == 3.0
+    assert _bounce_weight(legged_cip_reward(8.0)) == 8.0
+    # other terms are untouched by the bounce axis
+    assert dict(cip_goal_reward(8.0).terms)["goal_progress"] == dict(CIP_GOAL_REWARD.terms)["goal_progress"]
+    env = CipAiboEnv(max_steps=20, bounce=8.0)
+    assert _bounce_weight(env.reward_spec) == 8.0                   # env carries the requested weight
+
+
+def test_campaign_scenarios_bounce_and_body_filter() -> None:
+    """`scenarios(bounce, bodies)` filters to the requested bodies and threads the anti-bounce weight into each
+    built env's reward — so the campaign's bounce A/B axis reaches the physics, not just the cell label."""
+    from hymeko_rl.experiments.exp_sac_walk_campaign import scenarios
+
+    tall = scenarios(8.0, bodies=("aibo_goal", "humanoid_walk"))
+    assert [s["name"] for s in tall] == ["aibo_goal", "humanoid_walk"]     # cheetah (bounce-inert) excluded
+    for s in tall:
+        env = s["make"]()
+        assert _bounce_weight(env.reward_spec) == 8.0
+    assert len(scenarios()) == 3 and _bounce_weight(scenarios()[0]["make"]().reward_spec) == 3.0   # default grid
+
+
 def test_trot_gait_deterministic() -> None:
     env = QuadrupedGoalEnv(base="free", task="goal", max_steps=50)
     env.reset(seed=0)

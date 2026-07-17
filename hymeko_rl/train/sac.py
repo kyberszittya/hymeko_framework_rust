@@ -18,10 +18,12 @@ from __future__ import annotations
 import argparse
 import copy
 import enum
+import os
 import time
 import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
@@ -254,6 +256,14 @@ class SACConfig:
     greedy_rollout: bool = False           # step the env with action_mean (no exploration) instead of a sample — makes
     #                                        the rollout-anchor states self-consistent with the greedy-EVAL states, the
     #                                        F-SAC-9 discriminator (isolates exploration-covariate from the -Q term).
+    compile: bool = False             # torch.compile the update hot path (critic/actor loss) into CUDA graphs
+    #                                   (reduce-overhead); CUDA-only, no-op on CPU. Pure speedup — identical update
+    #                                   math + update-to-data ratio, so the learned policy is UNCHANGED (mirrors
+    #                                   train_offpolicy's 8.25× on the structural update; the 2026-07-17 profile
+    #                                   showed the B=256 update is 99.9% of the structural per-step cost).
+    update_every: int = 1             # do ONE update per `update_every` env steps (1 = current: every step). >1 is
+    #                                   FEWER gradient steps — a sample-EFFICIENCY change (§6.5 #19), never a silent
+    #                                   default: use only behind an explicit A/B.
 
     @classmethod
     def stable(cls, *, total_steps: int, seed: int = 0, rollout_anchor_coef: float = 0.0,
@@ -330,11 +340,82 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     ra_ptr = ra_size = 0
     if dagger_teacher is not None:
         dagger_teacher.reset()
+    if cfg.update_every < 1:
+        raise ValueError(f"update_every must be >= 1; got {cfg.update_every}")
     history: list[float] = []
     reward_rms = RunningRMS()                                       # bounds the Q-scale (anti-divergence)
+    last_c, last_a = float("nan"), float("nan")                     # last update's losses (bound before the closures)
+
+    # The update hot path as closures. The 2026-07-17 per-step profile showed the B=256 gradient update is 99.9%
+    # of the structural (hsikan) per-step cost and the B=1 rollout is 0.1% — so we cut the UPDATE, not the rollout
+    # (§6.5 #18). torch.compile folds these into CUDA graphs (reduce-overhead) when cfg.compile & CUDA: identical
+    # math + update-to-data ratio ⇒ the learned policy is UNCHANGED (mirrors train_offpolicy's 8.25×). BC/DAgger
+    # anchors are added eager and DISABLE compile — compile covers the pure-SAC-from-scratch path (the campaign).
+    def _critic_loss(s: torch.Tensor, a: torch.Tensor, r: torch.Tensor, s2: torch.Tensor,
+                     d: torch.Tensor, alpha: torch.Tensor) -> torch.Tensor:
+        with torch.no_grad():
+            a2, logp2 = actor.sample(s2)
+            q_next = torch.stack([tc(s2, a2) for tc in t_critics], 0).amin(0) - alpha * logp2
+            y = r + cfg.gamma * (1 - d) * q_next                    # reward already RMS-normalised eager by the caller
+        return sum(F.mse_loss(c(s, a), y) for c in critics)         # type: ignore[return-value]
+
+    def _actor_terms(s: torch.Tensor, alpha: torch.Tensor) -> "tuple[torch.Tensor, torch.Tensor]":
+        ap, logp = actor.sample(s)
+        q_pi = torch.stack([c(s, ap) for c in critics], 0).amin(0)
+        return (alpha * logp - q_pi).mean(), logp                  # alpha passed detached; logp reused for α update
+
+    _anchored = cfg.bc_coef > 0.0 or cfg.rollout_anchor_coef > 0.0 or dagger_teacher is not None
+    _use_compile = bool(cfg.compile) and dev.type == "cuda" and not _anchored
+    if cfg.compile and dev.type == "cuda" and _anchored:
+        print("  [sac] compile requested but BC/DAgger anchors are active → eager "
+              "(compile covers the pure-SAC-from-scratch path only)", flush=True)
+    if _use_compile:
+        os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR",
+                              str(Path(__file__).resolve().parent.parent / ".torchinductor_cache"))
+        _critic_loss = torch.compile(_critic_loss, mode="reduce-overhead")
+        _actor_terms = torch.compile(_actor_terms, mode="reduce-overhead")
+
+    def _update_once(step: int) -> None:
+        """One gradient update (critic → actor → α → polyak). Shared by every update_every cadence."""
+        nonlocal last_c, last_a
+        s, a, r, s2, d = (x.to(dev) for x in buf.sample(cfg.batch_size, generator=rng))
+        alpha_d = _alpha_at(step).detach()                         # value only; α is optimised eager below
+        if cfg.reward_norm:
+            r = reward_rms.normalize(r)                            # bounded-scale reward → bounded Q-target (eager)
+        if _use_compile:
+            torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]  # root a fresh CUDA-graph step
+        c_loss = _critic_loss(s, a, r, s2, d, alpha_d)
+        c_opt.zero_grad()
+        c_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
+        torch.nn.utils.clip_grad_norm_([p for c in critics for p in c.parameters()], cfg.max_grad_norm)
+        c_opt.step()
+        if _use_compile:
+            torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]
+        a_loss, logp = _actor_terms(s, alpha_d)
+        if demo_s is not None and demo_a is not None:              # TD3+BC-style anchor (eager; see _anchored above)
+            idx = rng.integers(0, demo_s.shape[0], size=min(cfg.batch_size, demo_s.shape[0]))
+            a_loss = a_loss + cfg.bc_coef * ((actor.action_mean(demo_s[idx]) - demo_a[idx]) ** 2).mean()
+        if cfg.rollout_anchor_coef > 0.0 and ra_size >= 1:         # rollout-state DAgger anchor (eager)
+            ridx = rng.integers(0, ra_size, size=min(cfg.batch_size, ra_size))
+            ro_obs = torch.as_tensor(ra_obs[ridx], device=dev)
+            ro_act = torch.as_tensor(ra_act[ridx], device=dev)
+            a_loss = a_loss + cfg.rollout_anchor_coef * ((actor.action_mean(ro_obs) - ro_act) ** 2).mean()
+        a_opt.zero_grad()
+        a_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
+        torch.nn.utils.clip_grad_norm_(actor.parameters(), cfg.max_grad_norm)
+        a_opt.step()
+        if cfg.alpha_mode is AlphaMode.AUTO:            # only classic SAC learns α; FIXED/ANNEAL schedule it
+            alpha_loss = -(log_alpha * (logp + target_entropy).detach()).mean()
+            al_opt.zero_grad()
+            alpha_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
+            al_opt.step()
+        for tc, c in zip(t_critics, critics):
+            _polyak(tc, c, cfg.tau)
+        last_c, last_a = float(c_loss.item()), float(a_loss.item())
+
     obs, _ = env.reset(seed=cfg.seed)
     t0 = time.perf_counter()
-    last_c, last_a = float("nan"), float("nan")
+    pending = 0
     for step in range(1, cfg.total_steps + 1):
         if step <= cfg.start_steps:
             action = rng.uniform(-scale, scale, size=action_dim).astype(np.float32)
@@ -361,47 +442,11 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
         else:
             obs = nobs
 
-        if buf.size >= cfg.batch_size and step > cfg.start_steps:
-            s, a, r, s2, d = (x.to(dev) for x in buf.sample(cfg.batch_size, generator=rng))
-            alpha = _alpha_at(step)
-            with torch.no_grad():
-                a2, logp2 = actor.sample(s2)
-                q_next = torch.stack([tc(s2, a2) for tc in t_critics], 0).amin(0) - alpha * logp2
-                if cfg.reward_norm:
-                    r = reward_rms.normalize(r)                     # bounded-scale reward → bounded Q-target
-                y = r + cfg.gamma * (1 - d) * q_next
-            c_loss = sum(F.mse_loss(c(s, a), y) for c in critics)
-            c_opt.zero_grad()
-            c_loss.backward()   # type: ignore[union-attr]  # sum() of tensors is a tensor
-            torch.nn.utils.clip_grad_norm_([p for c in critics for p in c.parameters()], cfg.max_grad_norm)
-            c_opt.step()
-
-            ap, logp = actor.sample(s)
-            q_pi = torch.stack([c(s, ap) for c in critics], 0).amin(0)
-            a_loss = (alpha.detach() * logp - q_pi).mean()
-            if demo_s is not None and demo_a is not None:          # TD3+BC-style anchor: hold action_mean near the demos
-                idx = rng.integers(0, demo_s.shape[0], size=min(cfg.batch_size, demo_s.shape[0]))
-                a_loss = a_loss + cfg.bc_coef * ((actor.action_mean(demo_s[idx]) - demo_a[idx]) ** 2).mean()
-            if cfg.rollout_anchor_coef > 0.0 and ra_size >= 1:     # rollout-state DAgger anchor: hold action_mean near the
-                ridx = rng.integers(0, ra_size, size=min(cfg.batch_size, ra_size))  # teacher on the actor's OWN states
-                ro_obs = torch.as_tensor(ra_obs[ridx], device=dev)
-                ro_act = torch.as_tensor(ra_act[ridx], device=dev)
-                a_loss = a_loss + cfg.rollout_anchor_coef * ((actor.action_mean(ro_obs) - ro_act) ** 2).mean()
-            a_opt.zero_grad()
-            a_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
-            torch.nn.utils.clip_grad_norm_(actor.parameters(), cfg.max_grad_norm)
-            a_opt.step()
-
-            if cfg.alpha_mode is AlphaMode.AUTO:            # only classic SAC learns α; FIXED/ANNEAL schedule it
-                alpha_loss = -(log_alpha * (logp + target_entropy).detach()).mean()
-                al_opt.zero_grad()
-                alpha_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
-                al_opt.step()
-
-            for tc, c in zip(t_critics, critics):
-                _polyak(tc, c, cfg.tau)
-            # c_loss is sum() of ≥1 tensors, so the int-0 branch of sum()'s type is unreachable here
-            last_c, last_a = float(c_loss.item()), float(a_loss.item())  # type: ignore[union-attr]
+        if buf.size >= cfg.batch_size and step > cfg.start_steps:   # UTD-preserving: total updates = qualifying/update_every
+            pending += 1
+            while pending >= cfg.update_every:
+                _update_once(step)
+                pending -= cfg.update_every
 
         if augmentor is not None:            # periodic replay augmentation (Cao/Ito CIP-CDS); no-op off its cadence
             augmentor.maybe_augment(buf, step)
