@@ -67,6 +67,19 @@ Runs humanoid × {flat,structural} × {bounce 3,8} × the given seeds × 800k, *
 (the +24% lever below), flat-first. Output: `experiments/2026_07_17_humanoid_scaleup_<host>/{scaleup.log,cells.jsonl}`.
 (To also bring the Aibo to 5 seeds: same idea with `bodies=("aibo_goal",)`, seeds 3,4 — edit `scaleup_launch.py`.)
 
+## 2b. Hamiltonian-Lyapunov reward A/B — kato15 RUNNING (concurrent with the scaleup)
+
+**Update 23:1x JST:** the new Hamiltonian-momenta + Lyapunov reward (committed `2c4bfe7`) is being A/B'd vs the
+CIP-bounce reward. `experiments/2026_07_17_aibo_hamiltonian_ab/{ham_ab.log,cells.jsonl}` — Aibo flat SAC, 6 cells
+(`cip_bounce` vs `hamiltonian` × 3 seeds), **1.2M steps** (the "train longer" lever), max-autotune, ~6 h. Running
+concurrent with the humanoid scaleup on kato15 (both flat single-env SAC = CPU-`env.step`-bound, so they share the
+box with minimal contention; ~293 steps/s each). Metric = dx + CIP propel/bounce edges of the LEARNED policy
+(reward-agnostic → a fair A/B). **The question:** does the Hamiltonian reward convert the measured bounce into
+forward propulsion (dx↑, propel↑, bounce↓) where the CIP-bounce reward left the Aibo bounce-dominated?
+- Relaunch/resume: `bash ~/hymeko_framework_rust/scripts/kato15/hamiltonian_ab_run.sh` (resumable via cells.jsonl).
+- The reward itself: `hymeko_rl/env/reward.py` (5 O(1) terms), `meta_reward.hymeko` vocab, `HAMILTONIAN_GOAL_REWARD`
+  + `CipAiboEnv(hamiltonian=True, target_speed=)` in `exp_aibo_cip_walk.py`. 5 tests pass.
+
 ## 3. hsikan acceleration — findings (the "look for a way" task)
 
 Profiled the hsikan update (`torch.profiler`, Aibo N=33, hidden 256) and tested each lever with a parity check:
