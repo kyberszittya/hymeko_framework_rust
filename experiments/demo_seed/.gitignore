@@ -1,0 +1,5 @@
+# generated artifacts (regenerable from setup_and_validate.py / launch.sh)
+demo_seed_setup.npz
+logs/
+logs_launch.out
+result_*.json

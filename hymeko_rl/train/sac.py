@@ -294,7 +294,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
               eval_fn: Callable[[Any, Any], float] | None = None,
               offline_data: "tuple[np.ndarray, np.ndarray] | None" = None,
               dagger_teacher: Any = None,
-              augmentor: "ReplayAugmentor | None" = None) -> list[float]:
+              augmentor: "ReplayAugmentor | None" = None,
+              init_transitions: "tuple[np.ndarray, ...] | None" = None) -> list[float]:
     """Train SAC on ``env``; returns the periodic eval curve.
 
     Twin soft-Q critics with the entropy-augmented target ``y = r + γ(1-d)(min_i Q̄_i(s',a') − α·logπ(a'))``;
@@ -334,6 +335,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     space_shape = env.observation_space.shape
     assert space_shape is not None
     buf = ReplayBuffer(cfg.capacity, tuple(int(d) for d in space_shape), action_dim)
+    if init_transitions is not None:                               # demo-seeded replay: preload (obs,act,rew,next,done)
+        buf.add_batch(*init_transitions)                           # true env rewards/dones; sampled like any transition
     # rollout-state DAgger anchor (2026-07-15): a recent ring of (obs, teacher_action) over the actor's OWN visited
     # states, refreshed live from the reactive teacher. Inactive (buffer stays empty) unless a teacher is supplied.
     obs_shape = tuple(int(d) for d in space_shape)
