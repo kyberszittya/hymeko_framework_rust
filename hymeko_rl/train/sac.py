@@ -188,13 +188,17 @@ class ContactActorBank(_SquashedGaussianActorBase):
     # Invariants the two heads never share ``μ``/``log σ`` parameters; the shared encoder is trained by both.
     """
 
-    def __init__(self, backbone: nn.Module, feat_dim: int, action_dim: int, action_scale: float) -> None:
+    def __init__(self, backbone: nn.Module, feat_dim: int, action_dim: int, action_scale: float,
+                 selector: "Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]] | None" = None) -> None:
         super().__init__()
         self.backbone = backbone
-        self.reposition = _ModeHead(feat_dim, action_dim)
-        self.transport = _ModeHead(feat_dim, action_dim)
+        self.reposition = _ModeHead(feat_dim, action_dim)           # "mode A" head (coin: REPOSITION)
+        self.transport = _ModeHead(feat_dim, action_dim)            # "mode B" head (coin: TRANSPORT)
         self.action_scale = float(action_scale)
         self.action_dim = int(action_dim)
+        # INJECTABLE binary mode selector obs→(mask, reason): coin default, but a task supplies its own (§13.3) so the
+        # bank is task-agnostic. mask True ⇒ the ``transport``/"mode B" head; False ⇒ ``reposition``/"mode A".
+        self._selector = selector if selector is not None else select_contact_mode
         self._reset_diag()
 
     def _reset_diag(self) -> None:
@@ -224,7 +228,7 @@ class ContactActorBank(_SquashedGaussianActorBase):
 
     def _routed(self, obs: torch.Tensor, *, stochastic: bool) -> tuple[torch.Tensor, torch.Tensor | None]:
         h = self.backbone(obs)
-        t_mask, _reason = select_contact_mode(obs)                 # explicit named-field gate (per-sample)
+        t_mask, _reason = self._selector(obs)                      # injectable explicit gate (per-sample)
         mu_t, ls_t = self.transport(h)
         mu_r, ls_r = self.reposition(h)
         if stochastic:
@@ -276,6 +280,7 @@ def warm_start_contact_bank(bank: ContactActorBank, single_state_dict: "dict[str
 def build_sac(kind: str, *, obs_dim: int, flat_dim: int, action_dim: int, action_scale: float,
               n_critics: int = 2, hidden: int = 64, device: torch.device | str = "cpu",
               actor_head: str = "pooled", act_vertices: Sequence[int] | None = None,
+              bank_selector: "Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]] | None" = None,
               **kw: object) -> tuple[_SquashedGaussianActorBase, list[QCritic]]:
     """Construct ``(stochastic actor, [critic, …])`` with independent backbones of ``kind``.
 
@@ -297,7 +302,7 @@ def build_sac(kind: str, *, obs_dim: int, flat_dim: int, action_dim: int, action
         actor: _SquashedGaussianActorBase = PerNodeSquashedGaussianActor(
             ab, feat, action_dim, action_scale, act_vertices).to(device)
     elif actor_head == "contact_bank":
-        actor = ContactActorBank(ab, feat, action_dim, action_scale).to(device)
+        actor = ContactActorBank(ab, feat, action_dim, action_scale, selector=bank_selector).to(device)
     elif actor_head == "pooled":
         actor = SquashedGaussianActor(ab, feat, action_dim, action_scale).to(device)
     else:
