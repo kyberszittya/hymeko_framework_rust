@@ -1,0 +1,47 @@
+[
+ {
+  "state_seed": 64102,
+  "label": "Learned certified delivery  (state 64102, reproducible 10/10)",
+  "path": "experiments/2026_07_20_coin_two_arm_sac_100k/videos/learned_certified_delivery_64102.gif",
+  "sha256": "634cfb085d5f013a7fea26004cefc8dbbc64e3a188b3a12cea8514bf3bb38367",
+  "frames": 66,
+  "strict": true,
+  "loose": true,
+  "attribution": 0.616,
+  "body_shove": 0.0,
+  "clean_mechanism": true,
+  "best_dwell": 30,
+  "settle_vel": 0.04408970847725868,
+  "size_bytes": 797225
+ },
+ {
+  "state_seed": 64201,
+  "label": "Learned bilateral zone entry  (state 64201, also certified)",
+  "path": "experiments/2026_07_20_coin_two_arm_sac_100k/videos/learned_bilateral_zone_entry_64201.gif",
+  "sha256": "871f695a63042d23761aece1fc032cd885deb18132d4ed5801cdcd21479561ae",
+  "frames": 38,
+  "strict": true,
+  "loose": true,
+  "attribution": 0.644,
+  "body_shove": 0.0,
+  "clean_mechanism": true,
+  "best_dwell": 26,
+  "settle_vel": 0.08088093250989914,
+  "size_bytes": 391495
+ },
+ {
+  "state_seed": 64111,
+  "label": "Near-certified delivery  (state 64111: fingertip-attribution short of 0.60)",
+  "path": "experiments/2026_07_20_coin_two_arm_sac_100k/videos/near_certified_delivery_64111.gif",
+  "sha256": "bf9243f6ad7ffbc52354a9aa2d2e0aab4c4d7361dab4b52b07f1ef393f44263a",
+  "frames": 72,
+  "strict": false,
+  "loose": true,
+  "attribution": 0.465,
+  "body_shove": 0.0,
+  "clean_mechanism": false,
+  "best_dwell": 26,
+  "settle_vel": 0.030968056991696358,
+  "size_bytes": 881687
+ }
+]

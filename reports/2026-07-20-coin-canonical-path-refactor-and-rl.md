@@ -4,7 +4,7 @@ title: Canonical-path repair of Coin Delivery, then learned two-arm delivery on 
 date: 2026-07-20
 baseline_commit: 1c704f72977ede79e828d6f29852617a90edda22
 repair_branch: repair/coin-delivery-canonical-path
-verdict: RUNNING — canonical refactor complete, smoke passed, RL launched
+verdict: PARTIAL — learned repeatable bilateral zone entry; certified strict delivery reproducible on a minority of states (2/18), not generalized. Blocker = CONTACT_STRATEGY (fingertip attribution + mechanism), NOT stabilization.
 ---
 
 # Canonical-path refactor + learned two-arm coin delivery
@@ -97,13 +97,58 @@ helper.
   0.014 m; **strict delivery 0** across all 20 (one fluke strict at eval#1, then 0). Best checkpoint = eval#1 by the
   strict-ranked selector.
 
-**Honest read (measured on this setup, provisional — not a verdict):** the learned policy holds *loose* competence (it
-gets the coin to the zone with genuine two-arm contact and slowly improving progress) but produces **no strict
-deliveries** — consistent with the arc's established **contact-mechanics wall** (a position-controlled parallel clamp on
-a wrist-less arm; local policy improvement caps at the supervised/scripted ceiling). The §8 demonstration goal (three
-consecutive strict deliveries) is **not** reached; no replay/video is claimed (there is no strict-delivery behaviour to
-animate). The deliverable met is: **the clean canonical framework trained the learned two-arm policy end-to-end** —
-which is the task's stated completion criterion.
+**Corrected read (post-run strict-gap diagnostic, `strict_gap_results.json`):** the earlier "strict=0 / contact-mechanics
+wall" headline was **over-pessimistic and is retracted**. The correct statement: *the current BC-anchored one-step SAC
+configuration plateaued at loose competence and did not achieve **repeatable across the distribution** certified delivery
+within 100,000 environment steps.* A mechanical limitation is at most a hypothesis — and the diagnostic argues against it,
+because certified delivery **was** achieved (below). The clean canonical framework trained the learned two-arm policy
+end-to-end (the task's completion criterion) and produced genuine certified deliveries on a subset of states.
+
+## Post-run strict-delivery gap diagnostic (read-only; predicate/actor/env unchanged)
+
+### §2 eval#1 strict event = REPRODUCIBLE_STRICT
+The eval#1 strict was VAL state **64102** under `sac_actor_best.pt`. Re-running that exact checkpoint+state **10×**
+through the canonical `rollout()` gave **10/10 strict**, single state hash → **REPRODUCIBLE_STRICT**. It is a genuine,
+deterministic certified delivery, not a fluke / monitor-boundary / logging artifact. Preserved as a video.
+
+### §3 checkpoint sweep (deduped to the 2 saved checkpoints) on DEMO(4)+VAL(14)=18 states
+
+| checkpoint | loose-success | strict | zone rate | pass-rates GIVEN zone entry (dwell / settle / attribution / body / mechanism) |
+|---|---|---|---|---|
+| `sac_actor_best.pt` (eval#1) | 4 | **2** | 0.39 | 1.00 / 1.00 / **0.50** / 1.00 / **0.50** |
+| `sac_actor_final.pt` (100k) | 4 | 0 | 0.39 | 1.00 / 0.75 / **0.25** / 1.00 / 0.75 |
+
+("best by strict / loose / progress" all resolve to `sac_actor_best.pt` — the only non-final saved checkpoint; deduped.)
+
+### §4 strict-predicate decomposition (loose-entry trajectories, best checkpoint)
+- **Joint failures:** `NONE (all pass)` × 2 (the 2 certified deliveries) · `ATTRIBUTION + MECHANISM` × 2. There are **no
+  dwell-only, settle-only or body failures** — the two conditions carrying every miss are fingertip-attribution and the
+  clean-mechanism (one-finger) check, and they fail *together*.
+- **Component margins (best checkpoint, median over loose entries):** dwell **+3.67** (passes with room), settle **+0.75**
+  (passes with room), body **+1.0** (passes), attribution **−0.10** (the one real deficit: 0.47–0.50 vs the 0.60 bar).
+
+### §5 blocker classification = **CONTACT_STRATEGY**
+Stabilization (dwell, settle) passes 100 % of zone entries with large margins; every miss is in the contact-quality group
+(attribution + one-finger mechanism), `contact_group_pass = 0.50` vs `stabilization_group_pass = 1.00`. The gap from loose
+to certified is **how the fingers contact the coin** (a clean bilateral push vs a one-finger bulldoze), **not** holding it
+still after entry. Not a "wall".
+
+### §6 presentation videos (`experiments/2026_07_20_coin_two_arm_sac_100k/videos/`, honest labels, HUD-overlaid)
+
+| label | state | strict | attribution | dwell | file (sha256 in `video_manifest.json`) |
+|---|---|---|---|---|---|
+| Learned **certified** delivery (reproducible 10/10) | 64102 | YES | 0.62 | 30 | `learned_certified_delivery_64102.gif` |
+| Learned bilateral zone entry (also certified) | 64201 | YES | 0.64 | 26 | `learned_bilateral_zone_entry_64201.gif` |
+| **Near**-certified delivery (attribution 0.47<0.60) | 64111 | no | 0.47 | 26 | `near_certified_delivery_64111.gif` |
+
+HUD overlays: target zone, coin, in-zone state, consecutive-dwell counter, coin settle velocity, L/R contact, fingertip
+attribution, body-shove, clean-mechanism flag, loose+strict result. A loose entry is never labelled a strict delivery.
+
+### §7 selected next RL intervention (CONTACT_STRATEGY branch) — NOT implemented here
+Specification recorded in `next_rl_intervention.md`: **no hold shaping** (stabilization is already solved); **stratify the
+demo replay toward high-fingertip-attribution, low-body-shove A1/A4 contact sequences**, and **implement the explicit
+demo/online sampling ratio in the existing `ReplayBuffer` sampler** (the §2/§3 ratio not yet wired); **retain the BC
+anchor**. Actor, reward, env, strict predicate unchanged.
 
 ## Files touched (Phase A + B)
 
@@ -127,4 +172,8 @@ changed/new files (pre-existing E702 semicolon debt in untouched coin lines left
   Binding v2b's `.hymeko` bytecode as the literal per-step reward is a deeper env change, not done here.
 - n_step=3 returns and the exact 50/50->25/75 demo/online batch ratio (§2/§3) are not wired into the shared
   `ReplayBuffer` sampler — they require a sampler change with its own regression test; deferred, flagged (not claimed).
-- When the run completes: emit the plotted eval curve + (only if a strict delivery is achieved) the policy GIF, per §9.
+  The strict-gap diagnostic now assigns the demo/online-ratio + attribution-weighted seeding as the *next* intervention
+  (`next_rl_intervention.md`); n_step is NOT selected (stabilization is already solved).
+- The competence gate dropped `bc_coef` to 0.1 on the eval#1 strict — which the diagnostic confirms was a genuine
+  REPRODUCIBLE_STRICT, so the gate fired on a real (if non-general) milestone, not a fluke.
+- Graphical outputs delivered per §9: `eval_curve.png` (numerical+plotted) and three HUD-overlaid GIFs under `videos/`.
