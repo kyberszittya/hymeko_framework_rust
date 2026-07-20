@@ -14,7 +14,7 @@ from hymeko_rl.eval.team_tensor import field_index
 from hymeko_rl.train.rl_config import (
     ContactModeReason, CriticMode, PolicyKind, Strategy, UnsupportedRLConfig, select_contact_mode, validate_rl_config,
 )
-from hymeko_rl.train.sac import ContactActorBank, SACConfig, build_sac, train_sac
+from hymeko_rl.train.sac import ContactActorBank, SACConfig, build_sac, train_sac, warm_start_contact_bank
 
 _OBS, _ACT = 41, 6
 _I = {n: field_index(n) for n in ("left_contact", "right_contact", "both_contact", "arm_body_contact",
@@ -171,6 +171,28 @@ def test_bank_trains_end_to_end_both_heads_change() -> None:
     tr_changed = not torch.equal(before["transport.mu.weight"], bank.state_dict()["transport.mu.weight"])
     rp_changed = not torch.equal(before["reposition.mu.weight"], bank.state_dict()["reposition.mu.weight"])
     assert tr_changed and rp_changed                               # both heads actually updated
+
+
+def test_warm_start_makes_bank_a_functional_clone_of_f11() -> None:
+    """After warm-start, both heads = the source policy, so the bank's greedy action equals F11's on EVERY state,
+    regardless of which mode routes it — identical source lineage for the matched contrast."""
+    torch.manual_seed(1)
+    f11, _ = build_sac("mlp", obs_dim=_OBS, flat_dim=_OBS, action_dim=_ACT, action_scale=1.0, hidden=16)
+    bank = _bank()
+    warm_start_contact_bank(bank, f11.state_dict())
+    o = _mixed_batch(10)                                            # spans both modes
+    assert torch.allclose(bank.action_mean(o), f11.action_mean(o), atol=1e-6)
+    sd = bank.state_dict()
+    assert torch.equal(sd["reposition.mu.weight"], sd["transport.mu.weight"])   # both heads identical at init
+
+
+def test_warm_start_rejects_non_single_actor_checkpoint() -> None:
+    bank = _bank()
+    try:
+        warm_start_contact_bank(bank, {"reposition.mu.weight": torch.zeros(_ACT, 16)})   # not a SquashedGaussianActor
+        raise AssertionError("expected ValueError")
+    except ValueError as e:
+        assert "unexpected key" in str(e) or "incomplete" in str(e)
 
 
 def test_bank_requires_contact_mode_strategy() -> None:

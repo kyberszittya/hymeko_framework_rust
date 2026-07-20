@@ -248,6 +248,31 @@ class ContactActorBank(_SquashedGaussianActorBase):
         return self._routed(obs, stochastic=False)[0]
 
 
+def warm_start_contact_bank(bank: ContactActorBank, single_state_dict: "dict[str, torch.Tensor]") -> None:
+    """Initialise the F21 bank from an F11 single-actor checkpoint: shared encoder ← the single actor's backbone, and
+    BOTH mode heads ← the single actor's ``μ``/``log σ``. So F21 begins as a *functional clone* of F11 (both modes act
+    identically to the source policy at step 0), giving the matched contrast identical source-checkpoint lineage — the
+    only difference from step 0 onward is the architecture (mode-routed vs single), not the initial policy.
+
+    # Preconditions ``single_state_dict`` has ``backbone.*`` + ``mu.*``/``log_std.*`` (a :class:`SquashedGaussianActor`).
+    # Postconditions ``bank``'s parameters are overwritten in place; no head is left at random init.
+    """
+    own = bank.state_dict()
+    remapped: dict[str, torch.Tensor] = {}
+    for k, v in single_state_dict.items():
+        if k.startswith("backbone."):
+            remapped[k] = v
+        elif k.startswith("mu.") or k.startswith("log_std."):
+            remapped[f"reposition.{k}"] = v                         # duplicate the source policy into both heads
+            remapped[f"transport.{k}"] = v
+        else:
+            raise ValueError(f"unexpected key {k!r} in single-actor checkpoint (not a SquashedGaussianActor)")
+    missing = set(own) - set(remapped)
+    if missing:
+        raise ValueError(f"warm-start incomplete — bank keys not initialised: {sorted(missing)}")
+    bank.load_state_dict(remapped, strict=True)
+
+
 def build_sac(kind: str, *, obs_dim: int, flat_dim: int, action_dim: int, action_scale: float,
               n_critics: int = 2, hidden: int = 64, device: torch.device | str = "cpu",
               actor_head: str = "pooled", act_vertices: Sequence[int] | None = None,
