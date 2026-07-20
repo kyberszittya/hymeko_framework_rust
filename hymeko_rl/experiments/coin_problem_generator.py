@@ -215,3 +215,92 @@ def split_freeze(configs: list[GeneratedConfig], *, n_train_per: int, n_held_per
 def load_configs(path: Path) -> list[GeneratedConfig]:
     with open(path, "rb") as f:
         return pickle.load(f)
+
+
+# ── clearance curriculum (§4): move the coin radially OUTSIDE the target footprint into signed-clearance bands ──────
+_COIN_R, _ZONE_HALF = 0.02, 0.04                                 # footprint radii (coin geom, target half)
+_FOOT = _COIN_R + _ZONE_HALF                                     # dtz at which the footprints just touch (clearance 0)
+CURRICULUM_STAGES = {"STAGE0": (0.002, 0.010), "STAGE1": (0.010, 0.030),
+                     "STAGE2": (0.030, 0.060), "STAGE3": (0.060, 0.120)}
+_CURR_PARENTS = (64102, 64201, 64111)
+
+
+def move_to_clearance(snap: PlanarSnapshot, target_clearance: float, lateral: float = 0.0) -> PlanarSnapshot:
+    """Move the coin RADIALLY away from the zone to signed footprint clearance ≈ ``target_clearance`` (i.e. coin→zone
+    distance = clearance + coin_r + zone_half), plus a perpendicular ``lateral`` offset (left-/right-leading). One
+    structural change only: the coin position. # Postconditions the coin is outside the target footprint iff
+    ``target_clearance > 0``."""
+    q = snap.qpos.copy()
+    z = np.array(snap.zone, np.float64)
+    coin = np.array([q[_COINX], q[_COINY]], np.float64)
+    d = coin - z
+    n = float(np.linalg.norm(d)) + 1e-9
+    u = d / n                                                    # away-from-zone unit
+    perp = np.array([-u[1], u[0]])
+    new = z + u * (target_clearance + _FOOT) + perp * lateral
+    q[_COINX], q[_COINY] = float(new[0]), float(new[1])
+    return dataclasses.replace(snap, qpos=q, qvel=np.zeros_like(snap.qvel),
+                               qacc_warmstart=np.zeros_like(snap.qacc_warmstart))
+
+
+def generate_curriculum(env, *, n_per_stage: int, rng: np.random.Generator) -> tuple[dict, dict]:
+    """Generate clearance-banded curriculum configs per stage (left/right/symmetric leads). Returns
+    ({stage: [GeneratedConfig]}, rejection_counts). Validity is physical only; stage + clearance live in ``params``."""
+    rej: dict = {}
+    by_stage: dict = {s: [] for s in CURRICULUM_STAGES}
+    parents = {ps: _parent_snapshot(env, ps) for ps in _CURR_PARENTS}
+    for stage, (lo, hi) in CURRICULUM_STAGES.items():
+        seen: set = set()
+        tries = 0
+        while len(by_stage[stage]) < n_per_stage and tries < n_per_stage * 40:
+            tries += 1
+            ps = _CURR_PARENTS[rng.integers(len(_CURR_PARENTS))]
+            clr = float(rng.uniform(lo, hi))
+            lateral = float(rng.choice([-1.0, 0.0, 1.0])) * float(rng.uniform(0.0, 0.03))   # left/right/symmetric
+            snap = move_to_clearance(parents[ps], clr, lateral)
+            ok, reason, facts = validate(env, snap)
+            if not ok:
+                rej[reason] = rej.get(reason, 0) + 1
+                continue
+            actual = facts["dtz"] - _FOOT                        # re-measure the achieved clearance after restore
+            if not (lo * 0.8 <= actual <= hi * 1.25):            # keep it inside the band
+                rej["out_of_band"] = rej.get("out_of_band", 0) + 1
+                continue
+            h = snapshot_hash(snap)
+            if h in seen:
+                continue
+            seen.add(h)
+            lead = "left" if lateral > 1e-4 else "right" if lateral < -1e-4 else "sym"
+            cfg = GeneratedConfig(f"{stage}_{ps}_{lead}_c{actual:+.3f}_{h[:8]}", int(ps), CERTIFIED_NEIGHBORHOOD,
+                                  "coin_radial_clearance", {"stage": stage, "clearance": round(actual, 4),
+                                  "lead": lead, "lateral": round(lateral, 4)}, h, facts["left_reachable"],
+                                  facts["right_reachable"], facts["target_dir"], True, snap)
+            by_stage[stage].append(cfg)
+    return by_stage, rej
+
+
+def freeze_curriculum(by_stage: dict, *, n_train: int, n_held: int, out_dir: Path, rng: np.random.Generator) -> dict:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    manifest = {"stages": {}, "train_by_stage": {}, "held_by_stage": {}}
+    all_hashes = []
+    for stage, cs in by_stage.items():
+        idx = rng.permutation(len(cs))
+        train = [cs[i] for i in idx[:n_train]]
+        held = [cs[i] for i in idx[n_train:n_train + n_held]]
+        with open(out_dir / f"{stage}_train.pkl", "wb") as f:
+            pickle.dump(train, f)
+        with open(out_dir / f"{stage}_held.pkl", "wb") as f:
+            pickle.dump(held, f)
+        manifest["train_by_stage"][stage] = len(train)
+        manifest["held_by_stage"][stage] = len(held)
+        manifest["stages"][stage] = dict(band=CURRICULUM_STAGES[stage], n_generated=len(cs),
+                                         train_hashes=[c.state_hash for c in train],
+                                         held_hashes=[c.state_hash for c in held],
+                                         clearances=[c.params["clearance"] for c in train + held])
+        all_hashes += [c.state_hash for c in train + held]
+    manifest["corpus_sha"] = hashlib.sha256("".join(sorted(all_hashes)).encode()).hexdigest()
+    manifest["train_held_disjoint"] = all(
+        set(manifest["stages"][s]["train_hashes"]).isdisjoint(manifest["stages"][s]["held_hashes"])
+        for s in CURRICULUM_STAGES)
+    (out_dir / "curriculum_manifest.json").write_text(json.dumps(manifest, indent=1, default=float))
+    return manifest
