@@ -35,6 +35,30 @@ from hymeko_rl.train.sac import SACConfig, build_sac, train_sac
 STRATA = {"CERTIFIED_BILATERAL": 1, "HIGH_QUALITY_CONTACT": 2, "RECOVERY": 3,
           "CONTRASTIVE_BULLDOZE": 4, "GENERAL_PROGRESS": 5}
 STRATA_WEIGHTS = {1: 0.35, 2: 0.25, 3: 0.15, 4: 0.15, 5: 0.10}
+GATE_CONFIRM = 2       # STRATIFIED->UNIFORM only after certified competence at this many consecutive evals (hysteresis)
+# competence-state -> sampler mapping (reuses the existing bc_coef gate; NO new classifier, NO CONTROL input):
+#   weak / pre-certified  (bc_coef in {1.0, 0.3}, or first_strict but consec_strict < GATE_CONFIRM) -> STRATIFIED
+#   established competence (consec_strict >= GATE_CONFIRM, bc_coef 0.1/0.05, confirmed twice)         -> UNIFORM (irreversible)
+
+
+def gate_step(gate: dict, comp: dict, *, eval_idx: int, step: int, bc_coef: float) -> str:
+    """Update the STRATIFIED->UNIFORM replay gate from the run's OWN competence state ``comp`` (never the matched CONTROL
+    result). The switch is irreversible and fires once certified competence is confirmed at ``GATE_CONFIRM`` consecutive
+    deterministic evals (hysteresis against a single noisy eval). Records + returns the sampler mode.
+
+    # Preconditions ``comp`` holds ``consec_strict``. # Postconditions once ``mode=='uniform'`` it never reverts."""
+    if gate["mode"] == "stratified" and comp["consec_strict"] >= GATE_CONFIRM:
+        gate.update(mode="uniform", switch_step=int(step), switch_eval=int(eval_idx), switch_bc=float(bc_coef),
+                    switch_consec=int(comp["consec_strict"]),
+                    reason=f"consec_strict>={GATE_CONFIRM} (established certified competence, confirmed)")
+    gate["history"].append(dict(eval=int(eval_idx), step=int(step), mode=gate["mode"], bc_coef=float(bc_coef),
+                                consec_strict=int(comp["consec_strict"])))
+    return gate["mode"]
+
+
+def new_gate() -> dict:
+    return dict(mode="stratified", switch_step=None, switch_eval=None, switch_bc=None, switch_consec=None,
+                reason=None, history=[])
 _CORPUS_SEEDS = tuple(range(64_000, 64_056)) + _DEMO_SEEDS            # TRAIN + DEMO states (disjoint from VAL eval)
 _EVAL_SEEDS = _DEMO_SEEDS + _VAL_SEEDS                                # §9: 4 DEMO + 14 VAL
 _DEMO_ACTORS = (DeliveryActor.A1_VPLOW, DeliveryActor.A4_RECOVERY)
@@ -141,6 +165,7 @@ def run_arm(sampler: str, steps: int, out: Path, seed: int = 0) -> dict:
     eval_env = direct_env()
     best = {"score": -1.0, "metrics": None}
     hist = []
+    gate = new_gate()
 
     def eval_fn(_e, ac):
         m = evaluate(eval_env, ac, _EVAL_SEEDS)                        # canonical-rollout eval on 4 DEMO + 14 VAL
@@ -152,24 +177,36 @@ def run_arm(sampler: str, steps: int, out: Path, seed: int = 0) -> dict:
         if m["strict_count"] >= 1:
             comp["first_strict"] = True
         hist.append(m)
+        if sampler == "gated":                                         # online competence gate (own-run signal only)
+            prev = gate["mode"]
+            mode = gate_step(gate, comp, eval_idx=len(hist), step=len(hist) * 2500, bc_coef=m["bc_coef"])
+            m["sampler_mode"] = mode
+            if prev != mode:
+                print(f"  [gated] SWITCH {prev}->{mode} @ eval#{len(hist)} step {len(hist)*2500} "
+                      f"bc_coef={m['bc_coef']} consec_strict={comp['consec_strict']} ({gate['reason']})", flush=True)
         score = m["strict_count"] * 1e3 + m["zone_rate"] * 1e1 + m["mean_progress"]
         if score > best["score"]:
             best.update(score=score, metrics=m, step=len(hist) * 2500)
             torch.save(ac.state_dict(), out / "actor_best.pt")
         print(f"  [{sampler} eval#{len(hist)}] strict={m['strict_count']} zone={m['zone_rate']:.2f} "
               f"P(attr|zone)~{m.get('lc',0):.2f} 64102={'Y' if m['s64102_strict'] else 'n'} "
-              f"prog={m['mean_progress']:.4f} bc={m['bc_coef']}", flush=True)
+              f"prog={m['mean_progress']:.4f} bc={m['bc_coef']} mode={m.get('sampler_mode','-')}", flush=True)
         return float(m["strict_count"] + m["zone_rate"])
 
     kw = dict(eval_fn=eval_fn, offline_data=(corpus[0], corpus[1]),
               init_transitions=corpus[:5], bc_coef_fn=bc_coef_fn)
-    if sampler == "stratified":
+    if sampler in ("stratified", "gated"):
         kw.update(init_transition_tags=corpus[5], demo_frac_fn=demo_frac_fn, strata_weights=STRATA_WEIGHTS)
+    if sampler == "gated":                                             # start STRATIFIED; flip to UNIFORM on the gate
+        kw["sampler_gate_fn"] = lambda _step: gate["mode"] == "stratified"
     out.mkdir(parents=True, exist_ok=True)
     curve = train_sac(actor, critics, env, cfg, **kw)
     torch.save(actor.state_dict(), out / "actor_final.pt")
     result = dict(sampler=sampler, steps=steps, corpus_size=int(len(corpus[0])), corpus_strata=counts,
-                  curve=curve, best_step=best.get("step"), best_metrics=best["metrics"], eval_history=hist)
+                  curve=curve, best_step=best.get("step"), best_metrics=best["metrics"], eval_history=hist,
+                  gate=dict(switched=gate["switch_step"] is not None, switch_step=gate["switch_step"],
+                            switch_eval=gate["switch_eval"], switch_bc=gate["switch_bc"], reason=gate["reason"],
+                            mode_history=[h["mode"] for h in gate["history"]]) if sampler == "gated" else None)
     (out / "run.json").write_text(json.dumps(result, indent=1, default=float))
     print(f"[{sampler}] done | best strict={best['metrics']['strict_count'] if best['metrics'] else 0} "
           f"@ step {best.get('step')}", flush=True)
@@ -178,7 +215,7 @@ def run_arm(sampler: str, steps: int, out: Path, seed: int = 0) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--sampler", choices=["control", "stratified"], required=True)
+    ap.add_argument("--sampler", choices=["control", "stratified", "gated"], required=True)
     ap.add_argument("--steps", type=int, default=50_000)
     ap.add_argument("--out", required=True)
     ap.add_argument("--seed", type=int, default=0)

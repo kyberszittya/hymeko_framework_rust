@@ -299,7 +299,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
               bc_coef_fn: "Callable[[int], float] | None" = None,
               init_transition_tags: "np.ndarray | None" = None,
               demo_frac_fn: "Callable[[int], float] | None" = None,
-              strata_weights: "dict[int, float] | None" = None) -> list[float]:
+              strata_weights: "dict[int, float] | None" = None,
+              sampler_gate_fn: "Callable[[int], bool] | None" = None) -> list[float]:
     """Train SAC on ``env``; returns the periodic eval curve.
 
     Twin soft-Q critics with the entropy-augmented target ``y = r + γ(1-d)(min_i Q̄_i(s',a') − α·logπ(a'))``;
@@ -395,9 +396,12 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
             torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]  # ONE fresh CUDA-graph step
             #   per update: the critic+actor graphs then share non-aliasing memory (train_offpolicy pattern). A mark
             #   BETWEEN them roots a step mid-update and corrupts the shared critic's buffers (measured on kato61 2026-07-17).
+        # competence-gated selection: stratified while the gate says so, else the ordinary uniform sampler. When
+        # sampler_gate_fn is None the behaviour is byte-identical to before (pure stratified or pure uniform).
+        _use_strat = _stratified and (sampler_gate_fn is None or sampler_gate_fn(step))
         _batch = (buf.sample_stratified(cfg.batch_size, demo_frac=demo_frac_fn(step), strata_weights=strata_weights,
                                         generator=rng, shortage=_shortage, account=_account)
-                  if _stratified else buf.sample(cfg.batch_size, generator=rng))
+                  if _use_strat else buf.sample(cfg.batch_size, generator=rng))
         s, a, r, s2, d = (x.to(dev) for x in _batch)
         alpha_d = _alpha_at(step).detach()                         # value only; α is optimised eager below
         if cfg.reward_norm:
