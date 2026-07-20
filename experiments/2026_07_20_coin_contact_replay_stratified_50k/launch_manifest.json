@@ -1,0 +1,10 @@
+{
+  "experiment": "COIN contact-stratified replay (CONTROL vs STRATIFIED)",
+  "source_commit": "37d923a", "experiment_branch": "exp/coin-contact-stratified-replay",
+  "source_checkpoint": "experiments/2026_07_20_coin_two_arm_sac_100k/sac_actor_best.pt",
+  "config_diff_from_stratified": "SAMPLER FIELDS ONLY: control sets init_transition_tags=None, demo_frac_fn=None, strata_weights=None (uniform buf.sample); stratified sets tags=corpus strata, demo_frac_fn=0.5->0.25@25k, strata_weights=35/25/15/15/10. env, actor(from ckpt), critics, SACConfig.stable, bc_coef_fn, offline_data, init_transitions corpus, eval path, seed=0 are IDENTICAL.",
+  "arms": {"control": {"pid": 75763, "sampler": "control (uniform)"},
+           "stratified": {"pid": 75766, "sampler": "contact-stratified"}},
+  "corpus": {"size": 5957, "strata": {"CERTIFIED_BILATERAL": 351, "HIGH_QUALITY_CONTACT": 1138, "RECOVERY": 1123, "CONTRASTIVE_BULLDOZE": 1097, "GENERAL_PROGRESS": 2248}},
+  "eval": "canonical rollout on 4 DEMO + 14 VAL every 2500 steps; state 64102 monitored for competence retention"
+}
