@@ -295,7 +295,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
               offline_data: "tuple[np.ndarray, np.ndarray] | None" = None,
               dagger_teacher: Any = None,
               augmentor: "ReplayAugmentor | None" = None,
-              init_transitions: "tuple[np.ndarray, ...] | None" = None) -> list[float]:
+              init_transitions: "tuple[np.ndarray, ...] | None" = None,
+              bc_coef_fn: "Callable[[int], float] | None" = None) -> list[float]:
     """Train SAC on ``env``; returns the periodic eval curve.
 
     Twin soft-Q critics with the entropy-augmented target ``y = r + γ(1-d)(min_i Q̄_i(s',a') − α·logπ(a'))``;
@@ -402,7 +403,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
         a_loss, logp = _actor_terms(s, alpha_d)
         if demo_s is not None and demo_a is not None:              # TD3+BC-style anchor (eager; see _anchored above)
             idx = rng.integers(0, demo_s.shape[0], size=min(cfg.batch_size, demo_s.shape[0]))
-            a_loss = a_loss + cfg.bc_coef * ((actor.action_mean(demo_s[idx]) - demo_a[idx]) ** 2).mean()
+            bc = float(bc_coef_fn(step)) if bc_coef_fn is not None else cfg.bc_coef   # competence-gated (not step-decay)
+            a_loss = a_loss + bc * ((actor.action_mean(demo_s[idx]) - demo_a[idx]) ** 2).mean()
         if cfg.rollout_anchor_coef > 0.0 and ra_size >= 1:         # rollout-state DAgger anchor (eager)
             ridx = rng.integers(0, ra_size, size=min(cfg.batch_size, ra_size))
             ro_obs = torch.as_tensor(ra_obs[ridx], device=dev)

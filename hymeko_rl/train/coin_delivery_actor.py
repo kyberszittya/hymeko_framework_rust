@@ -195,6 +195,7 @@ class RolloutStep:
     terminated: bool
     truncated: bool
     info: dict               # raw env info (env-specific telemetry; empty dict if the env emits none)
+    obs: object              # the observation BEFORE this action (None if the env exposes none) — for BC/SAC replay
 
 
 @dataclass(frozen=True)
@@ -206,6 +207,7 @@ class RolloutTrace:
     initial_success: bool
     start_dtz: float
     max_steps: int
+    final_obs: object = None   # the observation AFTER the last step (the terminal next_obs for replay)
 
     @property
     def loose(self) -> bool:
@@ -266,6 +268,7 @@ def rollout(env, action_fn, *, max_steps: int = 60, scramble=None) -> RolloutTra
     prev_body = int(inner.arm_body_steps)
     steps: list = []
     for t in range(max_steps):
+        obs_before = None if obs is None else np.asarray(obs, np.float32).copy()
         a = np.clip(action_fn(inner, t, obs), -1, 1).astype(np.float32)
         if scramble is not None:
             a = scramble(a, t)
@@ -278,10 +281,11 @@ def rollout(env, action_fn, *, max_steps: int = 60, scramble=None) -> RolloutTra
             tuple(float(x) for x in a), float(mm.disk_to_zone),
             (float(mm.disk_pos[0]), float(mm.disk_pos[1])), float(np.linalg.norm(mm.disk_vel)),
             bool(mm.left_contact), bool(mm.right_contact), float(fl), float(fr), bool(body),
-            bool(mm.in_zone), float(r), bool(term), bool(trunc), dict(info) if info else {}))
+            bool(mm.in_zone), float(r), bool(term), bool(trunc), dict(info) if info else {}, obs_before))
         if term or trunc:
             break
-    return RolloutTrace(steps, bool(m0.in_zone), float(m0.disk_to_zone), int(max_steps))
+    final_obs = None if obs is None else np.asarray(obs, np.float32).copy()
+    return RolloutTrace(steps, bool(m0.in_zone), float(m0.disk_to_zone), int(max_steps), final_obs)
 
 
 def _attribution_from_trace(trace: RolloutTrace) -> Attribution:
