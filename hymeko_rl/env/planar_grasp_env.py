@@ -583,6 +583,19 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         self._fingertip_progress = 0.0
         self._body_progress = 0.0
 
+    @property
+    def planar_metrics(self) -> PlanarGraspMetrics:
+        """Public read-only view of the current planar contact/geometry metrics — the single source the canonical
+        delivery ``rollout`` and the strict monitor read (callers must not touch ``_planar_metrics`` directly).
+
+        # Postconditions returns the metrics computed after the most recent ``reset``/``step``; never ``None``."""
+        return self._planar_metrics
+
+    @property
+    def arm_body_steps(self) -> int:
+        """Public read-only count of arm-body↔coin contact steps (the body-shove attribution source)."""
+        return int(self._arm_body_steps)
+
     def _metrics(self) -> PlanarGraspMetrics:
         return compute_planar_metrics(
             self.model, self.data, disk_body=self._disk_body, disk_geom=self._disk_geom,

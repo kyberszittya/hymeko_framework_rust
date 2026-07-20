@@ -34,6 +34,7 @@ import numpy as np
 
 from hymeko_rl.experiments.coin_delivery1 import p_grasp_carry
 from hymeko_rl.experiments.pedc_selection import _env
+from hymeko_rl.train.coin_delivery_actor import rollout
 
 
 @dataclass(frozen=True)
@@ -295,23 +296,23 @@ def greedy_action_fn(ac: Any) -> ActionFn:
 
 
 def roll_delivery(env: CoinDeliveryTrainEnv, seed: int, action_fn: ActionFn) -> dict[str, Any]:
-    """Roll one deterministic delivery episode; capture the full delivery/precision/telemetry metric bundle."""
-    obs, info = env.reset(seed=int(seed))
+    """Roll one deterministic delivery episode through the canonical :func:`rollout`; derive the delivery/precision/
+    telemetry bundle from the PUBLIC trace (per-step ``info`` + reward) rather than a private re-implemented loop."""
+    env.reset(seed=int(seed))
     start_dtz = env._start_dtz
+    trace = rollout(env, lambda _inner, _t, obs: action_fn(obs), max_steps=env.cfg.horizon)
     min_dtz = start_dtz
-    ret = 0.0
     t_zone = t_center = None
-    for t in range(env.cfg.horizon):
-        obs, r, term, trunc, info = env.step(action_fn(obs))
-        ret += float(r)
-        dtz = float(info["disk_to_zone"])
-        min_dtz = min(min_dtz, dtz)
-        if info["delivery_success"] and t_zone is None:
+    for t, s in enumerate(trace.steps):
+        min_dtz = min(min_dtz, float(s.info["disk_to_zone"]))
+        if s.info["delivery_success"] and t_zone is None:
             t_zone = t
-        if info["center_reached"] and t_center is None:
+        if s.info["center_reached"] and t_center is None:
             t_center = t
-        if term or trunc:
-            break
+    info = trace.steps[-1].info if trace.steps else {
+        "delivery_success": False, "center_reached": False, "handoff_event": env._handoff,
+        "contact_lost": False, "disk_to_zone": start_dtz}
+    ret = sum(float(s.reward) for s in trace.steps)
     return {"zone_entry": bool(info["delivery_success"]), "center_reach": bool(info["center_reached"]),
             "handoff_event": bool(info["handoff_event"]), "final_dtz": round(float(info["disk_to_zone"]), 4),
             "min_dtz": round(min_dtz, 4), "start_dtz": round(start_dtz, 4), "time_to_zone": t_zone,

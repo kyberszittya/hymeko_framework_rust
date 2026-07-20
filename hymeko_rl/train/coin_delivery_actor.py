@@ -177,56 +177,139 @@ class DeliveryResult:
         return d
 
 
-def rollout_delivery(env, seed: int, actor: DeliveryActor, p: ActorParams = ActorParams(),
-                     *, max_steps: int = 60, scramble=None) -> DeliveryResult:
-    """Roll one actor from a fresh reset; accumulate impulse-directed attribution, dwell, settle, and apply the strict
-    valid-delivery monitor + mechanism classification. History-independent; exact reset by seed."""
-    env.reset(seed=int(seed))
-    inner = env._env
-    m0 = inner._planar_metrics
-    initial_success = bool(m0.in_zone)
-    start_dtz = float(m0.disk_to_zone)
-    prev_dtz = start_dtz
-    acc = {"L": 0.0, "R": 0.0, "body": 0.0, "free": 0.0}
-    log = _roll_loop(env, inner, actor, p, max_steps, scramble, acc, prev_dtz, start_dtz)
-    att = _finalize_attribution(acc)
-    made_progress = log["progress"] >= _PROGRESS_MIN
-    mech = classify_mechanism(actor, att, made_progress=made_progress, initial_success=initial_success,
-                              both_frac=log["both_frac"])
-    strict = _valid_delivery(initial_success, log, att, mech)
-    return DeliveryResult(seed, actor.value, strict, log["loose"], initial_success, round(log["progress"], 4),
-                          round(log["min_dtz"], 4), log["dwell"], round(log["settle_vel"], 4), att.as_dict(),
-                          att.fingertip_fraction, att.alpha_body > _BODY_SHOVE_MAX, mech.value)
+# ── the single canonical delivery rollout + its public result ────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class RolloutStep:
+    """One public rollout step: the action taken and the resulting PUBLIC planar metrics. Downstream code (scripted
+    actors, BC/SAC eval, deterministic replay) reads this instead of the env's private ``_planar_metrics``."""
+    action: tuple            # the 6-DoF cooperative action actually applied (post-clip / post-scramble)
+    disk_to_zone: float
+    disk_pos: tuple          # coin centre (x, y)
+    disk_vel_norm: float
+    left_contact: bool
+    right_contact: bool
+    fl: float                # left fingertip normal force (impulse-attribution source)
+    fr: float                # right fingertip normal force
+    body_contact: bool       # arm-body↔coin contact occurred THIS step
+    in_zone: bool
+    reward: float
+    terminated: bool
+    truncated: bool
+    info: dict               # raw env info (env-specific telemetry; empty dict if the env emits none)
 
 
-def _roll_loop(env, inner, actor, p, max_steps, scramble, acc, prev_dtz, start_dtz) -> dict:
-    min_dtz, loose, dwell, best_dwell = prev_dtz, False, 0, 0
-    both_steps, settle_vel, prev_body_steps = 0, 1.0, int(inner._arm_body_steps)
+@dataclass(frozen=True)
+class RolloutTrace:
+    """The public result of one canonical rollout — the single source scripted/BC/SAC eval + replay consume.
+    Derived summaries reproduce the historical ``_roll_loop`` semantics exactly (dwell = longest in-zone run;
+    ``settle_vel`` = last in-zone step's coin speed, else 1.0; ``both_frac`` over the full step BUDGET)."""
+    steps: list
+    initial_success: bool
+    start_dtz: float
+    max_steps: int
+
+    @property
+    def loose(self) -> bool:
+        return any(s.in_zone for s in self.steps)
+
+    @property
+    def min_dtz(self) -> float:
+        return min([self.start_dtz, *(s.disk_to_zone for s in self.steps)])
+
+    @property
+    def progress(self) -> float:
+        return self.start_dtz - self.min_dtz
+
+    @property
+    def best_dwell(self) -> int:
+        best = run = 0
+        for s in self.steps:
+            run = run + 1 if s.in_zone else 0
+            best = max(best, run)
+        return best
+
+    @property
+    def settle_vel(self) -> float:
+        vel = 1.0
+        for s in self.steps:
+            if s.in_zone:
+                vel = s.disk_vel_norm
+        return vel
+
+    @property
+    def both_frac(self) -> float:
+        both = sum(int(s.left_contact and s.right_contact) for s in self.steps)
+        return both / max(1, self.max_steps)
+
+    @property
+    def terminated(self) -> bool:
+        return bool(self.steps and (self.steps[-1].terminated or self.steps[-1].truncated))
+
+
+def _planar_env(env):
+    """Resolve the underlying planar MuJoCo env (the metrics source) for either a raw ``ContactFormationEnv``
+    (``._env``) or a wrapper exposing ``.inner`` (e.g. ``CoinDeliveryTrainEnv``). # Preconditions one must exist."""
+    inner = getattr(env, "inner", None)
+    return inner if inner is not None else env._env
+
+
+def rollout(env, action_fn, *, max_steps: int = 60, scramble=None) -> RolloutTrace:
+    """THE canonical delivery rollout. Steps ``env`` under ``action_fn(inner, t, obs) -> 6-DoF action`` (a scripted
+    actor reads ``inner``/``t`` and ignores ``obs``; a learned policy reads ``obs``) and records the public per-step
+    trace. All scripted-actor / BC / SAC evaluation and deterministic replay funnel through here — no experiment-level
+    module re-implements the step/metric/termination loop or reads ``_planar_metrics``.
+
+    # Preconditions the caller has already reset/restored ``env`` to the desired start state; ``action_fn`` returns
+    a finite 6-vector. # Postconditions returns a :class:`RolloutTrace` whose summaries are history-independent."""
+    inner = _planar_env(env)
+    m0 = inner.planar_metrics
+    obs = getattr(env, "_last_obs", None)                       # learned-policy obs; a scripted actor ignores it
+    prev_body = int(inner.arm_body_steps)
+    steps: list = []
     for t in range(max_steps):
-        a = np.clip(actor_action(inner, t, actor, p), -1, 1).astype(np.float32)
+        a = np.clip(action_fn(inner, t, obs), -1, 1).astype(np.float32)
         if scramble is not None:
             a = scramble(a, t)
-        _o, _r, term, trunc, info = env.step(a)
-        mm = inner._planar_metrics
-        dtz = float(mm.disk_to_zone)
+        obs, r, term, trunc, info = env.step(a)
+        mm = inner.planar_metrics
         fl, fr = normal_contact_forces(inner)
-        body = int(inner._arm_body_steps) > prev_body_steps         # arm-body↔coin contact occurred THIS step
-        prev_body_steps = int(inner._arm_body_steps)
-        _attribute_step(prev_dtz - dtz, fl, fr, body, acc)
-        both_steps += int(bool(mm.left_contact and mm.right_contact))
-        if bool(mm.in_zone):
-            loose = True
-            dwell += 1
-            best_dwell = max(best_dwell, dwell)
-            settle_vel = float(np.linalg.norm(mm.disk_vel))
-        else:
-            dwell = 0
-        min_dtz = min(min_dtz, dtz)
-        prev_dtz = dtz
+        body = int(inner.arm_body_steps) > prev_body            # arm-body↔coin contact occurred THIS step
+        prev_body = int(inner.arm_body_steps)
+        steps.append(RolloutStep(
+            tuple(float(x) for x in a), float(mm.disk_to_zone),
+            (float(mm.disk_pos[0]), float(mm.disk_pos[1])), float(np.linalg.norm(mm.disk_vel)),
+            bool(mm.left_contact), bool(mm.right_contact), float(fl), float(fr), bool(body),
+            bool(mm.in_zone), float(r), bool(term), bool(trunc), dict(info) if info else {}))
         if term or trunc:
             break
-    return {"progress": start_dtz - min_dtz, "min_dtz": min_dtz, "loose": loose, "dwell": best_dwell,
-            "settle_vel": settle_vel, "both_frac": both_steps / max(1, max_steps)}
+    return RolloutTrace(steps, bool(m0.in_zone), float(m0.disk_to_zone), int(max_steps))
+
+
+def _attribution_from_trace(trace: RolloutTrace) -> Attribution:
+    """Walk a public :class:`RolloutTrace` and accumulate the impulse-directed L/R/body/free progress attribution
+    (identical accumulation to the historical inline loop, now over the public step record)."""
+    acc = {"L": 0.0, "R": 0.0, "body": 0.0, "free": 0.0}
+    prev = trace.start_dtz
+    for s in trace.steps:
+        _attribute_step(prev - s.disk_to_zone, s.fl, s.fr, s.body_contact, acc)
+        prev = s.disk_to_zone
+    return _finalize_attribution(acc)
+
+
+def rollout_delivery(env, seed: int, actor: DeliveryActor, p: ActorParams = ActorParams(),
+                     *, max_steps: int = 60, scramble=None) -> DeliveryResult:
+    """Roll one scripted actor from a fresh reset through the canonical :func:`rollout`, then apply impulse-directed
+    attribution + the strict valid-delivery monitor + mechanism classification. History-independent; reset by seed."""
+    env.reset(seed=int(seed))
+    trace = rollout(env, lambda inner, t, _obs: actor_action(inner, t, actor, p),
+                    max_steps=max_steps, scramble=scramble)
+    att = _attribution_from_trace(trace)
+    mech = classify_mechanism(actor, att, made_progress=trace.progress >= _PROGRESS_MIN,
+                              initial_success=trace.initial_success, both_frac=trace.both_frac)
+    strict = _valid_delivery(trace, att, mech)
+    return DeliveryResult(seed, actor.value, strict, trace.loose, trace.initial_success, round(trace.progress, 4),
+                          round(trace.min_dtz, 4), trace.best_dwell, round(trace.settle_vel, 4), att.as_dict(),
+                          att.fingertip_fraction, att.alpha_body > _BODY_SHOVE_MAX, mech.value)
 
 
 @dataclass(frozen=True)
@@ -258,12 +341,12 @@ def delivery_step_reward(m, d_dist: float, delivered_now: bool, body: bool, cfg:
     return float(r)
 
 
-def _valid_delivery(initial_success: bool, log: dict, att: Attribution, mech: Mechanism) -> bool:
+def _valid_delivery(trace: "RolloutTrace", att: Attribution, mech: Mechanism) -> bool:
     """The strict 9-condition valid-delivery monitor (independent of any training reward). Requires: not initially
     successful · zone entry · dwell ≥ K · low settle velocity · fingertip-attributed progress · body-shove below
-    threshold · a clean mechanism (not bulldoze/shove/free/stall/invalid)."""
+    threshold · a clean mechanism (not bulldoze/shove/free/stall/invalid). Reads the PUBLIC rollout trace."""
     clean = mech in (Mechanism.SYM_PUSH, Mechanism.VPLOW, Mechanism.ASYM_PUSH, Mechanism.SETUP_PUSH,
                      Mechanism.RECOVERY_PUSH)
-    return bool(not initial_success and log["loose"] and log["dwell"] >= _DWELL_STEPS
-                and log["settle_vel"] <= _SETTLE_VEL and att.fingertip_fraction >= 0.6
+    return bool(not trace.initial_success and trace.loose and trace.best_dwell >= _DWELL_STEPS
+                and trace.settle_vel <= _SETTLE_VEL and att.fingertip_fraction >= 0.6
                 and att.alpha_body <= _BODY_SHOVE_MAX and clean)

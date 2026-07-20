@@ -71,23 +71,25 @@ def test_classifier_body_shove_and_initial() -> None:
 
 
 # --- strict valid-delivery monitor ------------------------------------------------------------------------------
-def _log(loose=True, dwell=8, vel=0.05):
-    return {"loose": loose, "dwell": dwell, "settle_vel": vel, "progress": 0.1, "min_dtz": 0.0, "both_frac": 0.5}
+def _trace(initial=False, loose=True, dwell=8, vel=0.05):
+    """A minimal public-trace stand-in exposing exactly the fields the strict monitor reads."""
+    import types
+    return types.SimpleNamespace(initial_success=initial, loose=loose, best_dwell=dwell, settle_vel=vel)
 
 
 def test_monitor_requires_dwell_and_fingertip_and_rejects_initial() -> None:
     clean_att = Attribution(0.4, 0.4, 0.0, 0.0, 0.2, 0.1)
-    assert _valid_delivery(False, _log(), clean_att, Mechanism.SYM_PUSH) is True
-    assert _valid_delivery(True, _log(), clean_att, Mechanism.SYM_PUSH) is False        # initial success rejected
-    assert _valid_delivery(False, _log(dwell=2), clean_att, Mechanism.SYM_PUSH) is False  # dwell too short
-    assert _valid_delivery(False, _log(vel=0.9), clean_att, Mechanism.SYM_PUSH) is False  # not settled
+    assert _valid_delivery(_trace(), clean_att, Mechanism.SYM_PUSH) is True
+    assert _valid_delivery(_trace(initial=True), clean_att, Mechanism.SYM_PUSH) is False   # initial success rejected
+    assert _valid_delivery(_trace(dwell=2), clean_att, Mechanism.SYM_PUSH) is False         # dwell too short
+    assert _valid_delivery(_trace(vel=0.9), clean_att, Mechanism.SYM_PUSH) is False         # not settled
     low_ft = Attribution(0.1, 0.05, 0.0, 0.0, 0.85, 0.1)
-    assert _valid_delivery(False, _log(), low_ft, Mechanism.FREE_MOTION) is False          # not fingertip-attributed
+    assert _valid_delivery(_trace(), low_ft, Mechanism.FREE_MOTION) is False                # not fingertip-attributed
 
 
 def test_monitor_rejects_body_shove_mechanism() -> None:
     shove = Attribution(0.2, 0.2, 0.5, 0.0, 0.1, 0.1)
-    assert _valid_delivery(False, _log(), shove, Mechanism.BODY_SHOVE) is False
+    assert _valid_delivery(_trace(), shove, Mechanism.BODY_SHOVE) is False
 
 
 # --- delivery-aligned reward ordering ---------------------------------------------------------------------------
