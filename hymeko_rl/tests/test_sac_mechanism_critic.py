@@ -146,7 +146,7 @@ def test_mechanism_label_changes_target_not_env_reward() -> None:
 def test_invalid_rl_configs_fail_loud() -> None:
     validate_rl_config(PolicyKind.SAC_SINGLE_ACTOR, Strategy.DIRECT, CriticMode.TASK_ONLY)          # supported
     validate_rl_config(PolicyKind.SAC_SINGLE_ACTOR, Strategy.DIRECT, CriticMode.TASK_AND_MECHANISM)  # supported
-    with pytest.raises(UnsupportedRLConfig, match="not implemented yet"):                            # actor bank
+    with pytest.raises(UnsupportedRLConfig, match="requires the HYMeko_CONTACT_MODE"):               # bank needs its selector
         validate_rl_config(PolicyKind.SAC_CONTACT_ACTOR_BANK, Strategy.DIRECT, CriticMode.TASK_ONLY)
     with pytest.raises(UnsupportedRLConfig, match="CRITIC_SELECTED requires"):
         validate_rl_config(PolicyKind.SAC_SINGLE_ACTOR, Strategy.CRITIC_SELECTED, CriticMode.TASK_ONLY)

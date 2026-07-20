@@ -5,7 +5,7 @@ fail loudly rather than silently degrading. The mechanism target derives ONLY fr
 """
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, IntEnum
 
 import torch
 
@@ -31,16 +31,66 @@ class CriticMode(str, Enum):
     TASK_AND_MECHANISM = "TASK_AND_MECHANISM"
 
 
-# implementations executable in THIS task (others are validated-but-unsupported → fail loud, never silent fallback)
-SUPPORTED_POLICIES = {PolicyKind.SAC_SINGLE_ACTOR, PolicyKind.SCRIPTED_A1, PolicyKind.SCRIPTED_A4, PolicyKind.BC}
+# implementations executable NOW (others are validated-but-unsupported → fail loud, never silent fallback)
+SUPPORTED_POLICIES = {PolicyKind.SAC_SINGLE_ACTOR, PolicyKind.SAC_CONTACT_ACTOR_BANK,
+                      PolicyKind.SCRIPTED_A1, PolicyKind.SCRIPTED_A4, PolicyKind.BC}
 _ACTOR_BANK_POLICIES = {PolicyKind.SAC_CONTACT_ACTOR_BANK}
-SUPPORTED_STRATEGIES = {Strategy.DIRECT}
+SUPPORTED_STRATEGIES = {Strategy.DIRECT, Strategy.HYMEKO_CONTACT_MODE}
 SUPPORTED_CRITIC_MODES = {CriticMode.TASK_ONLY, CriticMode.TASK_AND_MECHANISM}
 
 # pre-registered mechanism weight (§5: fixed, NOT tuned per run) — the actor maximises Q_task + MECH_COEF·Q_mechanism.
 MECH_COEF = 0.5
 _MECH_BOTH = field_index("both_contact")            # clean BILATERAL fingertip contact (28)
 _MECH_BODY = field_index("arm_body_contact")        # arm-body↔coin shove (29) — a body-shove, not fingertip-attributed
+
+# HYMeko_CONTACT_MODE strategy — inspectable named-field gates (NOT a learned opaque gate). All by field name.
+# NOTE (measured 2026-07-21): the phase one-hot is stuck at CONTACT in the coin direct_env, so it carries no
+# hysteresis signal; the ``prev_*_contact`` fields DO vary, so a 1-frame prev-bilateral hold is the stability seat.
+# ``contact_lost_after_handoff`` is a LATCH — it must NOT gate transport (it would bar re-entry after any loss); it
+# only labels the reposition reason.
+_F_LEFT = field_index("left_contact")               # 26
+_F_RIGHT = field_index("right_contact")             # 27
+_F_LOST = field_index("contact_lost_after_handoff")  # 32 — latched; reason-only, never a transport gate
+_F_PREV_LEFT = field_index("prev_left_contact")     # 39 — previous-frame contact (real per-frame hysteresis signal)
+_F_PREV_RIGHT = field_index("prev_right_contact")   # 40
+
+
+class ContactModeReason(IntEnum):
+    """Why the HYMeko_CONTACT_MODE strategy selected a mode — logged per step (inspectable, §4)."""
+    TRANSPORT_VALID_BILATERAL = 0                   # both fingertips, no shove → the transport corridor
+    TRANSPORT_HYSTERESIS_HOLD = 1                   # was bilateral last frame, ≥1 fingertip now, no shove → 1-frame hold
+    REPOSITION_NO_CONTACT = 2                       # neither fingertip on the coin → approach
+    REPOSITION_ONE_SIDED = 3                        # exactly one fingertip → repair to bilateral
+    REPOSITION_LOST = 4                             # bilateral lost after handoff → re-establish
+    REPOSITION_BODY_SHOVE = 5                       # arm-body↔coin contact → back off to a clean fingertip grasp
+
+
+def select_contact_mode(obs: torch.Tensor) -> "tuple[torch.Tensor, torch.Tensor]":
+    """The explicit HYMeko contact-mode gate: TRANSPORT when the coin is cleanly bracketed for targetward motion,
+    REPOSITION otherwise. Reads canonical NAMED fields only; ``prev_*_contact`` supplies a 1-frame hysteresis hold so a
+    single-frame bilateral flicker does not thrash the mode.
+
+    # Preconditions ``obs`` is the flat ACTOR_FIELDS observation (…, 41). # Postconditions returns
+    ``(transport_mask (…,) bool, reason (…,) long)`` — True ⇒ ACTOR_TRANSPORT; ``reason`` is a :class:`ContactModeReason`.
+    """
+    left = obs[..., _F_LEFT] > 0.5
+    right = obs[..., _F_RIGHT] > 0.5
+    both = obs[..., _MECH_BOTH] > 0.5
+    body = obs[..., _MECH_BODY] > 0.5
+    lost = obs[..., _F_LOST] > 0.5
+    prev_both = (obs[..., _F_PREV_LEFT] > 0.5) & (obs[..., _F_PREV_RIGHT] > 0.5)
+    clean = both & ~body                                            # valid bilateral transport configuration (CURRENT)
+    # 1-frame hysteresis: was bilateral last frame, still ≥1 fingertip and no shove → hold TRANSPORT through a flicker
+    stable = prev_both & (left | right) & ~body & ~clean
+    transport = clean | stable
+    reason = torch.full(obs.shape[:-1], int(ContactModeReason.REPOSITION_NO_CONTACT), dtype=torch.long,
+                        device=obs.device)
+    reason = torch.where(left ^ right, torch.full_like(reason, int(ContactModeReason.REPOSITION_ONE_SIDED)), reason)
+    reason = torch.where(lost & ~(left | right), torch.full_like(reason, int(ContactModeReason.REPOSITION_LOST)), reason)
+    reason = torch.where(body, torch.full_like(reason, int(ContactModeReason.REPOSITION_BODY_SHOVE)), reason)
+    reason = torch.where(stable, torch.full_like(reason, int(ContactModeReason.TRANSPORT_HYSTERESIS_HOLD)), reason)
+    reason = torch.where(clean, torch.full_like(reason, int(ContactModeReason.TRANSPORT_VALID_BILATERAL)), reason)
+    return transport, reason
 
 
 class UnsupportedRLConfig(ValueError):
@@ -60,9 +110,9 @@ def validate_rl_config(policy: PolicyKind, strategy: Strategy, critic_mode: Crit
         raise UnsupportedRLConfig("CRITIC_SELECTED requires TASK_AND_MECHANISM (nothing to select actions with otherwise)")
     if strategy is Strategy.HYMEKO_CONTACT_MODE and policy not in _ACTOR_BANK_POLICIES:
         raise UnsupportedRLConfig("HYMeko_CONTACT_MODE requires an actor bank (SAC_CONTACT_ACTOR_BANK)")
-    if policy in _ACTOR_BANK_POLICIES:
-        raise UnsupportedRLConfig("SAC_CONTACT_ACTOR_BANK is not implemented yet (validated-unsupported; use "
-                                  "SAC_SINGLE_ACTOR) — it must never silently fall back to the single actor")
+    if policy in _ACTOR_BANK_POLICIES and strategy is not Strategy.HYMEKO_CONTACT_MODE:
+        raise UnsupportedRLConfig("SAC_CONTACT_ACTOR_BANK requires the HYMeko_CONTACT_MODE strategy "
+                                  "(the bank has no meaning without an explicit mode selector)")
     if policy not in SUPPORTED_POLICIES:
         raise UnsupportedRLConfig(f"policy {policy.value} not executable in this task")
     if strategy not in SUPPORTED_STRATEGIES:

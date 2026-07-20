@@ -32,7 +32,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from hymeko_rl.train.ddpg import QCritic, _backbone, _polyak
-from hymeko_rl.train.rl_config import mechanism_reward
+from hymeko_rl.train.rl_config import mechanism_reward, select_contact_mode
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
 from hymeko_rl.train.normalize import RunningRMS
 from hymeko_rl.agents.policy import POLICY_KINDS, PerNodeActionHead
@@ -40,6 +40,23 @@ from hymeko_rl.train.replay import ReplayBuffer
 from hymeko_rl.train.train_inverted_pendulum import eval_balance
 
 _LOG_STD_MIN, _LOG_STD_MAX = -20.0, 2.0
+
+
+def _squashed_sample(mu: torch.Tensor, log_std: torch.Tensor, scale: float) -> "tuple[torch.Tensor, torch.Tensor]":
+    """Reparameterised tanh-squashed-Gaussian sample shared by every SAC actor head (§6.5 #1: one squash, not three).
+    Returns ``(action ∈ [-scale, scale], log_prob (…,))`` with the tanh change-of-variables correction."""
+    std = log_std.clamp(_LOG_STD_MIN, _LOG_STD_MAX).exp()
+    dist: Any = torch.distributions.Normal(mu, std)
+    pre = dist.rsample()
+    log_prob = dist.log_prob(pre).sum(-1)
+    squashed = torch.tanh(pre)
+    log_prob = log_prob - torch.log(1 - squashed.pow(2) + 1e-6).sum(-1)   # log π(a) = log N(pre) − Σ log(1−tanh²)
+    return squashed * scale, log_prob
+
+
+def _squashed_mean(mu: torch.Tensor, scale: float) -> torch.Tensor:
+    """The deterministic greedy action ``scale·tanh(μ)`` (shared by every SAC actor head)."""
+    return scale * torch.tanh(mu)
 
 
 @runtime_checkable
@@ -93,19 +110,11 @@ class SquashedGaussianActor(_SquashedGaussianActorBase):
     def sample(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Reparameterised sample. Returns ``(action, log_prob (B,))``."""
         h = self.backbone(obs)
-        mu = self.mu(h)
-        std = self.log_std(h).clamp(_LOG_STD_MIN, _LOG_STD_MAX).exp()
-        dist: Any = torch.distributions.Normal(mu, std)
-        pre = dist.rsample()
-        log_prob = dist.log_prob(pre).sum(-1)
-        squashed = torch.tanh(pre)
-        # tanh change-of-variables: log π(a) = log N(pre) − Σ log(1 − tanh²(pre)).
-        log_prob = log_prob - torch.log(1 - squashed.pow(2) + 1e-6).sum(-1)
-        return squashed * self.action_scale, log_prob
+        return _squashed_sample(self.mu(h), self.log_std(h), self.action_scale)
 
     def action_mean(self, obs: torch.Tensor) -> torch.Tensor:
         """The deterministic mean action (greedy, for evaluation)."""
-        return self.action_scale * torch.tanh(self.mu(self.backbone(obs)))
+        return _squashed_mean(self.mu(self.backbone(obs)), self.action_scale)
 
 
 class PerNodeSquashedGaussianActor(_SquashedGaussianActorBase):
@@ -144,18 +153,99 @@ class PerNodeSquashedGaussianActor(_SquashedGaussianActorBase):
     def sample(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Reparameterised per-joint sample — identical tanh-Gaussian semantics to the pooled actor."""
         h = self._node_acts(obs)
-        mu = self.mu(h)
-        std = self.log_std(h).clamp(_LOG_STD_MIN, _LOG_STD_MAX).exp()
-        dist: Any = torch.distributions.Normal(mu, std)
-        pre = dist.rsample()
-        log_prob = dist.log_prob(pre).sum(-1)
-        squashed = torch.tanh(pre)
-        log_prob = log_prob - torch.log(1 - squashed.pow(2) + 1e-6).sum(-1)
-        return squashed * self.action_scale, log_prob
+        return _squashed_sample(self.mu(h), self.log_std(h), self.action_scale)
 
     def action_mean(self, obs: torch.Tensor) -> torch.Tensor:
         """The deterministic per-joint mean action (greedy, for evaluation)."""
-        return self.action_scale * torch.tanh(self.mu(self._node_acts(obs)))
+        return _squashed_mean(self.mu(self._node_acts(obs)), self.action_scale)
+
+
+class _ModeHead(nn.Module):
+    """One contact-mode readout: ``μ``/``log σ`` linear over the shared encoder (a tanh-Gaussian head)."""
+
+    def __init__(self, feat_dim: int, action_dim: int) -> None:
+        super().__init__()
+        self.mu = nn.Linear(feat_dim, action_dim)
+        self.log_std = nn.Linear(feat_dim, action_dim)
+
+    def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.mu(h), self.log_std(h)
+
+
+class ContactActorBank(_SquashedGaussianActorBase):
+    """SAC_CONTACT_ACTOR_BANK — two contact-mode actors behind the HYMeko_CONTACT_MODE selector (§3–§5).
+
+    A **shared encoder** feeds two mode-specific heads — ``ACTOR_REPOSITION`` (approach / repair one-sided or lost
+    contact / reach a valid bilateral configuration) and ``ACTOR_TRANSPORT`` (maintain bilateral contact / push toward
+    the target / certify delivery). Both emit the same canonical four-actuator action. The selector
+    :func:`~hymeko_rl.train.rl_config.select_contact_mode` is an **explicit, inspectable named-field gate**, not a
+    learned black box: each sampled state is routed per-sample, so REPOSITION states train the REPOSITION head and
+    TRANSPORT states train the TRANSPORT head (the mask stops one head's gradient at the other's samples). Implements
+    the shared ``_SquashedGaussianActorBase`` interface, so ``train_sac`` / eval drive it unchanged (§6.5 #8: a
+    structural variant is a class, not a call-site flag).
+
+    # Preconditions ``obs`` carries the ACTOR_FIELDS contact/phase fields the selector reads.
+    # Invariants the two heads never share ``μ``/``log σ`` parameters; the shared encoder is trained by both.
+    """
+
+    def __init__(self, backbone: nn.Module, feat_dim: int, action_dim: int, action_scale: float) -> None:
+        super().__init__()
+        self.backbone = backbone
+        self.reposition = _ModeHead(feat_dim, action_dim)
+        self.transport = _ModeHead(feat_dim, action_dim)
+        self.action_scale = float(action_scale)
+        self.action_dim = int(action_dim)
+        self._reset_diag()
+
+    def _reset_diag(self) -> None:
+        self._n = 0                                                # samples routed (for occupancy)
+        self._n_t = 0                                              # …to TRANSPORT
+        self._mag_t = 0.0                                          # summed |a| on TRANSPORT samples
+        self._mag_r = 0.0                                          # …on REPOSITION samples
+
+    def _accumulate(self, t_mask: torch.Tensor, action: torch.Tensor) -> None:
+        with torch.no_grad():
+            nt = int(t_mask.sum().item())
+            self._n += int(t_mask.numel())
+            self._n_t += nt
+            mag = action.abs().mean(-1)                            # per-sample action magnitude
+            self._mag_t += float(mag[t_mask].sum().item())
+            self._mag_r += float(mag[~t_mask].sum().item())
+
+    def pop_diagnostics(self) -> dict[str, float]:
+        """Consume the mode occupancy + per-head action magnitude accumulated since the last call (§5 logging)."""
+        n, nt = max(1, self._n), self._n_t
+        nr = self._n - nt
+        d = dict(mode_occupancy_transport=round(nt / n, 4), mode_occupancy_reposition=round((self._n - nt) / n, 4),
+                 samples_transport=nt, samples_reposition=self._n - nt,
+                 mag_transport=round(self._mag_t / max(1, nt), 4), mag_reposition=round(self._mag_r / max(1, nr), 4))
+        self._reset_diag()
+        return d
+
+    def _routed(self, obs: torch.Tensor, *, stochastic: bool) -> tuple[torch.Tensor, torch.Tensor | None]:
+        h = self.backbone(obs)
+        t_mask, _reason = select_contact_mode(obs)                 # explicit named-field gate (per-sample)
+        mu_t, ls_t = self.transport(h)
+        mu_r, ls_r = self.reposition(h)
+        if stochastic:
+            a_t, lp_t = _squashed_sample(mu_t, ls_t, self.action_scale)
+            a_r, lp_r = _squashed_sample(mu_r, ls_r, self.action_scale)
+            action = torch.where(t_mask.unsqueeze(-1), a_t, a_r)   # per-sample route; grad reaches only the chosen head
+            log_prob: torch.Tensor | None = torch.where(t_mask, lp_t, lp_r)
+        else:
+            action = torch.where(t_mask.unsqueeze(-1), _squashed_mean(mu_t, self.action_scale),
+                                 _squashed_mean(mu_r, self.action_scale))
+            log_prob = None
+        self._accumulate(t_mask, action)
+        return action, log_prob
+
+    def sample(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        action, log_prob = self._routed(obs, stochastic=True)
+        assert log_prob is not None
+        return action, log_prob
+
+    def action_mean(self, obs: torch.Tensor) -> torch.Tensor:
+        return self._routed(obs, stochastic=False)[0]
 
 
 def build_sac(kind: str, *, obs_dim: int, flat_dim: int, action_dim: int, action_scale: float,
@@ -165,8 +255,9 @@ def build_sac(kind: str, *, obs_dim: int, flat_dim: int, action_dim: int, action
     """Construct ``(stochastic actor, [critic, …])`` with independent backbones of ``kind``.
 
     ``actor_head`` selects the actor's readout: ``"pooled"`` (default — ``Linear`` over the mean-pooled
-    backbone) or ``"per_node"`` (each joint from its own vertex; needs ``act_vertices`` + a per-vertex
-    backbone). The **critic always pools** (a scalar Q/V wants an aggregate). ``device`` moves the nets.
+    backbone), ``"per_node"`` (each joint from its own vertex; needs ``act_vertices`` + a per-vertex backbone), or
+    ``"contact_bank"`` (F21 — two contact-mode heads over a shared encoder behind the HYMeko_CONTACT_MODE selector,
+    :class:`ContactActorBank`). The **critic always pools** (a scalar Q/V wants an aggregate). ``device`` moves the nets.
 
     # Preconditions ``kind in POLICY_KINDS``; ``hsikan``/``signedkan`` require ``hg_state=`` in ``kw``;
     ``actor_head="per_node"`` requires ``act_vertices`` and a per-vertex backbone (not ``mlp``)."""
@@ -180,10 +271,12 @@ def build_sac(kind: str, *, obs_dim: int, flat_dim: int, action_dim: int, action
             raise ValueError("actor_head='per_node' requires act_vertices (one vertex per actuator)")
         actor: _SquashedGaussianActorBase = PerNodeSquashedGaussianActor(
             ab, feat, action_dim, action_scale, act_vertices).to(device)
+    elif actor_head == "contact_bank":
+        actor = ContactActorBank(ab, feat, action_dim, action_scale).to(device)
     elif actor_head == "pooled":
         actor = SquashedGaussianActor(ab, feat, action_dim, action_scale).to(device)
     else:
-        raise ValueError(f"actor_head must be 'pooled' or 'per_node'; got {actor_head!r}")
+        raise ValueError(f"actor_head must be 'pooled', 'per_node', or 'contact_bank'; got {actor_head!r}")
     critics = [QCritic(_backbone(kind, obs_dim, flat_dim, hidden=hidden, **kw)[0], feat, action_dim).to(device)
                for _ in range(max(1, n_critics))]
     return actor, critics
