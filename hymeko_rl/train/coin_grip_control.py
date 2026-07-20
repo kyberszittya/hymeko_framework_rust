@@ -19,8 +19,12 @@ from enum import Enum
 
 import numpy as np
 
+from hymeko_rl.eval.team_tensor import field_indices
 from hymeko_rl.train.coin_delivery_acquisition import APERTURE, BOTH_C
 from hymeko_rl.train.coin_transport import obj_to_env
+
+# named indices of the coin-relative midpoint fields in the flat ACTOR observation (replaces the magic obs[[20,21]])
+_MID_TO_COIN = field_indices("mid_to_coin_x", "mid_to_coin_y")
 
 
 def normal_contact_forces(inner) -> tuple[float, float]:
@@ -100,7 +104,7 @@ def controlled_micro_transport(env, handoff, ctrl: GripController, p: GripParams
         obs, _r, _t, _tr, _i = env.step(np.clip(grasp_action(inner, obs, mode, GraspFamily.G1_SYMMETRIC, gp), -1, 1).astype(np.float32))
     d, _n = inner.direction_to_zone()
     coin0 = np.asarray(inner._planar_metrics.disk_pos[:2], np.float64)
-    mid0 = obs[[20, 21]].copy()                            # mid_to_coin proxy for midpoint tracking
+    mid0 = obs[_MID_TO_COIN].copy()                        # named mid_to_coin_{x,y} fields (midpoint-tracking proxy)
     both_run = 0
     for t in range(move_steps):
         a = np.clip(grip_action(inner, obs, ctrl, p, np.asarray(d)), -1, 1).astype(np.float32)
@@ -108,7 +112,7 @@ def controlled_micro_transport(env, handoff, ctrl: GripController, p: GripParams
             a = scramble(a, t)
         obs, _r, _t, _tr, _i = env.step(a)
         both_run += int(bool(inner._planar_metrics.left_contact and inner._planar_metrics.right_contact))
-    mid_disp = float(np.linalg.norm(obs[[20, 21]] - mid0)) + p.v_translate * 0.012 * move_steps  # commanded midpoint move
+    mid_disp = float(np.linalg.norm(obs[_MID_TO_COIN] - mid0)) + p.v_translate * 0.012 * move_steps  # commanded midpoint move
     return _transport_verdict(handoff, ctrl, inner._planar_metrics, coin0, np.asarray(d, np.float64),
                               mid_disp, both_run, move_steps)
 

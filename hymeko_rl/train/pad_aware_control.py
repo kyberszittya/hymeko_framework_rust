@@ -109,14 +109,28 @@ class PadAwareContactFormationEnv(ContactFormationEnv):
         full[self._pad_idx] = distal_targets(self._env, self._variant, self._params)
         return full
 
+    def _pad_insert_indices(self) -> list[int]:
+        """np.insert positions (into the canonical 7-qpos snapshot) that place the two distal pad-hinge DOFs at their
+        COMPILED qpos addresses in the 9-qpos K1 model — derived from the model's joint layout, not a hard-coded
+        ``[2, 4]``. All planar joints are 1-DOF (slide/hinge) so ``jnt_qposadr == jnt_dofadr``; the same indices
+        pad qpos, qvel and qacc. # Postconditions the k-th sorted insert point is shifted left by the k prior inserts."""
+        m = self._env.model
+        addrs = sorted(int(m.jnt_qposadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, f"pad_hinge_{s}")])
+                       for s in ("left", "right"))
+        return [a - k for k, a in enumerate(addrs)]
+
     def _restore(self, item: dict) -> None:
         """Pad the canonical (7-qpos) bank snapshot into the K1 (9-qpos) layout — insert the two distal hinge DOFs at
-        neutral (0) at qpos/qvel indices [2, 5] — so the SAME held corpus is byte-paired across K0/K1."""
+        neutral (0) at their COMPILED qpos addresses — so the SAME held corpus is byte-paired across K0/K1."""
         import dataclasses
         from hymeko_rl.env.planar_snapshot import restore_planar
         snap = item["snap"]
-        pad = dict(qpos=np.insert(snap.qpos, [2, 4], 0.0), qvel=np.insert(snap.qvel, [2, 4], 0.0),
-                   qacc_warmstart=np.insert(snap.qacc_warmstart, [2, 4], 0.0))
+        idx = self._pad_insert_indices()
+        if len(snap.qpos) + len(idx) != int(self._env.model.nq):    # fail loudly on a layout mismatch, never silently
+            raise ValueError(f"K1 pad-restore layout mismatch: {len(snap.qpos)} snapshot qpos + {len(idx)} pad DOFs "
+                             f"!= model nq {int(self._env.model.nq)}")
+        pad = dict(qpos=np.insert(snap.qpos, idx, 0.0), qvel=np.insert(snap.qvel, idx, 0.0),
+                   qacc_warmstart=np.insert(snap.qacc_warmstart, idx, 0.0))
         restore_planar(self._env, dataclasses.replace(snap, **pad))
 
 
