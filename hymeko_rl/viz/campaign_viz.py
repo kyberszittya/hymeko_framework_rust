@@ -133,3 +133,45 @@ def plot_curve_overlay(runs: "Sequence[tuple[str, dict[str, Any]]]", out_path: "
     fig.savefig(out, dpi=140)
     plt.close(fig)
     return out
+
+
+def plot_paired_deltas(aggregate: dict[str, dict[str, Any]], out_path: "str | Path", *,
+                       order: "Sequence[str] | None" = None, title: str | None = None) -> Path:
+    """Forest plot of matched TREATMENT−CONTROL deltas: one row per endpoint, marker = median, bar = bootstrap 95%
+    CI, with a zero reference line so a CI that clears zero is read at a glance (the **plotted** half of a matched-pair
+    verdict). Reusable across matched-pair campaigns (n-step, F11/F12, …) — takes the :func:`paired_stats` aggregate.
+
+    # Preconditions each ``aggregate[k]`` has ``median`` and ``boot95=[lo, hi]``; ``len(aggregate) >= 1``.
+    # Postconditions one ``.png`` (dpi 140) written; returns its path.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    keys = list(order) if order is not None else list(aggregate)
+    keys = [k for k in keys if k in aggregate]
+    if not keys:
+        raise ValueError("plot_paired_deltas needs at least one endpoint present in aggregate")
+    y = np.arange(len(keys), dtype=float)
+    med = [float(aggregate[k]["median"]) for k in keys]
+    lo = [float(aggregate[k]["boot95"][0]) for k in keys]
+    hi = [float(aggregate[k]["boot95"][1]) for k in keys]
+    clears = [(lo[i] > 0 or hi[i] < 0) for i in range(len(keys))]      # CI excludes zero → a real signal
+    fig, ax = plt.subplots(figsize=(7.0, 0.55 * len(keys) + 1.4))
+    ax.axvline(0.0, color="k", lw=1.0, alpha=0.6)
+    for i, k in enumerate(keys):
+        col = "#c0392b" if clears[i] and med[i] < 0 else "#27ae60" if clears[i] else "#7f8c8d"
+        ax.plot([lo[i], hi[i]], [y[i], y[i]], color=col, lw=2.5, solid_capstyle="round")
+        ax.plot(med[i], y[i], "o", color=col, ms=7)
+    ax.set_yticks(y)
+    ax.set_yticklabels(keys)
+    ax.invert_yaxis()
+    ax.set_xlabel("paired Δ (treatment − control), bootstrap 95% CI")
+    ax.set_title(title or "matched paired deltas")
+    ax.grid(axis="x", alpha=0.3)
+    fig.tight_layout()
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=140)
+    plt.close(fig)
+    return out
