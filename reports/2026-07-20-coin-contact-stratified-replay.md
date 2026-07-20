@@ -4,8 +4,13 @@ title: Does replay sampling alone generalize the certified bilateral delivery me
 date: 2026-07-20
 branch: exp/coin-contact-stratified-replay
 source_commit: 37d923a
-verdict: NEGATIVE (single matched seed; multiple correlated endpoints worse) — do not tune replay ratios further
+verdict: NEGATIVE on seed 0 only — OVERTURNED by the seeds 0-3 replication (SEED_SENSITIVE); see 2026-07-20-coin-contact-replay-multiseed.md
 ---
+
+> **CORRECTION (2026-07-20 21:25, replication):** this single-seed NEGATIVE did **not** replicate. Seeds 0–3 give paired
+> Δstrict = [−1, +2, +1, −2] (median 0, IQR 2.5, 2 pos / 2 negative) → **SEED_SENSITIVE**, not NEGATIVE. The seed-0 result
+> was one draw from a high-variance distribution. The §13 "specify 2-actor × 2-critic" recommendation below is therefore
+> **withdrawn** (it was gated on CONFIRMED_NEGATIVE/NO_EFFECT). See `2026-07-20-coin-contact-replay-multiseed.md`.
 
 # Contact-stratified replay — matched CONTROL vs STRATIFIED
 

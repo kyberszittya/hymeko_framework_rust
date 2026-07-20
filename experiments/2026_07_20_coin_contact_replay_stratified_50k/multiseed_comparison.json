@@ -1,0 +1,240 @@
+{
+ "seeds": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "per_seed": {
+  "0": {
+   "control": {
+    "strict_count": 4,
+    "coverage": 4,
+    "zone_count": 9,
+    "P_attr": 0.6666666666666666,
+    "P_clean": 0.4444444444444444,
+    "P_bilat": 0.5555555555555556,
+    "attr_margin_mean": -0.06277777777777775,
+    "s64102": true,
+    "strict_states": [
+     64102,
+     64111,
+     64201,
+     64203
+    ]
+   },
+   "stratified": {
+    "strict_count": 3,
+    "coverage": 3,
+    "zone_count": 8,
+    "P_attr": 0.5,
+    "P_clean": 0.375,
+    "P_bilat": 0.375,
+    "attr_margin_mean": -0.143125,
+    "s64102": false,
+    "strict_states": [
+     64111,
+     64113,
+     64201
+    ]
+   },
+   "delta": {
+    "strict_count": -1,
+    "coverage": -1,
+    "P_clean": -0.069,
+    "P_attr": -0.167,
+    "zone_count": -1
+   }
+  },
+  "1": {
+   "control": {
+    "strict_count": 2,
+    "coverage": 2,
+    "zone_count": 8,
+    "P_attr": 0.375,
+    "P_clean": 0.375,
+    "P_bilat": 0.5,
+    "attr_margin_mean": -0.22575,
+    "s64102": false,
+    "strict_states": [
+     64113,
+     64201
+    ]
+   },
+   "stratified": {
+    "strict_count": 4,
+    "coverage": 4,
+    "zone_count": 9,
+    "P_attr": 0.5555555555555556,
+    "P_clean": 0.5555555555555556,
+    "P_bilat": 0.6666666666666666,
+    "attr_margin_mean": -0.08888888888888886,
+    "s64102": true,
+    "strict_states": [
+     64102,
+     64112,
+     64113,
+     64201
+    ]
+   },
+   "delta": {
+    "strict_count": 2,
+    "coverage": 2,
+    "P_clean": 0.181,
+    "P_attr": 0.181,
+    "zone_count": 1
+   }
+  },
+  "2": {
+   "control": {
+    "strict_count": 2,
+    "coverage": 2,
+    "zone_count": 8,
+    "P_attr": 0.375,
+    "P_clean": 0.375,
+    "P_bilat": 0.625,
+    "attr_margin_mean": -0.194625,
+    "s64102": false,
+    "strict_states": [
+     64111,
+     64113
+    ]
+   },
+   "stratified": {
+    "strict_count": 3,
+    "coverage": 3,
+    "zone_count": 8,
+    "P_attr": 0.75,
+    "P_clean": 0.375,
+    "P_bilat": 0.625,
+    "attr_margin_mean": 0.020250000000000032,
+    "s64102": false,
+    "strict_states": [
+     64113,
+     64201,
+     64203
+    ]
+   },
+   "delta": {
+    "strict_count": 1,
+    "coverage": 1,
+    "P_clean": 0.0,
+    "P_attr": 0.375,
+    "zone_count": 0
+   }
+  },
+  "3": {
+   "control": {
+    "strict_count": 4,
+    "coverage": 4,
+    "zone_count": 7,
+    "P_attr": 0.5714285714285714,
+    "P_clean": 0.5714285714285714,
+    "P_bilat": 0.5714285714285714,
+    "attr_margin_mean": -0.18614285714285714,
+    "s64102": true,
+    "strict_states": [
+     64102,
+     64111,
+     64113,
+     64201
+    ]
+   },
+   "stratified": {
+    "strict_count": 2,
+    "coverage": 2,
+    "zone_count": 9,
+    "P_attr": 0.6666666666666666,
+    "P_clean": 0.3333333333333333,
+    "P_bilat": 0.5555555555555556,
+    "attr_margin_mean": -0.04844444444444443,
+    "s64102": false,
+    "strict_states": [
+     64113,
+     64201
+    ]
+   },
+   "delta": {
+    "strict_count": -2,
+    "coverage": -2,
+    "P_clean": -0.238,
+    "P_attr": 0.095,
+    "zone_count": 2
+   }
+  }
+ },
+ "aggregate": {
+  "strict_count": {
+   "values": [
+    -1,
+    2,
+    1,
+    -2
+   ],
+   "median": 0.0,
+   "iqr": 2.5,
+   "pos": 2,
+   "zero": 0,
+   "neg": 2
+  },
+  "coverage": {
+   "values": [
+    -1,
+    2,
+    1,
+    -2
+   ],
+   "median": 0.0,
+   "iqr": 2.5,
+   "pos": 2,
+   "zero": 0,
+   "neg": 2
+  },
+  "P_clean": {
+   "values": [
+    -0.069,
+    0.181,
+    0.0,
+    -0.238
+   ],
+   "median": -0.0345,
+   "iqr": 0.1565,
+   "pos": 1,
+   "zero": 1,
+   "neg": 2
+  },
+  "P_attr": {
+   "values": [
+    -0.167,
+    0.181,
+    0.375,
+    0.095
+   ],
+   "median": 0.138,
+   "iqr": 0.19999999999999998,
+   "pos": 3,
+   "zero": 0,
+   "neg": 1
+  },
+  "zone_count": {
+   "values": [
+    -1,
+    1,
+    0,
+    2
+   ],
+   "median": 0.5,
+   "iqr": 1.5,
+   "pos": 2,
+   "zero": 1,
+   "neg": 1
+  }
+ },
+ "s64102_retention": {
+  "0": false,
+  "1": true,
+  "2": false,
+  "3": false
+ },
+ "classification": "SEED_SENSITIVE"
+}
