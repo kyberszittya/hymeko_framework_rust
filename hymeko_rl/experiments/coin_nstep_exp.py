@@ -1,7 +1,10 @@
-"""COIN STAGE-2 n-step transport experiment — matched CONTROL (n_step=1) vs TREATMENT (n_step=3) continuation from the
-best CURRICULUM checkpoint, training on the frozen STAGE-2 corpus with the committed 70/15/15 mix. ONLY variable:
-n_step. Actor/critic/SAC/reward/strict predicate/obs/action/BC anchor/replay ratios/generator/STAGE-2 corpus unchanged.
-Reuses coin_clearance_curriculum + coin_generator_exp + the canonical restore/rollout.
+"""COIN STAGE-2 single-variable transport driver — a matched CONTROL vs TREATMENT continuation from the best CURRICULUM
+checkpoint, training on the frozen STAGE-2 corpus with the committed 70/15/15 mix. Everything (actor/critic/SAC/reward/
+strict predicate/obs/action/BC anchor/replay ratios/generator/STAGE-2 corpus) is held fixed except ONE SAC knob, chosen
+per invocation: ``--nstep`` (1 vs 3, the n-step credit-horizon experiment) OR ``--critic-mode`` (TASK_ONLY = F11 1 actor
+x task critic, vs TASK_AND_MECHANISM = F12 + a separate semantic Q_mechanism critic). One driver, one mode argument
+(§6.5 #13) — the two experiments share this identical setup and differ only in the isolated variable. Reuses
+coin_clearance_curriculum + coin_generator_exp + the canonical restore/rollout.
 """
 from __future__ import annotations
 
@@ -35,7 +38,7 @@ def _find_strong(held_all):
     return None
 
 
-def run(n_step: int, seed: int, rep: int, steps: int, out: Path) -> dict:
+def run(n_step: int, seed: int, rep: int, steps: int, out: Path, critic_mode: str = "TASK_ONLY") -> dict:
     s2_train = load_configs(_CURDIR / "STAGE2_train.pkl")
     earlier = load_configs(_CURDIR / "STAGE0_train.pkl") + load_configs(_CURDIR / "STAGE1_train.pkl")
     orig_cert = [c for c in load_configs(_GENDIR / "train_configs.pkl") if c.family == "CERTIFIED_NEIGHBORHOOD"]
@@ -60,7 +63,8 @@ def run(n_step: int, seed: int, rep: int, steps: int, out: Path) -> dict:
 
     actor, critics = build_sac("mlp", obs_dim=41, flat_dim=41, action_dim=6, action_scale=1.0)
     actor.load_state_dict(torch.load(_CKPT, map_location="cpu"))
-    cfg = SACConfig.stable(total_steps=steps, seed=run_seed, bc_coef=1.0, log_every=2500, eval_every=2500, n_step=n_step)
+    cfg = SACConfig.stable(total_steps=steps, seed=run_seed, bc_coef=1.0, log_every=2500, eval_every=2500,
+                           n_step=n_step, critic_mode=critic_mode)   # F11 TASK_ONLY / F12 TASK_AND_MECHANISM
     comp = {"progress_ok": False, "first_strict": False, "consec_strict": 0}
 
     def bc_coef_fn(_s):
@@ -70,7 +74,8 @@ def run(n_step: int, seed: int, rep: int, steps: int, out: Path) -> dict:
     eval_env._base_override = lambda inner, t: np.zeros(6, np.float32)
     eval_env._delta_override = 1.0
     hist, best = [], {"key": (-1, -9.9, -1, -1), "step": 0, "m": None}
-    arm = f"n{n_step} s{seed}r{rep}"
+    _cm = "F12" if critic_mode == "TASK_AND_MECHANISM" else "F11"
+    arm = f"{_cm} n{n_step} s{seed}r{rep}"
 
     def _strong_strict(ac):
         _restore_generated(eval_env, strong.snapshot)
@@ -102,9 +107,9 @@ def run(n_step: int, seed: int, rep: int, steps: int, out: Path) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     curve = train_sac(actor, critics, env, cfg, eval_fn=eval_fn, bc_coef_fn=bc_coef_fn)
     torch.save(actor.state_dict(), out / "actor_final.pt")
-    result = dict(n_step=n_step, seed=seed, rep=rep, steps=steps, source_checkpoint=str(_CKPT),
-                  strong_state_hash=_STRONG_HASH, curve=curve, best_step=best["step"], best_metrics=best["m"],
-                  eval_history=hist)
+    result = dict(n_step=n_step, seed=seed, rep=rep, steps=steps, critic_mode=critic_mode, cell=_cm,
+                  source_checkpoint=str(_CKPT), strong_state_hash=_STRONG_HASH, curve=curve,
+                  best_step=best["step"], best_metrics=best["m"], eval_history=hist)
     (out / "run.json").write_text(json.dumps(result, indent=1, default=float))
     bm = best["m"]
     print(f"[{arm}] done | best S2 cov={bm['stage2']['coverage'] if bm else 0} "
@@ -116,12 +121,14 @@ def run(n_step: int, seed: int, rep: int, steps: int, out: Path) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--nstep", type=int, choices=[1, 3], required=True)
+    ap.add_argument("--critic-mode", choices=["TASK_ONLY", "TASK_AND_MECHANISM"], default="TASK_ONLY",
+                    help="TASK_ONLY = F11 (1 actor x task critic); TASK_AND_MECHANISM = F12 (+ semantic Q_mechanism)")
     ap.add_argument("--seed", type=int, required=True)
     ap.add_argument("--rep", type=int, required=True)
     ap.add_argument("--steps", type=int, default=50_000)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    run(a.nstep, a.seed, a.rep, a.steps, Path(a.out))
+    run(a.nstep, a.seed, a.rep, a.steps, Path(a.out), critic_mode=a.critic_mode)
 
 
 if __name__ == "__main__":
