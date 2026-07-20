@@ -19,7 +19,6 @@ from enum import Enum
 
 import numpy as np
 
-from hymeko_rl.experiments.coin_delivery1 import _dir_to_zone
 from hymeko_rl.train.coin_delivery_acquisition import APERTURE, BOTH_C
 from hymeko_rl.train.coin_transport import obj_to_env
 
@@ -99,7 +98,7 @@ def controlled_micro_transport(env, handoff, ctrl: GripController, p: GripParams
     for _ in range(establish):                             # establish the grasp (fixed fingertip geometry)
         mode = clf.classify(inner)
         obs, _r, _t, _tr, _i = env.step(np.clip(grasp_action(inner, obs, mode, GraspFamily.G1_SYMMETRIC, gp), -1, 1).astype(np.float32))
-    d, _n = _dir_to_zone(inner)
+    d, _n = inner.direction_to_zone()
     coin0 = np.asarray(inner._planar_metrics.disk_pos[:2], np.float64)
     mid0 = obs[[20, 21]].copy()                            # mid_to_coin proxy for midpoint tracking
     both_run = 0

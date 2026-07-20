@@ -365,6 +365,18 @@ def compute_planar_metrics(model: Any, data: Any, *, disk_body: int, disk_geom: 
                               arm_self_contact, disk_vel, fingers_self_contact, legality=legality)
 
 
+def coin_zone_direction(disk_pos, zone_x: float, zone_y: float) -> tuple[np.ndarray, float]:
+    """Pure coin→zone geometry: the unit direction from the coin centre ``disk_pos`` (x,y[,z]) to the delivery zone
+    ``(zone_x, zone_y)`` and the distance ``n``. Shared by :meth:`PlanarGraspEnv.direction_to_zone` and unit tests
+    (so the math has a single home, testable without constructing a MuJoCo env).
+
+    # Postconditions ``||u|| ≈ 1`` unless the coin is exactly on the zone (then ``u == 0``); ``n ≥ 0``."""
+    coin = np.asarray(disk_pos[:2], np.float64)
+    d = np.array([zone_x, zone_y], np.float64) - coin
+    n = float(np.linalg.norm(d))
+    return d / (n + 1e-9), n
+
+
 class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
     """Top-down planar grasping: pull a coin placed on the table into the zone between two arms.
 
@@ -595,6 +607,16 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
     def arm_body_steps(self) -> int:
         """Public read-only count of arm-body↔coin contact steps (the body-shove attribution source)."""
         return int(self._arm_body_steps)
+
+    def direction_to_zone(self) -> tuple[np.ndarray, float]:
+        """Unit direction from the coin centre to the delivery zone, and the coin→zone distance ``n``.
+
+        The canonical target-relative geometry every scripted delivery primitive/actor uses. Lives on the env (which
+        owns both the coin metrics and the zone) so library/train code no longer reaches into an experiment module.
+
+        # Postconditions returns ``(u, n)`` with ``||u|| ≈ 1`` (``u == 0`` only if the coin sits exactly on the zone)
+        and ``n == disk_to_zone ≥ 0``."""
+        return coin_zone_direction(self._planar_metrics.disk_pos, self._zone_x, self._zone_y)
 
     def _metrics(self) -> PlanarGraspMetrics:
         return compute_planar_metrics(

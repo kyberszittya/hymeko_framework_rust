@@ -19,7 +19,6 @@ from enum import Enum
 import numpy as np
 
 from hymeko_rl.env.planar_snapshot import restore_planar
-from hymeko_rl.experiments.coin_delivery1 import _dir_to_zone
 from hymeko_rl.train.coin_delivery_acquisition import MID_TO_COIN
 from hymeko_rl.train.coin_transport import obj_to_env
 
@@ -175,7 +174,7 @@ def certify_grasp(env, handoff, family: GraspFamily, p: GraspParams, probe: Prob
     for _ in range(establish):                              # establish
         mode = clf.classify(inner)
         obs, _r, _t, _tr, _i = env.step(np.clip(grasp_action(inner, obs, mode, family, p), -1, 1).astype(np.float32))
-    d, _n = _dir_to_zone(inner)
+    d, _n = inner.direction_to_zone()
     both_before = bool(inner._planar_metrics.left_contact and inner._planar_metrics.right_contact)
     max_slip = 0.0
     both_after = False
@@ -208,7 +207,7 @@ def micro_transport(env, handoff, family: GraspFamily, p: GraspParams, *, establ
         for _ in range(establish):
             mode = clf.classify(inner)
             obs, _r, _t, _tr, _i = env.step(np.clip(grasp_action(inner, obs, mode, family, p), -1, 1).astype(np.float32))
-        d, _n = _dir_to_zone(inner)
+        d, _n = inner.direction_to_zone()
         start = float(inner._planar_metrics.disk_to_zone)
         for _ in range(move_steps):
             obs, _r, _t, _tr, _i = env.step(obj_to_env(eps * np.asarray(d), 0.0, 0.0, 0.85))

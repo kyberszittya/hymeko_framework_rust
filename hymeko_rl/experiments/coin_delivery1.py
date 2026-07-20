@@ -31,15 +31,14 @@ _HELD = range(64_000, 64_090)
 
 # ── geometry ─────────────────────────────────────────────────────────────────────────────────────────────────────
 def _dir_to_zone(inner) -> tuple:
-    m = inner._planar_metrics; coin = np.asarray(m.disk_pos[:2], np.float64)
-    zone = np.array([inner._zone_x, inner._zone_y], np.float64); d = zone - coin
-    n = float(np.linalg.norm(d)); return (d / (n + 1e-9)), n
+    """Backward-compat delegator to the canonical `PlanarGraspEnv.direction_to_zone` (geometry now lives on the env)."""
+    return inner.direction_to_zone()
 
 
 # ── Stage 1: delivery-directed candidate primitives (scripted, 6-d actions) ──────────────────────────────────────
-def p_grasp_carry(inner, t):
-    """B: grasp + carry toward zone (translate midpoint along coin→zone, squeeze to hold). Terminates on handoff."""
-    d, _n = _dir_to_zone(inner); return np.array([d[0], d[1], 0.0, 0.8, 0.0, 0.0], np.float32)
+# p_grasp_carry now lives in the library (hymeko_rl.train.coin_delivery_rl) so production RL code no longer imports a
+# scripted primitive from this experiment module; re-exported here for the local PRIMS table + downstream experiments.
+from hymeko_rl.train.coin_delivery_rl import p_grasp_carry  # noqa: E402  (re-export; kept after the module docstring)
 
 
 def p_carry_pulse(inner, t):

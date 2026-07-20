@@ -19,7 +19,6 @@ from enum import Enum
 import mujoco
 import numpy as np
 
-from hymeko_rl.experiments.coin_delivery1 import _dir_to_zone
 from hymeko_rl.train.coin_grasp_cert import ContactModeClassifier, GraspFamily, GraspParams, grasp_action
 from hymeko_rl.train.coin_grip_control import GripController, GripParams, grip_action
 from hymeko_rl.train.coin_transport import restore_planar
@@ -194,7 +193,7 @@ def compliant_micro_transport(env, handoff, compliance: Compliance, controller: 
     restore_planar(inner, handoff.snap)
     env._horizon = establish + move_steps + 400
     obs = _establish_grasp(env, inner, handoff.obs.copy(), establish)
-    d, _n = _dir_to_zone(inner)
+    d, _n = inner.direction_to_zone()
     coin0, rot0 = _coin_pose(inner)
     log = _run_transport(env, inner, obs, controller, gp_grip, np.asarray(d, np.float64), move_steps, scramble)
     return _verdict(handoff, compliance, inner, coin0, rot0, np.asarray(d, np.float64), log, move_steps, eps_target)

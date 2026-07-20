@@ -22,7 +22,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from hymeko_rl.experiments.coin_delivery1 import _dir_to_zone
 from hymeko_rl.train.coin_delivery_rl import CoinDeliveryTrainEnv, DeliveryRLConfig, make_delivery_rl_env, roll_delivery, scripted_action_fn
 
 # CEM-searched parameter ranges (normalised [0,1] → these), documented so the primitive is legible:
@@ -59,7 +58,7 @@ def centering_action(inner, params: CenteringParams) -> np.ndarray:
     proportional micro-motion (``settle_r``) and a gentler squeeze (``sq_settle``) so the coin comes to rest.
 
     # Preconditions the coin is (about to be) grasped; ``inner`` exposes ``_planar_metrics`` + zone. """
-    d, n = _dir_to_zone(inner)                                  # unit direction to zone centre, n = disk_to_zone
+    d, n = inner.direction_to_zone()                                  # unit direction to zone centre, n = disk_to_zone
     if n <= params.deadband:                                    # settle mode near the centre
         trans = params.settle_r * min(1.0, params.kp * n) * d
         sq = params.sq_settle

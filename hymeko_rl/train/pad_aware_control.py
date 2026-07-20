@@ -20,7 +20,6 @@ import numpy as np
 
 from hymeko_rl.env.contact_formation_env import ContactFormationEnv
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv
-from hymeko_rl.experiments.coin_delivery1 import _dir_to_zone
 
 _EPS = 1e-9
 _HINGE_MAX = 1.2                 # a_pad_{side} ctrlrange (rad)
@@ -65,7 +64,7 @@ def desired_pad_dir(inner, side: str, variant: PadVariant, p: PadParams) -> np.n
     toward_coin = toward_coin / (np.linalg.norm(toward_coin) + _EPS)
     if variant is not PadVariant.P2_PUSH_AWARE:     # P1/P3/P4 use the radial toward-coin direction (P3 sign-scrambles it)
         return toward_coin
-    push, _n = _dir_to_zone(inner)                 # P2: blend the radial with the target-relative push (coin → zone)
+    push, _n = inner.direction_to_zone()                 # P2: blend the radial with the target-relative push (coin → zone)
     d = toward_coin + p.push_blend * np.asarray(push, np.float64)
     return d / (np.linalg.norm(d) + _EPS)
 

@@ -23,7 +23,6 @@ from enum import Enum
 import numpy as np
 
 from hymeko_rl.env.planar_snapshot import restore_planar, snapshot_planar
-from hymeko_rl.experiments.coin_delivery1 import _dir_to_zone
 from hymeko_rl.train.coin_delivery_acquisition import (
     MID_TO_COIN, L_TO_COIN, R_TO_COIN, BOTH_C, APERTURE,
     AcqParams, AcquisitionPrimitive, Phase,
@@ -158,7 +157,7 @@ class TransportPrimitive:
         self.last_stable = None
 
     def action(self, inner, obs: np.ndarray) -> np.ndarray:
-        d, n = _dir_to_zone(inner)
+        d, n = inner.direction_to_zone()
         both = bool(obs[BOTH_C] > 0.5)
         if self.family == TransportFamily.T0_GRASP_CARRY:
             return obj_to_env(np.array([d[0], d[1]]), 0.0, 0.0, 0.8)      # historical baseline

@@ -32,9 +32,16 @@ from typing import Any, Callable
 
 import numpy as np
 
-from hymeko_rl.experiments.coin_delivery1 import p_grasp_carry
-from hymeko_rl.experiments.pedc_selection import _env
+from hymeko_rl.experiments.pedc_selection import _env  # shared eval-corpus fixture (arcrl c1 bank+contract; see report)
 from hymeko_rl.train.coin_delivery_actor import rollout
+
+
+def p_grasp_carry(inner, t: int) -> np.ndarray:
+    """Scripted base primitive: grasp + carry the coin toward the delivery zone (translate the fingertip midpoint
+    along the coin→zone direction, squeeze to hold). The zero-residual base of the delivery RL env, and the scripted
+    acquisition prefix. Terminates on the handoff phase event. # Postconditions returns a 6-DoF float32 action."""
+    d, _n = inner.direction_to_zone()
+    return np.array([d[0], d[1], 0.0, 0.8, 0.0, 0.0], np.float32)
 
 
 @dataclass(frozen=True)

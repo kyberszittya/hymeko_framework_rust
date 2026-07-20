@@ -10,8 +10,13 @@ from hymeko_rl.experiments import coin_delivery1 as cd
 
 
 def _inner(coin_xy, zone_xy=(0.044, 0.151), zone_half=0.04):
+    from hymeko_rl.env.planar_grasp_env import coin_zone_direction
     m = types.SimpleNamespace(disk_pos=np.array([coin_xy[0], coin_xy[1], 0.0]))
-    return types.SimpleNamespace(_planar_metrics=m, _zone_x=zone_xy[0], _zone_y=zone_xy[1], _zone_half=zone_half)
+    inner = types.SimpleNamespace(_planar_metrics=m, _zone_x=zone_xy[0], _zone_y=zone_xy[1], _zone_half=zone_half)
+    # the coin geometry now lives on the env as `direction_to_zone`; bind it on the lightweight mock via the shared
+    # pure function so this unit test exercises the real math without constructing a MuJoCo env.
+    inner.direction_to_zone = lambda: coin_zone_direction(m.disk_pos, inner._zone_x, inner._zone_y)
+    return inner
 
 
 def test_dir_to_zone_points_at_zone():

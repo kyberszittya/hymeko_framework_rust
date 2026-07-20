@@ -17,7 +17,6 @@ from enum import Enum
 
 import numpy as np
 
-from hymeko_rl.experiments.coin_delivery1 import _dir_to_zone
 from hymeko_rl.train.coin_grip_control import normal_contact_forces
 
 _EPS = 1e-9
@@ -48,7 +47,7 @@ class ActorParams:
 def actor_action(inner, t: int, actor: DeliveryActor, p: ActorParams = ActorParams()) -> np.ndarray:
     """Deterministic 6-DoF cooperative action for a push/plow actor. Push actors keep contact LIGHT and non-clamping so
     the coin is nudged toward the zone rather than clamped-and-carried (which triggers the 4-step handoff termination)."""
-    d, n = _dir_to_zone(inner)
+    d, n = inner.direction_to_zone()
     if actor is DeliveryActor.A5_NEUTRAL:
         return np.array([0.0, 0.0, 0.0, 0.5, 0.0, 0.0], np.float32)            # hold contact, no translation
     if actor is DeliveryActor.A0_SYM_PUSH:
