@@ -4,7 +4,7 @@ title: Does the seed-0 NEGATIVE hold? No — the effect is seed-sensitive (mean-
 date: 2026-07-20
 branch: exp/coin-contact-stratified-replay
 source_commit: d56f692
-verdict: SEED_SENSITIVE — the replay-sampler effect flips sign with the training seed; the seed-0 NEGATIVE is overturned
+verdict: SEED_SENSITIVE (4 seeds) — SHARPENED to BASIN_DEPENDENT by the 12-seed extension (2026-07-20-coin-contact-replay-12seed.md)
 ---
 
 # Contact-stratified replay — matched multi-seed replication
