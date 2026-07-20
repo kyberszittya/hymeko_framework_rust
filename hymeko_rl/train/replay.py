@@ -191,6 +191,48 @@ class ReplayBuffer:
         idx = np.concatenate(parts)[:batch_size] if parts else generator.integers(0, self.size, size=batch_size)
         return self._gather(idx)
 
+    def sample_nstep(self, batch_size: int, *, n_step: int, gamma: float, generator: np.random.Generator,
+                     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Sample ``(obs, act, R, next_obs, done, disc)`` where ``R = Σ_{k<K} γ^k r_{t+k}`` is the K-step return and
+        ``disc = γ^K`` with ``K`` the number of transitions actually accumulated. Accumulation STOPS at a terminal
+        transition (``done`` set, ``K`` = steps to termination) and NEVER crosses an episode boundary or the ring head
+        (truncation → bootstrap from the last valid ``next_obs`` with ``disc = γ^K``, ``done = 0``). ``next_obs`` is the
+        state after the last accumulated transition. With ``n_step == 1`` this is byte-identical to :meth:`sample`
+        (plus a constant ``disc = γ``). Metadata alignment: ``obs``/``act`` are the FIRST transition's (row ``t``).
+
+        # Preconditions ``1 <= batch_size <= size``; ``n_step >= 1``. # Postconditions ``disc`` masks the bootstrap on
+        termination; deterministic for a fixed ``generator`` state."""
+        if not 1 <= batch_size <= self.size:
+            raise ValueError(f"batch_size must be in [1, size={self.size}]; got {batch_size}")
+        if n_step < 1:
+            raise ValueError(f"n_step must be >= 1; got {n_step}")
+        starts = generator.integers(0, self.size, size=batch_size)
+        if n_step == 1:                                          # exact one-step path (regression #5)
+            base = self._gather(starts)
+            return (*base, torch.full((batch_size,), float(gamma)))
+        cap, size, ptr = self.capacity, self.size, self._ptr
+        wrapped = size >= cap
+        r_out = np.zeros(batch_size, np.float64)
+        steps = np.zeros(batch_size, np.int64)
+        done_out = np.zeros(batch_size, np.float32)
+        boot = starts.copy()                                    # index whose _next is the bootstrap state
+        active = np.ones(batch_size, dtype=bool)
+        for k in range(n_step):
+            idx = (starts + k) % cap
+            in_range = (idx != ptr) if wrapped else ((starts + k) < size)   # not crossing the ring head / stored region
+            take = active & in_range
+            r_out[take] += (gamma ** k) * self._rew[idx[take]]
+            steps[take] += 1
+            boot[take] = idx[take]
+            done_here = take & (self._done[idx] > 0.5)
+            done_out[done_here] = 1.0
+            active[done_here] = False                           # episode terminated: stop, mask bootstrap
+            active[~in_range] = False                           # crossed head/region: stop (truncation bootstrap)
+        disc = (gamma ** steps.astype(np.float64)).astype(np.float32)
+        t = torch.as_tensor
+        return (t(self._obs[starts]), t(self._act[starts]), t(r_out.astype(np.float32)),
+                t(self._next[boot]), t(done_out), t(disc))
+
     def sample_with_priv(self, batch_size: int, *, generator: np.random.Generator,
                          ) -> tuple[torch.Tensor, ...]:
         """Sample ``(obs, act, rew, next_obs, done, priv, priv_next)`` — the asymmetric-CTDE path. The two

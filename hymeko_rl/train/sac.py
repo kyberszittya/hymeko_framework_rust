@@ -227,6 +227,7 @@ class SACConfig:
     start_steps: int = 1_000
     batch_size: int = 256
     gamma: float = 0.99
+    n_step: int = 1                        # k-step returns in the critic target (1 = standard; >1 uses ReplayBuffer.sample_nstep)
     tau: float = 0.005
     actor_lr: float = 1e-3
     critic_lr: float = 1e-3
@@ -366,11 +367,12 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     # math + update-to-data ratio ⇒ the learned policy is UNCHANGED (mirrors train_offpolicy's 8.25×). BC/DAgger
     # anchors are added eager and DISABLE compile — compile covers the pure-SAC-from-scratch path (the campaign).
     def _critic_loss(s: torch.Tensor, a: torch.Tensor, r: torch.Tensor, s2: torch.Tensor,
-                     d: torch.Tensor, alpha: torch.Tensor) -> torch.Tensor:
+                     d: torch.Tensor, alpha: torch.Tensor, disc: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
             a2, logp2 = actor.sample(s2)
             q_next = torch.stack([tc(s2, a2) for tc in t_critics], 0).amin(0) - alpha * logp2
-            y = r + cfg.gamma * (1 - d) * q_next                    # reward already RMS-normalised eager by the caller
+            y = r + disc * (1 - d) * q_next                        # disc = γ (1-step) or γ^K (K-step); r is the K-step
+            #                                                        return, RMS-normalised eager by the caller
         return sum(F.mse_loss(c(s, a), y) for c in critics)         # type: ignore[return-value]
 
     def _actor_terms(s: torch.Tensor, alpha: torch.Tensor) -> "tuple[torch.Tensor, torch.Tensor]":
@@ -398,15 +400,20 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
             #   BETWEEN them roots a step mid-update and corrupts the shared critic's buffers (measured on kato61 2026-07-17).
         # competence-gated selection: stratified while the gate says so, else the ordinary uniform sampler. When
         # sampler_gate_fn is None the behaviour is byte-identical to before (pure stratified or pure uniform).
-        _use_strat = _stratified and (sampler_gate_fn is None or sampler_gate_fn(step))
-        _batch = (buf.sample_stratified(cfg.batch_size, demo_frac=demo_frac_fn(step), strata_weights=strata_weights,
-                                        generator=rng, shortage=_shortage, account=_account)
-                  if _use_strat else buf.sample(cfg.batch_size, generator=rng))
-        s, a, r, s2, d = (x.to(dev) for x in _batch)
+        if cfg.n_step > 1:                                         # k-step return path (episode-boundary-respecting)
+            s, a, r, s2, d, disc = (x.to(dev) for x in
+                                    buf.sample_nstep(cfg.batch_size, n_step=cfg.n_step, gamma=cfg.gamma, generator=rng))
+        else:
+            _use_strat = _stratified and (sampler_gate_fn is None or sampler_gate_fn(step))
+            _batch = (buf.sample_stratified(cfg.batch_size, demo_frac=demo_frac_fn(step), strata_weights=strata_weights,
+                                            generator=rng, shortage=_shortage, account=_account)
+                      if _use_strat else buf.sample(cfg.batch_size, generator=rng))
+            s, a, r, s2, d = (x.to(dev) for x in _batch)
+            disc = torch.full_like(r, cfg.gamma)                   # constant γ ⇒ byte-identical to the 1-step target
         alpha_d = _alpha_at(step).detach()                         # value only; α is optimised eager below
         if cfg.reward_norm:
-            r = reward_rms.normalize(r)                            # bounded-scale reward → bounded Q-target (eager)
-        c_loss = _critic_loss(s, a, r, s2, d, alpha_d)
+            r = reward_rms.normalize(r)                            # bounded-scale (K-step) return → bounded Q-target
+        c_loss = _critic_loss(s, a, r, s2, d, alpha_d, disc)
         c_opt.zero_grad()
         c_loss.backward()   # type: ignore[no-untyped-call]  # torch stub gap
         torch.nn.utils.clip_grad_norm_([p for c in critics for p in c.parameters()], cfg.max_grad_norm)
