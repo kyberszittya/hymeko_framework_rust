@@ -1,0 +1,2380 @@
+{
+ "seed": 0,
+ "source_checkpoint": "experiments/2026_07_20_coin_generator_generator_s2r0/actor_best.pt",
+ "curve": [
+  0.1327,
+  0.044899999999999995,
+  0.0653,
+  0.0653,
+  0.0853,
+  0.0158,
+  -1.0,
+  -1.0,
+  0.0156,
+  0.0377,
+  -1.0,
+  -1.0,
+  0.0132,
+  -1.0,
+  0.017,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  0.0281,
+  0.0363,
+  0.027700000000000002,
+  -1.0,
+  0.028200000000000003,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  0.0416,
+  -1.0,
+  -1.0,
+  -1.0,
+  -1.0,
+  0.0351
+ ],
+ "best_step": 12500,
+ "best_max_certified_clearance": 0.0253,
+ "best_metrics": {
+  "eval": 5,
+  "step": 12500,
+  "active_stage": "STAGE2",
+  "by_stage": {
+   "STAGE0": {
+    "n": 24,
+    "strict": 2,
+    "coverage": 2,
+    "loose": 15,
+    "loose_rate": 0.625,
+    "mean_progress": 0.0284,
+    "max_certified_clearance": 0.0056,
+    "P_attr": 0.2,
+    "P_clean": 0.6,
+    "P_bilat": 0.733
+   },
+   "STAGE1": {
+    "n": 24,
+    "strict": 4,
+    "coverage": 4,
+    "loose": 8,
+    "loose_rate": 0.333,
+    "mean_progress": 0.0221,
+    "max_certified_clearance": 0.0253,
+    "P_attr": 0.5,
+    "P_clean": 0.75,
+    "P_bilat": 0.75
+   },
+   "STAGE2": {
+    "n": 24,
+    "strict": 0,
+    "coverage": 0,
+    "loose": 0,
+    "loose_rate": 0.0,
+    "mean_progress": 0.0,
+    "max_certified_clearance": -9.9,
+    "P_attr": 0.0,
+    "P_clean": 0.0,
+    "P_bilat": 0.0
+   },
+   "STAGE3": {
+    "n": 24,
+    "strict": 0,
+    "coverage": 0,
+    "loose": 0,
+    "loose_rate": 0.0,
+    "mean_progress": 0.0,
+    "max_certified_clearance": -9.9,
+    "P_attr": 0.0,
+    "P_clean": 0.0,
+    "P_bilat": 0.0
+   }
+  },
+  "s64102_strict": false,
+  "bc_coef": 0.1,
+  "max_certified_clearance": 0.0253
+ },
+ "eval_history": [
+  {
+   "eval": 1,
+   "step": 2500,
+   "active_stage": "STAGE0",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 4,
+     "coverage": 4,
+     "loose": 14,
+     "loose_rate": 0.583,
+     "mean_progress": 0.026,
+     "max_certified_clearance": 0.0087,
+     "P_attr": 0.357,
+     "P_clean": 0.643,
+     "P_bilat": 0.643
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 7,
+     "coverage": 7,
+     "loose": 10,
+     "loose_rate": 0.417,
+     "mean_progress": 0.0242,
+     "max_certified_clearance": 0.0227,
+     "P_attr": 0.8,
+     "P_clean": 0.8,
+     "P_bilat": 0.8
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 1.0,
+   "max_certified_clearance": 0.0227
+  },
+  {
+   "eval": 2,
+   "step": 5000,
+   "active_stage": "STAGE1",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0242,
+     "max_certified_clearance": 0.0032,
+     "P_attr": 0.083,
+     "P_clean": 0.583,
+     "P_bilat": 0.75
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 5,
+     "loose_rate": 0.208,
+     "mean_progress": 0.0221,
+     "max_certified_clearance": 0.0249,
+     "P_attr": 0.2,
+     "P_clean": 0.6,
+     "P_bilat": 0.6
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0249
+  },
+  {
+   "eval": 3,
+   "step": 7500,
+   "active_stage": "STAGE1",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 11,
+     "loose_rate": 0.458,
+     "mean_progress": 0.0275,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.273,
+     "P_clean": 0.636,
+     "P_bilat": 0.727
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 4,
+     "coverage": 4,
+     "loose": 6,
+     "loose_rate": 0.25,
+     "mean_progress": 0.0214,
+     "max_certified_clearance": 0.0253,
+     "P_attr": 0.667,
+     "P_clean": 0.667,
+     "P_bilat": 0.667
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0253
+  },
+  {
+   "eval": 4,
+   "step": 10000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0257,
+     "max_certified_clearance": 0.0032,
+     "P_attr": 0.417,
+     "P_clean": 0.5,
+     "P_bilat": 0.75
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 3,
+     "coverage": 3,
+     "loose": 6,
+     "loose_rate": 0.25,
+     "mean_progress": 0.0221,
+     "max_certified_clearance": 0.0253,
+     "P_attr": 0.5,
+     "P_clean": 0.667,
+     "P_bilat": 0.667
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.05,
+   "max_certified_clearance": 0.0253
+  },
+  {
+   "eval": 5,
+   "step": 12500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 2,
+     "coverage": 2,
+     "loose": 15,
+     "loose_rate": 0.625,
+     "mean_progress": 0.0284,
+     "max_certified_clearance": 0.0056,
+     "P_attr": 0.2,
+     "P_clean": 0.6,
+     "P_bilat": 0.733
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 4,
+     "coverage": 4,
+     "loose": 8,
+     "loose_rate": 0.333,
+     "mean_progress": 0.0221,
+     "max_certified_clearance": 0.0253,
+     "P_attr": 0.5,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0253
+  },
+  {
+   "eval": 6,
+   "step": 15000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 14,
+     "loose_rate": 0.583,
+     "mean_progress": 0.0264,
+     "max_certified_clearance": 0.0058,
+     "P_attr": 0.357,
+     "P_clean": 0.5,
+     "P_bilat": 0.714
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 3,
+     "loose_rate": 0.125,
+     "mean_progress": 0.0184,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.667,
+     "P_clean": 0.333,
+     "P_bilat": 0.333
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0058
+  },
+  {
+   "eval": 7,
+   "step": 17500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 18,
+     "loose_rate": 0.75,
+     "mean_progress": 0.0305,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.167,
+     "P_clean": 0.556,
+     "P_bilat": 0.722
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 3,
+     "loose_rate": 0.125,
+     "mean_progress": 0.0185,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.667,
+     "P_clean": 0.333,
+     "P_bilat": 0.333
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 8,
+   "step": 20000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 15,
+     "loose_rate": 0.625,
+     "mean_progress": 0.0282,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.2,
+     "P_clean": 0.533,
+     "P_bilat": 0.667
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 4,
+     "loose_rate": 0.167,
+     "mean_progress": 0.0183,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.5,
+     "P_clean": 0.5,
+     "P_bilat": 0.5
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 9,
+   "step": 22500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 16,
+     "loose_rate": 0.667,
+     "mean_progress": 0.029,
+     "max_certified_clearance": 0.0056,
+     "P_attr": 0.125,
+     "P_clean": 0.688,
+     "P_bilat": 0.625
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 5,
+     "loose_rate": 0.208,
+     "mean_progress": 0.0181,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.4,
+     "P_clean": 0.6,
+     "P_bilat": 0.6
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0056
+  },
+  {
+   "eval": 10,
+   "step": 25000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 3,
+     "coverage": 3,
+     "loose": 17,
+     "loose_rate": 0.708,
+     "mean_progress": 0.029,
+     "max_certified_clearance": 0.0077,
+     "P_attr": 0.235,
+     "P_clean": 0.706,
+     "P_bilat": 0.647
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 3,
+     "loose_rate": 0.125,
+     "mean_progress": 0.0186,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.667,
+     "P_clean": 0.333,
+     "P_bilat": 0.333
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0077
+  },
+  {
+   "eval": 11,
+   "step": 27500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 18,
+     "loose_rate": 0.75,
+     "mean_progress": 0.0324,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.056,
+     "P_clean": 0.722,
+     "P_bilat": 0.667
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 7,
+     "loose_rate": 0.292,
+     "mean_progress": 0.0219,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.286,
+     "P_clean": 0.714,
+     "P_bilat": 0.714
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 12,
+   "step": 30000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 14,
+     "loose_rate": 0.583,
+     "mean_progress": 0.0276,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.714,
+     "P_bilat": 0.643
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 7,
+     "loose_rate": 0.292,
+     "mean_progress": 0.0204,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.286,
+     "P_clean": 0.714,
+     "P_bilat": 0.714
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 13,
+   "step": 32500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0248,
+     "max_certified_clearance": 0.0032,
+     "P_attr": 0.083,
+     "P_clean": 0.75,
+     "P_bilat": 0.583
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 9,
+     "loose_rate": 0.375,
+     "mean_progress": 0.0229,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.778,
+     "P_bilat": 0.889
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0032
+  },
+  {
+   "eval": 14,
+   "step": 35000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0257,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.083,
+     "P_clean": 0.667,
+     "P_bilat": 0.75
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 6,
+     "loose_rate": 0.25,
+     "mean_progress": 0.0166,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.333,
+     "P_clean": 0.667,
+     "P_bilat": 0.667
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 15,
+   "step": 37500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 13,
+     "loose_rate": 0.542,
+     "mean_progress": 0.0263,
+     "max_certified_clearance": 0.007,
+     "P_attr": 0.154,
+     "P_clean": 0.692,
+     "P_bilat": 0.615
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 7,
+     "loose_rate": 0.292,
+     "mean_progress": 0.0157,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.286,
+     "P_clean": 0.714,
+     "P_bilat": 0.714
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.007
+  },
+  {
+   "eval": 16,
+   "step": 40000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0265,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.75,
+     "P_bilat": 0.583
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 8,
+     "loose_rate": 0.333,
+     "mean_progress": 0.0187,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.25,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 17,
+   "step": 42500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 13,
+     "loose_rate": 0.542,
+     "mean_progress": 0.0275,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.692,
+     "P_bilat": 0.692
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 7,
+     "loose_rate": 0.292,
+     "mean_progress": 0.0176,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.286,
+     "P_clean": 0.714,
+     "P_bilat": 0.714
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 18,
+   "step": 45000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0264,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.667,
+     "P_bilat": 0.667
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 8,
+     "loose_rate": 0.333,
+     "mean_progress": 0.0197,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.25,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 19,
+   "step": 47500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 13,
+     "loose_rate": 0.542,
+     "mean_progress": 0.0259,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.154,
+     "P_clean": 0.615,
+     "P_bilat": 0.692
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 8,
+     "loose_rate": 0.333,
+     "mean_progress": 0.0191,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.25,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 20,
+   "step": 50000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 13,
+     "loose_rate": 0.542,
+     "mean_progress": 0.0261,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.077,
+     "P_clean": 0.692,
+     "P_bilat": 0.692
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 7,
+     "loose_rate": 0.292,
+     "mean_progress": 0.0163,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.286,
+     "P_clean": 0.714,
+     "P_bilat": 0.714
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 21,
+   "step": 52500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 14,
+     "loose_rate": 0.583,
+     "mean_progress": 0.0284,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.071,
+     "P_clean": 0.786,
+     "P_bilat": 0.786
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 9,
+     "loose_rate": 0.375,
+     "mean_progress": 0.0192,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.222,
+     "P_clean": 0.667,
+     "P_bilat": 0.667
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 22,
+   "step": 55000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 17,
+     "loose_rate": 0.708,
+     "mean_progress": 0.0288,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.118,
+     "P_clean": 0.647,
+     "P_bilat": 0.647
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 8,
+     "loose_rate": 0.333,
+     "mean_progress": 0.021,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.25,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 23,
+   "step": 57500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 18,
+     "loose_rate": 0.75,
+     "mean_progress": 0.0312,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.556,
+     "P_bilat": 0.722
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 8,
+     "loose_rate": 0.333,
+     "mean_progress": 0.0215,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.25,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 24,
+   "step": 60000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 16,
+     "loose_rate": 0.667,
+     "mean_progress": 0.029,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.125,
+     "P_clean": 0.562,
+     "P_bilat": 0.75
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 9,
+     "loose_rate": 0.375,
+     "mean_progress": 0.0227,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.222,
+     "P_clean": 0.778,
+     "P_bilat": 0.778
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 25,
+   "step": 62500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 18,
+     "loose_rate": 0.75,
+     "mean_progress": 0.0311,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.611,
+     "P_bilat": 0.722
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0266,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 26,
+   "step": 65000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 14,
+     "loose_rate": 0.583,
+     "mean_progress": 0.0269,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.571,
+     "P_bilat": 0.857
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 9,
+     "loose_rate": 0.375,
+     "mean_progress": 0.0232,
+     "max_certified_clearance": 0.0181,
+     "P_attr": 0.111,
+     "P_clean": 0.778,
+     "P_bilat": 0.889
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0181
+  },
+  {
+   "eval": 27,
+   "step": 67500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 17,
+     "loose_rate": 0.708,
+     "mean_progress": 0.0347,
+     "max_certified_clearance": 0.0076,
+     "P_attr": 0.118,
+     "P_clean": 0.471,
+     "P_bilat": 0.647
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0292,
+     "max_certified_clearance": 0.0163,
+     "P_attr": 0.417,
+     "P_clean": 0.5,
+     "P_bilat": 0.917
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0163
+  },
+  {
+   "eval": 28,
+   "step": 70000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 2,
+     "coverage": 2,
+     "loose": 18,
+     "loose_rate": 0.75,
+     "mean_progress": 0.0327,
+     "max_certified_clearance": 0.0077,
+     "P_attr": 0.167,
+     "P_clean": 0.611,
+     "P_bilat": 0.889
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 11,
+     "loose_rate": 0.458,
+     "mean_progress": 0.0274,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.818,
+     "P_bilat": 1.0
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0077
+  },
+  {
+   "eval": 29,
+   "step": 72500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 15,
+     "loose_rate": 0.625,
+     "mean_progress": 0.0285,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.733,
+     "P_bilat": 0.933
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0285,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.75,
+     "P_bilat": 0.917
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 30,
+   "step": 75000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 18,
+     "loose_rate": 0.75,
+     "mean_progress": 0.0353,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.667,
+     "P_bilat": 0.889
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0288,
+     "max_certified_clearance": 0.0182,
+     "P_attr": 0.083,
+     "P_clean": 0.75,
+     "P_bilat": 0.917
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0182
+  },
+  {
+   "eval": 31,
+   "step": 77500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 18,
+     "loose_rate": 0.75,
+     "mean_progress": 0.0353,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.667,
+     "P_bilat": 0.778
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0269,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.083,
+     "P_clean": 0.75,
+     "P_bilat": 0.833
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 32,
+   "step": 80000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 17,
+     "loose_rate": 0.708,
+     "mean_progress": 0.0345,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.471,
+     "P_bilat": 0.706
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0309,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.167,
+     "P_clean": 0.833,
+     "P_bilat": 0.917
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 33,
+   "step": 82500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 17,
+     "loose_rate": 0.708,
+     "mean_progress": 0.034,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.588,
+     "P_bilat": 0.706
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0292,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.083,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 34,
+   "step": 85000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 16,
+     "loose_rate": 0.667,
+     "mean_progress": 0.0341,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.625,
+     "P_bilat": 0.625
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 11,
+     "loose_rate": 0.458,
+     "mean_progress": 0.0309,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.091,
+     "P_clean": 0.818,
+     "P_bilat": 0.818
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 35,
+   "step": 87500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 18,
+     "loose_rate": 0.75,
+     "mean_progress": 0.0353,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.611,
+     "P_bilat": 0.722
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 2,
+     "coverage": 2,
+     "loose": 12,
+     "loose_rate": 0.5,
+     "mean_progress": 0.0295,
+     "max_certified_clearance": 0.0216,
+     "P_attr": 0.167,
+     "P_clean": 0.833,
+     "P_bilat": 0.917
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0216
+  },
+  {
+   "eval": 36,
+   "step": 90000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 16,
+     "loose_rate": 0.667,
+     "mean_progress": 0.0313,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.75,
+     "P_bilat": 0.75
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 11,
+     "loose_rate": 0.458,
+     "mean_progress": 0.0291,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.818,
+     "P_bilat": 0.818
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 37,
+   "step": 92500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 15,
+     "loose_rate": 0.625,
+     "mean_progress": 0.0284,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.667,
+     "P_bilat": 0.8
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 11,
+     "loose_rate": 0.458,
+     "mean_progress": 0.026,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.818,
+     "P_bilat": 0.818
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 38,
+   "step": 95000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 15,
+     "loose_rate": 0.625,
+     "mean_progress": 0.0303,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.6,
+     "P_bilat": 0.8
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 11,
+     "loose_rate": 0.458,
+     "mean_progress": 0.0263,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.818,
+     "P_bilat": 0.818
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 39,
+   "step": 97500,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 17,
+     "loose_rate": 0.708,
+     "mean_progress": 0.0338,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.765,
+     "P_bilat": 0.706
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 11,
+     "loose_rate": 0.458,
+     "mean_progress": 0.0291,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 1.0,
+     "P_bilat": 0.818
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": -9.9
+  },
+  {
+   "eval": 40,
+   "step": 100000,
+   "active_stage": "STAGE2",
+   "by_stage": {
+    "STAGE0": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 19,
+     "loose_rate": 0.792,
+     "mean_progress": 0.0365,
+     "max_certified_clearance": 0.0076,
+     "P_attr": 0.053,
+     "P_clean": 0.632,
+     "P_bilat": 0.684
+    },
+    "STAGE1": {
+     "n": 24,
+     "strict": 1,
+     "coverage": 1,
+     "loose": 9,
+     "loose_rate": 0.375,
+     "mean_progress": 0.0258,
+     "max_certified_clearance": 0.0151,
+     "P_attr": 0.111,
+     "P_clean": 0.889,
+     "P_bilat": 1.0
+    },
+    "STAGE2": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    },
+    "STAGE3": {
+     "n": 24,
+     "strict": 0,
+     "coverage": 0,
+     "loose": 0,
+     "loose_rate": 0.0,
+     "mean_progress": 0.0,
+     "max_certified_clearance": -9.9,
+     "P_attr": 0.0,
+     "P_clean": 0.0,
+     "P_bilat": 0.0
+    }
+   },
+   "s64102_strict": false,
+   "bc_coef": 0.1,
+   "max_certified_clearance": 0.0151
+  }
+ ]
+}
