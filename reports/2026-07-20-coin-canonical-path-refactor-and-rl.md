@@ -85,19 +85,25 @@ helper.
 | eval uses the canonical rollout | yes (`rollout()` + policy strict predicate) |
 | bc_coef logged each eval | yes (1.0 -> 0.1 after first strict) |
 
-## The 100k monitored run (in flight)
+## The 100k monitored run — COMPLETED
 
 - **Command:** `PYTHONUNBUFFERED=1 python -m hymeko_rl.experiments.coin_two_arm_sac --steps 100000 --eval-every 5000 --seed 0`
-- **PID** in `experiments/2026_07_20_coin_two_arm_sac_100k/train.pid`; live `train.log`; `launch_manifest.json` (commit 6).
-- **Device** CPU; ~437 steps/s; ETA ~3.5 min for 100k; peak RSS well under the 16 GB cap.
-- **Live evals (through the canonical rollout):** loose zone-entry ~0.29-0.43 with **both arms contacting** (L 0.15-0.43,
-  R 0.10-0.18); strict delivery 0 (one fluke at eval#1). Best checkpoint saved by the strict-ranked selector.
+- **Provenance:** `experiments/2026_07_20_coin_two_arm_sac_100k/` — `train.log`, `train.pid` (PID 19268),
+  `launch_manifest.json` (commit 6), `sac_actor_best.pt` + `sac_actor_final.pt` + `run.json` + `eval_curve.png`.
+- **Device** CPU; ~416-437 steps/s; **100k steps in ~4 min**; peak RSS well under the 16 GB cap. Losses finite
+  throughout (post the step<=1000 pre-update placeholder); no divergence.
+- **20 evals through the canonical rollout** (`eval_curve.png`, numerical `run.json`): loose zone-entry stabilised at
+  **0.43** with **both arms contacting every eval** (L 0.16-0.43, R 0.10-0.25); mean target progress climbed 0.007 ->
+  0.014 m; **strict delivery 0** across all 20 (one fluke strict at eval#1, then 0). Best checkpoint = eval#1 by the
+  strict-ranked selector.
 
-**Honest read (not a verdict from one run):** the learned policy holds *loose* competence (zone entry, two-arm contact)
-but has not produced *strict* deliveries — consistent with the arc's established **contact-mechanics wall** (a
-position-controlled parallel clamp on a wrist-less arm; local policy improvement caps at the supervised/scripted ceiling).
-The §8 demonstration goal (3 consecutive strict deliveries) is **not** reached; no replay/video is claimed. The run is
-the clean canonical framework *training the learned policy* — which is the completion criterion the task set.
+**Honest read (measured on this setup, provisional — not a verdict):** the learned policy holds *loose* competence (it
+gets the coin to the zone with genuine two-arm contact and slowly improving progress) but produces **no strict
+deliveries** — consistent with the arc's established **contact-mechanics wall** (a position-controlled parallel clamp on
+a wrist-less arm; local policy improvement caps at the supervised/scripted ceiling). The §8 demonstration goal (three
+consecutive strict deliveries) is **not** reached; no replay/video is claimed (there is no strict-delivery behaviour to
+animate). The deliverable met is: **the clean canonical framework trained the learned two-arm policy end-to-end** —
+which is the task's stated completion criterion.
 
 ## Files touched (Phase A + B)
 
