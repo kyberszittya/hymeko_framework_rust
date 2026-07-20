@@ -1,0 +1,35 @@
+{
+ "commit": null,
+ "checkpoint": "experiments/2026_07_20_coin_two_arm_sac_100k/sac_actor_best.pt",
+ "checkpoint_sha256": "003635267481bf5c8dfeaec05774df7ac35f071ba251d0e3ea405b5c57778bf1",
+ "command": "python -m hymeko_rl.experiments.coin_rl_demo --checkpoint experiments/2026_07_20_coin_two_arm_sac_100k/sac_actor_best.pt --state-index 64102 --deterministic --require-strict --render",
+ "state_index": 64102,
+ "state_hash": "4a4abca9a004fea93851fd4e135479f14d9d728a5e8e503449ec9593d4369ee8",
+ "deterministic": true,
+ "result": {
+  "state_index": 64102,
+  "state_hash": "4a4abca9a004fea93851fd4e135479f14d9d728a5e8e503449ec9593d4369ee8",
+  "strict": true,
+  "loose": true,
+  "attribution": 0.616,
+  "best_dwell": 30,
+  "settle_vel": 0.0441,
+  "n_steps": 54,
+  "footprint_clearance": -0.0021,
+  "clear_start": false
+ },
+ "videos": {
+  "main_mp4": {
+   "path": "experiments/2026_07_21_rl_coin_delivery_demo/corrected_overlay/learned_rl_coin_delivery_64102.mp4",
+   "sha256": "b7bcdf4497df49fcfe13ec56874accf84a54704fd1268ae20c55ae60614056d8"
+  },
+  "main_gif": {
+   "path": "experiments/2026_07_21_rl_coin_delivery_demo/corrected_overlay/learned_rl_coin_delivery_64102.gif",
+   "sha256": "69609a210a3d83fa15f9e7709603bf5764c25769b64975f1b5dc4cfbee8aa630"
+  },
+  "clean_mp4": {
+   "path": "experiments/2026_07_21_rl_coin_delivery_demo/corrected_overlay/learned_rl_coin_delivery_64102_clean.mp4",
+   "sha256": "d6d0a69d77c8f864361220a228e09be7cd91f7ded85140ac120961824118c782"
+  }
+ }
+}

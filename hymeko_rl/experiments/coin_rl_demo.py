@@ -54,16 +54,36 @@ def _camera(model):
     return cam
 
 
+def _align_overlay(inner) -> None:
+    """RENDER-ONLY repair (§1): move the drawn ``target_zone`` site to the EVALUATOR's zone (``_zone_x``/``_zone_y``).
+    ``restore_planar`` sets the evaluator zone per-snapshot but leaves the cosmetic site at its fixed MJCF pose, so
+    without this the rendered target is drawn in the wrong place (e.g. (0,0.16)) while the strict predicate scores a
+    different zone. The site carries no collision, so moving it changes nothing dynamical — only the overlay."""
+    sid = mujoco.mj_name2id(inner.model, mujoco.mjtObj.mjOBJ_SITE, "target_zone")
+    if sid >= 0:
+        inner.model.site_pos[sid][:2] = (float(inner._zone_x), float(inner._zone_y))
+        mujoco.mj_forward(inner.model, inner.data)
+
+
+def _clearance(inner) -> float:
+    """Signed footprint clearance: coin→zone distance minus (coin radius + zone half). >0 ⇒ footprints disjoint."""
+    disk_r = float(inner.model.geom_size[inner._disk_geom][0])
+    return float(inner.planar_metrics.disk_to_zone) - (disk_r + float(inner._zone_half))
+
+
 def run_demo(env, actor, state_index: int):
     """Restore the explicit state and run the deterministic learned rollout through the canonical path."""
     env.reset(seed=int(state_index))
+    _align_overlay(env.inner)
+    clr = _clearance(env.inner)
     state_hash = snapshot_hash(snapshot_planar(env.inner))
     trace = rollout(env, _greedy(actor), max_steps=60)
     att = _attribution_from_trace(trace)
     strict = policy_strict(trace)
     return dict(state_index=state_index, state_hash=state_hash, strict=bool(strict), loose=bool(trace.loose),
                 attribution=round(float(att.fingertip_fraction), 3), best_dwell=int(trace.best_dwell),
-                settle_vel=round(float(trace.settle_vel), 4), n_steps=len(trace.steps)), trace
+                settle_vel=round(float(trace.settle_vel), 4), n_steps=len(trace.steps),
+                footprint_clearance=round(float(clr), 4), clear_start=bool(clr > 0.01)), trace
 
 
 def _frame(rgb, *, title, ckpt_id, state_index, per, strict, loose, clean):
@@ -105,6 +125,7 @@ def _result_card(res, *, clean):
 
 def render_trajectory(env, actor, res, trace, *, title, ckpt_id, clean):
     env.reset(seed=int(res["state_index"]))
+    _align_overlay(env.inner)                                    # draw the target where the evaluator actually scores it
     rr = mujoco.Renderer(env.inner.model, _RH, _RW)
     cam = _camera(env.inner.model)
     frames, dwell = [], 0

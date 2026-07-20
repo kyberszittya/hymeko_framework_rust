@@ -1,0 +1,21 @@
+{
+ "conclusion": "BLOCKED \u2014 no existing reproducible strict-certified state starts clearly outside the target footprint",
+ "geometry_consistency_before": "renderer drew target_zone at fixed (0,0.16); evaluator zone (env._zone_x/_zone_y) varies per snapshot -> MISMATCH",
+ "geometry_consistency_after_repair": "render-only: target_zone site moved to (_zone_x,_zone_y); aligned==True for 64102/64201 (site==evalZone). Task/predicate unchanged.",
+ "geometry": {
+  "coin_radius": 0.02,
+  "zone_half": 0.04,
+  "footprint_clear_threshold": 0.06
+ },
+ "certified_states_clearance": {
+  "64102": -0.0021,
+  "64201": -0.0198
+ },
+ "search": {
+  "fixed_18": "clear-start states (clearance +0.03..+0.18: 64200/64202/64203/64100/64104/64105/64107/64109/64110) are NOT reached (loose=False) by the 100k checkpoint; certified states (64102/64201) overlap the target (clearance <0)",
+  "held_out_48": "clearance range [-0.020, +0.176]; only 5 have clearance>0 (3 >0.01); NONE certified by any of the 8 generator checkpoints",
+  "max_clearance_among_all_certified_pairs": -0.002
+ },
+ "interpretation": "the learned policy certifies only states where the coin already overlaps/touches the target footprint (delivers the last bit from an adjacent coin); it does not transport a coin that starts clearly outside. Consistent with the whole arc's contact-mechanics/near-zone structure.",
+ "corrected_diagnostic": "experiments/2026_07_21_rl_coin_delivery_demo/corrected_overlay/ (64102, overlay now geometrically honest; kept as diagnostic, NOT a clear-start headline per \u00a77)"
+}
