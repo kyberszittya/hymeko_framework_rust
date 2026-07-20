@@ -32,6 +32,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from hymeko_rl.train.ddpg import QCritic, _backbone, _polyak
+from hymeko_rl.train.rl_config import mechanism_reward
 from hymeko_rl.env.inverted_pendulum_env import InvertedPendulumEnv, emit_cartpole_mjcf
 from hymeko_rl.train.normalize import RunningRMS
 from hymeko_rl.agents.policy import POLICY_KINDS, PerNodeActionHead
@@ -228,6 +229,8 @@ class SACConfig:
     batch_size: int = 256
     gamma: float = 0.99
     n_step: int = 1                        # k-step returns in the critic target (1 = standard; >1 uses ReplayBuffer.sample_nstep)
+    critic_mode: str = "TASK_ONLY"         # "TASK_ONLY" (F11) or "TASK_AND_MECHANISM" (F12: + a semantic Q_mechanism)
+    mech_coef: float = 0.5                 # pre-registered actor weight on Q_mechanism (F12 only; NOT tuned per run)
     tau: float = 0.005
     actor_lr: float = 1e-3
     critic_lr: float = 1e-3
@@ -290,6 +293,68 @@ class SACConfig:
                    bc_coef=bc_coef, **overrides)  # type: ignore[arg-type]
 
 
+class _MechanismCritic:
+    """F12's SEPARATE semantic value estimator — **not** the twin-Q anti-overestimation pair.
+
+    Owns its own critic ensemble + polyak target + optimizer, mirroring the task critic's architecture but
+    FRESH-initialised (it never inherits task-critic weights). It learns the bounded mechanism-VALIDITY target
+    ``r_mech(s') = both_contact ∧ ¬arm_body_contact`` (canonical named obs fields; :func:`mechanism_reward`) through an
+    independent TD loss, and contributes ``mech_coef · min_i Q_mech(s,a)`` to the actor objective. F11 simply binds
+    ``None`` in its place, so the whole F12 apparatus is one object that is present or absent — no scattered flags
+    (§6.5 #8: a structural variant is a class, not a ``forward``-time branch).
+
+    # Preconditions ``critics`` is the built task-critic ensemble; observations carry the ACTOR_FIELDS contact fields.
+    # Invariants the task critic/optimizer are never touched; only the actor receives the mechanism gradient.
+    """
+
+    def __init__(self, critics: list[QCritic], actor: _SquashedGaussianActorBase, cfg: SACConfig) -> None:
+        self._actor, self._gamma, self._tau = actor, cfg.gamma, cfg.tau
+        self._coef, self._clip = cfg.mech_coef, cfg.max_grad_norm
+        self.critics = [copy.deepcopy(c) for c in critics]
+        for c in self.critics:                                       # FRESH init — provenance logged at build time
+            for p in c.parameters():
+                nn.init.xavier_uniform_(p) if p.dim() > 1 else nn.init.zeros_(p)
+        self.t_critics = [copy.deepcopy(c) for c in self.critics]
+        self.opt = torch.optim.Adam([p for c in self.critics for p in c.parameters()], lr=cfg.critic_lr)
+        self.last_loss = self.q_mech = self.q_task = float("nan")   # diagnostics, logged separately from the task value
+        print(f"  [sac] F12 TASK_AND_MECHANISM: {len(self.critics)} mechanism critics FRESH Xavier-init (never from "
+              f"task weights), independent target+opt; actor q_pi += {self._coef}*min_i Q_mech", flush=True)
+
+    def actor_bonus(self, s: torch.Tensor, ap: torch.Tensor) -> torch.Tensor:
+        """The pre-registered ``mech_coef · min_i Q_mech(s, a_π)`` added to the task value in the actor objective."""
+        return self._coef * torch.stack([c(s, ap) for c in self.critics], 0).amin(0)
+
+    def update(self, s: torch.Tensor, a: torch.Tensor, s2: torch.Tensor, d: torch.Tensor) -> None:
+        """One independent semantic-critic TD step: ``Q_mech(s,a) → r_mech(s') + γ(1-d) min_i Q̄_mech(s',a')`` (no
+        entropy term — a value estimator, not a policy)."""
+        with torch.no_grad():
+            a2, _ = self._actor.sample(s2)
+            y = mechanism_reward(s2) + self._gamma * (1 - d) * torch.stack([tc(s2, a2) for tc in self.t_critics],
+                                                                           0).amin(0)
+        loss = sum(F.mse_loss(c(s, a), y) for c in self.critics)
+        self.opt.zero_grad()
+        loss.backward()   # type: ignore[union-attr]
+        torch.nn.utils.clip_grad_norm_([p for c in self.critics for p in c.parameters()], self._clip)
+        self.opt.step()
+        self.last_loss = float(loss.detach())   # type: ignore[union-attr]
+
+    def polyak_and_record(self, s: torch.Tensor, task_critics: list[QCritic]) -> None:
+        """Track the target nets and snapshot the (task vs mechanism) actor values for separate logging."""
+        for tc, c in zip(self.t_critics, self.critics):
+            _polyak(tc, c, self._tau)
+        with torch.no_grad():
+            ap, _ = self._actor.sample(s)
+            self.q_task = float(torch.stack([c(s, ap) for c in task_critics], 0).amin(0).mean())
+            self.q_mech = float(torch.stack([c(s, ap) for c in self.critics], 0).amin(0).mean())
+
+    def diagnostics(self) -> dict[str, float]:
+        """The §5 mechanism split for the machine-readable ``diag_out`` (F11 substitutes :data:`_NO_MECH_DIAG`)."""
+        return {"mech_crit_loss": self.last_loss, "q_task": self.q_task, "q_mech": self.q_mech}
+
+
+_NO_MECH_DIAG = {"mech_crit_loss": float("nan"), "q_task": float("nan"), "q_mech": float("nan")}   # F11: no Q_mechanism
+
+
 def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: Any,
               cfg: SACConfig, *,
               eval_fn: Callable[[Any, Any], float] | None = None,
@@ -301,7 +366,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
               init_transition_tags: "np.ndarray | None" = None,
               demo_frac_fn: "Callable[[int], float] | None" = None,
               strata_weights: "dict[int, float] | None" = None,
-              sampler_gate_fn: "Callable[[int], bool] | None" = None) -> list[float]:
+              sampler_gate_fn: "Callable[[int], bool] | None" = None,
+              diag_out: "dict[str, float] | None" = None) -> list[float]:
     """Train SAC on ``env``; returns the periodic eval curve.
 
     Twin soft-Q critics with the entropy-augmented target ``y = r + γ(1-d)(min_i Q̄_i(s',a') − α·logπ(a'))``;
@@ -324,6 +390,9 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     t_critics = [copy.deepcopy(c) for c in critics]
     a_opt = torch.optim.Adam(actor.parameters(), lr=cfg.actor_lr)
     c_opt = torch.optim.Adam([p for c in critics for p in c.parameters()], lr=cfg.critic_lr)
+    # F12 (TASK_AND_MECHANISM): one SEPARATE semantic mechanism critic object (present) vs F11 (None). All the F12
+    # apparatus lives in :class:`_MechanismCritic` so train_sac carries a single present/absent object, not flags.
+    mech = _MechanismCritic(critics, actor, cfg) if cfg.critic_mode == "TASK_AND_MECHANISM" else None
     log_alpha = torch.full((1,), float(np.log(cfg.init_alpha)), requires_grad=True, device=dev)
     al_opt = torch.optim.Adam([log_alpha], lr=cfg.alpha_lr)
     action_dim = actor.action_dim                                  # both actor variants expose this
@@ -360,6 +429,7 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     history: list[float] = []
     reward_rms = RunningRMS()                                       # bounds the Q-scale (anti-divergence)
     last_c, last_a = float("nan"), float("nan")                     # last update's losses (bound before the closures)
+    last_bc = float("nan")                                          # BC actor contribution, logged separately (§5)
 
     # The update hot path as closures. The 2026-07-17 per-step profile showed the B=256 gradient update is 99.9%
     # of the structural (hsikan) per-step cost and the B=1 rollout is 0.1% — so we cut the UPDATE, not the rollout
@@ -377,7 +447,9 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
 
     def _actor_terms(s: torch.Tensor, alpha: torch.Tensor) -> "tuple[torch.Tensor, torch.Tensor]":
         ap, logp = actor.sample(s)
-        q_pi = torch.stack([c(s, ap) for c in critics], 0).amin(0)
+        q_pi = torch.stack([c(s, ap) for c in critics], 0).amin(0)         # Q_task
+        if mech is not None:                                               # F12: + mech_coef * Q_mechanism
+            q_pi = q_pi + mech.actor_bonus(s, ap)
         return (alpha * logp - q_pi).mean(), logp                  # alpha passed detached; logp reused for α update
 
     _anchored = cfg.bc_coef > 0.0 or cfg.rollout_anchor_coef > 0.0 or dagger_teacher is not None
@@ -393,7 +465,7 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
 
     def _update_once(step: int) -> None:
         """One gradient update (critic → actor → α → polyak). Shared by every update_every cadence."""
-        nonlocal last_c, last_a
+        nonlocal last_c, last_a, last_bc
         if _use_compile:
             torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]  # ONE fresh CUDA-graph step
             #   per update: the critic+actor graphs then share non-aliasing memory (train_offpolicy pattern). A mark
@@ -420,11 +492,15 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
         c_opt.step()
         last_c = float(c_loss.detach())      # consume to host NOW — a CUDA-graph output must not be held across
         #                                      the actor graph replay (it reuses the same static pool, ref bug 2026-07-17)
+        if mech is not None:                                       # F12: independent semantic-critic TD update
+            mech.update(s, a, s2, d)
         a_loss, logp = _actor_terms(s, alpha_d)
         if demo_s is not None and demo_a is not None:              # TD3+BC-style anchor (eager; see _anchored above)
             idx = rng.integers(0, demo_s.shape[0], size=min(cfg.batch_size, demo_s.shape[0]))
             bc = float(bc_coef_fn(step)) if bc_coef_fn is not None else cfg.bc_coef   # competence-gated (not step-decay)
-            a_loss = a_loss + bc * ((actor.action_mean(demo_s[idx]) - demo_a[idx]) ** 2).mean()
+            bc_term = bc * ((actor.action_mean(demo_s[idx]) - demo_a[idx]) ** 2).mean()
+            a_loss = a_loss + bc_term
+            last_bc = float(bc_term.detach())                      # logged separately from task/mechanism value
         if cfg.rollout_anchor_coef > 0.0 and ra_size >= 1:         # rollout-state DAgger anchor (eager)
             ridx = rng.integers(0, ra_size, size=min(cfg.batch_size, ra_size))
             ro_obs = torch.as_tensor(ra_obs[ridx], device=dev)
@@ -442,6 +518,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
             al_opt.step()
         for tc, c in zip(t_critics, critics):
             _polyak(tc, c, cfg.tau)
+        if mech is not None:                                       # F12: target tracking + task/mechanism value split
+            mech.polyak_and_record(s, critics)
 
     obs, _ = env.reset(seed=cfg.seed)
     t0 = time.perf_counter()
@@ -483,9 +561,12 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
 
         if cfg.log_every and step % cfg.log_every == 0:             # §3: never run blind
             rate = step / max(1e-9, time.perf_counter() - t0)
+            mech_tail = (f" | mech_crit={mech.last_loss:.3g} Qtask={mech.q_task:.3g} Qmech={mech.q_mech:.3g} "
+                         f"bc={last_bc:.3g}" if mech is not None else "")   # §5: task/mechanism/BC logged separately
             print(f"  [sac] step {step:>7}/{cfg.total_steps} | crit={last_c:.3g} act={last_a:.3g} "
                   f"alpha={float(_alpha_at(step).item()):.3g}[{cfg.alpha_mode.value}] | {rate:5.0f} steps/s "
-                  f"| ETA {(cfg.total_steps - step) / max(1e-9, rate) / 60:4.1f} min | buf={buf.size}", flush=True)
+                  f"| ETA {(cfg.total_steps - step) / max(1e-9, rate) / 60:4.1f} min | buf={buf.size}{mech_tail}",
+                  flush=True)
         if step % cfg.eval_every == 0:
             history.append(eval_balance(env, actor, cfg.n_eval, seed=20_000)
                            if eval_fn is None else eval_fn(env, actor))
@@ -497,6 +578,9 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
                 print(f"  [replay] demo_frac requested={demo_frac_fn(step):.2f} realized={dfrac} | "
                       f"realized-by-tag={comp} | corpus={buf.tag_counts()} | shortage={_shortage or '{}'}", flush=True)
                 _account.clear()
+    if diag_out is not None:                                        # F12 machine-readable split (report + §7 tests)
+        diag_out.update(critic_mode=mech is not None, last_c=last_c, last_a=last_a, bc_term=last_bc,
+                        **(mech.diagnostics() if mech is not None else _NO_MECH_DIAG))
     return history
 
 
