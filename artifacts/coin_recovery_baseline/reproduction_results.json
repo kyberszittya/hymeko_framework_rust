@@ -1,0 +1,49 @@
+{
+ "historical_n": 60,
+ "unique_n": 57,
+ "duplicates": 3,
+ "path": "real rollout_delivery",
+ "K0_A4": {
+  "historical": {
+   "strict": 5,
+   "raw": 21,
+   "n": 60,
+   "med_B_LR": 0.505
+  },
+  "unique": {
+   "strict": 5,
+   "raw": 20,
+   "n": 57,
+   "med_B_LR": 0.439
+  }
+ },
+ "K1neutral_A0": {
+  "historical": {
+   "strict": 0,
+   "raw": 18,
+   "n": 60,
+   "med_B_LR": 0.0
+  },
+  "unique": {
+   "strict": 0,
+   "raw": 17,
+   "n": 57,
+   "med_B_LR": 0.0
+  }
+ },
+ "K1aware_A0": {
+  "historical": {
+   "strict": 0,
+   "raw": 16,
+   "n": 60,
+   "med_B_LR": 0.0
+  },
+  "unique": {
+   "strict": 0,
+   "raw": 15,
+   "n": 57,
+   "med_B_LR": 0.0
+  }
+ },
+ "duplication_materially_changes_any_metric": true
+}

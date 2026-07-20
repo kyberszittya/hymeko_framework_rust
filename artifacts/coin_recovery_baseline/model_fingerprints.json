@@ -1,0 +1,135 @@
+{
+ "K0": {
+  "keys": {
+   "nq": 7,
+   "nv": 7,
+   "nu": 4,
+   "nbody": 8,
+   "njnt": 7,
+   "ngeom": 10,
+   "timestep": 0.0005,
+   "integrator": 3,
+   "actuators": [
+    "a_j1_left",
+    "a_j2_left",
+    "a_j1_right",
+    "a_j2_right"
+   ],
+   "geom_friction_sum": 10.51,
+   "body_mass_sum": 0.401822,
+   "jnt_types": [
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    3
+   ]
+  },
+  "hash": "a247e888135e3f73"
+ },
+ "P0_neutral": {
+  "keys": {
+   "nq": 9,
+   "nv": 9,
+   "nu": 6,
+   "nbody": 10,
+   "njnt": 9,
+   "ngeom": 10,
+   "timestep": 0.0005,
+   "integrator": 3,
+   "actuators": [
+    "a_j1_left",
+    "a_j2_left",
+    "a_j1_right",
+    "a_j2_right",
+    "a_pad_left",
+    "a_pad_right"
+   ],
+   "geom_friction_sum": 10.51,
+   "body_mass_sum": 0.401822,
+   "jnt_types": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    3
+   ]
+  },
+  "hash": "139f6e618b45219d"
+ },
+ "P1_geometry_aligned": {
+  "keys": {
+   "nq": 9,
+   "nv": 9,
+   "nu": 6,
+   "nbody": 10,
+   "njnt": 9,
+   "ngeom": 10,
+   "timestep": 0.0005,
+   "integrator": 3,
+   "actuators": [
+    "a_j1_left",
+    "a_j2_left",
+    "a_j1_right",
+    "a_j2_right",
+    "a_pad_left",
+    "a_pad_right"
+   ],
+   "geom_friction_sum": 10.51,
+   "body_mass_sum": 0.401822,
+   "jnt_types": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    3
+   ]
+  },
+  "hash": "139f6e618b45219d"
+ },
+ "P3_orientation_scramble": {
+  "keys": {
+   "nq": 9,
+   "nv": 9,
+   "nu": 6,
+   "nbody": 10,
+   "njnt": 9,
+   "ngeom": 10,
+   "timestep": 0.0005,
+   "integrator": 3,
+   "actuators": [
+    "a_j1_left",
+    "a_j2_left",
+    "a_j1_right",
+    "a_j2_right",
+    "a_pad_left",
+    "a_pad_right"
+   ],
+   "geom_friction_sum": 10.51,
+   "body_mass_sum": 0.401822,
+   "jnt_types": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    3
+   ]
+  },
+  "hash": "139f6e618b45219d"
+ },
+ "K1_neutral_aware_scramble_identical": true
+}

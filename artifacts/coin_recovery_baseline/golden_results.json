@@ -1,0 +1,218 @@
+{
+ "schema_version": 1,
+ "tol": 1e-06,
+ "state_indices": [
+  4,
+  206,
+  37,
+  126,
+  54,
+  266,
+  302,
+  169
+ ],
+ "actor": "A0_symmetric_push",
+ "results": {
+  "K0": {
+   "4": {
+    "state_id_hash": "3afd101453f5fc8a",
+    "final_dtz": 0.108555,
+    "min_dtz": 0.108555,
+    "progress": 0.059464
+   },
+   "206": {
+    "state_id_hash": "271539999b09199f",
+    "final_dtz": 0.112901,
+    "min_dtz": 0.112901,
+    "progress": 0.056032
+   },
+   "37": {
+    "state_id_hash": "2c068a65ab9b4cd3",
+    "final_dtz": 0.001047,
+    "min_dtz": 0.000793,
+    "progress": 0.063574
+   },
+   "126": {
+    "state_id_hash": "23d2a0f448a5763d",
+    "final_dtz": 0.04092,
+    "min_dtz": 0.04092,
+    "progress": 0.058282
+   },
+   "54": {
+    "state_id_hash": "34d92e90b7cfc4bd",
+    "final_dtz": 0.039807,
+    "min_dtz": 0.039807,
+    "progress": 0.049008
+   },
+   "266": {
+    "state_id_hash": "0c50b66e4c3b5cfd",
+    "final_dtz": 0.036736,
+    "min_dtz": 0.036736,
+    "progress": 0.035791
+   },
+   "302": {
+    "state_id_hash": "556a00f72bb0ba6c",
+    "final_dtz": 0.107666,
+    "min_dtz": 0.107666,
+    "progress": 0.062117
+   },
+   "169": {
+    "state_id_hash": "fc97ba9828709e46",
+    "final_dtz": 0.128873,
+    "min_dtz": 0.121201,
+    "progress": 0.0
+   }
+  },
+  "K1_neutral": {
+   "4": {
+    "state_id_hash": "3afd101453f5fc8a",
+    "final_dtz": 0.084082,
+    "min_dtz": 0.084082,
+    "progress": 0.083937
+   },
+   "206": {
+    "state_id_hash": "271539999b09199f",
+    "final_dtz": 0.078041,
+    "min_dtz": 0.078041,
+    "progress": 0.090892
+   },
+   "37": {
+    "state_id_hash": "2c068a65ab9b4cd3",
+    "final_dtz": 0.089513,
+    "min_dtz": 0.064063,
+    "progress": 0.000303
+   },
+   "126": {
+    "state_id_hash": "23d2a0f448a5763d",
+    "final_dtz": 0.030748,
+    "min_dtz": 0.030358,
+    "progress": 0.068844
+   },
+   "54": {
+    "state_id_hash": "34d92e90b7cfc4bd",
+    "final_dtz": 0.0192,
+    "min_dtz": 0.0192,
+    "progress": 0.069614
+   },
+   "266": {
+    "state_id_hash": "0c50b66e4c3b5cfd",
+    "final_dtz": 0.022659,
+    "min_dtz": 0.022659,
+    "progress": 0.049868
+   },
+   "302": {
+    "state_id_hash": "556a00f72bb0ba6c",
+    "final_dtz": 0.058728,
+    "min_dtz": 0.058728,
+    "progress": 0.111055
+   },
+   "169": {
+    "state_id_hash": "fc97ba9828709e46",
+    "final_dtz": 0.1482,
+    "min_dtz": 0.121201,
+    "progress": 0.0
+   }
+  },
+  "K1_aware": {
+   "4": {
+    "state_id_hash": "3afd101453f5fc8a",
+    "final_dtz": 0.084093,
+    "min_dtz": 0.084093,
+    "progress": 0.083926
+   },
+   "206": {
+    "state_id_hash": "271539999b09199f",
+    "final_dtz": 0.078681,
+    "min_dtz": 0.078681,
+    "progress": 0.090252
+   },
+   "37": {
+    "state_id_hash": "2c068a65ab9b4cd3",
+    "final_dtz": 0.089696,
+    "min_dtz": 0.063027,
+    "progress": 0.001339
+   },
+   "126": {
+    "state_id_hash": "23d2a0f448a5763d",
+    "final_dtz": 0.02064,
+    "min_dtz": 0.016579,
+    "progress": 0.082623
+   },
+   "54": {
+    "state_id_hash": "34d92e90b7cfc4bd",
+    "final_dtz": 0.027464,
+    "min_dtz": 0.027464,
+    "progress": 0.06135
+   },
+   "266": {
+    "state_id_hash": "0c50b66e4c3b5cfd",
+    "final_dtz": 0.030984,
+    "min_dtz": 0.030984,
+    "progress": 0.041542
+   },
+   "302": {
+    "state_id_hash": "556a00f72bb0ba6c",
+    "final_dtz": 0.0563,
+    "min_dtz": 0.0563,
+    "progress": 0.113483
+   },
+   "169": {
+    "state_id_hash": "fc97ba9828709e46",
+    "final_dtz": 0.150084,
+    "min_dtz": 0.121201,
+    "progress": 0.0
+   }
+  },
+  "K1_scramble": {
+   "4": {
+    "state_id_hash": "3afd101453f5fc8a",
+    "final_dtz": 0.111512,
+    "min_dtz": 0.111512,
+    "progress": 0.056507
+   },
+   "206": {
+    "state_id_hash": "271539999b09199f",
+    "final_dtz": 0.095221,
+    "min_dtz": 0.095221,
+    "progress": 0.073712
+   },
+   "37": {
+    "state_id_hash": "2c068a65ab9b4cd3",
+    "final_dtz": 0.082757,
+    "min_dtz": 0.060708,
+    "progress": 0.003658
+   },
+   "126": {
+    "state_id_hash": "23d2a0f448a5763d",
+    "final_dtz": 0.045511,
+    "min_dtz": 0.045511,
+    "progress": 0.053691
+   },
+   "54": {
+    "state_id_hash": "34d92e90b7cfc4bd",
+    "final_dtz": 0.030371,
+    "min_dtz": 0.030371,
+    "progress": 0.058444
+   },
+   "266": {
+    "state_id_hash": "0c50b66e4c3b5cfd",
+    "final_dtz": 0.010119,
+    "min_dtz": 0.010119,
+    "progress": 0.062407
+   },
+   "302": {
+    "state_id_hash": "556a00f72bb0ba6c",
+    "final_dtz": 0.072316,
+    "min_dtz": 0.072316,
+    "progress": 0.097467
+   },
+   "169": {
+    "state_id_hash": "fc97ba9828709e46",
+    "final_dtz": 0.141352,
+    "min_dtz": 0.121201,
+    "progress": 0.0
+   }
+  }
+ },
+ "restore_determinism_all_equal_run_twice": true
+}

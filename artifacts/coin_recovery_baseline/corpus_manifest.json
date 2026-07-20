@@ -1,0 +1,24 @@
+{
+ "corpus_id": {
+  "name": "c1_heldseed_bank.pkl",
+  "sha256": "9262f6dc842b127c91cc17513269d6560009dea622d8beb064c19d4aacf27544"
+ },
+ "path": "experiments/2026_07_18_arcrl/c1_heldseed_bank.pkl",
+ "originating_campaign": "2026_07_18_arcrl (PRIOR campaign \u2014 stale, reused by the coin arc)",
+ "n_items": 376,
+ "snapshot_schema_keys": [
+  "snap",
+  "mode",
+  "drift",
+  "dist",
+  "high_coin_y",
+  "source",
+  "side",
+  "second_dist",
+  "difficulty"
+ ],
+ "qpos_dim": 7,
+ "qvel_dim": 7,
+ "source_seed_universe": "62000-62312",
+ "note": "eval integers 64000-64089 are RNG seeds selecting bank indices, NOT state ids"
+}

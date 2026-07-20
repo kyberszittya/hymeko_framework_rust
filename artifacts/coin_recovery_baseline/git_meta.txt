@@ -1,0 +1,34 @@
+## branch
+exp/demo-seed-replay
+## HEAD
+291bb4bcff9e9b33aff697dc50e491a521c879b2
+## python
+Python 3.11.15
+## mujoco
+3.10.0
+## uv.lock sha256
+141ae3c5203244abb754025d776366815ba825ec2ab9d2faf38a4df46442aee4
+## worktrees
+worktree /Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_framework_rust
+HEAD 291bb4bcff9e9b33aff697dc50e491a521c879b2
+branch refs/heads/exp/demo-seed-replay
+
+worktree /Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_rl_bridge
+HEAD 291bb4bcff9e9b33aff697dc50e491a521c879b2
+branch refs/heads/exp/proposal-rl-bridge
+
+worktree /Users/kyberszittya/hakiko_ai_ws/03_implementation/hymeko_spec_reward_wt
+HEAD a8a9936a2a171bc05a4d49e12686c7f4f7fd4afa
+branch refs/heads/feat/spec-reward-close-loop
+
+worktree /Users/kyberszittya/hakiko_ai_ws/03_implementation/hysim-engine
+HEAD 291bb4bcff9e9b33aff697dc50e491a521c879b2
+branch refs/heads/feature/hysim-0
+
+## graph (all, 6)
+* 291bb4b (HEAD -> exp/demo-seed-replay, feature/hysim-0, exp/proposal-rl-bridge) Demo-seed retention result: replay-seeding converts DISCOVERY, not retention
+* 7b9cbf0 Demo-seed retention experiment: harness + validated 5000-demo replay preload
+* 71843f7 (audit/sac-cip-forensic) Overnight summary: SAC investigation closed + corrected-SAC curriculum map
+* 7e59440 Corrected 5-stage curriculum diagnostic (fixed SAC: early-concat critic + reward_norm off)
+* 2eb9ece S1 residual settled at 8 seeds: two fixes bring ours to SB3-comparable (no residual defect)
+* ce05fb3 Coffee-Push SAC config defects: SB3 cross-impl forensic + two demonstrated fixes

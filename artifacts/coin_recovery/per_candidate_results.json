@@ -1,0 +1,21 @@
+{
+ "state_ids": "explicit bank indices [0,47,94,141,188,235,282,329,375] (NOT rng seeds)",
+ "n_states": 9,
+ "monitor": "both loose(in_zone-ever) and current strict",
+ "results": {
+  "C1_carry_pulse_LOOSE": {
+   "delivery": "6/9",
+   "med_progress": 0.041
+  },
+  "C1_carry_pulse_STRICT": {
+   "delivery": "2/9"
+  },
+  "C0_A4_recovery_LOOSE": {
+   "delivery": "6/9"
+  },
+  "C0_A4_recovery_STRICT": {
+   "delivery": "1/9"
+  },
+  "interpretation": "C1 (earlier) \u2261 C0 (current) LOOSE 6/9 on identical states \u2192 same behavior lineage; both ~1-2/9 STRICT \u2192 the '0.30 loose ceiling \u2192 8.9% strict' is a LOOSE\u2192STRICT MONITOR CHANGE, not a lost/overwritten implementation. C2/C3 manifests claim no working delivery-to-zone (CASE_D/CASE_C/chained 0). C4 is a different task."
+ }
+}

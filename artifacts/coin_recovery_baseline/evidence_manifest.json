@@ -1,0 +1,665 @@
+{
+ "campaign": "COIN-DELIVERY-RECOVERY-BASELINE-0",
+ "branch_at_capture": "exp/demo-seed-replay",
+ "head": "291bb4b",
+ "n_files": 73,
+ "files": {
+  "data/robotics/coin_delivery_v1.hymeko": {
+   "tracked": false,
+   "sha256": "e6e0c77814e694879432c643d2e9b162b987c166d2eb9efbe4e0278357ee49c1",
+   "bytes": 15639,
+   "mtime": "2026-07-20T05:27:44.506835+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/__init__.py": {
+   "tracked": false,
+   "sha256": "f836bcef90ae32becb00784c62b6730fc5a14c6e79ca69f58a4b30b84171e32f",
+   "bytes": 1210,
+   "mtime": "2026-07-20T07:08:03.986130+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/actors/__init__.py": {
+   "tracked": false,
+   "sha256": "11a5c983d5bd6a481e11cf35391abf054934db9004a05f2843414d56dec072e2",
+   "bytes": 598,
+   "mtime": "2026-07-20T07:08:19.443127+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/actors/base.py": {
+   "tracked": false,
+   "sha256": "6aa233066d9e85135366790da8a61d1ec4c5ffa68a3a3144dca97da7e2eb9bd1",
+   "bytes": 7535,
+   "mtime": "2026-07-20T07:05:33.909375+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/monitoring/__init__.py": {
+   "tracked": false,
+   "sha256": "a0f05c17664c9afaf85f6f9c01b6c4a466884af90c212623756a00c558dc3cf3",
+   "bytes": 760,
+   "mtime": "2026-07-20T07:08:26.348407+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/monitoring/attribution.py": {
+   "tracked": false,
+   "sha256": "f432106b4f9e7f3e35ff31c17c35b126975ed20da72d5e7db7d3b5ebdb8b0c8f",
+   "bytes": 3018,
+   "mtime": "2026-07-20T07:04:39.585967+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/monitoring/contact_certification.py": {
+   "tracked": false,
+   "sha256": "f3a3491ed07344e9f26d34094b6fadf51988c8af928371b199c61cd88d9493e7",
+   "bytes": 3239,
+   "mtime": "2026-07-20T07:04:06.628759+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/monitoring/delivery.py": {
+   "tracked": false,
+   "sha256": "626b6c8fdb7309e328290e6960002df90f40d1e32c7a2673968e442080e1f76d",
+   "bytes": 1670,
+   "mtime": "2026-07-20T07:04:18.046905+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/monitoring/mechanism.py": {
+   "tracked": false,
+   "sha256": "2a07afd58b0e3eb0e5dffbc16fd9d00dfc9f9e408d8e0b84a50bf389c76c9614",
+   "bytes": 1165,
+   "mtime": "2026-07-20T07:05:02.165118+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/provenance.py": {
+   "tracked": false,
+   "sha256": "8e5a23f7d77ad261d5f641aa8520c2a6116ccfae080639f8ed07f665b93088b9",
+   "bytes": 598,
+   "mtime": "2026-07-20T07:05:26.620636+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/runners/__init__.py": {
+   "tracked": false,
+   "sha256": "a7c59641c49bb07f1869278f664e29a4da1821ec9b7575a51f47411778d0b118",
+   "bytes": 471,
+   "mtime": "2026-07-20T07:08:32.836817+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/runners/demo.py": {
+   "tracked": false,
+   "sha256": "73fcfa3304b5e93c0428ee6463bc3c78e0befef6205fcb37eb98444d29c04448",
+   "bytes": 7045,
+   "mtime": "2026-07-20T07:12:04.552005+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/runners/experiment.py": {
+   "tracked": false,
+   "sha256": "93f5e6a8d1b9ee6d7a275fc04c77a6fc0fda06c30484c6b9c3dc22c103d87e7c",
+   "bytes": 7055,
+   "mtime": "2026-07-20T07:07:52.332108+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/scenarios/__init__.py": {
+   "tracked": false,
+   "sha256": "54151db0f5c75b2a7e2b293f5b5b6e1227e5a66f7ff171a330578a18fe49d644",
+   "bytes": 928,
+   "mtime": "2026-07-20T07:08:11.696249+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/scenarios/config.py": {
+   "tracked": false,
+   "sha256": "58baece848cae4a8b444bdd2e1af2bf191d813cc16645547beeb6fd222647594",
+   "bytes": 1587,
+   "mtime": "2026-07-20T07:03:29.996379+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/scenarios/contact_policy.py": {
+   "tracked": false,
+   "sha256": "674f3d5d835676f65d440a3e7a9d2ea5cc04ec39f4a661e469b9f92a10a3e8fc",
+   "bytes": 7509,
+   "mtime": "2026-07-20T07:02:14.424568+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/scenarios/kinematic_variant.py": {
+   "tracked": false,
+   "sha256": "44057f209c00a122a28fac48c29caa4b048a25b2194df97a9b844fe96b80a3c8",
+   "bytes": 14204,
+   "mtime": "2026-07-20T07:03:19.682063+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/coin_delivery/scenarios/registry.py": {
+   "tracked": false,
+   "sha256": "2107cba51339ed4a900a3e5be6040a159ad2f2caf70b8fdd5eb98f99e8f309f1",
+   "bytes": 2970,
+   "mtime": "2026-07-20T07:03:46.522467+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/env/contact_formation_env.py": {
+   "tracked": false,
+   "sha256": "20a3c9d038bb3c1882843201debbbd8ae54f832eeaf0a1405cd0533575140e09",
+   "bytes": 7213,
+   "mtime": "2026-07-20T07:40:39.740686+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/env/planar_grasp_env.py": {
+   "tracked": true,
+   "sha256": "fcde19b65d0ceb6667d10d88864c750c1669775612d61033fc57afb5a867fc87",
+   "bytes": 50581,
+   "mtime": "2026-07-20T07:37:52.811418+00:00",
+   "encoding": "utf-8",
+   "line_ending": "CRLF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/clamp_oracle0.py": {
+   "tracked": false,
+   "sha256": "bb23061935dc976d8904ce59446323400921618c5e823725f16eeaf634e2abf2",
+   "bytes": 9187,
+   "mtime": "2026-07-20T06:11:36.943869+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_compliant_pad1.py": {
+   "tracked": false,
+   "sha256": "0dc25076656e5361e974d56b93cf3164ad63069546abf4027cdd1754b2b99052",
+   "bytes": 14884,
+   "mtime": "2026-07-20T05:24:16.395306+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery1.py": {
+   "tracked": false,
+   "sha256": "d44fc9c54283ba63c75421a29866e5d35168cd3e331662c8618810f2ec84b3e4",
+   "bytes": 9584,
+   "mtime": "2026-07-19T16:21:39.875996+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_acquisition1.py": {
+   "tracked": false,
+   "sha256": "9e4bd8eccf3cfebab2eeac62a66b24a4a9e0e668d21bbe11d41cd469900db2ec",
+   "bytes": 8907,
+   "mtime": "2026-07-19T20:01:56.962950+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_acquisition1_run.py": {
+   "tracked": false,
+   "sha256": "014b89751e73669a02c76ba6ba67f708bf294580558be2d5ba8969bf71edcfe9",
+   "bytes": 11570,
+   "mtime": "2026-07-19T20:02:41.428673+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_acquisition_ablation.py": {
+   "tracked": false,
+   "sha256": "55b5e8943f06b47f5f207eb6e0e932cffbbc8be5ca6834595a1d7628e201b373",
+   "bytes": 6013,
+   "mtime": "2026-07-19T20:01:47.666225+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_acquisition_rl_run.py": {
+   "tracked": false,
+   "sha256": "c3b90e4358ba0d02d94ff216429c14c60b3cce524f1ac75d3109192640fd218b",
+   "bytes": 9782,
+   "mtime": "2026-07-19T20:01:47.666658+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_actor1.py": {
+   "tracked": false,
+   "sha256": "06530e8eddeed5c3564fc4c4057735d658518ad302a2d90fb9004b2a54d61afd",
+   "bytes": 10661,
+   "mtime": "2026-07-20T06:46:29.624964+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_demo.py": {
+   "tracked": false,
+   "sha256": "bbfc3cf8a30976643ea210e8aae102186ac8a4ea9610de0ab1951d8c8bcb48a5",
+   "bytes": 2695,
+   "mtime": "2026-07-20T07:08:46.954374+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_factorial.py": {
+   "tracked": false,
+   "sha256": "daa909b4981dd6279257fd2ab3a523b51f40b86615562472ce74958ae815a1e0",
+   "bytes": 2096,
+   "mtime": "2026-07-20T07:08:59.346621+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_primitives.py": {
+   "tracked": false,
+   "sha256": "a273425644ded3e38162a7cc620bd31acb924eb14ad2ff4652198d23aae257c1",
+   "bytes": 6468,
+   "mtime": "2026-07-19T18:57:46.621959+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_rl1.py": {
+   "tracked": false,
+   "sha256": "6d1897a46b84ab44e39b090a8d51af184749d568b0e279c4494e57d1c1317ca5",
+   "bytes": 21039,
+   "mtime": "2026-07-19T18:03:08.205304+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_delivery_rl2.py": {
+   "tracked": false,
+   "sha256": "e518cfdd1840fe8ae75af81f52eeee6f56009fef9c7ed17c24c61e2948710a9d",
+   "bytes": 8467,
+   "mtime": "2026-07-19T18:23:51.429938+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/coin_grip_control1.py": {
+   "tracked": false,
+   "sha256": "96d0e1c1d3b5159290b453e622ef9be03da4110c506b262d2fc049456ba0f02d",
+   "bytes": 11739,
+   "mtime": "2026-07-20T04:46:52.993417+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/delivery_env0.py": {
+   "tracked": false,
+   "sha256": "28f2f7f0065e8fee202c8884a21f2bfcd08208a07aafee66062587c7862abc34",
+   "bytes": 8298,
+   "mtime": "2026-07-19T17:04:23.424255+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/delivery_rescore.py": {
+   "tracked": false,
+   "sha256": "13fd1049c0404615ff8cfea800df6ebb3a1a9545b8cce404d3efb7920b1fd425",
+   "bytes": 11678,
+   "mtime": "2026-07-19T15:58:07.531338+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/experiments/pad_aware_control0.py": {
+   "tracked": false,
+   "sha256": "82ac393503f959b414704a0436c2bc0b184054ed33240087ee50bd292b2ce6e6",
+   "bytes": 9200,
+   "mtime": "2026-07-20T07:52:08.233964+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_clamp_oracle.py": {
+   "tracked": false,
+   "sha256": "870f15162ce01083ccfd68b0785a72b4c17d334d28d34ec9f5dc3938a4160a8f",
+   "bytes": 3040,
+   "mtime": "2026-07-20T06:12:11.051196+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_compliant_pad.py": {
+   "tracked": false,
+   "sha256": "cb25492a1af84513f2c1ffa11b54adc73f992f93b9bdeaeee21470e1c8608887",
+   "bytes": 6347,
+   "mtime": "2026-07-20T05:34:47.115012+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_delivery1.py": {
+   "tracked": false,
+   "sha256": "8753d927171eab7040b96afa83215085d8d160a75ad4924439981458ee02aa79",
+   "bytes": 2259,
+   "mtime": "2026-07-19T16:25:02.391102+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_delivery_acquisition.py": {
+   "tracked": false,
+   "sha256": "84353700ec67fbd3e401f0ede48fe43e39a9af95310cd6bf12d893b384f40d7b",
+   "bytes": 7186,
+   "mtime": "2026-07-19T19:56:57.960870+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_delivery_actor.py": {
+   "tracked": false,
+   "sha256": "b9d0a1fbcfe7619d51fd06a821ffc318159e8f60368a0036101b9457d536d798",
+   "bytes": 5964,
+   "mtime": "2026-07-20T06:49:43.782129+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_delivery_hardstate.py": {
+   "tracked": false,
+   "sha256": "1ec24ecca7520a34c1622ae458c3317c56c75ef0bbd581b40ab531b7e80adec5",
+   "bytes": 7950,
+   "mtime": "2026-07-19T18:30:22.438398+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_delivery_hymeko.py": {
+   "tracked": false,
+   "sha256": "432b25aeb400593fb1babb48a3f8ceb56eece4ab8860d709a3178b5f8c9da506",
+   "bytes": 6451,
+   "mtime": "2026-07-20T01:28:47.411392+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_delivery_primitives.py": {
+   "tracked": false,
+   "sha256": "9eb72a487ccb523fc412afab2275ad6b4f09a04362c995774def1dd9712b3cc3",
+   "bytes": 4019,
+   "mtime": "2026-07-19T19:02:40.711834+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_delivery_rl.py": {
+   "tracked": false,
+   "sha256": "d35b8bce8de94503fa2f1150aa120bd135e0966113789e6278f2f463720a5d89",
+   "bytes": 7818,
+   "mtime": "2026-07-19T18:09:51.037560+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_delivery_scenarios.py": {
+   "tracked": false,
+   "sha256": "8f1284e6c6e3b8a0b28a0e0913a9551427f6b09bd0a6c2bae5340adf66853c7c",
+   "bytes": 11596,
+   "mtime": "2026-07-20T07:12:21.905895+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_fingertip_pad.py": {
+   "tracked": false,
+   "sha256": "8bb3e4b04a3ad609445bf240c2f52f18b1f8f97cc473783dd9838b02db36f509",
+   "bytes": 2389,
+   "mtime": "2026-07-20T04:09:16.819926+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_grasp_cert.py": {
+   "tracked": false,
+   "sha256": "5413938ad60843f6525038be0cce164e01b55ee1cde55e832678e1667cbd467e",
+   "bytes": 6302,
+   "mtime": "2026-07-20T02:15:44.136480+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_grip_control.py": {
+   "tracked": false,
+   "sha256": "d0fa1149973e7c849e90569ae7b7a6b25f34c13a26b25298e7e9d45bb54e7486",
+   "bytes": 5105,
+   "mtime": "2026-07-20T04:46:30.263685+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_toss_a0.py": {
+   "tracked": false,
+   "sha256": "c373105a047ca35bc0ff9581fd25c303be648dd35c88009e1300d9e1cc16d02a",
+   "bytes": 2319,
+   "mtime": "2026-07-17T18:36:37.326058+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_toss_belief.py": {
+   "tracked": false,
+   "sha256": "3d0a19fedfb73736ef9ed8a773fe6371d6fd8102cd995e86a6dd152db1fb110a",
+   "bytes": 8803,
+   "mtime": "2026-07-17T15:24:17.031969+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_toss_channel_audit.py": {
+   "tracked": false,
+   "sha256": "7eee416bafc44f25ef4c5838579d4c16b5a3bdcff9f7df597930dcf21e43e5aa",
+   "bytes": 3770,
+   "mtime": "2026-07-17T14:00:16.438058+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_toss_factorial.py": {
+   "tracked": false,
+   "sha256": "a4161430eec9c518432f7910091b1cc672805ee14e6b74da9e6d600e32c25eef",
+   "bytes": 1891,
+   "mtime": "2026-07-17T13:17:51.667206+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_toss_semantics.py": {
+   "tracked": false,
+   "sha256": "744c34103f8b6a448127f5e4653d85003b83a58a23e09c8c8064ca00cede95f8",
+   "bytes": 2255,
+   "mtime": "2026-07-17T13:54:56.663326+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_toss_structural.py": {
+   "tracked": false,
+   "sha256": "e80b818689799b89bb3acaa8d0bbad13e19aac137910caa54bde6a738318ad7d",
+   "bytes": 2382,
+   "mtime": "2026-07-16T19:28:48.341955+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_toss_traj_rl.py": {
+   "tracked": false,
+   "sha256": "96f0a776ad79e78a130e570f883bd4dbd77159ad9381c59e35c9927dfbd4a57c",
+   "bytes": 4612,
+   "mtime": "2026-07-17T13:18:15.116556+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_coin_transport.py": {
+   "tracked": false,
+   "sha256": "b3cd8c0d0091f5c3f985fb5e633dffe0aa4c93d2611769cc8a0122781ba1ebbd",
+   "bytes": 6584,
+   "mtime": "2026-07-20T01:27:57.305770+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/tests/test_pad_aware_control.py": {
+   "tracked": false,
+   "sha256": "e0d65a18bfdf53cbe1576d9180d9fb05032196f784205fbde397c6404d7dcea5",
+   "bytes": 5028,
+   "mtime": "2026-07-20T07:53:33.471314+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/clamp_oracle.py": {
+   "tracked": false,
+   "sha256": "10b197495bb4148605113000fcd03092f4ecb425981e2aac1535cf3b018bd92d",
+   "bytes": 14480,
+   "mtime": "2026-07-20T06:09:39.744642+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_compliant_pad.py": {
+   "tracked": false,
+   "sha256": "98c7688c35652078fc35cf7e990cab1058d1aa430983d183754500d63f5e6d2a",
+   "bytes": 14473,
+   "mtime": "2026-07-20T05:25:53.640984+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_delivery_acquisition.py": {
+   "tracked": false,
+   "sha256": "9682de1334a057186dd88ec4fd6be3c36dd615866d75087de4a178b669010e02",
+   "bytes": 16827,
+   "mtime": "2026-07-19T19:27:48.870421+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_delivery_acquisition_rl.py": {
+   "tracked": false,
+   "sha256": "0697ce913fd4b59f1f3f978b409d3633066188c73fc5df1d1843c43c2150aec6",
+   "bytes": 6908,
+   "mtime": "2026-07-19T20:04:14.335562+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_delivery_actor.py": {
+   "tracked": false,
+   "sha256": "cc9fe0c76607217c350358e6615ca2c93a82766d209597695baf6c9b205ff76c",
+   "bytes": 13936,
+   "mtime": "2026-07-20T06:43:07.225931+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_delivery_hardstate.py": {
+   "tracked": false,
+   "sha256": "2395c8fb2349f4c31185d430312d75f07445088e35b38cb9bcdf9dda6a7ae60d",
+   "bytes": 13192,
+   "mtime": "2026-07-19T18:42:49.323741+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_delivery_primitives.py": {
+   "tracked": false,
+   "sha256": "7d6f732afbde52df7aacba5abd300598f7b37b55ab2e944c9abbce94e4f1c8b7",
+   "bytes": 7408,
+   "mtime": "2026-07-19T19:03:15.632363+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_delivery_rl.py": {
+   "tracked": false,
+   "sha256": "e1061942f267627d8c1bf48aac01ea9d12fe0807824ad2672ab0379c2880e10a",
+   "bytes": 20534,
+   "mtime": "2026-07-19T18:55:17.566503+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_fingertip_pad.py": {
+   "tracked": false,
+   "sha256": "41765fde31948d32c7e964d18115fe6abcf720267115e352f50b3d453cfda2b9",
+   "bytes": 4056,
+   "mtime": "2026-07-20T04:07:43.967357+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_grasp_cert.py": {
+   "tracked": false,
+   "sha256": "03f14cf56a2a1718a3e5d2555476d8027f81299033f611c9be06fd33b2ce923f",
+   "bytes": 11687,
+   "mtime": "2026-07-20T02:19:59.422056+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_grip_control.py": {
+   "tracked": false,
+   "sha256": "e35c7a50e6484423b95b410fef031d104a56a485dffc01cdfef7abdd30dda240",
+   "bytes": 7867,
+   "mtime": "2026-07-20T04:48:07.270246+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/coin_transport.py": {
+   "tracked": false,
+   "sha256": "3f353c20f88823813fb6099b9da59de3651457f9d9a33adc0ed3dbfc2c4eed17",
+   "bytes": 15546,
+   "mtime": "2026-07-20T01:29:11.751679+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/cooperative_push_objective.py": {
+   "tracked": false,
+   "sha256": "1bfb28f8b278fe4baad03066f33dcf93664a32253aeb4a4a19e436e8b95f9887",
+   "bytes": 5596,
+   "mtime": "2026-07-11T08:38:53.222744+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  },
+  "hymeko_rl/train/pad_aware_control.py": {
+   "tracked": false,
+   "sha256": "5075519414aa0b2c340d71c55fd076f1e2640f433794615048437bf3fd63deb3",
+   "bytes": 7602,
+   "mtime": "2026-07-20T07:54:54.098145+00:00",
+   "encoding": "utf-8",
+   "line_ending": "LF",
+   "bom": false
+  }
+ }
+}
