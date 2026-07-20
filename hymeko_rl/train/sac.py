@@ -296,7 +296,10 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
               dagger_teacher: Any = None,
               augmentor: "ReplayAugmentor | None" = None,
               init_transitions: "tuple[np.ndarray, ...] | None" = None,
-              bc_coef_fn: "Callable[[int], float] | None" = None) -> list[float]:
+              bc_coef_fn: "Callable[[int], float] | None" = None,
+              init_transition_tags: "np.ndarray | None" = None,
+              demo_frac_fn: "Callable[[int], float] | None" = None,
+              strata_weights: "dict[int, float] | None" = None) -> list[float]:
     """Train SAC on ``env``; returns the periodic eval curve.
 
     Twin soft-Q critics with the entropy-augmented target ``y = r + γ(1-d)(min_i Q̄_i(s',a') − α·logπ(a'))``;
@@ -337,7 +340,10 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     assert space_shape is not None
     buf = ReplayBuffer(cfg.capacity, tuple(int(d) for d in space_shape), action_dim)
     if init_transitions is not None:                               # demo-seeded replay: preload (obs,act,rew,next,done)
-        buf.add_batch(*init_transitions)                           # true env rewards/dones; sampled like any transition
+        buf.add_batch(*init_transitions, tags=init_transition_tags)  # tags>0 => contact strata (None => all ONLINE)
+    _stratified = demo_frac_fn is not None and strata_weights is not None
+    _shortage: dict = {}                                           # per-tag empty/replacement counts (contact-strat log)
+    _account: dict = {}                                            # realized per-tag sample counts since the last eval
     # rollout-state DAgger anchor (2026-07-15): a recent ring of (obs, teacher_action) over the actor's OWN visited
     # states, refreshed live from the reactive teacher. Inactive (buffer stays empty) unless a teacher is supplied.
     obs_shape = tuple(int(d) for d in space_shape)
@@ -389,7 +395,10 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
             torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]  # ONE fresh CUDA-graph step
             #   per update: the critic+actor graphs then share non-aliasing memory (train_offpolicy pattern). A mark
             #   BETWEEN them roots a step mid-update and corrupts the shared critic's buffers (measured on kato61 2026-07-17).
-        s, a, r, s2, d = (x.to(dev) for x in buf.sample(cfg.batch_size, generator=rng))
+        _batch = (buf.sample_stratified(cfg.batch_size, demo_frac=demo_frac_fn(step), strata_weights=strata_weights,
+                                        generator=rng, shortage=_shortage, account=_account)
+                  if _stratified else buf.sample(cfg.batch_size, generator=rng))
+        s, a, r, s2, d = (x.to(dev) for x in _batch)
         alpha_d = _alpha_at(step).detach()                         # value only; α is optimised eager below
         if cfg.reward_norm:
             r = reward_rms.normalize(r)                            # bounded-scale reward → bounded Q-target (eager)
@@ -470,6 +479,13 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
             history.append(eval_balance(env, actor, cfg.n_eval, seed=20_000)
                            if eval_fn is None else eval_fn(env, actor))
             print(f"  [sac] eval @ {step}: {history[-1]:.4g}", flush=True)
+            if _stratified:                                          # §6 realized replay composition since last eval
+                tot = max(1, sum(_account.values()))
+                comp = {int(k): round(v / tot, 3) for k, v in sorted(_account.items())}
+                dfrac = round(sum(v for k, v in _account.items() if k > 0) / tot, 3)
+                print(f"  [replay] demo_frac requested={demo_frac_fn(step):.2f} realized={dfrac} | "
+                      f"realized-by-tag={comp} | corpus={buf.tag_counts()} | shortage={_shortage or '{}'}", flush=True)
+                _account.clear()
     return history
 
 

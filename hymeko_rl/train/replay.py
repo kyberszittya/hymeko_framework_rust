@@ -38,14 +38,19 @@ class ReplayBuffer:
         self.priv_dim = int(priv_dim)
         self._priv = np.zeros((capacity, priv_dim), dtype=np.float32) if priv_dim else None
         self._priv_next = np.zeros((capacity, priv_dim), dtype=np.float32) if priv_dim else None
+        # per-transition provenance TAG for contact-stratified sampling: 0 = ONLINE (the default; every online add and
+        # every legacy caller lands here, so uniform sampling is byte-unchanged), >0 = a demonstration stratum id.
+        # The tag never enters the learning signal — only :meth:`sample_stratified` reads it.
+        self._tag = np.zeros(capacity, dtype=np.int16)
         self._ptr = 0
         self.size = 0
 
     def add(self, obs: np.ndarray, action: np.ndarray, reward: float,
             next_obs: np.ndarray, done: bool, priv: "np.ndarray | None" = None,
-            priv_next: "np.ndarray | None" = None) -> None:
+            priv_next: "np.ndarray | None" = None, *, tag: int = 0) -> None:
         """Append one transition (overwriting the oldest when full). ``priv``/``priv_next`` are the privileged
         critic state ``z(s)``/``z(s')`` — required iff ``priv_dim>0``, ignored (must be ``None``) otherwise.
+        ``tag`` is the provenance stratum id (default ``0`` = ONLINE; only :meth:`sample_stratified` reads it).
 
         # Postconditions ``size`` grows until ``capacity``, then stays; the new transition is at the
         position the next ``add`` will overwrite (ring)."""
@@ -55,6 +60,7 @@ class ReplayBuffer:
         self._rew[i] = reward
         self._next[i] = next_obs
         self._done[i] = 1.0 if done else 0.0
+        self._tag[i] = int(tag)
         if self._priv is not None:
             if priv is None or priv_next is None:
                 raise ValueError("priv_dim>0 buffer requires priv and priv_next on add()")
@@ -65,7 +71,7 @@ class ReplayBuffer:
 
     def add_batch(self, obs: np.ndarray, action: np.ndarray, reward: np.ndarray,
                   next_obs: np.ndarray, done: np.ndarray, priv: "np.ndarray | None" = None,
-                  priv_next: "np.ndarray | None" = None) -> None:
+                  priv_next: "np.ndarray | None" = None, *, tags: "np.ndarray | None" = None) -> None:
         """Append ``N`` transitions at once (the vectorised-rollout path), equivalent to ``N`` sequential
         :meth:`add` calls in ring order. ``priv``/``priv_next`` are ``(N, priv_dim)`` — required iff ``priv_dim>0``.
 
@@ -81,6 +87,7 @@ class ReplayBuffer:
         self._rew[idx] = np.asarray(reward, dtype=np.float32)
         self._next[idx] = next_obs
         self._done[idx] = np.asarray(done, dtype=np.float32)
+        self._tag[idx] = np.asarray(tags, dtype=np.int16) if tags is not None else 0
         if self._priv is not None:
             if priv is None or priv_next is None:
                 raise ValueError("priv_dim>0 buffer requires priv and priv_next on add_batch()")
@@ -116,6 +123,72 @@ class ReplayBuffer:
         if not 1 <= batch_size <= self.size:
             raise ValueError(f"batch_size must be in [1, size={self.size}]; got {batch_size}")
         idx = generator.integers(0, self.size, size=batch_size)
+        return self._gather(idx)
+
+    def tag_counts(self) -> dict[int, int]:
+        """Number of stored transitions per provenance tag (0 = ONLINE, >0 = demo strata). For preflight/logging."""
+        tags, counts = np.unique(self._tag[: self.size], return_counts=True)
+        return {int(t): int(c) for t, c in zip(tags, counts)}
+
+    @staticmethod
+    def _largest_remainder(total: int, weights: "list[float]") -> np.ndarray:
+        """Integer apportionment of ``total`` across ``weights`` (largest-remainder / Hamilton) — exact sum, no drift."""
+        w = np.asarray(weights, dtype=np.float64)
+        w = w / (w.sum() + 1e-12)
+        raw = w * total
+        base = np.floor(raw).astype(int)
+        for k in np.argsort(-(raw - base))[: int(total - base.sum())]:
+            base[k] += 1
+        return base
+
+    def sample_stratified(self, batch_size: int, *, demo_frac: float, strata_weights: "dict[int, float]",
+                          generator: np.random.Generator, shortage: "dict | None" = None,
+                          account: "dict | None" = None,
+                          ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Compose a minibatch as ``demo_frac`` demonstration transitions (tag>0, split by ``strata_weights``) +
+        the remainder ONLINE (tag==0). A thin stratum is sampled WITH REPLACEMENT (quota kept, shortage logged); an
+        EMPTY stratum's quota is redistributed across the non-empty demo strata (never silently drawn from arbitrary
+        approach transitions). Returns the same ``(obs,act,rew,next,done)`` tensors as :meth:`sample`; batch size exact.
+
+        # Preconditions ``1 <= batch_size <= size``; ``strata_weights`` keys are positive tag ids. # Postconditions
+        deterministic for a fixed ``generator`` state; ``shortage`` (if given) records per-tag empty/replacement counts."""
+        if not 1 <= batch_size <= self.size:
+            raise ValueError(f"batch_size must be in [1, size={self.size}]; got {batch_size}")
+        demo_frac = float(np.clip(demo_frac, 0.0, 1.0))
+        n_demo = int(round(batch_size * demo_frac))
+        n_online = batch_size - n_demo
+        tag = self._tag[: self.size]
+        parts: list[np.ndarray] = []
+        if n_online > 0:                                              # ONLINE portion (unchanged uniform behaviour)
+            pool = np.flatnonzero(tag == 0)
+            pool = pool if pool.size else np.arange(self.size)        # early warmup: no online yet -> whole buffer
+            parts.append(pool[generator.integers(0, pool.size, size=n_online)])
+            if account is not None:
+                account[0] = account.get(0, 0) + n_online
+        if n_demo > 0:
+            keys = sorted(strata_weights)
+            avail = {k: np.flatnonzero(tag == k) for k in keys}
+            nonempty = [k for k in keys if avail[k].size > 0]
+            for k in keys:                                            # log empty non-zero-weight strata
+                if avail[k].size == 0 and strata_weights[k] > 0 and shortage is not None:
+                    shortage.setdefault(k, {"empty": 0, "replacement": 0})["empty"] += 1
+            if not nonempty:                                          # no demos at all -> uniform fallback
+                parts.append(generator.integers(0, self.size, size=n_demo))
+            else:
+                alloc = self._largest_remainder(n_demo, [strata_weights[k] for k in nonempty])
+                for k, n_k in zip(nonempty, alloc):
+                    if n_k <= 0:
+                        continue
+                    pool = avail[k]
+                    if pool.size < n_k:                              # thin stratum -> with replacement + log
+                        if shortage is not None:
+                            shortage.setdefault(k, {"empty": 0, "replacement": 0})["replacement"] += int(n_k - pool.size)
+                        parts.append(pool[generator.integers(0, pool.size, size=n_k)])
+                    else:
+                        parts.append(pool[generator.choice(pool.size, size=n_k, replace=False)])
+                    if account is not None:
+                        account[int(k)] = account.get(int(k), 0) + int(n_k)
+        idx = np.concatenate(parts)[:batch_size] if parts else generator.integers(0, self.size, size=batch_size)
         return self._gather(idx)
 
     def sample_with_priv(self, batch_size: int, *, generator: np.random.Generator,
