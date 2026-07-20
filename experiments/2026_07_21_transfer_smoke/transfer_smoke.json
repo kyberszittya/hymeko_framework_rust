@@ -1,0 +1,52 @@
+{
+ "pick_place": {
+  "task": "pick_place",
+  "obs_shape": [
+   9,
+   10
+  ],
+  "action_dim": 7,
+  "max_steps": 200,
+  "steps": 3000,
+  "curve_delivered": [
+   0.0,
+   0.0
+  ],
+  "losses_finite": true,
+  "params_finite": true,
+  "checkpoint_roundtrip": true,
+  "checkpoint": "experiments/2026_07_21_transfer_smoke/pick_place_actor.pt",
+  "modes_spec": [
+   "APPROACH_GRASP",
+   "LIFT_TRANSPORT",
+   "PLACE_RELEASE",
+   "RECOVERY_REGRASP"
+  ]
+ },
+ "beni": {
+  "task": "beni_humanoid_upright",
+  "obs_shape": [
+   13,
+   2
+  ],
+  "action_dim": 12,
+  "max_steps": 300,
+  "steps": 3000,
+  "upright_pre": 39.7,
+  "upright_curve": [
+   42.7,
+   29.0
+  ],
+  "losses_finite": true,
+  "params_finite": true,
+  "action_affects_plant": true,
+  "checkpoint_roundtrip": true,
+  "checkpoint": "experiments/2026_07_21_transfer_smoke/beni_actor.pt",
+  "modes_spec": [
+   "STABILIZE",
+   "ADVANCE",
+   "RECOVER_BALANCE"
+  ],
+  "manipulation_boundary": "LeggedLocomotionEnv is locomotion-only (biped, no object/gripper/target body). A reach/contact task needs: (1) an object+target body in humanoid.hymeko or a companion plant, (2) an arm/end-effector actuator group, (3) a reach RewardSpec + typed contact certification. The canonical policy/trainer/rollout/checkpoint + injectable bank selector already transfer."
+ }
+}
