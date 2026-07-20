@@ -1,0 +1,38 @@
+[
+ {
+  "path": "experiments/2026_07_20_coin_contact_replay_stratified_50k/videos/stratified_certified_64201.gif",
+  "sha256": "d97550e6dc91894d290d9ca2e5c10259e5a8dd6c7c6bec04d84589ee4a3d309c",
+  "state": 64201,
+  "strict": true,
+  "attribution": 0.623,
+  "size_bytes": 255033,
+  "label": "STRATIFIED best certified delivery (state 64201)"
+ },
+ {
+  "path": "experiments/2026_07_20_coin_contact_replay_stratified_50k/videos/stratified_new_strict_64113.gif",
+  "sha256": "0c9e8e24c160c668254595acc6dcf2ddf5995fd0d4910cae02409adb5d3d31ec",
+  "state": 64113,
+  "strict": true,
+  "attribution": 0.6619999999999999,
+  "size_bytes": 388971,
+  "label": "STRATIFIED newly-strict state (64113)"
+ },
+ {
+  "path": "experiments/2026_07_20_coin_contact_replay_stratified_50k/videos/control_matched_64201.gif",
+  "sha256": "32566b7586c0739ea8b52251e87fb7bfa69bc91b368ea687975309abb6c83653",
+  "state": 64201,
+  "strict": true,
+  "attribution": 0.7909999999999999,
+  "size_bytes": 255855,
+  "label": "CONTROL matched certified delivery (state 64201)"
+ },
+ {
+  "path": "experiments/2026_07_20_coin_contact_replay_stratified_50k/videos/control_retains_64102.gif",
+  "sha256": "7733c46b1ddb1984c26e2c2539b31c486dfd23814a0100a3428d995af3f7d4b4",
+  "state": 64102,
+  "strict": true,
+  "attribution": 0.627,
+  "size_bytes": 609862,
+  "label": "CONTROL retains 64102 (STRATIFIED lost it)"
+ }
+]

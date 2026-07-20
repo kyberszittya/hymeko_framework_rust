@@ -1,0 +1,56 @@
+{
+ "CONTROL": {
+  "strict_count": 4,
+  "strict_coverage": 4,
+  "zone_count": 9,
+  "zone_rate": 0.5,
+  "P_attr_given_zone": 0.6666666666666666,
+  "P_clean_given_zone": 0.4444444444444444,
+  "P_bilateral_given_zone": 0.5555555555555556,
+  "P_body_given_zone": 1.0,
+  "P_dwell_given_zone": 0.6666666666666666,
+  "P_settle_given_zone": 1.0,
+  "attr_margin_mean": -0.06277777777777775,
+  "attr_margin_median": 0.16800000000000004,
+  "s64102_strict": true,
+  "lc": 0.5923844537815125,
+  "rc": 0.33911647992530347,
+  "act_mag": 1.341036450992956,
+  "strict_states": [
+   64102,
+   64111,
+   64201,
+   64203
+  ]
+ },
+ "STRATIFIED": {
+  "strict_count": 3,
+  "strict_coverage": 3,
+  "zone_count": 8,
+  "zone_rate": 0.4444444444444444,
+  "P_attr_given_zone": 0.5,
+  "P_clean_given_zone": 0.375,
+  "P_bilateral_given_zone": 0.375,
+  "P_body_given_zone": 1.0,
+  "P_dwell_given_zone": 0.625,
+  "P_settle_given_zone": 1.0,
+  "attr_margin_mean": -0.143125,
+  "attr_margin_median": -0.09649999999999997,
+  "s64102_strict": false,
+  "lc": 0.36327030812324934,
+  "rc": 0.368039902770725,
+  "act_mag": 1.195672752782062,
+  "strict_states": [
+   64111,
+   64113,
+   64201
+  ]
+ },
+ "classification": {
+  "verdict": "NEGATIVE",
+  "more_strict": false,
+  "mechanism_up": false,
+  "zone_down": false,
+  "coverage_down": true
+ }
+}
