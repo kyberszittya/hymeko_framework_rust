@@ -6,7 +6,10 @@ strict monitor throughout — these tests never weaken it. Reasonably short: env
 """
 from __future__ import annotations
 
+import types
+
 import numpy as np
+import pytest
 
 from hymeko_rl.coin_delivery.actors.base import (
     SemanticCommand,
@@ -78,8 +81,12 @@ def test_c1_scenario_still_rejects_body_shove() -> None:
     mech = classify_mechanism(DeliveryActor.A0_SYM_PUSH, att, made_progress=True,
                               initial_success=False, both_frac=0.5)
     assert mech is Mechanism.BODY_SHOVE
-    log = {"loose": True, "dwell": 8, "settle_vel": 0.05}
-    assert _valid_delivery(False, log, att, mech) is False
+    assert _valid_delivery(_trace(), att, mech) is False
+
+
+def _trace(initial=False, loose=True, dwell=8, vel=0.05):
+    """A minimal public-trace stand-in exposing exactly the fields the strict monitor reads (post rollout-unification)."""
+    return types.SimpleNamespace(initial_success=initial, loose=loose, best_dwell=dwell, settle_vel=vel)
 
 
 # ── 4. K0 action mapping unchanged (byte-identical env + exact adapter reproduction) ─────────────────────────────
@@ -132,14 +139,20 @@ def test_scenario_config_roundtrip() -> None:
         assert ScenarioConfig.from_dict(cfg.to_dict()) == cfg
 
 
-# ── 8. All four factorial scenarios run through the common runner (2-seed smoke) ────────────────────────────────
+# ── 8. The supported (K0) factorial scenarios run through the common runner (2-seed smoke) ──────────────────────
 def test_factorial_all_scenarios_run() -> None:
-    report = ExperimentRunner().run(list(_ALL_SCENARIOS), ["symmetric_push"], [0, 1],
-                                    scramble=True, max_steps=25)
-    assert len(report.per_scenario) == 4 and len(report.cells) == 4
+    k0_scenarios = ["c0k0", "c1k0"]                                            # K1 is unsupported (build_env raises)
+    report = ExperimentRunner().run(k0_scenarios, ["symmetric_push"], [0, 1], scramble=True, max_steps=25)
+    assert len(report.per_scenario) == 2 and len(report.cells) == 2
     for cell in report.cells:
         assert cell.n_seeds == 2 and 0.0 <= cell.delivery_rate <= 1.0
         assert cell.correct_minus_scramble is not None                        # correct-vs-scramble computed
+
+
+def test_k1_build_env_raises_never_silently_k0() -> None:
+    """Required regression (defect 4): K1's build_env must FAIL LOUDLY, never fabricate the K0 env."""
+    with pytest.raises(NotImplementedError, match="never silently construct K0"):
+        K1DistalOrientation().build_env()
 
 
 # ── 9. The SAME frozen delivery monitor is used across all four scenarios ────────────────────────────────────────
@@ -148,8 +161,8 @@ def test_single_frozen_monitor_across_scenarios() -> None:
     runner = ExperimentRunner()
     assert runner.monitor.rollout_fn is rollout_delivery
     assert DemoRunner().monitor.rollout_fn is rollout_delivery
-    # every scenario resolves to a config the ONE monitor can evaluate (no per-scenario monitor variant)
-    for sid in _ALL_SCENARIOS:
+    # every SUPPORTED (K0) scenario resolves to a config the ONE monitor can evaluate (no per-scenario monitor variant)
+    for sid in ("c0k0", "c1k0"):
         assert ScenarioRegistry.get(sid).kinematic_variant.build_env().action_space.shape == (6,)
 
 
@@ -175,11 +188,10 @@ def test_orientation_scramble_capacity_matched() -> None:
 # ── 12. Initial-state success is rejected in every scenario (the shared monitor's guard) ────────────────────────
 def test_initial_state_success_rejected_every_scenario() -> None:
     good_att = Attribution(0.5, 0.4, 0.0, 0.0, 0.1, 0.2)                       # fingertip 0.9, clean
-    good_log = {"loose": True, "dwell": 8, "settle_vel": 0.05}
     for sid in _ALL_SCENARIOS:                                                 # same monitor → holds everywhere
         _ = ScenarioRegistry.get(sid)
-        assert _valid_delivery(False, good_log, good_att, Mechanism.SYM_PUSH) is True
-        assert _valid_delivery(True, good_log, good_att, Mechanism.SYM_PUSH) is False
+        assert _valid_delivery(_trace(initial=False), good_att, Mechanism.SYM_PUSH) is True
+        assert _valid_delivery(_trace(initial=True), good_att, Mechanism.SYM_PUSH) is False
 
 
 # ── extra: alpha_free decomposition is a labelled approximation summing to ~1 under free progress ────────────────

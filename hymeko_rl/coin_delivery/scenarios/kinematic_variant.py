@@ -279,11 +279,17 @@ class K1DistalOrientation(KinematicVariant):
         return _K1Adapter()
 
     def build_env(self) -> Any:
-        # The authoritative delivery rollout uses the canonical embodiment (the frozen monitor's ContactFormationEnv
-        # interface); the distal pad DOF is a verified-constructible additive geometry + a wired 8-DoF interface,
-        # not yet driven end-to-end by the cooperative controller. See the module docstring / report.
-        from hymeko_rl.experiments.pedc_selection import _env
-        return _env()
+        """The K1 distal-orientation embodiment is NOT wired into the authoritative delivery rollout. This method
+        used to silently return the K0 canonical env, making C0K1/C1K1 scenarios indistinguishable from K0 — a false
+        registration. It now fails loudly rather than fabricating K0.
+
+        # Raises ``NotImplementedError`` always — K1 is out of scope for the canonical path. For the *constructed*
+        distal-pad closed loop use :func:`hymeko_rl.train.pad_aware_control.build_pad_aware_env` (a separate experiment
+        harness), or :meth:`build_padded_arm_mjcf` for the geometry probe."""
+        raise NotImplementedError(
+            "K1 distal-orientation build_env is unsupported: the distal-pad DOF is not driven end-to-end by the "
+            "authoritative rollout. Use the K0 canonical embodiment, or train.pad_aware_control.build_pad_aware_env "
+            "for the closed-loop K1 experiment. (This variant must never silently construct K0.)")
 
     def build_padded_arm_mjcf(self) -> str:
         """The K1 arm MJCF with the physical distal pad DOFs (constructibility artifact / probe input)."""

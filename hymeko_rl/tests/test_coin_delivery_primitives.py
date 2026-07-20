@@ -19,11 +19,16 @@ from hymeko_rl.train.coin_delivery_rl import DeliveryRLConfig, make_delivery_rl_
 
 
 class _FakeInner:
-    """Minimal inner-env stand-in exposing what centering_action reads (via _dir_to_zone)."""
+    """Minimal inner-env stand-in exposing what centering_action reads (the coin geometry via direction_to_zone)."""
 
     def __init__(self, coin, zone) -> None:
         self._planar_metrics = type("M", (), {"disk_pos": np.asarray(coin, np.float64)})()
         self._zone_x, self._zone_y = float(zone[0]), float(zone[1])
+
+    def direction_to_zone(self):
+        # geometry now lives on the env; delegate to the shared pure function so the mock exercises the real math
+        from hymeko_rl.env.planar_grasp_env import coin_zone_direction
+        return coin_zone_direction(self._planar_metrics.disk_pos, self._zone_x, self._zone_y)
 
 
 def test_from_unit_maps_into_ranges() -> None:
