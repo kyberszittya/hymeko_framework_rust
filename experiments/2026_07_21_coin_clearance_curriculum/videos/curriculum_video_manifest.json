@@ -1,0 +1,18 @@
+{
+ "short_transport": {
+  "path": "experiments/2026_07_21_coin_clearance_curriculum/videos/rl_short_transport_certified_delivery.mp4",
+  "sha256": "038da154989035c939c0d2c85fc20b49bf7cce33cf425a139999e9ff031fff60",
+  "strict": true,
+  "clearance": 0.0253
+ },
+ "short_transport_gif": {
+  "path": "experiments/2026_07_21_coin_clearance_curriculum/videos/rl_short_transport_certified_delivery.gif",
+  "sha256": "c3763326a1d1e328cd849ad08f24b2a168e5bc9f0089f0e4614147d6bf61d22e",
+  "strict": true,
+  "clearance": 0.0253
+ },
+ "before_vs_after": {
+  "path": "experiments/2026_07_21_coin_clearance_curriculum/videos/rl_short_transport_before_vs_after.mp4",
+  "sha256": "5ab04ea9c020e1e1476fa9d4e67a288816c0072c84c8af1e7ce7ef7912c90998"
+ }
+}
