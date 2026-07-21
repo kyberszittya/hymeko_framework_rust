@@ -291,6 +291,56 @@ def eval_composed(transport_actor, seeds, *, grasp_hold=3, env_cf=None) -> dict:
     return {"grasp": grasp, "deliver": deliv, "n": len(seeds)}
 
 
+def collect_carry_demos(seeds, *, grasp_hold=3, maxk=160, carry_steps=200):
+    """§6/§11 — handoff-matched demos: from each learned E-grasp state, run the validated targetward CARRY
+    (``p_grasp_carry``) and record (obs, executed carry action) ONLY for trajectories that reach strict delivery. These
+    teach a transport COPY to push-deliver from the E-approach grip geometry; the scripted carry never ships in the
+    final rollout (it is only the demo generator)."""
+    import torch
+
+    from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
+    e = _e_approach_actor()
+    env, cf = neutral_env(prefix_steps=0)
+    inner = cf._env
+    obs_l, act_l, n_ok = [], [], 0
+    for s in seeds:
+        env.set_stage(0)
+        env.reset(seed=int(s))
+        bi = 0
+        grabbed = False
+        for _k in range(maxk):
+            m = inner._planar_metrics
+            bi = bi + 1 if (m.left_contact and m.right_contact) else 0
+            if bi >= grasp_hold:
+                grabbed = True
+                break
+            with torch.no_grad():
+                a = e.action_mean(torch.as_tensor(np.asarray(inner.node_features(), np.float32)[None]))[0].numpy()
+            inner.step(np.asarray(a, np.float32))
+        if not grabbed:
+            continue
+        cf._tracker.reset(inner)
+        cf._prev_coin = np.asarray(inner._planar_metrics.disk_pos[:2], np.float64)
+        cf._t = 0
+        cf._both_hist = []
+        cert = DeliveryCertifier(initial_clearance=_clearance(inner))
+        o = cf._obs(np.zeros(4, np.float32))
+        traj_o, traj_a = [], []
+        for _t in range(carry_steps):
+            cert.update(_cert_step(inner, cf))
+            if cert.delivery_certified:
+                break
+            act = np.clip(p_grasp_carry(inner, 0), -1.0, 1.0).astype(np.float32)
+            traj_o.append(np.asarray(o, np.float32))
+            traj_a.append(act)
+            o = cf.step(act)[0]
+        if cert.delivery_certified:                                 # keep only the SUCCESSFUL handoff-matched demos
+            obs_l.extend(traj_o)
+            act_l.extend(traj_a)
+            n_ok += 1
+    return np.asarray(obs_l, np.float32), np.asarray(act_l, np.float32), n_ok
+
+
 def train_neutral(*, steps=40_000, seed=0, out="experiments/2026_07_21_coin_neutral", eval_every=4_000,
                   bank_frac=0.35, prefix_max=110):
     """Reverse-curriculum neutral-start training: init actor from the proven TRANSPORT checkpoint; train on a curriculum
@@ -403,18 +453,83 @@ def finetune_transport_on_handoff(*, steps=24_000, seed=0, out="experiments/2026
     return best
 
 
+def train_handoff_transport(*, steps=16_000, seed=0, out="experiments/2026_07_21_coin_neutral_handoff",
+                            eval_every=2_000, rehearse_frac=0.4):
+    """§6/§11 — BC a transport COPY on the SUCCESSFUL carry-from-E-grasp demos (handoff-matched) + ≥rehearse_frac
+    original-bank transport demos, then a short SAC polish (α-floor, persistent BC). Compose learned E-approach → this
+    learned transport and evaluate strict NEUTRAL delivery per state. The scripted carry never appears in the rollout."""
+    import json
+    from pathlib import Path
+
+    import torch
+
+    from hymeko_rl.experiments.coin_delivery_e0_campaign import (
+        bc_fit, collect_e0_demos, direct_e0_env, evaluate_policy)
+    from hymeko_rl.train.sac import SACConfig, build_sac, train_sac
+    outp = Path(out)
+    outp.mkdir(parents=True, exist_ok=True)
+    train_seeds = tuple(s for s in range(1000, 1700) if s not in _HEADLINE)
+    carry = collect_carry_demos(train_seeds[:120])                  # handoff-matched (successful carry-from-E-grasp)
+    split = json.loads(Path("experiments/2026_07_21_coin_e0_stabilize/state_split.json").read_text())
+    bank_demos = collect_e0_demos([s for s, _c in split["train"]])  # original transport-bank rehearsal
+    n_reh = max(1, int(len(carry[0]) * rehearse_frac / (1 - rehearse_frac)))
+    ridx = np.random.default_rng(0).choice(len(bank_demos[0]), size=min(n_reh, len(bank_demos[0])), replace=False)
+    obs = np.concatenate([carry[0], bank_demos[0][ridx]])
+    act = np.concatenate([carry[1], bank_demos[1][ridx]])
+    print(f"[handoff] carry-demo trajectories ok={carry[2]} ({len(carry[0])} pairs) + rehearsal {len(ridx)} "
+          f"→ BC corpus {len(obs)}", flush=True)
+    if carry[2] == 0:
+        raise SystemExit("BLOCKED: no successful carry-from-E-grasp trajectory to BC-seed the handoff transport")
+    env, cf = direct_e0_env()                                       # bank-start env for the SAC polish
+    actor, critics = build_sac("mlp", obs_dim=41, flat_dim=41, action_dim=6, action_scale=1.0)
+    actor.load_state_dict(_load_transport().state_dict())          # a COPY of the proven transport
+    bc_fit(actor, (obs, act), epochs=400, seed=seed)
+    eval_env = neutral_env(prefix_steps=0)
+    ret_env = direct_e0_env()
+
+    def full_eval(ac):
+        m = eval_composed(ac, _HEADLINE, env_cf=eval_env)
+        r = evaluate_policy(ac, _HEADLINE, env_cf=(ret_env[0], ret_env[1]))
+        return m["deliver"], m["grasp"], r["delivery_count"]
+
+    d0, g0, r0 = full_eval(actor)
+    print(f"[handoff BC-init] neutral deliver={d0}/9 grasp={g0}/9 | contact-prepared retention={r0}/9", flush=True)
+    torch.save(actor.state_dict(), outp / "handoff_best.pt")
+    best = {"deliver": d0, "retention": r0}
+    hist = [{"deliver": d0, "retention": r0, "step": 0}]
+    cfg = SACConfig.stable(total_steps=steps, seed=seed, bc_coef=1.0, alpha_final=0.0367,
+                           log_every=eval_every, eval_every=eval_every)
+
+    def eval_fn(_e, ac):
+        d, g, r = full_eval(ac)
+        hist.append({"deliver": d, "grasp": g, "retention": r, "step": len(hist) * eval_every})
+        print(f"  [handoff eval#{len(hist)}] neutral deliver={d}/9 grasp={g}/9 retention={r}/9", flush=True)
+        if (d, r) > (best["deliver"], best["retention"]):
+            best.update(deliver=d, retention=r)
+            torch.save(ac.state_dict(), outp / "handoff_best.pt")
+        return float(d * 10 + r)
+
+    train_sac(actor, critics, env, cfg, eval_fn=eval_fn, offline_data=(obs, act), bc_coef_fn=lambda _s: 1.0)
+    (outp / "run.json").write_text(json.dumps(dict(steps=steps, seed=seed, carry_ok=carry[2], bc_init=dict(
+        deliver=d0, grasp=g0, retention=r0), best=best, eval_history=hist), indent=1, default=float))
+    print(f"[handoff done] neutral deliver {d0}→{best['deliver']}/9 | retention {best['retention']}/9", flush=True)
+    return best
+
+
 def main() -> None:
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", nargs="?", default="finetune", choices=["neutral", "finetune"])
-    ap.add_argument("--steps", type=int, default=24_000)
+    ap.add_argument("cmd", nargs="?", default="handoff", choices=["neutral", "finetune", "handoff"])
+    ap.add_argument("--steps", type=int, default=16_000)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="experiments/2026_07_21_coin_neutral_ft")
+    ap.add_argument("--out", default="experiments/2026_07_21_coin_neutral_handoff")
     a = ap.parse_args()
     if a.cmd == "neutral":
         train_neutral(steps=a.steps, seed=a.seed, out=a.out)
-    else:
+    elif a.cmd == "finetune":
         finetune_transport_on_handoff(steps=a.steps, seed=a.seed, out=a.out)
+    else:
+        train_handoff_transport(steps=a.steps, seed=a.seed, out=a.out)
 
 
 if __name__ == "__main__":
