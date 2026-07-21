@@ -216,6 +216,81 @@ def _cert_step(inner, cf) -> CertStep:
                     force_left=fl, force_right=fr)
 
 
+def _e_approach_actor():
+    from hymeko_rl.experiments.exp_v3_handoff_gate import _load_e
+    return _load_e()
+
+
+def collect_e_handoff_bank(seeds, *, grasp_hold=3, maxk=160):
+    """§1/§8 — regenerate EXPLICIT neutral→bilateral-grasp trajectories with the recovered E_valselect approach policy;
+    snapshot the stable-grasp handoff state. These are the learned handoff states the transport must be tuned on."""
+    import torch
+
+    from hymeko_rl.env.planar_snapshot import snapshot_planar
+    from hymeko_rl.experiments.coin_delivery_e0_campaign import _e0_env
+    e = _e_approach_actor()
+    _dev, cf = _e0_env()
+    inner = cf._env
+    bank = []
+    for s in seeds:
+        inner.reset(seed=int(s))
+        bi = 0
+        for _k in range(maxk):
+            m = inner._planar_metrics
+            bi = bi + 1 if (m.left_contact and m.right_contact) else 0
+            if bi >= grasp_hold:
+                bank.append({"snap": snapshot_planar(inner), "coin_y": float(m.disk_pos[1]), "high_coin_y": False})
+                break
+            with torch.no_grad():
+                a = e.action_mean(torch.as_tensor(np.asarray(inner.node_features(), np.float32)[None]))[0].numpy()
+            inner.step(np.asarray(a, np.float32))
+    return bank
+
+
+def eval_composed(transport_actor, seeds, *, grasp_hold=3, env_cf=None) -> dict:
+    """§7/§9 — E-approach+grasp (recovered policy) → frozen/tuned TRANSPORT; strict neutral delivery + grasp rate."""
+    import torch
+
+    from hymeko_rl.experiments.coin_delivery_e0_campaign import _greedy_action_fn
+    from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
+    e = _e_approach_actor()
+    tfn = _greedy_action_fn(transport_actor)
+    env, cf = env_cf or neutral_env(prefix_steps=0)
+    inner = cf._env
+    grasp = deliv = 0
+    for s in seeds:
+        env.set_stage(0)
+        env.reset(seed=int(s))
+        cert = DeliveryCertifier(initial_clearance=_clearance(inner))
+        bi = 0
+        got = False
+        for _k in range(160):
+            m = inner._planar_metrics
+            cert.update(_cert_step(inner, cf))
+            bi = bi + 1 if (m.left_contact and m.right_contact) else 0
+            if bi >= grasp_hold:
+                got = True
+                break
+            with torch.no_grad():
+                a = e.action_mean(torch.as_tensor(np.asarray(inner.node_features(), np.float32)[None]))[0].numpy()
+            inner.step(np.asarray(a, np.float32))
+        cf._prev_coin = np.asarray(inner._planar_metrics.disk_pos[:2], np.float64)
+        cf._t = 0
+        cf._both_hist = []
+        env._suffix_t = 0
+        env._prev_dtz = env._dtz()
+        env._prev_both = env._both()
+        o = cf._obs(np.zeros(4, np.float32))
+        for _t in range(200):
+            cert.update(_cert_step(inner, cf))
+            if cert.delivery_certified:
+                break
+            o = env.step(np.asarray(tfn(env, o, None), np.float32))[0]
+        grasp += got
+        deliv += cert.delivery_certified
+    return {"grasp": grasp, "deliver": deliv, "n": len(seeds)}
+
+
 def train_neutral(*, steps=40_000, seed=0, out="experiments/2026_07_21_coin_neutral", eval_every=4_000,
                   bank_frac=0.35, prefix_max=110):
     """Reverse-curriculum neutral-start training: init actor from the proven TRANSPORT checkpoint; train on a curriculum
@@ -269,14 +344,77 @@ def train_neutral(*, steps=40_000, seed=0, out="experiments/2026_07_21_coin_neut
     return best
 
 
+def finetune_transport_on_handoff(*, steps=24_000, seed=0, out="experiments/2026_07_21_coin_neutral_ft",
+                                  eval_every=3_000, rehearse_frac=0.4):
+    """§8 — the recovered E approach reaches grasp 6-7/9 but the frozen transport sees a SHIFTED handoff distribution
+    (0/9 delivery). Fine-tune a COPY of transport on the learned E-handoff states + rehearse the original bank; require
+    retention of the original contact-prepared competence. Then re-evaluate the full neutral chain."""
+    import json
+    from pathlib import Path
+
+    import torch
+
+    from hymeko_rl.experiments.coin_delivery_e0_campaign import (
+        _HEADLINE as HB, bc_fit, collect_e0_demos, direct_e0_env, evaluate_policy)
+    from hymeko_rl.train.sac import SACConfig, build_sac, train_sac
+    outp = Path(out)
+    outp.mkdir(parents=True, exist_ok=True)
+    train_seeds = tuple(s for s in range(1000, 1700) if s not in _HEADLINE)
+    ehand = collect_e_handoff_bank(train_seeds[:70])                # learned E-approach handoff states (new distribution)
+    env, cf = direct_e0_env()
+    c1 = list(cf._bank)
+    n_reh = max(1, int(len(ehand) * rehearse_frac / (1 - rehearse_frac)))
+    cf._bank = ehand + c1[:n_reh]                                   # ≥rehearse_frac original-bank rehearsal
+    print(f"[ft] E-handoff states={len(ehand)} + rehearsal={min(n_reh, len(c1))} → mixed bank {len(cf._bank)}", flush=True)
+    transport = _load_transport()
+    actor, critics = build_sac("mlp", obs_dim=41, flat_dim=41, action_dim=6, action_scale=1.0)
+    actor.load_state_dict(transport.state_dict())                  # fine-tune a COPY of the proven transport
+    split = json.loads(Path("experiments/2026_07_21_coin_e0_stabilize/state_split.json").read_text())
+    demos = collect_e0_demos([s for s, _c in split["train"]])
+    bc_fit(actor, demos, epochs=200, seed=seed)
+    eval_env = neutral_env(prefix_steps=0)
+    ret_env = direct_e0_env()                                       # original bank, for retention eval
+    base = eval_composed(actor, HB, env_cf=eval_env)
+    ret0 = evaluate_policy(actor, HB, env_cf=(ret_env[0], ret_env[1]))
+    print(f"[ft base] neutral chain deliver={base['deliver']}/9 grasp={base['grasp']}/9 | "
+          f"contact-prepared retention={ret0['delivery_count']}/9", flush=True)
+    cfg = SACConfig.stable(total_steps=steps, seed=seed, bc_coef=1.0, alpha_final=0.0367,
+                           log_every=eval_every, eval_every=eval_every)
+    best = {"deliver": -1}
+    hist = []
+
+    def eval_fn(_e, ac):
+        m = eval_composed(ac, HB, env_cf=eval_env)
+        r = evaluate_policy(ac, HB, env_cf=(ret_env[0], ret_env[1]))
+        hist.append({"deliver": m["deliver"], "grasp": m["grasp"], "retention": r["delivery_count"]})
+        print(f"  [ft eval#{len(hist)}] neutral deliver={m['deliver']}/9 grasp={m['grasp']}/9 "
+              f"retention={r['delivery_count']}/9", flush=True)
+        if m["deliver"] > best["deliver"]:
+            best.update(deliver=m["deliver"], retention=r["delivery_count"])
+            torch.save(ac.state_dict(), outp / "transport_ft_best.pt")
+        return float(m["deliver"] * 10 + r["delivery_count"])
+
+    train_sac(actor, critics, env, cfg, eval_fn=eval_fn, offline_data=demos, bc_coef_fn=lambda _s: 1.0)
+    torch.save(actor.state_dict(), outp / "transport_ft_final.pt")
+    (outp / "run.json").write_text(json.dumps(dict(steps=steps, seed=seed, n_ehandoff=len(ehand), base=base,
+                                    best=best, eval_history=hist), indent=1, default=float))
+    print(f"[ft done] base neutral deliver={base['deliver']}/9 → best={best['deliver']}/9 "
+          f"(retention {best.get('retention', '?')}/9)", flush=True)
+    return best
+
+
 def main() -> None:
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--steps", type=int, default=40_000)
+    ap.add_argument("cmd", nargs="?", default="finetune", choices=["neutral", "finetune"])
+    ap.add_argument("--steps", type=int, default=24_000)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="experiments/2026_07_21_coin_neutral")
+    ap.add_argument("--out", default="experiments/2026_07_21_coin_neutral_ft")
     a = ap.parse_args()
-    train_neutral(steps=a.steps, seed=a.seed, out=a.out)
+    if a.cmd == "neutral":
+        train_neutral(steps=a.steps, seed=a.seed, out=a.out)
+    else:
+        finetune_transport_on_handoff(steps=a.steps, seed=a.seed, out=a.out)
 
 
 if __name__ == "__main__":
