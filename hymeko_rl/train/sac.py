@@ -553,6 +553,7 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
     reward_rms = RunningRMS()                                       # bounds the Q-scale (anti-divergence)
     last_c, last_a = float("nan"), float("nan")                     # last update's losses (bound before the closures)
     last_bc = float("nan")                                          # BC actor contribution, logged separately (§5)
+    did_update = False                                             # False until the first real critic/actor update ran
 
     # The update hot path as closures. The 2026-07-17 per-step profile showed the B=256 gradient update is 99.9%
     # of the structural (hsikan) per-step cost and the B=1 rollout is 0.1% — so we cut the UPDATE, not the rollout
@@ -588,7 +589,8 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
 
     def _update_once(step: int) -> None:
         """One gradient update (critic → actor → α → polyak). Shared by every update_every cadence."""
-        nonlocal last_c, last_a, last_bc
+        nonlocal last_c, last_a, last_bc, did_update
+        did_update = True
         if _use_compile:
             torch.compiler.cudagraph_mark_step_begin()   # type: ignore[no-untyped-call]  # ONE fresh CUDA-graph step
             #   per update: the critic+actor graphs then share non-aliasing memory (train_offpolicy pattern). A mark
@@ -634,6 +636,9 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
         torch.nn.utils.clip_grad_norm_(actor.parameters(), cfg.max_grad_norm)
         a_opt.step()
         last_a = float(a_loss.detach())      # consume before the α update / next replay (same CUDA-graph rule)
+        if not (np.isfinite(last_c) and np.isfinite(last_a)):        # real non-finite OPTIMIZED loss ⇒ abort (not warmup)
+            raise RuntimeError(f"SAC non-finite update at step {step}: crit={last_c} act={last_a} — real divergence, "
+                               f"not a warmup-logging artifact; refusing to corrupt the policy")
         if cfg.alpha_mode is AlphaMode.AUTO:            # only classic SAC learns α; FIXED/ANNEAL schedule it
             alpha_loss = -(log_alpha * (logp + target_entropy).detach()).mean()
             al_opt.zero_grad()
@@ -686,7 +691,9 @@ def train_sac(actor: _SquashedGaussianActorBase, critics: list[QCritic], env: An
             rate = step / max(1e-9, time.perf_counter() - t0)
             mech_tail = (f" | mech_crit={mech.last_loss:.3g} Qtask={mech.q_task:.3g} Qmech={mech.q_mech:.3g} "
                          f"bc={last_bc:.3g}" if mech is not None else "")   # §5: task/mechanism/BC logged separately
-            print(f"  [sac] step {step:>7}/{cfg.total_steps} | crit={last_c:.3g} act={last_a:.3g} "
+            c_str = f"{last_c:.3g}" if did_update else "N/A"        # N/A before the first update (not a NaN divergence)
+            a_str = f"{last_a:.3g}" if did_update else "N/A"
+            print(f"  [sac] step {step:>7}/{cfg.total_steps} | crit={c_str} act={a_str} "
                   f"alpha={float(_alpha_at(step).item()):.3g}[{cfg.alpha_mode.value}] | {rate:5.0f} steps/s "
                   f"| ETA {(cfg.total_steps - step) / max(1e-9, rate) / 60:4.1f} min | buf={buf.size}{mech_tail}",
                   flush=True)
