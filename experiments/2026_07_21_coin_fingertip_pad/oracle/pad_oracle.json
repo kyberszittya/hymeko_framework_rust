@@ -1,0 +1,78 @@
+{
+ "point_strict_ge_030": 1,
+ "pad_strict_ge_030": 1,
+ "pad_max_strict_clearance": 0.039,
+ "point_max_strict_clearance": 0.037,
+ "feasible": true,
+ "verdict": "NO_PAD_ADVANTAGE",
+ "bands": {
+  "POINT": {
+   "P0_+0.018-0.030": {
+    "n": 16,
+    "strict": 1,
+    "loose": 2,
+    "mean_both_frac": 0.051,
+    "mean_progress": 0.0213,
+    "max_strict_clearance": 0.024
+   },
+   "P1_+0.030-0.045": {
+    "n": 16,
+    "strict": 1,
+    "loose": 2,
+    "mean_both_frac": 0.096,
+    "mean_progress": 0.027,
+    "max_strict_clearance": 0.037
+   },
+   "P2_+0.045-0.060": {
+    "n": 16,
+    "strict": 0,
+    "loose": 0,
+    "mean_both_frac": 0.126,
+    "mean_progress": 0.0231,
+    "max_strict_clearance": -9.9
+   },
+   "P3_+0.060-0.080": {
+    "n": 16,
+    "strict": 0,
+    "loose": 0,
+    "mean_both_frac": 0.125,
+    "mean_progress": 0.0192,
+    "max_strict_clearance": -9.9
+   }
+  },
+  "FLAT_PAD": {
+   "P0_+0.018-0.030": {
+    "n": 16,
+    "strict": 2,
+    "loose": 4,
+    "mean_both_frac": 0.155,
+    "mean_progress": 0.0257,
+    "max_strict_clearance": 0.0263
+   },
+   "P1_+0.030-0.045": {
+    "n": 16,
+    "strict": 1,
+    "loose": 2,
+    "mean_both_frac": 0.106,
+    "mean_progress": 0.0226,
+    "max_strict_clearance": 0.039
+   },
+   "P2_+0.045-0.060": {
+    "n": 16,
+    "strict": 0,
+    "loose": 1,
+    "mean_both_frac": 0.169,
+    "mean_progress": 0.0236,
+    "max_strict_clearance": -9.9
+   },
+   "P3_+0.060-0.080": {
+    "n": 16,
+    "strict": 0,
+    "loose": 0,
+    "mean_both_frac": 0.143,
+    "mean_progress": 0.0179,
+    "max_strict_clearance": -9.9
+   }
+  }
+ }
+}

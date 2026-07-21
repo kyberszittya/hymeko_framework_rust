@@ -30,6 +30,8 @@ from hymeko_rl.experiments.galambos_bc import collect_galambos_demos, eval_deliv
 from hymeko_rl.train.campaign import Campaign, CampaignConfig
 
 _COORD_HYMEKO = "data/robotics/galambos_task_coord.hymeko"
+_DELIVER_V2B = "data/robotics/galambos_task_deliver_v2b.hymeko"   # the sound coin-toss DELIVERY reward (v2b)
+_PLANAR_TASK_DEFAULT = "data/robotics/galambos_task.hymeko"        # PlanarGraspEnv's default (the A/B baseline reward)
 _MAX_STEPS = 300
 _EVAL_SEED = 9_000
 # Below this much coin→zone progress attributed to a body-only push (metres), a v2 delivery is graded
@@ -71,16 +73,41 @@ def _close_env(env: Any) -> None:
         close()
 
 
-def make_env(*, coord: bool, difficulty: float, treatment_hymeko: str = _COORD_HYMEKO) -> PlanarGraspEnv:
-    """A planar grasping env; ``coord=True`` swaps in the treatment reward from ``treatment_hymeko`` (defined in
-    its own ``.hymeko``, per the reward-in-hymeko rule — no in-memory term surgery)."""
-    env = PlanarGraspEnv(robot=None, max_steps=_MAX_STEPS, difficulty=difficulty)
+_FLAT_PAD_SIZE = "0.004 0.016 0.02"     # box half-extents: THIN in the contact-normal x (a flat face), wide in y/z
+
+
+def make_env(*, coord: bool, difficulty: float, treatment_hymeko: str = _COORD_HYMEKO,
+             deliver: bool = False, fingertip_geometry: str = "POINT") -> PlanarGraspEnv:
+    """A planar grasping env, tagging the active reward file on ``env.reward_file``.
+
+    - ``coord=True``  → the coordination treatment reward (``treatment_hymeko``).
+    - ``deliver=True`` → the sound coin-toss DELIVERY reward **v2b** (``galambos_task_deliver_v2b.hymeko``). This is
+      the coin-toss task's intended reward (2026-07-09 reward-identity fix: the coin-toss env previously fell through
+      to the ``galambos_task`` default — a dense-annuity farming reward — which the audit flagged).
+    - otherwise → the PlanarGraspEnv default (``galambos_task``), the original coord-A/B **baseline** (unchanged).
+
+    ``coord`` and ``deliver`` are mutually exclusive; ``coord`` wins if both are set. Reward-in-hymeko (no in-memory
+    term surgery). # Postconditions: ``env.reward_file`` names the active reward's ``.hymeko`` source.
+    """
+    # fingertip_contact_geometry: POINT (sphere = the existing golden model, no-op) vs FLAT_PAD (box = a finite contact
+    # patch). Only the fingertip geom type/size changes; joint/actuator/arm/coin/target/reward/predicate are untouched.
+    if fingertip_geometry not in ("POINT", "FLAT_PAD"):
+        raise ValueError(f"fingertip_geometry must be POINT or FLAT_PAD; got {fingertip_geometry!r}")
+    _fg = {} if fingertip_geometry == "POINT" else {"fingertip_shape": "box", "fingertip_size": _FLAT_PAD_SIZE}
+    env = PlanarGraspEnv(robot=None, max_steps=_MAX_STEPS, difficulty=difficulty, **_fg)
     if coord:
         env.reward_spec = RewardSpec.from_hymeko(treatment_hymeko)
+        env.reward_file = treatment_hymeko
+    elif deliver:
+        env.reward_spec = RewardSpec.from_hymeko(_DELIVER_V2B)
+        env.reward_file = _DELIVER_V2B
+    else:
+        env.reward_file = _PLANAR_TASK_DEFAULT
     return env
 
 
-def _coordination_metrics(env: PlanarGraspEnv, actor: Any, n_episodes: int, seed: int) -> "dict[str, float]":
+def _coordination_metrics(env: PlanarGraspEnv, actor: Any, n_episodes: int, seed: int,
+                          *, action_fn: "Any | None" = None) -> "dict[str, float]":
     """One greedy rollout pass → the four physics/task validation metrics (all from the same episodes, §6.1):
       - ``both_contact``      : fraction of steps BOTH fingertips touch the coin;
       - ``fingertip_contact`` : fraction of fingertip-steps in contact (``(left+right)/2`` per step);
@@ -104,7 +131,7 @@ def _coordination_metrics(env: PlanarGraspEnv, actor: Any, n_episodes: int, seed
       - ``arm_body_steps`` / ``arm_body_impulse`` : mean per-episode arm-body contact duration / summed impulse.
     ``raw = fingertip_dominant + body_assisted + body_driven_exploit``; ``zero_body_contact <= fingertip_dominant``.
     In v1 (no legality) the arm-body columns are zero and ``fingertip_dominant == zero_body_contact == raw``."""
-    act = greedy_action_fn(actor)
+    act = action_fn if action_fn is not None else greedy_action_fn(actor)  # env-aware policies pass action_fn
     steps = both = ft = 0
     vel_sum = 0.0
     deltas: "list[float]" = []

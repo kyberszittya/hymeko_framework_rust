@@ -53,12 +53,12 @@ def certify_or_abort() -> float:
     return float(orc.optimal_return)
 
 
-def direct_env(*, train_seed_pool: tuple[int, ...] | None = None):
+def direct_env(*, train_seed_pool: tuple[int, ...] | None = None, fingertip_geometry: str = "POINT"):
     """The shared CoinDeliveryTrainEnv made DIRECT-action via its own base/delta overrides (zero base + unit delta ->
     residual_action(0, raw, 1) == clip(raw)). If ``train_seed_pool`` is given, the instance's auto-reset (no seed)
     rotates deterministically through that pool so SAC trains on the intended split — a bounded instance
     parameterization, not a new env class."""
-    env = make_delivery_rl_env()
+    env = make_delivery_rl_env(fingertip_geometry=fingertip_geometry)
     env._base_override = lambda inner, t: np.zeros(env.action_space.shape[0], np.float32)
     env._delta_override = 1.0
     if train_seed_pool is not None:

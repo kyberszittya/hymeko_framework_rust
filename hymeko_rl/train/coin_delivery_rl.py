@@ -277,9 +277,10 @@ class CoinDeliveryTrainEnv:
         return float(self._sat_hits / self._sat_total) if self._sat_total else 0.0
 
 
-def make_delivery_rl_env(cfg: DeliveryRLConfig | None = None) -> CoinDeliveryTrainEnv:
-    """Build a fresh delivery-transport RL env over the held ``ContactFormationEnv`` (reuses ``pedc_selection._env``)."""
-    return CoinDeliveryTrainEnv(_env(), cfg or DeliveryRLConfig())
+def make_delivery_rl_env(cfg: DeliveryRLConfig | None = None, *, fingertip_geometry: str = "POINT") -> CoinDeliveryTrainEnv:
+    """Build a fresh delivery-transport RL env over the held ``ContactFormationEnv`` (reuses ``pedc_selection._env``).
+    ``fingertip_geometry`` POINT (default, golden) / FLAT_PAD (finite contact patch) selects the fingertip geometry."""
+    return CoinDeliveryTrainEnv(_env(fingertip_geometry), cfg or DeliveryRLConfig())
 
 
 # ── deterministic evaluation (Strategy over the action source) ─────────────────────────────────────────────────────
