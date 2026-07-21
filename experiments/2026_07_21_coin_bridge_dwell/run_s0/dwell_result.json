@@ -1,0 +1,158 @@
+{
+ "seed": 0,
+ "steps_scale": 1.0,
+ "ready_states": 39,
+ "thresholds": [
+  0.37306976318359375,
+  0.7461395263671875
+ ],
+ "band_sizes": {
+  "B0_ready": 39,
+  "B1_near": 243,
+  "B2_mid": 243,
+  "B3_far": 244,
+  "B4_clear_start": 128
+ },
+ "band_reports": [
+  {
+   "band": "B0_ready",
+   "budget": 25000,
+   "held1": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 4,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 0,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   }
+  },
+  {
+   "band": "B1_near",
+   "budget": 30000,
+   "held1": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 4,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 0,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   }
+  },
+  {
+   "band": "B2_mid",
+   "budget": 40000,
+   "held1": {
+    "n": 24,
+    "strict": 4,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 4,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 0,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   }
+  },
+  {
+   "band": "B3_far",
+   "budget": 50000,
+   "held1": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 4,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 0,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   }
+  },
+  {
+   "band": "B4_clear_start",
+   "budget": 50000,
+   "held1": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 4,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   },
+   "held2": {
+    "n": 24,
+    "strict": 0,
+    "handoff": 0,
+    "dwell_reached": 0,
+    "post_handoff_strict": 0,
+    "ready_entry": 0,
+    "handoff_rate": 0.0,
+    "dwell_rate": 0.0
+   }
+  }
+ ],
+ "best_band": "B2_mid",
+ "best_ckpt": "experiments/2026_07_21_coin_bridge_dwell/run_s0/dwell_bridge_B2_mid.pt",
+ "causal_held1": {
+  "n": 24,
+  "transport_alone": 4,
+  "prev_bridge_3step": 5,
+  "prev_bridge_1step": 9,
+  "dwell_bridge_3step": 4,
+  "zero_action": 0
+ },
+ "causal_held2": {
+  "n": 24,
+  "transport_alone": 0,
+  "prev_bridge_3step": 0,
+  "prev_bridge_1step": 0,
+  "dwell_bridge_3step": 0,
+  "zero_action": 0
+ },
+ "max_certified_clearance": 0.0182,
+ "classification": "NO_EFFECT"
+}
