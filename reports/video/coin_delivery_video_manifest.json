@@ -1,0 +1,52 @@
+{
+ "trajectories": [
+  {
+   "policy": "P0",
+   "seed": 1011,
+   "embodiment": "POINT",
+   "clearance": 0.0793,
+   "strict_delivered": false,
+   "n_frames": 245
+  },
+  {
+   "policy": "P1",
+   "seed": 1011,
+   "embodiment": "POINT",
+   "clearance": 0.0793,
+   "strict_delivered": false,
+   "n_frames": 245
+  },
+  {
+   "policy": "P4",
+   "seed": 1011,
+   "embodiment": "POINT",
+   "clearance": 0.0793,
+   "strict_delivered": true,
+   "n_frames": 292
+  }
+ ],
+ "videos": {
+  "full_policy_strategy_comparison": {
+   "path": "reports/figures/2026-07-21-coin-delivery-e0/coin_delivery_full_policy_strategy_comparison.mp4",
+   "sha256_16": "d58237f6542afb8d"
+  },
+  "policy_grid": {
+   "path": "reports/figures/2026-07-21-final-video/coin_delivery_policy_grid.mp4",
+   "sha256_16": "f690f48e1d89aca7"
+  },
+  "ring_vs_sphere": {
+   "path": "reports/figures/2026-07-21-coin-delivery-e0/coin_delivery_pad_vs_ball_tip.mp4",
+   "sha256_16": "f8e00eadda4a4581"
+  },
+  "sphere_headline_real_time": {
+   "path": "reports/figures/2026-07-21-coin-delivery-e0/coin_delivery_ball_tip_zero_shot_real_time.mp4",
+   "sha256_16": "932d8d5b63856edb"
+  }
+ },
+ "checkpoints": {
+  "E_approach": "b822a660",
+  "handoff_transport": "8955e8db",
+  "frozen_transport": "8bd73d8c"
+ },
+ "reproduce": "python -m hymeko_rl.campaign campaign --spec configs/campaigns/coin_delivery_final_video.json"
+}
