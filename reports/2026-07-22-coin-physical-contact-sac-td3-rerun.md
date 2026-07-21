@@ -137,3 +137,19 @@ None touched (CORE protects Rust crates + spec + rtl; all work is in `hymeko_rl`
 - The frozen neutral bridge needs re-derivation under corrected physics if it is to be a deploy artifact (1/9).
 - No residual RL improvement over the scripted base was found under corrected physics — as under filtered physics,
   the productive direction is imitation/search (rollout-DAgger, exact-rollout search), not local off-policy RL.
+
+## Scope correction (appended 2026-07-22, after the standalone full-action experiment)
+
+This campaign tested **residual policies on top of an always-active scripted base** (`u_exec = clip(grasp_carry +
+delta·tanh(policy))`). It is valid only as `RESIDUAL_OVER_SCRIPT_NO_FINAL_SUCCESS_EFFECT`. It did **not** test whether
+a standalone BC clone of the scripted expert can be improved by RL. The follow-up experiment
+(`exp/coin-full-action-bc-sac-td3`, report `2026-07-22-coin-full-action-bc-sac-td3.md`) ran that: scripted expert →
+full-action BC clone (script disabled) → standalone SAC/TD3. Result: standalone SAC and TD3 **regress** the BC on
+every seed (BC strict 34/59 → SAC 17, TD3 24). Therefore:
+
+- The broad claim *"local off-policy RL caps at the supervised ceiling"* is **withdrawn as stated**. The precise
+  findings are: **residual-over-base = NO_EFFECT** (the base holds it at the ceiling); **standalone-from-BC =
+  REGRESSION** (RL falls below the BC ceiling). The residual/standalone distinction is load-bearing.
+- A secondary correction: the 60-vs-120 discrepancy above conflated two harnesses (`evaluate` loose/momentary vs
+  `eval_delivery` env-native) as well as the horizon; the horizon fix (commit `9cc0505`) and a single consistent
+  metric are used in the standalone experiment.
