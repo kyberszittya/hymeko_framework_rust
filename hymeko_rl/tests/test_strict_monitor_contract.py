@@ -27,32 +27,45 @@ def test_certifier_matches_raw_oracle_on_rollout():
     from hymeko_rl.experiments.coin_delivery_e0_campaign import _greedy_action_fn
     from hymeko_rl.experiments.coin_neutral_start import _cert_step, _clearance, neutral_env
     from hymeko_rl.train.sac import build_sac
-    env, cf = neutral_env(prefix_steps=0, geom="POINT"); inner = cf._env
+    env, cf = neutral_env(prefix_steps=0, geom="POINT")
+    inner = cf._env
     apply_initial_state(env, cf, _diag_state(), seed_hint=0)
     appr, _ = build_actors("P4_E_APPROACH_HANDOFF")
     tr, _ = build_sac("mlp", obs_dim=41, flat_dim=41, action_dim=6, action_scale=1.0)
-    tr.load_state_dict(torch.load("experiments/2026_07_21_coin_neutral_handoff/handoff_best.pt", weights_only=True)); tr.eval()
+    tr.load_state_dict(torch.load("experiments/2026_07_21_coin_neutral_handoff/handoff_best.pt", weights_only=True))
+    tr.eval()
     tfn = _greedy_action_fn(tr)
     cert_prod = DeliveryCertifier(initial_clearance=_clearance(inner))
     cert_raw = DeliveryCertifier(initial_clearance=_clearance(inner))
     max_dz = max_v = 0.0
     # phase 1: E-approach
     for _k in range(160):
-        sp = _cert_step(inner, cf); sr = raw_cert_step(inner, cf)
-        max_dz = max(max_dz, abs(sp.disk_to_zone - sr.disk_to_zone)); max_v = max(max_v, abs(sp.disk_speed - sr.disk_speed))
+        sp = _cert_step(inner, cf)
+        sr = raw_cert_step(inner, cf)
+        max_dz = max(max_dz, abs(sp.disk_to_zone - sr.disk_to_zone))
+        max_v = max(max_v, abs(sp.disk_speed - sr.disk_speed))
         assert sp.left_fingertip == sr.left_fingertip and sp.right_fingertip == sr.right_fingertip
-        cert_prod.update(sp); cert_raw.update(sr)
+        cert_prod.update(sp)
+        cert_raw.update(sr)
         m = inner._planar_metrics
         if m.left_contact and m.right_contact:
             break
         a = appr.action_mean(torch.as_tensor(np.asarray(inner.node_features(), np.float32)[None]))[0].detach().numpy()
         inner.step(np.asarray(a, np.float32))
-    cf._prev_coin = np.asarray(inner._planar_metrics.disk_pos[:2], np.float64); cf._t = 0; cf._both_hist = []
-    env._suffix_t = 0; env._prev_dtz = env._dtz(); env._prev_both = env._both(); o = cf._obs(np.zeros(4, np.float32))
+    cf._prev_coin = np.asarray(inner._planar_metrics.disk_pos[:2], np.float64)
+    cf._t = 0
+    cf._both_hist = []
+    env._suffix_t = 0
+    env._prev_dtz = env._dtz()
+    env._prev_both = env._both()
+    o = cf._obs(np.zeros(4, np.float32))
     for _t in range(200):
-        sp = _cert_step(inner, cf); sr = raw_cert_step(inner, cf)
-        max_dz = max(max_dz, abs(sp.disk_to_zone - sr.disk_to_zone)); max_v = max(max_v, abs(sp.disk_speed - sr.disk_speed))
-        cert_prod.update(sp); cert_raw.update(sr)
+        sp = _cert_step(inner, cf)
+        sr = raw_cert_step(inner, cf)
+        max_dz = max(max_dz, abs(sp.disk_to_zone - sr.disk_to_zone))
+        max_v = max(max_v, abs(sp.disk_speed - sr.disk_speed))
+        cert_prod.update(sp)
+        cert_raw.update(sr)
         if cert_prod.delivery_certified:
             break
         o = env.step(np.asarray(tfn(env, o, None), np.float32))[0]

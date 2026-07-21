@@ -1,0 +1,59 @@
+{
+ "contract": "physical-contact (coin<->arm-link ARM_LEGALITY 1/3)",
+ "sampler": "point-to-capsule-segment, clear=disk_radius+3mm",
+ "penetration_tol_mm": -0.5,
+ "banks": {
+  "N0_neutral_ring": {
+   "n": 59,
+   "n_valid": 59,
+   "worst_min_arm_dist_mm": 3.354
+  },
+  "N1_neutral_point": {
+   "n": 59,
+   "n_valid": 59,
+   "worst_min_arm_dist_mm": 3.354
+  },
+  "D1_ehandoff_ring": {
+   "n": 59,
+   "n_valid": 59,
+   "worst_min_arm_dist_mm": 5.741
+  },
+  "D2_ehandoff_point": {
+   "n": 59,
+   "n_valid": 50,
+   "worst_min_arm_dist_mm": -1.684
+  }
+ },
+ "D0_contact_prepared_ring": {
+  "n": 47,
+  "derivation": "bilateral+valid subset of D1"
+ },
+ "panel_9": [
+  1011,
+  1045,
+  1164,
+  1174,
+  1202,
+  1278,
+  1358,
+  1447,
+  1568
+ ],
+ "heldout_n": 50,
+ "seed_replacement_mapping": {
+  "1011": {
+   "old_coin_xy": [
+    -0.159,
+    0.122
+   ],
+   "old_min_arm_dist_mm": -13.1,
+   "new_coin_xy": [
+    -0.0324,
+    0.2268
+   ],
+   "new_min_arm_dist_mm": 77.635,
+   "reason": "filtered-physics centroid sampler spawned inside link capsule; point-to-segment sampler relocated arm-clear"
+  }
+ },
+ "finding_D2_point": "frozen E-approach under corrected physics squeezes coin <=1.68mm into an arm capsule at grasp on 9/59 POINT states; RING 59/59 valid; recorded+flagged invalid, not silently kept"
+}

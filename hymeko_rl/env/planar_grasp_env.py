@@ -574,8 +574,21 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         _arm_bodies = self._left_bodies | self._right_bodies
         _arm_geoms = [g for g in range(self.model.ngeom) if int(self.model.geom_bodyid[g]) in _arm_bodies]
         mujoco.mj_forward(self.model, self.data)                  # qpos=0 home pose → arm-link geom XY
-        self._rest_arm_xy = self.data.geom_xpos[_arm_geoms, :2].copy()
-        self._coin_arm_clear = float(env.disk_radius) + 0.025     # coin radius + a link half-width margin
+        # Freeze each arm-link geom as a CAPSULE SEGMENT (endpoints + radius), not just its centroid: a capsule
+        # extends ±half-length from its centre, so a coin near a capsule END clears the centroid yet penetrates the
+        # link (the seed-1011 defect). Point-to-segment distance is exact. Physical-contact contract 2026-07-22.
+        segs = []
+        for g in _arm_geoms:
+            c = self.data.geom_xpos[g][:2].copy()
+            r = float(self.model.geom_size[g][0])
+            if int(self.model.geom_type[g]) == int(mujoco.mjtGeom.mjGEOM_CAPSULE):
+                axis = self.data.geom_xmat[g].reshape(3, 3)[:2, 2]   # capsule long axis (local +Z) projected to XY
+                h = float(self.model.geom_size[g][1])
+                segs.append((c - h * axis, c + h * axis, r))
+            else:
+                segs.append((c, c.copy(), r))                        # hub/sphere: degenerate segment
+        self._rest_arm_segs = segs
+        self._coin_arm_clear = float(env.disk_radius) + 0.003     # coin radius + 3 mm margin (> 0.5 mm penetration tol)
         self._arm_joints = [
             j for j in range(self.model.njnt)
             if not (mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_JOINT, j)
@@ -717,9 +730,17 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         return any(np.hypot(x - cx, y - cy) <= _ARM_REACH for cx, cy in self._reach_centers)
 
     def _clear_of_arms(self, x: float, y: float) -> bool:
-        """True if ``(x, y)`` clears every arm link at the home pose — the coin must not spawn inside an arm."""
-        return bool(np.all(np.hypot(self._rest_arm_xy[:, 0] - x, self._rest_arm_xy[:, 1] - y)
-                           > self._coin_arm_clear))
+        """True if a coin at ``(x, y)`` clears every arm-link CAPSULE at the home pose (point-to-segment distance minus
+        the capsule radius exceeds the coin+margin clearance) — the coin must not spawn inside an arm."""
+        p = np.array([x, y], dtype=np.float64)
+        for a, b, r in self._rest_arm_segs:
+            ab = b - a
+            denom = float(ab @ ab)
+            t = 0.0 if denom < 1e-12 else float(np.clip((p - a) @ ab / denom, 0.0, 1.0))
+            seg_dist = float(np.linalg.norm(p - (a + t * ab)))
+            if seg_dist - r <= self._coin_arm_clear:
+                return False
+        return True
 
     def _sample_zone_xy(self) -> tuple[float, float]:
         """A small target zone re-placed each episode, kept within reach of **both** arms (so the
