@@ -44,14 +44,19 @@ def make_planar_arms_mjcf(*, base_x: float = 0.14, l1: float = 0.16, l2: float =
     servos). Each arm: base hub → link1 (length ``l1``) → link2 (length ``l2``) → fingertip site,
     capsules connected ``fromto`` (no gaps). Bases at ``x = ±base_x``; at home both arms point +Y."""
     def arm(side: int, nm: str) -> str:
+        # PHYSICAL-CONTACT contract (2026-07-22): every structural arm geom carries ARM_LEGALITY (contype 1 /
+        # conaffinity 3) so it PHYSICALLY collides with the coin (bit 2) — the arm links can no longer pass through
+        # the coin. (Previously the structural geoms had no collision attr → MuJoCo default 1/1 → filtered from the
+        # coin; only the fingertip collided. Whole-arm contact is now legal, not a body-shove failure.)
+        al = Collision.attr(Collision.ARM_LEGALITY)
         return f'''<body name="base_{nm}" pos="{side * base_x:g} -0.02 {z:g}">
-        <geom type="cylinder" size="0.022 0.012"/>
+        <geom type="cylinder" size="0.022 0.012" {al}/>
         <body name="link1_{nm}">
           <joint name="j1_{nm}" type="hinge" axis="0 0 1" range="-4.0 4.0"/>
-          <geom type="capsule" fromto="0 0 0 0 {l1:g} 0" size="0.012"/>
+          <geom type="capsule" fromto="0 0 0 0 {l1:g} 0" size="0.012" {al}/>
           <body name="link2_{nm}" pos="0 {l1:g} 0">
             <joint name="j2_{nm}" type="hinge" axis="0 0 1" range="-4.0 4.0"/>
-            <geom type="capsule" fromto="0 0 0 0 {l2:g} 0" size="0.01" rgba="0.4 0.6 0.95 1"/>
+            <geom type="capsule" fromto="0 0 0 0 {l2:g} 0" size="0.01" rgba="0.4 0.6 0.95 1" {al}/>
             <geom name="fingertip_{nm}" type="sphere" size="0.014" pos="0 {l2:g} 0" rgba="0.9 0.7 0.1 1" {Collision.attr(Collision.FINGERTIP)}/>
             <site name="tip_{nm}" pos="0 {l2:g} 0" size="0.013" rgba="0.9 0.7 0.1 1"/>
           </body>
