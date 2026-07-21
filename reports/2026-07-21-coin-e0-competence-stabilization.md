@@ -9,6 +9,15 @@ classification: LEARNED_DELIVERY_POSITIVE (learned E0 policy reproducibly certif
 
 # E0 learned Coin-Delivery competence stabilization (§1–§12)
 
+> **SCOPE CORRECTION (2026-07-21, initial-pose audit — supersedes the "clear-start" wording, NOT the data).** The
+> rollouts/eval here start from a **CONTACT_PREPARED_START**: `ContactFormationEnv.reset` restores a bank snapshot with
+> **both pads already contacting the coin**, and a scripted `grasp_carry` prefix then grips/moves it. The "+0.0698"
+> clearance is **post-prefix** (true neutral clearance for seed 1174 is +0.0144). So this result is a
+> **TRANSPORT-of-an-already-gripped-coin positive (5/9)**, not full delivery from a neutral arm pose — measured
+> **0/9 from true neutral**. The numbers below stand; the task scope is transport, not neutral-start approach. See
+> `2026-07-21-coin-e0-initial-pose-audit.md`. The apparent video slowness was PLAYBACK (real delivery ~1.2 s @ 100 fps),
+> not the policy.
+
 **Created-at:** 2026-07-21 15:10 JST. Objective: preserve and stabilize the learned competence already observed
 (static-BC SAC peaked 6/9, collapsed to 0/9 as α annealed). No embodiment / certificate / grasp change; no
 contact/relay/critic/replay/n-step reopen; no hyperparameter grid.
