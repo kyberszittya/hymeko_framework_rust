@@ -17,7 +17,9 @@ from enum import Enum
 
 import numpy as np
 
-from hymeko_rl.train.coin_grip_control import normal_contact_forces
+# NOTE: `normal_contact_forces` is imported lazily inside `rollout()` (its only call site) to break the
+# coin_delivery_actor <-> coin_grip_control import cycle (coin_grip_control transitively imports this module via
+# coin_transport/coin_delivery_acquisition -> actors.base -> coin_delivery_actor). See rollout() below.
 
 _EPS = 1e-9
 _ZONE = np.array([0.0, 0.16])
@@ -262,6 +264,7 @@ def rollout(env, action_fn, *, max_steps: int = 60, scramble=None) -> RolloutTra
 
     # Preconditions the caller has already reset/restored ``env`` to the desired start state; ``action_fn`` returns
     a finite 6-vector. # Postconditions returns a :class:`RolloutTrace` whose summaries are history-independent."""
+    from hymeko_rl.train.coin_grip_control import normal_contact_forces   # lazy: breaks the import cycle (see top)
     inner = _planar_env(env)
     m0 = inner.planar_metrics
     obs = getattr(env, "_last_obs", None)                       # learned-policy obs; a scripted actor ignores it
