@@ -131,19 +131,26 @@ def policy_strict(trace) -> bool:
                 and att.alpha_body <= _BODY_SHOVE_MAX and not_bulldoze)
 
 
-def evaluate(eval_env, actor, seeds) -> dict:
+def evaluate(eval_env, actor, seeds, *, max_steps: int | None = None) -> dict:
     """Deterministic eval through the canonical rollout(): loose competence (zone entry + progress) AND strict
-    competence (the strict predicate) + two-arm participation. Same rollout path scripted actors use."""
+    competence (the strict predicate) + two-arm participation. Same rollout path scripted actors use.
+
+    ``max_steps`` defaults to the DECLARED environment horizon ``eval_env.cfg.horizon`` — never a hard-coded
+    truncation. A caller may pass a shorter ``max_steps`` ONLY as a time-to-success diagnostic; it must never be
+    used for checkpoint selection or headline reporting (that silently changes the task definition — see the
+    2026-07-22 60-vs-120 horizon artifact). # Preconditions ``eval_env`` exposes ``cfg.horizon`` (the deployment
+    horizon). # Postconditions the rollout length equals the declared horizon unless explicitly overridden."""
     import torch
 
     def greedy(inner, t, obs):
         with torch.no_grad():
             return actor.action_mean(torch.as_tensor(np.asarray(obs)[None], dtype=torch.float32)).numpy()[0]
 
+    steps = int(eval_env.cfg.horizon if max_steps is None else max_steps)
     rows = []
     for s in seeds:
         eval_env.reset(seed=int(s))
-        tr = rollout(eval_env, greedy, max_steps=60)
+        tr = rollout(eval_env, greedy, max_steps=steps)
         att = _attribution_from_trace(tr)
         rows.append(dict(loose=tr.loose, strict=policy_strict(tr), progress=tr.progress, both_frac=tr.both_frac,
                          aL=att.alpha_L, aR=att.alpha_R,
