@@ -114,3 +114,10 @@ htmlcov/
 
 # secrets — never commit
 .keys/
+
+# Media artifacts — keep on disk, not in git (2026-07-21, user request)
+*.mp4
+*.gif
+# Campaign run artifacts (results kept out of git; live under experiments/campaign_*)
+experiments/campaign_smoke/
+experiments/campaign_coin_video/
