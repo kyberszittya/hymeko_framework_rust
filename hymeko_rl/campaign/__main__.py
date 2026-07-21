@@ -36,18 +36,51 @@ def _render(run_dir: str) -> int:
     return 0
 
 
+_DOMAIN_ALIAS = {"coin": "coin_fixed_position"}   # the CLI-friendly domain name → adapter used by the flag form
+
+
+def _spec_from_flags(a: argparse.Namespace) -> ExperimentSpec:
+    """Build a fixed-position Coin replay spec from the flag form (``run --domain coin --seed … / --initial-state …``)."""
+    domain = _DOMAIN_ALIAS.get(a.domain, a.domain)
+    mode = "exact" if a.initial_state else "seed"
+    opts = {"mode": mode, "policy_chain": a.policy_chain, "repetitions": a.repetitions, "embodiment": a.embodiment}
+    if mode == "exact":
+        opts["initial_state"] = a.initial_state
+        name = f"exact_{Path(a.initial_state).stem}"
+    else:
+        opts["seed"] = a.seed
+        name = f"seed_{a.seed}"
+    return ExperimentSpec(domain=domain, experiment_name=name, model_variant=a.policy_chain,
+                          dataset_or_problem=name, seed=a.seed or 0, domain_options=opts,
+                          artifact_root="experiments/coin_fixed_position")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(prog="hymeko_rl.campaign")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for c in ("run", "campaign"):
-        sp = sub.add_parser(c)
-        sp.add_argument("--spec", required=True)
+    rp = sub.add_parser("run")
+    rp.add_argument("--spec")                                      # generic JSON spec (optional if flag form is used)
+    rp.add_argument("--domain")                                    # flag form: coin fixed-position replay
+    rp.add_argument("--seed", type=int)
+    rp.add_argument("--embodiment", default="POINT")
+    rp.add_argument("--policy-chain", dest="policy_chain", default="e_handoff",
+                    choices=["zero", "frozen", "e_handoff", "causal"])
+    rp.add_argument("--repetitions", type=int, default=10)
+    rp.add_argument("--initial-state", dest="initial_state")
+    cp = sub.add_parser("campaign")
+    cp.add_argument("--spec", required=True)
     for c in ("render", "verify"):
         sp = sub.add_parser(c)
         sp.add_argument("--run", required=True)
     a = ap.parse_args()
     if a.cmd == "run":
-        r = run_one(ExperimentSpec.from_dict(json.loads(Path(a.spec).read_text())))
+        if a.domain:
+            spec = _spec_from_flags(a)
+        elif a.spec:
+            spec = ExperimentSpec.from_dict(json.loads(Path(a.spec).read_text()))
+        else:
+            ap.error("run requires either --spec <json> or the flag form (--domain coin --seed … / --initial-state …)")
+        r = run_one(spec)
         print(json.dumps(r, indent=1, default=str), flush=True)
     elif a.cmd == "campaign":
         run_campaign(CampaignSpec.from_manifest(a.spec))

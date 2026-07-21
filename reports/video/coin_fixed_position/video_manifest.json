@@ -1,0 +1,12 @@
+{
+ "real_time": {
+  "path": "reports/video/coin_fixed_position/coin_delivery_fixed_position_real_time.mp4",
+  "sha256": "ffe9dac97f0c553a",
+  "strict_delivered": true
+ },
+ "controls": {
+  "path": "reports/video/coin_fixed_position/coin_delivery_fixed_position_controls.mp4",
+  "sha256": "484486b6bd8b579d",
+  "n_frames": 815
+ }
+}

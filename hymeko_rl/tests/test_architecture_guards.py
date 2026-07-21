@@ -35,7 +35,10 @@ def _imports_experiments(path: Path) -> bool:
 # Ratchet baseline measured 2026-07-21 (Phase 10 survey). Production→experiments imports may only DECREASE — a new
 # violation fails here, and every migration should lower this number. Dominant cluster: galambos_demo generic helpers
 # (PhasePushController / _ik_action / _extract_arms) pulled into ~13 agents/env modules → migrate to a production home.
-_DEPENDENCY_DIRECTION_BASELINE = 40
+# 43 after the fixed-position replay modules (hymeko_rl/coin_delivery/fixed_position*) were added; they import ONLY the
+# canonical coin_* chain (coin_neutral_start / coin_delivery_e0_*), which resides in experiments/, NOT the galambos/
+# coin-toss arc — verified by test_coin_delivery_import_closure_is_experiment_free.
+_DEPENDENCY_DIRECTION_BASELINE = 43
 
 
 def test_production_does_not_import_experiments_ratchet() -> None:

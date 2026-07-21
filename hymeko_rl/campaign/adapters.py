@@ -195,8 +195,52 @@ class HyperSignedLINGAMAdapter:
                 "bootstrap_mean_edges": float(np.mean(boot))}
 
 
+# ─────────────────────────────── Coin fixed-position replay ───────────────────
+class CoinFixedPositionAdapter:
+    """Fixed-initial-position Coin Delivery replay: deterministic problem replay (``seed``) or exact-state replay
+    (``initial_state`` JSON), with the P0/P1/P4 causal controls. Delegates to
+    :func:`hymeko_rl.coin_delivery.fixed_position_campaign.run_fixed_replay` — no algorithm re-implementation."""
+
+    _CHAINS = ("zero", "frozen", "e_handoff", "causal")
+
+    def validate(self, spec: Any) -> dict[str, Any]:
+        o = spec.domain_options
+        mode = o.get("mode")
+        if mode not in ("seed", "exact"):
+            raise ValueError(f"coin fixed-position mode {mode!r} invalid; expected 'seed' or 'exact'")
+        pc = o.get("policy_chain", "e_handoff")
+        if pc not in self._CHAINS:
+            raise ValueError(f"policy_chain {pc!r} unknown; valid {sorted(self._CHAINS)}")
+        if mode == "seed" and o.get("seed") is None and spec.seed is None:
+            raise ValueError("mode='seed' requires a seed")
+        if mode == "exact" and not o.get("initial_state"):
+            raise ValueError("mode='exact' requires an initial_state path")
+        return {"mode": mode, "seed": o.get("seed", spec.seed), "initial_state": o.get("initial_state"),
+                "policy_chain": pc, "repetitions": int(o.get("repetitions", 10)),
+                "embodiment": o.get("embodiment", "POINT"), "neutral_start": bool(o.get("neutral_start", True))}
+
+    def execute(self, spec: Any, out: Path, *, emit: Callable, log: Callable) -> dict[str, Any]:
+        import json
+
+        from hymeko_rl.coin_delivery.fixed_position_campaign import run_fixed_replay
+        cfg = self.validate(spec)
+        init = json.loads(Path(cfg["initial_state"]).read_text()) if cfg["initial_state"] else None
+        res = run_fixed_replay(mode=cfg["mode"], embodiment=cfg["embodiment"], seed=cfg["seed"], initial_state=init,
+                               policy_chain=cfg["policy_chain"], repetitions=cfg["repetitions"],
+                               neutral_start=cfg["neutral_start"], out=out, log=log)
+        for pol, row in res["causal_table"].items():
+            emit({"policy": pol, "strict": row["strict"], "first_contact": row["first_contact"],
+                  "zone_entry": row["zone_entry"], "problem_hash": res["problem"]["problem_hash"]})
+        return {"domain": "coin_fixed_position", "mode": cfg["mode"],
+                "problem_hash": res["problem"]["problem_hash"],
+                "geom_fp": res["problem"]["env_fingerprint"]["geom_fp"],
+                "signed_clearance": res["problem"]["reachability"]["signed_clearance"],
+                "causal_strict": {p: r["strict"] for p, r in res["causal_table"].items()}}
+
+
 ADAPTERS: dict[str, type] = {
     "coin_delivery": CoinDeliveryAdapter,
+    "coin_fixed_position": CoinFixedPositionAdapter,
     "cip": CIPAdapter,
     "hypersignedlingam": HyperSignedLINGAMAdapter,
 }

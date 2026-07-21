@@ -1,0 +1,48 @@
+{
+ "embodiment": "POINT",
+ "arm_qpos": [
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "arm_qvel": [
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "coin_position": [
+  -0.1588766678911168,
+  0.12157943813615868,
+  0.02
+ ],
+ "coin_quaternion": [
+  1.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "coin_linear_velocity": [
+  0.0,
+  0.0,
+  0.0
+ ],
+ "coin_angular_velocity": [
+  0.0,
+  0.0,
+  0.0
+ ],
+ "target_position": [
+  -0.02158751596495634,
+  0.14506588284075164,
+  0.004
+ ],
+ "zone_half": 0.04,
+ "control_dt": 0.01,
+ "provenance": {
+  "source": "seed",
+  "seed": 1011,
+  "note": "exported seed-1011 canonical neutral problem"
+ }
+}
