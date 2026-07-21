@@ -180,6 +180,32 @@ def with_fingertip_shape(arm_mjcf: str, shape: str, size: str, friction: "float 
     return ET.tostring(root, encoding="unicode")
 
 
+def with_fingertip_clamp(arm_mjcf: str, coin_radius: float = 0.02, clearance: float = -0.003,
+                         prong_radius: float = 0.011) -> str:
+    """CONCAVE_CLAMP (COIN-CLAMP embodiment): replace each single point/flat ``fingertip_{side}`` geom with a shallow
+    concave CRADLE — two prong geoms straddling the approach axis, forming a V-notch that opens toward the coin. The
+    fingertip approaches along its link's local +Y; the coin (a cylinder, cross-section in X-Y) nestles between the two
+    prongs offset ±(coin_radius+clearance) in local X, so the two contact normals pass on BOTH sides of the coin centre
+    → force closure (the flat pad had one central normal → the cylinder rolled). Both prongs keep the ``fingertip_``
+    prefix + side substring + collision mask, so contact attribution / legality treat them as the fingertip. No new
+    actuator (the existing aperture/squeeze closes the opposing cradles). # Preconditions ``arm_mjcf`` has
+    ``fingertip_{side}`` geoms. # Postconditions each is replaced by two ``fingertip_{side}_{0,1}`` prong spheres."""
+    dx = float(coin_radius + clearance)                            # half the notch opening (> coin radius)
+    root = ET.fromstring(arm_mjcf)
+    for body in root.iter("body"):
+        for geom in [g for g in list(body) if g.tag == "geom" and str(g.get("name", "")).startswith("fingertip_")]:
+            name = str(geom.get("name"))
+            pos = _vec3(geom.get("pos", "0 0 0"))
+            keep = {k: geom.get(k) for k in ("contype", "conaffinity", "rgba", "friction") if geom.get(k) is not None}
+            body.remove(geom)
+            for i, off in enumerate((-dx, dx)):                    # two prongs straddling the coin centre in local X
+                body.append(ET.fromstring(
+                    f'<geom name="{name}_{i}" type="sphere" size="{prong_radius:g}" '
+                    f'pos="{pos[0] + off:g} {pos[1]:g} {pos[2]:g}" '
+                    + " ".join(f'{k}="{v}"' for k, v in keep.items()) + "/>"))
+    return ET.tostring(root, encoding="unicode")
+
+
 def with_arm_coin_collision(arm_mjcf: str) -> str:
     """v2 physics: make the arm-body geoms physically collide with the coin (they pass through it in v1).
 

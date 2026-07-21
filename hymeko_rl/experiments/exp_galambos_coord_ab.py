@@ -89,11 +89,18 @@ def make_env(*, coord: bool, difficulty: float, treatment_hymeko: str = _COORD_H
     ``coord`` and ``deliver`` are mutually exclusive; ``coord`` wins if both are set. Reward-in-hymeko (no in-memory
     term surgery). # Postconditions: ``env.reward_file`` names the active reward's ``.hymeko`` source.
     """
-    # fingertip_contact_geometry: POINT (sphere = the existing golden model, no-op) vs FLAT_PAD (box = a finite contact
-    # patch). Only the fingertip geom type/size changes; joint/actuator/arm/coin/target/reward/predicate are untouched.
-    if fingertip_geometry not in ("POINT", "FLAT_PAD"):
-        raise ValueError(f"fingertip_geometry must be POINT or FLAT_PAD; got {fingertip_geometry!r}")
-    _fg = {} if fingertip_geometry == "POINT" else {"fingertip_shape": "box", "fingertip_size": _FLAT_PAD_SIZE}
+    # fingertip_contact_geometry: POINT (sphere = golden, no-op), FLAT_PAD (box = finite patch), CONCAVE_CLAMP (two
+    # prong geoms = a V-cradle giving force closure). Only the fingertip geometry changes; joint/actuator/arm/coin/
+    # target/reward/predicate are untouched (CONCAVE_CLAMP uses the existing aperture DoF to close, no new actuator).
+    if fingertip_geometry not in ("POINT", "FLAT_PAD", "CONCAVE_CLAMP"):
+        raise ValueError(f"fingertip_geometry must be POINT / FLAT_PAD / CONCAVE_CLAMP; got {fingertip_geometry!r}")
+    if fingertip_geometry == "POINT":
+        _fg: dict = {}
+    elif fingertip_geometry == "FLAT_PAD":
+        _fg = {"fingertip_shape": "box", "fingertip_size": _FLAT_PAD_SIZE}
+    else:
+        from hymeko_rl.env.planar_grasp_env import with_fingertip_clamp
+        _fg = {"arm_mjcf_transform": with_fingertip_clamp}
     env = PlanarGraspEnv(robot=None, max_steps=_MAX_STEPS, difficulty=difficulty, **_fg)
     if coord:
         env.reward_spec = RewardSpec.from_hymeko(treatment_hymeko)
