@@ -1,0 +1,10 @@
+{
+ "init": "zero_residual_head (faithful BC of scripted grasp_carry base)",
+ "obs_dim": 41,
+ "act_dim": 6,
+ "max_sac_td3_delta": 0.0,
+ "identical_init_verified": true,
+ "bc_native_panel_zone": 1.0,
+ "reproduces_ceiling_9_9": true,
+ "ckpt_sha256_12": "c03ad6175d31"
+}
