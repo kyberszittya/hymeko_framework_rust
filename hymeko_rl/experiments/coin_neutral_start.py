@@ -222,7 +222,9 @@ def _cert_step(inner, cf) -> CertStep:
     _both, fl, fr = _both_pad_contact(cf)
     return CertStep(disk_to_zone=float(met.disk_to_zone), disk_speed=float(np.linalg.norm(v)),
                     left_fingertip=lf, right_fingertip=rf, arm_body_contact=body, arm_body_impulse=imp,
-                    force_left=fl, force_right=fr)
+                    force_left=fl, force_right=fr,
+                    body_progress=float(getattr(inner, "_body_progress", 0.0)),   # body-only-driven coin displacement
+                    ever_grasped=bool(getattr(inner, "_ever_grasped", False)))    # a bilateral grasp formed (physical-contact contract)
 
 
 def _e_approach_actor():

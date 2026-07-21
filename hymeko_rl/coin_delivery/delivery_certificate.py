@@ -32,10 +32,14 @@ class CertStep:
     disk_speed: float            # in-plane coin speed (m/s)
     left_fingertip: bool         # left fingertip touches the coin this step
     right_fingertip: bool        # right fingertip touches the coin this step
-    arm_body_contact: bool       # a forbidden (non-fingertip) arm link touches the coin this step (a shove)
-    arm_body_impulse: float      # magnitude of that illegal contact impulse this step (N·s-ish; 0 if none)
+    arm_body_contact: bool       # a non-fingertip arm link touches the coin this step (LEGAL under the physical-
+                                 # contact contract 2026-07-22 — informational, NOT an automatic failure)
+    arm_body_impulse: float      # magnitude of that arm-link contact impulse this step (N·s-ish; 0 if none)
     force_left: float = 0.0      # left fingertip normal force (N) — only used by the GRASP certificate
     force_right: float = 0.0     # right fingertip normal force (N) — only used by the GRASP certificate
+    body_progress: float = 0.0   # cumulative coin→zone displacement DRIVEN BY body-only contact (no fingertip); the
+                                 # excessive-sweep diagnostic reads this — a large value with no grasp is a bulldoze
+    ever_grasped: bool = False   # a bilateral fingertip grasp has formed at some point (controlled manipulation)
 
 
 @dataclass
@@ -44,7 +48,10 @@ class DeliveryThresholds:
     center_tol: float = 0.02          # zone-entry / centered tolerance (m) — DeliveryRLConfig.center_tol
     settle_vel: float = 0.06          # settled coin-speed ceiling (m/s)
     dwell_req: int = 6                # consecutive centered+settled+clean steps required
-    impulse_tol: float = 1e-3         # per-step illegal-impulse ceiling for a CLEAN mechanism
+    impulse_tol: float = 1e-3         # (retained for the legacy pre-physical-contact interpretation; not used by the
+                                      # corrected clean predicate — arm-link contact is legal)
+    body_sweep_max: float = 0.05      # EXCESSIVE-SWEEP threshold (m): body-only-driven coin displacement above this,
+                                      # with NO grasp ever formed, is a bulldoze → not a clean delivery
     grasp_force_min: float = 0.3      # per-side minimum normal force (N) for a force-closure interval
 
 
@@ -53,9 +60,14 @@ class DeliveryCertifier:
     """Streams :class:`CertStep`s and accumulates the two certificates.
 
     COIN_DELIVERY_STRICT passes when, for ``dwell_req`` consecutive steps, the coin is centered (``<= center_tol``),
-    settled (``speed < settle_vel``) and the mechanism is CLEAN (no body-shove, illegal impulse ``<= impulse_tol``) —
-    AND the displacement is robot-attributed (a fingertip touched the coin at some point) AND the initial footprints
-    were disjoint (``initial_clearance > 0``). No force closure is required.
+    settled (``speed < settle_vel``) and the mechanism is CLEAN — AND the displacement is robot-attributed (a
+    fingertip touched the coin at some point) AND the initial footprints were disjoint (``initial_clearance > 0``).
+    No force closure is required.
+
+    CLEAN (physical-contact contract, 2026-07-22): arm-link contact is **legal** — whole-arm manipulation is allowed.
+    A step is UNCLEAN only for an **excessive body-driven sweep**: body-only-attributed coin displacement exceeding
+    ``body_sweep_max`` while **no bilateral grasp has ever formed** (a bulldoze with no controlled contact). Ordinary
+    arm-link contact incidental to a fingertip grasp/carry does NOT make the step unclean.
 
     COIN_GRASP_DELIVERY_STRICT additionally requires, across that same dwell, sustained BILATERAL fingertip contact
     with per-side force ``>= grasp_force_min`` (a force-closure interval).
@@ -80,7 +92,9 @@ class DeliveryCertifier:
         self.robot_touched = self.robot_touched or s.left_fingertip or s.right_fingertip
         centered = s.disk_to_zone <= self.th.center_tol
         settled = s.disk_speed < self.th.settle_vel
-        clean = (not s.arm_body_contact) and (s.arm_body_impulse <= self.th.impulse_tol)
+        # arm-link contact is LEGAL; UNCLEAN only on an excessive body-only-driven sweep with no grasp (a bulldoze)
+        excessive_body_sweep = (s.body_progress > self.th.body_sweep_max) and (not s.ever_grasped)
+        clean = not excessive_body_sweep
         if centered and settled and clean:
             self.delivery_dwell += 1
             self.best_delivery_dwell = max(self.best_delivery_dwell, self.delivery_dwell)
