@@ -82,6 +82,32 @@ def with_distal_pad_orientation(arm_mjcf: str, *, kp: float = 6.0, kv: float = 0
     return ET.tostring(root, encoding="unicode")
 
 
+def with_pad_closure(arm_mjcf: str, *, kp: float = 30.0, kv: float = 2.0, armature: float = 2e-3,
+                     slide_range: float = 0.02) -> str:
+    """Add one independent PAD-CLOSURE DOF per fingertip: a slide joint along the pad's local X (the measured contact
+    normal) + a position actuator ``a_close_{side}``, so each pad can be pressed toward the coin *independently* of the
+    arm (a regulated normal-force clamp rather than the arm's coupled squeeze). Composes with
+    :func:`with_distal_pad_orientation` (apply closure AFTER the wrist so the slide is on the wrist-oriented pad body).
+    # Preconditions ``arm_mjcf`` has ``fingertip_{side}`` geoms and an ``<actuator>`` block. # Postconditions each
+    fingertip's parent body gains one slide DOF + one position actuator; the fingertip geom is unmoved at rest."""
+    root = ET.fromstring(arm_mjcf)
+    actuator = root.find("actuator")
+    if actuator is None:
+        actuator = ET.SubElement(root, "actuator")
+    for body in list(root.iter("body")):
+        ft = next((g for g in body.findall("geom") if str(g.get("name", "")).startswith("fingertip_")), None)
+        if ft is None:
+            continue
+        side = ft.get("name", "").split("_", 1)[1].split("_")[0]   # "left"/"right" (handles fingertip_left_0)
+        ET.SubElement(body, "joint", {"name": f"pad_slide_{side}", "type": "slide", "axis": "1 0 0",
+                                      "range": f"{-slide_range:g} {slide_range:g}", "damping": "0.2",
+                                      "armature": f"{armature:g}"})
+        ET.SubElement(actuator, "position", {"name": f"a_close_{side}", "joint": f"pad_slide_{side}",
+                                             "kp": f"{kp:g}", "kv": f"{kv:g}",
+                                             "ctrlrange": f"{-slide_range:g} {slide_range:g}"})
+    return ET.tostring(root, encoding="unicode")
+
+
 def _canonical_arm_mjcf() -> str:
     """The canonical arm MJCF the delivery env is built from (emitted arm + injected fingertip sites/geoms)."""
     from hymeko_rl.env.arm_world import emit_arm_mjcf

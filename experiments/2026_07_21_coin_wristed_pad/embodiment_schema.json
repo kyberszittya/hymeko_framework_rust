@@ -1,0 +1,54 @@
+{
+ "E0_passive_ring": {
+  "nu": 4,
+  "nq": 7,
+  "model_hash": "935fa3c0eace1be8",
+  "actuators": [
+   "a_j1_left",
+   "a_j2_left",
+   "a_j1_right",
+   "a_j2_right"
+  ]
+ },
+ "E1_wrist": {
+  "nu": 6,
+  "nq": 9,
+  "model_hash": "efe80ed145c98dbc",
+  "actuators": [
+   "a_j1_left",
+   "a_j2_left",
+   "a_j1_right",
+   "a_j2_right",
+   "a_pad_left",
+   "a_pad_right"
+  ]
+ },
+ "E2_closure": {
+  "nu": 6,
+  "nq": 9,
+  "model_hash": "8f7c6b33dac31957",
+  "actuators": [
+   "a_j1_left",
+   "a_j2_left",
+   "a_j1_right",
+   "a_j2_right",
+   "a_close_left",
+   "a_close_right"
+  ]
+ },
+ "E3_wrist_closure": {
+  "nu": 8,
+  "nq": 11,
+  "model_hash": "3112288995ae8ea3",
+  "actuators": [
+   "a_j1_left",
+   "a_j2_left",
+   "a_j1_right",
+   "a_j2_right",
+   "a_pad_left",
+   "a_pad_right",
+   "a_close_left",
+   "a_close_right"
+  ]
+ }
+}
