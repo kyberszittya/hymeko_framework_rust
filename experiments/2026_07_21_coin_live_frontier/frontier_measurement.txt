@@ -1,0 +1,19 @@
+{
+ "old_bank_n": 39,
+ "old_dtz_median": 0.07383930683135986,
+ "old_dtz_min": 0.046285711228847504,
+ "old_dtz_max": 0.08529838174581528,
+ "new_n": 30,
+ "new_solvable": 6,
+ "new_earliest_median": 17.0,
+ "new_handoff_dtz_median": 0.056499999999999995,
+ "new_handoff_dtz": [
+  0.031,
+  0.034,
+  0.056,
+  0.057,
+  0.059,
+  0.061
+ ],
+ "new_horizon_median": 41.5
+}
