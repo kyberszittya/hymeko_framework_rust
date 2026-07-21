@@ -1,0 +1,27 @@
+{
+  "name": "cip_smoke",
+  "defaults": {
+    "domain": "cip",
+    "experiment_name": "causal_information_prioritization",
+    "artifact_root": "experiments/campaign_smoke",
+    "backend": "local",
+    "resource_class": "cpu"
+  },
+  "runs": [
+    {
+      "model_variant": "directlingam",
+      "execution_strategy": "lowest_importance_swap",
+      "dataset_or_problem": "synthetic_linear_sem",
+      "seed": 0,
+      "domain_options": {
+        "prioritization_model": "directlingam",
+        "evidence_source": "synthetic_sem",
+        "selection_strategy": "lowest_importance",
+        "n_samples": 400,
+        "d_state": 5,
+        "d_action": 2,
+        "budget": 2
+      }
+    }
+  ]
+}

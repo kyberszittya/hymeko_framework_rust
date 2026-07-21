@@ -1,0 +1,21 @@
+{
+  "name": "coin_delivery_final_video",
+  "defaults": {
+    "domain": "coin_delivery",
+    "experiment_name": "neutral_start_delivery",
+    "artifact_root": "experiments/campaign_coin_video",
+    "backend": "local",
+    "resource_class": "cpu"
+  },
+  "runs": [
+    {"model_variant": "P4_E_APPROACH_HANDOFF", "execution_strategy": "S1_FAST_HANDOFF", "dataset_or_problem": "neutral_1011", "domain_options": {"policy": "P4_E_APPROACH_HANDOFF", "strategy": "S1_FAST_HANDOFF", "embodiment": "RING", "problem_id": 1011, "reps": 3}},
+    {"model_variant": "P4_E_APPROACH_HANDOFF", "execution_strategy": "S1_FAST_HANDOFF", "dataset_or_problem": "neutral_1045", "domain_options": {"policy": "P4_E_APPROACH_HANDOFF", "strategy": "S1_FAST_HANDOFF", "embodiment": "RING", "problem_id": 1045, "reps": 3}},
+    {"model_variant": "P4_E_APPROACH_HANDOFF", "execution_strategy": "S1_FAST_HANDOFF", "dataset_or_problem": "neutral_1447", "domain_options": {"policy": "P4_E_APPROACH_HANDOFF", "strategy": "S1_FAST_HANDOFF", "embodiment": "RING", "problem_id": 1447, "reps": 3}},
+    {"model_variant": "P4_E_APPROACH_HANDOFF", "execution_strategy": "S1_FAST_HANDOFF", "dataset_or_problem": "point_1011", "domain_options": {"policy": "P4_E_APPROACH_HANDOFF", "strategy": "S1_FAST_HANDOFF", "embodiment": "POINT", "problem_id": 1011, "reps": 3}},
+    {"model_variant": "P4_E_APPROACH_HANDOFF", "execution_strategy": "S1_FAST_HANDOFF", "dataset_or_problem": "point_1174", "domain_options": {"policy": "P4_E_APPROACH_HANDOFF", "strategy": "S1_FAST_HANDOFF", "embodiment": "POINT", "problem_id": 1174, "reps": 3}},
+    {"model_variant": "P0_ZERO_ACTION", "execution_strategy": "S1_FAST_HANDOFF", "dataset_or_problem": "neutral_1011", "domain_options": {"policy": "P0_ZERO_ACTION", "strategy": "S1_FAST_HANDOFF", "embodiment": "RING", "problem_id": 1011, "reps": 3}},
+    {"model_variant": "P1_FROZEN_TRANSPORT", "execution_strategy": "S1_FAST_HANDOFF", "dataset_or_problem": "neutral_1011", "domain_options": {"policy": "P1_FROZEN_TRANSPORT", "strategy": "S1_FAST_HANDOFF", "embodiment": "RING", "problem_id": 1011, "reps": 3}},
+    {"model_variant": "P3_E_APPROACH_FROZEN", "execution_strategy": "S1_FAST_HANDOFF", "dataset_or_problem": "neutral_1011", "domain_options": {"policy": "P3_E_APPROACH_FROZEN", "strategy": "S1_FAST_HANDOFF", "embodiment": "RING", "problem_id": 1011, "reps": 3}},
+    {"model_variant": "P4_E_APPROACH_HANDOFF", "execution_strategy": "S0_SLOW_HANDOFF", "dataset_or_problem": "neutral_1045", "domain_options": {"policy": "P4_E_APPROACH_HANDOFF", "strategy": "S0_SLOW_HANDOFF", "embodiment": "RING", "problem_id": 1045, "reps": 3}}
+  ]
+}
