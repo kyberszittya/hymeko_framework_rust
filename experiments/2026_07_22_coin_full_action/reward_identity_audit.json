@@ -1,0 +1,26 @@
+{
+ "step1_live_reward": "hymeko_rl.train.coin_delivery_rl.delivery_reward",
+ "live_terms": {
+  "w_progress": 10.0,
+  "w_zone": 1.0,
+  "w_center": 3.0,
+  "w_stall": 0.02,
+  "w_drop": 0.5
+ },
+ "live_impl_hash": "bd0415e6416a7482",
+ "declared_v2b_sha256": "98cd3ad6af02a1bf4f7d2adc9e67136f4e633a9f918eede4feaec2fa86efa806",
+ "live_loads_v2b": false,
+ "live_is_v2b": false,
+ "v2b_terms": "approach4 bothapproach4 oob2 terminal_deliver_graded30 zoneprog10 body_progress_penalty5",
+ "step2_reward_hold_at_center_consumed": 0.0,
+ "step2_hold_incentive": false,
+ "step3_action_contract_max_delta": 0.0,
+ "step3_obs_norm": true,
+ "step3_pass": true,
+ "diagnosis": "REWARD_IDENTITY_MISMATCH",
+ "mechanism": "Live full-action env optimizes delivery_reward (PBRS progress + ONE-SHOT center-reach, weights w_progress10/w_zone1/w_center3), NOT the declared galambos_task_deliver_v2b.hymeko (contact-quality-gated: terminal_deliver_graded30 + body_progress_penalty5 + approach/bothapproach). delivery_reward gives ZERO reward for HOLDING at center once consumed, but the STRICT eval requires a 6-step HELD dwell. SAC/TD3 optimize reach-not-hold and are graded on hold -> the sub-BC strict scores are a reward/eval confound, NOT proven RL-cannot-improve-BC. Action/obs contract is clean (delta 0), so the defect is the reward, not normalization.",
+ "runs_invalidated": [
+  "90e323c SAC/TD3"
+ ],
+ "steps_4_5_deferred": "critic calibration + first-update microscope are only meaningful AFTER the reward is corrected (a critic calibrated on the wrong reward measures the wrong target)"
+}
