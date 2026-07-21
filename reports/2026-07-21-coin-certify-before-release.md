@@ -9,6 +9,16 @@ classification: FORCE_CLOSURE_BLOCKED (release-disturbance falsified; strict pre
 
 # Certify-before-release oracle (§1–§9)
 
+> **CORRECTION (2026-07-21, task-semantics fix — supersedes the interpretation below, NOT the data).** This report
+> conflated two distinct tasks. **Coin Delivery** (move the coin from a visibly-outside start into the zone and leave
+> it stably) does **not** require force closure — a robot-caused push/coast is a *valid* delivery. **Grasp Delivery**
+> is a separate, harder task that does. The E0 strict "successes" are therefore **valid COIN_DELIVERY_STRICT
+> successes, not phantoms**; only the separate COIN_GRASP_DELIVERY_STRICT is force-closure-blocked. The FORCE_CLOSURE_
+> BLOCKED verdict stands **only for the grasp criterion**. Corrected reading: *"The existing strict predicate certifies
+> stable Coin Delivery; it does not certify force closure. E0 produced valid push/coast delivery successes, while all
+> tested embodiments failed the separate grasp-delivery criterion."* See `2026-07-21-coin-delivery-e0-learned.md` for
+> the two named predicates, the reproduced E0 delivery oracle (DELIVERY_ORACLE_POSITIVE), and the learned campaign.
+
 **Created-at:** 2026-07-21 13:24 JST. The prior report returned NO_FORCE_CLOSURE; the user rejected it and named a
 specific alternative defect: *"RELEASE/WITHDRAW destroys the centered low-velocity state before the strict dwell
 certificate can accumulate."* This iteration builds the four fixed oracle variants (A/B/C/D) that differ **only** in
