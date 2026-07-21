@@ -119,12 +119,12 @@ def neutral_env(*, prefix_steps: int = 0, geom: str | None = None):
         from hymeko_rl.experiments.coin_delivery_e0_campaign import _e0_env
         _base, cf = _e0_env()
     else:
+        from hymeko_rl.coin_delivery.env_factory import (
+            C1_HORIZON, c1_contact_config, coin_monitor_contract, load_contact_bank, make_coin_env)
         from hymeko_rl.env.pad_actuation import build_wristed_contact_env
-        from hymeko_rl.experiments.coin_wristed_delivery import _roll_env
-        from hymeko_rl.experiments.pedc_selection import _C1_HORIZON, _ctx, _load_pkl_bank, c1_config
-        planar = _roll_env(geom)
-        cf = build_wristed_contact_env(planar, _load_pkl_bank("c1_heldseed_bank.pkl", holdout=False),
-                                       _ctx()["contract"], horizon=_C1_HORIZON, cfg=c1_config())
+        planar = make_coin_env(embodiment=geom)
+        cf = build_wristed_contact_env(planar, load_contact_bank("c1_heldseed_bank.pkl", holdout=False),
+                                       coin_monitor_contract(), horizon=C1_HORIZON, cfg=c1_contact_config())
     cf._restore = lambda item: None                                 # neutralise the bank-snapshot restore ⇒ neutral pose
     env = NeutralCoinDeliveryEnv(cf, DeliveryRLConfig(), prefix_steps=prefix_steps)
     return env, cf
@@ -226,8 +226,8 @@ def _cert_step(inner, cf) -> CertStep:
 
 
 def _e_approach_actor():
-    from hymeko_rl.experiments.exp_v3_handoff_gate import _load_e
-    return _load_e()
+    from hymeko_rl.coin_delivery.e_approach import load_e_approach_policy
+    return load_e_approach_policy()                                # canonical production loader (no experiment imports)
 
 
 def collect_e_handoff_bank(seeds, *, grasp_hold=3, maxk=160):

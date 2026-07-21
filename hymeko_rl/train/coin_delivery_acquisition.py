@@ -21,7 +21,7 @@ from enum import Enum
 
 import numpy as np
 
-from hymeko_rl.experiments.pedc_selection import _env
+from hymeko_rl.coin_delivery.env_factory import make_coin_contact_env as _env
 
 # ── obs field indices (ACTOR_FIELDS) the primitive reads ─────────────────────────────────────────────────────────────
 COIN = (0, 1)

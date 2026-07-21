@@ -164,7 +164,7 @@ def _read_geometry(env: Any) -> _Geom:
     coin = np.array(m.disk_pos[:2], np.float64)
     coin_v = np.array(m.disk_vel[:2], np.float64)
     zone = np.array([float(env._zone_x), float(env._zone_y)])
-    from hymeko_rl.experiments.galambos_demo import _extract_arms
+    from hymeko_rl.env.planar_arm_kinematics import extract_arms as _extract_arms
     arms = _extract_arms(env.model)
     lft = np.array(env.data.site_xpos[arms["left"].tip_site][:2], np.float64)
     rft = np.array(env.data.site_xpos[arms["right"].tip_site][:2], np.float64)

@@ -32,7 +32,7 @@ from typing import Any, Callable
 
 import numpy as np
 
-from hymeko_rl.experiments.pedc_selection import _env  # shared eval-corpus fixture (arcrl c1 bank+contract; see report)
+from hymeko_rl.coin_delivery.env_factory import make_coin_contact_env as _env  # canonical arcrl c1 bank+contract env
 from hymeko_rl.train.coin_delivery_actor import rollout
 
 
