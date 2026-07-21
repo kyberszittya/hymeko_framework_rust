@@ -32,12 +32,34 @@ class NeutralCoinDeliveryEnv(CoinDeliveryTrainEnv):
     def __init__(self, cf, cfg=None, *, prefix_steps: int = 0, direct: bool = True) -> None:
         super().__init__(cf, cfg or DeliveryRLConfig())
         self.prefix_steps = int(prefix_steps)
+        self.bank_frac = 0.0                                        # >0 ⇒ curriculum: fraction of starts from the
+        self._bank = cf._bank                                       #     contact-prepared bank (transport rehearsal)
+        self._rng = np.random.default_rng(0)
+        self._train_seeds: tuple[int, ...] | None = None
         if direct:
             self._base_override = lambda inner, t: np.zeros(self.action_space.shape[0], np.float32)
             self._delta_override = 1.0
 
     def set_stage(self, prefix_steps: int) -> None:
         self.prefix_steps = int(prefix_steps)
+
+    def set_curriculum(self, *, bank_frac: float, train_seeds: tuple[int, ...]) -> None:
+        self.bank_frac = float(bank_frac)
+        self._train_seeds = tuple(train_seeds)
+
+    def _bank_reset(self):
+        """Contact-prepared rehearsal start: restore a bank snapshot (the transport-suffix distribution)."""
+        cf = self.env
+        item = self._bank[int(self._rng.integers(len(self._bank)))]
+        from hymeko_rl.env.planar_snapshot import restore_planar
+        restore_planar(cf._env, item["snap"])
+        cf._tracker.reset(cf._env)
+        cf._t = 0
+        cf._both_hist = []
+        cf._prev_coin = np.asarray(cf._env._planar_metrics.disk_pos[:2], np.float64)
+        cf._high = cf._streak = cf._of_run = 0
+        cf._had_both = False
+        return cf._obs(np.zeros(4, np.float32))
 
     def _neutral_contact_reset(self, seed):
         """Reset the ContactFormationEnv to the CANONICAL NEUTRAL planar pose (PlanarGraspEnv.reset — arm zeros, coin
@@ -54,16 +76,29 @@ class NeutralCoinDeliveryEnv(CoinDeliveryTrainEnv):
         return cf._obs(np.zeros(4, np.float32))
 
     def reset(self, *, seed=None):
-        obs = self._neutral_contact_reset(seed)                      # true canonical neutral (no bank, no hidden pre-roll)
+        # training auto-reset (no seed) with a curriculum: sample a contact-prepared bank rehearsal start OR a neutral
+        # start with a random scripted-approach prefix; seeded reset (eval) is always a true neutral start.
+        bank_start = seed is None and self.bank_frac > 0 and self._rng.random() < self.bank_frac
+        if bank_start:
+            obs = self._bank_reset()
+            self.env._horizon = self.cfg.prefix_cap + self.cfg.horizon + 8
+            self._reset_state()
+            self._last_obs = self._start_obs = np.asarray(obs, np.float32)
+            self._prev_dtz = self._start_dtz = self._dtz()
+            self._prev_both = self._both()
+            return self._last_obs, {"handoff_event": True, "start": "bank"}
+        use_seed = seed if seed is not None else int(self._rng.choice(self._train_seeds or (1174,)))
+        prefix = self.prefix_steps if seed is not None else int(self._rng.integers(0, self.prefix_steps + 1))
+        obs = self._neutral_contact_reset(use_seed)                  # true canonical neutral (no bank, no hidden pre-roll)
         self.env._horizon = self.cfg.prefix_cap + self.cfg.horizon + 8
         self._reset_state()
         self._last_obs = np.asarray(obs, np.float32)
         self._start_obs = self._last_obs.copy()
         met0 = self.inner._planar_metrics
-        if self.prefix_steps == 0 and (met0.left_contact or met0.right_contact):
+        if seed is not None and self.prefix_steps == 0 and (met0.left_contact or met0.right_contact):
             raise RuntimeError("NEUTRAL_START invariant violated: initial fingertip contact at prefix_steps=0 "
                                "(hidden pre-roll or non-neutral snapshot leaked into the reset)")
-        for _ in range(self.prefix_steps):                          # explicit, curriculum-controlled scripted approach
+        for _ in range(prefix):                                     # explicit, curriculum-controlled scripted approach
             acquire = np.clip(p_grasp_carry(self.inner, 0), self.cfg.lo, self.cfg.hi).astype(np.float32)
             obs, _r, _t, _tr, sinfo = self.env.step(acquire)
             self._last_obs = np.asarray(obs, np.float32)
@@ -86,6 +121,81 @@ def neutral_env(*, prefix_steps: int = 0):
     return env, cf
 
 
+_HEADLINE = (1011, 1045, 1164, 1174, 1202, 1278, 1358, 1447, 1568)
+_TRANSPORT_CKPT = "experiments/2026_07_21_coin_e0_stabilize/learned_delivery_positive.pt"
+
+
+def _load_transport():
+    import torch
+
+    from hymeko_rl.train.sac import build_sac
+    ac, _ = build_sac("mlp", obs_dim=41, flat_dim=41, action_dim=6, action_scale=1.0)
+    ac.load_state_dict(torch.load(_TRANSPORT_CKPT, weights_only=True))
+    return ac
+
+
+def collect_neutral_demos(env, cf, transport_actor, seeds, *, approach_steps=120):
+    """Explicit curriculum demos: (a) scripted grasp_carry APPROACH from neutral (partial), (b) learned TRANSPORT from
+    bank starts. Records (obs, executed direct-action) for BC. The approach is now visible data, not a hidden pre-roll."""
+    from hymeko_rl.experiments.coin_delivery_e0_campaign import _greedy_action_fn
+    tfn = _greedy_action_fn(transport_actor)
+    obs_l, act_l = [], []
+    for s in seeds:                                                  # APPROACH demos (grasp_carry from neutral)
+        env.set_stage(0)
+        o = env.reset(seed=s)[0]
+        for _ in range(approach_steps):
+            a = np.clip(p_grasp_carry(env.inner, 0), env.cfg.lo, env.cfg.hi).astype(np.float32)
+            obs_l.append(np.asarray(o, np.float32))
+            act_l.append(a)
+            o = env.step(a)[0]
+    for s in seeds:                                                  # TRANSPORT demos (transport policy from bank)
+        env.bank_frac = 1.0
+        env._train_seeds = (s,)
+        o = env.reset()[0]
+        env.bank_frac = 0.0
+        for _ in range(120):
+            a = np.asarray(tfn(env, o, None), np.float32)
+            obs_l.append(np.asarray(o, np.float32))
+            act_l.append(a)
+            o = env.step(a)[0]
+    return np.asarray(obs_l, np.float32), np.asarray(act_l, np.float32)
+
+
+def eval_neutral(actor, seeds, *, env_cf=None) -> dict:
+    """Full-episode neutral-start eval (prefix=0): first-contact / bilateral-grasp / strict delivery + step counts."""
+    from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
+    from hymeko_rl.experiments.coin_delivery_e0_campaign import _greedy_action_fn
+    env, cf = env_cf or neutral_env(prefix_steps=0)
+    fn = _greedy_action_fn(actor)
+    fc = bi = zone = deliv = 0
+    tcert = []
+    for s in seeds:
+        env.set_stage(0)
+        o = env.reset(seed=int(s))[0]
+        cert = DeliveryCertifier(initial_clearance=_clearance(cf._env))
+        got_fc = got_bi = got_zone = False
+        tc = None
+        for t in range(300):
+            st = _cert_step(cf._env, cf)
+            cert.update(st)
+            got_fc = got_fc or st.left_fingertip or st.right_fingertip
+            got_bi = got_bi or (st.left_fingertip and st.right_fingertip)
+            got_zone = got_zone or st.disk_to_zone <= 0.02
+            if cert.delivery_certified:
+                tc = t
+                break
+            o = env.step(np.asarray(fn(env, o, None), np.float32))[0]
+        fc += got_fc
+        bi += got_bi
+        zone += got_zone
+        deliv += cert.delivery_certified
+        if tc is not None:
+            tcert.append(tc)
+    n = len(seeds)
+    return {"first_contact": fc, "bilateral": bi, "zone": zone, "deliver": deliv, "n": n,
+            "med_steps_cert": int(np.median(tcert)) if tcert else None}
+
+
 def _clearance(inner) -> float:
     disk_r = float(inner.model.geom_size[inner._disk_geom][0])
     return float(inner.planar_metrics.disk_to_zone) - (disk_r + float(inner._zone_half))
@@ -104,3 +214,70 @@ def _cert_step(inner, cf) -> CertStep:
     return CertStep(disk_to_zone=float(met.disk_to_zone), disk_speed=float(np.linalg.norm(v)),
                     left_fingertip=lf, right_fingertip=rf, arm_body_contact=body, arm_body_impulse=imp,
                     force_left=fl, force_right=fr)
+
+
+def train_neutral(*, steps=40_000, seed=0, out="experiments/2026_07_21_coin_neutral", eval_every=4_000,
+                  bank_frac=0.35, prefix_max=110):
+    """Reverse-curriculum neutral-start training: init actor from the proven TRANSPORT checkpoint; train on a curriculum
+    env that samples contact-prepared bank rehearsal (≥bank_frac) + neutral starts with a random scripted-approach
+    prefix in [0, prefix_max]; BC-anchor on the explicit approach+transport demos. Eval on true neutral (prefix=0)."""
+    import json
+    from pathlib import Path
+
+    import torch
+
+    from hymeko_rl.experiments.coin_delivery_e0_campaign import bc_fit
+    from hymeko_rl.train.sac import SACConfig, build_sac, train_sac
+    outp = Path(out)
+    outp.mkdir(parents=True, exist_ok=True)
+    train_seeds = tuple(s for s in range(1000, 1700) if s not in _HEADLINE)
+    env, cf = neutral_env(prefix_steps=prefix_max)
+    env.set_curriculum(bank_frac=bank_frac, train_seeds=train_seeds)
+    eval_env = neutral_env(prefix_steps=0)
+    transport = _load_transport()
+    demos = collect_neutral_demos(env, cf, transport, train_seeds[:24])
+    print(f"[neutral] demos={len(demos[0])} pairs | bank_frac={bank_frac} prefix_max={prefix_max}", flush=True)
+    actor, critics = build_sac("mlp", obs_dim=41, flat_dim=41, action_dim=6, action_scale=1.0)
+    actor.load_state_dict(transport.state_dict())                   # §4 init TRANSPORT from the proven checkpoint
+    base = eval_neutral(actor, _HEADLINE, env_cf=eval_env)
+    print(f"[neutral base (transport init)] first_contact={base['first_contact']}/9 bilateral={base['bilateral']}/9 "
+          f"deliver={base['deliver']}/9", flush=True)
+    bc_fit(actor, demos, epochs=300, seed=seed)                     # anchor approach+transport before RL
+    cfg = SACConfig.stable(total_steps=steps, seed=seed, bc_coef=1.0, alpha_final=0.0367,
+                           log_every=eval_every, eval_every=eval_every)
+    best = {"deliver": -1, "first_contact": -1}
+    hist = []
+
+    def eval_fn(_e, ac):
+        m = eval_neutral(ac, _HEADLINE, env_cf=eval_env)
+        hist.append(m)
+        print(f"  [neutral eval#{len(hist)}] fc={m['first_contact']}/9 bi={m['bilateral']}/9 zone={m['zone']}/9 "
+              f"deliver={m['deliver']}/9", flush=True)
+        key = (m["deliver"], m["first_contact"])
+        if key > (best["deliver"], best["first_contact"]):
+            best.update(deliver=m["deliver"], first_contact=m["first_contact"])
+            torch.save(ac.state_dict(), outp / "neutral_best.pt")
+        return float(m["deliver"] * 10 + m["first_contact"])
+
+    curve = train_sac(actor, critics, env, cfg, eval_fn=eval_fn, offline_data=demos,
+                      bc_coef_fn=lambda _s: 1.0)
+    torch.save(actor.state_dict(), outp / "neutral_final.pt")
+    (outp / "run.json").write_text(json.dumps(dict(steps=steps, seed=seed, bank_frac=bank_frac, prefix_max=prefix_max,
+                                    base=base, best=best, eval_history=hist, curve=curve), indent=1, default=float))
+    print(f"[neutral done] base deliver={base['deliver']}/9 → best deliver={best['deliver']}/9 "
+          f"first_contact {base['first_contact']}→{best['first_contact']}/9", flush=True)
+    return best
+
+
+def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--steps", type=int, default=40_000)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--out", default="experiments/2026_07_21_coin_neutral")
+    a = ap.parse_args()
+    train_neutral(steps=a.steps, seed=a.seed, out=a.out)
+
+
+if __name__ == "__main__":
+    main()
