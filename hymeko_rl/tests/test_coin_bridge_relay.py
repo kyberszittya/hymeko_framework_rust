@@ -55,9 +55,11 @@ def test_calibrate_excludes_self() -> None:
     assert enter > 0.0 and exit_ == pytest.approx(2 * enter)
 
 
-def test_bridge_reward_defaults_terminal_dominates() -> None:
+def test_bridge_reward_dwell_terminal_dominates() -> None:
     rw = BridgeReward()
-    assert rw.r_ready > rw.w_potential and rw.r_ready > rw.w_bilateral   # terminal READY bonus dominates shaping
+    assert rw.dwell_target == 3
+    assert rw.r_dwell > rw.r_first_ready                            # the 3-step dwell bonus dominates momentary entry
+    assert rw.r_dwell > rw.w_streak * rw.dwell_target              # …and the accumulated streak bonus
 
 
 def test_classify_bridge_positive() -> None:

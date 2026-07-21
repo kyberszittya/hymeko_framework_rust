@@ -37,6 +37,7 @@ _FEAT_NAMES = ("l_to_coin_x", "l_to_coin_y", "r_to_coin_x", "r_to_coin_y", "left
 _FEAT_IDX = [field_index(n) for n in _FEAT_NAMES]
 _I_BOTH, _I_BODY = field_index("both_contact"), field_index("arm_body_contact")
 _I_LEFT, _I_RIGHT = field_index("left_contact"), field_index("right_contact")
+_I_C2T_X, _I_C2T_Y = field_index("coin_to_target_x"), field_index("coin_to_target_y")
 
 
 def ready_features(obs: np.ndarray) -> np.ndarray:
@@ -186,6 +187,7 @@ class RelayLog:
     first_contact_step: int = -1
     bilateral_step: int = -1
     ready_step: int = -1
+    max_ready_streak: int = 0            # longest consecutive-ready run in the BRIDGE phase (the dwell the relay saw)
     mode_trace: list[str] = field(default_factory=list)
 
 
@@ -200,14 +202,16 @@ class RelayController:
         self._hyst, self._stall_window = int(hysteresis), int(stall_window)
 
     def act_fn(self, log: RelayLog) -> Callable[[Any, int, np.ndarray], np.ndarray]:
-        state = {"mode": "BRIDGE", "ready_run": 0, "no_prog": 0, "last_dtz": None}
+        state = {"mode": "BRIDGE", "ready_run": 0, "no_prog": 0, "best_dtz": None}
+
+        def _dtz(o: np.ndarray) -> float:
+            return float(np.hypot(o[_I_C2T_X], o[_I_C2T_Y]))          # coin→target distance (named fields)
 
         def act(inner: Any, t: int, obs: np.ndarray) -> np.ndarray:
             o = np.asarray(obs)
             in_transport = state["mode"] == "TRANSPORT"
-            if o[_I_LEFT] > 0.5 or o[_I_RIGHT] > 0.5:
-                if log.first_contact_step < 0:
-                    log.first_contact_step = t
+            if (o[_I_LEFT] > 0.5 or o[_I_RIGHT] > 0.5) and log.first_contact_step < 0:
+                log.first_contact_step = t
             if o[_I_BOTH] > 0.5 and log.bilateral_step < 0:
                 log.bilateral_step = t
             ready = self._det.is_ready(o, currently_transport=in_transport)
@@ -215,21 +219,34 @@ class RelayController:
                 log.ready_step = t
             if not in_transport:
                 state["ready_run"] = state["ready_run"] + 1 if ready else 0
-                if state["ready_run"] >= self._hyst:                      # valid handoff
+                log.max_ready_streak = max(log.max_ready_streak, state["ready_run"])
+                if state["ready_run"] >= self._hyst:                     # valid handoff — dwell requirement met
                     state["mode"] = "TRANSPORT"
                     log.handoffs += 1
                     log.handoff_step = t
+                    state["best_dtz"] = _dtz(o)
+                    state["no_prog"] = 0
             else:
-                body = o[_I_BODY] > 0.5
-                lost = o[_I_BOTH] < 0.5
-                if not ready or body or lost or state["no_prog"] >= self._stall_window:
-                    state["mode"] = "BRIDGE"                              # fall back
+                # CONTRACT: once handed off, the frozen transport policy is TRUSTED to complete. It MUST leave the ready
+                # region and may drop momentary bilateral contact while pushing — so DO NOT fall back on "not ready" or
+                # "bilateral lost". Fall back only on a GENUINE failure: a body shove, or a real stall (no targetward
+                # progress for the stall window). (The old fallback punished exactly the transport it was meant to run.)
+                d = _dtz(o)
+                if d < state["best_dtz"] - 1e-4:
+                    state["best_dtz"] = d
+                    state["no_prog"] = 0
+                else:
+                    state["no_prog"] += 1
+                if (o[_I_BODY] > 0.5) or state["no_prog"] >= self._stall_window:
+                    state["mode"] = "BRIDGE"                              # fall back on genuine failure only
                     log.fallbacks += 1
                     state["ready_run"] = 0
             in_transport = state["mode"] == "TRANSPORT"
             log.mode_trace.append("T" if in_transport else "B")
-            (log.__setattr__("transport_steps", log.transport_steps + 1) if in_transport
-             else log.__setattr__("bridge_steps", log.bridge_steps + 1))
+            if in_transport:
+                log.transport_steps += 1
+            else:
+                log.bridge_steps += 1
             return (self._transport_g if in_transport else self._bridge_g)(inner, t, o)
         return act
 
@@ -245,24 +262,30 @@ def relay_rollout(env: Any, bridge: Any, transport: Any, detector: ReadinessDete
     return trace, log
 
 
-# ── Phase 5.2: the bridge-reward training env (SEPARATE from delivery-v2b; terminates on entering the basin) ────────
+# ── Phase 3/4: dwell-aware bridge-reward env (train the bridge to the RELAY's dwell requirement, no train/eval gap) ──
 @dataclass
 class BridgeReward:
-    """Pre-registered bridge-only shaping weights (§5.2). The terminal READY bonus dominates the local shaping."""
+    """Pre-registered bridge-only DWELL shaping (§4). The bridge episode no longer succeeds on a momentary first entry:
+    it must ENTER-AND-HOLD the readiness region for ``dwell_target`` consecutive steps (the relay's handoff condition),
+    so training and the handoff share one criterion (no mismatch). The 3-step terminal bonus dominates first-entry."""
     w_potential: float = 12.0      # potential-based: decrease in scaled distance to the nearest READY state
     w_first_contact: float = 1.0   # one-time: first fingertip contact
     w_bilateral: float = 2.0       # one-time: one-sided → bilateral transition
-    w_hold: float = 0.1            # per-step: persistent valid bilateral (both ∧ ¬body)
     w_body: float = 2.0            # penalty: arm-body shove
     w_action: float = 0.01         # penalty: excessive action energy
-    r_ready: float = 20.0          # terminal: entered a verified TRANSPORT_READY state (dominant)
+    r_first_ready: float = 1.0     # small: first readiness entry (do NOT terminate here)
+    w_streak: float = 2.0          # per-step while ready, scaled by the streak (1→2→3 increasing bonus)
+    w_leave_ready: float = 3.0     # penalty: left readiness AFTER having entered it (oscillation across the boundary)
+    w_neg_progress: float = 4.0    # penalty: coin moving AWAY from the target while acquiring
+    r_dwell: float = 25.0          # terminal: held readiness for dwell_target steps (dominant) — the handoff condition
+    dwell_target: int = 3
 
 
 class BridgeRewardEnv:
-    """Wraps the coin ``direct_env`` with the bridge reward: shape toward the nearest verified READY state and
-    TERMINATE with a dominant bonus on entering the basin. delivery-v2b reward / strict predicate / the env physics are
-    untouched — this reward is a SEPARATE training signal, never reused for the final evaluation (which is the strict
-    certificate on the real env). gym-shaped so ``train_sac`` drives it unchanged."""
+    """Wraps the coin ``direct_env`` with the DWELL bridge reward: shape toward the basin, reward holding readiness with
+    an increasing streak bonus, and TERMINATE only when readiness is held for ``dwell_target`` steps — the same
+    condition the relay uses to hand off (train==eval). delivery-v2b / strict predicate / env physics / frozen transport
+    policy / detector labels are untouched — a SEPARATE training signal, never the final evaluation. gym-shaped."""
 
     def __init__(self, inner_env: Any, detector: ReadinessDetector, reset_pool: list[PlanarSnapshot],
                  rng: np.random.Generator, reward: BridgeReward | None = None) -> None:
@@ -277,14 +300,24 @@ class BridgeRewardEnv:
         self.action_space = inner_env.action_space
         self.max_steps = getattr(inner_env, "max_steps", 60)
         self._prev_dist = 0.0
+        self._prev_dtz = 0.0
         self._had_contact = False
         self._had_bilateral = False
+        self._had_ready = False
+        self._streak = 0
+
+    @staticmethod
+    def _dtz(obs: np.ndarray) -> float:
+        return float(np.hypot(obs[_I_C2T_X], obs[_I_C2T_Y]))
 
     def reset_to(self, snap: PlanarSnapshot) -> np.ndarray:
         obs = _restore_generated(self.env, snap)
         self._prev_dist = self._det.distance(obs)
+        self._prev_dtz = self._dtz(obs)
         self._had_contact = bool(obs[_I_LEFT] > 0.5 or obs[_I_RIGHT] > 0.5)
         self._had_bilateral = bool(obs[_I_BOTH] > 0.5)
+        self._had_ready = False
+        self._streak = 0
         return obs
 
     def reset(self, *, seed: int | None = None):                    # restore a FRESH random clear-start state each episode
@@ -294,7 +327,7 @@ class BridgeRewardEnv:
         obs, _r_v2b, _term, trunc, info = self.env.step(action)
         rw = self._rw
         dist = self._det.distance(obs)
-        r = rw.w_potential * (self._prev_dist - dist)               # potential-based shaping (toward the basin)
+        r = rw.w_potential * (self._prev_dist - dist)               # potential toward the basin
         self._prev_dist = dist
         left, right = obs[_I_LEFT] > 0.5, obs[_I_RIGHT] > 0.5
         both, body = obs[_I_BOTH] > 0.5, obs[_I_BODY] > 0.5
@@ -304,15 +337,28 @@ class BridgeRewardEnv:
         if both and not self._had_bilateral:
             r += rw.w_bilateral
             self._had_bilateral = True
-        if both and not body:
-            r += rw.w_hold
         if body:
             r -= rw.w_body
+        dtz = self._dtz(obs)
+        if dtz > self._prev_dtz + 1e-4:                             # coin drifting away from target while acquiring
+            r -= rw.w_neg_progress * (dtz - self._prev_dtz)
+        self._prev_dtz = dtz
         r -= rw.w_action * float(np.mean(np.square(action)))
+        # DWELL structure: enter → hold (increasing streak bonus) → terminate at dwell_target
         ready = self._det.is_ready(obs, currently_transport=False)
-        terminated = bool(ready)
+        if ready:
+            if not self._had_ready:
+                r += rw.r_first_ready                               # small first-entry (NOT terminal)
+                self._had_ready = True
+            self._streak += 1
+            r += rw.w_streak * self._streak                        # increasing bonus 1→2→3
+        else:
+            if self._had_ready and self._streak > 0:
+                r -= rw.w_leave_ready                              # left readiness after entering (oscillation)
+            self._streak = 0
+        terminated = self._streak >= rw.dwell_target
         if terminated:
-            r += rw.r_ready                                          # dominant terminal bonus for entering the basin
+            r += rw.r_dwell                                        # dominant terminal — held readiness dwell_target steps
         return obs, float(r), terminated, bool(trunc), info
 
 
