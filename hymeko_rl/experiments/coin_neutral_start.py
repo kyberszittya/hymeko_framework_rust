@@ -111,11 +111,20 @@ class NeutralCoinDeliveryEnv(CoinDeliveryTrainEnv):
         return self._last_obs, {"handoff_event": self._handoff}
 
 
-def neutral_env(*, prefix_steps: int = 0):
-    """Build an E0 NeutralCoinDeliveryEnv (direct-action) whose reset is a true canonical-neutral start (no bank
-    snapshot restore); returns (env, contact_env)."""
-    from hymeko_rl.experiments.coin_delivery_e0_campaign import _e0_env
-    _base, cf = _e0_env()
+def neutral_env(*, prefix_steps: int = 0, geom: str | None = None):
+    """Build a NeutralCoinDeliveryEnv (direct-action) whose reset is a true canonical-neutral start (no bank-snapshot
+    restore). ``geom=None`` = the canonical E0 CONCAVE_CLAMP ring (the successful chain's embodiment); a fingertip
+    string (e.g. ``"POINT"`` = one sphere per arm) builds that embodiment through the SAME builder for transfer tests."""
+    if geom is None:
+        from hymeko_rl.experiments.coin_delivery_e0_campaign import _e0_env
+        _base, cf = _e0_env()
+    else:
+        from hymeko_rl.env.pad_actuation import build_wristed_contact_env
+        from hymeko_rl.experiments.coin_wristed_delivery import _roll_env
+        from hymeko_rl.experiments.pedc_selection import _C1_HORIZON, _ctx, _load_pkl_bank, c1_config
+        planar = _roll_env(geom)
+        cf = build_wristed_contact_env(planar, _load_pkl_bank("c1_heldseed_bank.pkl", holdout=False),
+                                       _ctx()["contract"], horizon=_C1_HORIZON, cfg=c1_config())
     cf._restore = lambda item: None                                 # neutralise the bank-snapshot restore ⇒ neutral pose
     env = NeutralCoinDeliveryEnv(cf, DeliveryRLConfig(), prefix_steps=prefix_steps)
     return env, cf
@@ -247,29 +256,41 @@ def collect_e_handoff_bank(seeds, *, grasp_hold=3, maxk=160):
     return bank
 
 
-def eval_composed(transport_actor, seeds, *, grasp_hold=3, env_cf=None) -> dict:
-    """§7/§9 — E-approach+grasp (recovered policy) → frozen/tuned TRANSPORT; strict neutral delivery + grasp rate."""
+def eval_composed(transport_actor, seeds, *, grasp_hold=3, contact_window=None, env_cf=None, approach_actor=None) -> dict:
+    """§7/§9 — learned APPROACH (recovered E, or ``approach_actor``) → TRANSPORT; strict neutral delivery + grasp rate.
+
+    Handoff fires as soon as bilateral contact is confirmed for ``grasp_hold`` steps (§3: use 1 for the accelerated
+    controller) OR — for push-delivery states where a full grasp never forms — one-sided contact is held for
+    ``contact_window`` steps (removes the wait-to-160-cap dead time). ``contact_window=None`` is the original behaviour.
+    """
     import torch
 
     from hymeko_rl.experiments.coin_delivery_e0_campaign import _greedy_action_fn
     from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
-    e = _e_approach_actor()
+    e = approach_actor or _e_approach_actor()
     tfn = _greedy_action_fn(transport_actor)
     env, cf = env_cf or neutral_env(prefix_steps=0)
     inner = cf._env
     grasp = deliv = 0
+    handoff_steps = []
     for s in seeds:
         env.set_stage(0)
         env.reset(seed=int(s))
         cert = DeliveryCertifier(initial_clearance=_clearance(inner))
-        bi = 0
+        bi = cw = 0
         got = False
+        t_hand = 160
         for _k in range(160):
             m = inner._planar_metrics
             cert.update(_cert_step(inner, cf))
             bi = bi + 1 if (m.left_contact and m.right_contact) else 0
+            cw = cw + 1 if (m.left_contact or m.right_contact) else 0
             if bi >= grasp_hold:
                 got = True
+                t_hand = _k
+                break
+            if contact_window is not None and cw >= contact_window:  # push-delivery early handoff (no full grasp)
+                t_hand = _k
                 break
             with torch.no_grad():
                 a = e.action_mean(torch.as_tensor(np.asarray(inner.node_features(), np.float32)[None]))[0].numpy()
@@ -288,7 +309,8 @@ def eval_composed(transport_actor, seeds, *, grasp_hold=3, env_cf=None) -> dict:
             o = env.step(np.asarray(tfn(env, o, None), np.float32))[0]
         grasp += got
         deliv += cert.delivery_certified
-    return {"grasp": grasp, "deliver": deliv, "n": len(seeds)}
+        handoff_steps.append(t_hand)
+    return {"grasp": grasp, "deliver": deliv, "n": len(seeds), "handoff_steps": handoff_steps}
 
 
 def collect_carry_demos(seeds, *, grasp_hold=3, maxk=160, carry_steps=200):
