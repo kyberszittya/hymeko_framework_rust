@@ -63,6 +63,11 @@ class DeliveryRLConfig:
     zone_half: float = 0.04
     lo: float = -1.0
     hi: float = 1.0
+    # Reward authority (bundle-audit repair 2026-07-23): ``hymeko_spec`` scores the env's loaded RewardSpec (v2b
+    # galambos_task_deliver_v2b.hymeko) — the .hymeko is now LOAD-BEARING; ``python_delivery`` is the explicit LEGACY
+    # ablation reward (the old ``delivery_reward``, DUPLICATE_DIVERGED). No implicit fallback. See
+    # reports/2026-07-22-coin-hymeko-spec-bundle.md.
+    reward_source: str = "hymeko_spec"
     # potential-based delivery reward weights
     w_progress: float = 10.0      # per metre closed toward the zone centre (Φ = −disk_to_zone shaping)
     w_zone: float = 1.0           # one-shot on first zone entry (disk_to_zone <= zone_half)
@@ -78,6 +83,8 @@ class DeliveryRLConfig:
             raise ValueError("delta>0, prefix_cap>=1, horizon>=1 required")
         if not (0.0 < self.center_tol <= self.zone_half) or self.lo >= self.hi:
             raise ValueError("require 0 < center_tol <= zone_half and lo < hi")
+        if self.reward_source not in ("hymeko_spec", "python_delivery"):
+            raise ValueError(f"reward_source must be 'hymeko_spec' or 'python_delivery'; got {self.reward_source!r}")
 
 
 def residual_action(base: np.ndarray, raw: np.ndarray, delta: float, lo: float, hi: float) -> np.ndarray:
@@ -237,8 +244,13 @@ class CoinDeliveryTrainEnv:
         dtz, both = self._dtz(), self._both()
         zone_before = self._zone_entered
         entered_now, center_now, stalled, dropped = self._event_flags(dtz, both, zone_before)
-        reward = delivery_reward(self._prev_dtz, dtz, entered_zone_now=entered_now, center_now=center_now,
-                                 stalled=stalled, dropped=dropped, cfg=self.cfg)
+        if self.cfg.reward_source == "hymeko_spec":
+            # LOAD-BEARING v2b: score the inner PlanarGraspEnv's loaded RewardSpec on the post-step state, exactly as
+            # PlanarGraspEnv.step does (env, disk_to_zone, applied joint ctrl). The .hymeko is now the reward authority.
+            reward = float(self.inner.reward_spec.evaluate(self.inner, dtz, self.inner.data.ctrl))
+        else:  # explicit LEGACY ablation (the old DUPLICATE_DIVERGED Python reward)
+            reward = delivery_reward(self._prev_dtz, dtz, entered_zone_now=entered_now, center_now=center_now,
+                                     stalled=stalled, dropped=dropped, cfg=self.cfg)
         self._dropped_once = self._dropped_once or dropped
         self._zone_entered = zone_before or (dtz <= self.cfg.zone_half)
         self._center_reached = self._center_reached or center_now
