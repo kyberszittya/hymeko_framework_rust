@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from hymeko_rl.coin_delivery.env_factory import make_coin_env
 from hymeko_rl.env.pad_actuation import Phase, PadLimits, build_wristed_contact_env
-from hymeko_rl.experiments.exp_v3_handoff_gate import _roll_env
 from hymeko_rl.train.coin_delivery_rl import CoinDeliveryTrainEnv, DeliveryRLConfig
 
 _CENTER_TOL = 0.02      # canonical delivery center-reach tolerance (DeliveryRLConfig.center_tol)
@@ -24,10 +24,11 @@ _GEOM_MAP = {"E0": "CONCAVE_CLAMP", "E1": "E1_WRIST", "E2": "E2_CLOSURE", "E3": 
 
 def make_wristed_delivery_env(geom: str, *, limits: PadLimits | None = None):
     """Build the canonical delivery env over the wristed planar env; return (delivery_env, wristed_contact_env)."""
-    from hymeko_rl.experiments.pedc_selection import _C1_HORIZON, _ctx, _load_pkl_bank, c1_config
-    planar = _roll_env(_GEOM_MAP[geom])
-    cf = build_wristed_contact_env(planar, _load_pkl_bank("c1_heldseed_bank.pkl", holdout=False),
-                                   _ctx()["contract"], horizon=_C1_HORIZON, cfg=c1_config(), limits=limits)
+    from hymeko_rl.coin_delivery.env_factory import (
+        C1_HORIZON, c1_contact_config, coin_monitor_contract, load_contact_bank)
+    planar = make_coin_env(embodiment=_GEOM_MAP[geom])
+    cf = build_wristed_contact_env(planar, load_contact_bank("c1_heldseed_bank.pkl", holdout=False),
+                                   coin_monitor_contract(), horizon=C1_HORIZON, cfg=c1_contact_config(), limits=limits)
     return CoinDeliveryTrainEnv(cf, DeliveryRLConfig()), cf
 
 
