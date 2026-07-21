@@ -1,0 +1,37 @@
+{
+ "horizon": 120,
+ "metric": "env-native zone_entry (matched 120-step) + strict certificate",
+ "scripted": {
+  "VAL": {
+   "native": 0.7143,
+   "strict": 8
+  },
+  "panel": {
+   "native": 1.0,
+   "strict": 6
+  },
+  "heldout": {
+   "native": 0.7
+  }
+ },
+ "SAC_median": {
+  "VAL": {
+   "native": 0.643,
+   "strict": 8
+  },
+  "panel": {
+   "native": 1.0,
+   "strict": 6
+  }
+ },
+ "TD3_median": {
+  "VAL": {
+   "native": 0.643,
+   "strict": 7
+  },
+  "panel": {
+   "native": 1.0,
+   "strict": 6
+  }
+ }
+}

@@ -1,0 +1,43 @@
+{
+  "authoritative": "matched_120_step_env_native",
+  "scripted": {
+    "VAL": {
+      "native": 0.7143,
+      "strict": 8
+    },
+    "panel": {
+      "native": 1.0,
+      "strict": 6
+    },
+    "heldout": {
+      "native": 0.7
+    }
+  },
+  "SAC": {
+    "median": {
+      "VAL": {
+        "native": 0.643,
+        "strict": 8
+      },
+      "panel": {
+        "native": 1.0,
+        "strict": 6
+      }
+    },
+    "verdict": "NO_EFFECT"
+  },
+  "TD3": {
+    "median": {
+      "VAL": {
+        "native": 0.643,
+        "strict": 7
+      },
+      "panel": {
+        "native": 1.0,
+        "strict": 6
+      }
+    },
+    "verdict": "NO_EFFECT"
+  },
+  "note": "60-step evaluate() reported PHYSICS_FIXED_POSITIVE, but that is a HORIZON-TRUNCATION ARTIFACT (\u00a73 horizon-match): grasp_carry needs ~120 steps; at 60 the base scores low and the RL merely delivers faster. At the matched 120-step horizon the residual adds nothing over the scripted base (VAL native 0.71 vs 0.64 = 1-seed flip; VAL strict 8 vs 8/7; panel identical 9/9 native, 6/9 strict). Local policy-improvement caps at the scripted ceiling \u2014 confirmed under corrected physics."
+}

@@ -1,0 +1,325 @@
+{
+ "scripted_base": {
+  "VAL": {
+   "n": 14,
+   "native_zone": 0.2857,
+   "strict_rate": 0.0,
+   "strict_count": 0,
+   "mean_progress": 0.0013
+  },
+  "panel": {
+   "n": 9,
+   "native_zone": 0.0,
+   "strict_rate": 0.0,
+   "strict_count": 0,
+   "mean_progress": 0.0018
+  },
+  "heldout": {
+   "n": 50,
+   "native_zone": 0.14,
+   "strict_rate": 0.0,
+   "strict_count": 0,
+   "mean_progress": 0.0019
+  }
+ },
+ "runs": {
+  "SAC_s0": {
+   "best_native_train": 0.5,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.019
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.2222,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.051
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.58,
+     "strict_rate": 0.04,
+     "strict_count": 2,
+     "mean_progress": 0.0246
+    }
+   }
+  },
+  "SAC_s1": {
+   "best_native_train": 0.5,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0156
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.4444,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0679
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.5,
+     "strict_rate": 0.02,
+     "strict_count": 1,
+     "mean_progress": 0.0212
+    }
+   }
+  },
+  "SAC_s2": {
+   "best_native_train": 0.5,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0178
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.1111,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0558
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.46,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.022
+    }
+   }
+  },
+  "SAC_s3": {
+   "best_native_train": 0.5,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.019
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.6667,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0618
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.56,
+     "strict_rate": 0.04,
+     "strict_count": 2,
+     "mean_progress": 0.0264
+    }
+   }
+  },
+  "SAC_s4": {
+   "best_native_train": 0.5,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0156
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.0,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0533
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.5,
+     "strict_rate": 0.02,
+     "strict_count": 1,
+     "mean_progress": 0.0233
+    }
+   }
+  },
+  "TD3_s0": {
+   "best_native_train": 0.5714285714285714,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5714,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0193
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.6667,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0613
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.52,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0245
+    }
+   }
+  },
+  "TD3_s1": {
+   "best_native_train": 0.5714285714285714,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5714,
+     "strict_rate": 0.0714,
+     "strict_count": 1,
+     "mean_progress": 0.0193
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.5556,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0644
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.54,
+     "strict_rate": 0.02,
+     "strict_count": 1,
+     "mean_progress": 0.0241
+    }
+   }
+  },
+  "TD3_s2": {
+   "best_native_train": 0.5714285714285714,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5714,
+     "strict_rate": 0.0714,
+     "strict_count": 1,
+     "mean_progress": 0.0188
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.0,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0516
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.42,
+     "strict_rate": 0.02,
+     "strict_count": 1,
+     "mean_progress": 0.0176
+    }
+   }
+  },
+  "TD3_s3": {
+   "best_native_train": 0.5,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0208
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.0,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0203
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.44,
+     "strict_rate": 0.04,
+     "strict_count": 2,
+     "mean_progress": 0.0207
+    }
+   }
+  },
+  "TD3_s4": {
+   "best_native_train": 0.5714285714285714,
+   "eval": {
+    "VAL": {
+     "n": 14,
+     "native_zone": 0.5714,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0146
+    },
+    "panel": {
+     "n": 9,
+     "native_zone": 0.2222,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0303
+    },
+    "heldout": {
+     "n": 50,
+     "native_zone": 0.48,
+     "strict_rate": 0.0,
+     "strict_count": 0,
+     "mean_progress": 0.0201
+    }
+   }
+  }
+ },
+ "verdicts": {
+  "SAC": {
+   "median": {
+    "VAL": {
+     "native_zone": 0.5,
+     "strict_count": 0
+    },
+    "panel": {
+     "native_zone": 0.2222,
+     "strict_count": 0
+    },
+    "heldout": {
+     "native_zone": 0.5,
+     "strict_count": 1
+    }
+   },
+   "verdict": "PHYSICS_FIXED_POSITIVE",
+   "n_seeds": 5
+  },
+  "TD3": {
+   "median": {
+    "VAL": {
+     "native_zone": 0.5714,
+     "strict_count": 0
+    },
+    "panel": {
+     "native_zone": 0.2222,
+     "strict_count": 0
+    },
+    "heldout": {
+     "native_zone": 0.48,
+     "strict_count": 1
+    }
+   },
+   "verdict": "PHYSICS_FIXED_POSITIVE",
+   "n_seeds": 5
+  }
+ }
+}
