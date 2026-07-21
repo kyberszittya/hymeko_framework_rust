@@ -89,18 +89,27 @@ def make_env(*, coord: bool, difficulty: float, treatment_hymeko: str = _COORD_H
     ``coord`` and ``deliver`` are mutually exclusive; ``coord`` wins if both are set. Reward-in-hymeko (no in-memory
     term surgery). # Postconditions: ``env.reward_file`` names the active reward's ``.hymeko`` source.
     """
-    # fingertip_contact_geometry: POINT (sphere = golden, no-op), FLAT_PAD (box = finite patch), CONCAVE_CLAMP (two
-    # prong geoms = a V-cradle giving force closure). Only the fingertip geometry changes; joint/actuator/arm/coin/
-    # target/reward/predicate are untouched (CONCAVE_CLAMP uses the existing aperture DoF to close, no new actuator).
-    if fingertip_geometry not in ("POINT", "FLAT_PAD", "CONCAVE_CLAMP"):
-        raise ValueError(f"fingertip_geometry must be POINT / FLAT_PAD / CONCAVE_CLAMP; got {fingertip_geometry!r}")
+    # fingertip_contact_geometry (the 2×2 embodiment axis): POINT (golden), FLAT_PAD, CONCAVE_CLAMP (=E0 passive ring),
+    # E1_WRIST (box + wrist-yaw DoF), E2_CLOSURE (box + independent closure DoF), E3_WRIST_CLOSURE (box + both). Only the
+    # fingertip geometry / added distal DoF change; arm/coin/target/reward/strict predicate are untouched.
+    _valid = ("POINT", "FLAT_PAD", "CONCAVE_CLAMP", "E1_WRIST", "E2_CLOSURE", "E3_WRIST_CLOSURE")
+    if fingertip_geometry not in _valid:
+        raise ValueError(f"fingertip_geometry must be one of {_valid}; got {fingertip_geometry!r}")
+    from hymeko_rl.coin_delivery.scenarios.kinematic_variant import with_distal_pad_orientation, with_pad_closure
+    from hymeko_rl.env.planar_grasp_env import with_fingertip_clamp, with_fingertip_shape
     if fingertip_geometry == "POINT":
         _fg: dict = {}
     elif fingertip_geometry == "FLAT_PAD":
         _fg = {"fingertip_shape": "box", "fingertip_size": _FLAT_PAD_SIZE}
-    else:
-        from hymeko_rl.env.planar_grasp_env import with_fingertip_clamp
+    elif fingertip_geometry == "CONCAVE_CLAMP":
         _fg = {"arm_mjcf_transform": with_fingertip_clamp}
+    else:
+        def _box(mj: str) -> str:
+            return with_fingertip_shape(mj, "box", _FLAT_PAD_SIZE)
+        _tf = {"E1_WRIST": lambda mj: with_distal_pad_orientation(_box(mj)),
+               "E2_CLOSURE": lambda mj: with_pad_closure(_box(mj)),
+               "E3_WRIST_CLOSURE": lambda mj: with_pad_closure(with_distal_pad_orientation(_box(mj)))}[fingertip_geometry]
+        _fg = {"arm_mjcf_transform": _tf}
     env = PlanarGraspEnv(robot=None, max_steps=_MAX_STEPS, difficulty=difficulty, **_fg)
     if coord:
         env.reward_spec = RewardSpec.from_hymeko(treatment_hymeko)

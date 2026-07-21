@@ -1,0 +1,148 @@
+{
+ "strict_ge_030": {
+  "E0": 0,
+  "E1": 0,
+  "E2": 0,
+  "E3": 0
+ },
+ "verdict": "NO_FORCE_CLOSURE",
+ "bands": {
+  "E0": {
+   "+0.018-0.030": {
+    "n": 0,
+    "strict": 0,
+    "fails": {},
+    "min_dtz": 9.9
+   },
+   "+0.030-0.045": {
+    "n": 4,
+    "strict": 0,
+    "fails": {
+     "FORCE_HOLD_FAILURE": 4
+    },
+    "min_dtz": 0.0569
+   },
+   "+0.045-0.060": {
+    "n": 6,
+    "strict": 0,
+    "fails": {
+     "SETTLE_FAILURE": 4,
+     "FORCE_HOLD_FAILURE": 2
+    },
+    "min_dtz": 0.0201
+   },
+   "+0.060-0.080": {
+    "n": 6,
+    "strict": 0,
+    "fails": {
+     "SETTLE_FAILURE": 2,
+     "PAD_CONTACT_FAILURE": 3,
+     "TRANSPORT_FAILURE": 1
+    },
+    "min_dtz": 0.0204
+   }
+  },
+  "E1": {
+   "+0.018-0.030": {
+    "n": 1,
+    "strict": 0,
+    "fails": {
+     "WRIST_ALIGNMENT_FAILURE": 1
+    },
+    "min_dtz": 0.0893
+   },
+   "+0.030-0.045": {
+    "n": 0,
+    "strict": 0,
+    "fails": {},
+    "min_dtz": 9.9
+   },
+   "+0.045-0.060": {
+    "n": 7,
+    "strict": 0,
+    "fails": {
+     "SETTLE_FAILURE": 3,
+     "WRIST_ALIGNMENT_FAILURE": 4
+    },
+    "min_dtz": 0.0203
+   },
+   "+0.060-0.080": {
+    "n": 4,
+    "strict": 0,
+    "fails": {
+     "WRIST_ALIGNMENT_FAILURE": 4
+    },
+    "min_dtz": 0.0317
+   }
+  },
+  "E2": {
+   "+0.018-0.030": {
+    "n": 2,
+    "strict": 0,
+    "fails": {
+     "PAD_CONTACT_FAILURE": 2
+    },
+    "min_dtz": 0.0881
+   },
+   "+0.030-0.045": {
+    "n": 4,
+    "strict": 0,
+    "fails": {
+     "PAD_CONTACT_FAILURE": 2,
+     "FORCE_HOLD_FAILURE": 2
+    },
+    "min_dtz": 0.0924
+   },
+   "+0.045-0.060": {
+    "n": 6,
+    "strict": 0,
+    "fails": {
+     "FORCE_HOLD_FAILURE": 5,
+     "PAD_CONTACT_FAILURE": 1
+    },
+    "min_dtz": 0.1057
+   },
+   "+0.060-0.080": {
+    "n": 0,
+    "strict": 0,
+    "fails": {},
+    "min_dtz": 9.9
+   }
+  },
+  "E3": {
+   "+0.018-0.030": {
+    "n": 0,
+    "strict": 0,
+    "fails": {},
+    "min_dtz": 9.9
+   },
+   "+0.030-0.045": {
+    "n": 4,
+    "strict": 0,
+    "fails": {
+     "FORCE_HOLD_FAILURE": 1,
+     "WRIST_ALIGNMENT_FAILURE": 3
+    },
+    "min_dtz": 0.0577
+   },
+   "+0.045-0.060": {
+    "n": 5,
+    "strict": 0,
+    "fails": {
+     "WRIST_ALIGNMENT_FAILURE": 4,
+     "FORCE_HOLD_FAILURE": 1
+    },
+    "min_dtz": 0.0647
+   },
+   "+0.060-0.080": {
+    "n": 3,
+    "strict": 0,
+    "fails": {
+     "FORCE_HOLD_FAILURE": 1,
+     "WRIST_ALIGNMENT_FAILURE": 2
+    },
+    "min_dtz": 0.0207
+   }
+  }
+ }
+}
