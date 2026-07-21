@@ -1,0 +1,92 @@
+{
+ "algo": "TD3",
+ "seed": 0,
+ "steps": 100000,
+ "horizon": 160,
+ "bc_init_delta": 0.0,
+ "contract": "u_exec = clip(policy(obs)); scripted base DISABLED; primary baseline = standalone BC",
+ "selection_metric": "native center_rate",
+ "n_demos": 13440,
+ "curve": [
+  0.2,
+  0.2333,
+  0.1667,
+  0.4333,
+  0.4667,
+  0.2667,
+  0.0333,
+  0.2667,
+  0.5333,
+  0.4
+ ],
+ "best_native": 0.5333,
+ "best_step": 90000,
+ "best_metrics": {
+  "center_rate": 0.5333,
+  "strict": 7,
+  "auc": 0.1394,
+  "tts_median": 63.0
+ },
+ "eval_history": [
+  {
+   "center_rate": 0.2,
+   "strict": 2,
+   "auc": 0.0343,
+   "tts_median": 78.5
+  },
+  {
+   "center_rate": 0.2333,
+   "strict": 2,
+   "auc": 0.0535,
+   "tts_median": 32.0
+  },
+  {
+   "center_rate": 0.1667,
+   "strict": 2,
+   "auc": 0.0404,
+   "tts_median": 64.0
+  },
+  {
+   "center_rate": 0.4333,
+   "strict": 6,
+   "auc": 0.1121,
+   "tts_median": 70.0
+  },
+  {
+   "center_rate": 0.4667,
+   "strict": 8,
+   "auc": 0.1626,
+   "tts_median": 60.5
+  },
+  {
+   "center_rate": 0.2667,
+   "strict": 4,
+   "auc": 0.0848,
+   "tts_median": 46.5
+  },
+  {
+   "center_rate": 0.0333,
+   "strict": 0,
+   "auc": 0.0,
+   "tts_median": null
+  },
+  {
+   "center_rate": 0.2667,
+   "strict": 5,
+   "auc": 0.0929,
+   "tts_median": 64.0
+  },
+  {
+   "center_rate": 0.5333,
+   "strict": 7,
+   "auc": 0.1394,
+   "tts_median": 63.0
+  },
+  {
+   "center_rate": 0.4,
+   "strict": 6,
+   "auc": 0.099,
+   "tts_median": 74.5
+  }
+ ]
+}

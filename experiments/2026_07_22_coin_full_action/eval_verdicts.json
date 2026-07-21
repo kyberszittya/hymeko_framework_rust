@@ -1,0 +1,137 @@
+{
+ "horizon": 160,
+ "distributions": {
+  "panel": 9,
+  "heldout": 50
+ },
+ "combined_n": 59,
+ "scripted": {
+  "center_rate": 0.8475,
+  "strict": 41,
+  "auc": 0.3477,
+  "tts_median": 66.0,
+  "first_zone_median": 0.0
+ },
+ "zero_action": {
+  "center_rate": 0.0169,
+  "strict": 0,
+  "auc": 0.0,
+  "tts_median": null,
+  "first_zone_median": 0.0
+ },
+ "BC": {
+  "center_rate": 0.7119,
+  "strict": 34,
+  "auc": 0.2881,
+  "tts_median": 66.0,
+  "first_zone_median": 0.0
+ },
+ "runs": {
+  "SAC": [
+   {
+    "seed": 0,
+    "center_rate": 0.4068,
+    "strict": 13,
+    "auc": 0.1156,
+    "tts_median": 70.0,
+    "first_zone_median": 0.0
+   },
+   {
+    "seed": 1,
+    "center_rate": 0.5254,
+    "strict": 17,
+    "auc": 0.1597,
+    "tts_median": 62.0,
+    "first_zone_median": 0.0
+   },
+   {
+    "seed": 2,
+    "center_rate": 0.5932,
+    "strict": 21,
+    "auc": 0.1705,
+    "tts_median": 79.0,
+    "first_zone_median": 0.0
+   },
+   {
+    "seed": 3,
+    "center_rate": 0.4407,
+    "strict": 15,
+    "auc": 0.1459,
+    "tts_median": 59.0,
+    "first_zone_median": 0.0
+   },
+   {
+    "seed": 4,
+    "center_rate": 0.6271,
+    "strict": 26,
+    "auc": 0.2049,
+    "tts_median": 82.5,
+    "first_zone_median": 0.0
+   }
+  ],
+  "TD3": [
+   {
+    "seed": 0,
+    "center_rate": 0.3898,
+    "strict": 10,
+    "auc": 0.0786,
+    "tts_median": 74.5,
+    "first_zone_median": 4.0
+   },
+   {
+    "seed": 1,
+    "center_rate": 0.7458,
+    "strict": 31,
+    "auc": 0.2948,
+    "tts_median": 58.0,
+    "first_zone_median": 0.0
+   },
+   {
+    "seed": 2,
+    "center_rate": 0.6271,
+    "strict": 27,
+    "auc": 0.2722,
+    "tts_median": 55.0,
+    "first_zone_median": 0.0
+   },
+   {
+    "seed": 3,
+    "center_rate": 0.5932,
+    "strict": 18,
+    "auc": 0.1638,
+    "tts_median": 66.0,
+    "first_zone_median": 0.0
+   },
+   {
+    "seed": 4,
+    "center_rate": 0.5424,
+    "strict": 24,
+    "auc": 0.2357,
+    "tts_median": 59.0,
+    "first_zone_median": 0.0
+   }
+  ]
+ },
+ "verdicts": {
+  "SAC": {
+   "median": {
+    "center_rate": 0.5254,
+    "strict": 17.0,
+    "auc": 0.1597,
+    "tts_median": 70.0
+   },
+   "verdict": "FULL_ACTION_RL_REGRESSION",
+   "n_seeds": 5
+  },
+  "TD3": {
+   "median": {
+    "center_rate": 0.5932,
+    "strict": 24.0,
+    "auc": 0.2357,
+    "tts_median": 59.0
+   },
+   "verdict": "FULL_ACTION_RL_REGRESSION",
+   "n_seeds": 5
+  }
+ }
+}
