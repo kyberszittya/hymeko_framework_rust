@@ -1,0 +1,32 @@
+{
+ "updated": "2026-07-22",
+ "rl_gate": "LIFTED for bounded SAC/TD3 entry campaign",
+ "revised_question": "Can reward-driven SAC/TD3 learn transport+recovery under the policy's OWN state distribution, from the best clonable 3/9 handoff-feedback init?",
+ "SUPPORTED": [
+  "physical/contact ceiling refuted",
+  "H=30 receding-horizon expert succeeds",
+  "open-loop plans provide successful trajectories",
+  "open-loop imitation accurate one-step but fails closed-loop",
+  "observation and action history do NOT close the BC gap",
+  "covariate shift begins at TRANSPORT",
+  "best clonable standalone init = handoff-feedback actor at 3/9 headline / 2/30 validation / 9/9 grasp"
+ ],
+ "NOT_SUPPORTED": [
+  "competent full-action BC",
+  "RL improvement",
+  "SAC superiority",
+  "TD3 superiority",
+  "final-test generalization",
+  "PPO comparison",
+  "necessity of RL in every formulation"
+ ],
+ "frozen_pre_rl_commit": "b519654",
+ "invariants_preserved": [
+  "canonical bundle 6664ac459cca8f62",
+  "K=6 strict success",
+  "reward/eval alignment",
+  "robot/scene/graph fingerprints",
+  "action contract",
+  "headline/validation/final-test banks (final-test untouched)"
+ ]
+}
