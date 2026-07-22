@@ -98,12 +98,20 @@ def dagger_transport_labels(bc, seeds, *, grasp_hold: int = 3) -> tuple[np.ndarr
     return np.asarray(obs, np.float32), np.asarray(act, np.float32)
 
 
-def load_trajectory_dataset(dataset_dir: str) -> dict:
-    """Load all certified full-trajectory ``traj_*.npz`` under ``dataset_dir`` into flat arrays + per-sample phase +
-    trajectory id (splits are at the trajectory level; never split one trajectory's steps across train/val)."""
+def load_trajectory_dataset(dataset_dir, patterns=("traj_*.npz",)) -> dict:
+    """Load certified full-trajectory ``*.npz`` (obs/act/phase) into flat arrays + per-sample phase + trajectory id.
+
+    ``dataset_dir`` may be a single dir or a list of dirs; ``patterns`` the filename globs to include (default the base
+    ``traj_*.npz``; pass ``("traj_*.npz", "dagger_*.npz")`` to merge base ∪ DAgger labels). Splits are made at the
+    trajectory level — never split one trajectory's steps across train/val."""
     import glob
     import os
-    files = sorted(glob.glob(os.path.join(dataset_dir, "traj_*.npz")))
+    dirs = [dataset_dir] if isinstance(dataset_dir, str) else list(dataset_dir)
+    files: list[str] = []
+    for d in dirs:
+        for pat in patterns:
+            files.extend(glob.glob(os.path.join(d, pat)))
+    files = sorted(set(files))
     obs, act, phase, traj = [], [], [], []
     for i, f in enumerate(files):
         d = np.load(f)
