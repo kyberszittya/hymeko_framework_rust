@@ -1,0 +1,36 @@
+{
+ "pi0_file_sha_prefix": "1902454c",
+ "residual_contract_sha": "25a820ea3a66",
+ "residual_contract": {
+  "residual_actor": "ZeroInitResidualActor",
+  "arch": "48->256->256->4 MLP ReLU, last layer zero-init",
+  "transform": "delta_exec = 0.25 * tanh(raw)",
+  "bound": 0.25,
+  "obs_dim": 48,
+  "action_dim": 4,
+  "init": "executed residual == 0 at update 0",
+  "observation": "canonical node_features flat 48 only (no phase/target/success/planner/traj/future)"
+ },
+ "composite_vs_base_maxdiff": {
+  "gate0": 0.0,
+  "gate1": 0.0
+ },
+ "composite_gate_rollout": {
+  "headline": 3,
+  "validation": 2,
+  "grasp": 9,
+  "delivered": [
+   1011,
+   1447,
+   1568
+  ]
+ },
+ "pi0_direct": {
+  "headline": 3,
+  "validation": 2,
+  "grasp": 9
+ },
+ "pi0_param_hash_unchanged": true,
+ "pi0_param_hash": "0a754e8183b5",
+ "verdict": "PHASE_GATED_RESIDUAL_UPDATE0_REPRODUCED"
+}
