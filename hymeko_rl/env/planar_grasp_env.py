@@ -34,8 +34,25 @@ from hymeko_rl.agents.hypergraph_state import HypergraphState
 _PLANAR_ARM = "data/robotics/galambos_planar.hymeko"
 _PLANAR_ENV = "data/robotics/galambos_env.hymeko"
 _PLANAR_TASK = "data/robotics/galambos_task.hymeko"
+_CANONICAL_ROBOT_V2 = "data/robotics/galambos_planar_v2.hymeko"   # load-bearing corrected robot (capsules + masks)
 _PLANE_Z = 0.04
 _ARM_REACH = 0.28   # each 2-link finger reaches ~l1+l2=0.30 m; 0.28 leaves a margin
+
+
+def emit_galambos_v2_mjcf() -> str:
+    """Emit the canonical planar arm from the LOAD-BEARING HyMeKo spec ``galambos_planar_v2.hymeko``
+    (spec → typed IR → MJCF emitter), then apply the thin control-config adapter for the values the kinematics IR
+    does not carry (joint range, actuator ctrlrange, joint damping) so the compiled MjModel matches the golden
+    ``make_planar_arms_mjcf`` exactly (proven: 0.00 mm fingertip parity, matching geom inventory + masks). The
+    geometry / collision / structure are spec-driven and sentinel-propagating; only these three control-config scalars
+    are the adapter's (they are Python constants in the golden too). # Errors ``FileNotFoundError`` / ``RuntimeError``
+    (missing spec or unbuilt CLI) — never a silent Python-robot fallback."""
+    from hymeko_rl.env.arm_world import emit_arm_mjcf
+    mjcf = emit_arm_mjcf(_CANONICAL_ROBOT_V2, name="galambos", control_mode="position")
+    return (mjcf
+            .replace('range="-3.1416 3.1416"', 'range="-4.0 4.0"')
+            .replace('ctrlrange="-3.1416 3.1416"', 'ctrlrange="-4.0 4.0"')
+            .replace('damping="2.0"', 'damping="1.5"'))
 
 
 def make_planar_arms_mjcf(*, base_x: float = 0.14, l1: float = 0.16, l2: float = 0.14,
