@@ -213,6 +213,13 @@ fn emit_geometry(out: &mut String, geom: &GeometryInfo, indent: usize) {
                 out.push_str(&format!("{pad}<sphere radius=\"{}\"/>\n", d[0]));
             }
         }
+        GeometryShape::Capsule => {
+            // URDF has no capsule primitive; approximate with a cylinder (radius, length). Capsule dims = [length, radius].
+            let d = &geom.dimensions;
+            if d.len() >= 2 {
+                out.push_str(&format!("{pad}<cylinder radius=\"{}\" length=\"{}\"/>\n", d[1], d[0]));
+            }
+        }
     }
 }
 

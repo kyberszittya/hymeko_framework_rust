@@ -16,12 +16,28 @@ pub enum GeometryShape {
     Box,
     Cylinder,
     Sphere,
+    /// A capsule (a cylinder capped by two hemispheres). Dimensional contract (2026-07-23, Galambos planar
+    /// extension): `dimensions[0]` = the **rod/segment length** (the cylinder-axis extent, i.e. the `fromto`
+    /// endpoint distance used by the golden MuJoCo builder — NOT including the hemispherical caps, which the
+    /// emitter adds as `size` beyond each endpoint); `dimensions[1]` = the capsule **radius**.
+    Capsule,
+}
+
+/// Explicit collision categories for a geometry (additive, 2026-07-23). Maps directly to MuJoCo
+/// `contype` / `conaffinity`. `None` (no `collision {}` sub-node) preserves the historical behaviour exactly
+/// (the emitter omits both attributes → MuJoCo defaults).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CollisionMask {
+    pub contype: i64,
+    pub conaffinity: i64,
 }
 
 #[derive(Debug, Clone)]
 pub struct GeometryInfo {
     pub shape: GeometryShape,
     pub dimensions: Vec<f64>,
+    /// Optional explicit collision mask; `None` ⇒ historical default behaviour (emitter omits contype/conaffinity).
+    pub collision: Option<CollisionMask>,
 }
 
 #[derive(Debug, Clone)]
@@ -238,6 +254,7 @@ fn extract_geometry<R: NameResolver>(ir: &Ir, res: &R, link_did: DeclId) -> Opti
         if cname != "link_geometry" { return None; }
 
         if let Some(nid) = ir.as_node(cid) {
+            let mut unknown_shape: Option<String> = None;
             for base in &ir.nodes[nid.0].bases {
                 let target = base.target();
                 if target.is_none() { continue; }
@@ -246,16 +263,39 @@ fn extract_geometry<R: NameResolver>(ir: &Ir, res: &R, link_did: DeclId) -> Opti
                     "box"      => Some(GeometryShape::Box),
                     "cylinder" => Some(GeometryShape::Cylinder),
                     "sphere"   => Some(GeometryShape::Sphere),
-                    _ => None,
+                    "capsule"  => Some(GeometryShape::Capsule),
+                    other      => { unknown_shape = Some(other.to_string()); None }
                 };
                 if let Some(shape) = shape {
                     let dims = find_child_list(ir, res, cid, "dimension")
                         .unwrap_or_default();
-                    return Some(GeometryInfo { shape, dimensions: dims });
+                    let collision = extract_collision(ir, res, cid);
+                    return Some(GeometryInfo { shape, dimensions: dims, collision });
                 }
+            }
+            // An EXPLICITLY supplied but unknown geometry shape must hard-fail (not silently disappear).
+            // Missing geometry (no shape base at all) remains allowed and returns None below.
+            if let Some(bad) = unknown_shape {
+                panic!(
+                    "unknown geometry shape {bad:?} in `link_geometry` (decl {cid:?}); \
+                     expected one of box / cylinder / sphere / capsule"
+                );
             }
         }
         None
+    })
+}
+
+/// Read an optional `collision {{ contype ...; conaffinity ...; }}` sub-node of a `link_geometry` node.
+/// Absence ⇒ `None` (historical default). Both fields are required together when the block is present.
+fn extract_collision<R: NameResolver>(ir: &Ir, res: &R, geom_did: DeclId) -> Option<CollisionMask> {
+    ir.decl_children(geom_did).find_map(|cid| {
+        if res.resolve(ir.decl_nodes[cid.0].name) != "collision" {
+            return None;
+        }
+        let contype = find_child_num(ir, res, cid, "contype")? as i64;
+        let conaffinity = find_child_num(ir, res, cid, "conaffinity")? as i64;
+        Some(CollisionMask { contype, conaffinity })
     })
 }
 

@@ -21,6 +21,7 @@ mod test_entropy;
 mod test_gazebo_sim_launch;
 mod test_gazebo_world;
 mod test_generation_engine;
+mod test_geom_extension;
 mod test_helpers;
 mod test_imported_real;
 mod test_mdsd_reuse;

@@ -951,6 +951,7 @@ mod mjcf_emit_tests {
                 geometry: Some(GeometryInfo {
                     shape: GeometryShape::Box,
                     dimensions: vec![0.05, 0.05, 0.05],
+                    collision: None,
                 }),
                 origin: None,
                 color: None,
