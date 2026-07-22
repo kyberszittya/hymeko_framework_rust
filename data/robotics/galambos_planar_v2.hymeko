@@ -11,6 +11,17 @@ galambos_planar_v2_description {
     @"meta_kinematics.hymeko";
 }
 
+// LOAD-BEARING control contract (2026-07-23): the canonical control values the kinematics IR does not carry. The
+// robot builder reads these (via the shared scalar reader) and injects them into the emitted MJCF; canonical mode
+// HARD-FAILS if this block or any field is absent (no Python fallback constants). Golden make_planar_arms_mjcf values.
+galambos_control {
+    joint_range 4.0;
+    ctrl_range 4.0;
+    damping 1.5;
+    kp 40.0;
+    kv 4.0;
+}
+
 galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geometry, meta_kinematics.kinematics.axes
 {
     world: meta_kinematics.kinematics.elements.frame {}

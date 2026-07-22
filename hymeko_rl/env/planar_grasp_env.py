@@ -15,6 +15,7 @@ from __future__ import annotations
 import math
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
 import gymnasium as gym
@@ -39,22 +40,63 @@ _PLANE_Z = 0.04
 _ARM_REACH = 0.28   # each 2-link finger reaches ~l1+l2=0.30 m; 0.28 leaves a margin
 
 
-def emit_galambos_v2_mjcf() -> str:
+_CONTROL_FIELDS = ("joint_range", "ctrl_range", "damping", "kp", "kv")
+
+
+def read_control_contract(spec_path: str | None = None) -> dict[str, float]:
+    """Read the LOAD-BEARING ``galambos_control { … }`` control contract from the robot spec — the canonical control
+    values (joint range, actuator ctrlrange, joint damping, servo kp/kv) that the kinematics IR does not carry.
+
+    Canonical mode HARD-FAILS if the block or any required field is absent: there are NO Python fallback constants.
+    Uses the shared narrow scalar reader (:func:`hymeko_rl.env.env_spec._num`) — the same mechanism ``EnvSpec`` and
+    ``RewardSpec`` use — so a value edited in the ``.hymeko`` spec propagates through to the emitted MJCF.
+
+    # Preconditions the spec declares a ``galambos_control`` node with all of :data:`_CONTROL_FIELDS`.
+    # Postconditions returns a dict with every field in :data:`_CONTROL_FIELDS` as a finite float.
+    # Errors ``ValueError`` if the control block or any required field is missing (no fallback constant)."""
+    import re
+
+    from hymeko_rl.env.env_spec import _num
+    path = spec_path or _CANONICAL_ROBOT_V2
+    text = Path(path).read_text(encoding="utf-8")
+    block = re.search(r"\bgalambos_control\s*\{([^}]*)\}", text)
+    if block is None:
+        raise ValueError(f"{path}: canonical mode requires a `galambos_control {{ … }}` control contract carrying "
+                         f"{list(_CONTROL_FIELDS)}; none found — no Python fallback constants are permitted.")
+    body = block.group(1)
+    out: dict[str, float] = {}
+    for field in _CONTROL_FIELDS:
+        v = _num(body, field, float("nan"))
+        if v != v:  # NaN sentinel → the field is absent from the control block
+            raise ValueError(f"{path}: galambos_control is missing required field `{field}` "
+                             f"(canonical mode has no fallback constant for it).")
+        out[field] = v
+    return out
+
+
+def emit_galambos_v2_mjcf(spec_path: str | None = None) -> str:
     """Emit the canonical planar arm from the LOAD-BEARING HyMeKo spec ``galambos_planar_v2.hymeko``
-    (spec → typed IR → MJCF emitter), then apply the thin control-config adapter for the values the kinematics IR
-    does not carry (joint range, actuator ctrlrange, joint damping) so the compiled MjModel matches the golden
-    ``make_planar_arms_mjcf`` exactly (proven: 0.00 mm fingertip parity, matching geom inventory + masks). The
-    geometry / collision / structure are spec-driven and sentinel-propagating; only these three control-config scalars
-    are the adapter's (they are Python constants in the golden too). # Errors ``FileNotFoundError`` / ``RuntimeError``
-    (missing spec or unbuilt CLI) — never a silent Python-robot fallback."""
+    (spec → typed IR → MJCF emitter), then inject the SPEC-DRIVEN control contract (:func:`read_control_contract` —
+    joint range, actuator ctrlrange, joint damping, servo kp/kv) which the kinematics IR does not carry. Every control
+    value comes from the ``galambos_control`` block in the spec; canonical mode hard-fails if any is absent (no Python
+    fallback constants). The compiled MjModel matches the golden ``make_planar_arms_mjcf`` exactly (proven: 0.00 mm
+    fingertip parity, matching geom inventory + masks, control-config parity). ``spec_path`` overrides the canonical
+    spec (used by control-contract sentinels to drive the emit from a mutated copy). # Errors ``ValueError`` (missing
+    control contract), ``FileNotFoundError`` / ``RuntimeError`` (missing spec or unbuilt CLI) — never a silent fallback."""
     import re
 
     from hymeko_rl.env.arm_world import emit_arm_mjcf
-    mjcf = emit_arm_mjcf(_CANONICAL_ROBOT_V2, name="galambos", control_mode="position")
-    mjcf = (mjcf
-            .replace('range="-3.1416 3.1416"', 'range="-4.0 4.0"')
-            .replace('ctrlrange="-3.1416 3.1416"', 'ctrlrange="-4.0 4.0"')
-            .replace('damping="2.0"', 'damping="1.5"'))
+    path = spec_path or _CANONICAL_ROBOT_V2
+    ctl = read_control_contract(path)
+    jr, cr, damp, kp, kv = (ctl["joint_range"], ctl["ctrl_range"], ctl["damping"], ctl["kp"], ctl["kv"])
+    mjcf = emit_arm_mjcf(path, name="galambos", control_mode="position")
+    # Inject spec-driven control values over the emitter's retarget defaults. ctrlrange BEFORE range (so the joint
+    # `(?<!ctrl)range=` lookbehind does not clobber the actuator ctrlrange), then damping / servo gains.
+    mjcf = re.sub(r'ctrlrange="-?[\d.]+ -?[\d.]+"', f'ctrlrange="{-cr:g} {cr:g}"', mjcf)
+    mjcf = re.sub(r'(?<!ctrl)range="-?[\d.]+ -?[\d.]+"', f'range="{-jr:g} {jr:g}"', mjcf)
+    mjcf = re.sub(r'damping="-?[\d.]+"', f'damping="{damp:g}"', mjcf)
+    mjcf = re.sub(r'kp="-?[\d.]+"', f'kp="{kp:g}"', mjcf)
+    mjcf = re.sub(r'kv="-?[\d.]+"', f'kv="{kv:g}"', mjcf)
     # In each fingertip_{side} body: (1) NAME the (emitter-unnamed) sphere geom `fingertip_{side}` so the env's
     # POINT/RING variant + contact-priority look it up; (2) inject a `tip_{side}` site so `with_fingertip_sites`
     # treats the tip as already declared (idempotent) and does NOT inject a duplicate fingertip geom — mirroring the
