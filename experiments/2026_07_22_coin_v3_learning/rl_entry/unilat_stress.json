@@ -1,0 +1,157 @@
+{
+ "real": {
+  "pi0_1011": {
+   "or_arms": 2,
+   "or_premature": 1,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 128
+  },
+  "pi0_1045": {
+   "or_arms": 3,
+   "or_premature": 2,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 45
+  },
+  "pi0_1164": {
+   "or_arms": 5,
+   "or_premature": 1,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 28
+  },
+  "pi0_1174": {
+   "or_arms": 2,
+   "or_premature": 1,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 17
+  },
+  "pi0_1202": {
+   "or_arms": 4,
+   "or_premature": 4,
+   "and_arms": 0,
+   "and_premature": 0,
+   "and_active_transport": 0
+  },
+  "pi0_1278": {
+   "or_arms": 3,
+   "or_premature": 2,
+   "and_arms": 0,
+   "and_premature": 0,
+   "and_active_transport": 0
+  },
+  "pi0_1358": {
+   "or_arms": 2,
+   "or_premature": 2,
+   "and_arms": 0,
+   "and_premature": 0,
+   "and_active_transport": 0
+  },
+  "pi0_1447": {
+   "or_arms": 6,
+   "or_premature": 6,
+   "and_arms": 0,
+   "and_premature": 0,
+   "and_active_transport": 0
+  },
+  "pi0_1568": {
+   "or_arms": 4,
+   "or_premature": 2,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 3
+  },
+  "cert_6000": {
+   "or_arms": 2,
+   "or_premature": 2,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 89
+  },
+  "cert_6001": {
+   "or_arms": 1,
+   "or_premature": 0,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 68
+  },
+  "cert_6002": {
+   "or_arms": 2,
+   "or_premature": 2,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 73
+  },
+  "cert_6003": {
+   "or_arms": 1,
+   "or_premature": 0,
+   "and_arms": 1,
+   "and_premature": 0,
+   "and_active_transport": 68
+  },
+  "cert_6005": {
+   "or_arms": 5,
+   "or_premature": 0,
+   "and_arms": 0,
+   "and_premature": 0,
+   "and_active_transport": 0
+  }
+ },
+ "synthetic": [
+  {
+   "case": "unilateral_transient_2",
+   "armed_at": -1,
+   "unilateral_arm_window": null
+  },
+  {
+   "case": "unilateral_3steps",
+   "armed_at": 3,
+   "unilateral_arm_window": true
+  },
+  {
+   "case": "alternating_LR",
+   "armed_at": 2,
+   "unilateral_arm_window": true
+  },
+  {
+   "case": "bilateral_3steps",
+   "armed_at": 3,
+   "unilateral_arm_window": false
+  },
+  {
+   "case": "contact_bounce",
+   "armed_at": -1,
+   "unilateral_arm_window": null
+  },
+  {
+   "case": "acquire_unilateral_then_bilateral",
+   "armed_at": 3,
+   "unilateral_arm_window": true
+  }
+ ],
+ "predicate": "left_contact OR right_contact",
+ "refinement_bilateral_and": {
+  "or": {
+   "prem_traj": 11,
+   "arms": 42,
+   "active_transport": 1430
+  },
+  "and": {
+   "prem_traj": 0,
+   "arms": 9,
+   "active_transport": 519
+  }
+ },
+ "summary": {
+  "n_traj": 14,
+  "traj_with_premature_unilateral_acq": 11,
+  "material_rate": 0.786,
+  "total_arm_events": 39,
+  "total_unilateral_windows": 31,
+  "unilateral_3steps_arms_synthetic": true,
+  "material_premature": true
+ },
+ "verdict": "PHASE_GATE_PREMATURE_UNILATERAL_ACTIVATION"
+}
