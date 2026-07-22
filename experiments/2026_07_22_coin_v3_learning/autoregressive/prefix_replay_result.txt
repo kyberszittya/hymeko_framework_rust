@@ -1,0 +1,7 @@
+retrained C seed2; free-run headline: 1 /9
+
+§6 prefix-replay: C policy delivery when handed off AT each phase (near-distribution takeover):
+  handoff at TRANSPORT     : delivered 0/5
+  handoff at TARGET_ENTRY  : delivered 0/4
+  handoff at SETTLING      : delivered 1/2
+  handoff at STRICT_DWELL  : delivered 0/1

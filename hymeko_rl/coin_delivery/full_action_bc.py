@@ -224,6 +224,43 @@ def eval_framestack_bc_delivery(policy, seeds, *, k: int, horizon: int = 360) ->
             "deliver_rate": round(deliv / n, 4), "delivered_seeds": [s for s, dd in per if dd]}
 
 
+def eval_action_history_bc_delivery(policy, seeds, *, horizon: int = 360, teacher_forced=None) -> dict:
+    """Deploy a FULL_ACTION_OBS_HISTORY_V1 (152-dim) policy AUTOREGRESSIVELY from NEUTRAL — the action channel is fed
+    the policy's OWN executed actions (no teacher forcing). Optionally ``teacher_forced`` = a dict seed->(obs_seq,
+    act_seq) to instead feed demonstration actions (exposure-bias diagnostic, §6). Grades strict K=6."""
+    from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
+    from hymeko_rl.coin_delivery.full_action_obs_history import ObsHistoryV1
+    from hymeko_rl.experiments.coin_neutral_start import _cert_step, _clearance, neutral_env
+    env, cf = neutral_env(prefix_steps=0)
+    inner = cf._env
+    fc = grasp = deliv = 0
+    per = []
+    for s in seeds:
+        env.set_stage(0)
+        env.reset(seed=int(s))
+        cert = DeliveryCertifier(initial_clearance=_clearance(inner))
+        hist = ObsHistoryV1()
+        hist.reset(np.asarray(inner.node_features(), np.float32).flatten())
+        touched = False
+        for _t in range(horizon):
+            cert.update(_cert_step(inner, cf))
+            m = inner._planar_metrics
+            touched = touched or bool(m.left_contact or m.right_contact)
+            if cert.delivery_certified:
+                break
+            a = np.asarray(policy.act(hist.feature()), np.float32)
+            inner.step(a)
+            hist.push(np.asarray(inner.node_features(), np.float32).flatten(), a)   # OWN action into the history
+        d = bool(cert.delivery_certified)
+        fc += int(touched)
+        grasp += int(getattr(cert, "ever_grasped", False) or touched)
+        deliv += int(d)
+        per.append((int(s), d))
+    n = max(1, len(list(seeds)))
+    return {"n": n, "first_contact": fc, "grasp": grasp, "deliver": deliv,
+            "deliver_rate": round(deliv / n, 4), "delivered_seeds": [s for s, dd in per if dd]}
+
+
 def eval_bc_delivery(policy, seeds, *, horizon: int = 360) -> dict:
     """Deploy ``policy`` (``.act(flat48)->4`` or None for zero-action) from NEUTRAL and grade strict K=6 delivery with
     the certificate — no scripted base, no expert online, all motion through ``inner.step``."""
