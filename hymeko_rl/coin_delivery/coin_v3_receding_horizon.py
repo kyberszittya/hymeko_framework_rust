@@ -99,6 +99,148 @@ def plan_first_action(inner, cf, clearance, touched, dwell, seed, *, horizon=15,
     return best_seq.reshape(horizon, ACT_DIM)[0].astype(np.float32), best
 
 
+# ---- §5 closed-loop receding-horizon rollout from true canonical neutral ----------------------------------------
+
+def receding_horizon_rollout(seed, *, horizon=15, pop=48, iters=8, elite=8, plan_seed_base=0, max_steps=360,
+                             approach_cap=160, grasp_hold=3):
+    """True-neutral → frozen E-approach to the bilateral-grasp handoff (the declared teacher approach; the strict-K=6
+    scorer has no approach gradient, memory ``spec-reward``) → then the §3 receding-horizon CEM expert REPLANS every
+    step (4-dim ``inner.step``, unchanged strict-K=6 certificate), executing only the first action and discarding the
+    suffix. Returns the full executed action sequence + per-step diagnostics + outcome. No open-loop suffix labels."""
+    import time
+
+    import torch
+
+    from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
+    from hymeko_rl.coin_delivery.full_action_obs_history import ObsHistoryV1
+    from hymeko_rl.experiments.coin_neutral_start import _cert_step, _clearance, _e_approach_actor, neutral_env
+    e = _e_approach_actor()
+    env, cf = neutral_env(prefix_steps=0)
+    inner = cf._env
+    env.set_stage(0)
+    env.reset(seed=int(seed))
+    clearance = _clearance(inner)
+    cert = DeliveryCertifier(initial_clearance=clearance)
+    hist = ObsHistoryV1()
+    hist.reset(np.asarray(inner.node_features(), np.float32).flatten())
+    executed: list = []
+    feats: list = []
+    dwell_seq: list = []
+    cem_scores: list = []
+    latencies: list = []
+    n_cand: list = []
+    start_dtz = float(inner._planar_metrics.disk_to_zone)
+    bi = 0
+    grasped = False
+    handoff_step = None
+    first_contact = bilateral = entered = centered = False
+    contact_loss = exit_after_entry = False
+    was_bilateral = was_entered = False
+    max_dwell = 0
+    reason = "timeout"
+    for step in range(max_steps):
+        cert.update(_cert_step(inner, cf))
+        m = inner._planar_metrics
+        dtz = float(m.disk_to_zone)
+        lc, rc = bool(m.left_contact), bool(m.right_contact)
+        first_contact = first_contact or lc or rc
+        now_bi = lc and rc
+        bilateral = bilateral or now_bi
+        if was_bilateral and not now_bi and grasped:
+            contact_loss = True
+        was_bilateral = now_bi
+        entered = entered or dtz <= 0.04
+        centered = centered or dtz <= CENTER_TOL
+        if was_entered and dtz > 0.04:
+            exit_after_entry = True
+        was_entered = dtz <= 0.04
+        max_dwell = max(max_dwell, int(cert.delivery_dwell))
+        dwell_seq.append(int(cert.delivery_dwell))
+        if cert.delivery_certified:
+            reason = "strict_success"
+            break
+        if not grasped and (bi < grasp_hold) and step < approach_cap:
+            a = e.action_mean(torch.as_tensor(np.asarray(inner.node_features(), np.float32)[None]))[0].detach().numpy()
+            a = np.asarray(a, np.float32)
+            bi = bi + 1 if now_bi else 0
+            if bi >= grasp_hold:
+                grasped = True
+                handoff_step = step
+            cem_scores.append(None)
+            latencies.append(0.0)
+            n_cand.append(0)
+        else:
+            grasped = True
+            if handoff_step is None:
+                handoff_step = step
+            t0 = time.time()
+            a, res = plan_first_action(inner, cf, clearance, cert.robot_touched, cert.delivery_dwell,
+                                       plan_seed_base + step, horizon=horizon, pop=pop, iters=iters, elite=elite)
+            latencies.append(round(time.time() - t0, 4))
+            n_cand.append(pop * iters)
+            cem_scores.append(round(-res["min_dtz"] + res["dwell"], 4))
+        feats.append(hist.feature().copy())
+        inner.step(np.asarray(a, np.float32))
+        executed.append(np.asarray(a, np.float32).copy())
+        hist.push(np.asarray(inner.node_features(), np.float32).flatten(), a)
+    strict = reason == "strict_success"
+    fail_class = _classify_failure(strict, first_contact, bilateral, grasped, entered, centered, max_dwell,
+                                   contact_loss, exit_after_entry, start_dtz,
+                                   float(inner._planar_metrics.disk_to_zone))
+    return {"seed": int(seed), "strict": bool(strict), "reason": reason, "steps": len(executed),
+            "handoff_step": handoff_step, "first_contact": bool(first_contact), "bilateral": bool(bilateral),
+            "entered": bool(entered), "centered": bool(centered), "max_dwell": int(max_dwell),
+            "contact_loss_after_acq": bool(contact_loss), "target_exit_after_entry": bool(exit_after_entry),
+            "failure_class": fail_class,
+            "mean_action_mag": round(float(np.mean([np.linalg.norm(a) for a in executed])) if executed else 0.0, 4),
+            "mean_plan_latency": round(float(np.mean([x for x in latencies if x > 0])) if any(latencies) else 0.0, 4),
+            "total_candidate_evals": int(sum(n_cand)),
+            "executed": np.asarray(executed, np.float32), "dwell_seq": dwell_seq}
+
+
+def _classify_failure(strict, fc, bil, grasped, entered, centered, max_dwell, contact_loss, exit_after, start_dtz, end_dtz):
+    if strict:
+        return None
+    if not fc:
+        return "approach_failure"
+    if not bil:
+        return "no_bilateral_grasp"
+    if contact_loss and not centered:
+        return "contact_loss_recovery_failure"
+    if not entered:
+        return "transport_failure" if end_dtz < start_dtz - 0.02 else "transport_failure"
+    if not centered:
+        return "target_entry_failure"
+    if exit_after and max_dwell == 0:
+        return "target_exit_failure"
+    if centered and max_dwell == 0:
+        return "settling_failure"
+    if 0 < max_dwell < 6:
+        return "dwell_recovery_failure"
+    return "timeout"
+
+
+def replay_certify(seed, executed, *, max_steps=360):
+    """Reset true neutral with ``seed``, replay the exact executed action sequence WITHOUT replanning, and verify the
+    unchanged strict-K=6 certificate. Returns (certified, cert_step, max_dwell). Catches replay nondeterminism."""
+    from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
+    from hymeko_rl.experiments.coin_neutral_start import _cert_step, _clearance, neutral_env
+    env, cf = neutral_env(prefix_steps=0)
+    inner = cf._env
+    env.set_stage(0)
+    env.reset(seed=int(seed))
+    cert = DeliveryCertifier(initial_clearance=_clearance(inner))
+    md = 0
+    for t, a in enumerate(executed):
+        cert.update(_cert_step(inner, cf))
+        md = max(md, int(cert.delivery_dwell))
+        if cert.delivery_certified:
+            return True, t, md
+        inner.step(np.asarray(a, np.float32))
+    cert.update(_cert_step(inner, cf))
+    return bool(cert.delivery_certified), len(executed), max(md, int(cert.delivery_dwell))
+
+
 # ---- state capture (representative per-phase states with their FULL_ACTION_OBS_HISTORY_V1 key) -------------------
 
 _PHASES = ["APPROACH", "CONTACT_ACQUISITION", "BILATERAL_OR_STABLE_CONTACT", "TRANSPORT",
