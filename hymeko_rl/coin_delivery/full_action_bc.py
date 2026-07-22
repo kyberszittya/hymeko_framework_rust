@@ -59,6 +59,45 @@ def train_bc(obs: np.ndarray, act: np.ndarray, *, epochs: int = 200, lr: float =
     return bc, hist
 
 
+def dagger_transport_labels(bc, seeds, *, grasp_hold: int = 3) -> tuple[np.ndarray, np.ndarray]:
+    """On-policy DAgger for the failing TRANSPORT phase: roll the BC (``inner.step``) to its OWN grasp state, then hand
+    off to the expert handoff transport via ``env.step`` (which maintains the transport obs) and record
+    ``(node_features flat 48, executed ctrl 4)`` — the expert's correct action on the states the BC actually reaches.
+    The approach phase is already competent (9/9 contact), so DAgger targets transport (the observed failure)."""
+    from hymeko_rl.coin_delivery.full_action_dataset import _handoff_transport
+    from hymeko_rl.experiments.coin_delivery_e0_campaign import _greedy_action_fn
+    from hymeko_rl.experiments.coin_neutral_start import neutral_env
+    tfn = _greedy_action_fn(_handoff_transport())
+    env, cf = neutral_env(prefix_steps=0)
+    inner = cf._env
+    obs: list[np.ndarray] = []
+    act: list[np.ndarray] = []
+    for s in seeds:
+        env.set_stage(0)
+        env.reset(seed=int(s))
+        bi = 0
+        for _k in range(160):                                    # BC drives the approach on-policy
+            m = inner._planar_metrics
+            bi = bi + 1 if (m.left_contact and m.right_contact) else 0
+            if bi >= grasp_hold:
+                break
+            nf = np.asarray(inner.node_features(), np.float32).flatten()
+            inner.step(np.asarray(bc.act(nf), np.float32))
+        cf._prev_coin = np.asarray(inner._planar_metrics.disk_pos[:2], np.float64)   # transition to transport
+        cf._t = 0
+        cf._both_hist = []
+        env._suffix_t = 0
+        env._prev_dtz = env._dtz()
+        env._prev_both = env._both()
+        o = cf._obs(np.zeros(4, np.float32))
+        for _t in range(200):                                    # expert handoff labels on the BC-reached grasp state
+            nf = np.asarray(inner.node_features(), np.float32).flatten()
+            o = env.step(np.asarray(tfn(env, o, None), np.float32))[0]
+            obs.append(nf)
+            act.append(np.asarray(inner.data.ctrl[:4], np.float32).copy())
+    return np.asarray(obs, np.float32), np.asarray(act, np.float32)
+
+
 def eval_bc_delivery(policy, seeds, *, horizon: int = 360) -> dict:
     """Deploy ``policy`` (``.act(flat48)->4`` or None for zero-action) from NEUTRAL and grade strict K=6 delivery with
     the certificate — no scripted base, no expert online, all motion through ``inner.step``."""
