@@ -68,6 +68,14 @@ class DeliveryRLConfig:
     # ablation reward (the old ``delivery_reward``, DUPLICATE_DIVERGED). No implicit fallback. See
     # reports/2026-07-22-coin-hymeko-spec-bundle.md.
     reward_source: str = "hymeko_spec"
+    # Canonical K=6 shared strict-held-dwell success contract (authoritative decision 2026-07-23). ``canonical_k6``
+    # terminates on the 6th consecutive strict step (centered + settled + bilateral grasp), emits the v3 terminal
+    # exactly once, and stops dense accumulation; ``legacy_center`` is the historical 1-step center terminal (preserved
+    # for reproduction). ``held_dwell_steps`` is the ONE dwell K shared by reward / success / termination / certificate.
+    success_contract: str = "canonical_k6"
+    held_dwell_steps: int = 6
+    settle_vel: float = 0.06
+    canonical_reward_file: str = "data/robotics/galambos_task_deliver_v3.hymeko"
     # potential-based delivery reward weights
     w_progress: float = 10.0      # per metre closed toward the zone centre (Φ = −disk_to_zone shaping)
     w_zone: float = 1.0           # one-shot on first zone entry (disk_to_zone <= zone_half)
@@ -85,6 +93,10 @@ class DeliveryRLConfig:
             raise ValueError("require 0 < center_tol <= zone_half and lo < hi")
         if self.reward_source not in ("hymeko_spec", "python_delivery"):
             raise ValueError(f"reward_source must be 'hymeko_spec' or 'python_delivery'; got {self.reward_source!r}")
+        if self.success_contract not in ("canonical_k6", "legacy_center"):
+            raise ValueError(f"success_contract must be 'canonical_k6' or 'legacy_center'; got {self.success_contract!r}")
+        if self.held_dwell_steps < 1:
+            raise ValueError("held_dwell_steps >= 1 required")
 
 
 def residual_action(base: np.ndarray, raw: np.ndarray, delta: float, lo: float, hi: float) -> np.ndarray:
@@ -142,6 +154,11 @@ class CoinDeliveryTrainEnv:
         self.env = env
         self.inner = env._env                                    # the planar MuJoCo env (metrics live here)
         self.cfg = cfg or DeliveryRLConfig()
+        if self.cfg.success_contract == "canonical_k6" and self.cfg.reward_source == "hymeko_spec":
+            # Canonical mode loads the versioned v3 reward (K=6); v2b is preserved for historical reproduction.
+            from hymeko_rl.env.reward import RewardSpec
+            self.inner.reward_spec = RewardSpec.from_hymeko(self.cfg.canonical_reward_file)
+            self.inner.reward_file = self.cfg.canonical_reward_file
         self._delta_override: float | None = None               # per-episode residual scale (Stage-1 oracle / per-class δ)
         self._base_override: "Callable[[Any, int], np.ndarray] | None" = None  # replace the grasp_carry SUFFIX base
         self._last_obs = np.zeros(self.env.observation_space.shape, dtype=np.float32)
@@ -168,6 +185,8 @@ class CoinDeliveryTrainEnv:
         self._prev_both = False           # both-contact on the previous step (for the drop falling-edge)
         self._dropped_once = False        # the one-time drop event already fired this episode
         self._stag_run = 0                # consecutive no-transport steps (windowed stall)
+        self._strict_dwell = 0            # canonical K=6 consecutive strict steps (resets on any violation)
+        self._robot_touched = False       # episode-level robot-attribution guard (a fingertip touched the coin)
         self._zone_entered = False
         self._center_reached = False
         self._handoff = False
@@ -244,22 +263,42 @@ class CoinDeliveryTrainEnv:
         dtz, both = self._dtz(), self._both()
         zone_before = self._zone_entered
         entered_now, center_now, stalled, dropped = self._event_flags(dtz, both, zone_before)
+        # Canonical K=6 shared strict-held-dwell: ONE strict predicate drives success / termination AND the reward's
+        # terminal (via inner._success). A violation before K resets the dwell to 0. Set BEFORE scoring the reward so
+        # v3's terminal_deliver_graded fires exactly on the K-th consecutive strict step.
+        delivered_now = False
+        if self.cfg.success_contract == "canonical_k6":
+            # EXACT COIN_DELIVERY_STRICT per-step predicate (delivery_certificate.py:91-97): centered + settled (push/
+            # coast VALID — NOT bilateral, which is the GRASP variant), with robot-attribution as an episode guard.
+            speed = float(np.linalg.norm(self.inner.data.qvel[self.inner._disk_x_adr:self.inner._disk_x_adr + 2]))
+            m = self.inner._planar_metrics
+            self._robot_touched = self._robot_touched or bool(m.left_contact or m.right_contact)
+            strict_ok = (dtz <= self.cfg.center_tol) and (speed < self.cfg.settle_vel)
+            self._strict_dwell = (self._strict_dwell + 1) if strict_ok else 0
+            self.inner._success = int(self._strict_dwell)             # inner env success counter := strict dwell
+            self.inner.success_steps = int(self.cfg.held_dwell_steps)  # so v3 terminal fires at K (getattr-read term)
+            delivered_now = (self._strict_dwell >= self.cfg.held_dwell_steps and self._robot_touched
+                             and not self._center_reached)
         if self.cfg.reward_source == "hymeko_spec":
-            # LOAD-BEARING v2b: score the inner PlanarGraspEnv's loaded RewardSpec on the post-step state, exactly as
-            # PlanarGraspEnv.step does (env, disk_to_zone, applied joint ctrl). The .hymeko is now the reward authority.
+            # LOAD-BEARING v2b/v3: score the inner PlanarGraspEnv's loaded RewardSpec on the post-step state, exactly
+            # as PlanarGraspEnv.step does (env, disk_to_zone, applied joint ctrl). The .hymeko is the reward authority.
             reward = float(self.inner.reward_spec.evaluate(self.inner, dtz, self.inner.data.ctrl))
         else:  # explicit LEGACY ablation (the old DUPLICATE_DIVERGED Python reward)
             reward = delivery_reward(self._prev_dtz, dtz, entered_zone_now=entered_now, center_now=center_now,
                                      stalled=stalled, dropped=dropped, cfg=self.cfg)
         self._dropped_once = self._dropped_once or dropped
         self._zone_entered = zone_before or (dtz <= self.cfg.zone_half)
-        self._center_reached = self._center_reached or center_now
         self._had_both = self._had_both or both
         self._prev_both = both
         self._prev_dtz = dtz
         safety = bool(sinfo.get("safety_violation"))
-        terminated = bool(center_now or safety)
-        truncated = bool(self._suffix_t >= self.cfg.horizon)
+        if self.cfg.success_contract == "canonical_k6":
+            self._center_reached = self._center_reached or delivered_now   # ONE success flag = K-dwell completion
+            terminated = bool(delivered_now or safety)                     # terminate ON the K-th strict step
+        else:  # legacy 1-step center terminal
+            self._center_reached = self._center_reached or center_now
+            terminated = bool(center_now or safety)
+        truncated = bool((not terminated) and self._suffix_t >= self.cfg.horizon)
         return reward, terminated, truncated, safety, dtz
 
     def _record_telemetry(self, base: np.ndarray, raw: np.ndarray, a_exec: np.ndarray) -> None:

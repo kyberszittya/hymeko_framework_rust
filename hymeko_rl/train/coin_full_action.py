@@ -49,11 +49,10 @@ class FullActionDeliveryEnv(CoinDeliveryTrainEnv):
         obs, _r, _t, _tr, sinfo = self.env.step(a_exec)
         self._last_obs = np.asarray(obs, dtype=np.float32)
         self._suffix_t += 1
-        reward, _terminated_center, truncated, safety, dtz = self._transition(sinfo)
-        # full-action DELIVERY: do NOT terminate at center-reach — the strict certificate needs a 6-step HELD dwell,
-        # which cannot accumulate if the episode ends the instant the coin first touches the centre. Run to the
-        # horizon (or a safety violation); reward still credits the center event via _transition.
-        terminated = bool(safety)
+        # Canonical K=6 (2026-07-23): _transition now terminates on the 6th consecutive strict step (dwell), so the
+        # strict certificate's held-dwell is exactly the success/termination condition — one shared contract. (The old
+        # "run to horizon, never terminate at center" hack is superseded; legacy_center still terminates at 1 step.)
+        reward, terminated, truncated, safety, dtz = self._transition(sinfo)
         return self._last_obs, reward, terminated, truncated, self._info(safety=safety, dtz=dtz)
 
 
