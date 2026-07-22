@@ -1343,30 +1343,6 @@
    ],
    "superseded_findings": null,
    "open_questions": "Does a hard per-update executed-action trust-region (radius < 0.02) preserve the 3/9 marginal deliveries AND admit any Q-improvement, or is the basin simply not policy-improvable (only search-improvable)?"
-  },
-  {
-   "id": "F-SAC-13",
-   "claim": "CRITIC_NO_USEFUL_LOCAL_RANKING: a standard TD3 composite-action critic Q(obs, deployed composite action, encoded controller state) trained by stored-gate_tp1 bootstrap does NOT locally rank within-bound (0.25) residual perturbations over a competent frozen base \u2014 per-family pairwise rank accuracy ~chance (transport 0.500, entry 0.536, settling 0.543, contact_retention 0.571; none >=0.6), despite a strong realized-return ground-truth signal (counterfactual-rollout spread up to 85 at fragile-contact states). Discriminating test run: twin disagreement DIVERGED 1.95->5->15 with more training then STABILIZED to 4.8 (lower LR + grad clip) yet ranking stayed at chance => not mere under-convergence. Mechanism: the state value dominates and the action-induced Q-spread (~2) sits at the critic's own value-estimation noise floor for a small residual over a competent base. No OOD residual-boundary preference (rate 0.0). Blocks authorizing a residual actor update.",
-   "classification": "NEGATIVE_RESULT_REQUIRING_A_GUARD",
-   "source_experiment": "PHASE_GATED_RESIDUAL_CRITIC authorization (coin_residual_critic_authorize, 2026-07-23)",
-   "raw_evidence": [
-    "reports/2026-07-23-phase-gated-residual-critic.md",
-    "experiments/2026_07_22_coin_v3_learning/rl_entry/critic_auth.json",
-    "reports/figures/coin_residual_critic_auth.png"
-   ],
-   "confidence": "MEASURED across 4 runs + a stabilization discriminator; counterfactual labels deterministic (r1==r2). Scoped to the standard TD3 composite-action critic at 0.25 residual scale.",
-   "scope": "authorizing a small learned residual over a competent frozen base via a value-function critic's local action ranking",
-   "limitations": "NOT tested: advantage/A2C-style target isolating the action-marginal, n-step returns, or a residual-marginal critic that removes the dominant state value. So this is a negative for the STANDARD critic target, not a proof residual improvement is impossible.",
-   "framework_consequence": "GUARD: do NOT authorize a residual actor TD3 update on a standard composite-action value critic when the residual is small relative to the action range and the base is competent \u2014 the action-marginal is below the critic's value-noise floor and the actor gradient is ~chance. Redesign the critic target (advantage/n-step/residual-marginal) OR treat residual improvement as a SEARCH problem (cf. F-COIN nonlocal exact-rollout search > local policy-improvement). Reusable: CompositeTwinCritic + encode_controller_state + counterfactual-rollout labeler (coin_residual_critic_authorize).",
-   "code_changes": [
-    "hymeko_rl/coin_delivery/coin_residual_critic.py (encoder + twin critic)",
-    "experiments/.../rl_entry/coin_residual_critic_authorize.py (authorization + counterfactual labels)"
-   ],
-   "regression_tests": [
-    "hymeko_rl/tests/test_coin_residual_critic.py (8 tests)"
-   ],
-   "superseded_findings": null,
-   "open_questions": "Does an advantage/n-step/residual-marginal critic resolve the within-bound residual value difference, or is local residual improvement not critic-authorizable at this scale (search-only)?"
   }
  ]
 }

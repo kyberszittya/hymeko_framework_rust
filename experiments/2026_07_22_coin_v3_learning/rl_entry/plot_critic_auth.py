@@ -24,8 +24,8 @@ for f in fams:
         a.scatter(tr - tr.mean(), q - q.mean(), s=10, alpha=.4, color=colors[f])
 a.axhline(0, color="k", lw=.5); a.axvline(0, color="k", lw=.5)
 a.set_xlabel("realized return − state mean (ground truth)")
-a.set_ylabel("critic min-Q − state mean")
-a.set_title("Within-state action signal: critic Q vs realized return\n(no clear positive slope ⇒ chance-level ranking)")
+a.set_ylabel("min-Q − state mean (CENTERED, not abs twin)")
+a.set_title("Within-state action signal (DEVELOPMENT diagnostic)\ncritic min-Q vs realized return, per-state centered")
 a.grid(alpha=.3)
 
 # B: per-family rank accuracy
@@ -46,30 +46,31 @@ for bar, ac in zip(bars, accs):
 # C: diagnostic text
 c = ax[2]; c.axis("off")
 sw = d["boundary_sweep"]
-txt = (f"VERDICT: {d['verdict']}\n\n"
-       f"Infrastructure (validated):\n"
-       f"  encoder {d['encoder_fingerprint']}\n"
-       f"  critic  {d['critic_contract_sha']}\n"
-       f"  panels train/auth/final disjoint\n"
-       f"  final panel SEALED (n={d['panels']['final_sealed']['n']})\n\n"
-       f"Stabilized critic:\n"
-       f"  twin disagreement {d['twin_disagreement']}\n"
-       f"  boundary_pref_rate {sw['boundary_pref_rate']}  (no OOD boundary pref)\n"
-       f"  |residual-norm| vs Q corr {sw['mean_abs_norm_vs_q_corr']}\n\n"
-       f"Mechanism (blocking):\n"
-       f"  realized-return signal EXISTS\n"
-       f"  (contact spread up to 85), but the\n"
-       f"  action-induced Q signal sits at the\n"
-       f"  critic's value-estimation noise floor\n"
-       f"  for within-bound (0.25) residuals over\n"
-       f"  a competent base ⇒ rank ≈ chance.\n\n"
-       f"  Actor update NOT authorized.\n"
-       f"  No boundary preference / no leakage.")
-c.text(0.02, 0.98, txt, transform=c.transAxes, fontsize=9, va="top", family="monospace",
-       bbox=dict(boxstyle="round", fc="#fff3cd", ec="gray"))
+txt = ("STATUS: PHASE_GATED_RESIDUAL_CRITIC_\n"
+       "        AUTHORIZATION_BLOCKED\n"
+       "(development diagnostic — NOT final audit)\n\n"
+       "Blocking finding:\n"
+       "  TARGET_SMOOTHING_CONTRACT_MISMATCH\n"
+       "  critic trained with target smoothing\n"
+       "  DISABLED (hardcoded zero noise) — not\n"
+       "  the declared TD3 contract. Corrected.\n\n"
+       "Panel is DEVELOPMENT (adaptively tuned:\n"
+       "  LR/batch/steps/noise/capture) — cannot\n"
+       "  support a fundamental negative.\n\n"
+       f"Validated infra: encoder {d['encoder_fingerprint']}\n"
+       f"  critic {d['critic_contract_sha']}; panels\n"
+       "  train/dev/final DISJOINT; final SEALED.\n\n"
+       "NOT claimed: 'signal below noise floor'\n"
+       "  (that used absolute twin disagreement).\n"
+       "  Requires centered dQ1/dQ2 + margin-aware\n"
+       "  metrics + sealed final audit on the\n"
+       "  CORRECTED (smoothed) critic.\n\n"
+       "Actor update NOT authorized.")
+c.text(0.02, 0.98, txt, transform=c.transAxes, fontsize=8.5, va="top", family="monospace",
+       bbox=dict(boxstyle="round", fc="#fde2e2", ec="gray"))
 
-fig.suptitle("PHASE_GATED_RESIDUAL_CRITIC — CRITIC_NO_USEFUL_LOCAL_RANKING (stabilized critic still ~chance; "
-             "signal at the value-estimation noise floor)", fontsize=10.5)
+fig.suptitle("PHASE_GATED_RESIDUAL_CRITIC_AUTHORIZATION_BLOCKED — development diagnostic (smoothing-disabled critic; "
+             "superseded pending corrected re-audit)", fontsize=10)
 fig.tight_layout(rect=(0, 0, 1, 0.94))
 fig.savefig(out, dpi=140)
 print("wrote", out)

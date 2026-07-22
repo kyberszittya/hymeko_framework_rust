@@ -81,8 +81,10 @@ def train_critic(trs, pi0, residual0, steps, seed=0):
     for _i in range(steps):
         idx = rng.integers(0, n, CRITIC_BATCH)
         with torch.no_grad():
-            ta = residual_target_action(pi0, residual0, O2[idx], G2[idx],
-                                        noise=torch.zeros(len(idx), 4))     # residual0 == 0 -> target action = base
+            # DECLARED TD3 target policy smoothing (batch-independent, active stochastic noise) — corrected after the
+            # TARGET_SMOOTHING_CONTRACT_MISMATCH audit (was hardcoded zeros = smoothing disabled). residual0==0 so the
+            # target action = base + gate*clip(eps, -0.25, 0.25) at gate-active states.
+            ta = residual_target_action(pi0, residual0, O2[idx], G2[idx])   # noise=None -> active declared smoothing
             tq = torch.min(*targ(O2[idx], ta, ES_2[idx]))
             y = R[idx] + GAMMA * (1 - D[idx]) * tq
         q1, q2 = crit(O[idx], A[idx], ES_t[idx])

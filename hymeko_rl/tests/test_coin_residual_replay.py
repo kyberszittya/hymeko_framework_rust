@@ -152,6 +152,41 @@ def test_terminal_masks_bootstrap():
     assert not torch.equal(yn, reward)
 
 
+# ── §3 target-smoothing audit: batch-independent construction, reference tests at 1/7/256/512 ─────────────────
+def test_target_smoothing_batch_independent_and_bounded():
+    base = _frozen_base(); r = _nonzero_residual()
+    for B in (1, 7, 256, 512):
+        obs = torch.randn(B, 48)
+        gate = torch.ones(B)
+        # active stochastic smoothing (noise=None -> randn*std): bounded residual, composite in [-4,4]
+        torch.manual_seed(B)
+        tgt = residual_target_action(base, r, obs, gate)                 # default active smoothing
+        assert tgt.shape == (B, 4)
+        assert tgt.abs().max() <= 4.0 + 1e-6                              # composite target stays in action bounds
+        # the smoothed residual itself is within the residual bound
+        sm = bounded_smoothed_residual(r, obs)
+        assert sm.abs().max() <= 0.25 + 1e-6
+
+
+def test_target_smoothing_only_residual_not_base():
+    # with gate=0 the smoothing must have NO effect (base is never smoothed); base hash unchanged
+    base = _frozen_base(); h0 = _phash(base); r = _nonzero_residual()
+    for B in (1, 7, 256, 512):
+        obs = torch.randn(B, 48)
+        a_noisy = residual_target_action(base, r, obs, torch.zeros(B))    # gate=0 -> base regardless of smoothing
+        assert torch.equal(a_noisy, torch.clamp(base.action_mean(obs), -4, 4))
+    assert _phash(base) == h0
+
+
+def test_deterministic_zero_noise_mode_is_explicit():
+    # passing noise=0 explicitly is the ONLY way to disable smoothing; the default is active (stochastic)
+    base = _frozen_base(); r = _nonzero_residual()
+    obs = torch.randn(16, 48); gate = torch.ones(16)
+    zero = residual_target_action(base, r, obs, gate, noise=torch.zeros(16, 4))
+    torch.manual_seed(0); stoch = residual_target_action(base, r, obs, gate)
+    assert not torch.allclose(zero, stoch)                               # default smoothing is genuinely active
+
+
 # ── §5.5 optimizer / gradient guards ──────────────────────────────────────────
 def test_optimizer_and_gradient_guards():
     base = _frozen_base(); r = _nonzero_residual()
