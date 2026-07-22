@@ -1,7 +1,11 @@
-"""COIN §10 reproduction audit — two columns per artifact: HISTORICAL exact runtime (the robot the artifact was made
-on) and CANONICAL v2 compatibility runtime (the projected six-node graph). The goal is to show the canonical
-migration preserves the frozen deploy stack, NOT to retrain anything. Absent artifacts are reported
-ARTIFACT_NOT_PRESENT with the ledger reference and expected path (never invented or regenerated).
+"""COIN §10 FROZEN_ARTIFACT_RUNTIME_COMPATIBILITY audit — two columns per artifact: HISTORICAL exact runtime (the
+robot the artifact was made on) and CANONICAL v2 runtime (the projected six-node graph).
+
+SCOPE (terminology correction 2026-07-22): this proves ONLY checkpoint loading + semantic-graph compatibility +
+step-zero action identity + runtime-contract compatibility. It does NOT prove behavioral result reproduction — no
+frozen/scripted controller currently reaches strict K=6 delivery under the canonical env dynamics, so the reported
+historical strict successes are NOT yet behaviorally reproduced (that is the CANONICAL_DYNAMIC_EXPERT phase). Absent
+artifacts are reported ARTIFACT_NOT_PRESENT with the ledger reference and expected path (never invented/regenerated).
 """
 from __future__ import annotations
 
@@ -79,12 +83,12 @@ def run() -> dict:
         ok = detail.get("step_zero_action_delta", 1.0) < 1e-6
         rows.append({"item": item, "ledger_ref": ref, "path": path,
                      "sha16": hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16],
-                     "status": "REPRODUCED_BOTH_RUNTIMES" if ok else "COMPAT_DELTA", **detail})
+                     "status": "FROZEN_ARTIFACT_RUNTIME_COMPATIBLE" if ok else "COMPAT_DELTA", **detail})
     present = [r for r in rows if r["status"] != "ARTIFACT_NOT_PRESENT"]
-    result = {"gate": "COIN_REPRODUCTION_AUDIT", "rows": rows,
-              "reproduced": sum(r["status"] == "REPRODUCED_BOTH_RUNTIMES" for r in rows),
+    result = {"gate": "FROZEN_ARTIFACT_RUNTIME_COMPATIBILITY", "rows": rows,
+              "reproduced": sum(r["status"] == "FROZEN_ARTIFACT_RUNTIME_COMPATIBLE" for r in rows),
               "absent": [r["item"] for r in rows if r["status"] == "ARTIFACT_NOT_PRESENT"],
-              "all_present_reproduce": all(r["status"] == "REPRODUCED_BOTH_RUNTIMES" for r in present)}
+              "all_present_reproduce": all(r["status"] == "FROZEN_ARTIFACT_RUNTIME_COMPATIBLE" for r in present)}
     _OUT.parent.mkdir(parents=True, exist_ok=True)
     _OUT.write_text(json.dumps(result, indent=1))
     return result

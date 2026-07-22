@@ -1,0 +1,29 @@
+{
+ "algo": "SAC",
+ "seed": 0,
+ "steps": 4000,
+ "horizon": 160,
+ "bc_init_delta": 0.0,
+ "contract": "u_exec = clip(policy(obs)); scripted base DISABLED; primary baseline = standalone BC",
+ "selection_metric": "native center_rate",
+ "n_demos": 13440,
+ "curve": [
+  0.4667
+ ],
+ "best_native": 0.4667,
+ "best_step": 4000,
+ "best_metrics": {
+  "center_rate": 0.4667,
+  "strict": 5,
+  "auc": 0.0626,
+  "tts_median": 115.0
+ },
+ "eval_history": [
+  {
+   "center_rate": 0.4667,
+   "strict": 5,
+   "auc": 0.0626,
+   "tts_median": 115.0
+  }
+ ]
+}

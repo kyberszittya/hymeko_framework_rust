@@ -7,7 +7,7 @@ from __future__ import annotations
 from hymeko_rl.coin_delivery.reproduction_audit import run
 
 
-def test_all_present_artifacts_reproduce_on_both_runtimes():
+def test_all_present_artifacts_are_runtime_compatible():
     r = run()
     assert r["all_present_reproduce"], [row for row in r["rows"] if row["status"] == "COMPAT_DELTA"]
 
@@ -24,5 +24,5 @@ def test_absent_artifacts_are_reported_not_invented():
 def test_graph_state_reproductions_share_the_semantic_fingerprint():
     r = run()
     for row in r["rows"]:
-        if row["status"] == "REPRODUCED_BOTH_RUNTIMES" and "graph_fp_match" in row:
+        if row["status"] == "FROZEN_ARTIFACT_RUNTIME_COMPATIBLE" and "graph_fp_match" in row:
             assert row["graph_fp_match"], f"{row['item']}: v2 graph fingerprint != legacy"
