@@ -1,0 +1,51 @@
+{
+ "n_trajectories": 96,
+ "n_transitions": 19334,
+ "obs_dim": 48,
+ "act_dim": 4,
+ "tarball_sha256": "6da0089f97a571d54320ecda9ff8b676bfd0ef9542d655262bd8d682596cfd1a",
+ "phases": {
+  "APPROACH": {
+   "samples": 4705,
+   "unique_traj": 96,
+   "raw_p": 0.2434,
+   "balanced_p": 0.1429
+  },
+  "CONTACT_ACQUISITION": {
+   "samples": 1898,
+   "unique_traj": 93,
+   "raw_p": 0.0982,
+   "balanced_p": 0.1429
+  },
+  "BILATERAL_OR_STABLE_CONTACT": {
+   "samples": 1102,
+   "unique_traj": 71,
+   "raw_p": 0.057,
+   "balanced_p": 0.1429
+  },
+  "TRANSPORT": {
+   "samples": 6817,
+   "unique_traj": 96,
+   "raw_p": 0.3526,
+   "balanced_p": 0.1429
+  },
+  "TARGET_ENTRY": {
+   "samples": 2978,
+   "unique_traj": 96,
+   "raw_p": 0.154,
+   "balanced_p": 0.1429
+  },
+  "SETTLING": {
+   "samples": 1290,
+   "unique_traj": 96,
+   "raw_p": 0.0667,
+   "balanced_p": 0.1429
+  },
+  "STRICT_DWELL": {
+   "samples": 544,
+   "unique_traj": 96,
+   "raw_p": 0.0281,
+   "balanced_p": 0.1429
+  }
+ }
+}
