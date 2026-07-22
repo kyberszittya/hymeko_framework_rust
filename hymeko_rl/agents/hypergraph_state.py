@@ -20,6 +20,7 @@ the MJCF-derived hypergraph is structurally faithful (same compiled robot) meanw
 from __future__ import annotations
 
 import hashlib
+import re
 import shutil
 import subprocess
 from collections.abc import Sequence
@@ -52,26 +53,53 @@ class HypergraphState:
     def n_vertices(self) -> int:
         return len(self.vertex_labels)
 
+    def semantic_fingerprint(self) -> str:
+        """A hash of the SEMANTIC graph — vertex labels+order, signed edges — independent of the raw MJCF text
+        (unlike ``topo_hash``). Two models with the same semantic policy graph but different physical MJCF (e.g. the
+        legacy arm vs the v2 arm projected to 6 vertices) share this fingerprint. Used by the graph-contract
+        equivalence gate and the canonical bundle manifest."""
+        payload = repr((tuple(self.vertex_labels),
+                        [tuple(map(int, e)) for e in np.asarray(self.edges).tolist()],
+                        [int(s) for s in np.asarray(self.signs).tolist()]))
+        return "sem:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
+
     @classmethod
     def from_mjcf(cls, mjcf: str | Path, *, is_path: bool = True) -> HypergraphState:
         """Extract the signed kinematic hypergraph from an MJCF (path or XML string).
 
         # Preconditions the MJCF compiles; it has >= 1 joint.
-        # Postconditions ``n_vertices == nbody - 1`` (world dropped); ``len(edges) ==
-        2 * njnt`` (each joint -> a down +1 and an up -1 arc).
+        # Postconditions ``n_vertices == (nbody - 1) - #non-semantic-helper-bodies`` (world dropped, plus any body
+        # explicitly flagged non-semantic via the ``hymeko_non_semantic_bodies`` metadata marker); each inter-link
+        # joint contributes a down +1 and an up -1 arc.
         """
         text = Path(mjcf).read_text(encoding="utf-8") if is_path else str(mjcf)
         model = (mujoco.MjModel.from_xml_path(str(mjcf)) if is_path
                  else mujoco.MjModel.from_xml_string(text))
-        # vertices: bodies 1..nbody-1 (drop world=0); remap to 0-based vertex indices.
-        labels = [mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, b)
-                  for b in range(1, model.nbody)]
-        body2vtx = {b: b - 1 for b in range(1, model.nbody)}
+        # SEMANTIC GRAPH PROJECTION (spec-driven, explicit): bodies named in the emitted `hymeko_non_semantic_bodies`
+        # metadata marker are geometry/emission helpers (e.g. v2 fingertip child bodies) — they stay physical/contact-
+        # active in the MjModel but are NOT promoted to policy-graph vertices. No marker → every non-world body is a
+        # vertex (legacy behaviour, byte-identical for every other robot). Helpers must be LEAF bodies (no semantic
+        # child depends on a dropped vertex); a flagged non-leaf would orphan its subtree and is rejected below.
+        mk = re.search(r'name\s*=\s*"hymeko_non_semantic_bodies"\s+data\s*=\s*"([^"]*)"', text)
+        non_semantic = set(mk.group(1).split()) if mk else set()
+        drop_ids = {b for b in range(1, model.nbody)
+                    if mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, b) in non_semantic}
+        semantic = [b for b in range(1, model.nbody) if b not in drop_ids]
+        # vertices: the semantic bodies, remapped to contiguous 0-based indices (world + helpers dropped).
+        labels = [mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, b) for b in semantic]
+        body2vtx = {b: i for i, b in enumerate(semantic)}
         edges: list[tuple[int, int]] = []
         signs: list[int] = []
         for j in range(model.njnt):
             child = int(model.jnt_bodyid[j])
             parent = int(model.body_parentid[child])
+            if child in drop_ids:
+                continue  # a joint whose moving body is a dropped helper (helpers are welded leaves → no joint here)
+            if parent in drop_ids:
+                # a semantic child jointed to a DROPPED body would be orphaned → the helper is not a leaf. Reject
+                # loudly rather than silently disconnect the chain.
+                raise ValueError(f"non-semantic body {mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, parent)!r} "
+                                 f"has a jointed semantic child; graph_node-0 helpers must be leaf bodies")
             if parent not in body2vtx or child not in body2vtx:
                 continue  # a joint to the world frame (free/base) has no parent vertex
             p, c = body2vtx[parent], body2vtx[child]

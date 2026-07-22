@@ -74,6 +74,40 @@ def read_control_contract(spec_path: str | None = None) -> dict[str, float]:
     return out
 
 
+def _balanced_block(text: str, open_idx: int) -> str:
+    """Substring from the ``{`` at ``open_idx`` to its matching ``}`` (brace-balanced). # Preconditions
+    ``text[open_idx] == '{'``. # Errors ``ValueError`` on unbalanced braces."""
+    depth = 0
+    for i in range(open_idx, len(text)):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[open_idx:i + 1]
+    raise ValueError(f"unbalanced braces in spec starting at {open_idx}")
+
+
+def semantic_helper_bodies(spec_path: str | None = None) -> list[str]:
+    """The robot-spec link names explicitly flagged NON-SEMANTIC via ``graph_node 0`` — geometry/emission helper
+    bodies (e.g. the v2 fingertip child bodies) that must remain physical MuJoCo bodies but must NOT be promoted to
+    policy-graph vertices. The authority is the spec flag, not a body-name heuristic; the returned names are the
+    join key to the emitted MJCF bodies. Empty when nothing is flagged (all other robots → legacy behaviour).
+
+    # Preconditions the spec parses; each ``link { … }`` block is brace-balanced.
+    # Postconditions every returned name is a link declared in the spec with ``graph_node 0`` at link level.
+    # Errors ``FileNotFoundError`` if the spec is missing."""
+    import re
+
+    text = Path(spec_path or _CANONICAL_ROBOT_V2).read_text(encoding="utf-8")
+    helpers: list[str] = []
+    for m in re.finditer(r"(\w+)\s*:\s*[\w.]*\blink\s*\{", text):
+        name, body = m.group(1), _balanced_block(text, m.end() - 1)
+        if re.search(r"\bgraph_node\s+0\b", body):
+            helpers.append(name)
+    return helpers
+
+
 def emit_galambos_v2_mjcf(spec_path: str | None = None) -> str:
     """Emit the canonical planar arm from the LOAD-BEARING HyMeKo spec ``galambos_planar_v2.hymeko``
     (spec → typed IR → MJCF emitter), then inject the SPEC-DRIVEN control contract (:func:`read_control_contract` —
@@ -106,8 +140,17 @@ def emit_galambos_v2_mjcf(spec_path: str | None = None) -> str:
         body = m.group(0).replace('<geom type="sphere"', f'<geom name="fingertip_{side}" type="sphere"', 1)
         return body.replace('conaffinity="3"/>',
                             f'conaffinity="3"/>\n        <site name="tip_{side}" pos="0 0 0" size="0.012"/>', 1)
-    return re.sub(r'<body name="fingertip_(left|right)"[^>]*>.*?<geom type="sphere"[^/]*/>', _fix_tip, mjcf,
+    mjcf = re.sub(r'<body name="fingertip_(left|right)"[^>]*>.*?<geom type="sphere"[^/]*/>', _fix_tip, mjcf,
                   flags=re.DOTALL)
+    # SEMANTIC GRAPH PROJECTION metadata: carry the spec's `graph_node 0` helper flags into the emitted MJCF as a
+    # MuJoCo-legal `<custom><text>` marker. The graph extractor reads it and suppresses these (physical, contact-
+    # active) bodies from the policy graph, restoring the legacy 6-vertex / 48-dim contract. No flag → no marker.
+    helpers = semantic_helper_bodies(path)
+    if helpers:
+        marker = ('  <custom><text name="hymeko_non_semantic_bodies" '
+                  f'data="{" ".join(helpers)}"/></custom>\n')
+        mjcf = mjcf.replace("  <worldbody>", marker + "  <worldbody>", 1)
+    return mjcf
 
 
 def make_planar_arms_mjcf(*, base_x: float = 0.14, l1: float = 0.16, l2: float = 0.14,
@@ -615,6 +658,14 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         self._mjcf = mjcf   # kept so the renderer can re-skin the scene (decorate_scene)
         self.model = mujoco.MjModel.from_xml_string(mjcf)
         self.data = mujoco.MjData(self.model)
+        # Semantic-vertex → physical-body-id map (BY NAME). After the semantic graph projection a robot vertex index
+        # v need NOT equal physical body v+1: the v2 fingertip helper bodies stay in the MjModel but are dropped from
+        # the graph, so the semantic bodies are non-contiguous (v2 → [1,2,3,5,6,7]; legacy → [1,2,3,4,5,6]).
+        # node_features maps each semantic vertex to its correct physical body through this table, so the raw node
+        # features are identical to the legacy contiguous case on the shared kinematic state.
+        self._vtx2body = [mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, lbl)
+                          for lbl in self.hg.vertex_labels[:self._n_robot]]
+        self._body2vtx = {b: v for v, b in enumerate(self._vtx2body)}
         self._act_dofs = actuated_dof_addrs(self.model)   # for joint-velocity/acceleration reward terms
         self.reward_spec = reward_spec if reward_spec is not None else \
             RewardSpec.from_hymeko(_PLANAR_TASK)
@@ -782,12 +833,13 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         cx, cy = float(self._planar_metrics.disk_pos[0]), float(self._planar_metrics.disk_pos[1])
         nr = self._n_robot                                     # robot-link rows (== n_vertices unless augmented)
         for j in self._arm_joints:
-            v = int(self.model.jnt_bodyid[j]) - 1
+            v = self._body2vtx.get(int(self.model.jnt_bodyid[j]), -1)  # physical body → semantic vertex (projection)
             if 0 <= v < nr:
                 feat[v, 0] = self.data.qpos[self.model.jnt_qposadr[j]]
                 feat[v, 1] = self.data.qvel[self.model.jnt_dofadr[j]]
         for v in range(nr):
-            vx, vy = float(self.data.xpos[v + 1][0]), float(self.data.xpos[v + 1][1])
+            b = self._vtx2body[v]                                       # semantic vertex → physical body (projection)
+            vx, vy = float(self.data.xpos[b][0]), float(self.data.xpos[b][1])
             feat[v, 2], feat[v, 3] = vx, vy
             feat[v, 4], feat[v, 5] = cx - vx, cy - vy           # this link's vector to the coin
         feat[:nr, 6] = cx - self._zone_x                        # broadcast coin -> zone
