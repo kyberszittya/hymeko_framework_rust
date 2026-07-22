@@ -35,7 +35,9 @@ from hymeko_rl.agents.hypergraph_state import HypergraphState
 _PLANAR_ARM = "data/robotics/galambos_planar.hymeko"
 _PLANAR_ENV = "data/robotics/galambos_env.hymeko"
 _PLANAR_TASK = "data/robotics/galambos_task.hymeko"
-_CANONICAL_ROBOT_V2 = "data/robotics/galambos_planar_v2.hymeko"   # load-bearing corrected robot (capsules + masks)
+_CANONICAL_ROBOT_V2 = "data/robotics/galambos_planar_v2.hymeko"   # load-bearing corrected robot (capsules + masks).
+# NOTE: v3 (galambos_planar_v3.hymeko) adds a golden inertial contract but the naive override is dynamically unstable
+# (fingertip contact-body cannot be massless; E0 clamp starved) — canonical stays v2 until the golden-structure fix.
 _PLANE_Z = 0.04
 _ARM_REACH = 0.28   # each 2-link finger reaches ~l1+l2=0.30 m; 0.28 leaves a margin
 
@@ -72,6 +74,48 @@ def read_control_contract(spec_path: str | None = None) -> dict[str, float]:
                              f"(canonical mode has no fallback constant for it).")
         out[field] = v
     return out
+
+
+_INERTIA_LINKS = ("base", "link1", "link2")
+_INERTIA_FIELDS = ("mass", "px", "py", "pz", "qw", "qx", "qy", "qz", "ixx", "iyy", "izz")
+
+
+def read_inertia_contract(spec_path: str | None = None) -> dict[str, dict[str, float]]:
+    """Read the LOAD-BEARING ``galambos_inertia { base{…} link1{…} link2{…} }`` contract — the per-body mass +
+    inertial-frame pos/quat + diagonal inertia the kinematics IR does not carry, taken from the golden compiled
+    MjModel. Canonical mode HARD-FAILS if the block or any field is absent (no fallback). # Errors ``ValueError``.
+
+    # Postconditions returns ``{link: {field: float}}`` for every link in :data:`_INERTIA_LINKS`."""
+    import re
+
+    path = spec_path or _CANONICAL_ROBOT_V2
+    text = Path(path).read_text(encoding="utf-8")
+    blk = re.search(r"\bgalambos_inertia\s*\{", text)
+    if blk is None:
+        raise ValueError(f"{path}: canonical mode requires a `galambos_inertia {{ … }}` contract "
+                         f"({list(_INERTIA_LINKS)} × {list(_INERTIA_FIELDS)}); none found — no fallback.")
+    body = _balanced_block(text, blk.end() - 1)
+    num = r"(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)"
+    out: dict[str, dict[str, float]] = {}
+    for link in _INERTIA_LINKS:
+        lm = re.search(rf"\b{link}\s*\{{", body)
+        if lm is None:
+            raise ValueError(f"{path}: galambos_inertia is missing required link `{link}`.")
+        lbody, vals = _balanced_block(body, lm.end() - 1), {}
+        for field in _INERTIA_FIELDS:
+            fm = re.search(rf"\b{field}\s+{num}", lbody)
+            if fm is None:
+                raise ValueError(f"{path}: galambos_inertia.{link} is missing required field `{field}`.")
+            vals[field] = float(fm.group(1))
+        out[link] = vals
+    return out
+
+
+def _golden_inertial_xml(v: dict[str, float]) -> str:
+    """The MJCF ``<inertial>`` element for one link from its inertia-contract values."""
+    return (f'<inertial pos="{v["px"]:g} {v["py"]:g} {v["pz"]:g}" '
+            f'quat="{v["qw"]:.8f} {v["qx"]:.8f} {v["qy"]:.8f} {v["qz"]:.8f}" '
+            f'mass="{v["mass"]:.8f}" diaginertia="{v["ixx"]:.10e} {v["iyy"]:.10e} {v["izz"]:.10e}"/>')
 
 
 def _balanced_block(text: str, open_idx: int) -> str:
@@ -142,6 +186,27 @@ def emit_galambos_v2_mjcf(spec_path: str | None = None) -> str:
                             f'conaffinity="3"/>\n        <site name="tip_{side}" pos="0 0 0" size="0.012"/>', 1)
     mjcf = re.sub(r'<body name="fingertip_(left|right)"[^>]*>.*?<geom type="sphere"[^/]*/>', _fix_tip, mjcf,
                   flags=re.DOTALL)
+    # INERTIAL PARITY (2026-07-22): the emitter writes a crude `<inertial>` from the spec `mass` field, making the arm
+    # ~5x too heavy and breaking the frozen chain (3/9→0/9). Replace each structural link's inertial with the GOLDEN
+    # compiled values (galambos_inertia contract) and make the fingertip helper bodies MASSLESS — the golden folds the
+    # tip mass into link2 (COM at y=0.08348), so a massless fingertip body + the golden link2 inertial reproduces the
+    # golden dynamics body-for-body while keeping the fingertip contact-active. (Sentinel-tested; no fallback.)
+    # Applied ONLY when the spec carries a galambos_inertia contract (v3+). NOTE (2026-07-22): the naive override
+    # (golden <inertial> on links + massless/near-massless fingertip bodies) matches STATIC mass/inertia exactly but
+    # is DYNAMICALLY unstable — a welded fingertip CONTACT body cannot be massless (contact impulse ÷ tiny mass →
+    # NaN), and the E0 CONCAVE_CLAMP adds clamp geoms to the fingertip body that the override starves. The robust fix
+    # is the GOLDEN STRUCTURE (fingertip contact geom on link2, geomless fingertip FRAME for the graph) — a larger
+    # emit restructuring. See reports/2026-07-22-coin-inertia-repair-blocked.md. Kept behind the contract presence
+    # check so v2 (no contract) is unaffected and the tree stays green while the structural fix is designed.
+    if "galambos_inertia" in Path(path).read_text(encoding="utf-8"):
+        inertia = read_inertia_contract(path)
+        for side in ("left", "right"):
+            for body, link in (("base", "base"), ("link1", "link1"), ("link2", "link2")):
+                mjcf = re.sub(rf'(<body name="{body}_{side}"[^>]*>\s*)<inertial[^>]*/>',
+                              lambda m, v=inertia[link]: m.group(1) + _golden_inertial_xml(v), mjcf, count=1)
+            mjcf = re.sub(rf'(<body name="fingertip_{side}"[^>]*>\s*)<inertial[^>]*/>',
+                          lambda m: m.group(1) + '<inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7"/>',
+                          mjcf, count=1)
     # SEMANTIC GRAPH PROJECTION metadata: carry the spec's `graph_node 0` helper flags into the emitted MJCF as a
     # MuJoCo-legal `<custom><text>` marker. The graph extractor reads it and suppresses these (physical, contact-
     # active) bodies from the policy graph, restoring the legacy 6-vertex / 48-dim contract. No flag → no marker.
