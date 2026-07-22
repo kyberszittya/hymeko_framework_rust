@@ -40,7 +40,7 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
     }
 
     // === Link 1 capsule (length 0.16 along +Y, radius 0.012), ARM_LEGALITY. origin = midpoint [0, 0.08, 0]. ===
-    upper_left: meta_kinematics.kinematics.elements.link {
+    link1_left: meta_kinematics.kinematics.elements.link {
         mass 0.25;
         link_geometry: meta_kinematics.kinematics.geometry.capsule {
             dimension [0.16, 0.012];
@@ -48,7 +48,7 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
         }
         origin [0.0, 0.08, 0.0];
     }
-    upper_right: meta_kinematics.kinematics.elements.link {
+    link1_right: meta_kinematics.kinematics.elements.link {
         mass 0.25;
         link_geometry: meta_kinematics.kinematics.geometry.capsule {
             dimension [0.16, 0.012];
@@ -58,7 +58,7 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
     }
 
     // === Link 2 capsule (length 0.14 along +Y, radius 0.010), ARM_LEGALITY. origin = midpoint [0, 0.07, 0]. ===
-    lower_left: meta_kinematics.kinematics.elements.link {
+    link2_left: meta_kinematics.kinematics.elements.link {
         mass 0.2;
         link_geometry: meta_kinematics.kinematics.geometry.capsule {
             dimension [0.14, 0.010];
@@ -66,7 +66,7 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
         }
         origin [0.0, 0.07, 0.0];
     }
-    lower_right: meta_kinematics.kinematics.elements.link {
+    link2_right: meta_kinematics.kinematics.elements.link {
         mass 0.2;
         link_geometry: meta_kinematics.kinematics.geometry.capsule {
             dimension [0.14, 0.010];
@@ -103,27 +103,27 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
 
     // === Revolute Z joints (+-4 rad). j1 at base; j2 at the end of link 1 (offset +Y by 0.16). ===
     @jl1: meta_kinematics.kinematics.rev_joint {
-        (+ base_left [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - upper_left,
+        (+ base_left [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - link1_left,
          - meta_kinematics.kinematics.axes.AXIS_Z);
     }
     @jl2: meta_kinematics.kinematics.rev_joint {
-        (+ upper_left [[0.0, 0.16, 0.0], [0.0, 0.0, 0.0]], - lower_left,
+        (+ link1_left [[0.0, 0.16, 0.0], [0.0, 0.0, 0.0]], - link2_left,
          - meta_kinematics.kinematics.axes.AXIS_Z);
     }
     @jr1: meta_kinematics.kinematics.rev_joint {
-        (+ base_right [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - upper_right,
+        (+ base_right [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - link1_right,
          - meta_kinematics.kinematics.axes.AXIS_Z);
     }
     @jr2: meta_kinematics.kinematics.rev_joint {
-        (+ upper_right [[0.0, 0.16, 0.0], [0.0, 0.0, 0.0]], - lower_right,
+        (+ link1_right [[0.0, 0.16, 0.0], [0.0, 0.0, 0.0]], - link2_right,
          - meta_kinematics.kinematics.axes.AXIS_Z);
     }
 
     // === Fingertip fixed joints: distal link tip (offset +Y by 0.14) -> fingertip sphere body. ===
     @ft_left: meta_kinematics.kinematics.fixed_joint {
-        (+ lower_left [[0.0, 0.14, 0.0], [0.0, 0.0, 0.0]], - fingertip_left);
+        (+ link2_left [[0.0, 0.14, 0.0], [0.0, 0.0, 0.0]], - fingertip_left);
     }
     @ft_right: meta_kinematics.kinematics.fixed_joint {
-        (+ lower_right [[0.0, 0.14, 0.0], [0.0, 0.0, 0.0]], - fingertip_right);
+        (+ link2_right [[0.0, 0.14, 0.0], [0.0, 0.0, 0.0]], - fingertip_right);
     }
 }

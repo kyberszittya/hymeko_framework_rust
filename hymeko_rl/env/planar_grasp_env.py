@@ -47,12 +47,25 @@ def emit_galambos_v2_mjcf() -> str:
     geometry / collision / structure are spec-driven and sentinel-propagating; only these three control-config scalars
     are the adapter's (they are Python constants in the golden too). # Errors ``FileNotFoundError`` / ``RuntimeError``
     (missing spec or unbuilt CLI) — never a silent Python-robot fallback."""
+    import re
+
     from hymeko_rl.env.arm_world import emit_arm_mjcf
     mjcf = emit_arm_mjcf(_CANONICAL_ROBOT_V2, name="galambos", control_mode="position")
-    return (mjcf
+    mjcf = (mjcf
             .replace('range="-3.1416 3.1416"', 'range="-4.0 4.0"')
             .replace('ctrlrange="-3.1416 3.1416"', 'ctrlrange="-4.0 4.0"')
             .replace('damping="2.0"', 'damping="1.5"'))
+    # In each fingertip_{side} body: (1) NAME the (emitter-unnamed) sphere geom `fingertip_{side}` so the env's
+    # POINT/RING variant + contact-priority look it up; (2) inject a `tip_{side}` site so `with_fingertip_sites`
+    # treats the tip as already declared (idempotent) and does NOT inject a duplicate fingertip geom — mirroring the
+    # golden hand-authored arm, which carries both. The site sits at the fingertip body origin (the distal tip).
+    def _fix_tip(m: "re.Match[str]") -> str:
+        side = m.group(1)
+        body = m.group(0).replace('<geom type="sphere"', f'<geom name="fingertip_{side}" type="sphere"', 1)
+        return body.replace('conaffinity="3"/>',
+                            f'conaffinity="3"/>\n        <site name="tip_{side}" pos="0 0 0" size="0.012"/>', 1)
+    return re.sub(r'<body name="fingertip_(left|right)"[^>]*>.*?<geom type="sphere"[^/]*/>', _fix_tip, mjcf,
+                  flags=re.DOTALL)
 
 
 def make_planar_arms_mjcf(*, base_x: float = 0.14, l1: float = 0.16, l2: float = 0.14,
@@ -464,7 +477,8 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                  fingertip_compliance: "tuple[tuple[float, float], tuple[float, float, float, float, float] | None] | None" = None,
                  arm_mjcf_transform: "Callable[[str], str] | None" = None,
                  terminate_on_success: bool = True,
-                 contact_legality: bool | None = None) -> None:
+                 contact_legality: bool | None = None,
+                 robot_source: str | None = None) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
@@ -495,8 +509,19 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
         self.difficulty = difficulty
         # The robot is DESCRIBED IN HYMEKO (galambos_planar.hymeko) and emitted; `robot=None` falls
         # back to the hand-authored baseline (make_planar_arms_mjcf).
-        arm_mjcf = (emit_arm_mjcf(robot, name="galambos", control_mode="position")
-                    if robot is not None else make_planar_arms_mjcf())
+        # Robot source (2026-07-23): the CANONICAL default (``hymeko_spec``) drives the arm from the load-bearing
+        # ``galambos_planar_v2.hymeko`` (spec→IR→MJCF, proven equivalent to the golden). ``legacy_python`` is the
+        # historical make_planar_arms_mjcf. ``None`` keeps the pre-existing robot=<path>/robot=None behaviour for
+        # non-Coin callers. Hard-fail on an unknown mode — no silent Python fallback in canonical mode.
+        if robot_source == "hymeko_spec":
+            arm_mjcf = emit_galambos_v2_mjcf()
+        elif robot_source == "legacy_python":
+            arm_mjcf = make_planar_arms_mjcf()
+        elif robot_source is None:
+            arm_mjcf = (emit_arm_mjcf(robot, name="galambos", control_mode="position")
+                        if robot is not None else make_planar_arms_mjcf())
+        else:
+            raise ValueError(f"unknown robot_source {robot_source!r}; expected 'hymeko_spec' | 'legacy_python' | None")
         # The emitted arm carries no fingertip site; inject one at each leaf link's far end so the dense
         # approach reward (and the BC demonstrator) shape the true tool point, not a body origin. Massless
         # → dynamics unchanged. Idempotent on the hand-authored scene (it declares its tips already).
