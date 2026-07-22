@@ -1,0 +1,124 @@
+{
+ "algo": "td3",
+ "seed": 0,
+ "replay_sha16": "9031053d3312479f",
+ "n_demo": 14661,
+ "gamma": 0.99,
+ "init_headline": 3,
+ "init_validation": 2,
+ "best_headline": 3,
+ "best_validation": 2,
+ "best_update": 0,
+ "actor_changed": true,
+ "checkpoints": [
+  {
+   "update": 0,
+   "env_steps": 0,
+   "headline": 3,
+   "headline_grasp": 9,
+   "validation": 2,
+   "validation_n": 30,
+   "actor_out_delta": 0.0,
+   "actor_param_delta": 0.0,
+   "q_scale": 31.77,
+   "twin_disagree": 0.164,
+   "alpha": null,
+   "delivered_headline": [
+    1011,
+    1447,
+    1568
+   ]
+  },
+  {
+   "update": 1,
+   "env_steps": 1,
+   "headline": 1,
+   "headline_grasp": 9,
+   "validation": 2,
+   "validation_n": 30,
+   "actor_out_delta": 0.02455,
+   "actor_param_delta": 0.000183,
+   "q_scale": 31.61,
+   "twin_disagree": 0.181,
+   "alpha": null,
+   "delivered_headline": [
+    1174
+   ]
+  },
+  {
+   "update": 10,
+   "env_steps": 10,
+   "headline": 2,
+   "headline_grasp": 9,
+   "validation": 1,
+   "validation_n": 30,
+   "actor_out_delta": 0.11606,
+   "actor_param_delta": 0.000796,
+   "q_scale": 31.16,
+   "twin_disagree": 0.176,
+   "alpha": null,
+   "delivered_headline": [
+    1011,
+    1164
+   ]
+  },
+  {
+   "update": 100,
+   "env_steps": 100,
+   "headline": 0,
+   "headline_grasp": 9,
+   "validation": 1,
+   "validation_n": 30,
+   "actor_out_delta": 0.53742,
+   "actor_param_delta": 0.005576,
+   "q_scale": 31.76,
+   "twin_disagree": 0.309,
+   "alpha": null,
+   "delivered_headline": []
+  },
+  {
+   "update": 1000,
+   "env_steps": 1000,
+   "headline": 0,
+   "headline_grasp": 8,
+   "validation": 0,
+   "validation_n": 30,
+   "actor_out_delta": 0.52917,
+   "actor_param_delta": 0.015,
+   "q_scale": 31.31,
+   "twin_disagree": 0.293,
+   "alpha": null,
+   "delivered_headline": []
+  },
+  {
+   "update": 5000,
+   "env_steps": 5000,
+   "headline": 1,
+   "headline_grasp": 9,
+   "validation": 2,
+   "validation_n": 30,
+   "actor_out_delta": 0.35432,
+   "actor_param_delta": 0.026775,
+   "q_scale": 47.23,
+   "twin_disagree": 0.361,
+   "alpha": null,
+   "delivered_headline": [
+    1045
+   ]
+  },
+  {
+   "update": 10000,
+   "env_steps": 10000,
+   "headline": 0,
+   "headline_grasp": 8,
+   "validation": 0,
+   "validation_n": 30,
+   "actor_out_delta": 0.34431,
+   "actor_param_delta": 0.038609,
+   "q_scale": 64.13,
+   "twin_disagree": 0.467,
+   "alpha": null,
+   "delivered_headline": []
+  }
+ ]
+}
