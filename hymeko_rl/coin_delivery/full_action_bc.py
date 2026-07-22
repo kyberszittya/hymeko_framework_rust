@@ -98,6 +98,67 @@ def dagger_transport_labels(bc, seeds, *, grasp_hold: int = 3) -> tuple[np.ndarr
     return np.asarray(obs, np.float32), np.asarray(act, np.float32)
 
 
+def load_trajectory_dataset(dataset_dir: str) -> dict:
+    """Load all certified full-trajectory ``traj_*.npz`` under ``dataset_dir`` into flat arrays + per-sample phase +
+    trajectory id (splits are at the trajectory level; never split one trajectory's steps across train/val)."""
+    import glob
+    import os
+    files = sorted(glob.glob(os.path.join(dataset_dir, "traj_*.npz")))
+    obs, act, phase, traj = [], [], [], []
+    for i, f in enumerate(files):
+        d = np.load(f)
+        obs.append(d["obs"])
+        act.append(d["act"])
+        phase.append(d["phase"])
+        traj.append(np.full(len(d["act"]), i, np.int32))
+    return {"obs": np.concatenate(obs), "act": np.concatenate(act), "phase": np.concatenate(phase),
+            "traj": np.concatenate(traj), "n_traj": len(files), "files": files}
+
+
+def phase_balanced_weights(phase: np.ndarray, n_phases: int = 7) -> np.ndarray:
+    """Per-sample weight inversely proportional to phase frequency, so each RUNTIME PHASE contributes equal total mass
+    (the short load-bearing contact/settle/dwell phases are not drowned by the long approach). Returns normalised."""
+    counts = np.bincount(phase, minlength=n_phases).astype(np.float64)
+    w = 1.0 / np.maximum(counts[phase], 1.0)
+    return (w / w.sum()).astype(np.float64)
+
+
+def train_bc_phase_balanced(obs: np.ndarray, act: np.ndarray, phase: np.ndarray, *, epochs: int = 300,
+                            lr: float = 1e-3, batch: int = 256, seed: int = 0, steps_per_epoch: int = 200,
+                            val: "tuple[np.ndarray, np.ndarray, np.ndarray] | None" = None) -> tuple[FullActionBC, dict]:
+    """Phase-balanced behaviour cloning: each mini-batch is sampled by :func:`phase_balanced_weights` so the rare
+    contact/settle/dwell transitions are seen as often as the abundant approach ones. Deterministic per ``seed``."""
+    torch.manual_seed(seed)
+    bc = FullActionBC(obs.shape[1], act.shape[1])
+    opt = torch.optim.Adam(bc.parameters(), lr=lr)
+    lossfn = nn.MSELoss()
+    ob = torch.as_tensor(obs, dtype=torch.float32)
+    ac = torch.as_tensor(act, dtype=torch.float32)
+    w = phase_balanced_weights(phase)
+    rng = np.random.default_rng(seed)
+    hist: dict = {"train": [], "val": [], "val_by_phase": []}
+    for _ep in range(epochs):
+        ep = 0.0
+        for _b in range(steps_per_epoch):
+            idx = rng.choice(len(obs), size=batch, p=w)
+            opt.zero_grad()
+            loss = lossfn(bc(ob[idx]), ac[idx])
+            loss.backward()
+            opt.step()
+            ep += float(loss.detach())
+        hist["train"].append(ep / steps_per_epoch)
+        if val is not None:
+            vo, va, vp = val
+            with torch.no_grad():
+                pred = bc(torch.as_tensor(vo, dtype=torch.float32))
+                hist["val"].append(float(lossfn(pred, torch.as_tensor(va, dtype=torch.float32))))
+                per = {int(p): float(((pred.numpy()[vp == p] - va[vp == p]) ** 2).mean())
+                       for p in np.unique(vp)}
+                hist["val_by_phase"].append(per)
+    bc.eval()
+    return bc, hist
+
+
 def eval_bc_delivery(policy, seeds, *, horizon: int = 360) -> dict:
     """Deploy ``policy`` (``.act(flat48)->4`` or None for zero-action) from NEUTRAL and grade strict K=6 delivery with
     the certificate — no scripted base, no expert online, all motion through ``inner.step``."""
