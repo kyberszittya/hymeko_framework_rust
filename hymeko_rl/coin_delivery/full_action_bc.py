@@ -1,0 +1,92 @@
+"""CANONICAL FULL-ACTION BC (2026-07-22, v3 learning §5) — a standalone policy ``u = bc(node_features)`` cloned from
+the executed expert actions. NO scripted acquisition, NO scripted carry, NO residual-over-base, NO online expert
+switching, NO state injection: the deployed BC drives the whole task from true neutral through ``inner.step``.
+
+Architecture: flat MLP (48 → 256 → 256 → 4), MSE regression to the executed actuator command. Deployment rolls the BC
+from a neutral reset and grades with the SAME strict K=6 delivery certificate as the expert.
+"""
+from __future__ import annotations
+
+import numpy as np
+import torch
+from torch import nn
+
+
+class FullActionBC(nn.Module):
+    """``node_features`` (flat 48) → 4-DoF actuator command."""
+
+    def __init__(self, obs_dim: int = 48, action_dim: int = 4, hidden: int = 256):
+        super().__init__()
+        self.net = nn.Sequential(nn.Linear(obs_dim, hidden), nn.ReLU(),
+                                 nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, action_dim))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x)
+
+    @torch.no_grad()
+    def act(self, node_features_flat: np.ndarray) -> np.ndarray:
+        return self.net(torch.as_tensor(node_features_flat[None], dtype=torch.float32))[0].numpy()
+
+
+def train_bc(obs: np.ndarray, act: np.ndarray, *, epochs: int = 200, lr: float = 1e-3, batch: int = 256,
+             seed: int = 0, val: "tuple[np.ndarray, np.ndarray] | None" = None) -> tuple[FullActionBC, dict]:
+    """Behaviour-clone ``obs → act`` (MSE). Returns the policy + train/val loss history. Seeded (reproducible A/B)."""
+    torch.manual_seed(seed)
+    bc = FullActionBC(obs.shape[1], act.shape[1])
+    opt = torch.optim.Adam(bc.parameters(), lr=lr)
+    lossfn = nn.MSELoss()
+    ob = torch.as_tensor(obs, dtype=torch.float32)
+    ac = torch.as_tensor(act, dtype=torch.float32)
+    rng = np.random.default_rng(seed)
+    hist = {"train": [], "val": []}
+    n = len(obs)
+    for _ep in range(epochs):
+        idx = rng.permutation(n)
+        ep_loss = 0.0
+        for i in range(0, n, batch):
+            b = idx[i:i + batch]
+            opt.zero_grad()
+            loss = lossfn(bc(ob[b]), ac[b])
+            loss.backward()
+            opt.step()
+            ep_loss += float(loss) * len(b)
+        hist["train"].append(ep_loss / n)
+        if val is not None:
+            with torch.no_grad():
+                hist["val"].append(float(lossfn(bc(torch.as_tensor(val[0], dtype=torch.float32)),
+                                                 torch.as_tensor(val[1], dtype=torch.float32))))
+    bc.eval()
+    return bc, hist
+
+
+def eval_bc_delivery(policy, seeds, *, horizon: int = 360) -> dict:
+    """Deploy ``policy`` (``.act(flat48)->4`` or None for zero-action) from NEUTRAL and grade strict K=6 delivery with
+    the certificate — no scripted base, no expert online, all motion through ``inner.step``."""
+    from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
+    from hymeko_rl.experiments.coin_neutral_start import _cert_step, _clearance, neutral_env
+    env, cf = neutral_env(prefix_steps=0)
+    inner = cf._env
+    fc = grasp = deliv = 0
+    per = []
+    for s in seeds:
+        env.set_stage(0)
+        env.reset(seed=int(s))
+        cert = DeliveryCertifier(initial_clearance=_clearance(inner))
+        touched = False
+        for _k in range(horizon):
+            cert.update(_cert_step(inner, cf))
+            m = inner._planar_metrics
+            touched = touched or bool(m.left_contact or m.right_contact)
+            if cert.delivery_certified:
+                break
+            nf = np.asarray(inner.node_features(), np.float32).flatten()
+            a = np.zeros(4, np.float32) if policy is None else np.asarray(policy.act(nf), np.float32)
+            inner.step(a)
+        d = bool(cert.delivery_certified)
+        fc += int(touched)
+        grasp += int(getattr(cert, "ever_grasped", False) or touched)
+        deliv += int(d)
+        per.append((int(s), d))
+    n = max(1, len(list(seeds)))
+    return {"n": n, "first_contact": fc, "grasp": grasp, "deliver": deliv,
+            "deliver_rate": round(deliv / n, 4), "delivered_seeds": [s for s, d in per if d]}
