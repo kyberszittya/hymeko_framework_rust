@@ -87,6 +87,12 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
     }
 
     // === POINT fingertip spheres (r0.014, FINGERTIP collision) as terminal bodies at each distal-link tip. ===
+    // SEMANTIC GRAPH PROJECTION (2026-07-22, Option B): these two fingertips exist as physical MuJoCo bodies purely
+    // because the kinematics IR carries one geometry per link — they are GEOMETRY/EMISSION HELPERS, not semantic
+    // kinematic DoF. `graph_node 0` explicitly marks them NON-SEMANTIC: the emitter carries this into the emitted
+    // MJCF metadata and the graph extractor suppresses their promotion to policy-graph vertices, restoring the
+    // legacy 6-vertex / 48-dim semantic graph that the frozen deploy checkpoints were trained on. The physical body
+    // and its fingertip geometry REMAIN active for MuJoCo contact generation (kinematic/contact parity unchanged).
     fingertip_left: meta_kinematics.kinematics.elements.link {
         mass 0.02;
         link_geometry: meta_kinematics.kinematics.geometry.sphere {
@@ -94,6 +100,7 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
             collision { contype 1; conaffinity 3; }
         }
         origin [0.0, 0.0, 0.0];
+        graph_node 0;
     }
     fingertip_right: meta_kinematics.kinematics.elements.link {
         mass 0.02;
@@ -102,6 +109,7 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
             collision { contype 1; conaffinity 3; }
         }
         origin [0.0, 0.0, 0.0];
+        graph_node 0;
     }
 
     // === Fixed joints: world -> bases at x = +-0.14, y = -0.02, z = 0.04, NO yaw (rods already along +Y). ===
@@ -113,19 +121,22 @@ galambos_planar_v2: meta_kinematics.kinematics.elements, meta_kinematics.kinemat
     }
 
     // === Revolute Z joints (+-4 rad). j1 at base; j2 at the end of link 1 (offset +Y by 0.16). ===
-    @jl1: meta_kinematics.kinematics.rev_joint {
+    // Joint NAMES match the legacy make_planar_arms_mjcf exactly (j{1,2}_{left,right}), declared left-arm-first then
+    // right-arm — so the emitted actuators (act_j*_{left,right}) carry the legacy `_left`/`_right` suffix and the
+    // arm-action partition recovers the legacy 2-arms-of-2 grouping (agent_action_dims (2,2)) the checkpoints expect.
+    @j1_left: meta_kinematics.kinematics.rev_joint {
         (+ base_left [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - link1_left,
          - meta_kinematics.kinematics.axes.AXIS_Z);
     }
-    @jl2: meta_kinematics.kinematics.rev_joint {
+    @j2_left: meta_kinematics.kinematics.rev_joint {
         (+ link1_left [[0.0, 0.16, 0.0], [0.0, 0.0, 0.0]], - link2_left,
          - meta_kinematics.kinematics.axes.AXIS_Z);
     }
-    @jr1: meta_kinematics.kinematics.rev_joint {
+    @j1_right: meta_kinematics.kinematics.rev_joint {
         (+ base_right [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - link1_right,
          - meta_kinematics.kinematics.axes.AXIS_Z);
     }
-    @jr2: meta_kinematics.kinematics.rev_joint {
+    @j2_right: meta_kinematics.kinematics.rev_joint {
         (+ link1_right [[0.0, 0.16, 0.0], [0.0, 0.0, 0.0]], - link2_right,
          - meta_kinematics.kinematics.axes.AXIS_Z);
     }
