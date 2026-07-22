@@ -1,0 +1,126 @@
+{
+ "gate": "COIN_DISCOUNTED_REWARD_ALIGNMENT",
+ "gammas": {
+  "sac": 0.99,
+  "td3": 0.99
+ },
+ "manifest": {
+  "reward_spec": "d42c9cbfbe5e343e",
+  "robot_spec": "3c899487eff45cf3",
+  "scene_spec": "8be8246bb2af1a3c",
+  "control_contract": {
+   "joint_range": 4.0,
+   "ctrl_range": 4.0,
+   "damping": 1.5,
+   "kp": 40.0,
+   "kv": 4.0
+  },
+  "held_dwell_steps": 6,
+  "center_tol": 0.02,
+  "settle_vel": 0.06,
+  "horizon": 120,
+  "reward_source": "hymeko_spec",
+  "success_contract": "canonical_k6",
+  "combined_bundle_hash": "2b642d348a6b195b"
+ },
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "per_gamma": {
+  "sac": {
+   "gamma": 0.99,
+   "strict_delivery_return": 13.802,
+   "failure_returns": {
+    "zero_action": -20.901,
+    "movement_away": -18.11,
+    "reach_without_hold": -20.033,
+    "grasp_and_stall": -18.514,
+    "oscillation": -21.118,
+    "center_then_exit": -18.29,
+    "timeout": -19.86,
+    "contact_drop": -20.066,
+    "approach_retreat": -20.517,
+    "zone_entry_exit": -20.395
+   },
+   "failures_dominating_strict": [],
+   "no_farming": {
+    "oscillation": {
+     "cycle_len": 6,
+     "cycle_upper_bound": -23.298,
+     "dominates_strict": false
+    },
+    "approach_retreat": {
+     "cycle_len": 40,
+     "cycle_upper_bound": -23.499,
+     "dominates_strict": false
+    },
+    "zone_entry_exit": {
+     "cycle_len": 16,
+     "cycle_upper_bound": -22.863,
+     "dominates_strict": false
+    }
+   },
+   "farmers_dominating_strict": [],
+   "strict_dominates_all": true
+  },
+  "td3": {
+   "gamma": 0.99,
+   "strict_delivery_return": 13.802,
+   "failure_returns": {
+    "zero_action": -20.901,
+    "movement_away": -18.11,
+    "reach_without_hold": -20.033,
+    "grasp_and_stall": -18.514,
+    "oscillation": -21.118,
+    "center_then_exit": -18.29,
+    "timeout": -19.86,
+    "contact_drop": -20.066,
+    "approach_retreat": -20.517,
+    "zone_entry_exit": -20.395
+   },
+   "failures_dominating_strict": [],
+   "no_farming": {
+    "oscillation": {
+     "cycle_len": 6,
+     "cycle_upper_bound": -23.298,
+     "dominates_strict": false
+    },
+    "approach_retreat": {
+     "cycle_len": 40,
+     "cycle_upper_bound": -23.499,
+     "dominates_strict": false
+    },
+    "zone_entry_exit": {
+     "cycle_len": 16,
+     "cycle_upper_bound": -22.863,
+     "dominates_strict": false
+    }
+   },
+   "farmers_dominating_strict": [],
+   "strict_dominates_all": true
+  }
+ },
+ "verdict": "COIN_DISCOUNTED_REWARD_ALIGNMENT_PASS",
+ "strict_reference_detail": [
+  {
+   "seed": 0,
+   "steps": 7,
+   "terminated": true,
+   "final_dwell": 6
+  },
+  {
+   "seed": 1,
+   "steps": 7,
+   "terminated": true,
+   "final_dwell": 6
+  },
+  {
+   "seed": 2,
+   "steps": 7,
+   "terminated": true,
+   "final_dwell": 6
+  }
+ ]
+}
