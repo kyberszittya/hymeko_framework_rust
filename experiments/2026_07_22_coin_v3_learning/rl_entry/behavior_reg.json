@@ -1,0 +1,17 @@
+{
+ "identity_headline": 3,
+ "identity_validation": 2,
+ "identity_grasp": 9,
+ "delivered": [
+  1011,
+  1447,
+  1568
+ ],
+ "n_transitions": 3600,
+ "stores_terminated_and_truncated": true,
+ "has_terminated": false,
+ "has_truncated": true,
+ "gate_off_bit_identical_to_pi0": true,
+ "gate_off_residual_zero": true,
+ "verdict": "PHASE_GATED_RESIDUAL_BEHAVIOR_CONTRACT_PASS"
+}
