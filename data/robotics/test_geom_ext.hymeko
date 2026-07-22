@@ -29,4 +29,8 @@ test_geom_ext: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.g
     @fix_world: meta_kinematics.kinematics.fixed_joint {
         (+ world [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - hub_box);
     }
+    @rev_cap: meta_kinematics.kinematics.rev_joint {
+        (+ hub_box [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], - rod_cap,
+         - meta_kinematics.kinematics.axes.AXIS_Z);
+    }
 }

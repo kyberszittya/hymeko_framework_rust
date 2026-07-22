@@ -569,36 +569,53 @@ fn emit_mjcf_body_open(out: &mut String, ctx: &MjcfCtx<'_>, link_name: &str, ind
             ));
         }
         if let Some(ref geom) = link.geometry {
-            let gs = match geom.shape {
-                GeometryShape::Box if geom.dimensions.len() >= 3 => {
-                    let d = &geom.dimensions;
-                    format!(
-                        "type=\"box\" size=\"{} {} {}\"",
-                        d[0] / 2.0,
-                        d[1] / 2.0,
-                        d[2] / 2.0
-                    )
+            // Explicit MuJoCo collision categories (additive): omitted entirely when None (historical default).
+            let coll = geom
+                .collision
+                .map(|c| format!(" contype=\"{}\" conaffinity=\"{}\"", c.contype, c.conaffinity))
+                .unwrap_or_default();
+            let mat = link
+                .color
+                .as_ref()
+                .map(|_| format!(" material=\"mat_{}\"", link.name))
+                .unwrap_or_default();
+            match geom.shape {
+                // Capsule: MJCF uses `fromto` (the cylinder-axis endpoints), NOT pos/size. Dims = [length, radius].
+                // The rod spans from the joint (0,0,0) to the far endpoint 2*origin (origin is the rod midpoint), so
+                // a connected arm's capsule reaches from its joint to the next joint. Radius = dimensions[1].
+                GeometryShape::Capsule if geom.dimensions.len() >= 2 => {
+                    let (ex, ey, ez) = link
+                        .origin
+                        .as_ref()
+                        .filter(|o| o.len() >= 3)
+                        .map(|o| (o[0] * 2.0, o[1] * 2.0, o[2] * 2.0))
+                        .unwrap_or((0.0, 0.0, 0.0));
+                    out.push_str(&format!(
+                        "{}<geom type=\"capsule\" fromto=\"0 0 0 {} {} {}\" size=\"{}\"{}{}/>  \n",
+                        pad2, ex, ey, ez, geom.dimensions[1], mat, coll
+                    ));
                 }
-                GeometryShape::Cylinder if geom.dimensions.len() >= 2 => {
-                    let d = &geom.dimensions;
-                    format!("type=\"cylinder\" size=\"{} {}\"", d[0], d[1] / 2.0)
+                _ => {
+                    let gs = match geom.shape {
+                        GeometryShape::Box if geom.dimensions.len() >= 3 => {
+                            let d = &geom.dimensions;
+                            format!("type=\"box\" size=\"{} {} {}\"", d[0] / 2.0, d[1] / 2.0, d[2] / 2.0)
+                        }
+                        GeometryShape::Cylinder if geom.dimensions.len() >= 2 => {
+                            let d = &geom.dimensions;
+                            format!("type=\"cylinder\" size=\"{} {}\"", d[0], d[1] / 2.0)
+                        }
+                        GeometryShape::Sphere if !geom.dimensions.is_empty() => {
+                            format!("type=\"sphere\" size=\"{}\"", geom.dimensions[0])
+                        }
+                        _ => String::new(),
+                    };
+                    if !gs.is_empty() {
+                        // geom centred at the link's geometry centroid (the `origin` offset) — a rod from the joint.
+                        out.push_str(&format!(
+                            "{}<geom {} pos=\"{}\"{}{}/>  \n", pad2, gs, centroid, mat, coll));
+                    }
                 }
-                GeometryShape::Sphere if !geom.dimensions.is_empty() => {
-                    format!("type=\"sphere\" size=\"{}\"", geom.dimensions[0])
-                }
-                _ => String::new(),
-            };
-            if !gs.is_empty() {
-                let mat = link
-                    .color
-                    .as_ref()
-                    .map(|_| format!(" material=\"mat_{}\"", link.name))
-                    .unwrap_or_default();
-                // geom centred at the link's geometry centroid (the `origin` offset), so a link
-                // describes a rod spanning from its joint toward the next joint (a connected arm),
-                // not a stub at the joint.
-                out.push_str(&format!(
-                    "{}<geom {} pos=\"{}\"{}/>  \n", pad2, gs, centroid, mat));
             }
         }
     }
