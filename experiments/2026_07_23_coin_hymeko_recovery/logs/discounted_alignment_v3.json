@@ -6,7 +6,7 @@
  },
  "manifest": {
   "reward_spec": "d42c9cbfbe5e343e",
-  "robot_spec": "3c899487eff45cf3",
+  "robot_spec": "49ff35e91c3c8876",
   "scene_spec": "8be8246bb2af1a3c",
   "control_contract": {
    "joint_range": 4.0,
@@ -21,7 +21,7 @@
   "horizon": 120,
   "reward_source": "hymeko_spec",
   "success_contract": "canonical_k6",
-  "combined_bundle_hash": "2b642d348a6b195b"
+  "combined_bundle_hash": "5606c4345d8bb08f"
  },
  "seeds": [
   0,
@@ -31,34 +31,34 @@
  "per_gamma": {
   "sac": {
    "gamma": 0.99,
-   "strict_delivery_return": 13.802,
+   "strict_delivery_return": 12.704,
    "failure_returns": {
-    "zero_action": -20.901,
-    "movement_away": -18.11,
-    "reach_without_hold": -20.033,
-    "grasp_and_stall": -18.514,
-    "oscillation": -21.118,
-    "center_then_exit": -18.29,
-    "timeout": -19.86,
-    "contact_drop": -20.066,
-    "approach_retreat": -20.517,
-    "zone_entry_exit": -20.395
+    "zero_action": -36.562,
+    "movement_away": -36.36,
+    "reach_without_hold": -35.615,
+    "grasp_and_stall": -35.335,
+    "oscillation": -37.406,
+    "center_then_exit": -40.058,
+    "timeout": -35.721,
+    "contact_drop": -35.076,
+    "approach_retreat": -36.133,
+    "zone_entry_exit": -37.423
    },
    "failures_dominating_strict": [],
    "no_farming": {
     "oscillation": {
      "cycle_len": 6,
-     "cycle_upper_bound": -23.298,
+     "cycle_upper_bound": -51.386,
      "dominates_strict": false
     },
     "approach_retreat": {
      "cycle_len": 40,
-     "cycle_upper_bound": -23.499,
+     "cycle_upper_bound": -51.072,
      "dominates_strict": false
     },
     "zone_entry_exit": {
      "cycle_len": 16,
-     "cycle_upper_bound": -22.863,
+     "cycle_upper_bound": -50.769,
      "dominates_strict": false
     }
    },
@@ -67,34 +67,34 @@
   },
   "td3": {
    "gamma": 0.99,
-   "strict_delivery_return": 13.802,
+   "strict_delivery_return": 12.704,
    "failure_returns": {
-    "zero_action": -20.901,
-    "movement_away": -18.11,
-    "reach_without_hold": -20.033,
-    "grasp_and_stall": -18.514,
-    "oscillation": -21.118,
-    "center_then_exit": -18.29,
-    "timeout": -19.86,
-    "contact_drop": -20.066,
-    "approach_retreat": -20.517,
-    "zone_entry_exit": -20.395
+    "zero_action": -36.562,
+    "movement_away": -36.36,
+    "reach_without_hold": -35.615,
+    "grasp_and_stall": -35.335,
+    "oscillation": -37.406,
+    "center_then_exit": -40.058,
+    "timeout": -35.721,
+    "contact_drop": -35.076,
+    "approach_retreat": -36.133,
+    "zone_entry_exit": -37.423
    },
    "failures_dominating_strict": [],
    "no_farming": {
     "oscillation": {
      "cycle_len": 6,
-     "cycle_upper_bound": -23.298,
+     "cycle_upper_bound": -51.386,
      "dominates_strict": false
     },
     "approach_retreat": {
      "cycle_len": 40,
-     "cycle_upper_bound": -23.499,
+     "cycle_upper_bound": -51.072,
      "dominates_strict": false
     },
     "zone_entry_exit": {
      "cycle_len": 16,
-     "cycle_upper_bound": -22.863,
+     "cycle_upper_bound": -50.769,
      "dominates_strict": false
     }
    },
@@ -118,9 +118,9 @@
   },
   {
    "seed": 2,
-   "steps": 7,
-   "terminated": true,
-   "final_dwell": 6
+   "steps": 9,
+   "terminated": false,
+   "final_dwell": 8
   }
  ]
 }
