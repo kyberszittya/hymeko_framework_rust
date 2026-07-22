@@ -42,24 +42,35 @@ def _env():
     return env, cf, cf._env
 
 
-def _roll_bc_to_grasp(env, cf, inner, e, seed, grasp_hold=3):
-    """The frozen E approach drives from neutral to the TRANSITION state (bilateral grasp_hold OR the 160-step cap —
-    exactly the composed-chain handoff point). Always returns the snapshot (qpos,qvel) + whether a firm bilateral
-    grasp formed. The strengthened-teacher search targets this transition state (where the handoff would take over)."""
+def _e_action_fn(e):
+    """Adapt the frozen E_valselect approach to the ``action_fn(inner) -> action[4]`` driver contract."""
+    return lambda inner: e.action_mean(
+        torch.as_tensor(np.asarray(inner.node_features(), np.float32)[None]))[0].detach().numpy()
+
+
+def _bc_action_fn(bc):
+    """Adapt a :class:`FullActionBC` checkpoint to the same ``action_fn(inner) -> action[4]`` driver contract (used by
+    DAgger to snapshot the BC's OWN reached transition state)."""
+    return lambda inner: bc.act(np.asarray(inner.node_features(), np.float32).flatten())
+
+
+def _roll_to_transition(env, cf, inner, action_fn, seed, grasp_hold=3, max_steps=160):
+    """Drive from neutral to the TRANSITION state (bilateral grasp_hold OR the ``max_steps`` cap — the composed-chain
+    handoff point) using ``action_fn(inner) -> action[4]``. Driver-agnostic: the E approach (strengthening) or the
+    deployed BC (DAgger). Returns the snapshot (qpos, qvel) + firm-grasp + robot-touched flags."""
     env.set_stage(0)
     env.reset(seed=int(seed))
     bi = 0
     grasped = False
     touched = False
-    for _k in range(160):
+    for _k in range(max_steps):
         m = inner._planar_metrics
         touched = touched or bool(m.left_contact or m.right_contact)
         bi = bi + 1 if (m.left_contact and m.right_contact) else 0
         if bi >= grasp_hold:
             grasped = True
             break
-        a = e.action_mean(torch.as_tensor(np.asarray(inner.node_features(), np.float32)[None]))[0].detach().numpy()
-        inner.step(np.asarray(a, np.float32))
+        inner.step(np.asarray(action_fn(inner), np.float32))
     return inner.data.qpos.copy(), inner.data.qvel.copy(), grasped, touched
 
 
@@ -143,11 +154,11 @@ def _handoff_nominal(env, cf, inner, qpos, qvel):
     return seq[idx]                                          # (N_KNOTS, ACT_DIM) handoff knots
 
 
-def cem_search_state(seed, *, pop=48, iters=12, elite=8, sigma0=0.7, budget_mult=1, log=None):
-    """CEM over the suffix knots for one BC-grasp state. Returns the best result + the accepted (strict) suffix."""
-    env, cf, inner = _env()
-    bc = _bc()
-    qpos, qvel, grasped, touched = _roll_bc_to_grasp(env, cf, inner, bc, seed)   # transition state (always valid)
+def cem_from_snapshot(seed, env, cf, inner, qpos, qvel, grasped, touched, *, pop=48, iters=12, elite=8,
+                      sigma0=0.7, budget_mult=1, log=None):
+    """CEM over the suffix knots for one transition snapshot (qpos, qvel) — DRIVER-AGNOSTIC (E approach or BC). Returns
+    the best result + the accepted (strict) suffix. Every candidate is scored open-loop from the snapshot with honest
+    ``robot_touched`` carried from the prefix; the caller replay-certifies the winner from neutral."""
     nominal = _handoff_nominal(env, cf, inner, qpos, qvel)   # (N_KNOTS, ACT_DIM)
     mean = nominal.flatten().copy()
     sigma = np.full_like(mean, sigma0)
@@ -184,6 +195,14 @@ def cem_search_state(seed, *, pop=48, iters=12, elite=8, sigma0=0.7, budget_mult
             "min_dtz": float(best["min_dtz"]), "min_speed": float(best.get("min_speed", 9.0)),
             "rollouts": rollouts, "classification": cls,
             "suffix_knots": best_knots.reshape(N_KNOTS, ACT_DIM).tolist() if (best["strict"] and best_knots is not None) else None}
+
+
+def cem_search_state(seed, *, pop=48, iters=12, elite=8, sigma0=0.7, budget_mult=1, log=None):
+    """CEM suffix search from the frozen **E-approach** transition state (the strengthening teacher, §10)."""
+    env, cf, inner = _env()
+    qpos, qvel, grasped, touched = _roll_to_transition(env, cf, inner, _e_action_fn(_bc()), seed)
+    return cem_from_snapshot(seed, env, cf, inner, qpos, qvel, grasped, touched, pop=pop, iters=iters,
+                             elite=elite, sigma0=sigma0, budget_mult=budget_mult, log=log)
 
 
 def _run_one(args_tuple):
