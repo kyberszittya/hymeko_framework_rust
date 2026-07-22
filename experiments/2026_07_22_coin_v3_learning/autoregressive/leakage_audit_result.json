@@ -1,0 +1,16 @@
+{
+ "contract": "FULL_ACTION_OBS_HISTORY_V1",
+ "sha256": "6c84fa5b6ab0aab96cc9deccbb03ec8c9b7226219bd8c0cc96387fe84f504eac",
+ "n_traj": 96,
+ "n_samples": 19334,
+ "checks": {
+  "feature_dim_152": true,
+  "no_act_t_slot": true,
+  "feature_le_t_invariant_to_future": true,
+  "feature_t+1_uses_past_act_t_only": true,
+  "label_not_in_feature_unless_equals_past_action": true,
+  "variable_length_trajectories_present": true
+ },
+ "all_pass": true,
+ "verdict": "AUTOREGRESSIVE_DATA_LEAKAGE_AUDIT_PASS"
+}

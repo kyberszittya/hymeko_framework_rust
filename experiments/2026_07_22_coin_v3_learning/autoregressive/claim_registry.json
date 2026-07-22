@@ -1,0 +1,13 @@
+{
+ "updated": "2026-07-22",
+ "corrections": {
+  "OPEN_LOOP_TEACHER_NOT_CLONABLE": "RETIRED -> narrowed",
+  "OPEN_LOOP_TEACHER_NOT_CLONABLE_UNDER_INSTANTANEOUS_OBSERVATION": "historical finding (instantaneous-obs contract only)",
+  "OPEN_LOOP_TEACHER_MAY_BE_CLONABLE_UNDER_ACTION_HISTORY": "OPEN hypothesis (this pilot tests it)",
+  "FEEDBACK_MPC_SUCCESSFUL_BUT_LABEL_MULTIVALUED": "H=30 expert PASSED its rollout gate; its per-step settle labels are multivalued"
+ },
+ "notes": [
+  "H=30 feedback expert is NOT a failed planner (passed RECEDING_HORIZON_FEEDBACK_EXPERT_PASS).",
+  "Open-loop plans are NOT feedback demonstrations."
+ ]
+}
