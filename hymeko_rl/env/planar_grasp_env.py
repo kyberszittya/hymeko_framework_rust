@@ -520,12 +520,21 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                  arm_mjcf_transform: "Callable[[str], str] | None" = None,
                  terminate_on_success: bool = True,
                  contact_legality: bool | None = None,
-                 robot_source: str | None = None) -> None:
+                 robot_source: str | None = None,
+                 scene_source: str | None = None) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
         if not 0.0 <= difficulty <= 1.0:
             raise ValueError("difficulty must be in [0, 1]")
+        # Scene source (2026-07-22): the CANONICAL scene geometry (target zone, coin spawn, workspace bounds, success
+        # criterion, disk radius) is DESCRIBED IN HYMEKO. ``scene_source="hymeko_spec"`` reads it from the load-bearing
+        # ``galambos_env.hymeko`` via ``EnvSpec.from_hymeko`` (hard-fails on a missing/invalid scene — no silent Python
+        # DEFAULT_ENV fallback). ``None`` keeps the pre-existing ``env=`` behaviour for non-canonical callers.
+        if scene_source == "hymeko_spec":
+            env = EnvSpec.from_hymeko(_PLANAR_ENV)
+        elif scene_source is not None:
+            raise ValueError(f"unknown scene_source {scene_source!r}; expected 'hymeko_spec' | None")
         # The scene geometry is one config struct (EnvSpec), read from galambos_env.hymeko by
         # `from_hymeko`. `difficulty` (curriculum) and `max_steps` are runtime knobs, not scene data.
         self._env = env

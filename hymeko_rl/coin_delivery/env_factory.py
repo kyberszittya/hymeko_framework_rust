@@ -46,8 +46,8 @@ def make_coin_env(*, embodiment: str = "POINT", difficulty: float = 0.3, deliver
     ``env.reward_file`` names the active reward source. # Errors ``ValueError`` on an unknown embodiment (fail loud)."""
     if embodiment not in VALID_EMBODIMENTS:
         raise ValueError(f"embodiment must be one of {VALID_EMBODIMENTS}; got {embodiment!r}")
-    env = PlanarGraspEnv(robot_source="hymeko_spec", max_steps=max_steps, difficulty=difficulty,
-                         **_fingertip_kwargs(embodiment))
+    env = PlanarGraspEnv(robot_source="hymeko_spec", scene_source="hymeko_spec", max_steps=max_steps,
+                         difficulty=difficulty, **_fingertip_kwargs(embodiment))
     if coord or deliver:
         from hymeko_rl.env.reward import RewardSpec
         src = treatment_hymeko if coord else DELIVER_V2B
