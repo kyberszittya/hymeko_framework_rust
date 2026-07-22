@@ -46,11 +46,15 @@ def _score_horizon(inner, cf, qpos, qvel, actions_h, clearance, carry_touched, c
     min_dtz = 9.0
     min_speed = 9.0
     strict = False
+    entry_step = -1                                          # first in-plan step the coin enters the zone (dtz<=0.04)
     for t in range(len(actions_h)):
         cert.update(_cert_step(inner, cf))
         best_dwell = max(best_dwell, cert.delivery_dwell)
         m = inner._planar_metrics
-        min_dtz = min(min_dtz, float(m.disk_to_zone))
+        dtz = float(m.disk_to_zone)
+        min_dtz = min(min_dtz, dtz)
+        if entry_step < 0 and dtz <= 0.04:
+            entry_step = t
         sp = float(np.linalg.norm(inner.data.qvel[inner._disk_x_adr:inner._disk_x_adr + 2]))
         min_speed = min(min_speed, sp)
         if cert.delivery_certified:
@@ -58,9 +62,10 @@ def _score_horizon(inner, cf, qpos, qvel, actions_h, clearance, carry_touched, c
             break
         inner.step(np.asarray(actions_h[t], np.float32))
         if not np.all(np.isfinite(inner.data.qvel)):
-            return {"strict": False, "dwell": best_dwell, "min_dtz": min_dtz, "min_speed": 9.0, "effort": 9.0}
+            return {"strict": False, "dwell": best_dwell, "min_dtz": min_dtz, "min_speed": 9.0, "effort": 9.0,
+                    "entry_step": entry_step, "horizon": len(actions_h)}
     return {"strict": strict, "dwell": best_dwell, "min_dtz": min_dtz, "min_speed": min_speed,
-            "effort": float(np.mean(np.abs(actions_h)))}
+            "effort": float(np.mean(np.abs(actions_h))), "entry_step": entry_step, "horizon": len(actions_h)}
 
 
 def _lexo(r):
@@ -83,12 +88,14 @@ def plan_first_action(inner, cf, clearance, touched, dwell, seed, *, horizon=15,
     rng = np.random.default_rng(seed)
     best = None
     best_seq = None
+    any_strict = False                                       # did ANY sampled candidate reach strict K=6 in-plan?
     for _it in range(iters):
         cand = np.clip(rng.normal(mean, sigma, size=(pop, dim)), -CTRL_LIM, CTRL_LIM).astype(np.float32)
         cand[0] = mean                                       # keep the incumbent
         scored = []
         for c in cand:
             r = _score_horizon(inner, cf, qpos, qvel, c.reshape(horizon, ACT_DIM), clearance, touched, dwell)
+            any_strict = any_strict or bool(r["strict"])
             scored.append((_lexo(r), c, r))
         scored.sort(key=lambda x: x[0])
         el = np.stack([c for _k, c, _r in scored[-elite:]])
@@ -96,6 +103,7 @@ def plan_first_action(inner, cf, clearance, touched, dwell, seed, *, horizon=15,
         if best is None or scored[-1][0] > _lexo(best):
             best, best_seq = scored[-1][2], scored[-1][1].copy()
     _restore(inner, qpos, qvel)
+    best["any_candidate_strict"] = bool(any_strict)          # §3 horizon-mechanism probe
     return best_seq.reshape(horizon, ACT_DIM)[0].astype(np.float32), best
 
 
@@ -138,6 +146,13 @@ def receding_horizon_rollout(seed, *, horizon=15, pop=48, iters=8, elite=8, plan
     was_bilateral = was_entered = False
     max_dwell = 0
     reason = "timeout"
+    # §3 within-plan mechanism probes + §2 per-seed diagnostics
+    plan_any_strict = plan_sel_strict = n_plans = 0
+    max_plan_dwell = 0
+    min_plan_dtz = 9.0
+    entry_remaining: list = []
+    max_coin_speed_near = 0.0
+    min_dtz_overall = 9.0
     for step in range(max_steps):
         cert.update(_cert_step(inner, cf))
         m = inner._planar_metrics
@@ -156,6 +171,10 @@ def receding_horizon_rollout(seed, *, horizon=15, pop=48, iters=8, elite=8, plan
         was_entered = dtz <= 0.04
         max_dwell = max(max_dwell, int(cert.delivery_dwell))
         dwell_seq.append(int(cert.delivery_dwell))
+        min_dtz_overall = min(min_dtz_overall, dtz)
+        if dtz < 0.06:                                        # coin speed near the target (overshoot indicator)
+            csp = float(np.linalg.norm(inner.data.qvel[inner._disk_x_adr:inner._disk_x_adr + 2]))
+            max_coin_speed_near = max(max_coin_speed_near, csp)
         if cert.delivery_certified:
             reason = "strict_success"
             break
@@ -179,6 +198,13 @@ def receding_horizon_rollout(seed, *, horizon=15, pop=48, iters=8, elite=8, plan
             latencies.append(round(time.time() - t0, 4))
             n_cand.append(pop * iters)
             cem_scores.append(round(-res["min_dtz"] + res["dwell"], 4))
+            n_plans += 1
+            plan_any_strict += int(res.get("any_candidate_strict", False))
+            plan_sel_strict += int(res["strict"])
+            max_plan_dwell = max(max_plan_dwell, int(res["dwell"]))
+            min_plan_dtz = min(min_plan_dtz, float(res["min_dtz"]))
+            if res.get("entry_step", -1) >= 0:
+                entry_remaining.append(int(res["horizon"] - res["entry_step"]))
         feats.append(hist.feature().copy())
         inner.step(np.asarray(a, np.float32))
         executed.append(np.asarray(a, np.float32).copy())
@@ -194,7 +220,14 @@ def receding_horizon_rollout(seed, *, horizon=15, pop=48, iters=8, elite=8, plan
             "failure_class": fail_class,
             "mean_action_mag": round(float(np.mean([np.linalg.norm(a) for a in executed])) if executed else 0.0, 4),
             "mean_plan_latency": round(float(np.mean([x for x in latencies if x > 0])) if any(latencies) else 0.0, 4),
-            "total_candidate_evals": int(sum(n_cand)),
+            "total_candidate_evals": int(sum(n_cand)), "planner_calls": int(n_plans),
+            "final_approach_dtz": round(float(min_dtz_overall), 4),
+            "max_coin_speed_near_target": round(float(max_coin_speed_near), 4),
+            # §3 within-plan horizon-mechanism probes
+            "plan_any_strict_frac": round(plan_any_strict / n_plans, 4) if n_plans else 0.0,
+            "plan_sel_strict_frac": round(plan_sel_strict / n_plans, 4) if n_plans else 0.0,
+            "max_plan_dwell": int(max_plan_dwell), "min_plan_dtz": round(float(min_plan_dtz), 4),
+            "entry_remaining_med": int(np.median(entry_remaining)) if entry_remaining else -1,
             "executed": np.asarray(executed, np.float32), "dwell_seq": dwell_seq}
 
 

@@ -145,3 +145,72 @@ One bounded corrective proposed (H=30). Awaiting authorization before running it
 `coin_delivery/{coin_v3_receding_horizon,coin_v3_feedback_pilot}.py`; pilot result
 `experiments/2026_07_22_coin_v3_learning/receding_horizon/feedback_pilot_result.json` (SHA `fab6ea81…`). Headline
 bank sha `1e1d5ab87ff2c854`, train_query pilot sha `652fde8fd1ebf18e`. Config H=15/pop=40/iters=6, plan_seed_base=0.
+
+---
+
+# §5-corrective — matched H=30 horizon experiment
+
+**Created-at:** 2026-07-22 21:45 JST · **KATO14** (26 workers). **Only `--horizon` changed** (15→30); pop 40, iters 6,
+elite 8, plan_seed_base 0, max_steps 360, banks, bundle, checkpoints, objective, lexicographic ranking, replay
+certification, deterministic selection — all identical. The committed H=15 artifact (`fab6ea81`, commit `2842c623`)
+is **unmodified**; an instrumented H=15 baseline (SHA `95415805…`) was re-run for the matched within-plan probes and
+**reproduces the committed outcomes exactly (headline 6/9, train_query 16/30)**.
+
+## §5-corrective Verdict
+
+`RECEDING_HORIZON_FEEDBACK_EXPERT_PASS` → **`PLANNING_HORIZON_WAS_LOAD_BEARING`**. All gate conditions hold:
+
+| gate condition | result |
+|---|---|
+| headline ≥6/9 | **7/9** ✓ |
+| train_query ≥18/30 | **20/30** ✓ |
+| planning == replay-certified (both banks) | ✓ (no injection) |
+| ≥3 settle-stage fail→success conversions | **4** ✓ |
+| H=30 loses ≤1 of the 16 H=15 successes | **1** (6012) ✓ |
+| target-exit and/or dwell-recovery materially decrease | settle-fails **10→7**; dwell-recovery **3→0** ✓ |
+| bundle / obs / action contracts unchanged | ✓ |
+
+## Pairwise transitions (train_query, 30 seeds)
+
+fail→success **5** {6000,6007,6011,6029,+1} · success→success **15** · success→fail **1** {6012} · fail→different-failure **1**.
+Headline: fail→success **1** {1447} · success→success 6 · success→fail 0. Net: headline 6→**7/9**, train_query 16→**20/30**.
+
+## §3 horizon mechanism — measured in-plan, not inferred from success
+
+On the 4 settle conversions, H=15 could **never** make strict reachable inside a plan (search could only optimize the
+distance tie-break); H=30 makes it reachable, and the closed loop then delivers:
+
+| seed | H=15 fail | H=15 `any_strict` | H=15 maxK | → H=30 `any_strict` | H=30 maxK | H=30 |
+|---|---|---|---|---|---|---|
+| 6000 | target_exit | 0.000 | 0 | **0.795** | 6 | ✓ |
+| 6007 | target_exit | 0.000 | 0 | **0.696** | 6 | ✓ |
+| 6011 | dwell_recovery | 0.000 | 2 | **0.905** | 6 | ✓ |
+| 6029 | dwell_recovery | 0.051 | 5 | **1.000** | 6 | ✓ |
+
+This is the directly-measured horizon mechanism: `any_candidate_strict` (fraction of planning steps at which *some*
+CEM candidate reaches strict K=6 within the horizon) rises from ≈0 to 0.70–1.00 exactly at the converted states. The
+objective and tie-break were unchanged (no terminal value, grip bonus, re-grasp reward, penalty, braking controller,
+target action, or smoothing change).
+
+## Honest nuances
+
+- **One regression** (6012, H=15 success → H=30 target_exit_failure) — within the ≤1 tolerance, reported not hidden.
+- **target_exit count is flat (7→7)**; the settle-failure *decrease* (10→7) comes entirely from **dwell_recovery 3→0**.
+  The 7 target_exit failures at H=30 are partly different seeds (the regression + a fail→different-failure). So the
+  horizon converts the near-miss (partial-dwell) seeds cleanly but does not eliminate target-exit as a class.
+- Across all 14 H=15-failing seeds the median `any_strict` is still ≈0 at H=30, because most of those 14 are
+  no-grasp / contact-loss / target-entry states where the coin is never grasped/near — the horizon only helps the
+  **settle** stage, as the mechanism predicts.
+
+## Interpretation discipline (§7)
+
+Supported: `PLANNING_HORIZON_WAS_LOAD_BEARING`, `RECEDING_HORIZON_FEEDBACK_EXPERT_PASS`. **Not** established: feedback-
+dataset clonability, BC competence, final-test generalization, RL improvement. RL **not** started (`rl_started=false`).
+
+## Provenance
+
+Command: `python -m hymeko_rl.coin_delivery.coin_v3_feedback_pilot --bank both --workers 26 --horizon 30 --pop 40
+--iters 6 --elite 8 --plan-seed-base 0 --max-steps 360 --out …/feedback_pilot_h30`. Bundle `6664ac459cca8f62`, obs
+contract `6c84fa5b…`. H=15 committed SHA `fab6ea8172ef9b6…`; H=15 instrumented baseline SHA `95415805748ebaa3`;
+**H=30 result SHA `1115ade36b17f2b8`**; comparison `h15_vs_h30_comparison.json`. Wall: H=15 4:46, H=30 6:01; H=30
+peak RSS ≈ 222 MB/worker (≪ 16 GB). Banks unchanged (headline `1e1d5ab8…`, train_query pilot `652fde8f…`).
