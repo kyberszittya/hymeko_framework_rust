@@ -1,0 +1,31 @@
+{
+ "SAC": {
+  "actor_grad_norm_all": 20.08246,
+  "per_phase_grad_norm": {
+   "CONTACT_ACQ": 17.65324,
+   "TRANSPORT": 23.28897,
+   "TARGET_ENTRY": 20.45536,
+   "SETTLING": 32.45505
+  },
+  "load_bearing_dQda_mean_abs": 2.28069,
+  "jacobian_nonzero_frac_transport": 0.996,
+  "jacobian_nonzero_frac_entry": 1.0,
+  "jacobian_nonzero_frac_settling": 1.0,
+  "finite_gradient": true
+ },
+ "TD3": {
+  "actor_grad_norm_all": 14.42249,
+  "per_phase_grad_norm": {
+   "CONTACT_ACQ": 12.61319,
+   "TRANSPORT": 17.57104,
+   "TARGET_ENTRY": 14.23502,
+   "SETTLING": 21.3253
+  },
+  "load_bearing_dQda_mean_abs": 1.605,
+  "jacobian_nonzero_frac_transport": 0.996,
+  "jacobian_nonzero_frac_entry": 1.0,
+  "jacobian_nonzero_frac_settling": 1.0,
+  "finite_gradient": true
+ },
+ "verdict": "HARD_CLIP_ACTOR_GRADIENT_SUPPORT_PASS"
+}
