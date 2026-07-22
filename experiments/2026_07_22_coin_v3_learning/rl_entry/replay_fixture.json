@@ -1,0 +1,178 @@
+{
+ "schema_hash": "0b11b60e9a436e97fe9bc155f874b048480f361a22a96e160d3f92adcd9fc60a",
+ "schema_hash_prefix": "0b11b60e9a43",
+ "pi0_file_sha": "1902454c",
+ "transitions": [
+  {
+   "type": "EARLY_CONTROL->EARLY_CONTROL",
+   "gate_t": 0.0,
+   "gate_tp1": 0.0,
+   "done": 0.0,
+   "deployed_action": [
+    1.046851,
+    -1.808894,
+    1.843388,
+    -0.423219
+   ],
+   "reference_target": [
+    3.666752,
+    -4.0,
+    -0.048292,
+    4.0
+   ],
+   "learner_target": [
+    3.666752,
+    -4.0,
+    -0.048292,
+    4.0
+   ],
+   "max_diff": 0.0,
+   "gate0_equals_base": true,
+   "fsm_invoked": false,
+   "terminal_bootstrap_masked": null
+  },
+  {
+   "type": "EARLY_CONTROL->RESIDUAL_CONTROL",
+   "gate_t": 0.0,
+   "gate_tp1": 1.0,
+   "done": 0.0,
+   "deployed_action": [
+    1.197412,
+    -4.0,
+    1.367318,
+    3.576611
+   ],
+   "reference_target": [
+    -0.818588,
+    -0.868115,
+    0.055384,
+    0.327561
+   ],
+   "learner_target": [
+    -0.818588,
+    -0.868115,
+    0.055384,
+    0.327561
+   ],
+   "max_diff": 0.0,
+   "gate0_equals_base": false,
+   "fsm_invoked": false,
+   "terminal_bootstrap_masked": null
+  },
+  {
+   "type": "RESIDUAL_CONTROL->RESIDUAL_CONTROL",
+   "gate_t": 1.0,
+   "gate_tp1": 1.0,
+   "done": 0.0,
+   "deployed_action": [
+    0.823679,
+    -1.420046,
+    0.534372,
+    1.124186
+   ],
+   "reference_target": [
+    3.666535,
+    -3.75,
+    2.976877,
+    2.046396
+   ],
+   "learner_target": [
+    3.666535,
+    -3.75,
+    2.976877,
+    2.046396
+   ],
+   "max_diff": 0.0,
+   "gate0_equals_base": false,
+   "fsm_invoked": false,
+   "terminal_bootstrap_masked": null
+  },
+  {
+   "type": "RESIDUAL_CONTROL->EARLY_CONTROL(REACQUIRE)",
+   "gate_t": 1.0,
+   "gate_tp1": 0.0,
+   "done": 0.0,
+   "deployed_action": [
+    0.313439,
+    -0.141595,
+    0.125469,
+    0.427765
+   ],
+   "reference_target": [
+    -0.232283,
+    -0.929057,
+    0.007716,
+    0.057703
+   ],
+   "learner_target": [
+    -0.232283,
+    -0.929057,
+    0.007716,
+    0.057703
+   ],
+   "max_diff": 0.0,
+   "gate0_equals_base": true,
+   "fsm_invoked": false,
+   "terminal_bootstrap_masked": null
+  },
+  {
+   "type": "terminal",
+   "gate_t": 1.0,
+   "gate_tp1": 0.0,
+   "done": 1.0,
+   "deployed_action": [
+    -1.310037,
+    -1.042892,
+    -1.507461,
+    2.241735
+   ],
+   "reference_target": [
+    -0.31351,
+    -1.025733,
+    0.041369,
+    -0.723159
+   ],
+   "learner_target": [
+    -0.31351,
+    -1.025733,
+    0.041369,
+    -0.723159
+   ],
+   "max_diff": 0.0,
+   "gate0_equals_base": true,
+   "fsm_invoked": false,
+   "terminal_bootstrap_masked": true
+  },
+  {
+   "type": "truncated_reset",
+   "gate_t": 1.0,
+   "gate_tp1": 0.0,
+   "done": 0.0,
+   "deployed_action": [
+    -0.117517,
+    -1.179308,
+    -0.094635,
+    -0.084607
+   ],
+   "reference_target": [
+    3.951495,
+    -4.0,
+    2.047621,
+    4.0
+   ],
+   "learner_target": [
+    3.951495,
+    -4.0,
+    2.047621,
+    4.0
+   ],
+   "max_diff": 0.0,
+   "gate0_equals_base": true,
+   "fsm_invoked": false,
+   "terminal_bootstrap_masked": null
+  }
+ ],
+ "all_targets_match_reference": true,
+ "no_fsm_invoked": true,
+ "fixture_pass": true
+}
