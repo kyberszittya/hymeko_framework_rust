@@ -1,0 +1,20 @@
+{
+ "combined": {
+  "1011": true,
+  "1045": true,
+  "1164": true,
+  "1174": false,
+  "1202": false,
+  "1278": true,
+  "1358": false,
+  "1447": true,
+  "1568": true
+ },
+ "count": 6,
+ "search_certified": [
+  1011,
+  1164,
+  1447,
+  1568
+ ]
+}
