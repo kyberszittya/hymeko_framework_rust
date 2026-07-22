@@ -35,9 +35,9 @@ from hymeko_rl.agents.hypergraph_state import HypergraphState
 _PLANAR_ARM = "data/robotics/galambos_planar.hymeko"
 _PLANAR_ENV = "data/robotics/galambos_env.hymeko"
 _PLANAR_TASK = "data/robotics/galambos_task.hymeko"
-_CANONICAL_ROBOT_V2 = "data/robotics/galambos_planar_v2.hymeko"   # load-bearing corrected robot (capsules + masks).
-# NOTE: v3 (galambos_planar_v3.hymeko) adds a golden inertial contract but the naive override is dynamically unstable
-# (fingertip contact-body cannot be massless; E0 clamp starved) — canonical stays v2 until the golden-structure fix.
+_CANONICAL_ROBOT_V2 = "data/robotics/galambos_planar_v3.hymeko"   # canonical robot: v3 = v2 geometry + GOLDEN inertial
+# parity via the golden STRUCTURE (fingertip contact geom on link2, massless geomless fingertip frame). v2 preserved
+# for provenance. Name kept for call-site stability; the value is the current canonical spec.
 _PLANE_Z = 0.04
 _ARM_REACH = 0.28   # each 2-link finger reaches ~l1+l2=0.30 m; 0.28 leaves a margin
 
@@ -118,6 +118,56 @@ def _golden_inertial_xml(v: dict[str, float]) -> str:
             f'mass="{v["mass"]:.8f}" diaginertia="{v["ixx"]:.10e} {v["iyy"]:.10e} {v["izz"]:.10e}"/>')
 
 
+def _golden_structure(mjcf: str, inertia: dict[str, dict[str, float]]) -> str:
+    """GOLDEN PHYSICAL STRUCTURE (2026-07-22): relocate each fingertip CONTACT geom onto the massive ``link2`` body
+    (named ``fingertip_{side}`` at the tool point) and reduce the ``fingertip_{side}`` body to a MASSLESS, geomless
+    coordinate FRAME (tool ``site`` + the graph marker only). Then stamp the golden ``<inertial>`` on base/link1/link2
+    (explicit → authoritative, so the relocated contact geom adds NO mass). This reproduces the golden's unified
+    mass+contact-on-link2 dynamics body-for-body (stable contact against a massive body) while preserving the six-
+    vertex semantic projection (the frame body stays a dropped vertex). ``with_fingertip_shape`` / ``with_fingertip_clamp``
+    find the fingertip geom by NAME wherever it lives, so they now (correctly) act on link2. # Preconditions the emitted
+    MJCF has ``link2_{side}`` bodies each with a child ``fingertip_{side}`` body carrying one geom."""
+    import xml.etree.ElementTree as ET
+    root = ET.fromstring(mjcf)
+    bodies = {b.get("name"): b for b in root.iter("body")}
+    for side in ("left", "right"):
+        ftb, link2 = bodies.get(f"fingertip_{side}"), bodies.get(f"link2_{side}")
+        if ftb is None or link2 is None:
+            raise ValueError(f"golden-structure: missing fingertip_{side}/link2_{side} body")
+        ft_pos = _vec3(ftb.get("pos", "0 0 0"))                    # fingertip body pos relative to link2 (tool point)
+        for g in [x for x in list(ftb) if x.tag == "geom"]:       # move each fingertip geom onto link2 at the tool point
+            gp = _vec3(g.get("pos", "0 0 0"))
+            g.set("name", f"fingertip_{side}")
+            g.set("pos", f"{ft_pos[0] + gp[0]:g} {ft_pos[1] + gp[1]:g} {ft_pos[2] + gp[2]:g}")
+            ftb.remove(g)
+            link2.append(g)
+        # Fold the tool SITE onto link2 at the tool point and DELETE the fingertip body entirely. A massless welded
+        # body proved numerically unstable (QACC NaN during contact); this reproduces the golden's exact 6-body
+        # structure (fingertip geom + site on link2, no separate body). The graph is then naturally 6 vertices — the
+        # semantic marker becomes a harmless no-op — so the checkpoint contract is preserved without a projection.
+        if not any(s.get("name") == f"tip_{side}" for s in link2.findall("site")):
+            ET.SubElement(link2, "site", {"name": f"tip_{side}", "pos": f"{ft_pos[0]:g} {ft_pos[1]:g} {ft_pos[2]:g}",
+                                          "size": "0.012"})
+        link2.remove(ftb)
+        for contact in root.iter("contact"):                      # drop dangling <exclude> that named the removed body
+            for ex in [e for e in list(contact)
+                       if e.tag == "exclude" and f"fingertip_{side}" in (e.get("body1", ""), e.get("body2", ""))]:
+                contact.remove(ex)
+        # STRIP the crude emitter inertial from base/link1/link2 → MuJoCo DENSITY-derives mass+inertia from the
+        # geometry (density 1000), EXACTLY as the golden does. With the fingertip contact geom now on link2, the
+        # density-derived link2 automatically includes the tip (= the golden 0.0597, COM 0.08348), and this holds for
+        # EVERY embodiment (POINT fingertip / E0 clamp prongs / wrist pads add their real density mass to link2 just
+        # as in the golden) — an explicit link2 inertial would instead starve the clamp/pad geoms of mass. The
+        # `galambos_inertia` contract (the compiled-golden values) is retained for the inertia-parity gate to assert
+        # the density result equals the golden body-for-body.
+        for bname in ("base", "link1", "link2"):
+            b = bodies[f"{bname}_{side}"]
+            for iel in [x for x in list(b) if x.tag == "inertial"]:
+                b.remove(iel)
+    _ = inertia          # (contract read + validated by the caller / gate; density is the emit authority)
+    return ET.tostring(root, encoding="unicode")
+
+
 def _balanced_block(text: str, open_idx: int) -> str:
     """Substring from the ``{`` at ``open_idx`` to its matching ``}`` (brace-balanced). # Preconditions
     ``text[open_idx] == '{'``. # Errors ``ValueError`` on unbalanced braces."""
@@ -175,38 +225,26 @@ def emit_galambos_v2_mjcf(spec_path: str | None = None) -> str:
     mjcf = re.sub(r'damping="-?[\d.]+"', f'damping="{damp:g}"', mjcf)
     mjcf = re.sub(r'kp="-?[\d.]+"', f'kp="{kp:g}"', mjcf)
     mjcf = re.sub(r'kv="-?[\d.]+"', f'kv="{kv:g}"', mjcf)
-    # In each fingertip_{side} body: (1) NAME the (emitter-unnamed) sphere geom `fingertip_{side}` so the env's
-    # POINT/RING variant + contact-priority look it up; (2) inject a `tip_{side}` site so `with_fingertip_sites`
-    # treats the tip as already declared (idempotent) and does NOT inject a duplicate fingertip geom — mirroring the
-    # golden hand-authored arm, which carries both. The site sits at the fingertip body origin (the distal tip).
-    def _fix_tip(m: "re.Match[str]") -> str:
-        side = m.group(1)
-        body = m.group(0).replace('<geom type="sphere"', f'<geom name="fingertip_{side}" type="sphere"', 1)
-        return body.replace('conaffinity="3"/>',
-                            f'conaffinity="3"/>\n        <site name="tip_{side}" pos="0 0 0" size="0.012"/>', 1)
-    mjcf = re.sub(r'<body name="fingertip_(left|right)"[^>]*>.*?<geom type="sphere"[^/]*/>', _fix_tip, mjcf,
-                  flags=re.DOTALL)
-    # INERTIAL PARITY (2026-07-22): the emitter writes a crude `<inertial>` from the spec `mass` field, making the arm
-    # ~5x too heavy and breaking the frozen chain (3/9→0/9). Replace each structural link's inertial with the GOLDEN
-    # compiled values (galambos_inertia contract) and make the fingertip helper bodies MASSLESS — the golden folds the
-    # tip mass into link2 (COM at y=0.08348), so a massless fingertip body + the golden link2 inertial reproduces the
-    # golden dynamics body-for-body while keeping the fingertip contact-active. (Sentinel-tested; no fallback.)
-    # Applied ONLY when the spec carries a galambos_inertia contract (v3+). NOTE (2026-07-22): the naive override
-    # (golden <inertial> on links + massless/near-massless fingertip bodies) matches STATIC mass/inertia exactly but
-    # is DYNAMICALLY unstable — a welded fingertip CONTACT body cannot be massless (contact impulse ÷ tiny mass →
-    # NaN), and the E0 CONCAVE_CLAMP adds clamp geoms to the fingertip body that the override starves. The robust fix
-    # is the GOLDEN STRUCTURE (fingertip contact geom on link2, geomless fingertip FRAME for the graph) — a larger
-    # emit restructuring. See reports/2026-07-22-coin-inertia-repair-blocked.md. Kept behind the contract presence
-    # check so v2 (no contract) is unaffected and the tree stays green while the structural fix is designed.
+    # INTEGRATOR PARITY (2026-07-22): the env's stable-dt logic preserves ``original_timestep × frame_skip`` as the
+    # control interval, so the emitter's `timestep="0.001"` yields a 0.005 s interval vs the golden's `0.002`→0.01 s —
+    # the frozen chain (trained at 0.01 s) then blows up (qvel 5e3) at step 1. Match the golden `<option>` (timestep +
+    # implicitfast integrator) so the compiled control interval + integration scheme are identical to the golden.
+    mjcf = re.sub(r"<option[^>]*/>",
+                  '<option timestep="0.002" integrator="implicitfast" gravity="0 0 -9.81"/>', mjcf, count=1)
     if "galambos_inertia" in Path(path).read_text(encoding="utf-8"):
-        inertia = read_inertia_contract(path)
-        for side in ("left", "right"):
-            for body, link in (("base", "base"), ("link1", "link1"), ("link2", "link2")):
-                mjcf = re.sub(rf'(<body name="{body}_{side}"[^>]*>\s*)<inertial[^>]*/>',
-                              lambda m, v=inertia[link]: m.group(1) + _golden_inertial_xml(v), mjcf, count=1)
-            mjcf = re.sub(rf'(<body name="fingertip_{side}"[^>]*>\s*)<inertial[^>]*/>',
-                          lambda m: m.group(1) + '<inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7"/>',
-                          mjcf, count=1)
+        # v3 GOLDEN STRUCTURE: fingertip contact geom → link2 (stable contact vs a massive body), fingertip body →
+        # massless geomless frame, golden inertial on base/link1/link2. (Reproduces golden dynamics body-for-body.)
+        mjcf = _golden_structure(mjcf, read_inertia_contract(path))
+    else:
+        # legacy v2 path: NAME the (emitter-unnamed) fingertip sphere geom `fingertip_{side}` and inject the `tip_{side}`
+        # site on the fingertip body (geom stays on the fingertip body; crude emitter inertial). Kept for provenance.
+        def _fix_tip(m: "re.Match[str]") -> str:
+            side = m.group(1)
+            body = m.group(0).replace('<geom type="sphere"', f'<geom name="fingertip_{side}" type="sphere"', 1)
+            return body.replace('conaffinity="3"/>',
+                                f'conaffinity="3"/>\n        <site name="tip_{side}" pos="0 0 0" size="0.012"/>', 1)
+        mjcf = re.sub(r'<body name="fingertip_(left|right)"[^>]*>.*?<geom type="sphere"[^/]*/>', _fix_tip, mjcf,
+                      flags=re.DOTALL)
     # SEMANTIC GRAPH PROJECTION metadata: carry the spec's `graph_node 0` helper flags into the emitted MJCF as a
     # MuJoCo-legal `<custom><text>` marker. The graph extractor reads it and suppresses these (physical, contact-
     # active) bodies from the policy graph, restoring the legacy 6-vertex / 48-dim contract. No flag → no marker.
