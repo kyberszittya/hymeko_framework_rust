@@ -103,3 +103,28 @@ def build_shared_sac_td3(bc, *, obs_dim: int = 48, feat: int = 256, action_dim: 
         sac.log_std.weight.zero_()
         sac.log_std.bias.fill_(-6.0)
     return sac, td3
+
+
+def load_frozen_clip_actor(ckpt_path: str, *, freeze: bool = True) -> "ClipDeterministicActor":
+    """Reconstruct the immutable frozen ``pi_0`` from a persisted ``shared_clip_actor_init.pt`` checkpoint.
+
+    The checkpoint is ``{backbone, head, action_scale, obs_dim, feat, action_dim, squash}`` (as written by the
+    RL-init reproduction, file-SHA prefix ``1902454c``). Parameters are byte-identical to
+    :func:`build_shared_sac_td3` on the same BC (verified maxdiff 0.0), but the persisted FILE is the stable identity
+    because ``torch.save`` is not byte-reproducible across independent saves.
+
+    # Preconditions: ``ckpt_path`` exists and has the expected keys. # Postconditions: returns a
+    :class:`ClipDeterministicActor`; if ``freeze`` every parameter has ``requires_grad=False`` and the module is in
+    eval mode. # Invariants: the returned actor's outputs equal the audited frozen actor's.
+    """
+    ck = torch.load(ckpt_path)
+    backbone = make_backbone(int(ck.get("obs_dim", 48)), int(ck.get("feat", 256)))
+    backbone.load_state_dict(ck["backbone"])
+    actor = ClipDeterministicActor(backbone, int(ck.get("feat", 256)), int(ck.get("action_dim", 4)),
+                                   float(ck.get("action_scale", 4.0)))
+    actor.head.load_state_dict(ck["head"])
+    if freeze:
+        for p in actor.parameters():
+            p.requires_grad_(False)
+        actor.eval()
+    return actor

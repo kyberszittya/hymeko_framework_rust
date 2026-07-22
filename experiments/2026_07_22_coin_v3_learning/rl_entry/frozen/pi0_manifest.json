@@ -1,0 +1,10 @@
+{
+ "artifact": "pi0_shared_clip_actor.pt",
+ "role": "immutable frozen base actor pi_0 for PHASE_GATED_LEARNED_RESIDUAL_TD3",
+ "file_sha256": "1902454ca7a74c2716798589b532853d5c27f23c49245b0973ca03be4da761b0",
+ "file_sha_prefix": "1902454c",
+ "params_identical_to": "build_shared_sac_td3(bc_handoff_only_best) maxdiff 0.0",
+ "headline": 3, "validation": 2, "grasp": 9, "delivered": [1011, 1447, 1568],
+ "obs_contract": "node_features flat 48", "action": "4 arm actuators clip +-4",
+ "squash": "clip(identity in +-4)", "action_scale": 4.0
+}

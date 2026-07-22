@@ -1,0 +1,329 @@
+{
+ "pi0_file_sha256": "1902454ca7a74c2716798589b532853d5c27f23c49245b0973ca03be4da761b0",
+ "pi0_sha_prefix": "1902454c",
+ "gate_contract": {
+  "gate": "coin_phase_gate.PhaseGate",
+  "version": 1,
+  "config": {
+   "arm_after": 3,
+   "disarm_after": 2,
+   "contact_predicate": "robot_attributed_left_or_right"
+  },
+  "states": [
+   "EARLY_CONTROL",
+   "LATE_CONTROL_ARMED",
+   "REACQUIRE",
+   "TERMINAL"
+  ],
+  "transition": {
+   "arm": "contact_streak>=arm_after -> LATE_CONTROL_ARMED (from EARLY/REACQUIRE)",
+   "disarm": "loss_streak>=disarm_after -> REACQUIRE (from ARMED)",
+   "terminal": "terminated -> TERMINAL (absorbing)"
+  },
+  "multiplier": {
+   "LATE_CONTROL_ARMED": 1.0,
+   "other": 0.0
+  },
+  "deployable_signal": "robot_attributed_contact = left_contact or right_contact",
+  "forbidden_inputs": [
+   "seed",
+   "trajectory_id",
+   "future_info",
+   "planner_state",
+   "disk_to_zone"
+  ]
+ },
+ "gate_contract_sha256": "d739e8af7c4f852d671fa901217b83cdec2c436a5f765afaac4ba14544db86f7",
+ "classes": {
+  "success_pi0_K6": [
+   {
+    "len": 85,
+    "first_contact": 15,
+    "first_activation": 17,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 0,
+    "reacquire_entries": 0,
+    "rearm_entries": 0,
+    "toggles": 2,
+    "active_steps": 67,
+    "active_by_phase": {
+     "TRANSPORT": 22,
+     "TARGET_ENTRY": 34,
+     "SETTLING": 6,
+     "DWELL": 5
+    },
+    "activated": true,
+    "seed": 1011,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 302,
+    "first_contact": 17,
+    "first_activation": 19,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 5,
+    "reacquire_entries": 5,
+    "rearm_entries": 5,
+    "toggles": 12,
+    "active_steps": 174,
+    "active_by_phase": {
+     "TRANSPORT": 85,
+     "TARGET_ENTRY": 84,
+     "DWELL": 5
+    },
+    "activated": true,
+    "seed": 1447,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 109,
+    "first_contact": 15,
+    "first_activation": 17,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 3,
+    "reacquire_entries": 3,
+    "rearm_entries": 2,
+    "toggles": 6,
+    "active_steps": 13,
+    "active_by_phase": {
+     "TRANSPORT": 8,
+     "TARGET_ENTRY": 5
+    },
+    "activated": true,
+    "seed": 1568,
+    "hysteresis_honored": true
+   }
+  ],
+  "fail_pi0": [
+   {
+    "len": 360,
+    "first_contact": 18,
+    "first_activation": 20,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 3,
+    "reacquire_entries": 3,
+    "rearm_entries": 2,
+    "toggles": 6,
+    "active_steps": 63,
+    "active_by_phase": {
+     "TRANSPORT": 63
+    },
+    "activated": true,
+    "seed": 1045,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 360,
+    "first_contact": 39,
+    "first_activation": 41,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 5,
+    "reacquire_entries": 5,
+    "rearm_entries": 4,
+    "toggles": 10,
+    "active_steps": 189,
+    "active_by_phase": {
+     "TRANSPORT": 76,
+     "TARGET_ENTRY": 113
+    },
+    "activated": true,
+    "seed": 1164,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 360,
+    "first_contact": 41,
+    "first_activation": 43,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 2,
+    "reacquire_entries": 2,
+    "rearm_entries": 1,
+    "toggles": 4,
+    "active_steps": 164,
+    "active_by_phase": {
+     "TRANSPORT": 164
+    },
+    "activated": true,
+    "seed": 1174,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 360,
+    "first_contact": 0,
+    "first_activation": 2,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 4,
+    "reacquire_entries": 4,
+    "rearm_entries": 3,
+    "toggles": 8,
+    "active_steps": 78,
+    "active_by_phase": {
+     "TRANSPORT": 78
+    },
+    "activated": true,
+    "seed": 1202,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 360,
+    "first_contact": 24,
+    "first_activation": 26,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 3,
+    "reacquire_entries": 3,
+    "rearm_entries": 2,
+    "toggles": 6,
+    "active_steps": 229,
+    "active_by_phase": {
+     "TRANSPORT": 229
+    },
+    "activated": true,
+    "seed": 1278,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 360,
+    "first_contact": 0,
+    "first_activation": 2,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 2,
+    "reacquire_entries": 2,
+    "rearm_entries": 1,
+    "toggles": 4,
+    "active_steps": 14,
+    "active_by_phase": {
+     "TRANSPORT": 14
+    },
+    "activated": true,
+    "seed": 1358,
+    "hysteresis_honored": true
+   }
+  ],
+  "certified_delivery": [
+   {
+    "len": 153,
+    "first_contact": 37,
+    "first_activation": 39,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 2,
+    "reacquire_entries": 2,
+    "rearm_entries": 1,
+    "toggles": 4,
+    "active_steps": 100,
+    "active_by_phase": {
+     "TRANSPORT": 73,
+     "TARGET_ENTRY": 15,
+     "SETTLING": 12
+    },
+    "activated": true,
+    "seed": 6000,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 146,
+    "first_contact": 73,
+    "first_activation": 75,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 0,
+    "reacquire_entries": 0,
+    "rearm_entries": 0,
+    "toggles": 2,
+    "active_steps": 70,
+    "active_by_phase": {
+     "TRANSPORT": 22,
+     "TARGET_ENTRY": 29,
+     "SETTLING": 14,
+     "DWELL": 5
+    },
+    "activated": true,
+    "seed": 6001,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 244,
+    "first_contact": 31,
+    "first_activation": 33,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 1,
+    "reacquire_entries": 1,
+    "rearm_entries": 1,
+    "toggles": 4,
+    "active_steps": 166,
+    "active_by_phase": {
+     "TRANSPORT": 127,
+     "TARGET_ENTRY": 14,
+     "SETTLING": 20,
+     "DWELL": 5
+    },
+    "activated": true,
+    "seed": 6002,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 123,
+    "first_contact": 51,
+    "first_activation": 53,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 0,
+    "reacquire_entries": 0,
+    "rearm_entries": 0,
+    "toggles": 2,
+    "active_steps": 69,
+    "active_by_phase": {
+     "TRANSPORT": 25,
+     "TARGET_ENTRY": 24,
+     "SETTLING": 15,
+     "DWELL": 5
+    },
+    "activated": true,
+    "seed": 6003,
+    "hysteresis_honored": true
+   },
+   {
+    "len": 176,
+    "first_contact": 35,
+    "first_activation": 37,
+    "activation_phase": "TRANSPORT",
+    "false_early_activations": 0,
+    "deactivations": 4,
+    "reacquire_entries": 4,
+    "rearm_entries": 4,
+    "toggles": 10,
+    "active_steps": 105,
+    "active_by_phase": {
+     "TRANSPORT": 52,
+     "TARGET_ENTRY": 30,
+     "SETTLING": 17,
+     "DWELL": 6
+    },
+    "activated": true,
+    "seed": 6005,
+    "hysteresis_honored": true
+   }
+  ]
+ },
+ "checks": {
+  "never_active_before_contact": true,
+  "arms_only_after_stable_contact": true,
+  "active_through_late_phases_on_success": true,
+  "hysteresis_honored_no_subwindow_chatter": true,
+  "max_toggles_reported": 12,
+  "total_reacquisitions_reported": 34,
+  "activated_at_all": true,
+  "sha_matches_1902454c": true
+ },
+ "verdict": "PHASE_GATE_RUNTIME_CONTRACT_PASS"
+}
