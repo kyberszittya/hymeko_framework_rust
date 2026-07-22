@@ -1,0 +1,64 @@
+{
+ "pi0_sha": "1902454c",
+ "train_states": {
+  "transport": 60,
+  "entry": 50,
+  "settling": 36,
+  "contact_retention": 60
+ },
+ "train_pairs": 1854,
+ "in_sample_corr": 0.994,
+ "held_out_corr": 0.059,
+ "dev_metrics": {
+  "transport": {
+   "n": 10,
+   "centered_corr_Q1_vs_dG": 0.219,
+   "centered_corr_Q2_vs_dG": 0.219,
+   "allpair_acc": 0.625,
+   "acc_gap1": 0.716,
+   "acc_gap5": 0.76,
+   "acc_gap10": 1.0,
+   "harmful_rej": 0.8,
+   "gradQ1_wins": 0.9,
+   "grad_n": 10
+  },
+  "entry": {
+   "n": 10,
+   "centered_corr_Q1_vs_dG": 0.431,
+   "centered_corr_Q2_vs_dG": 0.431,
+   "allpair_acc": 0.553,
+   "acc_gap1": 0.0,
+   "acc_gap5": 0.0,
+   "acc_gap10": 0.0,
+   "harmful_rej": 0.8,
+   "gradQ1_wins": 0.5,
+   "grad_n": 10
+  },
+  "settling": {
+   "n": 4,
+   "centered_corr_Q1_vs_dG": -0.127,
+   "centered_corr_Q2_vs_dG": -0.127,
+   "allpair_acc": 0.562,
+   "acc_gap1": 0.5,
+   "acc_gap5": 0.714,
+   "acc_gap10": 0.0,
+   "harmful_rej": 1.0,
+   "gradQ1_wins": 0.75,
+   "grad_n": 4
+  },
+  "contact_retention": {
+   "n": 10,
+   "centered_corr_Q1_vs_dG": -0.07,
+   "centered_corr_Q2_vs_dG": -0.07,
+   "allpair_acc": 0.411,
+   "acc_gap1": 0.351,
+   "acc_gap5": 0.316,
+   "acc_gap10": 0.75,
+   "harmful_rej": 0.6,
+   "gradQ1_wins": 0.4,
+   "grad_n": 10
+  }
+ },
+ "advantage_development_pass": false,
+ "verdict": "ADVANTAGE_DEV_INSUFFICIENT"
+}
