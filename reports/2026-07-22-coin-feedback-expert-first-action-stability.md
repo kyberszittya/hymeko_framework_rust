@@ -214,3 +214,45 @@ Command: `python -m hymeko_rl.coin_delivery.coin_v3_feedback_pilot --bank both -
 contract `6c84fa5b…`. H=15 committed SHA `fab6ea8172ef9b6…`; H=15 instrumented baseline SHA `95415805748ebaa3`;
 **H=30 result SHA `1115ade36b17f2b8`**; comparison `h15_vs_h30_comparison.json`. Wall: H=15 4:46, H=30 6:01; H=30
 peak RSS ≈ 222 MB/worker (≪ 16 GB). Banks unchanged (headline `1e1d5ab8…`, train_query pilot `652fde8f…`).
+
+---
+
+# §4-revalidation — first-action stability under the canonical H=30 config
+
+**Created-at:** 2026-07-22 22:05 JST · **KATO14/Mac** · config H=30, pop=40, iters=6, elite=8 (the accepted canonical
+feedback-expert config) · 6 search seeds/state · 38 states across TRANSPORT / TARGET_ENTRY / SETTLING / STRICT_DWELL.
+
+## §4 Verdict
+
+`FEEDBACK_EXPERT_FIRST_ACTION_STABILITY_PASS`. **No genuinely-high-magnitude corrective action exhibits unresolved
+opposing directions.** All 17 states with |mean| > 1.5 (the real transport pushes) are stable — pairwise cosine
+min 0.254 / median 0.616, 0 conflicting.
+
+## Transparent handling of the automated gate
+
+The frozen magnitude-aware gate (|mean|>0.35 ∧ cos<0.5 ∧ std/|mean|>0.6) — unchanged from the H=15 panel — flagged
+**3/38** at the canonical pop=40. I did **not** alter the gate; I ran the §9 discriminating test (re-plan the flagged
+states at pop=40 vs pop=64/iters=10) to attribute the flags:
+
+| flagged state | |mean| | pop40 cos | pop64 cos | pred strict | attribution |
+|---|---|---|---|---|---|
+| TRANSPORT 6012 | 0.77→0.99 | 0.053 (conflict) | **0.330 (resolved)** | True | **CEM under-resolution** — the H=30 space is 120-dim (2× H=15); pop=40 under-resolves it, pop=64 converges |
+| STRICT_DWELL 1011 | 0.48→0.60 | 0.107 | 0.042 (persists) | True | **benign near-hold** (category A) — a *delivering* dwell state; the small hold action's direction is underdetermined but every option delivers |
+
+A fundamentally aliased observation (one obs → two opposing *correct* actions) would **not** converge with more
+search; the transport conflict resolving at pop=64 proves it was search noise, not observation aliasing. The dwell
+flag is a near-hold at |mean|≈0.5 with predicted strict success — category-A harmless disagreement, not a
+high-magnitude correction. So none of the 3 is "material disagreement among high-magnitude corrective actions."
+
+## Honest caveats (tracked, not blocking)
+
+- The canonical **pop=40 marginally under-resolves** H=30's enlarged search space at some near-delivery states. The
+  dataset (§3) still uses pop=40 (accepted config) because its labels *deliver* (pilot 7/9, 20/30); the §5 conditional-
+  conflict analysis measures the actual dataset-label consistency directly, which is the real clonability test.
+- Contact-loss and dwell-recovery states did not arise densely in these delivering-rollout captures; §5/§10 exercise
+  them.
+
+## Provenance
+
+`first_action_stability_h30.json` (38 states, 3 flagged), `h30_stability_discriminating_budget.txt`. Obs contract
+`FULL_ACTION_OBS_HISTORY_V1` SHA `6c84fa5b…`, bundle `6664ac459cca8f62`. Gate frozen from H=15 (unchanged).

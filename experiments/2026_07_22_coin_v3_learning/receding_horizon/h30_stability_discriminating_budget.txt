@@ -1,0 +1,4 @@
+STRICT_DWELL seed 1011: pop40 |mean|=0.480 cos=0.107 rel=0.835 conflict=True || pop64 |mean|=0.604 cos=0.042 rel=1.073 conflict=True pred40strict=True pred64strict=True
+STRICT_DWELL seed 1011: pop40 |mean|=0.529 cos=0.193 rel=0.554 conflict=False || pop64 |mean|=0.280 cos=0.066 rel=2.159 conflict=False pred40strict=True pred64strict=True
+TRANSPORT seed 6012: pop40 |mean|=0.766 cos=0.053 rel=0.848 conflict=True || pop64 |mean|=0.991 cos=0.330 rel=0.565 conflict=False pred40strict=True pred64strict=True
+TRANSPORT seed 6012: pop40 |mean|=0.539 cos=0.144 rel=1.027 conflict=True || pop64 |mean|=1.446 cos=0.450 rel=0.414 conflict=False pred40strict=True pred64strict=True
