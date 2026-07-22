@@ -167,6 +167,63 @@ def train_bc_phase_balanced(obs: np.ndarray, act: np.ndarray, phase: np.ndarray,
     return bc, hist
 
 
+def stack_frames(obs: np.ndarray, traj: np.ndarray, k: int) -> np.ndarray:
+    """Left-padded ``k``-frame stacking WITHIN each trajectory (never crosses a trajectory boundary):
+    ``stacked[t] = concat(obs[t], obs[t-1], …, obs[t-k+1])``, padding before the start with the first frame.
+
+    This is the minimal memory that recovers the COIN VELOCITY — absent from the instantaneous ``node_features``
+    (which carries coin position but not its velocity), which makes the settle sub-task a POMDP for a reactive
+    policy (same coin position, opposite braking depending on the unobserved motion direction)."""
+    n, dim = obs.shape
+    out = np.empty((n, dim * k), obs.dtype)
+    for tid in np.unique(traj):
+        idx = np.where(traj == tid)[0]                       # contiguous + time-ordered (load order)
+        seq = obs[idx]
+        for j, t in enumerate(idx):
+            frames = [seq[jj] if jj >= 0 else seq[0] for jj in range(j, j - k, -1)]
+            out[t] = np.concatenate(frames)
+    return out
+
+
+def eval_framestack_bc_delivery(policy, seeds, *, k: int, horizon: int = 360) -> dict:
+    """Deploy a ``k``-frame-stacked BC from NEUTRAL (u = policy(stack of last k node_features), no teacher). Maintains
+    a ring buffer of the last ``k`` frames (initialised to the first observation), so the coin velocity is available
+    to the policy via the position history."""
+    from collections import deque
+
+    from hymeko_rl.coin_delivery.delivery_certificate import DeliveryCertifier
+    from hymeko_rl.experiments.coin_neutral_start import _cert_step, _clearance, neutral_env
+    env, cf = neutral_env(prefix_steps=0)
+    inner = cf._env
+    fc = grasp = deliv = 0
+    per = []
+    for s in seeds:
+        env.set_stage(0)
+        env.reset(seed=int(s))
+        cert = DeliveryCertifier(initial_clearance=_clearance(inner))
+        nf0 = np.asarray(inner.node_features(), np.float32).flatten()
+        buf = deque([nf0] * k, maxlen=k)
+        touched = False
+        for _t in range(horizon):
+            cert.update(_cert_step(inner, cf))
+            m = inner._planar_metrics
+            touched = touched or bool(m.left_contact or m.right_contact)
+            if cert.delivery_certified:
+                break
+            nf = np.asarray(inner.node_features(), np.float32).flatten()
+            buf.append(nf)
+            stacked = np.concatenate(list(buf)[::-1])        # [t, t-1, …, t-k+1] — newest first
+            inner.step(np.asarray(policy.act(stacked), np.float32))
+        d = bool(cert.delivery_certified)
+        fc += int(touched)
+        grasp += int(getattr(cert, "ever_grasped", False) or touched)
+        deliv += int(d)
+        per.append((int(s), d))
+    n = max(1, len(list(seeds)))
+    return {"n": n, "first_contact": fc, "grasp": grasp, "deliver": deliv,
+            "deliver_rate": round(deliv / n, 4), "delivered_seeds": [s for s, dd in per if dd]}
+
+
 def eval_bc_delivery(policy, seeds, *, horizon: int = 360) -> dict:
     """Deploy ``policy`` (``.act(flat48)->4`` or None for zero-action) from NEUTRAL and grade strict K=6 delivery with
     the certificate — no scripted base, no expert online, all motion through ``inner.step``."""

@@ -1,0 +1,845 @@
+{
+ "bank": "train_query",
+ "bc_sha16": "dd2e2a279e7e8a1a",
+ "bundle_hash": "6664ac459cca8f62",
+ "n_states": 120,
+ "tally": {
+  "DAGGER_CERTIFIED": 70,
+  "REPLAY_NOT_CERTIFIED": 3,
+  "SEARCH_FAILED": 40,
+  "BC_ALREADY_DELIVERS": 7
+ },
+ "search": {
+  "pop": 64,
+  "iters": 20,
+  "elite": 10,
+  "n_knots": 10,
+  "act_dim": 6,
+  "suffix_steps": 200
+ },
+ "index": [
+  {
+   "seed": 6005,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 179,
+   "sha16": "801a4cda3c6ac4e9",
+   "wall_s": 3.0
+  },
+  {
+   "seed": 6006,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 271,
+   "sha16": "d5a83d5d30fbdd1b",
+   "wall_s": 3.2
+  },
+  {
+   "seed": 6013,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 184,
+   "sha16": "581d149bd7424c0f",
+   "wall_s": 3.9
+  },
+  {
+   "seed": 6015,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 279,
+   "sha16": "2c21a37a5c4052f6",
+   "wall_s": 3.6
+  },
+  {
+   "seed": 6001,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 355,
+   "sha16": "4b985a782eed50b9",
+   "wall_s": 6.7
+  },
+  {
+   "seed": 6004,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 355,
+   "sha16": "480312e72ba1e8ec",
+   "wall_s": 6.7
+  },
+  {
+   "seed": 6012,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 226,
+   "sha16": "1928ee638f6c4cff",
+   "wall_s": 6.9
+  },
+  {
+   "seed": 6011,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 269,
+   "sha16": "bd6796ca7b703bd5",
+   "wall_s": 7.7
+  },
+  {
+   "seed": 6000,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 270,
+   "sha16": "d4b86a9af888879c",
+   "wall_s": 9.4
+  },
+  {
+   "seed": 6010,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 336,
+   "sha16": "19f22828d84da9ac",
+   "wall_s": 14.1
+  },
+  {
+   "seed": 6022,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 200,
+   "sha16": "172a2621a9f2522b",
+   "wall_s": 6.5
+  },
+  {
+   "seed": 6014,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 274,
+   "sha16": "d0228b20e9a4dc85",
+   "wall_s": 15.8
+  },
+  {
+   "seed": 6023,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 328,
+   "sha16": "3fa158d834cf81e4",
+   "wall_s": 7.4
+  },
+  {
+   "seed": 6024,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 147,
+   "sha16": "689a93a1b964a876",
+   "wall_s": 5.7
+  },
+  {
+   "seed": 6016,
+   "outcome": "REPLAY_NOT_CERTIFIED",
+   "min_dtz": 0.0045127830511828395,
+   "wall_s": 16.8
+  },
+  {
+   "seed": 6025,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 311,
+   "sha16": "8c4507d7dd313152",
+   "wall_s": 9.9
+  },
+  {
+   "seed": 6027,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 279,
+   "sha16": "6a5c89c53165cccf",
+   "wall_s": 11.2
+  },
+  {
+   "seed": 6031,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 342,
+   "sha16": "f09e74b29ef55943",
+   "wall_s": 15.5
+  },
+  {
+   "seed": 6028,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 309,
+   "sha16": "010a2eabe6088f04",
+   "wall_s": 24.6
+  },
+  {
+   "seed": 6009,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.22785274368705197,
+   "wall_s": 50.1
+  },
+  {
+   "seed": 6034,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 238,
+   "sha16": "7b3980580cbd481f",
+   "wall_s": 3.2
+  },
+  {
+   "seed": 6003,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.19112064798223213,
+   "wall_s": 56.2
+  },
+  {
+   "seed": 6035,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 343,
+   "sha16": "410cfba2c5b5c586",
+   "wall_s": 5.4
+  },
+  {
+   "seed": 6002,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.13942064416352642,
+   "wall_s": 66.7
+  },
+  {
+   "seed": 6007,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.1398772207524153,
+   "wall_s": 70.4
+  },
+  {
+   "seed": 6018,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.04713191629902916,
+   "wall_s": 67.7
+  },
+  {
+   "seed": 6029,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.13649590706102002,
+   "wall_s": 57.1
+  },
+  {
+   "seed": 6040,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 194,
+   "sha16": "421f59a3eadd5904",
+   "wall_s": 6.5
+  },
+  {
+   "seed": 6036,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 330,
+   "sha16": "69c55f8cefcaf8ad",
+   "wall_s": 25.4
+  },
+  {
+   "seed": 6043,
+   "outcome": "BC_ALREADY_DELIVERS",
+   "wall_s": 0.1
+  },
+  {
+   "seed": 6044,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 270,
+   "sha16": "c1f2cc282878929c",
+   "wall_s": 5.1
+  },
+  {
+   "seed": 6019,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.0637748326809351,
+   "wall_s": 80.7
+  },
+  {
+   "seed": 6045,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 74,
+   "sha16": "8365abc7da8c8bfb",
+   "wall_s": 2.5
+  },
+  {
+   "seed": 6017,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.13926508948396096,
+   "wall_s": 87.1
+  },
+  {
+   "seed": 6047,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 258,
+   "sha16": "3aa7211f390468d6",
+   "wall_s": 3.5
+  },
+  {
+   "seed": 6030,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 334,
+   "sha16": "55dda23c3b840f5b",
+   "wall_s": 74.2
+  },
+  {
+   "seed": 6032,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.1288134746258271,
+   "wall_s": 61.4
+  },
+  {
+   "seed": 6020,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 334,
+   "sha16": "920307100e797bf4",
+   "wall_s": 102.9
+  },
+  {
+   "seed": 6008,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.0207817137808937,
+   "wall_s": 116.8
+  },
+  {
+   "seed": 6037,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.3105636080454192,
+   "wall_s": 59.2
+  },
+  {
+   "seed": 6046,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 357,
+   "sha16": "414f847e425c5d02",
+   "wall_s": 32.0
+  },
+  {
+   "seed": 6021,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.029186092819869287,
+   "wall_s": 115.8
+  },
+  {
+   "seed": 6054,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 327,
+   "sha16": "49c5f6ad88efbcfc",
+   "wall_s": 9.0
+  },
+  {
+   "seed": 6057,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 247,
+   "sha16": "c01a49864663c3a0",
+   "wall_s": 3.3
+  },
+  {
+   "seed": 6052,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 225,
+   "sha16": "a6b0d544c55b5d32",
+   "wall_s": 22.5
+  },
+  {
+   "seed": 6039,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.3047987269533442,
+   "wall_s": 63.3
+  },
+  {
+   "seed": 6058,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 267,
+   "sha16": "46134562f6fcd31e",
+   "wall_s": 4.1
+  },
+  {
+   "seed": 6033,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.1282762214807865,
+   "wall_s": 98.6
+  },
+  {
+   "seed": 6062,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 233,
+   "sha16": "cb4910d6ba15df66",
+   "wall_s": 2.9
+  },
+  {
+   "seed": 6051,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 354,
+   "sha16": "025816b71bc8b5a1",
+   "wall_s": 49.2
+  },
+  {
+   "seed": 6041,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.17243253342306875,
+   "wall_s": 78.6
+  },
+  {
+   "seed": 6053,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 304,
+   "sha16": "c23547f7944f6eed",
+   "wall_s": 39.5
+  },
+  {
+   "seed": 6048,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.09152467093582112,
+   "wall_s": 72.4
+  },
+  {
+   "seed": 6067,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 137,
+   "sha16": "f51e17a94719941c",
+   "wall_s": 13.5
+  },
+  {
+   "seed": 6056,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.24383290654474907,
+   "wall_s": 55.2
+  },
+  {
+   "seed": 6064,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 355,
+   "sha16": "ac7acdad5e396caa",
+   "wall_s": 26.4
+  },
+  {
+   "seed": 6069,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 195,
+   "sha16": "8e43060ccb088b46",
+   "wall_s": 3.3
+  },
+  {
+   "seed": 6070,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 300,
+   "sha16": "b762a734719f71b2",
+   "wall_s": 4.1
+  },
+  {
+   "seed": 6071,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 263,
+   "sha16": "514d314aed5d7d56",
+   "wall_s": 4.3
+  },
+  {
+   "seed": 6073,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 252,
+   "sha16": "4c4fc9ccc80a1337",
+   "wall_s": 3.1
+  },
+  {
+   "seed": 6072,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 349,
+   "sha16": "99e03c193265331e",
+   "wall_s": 4.7
+  },
+  {
+   "seed": 6038,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.15332625257240617,
+   "wall_s": 126.6
+  },
+  {
+   "seed": 6066,
+   "outcome": "REPLAY_NOT_CERTIFIED",
+   "min_dtz": 0.004576259558592221,
+   "wall_s": 37.1
+  },
+  {
+   "seed": 6060,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 285,
+   "sha16": "169e49922b4f1108",
+   "wall_s": 60.4
+  },
+  {
+   "seed": 6042,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.17105883753228057,
+   "wall_s": 114.1
+  },
+  {
+   "seed": 6026,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.08566873148118537,
+   "wall_s": 180.6
+  },
+  {
+   "seed": 6078,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 254,
+   "sha16": "53c0aede0f13ea9b",
+   "wall_s": 3.3
+  },
+  {
+   "seed": 6075,
+   "outcome": "REPLAY_NOT_CERTIFIED",
+   "min_dtz": 0.0038792542960677254,
+   "wall_s": 8.8
+  },
+  {
+   "seed": 6079,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 136,
+   "sha16": "a9b04490694918af",
+   "wall_s": 5.7
+  },
+  {
+   "seed": 6081,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 141,
+   "sha16": "98484831f5031f09",
+   "wall_s": 3.8
+  },
+  {
+   "seed": 6082,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 272,
+   "sha16": "2e4452de49f447fe",
+   "wall_s": 3.1
+  },
+  {
+   "seed": 6049,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 242,
+   "sha16": "8ee12f72a937a605",
+   "wall_s": 109.1
+  },
+  {
+   "seed": 6080,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 179,
+   "sha16": "f21fb6340b459312",
+   "wall_s": 7.1
+  },
+  {
+   "seed": 6087,
+   "outcome": "BC_ALREADY_DELIVERS",
+   "wall_s": 0.1
+  },
+  {
+   "seed": 6085,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 300,
+   "sha16": "78b113d07ccaae8a",
+   "wall_s": 3.9
+  },
+  {
+   "seed": 6063,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.08248488856123941,
+   "wall_s": 60.2
+  },
+  {
+   "seed": 6084,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 223,
+   "sha16": "e3f6c51a41bffd2b",
+   "wall_s": 6.2
+  },
+  {
+   "seed": 6065,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 307,
+   "sha16": "e4bea8dfc359d1ac",
+   "wall_s": 54.3
+  },
+  {
+   "seed": 6092,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 200,
+   "sha16": "0f1091fe50da1947",
+   "wall_s": 4.0
+  },
+  {
+   "seed": 6061,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.10758019465888781,
+   "wall_s": 85.7
+  },
+  {
+   "seed": 6050,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.20098243077321268,
+   "wall_s": 123.2
+  },
+  {
+   "seed": 6077,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 350,
+   "sha16": "79bb5e87c7e2d429",
+   "wall_s": 30.0
+  },
+  {
+   "seed": 6093,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 196,
+   "sha16": "97fa3fc33ad6e6ba",
+   "wall_s": 18.8
+  },
+  {
+   "seed": 6095,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 308,
+   "sha16": "0309c05fbf2eef92",
+   "wall_s": 12.9
+  },
+  {
+   "seed": 6094,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 314,
+   "sha16": "5f804fcf37be822e",
+   "wall_s": 20.5
+  },
+  {
+   "seed": 6099,
+   "outcome": "BC_ALREADY_DELIVERS",
+   "wall_s": 0.1
+  },
+  {
+   "seed": 6098,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 280,
+   "sha16": "5c16b31b83856f43",
+   "wall_s": 6.2
+  },
+  {
+   "seed": 6055,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.021139085763183792,
+   "wall_s": 127.9
+  },
+  {
+   "seed": 6059,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.1416945830900635,
+   "wall_s": 116.3
+  },
+  {
+   "seed": 6103,
+   "outcome": "BC_ALREADY_DELIVERS",
+   "wall_s": 0.0
+  },
+  {
+   "seed": 6100,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 203,
+   "sha16": "c4689d72c9277a46",
+   "wall_s": 8.0
+  },
+  {
+   "seed": 6102,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 232,
+   "sha16": "7067f04889d4922c",
+   "wall_s": 3.5
+  },
+  {
+   "seed": 6086,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.21610838078441802,
+   "wall_s": 58.1
+  },
+  {
+   "seed": 6089,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.18652593926786723,
+   "wall_s": 57.6
+  },
+  {
+   "seed": 6090,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.09386952484539746,
+   "wall_s": 56.8
+  },
+  {
+   "seed": 6108,
+   "outcome": "BC_ALREADY_DELIVERS",
+   "wall_s": 0.1
+  },
+  {
+   "seed": 6109,
+   "outcome": "BC_ALREADY_DELIVERS",
+   "wall_s": 0.1
+  },
+  {
+   "seed": 6107,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 271,
+   "sha16": "dd08b7a3ac06c960",
+   "wall_s": 3.6
+  },
+  {
+   "seed": 6112,
+   "outcome": "BC_ALREADY_DELIVERS",
+   "wall_s": 0.0
+  },
+  {
+   "seed": 6074,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.0950527700488955,
+   "wall_s": 76.1
+  },
+  {
+   "seed": 6113,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 125,
+   "sha16": "a2c5737a5d59d738",
+   "wall_s": 3.2
+  },
+  {
+   "seed": 6104,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 233,
+   "sha16": "e5fc93da91396363",
+   "wall_s": 18.9
+  },
+  {
+   "seed": 6115,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 128,
+   "sha16": "82be89972790e2ba",
+   "wall_s": 3.1
+  },
+  {
+   "seed": 6116,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 210,
+   "sha16": "8c695ab177bc8fd6",
+   "wall_s": 9.9
+  },
+  {
+   "seed": 6106,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 287,
+   "sha16": "8185af66909cbbdb",
+   "wall_s": 30.3
+  },
+  {
+   "seed": 6111,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 271,
+   "sha16": "c0f616b60af86532",
+   "wall_s": 22.4
+  },
+  {
+   "seed": 6068,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.3646872317908211,
+   "wall_s": 109.0
+  },
+  {
+   "seed": 6076,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 353,
+   "sha16": "b3780de8fc788a49",
+   "wall_s": 94.6
+  },
+  {
+   "seed": 6119,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 182,
+   "sha16": "a3b9057b29fc1d12",
+   "wall_s": 7.1
+  },
+  {
+   "seed": 6097,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.15017507908365785,
+   "wall_s": 59.1
+  },
+  {
+   "seed": 6091,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.030755697559929705,
+   "wall_s": 87.4
+  },
+  {
+   "seed": 6083,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.2706749149654518,
+   "wall_s": 107.0
+  },
+  {
+   "seed": 6110,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.3841698949020587,
+   "wall_s": 52.4
+  },
+  {
+   "seed": 6114,
+   "outcome": "DAGGER_CERTIFIED",
+   "steps": 351,
+   "sha16": "232850a7bb9175f6",
+   "wall_s": 52.0
+  },
+  {
+   "seed": 6096,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.13189307771655556,
+   "wall_s": 102.0
+  },
+  {
+   "seed": 6105,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.13745704187355642,
+   "wall_s": 79.1
+  },
+  {
+   "seed": 6088,
+   "outcome": "SEARCH_FAILED",
+   "classification": "HORIZON_LIMIT",
+   "min_dtz": 0.015132804195957979,
+   "wall_s": 126.9
+  },
+  {
+   "seed": 6118,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.2027345697549802,
+   "wall_s": 56.6
+  },
+  {
+   "seed": 6101,
+   "outcome": "SEARCH_FAILED",
+   "classification": "HORIZON_LIMIT",
+   "min_dtz": 0.008373661431060457,
+   "wall_s": 99.2
+  },
+  {
+   "seed": 6117,
+   "outcome": "SEARCH_FAILED",
+   "classification": "CONTACT_STATE_UNRECOVERABLE_WITH_TESTED_SEARCH",
+   "min_dtz": 0.17957688628321902,
+   "wall_s": 81.9
+  }
+ ]
+}
