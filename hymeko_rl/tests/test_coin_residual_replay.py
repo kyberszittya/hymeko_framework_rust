@@ -16,10 +16,13 @@ from hymeko_rl.coin_delivery.coin_residual_controller import (
     assert_frozen_base,
 )
 from hymeko_rl.coin_delivery.coin_residual_replay import (
+    SMOOTHING_CLIP,
+    SMOOTHING_STD,
     ReplayControllerStateV2,
     ResidualReplayBuffer,
     ResidualTransition,
     bounded_smoothed_residual,
+    residual_smoothing_contract_sha256,
     residual_target_action,
     td_target_scalar,
 )
@@ -183,8 +186,23 @@ def test_deterministic_zero_noise_mode_is_explicit():
     base = _frozen_base(); r = _nonzero_residual()
     obs = torch.randn(16, 48); gate = torch.ones(16)
     zero = residual_target_action(base, r, obs, gate, noise=torch.zeros(16, 4))
-    torch.manual_seed(0); stoch = residual_target_action(base, r, obs, gate)
+    g = torch.Generator().manual_seed(0)
+    stoch = residual_target_action(base, r, obs, gate, generator=g)
     assert not torch.allclose(zero, stoch)                               # default smoothing is genuinely active
+
+
+def test_smoothing_is_scale_correct():
+    # scale-relative to the residual range [-0.25,0.25], NOT the absolute TD3 0.2/0.5
+    assert abs(SMOOTHING_STD - 0.05) < 1e-9 and abs(SMOOTHING_CLIP - 0.125) < 1e-9
+    assert len(residual_smoothing_contract_sha256()) == 64
+
+
+def test_smoothing_reproducible_with_generator():
+    r = _nonzero_residual(); obs = torch.randn(7, 48)
+    a = bounded_smoothed_residual(r, obs, generator=torch.Generator().manual_seed(123))
+    b = bounded_smoothed_residual(r, obs, generator=torch.Generator().manual_seed(123))
+    c = bounded_smoothed_residual(r, obs, generator=torch.Generator().manual_seed(124))
+    assert torch.equal(a, b) and not torch.allclose(a, c)
 
 
 # ── §5.5 optimizer / gradient guards ──────────────────────────────────────────

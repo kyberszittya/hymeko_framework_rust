@@ -28,6 +28,26 @@ from hymeko_rl.coin_delivery.coin_residual_controller import RESIDUAL_BOUND
 
 ACTION_SCALE = 4.0
 
+# ── scale-correct residual target-policy smoothing (§ smoothing-scale contract) ──
+# TD3's absolute std=0.2 / clip=0.5 are for a ~[-1,1] action space; in RESIDUAL units ([-0.25,0.25]) they would make
+# the noise comparable to the whole residual range and saturate the bound. Use scale-RELATIVE ratios instead.
+SMOOTHING_STD_RATIO = 0.20
+SMOOTHING_CLIP_RATIO = 0.50
+SMOOTHING_STD = SMOOTHING_STD_RATIO * RESIDUAL_BOUND      # 0.05
+SMOOTHING_CLIP = SMOOTHING_CLIP_RATIO * RESIDUAL_BOUND    # 0.125
+
+RESIDUAL_SMOOTHING_CONTRACT = {
+    "contract": "RESIDUAL_TARGET_SMOOTHING_SCALE_CONTRACT_V1", "residual_bound": RESIDUAL_BOUND,
+    "smoothing_std_ratio": SMOOTHING_STD_RATIO, "smoothing_clip_ratio": SMOOTHING_CLIP_RATIO,
+    "smoothing_std": SMOOTHING_STD, "smoothing_clip": SMOOTHING_CLIP,
+    "target_residual": "clamp(target_residual_actor(o) + clamp(N(0,std), -clip, clip), -bound, bound)",
+    "base_never_smoothed": True, "note": "scale-relative to the residual range, NOT absolute TD3 defaults",
+}
+
+
+def residual_smoothing_contract_sha256() -> str:
+    return hashlib.sha256(json.dumps(RESIDUAL_SMOOTHING_CONTRACT, sort_keys=True).encode()).hexdigest()
+
 CONTROLLER_STATE_V2_SCHEMA = {
     "schema": "PHASE_GATE_CONTROLLER_STATE_V2",
     "gate_values_allowed": [0.0, 1.0],
@@ -117,20 +137,26 @@ class ResidualReplayBuffer:
 
 
 def bounded_smoothed_residual(residual_target, obs_tp1: torch.Tensor, *, noise: "torch.Tensor | None" = None,
-                              smoothing_std: float = 0.2, smoothing_clip: float = 0.5,
-                              bound: float = RESIDUAL_BOUND) -> torch.Tensor:
-    """0.25*tanh(raw) + clamped target-policy smoothing, re-bounded to [-bound, bound] (§5.3). Smoothing applies to
-    the RESIDUAL only; the result never exceeds the permitted residual range."""
+                              smoothing_std: float = SMOOTHING_STD, smoothing_clip: float = SMOOTHING_CLIP,
+                              bound: float = RESIDUAL_BOUND,
+                              generator: "torch.Generator | None" = None) -> torch.Tensor:
+    """``bound*tanh(raw)`` + clamped scale-correct target-policy smoothing, re-bounded to ``[-bound, bound]``. The
+    smoothing (default ``std=0.05, clip=0.125`` — scale-relative, NOT the absolute TD3 0.2/0.5) applies to the
+    RESIDUAL only; the result never exceeds the permitted residual range. ``noise`` overrides (e.g. explicit zeros
+    for the deterministic diagnostic mode); ``generator`` makes the default noise reproducible; shape derives from
+    the target-residual tensor (batch-independent)."""
     residual = bound * torch.tanh(residual_target.raw(obs_tp1))
     if noise is None:
-        noise = torch.randn_like(residual) * smoothing_std
+        noise = torch.randn(residual.shape, generator=generator, dtype=residual.dtype,
+                            device=residual.device) * smoothing_std
     eps = torch.clamp(noise, -smoothing_clip, smoothing_clip)
     return torch.clamp(residual + eps, -bound, bound)
 
 
 def residual_target_action(pi0, residual_target, obs_tp1: torch.Tensor, gate_tp1: torch.Tensor, *,
-                           noise: "torch.Tensor | None" = None, smoothing_std: float = 0.2,
-                           smoothing_clip: float = 0.5, bound: float = RESIDUAL_BOUND) -> torch.Tensor:
+                           noise: "torch.Tensor | None" = None, smoothing_std: float = SMOOTHING_STD,
+                           smoothing_clip: float = SMOOTHING_CLIP, bound: float = RESIDUAL_BOUND,
+                           generator: "torch.Generator | None" = None) -> torch.Tensor:
     """TD3 target action from the FROZEN base + gated smoothed residual, using the STORED ``gate_tp1`` (§5.3).
 
     # Preconditions: ``gate_tp1`` values are in {0,1} (the deployed contract). # Postconditions: rows with
@@ -139,7 +165,7 @@ def residual_target_action(pi0, residual_target, obs_tp1: torch.Tensor, gate_tp1
     with torch.no_grad():
         base = torch.clamp(pi0.action_mean(obs_tp1), -ACTION_SCALE, ACTION_SCALE)     # frozen, no smoothing
     residual = bounded_smoothed_residual(residual_target, obs_tp1, noise=noise, smoothing_std=smoothing_std,
-                                         smoothing_clip=smoothing_clip, bound=bound)
+                                         smoothing_clip=smoothing_clip, bound=bound, generator=generator)
     return torch.clamp(base + gate_tp1.unsqueeze(-1) * residual, -ACTION_SCALE, ACTION_SCALE)
 
 
