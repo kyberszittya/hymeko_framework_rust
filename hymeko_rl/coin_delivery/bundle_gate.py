@@ -87,7 +87,7 @@ def run() -> dict:
         and b["bundle_hashes"]["success_contract"] == "canonical_k6",
         "control_contract_present": set(b["control_contract"]) == {"joint_range", "ctrl_range", "damping", "kp", "kv"},
         "semantic_graph_six_node": len(b["semantic_vertices"]) == 6 and b["actor_input_dim"] == 48,
-        "physical_robot_v2": b["physical_nbody"] == 10,
+        "physical_robot_v3_golden_structure": b["physical_nbody"] == 8,   # world+6 arm bodies+coin (fingertip folded)
         "checkpoint_graph_compatible": b["e_approach_graph_fp"] == b["semantic_graph_fp"],
         "all_checkpoints_compatible": all(v == "CHECKPOINT_CANONICAL_V2_COMPATIBLE"
                                           for v in b["checkpoint_verdicts"].values()),

@@ -2,10 +2,9 @@
 adapter, reproduces the golden ``make_planar_arms_mjcf`` COMPILED inertial (mass + diagonal inertia + COM) on the
 structural links body-for-body, with the fingertip helper bodies near-massless. This is the STATIC parity gate.
 
-KNOWN LIMITATION (see reports/2026-07-22-coin-inertia-repair-blocked.md): static parity holds, but the naive
-override is DYNAMICALLY unstable (a welded fingertip CONTACT body cannot be massless without a NaN contact impulse;
-the E0 clamp compounds it), so v3 is NOT yet the canonical robot — the golden-structure fix is pending. This test
-guards the static-parity progress so it is not lost.
+RESOLVED (2026-07-22, golden structure): the fingertip contact geom is folded onto link2 and the separate body
+removed, so the density-derived mass/inertia match the golden EXACTLY and the frozen chain reproduces 3/9 on canonical
+v3 (see reports/2026-07-22-coin-dynamic-parity-and-expert.md). v3 IS the canonical robot.
 """
 from __future__ import annotations
 
@@ -26,8 +25,8 @@ def _models():
 
 def test_total_arm_mass_matches_golden():
     g, v = _models()
-    # near-exact: the fingertip stability floor (2×0.001) is the only allowed excess.
-    assert abs(float(g.body_mass.sum()) - float(v.body_mass.sum())) < 3e-3
+    # EXACT (golden structure: fingertip geom folded onto link2, no separate body, density-derived mass).
+    assert abs(float(g.body_mass.sum()) - float(v.body_mass.sum())) < 1e-6
 
 
 def test_structural_link_mass_inertia_com_match_golden():
@@ -44,11 +43,16 @@ def test_structural_link_mass_inertia_com_match_golden():
     assert worst_p < 1e-6, f"structural-link COM parity {worst_p}"
 
 
-def test_fingertip_helper_bodies_are_near_massless():
+def test_fingertip_geom_is_on_link2_and_no_separate_body():
+    # golden structure: the fingertip CONTACT geom lives on the massive link2 body (stable contact), and there is NO
+    # separate fingertip body (folded, exactly like the golden). The tool site is on link2.
     _g, v = _models()
     for s in ("left", "right"):
-        b = mujoco.mj_name2id(v, mujoco.mjtObj.mjOBJ_BODY, f"fingertip_{s}")
-        assert float(v.body_mass[b]) <= 1e-3, "fingertip helper must be at/below the stability floor"
+        gid = mujoco.mj_name2id(v, mujoco.mjtObj.mjOBJ_GEOM, f"fingertip_{s}")
+        assert gid >= 0, f"fingertip_{s} geom missing"
+        assert mujoco.mj_id2name(v, mujoco.mjtObj.mjOBJ_BODY, int(v.geom_bodyid[gid])) == f"link2_{s}"
+        assert mujoco.mj_name2id(v, mujoco.mjtObj.mjOBJ_BODY, f"fingertip_{s}") == -1, "no separate fingertip body"
+        assert mujoco.mj_name2id(v, mujoco.mjtObj.mjOBJ_SITE, f"tip_{s}") >= 0, "tool site retained"
 
 
 def test_control_contract_still_matches_golden_on_v3():

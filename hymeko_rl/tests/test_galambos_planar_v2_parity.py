@@ -90,9 +90,9 @@ def test_contact_parity_arm_link_collides_with_coin():
             assert mask != 0, "arm-link<->coin collision is filtered"
 
 
-def test_fingertip_body_difference_is_the_only_structural_delta():
-    # The ONE explained structural difference: v2 realises each fingertip as a massless child body (the IR carries one
-    # geom per link), so v2 has 2 more bodies than the golden's in-link fingertip geoms; kinematically equivalent
-    # (proven by the 0 mm fingertip parity above).
+def test_structural_body_count_matches_golden_exactly():
+    # v3 golden STRUCTURE (2026-07-22): the fingertip contact geom is folded onto link2 and the separate fingertip
+    # body is removed, so the canonical arm now has EXACTLY the golden's body count (no +2 fingertip bodies). The
+    # semantic graph is therefore natively six vertices (no projection needed).
     g, v = _golden(), _v2()
-    assert v.nbody - g.nbody == 2
+    assert v.nbody == g.nbody
