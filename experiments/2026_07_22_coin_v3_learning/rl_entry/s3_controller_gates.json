@@ -1,0 +1,38 @@
+{
+ "pi0_sha": "1902454c",
+ "headline": {
+  "grasp": 9,
+  "deliver": 3,
+  "n": 9,
+  "delivered": [
+   1011,
+   1447,
+   1568
+  ]
+ },
+ "validation": {
+  "grasp": 30,
+  "deliver": 2,
+  "n": 30
+ },
+ "forced_residual_gate0_max_leakage": 0.0,
+ "leakage_probes": 800,
+ "pi0_param_hash": [
+  "3a4b5d09b44f",
+  "3a4b5d09b44f"
+ ],
+ "pi0_output_fp": [
+  "84adc9e40f14",
+  "84adc9e40f14"
+ ],
+ "checks": {
+  "headline_grasp_9": true,
+  "headline_deliver_3": true,
+  "headline_delivered_set": true,
+  "validation_deliver_2": true,
+  "gate0_leakage_zero": true,
+  "pi0_params_unchanged": true,
+  "pi0_output_unchanged": true
+ },
+ "verdict": "PHASE_GATED_RESIDUAL_UPDATE0_REPRODUCED+EARLY_PHASE_STRUCTURAL_PRESERVATION_PASS"
+}

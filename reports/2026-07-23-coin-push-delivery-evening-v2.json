@@ -1,0 +1,63 @@
+{
+ "run": "COIN_PUSH_DELIVERY_EVENING_V2",
+ "date": "2026-07-23",
+ "branch": "recovery/coin-hymeko-bundle-and-results",
+ "start_commit": "6f36cf3",
+ "terminal_token": "RESIDUAL_CRITIC_ROUTE_BLOCKED",
+ "gates": {
+  "PHASE_GATE_STABLE_ENGAGEMENT": "PASS (67 module tests)",
+  "PHASE_GATED_RESIDUAL_UPDATE0_REPRODUCED": "PASS (3/9,2/30,9/9; delivered {1011,1447,1568})",
+  "EARLY_PHASE_STRUCTURAL_PRESERVATION_PASS": "PASS (gate0 leakage 0.0; pi_0 fp unchanged)",
+  "PHASE_GATE_REPLAY_STATE_CONTRACT_PASS": "PASS (committed 9fa35a4)",
+  "RESIDUAL_TARGET_SMOOTHING_SCALE_CONTRACT_PASS": "PASS (committed 6f36cf3)",
+  "RESIDUAL_CRITIC_CAUSAL_STATE_CONTRACT_PASS": "PASS (committed 2140352 + 13 v2 tests)",
+  "PHASE_GATED_RESIDUAL_BEHAVIOR_CONTRACT_PASS": "PASS (committed f760df2)",
+  "RESIDUAL_CRITIC_STATE_ABLATION": "RESIDUAL_CRITIC_CAUSAL_STATE_NO_GAIN",
+  "PHASE_GATED_RESIDUAL_CRITIC_DEVELOPMENT": "FAILURE (standard TD twin, instant+causal)",
+  "RESIDUAL_ADVANTAGE_CRITIC_DEVELOPMENT": "FAILURE (twin advantage, within-group)",
+  "PHASE_GATED_RESIDUAL_CRITIC_FINAL_AUDIT": "NOT OPENED (no dev gate passed)",
+  "PHASE_GATED_RESIDUAL_FIRST_STEP": "NOT PERFORMED (no critic route authorized)"
+ },
+ "key_numbers": {
+  "ablation_causal_minus_instant": {
+   "transport.centered_corr_Q1_vs_dG": 0.015,
+   "transport.acc_gap5": 0.023,
+   "transport.gradQ1_wins": 0.017,
+   "contact_retention.centered_corr_Q1_vs_dG": -0.024,
+   "contact_retention.acc_gap5": -0.022,
+   "contact_retention.gradQ1_wins": 0.033
+  },
+  "standard_transport_corr_range": [
+   -0.106,
+   -0.001
+  ],
+  "standard_contact_retention_corr_at_40k": {
+   "instant": -0.144,
+   "causal": -0.162
+  },
+  "advantage_transport_corr_range": [
+   -0.11,
+   0.013
+  ],
+  "advantage_boundary_pref_all_ckpts": 1.0,
+  "dev_states_per_family": 10,
+  "candidates_per_state": 51,
+  "transitions": 35693,
+  "seeds_train": 100
+ },
+ "claims": [
+  "S3 controller gates reproduce exactly (update-0 3/9,2/30,9/9; gate-off leakage 0; pi_0 frozen).",
+  "Corrected V2 harness fixes all six documented first-pass defects (gated collection, causal state option, kept truncated, within-group ranking, full-horizon labels, frozen gate).",
+  "At 40 states/family neither a standard composite TD twin critic nor a twin advantage critic locally authorizes a one-step residual update.",
+  "Causal history gives no gain over instantaneous obs (matched-ckpt |delta|<=0.033) -> aliasing is not the cause.",
+  "The stored ALIASING_CONFIRMED auto-verdict was a mismatched-checkpoint artifact; matched comparison is NO_GAIN."
+ ],
+ "non_claims": [
+  "NOT 'residual RL for coin delivery is impossible'.",
+  "NOT a statement about multi-step residual credit assignment, larger residual bound, or on-policy residual continuation.",
+  "NOT a sealed-final result (sealed banks UNOPENED; policy final-test bank 8000-8049 UNOPENED).",
+  "Single-seed critic training; bootstrap CIs by state group are wide (10 groups/family)."
+ ],
+ "next_experiment": "Replace one-step counterfactual label with a K-step residual-hold label; re-run S7 labeling + S12 advantage audit. Rising SNR with K => credit-assignment-horizon blocker; flat => residual bound (0.25) is the lever, not the critic.",
+ "detail_json": "experiments/2026_07_22_coin_v3_learning/rl_entry/critic_dev_v2.json"
+}
