@@ -1,0 +1,405 @@
+{
+ "checkpoints": {
+  "0": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.0,
+    "exited": 0.0,
+    "contact_retention": 0.0,
+    "ret": 0.0
+   },
+   "by_family": {
+    "target_entry": {
+     "n": 1,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.0
+    },
+    "braking": {
+     "n": 6,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.0
+    },
+    "settling_dwell": {
+     "n": 5,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.0
+    }
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 1.972,
+    "twin_ok": false,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -0.051,
+    "q2_mean": 0.032,
+    "authorized": false
+   },
+   "calibration_ok": false,
+   "accepted": 0,
+   "rejected": 0,
+   "actor_drift_from_update0": 0.0,
+   "anchor_cum_p95": 0.0,
+   "anchor_cum_max": 0.0,
+   "boundary_fraction": 0.0,
+   "scale_hist": {}
+  },
+  "2000": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.0,
+    "exited": 0.0,
+    "contact_retention": 0.0,
+    "ret": 0.0
+   },
+   "by_family": {
+    "target_entry": {
+     "n": 1,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.0
+    },
+    "braking": {
+     "n": 6,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.0
+    },
+    "settling_dwell": {
+     "n": 5,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.0
+    }
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.017,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -22.773,
+    "q2_mean": -22.492,
+    "authorized": true
+   },
+   "calibration_ok": true,
+   "accepted": 0,
+   "rejected": 0,
+   "actor_drift_from_update0": 0.0,
+   "anchor_cum_p95": 0.0,
+   "anchor_cum_max": 0.0,
+   "boundary_fraction": 0.0,
+   "scale_hist": {}
+  },
+  "4000": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.526,
+    "ret": -0.046
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.0,
+    "exited": 0.0,
+    "contact_retention": -0.094,
+    "ret": 0.335
+   },
+   "by_family": {
+    "target_entry": {
+     "n": 1,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.033
+    },
+    "braking": {
+     "n": 6,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": -0.083
+    },
+    "settling_dwell": {
+     "n": 5,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": -0.132
+    }
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.023,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -44.118,
+    "q2_mean": -43.755,
+    "authorized": true
+   },
+   "calibration_ok": true,
+   "accepted": 18,
+   "rejected": 482,
+   "actor_drift_from_update0": 0.09499,
+   "anchor_cum_p95": 0.03,
+   "anchor_cum_max": 0.03222,
+   "boundary_fraction": 0.0,
+   "scale_hist": {
+    "0.5": 1,
+    "1.0": 17
+   }
+  },
+  "6000": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.526,
+    "ret": -0.046
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.0,
+    "exited": 0.0,
+    "contact_retention": -0.094,
+    "ret": 0.335
+   },
+   "by_family": {
+    "target_entry": {
+     "n": 1,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.033
+    },
+    "braking": {
+     "n": 6,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": -0.083
+    },
+    "settling_dwell": {
+     "n": 5,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": -0.132
+    }
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.067,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -60.458,
+    "q2_mean": -59.95,
+    "authorized": true
+   },
+   "calibration_ok": true,
+   "accepted": 18,
+   "rejected": 982,
+   "actor_drift_from_update0": 0.09499,
+   "anchor_cum_p95": 0.03,
+   "anchor_cum_max": 0.03222,
+   "boundary_fraction": 0.0,
+   "scale_hist": {
+    "0.5": 1,
+    "1.0": 17
+   }
+  },
+  "8000": {
+   "n": 12,
+   "late": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.526,
+    "ret": -0.046
+   },
+   "pi0": {
+    "strict_success": 0.417,
+    "max_dwell": 2.5,
+    "entered": 0.417,
+    "exited": 0.0,
+    "contact_retention": 0.62,
+    "ret": -0.381
+   },
+   "delta_vs_pi0": {
+    "strict_success": 0.0,
+    "max_dwell": 0.0,
+    "entered": 0.0,
+    "exited": 0.0,
+    "contact_retention": -0.094,
+    "ret": 0.335
+   },
+   "by_family": {
+    "target_entry": {
+     "n": 1,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": 0.033
+    },
+    "braking": {
+     "n": 6,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": -0.083
+    },
+    "settling_dwell": {
+     "n": 5,
+     "d_strict": 0.0,
+     "d_dwell": 0.0,
+     "d_exit": 0.0,
+     "d_contact": -0.132
+    }
+   },
+   "auth": {
+    "finite_Q": true,
+    "finite_grad": true,
+    "boundary_pref": 0.0,
+    "boundary_ok": true,
+    "twin_disagree": 0.031,
+    "twin_ok": true,
+    "perturb_order": 1.0,
+    "perturb_ok": true,
+    "q1_mean": -70.95,
+    "q2_mean": -71.095,
+    "authorized": true
+   },
+   "calibration_ok": true,
+   "accepted": 18,
+   "rejected": 1482,
+   "actor_drift_from_update0": 0.09499,
+   "anchor_cum_p95": 0.03,
+   "anchor_cum_max": 0.03222,
+   "boundary_fraction": 0.0,
+   "scale_hist": {
+    "0.5": 1,
+    "1.0": 17
+   }
+  }
+ },
+ "stage1b_pass": false,
+ "critic_ever_authorized": true,
+ "accepted": 18,
+ "rejected": 1482,
+ "scale_hist": {
+  "0.5": 1,
+  "1.0": 17
+ },
+ "transactional_config": {
+  "actor_lr": 1e-05,
+  "policy_delay": 4,
+  "lambda_bc": 0.1,
+  "trust_region": {
+   "step_median": 0.0025,
+   "step_p95": 0.005,
+   "step_max": 0.01,
+   "cum_p95": 0.03,
+   "cum_max": 0.06
+  },
+  "backtrack_scales": [
+   0.5,
+   0.25,
+   0.125,
+   0.0625
+  ],
+  "auth_gate": {
+   "boundary_pref_max": 0.5,
+   "twin_disagree_max": 0.5,
+   "perturb_order_min": 0.5,
+   "eps": 0.05
+  }
+ },
+ "campaign": "PHASE_SWITCHED_TD3_STAGE1B",
+ "config_sha": "d4cf53aeb735294f",
+ "wall_s": 55.7,
+ "verdict": "PHASE_SWITCHED_TD3_STAGE1B_NO_IMPROVEMENT",
+ "launch_sha": "64fe3d1c8a95"
+}
