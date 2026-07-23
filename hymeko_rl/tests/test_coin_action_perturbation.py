@@ -263,9 +263,13 @@ def test_carry_sequence_then_pi0_and_cem():
         assert k in o1
     assert o1 == o2 and o1["reached_handoff"] in (0, 1)
     # CEM runs, returns a valid outcome no worse (by _score) than pi_0's on this state, and is deterministic given rng
+    obs_before = rl.obs().copy()
     c1 = carry_cem(rl, gate, pi0, base, 4, np.random.default_rng(3), shots=6, length=4, iters=2, init_std=0.1, mag_max=0.2, elite_frac=0.34, horizon=30)
+    from hymeko_rl.coin_delivery.coin_carry_handoff import carry_random
+    carry_random(rl, gate, pi0, base, 4, np.random.default_rng(5), shots=6, length=4, mag_max=0.2, horizon=30)
     c2 = carry_cem(rl, gate, pi0, base, 4, np.random.default_rng(3), shots=6, length=4, iters=2, init_std=0.1, mag_max=0.2, elite_frac=0.34, horizon=30)
-    assert c1 == c2 and c1["max_strict"] >= 0
+    assert c1 == c2 and c1["max_strict"] >= 0                          # deterministic given rng; NOT polluted by the intervening carry_random
+    assert np.array_equal(rl.obs(), obs_before)                        # carry_cem / carry_random do not mutate the passed rl
 
 
 def test_prefix_search_offsets_and_random_control():

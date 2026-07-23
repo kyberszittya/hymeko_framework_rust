@@ -1,0 +1,317 @@
+{
+ "contract": "CARRY_SUPPORT_FRONTIER_V1",
+ "date": "2026-07-24",
+ "no_new_campaign": true,
+ "smoke": false,
+ "note": "DEV panel after config selection \u2014 re-confirm the winner on a FRESH held-out carry panel; conclusion primarily contact_retention",
+ "panel_manifest_sha16": "d7f052ff4cbfb028",
+ "configs": [
+  {
+   "name": "C0",
+   "mag_max": 0.2,
+   "length": 30,
+   "horizon": 120,
+   "shots": 24,
+   "iters": 4
+  },
+  {
+   "name": "C1",
+   "mag_max": 0.2,
+   "length": 30,
+   "horizon": 160,
+   "shots": 24,
+   "iters": 4
+  },
+  {
+   "name": "C2",
+   "mag_max": 0.2,
+   "length": 50,
+   "horizon": 160,
+   "shots": 24,
+   "iters": 4
+  },
+  {
+   "name": "C3",
+   "mag_max": 0.4,
+   "length": 30,
+   "horizon": 160,
+   "shots": 24,
+   "iters": 4
+  },
+  {
+   "name": "C4",
+   "mag_max": 0.4,
+   "length": 50,
+   "horizon": 160,
+   "shots": 24,
+   "iters": 4
+  },
+  {
+   "name": "CB",
+   "mag_max": 0.2,
+   "length": 30,
+   "horizon": 120,
+   "shots": 24,
+   "iters": 8
+  }
+ ],
+ "panel": {
+  "n": 30,
+  "families": {
+   "contact_retention": 25,
+   "transport": 5
+  },
+  "all_held_out": true,
+  "strict": 0
+ },
+ "results": {
+  "C0": {
+   "cem_K6": 0.333,
+   "rand_K6": 0.3,
+   "handoff": 0.333,
+   "any_exit": 0.0,
+   "exit_per_100": 0.0,
+   "n_new": 0,
+   "n_lost": 0,
+   "net_new": 0,
+   "new_vs_C0": [],
+   "lost_vs_C0": [],
+   "solved_states": [
+    0,
+    1,
+    9,
+    11,
+    18,
+    19,
+    20,
+    27,
+    28,
+    29
+   ]
+  },
+  "C1": {
+   "cem_K6": 0.4,
+   "rand_K6": 0.3,
+   "handoff": 0.4,
+   "any_exit": 0.0,
+   "exit_per_100": 0.0,
+   "n_new": 2,
+   "n_lost": 0,
+   "net_new": 2,
+   "new_vs_C0": [
+    2,
+    17
+   ],
+   "lost_vs_C0": [],
+   "solved_states": [
+    0,
+    1,
+    2,
+    9,
+    11,
+    17,
+    18,
+    19,
+    20,
+    27,
+    28,
+    29
+   ]
+  },
+  "C2": {
+   "cem_K6": 0.4,
+   "rand_K6": 0.367,
+   "handoff": 0.4,
+   "any_exit": 0.0,
+   "exit_per_100": 0.0,
+   "n_new": 2,
+   "n_lost": 0,
+   "net_new": 2,
+   "new_vs_C0": [
+    2,
+    10
+   ],
+   "lost_vs_C0": [],
+   "solved_states": [
+    0,
+    1,
+    2,
+    9,
+    10,
+    11,
+    18,
+    19,
+    20,
+    27,
+    28,
+    29
+   ]
+  },
+  "C3": {
+   "cem_K6": 0.4,
+   "rand_K6": 0.367,
+   "handoff": 0.467,
+   "any_exit": 0.067,
+   "exit_per_100": 0.042,
+   "n_new": 3,
+   "n_lost": 1,
+   "net_new": 2,
+   "new_vs_C0": [
+    2,
+    15,
+    16
+   ],
+   "lost_vs_C0": [
+    9
+   ],
+   "solved_states": [
+    0,
+    1,
+    2,
+    11,
+    15,
+    16,
+    18,
+    19,
+    20,
+    27,
+    28,
+    29
+   ]
+  },
+  "C4": {
+   "cem_K6": 0.367,
+   "rand_K6": 0.4,
+   "handoff": 0.433,
+   "any_exit": 0.067,
+   "exit_per_100": 0.042,
+   "n_new": 2,
+   "n_lost": 1,
+   "net_new": 1,
+   "new_vs_C0": [
+    2,
+    15
+   ],
+   "lost_vs_C0": [
+    11
+   ],
+   "solved_states": [
+    0,
+    1,
+    2,
+    9,
+    15,
+    18,
+    19,
+    20,
+    27,
+    28,
+    29
+   ]
+  },
+  "CB": {
+   "cem_K6": 0.4,
+   "rand_K6": 0.4,
+   "handoff": 0.4,
+   "any_exit": 0.0,
+   "exit_per_100": 0.0,
+   "n_new": 2,
+   "n_lost": 0,
+   "net_new": 2,
+   "new_vs_C0": [
+    2,
+    10
+   ],
+   "lost_vs_C0": [],
+   "solved_states": [
+    0,
+    1,
+    2,
+    9,
+    10,
+    11,
+    18,
+    19,
+    20,
+    27,
+    28,
+    29
+   ]
+  }
+ },
+ "solved_core": [
+  0,
+  1,
+  18,
+  19,
+  20,
+  27,
+  28,
+  29
+ ],
+ "solved_union": [
+  0,
+  1,
+  2,
+  9,
+  10,
+  11,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  27,
+  28,
+  29
+ ],
+ "optimizer_stability": {
+  "C0": {
+   "jaccard": 0.818,
+   "seed_solved_sizes": [
+    10,
+    9,
+    10
+   ]
+  },
+  "C4": {
+   "jaccard": 0.659,
+   "seed_solved_sizes": [
+    11,
+    11,
+    12
+   ]
+  }
+ },
+ "optimizer_stable": true,
+ "per_family": {
+  "contact_retention": {
+   "n": 25,
+   "C0": 0.32,
+   "C1": 0.4,
+   "C2": 0.4,
+   "C3": 0.4,
+   "C4": 0.36,
+   "CB": 0.4
+  },
+  "transport": {
+   "n": 5,
+   "C0": 0.4,
+   "C1": 0.4,
+   "C2": 0.4,
+   "C3": 0.4,
+   "C4": 0.4,
+   "CB": 0.4
+  }
+ },
+ "material_gate": {
+  "threshold_net_new": 5,
+  "best": "C1",
+  "met": false,
+  "best_net_new": 2
+ },
+ "axis": [],
+ "verdict": "CANDIDATE_CLASS_PLATEAU_PI0_OFFSET_LIKELY_WRONG_FOR_CARRY_CONTACT_RETENTION",
+ "next_lever": "no tested support axis materially helps AND the CEM optimizer is stable across seeds (Jaccard [0.818, 0.659]) \u2192 for contact_retention the pi_0+offset candidate class is likely the limit; go carry-SPECIFIC (push/brake/release parametrization) for the DAgger expert. transport underpowered"
+}
