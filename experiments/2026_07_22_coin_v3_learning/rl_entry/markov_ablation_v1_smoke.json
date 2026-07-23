@@ -1,0 +1,427 @@
+{
+ "campaign": "STRICT_COUNTER_MARKOV_REPAIR_ABLATION_V1",
+ "date": "2026-07-23",
+ "smoke": true,
+ "wall_s": 18.5,
+ "update0_manifest": {
+  "max_action_diff": 0.0,
+  "mean_action_diff": 0.0
+ },
+ "pi0_baseline": {
+  "CONTINUATION": {
+   "n": 12,
+   "k6_rate": 0.4167,
+   "k1": 0.4167,
+   "k3": 0.4167,
+   "k5": 0.4167,
+   "mean_max_dwell": 2.5,
+   "entry_vel": 0.0,
+   "exit_ct": 0.0,
+   "canonical_return": -0.3809,
+   "full_contain": 0.4167
+  },
+  "RESET": {
+   "n": 12,
+   "k6_rate": 0.4167,
+   "k1": 0.4167,
+   "k3": 0.4167,
+   "k5": 0.4167,
+   "mean_max_dwell": 2.5,
+   "entry_vel": 0.0,
+   "exit_ct": 0.0,
+   "canonical_return": -0.6852,
+   "full_contain": 0.4167
+  }
+ },
+ "stage_config": {
+  "families": [
+   "target_entry",
+   "braking",
+   "settling_dwell"
+  ],
+  "horizon": 30,
+  "n_step": 4,
+  "total_updates": 200,
+  "checkpoints": [
+   0,
+   100,
+   200
+  ],
+  "policy_delay": 2
+ },
+ "final_k6_continuation": {
+  "A": [
+   0.4167
+  ],
+  "B": [
+   0.4167
+  ]
+ },
+ "improvement_vs_pi0": {
+  "A": 0.0,
+  "B": 0.0
+ },
+ "critic_healthy_all": true,
+ "runs": {
+  "A_0": {
+   "arm": "A",
+   "seed": 0,
+   "update0": {
+    "max_action_diff": 0.0,
+    "mean_action_diff": 0.0
+   },
+   "checkpoints": {
+    "0": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 1.439,
+      "twin_ok": false,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": 0.041,
+      "q2_mean": 0.001,
+      "authorized": false
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.3809,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6852,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -0.0,
+     "q_std": 0.02,
+     "q_max": 0.07,
+     "td_p90": 0.0,
+     "strict_q": [
+      -0.002,
+      -0.021,
+      -0.003,
+      -0.009,
+      -0.01,
+      -0.002,
+      -0.006
+     ]
+    },
+    "100": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.01,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -3.206,
+      "q2_mean": -3.206,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": 2.0628,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6682,
+      "full_contain": 0.4167
+     },
+     "accepted": 15,
+     "rejected": 10,
+     "actor_drift": 0.03048,
+     "q_mean": -3.22,
+     "q_std": 0.39,
+     "q_max": -2.54,
+     "td_p90": 2.356,
+     "strict_q": [
+      -3.359,
+      -3.231,
+      -3.097,
+      -3.058,
+      -3.036,
+      -3.145,
+      -3.068
+     ]
+    },
+    "200": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.02,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -4.219,
+      "q2_mean": -4.249,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": 2.0628,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.6682,
+      "full_contain": 0.4167
+     },
+     "accepted": 15,
+     "rejected": 60,
+     "actor_drift": 0.03048,
+     "q_mean": -4.28,
+     "q_std": 0.86,
+     "q_max": -2.67,
+     "td_p90": 1.882,
+     "strict_q": [
+      -4.129,
+      -2.81,
+      -2.626,
+      -2.468,
+      -2.427,
+      -2.787,
+      -2.92
+     ]
+    }
+   },
+   "accepted": 15,
+   "rejected": 60,
+   "critic_ever_authorized": true
+  },
+  "B_0": {
+   "arm": "B",
+   "seed": 0,
+   "update0": {
+    "max_action_diff": 0.0,
+    "mean_action_diff": 0.0
+   },
+   "checkpoints": {
+    "0": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 1.439,
+      "twin_ok": false,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": 0.041,
+      "q2_mean": 0.001,
+      "authorized": false
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.5002,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.8035,
+      "full_contain": 0.4167
+     },
+     "accepted": 0,
+     "rejected": 0,
+     "actor_drift": 0.0,
+     "q_mean": -0.0,
+     "q_std": 0.02,
+     "q_max": 0.07,
+     "td_p90": 0.0,
+     "strict_q": [
+      -0.002,
+      -0.021,
+      -0.003,
+      -0.009,
+      -0.01,
+      -0.002,
+      -0.006
+     ]
+    },
+    "100": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.01,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -3.206,
+      "q2_mean": -3.206,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.4823,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.7864,
+      "full_contain": 0.4167
+     },
+     "accepted": 15,
+     "rejected": 10,
+     "actor_drift": 0.03048,
+     "q_mean": -3.22,
+     "q_std": 0.39,
+     "q_max": -2.54,
+     "td_p90": 2.356,
+     "strict_q": [
+      -3.359,
+      -3.231,
+      -3.097,
+      -3.058,
+      -3.036,
+      -3.145,
+      -3.068
+     ]
+    },
+    "200": {
+     "auth": {
+      "finite_Q": true,
+      "finite_grad": true,
+      "boundary_pref": 0.0,
+      "boundary_ok": true,
+      "twin_disagree": 0.021,
+      "twin_ok": true,
+      "perturb_order": 1.0,
+      "perturb_ok": true,
+      "q1_mean": -4.435,
+      "q2_mean": -4.453,
+      "authorized": true
+     },
+     "CONTINUATION_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.4823,
+      "full_contain": 0.4167
+     },
+     "RESET_AT_HANDOFF_STRICT": {
+      "n": 12,
+      "k6_rate": 0.4167,
+      "k1": 0.4167,
+      "k3": 0.4167,
+      "k5": 0.4167,
+      "mean_max_dwell": 2.5,
+      "entry_vel": 0.0,
+      "exit_ct": 0.0,
+      "canonical_return": -0.7864,
+      "full_contain": 0.4167
+     },
+     "accepted": 15,
+     "rejected": 60,
+     "actor_drift": 0.03048,
+     "q_mean": -4.49,
+     "q_std": 0.68,
+     "q_max": -3.53,
+     "td_p90": 1.917,
+     "strict_q": [
+      -4.152,
+      -3.686,
+      -2.532,
+      -2.484,
+      -2.34,
+      -2.581,
+      -2.881
+     ]
+    }
+   },
+   "accepted": 15,
+   "rejected": 60,
+   "critic_ever_authorized": true
+  }
+ },
+ "reclassification": {
+  "PHASE_SWITCHED_TD3 / TRANSACTIONAL_TD3 / TRANSPORT_DWELL_TD3 / PHASE_GATED_RESIDUAL_CRITIC": "SURVIVE_MARKOV_REPAIR \u2014 no improvement even with the counter observed, healthy critics, finite grads"
+ },
+ "verdict": "REPAIRS_NOT_SUFFICIENT"
+}

@@ -52,6 +52,35 @@ def arm_b_terminal_bonus(strict: int, touched: bool, bonus_paid: bool, grade: fl
     return 0.0, bonus_paid
 
 
+def base_spec_no_terminal(rl):
+    """RewardSpec = v3 minus terminal_deliver_graded (Arm B's non-terminal base). Built once from rl's reward_spec."""
+    from hymeko_rl.env.reward import RewardSpec
+    return RewardSpec(terms=tuple((k, w) for k, w in rl.inner.reward_spec.terms if k != "terminal_deliver_graded"))
+
+
+def step_ablation(rl, a, arm, *, base_spec=None, bonus_state=None):
+    """Step ``rl.inner`` with action ``a`` under the arm's reward, in place (no env rebuild). Arm A = canonical v3;
+    Arm B = base_spec (v3 minus terminal) + latched K6 bonus (bonus_state=[bool]). Returns (reward, terminated, truncated)
+    and mutates rl._t/_strict/_touched exactly as CoinRL4Dof.step does. pi_0/physics/certifier unchanged."""
+    a = np.clip(np.asarray(a, np.float32), -4.0, 4.0)
+    rl.inner.step(a); rl._t += 1
+    dtz = rl._dtz(); m = rl.inner._planar_metrics
+    rl._touched = rl._touched or bool(m.left_contact or m.right_contact)
+    strict_ok = (dtz <= CENTER_TOL) and (rl._speed() < SETTLE_VEL)
+    rl._strict = rl._strict + 1 if strict_ok else 0
+    rl.inner._success = int(rl._strict); rl.inner.success_steps = HELD_DWELL
+    delivered = bool(rl._strict >= HELD_DWELL and rl._touched)
+    if arm == "A":
+        reward = float(rl.inner.reward_spec.evaluate(rl.inner, dtz, rl.inner.data.ctrl))
+    else:
+        reward = float(base_spec.evaluate(rl.inner, dtz, rl.inner.data.ctrl))
+        bonus, bonus_state[0] = arm_b_terminal_bonus(rl._strict, rl._touched, bonus_state[0], terminal_grade(rl.inner))
+        reward += bonus
+    terminated = delivered
+    truncated = (not terminated) and rl._t >= rl.horizon
+    return reward, terminated, truncated
+
+
 class CoinRL4DofAblation(CoinRL4Dof):
     """CoinRL4Dof with (arm) reward semantics and exact-counter exposure. ``arm='A'`` reproduces canonical reward +
     termination bit-exact; ``arm='B'`` moves the graded terminal bonus to the K6 terminal (latched, non-farmable)."""

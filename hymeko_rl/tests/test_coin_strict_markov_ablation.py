@@ -95,3 +95,18 @@ def test_arm_a_reward_termination_bit_identical_to_canonical():
         if term or trunc:
             break
     assert seqA == canon                                                   # Arm A == canonical, bit-identical
+
+
+def test_strict_1_vs_5_distinct_actor_critic_target_replay_inputs():
+    # step 4: identical physical obs48 with strict 1 vs 5 must give different actor / online-critic / target-critic /
+    # replay-state inputs (counter NOT reconstructed from control_mode).
+    from hymeko_rl.coin_delivery.coin_markov_ablation_train import _aug
+    from hymeko_rl.coin_delivery.coin_td3_contracts import LateTwinCritic
+    obs48 = np.arange(48, dtype=np.float32)
+    s1 = _aug(obs48, 1); s5 = _aug(obs48, 5)
+    assert not np.array_equal(s1, s5) and np.array_equal(s1[:48], s5[:48])       # replay/actor states differ, physics same
+    critic = LateTwinCritic(obs_dim=55)
+    act = np.zeros(4, np.float32)
+    q1 = critic(torch.as_tensor(s1[None]), torch.as_tensor(act[None]))[0]
+    q5 = critic(torch.as_tensor(s5[None]), torch.as_tensor(act[None]))[0]
+    assert not torch.equal(q1, q5)                                              # online (and target, same net class) critic inputs differ
