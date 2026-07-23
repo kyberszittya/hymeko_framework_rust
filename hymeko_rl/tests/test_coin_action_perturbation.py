@@ -8,6 +8,8 @@ from hymeko_rl.coin_delivery.coin_action_perturbation import (
     actuator_basis_delta,
     bootstrap_ci,
     critic_grad_delta,
+    eps_from_drifts,
+    hierarchical_bootstrap_ci,
     spearman,
 )
 
@@ -121,14 +123,16 @@ def test_one_step_candidate_outcome_applies_candidate_only_at_t0():
 
     o1 = one_step_candidate_outcome(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, a0, arm="A", horizon=12)
     o2 = one_step_candidate_outcome(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, a0, arm="A", horizon=12)
-    for k in ("max_dwell", "k6", "exit_ct", "final_dtz", "mean_speed", "applied"):
+    for k in ("max_dwell", "k6", "contain_exit_ct", "exit_ct", "final_dtz", "mean_speed", "applied"):
         assert k in o1
     assert o1["applied"] is True                                          # candidate reached a gate-on first step
     assert o1 == o2                                                       # deterministic (deepcopy templates)
     assert o1["final_dtz"] >= 0.0 and o1["mean_speed"] >= 0.0
+    assert isinstance(o1["contain_exit_ct"], int) and o1["contain_exit_ct"] >= 0   # true full-containment (CENTER_TOL) exit
     # arm B physical outcome equals arm A (certifier metrics are arm-independent — only reward differs)
     oB = one_step_candidate_outcome(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, a0, arm="B", horizon=12)
-    assert oB["max_dwell"] == o1["max_dwell"] and oB["k6"] == o1["k6"] and oB["exit_ct"] == o1["exit_ct"]
+    assert oB["max_dwell"] == o1["max_dwell"] and oB["k6"] == o1["k6"]
+    assert oB["contain_exit_ct"] == o1["contain_exit_ct"] and oB["exit_ct"] == o1["exit_ct"]
     # a large one-step nudge is allowed to change the outcome, but must still apply exactly once (no crash, applied True)
     big = np.clip(a0 + np.array([3.9, -3.9, 3.9, -3.9], np.float32), -4, 4)
     ob = one_step_candidate_outcome(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, big, arm="A", horizon=12)
@@ -188,3 +192,54 @@ def test_deepcopy_and_reconstruct_fidelity_and_order_independence():
     # template itself untouched (one_step_candidate_outcome only mutates the deepcopies it is handed)
     o_again = roll(rl0, g0, a0)
     assert _traces_equal(o_again["trace"], o_dc["trace"])
+
+
+def test_hierarchical_bootstrap_over_seeds_and_states():
+    # per-seed lists of per-state values; None (degenerate) dropped; no single seed dominates
+    ci = hierarchical_bootstrap_ci([[0.1, 0.2, None, 0.3], [0.15, 0.25], [0.05, None, 0.2]], stat=np.median)
+    assert ci["n_seeds"] == 3 and ci["n_states"] == 7                    # 4→3 (one None) + 2 + 3→2 (one None) = 7
+    assert ci["lo"] <= ci["stat"] <= ci["hi"]
+    assert hierarchical_bootstrap_ci([[None], []])["n_seeds"] == 0        # all-empty → n_seeds 0, no crash
+
+
+def test_eps_from_drifts_pre_registered():
+    eps, info = eps_from_drifts([0.001, 0.002, 0.004, 0.006, 0.009], cap=0.010)
+    assert info["source"] == "empirical-accepted-drift" and info["n_accepted"] == 5
+    assert eps == sorted(eps) and len(set(eps)) == len(eps)              # sorted, unique
+    assert 0.010 in eps                                                  # trust cap always included (largest safe)
+    assert all(e > 0 for e in eps) and max(eps) <= 0.010 + 1e-9          # bounded by the cap
+    eps0, info0 = eps_from_drifts([], cap=0.010)                         # no accepted steps → cap fallback
+    assert eps0 == [0.01] and info0["source"] == "trust-cap-fallback"
+
+
+def test_handoff_record_exposes_strict_dtz_speed():
+    import json
+
+    from hymeko_rl.coin_delivery.coin_late_start import replay_pi0
+    from hymeko_rl.coin_delivery.rl_clip_actor import load_frozen_clip_actor
+
+    d = "experiments/2026_07_22_coin_v3_learning/rl_entry"
+    _cfg = json.load(open(f"{d}/td3_baseline_v1_config.json"))
+    pi0 = load_frozen_clip_actor(f"{d}/frozen/pi0_shared_clip_actor.pt", freeze=True)
+    recs = replay_pi0(pi0, 6200, horizon=120)
+    assert all(hasattr(r, "strict") and hasattr(r, "dtz") and hasattr(r, "speed") for r in recs)
+    assert all(isinstance(r.strict, int) and r.strict >= 0 for r in recs)
+    assert all(r.dtz >= 0.0 and r.speed >= 0.0 for r in recs)
+    assert max(r.strict for r in recs) >= 1                              # strict counter climbs during the replay
+
+
+def test_boundary_panel_is_held_out_and_in_family():
+    import importlib.util
+
+    from hymeko_rl.coin_delivery.rl_clip_actor import load_frozen_clip_actor
+
+    d = "experiments/2026_07_22_coin_v3_learning/rl_entry"
+    spec = importlib.util.spec_from_file_location("lrf", f"{d}/coin_local_ranking_fidelity.py")
+    lrf = importlib.util.module_from_spec(spec); spec.loader.exec_module(lrf)
+    pi0 = load_frozen_clip_actor(f"{d}/frozen/pi0_shared_clip_actor.pt", freeze=True)
+    forbidden = set(range(6000, 6089)) | set(range(6100, 6149))
+    panel, comp, strict_hist = lrf.build_boundary_panel(pi0, range(6200, 6320), forbidden, want=6)
+    assert len(panel) >= 1
+    assert all(ls.seed not in forbidden for ls in panel)                 # exclusively held-out
+    assert all(ls.family in lrf.FAMS for ls in panel)                    # in the three ID families
+    assert all(s in (2, 3, 4, 5) for s in strict_hist)                   # boundary strict only

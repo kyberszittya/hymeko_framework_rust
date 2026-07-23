@@ -102,3 +102,34 @@ def bootstrap_ci(values, stat=np.median, n_boot=2000, seed=12345):
     boots = stat(v[rng.integers(0, len(v), size=(n_boot, len(v)))], axis=1)
     return {"stat": round(float(stat(v)), 3), "lo": round(float(np.percentile(boots, 2.5)), 3),
             "hi": round(float(np.percentile(boots, 97.5)), 3), "n": int(len(v))}
+
+
+def eps_from_drifts(drift_p95, cap):
+    """Pre-registered ε-selection for the local-ranking test: {p50, p90, p99} of the empirical accepted per-step p95
+    anchor action-drift + the trust cap (largest safe single-action deviation). Falls back to just the cap when no
+    accepted steps were observed. Returns ``(sorted unique epsilons, info)`` — never arbitrary constants."""
+    d = np.asarray(drift_p95, float)
+    if len(d) == 0:
+        return [round(float(cap), 4)], {"n_accepted": 0, "source": "trust-cap-fallback", "trust_cap_step_max": cap}
+    p50, p90, p99 = (float(np.percentile(d, q)) for q in (50, 90, 99))
+    eps = sorted(set(round(float(e), 4) for e in [p50, p90, p99, cap] if e > 1e-5))
+    return eps, {"n_accepted": int(len(d)), "p50": round(p50, 4), "p90": round(p90, 4), "p99": round(p99, 4),
+                 "trust_cap_step_max": cap, "source": "empirical-accepted-drift"}
+
+
+def hierarchical_bootstrap_ci(per_seed_values, stat=np.median, n_boot=3000, seed=777):
+    """Two-level bootstrap so no single training seed drives the verdict: resample SEEDS with replacement, then STATES
+    within each chosen seed, pool, apply ``stat``. ``per_seed_values`` is a list (one entry per seed) of per-state value
+    lists (``None`` entries = degenerate states, dropped). Returns {stat, lo, hi, n_seeds, n_states}."""
+    seeds = [np.asarray([x for x in s if x is not None], float) for s in per_seed_values]
+    seeds = [s for s in seeds if len(s) > 0]
+    if not seeds:
+        return {"stat": None, "lo": None, "hi": None, "n_seeds": 0, "n_states": 0}
+    pooled = np.concatenate(seeds)
+    rng = np.random.default_rng(seed); boots = np.empty(n_boot)
+    for b in range(n_boot):
+        chosen = [seeds[j] for j in rng.integers(0, len(seeds), len(seeds))]
+        draw = np.concatenate([s[rng.integers(0, len(s), len(s))] for s in chosen])
+        boots[b] = stat(draw)
+    return {"stat": round(float(stat(pooled)), 3), "lo": round(float(np.percentile(boots, 2.5)), 3),
+            "hi": round(float(np.percentile(boots, 97.5)), 3), "n_seeds": len(seeds), "n_states": int(len(pooled))}

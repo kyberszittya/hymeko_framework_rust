@@ -214,7 +214,8 @@ def one_step_candidate_outcome(rl, gate, pi0, base, first_action, *, arm, horizo
     """
     base_spec = base_spec_no_terminal(rl) if arm == "B" else None; bonus_state = [False]
     md = int(rl._strict); touched = rl._touched
-    dtz = rl._dtz(); was_in = dtz <= ENTRY_TOL; exit_ct = 0; speed_sum = 0.0; nstep = 0; applied = False
+    dtz = rl._dtz(); was_entered = dtz <= ENTRY_TOL; was_contained = dtz <= CENTER_TOL
+    entry_exit_ct = 0; contain_exit_ct = 0; speed_sum = 0.0; nstep = 0; applied = False
     trace = [] if capture else None
     for _k in range(horizon):
         gate_on = gate.gate == 1.0; o48 = rl.obs(); s = int(rl._strict)
@@ -230,12 +231,15 @@ def one_step_candidate_outcome(rl, gate, pi0, base, first_action, *, arm, horizo
         dtz = rl._dtz(); speed_sum += float(rl._speed()); nstep += 1
         if capture:
             trace.append((o48.copy(), a.copy(), int(rl._strict), round(dtz, 8), round(rl._speed(), 8), bool(term), bool(trunc)))
-        if was_in and dtz > ENTRY_TOL:
-            exit_ct += 1
-        was_in = dtz <= ENTRY_TOL
+        if was_entered and dtz > ENTRY_TOL:
+            entry_exit_ct += 1
+        if was_contained and dtz > CENTER_TOL:                           # TRUE full-containment exit (dtz ≤ 0.02 → out)
+            contain_exit_ct += 1
+        was_entered = dtz <= ENTRY_TOL; was_contained = dtz <= CENTER_TOL
         if term or trunc:
             break
-    out = {"max_dwell": md, "k6": int(md >= HELD_DWELL and touched), "exit_ct": exit_ct,
+    out = {"max_dwell": md, "k6": int(md >= HELD_DWELL and touched),
+           "contain_exit_ct": contain_exit_ct, "exit_ct": entry_exit_ct,     # primary = containment; entry kept for reference
            "final_dtz": round(float(dtz), 4), "mean_speed": round(speed_sum / max(nstep, 1), 4), "applied": applied}
     if capture:
         out["trace"] = trace
@@ -256,7 +260,7 @@ def strict_conditioned_q(critic, actor55, obs48):
     return qs
 
 
-def train_arm(pi0, arm, cfg_stage, train_bank, dev_bank, *, seed, tcfg=None, log=print, return_artifacts=False):
+def train_arm(pi0, arm, cfg_stage, train_bank, dev_bank, *, seed, tcfg=None, log=print, return_artifacts=False, accepted_sink=None):
     tcfg = tcfg or TransactionalConfig()
     torch.manual_seed(seed)
     families = tuple(cfg_stage["families"]); horizon = cfg_stage["horizon"]; n_step = cfg_stage["n_step"]
@@ -325,6 +329,8 @@ def train_arm(pi0, arm, cfg_stage, train_bank, dev_bank, *, seed, tcfg=None, log
                     r = transactional_actor_step(actor, a_opt, lf, anchor_obs, a0_anchor, tcfg)
                     if r["outcome"] == "accepted":
                         acc += 1
+                        if accepted_sink is not None:                    # empirical accepted per-step action-drift
+                            accepted_sink.append({"step_p95": r["step_p95"], "step_max": r["step_max"]})
                         with torch.no_grad():
                             for p, pt in zip(actor.parameters(), actor_t.parameters()):
                                 pt.mul_(1 - tau).add_(tau * p)

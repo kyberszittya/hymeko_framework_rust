@@ -2,7 +2,7 @@
 title: Local action-ranking fidelity V1 — corrected one-step, state-wise, ε-stratified, terminal-aligned
 date: 2026-07-23
 branch: recovery/coin-hymeko-bundle-and-results
-terminal: LOCAL_RANKING_NOT_FAITHFUL_NEAR_ZERO (DEV, ε=0.005) — near-zero local informativeness, underpowered
+terminal: STRONG_LOCAL_RANKING_FIDELITY_NOT_DEMONSTRATED + LOCAL_RANKING_SIGNAL_WEAK_AND_UNDERPOWERED (DEV, ε=0.005) — softened from NEAR_ZERO per review: ρ<0.5 excludes only the strong bar, not all useful positive ranking
 tags: [coin, markov, critic-fidelity, action-ranking, one-step, state-wise, lexicographic, in-distribution]
 ---
 
@@ -48,12 +48,13 @@ with every safeguard the review required.
 - **TRAIN-ID reference** (not in verdict): Arm-A ε=0.005 ρ_lex 0.22 — modestly higher on states the critic trained on, still
   below the bar.
 
-## Verdict — `LOCAL_RANKING_NOT_FAITHFUL_NEAR_ZERO` (DEV, ε=0.005), underpowered
+## Verdict — `STRONG_LOCAL_RANKING_FIDELITY_NOT_DEMONSTRATED` + `LOCAL_RANKING_SIGNAL_WEAK_AND_UNDERPOWERED` (DEV, ε=0.005)
 Properly measured — one-step, in-distribution, state-wise, terminal-aligned — the Markov critic's **local** action-ranking
-is **near-zero-correlated** with the physical terminal certificate (does not reach the ρ≥0.5 faithfulness bar; CI upper
-0.36). This is consistent across 2 seeds and both the Arm-A and Arm-B critics. It is **not** the strong inversion the
-confounded 2×2 suggested ("critic prefers physically-worse actions"): at the local scale the critic is approximately
-*uninformative*, not *anti-faithful*.
+does **not demonstrate strong fidelity**: median per-state ρ ≈ 0 with the 95% CI upper bound 0.36 < 0.5, so it fails to
+reach the pre-chosen ρ≥0.5 bar. But the honest scope is narrower than "unfaithful": ρ<0.5 excludes only the *strong* bar,
+not all useful positive ranking; the CI includes 0 and positives, so the signal is **weak and underpowered**, not a
+demonstrated inversion. Consistent across 2 seeds and both the Arm-A and Arm-B critics. (Earlier phrasing
+`LOCAL_RANKING_NOT_FAITHFUL_NEAR_ZERO` softened per review — it overstated what the data holds.)
 
 **Honest limitations (do not over-read):**
 1. **Underpowered** — DEV n=12 states, 2 seeds; every CI spans 0. This excludes "faithful", but cannot resolve "near-zero"

@@ -70,6 +70,9 @@ class HandoffRecord:
     base: np.ndarray
     gate_state: dict
     causal_state: np.ndarray
+    strict: int = 0            # dwell counter entering this handoff (for strict/boundary-conditioned panel selection)
+    dtz: float = 0.0           # disk-to-zone at the handoff
+    speed: float = 0.0         # disk speed at the handoff
 
 
 def replay_pi0(pi0, seed: int, *, horizon: int = 360, stop_at: "int | None" = None):
@@ -90,7 +93,8 @@ def replay_pi0(pi0, seed: int, *, horizon: int = 360, stop_at: "int | None" = No
         rec = HandoffRecord(step=k, gate_mult=float(gate.gate),
                             family=_classify(k, dtz, prev_dtz, min_dtz, speed, prev_speed, lc, rc, rl._strict),
                             obs=o.astype(np.float32), base=_base(pi0, o).astype(np.float32),
-                            gate_state=gd, causal_state=hist.feature(gd).astype(np.float32))
+                            gate_state=gd, causal_state=hist.feature(gd).astype(np.float32),
+                            strict=int(rl._strict), dtz=float(dtz), speed=float(speed))
         if stop_at is not None and k == stop_at:
             return rl, gate, hist, rec
         records.append(rec)
