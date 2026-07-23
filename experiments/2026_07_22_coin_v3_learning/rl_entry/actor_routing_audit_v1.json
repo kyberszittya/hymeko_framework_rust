@@ -1,0 +1,71 @@
+{
+ "s3_exploration_routing": {
+  "gate_off_leakage_maxinf": 0.0,
+  "gate_off_leakage_zero": true,
+  "n_gate_off": 993,
+  "n_gate_on": 255
+ },
+ "s4_replay_action_identity": {
+  "max_abs_action": 4.0,
+  "clipped_within_pm4": true,
+  "gate_on_fraction_perturbed": 1.0,
+  "stored_is_executed_clipped": true
+ },
+ "s6_minibatch_composition": {
+  "gate_on_fraction_of_replay": 0.204,
+  "n_transitions": 1248,
+  "n_gate_on": 255,
+  "gate_on_family_fraction": {
+   "target_entry": 0.361,
+   "braking": 0.416,
+   "settling_dwell": 0.224
+  },
+  "gate_on_terminated_fraction": 0.0,
+  "gate_on_truncated_fraction": 0.024
+ },
+ "s2_gate_masking": {
+  "actor_mask_field": "gate_on (== current gate_t, stored pre-step)",
+  "target_action_field": "gate_on_next (== gate_tp1)",
+  "fields_present": true,
+  "verified": true
+ },
+ "s8_target_init": {
+  "pi0_fp": "3a4b5d09b44f",
+  "online_pi_late_fp": "3a4b5d09b44f",
+  "target_pi_late_fp": "3a4b5d09b44f",
+  "online_eq_pi0": true,
+  "target_eq_online": true,
+  "critic_fp": "4e0f69c24106",
+  "critic_target_fp": "4e0f69c24106",
+  "critic_target_eq_online": true,
+  "no_random_target_actor": true
+ },
+ "s7_drift_units": {
+  "reported_drift_metric": "max |pi_late(probe)-pi_0(probe)| = Linf over a 64 RANDOM-obs probe batch",
+  "trust_region_cap_metric": "||pi_prop(s)-pi_ref(s)||_2 PER anchor (gate-active) state, {step median/p95/max, cum p95/max}",
+  "cap_constrains": "anchor-bank L2-per-state (cum_max <= 0.060) \u2014 NOT the reported probe-Linf",
+  "stage1b_reported_drift_probe_Linf": 0.09499,
+  "stage1b_anchor_cum_max_L2": 0.03222,
+  "anchor_cum_max_within_cap": true,
+  "illustration_uniform_0.02_bias_drift": {
+   "anchor_L2_median": 0.04,
+   "anchor_L2_p95": 0.04,
+   "anchor_L2_max": 0.04,
+   "anchor_Linf_median": 0.02,
+   "anchor_Linf_max": 0.02,
+   "probe_Linf_max": 0.02,
+   "note": "same actor: anchor-L2-max != probe-Linf-max \u21d2 the reported 0.095 and the cap 0.060 are different metrics"
+  }
+ },
+ "s5_phase_conditioning": {
+  "completed_actor_input": "obs_48 only (no phase one-hot)",
+  "completed_critic_input": "obs_48 + action (no phase one-hot)",
+  "was_phase_conditioned": false,
+  "statement": "The completed Stage-1/1b was a BINARY early/late controller (one pi_late for all late phases), NOT a phase-conditioned multi-state baseline.",
+  "added": "coin_phase_conditioning.make_phase_actor_from_pi0 / make_phase_critic (obs_48++phase_onehot, phase weights ZERO-init \u21d2 update-0 == pi_0 \u2200 phase); tested; NOT trained."
+ },
+ "verdict": [
+  "PHASE_CONDITIONING_MISSING",
+  "TRUST_REGION_METRIC_MISMATCH"
+ ]
+}
