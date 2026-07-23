@@ -60,13 +60,14 @@ def augment(obs: np.ndarray, family: str) -> np.ndarray:
     return np.concatenate([np.asarray(obs, np.float32), phase_onehot(family)]).astype(np.float32)
 
 
-def make_phase_actor_from_pi0(pi0, *, trainable: bool = True) -> ClipDeterministicActor:
-    """``pi_late`` over ``obs_48 ++ phase_onehot`` (dim 48+N_PHASE), phase-input weights ZERO ⇒ update-0 == pi_0 ∀ phase."""
+def make_phase_actor_from_pi0(pi0, *, trainable: bool = True, n_cond: int = N_PHASE) -> ClipDeterministicActor:
+    """``pi_late`` over ``obs_48 ++ conditioning`` (dim 48+``n_cond``), conditioning-input weights ZERO ⇒ update-0 == pi_0
+    for ANY conditioning vector (``n_cond`` = phase one-hot width, or control+contact+event features)."""
     feat = pi0.head.in_features
-    backbone = make_backbone(48 + N_PHASE, int(feat))
+    backbone = make_backbone(48 + n_cond, int(feat))
     with torch.no_grad():
         backbone[0].weight.zero_()
-        backbone[0].weight[:, :48].copy_(pi0.backbone[0].weight)        # obs columns = pi_0; phase columns = 0
+        backbone[0].weight[:, :48].copy_(pi0.backbone[0].weight)        # obs columns = pi_0; conditioning columns = 0
         backbone[0].bias.copy_(pi0.backbone[0].bias)
         backbone[2].load_state_dict(pi0.backbone[2].state_dict())
     late = ClipDeterministicActor(backbone, int(feat), int(pi0.action_dim), float(pi0.action_scale))
@@ -77,12 +78,12 @@ def make_phase_actor_from_pi0(pi0, *, trainable: bool = True) -> ClipDeterminist
     return late
 
 
-def make_phase_critic() -> LateTwinCritic:
-    """Twin critic over ``(obs_48 ++ phase_onehot, action_4)``; phase-input columns of the first layer ZERO-initialized."""
-    critic = LateTwinCritic(obs_dim=48 + N_PHASE)
+def make_phase_critic(n_cond: int = N_PHASE) -> LateTwinCritic:
+    """Twin critic over ``(obs_48 ++ conditioning, action_4)``; conditioning-input columns of the first layer ZERO-init."""
+    critic = LateTwinCritic(obs_dim=48 + n_cond)
     with torch.no_grad():
         for q in (critic.q1, critic.q2):
-            q[0].weight[:, 48:48 + N_PHASE].zero_()                     # phase columns = 0 at init
+            q[0].weight[:, 48:48 + n_cond].zero_()                      # conditioning columns = 0 at init
     return critic
 
 

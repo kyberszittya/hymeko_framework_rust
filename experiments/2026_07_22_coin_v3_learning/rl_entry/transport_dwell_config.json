@@ -1,0 +1,1013 @@
+{
+ "campaign": "TRANSPORT_TO_DWELL_TD3_BASELINE_V1",
+ "date": "2026-07-23",
+ "pi0_sha": "1902454c",
+ "ontology": {
+  "control_modes": [
+   "transport",
+   "braking",
+   "settling_dwell"
+  ],
+  "contact_flags": [
+   "contact_present",
+   "contact_lost"
+  ],
+  "target_entry": "DEMOTED to event features (not a control mode)",
+  "event_features": [
+   "inside_target_zone",
+   "just_entered",
+   "just_exited",
+   "distance_to_target",
+   "radial_velocity"
+  ],
+  "conditioning": "onehot3(control) ++ onehot2(contact) ++ event(5) = 10; actor/critic input obs_48 ++ 10 = 58",
+  "update0_identity": "conditioning weights ZERO-init \u21d2 update-0 == pi_0"
+ },
+ "horizon": 60,
+ "n_step": 4,
+ "target_smoothing_UNCHANGED": {
+  "std": 0.1,
+  "clip": 0.25
+ },
+ "exploration_UNCHANGED": {
+  "std_init": 0.15,
+  "std_max": 0.3,
+  "hold": [
+   2,
+   4
+  ]
+ },
+ "transactional_UNCHANGED": {
+  "actor_lr": 1e-05,
+  "policy_delay": 4,
+  "lambda_bc": 0.1,
+  "trust_region": {
+   "step_median": 0.0025,
+   "step_p95": 0.005,
+   "step_max": 0.01,
+   "cum_p95": 0.03,
+   "cum_max": 0.06
+  },
+  "backtrack_scales": [
+   0.5,
+   0.25,
+   0.125,
+   0.0625
+  ],
+  "auth_gate": {
+   "boundary_pref_max": 0.5,
+   "twin_disagree_max": 0.5,
+   "perturb_order_min": 0.5,
+   "eps": 0.05
+  }
+ },
+ "sample_target": {
+  "transport": 0.5,
+  "braking": 0.3,
+  "settling_dwell": 0.2
+ },
+ "sample_note": "dynamically balanced (not forced equal)",
+ "bank_min": {
+  "transport": 20,
+  "braking": 12,
+  "settling_dwell": 8
+ },
+ "train_bank_counts": {
+  "transport": 30,
+  "braking": 20,
+  "settling_dwell": 9
+ },
+ "dev_bank_counts": {
+  "transport": 15,
+  "braking": 10,
+  "settling_dwell": 6
+ },
+ "meets_thresholds": true,
+ "banks": {
+  "train": {
+   "transport": {
+    "n": 30,
+    "coverage": {
+     "transport": 30,
+     "target_entry": 0,
+     "overshoot": 0,
+     "braking": 0,
+     "settling_dwell": 0,
+     "contact_retention": 0
+    },
+    "families": [
+     "transport",
+     "target_entry",
+     "overshoot",
+     "braking",
+     "settling_dwell",
+     "contact_retention"
+    ],
+    "sha16": "8f378e841060a2aa",
+    "rows": [
+     [
+      6000,
+      53,
+      "transport",
+      "c6e542600dee",
+      "1482c5cf4aa2",
+      "f42a64912330"
+     ],
+     [
+      6001,
+      69,
+      "transport",
+      "0512dfaa0f11",
+      "472d887271ef",
+      "6c36009e9cac"
+     ],
+     [
+      6002,
+      44,
+      "transport",
+      "286164f80191",
+      "f2bcedbf01cf",
+      "c4d68f8aff09"
+     ],
+     [
+      6003,
+      38,
+      "transport",
+      "80dd60d3fdbc",
+      "0cdb2ca99cb5",
+      "a4fef37b1347"
+     ],
+     [
+      6004,
+      35,
+      "transport",
+      "12ca0858ed4d",
+      "239f4a4b61c4",
+      "97fcae987ed1"
+     ],
+     [
+      6005,
+      37,
+      "transport",
+      "5a826b26a64f",
+      "b5b5805bb55c",
+      "03fdac3c3727"
+     ],
+     [
+      6006,
+      39,
+      "transport",
+      "8b99fe8a4937",
+      "4e10d25fc502",
+      "dacda7befdb0"
+     ],
+     [
+      6008,
+      34,
+      "transport",
+      "11d05302332a",
+      "7f89438b829e",
+      "831329c276f2"
+     ],
+     [
+      6009,
+      8,
+      "transport",
+      "0290f7bee9af",
+      "86f2bce8cae8",
+      "9bd15f45a495"
+     ],
+     [
+      6010,
+      24,
+      "transport",
+      "5f74fbb313a8",
+      "3882e0fa73c2",
+      "bb60761c46f6"
+     ],
+     [
+      6011,
+      80,
+      "transport",
+      "57783a1d7086",
+      "a0b2b38e7732",
+      "41fee98f1db0"
+     ],
+     [
+      6012,
+      71,
+      "transport",
+      "450b90097180",
+      "cfb6458dd2e8",
+      "528b5e474d7f"
+     ],
+     [
+      6013,
+      35,
+      "transport",
+      "83c7081b6771",
+      "02394536d1a8",
+      "71a4fdd246a0"
+     ],
+     [
+      6014,
+      96,
+      "transport",
+      "e690d800e0f8",
+      "c13c20e117f1",
+      "2135a58800ee"
+     ],
+     [
+      6015,
+      54,
+      "transport",
+      "30e845400375",
+      "9fc14385e1a3",
+      "0b9fecedd3cb"
+     ],
+     [
+      6016,
+      43,
+      "transport",
+      "0b557eac93bd",
+      "f9121f1ec8fb",
+      "1076e0a052e6"
+     ],
+     [
+      6017,
+      45,
+      "transport",
+      "8259518e8bfd",
+      "9f5619e60587",
+      "21f3a290c4fd"
+     ],
+     [
+      6018,
+      42,
+      "transport",
+      "b4127d284f15",
+      "ff1e6bf77515",
+      "ff49ab539066"
+     ],
+     [
+      6019,
+      40,
+      "transport",
+      "1fd00292ae6a",
+      "be4a0e82c24b",
+      "f614b049a383"
+     ],
+     [
+      6020,
+      60,
+      "transport",
+      "961c865d2907",
+      "5ff9a3d0412d",
+      "b0bb3bea62cb"
+     ],
+     [
+      6021,
+      34,
+      "transport",
+      "5ae5e10afb7b",
+      "4b69f4bf1853",
+      "4b749d8fa635"
+     ],
+     [
+      6022,
+      44,
+      "transport",
+      "23591538c132",
+      "7af29821b6d7",
+      "2e20a5d0d507"
+     ],
+     [
+      6023,
+      53,
+      "transport",
+      "be7555aa03f9",
+      "ec312549bb89",
+      "bc9c22eb06af"
+     ],
+     [
+      6024,
+      97,
+      "transport",
+      "8e0f92a86a82",
+      "87a70c57eb7a",
+      "87065df34b08"
+     ],
+     [
+      6025,
+      37,
+      "transport",
+      "58b2cbeb1623",
+      "c86b4a050ed3",
+      "757b1febcb50"
+     ],
+     [
+      6026,
+      51,
+      "transport",
+      "00ea7d0d788a",
+      "8aaecb034218",
+      "cfcc518a7661"
+     ],
+     [
+      6027,
+      283,
+      "transport",
+      "5b49b5993e4a",
+      "724e74509d85",
+      "10b6527642ce"
+     ],
+     [
+      6028,
+      59,
+      "transport",
+      "c7e7d65919f2",
+      "01f68a38d397",
+      "7d3025c67882"
+     ],
+     [
+      6029,
+      76,
+      "transport",
+      "df170108041b",
+      "f7384adba17a",
+      "ce9e89e0d622"
+     ],
+     [
+      6030,
+      23,
+      "transport",
+      "a5e5d498d9f5",
+      "76b42e73383d",
+      "9c600550a0c8"
+     ]
+    ],
+    "seed_range": [
+     6000,
+     6200
+    ]
+   },
+   "braking": {
+    "n": 20,
+    "coverage": {
+     "transport": 0,
+     "target_entry": 0,
+     "overshoot": 0,
+     "braking": 20,
+     "settling_dwell": 0,
+     "contact_retention": 0
+    },
+    "families": [
+     "transport",
+     "target_entry",
+     "overshoot",
+     "braking",
+     "settling_dwell",
+     "contact_retention"
+    ],
+    "sha16": "3a899e4ecf31ec7c",
+    "rows": [
+     [
+      6002,
+      75,
+      "braking",
+      "32e862cc1359",
+      "ba1e88432730",
+      "bbbbc70f41d3"
+     ],
+     [
+      6005,
+      86,
+      "braking",
+      "dd8feb55095f",
+      "2cb1add6633c",
+      "f344a81dbde5"
+     ],
+     [
+      6008,
+      38,
+      "braking",
+      "289a10f2b741",
+      "4bff417c6288",
+      "092a5263bdfb"
+     ],
+     [
+      6017,
+      53,
+      "braking",
+      "351a264e8ad1",
+      "ab8773d8f9d9",
+      "48382cc61c0f"
+     ],
+     [
+      6021,
+      101,
+      "braking",
+      "e5f1ee0e3ab8",
+      "4cbb9e247a9e",
+      "d3b40c402683"
+     ],
+     [
+      6022,
+      50,
+      "braking",
+      "51f679798e74",
+      "00b9f4a087bd",
+      "8a6b6f890453"
+     ],
+     [
+      6023,
+      36,
+      "braking",
+      "db5b020da652",
+      "5b52b993fb12",
+      "462b45d58929"
+     ],
+     [
+      6026,
+      57,
+      "braking",
+      "227fb517fe77",
+      "725bd1c2fda4",
+      "300d7fd57c81"
+     ],
+     [
+      6030,
+      21,
+      "braking",
+      "cfc4972cf5e1",
+      "a05bd48fd9f4",
+      "1bcfe962ceeb"
+     ],
+     [
+      6040,
+      172,
+      "braking",
+      "f263e475de29",
+      "92564c123883",
+      "ea96312d10f3"
+     ],
+     [
+      6046,
+      65,
+      "braking",
+      "ee15a8eab0f5",
+      "e4119a5cdc50",
+      "6bed417f2ab3"
+     ],
+     [
+      6053,
+      33,
+      "braking",
+      "89230a4b2592",
+      "8a5d3d29d01c",
+      "02b8156d82e2"
+     ],
+     [
+      6054,
+      81,
+      "braking",
+      "6e29fa48fada",
+      "4408558b4092",
+      "bf371bc40c5a"
+     ],
+     [
+      6060,
+      68,
+      "braking",
+      "3cfafb9e6636",
+      "d88ae85ebafa",
+      "e1d3c9430bd5"
+     ],
+     [
+      6062,
+      33,
+      "braking",
+      "ef9f57db8c07",
+      "c98d314cb897",
+      "6ab5fb7df4b3"
+     ],
+     [
+      6063,
+      48,
+      "braking",
+      "9862a8127a43",
+      "3b055e6bc52b",
+      "23a14c56628e"
+     ],
+     [
+      6073,
+      32,
+      "braking",
+      "c0763e2830a9",
+      "80d770c4c7d6",
+      "994334b48529"
+     ],
+     [
+      6077,
+      61,
+      "braking",
+      "bf7b66c3cc5a",
+      "e2138b387715",
+      "675f08d1cb75"
+     ],
+     [
+      6079,
+      78,
+      "braking",
+      "4176dd23e745",
+      "4fab58a3fa41",
+      "0b83af3bbd38"
+     ],
+     [
+      6080,
+      134,
+      "braking",
+      "5e0e84ea20f0",
+      "401b9e648c3b",
+      "538523144b32"
+     ]
+    ],
+    "seed_range": [
+     6000,
+     6200
+    ]
+   },
+   "settling_dwell": {
+    "n": 9,
+    "coverage": {
+     "transport": 0,
+     "target_entry": 0,
+     "overshoot": 0,
+     "braking": 0,
+     "settling_dwell": 9,
+     "contact_retention": 0
+    },
+    "families": [
+     "transport",
+     "target_entry",
+     "overshoot",
+     "braking",
+     "settling_dwell",
+     "contact_retention"
+    ],
+    "sha16": "81e1df852b572abe",
+    "rows": [
+     [
+      6029,
+      164,
+      "settling_dwell",
+      "f0aab6dbc67b",
+      "781b00a2a267",
+      "00e7b7c27449"
+     ],
+     [
+      6030,
+      64,
+      "settling_dwell",
+      "b9a5a8eaac0f",
+      "82faf14dffd1",
+      "c97f27e1269b"
+     ],
+     [
+      6065,
+      158,
+      "settling_dwell",
+      "da2735deb32f",
+      "83a48d914828",
+      "1be69803e207"
+     ],
+     [
+      6074,
+      153,
+      "settling_dwell",
+      "d562e4b546be",
+      "dd7911618ae0",
+      "589d4c9c6a51"
+     ],
+     [
+      6107,
+      240,
+      "settling_dwell",
+      "9adff708ced2",
+      "ef8a9697aae6",
+      "4ac1badab2a4"
+     ],
+     [
+      6136,
+      204,
+      "settling_dwell",
+      "870274b9349d",
+      "b582a44f709f",
+      "d2812cf5aefa"
+     ],
+     [
+      6142,
+      85,
+      "settling_dwell",
+      "4b0151ac905c",
+      "d01370a9045a",
+      "f7aa55fab440"
+     ],
+     [
+      6148,
+      52,
+      "settling_dwell",
+      "be785bf322bd",
+      "e82e7dcb8914",
+      "b3bb03a4e643"
+     ],
+     [
+      6176,
+      196,
+      "settling_dwell",
+      "829151f3bc18",
+      "ef79a0347d61",
+      "7b4cb6b28770"
+     ]
+    ],
+    "seed_range": [
+     6000,
+     6200
+    ]
+   }
+  },
+  "dev": {
+   "transport": {
+    "n": 15,
+    "coverage": {
+     "transport": 15,
+     "target_entry": 0,
+     "overshoot": 0,
+     "braking": 0,
+     "settling_dwell": 0,
+     "contact_retention": 0
+    },
+    "families": [
+     "transport",
+     "target_entry",
+     "overshoot",
+     "braking",
+     "settling_dwell",
+     "contact_retention"
+    ],
+    "sha16": "cbc49369aa311dfa",
+    "rows": [
+     [
+      6200,
+      35,
+      "transport",
+      "403200304c43",
+      "a8a9ec6dc24c",
+      "b8def26611bb"
+     ],
+     [
+      6201,
+      38,
+      "transport",
+      "70e15c6adad6",
+      "2c7ccce9c832",
+      "d1c5e8eb5ae1"
+     ],
+     [
+      6203,
+      21,
+      "transport",
+      "ba48d92fadc1",
+      "5e5d1892a1ff",
+      "c84d7f0d968d"
+     ],
+     [
+      6205,
+      44,
+      "transport",
+      "5ceef39cbf8f",
+      "041245822e31",
+      "9d1884b43724"
+     ],
+     [
+      6206,
+      38,
+      "transport",
+      "8da6dc401c6d",
+      "e1bbb3ea5b25",
+      "e9c780a0495a"
+     ],
+     [
+      6207,
+      42,
+      "transport",
+      "ed040b9ae4f9",
+      "1f5cb096900e",
+      "4213c19fcd6c"
+     ],
+     [
+      6208,
+      64,
+      "transport",
+      "49c33b26ddca",
+      "ec2748ac296f",
+      "95510c9b9a3e"
+     ],
+     [
+      6210,
+      32,
+      "transport",
+      "7c0cf1c35270",
+      "7e7dd43441ef",
+      "df1d946e91ea"
+     ],
+     [
+      6211,
+      28,
+      "transport",
+      "72c2c5b94be0",
+      "264cb522f4cd",
+      "76c4707657b7"
+     ],
+     [
+      6212,
+      239,
+      "transport",
+      "099772330e6e",
+      "4e4408fc9a67",
+      "370de8c1e2f6"
+     ],
+     [
+      6213,
+      40,
+      "transport",
+      "0232ac9e0771",
+      "087d6b65b042",
+      "cafe129357b8"
+     ],
+     [
+      6214,
+      40,
+      "transport",
+      "a9e0a63b9e7e",
+      "61d7f2671a0a",
+      "f3b3293aa7ad"
+     ],
+     [
+      6215,
+      44,
+      "transport",
+      "f7fe45a9d9a5",
+      "34d031eaad40",
+      "d407b3fdaaff"
+     ],
+     [
+      6216,
+      49,
+      "transport",
+      "1a44c9e2a4c0",
+      "2f6278c81e14",
+      "b3b54a480254"
+     ],
+     [
+      6217,
+      39,
+      "transport",
+      "909cafa0b8c5",
+      "72cda71c69f4",
+      "3f4692bb15be"
+     ]
+    ],
+    "seed_range": [
+     6200,
+     6300
+    ]
+   },
+   "braking": {
+    "n": 10,
+    "coverage": {
+     "transport": 0,
+     "target_entry": 0,
+     "overshoot": 0,
+     "braking": 10,
+     "settling_dwell": 0,
+     "contact_retention": 0
+    },
+    "families": [
+     "transport",
+     "target_entry",
+     "overshoot",
+     "braking",
+     "settling_dwell",
+     "contact_retention"
+    ],
+    "sha16": "ed6d090fe382ab5b",
+    "rows": [
+     [
+      6200,
+      96,
+      "braking",
+      "24c9428c6473",
+      "53b144d95d82",
+      "3e2f527ec911"
+     ],
+     [
+      6207,
+      78,
+      "braking",
+      "19fc063042e7",
+      "f9d47ee98e88",
+      "b9572be63375"
+     ],
+     [
+      6208,
+      68,
+      "braking",
+      "a7e2b0eebd3e",
+      "5fa0112dd09d",
+      "d1671a4641f3"
+     ],
+     [
+      6210,
+      29,
+      "braking",
+      "c27dac5a7296",
+      "f9c30027130c",
+      "921b219456f2"
+     ],
+     [
+      6214,
+      45,
+      "braking",
+      "2676431f5442",
+      "7a77a9521bfe",
+      "27636b8cca3b"
+     ],
+     [
+      6217,
+      49,
+      "braking",
+      "49a1bd5bfaa5",
+      "b74b564cc3e5",
+      "18a7a64ee18d"
+     ],
+     [
+      6218,
+      78,
+      "braking",
+      "7acafdc2e49e",
+      "0d5311377b21",
+      "a99539d45966"
+     ],
+     [
+      6222,
+      29,
+      "braking",
+      "327c40fd6b48",
+      "945db1afad7e",
+      "8c9785f1b1ac"
+     ],
+     [
+      6230,
+      211,
+      "braking",
+      "06ac44ccdf07",
+      "250d2c8bc819",
+      "4051c0d6c492"
+     ],
+     [
+      6232,
+      68,
+      "braking",
+      "8aa6bd60165b",
+      "b2407d84ab0c",
+      "a60bc8634182"
+     ]
+    ],
+    "seed_range": [
+     6200,
+     6300
+    ]
+   },
+   "settling_dwell": {
+    "n": 6,
+    "coverage": {
+     "transport": 0,
+     "target_entry": 0,
+     "overshoot": 0,
+     "braking": 0,
+     "settling_dwell": 6,
+     "contact_retention": 0
+    },
+    "families": [
+     "transport",
+     "target_entry",
+     "overshoot",
+     "braking",
+     "settling_dwell",
+     "contact_retention"
+    ],
+    "sha16": "a0598728dd04355a",
+    "rows": [
+     [
+      6200,
+      99,
+      "settling_dwell",
+      "ab1acc396de1",
+      "c559387ee4b9",
+      "360600871024"
+     ],
+     [
+      6218,
+      123,
+      "settling_dwell",
+      "5debeb5aff91",
+      "8b31392ff327",
+      "af26990642f9"
+     ],
+     [
+      6227,
+      117,
+      "settling_dwell",
+      "0cba9a86d714",
+      "7d40628c123a",
+      "6ed9a102577f"
+     ],
+     [
+      6229,
+      190,
+      "settling_dwell",
+      "42fdeb6c31a5",
+      "7ec7c208fcd2",
+      "fe475946ff8e"
+     ],
+     [
+      6252,
+      164,
+      "settling_dwell",
+      "370d929b7f26",
+      "579f453e58bd",
+      "d5a15f6aeceb"
+     ],
+     [
+      6286,
+      121,
+      "settling_dwell",
+      "e3ed0a6f243d",
+      "ce45a08524f4",
+      "3a0fa238d973"
+     ]
+    ],
+    "seed_range": [
+     6200,
+     6300
+    ]
+   }
+  }
+ },
+ "train_dev_seed_disjoint": true,
+ "stage": {
+  "total_updates": 8000,
+  "critic_warmup_steps": 2000,
+  "policy_delay": 4,
+  "collect_every": 500,
+  "episodes_per_collect": 24,
+  "checkpoints": [
+   0,
+   2000,
+   4000,
+   6000,
+   8000
+  ]
+ },
+ "rng_seeds": {
+  "torch": 0,
+  "numpy_collect": 0,
+  "numpy_replay": 1
+ },
+ "unchanged": [
+  "frozen pi_0",
+  "canonical reward",
+  "stable-engagement gate",
+  "4-step TD",
+  "smoothing 0.10/0.25",
+  "coherent exploration 0.15->0.30 held 2-4",
+  "transactional per-step+cumulative caps",
+  "terminated/truncated semantics",
+  "development eval protocol"
+ ],
+ "stop_conditions": [
+  "accepted actor updates > 0",
+  "two consecutive TRAINED checkpoints improve >=1 of {entry-rate, braking/entry-speed, max-dwell, strict} without degrading contact retention (>=-0.05) or target exit (<=+0.05)"
+ ],
+ "no": [
+  "old target_entry curriculum",
+  "Stage 2",
+  "Arm B",
+  "SAC",
+  "neutral-reset composition",
+  "final-test seeds",
+  "trust-region relaxation"
+ ],
+ "config_sha": "3ec6dbeb20b7abb7"
+}
