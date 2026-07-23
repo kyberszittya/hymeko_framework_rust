@@ -54,5 +54,28 @@
  },
  "mechanism": "OPTION_DISTILLATION_COMPOUND_BLOCK",
  "finding": "compound: classification helps over BC/nearest (template 0.1 vs nearest 0.033 vs random 0.033, BC 0.0), BUT best open-loop distillation 0.1 reaches only 0.19\u00d7 per-state expert 0.533 \u2192 knife-edge state-specific \u03b8 basins (robust_k6 0.235) dominate; open-loop distillation blocked, option advantage needs per-state search or its cheap amortization",
- "distil_frac_of_expert": 0.188
+ "distil_frac_of_expert": 0.188,
+ "verdict_labels": [
+  "WEAK_TEMPLATE_LEVEL_TRANSFER_DEMONSTRATED",
+  "LIVE_PER_STATE_SEARCH_REMAINS_LOAD_BEARING",
+  "NAIVE_FIXED_THETA_AND_RETRIEVAL_DO_NOT_AMORTIZE_THE_EXPERT"
+ ],
+ "safe_claims": [
+  "The structured option space is valid.",
+  "Per-state search extracts strong performance from it (0.533 K6).",
+  "Simple one-shot amortization retains only a small fraction (~0.19x) of that performance."
+ ],
+ "not_proven": "It is NOT proven that no parametric actor can learn theta(s). Only proven insufficient: global single theta, nearest-neighbour retrieval, coarse template classification, random bank pick, deterministic MSE regression.",
+ "open_mechanisms": [
+  "multimodality (several distant theta succeed; single-vector regression averages)",
+  "fine state-dependence not locally smooth in the current feature space",
+  "too little / poorly covered data (classifier saw only sparse modes)",
+  "knife-edge execution (good theta shatters under small error; robust_k6 0.235)",
+  "templates too coarse (classification finds the mode but the within-mode residual is missing)"
+ ],
+ "caveats": {
+  "template_events": "3/30 (few events, no paired CI computed)",
+  "any_exit_worse": "template any_exit 0.133 vs expert 0.033",
+  "coverage_fraction": 0.188
+ }
 }

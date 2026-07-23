@@ -1,0 +1,97 @@
+{
+ "contract": "CARRY_OPTION_AMORTIZED_V1",
+ "date": "2026-07-24",
+ "no_new_campaign": true,
+ "smoke": false,
+ "eval_n": 30,
+ "K_templates": 8,
+ "budgets": [
+  0,
+  4,
+  8,
+  16
+ ],
+ "std_amp": 0.6,
+ "std_dur": 2.0,
+ "pi_0_K6": 0.0,
+ "expert_K6": 0.533,
+ "b_ref": 4,
+ "proposal_localizes": true,
+ "best_amortized_K6": 0.267,
+ "best_amortized_frac_of_expert": 0.501,
+ "curves": {
+  "amortized_template": {
+   "0": {
+    "K6": 0.067,
+    "any_exit": 0.167
+   },
+   "4": {
+    "K6": 0.2,
+    "any_exit": 0.0
+   },
+   "8": {
+    "K6": 0.267,
+    "any_exit": 0.0
+   },
+   "16": {
+    "K6": 0.233,
+    "any_exit": 0.0
+   }
+  },
+  "amortized_bc": {
+   "0": {
+    "K6": 0.033,
+    "any_exit": 0.167
+   },
+   "4": {
+    "K6": 0.1,
+    "any_exit": 0.1
+   },
+   "8": {
+    "K6": 0.1,
+    "any_exit": 0.1
+   },
+   "16": {
+    "K6": 0.1,
+    "any_exit": 0.1
+   }
+  },
+  "amortized_random_center": {
+   "0": {
+    "K6": 0.0,
+    "any_exit": 0.067
+   },
+   "4": {
+    "K6": 0.0,
+    "any_exit": 0.033
+   },
+   "8": {
+    "K6": 0.133,
+    "any_exit": 0.0
+   },
+   "16": {
+    "K6": 0.167,
+    "any_exit": 0.0
+   }
+  },
+  "uniform": {
+   "0": {
+    "K6": 0.0,
+    "any_exit": 0.0
+   },
+   "4": {
+    "K6": 0.1,
+    "any_exit": 0.0
+   },
+   "8": {
+    "K6": 0.033,
+    "any_exit": 0.0
+   },
+   "16": {
+    "K6": 0.2,
+    "any_exit": 0.0
+   }
+  }
+ },
+ "verdict": "PROPOSAL_LOCALIZES_SEARCH_PARTIAL_RECOVERY"
+}
