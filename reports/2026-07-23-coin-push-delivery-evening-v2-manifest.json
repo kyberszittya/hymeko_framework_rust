@@ -1,0 +1,167 @@
+{
+ "run": "COIN_PUSH_DELIVERY_EVENING_V2",
+ "generated_from_commit": "f760df2",
+ "branch": "recovery/coin-hymeko-bundle-and-results",
+ "start_commit": "6f36cf3",
+ "host": "Hajdus-MacBook-Pro (Apple Silicon)",
+ "note_host": "kato14 not used (SSH not established this session); Mac has correct source+venv, all coin stages ran here; \u00a73 update-0 reproduction is the parity anchor (3/9,2/30,9/9 + forced-residual leakage 0).",
+ "python": "3.11.15",
+ "torch": "2.12.0",
+ "mujoco": "3.10.0",
+ "controller": "PHASE_GATED_LEARNED_RESIDUAL_CONTROLLER",
+ "frozen_artifacts": {
+  "pi0_file": "experiments/2026_07_22_coin_v3_learning/rl_entry/frozen/pi0_shared_clip_actor.pt",
+  "pi0_file_sha256": "1902454ca7a74c2716798589b532853d5c27f23c49245b0973ca03be4da761b0",
+  "pi0_prefix": "1902454c",
+  "pi0_headline": 3,
+  "pi0_validation": 2,
+  "pi0_grasp": 9,
+  "pi0_delivered": [
+   1011,
+   1447,
+   1568
+  ],
+  "gate_controller_state_v2_sha_expected": "7633dd3c",
+  "replay_schema_sha_expected": "0b11b60e",
+  "smoothing_contract_sha_expected": "d558443d",
+  "encoder_fingerprint": "d6301d06",
+  "bundle_hash": "6664ac459cca8f62",
+  "semantic_graph_fp": "sem:469094de1fba54b2ff481706ca2e09ce",
+  "reward_file": "data/robotics/galambos_task_deliver_v3.hymeko"
+ },
+ "contracts": {
+  "obs": "node_features flat 48 (6 vertices x 8)",
+  "action": "u_expert_executed = inner.data.ctrl[:4] (4 arm actuators, ctrlrange +-4)",
+  "residual": "[-0.25,0.25]",
+  "horizon": 360,
+  "gamma": 0.99,
+  "K6": "6 consecutive centered(dtz<=0.02)+settled(speed<0.06)+robot-attributed",
+  "critic_state_v2": "258e85fbf6d6",
+  "critic_state_v2_dim": 163,
+  "instant_critic_contract": "423d76990326",
+  "causal_critic_contract": "d36944b6ffec",
+  "counterfactual_magnitudes": [
+   0.0,
+   0.01,
+   0.025,
+   0.05,
+   0.1,
+   0.25
+  ],
+  "target_smoothing": {
+   "residual_bound": 0.25,
+   "target_noise_std": 0.05,
+   "target_noise_clip": 0.125
+  }
+ },
+ "evaluation_banks": {
+  "train_query": {
+   "n": 120,
+   "sha16": "26d60d3af56310af"
+  },
+  "validation": {
+   "n": 30,
+   "sha16": "1008fa2fe06d1782"
+  },
+  "final_test": {
+   "n": 50,
+   "sha16": "e59cc4d3efc72c40"
+  },
+  "headline_regression": {
+   "n": 9,
+   "sha16": "1e1d5ab87ff2c854"
+  },
+  "coverage_panel_v1": {
+   "n": 30,
+   "sha16": "292199c1eb7d6692"
+  }
+ },
+ "critic_banks": {
+  "std_train": {
+   "range": [
+    6000,
+    6100
+   ],
+   "n": 100,
+   "sha16": "a4b72fd389b19367"
+  },
+  "std_dev": {
+   "range": [
+    6100,
+    6200
+   ],
+   "n": 100,
+   "sha16": "f8d4c4439e5cd3c7"
+  },
+  "std_sealed": {
+   "range": [
+    6200,
+    6250
+   ],
+   "n": 50,
+   "sha16": "e96bea52a6874bc1"
+  },
+  "adv_train": {
+   "range": [
+    6300,
+    6400
+   ],
+   "n": 100,
+   "sha16": "e0a657ae6618946d"
+  },
+  "adv_dev": {
+   "range": [
+    6400,
+    6500
+   ],
+   "n": 100,
+   "sha16": "d32646d0e0ef7081"
+  },
+  "adv_sealed": {
+   "range": [
+    6500,
+    6550
+   ],
+   "n": 50,
+   "sha16": "b827b3b94d82402c"
+  }
+ },
+ "policy_final_test_bank": {
+  "range": [
+   8000,
+   8050
+  ],
+  "n": 50,
+  "status": "UNOPENED tonight \u2014 not authorized"
+ },
+ "ledger": {
+  "DEPLOYABLE": [
+   "pi_0 (1902454c)",
+   "StableObjectEngagement gate V2 (7633dd3c)",
+   "CompositeResidualController",
+   "scale-correct smoothing (d558443d)"
+  ],
+  "REPLAY_ONLY": [
+   "gated-residual rollouts",
+   "grouped counterfactual continuations",
+   "pi_0 successes/failures",
+   "zero/boundary/basis/isotropic residual controls"
+  ],
+  "PLANNER_ONLY": [
+   "H=30 receding-horizon trajectories (coverage/counterfactual only, NOT a feedback policy)"
+  ],
+  "HISTORICAL_CONTROL": [
+   "prior v0-v28 coin-toss lines",
+   "seed_stabilized v2",
+   "coin_neutral_start deliveries"
+  ],
+  "QUARANTINED": [
+   "SAC (SAC_HARD_CLIP_LOGPROB_MISMATCH) \u2014 not touched",
+   "rejected V1 OR-contact gate (d739e8af)",
+   "old Python-reward campaigns"
+  ],
+  "INVALIDATED_DIAGNOSTIC": [
+   "coin_residual_critic_dev.py (first-pass): ungated full-action noise, instantaneous-only state, cross-state advantage ranking, dropped-truncated bootstrap, 40-step truncated labels, ad-hoc gate \u2014 committed at 327afa6, withdrawn at d44f1bb (RESIDUAL_CRITIC_DEVELOPMENT_HARNESS_INVALIDATED)."
+  ]
+ }
+}
