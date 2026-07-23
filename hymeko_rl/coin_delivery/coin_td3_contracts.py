@@ -137,6 +137,13 @@ class CoherentNoise:
         return np.clip(np.asarray(action, np.float32) + self.sample(), -self.action_scale, self.action_scale).astype(np.float32)
 
 
+# Control-only historical config (mechanically-scaled TD3 defaults). NOT the primary; recorded so a preregistered
+# smoothing ablation can reference it. The known-good handoff basin is fragile — target smoothing is for LOCAL critic
+# regularization, not broad exploration — so the primary uses small full-action smoothing (0.10 / 0.25).
+HISTORICAL_SCALED_DEFAULT_SMOOTHING = {"smoothing_std": 0.2 * ACTION_SCALE, "smoothing_clip": 0.5 * ACTION_SCALE,
+                                       "status": "control-only; do not run unless a preregistered ablation requires it"}
+
+
 # ── frozen TD3 config ──
 @dataclass(frozen=True)
 class TD3Config:
@@ -147,9 +154,10 @@ class TD3Config:
     critic_lr: float = 3e-4
     n_step_set: tuple = (4, 8)                          # frozen small set
     policy_delay: int = 2                               # delayed actor updates
-    smoothing_std: float = 0.2 * ACTION_SCALE           # full-action units (0.8)
-    smoothing_clip: float = 0.5 * ACTION_SCALE          # full-action units (2.0)
-    exploration_std: float = 0.3                        # coherent-noise std (full-action units)
+    smoothing_std: float = 0.10                         # PRIMARY, full-action units (local critic regularization)
+    smoothing_clip: float = 0.25                        # PRIMARY, full-action units
+    exploration_std_init: float = 0.15                  # coherent-noise std at start (full-action units)
+    exploration_std_max: float = 0.30                   # coherent-noise std ceiling
     coherent_noise_hold: tuple = (2, 4)                 # held 2–4 steps
     critic_warmup_steps: int = 2000                     # critic-first warm-up before actor updates
     checkpoints: tuple = (0, 1000, 3000, 6000, 10000, 20000, 40000)
@@ -159,8 +167,11 @@ class TD3Config:
         return {"gamma": self.gamma, "tau": self.tau, "batch_size": self.batch_size,
                 "actor_lr": self.actor_lr, "critic_lr": self.critic_lr, "n_step_set": list(self.n_step_set),
                 "policy_delay": self.policy_delay, "smoothing_std_full_action": self.smoothing_std,
-                "smoothing_clip_full_action": self.smoothing_clip, "exploration_std": self.exploration_std,
+                "smoothing_clip_full_action": self.smoothing_clip,
+                "exploration_std_init": self.exploration_std_init, "exploration_std_max": self.exploration_std_max,
                 "coherent_noise_hold": list(self.coherent_noise_hold), "critic_warmup_steps": self.critic_warmup_steps,
                 "checkpoints": list(self.checkpoints), "grad_clip": self.grad_clip,
-                "note": "target smoothing + exploration in FULL-action units; terminated/truncated masked separately; "
-                        "no per-step independent exploration (coherent noise held 2–4 steps)"}
+                "historical_scaled_default_smoothing": HISTORICAL_SCALED_DEFAULT_SMOOTHING,
+                "note": "PRIMARY target smoothing 0.10/0.25 (full-action, local regularization — NOT the scaled 0.8/2.0); "
+                        "exploration is SEPARATE (coherent noise, std 0.15→0.30, held 2–4 steps); "
+                        "terminated/truncated masked separately"}

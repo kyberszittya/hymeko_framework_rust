@@ -29,8 +29,10 @@ from hymeko_rl.coin_delivery.coin_stable_engagement import (
 
 ENTRY_TOL = 0.05
 ACTION_SCALE = 4.0
-LATE_FAMILIES = ("transport", "target_entry", "overshoot", "braking", "settling", "dwell",
-                 "contact_retention", "contact_loss_reacq")
+# PHASE_SWITCHED_TD3_BASELINE_V1 campaign families: settling+dwell MERGED (the detector enters dwell the instant strict
+# settling begins, so a separate replay family is not load-bearing); contact_loss_reacquisition DEFERRED to a later
+# recovery curriculum (rare under pi_0 replay).
+LATE_FAMILIES = ("transport", "target_entry", "overshoot", "braking", "settling_dwell", "contact_retention")
 
 
 def _base(pi0, obs):
@@ -43,14 +45,11 @@ def _sha(a) -> str:
     return hashlib.sha256(np.asarray(a, np.float32).tobytes()).hexdigest()[:12]
 
 
-def _classify(step, dtz, prev_dtz, min_dtz, speed, prev_speed, lc, rc, strict, reacq_event) -> str:
-    """Primary late-phase family for a gate-active step (priority: most specific first)."""
-    if strict >= 1:
-        return "dwell"
-    if dtz <= CENTER_TOL and speed < SETTLE_VEL:
-        return "settling"
-    if reacq_event:
-        return "contact_loss_reacq"
+def _classify(step, dtz, prev_dtz, min_dtz, speed, prev_speed, lc, rc, strict) -> str:
+    """Primary late-phase family for a gate-active step (priority: most specific first). ``settling`` and ``dwell`` are
+    MERGED into ``settling_dwell`` for the baseline campaign."""
+    if strict >= 1 or (dtz <= CENTER_TOL and speed < SETTLE_VEL):
+        return "settling_dwell"
     if lc != rc:
         return "contact_retention"
     if min_dtz <= ENTRY_TOL and dtz > min_dtz + 0.01:
@@ -89,7 +88,7 @@ def replay_pi0(pi0, seed: int, *, horizon: int = 360, stop_at: "int | None" = No
         dtz = float(m.disk_to_zone); speed = rl._speed(); lc, rc = bool(m.left_contact), bool(m.right_contact)
         gd = ReplayControllerStateV2.from_gate(gate).to_dict()
         rec = HandoffRecord(step=k, gate_mult=float(gate.gate),
-                            family=_classify(k, dtz, prev_dtz, min_dtz, speed, prev_speed, lc, rc, rl._strict, False),
+                            family=_classify(k, dtz, prev_dtz, min_dtz, speed, prev_speed, lc, rc, rl._strict),
                             obs=o.astype(np.float32), base=_base(pi0, o).astype(np.float32),
                             gate_state=gd, causal_state=hist.feature(gd).astype(np.float32))
         if stop_at is not None and k == stop_at:
@@ -98,10 +97,7 @@ def replay_pi0(pi0, seed: int, *, horizon: int = 360, stop_at: "int | None" = No
         a = rec.base                                            # frozen pi_0 prefix action
         o2, _r, term, trunc, _ = rl.step(a); hist.push(o2, a)
         lc2, rc2, coin, lt, rtp = stable_engagement_signals(rl.inner)
-        prev_gate = gate.gate; gate.update(lc2, rc2, coin, lt, rtp, terminated=bool(term))
-        reacq = (prev_gate == 0.0 and gate.gate == 1.0)
-        if reacq and records:
-            records[-1].family = "contact_loss_reacq"           # relabel the step that triggered reacquisition
+        gate.update(lc2, rc2, coin, lt, rtp, terminated=bool(term))
         min_dtz = min(min_dtz, dtz); prev_dtz, prev_speed = dtz, speed; o = o2
         if term or trunc:
             break

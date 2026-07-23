@@ -131,8 +131,10 @@ def test_td3_target_action_bounds_full_action_units():
                           generator=torch.Generator().manual_seed(0))
     assert a.shape == (64, 4)
     assert a.abs().max().item() <= ACTION_SCALE + 1e-6             # clipped to full-action bound
-    # smoothing is in full-action units (std ~0.8), not residual units (would be ~0.05)
-    assert cfg.smoothing_std > 0.5 and cfg.smoothing_clip > 1.0
+    # PRIMARY smoothing is small (0.10/0.25 full-action, local regularization) — NOT the scaled 0.8/2.0 default
+    assert cfg.smoothing_std == 0.10 and cfg.smoothing_clip == 0.25
+    from hymeko_rl.coin_delivery.coin_td3_contracts import HISTORICAL_SCALED_DEFAULT_SMOOTHING
+    assert HISTORICAL_SCALED_DEFAULT_SMOOTHING["smoothing_std"] == 0.8   # 0.8/2.0 recorded as control-only
 
 
 def test_late_twin_critic_independent_heads():
