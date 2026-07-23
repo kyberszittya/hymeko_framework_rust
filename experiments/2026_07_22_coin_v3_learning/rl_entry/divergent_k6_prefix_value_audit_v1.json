@@ -1,0 +1,173 @@
+{
+ "contract": "DIVERGENT_K6_PREFIX_VALUE_AUDIT_V1",
+ "date": "2026-07-23",
+ "no_new_campaign": true,
+ "smoke": false,
+ "reframe": "audits critic bootstrap+reward VALUE of a physical prefix; first-action-Q is a continuation-mismatch diagnostic, NOT a one-step critic verdict",
+ "method": {
+  "critic_independent_generator": true,
+  "physics_first": true,
+  "per_state_unit": true,
+  "hierarchical_bootstrap_seed_x_state": true,
+  "target_contract_bootstrap": "critic_target + actor_target",
+  "robust_margin": ">=2 dwell/containment",
+  "norm_matched_tol": 0.25,
+  "equiv_band": 0.05,
+  "chosen_K": 2,
+  "chosen_mag": 0.08,
+  "choose_reason": "preregistered-min-yield",
+  "horizon": 40
+ },
+ "panel": {
+  "n": 144,
+  "families": {
+   "settling_dwell": 144
+  },
+  "strict_hist": {
+   "3": 53,
+   "4": 47,
+   "5": 44
+  },
+  "all_held_out": true
+ },
+ "discovery_scores": {
+  "K2_mag0.01": {
+   "states_robust": 2,
+   "robust_pairs": 29,
+   "mean_cum_eff_dev": 0.0169
+  },
+  "K2_mag0.03": {
+   "states_robust": 5,
+   "robust_pairs": 56,
+   "mean_cum_eff_dev": 0.052
+  },
+  "K2_mag0.08": {
+   "states_robust": 9,
+   "robust_pairs": 84,
+   "mean_cum_eff_dev": 0.1442
+  },
+  "K4_mag0.01": {
+   "states_robust": 1,
+   "robust_pairs": 3,
+   "mean_cum_eff_dev": 0.0233
+  },
+  "K4_mag0.03": {
+   "states_robust": 4,
+   "robust_pairs": 11,
+   "mean_cum_eff_dev": 0.0756
+  },
+  "K4_mag0.08": {
+   "states_robust": 8,
+   "robust_pairs": 34,
+   "mean_cum_eff_dev": 0.2238
+  },
+  "K8_mag0.01": {
+   "states_robust": 2,
+   "robust_pairs": 6,
+   "mean_cum_eff_dev": 0.0313
+  },
+  "K8_mag0.03": {
+   "states_robust": 5,
+   "robust_pairs": 15,
+   "mean_cum_eff_dev": 0.1116
+  },
+  "K8_mag0.08": {
+   "states_robust": 6,
+   "robust_pairs": 32,
+   "mean_cum_eff_dev": 0.3554
+  }
+ },
+ "eval_pair_yield": {
+  "all": 3360,
+  "primary": 236,
+  "robust": 119
+ },
+ "eval_states_with_robust_pair": 13,
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "A": {
+  "R_prefix": {
+   "stat": 0.788,
+   "lo": 0.681,
+   "hi": 0.873,
+   "n": 13
+  },
+  "full_return": {
+   "stat": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "n": 13
+  },
+  "G_nstep": {
+   "stat": 0.817,
+   "lo": 0.751,
+   "hi": 0.883,
+   "n_seeds": 3,
+   "n_states": 39
+  },
+  "bootstrap_Q": {
+   "stat": 0.73,
+   "lo": 0.616,
+   "hi": 0.832,
+   "n_seeds": 3,
+   "n_states": 39
+  },
+  "first_action_Q_diag": {
+   "stat": 0.395,
+   "lo": 0.268,
+   "hi": 0.504,
+   "n_seeds": 3,
+   "n_states": 39
+  },
+  "class_G": "ABOVE",
+  "class_bootstrap_Q": "ABOVE",
+  "class_R_prefix": "ABOVE"
+ },
+ "B": {
+  "R_prefix": {
+   "stat": 0.635,
+   "lo": 0.508,
+   "hi": 0.768,
+   "n": 13
+  },
+  "full_return": {
+   "stat": 0.971,
+   "lo": 0.934,
+   "hi": 1.0,
+   "n": 13
+  },
+  "G_nstep": {
+   "stat": 0.844,
+   "lo": 0.771,
+   "hi": 0.913,
+   "n_seeds": 3,
+   "n_states": 39
+  },
+  "bootstrap_Q": {
+   "stat": 0.778,
+   "lo": 0.66,
+   "hi": 0.875,
+   "n_seeds": 3,
+   "n_states": 39
+  },
+  "first_action_Q_diag": {
+   "stat": 0.435,
+   "lo": 0.345,
+   "hi": 0.528,
+   "n_seeds": 3,
+   "n_states": 39
+  },
+  "class_G": "ABOVE",
+  "class_bootstrap_Q": "ABOVE",
+  "class_R_prefix": "ABOVE"
+ },
+ "cross_arm_bootstrapQ": {
+  "A": "ABOVE",
+  "B": "ABOVE"
+ },
+ "verdict": "CRITIC_VALUE_RANKS_DIVERGENT_K6_CONSEQUENCE",
+ "next_lever": "the critic's value (Bellman-target bootstrap) ranks the physically-better consequence above chance on BOTH arms \u2014 value understanding of terminally-relevant alternatives EXISTS; the remaining gap is converting it (actor search / temporal credit / a sequence critic), not value fidelity. Note reward-only also ranks \u2014 report the critic marginal."
+}

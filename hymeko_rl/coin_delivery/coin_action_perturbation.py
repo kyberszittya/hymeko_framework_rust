@@ -104,6 +104,62 @@ def bootstrap_ci(values, stat=np.median, n_boot=2000, seed=12345):
             "hi": round(float(np.percentile(boots, 97.5)), 3), "n": int(len(v))}
 
 
+# ── terminal-aligned certificate (higher = better): K6 ≻ max_dwell ≻ fewer full-containment exits ≻ slower ≻ closer ──
+def lex_key(o):
+    return (int(o["k6"]), int(o["max_dwell"]), -int(o["contain_exit_ct"]), -float(o["mean_speed"]), -float(o["final_dtz"]))
+
+
+def lex_better(a, b):
+    return lex_key(a) > lex_key(b)
+
+
+def lex_ranks(outcomes):
+    """Average ranks by lex_key (higher key → higher rank; identical keys share the average rank)."""
+    keys = [lex_key(o) for o in outcomes]
+    order = sorted(range(len(keys)), key=lambda i: keys[i])
+    ranks = [0.0] * len(keys); i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and keys[order[j + 1]] == keys[order[i]]:
+            j += 1
+        for k in range(i, j + 1):
+            ranks[order[k]] = (i + j) / 2.0
+        i = j + 1
+    return ranks
+
+
+def primary_divergence(a, b):
+    """True iff two outcomes differ on the PRIMARY certifier — K6, or max_dwell by ≥1, or one causes a full-containment
+    exit and the other does not — rather than only on the fine speed/dtz tiebreakers."""
+    return (a["k6"] != b["k6"] or abs(int(a["max_dwell"]) - int(b["max_dwell"])) >= 1
+            or (int(a["contain_exit_ct"]) > 0) != (int(b["contain_exit_ct"]) > 0))
+
+
+def classify_vs_chance(ci, chance=0.5, equiv=0.05):
+    """CI-based classification of a win-rate against a chance level (correct statistics — a CI that merely CONTAINS
+    chance is INCONCLUSIVE, never 'defective'). EQUIVALENT_TO_CHANCE requires the WHOLE CI inside
+    [chance-equiv, chance+equiv] (an equivalence test). Returns ABOVE / ANTI / EQUIVALENT_TO_CHANCE / INCONCLUSIVE / NO_DATA."""
+    lo, hi, stat = ci.get("lo"), ci.get("hi"), ci.get("stat")
+    if stat is None or lo is None or hi is None:
+        return "NO_DATA"
+    if lo > chance:
+        return "ABOVE"
+    if hi < chance:
+        return "ANTI"
+    if (chance - equiv) <= lo and hi <= (chance + equiv):
+        return "EQUIVALENT_TO_CHANCE"
+    return "INCONCLUSIVE"
+
+
+def nstep_return(rewards, q_boot, gamma, terminated=False):
+    """Critic-consistent value of a K-step action prefix then frozen pi_0: G = Σ_{t<K} γ^t r_t + (γ^K q_boot unless the
+    prefix already terminated). ``q_boot`` = ``Q(s_K, pi_0(s_K))``."""
+    g = 0.0; disc = 1.0
+    for r in rewards:
+        g += disc * float(r); disc *= gamma
+    return g + (0.0 if terminated else disc * float(q_boot))
+
+
 def eps_from_drifts(drift_p95, cap):
     """Pre-registered ε-selection for the local-ranking test: {p50, p90, p99} of the empirical accepted per-step p95
     anchor action-drift + the trust cap (largest safe single-action deviation). Falls back to just the cap when no

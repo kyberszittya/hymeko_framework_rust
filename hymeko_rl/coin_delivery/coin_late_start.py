@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -156,6 +157,33 @@ def build_late_start_bank(pi0, seeds, *, per_family: int = 6, horizon: int = 360
                                   obs_sha=_sha(rec.obs), base_sha=_sha(rec.base), causal_sha=_sha(rec.causal_state),
                                   gate_state=rec.gate_state))
     return bank
+
+
+def build_boundary_panel(pi0, seeds, held_out_forbidden, *, want,
+                         families=("target_entry", "braking", "settling_dwell"),
+                         strict_primary=(3, 4, 5), strict_fill=(2,), per_seed_cap=3):
+    """Scan HELD-OUT seeds for gate-active, in-family handoffs at strict∈strict_primary (mid-dwell, at the
+    CENTER_TOL/SETTLE_VEL boundary — where a small sustained action CAN flip the certifier); top up with strict_fill if
+    short of ``want``. Returns (list[LateStart], family_composition, strict_histogram). Asserts held-out disjointness so a
+    critic-train/dev seed can never leak into an evaluation panel."""
+    picked, comp, strict_hist = [], Counter(), Counter()
+    for pool in (strict_primary, strict_fill):
+        for s in seeds:
+            if len(picked) >= want:
+                break
+            assert s not in held_out_forbidden, f"seed {s} is a critic-train/dev seed — not held out"
+            taken = 0
+            for rec in replay_pi0(pi0, int(s), horizon=360):
+                if taken >= per_seed_cap or len(picked) >= want:
+                    break
+                if rec.gate_mult != 1.0 or rec.family not in families or rec.strict not in pool:
+                    continue
+                picked.append(LateStart(seed=int(s), prefix_steps=rec.step, family=rec.family, obs_sha=_sha(rec.obs),
+                                        base_sha=_sha(rec.base), causal_sha=_sha(rec.causal_state), gate_state=rec.gate_state))
+                comp[rec.family] += 1; strict_hist[rec.strict] += 1; taken += 1
+        if len(picked) >= want:
+            break
+    return picked, dict(comp), dict(sorted(strict_hist.items()))
 
 
 def late_start_bank_manifest(bank) -> dict:

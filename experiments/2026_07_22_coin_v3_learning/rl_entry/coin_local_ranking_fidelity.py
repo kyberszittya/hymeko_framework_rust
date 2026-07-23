@@ -16,7 +16,6 @@ moved). V2 adds discrimination WITHOUT introducing a new measurement error:
 import copy
 import json
 import sys
-from collections import Counter
 
 import numpy as np
 import torch
@@ -27,9 +26,12 @@ from hymeko_rl.coin_delivery.coin_action_perturbation import (  # noqa: E402
     critic_grad_delta,
     eps_from_drifts,
     hierarchical_bootstrap_ci,
+    lex_better,
+    lex_key,
+    lex_ranks,
     spearman,
 )
-from hymeko_rl.coin_delivery.coin_late_start import LateStart, _sha, reconstruct_handoff, replay_pi0  # noqa: E402
+from hymeko_rl.coin_delivery.coin_late_start import LateStart, build_boundary_panel, reconstruct_handoff  # noqa: E402,F401
 from hymeko_rl.coin_delivery.coin_markov_ablation_train import (  # noqa: E402
     _aug,
     make_late_actor55_from_pi0,
@@ -49,51 +51,7 @@ def _bank(m):
     return [LateStart(seed=r[0], prefix_steps=r[1], family=r[2], obs_sha=r[3], base_sha=r[4], causal_sha=r[5]) for r in m["rows"]]
 
 
-# ── pre-registered physical certificate (higher = better): K6 ≻ dwell ≻ fewer full-containment exits ≻ slower ≻ closer ──
-def lex_key(o):
-    return (int(o["k6"]), int(o["max_dwell"]), -int(o["contain_exit_ct"]), -float(o["mean_speed"]), -float(o["final_dtz"]))
-
-
-def lex_better(a, b):
-    return lex_key(a) > lex_key(b)
-
-
-def lex_ranks(outcomes):
-    keys = [lex_key(o) for o in outcomes]; order = sorted(range(len(keys)), key=lambda i: keys[i])
-    ranks = [0.0] * len(keys); i = 0
-    while i < len(order):
-        j = i
-        while j + 1 < len(order) and keys[order[j + 1]] == keys[order[i]]:
-            j += 1
-        for k in range(i, j + 1):
-            ranks[order[k]] = (i + j) / 2.0
-        i = j + 1
-    return ranks
-
-
-def build_boundary_panel(pi0, seeds, held_out_forbidden, *, want, per_seed_cap=3, strict_primary=(3, 4, 5), strict_fill=(2,)):
-    """Scan HELD-OUT seeds; collect gate-active, in-family handoffs at strict∈strict_primary (boundary, mid-dwell);
-    top up with strict_fill if short. Returns (list[LateStart], composition, strict_hist). Asserts held-out disjointness."""
-    picked, comp, strict_hist = [], Counter(), Counter()
-    for pool in (strict_primary, strict_fill):
-        for s in seeds:
-            if len(picked) >= want:
-                break
-            assert s not in held_out_forbidden, f"seed {s} is a critic-train/dev seed — not held out"
-            taken = 0
-            for rec in replay_pi0(pi0, int(s), horizon=360):
-                if taken >= per_seed_cap or len(picked) >= want:
-                    break
-                if rec.gate_mult != 1.0 or rec.family not in FAMS or rec.strict not in pool:
-                    continue
-                picked.append(LateStart(seed=int(s), prefix_steps=rec.step, family=rec.family, obs_sha=_sha(rec.obs),
-                                        base_sha=_sha(rec.base), causal_sha=_sha(rec.causal_state), gate_state=rec.gate_state))
-                comp[rec.family] += 1; strict_hist[rec.strict] += 1; taken += 1
-        if len(picked) >= want:
-            break
-    return picked, dict(comp), dict(sorted(strict_hist.items()))
-
-
+# certificate helpers (lex_key/lex_better/lex_ranks) are imported from coin_action_perturbation (shared with V2 pairs test)
 def accepted_drift_epsilons(pi0, stage, tb, db, tcfg, *, seed=0):
     """ε from the EMPIRICAL accepted transactional actor-update action-drift (one instrumented training)."""
     sink = []

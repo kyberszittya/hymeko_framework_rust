@@ -16,9 +16,11 @@ from hymeko_rl.coin_delivery.coin_rl_env import HELD_DWELL
 from hymeko_rl.coin_delivery.coin_stable_engagement import stable_engagement_signals
 from hymeko_rl.coin_delivery.coin_strict_markov_ablation import (
     STRICT_K,
+    arm_b_terminal_bonus,
     base_spec_no_terminal,
     step_ablation,
     strict_onehot,
+    terminal_grade,
 )
 from hymeko_rl.coin_delivery.coin_td3_contracts import (
     CoherentNoise,
@@ -247,6 +249,56 @@ def one_step_candidate_outcome(rl, gate, pi0, base, first_action, *, arm, horizo
     return out
 
 
+def prefix_candidate_rollout(rl, gate, pi0, base, offset, k_prefix, *, horizon):
+    """Apply the matched-norm action offset ``clip(pi_0(s_t) + offset)`` at the first ``k_prefix`` gate-on steps, then the
+    frozen pi_0 baseline. Physics is CRITIC-INDEPENDENT, so one rollout serves every critic/seed. Captures the
+    terminal-aligned certificate, the per-step Arm-A AND Arm-B rewards over the prefix (each critic scored under its own
+    reward), and the obs55 at the end of the prefix (``s_K``) for the n-step bootstrap ``Q(s_K, pi_0(s_K))``.
+
+    Preconditions:  ``rl``/``gate`` are a fresh deepcopy of a reconstructed handoff (this call mutates them); ``offset`` is
+                    an ``(action_dim,)`` per-step offset applied on top of pi_0's action.
+    Postconditions: the offset is applied on the first ``k_prefix`` gate-on steps; returns certifier variables +
+                    rewardsA/rewardsB (len ≤ k_prefix) + obs55_K/gate_on_K + terminated_in_prefix.
+    """
+    base_specB = base_spec_no_terminal(rl); bonusB = [False]
+    md = int(rl._strict); touched = rl._touched
+    dtz = rl._dtz(); was_contained = dtz <= CENTER_TOL; contain_exit = 0; speed_sum = 0.0; nstep = 0
+    K = int(k_prefix); off = np.asarray(offset, np.float32); applied = 0
+    rewardsA, rewardsB = [], []; obs55_K = None; gate_on_K = False; terminated_in_prefix = False
+    eff_dev = []                                                                      # post-clamp ‖a − pi_0(s_t)‖ per prefix step
+    fullA = fullB = 0.0; disc = 1.0                                                   # full-episode discounted returns
+    for _t in range(horizon):
+        gate_on = gate.gate == 1.0; o48 = rl.obs(); s = int(rl._strict)
+        a_pi0 = _det(base, _aug(o48, s)) if gate_on else _det(pi0, o48)
+        is_prefix = applied < K and gate_on
+        a = np.clip(a_pi0 + off, -ACTION_SCALE, ACTION_SCALE) if is_prefix else a_pi0  # matched-norm offset on pi_0
+        rA, term, trunc = step_ablation(rl, a, "A")
+        rB = float(base_specB.evaluate(rl.inner, rl._dtz(), rl.inner.data.ctrl))      # Arm-B reward on the same transition
+        bonus, bonusB[0] = arm_b_terminal_bonus(rl._strict, rl._touched, bonusB[0], terminal_grade(rl.inner))
+        rB += bonus
+        lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
+        md = max(md, int(rl._strict)); touched = touched or rl._touched
+        dtz = rl._dtz(); speed_sum += float(rl._speed()); nstep += 1
+        fullA += disc * rA; fullB += disc * rB; disc *= GAMMA
+        if is_prefix:
+            rewardsA.append(rA); rewardsB.append(rB); applied += 1
+            eff_dev.append(float(np.linalg.norm(a - a_pi0)))                          # actual post-clamp deviation
+            terminated_in_prefix = terminated_in_prefix or bool(term)
+            if applied == K or term or trunc:                                        # capture s_K at end of applied prefix
+                obs55_K = _aug(rl.obs(), int(rl._strict)); gate_on_K = bool(gate.gate == 1.0)
+        if was_contained and dtz > CENTER_TOL:
+            contain_exit += 1
+        was_contained = dtz <= CENTER_TOL
+        if term or trunc:
+            break
+    outcome = {"max_dwell": md, "k6": int(md >= HELD_DWELL and touched), "contain_exit_ct": contain_exit,
+               "final_dtz": round(float(dtz), 4), "mean_speed": round(speed_sum / max(nstep, 1), 4)}
+    return {"outcome": outcome, "rewardsA": rewardsA, "rewardsB": rewardsB, "obs55_K": obs55_K,
+            "gate_on_K": gate_on_K, "terminated_in_prefix": terminated_in_prefix, "k_applied": applied,
+            "eff_dev_per_step": eff_dev, "cum_eff_dev": round(float(np.sum(eff_dev)), 4),
+            "full_returnA": round(fullA, 4), "full_returnB": round(fullB, 4)}
+
+
 def strict_conditioned_q(critic, actor55, obs48):
     """Q(aug(obs, strict), pi_late(aug)) for strict 0..K from ONE physical state — does the critic represent terminal
     proximity (monotone rising toward K6)?"""
@@ -346,6 +398,6 @@ def train_arm(pi0, arm, cfg_stage, train_bank, dev_bank, *, seed, tcfg=None, log
     result = {"arm": arm, "seed": seed, "update0": u0, "checkpoints": {str(k): v for k, v in ckpt.items()},
               "accepted": acc, "rejected": rej, "critic_ever_authorized": any(ckpt[k]["auth"]["authorized"] for k in ckpt)}
     if return_artifacts:
-        return result, {"critic": critic, "actor": actor, "actor_target": actor_t, "buf": buf,
-                        "anchor_obs": anchor_obs, "a0_anchor": a0_anchor}
+        return result, {"critic": critic, "critic_target": critic_t, "actor": actor, "actor_target": actor_t,
+                        "buf": buf, "anchor_obs": anchor_obs, "a0_anchor": a0_anchor}
     return result

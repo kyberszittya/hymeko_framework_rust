@@ -7,9 +7,14 @@ from hymeko_rl.coin_delivery.coin_action_perturbation import (
     PerturbedActor,
     actuator_basis_delta,
     bootstrap_ci,
+    classify_vs_chance,
     critic_grad_delta,
     eps_from_drifts,
     hierarchical_bootstrap_ci,
+    lex_better,
+    lex_key,
+    nstep_return,
+    primary_divergence,
     spearman,
 )
 
@@ -243,3 +248,73 @@ def test_boundary_panel_is_held_out_and_in_family():
     assert all(ls.seed not in forbidden for ls in panel)                 # exclusively held-out
     assert all(ls.family in lrf.FAMS for ls in panel)                    # in the three ID families
     assert all(s in (2, 3, 4, 5) for s in strict_hist)                   # boundary strict only
+
+
+# ── DIVERGENT_K6_PAIR_RANKING_V1 primitives ──
+def test_nstep_return_bootstrap_and_terminal():
+    # G = Σ γ^t r_t + γ^K q_boot
+    g = nstep_return([1.0, 1.0], q_boot=10.0, gamma=0.5, terminated=False)
+    assert abs(g - (1.0 + 0.5 * 1.0 + 0.25 * 10.0)) < 1e-9              # 1 + 0.5 + 2.5 = 4.0
+    # terminated during prefix → no bootstrap
+    gt = nstep_return([1.0, 1.0], q_boot=10.0, gamma=0.5, terminated=True)
+    assert abs(gt - 1.5) < 1e-9
+    assert nstep_return([], q_boot=7.0, gamma=0.9) == 7.0               # empty prefix → pure bootstrap
+
+
+def test_classify_vs_chance_equivalence_aware():
+    # CI that merely CONTAINS 0.5 is INCONCLUSIVE, never "defective"
+    assert classify_vs_chance({"stat": 0.7, "lo": 0.6, "hi": 0.8}) == "ABOVE"
+    assert classify_vs_chance({"stat": 0.3, "lo": 0.2, "hi": 0.45}) == "ANTI"
+    assert classify_vs_chance({"stat": 0.55, "lo": 0.3, "hi": 0.8}) == "INCONCLUSIVE"   # wide, straddles 0.5
+    assert classify_vs_chance({"stat": 0.5, "lo": 0.47, "hi": 0.53}) == "EQUIVALENT_TO_CHANCE"  # whole CI in band
+    assert classify_vs_chance({"stat": None, "lo": None, "hi": None}) == "NO_DATA"
+
+
+def test_primary_divergence_ignores_fine_tiebreakers():
+    base = {"k6": 0, "max_dwell": 3, "contain_exit_ct": 0, "mean_speed": 0.05, "final_dtz": 0.015}
+    same_primary = {**base, "mean_speed": 0.09, "final_dtz": 0.019}     # only fine tiebreakers differ
+    assert not primary_divergence(base, same_primary)
+    assert primary_divergence(base, {**base, "k6": 1})                  # K6 differs
+    assert primary_divergence(base, {**base, "max_dwell": 4})           # dwell by ≥1
+    assert not primary_divergence(base, {**base, "max_dwell": 3})       # same dwell
+    assert primary_divergence(base, {**base, "contain_exit_ct": 2})     # containment-exit flip
+
+
+def test_lex_key_certificate_priority():
+    # K6 dominates everything; then dwell; then fewer containment exits
+    k6 = {"k6": 1, "max_dwell": 3, "contain_exit_ct": 5, "mean_speed": 9.0, "final_dtz": 9.0}
+    nok6 = {"k6": 0, "max_dwell": 6, "contain_exit_ct": 0, "mean_speed": 0.0, "final_dtz": 0.0}
+    assert lex_better(k6, nok6)                                         # K6 wins despite worse everything else
+    a = {"k6": 0, "max_dwell": 4, "contain_exit_ct": 0, "mean_speed": 0.1, "final_dtz": 0.02}
+    b = {"k6": 0, "max_dwell": 3, "contain_exit_ct": 0, "mean_speed": 0.0, "final_dtz": 0.0}
+    assert lex_better(a, b)                                             # more dwell wins over slower/closer
+    c = {**a, "max_dwell": 4, "contain_exit_ct": 1}
+    assert lex_better(a, c) and lex_key(a) > lex_key(c)                 # same dwell, fewer containment exits wins
+
+
+def test_prefix_candidate_rollout_captures_both_rewards_and_bootstrap():
+    import copy
+    import json
+
+    from hymeko_rl.coin_delivery.coin_late_start import LateStart, reconstruct_handoff
+    from hymeko_rl.coin_delivery.coin_markov_ablation_train import make_late_actor55_from_pi0, prefix_candidate_rollout
+    from hymeko_rl.coin_delivery.rl_clip_actor import load_frozen_clip_actor
+
+    d = "experiments/2026_07_22_coin_v3_learning/rl_entry"
+    cfg = json.load(open(f"{d}/td3_baseline_v1_config.json"))
+    pi0 = load_frozen_clip_actor(f"{d}/frozen/pi0_shared_clip_actor.pt", freeze=True)
+    base = make_late_actor55_from_pi0(pi0, trainable=False)
+    r = cfg["banks"]["late_dev"]["rows"][0]
+    ls = LateStart(seed=r[0], prefix_steps=r[1], family=r[2], obs_sha=r[3], base_sha=r[4], causal_sha=r[5])
+    rl, gate, _h, _rec = reconstruct_handoff(pi0, ls, horizon=360)
+    off = np.array([0.05, -0.05, 0.05, -0.05], np.float32)
+    o = prefix_candidate_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, off, 4, horizon=20)
+    assert o["k_applied"] <= 4 and len(o["rewardsA"]) == o["k_applied"] == len(o["rewardsB"])   # both arms, len ≤ K
+    for k in ("max_dwell", "k6", "contain_exit_ct", "final_dtz", "mean_speed"):
+        assert k in o["outcome"]
+    if not o["terminated_in_prefix"]:
+        assert o["obs55_K"] is not None and o["obs55_K"].shape == (55,)                         # s_K for bootstrap
+    # zero offset ⇒ the prefix is exactly pi_0, deterministic across deepcopies
+    z1 = prefix_candidate_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, np.zeros(4, np.float32), 4, horizon=20)
+    z2 = prefix_candidate_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, np.zeros(4, np.float32), 4, horizon=20)
+    assert z1["outcome"] == z2["outcome"] and z1["rewardsA"] == z2["rewardsA"]
