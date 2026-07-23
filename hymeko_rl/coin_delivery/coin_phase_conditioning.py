@@ -15,13 +15,38 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from hymeko_rl.coin_delivery.coin_late_start import LATE_FAMILIES
+from hymeko_rl.coin_delivery.coin_late_start import LATE_FAMILIES, _classify
 from hymeko_rl.coin_delivery.coin_td3_contracts import LateTwinCritic
 from hymeko_rl.coin_delivery.rl_clip_actor import ClipDeterministicActor, make_backbone
 
 ACTION_SCALE = 4.0
 PHASES = LATE_FAMILIES                       # ("transport","target_entry","overshoot","braking","settling_dwell","contact_retention")
 N_PHASE = len(PHASES)
+
+
+class PhaseDetector:
+    """DYNAMIC per-transition phase from the CURRENT env state + running trajectory context (deterministic). Call
+    :meth:`phase_of` EXACTLY ONCE per state as the trajectory unfolds — it advances the context — so
+    ``phase_tp1(k) == phase_t(k+1)`` by construction (the sequence is reconstructible from a deterministic replay).
+
+    This is the CURRENT phase, NOT the static ``LateStart.family`` episode-start label.
+    """
+
+    def __init__(self) -> None:
+        self.prev_dtz = None
+        self.min_dtz = None
+        self.prev_speed = None
+
+    def phase_of(self, rl) -> str:
+        m = rl.inner._planar_metrics
+        dtz = float(m.disk_to_zone); speed = float(rl._speed())
+        lc, rc, strict = bool(m.left_contact), bool(m.right_contact), int(rl._strict)
+        pdtz = dtz if self.prev_dtz is None else self.prev_dtz
+        mdtz = dtz if self.min_dtz is None else self.min_dtz
+        pspd = speed if self.prev_speed is None else self.prev_speed
+        phase = _classify(0, dtz, pdtz, mdtz, speed, pspd, lc, rc, strict)
+        self.min_dtz = min(mdtz, dtz); self.prev_dtz = dtz; self.prev_speed = speed
+        return phase
 
 
 def phase_onehot(family: str) -> np.ndarray:

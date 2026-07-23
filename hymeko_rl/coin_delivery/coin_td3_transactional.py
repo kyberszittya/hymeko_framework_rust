@@ -141,17 +141,29 @@ def critic_authorization(critic, actor, anchor_obs, cfg: TransactionalConfig) ->
     return checks
 
 
-def transactional_actor_step(pi_late, a_opt, critic, pi0, actor_obs, actor_gate, bc_obs, anchor_obs, a0_anchor, cfg):
-    """One TRANSACTIONAL actor update. Returns a dict: outcome ∈ {accepted, rejected}, scale, step/cum drift stats.
-    The Q term uses the §1 masked actor loss on ``(actor_obs, actor_gate)`` (only current gate-on rows drive pi_late)."""
+def actor_loss_fn(critic, pi_late, actor_obs, actor_gate, pi0, bc_obs, lambda_bc):
+    """Standard §1 actor loss closure: masked Q term on ``(actor_obs, actor_gate)`` + secondary BC anchor toward pi_0
+    on gate-active ``bc_obs``. ``actor_obs``/``bc_obs`` are whatever ``pi_late`` consumes (48 obs, or 48++phase_onehot);
+    the BC target uses ``pi0(bc_obs_48)`` supplied by the caller as ``bc_obs`` when pi_late is phase-blind, else the
+    caller passes a phase-aware closure directly."""
+    def fn():
+        with torch.no_grad():
+            pi0_bc = _actions(pi0, bc_obs)
+        bc = ((pi_late(bc_obs) - pi0_bc) ** 2).sum(-1).mean()
+        return masked_actor_loss(critic, pi_late, actor_obs, actor_gate) + lambda_bc * bc
+    return fn
+
+
+def transactional_actor_step(pi_late, a_opt, loss_fn, anchor_obs, a0_anchor, cfg):
+    """One TRANSACTIONAL actor update driven by ``loss_fn()`` (a scalar a_loss). Snapshot → propose → measure ‖Δa‖ on
+    the anchor bank → accept in the trust region, else backtrack on the parameter delta, else reject+restore. Returns a
+    dict: outcome ∈ {accepted, rejected}, scale, step/cum drift stats. ``anchor_obs`` is whatever ``pi_late`` consumes;
+    ``a0_anchor`` is the update-0 (pi_0-equivalent) action on the anchor bank."""
     snap_params = {k: v.clone() for k, v in pi_late.state_dict().items()}
     snap_opt = copy.deepcopy(a_opt.state_dict())
     old_anchor = _actions(pi_late, anchor_obs).detach()
 
-    with torch.no_grad():
-        pi0_bc = _actions(pi0, bc_obs)
-    bc = ((pi_late(bc_obs) - pi0_bc) ** 2).sum(-1).mean()   # secondary BC anchor on gate-active states
-    a_loss = masked_actor_loss(critic, pi_late, actor_obs, actor_gate) + cfg.lambda_bc * bc
+    a_loss = loss_fn()
     a_opt.zero_grad(); a_loss.backward(); nn.utils.clip_grad_norm_(pi_late.parameters(), 1.0); a_opt.step()
     param_delta = {k: (pi_late.state_dict()[k] - snap_params[k]).clone() for k in snap_params}
 
@@ -161,25 +173,27 @@ def transactional_actor_step(pi_late, a_opt, critic, pi0, actor_obs, actor_gate,
         cum_d = (prop - a0_anchor).norm(dim=-1).numpy()
         return step_d, cum_d
 
+    def _stats(sd, cd, scale):
+        return {"outcome": "accepted" if scale is not None else "rejected", "scale": scale,
+                "step_p95": float(np.percentile(sd, 95)), "step_max": float(np.max(sd)),
+                "cum_p95": float(np.percentile(cd, 95)), "cum_max": float(np.max(cd))}
+
     step_d, cum_d = measure()
     if within_trust_region(step_d, cum_d, cfg):
-        return {"outcome": "accepted", "scale": 1.0, "step_p95": float(np.percentile(step_d, 95)),
-                "cum_p95": float(np.percentile(cum_d, 95)), "cum_max": float(np.max(cum_d)), "bc": float(bc.detach())}
+        return _stats(step_d, cum_d, 1.0)
     for scale in cfg.backtrack_scales:
         with torch.no_grad():
             for k in snap_params:
                 pi_late.state_dict()[k].copy_(snap_params[k] + scale * param_delta[k])
-        a_opt.load_state_dict(snap_opt)                         # optimizer restored (scaled param delta applied directly)
+        a_opt.load_state_dict(snap_opt)                        # optimizer restored (scaled param delta applied directly)
         step_d, cum_d = measure()
         if within_trust_region(step_d, cum_d, cfg):
-            return {"outcome": "accepted", "scale": float(scale), "step_p95": float(np.percentile(step_d, 95)),
-                    "cum_p95": float(np.percentile(cum_d, 95)), "cum_max": float(np.max(cum_d)), "bc": float(bc.detach())}
-    with torch.no_grad():                                       # reject: restore actor + optimizer
+            return _stats(step_d, cum_d, float(scale))
+    with torch.no_grad():                                      # reject: restore actor + optimizer
         for k in snap_params:
             pi_late.state_dict()[k].copy_(snap_params[k])
     a_opt.load_state_dict(snap_opt)
-    return {"outcome": "rejected", "scale": None, "step_p95": float(np.percentile(step_d, 95)),
-            "cum_p95": float(np.percentile(cum_d, 95)), "cum_max": float(np.max(cum_d)), "bc": float(bc.detach())}
+    return _stats(step_d, cum_d, None)
 
 
 def train_stage1b(pi0, cfg_stage, train_bank, dev_bank, *, seeds, tcfg: "TransactionalConfig | None" = None, log=print):
@@ -245,8 +259,8 @@ def train_stage1b(pi0, cfg_stage, train_bank, dev_bank, *, seeds, tcfg: "Transac
             if auth["authorized"]:                              # transactional actor update ONLY when critic authorized
                 sample = sample_actor_batch(buf, batch, rng_r); bc_obs = _sample_gate_on(buf, batch, rng_r)
                 if sample is not None and bc_obs is not None and float(sample[1].sum()) > 0:
-                    r = transactional_actor_step(pi_late, a_opt, critic, pi0, sample[0], sample[1], bc_obs,
-                                                 anchor_obs, a0_anchor, tcfg)
+                    lf = actor_loss_fn(critic, pi_late, sample[0], sample[1], pi0, bc_obs, tcfg.lambda_bc)
+                    r = transactional_actor_step(pi_late, a_opt, lf, anchor_obs, a0_anchor, tcfg)
                     if r["outcome"] == "accepted":
                         acc += 1; scales.append(r["scale"])
                         with torch.no_grad():

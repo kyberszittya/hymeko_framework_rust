@@ -1,0 +1,50 @@
+{
+ "n_episodes": 30,
+ "n_starts": 30,
+ "horizon": 30,
+ "stage1_families": [
+  "target_entry",
+  "braking",
+  "settling_dwell"
+ ],
+ "expected_transition_counts": {
+  "target_entry->braking": 0,
+  "braking->settling_dwell": 1,
+  "settling_dwell->braking": 0
+ },
+ "unexpected_transition_counts": {
+  "transport->contact_retention": 41,
+  "contact_retention->transport": 29,
+  "transport->braking": 17,
+  "braking->transport": 16,
+  "contact_retention->braking": 8,
+  "braking->contact_retention": 8,
+  "contact_retention->target_entry": 1,
+  "target_entry->contact_retention": 1,
+  "contact_retention->overshoot": 1,
+  "settling_dwell->contact_retention": 1
+ },
+ "phase_t_step_counts": {
+  "transport": 260,
+  "braking": 54,
+  "contact_retention": 321,
+  "target_entry": 1,
+  "settling_dwell": 48
+ },
+ "phases_occurring_dynamically": [
+  "braking",
+  "contact_retention",
+  "settling_dwell",
+  "target_entry",
+  "transport"
+ ],
+ "stage1_phases_never_occurring": [],
+ "all_phases": [
+  "transport",
+  "target_entry",
+  "overshoot",
+  "braking",
+  "settling_dwell",
+  "contact_retention"
+ ]
+}
