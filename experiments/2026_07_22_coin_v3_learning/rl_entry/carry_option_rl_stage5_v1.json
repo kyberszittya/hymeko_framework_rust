@@ -1,0 +1,462 @@
+{
+ "contract": "CARRY_OPTION_RL_STAGE5_V1",
+ "date": "2026-07-24",
+ "smoke": false,
+ "reward_cert": {
+  "delivers": true,
+  "R_k6_mean": 9.624,
+  "R_nonk6_mean": -0.221,
+  "n_k6": 3,
+  "n_nonk6": 21
+ },
+ "rl_init": "carry_proposal_refined.pt",
+ "update0_baseline_final": {
+  "b0": {
+   "K6": 0.083,
+   "any_exit": 0.042
+  },
+  "b8": {
+   "K6": 0.167,
+   "any_exit": 0.0
+  }
+ },
+ "config": {
+  "gamma": 0.99,
+  "tau_polyak": 0.01,
+  "lr": 0.0003,
+  "batch": 128,
+  "warmup_options": 40,
+  "total_options": 600,
+  "updates_per_option": 1,
+  "eval_every": 120,
+  "b": 8,
+  "horizon": 160,
+  "max_options": 4,
+  "policy_delay": 2,
+  "target_noise": 0.15,
+  "noise_clip": 0.3,
+  "expl_noise": 0.2,
+  "alpha": 0.1
+ },
+ "branches": {
+  "sac_seed0": {
+   "distill_mse": 0.0278,
+   "history": [
+    {
+     "it": 120,
+     "dev_k6": 0.05,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.067,
+     "q_mean": -0.03
+    },
+    {
+     "it": 240,
+     "dev_k6": 0.0,
+     "dev_exit": 0.15,
+     "train_k6_recent": 0.058,
+     "q_mean": -0.04
+    },
+    {
+     "it": 360,
+     "dev_k6": 0.2,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.05,
+     "q_mean": 0.01
+    },
+    {
+     "it": 480,
+     "dev_k6": 0.05,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.075,
+     "q_mean": 0.12
+    },
+    {
+     "it": 600,
+     "dev_k6": 0.1,
+     "dev_exit": 0.0,
+     "train_k6_recent": 0.067,
+     "q_mean": 0.21
+    }
+   ],
+   "checkpoint_eval": {
+    "update0": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.0
+     },
+     "b8": {
+      "K6": 0.167,
+      "any_exit": 0.0
+     }
+    },
+    "best_val": {
+     "b0": {
+      "K6": 0.042,
+      "any_exit": 0.167
+     },
+     "b8": {
+      "K6": 0.125,
+      "any_exit": 0.0
+     }
+    },
+    "early": {
+     "b0": {
+      "K6": 0.042,
+      "any_exit": 0.042
+     },
+     "b8": {
+      "K6": 0.083,
+      "any_exit": 0.0
+     }
+    },
+    "mid": {
+     "b0": {
+      "K6": 0.042,
+      "any_exit": 0.167
+     },
+     "b8": {
+      "K6": 0.125,
+      "any_exit": 0.0
+     }
+    },
+    "final": {
+     "b0": {
+      "K6": 0.083,
+      "any_exit": 0.083
+     },
+     "b8": {
+      "K6": 0.167,
+      "any_exit": 0.0
+     }
+    }
+   }
+  },
+  "sac_seed1": {
+   "distill_mse": 0.0255,
+   "history": [
+    {
+     "it": 120,
+     "dev_k6": 0.0,
+     "dev_exit": 0.1,
+     "train_k6_recent": 0.058,
+     "q_mean": -0.08
+    },
+    {
+     "it": 240,
+     "dev_k6": 0.0,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.058,
+     "q_mean": -0.02
+    },
+    {
+     "it": 360,
+     "dev_k6": 0.1,
+     "dev_exit": 0.1,
+     "train_k6_recent": 0.042,
+     "q_mean": 0.02
+    },
+    {
+     "it": 480,
+     "dev_k6": 0.15,
+     "dev_exit": 0.1,
+     "train_k6_recent": 0.033,
+     "q_mean": 0.14
+    },
+    {
+     "it": 600,
+     "dev_k6": 0.05,
+     "dev_exit": 0.0,
+     "train_k6_recent": 0.067,
+     "q_mean": 0.01
+    }
+   ],
+   "checkpoint_eval": {
+    "update0": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.042
+     },
+     "b8": {
+      "K6": 0.125,
+      "any_exit": 0.0
+     }
+    },
+    "best_val": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.083
+     },
+     "b8": {
+      "K6": 0.083,
+      "any_exit": 0.042
+     }
+    },
+    "early": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.083
+     },
+     "b8": {
+      "K6": 0.125,
+      "any_exit": 0.042
+     }
+    },
+    "mid": {
+     "b0": {
+      "K6": 0.083,
+      "any_exit": 0.0
+     },
+     "b8": {
+      "K6": 0.208,
+      "any_exit": 0.0
+     }
+    },
+    "final": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.0
+     },
+     "b8": {
+      "K6": 0.125,
+      "any_exit": 0.0
+     }
+    }
+   }
+  },
+  "td3_seed0": {
+   "distill_mse": 0.0267,
+   "history": [
+    {
+     "it": 120,
+     "dev_k6": 0.1,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.167,
+     "q_mean": -0.02
+    },
+    {
+     "it": 240,
+     "dev_k6": 0.05,
+     "dev_exit": 0.0,
+     "train_k6_recent": 0.092,
+     "q_mean": 0.18
+    },
+    {
+     "it": 360,
+     "dev_k6": 0.0,
+     "dev_exit": 0.0,
+     "train_k6_recent": 0.083,
+     "q_mean": 0.12
+    },
+    {
+     "it": 480,
+     "dev_k6": 0.05,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.1,
+     "q_mean": 0.09
+    },
+    {
+     "it": 600,
+     "dev_k6": 0.0,
+     "dev_exit": 0.1,
+     "train_k6_recent": 0.117,
+     "q_mean": 0.37
+    }
+   ],
+   "checkpoint_eval": {
+    "update0": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.0
+     },
+     "b8": {
+      "K6": 0.083,
+      "any_exit": 0.0
+     }
+    },
+    "best_val": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.0
+     },
+     "b8": {
+      "K6": 0.083,
+      "any_exit": 0.0
+     }
+    },
+    "early": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.042
+     },
+     "b8": {
+      "K6": 0.167,
+      "any_exit": 0.0
+     }
+    },
+    "mid": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.083
+     },
+     "b8": {
+      "K6": 0.083,
+      "any_exit": 0.0
+     }
+    },
+    "final": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.292
+     },
+     "b8": {
+      "K6": 0.25,
+      "any_exit": 0.042
+     }
+    }
+   }
+  },
+  "td3_seed1": {
+   "distill_mse": 0.0267,
+   "history": [
+    {
+     "it": 120,
+     "dev_k6": 0.05,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.108,
+     "q_mean": -0.07
+    },
+    {
+     "it": 240,
+     "dev_k6": 0.0,
+     "dev_exit": 0.0,
+     "train_k6_recent": 0.075,
+     "q_mean": 0.14
+    },
+    {
+     "it": 360,
+     "dev_k6": 0.05,
+     "dev_exit": 0.0,
+     "train_k6_recent": 0.033,
+     "q_mean": 0.08
+    },
+    {
+     "it": 480,
+     "dev_k6": 0.05,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.058,
+     "q_mean": 0.15
+    },
+    {
+     "it": 600,
+     "dev_k6": 0.0,
+     "dev_exit": 0.05,
+     "train_k6_recent": 0.025,
+     "q_mean": 0.04
+    }
+   ],
+   "checkpoint_eval": {
+    "update0": {
+     "b0": {
+      "K6": 0.042,
+      "any_exit": 0.083
+     },
+     "b8": {
+      "K6": 0.167,
+      "any_exit": 0.0
+     }
+    },
+    "best_val": {
+     "b0": {
+      "K6": 0.042,
+      "any_exit": 0.083
+     },
+     "b8": {
+      "K6": 0.167,
+      "any_exit": 0.0
+     }
+    },
+    "early": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.0
+     },
+     "b8": {
+      "K6": 0.0,
+      "any_exit": 0.0
+     }
+    },
+    "mid": {
+     "b0": {
+      "K6": 0.0,
+      "any_exit": 0.125
+     },
+     "b8": {
+      "K6": 0.042,
+      "any_exit": 0.0
+     }
+    },
+    "final": {
+     "b0": {
+      "K6": 0.083,
+      "any_exit": 0.125
+     },
+     "b8": {
+      "K6": 0.208,
+      "any_exit": 0.042
+     }
+    }
+   }
+  }
+ },
+ "best_rl_bestval_b8": {
+  "K6": 0.167,
+  "branch": "td3_seed1"
+ },
+ "improves_over_update0": false,
+ "exit_ok": true,
+ "verdict": "OPTION_PROPOSAL_RL_IMPLEMENTED_FIRST_PASS_INCONCLUSIVE",
+ "option_return_distribution": {
+  "R_min": -2.27,
+  "R_med": 0.31,
+  "R_max": 11.26,
+  "tau_min": 1,
+  "tau_med": 9,
+  "tau_max": 160,
+  "success_frac": 0.375,
+  "terminal_frac": 0.95,
+  "R_success_med": 10.5,
+  "R_fail_med": -0.0
+ },
+ "auto_verdict": "OPTION_PROPOSAL_RL_NO_PHYSICAL_IMPROVEMENT",
+ "status_rationale": "All contracts pass + reward certified + Q learns; dev-selected best_val b8 ties update-0 (0.167=0.167) so NO improvement is DEMONSTRATED, but 2/4 FINAL checkpoints reach 0.208-0.25 (>baseline, within 24-state noise) and dev K6 moved (SAC peaked 0.2) -> not a clean negative either. Per the binding no-verdict-from-first-pass rule this is INCONCLUSIVE, not NO_IMPROVEMENT. Gated on variance reduction: larger dev panel + principled selection, more seeds/budget, or a lower-variance search-in-the-loop objective. Raw auto_verdict (strict on best_val) retained for provenance.",
+ "checkpoint_b8_final_panel": {
+  "sac_seed0": {
+   "update0": 0.167,
+   "early": 0.083,
+   "mid": 0.125,
+   "best_val": 0.125,
+   "final": 0.167
+  },
+  "sac_seed1": {
+   "update0": 0.125,
+   "early": 0.125,
+   "mid": 0.208,
+   "best_val": 0.083,
+   "final": 0.125
+  },
+  "td3_seed0": {
+   "update0": 0.083,
+   "early": 0.167,
+   "mid": 0.083,
+   "best_val": 0.083,
+   "final": 0.25
+  },
+  "td3_seed1": {
+   "update0": 0.167,
+   "early": 0.0,
+   "mid": 0.042,
+   "best_val": 0.167,
+   "final": 0.208
+  }
+ }
+}
