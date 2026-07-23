@@ -80,6 +80,12 @@ class RolloutTrace:
         braking = max_coin_speed_near - float(speed[-1])                        # near-zone deceleration (>0 = braked)
         max_dwell = int(strict.max())
         strict_success = bool(max_dwell >= HELD_DWELL and self.touched_final)
+        k6 = np.where(strict >= HELD_DWELL)[0]                                  # additive: strict-K6 certification step
+        k6_step = int(k6[0]) if k6.size else None
+        exit_before_k6 = False                                                 # entered then exited BEFORE K6 (step 2/9)
+        if entry_step is not None:
+            end = k6_step if k6_step is not None else n
+            exit_before_k6 = bool((dtz[entry_step:end] > ENTRY_TOL).any()) if end > entry_step else False
         progress = float(self.dtz[0] - self.dtz[-1])
         disc = gamma ** np.arange(n)
         total_return = float((disc * np.array(self.rewards)).sum())
@@ -93,7 +99,8 @@ class RolloutTrace:
                 "max_coin_speed_near": round(max_coin_speed_near, 4),
                 "max_dwell": max_dwell, "strict_success": strict_success,
                 "progress": round(progress, 4), "total_return": round(total_return, 4),
-                "stable_entry_step": stable_entry_step, "n_steps": n}
+                "stable_entry_step": stable_entry_step, "k6_step": k6_step, "exit_before_k6": bool(exit_before_k6),
+                "n_steps": n}
 
 
 # ── controllers as policy callables (rl, prev_action, step) → action(4) ──
