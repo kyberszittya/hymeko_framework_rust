@@ -1,0 +1,50 @@
+{
+ "contract": "CARRY_OPTION_REFINE_V1",
+ "date": "2026-07-24",
+ "no_new_campaign": true,
+ "smoke": false,
+ "scope": "refines a deterministic MSE-BC proposal; verdict does NOT bound distributional/MDN or template-conditioned-residual heads",
+ "eval_n": 30,
+ "rounds": 3,
+ "b_train": 12,
+ "K": 8,
+ "pi_0_K6": 0.0,
+ "expert_K6": 0.533,
+ "history": [
+  {
+   "round": 0,
+   "n_labels": 105,
+   "actor_b0": 0.033,
+   "actor_b4": 0.067,
+   "template_b0_fixed": 0.067,
+   "template_b4_fixed": 0.133
+  },
+  {
+   "round": 1,
+   "n_labels": 118,
+   "actor_b0": 0.0,
+   "actor_b4": 0.167,
+   "template_b0_fixed": 0.067,
+   "template_b4_fixed": 0.133
+  },
+  {
+   "round": 2,
+   "n_labels": 134,
+   "actor_b0": 0.0,
+   "actor_b4": 0.033,
+   "template_b0_fixed": 0.067,
+   "template_b4_fixed": 0.133
+  },
+  {
+   "round": 3,
+   "n_labels": 155,
+   "actor_b0": 0.0,
+   "actor_b4": 0.167,
+   "template_b0_fixed": 0.067,
+   "template_b4_fixed": 0.133
+  }
+ ],
+ "delta_b0": -0.033,
+ "delta_b4": 0.1,
+ "verdict": "DETERMINISTIC_BC_PROPOSAL_PARTIALLY_ABSORBS_SEARCH"
+}
