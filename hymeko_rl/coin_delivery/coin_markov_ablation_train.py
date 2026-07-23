@@ -157,13 +157,14 @@ def _ladder_row(rl, gate, pi0, actor55, arm, horizon):
     base_spec = base_spec_no_terminal(rl) if arm == "B" else None; bonus_state = [False]
     md = int(rl._strict); ret = 0.0; disc = 1.0; entered = rl._dtz() <= ENTRY_TOL
     exit_ct = 0; was_in = rl._dtz() <= ENTRY_TOL; entry_vel = None; touched = rl._touched
+    dtz = rl._dtz(); speed_sum = 0.0; nstep = 0                       # final-dtz + mean-speed diagnostics (additive)
     for _k in range(horizon):
         gate_on = gate.gate == 1.0; o48 = rl.obs(); s = int(rl._strict)
         a = _det(actor55, _aug(o48, s)) if gate_on else _det(pi0, o48)
         r, term, trunc = step_ablation(rl, a, arm, base_spec=base_spec, bonus_state=bonus_state)
         lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
         ret += disc * r; disc *= GAMMA; md = max(md, int(rl._strict)); touched = touched or rl._touched
-        dtz = rl._dtz()
+        dtz = rl._dtz(); speed_sum += float(rl._speed()); nstep += 1
         if dtz <= ENTRY_TOL and not entered:
             entry_vel = rl._speed()
         entered = entered or dtz <= ENTRY_TOL
@@ -175,7 +176,8 @@ def _ladder_row(rl, gate, pi0, actor55, arm, horizon):
     return {"max_dwell": md, "k6": int(md >= HELD_DWELL and touched), "k1": int(md >= 1), "k3": int(md >= 3),
             "k5": int(md >= 5), "entered": int(entered), "exit_ct": exit_ct, "ret": round(ret, 3),
             "entry_vel": round(float(entry_vel), 4) if entry_vel is not None else 0.0,
-            "full_contain": int(md >= 1)}
+            "full_contain": int(md >= 1), "final_dtz": round(float(dtz), 4),
+            "mean_speed": round(speed_sum / max(nstep, 1), 4)}
 
 
 def eval_ablation(pi0, actor55, dev_bank, arm, *, horizon, families, reset_strict):
@@ -192,7 +194,53 @@ def eval_ablation(pi0, actor55, dev_bank, arm, *, horizon, families, reset_stric
     agg = lambda k: round(float(np.mean([r[k] for r in rows])), 4) if rows else 0.0
     return {"n": len(rows), "k6_rate": agg("k6"), "k1": agg("k1"), "k3": agg("k3"), "k5": agg("k5"),
             "mean_max_dwell": agg("max_dwell"), "entry_vel": agg("entry_vel"), "exit_ct": agg("exit_ct"),
-            "canonical_return": agg("ret"), "full_contain": agg("full_contain")}
+            "canonical_return": agg("ret"), "full_contain": agg("full_contain"),
+            "final_dtz": agg("final_dtz"), "mean_speed": agg("mean_speed")}
+
+
+def one_step_candidate_outcome(rl, gate, pi0, base, first_action, *, arm, horizon, capture=False):
+    """Terminal-aligned physical outcome of applying ``first_action`` at the FIRST gate-on step, then the *frozen*
+    baseline policy (``base`` on gate-on physical obs, ``pi0`` on gate-off) for the remaining steps.
+
+    This isolates the physical consequence of changing ONE action — the correct measurement for local action-ranking
+    fidelity (vs. applying a perturbation on every step, which is a different 30-step feedback policy).
+
+    Preconditions:  ``rl``/``gate`` are a *fresh* handoff (deepcopy of a reconstructed template — this call mutates
+                    them); ``first_action`` is a clipped ``(action_dim,)`` action.
+    Postconditions: the candidate is applied exactly once (first gate-on step); returns certifier variables only
+                    (max_dwell, k6, exit_ct, final_dtz, mean_speed) — NOT the Arm reward. With ``capture=True`` the
+                    result also carries a per-step ``trace`` and the final simulator state (for the deepcopy-fidelity
+                    test).
+    """
+    base_spec = base_spec_no_terminal(rl) if arm == "B" else None; bonus_state = [False]
+    md = int(rl._strict); touched = rl._touched
+    dtz = rl._dtz(); was_in = dtz <= ENTRY_TOL; exit_ct = 0; speed_sum = 0.0; nstep = 0; applied = False
+    trace = [] if capture else None
+    for _k in range(horizon):
+        gate_on = gate.gate == 1.0; o48 = rl.obs(); s = int(rl._strict)
+        if gate_on and not applied:
+            a = np.asarray(first_action, np.float32); applied = True     # candidate — ONLY at first gate-on step
+        elif gate_on:
+            a = _det(base, _aug(o48, s))                                 # frozen baseline afterwards
+        else:
+            a = _det(pi0, o48)
+        _r, term, trunc = step_ablation(rl, a, arm, base_spec=base_spec, bonus_state=bonus_state)
+        lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
+        md = max(md, int(rl._strict)); touched = touched or rl._touched
+        dtz = rl._dtz(); speed_sum += float(rl._speed()); nstep += 1
+        if capture:
+            trace.append((o48.copy(), a.copy(), int(rl._strict), round(dtz, 8), round(rl._speed(), 8), bool(term), bool(trunc)))
+        if was_in and dtz > ENTRY_TOL:
+            exit_ct += 1
+        was_in = dtz <= ENTRY_TOL
+        if term or trunc:
+            break
+    out = {"max_dwell": md, "k6": int(md >= HELD_DWELL and touched), "exit_ct": exit_ct,
+           "final_dtz": round(float(dtz), 4), "mean_speed": round(speed_sum / max(nstep, 1), 4), "applied": applied}
+    if capture:
+        out["trace"] = trace
+        out["final_qpos"] = rl.inner.data.qpos.copy(); out["final_qvel"] = rl.inner.data.qvel.copy()
+    return out
 
 
 def strict_conditioned_q(critic, actor55, obs48):

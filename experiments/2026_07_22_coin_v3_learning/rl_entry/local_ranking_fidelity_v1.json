@@ -1,0 +1,1022 @@
+{
+ "contract": "LOCAL_ACTION_RANKING_FIDELITY_V1",
+ "date": "2026-07-23",
+ "no_new_campaign": true,
+ "smoke": false,
+ "method": {
+  "one_step_candidate": true,
+  "critic_grad_once_at_s0": true,
+  "cgrad_rollout_per_critic": true,
+  "state_wise": true,
+  "eps_stratified": true,
+  "physical_target": "pre-registered lexicographic: max_dwell \u227b -exit \u227b -dtz \u227b -speed",
+  "sensitivity_scalarizations": [
+   "max_dwell",
+   "k6"
+  ],
+  "train_dev_split": true,
+  "verdict_panel": "DEV-ID",
+  "critics": [
+   "A_markov",
+   "B_terminal_aligned"
+  ],
+  "rollout_horizon": 30
+ },
+ "panel": {
+  "train_id": 18,
+  "dev_id": 12,
+  "dev_families": {
+   "target_entry": 1,
+   "braking": 6,
+   "settling_dwell": 5
+  },
+  "dev_target_entry_n": 1
+ },
+ "seeds": [
+  0,
+  1
+ ],
+ "dev_A": {
+  "n": 12,
+  "0.005": {
+   "n_disc": 12,
+   "median_rho_lex": {
+    "stat": -0.05,
+    "lo": -0.275,
+    "hi": 0.359,
+    "n": 12
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.5,
+    "lo": 0.167,
+    "hi": 0.75,
+    "n": 12
+   },
+   "sign_agree_rate": {
+    "stat": 0.467,
+    "lo": 0.25,
+    "hi": 0.667,
+    "n": 12
+   }
+  },
+  "0.01": {
+   "n_disc": 12,
+   "median_rho_lex": {
+    "stat": -0.183,
+    "lo": -0.492,
+    "hi": 0.175,
+    "n": 12
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.25,
+    "lo": 0.0,
+    "hi": 0.5,
+    "n": 12
+   },
+   "sign_agree_rate": {
+    "stat": 0.417,
+    "lo": 0.25,
+    "hi": 0.583,
+    "n": 12
+   }
+  },
+  "0.02": {
+   "n_disc": 12,
+   "median_rho_lex": {
+    "stat": 0.2,
+    "lo": -0.308,
+    "hi": 0.497,
+    "n": 12
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.667,
+    "lo": 0.417,
+    "hi": 0.917,
+    "n": 12
+   },
+   "sign_agree_rate": {
+    "stat": 0.6,
+    "lo": 0.417,
+    "hi": 0.767,
+    "n": 12
+   }
+  },
+  "0.04": {
+   "n_disc": 12,
+   "median_rho_lex": {
+    "stat": 0.15,
+    "lo": -0.208,
+    "hi": 0.347,
+    "n": 12
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.667,
+    "lo": 0.417,
+    "hi": 0.917,
+    "n": 12
+   },
+   "sign_agree_rate": {
+    "stat": 0.55,
+    "lo": 0.35,
+    "hi": 0.75,
+    "n": 12
+   }
+  }
+ },
+ "dev_B": {
+  "n": 12,
+  "0.005": {
+   "n_disc": 12,
+   "median_rho_lex": {
+    "stat": 0.042,
+    "lo": -0.442,
+    "hi": 0.297,
+    "n": 12
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.583,
+    "lo": 0.25,
+    "hi": 0.833,
+    "n": 12
+   },
+   "sign_agree_rate": {
+    "stat": 0.5,
+    "lo": 0.3,
+    "hi": 0.683,
+    "n": 12
+   }
+  },
+  "0.01": {
+   "n_disc": 12,
+   "median_rho_lex": {
+    "stat": 0.133,
+    "lo": -0.25,
+    "hi": 0.449,
+    "n": 12
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.667,
+    "lo": 0.417,
+    "hi": 0.917,
+    "n": 12
+   },
+   "sign_agree_rate": {
+    "stat": 0.533,
+    "lo": 0.367,
+    "hi": 0.683,
+    "n": 12
+   }
+  },
+  "0.02": {
+   "n_disc": 12,
+   "median_rho_lex": {
+    "stat": 0.311,
+    "lo": -0.225,
+    "hi": 0.633,
+    "n": 12
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.833,
+    "lo": 0.583,
+    "hi": 1.0,
+    "n": 12
+   },
+   "sign_agree_rate": {
+    "stat": 0.65,
+    "lo": 0.467,
+    "hi": 0.817,
+    "n": 12
+   }
+  },
+  "0.04": {
+   "n_disc": 12,
+   "median_rho_lex": {
+    "stat": 0.158,
+    "lo": -0.2,
+    "hi": 0.442,
+    "n": 12
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.75,
+    "lo": 0.5,
+    "hi": 1.0,
+    "n": 12
+   },
+   "sign_agree_rate": {
+    "stat": 0.567,
+    "lo": 0.367,
+    "hi": 0.75,
+    "n": 12
+   }
+  }
+ },
+ "train_A_reference": {
+  "n": 18,
+  "0.005": {
+   "n_disc": 17,
+   "median_rho_lex": {
+    "stat": 0.217,
+    "lo": 0.06,
+    "hi": 0.477,
+    "n": 17
+   },
+   "median_rho_dwell": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "median_rho_k6": {
+    "stat": null,
+    "lo": null,
+    "hi": null,
+    "n": 0
+   },
+   "top1_beats_rate": {
+    "stat": 0.706,
+    "lo": 0.471,
+    "hi": 0.882,
+    "n": 17
+   },
+   "sign_agree_rate": {
+    "stat": 0.635,
+    "lo": 0.506,
+    "hi": 0.753,
+    "n": 17
+   }
+  },
+  "0.01": {
+   "n_disc": 17,
+   "median_rho_lex": {
+    "stat": 0.067,
+    "lo": -0.133,
+    "hi": 0.517,
+    "n": 17
+   },
+   "median_rho_dwell": {
+    "stat": 0.137,
+    "lo": 0.137,
+    "hi": 0.137,
+    "n": 1
+   },
+   "median_rho_k6": {
+    "stat": 0.207,
+    "lo": 0.207,
+    "hi": 0.207,
+    "n": 1
+   },
+   "top1_beats_rate": {
+    "stat": 0.706,
+    "lo": 0.471,
+    "hi": 0.882,
+    "n": 17
+   },
+   "sign_agree_rate": {
+    "stat": 0.624,
+    "lo": 0.494,
+    "hi": 0.741,
+    "n": 17
+   }
+  },
+  "0.02": {
+   "n_disc": 17,
+   "median_rho_lex": {
+    "stat": 0.367,
+    "lo": -0.167,
+    "hi": 0.517,
+    "n": 17
+   },
+   "median_rho_dwell": {
+    "stat": 0.538,
+    "lo": 0.538,
+    "hi": 0.538,
+    "n": 1
+   },
+   "median_rho_k6": {
+    "stat": 0.548,
+    "lo": 0.548,
+    "hi": 0.548,
+    "n": 1
+   },
+   "top1_beats_rate": {
+    "stat": 0.706,
+    "lo": 0.471,
+    "hi": 0.882,
+    "n": 17
+   },
+   "sign_agree_rate": {
+    "stat": 0.588,
+    "lo": 0.435,
+    "hi": 0.729,
+    "n": 17
+   }
+  },
+  "0.04": {
+   "n_disc": 18,
+   "median_rho_lex": {
+    "stat": 0.152,
+    "lo": -0.15,
+    "hi": 0.267,
+    "n": 18
+   },
+   "median_rho_dwell": {
+    "stat": 0.538,
+    "lo": 0.538,
+    "hi": 0.538,
+    "n": 1
+   },
+   "median_rho_k6": {
+    "stat": 0.548,
+    "lo": 0.548,
+    "hi": 0.548,
+    "n": 1
+   },
+   "top1_beats_rate": {
+    "stat": 0.389,
+    "lo": 0.167,
+    "hi": 0.611,
+    "n": 18
+   },
+   "sign_agree_rate": {
+    "stat": 0.422,
+    "lo": 0.289,
+    "hi": 0.544,
+    "n": 18
+   }
+  }
+ },
+ "dev_A_family_eps0005": {
+  "braking": {
+   "n_disc": 6,
+   "median_rho_lex": {
+    "stat": -0.2,
+    "lo": -0.542,
+    "hi": 0.008,
+    "n": 6
+   }
+  },
+  "settling_dwell": {
+   "n_disc": 5,
+   "median_rho_lex": {
+    "stat": 0.551,
+    "lo": -0.433,
+    "hi": 0.636,
+    "n": 5
+   }
+  },
+  "target_entry": {
+   "n_disc": 1,
+   "median_rho_lex": {
+    "stat": -0.067,
+    "lo": -0.067,
+    "hi": -0.067,
+    "n": 1
+   }
+  }
+ },
+ "all_seeds_dev": [
+  {
+   "A": {
+    "n": 12,
+    "0.005": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": -0.05,
+      "lo": -0.275,
+      "hi": 0.359,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.5,
+      "lo": 0.167,
+      "hi": 0.75,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.467,
+      "lo": 0.25,
+      "hi": 0.667,
+      "n": 12
+     }
+    },
+    "0.01": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": -0.183,
+      "lo": -0.492,
+      "hi": 0.175,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.25,
+      "lo": 0.0,
+      "hi": 0.5,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.417,
+      "lo": 0.25,
+      "hi": 0.583,
+      "n": 12
+     }
+    },
+    "0.02": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": 0.2,
+      "lo": -0.308,
+      "hi": 0.497,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.667,
+      "lo": 0.417,
+      "hi": 0.917,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.6,
+      "lo": 0.417,
+      "hi": 0.767,
+      "n": 12
+     }
+    },
+    "0.04": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": 0.15,
+      "lo": -0.208,
+      "hi": 0.347,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.667,
+      "lo": 0.417,
+      "hi": 0.917,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.55,
+      "lo": 0.35,
+      "hi": 0.75,
+      "n": 12
+     }
+    }
+   },
+   "B": {
+    "n": 12,
+    "0.005": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": 0.042,
+      "lo": -0.442,
+      "hi": 0.297,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.583,
+      "lo": 0.25,
+      "hi": 0.833,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.5,
+      "lo": 0.3,
+      "hi": 0.683,
+      "n": 12
+     }
+    },
+    "0.01": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": 0.133,
+      "lo": -0.25,
+      "hi": 0.449,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.667,
+      "lo": 0.417,
+      "hi": 0.917,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.533,
+      "lo": 0.367,
+      "hi": 0.683,
+      "n": 12
+     }
+    },
+    "0.02": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": 0.311,
+      "lo": -0.225,
+      "hi": 0.633,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.833,
+      "lo": 0.583,
+      "hi": 1.0,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.65,
+      "lo": 0.467,
+      "hi": 0.817,
+      "n": 12
+     }
+    },
+    "0.04": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": 0.158,
+      "lo": -0.2,
+      "hi": 0.442,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.75,
+      "lo": 0.5,
+      "hi": 1.0,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.567,
+      "lo": 0.367,
+      "hi": 0.75,
+      "n": 12
+     }
+    }
+   }
+  },
+  {
+   "A": {
+    "n": 12,
+    "0.005": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": -0.077,
+      "lo": -0.3,
+      "hi": 0.208,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.25,
+      "lo": 0.0,
+      "hi": 0.5,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.383,
+      "lo": 0.2,
+      "hi": 0.567,
+      "n": 12
+     }
+    },
+    "0.01": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": 0.038,
+      "lo": -0.375,
+      "hi": 0.276,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.583,
+      "lo": 0.333,
+      "hi": 0.833,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.483,
+      "lo": 0.3,
+      "hi": 0.633,
+      "n": 12
+     }
+    },
+    "0.02": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": 0.117,
+      "lo": -0.249,
+      "hi": 0.31,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.5,
+      "lo": 0.25,
+      "hi": 0.75,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.567,
+      "lo": 0.367,
+      "hi": 0.75,
+      "n": 12
+     }
+    },
+    "0.04": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": -0.017,
+      "lo": -0.2,
+      "hi": 0.208,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.417,
+      "lo": 0.167,
+      "hi": 0.667,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.467,
+      "lo": 0.25,
+      "hi": 0.683,
+      "n": 12
+     }
+    }
+   },
+   "B": {
+    "n": 12,
+    "0.005": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": -0.036,
+      "lo": -0.35,
+      "hi": 0.242,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.333,
+      "lo": 0.083,
+      "hi": 0.583,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.45,
+      "lo": 0.25,
+      "hi": 0.633,
+      "n": 12
+     }
+    },
+    "0.01": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": -0.156,
+      "lo": -0.3,
+      "hi": 0.192,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.5,
+      "lo": 0.25,
+      "hi": 0.75,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.5,
+      "lo": 0.333,
+      "hi": 0.65,
+      "n": 12
+     }
+    },
+    "0.02": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": -0.008,
+      "lo": -0.233,
+      "hi": 0.55,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.5,
+      "lo": 0.25,
+      "hi": 0.75,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.583,
+      "lo": 0.4,
+      "hi": 0.75,
+      "n": 12
+     }
+    },
+    "0.04": {
+     "n_disc": 12,
+     "median_rho_lex": {
+      "stat": -0.008,
+      "lo": -0.133,
+      "hi": 0.275,
+      "n": 12
+     },
+     "median_rho_dwell": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "median_rho_k6": {
+      "stat": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "top1_beats_rate": {
+      "stat": 0.417,
+      "lo": 0.167,
+      "hi": 0.75,
+      "n": 12
+     },
+     "sign_agree_rate": {
+      "stat": 0.517,
+      "lo": 0.317,
+      "hi": 0.717,
+      "n": 12
+     }
+    }
+   }
+  }
+ ],
+ "verdict": "LOCAL_RANKING_NOT_FAITHFUL_NEAR_ZERO",
+ "next_lever": "more on-distribution critic data / paired-difference (ranking-loss) critic / a pessimistic critic; and give the local test more physical discrimination (dwell/K6 rarely move under one nudge)",
+ "figure": "experiments/2026_07_22_coin_v3_learning/rl_entry/local_ranking_fidelity_v1.svg"
+}
