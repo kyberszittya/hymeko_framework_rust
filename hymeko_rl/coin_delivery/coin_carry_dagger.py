@@ -115,13 +115,21 @@ def teacher_openloop_plan(rl0, gate0, pi0, base, rng, *, shots, horizon):
                    "admissible": int(bool(admissible)), "provenance": "OPEN_LOOP_PLAN_ONLY"}
 
 
+def _strong_solve(rl, gate, pi0, base, rng, center0, shots, wide_amp, wide_dur, teacher_h):
+    # the validated 0.833 expert searches UNIFORMLY over the support; use that (not a narrow gaussian around 0) so the
+    # teacher's strong initial/fallback solve matches the proven expert's reach.
+    return structured_random_best(rl, gate, pi0, base, rng, shots=shots, horizon=teacher_h)
+
+
 def teacher_warmstart_bank(rl0, gate0, pi0, base, rng, *, strong_shots, warm_shots, teacher_h, roll_h,
-                           wide_amp=1.5, wide_dur=6.0, warm_amp=0.4, warm_dur=2.0):
-    """Warm-started RECEDING-horizon teacher: a strong initial solve from s0, then cheap warm-started replans (centred on
-    the previous plan) at each strict-0 step. Every label is the first action REPLANNED from the CURRENT state (feedback-
-    admissible); the plan is executed one step then re-solved. ABSTAINs (stops) when no warm plan reaches a handoff."""
+                           wide_amp=1.5, wide_dur=6.0, warm_amp=0.4, warm_dur=2.0, fallback=True):
+    """Two-tier RECEDING-horizon teacher: strong initial solve from s0, then cheap warm-started replans centred on the
+    previous plan; if a warm replan can't reach a handoff, FALL BACK to a full strong solve (only then) before abstaining.
+    Every label is the first action REPLANNED from the CURRENT state. Records the abstention reason:
+    INITIAL_STRONG_ABSTAIN (panel-hard here) vs WARM_THEN_STRONG_ABSTAIN (replan config + strong both fail)."""
     rl, gate = copy.deepcopy(rl0), copy.deepcopy(gate0)
     obs, act = [], []; theta = None; handed = False; md = int(rl._strict); touched = rl._touched
+    reason = "none"; fallbacks = 0
     center0 = np.concatenate([np.zeros(12, np.float32), np.full(3, (T_MIN + T_MAX) / 2.0, np.float32)]).astype(np.float32)
     for _t in range(roll_h):
         gate_on = gate.gate == 1.0; o48 = rl.obs(); s = int(rl._strict)
@@ -131,11 +139,15 @@ def teacher_warmstart_bank(rl0, gate0, pi0, base, rng, *, strong_shots, warm_sho
             handed = True; a = _det(base, _aug(o48, s))
         else:
             if theta is None:
-                theta, out = structured_random_around(rl, gate, pi0, base, rng, shots=strong_shots, center=center0, std_amp=wide_amp, std_dur=wide_dur, horizon=teacher_h)
+                theta, out = _strong_solve(rl, gate, pi0, base, rng, center0, strong_shots, wide_amp, wide_dur, teacher_h)
+                if not (out["reached_handoff"] or out["k6"]):
+                    reason = "INITIAL_STRONG_ABSTAIN"; break
             else:
                 theta, out = structured_random_around(rl, gate, pi0, base, rng, shots=warm_shots, center=theta, std_amp=warm_amp, std_dur=warm_dur, horizon=teacher_h)
-            if not (out["reached_handoff"] or out["k6"]):
-                break                                                     # ABSTAIN: no warm plan reaches a handoff here
+                if not (out["reached_handoff"] or out["k6"]) and fallback:
+                    theta, out = _strong_solve(rl, gate, pi0, base, rng, center0, strong_shots, wide_amp, wide_dur, teacher_h); fallbacks += 1
+                if not (out["reached_handoff"] or out["k6"]):
+                    reason = "WARM_THEN_STRONG_ABSTAIN" if fallback else "WARM_REPLAN_ABSTAIN"; break
             a = first_action_of_theta(theta, rl)                          # REPLANNED first action from the current state
             obs.append(o48.copy()); act.append(a)
         _r, term, trunc = step_ablation(rl, np.asarray(a, np.float32), "A")
@@ -145,7 +157,8 @@ def teacher_warmstart_bank(rl0, gate0, pi0, base, rng, *, strong_shots, warm_sho
             handed = True
         if term or trunc:
             break
-    return obs, act, {"k6": int(md >= HELD_DWELL and touched), "handoff": int(handed), "n_labels": len(obs), "abstained": int(len(obs) == 0)}
+    return obs, act, {"k6": int(md >= HELD_DWELL and touched), "handoff": int(handed), "n_labels": len(obs),
+                      "abstained": int(len(obs) == 0), "abstain_reason": reason, "fallbacks": fallbacks}
 
 
 def train_bc(actor, obs, act, *, epochs, lr, batch, seed):

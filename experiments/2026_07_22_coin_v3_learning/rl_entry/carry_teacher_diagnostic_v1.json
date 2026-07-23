@@ -1,0 +1,45 @@
+{
+ "contract": "CARRY_TEACHER_DIAGNOSTIC_V1",
+ "date": "2026-07-24",
+ "no_new_campaign": true,
+ "smoke": false,
+ "panel": {
+  "n": 20,
+  "families": {
+   "contact_retention": 15,
+   "transport": 4,
+   "braking": 1
+  }
+ },
+ "strong_shots": 64,
+ "metrics": {
+  "strong_s0_ceiling": {
+   "K6": 0.6,
+   "handoff": 0.6
+  },
+  "warm_receding": {
+   "K6": 0.2,
+   "handoff": 0.2,
+   "mean_labels": 1.7,
+   "abstain_reasons": {
+    "WARM_REPLAN_ABSTAIN": 6,
+    "INITIAL_STRONG_ABSTAIN": 10,
+    "none": 4
+   }
+  },
+  "warm_plus_fallback": {
+   "K6": 0.2,
+   "handoff": 0.25,
+   "mean_labels": 5.75,
+   "mean_fallbacks": 0.85,
+   "abstain_reasons": {
+    "WARM_THEN_STRONG_ABSTAIN": 5,
+    "INITIAL_STRONG_ABSTAIN": 6,
+    "none": 9
+   }
+  }
+ },
+ "total_feedback_labels_fallback": 115,
+ "verdict": "REPLAN_WEAK_FALLBACK_INSUFFICIENT",
+ "next_lever": "strong s0 0.6 \u226b warm 0.2, and even warm+fallback 0.2 < ceiling \u2192 the receding trajectory drifts to states the strong solve can't rescue; raise warm budget / replan cadence, or seed the warm start from the s0 plan more tightly"
+}
