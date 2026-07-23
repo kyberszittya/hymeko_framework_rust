@@ -85,11 +85,11 @@ def test_critic_authorization_shape_and_keys():
 
 def test_stage1b_gate_match_passes_degradation_fails():
     cfg = TransactionalConfig()
-    match = {"auth": {"authorized": True}, "anchor_cum_max": 0.01,
+    match = {"auth": {"authorized": True}, "anchor_cum_max": 0.01, "accepted": 5,
              "delta_vs_pi0": {"strict_success": 0.0, "max_dwell": 0.0, "exited": 0.0, "contact_retention": 0.0}}
-    degrade = {"auth": {"authorized": True}, "anchor_cum_max": 0.01,
+    degrade = {"auth": {"authorized": True}, "anchor_cum_max": 0.01, "accepted": 5,
                "delta_vs_pi0": {"strict_success": -0.1, "max_dwell": 0.0, "exited": 0.0, "contact_retention": 0.0}}
-    unauth = {"auth": {"authorized": False}, "anchor_cum_max": 0.01,
+    unauth = {"auth": {"authorized": False}, "anchor_cum_max": 0.01, "accepted": 5,
               "delta_vs_pi0": {"strict_success": 0.0, "max_dwell": 0.0, "exited": 0.0, "contact_retention": 0.0}}
     assert stage1b_gate(match, match, cfg) is True                            # beat-or-match, authorized, TR ok
     assert stage1b_gate(match, degrade, cfg) is False                         # one checkpoint degrades

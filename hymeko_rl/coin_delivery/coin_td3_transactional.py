@@ -36,12 +36,14 @@ ACTION_SCALE = 4.0
 
 
 def stage1b_gate(dev_a: dict, dev_b: dict, cfg: "TransactionalConfig") -> bool:
-    """Stage-1b pass rule (§12): two CONSECUTIVE checkpoints each BEAT OR MATCH pi_0 (Δstrict ≥ 0 and Δmax_dwell ≥
-    −0.05), without contact degradation (Δcontact ≥ −0.05) or target-exit rise (Δexit ≤ +0.05), with the critic
-    authorized and the cumulative trust region intact (anchor cum_max ≤ bound)."""
+    """Stage-1b/1c pass rule (§12): two CONSECUTIVE checkpoints — each with the actor ACTUALLY UPDATED (accepted > 0, so
+    "match pi_0" is not the trivial pre-training identity) — each BEAT OR MATCH pi_0 (Δstrict ≥ 0, Δmax_dwell ≥ −0.05),
+    without contact degradation (Δcontact ≥ −0.05) or target-exit rise (Δexit ≤ +0.05), with the critic authorized and
+    the cumulative trust region intact (anchor cum_max ≤ bound)."""
     def ck(d):
         dl = d["delta_vs_pi0"]
-        return (d["auth"]["authorized"] and dl["strict_success"] >= 0 and dl["max_dwell"] >= -0.05
+        return (d.get("accepted", 0) > 0 and d["auth"]["authorized"]
+                and dl["strict_success"] >= 0 and dl["max_dwell"] >= -0.05
                 and dl["contact_retention"] >= -0.05 and dl["exited"] <= 0.05
                 and d.get("anchor_cum_max", 0.0) <= cfg.cum_max)
     return ck(dev_a) and ck(dev_b)
