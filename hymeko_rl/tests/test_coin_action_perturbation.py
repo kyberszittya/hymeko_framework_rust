@@ -304,6 +304,24 @@ def test_structured_carry_primitive_and_cem():
     c2 = structured_cem(rl, gate, pi0, base, np.random.default_rng(1), shots=6, iters=2, elite_frac=0.34, horizon=30)
     assert c1 == c2 and np.array_equal(rl.obs(), obs_before)
 
+    # first_action_of_theta = the phase action for the CURRENT state (NOT the open-loop suffix); warm-started teacher is
+    # deterministic and only labels the replanned first action
+    from hymeko_rl.coin_delivery.coin_carry_dagger import teacher_warmstart_bank
+    from hymeko_rl.coin_delivery.coin_carry_structured import PUSH_DTZ, first_action_of_theta
+
+    class _RL:
+        def __init__(self, dtz, sp):
+            self._d, self._s = dtz, sp
+        def _dtz(self):
+            return self._d
+        def _speed(self):
+            return self._s
+    fa = first_action_of_theta(theta, _RL(PUSH_DTZ + 0.05, 0.0))         # dtz > PUSH_DTZ → push amplitude θ[0:4]
+    assert np.allclose(fa, np.clip(theta[0:4], -4, 4))
+    ob1, ac1, st1 = teacher_warmstart_bank(rl, gate, pi0, base, np.random.default_rng(2), strong_shots=6, warm_shots=3, teacher_h=30, roll_h=20)
+    ob2, ac2, st2 = teacher_warmstart_bank(rl, gate, pi0, base, np.random.default_rng(2), strong_shots=6, warm_shots=3, teacher_h=30, roll_h=20)
+    assert st1 == st2 and len(ac1) == st1["n_labels"] and np.array_equal(rl.obs(), obs_before)
+
 
 def test_prefix_search_offsets_and_random_control():
     from hymeko_rl.coin_delivery.coin_prefix_search import make_sel_random, offsets, sel_pi0

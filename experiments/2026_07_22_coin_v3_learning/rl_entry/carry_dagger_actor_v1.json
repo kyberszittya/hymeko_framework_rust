@@ -1,0 +1,87 @@
+{
+ "contract": "CARRY_DAGGER_ACTOR_V1",
+ "date": "2026-07-24",
+ "no_new_campaign": true,
+ "smoke": false,
+ "method": {
+  "teacher": "structured-random receding-horizon, first-action labels, abstain",
+  "actor": "low-level obs48\u21924D, strict-0 only, frozen pi_0 after handoff",
+  "dagger_iters": 2,
+  "teacher_shots": 16,
+  "eval_H": 160,
+  "disjoint_train_eval": true
+ },
+ "panel": {
+  "train_n": 20,
+  "eval_n": 20,
+  "train_families": {
+   "contact_retention": 15,
+   "transport": 4,
+   "braking": 1
+  },
+  "eval_families": {
+   "contact_retention": 16,
+   "braking": 1,
+   "transport": 3
+  }
+ },
+ "teacher_bank": {
+  "n_labels": 43,
+  "k6": 5,
+  "handoff": 5,
+  "abstained": 12
+ },
+ "bc_loss": 1.24926,
+ "aggregate": {
+  "pi_0": {
+   "K6": 0.15,
+   "handoff": 0.15,
+   "any_exit": 0.0
+  },
+  "structured_expert": {
+   "K6": 0.5,
+   "handoff": 0.5,
+   "any_exit": 0.0
+  },
+  "BC": {
+   "K6": 0.05,
+   "handoff": 0.05,
+   "any_exit": 0.05
+  },
+  "DAgger": {
+   "K6": 0.05,
+   "handoff": 0.05,
+   "any_exit": 0.0
+  }
+ },
+ "per_family": {
+  "braking": {
+   "n": 1,
+   "pi0": 0.0,
+   "DAgger": 0.0
+  },
+  "contact_retention": {
+   "n": 16,
+   "pi0": 0.125,
+   "DAgger": 0.0
+  },
+  "transport": {
+   "n": 3,
+   "pi0": 0.333,
+   "DAgger": 0.333
+  }
+ },
+ "teacher_student_action_error": {
+  "mean": 3.1268,
+  "n": 2
+ },
+ "gate_met": false,
+ "verdict": "UPDATE0_FAILED_FIRST_PASS_WEAK_TEACHER_AND_MULTIMODAL_LABELS",
+ "next_lever": "strengthen BEFORE concluding: (1) TEACHER at the validated budget (96-192 shots, H160) so the bank is dense and drawn from consistently-good plans; (2) address LABEL MULTIMODALITY (rising DAgger MSE): re-solve each state with a FIXED warm-start / pick a canonical solution branch, filter inconsistent labels, or use a stochastic/mixture actor instead of deterministic MSE; (3) more train states + the relabel-queue (re-solve OPEN_LOOP_PLAN_ONLY states individually). Re-run update-0; only after BC/DAgger>pi_0 does SAC/TD3 follow.",
+ "diagnosis": {
+  "methodology": "CORRECT \u2014 warm-started receding teacher, replanned first-action labels only, OPEN_LOOP_PLAN_ONLY provenance, abstain, disjoint train/eval",
+  "issue_1_weak_teacher": "teacher K6 5/20 abstained 12, only 33 labels; teacher budget (48 strong/8 warm, H100) far below the validated 0.833 expert (96-192 shots x H160) -> sparse, easy-biased bank",
+  "issue_2_multimodal_labels": "DAgger MSE RISES 1.25->1.94->2.61 -> the structured search proposes different first actions for similar states; deterministic MSE-BC averages the multimodal target into a poor mean",
+  "not_a_verdict": "NOT proof distillation fails (per no-conclusions-from-weak-first-pass); a stronger teacher + label-consistency fix are needed before any conclusion"
+ }
+}

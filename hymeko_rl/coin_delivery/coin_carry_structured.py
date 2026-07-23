@@ -33,16 +33,18 @@ def _unpack(theta):
             np.clip(t[8:12], -A_BOUND, A_BOUND), dur(t[14]))
 
 
-def structured_carry_rollout(rl, gate, pi0, base, theta, *, horizon):
+def structured_carry_rollout(rl, gate, pi0, base, theta, *, horizon, capture=False):
     """Run the push→brake→release macro-action (closed-loop phases) until a valid handoff (strict≥1), then the FROZEN
-    pi_0. Returns the certifier + handoff + lexicographic-score ingredients (contact kept, action effort, completion)."""
+    pi_0. Returns the certifier + handoff + lexicographic-score ingredients (contact kept, action effort, completion).
+    With ``capture`` also returns the (obs48, executed 4D action) list at each strict-0 macro step — the BC labels."""
     a_push, T_push, a_brake, T_brake, a_release, T_release = _unpack(theta)
     phase, tph, handed = "push", 0, False
     md = int(rl._strict); touched = rl._touched; max_strict = int(rl._strict)
     dtz = rl._dtz(); was_contained = dtz <= CENTER_TOL; contain_exit = 0; handoff_step = None
-    effort = 0.0; k6_step = None; nstep = 0
+    effort = 0.0; k6_step = None; nstep = 0; cap_o, cap_a = [], []
     for t in range(horizon):
         gate_on = gate.gate == 1.0; o48 = rl.obs(); s = int(rl._strict)
+        is_macro = gate_on and not handed and s < 1
         if not gate_on:
             a = _det(pi0, o48)
         elif handed or s >= 1:
@@ -58,6 +60,8 @@ def structured_carry_rollout(rl, gate, pi0, base, theta, *, horizon):
         else:
             a = a_release; tph += 1
         a = np.clip(np.asarray(a, np.float32), -ACTION_SCALE, ACTION_SCALE)
+        if capture and is_macro:
+            cap_o.append(o48.copy()); cap_a.append(a.copy())
         effort += float(np.abs(a).sum())
         _r, term, trunc = step_ablation(rl, a, "A")
         lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
@@ -72,9 +76,12 @@ def structured_carry_rollout(rl, gate, pi0, base, theta, *, horizon):
         was_contained = dtz <= CENTER_TOL
         if term or trunc:
             break
-    return {"k6": int(md >= HELD_DWELL and touched), "max_dwell": md, "max_strict": max_strict,
-            "reached_handoff": int(max_strict >= 1), "handoff_step": handoff_step, "contain_exit_ct": contain_exit,
-            "touched": int(touched), "effort": round(effort, 2), "completion": k6_step if k6_step is not None else horizon}
+    out = {"k6": int(md >= HELD_DWELL and touched), "max_dwell": md, "max_strict": max_strict,
+           "reached_handoff": int(max_strict >= 1), "handoff_step": handoff_step, "contain_exit_ct": contain_exit,
+           "touched": int(touched), "effort": round(effort, 2), "completion": k6_step if k6_step is not None else horizon}
+    if capture:
+        out["obs"], out["act"] = cap_o, cap_a
+    return out
 
 
 def structured_score(o):
@@ -105,13 +112,49 @@ def structured_cem(rl0, gate0, pi0, base, rng, *, shots, iters, elite_frac, hori
     return best
 
 
+def first_action_of_theta(theta, rl):
+    """The action the macro-plan θ executes at the CURRENT state (phase inferred from dtz/speed) — the FEEDBACK-admissible
+    label when replanning from this state. NOT the open-loop suffix."""
+    a_push, _, a_brake, _, a_release, _ = _unpack(theta)
+    dtz, sp = rl._dtz(), rl._speed()
+    if dtz > PUSH_DTZ:
+        a = a_push
+    elif dtz > CENTER_TOL and sp >= 1.5 * SETTLE_VEL:
+        a = a_brake
+    else:
+        a = a_release
+    return np.clip(a, -ACTION_SCALE, ACTION_SCALE).astype(np.float32)
+
+
+def structured_random_around(rl0, gate0, pi0, base, rng, *, shots, center, std_amp, std_dur, horizon):
+    """Random shooting centred on ``center`` (warm start). A wide center+std is the strong initial solve; a tight one
+    around the previous plan is the cheap warm-started replan. Returns (best_theta, best_outcome)."""
+    center = np.asarray(center, np.float32)
+    best_theta = center.copy()
+    best = structured_carry_rollout(copy.deepcopy(rl0), copy.deepcopy(gate0), pi0, base, best_theta, horizon=horizon)
+    for _ in range(shots):
+        theta = center + np.concatenate([rng.normal(0, std_amp, 12), rng.normal(0, std_dur, 3)]).astype(np.float32)
+        theta[0:12] = np.clip(theta[0:12], -A_BOUND, A_BOUND); theta[12:15] = np.clip(theta[12:15], T_MIN, T_MAX)
+        o = structured_carry_rollout(copy.deepcopy(rl0), copy.deepcopy(gate0), pi0, base, theta, horizon=horizon)
+        if structured_score(o) > structured_score(best):
+            best, best_theta = o, theta
+    return best_theta, best
+
+
 def structured_random(rl0, gate0, pi0, base, rng, *, shots, horizon):
     """Budget-matched random control over the SAME structured parametrization (uniform amplitudes + durations)."""
+    return structured_random_best(rl0, gate0, pi0, base, rng, shots=shots, horizon=horizon)[1]
+
+
+def structured_random_best(rl0, gate0, pi0, base, rng, *, shots, horizon):
+    """Random shooting that also returns the best θ (for receding-horizon teacher labeling — the first action = the push
+    amplitude θ[0:4]). Returns (best_theta, best_outcome)."""
+    best_theta = np.concatenate([np.zeros(12, np.float32), np.full(3, (T_MIN + T_MAX) / 2.0, np.float32)]).astype(np.float32)
     best = {"k6": 0, "max_dwell": int(rl0._strict), "max_strict": int(rl0._strict), "reached_handoff": 0,
             "handoff_step": None, "contain_exit_ct": 0, "touched": int(rl0._touched), "effort": 0.0, "completion": horizon}
     for _ in range(shots):
         theta = np.concatenate([rng.uniform(-A_BOUND, A_BOUND, 12), rng.uniform(T_MIN, T_MAX, 3)]).astype(np.float32)
         o = structured_carry_rollout(copy.deepcopy(rl0), copy.deepcopy(gate0), pi0, base, theta, horizon=horizon)
         if structured_score(o) > structured_score(best):
-            best = o
-    return best
+            best, best_theta = o, theta
+    return best_theta, best
