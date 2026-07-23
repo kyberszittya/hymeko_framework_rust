@@ -272,6 +272,39 @@ def test_carry_sequence_then_pi0_and_cem():
     assert np.array_equal(rl.obs(), obs_before)                        # carry_cem / carry_random do not mutate the passed rl
 
 
+def test_structured_carry_primitive_and_cem():
+    import copy
+    import json
+
+    from hymeko_rl.coin_delivery.coin_carry_structured import DIM, structured_carry_rollout, structured_cem, structured_score
+    from hymeko_rl.coin_delivery.coin_late_start import LateStart, reconstruct_handoff
+    from hymeko_rl.coin_delivery.coin_markov_ablation_train import make_late_actor55_from_pi0
+    from hymeko_rl.coin_delivery.rl_clip_actor import load_frozen_clip_actor
+
+    d = "experiments/2026_07_22_coin_v3_learning/rl_entry"
+    cfg = json.load(open(f"{d}/td3_baseline_v1_config.json"))
+    pi0 = load_frozen_clip_actor(f"{d}/frozen/pi0_shared_clip_actor.pt", freeze=True)
+    base = make_late_actor55_from_pi0(pi0, trainable=False)
+    r = cfg["banks"]["late_dev"]["rows"][0]
+    ls = LateStart(seed=r[0], prefix_steps=r[1], family=r[2], obs_sha=r[3], base_sha=r[4], causal_sha=r[5])
+    rl, gate, _h, _rec = reconstruct_handoff(pi0, ls, horizon=360)
+    assert DIM == 15
+    theta = np.array([2.0, -2.0, 1.0, 0.0, -2.0, 2.0, 0.0, 0.0, 0.5, -0.5, 0.0, 0.0, 5, 5, 5], np.float32)
+    obs_before = rl.obs().copy()
+    o1 = structured_carry_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, theta, horizon=30)
+    o2 = structured_carry_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, theta, horizon=30)
+    for k in ("k6", "max_dwell", "max_strict", "reached_handoff", "contain_exit_ct", "touched", "effort", "completion"):
+        assert k in o1
+    assert o1 == o2 and np.array_equal(rl.obs(), obs_before)            # deterministic + no mutation of the passed rl
+    # lexicographic score: K6 dominates everything
+    hi = {"k6": 1, "reached_handoff": 0, "max_dwell": 0, "contain_exit_ct": 9, "touched": 0, "effort": 9e9, "completion": 999}
+    lo = {"k6": 0, "reached_handoff": 1, "max_dwell": 6, "contain_exit_ct": 0, "touched": 1, "effort": 0.0, "completion": 0}
+    assert structured_score(hi) > structured_score(lo)
+    c1 = structured_cem(rl, gate, pi0, base, np.random.default_rng(1), shots=6, iters=2, elite_frac=0.34, horizon=30)
+    c2 = structured_cem(rl, gate, pi0, base, np.random.default_rng(1), shots=6, iters=2, elite_frac=0.34, horizon=30)
+    assert c1 == c2 and np.array_equal(rl.obs(), obs_before)
+
+
 def test_prefix_search_offsets_and_random_control():
     from hymeko_rl.coin_delivery.coin_prefix_search import make_sel_random, offsets, sel_pi0
 
