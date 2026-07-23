@@ -208,7 +208,7 @@ def strict_conditioned_q(critic, actor55, obs48):
     return qs
 
 
-def train_arm(pi0, arm, cfg_stage, train_bank, dev_bank, *, seed, tcfg=None, log=print):
+def train_arm(pi0, arm, cfg_stage, train_bank, dev_bank, *, seed, tcfg=None, log=print, return_artifacts=False):
     tcfg = tcfg or TransactionalConfig()
     torch.manual_seed(seed)
     families = tuple(cfg_stage["families"]); horizon = cfg_stage["horizon"]; n_step = cfg_stage["n_step"]
@@ -289,5 +289,9 @@ def train_arm(pi0, arm, cfg_stage, train_bank, dev_bank, *, seed, tcfg=None, log
             log(f"    [{arm} s{seed}] step {step}/{total} c_loss {c_loss.item():.2f} buf {buf.n_transitions()} acc/rej {acc}/{rej}")
 
     u0 = verify_update0(pi0, make_late_actor55_from_pi0(pi0, trainable=False), obs48_bank)
-    return {"arm": arm, "seed": seed, "update0": u0, "checkpoints": {str(k): v for k, v in ckpt.items()},
-            "accepted": acc, "rejected": rej, "critic_ever_authorized": any(ckpt[k]["auth"]["authorized"] for k in ckpt)}
+    result = {"arm": arm, "seed": seed, "update0": u0, "checkpoints": {str(k): v for k, v in ckpt.items()},
+              "accepted": acc, "rejected": rej, "critic_ever_authorized": any(ckpt[k]["auth"]["authorized"] for k in ckpt)}
+    if return_artifacts:
+        return result, {"critic": critic, "actor": actor, "actor_target": actor_t, "buf": buf,
+                        "anchor_obs": anchor_obs, "a0_anchor": a0_anchor}
+    return result

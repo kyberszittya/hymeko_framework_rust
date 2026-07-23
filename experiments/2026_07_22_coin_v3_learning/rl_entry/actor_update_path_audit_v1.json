@@ -1,0 +1,90 @@
+{
+ "contract": "ACTOR_UPDATE_PATH_AUDIT_V1",
+ "date": "2026-07-23",
+ "no_new_campaign": true,
+ "train_updates": 4000,
+ "trained_actor_uses_counter_before": 0.00054,
+ "q_before": -40.278,
+ "q_grad_vs_bc_grad_cosine": -0.3947,
+ "bc_target": "pi_0(obs48) \u2014 strict-blind (identical for strict 1..5)",
+ "proposals": {
+  "A_Q_only": {
+   "outcome": "applied",
+   "scale": 1.0,
+   "delta_Q": 0.0215,
+   "counter_use": 0.00057,
+   "anchor_drift": 0.03538,
+   "trust_step_p95": 0.0,
+   "trust_cum_max": 0.0
+  },
+  "B_Q_plus_BC": {
+   "outcome": "applied",
+   "scale": 1.0,
+   "delta_Q": 0.0215,
+   "counter_use": 0.00057,
+   "anchor_drift": 0.03538,
+   "trust_step_p95": 0.0,
+   "trust_cum_max": 0.0
+  },
+  "C_Q_plus_trust": {
+   "outcome": "rejected",
+   "scale": null,
+   "delta_Q": 0.0,
+   "counter_use": 0.00054,
+   "anchor_drift": 0.03407,
+   "trust_step_p95": 0.00014,
+   "trust_cum_max": 0.03415
+  },
+  "D_Q_plus_BC_plus_trust": {
+   "outcome": "rejected",
+   "scale": null,
+   "delta_Q": 0.0,
+   "counter_use": 0.00054,
+   "anchor_drift": 0.03407,
+   "trust_step_p95": 0.00014,
+   "trust_cum_max": 0.03415
+  }
+ },
+ "unconstrained_q_only_probe": {
+  "delta_Q": 29.002,
+  "counter_use": 0.02432,
+  "anchor_drift": 6.7393,
+  "raises_Q": true,
+  "grows_counter_use": true
+ },
+ "trust_region_binding": {
+  "step_median": {
+   "value": 0.00178,
+   "cap": 0.0025,
+   "exceeds": false
+  },
+  "step_p95": {
+   "value": 0.00221,
+   "cap": 0.005,
+   "exceeds": false
+  },
+  "step_max": {
+   "value": 0.00222,
+   "cap": 0.01,
+   "exceeds": false
+  },
+  "cum_p95": {
+   "value": 0.03135,
+   "cap": 0.03,
+   "exceeds": true
+  },
+  "cum_max": {
+   "value": 0.03538,
+   "cap": 0.06,
+   "exceeds": false
+  }
+ },
+ "mechanism": "BC_ANCHOR_AND_TRUST_REGION_BOTH_BLOCK",
+ "verdict_correction": {
+  "ablation_verdict_was": "REPAIRS_NOT_SUFFICIENT",
+  "corrected": [
+   "MARKOV_CRITIC_REPAIR_CONFIRMED",
+   "ACTOR_CONVERSION_BLOCKED"
+  ]
+ }
+}
