@@ -1,0 +1,89 @@
+{
+ "contract": "RECEDING_HORIZON_ACTION_CHUNK_TD3_V1",
+ "date": "2026-07-23",
+ "pi0_sha": "1902454c",
+ "chunk": {
+  "K": 8,
+  "M": 2,
+  "state_dim": 62,
+  "chunk_dim": 32,
+  "note": "each chunk step independently predicted; execute first M, replan (NOT a residual hold)"
+ },
+ "warm_start_sources": {
+  "A_pi0_rollouts": "USED (pi_0 rehearsal)",
+  "B_H30_feedback_planner": "USED via plan_chunk CEM (WARM_START_ONLY; no planner at eval)",
+  "C_certified_open_loop_continuations": "declared REPLAY_ONLY (not integrated this turn)"
+ },
+ "dataset": {
+  "n": 59,
+  "provenance": {
+   "planner": 20,
+   "pi0": 39
+  },
+  "sha16": "87b1aa9541f676f6",
+  "bank_shas": {
+   "train": {
+    "transport": "8f378e841060a2aa",
+    "braking": "3a899e4ecf31ec7c",
+    "settling_dwell": "81e1df852b572abe"
+   },
+   "dev": {
+    "transport": "cbc49369aa311dfa",
+    "braking": "ed6d090fe382ab5b",
+    "settling_dwell": "a0598728dd04355a"
+   }
+  }
+ },
+ "supervised_chunk_metrics_train": {
+  "sequence_mse": 0.00033,
+  "first_action_mse": 4e-05,
+  "two_step_prefix_mse": 4e-05,
+  "per_index_mse": [
+   0.0,
+   0.0,
+   0.0011,
+   0.0005,
+   0.0001,
+   0.0008,
+   0.0002,
+   0.0
+  ]
+ },
+ "supervised_baseline_eval_vs_pi0": {
+  "n": 31,
+  "chunk": {
+   "strict_success": 0.129,
+   "max_dwell": 0.9677,
+   "entered": 0.3871,
+   "exited": 0.2258,
+   "contact_retention": 0.1005,
+   "progress": -0.0707,
+   "ret": -70.4495,
+   "replan_consistent": 1.0
+  },
+  "pi0": {
+   "strict_success": 0.1935,
+   "max_dwell": 1.4839,
+   "entered": 0.5161,
+   "exited": 0.0323,
+   "contact_retention": 0.5962,
+   "progress": 0.0031,
+   "ret": -25.019,
+   "replan_consistent": 1.0
+  },
+  "delta_vs_pi0": {
+   "strict_success": -0.0645,
+   "max_dwell": -0.5162,
+   "entered": -0.129,
+   "exited": 0.1935,
+   "contact_retention": -0.4957,
+   "progress": -0.0738,
+   "ret": -45.4305,
+   "replan_consistent": 0.0
+  }
+ },
+ "no_td3": true,
+ "planner_at_eval": false,
+ "verdict": "CHUNK_WARMSTART_AND_EXECUTION_CONTRACTS_PASS",
+ "config_sha": "1e96fd09ee163375"
+}
