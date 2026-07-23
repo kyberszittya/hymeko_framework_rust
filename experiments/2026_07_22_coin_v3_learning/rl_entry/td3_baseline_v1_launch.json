@@ -1,0 +1,72 @@
+{
+  "campaign": "PHASE_SWITCHED_TD3_BASELINE_V1",
+  "arm": "A (pi_late = exact pi_0 copy)",
+  "config_sha": "d4cf53aeb735294f",
+  "pi0_sha": "1902454c",
+  "exact_command": "python experiments/2026_07_22_coin_v3_learning/rl_entry/coin_td3_baseline_v1.py experiments/2026_07_22_coin_v3_learning/rl_entry/frozen/pi0_shared_clip_actor.pt experiments/2026_07_22_coin_v3_learning/rl_entry/td3_baseline_v1_config.json experiments/2026_07_22_coin_v3_learning/rl_entry/td3_baseline_v1_results.json",
+  "rng_seeds": {
+    "torch": 0,
+    "numpy_collect": 0,
+    "numpy_replay": 1
+  },
+  "bank_shas": {
+    "late_train": "422eb63f91eaa30a",
+    "late_dev": "da7a29fbbc697282"
+  },
+  "stage1": {
+    "families": [
+      "target_entry",
+      "braking",
+      "settling_dwell"
+    ],
+    "horizon": 30,
+    "n_step": 4,
+    "critic_warmup_steps": 2000,
+    "policy_delay": 2,
+    "total_updates": 8000,
+    "checkpoints": [
+      0,
+      2000,
+      4000,
+      6000,
+      8000
+    ]
+  },
+  "target_smoothing": {
+    "std": 0.1,
+    "clip": 0.25,
+    "units": "full-action",
+    "note": "local critic regularization, NOT broad exploration"
+  },
+  "exploration_schedule": {
+    "type": "temporally_coherent",
+    "std_init": 0.15,
+    "std_max": 0.3,
+    "hold_steps": [
+      2,
+      4
+    ],
+    "note": "SEPARATE from target smoothing; frozen before training"
+  },
+  "checkpoint_schedule": [
+    0,
+    2000,
+    4000,
+    6000,
+    8000
+  ],
+  "stop_conditions": [
+    "two CONSECUTIVE dev checkpoints improve strict-K6 success OR the preregistered max-dwell metric vs frozen pi_0 continuation",
+    "no material increase in target_exit (<= +0.05 vs pi_0)",
+    "no material degradation in contact_retention (>= -0.05 vs pi_0)",
+    "stable Q1/Q2 calibration (finite, |Q1-Q2| bounded, no divergence)"
+  ],
+  "constraints": [
+    "neutral-reset composed eval before a late-start stage passes",
+    "Arm B planner warm-start",
+    "SAC",
+    "open final-test bank (8000-8049)",
+    "modify reward/gate/frozen pi_0",
+    "residual-critic route"
+  ]
+}
