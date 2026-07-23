@@ -12,6 +12,7 @@ import torch
 
 sys.path.insert(0, ".")
 from hymeko_rl.coin_delivery.coin_contract_audit import decompose_reward  # noqa: E402
+from hymeko_rl.coin_delivery.coin_start_id import start_id  # noqa: E402
 from hymeko_rl.coin_delivery.coin_late_start import LateStart, reconstruct_handoff  # noqa: E402
 from hymeko_rl.coin_delivery.coin_rl_env import CoinRL4Dof  # noqa: E402
 from hymeko_rl.coin_delivery.coin_stable_engagement import stable_engagement_signals  # noqa: E402
@@ -68,20 +69,23 @@ def main():
         rl_clr.reset(int(ls.seed)); clearance = float(_clearance(rl_clr.inner))     # canonical start clearance (measured)
         rl, gate, _h, _r = reconstruct_handoff(pi0, ls, horizon=360)
         terms = rl.inner.reward_spec.terms; transitions = []
+        handoff_strict = int(rl._strict)                          # dwell carried from the pi_0 PREFIX replay (load-bearing)
         for step in range(horizon):
             init_cs = _cert_step(rl.inner, rl.cf)                  # certificate at state_t (pre-action)
             a = np.asarray(policy(rl, step), np.float32)
             _o, rw, term, trunc, _ = rl.step(a)                   # -> state_{t+1}
-            comps = decompose_reward(rl.inner, rl._dtz(), rl.inner.data.ctrl, terms)   # exact v3 decomposition (post-step)
-            max_decomp_err = max(max_decomp_err, abs(sum(comps.values()) - float(rw)))
+            comps = decompose_reward(rl.inner, rl._dtz(), rl.inner.data.ctrl, terms)   # sum == rw (err 0); PBRS memory is
+            max_decomp_err = max(max_decomp_err, abs(sum(comps.values()) - float(rw)))  # left post-step (idempotent for next)
             post_cs = _cert_step(rl.inner, rl.cf)                  # certificate at state_{t+1} (post-action; terminal kept)
             transitions.append({"init": _cs_dict(init_cs), "action": [float(x) for x in a], "reward": float(rw),
-                                "components": {k: round(v, 6) for k, v in comps.items()}, "post": _cs_dict(post_cs)})
+                                "components": {k: round(v, 6) for k, v in comps.items()}, "post": _cs_dict(post_cs),
+                                "env_strict": int(rl._strict),     # env _strict counter (carries prefix dwell) = arc-canonical
+                                "env_touched": bool(rl._touched)})  # rl._touched = ANY planar contact (matches RolloutTrace)
             lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
             if term or trunc:
                 break
-        out.append({"seed": int(ls.seed), "family": ls.family, "prefix": int(ls.prefix_steps),
-                    "clearance_measured": clearance, "transitions": transitions})
+        out.append({"start_id": start_id(ls), "seed": int(ls.seed), "family": ls.family, "prefix": int(ls.prefix_steps),
+                    "handoff_strict": handoff_strict, "clearance_measured": clearance, "transitions": transitions})
         if (i + 1) % 8 == 0:
             log(f"    {i+1}/{len(dev)} ({time.time()-t:.0f}s)")
     assert max_decomp_err < 1e-4, f"reward decomposition mismatch {max_decomp_err}"

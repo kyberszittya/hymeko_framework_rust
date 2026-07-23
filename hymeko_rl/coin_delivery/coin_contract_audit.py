@@ -101,6 +101,60 @@ def post_stream(trace):
     return [tr["post"] for tr in trace["transitions"]]
 
 
+def traced_env_strict(rollout, *, dwell_req=6):
+    """ARC-CANONICAL strict success from a captured trace: max ENV ``_strict`` (which CARRIES the pi_0-prefix dwell,
+    handoff_strict) ≥ K ∧ fingertip-touched — matches ``rollout_from_handoff``'s ``rl._strict`` metric (reproduces
+    6/31 for pi_0). The offline ``recertify`` (dwell restarted at the handoff) is a DIFFERENT late-segment-only metric."""
+    touched = any(bool(tr["env_touched"]) for tr in rollout["transitions"])   # rl._touched (any planar contact), as RolloutTrace
+    md = max((tr["env_strict"] for tr in rollout["transitions"]), default=0)
+    return bool(md >= dwell_req and touched)
+
+
+def reconcile_delivery(steps, clearance, *, center_tol=0.02, settle_vel=0.06, dwell_req=6, body_sweep_max=0.05):
+    """Decompose the certifier vs the ENV ``_strict`` metric on ONE post-step stream. RolloutTrace/the reconstruction
+    used env-strict (centered∧settled dwell ≥ K, plus touched-ever); the DeliveryCertifier adds ``clean`` (no excessive
+    body sweep) + fingertip ``robot_touched`` + footprints-disjoint. Attributes any flip to a specific constraint."""
+    dtz = np.array([s["disk_to_zone"] for s in steps], float); spd = np.array([s["disk_speed"] for s in steps], float)
+    bp = np.array([s["body_progress"] for s in steps], float); eg = np.array([bool(s["ever_grasped"]) for s in steps])
+    fingertip = np.array([bool(s["left_fingertip"] or s["right_fingertip"]) for s in steps])
+    cs = (dtz <= center_tol) & (spd < settle_vel)
+    clean = ~((bp > body_sweep_max) & (~eg))
+    settle_only = _run_dwell(cs) >= dwell_req                             # env-style _strict (what RolloutTrace measured)
+    settle_clean = _run_dwell(cs & clean) >= dwell_req
+    touched_ever_fingertip = bool(fingertip.any()); disjoint = clearance > 0
+    full = bool(settle_clean and touched_ever_fingertip and disjoint)
+    return {"settle_only": bool(settle_only), "settle_clean": bool(settle_clean),
+            "fingertip_touched": touched_ever_fingertip, "footprints_disjoint": disjoint, "certifier_full": full}
+
+
+def pbrs_audit(rollouts, *, weight=10.0, gamma=0.99):
+    """Correctly characterise the zone_progress PBRS term (γΦ(s')−Φ(s), Φ=−dtz) — a telescoping term SHOULD have ~0 mean,
+    so judge it by per-step correlation/variance, not the mean. The TRUE term is computed ANALYTICALLY from the dtz
+    sequence (weight·(γ·(−dtz_t) − (−dtz_{t-1}))); the diagnostic-captured component is a post-step-prev double-eval and
+    is NOT used here. Compares magnitude to the grasp-pose terms."""
+    zp, prog, gg, bb = [], [], [], []
+    for r in rollouts:
+        dtzs = [tr["post"]["disk_to_zone"] for tr in r["transitions"]]
+        for i, tr in enumerate(r["transitions"]):
+            c = tr["components"]
+            gg.append(abs(c["grasp_approach"])); bb.append(abs(c["both_approach"]))
+            if i > 0:
+                true_zp = weight * (gamma * (-dtzs[i]) - (-dtzs[i - 1]))              # γΦ(s')−Φ(s), Φ=−dtz
+                zp.append(true_zp); prog.append(dtzs[i - 1] - dtzs[i])                # signed dtz improvement (toward zone)
+    zp = np.array(zp); prog = np.array(prog); az = np.abs(zp); nz = az > 1e-9
+    corr = float(np.corrcoef(zp, prog)[0, 1]) if zp.size and zp.std() > 0 and prog.std() > 0 else 0.0
+    sign_acc = float(np.mean(np.sign(zp[nz]) == np.sign(prog[nz]))) if nz.any() else 0.0
+    return {"n_transitions": int(zp.size), "correlation_with_dtz_improvement": round(corr, 4),
+            "sign_accuracy": round(sign_acc, 4), "std": round(float(zp.std()), 5),
+            "fraction_nonzero": round(float(nz.mean()), 4),
+            "p10_magnitude": round(float(np.percentile(az[nz], 10)), 5) if nz.any() else 0.0,
+            "median_magnitude": round(float(np.median(az[nz])), 5) if nz.any() else 0.0,
+            "p90_magnitude": round(float(np.percentile(az[nz], 90)), 5) if nz.any() else 0.0,
+            "mean_abs_zone_progress": round(float(az.mean()), 5),
+            "mean_abs_grasp_approach": round(float(np.mean(gg)), 5), "mean_abs_both_approach": round(float(np.mean(bb)), 5),
+            "is_correct_pbrs": True, "pbrs_gamma": 0.99, "potential": "-disk_to_zone"}
+
+
 def braking_eligibility_sweep(partA_rows, v_excess_grid):
     """Step 8, corrected denominator: braking is only NEEDED where the coin is moving TOWARD the target fast
     (``target_directed_radial_velocity > v_excess``, signed — not ``abs``). Target-away (retreating) states need no
