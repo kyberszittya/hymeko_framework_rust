@@ -238,6 +238,24 @@ def test_receding_horizon_rollout_pi0_select_and_info():
     assert a0 is not None
 
 
+def test_prefix_search_offsets_and_random_control():
+    from hymeko_rl.coin_delivery.coin_prefix_search import make_sel_random, offsets, sel_pi0
+
+    offs = offsets(4, 0.08)
+    assert len(offs) == 1 + 2 * 4                                       # pi_0 + ±e_i
+    assert np.allclose(offs[0], 0.0)                                    # index 0 is pi_0
+    assert all(abs(np.linalg.norm(o) - 0.08) < 1e-7 for o in offs[1:])  # unit-actuator, norm ε
+    o55 = np.zeros(55, np.float32); a_pi0 = np.array([1.0, -1.0, 0.5, 0.0], np.float32)
+    a_p, info_p = sel_pi0(None, None, o55, a_pi0)
+    assert np.array_equal(a_p, a_pi0) and info_p["nonpi0"] == 0         # pi_0 select executes pi_0
+    r1 = make_sel_random(offs, 7); r2 = make_sel_random(offs, 7)
+    seq1 = [r1(None, None, o55, a_pi0)[1]["choice"] for _ in range(20)]
+    seq2 = [r2(None, None, o55, a_pi0)[1]["choice"] for _ in range(20)]
+    assert seq1 == seq2                                                # deterministic given seed
+    assert len(set(seq1)) > 1                                          # actually random (not stuck)
+    assert all(0 <= c < len(offs) for c in seq1)
+
+
 def test_hierarchical_bootstrap_over_seeds_and_states():
     # per-seed lists of per-state values; None (degenerate) dropped; no single seed dominates
     ci = hierarchical_bootstrap_ci([[0.1, 0.2, None, 0.3], [0.15, 0.25], [0.05, None, 0.2]], stat=np.median)
