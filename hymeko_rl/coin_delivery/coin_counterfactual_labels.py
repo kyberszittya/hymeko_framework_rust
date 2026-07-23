@@ -17,6 +17,7 @@ Fixes the four contract defects of the invalidated first-pass harness:
 """
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -98,6 +99,7 @@ class StateGroup:
     cstate: dict                    # PHASE_GATE_CONTROLLER_STATE_V2 dict (for encode)
     snap: object                    # (PlanarSnapshot, _t, _strict, _touched)
     contact0: tuple                 # (lc, rc) at capture
+    gate_snap: object = None        # deepcopy of the StableEngagementGate FSM at capture (controller-state restore)
     cand_names: list = field(default_factory=list)
     cand_delta: list = field(default_factory=list)
     cand_meta: list = field(default_factory=list)
@@ -225,9 +227,12 @@ def collect_critic_transitions(pi0, seeds, *, horizon: int = 360, seed: int = 0)
 
 
 def capture_state_panel(pi0, seeds, *, per_family: int = 8, horizon: int = 360, n_random: int = 3,
-                        gid_start: int = 0) -> "list[StateGroup]":
+                        gid_start: int = 0, label: bool = True) -> "list[StateGroup]":
     """Roll the gated composite (residual OFF) from neutral; capture gate-active states balanced across FAMILIES; label
-    each with grouped counterfactual returns. Two capture offsets per family (early/settled inside the phase)."""
+    each with grouped counterfactual returns. Two capture offsets per family (early/settled inside the phase).
+
+    ``label=False`` returns UNLABELED states (with the gate-FSM snapshot populated) for callers that impose their own
+    labeling — e.g. the residual-hold-horizon sweep, which restores the controller state and re-advances the gate."""
     rl = CoinRL4Dof(horizon=horizon)
     groups: list[StateGroup] = []
     gid = gid_start
@@ -251,7 +256,8 @@ def capture_state_panel(pi0, seeds, *, per_family: int = 8, horizon: int = 360, 
                         group_id=gid, seed=int(s), family=f, t=rl._t,
                         obs=o.astype(np.float32), base=b.astype(np.float32),
                         causal_state=cstate.feature(gate_dict).astype(np.float32),
-                        cstate=gate_dict, snap=_snap_rl(rl), contact0=(lc, rc)))
+                        cstate=gate_dict, snap=_snap_rl(rl), contact0=(lc, rc),
+                        gate_snap=copy.deepcopy(gate)))
                     gid += 1
             o2, r, term, trunc, _ = rl.step(b)                 # residual OFF during capture rollout
             cstate.push(o2, b)
@@ -260,8 +266,9 @@ def capture_state_panel(pi0, seeds, *, per_family: int = 8, horizon: int = 360, 
             o = o2
             if term or trunc:
                 break
-    # label each captured state with grouped counterfactual returns (deterministic; verified x2)
-    for g in groups:
-        cands = residual_candidates(g.base, np.random.default_rng(1000 + g.group_id), n_random=n_random)
-        label_group(rl, pi0, g, cands)
+    # label each captured state with grouped one-step counterfactual returns (deterministic; verified x2)
+    if label:
+        for g in groups:
+            cands = residual_candidates(g.base, np.random.default_rng(1000 + g.group_id), n_random=n_random)
+            label_group(rl, pi0, g, cands)
     return groups
