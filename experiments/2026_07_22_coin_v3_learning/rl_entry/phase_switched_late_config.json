@@ -1,0 +1,521 @@
+{
+ "controller": "PHASE_SWITCHED_LEARNED_LATE_CONTROLLER_V1",
+ "date": "2026-07-23",
+ "pi0_sha": "1902454c",
+ "structure": "gate_t==0 \u21d2 clip(pi_0(obs),-4,4); gate_t==1 \u21d2 clip(pi_late(obs),-4,4); pi_late full-action, initialized EXACT copy of pi_0 (update-0 reproduces 3/9,2/30,9/9)",
+ "handoff_construction": "deterministic REPLAY (neutral reset \u2192 frozen pi_0 prefix \u2192 begin late episode); NOT a MuJoCo snapshot restore (which does not reproduce node_features' velocity buffer)",
+ "late_phase_horizons_preregistered": [
+  30,
+  60
+ ],
+ "reward": "data/robotics/galambos_task_deliver_v3.hymeko (UNCHANGED)",
+ "gate": "STABLE_OBJECT_ENGAGEMENT_V1 (7633dd3c, UNCHANGED)",
+ "banks": {
+  "late_train": {
+   "seed_range": [
+    6000,
+    6060
+   ],
+   "n": 28,
+   "coverage": {
+    "transport": 6,
+    "target_entry": 3,
+    "overshoot": 5,
+    "braking": 6,
+    "settling": 0,
+    "dwell": 2,
+    "contact_retention": 6,
+    "contact_loss_reacq": 0
+   },
+   "families": [
+    "transport",
+    "target_entry",
+    "overshoot",
+    "braking",
+    "settling",
+    "dwell",
+    "contact_retention",
+    "contact_loss_reacq"
+   ],
+   "sha16": "bf8fb07d8089c089",
+   "rows": [
+    [
+     6000,
+     53,
+     "contact_retention",
+     "c6e542600dee",
+     "1482c5cf4aa2",
+     "f42a64912330"
+    ],
+    [
+     6000,
+     61,
+     "transport",
+     "02ea7fa4a73d",
+     "c144155e4903",
+     "36b3929fcd23"
+    ],
+    [
+     6001,
+     69,
+     "contact_retention",
+     "0512dfaa0f11",
+     "472d887271ef",
+     "6c36009e9cac"
+    ],
+    [
+     6001,
+     74,
+     "transport",
+     "af43c24bdd63",
+     "8ddb6ac03c9e",
+     "0a4f40b7976e"
+    ],
+    [
+     6002,
+     44,
+     "contact_retention",
+     "286164f80191",
+     "f2bcedbf01cf",
+     "c4d68f8aff09"
+    ],
+    [
+     6002,
+     52,
+     "braking",
+     "66570a7f8467",
+     "2b62be8dc3ab",
+     "011551941e2c"
+    ],
+    [
+     6002,
+     70,
+     "transport",
+     "f1105412cd1a",
+     "4a3f2d430048",
+     "8e8a219ad6c5"
+    ],
+    [
+     6003,
+     38,
+     "contact_retention",
+     "80dd60d3fdbc",
+     "0cdb2ca99cb5",
+     "a4fef37b1347"
+    ],
+    [
+     6003,
+     59,
+     "transport",
+     "46da7c7b8b29",
+     "bc08b0b09edf",
+     "d88f8c9433a6"
+    ],
+    [
+     6004,
+     35,
+     "contact_retention",
+     "12ca0858ed4d",
+     "239f4a4b61c4",
+     "97fcae987ed1"
+    ],
+    [
+     6004,
+     44,
+     "transport",
+     "b058d0af4436",
+     "a34ef1b2501e",
+     "763414f1777f"
+    ],
+    [
+     6005,
+     37,
+     "contact_retention",
+     "5a826b26a64f",
+     "b5b5805bb55c",
+     "03fdac3c3727"
+    ],
+    [
+     6005,
+     91,
+     "overshoot",
+     "b78ce042e15b",
+     "a0d63f86e3fa",
+     "9e93e6c80845"
+    ],
+    [
+     6006,
+     46,
+     "transport",
+     "9158496f459e",
+     "d16dcfaa1232",
+     "c5e907e0a23d"
+    ],
+    [
+     6013,
+     104,
+     "braking",
+     "fd940539b691",
+     "e23a48bbcfe8",
+     "d80e6976ca1c"
+    ],
+    [
+     6013,
+     228,
+     "overshoot",
+     "2e3c619f6696",
+     "d4199658a944",
+     "0bd28e8637eb"
+    ],
+    [
+     6018,
+     95,
+     "overshoot",
+     "57301f1eeb54",
+     "68f8575bb098",
+     "eca580134f15"
+    ],
+    [
+     6019,
+     83,
+     "braking",
+     "df56e74f6ba9",
+     "f7b9fe82b5a9",
+     "815a638b934e"
+    ],
+    [
+     6021,
+     101,
+     "braking",
+     "e5f1ee0e3ab8",
+     "4cbb9e247a9e",
+     "d3b40c402683"
+    ],
+    [
+     6022,
+     50,
+     "braking",
+     "51f679798e74",
+     "00b9f4a087bd",
+     "8a6b6f890453"
+    ],
+    [
+     6022,
+     74,
+     "target_entry",
+     "2313f4a528eb",
+     "b964e4389d06",
+     "3f93930b36e0"
+    ],
+    [
+     6022,
+     217,
+     "overshoot",
+     "790b3aeaec0c",
+     "f78bae57277f",
+     "5074ebbdeb20"
+    ],
+    [
+     6023,
+     38,
+     "braking",
+     "9ab546712eda",
+     "48e8ab577ce2",
+     "a9c6e46e5a8f"
+    ],
+    [
+     6029,
+     164,
+     "dwell",
+     "f0aab6dbc67b",
+     "781b00a2a267",
+     "00e7b7c27449"
+    ],
+    [
+     6030,
+     64,
+     "dwell",
+     "b9a5a8eaac0f",
+     "82faf14dffd1",
+     "c97f27e1269b"
+    ],
+    [
+     6032,
+     246,
+     "target_entry",
+     "4b09d5cddf3a",
+     "6f6eafd6970b",
+     "72fb894e5dae"
+    ],
+    [
+     6040,
+     200,
+     "overshoot",
+     "db1b37d98523",
+     "9d18c7ebed27",
+     "59425d57f036"
+    ],
+    [
+     6059,
+     276,
+     "target_entry",
+     "d4cccd2c56bb",
+     "50ca3a6328e6",
+     "faadb677b928"
+    ]
+   ]
+  },
+  "late_dev": {
+   "seed_range": [
+    6060,
+    6100
+   ],
+   "n": 21,
+   "coverage": {
+    "transport": 4,
+    "target_entry": 3,
+    "overshoot": 4,
+    "braking": 4,
+    "settling": 0,
+    "dwell": 2,
+    "contact_retention": 4,
+    "contact_loss_reacq": 0
+   },
+   "families": [
+    "transport",
+    "target_entry",
+    "overshoot",
+    "braking",
+    "settling",
+    "dwell",
+    "contact_retention",
+    "contact_loss_reacq"
+   ],
+   "sha16": "f27b76c1673013cd",
+   "rows": [
+    [
+     6060,
+     66,
+     "contact_retention",
+     "9693c003c3b4",
+     "ef7bcb30041d",
+     "b5c0e7b8a7e3"
+    ],
+    [
+     6060,
+     73,
+     "transport",
+     "4f903dc80030",
+     "3746851d1dab",
+     "174a64533131"
+    ],
+    [
+     6060,
+     78,
+     "braking",
+     "92e61b227a3f",
+     "dcae8c52152c",
+     "5fdd73bb3a75"
+    ],
+    [
+     6061,
+     176,
+     "contact_retention",
+     "d81998d1a1d0",
+     "8646e0480634",
+     "95a38e20c72b"
+    ],
+    [
+     6061,
+     177,
+     "transport",
+     "28fd165abe3e",
+     "67f13afeef25",
+     "5c4c8aa1caa4"
+    ],
+    [
+     6062,
+     33,
+     "contact_retention",
+     "ef9f57db8c07",
+     "c98d314cb897",
+     "6ab5fb7df4b3"
+    ],
+    [
+     6062,
+     37,
+     "braking",
+     "f34e99eb2481",
+     "cb7403ff7768",
+     "ab1c6eae6e18"
+    ],
+    [
+     6062,
+     57,
+     "transport",
+     "cbd8f5b79d29",
+     "cd50589790bc",
+     "165855175768"
+    ],
+    [
+     6063,
+     39,
+     "contact_retention",
+     "117737c9d5a3",
+     "f5a8e26f6336",
+     "70132cc80a2e"
+    ],
+    [
+     6063,
+     66,
+     "braking",
+     "513b090eedae",
+     "5e1f88994c98",
+     "302540926292"
+    ],
+    [
+     6063,
+     85,
+     "overshoot",
+     "25a2a076131c",
+     "996e15b881a5",
+     "5c35f00d4567"
+    ],
+    [
+     6064,
+     63,
+     "transport",
+     "f3ce4e597039",
+     "626246b336bd",
+     "20f64811eac8"
+    ],
+    [
+     6065,
+     90,
+     "target_entry",
+     "39b56726e179",
+     "9add739759c2",
+     "d7c64922b0a1"
+    ],
+    [
+     6065,
+     158,
+     "dwell",
+     "da2735deb32f",
+     "83a48d914828",
+     "1be69803e207"
+    ],
+    [
+     6069,
+     71,
+     "overshoot",
+     "3559ff55b2b6",
+     "856774395f13",
+     "c92feaaae08b"
+    ],
+    [
+     6072,
+     105,
+     "overshoot",
+     "f09a2a89f519",
+     "0cd63d279a9e",
+     "a73b475a8e1e"
+    ],
+    [
+     6073,
+     32,
+     "braking",
+     "c0763e2830a9",
+     "80d770c4c7d6",
+     "994334b48529"
+    ],
+    [
+     6074,
+     109,
+     "target_entry",
+     "ef075a070269",
+     "76161e094258",
+     "0bbb68bf2406"
+    ],
+    [
+     6074,
+     153,
+     "dwell",
+     "d562e4b546be",
+     "dd7911618ae0",
+     "589d4c9c6a51"
+    ],
+    [
+     6079,
+     126,
+     "overshoot",
+     "9fd6a637acf0",
+     "98c3019e9fac",
+     "b78171cfbd95"
+    ],
+    [
+     6088,
+     196,
+     "target_entry",
+     "cac9021de559",
+     "af3245440a86",
+     "0279376d2e74"
+    ]
+   ]
+  }
+ },
+ "td3_contract": {
+  "gamma": 0.99,
+  "tau": 0.005,
+  "batch_size": 256,
+  "actor_lr": 0.0003,
+  "critic_lr": 0.0003,
+  "n_step_set": [
+   4,
+   8
+  ],
+  "policy_delay": 2,
+  "smoothing_std_full_action": 0.8,
+  "smoothing_clip_full_action": 2.0,
+  "exploration_std": 0.3,
+  "coherent_noise_hold": [
+   2,
+   4
+  ],
+  "critic_warmup_steps": 2000,
+  "checkpoints": [
+   0,
+   1000,
+   3000,
+   6000,
+   10000,
+   20000,
+   40000
+  ],
+  "grad_clip": 1.0,
+  "note": "target smoothing + exploration in FULL-action units; terminated/truncated masked separately; no per-step independent exploration (coherent noise held 2\u20134 steps)"
+ },
+ "td3_init_arms": {
+  "A": "pi_late = EXACT pi_0 copy",
+  "B": "pi_late warm-started from H=30 feedback-planner / certified late-policy data (provenance REPLAY_ONLY)"
+ },
+ "sac_deferred": "SAC is a SECOND matched campaign, ONLY after TD3 plumbing passes; tanh-squash (4*tanh(z)) with exact change-of-variables log-prob (NOT gaussian+hard-clip); low initial entropy; not implemented here",
+ "policy_final_test_bank": {
+  "range": [
+   8000,
+   8050
+  ],
+  "status": "UNOPENED"
+ },
+ "constraints_this_stage": [
+  "contracts+tests only",
+  "no training",
+  "no SAC",
+  "no residual-critic route",
+  "no safety-filter head",
+  "reward unchanged",
+  "gate unchanged",
+  "residual bound n/a",
+  "final-test bank unopened"
+ ]
+}
