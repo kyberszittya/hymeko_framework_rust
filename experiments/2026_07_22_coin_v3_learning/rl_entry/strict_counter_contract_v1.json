@@ -1,0 +1,118 @@
+{
+ "contract": "STRICT_COUNTER_STATE_CONTRACT_V1",
+ "date": "2026-07-23",
+ "measurement_only": true,
+ "handoff_strict_distribution": {
+  "transport": {
+   "0": 15
+  },
+  "braking": {
+   "0": 10
+  },
+  "settling_dwell": {
+   "1": 6
+  },
+  "ALL": {
+   "0": 25,
+   "1": 6
+  }
+ },
+ "observability": {
+  "actor_obs_48_node_features": {
+   "contains_strict_counter": false,
+   "evidence": "node_features has no _strict/_success/dwell field"
+  },
+  "critic_conditioning": {
+   "contains_exact_counter": false,
+   "evidence": "conditioning = onehot3(control_mode)+onehot2(contact)+event5; control_mode collapses strict>=1 -> 'settling_dwell' (does not distinguish 1..5)"
+  },
+  "replay_transition": {
+   "contains_strict_counter": false,
+   "evidence": "late replay stores (state=obs+conditioning, action, reward, next); no counter field"
+  },
+  "target_network_input": {
+   "contains_strict_counter": false,
+   "evidence": "target critic sees the same state vector as the online critic"
+  }
+ },
+ "paired_state_probe": {
+  "rows": [
+   {
+    "strict": 0,
+    "obs48_hash": "976171bdfc5f",
+    "control_mode": "settling_dwell",
+    "reward": -0.752,
+    "terminated": false,
+    "strict_after": 1
+   },
+   {
+    "strict": 1,
+    "obs48_hash": "976171bdfc5f",
+    "control_mode": "settling_dwell",
+    "reward": -0.752,
+    "terminated": false,
+    "strict_after": 2
+   },
+   {
+    "strict": 2,
+    "obs48_hash": "976171bdfc5f",
+    "control_mode": "settling_dwell",
+    "reward": -0.752,
+    "terminated": false,
+    "strict_after": 3
+   },
+   {
+    "strict": 3,
+    "obs48_hash": "976171bdfc5f",
+    "control_mode": "settling_dwell",
+    "reward": -0.752,
+    "terminated": false,
+    "strict_after": 4
+   },
+   {
+    "strict": 4,
+    "obs48_hash": "976171bdfc5f",
+    "control_mode": "settling_dwell",
+    "reward": 29.248,
+    "terminated": false,
+    "strict_after": 5
+   },
+   {
+    "strict": 5,
+    "obs48_hash": "976171bdfc5f",
+    "control_mode": "settling_dwell",
+    "reward": -0.752,
+    "terminated": true,
+    "strict_after": 6
+   }
+  ],
+  "obs_48_identical": true,
+  "reward_differs": true,
+  "termination_differs": true,
+  "control_mode_distinguishes_strict": false,
+  "td_target": [
+   0.238,
+   0.238,
+   0.238,
+   0.238,
+   30.238,
+   -0.752
+  ],
+  "td_target_differs": true
+ },
+ "verdict": "HIDDEN_CERTIFIER_STATE_NONMARKOV",
+ "evaluation_semantics": {
+  "CONTINUATION_STRICT": {
+   "rate": "6/31",
+   "def": "inherit handoff_strict (arc-canonical, rl._strict)"
+  },
+  "RESET_AT_HANDOFF_STRICT": {
+   "rate": "1/31",
+   "def": "strict=0 at the late-controller boundary (late-skill-from-zero-dwell)"
+  }
+ },
+ "rl_reclassification": {
+  "phase_switched_td3 / transactional / stage1abc / transport_dwell / residual_critic": "VERDICT_REQUIRES_RERUN \u2014 the critic state HID the strict counter; identical obs mapped to TD targets differing by up to the terminal bonus (~31), so the critic could not represent distance-to-terminal. 'no local improvement' / 'critic route blocked' are CONFOUNDED by non-Markov critic state.",
+  "chunk / primitive supervised baselines": "UNAFFECTED \u2014 supervised (no bootstrapped critic target)."
+ }
+}

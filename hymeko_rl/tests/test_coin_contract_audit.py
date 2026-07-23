@@ -85,3 +85,11 @@ def test_decompose_reward_sums_to_scalar():
         scalar = float(spec.evaluate(rl.inner, rl._dtz(), rl.inner.data.ctrl))
         comps = decompose_reward(rl.inner, rl._dtz(), rl.inner.data.ctrl, spec.terms)
         assert abs(sum(comps.values()) - scalar) < 1e-6
+
+
+def test_control_mode_collapses_strict_counter():
+    # STRICT_COUNTER_STATE_CONTRACT: the phase label used for critic conditioning does NOT distinguish strict 1..5,
+    # so the exact distance-to-terminal is hidden from the critic (identical conditioning for strict 1..5).
+    from hymeko_rl.coin_delivery.coin_transport_dwell import control_mode
+    labels = {control_mode(0.015, 0.02, 0.02, k) for k in range(1, 6)}   # centered+settled, strict 1..5
+    assert labels == {"settling_dwell"}                                  # one label -> counter collapsed
