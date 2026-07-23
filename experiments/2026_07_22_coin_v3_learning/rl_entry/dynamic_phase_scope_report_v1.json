@@ -1,0 +1,594 @@
+{
+ "detector": "control_phase(4) + contact_flag(2); contact demoted to orthogonal flag",
+ "precedence": "settling_dwell > target_entry > braking > transport (task-progress only); contact is an ORTHOGONAL flag",
+ "control_phases": [
+  "transport",
+  "target_entry",
+  "braking",
+  "settling_dwell"
+ ],
+ "stage1_control": [
+  "target_entry",
+  "braking",
+  "settling_dwell"
+ ],
+ "min_starts": 6,
+ "persistent_start_counts_min2": {
+  "target_entry": 0,
+  "braking": 40,
+  "settling_dwell": 18
+ },
+ "bank_shas_min2": {
+  "target_entry": "4f53cda18c2baa0c",
+  "braking": "4fcb6b59ba0c5185",
+  "settling_dwell": "cc98ccfd6c424bbd"
+ },
+ "banks_min2": {
+  "target_entry": {
+   "n": 0,
+   "coverage": {
+    "transport": 0,
+    "target_entry": 0,
+    "overshoot": 0,
+    "braking": 0,
+    "settling_dwell": 0,
+    "contact_retention": 0
+   },
+   "families": [
+    "transport",
+    "target_entry",
+    "overshoot",
+    "braking",
+    "settling_dwell",
+    "contact_retention"
+   ],
+   "sha16": "4f53cda18c2baa0c",
+   "rows": []
+  },
+  "braking": {
+   "n": 40,
+   "coverage": {
+    "transport": 0,
+    "target_entry": 0,
+    "overshoot": 0,
+    "braking": 40,
+    "settling_dwell": 0,
+    "contact_retention": 0
+   },
+   "families": [
+    "transport",
+    "target_entry",
+    "overshoot",
+    "braking",
+    "settling_dwell",
+    "contact_retention"
+   ],
+   "sha16": "4fcb6b59ba0c5185",
+   "rows": [
+    [
+     6002,
+     75,
+     "braking",
+     "32e862cc1359",
+     "ba1e88432730",
+     "bbbbc70f41d3"
+    ],
+    [
+     6005,
+     86,
+     "braking",
+     "dd8feb55095f",
+     "2cb1add6633c",
+     "f344a81dbde5"
+    ],
+    [
+     6017,
+     53,
+     "braking",
+     "351a264e8ad1",
+     "ab8773d8f9d9",
+     "48382cc61c0f"
+    ],
+    [
+     6021,
+     101,
+     "braking",
+     "e5f1ee0e3ab8",
+     "4cbb9e247a9e",
+     "d3b40c402683"
+    ],
+    [
+     6022,
+     50,
+     "braking",
+     "51f679798e74",
+     "00b9f4a087bd",
+     "8a6b6f890453"
+    ],
+    [
+     6023,
+     36,
+     "braking",
+     "db5b020da652",
+     "5b52b993fb12",
+     "462b45d58929"
+    ],
+    [
+     6026,
+     57,
+     "braking",
+     "227fb517fe77",
+     "725bd1c2fda4",
+     "300d7fd57c81"
+    ],
+    [
+     6030,
+     21,
+     "braking",
+     "cfc4972cf5e1",
+     "a05bd48fd9f4",
+     "1bcfe962ceeb"
+    ],
+    [
+     6040,
+     172,
+     "braking",
+     "f263e475de29",
+     "92564c123883",
+     "ea96312d10f3"
+    ],
+    [
+     6046,
+     65,
+     "braking",
+     "ee15a8eab0f5",
+     "e4119a5cdc50",
+     "6bed417f2ab3"
+    ],
+    [
+     6053,
+     33,
+     "braking",
+     "89230a4b2592",
+     "8a5d3d29d01c",
+     "02b8156d82e2"
+    ],
+    [
+     6054,
+     81,
+     "braking",
+     "6e29fa48fada",
+     "4408558b4092",
+     "bf371bc40c5a"
+    ],
+    [
+     6060,
+     68,
+     "braking",
+     "3cfafb9e6636",
+     "d88ae85ebafa",
+     "e1d3c9430bd5"
+    ],
+    [
+     6062,
+     33,
+     "braking",
+     "ef9f57db8c07",
+     "c98d314cb897",
+     "6ab5fb7df4b3"
+    ],
+    [
+     6063,
+     49,
+     "braking",
+     "eebca1894761",
+     "d1fb2a94dcd9",
+     "5b233fddb75a"
+    ],
+    [
+     6073,
+     32,
+     "braking",
+     "c0763e2830a9",
+     "80d770c4c7d6",
+     "994334b48529"
+    ],
+    [
+     6077,
+     61,
+     "braking",
+     "bf7b66c3cc5a",
+     "e2138b387715",
+     "675f08d1cb75"
+    ],
+    [
+     6079,
+     78,
+     "braking",
+     "4176dd23e745",
+     "4fab58a3fa41",
+     "0b83af3bbd38"
+    ],
+    [
+     6080,
+     134,
+     "braking",
+     "5e0e84ea20f0",
+     "401b9e648c3b",
+     "538523144b32"
+    ],
+    [
+     6084,
+     42,
+     "braking",
+     "91e698334d02",
+     "d969df95e6eb",
+     "e878d3eed61d"
+    ],
+    [
+     6097,
+     60,
+     "braking",
+     "4c7ba17ad5c0",
+     "f74ef8563216",
+     "5d3a16053ac8"
+    ],
+    [
+     6100,
+     52,
+     "braking",
+     "b1d8a43ad42a",
+     "2bc5f37e0130",
+     "4a6b1327a2cf"
+    ],
+    [
+     6101,
+     41,
+     "braking",
+     "f1defe750f14",
+     "c72465e60a35",
+     "c13f94bd4d98"
+    ],
+    [
+     6103,
+     44,
+     "braking",
+     "a32c8f96ad9d",
+     "e038de23a1eb",
+     "acb5ad93d9f9"
+    ],
+    [
+     6111,
+     52,
+     "braking",
+     "8d3de1442511",
+     "400bb6ae2f36",
+     "c3c4873a7ac7"
+    ],
+    [
+     6112,
+     64,
+     "braking",
+     "919a4d782add",
+     "847ec8266e2f",
+     "4a01afb54d00"
+    ],
+    [
+     6115,
+     39,
+     "braking",
+     "f841bd6f549b",
+     "e6fd25b92b18",
+     "32f461bcfafc"
+    ],
+    [
+     6116,
+     203,
+     "braking",
+     "4f327902cac7",
+     "2c0ca17ed019",
+     "190e9ead9531"
+    ],
+    [
+     6119,
+     118,
+     "braking",
+     "5017bed27426",
+     "de048505b053",
+     "4f2ba57fbcbb"
+    ],
+    [
+     6123,
+     159,
+     "braking",
+     "8502186cb239",
+     "8f99fc786392",
+     "b91d96afb681"
+    ],
+    [
+     6125,
+     56,
+     "braking",
+     "c2e3f8207388",
+     "5d5260ab85f5",
+     "4e7942aa0f60"
+    ],
+    [
+     6133,
+     117,
+     "braking",
+     "ffd3a3f25e8b",
+     "c3d6d9e371ae",
+     "a22b45de07b8"
+    ],
+    [
+     6137,
+     30,
+     "braking",
+     "99b59cb94ecb",
+     "590a24ceb32b",
+     "d30b14064e4e"
+    ],
+    [
+     6138,
+     79,
+     "braking",
+     "c65b01c422fd",
+     "cae10b97f6a7",
+     "98e90e712202"
+    ],
+    [
+     6140,
+     21,
+     "braking",
+     "3233c858e3be",
+     "4bede3000a1a",
+     "cb827ba3e14f"
+    ],
+    [
+     6141,
+     93,
+     "braking",
+     "ab303b24c34d",
+     "78ddc526d73e",
+     "636e47a171cf"
+    ],
+    [
+     6145,
+     83,
+     "braking",
+     "47d2cd7a32e1",
+     "f0a852b3318a",
+     "79fa74096543"
+    ],
+    [
+     6147,
+     81,
+     "braking",
+     "92a9fc09bcdf",
+     "0b34a496babf",
+     "da054b1f2cef"
+    ],
+    [
+     6148,
+     18,
+     "braking",
+     "2f8fe13dcb30",
+     "71291f3e45d8",
+     "5e78f054f453"
+    ],
+    [
+     6163,
+     41,
+     "braking",
+     "77e5ff581231",
+     "5dae54befc77",
+     "fb69d08ce714"
+    ]
+   ]
+  },
+  "settling_dwell": {
+   "n": 18,
+   "coverage": {
+    "transport": 0,
+    "target_entry": 0,
+    "overshoot": 0,
+    "braking": 0,
+    "settling_dwell": 18,
+    "contact_retention": 0
+   },
+   "families": [
+    "transport",
+    "target_entry",
+    "overshoot",
+    "braking",
+    "settling_dwell",
+    "contact_retention"
+   ],
+   "sha16": "cc98ccfd6c424bbd",
+   "rows": [
+    [
+     6029,
+     164,
+     "settling_dwell",
+     "f0aab6dbc67b",
+     "781b00a2a267",
+     "00e7b7c27449"
+    ],
+    [
+     6030,
+     64,
+     "settling_dwell",
+     "b9a5a8eaac0f",
+     "82faf14dffd1",
+     "c97f27e1269b"
+    ],
+    [
+     6065,
+     158,
+     "settling_dwell",
+     "da2735deb32f",
+     "83a48d914828",
+     "1be69803e207"
+    ],
+    [
+     6074,
+     153,
+     "settling_dwell",
+     "d562e4b546be",
+     "dd7911618ae0",
+     "589d4c9c6a51"
+    ],
+    [
+     6107,
+     240,
+     "settling_dwell",
+     "9adff708ced2",
+     "ef8a9697aae6",
+     "4ac1badab2a4"
+    ],
+    [
+     6136,
+     204,
+     "settling_dwell",
+     "870274b9349d",
+     "b582a44f709f",
+     "d2812cf5aefa"
+    ],
+    [
+     6142,
+     85,
+     "settling_dwell",
+     "4b0151ac905c",
+     "d01370a9045a",
+     "f7aa55fab440"
+    ],
+    [
+     6148,
+     52,
+     "settling_dwell",
+     "be785bf322bd",
+     "e82e7dcb8914",
+     "b3bb03a4e643"
+    ],
+    [
+     6176,
+     196,
+     "settling_dwell",
+     "829151f3bc18",
+     "ef79a0347d61",
+     "7b4cb6b28770"
+    ],
+    [
+     6200,
+     99,
+     "settling_dwell",
+     "ab1acc396de1",
+     "c559387ee4b9",
+     "360600871024"
+    ],
+    [
+     6218,
+     123,
+     "settling_dwell",
+     "5debeb5aff91",
+     "8b31392ff327",
+     "af26990642f9"
+    ],
+    [
+     6227,
+     117,
+     "settling_dwell",
+     "0cba9a86d714",
+     "7d40628c123a",
+     "6ed9a102577f"
+    ],
+    [
+     6229,
+     190,
+     "settling_dwell",
+     "42fdeb6c31a5",
+     "7ec7c208fcd2",
+     "fe475946ff8e"
+    ],
+    [
+     6252,
+     164,
+     "settling_dwell",
+     "370d929b7f26",
+     "579f453e58bd",
+     "d5a15f6aeceb"
+    ],
+    [
+     6286,
+     121,
+     "settling_dwell",
+     "e3ed0a6f243d",
+     "ce45a08524f4",
+     "3a0fa238d973"
+    ],
+    [
+     6289,
+     344,
+     "settling_dwell",
+     "f99abae4721e",
+     "41bf87386a1a",
+     "c129876c837e"
+    ],
+    [
+     6291,
+     207,
+     "settling_dwell",
+     "4ce271e22960",
+     "1f77f24f7d5b",
+     "b4f3ded4b8ea"
+    ],
+    [
+     6298,
+     165,
+     "settling_dwell",
+     "01b3eb3bef30",
+     "93a32b27db70",
+     "80bd1022f0a5"
+    ]
+   ]
+  }
+ },
+ "persistent_start_counts_min4": {
+  "target_entry": 0,
+  "braking": 19,
+  "settling_dwell": 13
+ },
+ "bank_shas_min4": {
+  "target_entry": "4f53cda18c2baa0c",
+  "braking": "b6b45d077fd55a3e",
+  "settling_dwell": "237795659b9831c8"
+ },
+ "control_phase_occupancy_gate_on": {
+  "transport": 11706,
+  "braking": 287,
+  "target_entry": 40,
+  "settling_dwell": 36
+ },
+ "fraction_in_stage1_control": 0.03,
+ "transition_matrix": {
+  "braking->transport": 176,
+  "transport->braking": 169,
+  "transport->target_entry": 38,
+  "target_entry->transport": 33,
+  "transport->settling_dwell": 9,
+  "target_entry->braking": 7,
+  "braking->target_entry": 2,
+  "settling_dwell->braking": 1,
+  "braking->settling_dwell": 1
+ },
+ "overlapping_predicate_counts": {
+  "braking+target_entry": 4,
+  "braking+settling_dwell": 3
+ },
+ "states_with_multiple_control_predicates": 7,
+ "underpowered_phases_min2": [
+  "target_entry"
+ ],
+ "verdict": "STAGE1_DYNAMIC_PHASE_BANK_UNDERPOWERED"
+}
