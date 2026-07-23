@@ -27,7 +27,9 @@ from hymeko_rl.coin_delivery.coin_td3_trainer import (
     _sample_nstep_phase,
     collect_late_episode,
     eval_late_controller,
+    masked_actor_loss,
     phase_target_action,
+    sample_actor_batch,
 )
 
 ACTION_SCALE = 4.0
@@ -139,17 +141,17 @@ def critic_authorization(critic, actor, anchor_obs, cfg: TransactionalConfig) ->
     return checks
 
 
-def transactional_actor_step(pi_late, a_opt, critic, pi0, gate_on_obs, bc_obs, anchor_obs, a0_anchor, cfg):
-    """One TRANSACTIONAL actor update. Returns a dict: outcome ∈ {accepted, rejected}, scale, step/cum drift stats."""
+def transactional_actor_step(pi_late, a_opt, critic, pi0, actor_obs, actor_gate, bc_obs, anchor_obs, a0_anchor, cfg):
+    """One TRANSACTIONAL actor update. Returns a dict: outcome ∈ {accepted, rejected}, scale, step/cum drift stats.
+    The Q term uses the §1 masked actor loss on ``(actor_obs, actor_gate)`` (only current gate-on rows drive pi_late)."""
     snap_params = {k: v.clone() for k, v in pi_late.state_dict().items()}
     snap_opt = copy.deepcopy(a_opt.state_dict())
     old_anchor = _actions(pi_late, anchor_obs).detach()
 
-    q1_pi, _ = critic(gate_on_obs, pi_late(gate_on_obs))
     with torch.no_grad():
         pi0_bc = _actions(pi0, bc_obs)
-    bc = ((pi_late(bc_obs) - pi0_bc) ** 2).sum(-1).mean()
-    a_loss = -q1_pi.mean() + cfg.lambda_bc * bc
+    bc = ((pi_late(bc_obs) - pi0_bc) ** 2).sum(-1).mean()   # secondary BC anchor on gate-active states
+    a_loss = masked_actor_loss(critic, pi_late, actor_obs, actor_gate) + cfg.lambda_bc * bc
     a_opt.zero_grad(); a_loss.backward(); nn.utils.clip_grad_norm_(pi_late.parameters(), 1.0); a_opt.step()
     param_delta = {k: (pi_late.state_dict()[k] - snap_params[k]).clone() for k in snap_params}
 
@@ -241,9 +243,10 @@ def train_stage1b(pi0, cfg_stage, train_bank, dev_bank, *, seeds, tcfg: "Transac
         if step >= warmup and step % tcfg.policy_delay == 0:
             auth = critic_authorization(critic, pi_late, anchor_obs, tcfg)
             if auth["authorized"]:                              # transactional actor update ONLY when critic authorized
-                on = _sample_gate_on(buf, batch, rng_r); bc_obs = _sample_gate_on(buf, batch, rng_r)
-                if on is not None and bc_obs is not None:
-                    r = transactional_actor_step(pi_late, a_opt, critic, pi0, on, bc_obs, anchor_obs, a0_anchor, tcfg)
+                sample = sample_actor_batch(buf, batch, rng_r); bc_obs = _sample_gate_on(buf, batch, rng_r)
+                if sample is not None and bc_obs is not None and float(sample[1].sum()) > 0:
+                    r = transactional_actor_step(pi_late, a_opt, critic, pi0, sample[0], sample[1], bc_obs,
+                                                 anchor_obs, a0_anchor, tcfg)
                     if r["outcome"] == "accepted":
                         acc += 1; scales.append(r["scale"])
                         with torch.no_grad():

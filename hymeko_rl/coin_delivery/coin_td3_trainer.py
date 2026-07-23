@@ -217,10 +217,9 @@ def train_stage1(pi0, cfg_stage, train_bank, dev_bank, *, seeds, log=print):
         c_opt.zero_grad(); c_loss.backward(); nn.utils.clip_grad_norm_(critic.parameters(), 1.0); c_opt.step()
         # delayed actor update on GATE-ON states, after critic warm-up
         if step >= warmup and step % policy_delay == 0:
-            on = _sample_gate_on(buf, batch, rng_r)
-            if on is not None:
-                q1_pi, _ = critic(on, pi_late(on))               # ascend Q1 at gate-on states (pi_late acts there)
-                a_loss = -q1_pi.mean()
+            sample = sample_actor_batch(buf, batch, rng_r)
+            if sample is not None and float(sample[1].sum()) > 0:    # skip if no gate-on transitions in the minibatch
+                a_loss = masked_actor_loss(critic, pi_late, sample[0], sample[1])   # §1 exact masked form (gate_t)
                 a_opt.zero_grad(); a_loss.backward(); nn.utils.clip_grad_norm_(pi_late.parameters(), 1.0); a_opt.step()
                 with torch.no_grad():
                     for p, pt in zip(pi_late.parameters(), pi_late_target.parameters()):
@@ -248,3 +247,22 @@ def _sample_gate_on(buf, batch, rng):
         return None
     pick = rng.integers(0, len(flat), min(batch, len(flat)))
     return torch.tensor(np.stack([buf.trajectories[flat[j][0]][flat[j][1]]["obs"] for j in pick]))
+
+
+def masked_actor_loss(critic, actor, obs, gate_t):
+    """Exact §1 actor objective: ``-Σ(gate_t · Q1(s, pi_late(s))) / max(Σ gate_t, 1)``. Gate-off rows contribute exactly
+    zero gradient to the actor (their ``gate_t`` weight is 0), so only CURRENT gate-on transitions drive ``pi_late``."""
+    q1, _ = critic(obs, actor(obs))
+    return -(gate_t * q1).sum() / gate_t.sum().clamp(min=1.0)
+
+
+def sample_actor_batch(buf, batch, rng):
+    """Mixed minibatch (obs, gate_t) for the masked actor loss. Returns None on an empty buffer; the caller SKIPS the
+    actor update when ``gate_t.sum() == 0`` (no gate-on transitions)."""
+    flat = [(ti, t) for ti, traj in enumerate(buf.trajectories) for t in range(len(traj))]
+    if not flat:
+        return None
+    pick = rng.integers(0, len(flat), batch)
+    obs = np.stack([buf.trajectories[flat[j][0]][flat[j][1]]["obs"] for j in pick])
+    gate = np.array([float(buf.trajectories[flat[j][0]][flat[j][1]]["gate_on"]) for j in pick], np.float32)
+    return torch.tensor(obs), torch.tensor(gate)

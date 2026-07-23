@@ -42,7 +42,7 @@ def test_transactional_reject_restores_actor_and_optimizer():
     obs = torch.randn(16, 48); anchor = torch.randn(12, 48)
     a0 = torch.clamp(pi0.action_mean(anchor), -4, 4).detach()
     before = _params(late)
-    r = transactional_actor_step(late, opt, critic, pi0, obs, obs, anchor, a0, cfg)
+    r = transactional_actor_step(late, opt, critic, pi0, obs, torch.ones(obs.shape[0]), obs, anchor, a0, cfg)
     assert r["outcome"] == "rejected"                                         # no scale can satisfy the region
     assert _same(before, _params(late))                                       # actor fully restored
 
@@ -56,7 +56,7 @@ def test_transactional_accept_small_step():
     obs = torch.randn(16, 48); anchor = torch.randn(12, 48)
     a0 = torch.clamp(pi0.action_mean(anchor), -4, 4).detach()
     before = _params(late)
-    r = transactional_actor_step(late, opt, critic, pi0, obs, obs, anchor, a0, cfg)
+    r = transactional_actor_step(late, opt, critic, pi0, obs, torch.ones(obs.shape[0]), obs, anchor, a0, cfg)
     assert r["outcome"] == "accepted" and r["scale"] == 1.0
     assert not _same(before, _params(late))                                   # actor moved (slightly)
 
