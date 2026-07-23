@@ -9,8 +9,12 @@ import torch
 
 from hymeko_rl.coin_delivery.coin_carry_option import (
     OptionActor,
+    _jitter_theta,
     make_option_actor,
     option_controller_rollout,
+    option_teacher_label,
+    recovery_state_theta,
+    train_option_bc,
 )
 from hymeko_rl.coin_delivery.coin_carry_structured import A_BOUND, DIM, T_MAX, T_MIN, structured_carry_rollout
 from hymeko_rl.coin_delivery.coin_late_start import LateStart, reconstruct_handoff
@@ -114,3 +118,44 @@ def test_option_controller_accepts_actor_and_transitions_to_pi0():
     assert isinstance(actor, OptionActor) and o["options"] >= 1 and o["options"] <= 3
     # if it reached a handoff, K6 is decided by the frozen pi_0 continuation (k6 ⇒ reached_handoff)
     assert (o["k6"] == 0) or (o["reached_handoff"] == 1)
+
+
+def test_jitter_theta_bounds_and_durations_untouched():
+    theta = np.array([3, -3, 2, -2, 1, -1, 0, 0, 2.5, -2.5, 1.5, -1.5, 4, 8, 12], np.float32)
+    j = _jitter_theta(theta, np.random.default_rng(0), amp_std=0.5)
+    assert np.abs(j[:12]).max() <= A_BOUND + 1e-6                        # amplitudes stay in ±A_BOUND after jitter
+    assert np.array_equal(j[12:], theta[12:])                           # durations are NOT jittered
+    assert not np.array_equal(j[:12], theta[:12])                       # amplitudes ARE perturbed
+
+
+def test_train_option_bc_overfits_tiny_clean_set():
+    torch.manual_seed(0)
+    obs = np.random.randn(3, 48).astype(np.float32)
+    theta = np.array([[2, -2, 1, -1, 0, 0, 1, -1, 0.5, -0.5, 0, 0, 5, 6, 7],
+                      [-1, 1, -2, 2, 1, -1, 0, 0, -1, 1, 0.5, -0.5, 10, 4, 8],
+                      [0, 0, 3, -3, -2, 2, 1, 1, 0, 0, -1, -1, 3, 12, 5]], np.float32)
+    actor = make_option_actor()
+    mse = train_option_bc(actor, obs, theta, epochs=600, lr=3e-3, batch=3, seed=0)
+    assert mse < 0.02                                                   # the representation CAN fit a clean tiny set (precheck floor)
+
+
+def test_option_teacher_label_confident_iff_k6_and_provenance():
+    pi0, base, ls = _setup()
+    rl, gate, _h, _r = reconstruct_handoff(pi0, ls, horizon=360)
+    th, confident, prov = option_teacher_label(rl, gate, pi0, base, np.random.default_rng(3), shots=8, horizon=80, robust_checks=2)
+    assert th.shape == (DIM,) and th.dtype == np.float32
+    assert bool(confident) == (prov["k6"] == 1)                        # CONFIDENT iff the option delivered K6
+    assert prov["termination_reason"] in ("K6", "HANDOFF_ONLY", "NO_HANDOFF")
+    assert (prov["robust_k6"] is None) == (not confident)              # robustness measured only for confident labels
+    for k in ("k6", "handoff", "any_exit", "shots", "confident"):
+        assert k in prov
+
+
+def test_recovery_state_theta_none_when_handed_off():
+    pi0, base, ls = _setup()
+    rl, gate, _h, _r = reconstruct_handoff(pi0, ls, horizon=360)
+    torch.manual_seed(2)
+    actor = make_option_actor()
+    # max_probe=0 → cannot advance; if the start state is already strict≥1 it returns None, else returns a label or None
+    r = recovery_state_theta(copy.deepcopy(rl), copy.deepcopy(gate), actor, pi0, base, np.random.default_rng(4), shots=8, horizon=80, max_probe=8)
+    assert r is None or (r[0].shape == (48,) and r[1].shape == (DIM,))
