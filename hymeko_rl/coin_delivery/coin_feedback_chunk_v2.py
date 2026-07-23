@@ -83,9 +83,11 @@ def label_chunk(rl, pi0, snap, planner_chunk, pi0_chunk, *, m=M):
     return pi0_chunk, "pi0_fallback", {"safe": bool(safe), "improving": bool(improve), "full_K_contact": pl["contact_all"]}
 
 
-def feedback_chunk_rollout(pi0, ls, *, horizon=60, plan_seed=0, pop=20, iters=4):
+def feedback_chunk_rollout(pi0, ls, *, horizon=60, plan_seed=0, pop=20, iters=4, record_teachers=False):
     """Receding-horizon FEEDBACK teacher rollout from a reconstructed late-start; one example per replanning state.
-    Advances by executing the planner's M-prefix (the teacher); records the SAFE label per state."""
+    Advances by executing the planner's M-prefix (the teacher); records the SAFE label per state. When
+    ``record_teachers`` is set, each example also carries BOTH teacher first-actions (``pi0_first``/``planner_first``)
+    and the label first-action, so the mixed-teacher-averaging audit can compare them (no effect on the label)."""
     rl, gate, _h, rec = reconstruct_handoff(pi0, ls, horizon=360)
     det = EventStateDetector(); pa = rec.base.astype(np.float32); ex = []
     steps = 0; term = trunc = False
@@ -102,8 +104,13 @@ def feedback_chunk_rollout(pi0, ls, *, horizon=60, plan_seed=0, pop=20, iters=4)
         label, prov, flags = label_chunk(rl, pi0, snap, planner_chunk, pi0_chunk)
         _restore(rl, snap)                                    # replay teacher (planner) prefix to advance
         st = state_vec(rl.obs(), cm, cf, ev, pa)
-        ex.append({"state": st, "label_chunk": label.reshape(-1).astype(np.float32), "prov": prov, "cm": cm,
-                   "flags": flags, "seed": int(ls.seed)})
+        rec_ex = {"state": st, "label_chunk": label.reshape(-1).astype(np.float32), "prov": prov, "cm": cm,
+                  "flags": flags, "seed": int(ls.seed)}
+        if record_teachers:
+            rec_ex["pi0_first"] = pi0_chunk[0].astype(np.float32)
+            rec_ex["planner_first"] = planner_chunk[0].astype(np.float32)
+            rec_ex["label_first"] = label[0].astype(np.float32)
+        ex.append(rec_ex)
         for j in range(M):
             gate_on = gate.gate == 1.0
             a = np.clip(planner_chunk[j], -ACTION_SCALE, ACTION_SCALE).astype(np.float32) if gate_on else _pi0_action(pi0, rl.obs())
@@ -125,6 +132,36 @@ def build_feedback_dataset(pi0, starts, *, horizon=60):
              "n_planner_improving": int(sum(p == "planner" for p in prov)),
              "n_pi0_fallback": int(sum(p == "pi0_fallback" for p in prov))}
     return np.stack(X).astype(np.float32), np.stack(Y).astype(np.float32), prov, stats
+
+
+def build_teacher_annotated_dataset(pi0, starts, *, horizon=60):
+    """Same states/labels as :func:`build_feedback_dataset` but each example also carries BOTH teacher first-actions
+    (``pi0_first``, ``planner_first``) and the label first-action + admissibility ``flags``. For the mixed-teacher
+    audit only — the label and its provenance are identical to the training dataset (record_teachers is additive)."""
+    rows = []
+    for i, ls in enumerate(starts):
+        rows.extend(feedback_chunk_rollout(pi0, ls, horizon=horizon, plan_seed=1000 + 50 * i, record_teachers=True))
+    X = np.stack([e["state"] for e in rows]).astype(np.float32)
+    pi0_first = np.stack([e["pi0_first"] for e in rows]).astype(np.float32)
+    planner_first = np.stack([e["planner_first"] for e in rows]).astype(np.float32)
+    label_first = np.stack([e["label_first"] for e in rows]).astype(np.float32)
+    prov = [e["prov"] for e in rows]; flags = [e["flags"] for e in rows]
+    return X, pi0_first, planner_first, label_first, prov, flags
+
+
+def reproduce_v2_actor(pi0, train, *, horizon=60, dagger_rounds=2, base_steps=4000, dagger_steps=3000, log=print):
+    """Deterministically rebuild the FEEDBACK_CHUNK_WARMSTART_V2 supervised chunk actor (same dataset + DAgger + prefix-
+    weighted regression, seed 0). Canonical single source so the m1 diagnostic and the mixed-teacher audit share the
+    exact same actor rather than re-implementing the reproduction (§6.1)."""
+    X, Y, _prov, stats = build_feedback_dataset(pi0, train, horizon=horizon)
+    actor = train_supervised_v2(X, Y, steps=base_steps, log=lambda *a: None)
+    for rd in range(dagger_rounds):
+        dX, dY, _dp = dagger_collect(pi0, actor, train, horizon=horizon, plan_seed=7000 + 1000 * rd)
+        if dX is not None:
+            X = np.concatenate([X, dX]); Y = np.concatenate([Y, dY])
+            actor = train_supervised_v2(X, Y, steps=dagger_steps, actor=actor, log=lambda *a: None)
+    log(f"  reproduced V2 actor; dataset {len(X)}")
+    return actor, X, Y, stats
 
 
 # ── prefix-weighted supervised regression + DAgger ──

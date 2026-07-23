@@ -193,12 +193,12 @@ def chunk_metrics(actor, X, Y):
             "two_step_prefix_mse": round(prefix_mse, 5), "per_index_mse": per_index}
 
 
-def eval_receding_horizon(pi0, pi_chunk, dev_starts, *, horizon=60):
-    """Receding-horizon rollout of the chunk actor (execute M, replan) vs frozen pi_0, on dev late-starts (§9/§12)."""
+def eval_receding_horizon(pi0, pi_chunk, dev_starts, *, horizon=60, m=M):
+    """Receding-horizon rollout of the chunk actor (execute ``m``, replan) vs frozen pi_0, on dev late-starts (§9/§12)."""
     late, base = [], []
     for ls in dev_starts:
-        late.append(_rollout_rh(pi0, pi_chunk, ls, horizon, use_chunk=True))
-        base.append(_rollout_rh(pi0, pi_chunk, ls, horizon, use_chunk=False))
+        late.append(_rollout_rh(pi0, pi_chunk, ls, horizon, use_chunk=True, m=m))
+        base.append(_rollout_rh(pi0, pi_chunk, ls, horizon, use_chunk=False, m=m))
 
     def agg(rows, k):
         return float(np.mean([r[k] for r in rows])) if rows else 0.0
@@ -224,7 +224,7 @@ def _accumulate(rl, recs, state):
             break
 
 
-def _rollout_rh(pi0, pi_chunk, ls, horizon, *, use_chunk):
+def _rollout_rh(pi0, pi_chunk, ls, horizon, *, use_chunk, m=M):
     rl, gate, _h, rec = reconstruct_handoff(pi0, ls, horizon=360)
     det = EventStateDetector(); pa = rec.base.astype(np.float32)
     s = {"tot": 0.0, "disc": 1.0, "max_dwell": rl._strict, "entered": rl._dtz() <= ENTRY_TOL, "exited": False,
@@ -233,7 +233,7 @@ def _rollout_rh(pi0, pi_chunk, ls, horizon, *, use_chunk):
         cm, cf, ev = det.state_of(rl)                                       # one detector read per replan
         if use_chunk and gate.gate == 1.0:
             st = state_vec(rl.obs(), cm, cf, ev, pa)
-            _chunk, executed, recs, _o = execute_chunk(rl, pi0, pi_chunk, gate, st, m=M)
+            _chunk, executed, recs, _o = execute_chunk(rl, pi0, pi_chunk, gate, st, m=m)
             _accumulate(rl, recs, s); pa = executed[-1]
         else:
             a = _pi0_action(pi0, rl.obs())
