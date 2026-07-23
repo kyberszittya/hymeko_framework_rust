@@ -137,6 +137,39 @@ def test_td3_target_action_bounds_full_action_units():
     assert HISTORICAL_SCALED_DEFAULT_SMOOTHING["smoothing_std"] == 0.8   # 0.8/2.0 recorded as control-only
 
 
+# ── trainer: phase-correct target + n-step-with-gate + stage gate ──
+def test_phase_target_action_gate_correct():
+    from hymeko_rl.coin_delivery.coin_phase_switched_late import make_late_actor_from_pi0
+    from hymeko_rl.coin_delivery.coin_td3_trainer import phase_target_action
+    pi0 = load_frozen_clip_actor(PI0, freeze=True)
+    late = make_late_actor_from_pi0(pi0, trainable=False)
+    with torch.no_grad():
+        for p in late.parameters():
+            p.add_(1.0)                                          # make pi_late differ from pi_0
+    obs = torch.randn(6, 48)
+    gate = torch.tensor([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])
+    a = phase_target_action(pi0, late, obs, gate, std=0.0, clip=0.25, gen=torch.Generator().manual_seed(0))
+    base0 = torch.clamp(pi0.action_mean(obs), -4, 4)
+    assert torch.allclose(a[gate == 0.0], base0[gate == 0.0])   # gate-off rows == pi_0 exactly (std=0 ⇒ no noise)
+    assert not torch.allclose(a[gate == 1.0], base0[gate == 1.0])   # gate-on rows use pi_late
+
+
+def test_nstep_with_gate_returns_bootstrap_gate():
+    from hymeko_rl.coin_delivery.coin_td3_trainer import _nstep_with_gate
+    traj = [{"reward": 1.0, "terminated": False, "truncated": False, "obs_next": np.full(48, i, np.float32),
+             "gate_on_next": (i % 2 == 0)} for i in range(5)]
+    G, boot, mask, gp, bg = _nstep_with_gate(traj, 0, 4, 1.0)
+    assert G == 4.0 and mask == 1 and bg == traj[3]["gate_on_next"]   # bootstrap gate from the last accumulated step
+
+
+def test_stage_gate_two_consecutive():
+    from hymeko_rl.coin_delivery.coin_td3_trainer import stage_gate
+    good = {"delta_vs_pi0": {"strict_success": 0.1, "max_dwell": 0.5, "exited": 0.0, "contact_retention": 0.0}, "calibration_ok": True}
+    bad = {"delta_vs_pi0": {"strict_success": 0.0, "max_dwell": 0.0, "exited": 0.2, "contact_retention": -0.2}, "calibration_ok": True}
+    assert stage_gate(good, good) is True
+    assert stage_gate(good, bad) is False                       # needs BOTH consecutive checkpoints
+
+
 def test_late_twin_critic_independent_heads():
     c = LateTwinCritic()
     o, a = torch.randn(5, 48), torch.randn(5, 4)
