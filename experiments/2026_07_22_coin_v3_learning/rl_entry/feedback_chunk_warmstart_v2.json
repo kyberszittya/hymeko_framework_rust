@@ -1,0 +1,117 @@
+{
+ "contract": "FEEDBACK_CHUNK_WARMSTART_V2",
+ "date": "2026-07-23",
+ "pi0_sha": "1902454c",
+ "no_td3": true,
+ "planner_at_eval": false,
+ "prefix_weights": [
+  1.0,
+  1.0,
+  0.5,
+  0.5,
+  0.25,
+  0.25,
+  0.10000000149011612,
+  0.10000000149011612
+ ],
+ "dagger_rounds": 2,
+ "teacher": "H-receding-horizon FEEDBACK planner (plan_chunk CEM at every replanning state), WARM_START_ONLY",
+ "dataset": {
+  "n_examples": 164,
+  "by_provenance": {
+   "pi0_fallback": 113,
+   "planner": 51
+  },
+  "by_phase": {
+   "transport": 134,
+   "braking": 20,
+   "settling_dwell": 10
+  },
+  "n_planner_improving": 51,
+  "n_pi0_fallback": 113,
+  "with_dagger_provenance": {
+   "pi0_fallback": 380,
+   "planner": 153
+  },
+  "n_final": 533,
+  "sha16": "d2d4bc2b889257f0",
+  "bank_shas": {
+   "train": {
+    "transport": "8f378e841060a2aa",
+    "braking": "3a899e4ecf31ec7c",
+    "settling_dwell": "81e1df852b572abe"
+   },
+   "dev": {
+    "transport": "cbc49369aa311dfa",
+    "braking": "ed6d090fe382ab5b",
+    "settling_dwell": "a0598728dd04355a"
+   }
+  }
+ },
+ "supervised_chunk_metrics_base": {
+  "sequence_mse": 0.00892,
+  "first_action_mse": 0.00934,
+  "two_step_prefix_mse": 0.00902,
+  "per_index_mse": [
+   0.0093,
+   0.0087,
+   0.0085,
+   0.0079,
+   0.0075,
+   0.0069,
+   0.0091,
+   0.0135
+  ]
+ },
+ "supervised_chunk_metrics_final": {
+  "sequence_mse": 0.03985,
+  "first_action_mse": 0.03167,
+  "two_step_prefix_mse": 0.03224,
+  "per_index_mse": [
+   0.0317,
+   0.0328,
+   0.0336,
+   0.035,
+   0.0401,
+   0.0463,
+   0.0492,
+   0.0501
+  ]
+ },
+ "eval_vs_pi0": {
+  "n": 31,
+  "chunk": {
+   "strict_success": 0.129,
+   "max_dwell": 0.8387,
+   "entered": 0.5161,
+   "exited": 0.2903,
+   "contact_retention": 0.1882,
+   "progress": -0.0469,
+   "ret": -58.0887,
+   "replan_consistent": 1.0
+  },
+  "pi0": {
+   "strict_success": 0.1935,
+   "max_dwell": 1.4839,
+   "entered": 0.5161,
+   "exited": 0.0323,
+   "contact_retention": 0.5962,
+   "progress": 0.0031,
+   "ret": -25.019,
+   "replan_consistent": 1.0
+  },
+  "delta_vs_pi0": {
+   "strict_success": -0.0645,
+   "max_dwell": -0.6452,
+   "entered": 0.0,
+   "exited": 0.258,
+   "contact_retention": -0.408,
+   "progress": -0.05,
+   "ret": -33.0697,
+   "replan_consistent": 0.0
+  }
+ },
+ "acceptance_gate_pass": false,
+ "reproduces_some_planner_advantage": false,
+ "verdict": "FEEDBACK_CHUNK_WARMSTART_V2_STILL_UNDERPERFORMS"
+}
