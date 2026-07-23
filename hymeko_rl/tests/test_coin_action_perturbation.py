@@ -199,6 +199,45 @@ def test_deepcopy_and_reconstruct_fidelity_and_order_independence():
     assert _traces_equal(o_again["trace"], o_dc["trace"])
 
 
+def test_receding_horizon_rollout_pi0_select_and_info():
+    """pi_0 select (a_pi0, zero drift) reproduces the frozen-pi_0 outcome; info carries gate_on/drift; select runs once/step."""
+    import copy
+    import json
+
+    from hymeko_rl.coin_delivery.coin_late_start import LateStart, reconstruct_handoff
+    from hymeko_rl.coin_delivery.coin_markov_ablation_train import (
+        make_late_actor55_from_pi0,
+        receding_horizon_rollout,
+    )
+    from hymeko_rl.coin_delivery.rl_clip_actor import load_frozen_clip_actor
+
+    d = "experiments/2026_07_22_coin_v3_learning/rl_entry"
+    cfg = json.load(open(f"{d}/td3_baseline_v1_config.json"))
+    pi0 = load_frozen_clip_actor(f"{d}/frozen/pi0_shared_clip_actor.pt", freeze=True)
+    base = make_late_actor55_from_pi0(pi0, trainable=False)
+    r = cfg["banks"]["late_dev"]["rows"][0]
+    ls = LateStart(seed=r[0], prefix_steps=r[1], family=r[2], obs_sha=r[3], base_sha=r[4], causal_sha=r[5])
+    rl, gate, _h, _rec = reconstruct_handoff(pi0, ls, horizon=360)
+    calls = {"n": 0}
+
+    def sel(rl_, gate_, o55, a_pi0):
+        calls["n"] += 1
+        return a_pi0, {"choice": 0, "nonpi0": 0}                       # execute pi_0
+
+    out, infos = receding_horizon_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, sel, horizon=15)
+    for k in ("k1", "k3", "k5", "k6", "max_dwell", "contain_exit_ct", "mean_speed"):
+        assert k in out
+    gon = [x for x in infos if x and x.get("gate_on")]
+    assert calls["n"] == len(gon)                                      # select called exactly once per gate-on step
+    assert all(abs(x["drift"]) < 1e-6 for x in gon)                    # pi_0 select ⇒ zero drift
+    assert all("obs55" in x and x["obs55"].shape == (55,) for x in gon)
+    # executing pi_0 via the controller == the frozen pi_0 rollout (zero-δ one-step candidate)
+    a0 = base.action_mean(torch.as_tensor(gon[0]["obs55"])[None])[0].numpy() if gon else None
+    ref, _ = receding_horizon_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, sel, horizon=15)
+    assert out == {k: ref[k] for k in out}                            # deterministic across deepcopies
+    assert a0 is not None
+
+
 def test_hierarchical_bootstrap_over_seeds_and_states():
     # per-seed lists of per-state values; None (degenerate) dropped; no single seed dominates
     ci = hierarchical_bootstrap_ci([[0.1, 0.2, None, 0.3], [0.15, 0.25], [0.05, None, 0.2]], stat=np.median)

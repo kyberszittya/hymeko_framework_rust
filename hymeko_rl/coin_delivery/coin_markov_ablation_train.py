@@ -299,6 +299,45 @@ def prefix_candidate_rollout(rl, gate, pi0, base, offset, k_prefix, *, horizon):
             "full_returnA": round(fullA, 4), "full_returnB": round(fullB, 4)}
 
 
+def receding_horizon_rollout(rl, gate, pi0, base, select, *, horizon, arm="A"):
+    """Receding-horizon control: at each gate-on step, ``select(rl, gate, obs55, a_pi0)`` returns ``(action, info)``;
+    execute exactly that ONE action, advance one step, then replan. Gate-off steps run frozen pi_0. Returns the
+    certifier ladder (K1/K3/K5/K6, max_dwell, true full-containment exit, speed, dtz) + the per-step info list.
+
+    The certifier physics/strict/termination are arm-independent (only the discarded reward differs), so stepping is done
+    with the canonical "A" physics regardless of ``arm`` — the controller's arm distinction is entirely in the critic that
+    ``select`` consults, not in this rollout. ``arm`` is retained for API symmetry only.
+
+    Preconditions:  ``rl``/``gate`` are a fresh deepcopy of a reconstructed handoff (mutated here); ``select`` must NOT
+                    mutate ``rl``/``gate`` (it deepcopies internally for any lookahead).
+    """
+    del arm  # certifier physics is arm-independent; reward is discarded here
+    md = int(rl._strict); touched = rl._touched
+    dtz = rl._dtz(); was_contained = dtz <= CENTER_TOL; contain_exit = 0; speed_sum = 0.0; nstep = 0; infos = []
+    for _t in range(horizon):
+        gate_on = gate.gate == 1.0; o48 = rl.obs(); s = int(rl._strict)
+        if gate_on:
+            o55 = _aug(o48, s); a_pi0 = _det(base, o55)
+            a, info = select(rl, gate, o55, a_pi0)
+            info = dict(info or {}); info["gate_on"] = True
+            info["drift"] = float(np.linalg.norm(np.asarray(a, np.float32) - a_pi0)); info["obs55"] = o55
+        else:
+            a = _det(pi0, o48); info = {"gate_on": False, "drift": 0.0}
+        _r, term, trunc = step_ablation(rl, np.asarray(a, np.float32), "A")   # arm-independent certifier physics
+        lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
+        md = max(md, int(rl._strict)); touched = touched or rl._touched
+        dtz = rl._dtz(); speed_sum += float(rl._speed()); nstep += 1
+        if was_contained and dtz > CENTER_TOL:
+            contain_exit += 1
+        was_contained = dtz <= CENTER_TOL
+        infos.append(info)
+        if term or trunc:
+            break
+    return {"k1": int(md >= 1), "k3": int(md >= 3), "k5": int(md >= 5), "k6": int(md >= HELD_DWELL and touched),
+            "max_dwell": md, "contain_exit_ct": contain_exit, "mean_speed": round(speed_sum / max(nstep, 1), 4),
+            "final_dtz": round(float(dtz), 4)}, infos
+
+
 def strict_conditioned_q(critic, actor55, obs48):
     """Q(aug(obs, strict), pi_late(aug)) for strict 0..K from ONE physical state — does the critic represent terminal
     proximity (monotone rising toward K6)?"""

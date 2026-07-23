@@ -2,7 +2,7 @@
 title: Divergent-K6 prefix-value audit — the critic's VALUE ranks divergent-K6 consequences above chance
 date: 2026-07-23
 branch: recovery/coin-hymeko-bundle-and-results
-terminal: CRITIC_VALUE_RANKS_DIVERGENT_K6_CONSEQUENCE (both arms bootstrap-Q CI-lower > 0.5); one-step action-value not fairly testable (continuation mismatch)
+terminal: POST_PREFIX_TERMINAL_VALUE_ORDERING_CONFIRMED + ONE_STEP_VALUE_TO_ACTION_CREDIT_UNRESOLVED (review-refined from CRITIC_VALUE_RANKS_DIVERGENT_K6_CONSEQUENCE) — bootstrap-Q above chance on both arms (value recognises the better post-prefix consequence, not just reward), but first-action-Q ≈ chance (that knowledge is not reliably credited back to the starting action)
 tags: [coin, markov, critic-value, divergent-k6, prefix-value, per-state, hierarchical-bootstrap, decomposition]
 ---
 

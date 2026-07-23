@@ -1,0 +1,378 @@
+{
+ "contract": "VALUE_GUIDED_PREFIX_SEARCH_V1",
+ "date": "2026-07-23",
+ "no_new_campaign": true,
+ "smoke": false,
+ "method": {
+  "K": 2,
+  "mag": 0.08,
+  "horizon": 20,
+  "candidates": 9,
+  "scorers": [
+   "reward",
+   "value",
+   "reward_value"
+  ],
+  "lookahead": "K-step exact ONLY; terminal value = learned Q_target (no full exact-rollout oracle)",
+  "bootstrap": "critic_target + actor_target",
+  "per_state_unit": true,
+  "hierarchical_seed_x_state": true,
+  "state_filter": "robust-pair: some chunk K6=1 \u2227 another clearly fails (dwell \u2264 K6-2); primary = NET paired \u0394K6 vs pi_0",
+  "arms": [
+   "A",
+   "B"
+  ]
+ },
+ "panel": {
+  "scanned": 254,
+  "kept_improvable": 30,
+  "strict_hist": {
+   "2": 72,
+   "3": 68,
+   "4": 60,
+   "5": 54
+  },
+  "all_held_out": true
+ },
+ "pi0_reference": {
+  "K6": 0.967,
+  "mean_containment_exit": 0.033
+ },
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "results": {
+  "A": {
+   "reward": {
+    "K6_rate": {
+     "stat": 0.933,
+     "lo": 0.878,
+     "hi": 0.978,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "net_dK6_vs_pi0": {
+     "stat": -0.033,
+     "lo": -0.1,
+     "hi": 0.033,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "class_net_dK6": "INCONCLUSIVE",
+    "dexit_vs_pi0": {
+     "stat": -0.033,
+     "lo": -0.078,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "pi0fail_n": 1,
+    "dK6_pi0fail": {
+     "stat": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "n_seeds": 3,
+     "n_states": 3
+    },
+    "class_dK6_pi0fail": "ABOVE",
+    "nonpi0_rate": {
+     "stat": 0.643,
+     "lo": 0.544,
+     "hi": 0.739,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "cum_drift": {
+     "stat": 0.195,
+     "lo": 0.124,
+     "hi": 0.279,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "support_dist": {
+     "stat": 1.395,
+     "lo": 1.284,
+     "hi": 1.482,
+     "n_seeds": 3,
+     "n_states": 90
+    }
+   },
+   "value": {
+    "K6_rate": {
+     "stat": 0.967,
+     "lo": 0.922,
+     "hi": 1.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "net_dK6_vs_pi0": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "class_net_dK6": "EQUIVALENT_TO_CHANCE",
+    "dexit_vs_pi0": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "pi0fail_n": 1,
+    "dK6_pi0fail": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 3
+    },
+    "class_dK6_pi0fail": "EQUIVALENT_TO_CHANCE",
+    "nonpi0_rate": {
+     "stat": 0.246,
+     "lo": 0.183,
+     "hi": 0.31,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "cum_drift": {
+     "stat": 0.044,
+     "lo": 0.033,
+     "hi": 0.058,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "support_dist": {
+     "stat": 1.396,
+     "lo": 1.301,
+     "hi": 1.472,
+     "n_seeds": 3,
+     "n_states": 90
+    }
+   },
+   "reward_value": {
+    "K6_rate": {
+     "stat": 0.967,
+     "lo": 0.922,
+     "hi": 1.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "net_dK6_vs_pi0": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "class_net_dK6": "EQUIVALENT_TO_CHANCE",
+    "dexit_vs_pi0": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "pi0fail_n": 1,
+    "dK6_pi0fail": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 3
+    },
+    "class_dK6_pi0fail": "EQUIVALENT_TO_CHANCE",
+    "nonpi0_rate": {
+     "stat": 0.777,
+     "lo": 0.697,
+     "hi": 0.854,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "cum_drift": {
+     "stat": 0.129,
+     "lo": 0.115,
+     "hi": 0.143,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "support_dist": {
+     "stat": 1.418,
+     "lo": 1.302,
+     "hi": 1.506,
+     "n_seeds": 3,
+     "n_states": 90
+    }
+   }
+  },
+  "B": {
+   "reward": {
+    "K6_rate": {
+     "stat": 0.933,
+     "lo": 0.878,
+     "hi": 0.978,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "net_dK6_vs_pi0": {
+     "stat": -0.033,
+     "lo": -0.1,
+     "hi": 0.033,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "class_net_dK6": "INCONCLUSIVE",
+    "dexit_vs_pi0": {
+     "stat": -0.033,
+     "lo": -0.078,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "pi0fail_n": 1,
+    "dK6_pi0fail": {
+     "stat": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "n_seeds": 3,
+     "n_states": 3
+    },
+    "class_dK6_pi0fail": "ABOVE",
+    "nonpi0_rate": {
+     "stat": 0.643,
+     "lo": 0.544,
+     "hi": 0.739,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "cum_drift": {
+     "stat": 0.195,
+     "lo": 0.124,
+     "hi": 0.279,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "support_dist": {
+     "stat": 1.246,
+     "lo": 1.104,
+     "hi": 1.407,
+     "n_seeds": 3,
+     "n_states": 90
+    }
+   },
+   "value": {
+    "K6_rate": {
+     "stat": 0.967,
+     "lo": 0.922,
+     "hi": 1.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "net_dK6_vs_pi0": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "class_net_dK6": "EQUIVALENT_TO_CHANCE",
+    "dexit_vs_pi0": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "pi0fail_n": 1,
+    "dK6_pi0fail": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 3
+    },
+    "class_dK6_pi0fail": "EQUIVALENT_TO_CHANCE",
+    "nonpi0_rate": {
+     "stat": 0.209,
+     "lo": 0.15,
+     "hi": 0.268,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "cum_drift": {
+     "stat": 0.039,
+     "lo": 0.028,
+     "hi": 0.052,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "support_dist": {
+     "stat": 1.268,
+     "lo": 1.147,
+     "hi": 1.414,
+     "n_seeds": 3,
+     "n_states": 90
+    }
+   },
+   "reward_value": {
+    "K6_rate": {
+     "stat": 0.967,
+     "lo": 0.922,
+     "hi": 1.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "net_dK6_vs_pi0": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "class_net_dK6": "EQUIVALENT_TO_CHANCE",
+    "dexit_vs_pi0": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "pi0fail_n": 1,
+    "dK6_pi0fail": {
+     "stat": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_seeds": 3,
+     "n_states": 3
+    },
+    "class_dK6_pi0fail": "EQUIVALENT_TO_CHANCE",
+    "nonpi0_rate": {
+     "stat": 0.753,
+     "lo": 0.657,
+     "hi": 0.838,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "cum_drift": {
+     "stat": 0.125,
+     "lo": 0.108,
+     "hi": 0.142,
+     "n_seeds": 3,
+     "n_states": 90
+    },
+    "support_dist": {
+     "stat": 1.26,
+     "lo": 1.125,
+     "hi": 1.416,
+     "n_seeds": 3,
+     "n_states": 90
+    }
+   }
+  }
+ },
+ "verdict": "NO_SEARCH_CONVERTS_PI0_NEAR_OPTIMAL_ON_BOUNDARY",
+ "next_lever": "no scorer nets a K6 gain and none clearly hurts \u2014 pi_0 is near-optimal on these boundary states (little to convert). Q(s_K) recognises consequences post-hoc but a bounded search over these candidates does not plan a gain"
+}
