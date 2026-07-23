@@ -21,6 +21,7 @@ from hymeko_rl.coin_delivery.coin_carry_structured import (
     T_MAX,
     T_MIN,
     _unpack,
+    structured_carry_rollout,
     structured_random_best,
     structured_score,
 )
@@ -189,3 +190,27 @@ def recovery_state_theta(rl0, gate0, actor, pi0, base, rng, *, shots, horizon, m
 
 def option_score(o):
     return structured_score(o)
+
+
+def _jitter_theta(theta, rng, amp_std=0.2):
+    t = np.asarray(theta, np.float32).copy()
+    t[:12] = np.clip(t[:12] + rng.normal(0, amp_std, 12).astype(np.float32), -A_BOUND, A_BOUND)
+    return t
+
+
+def option_teacher_label(rl0, gate0, pi0, base, rng, *, shots, horizon, robust_checks=3):
+    """Confident option label for one option-initiation state: strong θ* (K6-primary lexicographic canonical), CONFIDENT
+    only when the option actually delivers K6 (never a merely-least-bad candidate). Robustness = fraction of small-jitter
+    re-rolls of θ* that still reach K6. Returns (θ*, confident, provenance)."""
+    theta, _adm, out = teacher_theta(rl0, gate0, pi0, base, rng, shots=shots, horizon=horizon)
+    confident = int(out["k6"]) == 1
+    reason = "K6" if out["k6"] else ("HANDOFF_ONLY" if out["reached_handoff"] else "NO_HANDOFF")
+    robust_k6 = None
+    if confident and robust_checks > 0:
+        rk = [structured_carry_rollout(copy.deepcopy(rl0), copy.deepcopy(gate0), pi0, base, _jitter_theta(theta, rng), horizon=horizon)["k6"]
+              for _ in range(robust_checks)]
+        robust_k6 = round(float(np.mean(rk)), 3)
+    prov = {"k6": int(out["k6"]), "handoff": int(out["reached_handoff"]), "any_exit": int(out["contain_exit_ct"] > 0),
+            "effort": out["effort"], "completion": out["completion"], "handoff_step": out["handoff_step"],
+            "termination_reason": reason, "robust_k6": robust_k6, "shots": shots, "confident": int(confident)}
+    return theta.astype(np.float32), bool(confident), prov
