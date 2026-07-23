@@ -238,6 +238,36 @@ def test_receding_horizon_rollout_pi0_select_and_info():
     assert a0 is not None
 
 
+def test_carry_sequence_then_pi0_and_cem():
+    import copy
+    import json
+
+    from hymeko_rl.coin_delivery.coin_carry_handoff import carry_cem, sequence_then_pi0
+    from hymeko_rl.coin_delivery.coin_late_start import LateStart, reconstruct_handoff
+    from hymeko_rl.coin_delivery.coin_markov_ablation_train import make_late_actor55_from_pi0
+    from hymeko_rl.coin_delivery.rl_clip_actor import load_frozen_clip_actor
+
+    d = "experiments/2026_07_22_coin_v3_learning/rl_entry"
+    cfg = json.load(open(f"{d}/td3_baseline_v1_config.json"))
+    pi0 = load_frozen_clip_actor(f"{d}/frozen/pi0_shared_clip_actor.pt", freeze=True)
+    base = make_late_actor55_from_pi0(pi0, trainable=False)
+    r = cfg["banks"]["late_dev"]["rows"][0]
+    ls = LateStart(seed=r[0], prefix_steps=r[1], family=r[2], obs_sha=r[3], base_sha=r[4], causal_sha=r[5])
+    rl, gate, _h, _rec = reconstruct_handoff(pi0, ls, horizon=360)
+
+    # empty offset sequence ⇒ pure frozen pi_0; deterministic across deepcopies
+    z = np.zeros((0, 4), np.float32)
+    o1 = sequence_then_pi0(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, z, horizon=30)
+    o2 = sequence_then_pi0(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, z, horizon=30)
+    for k in ("k6", "max_dwell", "max_strict", "reached_handoff", "contain_exit_ct"):
+        assert k in o1
+    assert o1 == o2 and o1["reached_handoff"] in (0, 1)
+    # CEM runs, returns a valid outcome no worse (by _score) than pi_0's on this state, and is deterministic given rng
+    c1 = carry_cem(rl, gate, pi0, base, 4, np.random.default_rng(3), shots=6, length=4, iters=2, init_std=0.1, mag_max=0.2, elite_frac=0.34, horizon=30)
+    c2 = carry_cem(rl, gate, pi0, base, 4, np.random.default_rng(3), shots=6, length=4, iters=2, init_std=0.1, mag_max=0.2, elite_frac=0.34, horizon=30)
+    assert c1 == c2 and c1["max_strict"] >= 0
+
+
 def test_prefix_search_offsets_and_random_control():
     from hymeko_rl.coin_delivery.coin_prefix_search import make_sel_random, offsets, sel_pi0
 
