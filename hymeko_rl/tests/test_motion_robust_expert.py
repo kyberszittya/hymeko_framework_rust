@@ -31,15 +31,16 @@ def test_shared_low_level_torque_path_is_deterministic_and_equivalent():
     the same (q, qd, q_des) produces the same torque — no raw-torque bypass, no divergence between the two harnesses."""
     from hymeko_rl.env.governed_arm import V3Stack, pd_governed_torque
     st = V3Stack(0.8, 2.0, 0.2, 2.0, 0.02, 120.0, 12.0, 30.0)
-    q, qd, q_des = np.zeros(4), np.zeros(4), np.full(4, 0.1)
+    q, qd = np.zeros(4), np.zeros(4)
+    q_des = np.full(4, 0.02)                                 # kp·0.02 = 2.4 < 4 ⇒ below saturation
     lo, hi = np.full(4, -4.0), np.full(4, 4.0)
     a = pd_governed_torque(q, qd, q_des, st, None, lo, hi)
     b = pd_governed_torque(q, qd, q_des, st, None, lo, hi)
     assert np.array_equal(a, b)                              # deterministic
-    assert np.all(np.abs(a) <= 4.0)                         # saturated to ctrlrange
-    assert np.allclose(a, st.kp * (q_des - q))              # PD law (qd=0, no prev)
-    # torque-rate limit binds from a prev command
-    slow = pd_governed_torque(q, qd, q_des, st, np.zeros(4), lo, hi)
+    assert np.allclose(a, st.kp * (q_des - q))              # PD law (qd=0, no prev, unsaturated)
+    big = pd_governed_torque(q, qd, np.full(4, 1.0), st, None, lo, hi)
+    assert np.all(np.abs(big) <= 4.0)                       # large command saturates to ctrlrange
+    slow = pd_governed_torque(q, qd, q_des, st, np.zeros(4), lo, hi)  # torque-rate limit binds from a prev command
     assert np.all(np.abs(slow) <= st.tau_rate * st.control_dt + 1e-9)
 
 
