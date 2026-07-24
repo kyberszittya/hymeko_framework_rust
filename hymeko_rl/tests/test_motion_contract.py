@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from hymeko_rl.env.motion_contract import (
-    MotionLimits, MotionMetrics, assert_realistic_motion, motion_penalties, motion_report,
-    slew_limited_position, terminal_velocity_certified)
+    MotionLimits, MotionMetrics, TorqueGovernorConfig, assert_realistic_motion, govern_torque, motion_penalties,
+    motion_report, slew_limited_position, terminal_velocity_certified)
 
 
 def test_slew_limit_caps_command_change():
@@ -55,6 +55,26 @@ def test_gate_does_not_fail_on_transient_acceleration():
     """A realistic-velocity arm with a huge instantaneous qacc (servo/contact transient) must PASS — accel is not gated."""
     lim = MotionLimits()
     assert_realistic_motion({"peak_joint_vel": 1.9, "peak_ee_speed": 0.8, "peak_joint_acc": 1600.0}, lim)
+
+
+def test_torque_governor_suppresses_accelerating_but_keeps_braking():
+    cfg = TorqueGovernorConfig(qdot_soft=2.0, qdot_hard=3.0)
+    # joint moving fast +; accelerating torque (+) must be suppressed, braking torque (−) untouched
+    assert govern_torque([1.0], [3.5], cfg)[0] == 0.0            # at/above hard: accelerating torque zeroed
+    assert govern_torque([-1.0], [3.5], cfg)[0] == -1.0          # braking torque preserved fully
+    mid = govern_torque([1.0], [2.5], cfg)[0]                    # between soft and hard: partial suppression
+    assert 0.0 < mid < 1.0
+    assert govern_torque([1.0], [1.0], cfg)[0] == 1.0           # below soft: untouched
+    # vector + sign preserved, magnitude never increased
+    out = govern_torque([1.0, -1.0, 2.0, -2.0], [3.5, 3.5, -3.5, -3.5], cfg)
+    assert out.tolist() == [0.0, -1.0, 2.0, 0.0]                # accel(+/+ and -/-) zeroed; braking kept
+
+
+def test_torque_governor_never_increases_magnitude():
+    cfg = TorqueGovernorConfig(1.5, 2.5)
+    for tau, v in [(3.0, 2.0), (-2.0, 3.0), (1.0, -2.2), (0.5, 0.1)]:
+        g = govern_torque([tau], [v], cfg)[0]
+        assert abs(g) <= abs(tau) + 1e-9 and (g == 0.0 or np.sign(g) == np.sign(tau))
 
 
 def test_motion_report_verdict():

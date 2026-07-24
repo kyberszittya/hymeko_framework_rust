@@ -75,6 +75,33 @@ class MotionMetrics:
         }
 
 
+@dataclass(frozen=True)
+class TorqueGovernorConfig:
+    """Velocity governor for TORQUE-actuated arms (the coin). Suppress only the ACCELERATING torque above ``qdot_soft``
+    (fully at ``qdot_hard``); braking torque (opposite sign to velocity) is never touched, so the policy can always slow
+    down. A torque-rate limit smooths command jumps. armature/damping (set on the model) are the SECONDARY stabilisation
+    layer, not a replacement for the governor. This is NOT plain torque scaling."""
+
+    qdot_soft: float = 2.0             # rad/s — accelerating torque suppression begins
+    qdot_hard: float = 3.0             # rad/s — accelerating torque fully zeroed
+    tau_rate_limit: "float | None" = None   # N·m/s — per-second cap on torque change (None = off)
+
+
+def govern_torque(tau, qvel, cfg: TorqueGovernorConfig) -> np.ndarray:
+    """Directional velocity governor: for each joint, if the torque ACCELERATES the joint (same sign as velocity) and
+    |velocity| ≥ qdot_soft, scale that torque down by a linear ramp to 0 at qdot_hard. Braking torque (opposite sign) is
+    left untouched. Pure/vectorised. # Postconditions ``|result| ≤ |tau|`` elementwise; sign preserved."""
+    tau = np.asarray(tau, np.float64).copy()
+    v = np.asarray(qvel, np.float64)
+    accelerating = (np.sign(tau) == np.sign(v)) & (v != 0.0)
+    span = max(cfg.qdot_hard - cfg.qdot_soft, 1e-9)
+    ramp = np.clip(1.0 - (np.abs(v) - cfg.qdot_soft) / span, 0.0, 1.0)   # 1 below soft, 0 at/above hard
+    over = np.abs(v) >= cfg.qdot_soft
+    mask = accelerating & over
+    tau[mask] = tau[mask] * ramp[mask]
+    return tau
+
+
 def slew_limited_position(q_desired_raw, q_prev, *, joint_vel_limit: float, dt: float) -> np.ndarray:
     """Velocity-limited POSITION command: the commanded joint target cannot move faster than ``joint_vel_limit`` — the
     primary anti-teleport layer (removes single-step target jumps that a servo yanks the arm toward). # Postconditions
