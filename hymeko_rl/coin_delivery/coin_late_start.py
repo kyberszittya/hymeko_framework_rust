@@ -76,12 +76,15 @@ class HandoffRecord:
     speed: float = 0.0         # disk speed at the handoff
 
 
-def replay_pi0(pi0, seed: int, *, horizon: int = 360, stop_at: "int | None" = None):
+def replay_pi0(pi0, seed: int, *, horizon: int = 360, stop_at: "int | None" = None, coin_shape: str = "cylinder",
+               disk_radius_override=None, arm_mjcf_transform=None, geom: "str | None" = None):
     """Replay the frozen ``pi_0`` from neutral ``reset(seed)``. If ``stop_at`` is None, return the list of per-step
     :class:`HandoffRecord` (one per env step, BEFORE that step's action). Otherwise stop after ``stop_at`` steps and
     return ``(rl, gate, history, record_at_stop)`` — the LIVE env positioned at the handoff to begin the late episode.
-    """
-    rl = CoinRL4Dof(horizon=horizon)
+    ``coin_shape`` / ``disk_radius_override`` / ``arm_mjcf_transform`` / ``geom`` drive OBJECT_TO_TARGET_VARIANTS and the
+    ball-tip embodiment (defaults ⇒ the frozen canonical E0 clamp on the frozen coin)."""
+    rl = CoinRL4Dof(horizon=horizon, geom=geom, arm_mjcf_transform=arm_mjcf_transform,
+                    coin_shape=coin_shape, disk_radius_override=disk_radius_override)
     o = rl.reset(int(seed))
     gate = StableEngagementGate(StableEngagementConfig())
     hist = ResidualCriticStateV2(); hist.reset(o)
@@ -127,9 +130,12 @@ class LateStart:
         return [self.seed, self.prefix_steps, self.family, self.obs_sha, self.base_sha, self.causal_sha]
 
 
-def reconstruct_handoff(pi0, ls: "LateStart", *, horizon: int = 360):
-    """Replay to ``ls.prefix_steps`` and return ``(rl, gate, history, record)`` at the handoff (LIVE env)."""
-    return replay_pi0(pi0, ls.seed, horizon=horizon, stop_at=ls.prefix_steps)
+def reconstruct_handoff(pi0, ls: "LateStart", *, horizon: int = 360, coin_shape: str = "cylinder",
+                        disk_radius_override=None, arm_mjcf_transform=None, geom: "str | None" = None):
+    """Replay to ``ls.prefix_steps`` and return ``(rl, gate, history, record)`` at the handoff (LIVE env). The object /
+    embodiment overrides (defaults ⇒ frozen canonical) reconstruct the SAME (seed, prefix) handoff on a VARIANT coin/robot."""
+    return replay_pi0(pi0, ls.seed, horizon=horizon, stop_at=ls.prefix_steps, coin_shape=coin_shape,
+                      disk_radius_override=disk_radius_override, arm_mjcf_transform=arm_mjcf_transform, geom=geom)
 
 
 def verify_reconstruction(pi0, ls: "LateStart", *, horizon: int = 360) -> dict:
