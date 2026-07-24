@@ -478,7 +478,8 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
                          zone_x: float = 0.0, zone_y: float = 0.16, zone_half: float = 0.055,
                          plane_z: float = _PLANE_Z, coin_damping: float = 2.5,
                          coin_density: float | None = None, coin_shape: str = "cylinder",
-                         spin_damping: float = 0.8, coin_frictionloss: float = 0.0) -> str:
+                         spin_damping: float = 0.8, coin_frictionloss: float = 0.0,
+                         disk_radius_y: float | None = None) -> str:
     """Inject a planar table object (slide-x/slide-y/hinge-z, confined to the arms' plane; placed, not
     dropped) + a target-zone marker site into a two-arm MJCF. Appended before ``</worldbody>``.
 
@@ -500,7 +501,8 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
     # thus moved ONLY by the yellow fingertips, never knocked by an arm body. `cc` is applied to the manipuland.
     cc = " " + Collision.attr(Collision.COIN)
     if coin_shape == "box":
-        geom = (f'<geom name="disk" type="box" size="{disk_radius:g} {disk_radius:g} {disk_half:g}" '
+        hy = disk_radius if disk_radius_y is None else disk_radius_y   # hx=disk_radius, hy=disk_radius_y ⇒ rectangle (O2)
+        geom = (f'<geom name="disk" type="box" size="{disk_radius:g} {hy:g} {disk_half:g}" '
                 f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
     elif coin_shape == "cylinder":
         geom = (f'<geom name="disk" type="cylinder" size="{disk_radius:g} {disk_half:g}" '
@@ -668,7 +670,8 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                  contact_legality: bool | None = None,
                  robot_source: str | None = None,
                  scene_source: str | None = None,
-                 disk_radius_override: float | None = None) -> None:
+                 disk_radius_override: float | None = None,
+                 disk_radius_y_override: float | None = None) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
@@ -763,7 +766,7 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                                     zone_half=env.zone_half, disk_radius=env.disk_radius,
                                     coin_damping=coin_damping, coin_density=coin_density,
                                     coin_shape=coin_shape, spin_damping=spin_damping,
-                                    coin_frictionloss=coin_frictionloss)
+                                    coin_frictionloss=coin_frictionloss, disk_radius_y=disk_radius_y_override)
         self._mjcf = mjcf   # kept so the renderer can re-skin the scene (decorate_scene)
         self.model = mujoco.MjModel.from_xml_string(mjcf)
         self.data = mujoco.MjData(self.model)
