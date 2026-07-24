@@ -176,16 +176,25 @@ class MultimodalBudgetSearch:
         centers = [np.asarray(m.center, np.float32) for m in modes]
         probs = [float(max(0.0, m.prob)) for m in modes]
         per_mode = allocate_budget(probs, self.budget)
-        best = (0, np.asarray(centers[0], np.float32), -np.inf, {})   # (mode, action, score, outcome)
-        for mi, (c, n) in enumerate(zip(centers, per_mode)):
+        # ORDER-INVARIANCE (§after the gate-contamination bug): each mode gets an INDEPENDENT child rng assigned by the
+        # mode's CANONICAL identity (mode_id then centre bytes), NOT its list position — so reordering the mode list cannot
+        # change which candidates a mode draws. Score ties break on a canonical candidate key. K=1 keeps the passed rng ⇒
+        # ≡ FixedBudgetSearch. Together: the winning mode/θ/score/outcome are invariant to mode and candidate ordering.
+        if len(modes) <= 1:
+            children = [rng]
+        else:
+            spawned = rng.spawn(len(modes))
+            rank = {i: r for r, i in enumerate(sorted(range(len(modes)),
+                    key=lambda i: (int(modes[i].mode_id), centers[i].astype(np.float64).tobytes())))}
+            children = [spawned[rank[i]] for i in range(len(modes))]
+        best = (0, np.asarray(centers[0], np.float32), -np.inf, {}, None)   # (mode, action, score, outcome, tie_key)
+        for mi, (c, n, child) in enumerate(zip(centers, per_mode, children)):
             if n <= 0:
                 continue
-            if n == 1:                                        # a single candidate = the mode centre itself (no wasted jitter)
-                cand = c[None, :]
-            else:
-                cand = self.generator.sample(c, n, rng)       # score at the generator's native precision (K=1 ≡ FixedBudgetSearch)
+            cand = c[None, :] if n == 1 else self.generator.sample(c, n, child)   # K=1/n=1: the mode centre itself
             for cc in cand:
-                sc, out = self.scorer.score(cc, rng)
-                if sc > best[2]:
-                    best = (mi, np.asarray(cc, np.float32), sc, out)
+                sc, out = self.scorer.score(cc, child)
+                key = np.asarray(cc, np.float64).tobytes()    # canonical, order-independent tie-break
+                if sc > best[2] or (sc == best[2] and (best[4] is None or key < best[4])):
+                    best = (mi, np.asarray(cc, np.float32), sc, out, key)
         return MultimodalProvenance(centers, probs, best[0], best[1], best[2], best[3], self.budget, per_mode)

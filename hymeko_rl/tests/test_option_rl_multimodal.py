@@ -30,8 +30,8 @@ class BimodalScorer:
     cannot reach +1 by local jitter — exactly the O2 multimodal structure in miniature."""
 
     def score(self, cand, rng):
-        x = float(np.asarray(cand)[0])
-        s = max(np.exp(-((x - 1.0) ** 2) / 0.02) * 1.00, np.exp(-((x + 1.0) ** 2) / 0.02) * 0.90)
+        x = float(np.asarray(cand)[0])                          # wide peaks (0.5) so the mode WEIGHT decides, not sampling noise
+        s = max(np.exp(-((x - 1.0) ** 2) / 0.5) * 1.00, np.exp(-((x + 1.0) ** 2) / 0.5) * 0.90)
         return float(s), {"k6": int(s > 0.5)}
 
 
@@ -66,6 +66,56 @@ def test_single_center_search_misses_the_other_mode():
 def test_single_mode_adapter_is_k1():
     modes = SingleModeProposal(WrongCenter()).modes(np.zeros(1))
     assert len(modes) == 1 and modes[0].prob == 1.0 and float(modes[0].center[0]) == -1.0
+
+
+class PeakScorer:
+    """Deterministic (no mutable state); a single reward peak at ``target`` — one mode is the clear winner."""
+
+    def __init__(self, target=2.0):
+        self.target = target
+
+    def score(self, cand, rng):
+        return -float(abs(float(np.asarray(cand)[0]) - self.target)), {"k6": 0}
+
+
+class TieScorer:
+    """Every candidate scores EXACTLY the same — forces the canonical tie-break to decide the winner."""
+
+    def score(self, cand, rng):
+        return 1.0, {"k6": 0}
+
+
+class OrderProposal:
+    """Four modes with distinct centres + ids, emitted in a caller-chosen ORDER (to test order-invariance)."""
+
+    def __init__(self, order):
+        self._m = [ProposalMode(0.25, np.array([float(i)]), 0.05, i) for i in range(4)]
+        self.order = order
+
+    def modes(self, obs):
+        return [self._m[i] for i in self.order]
+
+
+def _run(order, scorer):
+    gen = GaussGen(0.05)
+    return MultimodalBudgetSearch(gen, scorer, budget=12).select(OrderProposal(order), np.zeros(1), np.random.default_rng(3))
+
+
+def test_search_mode_order_invariant_winner_theta_score():
+    a = _run([0, 1, 2, 3], PeakScorer(2.0))
+    for order in ([3, 2, 1, 0], [2, 0, 3, 1], [1, 3, 0, 2]):     # reverse + two permutations
+        b = _run(order, PeakScorer(2.0))
+        assert np.allclose(a.selected, b.selected)               # identical winning θ
+        assert abs(a.score - b.score) < 1e-12                    # identical score
+        assert np.allclose(a.mode_centers[a.selected_mode], b.mode_centers[b.selected_mode])  # same winning MODE (by centre)
+        assert a.outcome == b.outcome                            # same certificate/outcome
+
+
+def test_tie_break_is_stable_and_order_invariant():
+    a = _run([0, 1, 2, 3], TieScorer())
+    for order in ([3, 2, 1, 0], [2, 0, 3, 1]):                   # all-ties: the canonical key must pick the SAME candidate
+        b = _run(order, TieScorer())
+        assert np.allclose(a.selected, b.selected) and a.score == b.score
 
 
 def test_allocate_budget_ge1_each_and_sums():
