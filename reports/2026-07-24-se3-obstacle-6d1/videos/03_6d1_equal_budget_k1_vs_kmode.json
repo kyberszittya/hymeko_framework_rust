@@ -1,0 +1,20 @@
+{
+ "clip": "03_6d1_equal_budget_k1_vs_kmode",
+ "state_seed": 6,
+ "budget": 12,
+ "single_head": {
+  "argmax_route": "left",
+  "success": 0
+ },
+ "kmode": {
+  "selected": "over",
+  "alloc": [
+   3,
+   3,
+   3,
+   3
+  ],
+  "success": 1
+ },
+ "commit": "bbffe8da"
+}

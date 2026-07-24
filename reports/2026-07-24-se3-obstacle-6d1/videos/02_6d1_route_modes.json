@@ -1,0 +1,50 @@
+{
+ "clip": "02_6d1_route_modes",
+ "examples": [
+  {
+   "route": "left",
+   "state_seed": 21,
+   "budget_alloc": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "success": 1
+  },
+  {
+   "route": "right",
+   "state_seed": 15,
+   "budget_alloc": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "success": 1
+  },
+  {
+   "route": "over",
+   "state_seed": 8,
+   "budget_alloc": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "success": 1
+  },
+  {
+   "route": "under",
+   "state_seed": 6,
+   "budget_alloc": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "success": 1
+  }
+ ],
+ "commit": "bbffe8da"
+}
