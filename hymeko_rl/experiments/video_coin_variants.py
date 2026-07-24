@@ -198,11 +198,64 @@ def video_05_box_variants(pi0, base, forbidden):
     print(f"wrote {path} ({len(clip)} frames)")
 
 
+def video_06_clamp_vs_balltip(pi0, base, forbidden):
+    """Matched canonical-coin state, two embodiments side by side (NOT winner-loser — different contact strategy):
+      CLAMP  = the task-specific E0 CONCAVE_CLAMP baseline (structured expert)  — force-closure hold
+      BALLTIP = the generalization embodiment, deploy = FROZEN proposal update-0 + b8 search (NOT SAC) — push/coast
+    Both from the SAME landing state; pick one where BOTH deliver so the clip contrasts strategy, not success."""
+    ls, _c, _s = build_boundary_panel(pi0, range(16000, 17600), forbidden, want=24, families=FAMS,
+                                      strict_primary=(0,), strict_fill=(), per_seed_cap=3)
+    prop = load_proposal(CYL_PROP)
+    chosen = None
+    for one in ls:
+        try:
+            rlc, gatec, _h, _r = reconstruct_handoff(pi0, one, coin_shape="cylinder", disk_radius_override=_R)
+            rlb, gateb, _h2, _r2 = reconstruct_handoff(pi0, one, geom="POINT", arm_mjcf_transform=_ball_tf,
+                                                       coin_shape="cylinder", disk_radius_override=_R)
+        except ValueError:
+            continue
+        if int(rlc._strict) != 0 or int(rlb._strict) != 0:
+            continue
+        thc, oc, _s1 = structured_random_best_with_support(copy.deepcopy(rlc), copy.deepcopy(gatec), pi0, base,
+                                                           np.random.default_rng(5), shots=EXPERT_SHOTS, horizon=EVAL_H)
+        thb, ob = search_select(copy.deepcopy(rlb), copy.deepcopy(gateb), prop.theta(rlb.obs()), pi0, base,
+                                np.random.default_rng(5), b=8, horizon=EVAL_H)
+        if oc["k6"] and ob["k6"]:
+            chosen = (rlc, gatec, thc, rlb, gateb, thb)
+            break
+    if chosen is None:
+        print("06: no matched state where BOTH deliver found")
+        return
+    rlc, gatec, thc, rlb, gateb, thb = chosen
+    fc, dc, _oc = render_coin_rollout(rlc, gatec, pi0, base, thc)
+    fb, db, _ob = render_coin_rollout(rlb, gateb, pi0, base, thb)
+    left = _coin_clip(fc, dc, shape="canonical coin", ctrl="CLAMP (E0, task-specific)", budget=EXPERT_SHOTS)
+    right = _coin_clip(fb, db, shape="canonical coin", ctrl="BALLTIP (deploy update-0+b8)", budget=8)
+    clip = hstack(left, right)
+    clip += summary_card(clip[0].size, "06 — clamp vs balltip (matched canonical coin, different contact strategy)",
+                         [("CLAMP", "task-specific strong baseline (force-closure hold)"),
+                          ("BALLTIP", "generalization embodiment; collision ON; filtering OFF"),
+                          ("balltip deploy", "frozen proposal update-0 + b8 search (NOT SAC)"),
+                          ("both", f"K6 delivered — clamp cf {dc['contact_frac']} vs balltip cf {db['contact_frac']}")], hold=60)
+    path = encode_clip(clip, f"{OUT}/06_clamp_vs_balltip_coin.mp4", fps=30)
+    json.dump({"clip": "06_clamp_vs_balltip_coin",
+               "clamp": {"k6": dc["k6"], "max_dwell": dc["max_dwell"], "contact_frac": dc["contact_frac"]},
+               "balltip": {"k6": db["k6"], "max_dwell": db["max_dwell"], "contact_frac": db["contact_frac"],
+                           "deploy": "update-0 + b8 (NOT SAC)"}, "commit": "4dfdb2d6"},
+              open(f"{OUT}/06_clamp_vs_balltip_coin.json", "w"), indent=1, default=str)
+    print(f"wrote {path} ({len(clip)} frames)")
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     pi0, base, forbidden = _setup()
-    video_04_disk_sizes(pi0, base, forbidden)
-    video_05_box_variants(pi0, base, forbidden)
+    only = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if only in ("all", "04"):
+        video_04_disk_sizes(pi0, base, forbidden)
+    if only in ("all", "05"):
+        video_05_box_variants(pi0, base, forbidden)
+    if only in ("all", "06"):
+        video_06_clamp_vs_balltip(pi0, base, forbidden)
     print("COIN_VARIANT_VIDEOS_DONE")
     return True
 
