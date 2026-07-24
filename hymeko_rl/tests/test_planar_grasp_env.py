@@ -667,3 +667,31 @@ def test_arm_body_coin_contact_reward_penalizes_body_only_not_grasp() -> None:
                                               left_fingertip_contact=True)), 0.1, a) == 0.0
     assert term(env_with(ContactLegalityState()), 0.1, a) == 0.0                                  # no contact
     assert term(env_with(None), 0.1, a) == 0.0                                                    # v1: no legality
+
+
+# ── O3: triangular-prism manipuland (equal-area to the cylinder; MuJoCo density-derives correct COM + inertia) ──
+def test_triangle_prism_manipuland_equal_area_and_valid_inertia() -> None:
+    arm = make_planar_arms_mjcf()
+    cyl = compose_planar_scene(arm, disk_radius=0.020, disk_half=0.02, coin_shape="cylinder", coin_density=1000.0)
+    tri = compose_planar_scene(arm, disk_radius=0.020, disk_half=0.02, coin_shape="triangle", coin_density=1000.0)
+    assert 'type="mesh"' in tri and "disk_mesh" in tri       # a mesh manipuland + its <asset>
+    mc, mt = mujoco.MjModel.from_xml_string(cyl), mujoco.MjModel.from_xml_string(tri)
+    bc = mujoco.mj_name2id(mc, mujoco.mjtObj.mjOBJ_BODY, "disk")
+    bt = mujoco.mj_name2id(mt, mujoco.mjtObj.mjOBJ_BODY, "disk")
+    assert abs(float(mc.body_mass[bc]) - float(mt.body_mass[bt])) < 1e-5   # equal-area ⇒ equal mass
+    assert np.allclose(mt.body_ipos[bt], 0.0, atol=1e-4)      # centroid at the body origin
+    assert np.all(mt.body_inertia[bt] > 0)                    # a valid, non-degenerate inertia tensor
+    # the in-plane inertia of a triangle exceeds the equal-area disk's (mass farther from centre)
+    assert float(mt.body_inertia[bt][0]) > float(mc.body_inertia[bc][0])
+
+
+def test_triangle_prism_env_steps() -> None:
+    env = PlanarGraspEnv(max_steps=10, coin_shape="triangle")
+    env.reset(seed=0)
+    for _ in range(5):
+        env.step(env.action_space.sample())                  # compiles + steps with a mesh manipuland
+
+
+def test_unknown_coin_shape_rejected() -> None:
+    with pytest.raises(ValueError, match="cylinder"):
+        compose_planar_scene(make_planar_arms_mjcf(), coin_shape="hexagon")

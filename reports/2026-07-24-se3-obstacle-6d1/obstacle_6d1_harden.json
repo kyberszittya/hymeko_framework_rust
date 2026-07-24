@@ -1,0 +1,213 @@
+{
+ "contract": "SE3_OBSTACLE_6D1_HARDENING",
+ "date": "2026-07-24",
+ "claim": "multimodal policy search improves EE route selection in geometrically-separated local proposal basins (NOT full-arm avoidance)",
+ "harden": {
+  "per_seed": [
+   {
+    "seed_group": 0,
+    "eligibility_rate": 0.236,
+    "n_states": 13,
+    "critical_pair": {
+     "single_head_wrong": 0,
+     "kmode": 11
+    },
+    "delta_headline_mean": 0.154,
+    "route_family_feasible": {
+     "left": 9,
+     "right": 6,
+     "over": 9,
+     "under": 5
+    },
+    "kmode_failure_decomp": {
+     "collided": 1,
+     "not_reached": 1
+    }
+   },
+   {
+    "seed_group": 1,
+    "eligibility_rate": 0.2,
+    "n_states": 11,
+    "critical_pair": {
+     "single_head_wrong": 4,
+     "kmode": 9
+    },
+    "delta_headline_mean": 0.0,
+    "route_family_feasible": {
+     "left": 6,
+     "right": 7,
+     "over": 9,
+     "under": 2
+    },
+    "kmode_failure_decomp": {
+     "collided": 1,
+     "not_reached": 1
+    }
+   },
+   {
+    "seed_group": 2,
+    "eligibility_rate": 0.182,
+    "n_states": 10,
+    "critical_pair": {
+     "single_head_wrong": 1,
+     "kmode": 9
+    },
+    "delta_headline_mean": 0.3,
+    "route_family_feasible": {
+     "left": 4,
+     "right": 4,
+     "over": 6,
+     "under": 1
+    },
+    "kmode_failure_decomp": {
+     "collided": 1,
+     "not_reached": 0
+    }
+   },
+   {
+    "seed_group": 3,
+    "eligibility_rate": 0.236,
+    "n_states": 13,
+    "critical_pair": {
+     "single_head_wrong": 4,
+     "kmode": 11
+    },
+    "delta_headline_mean": 0.154,
+    "route_family_feasible": {
+     "left": 5,
+     "right": 6,
+     "over": 10,
+     "under": 2
+    },
+    "kmode_failure_decomp": {
+     "collided": 1,
+     "not_reached": 1
+    }
+   },
+   {
+    "seed_group": 4,
+    "eligibility_rate": 0.218,
+    "n_states": 12,
+    "critical_pair": {
+     "single_head_wrong": 1,
+     "kmode": 12
+    },
+    "delta_headline_mean": 0.667,
+    "route_family_feasible": {
+     "left": 6,
+     "right": 8,
+     "over": 7,
+     "under": 2
+    },
+    "kmode_failure_decomp": {
+     "collided": 0,
+     "not_reached": 0
+    }
+   },
+   {
+    "seed_group": 5,
+    "eligibility_rate": 0.2,
+    "n_states": 11,
+    "critical_pair": {
+     "single_head_wrong": 3,
+     "kmode": 10
+    },
+    "delta_headline_mean": 0.364,
+    "route_family_feasible": {
+     "left": 5,
+     "right": 5,
+     "over": 5,
+     "under": 2
+    },
+    "kmode_failure_decomp": {
+     "collided": 0,
+     "not_reached": 1
+    }
+   }
+  ],
+  "aggregate": {
+   "n_seeds": 6,
+   "headline_budget": 12,
+   "kmode": "K4_equal",
+   "per_seed_delta_mean": [
+    0.154,
+    0.0,
+    0.3,
+    0.154,
+    0.667,
+    0.364
+   ],
+   "seed_median_delta": 0.227,
+   "seed_iqr": [
+    0.154,
+    0.348
+   ],
+   "n_seeds_positive": 5,
+   "hier_bootstrap": {
+    "median": 0.2714,
+    "lo": 0.0823,
+    "hi": 0.4829
+   },
+   "budget_curve_K1": {
+    "0": 0.4,
+    "4": 0.557,
+    "8": 0.6,
+    "12": 0.614,
+    "24": 0.686
+   },
+   "budget_curve_KM": {
+    "0": 0.4,
+    "4": 0.814,
+    "8": 0.857,
+    "12": 0.886,
+    "24": 0.914
+   },
+   "verdict": "MULTIMODAL_POLICY_SEARCH_VALIDATED_ON_GEOMETRICALLY_SEPARATED_ROUTE_BASINS"
+  }
+ },
+ "obstacle_shift_control": {
+  "wider": {
+   "eligibility_rate": 0.244,
+   "n_states": 10,
+   "B4": {
+    "single_head": 0.4,
+    "kmode": 0.6,
+    "delta": 0.2
+   },
+   "B12": {
+    "single_head": 0.4,
+    "kmode": 0.8,
+    "delta": 0.4
+   }
+  },
+  "taller": {
+   "eligibility_rate": 0.244,
+   "n_states": 10,
+   "B4": {
+    "single_head": 0.3,
+    "kmode": 0.7,
+    "delta": 0.4
+   },
+   "B12": {
+    "single_head": 0.3,
+    "kmode": 0.7,
+    "delta": 0.4
+   }
+  },
+  "narrow": {
+   "eligibility_rate": 0.244,
+   "n_states": 10,
+   "B4": {
+    "single_head": 0.5,
+    "kmode": 0.8,
+    "delta": 0.3
+   },
+   "B12": {
+    "single_head": 0.5,
+    "kmode": 0.8,
+    "delta": 0.3
+   }
+  }
+ },
+ "verdict": "MULTIMODAL_POLICY_SEARCH_VALIDATED_ON_GEOMETRICALLY_SEPARATED_ROUTE_BASINS"
+}

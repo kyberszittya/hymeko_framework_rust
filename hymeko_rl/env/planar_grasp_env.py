@@ -474,6 +474,16 @@ def with_arm_coin_collision(arm_mjcf: str) -> str:
     return ET.tostring(root, encoding="unicode") if changed else arm_mjcf
 
 
+def _tri_prism_vertices(circumradius: float, half_z: float) -> str:
+    """The 6 vertices (flat 'x y z …' string) of an equilateral triangular prism: an equilateral triangle at
+    ``circumradius`` (apex up), extruded to ±``half_z``. Centroid at the origin. # Postconditions 18 numbers; the convex
+    hull is the prism MuJoCo derives mass/COM/inertia from."""
+    angs = [math.pi / 2 + k * 2 * math.pi / 3 for k in range(3)]
+    verts = [f"{circumradius * math.cos(a):.6f} {circumradius * math.sin(a):.6f} {z:.6f}"
+             for z in (-half_z, half_z) for a in angs]
+    return " ".join(verts)
+
+
 def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half: float = 0.02,
                          zone_x: float = 0.0, zone_y: float = 0.16, zone_half: float = 0.055,
                          plane_z: float = _PLANE_Z, coin_damping: float = 2.5,
@@ -500,6 +510,7 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
     # cannot touch it — only the fingertip geoms (conaffinity 3) and the floor (conaffinity 3) can. The coin is
     # thus moved ONLY by the yellow fingertips, never knocked by an arm body. `cc` is applied to the manipuland.
     cc = " " + Collision.attr(Collision.COIN)
+    mesh_asset = ""
     if coin_shape == "box":
         hy = disk_radius if disk_radius_y is None else disk_radius_y   # hx=disk_radius, hy=disk_radius_y ⇒ rectangle (O2)
         geom = (f'<geom name="disk" type="box" size="{disk_radius:g} {hy:g} {disk_half:g}" '
@@ -507,8 +518,16 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
     elif coin_shape == "cylinder":
         geom = (f'<geom name="disk" type="cylinder" size="{disk_radius:g} {disk_half:g}" '
                 f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
+    elif coin_shape == "triangle":
+        # O3: an equilateral triangular PRISM, EQUAL-AREA to the disk_radius cylinder ((3√3/4)R² = π·disk_radius²), a
+        # convex mesh centred at its centroid. MuJoCo DENSITY-derives the correct mass, COM (at origin) and inertia
+        # tensor from the mesh volume — no hand-authored inertial (verified: equal-area mass parity to the cylinder).
+        _tri_R = math.sqrt(math.pi * disk_radius * disk_radius / (3.0 * math.sqrt(3.0) / 4.0))
+        mesh_asset = f'<asset><mesh name="disk_mesh" vertex="{_tri_prism_vertices(_tri_R, disk_half)}"/></asset>'
+        geom = (f'<geom name="disk" type="mesh" mesh="disk_mesh" '
+                f'rgba="0.85 0.3 0.2 1" friction="1.0 0.05 0.001"{dens}{cc}/>')
     else:
-        raise ValueError(f"coin_shape must be 'cylinder' or 'box'; got {coin_shape!r}")
+        raise ValueError(f"coin_shape must be 'cylinder', 'box' or 'triangle'; got {coin_shape!r}")
     # `frictionloss` is DRY (Coulomb) friction on the slide joints — a FORCE THRESHOLD, not a rate: the coin does
     # not move until the applied push exceeds it. Set between one arm's and two arms' push force → a SINGLE arm
     # cannot move the coin, only two together (Galambos 2026-07-03: "két robot ereje kelljen a henger
@@ -526,6 +545,8 @@ def compose_planar_scene(arm_mjcf: str, *, disk_radius: float = 0.035, disk_half
         f'<site name="target_zone" type="cylinder" size="{zone_half:g} 0.002" '
         f'pos="{zone_x:g} {zone_y:g} 0.004" rgba="0.2 0.8 0.3 0.4"/>'
     )
+    if mesh_asset:                                          # O3 mesh: inject the <asset> (MuJoCo merges multiple <asset>)
+        arm_mjcf = arm_mjcf.replace("<worldbody>", mesh_asset + "\n  <worldbody>", 1)
     return arm_mjcf.replace("</worldbody>", "    " + coin + zone + "\n  </worldbody>", 1)
 
 

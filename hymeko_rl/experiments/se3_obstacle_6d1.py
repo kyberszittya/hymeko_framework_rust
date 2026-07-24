@@ -42,20 +42,24 @@ def _env():
                               min_separation=0.16)
 
 
-def build_eligible_panel(env, n_scan=60):
-    """Fixed, controller-independent eligibility: direct path blocked ∧ ≥1 execution-feasible route ∧ ≥1 execution-
-    infeasible route (so a right AND a wrong choice both exist). Returns [(seed, feasible[], infeasible[])] + rate."""
-    panel = []
-    for s in range(n_scan):
-        env.reset(seed=s)
+def build_eligible_panel(env, state_seeds=range(60), feas_seed_base=100, want=None):
+    """Fixed, controller-independent eligibility over an EXPLICIT set of state seeds (so replications use FRESH panels):
+    direct path blocked ∧ ≥1 execution-feasible route ∧ ≥1 execution-infeasible route (a right AND a wrong choice both
+    exist). Feasibility is EXECUTION-based (not the geometric polyline). Returns [(seed, feasible[], infeasible[])] + rate."""
+    panel, scanned = [], 0
+    for s in state_seeds:
+        scanned += 1
+        env.reset(seed=int(s))
         if not env.direct_path_blocked():
             continue
-        feas = {nm: route_execution_feasible(env, d, seed=100 + s) for nm, d in ROUTE_DIRS.items()}
+        feas = {nm: route_execution_feasible(env, d, seed=feas_seed_base + int(s)) for nm, d in ROUTE_DIRS.items()}
         good = [nm for nm, f in feas.items() if f]
         bad = [nm for nm, f in feas.items() if not f]
         if good and bad:
-            panel.append({"seed": s, "feasible": good, "infeasible": bad})
-    return panel, round(len(panel) / max(1, n_scan), 3)
+            panel.append({"seed": int(s), "feasible": good, "infeasible": bad})
+            if want and len(panel) >= want:
+                break
+    return panel, round(len(panel) / max(1, scanned), 3)
 
 
 def mode_non_crossing(env, direction, n=32, std=0.02):
@@ -164,6 +168,108 @@ def _grid_verdict(grid):
     return "MODE_ROUTING_OR_TRAINING_INSUFFICIENT_OR_NOT_A_DEPLOY_LEVER"
 
 
+def deploy_state(env, item, K, alloc, B, seed_rng):
+    """One (state, K, allocation, budget) deploy outcome — success + failure mode (collided / not-reached) + selected
+    route family. B=0 = direct proposal (top mode, no search)."""
+    env.reset(seed=item["seed"])
+    obs = env.node_features().reshape(-1)
+    prop = RouteModeProposal(env, list(ROUTE_DIRS.values()), alloc, k=K)
+    if B == 0:
+        modes = prop.modes(obs)
+        q, v = env.data.qpos.copy(), env.data.qvel.copy()
+        out = execute_route_option(env, modes[0].center)
+        env.data.qpos[:], env.data.qvel[:] = q, v
+        mujoco.mj_forward(env.model, env.data)
+        env._step = 0
+        return {**out, "selected_mode": int(modes[0].mode_id)}
+    prov = MultimodalBudgetSearch(ViaGen(), RouteOptionScorer(env), budget=B).select(prop, obs, np.random.default_rng(seed_rng))
+    return {**prov.outcome, "selected_mode": int(prov.selected_mode)}
+
+
+def _hier_bootstrap(per_seed_deltas, iters=5000, boot_seed=0):
+    """Hierarchical seed→state bootstrap of the mean paired Δ (K-mode − single-head): resample SEEDS with replacement,
+    then STATES within each resampled seed, average the per-state Δ. Returns median + 95% CI. per_seed_deltas = list (per
+    seed) of per-state Δ arrays."""
+    rng = np.random.default_rng(boot_seed)
+    seeds = [np.asarray(d, np.float64) for d in per_seed_deltas if len(d)]
+    if not seeds:
+        return {"median": 0.0, "lo": 0.0, "hi": 0.0}
+    boot = []
+    for _ in range(iters):
+        chosen = [seeds[i] for i in rng.integers(0, len(seeds), len(seeds))]
+        vals = [s[rng.integers(0, len(s), len(s))].mean() for s in chosen]
+        boot.append(float(np.mean(vals)))
+    return {"median": round(float(np.median(boot)), 4), "lo": round(float(np.percentile(boot, 2.5)), 4),
+            "hi": round(float(np.percentile(boot, 97.5)), 4)}
+
+
+def harden(n_seeds=6, budgets=(0, 4, 8, 12, 24), headline_B=12, kmode_alloc="equal", kmode_K=4):
+    """Seed-hardening: N replications, each a FRESH eligible panel (disjoint state-seed range) + a paired search seed.
+    Headline Δ = KMODE(K=kmode_K, alloc) − single-head@argmax at ``headline_B``, per (seed, state). Reports per-seed Δ,
+    seed median/IQR, hierarchical bootstrap, fresh critical-pair replication, route-family + failure decomposition."""
+    per_seed, curves = [], {"K1": {b: [] for b in budgets}, "KM": {b: [] for b in budgets}}
+    per_seed_deltas = []
+    for i in range(n_seeds):
+        env = _env()
+        lo = i * 90
+        panel, rate = build_eligible_panel(env, state_seeds=range(lo, lo + 55), feas_seed_base=300 + i, want=14)
+        srng = 40 + i
+        # fresh critical pair on THIS panel
+        sh, km, _rows = critical_pair(env, panel, budget=12, seed_rng=srng)
+        # per-state deploy bits across budgets
+        deltas, fam, fails = [], {"left": 0, "right": 0, "over": 0, "under": 0}, {"collided": 0, "not_reached": 0}
+        for it in panel:
+            for nm in it["feasible"]:
+                fam[nm] += 1
+            for b in budgets:
+                k1 = deploy_state(env, it, 1, "prob", b, srng)
+                kmv = deploy_state(env, it, kmode_K, kmode_alloc, b, srng)
+                curves["K1"][b].append(k1["success"])
+                curves["KM"][b].append(kmv["success"])
+                if b == headline_B:
+                    deltas.append(kmv["success"] - k1["success"])
+                    if not kmv["success"]:
+                        fails["collided" if kmv.get("collided") else "not_reached"] += 1
+        per_seed_deltas.append(deltas)
+        per_seed.append({"seed_group": i, "eligibility_rate": rate, "n_states": len(panel),
+                         "critical_pair": {"single_head_wrong": sh, "kmode": km},
+                         "delta_headline_mean": round(float(np.mean(deltas)) if deltas else 0.0, 3),
+                         "route_family_feasible": fam, "kmode_failure_decomp": fails})
+    seed_means = [p["delta_headline_mean"] for p in per_seed]
+    n_pos = sum(m > 0 for m in seed_means)
+    agg = {"n_seeds": n_seeds, "headline_budget": headline_B, "kmode": f"K{kmode_K}_{kmode_alloc}",
+           "per_seed_delta_mean": seed_means, "seed_median_delta": round(float(np.median(seed_means)), 3),
+           "seed_iqr": [round(float(np.percentile(seed_means, 25)), 3), round(float(np.percentile(seed_means, 75)), 3)],
+           "n_seeds_positive": int(n_pos), "hier_bootstrap": _hier_bootstrap(per_seed_deltas),
+           "budget_curve_K1": {b: round(float(np.mean(curves["K1"][b])), 3) for b in budgets},
+           "budget_curve_KM": {b: round(float(np.mean(curves["KM"][b])), 3) for b in budgets}}
+    strong = (n_pos >= max(5, n_seeds - 1) and agg["seed_median_delta"] > 0.05 and agg["hier_bootstrap"]["lo"] > 0
+              and all(p["critical_pair"]["kmode"] > p["critical_pair"]["single_head_wrong"] for p in per_seed))
+    agg["verdict"] = ("MULTIMODAL_POLICY_SEARCH_VALIDATED_ON_GEOMETRICALLY_SEPARATED_ROUTE_BASINS" if strong
+                      else "STILL_PILOT")
+    return {"per_seed": per_seed, "aggregate": agg}
+
+
+def obstacle_shift_control(budgets=(4, 12), kmode_K=4, kmode_alloc="equal"):
+    """Generalisation control: does the K-mode advantage survive a bounded change of obstacle GEOMETRY (not just fresh
+    seeds of the same box)? Vary half-extents + a small center shift; a fresh eligible panel per geometry; check
+    K-mode still beats single-head. Guards against memorising one obstacle layout."""
+    geoms = {"wider": (0.040, 0.040, 0.075), "taller": (0.028, 0.028, 0.11), "narrow": (0.020, 0.020, 0.06)}
+    out = {}
+    for name, half in geoms.items():
+        env = SE3ObstacleReachEnv(control_mode="position", max_steps=320, reach_thresh=0.06, ang_thresh=0.4,
+                                  min_separation=0.16, obstacle_half=half)
+        panel, rate = build_eligible_panel(env, state_seeds=range(700, 760), feas_seed_base=900, want=10)
+        row = {"eligibility_rate": rate, "n_states": len(panel)}
+        for b in budgets:
+            k1 = np.mean([deploy_state(env, it, 1, "prob", b, 7)["success"] for it in panel]) if panel else 0.0
+            km = np.mean([deploy_state(env, it, kmode_K, kmode_alloc, b, 7)["success"] for it in panel]) if panel else 0.0
+            row[f"B{b}"] = {"single_head": round(float(k1), 3), "kmode": round(float(km), 3),
+                           "delta": round(float(km - k1), 3)}
+        out[name] = row
+    return out
+
+
 def realized_allocations():
     """Prove the requested allocation strategy → the intended integer per-mode candidate counts (frozen allocate_budget
     on the reweighted probs). Especially top_probe should be [bulk,1,1,1]."""
@@ -225,5 +331,65 @@ def main():
     return grid_verdict
 
 
+def plot_harden(agg, path):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    budgets = sorted(agg["budget_curve_K1"], key=int)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 4.6))
+    ax1.plot(budgets, [agg["budget_curve_K1"][b] for b in budgets], "o-", color="#444", label="single-head (K1)", lw=2)
+    ax1.plot(budgets, [agg["budget_curve_KM"][b] for b in budgets], "s-", color="#2a7", label=f"K-mode {agg['kmode']}", lw=2)
+    ax1.set_xlabel("total budget B (equal)")
+    ax1.set_ylabel("collision-free success (all seeds×states)")
+    ax1.set_title("6D-1 hardened: single-head vs K-mode across budgets", fontsize=9)
+    ax1.legend(fontsize=8)
+    ax1.grid(alpha=0.3)
+    ax1.set_ylim(0, 1.02)
+    means = agg["per_seed_delta_mean"]
+    ax2.bar(range(len(means)), means, color=["#2a7" if m > 0 else "#c44" for m in means])
+    ax2.axhline(0, color="k", lw=0.8)
+    hb = agg["hier_bootstrap"]
+    ax2.axhline(agg["seed_median_delta"], color="#37a", ls="--", label=f"seed-median {agg['seed_median_delta']:+.3f}")
+    ax2.axhspan(hb["lo"], hb["hi"], alpha=0.15, color="#37a", label=f"hier-boot95 [{hb['lo']:+.2f},{hb['hi']:+.2f}]")
+    ax2.set_xlabel("seed replication")
+    ax2.set_ylabel(f"Δ success (K-mode − single-head) @ B={agg['headline_budget']}")
+    ax2.set_title(f"per-seed Δ ({agg['n_seeds_positive']}/{agg['n_seeds']} positive)", fontsize=9)
+    ax2.legend(fontsize=8)
+    ax2.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(path, dpi=130)
+    print(f"wrote {path}")
+
+
+def main_harden():
+    os.makedirs(OUT, exist_ok=True)
+    print("== 6D-1 SEED HARDENING (6 replications, fresh panels, paired search seeds) ==")
+    hard = harden(n_seeds=6)
+    agg = hard["aggregate"]
+    for p in hard["per_seed"]:
+        print(f"  seed {p['seed_group']}: elig {p['eligibility_rate']} n {p['n_states']} "
+              f"critical {p['critical_pair']['single_head_wrong']}→{p['critical_pair']['kmode']} "
+              f"Δ@B12 {p['delta_headline_mean']:+.3f} fails {p['kmode_failure_decomp']}")
+    print(f"\n  per-seed Δ: {agg['per_seed_delta_mean']}")
+    print(f"  seed-median Δ {agg['seed_median_delta']} IQR {agg['seed_iqr']} | positive {agg['n_seeds_positive']}/{agg['n_seeds']}")
+    print(f"  hierarchical seed→state bootstrap: {agg['hier_bootstrap']}")
+    print(f"  budget curve K1 {agg['budget_curve_K1']}")
+    print(f"  budget curve KM {agg['budget_curve_KM']}")
+    print("\n== OBSTACLE-SHIFT GENERALISATION CONTROL (fresh geometry, not just fresh seeds) ==")
+    shift = obstacle_shift_control()
+    for name, row in shift.items():
+        print(f"  {name}: elig {row['eligibility_rate']} " + " ".join(f"{k}Δ={row[k]['delta']}" for k in row if k.startswith("B")))
+    print(f"\n  → VERDICT: {agg['verdict']}")
+    manifest = {"contract": "SE3_OBSTACLE_6D1_HARDENING", "date": "2026-07-24",
+                "claim": "multimodal policy search improves EE route selection in geometrically-separated local proposal basins (NOT full-arm avoidance)",
+                "harden": hard, "obstacle_shift_control": shift, "verdict": agg["verdict"]}
+    json.dump(manifest, open(f"{OUT}/obstacle_6d1_harden.json", "w"), indent=1, default=str)
+    plot_harden(agg, f"{OUT}/obstacle_6d1_harden.png")
+    print(f"\nartifact: {OUT}/obstacle_6d1_harden.json\nSE3_OBSTACLE_6D1_HARDEN_DONE")
+    return agg["verdict"]
+
+
 if __name__ == "__main__":
+    if "--harden" in sys.argv:
+        sys.exit(0 if main_harden() else 1)
     sys.exit(0 if main() else 1)
