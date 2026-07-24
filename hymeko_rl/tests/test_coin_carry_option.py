@@ -109,6 +109,20 @@ def test_reproducible_replay_from_saved_option_initiation_state():
     assert a == b                                                      # identical outcome from the same option-initiation state
 
 
+def test_structured_carry_rollout_frame_hook_non_behavioral():
+    # the video frame_hook on the eval-path rollout must observe only — outcome bit-identical with hook on/off
+    pi0, base, ls = _setup()
+    rl, gate, _h, _r = reconstruct_handoff(pi0, ls, horizon=360)
+    theta = np.array([2, -2, 1, -1, 0, 0, 1, -1, 0.5, -0.5, 0, 0, 6, 6, 6], np.float32)
+    o_off = structured_carry_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, theta, horizon=140)
+    seen = []
+    o_on = structured_carry_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base, theta, horizon=140,
+                                    frame_hook=lambda phase, strict: seen.append((phase, strict)))
+    for k in ("k6", "max_dwell", "reached_handoff", "contain_exit_ct", "completion"):
+        assert o_off[k] == o_on[k], k
+    assert len(seen) >= 1 and all(p in ("PUSH", "BRAKE", "RELEASE", "SETTLE") for p, _s in seen)
+
+
 def test_option_controller_accepts_actor_and_transitions_to_pi0():
     pi0, base, ls = _setup()
     rl, gate, _h, _r = reconstruct_handoff(pi0, ls, horizon=360)

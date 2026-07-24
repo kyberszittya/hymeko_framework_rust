@@ -106,6 +106,21 @@ def test_eval_paired_is_bellman_safe_averaging():
     assert all(0.0 <= v <= 1.0 for v in rl_k6 + up_k6 + rl_ex)            # averaged K6 fractions, not merged transitions
 
 
+def test_frame_hook_is_non_behavioral():
+    # the video frame_hook must observe only — the rollout (return + certificate) is bit-identical with the hook on/off
+    pi0, base, ls = _setup()
+    rl, gate, _h, _r = reconstruct_handoff(pi0, ls, horizon=360)
+    theta = np.array([2, -2, 1, -1, 0, 0, 1, -1, 0.5, -0.5, 0, 0, 6, 6, 6], np.float32)
+    o_off = execute_one_option(copy.deepcopy(rl), copy.deepcopy(gate), theta, pi0, base, gamma=0.99, horizon=140)
+    seen = []
+    o_on = execute_one_option(copy.deepcopy(rl), copy.deepcopy(gate), theta, pi0, base, gamma=0.99, horizon=140,
+                              frame_hook=lambda phase, strict: seen.append((phase, strict)))
+    for k in ("R_option", "tau", "done", "k6", "reached_handoff", "contain_exit_ct"):
+        assert o_off[k] == o_on[k], k                                    # hook does NOT change physics/verdict
+    assert len(seen) >= 1                                                # the hook was invoked per executed step
+    assert all(p in ("PUSH", "BRAKE", "RELEASE", "SETTLE") and 0 <= s for p, s in seen)   # phase label + K6 dwell
+
+
 def test_option_replay_stores_center_action_and_provenance():
     from hymeko_rl.option_rl import OptionTransition
     rp = OptionReplay(cap=5)                                              # coin re-export of the framework OptionReplayBuffer

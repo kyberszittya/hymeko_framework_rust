@@ -1,0 +1,59 @@
+{
+ "name": "03_sac_honest_failure",
+ "mp4": "reports/2026-07-24-sac-rollout-video/03_sac_honest_failure.mp4",
+ "gif": "reports/2026-07-24-sac-rollout-video/03_sac_honest_failure.gif",
+ "provenance": [
+  {
+   "controller": "sac",
+   "checkpoint": "carry_rlb_sac_seed3_selected.pt",
+   "checkpoint_sha256_16": "868775c4c8367d41",
+   "env_seed": 12201,
+   "prefix_steps": 67,
+   "family": "contact_retention",
+   "start_state_hash": "95c4648e8525f929637b5ac1c9de3e2679ef4da57dc15e7081e1bb6c6c881fc2",
+   "search_seed": 8001,
+   "search_budget": 8,
+   "theta_center": [
+    -0.0341,
+    0.2769,
+    0.674,
+    -0.1791,
+    -0.3867,
+    0.2136,
+    0.5265,
+    0.0048,
+    0.8344,
+    -0.0214,
+    0.4353,
+    -0.4518,
+    8.1812,
+    11.4088,
+    7.0948
+   ],
+   "theta_selected_provenance": [
+    -0.3518,
+    0.3129,
+    0.8229,
+    0.2321,
+    -1.4874,
+    0.0337,
+    0.1974,
+    -0.7919,
+    0.6663,
+    0.6001,
+    -0.3585,
+    0.3432,
+    9.2351,
+    10.2523,
+    7.6235
+   ],
+   "k6": 0,
+   "reached_handoff": 0,
+   "contain_exit_ct": 0,
+   "baseline": {
+    "tag": "executable-hymeko-option-rl-v1",
+    "commit": "772a11a4"
+   }
+  }
+ ]
+}

@@ -1,0 +1,246 @@
+{
+ "contract": "SAC_AGENT_ROLLOUT_VIDEO_V1",
+ "date": "2026-07-24",
+ "smoke": false,
+ "baseline": {
+  "tag": "executable-hymeko-option-rl-v1",
+  "commit": "772a11a4"
+ },
+ "scan": {
+  "sac_k6": 6,
+  "update0_k6": 4,
+  "n": 30,
+  "search_seed": 8000
+ },
+ "videos": [
+  {
+   "name": "01_matched_seed_update0_vs_sac",
+   "mp4": "reports/2026-07-24-sac-rollout-video/01_matched_seed_update0_vs_sac.mp4",
+   "gif": "reports/2026-07-24-sac-rollout-video/01_matched_seed_update0_vs_sac.gif",
+   "provenance": [
+    {
+     "controller": "update-0",
+     "checkpoint": "carry_proposal_refined.pt",
+     "checkpoint_sha256_16": "095a9cde6232afad",
+     "env_seed": 12201,
+     "prefix_steps": 68,
+     "family": "contact_retention",
+     "start_state_hash": "1d3b316ae23d5b7d0591545c2f65b621e7e4b739a943e395acf1334f4abfbc76",
+     "search_seed": 8002,
+     "search_budget": 8,
+     "theta_center": [
+      -1.6453,
+      -1.2407,
+      2.5497,
+      -1.9488,
+      -0.0541,
+      1.9363,
+      1.5142,
+      2.5247,
+      -1.6334,
+      2.9395,
+      1.4807,
+      1.2912,
+      10.4353,
+      11.9568,
+      2.7063
+     ],
+     "theta_selected_provenance": [
+      -1.6325,
+      -1.5271,
+      2.7051,
+      -1.5902,
+      -0.0953,
+      1.7039,
+      2.1606,
+      2.7358,
+      -1.5162,
+      3.0,
+      1.5996,
+      1.494,
+      10.8837,
+      12.44,
+      6.6346
+     ],
+     "k6": 0,
+     "reached_handoff": 0,
+     "contain_exit_ct": 0,
+     "baseline": {
+      "tag": "executable-hymeko-option-rl-v1",
+      "commit": "772a11a4"
+     }
+    },
+    {
+     "controller": "sac",
+     "checkpoint": "carry_rlb_sac_seed3_selected.pt",
+     "checkpoint_sha256_16": "868775c4c8367d41",
+     "env_seed": 12201,
+     "prefix_steps": 68,
+     "family": "contact_retention",
+     "start_state_hash": "1d3b316ae23d5b7d0591545c2f65b621e7e4b739a943e395acf1334f4abfbc76",
+     "search_seed": 8002,
+     "search_budget": 8,
+     "theta_center": [
+      -0.0112,
+      0.3154,
+      0.7114,
+      -0.2331,
+      -0.3592,
+      0.3271,
+      0.5318,
+      -0.0106,
+      0.883,
+      0.1204,
+      0.4774,
+      -0.408,
+      8.3331,
+      11.4584,
+      6.8013
+     ],
+     "theta_selected_provenance": [
+      0.0553,
+      0.8204,
+      0.9192,
+      0.4257,
+      0.8828,
+      1.1619,
+      0.1785,
+      -0.7354,
+      0.6128,
+      1.1527,
+      0.384,
+      0.4711,
+      9.1276,
+      8.934,
+      4.8536
+     ],
+     "k6": 1,
+     "reached_handoff": 1,
+     "contain_exit_ct": 0,
+     "baseline": {
+      "tag": "executable-hymeko-option-rl-v1",
+      "commit": "772a11a4"
+     }
+    }
+   ]
+  },
+  {
+   "name": "02_sac_success_k6",
+   "mp4": "reports/2026-07-24-sac-rollout-video/02_sac_success_k6.mp4",
+   "gif": "reports/2026-07-24-sac-rollout-video/02_sac_success_k6.gif",
+   "provenance": [
+    {
+     "controller": "sac",
+     "checkpoint": "carry_rlb_sac_seed3_selected.pt",
+     "checkpoint_sha256_16": "868775c4c8367d41",
+     "env_seed": 12201,
+     "prefix_steps": 66,
+     "family": "contact_retention",
+     "start_state_hash": "b226cd45f55a38c1f68a334381a9ce9214741816d7db8058374e4fc817df8fbf",
+     "search_seed": 8000,
+     "search_budget": 8,
+     "theta_center": [
+      -0.1572,
+      0.245,
+      0.6421,
+      -0.0756,
+      -0.3558,
+      0.1534,
+      0.5384,
+      0.0159,
+      0.8361,
+      -0.1543,
+      0.5403,
+      -0.4124,
+      7.8471,
+      11.3015,
+      7.28
+     ],
+     "theta_selected_provenance": [
+      -1.5674,
+      0.4015,
+      0.9212,
+      -0.2071,
+      0.4377,
+      -0.3218,
+      1.8348,
+      -0.5949,
+      0.6383,
+      -0.9184,
+      0.3161,
+      -0.8642,
+      9.5541,
+      10.7273,
+      7.5709
+     ],
+     "k6": 1,
+     "reached_handoff": 1,
+     "contain_exit_ct": 0,
+     "baseline": {
+      "tag": "executable-hymeko-option-rl-v1",
+      "commit": "772a11a4"
+     }
+    }
+   ]
+  },
+  {
+   "name": "03_sac_honest_failure",
+   "mp4": "reports/2026-07-24-sac-rollout-video/03_sac_honest_failure.mp4",
+   "gif": "reports/2026-07-24-sac-rollout-video/03_sac_honest_failure.gif",
+   "provenance": [
+    {
+     "controller": "sac",
+     "checkpoint": "carry_rlb_sac_seed3_selected.pt",
+     "checkpoint_sha256_16": "868775c4c8367d41",
+     "env_seed": 12201,
+     "prefix_steps": 67,
+     "family": "contact_retention",
+     "start_state_hash": "95c4648e8525f929637b5ac1c9de3e2679ef4da57dc15e7081e1bb6c6c881fc2",
+     "search_seed": 8001,
+     "search_budget": 8,
+     "theta_center": [
+      -0.0341,
+      0.2769,
+      0.674,
+      -0.1791,
+      -0.3867,
+      0.2136,
+      0.5265,
+      0.0048,
+      0.8344,
+      -0.0214,
+      0.4353,
+      -0.4518,
+      8.1812,
+      11.4088,
+      7.0948
+     ],
+     "theta_selected_provenance": [
+      -0.3518,
+      0.3129,
+      0.8229,
+      0.2321,
+      -1.4874,
+      0.0337,
+      0.1974,
+      -0.7919,
+      0.6663,
+      0.6001,
+      -0.3585,
+      0.3432,
+      9.2351,
+      10.2523,
+      7.6235
+     ],
+     "k6": 0,
+     "reached_handoff": 0,
+     "contain_exit_ct": 0,
+     "baseline": {
+      "tag": "executable-hymeko-option-rl-v1",
+      "commit": "772a11a4"
+     }
+    }
+   ]
+  }
+ ]
+}

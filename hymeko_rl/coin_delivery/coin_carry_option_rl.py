@@ -80,7 +80,7 @@ def _nxt(spec, phase, event, default):
 
 
 def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=None, max_macro=60, spec="auto", trace=None,
-                       monitor=None, verify_shadow=False):
+                       monitor=None, verify_shadow=False, frame_hook=None):
     """Execute ONE committed push→brake→release macro; on a valid handoff (strict≥1) switch to FROZEN pi_0 and settle to a
     terminal K6 decision (the option carries the WHOLE carry→settle→K6 consequence); else return a recovery state for the
     next option. Returns R_option = Σ_{j<τ} γ^j r_{t+j} (discounted, so the semi-MDP target is exactly R_option + γ^τ Q'),
@@ -112,6 +112,10 @@ def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=Non
     def _mark(m):
         if trace is not None:
             trace.append(m)
+
+    def _capture(phase_label):                                          # NON-behavioral: renders the live step (video only)
+        if frame_hook is not None:
+            frame_hook(phase_label, int(mstrict))
 
     def _observe(term, trunc):                                          # feed one physical sample → monitor; shadow-check
         nonlocal mstrict
@@ -154,7 +158,7 @@ def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=Non
         r_t = rw.w_progress * (dtz_prev - dtz) + rw.w_contact * contact - rw.w_exit * res["exited"] - rw.w_effort * estep
         if mstrict >= 1 and not handoff_paid:
             r_t += rw.w_handoff; handoff_paid = True
-        _pay(r_t); dtz_prev = dtz
+        _pay(r_t); dtz_prev = dtz; _capture(cur)
         if term or trunc:
             handed = handed or mstrict >= 1; _mark("HANDOFF" if handed else "SETTLED"); break
         if _safety_abort(rl, tb):
@@ -172,7 +176,7 @@ def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=Non
             lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
             dtz = rl._dtz(); dtz_min = min(dtz_min, dtz)
             res, _c = _observe(term, trunc)
-            _pay(rw.w_progress * (dtz_prev - dtz) - rw.w_exit * res["exited"]); dtz_prev = dtz; ts += 1; _mark("HANDOFF")
+            _pay(rw.w_progress * (dtz_prev - dtz) - rw.w_exit * res["exited"]); dtz_prev = dtz; ts += 1; _mark("HANDOFF"); _capture("SETTLE")
             if term or trunc:
                 break
         tau = max(1, t + ts)

@@ -33,10 +33,11 @@ def _unpack(theta):
             np.clip(t[8:12], -A_BOUND, A_BOUND), dur(t[14]))
 
 
-def structured_carry_rollout(rl, gate, pi0, base, theta, *, horizon, capture=False):
+def structured_carry_rollout(rl, gate, pi0, base, theta, *, horizon, capture=False, frame_hook=None):
     """Run the push→brake→release macro-action (closed-loop phases) until a valid handoff (strict≥1), then the FROZEN
     pi_0. Returns the certifier + handoff + lexicographic-score ingredients (contact kept, action effort, completion).
-    With ``capture`` also returns the (obs48, executed 4D action) list at each strict-0 macro step — the BC labels."""
+    With ``capture`` also returns the (obs48, executed 4D action) list at each strict-0 macro step — the BC labels.
+    ``frame_hook(phase_label, strict)`` is a NON-behavioral per-step observer (video rendering only)."""
     a_push, T_push, a_brake, T_brake, a_release, T_release = _unpack(theta)
     phase, tph, handed = "push", 0, False
     md = int(rl._strict); touched = rl._touched; max_strict = int(rl._strict)
@@ -45,6 +46,7 @@ def structured_carry_rollout(rl, gate, pi0, base, theta, *, horizon, capture=Fal
     for t in range(horizon):
         gate_on = gate.gate == 1.0; o48 = rl.obs(); s = int(rl._strict)
         is_macro = gate_on and not handed and s < 1
+        cur = "SETTLE" if (handed or s >= 1) else phase.upper()          # the applied action's phase (for the video HUD)
         if not gate_on:
             a = _det(pi0, o48)
         elif handed or s >= 1:
@@ -74,6 +76,8 @@ def structured_carry_rollout(rl, gate, pi0, base, theta, *, horizon, capture=Fal
         if was_contained and dtz > CENTER_TOL:
             contain_exit += 1
         was_contained = dtz <= CENTER_TOL
+        if frame_hook is not None:
+            frame_hook(cur, int(rl._strict))
         if term or trunc:
             break
     out = {"k6": int(md >= HELD_DWELL and touched), "max_dwell": md, "max_strict": max_strict,
