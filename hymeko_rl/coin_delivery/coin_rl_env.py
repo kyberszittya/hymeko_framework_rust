@@ -19,10 +19,12 @@ CANONICAL_REWARD_FILE = "data/robotics/galambos_task_deliver_v3.hymeko"
 class CoinRL4Dof:
     """Gym-like 4-DoF canonical-reward env. `reset(seed)` → obs(48); `step(a4)` → (obs, reward, terminated, truncated)."""
 
-    def __init__(self, horizon: int = 360):
+    def __init__(self, horizon: int = 360, *, geom: str | None = None, arm_mjcf_transform=None):
         from hymeko_rl.env.reward import RewardSpec
         from hymeko_rl.experiments.coin_neutral_start import neutral_env
-        self.env, self.cf = neutral_env(prefix_steps=0)
+        # geom=None ⇒ the canonical E0 CONCAVE_CLAMP eval robot (unchanged). A robot VARIANT (BALLTIP matched-panel
+        # regression) passes geom="POINT" + a ball-tip arm_mjcf_transform to swap the clamp for a spherical tip.
+        self.env, self.cf = neutral_env(prefix_steps=0, geom=geom, arm_mjcf_transform=arm_mjcf_transform)
         self.inner = self.cf._env
         self.inner.reward_spec = RewardSpec.from_hymeko(CANONICAL_REWARD_FILE)      # v3 reward authority
         self.inner.reward_file = CANONICAL_REWARD_FILE

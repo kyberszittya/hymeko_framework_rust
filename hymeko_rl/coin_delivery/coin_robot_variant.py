@@ -36,6 +36,52 @@ def read_collision_policy(spec_path: str = BALLTIP_SPEC) -> dict:
     return f
 
 
+# ── §5 4-way matched-panel regression variants — (geom embodiment, ball-tip inter_arm | None). The CANONICAL is the
+#    REAL frozen eval robot (E0 = CONCAVE_CLAMP), which is why "spherical tips" is an embodiment change (clamp→ball), not a
+#    radius tweak. The POINT sphere is the clamp→sphere control; the two ball-tips isolate radius then filtering.
+PANEL_VARIANTS = {
+    "canonical_clamp":  (None,    None),        # E0 CONCAVE_CLAMP — what the Stage-5b controller was deployed on
+    "point_sphere":     ("POINT", None),        # galambos_planar_v3 sphere r0.014 (clamp→sphere control)
+    "balltip_nofilter": ("POINT", "enabled"),   # ball tip r0.020 + original collision (radius control)
+    "balltip_filtered": ("POINT", "filtered"),  # ball tip r0.020 + inter-arm filtering (the variant under test)
+}
+
+
+def variant_arm_transform(inter_arm: str | None):
+    """The ``arm_mjcf_transform`` for a §5 variant: None ⇒ the geom's own fingertip (clamp / POINT sphere); a ball-tip
+    ``inter_arm`` ⇒ supply the whole ball-tip arm MJCF (+ fingertip tool sites) in place of the base arm."""
+    if inter_arm is None:
+        return None
+    from hymeko_rl.env.planar_grasp_env import with_fingertip_sites
+    return lambda _canon: with_fingertip_sites(build_arm_mjcf(BALLTIP_SPEC, inter_arm))
+
+
+def build_variant_rl(variant: str, horizon: int = 360, *, seed: int = 0):
+    """Build a reset :class:`CoinRL4Dof` for a named §5 variant. ``canonical_clamp`` ⇒ the exact frozen eval robot
+    (geom=None); the others swap the fingertip embodiment. All variants share the nq=7 layout."""
+    from hymeko_rl.coin_delivery.coin_rl_env import CoinRL4Dof
+    geom, inter_arm = PANEL_VARIANTS[variant]
+    rl = CoinRL4Dof(horizon=horizon, geom=geom, arm_mjcf_transform=variant_arm_transform(inter_arm))
+    rl.reset(seed=seed)
+    return rl
+
+
+def transplant_handoff(rl_dst, rl_src):
+    """Set ``rl_dst`` to ``rl_src``'s handoff state for a MATCHED-panel start: copy the physical state (qpos/qvel),
+    refresh the cached planar metrics, and carry the certificate counters (``_strict``/``_touched``). Valid because all
+    variants share the qpos layout — only the fingertip geometry differs. # Preconditions same nq. # Postconditions
+    ``rl_dst`` is at the identical physical + certificate state; only the robot geometry/collision policy differs."""
+    m, d = rl_dst.inner.model, rl_dst.inner.data
+    assert m.nq == rl_src.inner.model.nq, "variant qpos layout mismatch — cannot transplant"
+    d.qpos[:] = rl_src.inner.data.qpos
+    d.qvel[:] = rl_src.inner.data.qvel
+    mujoco.mj_forward(m, d)
+    rl_dst.inner._planar_metrics = rl_dst.inner._metrics()               # refresh dtz/contacts from the transplanted state
+    rl_dst._strict = int(rl_src._strict)
+    rl_dst._touched = bool(rl_src._touched)
+    return rl_dst
+
+
 def build_arm_mjcf(robot_spec: str, inter_arm: str = "filtered") -> str:
     """Emit the arm MJCF from a robot spec; ``inter_arm='enabled'`` rewrites the per-side contype bits back to the
     canonical shared bit (1) — the control that keeps the spherical tips but restores the original collision policy."""

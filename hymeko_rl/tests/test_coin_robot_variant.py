@@ -2,13 +2,17 @@
 inter-arm collision filtering via collision groups (not event-ignoring), with the collision manifest/query and the exact
 ignored body pairs / masks. The frozen canonical baseline is unchanged."""
 import mujoco
+import numpy as np
 
 from hymeko_rl.coin_delivery.coin_robot_variant import (
+    PANEL_VARIANTS,
     VARIANTS,
     build_variant_model,
+    build_variant_rl,
     collision_manifest,
     min_interarm_clearance,
     read_collision_policy,
+    transplant_handoff,
 )
 
 
@@ -60,3 +64,26 @@ def test_variants_share_dof_layout():
     # can be set into any variant env for a matched-panel comparison
     nqs = {v: build_variant_model(v)[0].nq for v in VARIANTS}
     assert len(set(nqs.values())) == 1, nqs
+
+
+def test_panel_variants_build_and_share_layout():
+    # the §5 4-way eval variants each build a CoinRL4Dof; canonical_clamp is the real E0 (20 geoms), the others swap
+    # the fingertip embodiment. All share nq=7 so a canonical start transplants into any of them.
+    envs = {v: build_variant_rl(v, horizon=60, seed=0) for v in PANEL_VARIANTS}
+    assert len({e.inner.model.nq for e in envs.values()}) == 1
+    assert envs["canonical_clamp"].inner.model.ngeom == 20            # E0 CONCAVE_CLAMP
+    assert envs["point_sphere"].inner.model.ngeom == 10               # plain sphere fingertip
+
+
+def test_transplant_handoff_matches_physical_state():
+    # transplant a stepped source state into a DIFFERENT-geometry variant: the physical state (dtz) must match, proving
+    # the matched-panel start is faithful (the only difference is the fingertip geometry, which is what §5 measures)
+    src = build_variant_rl("point_sphere", horizon=60, seed=1)
+    src.reset(seed=1)
+    for _ in range(5):                                               # perturb into a non-trivial pose
+        src.step(np.array([0.3, -0.2, 0.2, -0.3], np.float32))
+    dtz_src = src.inner._planar_metrics.disk_to_zone
+    dst = transplant_handoff(build_variant_rl("balltip_filtered", horizon=60, seed=1), src)
+    assert abs(dst.inner._planar_metrics.disk_to_zone - dtz_src) < 1e-3
+    assert dst._strict == src._strict and dst._touched == src._touched
+    assert np.isfinite(min_interarm_clearance(dst.inner.model, dst.inner.data))

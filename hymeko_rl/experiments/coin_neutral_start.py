@@ -111,10 +111,12 @@ class NeutralCoinDeliveryEnv(CoinDeliveryTrainEnv):
         return self._last_obs, {"handoff_event": self._handoff}
 
 
-def neutral_env(*, prefix_steps: int = 0, geom: str | None = None):
+def neutral_env(*, prefix_steps: int = 0, geom: str | None = None, arm_mjcf_transform=None):
     """Build a NeutralCoinDeliveryEnv (direct-action) whose reset is a true canonical-neutral start (no bank-snapshot
     restore). ``geom=None`` = the canonical E0 CONCAVE_CLAMP ring (the successful chain's embodiment); a fingertip
-    string (e.g. ``"POINT"`` = one sphere per arm) builds that embodiment through the SAME builder for transfer tests."""
+    string (e.g. ``"POINT"`` = one sphere per arm) builds that embodiment through the SAME builder for transfer tests.
+    ``arm_mjcf_transform`` (requires an explicit ``geom``) lets a robot VARIANT supply its whole arm MJCF — the
+    BALLTIP matched-panel regression uses ``geom="POINT"`` + a ball-tip transform. Default None ⇒ E0 unchanged."""
     if geom is None:
         from hymeko_rl.experiments.coin_delivery_e0_campaign import _e0_env
         _base, cf = _e0_env()
@@ -122,7 +124,7 @@ def neutral_env(*, prefix_steps: int = 0, geom: str | None = None):
         from hymeko_rl.coin_delivery.env_factory import (
             C1_HORIZON, c1_contact_config, coin_monitor_contract, load_contact_bank, make_coin_env)
         from hymeko_rl.env.pad_actuation import build_wristed_contact_env
-        planar = make_coin_env(embodiment=geom)
+        planar = make_coin_env(embodiment=geom, arm_mjcf_transform=arm_mjcf_transform)
         cf = build_wristed_contact_env(planar, load_contact_bank("c1_heldseed_bank.pkl", holdout=False),
                                        coin_monitor_contract(), horizon=C1_HORIZON, cfg=c1_contact_config())
     cf._restore = lambda item: None                                 # neutralise the bank-snapshot restore ⇒ neutral pose

@@ -39,15 +39,20 @@ def _fingertip_kwargs(embodiment: str) -> dict:
 
 
 def make_coin_env(*, embodiment: str = "POINT", difficulty: float = 0.3, deliver: bool = True, coord: bool = False,
-                  max_steps: int = COIN_MAX_STEPS, treatment_hymeko: str = COORD_HYMEKO) -> PlanarGraspEnv:
+                  max_steps: int = COIN_MAX_STEPS, treatment_hymeko: str = COORD_HYMEKO,
+                  arm_mjcf_transform=None) -> PlanarGraspEnv:
     """Build the canonical planar Coin env. ``embodiment`` selects the fingertip geometry (POINT golden, …). ``deliver``
     loads the v2b delivery reward; ``coord`` (wins if both set) loads the coordination reward; else the PlanarGraspEnv
     default. Reward-in-hymeko. # Preconditions ``embodiment`` in :data:`VALID_EMBODIMENTS`. # Postconditions
     ``env.reward_file`` names the active reward source. # Errors ``ValueError`` on an unknown embodiment (fail loud)."""
     if embodiment not in VALID_EMBODIMENTS:
         raise ValueError(f"embodiment must be one of {VALID_EMBODIMENTS}; got {embodiment!r}")
+    kw = _fingertip_kwargs(embodiment)
+    if arm_mjcf_transform is not None:                                 # a variant supplies its whole arm MJCF (overrides
+        kw["arm_mjcf_transform"] = arm_mjcf_transform                  # the embodiment's default transform; used by the
+                                                                       # BALLTIP robot-variant matched-panel regression)
     env = PlanarGraspEnv(robot_source="hymeko_spec", scene_source="hymeko_spec", max_steps=max_steps,
-                         difficulty=difficulty, **_fingertip_kwargs(embodiment))
+                         difficulty=difficulty, **kw)
     if coord or deliver:
         from hymeko_rl.env.reward import RewardSpec
         src = treatment_hymeko if coord else DELIVER_V2B
