@@ -249,17 +249,43 @@ def smdp_target(r, gamma, tau, done, q_next):
 
 
 # ------------------------------ eval + init distillation ------------------------------
-def eval_policy(actor, templates, pi0, base, *, b, horizon=160, seed0=8000):
+def eval_policy(actor, templates, pi0, base, *, b, horizon=160, seed0=8000, search_seeds=1):
     """Deployed-controller eval: deterministic actor mean → θ_center → FIXED b-search → selected option outcome. K6/exit on
-    the paired panel with FIXED per-state search seeds (matches Stage 4c / amortized eval)."""
+    the paired panel with FIXED per-state search seeds, averaged over ``search_seeds`` (Bellman-safe eval-time smoothing —
+    lowers the SELECTION variance without merging transitions)."""
     k6, ex = [], []
     for i, (rl, gate) in enumerate(templates):
-        with torch.no_grad():
-            a = actor.mean_action(torch.as_tensor(rl.obs()[None]).float())[0].numpy() if hasattr(actor, "mean_action") else actor(torch.as_tensor(rl.obs()[None]).float())[0].numpy()
-        center = action_to_theta(a)
-        _th, out = search_select(rl, gate, center, pi0, base, np.random.default_rng(seed0 + i), b=b, horizon=horizon)
-        k6.append(int(out["k6"])); ex.append(int(out["contain_exit_ct"] > 0))
+        center = _actor_center(actor, rl.obs())
+        kk, ee = [], []
+        for j in range(search_seeds):
+            _th, out = search_select(rl, gate, center, pi0, base, np.random.default_rng(seed0 + i * 131 + j), b=b, horizon=horizon)
+            kk.append(int(out["k6"])); ee.append(int(out["contain_exit_ct"] > 0))
+        k6.append(float(np.mean(kk))); ex.append(float(np.mean(ee)))
     return round(float(np.mean(k6)), 3), round(float(np.mean(ex)), 3)
+
+
+def _actor_center(actor, obs):
+    with torch.no_grad():
+        ot = torch.as_tensor(obs[None]).float()
+        a = actor.mean_action(ot)[0].numpy() if hasattr(actor, "mean_action") else actor(ot)[0].numpy()
+    return action_to_theta(a)
+
+
+def eval_paired(actor, proposal, templates, pi0, base, *, b, search_seeds, horizon=160, seed0=8000):
+    """Per-state PAIRED eval, averaged over ``search_seeds`` fixed seeds (Bellman-safe: each search seed is a real,
+    independent wrapper response; we average the per-state K6, we do NOT merge different transitions). Returns per-state
+    lists (rl_k6, upd0_k6, rl_exit) for a paired bootstrap of ΔK6 = RL − its own update-0 proposal."""
+    rl_k6, up_k6, rl_ex = [], [], []
+    for i, (rl, gate) in enumerate(templates):
+        c_rl = _actor_center(actor, rl.obs()); c_up = proposal.theta(rl.obs())
+        kk, uu, ee = [], [], []
+        for j in range(search_seeds):
+            sd = seed0 + i * 131 + j
+            _t1, o1 = search_select(rl, gate, c_rl, pi0, base, np.random.default_rng(sd), b=b, horizon=horizon)
+            _t2, o2 = search_select(rl, gate, c_up, pi0, base, np.random.default_rng(sd), b=b, horizon=horizon)
+            kk.append(int(o1["k6"])); uu.append(int(o2["k6"])); ee.append(int(o1["contain_exit_ct"] > 0))
+        rl_k6.append(float(np.mean(kk))); up_k6.append(float(np.mean(uu))); rl_ex.append(float(np.mean(ee)))
+    return rl_k6, up_k6, rl_ex
 
 
 def distill_actor(actor, proposal, obs, *, epochs, lr=1e-3, seed=0):

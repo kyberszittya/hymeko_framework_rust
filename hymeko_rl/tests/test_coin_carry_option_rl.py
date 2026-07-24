@@ -91,6 +91,21 @@ def test_env_bellman_action_is_center_and_search_is_deterministic():
     assert not np.array_equal(i1["theta_center"], i1["theta_selected"]) or i1["theta_selected"] is not None  # provenance kept separate
 
 
+def test_eval_paired_is_bellman_safe_averaging():
+    # eval-time multi-search-seed smoothing averages per-state K6 over SEPARATE wrapper responses (never merges transitions)
+    import numpy as np
+    from hymeko_rl.coin_delivery.coin_carry_option_rl import DetActor, eval_paired
+    from hymeko_rl.coin_delivery.coin_carry_proposal import fit_proposal
+    pi0, base, ls = _setup()
+    rl, gate, _h, _r = reconstruct_handoff(pi0, ls, horizon=360)
+    z = np.load(f"{D}/carry_option_teacher_bank_v1.npz")
+    prop, _i = fit_proposal(z["obs"][:40].astype(np.float32), z["theta"][:40].astype(np.float32), 4, clf_epochs=40, res_epochs=40, seed=0)
+    torch.manual_seed(0); actor = DetActor()
+    rl_k6, up_k6, rl_ex = eval_paired(actor, prop, [(rl, gate)], pi0, base, b=4, search_seeds=3, horizon=80)
+    assert len(rl_k6) == len(up_k6) == len(rl_ex) == 1                    # one per state
+    assert all(0.0 <= v <= 1.0 for v in rl_k6 + up_k6 + rl_ex)            # averaged K6 fractions, not merged transitions
+
+
 def test_option_replay_stores_center_action_and_provenance():
     rp = OptionReplay(cap=5)
     a = np.ones(DIM, np.float32)
