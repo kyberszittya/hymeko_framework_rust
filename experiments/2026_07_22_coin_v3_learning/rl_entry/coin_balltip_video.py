@@ -57,6 +57,7 @@ def render_variant(variant, rl_c, gate_c, ls, c_center, i, pi0, base, *, width, 
     live min inter-arm clearance captured each physics step (negative ⇒ arm-through-arm)."""
     theta, _ = search_select(_fresh(variant, rl_c, ls), gate_c, c_center, pi0, base,
                              np.random.default_rng(SEARCH_SEED + i), b=8, horizon=horizon)
+    gate_c = copy.deepcopy(gate_c)               # the render rollout mutates the gate; isolate it (matched across variants)
     rl = _fresh(variant, rl_c, ls)
     renderer = mujoco.Renderer(rl.inner.model, height=height, width=width)
     cam = topdown_camera()
@@ -120,8 +121,10 @@ def main(smoke=False):
     raw, _c, _s = build_boundary_panel(pi0, range(14000, 15200), forbidden, want=4 if smoke else 24, families=FAMS,
                                        strict_primary=(0,), strict_fill=(), per_seed_cap=3)
     panel = [(*reconstruct_handoff(pi0, ls, horizon=360)[:2], ls) for ls in raw]
-    # two scenes: a clamp-legitimate delivery (state 0) and the §6 pass-through exploit (state 12, if present)
-    scenes = [0] if smoke else [0, 12]
+    # two scenes (post gate-fix): state 14 = the filtered VISIBLE pass-through exploit (min_clr −0.010 ⇒ HUD "OVERLAP!",
+    # blocked by a collision-on replay) while clamp+collision-on ball fail; state 3 = the honest collision-on ball
+    # delivering legitimately (positive clearance) where the clamp fails.
+    scenes = [0] if smoke else [14, 3]
     scenes = [s for s in scenes if s < len(panel)]
     print(f"[balltip §7] {len(panel)} states | rendering 4-way at {scenes} | search seed {SEARCH_SEED}", flush=True)
     metas = []

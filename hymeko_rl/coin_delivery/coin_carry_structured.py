@@ -150,15 +150,33 @@ def structured_random(rl0, gate0, pi0, base, rng, *, shots, horizon):
     return structured_random_best(rl0, gate0, pi0, base, rng, shots=shots, horizon=horizon)[1]
 
 
-def structured_random_best(rl0, gate0, pi0, base, rng, *, shots, horizon):
-    """Random shooting that also returns the best θ (for receding-horizon teacher labeling — the first action = the push
-    amplitude θ[0:4]). Returns (best_theta, best_outcome)."""
+def structured_random_best_with_support(rl0, gate0, pi0, base, rng, *, shots, horizon, center=None, std_amp=0.6, std_dur=2.0):
+    """Structured shooting that ALSO returns the candidate support = the number of shots whose committed option reached a
+    valid handoff (strict≥1) or K6 — the fraction of the action language that is *admissible* at this state. ``center=None``
+    ⇒ uniform amplitudes/durations (the full random expert); a ``center`` ⇒ Gaussian shots around it (a proposal-localised
+    search). Returns (best_theta, best_outcome, n_admissible). # Postconditions ``0 ≤ n_admissible ≤ shots``."""
+    if center is not None:
+        center = np.asarray(center, np.float32)
     best_theta = np.concatenate([np.zeros(12, np.float32), np.full(3, (T_MIN + T_MAX) / 2.0, np.float32)]).astype(np.float32)
     best = {"k6": 0, "max_dwell": int(rl0._strict), "max_strict": int(rl0._strict), "reached_handoff": 0,
             "handoff_step": None, "contain_exit_ct": 0, "touched": int(rl0._touched), "effort": 0.0, "completion": horizon}
+    n_admissible = 0
     for _ in range(shots):
-        theta = np.concatenate([rng.uniform(-A_BOUND, A_BOUND, 12), rng.uniform(T_MIN, T_MAX, 3)]).astype(np.float32)
+        if center is None:
+            theta = np.concatenate([rng.uniform(-A_BOUND, A_BOUND, 12), rng.uniform(T_MIN, T_MAX, 3)]).astype(np.float32)
+        else:
+            theta = center + np.concatenate([rng.normal(0, std_amp, 12), rng.normal(0, std_dur, 3)]).astype(np.float32)
+            theta[0:12] = np.clip(theta[0:12], -A_BOUND, A_BOUND)
+            theta[12:15] = np.clip(theta[12:15], T_MIN, T_MAX)
         o = structured_carry_rollout(copy.deepcopy(rl0), copy.deepcopy(gate0), pi0, base, theta, horizon=horizon)
+        n_admissible += int(o["reached_handoff"] or o["k6"])
         if structured_score(o) > structured_score(best):
             best, best_theta = o, theta
-    return best_theta, best
+    return best_theta, best, n_admissible
+
+
+def structured_random_best(rl0, gate0, pi0, base, rng, *, shots, horizon):
+    """Random shooting that also returns the best θ (for receding-horizon teacher labeling — the first action = the push
+    amplitude θ[0:4]). Returns (best_theta, best_outcome)."""
+    theta, out, _support = structured_random_best_with_support(rl0, gate0, pi0, base, rng, shots=shots, horizon=horizon)
+    return theta, out

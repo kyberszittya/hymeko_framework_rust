@@ -54,7 +54,9 @@ def _fresh(variant, rl_c, ls):
 
 def _clearance_trace(rl_v, gate, pi0, base, theta, horizon):
     """Re-run the COMMITTED option with a non-behavioral clearance hook: min inter-arm clearance over the rollout and
-    the number of overlap steps (clearance < 0 ⇒ interpenetration only reachable when inter-arm contact is filtered)."""
+    the number of overlap steps (clearance < 0 ⇒ interpenetration only reachable when inter-arm contact is filtered).
+    The gate is DEEP-COPIED — structured_carry_rollout mutates it, and a shared gate would contaminate later variants."""
+    gate = copy.deepcopy(gate)
     m, d = rl_v.inner.model, rl_v.inner.data
     acc = {"min_clr": float("inf"), "overlap_steps": 0, "n": 0}
 

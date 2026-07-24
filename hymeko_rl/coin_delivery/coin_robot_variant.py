@@ -123,6 +123,21 @@ def collision_manifest(m) -> dict:
             "fingertip_radii": sorted({round(float(m.geom_size[g][0]), 4) for g in range(m.ngeom) if int(m.geom_type[g]) == 2})}
 
 
+def interarm_contact_count(m, d) -> int:
+    """Count ACTIVE inter-arm contacts in the solver's current contact list (a left-arm geom touching a right-arm geom).
+    Unlike :func:`min_interarm_clearance` (a geometric distance query, artefact-prone around the coin), this reads the
+    real physics contacts MuJoCo generated this step — only meaningful with inter-arm collision ENABLED (the honest
+    BALLTIP_COLLISION_ON variant). # Postconditions ≥0; 0 when the arms are not in contact."""
+    body = {g: (mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_BODY, m.geom_bodyid[g]) or "") for g in range(m.ngeom)}
+    n = 0
+    for c in range(int(d.ncon)):
+        b1 = body.get(int(d.contact[c].geom1), "")
+        b2 = body.get(int(d.contact[c].geom2), "")
+        if (b1.endswith("_left") and b2.endswith("_right")) or (b1.endswith("_right") and b2.endswith("_left")):
+            n += 1
+    return n
+
+
 def min_interarm_clearance(m, d) -> float:
     """Diagnostic (NOT part of the reward/certificate): the minimum surface-to-surface distance between any left-arm geom
     and any right-arm geom in the current configuration (negative = interpenetration). Used by the §6 exploit audit."""

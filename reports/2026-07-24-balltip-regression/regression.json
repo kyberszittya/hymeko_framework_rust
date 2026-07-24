@@ -53,56 +53,66 @@
   },
   "point_sphere": {
    "n": 24,
-   "k6": 0,
-   "k6_rate": 0.0,
-   "handoff": 1,
+   "k6": 2,
+   "k6_rate": 0.0833,
+   "handoff": 3,
    "exit": 1,
-   "mean_dwell": 0.125,
-   "mean_effort": 1062.521,
-   "mean_completion": 160.0,
-   "min_clearance": -0.02539,
-   "mean_min_clearance": 0.00052,
-   "overlap_query_states": 12,
-   "total_overlap_steps": 425,
+   "mean_dwell": 0.625,
+   "mean_effort": 1048.149,
+   "mean_completion": 150.62,
+   "min_clearance": -0.02417,
+   "mean_min_clearance": 0.00809,
+   "overlap_query_states": 14,
+   "total_overlap_steps": 800,
    "exploit_states": 0,
-   "solved_states": []
+   "solved_states": [
+    3,
+    17
+   ]
   },
   "balltip_nofilter": {
    "n": 24,
-   "k6": 3,
-   "k6_rate": 0.125,
-   "handoff": 3,
+   "k6": 4,
+   "k6_rate": 0.1667,
+   "handoff": 4,
    "exit": 1,
-   "mean_dwell": 0.75,
-   "mean_effort": 987.69,
-   "mean_completion": 150.21,
-   "min_clearance": -0.03746,
-   "mean_min_clearance": -0.00196,
-   "overlap_query_states": 16,
-   "total_overlap_steps": 460,
+   "mean_dwell": 1.0,
+   "mean_effort": 936.601,
+   "mean_completion": 136.04,
+   "min_clearance": -0.03278,
+   "mean_min_clearance": 0.00757,
+   "overlap_query_states": 13,
+   "total_overlap_steps": 604,
    "exploit_states": 0,
    "solved_states": [
+    3,
     4,
-    13,
-    16
+    10,
+    11
    ]
   },
   "balltip_filtered": {
    "n": 24,
-   "k6": 1,
-   "k6_rate": 0.0417,
-   "handoff": 1,
-   "exit": 0,
-   "mean_dwell": 0.25,
-   "mean_effort": 1023.687,
-   "mean_completion": 159.0,
-   "min_clearance": -0.032,
-   "mean_min_clearance": -0.01093,
-   "overlap_query_states": 18,
-   "total_overlap_steps": 502,
-   "exploit_states": 1,
+   "k6": 7,
+   "k6_rate": 0.2917,
+   "handoff": 8,
+   "exit": 2,
+   "mean_dwell": 1.792,
+   "mean_effort": 903.795,
+   "mean_completion": 126.25,
+   "min_clearance": -0.03851,
+   "mean_min_clearance": -0.00445,
+   "overlap_query_states": 15,
+   "total_overlap_steps": 328,
+   "exploit_states": 4,
    "solved_states": [
-    12
+    0,
+    3,
+    4,
+    10,
+    11,
+    14,
+    15
    ]
   }
  },
@@ -455,9 +465,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1434.66,
+    "effort": 1454.21,
     "completion": 160,
-    "min_clearance": 0.01435,
+    "min_clearance": 0.04201,
     "overlap_steps": 0
    },
    {
@@ -469,9 +479,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1439.23,
+    "effort": 1426.48,
     "completion": 160,
-    "min_clearance": 0.01482,
+    "min_clearance": 0.05246,
     "overlap_steps": 0
    },
    {
@@ -483,23 +493,23 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1478.93,
+    "effort": 1751.34,
     "completion": 160,
-    "min_clearance": 0.01519,
+    "min_clearance": 0.02082,
     "overlap_steps": 0
    },
    {
     "i": 3,
     "seed": 14001,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 832.03,
-    "completion": 160,
-    "min_clearance": 0.03907,
+    "effort": 185.45,
+    "completion": 19,
+    "min_clearance": 0.10577,
     "overlap_steps": 0
    },
    {
@@ -511,10 +521,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 800.1,
+    "effort": 1078.37,
     "completion": 160,
-    "min_clearance": -0.02539,
-    "overlap_steps": 134
+    "min_clearance": -0.0017,
+    "overlap_steps": 5
    },
    {
     "i": 5,
@@ -525,9 +535,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 870.4,
+    "effort": 923.96,
     "completion": 160,
-    "min_clearance": 0.03451,
+    "min_clearance": 0.06361,
     "overlap_steps": 0
    },
    {
@@ -539,10 +549,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1139.01,
+    "effort": 578.13,
     "completion": 160,
-    "min_clearance": -0.02259,
-    "overlap_steps": 9
+    "min_clearance": -0.02284,
+    "overlap_steps": 156
    },
    {
     "i": 7,
@@ -581,10 +591,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1481.01,
+    "effort": 1601.48,
     "completion": 160,
-    "min_clearance": -0.02263,
-    "overlap_steps": 13
+    "min_clearance": -0.02222,
+    "overlap_steps": 31
    },
    {
     "i": 10,
@@ -595,10 +605,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1470.19,
+    "effort": 956.12,
     "completion": 160,
-    "min_clearance": -0.02308,
-    "overlap_steps": 13
+    "min_clearance": 0.00102,
+    "overlap_steps": 0
    },
    {
     "i": 11,
@@ -609,10 +619,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 501.78,
+    "effort": 1651.26,
     "completion": 160,
-    "min_clearance": 0.01261,
-    "overlap_steps": 0
+    "min_clearance": -0.01592,
+    "overlap_steps": 8
    },
    {
     "i": 12,
@@ -623,9 +633,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 897.92,
+    "effort": 1142.04,
     "completion": 160,
-    "min_clearance": 0.01847,
+    "min_clearance": 0.04002,
     "overlap_steps": 0
    },
    {
@@ -637,9 +647,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 914.16,
+    "effort": 1119.54,
     "completion": 160,
-    "min_clearance": 0.0203,
+    "min_clearance": 0.03003,
     "overlap_steps": 0
    },
    {
@@ -651,9 +661,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 831.24,
+    "effort": 1115.59,
     "completion": 160,
-    "min_clearance": 0.02197,
+    "min_clearance": 0.04037,
     "overlap_steps": 0
    },
    {
@@ -665,10 +675,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 608.9,
+    "effort": 466.77,
     "completion": 160,
-    "min_clearance": 0.0064,
-    "overlap_steps": 0
+    "min_clearance": -0.00481,
+    "overlap_steps": 149
    },
    {
     "i": 16,
@@ -679,24 +689,24 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 579.5,
+    "effort": 1111.19,
     "completion": 160,
-    "min_clearance": -0.01704,
-    "overlap_steps": 26
+    "min_clearance": -0.02315,
+    "overlap_steps": 21
    },
    {
     "i": 17,
     "seed": 14006,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1077.1,
-    "completion": 160,
-    "min_clearance": -0.00369,
-    "overlap_steps": 2
+    "effort": 587.71,
+    "completion": 76,
+    "min_clearance": -0.01878,
+    "overlap_steps": 3
    },
    {
     "i": 18,
@@ -707,10 +717,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 814.71,
+    "effort": 1002.32,
     "completion": 160,
-    "min_clearance": 0.00351,
-    "overlap_steps": 0
+    "min_clearance": -0.02371,
+    "overlap_steps": 7
    },
    {
     "i": 19,
@@ -721,10 +731,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1184.33,
+    "effort": 838.54,
     "completion": 160,
-    "min_clearance": -0.0222,
-    "overlap_steps": 1
+    "min_clearance": -0.02348,
+    "overlap_steps": 118
    },
    {
     "i": 20,
@@ -735,10 +745,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 921.41,
+    "effort": 890.01,
     "completion": 160,
-    "min_clearance": 0.05095,
-    "overlap_steps": 0
+    "min_clearance": -0.0211,
+    "overlap_steps": 66
    },
    {
     "i": 21,
@@ -749,10 +759,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1240.12,
+    "effort": 970.22,
     "completion": 160,
-    "min_clearance": -0.02146,
-    "overlap_steps": 6
+    "min_clearance": 0.05198,
+    "overlap_steps": 0
    },
    {
     "i": 22,
@@ -763,10 +773,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1313.62,
+    "effort": 883.57,
     "completion": 160,
-    "min_clearance": -0.01783,
-    "overlap_steps": 4
+    "min_clearance": -0.00785,
+    "overlap_steps": 8
    },
    {
     "i": 23,
@@ -777,10 +787,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1527.84,
+    "effort": 1278.95,
     "completion": 160,
-    "min_clearance": -0.01753,
-    "overlap_steps": 4
+    "min_clearance": -0.02231,
+    "overlap_steps": 15
    }
   ],
   "balltip_nofilter": [
@@ -793,9 +803,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1312.61,
+    "effort": 1418.33,
     "completion": 160,
-    "min_clearance": 0.00246,
+    "min_clearance": 0.03926,
     "overlap_steps": 0
    },
    {
@@ -807,10 +817,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1028.19,
+    "effort": 1432.84,
     "completion": 160,
-    "min_clearance": -0.00638,
-    "overlap_steps": 2
+    "min_clearance": 0.03275,
+    "overlap_steps": 0
    },
    {
     "i": 2,
@@ -821,23 +831,23 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1004.78,
+    "effort": 1428.46,
     "completion": 160,
-    "min_clearance": 0.00329,
+    "min_clearance": 0.03316,
     "overlap_steps": 0
    },
    {
     "i": 3,
     "seed": 14001,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1426.55,
-    "completion": 160,
-    "min_clearance": 0.06054,
+    "effort": 201.45,
+    "completion": 20,
+    "min_clearance": 0.10595,
     "overlap_steps": 0
    },
    {
@@ -863,10 +873,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1150.94,
+    "effort": 634.58,
     "completion": 160,
-    "min_clearance": 0.0527,
-    "overlap_steps": 0
+    "min_clearance": -0.00601,
+    "overlap_steps": 115
    },
    {
     "i": 6,
@@ -877,10 +887,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 596.39,
+    "effort": 707.23,
     "completion": 160,
-    "min_clearance": -0.02329,
-    "overlap_steps": 145
+    "min_clearance": -0.01608,
+    "overlap_steps": 153
    },
    {
     "i": 7,
@@ -891,10 +901,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 702.62,
+    "effort": 1405.08,
     "completion": 160,
-    "min_clearance": -0.03746,
-    "overlap_steps": 135
+    "min_clearance": -0.03044,
+    "overlap_steps": 32
    },
    {
     "i": 8,
@@ -919,38 +929,38 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1445.51,
+    "effort": 1364.77,
     "completion": 160,
-    "min_clearance": -0.01644,
-    "overlap_steps": 7
+    "min_clearance": 0.00743,
+    "overlap_steps": 0
    },
    {
     "i": 10,
     "seed": 14004,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1468.51,
-    "completion": 160,
-    "min_clearance": -0.02886,
-    "overlap_steps": 9
+    "effort": 163.73,
+    "completion": 13,
+    "min_clearance": 0.02347,
+    "overlap_steps": 0
    },
    {
     "i": 11,
     "seed": 14004,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 476.12,
-    "completion": 160,
-    "min_clearance": -0.00154,
-    "overlap_steps": 59
+    "effort": 175.03,
+    "completion": 13,
+    "min_clearance": 0.00106,
+    "overlap_steps": 0
    },
    {
     "i": 12,
@@ -961,24 +971,24 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 918.75,
+    "effort": 984.49,
     "completion": 160,
-    "min_clearance": 0.01283,
+    "min_clearance": 0.03868,
     "overlap_steps": 0
    },
    {
     "i": 13,
     "seed": 14005,
     "family": "contact_retention",
-    "k6": 1,
-    "max_dwell": 6,
-    "reached_handoff": 1,
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1021.66,
-    "completion": 148,
-    "min_clearance": -0.02052,
-    "overlap_steps": 2
+    "effort": 990.66,
+    "completion": 160,
+    "min_clearance": 0.01813,
+    "overlap_steps": 0
    },
    {
     "i": 14,
@@ -989,9 +999,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 889.27,
+    "effort": 997.8,
     "completion": 160,
-    "min_clearance": 0.01393,
+    "min_clearance": 0.02741,
     "overlap_steps": 0
    },
    {
@@ -1003,24 +1013,24 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 605.99,
+    "effort": 940.43,
     "completion": 160,
-    "min_clearance": -5e-05,
-    "overlap_steps": 33
+    "min_clearance": -0.00995,
+    "overlap_steps": 83
    },
    {
     "i": 16,
     "seed": 14006,
     "family": "contact_retention",
-    "k6": 1,
-    "max_dwell": 6,
-    "reached_handoff": 1,
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 534.01,
-    "completion": 78,
-    "min_clearance": -0.01701,
-    "overlap_steps": 11
+    "effort": 775.74,
+    "completion": 160,
+    "min_clearance": -0.0032,
+    "overlap_steps": 36
    },
    {
     "i": 17,
@@ -1031,10 +1041,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 864.37,
+    "effort": 871.41,
     "completion": 160,
-    "min_clearance": -0.01138,
-    "overlap_steps": 29
+    "min_clearance": -0.00427,
+    "overlap_steps": 2
    },
    {
     "i": 18,
@@ -1045,10 +1055,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 825.79,
+    "effort": 1019.73,
     "completion": 160,
-    "min_clearance": -0.00257,
-    "overlap_steps": 4
+    "min_clearance": -0.03278,
+    "overlap_steps": 12
    },
    {
     "i": 19,
@@ -1073,10 +1083,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 915.94,
+    "effort": 914.01,
     "completion": 160,
-    "min_clearance": 0.03168,
-    "overlap_steps": 0
+    "min_clearance": -0.03059,
+    "overlap_steps": 146
    },
    {
     "i": 21,
@@ -1087,9 +1097,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1480.82,
+    "effort": 1428.18,
     "completion": 160,
-    "min_clearance": 0.01431,
+    "min_clearance": 0.05316,
     "overlap_steps": 0
    },
    {
@@ -1101,10 +1111,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1340.42,
+    "effort": 1355.82,
     "completion": 160,
-    "min_clearance": -0.00522,
-    "overlap_steps": 3
+    "min_clearance": -0.00638,
+    "overlap_steps": 8
    },
    {
     "i": 23,
@@ -1115,10 +1125,10 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1843.8,
+    "effort": 1417.14,
     "completion": 160,
-    "min_clearance": -0.0296,
-    "overlap_steps": 12
+    "min_clearance": -0.02072,
+    "overlap_steps": 8
    }
   ],
   "balltip_filtered": [
@@ -1126,37 +1136,37 @@
     "i": 0,
     "seed": 14000,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1451.15,
-    "completion": 160,
-    "min_clearance": 0.00246,
+    "effort": 1297.67,
+    "completion": 136,
+    "min_clearance": 0.02733,
     "overlap_steps": 0,
-    "exploit": false,
+    "exploit": true,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.0
+    "clr_gap": 0.00191
    },
    {
     "i": 1,
     "seed": 14000,
     "family": "contact_retention",
     "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
-    "contain_exit_ct": 0,
+    "max_dwell": 1,
+    "reached_handoff": 1,
+    "contain_exit_ct": 1,
     "touched": 1,
-    "effort": 1128.92,
+    "effort": 1428.1,
     "completion": 160,
-    "min_clearance": -0.01026,
-    "overlap_steps": 4,
-    "exploit": false,
+    "min_clearance": 0.00353,
+    "overlap_steps": 0,
+    "exploit": true,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.01319
+    "clr_gap": 0.01707
    },
    {
     "i": 2,
@@ -1167,50 +1177,50 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 996.9,
+    "effort": 1425.28,
     "completion": 160,
-    "min_clearance": -0.02727,
-    "overlap_steps": 39,
+    "min_clearance": -0.00328,
+    "overlap_steps": 1,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.06325
+    "clr_gap": 0.03926
    },
    {
     "i": 3,
     "seed": 14001,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1571.32,
-    "completion": 160,
-    "min_clearance": 0.04183,
+    "effort": 201.45,
+    "completion": 20,
+    "min_clearance": 0.10595,
     "overlap_steps": 0,
     "exploit": false,
-    "nofilter_replay_k6": 0,
-    "nofilter_replay_handoff": 0,
-    "clr_gap": 0.01871
+    "nofilter_replay_k6": 1,
+    "nofilter_replay_handoff": 1,
+    "clr_gap": 0.0
    },
    {
     "i": 4,
     "seed": 14001,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
-    "contain_exit_ct": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "contain_exit_ct": 1,
     "touched": 1,
-    "effort": 347.0,
-    "completion": 160,
-    "min_clearance": -0.02879,
-    "overlap_steps": 68,
+    "effort": 129.7,
+    "completion": 18,
+    "min_clearance": -0.00829,
+    "overlap_steps": 2,
     "exploit": false,
-    "nofilter_replay_k6": 0,
-    "nofilter_replay_handoff": 0,
-    "clr_gap": 0.02809
+    "nofilter_replay_k6": 1,
+    "nofilter_replay_handoff": 1,
+    "clr_gap": 7e-05
    },
    {
     "i": 5,
@@ -1221,14 +1231,14 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1178.02,
+    "effort": 630.07,
     "completion": 160,
-    "min_clearance": 0.04344,
-    "overlap_steps": 0,
+    "min_clearance": -0.03646,
+    "overlap_steps": 123,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.00926
+    "clr_gap": 0.03046
    },
    {
     "i": 6,
@@ -1264,7 +1274,7 @@
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": -0.00248
+    "clr_gap": 0.00156
    },
    {
     "i": 8,
@@ -1293,68 +1303,68 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1520.76,
+    "effort": 1434.73,
     "completion": 160,
-    "min_clearance": -0.02811,
-    "overlap_steps": 13,
+    "min_clearance": -0.03051,
+    "overlap_steps": 15,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.01167
+    "clr_gap": 0.03794
    },
    {
     "i": 10,
     "seed": 14004,
-    "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
-    "contain_exit_ct": 0,
-    "touched": 1,
-    "effort": 1584.09,
-    "completion": 160,
-    "min_clearance": -0.03116,
-    "overlap_steps": 22,
-    "exploit": false,
-    "nofilter_replay_k6": 0,
-    "nofilter_replay_handoff": 0,
-    "clr_gap": 0.00228
-   },
-   {
-    "i": 11,
-    "seed": 14004,
-    "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
-    "contain_exit_ct": 0,
-    "touched": 1,
-    "effort": 500.7,
-    "completion": 160,
-    "min_clearance": -0.02779,
-    "overlap_steps": 59,
-    "exploit": false,
-    "nofilter_replay_k6": 0,
-    "nofilter_replay_handoff": 0,
-    "clr_gap": 0.02625
-   },
-   {
-    "i": 12,
-    "seed": 14005,
     "family": "contact_retention",
     "k6": 1,
     "max_dwell": 6,
     "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 961.65,
-    "completion": 136,
-    "min_clearance": -0.00487,
-    "overlap_steps": 1,
-    "exploit": true,
+    "effort": 163.73,
+    "completion": 13,
+    "min_clearance": 0.02347,
+    "overlap_steps": 0,
+    "exploit": false,
+    "nofilter_replay_k6": 1,
+    "nofilter_replay_handoff": 1,
+    "clr_gap": 0.0
+   },
+   {
+    "i": 11,
+    "seed": 14004,
+    "family": "contact_retention",
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "contain_exit_ct": 0,
+    "touched": 1,
+    "effort": 175.03,
+    "completion": 13,
+    "min_clearance": 0.00106,
+    "overlap_steps": 0,
+    "exploit": false,
+    "nofilter_replay_k6": 1,
+    "nofilter_replay_handoff": 1,
+    "clr_gap": 0.0
+   },
+   {
+    "i": 12,
+    "seed": 14005,
+    "family": "contact_retention",
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "contain_exit_ct": 0,
+    "touched": 1,
+    "effort": 1226.04,
+    "completion": 160,
+    "min_clearance": -0.03081,
+    "overlap_steps": 17,
+    "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.00373
+    "clr_gap": 0.00683
    },
    {
     "i": 13,
@@ -1365,50 +1375,50 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 679.02,
+    "effort": 1214.37,
     "completion": 160,
-    "min_clearance": -0.01413,
-    "overlap_steps": 29,
+    "min_clearance": 0.04303,
+    "overlap_steps": 0,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.01242
+    "clr_gap": -0.02001
    },
    {
     "i": 14,
     "seed": 14005,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1026.64,
-    "completion": 160,
-    "min_clearance": 0.01393,
-    "overlap_steps": 0,
-    "exploit": false,
+    "effort": 447.71,
+    "completion": 51,
+    "min_clearance": -0.01043,
+    "overlap_steps": 6,
+    "exploit": true,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.0
+    "clr_gap": 0.03784
    },
    {
     "i": 15,
     "seed": 14006,
     "family": "contact_retention",
-    "k6": 0,
-    "max_dwell": 0,
-    "reached_handoff": 0,
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 606.19,
-    "completion": 160,
-    "min_clearance": -0.00138,
-    "overlap_steps": 33,
-    "exploit": false,
+    "effort": 618.01,
+    "completion": 59,
+    "min_clearance": 4e-05,
+    "overlap_steps": 0,
+    "exploit": true,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.00133
+    "clr_gap": 0.02287
    },
    {
     "i": 16,
@@ -1419,14 +1429,14 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 605.52,
+    "effort": 1233.48,
     "completion": 160,
-    "min_clearance": -0.00182,
-    "overlap_steps": 37,
+    "min_clearance": -0.01348,
+    "overlap_steps": 20,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.00175
+    "clr_gap": 0.01131
    },
    {
     "i": 17,
@@ -1437,14 +1447,14 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 764.73,
+    "effort": 754.79,
     "completion": 160,
-    "min_clearance": -0.02928,
-    "overlap_steps": 54,
+    "min_clearance": -0.03851,
+    "overlap_steps": 66,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.0179
+    "clr_gap": 0.00907
    },
    {
     "i": 18,
@@ -1455,14 +1465,14 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 827.51,
+    "effort": 1020.11,
     "completion": 160,
-    "min_clearance": -0.00315,
-    "overlap_steps": 5,
+    "min_clearance": -0.00309,
+    "overlap_steps": 1,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.00059
+    "clr_gap": 1e-05
    },
    {
     "i": 19,
@@ -1473,14 +1483,14 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 877.24,
+    "effort": 940.73,
     "completion": 160,
-    "min_clearance": 0.01044,
-    "overlap_steps": 0,
+    "min_clearance": -0.032,
+    "overlap_steps": 10,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.0
+    "clr_gap": 0.00038
    },
    {
     "i": 20,
@@ -1491,14 +1501,14 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 936.85,
+    "effort": 890.01,
     "completion": 160,
-    "min_clearance": -0.032,
-    "overlap_steps": 75,
+    "min_clearance": -0.03029,
+    "overlap_steps": 10,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.00141
+    "clr_gap": 0.00116
    },
    {
     "i": 21,
@@ -1509,9 +1519,9 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1453.15,
+    "effort": 1145.56,
     "completion": 160,
-    "min_clearance": 0.01431,
+    "min_clearance": 0.04698,
     "overlap_steps": 0,
     "exploit": false,
     "nofilter_replay_k6": 0,
@@ -1527,14 +1537,14 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1244.81,
+    "effort": 1135.14,
     "completion": 160,
-    "min_clearance": -0.02988,
-    "overlap_steps": 5,
+    "min_clearance": 0.00096,
+    "overlap_steps": 0,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": 0.01338
+    "clr_gap": 0.0
    },
    {
     "i": 23,
@@ -1545,14 +1555,14 @@
     "reached_handoff": 0,
     "contain_exit_ct": 0,
     "touched": 1,
-    "effort": 1552.06,
+    "effort": 1425.13,
     "completion": 160,
-    "min_clearance": -0.02658,
-    "overlap_steps": 7,
+    "min_clearance": -0.02975,
+    "overlap_steps": 6,
     "exploit": false,
     "nofilter_replay_k6": 0,
     "nofilter_replay_handoff": 0,
-    "clr_gap": -0.00303
+    "clr_gap": 0.0109
    }
   ]
  }
