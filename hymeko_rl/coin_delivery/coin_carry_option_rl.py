@@ -12,11 +12,15 @@ retention ≻ −containment-exit ≻ −effort) and is CERTIFIED (structured ex
 tolerances are unchanged; model selection is on held-out eventual K6, then containment safety.
 """
 import copy
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 import torch
-from torch import nn
+
+# The semi-MDP mechanism now lives in the framework engine (hymeko_rl.option_rl); this module is the COIN task adapter.
+from hymeko_rl.option_rl import SemiMDPConfig, smdp_target, train_semi_mdp  # noqa: F401 (smdp_target re-exported for coin callers)
+from hymeko_rl.option_rl import OptionReplayBuffer as OptionReplay  # noqa: F401 (coin-compat re-export)
+from hymeko_rl.option_rl.agents import DetActor as _FDetActor, GaussActor as _FGaussActor, QNet as _FQNet
 
 from hymeko_rl.coin_delivery.coin_carry_option import _safety_abort
 from hymeko_rl.coin_delivery.coin_carry_proposal import search_select
@@ -177,75 +181,22 @@ class SearchWrapperEnv:
         return s_next, float(o["R_option"]), bool(done), info
 
 
-# ------------------------------ networks ------------------------------
-class QNet(nn.Module):
+# ------------------------------ networks (coin-bound framework nets: obs48 → θ-center 15-d) ------------------------------
+# The architectures live in hymeko_rl.option_rl.agents; these thin subclasses bind the coin dims (OBS/DIM) so `QNet()`/
+# `GaussActor()`/`DetActor()` keep their no-arg coin API AND identical state_dict keys (prior coin checkpoints load unchanged).
+class QNet(_FQNet):
     def __init__(self, h=256):
-        super().__init__()
-        self.net = nn.Sequential(nn.Linear(OBS + DIM, h), nn.ReLU(), nn.Linear(h, h), nn.ReLU(), nn.Linear(h, 1))
-
-    def forward(self, s, a):
-        return self.net(torch.cat([s, a], -1)).squeeze(-1)
+        super().__init__(OBS, DIM, h)
 
 
-class DetActor(nn.Module):                                               # TD3
+class DetActor(_FDetActor):
     def __init__(self, h=256):
-        super().__init__()
-        self.net = nn.Sequential(nn.Linear(OBS, h), nn.ReLU(), nn.Linear(h, h), nn.ReLU(), nn.Linear(h, DIM), nn.Tanh())
-
-    def forward(self, s):
-        return self.net(s)
+        super().__init__(OBS, DIM, h)
 
 
-class GaussActor(nn.Module):                                            # SAC (squashed Gaussian)
-    LOG_STD = (-5.0, 2.0)
-
+class GaussActor(_FGaussActor):
     def __init__(self, h=256):
-        super().__init__()
-        self.body = nn.Sequential(nn.Linear(OBS, h), nn.ReLU(), nn.Linear(h, h), nn.ReLU())
-        self.mu = nn.Linear(h, DIM); self.log_std = nn.Linear(h, DIM)
-
-    def forward(self, s):
-        x = self.body(s); return self.mu(x), self.log_std(x).clamp(*self.LOG_STD)
-
-    def sample(self, s):
-        mu, log_std = self(s); std = log_std.exp()
-        n = torch.randn_like(std); pre = mu + std * n; a = torch.tanh(pre)
-        logp = (-0.5 * (n ** 2) - log_std - 0.5 * np.log(2 * np.pi)).sum(-1) - torch.log(1 - a ** 2 + 1e-6).sum(-1)
-        return a, logp
-
-    def mean_action(self, s):
-        return torch.tanh(self(s)[0])
-
-
-# ------------------------------ replay + semi-MDP target ------------------------------
-@dataclass
-class OptionReplay:
-    cap: int = 20000
-    s: list = field(default_factory=list); a: list = field(default_factory=list); r: list = field(default_factory=list)
-    tau: list = field(default_factory=list); s2: list = field(default_factory=list); done: list = field(default_factory=list)
-    prov: list = field(default_factory=list)
-
-    def add(self, s, a, r, tau, s2, done, prov):
-        for buf, v in ((self.s, s), (self.a, a), (self.r, r), (self.tau, tau), (self.s2, s2), (self.done, done), (self.prov, prov)):
-            buf.append(v)
-        if len(self.s) > self.cap:
-            for buf in (self.s, self.a, self.r, self.tau, self.s2, self.done, self.prov):
-                del buf[0]
-
-    def __len__(self):
-        return len(self.s)
-
-    def sample(self, n, rng):
-        idx = rng.integers(0, len(self.s), n)
-        t = lambda buf, dt: torch.as_tensor(np.asarray([buf[i] for i in idx], dt))
-        return (t(self.s, np.float32), t(self.a, np.float32), t(self.r, np.float32), t(self.tau, np.float32),
-                t(self.s2, np.float32), t(self.done, np.float32))
-
-
-def smdp_target(r, gamma, tau, done, q_next):
-    """Semi-MDP Bellman target: R_option + γ^τ · Q_next for non-terminal options, R_option alone at terminal. This uses
-    γ^τ (option duration), NOT one-step γ — the property test asserts exactly this."""
-    return r + (1.0 - done) * (gamma ** tau) * q_next
+        super().__init__(OBS, DIM, h)
 
 
 # ------------------------------ eval + init distillation ------------------------------
@@ -301,9 +252,11 @@ def distill_actor(actor, proposal, obs, *, epochs, lr=1e-3, seed=0):
     return float(loss.item())
 
 
-# ------------------------------ SAC / TD3 (shared semi-MDP loop) ------------------------------
+# ------------------------------ coin RL config + train adapter over the framework engine ------------------------------
 @dataclass
 class RLConfig:
+    """Coin RL config = the framework semi-MDP hyperparameters + the coin env params (b / horizon / max_options)."""
+
     gamma: float = 0.99
     tau_polyak: float = 0.01
     lr: float = 3e-4
@@ -312,89 +265,32 @@ class RLConfig:
     total_options: int = 600
     updates_per_option: int = 1
     eval_every: int = 120
-    b: int = 8
-    horizon: int = 160
-    max_options: int = 4
-    policy_delay: int = 2         # TD3
+    b: int = 8                    # coin: fixed search budget
+    horizon: int = 160            # coin: option/settle horizon
+    max_options: int = 4          # coin: options per episode
+    policy_delay: int = 2
     target_noise: float = 0.15
     noise_clip: float = 0.3
-    expl_noise: float = 0.2       # TD3 exploration
-    alpha: float = 0.1            # SAC entropy temperature (fixed)
+    expl_noise: float = 0.2
+    alpha: float = 0.1
 
-
-def _polyak(tgt, src, tau):
-    for tp, sp in zip(tgt.parameters(), src.parameters()):
-        tp.data.mul_(1 - tau).add_(tau * sp.data)
+    def to_semi_mdp(self):
+        return SemiMDPConfig(gamma=self.gamma, tau_polyak=self.tau_polyak, lr=self.lr, batch=self.batch,
+                             warmup_options=self.warmup_options, total_options=self.total_options,
+                             updates_per_option=self.updates_per_option, eval_every=self.eval_every, reward_scale=REWARD_SCALE,
+                             policy_delay=self.policy_delay, target_noise=self.target_noise, noise_clip=self.noise_clip,
+                             expl_noise=self.expl_noise, alpha=self.alpha)
 
 
 def train_agent(algo, env, actor, dev_panel, pi0, base, cfg, log, *, seed=0):
-    """Semi-MDP SAC ('sac') or TD3 ('td3') over the proposal center. Critic Q(s, θ_center); actor trained through the critic
-    only (never through the black-box search). Model selection on dev K6. Returns (checkpoints, history)."""
-    torch.manual_seed(seed); rng = np.random.default_rng(seed)
-    q1, q2 = QNet(), QNet(); q1t, q2t = QNet(), QNet(); q1t.load_state_dict(q1.state_dict()); q2t.load_state_dict(q2.state_dict())
-    qopt = torch.optim.Adam(list(q1.parameters()) + list(q2.parameters()), cfg.lr)
-    if algo == "td3":
-        at = DetActor(); at.load_state_dict(actor.state_dict())
-    aopt = torch.optim.Adam(actor.parameters(), cfg.lr)
-    replay = OptionReplay(); history = []; ckpts = {}
-    ckpts["update0"] = copy.deepcopy(actor.state_dict())
-    best_val = -1.0; ckpts["best_val"] = copy.deepcopy(actor.state_dict()); upd = 0
+    """Coin adapter over the framework `train_semi_mdp`: supplies the coin dev-eval (K6 on the held-out panel) and maps the
+    coin RLConfig → SemiMDPConfig. The engine owns the semi-MDP mechanism; this only wires the coin task in. History keys are
+    kept backward-compatible (``dev_k6``/``dev_exit``/``train_k6_recent``)."""
+    def dev_eval_fn(a):
+        k6, ex = eval_policy(a, dev_panel, pi0, base, b=cfg.b, horizon=cfg.horizon)
+        return k6, {"exit": ex}
 
-    def act(o, explore):
-        with torch.no_grad():
-            ot = torch.as_tensor(o[None]).float()
-            if algo == "sac":
-                a = (actor.sample(ot)[0] if explore else actor.mean_action(ot))[0].numpy()
-            else:
-                a = actor(ot)[0].numpy()
-                if explore:
-                    a = np.clip(a + rng.normal(0, cfg.expl_noise, DIM).astype(np.float32), -1, 1)
-        return a
-
-    s = env.reset(); k6run = []
-    for it in range(cfg.total_options):
-        a = act(s, explore=(it >= cfg.warmup_options)) if it >= cfg.warmup_options else np.clip(rng.uniform(-1, 1, DIM).astype(np.float32), -1, 1)
-        s2, r, done, info = env.step(a)
-        # Bellman action = the actor's PROPOSAL-CENTER action a (θ_center); θ_selected is provenance only, never the stored action
-        replay.add(s, np.asarray(a, np.float32), r / REWARD_SCALE, info["tau"], s2, float(info["terminal"]),
-                   {"theta_center": info["theta_center"], "theta_selected": info["theta_selected"], "k6": info["k6"], "tau": info["tau"], "reached_handoff": info["reached_handoff"], "exit": info["contain_exit_ct"]})
-        k6run.append(info["k6"]); s = env.reset() if done else s2
-        if len(replay) >= cfg.batch and it >= cfg.warmup_options:
-            for _ in range(cfg.updates_per_option):
-                upd += 1
-                bs, ba, br, bt, bs2, bd = replay.sample(cfg.batch, rng)
-                with torch.no_grad():
-                    if algo == "sac":
-                        a2, logp2 = actor.sample(bs2); q_next = torch.min(q1t(bs2, a2), q2t(bs2, a2)) - cfg.alpha * logp2
-                    else:
-                        noise = (torch.randn_like(ba) * cfg.target_noise).clamp(-cfg.noise_clip, cfg.noise_clip)
-                        a2 = (at(bs2) + noise).clamp(-1, 1); q_next = torch.min(q1t(bs2, a2), q2t(bs2, a2))
-                    y = smdp_target(br, cfg.gamma, bt, bd, q_next)
-                ql = ((q1(bs, ba) - y) ** 2).mean() + ((q2(bs, ba) - y) ** 2).mean()
-                qopt.zero_grad(); ql.backward(); qopt.step()
-                if algo == "sac":
-                    ap, logp = actor.sample(bs); al = (cfg.alpha * logp - torch.min(q1(bs, ap), q2(bs, ap))).mean()
-                    aopt.zero_grad(); al.backward(); aopt.step()
-                    _polyak(q1t, q1, cfg.tau_polyak); _polyak(q2t, q2, cfg.tau_polyak)
-                elif upd % cfg.policy_delay == 0:
-                    al = -q1(bs, actor(bs)).mean(); aopt.zero_grad(); al.backward(); aopt.step()
-                    _polyak(q1t, q1, cfg.tau_polyak); _polyak(q2t, q2, cfg.tau_polyak); _polyak(at, actor, cfg.tau_polyak)
-        if (it + 1) % cfg.eval_every == 0 or it == cfg.total_options - 1:
-            vk6, vex = eval_policy(actor, dev_panel, pi0, base, b=cfg.b, horizon=cfg.horizon)
-            if len(replay) >= 8:
-                with torch.no_grad():
-                    _qs = replay.sample(min(64, len(replay)), rng); qm = float(q1(_qs[0], _qs[1]).mean())
-            else:
-                qm = 0.0
-            recent = float(np.mean(k6run[-cfg.eval_every:])) if k6run else 0.0
-            history.append({"it": it + 1, "dev_k6": vk6, "dev_exit": vex, "train_k6_recent": round(recent, 3), "q_mean": round(qm, 2)})
-            log(f"    [{algo} it {it+1}/{cfg.total_options}] dev K6 {vk6} exit {vex} | train_k6 {round(recent,3)} | Q~{round(qm,2)} | replay {len(replay)}")
-            if it + 1 >= cfg.total_options // 4 and "early" not in ckpts:
-                ckpts["early"] = copy.deepcopy(actor.state_dict())
-            if it + 1 >= cfg.total_options // 2 and "mid" not in ckpts:
-                ckpts["mid"] = copy.deepcopy(actor.state_dict())
-            if vk6 > best_val:
-                best_val = vk6; ckpts["best_val"] = copy.deepcopy(actor.state_dict())
-    ckpts["final"] = copy.deepcopy(actor.state_dict())
-    ckpts.setdefault("early", ckpts["update0"]); ckpts.setdefault("mid", ckpts.get("best_val"))
-    return ckpts, history
+    ckpts, hist = train_semi_mdp(algo, env, actor, dev_eval_fn, cfg.to_semi_mdp(), obs_dim=OBS, act_dim=DIM, log=log, seed=seed)
+    for h in hist:                                                        # framework keys → coin-compat keys
+        h["dev_k6"] = h.pop("dev_score"); h["dev_exit"] = h.pop("aux", {}).get("exit"); h["train_k6_recent"] = h.pop("train_recent")
+    return ckpts, hist

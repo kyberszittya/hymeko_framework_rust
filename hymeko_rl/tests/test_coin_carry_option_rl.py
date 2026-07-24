@@ -107,11 +107,13 @@ def test_eval_paired_is_bellman_safe_averaging():
 
 
 def test_option_replay_stores_center_action_and_provenance():
-    rp = OptionReplay(cap=5)
+    from hymeko_rl.option_rl import OptionTransition
+    rp = OptionReplay(cap=5)                                              # coin re-export of the framework OptionReplayBuffer
     a = np.ones(DIM, np.float32)
-    rp.add(np.zeros(48, np.float32), a, 1.0, 3.0, np.zeros(48, np.float32), 0.0, {"theta_selected": np.zeros(DIM, np.float32), "theta_center": np.ones(DIM, np.float32)})
-    assert np.array_equal(rp.a[0], a)                                     # stored Bellman action is the center action
-    assert "theta_selected" in rp.prov[0] and "theta_center" in rp.prov[0]
+    rp.add(OptionTransition(s=np.zeros(48, np.float32), action=a, reward=1.0, tau=3.0, s_next=np.zeros(48, np.float32),
+                            terminal=0.0, end="handoff", provenance={"theta_selected": np.zeros(DIM, np.float32), "theta_center": np.ones(DIM, np.float32)}))
+    assert np.array_equal(rp._a[0], a)                                    # stored Bellman action is the center action
+    assert "theta_selected" in rp.provenance[0] and "theta_center" in rp.provenance[0]
     rng = np.random.default_rng(0)
     bs, ba, br, bt, bs2, bd = rp.sample(1, rng)
     assert ba.shape == (1, DIM) and bt.item() == 3.0 and bd.item() == 0.0
