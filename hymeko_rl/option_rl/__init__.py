@@ -32,13 +32,20 @@ from hymeko_rl.option_rl.proposal import (
     CandidateGenerator,
     CandidateScorer,
     FixedBudgetSearch,
+    MultimodalBudgetSearch,
+    MultimodalProposalPolicy,
+    MultimodalProvenance,
+    ProposalMode,
     ProposalPolicy,
     SelectedActionProvenance,
+    SingleModeProposal,
+    allocate_budget,
 )
 
 __all__ = [
     "OptionTransition", "OptionReplayBuffer", "smdp_target", "OptionEnv", "OptionEnd", "HandoffCertificate",
     "ProposalPolicy", "CandidateGenerator", "CandidateScorer", "FixedBudgetSearch", "SelectedActionProvenance",
+    "ProposalMode", "MultimodalProposalPolicy", "SingleModeProposal", "MultimodalProvenance", "MultimodalBudgetSearch", "allocate_budget",
     "QNet", "GaussActor", "DetActor", "SemiMDPConfig", "make_actor", "train_semi_mdp",
     "bootstrap_ci", "paired_delta", "preregistered_select", "paired_final_score", "across_seed_summary", "SkillRoute",
 ]
