@@ -27,18 +27,31 @@ def _bank(m):
     return [LateStart(seed=r[0], prefix_steps=r[1], family=r[2], obs_sha=r[3], base_sha=r[4], causal_sha=r[5]) for r in m["rows"]]
 
 
-def generate_bank(pi0, base, panel, *, shots, teacher_h=TEACHER_H, robust=ROBUST, transplant=None, log=print):
+def generate_bank(pi0, base, panel, *, shots, teacher_h=TEACHER_H, robust=ROBUST, transplant=None,
+                  reconstruct_kwargs=None, log=print):
     """Label each option-initiation state with the strong structured expert; keep only CONFIDENT (K6-delivering) labels.
-    ``transplant`` (a callable rl_clamp → rl_variant at the matched state) retargets the labels to a robot VARIANT (the
-    ball-tip B3 bank); ``None`` = the canonical clamp. Returns (obs, theta, provenance) — obs/θ are the VARIANT's own."""
+    ``transplant`` (a callable rl_clamp → rl_variant at the matched state) retargets the labels to a robot VARIANT at the
+    matched canonical state (the B3 TRANSPLANT bank); ``None`` = the canonical clamp. ``reconstruct_kwargs`` (a dict passed
+    to ``reconstruct_handoff``, e.g. ``geom``/``arm_mjcf_transform``/``disk_radius_override``) instead reconstructs the pi_0
+    prefix DIRECTLY on the variant robot/object (the true FRESH-RECONSTRUCT deploy distribution) — the canonical hash
+    verification is skipped (different physics) and only strict==0 carry handoffs are kept. Returns (obs, theta, provenance)."""
+    fresh = reconstruct_kwargs is not None
     obs, theta, prov = [], [], []
     for i, ls in enumerate(panel):
-        v = verify_reconstruction(pi0, ls)
-        assert v["obs_ok"] and v["base_ok"] and v["gate_ok"]
-        rl, gate, _h, rec = reconstruct_handoff(pi0, ls, horizon=360)
-        assert int(rl._strict) == 0 and rec.gate_mult == 1.0 and rec.family in FAMS_CARRY
-        if transplant is not None:
-            rl = transplant(rl)                                         # retarget to the ball-tip robot at the matched state
+        if not fresh:
+            v = verify_reconstruction(pi0, ls)
+            assert v["obs_ok"] and v["base_ok"] and v["gate_ok"]
+        try:
+            rl, gate, _h, rec = reconstruct_handoff(pi0, ls, horizon=360, **(reconstruct_kwargs or {}))
+        except ValueError:
+            continue                                                    # variant terminated before the prefix — skip
+        if fresh:
+            if int(rl._strict) != 0:
+                continue                                                # variant: keep only strict==0 carry handoffs
+        else:
+            assert int(rl._strict) == 0 and rec.gate_mult == 1.0 and rec.family in FAMS_CARRY
+            if transplant is not None:
+                rl = transplant(rl)                                     # retarget to the ball-tip robot at the matched state
         th, confident, p = option_teacher_label(rl, gate, pi0, base, np.random.default_rng(1000 + i), shots=shots, horizon=teacher_h, robust_checks=robust)
         p.update({"seed": int(ls.seed), "prefix_steps": int(ls.prefix_steps), "family": ls.family})
         prov.append(p)
