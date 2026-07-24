@@ -1,0 +1,56 @@
+{
+ "clip": "01_6d1_critical_pair",
+ "date": "2026-07-24",
+ "task": "6D-1 obstacle EE-route-selection",
+ "scope": "collision graded on executed EE trajectory; NOT full-arm avoidance",
+ "state_seed": 6,
+ "search_seed": 1,
+ "budget": 12,
+ "feasible_routes": [
+  "left",
+  "right"
+ ],
+ "infeasible_routes": [
+  "over",
+  "under"
+ ],
+ "single_head": {
+  "anchored_route": "over",
+  "success": 0,
+  "collided": 0,
+  "theta_selected": [
+   -0.2533,
+   0.0509,
+   0.527
+  ]
+ },
+ "kmode": {
+  "modes": [
+   "left",
+   "right",
+   "over",
+   "under"
+  ],
+  "mode_probs": [
+   0.25,
+   0.25,
+   0.25,
+   0.25
+  ],
+  "budget_alloc": [
+   3,
+   3,
+   3,
+   3
+  ],
+  "selected_mode": "under",
+  "success": 1,
+  "theta_selected": [
+   -0.2459,
+   0.2353,
+   0.3695
+  ]
+ },
+ "commit": "809bc1c2",
+ "video": "reports/2026-07-24-se3-obstacle-6d1/videos/01_6d1_critical_pair.mp4"
+}
