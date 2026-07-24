@@ -52,7 +52,14 @@ settles after a valid handoff.
 - held-out states: seeds **14000–15200**, `build_boundary_panel(want=24)`, families {contact_retention, transport, braking}, strict_primary (0,)
 - search seeds: fixed per state (paired protocol `8000 + i·131 + j`, j∈{0,1,2})
 
-## Measured performance (deployed = proposal update-0 + b=8)
+## ⚠ Distribution caveat (found in O1, 2026-07-24)
+The measured numbers below are on the **transplant** handoff distribution (canonical clamp reconstruct → transplant qpos)
+— correct for the B1 *robot comparison* but NOT the ball's own true deploy distribution. On **fresh per-object
+reconstruction** (pi_0 replayed directly on the ball) the frozen proposal scores ≈0 (O1), while the expert still solves
+0.5–0.69. So this baseline is **operational on the transplant distribution**; its fresh-reconstruct deploy performance is
+an OPEN item (re-fit the proposal on fresh-reconstruct states for a true-deploy baseline). See `reports/2026-07-24-object-variants-o1.md`.
+
+## Measured performance (deployed = proposal update-0 + b=8; TRANSPLANT distribution — see caveat)
 - **Paired b=8 K6 = 0.236** (≈ 5.7/24) — the honest search-seed-paired number (the SAME protocol used for the RL claim)
 - single-search-seed diagnostic (9000+i): 0.333 — a DIAGNOSTIC, not the claim
 - full structured expert ceiling (192-shot): **16/24 (0.667)** — reachable only by non-local search, not at b=8

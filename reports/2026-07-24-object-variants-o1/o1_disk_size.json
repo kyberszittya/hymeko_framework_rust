@@ -1,0 +1,35 @@
+{
+ "contract": "OBJECT_TO_TARGET_VARIANTS_V1",
+ "stage": "O1_disk_size",
+ "date": "2026-07-24",
+ "smoke": false,
+ "embodiment": "collision-on ball-tip (frozen BALLTIP_COIN_BASELINE_V1)",
+ "canonical_radius": 0.02,
+ "proposal": "carry_proposal_balltip_v1.pt",
+ "results": {
+  "small_0.014": {
+   "n": 16,
+   "proposal_zeroshot_b8": 0,
+   "proposal_rate": 0.0,
+   "expert_ceiling": 9,
+   "expert_rate": 0.562,
+   "size": 0.014
+  },
+  "canonical_0.020": {
+   "n": 16,
+   "proposal_zeroshot_b8": 0,
+   "proposal_rate": 0.0,
+   "expert_ceiling": 11,
+   "expert_rate": 0.688,
+   "size": 0.02
+  },
+  "large_0.028": {
+   "n": 16,
+   "proposal_zeroshot_b8": 1,
+   "proposal_rate": 0.062,
+   "expert_ceiling": 8,
+   "expert_rate": 0.5,
+   "size": 0.028
+  }
+ }
+}
