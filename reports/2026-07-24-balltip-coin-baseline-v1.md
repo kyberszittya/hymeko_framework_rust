@@ -52,12 +52,18 @@ settles after a valid handoff.
 - held-out states: seeds **14000–15200**, `build_boundary_panel(want=24)`, families {contact_retention, transport, braking}, strict_primary (0,)
 - search seeds: fixed per state (paired protocol `8000 + i·131 + j`, j∈{0,1,2})
 
-## ⚠ Distribution caveat (found in O1, 2026-07-24)
-The measured numbers below are on the **transplant** handoff distribution (canonical clamp reconstruct → transplant qpos)
-— correct for the B1 *robot comparison* but NOT the ball's own true deploy distribution. On **fresh per-object
-reconstruction** (pi_0 replayed directly on the ball) the frozen proposal scores ≈0 (O1), while the expert still solves
-0.5–0.69. So this baseline is **operational on the transplant distribution**; its fresh-reconstruct deploy performance is
-an OPEN item (re-fit the proposal on fresh-reconstruct states for a true-deploy baseline). See `reports/2026-07-24-object-variants-o1.md`.
+## ⚠ TRUE-DEPLOY correction (O1 + fresh-fit, 2026-07-24) — READ FIRST
+The transplant numbers below (0.236) are on the **transplant** handoff distribution (canonical clamp reconstruct →
+transplant qpos) — correct for the B1 *robot comparison* but an OPTIMISTIC PROXY for the ball's own deploy. On **fresh
+per-object reconstruction** (pi_0 replayed directly on the ball = the true deploy path):
+- frozen transplant-fit proposal (`carry_proposal_balltip_v1.pt`): **0/24** on fresh eval;
+- **re-fit** proposal on fresh-reconstruct (`carry_proposal_balltip_fresh_v1.pt`, 131 labels, res_mse 0.565): **2/24 (0.083)**;
+- structured expert on the SAME fresh states: ≈0.69 (object IS solvable).
+
+**Honest true-deploy baseline ≈ 0.083 (2/24), not 0.236.** The object is solvable by strong search, but the *deployable*
+controller (pi_0 handoff → proposal → b=8) caps low on the true distribution because the clamp-trained pi_0 sets up poor
+ball handoffs. The deploy→ceiling gap is LARGER than the transplant proxy suggested. See
+`reports/2026-07-24-object-variants-o1.md` + `reports/2026-07-24-balltip-freshfit/freshfit.json`.
 
 ## Measured performance (deployed = proposal update-0 + b=8; TRANSPLANT distribution — see caveat)
 - **Paired b=8 K6 = 0.236** (≈ 5.7/24) — the honest search-seed-paired number (the SAME protocol used for the RL claim)
