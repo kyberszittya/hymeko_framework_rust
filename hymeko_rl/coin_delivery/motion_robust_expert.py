@@ -38,7 +38,8 @@ class CarryControllerConfig:
     brake_lin: float = 0.4
     brake_margin: float = 0.01         # m — enter BRAKE this much before the predicted braking distance
     release_band: float = 1.5 * SETTLE_VEL   # coin speed below which release/settle is admissible
-    replan_every: int = 4              # re-estimate the contact Jacobian every N steps (receding horizon)
+    replan_every: int = 4              # re-estimate the contact Jacobian every N steps (receding horizon; ≥horizon = off)
+    enable_braking: bool = True        # C2 ablation: velocity-aware braking + braking-distance-gated release (off ⇒ arm C)
     probe_mag: float = 2.0
     probe_steps: int = 4
 
@@ -99,8 +100,8 @@ def _macro_delta(rl, J, cfg: CarryControllerConfig):
     brake_d = cfg.brake_k * v_along * v_along + cfg.brake_lin * abs(v_along)
     if dtz <= CENTER_TOL and rl._speed() < cfg.release_band:
         return np.zeros(4, np.float32), "SETTLE"                        # hold position; damping brings the coin to rest
-    if dtz <= brake_d + cfg.brake_margin and v_along > cfg.release_band:
-        return cfg.brake_disp * _unit(-_jac_solve(J, coin_vel)), "BRAKE"   # displace to oppose the coin motion
+    if cfg.enable_braking and dtz <= brake_d + cfg.brake_margin and v_along > cfg.release_band:
+        return cfg.brake_disp * _unit(-_jac_solve(J, coin_vel)), "BRAKE"   # velocity-aware braking (ablation: arm D/E)
     if not contact:                                                     # ACQUIRE: close the fingertip gap
         return cfg.acquire_disp * _acquire_direction(rl, cfg), "ACQUIRE"
     return cfg.track_disp * _unit(_jac_solve(J, np.asarray(u, np.float32))), "TRANSPORT"   # push toward the zone
