@@ -34,7 +34,8 @@ from hymeko_rl.coin_delivery.coin_late_start import build_boundary_panel, recons
 from hymeko_rl.coin_delivery.coin_markov_ablation_train import make_late_actor55_from_pi0  # noqa: E402
 from hymeko_rl.coin_delivery.rl_clip_actor import load_frozen_clip_actor  # noqa: E402
 from hymeko_rl.viz.rollout_overlay import (  # noqa: E402
-    InfoPanel, StatusBar, TimeSeriesPanel, encode_clip, hstack, overlay_frames, summary_card)
+    InfoPanel, StatusBar, TimeSeriesPanel, assert_trace_render_consistency, encode_clip, hstack, overlay_frames,
+    rollout_trace_hash, summary_card)
 
 from coin_balltip_proposal import D, _bank  # noqa: E402
 from coin_object_o2 import _ball_tf  # noqa: E402
@@ -92,6 +93,9 @@ def render_coin_rollout(rl, gate, pi0, base, theta, *, horizon=EVAL_H, h=360, w=
     diag = {"dtz": np.asarray(dtz, np.float32), "dwell": np.asarray(dwell, np.float32), "phase": phase,
             "contact": np.asarray(contact), "contact_frac": cfrac, "k6": int(out["k6"]), "max_dwell": int(out["max_dwell"]),
             "handoff": int(out["reached_handoff"]), "contain_exit": int(out["contain_exit_ct"])}
+    # VIDEO_TRACE_CONSISTENCY_V1 gate: the rendered frames MUST match the stepped rollout (the 2026-07-24 static-video bug).
+    assert_trace_render_consistency(frames, diag["dtz"], label="coin_carry")
+    diag["rollout_hash"] = rollout_trace_hash(diag["dtz"], {"k6": diag["k6"], "max_dwell": diag["max_dwell"]})
     return frames, diag, out
 
 

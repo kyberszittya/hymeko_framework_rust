@@ -157,6 +157,54 @@ def summary_card(size: tuple[int, int], title: str, rows: list[tuple[str, str]],
     return [img] * hold
 
 
+# ─────────────────────────── VIDEO_TRACE_CONSISTENCY_V1 (mandatory demo gate) ───────────────────────────
+# A demonstration video must film the SAME rollout the scorer stepped. The 2026-07-24 coin bug (the renderer's frame_hook
+# read a DIFFERENT, un-stepped state instance than structured_carry_rollout stepped) produced a frozen video whose summary
+# metrics were still correct — credible-looking but wrong. This gate makes that class of mismatch a hard failure, not a
+# manual visual catch. It is the mirror of the gate-contamination bug (shared mutable state) — here, two state instances
+# where there should be one. Every recorder (coin, 6D-1, and future pick-place / AIBO) calls it before encoding.
+def render_state_signature(frame) -> int:
+    """A cheap per-frame content fingerprint (used to detect whether frames actually change across the rollout)."""
+    return int(np.asarray(frame, np.int64).sum())
+
+
+def assert_trace_render_consistency(frames, telemetry, *, eps: float = 1e-3, label: str = "") -> dict:
+    """VIDEO_TRACE_CONSISTENCY_V1 — the rendered frames and the rollout telemetry must describe the SAME run.
+
+    Raises AssertionError when:
+      * frame count ≠ telemetry length (frames and trace are not the same sequence);
+      * the rollout is DYNAMIC (telemetry span > eps) but the frames are STATIC (all identical) — the deepcopy-mismatch
+        bug: the camera filmed a different, un-stepped state than the rollout stepped;
+      * a dynamic rollout's first and last frames are bit-identical.
+    Returns a diagnostics dict on success. `telemetry` is any per-step scalar that varies in a non-static rollout
+    (dtz for the coin, distance-to-goal for reach)."""
+    frames = list(frames)
+    telem = np.asarray(telemetry, np.float64).ravel()
+    n = len(frames)
+    if n != len(telem):
+        raise AssertionError(f"{label}: VIDEO_TRACE mismatch — {n} frames vs {len(telem)} telemetry steps (not the same rollout)")
+    if n == 0:
+        return {"n": 0, "telem_span": 0.0, "frames_vary": False}
+    telem_span = float(np.max(telem) - np.min(telem))
+    frames_vary = len({render_state_signature(f) for f in frames}) > 1
+    if telem_span > eps and not frames_vary:
+        raise AssertionError(f"{label}: VIDEO_TRACE mismatch — telemetry moves (span {telem_span:.4f}) but every frame is "
+                             "IDENTICAL; the renderer filmed a different state than the rollout stepped (deepcopy mismatch).")
+    if telem_span > eps and n >= 2 and np.array_equal(np.asarray(frames[0]), np.asarray(frames[-1])):
+        raise AssertionError(f"{label}: VIDEO_TRACE mismatch — dynamic rollout but first==last frame bit-identical.")
+    return {"n": n, "telem_span": round(telem_span, 4), "frames_vary": frames_vary}
+
+
+def rollout_trace_hash(telemetry, final_metrics: dict) -> str:
+    """A deterministic short hash of the rollout's per-step telemetry + final metrics — stored in the video manifest so
+    the clip's rollout can be matched against the evaluator's record (`video_manifest.rollout_hash == evaluator.hash`)."""
+    import hashlib
+    h = hashlib.sha256()
+    h.update(np.asarray(telemetry, np.float64).ravel().tobytes())
+    h.update(repr(sorted((k, round(float(v), 6) if isinstance(v, (int, float)) else v) for k, v in final_metrics.items())).encode())
+    return h.hexdigest()[:16]
+
+
 def encode_clip(frames: list[Image.Image], path: str | Path, fps: int = 30) -> str:
     """Encode to MP4 (imageio, installed) or GIF (Pillow, no dep) by suffix. Returns the path written."""
     path = Path(path)

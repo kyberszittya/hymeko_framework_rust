@@ -21,7 +21,8 @@ from hymeko_rl.env.se3_reach_option import (
 from hymeko_rl.option_rl import MultimodalBudgetSearch
 from hymeko_rl.viz.render_reach import CameraView, _draw_target
 from hymeko_rl.viz.rollout_overlay import (
-    InfoPanel, StatusBar, TimeSeriesPanel, encode_clip, hstack, overlay_frames, summary_card)
+    InfoPanel, StatusBar, TimeSeriesPanel, assert_trace_render_consistency, encode_clip, hstack, overlay_frames,
+    rollout_trace_hash, summary_card)
 
 OUT = "reports/2026-07-24-se3-obstacle-6d1/videos"
 DIRNAMES = list(ROUTE_DIRS)
@@ -73,9 +74,13 @@ def record_route_rollout(env, via_ee, *, via_steps=60, goal_steps=150, h=430, w=
             break
     renderer.close()
     success = bool(reached and not collided)
-    return frames, {"dist": np.asarray(dist), "coll": np.asarray(coll), "via_end": via_steps,
-                    "reached": int(reached), "collided": int(collided), "success": int(success),
-                    "pos_err": float(info["dist"]), "ang_err": float(info["ang_err"])}
+    diag = {"dist": np.asarray(dist), "coll": np.asarray(coll), "via_end": via_steps,
+            "reached": int(reached), "collided": int(collided), "success": int(success),
+            "pos_err": float(info["dist"]), "ang_err": float(info["ang_err"])}
+    # VIDEO_TRACE_CONSISTENCY_V1 gate: rendered frames must match the stepped rollout (mandatory for every demo recorder).
+    assert_trace_render_consistency(frames, diag["dist"], label="6d1_route")
+    diag["rollout_hash"] = rollout_trace_hash(diag["dist"], {"success": success, "reached": int(reached)})
+    return frames, diag
 
 
 def _status_series(diag):
