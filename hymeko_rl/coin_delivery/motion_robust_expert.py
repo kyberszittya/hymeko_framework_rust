@@ -40,6 +40,9 @@ class CarryControllerConfig:
     release_band: float = 1.5 * SETTLE_VEL   # coin speed below which release/settle is admissible
     replan_every: int = 4              # re-estimate the contact Jacobian every N steps (receding horizon; ≥horizon = off)
     enable_braking: bool = True        # C2 ablation: velocity-aware braking + braking-distance-gated release (off ⇒ arm C)
+    sustained_press: bool = False      # dynamics-GATE driver: keep pushing the coin in a FIXED (zone-independent) dir
+    press_disp: float = 0.12           # rad — per-step press displacement (sustained contact loading)
+    press_flip: int = 30               # flip the fixed push direction every N steps (keeps the coin in reach; delivery-agnostic)
     probe_mag: float = 2.0
     probe_steps: int = 4
 
@@ -89,6 +92,17 @@ def _unit(x):
     return (np.asarray(x, np.float32) / n) if n > 1e-9 else np.zeros_like(np.asarray(x, np.float32))
 
 
+def _peak_contact_normal(m, d) -> float:
+    """Peak contact NORMAL force magnitude over all active contacts this step (MuJoCo contact frame, component 0). A
+    physical measure of how hard the coin is being loaded — reported by the dynamics gate (not gated)."""
+    f = np.zeros(6, np.float64)
+    peak = 0.0
+    for ci in range(d.ncon):
+        mujoco.mj_contactForce(m, d, ci, f)
+        peak = max(peak, abs(float(f[0])))
+    return peak
+
+
 def _macro_delta(rl, J, cfg: CarryControllerConfig):
     """The closed-loop POSITION-TARGET DISPLACEMENT (Δq, rad) + phase label, from the live state. Braking distance
     decides the push end, not a clock. Δq goes to the shared PD stack — the controller emits no torque."""
@@ -121,13 +135,21 @@ def motion_robust_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CarryC
     m.dof_frictionloss[:4] = stack.friction
     lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
     gov = stack.gov
+    # per-sub-step governor telemetry: how often the governor altered torque, and how often active braking fired above hard
+    subs = {"n": 0, "gov": 0, "brake": 0}
 
     def _gcb(_model, data):
-        data.ctrl[:4] = govern_torque(data.ctrl[:4], data.qvel[:4], gov)
+        raw = data.ctrl[:4].copy()
+        data.ctrl[:4] = govern_torque(raw, data.qvel[:4], gov)
+        subs["n"] += 1
+        subs["gov"] += int(not np.allclose(data.ctrl[:4], raw))
+        subs["brake"] += int(bool(np.any(np.abs(data.qvel[:4]) > gov.qdot_hard)))
     mujoco.set_mjcb_control(_gcb)
-    handed, md, touched, J, prev_tau = False, int(rl._strict), rl._touched, None, None
-    phases = {"ACQUIRE": 0, "TRANSPORT": 0, "BRAKE": 0, "SETTLE": 0}
+    handed, md, touched, J, prev_tau, press_dir = False, int(rl._strict), rl._touched, None, None, np.zeros(4, np.float32)
+    phases = {"ACQUIRE": 0, "TRANSPORT": 0, "BRAKE": 0, "SETTLE": 0, "PRESS": 0}
     contact_frames, entered_zone, peak_vel, integ_over = 0, False, 0.0, 0.0
+    peak_vel_contact, integ_contact, peak_normal_force = 0.0, 0.0, 0.0   # contact-CONDITIONED motion (the dynamics-gate signal)
+    ctrl_frames, sat_frames = 0, 0                                       # torque-saturation telemetry (PD control steps only)
     t = 0
     try:
         for t in range(horizon):
@@ -139,6 +161,22 @@ def motion_robust_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CarryC
                 handed = True
                 a = _det(base, _aug(rl.obs(), s))                       # frozen settling torque (still governed per sub-step)
                 cur = "SETTLE"
+            elif cfg.sustained_press:                                   # dynamics-GATE driver: CLOSED-LOOP sustained push
+                mpl = rl.inner._planar_metrics
+                if not (mpl.left_contact or mpl.right_contact):
+                    press_dir = _acquire_direction(rl, cfg)             # not touching: close the tip→coin gap (per-step, closed-loop)
+                else:                                                   # in contact: keep PUSHING the coin (contact only sustains
+                    if J is None or t % cfg.replan_every == 0:          # under continuous push) in a FIXED, zone-independent dir,
+                        J = _contact_jacobian(rl, cfg)                  # flipped periodically to keep the coin in reach
+                    sign = 1.0 if (t // cfg.press_flip) % 2 == 0 else -1.0
+                    press_dir = _unit(_jac_solve(J, np.array([sign, 0.0], np.float32)))
+                delta, cur = cfg.press_disp * press_dir, "PRESS"        # sustained contact loading (delivery-agnostic)
+                q, qd = d.qpos[:4].copy(), d.qvel[:4].copy()
+                a = pd_governed_torque(q, qd, q + delta, stack, prev_tau, lo, hi)
+                prev_tau = a
+                ctrl_frames += 1
+                sat_frames += int(bool(np.any((a <= lo + 1e-6) | (a >= hi - 1e-6))))
+                phases[cur] += 1
             else:
                 if J is None or t % cfg.replan_every == 0:
                     J = _contact_jacobian(rl, cfg)
@@ -146,6 +184,8 @@ def motion_robust_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CarryC
                 q, qd = d.qpos[:4].copy(), d.qvel[:4].copy()
                 a = pd_governed_torque(q, qd, q + delta, stack, prev_tau, lo, hi)   # SHARED torque path
                 prev_tau = a
+                ctrl_frames += 1
+                sat_frames += int(bool(np.any((a <= lo + 1e-6) | (a >= hi - 1e-6))))   # commanded torque hit the ctrl bound
                 phases[cur] = phases.get(cur, 0) + 1
             _r, term, trunc = step_ablation(rl, np.asarray(a, np.float32), "A")
             lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner)
@@ -155,7 +195,12 @@ def motion_robust_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CarryC
             v = float(np.max(np.abs(d.qvel[:4])))
             peak_vel = max(peak_vel, v)
             integ_over += max(0.0, v / 2.0 - 1.0) * stack.control_dt     # ∫ReLU(|q̇|/q̇_safe−1)dt  (q̇_safe≈2)
-            contact_frames += int(bool(rl.inner._planar_metrics.left_contact or rl.inner._planar_metrics.right_contact))
+            in_contact = bool(rl.inner._planar_metrics.left_contact or rl.inner._planar_metrics.right_contact)
+            contact_frames += int(in_contact)
+            if in_contact:                                              # contact-CONDITIONED motion: the loading regime only
+                peak_vel_contact = max(peak_vel_contact, v)
+                integ_contact += max(0.0, v / 2.0 - 1.0) * stack.control_dt
+                peak_normal_force = max(peak_normal_force, _peak_contact_normal(m, d))
             entered_zone = entered_zone or (rl._dtz() <= CENTER_TOL)
             if frame_hook is not None:
                 frame_hook(cur, int(rl._strict))
@@ -164,7 +209,13 @@ def motion_robust_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CarryC
     finally:
         mujoco.set_mjcb_control(None)
     n = max(1, t + 1)
+    nsub = max(1, subs["n"])
     return {"k6": int(md >= HELD_DWELL and touched), "max_dwell": md, "reached_handoff": int(md >= 1),
             "touched": int(touched), "contact_frac": round(contact_frames / n, 3), "entered_zone": int(entered_zone),
-            "acquired_contact": int(contact_frames > 0), "phases": phases, "steps": n,
-            "peak_joint_vel": round(peak_vel, 2), "integrated_overspeed": round(integ_over, 3)}
+            "acquired_contact": int(contact_frames > 0), "phases": phases, "steps": n, "contact_frames": contact_frames,
+            "peak_joint_vel": round(peak_vel, 2), "integrated_overspeed": round(integ_over, 3),
+            "terminal_joint_vel": round(float(np.max(np.abs(d.qvel[:4]))), 3),
+            "peak_joint_vel_in_contact": round(peak_vel_contact, 2), "integrated_overspeed_in_contact": round(integ_contact, 3),
+            "peak_contact_normal_force": round(peak_normal_force, 2),
+            "governor_active_frac": round(subs["gov"] / nsub, 3), "active_brake_frac": round(subs["brake"] / nsub, 3),
+            "torque_saturation_frac": round(sat_frames / max(1, ctrl_frames), 3)}
