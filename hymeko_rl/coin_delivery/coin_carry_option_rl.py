@@ -22,6 +22,7 @@ from hymeko_rl.option_rl import SemiMDPConfig, smdp_target, train_semi_mdp  # no
 from hymeko_rl.option_rl import OptionReplayBuffer as OptionReplay  # noqa: F401 (coin-compat re-export)
 from hymeko_rl.option_rl.agents import DetActor as _FDetActor, GaussActor as _FGaussActor, QNet as _FQNet
 
+from hymeko_rl.coin_delivery.coin_carry_fsm import load_carry_automaton
 from hymeko_rl.coin_delivery.coin_carry_option import _safety_abort
 from hymeko_rl.coin_delivery.coin_carry_proposal import search_select
 from hymeko_rl.coin_delivery.coin_carry_structured import A_BOUND, DIM, PUSH_DTZ, T_MAX, T_MIN, _unpack
@@ -68,39 +69,63 @@ REWARD_SCALE = 5.0                # fixed critic reward-scale (algorithmic only;
 
 
 # ------------------------------ single-option boundary executor (semi-MDP, discounted return) ------------------------------
-def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=None, max_macro=60):
+def _nxt(spec, phase, event, default):
+    """Destination of ``phase`` on ``event`` — from the parsed .hymeko automaton when ``spec`` is given, else the hard-coded
+    default. This is the ONLY thing the automaton drives; the guard predicates + their timing stay identical below."""
+    if spec is None:
+        return default
+    dst, _ev = spec.step(phase, lambda e: e == event)
+    return dst
+
+
+def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=None, max_macro=60, spec="auto", trace=None):
     """Execute ONE committed push→brake→release macro; on a valid handoff (strict≥1) switch to FROZEN pi_0 and settle to a
     terminal K6 decision (the option carries the WHOLE carry→settle→K6 consequence); else return a recovery state for the
     next option. Returns R_option = Σ_{j<τ} γ^j r_{t+j} (discounted, so the semi-MDP target is exactly R_option + γ^τ Q'),
-    τ, done, s_next, certificate. Deterministic given (rl,gate,theta,γ,reward)."""
+    τ, done, s_next, certificate. Deterministic given (rl,gate,theta,γ,reward).
+
+    ``spec`` (a `hymeko_rl.control.controller_spec.ControllerSpec` from ``coin_carry_option_v1.hymeko``) sources the phase
+    TRANSITION TOPOLOGY; ``spec=None`` uses the equivalent hard-coded defaults (the two are gated identical). ``trace`` (a
+    list) records the per-step phase label + the terminal marker."""
+    if spec == "auto":                                                   # default: the .hymeko automaton is the runtime truth
+        spec = load_carry_automaton()
     rw = reward or OptionReward()
     a_push, T_push, a_brake, T_brake, a_release, T_release = _unpack(theta)
     dtz_prev = rl._dtz(); dtz_start = dtz_prev; dtz_min = dtz_prev; touched0 = rl._touched
     contain_exit = 0; was_contained = dtz_prev <= CENTER_TOL; effort = 0.0; contact_steps = 0
     R = 0.0; gp = 1.0; handoff_paid = False
-    phase, tph, t = "push", 0, 0
+    phase, tph, t = "PUSH", 0, 0
     handed = aborted = False
 
     def _pay(r):                                                          # accumulate one discounted per-step reward
         nonlocal R, gp
         R += gp * r; gp *= gamma
 
+    def _mark(m):
+        if trace is not None:
+            trace.append(m)
+
     while t < max_macro and t < horizon:
         s = int(rl._strict); o48 = rl.obs()
         if s >= 1:
-            handed = True; break
+            _mark(_nxt(spec, phase, "handoff", "HANDOFF")); handed = True; break
+        cur = phase
         if not (gate.gate == 1.0):
             a = _det(pi0, o48)
-        elif phase == "push":
+        elif phase == "PUSH":
             a = a_push; tph += 1
-            if tph >= T_push or rl._dtz() <= PUSH_DTZ:
-                phase, tph = "brake", 0
-        elif phase == "brake":
+            ev = "push_reached" if rl._dtz() <= PUSH_DTZ else ("push_timeout" if tph >= T_push else None)
+            if ev:
+                phase, tph = _nxt(spec, "PUSH", ev, "BRAKE"), 0
+        elif phase == "BRAKE":
             a = a_brake; tph += 1
-            if tph >= T_brake or rl._dtz() <= CENTER_TOL or rl._speed() < 1.5 * SETTLE_VEL:
-                phase, tph = "release", 0
+            ev = ("brake_centered" if rl._dtz() <= CENTER_TOL else
+                  ("brake_slow" if rl._speed() < 1.5 * SETTLE_VEL else ("brake_timeout" if tph >= T_brake else None)))
+            if ev:
+                phase, tph = _nxt(spec, "BRAKE", ev, "RELEASE"), 0
         else:
             a = a_release; tph += 1
+        _mark(cur)
         tb = rl._touched
         ca = np.clip(np.asarray(a, np.float32), -ACTION_SCALE, ACTION_SCALE)
         estep = float((ca ** 2).sum()); effort += estep
@@ -115,15 +140,15 @@ def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=Non
             r_t += rw.w_handoff; handoff_paid = True
         _pay(r_t); dtz_prev = dtz
         if term or trunc:
-            handed = handed or int(rl._strict) >= 1; break
+            handed = handed or int(rl._strict) >= 1; _mark("HANDOFF" if handed else "SETTLED"); break
         if _safety_abort(rl, tb):
-            aborted = True; break
-        if phase == "release" and tph >= T_release:
-            break                                                        # macro completed without handoff → re-decide
+            _mark(_nxt(spec, cur, "abort", "ABORTED")); aborted = True; break
+        if cur == "RELEASE" and tph >= T_release:
+            _mark(_nxt(spec, "RELEASE", "release_done", "COMPLETED")); break   # macro completed without handoff → re-decide
         if int(rl._strict) >= 1:
-            handed = True; break
+            _mark(_nxt(spec, cur, "handoff", "HANDOFF")); handed = True; break
     md = int(rl._strict); touched = touched0 or rl._touched
-    if handed:                                                           # settle via FROZEN pi_0 to a terminal K6 decision
+    if handed:                                                           # settle via FROZEN pi_0 (HANDOFF phase law) to a terminal K6
         ts = 0
         while t + ts < horizon:
             s = int(rl._strict); o48 = rl.obs()
@@ -133,12 +158,15 @@ def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=Non
             md = max(md, int(rl._strict)); touched = touched or rl._touched; dtz = rl._dtz()
             exited = was_contained and dtz > CENTER_TOL; contain_exit += int(exited); was_contained = dtz <= CENTER_TOL
             dtz_min = min(dtz_min, dtz)
-            _pay(rw.w_progress * (dtz_prev - dtz) - rw.w_exit * int(exited)); dtz_prev = dtz; ts += 1
+            _pay(rw.w_progress * (dtz_prev - dtz) - rw.w_exit * int(exited)); dtz_prev = dtz; ts += 1; _mark("HANDOFF")
             if term or trunc:
                 break
         tau = max(1, t + ts)
+        _mark(_nxt(spec, "HANDOFF", "delivered", "DELIVERED") if (md >= HELD_DWELL and touched) else _nxt(spec, "HANDOFF", "settle_horizon", "SETTLED"))
     else:
         tau = max(1, t)
+        if trace is not None and trace and trace[-1] in ("PUSH", "BRAKE", "RELEASE"):
+            trace.append("COMPLETED")                                    # macro exhausted its step budget w/o handoff → re-decide
     k6 = int(md >= HELD_DWELL and touched)
     done = bool(handed or aborted)
     if done:
