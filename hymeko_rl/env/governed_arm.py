@@ -30,10 +30,11 @@ class V3Stack:
     tau_rate: float | None
     control_dt: float = 0.01
     substeps: int = 20
+    over_hard_brake: float = 0.0       # velocity-feedback active braking above qdot_hard (0 = off)
 
     @property
     def gov(self) -> TorqueGovernorConfig:
-        return TorqueGovernorConfig(self.qdot_soft, self.qdot_hard)
+        return TorqueGovernorConfig(self.qdot_soft, self.qdot_hard, over_hard_brake=self.over_hard_brake)
 
 
 def pd_governed_torque(q, qd, q_des, stack: V3Stack, prev_tau, ctrl_lo, ctrl_hi):

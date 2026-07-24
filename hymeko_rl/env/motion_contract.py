@@ -85,20 +85,26 @@ class TorqueGovernorConfig:
     qdot_soft: float = 2.0             # rad/s — accelerating torque suppression begins
     qdot_hard: float = 3.0             # rad/s — accelerating torque fully zeroed
     tau_rate_limit: "float | None" = None   # N·m/s — per-second cap on torque change (None = off)
+    over_hard_brake: float = 0.0       # N·m per (rad/s) of overspeed — ACTIVE braking torque above qdot_hard (velocity
+    #                                    feedback). 0 = off (legacy: zero accel torque only). >0 caps contact-imparted
+    #                                    spikes the arm cannot otherwise shed without heavy damping.
 
 
 def govern_torque(tau, qvel, cfg: TorqueGovernorConfig) -> np.ndarray:
     """Directional velocity governor: for each joint, if the torque ACCELERATES the joint (same sign as velocity) and
     |velocity| ≥ qdot_soft, scale that torque down by a linear ramp to 0 at qdot_hard. Braking torque (opposite sign) is
-    left untouched. Pure/vectorised. # Postconditions ``|result| ≤ |tau|`` elementwise; sign preserved."""
+    left untouched. With ``over_hard_brake > 0``, ADD a velocity-feedback braking torque above qdot_hard (opposing the
+    motion) to shed contact-imparted overspeed. Pure/vectorised. # Postconditions sign of the accelerating component is
+    preserved; the added braking is opposite to velocity."""
     tau = np.asarray(tau, np.float64).copy()
     v = np.asarray(qvel, np.float64)
     accelerating = (np.sign(tau) == np.sign(v)) & (v != 0.0)
     span = max(cfg.qdot_hard - cfg.qdot_soft, 1e-9)
     ramp = np.clip(1.0 - (np.abs(v) - cfg.qdot_soft) / span, 0.0, 1.0)   # 1 below soft, 0 at/above hard
-    over = np.abs(v) >= cfg.qdot_soft
-    mask = accelerating & over
-    tau[mask] = tau[mask] * ramp[mask]
+    tau[accelerating & (np.abs(v) >= cfg.qdot_soft)] *= ramp[accelerating & (np.abs(v) >= cfg.qdot_soft)]
+    if cfg.over_hard_brake > 0.0:
+        overspeed = np.maximum(np.abs(v) - cfg.qdot_hard, 0.0)          # active braking opposes motion above hard
+        tau = tau - cfg.over_hard_brake * overspeed * np.sign(v)
     return tau
 
 

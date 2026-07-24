@@ -71,10 +71,23 @@ def test_torque_governor_suppresses_accelerating_but_keeps_braking():
 
 
 def test_torque_governor_never_increases_magnitude():
-    cfg = TorqueGovernorConfig(1.5, 2.5)
+    cfg = TorqueGovernorConfig(1.5, 2.5)                     # over_hard_brake off (default)
     for tau, v in [(3.0, 2.0), (-2.0, 3.0), (1.0, -2.2), (0.5, 0.1)]:
         g = govern_torque([tau], [v], cfg)[0]
         assert abs(g) <= abs(tau) + 1e-9 and (g == 0.0 or np.sign(g) == np.sign(tau))
+
+
+def test_over_hard_brake_adds_active_braking_above_hard():
+    cfg = TorqueGovernorConfig(1.5, 2.5, over_hard_brake=2.0)
+    # below hard: no active braking (only the accel-suppression path)
+    assert govern_torque([0.0], [2.0], cfg)[0] == 0.0
+    # above hard, moving +: an ACTIVE braking torque (negative) is added even with zero command
+    g = govern_torque([0.0], [4.0], cfg)[0]
+    assert g < 0.0 and abs(g - (-2.0 * (4.0 - 2.5))) < 1e-9   # -over_hard_brake·overspeed
+    # above hard, moving −: braking is positive (opposes motion)
+    assert govern_torque([0.0], [-4.0], cfg)[0] > 0.0
+    # a braking command is reinforced, not blocked
+    assert govern_torque([-1.0], [4.0], cfg)[0] < -1.0
 
 
 def test_motion_report_verdict():
