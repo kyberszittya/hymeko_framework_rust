@@ -3,7 +3,7 @@ title: OBJECT_TO_TARGET_VARIANTS_V1 — O2: square & rectangle on the fresh-reco
 date: 2026-07-24
 branch: feat/balltip-interarm-filtered-v1
 baseline: executable-hymeko-option-rl-v1 @ 772a11a4
-status: O2_STRUCTURALLY_SOLVABLE_DEPLOY_GAP / RETENTION_CAPABILITY_NOT_REWARD_LIMITED / TEACHER_REWARD_CHANGE_INSUFFICIENT / DETERMINISTIC_SHAPE_BLIND_PROPOSAL_INSUFFICIENT / ARCHITECTURAL_ASSIMILATION_REQUIRED
+status: O2_STRUCTURALLY_SOLVABLE_DEPLOY_GAP / RETENTION_CAPABILITY_NOT_REWARD_LIMITED / DETERMINISTIC_SHAPE_BLIND_PROPOSAL_INSUFFICIENT / GEOMETRY_INFORMATION_NECESSARY_BUT_NOT_SUFFICIENT / MULTIMODAL_OPTION_STRUCTURE_DOMINANT / ARCHITECTURAL_ASSIMILATION_REQUIRED
 ---
 
 # O2 — square & rectangle (fresh-reconstruct, ball-tip embodiment fixed)
@@ -42,11 +42,21 @@ So the winning policy is state- and contact-mode-dependent and multi-phase — n
 `SIMPLE_REFIT_INSUFFICIENT`. (The explicit arm is deliberately open-loop; it bounds "solvable without search" only weakly —
 the expert is the real ceiling here. Noted as a limitation, not evidence against solvability.)
 
-## Diagnostic 1 — geometry-aliasing probe (`o2_geometry_probe.json`)
-_(fill on completion)_ Combined res_mse 0.946 vs square-only 0.13 suggested geometry aliasing. This control tests it directly:
-per-shape fit MSE (is each shape individually hard, or is the aggregate driven by cross-shape averaging?), a shape-conditioned
-probe (`obs` vs `obs + [hx, hy, hx/hy, sin rz, cos rz]` — does the geometry descriptor collapse the fit error?), and teacher
-multimodality (nearest-obs θ-distance within-shape vs across-shape). **If obs+geom collapses the error ⇒ `GEOMETRY_ALIASING_CONFIRMED`.**
+## Diagnostic 1 — geometry-aliasing probe (`o2_geometry_probe.json`) — DONE
+| control | result | reading |
+|---|---|---|
+| per-shape res_mse | square 0.48 / 2:1 0.34 / 3:1 0.30 vs **combined 1.13** | each shape alone fits far better than combined ⇒ cross-shape aliasing DOES contribute |
+| shape-conditioned probe (val MSE) | `obs` 0.326 vs `obs+geom` 0.337 (**0.967×**) | the geometry descriptor on a flat deterministic head does NOT reduce the error |
+| teacher multimodality (nearest-obs θ-dist) | **within-shape 2.88** vs across-shape 2.56 | near-identical states → DISTANT winning θ, even WITHIN one shape |
+
+**Verdict: `GEOMETRY_CONDITIONING_NOT_DECISIVE` ⇒ `GEOMETRY_INFORMATION_NECESSARY_BUT_NOT_SUFFICIENT` +
+`MULTIMODAL_OPTION_STRUCTURE_DOMINANT`.** The dominant limit is NOT a missing state-feature: it is that the same
+geometric+physical state has multiple distant winning strategies that a single MSE deterministic head averages into a bad
+centre. Reconciliation of the two aliasing facts: per-shape (template) models fit better than the combined (shape identity
+matters), but a geometry *descriptor* fed to a flat deterministic head does not help (multimodality dominates the residual).
+So geometry conditioning is *necessary but insufficient* — the first fix must be a **multimodal / template proposal that
+conditions on geometry**, not conditioning alone. (Single-run; the val split is small/noisy, but the per-shape and
+multimodality signals corroborate the direction.)
 
 ## Diagnostic 2 — HOLD_AWARE_REWARD_V1 ablation (`o2_hold.json`) — DONE
 Separate, pre-registered; changes ONLY the teacher selection to a phase-dependent, farming-proof contact-retention score.
@@ -74,12 +84,12 @@ HOLD (reward) is settled: reward is NOT the limit (outcomes 1 and 2 excluded). T
 already establishes `DETERMINISTIC_SHAPE_BLIND_PROPOSAL_INSUFFICIENT` and `ARCHITECTURAL_ASSIMILATION_REQUIRED`. **The
 geometry-probe no longer decides *whether* an architectural change is needed — that is decided — only whether the FIRST fix
 can be simple geometry conditioning or must go straight to structured multimodal/nonlocal:**
-- probe collapses the fit error ⇒ `REPRESENTATION_LIMIT_DOMINANT` + `GEOMETRY_ALIASING_CONFIRMED` → first element =
-  **StructuredObjectRepresentation** (geometry conditioning may be enough as the first step);
-- probe helps only a little ⇒ `GEOMETRY_INFORMATION_NECESSARY_BUT_NOT_SUFFICIENT` + `MULTIMODAL_OPTION_STRUCTURE_DOMINANT`
-  → the same geometric+physical state has multiple distant working strategies a single MSE deterministic head averages ⇒ a
-  **multimodal/nonlocal proposal** is needed immediately, not just conditioning.
-_(probe numbers filled on completion)_
+- probe collapses the fit error ⇒ `REPRESENTATION_LIMIT_DOMINANT` (geometry conditioning enough as a first step) — **NOT observed**;
+- probe does not help + high multimodality ⇒ `MULTIMODAL_OPTION_STRUCTURE_DOMINANT` — **THIS is the observed outcome** (obs+geom
+  0.967×, within-shape nearest-obs θ-dist 2.88). ⇒ **the first fix is a multimodal/template proposal that conditions on
+  geometry — not geometry conditioning on a deterministic head.** A `MultimodalProposal` is required immediately, alongside
+  `StructuredObjectRepresentation`; `NonlocalDecisionLayer` (retrieval / adaptive search) is the deploy-side complement that
+  keeps the search (which is load-bearing) in the loop.
 
 ## Assimilation requirements this O2 makes concrete (input to ARCHITECTURAL_ASSIMILATION_V1 — NO implementation here)
 The next shared framework must AT LEAST provide (not "another shape-blind proposal training"):
@@ -110,10 +120,13 @@ long-axis rotation mode (H5).
 - No transplant proxy used; fresh-reconstruct throughout.
 
 ## Recommendation for O3 (triangle)
-Proceed to O3 (triangle) on the SAME fresh-reconstruct distribution with the same 5 arms + the two diagnostics. Triangle
-adds vertex-first/edge-first asymmetry and a stronger multimodal expectation — it is the natural test of whether the
-`MULTIMODAL_OR_NONLOCAL_OPTION_STRUCTURE` outcome dominates. But per the plan, complete O3/O4 (the bounded matrix) BEFORE
-executing the assimilation.
+O2 already establishes `MULTIMODAL_OPTION_STRUCTURE_DOMINANT`, so O3's role shifts from "does multimodality appear" to
+"how much STRONGER does it get with vertex/edge asymmetry" — the triangle should widen the within-obs θ-multimodality and
+sharpen the case for template/mixture heads. Run O3 with the same 5 arms + the two diagnostics on fresh-reconstruct, and add
+one cheap control the O2 result now motivates: **a K-mode (mixture/GMM-of-θ) fit vs the single deterministic head on the
+SAME labels** — if the multimodal fit collapses the residual where obs+geom did not, it directly confirms the
+`MultimodalProposal` requirement before any assimilation. Per the plan, complete O3/O4 (the bounded matrix) BEFORE executing
+the assimilation; the architectural verdict (`ARCHITECTURAL_ASSIMILATION_REQUIRED`) is already fixed.
 
 ## Files / provenance
 - `coin_object_o2.py` (5-arm), `coin_object_o2_hold.py` (HOLD ablation), `coin_object_o2_geometry_probe.py` (diagnostics).

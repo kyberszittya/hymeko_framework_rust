@@ -1,0 +1,35 @@
+{
+ "contract": "O2_GEOMETRY_PROBE",
+ "date": "2026-07-24",
+ "smoke": false,
+ "per_shape_fit": {
+  "square_1_1": {
+   "n": 45,
+   "K": 6,
+   "res_mse": 0.4806
+  },
+  "rect_2_1": {
+   "n": 45,
+   "K": 6,
+   "res_mse": 0.3442
+  },
+  "rect_3_1": {
+   "n": 45,
+   "K": 6,
+   "res_mse": 0.3027
+  }
+ },
+ "combined_res_mse": 1.1338,
+ "shape_conditioned_probe": {
+  "val_mse_obs": 0.3258,
+  "val_mse_obs_plus_geom": 0.337,
+  "improvement_ratio_obs_over_geom": 0.967,
+  "geom_descriptor": "[hx, hy, hx/hy, sin(rz), cos(rz)]"
+ },
+ "teacher_multimodality": {
+  "nearest_obs_theta_dist_within_shape": 2.881,
+  "nearest_obs_theta_dist_across_shape": 2.555,
+  "n_within": 25,
+  "n_across": 110
+ }
+}
