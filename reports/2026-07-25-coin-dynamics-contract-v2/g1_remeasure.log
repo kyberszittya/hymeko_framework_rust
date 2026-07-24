@@ -1,0 +1,21 @@
+  state 0: deploy k6 0 vel 1.1 | expert k6 0 vel 1.1
+  state 1: deploy k6 0 vel 2.52 | expert k6 1 vel 3.4
+  state 2: deploy k6 0 vel 0.36 | expert k6 0 vel 0.36
+  state 3: deploy k6 0 vel 2.01 | expert k6 1 vel 2.19
+  state 4: deploy k6 0 vel 2.34 | expert k6 0 vel 1.41
+  state 5: deploy k6 0 vel 3.13 | expert k6 0 vel 2.95
+  state 6: deploy k6 0 vel 2.4 | expert k6 1 vel 2.01
+  state 7: deploy k6 0 vel 3.19 | expert k6 0 vel 3.19
+  state 8: deploy k6 0 vel 0.43 | expert k6 0 vel 0.43
+  state 9: deploy k6 0 vel 1.73 | expert k6 1 vel 1.73
+  state 10: deploy k6 0 vel 2.7 | expert k6 0 vel 2.7
+  state 11: deploy k6 0 vel 1.02 | expert k6 0 vel 1.02
+  state 12: deploy k6 1 vel 1.98 | expert k6 1 vel 2.19
+  state 13: deploy k6 0 vel 1.27 | expert k6 0 vel 1.27
+  state 14: deploy k6 1 vel 4.75 | expert k6 0 vel 4.68
+  state 15: deploy k6 0 vel 3.17 | expert k6 0 vel 2.52
+
+== G1 governed re-measurement ==  deploy K6 0.125 | expert K6 0.312
+  → LEGACY_COIN_SOLUTION_DEPENDED_ON_UNREALISTIC_DYNAMICS
+  artifact: reports/2026-07-25-coin-dynamics-contract-v2/coin_governed_remeasure.json
+COIN_GOVERNED_REMEASURE_DONE

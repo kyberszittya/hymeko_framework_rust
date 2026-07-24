@@ -1,0 +1,374 @@
+{
+ "contract": "COIN_GOVERNED_REMEASURE_G1",
+ "date": "2026-07-25",
+ "smoke": false,
+ "dynamics_contract": {
+  "name": "COIN_DYNAMICS_CONTRACT_V2",
+  "motion_limit_version": "V1",
+  "qdot_soft": 1.5,
+  "qdot_hard": 3.0,
+  "armature": 0.4,
+  "damping": 15.0,
+  "friction": 0.1,
+  "tau_rate": 25.0,
+  "control_dt": 0.01,
+  "substeps": 20
+ },
+ "note": "expert re-searched under governed dynamics; NO retraining; frozen files not mutated",
+ "n_states": 16,
+ "summary": {
+  "deploy": {
+   "k6_rate": 0.125,
+   "mean_peak_vel": 2.131,
+   "mean_terminal_vel": 0.11,
+   "mean_contact_frac": 0.238,
+   "mean_obj_speed": 0.003
+  },
+  "expert": {
+   "k6_rate": 0.312,
+   "mean_peak_vel": 2.072,
+   "mean_terminal_vel": 0.314,
+   "mean_contact_frac": 0.269,
+   "mean_obj_speed": 0.004
+  }
+ },
+ "rows": [
+  {
+   "state": 0,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 1.1,
+    "terminal_joint_vel": 0.044,
+    "contact_frac": 0.0,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 1.1,
+    "terminal_joint_vel": 0.044,
+    "contact_frac": 0.0,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 1,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 2.52,
+    "terminal_joint_vel": 0.137,
+    "contact_frac": 0.25,
+    "obj_speed": 0.01
+   },
+   "expert": {
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "peak_joint_vel": 3.4,
+    "terminal_joint_vel": 0.611,
+    "contact_frac": 0.26,
+    "obj_speed": 0.04
+   }
+  },
+  {
+   "state": 2,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 0.36,
+    "terminal_joint_vel": 0.032,
+    "contact_frac": 0.0,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 0.36,
+    "terminal_joint_vel": 0.032,
+    "contact_frac": 0.0,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 3,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 2.01,
+    "terminal_joint_vel": 0.035,
+    "contact_frac": 0.01,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "peak_joint_vel": 2.19,
+    "terminal_joint_vel": 0.233,
+    "contact_frac": 0.45,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 4,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 2.34,
+    "terminal_joint_vel": 0.137,
+    "contact_frac": 0.02,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 1.41,
+    "terminal_joint_vel": 0.065,
+    "contact_frac": 0.02,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 5,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 3.13,
+    "terminal_joint_vel": 0.031,
+    "contact_frac": 0.01,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 2.95,
+    "terminal_joint_vel": 0.032,
+    "contact_frac": 0.04,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 6,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 2.4,
+    "terminal_joint_vel": 0.08,
+    "contact_frac": 0.21,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "peak_joint_vel": 2.01,
+    "terminal_joint_vel": 0.323,
+    "contact_frac": 0.67,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 7,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 3.19,
+    "terminal_joint_vel": 0.295,
+    "contact_frac": 0.3,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 3.19,
+    "terminal_joint_vel": 0.15,
+    "contact_frac": 0.21,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 8,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 0.43,
+    "terminal_joint_vel": 0.076,
+    "contact_frac": 0.0,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 0.43,
+    "terminal_joint_vel": 0.076,
+    "contact_frac": 0.0,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 9,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 1.73,
+    "terminal_joint_vel": 0.038,
+    "contact_frac": 0.8,
+    "obj_speed": 0.01
+   },
+   "expert": {
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "peak_joint_vel": 1.73,
+    "terminal_joint_vel": 0.607,
+    "contact_frac": 0.6,
+    "obj_speed": 0.01
+   }
+  },
+  {
+   "state": 10,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 2.7,
+    "terminal_joint_vel": 0.087,
+    "contact_frac": 0.39,
+    "obj_speed": 0.01
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 2.7,
+    "terminal_joint_vel": 0.061,
+    "contact_frac": 0.48,
+    "obj_speed": 0.01
+   }
+  },
+  {
+   "state": 11,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 1.02,
+    "terminal_joint_vel": 0.032,
+    "contact_frac": 0.38,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 1.02,
+    "terminal_joint_vel": 0.032,
+    "contact_frac": 0.38,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 12,
+   "deploy": {
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "peak_joint_vel": 1.98,
+    "terminal_joint_vel": 0.302,
+    "contact_frac": 0.5,
+    "obj_speed": 0.02
+   },
+   "expert": {
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "peak_joint_vel": 2.19,
+    "terminal_joint_vel": 1.391,
+    "contact_frac": 0.72,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 13,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 1.27,
+    "terminal_joint_vel": 0.072,
+    "contact_frac": 0.01,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 1.27,
+    "terminal_joint_vel": 0.072,
+    "contact_frac": 0.01,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 14,
+   "deploy": {
+    "k6": 1,
+    "max_dwell": 6,
+    "reached_handoff": 1,
+    "peak_joint_vel": 4.75,
+    "terminal_joint_vel": 0.302,
+    "contact_frac": 0.46,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 4.68,
+    "terminal_joint_vel": 1.272,
+    "contact_frac": 0.2,
+    "obj_speed": 0.0
+   }
+  },
+  {
+   "state": 15,
+   "deploy": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 3.17,
+    "terminal_joint_vel": 0.053,
+    "contact_frac": 0.47,
+    "obj_speed": 0.0
+   },
+   "expert": {
+    "k6": 0,
+    "max_dwell": 0,
+    "reached_handoff": 0,
+    "peak_joint_vel": 2.52,
+    "terminal_joint_vel": 0.021,
+    "contact_frac": 0.27,
+    "obj_speed": 0.0
+   }
+  }
+ ],
+ "verdict": "LEGACY_COIN_SOLUTION_DEPENDED_ON_UNREALISTIC_DYNAMICS"
+}

@@ -1,10 +1,37 @@
 ---
-title: REALISTIC_MOTION_CONTRACT_V1 — audit, contract, torque governor, and the preliminary governed-coin finding
+title: REALISTIC_MOTION_CONTRACT_V1 — audit, contract, governor, and the DEFINITIVE governed-coin verdict (outcome 3)
 date: 2026-07-25
 branch: feat/architectural-assimilation-v1
-status: CONTRACT BUILT + GATED; COIN GOVERNED RE-MEASUREMENT PRELIMINARY (points at outcome-3: legacy leaned on fast dynamics)
+status: CONTRACT GATED; DYNAMICS CONTRACT V2 FROZEN (G0); G1 VERDICT = LEGACY_COIN_SOLUTION_DEPENDED_ON_UNREALISTIC_DYNAMICS
 contract: REALISTIC_MOTION_CONTRACT_V1
 ---
+
+## DEFINITIVE RESULT (G0 frozen contract + G1 re-measurement)
+**G0 — `COIN_DYNAMICS_CONTRACT_V2` calibrated on PHYSICS ONLY (not delivery) and FROZEN** (commit `b5e9c7b9`): qdot_soft
+1.5, qdot_hard 3.0, armature 0.4, damping 15.0, friction 0.1, torque-rate 25.0, control_dt 0.01, 20 substeps. Passes all
+five physical criteria (free-space speed cap, velocity reversal/braking, sudden release decay, 12 rad/s contact-impulse
+recovery within cycles via inertia+damping — no artificial clamp — normal-range undistorted). Lighter configs failed the
+free-space cap; calibrating on physics rather than delivery is what forced the stronger inertia.
+
+**G1 — re-measure balltip deploy + expert under the FROZEN V2, expert RE-SEARCHED under the new dynamics, no retraining**
+(commit `a5539756`, 16 states, `coin_governed_remeasure.json`):
+
+| arm | K6 (governed V2) | legacy fast | mean peak joint vel |
+|---|---|---|---|
+| deploy (update-0 + b8) | **0.125** (2/16) | ~10/10 on delivering states | ~2.2 rad/s |
+| structured expert (192-shot) | **0.312** (5/16) | ~10/10 | ~2.2 rad/s |
+
+Velocities are now realistic (mostly ≤ 3.2 rad/s). Both deploy AND the 192-shot expert collapse. **Verdict:
+`LEGACY_COIN_SOLUTION_DEPENDED_ON_UNREALISTIC_DYNAMICS` (outcome 3).** The legacy coin success was substantially a
+dynamics exploit (27 rad/s "throws"), not a strategy robust to realistic motion. This is the separation the contract was
+built to force — and it landed on the uncomfortable-but-important outcome.
+
+**Implication (per the pre-registered G2):** do NOT retrain the same option language on V2. The push→brake→release macro
+with ±3.0 impulses is what the fast dynamics rewarded; under governed motion it needs a STRATEGIC redesign — longer/slower
+push, more continuous contact retention, lower-impulse acceleration, earlier braking, velocity-dependent release, longer
+settling, more closed-loop replanning. O3 (triangle contact) MUST be evaluated only on the frozen V2 contract; it stays
+paused until the redesign + the 6D re-run land.
+
 
 # REALISTIC_MOTION_CONTRACT_V1
 
