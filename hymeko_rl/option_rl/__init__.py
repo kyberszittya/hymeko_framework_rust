@@ -28,6 +28,8 @@ from hymeko_rl.option_rl.eval import (
     preregistered_select,
 )
 from hymeko_rl.option_rl.hierarchy import SkillRoute
+from hymeko_rl.option_rl.state import FlatStateView, StructuredState, StructuredStateAdapter
+from hymeko_rl.option_rl.temporal import LSTMTemporalEncoder, fuse_state
 from hymeko_rl.option_rl.proposal import (
     CandidateGenerator,
     CandidateScorer,
@@ -46,6 +48,7 @@ __all__ = [
     "OptionTransition", "OptionReplayBuffer", "smdp_target", "OptionEnv", "OptionEnd", "HandoffCertificate",
     "ProposalPolicy", "CandidateGenerator", "CandidateScorer", "FixedBudgetSearch", "SelectedActionProvenance",
     "ProposalMode", "MultimodalProposalPolicy", "SingleModeProposal", "MultimodalProvenance", "MultimodalBudgetSearch", "allocate_budget",
+    "StructuredState", "StructuredStateAdapter", "FlatStateView", "LSTMTemporalEncoder", "fuse_state",
     "QNet", "GaussActor", "DetActor", "SemiMDPConfig", "make_actor", "train_semi_mdp",
     "bootstrap_ci", "paired_delta", "preregistered_select", "paired_final_score", "across_seed_summary", "SkillRoute",
 ]

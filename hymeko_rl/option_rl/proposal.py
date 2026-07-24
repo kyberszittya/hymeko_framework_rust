@@ -183,7 +183,7 @@ class MultimodalBudgetSearch:
             if n == 1:                                        # a single candidate = the mode centre itself (no wasted jitter)
                 cand = c[None, :]
             else:
-                cand = np.asarray(self.generator.sample(c, n, rng), np.float32)
+                cand = self.generator.sample(c, n, rng)       # score at the generator's native precision (K=1 ≡ FixedBudgetSearch)
             for cc in cand:
                 sc, out = self.scorer.score(cc, rng)
                 if sc > best[2]:
