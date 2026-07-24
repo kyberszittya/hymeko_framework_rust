@@ -1,0 +1,49 @@
+{
+ "contract": "BALLTIP_COLLISION_ON_V1",
+ "stage": "B3-iteration",
+ "date": "2026-07-24",
+ "smoke": false,
+ "robust_min": 0.67,
+ "n_eval": 24,
+ "expert_ceiling": 16,
+ "history": [
+  {
+   "round": 0,
+   "labels": 5,
+   "b0": 0,
+   "b8": 2,
+   "res_mse": 0.1131
+  },
+  {
+   "round": 1,
+   "labels": 13,
+   "b0": 0,
+   "b8": 1,
+   "res_mse": 0.0174,
+   "added": 8
+  },
+  {
+   "round": 2,
+   "labels": 22,
+   "b0": 0,
+   "b8": 1,
+   "res_mse": 0.026,
+   "added": 9
+  },
+  {
+   "round": 3,
+   "labels": 37,
+   "b0": 3,
+   "b8": 5,
+   "res_mse": 0.0651,
+   "added": 15
+  }
+ ],
+ "best_round": 3,
+ "best_b8": 5,
+ "delta_b0": 3,
+ "delta_b8": 3,
+ "ball_proposal_ckpt": "carry_proposal_balltip_v1.pt",
+ "verdict": "BALLTIP_UPDATE0_IMPROVED_STILL_WEAK",
+ "clamp_zeroshot_b8": 0
+}

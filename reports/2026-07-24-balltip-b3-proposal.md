@@ -56,6 +56,22 @@ B3's expert ceiling is 16/24 (search-best outcome directly); B1's was 13/24 (a s
 The 3-state gap is eval-methodology variance (search-best vs re-run), not a contradiction — both show a high ceiling
 (≈13–16/24) far above any proposal. B3's 16 is the cleaner number (no re-run env mismatch).
 
+## B3-iteration (robust filter + DAgger refinement) — `reports/2026-07-24-balltip-b3-proposal/b3_iteration.json`
+Robust-label filter + 3 search-as-teacher DAgger rounds (`coin_balltip_proposal_refine.py`).
+- **The robust filter dropped 94 of 99 labels — only 5 are robust** (`robust_k6 ≥ 0.67`). ~95% of the ball's confident
+  deliveries are FRAGILE (θ* reaches K6 once, fails under jitter). This is a property of the ball embodiment (a sphere
+  point-contact is far less forgiving than the clamp's cupping) and it explains B3's noisy fit (res_mse 0.40).
+- **Trajectory (b=0 direct / b=8 search):** round0 0/2 → r1 0/1 → r2 0/1 → **r3 3/5** (labels 5→13→22→37; res_mse
+  0.11→0.017→0.026→0.065). **b=0 rose 0→3** and b=8 recovered to 5 on the cleaner bank. Verdict
+  `BALLTIP_UPDATE0_IMPROVED_STILL_WEAK`: the deterministic proposal IS absorbing the search (b=0 rising) but slowly —
+  b=8 5/24 is still only 31% of the 16/24 ceiling (< the ½·ceiling B5 greenlight).
+- **Read:** the refinement works and had not plateaued at round 3 (the b=0 jump came only as labels accumulated). Two
+  honest next moves: (i) **more DAgger rounds** — continue accumulating robust search-K6 labels; the trend is rising;
+  (ii) **B5 with a DISTRIBUTIONAL actor** — a deterministic template+residual proposal converges slowly on a fragile,
+  multimodal option distribution; option-level SAC learns a *stochastic* proposal over θ (with the search kept in the
+  loop), which is the architecture matched to this bottleneck. Compared against its OWN ball update-0 (b=8 5/24), not the clamp.
+- **B5 gate: still not passed** (b=8 5 < 8). The strengthened checkpoint (best round 3) overwrote `carry_proposal_balltip_v1.pt`.
+
 ## Files
 - **NEW** `experiments/2026_07_22_coin_v3_learning/rl_entry/coin_balltip_proposal.py` (B3 orchestration) — committed 1f105b92
 - **EDIT** `coin_carry_option_teacher_bank.py` (+reusable `generate_bank(...,transplant=)`, DRY; clamp path unchanged)
