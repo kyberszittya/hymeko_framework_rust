@@ -34,8 +34,13 @@ coin_carry_option_description {
 coin_carry_option: cp, ph, c
 {
     // Commit the push amplitude a_push until the coin enters the brake band or the push budget is spent.
+    // §3 skill routing: PUSH/BRAKE/RELEASE are the TRAINABLE UPSTREAM option (the learned carry option); their
+    // checkpoint is a runtime manifest (the RL/proposal actor), not fixed here.
     @PUSH: ph.fsm_phase {
         law push_amplitude;
+        skill_role upstream;
+        training_state trainable;
+        binding carry_option;
         on handoff to HANDOFF;
         on abort to ABORTED;
         on push_reached to BRAKE;
@@ -45,6 +50,9 @@ coin_carry_option: cp, ph, c
     // Commit the brake amplitude a_brake until the coin is centred / slow enough or the brake budget is spent.
     @BRAKE: ph.fsm_phase {
         law brake_amplitude;
+        skill_role upstream;
+        training_state trainable;
+        binding carry_option;
         on handoff to HANDOFF;
         on abort to ABORTED;
         on brake_centered to RELEASE;
@@ -55,23 +63,33 @@ coin_carry_option: cp, ph, c
     // Commit the release amplitude a_release; if no handoff is reached the macro completes (re-decide).
     @RELEASE: ph.fsm_phase {
         law release_amplitude;
+        skill_role upstream;
+        training_state trainable;
+        binding carry_option;
         on handoff to HANDOFF;
         on abort to ABORTED;
         on release_done to COMPLETED;
     }
 
-    // Valid handoff (strict>=1): the FROZEN settling policy pi_0 owns continuation to the K6 decision.
+    // Valid handoff: the FROZEN downstream settling policy pi_0 owns continuation to the K6 decision. The handoff is
+    // permitted ONLY by the declared certificate; the frozen checkpoint identity/hash is pinned here for provenance.
     @HANDOFF: ph.fsm_phase {
         law frozen_settling;
+        skill_role downstream;
+        training_state frozen;
+        binding settling_pi0;
+        handoff_certificate stable_entry_v1;
+        checkpoint pi0_shared_clip_actor;
+        checkpoint_sha 1902454c;
         on delivered to DELIVERED;
         on settle_horizon to SETTLED;
     }
 
     // Terminal markers (backend law `terminal` is a no-op; these carry the certificate outcome).
-    @COMPLETED: ph.fsm_phase { law terminal; }
-    @ABORTED:   ph.fsm_phase { law terminal; }
-    @DELIVERED: ph.fsm_phase { law terminal; }
-    @SETTLED:   ph.fsm_phase { law terminal; }
+    @COMPLETED: ph.fsm_phase { law terminal; skill_role terminal; training_state none; }
+    @ABORTED:   ph.fsm_phase { law terminal; skill_role terminal; training_state none; }
+    @DELIVERED: ph.fsm_phase { law terminal; skill_role terminal; training_state none; }
+    @SETTLED:   ph.fsm_phase { law terminal; skill_role terminal; training_state none; }
 
     // Option parameter theta budgets (the option actor emits a_push/brake/release + these durations).
     @budget: cp.gait {
