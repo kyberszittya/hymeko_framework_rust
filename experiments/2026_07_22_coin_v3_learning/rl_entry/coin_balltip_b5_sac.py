@@ -1,4 +1,4 @@
-"""BALLTIP_COLLISION_ON_V1 — Stage B5: option-level SAC (distributional) on the collision-on ball.
+"""BALLTIP_COLLISION_ON_V1 — Stage B5: option-level STOCHASTIC-GAUSSIAN SAC on the collision-on ball (not distributional RL).
 
 B3-iteration showed a deterministic proposal absorbs the ball's FRAGILE, multimodal option distribution only slowly
 (b=0 0→3, b=8 5/24, ceiling 16/24). A STOCHASTIC actor over θ (with the fixed b=8 search kept in the loop) is the matched
@@ -107,25 +107,34 @@ def main(smoke=False):
             torch.save(ckpts["best_val"], f"{D}/carry_rl_balltip_{algo}_seed{sd}_bestval.pt")
             branches[f"{algo}_seed{sd}"] = {"distill_mse": round(dloss, 4), "history": hist,
                                             "rl_b8_K6": round(float(np.mean(rl_k6)), 3), "up_b8_K6": round(float(np.mean(up_k6)), 3),
-                                            "delta_K6": delta, "delta_ci95": ci, "rl_exit": round(float(np.mean(rl_ex)), 3)}
+                                            "delta_K6": delta, "delta_ci95": ci, "rl_exit": round(float(np.mean(rl_ex)), 3),
+                                            "rl_k6_per_state": [round(float(x), 3) for x in rl_k6],       # per-state paired bits
+                                            "up_k6_per_state": [round(float(x), 3) for x in up_k6]}       # (authoritative eval = coin_balltip_b5_eval.py)
             log(f"[{algo} seed {sd}] PAIRED final: RL b8 {branches[f'{algo}_seed{sd}']['rl_b8_K6']} vs update-0 b8 {branches[f'{algo}_seed{sd}']['up_b8_K6']} | ΔK6 {delta} CI95 {ci}")
 
-    # aggregate paired claim: does SAC beat its OWN ball update-0, CI above 0?
-    sac = [v for k, v in branches.items() if k.startswith("sac")]
-    best_sac = max(sac, key=lambda v: v["delta_K6"]) if sac else None
-    ci_above0 = best_sac and best_sac["delta_ci95"][0] > 0
+    # SEED-AWARE aggregate (no best-seed selection bias): per-seed ΔK6 → median/IQR. 2 seeds ⇒ PILOT cap at most.
+    def _agg(prefix):
+        seeds = {k: v for k, v in branches.items() if k.startswith(prefix)}
+        if not seeds:
+            return None
+        d = [v["delta_K6"] for v in seeds.values()]
+        return {"per_seed_delta": d, "median_delta": round(float(np.median(d)), 3),
+                "iqr": [round(float(np.percentile(d, 25)), 3), round(float(np.percentile(d, 75)), 3)],
+                "both_seeds_positive": all(x > 0 for x in d), "both_seed_cis_above0": all(v["delta_ci95"][0] > 0 for v in seeds.values())}
+    sac_agg = _agg("sac")
     if smoke:
         verdict = "BALLTIP_B5_SMOKE_CONTRACTS_OK"
-    elif ci_above0:
-        verdict = "BALLTIP_SAC_IMPROVES_OVER_OWN_UPDATE0"
-    elif best_sac and best_sac["delta_K6"] > 0:
-        verdict = "BALLTIP_SAC_POSITIVE_LEAN_CI_SPANS_0"
+    elif sac_agg and sac_agg["both_seeds_positive"] and sac_agg["both_seed_cis_above0"]:
+        verdict = "BALLTIP_SAC_PILOT_POSITIVE_LEAN"                        # strongest admissible at 2 seeds (NOT established)
+    elif sac_agg and sac_agg["median_delta"] > 0:
+        verdict = "BALLTIP_SAC_POSITIVE_LEAN_UNDERPOWERED_CI_SPANS_0"
     else:
         verdict = "BALLTIP_SAC_NO_IMPROVEMENT_OVER_UPDATE0"
     out = {"contract": "BALLTIP_B5_SAC", "date": "2026-07-24", "smoke": smoke, "baseline": BASELINE, "reward_cert": cert,
-           "rl_init": BALL_PROP.split("/")[-1], "update0_baseline_final": upd0, "config": rc.__dict__,
-           "branches": branches, "best_sac_delta": (best_sac["delta_K6"] if best_sac else None),
-           "best_sac_ci95": (best_sac["delta_ci95"] if best_sac else None), "option_return_distribution": dist, "verdict": verdict}
+           "rl_init": BALL_PROP.split("/")[-1], "update0_baseline_final_DIAGNOSTIC_single_search_seed": upd0, "config": rc.__dict__,
+           "branches": branches, "sac_aggregate": sac_agg, "td3_aggregate": _agg("td3"),
+           "authoritative_claim": "coin_balltip_b5_eval.py (seed-aware, search-seed-paired, per-(seed,state,search-seed) bits)",
+           "option_return_distribution": dist, "verdict": verdict}
     json.dump(out, open(f"{OUT}/b5_sac.json", "w"), indent=1, default=float)
 
     log("\n== BALLTIP_COLLISION_ON_V1 — Stage B5: option-level SAC ==")
