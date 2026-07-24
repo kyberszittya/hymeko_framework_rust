@@ -177,11 +177,17 @@ def ik_position(env, target_pos, *, iters: int = 20, gain: float = 0.5, damp: fl
     return q[:n].astype(np.float32)
 
 
-def execute_route_option(env, via_ee, *, via_steps: int = 60, goal_steps: int = 150) -> dict:
+def execute_route_option(env, via_ee, *, via_steps: int | None = None, goal_steps: int | None = None) -> dict:
     """Execute the committed EE-path option: open-loop servo to the via (routes around the obstacle), then a CLOSED-LOOP
     goal phase (re-planned expert DLS-IK each step) that reliably closes the goal pose from the far side — the open-loop
     ``ik_estimate`` goal phase does not close a large post-detour 6-D error (measured; the 6D-0 closability wall). EE-path
-    obstacle collision is tracked throughout. Grade = reached goal pose AND collision-free. Caller snapshots/restores."""
+    obstacle collision is tracked throughout. Grade = reached goal pose AND collision-free. Caller snapshots/restores.
+
+    Horizons: when ``via_steps``/``goal_steps`` are None they fall back to the env's ``route_via_steps``/``route_goal_steps``
+    attributes (set by a realistic velocity-limited env so a slew-limited arm has PHYSICAL time to traverse the route),
+    else the fast-dynamics defaults (60 / 150). This is the single execution primitive; feasibility + scorer funnel here."""
+    via_steps = int(getattr(env, "route_via_steps", 60)) if via_steps is None else via_steps
+    goal_steps = int(getattr(env, "route_goal_steps", 150)) if goal_steps is None else goal_steps
     q_via = ik_position(env, via_ee)
     collided = bool(env.ee_in_obstacle(env._ee_pos()))
     for _ in range(via_steps):
@@ -198,6 +204,7 @@ def execute_route_option(env, via_ee, *, via_steps: int = 60, goal_steps: int = 
             break
     success = bool(reached and not collided)
     return {"reached": int(reached), "collided": int(collided), "success": int(success), "k6": int(success),
+            "timeout": int(not reached and not collided),   # ran out of PHYSICAL time without reaching or colliding
             "pos_err": float(info["dist"]), "ang_err": float(info["ang_err"])}
 
 
@@ -270,8 +277,11 @@ class RouteOptionScorer:
     goal reach. Snapshots/restores (qpos, qvel) around every candidate. Score is lexicographic success ≻ reached ≻
     −collided ≻ −pos_err (as a float via a monotone encoding)."""
 
-    def __init__(self, env, via_steps: int = 60, goal_steps: int = 140):
-        self.env, self.via_steps, self.goal_steps = env, via_steps, goal_steps
+    def __init__(self, env, via_steps: int | None = None, goal_steps: int | None = None):
+        # None ⇒ inherit the env's physical horizons (realistic velocity-limited env) or the fast defaults (60 / 140).
+        self.env = env
+        self.via_steps = int(getattr(env, "route_via_steps", 60)) if via_steps is None else via_steps
+        self.goal_steps = int(getattr(env, "route_goal_steps", 140)) if goal_steps is None else goal_steps
         self._q, self._v = env.data.qpos.copy(), env.data.qvel.copy()
 
     def _restore(self):

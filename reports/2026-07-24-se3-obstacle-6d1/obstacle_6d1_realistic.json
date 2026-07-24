@@ -1,0 +1,249 @@
+{
+ "contract": "SE3_OBSTACLE_6D1_REALISTIC_MOTION",
+ "date": "2026-07-25",
+ "motion": {
+  "slew_limit": 2.0,
+  "ctrl_dt": 0.01,
+  "physical_horizons": {
+   "via": 208,
+   "goal": 248
+  },
+  "joint_budget": 3.2,
+  "accel_frac": 0.3,
+  "settle_steps": 40
+ },
+ "executor_velocity_check": {
+  "raw_peak_joint_vel": 6.168,
+  "sustained_peak_joint_vel": 2.069,
+  "mean_joint_vel": 0.735,
+  "slew_limit": 2.0,
+  "sustained_within_limit": true,
+  "startup_transient_excluded_steps": 5,
+  "terminal_joint_vel_mean": 0.001
+ },
+ "reach_6d0": {
+  "n_states": 12,
+  "success_rate": 0.0,
+  "via_steps": 208,
+  "goal_steps": 248,
+  "n_timeout": 3,
+  "peak_joint_vel": 2.911,
+  "within_slew": false
+ },
+ "eligibility_rate_under_slew": 0.259,
+ "harden": {
+  "per_seed": [
+   {
+    "seed_group": 0,
+    "eligibility_rate": 0.236,
+    "n_states": 13,
+    "critical_pair": {
+     "single_head_wrong": 4,
+     "kmode": 13
+    },
+    "delta_headline_mean": 0.231,
+    "route_family_feasible": {
+     "left": 9,
+     "right": 4,
+     "over": 10,
+     "under": 5
+    },
+    "kmode_failure_decomp": {
+     "collided": 0,
+     "timeout": 0,
+     "not_reached": 0
+    }
+   },
+   {
+    "seed_group": 1,
+    "eligibility_rate": 0.2,
+    "n_states": 11,
+    "critical_pair": {
+     "single_head_wrong": 2,
+     "kmode": 10
+    },
+    "delta_headline_mean": 0.455,
+    "route_family_feasible": {
+     "left": 6,
+     "right": 5,
+     "over": 4,
+     "under": 4
+    },
+    "kmode_failure_decomp": {
+     "collided": 0,
+     "timeout": 1,
+     "not_reached": 0
+    }
+   },
+   {
+    "seed_group": 2,
+    "eligibility_rate": 0.127,
+    "n_states": 7,
+    "critical_pair": {
+     "single_head_wrong": 0,
+     "kmode": 6
+    },
+    "delta_headline_mean": 0.143,
+    "route_family_feasible": {
+     "left": 4,
+     "right": 3,
+     "over": 6,
+     "under": 0
+    },
+    "kmode_failure_decomp": {
+     "collided": 0,
+     "timeout": 1,
+     "not_reached": 0
+    }
+   },
+   {
+    "seed_group": 3,
+    "eligibility_rate": 0.218,
+    "n_states": 12,
+    "critical_pair": {
+     "single_head_wrong": 4,
+     "kmode": 11
+    },
+    "delta_headline_mean": 0.5,
+    "route_family_feasible": {
+     "left": 7,
+     "right": 8,
+     "over": 8,
+     "under": 2
+    },
+    "kmode_failure_decomp": {
+     "collided": 0,
+     "timeout": 1,
+     "not_reached": 0
+    }
+   },
+   {
+    "seed_group": 4,
+    "eligibility_rate": 0.236,
+    "n_states": 13,
+    "critical_pair": {
+     "single_head_wrong": 1,
+     "kmode": 11
+    },
+    "delta_headline_mean": 0.308,
+    "route_family_feasible": {
+     "left": 5,
+     "right": 7,
+     "over": 11,
+     "under": 2
+    },
+    "kmode_failure_decomp": {
+     "collided": 1,
+     "timeout": 1,
+     "not_reached": 0
+    }
+   },
+   {
+    "seed_group": 5,
+    "eligibility_rate": 0.182,
+    "n_states": 10,
+    "critical_pair": {
+     "single_head_wrong": 1,
+     "kmode": 9
+    },
+    "delta_headline_mean": 0.4,
+    "route_family_feasible": {
+     "left": 5,
+     "right": 6,
+     "over": 5,
+     "under": 2
+    },
+    "kmode_failure_decomp": {
+     "collided": 1,
+     "timeout": 0,
+     "not_reached": 0
+    }
+   }
+  ],
+  "aggregate": {
+   "n_seeds": 6,
+   "headline_budget": 12,
+   "kmode": "K4_equal",
+   "per_seed_delta_mean": [
+    0.231,
+    0.455,
+    0.143,
+    0.5,
+    0.308,
+    0.4
+   ],
+   "seed_median_delta": 0.354,
+   "seed_iqr": [
+    0.25,
+    0.441
+   ],
+   "n_seeds_positive": 6,
+   "hier_bootstrap": {
+    "median": 0.3367,
+    "lo": 0.1923,
+    "hi": 0.4928
+   },
+   "budget_curve_K1": {
+    "0": 0.348,
+    "4": 0.515,
+    "8": 0.545,
+    "12": 0.561,
+    "24": 0.576
+   },
+   "budget_curve_KM": {
+    "0": 0.348,
+    "4": 0.773,
+    "8": 0.833,
+    "12": 0.909,
+    "24": 0.924
+   },
+   "verdict": "MULTIMODAL_POLICY_SEARCH_VALIDATED_ON_GEOMETRICALLY_SEPARATED_ROUTE_BASINS"
+  }
+ },
+ "obstacle_shift_control": {
+  "wider": {
+   "eligibility_rate": 0.1,
+   "n_states": 6,
+   "B4": {
+    "single_head": 0.667,
+    "kmode": 0.5,
+    "delta": -0.167
+   },
+   "B12": {
+    "single_head": 0.667,
+    "kmode": 0.667,
+    "delta": 0.0
+   }
+  },
+  "taller": {
+   "eligibility_rate": 0.117,
+   "n_states": 7,
+   "B4": {
+    "single_head": 0.571,
+    "kmode": 0.429,
+    "delta": -0.143
+   },
+   "B12": {
+    "single_head": 0.571,
+    "kmode": 0.714,
+    "delta": 0.143
+   }
+  },
+  "narrow": {
+   "eligibility_rate": 0.133,
+   "n_states": 8,
+   "B4": {
+    "single_head": 0.625,
+    "kmode": 0.625,
+    "delta": 0.0
+   },
+   "B12": {
+    "single_head": 0.75,
+    "kmode": 0.875,
+    "delta": 0.125
+   }
+  }
+ },
+ "unlimited_verdict": "MULTIMODAL_POLICY_SEARCH_VALIDATED_ON_GEOMETRICALLY_SEPARATED_ROUTE_BASINS",
+ "verdict": "MULTIMODAL_POLICY_SEARCH_VALIDATED_UNDER_REALISTIC_MOTION_LIMITS"
+}

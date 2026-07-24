@@ -203,21 +203,25 @@ def _hier_bootstrap(per_seed_deltas, iters=5000, boot_seed=0):
             "hi": round(float(np.percentile(boot, 97.5)), 4)}
 
 
-def harden(n_seeds=6, budgets=(0, 4, 8, 12, 24), headline_B=12, kmode_alloc="equal", kmode_K=4):
+def harden(n_seeds=6, budgets=(0, 4, 8, 12, 24), headline_B=12, kmode_alloc="equal", kmode_K=4, env_factory=None):
     """Seed-hardening: N replications, each a FRESH eligible panel (disjoint state-seed range) + a paired search seed.
     Headline Δ = KMODE(K=kmode_K, alloc) − single-head@argmax at ``headline_B``, per (seed, state). Reports per-seed Δ,
-    seed median/IQR, hierarchical bootstrap, fresh critical-pair replication, route-family + failure decomposition."""
+    seed median/IQR, hierarchical bootstrap, fresh critical-pair replication, route-family + failure decomposition.
+    ``env_factory`` (default fast ``_env``) lets the realistic velocity-limited env + physical horizons be injected — the
+    eligible panel is then RECOMPUTED under that limited executor (not reused from the unlimited run)."""
+    env_factory = env_factory or _env
     per_seed, curves = [], {"K1": {b: [] for b in budgets}, "KM": {b: [] for b in budgets}}
     per_seed_deltas = []
     for i in range(n_seeds):
-        env = _env()
+        env = env_factory()
         lo = i * 90
         panel, rate = build_eligible_panel(env, state_seeds=range(lo, lo + 55), feas_seed_base=300 + i, want=14)
         srng = 40 + i
         # fresh critical pair on THIS panel
         sh, km, _rows = critical_pair(env, panel, budget=12, seed_rng=srng)
         # per-state deploy bits across budgets
-        deltas, fam, fails = [], {"left": 0, "right": 0, "over": 0, "under": 0}, {"collided": 0, "not_reached": 0}
+        deltas, fam = [], {"left": 0, "right": 0, "over": 0, "under": 0}
+        fails = {"collided": 0, "timeout": 0, "not_reached": 0}   # timeout = ran out of physical time (separate category)
         for it in panel:
             for nm in it["feasible"]:
                 fam[nm] += 1
@@ -229,7 +233,8 @@ def harden(n_seeds=6, budgets=(0, 4, 8, 12, 24), headline_B=12, kmode_alloc="equ
                 if b == headline_B:
                     deltas.append(kmv["success"] - k1["success"])
                     if not kmv["success"]:
-                        fails["collided" if kmv.get("collided") else "not_reached"] += 1
+                        key = "collided" if kmv.get("collided") else ("timeout" if kmv.get("timeout") else "not_reached")
+                        fails[key] += 1
         per_seed_deltas.append(deltas)
         per_seed.append({"seed_group": i, "eligibility_rate": rate, "n_states": len(panel),
                          "critical_pair": {"single_head_wrong": sh, "kmode": km},
@@ -250,15 +255,19 @@ def harden(n_seeds=6, budgets=(0, 4, 8, 12, 24), headline_B=12, kmode_alloc="equ
     return {"per_seed": per_seed, "aggregate": agg}
 
 
-def obstacle_shift_control(budgets=(4, 12), kmode_K=4, kmode_alloc="equal"):
+def obstacle_shift_control(budgets=(4, 12), kmode_K=4, kmode_alloc="equal", env_for_half=None):
     """Generalisation control: does the K-mode advantage survive a bounded change of obstacle GEOMETRY (not just fresh
     seeds of the same box)? Vary half-extents + a small center shift; a fresh eligible panel per geometry; check
-    K-mode still beats single-head. Guards against memorising one obstacle layout."""
+    K-mode still beats single-head. Guards against memorising one obstacle layout. ``env_for_half`` (default fast) builds
+    the env for a given obstacle half-extent — inject a realistic velocity-limited variant to run under motion limits."""
+    def _default_for_half(half):
+        return SE3ObstacleReachEnv(control_mode="position", max_steps=320, reach_thresh=0.06, ang_thresh=0.4,
+                                   min_separation=0.16, obstacle_half=half)
+    env_for_half = env_for_half or _default_for_half
     geoms = {"wider": (0.040, 0.040, 0.075), "taller": (0.028, 0.028, 0.11), "narrow": (0.020, 0.020, 0.06)}
     out = {}
     for name, half in geoms.items():
-        env = SE3ObstacleReachEnv(control_mode="position", max_steps=320, reach_thresh=0.06, ang_thresh=0.4,
-                                  min_separation=0.16, obstacle_half=half)
+        env = env_for_half(half)
         panel, rate = build_eligible_panel(env, state_seeds=range(700, 760), feas_seed_base=900, want=10)
         row = {"eligibility_rate": rate, "n_states": len(panel)}
         for b in budgets:
