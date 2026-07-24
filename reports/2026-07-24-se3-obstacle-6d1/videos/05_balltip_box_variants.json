@@ -1,0 +1,63 @@
+{
+ "clip": "05_balltip_box_variants",
+ "variants": [
+  {
+   "square_1_1": {
+    "shape": "square_1_1",
+    "deploy": {
+     "k6": 1,
+     "max_dwell": 6,
+     "contact_frac": 1.0,
+     "handoff": 1,
+     "contain_exit": 0
+    },
+    "expert": {
+     "k6": 1,
+     "max_dwell": 6,
+     "contact_frac": 1.0,
+     "handoff": 1,
+     "contain_exit": 0
+    }
+   }
+  },
+  {
+   "rect_2_1": {
+    "shape": "rect_2_1",
+    "deploy": {
+     "k6": 0,
+     "max_dwell": 0,
+     "contact_frac": 1.0,
+     "handoff": 0,
+     "contain_exit": 0
+    },
+    "expert": {
+     "k6": 1,
+     "max_dwell": 6,
+     "contact_frac": 1.0,
+     "handoff": 1,
+     "contain_exit": 0
+    }
+   }
+  },
+  {
+   "rect_3_1": {
+    "shape": "rect_3_1",
+    "deploy": {
+     "k6": 0,
+     "max_dwell": 0,
+     "contact_frac": 0.0,
+     "handoff": 0,
+     "contain_exit": 0
+    },
+    "expert": {
+     "k6": 1,
+     "max_dwell": 6,
+     "contact_frac": 0.0,
+     "handoff": 1,
+     "contain_exit": 0
+    }
+   }
+  }
+ ],
+ "commit": "1ef48623"
+}
