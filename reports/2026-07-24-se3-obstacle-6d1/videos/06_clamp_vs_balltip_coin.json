@@ -3,12 +3,12 @@
  "clamp": {
   "k6": 1,
   "max_dwell": 6,
-  "contact_frac": 1.0
+  "contact_frac": 0.1
  },
  "balltip": {
   "k6": 1,
   "max_dwell": 6,
-  "contact_frac": 1.0,
+  "contact_frac": 0.29,
   "deploy": "update-0 + b8 (NOT SAC)"
  },
  "commit": "4dfdb2d6"

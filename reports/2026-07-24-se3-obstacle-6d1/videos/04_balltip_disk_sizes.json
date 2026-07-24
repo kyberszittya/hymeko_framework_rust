@@ -5,16 +5,16 @@
    "small_disk": {
     "shape": "small_disk",
     "deploy": {
-     "k6": 1,
-     "max_dwell": 6,
-     "contact_frac": 1.0,
-     "handoff": 1,
+     "k6": 0,
+     "max_dwell": 0,
+     "contact_frac": 0.07,
+     "handoff": 0,
      "contain_exit": 0
     },
     "expert": {
      "k6": 1,
      "max_dwell": 6,
-     "contact_frac": 1.0,
+     "contact_frac": 0.31,
      "handoff": 1,
      "contain_exit": 0
     }
@@ -26,14 +26,14 @@
     "deploy": {
      "k6": 1,
      "max_dwell": 6,
-     "contact_frac": 0.0,
+     "contact_frac": 0.38,
      "handoff": 1,
      "contain_exit": 0
     },
     "expert": {
      "k6": 1,
      "max_dwell": 6,
-     "contact_frac": 0.0,
+     "contact_frac": 0.41,
      "handoff": 1,
      "contain_exit": 0
     }
@@ -45,15 +45,15 @@
     "deploy": {
      "k6": 0,
      "max_dwell": 0,
-     "contact_frac": 1.0,
+     "contact_frac": 0.03,
      "handoff": 0,
      "contain_exit": 0
     },
     "expert": {
-     "k6": 1,
-     "max_dwell": 6,
-     "contact_frac": 1.0,
-     "handoff": 1,
+     "k6": 0,
+     "max_dwell": 0,
+     "contact_frac": 0.02,
+     "handoff": 0,
      "contain_exit": 0
     }
    }

@@ -65,7 +65,14 @@ def _cam():
 
 def render_coin_rollout(rl, gate, pi0, base, theta, *, horizon=EVAL_H, h=360, w=470):
     """Render the EXACT structured_carry_rollout for ``theta`` via its frame_hook, capturing dtz / held-dwell / contact /
-    phase per step. Returns (frames, diag, outcome). Non-behavioral (frame_hook only observes)."""
+    phase per step. Returns (frames, diag, outcome). Non-behavioral (frame_hook only observes).
+
+    IMPORTANT: the hook must render the SAME rl that the rollout STEPS. structured_carry_rollout steps its ``rl``
+    argument in place, so we deepcopy ONCE here (isolating the caller's rl between deploy/expert calls) and pass THAT
+    copy to both the rollout and the hook. (Previously the rollout stepped a separate deepcopy while the hook rendered
+    the un-stepped original → every frame was the static initial state.)"""
+    rl = copy.deepcopy(rl)
+    gate = copy.deepcopy(gate)
     renderer = mujoco.Renderer(rl.inner.model, height=h, width=w)
     cam = _cam()
     frames, dtz, dwell, contact, phase = [], [], [], [], []
@@ -78,7 +85,7 @@ def render_coin_rollout(rl, gate, pi0, base, theta, *, horizon=EVAL_H, h=360, w=
         m = rl.inner._planar_metrics
         contact.append(int(bool(m.left_contact or m.right_contact)))
         phase.append(ph)
-    out = structured_carry_rollout(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base,
+    out = structured_carry_rollout(rl, gate, pi0, base,
                                    np.asarray(theta, np.float32), horizon=horizon, frame_hook=hook)
     renderer.close()
     cfrac = round(float(np.mean(contact)), 2) if contact else 0.0
@@ -134,11 +141,12 @@ def _pair(pi0, base, rl, gate, *, shape):
     return clip, manifest
 
 
-def _reconstruct(pi0, base, forbidden, *, coin_shape, hx, hy, seed_lo, tries=12):
-    """Pick a DELIVERING demo state: reconstruct several fresh handoffs, run a quick expert, keep the highest max-dwell
-    (break on the first K6). The fresh-reconstruct distribution rarely delivers, so a demonstration must select a state
-    where delivery is achievable — otherwise the clip shows a flat dtz that demonstrates nothing."""
-    ls, _c, _s = build_boundary_panel(pi0, range(seed_lo, seed_lo + 1200), forbidden, want=tries, families=FAMS,
+def _reconstruct(pi0, base, forbidden, *, coin_shape, hx, hy, seed_lo, tries=16):
+    """Pick a DELIVERING demo state with VISIBLE travel: reconstruct several fresh handoffs, run a quick expert, and
+    rank by (delivers, longest approach). The fresh-reconstruct distribution rarely delivers, so a demonstration must
+    select a deliverable state — and among those, the one with the longest approach (highest ``completion`` = K6-step)
+    so the clip shows real motion, not a 0.5 s snap. Scans all candidates (no early break)."""
+    ls, _c, _s = build_boundary_panel(pi0, range(seed_lo, seed_lo + 1600), forbidden, want=tries, families=FAMS,
                                       strict_primary=(0,), strict_fill=(), per_seed_cap=3)
     rk = {"geom": "POINT", "arm_mjcf_transform": _ball_tf, "coin_shape": coin_shape, "disk_radius_override": hx}
     if hy is not None:
@@ -153,10 +161,10 @@ def _reconstruct(pi0, base, forbidden, *, coin_shape, hx, hy, seed_lo, tries=12)
             continue
         _th, out, _sup = structured_random_best_with_support(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base,
                                                              np.random.default_rng(3), shots=96, horizon=EVAL_H)
-        if best is None or out["max_dwell"] > best[2]:
-            best = (rl, gate, int(out["max_dwell"]))
-        if out["k6"]:
-            break
+        # rank: delivering first, then the LONGEST approach (completion = when K6 first held) for visible travel
+        score = (int(out["k6"]), int(out["completion"]) if out["k6"] else int(out["max_dwell"]))
+        if best is None or score > best[2]:
+            best = (rl, gate, score)
     return (best[0], best[1]) if best else reconstruct_handoff(pi0, ls[0], **rk)[:2]
 
 
