@@ -1,0 +1,471 @@
+{
+ "contract": "SE3_OBSTACLE_6D1_EE_ROUTE_SELECTION",
+ "date": "2026-07-24",
+ "claim_scope": "EE-route-selection (obstacle contype=0, EE-AABB collision); NOT full-arm avoidance",
+ "route_modes": "geometrically-separated / locally-disconnected proposal basins",
+ "eligibility": "direct blocked AND >=1 exec-feasible route AND >=1 exec-infeasible route (execution-based)",
+ "eligible_panel": [
+  {
+   "seed": 6,
+   "feasible": [
+    "left",
+    "right"
+   ],
+   "infeasible": [
+    "over",
+    "under"
+   ]
+  },
+  {
+   "seed": 8,
+   "feasible": [
+    "left",
+    "right",
+    "over"
+   ],
+   "infeasible": [
+    "under"
+   ]
+  },
+  {
+   "seed": 11,
+   "feasible": [
+    "left"
+   ],
+   "infeasible": [
+    "right",
+    "over",
+    "under"
+   ]
+  },
+  {
+   "seed": 17,
+   "feasible": [
+    "left",
+    "over",
+    "under"
+   ],
+   "infeasible": [
+    "right"
+   ]
+  },
+  {
+   "seed": 21,
+   "feasible": [
+    "left",
+    "right",
+    "over"
+   ],
+   "infeasible": [
+    "under"
+   ]
+  },
+  {
+   "seed": 24,
+   "feasible": [
+    "left",
+    "right",
+    "over"
+   ],
+   "infeasible": [
+    "under"
+   ]
+  },
+  {
+   "seed": 44,
+   "feasible": [
+    "over",
+    "under"
+   ],
+   "infeasible": [
+    "left",
+    "right"
+   ]
+  },
+  {
+   "seed": 48,
+   "feasible": [
+    "left",
+    "right",
+    "over"
+   ],
+   "infeasible": [
+    "under"
+   ]
+  },
+  {
+   "seed": 49,
+   "feasible": [
+    "right"
+   ],
+   "infeasible": [
+    "left",
+    "over",
+    "under"
+   ]
+  },
+  {
+   "seed": 52,
+   "feasible": [
+    "right",
+    "over"
+   ],
+   "infeasible": [
+    "left",
+    "under"
+   ]
+  },
+  {
+   "seed": 53,
+   "feasible": [
+    "left",
+    "under"
+   ],
+   "infeasible": [
+    "right",
+    "over"
+   ]
+  },
+  {
+   "seed": 55,
+   "feasible": [
+    "over"
+   ],
+   "infeasible": [
+    "left",
+    "right",
+    "under"
+   ]
+  },
+  {
+   "seed": 56,
+   "feasible": [
+    "left",
+    "over",
+    "under"
+   ],
+   "infeasible": [
+    "right"
+   ]
+  },
+  {
+   "seed": 59,
+   "feasible": [
+    "right",
+    "over"
+   ],
+   "infeasible": [
+    "left",
+    "under"
+   ]
+  }
+ ],
+ "eligibility_rate": 0.233,
+ "mode_non_crossing_min": 1.0,
+ "realized_allocations": {
+  "0": {
+   "equal": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "top_probe": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "prob": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "4": {
+   "equal": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "top_probe": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "prob": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "8": {
+   "equal": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "top_probe": [
+    5,
+    1,
+    1,
+    1
+   ],
+   "prob": [
+    3,
+    2,
+    2,
+    1
+   ]
+  },
+  "12": {
+   "equal": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "top_probe": [
+    9,
+    1,
+    1,
+    1
+   ],
+   "prob": [
+    5,
+    3,
+    2,
+    2
+   ]
+  },
+  "24": {
+   "equal": [
+    6,
+    6,
+    6,
+    6
+   ],
+   "top_probe": [
+    21,
+    1,
+    1,
+    1
+   ],
+   "prob": [
+    11,
+    7,
+    4,
+    2
+   ]
+  }
+ },
+ "critical_pair": {
+  "n": 14,
+  "single_head_wrong": 2,
+  "kmode": 13,
+  "rows": [
+   {
+    "seed": 6,
+    "feasible": [
+     "left",
+     "right"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 3
+   },
+   {
+    "seed": 8,
+    "feasible": [
+     "left",
+     "right",
+     "over"
+    ],
+    "single_head_wrong_success": 1,
+    "kmode_success": 1,
+    "kmode_selected_mode": 2
+   },
+   {
+    "seed": 11,
+    "feasible": [
+     "left"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 0,
+    "kmode_selected_mode": 1
+   },
+   {
+    "seed": 17,
+    "feasible": [
+     "left",
+     "over",
+     "under"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 2
+   },
+   {
+    "seed": 21,
+    "feasible": [
+     "left",
+     "right",
+     "over"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 0
+   },
+   {
+    "seed": 24,
+    "feasible": [
+     "left",
+     "right",
+     "over"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 0
+   },
+   {
+    "seed": 44,
+    "feasible": [
+     "over",
+     "under"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 0
+   },
+   {
+    "seed": 48,
+    "feasible": [
+     "left",
+     "right",
+     "over"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 1
+   },
+   {
+    "seed": 49,
+    "feasible": [
+     "right"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 1
+   },
+   {
+    "seed": 52,
+    "feasible": [
+     "right",
+     "over"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 2
+   },
+   {
+    "seed": 53,
+    "feasible": [
+     "left",
+     "under"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 3
+   },
+   {
+    "seed": 55,
+    "feasible": [
+     "over"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 0
+   },
+   {
+    "seed": 56,
+    "feasible": [
+     "left",
+     "over",
+     "under"
+    ],
+    "single_head_wrong_success": 1,
+    "kmode_success": 1,
+    "kmode_selected_mode": 2
+   },
+   {
+    "seed": 59,
+    "feasible": [
+     "right",
+     "over"
+    ],
+    "single_head_wrong_success": 0,
+    "kmode_success": 1,
+    "kmode_selected_mode": 1
+   }
+  ],
+  "verdict": "SINGLE_WRONG_MODE_FAILS_KMODE_RECOVERS"
+ },
+ "fair_grid": {
+  "B0_K1_prob": 0.643,
+  "B0_K2_prob": 0.643,
+  "B0_K2_equal": 0.643,
+  "B0_K2_top_probe": 0.643,
+  "B0_K3_prob": 0.643,
+  "B0_K3_equal": 0.643,
+  "B0_K3_top_probe": 0.643,
+  "B0_K4_prob": 0.643,
+  "B0_K4_equal": 0.643,
+  "B0_K4_top_probe": 0.643,
+  "B4_K1_prob": 0.643,
+  "B4_K2_prob": 0.857,
+  "B4_K2_equal": 0.857,
+  "B4_K2_top_probe": 0.893,
+  "B4_K3_prob": 0.929,
+  "B4_K3_equal": 0.929,
+  "B4_K3_top_probe": 0.929,
+  "B4_K4_prob": 0.929,
+  "B4_K4_equal": 0.929,
+  "B4_K4_top_probe": 0.929,
+  "B8_K1_prob": 0.679,
+  "B8_K2_prob": 0.893,
+  "B8_K2_equal": 0.893,
+  "B8_K2_top_probe": 0.929,
+  "B8_K3_prob": 0.964,
+  "B8_K3_equal": 0.964,
+  "B8_K3_top_probe": 1.0,
+  "B8_K4_prob": 0.964,
+  "B8_K4_equal": 0.929,
+  "B8_K4_top_probe": 0.964,
+  "B12_K1_prob": 0.714,
+  "B12_K2_prob": 0.929,
+  "B12_K2_equal": 0.929,
+  "B12_K2_top_probe": 0.929,
+  "B12_K3_prob": 0.964,
+  "B12_K3_equal": 1.0,
+  "B12_K3_top_probe": 1.0,
+  "B12_K4_prob": 0.964,
+  "B12_K4_equal": 0.964,
+  "B12_K4_top_probe": 1.0,
+  "B24_K1_prob": 0.714,
+  "B24_K2_prob": 0.964,
+  "B24_K2_equal": 0.964,
+  "B24_K2_top_probe": 0.929,
+  "B24_K3_prob": 1.0,
+  "B24_K3_equal": 1.0,
+  "B24_K3_top_probe": 1.0,
+  "B24_K4_prob": 1.0,
+  "B24_K4_equal": 1.0,
+  "B24_K4_top_probe": 1.0
+ },
+ "fair_grid_verdict": "MULTIMODAL_POLICY_SEARCH_VALIDATED_ON_DISJOINT_PATH_MODES"
+}
