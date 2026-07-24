@@ -1,0 +1,169 @@
+{
+ "contract": "COIN_DYNAMICS_CONTRACT_V2_CALIBRATION",
+ "date": "2026-07-25",
+ "discipline": "calibrated on PHYSICAL tests only, independent of task/delivery success",
+ "runs": [
+  {
+   "config": {
+    "qdot_soft": 1.5,
+    "qdot_hard": 3.0,
+    "armature": 0.1,
+    "damping": 5.0,
+    "friction": 0.0,
+    "tau_rate": null
+   },
+   "results": {
+    "free_space_max_speed": {
+     "peak_vel": 10.33,
+     "stable": true,
+     "ok": false
+    },
+    "velocity_reversal": {
+     "v_fwd": -1.58,
+     "v_rev": 1.11,
+     "ok": false
+    },
+    "sudden_release": {
+     "v0": 6.07,
+     "decay_steps": 80,
+     "ok": true
+    },
+    "contact_impulse_recovery": {
+     "recovery_cycles": 2,
+     "final_vel": 2.07,
+     "ok": true
+    },
+    "normal_range_undistorted": {
+     "peak_vel": 1.182,
+     "ok": true
+    },
+    "all_ok": false
+   }
+  },
+  {
+   "config": {
+    "qdot_soft": 1.5,
+    "qdot_hard": 3.0,
+    "armature": 0.2,
+    "damping": 8.0,
+    "friction": 0.05,
+    "tau_rate": 40.0
+   },
+   "results": {
+    "free_space_max_speed": {
+     "peak_vel": 5.86,
+     "stable": true,
+     "ok": false
+    },
+    "velocity_reversal": {
+     "v_fwd": 1.83,
+     "v_rev": -1.83,
+     "ok": true
+    },
+    "sudden_release": {
+     "v0": 1.83,
+     "decay_steps": 2,
+     "ok": true
+    },
+    "contact_impulse_recovery": {
+     "recovery_cycles": 3,
+     "final_vel": 1.84,
+     "ok": true
+    },
+    "normal_range_undistorted": {
+     "peak_vel": 0.876,
+     "ok": true
+    },
+    "all_ok": false
+   }
+  },
+  {
+   "config": {
+    "qdot_soft": 1.5,
+    "qdot_hard": 3.0,
+    "armature": 0.3,
+    "damping": 12.0,
+    "friction": 0.1,
+    "tau_rate": 30.0
+   },
+   "results": {
+    "free_space_max_speed": {
+     "peak_vel": 4.05,
+     "stable": true,
+     "ok": false
+    },
+    "velocity_reversal": {
+     "v_fwd": 1.75,
+     "v_rev": -1.75,
+     "ok": true
+    },
+    "sudden_release": {
+     "v0": 1.75,
+     "decay_steps": 3,
+     "ok": true
+    },
+    "contact_impulse_recovery": {
+     "recovery_cycles": 3,
+     "final_vel": 2.32,
+     "ok": true
+    },
+    "normal_range_undistorted": {
+     "peak_vel": 0.664,
+     "ok": true
+    },
+    "all_ok": false
+   }
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.4,
+    "damping": 15.0,
+    "friction": 0.1,
+    "tau_rate": 25.0
+   },
+   "results": {
+    "free_space_max_speed": {
+     "peak_vel": 3.13,
+     "stable": true,
+     "ok": true
+    },
+    "velocity_reversal": {
+     "v_fwd": 1.41,
+     "v_rev": -1.41,
+     "ok": true
+    },
+    "sudden_release": {
+     "v0": 1.41,
+     "decay_steps": 3,
+     "ok": true
+    },
+    "contact_impulse_recovery": {
+     "recovery_cycles": 3,
+     "final_vel": 2.8,
+     "ok": true
+    },
+    "normal_range_undistorted": {
+     "peak_vel": 0.562,
+     "ok": true
+    },
+    "all_ok": true
+   }
+  }
+ ],
+ "frozen_contract": {
+  "dynamics_contract": "COIN_DYNAMICS_CONTRACT_V2",
+  "motion_limit_version": "V1",
+  "control_dt": 0.01,
+  "substeps": 20,
+  "qdot_soft": 1.2,
+  "qdot_hard": 2.5,
+  "armature": 0.4,
+  "damping": 15.0,
+  "friction": 0.1,
+  "tau_rate": 25.0,
+  "joint_vel_hard": 3.0,
+  "terminal_joint_vel": 0.25
+ }
+}
