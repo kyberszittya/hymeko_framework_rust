@@ -1,0 +1,2940 @@
+{
+ "contract": "COIN_DYNAMICS_CONTRACT_V3_AGILE_CALIBRATION",
+ "date": "2026-07-25",
+ "discipline": "SAME GovernedArm stack in calibration + execution; per-sub-step governor; lexicographic min-damping; NO delivery",
+ "preserved_v2": true,
+ "n_configs": 54,
+ "runs": [
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.05,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.38,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.11,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 61,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.07,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.011,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.05,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.38,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.11,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 61,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 20,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.066,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.011,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.05,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.34,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.08,
+      "v_rev": -2.25,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 72,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 24,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.072,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.005,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.05,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.34,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.08,
+      "v_rev": -2.25,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 72,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.062,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.005,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.05,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.27,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.02,
+      "v_rev": -2.22,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 89,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.063,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 1,
+      "integrated_overspeed": 0.0,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.05,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.27,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.02,
+      "v_rev": -2.22,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 89,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.058,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 1,
+      "integrated_overspeed": 0.0,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.1,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.38,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.11,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 59,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.06,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.1,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.38,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.11,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 59,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 20,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.1,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.34,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.08,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 71,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.021,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.1,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.34,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.08,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 71,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.058,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.021,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.1,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.27,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.02,
+      "v_rev": -2.23,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 89,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 24,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.01,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.1,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.27,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.02,
+      "v_rev": -2.23,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 89,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.06,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.01,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.2,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.38,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.11,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 56,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.058,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 5,
+      "integrated_overspeed": 0.075,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.2,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.38,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.11,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 56,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 20,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.058,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 5,
+      "integrated_overspeed": 0.075,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.2,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.34,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.08,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 70,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.063,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 4,
+      "integrated_overspeed": 0.054,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.2,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.34,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.08,
+      "v_rev": -2.26,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 70,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.057,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 4,
+      "integrated_overspeed": 0.054,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.2,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.27,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.03,
+      "v_rev": -2.23,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 89,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.057,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.2,
+    "qdot_hard": 2.5,
+    "armature": 0.2,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.27,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 2.03,
+      "v_rev": -2.23,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 89,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 21,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.058,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.05,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.1,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.88,
+      "v_rev": -2.0,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 59,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.066,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.011,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.05,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.1,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.88,
+      "v_rev": -2.0,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 59,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.066,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.011,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.05,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.07,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.85,
+      "v_rev": -2.0,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 70,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.065,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.005,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.05,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.07,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.85,
+      "v_rev": -2.0,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 70,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.062,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.005,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.05,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.01,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.81,
+      "v_rev": -1.98,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 86,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 26,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.062,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 1,
+      "integrated_overspeed": 0.0,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.05,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.01,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.81,
+      "v_rev": -1.98,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 86,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 24,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.062,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 1,
+      "integrated_overspeed": 0.0,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.1,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.1,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.88,
+      "v_rev": -2.0,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 58,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.1,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.1,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.88,
+      "v_rev": -2.0,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 58,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.06,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.1,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.07,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.85,
+      "v_rev": -2.0,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 69,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 24,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.059,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.021,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.1,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.07,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.85,
+      "v_rev": -2.0,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 69,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.057,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.021,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.1,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.01,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.81,
+      "v_rev": -1.98,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 86,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.01,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.1,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.01,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.81,
+      "v_rev": -1.98,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 86,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 24,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.06,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.01,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.2,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.1,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.88,
+      "v_rev": -2.01,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 55,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 5,
+      "integrated_overspeed": 0.075,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.2,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.1,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.88,
+      "v_rev": -2.01,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 55,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.064,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 5,
+      "integrated_overspeed": 0.075,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.2,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.07,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.85,
+      "v_rev": -2.01,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 24,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.06,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 4,
+      "integrated_overspeed": 0.054,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.2,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.07,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.85,
+      "v_rev": -2.01,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 23,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.056,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 4,
+      "integrated_overspeed": 0.054,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.2,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.01,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.81,
+      "v_rev": -1.99,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.058,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 1.0,
+    "qdot_hard": 2.2,
+    "armature": 0.2,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 2.01,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.81,
+      "v_rev": -1.99,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 24,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.057,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.05,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.91,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.71,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 58,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 26,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.064,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.011,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.05,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.91,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.71,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 58,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.011,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.05,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.88,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.69,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 68,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 28,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.064,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.005,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.05,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.88,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.69,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 68,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.064,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.005,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.05,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.83,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.64,
+      "v_rev": -1.8,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 84,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 29,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.066,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 1,
+      "integrated_overspeed": 0.0,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.05,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.83,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.64,
+      "v_rev": -1.8,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 84,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 26,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.059,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 1,
+      "integrated_overspeed": 0.0,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.1,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.91,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.71,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 26,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.065,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.1,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.91,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.71,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.062,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.1,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.88,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.69,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 27,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.021,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.1,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.88,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.69,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.056,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.021,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.1,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.83,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.64,
+      "v_rev": -1.8,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 29,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.063,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.01,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.1,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.83,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.64,
+      "v_rev": -1.8,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 26,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.06,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 2,
+      "integrated_overspeed": 0.01,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.2,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.91,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.71,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 54,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 26,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.058,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 5,
+      "integrated_overspeed": 0.075,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.2,
+    "damping": 2.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.91,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.71,
+      "v_rev": -1.82,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 54,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.055,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 5,
+      "integrated_overspeed": 0.075,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.2,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.88,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.69,
+      "v_rev": -1.83,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 67,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 30,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.061,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 4,
+      "integrated_overspeed": 0.054,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.2,
+    "damping": 4.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.88,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.69,
+      "v_rev": -1.83,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 67,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 25,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.059,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 4,
+      "integrated_overspeed": 0.054,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.2,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 60.0,
+    "kv": 6.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.83,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.64,
+      "v_rev": -1.81,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 28,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.058,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  },
+  {
+   "config": {
+    "qdot_soft": 0.8,
+    "qdot_hard": 2.0,
+    "armature": 0.2,
+    "damping": 8.0,
+    "friction": 0.02,
+    "kp": 120.0,
+    "kv": 12.0,
+    "tau_rate": 30.0,
+    "control_dt": 0.01,
+    "substeps": 20
+   },
+   "results": {
+    "safety": {
+     "free_space": {
+      "peak_vel": 1.83,
+      "ok": true
+     },
+     "reversal": {
+      "v_fwd": 1.64,
+      "v_rev": -1.81,
+      "ok": true
+     },
+     "release": {
+      "settle_steps": 11,
+      "ok": true
+     }
+    },
+    "agility": {
+     "reach": {
+      "reached_at": 26,
+      "t_max": 76.7,
+      "ok": true
+     },
+     "tracking": {
+      "mean_track_err": 0.056,
+      "sat_frac": 0.0,
+      "ok": true
+     }
+    },
+    "recovery": {
+     "contact_recovery": {
+      "return_cycles": 3,
+      "integrated_overspeed": 0.032,
+      "ok": true
+     }
+    },
+    "safety_ok": true,
+    "agility_ok": true,
+    "recovery_ok": true
+   },
+   "passes": true
+  }
+ ],
+ "frozen_contract": {
+  "dynamics_contract": "COIN_DYNAMICS_CONTRACT_V3_AGILE",
+  "motion_limit_version": "V1",
+  "qdot_soft": 0.8,
+  "qdot_hard": 2.0,
+  "armature": 0.2,
+  "damping": 2.0,
+  "friction": 0.02,
+  "kp": 120.0,
+  "kv": 12.0,
+  "tau_rate": 30.0,
+  "control_dt": 0.01,
+  "substeps": 20
+ },
+ "verdict": "V3_AGILE_FROZEN"
+}
