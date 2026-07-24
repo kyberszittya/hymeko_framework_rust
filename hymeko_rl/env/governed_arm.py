@@ -36,6 +36,18 @@ class V3Stack:
         return TorqueGovernorConfig(self.qdot_soft, self.qdot_hard)
 
 
+def pd_governed_torque(q, qd, q_des, stack: V3Stack, prev_tau, ctrl_lo, ctrl_hi):
+    """The SHARED control-step torque: PD position law → torque-rate limit → actuator saturation. The directional
+    velocity governor is applied SEPARATELY per sub-step (mjcb_control) on the live velocity — so this function is the
+    identical low-level torque path in both the calibration harness and the coin controller (trace-equivalence).
+    Returns the torque to apply (also the next ``prev_tau``)."""
+    tau = stack.kp * (np.asarray(q_des, np.float64) - np.asarray(q, np.float64)) - stack.kv * np.asarray(qd, np.float64)
+    if stack.tau_rate is not None and prev_tau is not None:
+        step = stack.tau_rate * stack.control_dt
+        tau = np.asarray(prev_tau, np.float64) + np.clip(tau - np.asarray(prev_tau, np.float64), -step, step)
+    return np.clip(tau, ctrl_lo, ctrl_hi)
+
+
 class GovernedArm:
     """Drives the first ``n`` dofs of a MuJoCo model with the V3 stack. Set the raw control-step torque (PD or direct);
     the governor fires every sub-step via ``mjcb_control`` on the CURRENT velocity, so velocity is capped within the
@@ -63,10 +75,6 @@ class GovernedArm:
         return False
 
     def _commit(self, tau):
-        n = self.n
-        if self.s.tau_rate is not None and self._prev is not None:
-            tau = self._prev + np.clip(tau - self._prev, -self.s.tau_rate * self.s.control_dt, self.s.tau_rate * self.s.control_dt)
-        tau = np.clip(tau, self.m.actuator_ctrlrange[:n, 0], self.m.actuator_ctrlrange[:n, 1])
         self._raw[:] = tau                                            # the governor reads this every sub-step
         self._prev = tau.copy()
         for _ in range(self.s.substeps):
@@ -74,10 +82,17 @@ class GovernedArm:
         return tau
 
     def pd_step(self, q_des):
-        """One control step under PD position control (governed per sub-step)."""
-        q, qd = self.d.qpos[:self.n], self.d.qvel[:self.n]
-        return self._commit(self.s.kp * (np.asarray(q_des, np.float64) - q) - self.s.kv * qd)
+        """One control step under PD position control (governed per sub-step) — via the SHARED torque path."""
+        n = self.n
+        tau = pd_governed_torque(self.d.qpos[:n], self.d.qvel[:n], q_des, self.s, self._prev,
+                                 self.m.actuator_ctrlrange[:n, 0], self.m.actuator_ctrlrange[:n, 1])
+        return self._commit(tau)
 
     def torque_step(self, tau_cmd):
-        """One control step under a direct torque command (governed per sub-step)."""
-        return self._commit(np.asarray(tau_cmd, np.float64))
+        """One control step under a direct torque command (rate-limited + saturated; governed per sub-step)."""
+        n = self.n
+        tau = np.asarray(tau_cmd, np.float64)
+        if self.s.tau_rate is not None and self._prev is not None:
+            step = self.s.tau_rate * self.s.control_dt
+            tau = self._prev + np.clip(tau - self._prev, -step, step)
+        return self._commit(np.clip(tau, self.m.actuator_ctrlrange[:n, 0], self.m.actuator_ctrlrange[:n, 1]))
