@@ -667,7 +667,8 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                  terminate_on_success: bool = True,
                  contact_legality: bool | None = None,
                  robot_source: str | None = None,
-                 scene_source: str | None = None) -> None:
+                 scene_source: str | None = None,
+                 disk_radius_override: float | None = None) -> None:
         super().__init__()
         if frame_skip < 1 or max_steps < 1:
             raise ValueError("frame_skip/max_steps must be >= 1")
@@ -681,6 +682,11 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
             env = EnvSpec.from_hymeko(_PLANAR_ENV)
         elif scene_source is not None:
             raise ValueError(f"unknown scene_source {scene_source!r}; expected 'hymeko_spec' | None")
+        # OBJECT_TO_TARGET_VARIANTS: override ONLY the manipuland radius on the EnvSpec (flows to compose_planar_scene AND
+        # the arm-clearance consistently). The canonical scene/robot/reward are untouched; None ⇒ frozen coin unchanged.
+        if disk_radius_override is not None:
+            from dataclasses import replace
+            env = replace(env, disk_radius=float(disk_radius_override))
         # The scene geometry is one config struct (EnvSpec), read from galambos_env.hymeko by
         # `from_hymeko`. `difficulty` (curriculum) and `max_steps` are runtime knobs, not scene data.
         self._env = env

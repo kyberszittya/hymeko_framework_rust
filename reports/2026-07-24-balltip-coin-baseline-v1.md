@@ -42,8 +42,11 @@ settles after a valid handoff.
 - K6 = `max_strict ≥ HELD_DWELL(6) ∧ touched`; entry_tol 0.05
 
 ## Object (canonical coin — the O0 reference for OBJECT_TO_TARGET_VARIANTS)
-- `compose_planar_scene`: `coin_shape="cylinder"`, `disk_radius 0.035`, `disk_half 0.02`; planar slide-x/slide-y/hinge-z
-- target zone: cylinder site at `(0, 0.16)`, `zone_half 0.055`
+- from `galambos_env.hymeko` (EnvSpec.from_hymeko): `coin_shape="cylinder"`, **`disk_radius 0.02`**, `disk_half 0.02`;
+  planar slide-x/slide-y/hinge-z. (The `compose_planar_scene` default 0.035 is NOT used — the hymeko scene declares 0.02.)
+- target zone: cylinder site at `(zone_x, zone_y)` per the hymeko scene, `zone_half` per spec
+- object variation (O1–O4): `CoinRL4Dof(disk_radius_override=…, coin_shape="cylinder"|"box")` — overrides ONLY the
+  manipuland on the EnvSpec (flows to compose + arm-clearance); canonical scene/robot/reward untouched.
 
 ## Deterministic eval panel
 - held-out states: seeds **14000–15200**, `build_boundary_panel(want=24)`, families {contact_retention, transport, braking}, strict_primary (0,)
