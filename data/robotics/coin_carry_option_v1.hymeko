@@ -80,7 +80,21 @@ coin_carry_option: cp, ph, c
         push_dtz 0.06;
     }
 
+    // Certificate / monitor semantics — the SINGLE source of the delivery verdict's tolerances and events.
+    // The online trace-monitor (hymeko_rl/coin_delivery/coin_carry_monitor.py) reads THESE, not Python constants:
+    //   strict_ok      = dtz <= center_tol AND speed < settle_vel      (the strict-dwell predicate)
+    //   strict         = strict + 1 if strict_ok else 0                (consecutive-dwell counter)
+    //   handoff        = strict >= 1                                   (a valid handoff was reached)
+    //   containment    = dtz <= center_tol                            (coin fully contained; enter/exit events)
+    //   delivered / K6 = max strict >= held_dwell AND touched          (the frozen K=6 delivery certificate)
+    @certificate: cp.gait {
+        center_tol 0.02;
+        settle_vel 0.06;
+        held_dwell 6.0;
+        entry_tol 0.05;
+    }
+
     @controller_spec: c.controller_spec {
-        (+ PUSH, + BRAKE, + RELEASE, + HANDOFF, + COMPLETED, + ABORTED, + DELIVERED, + SETTLED, + budget);
+        (+ PUSH, + BRAKE, + RELEASE, + HANDOFF, + COMPLETED, + ABORTED, + DELIVERED, + SETTLED, + budget, + certificate);
     }
 }

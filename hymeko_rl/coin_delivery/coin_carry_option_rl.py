@@ -23,11 +23,12 @@ from hymeko_rl.option_rl import OptionReplayBuffer as OptionReplay  # noqa: F401
 from hymeko_rl.option_rl.agents import DetActor as _FDetActor, GaussActor as _FGaussActor, QNet as _FQNet
 
 from hymeko_rl.coin_delivery.coin_carry_fsm import load_carry_automaton
+from hymeko_rl.coin_delivery.coin_carry_monitor import TraceSample, load_carry_monitor_spec, make_monitor
 from hymeko_rl.coin_delivery.coin_carry_option import _safety_abort
 from hymeko_rl.coin_delivery.coin_carry_proposal import search_select
 from hymeko_rl.coin_delivery.coin_carry_structured import A_BOUND, DIM, PUSH_DTZ, T_MAX, T_MIN, _unpack
 from hymeko_rl.coin_delivery.coin_markov_ablation_train import ACTION_SCALE, _aug, _det
-from hymeko_rl.coin_delivery.coin_rl_env import CENTER_TOL, HELD_DWELL, SETTLE_VEL
+from hymeko_rl.coin_delivery.coin_rl_env import CENTER_TOL, SETTLE_VEL  # HELD_DWELL now owned by the trace-monitor (§2A)
 from hymeko_rl.coin_delivery.coin_stable_engagement import stable_engagement_signals
 from hymeko_rl.coin_delivery.coin_strict_markov_ablation import step_ablation
 
@@ -78,26 +79,33 @@ def _nxt(spec, phase, event, default):
     return dst
 
 
-def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=None, max_macro=60, spec="auto", trace=None):
+def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=None, max_macro=60, spec="auto", trace=None,
+                       monitor=None, verify_shadow=False):
     """Execute ONE committed push→brake→release macro; on a valid handoff (strict≥1) switch to FROZEN pi_0 and settle to a
     terminal K6 decision (the option carries the WHOLE carry→settle→K6 consequence); else return a recovery state for the
     next option. Returns R_option = Σ_{j<τ} γ^j r_{t+j} (discounted, so the semi-MDP target is exactly R_option + γ^τ Q'),
     τ, done, s_next, certificate. Deterministic given (rl,gate,theta,γ,reward).
 
-    ``spec`` (a `hymeko_rl.control.controller_spec.ControllerSpec` from ``coin_carry_option_v1.hymeko``) sources the phase
-    TRANSITION TOPOLOGY; ``spec=None`` uses the equivalent hard-coded defaults (the two are gated identical). ``trace`` (a
-    list) records the per-step phase label + the terminal marker."""
+    §1: ``spec`` (a `ControllerSpec` from ``coin_carry_option_v1.hymeko``) sources the phase TRANSITION TOPOLOGY (``spec=None``
+    = the gated hard-coded fallback). §2A: an online trace-``monitor`` (semantics from the same `.hymeko` `@certificate`)
+    computes the SINGLE delivery verdict (strict/handoff/containment/K6) from the per-step physical trace — the env's
+    ``rl._strict`` is a SHADOW, out of the decision path (``verify_shadow`` fail-closes if the monitor and the shadow diverge).
+    ``trace`` records the per-step phase label + terminal marker."""
     if spec == "auto":                                                   # default: the .hymeko automaton is the runtime truth
         spec = load_carry_automaton()
+    if monitor is None:                                                  # default: the .hymeko-sourced online certificate monitor
+        monitor = make_monitor("python")
     rw = reward or OptionReward()
     a_push, T_push, a_brake, T_brake, a_release, T_release = _unpack(theta)
-    dtz_prev = rl._dtz(); dtz_start = dtz_prev; dtz_min = dtz_prev; touched0 = rl._touched
-    contain_exit = 0; was_contained = dtz_prev <= CENTER_TOL; effort = 0.0; contact_steps = 0
+    dtz_prev = rl._dtz(); dtz_start = dtz_prev; dtz_min = dtz_prev
+    monitor.reset(load_carry_monitor_spec(), dtz_start, bool(rl._touched))
+    effort = 0.0; contact_steps = 0
     R = 0.0; gp = 1.0; handoff_paid = False
     phase, tph, t = "PUSH", 0, 0
+    mstrict = 0                                                          # the MONITOR's strict (the certificate driver)
     handed = aborted = False
 
-    def _pay(r):                                                          # accumulate one discounted per-step reward
+    def _pay(r):
         nonlocal R, gp
         R += gp * r; gp *= gamma
 
@@ -105,9 +113,19 @@ def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=Non
         if trace is not None:
             trace.append(m)
 
+    def _observe(term, trunc):                                          # feed one physical sample → monitor; shadow-check
+        nonlocal mstrict
+        m = rl.inner._planar_metrics; contact = int(m.left_contact or m.right_contact)
+        res = monitor.observe(TraceSample(dtz=rl._dtz(), speed=rl._speed(), touched=bool(rl._touched),
+                                          contact=bool(contact), terminated=bool(term or trunc)))
+        mstrict = res["strict"]
+        if verify_shadow and mstrict != int(rl._strict):
+            raise AssertionError(f"MONITOR/shadow strict divergence at step {t}: monitor {mstrict} != env {int(rl._strict)}")
+        return res, contact
+
     while t < max_macro and t < horizon:
-        s = int(rl._strict); o48 = rl.obs()
-        if s >= 1:
+        o48 = rl.obs()
+        if mstrict >= 1:                                                 # handoff = monitor strict ≥ 1 (pre-action)
             _mark(_nxt(spec, phase, "handoff", "HANDOFF")); handed = True; break
         cur = phase
         if not (gate.gate == 1.0):
@@ -131,49 +149,46 @@ def execute_one_option(rl, gate, theta, pi0, base, *, gamma, horizon, reward=Non
         estep = float((ca ** 2).sum()); effort += estep
         _r, term, trunc = step_ablation(rl, ca, "A")
         lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
-        m = rl.inner._planar_metrics; contact = int(m.left_contact or m.right_contact); contact_steps += contact
         dtz = rl._dtz(); dtz_min = min(dtz_min, dtz); t += 1
-        exited = was_contained and dtz > CENTER_TOL
-        contain_exit += int(exited); was_contained = dtz <= CENTER_TOL
-        r_t = rw.w_progress * (dtz_prev - dtz) + rw.w_contact * contact - rw.w_exit * int(exited) - rw.w_effort * estep
-        if int(rl._strict) >= 1 and not handoff_paid:
+        res, contact = _observe(term, trunc); contact_steps += contact   # monitor computes strict/containment (single source)
+        r_t = rw.w_progress * (dtz_prev - dtz) + rw.w_contact * contact - rw.w_exit * res["exited"] - rw.w_effort * estep
+        if mstrict >= 1 and not handoff_paid:
             r_t += rw.w_handoff; handoff_paid = True
         _pay(r_t); dtz_prev = dtz
         if term or trunc:
-            handed = handed or int(rl._strict) >= 1; _mark("HANDOFF" if handed else "SETTLED"); break
+            handed = handed or mstrict >= 1; _mark("HANDOFF" if handed else "SETTLED"); break
         if _safety_abort(rl, tb):
             _mark(_nxt(spec, cur, "abort", "ABORTED")); aborted = True; break
         if cur == "RELEASE" and tph >= T_release:
             _mark(_nxt(spec, "RELEASE", "release_done", "COMPLETED")); break   # macro completed without handoff → re-decide
-        if int(rl._strict) >= 1:
+        if mstrict >= 1:
             _mark(_nxt(spec, cur, "handoff", "HANDOFF")); handed = True; break
-    md = int(rl._strict); touched = touched0 or rl._touched
-    if handed:                                                           # settle via FROZEN pi_0 (HANDOFF phase law) to a terminal K6
+    if handed:                                                          # settle via FROZEN pi_0 (HANDOFF phase law) to terminal K6
         ts = 0
         while t + ts < horizon:
-            s = int(rl._strict); o48 = rl.obs()
-            a = _det(base, _aug(o48, s)) if (gate.gate == 1.0 and s >= 1) else _det(pi0, o48)
+            o48 = rl.obs()
+            a = _det(base, _aug(o48, mstrict)) if (gate.gate == 1.0 and mstrict >= 1) else _det(pi0, o48)
             _r, term, trunc = step_ablation(rl, np.asarray(a, np.float32), "A")
             lc, rc, coin, lt, rtp = stable_engagement_signals(rl.inner); gate.update(lc, rc, coin, lt, rtp, terminated=bool(term))
-            md = max(md, int(rl._strict)); touched = touched or rl._touched; dtz = rl._dtz()
-            exited = was_contained and dtz > CENTER_TOL; contain_exit += int(exited); was_contained = dtz <= CENTER_TOL
-            dtz_min = min(dtz_min, dtz)
-            _pay(rw.w_progress * (dtz_prev - dtz) - rw.w_exit * int(exited)); dtz_prev = dtz; ts += 1; _mark("HANDOFF")
+            dtz = rl._dtz(); dtz_min = min(dtz_min, dtz)
+            res, _c = _observe(term, trunc)
+            _pay(rw.w_progress * (dtz_prev - dtz) - rw.w_exit * res["exited"]); dtz_prev = dtz; ts += 1; _mark("HANDOFF")
             if term or trunc:
                 break
         tau = max(1, t + ts)
-        _mark(_nxt(spec, "HANDOFF", "delivered", "DELIVERED") if (md >= HELD_DWELL and touched) else _nxt(spec, "HANDOFF", "settle_horizon", "SETTLED"))
     else:
         tau = max(1, t)
         if trace is not None and trace and trace[-1] in ("PUSH", "BRAKE", "RELEASE"):
             trace.append("COMPLETED")                                    # macro exhausted its step budget w/o handoff → re-decide
-    k6 = int(md >= HELD_DWELL and touched)
+    v = monitor.verdict()                                               # THE single certificate: k6 / handoff / containment-exit
+    if handed:
+        _mark(_nxt(spec, "HANDOFF", "delivered", "DELIVERED") if v["k6"] else _nxt(spec, "HANDOFF", "settle_horizon", "SETTLED"))
     done = bool(handed or aborted)
     if done:
-        R += gp * (rw.w_k6 * k6)                                          # terminal K6 bonus, discounted to the terminal step
-    return {"R_option": float(R), "k6": k6, "reached_handoff": int(handed or md >= 1), "contain_exit_ct": contain_exit,
+        R += gp * (rw.w_k6 * v["k6"])                                    # terminal K6 bonus, discounted to the terminal step
+    return {"R_option": float(R), "k6": v["k6"], "reached_handoff": v["reached_handoff"], "contain_exit_ct": v["contain_exit_ct"],
             "effort": effort, "dtz_start": dtz_start, "dtz_min": dtz_min, "contact_frac": contact_steps / max(1, t), "tau": tau,
-            "done": done, "s_next": None if done else rl.obs().copy().astype(np.float32)}
+            "done": done, "s_next": None if done else rl.obs().copy().astype(np.float32), "monitor_events": v["events"]}
 
 
 # ------------------------------ the fixed search-wrapper environment ------------------------------
