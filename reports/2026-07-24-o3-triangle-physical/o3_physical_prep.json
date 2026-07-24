@@ -1,0 +1,103 @@
+{
+ "contract": "O3_TRIANGLE_PHYSICAL_PREP",
+ "date": "2026-07-24",
+ "scope": "physical foundation only; no learning campaign",
+ "footprint_certificate": {
+  "circumradius": 0.0311,
+  "centred_certifies": true,
+  "centroid_in_but_corner_out_rejected": true,
+  "far_rejected": true,
+  "ok": true
+ },
+ "runtime_inertia": {
+  "mass_triangle": 0.050264,
+  "mass_cylinder": 0.050265,
+  "equal_area_mass_parity": true,
+  "com_at_origin": true,
+  "diag_inertia": [
+   1.278e-05,
+   1.278e-05,
+   1.2155e-05
+  ],
+  "inertia_rotation_invariant": true,
+  "ok": true
+ },
+ "mesh_contact_stability": {
+  "max_abs_qvel": 23.27,
+  "max_abs_qacc": 2961.8,
+  "nan_or_inf": false,
+  "ok": true
+ },
+ "orientation_stratification": {
+  "n": 12,
+  "n_vertex": 7,
+  "n_edge": 5,
+  "leading_feature_at_0": "vertex",
+  "vertex_min_margin": 0.0239,
+  "edge_min_margin": 0.0239,
+  "rows": [
+   {
+    "leading": "vertex",
+    "disk_rz": 0.0,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "vertex",
+    "disk_rz": 0.1745,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "vertex",
+    "disk_rz": 0.3491,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "vertex",
+    "disk_rz": 0.5236,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "edge",
+    "disk_rz": 0.6981,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "edge",
+    "disk_rz": 0.8727,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "edge",
+    "disk_rz": 1.0472,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "edge",
+    "disk_rz": 1.2217,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "edge",
+    "disk_rz": 1.3963,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "vertex",
+    "disk_rz": 1.5708,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "vertex",
+    "disk_rz": 1.7453,
+    "footprint_margin": 0.0239
+   },
+   {
+    "leading": "vertex",
+    "disk_rz": 1.9199,
+    "footprint_margin": 0.0239
+   }
+  ],
+  "ok": true
+ },
+ "all_ok": true
+}
