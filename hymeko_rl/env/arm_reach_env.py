@@ -26,6 +26,7 @@ from gymnasium import spaces
 from hymeko_rl.env.arm_world import (
     CONTROL_MODES, emit_arm_mjcf, make_arm_mjcf, slim_arm_collision, with_collision_floor,
 )
+from hymeko_rl.env.motion_contract import slew_limited_position
 from hymeko_rl.env.observation import REACH_OBSERVATION, ObservationSpec
 from hymeko_rl.env.reward import REACH_REWARD, RewardSpec
 from hymeko_rl.env.safety import CLEAN_SAFETY, SafetyState, compute_safety
@@ -95,7 +96,8 @@ class ArmReachEnv(gym.Env[np.ndarray, np.ndarray]):
                  max_steps: int = 80, reach_thresh: float = 0.06,
                  expert_gain: float = 1.0, ee_body: str = "flange_link",
                  reach_min_radius: float = 0.0, enable_safety: bool = False,
-                 termination_spec: TerminationSpec | None = None) -> None:
+                 termination_spec: TerminationSpec | None = None,
+                 slew_joint_vel_limit: float | None = None) -> None:
         super().__init__()
         if control_mode not in CONTROL_MODES:
             raise ValueError(f"control_mode must be in {CONTROL_MODES}; got {control_mode!r}")
@@ -154,6 +156,11 @@ class ArmReachEnv(gym.Env[np.ndarray, np.ndarray]):
             self.model.jnt_range[:, 0], self.model.jnt_range[:, 1], _DEFAULT_QRANGE)
         self._target = np.zeros(3, dtype=np.float32)
         self._step = 0
+        # REALISTIC_MOTION_CONTRACT_V1: slew-rate (velocity) limit on the POSITION command — the anti-teleport layer.
+        # None = off (preserves the base env). ``_ctrl_dt`` = the wall-time one env.step advances (frame_skip·timestep).
+        self.slew_joint_vel_limit = slew_joint_vel_limit
+        self._ctrl_dt = float(self.frame_skip * self.model.opt.timestep)
+        self._prev_ctrl: np.ndarray | None = None
         self.reach_min_radius = float(reach_min_radius)
         # The death predicate (from the model when provided, else ground-contact ∨ self-collision).
         self.termination_spec = termination_spec if termination_spec is not None else DEATH_ON_CONTACT
@@ -229,6 +236,7 @@ class ArmReachEnv(gym.Env[np.ndarray, np.ndarray]):
         self.data.qvel[:] = 0.0
         mujoco.mj_forward(self.model, self.data)
         self._step = 0
+        self._prev_ctrl = None                               # reset the slew-rate limiter's command memory
         self._last_safety = CLEAN_SAFETY
         return self.node_features(), info
 
@@ -300,6 +308,14 @@ class ArmReachEnv(gym.Env[np.ndarray, np.ndarray]):
              ) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         # action is the raw actuator control (torque/position/velocity), clipped to range.
         ctrl = np.clip(np.asarray(action, dtype=np.float32), self._ctrl_lo, self._ctrl_hi)
+        # REALISTIC_MOTION_CONTRACT_V1: for POSITION control, velocity-limit the commanded target so it cannot jump
+        # faster than slew_joint_vel_limit — the primary anti-teleport layer (a servo yanks the arm toward a jumped
+        # target). Inactive when the limit is None or the requested move is already within budget.
+        if self.slew_joint_vel_limit is not None and self.control_mode == "position":
+            prev = self.data.qpos[:self.n_actions] if self._prev_ctrl is None else self._prev_ctrl
+            ctrl = slew_limited_position(ctrl, prev, joint_vel_limit=self.slew_joint_vel_limit,
+                                         dt=self._ctrl_dt).astype(np.float32)
+            self._prev_ctrl = ctrl.copy()
         self.data.ctrl[:] = ctrl
         for _ in range(self.frame_skip):
             mujoco.mj_step(self.model, self.data)
