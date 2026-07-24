@@ -1,0 +1,250 @@
+{
+ "contract": "BALLTIP_INTERARM_FILTERED_V1",
+ "section": "\u00a77",
+ "videos": [
+  {
+   "name": "balltip_4way_state0_seed14000",
+   "state": 0,
+   "seed": 14000,
+   "family": "contact_retention",
+   "order": [
+    "canonical_clamp",
+    "point_sphere",
+    "balltip_nofilter",
+    "balltip_filtered"
+   ],
+   "mp4": "reports/2026-07-24-balltip-regression/video/balltip_4way_state0_seed14000.mp4",
+   "gif": "reports/2026-07-24-balltip-regression/video/balltip_4way_state0_seed14000.gif",
+   "provenance": [
+    {
+     "variant": "canonical_clamp",
+     "k6": 1,
+     "reached_handoff": 1,
+     "contain_exit_ct": 0,
+     "min_interarm_clearance": 0.00941,
+     "theta_selected": [
+      0.8884,
+      -0.1628,
+      -0.6674,
+      -2.3963,
+      -1.7248,
+      0.088,
+      0.0422,
+      -0.9236,
+      -1.2569,
+      3.0,
+      1.7366,
+      -0.1295,
+      10.0559,
+      8.1875,
+      11.4049
+     ],
+     "start_state_hash": "de10e4861f166a5b66980aa686d5b787ba2035568d9885c697b45a6c2a929695"
+    },
+    {
+     "variant": "point_sphere",
+     "k6": 0,
+     "reached_handoff": 0,
+     "contain_exit_ct": 0,
+     "min_interarm_clearance": 0.01435,
+     "theta_selected": [
+      0.8421,
+      0.766,
+      -1.158,
+      -1.7109,
+      -1.898,
+      -0.4525,
+      0.5925,
+      -0.6765,
+      -0.6208,
+      2.5435,
+      1.453,
+      0.4377,
+      12.2909,
+      5.2517,
+      11.9829
+     ],
+     "start_state_hash": "de10e4861f166a5b66980aa686d5b787ba2035568d9885c697b45a6c2a929695"
+    },
+    {
+     "variant": "balltip_nofilter",
+     "k6": 0,
+     "reached_handoff": 0,
+     "contain_exit_ct": 0,
+     "min_interarm_clearance": 0.00246,
+     "theta_selected": [
+      0.8421,
+      0.766,
+      -1.158,
+      -1.7109,
+      -1.898,
+      -0.4525,
+      0.5925,
+      -0.6765,
+      -0.6208,
+      2.5435,
+      1.453,
+      0.4377,
+      12.2909,
+      5.2517,
+      11.9829
+     ],
+     "start_state_hash": "de10e4861f166a5b66980aa686d5b787ba2035568d9885c697b45a6c2a929695"
+    },
+    {
+     "variant": "balltip_filtered",
+     "k6": 0,
+     "reached_handoff": 0,
+     "contain_exit_ct": 0,
+     "min_interarm_clearance": 0.00246,
+     "theta_selected": [
+      0.8421,
+      0.766,
+      -1.158,
+      -1.7109,
+      -1.898,
+      -0.4525,
+      0.5925,
+      -0.6765,
+      -0.6208,
+      2.5435,
+      1.453,
+      0.4377,
+      12.2909,
+      5.2517,
+      11.9829
+     ],
+     "start_state_hash": "de10e4861f166a5b66980aa686d5b787ba2035568d9885c697b45a6c2a929695"
+    }
+   ],
+   "baseline": {
+    "tag": "executable-hymeko-option-rl-v1",
+    "commit": "772a11a4"
+   }
+  },
+  {
+   "name": "balltip_4way_state12_seed14005",
+   "state": 12,
+   "seed": 14005,
+   "family": "contact_retention",
+   "order": [
+    "canonical_clamp",
+    "point_sphere",
+    "balltip_nofilter",
+    "balltip_filtered"
+   ],
+   "mp4": "reports/2026-07-24-balltip-regression/video/balltip_4way_state12_seed14005.mp4",
+   "gif": "reports/2026-07-24-balltip-regression/video/balltip_4way_state12_seed14005.gif",
+   "provenance": [
+    {
+     "variant": "canonical_clamp",
+     "k6": 0,
+     "reached_handoff": 0,
+     "contain_exit_ct": 0,
+     "min_interarm_clearance": 0.02107,
+     "theta_selected": [
+      -0.1355,
+      2.9317,
+      -1.2524,
+      3.0,
+      -1.4049,
+      -1.6737,
+      -0.833,
+      -1.288,
+      0.7635,
+      1.1409,
+      1.0007,
+      1.7288,
+      9.3354,
+      7.4155,
+      13.6871
+     ],
+     "start_state_hash": "bfa7b38216ed90d7cd597660750798cf671715267b02e681c3256e8730c96e0b"
+    },
+    {
+     "variant": "point_sphere",
+     "k6": 0,
+     "reached_handoff": 0,
+     "contain_exit_ct": 0,
+     "min_interarm_clearance": 0.01847,
+     "theta_selected": [
+      -1.5873,
+      1.0101,
+      -1.953,
+      2.8175,
+      0.3018,
+      -1.6144,
+      -1.0884,
+      -1.9985,
+      0.4691,
+      2.1791,
+      0.0645,
+      1.5948,
+      9.4422,
+      4.5976,
+      11.609
+     ],
+     "start_state_hash": "bfa7b38216ed90d7cd597660750798cf671715267b02e681c3256e8730c96e0b"
+    },
+    {
+     "variant": "balltip_nofilter",
+     "k6": 0,
+     "reached_handoff": 0,
+     "contain_exit_ct": 0,
+     "min_interarm_clearance": 0.01283,
+     "theta_selected": [
+      -0.1355,
+      2.9317,
+      -1.2524,
+      3.0,
+      -1.4049,
+      -1.6737,
+      -0.833,
+      -1.288,
+      0.7635,
+      1.1409,
+      1.0007,
+      1.7288,
+      9.3354,
+      7.4155,
+      13.6871
+     ],
+     "start_state_hash": "bfa7b38216ed90d7cd597660750798cf671715267b02e681c3256e8730c96e0b"
+    },
+    {
+     "variant": "balltip_filtered",
+     "k6": 1,
+     "reached_handoff": 1,
+     "contain_exit_ct": 0,
+     "min_interarm_clearance": -0.00487,
+     "theta_selected": [
+      -0.5287,
+      1.9383,
+      -0.9545,
+      2.1752,
+      -1.2335,
+      -1.3941,
+      -1.1535,
+      -2.7328,
+      0.642,
+      0.9254,
+      0.6267,
+      2.6576,
+      10.5817,
+      9.5832,
+      16.8962
+     ],
+     "start_state_hash": "bfa7b38216ed90d7cd597660750798cf671715267b02e681c3256e8730c96e0b"
+    }
+   ],
+   "baseline": {
+    "tag": "executable-hymeko-option-rl-v1",
+    "commit": "772a11a4"
+   }
+  }
+ ],
+ "baseline": {
+  "tag": "executable-hymeko-option-rl-v1",
+  "commit": "772a11a4"
+ }
+}

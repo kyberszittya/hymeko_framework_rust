@@ -1,0 +1,120 @@
+{
+ "name": "balltip_4way_state0_seed14000",
+ "state": 0,
+ "seed": 14000,
+ "family": "contact_retention",
+ "order": [
+  "canonical_clamp",
+  "point_sphere",
+  "balltip_nofilter",
+  "balltip_filtered"
+ ],
+ "mp4": "reports/2026-07-24-balltip-regression/video/balltip_4way_state0_seed14000.mp4",
+ "gif": "reports/2026-07-24-balltip-regression/video/balltip_4way_state0_seed14000.gif",
+ "provenance": [
+  {
+   "variant": "canonical_clamp",
+   "k6": 1,
+   "reached_handoff": 1,
+   "contain_exit_ct": 0,
+   "min_interarm_clearance": 0.00941,
+   "theta_selected": [
+    0.8884,
+    -0.1628,
+    -0.6674,
+    -2.3963,
+    -1.7248,
+    0.088,
+    0.0422,
+    -0.9236,
+    -1.2569,
+    3.0,
+    1.7366,
+    -0.1295,
+    10.0559,
+    8.1875,
+    11.4049
+   ],
+   "start_state_hash": "de10e4861f166a5b66980aa686d5b787ba2035568d9885c697b45a6c2a929695"
+  },
+  {
+   "variant": "point_sphere",
+   "k6": 0,
+   "reached_handoff": 0,
+   "contain_exit_ct": 0,
+   "min_interarm_clearance": 0.01435,
+   "theta_selected": [
+    0.8421,
+    0.766,
+    -1.158,
+    -1.7109,
+    -1.898,
+    -0.4525,
+    0.5925,
+    -0.6765,
+    -0.6208,
+    2.5435,
+    1.453,
+    0.4377,
+    12.2909,
+    5.2517,
+    11.9829
+   ],
+   "start_state_hash": "de10e4861f166a5b66980aa686d5b787ba2035568d9885c697b45a6c2a929695"
+  },
+  {
+   "variant": "balltip_nofilter",
+   "k6": 0,
+   "reached_handoff": 0,
+   "contain_exit_ct": 0,
+   "min_interarm_clearance": 0.00246,
+   "theta_selected": [
+    0.8421,
+    0.766,
+    -1.158,
+    -1.7109,
+    -1.898,
+    -0.4525,
+    0.5925,
+    -0.6765,
+    -0.6208,
+    2.5435,
+    1.453,
+    0.4377,
+    12.2909,
+    5.2517,
+    11.9829
+   ],
+   "start_state_hash": "de10e4861f166a5b66980aa686d5b787ba2035568d9885c697b45a6c2a929695"
+  },
+  {
+   "variant": "balltip_filtered",
+   "k6": 0,
+   "reached_handoff": 0,
+   "contain_exit_ct": 0,
+   "min_interarm_clearance": 0.00246,
+   "theta_selected": [
+    0.8421,
+    0.766,
+    -1.158,
+    -1.7109,
+    -1.898,
+    -0.4525,
+    0.5925,
+    -0.6765,
+    -0.6208,
+    2.5435,
+    1.453,
+    0.4377,
+    12.2909,
+    5.2517,
+    11.9829
+   ],
+   "start_state_hash": "de10e4861f166a5b66980aa686d5b787ba2035568d9885c697b45a6c2a929695"
+  }
+ ],
+ "baseline": {
+  "tag": "executable-hymeko-option-rl-v1",
+  "commit": "772a11a4"
+ }
+}
