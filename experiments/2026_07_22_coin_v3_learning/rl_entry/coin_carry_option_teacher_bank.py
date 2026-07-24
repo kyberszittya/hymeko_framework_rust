@@ -27,6 +27,29 @@ def _bank(m):
     return [LateStart(seed=r[0], prefix_steps=r[1], family=r[2], obs_sha=r[3], base_sha=r[4], causal_sha=r[5]) for r in m["rows"]]
 
 
+def generate_bank(pi0, base, panel, *, shots, teacher_h=TEACHER_H, robust=ROBUST, transplant=None, log=print):
+    """Label each option-initiation state with the strong structured expert; keep only CONFIDENT (K6-delivering) labels.
+    ``transplant`` (a callable rl_clamp → rl_variant at the matched state) retargets the labels to a robot VARIANT (the
+    ball-tip B3 bank); ``None`` = the canonical clamp. Returns (obs, theta, provenance) — obs/θ are the VARIANT's own."""
+    obs, theta, prov = [], [], []
+    for i, ls in enumerate(panel):
+        v = verify_reconstruction(pi0, ls)
+        assert v["obs_ok"] and v["base_ok"] and v["gate_ok"]
+        rl, gate, _h, rec = reconstruct_handoff(pi0, ls, horizon=360)
+        assert int(rl._strict) == 0 and rec.gate_mult == 1.0 and rec.family in FAMS_CARRY
+        if transplant is not None:
+            rl = transplant(rl)                                         # retarget to the ball-tip robot at the matched state
+        th, confident, p = option_teacher_label(rl, gate, pi0, base, np.random.default_rng(1000 + i), shots=shots, horizon=teacher_h, robust_checks=robust)
+        p.update({"seed": int(ls.seed), "prefix_steps": int(ls.prefix_steps), "family": ls.family})
+        prov.append(p)
+        if confident:
+            obs.append(rl.obs().copy())
+            theta.append(th)
+        if i % 20 == 0:
+            log(f"  [{i+1}/{len(panel)} {ls.family:16}] confident {confident} reason {p['termination_reason']} robust_k6 {p['robust_k6']} (labels {len(obs)})")
+    return obs, theta, prov
+
+
 def main(smoke=False):
     torch.set_num_threads(1)
     def log(*a):
@@ -42,19 +65,7 @@ def main(smoke=False):
 
     log(f"[panel] scanning held-out TRAIN carry states (seeds 9000–10800) for the option teacher bank (want {want})...")
     panel, _c, _s = build_boundary_panel(pi0, range(9000, 10800), forbidden, want=want, families=FAMS_CARRY, strict_primary=(0,), strict_fill=(), per_seed_cap=3)
-    obs, theta, prov = [], [], []
-    for i, ls in enumerate(panel):
-        v = verify_reconstruction(pi0, ls)
-        assert v["obs_ok"] and v["base_ok"] and v["gate_ok"]
-        rl, gate, _h, rec = reconstruct_handoff(pi0, ls, horizon=360)
-        assert int(rl._strict) == 0 and rec.gate_mult == 1.0 and rec.family in FAMS_CARRY
-        th, confident, p = option_teacher_label(rl, gate, pi0, base, np.random.default_rng(1000 + i), shots=shots, horizon=TEACHER_H, robust_checks=ROBUST)
-        p.update({"seed": int(ls.seed), "prefix_steps": int(ls.prefix_steps), "family": ls.family})
-        prov.append(p)
-        if confident:
-            obs.append(rl.obs().copy()); theta.append(th)
-        if i % 20 == 0 or smoke:
-            log(f"  [{i+1}/{len(panel)} {ls.family:16}] confident {confident} reason {p['termination_reason']} robust_k6 {p['robust_k6']} (labels {len(obs)})")
+    obs, theta, prov = generate_bank(pi0, base, panel, shots=shots, teacher_h=TEACHER_H, robust=ROBUST, log=log)
 
     reasons = Counter(p["termination_reason"] for p in prov)
     fam_conf = Counter(p["family"] for p in prov if p["confident"])
