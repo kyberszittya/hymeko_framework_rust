@@ -224,13 +224,25 @@ class ArmReachEnv(gym.Env[np.ndarray, np.ndarray]):
               ) -> tuple[np.ndarray, dict[str, Any]]:
         super().reset(seed=seed)
         lo, hi = self._q_lo, self._q_hi
-        self._target = self._sample_target(lo, hi).copy()   # reachable AND outside the robot
-        self.data.qpos[:] = self.np_random.uniform(lo, hi) * 0.3   # near-home start
+        info = self._reset_target(lo, hi)                    # overridable: a reachable EE position (base) or pose (SE3 subclass)
+        self.data.qpos[:] = self._start_config(lo, hi)       # overridable start (base: near-home)
         self.data.qvel[:] = 0.0
         mujoco.mj_forward(self.model, self.data)
         self._step = 0
         self._last_safety = CLEAN_SAFETY
-        return self.node_features(), {"target": self._target.copy()}
+        return self.node_features(), info
+
+    def _reset_target(self, lo: np.ndarray, hi: np.ndarray) -> dict[str, Any]:
+        """Sample the task target and return the reset ``info`` dict. Base = a forward-kinematics-reachable EE
+        POSITION; the SE(3) subclass overrides to a full reachable pose. # Postconditions sets ``self._target``;
+        returns ``{'target': ...}`` (RNG-order identical to the prior inline body)."""
+        self._target = self._sample_target(lo, hi).copy()   # reachable AND outside the robot
+        return {"target": self._target.copy()}
+
+    def _start_config(self, lo: np.ndarray, hi: np.ndarray) -> np.ndarray:
+        """Initial joint configuration for an episode. Base = near-home (``uniform·0.3``); the SE(3) subclass couples
+        the start to the sampled target config so the 6-D pose error is closable. # Postconditions length ``nq``."""
+        return self.np_random.uniform(lo, hi) * 0.3
 
     def _sample_target(self, lo: np.ndarray, hi: np.ndarray, *, attempts: int = 64) -> np.ndarray:
         """A forward-kinematics-reachable EE target whose horizontal distance from the base axis is
@@ -299,12 +311,26 @@ class ArmReachEnv(gym.Env[np.ndarray, np.ndarray]):
             death = self.termination_spec.is_terminal(self._last_safety)
         else:
             death = False
-        terminated = bool(dist < self.reach_thresh or death)
+        terminated = bool(self._reached(dist) or death)
         truncated = self._step >= self.max_steps
-        reward = self.reward_spec.evaluate(self, dist, ctrl)
-        return (self.node_features(), reward, terminated, truncated,
-                {"dist": dist, "ee": self._ee_pos().copy(),
-                 "safety": self._last_safety, "death": death})
+        reward = self.reward_spec.evaluate(self, dist, ctrl) + self._extra_reward(dist, ctrl)
+        info = {"dist": dist, "ee": self._ee_pos().copy(), "safety": self._last_safety, "death": death}
+        info.update(self._extra_step_info())
+        return (self.node_features(), reward, terminated, truncated, info)
+
+    # -- Template-Method hooks (base = position reach; SE3ReachEnv overrides for pose) ---------
+    def _reached(self, dist: float) -> bool:
+        """Task-success predicate on the current state. Base = EE within ``reach_thresh``; the SE(3) subclass adds the
+        orientation gate. # Postconditions pure (no side effects)."""
+        return bool(dist < self.reach_thresh)
+
+    def _extra_reward(self, dist: float, ctrl: np.ndarray) -> float:
+        """Additional reward beyond ``reward_spec`` (base: none; SE3: a weighted orientation-error penalty)."""
+        return 0.0
+
+    def _extra_step_info(self) -> dict[str, Any]:
+        """Extra ``info`` keys for ``step`` (base: none; SE3: the orientation error)."""
+        return {}
 
     def safety_state(self) -> SafetyState:
         """Current ground-contact / self-collision / joint-margin / below-ground state, derived

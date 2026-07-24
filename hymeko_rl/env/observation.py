@@ -60,6 +60,22 @@ def _extract_ee_error(env: "ArmReachEnv") -> np.ndarray:
     return _broadcast(env, env._target - env._ee_pos())
 
 
+# -- SE(3) channels (6D-0 pose reach) -----------------------------------------
+# The orientation analogues of target_position / ee_error, plus the EE twist. Each delegates to an env method so the
+# quaternion algebra (mujoco) stays in the SE(3) env and observation.py remains mujoco-free. Only POSE_OBSERVATION uses
+# them, so the plain reach env never touches these attributes.
+def _extract_target_orientation(env: "ArmReachEnv") -> np.ndarray:
+    return _broadcast(env, env.target_quat())                     # (4,) target world quaternion
+
+
+def _extract_ee_orientation_error(env: "ArmReachEnv") -> np.ndarray:
+    return _broadcast(env, env.orientation_error())              # (3,) rotation vector ee -> target (mju_subQuat)
+
+
+def _extract_ee_angular_velocity(env: "ArmReachEnv") -> np.ndarray:
+    return _broadcast(env, env.ee_angular_velocity())           # (3,) EE angular velocity (twist rotational part)
+
+
 @dataclass(frozen=True)
 class _ChannelImpl:
     """A channel kind's width and its live-state extractor — the dim and the Strategy
@@ -74,6 +90,9 @@ _CHANNELS: dict[str, _ChannelImpl] = {
     "joint_velocity": _ChannelImpl(1, _extract_joint_velocity),
     "target_position": _ChannelImpl(3, _extract_target_position),
     "ee_error": _ChannelImpl(3, _extract_ee_error),
+    "target_orientation": _ChannelImpl(4, _extract_target_orientation),
+    "ee_orientation_error": _ChannelImpl(3, _extract_ee_orientation_error),
+    "ee_angular_velocity": _ChannelImpl(3, _extract_ee_angular_velocity),
 }
 
 
@@ -130,3 +149,9 @@ def read_channels(profile_path: str | Path) -> tuple[str, ...]:
 # [target(3), ee_error(3)] = 8. Identical layout to the former hand-coded node_features.
 REACH_OBSERVATION = ObservationSpec(
     ("joint_position", "joint_velocity", "target_position", "ee_error"))
+
+# 6D-0 SE(3) pose reach: the reaching layout + orientation target/error + EE twist =
+# per-joint [qpos, qvel] + broadcast [target(3), ee_error(3), target_quat(4), ee_orient_error(3), ee_ang_vel(3)] = 18.
+POSE_OBSERVATION = ObservationSpec(
+    ("joint_position", "joint_velocity", "target_position", "ee_error",
+     "target_orientation", "ee_orientation_error", "ee_angular_velocity"))
