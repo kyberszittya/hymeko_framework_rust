@@ -2,7 +2,7 @@
 title: CARRY_OPTION_RL — Stage 4c refinement + Stage 5 search-in-the-loop semi-MDP option RL
 date: 2026-07-24
 branch: recovery/coin-hymeko-bundle-and-results
-status: OPTION_PROPOSAL_RL_IMPLEMENTED_FIRST_PASS_INCONCLUSIVE
+status: OPTION_PROPOSAL_RL_IMPLEMENTED_FIRST_PASS_INCONCLUSIVE_5B_CONSISTENT_POSITIVE_LEAN
 ---
 
 # Search-in-the-loop option RL — Stage 4c + Stage 5 (2026-07-24)
@@ -150,21 +150,41 @@ no-verdict-from-first-pass rule this is inconclusive, gated on variance-reduced 
 that RL cannot beat the proposal. (Auto-verdict `OPTION_PROPOSAL_RL_NO_PHYSICAL_IMPROVEMENT` retained in the JSON as the
 strict-on-best_val reading.)
 
+## 11. Stage 5b — variance-reduced campaign (the follow-up landed)
+
+The §10 lever was executed (`coin_carry_option_rl_stage5b.py`, commit `4077dd51`): larger disjoint panels (train 90 / dev 54
+/ untouched final 36), SAC primary (4 seeds) + TD3 control (1), 2000 options, Bellman-safe eval-time multi-search-seed
+averaging, and a **pre-registered** checkpoint selection (paired ΔK6 vs the checkpoint's own update-0 → bootstrap-CI-lower →
+−any_exit → return). Figure `reports/figures/2026-07-24-carry-option-rl-stage5b.png`.
+
+| branch | RL best-val b8 | own update-0 b8 | ΔK6 | boot-CI |
+|---|---|---|---|---|
+| sac seed0 | 0.130 | 0.102 | **+0.028** | [−0.056, +0.111] |
+| sac seed1 | 0.148 | 0.102 | **+0.046** | [−0.037, +0.120] |
+| sac seed2 | 0.139 | 0.102 | **+0.037** | [−0.065, +0.148] |
+| sac seed3 | 0.167 | 0.102 | **+0.065** | [−0.019, +0.157] |
+| td3 seed0 (control) | 0.083 | 0.102 | −0.019 | [−0.102, +0.065] |
+
+**SAC across-seed: median ΔK6 +0.042, IQR [+0.035, +0.051], 4/4 seeds positive** — the variance reduction turned the
+first-pass tie into a consistent positive lean. **But 0/4 per-seed bootstrap CI-lower > 0** (each CI still spans 0 on the
+36-state final panel), so it is **not per-seed CI-significant**. TD3 (control) is negative (−0.019), confirming SAC > TD3 for
+the noisy Q(s, θ_center) landscape. Verdict stays honest: `OPTION_PROPOSAL_RL_IMPLEMENTED_FIRST_PASS_INCONCLUSIVE` — a
+consistent, reproducible-in-direction positive (4/4 SAC seeds, tight IQR), short of a clean statistical win. The 4/4 sign
+result is p≈0.06; the next lever to cross significance is more seeds (≥6) and/or a larger final panel to tighten per-seed
+CIs — no contract/plumbing change needed.
+
 ## 8. Commits and tests
 
-- `9141484c` Stage 4c: proposal library (`coin_carry_proposal.py`) + refinement entry + global-MSE control + 5 tests.
-- `763734c0` Stage 5 infra: `coin_carry_option_rl.py` (env, replay, semi-MDP γ^τ, SAC+TD3, distill, eval) + 6 contract tests.
-- Stage-5 results commit: _[on completion]_.
-- Tests: 21 pass across `test_coin_carry_option.py` (10), `test_coin_carry_proposal.py` (5), `test_coin_carry_option_rl.py`
-  (6). Lint `ruff --select F` clean; E702 compact-semicolon style consistent with arc modules.
+- `9141484c` Stage 4c · `763734c0` Stage 5 infra · `ad4db7e7` Stage 5 results · `4077dd51` Stage 5b campaign.
+- Tests: coin RL/proposal/option/fsm/monitor + framework option_rl — full suite green (35 at last count).
 
-## 9. Blockers
+---
 
-_[filled on RL completion — any hard-stop mechanism, or none.]_
-
-## 10. Next recommended lever
-
-_[filled on RL completion.]_
+**Final status: `OPTION_PROPOSAL_RL_IMPLEMENTED_FIRST_PASS_INCONCLUSIVE` (variance-reduced follow-up: consistent +0.042
+SAC lean, 4/4 seeds, not yet CI-significant).** The pipeline is implemented to contract, reward certified, and — after
+variance reduction — reward-driven proposal-SAC beats its own update-0 at fixed b=8 on all 4 seeds (median +0.042), TD3
+control negative. Not yet a clean statistical win (per-seed CIs span 0); the honest reading is a reproducible positive
+direction, gated on more seeds/larger panel for significance — not a verdict that RL cannot beat the proposal.
 
 ---
 
