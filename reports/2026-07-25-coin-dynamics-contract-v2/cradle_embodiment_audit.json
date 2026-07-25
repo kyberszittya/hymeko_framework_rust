@@ -1,0 +1,189 @@
+{
+ "contract": "BIMANUAL_CRADLE_EMBODIMENT_AUDIT",
+ "date": "2026-07-26",
+ "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2",
+ "coast_mu": 0.179,
+ "n_states": 8,
+ "reachable_cradle_states": 4,
+ "straddle_reached_states": 6,
+ "reachable_rate": 0.5,
+ "verdict": "STRADDLING_CRADLE_REACHABLE",
+ "rows": [
+  {
+   "state": 0,
+   "best_axis": null,
+   "attempts": {
+    "zone_cross": {
+     "both_contact": true,
+     "both_dwell": 57,
+     "n_dot": -0.376,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    },
+    "zone_par": {
+     "both_contact": true,
+     "both_dwell": 12,
+     "n_dot": 0.682,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    }
+   }
+  },
+  {
+   "state": 1,
+   "best_axis": "zone_cross",
+   "attempts": {
+    "zone_cross": {
+     "both_contact": true,
+     "both_dwell": 109,
+     "n_dot": -0.997,
+     "cert_feasible": true,
+     "cone_admissible": true,
+     "reachable_cradle": true
+    },
+    "zone_par": {
+     "both_contact": true,
+     "both_dwell": 109,
+     "n_dot": -0.957,
+     "cert_feasible": true,
+     "cone_admissible": true,
+     "reachable_cradle": true
+    }
+   }
+  },
+  {
+   "state": 2,
+   "best_axis": null,
+   "attempts": {
+    "zone_cross": {
+     "both_contact": false,
+     "both_dwell": 0,
+     "n_dot": 0.339,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    },
+    "zone_par": {
+     "both_contact": false,
+     "both_dwell": 0,
+     "n_dot": 0.667,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    }
+   }
+  },
+  {
+   "state": 3,
+   "best_axis": "zone_par",
+   "attempts": {
+    "zone_cross": {
+     "both_contact": false,
+     "both_dwell": 0,
+     "n_dot": -0.992,
+     "cert_feasible": true,
+     "cone_admissible": true,
+     "reachable_cradle": false
+    },
+    "zone_par": {
+     "both_contact": true,
+     "both_dwell": 49,
+     "n_dot": -0.989,
+     "cert_feasible": true,
+     "cone_admissible": true,
+     "reachable_cradle": true
+    }
+   }
+  },
+  {
+   "state": 4,
+   "best_axis": "zone_par",
+   "attempts": {
+    "zone_cross": {
+     "both_contact": true,
+     "both_dwell": 100,
+     "n_dot": 0.898,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    },
+    "zone_par": {
+     "both_contact": true,
+     "both_dwell": 113,
+     "n_dot": -0.957,
+     "cert_feasible": true,
+     "cone_admissible": true,
+     "reachable_cradle": true
+    }
+   }
+  },
+  {
+   "state": 5,
+   "best_axis": null,
+   "attempts": {
+    "zone_cross": {
+     "both_contact": false,
+     "both_dwell": 0,
+     "n_dot": 0.509,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    },
+    "zone_par": {
+     "both_contact": false,
+     "both_dwell": 0,
+     "n_dot": 0.93,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    }
+   }
+  },
+  {
+   "state": 6,
+   "best_axis": null,
+   "attempts": {
+    "zone_cross": {
+     "both_contact": false,
+     "both_dwell": 0,
+     "n_dot": -0.981,
+     "cert_feasible": true,
+     "cone_admissible": true,
+     "reachable_cradle": false
+    },
+    "zone_par": {
+     "both_contact": true,
+     "both_dwell": 116,
+     "n_dot": 0.243,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    }
+   }
+  },
+  {
+   "state": 7,
+   "best_axis": "zone_par",
+   "attempts": {
+    "zone_cross": {
+     "both_contact": true,
+     "both_dwell": 140,
+     "n_dot": -0.762,
+     "cert_feasible": false,
+     "cone_admissible": false,
+     "reachable_cradle": false
+    },
+    "zone_par": {
+     "both_contact": true,
+     "both_dwell": 140,
+     "n_dot": -0.996,
+     "cert_feasible": true,
+     "cone_admissible": true,
+     "reachable_cradle": true
+    }
+   }
+  }
+ ]
+}

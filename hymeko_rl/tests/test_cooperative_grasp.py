@@ -5,7 +5,7 @@ import numpy as np
 
 from hymeko_rl.coin_delivery.cooperative_launch import (
     CooperativeConfig, GraspAllocator, TwistAllocator, _grasp_allocation, _grasp_solve, _solve_contact_qp,
-    forward_feasibility)
+    forward_feasibility, internal_force_feasibility)
 
 
 def _wrench(c, p_l, p_r, f_l, f_r):
@@ -88,6 +88,17 @@ def test_mixed_pair_feasibility_set_by_cone_geometry_not_sign():
     p_far, p_zone = np.array([-0.04, 0.0]), np.array([0.03, 0.02])
     fa = forward_feasibility(C, p_far, p_zone, E_PAR, mu=0.5)
     assert fa["feasible"] and fa["per_contact"][0] > 0          # the far-side contact carries it
+
+
+def test_internal_force_cradle_certificate():
+    """The definitive cradle certificate: straddling contacts (opposite sides) admit a cone-admissible internal force
+    with same-sign normals (Gf=0 while both press) → cradle feasible; same-side contacts require opposite-sign normals →
+    infeasible. This supersedes the n_L·n_R prior and is what decides controller-work vs embodiment-rethink."""
+    c = np.zeros(2)
+    straddle = internal_force_feasibility(c, np.array([-0.04, 0.0]), np.array([0.04, 0.0]), mu=0.5)
+    assert straddle["feasible"] and straddle["cone_admissible"] and straddle["fn_same_sign"]
+    same = internal_force_feasibility(c, np.array([-0.04, 0.012]), np.array([-0.04, -0.012]), mu=0.5)
+    assert not same["feasible"] and not same["cone_admissible"]  # same-side → grip needs |Ft| ≫ μFn (cone-infeasible)
 
 
 def test_straddle_geometry_null_preload_feasibility():

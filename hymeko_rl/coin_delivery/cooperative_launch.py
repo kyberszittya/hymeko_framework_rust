@@ -470,6 +470,39 @@ def realized_coin_wrench(rl):
             "force_norm": round(float(np.linalg.norm(net_f)), 4), "torque": round(float(tau), 5)}
 
 
+def _grasp_matrix(c, p_l, p_r):
+    """The 3×4 grasp map G for f = [Fn_L, Ft_L, Fn_R, Ft_R] → coin wrench [Fx, Fy, τ], each contact in its local frame."""
+    cols = []
+    for r, n, t in _contact_frames(c, p_l, p_r):
+        cols.append([n[0], n[1], r[0] * n[1] - r[1] * n[0]])
+        cols.append([t[0], t[1], r[0] * t[1] - r[1] * t[0]])
+    return np.array(cols, np.float64).T
+
+
+def internal_force_feasibility(c, p_l, p_r, mu, fn_min=0.15, fn_max=6.0):
+    """The DEFINITIVE null-preload cradle certificate (supersedes the ``n_L·n_R`` prior): does an admissible INTERNAL force
+    exist — ``∃ f ≠ 0 : G·f = 0`` (zero net object wrench), ``f`` in the friction cone (Fn_i ≥ 0, |Ft_i| ≤ μ·Fn_i), both
+    normals loaded? The grasp map G is 3×4, so its nullspace is generically 1-D — the internal force is unique up to scale
+    (``vt[-1]`` from the SVD). The cradle EXISTS iff that nullspace force is cone-admissible with BOTH normal forces the
+    SAME (positive) sign; if the nullspace requires opposite-sign normals (Fn_L·Fn_R < 0), a net-zero grip is impossible and
+    the contact pair cannot hold a null preload no matter the controller. High tip friction (μ large) lets the tangential
+    components help, so this is stricter and more correct than the normal-dot prior. Returns the internal force, the
+    equilibrium residual (‖G·f‖, ≈0 for a true nullspace), cone admissibility, and whether a scaled f fits [F_min, F_max]."""
+    g = _grasp_matrix(np.asarray(c), np.asarray(p_l), np.asarray(p_r))
+    _uu, _sv, vt = np.linalg.svd(g)
+    f = vt[-1].copy()                                            # 4th right-singular vector = the grasp-map nullspace (Gf≈0)
+    if f[0] < 0:
+        f = -f                                                   # orient Fn_L ≥ 0
+    fn_l, ft_l, fn_r, ft_r = f
+    cone = bool(fn_l > 1e-6 and fn_r > 1e-6 and abs(ft_l) <= mu * fn_l + 1e-9 and abs(ft_r) <= mu * fn_r + 1e-9)
+    resid = float(np.linalg.norm(g @ f))                         # true equilibrium residual ‖G·f‖ (not a singular value)
+    scale = fn_min / max(min(fn_l, fn_r), 1e-9)                  # scale so the weaker normal = F_min
+    within = bool(max(abs(scale * fn_l), abs(scale * fn_r)) <= fn_max)
+    return {"internal_force": [round(float(x), 3) for x in f], "equilibrium_residual": round(resid, 6),
+            "cone_admissible": cone, "fn_same_sign": bool(fn_l * fn_r > 0),
+            "feasible": bool(cone and resid < 1e-5 and within)}
+
+
 def contact_straddle(rl):
     """The STRADDLE test — the prerequisite for a null-preload bimanual cradle that E2/E3 kept failing without. For the two
     tip normal forces to CANCEL (net-zero preload with both tips pressing, Fn > 0), the tips must be on OPPOSITE sides of
@@ -558,6 +591,60 @@ def _solve_contact_qp(hess, grad, c_ineq, d_ineq, dq_max, iters=6):
         sol = np.linalg.lstsq(kkt, np.concatenate([-grad, da]), rcond=None)[0]
         dq = np.clip(sol[:n], -dq_max, dq_max)
     return dq
+
+
+def straddle_directed_acquire(rl, stack, coin_xy, squeeze_axis, *, cfg: CooperativeConfig | None = None, steps: int = 140,
+                              keep_pin: bool = False):
+    """Drive the two tips to OPPOSITE sides of the coin along ``squeeze_axis`` (left tip → −axis side, right tip → +axis
+    side) rather than both to the surface from their approach — the acquisition a null-preload cradle needs. Soft-pins the
+    coin, servos each arm to its opposite-side contact target, and reports whether both tips reached contact (reachability),
+    the straddle dot, and the internal-force cradle certificate on the realised geometry. Answers the embodiment question:
+    is a straddling, equilibrium-feasible grasp REACHABLE with this arm placement? With ``keep_pin=True`` the soft pin is
+    LEFT ON and its handle returned, so ``null_coin_wrench`` (the hard QP) can chain directly from the straddle cradle."""
+    cfg = cfg or CooperativeConfig()
+    place_coin_at(rl, coin_xy)
+    m, d = rl.inner.model, rl.inner.data
+    m.dof_armature[:4], m.dof_damping[:4], m.dof_frictionloss[:4] = stack.armature, stack.damping, stack.friction
+    lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    u = _unit2(np.asarray(squeeze_axis, np.float64))
+    saved = _pin_coin(rl, True)
+    reach = {side: _coin_radius(rl) + float(m.geom_size[g][0]) - cfg.preload_depth for side, g in (("left", gl), ("right", gr))}
+    targets = {"left": -u, "right": u}                           # opposite sides of the coin along the squeeze axis
+    arms = (("left", gl, _LEFT_DOF), ("right", gr, _RIGHT_DOF))
+
+    def _gcb(_mo, dt):
+        dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
+    mujoco.set_mjcb_control(_gcb)
+    prev_tau, both = None, 0
+    try:
+        for _ in range(steps):
+            coin = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].astype(np.float64)
+            target = d.qpos[:4].copy()
+            for side, g, dofs in arms:
+                tgt_pt = (coin + reach[side] * targets[side]).astype(np.float32)
+                dq = _arm_dir(rl, g, dofs, tgt_pt, cfg)
+                for j in dofs:
+                    target[j] = d.qpos[j] + cfg.approach_gain * dq[j]
+            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), target, stack, prev_tau, lo, hi)
+            prev_tau = a
+            step_ablation(rl, np.asarray(a, np.float32), "A")
+            mpl = rl.inner._planar_metrics
+            both = both + 1 if (mpl.left_contact and mpl.right_contact) else 0
+    finally:
+        mujoco.set_mjcb_control(None)
+        if not keep_pin:
+            _pin_coin(rl, False, saved)
+    mpl = rl.inner._planar_metrics
+    contacted = bool(mpl.left_contact and mpl.right_contact)
+    coin = np.asarray(mpl.disk_pos, np.float64)[:2]
+    p_l, p_r = _tip_xy(rl, gl).astype(np.float64), _tip_xy(rl, gr).astype(np.float64)
+    cert = internal_force_feasibility(coin, p_l, p_r, cfg.coast_mu)
+    strd = contact_straddle(rl)
+    return {"both_contact": contacted, "both_dwell": int(both), "straddle": strd, "cradle_certificate": cert,
+            "pin_saved": (saved if keep_pin else None),
+            "min_tip_left": round(float(np.linalg.norm(p_l - coin)), 4), "min_tip_right": round(float(np.linalg.norm(p_r - coin)), 4)}
 
 
 def null_coin_wrench(rl, stack, *, cfg: CooperativeConfig | None = None, w_target=None):
