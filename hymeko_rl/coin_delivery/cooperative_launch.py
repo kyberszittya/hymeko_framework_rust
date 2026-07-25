@@ -78,6 +78,7 @@ class CooperativeConfig:
     jac_eps: float = 0.003             # rad — FD perturbation for the wrench / normal-force Jacobians
     jac_recompute_every: int = 4       # steps between Jacobian recomputes (geometry drifts slowly)
     qp_fn_min: float = 0.20            # N — HARD lower bound on each tip normal force in the QP (keeps dual contact)
+    qp_g1_fn_floor: float = 0.05       # N — trust-region G1 acceptance floor: below this a tip counts as contact-lost
     jac_lam: float = 0.02              # Tikhonov damping on the QP Hessian JwᵀJw + λI
 
 
@@ -661,33 +662,57 @@ def null_coin_wrench(rl, stack, *, cfg: CooperativeConfig | None = None, w_targe
     pin_qpos = d.qpos[adr:adr + 3].copy()
     r = _coin_radius(rl)
     w_star = np.zeros(3) if w_target is None else np.asarray(w_target, np.float64) / np.array([1.0, 1.0, r])
+    wt = np.array([1.0 / cfg.g2_force_max, 1.0 / cfg.g2_force_max, 1.0 / (cfg.g2_torque_max / r)])   # G2-band normaliser
+    wmat = np.diag(wt)
+
+    def _state(env):
+        """Realized wrench, G1 (dual contact + Fn floor), G3 (launch feasibility), and the G2-NORMALISED merit
+        ‖W(w − w*)‖² (each component scaled by its G2 band so reducing the merit drives BOTH force and torque into the box,
+        not one at the other's expense) — read from the ACTUAL sim (``_tip_contacts`` / ``mj_contactForce``, not the stale
+        ``_planar_metrics`` cache)."""
+        w = realized_coin_wrench(env)
+        tc = _tip_contacts(env)
+        fn = (tc["left"][0], tc["right"][0])
+        g1 = bool(fn[0] >= cfg.qp_g1_fn_floor and fn[1] >= cfg.qp_g1_fn_floor)
+        g3 = bool(launch_feasibility_certificate(env, cfg)["feasible"])
+        wv = np.array([w["Fx"], w["Fy"], w["torque"] / r])
+        return w, np.array(fn), g1, g3, float(np.sum((wt * (wv - w_star)) ** 2))
 
     def _gcb(_mo, dt):
         dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
     mujoco.set_mjcb_control(_gcb)
     prev_tau, dwell, nulled, jac = None, 0, False, None
     try:
-        for k in range(cfg.wrench_null_steps):
-            if jac is None or k % cfg.jac_recompute_every == 0:
+        for _ in range(cfg.wrench_null_steps):
+            if jac is None:                                      # (re)compute Jacobian only on demand — a rejected step forces it
                 _w0, _fn0, Jw, JFn = _contact_jacobians(rl, cfg)
-                jac = (Jw, JFn, Jw.T @ Jw + cfg.jac_lam * np.eye(4))
+                jac = (Jw, JFn, Jw.T @ wmat @ wmat @ Jw + cfg.jac_lam * np.eye(4))   # G2-normalised QP Hessian
             Jw, JFn, hess = jac
+            w0v, fn0, g1_0, g3_0, merit0 = _state(rl)
+            w0 = np.array([w0v["Fx"], w0v["Fy"], w0v["torque"] / r])
+            dq = _solve_contact_qp(hess, -Jw.T @ wmat @ wmat @ (w_star - w0), JFn, cfg.qp_fn_min - fn0, cfg.wrench_null_dq_max)
+            q_save, v_save = d.qpos.copy(), d.qvel.copy()         # trust-region: try α, ACCEPT only if the real sim improves
+            accepted = False
+            for alpha in (1.0, 0.5, 0.25, 0.125):
+                d.qpos[:], d.qvel[:] = q_save, v_save
+                mujoco.mj_forward(m, d)
+                a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), q_save[:4] + cfg.wrench_null_gain * alpha * dq, stack, prev_tau, lo, hi)
+                step_ablation(rl, np.asarray(a, np.float32), "A")
+                d.qpos[adr:adr + 3] = pin_qpos
+                d.qvel[adr:adr + 3] = 0.0
+                mujoco.mj_forward(m, d)
+                w1, _fn1, g1, g3, merit1 = _state(rl)
+                # accept if the merit drops and G1 (contact) holds; don't let G3 REGRESS from a currently-feasible frame
+                if merit1 < merit0 and g1 and (g3 or not g3_0):
+                    prev_tau, accepted = a, True
+                    break
+            if not accepted:                                     # zero step + reset (Jacobian & active set) — s4's fix
+                d.qpos[:], d.qvel[:] = q_save, v_save
+                mujoco.mj_forward(m, d)
+                jac = None
+                continue
             w = realized_coin_wrench(rl)
-            w0 = np.array([w["Fx"], w["Fy"], w["torque"] / r])   # live wrench (Jacobian reused between recomputes)
-            tc = _tip_contacts(rl)
-            fn0 = np.array([tc["left"][0], tc["right"][0]])
-            grad = -Jw.T @ (w_star - w0)
-            dq = _solve_contact_qp(hess, grad, JFn, cfg.qp_fn_min - fn0, cfg.wrench_null_dq_max)   # Fn_i+JFn·Δq ≥ F_min
-            target = d.qpos[:4] + cfg.wrench_null_gain * dq
-            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), target, stack, prev_tau, lo, hi)
-            prev_tau = a
-            step_ablation(rl, np.asarray(a, np.float32), "A")
-            d.qpos[adr:adr + 3] = pin_qpos                        # keep the coin held while nulling
-            d.qvel[adr:adr + 3] = 0.0
-            mujoco.mj_forward(m, d)
-            mpl = rl.inner._planar_metrics
-            in_band = bool(w["force_norm"] <= cfg.g2_force_max and abs(w["torque"]) <= cfg.g2_torque_max
-                           and mpl.left_contact and mpl.right_contact)
+            in_band = bool(w["force_norm"] <= cfg.g2_force_max and abs(w["torque"]) <= cfg.g2_torque_max and g1)
             dwell = dwell + 1 if in_band else 0
             if w_target is None and dwell >= cfg.wrench_null_dwell:
                 nulled = True
