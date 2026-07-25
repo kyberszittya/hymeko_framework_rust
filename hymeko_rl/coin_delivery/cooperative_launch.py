@@ -68,13 +68,17 @@ class CooperativeConfig:
     g2_torque_max: float = 0.010       # N·m — G2 max realized net coin torque (moment arms can spin an Fn-balanced pair)
     g3_fpar_min: float = 0.10          # (unit grasp force) — G3 min achievable forward net force under the cone
     g3_cross_max: float = 0.20         # G3 max achievable cross-force fraction of the directed grasp solve
+    g3_residual_max: float = 0.55      # G3 max wrench residual of the directed grasp solve (a clean forward INCREMENT is
+    #                                    achievable — the INCREMENTAL launch feasibility, decoupled from the resting wrench)
     # --- E3 active net-wrench-nulling acquisition (object-level feedback: min‖w_coin‖ s.t. G1 dual contact ∧ G3 feasible) ---
-    wrench_null_kf: float = 0.004      # m per N — TANGENTIAL tip slide per unit net force (radial stays the δ servo → keeps G1)
-    wrench_null_ktau: float = 0.15     # m per N·m — tangential slide per unit net coin torque
-    wrench_null_slide_max: float = 0.005  # m — clamp on the tangential slide, so it cannot walk the tip off the round coin
-    wrench_null_gain: float = 0.03     # rad/step — gentle nulling target step (< approach_gain; a big step lost contact)
+    wrench_null_gain: float = 0.5      # step fraction of the constrained-LS Δq per iteration
+    wrench_null_dq_max: float = 0.02   # rad — clamp on the per-step joint move (keeps the tips on the coin)
     wrench_null_steps: int = 200       # feedback iterations to drive ‖w_coin‖ into the G2 band
     wrench_null_dwell: int = 12        # frames the wrench must stay in the G2 band before E3a terminates
+    jac_eps: float = 0.003             # rad — FD perturbation for the wrench/penetration Jacobians
+    jac_recompute_every: int = 4       # steps between Jacobian recomputes (geometry drifts slowly)
+    jac_pen_weight: float = 40.0       # weight on holding the δ penetration (dual contact) vs nulling the wrench
+    jac_lam: float = 0.02              # Tikhonov damping on the constrained least-squares Δq
 
 
 def _tip_xy(rl, g):
@@ -467,10 +471,12 @@ def realized_coin_wrench(rl):
 
 
 def launch_feasibility_certificate(rl, cfg: CooperativeConfig | None = None):
-    """G3 — is a target-directed launch WRENCH feasible from this contact geometry? Fast pre-filter: the forward-feasibility
-    coefficient > 0 (the +e_par direction is inside the friction cone). Full certificate: solve the grasp allocation for a
-    forward target and require the realized net force to have F∥ ≥ g3_fpar_min and |F⊥| ≤ g3_cross_max·F∥ with a small
-    wrench residual (cone-feasible, low cross). This is the LAUNCH entry condition the acquisition must satisfy."""
+    """G3 — INCREMENTAL launch feasibility: from this preload, can a positive forward wrench CHANGE be commanded? Not "does
+    the resting contact already push forward" (that conflates with G2), but ``∃ Δf ∈ C : G·Δf ≈ [F∥*; 0; 0]`` — at rest the
+    coin does not move (G2 null), yet on command the two tips can push it forward with low cross and low torque. Because G is
+    linear, the increment is exactly the directed grasp solve; G3 = forward direction inside the cone (coeff > 0) ∧ the
+    directed solve reaches F∥ ≥ g3_fpar_min with a small wrench residual (a clean forward increment is achievable). This
+    decouples G3 from the resting wrench, dissolving the apparent G2-vs-G3 tension at a far-side frame."""
     cfg = cfg or CooperativeConfig()
     m = rl.inner.model
     gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
@@ -484,52 +490,76 @@ def launch_feasibility_certificate(rl, cfg: CooperativeConfig | None = None):
     _fl, _fr, diag = _grasp_solve(c, p_l, p_r, e_par, cfg.coast_mu, cfg.grasp_lam)
     net = np.asarray(diag["net_force"], np.float64)
     f_par, f_cross = float(net @ e_par), abs(float(net @ e_cross))
-    feasible = bool(fa["feasible"] and f_par >= cfg.g3_fpar_min and f_cross <= cfg.g3_cross_max * max(f_par, 1e-9))
+    feasible = bool(fa["feasible"] and f_par >= cfg.g3_fpar_min and diag["wrench_residual"] <= cfg.g3_residual_max)
     return {"forward_coeff": fa["coeff"], "f_parallel": round(f_par, 4), "f_cross": round(f_cross, 4),
             "wrench_residual": diag["wrench_residual"], "feasible": feasible}
 
 
-def null_coin_wrench(rl, stack, *, cfg: CooperativeConfig | None = None):
-    """E3a nulling phase — an OBJECT-LEVEL feedback controller that drives the realized coin wrench w=[Fx,Fy,τ]→0 on an
-    ALREADY-G1-acquired, soft-pinned preload (call ``acquire_clean_preload`` / pass its validated env first). The passive
-    servo balances PENETRATION but not the NET WRENCH (LFA: G2 0/72), so this actively nulls it. Three channels separated
-    so they do not fight: the RADIAL target stays the δ penetration servo (common-mode → keeps G1 depth); a TANGENTIAL
-    slide on each tip cancels the net force's tangential projection and the net torque (sliding along tᵢ changes the
-    friction force without changing penetration). Leaves the settled wrench-null preload. Returns whether ‖w‖ reached the
-    G2 band, the final wrench, the preload sanity, and the launch-feasibility certificate (G3)."""
+def _wrench_penetration_jacobian(rl, cfg):
+    """FD Jacobians on the soft-pinned coin: ``Jw`` = d[Fx,Fy,τ/r]/dq (3×4) and ``Jp`` = d[pen_L,pen_R]/dq (2×4), by
+    perturbing each arm joint POSITION and re-solving contacts (``mj_forward``) on a deep copy — the live sim is untouched.
+    ``Jw`` lets the constrained step null the wrench; ``Jp`` lets it hold the δ penetration (dual contact) at the same time,
+    so the controller cannot null ‖w‖ by sliding the tips off the coin (the proportional law's failure)."""
+    r = _coin_radius(rl)
+
+    def _state(e):
+        w = realized_coin_wrench(e)
+        tc = _tip_contacts(e)
+        return np.array([w["Fx"], w["Fy"], w["torque"] / r]), np.array([tc["left"][2], tc["right"][2]])
+    w0, p0 = _state(rl)
+    base = copy.deepcopy(rl)
+    m, d = base.inner.model, base.inner.data
+    q0 = d.qpos[:4].copy()
+    adr = int(base.inner._disk_x_adr)
+    pin = d.qpos[adr:adr + 3].copy()
+    Jw, Jp = np.zeros((3, 4)), np.zeros((2, 4))
+    for j in range(4):
+        d.qpos[:4] = q0
+        d.qpos[j] = q0[j] + cfg.jac_eps
+        d.qpos[adr:adr + 3] = pin
+        mujoco.mj_forward(m, d)
+        w1, p1 = _state(base)
+        Jw[:, j] = (w1 - w0) / cfg.jac_eps
+        Jp[:, j] = (p1 - p0) / cfg.jac_eps
+    return w0, p0, Jw, Jp
+
+
+def null_coin_wrench(rl, stack, *, cfg: CooperativeConfig | None = None, w_target=None):
+    """E3a — a CONSTRAINED object-level controller that drives the realized coin wrench toward ``w_target`` (default 0 =
+    null preload; pass [F∥·e_par ; 0] for INSERT = a synchronised forward push) on an ALREADY-G1-acquired soft-pinned
+    preload. Each step solves a Tikhonov least-squares Δq that BOTH moves the wrench toward the target AND holds the δ
+    penetration (dual contact), via the stacked wrench/penetration Jacobian — so, unlike the proportional slide, it cannot
+    null ‖w‖ by sliding the tips off the coin. Leaves the settled state; returns whether ‖w‖ reached the G2 band, the final
+    wrench, the preload sanity, and the launch-feasibility certificate (G3)."""
     cfg = cfg or CooperativeConfig()
     m, d = rl.inner.model, rl.inner.data
     lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
-    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
-    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
-    reach = {side: _coin_radius(rl) + float(m.geom_size[g][0]) - cfg.preload_depth for side, g in (("left", gl), ("right", gr))}
-    arms = (("left", gl, _LEFT_DOF), ("right", gr, _RIGHT_DOF))
     adr = int(rl.inner._disk_x_adr)
     pin_qpos = d.qpos[adr:adr + 3].copy()
+    r = _coin_radius(rl)
+    w_star = np.zeros(3) if w_target is None else np.asarray(w_target, np.float64) / np.array([1.0, 1.0, r])
+    p_star = np.array([-cfg.preload_depth, -cfg.preload_depth])   # hold δ penetration on both tips
+    sw = np.sqrt(cfg.jac_pen_weight)
 
     def _gcb(_mo, dt):
         dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
     mujoco.set_mjcb_control(_gcb)
-    prev_tau, dwell, nulled = None, 0, False
+    prev_tau, dwell, nulled, cache = None, 0, False, None
     try:
-        for _ in range(cfg.wrench_null_steps):
+        for k in range(cfg.wrench_null_steps):
+            if cache is None or k % cfg.jac_recompute_every == 0:
+                w0, p0, Jw, Jp = _wrench_penetration_jacobian(rl, cfg)
+                A = np.vstack([Jw, sw * Jp])                     # stack: null wrench (→ w*) AND hold penetration (→ p*)
+                cache = (A, np.linalg.inv(A.T @ A + cfg.jac_lam * np.eye(4)))
             w = realized_coin_wrench(rl)
-            f_net = np.array([w["Fx"], w["Fy"]], np.float64)
-            tau = w["torque"]
-            coin = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].astype(np.float64)
-            contact = {"left": bool(rl.inner._planar_metrics.left_contact), "right": bool(rl.inner._planar_metrics.right_contact)}
-            target = d.qpos[:4].copy()
-            for side, g, dofs in arms:
-                n_out = _unit2(_tip_xy(rl, g).astype(np.float64) - coin)   # live outward radial
-                t_hat = np.array([-n_out[1], n_out[0]], np.float64)
-                # TANGENTIAL wrench-null slide, CLAMPED so it cannot walk the tip off the round coin; zeroed if this tip
-                # lost contact (pure radial re-acquire restores G1 before nulling resumes)
-                slide = -cfg.wrench_null_kf * float(f_net @ t_hat) - cfg.wrench_null_ktau * tau
-                slide = float(np.clip(slide, -cfg.wrench_null_slide_max, cfg.wrench_null_slide_max)) if contact[side] else 0.0
-                target_pt = (coin + reach[side] * n_out + slide * t_hat).astype(np.float32)
-                dq = _arm_dir(rl, g, dofs, target_pt, cfg)
-                for j in dofs:
-                    target[j] = d.qpos[j] + cfg.wrench_null_gain * dq[j]
+            w0 = np.array([w["Fx"], w["Fy"], w["torque"] / r])   # live wrench (Jacobian reused between recomputes)
+            tc = _tip_contacts(rl)
+            p0 = np.array([tc["left"][2], tc["right"][2]])
+            A, Ainv = cache
+            b = np.concatenate([w_star - w0, sw * (p_star - p0)])
+            dq = Ainv @ (A.T @ b)
+            dq = np.clip(cfg.wrench_null_gain * dq, -cfg.wrench_null_dq_max, cfg.wrench_null_dq_max)
+            target = d.qpos[:4] + dq
             a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), target, stack, prev_tau, lo, hi)
             prev_tau = a
             step_ablation(rl, np.asarray(a, np.float32), "A")
@@ -540,7 +570,7 @@ def null_coin_wrench(rl, stack, *, cfg: CooperativeConfig | None = None):
             in_band = bool(w["force_norm"] <= cfg.g2_force_max and abs(w["torque"]) <= cfg.g2_torque_max
                            and mpl.left_contact and mpl.right_contact)
             dwell = dwell + 1 if in_band else 0
-            if dwell >= cfg.wrench_null_dwell:
+            if w_target is None and dwell >= cfg.wrench_null_dwell:
                 nulled = True
                 break
     finally:
