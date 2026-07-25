@@ -59,6 +59,10 @@ class CooperativeConfig:
     clean_fn_min: float = 0.15         # N — each tip must carry at least this normal force (both really in contact)
     clean_fn_balance_min: float = 0.30  # min(Fn_l,Fn_r)/max — the two normals are balanced, not one-sided
     # --- E1 authority-balance existence oracle (a balanced frame must carry real force AND be near-symmetric) ---
+    viab_window: int = 40              # frames of the passive-hold rollout the viability certificate integrates over
+    viab_wrench_max: float = 5.0       # N — a viable cradle's wrench stays BOUNDED under hold (not s4's blow-up to 13 N)
+    viab_slope_max: float = 0.06       # N/frame — the wrench must not be trending UP (leaving the equilibrium manifold)
+    viab_drift_max: float = 0.010      # m — max contact-point drift over the window (the tips are not walking off)
     preload_min_total: float = 0.60    # N — min Fn_L + Fn_R, so the trivial Fn≈0 (touch-but-no-load) point cannot win
     imbalance_max: float = 0.25         # |Fn_L − Fn_R|/(Fn_L + Fn_R) — scale-free balance target, tighter than the clean gate
     search_span: float = 0.04          # m — half-range of the 1-D coin sweep along the fingertip–fingertip axis
@@ -682,6 +686,57 @@ def hold_cradle(rl, stack, *, cfg: CooperativeConfig | None = None, steps: int =
             "std": round(float(tr.std()), 3), "drifted": bool(tr.max() > 2.0 * tr[0] + 0.3)}
 
 
+def cradle_viability(rl, stack, *, cfg: CooperativeConfig | None = None):
+    """The WINDOW-BASED viability certificate — the CORRECTED handoff metric (a cradle postcondition is a VIABILITY REGION
+    over the extended state held for a window, not a one-frame x). Hold the cradle passively over ``viab_window`` frames and
+    require the trajectory to STAY in the cradle set: dual contact + straddle topology SUSTAINED, wrench BOUNDED and NOT
+    trending up (not leaving the equilibrium manifold), contact-point drift small, G3 margin positive throughout. Scored on
+    the WORST-window values (a cradle good for 19 frames then falling apart on the 20th is not a handoff). NOTE: the wrench
+    magnitude is not required to be null here — nulling is the regulator's job; this certifies the cradle is a STABLE basin
+    the regulator can work from, which the end-of-acquire transient (s7 0.66 N → 10 N on hold) did not."""
+    cfg = cfg or CooperativeConfig()
+    m, d = rl.inner.model, rl.inner.data
+    lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    adr = int(rl.inner._disk_x_adr)
+    pin_qpos = d.qpos[adr:adr + 3].copy()
+    hold = d.qpos[:4].copy()
+    p_l0, p_r0 = _tip_xy(rl, gl).astype(np.float64), _tip_xy(rl, gr).astype(np.float64)
+
+    def _gcb(_mo, dt):
+        dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
+    mujoco.set_mjcb_control(_gcb)
+    wtraj, g1s, strs, margins, drift = [], True, True, [], 0.0
+    prev_tau = None
+    try:
+        for _ in range(cfg.viab_window):
+            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), hold, stack, prev_tau, lo, hi)
+            prev_tau = a
+            step_ablation(rl, np.asarray(a, np.float32), "A")
+            d.qpos[adr:adr + 3] = pin_qpos
+            d.qvel[adr:adr + 3] = 0.0
+            mujoco.mj_forward(m, d)
+            w = realized_coin_wrench(rl)
+            tc = _tip_contacts(rl)
+            wtraj.append(w["force_norm"])
+            g1s = g1s and bool(tc["left"][0] >= cfg.qp_g1_fn_floor and tc["right"][0] >= cfg.qp_g1_fn_floor)
+            strs = strs and bool(contact_straddle(rl)["straddles"])
+            margins.append(launch_feasibility_certificate(rl, cfg)["margin"])
+            drift = max(drift, float(np.linalg.norm(_tip_xy(rl, gl).astype(np.float64) - p_l0) + np.linalg.norm(_tip_xy(rl, gr).astype(np.float64) - p_r0)))
+    finally:
+        mujoco.set_mjcb_control(None)
+    tr = np.asarray(wtraj)
+    slope = float(np.polyfit(np.arange(len(tr)), tr, 1)[0]) if len(tr) > 2 else 0.0
+    min_margin = float(min(margins)) if margins else -1.0
+    viable = bool(g1s and strs and float(tr.max()) <= cfg.viab_wrench_max and slope <= cfg.viab_slope_max
+                  and drift <= cfg.viab_drift_max and min_margin >= 0.0)
+    return {"wrench_mean": round(float(tr.mean()), 3), "wrench_p95": round(float(np.percentile(tr, 95)), 3),
+            "wrench_max": round(float(tr.max()), 3), "wrench_slope": round(slope, 4), "wrench_std": round(float(tr.std()), 3),
+            "contact_drift": round(drift, 4), "g1_sustained": g1s, "straddle_sustained": strs,
+            "min_g3_margin": round(min_margin, 4), "viable": viable}
+
+
 def balanced_straddle_search(rl, stack, coin_xy, *, cfg: CooperativeConfig | None = None, n_axes: int = 6):
     """The HANDOFF-QUALITY acquisition: an ACQUIRE postcondition is entry into the cradle VIABILITY region, not merely dual
     contact — so don't stop at the first certificate-feasible straddle. Search squeeze-axis angles and pick the cradle with
@@ -696,16 +751,13 @@ def balanced_straddle_search(rl, stack, coin_xy, *, cfg: CooperativeConfig | Non
         axis = np.array([np.cos(th), np.sin(th)], np.float64)
         env = copy.deepcopy(rl)
         out = straddle_directed_acquire(env, stack, coin_xy, axis, cfg=cfg, keep_pin=True)
-        w = realized_coin_wrench(env)
-        cert = out["cradle_certificate"]
-        margin = launch_feasibility_certificate(env, cfg)["margin"]
-        admissible = bool(out["both_contact"] and cert["feasible"])
-        net_wrench = w["force_norm"] / cfg.g2_force_max + abs(w["torque"]) / cfg.g2_torque_max
+        admissible = bool(out["both_contact"] and out["cradle_certificate"]["feasible"])
+        viab = cradle_viability(copy.deepcopy(env), stack, cfg=cfg) if admissible else None   # WINDOW metric, not the transient
         cand = {"theta": round(float(th), 3), "admissible": admissible, "n_dot": out["straddle"]["n_dot"],
-                "net_wrench_norm": round(float(net_wrench), 3), "force_norm": w["force_norm"], "g3_margin": round(float(margin), 4)}
+                "viable": bool(viab and viab["viable"]), "viability": viab}
         cands.append(cand)
-        if admissible:
-            key = (net_wrench, -margin)                          # A2 min wrench, A3 max margin
+        if admissible and viab["viable"]:                        # only a VIABLE (sustained, stable) cradle can be selected
+            key = (viab["wrench_p95"], -viab["min_g3_margin"])   # A5 low worst-window wrench, A7 high G3 margin
             if best is None or key < best_key:
                 best, best_key, best_env, best_saved = cand, key, env, out["pin_saved"]
     return {"candidates": cands, "best": best, "exists": bool(best is not None), "_best_env": best_env, "_best_saved": best_saved}
