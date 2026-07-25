@@ -1,0 +1,2650 @@
+{
+ "contract": "H2_CONTROL_TO_CONTACT_VELOCITY_IDENTIFICATION",
+ "date": "2026-07-26",
+ "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2",
+ "coast_mu": 0.179,
+ "certified_seeds": [
+  14250,
+  14750,
+  15000,
+  15750
+ ],
+ "frozen_conventions": {
+  "decision_variable": "dq_target in R^4 (joint position-servo target perturbation; nominal dq=0 = acquisition handoff q_target)",
+  "prediction_horizon": "exactly one control step",
+  "control_dt": 0.01,
+  "substeps": 20,
+  "output_ordering": "[v_n_L, v_t_L, v_n_R, v_t_R]",
+  "relative_velocity": "v_rel = v_tip(x_c) - v_coin(x_c) at the COMMON MuJoCo contact point x_c; both bodies rigid-body-transported to x_c; v_n>0 = closing/compression",
+  "projection_frame": "ACTUAL MuJoCo contact normal at snapshot t (oriented tip->coin), FROZEN",
+  "coin": "FREE (pin released) for identification; PINNED variant = positive control (pipeline check only)",
+  "operating_point": "EXACT acquisition handoff (exported prev_tau + q_target; NO settle, NO re-synthesised seed)",
+  "source_gate": "certified straddle: both_contact AND internal_force_feasibility.feasible AND straddle(n_dot<0)",
+  "fd": "central, two eps scales; one-sided compared near constraints",
+  "eps_scales": [
+   0.0015,
+   0.003
+  ],
+  "fn_floor_N": 0.05,
+  "dq_levels": [
+   0.002,
+   0.006,
+   0.012
+  ],
+  "val_dirs_per_level": 8,
+  "val_seed": 20260726,
+  "validity": "SAME contact mode: same contact identities AND both Fn>=floor AND straddle retained AND motion contract"
+ },
+ "n_states_requested": 2,
+ "n_states_analysed": 2,
+ "acquire_log": [
+  {
+   "seed": 14250,
+   "certified": true,
+   "axis": "zone_cross",
+   "n_dot": -0.997,
+   "attempts": {
+    "zone_cross": {
+     "both_contact": true,
+     "n_dot": -0.997,
+     "cert_feasible": true,
+     "certified": true
+    },
+    "zone_par": {
+     "both_contact": true,
+     "n_dot": -0.957,
+     "cert_feasible": true,
+     "certified": true
+    }
+   }
+  },
+  {
+   "seed": 14750,
+   "certified": true,
+   "axis": "zone_par",
+   "n_dot": -0.989,
+   "attempts": {
+    "zone_cross": {
+     "both_contact": false,
+     "n_dot": -0.992,
+     "cert_feasible": true,
+     "certified": false
+    },
+    "zone_par": {
+     "both_contact": true,
+     "n_dot": -0.989,
+     "cert_feasible": true,
+     "certified": true
+    }
+   }
+  }
+ ],
+ "states": [
+  {
+   "state": 0,
+   "seed": 14250,
+   "acquire": {
+    "seed": 14250,
+    "certified": true,
+    "axis": "zone_cross",
+    "n_dot": -0.997,
+    "attempts": {
+     "zone_cross": {
+      "both_contact": true,
+      "n_dot": -0.997,
+      "cert_feasible": true,
+      "certified": true
+     },
+     "zone_par": {
+      "both_contact": true,
+      "n_dot": -0.957,
+      "cert_feasible": true,
+      "certified": true
+     }
+    }
+   },
+   "free": {
+    "operating_point": "EXACT_POST_RELEASE_HANDOFF",
+    "released_coin": true,
+    "pre_release_hash": "16778d7df544b9e8",
+    "post_release_hash": "16778d7df544b9e8",
+    "post_release_recert": {
+     "dual_contact": true,
+     "straddle_dot": -0.9962,
+     "straddle": true,
+     "cert_feasible": true,
+     "qdot_max": 0.454,
+     "qdot_ok": true,
+     "admissible": true
+    },
+    "determinism_max_abs": 0.0,
+    "eps_used": 0.003,
+    "col_valid": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "n_valid_cols": 4,
+    "col_classes": [
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+    ],
+    "n_active_cols": 0,
+    "col_diag": {
+     "0": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "1": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "2": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "3": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     }
+    },
+    "handoff_prev_tau": [
+     -1.1712,
+     -0.9291,
+     -0.3088,
+     2.1943
+    ],
+    "arm_saturated": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "fn0": [
+     2.8378,
+     8.748
+    ],
+    "straddle0": -0.9962,
+    "eps_agreement_rel_gap": null,
+    "central_vs_onesided_rel_gap": null,
+    "Bv": [
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "g0": [
+     -0.160226,
+     -0.017603,
+     0.237272,
+     0.110221
+    ],
+    "geometric_jacobian_contrast": {
+     "bv_norm": 0.0,
+     "bv_minus_jtip_norm": 37.63923,
+     "relative_difference": 37639225311944.84,
+     "Bv_kinematic": [
+      [
+       -16.57922,
+       -11.55424,
+       0.0,
+       0.0
+      ],
+      [
+       -23.09611,
+       -7.90566,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       -9.18658,
+       -13.43542
+      ],
+      [
+       0.0,
+       0.0,
+       11.48988,
+       -3.93566
+      ]
+     ]
+    },
+    "rate_limiter_mechanism": {
+     "rate_step_Nm": 0.3,
+     "kp_times_eps_Nm": 0.36,
+     "raw_pd_tau": [
+      0.5938,
+      8.50149,
+      -2.08045,
+      2.85881
+     ],
+     "prev_tau": [
+      -1.1712,
+      -0.9291,
+      -0.3088,
+      2.1943
+     ],
+     "abs_gap_raw_minus_prev": [
+      1.765,
+      9.4306,
+      1.7716,
+      0.6645
+     ],
+     "absorbed_per_joint": [
+      true,
+      true,
+      true,
+      true
+     ],
+     "all_absorbed": true
+    },
+    "validation": [
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.016146,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.016146,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.001632,
+       0.000424,
+       0.015872,
+       0.002435
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.004682,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.004682,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.000528,
+       0.000109,
+       0.004593,
+       0.000734
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.033164,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.033164,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.00317,
+       0.000916,
+       0.032633,
+       0.004901
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.029187,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.029187,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.002811,
+       0.000801,
+       0.028716,
+       0.004327
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.015133,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.015133,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.001541,
+       0.000395,
+       0.014874,
+       0.002288
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.040755,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.040755,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.003854,
+       0.001133,
+       0.04011,
+       0.005998
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.114899,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.114899,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.010475,
+       0.003171,
+       0.113164,
+       0.016605
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.098639,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.098639,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.009031,
+       0.002736,
+       0.09714,
+       0.014296
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     }
+    ],
+    "level_summary": {
+     "small": {
+      "n": 8,
+      "median_rel_err": null,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     },
+     "medium": {
+      "n": 8,
+      "median_rel_err": 1.0,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     },
+     "near_boundary": {
+      "n": 8,
+      "median_rel_err": 1.0,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     }
+    }
+   },
+   "replay": {
+    "max_applied_tau_mismatch": 4.45e-06,
+    "consistent": true,
+    "a_acquisition_continue": [
+     -0.87125,
+     -0.62913,
+     -0.60883,
+     2.4943
+    ],
+    "a_snapshot_dq0": [
+     -0.87125,
+     -0.62913,
+     -0.60883,
+     2.4943
+    ]
+   },
+   "pinned_control": {
+    "operating_point": "PINNED_POSITIVE_CONTROL",
+    "released_coin": false,
+    "pre_release_hash": "16778d7df544b9e8",
+    "post_release_hash": "16778d7df544b9e8",
+    "post_release_recert": {
+     "dual_contact": true,
+     "straddle_dot": -0.9962,
+     "straddle": true,
+     "cert_feasible": true,
+     "qdot_max": 0.454,
+     "qdot_ok": true,
+     "admissible": true
+    },
+    "determinism_max_abs": 0.0,
+    "eps_used": 0.003,
+    "col_valid": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "n_valid_cols": 4,
+    "col_classes": [
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+    ],
+    "n_active_cols": 0,
+    "col_diag": {
+     "0": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "1": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "2": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "3": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     }
+    },
+    "handoff_prev_tau": [
+     -1.1712,
+     -0.9291,
+     -0.3088,
+     2.1943
+    ],
+    "arm_saturated": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "fn0": [
+     7.6059,
+     1.8621
+    ],
+    "straddle0": -0.9962,
+    "eps_agreement_rel_gap": null,
+    "central_vs_onesided_rel_gap": null,
+    "Bv": [
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "g0": [
+     0.024692,
+     0.036516,
+     -0.078988,
+     -0.050045
+    ],
+    "geometric_jacobian_contrast": {
+     "bv_norm": 0.0,
+     "bv_minus_jtip_norm": 37.63923,
+     "relative_difference": 37639225311944.84,
+     "Bv_kinematic": [
+      [
+       -16.57922,
+       -11.55424,
+       0.0,
+       0.0
+      ],
+      [
+       -23.09611,
+       -7.90566,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       -9.18658,
+       -13.43542
+      ],
+      [
+       0.0,
+       0.0,
+       11.48988,
+       -3.93566
+      ]
+     ]
+    },
+    "rate_limiter_mechanism": {
+     "rate_step_Nm": 0.3,
+     "kp_times_eps_Nm": 0.36,
+     "raw_pd_tau": [
+      0.5938,
+      8.50149,
+      -2.08045,
+      2.85881
+     ],
+     "prev_tau": [
+      -1.1712,
+      -0.9291,
+      -0.3088,
+      2.1943
+     ],
+     "abs_gap_raw_minus_prev": [
+      1.765,
+      9.4306,
+      1.7716,
+      0.6645
+     ],
+     "absorbed_per_joint": [
+      true,
+      true,
+      true,
+      true
+     ],
+     "all_absorbed": true
+    },
+    "validation": [
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.018778,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.018778,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       6e-06,
+       6e-06,
+       0.018499,
+       0.003224
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.005489,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.005489,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       2e-06,
+       2e-06,
+       0.005408,
+       0.000944
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.038287,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.038287,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.000141,
+       0.000159,
+       0.03771,
+       0.006622
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.033735,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.033735,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0001,
+       0.000113,
+       0.033228,
+       0.005828
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.017609,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.017609,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       5e-06,
+       5e-06,
+       0.017347,
+       0.003024
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.046973,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.046973,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.00022,
+       0.000247,
+       0.046262,
+       0.008135
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.131525,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.131525,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.001459,
+       0.001634,
+       0.129546,
+       0.022621
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.113025,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.113025,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.00109,
+       0.001221,
+       0.111321,
+       0.019485
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     }
+    ],
+    "level_summary": {
+     "small": {
+      "n": 8,
+      "median_rel_err": null,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     },
+     "medium": {
+      "n": 8,
+      "median_rel_err": 1.0,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     },
+     "near_boundary": {
+      "n": 8,
+      "median_rel_err": 1.0,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     }
+    }
+   }
+  },
+  {
+   "state": 1,
+   "seed": 14750,
+   "acquire": {
+    "seed": 14750,
+    "certified": true,
+    "axis": "zone_par",
+    "n_dot": -0.989,
+    "attempts": {
+     "zone_cross": {
+      "both_contact": false,
+      "n_dot": -0.992,
+      "cert_feasible": true,
+      "certified": false
+     },
+     "zone_par": {
+      "both_contact": true,
+      "n_dot": -0.989,
+      "cert_feasible": true,
+      "certified": true
+     }
+    }
+   },
+   "free": {
+    "operating_point": "EXACT_POST_RELEASE_HANDOFF",
+    "released_coin": true,
+    "pre_release_hash": "ede88da6a0ca5673",
+    "post_release_hash": "ede88da6a0ca5673",
+    "post_release_recert": {
+     "dual_contact": true,
+     "straddle_dot": -0.9891,
+     "straddle": true,
+     "cert_feasible": true,
+     "qdot_max": 0.9138,
+     "qdot_ok": true,
+     "admissible": true
+    },
+    "determinism_max_abs": 0.0,
+    "eps_used": 0.003,
+    "col_valid": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "n_valid_cols": 4,
+    "col_classes": [
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+    ],
+    "n_active_cols": 0,
+    "col_diag": {
+     "0": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "1": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "2": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "3": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     }
+    },
+    "handoff_prev_tau": [
+     -1.0313,
+     -0.1395,
+     -0.2529,
+     1.2
+    ],
+    "arm_saturated": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "fn0": [
+     2.369,
+     2.5616
+    ],
+    "straddle0": -0.9891,
+    "eps_agreement_rel_gap": null,
+    "central_vs_onesided_rel_gap": null,
+    "Bv": [
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "g0": [
+     0.118753,
+     -0.016143,
+     0.029531,
+     2.1e-05
+    ],
+    "geometric_jacobian_contrast": {
+     "bv_norm": 0.0,
+     "bv_minus_jtip_norm": 43.32511,
+     "relative_difference": 43325109205584.766,
+     "Bv_kinematic": [
+      [
+       -25.17835,
+       -9.76975,
+       0.0,
+       0.0
+      ],
+      [
+       14.33742,
+       10.02756,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       25.13625,
+       10.24076
+      ],
+      [
+       0.0,
+       0.0,
+       3.70442,
+       9.54603
+      ]
+     ]
+    },
+    "rate_limiter_mechanism": {
+     "rate_step_Nm": 0.3,
+     "kp_times_eps_Nm": 0.36,
+     "raw_pd_tau": [
+      6.0845,
+      -8.38978,
+      1.21704,
+      0.43348
+     ],
+     "prev_tau": [
+      -1.0313,
+      -0.1395,
+      -0.2529,
+      1.2
+     ],
+     "abs_gap_raw_minus_prev": [
+      7.1158,
+      8.2503,
+      1.47,
+      0.7665
+     ],
+     "absorbed_per_joint": [
+      true,
+      true,
+      true,
+      true
+     ],
+     "all_absorbed": true
+    },
+    "validation": [
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.057766,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.057766,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.027218,
+       0.031494,
+       0.022451,
+       0.03317
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     }
+    ],
+    "level_summary": {
+     "small": {
+      "n": 8,
+      "median_rel_err": null,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     },
+     "medium": {
+      "n": 8,
+      "median_rel_err": null,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     },
+     "near_boundary": {
+      "n": 8,
+      "median_rel_err": 1.0,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     }
+    }
+   },
+   "replay": {
+    "max_applied_tau_mismatch": 4.73e-06,
+    "consistent": true,
+    "a_acquisition_continue": [
+     -0.73132,
+     -0.43947,
+     0.04708,
+     0.89997
+    ],
+    "a_snapshot_dq0": [
+     -0.73132,
+     -0.43947,
+     0.04708,
+     0.89997
+    ]
+   },
+   "pinned_control": {
+    "operating_point": "PINNED_POSITIVE_CONTROL",
+    "released_coin": false,
+    "pre_release_hash": "ede88da6a0ca5673",
+    "post_release_hash": "ede88da6a0ca5673",
+    "post_release_recert": {
+     "dual_contact": true,
+     "straddle_dot": -0.9891,
+     "straddle": true,
+     "cert_feasible": true,
+     "qdot_max": 0.9138,
+     "qdot_ok": true,
+     "admissible": true
+    },
+    "determinism_max_abs": 0.0,
+    "eps_used": 0.003,
+    "col_valid": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "n_valid_cols": 4,
+    "col_classes": [
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE",
+     "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+    ],
+    "n_active_cols": 0,
+    "col_diag": {
+     "0": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "1": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "2": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     },
+     "3": {
+      "plus_valid": true,
+      "minus_valid": true,
+      "post_governor_seq_identical": true,
+      "actuator_clipped": false,
+      "governor_active_frac": 1.0,
+      "col_norm": 0.0,
+      "tau_differs": false,
+      "class": "DEAD_ZONE_IDENTICAL_POST_GOVERNOR_TORQUE"
+     }
+    },
+    "handoff_prev_tau": [
+     -1.0313,
+     -0.1395,
+     -0.2529,
+     1.2
+    ],
+    "arm_saturated": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "fn0": [
+     2.6136,
+     2.3499
+    ],
+    "straddle0": -0.9891,
+    "eps_agreement_rel_gap": null,
+    "central_vs_onesided_rel_gap": null,
+    "Bv": [
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "g0": [
+     0.095295,
+     -0.021666,
+     0.052822,
+     0.001471
+    ],
+    "geometric_jacobian_contrast": {
+     "bv_norm": 0.0,
+     "bv_minus_jtip_norm": 43.32511,
+     "relative_difference": 43325109205584.766,
+     "Bv_kinematic": [
+      [
+       -25.17835,
+       -9.76975,
+       0.0,
+       0.0
+      ],
+      [
+       14.33742,
+       10.02756,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       25.13625,
+       10.24076
+      ],
+      [
+       0.0,
+       0.0,
+       3.70442,
+       9.54603
+      ]
+     ]
+    },
+    "rate_limiter_mechanism": {
+     "rate_step_Nm": 0.3,
+     "kp_times_eps_Nm": 0.36,
+     "raw_pd_tau": [
+      6.0845,
+      -8.38978,
+      1.21704,
+      0.43348
+     ],
+     "prev_tau": [
+      -1.0313,
+      -0.1395,
+      -0.2529,
+      1.2
+     ],
+     "abs_gap_raw_minus_prev": [
+      7.1158,
+      8.2503,
+      1.47,
+      0.7665
+     ],
+     "absorbed_per_joint": [
+      true,
+      true,
+      true,
+      true
+     ],
+     "all_absorbed": true
+    },
+    "validation": [
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "small",
+      "dq_mag": 0.002,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "medium",
+      "dq_mag": 0.006,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.078614,
+      "rel_err": 1.0,
+      "cosine": null,
+      "actual_norm": 0.078614,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.001009,
+       0.000797,
+       0.050635,
+       0.060123
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     },
+     {
+      "level": "near_boundary",
+      "dq_mag": 0.012,
+      "abs_err": 0.0,
+      "rel_err": null,
+      "cosine": null,
+      "actual_norm": 0.0,
+      "pred_norm": 0.0,
+      "per_component_abs_err": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "contact_retained": true,
+      "contract_ok": true
+     }
+    ],
+    "level_summary": {
+     "small": {
+      "n": 8,
+      "median_rel_err": null,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     },
+     "medium": {
+      "n": 8,
+      "median_rel_err": null,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     },
+     "near_boundary": {
+      "n": 8,
+      "median_rel_err": 1.0,
+      "median_cosine": null,
+      "contact_retained_frac": 1.0,
+      "contract_ok_frac": 1.0
+     }
+    }
+   }
+  }
+ ],
+ "overnight_gate": {
+  "passed": false,
+  "reason": "some_state_ge2_active_cols=FAIL",
+  "checks": {
+   "post_release_admissible": true,
+   "some_state_ge2_active_cols": false,
+   "bit_reproducible": true,
+   "replay_consistent": true,
+   "all_zero_cols_classified": true
+  }
+ },
+ "verdict": {
+  "verdict": "ONE_STEP_DQ_TARGET_AUTHORITY_NULL_AT_HANDOFF_UNDER_TORQUE_RATE_LIMIT",
+  "reason": "every certified post-release handoff: 0 ACTIVE B_v columns; \u00b1\u03b5 absorbed by the rate limiter (identical post-governor torque) \u2014 one-step position-target authority is null"
+ },
+ "peak_rss_gb": 0.232,
+ "wall_s": 66.0,
+ "h2_qp_built": false
+}

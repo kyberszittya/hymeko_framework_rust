@@ -623,7 +623,7 @@ def straddle_directed_acquire(rl, stack, coin_xy, squeeze_axis, *, cfg: Cooperat
     def _gcb(_mo, dt):
         dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
     mujoco.set_mjcb_control(_gcb)
-    prev_tau, both = None, 0
+    prev_tau, both, target = None, 0, d.qpos[:4].copy()
     try:
         for _ in range(steps):
             coin = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].astype(np.float64)
@@ -648,8 +648,12 @@ def straddle_directed_acquire(rl, stack, coin_xy, squeeze_axis, *, cfg: Cooperat
     p_l, p_r = _tip_xy(rl, gl).astype(np.float64), _tip_xy(rl, gr).astype(np.float64)
     cert = internal_force_feasibility(coin, p_l, p_r, cfg.coast_mu)
     strd = contact_straddle(rl)
+    # EXACT control-handoff state (for H2 B_v identification): the acquisition's last servo target + last applied,
+    # rate-limited torque (the true prev_tau / rate-limiter memory). No re-synthesis at the identification boundary.
     return {"both_contact": contacted, "both_dwell": int(both), "straddle": strd, "cradle_certificate": cert,
             "pin_saved": (saved if keep_pin else None),
+            "final_tau": (None if prev_tau is None else np.asarray(prev_tau, np.float64).copy()),
+            "final_q_target": np.asarray(target, np.float64).copy(),
             "min_tip_left": round(float(np.linalg.norm(p_l - coin)), 4), "min_tip_right": round(float(np.linalg.norm(p_r - coin)), 4)}
 
 
