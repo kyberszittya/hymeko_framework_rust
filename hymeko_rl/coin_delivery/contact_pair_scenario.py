@@ -43,11 +43,31 @@ def setup_material_decoupling(rl):
     return tip, adr, round(float(m.geom_friction[tip[0], 0]), 4), round(float(m.dof_damping[adr]), 4)
 
 
-def set_material(rl, tip_gids, disk_adr, tip_mu: float, coin_slide_damping: float) -> None:
-    """Set the tip↔coin CONTACT friction (fingertip geom, priority-won) and the coin↔floor slide DRAG (the disk's two
-    planar-slide ``dof_damping`` components — the smooth-table knob). Runtime; no recompile."""
+def set_material(rl, tip_gids, disk_adr, tip_mu: float, coin_slide_damping: float,
+                 coin_slide_frictionloss: float = 0.0) -> None:
+    """Set the tip↔coin CONTACT friction (fingertip geom, priority-won) and the coin↔floor slide DRAG. The drag has two
+    parts: a small VISCOUS ``dof_damping`` (numerical residual only) and a COULOMB ``dof_frictionloss`` (the physically-
+    correct, speed-independent table friction — calibrated via the coast test). Both on the disk's two planar-slide DOFs.
+    Runtime; no recompile."""
     m = rl.inner.model
     for g in tip_gids:
         m.geom_friction[g, 0:2] = tip_mu
-    m.dof_damping[disk_adr:disk_adr + 2] = coin_slide_damping    # x, y slide damping (spin DOF at adr+2 left as-is)
+    m.dof_damping[disk_adr:disk_adr + 2] = coin_slide_damping
+    m.dof_frictionloss[disk_adr:disk_adr + 2] = coin_slide_frictionloss
     mujoco.mj_forward(m, rl.inner.data)
+
+
+def effective_tip_coin_friction(rl, tip_gids, disk_geom):
+    """Read the EFFECTIVE tangential friction MuJoCo assigned to an active fingertip↔disk contact (``d.contact[i].friction``
+    [0], AFTER the priority combination). Returns the effective μ, or None if no such contact is active. This VERIFIES that
+    geom_priority actually produces the intended tip↔coin friction — the user-requested separate check that the material
+    model is what we think it is, independent of any delivery outcome."""
+    d = rl.inner.data
+    tip = set(int(g) for g in tip_gids)
+    disk = int(disk_geom)
+    for i in range(d.ncon):
+        c = d.contact[i]
+        g1, g2 = int(c.geom1), int(c.geom2)
+        if (g1 in tip and g2 == disk) or (g2 in tip and g1 == disk):
+            return round(float(c.friction[0]), 4)
+    return None
