@@ -1,0 +1,301 @@
+{
+ "contract": "COIN_COAST_CALIBRATION",
+ "date": "2026-07-25",
+ "gravity": 9.81,
+ "as_loaded": {
+  "damping": 2.5,
+  "frictionloss": 0.0,
+  "coast_at_1.5ms": {
+   "model": "viscous",
+   "param": 2.5,
+   "v0": 1.5,
+   "stop_dist_m": 0.03,
+   "stop_time_s": 0.102,
+   "truncated": false,
+   "mu_eff": 3.828
+  }
+ },
+ "realistic_mu_band": [
+  0.05,
+  0.25
+ ],
+ "rows": [
+  {
+   "model": "viscous",
+   "param": 2.5,
+   "v0": 0.5,
+   "stop_dist_m": 0.0099,
+   "stop_time_s": 0.08,
+   "truncated": false,
+   "mu_eff": 1.293
+  },
+  {
+   "model": "viscous",
+   "param": 2.5,
+   "v0": 1.0,
+   "stop_dist_m": 0.0199,
+   "stop_time_s": 0.094,
+   "truncated": false,
+   "mu_eff": 2.56
+  },
+  {
+   "model": "viscous",
+   "param": 2.5,
+   "v0": 1.5,
+   "stop_dist_m": 0.03,
+   "stop_time_s": 0.102,
+   "truncated": false,
+   "mu_eff": 3.828
+  },
+  {
+   "model": "viscous",
+   "param": 1.0,
+   "v0": 0.5,
+   "stop_dist_m": 0.0246,
+   "stop_time_s": 0.198,
+   "truncated": false,
+   "mu_eff": 0.517
+  },
+  {
+   "model": "viscous",
+   "param": 1.0,
+   "v0": 1.0,
+   "stop_dist_m": 0.0498,
+   "stop_time_s": 0.233,
+   "truncated": false,
+   "mu_eff": 1.024
+  },
+  {
+   "model": "viscous",
+   "param": 1.0,
+   "v0": 1.5,
+   "stop_dist_m": 0.0749,
+   "stop_time_s": 0.254,
+   "truncated": false,
+   "mu_eff": 1.531
+  },
+  {
+   "model": "viscous",
+   "param": 0.5,
+   "v0": 0.5,
+   "stop_dist_m": 0.0493,
+   "stop_time_s": 0.395,
+   "truncated": false,
+   "mu_eff": 0.259
+  },
+  {
+   "model": "viscous",
+   "param": 0.5,
+   "v0": 1.0,
+   "stop_dist_m": 0.0995,
+   "stop_time_s": 0.465,
+   "truncated": false,
+   "mu_eff": 0.512
+  },
+  {
+   "model": "viscous",
+   "param": 0.5,
+   "v0": 1.5,
+   "stop_dist_m": 0.1024,
+   "stop_time_s": 0.325,
+   "truncated": false,
+   "mu_eff": 1.12
+  },
+  {
+   "model": "viscous",
+   "param": 0.1,
+   "v0": 0.5,
+   "stop_dist_m": 0.0953,
+   "stop_time_s": 0.908,
+   "truncated": false,
+   "mu_eff": 0.134
+  },
+  {
+   "model": "viscous",
+   "param": 0.1,
+   "v0": 1.0,
+   "stop_dist_m": 0.081,
+   "stop_time_s": 1.248,
+   "truncated": false,
+   "mu_eff": 0.629
+  },
+  {
+   "model": "viscous",
+   "param": 0.1,
+   "v0": 1.5,
+   "stop_dist_m": 0.0594,
+   "stop_time_s": 1.52,
+   "truncated": false,
+   "mu_eff": 1.931
+  },
+  {
+   "model": "viscous",
+   "param": 0.05,
+   "v0": 0.5,
+   "stop_dist_m": 0.0789,
+   "stop_time_s": 1.792,
+   "truncated": false,
+   "mu_eff": 0.162
+  },
+  {
+   "model": "viscous",
+   "param": 0.05,
+   "v0": 1.0,
+   "stop_dist_m": 0.0685,
+   "stop_time_s": 2.0,
+   "truncated": true,
+   "mu_eff": 0.744
+  },
+  {
+   "model": "viscous",
+   "param": 0.05,
+   "v0": 1.5,
+   "stop_dist_m": 0.085,
+   "stop_time_s": 2.0,
+   "truncated": true,
+   "mu_eff": 1.35
+  },
+  {
+   "model": "viscous",
+   "param": 0.02,
+   "v0": 0.5,
+   "stop_dist_m": 0.0644,
+   "stop_time_s": 2.0,
+   "truncated": true,
+   "mu_eff": 0.198
+  },
+  {
+   "model": "viscous",
+   "param": 0.02,
+   "v0": 1.0,
+   "stop_dist_m": 0.0869,
+   "stop_time_s": 2.0,
+   "truncated": true,
+   "mu_eff": 0.587
+  },
+  {
+   "model": "viscous",
+   "param": 0.02,
+   "v0": 1.5,
+   "stop_dist_m": 0.1611,
+   "stop_time_s": 1.819,
+   "truncated": false,
+   "mu_eff": 0.712
+  },
+  {
+   "model": "coulomb",
+   "param": 0.0,
+   "v0": 0.5,
+   "stop_dist_m": 0.0789,
+   "stop_time_s": 1.792,
+   "truncated": false,
+   "mu_eff": 0.162
+  },
+  {
+   "model": "coulomb",
+   "param": 0.0,
+   "v0": 1.0,
+   "stop_dist_m": 0.0685,
+   "stop_time_s": 2.0,
+   "truncated": true,
+   "mu_eff": 0.744
+  },
+  {
+   "model": "coulomb",
+   "param": 0.0,
+   "v0": 1.5,
+   "stop_dist_m": 0.085,
+   "stop_time_s": 2.0,
+   "truncated": true,
+   "mu_eff": 1.35
+  },
+  {
+   "model": "coulomb",
+   "param": 0.02,
+   "v0": 0.5,
+   "stop_dist_m": 0.1039,
+   "stop_time_s": 0.354,
+   "truncated": false,
+   "mu_eff": 0.123
+  },
+  {
+   "model": "coulomb",
+   "param": 0.02,
+   "v0": 1.0,
+   "stop_dist_m": 0.1024,
+   "stop_time_s": 0.298,
+   "truncated": false,
+   "mu_eff": 0.498
+  },
+  {
+   "model": "coulomb",
+   "param": 0.02,
+   "v0": 1.5,
+   "stop_dist_m": 0.0875,
+   "stop_time_s": 0.415,
+   "truncated": false,
+   "mu_eff": 1.31
+  },
+  {
+   "model": "coulomb",
+   "param": 0.05,
+   "v0": 0.5,
+   "stop_dist_m": 0.0949,
+   "stop_time_s": 0.398,
+   "truncated": false,
+   "mu_eff": 0.134
+  },
+  {
+   "model": "coulomb",
+   "param": 0.05,
+   "v0": 1.0,
+   "stop_dist_m": 0.1054,
+   "stop_time_s": 0.225,
+   "truncated": false,
+   "mu_eff": 0.483
+  },
+  {
+   "model": "coulomb",
+   "param": 0.05,
+   "v0": 1.5,
+   "stop_dist_m": 0.1002,
+   "stop_time_s": 0.246,
+   "truncated": false,
+   "mu_eff": 1.144
+  },
+  {
+   "model": "coulomb",
+   "param": 0.1,
+   "v0": 0.5,
+   "stop_dist_m": 0.0539,
+   "stop_time_s": 0.222,
+   "truncated": false,
+   "mu_eff": 0.236
+  },
+  {
+   "model": "coulomb",
+   "param": 0.1,
+   "v0": 1.0,
+   "stop_dist_m": 0.105,
+   "stop_time_s": 0.233,
+   "truncated": false,
+   "mu_eff": 0.485
+  },
+  {
+   "model": "coulomb",
+   "param": 0.1,
+   "v0": 1.5,
+   "stop_dist_m": 0.1057,
+   "stop_time_s": 0.181,
+   "truncated": false,
+   "mu_eff": 1.085
+  }
+ ],
+ "low_damping_caveat": "free-coast at low damping is contaminated by workspace/arm contact (short or truncated coasts); an unobstructed coast lane is needed to pin the exact realistic damping",
+ "nearest_realistic_clean_damping": {
+  "damping": 0.02,
+  "mu_eff_at_1.5": 0.712,
+  "stop_dist_at_1.5": 0.1611
+ },
+ "verdict": "AS_LOADED_COIN_DRAG_UNREALISTICALLY_STICKY"
+}
