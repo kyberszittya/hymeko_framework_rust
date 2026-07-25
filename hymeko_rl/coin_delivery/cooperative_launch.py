@@ -541,8 +541,9 @@ def launch_feasibility_certificate(rl, cfg: CooperativeConfig | None = None):
     net = np.asarray(diag["net_force"], np.float64)
     f_par, f_cross = float(net @ e_par), abs(float(net @ e_cross))
     feasible = bool(fa["feasible"] and f_par >= cfg.g3_fpar_min and diag["wrench_residual"] <= cfg.g3_residual_max)
+    margin = float(f_par - cfg.g3_fpar_min) if fa["feasible"] else -1.0   # launch-feasibility MARGIN (achievable − required)
     return {"forward_coeff": fa["coeff"], "f_parallel": round(f_par, 4), "f_cross": round(f_cross, 4),
-            "wrench_residual": diag["wrench_residual"], "feasible": feasible}
+            "wrench_residual": diag["wrench_residual"], "margin": round(margin, 4), "feasible": feasible}
 
 
 def _contact_jacobians(rl, cfg):
@@ -646,6 +647,35 @@ def straddle_directed_acquire(rl, stack, coin_xy, squeeze_axis, *, cfg: Cooperat
     return {"both_contact": contacted, "both_dwell": int(both), "straddle": strd, "cradle_certificate": cert,
             "pin_saved": (saved if keep_pin else None),
             "min_tip_left": round(float(np.linalg.norm(p_l - coin)), 4), "min_tip_right": round(float(np.linalg.norm(p_r - coin)), 4)}
+
+
+def balanced_straddle_search(rl, stack, coin_xy, *, cfg: CooperativeConfig | None = None, n_axes: int = 6):
+    """The HANDOFF-QUALITY acquisition: an ACQUIRE postcondition is entry into the cradle VIABILITY region, not merely dual
+    contact — so don't stop at the first certificate-feasible straddle. Search squeeze-axis angles and pick the cradle with
+    the best handoff to the next option, LEXICOGRAPHICALLY (not one blended reward): A1 admissible (straddle ∧ internal-force
+    certificate ∧ dual contact) → among the admissible, A2 minimum G2-normalised net wrench (closest to a null preload the
+    regulator can hold) → A3 maximum G3 launch-feasibility MARGIN. This is what gives the trust-region QP a good basin (the
+    fix for s7's deep imbalanced squeeze). Returns the best cradle env (pin kept) + its handoff metrics."""
+    cfg = cfg or CooperativeConfig()
+    best, best_key, best_env, best_saved, cands = None, None, None, None, []
+    for k in range(n_axes):
+        th = np.pi * k / n_axes                                  # squeeze axes over a half-turn (axis and −axis coincide)
+        axis = np.array([np.cos(th), np.sin(th)], np.float64)
+        env = copy.deepcopy(rl)
+        out = straddle_directed_acquire(env, stack, coin_xy, axis, cfg=cfg, keep_pin=True)
+        w = realized_coin_wrench(env)
+        cert = out["cradle_certificate"]
+        margin = launch_feasibility_certificate(env, cfg)["margin"]
+        admissible = bool(out["both_contact"] and cert["feasible"])
+        net_wrench = w["force_norm"] / cfg.g2_force_max + abs(w["torque"]) / cfg.g2_torque_max
+        cand = {"theta": round(float(th), 3), "admissible": admissible, "n_dot": out["straddle"]["n_dot"],
+                "net_wrench_norm": round(float(net_wrench), 3), "force_norm": w["force_norm"], "g3_margin": round(float(margin), 4)}
+        cands.append(cand)
+        if admissible:
+            key = (net_wrench, -margin)                          # A2 min wrench, A3 max margin
+            if best is None or key < best_key:
+                best, best_key, best_env, best_saved = cand, key, env, out["pin_saved"]
+    return {"candidates": cands, "best": best, "exists": bool(best is not None), "_best_env": best_env, "_best_saved": best_saved}
 
 
 def null_coin_wrench(rl, stack, *, cfg: CooperativeConfig | None = None, w_target=None):
