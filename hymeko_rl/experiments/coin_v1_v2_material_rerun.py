@@ -41,7 +41,7 @@ def _carry_arm(rl, gate, pi0, base, stack, fn):
     def hook(_ph, _s):
         prog["max"] = max(prog["max"], _coin_progress(r2, disk0, np.asarray(u, np.float32)))
     r2 = copy.deepcopy(rl)
-    o = fn(r2, copy.deepcopy(gate), pi0, base, stack, horizon=EVAL_H)
+    o = fn(r2, copy.deepcopy(gate), pi0, base, stack, horizon=EVAL_H, frame_hook=hook)
     return {"k6": int(o["k6"]), "acquired": int(o["acquired_contact"]), "transport_dist": round(prog["max"], 4),
             "zone_entry": int(o["entered_zone"]), "episodes": o.get("n_contact_episodes", 0),
             "ftfn": round(o["peak_contact_tangential_force"] / (o["peak_contact_normal_force"] + 1e-6), 3),
@@ -52,9 +52,9 @@ def _run_controllers(rl, gate, pi0, base, stack):
     return {
         "searched_legacy_expert": _legacy_arm(rl, gate, pi0, base, stack, slow=False),
         "C1_closed_loop": _carry_arm(rl, gate, pi0, base, stack,
-                                     lambda *a, horizon: motion_robust_carry(*a, horizon=horizon, cfg=CarryControllerConfig())),
+                                     lambda *a, horizon, frame_hook: motion_robust_carry(*a, horizon=horizon, cfg=CarryControllerConfig(), frame_hook=frame_hook)),
         "C2_intermittent": _carry_arm(rl, gate, pi0, base, stack,
-                                      lambda *a, horizon: intermittent_carry(*a, horizon=horizon, cfg=IntermittentConfig())),
+                                      lambda *a, horizon, frame_hook: intermittent_carry(*a, horizon=horizon, cfg=IntermittentConfig(), frame_hook=frame_hook)),
     }
 
 
