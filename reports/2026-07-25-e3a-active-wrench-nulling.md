@@ -43,14 +43,36 @@ light weight nulls but drops `Fn` through zero. **A soft objective cannot keep `
 are opposed near the contact boundary. (s7 nulls to 0 at every weight because its large forward force gives the solver an
 easy contact-preserving direction; s1's small wrench does not.)
 
+## ROOT CAUSE — the grasp does not straddle the coin (the real blocker)
+
+Building the hard-constraint QP (`_solve_contact_qp`, dependency-free active-set, 2 unit tests) did **not** fix it either
+— the QP also nulled ‖w‖ by contact loss. That forced the right question: *is a null preload with both tips pressing even
+geometrically possible here?* The **straddle test** answers it. For the two normal forces to cancel (net-zero preload,
+Fn > 0 on both), the tips must be on **opposite** sides of the coin: `n_L · n_R < 0` (n_i = tip→centre). Measured on the
+three balanced states:
+
+| state | frame | `n_L · n_R` | straddles? |
+|---|---|---|---|
+| s1 | zone-side | **+0.58** | no |
+| s5 | zone-side | **+0.85** | no |
+| s7 | far-side | **+0.57** | no |
+
+**All three press from the same side** (`n_L · n_R > 0`) — the normals *add*, so the net force can only reach zero by
+driving the forces to zero, i.e. **releasing contact**. That is exactly, and only, what every controller did. The E1
+search selected balanced normal *magnitude*, and E2B selected *forward-side*, but **neither guarantees the tips STRADDLE
+the coin** — and straddle is the true prerequisite for a null-preload cradle. The controllers were never the blocker; the
+acquisition geometry is.
+
 ## Honest ledger
 
 ```
 G3_SEMANTICS_CORRECTED_TO_INCREMENTAL                  PASS (s7 G3-feasible at the nulled state)
 ACTIVE_WRENCH_NULLING_MECHANISM_DEMONSTRATED           PASS (‖w‖ reducible; s1 → 0.025 N with G3 held, transiently)
 SOFT_CONSTRAINT_CONTROL_CONVERGES                      FAIL (contact-hold vs null is an intrinsic soft trade-off)
-HARD_CONSTRAINT_QP_REQUIRED                            ESTABLISHED
-CERTIFIED_G1∧G2∧G3_CRADLE                              OPEN (needs the QP)
+HARD_CONSTRAINT_QP_BUILT                               PASS (dependency-free active-set; 2 unit tests)
+HARD_QP_ALSO_NULLS_BY_CONTACT_LOSS                     ESTABLISHED
+STRADDLE_IS_THE_NULL-PRELOAD_PREREQUISITE              ESTABLISHED (n_L·n_R > 0 on all 3 → same-side, cannot cancel)
+CERTIFIED_G1∧G2∧G3_CRADLE                              OPEN (needs a STRADDLING acquisition, not a better controller)
 ```
 
 ## Claims / non-claims
@@ -62,16 +84,21 @@ wrench (demonstrated weight sweep: 400 holds contact but ‖w‖ stays 0.41; ≤
 **NOT claimed:** that no controller can reach a certified G1∧G2∧G3 cradle (a hard-constraint QP is untested); that the QP
 will succeed (it is the principled next attempt, not a proven result). Gains are hand-set, not metric-optimised.
 
-## Exact next rung (decision required)
+## Exact next rung — a STRADDLING acquisition (the blocker is upstream, not the controller)
 
-- **E3a v3 — hard-constraint QP.** `min_Δq ‖w_coin(Δq)‖² + λ‖Δq‖²` s.t. **`Fn_i + J_{Fn}·Δq ≥ F_min`** (dual contact as a
-  hard inequality), `|Ft_i| ≤ μ Fn_i`, Δq bounded, incremental forward feasibility > ε. Then the INSERT mode is the *same*
-  controller with `w* = [F∥*·e_par ; 0]` — a synchronised cooperative push — giving the canonical skill
-  `ACQUIRE → NULL PRELOAD → SYNCHRONISED INSERT → RELEASE → B1 → SETTLE` (the `w_target` argument of `null_coin_wrench` is
-  already wired for this). Then E3b drift-free unpin, E3c cooperative insertion on the mobile coin, E3d composition.
-- **§1 dependency decision:** the QP wants a solver. `scipy` 1.17.1 is installed (transitively) but is not an explicit
-  project dependency, so adopting `scipy.optimize` in the core algorithm path is a §1 call — **or** I implement a small
-  dependency-free active-set QP in pure numpy. Awaiting your preference before building E3a v3.
+The hard-QP controller is built and correct; the wrench-null / insert machinery (`null_coin_wrench` with the `w_target`
+argument for cooperative insertion), the incremental G3, and the `contact_straddle` diagnostic are all in place. What is
+missing is an acquisition that seats the two tips **on opposite sides of the coin** (`n_L · n_R < 0`). Concretely:
+
+- **STRADDLE-first acquisition.** Add straddle (`n_L · n_R < 0`, ideally `< −0.5`) as a hard gate to the candidate search
+  (a cheap geometric pre-filter, before G1/G2/G3), and drive each arm to a target contact point on the coin's *opposite*
+  side (left tip to `−e_cross` side, right tip to `+e_cross` side, about the desired squeeze axis). Then the null-preload
+  QP has a feasible net-zero squeeze to converge to, and the incremental-forward insert (`w* = [F∥·e_par; 0]`) is the
+  cooperative push.
+- **Embodiment question to answer first (cheap):** can the two arms *reach* opposite sides of the coin at all — is
+  `n_L · n_R < 0` achievable anywhere in the workspace, or do both arm bases force same-side approaches? A quick sweep of
+  `contact_straddle` over coin positions answers whether a straddling cradle is reachable before any controller work.
+- Then E3 (null → insert → unpin → B1 → settle) on the straddling cradle. O3 paused.
 
 ---
 

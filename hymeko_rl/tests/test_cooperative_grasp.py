@@ -4,7 +4,8 @@ produce two contact forces whose resultant is aimed along e_par at zero coin tor
 import numpy as np
 
 from hymeko_rl.coin_delivery.cooperative_launch import (
-    CooperativeConfig, GraspAllocator, TwistAllocator, _grasp_allocation, _grasp_solve, forward_feasibility)
+    CooperativeConfig, GraspAllocator, TwistAllocator, _grasp_allocation, _grasp_solve, _solve_contact_qp,
+    forward_feasibility)
 
 
 def _wrench(c, p_l, p_r, f_l, f_r):
@@ -87,6 +88,40 @@ def test_mixed_pair_feasibility_set_by_cone_geometry_not_sign():
     p_far, p_zone = np.array([-0.04, 0.0]), np.array([0.03, 0.02])
     fa = forward_feasibility(C, p_far, p_zone, E_PAR, mu=0.5)
     assert fa["feasible"] and fa["per_contact"][0] > 0          # the far-side contact carries it
+
+
+def test_straddle_geometry_null_preload_feasibility():
+    """The straddle prerequisite for a null-preload cradle: two contact normals oppose (n_L·n_R < 0) iff a net-zero squeeze
+    with both tips pressing is geometrically possible. Same-side normals (dot > 0) add and cannot cancel."""
+    from hymeko_rl.coin_delivery.cooperative_launch import _unit2
+    c = np.zeros(2)
+    # opposite sides: left tip at −x, right tip at +x → normals (+x) and (−x) oppose
+    n_l = _unit2(c - np.array([-0.04, 0.0]))
+    n_r = _unit2(c - np.array([0.04, 0.0]))
+    assert float(n_l @ n_r) < 0                                 # straddle → null preload feasible
+    # same side: both tips at −x → both normals +x, add
+    n_l2 = _unit2(c - np.array([-0.04, 0.01]))
+    n_r2 = _unit2(c - np.array([-0.04, -0.01]))
+    assert float(n_l2 @ n_r2) > 0                               # same side → cannot cancel
+
+
+def test_contact_qp_respects_hard_inequality_and_box():
+    """The E3a v3 QP: min ½ΔqᵀHΔq + gᵀΔq s.t. C·Δq ≥ d ∧ |Δq| ≤ box. The unconstrained optimum would violate the
+    inequality; the active-set solver must return a Δq that satisfies the hard constraint AND the box."""
+    hess = np.eye(4)
+    grad = np.array([1.0, 1.0, 0.0, 0.0])                        # unconstrained opt = −grad = (−1,−1,0,0)
+    c_ineq = np.array([[1.0, 0, 0, 0], [0, 1.0, 0, 0]])         # Δq0 ≥ 0.2, Δq1 ≥ 0.2 (opposes the unconstrained pull)
+    d_ineq = np.array([0.2, 0.2])
+    dq = _solve_contact_qp(hess, grad, c_ineq, d_ineq, dq_max=0.5)
+    assert np.all(c_ineq @ dq >= d_ineq - 1e-6)                 # hard inequality satisfied
+    assert np.all(np.abs(dq) <= 0.5 + 1e-9)                     # box satisfied
+
+
+def test_contact_qp_unconstrained_when_feasible():
+    """When the unconstrained optimum already satisfies the constraints, the QP returns it (clipped to the box)."""
+    hess, grad = np.eye(4), np.array([-0.1, -0.1, 0.0, 0.0])    # opt = (0.1,0.1,0,0), already ≥ 0
+    dq = _solve_contact_qp(hess, grad, np.array([[1.0, 0, 0, 0]]), np.array([0.0]), dq_max=0.5)
+    assert np.allclose(dq, [0.1, 0.1, 0.0, 0.0], atol=1e-6)
 
 
 def test_forward_feasibility_consistent_with_allocation():
