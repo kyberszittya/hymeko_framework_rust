@@ -1,0 +1,321 @@
+{
+ "contract": "BIMANUAL_ACQUISITION_CURRICULUM_V1_E0",
+ "date": "2026-07-25",
+ "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2",
+ "coast_mu": 0.179,
+ "preload_depth": 0.005,
+ "n_states": 8,
+ "clean_gate": {
+  "pen_min": 0.001,
+  "pen_max": 0.01,
+  "qdot_max": 0.45,
+  "fn_min": 0.15,
+  "fn_balance_min": 0.3
+ },
+ "contact_fingerprint": {
+  "timestep": 0.0005,
+  "coin_radius": 0.02,
+  "tip_radius": 0.02,
+  "disk_solref": [
+   0.02,
+   1.0
+  ],
+  "disk_solimp": [
+   0.9,
+   0.95,
+   0.001,
+   0.5,
+   2.0
+  ],
+  "disk_margin": 0.0,
+  "disk_gap": 0.0,
+  "disk_friction": [
+   1.0,
+   0.05,
+   0.001
+  ]
+ },
+ "E0a_clean_preload_rate": 0.125,
+ "E0b_release_pass_rate": 0.0,
+ "E0c_directed_by_allocator": {
+  "A0_twist": 0,
+  "A2_grasp": 0
+ },
+ "E0c_best_allocator": "A0_twist",
+ "E0c_directed_rate": 0.0,
+ "E0a_verdict": "CLEAN_BOUNDED_PRELOAD_NOT_YET_ESTABLISHED",
+ "E0b_verdict": "RELEASE_ONLY_SANITY_FAIL_SPRING_RESIDUE",
+ "E0c_verdict": "COOPERATIVE_FORCE_ALLOCATION_NOT_YET_TARGET_DIRECTED",
+ "rows": [
+  {
+   "state": 0,
+   "v_target": 0.577,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 1,
+   "v_target": 0.584,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 2,
+   "v_target": 0.515,
+   "static_two_reachable": true,
+   "E0a_acquired": true,
+   "E0a_clean": false,
+   "preload": {
+    "fn_left": 2.021,
+    "fn_right": 0.0,
+    "ft_left": 0.621,
+    "ft_right": 0.0,
+    "fn_balance": 0.0,
+    "penetration_left": -0.0076,
+    "penetration_right": -0.0011,
+    "qdot_prerelease": 0.248,
+    "torque_saturated": false,
+    "both_contact_dwell": 12,
+    "clean": false
+   },
+   "E0b_release": {
+    "coin_peak_speed": 0.481,
+    "coin_displacement": 0.1132,
+    "jumped": true
+   },
+   "A0_twist": {
+    "both_tips_contact": 1,
+    "both_contact_frames": 28,
+    "peak_v_parallel": 0.282,
+    "cross_ratio": 0.964,
+    "peak_omega": 0.125,
+    "peak_joint_vel": 2.14,
+    "directed": false
+   },
+   "A2_grasp": {
+    "both_tips_contact": 1,
+    "both_contact_frames": 13,
+    "peak_v_parallel": 0.571,
+    "cross_ratio": 0.161,
+    "peak_omega": 0.095,
+    "peak_joint_vel": 2.03,
+    "directed": false
+   }
+  },
+  {
+   "state": 3,
+   "v_target": 0.464,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 4,
+   "v_target": 0.566,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 5,
+   "v_target": 0.613,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 6,
+   "v_target": 0.548,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 7,
+   "v_target": 0.722,
+   "static_two_reachable": true,
+   "E0a_acquired": true,
+   "E0a_clean": true,
+   "preload": {
+    "fn_left": 0.859,
+    "fn_right": 1.244,
+    "ft_left": 0.96,
+    "ft_right": 0.003,
+    "fn_balance": 0.69,
+    "penetration_left": -0.001,
+    "penetration_right": -0.005,
+    "qdot_prerelease": 0.347,
+    "torque_saturated": false,
+    "both_contact_dwell": 12,
+    "clean": true
+   },
+   "E0b_release": {
+    "coin_peak_speed": 0.248,
+    "coin_displacement": 0.0258,
+    "jumped": true
+   },
+   "A0_twist": {
+    "both_tips_contact": 1,
+    "both_contact_frames": 1,
+    "peak_v_parallel": 0.52,
+    "cross_ratio": 0.634,
+    "peak_omega": 0.011,
+    "peak_joint_vel": 1.53,
+    "directed": false
+   },
+   "A2_grasp": {
+    "both_tips_contact": 1,
+    "both_contact_frames": 67,
+    "peak_v_parallel": 0.299,
+    "cross_ratio": 1.883,
+    "peak_omega": 0.631,
+    "peak_joint_vel": 1.4,
+    "directed": false
+   }
+  }
+ ],
+ "teacher_records": [
+  {
+   "state": 0,
+   "v_target": 0.577,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 1,
+   "v_target": 0.584,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 2,
+   "v_target": 0.515,
+   "static_two_reachable": true,
+   "E0a_acquired": true,
+   "E0a_clean": false,
+   "preload": {
+    "fn_left": 2.021,
+    "fn_right": 0.0,
+    "ft_left": 0.621,
+    "ft_right": 0.0,
+    "fn_balance": 0.0,
+    "penetration_left": -0.0076,
+    "penetration_right": -0.0011,
+    "qdot_prerelease": 0.248,
+    "torque_saturated": false,
+    "both_contact_dwell": 12,
+    "clean": false
+   },
+   "E0b_release": {
+    "coin_peak_speed": 0.481,
+    "coin_displacement": 0.1132,
+    "jumped": true
+   },
+   "A0_twist": {
+    "both_tips_contact": 1,
+    "both_contact_frames": 28,
+    "peak_v_parallel": 0.282,
+    "cross_ratio": 0.964,
+    "peak_omega": 0.125,
+    "peak_joint_vel": 2.14,
+    "directed": false
+   },
+   "A2_grasp": {
+    "both_tips_contact": 1,
+    "both_contact_frames": 13,
+    "peak_v_parallel": 0.571,
+    "cross_ratio": 0.161,
+    "peak_omega": 0.095,
+    "peak_joint_vel": 2.03,
+    "directed": false
+   }
+  },
+  {
+   "state": 3,
+   "v_target": 0.464,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 4,
+   "v_target": 0.566,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 5,
+   "v_target": 0.613,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 6,
+   "v_target": 0.548,
+   "static_two_reachable": true,
+   "E0a_acquired": false,
+   "E0a_clean": false,
+   "preload": null
+  },
+  {
+   "state": 7,
+   "v_target": 0.722,
+   "static_two_reachable": true,
+   "E0a_acquired": true,
+   "E0a_clean": true,
+   "preload": {
+    "fn_left": 0.859,
+    "fn_right": 1.244,
+    "ft_left": 0.96,
+    "ft_right": 0.003,
+    "fn_balance": 0.69,
+    "penetration_left": -0.001,
+    "penetration_right": -0.005,
+    "qdot_prerelease": 0.347,
+    "torque_saturated": false,
+    "both_contact_dwell": 12,
+    "clean": true
+   },
+   "E0b_release": {
+    "coin_peak_speed": 0.248,
+    "coin_displacement": 0.0258,
+    "jumped": true
+   },
+   "A0_twist": {
+    "both_tips_contact": 1,
+    "both_contact_frames": 1,
+    "peak_v_parallel": 0.52,
+    "cross_ratio": 0.634,
+    "peak_omega": 0.011,
+    "peak_joint_vel": 1.53,
+    "directed": false
+   },
+   "A2_grasp": {
+    "both_tips_contact": 1,
+    "both_contact_frames": 67,
+    "peak_v_parallel": 0.299,
+    "cross_ratio": 1.883,
+    "peak_omega": 0.631,
+    "peak_joint_vel": 1.4,
+    "directed": false
+   }
+  }
+ ]
+}

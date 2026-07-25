@@ -36,11 +36,28 @@ class CooperativeConfig:
     launch_gain: float = 0.06
     lam: float = 0.06
     w_omega: float = 3.0
+    grasp_lam: float = 0.05            # A2: Tikhonov damping on the grasp-matrix force solve
     replan_every: int = 2
     reach_steps: int = 90
     contact_tol: float = 0.03          # m — tip within this of the coin centre counts as reach-capable
     probe_mag: float = 2.0
     probe_steps: int = 3
+    preload_depth: float = 0.005       # m of surface overlap the tips COMMAND — a BOUNDED solid preload (not the coin
+    #                                    centre, which is unreachable and marches the arm in until the torque saturates)
+    approach_gain: float = 0.05        # rad/step — per-arm distance-servo gain in E0a (a fixed 0.10 step overshot the thin
+    #                                    contact margin and buried the tip; the servo scales the step by the reach error)
+    servo_scale: float = 0.02          # m — reach error that saturates the servo step (finer control near the setpoint)
+    acquire_dwell: int = 12            # frames of stable in-band co-contact required before the preload counts as acquired
+    settle_qdot: float = 0.45          # rad/s — gate above the ~0.33 CONTACT limit-cycle floor (simulator-calibrated: the
+    #                                    tips vibrate against the near-rigid damped coin; E0b release-sanity is the physical
+    #                                    backstop that stored energy is not launching the coin, not this joint-speed gate)
+    settle_frames: int = 60            # extra frames the servo may run to reach a stable in-band settled co-contact
+    # --- clean-preload gate (FROZEN before the run; a release is only honest from a preload that passes all of these) ---
+    clean_pen_min: float = 0.001       # m — min |surface overlap| (a real preload, not a marginal flickering touch)
+    clean_pen_max: float = 0.010       # m — max |surface overlap| (bounded, no burial); accepted band ≠ commanded depth
+    clean_qdot_max: float = 0.45       # rad/s — max pre-release joint speed (calibrated to the contact floor; see settle_qdot)
+    clean_fn_min: float = 0.15         # N — each tip must carry at least this normal force (both really in contact)
+    clean_fn_balance_min: float = 0.30  # min(Fn_l,Fn_r)/max — the two normals are balanced, not one-sided
 
 
 def _tip_xy(rl, g):
@@ -63,6 +80,24 @@ def _arm_dir(rl, g, dofs, target, cfg):
     return (g2 / n).astype(np.float32) if n > 1e-6 else np.zeros(4, np.float32)
 
 
+def _coin_radius(rl):
+    """The coin (disk) geom radius read from the MuJoCo model — never hardcoded, so a different coin geometry cannot
+    reintroduce the centre-vs-surface preload bug."""
+    dj = mujoco.mj_name2id(rl.inner.model, mujoco.mjtObj.mjOBJ_GEOM, "disk")
+    return float(rl.inner.model.geom_size[dj][0])
+
+
+def _surface_target(rl, g, coin, cfg):
+    """The tip-CENTRE position that gives a bounded ``preload_depth`` surface overlap on this tip's side. Two spheres/disks
+    touch when their centre distance drops below (r_coin + r_tip) — BOTH radii read from the model; aiming the tip centre
+    at that minus ``preload_depth`` makes the close self-limit at a light balanced contact (the FD gradient vanishes at the
+    target, so the arm stops marching in instead of burying the tip, which ignoring r_tip did, until the torque saturates)."""
+    r_tip = float(rl.inner.model.geom_size[g][0])
+    v = _tip_xy(rl, g) - np.asarray(coin, np.float32)
+    reach = _coin_radius(rl) + r_tip - cfg.preload_depth
+    return (np.asarray(coin, np.float32) + reach * (v / (float(np.linalg.norm(v)) + 1e-9))).astype(np.float32)
+
+
 def place_coin_at(rl, xy):
     """EASY-SCENARIO helper: move the coin to a chosen xy (e.g. the two-arm-reachable tip midpoint), zero its velocity."""
     adr = int(rl.inner._disk_x_adr)
@@ -79,9 +114,61 @@ def tip_midpoint(rl):
     return (0.5 * (d.geom_xpos[gl][:2] + d.geom_xpos[gr][:2])).astype(np.float32)
 
 
+def _pin_coin(rl, on: bool, saved=None):
+    """Kinematically FIX the coin (huge slide damping) so a reachability probe measures GEOMETRIC reach, not whether the
+    arm shoves a mobile coin away. Returns the saved damping to restore. STATIC_GEOMETRIC_REACHABILITY."""
+    m = rl.inner.model
+    adr = int(rl.inner._disk_x_adr)
+    if on:
+        saved = m.dof_damping[adr:adr + 3].copy()
+        m.dof_damping[adr:adr + 3] = 1e5
+        return saved
+    m.dof_damping[adr:adr + 3] = saved
+    return None
+
+
+def static_reachability_probe(rl, stack, cfg: CooperativeConfig | None = None):
+    """STATIC_GEOMETRIC_REACHABILITY: pin the coin, then drive each arm alone to the coin's contact arc — can the tip
+    reach it geometrically (min tip-coin ≤ contact_tol), independent of the mobile-coin dynamics? The honest geometric
+    verdict (vs the dynamic ``reachability_probe`` which chases a mobile coin)."""
+    cfg = cfg or CooperativeConfig()
+    out = {}
+    for side, g_name, dofs in (("left", "fingertip_left", _LEFT_DOF), ("right", "fingertip_right", _RIGHT_DOF)):
+        r = copy.deepcopy(rl)
+        m, d = r.inner.model, r.inner.data
+        m.dof_armature[:4], m.dof_damping[:4], m.dof_frictionloss[:4] = stack.armature, stack.damping, stack.friction
+        saved = _pin_coin(r, True)
+        lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
+        g = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, g_name)
+
+        def _gcb(_mo, dt, _gov=stack.gov):
+            dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], _gov)
+        mujoco.set_mjcb_control(_gcb)
+        prev, touched, min_d = None, 0, 9.0
+        try:
+            for _ in range(cfg.reach_steps):
+                coin = np.asarray(r.inner._planar_metrics.disk_pos, np.float32)[:2]
+                min_d = min(min_d, float(np.linalg.norm(_tip_xy(r, g) - coin)))
+                v = _tip_xy(r, g) - coin
+                tgt = coin + cfg.coin_radius * (v / (np.linalg.norm(v) + 1e-9))
+                delta = cfg.close_gain * _arm_dir(r, g, dofs, tgt, cfg)
+                a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), d.qpos[:4] + delta, stack, prev, lo, hi)
+                prev = a
+                step_ablation(r, np.asarray(a, np.float32), "A")
+                c = r.inner._planar_metrics.left_contact if side == "left" else r.inner._planar_metrics.right_contact
+                touched += int(bool(c))
+        finally:
+            mujoco.set_mjcb_control(None)
+            _pin_coin(r, False, saved)
+        out[side] = {"reachable": bool(touched > 0 or min_d <= cfg.contact_tol), "contact_frames": touched,
+                     "min_tip_coin": round(min_d, 4)}
+    out["two_contact_reachable"] = bool(out["left"]["reachable"] and out["right"]["reachable"])
+    return out
+
+
 def reachability_probe(rl, stack, cfg: CooperativeConfig | None = None):
-    """Per-arm reachability: drive EACH arm alone toward the coin and report whether it can contact / how near it gets.
-    Delivery-independent — the relational fact (which arm can reach the coin from this state)."""
+    """DYNAMIC_ACQUISITION_REACHABILITY: drive EACH arm alone toward the (MOBILE) coin — can it contact given the coin can
+    be pushed away. Complements ``static_reachability_probe`` (geometric reach)."""
     cfg = cfg or CooperativeConfig()
     out = {}
     for side, g_name, dofs in (("left", "fingertip_left", _LEFT_DOF), ("right", "fingertip_right", _RIGHT_DOF)):
@@ -114,10 +201,224 @@ def reachability_probe(rl, stack, cfg: CooperativeConfig | None = None):
     return out
 
 
-def cooperative_launch_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CooperativeConfig | None = None):
-    """Decoupled synchronized close (both arms → coin centre) then cooperative twist allocation. Returns launch quality +
-    both-tips contact/simultaneity + force-line-miss ω. K6/zone are outputs."""
+def _preload_sanity(rl, prev_tau, lo, hi, cfg, dwell):
+    """The E0 clean-preload gate: a release is only honest from a BOUNDED, BALANCED, SETTLED bilateral preload — never a
+    spring-load explosion accumulated against the pin. Records per-tip normal/tangential force, normal balance,
+    penetration, the settled joint speed, torque saturation and the both-contact dwell; ``clean`` gates ALL of the frozen
+    ``cfg.clean_*`` thresholds. (Feature history: an earlier centre-target close buried the tips 18–34 mm — deeper than
+    the coin — so the positive launch velocity was a pin-release artifact; this gate exists to reject exactly that.)"""
+    tc = _tip_contacts(rl)
+    fnl, fnr = tc["left"][0], tc["right"][0]
+    prev = np.asarray(prev_tau, np.float64) if prev_tau is not None else np.zeros(4)
+    p = {"fn_left": round(fnl, 3), "fn_right": round(fnr, 3), "ft_left": round(tc["left"][1], 3),
+         "ft_right": round(tc["right"][1], 3), "fn_balance": round(min(fnl, fnr) / max(fnl, fnr, 1e-6), 3),
+         "penetration_left": round(tc["left"][2], 4), "penetration_right": round(tc["right"][2], 4),
+         "qdot_prerelease": round(float(np.max(np.abs(rl.inner.data.qvel[:4]))), 3),
+         "torque_saturated": bool(np.any((prev <= lo + 1e-6) | (prev >= hi - 1e-6))), "both_contact_dwell": int(dwell)}
+    pens = (p["penetration_left"], p["penetration_right"])
+    in_band = all(-cfg.clean_pen_max <= pen <= -cfg.clean_pen_min for pen in pens)   # accepted band, not exact depth
+    p["clean"] = bool(p["qdot_prerelease"] <= cfg.clean_qdot_max and not p["torque_saturated"]
+                      and p["fn_balance"] >= cfg.clean_fn_balance_min and fnl >= cfg.clean_fn_min and fnr >= cfg.clean_fn_min
+                      and in_band)
+    return p
+
+
+def release_pin(rl, saved):
+    """Undo the E0a soft pin — restore the coin's slide damping so a subsequent release-only or launch stage runs on a
+    genuinely FREE coin. Pairs with the ``saved`` handle returned by ``acquire_clean_preload``."""
+    _pin_coin(rl, False, saved)
+
+
+def acquire_clean_preload(rl, stack, *, cfg: CooperativeConfig | None = None, acquire_cap: int = 160):
+    """E0a — SOFT-PINNED, servo-held bilateral acquisition. Place the coin at the two-arm-reachable midpoint, hold it with a
+    heavy slide-DAMPING pin (not a hard kinematic clamp — the clamp is an infinitely stiff wall that traps the tips in a
+    qdot limit cycle and never settles), then servo EACH arm's tip-centre distance to its model-read light-preload setpoint
+    (r_coin + r_tip − δ). The servo command vanishes at the setpoint, so a bounded, balanced, low-drift co-contact holds
+    stably. NO launch command is issued. Leaves the sim at the settled pinned preload and returns the saved damping so a
+    later stage can ``release_pin`` onto a free coin. The clean-preload sanity gates the frozen ``cfg.clean_*`` thresholds."""
     cfg = cfg or CooperativeConfig()
+    place_coin_at(rl, tip_midpoint(rl))
+    m, d = rl.inner.model, rl.inner.data
+    m.dof_armature[:4], m.dof_damping[:4], m.dof_frictionloss[:4] = stack.armature, stack.damping, stack.friction
+    lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    reach = {side: _coin_radius(rl) + float(m.geom_size[g][0]) - cfg.preload_depth for side, g in (("left", gl), ("right", gr))}
+    arms = (("left", gl, _LEFT_DOF), ("right", gr, _RIGHT_DOF))
+    adr = int(rl.inner._disk_x_adr)
+    coin0 = d.qpos[adr:adr + 2].copy()
+    saved = _pin_coin(rl, True)                                   # SOFT damping pin — coin held, but can yield micro-scale so tips settle
+
+    def _in_band(pen):                                           # pen ≤ 0 (overlap); accept a bounded light preload
+        return -cfg.clean_pen_max <= pen <= -cfg.clean_pen_min
+
+    def _gcb(_mo, dt):
+        dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
+    mujoco.set_mjcb_control(_gcb)
+    peak_joint, prev_tau, acquired, dwell = 0.0, None, False, 0
+    try:
+        contact_of = {"left": lambda mp: mp.left_contact, "right": lambda mp: mp.right_contact}
+        for _ in range(acquire_cap + cfg.settle_frames):
+            coin = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2]
+            mpl = rl.inner._planar_metrics
+            tc = _tip_contacts(rl)
+            target = d.qpos[:4].copy()
+            for side, g, dofs in arms:
+                inward = _arm_dir(rl, g, dofs, coin, cfg)
+                if contact_of[side](mpl):                         # in contact: servo the TRUE penetration to δ (equalises the
+                    err = cfg.preload_depth + tc[side][2]         # two normals → balanced preload; con.dist ≤ 0, want = −δ
+                else:                                             # not yet touching: close the geometric gap to the setpoint
+                    err = float(np.linalg.norm(_tip_xy(rl, g) - coin)) - reach[side]
+                gstep = cfg.approach_gain * float(np.clip(err / cfg.servo_scale, -1.0, 1.0))
+                for j in dofs:
+                    target[j] = d.qpos[j] + gstep * inward[j]
+            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), target, stack, prev_tau, lo, hi)
+            prev_tau = a
+            step_ablation(rl, np.asarray(a, np.float32), "A")     # coin held by damping, NOT hard-clamped
+            qdot = float(np.max(np.abs(d.qvel[:4])))
+            peak_joint = max(peak_joint, qdot)
+            mpl = rl.inner._planar_metrics
+            tc = _tip_contacts(rl)
+            both_in_band = bool(mpl.left_contact and mpl.right_contact and _in_band(tc["left"][2]) and _in_band(tc["right"][2]))
+            dwell = dwell + 1 if both_in_band else 0
+            if dwell >= cfg.acquire_dwell and qdot < cfg.settle_qdot:
+                acquired = True
+                break
+    finally:
+        preload = _preload_sanity(rl, prev_tau, lo, hi, cfg, dwell) if acquired else None
+        acq_disp = float(np.linalg.norm(d.qpos[adr:adr + 2] - coin0))
+        mujoco.set_mjcb_control(None)
+    return {"acquired": acquired, "clean": bool(acquired and preload and preload["clean"]),
+            "acquisition_displacement": round(acq_disp, 4), "peak_joint_vel": round(peak_joint, 2), "preload": preload,
+            "pin_saved": saved}
+
+
+def release_only_sanity(rl, stack, saved, *, cfg: CooperativeConfig | None = None, frames: int = 40):
+    """E0b — release-only sanity. From the settled preload (call ``acquire_clean_preload`` first), RELEASE the pin (restore
+    the coin's damping via ``saved``) and step with the arms HOLDING position (NO launch command). A genuinely clean
+    preload must NOT fling the coin: report the peak coin speed and net displacement. This directly rules out a residual
+    spring-release exploit before any directed launch is credited. ``jumped`` = the coin moved more than a bounded tol."""
+    cfg = cfg or CooperativeConfig()
+    release_pin(rl, saved)                                        # genuine free coin — the pin is OFF for the sanity check
+    m, d = rl.inner.model, rl.inner.data
+    lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
+    hold = d.qpos[:4].copy()
+    disk0 = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].copy()
+
+    def _gcb(_mo, dt):
+        dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
+    mujoco.set_mjcb_control(_gcb)
+    peak_speed, prev_tau = 0.0, None
+    try:
+        for _ in range(frames):
+            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), hold, stack, prev_tau, lo, hi)  # HOLD, no launch
+            prev_tau = a
+            step_ablation(rl, np.asarray(a, np.float32), "A")                # coin FREE (no clamp) — genuine release
+            peak_speed = max(peak_speed, float(np.linalg.norm(rl.inner._planar_metrics.disk_vel[:2])))
+    finally:
+        mujoco.set_mjcb_control(None)
+    disp = float(np.linalg.norm(np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2] - disk0))
+    return {"coin_peak_speed": round(peak_speed, 3), "coin_displacement": round(disp, 4),
+            "jumped": bool(peak_speed > cfg.settle_qdot or disp > 0.01)}
+
+
+def _tip_contacts(rl):
+    """Per-tip peak (normal force, tangential force, min penetration depth) vs the coin THIS step (MuJoCo contact frame).
+    Feeds the E0 pre-release sanity gate: the positive launch velocity must come from a BOUNDED preload, not from a
+    spring-load explosion accumulated against the hard pin (large |penetration| + saturated torque)."""
+    m, d = rl.inner.model, rl.inner.data
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    dj = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "disk")
+    acc = {gl: [0.0, 0.0, 0.0], gr: [0.0, 0.0, 0.0]}
+    f = np.zeros(6, np.float64)
+    for ci in range(d.ncon):
+        con = d.contact[ci]
+        pair = (con.geom1, con.geom2)
+        if dj not in pair:
+            continue
+        other = pair[0] if pair[1] == dj else pair[1]
+        if other not in acc:
+            continue
+        mujoco.mj_contactForce(m, d, ci, f)
+        acc[other][0] = max(acc[other][0], abs(float(f[0])))
+        acc[other][1] = max(acc[other][1], float(np.hypot(f[1], f[2])))
+        acc[other][2] = min(acc[other][2], float(con.dist))
+    return {"left": tuple(acc[gl]), "right": tuple(acc[gr])}
+
+
+def _grasp_allocation(c, p_l, p_r, e_par, mu, lam, f_par=1.0):
+    """A2 resultant-FORCE allocation over two contacts. Each contact i has a LOCAL frame (A3): normal nᵢ = tip→centre,
+    tangent tᵢ ⊥ nᵢ. The 3×4 grasp matrix G maps [Fn_L,Ft_L,Fn_R,Ft_R] to the coin wrench [Fx,Fy,τ]. Solve
+    min‖G f − w*‖² + λ‖f‖² with w* = [f_par·e_par ; 0] (aim the resultant along e_par, ZERO torque), then project onto the
+    friction cone Fn ≥ 0 ∧ |Ft| ≤ μ·Fn (A1 keeps the two normals balanced). Returns the two WORLD contact forces."""
+    cols, frames = [], []
+    for p in (p_l, p_r):
+        r = (p - c).astype(np.float64)
+        n = _unit2((c - p).astype(np.float64))
+        tang = np.array([-n[1], n[0]], np.float64)
+        frames.append((n, tang))
+        cols.append([n[0], n[1], r[0] * n[1] - r[1] * n[0]])
+        cols.append([tang[0], tang[1], r[0] * tang[1] - r[1] * tang[0]])
+    G = np.array(cols, np.float64).T
+    w = np.array([f_par * e_par[0], f_par * e_par[1], 0.0], np.float64)
+    f = np.linalg.solve(G.T @ G + lam * np.eye(4), G.T @ w)
+    forces = []
+    for k, (n, tang) in zip((0, 2), frames):
+        fn = max(0.0, float(f[k]))
+        ft = float(np.clip(f[k + 1], -mu * fn, mu * fn))
+        forces.append(fn * n + ft * tang)
+    return forces[0], forces[1]
+
+
+class TwistAllocator:
+    """A0 baseline (the 0/8 reference): coin-twist Jacobian → desired object twist [v_target·e_par ; 0], DLS solve with a
+    zero-spin weight. Resultant-TWIST allocation (velocity level)."""
+
+    def __init__(self, cfg: CooperativeConfig):
+        self.cfg = cfg
+        self._J = None
+        self._t = 0
+
+    def __call__(self, rl, e_par, e_cross, v_target):
+        cfg = self.cfg
+        if self._J is None or self._t % cfg.replan_every == 0:
+            self._J = _coin_twist_jacobian(rl, cfg)
+        self._t += 1
+        w = np.diag([1.0, 1.0, cfg.w_omega])
+        desired = np.array([v_target * e_par[0], v_target * e_par[1], 0.0], np.float64) - _coin_twist(rl)
+        return self._J.T @ np.linalg.solve((w @ self._J) @ self._J.T + cfg.lam ** 2 * np.eye(3), w @ desired)
+
+
+class GraspAllocator:
+    """A2 resultant-FORCE allocation (force level). Build the grasp matrix from the two live contact points, solve for the
+    two contact forces that produce a zero-torque resultant along e_par (``_grasp_allocation``), then drive each tip ALONG
+    its allocated world force — scaled by the relative force magnitude so the A1 normal balance is realised on the arms."""
+
+    def __init__(self, cfg: CooperativeConfig):
+        self.cfg = cfg
+
+    def __call__(self, rl, e_par, e_cross, v_target):
+        cfg = self.cfg
+        m = rl.inner.model
+        gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+        gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+        c = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].astype(np.float64)
+        p_l, p_r = _tip_xy(rl, gl).astype(np.float64), _tip_xy(rl, gr).astype(np.float64)
+        f_l, f_r = _grasp_allocation(c, p_l, p_r, np.asarray(e_par, np.float64), cfg.coast_mu, cfg.grasp_lam)
+        fmax = max(float(np.linalg.norm(f_l)), float(np.linalg.norm(f_r)), 1e-6)
+        dl = (float(np.linalg.norm(f_l)) / fmax) * _arm_dir(rl, gl, _LEFT_DOF, (p_l + cfg.coin_radius * _unit2(f_l)).astype(np.float32), cfg)
+        dr = (float(np.linalg.norm(f_r)) / fmax) * _arm_dir(rl, gr, _RIGHT_DOF, (p_r + cfg.coin_radius * _unit2(f_r)).astype(np.float32), cfg)
+        return (dl + dr).astype(np.float64)
+
+
+def cooperative_launch_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CooperativeConfig | None = None,
+                             allocator=None):
+    """Decoupled synchronized close (both arms → coin centre) then a cooperative RESULTANT allocation (Strategy:
+    ``TwistAllocator`` A0 by default, or ``GraspAllocator`` A2). Returns launch quality + both-tips contact/simultaneity +
+    force-line-miss ω. K6/zone are outputs."""
+    cfg = cfg or CooperativeConfig()
+    allocator = allocator or TwistAllocator(cfg)
     m, d = rl.inner.model, rl.inner.data
     m.dof_armature[:4], m.dof_damping[:4], m.dof_frictionloss[:4] = stack.armature, stack.damping, stack.friction
     lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
@@ -131,9 +432,8 @@ def cooperative_launch_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: C
         dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
     mujoco.set_mjcb_control(_gcb)
     disk0 = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].copy()
-    peak_vp, peak_vc, peak_om, peak_joint, both_frames, both_seen, prev_tau, J = 0.0, 0.0, 0.0, 0.0, 0, 0, None, None
+    peak_vp, peak_vc, peak_om, peak_joint, both_frames, both_seen, prev_tau = 0.0, 0.0, 0.0, 0.0, 0, 0, None
     md, touched, t = int(rl._strict), rl._touched, 0
-    W = np.diag([1.0, 1.0, cfg.w_omega])
     try:
         for t in range(horizon):
             mpl = rl.inner._planar_metrics
@@ -148,13 +448,10 @@ def cooperative_launch_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: C
                 dr = _arm_dir(rl, gr, _RIGHT_DOF, coin, cfg)
                 a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), d.qpos[:4] + cfg.close_gain * (dl + dr), stack, prev_tau, lo, hi)
                 prev_tau = a
-            else:                                                 # cooperative twist allocation: translate +e_par, ω→0
+            else:                                                 # cooperative resultant allocation (A0 twist / A2 grasp)
                 both_frames += 1
                 both_seen = 1
-                if J is None or t % cfg.replan_every == 0:
-                    J = _coin_twist_jacobian(rl, cfg)
-                desired = np.array([v_target * e_par[0], v_target * e_par[1], 0.0], np.float64) - _coin_twist(rl)
-                dq = J.T @ np.linalg.solve((W @ J) @ J.T + cfg.lam ** 2 * np.eye(3), W @ desired)
+                dq = allocator(rl, e_par, e_cross, v_target)
                 a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), d.qpos[:4] + cfg.launch_gain * _unit2(dq), stack, prev_tau, lo, hi)
                 prev_tau = a
             _r, term, trunc = step_ablation(rl, np.asarray(a, np.float32), "A")
