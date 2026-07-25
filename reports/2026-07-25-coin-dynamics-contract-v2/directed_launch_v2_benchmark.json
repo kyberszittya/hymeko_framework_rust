@@ -1,0 +1,375 @@
+{
+ "contract": "TARGET_DIRECTED_LAUNCH_V2",
+ "date": "2026-07-25",
+ "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2",
+ "coast_mu": 0.179,
+ "gate": {
+  "v_frac": 0.85,
+  "cross_max": 0.2,
+  "omega_max": 0.5
+ },
+ "n_states": 8,
+ "n_target_directed_by_mode": {
+  "L3_single_point": 0,
+  "L5a_two_point": 0,
+  "L5b_edge_aware": 0
+ },
+ "both_tips_contact_rate": {
+  "L5a": 0.125,
+  "L5b": 0.0
+ },
+ "mean_force_line_omega": {
+  "L5a": 0.006,
+  "L5b": 0.006
+ },
+ "n_forceline_mechanism_confirmed": 1,
+ "rows": [
+  {
+   "state": 0,
+   "v_target": 0.577,
+   "L3_single_point": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.0,
+    "cross_ratio": 0.0,
+    "signed_target_displacement": 0.0,
+    "peak_joint_vel": 2.28,
+    "directed": false
+   },
+   "L5a_two_point": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.0,
+    "cross_ratio": 0.0,
+    "peak_omega": 0.0,
+    "both_tips_contact": 0,
+    "signed_target_displacement": 0.0,
+    "peak_joint_vel": 2.28,
+    "directed": false
+   },
+   "L5b_edge_aware": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.0,
+    "cross_ratio": 0.0,
+    "peak_omega": 0.0,
+    "both_tips_contact": 0,
+    "chosen_phi": 20.0,
+    "signed_target_displacement": 0.0,
+    "peak_joint_vel": 2.28,
+    "directed": false
+   }
+  },
+  {
+   "state": 1,
+   "v_target": 0.305,
+   "L3_single_point": {
+    "peak_v_parallel": 0.318,
+    "peak_v_cross": 0.137,
+    "cross_ratio": 0.432,
+    "signed_target_displacement": 0.0864,
+    "peak_joint_vel": 2.2,
+    "directed": false
+   },
+   "L5a_two_point": {
+    "peak_v_parallel": 0.318,
+    "peak_v_cross": 0.137,
+    "cross_ratio": 0.432,
+    "peak_omega": 0.006,
+    "both_tips_contact": 0,
+    "signed_target_displacement": 0.0864,
+    "peak_joint_vel": 2.2,
+    "directed": false
+   },
+   "L5b_edge_aware": {
+    "peak_v_parallel": 0.318,
+    "peak_v_cross": 0.137,
+    "cross_ratio": 0.432,
+    "peak_omega": 0.006,
+    "both_tips_contact": 0,
+    "chosen_phi": 50.0,
+    "signed_target_displacement": 0.0864,
+    "peak_joint_vel": 2.2,
+    "directed": false
+   }
+  },
+  {
+   "state": 2,
+   "v_target": 0.524,
+   "L3_single_point": {
+    "peak_v_parallel": 0.005,
+    "peak_v_cross": 0.15,
+    "cross_ratio": 31.268,
+    "signed_target_displacement": -0.0017,
+    "peak_joint_vel": 1.83,
+    "directed": false
+   },
+   "L5a_two_point": {
+    "peak_v_parallel": 0.005,
+    "peak_v_cross": 0.15,
+    "cross_ratio": 31.268,
+    "peak_omega": 0.011,
+    "both_tips_contact": 0,
+    "signed_target_displacement": -0.0051,
+    "peak_joint_vel": 1.98,
+    "directed": false
+   },
+   "L5b_edge_aware": {
+    "peak_v_parallel": 0.005,
+    "peak_v_cross": 0.15,
+    "cross_ratio": 31.268,
+    "peak_omega": 0.011,
+    "both_tips_contact": 0,
+    "chosen_phi": 50.0,
+    "signed_target_displacement": 0.0001,
+    "peak_joint_vel": 1.84,
+    "directed": false
+   }
+  },
+  {
+   "state": 3,
+   "v_target": 0.573,
+   "L3_single_point": {
+    "peak_v_parallel": 0.198,
+    "peak_v_cross": 0.176,
+    "cross_ratio": 0.887,
+    "signed_target_displacement": -0.0078,
+    "peak_joint_vel": 2.05,
+    "directed": false
+   },
+   "L5a_two_point": {
+    "peak_v_parallel": 0.241,
+    "peak_v_cross": 0.061,
+    "cross_ratio": 0.252,
+    "peak_omega": 0.003,
+    "both_tips_contact": 0,
+    "signed_target_displacement": 0.0489,
+    "peak_joint_vel": 2.19,
+    "directed": false
+   },
+   "L5b_edge_aware": {
+    "peak_v_parallel": 0.238,
+    "peak_v_cross": 0.055,
+    "cross_ratio": 0.231,
+    "peak_omega": 0.003,
+    "both_tips_contact": 0,
+    "chosen_phi": 30.0,
+    "signed_target_displacement": 0.0474,
+    "peak_joint_vel": 2.19,
+    "directed": false
+   }
+  },
+  {
+   "state": 4,
+   "v_target": 0.552,
+   "L3_single_point": {
+    "peak_v_parallel": 0.127,
+    "peak_v_cross": 0.171,
+    "cross_ratio": 1.345,
+    "signed_target_displacement": 0.0233,
+    "peak_joint_vel": 1.54,
+    "directed": false
+   },
+   "L5a_two_point": {
+    "peak_v_parallel": 0.078,
+    "peak_v_cross": 0.229,
+    "cross_ratio": 2.926,
+    "peak_omega": 0.009,
+    "both_tips_contact": 0,
+    "signed_target_displacement": -0.0312,
+    "peak_joint_vel": 1.72,
+    "directed": false
+   },
+   "L5b_edge_aware": {
+    "peak_v_parallel": 0.078,
+    "peak_v_cross": 0.223,
+    "cross_ratio": 2.856,
+    "peak_omega": 0.009,
+    "both_tips_contact": 0,
+    "chosen_phi": 20.0,
+    "signed_target_displacement": -0.0311,
+    "peak_joint_vel": 1.83,
+    "directed": false
+   }
+  },
+  {
+   "state": 5,
+   "v_target": 0.62,
+   "L3_single_point": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.027,
+    "cross_ratio": 27056.541,
+    "signed_target_displacement": -0.0023,
+    "peak_joint_vel": 1.2,
+    "directed": false
+   },
+   "L5a_two_point": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.034,
+    "cross_ratio": 34050.021,
+    "peak_omega": 0.002,
+    "both_tips_contact": 0,
+    "signed_target_displacement": -0.0148,
+    "peak_joint_vel": 2.08,
+    "directed": false
+   },
+   "L5b_edge_aware": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.034,
+    "cross_ratio": 34050.021,
+    "peak_omega": 0.002,
+    "both_tips_contact": 0,
+    "chosen_phi": 20.0,
+    "signed_target_displacement": -0.0148,
+    "peak_joint_vel": 2.19,
+    "directed": false
+   }
+  },
+  {
+   "state": 6,
+   "v_target": 0.499,
+   "L3_single_point": {
+    "peak_v_parallel": 0.164,
+    "peak_v_cross": 0.238,
+    "cross_ratio": 1.457,
+    "signed_target_displacement": 0.0361,
+    "peak_joint_vel": 2.21,
+    "directed": false
+   },
+   "L5a_two_point": {
+    "peak_v_parallel": 0.297,
+    "peak_v_cross": 0.198,
+    "cross_ratio": 0.668,
+    "peak_omega": 0.017,
+    "both_tips_contact": 1,
+    "signed_target_displacement": 0.1035,
+    "peak_joint_vel": 2.25,
+    "directed": false
+   },
+   "L5b_edge_aware": {
+    "peak_v_parallel": 0.3,
+    "peak_v_cross": 0.199,
+    "cross_ratio": 0.665,
+    "peak_omega": 0.017,
+    "both_tips_contact": 0,
+    "chosen_phi": 30.0,
+    "signed_target_displacement": 0.1114,
+    "peak_joint_vel": 2.19,
+    "directed": false
+   }
+  },
+  {
+   "state": 7,
+   "v_target": 0.787,
+   "L3_single_point": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.448,
+    "cross_ratio": 448221.713,
+    "signed_target_displacement": -0.0139,
+    "peak_joint_vel": 2.0,
+    "directed": false
+   },
+   "L5a_two_point": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.448,
+    "cross_ratio": 448221.713,
+    "peak_omega": 0.0,
+    "both_tips_contact": 0,
+    "signed_target_displacement": -0.0139,
+    "peak_joint_vel": 2.0,
+    "directed": false
+   },
+   "L5b_edge_aware": {
+    "peak_v_parallel": 0.0,
+    "peak_v_cross": 0.448,
+    "cross_ratio": 448221.713,
+    "peak_omega": 0.0,
+    "both_tips_contact": 0,
+    "chosen_phi": 20.0,
+    "signed_target_displacement": -0.0139,
+    "peak_joint_vel": 2.0,
+    "directed": false
+   }
+  }
+ ],
+ "teacher_records": [
+  {
+   "state": 0,
+   "v_target": 0.577,
+   "chosen_mode": "edge_aware_two_point",
+   "chosen_phi": 20.0,
+   "both_tips_contact": 0,
+   "force_line_miss_omega": 0.0,
+   "predicted_v_parallel": 0.0,
+   "predicted_v_cross": 0.0
+  },
+  {
+   "state": 1,
+   "v_target": 0.305,
+   "chosen_mode": "edge_aware_two_point",
+   "chosen_phi": 50.0,
+   "both_tips_contact": 0,
+   "force_line_miss_omega": 0.006,
+   "predicted_v_parallel": 0.318,
+   "predicted_v_cross": 0.137
+  },
+  {
+   "state": 2,
+   "v_target": 0.524,
+   "chosen_mode": "edge_aware_two_point",
+   "chosen_phi": 50.0,
+   "both_tips_contact": 0,
+   "force_line_miss_omega": 0.011,
+   "predicted_v_parallel": 0.005,
+   "predicted_v_cross": 0.15
+  },
+  {
+   "state": 3,
+   "v_target": 0.573,
+   "chosen_mode": "edge_aware_two_point",
+   "chosen_phi": 30.0,
+   "both_tips_contact": 0,
+   "force_line_miss_omega": 0.003,
+   "predicted_v_parallel": 0.238,
+   "predicted_v_cross": 0.055
+  },
+  {
+   "state": 4,
+   "v_target": 0.552,
+   "chosen_mode": "edge_aware_two_point",
+   "chosen_phi": 20.0,
+   "both_tips_contact": 0,
+   "force_line_miss_omega": 0.009,
+   "predicted_v_parallel": 0.078,
+   "predicted_v_cross": 0.223
+  },
+  {
+   "state": 5,
+   "v_target": 0.62,
+   "chosen_mode": "edge_aware_two_point",
+   "chosen_phi": 20.0,
+   "both_tips_contact": 0,
+   "force_line_miss_omega": 0.002,
+   "predicted_v_parallel": 0.0,
+   "predicted_v_cross": 0.034
+  },
+  {
+   "state": 6,
+   "v_target": 0.499,
+   "chosen_mode": "edge_aware_two_point",
+   "chosen_phi": 30.0,
+   "both_tips_contact": 0,
+   "force_line_miss_omega": 0.017,
+   "predicted_v_parallel": 0.3,
+   "predicted_v_cross": 0.199
+  },
+  {
+   "state": 7,
+   "v_target": 0.787,
+   "chosen_mode": "edge_aware_two_point",
+   "chosen_phi": 20.0,
+   "both_tips_contact": 0,
+   "force_line_miss_omega": 0.0,
+   "predicted_v_parallel": 0.0,
+   "predicted_v_cross": 0.448
+  }
+ ],
+ "verdict": "MULTI_CONTACT_DIRECTIONAL_CAPABILITY_EXISTS__REACHABILITY_OR_MODE_SELECTION_REMAINS_OPEN"
+}
