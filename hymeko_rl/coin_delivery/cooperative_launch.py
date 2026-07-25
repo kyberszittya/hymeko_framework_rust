@@ -63,6 +63,22 @@ def _arm_dir(rl, g, dofs, target, cfg):
     return (g2 / n).astype(np.float32) if n > 1e-6 else np.zeros(4, np.float32)
 
 
+def place_coin_at(rl, xy):
+    """EASY-SCENARIO helper: move the coin to a chosen xy (e.g. the two-arm-reachable tip midpoint), zero its velocity."""
+    adr = int(rl.inner._disk_x_adr)
+    rl.inner.data.qpos[adr:adr + 2] = np.asarray(xy, np.float64)
+    rl.inner.data.qvel[adr:adr + 3] = 0.0
+    mujoco.mj_forward(rl.inner.model, rl.inner.data)
+
+
+def tip_midpoint(rl):
+    """The midpoint of the two fingertips — a coin position both arms can reach (the easy scenario)."""
+    m, d = rl.inner.model, rl.inner.data
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    return (0.5 * (d.geom_xpos[gl][:2] + d.geom_xpos[gr][:2])).astype(np.float32)
+
+
 def reachability_probe(rl, stack, cfg: CooperativeConfig | None = None):
     """Per-arm reachability: drive EACH arm alone toward the coin and report whether it can contact / how near it gets.
     Delivery-independent — the relational fact (which arm can reach the coin from this state)."""
