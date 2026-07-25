@@ -1,301 +1,267 @@
 {
- "contract": "COIN_COAST_CALIBRATION",
+ "contract": "COIN_COAST_CALIBRATION_MULTIVELOCITY",
  "date": "2026-07-25",
  "gravity": 9.81,
- "as_loaded": {
-  "damping": 2.5,
-  "frictionloss": 0.0,
-  "coast_at_1.5ms": {
-   "model": "viscous",
-   "param": 2.5,
-   "v0": 1.5,
-   "stop_dist_m": 0.03,
-   "stop_time_s": 0.102,
-   "truncated": false,
-   "mu_eff": 3.828
-  }
- },
+ "method": "early average deceleration over an unobstructed CLEAN_DIST window; \u03bc_eff = decel/g",
+ "clean_dist_m": 0.05,
+ "v0s": [
+  0.2,
+  0.5,
+  1.0,
+  1.5
+ ],
  "realistic_mu_band": [
   0.05,
   0.25
  ],
- "rows": [
-  {
-   "model": "viscous",
-   "param": 2.5,
-   "v0": 0.5,
-   "stop_dist_m": 0.0099,
-   "stop_time_s": 0.08,
-   "truncated": false,
-   "mu_eff": 1.293
-  },
-  {
-   "model": "viscous",
-   "param": 2.5,
-   "v0": 1.0,
-   "stop_dist_m": 0.0199,
-   "stop_time_s": 0.094,
-   "truncated": false,
-   "mu_eff": 2.56
-  },
-  {
-   "model": "viscous",
-   "param": 2.5,
-   "v0": 1.5,
-   "stop_dist_m": 0.03,
-   "stop_time_s": 0.102,
-   "truncated": false,
-   "mu_eff": 3.828
-  },
-  {
-   "model": "viscous",
-   "param": 1.0,
-   "v0": 0.5,
-   "stop_dist_m": 0.0246,
-   "stop_time_s": 0.198,
-   "truncated": false,
-   "mu_eff": 0.517
-  },
-  {
-   "model": "viscous",
-   "param": 1.0,
-   "v0": 1.0,
-   "stop_dist_m": 0.0498,
-   "stop_time_s": 0.233,
-   "truncated": false,
-   "mu_eff": 1.024
-  },
-  {
-   "model": "viscous",
-   "param": 1.0,
-   "v0": 1.5,
-   "stop_dist_m": 0.0749,
-   "stop_time_s": 0.254,
-   "truncated": false,
-   "mu_eff": 1.531
-  },
-  {
-   "model": "viscous",
-   "param": 0.5,
-   "v0": 0.5,
-   "stop_dist_m": 0.0493,
-   "stop_time_s": 0.395,
-   "truncated": false,
-   "mu_eff": 0.259
-  },
-  {
-   "model": "viscous",
-   "param": 0.5,
-   "v0": 1.0,
-   "stop_dist_m": 0.0995,
-   "stop_time_s": 0.465,
-   "truncated": false,
-   "mu_eff": 0.512
-  },
-  {
-   "model": "viscous",
-   "param": 0.5,
-   "v0": 1.5,
-   "stop_dist_m": 0.1024,
-   "stop_time_s": 0.325,
-   "truncated": false,
-   "mu_eff": 1.12
-  },
-  {
-   "model": "viscous",
-   "param": 0.1,
-   "v0": 0.5,
-   "stop_dist_m": 0.0953,
-   "stop_time_s": 0.908,
-   "truncated": false,
-   "mu_eff": 0.134
-  },
-  {
-   "model": "viscous",
-   "param": 0.1,
-   "v0": 1.0,
-   "stop_dist_m": 0.081,
-   "stop_time_s": 1.248,
-   "truncated": false,
-   "mu_eff": 0.629
-  },
-  {
-   "model": "viscous",
-   "param": 0.1,
-   "v0": 1.5,
-   "stop_dist_m": 0.0594,
-   "stop_time_s": 1.52,
-   "truncated": false,
-   "mu_eff": 1.931
-  },
-  {
-   "model": "viscous",
-   "param": 0.05,
-   "v0": 0.5,
-   "stop_dist_m": 0.0789,
-   "stop_time_s": 1.792,
-   "truncated": false,
-   "mu_eff": 0.162
-  },
-  {
-   "model": "viscous",
-   "param": 0.05,
-   "v0": 1.0,
-   "stop_dist_m": 0.0685,
-   "stop_time_s": 2.0,
-   "truncated": true,
-   "mu_eff": 0.744
-  },
-  {
-   "model": "viscous",
-   "param": 0.05,
-   "v0": 1.5,
-   "stop_dist_m": 0.085,
-   "stop_time_s": 2.0,
-   "truncated": true,
-   "mu_eff": 1.35
-  },
-  {
-   "model": "viscous",
-   "param": 0.02,
-   "v0": 0.5,
-   "stop_dist_m": 0.0644,
-   "stop_time_s": 2.0,
-   "truncated": true,
-   "mu_eff": 0.198
-  },
-  {
-   "model": "viscous",
-   "param": 0.02,
-   "v0": 1.0,
-   "stop_dist_m": 0.0869,
-   "stop_time_s": 2.0,
-   "truncated": true,
-   "mu_eff": 0.587
-  },
-  {
-   "model": "viscous",
-   "param": 0.02,
-   "v0": 1.5,
-   "stop_dist_m": 0.1611,
-   "stop_time_s": 1.819,
-   "truncated": false,
-   "mu_eff": 0.712
-  },
-  {
-   "model": "coulomb",
-   "param": 0.0,
-   "v0": 0.5,
-   "stop_dist_m": 0.0789,
-   "stop_time_s": 1.792,
-   "truncated": false,
-   "mu_eff": 0.162
-  },
-  {
-   "model": "coulomb",
-   "param": 0.0,
-   "v0": 1.0,
-   "stop_dist_m": 0.0685,
-   "stop_time_s": 2.0,
-   "truncated": true,
-   "mu_eff": 0.744
-  },
-  {
-   "model": "coulomb",
-   "param": 0.0,
-   "v0": 1.5,
-   "stop_dist_m": 0.085,
-   "stop_time_s": 2.0,
-   "truncated": true,
-   "mu_eff": 1.35
-  },
-  {
-   "model": "coulomb",
-   "param": 0.02,
-   "v0": 0.5,
-   "stop_dist_m": 0.1039,
-   "stop_time_s": 0.354,
-   "truncated": false,
-   "mu_eff": 0.123
-  },
-  {
-   "model": "coulomb",
-   "param": 0.02,
-   "v0": 1.0,
-   "stop_dist_m": 0.1024,
-   "stop_time_s": 0.298,
-   "truncated": false,
-   "mu_eff": 0.498
-  },
-  {
-   "model": "coulomb",
-   "param": 0.02,
-   "v0": 1.5,
-   "stop_dist_m": 0.0875,
-   "stop_time_s": 0.415,
-   "truncated": false,
-   "mu_eff": 1.31
-  },
-  {
-   "model": "coulomb",
-   "param": 0.05,
-   "v0": 0.5,
-   "stop_dist_m": 0.0949,
-   "stop_time_s": 0.398,
-   "truncated": false,
-   "mu_eff": 0.134
-  },
-  {
-   "model": "coulomb",
-   "param": 0.05,
-   "v0": 1.0,
-   "stop_dist_m": 0.1054,
-   "stop_time_s": 0.225,
-   "truncated": false,
-   "mu_eff": 0.483
-  },
-  {
-   "model": "coulomb",
-   "param": 0.05,
-   "v0": 1.5,
-   "stop_dist_m": 0.1002,
-   "stop_time_s": 0.246,
-   "truncated": false,
-   "mu_eff": 1.144
-  },
-  {
-   "model": "coulomb",
-   "param": 0.1,
-   "v0": 0.5,
-   "stop_dist_m": 0.0539,
-   "stop_time_s": 0.222,
-   "truncated": false,
-   "mu_eff": 0.236
-  },
-  {
-   "model": "coulomb",
-   "param": 0.1,
-   "v0": 1.0,
-   "stop_dist_m": 0.105,
-   "stop_time_s": 0.233,
-   "truncated": false,
-   "mu_eff": 0.485
-  },
-  {
-   "model": "coulomb",
-   "param": 0.1,
-   "v0": 1.5,
-   "stop_dist_m": 0.1057,
-   "stop_time_s": 0.181,
-   "truncated": false,
-   "mu_eff": 1.085
-  }
- ],
- "low_damping_caveat": "free-coast at low damping is contaminated by workspace/arm contact (short or truncated coasts); an unobstructed coast lane is needed to pin the exact realistic damping",
- "nearest_realistic_clean_damping": {
-  "damping": 0.02,
-  "mu_eff_at_1.5": 0.712,
-  "stop_dist_at_1.5": 0.1611
+ "as_loaded_kind": "VISCOUS",
+ "as_loaded_mu_by_v0": {
+  "0.2": 0.391,
+  "0.5": 0.742,
+  "1.0": 1.249,
+  "1.5": 1.715
  },
- "verdict": "AS_LOADED_COIN_DRAG_UNREALISTICALLY_STICKY"
+ "chosen_coulomb_model": "coulomb_mu0.15",
+ "chosen_params": {
+  "dof_damping": 0.02,
+  "dof_frictionloss": 0.074,
+  "mu_by_v0": {
+   "0.2": 0.154,
+   "0.5": 0.166,
+   "1.0": 0.189,
+   "1.5": 0.209
+  }
+ },
+ "grid": {
+  "viscous_asloaded_2.5": {
+   "viscous": 2.5,
+   "coulomb": 0.0,
+   "kind": "VISCOUS",
+   "mu_ratio_hi_lo": 4.39,
+   "mu_by_v0": {
+    "0.2": 0.391,
+    "0.5": 0.742,
+    "1.0": 1.249,
+    "1.5": 1.715
+   },
+   "cells": {
+    "0.2": {
+     "v0": 0.2,
+     "avg_decel": 3.833,
+     "mu_eff": 0.391,
+     "window_dist": 0.0036,
+     "window_t": 0.047,
+     "v_end": 0.02
+    },
+    "0.5": {
+     "v0": 0.5,
+     "avg_decel": 7.28,
+     "mu_eff": 0.742,
+     "window_dist": 0.0097,
+     "window_t": 0.066,
+     "v_end": 0.02
+    },
+    "1.0": {
+     "v0": 1.0,
+     "avg_decel": 12.255,
+     "mu_eff": 1.249,
+     "window_dist": 0.0197,
+     "window_t": 0.08,
+     "v_end": 0.02
+    },
+    "1.5": {
+     "v0": 1.5,
+     "avg_decel": 16.819,
+     "mu_eff": 1.715,
+     "window_dist": 0.0298,
+     "window_t": 0.088,
+     "v_end": 0.02
+    }
+   }
+  },
+  "viscous_0.1": {
+   "viscous": 0.1,
+   "coulomb": 0.0,
+   "kind": "VISCOUS",
+   "mu_ratio_hi_lo": 10.14,
+   "mu_by_v0": {
+    "0.2": 0.029,
+    "0.5": 0.091,
+    "1.0": 0.192,
+    "1.5": 0.294
+   },
+   "cells": {
+    "0.2": {
+     "v0": 0.2,
+     "avg_decel": 0.288,
+     "mu_eff": 0.029,
+     "window_dist": 0.05,
+     "window_t": 0.346,
+     "v_end": 0.101
+    },
+    "0.5": {
+     "v0": 0.5,
+     "avg_decel": 0.891,
+     "mu_eff": 0.091,
+     "window_dist": 0.0502,
+     "window_t": 0.112,
+     "v_end": 0.4
+    },
+    "1.0": {
+     "v0": 1.0,
+     "avg_decel": 1.887,
+     "mu_eff": 0.192,
+     "window_dist": 0.0503,
+     "window_t": 0.053,
+     "v_end": 0.9
+    },
+    "1.5": {
+     "v0": 1.5,
+     "avg_decel": 2.881,
+     "mu_eff": 0.294,
+     "window_dist": 0.0507,
+     "window_t": 0.035,
+     "v_end": 1.399
+    }
+   }
+  },
+  "coulomb_mu0.075": {
+   "viscous": 0.02,
+   "coulomb": 0.037,
+   "kind": "VISCOUS",
+   "mu_ratio_hi_lo": 1.71,
+   "mu_by_v0": {
+    "0.2": 0.079,
+    "0.5": 0.093,
+    "1.0": 0.114,
+    "1.5": 0.135
+   },
+   "cells": {
+    "0.2": {
+     "v0": 0.2,
+     "avg_decel": 0.779,
+     "mu_eff": 0.079,
+     "window_dist": 0.025,
+     "window_t": 0.231,
+     "v_end": 0.02
+    },
+    "0.5": {
+     "v0": 0.5,
+     "avg_decel": 0.914,
+     "mu_eff": 0.093,
+     "window_dist": 0.0502,
+     "window_t": 0.112,
+     "v_end": 0.398
+    },
+    "1.0": {
+     "v0": 1.0,
+     "avg_decel": 1.122,
+     "mu_eff": 0.114,
+     "window_dist": 0.0505,
+     "window_t": 0.052,
+     "v_end": 0.942
+    },
+    "1.5": {
+     "v0": 1.5,
+     "avg_decel": 1.324,
+     "mu_eff": 0.135,
+     "window_dist": 0.0502,
+     "window_t": 0.034,
+     "v_end": 1.455
+    }
+   }
+  },
+  "coulomb_mu0.15": {
+   "viscous": 0.02,
+   "coulomb": 0.074,
+   "kind": "MIXED",
+   "mu_ratio_hi_lo": 1.36,
+   "mu_by_v0": {
+    "0.2": 0.154,
+    "0.5": 0.166,
+    "1.0": 0.189,
+    "1.5": 0.209
+   },
+   "cells": {
+    "0.2": {
+     "v0": 0.2,
+     "avg_decel": 1.515,
+     "mu_eff": 0.154,
+     "window_dist": 0.0129,
+     "window_t": 0.119,
+     "v_end": 0.02
+    },
+    "0.5": {
+     "v0": 0.5,
+     "avg_decel": 1.63,
+     "mu_eff": 0.166,
+     "window_dist": 0.0501,
+     "window_t": 0.1265,
+     "v_end": 0.294
+    },
+    "1.0": {
+     "v0": 1.0,
+     "avg_decel": 1.85,
+     "mu_eff": 0.189,
+     "window_dist": 0.0504,
+     "window_t": 0.053,
+     "v_end": 0.902
+    },
+    "1.5": {
+     "v0": 1.5,
+     "avg_decel": 2.055,
+     "mu_eff": 0.209,
+     "window_dist": 0.0505,
+     "window_t": 0.0345,
+     "v_end": 1.429
+    }
+   }
+  },
+  "coulomb_mu0.30": {
+   "viscous": 0.02,
+   "coulomb": 0.147,
+   "kind": "COULOMB",
+   "mu_ratio_hi_lo": 1.19,
+   "mu_by_v0": {
+    "0.2": 0.299,
+    "0.5": 0.307,
+    "1.0": 0.335,
+    "1.5": 0.356
+   },
+   "cells": {
+    "0.2": {
+     "v0": 0.2,
+     "avg_decel": 2.929,
+     "mu_eff": 0.299,
+     "window_dist": 0.0066,
+     "window_t": 0.0615,
+     "v_end": 0.02
+    },
+    "0.5": {
+     "v0": 0.5,
+     "avg_decel": 3.011,
+     "mu_eff": 0.307,
+     "window_dist": 0.0407,
+     "window_t": 0.1595,
+     "v_end": 0.02
+    },
+    "1.0": {
+     "v0": 1.0,
+     "avg_decel": 3.286,
+     "mu_eff": 0.335,
+     "window_dist": 0.0504,
+     "window_t": 0.0555,
+     "v_end": 0.818
+    },
+    "1.5": {
+     "v0": 1.5,
+     "avg_decel": 3.497,
+     "mu_eff": 0.356,
+     "window_dist": 0.0503,
+     "window_t": 0.035,
+     "v_end": 1.378
+    }
+   }
+  }
+ }
 }
