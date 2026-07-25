@@ -649,6 +649,39 @@ def straddle_directed_acquire(rl, stack, coin_xy, squeeze_axis, *, cfg: Cooperat
             "min_tip_left": round(float(np.linalg.norm(p_l - coin)), 4), "min_tip_right": round(float(np.linalg.norm(p_r - coin)), 4)}
 
 
+def hold_cradle(rl, stack, *, cfg: CooperativeConfig | None = None, steps: int = 100):
+    """H0 baseline — PASSIVE hold from a cradle: keep the soft pin, hold the arm joints (NO nulling command), and measure
+    whether the realized coin wrench STAYS put or drifts. This is the discriminating test before touching the regulator: if
+    ‖w‖ drifts even with the arms held, the cradle is PASSIVELY UNSTABLE (the acquisition postcondition needs a dynamic
+    stability margin, not just a static internal-force certificate); if ‖w‖ holds under H0 but the QP (H1) pushes it out,
+    it is a pure REGULATOR fault. Returns the wrench trajectory stats."""
+    cfg = cfg or CooperativeConfig()
+    m, d = rl.inner.model, rl.inner.data
+    lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
+    adr = int(rl.inner._disk_x_adr)
+    pin_qpos = d.qpos[adr:adr + 3].copy()
+    hold = d.qpos[:4].copy()
+
+    def _gcb(_mo, dt):
+        dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
+    mujoco.set_mjcb_control(_gcb)
+    traj, prev_tau = [], None
+    try:
+        for _ in range(steps):
+            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), hold, stack, prev_tau, lo, hi)
+            prev_tau = a
+            step_ablation(rl, np.asarray(a, np.float32), "A")
+            d.qpos[adr:adr + 3] = pin_qpos
+            d.qvel[adr:adr + 3] = 0.0
+            mujoco.mj_forward(m, d)
+            traj.append(realized_coin_wrench(rl)["force_norm"])
+    finally:
+        mujoco.set_mjcb_control(None)
+    tr = np.asarray(traj)
+    return {"initial": round(float(tr[0]), 3), "final": round(float(tr[-1]), 3), "max": round(float(tr.max()), 3),
+            "std": round(float(tr.std()), 3), "drifted": bool(tr.max() > 2.0 * tr[0] + 0.3)}
+
+
 def balanced_straddle_search(rl, stack, coin_xy, *, cfg: CooperativeConfig | None = None, n_axes: int = 6):
     """The HANDOFF-QUALITY acquisition: an ACQUIRE postcondition is entry into the cradle VIABILITY region, not merely dual
     contact — so don't stop at the first certificate-feasible straddle. Search squeeze-axis angles and pick the cradle with
