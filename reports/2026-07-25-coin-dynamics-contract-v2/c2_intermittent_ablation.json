@@ -1,0 +1,866 @@
+{
+ "contract": "COIN_C2_INTERMITTENT_OPTION_LANGUAGE_ABLATION",
+ "date": "2026-07-25",
+ "dynamics_contract": {
+  "dynamics_contract": "COIN_DYNAMICS_CONTRACT_V4_INTERMITTENT_CONTACT",
+  "based_on": "V3_AGILE",
+  "contact_class": "INTERMITTENT (push-and-coast); SUSTAINED/grasp deferred to a separate gripping benchmark",
+  "governor_arm_source_sha": "b1c69a31fc9a",
+  "qdot_soft": 0.8,
+  "qdot_hard": 2.0,
+  "armature": 0.2,
+  "damping": 2.0,
+  "friction": 0.02,
+  "kp": 120.0,
+  "kv": 12.0,
+  "tau_rate": 30.0,
+  "over_hard_brake": 1.5,
+  "control_dt": 0.01,
+  "substeps": 20,
+  "nominal_joint_vel_hard": 3.0,
+  "transient_tolerance": 0.15,
+  "abs_velocity_gate": 3.4499999999999997,
+  "joint_vel_safe": 2.0,
+  "coin_speed_max": 1.0,
+  "coin_terminal_max": 0.15,
+  "min_contact_episodes": 2,
+  "terminal_joint_vel": 0.25,
+  "v3_gates_inherited": "over_hard_brake dormant below qdot_hard \u21d2 free-space/agility/tracking/reversal/settling identical to V3_AGILE_FROZEN"
+ },
+ "n_states": 16,
+ "summary": {
+  "A_legacy": {
+   "acquired": 0.938,
+   "transport_dist": 0.036,
+   "zone_entry": 0.312,
+   "k6": 0.312
+  },
+  "B_impulse_coast": {
+   "acquired": 0.812,
+   "transport_dist": 0.021,
+   "zone_entry": 0.062,
+   "k6": 0.062
+  },
+  "C_recontact": {
+   "acquired": 0.812,
+   "transport_dist": 0.021,
+   "zone_entry": 0.062,
+   "k6": 0.062
+  },
+  "D_brake": {
+   "acquired": 0.812,
+   "transport_dist": 0.021,
+   "zone_entry": 0.062,
+   "k6": 0.062
+  },
+  "E_settle": {
+   "acquired": 0.812,
+   "transport_dist": 0.021,
+   "zone_entry": 0.062,
+   "k6": 0.062
+  }
+ },
+ "rows": [
+  {
+   "state": 0,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 2.28,
+    "peak_coin": 0.0
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 2.28,
+    "peak_coin": 0.0
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 2.28,
+    "peak_coin": 0.0
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 2.28,
+    "peak_coin": 0.0
+   }
+  },
+  {
+   "state": 1,
+   "A_legacy": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.0789,
+    "zone_entry": 1,
+    "max_dwell": 6
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0577,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 5,
+    "peak_vel": 2.2,
+    "peak_coin": 0.345
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0577,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 5,
+    "peak_vel": 2.2,
+    "peak_coin": 0.345
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0577,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 5,
+    "peak_vel": 2.2,
+    "peak_coin": 0.345
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0577,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 5,
+    "peak_vel": 2.2,
+    "peak_coin": 0.345
+   }
+  },
+  {
+   "state": 2,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0003,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0003,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 1,
+    "peak_vel": 1.81,
+    "peak_coin": 0.152
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0003,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 1,
+    "peak_vel": 1.81,
+    "peak_coin": 0.152
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0003,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 1,
+    "peak_vel": 1.81,
+    "peak_coin": 0.152
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0003,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 1,
+    "peak_vel": 1.81,
+    "peak_coin": 0.152
+   }
+  },
+  {
+   "state": 3,
+   "A_legacy": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.0523,
+    "zone_entry": 1,
+    "max_dwell": 6
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0329,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 11,
+    "peak_vel": 2.23,
+    "peak_coin": 0.203
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0329,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 11,
+    "peak_vel": 2.23,
+    "peak_coin": 0.203
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0329,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 11,
+    "peak_vel": 2.23,
+    "peak_coin": 0.203
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0329,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 11,
+    "peak_vel": 2.23,
+    "peak_coin": 0.203
+   }
+  },
+  {
+   "state": 4,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0019,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0019,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 3,
+    "peak_vel": 1.5,
+    "peak_coin": 0.086
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0019,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 3,
+    "peak_vel": 1.5,
+    "peak_coin": 0.086
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0019,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 3,
+    "peak_vel": 1.5,
+    "peak_coin": 0.086
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0019,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 3,
+    "peak_vel": 1.5,
+    "peak_coin": 0.086
+   }
+  },
+  {
+   "state": 5,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 2,
+    "peak_vel": 1.36,
+    "peak_coin": 0.042
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 2,
+    "peak_vel": 1.36,
+    "peak_coin": 0.042
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 2,
+    "peak_vel": 1.36,
+    "peak_coin": 0.042
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 2,
+    "peak_vel": 1.36,
+    "peak_coin": 0.042
+   }
+  },
+  {
+   "state": 6,
+   "A_legacy": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.0748,
+    "zone_entry": 1,
+    "max_dwell": 6
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0634,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 14,
+    "peak_vel": 2.09,
+    "peak_coin": 0.271
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0634,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 14,
+    "peak_vel": 2.09,
+    "peak_coin": 0.271
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0634,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 14,
+    "peak_vel": 2.09,
+    "peak_coin": 0.271
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0634,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 14,
+    "peak_vel": 2.09,
+    "peak_coin": 0.271
+   }
+  },
+  {
+   "state": 7,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0045,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0015,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 10,
+    "peak_vel": 2.04,
+    "peak_coin": 0.31
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0015,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 10,
+    "peak_vel": 2.04,
+    "peak_coin": 0.31
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0015,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 10,
+    "peak_vel": 2.04,
+    "peak_coin": 0.31
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0015,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 10,
+    "peak_vel": 2.04,
+    "peak_coin": 0.31
+   }
+  },
+  {
+   "state": 8,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 0.69,
+    "peak_coin": 0.007
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 0.69,
+    "peak_coin": 0.007
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 0.69,
+    "peak_coin": 0.007
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 0.69,
+    "peak_coin": 0.007
+   }
+  },
+  {
+   "state": 9,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0035,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0035,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 1,
+    "peak_vel": 2.06,
+    "peak_coin": 0.079
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0035,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 1,
+    "peak_vel": 2.06,
+    "peak_coin": 0.079
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0035,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 1,
+    "peak_vel": 2.06,
+    "peak_coin": 0.079
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0035,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 1,
+    "peak_vel": 2.06,
+    "peak_coin": 0.079
+   }
+  },
+  {
+   "state": 10,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0293,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.019,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 6,
+    "peak_vel": 2.2,
+    "peak_coin": 0.18
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.019,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 6,
+    "peak_vel": 2.2,
+    "peak_coin": 0.18
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.019,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 6,
+    "peak_vel": 2.2,
+    "peak_coin": 0.18
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.019,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 6,
+    "peak_vel": 2.2,
+    "peak_coin": 0.18
+   }
+  },
+  {
+   "state": 11,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0014,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0141,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 7,
+    "peak_vel": 1.78,
+    "peak_coin": 0.164
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0141,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 7,
+    "peak_vel": 1.78,
+    "peak_coin": 0.164
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0141,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 7,
+    "peak_vel": 1.78,
+    "peak_coin": 0.164
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0141,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 7,
+    "peak_vel": 1.78,
+    "peak_coin": 0.164
+   }
+  },
+  {
+   "state": 12,
+   "A_legacy": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.066,
+    "zone_entry": 1,
+    "max_dwell": 6
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0622,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 15,
+    "peak_vel": 2.15,
+    "peak_coin": 0.318
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0622,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 15,
+    "peak_vel": 2.15,
+    "peak_coin": 0.318
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0622,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 15,
+    "peak_vel": 2.15,
+    "peak_coin": 0.318
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0622,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 15,
+    "peak_vel": 2.15,
+    "peak_coin": 0.318
+   }
+  },
+  {
+   "state": 13,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 1.55,
+    "peak_coin": 0.065
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 1.55,
+    "peak_coin": 0.065
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 1.55,
+    "peak_coin": 0.065
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 0,
+    "transport_dist": 0.0,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 0,
+    "peak_vel": 1.55,
+    "peak_coin": 0.065
+   }
+  },
+  {
+   "state": 14,
+   "A_legacy": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.1978,
+    "zone_entry": 0,
+    "max_dwell": 0
+   },
+   "B_impulse_coast": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0248,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 7,
+    "peak_vel": 1.92,
+    "peak_coin": 0.156
+   },
+   "C_recontact": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0248,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 7,
+    "peak_vel": 1.92,
+    "peak_coin": 0.156
+   },
+   "D_brake": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0248,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 7,
+    "peak_vel": 1.92,
+    "peak_coin": 0.156
+   },
+   "E_settle": {
+    "k6": 0,
+    "acquired": 1,
+    "transport_dist": 0.0248,
+    "zone_entry": 0,
+    "max_dwell": 0,
+    "episodes": 7,
+    "peak_vel": 1.92,
+    "peak_coin": 0.156
+   }
+  },
+  {
+   "state": 15,
+   "A_legacy": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.0608,
+    "zone_entry": 1,
+    "max_dwell": 6
+   },
+   "B_impulse_coast": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.0544,
+    "zone_entry": 1,
+    "max_dwell": 6,
+    "episodes": 13,
+    "peak_vel": 1.53,
+    "peak_coin": 0.134
+   },
+   "C_recontact": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.0544,
+    "zone_entry": 1,
+    "max_dwell": 6,
+    "episodes": 13,
+    "peak_vel": 1.53,
+    "peak_coin": 0.134
+   },
+   "D_brake": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.0544,
+    "zone_entry": 1,
+    "max_dwell": 6,
+    "episodes": 13,
+    "peak_vel": 1.53,
+    "peak_coin": 0.134
+   },
+   "E_settle": {
+    "k6": 1,
+    "acquired": 1,
+    "transport_dist": 0.0544,
+    "zone_entry": 1,
+    "max_dwell": 6,
+    "episodes": 13,
+    "peak_vel": 1.53,
+    "peak_coin": 0.134
+   }
+  }
+ ],
+ "verdict": "INTERMITTENT_OPTION_LANGUAGE_INSUFFICIENT_UNDER_REALISTIC_CONTACT_DYNAMICS"
+}
