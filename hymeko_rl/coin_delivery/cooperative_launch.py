@@ -338,6 +338,57 @@ def release_only_sanity(rl, stack, saved, *, cfg: CooperativeConfig | None = Non
             "jumped": bool(peak_speed > cfg.settle_qdot or disp > 0.01)}
 
 
+def measure_release_branch(rl, stack, saved, *, cfg: CooperativeConfig | None = None, allocator=None, horizon: int = 40):
+    """E2B — measure ONE release branch from a settled preload over a SHORT fixed horizon. Release the pin, then either HOLD
+    (``allocator=None`` → the passive-drift baseline P) or apply the launch allocation (``TwistAllocator`` A0 / ``GraspAllocator``
+    A2). All three branches share this identical code path — bit-identical but for the allocator — and the horizon is kept
+    SHORT so the comparison is made BEFORE the P/A0/A2 trajectories diverge into different contact modes (baseline
+    subtraction is not literally linear afterwards; the incremental = branch − P isolates the allocator's added wrench only
+    while the contact topology is still shared). Reports target-directed / lateral / spin coin velocity (peak + final),
+    motion-contract and torque-saturation over the window."""
+    cfg = cfg or CooperativeConfig()
+    release_pin(rl, saved)
+    m, d = rl.inner.model, rl.inner.data
+    m.dof_armature[:4], m.dof_damping[:4], m.dof_frictionloss[:4] = stack.armature, stack.damping, stack.friction
+    lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
+    u, _dtz = rl.inner.direction_to_zone()
+    e_par = np.asarray(u, np.float32)
+    e_cross = np.array([-e_par[1], e_par[0]], np.float32)
+    v_target = float(min(0.8, np.sqrt(max(0.0, 2.0 * cfg.coast_mu * _G * rl._dtz()))))
+    hold = d.qpos[:4].copy()
+    disk0 = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].copy()
+    adr = int(rl.inner._disk_x_adr)
+
+    def _gcb(_mo, dt):
+        dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
+    mujoco.set_mjcb_control(_gcb)
+    peak_vp, peak_vc, peak_om, peak_joint, sat, prev_tau, final_vp = 0.0, 0.0, 0.0, 0.0, 0, None, 0.0
+    try:
+        for _ in range(horizon):
+            if allocator is None:                                # passive baseline P — HOLD, no launch command
+                target = hold
+            else:                                                # A0 / A2 — apply the launch allocation
+                dq = allocator(rl, e_par, e_cross, v_target)
+                target = d.qpos[:4] + cfg.launch_gain * _unit2(dq)
+            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), target, stack, prev_tau, lo, hi)
+            prev_tau = a
+            step_ablation(rl, np.asarray(a, np.float32), "A")
+            cvn = np.asarray(rl.inner._planar_metrics.disk_vel, np.float32)[:2]
+            final_vp = float(cvn @ e_par)
+            peak_vp = max(peak_vp, final_vp)
+            peak_vc = max(peak_vc, abs(float(cvn @ e_cross)))
+            peak_om = max(peak_om, abs(float(d.qvel[adr + 2])))
+            peak_joint = max(peak_joint, float(np.max(np.abs(d.qvel[:4]))))
+            sat += int(bool(np.any((np.asarray(a) <= lo + 1e-6) | (np.asarray(a) >= hi - 1e-6))))
+    finally:
+        mujoco.set_mjcb_control(None)
+    disp = float(np.linalg.norm(np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2] - disk0))
+    return {"v_target": round(v_target, 3), "peak_v_parallel": round(peak_vp, 4), "final_v_parallel": round(final_vp, 4),
+            "peak_v_cross": round(peak_vc, 4), "peak_omega": round(peak_om, 4), "peak_joint_vel": round(peak_joint, 3),
+            "saturation_frac": round(sat / horizon, 3), "motion_contract_pass": bool(peak_joint <= 3.45),
+            "coin_displacement": round(disp, 4)}
+
+
 def balanced_preload_search(rl, stack, *, cfg: CooperativeConfig | None = None):
     """E1 existence oracle — a delivery-blind 1-D search along the fingertip→fingertip axis for a coin position where BOTH
     arms hold a BALANCED light preload. The geometric tip-midpoint is not in general the authority-balanced point (the two

@@ -1,0 +1,194 @@
+{
+ "contract": "E2B_BASELINE_SUBTRACTED_ALLOCATOR_V1",
+ "date": "2026-07-25",
+ "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2",
+ "coast_mu": 0.179,
+ "horizon": 40,
+ "margin": 0.03,
+ "n_states": 3,
+ "a2_wins": 1,
+ "a0_wins": 1,
+ "similar": 1,
+ "zone_side": 2,
+ "a2_engaged": 1,
+ "verdict": "ALLOCATOR_ADVANTAGE_DEPENDS_ON_CONTACT_FRAME_AND_LOCAL_ACTUATION_AUTHORITY",
+ "rows": [
+  {
+   "state": 1,
+   "best_s": 0.03,
+   "imbalance": 0.117,
+   "contact_frame_side": {
+    "proj_left": 0.0363,
+    "proj_right": 0.0233,
+    "far_side": false,
+    "zone_side": true
+   },
+   "a2_engaged": false,
+   "measured": {
+    "P": {
+     "v_target": 0.612,
+     "peak_v_parallel": 0.0,
+     "final_v_parallel": -0.0,
+     "peak_v_cross": 0.1192,
+     "peak_omega": 0.0101,
+     "peak_joint_vel": 2.025,
+     "saturation_frac": 0.0,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.0256
+    },
+    "A0": {
+     "v_target": 0.612,
+     "peak_v_parallel": 0.1307,
+     "final_v_parallel": -0.0,
+     "peak_v_cross": 0.3036,
+     "peak_omega": 0.0253,
+     "peak_joint_vel": 2.105,
+     "saturation_frac": 0.025,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.0322
+    },
+    "A2": {
+     "v_target": 0.612,
+     "peak_v_parallel": 0.0,
+     "final_v_parallel": -0.0,
+     "peak_v_cross": 0.1192,
+     "peak_omega": 0.0101,
+     "peak_joint_vel": 1.238,
+     "saturation_frac": 0.0,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.0256
+    }
+   },
+   "incremental": {
+    "A0": {
+     "d_v_par": 0.1307,
+     "d_v_cross": 0.1844,
+     "d_omega": 0.0152
+    },
+    "A2": {
+     "d_v_par": 0.0,
+     "d_v_cross": 0.0,
+     "d_omega": 0.0
+    }
+   }
+  },
+  {
+   "state": 5,
+   "best_s": 0.01,
+   "imbalance": 0.057,
+   "contact_frame_side": {
+    "proj_left": 0.0346,
+    "proj_right": 0.0197,
+    "far_side": false,
+    "zone_side": true
+   },
+   "a2_engaged": false,
+   "measured": {
+    "P": {
+     "v_target": 0.61,
+     "peak_v_parallel": 0.0,
+     "final_v_parallel": -0.0,
+     "peak_v_cross": 0.0854,
+     "peak_omega": 0.0089,
+     "peak_joint_vel": 1.959,
+     "saturation_frac": 0.0,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.0178
+    },
+    "A0": {
+     "v_target": 0.61,
+     "peak_v_parallel": 0.0,
+     "final_v_parallel": -0.0,
+     "peak_v_cross": 0.1482,
+     "peak_omega": 0.007,
+     "peak_joint_vel": 1.287,
+     "saturation_frac": 0.05,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.0248
+    },
+    "A2": {
+     "v_target": 0.61,
+     "peak_v_parallel": 0.0,
+     "final_v_parallel": -0.0,
+     "peak_v_cross": 0.0854,
+     "peak_omega": 0.0089,
+     "peak_joint_vel": 1.595,
+     "saturation_frac": 0.0,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.0178
+    }
+   },
+   "incremental": {
+    "A0": {
+     "d_v_par": 0.0,
+     "d_v_cross": 0.0628,
+     "d_omega": -0.0019
+    },
+    "A2": {
+     "d_v_par": 0.0,
+     "d_v_cross": 0.0,
+     "d_omega": 0.0
+    }
+   }
+  },
+  {
+   "state": 7,
+   "best_s": -0.03,
+   "imbalance": 0.126,
+   "contact_frame_side": {
+    "proj_left": -0.0115,
+    "proj_right": -0.0303,
+    "far_side": true,
+    "zone_side": false
+   },
+   "a2_engaged": true,
+   "measured": {
+    "P": {
+     "v_target": 0.651,
+     "peak_v_parallel": 0.1759,
+     "final_v_parallel": 0.0133,
+     "peak_v_cross": 0.047,
+     "peak_omega": 0.0064,
+     "peak_joint_vel": 2.247,
+     "saturation_frac": 0.0,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.0131
+    },
+    "A0": {
+     "v_target": 0.651,
+     "peak_v_parallel": 0.4454,
+     "final_v_parallel": 0.0,
+     "peak_v_cross": 0.0863,
+     "peak_omega": 0.0193,
+     "peak_joint_vel": 1.166,
+     "saturation_frac": 0.15,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.0642
+    },
+    "A2": {
+     "v_target": 0.651,
+     "peak_v_parallel": 0.6648,
+     "final_v_parallel": 0.0185,
+     "peak_v_cross": 0.1489,
+     "peak_omega": 0.0108,
+     "peak_joint_vel": 1.273,
+     "saturation_frac": 0.25,
+     "motion_contract_pass": true,
+     "coin_displacement": 0.1373
+    }
+   },
+   "incremental": {
+    "A0": {
+     "d_v_par": 0.2695,
+     "d_v_cross": 0.0393,
+     "d_omega": 0.0129
+    },
+    "A2": {
+     "d_v_par": 0.4889,
+     "d_v_cross": 0.1019,
+     "d_omega": 0.0044
+    }
+   }
+  }
+ ]
+}
