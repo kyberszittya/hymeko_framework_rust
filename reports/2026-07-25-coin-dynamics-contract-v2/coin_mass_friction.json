@@ -1,0 +1,496 @@
+{
+ "contract": "COIN_MASS_FRICTION_CHARACTERIZATION",
+ "date": "2026-07-25",
+ "delivery_independent": true,
+ "driver": "oscillating press (sustained_press), governor-only velocity control",
+ "mass_scales": [
+  0.5,
+  1.0,
+  2.0
+ ],
+ "friction_scales": [
+  0.5,
+  1.0,
+  2.0
+ ],
+ "grid": {
+  "m0.5_f0.5": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.02513,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 0.5,
+    "floor_geom": 0
+   },
+   "contact_frames": 8.6667,
+   "normal_impulse": 0.5151,
+   "peak_coin_speed": 0.123,
+   "max_coin_disp": 0.0116,
+   "n_episodes": 1.6667,
+   "sat_frac": 0.3097,
+   "peak_Fn": 5.81,
+   "peak_Ft": 1.26,
+   "tangential_ratio": 0.217,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0088,
+     "peak_coin_speed": 0.22,
+     "max_coin_disp": 0.0146,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.23,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 20,
+     "normal_impulse": 1.5366,
+     "peak_coin_speed": 0.149,
+     "max_coin_disp": 0.0201,
+     "n_episodes": 4,
+     "mean_gap": 5.0,
+     "sat_frac": 0.429,
+     "peak_Fn": 17.2,
+     "peak_Ft": 3.57
+    }
+   ]
+  },
+  "m0.5_f1.0": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.02513,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 1.0,
+    "floor_geom": 0
+   },
+   "contact_frames": 8.6667,
+   "normal_impulse": 0.5151,
+   "peak_coin_speed": 0.123,
+   "max_coin_disp": 0.0116,
+   "n_episodes": 1.6667,
+   "sat_frac": 0.3097,
+   "peak_Fn": 5.81,
+   "peak_Ft": 1.26,
+   "tangential_ratio": 0.217,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0088,
+     "peak_coin_speed": 0.22,
+     "max_coin_disp": 0.0146,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.23,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 20,
+     "normal_impulse": 1.5366,
+     "peak_coin_speed": 0.149,
+     "max_coin_disp": 0.0201,
+     "n_episodes": 4,
+     "mean_gap": 5.0,
+     "sat_frac": 0.429,
+     "peak_Fn": 17.2,
+     "peak_Ft": 3.57
+    }
+   ]
+  },
+  "m0.5_f2.0": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.02513,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 2.0,
+    "floor_geom": 0
+   },
+   "contact_frames": 10.3333,
+   "normal_impulse": 0.6247,
+   "peak_coin_speed": 0.1193,
+   "max_coin_disp": 0.0127,
+   "n_episodes": 2.3333,
+   "sat_frac": 0.25,
+   "peak_Fn": 10.7767,
+   "peak_Ft": 6.25,
+   "tangential_ratio": 0.58,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0087,
+     "peak_coin_speed": 0.213,
+     "max_coin_disp": 0.014,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.21,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 25,
+     "normal_impulse": 1.8655,
+     "peak_coin_speed": 0.145,
+     "max_coin_disp": 0.0242,
+     "n_episodes": 6,
+     "mean_gap": 4.2,
+     "sat_frac": 0.25,
+     "peak_Fn": 32.12,
+     "peak_Ft": 18.54
+    }
+   ]
+  },
+  "m1.0_f0.5": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.05027,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 0.5,
+    "floor_geom": 0
+   },
+   "contact_frames": 8.6667,
+   "normal_impulse": 0.5151,
+   "peak_coin_speed": 0.123,
+   "max_coin_disp": 0.0116,
+   "n_episodes": 1.6667,
+   "sat_frac": 0.3097,
+   "peak_Fn": 5.81,
+   "peak_Ft": 1.26,
+   "tangential_ratio": 0.217,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0088,
+     "peak_coin_speed": 0.22,
+     "max_coin_disp": 0.0146,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.23,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 20,
+     "normal_impulse": 1.5366,
+     "peak_coin_speed": 0.149,
+     "max_coin_disp": 0.0201,
+     "n_episodes": 4,
+     "mean_gap": 5.0,
+     "sat_frac": 0.429,
+     "peak_Fn": 17.2,
+     "peak_Ft": 3.57
+    }
+   ]
+  },
+  "m1.0_f1.0": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.05027,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 1.0,
+    "floor_geom": 0
+   },
+   "contact_frames": 8.6667,
+   "normal_impulse": 0.5151,
+   "peak_coin_speed": 0.123,
+   "max_coin_disp": 0.0116,
+   "n_episodes": 1.6667,
+   "sat_frac": 0.3097,
+   "peak_Fn": 5.81,
+   "peak_Ft": 1.26,
+   "tangential_ratio": 0.217,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0088,
+     "peak_coin_speed": 0.22,
+     "max_coin_disp": 0.0146,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.23,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 20,
+     "normal_impulse": 1.5366,
+     "peak_coin_speed": 0.149,
+     "max_coin_disp": 0.0201,
+     "n_episodes": 4,
+     "mean_gap": 5.0,
+     "sat_frac": 0.429,
+     "peak_Fn": 17.2,
+     "peak_Ft": 3.57
+    }
+   ]
+  },
+  "m1.0_f2.0": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.05027,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 2.0,
+    "floor_geom": 0
+   },
+   "contact_frames": 10.3333,
+   "normal_impulse": 0.6247,
+   "peak_coin_speed": 0.1193,
+   "max_coin_disp": 0.0127,
+   "n_episodes": 2.3333,
+   "sat_frac": 0.25,
+   "peak_Fn": 10.7767,
+   "peak_Ft": 6.25,
+   "tangential_ratio": 0.58,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0087,
+     "peak_coin_speed": 0.213,
+     "max_coin_disp": 0.014,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.21,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 25,
+     "normal_impulse": 1.8655,
+     "peak_coin_speed": 0.145,
+     "max_coin_disp": 0.0242,
+     "n_episodes": 6,
+     "mean_gap": 4.2,
+     "sat_frac": 0.25,
+     "peak_Fn": 32.12,
+     "peak_Ft": 18.54
+    }
+   ]
+  },
+  "m2.0_f0.5": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.10053,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 0.5,
+    "floor_geom": 0
+   },
+   "contact_frames": 8.6667,
+   "normal_impulse": 0.5151,
+   "peak_coin_speed": 0.123,
+   "max_coin_disp": 0.0116,
+   "n_episodes": 1.6667,
+   "sat_frac": 0.3097,
+   "peak_Fn": 5.81,
+   "peak_Ft": 1.26,
+   "tangential_ratio": 0.217,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0088,
+     "peak_coin_speed": 0.22,
+     "max_coin_disp": 0.0146,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.23,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 20,
+     "normal_impulse": 1.5366,
+     "peak_coin_speed": 0.149,
+     "max_coin_disp": 0.0201,
+     "n_episodes": 4,
+     "mean_gap": 5.0,
+     "sat_frac": 0.429,
+     "peak_Fn": 17.2,
+     "peak_Ft": 3.57
+    }
+   ]
+  },
+  "m2.0_f1.0": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.10053,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 1.0,
+    "floor_geom": 0
+   },
+   "contact_frames": 8.6667,
+   "normal_impulse": 0.5151,
+   "peak_coin_speed": 0.123,
+   "max_coin_disp": 0.0116,
+   "n_episodes": 1.6667,
+   "sat_frac": 0.3097,
+   "peak_Fn": 5.81,
+   "peak_Ft": 1.26,
+   "tangential_ratio": 0.217,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0088,
+     "peak_coin_speed": 0.22,
+     "max_coin_disp": 0.0146,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.23,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 20,
+     "normal_impulse": 1.5366,
+     "peak_coin_speed": 0.149,
+     "max_coin_disp": 0.0201,
+     "n_episodes": 4,
+     "mean_gap": 5.0,
+     "sat_frac": 0.429,
+     "peak_Fn": 17.2,
+     "peak_Ft": 3.57
+    }
+   ]
+  },
+  "m2.0_f2.0": {
+   "applied": {
+    "base_mass": 0.05027,
+    "scaled_mass": 0.10053,
+    "base_coin_friction": 1.0,
+    "scaled_coin_friction": 2.0,
+    "floor_geom": 0
+   },
+   "contact_frames": 10.3333,
+   "normal_impulse": 0.6247,
+   "peak_coin_speed": 0.1193,
+   "max_coin_disp": 0.0127,
+   "n_episodes": 2.3333,
+   "sat_frac": 0.25,
+   "peak_Fn": 10.7767,
+   "peak_Ft": 6.25,
+   "tangential_ratio": 0.58,
+   "per_state": [
+    {
+     "contact_frames": 0,
+     "normal_impulse": 0.0,
+     "peak_coin_speed": 0.0,
+     "max_coin_disp": 0.0,
+     "n_episodes": 0,
+     "mean_gap": 0.0,
+     "sat_frac": 0.0,
+     "peak_Fn": 0.0,
+     "peak_Ft": 0.0
+    },
+    {
+     "contact_frames": 6,
+     "normal_impulse": 0.0087,
+     "peak_coin_speed": 0.213,
+     "max_coin_disp": 0.014,
+     "n_episodes": 1,
+     "mean_gap": 6.0,
+     "sat_frac": 0.5,
+     "peak_Fn": 0.21,
+     "peak_Ft": 0.21
+    },
+    {
+     "contact_frames": 25,
+     "normal_impulse": 1.8655,
+     "peak_coin_speed": 0.145,
+     "max_coin_disp": 0.0242,
+     "n_episodes": 6,
+     "mean_gap": 4.2,
+     "sat_frac": 0.25,
+     "peak_Fn": 32.12,
+     "peak_Ft": 18.54
+    }
+   ]
+  }
+ },
+ "longest_contact_controllable_cell": "m0.5_f2.0"
+}

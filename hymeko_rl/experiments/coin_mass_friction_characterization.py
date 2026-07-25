@@ -38,19 +38,25 @@ HORIZON, N_STATES = 200, 3
 
 
 def _scale_coin(rl, mass_scale, fric_scale):
-    """Scale the coin body mass+inertia and the coin geom's sliding friction on the model in place. Returns the (base,
-    scaled) mass and friction actually applied. mj_forward recomputes the derived mass matrix / subtree quantities."""
+    """Scale the coin body mass+inertia and BOTH the coin AND floor geoms' sliding friction on the model in place.
+    Scaling the floor too is REQUIRED: MuJoCo combines two equal-priority geoms' friction by the elementwise MAXIMUM, so
+    scaling the coin's friction below the floor's has no effect (the floor dominates the disk↔floor contact). Returns the
+    (base, scaled) mass and effective friction. mj_forward recomputes the derived mass matrix / subtree quantities."""
     m = rl.inner.model
     gid = rl.inner._disk_geom
     bid = int(m.geom_bodyid[gid])
+    floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "floor")
     base_mass = float(m.body_mass[bid])
     base_fric = float(m.geom_friction[gid, 0])
     m.body_mass[bid] = base_mass * mass_scale
     m.body_inertia[bid] *= mass_scale
-    m.geom_friction[gid, 0] = base_fric * fric_scale       # component 0 = sliding (tangential) friction coefficient
+    m.geom_friction[gid, 0] *= fric_scale                  # component 0 = sliding (tangential) friction coefficient
+    if floor >= 0:
+        m.geom_friction[floor, 0] *= fric_scale            # scale the floor too (max-combination ⇒ floor otherwise dominates)
     mujoco.mj_forward(m, rl.inner.data)
     return {"base_mass": round(base_mass, 5), "scaled_mass": round(base_mass * mass_scale, 5),
-            "base_friction": round(base_fric, 4), "scaled_friction": round(base_fric * fric_scale, 4)}
+            "base_coin_friction": round(base_fric, 4), "scaled_coin_friction": round(base_fric * fric_scale, 4),
+            "floor_geom": int(floor)}
 
 
 def _cell(pi0, base, forbidden, stack, mass_scale, fric_scale):
