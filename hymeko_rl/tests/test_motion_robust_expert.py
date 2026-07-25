@@ -35,12 +35,14 @@ def test_sustained_press_config_is_delivery_agnostic_and_physical():
     assert press.sustained_press and 0 < press.press_disp < 0.5 and press.press_flip >= 1   # small displacement, periodic flip
 
 
-def test_peak_contact_normal_reads_mujoco_contact_state():
-    """The contact-conditioned normal-force reporter must query the actual MuJoCo contact force (not a proxy)."""
+def test_contact_forces_read_mujoco_normal_and_tangential():
+    """The contact-force reporter must query the actual MuJoCo contact wrench and decompose normal (component 0) from
+    tangential (components 1–2 = friction shear) — a normal-force peak alone does not prove useful push."""
     import inspect
 
     import hymeko_rl.coin_delivery.motion_robust_expert as mre
-    assert "mj_contactForce" in inspect.getsource(mre._peak_contact_normal)
+    src = inspect.getsource(mre._contact_forces)
+    assert "mj_contactForce" in src and "hypot" in src            # normal from f[0], tangential from f[1],f[2]
 
 
 def test_shared_low_level_torque_path_is_deterministic_and_equivalent():

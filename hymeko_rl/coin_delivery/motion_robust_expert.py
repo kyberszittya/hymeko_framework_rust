@@ -95,12 +95,21 @@ def _unit(x):
 def _peak_contact_normal(m, d) -> float:
     """Peak contact NORMAL force magnitude over all active contacts this step (MuJoCo contact frame, component 0). A
     physical measure of how hard the coin is being loaded — reported by the dynamics gate (not gated)."""
+    return _contact_forces(m, d)[0]
+
+
+def _contact_forces(m, d) -> tuple[float, float]:
+    """Peak (normal, tangential) contact force magnitudes this step over all active contacts. MuJoCo `mj_contactForce`
+    returns the wrench in the contact frame: component 0 = normal, components 1–2 = the two friction (tangential)
+    directions. Decomposing them separates a large NORMAL collision spike (pressing) from useful TANGENTIAL shear
+    (the component that actually drags a low-friction coin) — a normal peak alone does not prove useful push."""
     f = np.zeros(6, np.float64)
-    peak = 0.0
+    pn, pt = 0.0, 0.0
     for ci in range(d.ncon):
         mujoco.mj_contactForce(m, d, ci, f)
-        peak = max(peak, abs(float(f[0])))
-    return peak
+        pn = max(pn, abs(float(f[0])))
+        pt = max(pt, float(np.hypot(f[1], f[2])))
+    return pn, pt
 
 
 def _macro_delta(rl, J, cfg: CarryControllerConfig):
@@ -150,6 +159,9 @@ def motion_robust_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CarryC
     contact_frames, entered_zone, peak_vel, integ_over = 0, False, 0.0, 0.0
     peak_vel_contact, integ_contact, peak_normal_force = 0.0, 0.0, 0.0   # contact-CONDITIONED motion (the dynamics-gate signal)
     ctrl_frames, sat_frames = 0, 0                                       # torque-saturation telemetry (PD control steps only)
+    # INTERMITTENT-contact metrics: impulse, coin motion, and re-contact episodes (rising edges of contact)
+    peak_tangential_force, normal_impulse, peak_coin_speed, coin_speed = 0.0, 0.0, 0.0, 0.0
+    n_contact_episodes, prev_in_contact = 0, False
     t = 0
     try:
         for t in range(horizon):
@@ -197,10 +209,18 @@ def motion_robust_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CarryC
             integ_over += max(0.0, v / 2.0 - 1.0) * stack.control_dt     # ∫ReLU(|q̇|/q̇_safe−1)dt  (q̇_safe≈2)
             in_contact = bool(rl.inner._planar_metrics.left_contact or rl.inner._planar_metrics.right_contact)
             contact_frames += int(in_contact)
+            coin_speed = float(np.linalg.norm(np.asarray(rl.inner._planar_metrics.disk_vel, np.float32)[:2]))
+            peak_coin_speed = max(peak_coin_speed, coin_speed)
             if in_contact:                                              # contact-CONDITIONED motion: the loading regime only
                 peak_vel_contact = max(peak_vel_contact, v)
                 integ_contact += max(0.0, v / 2.0 - 1.0) * stack.control_dt
-                peak_normal_force = max(peak_normal_force, _peak_contact_normal(m, d))
+                fn, ft = _contact_forces(m, d)
+                peak_normal_force = max(peak_normal_force, fn)
+                peak_tangential_force = max(peak_tangential_force, ft)
+                normal_impulse += fn * stack.control_dt                 # ∫Fn dt over contact (the loading impulse)
+                if not prev_in_contact:
+                    n_contact_episodes += 1                            # rising edge ⇒ a NEW contact episode (re-contact)
+            prev_in_contact = in_contact
             entered_zone = entered_zone or (rl._dtz() <= CENTER_TOL)
             if frame_hook is not None:
                 frame_hook(cur, int(rl._strict))
@@ -217,5 +237,8 @@ def motion_robust_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: CarryC
             "terminal_joint_vel": round(float(np.max(np.abs(d.qvel[:4]))), 3),
             "peak_joint_vel_in_contact": round(peak_vel_contact, 2), "integrated_overspeed_in_contact": round(integ_contact, 3),
             "peak_contact_normal_force": round(peak_normal_force, 2),
+            "peak_contact_tangential_force": round(peak_tangential_force, 2), "contact_normal_impulse": round(normal_impulse, 4),
+            "peak_coin_speed": round(peak_coin_speed, 3), "terminal_coin_speed": round(coin_speed, 3),
+            "n_contact_episodes": n_contact_episodes,
             "governor_active_frac": round(subs["gov"] / nsub, 3), "active_brake_frac": round(subs["brake"] / nsub, 3),
             "torque_saturation_frac": round(sat_frames / max(1, ctrl_frames), 3)}
