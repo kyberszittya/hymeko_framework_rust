@@ -1,0 +1,780 @@
+{
+ "contract": "FORCE_SLIP_SEMANTICS_V1",
+ "date": "2026-07-25",
+ "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2 (frozen)",
+ "motion_contract": "COIN_DYNAMICS_CONTRACT_V4_INTERMITTENT_CONTACT",
+ "no_retraining": true,
+ "coast_mu": 0.179,
+ "contact_capable_subset": {
+  "per_state": {
+   "0": {
+    "seed": 14000,
+    "contact_capable": true,
+    "acquire_step": 98,
+    "min_tip_dist": 0.0805
+   },
+   "1": {
+    "seed": 14250,
+    "contact_capable": true,
+    "acquire_step": 3,
+    "min_tip_dist": 0.0733
+   },
+   "2": {
+    "seed": 14500,
+    "contact_capable": true,
+    "acquire_step": 5,
+    "min_tip_dist": 0.06
+   },
+   "3": {
+    "seed": 14750,
+    "contact_capable": true,
+    "acquire_step": 0,
+    "min_tip_dist": 0.0602
+   },
+   "4": {
+    "seed": 15000,
+    "contact_capable": true,
+    "acquire_step": 24,
+    "min_tip_dist": 0.0665
+   },
+   "5": {
+    "seed": 15250,
+    "contact_capable": true,
+    "acquire_step": 0,
+    "min_tip_dist": 0.06
+   },
+   "6": {
+    "seed": 15500,
+    "contact_capable": true,
+    "acquire_step": 22,
+    "min_tip_dist": 0.0629
+   },
+   "7": {
+    "seed": 15750,
+    "contact_capable": true,
+    "acquire_step": 0,
+    "min_tip_dist": 0.0619
+   }
+  },
+  "contact_capable_states": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "n_capable": 8,
+  "n_total": 8
+ },
+ "summary_capable": {
+  "S0_reference": {
+   "peak_coin_velocity": 0.329,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.704,
+   "ftfn": 0.776,
+   "transport_dist": 0.029,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.931
+  },
+  "S1_preload": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.67,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  },
+  "S2_target_velocity": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.67,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  },
+  "S3_slip_aware": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.666,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  },
+  "S4_impulse": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.666,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  },
+  "S5_predictive_brake": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.666,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  }
+ },
+ "summary_full_panel": {
+  "S0_reference": {
+   "peak_coin_velocity": 0.329,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.704,
+   "ftfn": 0.776,
+   "transport_dist": 0.029,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.931
+  },
+  "S1_preload": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.67,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  },
+  "S2_target_velocity": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.67,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  },
+  "S3_slip_aware": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.666,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  },
+  "S4_impulse": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.666,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  },
+  "S5_predictive_brake": {
+   "peak_coin_velocity": 0.321,
+   "coin_push_end_velocity": 0.0,
+   "target_directed_impulse": 0.666,
+   "ftfn": 0.769,
+   "transport_dist": 0.031,
+   "entered_zone": 0.0,
+   "k6": 0.0,
+   "stopping_distance_pred_error": 0.0,
+   "peak_joint_vel": 1.901
+  }
+ },
+ "rows": [
+  {
+   "state": 0,
+   "contact_capable": true,
+   "S0_reference": {
+    "peak_coin_velocity": 0.0,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0,
+    "ftfn": 0.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.28
+   },
+   "S1_preload": {
+    "peak_coin_velocity": 0.0,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0,
+    "ftfn": 0.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.28
+   },
+   "S2_target_velocity": {
+    "peak_coin_velocity": 0.0,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0,
+    "ftfn": 0.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.28
+   },
+   "S3_slip_aware": {
+    "peak_coin_velocity": 0.0,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0,
+    "ftfn": 0.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.28
+   },
+   "S4_impulse": {
+    "peak_coin_velocity": 0.0,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0,
+    "ftfn": 0.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.28
+   },
+   "S5_predictive_brake": {
+    "peak_coin_velocity": 0.0,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0,
+    "ftfn": 0.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.28
+   }
+  },
+  {
+   "state": 1,
+   "contact_capable": true,
+   "S0_reference": {
+    "peak_coin_velocity": 0.635,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0471,
+    "ftfn": 1.009,
+    "transport_dist": 0.1355,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.2
+   },
+   "S1_preload": {
+    "peak_coin_velocity": 0.609,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0502,
+    "ftfn": 1.022,
+    "transport_dist": 0.1554,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.2
+   },
+   "S2_target_velocity": {
+    "peak_coin_velocity": 0.609,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0502,
+    "ftfn": 1.022,
+    "transport_dist": 0.1554,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.2
+   },
+   "S3_slip_aware": {
+    "peak_coin_velocity": 0.609,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0502,
+    "ftfn": 1.022,
+    "transport_dist": 0.1554,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.2
+   },
+   "S4_impulse": {
+    "peak_coin_velocity": 0.609,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0502,
+    "ftfn": 1.022,
+    "transport_dist": 0.1554,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.2
+   },
+   "S5_predictive_brake": {
+    "peak_coin_velocity": 0.609,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0502,
+    "ftfn": 1.022,
+    "transport_dist": 0.1554,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.2
+   }
+  },
+  {
+   "state": 2,
+   "contact_capable": true,
+   "S0_reference": {
+    "peak_coin_velocity": 0.151,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.5638,
+    "ftfn": 0.605,
+    "transport_dist": 0.0002,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.96
+   },
+   "S1_preload": {
+    "peak_coin_velocity": 0.151,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2984,
+    "ftfn": 0.535,
+    "transport_dist": 0.0002,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.95
+   },
+   "S2_target_velocity": {
+    "peak_coin_velocity": 0.151,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2984,
+    "ftfn": 0.535,
+    "transport_dist": 0.0002,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.95
+   },
+   "S3_slip_aware": {
+    "peak_coin_velocity": 0.151,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2984,
+    "ftfn": 0.535,
+    "transport_dist": 0.0002,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.95
+   },
+   "S4_impulse": {
+    "peak_coin_velocity": 0.151,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2984,
+    "ftfn": 0.535,
+    "transport_dist": 0.0002,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.95
+   },
+   "S5_predictive_brake": {
+    "peak_coin_velocity": 0.151,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2984,
+    "ftfn": 0.535,
+    "transport_dist": 0.0002,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.95
+   }
+  },
+  {
+   "state": 3,
+   "contact_capable": true,
+   "S0_reference": {
+    "peak_coin_velocity": 0.257,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.2969,
+    "ftfn": 0.811,
+    "transport_dist": 0.0194,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.21
+   },
+   "S1_preload": {
+    "peak_coin_velocity": 0.257,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.2969,
+    "ftfn": 0.811,
+    "transport_dist": 0.0194,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.21
+   },
+   "S2_target_velocity": {
+    "peak_coin_velocity": 0.257,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.2969,
+    "ftfn": 0.811,
+    "transport_dist": 0.0194,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.21
+   },
+   "S3_slip_aware": {
+    "peak_coin_velocity": 0.257,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.2969,
+    "ftfn": 0.811,
+    "transport_dist": 0.0194,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.21
+   },
+   "S4_impulse": {
+    "peak_coin_velocity": 0.257,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.2969,
+    "ftfn": 0.811,
+    "transport_dist": 0.0194,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.21
+   },
+   "S5_predictive_brake": {
+    "peak_coin_velocity": 0.257,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.2969,
+    "ftfn": 0.811,
+    "transport_dist": 0.0194,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.21
+   }
+  },
+  {
+   "state": 4,
+   "contact_capable": true,
+   "S0_reference": {
+    "peak_coin_velocity": 0.346,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2327,
+    "ftfn": 1.221,
+    "transport_dist": 0.0061,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.86
+   },
+   "S1_preload": {
+    "peak_coin_velocity": 0.346,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2327,
+    "ftfn": 1.221,
+    "transport_dist": 0.0061,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.86
+   },
+   "S2_target_velocity": {
+    "peak_coin_velocity": 0.346,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2327,
+    "ftfn": 1.221,
+    "transport_dist": 0.0061,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.86
+   },
+   "S3_slip_aware": {
+    "peak_coin_velocity": 0.346,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2327,
+    "ftfn": 1.221,
+    "transport_dist": 0.0061,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.86
+   },
+   "S4_impulse": {
+    "peak_coin_velocity": 0.346,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2327,
+    "ftfn": 1.221,
+    "transport_dist": 0.0061,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.86
+   },
+   "S5_predictive_brake": {
+    "peak_coin_velocity": 0.346,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 1.2327,
+    "ftfn": 1.221,
+    "transport_dist": 0.0061,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.86
+   }
+  },
+  {
+   "state": 5,
+   "contact_capable": true,
+   "S0_reference": {
+    "peak_coin_velocity": 0.207,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0016,
+    "ftfn": 2.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.37
+   },
+   "S1_preload": {
+    "peak_coin_velocity": 0.182,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0007,
+    "ftfn": 2.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.14
+   },
+   "S2_target_velocity": {
+    "peak_coin_velocity": 0.182,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0007,
+    "ftfn": 2.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.14
+   },
+   "S3_slip_aware": {
+    "peak_coin_velocity": 0.182,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0007,
+    "ftfn": 2.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.14
+   },
+   "S4_impulse": {
+    "peak_coin_velocity": 0.182,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0007,
+    "ftfn": 2.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.14
+   },
+   "S5_predictive_brake": {
+    "peak_coin_velocity": 0.182,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0007,
+    "ftfn": 2.0,
+    "transport_dist": 0.0,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.14
+   }
+  },
+  {
+   "state": 6,
+   "contact_capable": true,
+   "S0_reference": {
+    "peak_coin_velocity": 0.549,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0318,
+    "ftfn": 0.237,
+    "transport_dist": 0.062,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.57
+   },
+   "S1_preload": {
+    "peak_coin_velocity": 0.54,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0318,
+    "ftfn": 0.237,
+    "transport_dist": 0.0612,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.57
+   },
+   "S2_target_velocity": {
+    "peak_coin_velocity": 0.54,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0318,
+    "ftfn": 0.237,
+    "transport_dist": 0.0612,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.57
+   },
+   "S3_slip_aware": {
+    "peak_coin_velocity": 0.537,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0318,
+    "ftfn": 0.237,
+    "transport_dist": 0.0605,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.57
+   },
+   "S4_impulse": {
+    "peak_coin_velocity": 0.537,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0318,
+    "ftfn": 0.237,
+    "transport_dist": 0.0605,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.57
+   },
+   "S5_predictive_brake": {
+    "peak_coin_velocity": 0.537,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 0.0318,
+    "ftfn": 0.237,
+    "transport_dist": 0.0605,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 1.57
+   }
+  },
+  {
+   "state": 7,
+   "contact_capable": true,
+   "S0_reference": {
+    "peak_coin_velocity": 0.486,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 2.4565,
+    "ftfn": 0.327,
+    "transport_dist": 0.0071,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.0
+   },
+   "S1_preload": {
+    "peak_coin_velocity": 0.486,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 2.4519,
+    "ftfn": 0.327,
+    "transport_dist": 0.0071,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.0
+   },
+   "S2_target_velocity": {
+    "peak_coin_velocity": 0.486,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 2.4519,
+    "ftfn": 0.327,
+    "transport_dist": 0.0071,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.0
+   },
+   "S3_slip_aware": {
+    "peak_coin_velocity": 0.486,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 2.4141,
+    "ftfn": 0.327,
+    "transport_dist": 0.0068,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.0
+   },
+   "S4_impulse": {
+    "peak_coin_velocity": 0.486,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 2.4141,
+    "ftfn": 0.327,
+    "transport_dist": 0.0068,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.0
+   },
+   "S5_predictive_brake": {
+    "peak_coin_velocity": 0.486,
+    "coin_push_end_velocity": 0.0,
+    "target_directed_impulse": 2.4141,
+    "ftfn": 0.327,
+    "transport_dist": 0.0068,
+    "entered_zone": 0,
+    "k6": 0,
+    "stopping_distance_pred_error": null,
+    "peak_joint_vel": 2.0
+   }
+  }
+ ],
+ "coin_velocity_delta_S5_minus_S0": -0.008,
+ "impulse_within_motion_contract": true,
+ "verdict": "TRANSPORT_IMPULSE_RECOVERED__BRAKING_OR_TERMINAL_CONTROL_REMAINS_THE_WALL",
+ "launch_velocity_required_10cm": 0.593,
+ "impulse_recovered_states": [
+  1,
+  6
+ ],
+ "n_impulse_recovered": 2,
+ "auto_verdict_diluted_mean": "SINGLE_TIP_POSITION_IMPEDANCE_INSUFFICIENT_FOR_REQUIRED_CONTROLLED_IMPULSE"
+}
