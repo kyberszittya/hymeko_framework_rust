@@ -103,8 +103,15 @@ def force_slip_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: ForceSlip
     phase = "ACQUIRE"
     push_impulse, v_launch, coast_start = 0.0, 0.0, None
     peak_vel, peak_fn, peak_ft, transport, coin_push_end_v = 0.0, 0.0, 0.0, 0.0, 0.0
-    peak_coin_v = 0.0                                              # max coin speed imparted (robust to phase flow)
+    peak_coin_v, peak_v_along, peak_v_cross = 0.0, 0.0, 0.0        # speed, TARGET-projected, CROSS-track coin velocity
+    signed_target_disp = 0.0                                       # final coin displacement along the target (may be < 0)
     stop_pred_err, entered_zone = None, False
+    coin_bid = int(m.geom_bodyid[rl.inner._disk_geom])
+    coin_mass = float(m.body_mass[coin_bid])
+    # PHASE-TRANSITION log — proves whether each semantic stage actually FIRED (a stage that never runs is not a stage
+    # that failed). Counts rising edges of each phase + whether the coin ever reached the launch band.
+    phase_log = {"launch_reached": 0, "coast_entered": 0, "brake_entered": 0, "settle_entered": 0, "acquire_entered": 0}
+    prev_phase = None
     t = 0
     try:
         for t in range(horizon):
@@ -142,14 +149,25 @@ def force_slip_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: ForceSlip
                 peak_fn, peak_ft = max(peak_fn, fn), max(peak_ft, ft)
                 push_impulse += fn * stack.control_dt
             csp_now = np.asarray(rl.inner._planar_metrics.disk_vel, np.float32)[:2]
-            peak_coin_v = max(peak_coin_v, float(np.linalg.norm(csp_now)))   # velocity actually imparted to the coin
+            v_along = float(csp_now @ zone_u)                            # TARGET-projected coin velocity (signed)
+            v_cross = float(np.linalg.norm(csp_now - v_along * zone_u))  # CROSS-track coin velocity (drift)
+            peak_coin_v = max(peak_coin_v, float(np.linalg.norm(csp_now)))
+            peak_v_along, peak_v_cross = max(peak_v_along, v_along), max(peak_v_cross, v_cross)
+            if cur != prev_phase:                                        # phase rising-edge log
+                key = {"COAST": "coast_entered", "BRAKE": "brake_entered", "SETTLE": "settle_entered",
+                       "ACQUIRE": "acquire_entered"}.get(cur)
+                if key:
+                    phase_log[key] += 1
+                prev_phase = cur
+            if cfg.enable_target_velocity and v_along >= v_launch - cfg.v_band:
+                phase_log["launch_reached"] = 1                          # the coin reached the coast-model launch band
             # capture the coin velocity at the moment the push releases into a coast
             if phase == "COAST" and coast_start is None:
                 coast_start = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].copy()
                 coin_push_end_v = float(np.linalg.norm(csp_now))
-                predicted_stop = coin_push_end_v ** 2 / (2 * cfg.coast_mu * _G + 1e-9)
             disp = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2] - disk0
             transport = max(transport, float(disp @ zone_u))
+            signed_target_disp = float(disp @ zone_u)                    # (last value = final signed displacement)
             entered_zone = entered_zone or (rl._dtz() <= CENTER_TOL)
             if frame_hook is not None:
                 frame_hook(cur, int(rl._strict))
@@ -165,12 +183,16 @@ def force_slip_carry(rl, gate, pi0, base, stack, *, horizon: int, cfg: ForceSlip
     nsub = max(1, subs["n"])
     return {"k6": int(md >= HELD_DWELL and touched), "max_dwell": md, "touched": int(touched),
             "entered_zone": int(entered_zone), "transport_dist": round(transport, 4),
+            "signed_target_displacement": round(signed_target_disp, 4),
             "coin_push_end_velocity": round(coin_push_end_v, 3), "peak_coin_velocity": round(peak_coin_v, 3),
-            "target_directed_impulse": round(push_impulse, 4),
+            "peak_target_velocity": round(peak_v_along, 3), "peak_cross_track_velocity": round(peak_v_cross, 3),
+            "target_directed_impulse": round(coin_mass * max(0.0, peak_v_along), 5),
+            "lateral_impulse": round(coin_mass * peak_v_cross, 5), "contact_normal_impulse": round(push_impulse, 4),
             "peak_contact_normal_force": round(peak_fn, 2), "peak_contact_tangential_force": round(peak_ft, 2),
             "ftfn": round(peak_ft / (peak_fn + 1e-6), 3), "launch_velocity_target": round(v_launch, 3),
             "stopping_distance_pred_error": stop_pred_err, "peak_joint_vel": round(peak_vel, 2),
-            "acquired_contact": int(peak_fn > 0), "governor_active_frac": round(subs["gov"] / nsub, 3), "steps": n}
+            "phase_log": phase_log, "acquired_contact": int(peak_fn > 0),
+            "governor_active_frac": round(subs["gov"] / nsub, 3), "steps": n}
 
 
 def _semantic_delta(rl, J, cfg: ForceSlipConfig, zone_u, dtz, contact, coin_v, coin_speed, v_launch, push_impulse, phase, tip_v):
