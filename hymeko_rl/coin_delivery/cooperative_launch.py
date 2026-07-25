@@ -63,6 +63,11 @@ class CooperativeConfig:
     imbalance_max: float = 0.25         # |Fn_L − Fn_R|/(Fn_L + Fn_R) — scale-free balance target, tighter than the clean gate
     search_span: float = 0.04          # m — half-range of the 1-D coin sweep along the fingertip–fingertip axis
     search_n: int = 9                  # candidates in the sweep
+    # --- LAUNCH_FEASIBLE_ACQUISITION lexicographic gate (the option-postcondition; Fn-balance is only a diagnostic) ---
+    g2_force_max: float = 0.30         # N — G2 max realized NET contact force on the coin (a clean preload = null net wrench)
+    g2_torque_max: float = 0.010       # N·m — G2 max realized net coin torque (moment arms can spin an Fn-balanced pair)
+    g3_fpar_min: float = 0.10          # (unit grasp force) — G3 min achievable forward net force under the cone
+    g3_cross_max: float = 0.20         # G3 max achievable cross-force fraction of the directed grasp solve
 
 
 def _tip_xy(rl, g):
@@ -425,6 +430,91 @@ def balanced_preload_search(rl, stack, *, cfg: CooperativeConfig | None = None):
             "candidates": cands, "best": best, "exists": bool(best is not None), "_best_env": best_env, "_best_saved": best_saved}
 
 
+def realized_coin_wrench(rl):
+    """G2 — the NET contact wrench [Fx, Fy, τ] the two FINGERTIPS exert on the coin right now (summed from the MuJoCo
+    contacts, world/planar frame, torque about the coin centre). ONLY the fingertip–disk contacts count — floor / boundary
+    / arm-link reactions are excluded, since it is the two-tip PRELOAD that must be net-null (those other contacts are
+    static reactions that do not drive the release drift). A CLEAN preload has both ‖(Fx,Fy)‖ and |τ| small — the coin is
+    squeezed with no net push and no net spin. This is the physical preload target; Fn-balance is only a proxy (asymmetric
+    contact points can be Fn-balanced yet carry a net tangential force / coin torque via the moment arms). Sign: force ON
+    the coin (``mj_contactForce`` returns the force on geom2 along the contact frame)."""
+    m, d = rl.inner.model, rl.inner.data
+    dj = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "disk")
+    tips = {mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left"),
+            mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")}
+    c = d.qpos[int(rl.inner._disk_x_adr):int(rl.inner._disk_x_adr) + 2]
+    net_f, tau, f6 = np.zeros(2), 0.0, np.zeros(6, np.float64)
+    for i in range(d.ncon):
+        con = d.contact[i]
+        pair = {con.geom1, con.geom2}
+        if dj not in pair or not (pair & tips):                  # keep only fingertip–disk contacts (the preload)
+            continue
+        mujoco.mj_contactForce(m, d, i, f6)
+        fw = (con.frame.reshape(3, 3).T @ f6[:3])[:2]            # contact-frame force → world
+        fw = fw if con.geom2 == dj else -fw                      # force ON the coin
+        r = con.pos[:2] - c
+        net_f += fw
+        tau += float(r[0] * fw[1] - r[1] * fw[0])
+    return {"Fx": round(float(net_f[0]), 4), "Fy": round(float(net_f[1]), 4),
+            "force_norm": round(float(np.linalg.norm(net_f)), 4), "torque": round(float(tau), 5)}
+
+
+def launch_feasibility_certificate(rl, cfg: CooperativeConfig | None = None):
+    """G3 — is a target-directed launch WRENCH feasible from this contact geometry? Fast pre-filter: the forward-feasibility
+    coefficient > 0 (the +e_par direction is inside the friction cone). Full certificate: solve the grasp allocation for a
+    forward target and require the realized net force to have F∥ ≥ g3_fpar_min and |F⊥| ≤ g3_cross_max·F∥ with a small
+    wrench residual (cone-feasible, low cross). This is the LAUNCH entry condition the acquisition must satisfy."""
+    cfg = cfg or CooperativeConfig()
+    m = rl.inner.model
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    c = np.asarray(rl.inner._planar_metrics.disk_pos, np.float64)[:2]
+    p_l, p_r = _tip_xy(rl, gl).astype(np.float64), _tip_xy(rl, gr).astype(np.float64)
+    u, _dtz = rl.inner.direction_to_zone()
+    e_par = np.asarray(u, np.float64)
+    e_cross = np.array([-e_par[1], e_par[0]], np.float64)
+    fa = forward_feasibility(c, p_l, p_r, e_par, cfg.coast_mu)
+    _fl, _fr, diag = _grasp_solve(c, p_l, p_r, e_par, cfg.coast_mu, cfg.grasp_lam)
+    net = np.asarray(diag["net_force"], np.float64)
+    f_par, f_cross = float(net @ e_par), abs(float(net @ e_cross))
+    feasible = bool(fa["feasible"] and f_par >= cfg.g3_fpar_min and f_cross <= cfg.g3_cross_max * max(f_par, 1e-9))
+    return {"forward_coeff": fa["coeff"], "f_parallel": round(f_par, 4), "f_cross": round(f_cross, 4),
+            "wrench_residual": diag["wrench_residual"], "feasible": feasible}
+
+
+def launch_feasible_acquisition_search(rl, stack, *, cfg: CooperativeConfig | None = None):
+    """LAUNCH_FEASIBLE_ACQUISITION_SEARCH_V1 — the corrected acquisition: sweep the fingertip axis and apply the
+    LEXICOGRAPHIC option-postcondition at each candidate, so ``done`` means the next option (LAUNCH) is executable — not
+    merely that the contact is Fn-balanced (E1's mis-abstraction). G1 clean contact (``acquire_clean_preload``) → G2 null
+    realized preload wrench (``realized_coin_wrench``) → G3 launch-wrench feasibility (``launch_feasibility_certificate``).
+    The far-side sign is only an ORDERING PRIOR; the decision is G1∧G2∧G3. Returns per-candidate gate breakdown + the best
+    (lowest-residual) candidate passing all three, with its validated env for a downstream launch."""
+    cfg = cfg or CooperativeConfig()
+    m = rl.inner.model
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    mid0 = tip_midpoint(rl).astype(np.float64)
+    axis = _unit2((_tip_xy(rl, gr) - _tip_xy(rl, gl)).astype(np.float64))
+    cands, best, best_env, best_saved = [], None, None, None
+    for s in np.linspace(-cfg.search_span, cfg.search_span, cfg.search_n):
+        coin_xy = (mid0 + float(s) * axis).astype(np.float32)
+        env = copy.deepcopy(rl)
+        acq = acquire_clean_preload(env, stack, cfg=cfg, coin_xy=coin_xy)
+        g1 = bool(acq["clean"])
+        w = realized_coin_wrench(env) if acq["acquired"] else {"force_norm": None, "torque": None}
+        g2 = bool(g1 and w["force_norm"] is not None and w["force_norm"] <= cfg.g2_force_max and abs(w["torque"]) <= cfg.g2_torque_max)
+        cert = launch_feasibility_certificate(env, cfg) if acq["acquired"] else {"feasible": False, "wrench_residual": None}
+        g3 = bool(g1 and cert["feasible"])
+        done = bool(g1 and g2 and g3)
+        cand = {"s": round(float(s), 4), "coin_xy": [round(float(x), 4) for x in coin_xy], "acquired": acq["acquired"],
+                "G1_clean_contact": g1, "G2_null_preload_wrench": g2, "G3_launch_feasible": g3, "done": done,
+                "realized_wrench": w, "launch_cert": cert}
+        cands.append(cand)
+        if done and (best is None or cert["wrench_residual"] < best["launch_cert"]["wrench_residual"]):
+            best, best_env, best_saved = cand, env, acq["pin_saved"]
+    return {"candidates": cands, "best": best, "exists": bool(best is not None), "_best_env": best_env, "_best_saved": best_saved}
+
+
 def _tip_contacts(rl):
     """Per-tip peak (normal force, tangential force, min penetration depth) vs the coin THIS step (MuJoCo contact frame).
     Feeds the E0 pre-release sanity gate: the positive launch velocity must come from a BOUNDED preload, not from a
@@ -496,19 +586,26 @@ def _grasp_allocation(c, p_l, p_r, e_par, mu, lam, f_par=1.0):
     return f_l, f_r
 
 
-def forward_authority(c, p_l, p_r, e_par, mu):
-    """A∥(s) = max_{f ∈ friction cone, Fn ≤ 1} e_par·F_net — the maximum forward (toward-zone) net force the two contacts
-    can produce under Fn ≥ 0 ∧ |Ft| ≤ μ·Fn (unit per-contact normal cap). The contacts are INDEPENDENT in this objective,
-    so it has a closed form: Σᵢ max(0, e_par·nᵢ + μ|e_par·tᵢ|). **A∥ ≤ 0 ⇒ pressing can produce NO forward push ⇒ a grasp
-    allocator returning zero is a physically HONEST refusal, not a bug; A∥ > 0 with a zero allocation would be an
-    implementation/optimisation error.** Per-contact terms let a MIXED pair still be feasible via friction, so this is the
-    real launch-feasibility gate — not the hardcoded "both tips far-side" sign."""
+def forward_feasibility(c, p_l, p_r, e_par, mu, fn_max=None):
+    """The UNIT-NORMALISED forward-feasibility coefficient — a SIGN gate, NOT a physical force magnitude. With a unit
+    per-contact normal cap (Fn ≤ 1), the friction cone's max forward projection has the closed form
+    ``coeff = Σᵢ max(0, e_par·nᵢ + μ|e_par·tᵢ|)`` (contacts independent in the objective). Its ROLE is directional
+    feasibility: ``coeff == 0`` ⇒ the contact geometry admits NO forward-pushing compressive direction (a grasp allocator
+    returning zero is then a physically HONEST refusal); ``coeff > 0`` ⇒ the forward direction lies inside the friction
+    cone (feasible). Per-contact terms let a MIXED pair be feasible via friction — so the gate is feasibility, not the
+    hardcoded "both tips far-side" sign. It does NOT say how much force the ACTUATORS can produce: pass ``fn_max`` (the
+    per-contact realizable normal force from torque/Jacobian/motion-contract) to also get the bounded physical magnitude
+    ``bounded = Σᵢ Fn_maxᵢ·max(0, …)``. Without ``fn_max`` the magnitude is unbounded, hence the unit normalisation."""
     e = np.asarray(e_par, np.float64)
     e = e / (float(np.linalg.norm(e)) + 1e-12)
-    per = []
-    for _r, n, t in _contact_frames(c, p_l, p_r):
-        per.append(max(0.0, float(e @ n) + mu * abs(float(e @ t))))
-    return {"A_parallel": round(sum(per), 4), "per_contact": [round(x, 4) for x in per]}
+    fn_max = fn_max if fn_max is not None else (1.0, 1.0)
+    per, bounded = [], 0.0
+    for (_r, n, t), fmax in zip(_contact_frames(c, p_l, p_r), fn_max):
+        support = max(0.0, float(e @ n) + mu * abs(float(e @ t)))
+        per.append(support)
+        bounded += float(fmax) * support
+    return {"coeff": round(sum(per), 4), "per_contact": [round(x, 4) for x in per], "feasible": bool(sum(per) > 1e-6),
+            "bounded_forward_force": round(bounded, 4)}
 
 
 class TwistAllocator:

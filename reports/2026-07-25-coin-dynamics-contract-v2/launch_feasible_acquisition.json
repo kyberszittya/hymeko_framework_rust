@@ -1,0 +1,1649 @@
+{
+ "contract": "LAUNCH_FEASIBLE_ACQUISITION_SEARCH_V1",
+ "date": "2026-07-25",
+ "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2",
+ "coast_mu": 0.179,
+ "n_states": 8,
+ "gate": {
+  "g2_force_max": 0.3,
+  "g2_torque_max": 0.01,
+  "g3_fpar_min": 0.1,
+  "g3_cross_max": 0.2,
+  "search_span": 0.04,
+  "search_n": 9
+ },
+ "exists_rate": 0.0,
+ "candidate_funnel_total": {
+  "G1_clean_contact": 7,
+  "G2_null_preload_wrench": 0,
+  "G3_launch_feasible": 0,
+  "done": 0
+ },
+ "verdict": "NO_LAUNCH_FEASIBLE_ACQUISITION_UNDER_CURRENT_SEARCH",
+ "rows": [
+  {
+   "state": 0,
+   "exists": false,
+   "best": null,
+   "funnel": {
+    "G1_clean_contact": 0,
+    "G2_null_preload_wrench": 0,
+    "G3_launch_feasible": 0,
+    "done": 0
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.0261,
+      0.0901
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.035,
+      0.0854
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0438,
+      0.0807
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0526,
+      0.076
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0615,
+      0.0714
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0703,
+      0.0667
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0791,
+      0.062
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.088,
+      0.0573
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0968,
+      0.0527
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    }
+   ]
+  },
+  {
+   "state": 1,
+   "exists": false,
+   "best": null,
+   "funnel": {
+    "G1_clean_contact": 2,
+    "G2_null_preload_wrench": 0,
+    "G3_launch_feasible": 0,
+    "done": 0
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.0388,
+      0.1585
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.0481,
+      0.1547
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0573,
+      0.1508
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0666,
+      0.147
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0758,
+      0.1432
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0851,
+      0.1394
+     ],
+     "acquired": true,
+     "G1_clean_contact": true,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": -0.4356,
+      "Fy": -2.4485,
+      "force_norm": 2.487,
+      "torque": -0.00193
+     },
+     "launch_cert": {
+      "forward_coeff": 0.5006,
+      "f_parallel": 0.0847,
+      "f_cross": 0.1495,
+      "wrench_residual": 0.9275,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0943,
+      0.1356
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.1035,
+      0.1318
+     ],
+     "acquired": true,
+     "G1_clean_contact": true,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 0.3198,
+      "Fy": -0.2935,
+      "force_norm": 0.434,
+      "torque": -0.00189
+     },
+     "launch_cert": {
+      "forward_coeff": 0.0,
+      "f_parallel": 0.0,
+      "f_cross": 0.0,
+      "wrench_residual": 1.0,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.1128,
+      0.128
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    }
+   ]
+  },
+  {
+   "state": 2,
+   "exists": false,
+   "best": null,
+   "funnel": {
+    "G1_clean_contact": 0,
+    "G2_null_preload_wrench": 0,
+    "G3_launch_feasible": 0,
+    "done": 0
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      -0.0281,
+      0.1553
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      -0.0198,
+      0.1498
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      -0.0115,
+      0.1443
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      -0.0032,
+      0.1387
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0052,
+      0.1332
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 1.2388,
+      "Fy": -1.713,
+      "force_norm": 2.114,
+      "torque": 0.01007
+     },
+     "launch_cert": {
+      "forward_coeff": 1.2584,
+      "f_parallel": 0.4386,
+      "f_cross": 0.0799,
+      "wrench_residual": 0.567,
+      "feasible": true
+     }
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0135,
+      0.1276
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 1.63,
+      "Fy": -0.7127,
+      "force_norm": 1.779,
+      "torque": -0.00558
+     },
+     "launch_cert": {
+      "forward_coeff": 1.156,
+      "f_parallel": 0.4931,
+      "f_cross": 0.0021,
+      "wrench_residual": 0.5069,
+      "feasible": true
+     }
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0218,
+      0.1221
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.0301,
+      0.1165
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0385,
+      0.111
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    }
+   ]
+  },
+  {
+   "state": 3,
+   "exists": false,
+   "best": null,
+   "funnel": {
+    "G1_clean_contact": 0,
+    "G2_null_preload_wrench": 0,
+    "G3_launch_feasible": 0,
+    "done": 0
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.0092,
+      0.2126
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.0189,
+      0.2152
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0285,
+      0.2179
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0381,
+      0.2206
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0478,
+      0.2233
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0574,
+      0.226
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.067,
+      0.2287
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.0767,
+      0.2314
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0863,
+      0.2341
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    }
+   ]
+  },
+  {
+   "state": 4,
+   "exists": false,
+   "best": null,
+   "funnel": {
+    "G1_clean_contact": 0,
+    "G2_null_preload_wrench": 0,
+    "G3_launch_feasible": 0,
+    "done": 0
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.0311,
+      0.1331
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.0408,
+      0.1355
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0505,
+      0.1379
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0602,
+      0.1404
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0699,
+      0.1428
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0796,
+      0.1453
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0893,
+      0.1477
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.099,
+      0.1502
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.1087,
+      0.1526
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    }
+   ]
+  },
+  {
+   "state": 5,
+   "exists": false,
+   "best": null,
+   "funnel": {
+    "G1_clean_contact": 2,
+    "G2_null_preload_wrench": 0,
+    "G3_launch_feasible": 0,
+    "done": 0
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      -0.013,
+      0.0999
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      -0.0041,
+      0.0954
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0048,
+      0.0908
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0137,
+      0.0863
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0226,
+      0.0817
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0315,
+      0.0771
+     ],
+     "acquired": true,
+     "G1_clean_contact": true,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": -1.0433,
+      "Fy": -2.6936,
+      "force_norm": 2.8886,
+      "torque": 0.00373
+     },
+     "launch_cert": {
+      "forward_coeff": 0.0,
+      "f_parallel": 0.0,
+      "f_cross": 0.0,
+      "wrench_residual": 1.0,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0404,
+      0.0726
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 3.9262,
+      "Fy": 0.2942,
+      "force_norm": 3.9372,
+      "torque": 0.02259
+     },
+     "launch_cert": {
+      "forward_coeff": 0.5105,
+      "f_parallel": 0.0876,
+      "f_cross": 0.1508,
+      "wrench_residual": 0.9247,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.0493,
+      0.068
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 1.2175,
+      "Fy": 2.9381,
+      "force_norm": 3.1803,
+      "torque": -0.0327
+     },
+     "launch_cert": {
+      "forward_coeff": 0.1452,
+      "f_parallel": 0.0,
+      "f_cross": 0.0,
+      "wrench_residual": 1.0,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0582,
+      0.0635
+     ],
+     "acquired": true,
+     "G1_clean_contact": true,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 1.356,
+      "Fy": -2.2129,
+      "force_norm": 2.5953,
+      "torque": 0.02664
+     },
+     "launch_cert": {
+      "forward_coeff": 0.0,
+      "f_parallel": 0.0,
+      "f_cross": 0.0,
+      "wrench_residual": 1.0,
+      "feasible": false
+     }
+    }
+   ]
+  },
+  {
+   "state": 6,
+   "exists": false,
+   "best": null,
+   "funnel": {
+    "G1_clean_contact": 0,
+    "G2_null_preload_wrench": 0,
+    "G3_launch_feasible": 0,
+    "done": 0
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      -0.0649,
+      0.2064
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      -0.0555,
+      0.2099
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      -0.0461,
+      0.2134
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      -0.0367,
+      0.2169
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      -0.0274,
+      0.2203
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      -0.018,
+      0.2238
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      -0.0086,
+      0.2273
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.0008,
+      0.2308
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": -2.6667,
+      "Fy": -1.2818,
+      "force_norm": 2.9587,
+      "torque": -0.01152
+     },
+     "launch_cert": {
+      "forward_coeff": 0.7633,
+      "f_parallel": 0.1365,
+      "f_cross": 0.1799,
+      "wrench_residual": 0.8821,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0101,
+      0.2342
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 3.6241,
+      "Fy": -1.3395,
+      "force_norm": 3.8637,
+      "torque": 0.05869
+     },
+     "launch_cert": {
+      "forward_coeff": 0.3503,
+      "f_parallel": 0.0297,
+      "f_cross": 0.0809,
+      "wrench_residual": 0.9736,
+      "feasible": false
+     }
+    }
+   ]
+  },
+  {
+   "state": 7,
+   "exists": false,
+   "best": null,
+   "funnel": {
+    "G1_clean_contact": 3,
+    "G2_null_preload_wrench": 0,
+    "G3_launch_feasible": 0,
+    "done": 0
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.046,
+      0.2079
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.0548,
+      0.2032
+     ],
+     "acquired": true,
+     "G1_clean_contact": true,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": -4.1895,
+      "Fy": -0.7242,
+      "force_norm": 4.2517,
+      "torque": -0.03074
+     },
+     "launch_cert": {
+      "forward_coeff": 1.5594,
+      "f_parallel": 0.586,
+      "f_cross": 0.1732,
+      "wrench_residual": 0.4488,
+      "feasible": false
+     }
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0636,
+      0.1984
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": -1.1166,
+      "Fy": -2.6224,
+      "force_norm": 2.8502,
+      "torque": -0.01401
+     },
+     "launch_cert": {
+      "forward_coeff": 1.0119,
+      "f_parallel": 0.4827,
+      "f_cross": 0.0435,
+      "wrench_residual": 0.5192,
+      "feasible": true
+     }
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0724,
+      0.1936
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 1.2431,
+      "Fy": -2.6083,
+      "force_norm": 2.8893,
+      "torque": 0.00245
+     },
+     "launch_cert": {
+      "forward_coeff": 0.2072,
+      "f_parallel": 0.004,
+      "f_cross": 0.0191,
+      "wrench_residual": 0.9962,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0812,
+      0.1889
+     ],
+     "acquired": true,
+     "G1_clean_contact": true,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 1.5536,
+      "Fy": -1.0047,
+      "force_norm": 1.8502,
+      "torque": -0.01864
+     },
+     "launch_cert": {
+      "forward_coeff": 0.2854,
+      "f_parallel": 0.0171,
+      "f_cross": 0.0583,
+      "wrench_residual": 0.9847,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.09,
+      0.1841
+     ],
+     "acquired": true,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 0.4306,
+      "Fy": -2.1243,
+      "force_norm": 2.1675,
+      "torque": 0.00068
+     },
+     "launch_cert": {
+      "forward_coeff": 0.2406,
+      "f_parallel": 0.009,
+      "f_cross": 0.0372,
+      "wrench_residual": 0.9916,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0988,
+      0.1793
+     ],
+     "acquired": true,
+     "G1_clean_contact": true,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "Fx": 1.8637,
+      "Fy": -5.6648,
+      "force_norm": 5.9635,
+      "torque": 0.05218
+     },
+     "launch_cert": {
+      "forward_coeff": 0.1632,
+      "f_parallel": 0.0,
+      "f_cross": 0.0,
+      "wrench_residual": 1.0,
+      "feasible": false
+     }
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.1075,
+      0.1746
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.1163,
+      0.1698
+     ],
+     "acquired": false,
+     "G1_clean_contact": false,
+     "G2_null_preload_wrench": false,
+     "G3_launch_feasible": false,
+     "done": false,
+     "realized_wrench": {
+      "force_norm": null,
+      "torque": null
+     },
+     "launch_cert": {
+      "feasible": false,
+      "wrench_residual": null
+     }
+    }
+   ]
+  }
+ ]
+}

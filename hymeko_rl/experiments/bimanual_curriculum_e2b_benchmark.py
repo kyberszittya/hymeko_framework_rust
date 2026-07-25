@@ -28,14 +28,15 @@ import mujoco  # noqa: E402
 from hymeko_rl.coin_delivery.contact_pair_scenario import set_material, setup_material_decoupling  # noqa: E402
 from hymeko_rl.coin_delivery.cooperative_launch import (  # noqa: E402
     CooperativeConfig, GraspAllocator, TwistAllocator, _grasp_solve, _tip_xy, balanced_preload_search,
-    forward_authority, measure_release_branch)
+    forward_feasibility, measure_release_branch)
 from hymeko_rl.env.governed_arm import V3Stack  # noqa: E402
 from hymeko_rl.experiments.video_coin_variants import _reconstruct, _setup  # noqa: E402
 
 
 def _feasibility_audit(rl, mu, lam):
-    """Classify a preload snapshot's launch feasibility: A∥ (max achievable forward force) + the full grasp solve
-    (unclipped/clipped/realized/residual). Lets an A2 zero output be PROVEN an honest refusal (A∥ ≤ 0) vs an artifact."""
+    """Classify a preload snapshot's launch feasibility: the forward-feasibility COEFFICIENT (a directional sign gate, not
+    a force magnitude) + the full grasp solve (unclipped/clipped/realized/residual). Lets an A2 zero output be PROVEN an
+    honest refusal (coeff = 0, geometrically infeasible) versus a solver/scale/clip artifact."""
     m = rl.inner.model
     gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
     gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
@@ -43,9 +44,9 @@ def _feasibility_audit(rl, mu, lam):
     p_l, p_r = _tip_xy(rl, gl).astype(np.float64), _tip_xy(rl, gr).astype(np.float64)
     u, _dtz = rl.inner.direction_to_zone()
     e_par = np.asarray(u, np.float64)
-    fa = forward_authority(c, p_l, p_r, e_par, mu)
+    fa = forward_feasibility(c, p_l, p_r, e_par, mu)
     _fl, _fr, gdiag = _grasp_solve(c, p_l, p_r, e_par, mu, lam)
-    return {"A_parallel": fa["A_parallel"], "per_contact": fa["per_contact"], "grasp": gdiag}
+    return {"forward_coeff": fa["coeff"], "feasible": fa["feasible"], "per_contact": fa["per_contact"], "grasp": gdiag}
 
 
 def _contact_frame_side(rl):
@@ -109,11 +110,11 @@ def main(smoke=False):
                       "d_omega": round(meas[name]["peak_omega"] - p["peak_omega"], 4)} for name in ("A0", "A2")}
         a2_engaged = bool(any(abs(inc["A2"][k]) > 1e-4 for k in ("d_v_par", "d_v_cross", "d_omega")))
         # honest refusal: A2 disengages exactly when the forward authority is ~zero (feasibility-consistent)
-        refusal_honest = bool((not a2_engaged and feas["A_parallel"] < 1e-3) or (a2_engaged and feas["A_parallel"] > 0))
+        refusal_honest = bool((not a2_engaged and not feas["feasible"]) or (a2_engaged and feas["feasible"]))
         rows.append({"state": si, "best_s": srch["best"]["s"], "imbalance": srch["best"]["imbalance"],
                      "contact_frame_side": side, "feasibility": feas, "a2_engaged": a2_engaged,
                      "refusal_honest": refusal_honest, "measured": meas, "incremental": inc})
-        print(f"  s{si}: {'FAR' if side['far_side'] else 'ZONE'} A∥={feas['A_parallel']} per{feas['per_contact']} "
+        print(f"  s{si}: {'FAR' if side['far_side'] else 'ZONE'} coeff={feas['forward_coeff']} per{feas['per_contact']} "
               f"fwd_force={feas['grasp']['forward_force']} | inc_A0 dv{inc['A0']['d_v_par']} dx{inc['A0']['d_v_cross']} | "
               f"inc_A2 dv{inc['A2']['d_v_par']} dx{inc['A2']['d_v_cross']} eng={int(a2_engaged)} honest={int(refusal_honest)}", flush=True)
 
