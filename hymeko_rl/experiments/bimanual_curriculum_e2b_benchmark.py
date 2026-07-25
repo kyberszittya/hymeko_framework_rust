@@ -27,9 +27,25 @@ import mujoco  # noqa: E402
 
 from hymeko_rl.coin_delivery.contact_pair_scenario import set_material, setup_material_decoupling  # noqa: E402
 from hymeko_rl.coin_delivery.cooperative_launch import (  # noqa: E402
-    CooperativeConfig, GraspAllocator, TwistAllocator, _tip_xy, balanced_preload_search, measure_release_branch)
+    CooperativeConfig, GraspAllocator, TwistAllocator, _grasp_solve, _tip_xy, balanced_preload_search,
+    forward_authority, measure_release_branch)
 from hymeko_rl.env.governed_arm import V3Stack  # noqa: E402
 from hymeko_rl.experiments.video_coin_variants import _reconstruct, _setup  # noqa: E402
+
+
+def _feasibility_audit(rl, mu, lam):
+    """Classify a preload snapshot's launch feasibility: A∥ (max achievable forward force) + the full grasp solve
+    (unclipped/clipped/realized/residual). Lets an A2 zero output be PROVEN an honest refusal (A∥ ≤ 0) vs an artifact."""
+    m = rl.inner.model
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    c = np.asarray(rl.inner._planar_metrics.disk_pos, np.float64)[:2]
+    p_l, p_r = _tip_xy(rl, gl).astype(np.float64), _tip_xy(rl, gr).astype(np.float64)
+    u, _dtz = rl.inner.direction_to_zone()
+    e_par = np.asarray(u, np.float64)
+    fa = forward_authority(c, p_l, p_r, e_par, mu)
+    _fl, _fr, gdiag = _grasp_solve(c, p_l, p_r, e_par, mu, lam)
+    return {"A_parallel": fa["A_parallel"], "per_contact": fa["per_contact"], "grasp": gdiag}
 
 
 def _contact_frame_side(rl):
@@ -83,6 +99,7 @@ def main(smoke=False):
             continue
         env, saved = srch["_best_env"], srch["_best_saved"]
         side = _contact_frame_side(copy.deepcopy(env))            # which side of the coin the balanced preload acquired
+        feas = _feasibility_audit(copy.deepcopy(env), mu, cfg.grasp_lam)   # A∥ + grasp solve → is any A2 zero HONEST?
         branches = {"P": None, "A0": TwistAllocator(cfg), "A2": GraspAllocator(cfg)}
         meas = {name: measure_release_branch(copy.deepcopy(env), stack, saved, cfg=cfg, allocator=al, horizon=HORIZON)
                 for name, al in branches.items()}
@@ -91,12 +108,14 @@ def main(smoke=False):
                       "d_v_cross": round(meas[name]["peak_v_cross"] - p["peak_v_cross"], 4),
                       "d_omega": round(meas[name]["peak_omega"] - p["peak_omega"], 4)} for name in ("A0", "A2")}
         a2_engaged = bool(any(abs(inc["A2"][k]) > 1e-4 for k in ("d_v_par", "d_v_cross", "d_omega")))
+        # honest refusal: A2 disengages exactly when the forward authority is ~zero (feasibility-consistent)
+        refusal_honest = bool((not a2_engaged and feas["A_parallel"] < 1e-3) or (a2_engaged and feas["A_parallel"] > 0))
         rows.append({"state": si, "best_s": srch["best"]["s"], "imbalance": srch["best"]["imbalance"],
-                     "contact_frame_side": side, "a2_engaged": a2_engaged, "measured": meas, "incremental": inc})
-        print(f"  s{si}: frame far_side={int(side['far_side'])} zone_side={int(side['zone_side'])} "
-              f"proj[{side['proj_left']},{side['proj_right']}] | passive v_par {p['peak_v_parallel']} | "
-              f"inc_A0 dv{inc['A0']['d_v_par']} dx{inc['A0']['d_v_cross']} | inc_A2 dv{inc['A2']['d_v_par']} dx{inc['A2']['d_v_cross']} "
-              f"engaged={int(a2_engaged)}", flush=True)
+                     "contact_frame_side": side, "feasibility": feas, "a2_engaged": a2_engaged,
+                     "refusal_honest": refusal_honest, "measured": meas, "incremental": inc})
+        print(f"  s{si}: {'FAR' if side['far_side'] else 'ZONE'} A∥={feas['A_parallel']} per{feas['per_contact']} "
+              f"fwd_force={feas['grasp']['forward_force']} | inc_A0 dv{inc['A0']['d_v_par']} dx{inc['A0']['d_v_cross']} | "
+              f"inc_A2 dv{inc['A2']['d_v_par']} dx{inc['A2']['d_v_cross']} eng={int(a2_engaged)} honest={int(refusal_honest)}", flush=True)
 
     # per-state: does A2 add more target-directed impulse than A0 (with margin), without blowing lateral/spin?
     def a2_wins(r):
@@ -115,6 +134,7 @@ def main(smoke=False):
     similar = n - a2w - a0w
     zone_side = sum(r["contact_frame_side"]["zone_side"] for r in rows)
     a2_engaged_n = sum(r["a2_engaged"] for r in rows)
+    refusal_honest_all = bool(rows and all(r["refusal_honest"] for r in rows))
     if n and a2_engaged_n == 0 and zone_side >= max(2, (n + 1) // 2):
         # A2 correctly refuses (zero force) because the balanced frame is on the ZONE-facing side — no feasible +e_par push
         verdict = "BALANCED_PRELOAD_FRAME_DOES_NOT_AFFORD_TARGET_DIRECTED_WRENCH__CONTACT_SIDE_DOMINATES_ALLOCATOR"
@@ -127,10 +147,11 @@ def main(smoke=False):
     manifest = {"contract": "E2B_BASELINE_SUBTRACTED_ALLOCATOR_V1", "date": "2026-07-25", "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2",
                 "coast_mu": round(mu, 3), "horizon": HORIZON, "margin": MARGIN, "n_states": n,
                 "a2_wins": a2w, "a0_wins": a0w, "similar": similar, "zone_side": zone_side, "a2_engaged": a2_engaged_n,
-                "verdict": verdict, "rows": rows}
+                "refusal_honest_all": refusal_honest_all, "verdict": verdict, "rows": rows}
     json.dump(manifest, open(f"{OUT}/bimanual_curriculum_e2b.json", "w"), indent=1, default=float)
-    print("\n== E2B baseline-subtracted allocator ==")
-    print(f"  A2 engaged {a2_engaged_n}/{n} | zone-side frames {zone_side}/{n} | A2 wins {a2w}/{n}, A0 wins {a0w}/{n}")
+    print("\n== E2B baseline-subtracted allocator (+ feasibility audit) ==")
+    print(f"  A2 engaged {a2_engaged_n}/{n} | zone-side frames {zone_side}/{n} | honest-refusal verified: {refusal_honest_all}")
+    print(f"  A2 wins {a2w}/{n}, A0 wins {a0w}/{n}")
     print(f"  → {verdict}\n  artifact: {OUT}/bimanual_curriculum_e2b.json\nE2B_DONE")
     return manifest
 

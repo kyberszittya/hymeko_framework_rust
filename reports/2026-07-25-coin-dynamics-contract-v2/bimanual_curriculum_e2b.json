@@ -11,6 +11,7 @@
  "similar": 1,
  "zone_side": 2,
  "a2_engaged": 1,
+ "refusal_honest_all": true,
  "verdict": "ALLOCATOR_ADVANTAGE_DEPENDS_ON_CONTACT_FRAME_AND_LOCAL_ACTUATION_AUTHORITY",
  "rows": [
   {
@@ -23,7 +24,36 @@
     "far_side": false,
     "zone_side": true
    },
+   "feasibility": {
+    "A_parallel": 0.0,
+    "per_contact": [
+     0.0,
+     0.0
+    ],
+    "grasp": {
+     "f_unclipped": [
+      -0.4905,
+      0.0325,
+      -0.3055,
+      -0.3752
+     ],
+     "f_clipped": [
+      0.0,
+      0.0,
+      0.0,
+      -0.0
+     ],
+     "net_force": [
+      0.0,
+      0.0
+     ],
+     "forward_force": 0.0,
+     "wrench_residual": 1.0,
+     "clip_changed": true
+    }
+   },
    "a2_engaged": false,
+   "refusal_honest": true,
    "measured": {
     "P": {
      "v_target": 0.612,
@@ -82,7 +112,36 @@
     "far_side": false,
     "zone_side": true
    },
+   "feasibility": {
+    "A_parallel": 0.0,
+    "per_contact": [
+     0.0,
+     0.0
+    ],
+    "grasp": {
+     "f_unclipped": [
+      -0.4475,
+      -0.2009,
+      -0.2687,
+      -0.4033
+     ],
+     "f_clipped": [
+      0.0,
+      -0.0,
+      0.0,
+      -0.0
+     ],
+     "net_force": [
+      -0.0,
+      0.0
+     ],
+     "forward_force": 0.0,
+     "wrench_residual": 1.0,
+     "clip_changed": true
+    }
+   },
    "a2_engaged": false,
+   "refusal_honest": true,
    "measured": {
     "P": {
      "v_target": 0.61,
@@ -141,7 +200,36 @@
     "far_side": true,
     "zone_side": false
    },
+   "feasibility": {
+    "A_parallel": 1.5594,
+    "per_contact": [
+     0.5442,
+     1.0152
+    ],
+    "grasp": {
+     "f_unclipped": [
+      0.1802,
+      0.4493,
+      0.4806,
+      0.1018
+     ],
+     "f_clipped": [
+      0.1802,
+      0.0323,
+      0.4806,
+      0.0863
+     ],
+     "net_force": [
+      -0.5929,
+      -0.1479
+     ],
+     "forward_force": 0.586,
+     "wrench_residual": 0.4488,
+     "clip_changed": true
+    }
+   },
    "a2_engaged": true,
+   "refusal_honest": true,
    "measured": {
     "P": {
      "v_target": 0.651,

@@ -450,28 +450,65 @@ def _tip_contacts(rl):
     return {"left": tuple(acc[gl]), "right": tuple(acc[gr])}
 
 
-def _grasp_allocation(c, p_l, p_r, e_par, mu, lam, f_par=1.0):
-    """A2 resultant-FORCE allocation over two contacts. Each contact i has a LOCAL frame (A3): normal nᵢ = tip→centre,
-    tangent tᵢ ⊥ nᵢ. The 3×4 grasp matrix G maps [Fn_L,Ft_L,Fn_R,Ft_R] to the coin wrench [Fx,Fy,τ]. Solve
-    min‖G f − w*‖² + λ‖f‖² with w* = [f_par·e_par ; 0] (aim the resultant along e_par, ZERO torque), then project onto the
-    friction cone Fn ≥ 0 ∧ |Ft| ≤ μ·Fn (A1 keeps the two normals balanced). Returns the two WORLD contact forces."""
-    cols, frames = [], []
+def _contact_frames(c, p_l, p_r):
+    """The FROZEN sign convention for both contacts: normal nᵢ = unit(coin_centre − tip) — the direction tip i pushes INTO
+    the coin (Fn ≥ 0 presses along +nᵢ); tangent tᵢ = nᵢ rotated +90°. Returned per contact as (r=tip−centre, n, t)."""
+    out = []
     for p in (p_l, p_r):
-        r = (p - c).astype(np.float64)
-        n = _unit2((c - p).astype(np.float64))
-        tang = np.array([-n[1], n[0]], np.float64)
-        frames.append((n, tang))
+        r = (np.asarray(p) - np.asarray(c)).astype(np.float64)
+        n = _unit2((np.asarray(c) - np.asarray(p)).astype(np.float64))
+        out.append((r, n, np.array([-n[1], n[0]], np.float64)))
+    return out
+
+
+def _grasp_solve(c, p_l, p_r, e_par, mu, lam, f_par=1.0):
+    """A2 resultant-FORCE allocation with full diagnostics. Grasp matrix G maps [Fn_L,Ft_L,Fn_R,Ft_R] to the coin wrench
+    [Fx,Fy,τ]; solve min‖G f − w*‖² + λ‖f‖², w* = [f_par·e_par ; 0], then project onto the friction cone Fn ≥ 0 ∧
+    |Ft| ≤ μ·Fn. Returns the two WORLD contact forces AND a diagnostic dict (unclipped/clipped solution, realized net force,
+    realized forward force e_par·F_net, wrench residual, whether the cone clip changed the solution) — so a zero output can
+    be classified as an HONEST refusal (infeasible wrench) versus a solver/scale/clip artifact."""
+    e = np.asarray(e_par, np.float64)
+    frames = _contact_frames(c, p_l, p_r)
+    cols = []
+    for r, n, t in frames:
         cols.append([n[0], n[1], r[0] * n[1] - r[1] * n[0]])
-        cols.append([tang[0], tang[1], r[0] * tang[1] - r[1] * tang[0]])
+        cols.append([t[0], t[1], r[0] * t[1] - r[1] * t[0]])
     G = np.array(cols, np.float64).T
-    w = np.array([f_par * e_par[0], f_par * e_par[1], 0.0], np.float64)
-    f = np.linalg.solve(G.T @ G + lam * np.eye(4), G.T @ w)
-    forces = []
-    for k, (n, tang) in zip((0, 2), frames):
-        fn = max(0.0, float(f[k]))
-        ft = float(np.clip(f[k + 1], -mu * fn, mu * fn))
-        forces.append(fn * n + ft * tang)
-    return forces[0], forces[1]
+    w = np.array([f_par * e[0], f_par * e[1], 0.0], np.float64)
+    f_unclipped = np.linalg.solve(G.T @ G + lam * np.eye(4), G.T @ w)
+    f_clipped, forces = f_unclipped.copy(), []
+    for k, (_r, n, t) in zip((0, 2), frames):
+        fn = max(0.0, float(f_unclipped[k]))
+        ft = float(np.clip(f_unclipped[k + 1], -mu * fn, mu * fn))
+        f_clipped[k], f_clipped[k + 1] = fn, ft
+        forces.append(fn * n + ft * t)
+    net = forces[0] + forces[1]
+    diag = {"f_unclipped": [round(float(x), 4) for x in f_unclipped], "f_clipped": [round(float(x), 4) for x in f_clipped],
+            "net_force": [round(float(x), 4) for x in net], "forward_force": round(float(e @ net), 4),
+            "wrench_residual": round(float(np.linalg.norm(G @ f_clipped - w)), 4),
+            "clip_changed": bool(not np.allclose(f_unclipped, f_clipped, atol=1e-9))}
+    return forces[0], forces[1], diag
+
+
+def _grasp_allocation(c, p_l, p_r, e_par, mu, lam, f_par=1.0):
+    """Thin wrapper over ``_grasp_solve`` returning just the two WORLD contact forces (the A2 launch command path)."""
+    f_l, f_r, _ = _grasp_solve(c, p_l, p_r, e_par, mu, lam, f_par)
+    return f_l, f_r
+
+
+def forward_authority(c, p_l, p_r, e_par, mu):
+    """A∥(s) = max_{f ∈ friction cone, Fn ≤ 1} e_par·F_net — the maximum forward (toward-zone) net force the two contacts
+    can produce under Fn ≥ 0 ∧ |Ft| ≤ μ·Fn (unit per-contact normal cap). The contacts are INDEPENDENT in this objective,
+    so it has a closed form: Σᵢ max(0, e_par·nᵢ + μ|e_par·tᵢ|). **A∥ ≤ 0 ⇒ pressing can produce NO forward push ⇒ a grasp
+    allocator returning zero is a physically HONEST refusal, not a bug; A∥ > 0 with a zero allocation would be an
+    implementation/optimisation error.** Per-contact terms let a MIXED pair still be feasible via friction, so this is the
+    real launch-feasibility gate — not the hardcoded "both tips far-side" sign."""
+    e = np.asarray(e_par, np.float64)
+    e = e / (float(np.linalg.norm(e)) + 1e-12)
+    per = []
+    for _r, n, t in _contact_frames(c, p_l, p_r):
+        per.append(max(0.0, float(e @ n) + mu * abs(float(e @ t))))
+    return {"A_parallel": round(sum(per), 4), "per_contact": [round(x, 4) for x in per]}
 
 
 class TwistAllocator:
