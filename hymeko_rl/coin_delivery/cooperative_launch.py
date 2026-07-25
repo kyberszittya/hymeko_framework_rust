@@ -58,6 +58,11 @@ class CooperativeConfig:
     clean_qdot_max: float = 0.45       # rad/s — max pre-release joint speed (calibrated to the contact floor; see settle_qdot)
     clean_fn_min: float = 0.15         # N — each tip must carry at least this normal force (both really in contact)
     clean_fn_balance_min: float = 0.30  # min(Fn_l,Fn_r)/max — the two normals are balanced, not one-sided
+    # --- E1 authority-balance existence oracle (a balanced frame must carry real force AND be near-symmetric) ---
+    preload_min_total: float = 0.60    # N — min Fn_L + Fn_R, so the trivial Fn≈0 (touch-but-no-load) point cannot win
+    imbalance_max: float = 0.25         # |Fn_L − Fn_R|/(Fn_L + Fn_R) — scale-free balance target, tighter than the clean gate
+    search_span: float = 0.04          # m — half-range of the 1-D coin sweep along the fingertip–fingertip axis
+    search_n: int = 9                  # candidates in the sweep
 
 
 def _tip_xy(rl, g):
@@ -229,15 +234,16 @@ def release_pin(rl, saved):
     _pin_coin(rl, False, saved)
 
 
-def acquire_clean_preload(rl, stack, *, cfg: CooperativeConfig | None = None, acquire_cap: int = 160):
-    """E0a — SOFT-PINNED, servo-held bilateral acquisition. Place the coin at the two-arm-reachable midpoint, hold it with a
-    heavy slide-DAMPING pin (not a hard kinematic clamp — the clamp is an infinitely stiff wall that traps the tips in a
-    qdot limit cycle and never settles), then servo EACH arm's tip-centre distance to its model-read light-preload setpoint
-    (r_coin + r_tip − δ). The servo command vanishes at the setpoint, so a bounded, balanced, low-drift co-contact holds
-    stably. NO launch command is issued. Leaves the sim at the settled pinned preload and returns the saved damping so a
-    later stage can ``release_pin`` onto a free coin. The clean-preload sanity gates the frozen ``cfg.clean_*`` thresholds."""
+def acquire_clean_preload(rl, stack, *, cfg: CooperativeConfig | None = None, acquire_cap: int = 160, coin_xy=None):
+    """E0a — SOFT-PINNED, servo-held bilateral acquisition. Place the coin at ``coin_xy`` (default: the two-arm-reachable
+    tip midpoint; the E1 authority search passes other positions), hold it with a heavy slide-DAMPING pin (not a hard
+    kinematic clamp — the clamp is an infinitely stiff wall that traps the tips in a qdot limit cycle and never settles),
+    then servo EACH arm's tip-centre distance to its model-read light-preload setpoint (r_coin + r_tip − δ). The servo
+    command vanishes at the setpoint, so a bounded, balanced, low-drift co-contact holds stably. NO launch command is
+    issued. Leaves the sim at the settled pinned preload and returns the saved damping so a later stage can ``release_pin``
+    onto a free coin. The clean-preload sanity gates the frozen ``cfg.clean_*`` thresholds."""
     cfg = cfg or CooperativeConfig()
-    place_coin_at(rl, tip_midpoint(rl))
+    place_coin_at(rl, tip_midpoint(rl) if coin_xy is None else coin_xy)
     m, d = rl.inner.model, rl.inner.data
     m.dof_armature[:4], m.dof_damping[:4], m.dof_frictionloss[:4] = stack.armature, stack.damping, stack.friction
     lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
@@ -293,16 +299,26 @@ def acquire_clean_preload(rl, stack, *, cfg: CooperativeConfig | None = None, ac
             "pin_saved": saved}
 
 
-def release_only_sanity(rl, stack, saved, *, cfg: CooperativeConfig | None = None, frames: int = 40):
-    """E0b — release-only sanity. From the settled preload (call ``acquire_clean_preload`` first), RELEASE the pin (restore
-    the coin's damping via ``saved``) and step with the arms HOLDING position (NO launch command). A genuinely clean
-    preload must NOT fling the coin: report the peak coin speed and net displacement. This directly rules out a residual
-    spring-release exploit before any directed launch is credited. ``jumped`` = the coin moved more than a bounded tol."""
+def release_only_sanity(rl, stack, saved, *, cfg: CooperativeConfig | None = None, frames: int = 40, retract: bool = False):
+    """E0b/E2 — release-only sanity. From the settled preload (call ``acquire_clean_preload`` first), RELEASE the pin
+    (restore the coin's damping via ``saved``) and step with NO launch command. A genuinely clean preload must NOT fling
+    the coin: report peak coin speed and net displacement. Two release controllers (the analysis's hold/retract-neutral
+    distinction): ``retract=False`` HOLDS the tip positions (the tips keep squeezing → stored preload energy can eject the
+    coin); ``retract=True`` backs each tip OFF the coin by δ as it releases (relieves the squeeze → isolates whether a
+    residue is a hold artifact or a fundamental spring). ``jumped`` = coin moved more than a bounded quiescent tol."""
     cfg = cfg or CooperativeConfig()
     release_pin(rl, saved)                                        # genuine free coin — the pin is OFF for the sanity check
     m, d = rl.inner.model, rl.inner.data
     lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
-    hold = d.qpos[:4].copy()
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    target = d.qpos[:4].copy()
+    if retract:                                                   # back each tip OFF the coin (relieve the squeeze)
+        coin = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2]
+        for g, dofs in ((gl, _LEFT_DOF), (gr, _RIGHT_DOF)):
+            inward = _arm_dir(rl, g, dofs, coin, cfg)
+            for j in dofs:
+                target[j] = d.qpos[j] - 2.0 * cfg.preload_depth * inward[j]   # outward = −inward
     disk0 = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].copy()
 
     def _gcb(_mo, dt):
@@ -311,15 +327,51 @@ def release_only_sanity(rl, stack, saved, *, cfg: CooperativeConfig | None = Non
     peak_speed, prev_tau = 0.0, None
     try:
         for _ in range(frames):
-            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), hold, stack, prev_tau, lo, hi)  # HOLD, no launch
+            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), target, stack, prev_tau, lo, hi)  # hold/retract, no launch
             prev_tau = a
             step_ablation(rl, np.asarray(a, np.float32), "A")                # coin FREE (no clamp) — genuine release
             peak_speed = max(peak_speed, float(np.linalg.norm(rl.inner._planar_metrics.disk_vel[:2])))
     finally:
         mujoco.set_mjcb_control(None)
     disp = float(np.linalg.norm(np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2] - disk0))
-    return {"coin_peak_speed": round(peak_speed, 3), "coin_displacement": round(disp, 4),
+    return {"coin_peak_speed": round(peak_speed, 3), "coin_displacement": round(disp, 4), "retract": retract,
             "jumped": bool(peak_speed > cfg.settle_qdot or disp > 0.01)}
+
+
+def balanced_preload_search(rl, stack, *, cfg: CooperativeConfig | None = None):
+    """E1 existence oracle — a delivery-blind 1-D search along the fingertip→fingertip axis for a coin position where BOTH
+    arms hold a BALANCED light preload. The geometric tip-midpoint is not in general the authority-balanced point (the two
+    arms differ in Jacobian conditioning, torque headroom, and reachable normal force); this search asks whether a balanced
+    frame EXISTS at all, separately from whether a controller can drive to it. At each candidate the preload is acquired on
+    a deep copy (non-destructive, no launch) and scored by force imbalance |Fn_L − Fn_R|/(Fn_L + Fn_R), subject to the clean
+    gate AND a minimum TOTAL normal force (so the trivial Fn≈0 touch-without-load point cannot win). Returns every candidate
+    plus the most-balanced one that qualifies (or ``None``)."""
+    cfg = cfg or CooperativeConfig()
+    m = rl.inner.model
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    mid0 = tip_midpoint(rl).astype(np.float64)
+    axis = _unit2((_tip_xy(rl, gr) - _tip_xy(rl, gl)).astype(np.float64))     # left → right; sweeping trades arm authority
+    cands, best, best_env, best_saved = [], None, None, None
+    for s in np.linspace(-cfg.search_span, cfg.search_span, cfg.search_n):
+        coin_xy = (mid0 + float(s) * axis).astype(np.float32)
+        env = copy.deepcopy(rl)
+        acq = acquire_clean_preload(env, stack, cfg=cfg, coin_xy=coin_xy)     # env left at the settled pinned preload
+        pl = acq["preload"] or {}
+        fnl, fnr = float(pl.get("fn_left", 0.0)), float(pl.get("fn_right", 0.0))
+        total = fnl + fnr
+        imb = abs(fnl - fnr) / max(total, 1e-6)
+        balanced = bool(acq["clean"] and total >= cfg.preload_min_total and imb <= cfg.imbalance_max)
+        cand = {"s": round(float(s), 4), "coin_xy": [round(float(x), 4) for x in coin_xy], "acquired": acq["acquired"],
+                "clean": acq["clean"], "fn_left": round(fnl, 3), "fn_right": round(fnr, 3), "total_fn": round(total, 3),
+                "imbalance": round(imb, 3), "penetration_left": pl.get("penetration_left"),
+                "penetration_right": pl.get("penetration_right"), "qdot": pl.get("qdot_prerelease"),
+                "saturated": pl.get("torque_saturated"), "balanced": balanced}
+        cands.append(cand)
+        if balanced and (best is None or imb < best["imbalance"]):            # KEEP the validated env for E2 (release from the
+            best, best_env, best_saved = cand, env, acq["pin_saved"]          # EXACT state the search validated, not a re-acquire)
+    return {"mid": [round(float(x), 4) for x in mid0], "axis": [round(float(x), 4) for x in axis],
+            "candidates": cands, "best": best, "exists": bool(best is not None), "_best_env": best_env, "_best_saved": best_saved}
 
 
 def _tip_contacts(rl):

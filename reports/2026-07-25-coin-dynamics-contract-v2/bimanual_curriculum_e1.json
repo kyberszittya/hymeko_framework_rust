@@ -1,0 +1,1461 @@
+{
+ "contract": "BIMANUAL_ACQUISITION_CURRICULUM_V1_E1",
+ "date": "2026-07-25",
+ "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2",
+ "coast_mu": 0.179,
+ "n_states": 8,
+ "search": {
+  "span": 0.04,
+  "n": 9
+ },
+ "balance_gate": {
+  "preload_min_total": 0.6,
+  "imbalance_max": 0.25
+ },
+ "E1_exists_rate": 0.375,
+ "E1_verdict": "BALANCED_PRELOAD_EXISTS_BUT_RARE_AND_OFF_MIDPOINT__CONTACT_GEOMETRY_LACKS_BROAD_BALANCED_AUTHORITY",
+ "E2_hold_pass_rate": 0.0,
+ "E2_retract_pass_rate": 0.0,
+ "E2_verdict": "SPRING_RESIDUE_REMAINS_AT_BALANCED_POINT",
+ "rows": [
+  {
+   "state": 0,
+   "exists": false,
+   "best": null,
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.0261,
+      0.0901
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.035,
+      0.0854
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0438,
+      0.0807
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0526,
+      0.076
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0615,
+      0.0714
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0703,
+      0.0667
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0791,
+      0.062
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.088,
+      0.0573
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0968,
+      0.0527
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    }
+   ]
+  },
+  {
+   "state": 1,
+   "exists": true,
+   "best": {
+    "s": 0.03,
+    "coin_xy": [
+     0.1035,
+     0.1318
+    ],
+    "acquired": true,
+    "clean": true,
+    "fn_left": 0.508,
+    "fn_right": 0.643,
+    "total_fn": 1.151,
+    "imbalance": 0.117,
+    "penetration_left": -0.0036,
+    "penetration_right": -0.0033,
+    "qdot": 0.314,
+    "saturated": false,
+    "balanced": true
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.0388,
+      0.1585
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.0481,
+      0.1547
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0573,
+      0.1508
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0666,
+      0.147
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0758,
+      0.1432
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0851,
+      0.1394
+     ],
+     "acquired": true,
+     "clean": true,
+     "fn_left": 1.056,
+     "fn_right": 1.956,
+     "total_fn": 3.012,
+     "imbalance": 0.299,
+     "penetration_left": -0.0029,
+     "penetration_right": -0.0045,
+     "qdot": 0.262,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0943,
+      0.1356
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.1035,
+      0.1318
+     ],
+     "acquired": true,
+     "clean": true,
+     "fn_left": 0.508,
+     "fn_right": 0.643,
+     "total_fn": 1.151,
+     "imbalance": 0.117,
+     "penetration_left": -0.0036,
+     "penetration_right": -0.0033,
+     "qdot": 0.314,
+     "saturated": false,
+     "balanced": true
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.1128,
+      0.128
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    }
+   ],
+   "E2_hold": {
+    "coin_peak_speed": 0.282,
+    "coin_displacement": 0.0256,
+    "retract": false,
+    "jumped": true
+   },
+   "E2_retract": {
+    "coin_peak_speed": 0.228,
+    "coin_displacement": 0.0212,
+    "retract": true,
+    "jumped": true
+   }
+  },
+  {
+   "state": 2,
+   "exists": false,
+   "best": null,
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      -0.0281,
+      0.1553
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      -0.0198,
+      0.1498
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      -0.0115,
+      0.1443
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      -0.0032,
+      0.1387
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0052,
+      0.1332
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 2.021,
+     "fn_right": 0.0,
+     "total_fn": 2.021,
+     "imbalance": 1.0,
+     "penetration_left": -0.0076,
+     "penetration_right": -0.0011,
+     "qdot": 0.248,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0135,
+      0.1276
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 2.327,
+     "fn_right": 0.357,
+     "total_fn": 2.684,
+     "imbalance": 0.734,
+     "penetration_left": -0.001,
+     "penetration_right": -0.0022,
+     "qdot": 0.354,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0218,
+      0.1221
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.0301,
+      0.1165
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0385,
+      0.111
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    }
+   ]
+  },
+  {
+   "state": 3,
+   "exists": false,
+   "best": null,
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.0092,
+      0.2126
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.0189,
+      0.2152
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0285,
+      0.2179
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0381,
+      0.2206
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0478,
+      0.2233
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0574,
+      0.226
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.067,
+      0.2287
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.0767,
+      0.2314
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0863,
+      0.2341
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    }
+   ]
+  },
+  {
+   "state": 4,
+   "exists": false,
+   "best": null,
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.0311,
+      0.1331
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.0408,
+      0.1355
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0505,
+      0.1379
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0602,
+      0.1404
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0699,
+      0.1428
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0796,
+      0.1453
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0893,
+      0.1477
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.099,
+      0.1502
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.1087,
+      0.1526
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    }
+   ]
+  },
+  {
+   "state": 5,
+   "exists": true,
+   "best": {
+    "s": 0.01,
+    "coin_xy": [
+     0.0315,
+     0.0771
+    ],
+    "acquired": true,
+    "clean": true,
+    "fn_left": 1.798,
+    "fn_right": 1.604,
+    "total_fn": 3.402,
+    "imbalance": 0.057,
+    "penetration_left": -0.002,
+    "penetration_right": -0.0047,
+    "qdot": 0.313,
+    "saturated": false,
+    "balanced": true
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      -0.013,
+      0.0999
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      -0.0041,
+      0.0954
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0048,
+      0.0908
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0137,
+      0.0863
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0226,
+      0.0817
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.0315,
+      0.0771
+     ],
+     "acquired": true,
+     "clean": true,
+     "fn_left": 1.798,
+     "fn_right": 1.604,
+     "total_fn": 3.402,
+     "imbalance": 0.057,
+     "penetration_left": -0.002,
+     "penetration_right": -0.0047,
+     "qdot": 0.313,
+     "saturated": false,
+     "balanced": true
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0404,
+      0.0726
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 0.289,
+     "fn_right": 2.482,
+     "total_fn": 2.771,
+     "imbalance": 0.791,
+     "penetration_left": -0.001,
+     "penetration_right": -0.0088,
+     "qdot": 0.25,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.0493,
+      0.068
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 2.425,
+     "total_fn": 2.425,
+     "imbalance": 1.0,
+     "penetration_left": -0.006,
+     "penetration_right": -0.0082,
+     "qdot": 0.376,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0582,
+      0.0635
+     ],
+     "acquired": true,
+     "clean": true,
+     "fn_left": 1.441,
+     "fn_right": 1.227,
+     "total_fn": 2.668,
+     "imbalance": 0.08,
+     "penetration_left": -0.0021,
+     "penetration_right": -0.0031,
+     "qdot": 0.308,
+     "saturated": false,
+     "balanced": true
+    }
+   ],
+   "E2_hold": {
+    "coin_peak_speed": 0.197,
+    "coin_displacement": 0.0178,
+    "retract": false,
+    "jumped": true
+   },
+   "E2_retract": {
+    "coin_peak_speed": 0.294,
+    "coin_displacement": 0.0368,
+    "retract": true,
+    "jumped": true
+   }
+  },
+  {
+   "state": 6,
+   "exists": false,
+   "best": null,
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      -0.0649,
+      0.2064
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      -0.0555,
+      0.2099
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      -0.0461,
+      0.2134
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      -0.0367,
+      0.2169
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      -0.0274,
+      0.2203
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      -0.018,
+      0.2238
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      -0.0086,
+      0.2273
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.0008,
+      0.2308
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 0.268,
+     "fn_right": 3.416,
+     "total_fn": 3.684,
+     "imbalance": 0.855,
+     "penetration_left": -0.0019,
+     "penetration_right": -0.0078,
+     "qdot": 0.238,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.0101,
+      0.2342
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 3.035,
+     "fn_right": 0.512,
+     "total_fn": 3.547,
+     "imbalance": 0.711,
+     "penetration_left": -0.0056,
+     "penetration_right": -0.0043,
+     "qdot": 0.31,
+     "saturated": false,
+     "balanced": false
+    }
+   ]
+  },
+  {
+   "state": 7,
+   "exists": true,
+   "best": {
+    "s": -0.03,
+    "coin_xy": [
+     0.0548,
+     0.2032
+    ],
+    "acquired": true,
+    "clean": true,
+    "fn_left": 3.271,
+    "fn_right": 2.541,
+    "total_fn": 5.812,
+    "imbalance": 0.126,
+    "penetration_left": -0.0097,
+    "penetration_right": -0.009,
+    "qdot": 0.323,
+    "saturated": false,
+    "balanced": true
+   },
+   "candidates": [
+    {
+     "s": -0.04,
+     "coin_xy": [
+      0.046,
+      0.2079
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": -0.03,
+     "coin_xy": [
+      0.0548,
+      0.2032
+     ],
+     "acquired": true,
+     "clean": true,
+     "fn_left": 3.271,
+     "fn_right": 2.541,
+     "total_fn": 5.812,
+     "imbalance": 0.126,
+     "penetration_left": -0.0097,
+     "penetration_right": -0.009,
+     "qdot": 0.323,
+     "saturated": false,
+     "balanced": true
+    },
+    {
+     "s": -0.02,
+     "coin_xy": [
+      0.0636,
+      0.1984
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 0.317,
+     "fn_right": 2.626,
+     "total_fn": 2.943,
+     "imbalance": 0.785,
+     "penetration_left": -0.0052,
+     "penetration_right": -0.0093,
+     "qdot": 0.21,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": -0.01,
+     "coin_xy": [
+      0.0724,
+      0.1936
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 0.55,
+     "fn_right": 2.223,
+     "total_fn": 2.773,
+     "imbalance": 0.603,
+     "penetration_left": -0.0018,
+     "penetration_right": -0.0076,
+     "qdot": 0.17,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.0,
+     "coin_xy": [
+      0.0812,
+      0.1889
+     ],
+     "acquired": true,
+     "clean": true,
+     "fn_left": 0.859,
+     "fn_right": 1.244,
+     "total_fn": 2.103,
+     "imbalance": 0.183,
+     "penetration_left": -0.001,
+     "penetration_right": -0.005,
+     "qdot": 0.347,
+     "saturated": false,
+     "balanced": true
+    },
+    {
+     "s": 0.01,
+     "coin_xy": [
+      0.09,
+      0.1841
+     ],
+     "acquired": true,
+     "clean": false,
+     "fn_left": 0.072,
+     "fn_right": 2.211,
+     "total_fn": 2.283,
+     "imbalance": 0.937,
+     "penetration_left": -0.0012,
+     "penetration_right": -0.0081,
+     "qdot": 0.295,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.02,
+     "coin_xy": [
+      0.0988,
+      0.1793
+     ],
+     "acquired": true,
+     "clean": true,
+     "fn_left": 3.138,
+     "fn_right": 1.493,
+     "total_fn": 4.631,
+     "imbalance": 0.355,
+     "penetration_left": -0.0033,
+     "penetration_right": -0.0048,
+     "qdot": 0.338,
+     "saturated": false,
+     "balanced": false
+    },
+    {
+     "s": 0.03,
+     "coin_xy": [
+      0.1075,
+      0.1746
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    },
+    {
+     "s": 0.04,
+     "coin_xy": [
+      0.1163,
+      0.1698
+     ],
+     "acquired": false,
+     "clean": false,
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "total_fn": 0.0,
+     "imbalance": 0.0,
+     "penetration_left": null,
+     "penetration_right": null,
+     "qdot": null,
+     "saturated": null,
+     "balanced": false
+    }
+   ],
+   "E2_hold": {
+    "coin_peak_speed": 0.176,
+    "coin_displacement": 0.0131,
+    "retract": false,
+    "jumped": true
+   },
+   "E2_retract": {
+    "coin_peak_speed": 0.173,
+    "coin_displacement": 0.0155,
+    "retract": true,
+    "jumped": true
+   }
+  }
+ ]
+}
