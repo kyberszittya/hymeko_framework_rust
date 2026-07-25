@@ -68,6 +68,13 @@ class CooperativeConfig:
     g2_torque_max: float = 0.010       # N·m — G2 max realized net coin torque (moment arms can spin an Fn-balanced pair)
     g3_fpar_min: float = 0.10          # (unit grasp force) — G3 min achievable forward net force under the cone
     g3_cross_max: float = 0.20         # G3 max achievable cross-force fraction of the directed grasp solve
+    # --- E3 active net-wrench-nulling acquisition (object-level feedback: min‖w_coin‖ s.t. G1 dual contact ∧ G3 feasible) ---
+    wrench_null_kf: float = 0.004      # m per N — TANGENTIAL tip slide per unit net force (radial stays the δ servo → keeps G1)
+    wrench_null_ktau: float = 0.15     # m per N·m — tangential slide per unit net coin torque
+    wrench_null_slide_max: float = 0.005  # m — clamp on the tangential slide, so it cannot walk the tip off the round coin
+    wrench_null_gain: float = 0.03     # rad/step — gentle nulling target step (< approach_gain; a big step lost contact)
+    wrench_null_steps: int = 200       # feedback iterations to drive ‖w_coin‖ into the G2 band
+    wrench_null_dwell: int = 12        # frames the wrench must stay in the G2 band before E3a terminates
 
 
 def _tip_xy(rl, g):
@@ -480,6 +487,83 @@ def launch_feasibility_certificate(rl, cfg: CooperativeConfig | None = None):
     feasible = bool(fa["feasible"] and f_par >= cfg.g3_fpar_min and f_cross <= cfg.g3_cross_max * max(f_par, 1e-9))
     return {"forward_coeff": fa["coeff"], "f_parallel": round(f_par, 4), "f_cross": round(f_cross, 4),
             "wrench_residual": diag["wrench_residual"], "feasible": feasible}
+
+
+def null_coin_wrench(rl, stack, *, cfg: CooperativeConfig | None = None):
+    """E3a nulling phase — an OBJECT-LEVEL feedback controller that drives the realized coin wrench w=[Fx,Fy,τ]→0 on an
+    ALREADY-G1-acquired, soft-pinned preload (call ``acquire_clean_preload`` / pass its validated env first). The passive
+    servo balances PENETRATION but not the NET WRENCH (LFA: G2 0/72), so this actively nulls it. Three channels separated
+    so they do not fight: the RADIAL target stays the δ penetration servo (common-mode → keeps G1 depth); a TANGENTIAL
+    slide on each tip cancels the net force's tangential projection and the net torque (sliding along tᵢ changes the
+    friction force without changing penetration). Leaves the settled wrench-null preload. Returns whether ‖w‖ reached the
+    G2 band, the final wrench, the preload sanity, and the launch-feasibility certificate (G3)."""
+    cfg = cfg or CooperativeConfig()
+    m, d = rl.inner.model, rl.inner.data
+    lo, hi = m.actuator_ctrlrange[:4, 0].copy(), m.actuator_ctrlrange[:4, 1].copy()
+    gl = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left")
+    gr = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_right")
+    reach = {side: _coin_radius(rl) + float(m.geom_size[g][0]) - cfg.preload_depth for side, g in (("left", gl), ("right", gr))}
+    arms = (("left", gl, _LEFT_DOF), ("right", gr, _RIGHT_DOF))
+    adr = int(rl.inner._disk_x_adr)
+    pin_qpos = d.qpos[adr:adr + 3].copy()
+
+    def _gcb(_mo, dt):
+        dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], stack.gov)
+    mujoco.set_mjcb_control(_gcb)
+    prev_tau, dwell, nulled = None, 0, False
+    try:
+        for _ in range(cfg.wrench_null_steps):
+            w = realized_coin_wrench(rl)
+            f_net = np.array([w["Fx"], w["Fy"]], np.float64)
+            tau = w["torque"]
+            coin = np.asarray(rl.inner._planar_metrics.disk_pos, np.float32)[:2].astype(np.float64)
+            contact = {"left": bool(rl.inner._planar_metrics.left_contact), "right": bool(rl.inner._planar_metrics.right_contact)}
+            target = d.qpos[:4].copy()
+            for side, g, dofs in arms:
+                n_out = _unit2(_tip_xy(rl, g).astype(np.float64) - coin)   # live outward radial
+                t_hat = np.array([-n_out[1], n_out[0]], np.float64)
+                # TANGENTIAL wrench-null slide, CLAMPED so it cannot walk the tip off the round coin; zeroed if this tip
+                # lost contact (pure radial re-acquire restores G1 before nulling resumes)
+                slide = -cfg.wrench_null_kf * float(f_net @ t_hat) - cfg.wrench_null_ktau * tau
+                slide = float(np.clip(slide, -cfg.wrench_null_slide_max, cfg.wrench_null_slide_max)) if contact[side] else 0.0
+                target_pt = (coin + reach[side] * n_out + slide * t_hat).astype(np.float32)
+                dq = _arm_dir(rl, g, dofs, target_pt, cfg)
+                for j in dofs:
+                    target[j] = d.qpos[j] + cfg.wrench_null_gain * dq[j]
+            a = pd_governed_torque(d.qpos[:4].copy(), d.qvel[:4].copy(), target, stack, prev_tau, lo, hi)
+            prev_tau = a
+            step_ablation(rl, np.asarray(a, np.float32), "A")
+            d.qpos[adr:adr + 3] = pin_qpos                        # keep the coin held while nulling
+            d.qvel[adr:adr + 3] = 0.0
+            mujoco.mj_forward(m, d)
+            mpl = rl.inner._planar_metrics
+            in_band = bool(w["force_norm"] <= cfg.g2_force_max and abs(w["torque"]) <= cfg.g2_torque_max
+                           and mpl.left_contact and mpl.right_contact)
+            dwell = dwell + 1 if in_band else 0
+            if dwell >= cfg.wrench_null_dwell:
+                nulled = True
+                break
+    finally:
+        preload = _preload_sanity(rl, prev_tau, lo, hi, cfg, dwell)
+        cert = launch_feasibility_certificate(rl, cfg)
+        wr = realized_coin_wrench(rl)
+        mujoco.set_mjcb_control(None)
+    return {"wrench_nulled": nulled, "preload": preload, "realized_wrench": wr, "launch_cert": cert,
+            "done": bool(nulled and cert["feasible"] and preload and preload["clean"])}
+
+
+def active_wrench_null_acquire(rl, stack, *, cfg: CooperativeConfig | None = None, coin_xy=None):
+    """E3a standalone — acquire a G1 clean preload at ``coin_xy`` then actively null the coin wrench (``null_coin_wrench``).
+    The terminal state is the E3 acquisition whose next option (LAUNCH) is executable. Returns the nulling result + the pin
+    handle so a downstream release / launch can proceed on the same env."""
+    cfg = cfg or CooperativeConfig()
+    acq = acquire_clean_preload(rl, stack, cfg=cfg, coin_xy=coin_xy)
+    if not acq["acquired"]:
+        return {"acquired": False, "g1_clean": False, "wrench_nulled": False, "preload": acq["preload"],
+                "realized_wrench": None, "launch_cert": None, "done": False, "pin_saved": acq["pin_saved"]}
+    out = null_coin_wrench(rl, stack, cfg=cfg)
+    out.update({"acquired": True, "g1_clean": bool(acq["clean"]), "pin_saved": acq["pin_saved"]})
+    return out
 
 
 def launch_feasible_acquisition_search(rl, stack, *, cfg: CooperativeConfig | None = None):
