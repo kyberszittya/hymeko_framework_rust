@@ -1,16 +1,17 @@
 {
- "contract": "COIN_R1_REPRESENTATION_CHECK_V1",
+ "contract": "COIN_R1_REPRESENTATION_CHECK_V2",
  "base_commit": "1ab9e62f",
  "date": "2026-07-27",
- "representation": "R1 canonical target/contact-frame",
+ "representation": "R1 v2 canonical target/contact-frame + B_\u03c4 authority + contact kinematics + control state",
  "no_training": true,
+ "feature_dim": 34,
  "per_cradle_swapped": {
   "s1": false,
-  "s3": false,
+  "s3": true,
   "16500": false,
-  "17750": false,
+  "17750": true,
   "19500": false,
-  "24000": false,
+  "24000": true,
   "s4": false,
   "s7": true
  },
@@ -35,88 +36,102 @@
   ],
   "n_pairs": 15,
   "feature_dist": {
-   "min": 1.2469,
-   "median": 4.5075,
-   "max": 7.3162
+   "min": 1.0998,
+   "median": 3.1458,
+   "max": 24.0089
   },
   "theta_dist": {
-   "min": 0.6934,
+   "min": 0.6622,
    "median": 1.2053,
    "max": 2.1169
   },
-  "corr_dphi_dtheta": 0.4162,
+  "corr_dphi_dtheta": 0.7074,
   "lipschitz_ratio": {
-   "min": 0.1647,
-   "median": 0.2862,
-   "max": 0.7199
+   "min": 0.0623,
+   "median": 0.3821,
+   "max": 0.7149
   },
   "nearest_feature_pair_is_nearest_theta_pair": false
  },
  "nn_retrieval_dev": {
   "s1": {
-   "source": "17750",
+   "source": "24000",
    "k6": false,
-   "dtz_end_mm": 68.52,
-   "nn_feature_dist": 3.9233
+   "dtz_end_mm": 75.45,
+   "nearest_acceptable_set_dist": 0.9385,
+   "nn_feature_dist": 2.203
   },
   "s3": {
-   "source": "19500",
-   "k6": true,
-   "dtz_end_mm": 15.86,
-   "nn_feature_dist": 1.2469
+   "source": "24000",
+   "k6": false,
+   "dtz_end_mm": 33.94,
+   "nearest_acceptable_set_dist": 0.5721,
+   "nn_feature_dist": 1.0998
   },
   "16500": {
-   "source": "24000",
+   "source": "s1",
    "k6": false,
-   "dtz_end_mm": 58.73,
-   "nn_feature_dist": 4.0294
+   "dtz_end_mm": 92.75,
+   "nearest_acceptable_set_dist": 0.6036,
+   "nn_feature_dist": 3.0452
   },
   "17750": {
-   "source": "24000",
+   "source": "16500",
    "k6": false,
-   "dtz_end_mm": 163.82,
-   "nn_feature_dist": 3.5367
+   "dtz_end_mm": 10.4,
+   "nearest_acceptable_set_dist": 0.7649,
+   "nn_feature_dist": 22.7635
   },
   "19500": {
-   "source": "s3",
+   "source": "24000",
    "k6": false,
-   "dtz_end_mm": 48.03,
-   "nn_feature_dist": 1.2469
+   "dtz_end_mm": 79.21,
+   "nearest_acceptable_set_dist": 0.6622,
+   "nn_feature_dist": 1.5399
   },
   "24000": {
    "source": "s3",
    "k6": false,
    "dtz_end_mm": 46.64,
-   "nn_feature_dist": 1.7157
+   "nearest_acceptable_set_dist": 0.6419,
+   "nn_feature_dist": 1.0998
   }
  },
  "nn_retrieval_held_out_overlay": {
   "s4": {
-   "source": "19500",
+   "source": "s3",
    "k6": false,
-   "dtz_end_mm": 67.8,
-   "nn_feature_dist": 2.9097
+   "dtz_end_mm": 69.88,
+   "nearest_acceptable_set_dist": 1.5338,
+   "nn_feature_dist": 3.0544
   },
   "s7": {
    "source": "16500",
    "k6": false,
    "dtz_end_mm": 45.7,
-   "nn_feature_dist": 2.4646
+   "nearest_acceptable_set_dist": 1.5453,
+   "nn_feature_dist": 10.069
   }
  },
  "representation_goals": {
   "mirror_invariant_all": true,
-  "corr_dphi_dtheta": 0.4162,
-  "corr_improved_or_held_vs_R0_0p71": false,
-  "nn_retrieval_dev": "1/6",
+  "feature_rank": 5,
+  "feature_rank_no_collapse": true,
+  "feature_mean_var": 2.28896,
+  "corr_dphi_dtheta": 0.7074,
+  "corr_note": "SECONDARY (noisy at 6 cradles; \u03b8-set is multimodal)",
+  "nn_retrieval_dev": "0/6",
   "nn_retrieval_held_out_overlay": "0/2",
-  "retrieval_beats_R0_dev_1of6": false
+  "retrieval_beats_R0_dev_1of6": false,
+  "mean_nearest_acceptable_set_dist_dev": 0.6972,
+  "acceptable_set_within_budget8_reach": false
  },
  "R0_reference": {
   "nn_retrieval_dev": "1/6",
   "corr_dphi_dtheta": 0.71,
   "mirror_deficit": 3.49
  },
- "wall_s": 190.1,
- "peak_rss_gb": 0.245
+ "primary_metric": "nearest_acceptable_set_dist (not corr; \u03b8-sets are multimodal)",
+ "wall_s": 232.8,
+ "peak_rss_gb": 0.233
 }
