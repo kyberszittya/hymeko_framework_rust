@@ -76,7 +76,10 @@
   "role": "fixed bounded local search around \u03b8_0; selects \u03b8_exec by the frozen canonical delivery score",
   "perturbation": "Gaussian jitter in normalised z-space with a FROZEN per-component std, denorm-clipped to the box",
   "score": "forward_displacement.score(deliver=True): -dtz_end - lost_penalty\u00b7lost_before_release + 0.02\u00b7k6_max_dwell + 0.10\u00b7k6_delivered (higher = better)",
-  "budget_semantics": "budget candidates; budget==0 executes \u03b8_0 directly (no rescue); FROZEN & identical for all states and for the informed/uninformed control",
+  "budget_semantics": "budget = TOTAL candidate evaluations; the centre \u03b8_0 is ALWAYS evaluated + (budget-1) jittered neighbours; budget\u22641 = centre only (direct execution). FROZEN & identical for all states and for the informed/uninformed/oracle conditions",
+  "budget_counts_total_candidates": true,
+  "centre_always_evaluated": true,
+  "n_jittered_candidates": "budget - 1",
   "provenance": "\u03b8_0 is the Bellman action; \u03b8_exec (search-selected) is provenance only (never a label)"
  },
  "termination_and_k6": {

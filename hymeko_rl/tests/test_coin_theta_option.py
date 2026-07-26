@@ -342,3 +342,75 @@ def test_bc_save_load_roundtrip(tmp_path):
         obs2 = fz2.obs(ds.rows[0].features, ds.rows[0].history)
         assert np.allclose(obs1, obs2, atol=1e-6)
         assert np.allclose(prop.center(obs1), prop2.center(obs2), atol=1e-6)
+
+
+# ───────────────────────────── Stage 4: update-0 no-regression ─────────────────────────────
+_UPDATE0_PATH = "reports/2026-07-27-coin-teacher-to-rl/update_zero.json"
+
+
+@pytest.mark.skipif(not os.path.exists(_UPDATE0_PATH), reason="update_zero.json not built")
+def test_update_zero_artifact_gate_and_controls():
+    d = json.load(open(_UPDATE0_PATH))
+    g = d["gate"]
+    # the ORACLE (teacher θ + same search) must validate that search+physics deliver 4/4 from a correct θ_0
+    assert g["oracle_total_k6"] == g["n_states"] and g["oracle_validates_search_and_physics"] is True
+    # the actor must be load-bearing (informed strictly beats the uninformed box-centre control)
+    assert g["informed_total_k6"] > g["uninformed_total_k6"] and g["actor_load_bearing"] is True
+    assert g["no_hidden_teacher_fallback"] is True
+    # verdict/authorisation must be internally consistent
+    assert d["authorises_rl"] == bool(d["verdict"] == "UPDATE_ZERO_MOBILE_TEACHER_NO_REGRESSION_PASS" and g["passed"])
+    if not g["passed"]:
+        assert d["authorises_rl"] is False
+
+
+@pytest.mark.slow
+def test_oracle_teacher_theta_delivers_under_fixed_search():
+    """Live physics: the centre-inclusive fixed search seeded with the recorded teacher θ delivers frozen K6 on a held-out
+    cradle (s4) — isolating any held-out actor miss to θ_0 quality (coverage), not the search/physics. Also regresses the
+    centre-inclusion fix: an std=0.15 jitter escapes s4's narrow basin, so a centre-excluding search would fail here."""
+    bank = json.load(open(_BANK_PATH))
+    if bank.get("smoke"):
+        pytest.skip("bank is a smoke run")
+    from hymeko_rl.coin_delivery.theta_option.search import fixed_search_select
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import CERTIFIED_SEEDS, acquire_snapshot, load_harness
+    s4 = [e for e in bank["states"] if e["tag"] == "s4"][0]
+    snap, _ = acquire_snapshot(load_harness(), CERTIFIED_SEEDS[2])
+    teacher = np.asarray(s4["canonical_theta_vec"], np.float64)
+    prov = fixed_search_select(snap, teacher, np.random.default_rng(0), budget=8)
+    assert prov.outcome["delivery_success"] is True                    # teacher θ + centre-inclusive search delivers
+    assert np.allclose(prov.center, teacher, atol=1e-4)                # centre (Bellman action) preserved
+
+
+# ───────────────────────────── centre-inclusive fixed search (correctness fix) ─────────────────────────────
+class _CountingCentreOptimalScorer:
+    """Physics-free scorer where the CENTRE is strictly optimal and every other candidate is worse; counts evaluations.
+    Conforms to option_rl.CandidateScorer, injected into fixed_search_select."""
+
+    def __init__(self, center):
+        self.center = np.asarray(center, np.float64)
+        self.calls = 0
+
+    def score(self, candidate, rng):
+        self.calls += 1
+        d = float(np.linalg.norm(np.asarray(candidate, np.float64) - self.center))
+        return -d, {"k6_delivered": bool(d < 1e-9), "dtz_end": d, "delivery_success": bool(d < 1e-9)}
+
+
+def test_fixed_search_is_centre_inclusive_and_budget_exact():
+    """Discriminating test for the centre-inclusion correctness fix: (1) the centre is always evaluated; (2) when the
+    centre is optimal and every jittered neighbour is worse, the search RETURNS the centre; (3) the total number of
+    candidate evaluations equals the declared budget (centre + budget-1 jitters). A centre-EXCLUDING search would return
+    a worse neighbour and evaluate the wrong count."""
+    from hymeko_rl.coin_delivery.theta_option.search import fixed_search_select, search_semantics
+    box = ThetaBox()
+    center = box.clip(theta_bounds()[0] + 0.1)
+    for budget in (0, 1, 4, 8):
+        sc = _CountingCentreOptimalScorer(center)
+        prov = fixed_search_select(None, center, np.random.default_rng(0), budget=budget, scorer=sc)
+        assert sc.calls == max(1, budget)                              # total evaluations == declared budget
+        assert np.allclose(prov.center, center, atol=1e-6)             # Bellman action preserved
+        assert np.allclose(prov.selected, prov.center, atol=1e-6)      # centre optimal ⇒ search returns the centre
+        assert prov.outcome["delivery_success"] is True
+    ss = search_semantics(8)
+    assert ss["n_total_candidates"] == 8 and ss["n_jittered_candidates"] == 7
+    assert ss["centre_always_evaluated"] and ss["budget_counts_total_candidates"]

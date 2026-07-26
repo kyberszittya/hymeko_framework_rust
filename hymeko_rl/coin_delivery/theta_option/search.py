@@ -18,7 +18,6 @@ from hymeko_rl.coin_delivery.contact_velocity import CradleSnapshot
 from hymeko_rl.coin_delivery.forward_displacement import (
     ForwardConfig, delivery_success, rollout_primitive, score as fd_score)
 from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG, ThetaBox, ThetaProvenance
-from hymeko_rl.option_rl.proposal import FixedBudgetSearch
 
 # FROZEN per-component search spread in normalised z-space (uniform across the 6 components; ≈0.15 matches the carry
 # adapter's std_amp/std_dur once normalised). Bounded, local — the search refines the proposal, it does not re-solve.
@@ -66,17 +65,43 @@ class ThetaCandidateScorer:
         return float(fd_score(m, self.cfg)), _compact_outcome(m, self.cfg)
 
 
+def search_semantics(budget: int) -> dict[str, Any]:
+    """The FROZEN, explicit budget accounting for the centre-inclusive fixed search. ``budget`` is the TOTAL number of
+    candidate evaluations, of which the centre θ_0 is always one and ``budget-1`` are jittered neighbours (``budget≤1`` ⇒
+    the centre alone). Recorded in the artifacts so the compute budget is unambiguous and identical across conditions."""
+    b = int(budget)
+    return {"budget_counts_total_candidates": True, "centre_always_evaluated": True,
+            "n_total_candidates": max(1, b), "n_jittered_candidates": max(0, b - 1),
+            "budget_zero": "direct execution of θ_0 (centre only, no jitter)", "search_std_norm": SEARCH_STD}
+
+
 def fixed_search_select(snap: CradleSnapshot, center: np.ndarray, rng: np.random.Generator, *,
-                        budget: int, cfg: ForwardConfig = DELIVERY_CFG, std: float = SEARCH_STD) -> ThetaProvenance:
-    """The single deploy/RL search wrapper. Sample ``budget`` candidates around ``center`` (θ_0), keep the argmax of the
-    frozen delivery score, return a `ThetaProvenance` separating θ_0 (Bellman action) from θ_exec (selected). ``budget==0``
-    executes θ_0 directly (no rescue). Reuses `option_rl.FixedBudgetSearch` verbatim so the Bellman-safety contract is the
-    engine's, not re-derived. # Postconditions: `prov.center` is the input θ_0 (clipped legal); `prov.selected` is a legal
-    θ; both are separate objects."""
+                        budget: int, cfg: ForwardConfig = DELIVERY_CFG, std: float = SEARCH_STD,
+                        scorer: "ThetaCandidateScorer | None" = None) -> ThetaProvenance:
+    """The single deploy/RL search wrapper (CENTRE-INCLUSIVE local search). Evaluate the centre θ_0 AND ``budget-1``
+    jittered neighbours — ``budget`` TOTAL evaluations, the centre always among them — keep the argmax of the frozen
+    delivery score, and return a `ThetaProvenance` separating θ_0 (Bellman action) from θ_exec (selected). ``budget≤1``
+    executes θ_0 directly (no jitter).
+
+    Centre-inclusion is a deliberate correctness fix over `option_rl.FixedBudgetSearch` (which scores only the jittered
+    neighbours): a search that never evaluates its own centre can DISCARD a delivering θ_0 for a worse neighbour and is
+    non-monotone in budget. This bit the coin's narrow delivering basins (a jittered candidate escaped the basin). The
+    change is uniform across informed/uninformed/oracle conditions — it is NOT enlarging the search for the learned actor,
+    and NOT held-out tuning. Reuses the engine's `CandidateGenerator`/`CandidateScorer` protocols; ``scorer`` may be
+    injected (tests). Deterministic given ``rng``. # Postconditions: `prov.center` is the input θ_0 (clipped legal);
+    `prov.selected` is a legal θ; both are separate objects; exactly ``max(1,budget)`` candidates are evaluated; the
+    selected score ≥ the centre's score (monotone in budget)."""
     box = ThetaBox()
     center = box.clip(center)
-    gen = ThetaCandidateGenerator(std=std, box=box)
-    scorer = ThetaCandidateScorer(snap=snap, cfg=cfg)
-    sel = FixedBudgetSearch(generator=gen, scorer=scorer, budget=int(budget)).select(center, rng)
-    return ThetaProvenance(center=np.asarray(sel.center, np.float32), selected=np.asarray(sel.selected, np.float32),
-                           score=float(sel.score), budget=int(sel.budget), outcome=dict(sel.outcome))
+    scorer = scorer or ThetaCandidateScorer(snap=snap, cfg=cfg)
+    cands = [center]
+    if int(budget) > 1:
+        gen = ThetaCandidateGenerator(std=std, box=box)
+        cands += list(gen.sample(center, int(budget) - 1, rng))
+    best_i, best_sc, best_out = 0, -np.inf, None
+    for i, c in enumerate(cands):
+        sc, out = scorer.score(np.asarray(c, np.float64), rng)
+        if best_out is None or sc > best_sc:
+            best_i, best_sc, best_out = i, sc, out
+    return ThetaProvenance(center=np.asarray(center, np.float32), selected=np.asarray(cands[best_i], np.float32),
+                           score=float(best_sc), budget=len(cands), outcome=best_out or {})

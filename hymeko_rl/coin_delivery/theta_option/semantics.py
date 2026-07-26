@@ -146,8 +146,11 @@ def option_semantics() -> dict[str, Any]:
             "perturbation": "Gaussian jitter in normalised z-space with a FROZEN per-component std, denorm-clipped to the box",
             "score": "forward_displacement.score(deliver=True): -dtz_end - lost_penalty·lost_before_release + "
                      "0.02·k6_max_dwell + 0.10·k6_delivered (higher = better)",
-            "budget_semantics": "budget candidates; budget==0 executes θ_0 directly (no rescue); FROZEN & identical for "
-                                "all states and for the informed/uninformed control",
+            "budget_semantics": "budget = TOTAL candidate evaluations; the centre θ_0 is ALWAYS evaluated + (budget-1) "
+                                "jittered neighbours; budget≤1 = centre only (direct execution). FROZEN & identical for "
+                                "all states and for the informed/uninformed/oracle conditions",
+            "budget_counts_total_candidates": True, "centre_always_evaluated": True,
+            "n_jittered_candidates": "budget - 1",
             "provenance": "θ_0 is the Bellman action; θ_exec (search-selected) is provenance only (never a label)",
         },
         "termination_and_k6": {
