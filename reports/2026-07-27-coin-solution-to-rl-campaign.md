@@ -290,8 +290,8 @@ non-deliveries **reach but do not settle** — the coin arrives still moving (0.
 | Session 2 measurement | lifted-horizon Δq authority real & usable on dev; held-out collapse fast; ONE_STEP_PULSE control flat (authority is sustained catch-up) | `2640567e` |
 | 1·Route A (mobile conditioning) | honest **negative** — does not rescue held-out (grip decay diagnosed; degrades s1/s7; can't fix s4 geometric weak contact) | `58de3dd6` |
 | 1·Route B (slew-admissible Δτ) | **PASS** — one-step Δτ authority rank 3–4 on **all four** states incl. held-out; `Δτ_cmd` is the recovered interface | `e7b24d6f` |
-| 3 forward displacement | **PASS** — controlled bimanual push, 2/4 incl. held-out (s3 42 mm, s4 39 mm) | `6152b56e` |
-| 4 mobile K6 delivery | **PARTIAL PASS** — genuine frozen-K6 delivery on s1 (dev, settled 21-step dwell); 4/4 reach the zone (78–99 %); 3 not settled | (this commit) |
+| 3 forward displacement | **PASS** — controlled bimanual push, 2/4 incl. held-out (s3 42 mm, s4 39 mm) | `6b16bdb9` |
+| 4 mobile K6 delivery | **PARTIAL PASS** — genuine frozen-K6 delivery on s1 (dev, settled 21-step dwell); 4/4 reach the zone (78–99 %); 3 not settled | `b0d6e33e` |
 | 5 update-0 / 6 SAC-TD3 | **NOT STARTED** — teacher is minimal (1 dev delivery); starting multi-seed RL here would violate the no-rush / ≥1-held-out discipline | — |
 
 **Honest verdict:** the frozen `ONE_STEP_DQ_TARGET_AUTHORITY_NULL` was an *interface* fact, not an uncontrollability
