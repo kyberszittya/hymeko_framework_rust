@@ -1,0 +1,99 @@
+{
+ "contract": "COIN_R2_RELATIONAL_UPDATE_ZERO_CONTRACT_AUDIT",
+ "date": "2026-07-27",
+ "tz": "JST",
+ "branch": "recovery/coin-r2-relational-update0",
+ "start_commit": "9d6fc3d5",
+ "parent_design_contract": "8c16076c",
+ "frozen_r2_contract_doc": "reports/2026-07-27-coin-r2-relational-contract.md",
+ "graph_adapter": "hymeko_rl/coin_delivery/theta_option/relational_graph.py",
+ "audit_checklist": {
+  "1_read_design_and_adapter": {
+   "status": "PASS",
+   "note": "Frozen contract md + relational_graph.py read. R2 = the R1 v3 canonical information reorganised as typed HyMeKo relations; NO new information axis."
+  },
+  "2_every_r1_group_one_home": {
+   "status": "PASS",
+   "n_r1_v3_groups": 25,
+   "r1_feature_dim": 43,
+   "note": "recover_r1_groups() reconstructs all 25 R1 groups from the graph; existing test test_information_parity_every_group_recovered asserts bit-recovery. Some combined authorities (forward_push_reach, brake_opposed_reach, lateral_reach_pair) are ALSO carried on the bimanual hyperedge as redundant COMBINED attrs, but recovery reads them from the per-side authority edge -> exactly one recovery home per group; the redundancy is the load-bearing HyMeKo cross-term flat R1 had to implicitly multiply."
+  },
+  "3_graph_uses_verified_canonical_extractor": {
+   "status": "PASS",
+   "note": "build_graph(snap) = build_graph_from_canonical(*canonicalise(r1_grouped_features(snap))). build_graph_from_canonical is PURE (no physics) -> mirror/permutation/parity are directly testable. NOT built from env node_features()."
+  },
+  "4_no_env_node_features_silently_added": {
+   "status": "PASS",
+   "note": "relational_graph.py docstring + code: only R1 canonical groups + two DOCUMENTED CONSTANTS enter the graph -> COIN phase placeholder (const 0.0 at t=0) and TARGET spec (CENTER_TOL, SETTLE_VEL, HELD_DWELL). Both are constant across ALL cradles -> zero per-state / held-out information. A Stage-3 test asserts the only non-R1 attributes are exactly these constants."
+  },
+  "5_frozen_acceptable_set_dataset_and_split": {
+   "status": "PASS",
+   "dev_seeds": [14250, 14750, 16500, 17750, 19500, 24000],
+   "dev_tags": {"14250": "s1", "14750": "s3", "16500": "16500", "17750": "17750", "19500": "19500", "24000": "24000"},
+   "panel": {
+    "s1": {"seed": 14250, "split": "development"},
+    "s3": {"seed": 14750, "split": "development"},
+    "s4": {"seed": 15000, "split": "held_out"},
+    "s7": {"seed": 15750, "split": "held_out"}
+   },
+   "held_out_seeds": [15000, 15750],
+   "held_out_discipline": "s4/s7 used for evaluation ONLY: never training, validation, early stop, arch/seed selection, normalisation, or tuning.",
+   "acceptable_set": "harvest_acceptable_set(snap, n_samples=600, seed=seed, seed_thetas=[cvec,*local_delivering_basin]); deterministic given seed. R2 re-runs the IDENTICAL harvest -> identical targets_norm; only the input organisation (flat 43-D vs typed graph) changes."
+  },
+  "6_k_main_frozen": {
+   "status": "PASS",
+   "k_main": 4,
+   "r1_dev_only_lodo_cv": {"1": 0, "2": 0, "4": 1},
+   "note": "K_main=4 selected by R1 dev-only leave-one-dev-out CV (K=1 is a side-diagnostic). FROZEN; R2 deploys K=4. R2 re-runs a dev-only LODO as a pre-panel diagnostic ONLY (not a re-selection)."
+  },
+  "7_total_search_budget_8": {
+   "status": "PASS",
+   "budget": 8,
+   "note": "allocate_budget(uniform K probs, 8) -> fair K x (8/K) split, >=1 each. Total physical candidate rollouts = 8 for every K. R2 gets NO extra tries."
+  },
+  "8_centre_inclusion_and_fair_allocation": {
+   "status": "PASS",
+   "note": "fixed_search_select is CENTRE-INCLUSIVE (centre theta0 always one of the budget evaluations; selected score >= centre score, monotone in budget). allocate_budget largest-remainder, deterministic. Unchanged for R2."
+  },
+  "9_canonical_theta_encode_decode_and_provenance": {
+   "status": "PASS",
+   "balance_idx": 2,
+   "note": "to_canonical_theta(theta, was_swapped) applies T_theta (negate theta[2]) iff swapped; from_canonical_theta undoes it. ThetaProvenance separates theta0 (Bellman/centre) from theta_exec (selected). ThetaBox: z=2(theta-lo)/span-1, denorm clips to legal box -> Tanh actor can never emit out-of-box."
+  },
+  "10_r1_baseline_recorded": {
+   "status": "PASS",
+   "r1_khead_model": "KHeadProposalNet(k=4, feat_dim=43, h=128): trunk Linear(43,128)+ReLU+Linear(128,128)+ReLU, heads Linear(128, 4*6=24), output Tanh -> ThetaBox.denorm (canonical theta centres).",
+   "r1_trainable_params": 25240,
+   "r1_param_breakdown": {"trunk.0.weight": 5504, "trunk.0.bias": 128, "trunk.2.weight": 16384, "trunk.2.bias": 128, "heads.weight": 3072, "heads.bias": 24},
+   "capacity_window_pm5pct": [23978, 26502],
+   "optimiser": "Adam",
+   "lr": 0.001,
+   "epochs": 1500,
+   "seed": 0,
+   "batching": "full-batch: each dev state contributes one variable-size set-loss term per epoch; mean over states; one Adam step per epoch.",
+   "loss": "set_loss = permutation-invariant bidirectional Chamfer (recall: each acceptable target -> nearest head; precision: each head -> nearest target) + head-collapse hinge (diversity_weight=0.5, margin=0.8) GATED on is_multimodal_target_set (spread>0.8).",
+   "normalisation": "features: R1 fixed per-group physical scales (R1_NORM_SCALES); labels: ThetaBox.norm (canonical theta in [-1,1]).",
+   "output_bounds": "Tanh -> ThetaBox.denorm -> always legal 6-D theta in the frozen delivery box.",
+   "r1_result": {"dev_k6": 2, "held_out_k6": 0, "total_k6": 2, "k1_side_total": 2, "final_set_loss": 0.451649, "verdict": "FLAT_R1_LEARNED_AMORTISATION_FAILS", "authorises_sac_td3": false, "r2_authorised": true},
+   "r1_per_state": {
+    "s1": {"success": true, "selected_head": 1, "dtz_end_mm": 15.67},
+    "s3": {"success": true, "selected_head": 1, "dtz_end_mm": 11.63},
+    "s4": {"success": false, "selected_head": 2, "dtz_end_mm": 64.67, "failure_phase": "NEVER_REACHED_ZONE"},
+    "s7": {"success": false, "selected_head": 0, "dtz_end_mm": 67.22, "failure_phase": "NEVER_REACHED_ZONE"}
+   }
+  }
+ },
+ "graph_schema_dims": {
+  "nodes": {"COIN": 4, "TARGET": 3, "TIP": [2, 2], "CONTACT": [2, 6], "PORT": [2, 4]},
+  "relations": {"goal": 3, "authority_per_side": [2, 11], "bimanual_hyperedge": 8},
+  "matches_frozen_schema": true
+ },
+ "frozen_k6_contract": {"zone_tol_m": 0.02, "settle_vel_mps": 0.06, "dwell_steps": 6},
+ "frozen_option": "6-D torque-theta PUSH -> BRAKE -> RELEASE with velocity-feedback braking (tag coin-physical-feasibility-closed, a3459629); teacher/search/physics oracle 4/4.",
+ "core_yaml_items_touched": [],
+ "plan_of_record": {
+  "note": "The frozen R2 relational contract (committed 8c16076c; reports/2026-07-27-coin-r2-relational-contract.md) is the plan-of-record. pdflatex/lualatex are absent on this host, so the four-format docs/plans bundle (CLAUDE.md §2) cannot be built; producing it would be a ceremonial detour over an already-frozen, risk-anticipated contract. Recorded, not silently skipped."
+ },
+ "mismatches_found": "none",
+ "verdict": "CONTRACT_AUDIT_PASS_PROCEED_TO_ENCODER"
+}
