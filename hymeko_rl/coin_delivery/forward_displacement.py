@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 import mujoco
 import numpy as np
 
+from hymeko_rl.coin_delivery.coin_rl_env import CENTER_TOL, HELD_DWELL, SETTLE_VEL
 from hymeko_rl.coin_delivery.coin_strict_markov_ablation import step_ablation
 from hymeko_rl.coin_delivery.contact_velocity import CradleSnapshot, primary_fingertip_contacts
 from hymeko_rl.coin_delivery.mobile_conditioning import _fingertip_geoms, arm_inward_geom
@@ -42,6 +43,7 @@ class ForwardConfig:
 
     horizon: int = 16                    # control steps of the dynamic transition (8–16 per the pivot)
     limits: MotionLimits = field(default_factory=MotionLimits)
+    deliver: bool = False                # delivery mode: FROZEN K6 certificate (dtz≤CENTER_TOL ∧ speed<SETTLE_VEL, held-dwell)
     # θ bounds: squeeze_mag, forward_mag (N·m increments), balance (N·m), ramp_steps, release_step
     lo: tuple = (0.0, 0.0, -0.10, 1.0, 4.0)
     hi: tuple = (0.25, 0.30, 0.10, 12.0, 16.0)
@@ -106,7 +108,7 @@ def rollout_primitive(snap: CradleSnapshot, theta, cfg: ForwardConfig, *, frame_
     no reward, no pin, no hidden force."""
     rl = snap.branch()
     d = rl.inner.data
-    e_par, _dtz = rl.inner.direction_to_zone()
+    e_par, dtz_start = rl.inner.direction_to_zone()
     e_par = np.asarray(e_par, np.float64)
     e_cross = np.array([-e_par[1], e_par[0]], np.float64)
     coin0 = _coin_xy(rl)
@@ -121,6 +123,7 @@ def rollout_primitive(snap: CradleSnapshot, theta, cfg: ForwardConfig, *, frame_
     peak_qdot, peak_coin_speed, contact_lost_steps, lost_before_release = 0.0, 0.0, 0, 0
     straddle_min, min_fn_push = 1.0, 1e9
     forward_at_release, terminal_speed = 0.0, 0.0
+    k6_dwell, k6_max_dwell, touched = 0, 0, False       # FROZEN K6 monitor: dtz≤CENTER_TOL ∧ speed<SETTLE_VEL, HELD_DWELL, touched
     try:
         for t in range(1, cfg.horizon + 1):
             coin = _coin_xy(rl)
@@ -133,8 +136,12 @@ def rollout_primitive(snap: CradleSnapshot, theta, cfg: ForwardConfig, *, frame_
             speed_t = _coin_speed(rl)
             peak_coin_speed = max(peak_coin_speed, speed_t)
             terminal_speed = speed_t
+            _u_t, dtz_t = rl.inner.direction_to_zone()
             con = primary_fingertip_contacts(rl)
             both = con["left"] is not None and con["right"] is not None
+            touched = touched or both
+            k6_dwell = k6_dwell + 1 if (dtz_t <= CENTER_TOL and speed_t < SETTLE_VEL) else 0
+            k6_max_dwell = max(k6_max_dwell, k6_dwell)
             if both:
                 straddle_min = min(straddle_min, float(con["left"]["n"] @ con["right"]["n"]))
                 if t <= rel:
@@ -149,10 +156,15 @@ def rollout_primitive(snap: CradleSnapshot, theta, cfg: ForwardConfig, *, frame_
                 frame_hook(rl, t)
     finally:
         mujoco.set_mjcb_control(None)
+    k6_delivered = bool(k6_max_dwell >= HELD_DWELL and touched)
     disp = _coin_xy(rl) - coin0
     forward = float(disp @ e_par)
     cross = float(abs(disp @ e_cross))
+    _u_end, dtz_end = rl.inner.direction_to_zone()
     return {"forward": forward, "cross": cross, "total_disp": float(np.linalg.norm(disp)),
+            "dtz_start": float(dtz_start), "dtz_end": float(dtz_end),
+            "gap_closed": float((dtz_start - dtz_end) / max(dtz_start, 1e-9)),
+            "k6_max_dwell": int(k6_max_dwell), "k6_delivered": k6_delivered, "touched": bool(touched),
             "forward_at_release": forward_at_release, "peak_qdot": peak_qdot, "peak_coin_speed": peak_coin_speed,
             "terminal_coin_speed": terminal_speed, "contact_lost_steps": contact_lost_steps,
             "lost_before_release": lost_before_release, "release_step": rel,
@@ -191,13 +203,24 @@ def _feasible(m: dict, cfg: ForwardConfig) -> bool:
 
 
 def score(m: dict, cfg: ForwardConfig) -> float:
-    """CEM score: −inf if infeasible; else forward displacement, minus a cross-track penalty and a grip-loss-before-
-    release penalty (steer the search toward a CONTROLLED push, not a flick)."""
+    """CEM score: −inf if infeasible; else (deliver mode) reward closing the distance-to-zone and settling in-zone;
+    (forward mode) forward displacement minus cross-track + grip-loss + over-speed penalties (a CONTROLLED push)."""
     if not _feasible(m, cfg):
         return -np.inf
+    if cfg.deliver:                        # push-and-coast: close the distance-to-zone + accumulate the FROZEN K6 held-dwell
+        return (-m["dtz_end"] - cfg.lost_penalty * m["lost_before_release"]
+                + 0.02 * m["k6_max_dwell"] + (0.10 if m["k6_delivered"] else 0.0))
     return (m["forward"] - 0.5 * max(0.0, m["cross"] - cfg.cross_frac_max * m["forward"])
             - cfg.lost_penalty * m["lost_before_release"]
             - 0.5 * max(0.0, m["terminal_coin_speed"] - cfg.release_speed_max))    # prefer a controlled release
+
+
+def delivery_success(m: dict, cfg: ForwardConfig) -> bool:
+    """The FROZEN external K6 delivery certificate: coin held in-zone (dtz ≤ CENTER_TOL ∧ speed < SETTLE_VEL) for
+    HELD_DWELL consecutive steps and touched — with the motion contract held over a single continuous trajectory
+    (no re-grip / teleport / coin-state edit). This is the real monitor, NOT a loose proxy."""
+    return bool(m["k6_delivered"] and m["peak_qdot"] <= cfg.limits.joint_vel_hard
+                and m["peak_coin_speed"] <= cfg.limits.ee_speed_hard)
 
 
 def success(m: dict, threshold: float, passive: float, cfg: ForwardConfig) -> bool:
@@ -240,7 +263,9 @@ def cem_search(snap: CradleSnapshot, cfg: ForwardConfig) -> dict:
         n_feas = int(sum(1 for s, _v, _m in scored if np.isfinite(s)))
         history.append({"iter": it, "best_score": round(float(best["score"]), 5), "n_feasible": n_feas,
                         "best_forward": round(float(best["metrics"]["forward"]), 5) if best["metrics"] else None})
+    ok = False
+    if best["metrics"]:
+        ok = (delivery_success(best["metrics"], cfg) if cfg.deliver
+              else success(best["metrics"], threshold, passive, cfg))
     return {"passive_drift": round(passive, 6), "threshold": round(threshold, 6),
-            "best_theta": best["theta"], "best_metrics": best["metrics"],
-            "success": (success(best["metrics"], threshold, passive, cfg) if best["metrics"] else False),
-            "history": history}
+            "best_theta": best["theta"], "best_metrics": best["metrics"], "success": ok, "history": history}

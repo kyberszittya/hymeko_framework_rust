@@ -344,8 +344,9 @@ def _plot_forward(states: list[dict], path: str) -> None:
     plt.close(fig)
 
 
-def _render_forward_gif(snap, theta, path) -> bool:
-    """Render the best-θ controlled-push rollout to a GIF (mandatory §9 graphical output). Returns True on success."""
+def _render_forward_gif(snap, theta, path, cfg=None) -> bool:
+    """Render the best-θ rollout to a GIF (mandatory §9 graphical output) using the SAME config the search used (so a
+    48-step delivery renders all 48 steps, not the default 16). Returns True on success."""
     try:
         import imageio.v2 as imageio
         import mujoco
@@ -360,12 +361,12 @@ def _render_forward_gif(snap, theta, path) -> bool:
             holder["r"] = mujoco.Renderer(rl.inner.model, height=480, width=640)
         holder["r"].update_scene(rl.inner.data, camera=_cam())
         frames.append(np.asarray(holder["r"].render(), np.uint8).copy())
-    rollout_primitive(snap, tuple(theta), ForwardConfig(), frame_hook=hook)
+    rollout_primitive(snap, tuple(theta), cfg or ForwardConfig(), frame_hook=hook)
     if "r" in holder:
         holder["r"].close()
     if not frames:
         return False
-    imageio.mimsave(path, frames, duration=0.12)
+    imageio.mimsave(path, frames, duration=0.10)
     return True
 
 
@@ -427,10 +428,68 @@ def forward_main(smoke=False):
     return manifest
 
 
+def deliver_main(smoke=False):
+    """Stage 4 — MOBILE K6 DELIVERY via a single continuous push-and-coast (no re-grip / teleport / coin-state edit),
+    certified by the FROZEN K6 monitor (dtz ≤ CENTER_TOL ∧ speed < SETTLE_VEL held for HELD_DWELL steps, touched)."""
+    import torch
+    torch.set_num_threads(1)
+    os.makedirs(REPORT_DIR, exist_ok=True)
+    t_start = time.time()
+    stack, cfg_coop, v2, mu = _load_frozen()
+    dcfg = ForwardConfig(horizon=48, deliver=True, lo=(0.0, 0.0, -0.10, 1.0, 4.0), hi=(0.25, 0.30, 0.10, 24.0, 36.0),
+                         init_std=(0.08, 0.10, 0.05, 8.0, 10.0), pop=48, iters=8)
+    pi0, base, forbidden = _setup()
+    seeds = CERTIFIED_SEEDS[:2] if smoke else CERTIFIED_SEEDS
+    print(f"MOBILE K6 DELIVERY — push-and-coast | μ={mu:.3f} H={dcfg.horizon} pop={dcfg.pop} iters={dcfg.iters} "
+          f"| seeds={seeds} ({'smoke:dev' if smoke else 'full'})", flush=True)
+    states = []
+    for idx, seed in enumerate(seeds):
+        t0 = time.time()
+        rl, saved, handoff, meta = acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg_coop, seed, tries=3)
+        entry = {"state": idx, "tag": STATE_TAG.get(idx, f"s{idx}"), "seed": seed,
+                 "split": ("development" if idx in DEV_IDS else "held_out")}
+        if rl is None:
+            entry["skipped"] = "no certified straddle"
+            states.append(entry)
+            continue
+        snap = CradleSnapshot(rl, stack, saved, handoff["prev_tau"], handoff["q_target"],
+                              release_coin=True, coast_mu=mu, cfg=BvConfig())
+        res = cem_search(snap, dcfg)
+        m = res["best_metrics"]
+        entry["delivery"] = {"best_theta": res["best_theta"], "k6_delivered": res["success"],
+                             "dtz_start_mm": round(m["dtz_start"] * 1000, 1), "dtz_end_mm": round(m["dtz_end"] * 1000, 1),
+                             "gap_closed": round(m["gap_closed"], 3), "terminal_coin_speed": round(m["terminal_coin_speed"], 3),
+                             "k6_max_dwell": m["k6_max_dwell"], "touched": m["touched"], "peak_qdot": round(m["peak_qdot"], 3),
+                             "peak_coin_speed": round(m["peak_coin_speed"], 3), "coin_trace": m["coin_trace"]}
+        if res["success"] and res["best_theta"] is not None:
+            gif = f"{REPORT_DIR}/k6_delivery_{entry['tag']}.gif"
+            entry["gif"] = gif if _render_forward_gif(snap, res["best_theta"], gif, dcfg) else None
+        states.append(entry)
+        print(f"  {entry['tag']} seed{seed} [{entry['split']}]: dtz {m['dtz_start']*1000:.0f}→{m['dtz_end']*1000:.1f}mm "
+              f"gap={m['gap_closed']*100:.0f}% term_v={m['terminal_coin_speed']:.3f} k6_dwell={m['k6_max_dwell']}/6 "
+              f"→ K6_DELIVERED={res['success']} ({time.time()-t0:.1f}s)", flush=True)
+    n_deliv = sum(1 for e in states if e.get("delivery", {}).get("k6_delivered"))
+    n_reach = sum(1 for e in states if e.get("delivery") and e["delivery"]["dtz_end_mm"] <= 20.0)
+    peak_rss_gb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 ** 3 if sys.platform == "darwin" else 1024 ** 2)
+    manifest = {"contract": "MOBILE_BIMANUAL_COIN_DELIVERY_TEACHER", "session": "H2_SESSION_2_STAGE4",
+                "date": "2026-07-27", "certificate": "FROZEN K6 (dtz<=CENTER_TOL 0.02 & speed<SETTLE_VEL 0.06, HELD_DWELL 6, touched)",
+                "method": "single continuous push-and-coast from the certified handoff — no re-grip/teleport/coin-state edit",
+                "frozen_split": {"development": ["s1", "s3"], "held_out": ["s4", "s7"]},
+                "n_states": len(seeds), "n_k6_delivered": n_deliv, "n_reach_zone": n_reach, "states": states,
+                "peak_rss_gb": round(peak_rss_gb, 3), "wall_s": round(time.time() - t_start, 1)}
+    art = f"{REPORT_DIR}/mobile_teacher.json"
+    json.dump(manifest, open(art, "w"), indent=1, default=float)
+    print(f"\n== MOBILE K6 DELIVERY ==\n  K6-delivered: {n_deliv}/{len(seeds)} | reach-zone(≤20mm): {n_reach}/{len(seeds)} "
+          f"| peak RSS {peak_rss_gb:.2f} GB | wall {manifest['wall_s']}s\n  artifact: {art}\nDELIVER_DONE", flush=True)
+    return manifest
+
+
 if __name__ == "__main__":
     if "--route-b" in sys.argv:
         route_b_main(smoke="--smoke" in sys.argv)
     elif "--forward" in sys.argv:
         forward_main(smoke="--smoke" in sys.argv)
+    elif "--deliver" in sys.argv:
+        deliver_main(smoke="--smoke" in sys.argv)
     else:
         main(smoke="--smoke" in sys.argv, condition="--condition" in sys.argv)
