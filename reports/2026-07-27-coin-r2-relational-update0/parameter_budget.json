@@ -1,0 +1,67 @@
+{
+ "contract": "COIN_R2_PARAMETER_BUDGET",
+ "date": "2026-07-27",
+ "r1_khead": {
+  "model": "KHeadProposalNet(k=4,feat_dim=43,h=128)",
+  "trainable_params": 25240,
+  "per_module": {
+   "trunk": 22144,
+   "heads": 3096
+  }
+ },
+ "r2_primary": {
+  "model": "RelationalKHeadNet(k=4,h=25)",
+  "hidden_width": 25,
+  "trainable_params": 25774,
+  "per_module": {
+   "enc_coin": 125,
+   "enc_target": 100,
+   "enc_tip": 75,
+   "enc_contact": 175,
+   "enc_port": 125,
+   "rounds": 22750,
+   "heads": 2424
+  }
+ },
+ "capacity_match": {
+  "r1_params": 25240,
+  "r2_params": 25774,
+  "abs_diff": 534,
+  "pct_diff": 2.116,
+  "window_pm5pct": [
+   23978,
+   26502
+  ],
+  "within_pm5pct": true,
+  "binding_criterion": "trainable parameter count within +-5% of the R1 K-head (primary); same-hidden-width is a secondary diagnostic only"
+ },
+ "r2_secondary_same_hidden_width": {
+  "model": "RelationalKHeadNet(k=4,h=128)",
+  "hidden_width": 128,
+  "trainable_params": 580120,
+  "deployed_on_frozen_panel": false,
+  "note": "same hidden width as R1 h=128; ~22.4x the R1 budget because the typed relational net has many small H x H blocks. Reported so an R2 win cannot be dismissed as under-capacity; NOT deployed."
+ },
+ "width_sweep": {
+  "23": {
+   "params": 22150,
+   "pct_diff": -12.24,
+   "within_pm5pct": false
+  },
+  "24": {
+   "params": 23928,
+   "pct_diff": -5.2,
+   "within_pm5pct": false
+  },
+  "25": {
+   "params": 25774,
+   "pct_diff": 2.12,
+   "within_pm5pct": true
+  },
+  "26": {
+   "params": 27688,
+   "pct_diff": 9.7,
+   "within_pm5pct": false
+  }
+ }
+}
