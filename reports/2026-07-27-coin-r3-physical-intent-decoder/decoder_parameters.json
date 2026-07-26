@@ -1,0 +1,15 @@
+{
+ "predictor": "NW_kernel_regression",
+ "bandwidth": 3.0,
+ "n_dev": 6,
+ "feature": "flatten_r1 canonical (43-D)",
+ "intent_roles": [
+  "forward_drive",
+  "peak_velocity",
+  "lateral",
+  "squeeze",
+  "brake_entry",
+  "braking_demand",
+  "release"
+ ]
+}

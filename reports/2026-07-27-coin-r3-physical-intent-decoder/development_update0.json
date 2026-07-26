@@ -1,0 +1,442 @@
+{
+ "contract": "COIN_R3_PHYSICAL_INTENT_UPDATE_ZERO_V1",
+ "dev_seeds": [
+  14250,
+  14750,
+  16500,
+  17750,
+  19500,
+  24000
+ ],
+ "bandwidth_selection": {
+  "bandwidths": {
+   "0.3": {
+    "lodo_k6": 0,
+    "per_state": {
+     "s1": false,
+     "s3": false,
+     "16500": false,
+     "17750": false,
+     "19500": false,
+     "24000": false
+    }
+   },
+   "0.5": {
+    "lodo_k6": 0,
+    "per_state": {
+     "s1": false,
+     "s3": false,
+     "16500": false,
+     "17750": false,
+     "19500": false,
+     "24000": false
+    }
+   },
+   "0.75": {
+    "lodo_k6": 0,
+    "per_state": {
+     "s1": false,
+     "s3": false,
+     "16500": false,
+     "17750": false,
+     "19500": false,
+     "24000": false
+    }
+   },
+   "1.0": {
+    "lodo_k6": 0,
+    "per_state": {
+     "s1": false,
+     "s3": false,
+     "16500": false,
+     "17750": false,
+     "19500": false,
+     "24000": false
+    }
+   },
+   "1.5": {
+    "lodo_k6": 0,
+    "per_state": {
+     "s1": false,
+     "s3": false,
+     "16500": false,
+     "17750": false,
+     "19500": false,
+     "24000": false
+    }
+   },
+   "2.0": {
+    "lodo_k6": 0,
+    "per_state": {
+     "s1": false,
+     "s3": false,
+     "16500": false,
+     "17750": false,
+     "19500": false,
+     "24000": false
+    }
+   },
+   "3.0": {
+    "lodo_k6": 0,
+    "per_state": {
+     "s1": false,
+     "s3": false,
+     "16500": false,
+     "17750": false,
+     "19500": false,
+     "24000": false
+    }
+   }
+  },
+  "selected_bandwidth": 3.0,
+  "lodo_k6": 0
+ },
+ "dev_intents": {
+  "s1": [
+   0.05803,
+   0.44997,
+   0.00491,
+   0.0413,
+   0.21346,
+   0.80934,
+   0.15395
+  ],
+  "s3": [
+   0.01739,
+   0.45114,
+   0.01096,
+   0.13055,
+   0.13042,
+   0.54928,
+   0.18636
+  ],
+  "16500": [
+   0.0393,
+   0.65333,
+   0.00825,
+   0.02057,
+   0.259,
+   1.08709,
+   0.26987
+  ],
+  "17750": [
+   0.03176,
+   0.28755,
+   -0.02879,
+   0.01271,
+   0.06995,
+   0.32473,
+   0.34284
+  ],
+  "19500": [
+   0.01583,
+   0.55544,
+   -0.02165,
+   0.18012,
+   0.20699,
+   0.36325,
+   0.27371
+  ],
+  "24000": [
+   0.03896,
+   0.48292,
+   -0.00181,
+   0.1402,
+   0.19379,
+   0.72714,
+   0.20849
+  ]
+ },
+ "d1_dev_k6": 2,
+ "d1_pass": true,
+ "teacher_intent_provenance": {
+  "s1": {
+   "was_swapped": false,
+   "slew": 0.3,
+   "horizon": 60.0,
+   "authority": {
+    "forward_push_reach": 0.0799,
+    "brake_opposed_reach": 0.0799,
+    "lateral_reach": 0.08982,
+    "normal_force_reach": 0.24057
+   },
+   "theta_phys": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "theta_canonical": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "intent_raw": [
+    0.05803,
+    0.44997,
+    0.00491,
+    0.0413,
+    0.21346,
+    0.80934,
+    0.15395
+   ],
+   "intent_clipped": [
+    0.05803,
+    0.44997,
+    0.00491,
+    0.0413,
+    0.21346,
+    0.80934,
+    0.15395
+   ],
+   "clipped_roles": [],
+   "k6_peak_coin_speed": 0.44997,
+   "k6_delivered": true
+  },
+  "s3": {
+   "was_swapped": true,
+   "slew": 0.3,
+   "horizon": 60.0,
+   "authority": {
+    "forward_push_reach": 0.07516,
+    "brake_opposed_reach": 0.07516,
+    "lateral_reach": 0.08891,
+    "normal_force_reach": 0.19999
+   },
+   "theta_phys": [
+    0.19582,
+    0.0694,
+    -0.03699,
+    7.82491,
+    11.18153,
+    2.19236
+   ],
+   "theta_canonical": [
+    0.19582,
+    0.0694,
+    0.03699,
+    7.82491,
+    11.18153,
+    2.19236
+   ],
+   "intent_raw": [
+    0.01739,
+    0.45114,
+    0.01096,
+    0.13055,
+    0.13042,
+    0.54928,
+    0.18636
+   ],
+   "intent_clipped": [
+    0.01739,
+    0.45114,
+    0.01096,
+    0.13055,
+    0.13042,
+    0.54928,
+    0.18636
+   ],
+   "clipped_roles": [],
+   "k6_peak_coin_speed": 0.45114,
+   "k6_delivered": true
+  },
+  "16500": {
+   "was_swapped": false,
+   "slew": 0.3,
+   "horizon": 60.0,
+   "authority": {
+    "forward_push_reach": 0.10342,
+    "brake_opposed_reach": 0.10342,
+    "lateral_reach": 0.10624,
+    "normal_force_reach": 0.15863
+   },
+   "theta_phys": [
+    0.0389,
+    0.114,
+    0.0233,
+    15.5399,
+    16.1924,
+    3.1535
+   ],
+   "theta_canonical": [
+    0.0389,
+    0.114,
+    0.0233,
+    15.5399,
+    16.1924,
+    3.1535
+   ],
+   "intent_raw": [
+    0.0393,
+    0.65333,
+    0.00825,
+    0.02057,
+    0.259,
+    1.08709,
+    0.26987
+   ],
+   "intent_clipped": [
+    0.0393,
+    0.65333,
+    0.00825,
+    0.02057,
+    0.259,
+    1.08709,
+    0.26987
+   ],
+   "clipped_roles": [],
+   "k6_peak_coin_speed": 0.65333,
+   "k6_delivered": true
+  },
+  "17750": {
+   "was_swapped": true,
+   "slew": 0.3,
+   "horizon": 60.0,
+   "authority": {
+    "forward_push_reach": 0.04931,
+    "brake_opposed_reach": 0.04931,
+    "lateral_reach": 0.08636,
+    "normal_force_reach": 0.10929
+   },
+   "theta_phys": [
+    0.0349,
+    0.1932,
+    0.1,
+    4.1972,
+    20.5702,
+    1.9756
+   ],
+   "theta_canonical": [
+    0.0349,
+    0.1932,
+    -0.1,
+    4.1972,
+    20.5702,
+    1.9756
+   ],
+   "intent_raw": [
+    0.03176,
+    0.28755,
+    -0.02879,
+    0.01271,
+    0.06995,
+    0.32473,
+    0.34284
+   ],
+   "intent_clipped": [
+    0.03176,
+    0.28755,
+    -0.02879,
+    0.01271,
+    0.06995,
+    0.32473,
+    0.34284
+   ],
+   "clipped_roles": [],
+   "k6_peak_coin_speed": 0.28755,
+   "k6_delivered": true
+  },
+  "19500": {
+   "was_swapped": false,
+   "slew": 0.3,
+   "horizon": 60.0,
+   "authority": {
+    "forward_push_reach": 0.0332,
+    "brake_opposed_reach": 0.0332,
+    "lateral_reach": 0.15034,
+    "normal_force_reach": 0.342
+   },
+   "theta_phys": [
+    0.158,
+    0.143,
+    -0.0432,
+    12.4194,
+    16.4224,
+    3.2824
+   ],
+   "theta_canonical": [
+    0.158,
+    0.143,
+    -0.0432,
+    12.4194,
+    16.4224,
+    3.2824
+   ],
+   "intent_raw": [
+    0.01583,
+    0.55544,
+    -0.02165,
+    0.18012,
+    0.20699,
+    0.36325,
+    0.27371
+   ],
+   "intent_clipped": [
+    0.01583,
+    0.55544,
+    -0.02165,
+    0.18012,
+    0.20699,
+    0.36325,
+    0.27371
+   ],
+   "clipped_roles": [],
+   "k6_peak_coin_speed": 0.55544,
+   "k6_delivered": true
+  },
+  "24000": {
+   "was_swapped": true,
+   "slew": 0.3,
+   "horizon": 60.0,
+   "authority": {
+    "forward_push_reach": 0.0941,
+    "brake_opposed_reach": 0.0941,
+    "lateral_reach": 0.14272,
+    "normal_force_reach": 0.26704
+   },
+   "theta_phys": [
+    0.1575,
+    0.1242,
+    0.0038,
+    11.6271,
+    12.5093,
+    2.3182
+   ],
+   "theta_canonical": [
+    0.1575,
+    0.1242,
+    -0.0038,
+    11.6271,
+    12.5093,
+    2.3182
+   ],
+   "intent_raw": [
+    0.03896,
+    0.48292,
+    -0.00181,
+    0.1402,
+    0.19379,
+    0.72714,
+    0.20849
+   ],
+   "intent_clipped": [
+    0.03896,
+    0.48292,
+    -0.00181,
+    0.1402,
+    0.19379,
+    0.72714,
+    0.20849
+   ],
+   "clipped_roles": [],
+   "k6_peak_coin_speed": 0.48292,
+   "k6_delivered": true
+  }
+ }
+}
