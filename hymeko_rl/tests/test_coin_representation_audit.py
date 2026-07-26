@@ -34,10 +34,13 @@ def test_lipschitz_low_correlation_when_decoupled():
 # ───────────────────────────── nearest neighbour ─────────────────────────────
 def test_nearest_neighbour_never_self_and_picks_closest():
     feats = {"a": np.array([0.0, 0]), "b": np.array([0.1, 0]), "c": np.array([5.0, 0])}
-    nn = nearest_neighbour_by_feature(feats, ["a", "b", "c"])
+    nn = nearest_neighbour_by_feature(feats, ["a", "b", "c"], ["a", "b", "c"])
     assert nn["a"]["nn_tag"] == "b" and nn["b"]["nn_tag"] == "a"
     assert nn["c"]["nn_tag"] == "b"                             # closest of {a,b}
     assert all(nn[t]["nn_tag"] != t for t in feats)            # never self
+    # held-out-style query: candidates restricted to a subset not containing the query
+    held = nearest_neighbour_by_feature({**feats, "h": np.array([0.2, 0])}, ["h"], ["a", "b", "c"])
+    assert held["h"]["nn_tag"] == "b"                           # h(0.2) nearest to b(0.1) among dev candidates
 
 
 # ───────────────────────────── L/R ordering deficit ─────────────────────────────

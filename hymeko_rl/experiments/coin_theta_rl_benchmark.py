@@ -654,8 +654,8 @@ def rep_audit_main(smoke: bool = False) -> dict:
     held_tags = [held_tag[s] for s in held_seeds]
     lip = lipschitz_analysis({t: feats_flat[t] for t in dev_tags}, {t: theta_n[t] for t in dev_tags})
     order = ordering_deficit({t: feats_grouped[t] for t in dev_tags}, flatten_features)
-    nn_dev = nearest_neighbour_by_feature({t: feats_flat[t] for t in dev_tags}, dev_tags)          # LODO among dev
-    nn_held = nearest_neighbour_by_feature({t: feats_flat[t] for t in held_tags}, dev_tags)         # held-out → nearest dev
+    nn_dev = nearest_neighbour_by_feature(feats_flat, dev_tags, dev_tags)          # LODO among dev
+    nn_held = nearest_neighbour_by_feature(feats_flat, held_tags, dev_tags)        # held-out → nearest dev (overlay)
 
     def _retrieve(target_tag: str, source_tag: str, i: int) -> dict:
         prov = fixed_search_select(snaps[target_tag], np.asarray(canon_by_tag[source_tag], np.float64),

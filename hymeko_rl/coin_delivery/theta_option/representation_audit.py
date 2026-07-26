@@ -50,13 +50,15 @@ def lipschitz_analysis(feats: dict[str, np.ndarray], thetas_norm: dict[str, np.n
             "nearest_feature_pair_is_nearest_theta_pair": bool(np.argmin(dphi) == np.argmin(dth))}
 
 
-def nearest_neighbour_by_feature(feats: dict[str, np.ndarray], candidate_tags: "list[str]") -> dict[str, Any]:
-    """For each tag, its nearest OTHER cradle among ``candidate_tags`` by feature distance (deterministic tie-break to the
-    lower tag). Used for training-free retrieval: propose the neighbour's canonical θ. # Postconditions: never maps a tag
-    to itself."""
+def nearest_neighbour_by_feature(feats_all: dict[str, np.ndarray], query_tags: "list[str]",
+                                 candidate_tags: "list[str]") -> dict[str, Any]:
+    """For each tag in ``query_tags``, its nearest cradle among ``candidate_tags`` by feature distance (self excluded;
+    deterministic tie-break to the lower tag). ``feats_all`` must contain every query AND candidate tag. Used for
+    training-free retrieval (propose the neighbour's canonical θ) — dev LODO uses candidates=dev; the held-out overlay uses
+    candidates=dev. # Postconditions: never maps a tag to itself."""
     out = {}
-    for t in feats:
-        cands = [(float(np.linalg.norm(np.asarray(feats[t], np.float64) - np.asarray(feats[c], np.float64))), c)
+    for t in query_tags:
+        cands = [(float(np.linalg.norm(np.asarray(feats_all[t], np.float64) - np.asarray(feats_all[c], np.float64))), c)
                  for c in candidate_tags if c != t]
         cands.sort(key=lambda z: (z[0], z[1]))
         out[t] = {"nn_tag": cands[0][1], "nn_feature_dist": round(cands[0][0], 4)} if cands else {"nn_tag": None}
