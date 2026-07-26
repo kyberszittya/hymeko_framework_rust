@@ -41,10 +41,11 @@ class KHeadProposalNet(nn.Module):
     """Shared B0-feature trunk → K bounded 6-D heads. forward(feats) → (B, K, 6) normalised θ ∈ [-1,1] (Tanh). The heads
     share the trunk so the modes are conditioned on the same state encoding; each head is a distinct linear read-out."""
 
-    def __init__(self, k: int, h: int = 128):
+    def __init__(self, k: int, feat_dim: int = FEATURE_DIM, h: int = 128):
         super().__init__()
         self.k = int(k)
-        self.trunk = nn.Sequential(nn.Linear(FEATURE_DIM, h), nn.ReLU(), nn.Linear(h, h), nn.ReLU())
+        self.feat_dim = int(feat_dim)
+        self.trunk = nn.Sequential(nn.Linear(self.feat_dim, h), nn.ReLU(), nn.Linear(h, h), nn.ReLU())
         self.heads = nn.Linear(h, self.k * DIM)
 
     def forward(self, feats: torch.Tensor) -> torch.Tensor:
@@ -118,7 +119,8 @@ def fit_khead(states: "list[KHeadTrainState]", k: int, *, epochs: int = 1500, lr
     given ``seed``. Each state contributes one set-loss term (variable-size target set). # Preconditions: every state has
     ≥1 target. # Postconditions: returns (proposal, {final_loss, per_state_recall})."""
     torch.manual_seed(seed)
-    net = KHeadProposalNet(k, h=h)
+    feat_dim = int(np.asarray(states[0].features).reshape(-1).shape[0])   # infer from the data (42 for B0, 43 for R1 v3)
+    net = KHeadProposalNet(k, feat_dim=feat_dim, h=h)
     opt = torch.optim.Adam(net.parameters(), lr)
     feats = [torch.as_tensor(np.asarray(s.features, np.float32))[None] for s in states]
     tgts = [torch.as_tensor(np.asarray(s.targets_norm, np.float32)) for s in states]
@@ -197,12 +199,12 @@ def multimodal_search_select(snap: CradleSnapshot, proposal: KHeadProposal, obs:
 
 
 def save_khead(prop: KHeadProposal, path: str) -> None:
-    torch.save({"k": prop.k, "state_dict": prop.net.state_dict()}, path)
+    torch.save({"k": prop.k, "feat_dim": prop.net.feat_dim, "state_dict": prop.net.state_dict()}, path)
 
 
 def load_khead(path: str) -> KHeadProposal:
     blob = torch.load(path, weights_only=False)
-    net = KHeadProposalNet(int(blob["k"]))
+    net = KHeadProposalNet(int(blob["k"]), feat_dim=int(blob.get("feat_dim", FEATURE_DIM)))
     net.load_state_dict(blob["state_dict"])
     net.eval()
     return KHeadProposal(k=int(blob["k"]), net=net, box=ThetaBox())

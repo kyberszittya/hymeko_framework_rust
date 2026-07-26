@@ -863,6 +863,154 @@ def _multimodal_deploy_panel(prop: Any, panel: list, budget: int, dev_targets: d
     return {"budget": budget, "per_state": per, "dev_k6": dev_k6, "held_out_k6": held_k6, "total_k6": dev_k6 + held_k6}
 
 
+R1_UPDATE0_DIR = "reports/2026-07-27-coin-r1-update0"
+
+
+def _r1_deploy_one(snap: Any, prop: Any, r1_feat: np.ndarray, was_swapped: bool, rng: Any, budget: int, box: Any) -> dict:
+    """R1 deploy on ONE cradle: predict K CANONICAL θ heads → decode each back to physical θ (inverse T_θ, using this
+    cradle's was_swapped) → fair budget-8 split (option_rl.allocate_budget) → coin CENTRE-INCLUSIVE search per mode → global
+    argmax. Records the full provenance (canonical heads, decoded centres, selected head, θ_exec, displacement, K6)."""
+    from hymeko_rl.coin_delivery.theta_option.canonical_frame import from_canonical_theta
+    from hymeko_rl.coin_delivery.theta_option.cradle_expansion import classify_failure_mode
+    from hymeko_rl.coin_delivery.theta_option.search import SEARCH_STD, fixed_search_select
+    from hymeko_rl.option_rl.proposal import allocate_budget
+    modes = prop.modes(np.asarray(r1_feat, np.float32))            # K canonical θ centres
+    canon_centres = [np.asarray(m.center, np.float64) for m in modes]
+    phys_centres = [from_canonical_theta(c, was_swapped) for c in canon_centres]   # inverse T_θ → physical
+    per = allocate_budget([1.0 / len(modes)] * len(modes), int(budget))
+    children = list(rng.spawn(len(modes))) if len(modes) > 1 else [rng]
+    best = None
+    for k, (c, b_k) in enumerate(zip(phys_centres, per)):
+        if b_k <= 0:
+            continue
+        prov = fixed_search_select(snap, np.asarray(c, np.float64), children[k], budget=int(b_k), std=SEARCH_STD)
+        if best is None or prov.score > best[1].score:
+            best = (k, prov)
+    sel, prov = best
+    disp = float(np.linalg.norm(box.norm(prov.selected) - box.norm(phys_centres[sel])))
+    o = prov.outcome
+    ok = bool(o.get("delivery_success"))
+    fail = None if ok else classify_failure_mode({"dtz_end_mm": o.get("dtz_end", 0) * 1000, "k6_max_dwell": o.get("k6_max_dwell", 0),
+                                                  "peak_qdot": o.get("peak_qdot", 0), "peak_coin_speed": o.get("peak_coin_speed", 0)})
+    return {"selected_head": sel, "n_modes": len(modes), "per_mode_budget": per, "was_swapped": bool(was_swapped),
+            "canonical_heads": [[round(float(x), 4) for x in c] for c in canon_centres],
+            "decoded_physical_centres": [[round(float(x), 4) for x in c] for c in phys_centres],
+            "theta_exec": [round(float(x), 4) for x in prov.selected], "search_displacement_norm": round(disp, 4),
+            "k6_delivered": bool(o.get("k6_delivered")), "delivery_success": ok, "dtz_end_mm": round(o.get("dtz_end", 0) * 1000, 2),
+            "peak_qdot": round(o.get("peak_qdot", 0), 4), "peak_coin_speed": round(o.get("peak_coin_speed", 0), 4),
+            "failure_phase": fail}
+
+
+def r1_update0_main(smoke: bool = False) -> dict:
+    """R1 LEARNED UPDATE-0 GATE — the decisive learned-amortisation test. ONLY the representation (42-D → R1 v3 canonical
+    43-D) and the labels (raw θ → canonical θ) change vs the frozen multimodal baseline; K-head arch, K-selection procedure
+    (dev-only LODO), acceptable sets, optimiser/epochs/seed, budget-8 + centre-inclusion, physical option, K6, and the
+    frozen 4-state panel are all UNCHANGED. Deploy: canonicalise → predict canonical θ heads → decode (inverse T_θ) →
+    fair budget-8 search → frozen K6."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.acceptable_set import harvest_acceptable_set
+    from hymeko_rl.coin_delivery.theta_option.canonical_frame import r1_canonical_features, to_canonical_theta
+    from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
+    from hymeko_rl.coin_delivery.theta_option.multimodal_proposal import (
+        KHeadTrainState, fit_khead, is_multimodal_target_set, save_khead)
+    from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot, load_harness, sample_dev_basin
+    t0 = time.time()
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    dp = json.load(open(f"{REPORT_DIR}/cradle_delivery_pass.json"))
+    box = ThetaBox()
+    dev_tag = {14250: "s1", 14750: "s3", 16500: "16500", 17750: "17750", 19500: "19500", 24000: "24000"}
+    dev_seeds = [14250, 14750, 16500, 17750, 19500, 24000]
+    dev_canon = {14250: [e for e in bank["states"] if e["tag"] == "s1"][0]["canonical_theta_vec"],
+                 14750: [e for e in bank["states"] if e["tag"] == "s3"][0]["canonical_theta_vec"],
+                 **{r["seed"]: r["canonical_theta"] for r in dp["deliverable_dev_pool"] if r["seed"] not in (14250, 14750)}}
+    Ks = [1, 2] if smoke else [1, 2, 4]
+    EPOCHS, LR, SEED, n_global = (400 if smoke else 1500), 1e-3, 0, (120 if smoke else 600)
+    harness = load_harness()
+    os.makedirs(R1_UPDATE0_DIR, exist_ok=True)
+    print(f"R1 UPDATE-0 — R1 v3 canonical features + canonical θ labels | K∈{Ks} | budget 8 | only representation+label change", flush=True)
+
+    print("BUILD R1 acceptable-set training data (r1_canonical_features + CANONICAL θ targets)", flush=True)
+    snaps = {seed: acquire_snapshot(harness, seed)[0] for seed in dev_seeds}
+    states, swaps = [], {}
+    for seed in dev_seeds:
+        tag, snap = dev_tag[seed], snaps[seed]
+        feat, sw = r1_canonical_features(snap)
+        swaps[tag] = sw
+        cvec = np.asarray(dev_canon[seed], np.float64)
+        local = [np.asarray(c["theta"], np.float64) for c in sample_dev_basin(snap, cvec, seed=seed) if c["kind"] == "delivering"]
+        acc = harvest_acceptable_set(snap, n_samples=n_global, seed=seed, seed_thetas=[cvec, *local])["accepted"]
+        tgt = np.asarray([box.norm(to_canonical_theta(a.theta, sw)) for a in acc], np.float64)   # CANONICAL θ targets
+        states.append(KHeadTrainState(tag=tag, features=np.asarray(feat, np.float32), targets_norm=tgt, multimodal=is_multimodal_target_set(tgt)))
+        print(f"  {tag} seed={seed}: was_swapped={sw} targets={len(tgt)} multimodal={states[-1].multimodal}", flush=True)
+
+    print("DEV-only LODO-CV (same procedure as M2; physical held-dev K6 with decode deploy)", flush=True)
+    cv = {}
+    for K in Ks:
+        fold = 0
+        seed_of = {t: s for s, t in dev_tag.items()}
+        for held in states:
+            train = [s for s in states if s.tag != held.tag]
+            prop, _ = fit_khead(train, K, epochs=EPOCHS, lr=LR, seed=SEED)
+            dep = _r1_deploy_one(snaps[seed_of[held.tag]], prop, held.features, swaps[held.tag],   # cached R1 features
+                                 np.random.default_rng(70000 + K), 8, box)
+            fold += int(dep["delivery_success"])
+        cv[K] = fold
+        print(f"  K={K}: LODO held-dev K6 = {fold}/{len(states)}", flush=True)
+    k_main = max([k for k in Ks if k > 1] or Ks, key=lambda K: (cv[K], -K))   # capacity-capable (K>1); K=1 is side-diagnostic
+    print(f"  K_main = {k_main} (dev-only; K=1 is a side-diagnostic, not the deploy)", flush=True)
+
+    panel = build_panel(harness, bank)
+    panel_feat = {ps.tag: r1_canonical_features(ps.snap) for ps in panel}
+
+    def _deploy_panel(K: int) -> dict:
+        prop, info = fit_khead(states, K, epochs=EPOCHS, lr=LR, seed=SEED)
+        save_khead(prop, f"{R1_UPDATE0_DIR}/r1_khead_K{K}.pt")
+        per = {}
+        for i, ps in enumerate(panel):
+            feat, sw = panel_feat[ps.tag]
+            d = _r1_deploy_one(ps.snap, prop, feat, sw, np.random.default_rng(90000 + i * 131 + K), 8, box)
+            d["split"] = ps.split
+            per[ps.tag] = d
+        dev_k6 = sum(1 for r in per.values() if r["split"] == "development" and r["delivery_success"])
+        held_k6 = sum(1 for r in per.values() if r["split"] == "held_out" and r["delivery_success"])
+        return {"K": K, "per_state": per, "dev_k6": dev_k6, "held_out_k6": held_k6, "total_k6": dev_k6 + held_k6,
+                "train_mse": info.get("final_loss")}
+
+    main = _deploy_panel(k_main)
+    side1 = _deploy_panel(1)                                          # K=1 side-diagnostic
+    n = len(panel)
+    dev_ok, held_ok, all_ok = main["dev_k6"] == 2, main["held_out_k6"] == 2, main["total_k6"] == n
+    motion_ok = all(bool(r["peak_qdot"] <= 3.0 and r["peak_coin_speed"] <= 1.5) for r in main["per_state"].values())
+    if all_ok and dev_ok and held_ok and motion_ok:
+        verdict, auth, r2 = "ENGINEERED_CANONICAL_CONTACT_FRAME_SUFFICIENT", True, False
+    elif main["dev_k6"] < 2:
+        verdict, auth, r2 = "DEV_REGRESSION_AUDIT_ENCODE_DECODE_FIRST", False, False
+    elif main["total_k6"] == 3 or main["held_out_k6"] == 1:
+        verdict, auth, r2 = "R1_LOAD_BEARING_BUT_INSUFFICIENT", False, True
+    else:
+        verdict, auth, r2 = "FLAT_R1_LEARNED_AMORTISATION_FAILS", False, True
+    out = {"contract": "COIN_R1_LEARNED_UPDATE_ZERO_V1", "base_commit": "4bdc329d", "date": "2026-07-27",
+           "changed_axes_only": ["representation: 42D→R1 v3 canonical 43D", "labels: raw θ→canonical θ"],
+           "frozen": ["dev acceptable sets", "K-head arch", "dev-only K-selection", "optimiser/epochs/seed", "budget-8+centre",
+                      "physical option", "K6 monitor", "frozen 4-state panel"],
+           "cv_lodo": cv, "k_main": k_main, "main_deploy": main, "k1_side_diagnostic": side1,
+           "gate": {"dev_k6": main["dev_k6"], "held_out_k6": main["held_out_k6"], "total_k6": main["total_k6"],
+                    "motion_ok": motion_ok, "passed": bool(all_ok and dev_ok and held_ok and motion_ok)},
+           "verdict": verdict, "authorises_sac_td3": auth, "r2_authorised": r2,
+           "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    path = f"{R1_UPDATE0_DIR}/r1_update_zero.json"
+    json.dump(out, open(path, "w"), indent=1, default=float)
+    ps_str = ", ".join(f"{t}:{int(r['delivery_success'])}(h{r['selected_head']},dtz{r['dtz_end_mm']},{r['failure_phase'] or 'K6'})"
+                       for t, r in main["per_state"].items())
+    print(f"\n== R1 UPDATE-0 ==\n  K_main={k_main} LODO={cv} | MAIN: dev {main['dev_k6']}/2 held {main['held_out_k6']}/2 "
+          f"total {main['total_k6']}/4 | K=1 side: total {side1['total_k6']}/4\n  per-state: {ps_str}\n"
+          f"  VERDICT: {verdict} | authorises_sac_td3={auth} | r2_authorised={r2}\n  artifact: {path} | wall {out['wall_s']}s\n"
+          f"R1_UPDATE0_DONE", flush=True)
+    return out
+
+
 def multimodal_main(smoke: bool = False) -> dict:
     """M1+M2 — the K-head acceptable-set proposal. Build the dev acceptable-set training data, select K by DEV-ONLY
     leave-one-dev-out CV (physical K6 on the held-out DEV cradle), freeze K, retrain on all dev, then ONE frozen-panel
@@ -1170,6 +1318,8 @@ if __name__ == "__main__":
         rep_audit_main(smoke="--smoke" in sys.argv)
     elif "--r1-check" in sys.argv:
         r1_check_main(smoke="--smoke" in sys.argv)
+    elif "--r1-update0" in sys.argv:
+        r1_update0_main(smoke="--smoke" in sys.argv)
     elif "--scout-cradles" in sys.argv:
         _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
         scout_cradles_main(n=_n)
