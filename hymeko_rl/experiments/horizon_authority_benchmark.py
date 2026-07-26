@@ -25,6 +25,7 @@ sys.path.insert(0, ".")
 from hymeko_rl.coin_delivery.contact_velocity import BvConfig, CradleSnapshot, InvalidCradleSnapshot  # noqa: E402
 from hymeko_rl.coin_delivery.horizon_authority import (  # noqa: E402
     HORIZONS, HorizonConfig, analyse_state_horizon, decide_campaign_route)
+from hymeko_rl.coin_delivery.mobile_conditioning import ConditionConfig, condition_mobile_handoff  # noqa: E402
 from hymeko_rl.experiments.bv_identification_benchmark import (  # noqa: E402
     CERTIFIED_SEEDS, _load_frozen, acquire_certified_straddle)
 from hymeko_rl.experiments.video_coin_variants import _setup  # noqa: E402
@@ -34,18 +35,31 @@ DEV_IDS, HELDOUT_IDS = [0, 1], [2, 3]           # s1,s3 development · s4,s7 hel
 STATE_TAG = {0: "s1", 1: "s3", 2: "s4", 3: "s7"}
 
 
-def _analyse_seed(idx, seed, harness, cfg: HorizonConfig) -> dict:
-    """Acquire a certified straddle at ``seed``, snapshot the free-coin handoff, run the lifted-horizon analysis."""
+def _analyse_seed(idx, seed, harness, cfg: HorizonConfig, condition: bool = False) -> dict:
+    """Acquire a certified straddle at ``seed``, optionally run the Route-A mobile low-debt conditioning (free-coin
+    preload settle), snapshot the free-coin handoff, run the lifted-horizon analysis."""
     pi0, base, forbidden, v2, stack, cfg_coop, mu = harness
     rl, saved, handoff, meta = acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg_coop, seed, tries=3)
     entry = {"state": idx, "tag": STATE_TAG.get(idx, f"s{idx}"), "seed": seed,
-             "split": ("development" if idx in DEV_IDS else "held_out"), "acquire": meta}
+             "split": ("development" if idx in DEV_IDS else "held_out"), "acquire": meta, "conditioned": bool(condition)}
     if rl is None:
         entry["skipped"] = "no CERTIFIED straddle cradle acquired"
         return entry
+    prev_tau, q_target = handoff["prev_tau"], handoff["q_target"]
+    if condition:                                    # Route A — mobile low-debt handoff (free coin, no pin), then measure
+        cond = condition_mobile_handoff(rl, stack, saved, handoff["prev_tau"], handoff["q_target"],
+                                        coop=cfg_coop, ccfg=ConditionConfig())
+        entry["conditioning"] = {
+            "settled": cond["settled"], "steps_used": cond["steps_used"], "fn_final": list(cond["fn_final"]),
+            "balance_final": cond["balance_final"], "qdot_final": cond["qdot_final"],
+            "prev_tau": ([round(float(x), 4) for x in cond["prev_tau"]] if cond["prev_tau"] is not None else None),
+            "q_target": [round(float(x), 4) for x in cond["q_target"]], "fn_hist": cond["fn_hist"]}
+        if cond["prev_tau"] is None:
+            entry["invalid"] = "conditioning produced no controller state (no contact)"
+            return entry
+        prev_tau, q_target = cond["prev_tau"], cond["q_target"]
     try:
-        snap = CradleSnapshot(rl, stack, saved, handoff["prev_tau"], handoff["q_target"],
-                              release_coin=True, coast_mu=mu, cfg=cfg.bv)
+        snap = CradleSnapshot(rl, stack, saved, prev_tau, q_target, release_coin=True, coast_mu=mu, cfg=cfg.bv)
         entry["analysis"] = analyse_state_horizon(snap, cfg)
     except InvalidCradleSnapshot as e:
         entry["invalid"] = str(e)
@@ -53,6 +67,12 @@ def _analyse_seed(idx, seed, harness, cfg: HorizonConfig) -> dict:
 
 
 def _print_state(entry: dict, dt_wall: float) -> None:
+    if entry.get("conditioning"):
+        c = entry["conditioning"]
+        fh = c["fn_hist"]
+        trace = " ".join(f"({fl:.2f},{fr:.2f})" for fl, fr in fh[::max(1, len(fh) // 8)]) if fh else "-"
+        print(f"  {entry['tag']} cond: settled={c['settled']} steps={c['steps_used']} fn_final={c['fn_final']} "
+              f"balance={c['balance_final']} qdot={c['qdot_final']} | fn_hist~ {trace}", flush=True)
     if "analysis" not in entry:
         print(f"  {entry['tag']} seed{entry['seed']}: {entry.get('skipped', entry.get('invalid','?'))} "
               f"({dt_wall:.1f}s)", flush=True)
@@ -130,7 +150,7 @@ def _plot(states: list[dict], path: str, cfg: HorizonConfig) -> None:
     plt.close(fig)
 
 
-def main(smoke=False):
+def main(smoke=False, condition=False):
     import torch
     torch.set_num_threads(1)
     os.makedirs(REPORT_DIR, exist_ok=True)
@@ -140,12 +160,13 @@ def main(smoke=False):
     pi0, base, forbidden = _setup()
     harness = (pi0, base, forbidden, v2, stack, cfg_coop, mu)
     seeds = CERTIFIED_SEEDS[:2] if smoke else CERTIFIED_SEEDS
-    print(f"HORIZON AUTHORITY — lifted-horizon vs cradle collapse | μ={mu:.3f} H={HORIZONS} "
+    tag = "conditioned (ROUTE_A)" if condition else "baseline"
+    print(f"HORIZON AUTHORITY [{tag}] — lifted-horizon vs cradle collapse | μ={mu:.3f} H={HORIZONS} "
           f"eps={cfg.bv.eps_scales} margin={cfg.margin} | seeds={seeds} ({'smoke:dev' if smoke else 'full'})", flush=True)
     states = []
     for idx, seed in enumerate(seeds):
         t0 = time.time()
-        entry = _analyse_seed(idx, seed, harness, cfg)
+        entry = _analyse_seed(idx, seed, harness, cfg, condition=condition)
         _print_state(entry, time.time() - t0)
         states.append(entry)
     cstates = _campaign_states(states)
@@ -153,6 +174,7 @@ def main(smoke=False):
     peak_rss_gb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 ** 3 if sys.platform == "darwin" else 1024 ** 2)
     manifest = {
         "contract": "H2_LIFTED_HORIZON_AUTHORITY_VS_CRADLE_COLLAPSE", "session": "H2_SESSION_2",
+        "variant": ("ROUTE_A_MOBILE_LOW_DEBT_CONDITIONED" if condition else "BASELINE_RAW_HANDOFF"),
         "date": "2026-07-27", "wall_clock_note": "executed 2026-07-26/27 JST overnight campaign",
         "builds_on": "ONE_STEP_DQ_TARGET_AUTHORITY_NULL_AT_HANDOFF_UNDER_TORQUE_RATE_LIMIT (5f2f0133, frozen)",
         "physics": "RUBBER_TIP_LOW_DRAG_COIN_V2", "coast_mu": round(mu, 3),
@@ -173,9 +195,10 @@ def main(smoke=False):
                            "ROUTE_B": "no rank-2 authority before collapse → slew-admissible Δτ"}},
         "n_states": len(seeds), "states": states, "campaign_route": campaign,
         "peak_rss_gb": round(peak_rss_gb, 3), "wall_s": round(time.time() - t_start, 1), "h2_qp_built": False}
-    art = f"{REPORT_DIR}/authority_recovery.json"
+    suffix = "_conditioned" if condition else ""
+    art = f"{REPORT_DIR}/authority_recovery{suffix}.json"
     json.dump(manifest, open(art, "w"), indent=1, default=float)
-    _plot(states, f"{REPORT_DIR}/horizon_authority_race.png", cfg)
+    _plot(states, f"{REPORT_DIR}/horizon_authority_race{suffix}.png", cfg)
     print(f"\n== HORIZON AUTHORITY ==\n  states analysed: {len(cstates)}/{len(seeds)} | peak RSS {peak_rss_gb:.2f} GB "
           f"| wall {manifest['wall_s']}s\n  dev routes: {campaign['dev_routes']} | held-out: {campaign['heldout_routes']}"
           f"\n  → CAMPAIGN ROUTE: {campaign['route']}\n  reason: {campaign['reason']}\n  artifact: {art}\nHORIZON_DONE",
@@ -184,4 +207,4 @@ def main(smoke=False):
 
 
 if __name__ == "__main__":
-    main(smoke="--smoke" in sys.argv)
+    main(smoke="--smoke" in sys.argv, condition="--condition" in sys.argv)

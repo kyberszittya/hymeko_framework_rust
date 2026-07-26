@@ -129,7 +129,44 @@ control flat at 0), (3) contact-velocity authority `‖Δv_rel‖` growth at the
 
 ---
 
-## Next: Stage 1 continuation — Route A (lower-debt mobile handoff)
+### Stage 1 Route A — mobile low-debt handoff conditioning (attempted; DID NOT PASS the gate)
 
-Develop a mobile handoff-conditioning phase on the development states to reduce torque debt and raise cradle survival
-so the held-out cradles' rank-2 authority becomes usable, then re-run the horizon-authority gate on held-out.
+**Diagnosis first (discriminating).** The baseline `H_collapse` rollouts show the held-out collapse mechanism is
+**grip loss** — the tip normal force decays below the 0.05 N floor under the hold (s4: chronic weak left contact
+fn≈0.05–0.13 N; s7: progressive preload decay 5→0 N) — **not** velocity (peak q̇ ≤ 0.9 ≪ 3.0) or straddle inversion.
+So Route A targets sustaining/restoring preload.
+
+**Repair (`mobile_conditioning.py`).** After the directed straddle acquire, a short MOBILE (free-coin, no pin)
+conditioning phase starts from the acquisition hold (base servo target `q_target0`, threaded `prev_tau0` — the standing
+grip torque preserved) and adds a **monotone inward squeeze** to any under-loaded side, early-stopping the moment both
+tips are balanced and above a physical `fn_target = 1.5 N` (a setpoint developed on the dev cradles, not held-out). Two
+diagnosed bugs were fixed en route (recorded as engineering signal): (i) the acquisition's FD `_arm_dir` probe steps
+the sim 3× and, on a *free* coin, shoves the coin so the gradient is corrupted → replaced with the **analytic tip
+Jacobian** `arm_inward_geom` (`mj_jacGeom`, coin-motion-independent); (ii) re-seeding the hold from `qpos` with a fresh
+torque **zeroes the standing grip torque and releases the coin** → base must be the acquisition hold, not the current
+pose.
+
+**Result (`authority_recovery_conditioned.json`) — honest negative:**
+
+| state | split | conditioned | vs baseline |
+|---|---|---|---|
+| s1 | dev | settled 4 steps, balanced, survives 41, but rank-2 **repro=False** → not usable | **degraded** (was usable) |
+| s3 | dev | settled, usable ROUTE_C, rank-2 onset 12→8 | preserved/improved |
+| s4 | held-out | left contact unrecoverable (fn→0), snapshot invalid | not rescued (geometric weak-contact) |
+| s7 | held-out | straddle −0.996→−0.88, collapse **9→5**, not usable | **degraded** |
+
+Conditioning preserves s3 and lowers torque debt (s1 `H_tau` 4→2) but **does not convert a fragile held-out cradle
+into a usable one** — it trades survival for lower debt inconsistently, degrades s1's reproducibility and s7's
+straddle, and cannot overcome s4's geometric weak left-contact. The number of usable states did not increase
+(baseline: s1,s3; conditioned: s3). **Route A does not pass the held-out gate.** The fragile held-out cradles collapse
+under passive hold too fast for a lifted-horizon *position*-target interface to be actionable, regardless of
+conditioning — exactly the case the frozen tree routes to **Route B** (a slew-admissible Δτ decision variable), which
+the Session-1 report independently recommended. Tests: 2 integration tests pass (grip preservation on s1,
+`arm_inward_geom` direction).
+
+### Next: Stage 1 Route B — slew-admissible torque-increment interface
+
+Identify `B_τ = ∂v_rel,t+1/∂Δτ_cmd` (one step) with `|Δτ_cmd| ≤ τ̇·dt`, admissible perturbations, on dev + held-out. A
+torque-increment decision variable commands the rate-limited step directly (no position-servo dead zone) → expected
+immediate authority, and a *one-step* measurement only needs the cradle alive for one step, so the fragile held-out
+cradles (alive 9–12 steps) qualify.
