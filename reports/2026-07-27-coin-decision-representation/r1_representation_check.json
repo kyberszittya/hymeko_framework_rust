@@ -4,7 +4,7 @@
  "date": "2026-07-27",
  "representation": "R1 v2 canonical target/contact-frame + B_\u03c4 authority + contact kinematics + control state",
  "no_training": true,
- "feature_dim": 34,
+ "feature_dim": 43,
  "per_cradle_swapped": {
   "s1": false,
   "s3": true,
@@ -36,94 +36,94 @@
   ],
   "n_pairs": 15,
   "feature_dist": {
-   "min": 1.0998,
-   "median": 3.1458,
-   "max": 24.0089
+   "min": 1.7283,
+   "median": 2.7736,
+   "max": 3.739
   },
   "theta_dist": {
    "min": 0.6622,
    "median": 1.2053,
    "max": 2.1169
   },
-  "corr_dphi_dtheta": 0.7074,
+  "corr_dphi_dtheta": 0.6698,
   "lipschitz_ratio": {
-   "min": 0.0623,
-   "median": 0.3821,
-   "max": 0.7149
+   "min": 0.2928,
+   "median": 0.4369,
+   "max": 0.7186
   },
   "nearest_feature_pair_is_nearest_theta_pair": false
  },
  "nn_retrieval_dev": {
   "s1": {
-   "source": "24000",
+   "source": "s3",
    "k6": false,
-   "dtz_end_mm": 75.45,
-   "nearest_acceptable_set_dist": 0.9385,
-   "nn_feature_dist": 2.203
+   "dtz_end_mm": 78.2,
+   "nearest_acceptable_set_dist": 1.4985,
+   "nn_feature_dist": 2.2776
   },
   "s3": {
    "source": "24000",
    "k6": false,
    "dtz_end_mm": 33.94,
    "nearest_acceptable_set_dist": 0.5721,
-   "nn_feature_dist": 1.0998
+   "nn_feature_dist": 1.7283
   },
   "16500": {
    "source": "s1",
    "k6": false,
    "dtz_end_mm": 92.75,
    "nearest_acceptable_set_dist": 0.6036,
-   "nn_feature_dist": 3.0452
+   "nn_feature_dist": 2.7303
   },
   "17750": {
    "source": "16500",
    "k6": false,
    "dtz_end_mm": 10.4,
    "nearest_acceptable_set_dist": 0.7649,
-   "nn_feature_dist": 22.7635
+   "nn_feature_dist": 2.7475
   },
   "19500": {
    "source": "24000",
    "k6": false,
    "dtz_end_mm": 79.21,
    "nearest_acceptable_set_dist": 0.6622,
-   "nn_feature_dist": 1.5399
+   "nn_feature_dist": 1.8216
   },
   "24000": {
    "source": "s3",
    "k6": false,
    "dtz_end_mm": 46.64,
    "nearest_acceptable_set_dist": 0.6419,
-   "nn_feature_dist": 1.0998
+   "nn_feature_dist": 1.7283
   }
  },
  "nn_retrieval_held_out_overlay": {
   "s4": {
-   "source": "s3",
+   "source": "17750",
    "k6": false,
-   "dtz_end_mm": 69.88,
-   "nearest_acceptable_set_dist": 1.5338,
-   "nn_feature_dist": 3.0544
+   "dtz_end_mm": 72.81,
+   "nearest_acceptable_set_dist": 1.0936,
+   "nn_feature_dist": 2.9007
   },
   "s7": {
-   "source": "16500",
+   "source": "17750",
    "k6": false,
-   "dtz_end_mm": 45.7,
-   "nearest_acceptable_set_dist": 1.5453,
-   "nn_feature_dist": 10.069
+   "dtz_end_mm": 106.41,
+   "nearest_acceptable_set_dist": 1.5405,
+   "nn_feature_dist": 1.5731
   }
  },
  "representation_goals": {
   "mirror_invariant_all": true,
   "feature_rank": 5,
   "feature_rank_no_collapse": true,
-  "feature_mean_var": 2.28896,
-  "corr_dphi_dtheta": 0.7074,
+  "feature_mean_var": 0.08121,
+  "corr_dphi_dtheta": 0.6698,
   "corr_note": "SECONDARY (noisy at 6 cradles; \u03b8-set is multimodal)",
   "nn_retrieval_dev": "0/6",
   "nn_retrieval_held_out_overlay": "0/2",
   "retrieval_beats_R0_dev_1of6": false,
-  "mean_nearest_acceptable_set_dist_dev": 0.6972,
+  "mean_nearest_acceptable_set_dist_dev": 0.7905,
   "acceptable_set_within_budget8_reach": false
  },
  "R0_reference": {
@@ -132,6 +132,6 @@
   "mirror_deficit": 3.49
  },
  "primary_metric": "nearest_acceptable_set_dist (not corr; \u03b8-sets are multimodal)",
- "wall_s": 232.8,
- "peak_rss_gb": 0.233
+ "wall_s": 238.8,
+ "peak_rss_gb": 0.245
 }

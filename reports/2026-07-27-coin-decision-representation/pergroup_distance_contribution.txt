@@ -1,0 +1,37 @@
+  14250 (22s)
+  14750 (43s)
+  16500 (65s)
+  17750 (87s)
+  19500 (112s)
+  24000 (135s)
+
+group                    len  var(norm)   dist_contrib%   signed?
+dtz                        1    0.0165       0.02%      
+coin_vel_along             1    0.0000       0.00%      
+coin_vel_perp              1    0.0000       0.00%      
+straddle                   1    0.0001       0.00%      
+tip_coin_along             2    0.0111       0.03%      
+tip_coin_perp              2    0.0287       0.07%      
+normal_along               2    0.2196       0.56%      
+normal_perp                2    0.3742       0.95%      
+fn                         2    0.1852       0.47%      
+slew_head_up               2    0.0000       0.00%      
+slew_head_dn               2    0.0000       0.00%      
+btau_svals                 4    0.0232       0.12%      
+btau_summary               2    0.0269       0.07%      
+btau_side_auth             2    0.0661       0.17%      
+vrel_normal                2    0.2098       0.53%      
+vrel_tangent               2    0.0603       0.15%      
+friction_util              2   37.5379      95.67%      
+prev_tau_arm               2    0.1378       0.35%      
+forward_push_reach         1    0.0594       0.08%      YES
+forward_reverse_reach      1    0.0594       0.08%      YES
+lateral_reach_pair         2    0.0687       0.17%      YES
+brake_opposed_reach        1    0.0594       0.08%      YES
+bcoin_min_attenuation      1    0.1549       0.20%      YES
+normal_force_reach_pair    2    0.0905       0.23%      YES
+balance_reach_signed       1    0.0000       0.00%      YES
+
+TOTAL signed-authority (v3-new) groups: 0.8% of the pairwise distance
+mean per-group normalised variance of signed groups: 0.0703  vs  non-signed: 2.1610
+DONE 135s
