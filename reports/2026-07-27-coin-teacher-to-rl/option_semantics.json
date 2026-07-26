@@ -1,0 +1,101 @@
+{
+ "contract": "COIN_6D_TORQUE_THETA_OPTION_SEMANTICS_V1",
+ "base_tag": "coin-physical-feasibility-closed",
+ "base_commit": "a3459629",
+ "dim": 6,
+ "components": [
+  {
+   "index": 0,
+   "name": "squeeze_mag",
+   "unit": "N\u00b7m (grip incr)",
+   "lo": 0.0,
+   "hi": 0.25,
+   "phase": "PUSH+BRAKE+RELEASE (grip, all phases)",
+   "interpretation": "grip magnitude: each tip driven toward the coin centre along the inward geom Jacobian; held through PUSH+BRAKE, relaxed to -0.5\u00b7squeeze at RELEASE"
+  },
+  {
+   "index": 1,
+   "name": "forward_mag",
+   "unit": "N\u00b7m (push incr)",
+   "lo": 0.0,
+   "hi": 0.3,
+   "phase": "PUSH",
+   "interpretation": "forward push magnitude toward the target zone (J\u1d40e_par of both tips), ramped over ramp_steps during PUSH"
+  },
+  {
+   "index": 2,
+   "name": "balance",
+   "unit": "N\u00b7m (L/R steer incr)",
+   "lo": -0.1,
+   "hi": 0.1,
+   "phase": "PUSH (L\u2212R steer)",
+   "interpretation": "L/R steer: shifts the forward push between arms (bal\u00b7(fwd_L \u2212 fwd_R)) to null spin / steer cross-track"
+  },
+  {
+   "index": 3,
+   "name": "ramp_steps",
+   "unit": "control steps",
+   "lo": 1.0,
+   "hi": 28.0,
+   "phase": "PUSH\u2194BRAKE boundary",
+   "interpretation": "PUSH lasts t \u2264 ramp_steps; the push increment ramps min(1, t/ramp) up over this window"
+  },
+  {
+   "index": 4,
+   "name": "release_step",
+   "unit": "control steps",
+   "lo": 4.0,
+   "hi": 48.0,
+   "phase": "BRAKE\u2194RELEASE boundary",
+   "interpretation": "BRAKE lasts ramp_steps < t \u2264 release_step; RELEASE is t > release_step"
+  },
+  {
+   "index": 5,
+   "name": "brake_gain",
+   "unit": "N\u00b7m per m/s (velocity-feedback brake)",
+   "lo": 0.0,
+   "hi": 4.0,
+   "phase": "BRAKE (velocity feedback)",
+   "interpretation": "velocity-feedback brake: during BRAKE, \u0394\u03c4 \u221d brake_gain\u00b7\u2016v_coin\u2016 driving the tips OPPOSITE the coin velocity through the contacts (a decelerating increment, NOT a timed impulse)"
+  }
+ ],
+ "phase_schedule": "PUSH (t \u2264 ramp_steps) \u2192 BRAKE (ramp_steps < t \u2264 release_step, velocity-feedback) \u2192 RELEASE (t > release_step)",
+ "velocity_feedback_brake": "during BRAKE, \u0394\u03c4 \u221d brake_gain\u00b7\u2016v_coin\u2016 driving the tips opposite the coin velocity through the contacts (decelerating increment, not a timed impulse)",
+ "per_step_map": "\u03b8 \u2192 slew-admissible \u0394\u03c4_cmd (|\u0394\u03c4_cmd| \u2264 \u03c4\u0307\u00b7dt) from live geometry; a = clip(prev_tau + \u0394\u03c4_cmd, actuator_lo, actuator_hi) then the per-sub-step directional velocity governor (motion contract V4)",
+ "action_clipping": {
+  "network_action_space": "z \u2208 [-1,1]^6 (Tanh actor)",
+  "theta_from_action": "affine denormalise to the frozen box then hard clip to [lo,hi] (ThetaBox.denorm)",
+  "per_step_dtau_clip": "\u0394\u03c4_cmd clipped to \u00b1(\u03c4\u0307\u00b7dt) (slew-admissible)",
+  "actuator_clip": "a clipped to actuator_ctrlrange before the governor"
+ },
+ "option_duration": {
+  "horizon_control_steps": 60,
+  "note": "one option = the full PUSH\u2192BRAKE\u2192RELEASE rollout (single continuous trajectory); the episode is a single terminal option (semi-MDP \u03c4 = horizon, no bootstrap)"
+ },
+ "structured_search": {
+  "role": "fixed bounded local search around \u03b8_0; selects \u03b8_exec by the frozen canonical delivery score",
+  "perturbation": "Gaussian jitter in normalised z-space with a FROZEN per-component std, denorm-clipped to the box",
+  "score": "forward_displacement.score(deliver=True): -dtz_end - lost_penalty\u00b7lost_before_release + 0.02\u00b7k6_max_dwell + 0.10\u00b7k6_delivered (higher = better)",
+  "budget_semantics": "budget candidates; budget==0 executes \u03b8_0 directly (no rescue); FROZEN & identical for all states and for the informed/uninformed control",
+  "provenance": "\u03b8_0 is the Bellman action; \u03b8_exec (search-selected) is provenance only (never a label)"
+ },
+ "termination_and_k6": {
+  "monitor": "frozen K6 (forward_displacement.rollout_primitive / coin_rl_env constants)",
+  "CENTER_TOL_m": 0.02,
+  "SETTLE_VEL_mps": 0.06,
+  "HELD_DWELL_steps": 6,
+  "predicate": "k6_delivered = (max consecutive steps with dtz \u2264 CENTER_TOL \u2227 coin_speed < SETTLE_VEL) \u2265 HELD_DWELL AND touched, with the motion contract held over a single continuous trajectory (no re-grip / teleport / coin-state edit)",
+  "delivery_success": "delivery_success(m): k6_delivered AND peak_qdot \u2264 joint_vel_hard AND peak_coin_speed \u2264 ee_speed_hard"
+ },
+ "frozen_split": {
+  "development": [
+   "s1",
+   "s3"
+  ],
+  "held_out": [
+   "s4",
+   "s7"
+  ],
+  "note": "held-out is eval-only; never used for actor fitting or hyperparameter selection"
+ }
+}
