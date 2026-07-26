@@ -233,11 +233,19 @@ def deliver_on_snapshot(snap: CradleSnapshot, cfg: Any = DELIVERY_CFG, *, basin_
             "outcome": _outcome_summary(m, cfg), "n_basin_delivering": int(sum(1 for c in basin if c["kind"] == "delivering"))}
 
 
-def reproduce_state(harness: tuple[Any, ...], idx: int, seed: int, cfg: Any = DELIVERY_CFG, *, augment: bool = False) -> dict[str, Any]:
+def reproduce_state(harness: tuple[Any, ...], idx: int, seed: int, cfg: Any = DELIVERY_CFG, *, augment: bool = False,
+                    tag: "str | None" = None, split: "str | None" = None, basin_seed: "int | None" = None) -> dict[str, Any]:
     """Reproduce one cradle's canonical delivering θ (frozen CEM), verify frozen-tolerance replay, record provenance +
-    per-step trace, and (dev only, ``augment``) harvest delivering-basin candidates. Returns the bank entry."""
-    tag = STATE_TAG.get(idx, f"s{idx}")
-    split = "development" if idx in DEV_IDS else "held_out"
+    per-step trace, and (dev only, ``augment``) harvest delivering-basin candidates. Returns the bank entry.
+
+    For the frozen 4-state panel, ``tag``/``split`` are derived from ``idx`` (DEV_IDS/HELDOUT_IDS). For dev-cradle
+    EXPANSION (the coverage curve) pass an explicit ``tag`` + ``split="development"`` to reproduce a NEW development cradle
+    with the SAME frozen machinery (identical CEM search + basin augmentation); ``basin_seed`` defaults to a deterministic
+    function of ``idx``. # Preconditions: split ∈ {development, held_out}. # Postconditions: a dev entry carries
+    ``canonical_theta_vec`` + (``augment``) ``basin_candidates``; defaults reproduce the frozen-panel behaviour exactly."""
+    tag = tag if tag is not None else STATE_TAG.get(idx, f"s{idx}")
+    split = split if split is not None else ("development" if idx in DEV_IDS else "held_out")
+    is_dev = split == "development"
     snap, meta = acquire_snapshot(harness, seed)
     entry: dict[str, Any] = {"state": idx, "tag": tag, "seed": seed, "split": split, "acquire": meta}
     if snap is None:
@@ -252,8 +260,8 @@ def reproduce_state(harness: tuple[Any, ...], idx: int, seed: int, cfg: Any = DE
     # Dev cradles harvest the delivering basin FIRST (used both for canonical robustness repair AND as label augmentation);
     # held-out cradles are NEVER refined — their canonical is the frozen CEM optimum (recorded for evaluation only).
     basin: list[dict[str, Any]] = []
-    if augment and idx in DEV_IDS:
-        basin = sample_dev_basin(snap, cem_best, cfg, seed=idx * 1000 + 7)
+    if augment and is_dev:
+        basin = sample_dev_basin(snap, cem_best, cfg, seed=(basin_seed if basin_seed is not None else idx * 1000 + 7))
     rc = robust_canonical(snap, cem_best, basin, cfg)
     canon_theta = rc["theta"]
     metrics, trace = trace_teacher(snap, canon_theta, cfg)    # rich per-step trace of the chosen canonical θ

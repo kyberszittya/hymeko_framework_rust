@@ -10,6 +10,7 @@ Modes (each STOPS at its gate; downstream artifacts only when authorised):
     --dataset         build the structured causal θ dataset + splits; dataset_contract.json (Stage 2)
     --bc              fit B0/B1/B2 proposals; bc_results.json (Stage 3)
     --update0         update-0 deploy on the frozen 4-state panel; update_zero.json (Stage 4)
+    --coverage-curve  coverage-only causal curve: the update-0 gate at N=2,4,6 dev cradles (only N changes); coverage_curve.json
     --rl-smoke        matched SAC/TD3 one-seed smoke (Stage 6, gated on Stage 4)
     --rl-multiseed    matched multi-seed SAC/TD3 (Stage 7, gated)
 
@@ -388,6 +389,179 @@ def _render_update0_viz(out: dict, panel: list) -> dict:
     return figs
 
 
+def _render_coverage_viz(out: dict, panel: list) -> dict:
+    """§9 graphical output for the coverage curve: (1) K6-vs-N (dev / held-out / total, oracle=4/4 reference) and the
+    held-out actor→teacher θ distance vs N, side by side; (2) a deploy GIF of the largest-N proposal on a held-out cradle
+    (s4). Reuses the frozen renderer; the panel snapshots are already acquired."""
+    figs: dict = {}
+    recs = sorted(out["records"], key=lambda r: r["N"])
+    Ns = [r["N"] for r in recs]
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 2, figsize=(12, 4.4))
+        ax[0].plot(Ns, [r["gate_informed_dev_k6"] for r in recs], "o-", label="dev K6 (s1,s3)", color="tab:blue")
+        ax[0].plot(Ns, [r["gate_informed_held_out_k6"] for r in recs], "s-", label="held-out K6 (s4,s7)", color="tab:red")
+        ax[0].plot(Ns, [r["gate_informed_total_k6"] for r in recs], "^--", label="total K6 / 4", color="tab:purple")
+        ax[0].axhline(4, color="tab:green", ls=":", label="oracle (teacher θ) = 4/4")
+        ax[0].set_xlabel("N (unique K6-deliverable dev cradles)")
+        ax[0].set_ylabel("frozen K6 @ budget 8")
+        ax[0].set_ylim(-0.2, 4.3)
+        ax[0].set_xticks(Ns)
+        ax[0].set_title("Coverage curve — update-0 K6 vs N")
+        ax[0].legend(fontsize=8)
+        hd = [r["held_out_theta_l2_norm"] for r in recs]
+        dd = [r["dev_theta_l2_norm"] for r in recs]
+        ax[1].plot(Ns, hd, "s-", label="held-out (s4,s7)", color="tab:red")
+        ax[1].plot(Ns, dd, "o-", label="dev (s1,s3)", color="tab:blue")
+        ax[1].set_xlabel("N (unique K6-deliverable dev cradles)")
+        ax[1].set_ylabel("actor→teacher θ distance (box-normalised L2)")
+        ax[1].set_xticks(Ns)
+        ax[1].set_title("Actor→teacher θ distance vs N")
+        ax[1].legend(fontsize=8)
+        v = out["verdict"]
+        fig.suptitle(f"COVERAGE-ONLY CAUSAL CURVE — {v['verdict']} "
+                     f"(authorise_sac_td3={v['authorise_sac_td3']}, generalisation_improves={v['generalisation_improves_with_coverage']})")
+        fig.tight_layout()
+        p = f"{REPORT_DIR}/coverage_curve.png"
+        fig.savefig(p, dpi=130)
+        plt.close(fig)
+        figs["curve_png"] = p
+    except Exception as e:                                # viz must never break the measurement
+        figs["plot_error"] = str(e)
+    try:
+        from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
+        from hymeko_rl.experiments.horizon_authority_benchmark import _render_forward_gif
+        top = max(recs, key=lambda r: r["N"])
+        te = top.get("held_out_theta_exec", {})
+        by_tag = {ps.tag: ps for ps in panel}
+        for tag in ("s4",):
+            if tag in te and tag in by_tag:
+                gif = f"{REPORT_DIR}/coverage_N{top['N']}_deploy_{tag}.gif"
+                if _render_forward_gif(by_tag[tag].snap, te[tag], gif, DELIVERY_CFG):
+                    figs[f"gif_N{top['N']}_{tag}"] = gif
+    except Exception as e:
+        figs["gif_error"] = str(e)
+    return figs
+
+
+def coverage_curve_main(smoke: bool = False) -> dict:
+    """COVERAGE-ONLY CAUSAL CURVE — the frozen update-0 gate at N = 2, 4, 6 unique K6-deliverable DEVELOPMENT cradles,
+    with EVERYTHING except N held identical (model B0, feature set, optimiser, epochs, init seed, search budget 8, search
+    semantics, evaluation panel, K6, motion/collision/task contract). Every N is trained from a FRESH matched init. The one
+    question: does growing dev-cradle coverage ALONE close the held-out regression? No architecture / loss / hyperparameter
+    change — only N. Reuses the frozen teacher-bank / dataset / BC / deploy machinery unchanged."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.coverage_curve import (
+        FROZEN_DEV_SEEDS, coverage_record, coverage_verdict, nested_dev_sets, select_n4_additions, theta_distance_summary)
+    from hymeko_rl.coin_delivery.theta_option.cradle_expansion import geometry_fingerprint
+    from hymeko_rl.coin_delivery.theta_option.dataset import build_dataset
+    from hymeko_rl.coin_delivery.theta_option.deploy import DEPLOY_BUDGETS, build_panel, update_zero_eval
+    from hymeko_rl.coin_delivery.theta_option.proposal import fit_bc, save_proposal
+    from hymeko_rl.coin_delivery.theta_option.search import SEARCH_STD, search_semantics
+    from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot, load_harness, reproduce_state
+    t0 = time.time()
+    bank_path, dp_path = f"{REPORT_DIR}/teacher_bank.json", f"{REPORT_DIR}/cradle_delivery_pass.json"
+    if not (os.path.exists(bank_path) and os.path.exists(dp_path)):
+        print(f"MISSING {bank_path} or {dp_path} — run --teacher-bank and --deliver-pass first")
+        sys.exit(2)
+    bank, dp = json.load(open(bank_path)), json.load(open(dp_path))
+    VARIANT, EPOCHS, LR, INIT_SEED = "B0", 1200, 1e-3, 0            # FROZEN across N (the frozen update-0 model)
+    frozen_dev = {e["seed"]: e for e in bank["states"] if e["split"] == "development"}
+    new_seeds = sorted(dp["new_state_distribution"]["K6_DELIVERABLE"])
+    if smoke:
+        new_seeds, EPOCHS = new_seeds[:2], 200
+    budgets = (0, 8) if smoke else DEPLOY_BUDGETS
+    k_add = 1 if smoke else 2
+    harness = load_harness()
+    print(f"COVERAGE CURVE — frozen dev {list(FROZEN_DEV_SEEDS)} + new usable dev {new_seeds} | model={VARIANT} "
+          f"epochs={EPOCHS} lr={LR} init_seed={INIT_SEED} budgets={budgets} search_std={SEARCH_STD}\n"
+          f"  INVARIANT: only N changes; fresh matched init per N; eval panel FROZEN 4-state; held-out ALWAYS s4,s7", flush=True)
+
+    # 1. reproduce the NEW dev entries with the SAME frozen machinery (CEM + basin), live per cradle
+    new_dev: dict[int, Any] = {}
+    dp_theta = {r["seed"]: r.get("canonical_theta") for r in dp["deliverable_dev_pool"]}
+    for k, seed in enumerate(new_seeds):
+        te = time.time()
+        e = reproduce_state(harness, idx=seed, seed=seed, augment=True, tag=f"c{k+1}", split="development", basin_seed=seed)
+        new_dev[seed] = e
+        cv = e.get("canonical_theta_vec")
+        matches = bool(cv is not None and dp_theta.get(seed) is not None
+                       and np.allclose(np.asarray(cv), np.asarray(dp_theta[seed]), atol=1e-5))
+        print(f"  new dev c{k+1} seed={seed}: k6={e.get('k6_delivered')} replay_ok={e.get('replay_ok')} src={e.get('canonical_source')} "
+              f"basin_deliv={e.get('n_basin_delivering','-')} matches_delivery_pass={matches} ({time.time()-te:.0f}s)", flush=True)
+
+    # 2. FROZEN geometry fingerprints → NON-OUTCOME N=4 selection, recorded BEFORE any training/deploy is read
+    fps = {seed: geometry_fingerprint(acquire_snapshot(harness, seed)[0]) for seed in list(FROZEN_DEV_SEEDS) + new_seeds}
+    selection = select_n4_additions(new_seeds, fps, FROZEN_DEV_SEEDS, k=k_add)
+    print(f"\n== N=4 SELECTION (frozen, non-outcome: {selection['rule']}) ==\n  candidate min-dist to frozen dev: "
+          f"{selection['candidate_min_dist_to_frozen_dev']}\n  SELECTED (before any result): {selection['selected']}\n", flush=True)
+    dev_sets = nested_dev_sets(new_seeds, selection["selected"], FROZEN_DEV_SEEDS)
+    entry_by_seed = {**frozen_dev, **new_dev}
+
+    # 3. FIXED evaluation panel (frozen 4-state {s1,s3,s4,s7}) — acquired once, identical for every N
+    panel = build_panel(harness, bank)
+    box = ThetaBox()
+
+    records: list[dict[str, Any]] = []
+    for n in sorted(dev_sets):
+        tn = time.time()
+        dev_seeds = dev_sets[n]
+        cov_bank = {"contract": f"COVERAGE_N{n}", "base_commit": "a3459629", "states": [entry_by_seed[s] for s in dev_seeds]}
+        ds = build_dataset(cov_bank, harness=harness)
+        prop, fz, tl = fit_bc(ds, VARIANT, epochs=EPOCHS, lr=LR, seed=INIT_SEED)   # FRESH matched init each N
+        save_proposal(prop, fz, f"{REPORT_DIR}/bc_coverage_N{n}_{VARIANT}.pt")
+        out = update_zero_eval(panel, prop, fz, budgets=budgets)
+        rows = [{"tag": ps.tag, "split": ps.split,
+                 "proposed": [float(x) for x in prop.center(fz.obs(ps.features, ps.history))],
+                 "teacher": [float(x) for x in ps.teacher_theta]} for ps in panel]
+        dist = theta_distance_summary(rows, box)
+        rec = coverage_record(n, dev_seeds, out, dist)
+        rec["train_mse"] = tl.get("train_mse")
+        rec["n_train_rows"] = len(ds.subset("train"))
+        gate_b = out["deploy_budget"]
+        per = out["informed_sweep"][str(gate_b) if str(gate_b) in out["informed_sweep"] else gate_b]["per_state"]
+        rec["held_out_theta_exec"] = {t: r["theta_exec"] for t, r in per.items() if r["split"] == "held_out"}
+        records.append(rec)
+        print(f"  N={n} train={dev_seeds} rows={rec['n_train_rows']}: INFORMED dev={rec['gate_informed_dev_k6']}/2 "
+              f"held={rec['gate_informed_held_out_k6']}/2 total={rec['gate_informed_total_k6']}/4 "
+              f"| proposal-only(b0)={rec['proposal_only_total_k6']}/4 | uninformed={rec['uninformed_total_k6']}/4 "
+              f"| oracle={rec['oracle_total_k6']}/4 | θdist(held)={rec['held_out_theta_l2_norm']} "
+              f"| gate_passed={rec['gate_passed']} ({time.time()-tn:.0f}s)", flush=True)
+
+    verdict = coverage_verdict(records)
+    out_obj = {"contract": "COIN_6D_THETA_COVERAGE_CURVE_V1", "base_commit": "a3459629", "date": "2026-07-27",
+               "question": "Does growing development-cradle coverage ALONE remove the held-out update-0 regression?",
+               "invariant_across_N": {"model": VARIANT, "feature_set": "structured 42-D + causal history (frozen)",
+                                      "optimiser": "Adam", "epochs": EPOCHS, "lr": LR, "init_seed": INIT_SEED,
+                                      "search_budget": 8, "search_semantics": search_semantics(8), "search_std": SEARCH_STD,
+                                      "eval_panel": "frozen 4-state {s1,s3,s4,s7}", "held_out": ["s4", "s7"],
+                                      "fresh_matched_init_each_N": True, "K6": "frozen monitor",
+                                      "motion_collision_task_contract": "frozen (4c71f12f per-side masks + CONTROLLED_INSERTION)"},
+               "frozen_dev_seeds": list(FROZEN_DEV_SEEDS), "new_usable_dev_seeds": new_seeds,
+               "n4_selection": selection, "nested_dev_sets": {str(n): dev_sets[n] for n in sorted(dev_sets)},
+               "records": records, "verdict": verdict, "smoke": bool(smoke),
+               "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    out_obj["figures"] = _render_coverage_viz(out_obj, panel)
+    path = _dump(out_obj, "coverage_curve.json")
+    v = verdict
+    print("\n== COVERAGE CURVE ==")
+    for r in sorted(records, key=lambda z: z["N"]):
+        print(f"  N={r['N']}: total {r['gate_informed_total_k6']}/4 (dev {r['gate_informed_dev_k6']}/2 "
+              f"held {r['gate_informed_held_out_k6']}/2) | held s4/s7 K6={r['held_out_per_state_k6']} "
+              f"| θdist(held)={r['held_out_theta_l2_norm']} | fail={r['held_out_failure_mode']}")
+    print(f"  held-out K6 by N: {v['held_out_k6_by_N']} | θdist(held) by N: {v['held_out_theta_l2_norm_by_N']}\n"
+          f"  generalisation_improves_with_coverage={v['generalisation_improves_with_coverage']} "
+          f"(k6↑={v['held_out_k6_nondecreasing_and_rises']}, θdist↓={v['held_out_theta_distance_shrinks_monotonically']})\n"
+          f"  VERDICT: {v['verdict']} | authorise_sac_td3={v['authorise_sac_td3']} | next: {v.get('next_action')}\n"
+          f"  artifact: {path} | wall {out_obj['wall_s']}s | peak RSS {out_obj['peak_rss_gb']} GB\nCOVERAGE_CURVE_DONE",
+          flush=True)
+    return out_obj
+
+
 def update0_main(smoke: bool = False) -> dict:
     """Stage 4 — update-0 no-regression on the frozen 4-state panel (informed BC θ_0 vs uninformed box-centre control)."""
     import torch
@@ -442,6 +616,8 @@ if __name__ == "__main__":
         bc_main()
     elif "--update0" in sys.argv:
         update0_main(smoke="--smoke" in sys.argv)
+    elif "--coverage-curve" in sys.argv:
+        coverage_curve_main(smoke="--smoke" in sys.argv)
     elif "--scout-cradles" in sys.argv:
         _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
         scout_cradles_main(n=_n)
@@ -450,6 +626,6 @@ if __name__ == "__main__":
     elif "--contact-audit" in sys.argv:
         contact_audit_main()
     else:
-        print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --scout-cradles [--n N] "
-              "| --rl-smoke | --rl-multiseed")
+        print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --coverage-curve "
+              "| --scout-cradles [--n N] | --deliver-pass | --contact-audit | --rl-smoke | --rl-multiseed")
         sys.exit(2)
