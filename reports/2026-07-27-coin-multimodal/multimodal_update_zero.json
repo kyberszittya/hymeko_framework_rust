@@ -1,0 +1,490 @@
+{
+ "contract": "COIN_6D_THETA_MULTIMODAL_UPDATE_ZERO_V1",
+ "base_commit": "5fbf3c16",
+ "date": "2026-07-27",
+ "branch": "recovery/coin-acceptable-set-proposal",
+ "invariant": {
+  "model": "K-head acceptable-set (shared B0 trunk)",
+  "loss": "perm-invariant bidirectional Chamfer + gated head-collapse",
+  "optimiser": "Adam",
+  "epochs": 1500,
+  "lr": 0.001,
+  "seed": 0,
+  "search_budget": 8,
+  "budget_split": "option_rl.allocate_budget (K\u00d78/K), centre-inclusive per mode",
+  "eval_panel": "frozen 4-state {s1,s3,s4,s7}",
+  "held_out": [
+   "s4",
+   "s7"
+  ],
+  "model_selection": "DEV-only LODO-CV (physical held-dev K6); no held-out fitting"
+ },
+ "data_summary": {
+  "s1": {
+   "seed": 14250,
+   "n_targets": 24,
+   "multimodal": true
+  },
+  "s3": {
+   "seed": 14750,
+   "n_targets": 12,
+   "multimodal": true
+  },
+  "16500": {
+   "seed": 16500,
+   "n_targets": 4,
+   "multimodal": true
+  },
+  "17750": {
+   "seed": 17750,
+   "n_targets": 68,
+   "multimodal": true
+  },
+  "19500": {
+   "seed": 19500,
+   "n_targets": 10,
+   "multimodal": true
+  },
+  "24000": {
+   "seed": 24000,
+   "n_targets": 3,
+   "multimodal": false
+  }
+ },
+ "cv": {
+  "1": {
+   "lodo_k6": 0,
+   "n": 6,
+   "folds": [
+    {
+     "held_dev": "s1",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "s3",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "16500",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "17750",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "19500",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "24000",
+     "k6": false,
+     "selected_mode": 0
+    }
+   ]
+  },
+  "2": {
+   "lodo_k6": 1,
+   "n": 6,
+   "folds": [
+    {
+     "held_dev": "s1",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "s3",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "16500",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "17750",
+     "k6": true,
+     "selected_mode": 1
+    },
+    {
+     "held_dev": "19500",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "24000",
+     "k6": false,
+     "selected_mode": 0
+    }
+   ]
+  },
+  "4": {
+   "lodo_k6": 0,
+   "n": 6,
+   "folds": [
+    {
+     "held_dev": "s1",
+     "k6": false,
+     "selected_mode": 1
+    },
+    {
+     "held_dev": "s3",
+     "k6": false,
+     "selected_mode": 3
+    },
+    {
+     "held_dev": "16500",
+     "k6": false,
+     "selected_mode": 0
+    },
+    {
+     "held_dev": "17750",
+     "k6": false,
+     "selected_mode": 1
+    },
+    {
+     "held_dev": "19500",
+     "k6": false,
+     "selected_mode": 2
+    },
+    {
+     "held_dev": "24000",
+     "k6": false,
+     "selected_mode": 3
+    }
+   ]
+  }
+ },
+ "k_star": 2,
+ "fit_info": {
+  "final_loss": 0.739101,
+  "per_state_recall": {
+   "s1": 0.5344,
+   "s3": 1.1212,
+   "16500": 0.5077,
+   "17750": 0.9595,
+   "19500": 0.669,
+   "24000": 0.0957
+  },
+  "k": 2,
+  "epochs": 1500
+ },
+ "deploy_budget8": {
+  "budget": 8,
+  "per_state": {
+   "s1": {
+    "split": "development",
+    "selected_mode": 0,
+    "n_modes": 2,
+    "per_mode_budget": [
+     4,
+     4
+    ],
+    "theta0_selected_mode": [
+     0.06146,
+     0.23798,
+     0.01982,
+     13.69751,
+     8.14115,
+     3.24936
+    ],
+    "theta_exec": [
+     0.06146,
+     0.23798,
+     0.01982,
+     13.69751,
+     8.14115,
+     3.24936
+    ],
+    "k6_delivered": true,
+    "delivery_success": true,
+    "k6_max_dwell": 22,
+    "dtz_end_mm": 13.39,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9971,
+    "peak_coin_speed": 0.4501,
+    "search_displacement_norm": 0.0,
+    "nearest_dev_acceptable_dist": 0.1767,
+    "failure_mode": null
+   },
+   "s3": {
+    "split": "development",
+    "selected_mode": 1,
+    "n_modes": 2,
+    "per_mode_budget": [
+     4,
+     4
+    ],
+    "theta0_selected_mode": [
+     0.08891,
+     0.02604,
+     -0.02919,
+     11.83366,
+     13.58679,
+     3.91959
+    ],
+    "theta_exec": [
+     0.08891,
+     0.02604,
+     -0.02919,
+     11.83366,
+     13.58679,
+     3.91959
+    ],
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_end_mm": 21.14,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9977,
+    "peak_coin_speed": 0.4806,
+    "search_displacement_norm": 0.0,
+    "nearest_dev_acceptable_dist": 0.0035,
+    "failure_mode": "REACHED_BUT_NO_SETTLE"
+   },
+   "s4": {
+    "split": "held_out",
+    "selected_mode": 0,
+    "n_modes": 2,
+    "per_mode_budget": [
+     4,
+     4
+    ],
+    "theta0_selected_mode": [
+     0.07172,
+     0.16447,
+     0.01027,
+     5.12398,
+     25.36227,
+     2.27206
+    ],
+    "theta_exec": [
+     0.07172,
+     0.16447,
+     0.01027,
+     5.12398,
+     25.36227,
+     2.27206
+    ],
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_end_mm": 77.8,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.4622,
+    "peak_coin_speed": 0.2278,
+    "search_displacement_norm": 0.0,
+    "nearest_dev_acceptable_dist": 0.3623,
+    "failure_mode": "NEVER_REACHED_ZONE"
+   },
+   "s7": {
+    "split": "held_out",
+    "selected_mode": 0,
+    "n_modes": 2,
+    "per_mode_budget": [
+     4,
+     4
+    ],
+    "theta0_selected_mode": [
+     0.05709,
+     0.15521,
+     0.01953,
+     4.41688,
+     25.202,
+     2.18615
+    ],
+    "theta_exec": [
+     0.05039,
+     0.13992,
+     0.01502,
+     4.52994,
+     22.91215,
+     1.85301
+    ],
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_end_mm": 107.68,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.92,
+    "peak_coin_speed": 0.5344,
+    "search_displacement_norm": 0.2323,
+    "nearest_dev_acceptable_dist": 0.4186,
+    "failure_mode": "NEVER_REACHED_ZONE"
+   }
+  },
+  "dev_k6": 1,
+  "held_out_k6": 0,
+  "total_k6": 1
+ },
+ "deploy_proposal_only": {
+  "budget": 2,
+  "per_state": {
+   "s1": {
+    "split": "development",
+    "selected_mode": 0,
+    "n_modes": 2,
+    "per_mode_budget": [
+     1,
+     1
+    ],
+    "theta0_selected_mode": [
+     0.06146,
+     0.23798,
+     0.01982,
+     13.69751,
+     8.14115,
+     3.24936
+    ],
+    "theta_exec": [
+     0.06146,
+     0.23798,
+     0.01982,
+     13.69751,
+     8.14115,
+     3.24936
+    ],
+    "k6_delivered": true,
+    "delivery_success": true,
+    "k6_max_dwell": 22,
+    "dtz_end_mm": 13.39,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9971,
+    "peak_coin_speed": 0.4501,
+    "search_displacement_norm": 0.0,
+    "nearest_dev_acceptable_dist": 0.1767,
+    "failure_mode": null
+   },
+   "s3": {
+    "split": "development",
+    "selected_mode": 1,
+    "n_modes": 2,
+    "per_mode_budget": [
+     1,
+     1
+    ],
+    "theta0_selected_mode": [
+     0.08891,
+     0.02604,
+     -0.02919,
+     11.83366,
+     13.58679,
+     3.91959
+    ],
+    "theta_exec": [
+     0.08891,
+     0.02604,
+     -0.02919,
+     11.83366,
+     13.58679,
+     3.91959
+    ],
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_end_mm": 21.14,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9977,
+    "peak_coin_speed": 0.4806,
+    "search_displacement_norm": 0.0,
+    "nearest_dev_acceptable_dist": 0.0035,
+    "failure_mode": "REACHED_BUT_NO_SETTLE"
+   },
+   "s4": {
+    "split": "held_out",
+    "selected_mode": 0,
+    "n_modes": 2,
+    "per_mode_budget": [
+     1,
+     1
+    ],
+    "theta0_selected_mode": [
+     0.07172,
+     0.16447,
+     0.01027,
+     5.12398,
+     25.36227,
+     2.27206
+    ],
+    "theta_exec": [
+     0.07172,
+     0.16447,
+     0.01027,
+     5.12398,
+     25.36227,
+     2.27206
+    ],
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_end_mm": 77.8,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.4622,
+    "peak_coin_speed": 0.2278,
+    "search_displacement_norm": 0.0,
+    "nearest_dev_acceptable_dist": 0.3623,
+    "failure_mode": "NEVER_REACHED_ZONE"
+   },
+   "s7": {
+    "split": "held_out",
+    "selected_mode": 0,
+    "n_modes": 2,
+    "per_mode_budget": [
+     1,
+     1
+    ],
+    "theta0_selected_mode": [
+     0.05709,
+     0.15521,
+     0.01953,
+     4.41688,
+     25.202,
+     2.18615
+    ],
+    "theta_exec": [
+     0.05709,
+     0.15521,
+     0.01953,
+     4.41688,
+     25.202,
+     2.18615
+    ],
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_end_mm": 105.89,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9346,
+    "peak_coin_speed": 0.5349,
+    "search_displacement_norm": 0.0,
+    "nearest_dev_acceptable_dist": 0.4186,
+    "failure_mode": "NEVER_REACHED_ZONE"
+   }
+  },
+  "dev_k6": 1,
+  "held_out_k6": 0,
+  "total_k6": 1
+ },
+ "gate": {
+  "dev_k6": 1,
+  "held_out_k6": 0,
+  "total_k6": 1,
+  "n_states": 4,
+  "motion_ok": true,
+  "no_held_out_fitting": true,
+  "passed": false
+ },
+ "verdict": "MULTIMODALITY_PRESENT_BUT_UPDATE_ZERO_STILL_FAILS",
+ "authorises_sac_td3": false,
+ "wall_s": 338.3,
+ "peak_rss_gb": 0.328,
+ "figures": {
+  "png": "reports/2026-07-27-coin-multimodal/multimodal_update_zero.png"
+ }
+}
