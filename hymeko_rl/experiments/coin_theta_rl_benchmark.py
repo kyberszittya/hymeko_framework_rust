@@ -22,6 +22,7 @@ import os
 import resource
 import sys
 import time
+from typing import Any
 
 import numpy as np
 
@@ -50,6 +51,106 @@ def semantics_main() -> dict:
           f"{sem['termination_and_k6']['SETTLE_VEL_mps']} HELD_DWELL={sem['termination_and_k6']['HELD_DWELL_steps']}\n"
           f"  Bellman action = θ_0 (proposal centre); θ_exec = search provenance only\nSEMANTICS_DONE", flush=True)
     return sem
+
+
+def scout_cradles_main(n: int = 32) -> dict:
+    """DEV-CRADLE EXPANSION step 0 — certification scout (read-only). Sweep the canonical seed enumeration and count how
+    many UNIQUE certified straddle cradles are available, to bound N for the expansion. No delivery CEM (cheap)."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import (
+        FROZEN_SEEDS, enumerate_seeds, load_harness, scout_certified_cradles)
+    t0 = time.time()
+    seeds = enumerate_seeds(n)
+    print(f"CRADLE SCOUT — certifying {len(seeds)} candidate cradles (seed=14000+250·si, si=0..{n-1}) | "
+          f"frozen already-certified: {list(FROZEN_SEEDS)}", flush=True)
+    n_cert = {"c": 0}
+
+    def _progress(r: dict, dt: float) -> None:                # live per-cradle (never run blind)
+        n_cert["c"] += int(r["certified"])
+        mark = "FROZEN" if r["is_frozen_seed"] else ("NEW" if r["certified"] else "-")
+        print(f"  si={r['si']:2d} seed={r['seed']}: certified={int(r['certified'])} n_dot={r['n_dot']} "
+              f"strd0={r['straddle0']} [{mark}] (cum_cert={n_cert['c']}, {dt:.0f}s)", flush=True)
+
+    rows = scout_certified_cradles(load_harness(), seeds, progress=_progress)
+    certified = [r for r in rows if r["certified"]]
+    uniq_hashes = {r["post_release_hash"] for r in certified}
+    new_certified = [r for r in certified if not r["is_frozen_seed"]]
+    frozen_recertified = sum(1 for r in certified if r["is_frozen_seed"])
+    out = {"contract": "COIN_CRADLE_CERTIFICATION_SCOUT_V1", "base_commit": "a3459629", "date": "2026-07-27",
+           "enumeration": "seed = 14000 + 250*si", "n_scanned": len(seeds),
+           "n_certified": len(certified), "n_unique_by_hash": len(uniq_hashes),
+           "n_new_certified": len(new_certified), "n_frozen_recertified": frozen_recertified,
+           "certified_seeds": [r["seed"] for r in certified], "new_certified_seeds": [r["seed"] for r in new_certified],
+           "certification_rate": round(len(certified) / max(1, len(seeds)), 3),
+           "rows": rows, "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    path = _dump(out, "cradle_scout.json")
+    print(f"\n== CRADLE SCOUT ==\n  certified {out['n_certified']}/{out['n_scanned']} "
+          f"(rate {out['certification_rate']}) | unique-by-hash {out['n_unique_by_hash']} | "
+          f"frozen re-certified {frozen_recertified}/4 | NEW certified {out['n_new_certified']}\n"
+          f"  achievable N (unique certified dev+heldout cradles) ≈ {out['n_unique_by_hash']}\n"
+          f"  new certified seeds: {out['new_certified_seeds']}\n  artifact: {path} | wall {out['wall_s']}s\nSCOUT_DONE",
+          flush=True)
+    return out
+
+
+def deliver_pass_main() -> dict:
+    """DEV-CRADLE EXPANSION step 1 — dedup the certified inventory + frozen-CEM delivery pass on each UNIQUE dev-eligible
+    cradle. Records K6-deliverable dev cradles (the N-curve x-axis) and CERTIFIED_BUT_NOT_DELIVERABLE_UNDER_FROZEN_OPTION
+    separately. All per-cradle params (CEM budget/seed, θ bounds, search, K6, motion contract) frozen."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.cradle_expansion import (
+        HELDOUT_SEEDS, NEAR_TOL, acquire_certified_pool, dedup_and_split)
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import deliver_on_snapshot, load_harness
+    t0 = time.time()
+    scout_path = f"{REPORT_DIR}/cradle_scout.json"
+    if not os.path.exists(scout_path):
+        print(f"MISSING {scout_path} — run --scout-cradles first")
+        sys.exit(2)
+    scout = json.load(open(scout_path))
+    certified_seeds = scout["certified_seeds"]
+    near_tol = float(sys.argv[sys.argv.index("--near-tol") + 1]) if "--near-tol" in sys.argv else NEAR_TOL
+    print(f"DELIVERY PASS — {len(certified_seeds)} certified cradles → dedup (near_tol={near_tol}) → frozen-CEM delivery. "
+          f"held-out excluded: {list(HELDOUT_SEEDS)}", flush=True)
+    harness = load_harness()
+
+    def _acq_prog(e: Any, dt: float) -> None:
+        print(f"  acquire seed={e.seed}: hash={e.hash} ({dt:.0f}s)", flush=True)
+
+    pool = acquire_certified_pool(harness, certified_seeds, progress=_acq_prog)
+    dedup = dedup_and_split(pool, near_tol=near_tol)
+    by_seed = {e.seed: e for e in pool}
+    print(f"  dedup: certified={dedup['n_certified']} hash_unique={dedup['n_hash_unique']} "
+          f"after_near_dedup={dedup['n_after_near_dedup']} dev_eligible={dedup['n_dev_eligible']} | "
+          f"fp_dist min/med/max={dedup['pairwise_fingerprint_dist']['min']}/"
+          f"{dedup['pairwise_fingerprint_dist']['median']}/{dedup['pairwise_fingerprint_dist']['max']}", flush=True)
+    delivering, not_deliverable = [], []
+    for k, seed in enumerate(dedup["dev_eligible_seeds"]):
+        te = time.time()
+        r = deliver_on_snapshot(by_seed[seed].snap, basin_seed=seed)
+        rec = {"seed": seed, **r}
+        (delivering if r["deliverable"] else not_deliverable).append(rec)
+        oc = r.get("outcome", {})
+        print(f"  [{k+1}/{len(dedup['dev_eligible_seeds'])}] deliver seed={seed}: deliverable={int(r['deliverable'])} "
+              f"src={r.get('canonical_source')} dwell={oc.get('k6_max_dwell')} dtz_end={oc.get('dtz_end_mm')}mm "
+              f"({time.time()-te:.0f}s)", flush=True)
+    out = {"contract": "COIN_CRADLE_DELIVERY_PASS_V1", "base_commit": "a3459629", "date": "2026-07-27",
+           "near_tol": near_tol, "dedup": dedup,
+           "n_dev_eligible_unique": dedup["n_dev_eligible"], "n_deliverable": len(delivering),
+           "n_certified_but_not_deliverable": len(not_deliverable),
+           "deliverable_dev_pool": delivering,
+           "certified_but_not_deliverable_under_frozen_option": not_deliverable,
+           "achievable_N_dev_deliverable": len(delivering),
+           "frozen_dev_already_in_pool": [s for s in (14250, 14750) if s in dedup["dev_eligible_seeds"]],
+           "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    path = _dump(out, "cradle_delivery_pass.json")
+    print(f"\n== DELIVERY PASS ==\n  unique dev-eligible {dedup['n_dev_eligible']} → K6-deliverable "
+          f"{len(delivering)} | not-deliverable-under-frozen-option {len(not_deliverable)}\n"
+          f"  ACHIEVABLE N (unique K6-deliverable dev cradles) = {len(delivering)}\n"
+          f"  deliverable seeds: {[r['seed'] for r in delivering]}\n  artifact: {path} | wall {out['wall_s']}s\n"
+          f"DELIVER_PASS_DONE", flush=True)
+    return out
 
 
 def teacher_bank_main(smoke: bool = False) -> dict:
@@ -291,6 +392,12 @@ if __name__ == "__main__":
         bc_main()
     elif "--update0" in sys.argv:
         update0_main(smoke="--smoke" in sys.argv)
+    elif "--scout-cradles" in sys.argv:
+        _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
+        scout_cradles_main(n=_n)
+    elif "--deliver-pass" in sys.argv:
+        deliver_pass_main()
     else:
-        print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --rl-smoke | --rl-multiseed")
+        print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --scout-cradles [--n N] "
+              "| --rl-smoke | --rl-multiseed")
         sys.exit(2)

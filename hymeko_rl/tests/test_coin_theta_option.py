@@ -414,3 +414,33 @@ def test_fixed_search_is_centre_inclusive_and_budget_exact():
     ss = search_semantics(8)
     assert ss["n_total_candidates"] == 8 and ss["n_jittered_candidates"] == 7
     assert ss["centre_always_evaluated"] and ss["budget_counts_total_candidates"]
+
+
+# ───────────────────────────── dev-cradle expansion: dedup ─────────────────────────────
+class _StubCradle:
+    def __init__(self, seed, hsh, fp):
+        self.seed = int(seed)
+        self.hash = hsh
+        self.fingerprint = np.asarray(fp, np.float64)
+
+
+def test_dedup_exact_near_and_holdout_exclusion():
+    """The certified→unique funnel: exact dedup by state hash, near dedup by fingerprint L2, and exclusion of the frozen
+    held-out cradles + their near-duplicates. Raw certification count must NOT be mistaken for unique-cradle count."""
+    from hymeko_rl.coin_delivery.theta_option.cradle_expansion import dedup_and_split
+    pool = [
+        _StubCradle(15000, "HELD", [0.0, 10.0, 0.0]),     # held-out (s4)
+        _StubCradle(100, "A", [0.0, 0.0, 0.0]),           # unique dev rep
+        _StubCradle(200, "A", [0.0, 0.0, 0.0]),           # EXACT dup of 100 (same hash)
+        _StubCradle(300, "B", [10.0, 0.0, 0.0]),          # unique dev rep (far)
+        _StubCradle(400, "C", [10.1, 0.0, 0.0]),          # NEAR dup of 300 (dist 0.1 < tol)
+        _StubCradle(500, "D", [0.0, 10.1, 0.0]),          # NEAR dup of the held-out 15000
+    ]
+    d = dedup_and_split(pool, near_tol=0.5, heldout_seeds=(15000,))
+    assert d["dev_eligible_seeds"] == [100, 300]
+    by_seed = {r["seed"]: r for r in d["rows"]}
+    assert by_seed[200]["duplicate_of"] == 100 and by_seed[200]["dev_eligible"] is False
+    assert by_seed[400]["near_dup_of"] == 300 and by_seed[400]["dev_eligible"] is False
+    assert by_seed[15000]["held_out"] is True and by_seed[15000]["dev_eligible"] is False
+    assert by_seed[500]["dev_eligible"] is False           # near-dup of a held-out cradle
+    assert d["n_certified"] == 6 and d["n_hash_unique"] == 5 and d["n_dev_eligible"] == 2

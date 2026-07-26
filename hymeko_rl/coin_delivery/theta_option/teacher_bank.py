@@ -52,6 +52,43 @@ def acquire_snapshot(harness: tuple[Any, ...], seed: int, *, tries: int = 3) -> 
     return snap, meta
 
 
+FROZEN_SEEDS = (14250, 14750, 15000, 15750)          # the 4 already-certified cradles (s1,s3 dev · s4,s7 held-out)
+
+
+def enumerate_seeds(n: int) -> list[int]:
+    """The canonical cradle-embodiment enumeration ``seed = 14000 + 250·si`` (from bimanual_cradle_embodiment_audit),
+    extended to ``si ∈ [0,n)``. Each seed_lo drives a distinct scene reconstruction (a candidate straddle cradle)."""
+    return [14000 + 250 * si for si in range(int(n))]
+
+
+def scout_certified_cradles(harness: tuple[Any, ...], seeds: list[int],
+                            progress: "Any | None" = None) -> list[dict[str, Any]]:
+    """CERTIFICATION SCOUT (read-only): for each seed, attempt to acquire a certified straddle cradle (both-contact ∧
+    internal-force-feasible ∧ straddle) and build its free-coin snapshot. Records certification, the straddle n_dot, and
+    the post-release state hash (a uniqueness signature) — NO delivery CEM (cheap). ``progress(row, dt)`` (optional) is
+    called live per cradle so the sweep is never blind. Bounds the achievable N of UNIQUE development cradles for the
+    expansion. # Postconditions: one row per seed; a certified row has a snapshot hash."""
+    import time as _time
+    rows: list[dict[str, Any]] = []
+    for si, seed in enumerate(seeds):
+        t0 = _time.time()
+        snap, meta = acquire_snapshot(harness, seed)
+        certified = snap is not None
+        row = {"si": si, "seed": seed, "certified": bool(certified),
+               "acquire_certified": bool(meta.get("certified", False)),
+               "invalid_snapshot": meta.get("invalid_snapshot"),
+               "n_dot": (round(float(meta["n_dot"]), 4) if meta.get("n_dot") is not None else None),
+               "axis": meta.get("axis"),
+               "post_release_hash": (snap.post_release_hash if snap else None),
+               "straddle0": (round(float(snap.straddle0), 4) if snap else None),
+               "fn0": ([round(float(x), 4) for x in snap.fn0] if snap else None),
+               "is_frozen_seed": bool(seed in FROZEN_SEEDS)}
+        rows.append(row)
+        if progress is not None:
+            progress(row, _time.time() - t0)
+    return rows
+
+
 def _phase_of(t: int, theta: Any) -> str:
     ramp, rel = float(theta[3]), float(theta[4])
     return "PUSH" if t <= ramp else ("BRAKE" if t <= rel else "RELEASE")
@@ -175,6 +212,25 @@ def robust_canonical(snap: CradleSnapshot, cem_best_theta: Any, basin: list[dict
                 "cem_best_theta": cem_vec}
     return {"theta": cem_round, "metrics": cem_m, "source": "cem_best_NONDELIVERING", "cem_best_reproduces": False,
             "cem_best_theta": cem_vec}
+
+
+def deliver_on_snapshot(snap: CradleSnapshot, cfg: Any = DELIVERY_CFG, *, basin_seed: int = 0) -> dict[str, Any]:
+    """Frozen-CEM delivery test on an already-acquired snapshot (no re-acquisition). Runs the SAME frozen search
+    (cem_search) + fragility repair (basin → robust_canonical) as the teacher bank, and reports whether the cradle is
+    K6-DELIVERABLE under the frozen 6-D option — with the canonical θ if so. All per-cradle params (CEM budget, seed, θ
+    bounds, K6, motion contract) are frozen. # Postconditions: `deliverable` is the frozen monitor's verdict on the
+    stored (rounded) canonical θ."""
+    res = cem_search(snap, cfg)
+    cem_best = res["best_theta"]
+    if cem_best is None:
+        return {"deliverable": False, "reason": "cem_no_feasible_theta", "canonical_theta": None}
+    basin = sample_dev_basin(snap, cem_best, cfg, seed=basin_seed)
+    rc = robust_canonical(snap, cem_best, basin, cfg)
+    m = rc["metrics"]
+    deliverable = bool(delivery_success(m, cfg))
+    return {"deliverable": deliverable, "canonical_theta": [round(float(x), 6) for x in rc["theta"]],
+            "canonical_source": rc["source"], "cem_optimum_reproduces": bool(rc["cem_best_reproduces"]),
+            "outcome": _outcome_summary(m, cfg), "n_basin_delivering": int(sum(1 for c in basin if c["kind"] == "delivering"))}
 
 
 def reproduce_state(harness: tuple[Any, ...], idx: int, seed: int, cfg: Any = DELIVERY_CFG, *, augment: bool = False) -> dict[str, Any]:
