@@ -1,0 +1,517 @@
+{
+ "contract": "COIN_6D_THETA_DATASET_V1",
+ "base_commit": "a3459629",
+ "teacher_bank": "COIN_6D_TORQUE_THETA_TEACHER_BANK_V1",
+ "target": "proposal centre \u03b8_0 (Bellman action), normalised in the frozen \u03b8 box",
+ "feature_order": [
+  "dtz",
+  "e_par",
+  "coin_xy",
+  "coin_vel",
+  "straddle",
+  "fn",
+  "normal",
+  "xc_rel",
+  "q",
+  "qdot",
+  "prev_tau",
+  "slew_head",
+  "saturated"
+ ],
+ "feature_dim": 42,
+ "feature_names": [
+  "dtz[0]",
+  "e_par[0]",
+  "e_par[1]",
+  "coin_xy[0]",
+  "coin_xy[1]",
+  "coin_vel[0]",
+  "coin_vel[1]",
+  "straddle[0]",
+  "fn[0]",
+  "fn[1]",
+  "normal[0]",
+  "normal[1]",
+  "normal[2]",
+  "normal[3]",
+  "xc_rel[0]",
+  "xc_rel[1]",
+  "xc_rel[2]",
+  "xc_rel[3]",
+  "q[0]",
+  "q[1]",
+  "q[2]",
+  "q[3]",
+  "qdot[0]",
+  "qdot[1]",
+  "qdot[2]",
+  "qdot[3]",
+  "prev_tau[0]",
+  "prev_tau[1]",
+  "prev_tau[2]",
+  "prev_tau[3]",
+  "slew_head[0]",
+  "slew_head[1]",
+  "slew_head[2]",
+  "slew_head[3]",
+  "slew_head[4]",
+  "slew_head[5]",
+  "slew_head[6]",
+  "slew_head[7]",
+  "saturated[0]",
+  "saturated[1]",
+  "saturated[2]",
+  "saturated[3]"
+ ],
+ "normalisation": "fixed physical per-group scales (2-point dev std is degenerate)",
+ "norm_scales": {
+  "dtz": 0.2,
+  "e_par": 1.0,
+  "coin_xy": 0.3,
+  "coin_vel": 0.5,
+  "straddle": 1.0,
+  "fn": 5.0,
+  "normal": 1.0,
+  "xc_rel": 0.05,
+  "q": 3.0,
+  "qdot": 3.0,
+  "prev_tau": 2.0,
+  "slew_head": 0.3,
+  "saturated": 1.0
+ },
+ "history": {
+  "k": 8,
+  "features": [
+   "dtz",
+   "coin_speed",
+   "fn_left",
+   "fn_right",
+   "straddle",
+   "qdot_max"
+  ],
+  "probe": "\u03b8-independent passive position-hold from the handoff (causal, pre-decision)"
+ },
+ "splits": {
+  "train": "development canonical + delivering-basin \u03b8",
+  "val": "held-back development delivering-basin \u03b8 (every 4th)",
+  "eval": "frozen 4-state panel canonical \u03b8 (s1,s3 + held-out s4,s7)"
+ },
+ "leakage_guards": [
+  "no K6 result in inputs",
+  "no \u03b8_exec as a label",
+  "no post-option measurement",
+  "held-out labels are eval-only",
+  "features read at t=0 or from a \u03b8-independent pre-decision probe"
+ ],
+ "split_counts": {
+  "train": 17,
+  "val": 5,
+  "eval": 4
+ },
+ "n_by_tag_split": {
+  "s1:eval": 1,
+  "s1:train": 13,
+  "s1:val": 4,
+  "s3:eval": 1,
+  "s3:train": 4,
+  "s3:val": 1,
+  "s4:eval": 1,
+  "s7:eval": 1
+ },
+ "snapshot_hash_checks": [
+  {
+   "tag": "s1",
+   "bank_hash": "16778d7df544b9e8",
+   "reacquired_hash": "16778d7df544b9e8",
+   "match": true
+  },
+  {
+   "tag": "s3",
+   "bank_hash": "ede88da6a0ca5673",
+   "reacquired_hash": "ede88da6a0ca5673",
+   "match": true
+  },
+  {
+   "tag": "s4",
+   "bank_hash": "8f2abf5e34f177e4",
+   "reacquired_hash": "8f2abf5e34f177e4",
+   "match": true
+  },
+  {
+   "tag": "s7",
+   "bank_hash": "92d07f22ff72e960",
+   "reacquired_hash": "92d07f22ff72e960",
+   "match": true
+  }
+ ],
+ "all_hashes_match": true,
+ "rows": [
+  {
+   "tag": "s1",
+   "split": "eval",
+   "kind": "canonical",
+   "eval_only": false,
+   "theta": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "canonical",
+   "eval_only": false,
+   "theta": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "val",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.05285,
+    0.25409,
+    0.00754,
+    11.30005,
+    11.17667,
+    3.16728
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.05387,
+    0.19278,
+    0.01587,
+    14.49739,
+    4.0,
+    2.87406
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.05077,
+    0.24178,
+    0.00589,
+    12.53636,
+    9.67434,
+    3.06176
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.04725,
+    0.23634,
+    0.0152,
+    14.42921,
+    14.93345,
+    2.79556
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "val",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.04587,
+    0.25903,
+    0.0087,
+    12.06986,
+    10.63315,
+    2.99532
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.05096,
+    0.23595,
+    0.01028,
+    15.36447,
+    9.21552,
+    3.24882
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.05519,
+    0.27851,
+    0.00143,
+    11.29162,
+    10.0503,
+    3.21628
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.04753,
+    0.21234,
+    0.02904,
+    14.07118,
+    5.14354,
+    3.01029
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "val",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.00361,
+    0.24076,
+    -0.01503,
+    14.64667,
+    5.88873,
+    3.31924
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.05097,
+    0.21983,
+    0.00286,
+    13.91293,
+    7.10128,
+    2.98735
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.07797,
+    0.23627,
+    0.02329,
+    11.43832,
+    4.0,
+    3.38063
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.04125,
+    0.2588,
+    -0.00604,
+    14.90179,
+    11.19287,
+    3.3533
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "val",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.01452,
+    0.23155,
+    0.01529,
+    13.79566,
+    5.31929,
+    2.8019
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.04115,
+    0.23797,
+    0.01491,
+    13.00476,
+    8.08566,
+    3.45444
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.05258,
+    0.21646,
+    0.01709,
+    14.76493,
+    11.42507,
+    3.11645
+   ]
+  },
+  {
+   "tag": "s1",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.02803,
+    0.2317,
+    0.00408,
+    15.46585,
+    4.20354,
+    2.98926
+   ]
+  },
+  {
+   "tag": "s3",
+   "split": "eval",
+   "kind": "canonical",
+   "eval_only": false,
+   "theta": [
+    0.19582,
+    0.0694,
+    -0.03699,
+    7.82491,
+    11.18153,
+    2.19236
+   ]
+  },
+  {
+   "tag": "s3",
+   "split": "train",
+   "kind": "canonical",
+   "eval_only": false,
+   "theta": [
+    0.19582,
+    0.0694,
+    -0.03699,
+    7.82491,
+    11.18153,
+    2.19236
+   ]
+  },
+  {
+   "tag": "s3",
+   "split": "val",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.2025,
+    0.06223,
+    -0.04024,
+    6.78837,
+    21.05867,
+    1.33575
+   ]
+  },
+  {
+   "tag": "s3",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.16683,
+    0.00053,
+    -0.07495,
+    4.07453,
+    11.06048,
+    1.28724
+   ]
+  },
+  {
+   "tag": "s3",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.19582,
+    0.0694,
+    -0.03699,
+    7.82491,
+    11.18153,
+    2.19236
+   ]
+  },
+  {
+   "tag": "s3",
+   "split": "train",
+   "kind": "basin_delivering",
+   "eval_only": false,
+   "theta": [
+    0.19209,
+    0.03816,
+    -0.02036,
+    4.95571,
+    15.84315,
+    1.31167
+   ]
+  },
+  {
+   "tag": "s4",
+   "split": "eval",
+   "kind": "canonical",
+   "eval_only": true,
+   "theta": [
+    0.0681,
+    0.2023,
+    -0.0297,
+    10.4443,
+    6.8406,
+    2.2844
+   ]
+  },
+  {
+   "tag": "s7",
+   "split": "eval",
+   "kind": "canonical",
+   "eval_only": true,
+   "theta": [
+    0.157,
+    0.1729,
+    0.0133,
+    8.6476,
+    5.3654,
+    1.4752
+   ]
+  }
+ ],
+ "split_isolation_ok": true,
+ "wall_s": 129.9,
+ "peak_rss_gb": 0.231
+}

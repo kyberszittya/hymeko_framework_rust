@@ -194,3 +194,94 @@ def test_reproduce_held_out_state_delivers_without_basin():
     assert e["tag"] == "s7" and e["split"] == "held_out"
     assert e["k6_delivered"] is True and e["replay_ok"] is True and e["deterministic"] is True
     assert "basin_candidates" not in e
+
+
+# ───────────────────────────── Stage 2: structured causal dataset ─────────────────────────────
+_DATASET_PATH = "reports/2026-07-27-coin-teacher-to-rl/dataset_contract.json"
+
+
+def _synth_feat():
+    from hymeko_rl.coin_delivery.theta_option.dataset import FEATURE_ORDER
+    sizes = {"dtz": 1, "e_par": 2, "coin_xy": 2, "coin_vel": 2, "straddle": 1, "fn": 2, "normal": 4, "xc_rel": 4,
+             "q": 4, "qdot": 4, "prev_tau": 4, "slew_head": 8, "saturated": 4}
+    return {g: np.arange(sizes[g], dtype=np.float64) + 1.0 for g in FEATURE_ORDER}
+
+
+def test_feature_names_match_feature_dim():
+    from hymeko_rl.coin_delivery.theta_option.dataset import feature_names, flatten_features
+    names = feature_names()
+    vec = flatten_features(_synth_feat())
+    assert len(names) == vec.shape[0] == 42
+
+
+def test_flatten_features_deterministic_and_scaled():
+    from hymeko_rl.coin_delivery.theta_option.dataset import NORM_SCALES, flatten_features
+    feat = _synth_feat()
+    a = flatten_features(feat, normalise=True)
+    b = flatten_features(feat, normalise=True)
+    assert np.array_equal(a, b)                                  # deterministic
+    raw = flatten_features(feat, normalise=False)
+    assert not np.allclose(a, raw)                              # normalisation changed something
+    # dtz (first entry) divided by its physical scale; slew_head is NOT re-scaled (already normalised)
+    assert np.isclose(a[0], feat["dtz"][0] / NORM_SCALES["dtz"])
+
+
+def test_history_streaming_equals_batch_on_probe_shape():
+    """The temporal encoder over the (K,6) causal history probe must give identical embeddings whether fed step-by-step
+    (deploy/streaming) or as a batch sequence — the closing contract for B2."""
+    import torch
+    from hymeko_rl.option_rl.temporal import LSTMTemporalEncoder
+    torch.manual_seed(0)
+    enc = LSTMTemporalEncoder(in_dim=6, hidden=16, out_dim=8)
+    X = np.random.default_rng(0).standard_normal((8, 6)).astype(np.float32)   # (HISTORY_K, |HIST_FEATURES|)
+    embs, _ = enc.forward(torch.as_tensor(X)[None])            # batch: (1, K, 8)
+    h, outs = None, []
+    for t in range(X.shape[0]):
+        e, h = enc.update(torch.as_tensor(X[t]), h)
+        outs.append(e[0])
+    stream = torch.stack(outs)
+    assert torch.allclose(embs[0], stream, atol=1e-5)
+
+
+def test_dataset_row_split_isolation_invariant():
+    from hymeko_rl.coin_delivery.theta_option.dataset import DatasetRow, ThetaDataset, contract_summary
+    good = [DatasetRow("s1", "train", "canonical", np.zeros(42, np.float32), np.zeros((8, 6), np.float32),
+                       np.zeros(6), np.zeros(6), False, True),
+            DatasetRow("s4", "eval", "canonical", np.zeros(42, np.float32), np.zeros((8, 6), np.float32),
+                       np.zeros(6), np.zeros(6), True, True)]
+    ds = ThetaDataset(rows=good, contract={"split_counts": {"train": 1, "val": 0, "eval": 1}, "n_by_tag_split": {}})
+    assert contract_summary(ds)["split_isolation_ok"] is True
+    bad = good + [DatasetRow("s7", "train", "canonical", np.zeros(42, np.float32), np.zeros((8, 6), np.float32),
+                             np.zeros(6), np.zeros(6), True, True)]           # held-out (eval_only) leaked into train
+    ds_bad = ThetaDataset(rows=bad, contract={"split_counts": {}, "n_by_tag_split": {}})
+    assert contract_summary(ds_bad)["split_isolation_ok"] is False
+
+
+@pytest.mark.skipif(not os.path.exists(_DATASET_PATH), reason="dataset_contract.json not built")
+def test_dataset_contract_artifact_invariants():
+    c = json.load(open(_DATASET_PATH))
+    assert c["split_isolation_ok"] is True and c["all_hashes_match"] is True
+    assert c["feature_dim"] == 42 and c["history"]["k"] == 8
+    # held-out cradles appear ONLY in eval; θ labels are legal
+    lo, hi = theta_bounds()
+    for r in c["rows"]:
+        th = np.asarray(r["theta"], np.float64)
+        assert np.all(th >= lo - 1e-5) and np.all(th <= hi + 1e-5)
+        if r["tag"] in ("s4", "s7"):
+            assert r["split"] == "eval" and r["eval_only"] is True
+    assert any(r["split"] == "train" and r["tag"] in ("s1", "s3") for r in c["rows"])
+
+
+@pytest.mark.slow
+def test_structured_features_and_history_deterministic_live():
+    """Live physics: the causal feature vector and history probe are deterministic (same snapshot → identical), and the
+    history has the frozen (K,6) shape."""
+    from hymeko_rl.coin_delivery.theta_option.dataset import HISTORY_K, causal_history, flatten_features, structured_features
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import CERTIFIED_SEEDS, load_harness
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot
+    snap, _ = acquire_snapshot(load_harness(), CERTIFIED_SEEDS[0])           # s1
+    f1 = flatten_features(structured_features(snap))
+    f2 = flatten_features(structured_features(snap))
+    assert np.array_equal(f1, f2) and f1.shape[0] == 42
+    h1, h2 = causal_history(snap), causal_history(snap)
+    assert h1.shape == (HISTORY_K, 6) and np.array_equal(h1, h2)

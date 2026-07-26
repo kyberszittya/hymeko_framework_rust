@@ -96,11 +96,43 @@ def teacher_bank_main(smoke: bool = False) -> dict:
     return bank
 
 
+def dataset_main() -> dict:
+    """Stage 2 — build the structured causal θ dataset from the frozen teacher bank; freeze dataset_contract.json."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.dataset import build_dataset, contract_summary
+    t0 = time.time()
+    bank_path = f"{REPORT_DIR}/teacher_bank.json"
+    if not os.path.exists(bank_path):
+        print(f"MISSING {bank_path} — run --teacher-bank first")
+        sys.exit(2)
+    bank = json.load(open(bank_path))
+    if bank.get("smoke"):
+        print("teacher_bank.json is a SMOKE run (partial) — run the full --teacher-bank first")
+        sys.exit(2)
+    print("DATASET — building structured causal θ dataset from the frozen teacher bank", flush=True)
+    ds = build_dataset(bank)
+    summary = contract_summary(ds)
+    summary["wall_s"] = round(time.time() - t0, 1)
+    summary["peak_rss_gb"] = _peak_rss_gb()
+    path = _dump(summary, "dataset_contract.json")
+    sc = summary["split_counts"]
+    print(f"  feature_dim={summary['feature_dim']} history={summary['history']['k']}x{len(summary['history']['features'])} "
+          f"| splits train={sc['train']} val={sc['val']} eval={sc['eval']}\n"
+          f"  n_by_tag_split={summary['n_by_tag_split']}\n"
+          f"  split_isolation_ok={summary['split_isolation_ok']} all_hashes_match={summary['all_hashes_match']}\n"
+          f"  leakage_guards={summary['leakage_guards']}\n  artifact: {path} | wall {summary['wall_s']}s\nDATASET_DONE",
+          flush=True)
+    return summary
+
+
 if __name__ == "__main__":
     if "--semantics" in sys.argv:
         semantics_main()
     elif "--teacher-bank" in sys.argv:
         teacher_bank_main(smoke="--smoke" in sys.argv)
+    elif "--dataset" in sys.argv:
+        dataset_main()
     else:
         print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --rl-smoke | --rl-multiseed")
         sys.exit(2)
