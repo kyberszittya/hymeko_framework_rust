@@ -10,6 +10,7 @@
    15750
   ],
   "n_certified": 11,
+  "n_holdout_present": 2,
   "n_hash_unique": 11,
   "n_after_near_dedup": 11,
   "n_dev_eligible": 9,
@@ -21,7 +22,7 @@
    17750,
    18250,
    19500,
-   23000,
+   24000,
    25000
   ],
   "held_out_present": [
@@ -30,7 +31,7 @@
   ],
   "pairwise_fingerprint_dist": {
    "min": 0.922,
-   "median": 2.9737,
+   "median": 2.9467,
    "max": 4.1586,
    "pairs_below_tol": 0
   },
@@ -135,9 +136,9 @@
     "is_frozen_seed": false
    },
    {
-    "seed": 23000,
-    "replay_hash": "c430659c6dd43c92",
-    "physical_state_hash": "0af9c2d5a15e2d69",
+    "seed": 24000,
+    "replay_hash": "0176a9993b3259ca",
+    "physical_state_hash": "8cf3555dcdb848a6",
     "duplicate_of": null,
     "near_dup_of": null,
     "held_out": false,
@@ -158,9 +159,28 @@
    }
   ]
  },
- "n_dev_eligible_unique": 9,
- "n_deliverable": 5,
- "n_certified_but_not_deliverable": 4,
+ "funnel": {
+  "n_raw_dev_candidates": 9,
+  "n_near_unique_dev": 9,
+  "n_K6_deliverable_dev": 6,
+  "delivery_yield_among_unique": 0.667,
+  "usable_N": 6
+ },
+ "new_state_distribution": {
+  "K6_DELIVERABLE": [
+   16500,
+   17750,
+   19500,
+   24000
+  ],
+  "CERTIFIED_BUT_NOT_DELIVERABLE_UNDER_FROZEN_OPTION": [
+   17000,
+   18250,
+   25000
+  ],
+  "NEAR_DUPLICATE": [],
+  "HELD_OUT_NEAR_DUP": []
+ },
  "deliverable_dev_pool": [
   {
    "seed": 14250,
@@ -321,6 +341,38 @@
    "n_basin_delivering": 1,
    "near_dup_of": null,
    "dev_eligible": true
+  },
+  {
+   "seed": 24000,
+   "deliverable": true,
+   "canonical_theta": [
+    0.1575,
+    0.1242,
+    0.0038,
+    11.6271,
+    12.5093,
+    2.3182
+   ],
+   "canonical_source": "cem_best",
+   "cem_optimum_reproduces": true,
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 21,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 102.79,
+    "dtz_end_mm": 10.23,
+    "gap_closed": 0.9,
+    "forward_mm": 93.48,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 2.0095,
+    "peak_coin_speed": 0.4829,
+    "contact_lost_steps": 44,
+    "score": 0.50977
+   },
+   "n_basin_delivering": 2,
+   "near_dup_of": null,
+   "dev_eligible": true
   }
  ],
  "certified_but_not_deliverable_under_frozen_option": [
@@ -391,39 +443,6 @@
    "failure_mode": "NEVER_REACHED_ZONE"
   },
   {
-   "seed": 23000,
-   "deliverable": false,
-   "canonical_theta": [
-    0.0127,
-    0.1135,
-    -0.0072,
-    19.069,
-    7.1138,
-    1.7191
-   ],
-   "canonical_source": "cem_best_NONDELIVERING",
-   "cem_optimum_reproduces": false,
-   "outcome": {
-    "k6_delivered": false,
-    "k6_max_dwell": 0,
-    "delivery_success": false,
-    "touched": true,
-    "dtz_start_mm": 154.7,
-    "dtz_end_mm": 77.85,
-    "gap_closed": 0.497,
-    "forward_mm": 83.49,
-    "terminal_coin_speed": 0.0722,
-    "peak_qdot": 1.9993,
-    "peak_coin_speed": 0.6165,
-    "contact_lost_steps": 51,
-    "score": -0.07785
-   },
-   "n_basin_delivering": 0,
-   "near_dup_of": null,
-   "dev_eligible": true,
-   "failure_mode": "NEVER_REACHED_ZONE"
-  },
-  {
    "seed": 25000,
    "deliverable": false,
    "canonical_theta": [
@@ -457,46 +476,10 @@
    "failure_mode": "NEVER_REACHED_ZONE"
   }
  ],
- "achievable_N_dev_deliverable": 5,
  "frozen_dev_already_in_pool": [
   14250,
   14750
  ],
- "wall_s": 490.3,
- "peak_rss_gb": 0.248,
- "funnel": {
-  "n_raw_dev_candidates": 9,
-  "n_near_unique_dev": 9,
-  "n_K6_deliverable_dev": 5,
-  "delivery_yield_among_unique": 0.556,
-  "usable_N": 5
- },
- "new_state_distribution": {
-  "K6_DELIVERABLE": [
-   16500,
-   17750,
-   19500
-  ],
-  "CERTIFIED_BUT_NOT_DELIVERABLE_UNDER_FROZEN_OPTION": [
-   17000,
-   18250,
-   23000,
-   25000
-  ],
-  "NEAR_DUPLICATE": [],
-  "HELD_OUT_NEAR_DUP": []
- },
- "certified_seeds": [
-  14250,
-  14750,
-  15000,
-  15750,
-  16500,
-  17000,
-  17750,
-  18250,
-  19500,
-  23000,
-  25000
- ]
+ "wall_s": 397.2,
+ "peak_rss_gb": 0.252
 }

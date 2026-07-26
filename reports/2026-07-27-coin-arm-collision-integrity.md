@@ -94,11 +94,13 @@ SETTLE_VEL), so it fails the "ends settled" clause (the known "s4 least clean").
 supplementary. It is **not** fingertip-dominant — no fingertip-grasp claim is made, and the strict CONTROLLED_INSERTION
 certificate (stricter than K6, it also requires terminal rest) already flags s4's drift.
 
-**Validation of the mask change (physics-neutrality):** the frozen teacher replays **4/4 unchanged** (snapshot hashes +
-K6 + dwell match), and all **5 usable dev cradles** (s1,s3,16500,17750,19500) match. One certified-but-not-deliverable
-cradle, **seed 23000, no longer certifies** under the correct masks — its old certification was an artifact of the
-incorrect same-arm collision (a false positive correctly dropped). So the coverage inventory is re-frozen under the
-corrected masks; the usable-N pool is unchanged.
+**Validation of the mask change (physics-neutrality + coverage re-freeze):** the frozen teacher replays **4/4 unchanged**
+(snapshot hashes + K6 + dwell match), and all previously-usable dev cradles (s1,s3,16500,17750,19500) match. Re-scouting
+under the corrected masks changed the certified SET in both directions: **seed 23000 no longer certifies** (its old
+certification was an artifact of the incorrect same-arm collision — a false positive dropped) while **seed 24000 now
+certifies AND delivers K6** (a false negative recovered — a spurious same-arm collision had been blocking it). Net: the
+usable dev pool **grew 5 → 6** (s1, s3, 16500, 17750, 19500, 24000; delivery yield 0.667), so the coverage N-curve is now
+**N = 2, 4, 6**. Held-out s4/s7 unchanged.
 
 **SAC/TD3 authorisation is unaffected** — the E0 teacher is a valid whole-arm-assisted delivery; the next gate remains
 update-0 coverage at N = 2, 4, 5. E1/E2 (fingertip-dominant / fingertip-only) are later hardenings.

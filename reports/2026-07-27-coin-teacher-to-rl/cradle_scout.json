@@ -18,7 +18,7 @@
   17750,
   18250,
   19500,
-  23000,
+  24000,
   25000
  ],
  "new_certified_seeds": [
@@ -27,7 +27,7 @@
   17750,
   18250,
   19500,
-  23000,
+  24000,
   25000
  ],
  "certification_rate": 0.229,
@@ -530,17 +530,14 @@
   {
    "si": 36,
    "seed": 23000,
-   "certified": true,
-   "acquire_certified": true,
+   "certified": false,
+   "acquire_certified": false,
    "invalid_snapshot": null,
-   "n_dot": -0.972,
-   "axis": "zone_par",
-   "post_release_hash": "0af9c2d5a15e2d69",
-   "straddle0": -0.9721,
-   "fn0": [
-    4.4639,
-    3.2118
-   ],
+   "n_dot": null,
+   "axis": null,
+   "post_release_hash": null,
+   "straddle0": null,
+   "fn0": null,
    "is_frozen_seed": false
   },
   {
@@ -585,14 +582,17 @@
   {
    "si": 40,
    "seed": 24000,
-   "certified": false,
-   "acquire_certified": false,
+   "certified": true,
+   "acquire_certified": true,
    "invalid_snapshot": null,
-   "n_dot": null,
-   "axis": null,
-   "post_release_hash": null,
-   "straddle0": null,
-   "fn0": null,
+   "n_dot": -0.99,
+   "axis": "zone_cross",
+   "post_release_hash": "8cf3555dcdb848a6",
+   "straddle0": -0.9894,
+   "fn0": [
+    3.5999,
+    3.7413
+   ],
    "is_frozen_seed": false
   },
   {
@@ -690,6 +690,6 @@
    "is_frozen_seed": false
   }
  ],
- "wall_s": 1599.1,
- "peak_rss_gb": 0.231
+ "wall_s": 1101.3,
+ "peak_rss_gb": 0.23
 }
