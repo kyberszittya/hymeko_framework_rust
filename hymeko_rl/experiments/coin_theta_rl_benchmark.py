@@ -1242,6 +1242,123 @@ def r2_update0_main(smoke: bool = False) -> dict:
     return _r2_finalize(main, side1, lodo, gates, dec, motion_ok, provenance_ok, hp, dev_seeds, round(time.time() - t0, 1))
 
 
+def _basin_classify(actor_b8: bool, alpha_search: "float | None", reach_std: float) -> "tuple[str, bool]":
+    """Map the audit numbers to the mechanism (and whether the physical-intent decoder is authorised). ``reach_std`` =
+    nearest held-out-acceptable distance in SEARCH_STD units; ``alpha_search`` = min interpolation toward the teacher θ at
+    which the budget-8 search first restores K6 (None = never)."""
+    if actor_b8:
+        return "ACTOR_ALREADY_DELIVERS_INCONSISTENT_WITH_PANEL", False
+    if alpha_search is not None and alpha_search <= 0.2:
+        return "NARROW_DISCONNECTED_BASIN_ABRUPT_RESTORE", False          # decoder OR basin-aware search
+    if reach_std <= 2.0:
+        return "WITHIN_METRIC_REACH_BUT_BUDGET8_MISSES", False            # search allocation / anisotropy blocker
+    return "ACTOR_OUTSIDE_CAPTURE_BASIN", True                            # physical-intent decoder authorised
+
+
+def _basin_sweep(snap: Any, theta_actor: np.ndarray, theta_teacher: np.ndarray) -> "tuple[list, float, float]":
+    """Interpolate θ(α)=(1-α)θ_actor+α θ_teacher over 21 α, and at each α record the direct-centre (budget 1) and budget-8
+    K6. Returns (sweep, first-α-direct-delivers, first-α-budget8-delivers). Frozen search/physics; deterministic rng."""
+    from hymeko_rl.coin_delivery.forward_displacement import delivery_success, rollout_primitive
+    from hymeko_rl.coin_delivery.theta_option.search import fixed_search_select
+    from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
+    sweep, a_direct, a_search = [], None, None
+    for alpha in np.linspace(0.0, 1.0, 21):
+        th = (1.0 - alpha) * theta_actor + alpha * theta_teacher
+        direct = bool(delivery_success(rollout_primitive(snap, tuple(th), DELIVERY_CFG), DELIVERY_CFG))
+        prov = fixed_search_select(snap, th, np.random.default_rng(4242), budget=8, cfg=DELIVERY_CFG)
+        s8 = bool(prov.outcome.get("delivery_success"))
+        sweep.append({"alpha": round(float(alpha), 3), "direct_k6": direct, "search8_k6": s8,
+                      "dtz_end_mm": round(prov.outcome.get("dtz_end", 0.0) * 1000, 2)})
+        a_direct = round(float(alpha), 3) if direct and a_direct is None else a_direct
+        a_search = round(float(alpha), 3) if s8 and a_search is None else a_search
+    return sweep, a_direct, a_search
+
+
+def _basin_one(ps: Any, prop: Any, box: Any, n_samples: int, panel_index: int) -> dict:
+    """Frozen, TRAINING-FREE search-basin audit for ONE held-out cradle. Reconstructs the frozen R2 actor proposal, harvests
+    the held-out acceptable set (EVAL-ONLY overlay), measures the actor->teacher / actor->nearest-working distances in
+    SEARCH_STD units, and sweeps θ(α) through the direct centre + budget-8 search. Changes NOTHING in the frozen result."""
+    from hymeko_rl.coin_delivery.theta_option.acceptable_set import harvest_acceptable_set
+    from hymeko_rl.coin_delivery.theta_option.canonical_frame import from_canonical_theta
+    from hymeko_rl.coin_delivery.theta_option.relational_encoder import relational_deploy_one
+    from hymeko_rl.coin_delivery.theta_option.relational_graph import build_graph
+    from hymeko_rl.coin_delivery.theta_option.search import SEARCH_STD
+    graph = build_graph(ps.snap)
+    dep = relational_deploy_one(ps.snap, prop, graph, np.random.default_rng(90000 + panel_index * 131 + 4), 8, box)
+    modes = prop.modes(graph)
+    decoded = [from_canonical_theta(np.asarray(m.center, np.float64), graph.was_swapped) for m in modes]
+    theta_actor = np.asarray(decoded[dep["selected_head"]], np.float64)
+    theta_teacher = np.asarray(ps.teacher_theta, np.float64)
+    acc = harvest_acceptable_set(ps.snap, n_samples=n_samples, seed=ps.seed, seed_thetas=[theta_teacher])["accepted"]
+    za, zt = box.norm(theta_actor), box.norm(theta_teacher)
+    a_norm = [box.norm(np.asarray(a.theta, np.float64)) for a in acc]
+    d_teacher = float(np.linalg.norm(za - zt))
+    d_ahold = float(min(np.linalg.norm(za - an) for an in a_norm)) if a_norm else float("inf")
+    comp_std = [round(float((za[j] - zt[j]) / SEARCH_STD), 3) for j in range(len(za))]     # per-component gap in search-std
+    near_head = float(min(np.linalg.norm(box.norm(np.asarray(d, np.float64)) - zt) for d in decoded))
+    sweep, a_direct, a_search = _basin_sweep(ps.snap, theta_actor, theta_teacher)
+    reach_std = d_ahold / SEARCH_STD if np.isfinite(d_ahold) else float("inf")
+    mech, decoder = _basin_classify(sweep[0]["search8_k6"], a_search, reach_std)
+    return {"tag": ps.tag, "split": ps.split, "selected_head": dep["selected_head"], "n_accept_heldout": len(acc),
+            "theta_actor": [round(float(x), 4) for x in theta_actor], "theta_teacher": [round(float(x), 4) for x in theta_teacher],
+            "d_actor_to_teacher_norm": round(d_teacher, 4), "d_actor_to_nearest_heldout_acc_norm": round(d_ahold, 4),
+            "reach_in_search_std_units": round(reach_std, 3), "nearest_of_4_heads_to_teacher_norm": round(near_head, 4),
+            "per_component_gap_search_std": comp_std, "search_std": SEARCH_STD,
+            "four_conditions": {"actor_no_search": sweep[0]["direct_k6"], "actor_budget8": sweep[0]["search8_k6"],
+                                "interp_budget8_min_alpha": a_search, "teacher_budget8": sweep[-1]["search8_k6"]},
+            "alpha_direct_first_k6": a_direct, "alpha_search8_first_k6": a_search, "sweep": sweep,
+            "mechanism": mech, "physical_intent_decoder_authorised": decoder}
+
+
+def r2_basin_audit_main(smoke: bool = False) -> dict:
+    """FROZEN search-basin geometry audit (Csaba's micro-gate) — the discriminating test BEFORE naming the held-out failure
+    a representation/decoder problem. For held-out s4/s7: is the frozen R2 actor proposal GENUINELY outside the capture
+    basin (=> decoder), or inside metric reach with budget-8 missing (=> search allocation / anisotropy), or a narrow basin
+    that a tiny move toward the teacher abruptly restores? Training-free; does NOT touch the frozen R2 result."""
+    from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
+    from hymeko_rl.coin_delivery.theta_option.relational_encoder import load_relational_khead
+    from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import load_harness
+    t0 = time.time()
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    box = ThetaBox()
+    prop = load_relational_khead(f"{R2_UPDATE0_DIR}/r2_khead_K4.pt")
+    n_samples = 200 if smoke else 600
+    harness = load_harness()
+    panel = build_panel(harness, bank)
+    print(f"R2 BASIN AUDIT — frozen r2_khead_K4.pt | held-out s4/s7 | held-out acceptable harvest n={n_samples} | "
+          f"α-sweep 21 pts | training-free (frozen result unchanged)", flush=True)
+    per = {}
+    for i, ps in enumerate(panel):
+        if ps.split != "held_out":
+            continue
+        r = _basin_one(ps, prop, box, n_samples, i)
+        per[ps.tag] = r
+        fc = r["four_conditions"]
+        print(f"  {ps.tag}: d(actor→teacher)={r['d_actor_to_teacher_norm']} d(actor→nearest-heldout-acc)="
+              f"{r['d_actor_to_nearest_heldout_acc_norm']} ({r['reach_in_search_std_units']}×SEARCH_STD) | "
+              f"4cond actor_noS={int(fc['actor_no_search'])} actor_b8={int(fc['actor_budget8'])} "
+              f"interp_min_α={fc['interp_budget8_min_alpha']} teacher_b8={int(fc['teacher_budget8'])} | "
+              f"MECH={r['mechanism']} decoder_auth={r['physical_intent_decoder_authorised']}", flush=True)
+    decoder_votes = [r["physical_intent_decoder_authorised"] for r in per.values()]
+    overall = "PHYSICAL_INTENT_DECODER_AUTHORISED" if all(decoder_votes) and decoder_votes else \
+              ("SEARCH_BASIN_GEOMETRY_BLOCKER" if not any(decoder_votes) else "MIXED_AUDIT_STATES_DISAGREE")
+    out = {"contract": "COIN_R2_SEARCH_BASIN_AUDIT_V1", "date": "2026-07-27", "start_commit": "9d6fc3d5",
+           "training_free": True, "frozen_result_unchanged": True, "checkpoint": "r2_khead_K4.pt",
+           "per_state": per, "overall": overall, "authorises_physical_intent_decoder": bool(all(decoder_votes) and decoder_votes),
+           "authorises_sac_td3": False, "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    path = f"{R2_UPDATE0_DIR}/basin_audit.json"
+    json.dump(out, open(path, "w"), indent=1, default=float)
+    try:
+        from hymeko_rl.experiments._r2_panel_viz import basin_main
+        out["figure"] = basin_main()
+    except Exception as e:                                            # viz is optional; the audit numbers are the result
+        print(f"  (basin plot skipped: {e})", flush=True)
+    print(f"\n== R2 BASIN AUDIT ==\n  OVERALL: {overall} | decoder_authorised={out['authorises_physical_intent_decoder']} "
+          f"| SAC/TD3 still blocked\n  artifact: {path} | wall {out['wall_s']}s\nR2_BASIN_AUDIT_DONE", flush=True)
+    return out
+
+
 def multimodal_main(smoke: bool = False) -> dict:
     """M1+M2 — the K-head acceptable-set proposal. Build the dev acceptable-set training data, select K by DEV-ONLY
     leave-one-dev-out CV (physical K6 on the held-out DEV cradle), freeze K, retrain on all dev, then ONE frozen-panel
@@ -1553,6 +1670,8 @@ if __name__ == "__main__":
         r1_update0_main(smoke="--smoke" in sys.argv)
     elif "--r2-update0" in sys.argv:
         r2_update0_main(smoke="--smoke" in sys.argv)
+    elif "--r2-basin-audit" in sys.argv:
+        r2_basin_audit_main(smoke="--smoke" in sys.argv)
     elif "--scout-cradles" in sys.argv:
         _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
         scout_cradles_main(n=_n)

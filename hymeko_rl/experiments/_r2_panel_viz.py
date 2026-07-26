@@ -51,5 +51,35 @@ def main() -> str:
     return out
 
 
+def basin_main() -> str:
+    """§9 plot for the frozen search-basin audit: per held-out cradle, K6 vs interpolation α (direct centre + budget-8),
+    with the actor→teacher and actor→nearest-working distances (in SEARCH_STD units) annotated."""
+    a = json.load(open(f"{R2_DIR}/basin_audit.json"))
+    states = list(a["per_state"].keys())
+    fig, ax = plt.subplots(1, len(states), figsize=(5.4 * len(states), 4.2), dpi=140, squeeze=False)
+    for k, tag in enumerate(states):
+        r = a["per_state"][tag]
+        al = [s["alpha"] for s in r["sweep"]]
+        direct = [int(s["direct_k6"]) for s in r["sweep"]]
+        s8 = [int(s["search8_k6"]) for s in r["sweep"]]
+        ax[0][k].plot(al, direct, "o-", color="tab:gray", label="direct centre (budget 1)")
+        ax[0][k].plot(al, s8, "s-", color="tab:blue", label="budget-8 search")
+        if r["alpha_search8_first_k6"] is not None:
+            ax[0][k].axvline(r["alpha_search8_first_k6"], color="tab:green", ls=":", lw=1.2,
+                             label=f"α*={r['alpha_search8_first_k6']} (budget-8 restores)")
+        ax[0][k].set_xlabel("α  (0 = frozen actor θ → 1 = teacher θ)")
+        ax[0][k].set_ylabel("frozen K6 delivered")
+        ax[0][k].set_ylim(-0.1, 1.2)
+        ax[0][k].set_title(f"{tag} ({r['split']}) — {r['mechanism']}\n"
+                           f"d(actor→working)={r['d_actor_to_nearest_heldout_acc_norm']} "
+                           f"= {r['reach_in_search_std_units']}×SEARCH_STD", fontsize=8)
+        ax[0][k].legend(fontsize=7, loc="center right")
+    fig.tight_layout()
+    out = f"{R2_DIR}/basin_audit.png"
+    fig.savefig(out)
+    print(f"wrote {out}")
+    return out
+
+
 if __name__ == "__main__":
     main()

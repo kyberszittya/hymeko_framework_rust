@@ -153,10 +153,42 @@ problem.
 
 - **SAC/TD3 authorisation: BLOCKED.** Case A (4/4 incl. held-out 2/2) is the only thing that authorises matched SAC/TD3;
   R2 did not reach it.
-- **Exact next action (do NOT build in this session):** the next authorised axis is **canonical physical intent →
-  deterministic authority-aware decoder → the unchanged 6-D θ option** — i.e. compute θ from the canonical signed
-  authority quantities by a *deterministic* map instead of amortising it by regression. This is a decoder axis, not a
-  representation axis, and is gated behind a fresh contract.
+
+## 10.5 Frozen search-basin audit (discriminating test before naming the axis) — `basin_audit.json`
+
+Before calling this a *decoder* problem, one number had to be audited (raised by C. Hajdu): the §9 distances 0.40/0.42
+were to the **dev** acceptable set, not to the **held-out working** set — so the failure could still be *search-basin
+geometry* (anisotropic reach, a narrow disconnected basin, or the K×(8/4) allocation not filling the metric ball) rather
+than a wrong-basin proposal. `--r2-basin-audit` runs the **training-free, frozen** discriminating test: reconstruct the
+frozen R2 actor θ, harvest the **held-out** acceptable set (eval-only), measure the actor→teacher / actor→nearest-working
+gap in **SEARCH_STD (0.15) units**, and sweep θ(α) = (1−α)·θ_actor + α·θ_teacher through the direct centre and the budget-8
+search. It changes nothing in the frozen result.
+
+| held-out | actor→teacher (norm) | ×SEARCH_STD | n working θ (600 harvest) | budget-8 first K6 | direct first K6 | dominant per-component gap (σ) | mechanism |
+|---|--:|--:|--:|--:|--:|---|---|
+| **s4** | 1.216 | **8.1** | **0** | α = **1.0** | α = 1.0 | squeeze +6.1, forward −3.7, release +2.8, ramp +2.4 | ACTOR_OUTSIDE_CAPTURE_BASIN |
+| **s7** | 0.798 | **5.3** | 2 | α = **0.8** | α = 1.0 | balance −3.9, squeeze −2.8, release +1.9 | ACTOR_OUTSIDE_CAPTURE_BASIN |
+
+**Overall: `PHYSICAL_INTENT_DECODER_AUTHORISED`.** The three alternatives are ruled out by the numbers: (a) *not* search
+allocation/anisotropy — the gap is **5.3–8.1 search-stds**, orders beyond any budget-8 cloud (7 jittered samples at σ=0.15
+cover ≈1 std), and it is **multi-dimensional** (squeeze, forward, balance, ramp, release all off by 2–6 σ), not one narrow
+anisotropic axis; (b) *not* a narrow basin a tiny move restores — budget-8 first re-delivers only at **α = 0.8 / 1.0**, not
+α ≈ 0.1; (c) even the **nearest of the 4 heads** is 5.9 σ (s4) / 5.3 σ (s7) from the teacher, so no mode points near a
+working θ. The frozen R2 actor genuinely targets the **wrong basin** on held-out cradles. Plot: `basin_audit.png`.
+
+*Honest caveat (measured):* s4's held-out harvest returned **0** motion-compatible delivering θ in 600 global samples even
+though the teacher θ delivers frozen-K6 in the sweep — i.e. s4's teacher solution sits at/over the harvest motion limit and
+its motion-compatible working set is essentially a point; the robust s4 number is therefore the actor→teacher distance
+(8.1 σ), not a nearest-working distance. This does not change the verdict (the actor is far from even that point) and is
+consistent with the arc's `REALISTIC_MOTION_CONTRACT` note that some coin solutions ride the dynamics limit.
+
+- **Exact next action (authorised by the audit; still needs a fresh frozen contract before building):** **canonical
+  structured state → physical intent → deterministic authority-aware decoder → the unchanged 6-D θ option → same budget-8
+  search → frozen K6.** The *intent* should be physical and cradle-agnostic (desired forward impulse, desired peak coin
+  velocity, lateral correction, squeeze/contact retention, brake-entry condition, braking impulse, release condition), and
+  the *decoder* should compute physical θ from the measured B_coin, contact-authority, slew-headroom and geometry — the
+  hypothesis being that the right physical *intent* generalises where the concrete torque-option parameterisation does not.
+  This is a **decoder** axis, not a representation axis. **SAC/TD3 remain BLOCKED.**
 
 ## 11. Files touched (no CORE.YAML items)
 
@@ -164,9 +196,9 @@ problem.
 |---|---|
 | `hymeko_rl/coin_delivery/theta_option/relational_encoder.py` | +249 (new) |
 | `hymeko_rl/tests/test_coin_relational_encoder.py` | +204 (new) |
-| `hymeko_rl/experiments/coin_theta_rl_benchmark.py` | +233 (new `--r2-update0` mode + helpers) |
-| `hymeko_rl/experiments/_r2_panel_viz.py` | +55 (new §9 plot) |
-| `reports/2026-07-27-coin-r2-relational-update0/` | contract_audit / parameter_budget / training / frozen_panel / r2_update_zero .json, r2_checkpoint.pt, r2_khead_K{1,4}.pt, r2_panel.png |
+| `hymeko_rl/experiments/coin_theta_rl_benchmark.py` | +233 `--r2-update0` mode + helpers, +≈150 `--r2-basin-audit` mode |
+| `hymeko_rl/experiments/_r2_panel_viz.py` | +55 (§9 panel plot) + ≈35 (basin plot) |
+| `reports/2026-07-27-coin-r2-relational-update0/` | contract_audit / parameter_budget / training / frozen_panel / r2_update_zero / **basin_audit** .json, r2_checkpoint.pt, r2_khead_K{1,4}.pt, r2_panel.png, **basin_audit.png** |
 
 No §6.5 anti-patterns introduced (the mode is a flag on the one benchmark harness, not a v-file; the deploy path is the
 shared `relational_deploy_one`, not a copy of `_r1_deploy_one`; no globals; string→enum n/a). Plan-of-record: the frozen
