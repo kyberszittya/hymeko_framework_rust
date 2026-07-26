@@ -29,6 +29,7 @@ import numpy as np
 
 REPORT_DIR = "reports/2026-07-27-coin-teacher-to-rl"
 ACCEPTABLE_DIR = "reports/2026-07-27-coin-acceptable-set"
+MULTIMODAL_DIR = "reports/2026-07-27-coin-multimodal"
 
 
 def _peak_rss_gb() -> float:
@@ -610,6 +611,181 @@ def acceptable_set_main(smoke: bool = False) -> dict:
     return out
 
 
+def _build_acceptable_training_data(snaps: dict, dev_seeds: list, dev_canon: dict, dev_tag: dict, n_global: int) -> "tuple[list, dict]":
+    """Per dev cradle (from pre-acquired snapshots): frozen B0 features + the acceptable set (local delivering basin +
+    global enrichment, normalised θ) + the multimodal gate. Deterministic (seed = the cradle seed) — the SAME acceptable
+    sets M0 analysed. Returns the training states + a per-state summary."""
+    from hymeko_rl.coin_delivery.theta_option.acceptable_set import harvest_acceptable_set
+    from hymeko_rl.coin_delivery.theta_option.dataset import flatten_features, structured_features
+    from hymeko_rl.coin_delivery.theta_option.multimodal_proposal import KHeadTrainState, is_multimodal_target_set
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import sample_dev_basin
+    states, summary = [], {}
+    for seed in dev_seeds:
+        tag = dev_tag[seed]
+        snap = snaps[seed]
+        feats = flatten_features(structured_features(snap))
+        canon = np.asarray(dev_canon[seed], np.float64)
+        local = [np.asarray(c["theta"], np.float64) for c in sample_dev_basin(snap, canon, seed=seed) if c["kind"] == "delivering"]
+        res = harvest_acceptable_set(snap, n_samples=n_global, seed=seed, seed_thetas=[canon, *local])
+        tgt = np.asarray([a.theta_norm for a in res["accepted"]], np.float64)
+        mm = is_multimodal_target_set(tgt)
+        states.append(KHeadTrainState(tag=tag, features=np.asarray(feats, np.float32), targets_norm=tgt, multimodal=mm))
+        summary[tag] = {"seed": seed, "n_targets": len(tgt), "multimodal": bool(mm)}
+        print(f"  data {tag} seed={seed}: targets={len(tgt)} multimodal={mm}", flush=True)
+    return states, summary
+
+
+def _multimodal_deploy_panel(prop: Any, panel: list, budget: int, dev_targets: dict, box: Any, seed_base: int = 90000) -> dict:
+    """Deploy a K-head proposal on the frozen panel at ``budget`` (fixed per-state rng). Records per-state K6 + which mode
+    won + search displacement + nearest-dev-acceptable-θ distance + failure mode; returns dev/held-out K6 counts."""
+    from hymeko_rl.coin_delivery.theta_option.cradle_expansion import classify_failure_mode
+    from hymeko_rl.coin_delivery.theta_option.multimodal_proposal import multimodal_search_select
+    all_dev = np.vstack([v for v in dev_targets.values()]) if dev_targets else None
+    per = {}
+    for i, ps in enumerate(panel):
+        dep = multimodal_search_select(ps.snap, prop, ps.features, np.random.default_rng(seed_base + i * 131 + budget), budget=budget)
+        d = dep.as_dict()
+        sel_c = np.asarray(dep.mode_centers[dep.selected_mode], np.float64)
+        disp = float(np.linalg.norm(box.norm(np.asarray(d["theta_exec"], np.float64)) - box.norm(sel_c)))
+        near = None
+        if all_dev is not None:
+            near = round(float(np.min(np.linalg.norm(all_dev - box.norm(sel_c)[None, :], axis=1))), 4)
+        fail = None if d["delivery_success"] else classify_failure_mode(
+            {"dtz_end_mm": d["dtz_end_mm"], "k6_max_dwell": d["k6_max_dwell"], "peak_qdot": d["peak_qdot"], "peak_coin_speed": d["peak_coin_speed"]})
+        per[ps.tag] = {"split": ps.split, **d, "search_displacement_norm": round(disp, 4),
+                       "nearest_dev_acceptable_dist": near, "failure_mode": fail}
+    dev_k6 = sum(1 for r in per.values() if r["split"] == "development" and r["delivery_success"])
+    held_k6 = sum(1 for r in per.values() if r["split"] == "held_out" and r["delivery_success"])
+    return {"budget": budget, "per_state": per, "dev_k6": dev_k6, "held_out_k6": held_k6, "total_k6": dev_k6 + held_k6}
+
+
+def multimodal_main(smoke: bool = False) -> dict:
+    """M1+M2 — the K-head acceptable-set proposal. Build the dev acceptable-set training data, select K by DEV-ONLY
+    leave-one-dev-out CV (physical K6 on the held-out DEV cradle), freeze K, retrain on all dev, then ONE frozen-panel
+    deploy at total budget 8 (fair K×(8/K) split, centre-inclusive per mode). Hard gate MULTIMODAL_UPDATE_ZERO_PASS
+    (4/4 incl. held-out 2/2) is the only thing that authorises SAC/TD3. No held-out fitting; all seeds reported."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
+    from hymeko_rl.coin_delivery.theta_option.multimodal_proposal import fit_khead, multimodal_search_select, save_khead
+    from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot, load_harness
+    t0 = time.time()
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    dp = json.load(open(f"{REPORT_DIR}/cradle_delivery_pass.json"))
+    dev_tag = {14250: "s1", 14750: "s3", 16500: "16500", 17750: "17750", 19500: "19500", 24000: "24000"}
+    dev_seeds = [14250, 14750, 16500, 17750, 19500, 24000]
+    dev_canon = {14250: [e for e in bank["states"] if e["tag"] == "s1"][0]["canonical_theta_vec"],
+                 14750: [e for e in bank["states"] if e["tag"] == "s3"][0]["canonical_theta_vec"],
+                 **{r["seed"]: r["canonical_theta"] for r in dp["deliverable_dev_pool"] if r["seed"] not in (14250, 14750)}}
+    Ks = [1, 2] if smoke else [1, 2, 4]
+    EPOCHS, LR, SEED = (400 if smoke else 1500), 1e-3, 0
+    n_global = 120 if smoke else 600
+    box = ThetaBox()
+    harness = load_harness()
+    os.makedirs(MULTIMODAL_DIR, exist_ok=True)
+    print(f"MULTIMODAL (M1+M2) — dev {dev_seeds} | K∈{Ks} epochs={EPOCHS} | budget 8 (K×8/K) | DEV-only LODO-CV → freeze K", flush=True)
+
+    print("ACQUIRE dev snapshots (once, reused for harvest + LODO deploy)", flush=True)
+    dev_snaps_by_seed = {seed: acquire_snapshot(harness, seed)[0] for seed in dev_seeds}
+    print("BUILD acceptable-set training data (deterministic; = M0 sets)", flush=True)
+    states, data_summary = _build_acceptable_training_data(dev_snaps_by_seed, dev_seeds, dev_canon, dev_tag, n_global)
+    dev_targets = {s.tag: s.targets_norm for s in states}
+    dev_snaps = {dev_tag[seed]: dev_snaps_by_seed[seed] for seed in dev_seeds}
+
+    # ── DEV-only LODO cross-validation: pick K by physical held-out-DEV K6 (no panel/held-out involvement) ──
+    print("DEV LODO-CV (leave-one-dev-out; physical K6 on the held-out DEV cradle)", flush=True)
+    cv = {}
+    for K in Ks:
+        fold_k6, folds = 0, []
+        for held in states:
+            train = [s for s in states if s.tag != held.tag]
+            prop, _info = fit_khead(train, K, epochs=EPOCHS, lr=LR, seed=SEED)
+            dep = multimodal_search_select(dev_snaps[held.tag], prop, held.features, np.random.default_rng(70000 + K), budget=8)
+            ok = bool(dep.provenance.outcome.get("delivery_success"))
+            fold_k6 += int(ok)
+            folds.append({"held_dev": held.tag, "k6": ok, "selected_mode": dep.selected_mode})
+        cv[K] = {"lodo_k6": fold_k6, "n": len(states), "folds": folds}
+        fold_str = " ".join(f"{f['held_dev']}:{int(f['k6'])}" for f in folds)
+        print(f"  K={K}: LODO held-dev K6 = {fold_k6}/{len(states)} | {fold_str}", flush=True)
+    k_star = max(Ks, key=lambda K: (cv[K]["lodo_k6"], -K))       # best LODO K6, tie → smaller K
+    print(f"  SELECTED K* = {k_star} (dev-only LODO)", flush=True)
+
+    # ── freeze K*, retrain on ALL dev, deploy ONCE on the frozen panel ──
+    prop_final, fit_info = fit_khead(states, k_star, epochs=EPOCHS, lr=LR, seed=SEED)
+    save_khead(prop_final, f"{MULTIMODAL_DIR}/khead_K{k_star}.pt")
+    panel = build_panel(harness, bank)
+    dep8 = _multimodal_deploy_panel(prop_final, panel, 8, dev_targets, box)
+    dep_prop = _multimodal_deploy_panel(prop_final, panel, k_star, dev_targets, box)   # proposal-only: 1 candidate/mode (K total)
+    n = len(panel)
+    dev_ok, held_ok = dep8["dev_k6"] == 2, dep8["held_out_k6"] == 2
+    all_ok = dep8["total_k6"] == n
+    motion_ok = all(bool(r["peak_qdot"] <= 3.0 and r["peak_coin_speed"] <= 1.5) for r in dep8["per_state"].values())
+    gate_pass = bool(all_ok and dev_ok and held_ok and motion_ok)
+    if gate_pass:
+        verdict = "MULTIMODAL_UPDATE_ZERO_PASS"
+    elif dep8["held_out_k6"] > 0:
+        verdict = "MULTIMODAL_PROPOSAL_IMPROVES_BASIN_COVERAGE"
+    else:
+        verdict = "MULTIMODALITY_PRESENT_BUT_UPDATE_ZERO_STILL_FAILS"
+    out = {"contract": "COIN_6D_THETA_MULTIMODAL_UPDATE_ZERO_V1", "base_commit": "5fbf3c16", "date": "2026-07-27",
+           "branch": "recovery/coin-acceptable-set-proposal",
+           "invariant": {"model": "K-head acceptable-set (shared B0 trunk)", "loss": "perm-invariant bidirectional Chamfer + gated head-collapse",
+                         "optimiser": "Adam", "epochs": EPOCHS, "lr": LR, "seed": SEED, "search_budget": 8,
+                         "budget_split": "option_rl.allocate_budget (K×8/K), centre-inclusive per mode",
+                         "eval_panel": "frozen 4-state {s1,s3,s4,s7}", "held_out": ["s4", "s7"],
+                         "model_selection": "DEV-only LODO-CV (physical held-dev K6); no held-out fitting"},
+           "data_summary": data_summary, "cv": cv, "k_star": k_star, "fit_info": fit_info,
+           "deploy_budget8": dep8, "deploy_proposal_only": dep_prop,
+           "gate": {"dev_k6": dep8["dev_k6"], "held_out_k6": dep8["held_out_k6"], "total_k6": dep8["total_k6"],
+                    "n_states": n, "motion_ok": motion_ok, "no_held_out_fitting": True, "passed": gate_pass},
+           "verdict": verdict, "authorises_sac_td3": gate_pass,
+           "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    out["figures"] = _render_multimodal_viz(out, panel, prop_final, dev_targets, box)
+    path = f"{MULTIMODAL_DIR}/multimodal_update_zero.json"
+    json.dump(out, open(path, "w"), indent=1, default=float)
+    print(f"\n== MULTIMODAL UPDATE-0 ==\n  K*={k_star} | budget-8: dev {dep8['dev_k6']}/2 held {dep8['held_out_k6']}/2 "
+          f"total {dep8['total_k6']}/4 | proposal-only(K): dev {dep_prop['dev_k6']}/2 held {dep_prop['held_out_k6']}/2\n"
+          f"  per-state (budget 8): " + ", ".join(
+              f"{t}:{int(r['delivery_success'])}(m{r['selected_mode']},dtz{r['dtz_end_mm']})" for t, r in dep8["per_state"].items()) + "\n"
+          f"  motion_ok={motion_ok} | GATE {'PASS' if gate_pass else 'FAIL'} | verdict={verdict} | "
+          f"authorises_sac_td3={gate_pass}\n  artifact: {path} | wall {out['wall_s']}s | RSS {out['peak_rss_gb']} GB\n"
+          f"MULTIMODAL_DONE", flush=True)
+    return out
+
+
+def _render_multimodal_viz(out: dict, panel: list, prop: Any, dev_targets: dict, box: Any) -> dict:
+    """§9 viz: per-state K6 (proposal-only K vs budget-8) grouped bars + a note of the selected mode per state."""
+    figs: dict = {}
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        d8 = out["deploy_budget8"]["per_state"]
+        dp = out["deploy_proposal_only"]["per_state"]
+        tags = list(d8.keys())
+        x = np.arange(len(tags))
+        fig, ax = plt.subplots(figsize=(9, 4.6))
+        ax.bar(x - 0.2, [int(dp[t]["delivery_success"]) for t in tags], 0.4, label=f"proposal-only (K={out['k_star']} centres)", color="tab:gray")
+        ax.bar(x + 0.2, [int(d8[t]["delivery_success"]) for t in tags], 0.4, label="budget-8 (K×8/K)", color="tab:blue")
+        ax.axhline(1, color="tab:green", ls=":", lw=0.8)
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"{t}\n{d8[t]['split'][:3]}\nmode {d8[t]['selected_mode']}" for t in tags])
+        ax.set_ylabel("frozen K6 delivered")
+        ax.set_ylim(0, 1.25)
+        ax.set_title(f"Multimodal update-0 (K*={out['k_star']}) — {out['verdict']} "
+                     f"(total {out['deploy_budget8']['total_k6']}/4, held {out['deploy_budget8']['held_out_k6']}/2)")
+        ax.legend(fontsize=8)
+        fig.tight_layout()
+        p = f"{MULTIMODAL_DIR}/multimodal_update_zero.png"
+        fig.savefig(p, dpi=130)
+        plt.close(fig)
+        figs["png"] = p
+    except Exception as e:
+        figs["plot_error"] = str(e)
+    return figs
+
+
 def coverage_curve_main(smoke: bool = False) -> dict:
     """COVERAGE-ONLY CAUSAL CURVE — the frozen update-0 gate at N = 2, 4, 6 unique K6-deliverable DEVELOPMENT cradles,
     with EVERYTHING except N held identical (model B0, feature set, optimiser, epochs, init seed, search budget 8, search
@@ -784,6 +960,8 @@ if __name__ == "__main__":
         coverage_curve_main(smoke="--smoke" in sys.argv)
     elif "--acceptable-set" in sys.argv:
         acceptable_set_main(smoke="--smoke" in sys.argv)
+    elif "--multimodal" in sys.argv:
+        multimodal_main(smoke="--smoke" in sys.argv)
     elif "--scout-cradles" in sys.argv:
         _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
         scout_cradles_main(n=_n)
