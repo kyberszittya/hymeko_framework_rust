@@ -51,11 +51,19 @@ R1_LAYOUT: tuple[tuple[str, str], ...] = (
     ("vrel_normal", SIDE_ALONG), ("vrel_tangent", SIDE_PERP), ("friction_util", SIDE_ALONG),
     # ── v2 real control state (achievable next slew-admissible step) ──
     ("prev_tau_arm", SIDE_ALONG),
+    # ── v3 SIGNED directional reachable authority (object frame; equivariant) ──
+    # forward push/reverse & brake are along ±e_par ⇒ mirror-INVARIANT; lateral ± swaps as a pair; the B_coin governor-
+    # attenuation is a scalar provenance flag.
+    ("forward_push_reach", SHARED_ALONG), ("forward_reverse_reach", SHARED_ALONG),
+    ("lateral_reach_pair", SIDE_ALONG), ("brake_opposed_reach", SHARED_ALONG),
+    ("bcoin_min_attenuation", SHARED_ALONG),
+    # ── v3 SIGNED contact/internal authority (B_τ null-space): total-normal ± invariant; L/R balance SIGN-FLIPS ──
+    ("normal_force_reach_pair", SHARED_ALONG), ("balance_reach_signed", SHARED_PERP),
 )
 R1_GROUP_ORDER = tuple(name for name, _ in R1_LAYOUT)
 R1_KIND = dict(R1_LAYOUT)
 # groups whose flattened length differs from the kind default (SHARED_* = 1, SIDE_* = 2)
-R1_GROUP_LEN = {"btau_svals": 4, "btau_summary": 2}
+R1_GROUP_LEN = {"btau_svals": 4, "btau_summary": 2, "normal_force_reach_pair": 2}
 # FIXED per-group physical scales (causal — no cross-cradle leak) so no component dominates the distance/model. The same
 # scale applies to both sides of a SIDE group (⇒ commutes with the swap ⇒ mirror-safe). Chosen from the physical ranges.
 R1_NORM_SCALES = {
@@ -64,6 +72,9 @@ R1_NORM_SCALES = {
     "fn": 5.0, "slew_head_up": 1.0, "slew_head_dn": 1.0,
     "btau_svals": 0.40, "btau_summary": 0.50, "btau_side_auth": 0.40,
     "vrel_normal": 0.20, "vrel_tangent": 0.20, "friction_util": 1.0, "prev_tau_arm": 2.0,
+    "forward_push_reach": 0.10, "forward_reverse_reach": 0.10, "lateral_reach_pair": 0.10,
+    "brake_opposed_reach": 0.10, "bcoin_min_attenuation": 1.0, "normal_force_reach_pair": 0.25,
+    "balance_reach_signed": 0.10,
 }
 
 
@@ -105,6 +116,10 @@ def r1_grouped_features(snap: CradleSnapshot) -> dict[str, np.ndarray]:
     dn = np.minimum(snap.prev_tau - snap.lo, slew) / slew          # per-joint down-headroom (4)
     ba = _btau_authority(snap)                                     # B_τ singular / condition / per-side authority
     ck = _contact_kinematics(rl, snap)                            # per-side v_n, v_t, friction utilisation
+    from hymeko_rl.coin_delivery.theta_option.directional_authority import (
+        contact_internal_authority, object_authority)
+    oa = object_authority(snap)                                   # v3 signed object reachable authority (B_coin)
+    ci = contact_internal_authority(snap)                        # v3 signed contact/internal authority (B_τ null-space)
     pt = np.asarray(snap.prev_tau, np.float64)
     # per-ARM slew headroom = mean over that arm's joints (joints 0,1 = left, 2,3 = right); a magnitude ⇒ no sign flip
     return {
@@ -122,6 +137,10 @@ def r1_grouped_features(snap: CradleSnapshot) -> dict[str, np.ndarray]:
         "btau_svals": ba["svals"], "btau_summary": ba["summary"], "btau_side_auth": ba["side_auth"],
         "vrel_normal": ck["vrel_normal"], "vrel_tangent": ck["vrel_tangent"], "friction_util": ck["friction_util"],
         "prev_tau_arm": np.array([float(np.linalg.norm(pt[:2])), float(np.linalg.norm(pt[2:]))]),
+        "forward_push_reach": oa["forward_push_reach"], "forward_reverse_reach": oa["forward_reverse_reach"],
+        "lateral_reach_pair": oa["lateral_reach_pair"], "brake_opposed_reach": oa["brake_opposed_reach"],
+        "bcoin_min_attenuation": oa["bcoin_min_attenuation"],
+        "normal_force_reach_pair": ci["normal_force_reach_pair"], "balance_reach_signed": ci["balance_reach_signed"],
     }
 
 
