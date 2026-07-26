@@ -1,0 +1,4303 @@
+{
+ "contract": "COIN_R4_C2_FROZEN_PANEL",
+ "params": {
+  "passthrough_reach": Infinity,
+  "a_friction": 0.55,
+  "release_zone": 0.02,
+  "coast_safety": 1.0,
+  "overshoot_margin": 0.06,
+  "min_push_steps": 4,
+  "w_probe": 6,
+  "c_corr": 4,
+  "initial_source": "r3_predictor",
+  "push_squeeze_cap": 0.1,
+  "k_squeeze_cut": 0.6,
+  "k_forward_deficit": 2.5,
+  "deficit_deadband": 0.02,
+  "fn_floor": 0.05,
+  "k_squeeze_up": 0.08,
+  "k_lateral": 0.25,
+  "k_spin": 0.02,
+  "lateral_deadband": 0.05
+ },
+ "per_state": {
+  "s1": {
+   "split": "development",
+   "delivery_success": true,
+   "k6_max_dwell": 17,
+   "dtz_start_mm": 76.44,
+   "dtz_end_mm": 15.12,
+   "peak_qdot": 2.09044,
+   "peak_coin_speed": 0.45033,
+   "n_corrections": 14,
+   "release_step": 14,
+   "theta0": [
+    0.06166,
+    0.20658,
+    0.0159,
+    12.53696,
+    9.55464,
+    2.97526
+   ],
+   "theta_exec": [
+    0.05369,
+    0.22754,
+    0.02548,
+    10.63638,
+    10.92026,
+    2.86787
+   ],
+   "search_displacement_norm": 0.24356,
+   "budget_total": 8,
+   "final_intent": [
+    0.16757,
+    0.45305,
+    -0.03073,
+    0.35,
+    0.20895,
+    0.79241,
+    0.15924
+   ],
+   "base_intent": [
+    0.05502,
+    0.45305,
+    0.00476,
+    0.04945,
+    0.20895,
+    0.79241,
+    0.15924
+   ],
+   "open_loop_delivery": true,
+   "open_loop_dtz_end_mm": 17.42,
+   "oracle_delivery": true,
+   "corrections": [
+    {
+     "t": 7,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.00902,
+      0.04945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "boost_forward",
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.06502,
+     "coin_speed": 0.08006,
+     "canon_v_perp": 0.07916,
+     "delta_intent": [
+      0.11256,
+      0.0,
+      -0.01378,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 11,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.00902,
+      0.04945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [],
+     "contact_risk": false,
+     "coast_deficit": -0.01183,
+     "coin_speed": 0.28174,
+     "canon_v_perp": -0.01568,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 15,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.01796,
+      0.04945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": -0.01181,
+     "coin_speed": 0.26202,
+     "canon_v_perp": 0.05283,
+     "delta_intent": [
+      0.0,
+      0.0,
+      -0.00894,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 19,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.04945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": -0.00728,
+     "coin_speed": 0.23662,
+     "canon_v_perp": 0.07438,
+     "delta_intent": [
+      0.0,
+      0.0,
+      -0.01277,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 23,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.04945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [],
+     "contact_risk": false,
+     "coast_deficit": -0.01604,
+     "coin_speed": 0.22638,
+     "canon_v_perp": 0.03736,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 27,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.04945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [],
+     "contact_risk": false,
+     "coast_deficit": -0.0193,
+     "coin_speed": 0.20938,
+     "canon_v_perp": 0.00354,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 31,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.04945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [],
+     "contact_risk": false,
+     "coast_deficit": -0.01804,
+     "coin_speed": 0.18381,
+     "canon_v_perp": -0.01086,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 35,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.04945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [],
+     "contact_risk": false,
+     "coast_deficit": -0.01357,
+     "coin_speed": 0.1465,
+     "canon_v_perp": 0.00288,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 39,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.12945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": -0.01189,
+     "coin_speed": 0.11961,
+     "canon_v_perp": -0.02177,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 43,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.20945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": -0.00434,
+     "coin_speed": 0.07884,
+     "canon_v_perp": 0.03796,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 47,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.28945,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": -0.00015,
+     "coin_speed": 0.01767,
+     "canon_v_perp": 0.01211,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 51,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.35,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": -0.0,
+     "coin_speed": 0.00037,
+     "canon_v_perp": 0.00025,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.06055,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 55,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.35,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": -0.0,
+     "coin_speed": 1e-05,
+     "canon_v_perp": 1e-05,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 59,
+     "intent": [
+      0.16757,
+      0.45305,
+      -0.03073,
+      0.35,
+      0.20895,
+      0.79241,
+      0.15924
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": -0.0,
+     "coin_speed": 0.0,
+     "canon_v_perp": 0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   ],
+   "responses": [
+    {
+     "t": 7,
+     "dtz": 0.08502,
+     "d_safe": 0.06502,
+     "v_parallel": -0.01192,
+     "v_perpendicular": 0.07916,
+     "coin_speed": 0.08006,
+     "coin_spin": -0.30066,
+     "probe_forward_disp": -0.00916,
+     "probe_perp_disp": 0.00941,
+     "probe_accel_mean": 1.32324,
+     "contact_v_n": [
+      -0.01051,
+      -0.01983
+     ],
+     "contact_v_t": [
+      0.07861,
+      0.04127
+     ],
+     "friction_util": [
+      0.87226,
+      0.66452
+     ],
+     "fn": [
+      5.91531,
+      3.16716
+     ],
+     "both_contact": true,
+     "straddle": -0.9944,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00016,
+     "a_brake": 7.99003,
+     "d_stop": 1e-05,
+     "w_brake_available": 0.02611,
+     "over_speed": false,
+     "phase": "PUSH",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 11,
+     "dtz": 0.0801,
+     "d_safe": 0.0601,
+     "v_parallel": 0.2813,
+     "v_perpendicular": -0.01568,
+     "coin_speed": 0.28174,
+     "coin_spin": -0.23418,
+     "probe_forward_disp": -0.0044,
+     "probe_perp_disp": 0.01063,
+     "probe_accel_mean": 2.8108,
+     "contact_v_n": [
+      -0.06919,
+      -0.02916
+     ],
+     "contact_v_t": [
+      0.03453,
+      0.02229
+     ],
+     "friction_util": [
+      0.32977,
+      0.42494
+     ],
+     "fn": [
+      4.41258,
+      2.63095
+     ],
+     "both_contact": true,
+     "straddle": -0.98196,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00199,
+     "a_brake": 7.99003,
+     "d_stop": 0.00495,
+     "w_brake_available": 0.02414,
+     "over_speed": false,
+     "phase": "PUSH",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 15,
+     "dtz": 0.06807,
+     "d_safe": 0.04807,
+     "v_parallel": 0.25664,
+     "v_perpendicular": 0.05283,
+     "coin_speed": 0.26202,
+     "coin_spin": -0.21323,
+     "probe_forward_disp": 0.00748,
+     "probe_perp_disp": 0.01165,
+     "probe_accel_mean": 1.86685,
+     "contact_v_n": [
+      -0.09472,
+      -0.04449
+     ],
+     "contact_v_t": [
+      -0.01964,
+      0.03307
+     ],
+     "friction_util": [
+      0.17023,
+      0.42096
+     ],
+     "fn": [
+      2.62676,
+      2.0696
+     ],
+     "both_contact": true,
+     "straddle": -0.993,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00173,
+     "a_brake": 7.99003,
+     "d_stop": 0.00412,
+     "w_brake_available": 0.0193,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 19,
+     "dtz": 0.05859,
+     "d_safe": 0.03859,
+     "v_parallel": 0.22463,
+     "v_perpendicular": 0.07438,
+     "coin_speed": 0.23662,
+     "coin_spin": -0.29138,
+     "probe_forward_disp": 0.01639,
+     "probe_perp_disp": 0.01488,
+     "probe_accel_mean": 1.31091,
+     "contact_v_n": [
+      -0.11285,
+      -0.04009
+     ],
+     "contact_v_t": [
+      -0.0708,
+      0.05297
+     ],
+     "friction_util": [
+      0.3834,
+      0.56312
+     ],
+     "fn": [
+      1.65057,
+      1.49098
+     ],
+     "both_contact": true,
+     "straddle": -0.99805,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00141,
+     "a_brake": 7.99003,
+     "d_stop": 0.00316,
+     "w_brake_available": 0.0155,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 23,
+     "dtz": 0.04929,
+     "d_safe": 0.02929,
+     "v_parallel": 0.22328,
+     "v_perpendicular": 0.03736,
+     "coin_speed": 0.22638,
+     "coin_spin": -0.26934,
+     "probe_forward_disp": 0.02508,
+     "probe_perp_disp": 0.0177,
+     "probe_accel_mean": 1.02601,
+     "contact_v_n": [
+      -0.05212,
+      -0.04484
+     ],
+     "contact_v_t": [
+      -0.03086,
+      0.02505
+     ],
+     "friction_util": [
+      0.36744,
+      0.35335
+     ],
+     "fn": [
+      1.40497,
+      1.11364
+     ],
+     "both_contact": true,
+     "straddle": -0.98357,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00129,
+     "a_brake": 7.99003,
+     "d_stop": 0.00312,
+     "w_brake_available": 0.01176,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 27,
+     "dtz": 0.04054,
+     "d_safe": 0.02054,
+     "v_parallel": 0.20935,
+     "v_perpendicular": 0.00354,
+     "coin_speed": 0.20938,
+     "coin_spin": -0.19846,
+     "probe_forward_disp": 0.03351,
+     "probe_perp_disp": 0.01897,
+     "probe_accel_mean": 0.80275,
+     "contact_v_n": [
+      -0.02373,
+      -0.028
+     ],
+     "contact_v_t": [
+      -0.02846,
+      0.0159
+     ],
+     "friction_util": [
+      0.53507,
+      0.3541
+     ],
+     "fn": [
+      1.35505,
+      0.97669
+     ],
+     "both_contact": true,
+     "straddle": -0.9653,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0011,
+     "a_brake": 7.99003,
+     "d_stop": 0.00274,
+     "w_brake_available": 0.00825,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 31,
+     "dtz": 0.03257,
+     "d_safe": 0.01257,
+     "v_parallel": 0.18349,
+     "v_perpendicular": -0.01086,
+     "coin_speed": 0.18381,
+     "coin_spin": -0.13482,
+     "probe_forward_disp": 0.04157,
+     "probe_perp_disp": 0.01862,
+     "probe_accel_mean": 0.6105,
+     "contact_v_n": [
+      -0.02216,
+      -0.02616
+     ],
+     "contact_v_t": [
+      -0.03141,
+      0.00772
+     ],
+     "friction_util": [
+      0.57562,
+      0.22139
+     ],
+     "fn": [
+      1.12317,
+      0.69712
+     ],
+     "both_contact": true,
+     "straddle": -0.94122,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00085,
+     "a_brake": 7.99003,
+     "d_stop": 0.00211,
+     "w_brake_available": 0.00505,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 35,
+     "dtz": 0.02594,
+     "d_safe": 0.00594,
+     "v_parallel": 0.14648,
+     "v_perpendicular": 0.00288,
+     "coin_speed": 0.1465,
+     "coin_spin": -0.13747,
+     "probe_forward_disp": 0.04822,
+     "probe_perp_disp": 0.01855,
+     "probe_accel_mean": 0.42895,
+     "contact_v_n": [
+      -0.03865,
+      -0.03798
+     ],
+     "contact_v_t": [
+      -0.02222,
+      0.00214
+     ],
+     "friction_util": [
+      0.35909,
+      0.05202
+     ],
+     "fn": [
+      0.58974,
+      0.21092
+     ],
+     "both_contact": true,
+     "straddle": -0.91763,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00054,
+     "a_brake": 7.99003,
+     "d_stop": 0.00134,
+     "w_brake_available": 0.00239,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 39,
+     "dtz": 0.02068,
+     "d_safe": 0.00068,
+     "v_parallel": 0.11761,
+     "v_perpendicular": -0.02177,
+     "coin_speed": 0.11961,
+     "coin_spin": -0.08163,
+     "probe_forward_disp": 0.05336,
+     "probe_perp_disp": 0.019,
+     "probe_accel_mean": 0.31303,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.38539,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00036,
+     "a_brake": 7.99003,
+     "d_stop": 0.00087,
+     "w_brake_available": 0.00027,
+     "over_speed": true,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 43,
+     "dtz": 0.01678,
+     "d_safe": 0.0,
+     "v_parallel": 0.0691,
+     "v_perpendicular": 0.03796,
+     "coin_speed": 0.07884,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.05678,
+     "probe_perp_disp": 0.02081,
+     "probe_accel_mean": 0.18614,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00016,
+     "a_brake": 7.99003,
+     "d_stop": 0.0003,
+     "w_brake_available": 0.0,
+     "over_speed": true,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 47,
+     "dtz": 0.01525,
+     "d_safe": 0.0,
+     "v_parallel": 0.01287,
+     "v_perpendicular": 0.01211,
+     "coin_speed": 0.01767,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.0566,
+     "probe_perp_disp": 0.0261,
+     "probe_accel_mean": 0.03697,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 1e-05,
+     "a_brake": 7.99003,
+     "d_stop": 1e-05,
+     "w_brake_available": 0.0,
+     "over_speed": true,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 51,
+     "dtz": 0.01512,
+     "d_safe": 0.0,
+     "v_parallel": 0.00027,
+     "v_perpendicular": 0.00025,
+     "coin_speed": 0.00037,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.05651,
+     "probe_perp_disp": 0.0267,
+     "probe_accel_mean": -0.00059,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.99003,
+     "d_stop": 0.0,
+     "w_brake_available": 0.0,
+     "over_speed": true,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 55,
+     "dtz": 0.01512,
+     "d_safe": 0.0,
+     "v_parallel": 1e-05,
+     "v_perpendicular": 1e-05,
+     "coin_speed": 1e-05,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.05651,
+     "probe_perp_disp": 0.02671,
+     "probe_accel_mean": -0.00121,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.99003,
+     "d_stop": 0.0,
+     "w_brake_available": 0.0,
+     "over_speed": true,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 59,
+     "dtz": 0.01512,
+     "d_safe": 0.0,
+     "v_parallel": 0.0,
+     "v_perpendicular": 0.0,
+     "coin_speed": 0.0,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.05651,
+     "probe_perp_disp": 0.02671,
+     "probe_accel_mean": -0.00114,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.0799,
+     "brake_opposed_reach": 0.0799,
+     "lateral_reach": 0.08982,
+     "normal_force_reach": 0.24057,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.99003,
+     "d_stop": 0.0,
+     "w_brake_available": 0.0,
+     "over_speed": true,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    }
+   ]
+  },
+  "s3": {
+   "split": "development",
+   "delivery_success": false,
+   "k6_max_dwell": 0,
+   "dtz_start_mm": 99.89,
+   "dtz_end_mm": 46.57,
+   "peak_qdot": 2.00334,
+   "peak_coin_speed": 0.33963,
+   "n_corrections": 14,
+   "release_step": 22,
+   "theta0": [
+    0.19087,
+    0.08528,
+    -0.02975,
+    8.51774,
+    11.37102,
+    2.30421
+   ],
+   "theta_exec": [
+    0.17655,
+    0.07359,
+    -0.04717,
+    8.86382,
+    10.17462,
+    2.95075
+   ],
+   "search_displacement_norm": 0.39707,
+   "budget_total": 8,
+   "final_intent": [
+    0.17604,
+    0.45666,
+    -0.04605,
+    0.35,
+    0.14196,
+    0.5773,
+    0.18952
+   ],
+   "base_intent": [
+    0.02137,
+    0.45666,
+    0.00882,
+    0.12725,
+    0.14196,
+    0.5773,
+    0.18952
+   ],
+   "open_loop_delivery": false,
+   "open_loop_dtz_end_mm": 37.06,
+   "oracle_delivery": true,
+   "corrections": [
+    {
+     "t": 7,
+     "intent": [
+      0.14555,
+      0.45666,
+      -0.03258,
+      0.1109,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "cut_squeeze",
+      "boost_forward",
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.06967,
+     "coin_speed": 0.16055,
+     "canon_v_perp": 0.13814,
+     "delta_intent": [
+      0.12418,
+      0.0,
+      -0.0414,
+      -0.01635,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 11,
+     "intent": [
+      0.14555,
+      0.45666,
+      -0.06,
+      0.10436,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "cut_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.01827,
+     "coin_speed": 0.31696,
+     "canon_v_perp": 0.21336,
+     "delta_intent": [
+      0.0,
+      0.0,
+      -0.02742,
+      -0.00654,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 15,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.10174,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "cut_squeeze",
+      "boost_forward",
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.0322,
+     "coin_speed": 0.17719,
+     "canon_v_perp": -0.05626,
+     "delta_intent": [
+      0.0305,
+      0.0,
+      0.01395,
+      -0.00262,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 19,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.18174,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.0191,
+     "coin_speed": 0.18662,
+     "canon_v_perp": -0.0225,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 23,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.26174,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.00081,
+     "coin_speed": 0.21525,
+     "canon_v_perp": -0.03858,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 27,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.34174,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.01343,
+     "coin_speed": 0.15198,
+     "canon_v_perp": -0.01223,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 31,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.35,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02193,
+     "coin_speed": 0.09116,
+     "canon_v_perp": -0.00768,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.00826,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 35,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.35,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.0261,
+     "coin_speed": 0.03131,
+     "canon_v_perp": -0.00277,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 39,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.35,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02658,
+     "coin_speed": 0.0009,
+     "canon_v_perp": -8e-05,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 43,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.35,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02657,
+     "coin_speed": 2e-05,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 47,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.35,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02657,
+     "coin_speed": 0.0,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 51,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.35,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02657,
+     "coin_speed": 0.0,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 55,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.35,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02657,
+     "coin_speed": 0.0,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 59,
+     "intent": [
+      0.17604,
+      0.45666,
+      -0.04605,
+      0.35,
+      0.14196,
+      0.5773,
+      0.18952
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02657,
+     "coin_speed": 0.0,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   ],
+   "responses": [
+    {
+     "t": 7,
+     "dtz": 0.09576,
+     "d_safe": 0.07576,
+     "v_parallel": 0.08182,
+     "v_perpendicular": -0.13814,
+     "coin_speed": 0.16055,
+     "coin_spin": -0.34304,
+     "probe_forward_disp": 0.00396,
+     "probe_perp_disp": -0.00594,
+     "probe_accel_mean": 2.67545,
+     "contact_v_n": [
+      0.1109,
+      0.13934
+     ],
+     "contact_v_t": [
+      0.1767,
+      0.08431
+     ],
+     "friction_util": [
+      0.61227,
+      0.37529
+     ],
+     "fn": [
+      5.10745,
+      5.34083
+     ],
+     "both_contact": true,
+     "straddle": -0.96898,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00065,
+     "a_brake": 7.51626,
+     "d_stop": 0.00045,
+     "w_brake_available": 0.02862,
+     "over_speed": false,
+     "phase": "PUSH",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 11,
+     "dtz": 0.08822,
+     "d_safe": 0.06822,
+     "v_parallel": 0.2344,
+     "v_perpendicular": -0.21336,
+     "coin_speed": 0.31696,
+     "coin_spin": -0.30074,
+     "probe_forward_disp": 0.01108,
+     "probe_perp_disp": -0.01084,
+     "probe_accel_mean": 3.16936,
+     "contact_v_n": [
+      0.01945,
+      0.05464
+     ],
+     "contact_v_t": [
+      0.35307,
+      -0.05736
+     ],
+     "friction_util": [
+      0.94525,
+      0.50759
+     ],
+     "fn": [
+      5.89709,
+      6.22973
+     ],
+     "both_contact": true,
+     "straddle": -0.72073,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00252,
+     "a_brake": 7.51626,
+     "d_stop": 0.00365,
+     "w_brake_available": 0.02577,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 15,
+     "dtz": 0.07786,
+     "d_safe": 0.05786,
+     "v_parallel": 0.16802,
+     "v_perpendicular": 0.05626,
+     "coin_speed": 0.17719,
+     "coin_spin": -0.00597,
+     "probe_forward_disp": 0.02112,
+     "probe_perp_disp": -0.01346,
+     "probe_accel_mean": 1.26548,
+     "contact_v_n": [
+      -0.24037,
+      -0.21963
+     ],
+     "contact_v_t": [
+      0.024,
+      -0.24567
+     ],
+     "friction_util": [
+      0.09044,
+      0.52685
+     ],
+     "fn": [
+      0.88537,
+      2.38992
+     ],
+     "both_contact": true,
+     "straddle": 0.1472,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00079,
+     "a_brake": 7.51626,
+     "d_stop": 0.00188,
+     "w_brake_available": 0.02186,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 19,
+     "dtz": 0.0703,
+     "d_safe": 0.0503,
+     "v_parallel": 0.18526,
+     "v_perpendicular": 0.0225,
+     "coin_speed": 0.18662,
+     "coin_spin": 0.01489,
+     "probe_forward_disp": 0.02925,
+     "probe_perp_disp": -0.00822,
+     "probe_accel_mean": 1.03664,
+     "contact_v_n": [
+      -0.2529,
+      -0.31513
+     ],
+     "contact_v_t": [
+      0.05117,
+      -0.19057
+     ],
+     "friction_util": [
+      0.16773,
+      0.37609
+     ],
+     "fn": [
+      0.0,
+      0.57778
+     ],
+     "both_contact": true,
+     "straddle": 0.56637,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00088,
+     "a_brake": 7.51626,
+     "d_stop": 0.00228,
+     "w_brake_available": 0.01901,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 23,
+     "dtz": 0.06158,
+     "d_safe": 0.04158,
+     "v_parallel": 0.21177,
+     "v_perpendicular": 0.03858,
+     "coin_speed": 0.21525,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.03818,
+     "probe_perp_disp": -0.00512,
+     "probe_accel_mean": 0.97831,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00116,
+     "a_brake": 7.51626,
+     "d_stop": 0.00298,
+     "w_brake_available": 0.01571,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 27,
+     "dtz": 0.05429,
+     "d_safe": 0.03429,
+     "v_parallel": 0.15149,
+     "v_perpendicular": 0.01223,
+     "coin_speed": 0.15198,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.04553,
+     "probe_perp_disp": -0.00374,
+     "probe_accel_mean": 0.58444,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00058,
+     "a_brake": 7.51626,
+     "d_stop": 0.00153,
+     "w_brake_available": 0.01296,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 31,
+     "dtz": 0.04944,
+     "d_safe": 0.02944,
+     "v_parallel": 0.09084,
+     "v_perpendicular": 0.00768,
+     "coin_speed": 0.09116,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.05042,
+     "probe_perp_disp": -0.00298,
+     "probe_accel_mean": 0.3038,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00021,
+     "a_brake": 7.51626,
+     "d_stop": 0.00055,
+     "w_brake_available": 0.01112,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 35,
+     "dtz": 0.04698,
+     "d_safe": 0.02698,
+     "v_parallel": 0.03119,
+     "v_perpendicular": 0.00277,
+     "coin_speed": 0.03131,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.05288,
+     "probe_perp_disp": -0.00253,
+     "probe_accel_mean": 0.09201,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 2e-05,
+     "a_brake": 7.51626,
+     "d_stop": 6e-05,
+     "w_brake_available": 0.01019,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 39,
+     "dtz": 0.04658,
+     "d_safe": 0.02658,
+     "v_parallel": 0.0009,
+     "v_perpendicular": 8e-05,
+     "coin_speed": 0.0009,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.05329,
+     "probe_perp_disp": -0.00246,
+     "probe_accel_mean": 0.0023,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.51626,
+     "d_stop": 0.0,
+     "w_brake_available": 0.01004,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 43,
+     "dtz": 0.04657,
+     "d_safe": 0.02657,
+     "v_parallel": 2e-05,
+     "v_perpendicular": 0.0,
+     "coin_speed": 2e-05,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.0533,
+     "probe_perp_disp": -0.00246,
+     "probe_accel_mean": -2e-05,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.51626,
+     "d_stop": 0.0,
+     "w_brake_available": 0.01004,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 47,
+     "dtz": 0.04657,
+     "d_safe": 0.02657,
+     "v_parallel": 0.0,
+     "v_perpendicular": 0.0,
+     "coin_speed": 0.0,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.0533,
+     "probe_perp_disp": -0.00246,
+     "probe_accel_mean": -5e-05,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.51626,
+     "d_stop": 0.0,
+     "w_brake_available": 0.01004,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 51,
+     "dtz": 0.04657,
+     "d_safe": 0.02657,
+     "v_parallel": 0.0,
+     "v_perpendicular": 0.0,
+     "coin_speed": 0.0,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.0533,
+     "probe_perp_disp": -0.00246,
+     "probe_accel_mean": -5e-05,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.51626,
+     "d_stop": 0.0,
+     "w_brake_available": 0.01004,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 55,
+     "dtz": 0.04657,
+     "d_safe": 0.02657,
+     "v_parallel": 0.0,
+     "v_perpendicular": 0.0,
+     "coin_speed": 0.0,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.0533,
+     "probe_perp_disp": -0.00246,
+     "probe_accel_mean": -5e-05,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.51626,
+     "d_stop": 0.0,
+     "w_brake_available": 0.01004,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 59,
+     "dtz": 0.04657,
+     "d_safe": 0.02657,
+     "v_parallel": 0.0,
+     "v_perpendicular": 0.0,
+     "coin_speed": 0.0,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.0533,
+     "probe_perp_disp": -0.00246,
+     "probe_accel_mean": -4e-05,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07516,
+     "brake_opposed_reach": 0.07516,
+     "lateral_reach": 0.08891,
+     "normal_force_reach": 0.19999,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.51626,
+     "d_stop": 0.0,
+     "w_brake_available": 0.01004,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    }
+   ]
+  },
+  "s4": {
+   "split": "held_out",
+   "delivery_success": false,
+   "k6_max_dwell": 0,
+   "dtz_start_mm": 96.06,
+   "dtz_end_mm": 46.98,
+   "peak_qdot": 1.18749,
+   "peak_coin_speed": 0.32333,
+   "n_corrections": 14,
+   "release_step": 23,
+   "theta0": [
+    0.22746,
+    0.11044,
+    0.00171,
+    9.73157,
+    12.74228,
+    2.47105
+   ],
+   "theta_exec": [
+    0.24806,
+    0.13745,
+    0.02179,
+    8.45438,
+    8.71156,
+    2.23559
+   ],
+   "search_displacement_norm": 0.3953,
+   "budget_total": 8,
+   "final_intent": [
+    0.19852,
+    0.47048,
+    0.06,
+    0.35,
+    0.16219,
+    0.58929,
+    0.21237
+   ],
+   "base_intent": [
+    0.02634,
+    0.47048,
+    0.00074,
+    0.12849,
+    0.16219,
+    0.58929,
+    0.21237
+   ],
+   "open_loop_delivery": false,
+   "open_loop_dtz_end_mm": 57.2,
+   "oracle_delivery": true,
+   "corrections": [
+    {
+     "t": 7,
+     "intent": [
+      0.12626,
+      0.47048,
+      0.03052,
+      0.1114,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "cut_squeeze",
+      "boost_forward",
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.05997,
+     "coin_speed": 0.13861,
+     "canon_v_perp": -0.08199,
+     "delta_intent": [
+      0.09993,
+      0.0,
+      0.02978,
+      -0.01709,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 11,
+     "intent": [
+      0.17823,
+      0.47048,
+      0.06,
+      0.10456,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "cut_squeeze",
+      "boost_forward",
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.04079,
+     "coin_speed": 0.21915,
+     "canon_v_perp": -0.14565,
+     "delta_intent": [
+      0.05196,
+      0.0,
+      0.02948,
+      -0.00684,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 15,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.10182,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "cut_squeeze",
+      "boost_forward",
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.02812,
+     "coin_speed": 0.29305,
+     "canon_v_perp": -0.2265,
+     "delta_intent": [
+      0.02029,
+      0.0,
+      0.0,
+      -0.00274,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 19,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.18182,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.04538,
+     "coin_speed": 0.15283,
+     "canon_v_perp": -0.12159,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 23,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.26182,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": -0.00074,
+     "coin_speed": 0.23381,
+     "canon_v_perp": -0.04137,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 27,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.34182,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.00649,
+     "coin_speed": 0.19658,
+     "canon_v_perp": -0.05958,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 31,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.35,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.01923,
+     "coin_speed": 0.13394,
+     "canon_v_perp": -0.0594,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.00818,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 35,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.35,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02487,
+     "coin_speed": 0.0734,
+     "canon_v_perp": -0.03526,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 39,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.35,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02697,
+     "coin_speed": 0.01389,
+     "canon_v_perp": -0.00689,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 43,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.35,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02698,
+     "coin_speed": 0.00029,
+     "canon_v_perp": -0.00014,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 47,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.35,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02698,
+     "coin_speed": 1e-05,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 51,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.35,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02698,
+     "coin_speed": 0.0,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 55,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.35,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02698,
+     "coin_speed": 0.0,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 59,
+     "intent": [
+      0.19852,
+      0.47048,
+      0.06,
+      0.35,
+      0.16219,
+      0.58929,
+      0.21237
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.02698,
+     "coin_speed": 0.0,
+     "canon_v_perp": -0.0,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   ],
+   "responses": [
+    {
+     "t": 7,
+     "dtz": 0.09133,
+     "d_safe": 0.07133,
+     "v_parallel": 0.11177,
+     "v_perpendicular": -0.08199,
+     "coin_speed": 0.13861,
+     "coin_spin": -0.4641,
+     "probe_forward_disp": 0.0046,
+     "probe_perp_disp": -0.00503,
+     "probe_accel_mean": 2.30425,
+     "contact_v_n": [
+      0.07571,
+      0.20324
+     ],
+     "contact_v_t": [
+      -0.07344,
+      0.113
+     ],
+     "friction_util": [
+      0.48909,
+      0.35619
+     ],
+     "fn": [
+      2.8464,
+      5.47239
+     ],
+     "both_contact": true,
+     "straddle": -0.85737,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00048,
+     "a_brake": 7.15439,
+     "d_stop": 0.00087,
+     "w_brake_available": 0.02565,
+     "over_speed": false,
+     "phase": "PUSH",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 11,
+     "dtz": 0.08516,
+     "d_safe": 0.06516,
+     "v_parallel": 0.16375,
+     "v_perpendicular": -0.14565,
+     "coin_speed": 0.21915,
+     "coin_spin": -0.48453,
+     "probe_forward_disp": 0.01042,
+     "probe_perp_disp": -0.00956,
+     "probe_accel_mean": 2.18795,
+     "contact_v_n": [
+      -0.01809,
+      0.20696
+     ],
+     "contact_v_t": [
+      -0.07726,
+      0.15612
+     ],
+     "friction_util": [
+      0.80183,
+      0.42881
+     ],
+     "fn": [
+      2.09077,
+      7.80187
+     ],
+     "both_contact": true,
+     "straddle": -0.63265,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00121,
+     "a_brake": 7.15439,
+     "d_stop": 0.00187,
+     "w_brake_available": 0.02343,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 15,
+     "dtz": 0.07955,
+     "d_safe": 0.05955,
+     "v_parallel": 0.18595,
+     "v_perpendicular": -0.2265,
+     "coin_speed": 0.29305,
+     "coin_spin": -0.22293,
+     "probe_forward_disp": 0.01427,
+     "probe_perp_disp": -0.02063,
+     "probe_accel_mean": 2.0907,
+     "contact_v_n": [
+      -0.12396,
+      -0.13751
+     ],
+     "contact_v_t": [
+      -0.00854,
+      0.36194
+     ],
+     "friction_util": [
+      0.06394,
+      0.72323
+     ],
+     "fn": [
+      0.5877,
+      6.31339
+     ],
+     "both_contact": true,
+     "straddle": 0.14342,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.75,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00216,
+     "a_brake": 7.15439,
+     "d_stop": 0.00242,
+     "w_brake_available": 0.02142,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 19,
+     "dtz": 0.07318,
+     "d_safe": 0.05318,
+     "v_parallel": 0.09259,
+     "v_perpendicular": -0.12159,
+     "coin_speed": 0.15283,
+     "coin_spin": 0.02695,
+     "probe_forward_disp": 0.01895,
+     "probe_perp_disp": -0.02721,
+     "probe_accel_mean": 0.84709,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      1.83405
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.75,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00059,
+     "a_brake": 7.15439,
+     "d_stop": 0.0006,
+     "w_brake_available": 0.01912,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 23,
+     "dtz": 0.06741,
+     "d_safe": 0.04741,
+     "v_parallel": 0.23013,
+     "v_perpendicular": -0.04137,
+     "coin_speed": 0.23381,
+     "coin_spin": 0.01182,
+     "probe_forward_disp": 0.02416,
+     "probe_perp_disp": -0.02905,
+     "probe_accel_mean": 1.06117,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.26613
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.77872,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00137,
+     "a_brake": 7.15439,
+     "d_stop": 0.0037,
+     "w_brake_available": 0.01705,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 27,
+     "dtz": 0.0584,
+     "d_safe": 0.0384,
+     "v_parallel": 0.18734,
+     "v_perpendicular": -0.05958,
+     "coin_speed": 0.19658,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.03241,
+     "probe_perp_disp": -0.03135,
+     "probe_accel_mean": 0.75472,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.87754,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00097,
+     "a_brake": 7.15439,
+     "d_stop": 0.00245,
+     "w_brake_available": 0.01381,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 31,
+     "dtz": 0.05233,
+     "d_safe": 0.03233,
+     "v_parallel": 0.12004,
+     "v_perpendicular": -0.0594,
+     "coin_speed": 0.13394,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.03691,
+     "probe_perp_disp": -0.03557,
+     "probe_accel_mean": 0.44526,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.97282,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00045,
+     "a_brake": 7.15439,
+     "d_stop": 0.00101,
+     "w_brake_available": 0.01162,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 35,
+     "dtz": 0.04864,
+     "d_safe": 0.02864,
+     "v_parallel": 0.06438,
+     "v_perpendicular": -0.03526,
+     "coin_speed": 0.0734,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.03917,
+     "probe_perp_disp": -0.03895,
+     "probe_accel_mean": 0.21485,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00014,
+     "a_brake": 7.15439,
+     "d_stop": 0.00029,
+     "w_brake_available": 0.0103,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 39,
+     "dtz": 0.04711,
+     "d_safe": 0.02711,
+     "v_parallel": 0.01206,
+     "v_perpendicular": -0.00689,
+     "coin_speed": 0.01389,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.04,
+     "probe_perp_disp": -0.04051,
+     "probe_accel_mean": 0.03562,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 0.77871,
+     "e_kin": 0.0,
+     "a_brake": 7.15439,
+     "d_stop": 1e-05,
+     "w_brake_available": 0.00975,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 43,
+     "dtz": 0.04698,
+     "d_safe": 0.02698,
+     "v_parallel": 0.00025,
+     "v_perpendicular": -0.00014,
+     "coin_speed": 0.00029,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.04006,
+     "probe_perp_disp": -0.04065,
+     "probe_accel_mean": -0.00017,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 0.75,
+     "e_kin": 0.0,
+     "a_brake": 7.15439,
+     "d_stop": 0.0,
+     "w_brake_available": 0.0097,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 47,
+     "dtz": 0.04698,
+     "d_safe": 0.02698,
+     "v_parallel": 1e-05,
+     "v_perpendicular": -0.0,
+     "coin_speed": 1e-05,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.04006,
+     "probe_perp_disp": -0.04065,
+     "probe_accel_mean": -0.00076,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 0.75,
+     "e_kin": 0.0,
+     "a_brake": 7.15439,
+     "d_stop": 0.0,
+     "w_brake_available": 0.0097,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 51,
+     "dtz": 0.04698,
+     "d_safe": 0.02698,
+     "v_parallel": 0.0,
+     "v_perpendicular": -0.0,
+     "coin_speed": 0.0,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.04006,
+     "probe_perp_disp": -0.04065,
+     "probe_accel_mean": -0.00071,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 0.75,
+     "e_kin": 0.0,
+     "a_brake": 7.15439,
+     "d_stop": 0.0,
+     "w_brake_available": 0.0097,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 55,
+     "dtz": 0.04698,
+     "d_safe": 0.02698,
+     "v_parallel": 0.0,
+     "v_perpendicular": -0.0,
+     "coin_speed": 0.0,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.04006,
+     "probe_perp_disp": -0.04065,
+     "probe_accel_mean": -0.00066,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 0.60615,
+     "e_kin": 0.0,
+     "a_brake": 7.15439,
+     "d_stop": 0.0,
+     "w_brake_available": 0.0097,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 59,
+     "dtz": 0.04698,
+     "d_safe": 0.02698,
+     "v_parallel": 0.0,
+     "v_perpendicular": -0.0,
+     "coin_speed": 0.0,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.04006,
+     "probe_perp_disp": -0.04065,
+     "probe_accel_mean": -0.00062,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07154,
+     "brake_opposed_reach": 0.07154,
+     "lateral_reach": 0.13002,
+     "normal_force_reach": 0.16947,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 0.5,
+     "e_kin": 0.0,
+     "a_brake": 7.15439,
+     "d_stop": 0.0,
+     "w_brake_available": 0.0097,
+     "over_speed": false,
+     "phase": "RELEASE",
+     "elapsed_horizon": 60
+    }
+   ]
+  },
+  "s7": {
+   "split": "held_out",
+   "delivery_success": false,
+   "k6_max_dwell": 0,
+   "dtz_start_mm": 137.73,
+   "dtz_end_mm": 85.18,
+   "peak_qdot": 1.37151,
+   "peak_coin_speed": 0.41221,
+   "n_corrections": 14,
+   "release_step": 60,
+   "theta0": [
+    0.05948,
+    0.1421,
+    0.0684,
+    7.61291,
+    18.28246,
+    2.25009
+   ],
+   "theta_exec": [
+    0.06235,
+    0.1211,
+    0.07375,
+    8.917,
+    13.7577,
+    2.27168
+   ],
+   "search_displacement_norm": 0.27338,
+   "budget_total": 8,
+   "final_intent": [
+    0.2,
+    0.39232,
+    -0.06,
+    0.35,
+    0.12688,
+    0.54105,
+    0.30471
+   ],
+   "base_intent": [
+    0.03417,
+    0.39232,
+    -0.01623,
+    0.02953,
+    0.12688,
+    0.54105,
+    0.30471
+   ],
+   "open_loop_delivery": false,
+   "open_loop_dtz_end_mm": 101.88,
+   "oracle_delivery": true,
+   "corrections": [
+    {
+     "t": 7,
+     "intent": [
+      0.03417,
+      0.39232,
+      0.03839,
+      0.02953,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": -0.00416,
+     "coin_speed": 0.39577,
+     "canon_v_perp": -0.20951,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.05462,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 11,
+     "intent": [
+      0.2,
+      0.39232,
+      0.02262,
+      0.02953,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "boost_forward",
+      "cross_track"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.08951,
+     "coin_speed": 0.05836,
+     "canon_v_perp": 0.05373,
+     "delta_intent": [
+      0.16583,
+      0.0,
+      -0.01577,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 15,
+     "intent": [
+      0.2,
+      0.39232,
+      0.02262,
+      0.02953,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "boost_forward"
+     ],
+     "contact_risk": false,
+     "coast_deficit": 0.08481,
+     "coin_speed": 0.06544,
+     "canon_v_perp": 0.00231,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 19,
+     "intent": [
+      0.2,
+      0.39232,
+      0.02262,
+      0.10953,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.08616,
+     "coin_speed": 0.02925,
+     "canon_v_perp": -0.00016,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 23,
+     "intent": [
+      0.2,
+      0.39232,
+      0.00441,
+      0.18953,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.08238,
+     "coin_speed": 0.09167,
+     "canon_v_perp": 0.07083,
+     "delta_intent": [
+      0.0,
+      0.0,
+      -0.01822,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 27,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.01447,
+      0.26953,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.0786,
+     "coin_speed": 0.10215,
+     "canon_v_perp": 0.07511,
+     "delta_intent": [
+      0.0,
+      0.0,
+      -0.01888,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 31,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.02801,
+      0.34953,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.07872,
+     "coin_speed": 0.07085,
+     "canon_v_perp": 0.05413,
+     "delta_intent": [
+      0.0,
+      0.0,
+      -0.01353,
+      0.08,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 35,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.05265,
+      0.35,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.07403,
+     "coin_speed": 0.1202,
+     "canon_v_perp": 0.09857,
+     "delta_intent": [
+      0.0,
+      0.0,
+      -0.02464,
+      0.00047,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 39,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.06,
+      0.35,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.0652,
+     "coin_speed": 0.23414,
+     "canon_v_perp": 0.20876,
+     "delta_intent": [
+      0.0,
+      0.0,
+      -0.00735,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 43,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.06,
+      0.35,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.06267,
+     "coin_speed": 0.18823,
+     "canon_v_perp": 0.16151,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 47,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.06,
+      0.35,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze",
+      "cross_track"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.06371,
+     "coin_speed": 0.10758,
+     "canon_v_perp": 0.0834,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 51,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.06,
+      0.35,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.06467,
+     "coin_speed": 0.04193,
+     "canon_v_perp": 0.02405,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 55,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.06,
+      0.35,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.06519,
+     "coin_speed": 0.0018,
+     "canon_v_perp": 0.00102,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "t": 59,
+     "intent": [
+      0.2,
+      0.39232,
+      -0.06,
+      0.35,
+      0.12688,
+      0.54105,
+      0.30471
+     ],
+     "fired": [
+      "contact_squeeze"
+     ],
+     "contact_risk": true,
+     "coast_deficit": 0.06518,
+     "coin_speed": 4e-05,
+     "canon_v_perp": 2e-05,
+     "delta_intent": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   ],
+   "responses": [
+    {
+     "t": 7,
+     "dtz": 0.11833,
+     "d_safe": 0.09833,
+     "v_parallel": 0.33577,
+     "v_perpendicular": 0.20951,
+     "coin_speed": 0.39577,
+     "coin_spin": 0.1121,
+     "probe_forward_disp": 0.01919,
+     "probe_perp_disp": 0.00756,
+     "probe_accel_mean": 6.58342,
+     "contact_v_n": [
+      -0.08826,
+      -0.13884
+     ],
+     "contact_v_t": [
+      -0.39532,
+      0.21894
+     ],
+     "friction_util": [
+      0.8158,
+      0.61024
+     ],
+     "fn": [
+      2.10021,
+      3.25539
+     ],
+     "both_contact": true,
+     "straddle": -0.6001,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00394,
+     "a_brake": 7.21369,
+     "d_stop": 0.00781,
+     "w_brake_available": 0.03565,
+     "over_speed": false,
+     "phase": "PUSH",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 11,
+     "dtz": 0.10998,
+     "d_safe": 0.08998,
+     "v_parallel": 0.02277,
+     "v_perpendicular": -0.05373,
+     "coin_speed": 0.05836,
+     "coin_spin": -0.11686,
+     "probe_forward_disp": 0.02734,
+     "probe_perp_disp": 0.01048,
+     "probe_accel_mean": 0.57594,
+     "contact_v_n": [
+      0.00843,
+      -0.02741
+     ],
+     "contact_v_t": [
+      0.001,
+      0.20755
+     ],
+     "friction_util": [
+      0.09598,
+      0.87958
+     ],
+     "fn": [
+      1.06118,
+      3.20799
+     ],
+     "both_contact": true,
+     "straddle": -0.15058,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 9e-05,
+     "a_brake": 7.21369,
+     "d_stop": 4e-05,
+     "w_brake_available": 0.03263,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 15,
+     "dtz": 0.1087,
+     "d_safe": 0.0887,
+     "v_parallel": 0.0654,
+     "v_perpendicular": -0.00231,
+     "coin_speed": 0.06544,
+     "coin_spin": -0.09293,
+     "probe_forward_disp": 0.02871,
+     "probe_perp_disp": 0.00932,
+     "probe_accel_mean": 0.462,
+     "contact_v_n": [
+      -0.03605,
+      -0.0753
+     ],
+     "contact_v_t": [
+      -0.02803,
+      0.18885
+     ],
+     "friction_util": [
+      0.43071,
+      0.71223
+     ],
+     "fn": [
+      0.13627,
+      3.14357
+     ],
+     "both_contact": true,
+     "straddle": 0.15417,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00011,
+     "a_brake": 7.21369,
+     "d_stop": 0.0003,
+     "w_brake_available": 0.03216,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 19,
+     "dtz": 0.10694,
+     "d_safe": 0.08694,
+     "v_parallel": 0.02925,
+     "v_perpendicular": 0.00016,
+     "coin_speed": 0.02925,
+     "coin_spin": -0.02027,
+     "probe_forward_disp": 0.03052,
+     "probe_perp_disp": 0.0087,
+     "probe_accel_mean": 0.15826,
+     "contact_v_n": [
+      -0.01929,
+      -0.0448
+     ],
+     "contact_v_t": [
+      -0.00034,
+      0.14433
+     ],
+     "friction_util": [
+      0.01645,
+      0.7591
+     ],
+     "fn": [
+      0.00505,
+      2.12557
+     ],
+     "both_contact": true,
+     "straddle": 0.39347,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 2e-05,
+     "a_brake": 7.21369,
+     "d_stop": 6e-05,
+     "w_brake_available": 0.03152,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 23,
+     "dtz": 0.10546,
+     "d_safe": 0.08546,
+     "v_parallel": 0.05819,
+     "v_perpendicular": -0.07083,
+     "coin_speed": 0.09167,
+     "coin_spin": -0.02549,
+     "probe_forward_disp": 0.03209,
+     "probe_perp_disp": 0.00691,
+     "probe_accel_mean": 0.4132,
+     "contact_v_n": [
+      0.00048,
+      -0.06701
+     ],
+     "contact_v_t": [
+      -0.01081,
+      0.19974
+     ],
+     "friction_util": [
+      0.87932,
+      0.74601
+     ],
+     "fn": [
+      0.02791,
+      1.42812
+     ],
+     "both_contact": true,
+     "straddle": 0.58814,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00021,
+     "a_brake": 7.21369,
+     "d_stop": 0.00023,
+     "w_brake_available": 0.03099,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 27,
+     "dtz": 0.10296,
+     "d_safe": 0.08296,
+     "v_parallel": 0.06922,
+     "v_perpendicular": -0.07511,
+     "coin_speed": 0.10215,
+     "coin_spin": -0.00514,
+     "probe_forward_disp": 0.03474,
+     "probe_perp_disp": 0.00295,
+     "probe_accel_mean": 0.38993,
+     "contact_v_n": [
+      -0.00616,
+      -0.13091
+     ],
+     "contact_v_t": [
+      -0.01531,
+      0.17657
+     ],
+     "friction_util": [
+      0.68139,
+      0.57238
+     ],
+     "fn": [
+      0.00711,
+      0.35441
+     ],
+     "both_contact": true,
+     "straddle": 0.77388,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00026,
+     "a_brake": 7.21369,
+     "d_stop": 0.00033,
+     "w_brake_available": 0.03008,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 31,
+     "dtz": 0.10062,
+     "d_safe": 0.08062,
+     "v_parallel": 0.04572,
+     "v_perpendicular": -0.05413,
+     "coin_speed": 0.07085,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.0371,
+     "probe_perp_disp": -0.00078,
+     "probe_accel_mean": 0.23362,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00013,
+     "a_brake": 7.21369,
+     "d_stop": 0.00014,
+     "w_brake_available": 0.02923,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 35,
+     "dtz": 0.09833,
+     "d_safe": 0.07833,
+     "v_parallel": 0.06878,
+     "v_perpendicular": -0.09857,
+     "coin_speed": 0.1202,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.0393,
+     "probe_perp_disp": -0.00515,
+     "probe_accel_mean": 0.35128,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00036,
+     "a_brake": 7.21369,
+     "d_stop": 0.00033,
+     "w_brake_available": 0.0284,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 39,
+     "dtz": 0.09542,
+     "d_safe": 0.07542,
+     "v_parallel": 0.10603,
+     "v_perpendicular": -0.20876,
+     "coin_speed": 0.23414,
+     "coin_spin": 0.00712,
+     "probe_forward_disp": 0.04182,
+     "probe_perp_disp": -0.01152,
+     "probe_accel_mean": 0.61416,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.21027,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 1.0,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00138,
+     "a_brake": 7.21369,
+     "d_stop": 0.00078,
+     "w_brake_available": 0.02735,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 43,
+     "dtz": 0.09117,
+     "d_safe": 0.07117,
+     "v_parallel": 0.09667,
+     "v_perpendicular": -0.16151,
+     "coin_speed": 0.18823,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.04462,
+     "probe_perp_disp": -0.02303,
+     "probe_accel_mean": 0.44635,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.84359,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00089,
+     "a_brake": 7.21369,
+     "d_stop": 0.00065,
+     "w_brake_available": 0.0258,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 47,
+     "dtz": 0.08791,
+     "d_safe": 0.06791,
+     "v_parallel": 0.06795,
+     "v_perpendicular": -0.0834,
+     "coin_speed": 0.10758,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.0464,
+     "probe_perp_disp": -0.03047,
+     "probe_accel_mean": 0.2322,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.75,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.00029,
+     "a_brake": 7.21369,
+     "d_stop": 0.00032,
+     "w_brake_available": 0.02462,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 51,
+     "dtz": 0.08574,
+     "d_safe": 0.06574,
+     "v_parallel": 0.03435,
+     "v_perpendicular": -0.02405,
+     "coin_speed": 0.04193,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.04785,
+     "probe_perp_disp": -0.0335,
+     "probe_accel_mean": 0.08234,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.79901,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 4e-05,
+     "a_brake": 7.21369,
+     "d_stop": 8e-05,
+     "w_brake_available": 0.02384,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 55,
+     "dtz": 0.0852,
+     "d_safe": 0.0652,
+     "v_parallel": 0.00148,
+     "v_perpendicular": -0.00102,
+     "coin_speed": 0.0018,
+     "coin_spin": -0.0,
+     "probe_forward_disp": 0.04824,
+     "probe_perp_disp": -0.03409,
+     "probe_accel_mean": 0.00192,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.89681,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.21369,
+     "d_stop": 0.0,
+     "w_brake_available": 0.02364,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    },
+    {
+     "t": 59,
+     "dtz": 0.08518,
+     "d_safe": 0.06518,
+     "v_parallel": 3e-05,
+     "v_perpendicular": -2e-05,
+     "coin_speed": 4e-05,
+     "coin_spin": 0.0,
+     "probe_forward_disp": 0.04826,
+     "probe_perp_disp": -0.0341,
+     "probe_accel_mean": -0.00125,
+     "contact_v_n": [
+      0.0,
+      0.0
+     ],
+     "contact_v_t": [
+      0.0,
+      0.0
+     ],
+     "friction_util": [
+      0.0,
+      0.0
+     ],
+     "fn": [
+      0.0,
+      0.0
+     ],
+     "both_contact": false,
+     "straddle": null,
+     "forward_push_reach": 0.07214,
+     "brake_opposed_reach": 0.07214,
+     "lateral_reach": 0.07116,
+     "normal_force_reach": 0.14896,
+     "balance_reach_signed": 0.0,
+     "slew_headroom_up": 0.99449,
+     "slew_headroom_dn": 1.0,
+     "e_kin": 0.0,
+     "a_brake": 7.21369,
+     "d_stop": 0.0,
+     "w_brake_available": 0.02363,
+     "over_speed": false,
+     "phase": "BRAKE",
+     "elapsed_horizon": 60
+    }
+   ]
+  }
+ },
+ "closed_loop": {
+  "dev_k6": 1,
+  "held_out_k6": 0,
+  "total_k6": 1
+ },
+ "open_loop_baseline": {
+  "dev_k6": 1,
+  "held_out_k6": 0,
+  "total_k6": 1
+ },
+ "oracle_validates_search_and_physics": true,
+ "closed_loop_load_bearing": false,
+ "motion_ok": true,
+ "budget_ok": true,
+ "c0_pass": false,
+ "verdict": "CURRENT_DETERMINISTIC_FEEDBACK_LAW_INSUFFICIENT",
+ "authorises_sac_td3": false
+}

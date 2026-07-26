@@ -1,0 +1,70 @@
+{
+ "contract": "COIN_R4_C0_TEACHER_NO_REGRESSION",
+ "params": {
+  "passthrough_reach": Infinity,
+  "a_friction": 0.55,
+  "release_zone": 0.02,
+  "coast_safety": 1.0,
+  "overshoot_margin": 0.06,
+  "min_push_steps": 4,
+  "w_probe": 6,
+  "c_corr": 4,
+  "initial_source": "r3_predictor",
+  "push_squeeze_cap": 0.1,
+  "k_squeeze_cut": 0.6,
+  "k_forward_deficit": 2.5,
+  "deficit_deadband": 0.02,
+  "fn_floor": 0.05,
+  "k_squeeze_up": 0.08,
+  "k_lateral": 0.25,
+  "k_spin": 0.02,
+  "lateral_deadband": 0.05
+ },
+ "per_state": {
+  "s1": {
+   "split": "development",
+   "delivery_success": true,
+   "k6_max_dwell": 20,
+   "dtz_end_mm": 17.67,
+   "peak_qdot": 2.03487,
+   "peak_coin_speed": 0.45068,
+   "n_corrections": 14,
+   "release_step": 14
+  },
+  "s3": {
+   "split": "development",
+   "delivery_success": false,
+   "k6_max_dwell": 0,
+   "dtz_end_mm": 29.98,
+   "peak_qdot": 2.0357,
+   "peak_coin_speed": 0.54026,
+   "n_corrections": 14,
+   "release_step": 12
+  },
+  "s4": {
+   "split": "held_out",
+   "delivery_success": false,
+   "k6_max_dwell": 0,
+   "dtz_end_mm": 47.18,
+   "peak_qdot": 1.95687,
+   "peak_coin_speed": 0.26586,
+   "n_corrections": 14,
+   "release_step": 13
+  },
+  "s7": {
+   "split": "held_out",
+   "delivery_success": false,
+   "k6_max_dwell": 0,
+   "dtz_end_mm": 95.95,
+   "peak_qdot": 1.98836,
+   "peak_coin_speed": 0.39534,
+   "n_corrections": 14,
+   "release_step": 10
+  }
+ },
+ "dev_k6": 1,
+ "held_out_k6": 0,
+ "total_k6": 1,
+ "passed": false,
+ "verdict": "CORRECTION_LAW_DESTABILISES_TEACHER"
+}

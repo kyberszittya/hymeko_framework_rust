@@ -1,0 +1,20 @@
+{
+ "passthrough_reach": Infinity,
+ "a_friction": 0.55,
+ "release_zone": 0.02,
+ "coast_safety": 1.0,
+ "overshoot_margin": 0.06,
+ "min_push_steps": 4,
+ "w_probe": 6,
+ "c_corr": 4,
+ "initial_source": "r3_predictor",
+ "push_squeeze_cap": 0.1,
+ "k_squeeze_cut": 0.6,
+ "k_forward_deficit": 2.5,
+ "deficit_deadband": 0.02,
+ "fn_floor": 0.05,
+ "k_squeeze_up": 0.08,
+ "k_lateral": 0.25,
+ "k_spin": 0.02,
+ "lateral_deadband": 0.05
+}
