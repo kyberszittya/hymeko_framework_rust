@@ -49,20 +49,37 @@ def test_score_infeasible_is_neg_inf_and_penalises_flick():
     assert controlled > flick                                         # a controlled push scores above a flick
 
 
-@pytest.mark.slow
-def test_cem_finds_controlled_push_s3():
-    """Integration: on development state s3, the CEM finds a CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT."""
+def _acquire_snapshot(seed):
     from hymeko_rl.coin_delivery.contact_velocity import BvConfig, CradleSnapshot
-    from hymeko_rl.coin_delivery.forward_displacement import cem_search
     from hymeko_rl.experiments.bv_identification_benchmark import _load_frozen, acquire_certified_straddle
     from hymeko_rl.experiments.video_coin_variants import _setup
     stack, cfg_coop, v2, mu = _load_frozen()
     pi0, base, forbidden = _setup()
-    rl, saved, handoff, meta = acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg_coop, 14750, tries=3)
+    rl, saved, handoff, meta = acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg_coop, seed, tries=3)
     assert rl is not None and meta["certified"]
-    snap = CradleSnapshot(rl, stack, saved, handoff["prev_tau"], handoff["q_target"],
+    return CradleSnapshot(rl, stack, saved, handoff["prev_tau"], handoff["q_target"],
                           release_coin=True, coast_mu=mu, cfg=BvConfig())
-    res = cem_search(snap, ForwardConfig())
+
+
+@pytest.mark.slow
+def test_cem_finds_controlled_push_s3():
+    """Integration: on development state s3, the CEM finds a CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT (6-D θ)."""
+    from hymeko_rl.coin_delivery.forward_displacement import cem_search
+    res = cem_search(_acquire_snapshot(14750), ForwardConfig())
     assert res["success"], f"expected a controlled forward push on s3, got {res['best_metrics']}"
     bm = res["best_metrics"]
     assert bm["forward"] > res["threshold"] and bm["lost_before_release"] == 0
+
+
+@pytest.mark.slow
+def test_velocity_brake_delivers_held_out_s7():
+    """Integration: the velocity-feedback braking primitive achieves a FROZEN-K6 delivery on HELD-OUT state s7 (a
+    single continuous push-and-brake-and-settle trajectory, no re-grip / teleport)."""
+    from hymeko_rl.coin_delivery.forward_displacement import cem_search
+    cfg = ForwardConfig(horizon=60, deliver=True, lo=(0.0, 0.0, -0.10, 1.0, 4.0, 0.0),
+                        hi=(0.25, 0.30, 0.10, 28.0, 48.0, 4.0), init_std=(0.08, 0.10, 0.05, 8.0, 12.0, 1.2),
+                        pop=56, iters=10)
+    res = cem_search(_acquire_snapshot(15750), cfg)
+    assert res["success"], f"expected a K6 delivery on held-out s7, got {res['best_metrics']}"
+    m = res["best_metrics"]
+    assert m["k6_delivered"] and m["k6_max_dwell"] >= 6 and m["dtz_end"] <= 0.02

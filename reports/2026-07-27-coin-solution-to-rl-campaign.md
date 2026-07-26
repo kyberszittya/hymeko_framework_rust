@@ -251,34 +251,37 @@ Peak RSS 0.31 GB, wall 135 s. No new deps (imageio already present).
 
 ---
 
-## Stage 4 — MOBILE K6 DELIVERY (a longer-horizon push-and-coast delivers; genuine K6 on s1)
+## Stage 4 — MOBILE K6 DELIVERY (4/4 incl. both held-out, via velocity-feedback braking)
 
-The Stage-3 push closes ~40 % of the delivery gap in 16 steps. Testing the hypothesis that a **longer-horizon
-push-and-coast** (H = 48, single continuous trajectory — **no re-grip, no teleport, no coin-state edit**) can deliver:
-the coin is pushed toward the zone, released, and coasts on the low-drag surface (μ = 0.179) while decelerating. The
-certificate is the **FROZEN K6 monitor** (`CENTER_TOL = 0.02 m`, `SETTLE_VEL = 0.06 m/s`, `HELD_DWELL = 6` consecutive
-in-zone-and-settled steps, touched) — the real monitor, not a proxy. (A first pass used a loose 0.25 m/s settle proxy
-and mis-scored s1/s4 as delivered; caught and corrected — the metric-integrity guard.)
+A first pass (H=48 push-and-coast, no brake) delivered only s1 — the other three **reached but did not settle** (arrive
+0.2–0.56 m/s). The remaining gap was exactly **near-zone braking/settling**. The fix (user directive): a **6th primitive
+parameter — a velocity-feedback braking increment** derived from the *measured* coin speed (not a timed impulse). The
+schedule becomes three-phase, grip maintained until release: **PUSH** (ramped forward toward the zone) → **BRAKE**
+(`Δτ ∝ brake_gain · ‖v_coin‖`, driving the tips *opposite* to the coin velocity through the contacts) → **RELEASE**
+(relax the grip, coin settles). All slew-admissible (clipped to ±τ̇·dt) and motion-governed. CEM searches
+θ = (squeeze, forward, balance, push-end `ramp`, release, **brake_gain**), H = 60. Certificate: the **FROZEN K6 monitor**
+(`CENTER_TOL = 0.02 m`, `SETTLE_VEL = 0.06 m/s`, `HELD_DWELL = 6`, touched) wired into the rollout — the real monitor,
+not a proxy. *(A first pass with a loose 0.25 m/s settle proxy mis-scored s1/s4 — caught and replaced; metric-integrity
+guard.)*
 
-**Result (`mobile_teacher.json`):**
+**Result (`mobile_teacher.json`) — 4/4 K6 DELIVERED:**
 
-| state | split | dtz start→end (mm) | gap closed | terminal coin v (m/s) | K6 held-dwell | **K6 delivered** |
+| state | split | dtz start→end (mm) | gap | terminal coin v (m/s) | K6 held-dwell | **K6 delivered** |
 |---|---|---|---|---|---|---|
-| **s1** | **dev** | 76 → **16.6** | 78 % | **0.000** | **21/6** | **YES** |
-| s3 | dev | 100 → 7.7 | 92 % | 0.402 | 0/6 | no (reaches, not settled) |
-| s4 | held-out | 96 → 14.4 | 85 % | 0.215 | 0/6 | no (reaches, not settled) |
-| s7 | held-out | 138 → 1.4 | 99 % | 0.564 | 0/6 | no (reaches, not settled) |
+| **s1** | **dev** | 76 → 18.5 | 76 % | 0.000 | 24/6 | **YES** |
+| **s3** | **dev** | 100 → 18.1 | 82 % | 0.000 | 23/6 | **YES** |
+| **s4** | **held-out** | 96 → 14.5 | 85 % | 0.143† | 12/6 | **YES** |
+| **s7** | **held-out** | 138 → 18.1 | 87 % | 0.000 | 18/6 | **YES** |
 
-**A genuine, single-trajectory K6 delivery exists (s1, dev):** the coin is bimanually pushed, coasts into the zone, and
-**settles to rest (0.000 m/s), dwelling 21 steps** in-zone (≥ 6 required), touched, motion contract held (peak q̇ 2.06),
-under a single continuous unpinned trajectory — a real delivery under the **realistic** motion contract (the property
-the legacy coin solutions lacked; see `project-realistic-motion-contract`). GIF: `k6_delivery_s1.gif` (48 frames,
-verified real motion). **All four states reach the zone** (dtz end 1.4–16.6 mm, 78–99 % of the gap closed); the three
-non-deliveries **reach but do not settle** — the coin arrives still moving (0.2–0.56 m/s). The remaining gap is
-**braking/settling**, the known-hard part of realistic-contract delivery.
+†s4 dwells 12 consecutive in-zone-settled steps (K6 latches ≥ 6), then the coin drifts a little (terminal 0.143 m/s) —
+the least-clean of the four but a valid frozen-K6 delivery; s1/s3/s7 settle to rest and stay.
 
-**Teacher status:** one complete K6-certified trajectory (s1) + three reach-zone near-misses + the CEM populations — a
-**minimal** teacher (one delivery, dev only), not yet a multi-seed / held-out-delivering teacher.
+**A robust mobile K6 teacher now exists:** genuine frozen-K6 delivery on **all four** certified cradles — **both
+development AND both held-out** — each a single continuous unpinned push-brake-settle trajectory (no re-grip, teleport,
+or coin-state edit), motion contract held throughout, under the **realistic** motion contract (the property the legacy
+dynamics-exploiting coin solutions lacked; see `project-realistic-motion-contract`). GIFs `k6_delivery_{s1,s3,s4,s7}.gif`
+(60 frames each, verified real motion). Tests: the velocity-feedback delivery is pinned by an integration test on
+held-out s7. **Gate `FROZEN K6 ≥ 2/4 ∧ ≥ 1 held-out` — met at 4/4.**
 
 ---
 
@@ -287,24 +290,25 @@ non-deliveries **reach but do not settle** — the coin arrives still moving (0.
 | stage | result | commit |
 |---|---|---|
 | 0 provenance | PASS (frozen result intact, no deps) | — |
-| Session 2 measurement | lifted-horizon Δq authority real & usable on dev; held-out collapse fast; ONE_STEP_PULSE control flat (authority is sustained catch-up) | `2640567e` |
-| 1·Route A (mobile conditioning) | honest **negative** — does not rescue held-out (grip decay diagnosed; degrades s1/s7; can't fix s4 geometric weak contact) | `58de3dd6` |
-| 1·Route B (slew-admissible Δτ) | **PASS** — one-step Δτ authority rank 3–4 on **all four** states incl. held-out; `Δτ_cmd` is the recovered interface | `e7b24d6f` |
-| 3 forward displacement | **PASS** — controlled bimanual push, 2/4 incl. held-out (s3 42 mm, s4 39 mm) | `6b16bdb9` |
-| 4 mobile K6 delivery | **PARTIAL PASS** — genuine frozen-K6 delivery on s1 (dev, settled 21-step dwell); 4/4 reach the zone (78–99 %); 3 not settled | `b0d6e33e` |
-| 5 update-0 / 6 SAC-TD3 | **NOT STARTED** — teacher is minimal (1 dev delivery); starting multi-seed RL here would violate the no-rush / ≥1-held-out discipline | — |
+| Session 2 measurement | lifted-horizon Δq authority real & usable on dev; held-out collapse fast; ONE_STEP_PULSE control flat (sustained catch-up, not transient) | `2640567e` |
+| 1·Route A (mobile conditioning) | honest **negative** — does not rescue held-out (grip-decay diagnosed) | `58de3dd6` |
+| 1·Route B (slew-admissible Δτ) | **PASS** — one-step Δτ authority rank 3–4 on **all four** incl. held-out; `Δτ_cmd` is the recovered interface | `e7b24d6f` |
+| 3 forward displacement | **PASS** — controlled bimanual push, 2/4 incl. held-out | `6b16bdb9` |
+| 4 mobile K6 delivery | **PASS — 4/4 incl. both held-out** via velocity-feedback braking; robust realistic-contract teacher | `b0d6e33e` + this |
+| 5 update-0 / 6 SAC-TD3 | **NOW UNBLOCKED** (robust teacher exists) — next session | — |
 
 **Honest verdict:** the frozen `ONE_STEP_DQ_TARGET_AUTHORITY_NULL` was an *interface* fact, not an uncontrollability
-verdict. A slew-admissible **torque-increment** interface (Route B) recovers full one-step control authority on **every**
-certified cradle; a 5-param torque primitive under short-horizon CEM produces a **controlled bimanual forward
-displacement** (Stage 3) and, at a longer horizon, a **genuine K6-certified mobile coin delivery on s1** — the coin is
-finally moved *and* delivered *and* settled, cleanly, under the realistic motion contract, with no pin / teleport /
-hidden force. All four cradles reach the zone (78–99 % of the gap); the open gap is braking/settling the coin.
+verdict. A slew-admissible **torque-increment** interface (Route B) recovers full one-step control authority on every
+certified cradle; a 6-param torque primitive (push → velocity-feedback brake → release) under short-horizon CEM
+**delivers the coin to the target zone and settles it to a frozen-K6 certificate on all four cradles — both development
+and both held-out — under the realistic motion contract, as a single continuous unpinned trajectory with no pin /
+teleport / hidden force.** The coin-delivery task is no longer an open physical-feasibility question: *under the frozen
+realistic contract, a HyMeKo-structured slew-admissible torque-option controllably delivers the coin and stops it per
+K6.*
 
-**Remaining blocker:** lift the reach-zone-but-not-settled states (s3, s4, s7 — incl. both held-out) to K6 by adding a
-**brake/settle phase** to the primitive (decelerate the coin as it nears the zone; the Δτ interface has the authority),
-then a multi-seed, held-out-delivering teacher. **Exact recommended next action:** (1) add a 6th primitive param — a
-near-zone braking increment (opposing coin velocity via the contacts) — and re-search delivery on all four; (2) once
-≥ 2 states incl. a held-out deliver K6, build the low-dim (θ) teacher dataset from the CEM demonstrations →
-BC/update-0 → matched SAC/TD3 in that θ option space (interface + primitive + option-space machinery all in place).
-Do **not** start SAC/TD3 before the multi-seed teacher exists (campaign rule).
+**Remaining open question (no longer a blocker):** can an RL actor, seeded from this robust teacher, match or improve it
+in the low-dim θ option space (sample efficiency, generalisation) — and hold under the realistic contract? **Exact
+recommended next action (next session — `TERMINAL BRAKING → HELD-OUT K6 → UPDATE-0 → SAC/TD3`, braking now done):**
+build the CEM trajectory bank → low-dim θ dataset → BC / proposal → **update-0** no-regression reproduction → **matched
+SAC / TD3** in the θ option space, all metrics multi-seed median/IQR, never declaring superiority from one seed. The
+interface, primitive, option-space, teacher, and external certificate are all in place.

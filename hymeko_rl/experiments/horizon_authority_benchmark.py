@@ -436,8 +436,9 @@ def deliver_main(smoke=False):
     os.makedirs(REPORT_DIR, exist_ok=True)
     t_start = time.time()
     stack, cfg_coop, v2, mu = _load_frozen()
-    dcfg = ForwardConfig(horizon=48, deliver=True, lo=(0.0, 0.0, -0.10, 1.0, 4.0), hi=(0.25, 0.30, 0.10, 24.0, 36.0),
-                         init_std=(0.08, 0.10, 0.05, 8.0, 10.0), pop=48, iters=8)
+    dcfg = ForwardConfig(horizon=60, deliver=True, lo=(0.0, 0.0, -0.10, 1.0, 4.0, 0.0),
+                         hi=(0.25, 0.30, 0.10, 28.0, 48.0, 4.0), init_std=(0.08, 0.10, 0.05, 8.0, 12.0, 1.2),
+                         pop=56, iters=10)
     pi0, base, forbidden = _setup()
     seeds = CERTIFIED_SEEDS[:2] if smoke else CERTIFIED_SEEDS
     print(f"MOBILE K6 DELIVERY — push-and-coast | μ={mu:.3f} H={dcfg.horizon} pop={dcfg.pop} iters={dcfg.iters} "

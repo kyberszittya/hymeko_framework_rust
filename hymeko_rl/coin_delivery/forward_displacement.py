@@ -44,9 +44,9 @@ class ForwardConfig:
     horizon: int = 16                    # control steps of the dynamic transition (8–16 per the pivot)
     limits: MotionLimits = field(default_factory=MotionLimits)
     deliver: bool = False                # delivery mode: FROZEN K6 certificate (dtz≤CENTER_TOL ∧ speed<SETTLE_VEL, held-dwell)
-    # θ bounds: squeeze_mag, forward_mag (N·m increments), balance (N·m), ramp_steps, release_step
-    lo: tuple = (0.0, 0.0, -0.10, 1.0, 4.0)
-    hi: tuple = (0.25, 0.30, 0.10, 12.0, 16.0)
+    # θ bounds: squeeze_mag, forward_mag (N·m incr), balance (N·m), ramp_steps, release_step, brake_gain (N·m per m/s)
+    lo: tuple = (0.0, 0.0, -0.10, 1.0, 4.0, 0.0)
+    hi: tuple = (0.25, 0.30, 0.10, 12.0, 16.0, 3.0)
     cross_frac_max: float = 1.0          # cross-track ≤ this × forward displacement (predominantly forward)
     min_forward_m: float = 0.005         # absolute forward threshold floor
     drift_mult: float = 5.0              # forward must exceed this × passive drift
@@ -57,7 +57,7 @@ class ForwardConfig:
     pop: int = 32
     iters: int = 6
     elite: int = 8
-    init_std: tuple = (0.08, 0.10, 0.05, 4.0, 4.0)
+    init_std: tuple = (0.08, 0.10, 0.05, 4.0, 4.0, 0.8)
     cem_seed: int = 20260727
 
 
@@ -85,19 +85,33 @@ def _coin_speed(rl) -> float:
 
 
 def _schedule_increment(rl, th, t, e_par, step, coin) -> np.ndarray:
-    """The slew-admissible Δτ_cmd at control step ``t`` (1-based) for primitive ``th`` = (sqz, fwd, bal, ramp, rel)."""
-    sqz, fwd, bal, ramp, rel = th
+    """The slew-admissible Δτ_cmd at control step ``t`` (1-based) for the 6-param primitive
+    ``th`` = (squeeze, forward, balance, ramp, release, brake_gain). Three phases (grip maintained until release):
+      * PUSH   (t ≤ ramp):     ramped forward push toward the zone + grip + L/R balance
+      * BRAKE  (ramp < t ≤ release): VELOCITY-FEEDBACK brake — a decelerating increment ∝ measured coin speed, driving
+                               the tips opposite to the coin velocity (through the contacts) + grip. Not a timed impulse.
+      * RELEASE(t > release):  relax the grip and let the (now slow) coin settle.
+    All slew-admissible (clipped to ±step) and, downstream, motion-governed."""
+    sqz, fwd, bal, ramp, rel, brake_gain = th
     gl, gr = _fingertip_geoms(rl.inner.model)
     inward = arm_inward_geom(rl, gl, _LEFT_DOF, coin) + arm_inward_geom(rl, gr, _RIGHT_DOF, coin)
     squeeze_dir = inward / (np.linalg.norm(inward) + 1e-12)
-    fwd_l, fwd_r = arm_jac_dir(rl, gl, _LEFT_DOF, e_par), arm_jac_dir(rl, gr, _RIGHT_DOF, e_par)
-    forward_dir = (fwd_l + fwd_r)
-    forward_dir = forward_dir / (np.linalg.norm(forward_dir) + 1e-12)
-    ramp_gain = min(1.0, t / max(1.0, ramp))
-    if t <= rel:
-        dtau = sqz * squeeze_dir + fwd * ramp_gain * forward_dir + bal * (fwd_l - fwd_r)
-    else:                                                 # release: relax the grip, let the coin coast
-        dtau = -0.5 * sqz * squeeze_dir + fwd * ramp_gain * forward_dir
+    if t <= ramp:                                         # PUSH
+        fwd_l, fwd_r = arm_jac_dir(rl, gl, _LEFT_DOF, e_par), arm_jac_dir(rl, gr, _RIGHT_DOF, e_par)
+        forward_dir = (fwd_l + fwd_r)
+        forward_dir = forward_dir / (np.linalg.norm(forward_dir) + 1e-12)
+        dtau = sqz * squeeze_dir + fwd * min(1.0, t / max(1.0, ramp)) * forward_dir + bal * (fwd_l - fwd_r)
+    elif t <= rel:                                        # BRAKE — velocity feedback (decelerate the coin via the grip)
+        v_coin = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
+        sp = float(np.linalg.norm(v_coin))
+        brake_dir = np.zeros(4)
+        if sp > 1e-4:
+            neg = -v_coin / sp
+            brake_dir = arm_jac_dir(rl, gl, _LEFT_DOF, neg) + arm_jac_dir(rl, gr, _RIGHT_DOF, neg)
+            brake_dir = brake_dir / (np.linalg.norm(brake_dir) + 1e-12)
+        dtau = sqz * squeeze_dir + brake_gain * sp * brake_dir
+    else:                                                 # RELEASE — relax the grip, let the coin settle
+        dtau = -0.5 * sqz * squeeze_dir
     return np.clip(dtau, -step, step)
 
 
@@ -249,7 +263,7 @@ def cem_search(snap: CradleSnapshot, cfg: ForwardConfig) -> dict:
     best = {"score": -np.inf, "theta": None, "metrics": None}
     history = []
     for it in range(cfg.iters):
-        pop = _clip_theta(mean + std * rng.standard_normal((cfg.pop, 5)), cfg)
+        pop = _clip_theta(mean + std * rng.standard_normal((cfg.pop, 6)), cfg)
         scored = []
         for v in pop:
             m = rollout_primitive(snap, tuple(v), cfg)
