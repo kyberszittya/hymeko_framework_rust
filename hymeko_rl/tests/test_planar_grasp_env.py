@@ -32,9 +32,12 @@ def _capsule_geoms(model: object) -> list[int]:
             if int(model.geom_type[g]) == int(mujoco.mjtGeom.mjGEOM_CAPSULE)]   # type: ignore[attr-defined]
 
 
-def test_compiled_model_coin_collides_with_fingertip_not_arm_capsule() -> None:
-    """On the actual compiled model: the coin geom's channel collides with the fingertip geom's channel and
-    with NONE of the arm-link capsule channels (the fingertip-only manipulation invariant, at model level)."""
+def test_compiled_model_coin_physically_collides_with_arm_and_fingertip() -> None:
+    """COIN_ARM_COLLISION_CONTRACT (2026-07-27) — MIGRATED from the Galambos fingertip-only-via-noncollision model.
+    HISTORICAL INTENT: the old model DISABLED arm-link↔coin collision to prevent a body-knock shortcut, but that made
+    the physics unrealistic (the coin interpenetrated the arm) and is unsuitable for real-robot transfer. NEW CONTRACT:
+    the coin physically collides with the fingertip AND every arm-link capsule (whole-arm contact is legal); the
+    anti-knock rule is now a SEPARATE task certificate (controlled-insertion / knock-rejection), not a collision mask."""
     env = PlanarGraspEnv(robot=None, max_steps=10, difficulty=0.3)
     env.reset(seed=0)
     model = env.model
@@ -42,47 +45,45 @@ def test_compiled_model_coin_collides_with_fingertip_not_arm_capsule() -> None:
     ft = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left"))
     assert disk >= 0 and ft >= 0
     coin_ch = _geom_channel(model, disk)
-    assert Collision.collide(coin_ch, _geom_channel(model, ft))           # FINGERTIP geometry: collides
+    assert Collision.collide(coin_ch, _geom_channel(model, ft))           # fingertip collides
     caps = _capsule_geoms(model)
     assert caps, "expected arm-link capsule geoms in the compiled model"
-    for g in caps:                                                        # ARM geometry: never collides
-        assert not Collision.collide(coin_ch, _geom_channel(model, g)), \
-            f"arm capsule geom {g} would collide with the coin (mask leak)"
+    for g in caps:                                                        # ARM links now PHYSICALLY collide with the coin
+        assert Collision.collide(coin_ch, _geom_channel(model, g)), \
+            f"arm capsule geom {g} must physically collide with the coin (whole-arm contact enabled)"
     env.close()
 
 
-def test_coin_passes_through_arm_capsule_but_contacts_fingertip() -> None:
-    """Dynamic (mj_forward at overlapping poses): the coin placed ON a fingertip generates a coin-fingertip
-    contact, but the coin placed ON an arm capsule generates NO coin-arm contact — it passes through, exactly
-    what the simulation showed. Tests the collision for both geometries via real MuJoCo contact generation."""
+def test_coin_does_not_pass_through_arm_capsule() -> None:
+    """COIN_ARM_COLLISION_CONTRACT (2026-07-27) — MIGRATED. The old test placed the coin at the arm capsule's CENTRE
+    (coincident centres — a DEGENERATE convex-collision config that spuriously reports no contact) and asserted the coin
+    'passes through'. Re-tested at a NON-coincident 1 mm penetration along the outward normal, the coin generates a real
+    coin↔arm contact — it does NOT pass through — and also contacts a fingertip. Whole-arm physical collision is real."""
     env = PlanarGraspEnv(robot=None, max_steps=10, difficulty=0.3)
     env.reset(seed=0)
     model, data = env.model, env.data
     disk = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "disk"))
     ft = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "fingertip_left"))
-    caps = set(_capsule_geoms(model))
+    coin_r = float(model.geom_size[disk][0])
     data.qpos[:] = 0.0                                                    # home the arms
     mujoco.mj_forward(model, data)
-    ft_xy = data.geom_xpos[ft][:2].copy()
-    cap_geom = min(caps)
-    cap_xy = data.geom_xpos[cap_geom][:2].copy()
+    homed = {g: (data.geom_xpos[g][:3].copy(), data.geom_xmat[g].reshape(3, 3)[:, 2].copy(), float(model.geom_size[g][0]))
+             for g in list(_capsule_geoms(model)) + [ft]}
 
-    def _place_coin(xy: np.ndarray) -> None:
+    def _contact(other: int) -> int:                                     # 1 mm penetration, NON-coincident
+        c, axis, r = homed[other]
+        perp = np.array([-axis[1], axis[0], 0.0])
+        perp = np.array([1.0, 0.0, 0.0]) if np.linalg.norm(perp) < 1e-6 else perp / np.linalg.norm(perp)
+        pos = c + perp * (r + coin_r - 0.001)
         data.qpos[:] = 0.0
-        data.qpos[env._disk_x_adr] = float(xy[0])
-        data.qpos[env._disk_y_adr] = float(xy[1])
+        data.qpos[env._disk_x_adr] = float(pos[0])
+        data.qpos[env._disk_x_adr + 1] = float(pos[1])
         mujoco.mj_forward(model, data)
-
-    def _pairs(pred: object) -> int:
         return sum(1 for i in range(int(data.ncon))
-                   if pred(int(data.contact[i].geom1), int(data.contact[i].geom2)))   # type: ignore[operator]
+                   if {int(data.contact[i].geom1), int(data.contact[i].geom2)} == {disk, other})
 
-    _place_coin(ft_xy)                                                    # coin ON the fingertip
-    assert _pairs(lambda a, b: {a, b} == {disk, ft}) >= 1, "coin should contact the fingertip"
-
-    _place_coin(cap_xy)                                                   # coin ON an arm capsule
-    assert _pairs(lambda a, b: disk in (a, b) and (a in caps or b in caps)) == 0, \
-        "coin must pass THROUGH the arm capsule (no coin-arm contact)"
+    assert _contact(min(_capsule_geoms(model))) >= 1, "coin must CONTACT (not pass through) the arm capsule"
+    assert _contact(ft) >= 1, "coin must contact the fingertip"
     env.close()
 
 
@@ -95,29 +96,37 @@ def test_planar_reward_terms_registered() -> None:
         assert k in _REWARD_TERMS
 
 
-def test_only_fingertip_can_touch_the_coin() -> None:
-    """Galambos 2026-07-03: ONLY the yellow fingertip may contact the cylinder — the arm links must NOT be able
-    to. Enforced by collision bitmasks: coin on bit 2 (arm links are MuJoCo-default 1/1 → cannot touch it), a
-    fingertip geom on conaffinity 3 (→ touches the coin), floor on conaffinity 3 (→ the coin still rests). Two
-    geoms collide iff (contype_a & conaffinity_b) | (contype_b & conaffinity_a)."""
+def test_arm_and_fingertip_physically_collide_coin_same_arm_isolated() -> None:
+    """COIN_ARM_COLLISION_CONTRACT (2026-07-27) — MIGRATED from 'Galambos 2026-07-03: a kar ne ütközzön'.
+    HISTORICAL INTENT: the arm was made NON-colliding with the coin to prevent a body-KNOCK shortcut. That enforced a
+    behavioural preference with FAKE physics (the coin interpenetrated the arm) — wrong for real-robot transfer. NEW
+    CONTRACT: realistic physics (per-side masks LEFT 1/14, RIGHT 2/13, COIN 4/11, WORLD/floor 8/7): the coin collides
+    with the fingertip AND every arm link; left↔right arms collide; same-arm pairs are isolated. The anti-knock rule is
+    now a SEPARATE task certificate (controlled-insertion / ballistic-knock-rejection), not a collision mask."""
+    from hymeko_rl.env.collision_contract import role_masks
     env = PlanarGraspEnv(robot=None, max_steps=60, difficulty=0.3)
     m = env.model
 
-    def mask(name: str) -> tuple[int, int]:
+    def ch(name: str) -> tuple[int, int]:
         gid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, name)
         assert gid >= 0, f"geom {name} missing"
         return int(m.geom_contype[gid]), int(m.geom_conaffinity[gid])
 
+    def chid(g: int) -> tuple[int, int]:
+        return int(m.geom_contype[g]), int(m.geom_conaffinity[g])
+
     def collide(a: tuple[int, int], b: tuple[int, int]) -> bool:
         return bool((a[0] & b[1]) or (b[0] & a[1]))
 
-    disk, tip, floor = mask("disk"), mask("fingertip_left"), mask("floor")
-    arm = (1, 1)                                                    # arm-link capsules use the MuJoCo default
-    assert disk == (2, 2) and tip == (1, 3)
-    assert not collide(arm, disk), "arm links must NOT be able to touch the coin (Galambos: a kar ne ütközzön)"
-    assert collide(tip, disk), "the yellow fingertip must contact the coin"
-    assert collide(disk, floor), "the coin must still rest on the table"
-    assert collide(mask("fingertip_left"), mask("fingertip_right")), "fingers still collide (fingers_collision)"
+    disk = ch("disk")
+    assert disk == role_masks("coin") and ch("fingertip_left") == role_masks("left") and ch("fingertip_right") == role_masks("right")
+    assert collide(ch("fingertip_left"), disk) and collide(ch("fingertip_right"), disk), "fingertips collide with the coin"
+    for g in _capsule_geoms(m):                                     # every arm link PHYSICALLY collides with the coin
+        assert collide(chid(g), disk), f"arm link {g} must collide with the coin (whole-arm contact)"
+    assert collide(disk, ch("floor")), "the coin still rests on the table"
+    assert collide(ch("fingertip_left"), ch("fingertip_right")), "left↔right arms collide"
+    left = [g for g in _capsule_geoms(m) if (mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_BODY, int(m.geom_bodyid[g])) or "").endswith("_left")]
+    assert not collide(chid(left[0]), ch("fingertip_left")), "same-arm pair must be mask-isolated (no self-collision)"
 
 
 def test_coin_frictionloss_is_opt_in_and_sets_joint_threshold() -> None:

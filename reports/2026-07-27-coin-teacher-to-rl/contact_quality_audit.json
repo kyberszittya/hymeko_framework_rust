@@ -1,0 +1,68 @@
+{
+ "contract": "COIN_CONTACT_LEGALITY_AUDIT_V1",
+ "base_commit": "a3459629",
+ "date": "2026-07-27",
+ "physical_collision": "REALISTIC (every arm geom collides with the coin; per-side masks; same-arm isolated)",
+ "task_certificate": "CONTROLLED_INSERTION (link contact allowed; ballistic knock rejected)",
+ "levels": {
+  "E0": "WHOLE_ARM_ASSISTED_INSERTION (link contact allowed)",
+  "E1": "FINGERTIP_DOMINANT (ft impulse share >= 0.5)",
+  "E2": "FINGERTIP_ONLY (no non-tip contact)"
+ },
+ "states": [
+  {
+   "tag": "s1",
+   "split": "development",
+   "controlled_insertion": true,
+   "ballistic_knock": false,
+   "level": "E0_WHOLE_ARM_ASSISTED_INSERTION",
+   "fingertip_impulse_share": 0.1066,
+   "arm_body_contact_frames": 26,
+   "n_frames": 60,
+   "peak_coin_speed": 0.45,
+   "terminal_coin_speed": 0.0
+  },
+  {
+   "tag": "s3",
+   "split": "development",
+   "controlled_insertion": true,
+   "ballistic_knock": false,
+   "level": "E0_WHOLE_ARM_ASSISTED_INSERTION",
+   "fingertip_impulse_share": 0.1999,
+   "arm_body_contact_frames": 16,
+   "n_frames": 60,
+   "peak_coin_speed": 0.4511,
+   "terminal_coin_speed": 0.0
+  },
+  {
+   "tag": "s4",
+   "split": "held_out",
+   "controlled_insertion": false,
+   "ballistic_knock": false,
+   "level": "E0_WHOLE_ARM_ASSISTED_INSERTION",
+   "fingertip_impulse_share": 0.0277,
+   "arm_body_contact_frames": 60,
+   "n_frames": 60,
+   "peak_coin_speed": 0.2629,
+   "terminal_coin_speed": 0.1649
+  },
+  {
+   "tag": "s7",
+   "split": "held_out",
+   "controlled_insertion": true,
+   "ballistic_knock": false,
+   "level": "E0_WHOLE_ARM_ASSISTED_INSERTION",
+   "fingertip_impulse_share": 0.0911,
+   "arm_body_contact_frames": 24,
+   "n_frames": 60,
+   "peak_coin_speed": 0.4363,
+   "terminal_coin_speed": 0.0
+  }
+ ],
+ "overall_fingertip_impulse_share": 0.0603,
+ "all_controlled_insertion": false,
+ "teacher_label": "WHOLE_ARM_ASSISTED_INSERTION_E0",
+ "fingertip_dominant": false,
+ "wall_s": 89.4,
+ "peak_rss_gb": 0.232
+}

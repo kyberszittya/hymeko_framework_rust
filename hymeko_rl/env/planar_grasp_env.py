@@ -24,6 +24,7 @@ import numpy as np
 from gymnasium import spaces
 
 from hymeko_rl.env.arm_world import actuated_dof_addrs, emit_arm_mjcf, with_collision_floor
+from hymeko_rl.env.collision_contract import apply_collision_contract
 from hymeko_rl.env.constants import Collision, Physics
 from hymeko_rl.env.contact_legality import (
     ContactLegalitySpec, ContactLegalityState, ContactMode, classify_contacts,
@@ -788,6 +789,11 @@ class PlanarGraspEnv(gym.Env[np.ndarray, np.ndarray]):
                                     coin_damping=coin_damping, coin_density=coin_density,
                                     coin_shape=coin_shape, spin_damping=spin_damping,
                                     coin_frictionloss=coin_frictionloss, disk_radius_y=disk_radius_y_override)
+        # COIN_ARM_COLLISION_CONTRACT: replace the arm/coin/floor masks with the explicit per-side category masks
+        # (LEFT=1/RIGHT=2/COIN=4/WORLD=8) so same-arm geoms are ISOLATED by mask (not just the adjacent-link excludes),
+        # left↔right and every arm↔coin collide. Masks-only; geometry/dynamics/graph unchanged. Applied to every planar
+        # coin scene (the §5 inter-arm-filter variants build via coin_robot_variant.build_scene_model and are unaffected).
+        mjcf = apply_collision_contract(mjcf)
         self._mjcf = mjcf   # kept so the renderer can re-skin the scene (decorate_scene)
         self.model = mujoco.MjModel.from_xml_string(mjcf)
         self.data = mujoco.MjData(self.model)

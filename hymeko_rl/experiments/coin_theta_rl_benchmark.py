@@ -151,6 +151,58 @@ def deliver_pass_main() -> dict:
     return out
 
 
+def contact_audit_main() -> dict:
+    """TASK CONTACT-LEGALITY audit — grade each frozen teacher delivery (CONTROLLED_INSERTION + fingertip impulse share +
+    E0/E1/E2 level). Physical collision is real; this only GRADES the contact quality."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.insertion_certificate import grade_delivery
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot, load_harness
+    t0 = time.time()
+    bank_path = f"{REPORT_DIR}/teacher_bank.json"
+    if not os.path.exists(bank_path):
+        print(f"MISSING {bank_path} — run --teacher-bank first")
+        sys.exit(2)
+    bank = json.load(open(bank_path))
+    harness = load_harness()
+    print("CONTACT AUDIT — grading teacher deliveries (physical collision ON; link contact allowed)", flush=True)
+    rows, tot_ft, tot_arm = [], 0.0, 0.0
+    for e in bank["states"]:
+        if "canonical_theta_vec" not in e:
+            continue
+        snap, _ = acquire_snapshot(harness, e["seed"])
+        from hymeko_rl.coin_delivery.theta_option.insertion_certificate import contact_impulse_share
+        q = contact_impulse_share(snap, e["canonical_theta_vec"])
+        g = grade_delivery(snap, e["canonical_theta_vec"])
+        tot_ft += q["fingertip_impulse"]
+        tot_arm += q["arm_body_impulse"]
+        rows.append({"tag": e["tag"], "split": e["split"], "controlled_insertion": g.controlled_insertion,
+                     "ballistic_knock": g.ballistic_knock, "level": g.level,
+                     "fingertip_impulse_share": g.fingertip_impulse_share,
+                     "arm_body_contact_frames": q["arm_body_contact_frames"], "n_frames": q["n_frames"],
+                     "peak_coin_speed": g.peak_coin_speed, "terminal_coin_speed": g.terminal_coin_speed})
+        print(f"  {e['tag']} [{e['split']}]: controlled_insertion={g.controlled_insertion} knock={g.ballistic_knock} "
+              f"level={g.level} ft_share={g.fingertip_impulse_share} arm_frames={q['arm_body_contact_frames']}/{q['n_frames']}",
+              flush=True)
+    grand = tot_ft + tot_arm
+    overall_share = round(tot_ft / grand, 4) if grand > 1e-9 else None
+    all_ci = all(r["controlled_insertion"] for r in rows)
+    out = {"contract": "COIN_CONTACT_LEGALITY_AUDIT_V1", "base_commit": "a3459629", "date": "2026-07-27",
+           "physical_collision": "REALISTIC (every arm geom collides with the coin; per-side masks; same-arm isolated)",
+           "task_certificate": "CONTROLLED_INSERTION (link contact allowed; ballistic knock rejected)",
+           "levels": {"E0": "WHOLE_ARM_ASSISTED_INSERTION (link contact allowed)",
+                      "E1": "FINGERTIP_DOMINANT (ft impulse share >= 0.5)", "E2": "FINGERTIP_ONLY (no non-tip contact)"},
+           "states": rows, "overall_fingertip_impulse_share": overall_share,
+           "all_controlled_insertion": all_ci, "teacher_label": "WHOLE_ARM_ASSISTED_INSERTION_E0",
+           "fingertip_dominant": bool(overall_share is not None and overall_share >= 0.5),
+           "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    path = _dump(out, "contact_quality_audit.json")
+    print(f"\n== CONTACT AUDIT ==\n  all controlled_insertion={all_ci} | overall fingertip impulse share={overall_share} "
+          f"| LABEL: {out['teacher_label']} (fingertip_dominant={out['fingertip_dominant']})\n  artifact: {path} | "
+          f"wall {out['wall_s']}s\nCONTACT_AUDIT_DONE", flush=True)
+    return out
+
+
 def teacher_bank_main(smoke: bool = False) -> dict:
     """Stage 1 — reproduce + freeze the 6-D torque-θ teacher bank; gate on 4/4 canonical frozen-tolerance replay."""
     import torch
@@ -395,6 +447,8 @@ if __name__ == "__main__":
         scout_cradles_main(n=_n)
     elif "--deliver-pass" in sys.argv:
         deliver_pass_main()
+    elif "--contact-audit" in sys.argv:
+        contact_audit_main()
     else:
         print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --scout-cradles [--n N] "
               "| --rl-smoke | --rl-multiseed")

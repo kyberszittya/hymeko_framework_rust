@@ -60,7 +60,62 @@ methodology so the verified behaviour is a regression:
 - `test_cross_arm_pairs_are_collidable` / `test_same_arm_adjacent_pairs_are_excluded_and_do_not_contact` — document the
   cross-arm-collide / adjacent-same-arm-exclude structure.
 
-## Impact on prior results
+## Impact on prior results (of the verified-collision lock-in)
 
-None. No physics changed, so the teacher bank, the update-0 result, and the cradle coverage inventory are unaffected.
-The coin was colliding with the arm all along; the earlier "pass-through" reading was a test artifact.
+None from the test-only lock-in itself. The coin was colliding with the arm all along; the earlier "pass-through"
+reading was a test artifact.
+
+---
+
+## Follow-up — per-side collision contract + task-legality separation (supersedes "test-only")
+
+The user then directed the explicit per-side collision contract (the "test-only" choice above was overridden), and a
+deeper architectural correction: **physical collision** and **task legality** are separate concerns. The old model
+conflated them — it disabled arm↔coin collision (fake physics, interpenetration) to enforce a *behavioural* preference
+(no arm-body "knock"). That is unsuitable for real-robot transfer.
+
+**Physical collision contract (`hymeko_rl/env/collision_contract.py`, applied in `PlanarGraspEnv` for every planar coin
+scene):** per-side category masks — left arm `1/14`, right arm `2/13`, coin `4/11`, floor/world `8/7`. Semantics: every
+arm geom collides with the coin; left↔right collide; same-arm pairs are mask-isolated (not just the adjacent excludes).
+The legacy Galambos fingertip-only-via-noncollision model is retired.
+
+**Task certificate (`hymeko_rl/coin_delivery/theta_option/insertion_certificate.py`), separate from masks:**
+`CONTROLLED_INSERTION = target-directed displacement ∧ bounded coin speed ∧ active braking (low terminal speed) ∧
+terminal K6 dwell ∧ ¬ballistic-knock`. Link contact is **allowed** (morphology-assisted guiding); the forbidden shortcut
+is a ballistic knock. Delivery levels: **E0** whole-arm assisted (link contact allowed), **E1** fingertip-dominant
+(fingertip impulse share ≥ 0.5), **E2** fingertip-only. The fingertip vs arm-body impulse split reuses
+`contact_legality.classify_contacts` (no re-implementation).
+
+**Impulse audit of the frozen teacher (`contact_quality_audit.json`):** overall fingertip impulse share ≈ **0.06**
+(s1 0.107, s3 0.200, s4 0.028, s7 0.091; 126/240 arm-body-contact frames). None is a ballistic knock;
+**3/4 pass CONTROLLED_INSERTION** (s1, s3, s7) — **s4 is K6-valid but drifts after dwelling** (terminal coin speed ≥
+SETTLE_VEL), so it fails the "ends settled" clause (the known "s4 least clean"). **Teacher label:
+`WHOLE_ARM_ASSISTED_INSERTION` (E0).** The teacher guides the coin primarily with the arm links; the fingertips are
+supplementary. It is **not** fingertip-dominant — no fingertip-grasp claim is made, and the strict CONTROLLED_INSERTION
+certificate (stricter than K6, it also requires terminal rest) already flags s4's drift.
+
+**Validation of the mask change (physics-neutrality):** the frozen teacher replays **4/4 unchanged** (snapshot hashes +
+K6 + dwell match), and all **5 usable dev cradles** (s1,s3,16500,17750,19500) match. One certified-but-not-deliverable
+cradle, **seed 23000, no longer certifies** under the correct masks — its old certification was an artifact of the
+incorrect same-arm collision (a false positive correctly dropped). So the coverage inventory is re-frozen under the
+corrected masks; the usable-N pool is unchanged.
+
+**SAC/TD3 authorisation is unaffected** — the E0 teacher is a valid whole-arm-assisted delivery; the next gate remains
+update-0 coverage at N = 2, 4, 5. E1/E2 (fingertip-dominant / fingertip-only) are later hardenings.
+
+### Classification of the 5 failing regression tests (migrated, not deleted)
+
+- **A — obsolete fingertip-only-via-noncollision assumption** (migrated to the physical contract, historical intent
+  recorded): `test_only_fingertip_can_touch_the_coin` → `test_arm_and_fingertip_physically_collide_coin_same_arm_isolated`;
+  `test_compiled_model_coin_collides_with_fingertip_not_arm_capsule` →
+  `test_compiled_model_coin_physically_collides_with_arm_and_fingertip`; the degenerate coincident-centre
+  `test_coin_passes_through_arm_capsule_but_contacts_fingertip` → `test_coin_does_not_pass_through_arm_capsule`
+  (non-coincident shallow penetration); `test_arm_links_collide_with_coin_bitmask` (POINT + CONCAVE_CLAMP) — value
+  migration only (intent aligned: coin↔arm collides; masks updated to per-side).
+- **B — genuine regression:** none.
+- **Pre-existing (collision-independent):** `test_env_shapes_and_coin_placed_in_reach` fails **without** the collision
+  change too (the coin-spawn `_clear_of_arms` is a purely geometric point-to-segment check, unaffected by masks). Left
+  as-is; not in scope for this change.
+
+New task-semantics tests: `hymeko_rl/tests/test_coin_insertion_certificate.py` (controlled-insertion accepted,
+ballistic-knock rejected, teacher grades E0).

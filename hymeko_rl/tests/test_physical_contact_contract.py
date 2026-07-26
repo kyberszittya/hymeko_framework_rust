@@ -43,11 +43,17 @@ def _coin_arm_contacts(env):
 # 8. RING and POINT use the same contact policy (arm-link 1/3, coin 2/2)
 @pytest.mark.parametrize("emb", ["POINT", "CONCAVE_CLAMP"])
 def test_arm_links_collide_with_coin_bitmask(emb):
+    """COIN_ARM_COLLISION_CONTRACT (per-side, 2026-07-27): the coin physically collides with every arm-link geom
+    (whole-arm contact is legal; task legality is a SEPARATE certificate). Masks: coin 4/11, left arm 1/14, right arm
+    2/13 — coin↔arm collidable, same-arm isolated. Supersedes the earlier shared ARM_LEGALITY (1/3)."""
+    from hymeko_rl.env.collision_contract import role_masks
     env = make_coin_env(embodiment=emb)
     m = env.model
-    assert (int(m.geom_contype[env._disk_geom]), int(m.geom_conaffinity[env._disk_geom])) == (2, 2)
+    assert (int(m.geom_contype[env._disk_geom]), int(m.geom_conaffinity[env._disk_geom])) == role_masks("coin")
     for g in _arm_caps(m):
-        assert (int(m.geom_contype[g]), int(m.geom_conaffinity[g])) == (1, 3), f"{emb} arm cap {g} not ARM_LEGALITY"
+        bn = mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_BODY, int(m.geom_bodyid[g])) or ""
+        want = role_masks("left" if bn.endswith("_left") else "right")
+        assert (int(m.geom_contype[g]), int(m.geom_conaffinity[g])) == want, f"{emb} arm cap {g}"
         assert _mask(m, env._disk_geom, g) != 0, f"{emb} coin↔arm-link {g} still filtered"
 
 

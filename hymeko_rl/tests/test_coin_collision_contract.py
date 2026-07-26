@@ -179,22 +179,34 @@ def test_cross_arm_pairs_are_collidable(coin_model):
             assert bp not in excl                                   # no cross-arm exclude
 
 
-def test_same_arm_adjacent_pairs_are_excluded_and_do_not_contact(coin_model):
-    """Contract #1 (as enforced today): the ADJACENT same-arm body pairs are in the MuJoCo exclude list, and at the home
-    pose no same-arm geom pair appears in data.contact (they are physically adjacent at the joints, so absent the exclude
-    they would contact)."""
+def test_same_arm_pairs_are_mask_isolated(coin_model):
+    """Contract #1 (per-side mask, not just adjacent excludes): EVERY same-arm geom pair — adjacent AND non-adjacent — is
+    mask-isolated (not collidable), so no same-arm self-collision can occur in any pose or on any future morphology.
+    Also: no same-arm contact appears at the home pose."""
     m, d = coin_model.inner.model, coin_model.inner.data
-    excl = _excluded_bodies(m)
-
-    def bid(name: str) -> int:
-        return int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, name))
-    for a, b in [("base_left", "link1_left"), ("link1_left", "link2_left"),
-                 ("base_right", "link1_right"), ("link1_right", "link2_right")]:
-        assert tuple(sorted((bid(a), bid(b)))) in excl
     arm = _arm_geoms(m)
+    for side in ("L", "R"):
+        gs = [g for g, i in arm.items() if i["side"] == side]
+        for i, a in enumerate(gs):
+            for b in gs[i + 1:]:
+                assert not _mask_collidable(m, a, b), f"same-arm pair {arm[a]['label']}~{arm[b]['label']} is collidable"
     mujoco.mj_forward(m, d)
     for i in range(d.ncon):
         c = d.contact[i]
         a, b = int(c.geom1), int(c.geom2)
         if a in arm and b in arm and arm[a]["side"] == arm[b]["side"]:
             raise AssertionError(f"unexpected same-arm contact at home pose: {arm[a]['label']}~{arm[b]['label']}")
+
+
+def test_collision_contract_exact_mask_values(coin_model):
+    """Lock the exact per-side category masks: LEFT=1/14, RIGHT=2/13, COIN=4/11, WORLD/floor=8/7."""
+    from hymeko_rl.env.collision_contract import role_masks
+    m = coin_model.inner.model
+    arm = _arm_geoms(m)
+    for g, info in arm.items():
+        want = role_masks("left" if info["side"] == "L" else "right")
+        assert (int(m.geom_contype[g]), int(m.geom_conaffinity[g])) == want, info["label"]
+    coin = _disk(m)
+    assert (int(m.geom_contype[coin]), int(m.geom_conaffinity[coin])) == role_masks("coin")
+    floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "floor")
+    assert (int(m.geom_contype[floor]), int(m.geom_conaffinity[floor])) == role_masks("world")
