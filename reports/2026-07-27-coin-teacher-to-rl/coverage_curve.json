@@ -1,0 +1,397 @@
+{
+ "contract": "COIN_6D_THETA_COVERAGE_CURVE_V1",
+ "base_commit": "a3459629",
+ "date": "2026-07-27",
+ "question": "Does growing development-cradle coverage ALONE remove the held-out update-0 regression?",
+ "invariant_across_N": {
+  "model": "B0",
+  "feature_set": "structured 42-D + causal history (frozen)",
+  "optimiser": "Adam",
+  "epochs": 1200,
+  "lr": 0.001,
+  "init_seed": 0,
+  "search_budget": 8,
+  "search_semantics": {
+   "budget_counts_total_candidates": true,
+   "centre_always_evaluated": true,
+   "n_total_candidates": 8,
+   "n_jittered_candidates": 7,
+   "budget_zero": "direct execution of \u03b8_0 (centre only, no jitter)",
+   "search_std_norm": 0.15
+  },
+  "search_std": 0.15,
+  "eval_panel": "frozen 4-state {s1,s3,s4,s7}",
+  "held_out": [
+   "s4",
+   "s7"
+  ],
+  "fresh_matched_init_each_N": true,
+  "K6": "frozen monitor",
+  "motion_collision_task_contract": "frozen (4c71f12f per-side masks + CONTROLLED_INSERTION)"
+ },
+ "frozen_dev_seeds": [
+  14250,
+  14750
+ ],
+ "new_usable_dev_seeds": [
+  16500,
+  17750,
+  19500,
+  24000
+ ],
+ "n4_selection": {
+  "rule": "greedy_farthest_point_in_geometry_fingerprint_space",
+  "non_outcome_based": true,
+  "selected": [
+   17750,
+   16500
+  ],
+  "candidate_min_dist_to_frozen_dev": {
+   "16500": 1.8385,
+   "17750": 2.5811,
+   "19500": 1.1783,
+   "24000": 1.1483
+  },
+  "pick_trace": [
+   {
+    "picked_seed": 17750,
+    "min_dist_to_current_set": 2.5811
+   },
+   {
+    "picked_seed": 16500,
+    "min_dist_to_current_set": 1.8385
+   }
+  ]
+ },
+ "nested_dev_sets": {
+  "2": [
+   14250,
+   14750
+  ],
+  "4": [
+   14250,
+   14750,
+   17750,
+   16500
+  ],
+  "6": [
+   14250,
+   14750,
+   16500,
+   17750,
+   19500,
+   24000
+  ]
+ },
+ "records": [
+  {
+   "N": 2,
+   "train_cradles": [
+    14250,
+    14750
+   ],
+   "n_train_cradles": 2,
+   "gate_budget": 8,
+   "gate_informed_dev_k6": 2,
+   "gate_informed_held_out_k6": 0,
+   "gate_informed_total_k6": 2,
+   "n_panel": 4,
+   "held_out_per_state_k6": {
+    "s4": 0,
+    "s7": 0
+   },
+   "held_out_dtz_end_mm": {
+    "s4": 33.71,
+    "s7": 50.88
+   },
+   "proposal_only_total_k6": 1,
+   "proposal_only_held_out_k6": 0,
+   "search8_total_k6": 2,
+   "search8_held_out_k6": 0,
+   "uninformed_total_k6": 0,
+   "oracle_total_k6": 4,
+   "actor_load_bearing": true,
+   "held_out_theta_l2_norm": 0.64932,
+   "dev_theta_l2_norm": 0.22956,
+   "theta_distance": {
+    "per_state": {
+     "s1": {
+      "split": "development",
+      "theta_l2_legal": 1.29719,
+      "theta_l2_norm": 0.13897
+     },
+     "s3": {
+      "split": "development",
+      "theta_l2_legal": 2.05603,
+      "theta_l2_norm": 0.32014
+     },
+     "s4": {
+      "split": "held_out",
+      "theta_l2_legal": 4.66313,
+      "theta_l2_norm": 0.54582
+     },
+     "s7": {
+      "split": "held_out",
+      "theta_l2_legal": 5.35966,
+      "theta_l2_norm": 0.75283
+     }
+    },
+    "mean_theta_l2_norm_by_split": {
+     "development": 0.22956,
+     "held_out": 0.64932
+    }
+   },
+   "held_out_failure_mode": {
+    "s4": "REACHED_BUT_NO_SETTLE",
+    "s7": "NEVER_REACHED_ZONE"
+   },
+   "motion_contract_ok_per_state": {
+    "s1": true,
+    "s3": true,
+    "s4": true,
+    "s7": true
+   },
+   "gate_passed": false,
+   "authorises_rl": false,
+   "verdict": "UPDATE_ZERO_REGRESSES_HELD_OUT",
+   "diagnosed_blocker": "INSUFFICIENT_DATASET_COVERAGE_2_DEV_CRADLES",
+   "train_mse": 0.015855,
+   "n_train_rows": 17,
+   "held_out_theta_exec": {
+    "s4": [
+     0.10272,
+     0.14457,
+     -0.01454,
+     11.14064,
+     11.44938,
+     2.4039
+    ],
+    "s7": [
+     0.11291,
+     0.12483,
+     0.00604,
+     10.49667,
+     5.91419,
+     2.90404
+    ]
+   }
+  },
+  {
+   "N": 4,
+   "train_cradles": [
+    14250,
+    14750,
+    17750,
+    16500
+   ],
+   "n_train_cradles": 4,
+   "gate_budget": 8,
+   "gate_informed_dev_k6": 2,
+   "gate_informed_held_out_k6": 0,
+   "gate_informed_total_k6": 2,
+   "n_panel": 4,
+   "held_out_per_state_k6": {
+    "s4": 0,
+    "s7": 0
+   },
+   "held_out_dtz_end_mm": {
+    "s4": 77.58,
+    "s7": 114.92
+   },
+   "proposal_only_total_k6": 1,
+   "proposal_only_held_out_k6": 0,
+   "search8_total_k6": 2,
+   "search8_held_out_k6": 0,
+   "uninformed_total_k6": 0,
+   "oracle_total_k6": 4,
+   "actor_load_bearing": true,
+   "held_out_theta_l2_norm": 1.53415,
+   "dev_theta_l2_norm": 0.22956,
+   "theta_distance": {
+    "per_state": {
+     "s1": {
+      "split": "development",
+      "theta_l2_legal": 1.29719,
+      "theta_l2_norm": 0.13897
+     },
+     "s3": {
+      "split": "development",
+      "theta_l2_legal": 2.05603,
+      "theta_l2_norm": 0.32014
+     },
+     "s4": {
+      "split": "held_out",
+      "theta_l2_legal": 18.1558,
+      "theta_l2_norm": 1.49985
+     },
+     "s7": {
+      "split": "held_out",
+      "theta_l2_legal": 19.16219,
+      "theta_l2_norm": 1.56844
+     }
+    },
+    "mean_theta_l2_norm_by_split": {
+     "development": 0.22956,
+     "held_out": 1.53415
+    }
+   },
+   "held_out_failure_mode": {
+    "s4": "NEVER_REACHED_ZONE",
+    "s7": "NEVER_REACHED_ZONE"
+   },
+   "motion_contract_ok_per_state": {
+    "s1": true,
+    "s3": true,
+    "s4": true,
+    "s7": true
+   },
+   "gate_passed": false,
+   "authorises_rl": false,
+   "verdict": "UPDATE_ZERO_REGRESSES_HELD_OUT",
+   "diagnosed_blocker": "INSUFFICIENT_DATASET_COVERAGE_2_DEV_CRADLES",
+   "train_mse": 0.018323,
+   "n_train_rows": 35,
+   "held_out_theta_exec": {
+    "s4": [
+     0.02494,
+     0.17929,
+     0.06671,
+     4.87057,
+     26.92551,
+     1.94556
+    ],
+    "s7": [
+     0.02212,
+     0.12611,
+     0.1,
+     4.87725,
+     19.03575,
+     1.93586
+    ]
+   }
+  },
+  {
+   "N": 6,
+   "train_cradles": [
+    14250,
+    14750,
+    16500,
+    17750,
+    19500,
+    24000
+   ],
+   "n_train_cradles": 6,
+   "gate_budget": 8,
+   "gate_informed_dev_k6": 2,
+   "gate_informed_held_out_k6": 0,
+   "gate_informed_total_k6": 2,
+   "n_panel": 4,
+   "held_out_per_state_k6": {
+    "s4": 0,
+    "s7": 0
+   },
+   "held_out_dtz_end_mm": {
+    "s4": 76.6,
+    "s7": 111.1
+   },
+   "proposal_only_total_k6": 1,
+   "proposal_only_held_out_k6": 0,
+   "search8_total_k6": 2,
+   "search8_held_out_k6": 0,
+   "uninformed_total_k6": 0,
+   "oracle_total_k6": 4,
+   "actor_load_bearing": true,
+   "held_out_theta_l2_norm": 1.52052,
+   "dev_theta_l2_norm": 0.22956,
+   "theta_distance": {
+    "per_state": {
+     "s1": {
+      "split": "development",
+      "theta_l2_legal": 1.29719,
+      "theta_l2_norm": 0.13897
+     },
+     "s3": {
+      "split": "development",
+      "theta_l2_legal": 2.05603,
+      "theta_l2_norm": 0.32014
+     },
+     "s4": {
+      "split": "held_out",
+      "theta_l2_legal": 17.90264,
+      "theta_l2_norm": 1.45166
+     },
+     "s7": {
+      "split": "held_out",
+      "theta_l2_legal": 19.2723,
+      "theta_l2_norm": 1.58937
+     }
+    },
+    "mean_theta_l2_norm_by_split": {
+     "development": 0.22956,
+     "held_out": 1.52052
+    }
+   },
+   "held_out_failure_mode": {
+    "s4": "NEVER_REACHED_ZONE",
+    "s7": "NEVER_REACHED_ZONE"
+   },
+   "motion_contract_ok_per_state": {
+    "s1": true,
+    "s3": true,
+    "s4": true,
+    "s7": true
+   },
+   "gate_passed": false,
+   "authorises_rl": false,
+   "verdict": "UPDATE_ZERO_REGRESSES_HELD_OUT",
+   "diagnosed_blocker": "INSUFFICIENT_DATASET_COVERAGE_2_DEV_CRADLES",
+   "train_mse": 0.01718,
+   "n_train_rows": 38,
+   "held_out_theta_exec": {
+    "s4": [
+     0.02596,
+     0.18718,
+     0.06425,
+     5.19834,
+     26.76869,
+     2.1391
+    ],
+    "s7": [
+     0.02077,
+     0.1179,
+     0.1,
+     5.16039,
+     19.19247,
+     2.07055
+    ]
+   }
+  }
+ ],
+ "verdict": {
+  "held_out_k6_by_N": {
+   "2": 0,
+   "4": 0,
+   "6": 0
+  },
+  "held_out_theta_l2_norm_by_N": {
+   "2": 0.64932,
+   "4": 1.53415,
+   "6": 1.52052
+  },
+  "held_out_k6_nondecreasing_and_rises": false,
+  "held_out_theta_distance_shrinks_monotonically": false,
+  "generalisation_improves_with_coverage": false,
+  "authorise_sac_td3": false,
+  "first_passing_N": null,
+  "stop": true,
+  "verdict": "COVERAGE_ALONE_INSUFFICIENT",
+  "next_action": "acceptable-set / multimodal proposal \u2192 update-0 retry \u2192 only then RL (do NOT run SAC/TD3 now)"
+ },
+ "smoke": false,
+ "wall_s": 647.3,
+ "peak_rss_gb": 0.319,
+ "figures": {
+  "curve_png": "reports/2026-07-27-coin-teacher-to-rl/coverage_curve.png",
+  "gif_N6_s4": "reports/2026-07-27-coin-teacher-to-rl/coverage_N6_deploy_s4.gif"
+ }
+}
