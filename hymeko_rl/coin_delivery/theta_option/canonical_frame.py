@@ -56,6 +56,15 @@ R1_GROUP_ORDER = tuple(name for name, _ in R1_LAYOUT)
 R1_KIND = dict(R1_LAYOUT)
 # groups whose flattened length differs from the kind default (SHARED_* = 1, SIDE_* = 2)
 R1_GROUP_LEN = {"btau_svals": 4, "btau_summary": 2}
+# FIXED per-group physical scales (causal — no cross-cradle leak) so no component dominates the distance/model. The same
+# scale applies to both sides of a SIDE group (⇒ commutes with the swap ⇒ mirror-safe). Chosen from the physical ranges.
+R1_NORM_SCALES = {
+    "dtz": 0.20, "coin_vel_along": 0.50, "coin_vel_perp": 0.50, "straddle": 1.0,
+    "tip_coin_along": 0.05, "tip_coin_perp": 0.05, "normal_along": 1.0, "normal_perp": 1.0,
+    "fn": 5.0, "slew_head_up": 1.0, "slew_head_dn": 1.0,
+    "btau_svals": 0.40, "btau_summary": 0.50, "btau_side_auth": 0.40,
+    "vrel_normal": 0.20, "vrel_tangent": 0.20, "friction_util": 1.0, "prev_tau_arm": 2.0,
+}
 
 
 def group_len(name: str) -> int:
@@ -118,16 +127,17 @@ def r1_grouped_features(snap: CradleSnapshot) -> dict[str, np.ndarray]:
 
 def _btau_authority(snap: CradleSnapshot) -> dict[str, np.ndarray]:
     """Configuration-dependent one-step control authority from B_τ = ∂vrel4/∂Δτ (contact-frame rows [Lvn,Lvt,Rvn,Rvt]).
-    Returns mirror-safe scalars: the 4 singular values + [condition, active-rank fraction] (invariant under the mirror's
-    orthogonal row/col action) and the per-side response magnitude [‖left rows‖, ‖right rows‖] (swaps sides). Reuses the
-    frozen Route-B `identify_Btau`. # Postconditions: all finite; magnitudes ⇒ no τ-sign ambiguity."""
+    Returns mirror-safe, WELL-SCALED scalars: the 4 singular values + [active-rank fraction, Frobenius norm] (invariant
+    under the mirror's orthogonal row/col action) and the per-side response magnitude [‖left rows‖, ‖right rows‖] (swaps
+    sides). The raw condition number is deliberately dropped — it is O(100+) (it would dominate the unnormalised distance)
+    AND redundant with the singular values. Reuses the frozen Route-B `identify_Btau`. # Postconditions: all finite,
+    O(1); magnitudes ⇒ no τ-sign ambiguity."""
     from hymeko_rl.coin_delivery.torque_authority import TorqueAuthorityConfig, identify_Btau
     info = identify_Btau(snap, 0.05, TorqueAuthorityConfig())
     B = np.nan_to_num(np.asarray(info["Btau"], np.float64), nan=0.0)
     sv = np.sort(np.linalg.svd(B, compute_uv=False))[::-1]
-    cond = float(sv[0] / max(sv[-1], 1e-6))
     return {"svals": sv.astype(np.float64),
-            "summary": np.array([min(cond, 1e4), float(info["n_active"]) / 4.0]),
+            "summary": np.array([float(info["n_active"]) / 4.0, float(np.linalg.norm(B))]),
             "side_auth": np.array([float(np.linalg.norm(B[:2])), float(np.linalg.norm(B[2:]))])}
 
 
@@ -192,9 +202,12 @@ def canonicalise(g: dict[str, np.ndarray]) -> "tuple[dict[str, np.ndarray], bool
 
 
 def flatten_r1(g: dict[str, np.ndarray]) -> np.ndarray:
-    """Concatenate the grouped features in the frozen R1 group order → a 1-D float32 vector. # Postconditions: length is
-    fixed (4 shared + 7×2 − … per the layout); deterministic."""
-    return np.concatenate([np.asarray(g[name], np.float64).ravel() for name in R1_GROUP_ORDER]).astype(np.float32)
+    """Concatenate the grouped features in the frozen R1 group order, each divided by its FIXED per-group physical scale
+    (so no component dominates the distance), → a 1-D float32 vector. The per-group scale is identical for both sides ⇒ it
+    commutes with the mirror swap ⇒ the canonicalisation invariance is preserved. # Postconditions: length == r1_feature_dim();
+    deterministic; every component O(1)."""
+    return np.concatenate([np.asarray(g[name], np.float64).ravel() / R1_NORM_SCALES.get(name, 1.0)
+                           for name in R1_GROUP_ORDER]).astype(np.float32)
 
 
 def r1_canonical_features(snap: CradleSnapshot) -> "tuple[np.ndarray, bool]":
