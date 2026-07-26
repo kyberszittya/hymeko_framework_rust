@@ -6,9 +6,21 @@ description = "Scaling-study benchmark harness for the HyMeKo pipeline"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/kyberszittya/hymeko_framework_rust"
 
+[lib]
+name = "hymeko_bench"
+path = "src/lib.rs"
+
 [[bin]]
 name = "bench_scaling"
 path = "src/bin/bench_scaling.rs"
+
+[[bin]]
+name = "bench_memory"
+path = "src/bin/bench_memory.rs"
+
+[[bin]]
+name = "bench_scaling_sweep"
+path = "src/bin/bench_scaling_sweep.rs"
 
 [[bin]]
 name = "binary_vs_hypergraph"
