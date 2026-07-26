@@ -1,0 +1,49 @@
+{
+ "contract": "COIN_R2_RELATIONAL_UPDATE_ZERO_V1",
+ "date": "2026-07-27",
+ "capacity": {
+  "r1_params": 25240,
+  "r2_params": 25774,
+  "pct_diff": 2.116,
+  "within_pm5pct": true
+ },
+ "k_main": 4,
+ "epochs": 1500,
+ "lr": 0.001,
+ "seed": 0,
+ "hidden_width": 25,
+ "n_global": 600,
+ "dev_seeds": [
+  14250,
+  14750,
+  16500,
+  17750,
+  19500,
+  24000
+ ],
+ "pre_panel_gates": {
+  "final_loss": 0.463881,
+  "finite_loss": true,
+  "bounded_outputs": true,
+  "deterministic_reload": true,
+  "embedding_not_constant": true,
+  "relation_response_maxabs": 0.129839,
+  "responds_to_relations": true,
+  "per_state_recall": {
+   "s1": 0.5232,
+   "s3": 0.7654,
+   "16500": 0.1345,
+   "17750": 0.7192,
+   "19500": 0.5972,
+   "24000": 0.0172
+  },
+  "trainable_params": 25774,
+  "all_pass": true
+ },
+ "lodo_dev_diagnostic": {
+  "1": 0,
+  "4": 1
+ },
+ "train_final_loss": 0.463881,
+ "checkpoint": "r2_checkpoint.pt"
+}

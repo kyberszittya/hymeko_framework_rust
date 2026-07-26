@@ -1,0 +1,701 @@
+{
+ "contract": "COIN_R2_RELATIONAL_UPDATE_ZERO_V1",
+ "start_commit": "9d6fc3d5",
+ "date": "2026-07-27",
+ "changed_axes_only": [
+  "organisation: flat 43-D R1 v3 -> HyMeKo typed relational graph"
+ ],
+ "frozen": [
+  "43-D canonical information (identical)",
+  "acceptable-set targets",
+  "set-loss",
+  "optimiser/epochs/seed",
+  "K_main=4 (dev-only LODO)",
+  "budget-8 + centre-inclusion",
+  "physical PUSH/BRAKE/RELEASE option",
+  "K6 monitor",
+  "frozen 4-state panel",
+  "held-out discipline (s4/s7 eval-only)"
+ ],
+ "capacity": {
+  "r1_params": 25240,
+  "r2_params": 25774,
+  "pct_diff": 2.116,
+  "within_pm5pct": true
+ },
+ "pre_panel_gates": {
+  "final_loss": 0.463881,
+  "finite_loss": true,
+  "bounded_outputs": true,
+  "deterministic_reload": true,
+  "embedding_not_constant": true,
+  "relation_response_maxabs": 0.129839,
+  "responds_to_relations": true,
+  "per_state_recall": {
+   "s1": 0.5232,
+   "s3": 0.7654,
+   "16500": 0.1345,
+   "17750": 0.7192,
+   "19500": 0.5972,
+   "24000": 0.0172
+  },
+  "trainable_params": 25774,
+  "all_pass": true
+ },
+ "lodo_dev_diagnostic": {
+  "1": 0,
+  "4": 1
+ },
+ "k_main": 4,
+ "main_deploy": {
+  "K": 4,
+  "checkpoint": "reports/2026-07-27-coin-r2-relational-update0/r2_khead_K4.pt",
+  "per_state": {
+   "s1": {
+    "selected_head": 0,
+    "n_modes": 4,
+    "per_mode_budget": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "was_swapped": false,
+    "canonical_heads": [
+     [
+      0.0274,
+      0.1624,
+      0.019,
+      16.8613,
+      14.8826,
+      3.1173
+     ],
+     [
+      0.0738,
+      0.2444,
+      -0.0355,
+      18.1879,
+      12.4303,
+      1.8638
+     ],
+     [
+      0.0789,
+      0.1936,
+      0.0353,
+      9.4423,
+      9.1148,
+      2.7421
+     ],
+     [
+      0.0548,
+      0.2627,
+      0.0073,
+      15.5338,
+      6.427,
+      3.3108
+     ]
+    ],
+    "decoded_physical_centres": [
+     [
+      0.0274,
+      0.1624,
+      0.019,
+      16.8613,
+      14.8826,
+      3.1173
+     ],
+     [
+      0.0738,
+      0.2444,
+      -0.0355,
+      18.1879,
+      12.4303,
+      1.8638
+     ],
+     [
+      0.0789,
+      0.1936,
+      0.0353,
+      9.4423,
+      9.1148,
+      2.7421
+     ],
+     [
+      0.0548,
+      0.2627,
+      0.0073,
+      15.5338,
+      6.427,
+      3.3108
+     ]
+    ],
+    "theta_exec": [
+     0.0274,
+     0.1624,
+     0.019,
+     16.8613,
+     14.8826,
+     3.1173
+    ],
+    "search_displacement_norm": 0.0,
+    "budget_total": 8,
+    "k6_delivered": true,
+    "delivery_success": true,
+    "k6_max_dwell": 22,
+    "dtz_start_mm": 76.44,
+    "dtz_end_mm": 19.37,
+    "zone_entry": true,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9972,
+    "peak_coin_speed": 0.45,
+    "failure_phase": null,
+    "split": "development",
+    "nearest_dev_acceptable_dist": 0.2026
+   },
+   "s3": {
+    "selected_head": 0,
+    "n_modes": 4,
+    "per_mode_budget": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "was_swapped": true,
+    "canonical_heads": [
+     [
+      0.2189,
+      0.0953,
+      -0.0464,
+      7.7357,
+      37.4936,
+      2.3006
+     ],
+     [
+      0.1142,
+      0.2319,
+      -0.0313,
+      7.491,
+      32.5778,
+      1.8518
+     ],
+     [
+      0.1561,
+      0.079,
+      0.0382,
+      6.8714,
+      9.5231,
+      2.2715
+     ],
+     [
+      0.0505,
+      0.2353,
+      -0.0731,
+      18.6628,
+      11.8465,
+      2.1286
+     ]
+    ],
+    "decoded_physical_centres": [
+     [
+      0.2189,
+      0.0953,
+      0.0464,
+      7.7357,
+      37.4936,
+      2.3006
+     ],
+     [
+      0.1142,
+      0.2319,
+      0.0313,
+      7.491,
+      32.5778,
+      1.8518
+     ],
+     [
+      0.1561,
+      0.079,
+      -0.0382,
+      6.8714,
+      9.5231,
+      2.2715
+     ],
+     [
+      0.0505,
+      0.2353,
+      0.0731,
+      18.6628,
+      11.8465,
+      2.1286
+     ]
+    ],
+    "theta_exec": [
+     0.2189,
+     0.0953,
+     0.0464,
+     7.7357,
+     37.4936,
+     2.3006
+    ],
+    "search_displacement_norm": 0.0,
+    "budget_total": 8,
+    "k6_delivered": true,
+    "delivery_success": true,
+    "k6_max_dwell": 20,
+    "dtz_start_mm": 99.89,
+    "dtz_end_mm": 17.69,
+    "zone_entry": true,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 2.0262,
+    "peak_coin_speed": 0.5216,
+    "failure_phase": null,
+    "split": "development",
+    "nearest_dev_acceptable_dist": 0.2518
+   },
+   "s4": {
+    "selected_head": 2,
+    "n_modes": 4,
+    "per_mode_budget": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "was_swapped": false,
+    "canonical_heads": [
+     [
+      0.2061,
+      0.1149,
+      -0.07,
+      16.6352,
+      43.0102,
+      2.6952
+     ],
+     [
+      0.094,
+      0.2006,
+      -0.0568,
+      10.0963,
+      24.8818,
+      2.1692
+     ],
+     [
+      0.1829,
+      0.1183,
+      -0.0264,
+      9.1899,
+      14.8456,
+      3.131
+     ],
+     [
+      0.082,
+      0.2441,
+      -0.0519,
+      18.3347,
+      19.9176,
+      3.2029
+     ]
+    ],
+    "decoded_physical_centres": [
+     [
+      0.2061,
+      0.1149,
+      -0.07,
+      16.6352,
+      43.0102,
+      2.6952
+     ],
+     [
+      0.094,
+      0.2006,
+      -0.0568,
+      10.0963,
+      24.8818,
+      2.1692
+     ],
+     [
+      0.1829,
+      0.1183,
+      -0.0264,
+      9.1899,
+      14.8456,
+      3.131
+     ],
+     [
+      0.082,
+      0.2441,
+      -0.0519,
+      18.3347,
+      19.9176,
+      3.2029
+     ]
+    ],
+    "theta_exec": [
+     0.1763,
+     0.1122,
+     -0.034,
+     10.1112,
+     11.1555,
+     3.0053
+    ],
+    "search_displacement_norm": 0.217,
+    "budget_total": 8,
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_start_mm": 96.06,
+    "dtz_end_mm": 69.79,
+    "zone_entry": false,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 2.0026,
+    "peak_coin_speed": 0.2427,
+    "failure_phase": "NEVER_REACHED_ZONE",
+    "split": "held_out",
+    "nearest_dev_acceptable_dist": 0.4039
+   },
+   "s7": {
+    "selected_head": 2,
+    "n_modes": 4,
+    "per_mode_budget": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "was_swapped": true,
+    "canonical_heads": [
+     [
+      0.0518,
+      0.0574,
+      0.0315,
+      15.5787,
+      18.2563,
+      2.6581
+     ],
+     [
+      0.0523,
+      0.1576,
+      -0.0161,
+      11.4083,
+      16.583,
+      2.6166
+     ],
+     [
+      0.1042,
+      0.1539,
+      0.0448,
+      8.7427,
+      11.4965,
+      1.1525
+     ],
+     [
+      0.062,
+      0.2193,
+      0.0118,
+      12.1736,
+      18.6422,
+      2.8828
+     ]
+    ],
+    "decoded_physical_centres": [
+     [
+      0.0518,
+      0.0574,
+      -0.0315,
+      15.5787,
+      18.2563,
+      2.6581
+     ],
+     [
+      0.0523,
+      0.1576,
+      0.0161,
+      11.4083,
+      16.583,
+      2.6166
+     ],
+     [
+      0.1042,
+      0.1539,
+      -0.0448,
+      8.7427,
+      11.4965,
+      1.1525
+     ],
+     [
+      0.062,
+      0.2193,
+      -0.0118,
+      12.1736,
+      18.6422,
+      2.8828
+     ]
+    ],
+    "theta_exec": [
+     0.123,
+     0.1577,
+     -0.0365,
+     11.2398,
+     7.5743,
+     1.1229
+    ],
+    "search_displacement_norm": 0.3106,
+    "budget_total": 8,
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_start_mm": 137.73,
+    "dtz_end_mm": 60.89,
+    "zone_entry": false,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.0981,
+    "peak_coin_speed": 0.5908,
+    "failure_phase": "NEVER_REACHED_ZONE",
+    "split": "held_out",
+    "nearest_dev_acceptable_dist": 0.4234
+   }
+  },
+  "dev_k6": 2,
+  "held_out_k6": 0,
+  "total_k6": 2,
+  "train_final_loss": 0.463881,
+  "trainable_params": 25774
+ },
+ "k1_side_diagnostic": {
+  "K": 1,
+  "checkpoint": "reports/2026-07-27-coin-r2-relational-update0/r2_khead_K1.pt",
+  "per_state": {
+   "s1": {
+    "selected_head": 0,
+    "n_modes": 1,
+    "per_mode_budget": [
+     8
+    ],
+    "was_swapped": false,
+    "canonical_heads": [
+     [
+      0.0604,
+      0.2169,
+      0.0027,
+      16.3858,
+      9.955,
+      2.823
+     ]
+    ],
+    "decoded_physical_centres": [
+     [
+      0.0604,
+      0.2169,
+      0.0027,
+      16.3858,
+      9.955,
+      2.823
+     ]
+    ],
+    "theta_exec": [
+     0.0515,
+     0.2037,
+     -0.0005,
+     18.0319,
+     13.1273,
+     2.6145
+    ],
+    "search_displacement_norm": 0.2455,
+    "budget_total": 8,
+    "k6_delivered": true,
+    "delivery_success": true,
+    "k6_max_dwell": 15,
+    "dtz_start_mm": 76.44,
+    "dtz_end_mm": 7.62,
+    "zone_entry": true,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 2.0632,
+    "peak_coin_speed": 0.4494,
+    "failure_phase": null,
+    "split": "development",
+    "nearest_dev_acceptable_dist": 0.1387
+   },
+   "s3": {
+    "selected_head": 0,
+    "n_modes": 1,
+    "per_mode_budget": [
+     8
+    ],
+    "was_swapped": true,
+    "canonical_heads": [
+     [
+      0.1431,
+      0.1018,
+      0.0022,
+      7.528,
+      14.3709,
+      1.9327
+     ]
+    ],
+    "decoded_physical_centres": [
+     [
+      0.1431,
+      0.1018,
+      -0.0022,
+      7.528,
+      14.3709,
+      1.9327
+     ]
+    ],
+    "theta_exec": [
+     0.132,
+     0.1514,
+     -0.0025,
+     10.8813,
+     15.1547,
+     1.6041
+    ],
+    "search_displacement_norm": 0.4552,
+    "budget_total": 8,
+    "k6_delivered": true,
+    "delivery_success": true,
+    "k6_max_dwell": 20,
+    "dtz_start_mm": 99.89,
+    "dtz_end_mm": 2.13,
+    "zone_entry": true,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 2.0149,
+    "peak_coin_speed": 0.5245,
+    "failure_phase": null,
+    "split": "development",
+    "nearest_dev_acceptable_dist": 0.3675
+   },
+   "s4": {
+    "selected_head": 0,
+    "n_modes": 1,
+    "per_mode_budget": [
+     8
+    ],
+    "was_swapped": false,
+    "canonical_heads": [
+     [
+      0.1519,
+      0.1417,
+      -0.0385,
+      12.704,
+      23.1415,
+      2.6196
+     ]
+    ],
+    "decoded_physical_centres": [
+     [
+      0.1519,
+      0.1417,
+      -0.0385,
+      12.704,
+      23.1415,
+      2.6196
+     ]
+    ],
+    "theta_exec": [
+     0.1815,
+     0.1189,
+     -0.0214,
+     10.7958,
+     17.2844,
+     2.5208
+    ],
+    "search_displacement_norm": 0.4495,
+    "budget_total": 8,
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_start_mm": 96.06,
+    "dtz_end_mm": 58.83,
+    "zone_entry": false,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.2225,
+    "peak_coin_speed": 0.2383,
+    "failure_phase": "NEVER_REACHED_ZONE",
+    "split": "held_out",
+    "nearest_dev_acceptable_dist": 0.3307
+   },
+   "s7": {
+    "selected_head": 0,
+    "n_modes": 1,
+    "per_mode_budget": [
+     8
+    ],
+    "was_swapped": true,
+    "canonical_heads": [
+     [
+      0.0718,
+      0.1379,
+      0.0059,
+      11.2094,
+      14.4974,
+      2.3995
+     ]
+    ],
+    "decoded_physical_centres": [
+     [
+      0.0718,
+      0.1379,
+      -0.0059,
+      11.2094,
+      14.4974,
+      2.3995
+     ]
+    ],
+    "theta_exec": [
+     0.0827,
+     0.1314,
+     -0.0026,
+     11.6467,
+     8.6815,
+     2.6411
+    ],
+    "search_displacement_norm": 0.3098,
+    "budget_total": 8,
+    "k6_delivered": false,
+    "delivery_success": false,
+    "k6_max_dwell": 0,
+    "dtz_start_mm": 137.73,
+    "dtz_end_mm": 47.24,
+    "zone_entry": false,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.004,
+    "peak_coin_speed": 0.5952,
+    "failure_phase": "NEVER_REACHED_ZONE",
+    "split": "held_out",
+    "nearest_dev_acceptable_dist": 0.6072
+   }
+  },
+  "dev_k6": 2,
+  "held_out_k6": 0,
+  "total_k6": 2,
+  "train_final_loss": 0.956422,
+  "trainable_params": 23956
+ },
+ "gate": {
+  "dev_k6": 2,
+  "held_out_k6": 0,
+  "total_k6": 2,
+  "motion_ok": true,
+  "provenance_ok": true,
+  "passed": false
+ },
+ "r1_baseline": {
+  "dev_k6": 2,
+  "held_out_k6": 0,
+  "total_k6": 2,
+  "verdict": "FLAT_R1_LEARNED_AMORTISATION_FAILS"
+ },
+ "improves_over_r1": false,
+ "decision_case": "C",
+ "verdict": "RELATIONAL_ORGANISATION_ALONE_INSUFFICIENT",
+ "verdict_secondary": {
+  "verdict_A": null,
+  "verdict_A_rl": null
+ },
+ "authorises_sac_td3": false,
+ "next_action": "next authorised axis: canonical physical intent -> deterministic authority-aware decoder -> unchanged 6-D \u03b8 option (do NOT build in this session). SAC/TD3 blocked.",
+ "wall_s": 396.5,
+ "peak_rss_gb": 0.32
+}
