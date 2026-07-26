@@ -26,6 +26,8 @@ from hymeko_rl.coin_delivery.contact_velocity import BvConfig, CradleSnapshot, I
 from hymeko_rl.coin_delivery.horizon_authority import (  # noqa: E402
     HORIZONS, HorizonConfig, analyse_state_horizon, decide_campaign_route)
 from hymeko_rl.coin_delivery.mobile_conditioning import ConditionConfig, condition_mobile_handoff  # noqa: E402
+from hymeko_rl.coin_delivery.torque_authority import (  # noqa: E402
+    TorqueAuthorityConfig, analyse_state_btau, decide_btau_route)
 from hymeko_rl.experiments.bv_identification_benchmark import (  # noqa: E402
     CERTIFIED_SEEDS, _load_frozen, acquire_certified_straddle)
 from hymeko_rl.experiments.video_coin_variants import _setup  # noqa: E402
@@ -206,5 +208,106 @@ def main(smoke=False, condition=False):
     return manifest
 
 
+def _analyse_seed_btau(idx, seed, harness, tcfg: TorqueAuthorityConfig) -> dict:
+    """Route B — acquire a certified straddle, snapshot the free-coin handoff, identify the one-step Δτ-increment
+    authority B_τ."""
+    pi0, base, forbidden, v2, stack, cfg_coop, mu = harness
+    rl, saved, handoff, meta = acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg_coop, seed, tries=3)
+    entry = {"state": idx, "tag": STATE_TAG.get(idx, f"s{idx}"), "seed": seed,
+             "split": ("development" if idx in DEV_IDS else "held_out"), "acquire": meta}
+    if rl is None:
+        entry["skipped"] = "no CERTIFIED straddle cradle acquired"
+        return entry
+    try:
+        snap = CradleSnapshot(rl, stack, saved, handoff["prev_tau"], handoff["q_target"],
+                              release_coin=True, coast_mu=mu, cfg=tcfg.hz.bv)
+        entry["analysis"] = analyse_state_btau(snap, tcfg)
+    except InvalidCradleSnapshot as e:
+        entry["invalid"] = str(e)
+    return entry
+
+
+def route_b_main(smoke=False):
+    import torch
+    torch.set_num_threads(1)
+    os.makedirs(REPORT_DIR, exist_ok=True)
+    t_start = time.time()
+    stack, cfg_coop, v2, mu = _load_frozen()
+    tcfg = TorqueAuthorityConfig()
+    pi0, base, forbidden = _setup()
+    harness = (pi0, base, forbidden, v2, stack, cfg_coop, mu)
+    seeds = CERTIFIED_SEEDS[:2] if smoke else CERTIFIED_SEEDS
+    print(f"ROUTE B — slew-admissible Δτ authority B_τ (one step) | μ={mu:.3f} eps_Nm={tcfg.eps_scales_nm} "
+          f"| seeds={seeds} ({'smoke:dev' if smoke else 'full'})", flush=True)
+    states = []
+    for idx, seed in enumerate(seeds):
+        t0 = time.time()
+        entry = _analyse_seed_btau(idx, seed, harness, tcfg)
+        if "analysis" in entry:
+            a = entry["analysis"]
+            print(f"  {entry['tag']} seed{seed} [{entry['split']}]: fn0={a['fn0']} strd0={a['straddle0']} "
+                  f"slew={a['slew_step_Nm']} dtau0={a['dtau0']} | rank_by_eps={a['rank_by_eps']} "
+                  f"n_active={a['n_active_by_eps']} repro={a['reproducible']}(gap={a['repro_rel_gap']}) "
+                  f"→ usable={a['usable_authority']} ({time.time()-t0:.1f}s)", flush=True)
+        else:
+            print(f"  {entry['tag']} seed{seed}: {entry.get('skipped', entry.get('invalid','?'))} "
+                  f"({time.time()-t0:.1f}s)", flush=True)
+        states.append(entry)
+    cstates = {e["state"]: e["analysis"] for e in states if "analysis" in e}
+    campaign = decide_btau_route(cstates, DEV_IDS, HELDOUT_IDS)
+    peak_rss_gb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 ** 3 if sys.platform == "darwin" else 1024 ** 2)
+    manifest = {"contract": "H2_ROUTE_B_SLEW_ADMISSIBLE_DTAU_AUTHORITY", "session": "H2_SESSION_2",
+                "date": "2026-07-27", "builds_on": "ROUTE_A did not pass held-out gate; Session-1 recommended a "
+                "slew-admissible torque-level decision variable", "coast_mu": round(mu, 3),
+                "frozen_split": {"development": ["s1", "s3"], "held_out": ["s4", "s7"]},
+                "decision_variable": "Δτ_cmd ∈ R^4, |Δτ_cmd_j| ≤ τ̇·dt; a = clip(prev_tau+Δτ_cmd, lo, hi) then governor",
+                "eps_scales_nm": list(tcfg.eps_scales_nm), "n_states": len(seeds), "states": states,
+                "campaign_route": campaign, "peak_rss_gb": round(peak_rss_gb, 3),
+                "wall_s": round(time.time() - t_start, 1), "h2_qp_built": False}
+    art = f"{REPORT_DIR}/authority_recovery_route_b.json"
+    json.dump(manifest, open(art, "w"), indent=1, default=float)
+    _plot_route_b(states, f"{REPORT_DIR}/route_b_dtau_authority.png")
+    print(f"\n== ROUTE B ==\n  states analysed: {len(cstates)}/{len(seeds)} | peak RSS {peak_rss_gb:.2f} GB "
+          f"| wall {manifest['wall_s']}s\n  dev usable: {campaign['dev_usable']} | held-out usable: "
+          f"{campaign['heldout_usable']}\n  → {campaign['route']}\n  reason: {campaign['reason']}\n  artifact: {art}\n"
+          f"ROUTE_B_DONE", flush=True)
+    return manifest
+
+
+def _plot_route_b(states: list[dict], path: str) -> None:
+    """Route-B figure: per-state B_τ rank at both ε (usable = rank ≥ 2 both) + the max active-column response norm."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    ana = [(e["tag"], e["analysis"]) for e in states if "analysis" in e]
+    if not ana:
+        return
+    fig, ax = plt.subplots(1, 2, figsize=(11, 4.4))
+    tags = [t for t, _ in ana]
+    x = np.arange(len(ana))
+    eps_keys = list(ana[0][1]["rank_by_eps"].keys())
+    for i, ek in enumerate(eps_keys):
+        ax[0].bar(x + (i - 0.5) * 0.35, [a["rank_by_eps"][ek] for _, a in ana], 0.35, label=ek)
+    ax[0].axhline(2, color="k", ls="--", lw=0.8, label="rank=2 (usable)")
+    ax[0].set_xticks(x)
+    ax[0].set_xticklabels(tags)
+    ax[0].set_ylabel("rank B_τ")
+    ax[0].set_title("Route B — one-step Δτ authority rank")
+    ax[0].legend(fontsize=7)
+    norms = [max((a["cols"][list(a["cols"])[0]][j]["col_norm"] for j in range(4)), default=0.0) for _, a in ana]
+    ax[1].bar(x, norms, color="tab:orange")
+    ax[1].set_xticks(x)
+    ax[1].set_xticklabels(tags)
+    ax[1].set_ylabel("max col ‖B_τ[:,j]‖ (m/s per N·m)")
+    ax[1].set_title("Δτ contact-velocity authority magnitude")
+    fig.suptitle("H2 Session 2 — Route B slew-admissible torque-increment authority")
+    fig.tight_layout()
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    main(smoke="--smoke" in sys.argv, condition="--condition" in sys.argv)
+    if "--route-b" in sys.argv:
+        route_b_main(smoke="--smoke" in sys.argv)
+    else:
+        main(smoke="--smoke" in sys.argv, condition="--condition" in sys.argv)

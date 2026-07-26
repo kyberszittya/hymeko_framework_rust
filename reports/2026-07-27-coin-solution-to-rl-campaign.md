@@ -164,9 +164,46 @@ conditioning — exactly the case the frozen tree routes to **Route B** (a slew-
 the Session-1 report independently recommended. Tests: 2 integration tests pass (grip preservation on s1,
 `arm_inward_geom` direction).
 
-### Next: Stage 1 Route B — slew-admissible torque-increment interface
+### Stage 1 Route B — slew-admissible torque-increment interface (PASS — the recovered interface)
 
-Identify `B_τ = ∂v_rel,t+1/∂Δτ_cmd` (one step) with `|Δτ_cmd| ≤ τ̇·dt`, admissible perturbations, on dev + held-out. A
-torque-increment decision variable commands the rate-limited step directly (no position-servo dead zone) → expected
-immediate authority, and a *one-step* measurement only needs the cradle alive for one step, so the fragile held-out
-cradles (alive 9–12 steps) qualify.
+**Decision variable:** `Δτ_cmd ∈ R^4`, `|Δτ_cmd_j| ≤ τ̇·dt = 0.3 N·m`; applied step `a = clip(prev_tau + Δτ_cmd, lo, hi)`
+then the per-sub-step directional governor (no rate-limiter re-entry — `Δτ_cmd` is admissible by construction, no
+governor bypass). Identify `B_τ = ∂v_rel,t+1/∂Δτ_cmd` one step at the exact certified handoff, FD around the nominal
+hold increment `Δτ_0 = clip(raw_pd − prev_tau, ±step)`; admissible perturbations are central where `Δτ_0` is interior
+and one-sided into the box where it sits on the slew edge (the saturated-joint case). Reuses the Session-1 governed
+stepping — the *only* change from B_v is the decision variable.
+
+**Result (`authority_recovery_route_b.json`) — clean PASS on all four states:**
+
+| state | split | Δτ_0 (slew edges) | rank ε=0.05 / 0.10 | active cols | repro gap | usable |
+|---|---|---|---|---|---|---|
+| s1 | dev | [.3,.3,−.3,.3] | 3 / 3 | 4/4 | 0.029 | **yes** |
+| s3 | dev | [.3,−.3,.3,−.3] | 3 / 3 | 4/4 | 0.136 | **yes** |
+| s4 | held-out | [−.3,.3,−.3,.3] | 3 / 3 | 4/4 | 0.005 | **yes** |
+| s7 | held-out | [.3,−.3,−.3,−.3] | 4 / 3 | 4/4 | 0.112 | **yes** |
+
+Every `Δτ_0` sits at the ±0.3 slew edge — confirming the debt saturates the limiter (the B_v dead-zone root) — yet the
+one-sided admissible perturbation reveals **rank 3–4 authority with all four columns active, reproducible across ε, on
+every state including both held-out**. `ONE_STEP_DQ_TARGET_AUTHORITY_NULL` is a statement about the *position-target*
+interface only; the slew-admissible **torque-increment** interface has immediate full one-step authority, and because
+it is a one-step measurement the fragile held-out cradles (alive ≥ 9 steps) qualify — the property Route A's
+lifted-horizon route could not use.
+
+**Verdict: `ROUTE_B_SLEW_ADMISSIBLE_DTAU_ESTABLISHED`.** `Δτ_cmd` is the recovered control interface for downstream
+control. The interface-recovery gate (Stage 1) is **PASSED**.
+
+### Strategy pivot (2026-07-26, user directive) — dynamic transition, not a quasi-static cradle
+
+With the interface established, the campaign de-escalates the over-rigid `acquire → perfect 40-step cradle → null-wrench
+→ CLF/CBF-QP → …` chain. The coin move does not require a persistent quasi-static cradle to be *proved stable first*;
+it can be a **dynamic coordinated transition** (bilateral contact → brief squeeze → forward push → controlled release)
+that only needs to *pass through* the intermediate state. **Kept** as guardrails: exact snapshot + replay, real
+common-contact-point velocities, torque provenance, motion & safety contract, straddle/internal-force certificate, the
+external success check. **Dropped** (deferred, may return later): the port-Hamiltonian H2 CLF/CBF-QP, a universal
+40-step controlled-invariant cradle, a full B_τ audit per controller step, LSTM, further certificate layers.
+
+**Revised path:** slew-admissible torque **primitives** (4–6 params: squeeze magnitude, forward differential torque,
+L/R balance, ramp duration, release time) → short-horizon **CEM/MPC search** (8–16 steps, hard-exclusion objective) →
+first **`CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT`** (≥ 5 mm target-directed, > 5× passive drift, bounded
+cross-track, no motion-contract breach, no pin) → mobile composition → BC / update-0 on the low-dim primitive params →
+matched SAC / TD3 in that option space.
