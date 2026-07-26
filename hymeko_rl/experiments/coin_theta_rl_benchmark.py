@@ -1011,6 +1011,237 @@ def r1_update0_main(smoke: bool = False) -> dict:
     return out
 
 
+R2_UPDATE0_DIR = "reports/2026-07-27-coin-r2-relational-update0"
+
+
+def _r2_build_states(harness: Any, dev_seeds: "list[int]", dev_tag: dict, dev_canon: dict, box: Any, n_global: int):
+    """Build the R2 relational train states — the SAME acceptable-set targets as the flat R1 gate (deterministic harvest),
+    only the input organisation changes (typed graph vs 43-D vector). Returns (states, snaps)."""
+    from hymeko_rl.coin_delivery.theta_option.acceptable_set import harvest_acceptable_set
+    from hymeko_rl.coin_delivery.theta_option.canonical_frame import to_canonical_theta
+    from hymeko_rl.coin_delivery.theta_option.multimodal_proposal import is_multimodal_target_set
+    from hymeko_rl.coin_delivery.theta_option.relational_encoder import RelKHeadTrainState
+    from hymeko_rl.coin_delivery.theta_option.relational_graph import build_graph
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot, sample_dev_basin
+    snaps = {seed: acquire_snapshot(harness, seed)[0] for seed in dev_seeds}
+    states = []
+    for seed in dev_seeds:
+        tag, snap = dev_tag[seed], snaps[seed]
+        graph = build_graph(snap)                                     # canonicalise -> typed graph (records was_swapped)
+        sw = graph.was_swapped
+        cvec = np.asarray(dev_canon[seed], np.float64)
+        local = [np.asarray(c["theta"], np.float64) for c in sample_dev_basin(snap, cvec, seed=seed) if c["kind"] == "delivering"]
+        acc = harvest_acceptable_set(snap, n_samples=n_global, seed=seed, seed_thetas=[cvec, *local])["accepted"]
+        tgt = np.asarray([box.norm(to_canonical_theta(a.theta, sw)) for a in acc], np.float64)   # CANONICAL θ targets (== R1)
+        states.append(RelKHeadTrainState(tag=tag, graph=graph, targets_norm=tgt, multimodal=is_multimodal_target_set(tgt)))
+        print(f"  {tag} seed={seed}: was_swapped={sw} targets={len(tgt)} multimodal={states[-1].multimodal}", flush=True)
+    return states, snaps
+
+
+def _r2_pre_panel_gates(states, K: int, epochs: int, lr: int, seed: int, h: int) -> dict:
+    """Development-only pre-panel gates (Stage 4): finite loss, bounded Tanh outputs, deterministic checkpoint reload, and
+    a non-constant graph embedding that RESPONDS to relation changes (zeroing the authority+bimanual attrs must move the
+    heads — proves the relational inputs actually flow to the output, not a degenerate flat readout)."""
+    import torch
+    from hymeko_rl.coin_delivery.theta_option.relational_encoder import (
+        fit_relational_khead, graph_tensors, load_relational_khead, save_relational_khead)
+    prop, info = fit_relational_khead(states, K, epochs=epochs, lr=lr, seed=seed, h=h)
+    finite = bool(np.isfinite(info["final_loss"]))
+    with torch.no_grad():
+        heads = [prop.net(graph_tensors(s.graph)) for s in states]
+    bounded = bool(all(float(hd.abs().max()) <= 1.0 + 1e-6 for hd in heads))
+    # deterministic reload
+    tmp = f"{R2_UPDATE0_DIR}/_reload_probe_K{K}.pt"
+    save_relational_khead(prop, tmp)
+    prop2 = load_relational_khead(tmp)
+    with torch.no_grad():
+        reload_ok = bool(torch.allclose(prop.net(graph_tensors(states[0].graph)), prop2.net(graph_tensors(states[0].graph)), atol=0.0))
+    os.remove(tmp)
+    # not-constant across dev states
+    stacked = torch.stack(heads)
+    not_constant = bool(float(stacked.reshape(len(heads), -1).std(dim=0).max()) > 1e-4)
+    # responds to relation changes: zero authority + bimanual attrs -> heads must move
+    t0 = graph_tensors(states[0].graph)
+    t1 = dict(t0)
+    t1["auth"] = torch.zeros_like(t0["auth"])
+    t1["biman"] = torch.zeros_like(t0["biman"])
+    with torch.no_grad():
+        response = float((prop.net(t0) - prop.net(t1)).abs().max())
+    responds = bool(response > 1e-4)
+    return {"final_loss": info["final_loss"], "finite_loss": finite, "bounded_outputs": bounded,
+            "deterministic_reload": reload_ok, "embedding_not_constant": not_constant,
+            "relation_response_maxabs": round(response, 6), "responds_to_relations": responds,
+            "per_state_recall": info["per_state_recall"], "trainable_params": info["trainable_params"],
+            "all_pass": bool(finite and bounded and reload_ok and not_constant and responds)}
+
+
+def _r2_lodo(states, snaps, seed_of, box, Ks, epochs, lr, seed, h) -> dict:
+    """Dev-only leave-one-dev-out K6 diagnostic (recorded, NOT a re-selection — K_main stays frozen)."""
+    from hymeko_rl.coin_delivery.theta_option.relational_encoder import fit_relational_khead, relational_deploy_one
+    lodo = {}
+    for K in Ks:
+        fold = 0
+        for held in states:
+            train = [s for s in states if s.tag != held.tag]
+            prop, _ = fit_relational_khead(train, K, epochs=epochs, lr=lr, seed=seed, h=h)
+            dep = relational_deploy_one(snaps[seed_of[held.tag]], prop, held.graph, np.random.default_rng(70000 + K), 8, box)
+            fold += int(dep["delivery_success"])
+        lodo[K] = fold
+        print(f"  K={K}: LODO held-dev K6 = {fold}/{len(states)}", flush=True)
+    return lodo
+
+
+def _r2_deploy_panel(states, panel, K, box, pooled_targets, epochs, lr, seed, h) -> dict:
+    """Train R2 on ALL dev at K, checkpoint, deploy the reloaded model on the frozen panel (budget-8 search + K6)."""
+    from hymeko_rl.coin_delivery.theta_option.relational_encoder import (
+        fit_relational_khead, load_relational_khead, relational_deploy_one, save_relational_khead)
+    from hymeko_rl.coin_delivery.theta_option.relational_graph import build_graph
+    prop, info = fit_relational_khead(states, K, epochs=epochs, lr=lr, seed=seed, h=h)
+    ckpt = f"{R2_UPDATE0_DIR}/r2_khead_K{K}.pt"
+    save_relational_khead(prop, ckpt)
+    prop = load_relational_khead(ckpt)                                # deploy from the reloaded checkpoint (provenance)
+    per = {}
+    for i, ps in enumerate(panel):
+        d = relational_deploy_one(ps.snap, prop, build_graph(ps.snap), np.random.default_rng(90000 + i * 131 + K), 8, box)
+        d["split"] = ps.split
+        head_norm = box.norm(np.asarray(d["canonical_heads"][d["selected_head"]], np.float64))
+        d["nearest_dev_acceptable_dist"] = round(float(np.linalg.norm(pooled_targets - head_norm[None, :], axis=1).min()), 4)
+        per[ps.tag] = d
+    dev_k6 = sum(1 for r in per.values() if r["split"] == "development" and r["delivery_success"])
+    held_k6 = sum(1 for r in per.values() if r["split"] == "held_out" and r["delivery_success"])
+    return {"K": K, "checkpoint": ckpt, "per_state": per, "dev_k6": dev_k6, "held_out_k6": held_k6,
+            "total_k6": dev_k6 + held_k6, "train_final_loss": info.get("final_loss"), "trainable_params": info["trainable_params"]}
+
+
+_R2_NEXT = {"A": "record + commit; do NOT start SAC/TD3 in this session unless explicitly instructed later.",
+            "B": "STOP and report; SAC/TD3 remain blocked; R2 improves over R1 but the update-0 gate is still open.",
+            "C": "next authorised axis: canonical physical intent -> deterministic authority-aware decoder -> unchanged 6-D θ "
+                 "option (do NOT build in this session). SAC/TD3 blocked.",
+            "D": "diagnose with dev-only data + discriminating tests; a frozen-panel rerun only after a mechanically-proven "
+                 "implementation fix that does not touch arch/training/search budgets or held-out discipline."}
+
+
+def _r2_classify(dev_k6: int, held_k6: int, total: int, n: int, motion_ok: bool, provenance_ok: bool) -> dict:
+    """The hard decision tree A–D (frozen contract). Case A alone authorises matched SAC/TD3."""
+    if dev_k6 < 2 or not provenance_ok:
+        case, verdict, auth = "D", "R2_IMPLEMENTATION_OR_TRAINING_GATE_INVALID", False
+    elif total == n and dev_k6 == 2 and held_k6 == 2 and motion_ok:
+        case, verdict, auth = "A", "HYMEKO_STRUCTURAL_REPRESENTATION_LOAD_BEARING", True
+    elif total == 3 or held_k6 == 1:
+        case, verdict, auth = "B", "RELATIONAL_ORGANISATION_IMPROVES_GENERALISATION_BUT_GATE_REMAINS_OPEN", False
+    else:
+        case, verdict, auth = "C", "RELATIONAL_ORGANISATION_ALONE_INSUFFICIENT", False
+    return {"case": case, "verdict": verdict, "authorises_sac_td3": auth, "next_action": _R2_NEXT[case],
+            "verdict_secondary": {"verdict_A": "UPDATE_ZERO_MOBILE_TEACHER_NO_REGRESSION_PASS" if case == "A" else None,
+                                  "verdict_A_rl": "MATCHED_SAC_TD3_AUTHORISED" if case == "A" else None}}
+
+
+def _r2_dev_data(bank: dict, dp: dict) -> "tuple[dict, list, dict]":
+    """The FROZEN dev training set: 6 dev cradles (s1,s3 on the panel + 4 coverage cradles), their canonical θ anchors."""
+    dev_tag = {14250: "s1", 14750: "s3", 16500: "16500", 17750: "17750", 19500: "19500", 24000: "24000"}
+    dev_seeds = [14250, 14750, 16500, 17750, 19500, 24000]
+    dev_canon = {14250: [e for e in bank["states"] if e["tag"] == "s1"][0]["canonical_theta_vec"],
+                 14750: [e for e in bank["states"] if e["tag"] == "s3"][0]["canonical_theta_vec"],
+                 **{r["seed"]: r["canonical_theta"] for r in dp["deliverable_dev_pool"] if r["seed"] not in (14250, 14750)}}
+    return dev_tag, dev_seeds, dev_canon
+
+
+def _r2_finalize(main: dict, side1: dict, lodo: dict, gates: dict, dec: dict, motion_ok: bool, provenance_ok: bool,
+                 hp: dict, dev_seeds: list, wall_s: float) -> dict:
+    """Assemble r2_update_zero.json + the deliverable training.json / frozen_panel.json, and print the live summary."""
+    dev_k6, held_k6, total = main["dev_k6"], main["held_out_k6"], main["total_k6"]
+    improves = bool(total > 2 or held_k6 > 0)
+    r1_base = {"dev_k6": 2, "held_out_k6": 0, "total_k6": 2, "verdict": "FLAT_R1_LEARNED_AMORTISATION_FAILS"}
+    cap = {"r1_params": 25240, "r2_params": main["trainable_params"],
+           "pct_diff": round(100 * (main["trainable_params"] - 25240) / 25240, 3),
+           "within_pm5pct": bool(0.95 * 25240 <= main["trainable_params"] <= 1.05 * 25240)}
+    gate = {"dev_k6": dev_k6, "held_out_k6": held_k6, "total_k6": total, "motion_ok": motion_ok,
+            "provenance_ok": provenance_ok, "passed": bool(dec["case"] == "A")}
+    out = {"contract": "COIN_R2_RELATIONAL_UPDATE_ZERO_V1", "start_commit": "9d6fc3d5", "date": "2026-07-27",
+           "changed_axes_only": ["organisation: flat 43-D R1 v3 -> HyMeKo typed relational graph"],
+           "frozen": ["43-D canonical information (identical)", "acceptable-set targets", "set-loss", "optimiser/epochs/seed",
+                      "K_main=4 (dev-only LODO)", "budget-8 + centre-inclusion", "physical PUSH/BRAKE/RELEASE option",
+                      "K6 monitor", "frozen 4-state panel", "held-out discipline (s4/s7 eval-only)"],
+           "capacity": cap, "pre_panel_gates": gates, "lodo_dev_diagnostic": lodo, "k_main": hp["K_MAIN"],
+           "main_deploy": main, "k1_side_diagnostic": side1, "gate": gate, "r1_baseline": r1_base,
+           "improves_over_r1": improves, "decision_case": dec["case"], "verdict": dec["verdict"],
+           "verdict_secondary": dec["verdict_secondary"], "authorises_sac_td3": dec["authorises_sac_td3"],
+           "next_action": dec["next_action"], "wall_s": wall_s, "peak_rss_gb": _peak_rss_gb()}
+    json.dump({"contract": out["contract"], "date": out["date"], "capacity": cap, "k_main": hp["K_MAIN"],
+               "epochs": hp["EPOCHS"], "lr": hp["LR"], "seed": hp["SEED"], "hidden_width": hp["H"], "n_global": hp["n_global"],
+               "dev_seeds": dev_seeds, "pre_panel_gates": gates, "lodo_dev_diagnostic": lodo,
+               "train_final_loss": main["train_final_loss"], "checkpoint": "r2_checkpoint.pt"},
+              open(f"{R2_UPDATE0_DIR}/training.json", "w"), indent=1, default=float)
+    json.dump({"contract": out["contract"], "date": out["date"], "start_commit": out["start_commit"], "k_main": hp["K_MAIN"],
+               "budget": 8, "panel": main["per_state"], "k1_side_per_state": side1["per_state"], "gate": gate,
+               "decision_case": dec["case"], "verdict": dec["verdict"], "authorises_sac_td3": dec["authorises_sac_td3"],
+               "r1_baseline": r1_base, "improves_over_r1": improves},
+              open(f"{R2_UPDATE0_DIR}/frozen_panel.json", "w"), indent=1, default=float)
+    path = f"{R2_UPDATE0_DIR}/r2_update_zero.json"
+    json.dump(out, open(path, "w"), indent=1, default=float)
+    ps_str = ", ".join(f"{t}:{int(r['delivery_success'])}(h{r['selected_head']},dtz{r['dtz_end_mm']},"
+                       f"near{r['nearest_dev_acceptable_dist']},{r['failure_phase'] or 'K6'})"
+                       for t, r in main["per_state"].items())
+    print(f"\n== R2 UPDATE-0 ==\n  capacity {main['trainable_params']} params ({cap['pct_diff']:+.2f}% of R1) | LODO={lodo} | "
+          f"pre-panel ALL_PASS={gates['all_pass']}\n  MAIN(K={hp['K_MAIN']}): dev {dev_k6}/2 held {held_k6}/2 total {total}/4 "
+          f"| K=1 side total {side1['total_k6']}/4 | motion_ok={motion_ok}\n  per-state: {ps_str}\n"
+          f"  vs R1 flat: dev 2/2 held 0/2 total 2/4 | improves_over_r1={improves}\n"
+          f"  CASE {dec['case']} → VERDICT: {dec['verdict']} | authorises_sac_td3={dec['authorises_sac_td3']}\n"
+          f"  next: {dec['next_action']}\n  artifacts: {path} + training.json + frozen_panel.json + r2_checkpoint.pt | "
+          f"wall {wall_s}s\nR2_UPDATE0_DONE", flush=True)
+    return out
+
+
+def r2_update0_main(smoke: bool = False) -> dict:
+    """R2 RELATIONAL UPDATE-0 GATE — the isolated relational-ORGANISATION axis over flat R1 v3. ONLY the model changes: the
+    SAME 43-D canonical information, reorganised as the frozen HyMeKo typed graph, at a +-5% parameter budget, with the SAME
+    acceptable-set targets / set-loss / optimiser / epochs / seed, the SAME dev-only K_main=4, budget-8 centre-inclusive
+    search, physical option, K6 monitor, and frozen 4-state panel. Deploy: state -> canonical graph -> relational K-head ->
+    decode (inverse T_θ) -> budget-8 search -> frozen K6. One frozen panel; the hard decision tree A–D."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
+    from hymeko_rl.coin_delivery.theta_option.relational_encoder import load_relational_khead, save_relational_khead
+    from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import load_harness
+    t0 = time.time()
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    dp = json.load(open(f"{REPORT_DIR}/cradle_delivery_pass.json"))
+    box = ThetaBox()
+    dev_tag, dev_seeds, dev_canon = _r2_dev_data(bank, dp)
+    # FROZEN hyperparameters (K_main from R1 dev-only LODO; NOT re-selected). smoke shrinks epochs/K/harvest for the smoke path.
+    hp = {"K_MAIN": (2 if smoke else 4), "EPOCHS": (400 if smoke else 1500), "LR": 1e-3, "SEED": 0,
+          "n_global": (120 if smoke else 600), "H": 25}
+    harness = load_harness()
+    os.makedirs(R2_UPDATE0_DIR, exist_ok=True)
+    print(f"R2 UPDATE-0 — HyMeKo relational graph + canonical θ labels | K_main={hp['K_MAIN']} (frozen) | h={hp['H']} | "
+          f"budget 8 | ONLY flat→relational organisation changes", flush=True)
+
+    print("BUILD R2 relational train data (typed graph inputs; SAME acceptable-set targets as R1)", flush=True)
+    states, snaps = _r2_build_states(harness, dev_seeds, dev_tag, dev_canon, box, hp["n_global"])
+    seed_of = {t: s for s, t in dev_tag.items()}
+    pooled_targets = np.concatenate([s.targets_norm for s in states], axis=0)   # dev acceptable set (normalised canonical θ)
+
+    print("PRE-PANEL dev-only gates (finite loss / bounded / deterministic reload / relation-response)", flush=True)
+    gates = _r2_pre_panel_gates(states, hp["K_MAIN"], hp["EPOCHS"], hp["LR"], hp["SEED"], hp["H"])
+    print(f"  gates: finite={gates['finite_loss']} bounded={gates['bounded_outputs']} reload={gates['deterministic_reload']} "
+          f"not_const={gates['embedding_not_constant']} responds={gates['responds_to_relations']} "
+          f"(Δ={gates['relation_response_maxabs']}) | loss={gates['final_loss']} | ALL_PASS={gates['all_pass']}", flush=True)
+
+    print("DEV-only LODO diagnostic at frozen K (recorded, NOT a re-selection)", flush=True)
+    Ks = [hp["K_MAIN"]] if smoke else [1, hp["K_MAIN"]]
+    lodo = _r2_lodo(states, snaps, seed_of, box, Ks, hp["EPOCHS"], hp["LR"], hp["SEED"], hp["H"])
+
+    panel = build_panel(harness, bank)
+    main = _r2_deploy_panel(states, panel, hp["K_MAIN"], box, pooled_targets, hp["EPOCHS"], hp["LR"], hp["SEED"], hp["H"])
+    side1 = _r2_deploy_panel(states, panel, 1, box, pooled_targets, hp["EPOCHS"], hp["LR"], hp["SEED"], hp["H"])
+    save_relational_khead(load_relational_khead(main["checkpoint"]), f"{R2_UPDATE0_DIR}/r2_checkpoint.pt")
+    motion_ok = all(bool(r["peak_qdot"] <= 3.0 and r["peak_coin_speed"] <= 1.5) for r in main["per_state"].values())
+    provenance_ok = bool(gates["all_pass"] and all(sum(r["per_mode_budget"]) == 8 for r in main["per_state"].values()))
+    dec = _r2_classify(main["dev_k6"], main["held_out_k6"], main["total_k6"], len(panel), motion_ok, provenance_ok)
+    return _r2_finalize(main, side1, lodo, gates, dec, motion_ok, provenance_ok, hp, dev_seeds, round(time.time() - t0, 1))
+
+
 def multimodal_main(smoke: bool = False) -> dict:
     """M1+M2 — the K-head acceptable-set proposal. Build the dev acceptable-set training data, select K by DEV-ONLY
     leave-one-dev-out CV (physical K6 on the held-out DEV cradle), freeze K, retrain on all dev, then ONE frozen-panel
@@ -1320,6 +1551,8 @@ if __name__ == "__main__":
         r1_check_main(smoke="--smoke" in sys.argv)
     elif "--r1-update0" in sys.argv:
         r1_update0_main(smoke="--smoke" in sys.argv)
+    elif "--r2-update0" in sys.argv:
+        r2_update0_main(smoke="--smoke" in sys.argv)
     elif "--scout-cradles" in sys.argv:
         _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
         scout_cradles_main(n=_n)
