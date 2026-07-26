@@ -30,6 +30,7 @@ import numpy as np
 REPORT_DIR = "reports/2026-07-27-coin-teacher-to-rl"
 ACCEPTABLE_DIR = "reports/2026-07-27-coin-acceptable-set"
 MULTIMODAL_DIR = "reports/2026-07-27-coin-multimodal"
+REP_AUDIT_DIR = "reports/2026-07-27-coin-decision-representation"
 
 
 def _peak_rss_gb() -> float:
@@ -611,6 +612,95 @@ def acceptable_set_main(smoke: bool = False) -> dict:
     return out
 
 
+def rep_audit_main(smoke: bool = False) -> dict:
+    """DECISION-TIME REPRESENTATION AUDIT (Step 1) — no training, dev-only, held-out overlay is frozen diagnosis. On the
+    current 42-D features: feature→θ smoothness (Lipschitz), training-free nearest-feature retrieval deploy (dev LODO +
+    held-out overlay) at the SAME budget-8 search, and the canonical L/R ordering deficit. Verdict frames what R1 must fix."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.dataset import flatten_features, structured_features
+    from hymeko_rl.coin_delivery.theta_option.representation_audit import (
+        audit_verdict, lipschitz_analysis, nearest_neighbour_by_feature, ordering_deficit)
+    from hymeko_rl.coin_delivery.theta_option.search import SEARCH_STD, fixed_search_select
+    from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG, ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot, load_harness
+    t0 = time.time()
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    dp = json.load(open(f"{REPORT_DIR}/cradle_delivery_pass.json"))
+    box = ThetaBox()
+    dev_tag = {14250: "s1", 14750: "s3", 16500: "16500", 17750: "17750", 19500: "19500", 24000: "24000"}
+    held_tag = {15000: "s4", 15750: "s7"}
+    canon = {14250: [e for e in bank["states"] if e["tag"] == "s1"][0]["canonical_theta_vec"],
+             14750: [e for e in bank["states"] if e["tag"] == "s3"][0]["canonical_theta_vec"],
+             15000: [e for e in bank["states"] if e["tag"] == "s4"][0]["canonical_theta_vec"],
+             15750: [e for e in bank["states"] if e["tag"] == "s7"][0]["canonical_theta_vec"],
+             **{r["seed"]: r["canonical_theta"] for r in dp["deliverable_dev_pool"] if r["seed"] not in (14250, 14750)}}
+    dev_seeds = [14250, 14750, 16500, 17750, 19500, 24000]
+    held_seeds = [15000, 15750]
+    harness = load_harness()
+    print(f"REP AUDIT — dev {dev_seeds} + held-out (overlay) {held_seeds} | budget-8 retrieval, no training", flush=True)
+    snaps, feats_flat, feats_grouped, theta_n = {}, {}, {}, {}
+    for seed in dev_seeds + held_seeds:
+        tag = {**dev_tag, **held_tag}[seed]
+        snap, _ = acquire_snapshot(harness, seed)
+        snaps[tag] = snap
+        fg = structured_features(snap)
+        feats_grouped[tag] = fg
+        feats_flat[tag] = flatten_features(fg)
+        theta_n[tag] = box.norm(np.asarray(canon[seed], np.float64))
+        print(f"  acquired {tag} seed={seed}", flush=True)
+
+    dev_tags = [dev_tag[s] for s in dev_seeds]
+    held_tags = [held_tag[s] for s in held_seeds]
+    lip = lipschitz_analysis({t: feats_flat[t] for t in dev_tags}, {t: theta_n[t] for t in dev_tags})
+    order = ordering_deficit({t: feats_grouped[t] for t in dev_tags}, flatten_features)
+    nn_dev = nearest_neighbour_by_feature({t: feats_flat[t] for t in dev_tags}, dev_tags)          # LODO among dev
+    nn_held = nearest_neighbour_by_feature({t: feats_flat[t] for t in held_tags}, dev_tags)         # held-out → nearest dev
+
+    def _retrieve(target_tag: str, source_tag: str, i: int) -> dict:
+        prov = fixed_search_select(snaps[target_tag], np.asarray(canon_by_tag[source_tag], np.float64),
+                                   np.random.default_rng(60000 + i * 131), budget=8, cfg=DELIVERY_CFG, std=SEARCH_STD)
+        return {"source": source_tag, "k6": bool(prov.outcome.get("delivery_success")),
+                "dtz_end_mm": round(prov.outcome.get("dtz_end", 0.0) * 1000, 2),
+                "nn_feature_dist": None}
+    canon_by_tag = {dev_tag[s]: canon[s] for s in dev_seeds}
+    canon_by_tag.update({held_tag[s]: canon[s] for s in held_seeds})
+
+    print("NN-retrieval deploy (training-free, budget 8):", flush=True)
+    retr_dev, dev_k6 = {}, 0
+    for i, t in enumerate(dev_tags):
+        src = nn_dev[t]["nn_tag"]
+        r = _retrieve(t, src, i)
+        r["nn_feature_dist"] = nn_dev[t]["nn_feature_dist"]
+        retr_dev[t] = r
+        dev_k6 += int(r["k6"])
+        print(f"  dev {t} ← NN {src} (dφ={r['nn_feature_dist']}): K6={int(r['k6'])} dtz={r['dtz_end_mm']}mm", flush=True)
+    retr_held, held_k6 = {}, 0
+    for i, t in enumerate(held_tags):
+        src = nn_held[t]["nn_tag"]
+        r = _retrieve(t, src, 100 + i)
+        r["nn_feature_dist"] = nn_held[t]["nn_feature_dist"]
+        retr_held[t] = r
+        held_k6 += int(r["k6"])
+        print(f"  held {t} ← NN {src} (dφ={r['nn_feature_dist']}): K6={int(r['k6'])} dtz={r['dtz_end_mm']}mm [overlay]", flush=True)
+
+    verdict = audit_verdict(dev_k6, len(dev_tags), held_k6, len(held_tags), lip, order)
+    out = {"contract": "COIN_DECISION_REPRESENTATION_AUDIT_V1", "base_commit": "1ca1edcb", "date": "2026-07-27",
+           "branch": "recovery/coin-decision-representation", "no_training": True,
+           "lipschitz": lip, "ordering_deficit": order,
+           "nn_retrieval_dev": retr_dev, "nn_retrieval_held_out_overlay": retr_held,
+           "verdict": verdict, "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    os.makedirs(REP_AUDIT_DIR, exist_ok=True)
+    path = f"{REP_AUDIT_DIR}/representation_audit.json"
+    json.dump(out, open(path, "w"), indent=1, default=float)
+    print(f"\n== REP AUDIT ==\n  smoothness: corr(dφ,dθ)={lip['corr_dphi_dtheta']} lipschitz_max={lip['lipschitz_ratio']['max']}\n"
+          f"  ordering: mean full-swap deficit={order['mean_full_swap_deficit']} canonical={order['features_are_canonically_ordered']}\n"
+          f"  NN-retrieval: dev {dev_k6}/{len(dev_tags)} | held-out(overlay) {held_k6}/{len(held_tags)}\n"
+          f"  defects: {verdict['identified_defects']}\n  SUMMARY: {verdict['audit_summary']}\n"
+          f"  artifact: {path} | wall {out['wall_s']}s | RSS {out['peak_rss_gb']} GB\nREP_AUDIT_DONE", flush=True)
+    return out
+
+
 def _build_acceptable_training_data(snaps: dict, dev_seeds: list, dev_canon: dict, dev_tag: dict, n_global: int) -> "tuple[list, dict]":
     """Per dev cradle (from pre-acquired snapshots): frozen B0 features + the acceptable set (local delivering basin +
     global enrichment, normalised θ) + the multimodal gate. Deterministic (seed = the cradle seed) — the SAME acceptable
@@ -962,6 +1052,8 @@ if __name__ == "__main__":
         acceptable_set_main(smoke="--smoke" in sys.argv)
     elif "--multimodal" in sys.argv:
         multimodal_main(smoke="--smoke" in sys.argv)
+    elif "--rep-audit" in sys.argv:
+        rep_audit_main(smoke="--smoke" in sys.argv)
     elif "--scout-cradles" in sys.argv:
         _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
         scout_cradles_main(n=_n)
