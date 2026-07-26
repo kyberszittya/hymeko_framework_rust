@@ -28,6 +28,7 @@ from typing import Any
 import numpy as np
 
 REPORT_DIR = "reports/2026-07-27-coin-teacher-to-rl"
+ACCEPTABLE_DIR = "reports/2026-07-27-coin-acceptable-set"
 
 
 def _peak_rss_gb() -> float:
@@ -446,6 +447,169 @@ def _render_coverage_viz(out: dict, panel: list) -> dict:
     return figs
 
 
+def _pca2(X: np.ndarray) -> "tuple[np.ndarray, np.ndarray]":
+    """2-D PCA projection via SVD (no sklearn dep): centre, SVD, project onto the top-2 right singular vectors. Returns
+    (projection (n,2), components (2,d)). # Postconditions: deterministic; components are orthonormal rows."""
+    Xc = np.asarray(X, np.float64)
+    mu = Xc.mean(0)
+    Xc = Xc - mu
+    _u, _s, vt = np.linalg.svd(Xc, full_matrices=False)
+    comp = vt[:2]
+    return Xc @ comp.T, comp
+
+
+def _render_acceptable_set_viz(out: dict, pooled_norm: np.ndarray, labels: list, state_of: list,
+                               heldout_proj_src: dict) -> dict:
+    """§9 viz for the multimodality test: a 2-D PCA of the pooled dev acceptable set coloured by basin, with per-state
+    markers, basin centroids, and the held-out teacher θ + the failing actor θ₀ overlaid (projected into the same PCA)."""
+    figs: dict = {}
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        proj, comp = _pca2(pooled_norm)
+        mu = np.asarray(pooled_norm, np.float64).mean(0)
+        fig, ax = plt.subplots(figsize=(8.2, 6.4))
+        nb = out["pooled_clusters"]["n_basins"]
+        cmap = plt.get_cmap("tab10")
+        markers = {"s1": "o", "s3": "s", "16500": "^", "17750": "v", "19500": "D", "24000": "P"}
+        for i, (p, lb, st) in enumerate(zip(proj, labels, state_of)):
+            ax.scatter(p[0], p[1], c=[cmap(lb % 10)], marker=markers.get(str(st), "x"), s=42,
+                       edgecolors="k", linewidths=0.3, alpha=0.85,
+                       label=None)
+        for b, cen in enumerate(out["pooled_clusters"]["centroids"]):
+            cp = (np.asarray(cen) - mu) @ comp.T
+            ax.scatter(cp[0], cp[1], c="k", marker="*", s=220, edgecolors=cmap(b % 10), linewidths=1.5,
+                       label=f"basin {b} centroid (n={out['pooled_clusters']['basin_sizes'][b]})")
+        for tag, src in heldout_proj_src.items():
+            for kind, z, mk, col in src:
+                zp = (np.asarray(z, np.float64) - mu) @ comp.T
+                ax.scatter(zp[0], zp[1], marker=mk, s=170, c=col, edgecolors="k", linewidths=1.2,
+                           label=f"{tag} {kind}")
+        ax.set_xlabel("PCA-1 (normalised θ)")
+        ax.set_ylabel("PCA-2 (normalised θ)")
+        ax.set_title(f"Dev acceptable set — {out['verdict']['verdict']} "
+                     f"({nb} pooled basins, inter/intra={out['pooled_clusters']['min_inter_basin_dist']}/"
+                     f"{out['pooled_clusters']['max_intra_nn_hop']})")
+        ax.legend(fontsize=7, loc="best", ncol=2)
+        fig.tight_layout()
+        p = f"{ACCEPTABLE_DIR}/acceptable_set_basins.png"
+        os.makedirs(ACCEPTABLE_DIR, exist_ok=True)
+        fig.savefig(p, dpi=130)
+        plt.close(fig)
+        figs["basins_png"] = p
+    except Exception as e:
+        figs["plot_error"] = str(e)
+    return figs
+
+
+def acceptable_set_main(smoke: bool = False) -> dict:
+    """MULTIMODALITY DISCRIMINATING TEST (M0) — harvest the acceptable set on DEV cradles (local delivering basin +
+    global enrichment; frozen-K6 ∧ motion-compatible), pool + single-linkage cluster in normalised option-space, test
+    whether averaging fails (per-state acceptable-centroid non-delivery), and overlay the held-out delivering teacher θ +
+    the failing N=6 actor θ₀ (eval-only, no fit). Verdict gates the multimodal model: MULTIMODAL_BASINS_PRESENT (proceed)
+    vs SINGLE_CONNECTED_CLUSTER (= REPRESENTATION_NOT_PROPOSAL_MODALITY_IS_BLOCKER, stop)."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.acceptable_set import (
+        assign_to_basins, centroid_delivers, cluster_basins, harvest_acceptable_set, multimodality_verdict)
+    from hymeko_rl.coin_delivery.theta_option.proposal import load_proposal
+    from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
+    from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot, load_harness, sample_dev_basin
+    t0 = time.time()
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    dp = json.load(open(f"{REPORT_DIR}/cradle_delivery_pass.json"))
+    box = ThetaBox()
+    dev = {14250: "s1", 14750: "s3"}
+    new_theta = {r["seed"]: r["canonical_theta"] for r in dp["deliverable_dev_pool"] if r["seed"] not in dev}
+    dev_canon = {14250: [e for e in bank["states"] if e["tag"] == "s1"][0]["canonical_theta_vec"],
+                 14750: [e for e in bank["states"] if e["tag"] == "s3"][0]["canonical_theta_vec"], **new_theta}
+    dev_seeds = [14250, 14750] + sorted(new_theta)
+    heldout = {e["tag"]: e["canonical_theta_vec"] for e in bank["states"] if e["split"] == "held_out"}
+    n_global = 120 if smoke else 600
+    link_tol = float(sys.argv[sys.argv.index("--link-tol") + 1]) if "--link-tol" in sys.argv else 0.9
+    harness = load_harness()
+    print(f"ACCEPTABLE-SET (M0 multimodality test) — dev {dev_seeds} | local basin + {n_global} global/state | "
+          f"link_tol={link_tol} | held-out (eval-only overlay) {list(heldout)}", flush=True)
+
+    pooled_norm: list[np.ndarray] = []
+    state_of: list[Any] = []
+    per_state: dict[str, Any] = {}
+    for seed in dev_seeds:
+        te = time.time()
+        tag = dev.get(seed, str(seed))
+        snap, _ = acquire_snapshot(harness, seed)
+        canon = np.asarray(dev_canon[seed], np.float64)
+        local = [np.asarray(c["theta"], np.float64) for c in sample_dev_basin(snap, canon, seed=seed)
+                 if c["kind"] == "delivering"]
+        res = harvest_acceptable_set(snap, n_samples=n_global, seed=seed, seed_thetas=[canon, *local])
+        acc = res["accepted"]
+        cd = centroid_delivers(snap, acc)
+        Z = [a.theta_norm for a in acc]
+        pooled_norm.extend(Z)
+        state_of.extend([tag] * len(Z))
+        per_state[tag] = {"seed": seed, "n_accepted": len(acc), "n_local_basin": len(local),
+                          "delivery_rate": res["delivery_rate"], "acceptance_rate": res["acceptance_rate"],
+                          "canonical_theta": [round(float(x), 5) for x in canon], "centroid": cd}
+        print(f"  {tag} seed={seed}: accepted={len(acc)} (local={len(local)}, deliv_rate={res['delivery_rate']}) | "
+              f"acc-centroid delivers={cd.get('delivers')} dtz={cd.get('dtz_end_mm')}mm ({time.time()-te:.0f}s)", flush=True)
+
+    P = np.asarray(pooled_norm, np.float64)
+    pooled = cluster_basins(P, link_tol=link_tol)
+    tol_sweep = {str(lt): cluster_basins(P, link_tol=lt)["n_basins"] for lt in (0.4, 0.6, 0.8, 0.9, 1.1, 1.3, 1.5)}
+    # per-state basin occupancy
+    for tag in per_state:
+        idx = [i for i, s in enumerate(state_of) if s == tag]
+        per_state[tag]["basins_occupied"] = sorted(set(pooled["labels"][i] for i in idx))
+    # held-out overlay (eval-only): the delivering teacher θ → nearest pooled dev basin / orphan
+    heldout_assign = {tag: {**assign_to_basins(box.norm(np.asarray(th, np.float64)), pooled["centroids"], link_tol=link_tol),
+                            "teacher_theta": [round(float(x), 5) for x in th]}
+                      for tag, th in heldout.items()}
+    # failing N=6 actor θ₀ on the panel (eval-only overlay: where the single-θ regressor pointed)
+    actor0 = {}
+    pt = f"{REPORT_DIR}/bc_coverage_N6_B0.pt"
+    if os.path.exists(pt):
+        prop, fz = load_proposal(pt)
+        panel = build_panel(harness, bank)
+        for ps in panel:
+            th0 = prop.center(fz.obs(ps.features, ps.history))
+            a = assign_to_basins(box.norm(np.asarray(th0, np.float64)), pooled["centroids"], link_tol=link_tol)
+            actor0[ps.tag] = {"split": ps.split, "theta0": [round(float(x), 5) for x in th0], **a}
+
+    verdict = multimodality_verdict(per_state, pooled, heldout_assign)
+    out = {"contract": "COIN_6D_THETA_ACCEPTABLE_SET_MULTIMODALITY_V1", "base_commit": "5fbf3c16", "date": "2026-07-27",
+           "branch": "recovery/coin-acceptable-set-proposal",
+           "question": "Do multiple distinct delivering basins exist (→ multimodal), or one connected cluster (→ representation)?",
+           "harvest": {"local_basin": "sample_dev_basin (frozen)", "global_uniform_per_state": n_global,
+                       "accept": "frozen-K6 delivered AND motion-compatible", "held_out": "eval-only overlay, no fit"},
+           "link_tol": link_tol, "link_tol_sweep_n_basins": tol_sweep,
+           "per_state": per_state, "pooled_clusters": pooled,
+           "held_out_overlay": heldout_assign, "actor_n6_theta0_overlay": actor0,
+           "verdict": verdict, "smoke": bool(smoke),
+           "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    heldout_src = {tag: [("teacher θ (delivers)", box.norm(np.asarray(v["teacher_theta"], np.float64)), "*", "red")]
+                   for tag, v in heldout_assign.items()}
+    for tag, a in actor0.items():
+        if a["split"] == "held_out":
+            heldout_src.setdefault(tag, []).append(("actor θ₀ (N=6)", box.norm(np.asarray(a["theta0"], np.float64)), "X", "gray"))
+    out["figures"] = _render_acceptable_set_viz(out, P, pooled["labels"], state_of, heldout_src)
+    os.makedirs(ACCEPTABLE_DIR, exist_ok=True)
+    path = f"{ACCEPTABLE_DIR}/acceptable_set_multimodality.json"
+    json.dump(out, open(path, "w"), indent=1, default=float)
+    v = verdict
+    centroid_str = ", ".join(f"{t}:{s['centroid'].get('delivers')}" for t, s in per_state.items())
+    overlay_str = ", ".join(f"{t}:basin{a['nearest_basin']}(d={a['dist']},orphan={a['orphan']})"
+                            for t, a in heldout_assign.items())
+    print(f"\n== ACCEPTABLE-SET MULTIMODALITY ==\n  pooled points={pooled['n_points']} basins={pooled['n_basins']} "
+          f"inter/intra={pooled['min_inter_basin_dist']}/{pooled['max_intra_nn_hop']} | tol-sweep {tol_sweep}\n"
+          f"  per-state acc-centroid delivers: {{ {centroid_str} }}\n"
+          f"  held-out teacher-θ overlay: {{ {overlay_str} }}\n"
+          f"  VERDICT: {v['verdict']} | justifies_k_head={v['justifies_k_head']} | held_out_ood_warning={v['held_out_ood_warning']}\n"
+          f"  artifact: {path} | wall {out['wall_s']}s | peak RSS {out['peak_rss_gb']} GB\nACCEPTABLE_SET_DONE", flush=True)
+    return out
+
+
 def coverage_curve_main(smoke: bool = False) -> dict:
     """COVERAGE-ONLY CAUSAL CURVE — the frozen update-0 gate at N = 2, 4, 6 unique K6-deliverable DEVELOPMENT cradles,
     with EVERYTHING except N held identical (model B0, feature set, optimiser, epochs, init seed, search budget 8, search
@@ -618,6 +782,8 @@ if __name__ == "__main__":
         update0_main(smoke="--smoke" in sys.argv)
     elif "--coverage-curve" in sys.argv:
         coverage_curve_main(smoke="--smoke" in sys.argv)
+    elif "--acceptable-set" in sys.argv:
+        acceptable_set_main(smoke="--smoke" in sys.argv)
     elif "--scout-cradles" in sys.argv:
         _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
         scout_cradles_main(n=_n)
