@@ -1,0 +1,146 @@
+{
+ "contract": "COIN_DECISION_REPRESENTATION_AUDIT_V1",
+ "base_commit": "1ca1edcb",
+ "date": "2026-07-27",
+ "branch": "recovery/coin-decision-representation",
+ "no_training": true,
+ "lipschitz": {
+  "tags": [
+   "16500",
+   "17750",
+   "19500",
+   "24000",
+   "s1",
+   "s3"
+  ],
+  "n_pairs": 15,
+  "feature_dist": {
+   "min": 1.1483,
+   "median": 2.5811,
+   "max": 3.6415
+  },
+  "theta_dist": {
+   "min": 0.6934,
+   "median": 1.2053,
+   "max": 2.1169
+  },
+  "corr_dphi_dtheta": 0.7102,
+  "lipschitz_ratio": {
+   "min": 0.2937,
+   "median": 0.5305,
+   "max": 0.8833
+  },
+  "nearest_feature_pair_is_nearest_theta_pair": true
+ },
+ "ordering_deficit": {
+  "per_cradle": {
+   "s1": {
+    "contact_swap_deficit": 3.3629,
+    "full_swap_deficit": 4.2912,
+    "contact_swap_deficit_rel": 0.7839,
+    "full_swap_deficit_rel": 1.0004
+   },
+   "s3": {
+    "contact_swap_deficit": 2.9577,
+    "full_swap_deficit": 3.2669,
+    "contact_swap_deficit_rel": 0.7764,
+    "full_swap_deficit_rel": 0.8575
+   },
+   "16500": {
+    "contact_swap_deficit": 2.876,
+    "full_swap_deficit": 3.5257,
+    "contact_swap_deficit_rel": 0.6848,
+    "full_swap_deficit_rel": 0.8395
+   },
+   "17750": {
+    "contact_swap_deficit": 3.0501,
+    "full_swap_deficit": 3.7787,
+    "contact_swap_deficit_rel": 0.7531,
+    "full_swap_deficit_rel": 0.933
+   },
+   "19500": {
+    "contact_swap_deficit": 2.9172,
+    "full_swap_deficit": 2.9695,
+    "contact_swap_deficit_rel": 0.7912,
+    "full_swap_deficit_rel": 0.8054
+   },
+   "24000": {
+    "contact_swap_deficit": 2.914,
+    "full_swap_deficit": 3.1279,
+    "contact_swap_deficit_rel": 0.7584,
+    "full_swap_deficit_rel": 0.8141
+   }
+  },
+  "mean_contact_swap_deficit": 3.013,
+  "mean_full_swap_deficit": 3.4933,
+  "features_are_canonically_ordered": false
+ },
+ "nn_retrieval_dev": {
+  "s1": {
+   "source": "24000",
+   "k6": false,
+   "dtz_end_mm": 75.2,
+   "nn_feature_dist": 2.5454
+  },
+  "s3": {
+   "source": "24000",
+   "k6": false,
+   "dtz_end_mm": 47.71,
+   "nn_feature_dist": 1.1483
+  },
+  "16500": {
+   "source": "24000",
+   "k6": false,
+   "dtz_end_mm": 69.73,
+   "nn_feature_dist": 1.499
+  },
+  "17750": {
+   "source": "s1",
+   "k6": false,
+   "dtz_end_mm": 93.72,
+   "nn_feature_dist": 2.5811
+  },
+  "19500": {
+   "source": "s3",
+   "k6": true,
+   "dtz_end_mm": 18.38,
+   "nn_feature_dist": 1.1783
+  },
+  "24000": {
+   "source": "s3",
+   "k6": false,
+   "dtz_end_mm": 60.72,
+   "nn_feature_dist": 1.1483
+  }
+ },
+ "nn_retrieval_held_out_overlay": {
+  "s4": {
+   "source": "17750",
+   "k6": false,
+   "dtz_end_mm": 79.5,
+   "nn_feature_dist": 1.4528
+  },
+  "s7": {
+   "source": "17750",
+   "k6": false,
+   "dtz_end_mm": 102.91,
+   "nn_feature_dist": 1.2949
+  }
+ },
+ "verdict": {
+  "nn_retrieval_dev_k6": "1/6",
+  "nn_retrieval_held_out_k6": "0/2",
+  "retrieval_works_on_dev": false,
+  "retrieval_works_on_held_out": false,
+  "map_is_smooth": true,
+  "features_canonically_ordered": false,
+  "identified_defects": [
+   "FEATURE_PROXIMITY_DOES_NOT_PREDICT_THETA_TRANSFER_ON_DEV",
+   "NO_CANONICAL_LEFT_RIGHT_ORDERING"
+  ],
+  "audit_summary": "CURRENT_42D_DOES_NOT_ADMIT_A_LEARNABLE_MAP_AS_IS",
+  "note": "held-out overlay is frozen diagnosis, not model selection"
+ },
+ "wall_s": 184.9,
+ "peak_rss_gb": 0.247
+}
