@@ -1,0 +1,1118 @@
+{
+ "contract": "COIN_6D_THETA_UPDATE_ZERO_V1",
+ "base_commit": "a3459629",
+ "variant": "B0",
+ "deploy_budget": 8,
+ "budgets": [
+  0,
+  4,
+  8
+ ],
+ "search_std": 0.15,
+ "informed_sweep": {
+  "0": {
+   "budget": 0,
+   "per_state": {
+    "s1": {
+     "split": "development",
+     "teacher_theta": [
+      0.0515,
+      0.2179,
+      0.0164,
+      12.8078,
+      9.2369,
+      3.0388
+     ],
+     "theta0": [
+      0.04993,
+      0.23205,
+      0.01156,
+      13.72974,
+      8.32788,
+      3.11746
+     ],
+     "theta_exec": [
+      0.04993,
+      0.23205,
+      0.01156,
+      13.72974,
+      8.32788,
+      3.11746
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": true,
+     "k6_max_dwell": 22,
+     "delivery_success": true,
+     "dtz_end_mm": 13.53,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.9855,
+     "peak_coin_speed": 0.4498,
+     "budget": 0
+    },
+    "s3": {
+     "split": "development",
+     "teacher_theta": [
+      0.19582,
+      0.0694,
+      -0.03699,
+      7.82491,
+      11.18153,
+      2.19236
+     ],
+     "theta0": [
+      0.18764,
+      0.04437,
+      -0.04232,
+      6.17001,
+      12.31667,
+      1.74591
+     ],
+     "theta_exec": [
+      0.18764,
+      0.04437,
+      -0.04232,
+      6.17001,
+      12.31667,
+      1.74591
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 3,
+     "delivery_success": false,
+     "dtz_end_mm": 19.13,
+     "terminal_coin_speed": 0.0104,
+     "peak_qdot": 2.0065,
+     "peak_coin_speed": 0.359,
+     "budget": 0
+    },
+    "s4": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.0681,
+      0.2023,
+      -0.0297,
+      10.4443,
+      6.8406,
+      2.2844
+     ],
+     "theta0": [
+      0.10272,
+      0.14457,
+      -0.01454,
+      11.14064,
+      11.44938,
+      2.4039
+     ],
+     "theta_exec": [
+      0.10272,
+      0.14457,
+      -0.01454,
+      11.14064,
+      11.44938,
+      2.4039
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 33.71,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.9947,
+     "peak_coin_speed": 0.2862,
+     "budget": 0
+    },
+    "s7": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.157,
+      0.1729,
+      0.0133,
+      8.6476,
+      5.3654,
+      1.4752
+     ],
+     "theta0": [
+      0.11042,
+      0.14529,
+      -0.01507,
+      10.77327,
+      10.1863,
+      2.45636
+     ],
+     "theta_exec": [
+      0.11042,
+      0.14529,
+      -0.01507,
+      10.77327,
+      10.1863,
+      2.45636
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 52.7,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.463,
+     "peak_coin_speed": 0.5647,
+     "budget": 0
+    }
+   },
+   "dev_k6": 1,
+   "held_out_k6": 0,
+   "total_k6": 1,
+   "n_states": 4
+  },
+  "4": {
+   "budget": 4,
+   "per_state": {
+    "s1": {
+     "split": "development",
+     "teacher_theta": [
+      0.0515,
+      0.2179,
+      0.0164,
+      12.8078,
+      9.2369,
+      3.0388
+     ],
+     "theta0": [
+      0.04993,
+      0.23205,
+      0.01156,
+      13.72974,
+      8.32788,
+      3.11746
+     ],
+     "theta_exec": [
+      0.04993,
+      0.23205,
+      0.01156,
+      13.72974,
+      8.32788,
+      3.11746
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": true,
+     "k6_max_dwell": 22,
+     "delivery_success": true,
+     "dtz_end_mm": 13.53,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.9855,
+     "peak_coin_speed": 0.4498,
+     "budget": 4
+    },
+    "s3": {
+     "split": "development",
+     "teacher_theta": [
+      0.19582,
+      0.0694,
+      -0.03699,
+      7.82491,
+      11.18153,
+      2.19236
+     ],
+     "theta0": [
+      0.18764,
+      0.04437,
+      -0.04232,
+      6.17001,
+      12.31667,
+      1.74591
+     ],
+     "theta_exec": [
+      0.18764,
+      0.04437,
+      -0.04232,
+      6.17001,
+      12.31667,
+      1.74591
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 3,
+     "delivery_success": false,
+     "dtz_end_mm": 19.13,
+     "terminal_coin_speed": 0.0104,
+     "peak_qdot": 2.0065,
+     "peak_coin_speed": 0.359,
+     "budget": 4
+    },
+    "s4": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.0681,
+      0.2023,
+      -0.0297,
+      10.4443,
+      6.8406,
+      2.2844
+     ],
+     "theta0": [
+      0.10272,
+      0.14457,
+      -0.01454,
+      11.14064,
+      11.44938,
+      2.4039
+     ],
+     "theta_exec": [
+      0.10272,
+      0.14457,
+      -0.01454,
+      11.14064,
+      11.44938,
+      2.4039
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 33.71,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.9947,
+     "peak_coin_speed": 0.2862,
+     "budget": 4
+    },
+    "s7": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.157,
+      0.1729,
+      0.0133,
+      8.6476,
+      5.3654,
+      1.4752
+     ],
+     "theta0": [
+      0.11042,
+      0.14529,
+      -0.01507,
+      10.77327,
+      10.1863,
+      2.45636
+     ],
+     "theta_exec": [
+      0.10376,
+      0.1499,
+      0.00072,
+      8.29988,
+      4.0,
+      2.05546
+     ],
+     "search_displacement_norm": 0.42607,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 54.34,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 2.0036,
+     "peak_coin_speed": 0.5154,
+     "budget": 4
+    }
+   },
+   "dev_k6": 1,
+   "held_out_k6": 0,
+   "total_k6": 1,
+   "n_states": 4
+  },
+  "8": {
+   "budget": 8,
+   "per_state": {
+    "s1": {
+     "split": "development",
+     "teacher_theta": [
+      0.0515,
+      0.2179,
+      0.0164,
+      12.8078,
+      9.2369,
+      3.0388
+     ],
+     "theta0": [
+      0.04993,
+      0.23205,
+      0.01156,
+      13.72974,
+      8.32788,
+      3.11746
+     ],
+     "theta_exec": [
+      0.04971,
+      0.23562,
+      0.02214,
+      12.8,
+      7.01649,
+      3.4652
+     ],
+     "search_displacement_norm": 0.22426,
+     "k6_delivered": true,
+     "k6_max_dwell": 25,
+     "delivery_success": true,
+     "dtz_end_mm": 16.41,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.9994,
+     "peak_coin_speed": 0.4502,
+     "budget": 8
+    },
+    "s3": {
+     "split": "development",
+     "teacher_theta": [
+      0.19582,
+      0.0694,
+      -0.03699,
+      7.82491,
+      11.18153,
+      2.19236
+     ],
+     "theta0": [
+      0.18764,
+      0.04437,
+      -0.04232,
+      6.17001,
+      12.31667,
+      1.74591
+     ],
+     "theta_exec": [
+      0.20437,
+      0.0568,
+      -0.04538,
+      8.06511,
+      14.77162,
+      1.70458
+     ],
+     "search_displacement_norm": 0.24142,
+     "k6_delivered": true,
+     "k6_max_dwell": 19,
+     "delivery_success": true,
+     "dtz_end_mm": 6.45,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 2.0307,
+     "peak_coin_speed": 0.4401,
+     "budget": 8
+    },
+    "s4": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.0681,
+      0.2023,
+      -0.0297,
+      10.4443,
+      6.8406,
+      2.2844
+     ],
+     "theta0": [
+      0.10272,
+      0.14457,
+      -0.01454,
+      11.14064,
+      11.44938,
+      2.4039
+     ],
+     "theta_exec": [
+      0.10272,
+      0.14457,
+      -0.01454,
+      11.14064,
+      11.44938,
+      2.4039
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 33.71,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.9947,
+     "peak_coin_speed": 0.2862,
+     "budget": 8
+    },
+    "s7": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.157,
+      0.1729,
+      0.0133,
+      8.6476,
+      5.3654,
+      1.4752
+     ],
+     "theta0": [
+      0.11042,
+      0.14529,
+      -0.01507,
+      10.77327,
+      10.1863,
+      2.45636
+     ],
+     "theta_exec": [
+      0.11291,
+      0.12483,
+      0.00604,
+      10.49667,
+      5.91419,
+      2.90404
+     ],
+     "search_displacement_norm": 0.38962,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 50.88,
+     "terminal_coin_speed": 0.0001,
+     "peak_qdot": 1.0695,
+     "peak_coin_speed": 0.5576,
+     "budget": 8
+    }
+   },
+   "dev_k6": 2,
+   "held_out_k6": 0,
+   "total_k6": 2,
+   "n_states": 4
+  }
+ },
+ "uninformed_sweep": {
+  "0": {
+   "budget": 0,
+   "per_state": {
+    "s1": {
+     "split": "development",
+     "teacher_theta": [
+      0.0515,
+      0.2179,
+      0.0164,
+      12.8078,
+      9.2369,
+      3.0388
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 283.49,
+     "terminal_coin_speed": 0.4955,
+     "peak_qdot": 2.0551,
+     "peak_coin_speed": 1.1279,
+     "budget": 0
+    },
+    "s3": {
+     "split": "development",
+     "teacher_theta": [
+      0.19582,
+      0.0694,
+      -0.03699,
+      7.82491,
+      11.18153,
+      2.19236
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 400.28,
+     "terminal_coin_speed": 0.5946,
+     "peak_qdot": 2.0324,
+     "peak_coin_speed": 1.4373,
+     "budget": 0
+    },
+    "s4": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.0681,
+      0.2023,
+      -0.0297,
+      10.4443,
+      6.8406,
+      2.2844
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 35.32,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.3275,
+     "peak_coin_speed": 0.2902,
+     "budget": 0
+    },
+    "s7": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.157,
+      0.1729,
+      0.0133,
+      8.6476,
+      5.3654,
+      1.4752
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 65.99,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.1509,
+     "peak_coin_speed": 0.4714,
+     "budget": 0
+    }
+   },
+   "dev_k6": 0,
+   "held_out_k6": 0,
+   "total_k6": 0,
+   "n_states": 4
+  },
+  "4": {
+   "budget": 4,
+   "per_state": {
+    "s1": {
+     "split": "development",
+     "teacher_theta": [
+      0.0515,
+      0.2179,
+      0.0164,
+      12.8078,
+      9.2369,
+      3.0388
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "search_displacement_norm": 0.0,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 283.49,
+     "terminal_coin_speed": 0.4955,
+     "peak_qdot": 2.0551,
+     "peak_coin_speed": 1.1279,
+     "budget": 4
+    },
+    "s3": {
+     "split": "development",
+     "teacher_theta": [
+      0.19582,
+      0.0694,
+      -0.03699,
+      7.82491,
+      11.18153,
+      2.19236
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.11782,
+      0.17942,
+      -0.00276,
+      13.36183,
+      22.28309,
+      2.17484
+     ],
+     "search_displacement_norm": 0.29296,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 312.99,
+     "terminal_coin_speed": 0.4214,
+     "peak_qdot": 2.0234,
+     "peak_coin_speed": 1.2255,
+     "budget": 4
+    },
+    "s4": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.0681,
+      0.2023,
+      -0.0297,
+      10.4443,
+      6.8406,
+      2.2844
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.15604,
+      0.13644,
+      0.02383,
+      12.97754,
+      26.69025,
+      1.80964
+     ],
+     "search_displacement_norm": 0.38652,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 47.55,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.2905,
+     "peak_coin_speed": 0.3253,
+     "budget": 4
+    },
+    "s7": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.157,
+      0.1729,
+      0.0133,
+      8.6476,
+      5.3654,
+      1.4752
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.11834,
+      0.15461,
+      0.01579,
+      12.02661,
+      17.60443,
+      1.5991
+     ],
+     "search_displacement_norm": 0.49809,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 79.73,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.1797,
+     "peak_coin_speed": 0.4602,
+     "budget": 4
+    }
+   },
+   "dev_k6": 0,
+   "held_out_k6": 0,
+   "total_k6": 0,
+   "n_states": 4
+  },
+  "8": {
+   "budget": 8,
+   "per_state": {
+    "s1": {
+     "split": "development",
+     "teacher_theta": [
+      0.0515,
+      0.2179,
+      0.0164,
+      12.8078,
+      9.2369,
+      3.0388
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.11882,
+      0.15888,
+      -0.00854,
+      15.60098,
+      24.80195,
+      1.99738
+     ],
+     "search_displacement_norm": 0.15121,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 48.24,
+     "terminal_coin_speed": 0.1266,
+     "peak_qdot": 2.0554,
+     "peak_coin_speed": 0.4492,
+     "budget": 8
+    },
+    "s3": {
+     "split": "development",
+     "teacher_theta": [
+      0.19582,
+      0.0694,
+      -0.03699,
+      7.82491,
+      11.18153,
+      2.19236
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.1057,
+      0.14195,
+      -0.01088,
+      12.09031,
+      24.10315,
+      2.26836
+     ],
+     "search_displacement_norm": 0.30962,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 126.47,
+     "terminal_coin_speed": 0.0683,
+     "peak_qdot": 2.0281,
+     "peak_coin_speed": 0.7892,
+     "budget": 8
+    },
+    "s4": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.0681,
+      0.2023,
+      -0.0297,
+      10.4443,
+      6.8406,
+      2.2844
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.1256,
+      0.18703,
+      0.0009,
+      10.50679,
+      23.60121,
+      2.29205
+     ],
+     "search_displacement_norm": 0.42633,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 57.29,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.3276,
+     "peak_coin_speed": 0.2467,
+     "budget": 8
+    },
+    "s7": {
+     "split": "held_out",
+     "teacher_theta": [
+      0.157,
+      0.1729,
+      0.0133,
+      8.6476,
+      5.3654,
+      1.4752
+     ],
+     "theta0": [
+      0.125,
+      0.15,
+      0.0,
+      14.5,
+      26.0,
+      2.0
+     ],
+     "theta_exec": [
+      0.11239,
+      0.1283,
+      0.02431,
+      14.2043,
+      20.83737,
+      1.81728
+     ],
+     "search_displacement_norm": 0.39255,
+     "k6_delivered": false,
+     "k6_max_dwell": 0,
+     "delivery_success": false,
+     "dtz_end_mm": 68.53,
+     "terminal_coin_speed": 0.0,
+     "peak_qdot": 1.1089,
+     "peak_coin_speed": 0.4536,
+     "budget": 8
+    }
+   },
+   "dev_k6": 0,
+   "held_out_k6": 0,
+   "total_k6": 0,
+   "n_states": 4
+  }
+ },
+ "oracle_gate_diagnostic": {
+  "budget": 8,
+  "per_state": {
+   "s1": {
+    "split": "development",
+    "teacher_theta": [
+     0.0515,
+     0.2179,
+     0.0164,
+     12.8078,
+     9.2369,
+     3.0388
+    ],
+    "theta0": [
+     0.0515,
+     0.2179,
+     0.0164,
+     12.8078,
+     9.2369,
+     3.0388
+    ],
+    "theta_exec": [
+     0.0515,
+     0.2179,
+     0.0164,
+     12.8078,
+     9.2369,
+     3.0388
+    ],
+    "search_displacement_norm": 0.0,
+    "k6_delivered": true,
+    "k6_max_dwell": 24,
+    "delivery_success": true,
+    "dtz_end_mm": 18.55,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.998,
+    "peak_coin_speed": 0.45,
+    "budget": 8
+   },
+   "s3": {
+    "split": "development",
+    "teacher_theta": [
+     0.19582,
+     0.0694,
+     -0.03699,
+     7.82491,
+     11.18153,
+     2.19236
+    ],
+    "theta0": [
+     0.19582,
+     0.0694,
+     -0.03699,
+     7.82491,
+     11.18153,
+     2.19236
+    ],
+    "theta_exec": [
+     0.19582,
+     0.0694,
+     -0.03699,
+     7.82491,
+     11.18153,
+     2.19236
+    ],
+    "search_displacement_norm": 0.0,
+    "k6_delivered": true,
+    "k6_max_dwell": 18,
+    "delivery_success": true,
+    "dtz_end_mm": 5.16,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9812,
+    "peak_coin_speed": 0.4511,
+    "budget": 8
+   },
+   "s4": {
+    "split": "held_out",
+    "teacher_theta": [
+     0.0681,
+     0.2023,
+     -0.0297,
+     10.4443,
+     6.8406,
+     2.2844
+    ],
+    "theta0": [
+     0.0681,
+     0.2023,
+     -0.0297,
+     10.4443,
+     6.8406,
+     2.2844
+    ],
+    "theta_exec": [
+     0.0681,
+     0.2023,
+     -0.0297,
+     10.4443,
+     6.8406,
+     2.2844
+    ],
+    "search_displacement_norm": 0.0,
+    "k6_delivered": true,
+    "k6_max_dwell": 10,
+    "delivery_success": true,
+    "dtz_end_mm": 14.5,
+    "terminal_coin_speed": 0.1649,
+    "peak_qdot": 1.4157,
+    "peak_coin_speed": 0.2629,
+    "budget": 8
+   },
+   "s7": {
+    "split": "held_out",
+    "teacher_theta": [
+     0.157,
+     0.1729,
+     0.0133,
+     8.6476,
+     5.3654,
+     1.4752
+    ],
+    "theta0": [
+     0.157,
+     0.1729,
+     0.0133,
+     8.6476,
+     5.3654,
+     1.4752
+    ],
+    "theta_exec": [
+     0.157,
+     0.1729,
+     0.0133,
+     8.6476,
+     5.3654,
+     1.4752
+    ],
+    "search_displacement_norm": 0.0,
+    "k6_delivered": true,
+    "k6_max_dwell": 18,
+    "delivery_success": true,
+    "dtz_end_mm": 18.06,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9795,
+    "peak_coin_speed": 0.4363,
+    "budget": 8
+   }
+  },
+  "dev_k6": 2,
+  "held_out_k6": 2,
+  "total_k6": 4,
+  "n_states": 4
+ },
+ "gate": {
+  "informed_total_k6": 2,
+  "informed_dev_k6": 2,
+  "informed_held_out_k6": 0,
+  "n_states": 4,
+  "uninformed_total_k6": 0,
+  "oracle_total_k6": 4,
+  "actor_gap_vs_uninformed": 2,
+  "actor_load_bearing": true,
+  "oracle_validates_search_and_physics": true,
+  "no_hidden_teacher_fallback": true,
+  "passed": false
+ },
+ "verdict": "UPDATE_ZERO_REGRESSES_HELD_OUT",
+ "diagnosed_blocker": "INSUFFICIENT_DATASET_COVERAGE_2_DEV_CRADLES",
+ "authorises_rl": false,
+ "wall_s": 136.6,
+ "peak_rss_gb": 0.236,
+ "figures": {
+  "gif_s1": "reports/2026-07-27-coin-teacher-to-rl/update0_deploy_s1.gif",
+  "gif_s4": "reports/2026-07-27-coin-teacher-to-rl/update0_deploy_s4.gif",
+  "panel_png": "reports/2026-07-27-coin-teacher-to-rl/update_zero_panel.png"
+ },
+ "search_semantics": {
+  "budget_counts_total_candidates": true,
+  "centre_always_evaluated": true,
+  "n_total_candidates": 8,
+  "n_jittered_candidates": 7,
+  "budget_zero": "direct execution of \u03b8_0 (centre only, no jitter)",
+  "search_std_norm": 0.15
+ }
+}

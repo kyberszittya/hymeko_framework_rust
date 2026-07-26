@@ -23,6 +23,8 @@ import resource
 import sys
 import time
 
+import numpy as np
+
 REPORT_DIR = "reports/2026-07-27-coin-teacher-to-rl"
 
 
@@ -175,6 +177,109 @@ def bc_main() -> dict:
     return out
 
 
+def _render_update0_viz(out: dict, panel: list) -> dict:
+    """§9 graphical output for update-0: (1) a per-state K6 grouped bar (informed / uninformed / oracle) + a budget-sweep
+    line; (2) deploy GIFs of the BC θ_exec on a delivering dev cradle (s1) and a failing held-out cradle (s4). Reuses the
+    frozen renderer; panel snapshots are already acquired. Returns the written figure paths."""
+    figs: dict = {}
+    gate_b = out["deploy_budget"]
+    per = out["informed_sweep"][str(gate_b)]["per_state"] if str(gate_b) in out["informed_sweep"] else out["informed_sweep"][gate_b]["per_state"]
+    unf = out["uninformed_sweep"].get(str(gate_b), out["uninformed_sweep"].get(gate_b))["per_state"]
+    orc = out["oracle_gate_diagnostic"]["per_state"]
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        tags = list(per.keys())
+        x = np.arange(len(tags))
+        fig, ax = plt.subplots(1, 2, figsize=(12, 4.4))
+        for k, (cond, src, c) in enumerate([("informed (BC θ0)", per, "tab:blue"),
+                                            ("uninformed (box)", unf, "tab:gray"),
+                                            ("oracle (teacher θ)", orc, "tab:green")]):
+            ax[0].bar(x + (k - 1) * 0.27, [int(src[t]["delivery_success"]) for t in tags], 0.27, label=cond, color=c)
+        ax[0].set_xticks(x)
+        ax[0].set_xticklabels([f"{t}\n{per[t]['split'][:3]}" for t in tags])
+        ax[0].set_ylabel("frozen K6 delivered")
+        ax[0].set_ylim(0, 1.2)
+        ax[0].set_title(f"update-0 per-cradle K6 (budget {gate_b})")
+        ax[0].legend(fontsize=8)
+        budgets = out["budgets"]
+        inf_tot = [out["informed_sweep"][str(b) if str(b) in out["informed_sweep"] else b]["total_k6"] for b in budgets]
+        unf_tot = [out["uninformed_sweep"][str(b) if str(b) in out["uninformed_sweep"] else b]["total_k6"] for b in budgets]
+        ax[1].plot(budgets, inf_tot, "o-", label="informed (BC θ0)", color="tab:blue")
+        ax[1].plot(budgets, unf_tot, "s--", label="uninformed (box)", color="tab:gray")
+        ax[1].axhline(4, color="tab:green", ls=":", label="oracle / teacher = 4/4")
+        ax[1].set_xlabel("fixed search budget")
+        ax[1].set_ylabel("total K6 / 4")
+        ax[1].set_ylim(0, 4.3)
+        ax[1].set_title("K6 vs search budget")
+        ax[1].legend(fontsize=8)
+        fig.suptitle(f"Update-0 no-regression — {out['verdict']} (blocker: {out['diagnosed_blocker']})")
+        fig.tight_layout()
+        p = f"{REPORT_DIR}/update_zero_panel.png"
+        fig.savefig(p, dpi=130)
+        plt.close(fig)
+        figs["panel_png"] = p
+    except Exception as e:
+        figs["plot_error"] = str(e)
+    # deploy GIFs of the BC θ_exec: s1 (delivering dev) and s4 (failing held-out)
+    try:
+        from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
+        from hymeko_rl.experiments.horizon_authority_benchmark import _render_forward_gif
+        by_tag = {ps.tag: ps for ps in panel}
+        for tag in ("s1", "s4"):
+            if tag in per and tag in by_tag:
+                gif = f"{REPORT_DIR}/update0_deploy_{tag}.gif"
+                if _render_forward_gif(by_tag[tag].snap, per[tag]["theta_exec"], gif, DELIVERY_CFG):
+                    figs[f"gif_{tag}"] = gif
+    except Exception as e:
+        figs["gif_error"] = str(e)
+    return figs
+
+
+def update0_main(smoke: bool = False) -> dict:
+    """Stage 4 — update-0 no-regression on the frozen 4-state panel (informed BC θ_0 vs uninformed box-centre control)."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.deploy import DEPLOY_BUDGETS, build_panel, update_zero_eval
+    from hymeko_rl.coin_delivery.theta_option.proposal import load_proposal
+    from hymeko_rl.coin_delivery.theta_option.search import SEARCH_STD
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import load_harness
+    t0 = time.time()
+    bank_path = f"{REPORT_DIR}/teacher_bank.json"
+    sel = json.load(open(f"{REPORT_DIR}/bc_results.json"))["selected"] if os.path.exists(f"{REPORT_DIR}/bc_results.json") else "B0"
+    pt = f"{REPORT_DIR}/bc_{sel}.pt"
+    if not (os.path.exists(bank_path) and os.path.exists(pt)):
+        print(f"MISSING {bank_path} or {pt} — run --teacher-bank and --bc first")
+        sys.exit(2)
+    bank = json.load(open(bank_path))
+    prop, fz = load_proposal(pt)
+    budgets = (0, 8) if smoke else DEPLOY_BUDGETS
+    print(f"UPDATE-0 — BC {sel} on frozen panel {[e['tag'] for e in bank['states'] if 'canonical_theta_vec' in e]} | "
+          f"budgets {budgets} search_std={SEARCH_STD}", flush=True)
+    panel = build_panel(load_harness(), bank)
+    out = update_zero_eval(panel, prop, fz, budgets=budgets)
+    out["search_std"] = SEARCH_STD
+    out["wall_s"] = round(time.time() - t0, 1)
+    out["peak_rss_gb"] = _peak_rss_gb()
+    out["figures"] = _render_update0_viz(out, panel)
+    path = _dump(out, "update_zero.json")
+    for b in budgets:
+        inf, unf = out["informed_sweep"][b], out["uninformed_sweep"][b]
+        ik6 = {t: int(r["delivery_success"]) for t, r in inf["per_state"].items()}
+        print(f"  budget {b}: INFORMED dev={inf['dev_k6']}/2 held={inf['held_out_k6']}/2 total={inf['total_k6']}/4 {ik6} "
+              f"| UNINFORMED total={unf['total_k6']}/4", flush=True)
+    g = out["gate"]
+    print(f"\n== UPDATE-0 ==\n  verdict: {out['verdict']}  blocker: {out['diagnosed_blocker']}\n"
+          f"  gate(budget {out['deploy_budget']}): informed {g['informed_total_k6']}/4 (dev {g['informed_dev_k6']}/2 "
+          f"held {g['informed_held_out_k6']}/2) | uninformed {g['uninformed_total_k6']}/4 | oracle(teacher θ) "
+          f"{g['oracle_total_k6']}/4 | actor_gap {g['actor_gap_vs_uninformed']} load_bearing={g['actor_load_bearing']}\n"
+          f"  oracle_validates_search_and_physics={g['oracle_validates_search_and_physics']}\n"
+          f"  GATE {'PASS' if g['passed'] else 'FAIL'} | authorises_rl={out['authorises_rl']}\n  artifact: {path} | "
+          f"wall {out['wall_s']}s\nUPDATE0_DONE", flush=True)
+    return out
+
+
 if __name__ == "__main__":
     if "--semantics" in sys.argv:
         semantics_main()
@@ -184,6 +289,8 @@ if __name__ == "__main__":
         dataset_main()
     elif "--bc" in sys.argv:
         bc_main()
+    elif "--update0" in sys.argv:
+        update0_main(smoke="--smoke" in sys.argv)
     else:
         print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --rl-smoke | --rl-multiseed")
         sys.exit(2)
