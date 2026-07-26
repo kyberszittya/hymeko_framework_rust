@@ -12,14 +12,9 @@ from hymeko_rl.coin_delivery.theta_option.semantics import DIM
 
 
 def _grouped(seed=0):
+    from hymeko_rl.coin_delivery.theta_option.canonical_frame import group_len
     rng = np.random.default_rng(seed)
-    g = {}
-    for name in R1_GROUP_ORDER:
-        # SIDE_* groups are length-2, SHARED_* length-1 (per r1_feature_dim accounting)
-        from hymeko_rl.coin_delivery.theta_option.canonical_frame import R1_KIND, SHARED_ALONG, SHARED_PERP
-        n = 1 if R1_KIND[name] in (SHARED_ALONG, SHARED_PERP) else 2
-        g[name] = rng.normal(size=n)
-    return g
+    return {name: rng.normal(size=group_len(name)) for name in R1_GROUP_ORDER}
 
 
 # ── 1. swap twice == identity (state AND θ) ──

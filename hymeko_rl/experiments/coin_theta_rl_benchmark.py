@@ -637,8 +637,10 @@ def r1_check_main(smoke: bool = False) -> dict:
              **{r["seed"]: r["canonical_theta"] for r in dp["deliverable_dev_pool"] if r["seed"] not in (14250, 14750)}}
     dev_seeds, held_seeds = [14250, 14750, 16500, 17750, 19500, 24000], [15000, 15750]
     harness = load_harness()
-    print("R1 CHECK — canonical target-frame features | budget-8 retrieval w/ θ-decode, no training", flush=True)
-    snaps, feat, swapped, theta_canon_n, mirror_ok = {}, {}, {}, {}, {}
+    print("R1 CHECK (v2) — canonical target/authority features | budget-8 retrieval w/ θ-decode + acceptable-set distance", flush=True)
+    snaps, feat, swapped, theta_canon_n, mirror_ok, acc_sets = {}, {}, {}, {}, {}, {}
+    from hymeko_rl.coin_delivery.theta_option.acceptable_set import harvest_acceptable_set
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import sample_dev_basin
     for seed in dev_seeds + held_seeds:
         tag = {**dev_tag, **held_tag}[seed]
         snap, _ = acquire_snapshot(harness, seed)
@@ -649,19 +651,35 @@ def r1_check_main(smoke: bool = False) -> dict:
         swapped[tag] = sw
         theta_canon_n[tag] = box.norm(to_canonical_theta(np.asarray(canon[seed], np.float64), sw))
         mirror_ok[tag] = bool(np.allclose(flatten_r1(canonicalise(g)[0]), flatten_r1(canonicalise(swap_grouped(g))[0]), atol=1e-6))
-        print(f"  {tag} seed={seed}: was_swapped={sw} mirror_invariant={mirror_ok[tag]}", flush=True)
+        # dev acceptable SET (θ-norm) for the PRIMARY diagnostic (nearest-acceptable-set distance); held-out = teacher θ only
+        if seed in dev_seeds:
+            cvec = np.asarray(canon[seed], np.float64)
+            local = [np.asarray(c["theta"], np.float64) for c in sample_dev_basin(snap, cvec, seed=seed) if c["kind"] == "delivering"]
+            acc = harvest_acceptable_set(snap, n_samples=(60 if smoke else 300), seed=seed, seed_thetas=[cvec, *local])["accepted"]
+            acc_sets[tag] = np.asarray([a.theta_norm for a in acc], np.float64)
+        else:
+            acc_sets[tag] = box.norm(np.asarray(canon[seed], np.float64))[None, :]
+        print(f"  {tag} seed={seed}: was_swapped={sw} mirror_invariant={mirror_ok[tag]} |A|={len(acc_sets[tag])}", flush=True)
 
     dev_tags, held_tags = [dev_tag[s] for s in dev_seeds], [held_tag[s] for s in held_seeds]
     lip = lipschitz_analysis({t: feat[t] for t in dev_tags}, {t: theta_canon_n[t] for t in dev_tags})
     nn_dev = nearest_neighbour_by_feature(feat, dev_tags, dev_tags)
     nn_held = nearest_neighbour_by_feature(feat, held_tags, dev_tags)
+    # feature-rank / variance no-collapse check
+    Fmat = np.asarray([feat[t] for t in dev_tags], np.float64)
+    feat_rank = int(np.linalg.matrix_rank(Fmat - Fmat.mean(0), tol=1e-6))
+    feat_var = float(np.mean(Fmat.var(0)))
 
     def _retrieve(target: str, source: str, i: int) -> dict:
         theta_phys = from_canonical_theta(box.denorm(theta_canon_n[source]), swapped[target])   # decode to target frame
         prov = fixed_search_select(snaps[target], np.asarray(theta_phys, np.float64), np.random.default_rng(50000 + i * 131),
                                    budget=8, cfg=DELIVERY_CFG, std=SEARCH_STD)
+        # PRIMARY diagnostic: nearest distance from the retrieval PROPOSAL to the target's acceptable SET (θ-norm)
+        prop_n = box.norm(np.asarray(theta_phys, np.float64))
+        near_acc = float(np.min(np.linalg.norm(acc_sets[target] - prop_n[None, :], axis=1)))
         return {"source": source, "k6": bool(prov.outcome.get("delivery_success")),
-                "dtz_end_mm": round(prov.outcome.get("dtz_end", 0.0) * 1000, 2), "nn_feature_dist": None}
+                "dtz_end_mm": round(prov.outcome.get("dtz_end", 0.0) * 1000, 2),
+                "nearest_acceptable_set_dist": round(near_acc, 4), "nn_feature_dist": None}
 
     print("NN-retrieval (R1 canonical features + θ-decode, budget 8):", flush=True)
     retr_dev, dev_k6 = {}, 0
@@ -679,22 +697,32 @@ def r1_check_main(smoke: bool = False) -> dict:
         held_k6 += int(r["k6"])
         print(f"  held {t} ← NN {r['source']} (dφ={r['nn_feature_dist']}): K6={int(r['k6'])} dtz={r['dtz_end_mm']}mm [overlay]", flush=True)
 
+    mean_near_acc_dev = round(float(np.mean([r["nearest_acceptable_set_dist"] for r in retr_dev.values()])), 4)
     goals = {"mirror_invariant_all": bool(all(mirror_ok.values())),
-             "corr_dphi_dtheta": lip["corr_dphi_dtheta"], "corr_improved_or_held_vs_R0_0p71": bool(lip["corr_dphi_dtheta"] >= 0.71 - 0.1),
+             "feature_rank": feat_rank, "feature_rank_no_collapse": bool(feat_rank >= len(dev_tags) - 1),
+             "feature_mean_var": round(feat_var, 5),
+             "corr_dphi_dtheta": lip["corr_dphi_dtheta"], "corr_note": "SECONDARY (noisy at 6 cradles; θ-set is multimodal)",
              "nn_retrieval_dev": f"{dev_k6}/{len(dev_tags)}", "nn_retrieval_held_out_overlay": f"{held_k6}/{len(held_tags)}",
-             "retrieval_beats_R0_dev_1of6": bool(dev_k6 > 1)}
-    out = {"contract": "COIN_R1_REPRESENTATION_CHECK_V1", "base_commit": "1ab9e62f", "date": "2026-07-27",
-           "representation": "R1 canonical target/contact-frame", "no_training": True,
+             "retrieval_beats_R0_dev_1of6": bool(dev_k6 > 1),
+             "mean_nearest_acceptable_set_dist_dev": mean_near_acc_dev,
+             "acceptable_set_within_budget8_reach": bool(mean_near_acc_dev < 0.45)}   # ~ budget-8 std-0.15 reach
+    out = {"contract": "COIN_R1_REPRESENTATION_CHECK_V2", "base_commit": "1ab9e62f", "date": "2026-07-27",
+           "representation": "R1 v2 canonical target/contact-frame + B_τ authority + contact kinematics + control state",
+           "no_training": True, "feature_dim": int(Fmat.shape[1]),
            "per_cradle_swapped": swapped, "mirror_invariant_confirmed": mirror_ok,
            "lipschitz": lip, "nn_retrieval_dev": retr_dev, "nn_retrieval_held_out_overlay": retr_held,
-           "representation_goals": goals, "R0_reference": {"nn_retrieval_dev": "1/6", "corr_dphi_dtheta": 0.71, "mirror_deficit": 3.49},
+           "representation_goals": goals,
+           "R0_reference": {"nn_retrieval_dev": "1/6", "corr_dphi_dtheta": 0.71, "mirror_deficit": 3.49},
+           "primary_metric": "nearest_acceptable_set_dist (not corr; θ-sets are multimodal)",
            "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
     os.makedirs(REP_AUDIT_DIR, exist_ok=True)
     path = f"{REP_AUDIT_DIR}/r1_representation_check.json"
     json.dump(out, open(path, "w"), indent=1, default=float)
-    print(f"\n== R1 CHECK ==\n  mirror-invariant(all)={goals['mirror_invariant_all']} (deficit 3.49→0 by construction)\n"
-          f"  corr(dφ,dθ)={lip['corr_dphi_dtheta']} (R0 0.71) | NN-retrieval dev {dev_k6}/6 (R0 1/6) | held(overlay) {held_k6}/2\n"
-          f"  goals: {goals}\n  artifact: {path} | wall {out['wall_s']}s\nR1_CHECK_DONE", flush=True)
+    print(f"\n== R1 CHECK (v2, dim {Fmat.shape[1]}) ==\n  mirror-invariant(all)={goals['mirror_invariant_all']} (deficit→0 by construction) | "
+          f"feature rank {feat_rank}/{len(dev_tags)} (no-collapse={goals['feature_rank_no_collapse']})\n"
+          f"  PRIMARY: mean nearest-acceptable-set dist(dev)={mean_near_acc_dev} (within budget-8 reach={goals['acceptable_set_within_budget8_reach']})\n"
+          f"  retrieval dev {dev_k6}/6 (R0 1/6) | held(overlay) {held_k6}/2 | corr(dφ,dθ)={lip['corr_dphi_dtheta']} (secondary)\n"
+          f"  artifact: {path} | wall {out['wall_s']}s\nR1_CHECK_DONE", flush=True)
     return out
 
 

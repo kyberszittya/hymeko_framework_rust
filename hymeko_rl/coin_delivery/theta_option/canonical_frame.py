@@ -21,6 +21,7 @@ whose aggregate perpendicular key is ≥ 0 (a stable, deterministic tie-break �
 """
 from __future__ import annotations
 
+from typing import Any
 
 import mujoco
 import numpy as np
@@ -37,13 +38,29 @@ BALANCE_IDX = 2                                      # θ = (squeeze, forward, B
 #   SIDE_PERP    : per-side [left,right] perpendicular (sides swapped AND negated by S)
 SHARED_ALONG, SHARED_PERP, SIDE_ALONG, SIDE_PERP = "SHARED_ALONG", "SHARED_PERP", "SIDE_ALONG", "SIDE_PERP"
 R1_LAYOUT: tuple[tuple[str, str], ...] = (
+    # ── v1 target/contact-frame geometry ──
     ("dtz", SHARED_ALONG), ("coin_vel_along", SHARED_ALONG), ("coin_vel_perp", SHARED_PERP), ("straddle", SHARED_ALONG),
     ("tip_coin_along", SIDE_ALONG), ("tip_coin_perp", SIDE_PERP),
     ("normal_along", SIDE_ALONG), ("normal_perp", SIDE_PERP),
     ("fn", SIDE_ALONG), ("slew_head_up", SIDE_ALONG), ("slew_head_dn", SIDE_ALONG),
+    # ── v2 configuration-dependent CONTROL AUTHORITY (B_τ = ∂vrel4/∂Δτ) ──
+    # B_τ singular values / condition / active-rank are invariant under the mirror (orthogonal row/col transforms);
+    # per-side response magnitude swaps sides. Kept as magnitudes ⇒ no sign-flip ambiguity in τ space.
+    ("btau_svals", SHARED_ALONG), ("btau_summary", SHARED_ALONG), ("btau_side_auth", SIDE_ALONG),
+    # ── v2 contact kinematics / forces (contact frame → target-consistent) ──
+    ("vrel_normal", SIDE_ALONG), ("vrel_tangent", SIDE_PERP), ("friction_util", SIDE_ALONG),
+    # ── v2 real control state (achievable next slew-admissible step) ──
+    ("prev_tau_arm", SIDE_ALONG),
 )
 R1_GROUP_ORDER = tuple(name for name, _ in R1_LAYOUT)
 R1_KIND = dict(R1_LAYOUT)
+# groups whose flattened length differs from the kind default (SHARED_* = 1, SIDE_* = 2)
+R1_GROUP_LEN = {"btau_svals": 4, "btau_summary": 2}
+
+
+def group_len(name: str) -> int:
+    """Flattened length of a feature group (explicit override, else 1 for SHARED_* and 2 for SIDE_*)."""
+    return R1_GROUP_LEN.get(name, 1 if R1_KIND[name] in (SHARED_ALONG, SHARED_PERP) else 2)
 
 
 def _perp(u: np.ndarray) -> np.ndarray:
@@ -77,6 +94,9 @@ def r1_grouped_features(snap: CradleSnapshot) -> dict[str, np.ndarray]:
     slew = float(snap.stack.tau_rate * snap.stack.control_dt)
     up = np.minimum(snap.hi - snap.prev_tau, slew) / slew          # per-joint up-headroom (4)
     dn = np.minimum(snap.prev_tau - snap.lo, slew) / slew          # per-joint down-headroom (4)
+    ba = _btau_authority(snap)                                     # B_τ singular / condition / per-side authority
+    ck = _contact_kinematics(rl, snap)                            # per-side v_n, v_t, friction utilisation
+    pt = np.asarray(snap.prev_tau, np.float64)
     # per-ARM slew headroom = mean over that arm's joints (joints 0,1 = left, 2,3 = right); a magnitude ⇒ no sign flip
     return {
         "dtz": np.array([float(dtz)]),
@@ -90,7 +110,48 @@ def r1_grouped_features(snap: CradleSnapshot) -> dict[str, np.ndarray]:
         "fn": np.array([fn_l, fn_r]),
         "slew_head_up": np.array([float(up[:2].mean()), float(up[2:].mean())]),
         "slew_head_dn": np.array([float(dn[:2].mean()), float(dn[2:].mean())]),
+        "btau_svals": ba["svals"], "btau_summary": ba["summary"], "btau_side_auth": ba["side_auth"],
+        "vrel_normal": ck["vrel_normal"], "vrel_tangent": ck["vrel_tangent"], "friction_util": ck["friction_util"],
+        "prev_tau_arm": np.array([float(np.linalg.norm(pt[:2])), float(np.linalg.norm(pt[2:]))]),
     }
+
+
+def _btau_authority(snap: CradleSnapshot) -> dict[str, np.ndarray]:
+    """Configuration-dependent one-step control authority from B_τ = ∂vrel4/∂Δτ (contact-frame rows [Lvn,Lvt,Rvn,Rvt]).
+    Returns mirror-safe scalars: the 4 singular values + [condition, active-rank fraction] (invariant under the mirror's
+    orthogonal row/col action) and the per-side response magnitude [‖left rows‖, ‖right rows‖] (swaps sides). Reuses the
+    frozen Route-B `identify_Btau`. # Postconditions: all finite; magnitudes ⇒ no τ-sign ambiguity."""
+    from hymeko_rl.coin_delivery.torque_authority import TorqueAuthorityConfig, identify_Btau
+    info = identify_Btau(snap, 0.05, TorqueAuthorityConfig())
+    B = np.nan_to_num(np.asarray(info["Btau"], np.float64), nan=0.0)
+    sv = np.sort(np.linalg.svd(B, compute_uv=False))[::-1]
+    cond = float(sv[0] / max(sv[-1], 1e-6))
+    return {"svals": sv.astype(np.float64),
+            "summary": np.array([min(cond, 1e4), float(info["n_active"]) / 4.0]),
+            "side_auth": np.array([float(np.linalg.norm(B[:2])), float(np.linalg.norm(B[2:]))])}
+
+
+def _contact_kinematics(rl: Any, snap: CradleSnapshot) -> dict[str, np.ndarray]:
+    """Per-side contact-relative kinematics at the handoff: normal-approach velocity v_n (SIDE_ALONG — symmetric),
+    tangential velocity v_t (SIDE_PERP — flips under reflection), and a friction-utilisation slip proxy |v_t|/(|v_n|+ε)
+    (SIDE_ALONG magnitude). Reuses `measure_contact_velocities` on the frozen frames. Missing contact ⇒ zeros."""
+    from hymeko_rl.coin_delivery.contact_velocity import measure_contact_velocities
+    try:
+        per = measure_contact_velocities(rl, snap.frames)["per"]
+    except Exception:
+        per = {"left": None, "right": None}
+
+    def _vn(side: str) -> float:
+        c = per.get(side)
+        return float(c["v_n"]) if c is not None else 0.0
+
+    def _vt(side: str) -> float:
+        c = per.get(side)
+        return float(c["v_t"]) if c is not None else 0.0
+
+    lvn, rvn, lvt, rvt = _vn("left"), _vn("right"), _vt("left"), _vt("right")
+    return {"vrel_normal": np.array([lvn, rvn]), "vrel_tangent": np.array([lvt, rvt]),
+            "friction_util": np.array([abs(lvt) / (abs(lvn) + 1e-3), abs(rvt) / (abs(rvn) + 1e-3)])}
 
 
 def swap_grouped(g: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
@@ -167,5 +228,5 @@ def from_canonical_theta(theta_canonical: np.ndarray, was_swapped: bool) -> np.n
 
 
 def r1_feature_dim() -> int:
-    """Length of the flattened R1 vector (4 shared-1 groups + 7 per-side-2 groups = 4 + 14 = 18)."""
-    return sum(1 if R1_KIND[name] in (SHARED_ALONG, SHARED_PERP) else 2 for name in R1_GROUP_ORDER)
+    """Length of the flattened R1 vector (sum of per-group lengths across the frozen layout)."""
+    return sum(group_len(name) for name in R1_GROUP_ORDER)
