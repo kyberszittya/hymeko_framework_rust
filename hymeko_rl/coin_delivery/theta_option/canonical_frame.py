@@ -179,8 +179,12 @@ def _contact_kinematics(rl: Any, snap: CradleSnapshot) -> dict[str, np.ndarray]:
         return float(c["v_t"]) if c is not None else 0.0
 
     lvn, rvn, lvt, rvt = _vn("left"), _vn("right"), _vt("left"), _vt("right")
+    # BOUNDED slip fraction ∈ [0,1] (NOT the unbounded |v_t|/|v_n| ratio, which explodes as v_n→0 and dominated the
+    # distance at ~96% — a scale-dominance bug the per-group audit caught, same class as the B_τ condition number).
+    def _slip(vt: float, vn: float) -> float:
+        return abs(vt) / (abs(vt) + abs(vn) + 1e-3)
     return {"vrel_normal": np.array([lvn, rvn]), "vrel_tangent": np.array([lvt, rvt]),
-            "friction_util": np.array([abs(lvt) / (abs(lvn) + 1e-3), abs(rvt) / (abs(rvn) + 1e-3)])}
+            "friction_util": np.array([_slip(lvt, lvn), _slip(rvt, rvn)])}
 
 
 def swap_grouped(g: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
