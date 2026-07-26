@@ -1,0 +1,502 @@
+{
+ "contract": "COIN_CRADLE_DELIVERY_PASS_V1",
+ "base_commit": "a3459629",
+ "date": "2026-07-27",
+ "near_tol": 0.3,
+ "dedup": {
+  "near_tol": 0.3,
+  "heldout_seeds": [
+   15000,
+   15750
+  ],
+  "n_certified": 11,
+  "n_hash_unique": 11,
+  "n_after_near_dedup": 11,
+  "n_dev_eligible": 9,
+  "dev_eligible_seeds": [
+   14250,
+   14750,
+   16500,
+   17000,
+   17750,
+   18250,
+   19500,
+   23000,
+   25000
+  ],
+  "held_out_present": [
+   15000,
+   15750
+  ],
+  "pairwise_fingerprint_dist": {
+   "min": 0.922,
+   "median": 2.9737,
+   "max": 4.1586,
+   "pairs_below_tol": 0
+  },
+  "rows": [
+   {
+    "seed": 14250,
+    "replay_hash": "663592959c88d43b",
+    "physical_state_hash": "16778d7df544b9e8",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": true
+   },
+   {
+    "seed": 14750,
+    "replay_hash": "06ab5142578b7cd2",
+    "physical_state_hash": "ede88da6a0ca5673",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": true
+   },
+   {
+    "seed": 15000,
+    "replay_hash": "d0f2feb9f13b5d12",
+    "physical_state_hash": "8f2abf5e34f177e4",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": true,
+    "held_out_near_dup": false,
+    "dev_eligible": false,
+    "is_frozen_seed": true
+   },
+   {
+    "seed": 15750,
+    "replay_hash": "0e01e4e0551f200b",
+    "physical_state_hash": "92d07f22ff72e960",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": true,
+    "held_out_near_dup": false,
+    "dev_eligible": false,
+    "is_frozen_seed": true
+   },
+   {
+    "seed": 16500,
+    "replay_hash": "4ba547c9bd3be9d0",
+    "physical_state_hash": "eff0b7d8948691aa",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": false
+   },
+   {
+    "seed": 17000,
+    "replay_hash": "02349f2a4ff602c2",
+    "physical_state_hash": "87f9cf2f3c1f1866",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": false
+   },
+   {
+    "seed": 17750,
+    "replay_hash": "44aa287a4d45f288",
+    "physical_state_hash": "21ec40fb48861f39",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": false
+   },
+   {
+    "seed": 18250,
+    "replay_hash": "866ea6008b6bebea",
+    "physical_state_hash": "f663e1691b5394db",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": false
+   },
+   {
+    "seed": 19500,
+    "replay_hash": "1e838979d0950f5c",
+    "physical_state_hash": "5e0e5b8f1add93fc",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": false
+   },
+   {
+    "seed": 23000,
+    "replay_hash": "c430659c6dd43c92",
+    "physical_state_hash": "0af9c2d5a15e2d69",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": false
+   },
+   {
+    "seed": 25000,
+    "replay_hash": "4616e7e04a5004ba",
+    "physical_state_hash": "b52028bb72b8e822",
+    "duplicate_of": null,
+    "near_dup_of": null,
+    "held_out": false,
+    "held_out_near_dup": false,
+    "dev_eligible": true,
+    "is_frozen_seed": false
+   }
+  ]
+ },
+ "n_dev_eligible_unique": 9,
+ "n_deliverable": 5,
+ "n_certified_but_not_deliverable": 4,
+ "deliverable_dev_pool": [
+  {
+   "seed": 14250,
+   "deliverable": true,
+   "canonical_theta": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "canonical_source": "cem_best",
+   "cem_optimum_reproduces": true,
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 24,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 76.44,
+    "dtz_end_mm": 18.55,
+    "gap_closed": 0.757,
+    "forward_mm": 57.9,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.998,
+    "peak_coin_speed": 0.45,
+    "contact_lost_steps": 31,
+    "score": 0.56145
+   },
+   "n_basin_delivering": 16,
+   "near_dup_of": null,
+   "dev_eligible": true
+  },
+  {
+   "seed": 14750,
+   "deliverable": true,
+   "canonical_theta": [
+    0.203578,
+    0.055342,
+    -0.047739,
+    4.643692,
+    19.946047,
+    1.388089
+   ],
+   "canonical_source": "basin_repair",
+   "cem_optimum_reproduces": false,
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 22,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 99.89,
+    "dtz_end_mm": 15.32,
+    "gap_closed": 0.847,
+    "forward_mm": 84.65,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9948,
+    "peak_coin_speed": 0.3838,
+    "contact_lost_steps": 42,
+    "score": 0.50468
+   },
+   "n_basin_delivering": 9,
+   "near_dup_of": null,
+   "dev_eligible": true
+  },
+  {
+   "seed": 16500,
+   "deliverable": true,
+   "canonical_theta": [
+    0.0389,
+    0.114,
+    0.0233,
+    15.5399,
+    16.1924,
+    3.1535
+   ],
+   "canonical_source": "cem_best",
+   "cem_optimum_reproduces": true,
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 29,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 112.32,
+    "dtz_end_mm": 12.22,
+    "gap_closed": 0.891,
+    "forward_mm": 122.36,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 2.0026,
+    "peak_coin_speed": 0.6533,
+    "contact_lost_steps": 47,
+    "score": 0.63778
+   },
+   "n_basin_delivering": 2,
+   "near_dup_of": null,
+   "dev_eligible": true
+  },
+  {
+   "seed": 17750,
+   "deliverable": true,
+   "canonical_theta": [
+    0.0349,
+    0.1932,
+    0.1,
+    4.1972,
+    20.5702,
+    1.9756
+   ],
+   "canonical_source": "cem_best",
+   "cem_optimum_reproduces": true,
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 25,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 51.4,
+    "dtz_end_mm": 16.43,
+    "gap_closed": 0.68,
+    "forward_mm": 38.67,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.1698,
+    "peak_coin_speed": 0.2875,
+    "contact_lost_steps": 43,
+    "score": 0.54357
+   },
+   "n_basin_delivering": 20,
+   "near_dup_of": null,
+   "dev_eligible": true
+  },
+  {
+   "seed": 19500,
+   "deliverable": true,
+   "canonical_theta": [
+    0.158,
+    0.143,
+    -0.0432,
+    12.4194,
+    16.4224,
+    3.2824
+   ],
+   "canonical_source": "cem_best",
+   "cem_optimum_reproduces": true,
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 17,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 131.43,
+    "dtz_end_mm": 17.04,
+    "gap_closed": 0.87,
+    "forward_mm": 119.35,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 2.0057,
+    "peak_coin_speed": 0.5554,
+    "contact_lost_steps": 44,
+    "score": 0.42296
+   },
+   "n_basin_delivering": 1,
+   "near_dup_of": null,
+   "dev_eligible": true
+  }
+ ],
+ "certified_but_not_deliverable_under_frozen_option": [
+  {
+   "seed": 17000,
+   "deliverable": false,
+   "canonical_theta": [
+    0.1098,
+    0.1441,
+    -0.0768,
+    3.6223,
+    16.4306,
+    2.0739
+   ],
+   "canonical_source": "cem_best_NONDELIVERING",
+   "cem_optimum_reproduces": false,
+   "outcome": {
+    "k6_delivered": false,
+    "k6_max_dwell": 0,
+    "delivery_success": false,
+    "touched": true,
+    "dtz_start_mm": 106.44,
+    "dtz_end_mm": 33.31,
+    "gap_closed": 0.687,
+    "forward_mm": 73.88,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9911,
+    "peak_coin_speed": 0.4722,
+    "contact_lost_steps": 43,
+    "score": -0.03331
+   },
+   "n_basin_delivering": 0,
+   "near_dup_of": null,
+   "dev_eligible": true,
+   "failure_mode": "REACHED_BUT_NO_SETTLE"
+  },
+  {
+   "seed": 18250,
+   "deliverable": false,
+   "canonical_theta": [
+    0.0596,
+    0.0262,
+    -0.0476,
+    15.5114,
+    16.6412,
+    2.1899
+   ],
+   "canonical_source": "cem_best_NONDELIVERING",
+   "cem_optimum_reproduces": false,
+   "outcome": {
+    "k6_delivered": false,
+    "k6_max_dwell": 0,
+    "delivery_success": false,
+    "touched": true,
+    "dtz_start_mm": 97.6,
+    "dtz_end_mm": 78.99,
+    "gap_closed": 0.191,
+    "forward_mm": 19.85,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.4921,
+    "peak_coin_speed": 0.3672,
+    "contact_lost_steps": 38,
+    "score": -0.07899
+   },
+   "n_basin_delivering": 0,
+   "near_dup_of": null,
+   "dev_eligible": true,
+   "failure_mode": "NEVER_REACHED_ZONE"
+  },
+  {
+   "seed": 23000,
+   "deliverable": false,
+   "canonical_theta": [
+    0.0127,
+    0.1135,
+    -0.0072,
+    19.069,
+    7.1138,
+    1.7191
+   ],
+   "canonical_source": "cem_best_NONDELIVERING",
+   "cem_optimum_reproduces": false,
+   "outcome": {
+    "k6_delivered": false,
+    "k6_max_dwell": 0,
+    "delivery_success": false,
+    "touched": true,
+    "dtz_start_mm": 154.7,
+    "dtz_end_mm": 77.85,
+    "gap_closed": 0.497,
+    "forward_mm": 83.49,
+    "terminal_coin_speed": 0.0722,
+    "peak_qdot": 1.9993,
+    "peak_coin_speed": 0.6165,
+    "contact_lost_steps": 51,
+    "score": -0.07785
+   },
+   "n_basin_delivering": 0,
+   "near_dup_of": null,
+   "dev_eligible": true,
+   "failure_mode": "NEVER_REACHED_ZONE"
+  },
+  {
+   "seed": 25000,
+   "deliverable": false,
+   "canonical_theta": [
+    0.1992,
+    0.1137,
+    0.0439,
+    9.082,
+    11.2263,
+    2.0097
+   ],
+   "canonical_source": "cem_best_NONDELIVERING",
+   "cem_optimum_reproduces": false,
+   "outcome": {
+    "k6_delivered": false,
+    "k6_max_dwell": 0,
+    "delivery_success": false,
+    "touched": true,
+    "dtz_start_mm": 115.97,
+    "dtz_end_mm": 61.68,
+    "gap_closed": 0.468,
+    "forward_mm": 93.27,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9989,
+    "peak_coin_speed": 0.535,
+    "contact_lost_steps": 47,
+    "score": -0.06168
+   },
+   "n_basin_delivering": 0,
+   "near_dup_of": null,
+   "dev_eligible": true,
+   "failure_mode": "NEVER_REACHED_ZONE"
+  }
+ ],
+ "achievable_N_dev_deliverable": 5,
+ "frozen_dev_already_in_pool": [
+  14250,
+  14750
+ ],
+ "wall_s": 490.3,
+ "peak_rss_gb": 0.248,
+ "funnel": {
+  "n_raw_dev_candidates": 9,
+  "n_near_unique_dev": 9,
+  "n_K6_deliverable_dev": 5,
+  "delivery_yield_among_unique": 0.556,
+  "usable_N": 5
+ },
+ "new_state_distribution": {
+  "K6_DELIVERABLE": [
+   16500,
+   17750,
+   19500
+  ],
+  "CERTIFIED_BUT_NOT_DELIVERABLE_UNDER_FROZEN_OPTION": [
+   17000,
+   18250,
+   23000,
+   25000
+  ],
+  "NEAR_DUPLICATE": [],
+  "HELD_OUT_NEAR_DUP": []
+ },
+ "certified_seeds": [
+  14250,
+  14750,
+  15000,
+  15750,
+  16500,
+  17000,
+  17750,
+  18250,
+  19500,
+  23000,
+  25000
+ ]
+}
