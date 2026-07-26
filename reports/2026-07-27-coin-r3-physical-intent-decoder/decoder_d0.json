@@ -1,0 +1,223 @@
+{
+ "contract": "COIN_R3_DECODER_D0_V1",
+ "date": "2026-07-27",
+ "start_commit": "ce3d6f41",
+ "per_state": {
+  "s1": {
+   "intent": [
+    0.058,
+    0.45,
+    0.0049,
+    0.0413,
+    0.2135,
+    0.8093,
+    0.1539
+   ],
+   "decoded_physical_theta": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "weak_link": "brake",
+   "saturated_roles": [],
+   "achievable_peak_estimate": 0.7433,
+   "theta_exec": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "search_displacement_norm": 0.0,
+   "budget_total": 8,
+   "delivery_success": true,
+   "k6_delivered": true,
+   "k6_max_dwell": 24,
+   "dtz_start_mm": 76.44,
+   "dtz_end_mm": 18.55,
+   "zone_entry": true,
+   "terminal_coin_speed": 0.0,
+   "peak_qdot": 1.998,
+   "peak_coin_speed": 0.45,
+   "failure_phase": null,
+   "split": "development",
+   "teacher_theta": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "reconstruction_norm": 0.0
+  },
+  "s3": {
+   "intent": [
+    0.0174,
+    0.4511,
+    0.011,
+    0.1305,
+    0.1304,
+    0.5493,
+    0.1864
+   ],
+   "decoded_physical_theta": [
+    0.1958,
+    0.0694,
+    -0.037,
+    7.8249,
+    11.1815,
+    2.1924
+   ],
+   "weak_link": "squeeze",
+   "saturated_roles": [],
+   "achievable_peak_estimate": 0.1361,
+   "theta_exec": [
+    0.1958,
+    0.0694,
+    -0.037,
+    7.8249,
+    11.1815,
+    2.1924
+   ],
+   "search_displacement_norm": 0.0,
+   "budget_total": 8,
+   "delivery_success": true,
+   "k6_delivered": true,
+   "k6_max_dwell": 18,
+   "dtz_start_mm": 99.89,
+   "dtz_end_mm": 5.16,
+   "zone_entry": true,
+   "terminal_coin_speed": 0.0,
+   "peak_qdot": 1.9812,
+   "peak_coin_speed": 0.4511,
+   "failure_phase": null,
+   "split": "development",
+   "teacher_theta": [
+    0.1958,
+    0.0694,
+    -0.037,
+    7.8249,
+    11.1815,
+    2.1924
+   ],
+   "reconstruction_norm": 0.0002
+  },
+  "s4": {
+   "intent": [
+    0.0482,
+    0.2629,
+    -0.0129,
+    0.0385,
+    0.1741,
+    0.5448,
+    0.114
+   ],
+   "decoded_physical_theta": [
+    0.0681,
+    0.2023,
+    -0.0297,
+    10.4443,
+    6.8406,
+    2.2844
+   ],
+   "weak_link": "push",
+   "saturated_roles": [],
+   "achievable_peak_estimate": 0.5039,
+   "theta_exec": [
+    0.0681,
+    0.2023,
+    -0.0297,
+    10.4443,
+    6.8406,
+    2.2844
+   ],
+   "search_displacement_norm": 0.0,
+   "budget_total": 8,
+   "delivery_success": true,
+   "k6_delivered": true,
+   "k6_max_dwell": 10,
+   "dtz_start_mm": 96.06,
+   "dtz_end_mm": 14.5,
+   "zone_entry": true,
+   "terminal_coin_speed": 0.1649,
+   "peak_qdot": 1.4157,
+   "peak_coin_speed": 0.2629,
+   "failure_phase": null,
+   "split": "held_out",
+   "teacher_theta": [
+    0.0681,
+    0.2023,
+    -0.0297,
+    10.4443,
+    6.8406,
+    2.2844
+   ],
+   "reconstruction_norm": 0.0
+  },
+  "s7": {
+   "intent": [
+    0.0416,
+    0.4363,
+    -0.0032,
+    0.078,
+    0.1441,
+    0.3547,
+    0.0894
+   ],
+   "decoded_physical_theta": [
+    0.157,
+    0.1729,
+    0.0133,
+    8.6476,
+    5.3654,
+    1.4752
+   ],
+   "weak_link": "squeeze",
+   "saturated_roles": [],
+   "achievable_peak_estimate": 0.3595,
+   "theta_exec": [
+    0.157,
+    0.1729,
+    0.0133,
+    8.6476,
+    5.3654,
+    1.4752
+   ],
+   "search_displacement_norm": 0.0,
+   "budget_total": 8,
+   "delivery_success": true,
+   "k6_delivered": true,
+   "k6_max_dwell": 18,
+   "dtz_start_mm": 137.73,
+   "dtz_end_mm": 18.06,
+   "zone_entry": true,
+   "terminal_coin_speed": 0.0,
+   "peak_qdot": 1.9795,
+   "peak_coin_speed": 0.4363,
+   "failure_phase": null,
+   "split": "held_out",
+   "teacher_theta": [
+    0.157,
+    0.1729,
+    0.0133,
+    8.6476,
+    5.3654,
+    1.4752
+   ],
+   "reconstruction_norm": 0.0
+  }
+ },
+ "dev_k6": 2,
+ "held_out_k6": 2,
+ "total_k6": 4,
+ "max_reconstruction_norm": 0.0002,
+ "verdict": "D0_TEACHER_INTENT_ROUNDTRIP_PASS",
+ "passed": true,
+ "no_teacher_fallback": true,
+ "wall_s": 96.4
+}

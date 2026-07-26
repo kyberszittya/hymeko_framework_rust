@@ -1645,6 +1645,229 @@ def update0_main(smoke: bool = False) -> dict:
     return out
 
 
+R3_DIR = "reports/2026-07-27-coin-r3-physical-intent-decoder"
+
+
+def _r3_deploy_one(snap: Any, intent: Any, box: Any, rng: Any, budget: int) -> dict:
+    """R3 deploy on ONE cradle: intent -> deterministic authority-aware decode -> budget-8 centre-inclusive search ->
+    frozen K6. Records the decoder diagnostics + the physical outcome. NEVER a teacher fallback."""
+    from hymeko_rl.coin_delivery.theta_option.authority_decoder import decode_intent
+    from hymeko_rl.coin_delivery.theta_option.cradle_expansion import classify_failure_mode
+    from hymeko_rl.coin_delivery.theta_option.search import SEARCH_STD, fixed_search_select
+    from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
+    dec = decode_intent(intent, snap, DELIVERY_CFG)
+    theta0 = np.asarray(dec.physical_theta, np.float64)
+    prov = fixed_search_select(snap, theta0, rng, budget=int(budget), cfg=DELIVERY_CFG, std=SEARCH_STD)
+    o = prov.outcome
+    ok = bool(o.get("delivery_success"))
+    disp = float(np.linalg.norm(box.norm(prov.selected) - box.norm(theta0)))
+    fail = None if ok else classify_failure_mode({"dtz_end_mm": o.get("dtz_end", 0.0) * 1000, "k6_max_dwell": o.get("k6_max_dwell", 0),
+                                                  "peak_qdot": o.get("peak_qdot", 0.0), "peak_coin_speed": o.get("peak_coin_speed", 0.0)})
+    return {"intent": [round(float(x), 4) for x in intent.to_vector()], "decoded_physical_theta": [round(float(x), 4) for x in theta0],
+            "weak_link": dec.weak_link, "saturated_roles": [k for k, v in dec.saturation.items() if v],
+            "achievable_peak_estimate": round(float(dec.achievable_peak_estimate), 4),
+            "theta_exec": [round(float(x), 4) for x in prov.selected], "search_displacement_norm": round(disp, 4),
+            "budget_total": int(prov.budget), "delivery_success": ok, "k6_delivered": bool(o.get("k6_delivered")),
+            "k6_max_dwell": int(o.get("k6_max_dwell", 0)), "dtz_start_mm": round(o.get("dtz_start", 0.0) * 1000, 2),
+            "dtz_end_mm": round(o.get("dtz_end", 0.0) * 1000, 2), "zone_entry": bool(o.get("dtz_end", 1.0) <= 0.02),
+            "terminal_coin_speed": round(o.get("terminal_coin_speed", 0.0), 4), "peak_qdot": round(o.get("peak_qdot", 0.0), 4),
+            "peak_coin_speed": round(o.get("peak_coin_speed", 0.0), 4), "failure_phase": fail}
+
+
+def _r3_dev_dataset(harness: Any, dev_tag: dict, dev_seeds: list, dev_canon: dict):
+    """Build the dev (canonical-R1-feature -> intent) dataset from the 6 dev teacher trajectories (dev only)."""
+    from hymeko_rl.coin_delivery.theta_option.canonical_frame import canonicalise, flatten_r1, r1_grouped_features
+    from hymeko_rl.coin_delivery.theta_option.physical_intent import extract_teacher_intent
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot
+    snaps, feats, intents, prov = {}, [], [], {}
+    for seed in dev_seeds:
+        snap = acquire_snapshot(harness, seed)[0]
+        snaps[seed] = snap
+        th = np.asarray(dev_canon[seed], np.float64)
+        it, p = extract_teacher_intent(snap, th)
+        g_canon, _ = canonicalise(r1_grouped_features(snap))
+        feats.append(flatten_r1(g_canon))
+        intents.append(it.to_vector())
+        prov[dev_tag[seed]] = p
+        print(f"  {dev_tag[seed]} seed={seed}: intent={np.round(it.to_vector(), 4)} k6={p['k6_delivered']}", flush=True)
+    return snaps, np.asarray(feats, np.float64), np.asarray(intents, np.float64), prov
+
+
+def _r3_select_bandwidth(feats, intents, snaps, dev_seeds, dev_tag, box, bandwidths) -> dict:
+    """DEV-only leave-one-out bandwidth selection: for each held dev cradle predict its intent from the others, decode,
+    budget-8 K6. Pick the bandwidth with the best dev-LODO K6 (tie -> larger bandwidth = smoother). Held-out NEVER used."""
+    from hymeko_rl.coin_delivery.theta_option.intent_predictor import lodo_predictor
+    results = {}
+    for h in bandwidths:
+        k6, per = 0, {}
+        for i, seed in enumerate(dev_seeds):
+            intent = lodo_predictor(feats, intents, i, h).predict(feats[i])
+            dep = _r3_deploy_one(snaps[seed], intent, box, np.random.default_rng(70000 + i), 8)
+            per[dev_tag[seed]] = bool(dep["delivery_success"])
+            k6 += int(dep["delivery_success"])
+        results[h] = {"lodo_k6": k6, "per_state": per}
+        print(f"  bandwidth={h}: dev-LODO K6 = {k6}/{len(dev_seeds)}", flush=True)
+    best_h = max(bandwidths, key=lambda h: (results[h]["lodo_k6"], h))
+    return {"bandwidths": results, "selected_bandwidth": float(best_h), "lodo_k6": results[best_h]["lodo_k6"]}
+
+
+def r3_decoder_d0_main(smoke: bool = False) -> dict:
+    """D0 — teacher-intent round-trip gate. For each frozen teacher trajectory: extract intent -> deterministic decode ->
+    budget-8 search -> K6. Validates the factorisation on teacher data (all 4 states; held-out outcomes NOT used to change
+    the decoder). Writes teacher_intents.json + decoder_d0.json."""
+    from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
+    from hymeko_rl.coin_delivery.theta_option.physical_intent import extract_teacher_intent
+    from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import load_harness
+    t0 = time.time()
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    box = ThetaBox()
+    os.makedirs(R3_DIR, exist_ok=True)
+    panel = build_panel(load_harness(), bank)
+    print("R3 D0 — teacher-intent round-trip (extract -> deterministic decode -> budget-8 -> K6) on all 4 teacher states", flush=True)
+    teacher_intents, per = {}, {}
+    for i, ps in enumerate(panel):
+        th = np.asarray(ps.teacher_theta, np.float64)
+        intent, prov = extract_teacher_intent(ps.snap, th)
+        teacher_intents[ps.tag] = prov
+        dep = _r3_deploy_one(ps.snap, intent, box, np.random.default_rng(90000 + i * 131), 8)
+        recon = float(np.linalg.norm(box.norm(np.asarray(dep["decoded_physical_theta"], np.float64)) - box.norm(th)))
+        dep.update({"split": ps.split, "teacher_theta": [round(float(x), 4) for x in th], "reconstruction_norm": round(recon, 4)})
+        per[ps.tag] = dep
+        print(f"  {ps.tag} [{ps.split}]: recon={recon:.4f} K6={dep['delivery_success']} weak={dep['weak_link']} "
+              f"dtz_end={dep['dtz_end_mm']}mm", flush=True)
+    dev_k6 = sum(1 for r in per.values() if r["split"] == "development" and r["delivery_success"])
+    held_k6 = sum(1 for r in per.values() if r["split"] == "held_out" and r["delivery_success"])
+    total, n = dev_k6 + held_k6, len(panel)
+    max_recon = max(r["reconstruction_norm"] for r in per.values())
+    if total == n:
+        verdict, passed = "D0_TEACHER_INTENT_ROUNDTRIP_PASS", True
+    elif max_recon > 0.05:
+        verdict, passed = "DECODER_AUTHORITY_MAPPING_INVALID", False
+    else:
+        verdict, passed = "INTENT_FACTORISATION_INCOMPLETE", False
+    out = {"contract": "COIN_R3_DECODER_D0_V1", "date": "2026-07-27", "start_commit": "ce3d6f41", "per_state": per,
+           "dev_k6": dev_k6, "held_out_k6": held_k6, "total_k6": total, "max_reconstruction_norm": round(max_recon, 4),
+           "verdict": verdict, "passed": passed, "no_teacher_fallback": True, "wall_s": round(time.time() - t0, 1)}
+    json.dump(teacher_intents, open(f"{R3_DIR}/teacher_intents.json", "w"), indent=1, default=float)
+    json.dump(out, open(f"{R3_DIR}/decoder_d0.json", "w"), indent=1, default=float)
+    print(f"\n== R3 D0 ==\n  dev {dev_k6}/2 held {held_k6}/2 total {total}/{n} | max recon {max_recon:.4f}\n"
+          f"  VERDICT: {verdict} | passed={passed}\n  artifacts: decoder_d0.json + teacher_intents.json | "
+          f"wall {out['wall_s']}s\nR3_D0_DONE", flush=True)
+    return out
+
+
+_R3_NEXT = {"A": "record + commit; do NOT start SAC/TD3 in this session unless explicitly instructed later.",
+            "B": "STOP + report; SAC/TD3 blocked; the factorisation improves over R2 but the gate is still open.",
+            "C": "STOP + report; SAC/TD3 blocked; deterministic physical-intent decoder ALSO insufficient -> deeper "
+                 "factorisation / basin-aware search is the next axis (fresh contract).",
+            "D": "diagnose dev-only (intent prediction vs decoder vs search vs provenance); a frozen-panel rerun only after "
+                 "a mechanically-proven fix; no held-out tuning."}
+
+
+def _r3_classify(dev_k6: int, held_k6: int, total: int, n: int, motion_ok: bool, provenance_ok: bool) -> dict:
+    """D2 decision tree. Case A (4/4 incl held 2/2) alone authorises matched SAC/TD3."""
+    if dev_k6 < 2 or not provenance_ok:
+        case, verdict, auth = "D", "R3_IMPLEMENTATION_OR_TRAINING_GATE_INVALID", False
+    elif total == n and dev_k6 == 2 and held_k6 == 2 and motion_ok:
+        case, verdict, auth = "A", "PHYSICAL_INTENT_DECODER_LOAD_BEARING", True
+    elif total == 3 or held_k6 == 1:
+        case, verdict, auth = "B", "PHYSICAL_INTENT_FACTORISATION_IMPROVES_BUT_GATE_OPEN", False
+    else:
+        case, verdict, auth = "C", "PHYSICAL_INTENT_FACTORISATION_ALONE_INSUFFICIENT", False
+    return {"case": case, "verdict": verdict, "authorises_sac_td3": auth, "next_action": _R3_NEXT[case]}
+
+
+def _r3_panel_deploy(predictor: Any, panel: list, box: Any) -> dict:
+    """Deploy the learned predictor -> decoder on the frozen 4-state panel; per-state record incl. the teacher-intent
+    residual (diagnosis only)."""
+    from hymeko_rl.coin_delivery.theta_option.canonical_frame import canonicalise, flatten_r1, r1_grouped_features
+    from hymeko_rl.coin_delivery.theta_option.physical_intent import INTENT_ROLES, extract_teacher_intent
+    per = {}
+    for i, ps in enumerate(panel):
+        g_canon, _ = canonicalise(r1_grouped_features(ps.snap))
+        pred = predictor.predict(flatten_r1(g_canon))
+        t_int, _ = extract_teacher_intent(ps.snap, np.asarray(ps.teacher_theta, np.float64))   # diagnosis only
+        dep = _r3_deploy_one(ps.snap, pred, box, np.random.default_rng(90000 + i * 131), 8)
+        dep["split"] = ps.split
+        dep["teacher_intent_diag"] = [round(float(x), 4) for x in t_int.to_vector()]
+        dep["intent_residual"] = {INTENT_ROLES[k]: round(float(pred.to_vector()[k] - t_int.to_vector()[k]), 4) for k in range(7)}
+        per[ps.tag] = dep
+        print(f"  {ps.tag} [{ps.split}]: K6={dep['delivery_success']} weak={dep['weak_link']} dtz {dep['dtz_start_mm']}->"
+              f"{dep['dtz_end_mm']}mm zone={dep['zone_entry']}", flush=True)
+    return per
+
+
+def _r3_write(out: dict, sel: dict, dev_intents: dict, prov: dict) -> str:
+    """Write development_update0.json / frozen_panel.json / decoder_parameters.json / r3_update_zero.json + print."""
+    from hymeko_rl.coin_delivery.theta_option.physical_intent import INTENT_ROLES
+    per, dev_k6, held_k6, total = out["panel"], out["dev_k6"], out["held_out_k6"], out["total_k6"]
+    json.dump({"contract": out["contract"], "dev_seeds": out["dev_seeds"], "bandwidth_selection": sel,
+               "dev_intents": dev_intents, "d1_dev_k6": dev_k6, "d1_pass": out["d1_pass"],
+               "teacher_intent_provenance": prov}, open(f"{R3_DIR}/development_update0.json", "w"), indent=1, default=float)
+    json.dump({"contract": out["contract"], "panel": per, "dev_k6": dev_k6, "held_out_k6": held_k6, "total_k6": total,
+               "motion_ok": out["motion_ok"], "provenance_ok": out["provenance_ok"], "decision_case": out["decision_case"],
+               "verdict": out["verdict"], "authorises_sac_td3": out["authorises_sac_td3"], "r2_baseline": out["r2_baseline"],
+               "improves_over_r2": out["improves_over_r2"]}, open(f"{R3_DIR}/frozen_panel.json", "w"), indent=1, default=float)
+    json.dump({"predictor": "NW_kernel_regression", "bandwidth": sel["selected_bandwidth"], "n_dev": len(out["dev_seeds"]),
+               "feature": "flatten_r1 canonical (43-D)", "intent_roles": list(INTENT_ROLES)},
+              open(f"{R3_DIR}/decoder_parameters.json", "w"), indent=1, default=float)
+    path = f"{R3_DIR}/r3_update_zero.json"
+    json.dump(out, open(path, "w"), indent=1, default=float)
+    ps_str = ", ".join(f"{t}:{int(r['delivery_success'])}(dtz{r['dtz_end_mm']},{r['failure_phase'] or 'K6'})" for t, r in per.items())
+    print(f"\n== R3 UPDATE-0 ==\n  bandwidth={sel['selected_bandwidth']} dev-LODO {sel['lodo_k6']}/{len(out['dev_seeds'])} | "
+          f"D1 dev {dev_k6}/2 (pass={out['d1_pass']})\n  D2 PANEL: dev {dev_k6}/2 held {held_k6}/2 total {total}/4 | "
+          f"motion_ok={out['motion_ok']}\n  per-state: {ps_str}\n  vs R2: dev 2/2 held 0/2 total 2/4 | "
+          f"improves_over_r2={out['improves_over_r2']}\n  CASE {out['decision_case']} -> VERDICT: {out['verdict']} | "
+          f"authorises_sac_td3={out['authorises_sac_td3']}\n  next: {out['next_action']}\n  artifact: {path} | "
+          f"wall {out['wall_s']}s\nR3_UPDATE0_DONE", flush=True)
+    return path
+
+
+def r3_update0_main(smoke: bool = False) -> dict:
+    """D1 (development update-0) + D2 (one frozen panel). Learned intent predictor (canonical R1 state -> 7 intent roles,
+    NW kernel regression, bandwidth by dev-LODO) -> deterministic decoder -> budget-8 -> K6. Dev-only training; s4/s7 are
+    deploy-only. Writes development_update0.json, frozen_panel.json, decoder_parameters.json."""
+    from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
+    from hymeko_rl.coin_delivery.theta_option.intent_predictor import fit_intent_predictor
+    from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import load_harness
+    t0 = time.time()
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    dp = json.load(open(f"{REPORT_DIR}/cradle_delivery_pass.json"))
+    box = ThetaBox()
+    dev_tag, dev_seeds, dev_canon = _r2_dev_data(bank, dp)
+    bandwidths = [0.5, 1.0, 2.0] if smoke else [0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0]
+    harness = load_harness()
+    os.makedirs(R3_DIR, exist_ok=True)
+    print(f"R3 UPDATE-0 — learned intent predictor (canonical R1 -> 7 roles, NW) -> deterministic decoder -> budget 8 | "
+          f"dev {dev_seeds} | held-out s4/s7 deploy-only", flush=True)
+    print("BUILD dev (state -> intent) dataset", flush=True)
+    snaps, feats, intents, prov = _r3_dev_dataset(harness, dev_tag, dev_seeds, dev_canon)
+    print("DEV-only LODO bandwidth selection", flush=True)
+    sel = _r3_select_bandwidth(feats, intents, snaps, dev_seeds, dev_tag, box, bandwidths)
+    predictor = fit_intent_predictor(feats, intents, bandwidth=sel["selected_bandwidth"])
+    print(f"  selected bandwidth={sel['selected_bandwidth']} (dev-LODO {sel['lodo_k6']}/{len(dev_seeds)})", flush=True)
+
+    per = _r3_panel_deploy(predictor, build_panel(harness, bank), box)
+    dev_k6 = sum(1 for r in per.values() if r["split"] == "development" and r["delivery_success"])
+    held_k6 = sum(1 for r in per.values() if r["split"] == "held_out" and r["delivery_success"])
+    total = dev_k6 + held_k6
+    motion_ok = all(bool(r["peak_qdot"] <= 3.0 and r["peak_coin_speed"] <= 1.5) for r in per.values())
+    provenance_ok = all(r["budget_total"] == 8 for r in per.values())
+    dec = _r3_classify(dev_k6, held_k6, total, len(per), motion_ok, provenance_ok)
+    out = {"contract": "COIN_R3_PHYSICAL_INTENT_UPDATE_ZERO_V1", "date": "2026-07-27", "start_commit": "ce3d6f41",
+           "dev_seeds": dev_seeds, "bandwidth_selection": sel, "d1_dev_k6": dev_k6, "d1_pass": bool(dev_k6 == 2),
+           "panel": per, "dev_k6": dev_k6, "held_out_k6": held_k6, "total_k6": total, "motion_ok": motion_ok,
+           "provenance_ok": provenance_ok, "r2_baseline": {"dev_k6": 2, "held_out_k6": 0, "total_k6": 2},
+           "improves_over_r2": bool(total > 2 or held_k6 > 0), "decision_case": dec["case"], "verdict": dec["verdict"],
+           "authorises_sac_td3": dec["authorises_sac_td3"], "next_action": dec["next_action"],
+           "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    dev_intents = {dev_tag[s]: [round(float(x), 5) for x in intents[i]] for i, s in enumerate(dev_seeds)}
+    _r3_write(out, sel, dev_intents, prov)
+    return out
+
+
 if __name__ == "__main__":
     if "--semantics" in sys.argv:
         semantics_main()
@@ -1672,6 +1895,10 @@ if __name__ == "__main__":
         r2_update0_main(smoke="--smoke" in sys.argv)
     elif "--r2-basin-audit" in sys.argv:
         r2_basin_audit_main(smoke="--smoke" in sys.argv)
+    elif "--r3-decoder-d0" in sys.argv:
+        r3_decoder_d0_main(smoke="--smoke" in sys.argv)
+    elif "--r3-update0" in sys.argv:
+        r3_update0_main(smoke="--smoke" in sys.argv)
     elif "--scout-cradles" in sys.argv:
         _n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else (12 if "--smoke" in sys.argv else 32)
         scout_cradles_main(n=_n)
