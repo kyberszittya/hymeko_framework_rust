@@ -1,0 +1,128 @@
+{
+  "contract": "COIN_R4_CLOSED_LOOP_INTENT_CORRECTION_V1",
+  "created_at": "2026-07-27 04:20 JST",
+  "branch": "recovery/coin-r4-closed-loop-intent",
+  "base_commit": "60801b09",
+  "base_commit_note": "linear descendant of e3624d14 carrying the frozen R4 design freeze; branching here preserves that commit instead of orphaning it",
+  "design_freeze": "reports/2026-07-27-coin-r4-closed-loop-intent-correction-contract.md (60801b09)",
+  "core_yaml_items_touched": [],
+  "frozen_baseline_measured": {
+    "teacher_theta_K6": "4/4",
+    "s4_held_out_teacher_peak_coin_speed_mps": 0.263,
+    "dev_teacher_peak_coin_speed_mps_approx": 0.45,
+    "r3_open_loop_total_K6": "2/4 (dev 2/2, held-out 0/2)",
+    "r3_verdict": "PHYSICAL_INTENT_FACTORISATION_ALONE_INSUFFICIENT",
+    "s4_witness": "R3 predictor gives peak_velocity 0.47; cradle tolerates 0.263"
+  },
+  "architecture": {
+    "closed_loop_rollout": "new continuous rollout closed_loop_rollout(snap, controller, cfg); branches rl once; reuses _schedule_increment + step_ablation + govern_torque + identical K6/peak/contact accounting; returns rollout_primitive-shaped metrics dict",
+    "forward_displacement_modified": false,
+    "frame_hook_is_observe_only": true,
+    "anti_divergence_golden": "constant-controller closed_loop_rollout == rollout_primitive(snap, theta) bit-identical on all 4 teacher states"
+  },
+  "frozen": {
+    "physics_and_snapshot": true,
+    "option_semantics_6d_push_brake_release": true,
+    "per_step_dtau_map": "_schedule_increment (verbatim)",
+    "governed_step": "step_ablation + govern_torque",
+    "r3_decoder": "authority_decoder.decode_intent",
+    "intent_roles": ["forward_drive", "peak_velocity", "lateral", "squeeze", "brake_entry", "braking_demand", "release"],
+    "intent_box_lo": [0.0, 0.0, -0.06, 0.0, 0.02, 0.0, 0.05],
+    "intent_box_hi": [0.20, 0.80, 0.06, 0.35, 0.50, 2.50, 0.85],
+    "authority_measurement": ["identify_Bcoin", "object_authority", "contact_internal_authority"],
+    "k6": {"CENTER_TOL_m": 0.02, "SETTLE_VEL_mps": 0.06, "HELD_DWELL": 6, "judge": "delivery_success (k6_delivered & peak_qdot<=3.0 & peak_coin_speed<=1.5)"},
+    "search": {"fn": "fixed_search_select (centre-inclusive)", "SEARCH_STD": 0.15},
+    "panel": {"s1": 14250, "s3": 14750, "s4": 15000, "s7": 15750, "dev": ["s1", "s3"], "held_out": ["s4", "s7"]},
+    "predictor": "R3 NW kernel regression over 6 dev cradles [14250,14750,16500,17750,19500,24000]",
+    "coin_mass_kg": 0.0502654824574367,
+    "coin_dofs": {"x": 4, "y": 5}
+  },
+  "forbidden": [
+    "new predictor STATE feature", "held-out-derived feature or hyperparameter", "changed physics/option semantics",
+    "changed reward/K6", "K6 or future value as controller input", "teacher theta/intent at deploy",
+    "pin/teleport/coin-state edit/snapshot restoration of the executed trajectory"
+  ],
+  "response_vector_fields": [
+    "dtz", "d_safe", "v_parallel", "v_perpendicular", "coin_speed", "coin_spin",
+    "probe_forward_disp", "probe_perp_disp", "probe_accel_mean",
+    "contact_v_n_pair", "contact_v_t_pair", "friction_util_pair",
+    "fn_pair", "both_contact", "straddle", "min_fn_push",
+    "forward_push_reach", "brake_opposed_reach", "lateral_reach", "normal_force_reach", "balance_reach_signed",
+    "slew_headroom_up", "slew_headroom_dn",
+    "E_kin", "a_brake", "d_stop", "W_brake_available",
+    "phase", "elapsed_horizon"
+  ],
+  "energy_stopping": {
+    "E_kin": "0.5 * m_coin * speed^2",
+    "a_brake": "brake_opposed_reach / control_dt (governor-realised, slew-admissible), floored",
+    "d_stop": "v_parallel^2 / (2 * a_brake)",
+    "W_brake_available": "m_coin * a_brake * d_safe",
+    "guard": "d_stop > d_safe  (mass-free, numerically equivalent to E_kin > W_brake_available); tiny/zero authority floored conservatively"
+  },
+  "correction_law_rules": {
+    "A_over_speed": "d_stop>d_safe or E_kin>W_brake => down peak_velocity, down forward_drive, up braking_demand, earlier brake_entry; never up forward",
+    "B_under_speed": "insufficient progress & healthy margins => up forward_drive conservatively, keep safe margin",
+    "C_contact_risk": "Fn/margin dropping or separation growing => up squeeze, down forward_drive; no aggressive lateral",
+    "D_cross_track_spin": "target-frame v_perp/perp-disp/spin => update lateral, mirror-equivariant sign",
+    "E_release": "frozen causal guard (dtz, coin speed, stopping margin, contact, min dwell-safety); never K6 result"
+  },
+  "phase_guards": {
+    "order": "PUSH(0)->BRAKE(1)->RELEASE(2) monotone non-decreasing",
+    "mechanism": "timing-clamp effective theta so _schedule_increment yields phase >= floor; corrections may bring brake earlier but never revert BRAKE->PUSH",
+    "hysteresis": true
+  },
+  "search_budget": {
+    "allocation": "INITIAL_SEGMENT_BUDGET_8",
+    "total_budget_for_complete_trajectory": 8,
+    "budget_on_initial_theta0": 8,
+    "budget_for_corrections": 0,
+    "budget_zero_meaning": "direct execution of theta0 = pure closed-loop, no search",
+    "candidate_is": "a full continuous closed-loop trajectory from snap"
+  },
+  "honesty_control": {
+    "load_bearing_if": "closed-loop strictly beats R3 open-loop at the same budget (ideally budget 0)",
+    "open_loop_baseline": "_r3_deploy_one (decode -> fixed_search_select)",
+    "oracle": "teacher theta + same search (validates search+physics)",
+    "search_never_enlarged_for_closed_loop_only": true
+  },
+  "dev_only_tuning_C1": {
+    "tuned_on": ["s1", "s3", "6-dev predictor set"],
+    "held_out_never_touched": ["s4", "s7"],
+    "initial_intent_source_space": ["r3_predictor", "conservative_prior"],
+    "W_probe_space": [6, 8, 10, 12],
+    "C_corr_space": [4, 6, 8, 60],
+    "gate_budget_space": [0, 4, 8],
+    "selection_criterion": "dev K6 = 2/2 with smallest/most-conservative params; tie -> largest safe stopping margin",
+    "frozen_into": "controller_parameters.json"
+  },
+  "frozen_panel_C2": {
+    "runs": 1,
+    "states": ["s1", "s3", "s4", "s7"],
+    "hard_gate": "total 4/4, dev 2/2, held-out 2/2, one continuous trajectory/state, budget<=8, no motion/collision/contract violation, provenance valid",
+    "no_repeated_held_out": true
+  },
+  "verdicts": {
+    "pass": ["CLOSED_LOOP_INTENT_CORRECTION_LOAD_BEARING", "UPDATE_ZERO_MOBILE_TEACHER_NO_REGRESSION_PASS", "MATCHED_SAC_TD3_AUTHORISED"],
+    "partial": "CLOSED_LOOP_FEEDBACK_IMPROVES_GENERALISATION_BUT_GATE_OPEN",
+    "negative": "CURRENT_DETERMINISTIC_FEEDBACK_LAW_INSUFFICIENT",
+    "c0_fail": "CORRECTION_LAW_DESTABILISES_TEACHER"
+  },
+  "sac_td3_status": "BLOCKED until C2 = 4/4 incl held-out 2/2; not started this session regardless",
+  "mandatory_tests": [
+    "zero_residual_identity", "over_speed_monotonicity", "contact_risk_monotonicity", "mirror_equivariance",
+    "energy_stopping_guard", "phase_monotonicity", "decoder_contract", "search_budget_provenance",
+    "no_teacher_fallback", "determinism", "golden_constant_controller_equals_rollout_primitive"
+  ],
+  "plan_bundle": {
+    "pdflatex_available": false,
+    "lualatex_available": false,
+    "plan_pdf_buildable": false,
+    "plan_pdf_status": "NOT BUILT — no LaTeX engine on host (same limitation R3 recorded and proceeded past)",
+    "buildable_formats_written": ["docs/plans/2026-07-27-coin-r4-closed-loop-intent/plan.tex", "docs/plans/2026-07-27-coin-r4-closed-loop-intent/plan.tikz", "docs/plans/2026-07-27-coin-r4-closed-loop-intent/plan.mmd"],
+    "plan_of_record": ["60801b09 design freeze", "this Stage-0 contract"]
+  },
+  "environment": {
+    "python": ".venv cpython-3.11 (uv)", "ruff": "0.15.20", "mujoco": true,
+    "build_panel_wall_s": 93, "per_rollout_wall_s": 0.02, "peak_rss_gb": 0.25
+  }
+}
