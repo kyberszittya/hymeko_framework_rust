@@ -126,6 +126,55 @@ def dataset_main() -> dict:
     return summary
 
 
+_NPZ = f"{REPORT_DIR}/theta_dataset.npz"
+
+
+def _load_or_build_dataset():
+    """Load the cached snapshot-free dataset (fast) or build it from the frozen teacher bank (re-acquires physics)."""
+    from hymeko_rl.coin_delivery.theta_option.dataset import build_dataset, load_npz, save_npz
+    if os.path.exists(_NPZ):
+        return load_npz(_NPZ)
+    bank_path = f"{REPORT_DIR}/teacher_bank.json"
+    if not os.path.exists(bank_path):
+        print(f"MISSING {bank_path} — run --teacher-bank first")
+        sys.exit(2)
+    ds = build_dataset(json.load(open(bank_path)))
+    save_npz(ds, _NPZ)
+    return ds
+
+
+def bc_main() -> dict:
+    """Stage 3 — fit B0/B1/B2 proposals identically; offline θ-error / validity / phase / held-back-dev metrics; select."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.proposal import VARIANTS, fit_bc, offline_metrics, save_proposal
+    t0 = time.time()
+    ds = _load_or_build_dataset()
+    print(f"BC — fitting {VARIANTS} on train={len(ds.subset('train'))} val={len(ds.subset('val'))} (identical budget)",
+          flush=True)
+    results = {}
+    for v in VARIANTS:
+        prop, fz, tl = fit_bc(ds, v, epochs=1200, lr=1e-3, seed=0)
+        save_proposal(prop, fz, f"{REPORT_DIR}/bc_{v}.pt")
+        results[v] = {"train": {**tl, **offline_metrics(prop, fz, ds, "train")},
+                      "val": offline_metrics(prop, fz, ds, "val")}
+        val = results[v]["val"]
+        print(f"  {v}: train_mse={tl['train_mse']} | val n={val.get('n')} norm_err={val.get('mean_norm_err')} "
+              f"phase_step_err={val.get('phase_param_step_err')} valid={val.get('bounded_validity')} "
+              f"per_tag={val.get('per_tag_norm_err')}", flush=True)
+    # selection: lowest held-back-dev (val) normalised θ-error; tie-break to the simplest variant (B0<B1<B2)
+    order = {v: i for i, v in enumerate(VARIANTS)}
+    selected = min(VARIANTS, key=lambda v: (results[v]["val"].get("mean_norm_err", 9.9), order[v]))
+    out = {"contract": "COIN_6D_THETA_BC_V1", "base_commit": "a3459629", "date": "2026-07-27",
+           "config": {"epochs": 1200, "lr": 1e-3, "seed": 0, "variants": list(VARIANTS)},
+           "note": "offline regression is NOT the update-0 gate (Stage 4); selection carries to the frozen-panel deploy",
+           "results": results, "selected": selected, "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
+    path = _dump(out, "bc_results.json")
+    print(f"\n== BC ==\n  selected (min held-back-dev θ-error): {selected}\n  artifact: {path} | wall {out['wall_s']}s\n"
+          f"BC_DONE", flush=True)
+    return out
+
+
 if __name__ == "__main__":
     if "--semantics" in sys.argv:
         semantics_main()
@@ -133,6 +182,8 @@ if __name__ == "__main__":
         teacher_bank_main(smoke="--smoke" in sys.argv)
     elif "--dataset" in sys.argv:
         dataset_main()
+    elif "--bc" in sys.argv:
+        bc_main()
     else:
         print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --rl-smoke | --rl-multiseed")
         sys.exit(2)

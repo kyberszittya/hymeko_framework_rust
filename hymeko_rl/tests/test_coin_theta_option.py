@@ -285,3 +285,60 @@ def test_structured_features_and_history_deterministic_live():
     assert np.array_equal(f1, f2) and f1.shape[0] == 42
     h1, h2 = causal_history(snap), causal_history(snap)
     assert h1.shape == (HISTORY_K, 6) and np.array_equal(h1, h2)
+
+
+# ───────────────────────────── Stage 3: BC proposal actor ─────────────────────────────
+def _tiny_dataset(n_train=12, n_val=4, seed=0):
+    from hymeko_rl.coin_delivery.theta_option.dataset import DatasetRow, ThetaDataset
+    box = ThetaBox()
+    lo, hi = theta_bounds()
+    rng = np.random.default_rng(seed)
+    rows = []
+    for i in range(n_train + n_val):
+        theta = lo + rng.random(DIM) * (hi - lo)
+        rows.append(DatasetRow(tag="s1" if i % 2 else "s3", split="train" if i < n_train else "val",
+                               kind="basin_delivering", features=rng.standard_normal(42).astype(np.float32),
+                               history=rng.standard_normal((8, 6)).astype(np.float32),
+                               theta=box.clip(theta), theta_norm=box.norm(theta), eval_only=False, k6_delivered=True))
+    return ThetaDataset(rows=rows, contract={})
+
+
+def test_bc_obs_dim_per_variant():
+    from hymeko_rl.coin_delivery.theta_option.proposal import obs_dim
+    assert obs_dim("B0") == 42 and obs_dim("B1") == 42 + 48 and obs_dim("B2") == 42 + 8
+
+
+def test_bc_fit_produces_legal_theta_and_full_validity():
+    from hymeko_rl.coin_delivery.theta_option.proposal import fit_bc, offline_metrics
+    ds = _tiny_dataset()
+    lo, hi = theta_bounds()
+    for v in ("B0", "B1", "B2"):
+        prop, fz, _tl = fit_bc(ds, v, epochs=60, lr=1e-3, seed=0)
+        obs = fz.obs(ds.rows[0].features, ds.rows[0].history)
+        th = prop.center(obs)
+        assert np.all(th >= lo - 1e-4) and np.all(th <= hi + 1e-4)      # legal option
+        m = offline_metrics(prop, fz, ds, "val")
+        assert m["bounded_validity"] == 1.0                            # Tanh output always in-box
+
+
+def test_bc_fit_deterministic_same_seed():
+    from hymeko_rl.coin_delivery.theta_option.proposal import fit_bc
+    ds = _tiny_dataset()
+    p1, f1, _ = fit_bc(ds, "B0", epochs=60, lr=1e-3, seed=1)
+    p2, f2, _ = fit_bc(ds, "B0", epochs=60, lr=1e-3, seed=1)
+    obs = f1.obs(ds.rows[0].features, ds.rows[0].history)
+    assert np.allclose(p1.center(obs), p2.center(obs), atol=1e-6)
+
+
+def test_bc_save_load_roundtrip(tmp_path):
+    from hymeko_rl.coin_delivery.theta_option.proposal import fit_bc, load_proposal, save_proposal
+    ds = _tiny_dataset()
+    for v in ("B0", "B2"):                                              # cover the flat + LSTM-featurizer paths
+        prop, fz, _ = fit_bc(ds, v, epochs=60, lr=1e-3, seed=0)
+        p = str(tmp_path / f"bc_{v}.pt")
+        save_proposal(prop, fz, p)
+        prop2, fz2 = load_proposal(p)
+        obs1 = fz.obs(ds.rows[0].features, ds.rows[0].history)
+        obs2 = fz2.obs(ds.rows[0].features, ds.rows[0].history)
+        assert np.allclose(obs1, obs2, atol=1e-6)
+        assert np.allclose(prop.center(obs1), prop2.center(obs2), atol=1e-6)

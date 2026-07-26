@@ -1,0 +1,145 @@
+{
+ "contract": "COIN_6D_THETA_BC_V1",
+ "base_commit": "a3459629",
+ "date": "2026-07-27",
+ "config": {
+  "epochs": 1200,
+  "lr": 0.001,
+  "seed": 0,
+  "variants": [
+   "B0",
+   "B1",
+   "B2"
+  ]
+ },
+ "note": "offline regression is NOT the update-0 gate (Stage 4); selection carries to the frozen-panel deploy",
+ "results": {
+  "B0": {
+   "train": {
+    "train_mse": 0.015855,
+    "n": 17,
+    "mean_abs_err_per_component": {
+     "squeeze_mag": 0.00767,
+     "forward_mag": 0.01781,
+     "balance": 0.00982,
+     "ramp_steps": 1.27996,
+     "release_step": 2.46585,
+     "brake_gain": 0.23048
+    },
+    "mean_norm_err": 0.10008,
+    "phase_param_step_err": 1.8729,
+    "continuous_param_err": 0.06644,
+    "bounded_validity": 1.0,
+    "per_tag_norm_err": {
+     "s1": 0.08783,
+     "s3": 0.13987
+    }
+   },
+   "val": {
+    "n": 5,
+    "mean_abs_err_per_component": {
+     "squeeze_mag": 0.02071,
+     "forward_mag": 0.01522,
+     "balance": 0.00786,
+     "ramp_steps": 1.13816,
+     "release_step": 3.86876,
+     "brake_gain": 0.21989
+    },
+    "mean_norm_err": 0.11931,
+    "phase_param_step_err": 2.5035,
+    "continuous_param_err": 0.06592,
+    "bounded_validity": 1.0,
+    "per_tag_norm_err": {
+     "s1": 0.11134,
+     "s3": 0.15115
+    }
+   }
+  },
+  "B1": {
+   "train": {
+    "train_mse": 0.015855,
+    "n": 17,
+    "mean_abs_err_per_component": {
+     "squeeze_mag": 0.00767,
+     "forward_mag": 0.01781,
+     "balance": 0.00982,
+     "ramp_steps": 1.27995,
+     "release_step": 2.46585,
+     "brake_gain": 0.23048
+    },
+    "mean_norm_err": 0.10008,
+    "phase_param_step_err": 1.8729,
+    "continuous_param_err": 0.06644,
+    "bounded_validity": 1.0,
+    "per_tag_norm_err": {
+     "s1": 0.08783,
+     "s3": 0.13987
+    }
+   },
+   "val": {
+    "n": 5,
+    "mean_abs_err_per_component": {
+     "squeeze_mag": 0.02071,
+     "forward_mag": 0.01522,
+     "balance": 0.00786,
+     "ramp_steps": 1.13816,
+     "release_step": 3.86876,
+     "brake_gain": 0.21989
+    },
+    "mean_norm_err": 0.11931,
+    "phase_param_step_err": 2.5035,
+    "continuous_param_err": 0.06592,
+    "bounded_validity": 1.0,
+    "per_tag_norm_err": {
+     "s1": 0.11134,
+     "s3": 0.15115
+    }
+   }
+  },
+  "B2": {
+   "train": {
+    "train_mse": 0.015855,
+    "joint_lstm_mse": 0.015855,
+    "n": 17,
+    "mean_abs_err_per_component": {
+     "squeeze_mag": 0.00768,
+     "forward_mag": 0.0178,
+     "balance": 0.00982,
+     "ramp_steps": 1.27858,
+     "release_step": 2.46591,
+     "brake_gain": 0.23054
+    },
+    "mean_norm_err": 0.10006,
+    "phase_param_step_err": 1.8722,
+    "continuous_param_err": 0.06646,
+    "bounded_validity": 1.0,
+    "per_tag_norm_err": {
+     "s1": 0.08781,
+     "s3": 0.13986
+    }
+   },
+   "val": {
+    "n": 5,
+    "mean_abs_err_per_component": {
+     "squeeze_mag": 0.0207,
+     "forward_mag": 0.0152,
+     "balance": 0.00788,
+     "ramp_steps": 1.13781,
+     "release_step": 3.86861,
+     "brake_gain": 0.21991
+    },
+    "mean_norm_err": 0.11931,
+    "phase_param_step_err": 2.5032,
+    "continuous_param_err": 0.06592,
+    "bounded_validity": 1.0,
+    "per_tag_norm_err": {
+     "s1": 0.11136,
+     "s3": 0.15111
+    }
+   }
+  }
+ },
+ "selected": "B0",
+ "wall_s": 134.8,
+ "peak_rss_gb": 0.3
+}

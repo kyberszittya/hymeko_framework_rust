@@ -224,6 +224,33 @@ def build_dataset(bank: dict[str, Any], harness: Any = None) -> ThetaDataset:
     return ThetaDataset(rows=rows, contract=contract)
 
 
+def save_npz(ds: ThetaDataset, path: str) -> None:
+    """Cache the (snapshot-free) dataset rows + contract to ``path`` so the offline BC fit reloads in <1s instead of
+    re-acquiring physics. Physics stages (update-0, RL) still re-acquire snapshots (mujoco state is not serialisable)."""
+    import json as _json
+    n = len(ds.rows)
+    np.savez(path, features=np.asarray([r.features for r in ds.rows], np.float32),
+             history=np.asarray([r.history for r in ds.rows], np.float32),
+             theta=np.asarray([r.theta for r in ds.rows], np.float32),
+             theta_norm=np.asarray([r.theta_norm for r in ds.rows], np.float32),
+             tag=np.asarray([r.tag for r in ds.rows]), split=np.asarray([r.split for r in ds.rows]),
+             kind=np.asarray([r.kind for r in ds.rows]),
+             eval_only=np.asarray([r.eval_only for r in ds.rows]),
+             k6=np.asarray([r.k6_delivered for r in ds.rows]),
+             contract=np.asarray([_json.dumps(ds.contract)]), n=np.asarray([n]))
+
+
+def load_npz(path: str) -> ThetaDataset:
+    """Reconstruct a snapshot-free `ThetaDataset` from `save_npz` (features/history/θ/splits) for the offline BC fit."""
+    import json as _json
+    z = np.load(path, allow_pickle=True)
+    rows = [DatasetRow(tag=str(z["tag"][i]), split=str(z["split"][i]), kind=str(z["kind"][i]),
+                       features=z["features"][i], history=z["history"][i], theta=z["theta"][i],
+                       theta_norm=z["theta_norm"][i], eval_only=bool(z["eval_only"][i]), k6_delivered=bool(z["k6"][i]))
+            for i in range(int(z["n"][0]))]
+    return ThetaDataset(rows=rows, contract=_json.loads(str(z["contract"][0])))
+
+
 def contract_summary(ds: ThetaDataset) -> dict[str, Any]:
     """The machine-readable dataset contract (dataset_contract.json) + a per-split preview of the (tag, kind, θ) rows —
     small enough to store in full because the dataset is tiny."""
