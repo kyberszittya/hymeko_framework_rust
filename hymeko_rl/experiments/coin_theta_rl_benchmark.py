@@ -135,19 +135,17 @@ def deliver_pass_main() -> dict:
         print(f"  [{k+1}/{len(dedup['dev_eligible_seeds'])}] deliver seed={seed}: deliverable={int(r['deliverable'])} "
               f"src={r.get('canonical_source')} dwell={oc.get('k6_max_dwell')} dtz_end={oc.get('dtz_end_mm')}mm "
               f"({time.time()-te:.0f}s)", flush=True)
+    from hymeko_rl.coin_delivery.theta_option.cradle_expansion import assemble_funnel
+    funnel = assemble_funnel(dedup, delivering, not_deliverable, certified_seeds=certified_seeds)
     out = {"contract": "COIN_CRADLE_DELIVERY_PASS_V1", "base_commit": "a3459629", "date": "2026-07-27",
-           "near_tol": near_tol, "dedup": dedup,
-           "n_dev_eligible_unique": dedup["n_dev_eligible"], "n_deliverable": len(delivering),
-           "n_certified_but_not_deliverable": len(not_deliverable),
-           "deliverable_dev_pool": delivering,
-           "certified_but_not_deliverable_under_frozen_option": not_deliverable,
-           "achievable_N_dev_deliverable": len(delivering),
+           "near_tol": near_tol, "dedup": dedup, **funnel,
            "frozen_dev_already_in_pool": [s for s in (14250, 14750) if s in dedup["dev_eligible_seeds"]],
            "wall_s": round(time.time() - t0, 1), "peak_rss_gb": _peak_rss_gb()}
     path = _dump(out, "cradle_delivery_pass.json")
-    print(f"\n== DELIVERY PASS ==\n  unique dev-eligible {dedup['n_dev_eligible']} → K6-deliverable "
-          f"{len(delivering)} | not-deliverable-under-frozen-option {len(not_deliverable)}\n"
-          f"  ACHIEVABLE N (unique K6-deliverable dev cradles) = {len(delivering)}\n"
+    f = funnel["funnel"]
+    print(f"\n== DELIVERY PASS ==\n  funnel: raw_dev={f['n_raw_dev_candidates']} → near_unique={f['n_near_unique_dev']} "
+          f"→ K6_deliverable={f['n_K6_deliverable_dev']} (yield {f['delivery_yield_among_unique']}) → usable_N={f['usable_N']}\n"
+          f"  new-state distribution: {funnel['new_state_distribution']}\n"
           f"  deliverable seeds: {[r['seed'] for r in delivering]}\n  artifact: {path} | wall {out['wall_s']}s\n"
           f"DELIVER_PASS_DONE", flush=True)
     return out

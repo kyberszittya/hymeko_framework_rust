@@ -444,3 +444,31 @@ def test_dedup_exact_near_and_holdout_exclusion():
     assert by_seed[15000]["held_out"] is True and by_seed[15000]["dev_eligible"] is False
     assert by_seed[500]["dev_eligible"] is False           # near-dup of a held-out cradle
     assert d["n_certified"] == 6 and d["n_hash_unique"] == 5 and d["n_dev_eligible"] == 2
+
+
+def test_assemble_funnel_and_failure_mode_classification():
+    from hymeko_rl.coin_delivery.theta_option.cradle_expansion import assemble_funnel, classify_failure_mode
+    assert classify_failure_mode({"touched": False}) == "NO_CONTACT"
+    assert classify_failure_mode({"touched": True, "peak_qdot": 99.0}) == "MOTION_CONTRACT_BREACH"
+    assert classify_failure_mode({"touched": True, "dtz_end_mm": 60.0, "k6_max_dwell": 0}) == "NEVER_REACHED_ZONE"
+    assert classify_failure_mode({"touched": True, "dtz_end_mm": 12.0, "k6_max_dwell": 0}) == "REACHED_BUT_NO_SETTLE"
+    dedup = {"n_dev_eligible": 2, "rows": [
+        {"seed": 14250, "near_dup_of": None, "dev_eligible": True, "held_out_near_dup": False},
+        {"seed": 16500, "near_dup_of": None, "dev_eligible": True, "held_out_near_dup": False},
+        {"seed": 17000, "near_dup_of": None, "dev_eligible": True, "held_out_near_dup": False},
+        {"seed": 17750, "near_dup_of": 16500, "dev_eligible": False, "held_out_near_dup": False},
+    ]}
+    delivering = [{"seed": 14250, "deliverable": True, "outcome": {}}, {"seed": 16500, "deliverable": True, "outcome": {}}]
+    not_deliverable = [{"seed": 17000, "deliverable": False,
+                        "outcome": {"touched": True, "dtz_end_mm": 60.0, "k6_max_dwell": 0}}]
+    f = assemble_funnel(dedup, delivering, not_deliverable, certified_seeds=[14250, 16500, 17000, 17750, 15000],
+                        heldout_seeds=(15000,), frozen_seeds=(14250, 15000))
+    fn = f["funnel"]
+    assert fn["n_raw_dev_candidates"] == 4 and fn["n_near_unique_dev"] == 2 and fn["usable_N"] == 2
+    assert fn["delivery_yield_among_unique"] == 1.0
+    dist = f["new_state_distribution"]
+    assert dist["K6_DELIVERABLE"] == [16500]
+    assert dist["CERTIFIED_BUT_NOT_DELIVERABLE_UNDER_FROZEN_OPTION"] == [17000]
+    assert dist["NEAR_DUPLICATE"] == [17750]
+    nd = f["certified_but_not_deliverable_under_frozen_option"][0]
+    assert nd["failure_mode"] == "NEVER_REACHED_ZONE" and nd["near_dup_of"] is None

@@ -144,6 +144,7 @@ def dedup_and_split(pool: list[CradleEntry], *, near_tol: float = NEAR_TOL,
             for i in range(n)]
     dvals = list(dist.values())
     return {"near_tol": near_tol, "heldout_seeds": list(heldout_seeds), "n_certified": n,
+            "n_holdout_present": len(held_idx),
             "n_hash_unique": len(hash_unique), "n_after_near_dedup": len(kept),
             "n_dev_eligible": len(dev_eligible_idx), "dev_eligible_seeds": [seeds[i] for i in dev_eligible_idx],
             "held_out_present": [seeds[i] for i in held_idx],
@@ -152,3 +153,60 @@ def dedup_and_split(pool: list[CradleEntry], *, near_tol: float = NEAR_TOL,
                                           "max": (round(max(dvals), 4) if dvals else None),
                                           "pairs_below_tol": int(sum(1 for d in dvals if d < near_tol))},
             "rows": rows}
+
+
+def classify_failure_mode(outcome: dict[str, Any]) -> str:
+    """Coarse frozen-option failure mode of a CERTIFIED-but-not-deliverable cradle, derived from its best-CEM outcome —
+    separates contact-topology admissibility from option-policy expressivity. NO extra physics (from the captured outcome)."""
+    from hymeko_rl.coin_delivery.coin_rl_env import CENTER_TOL, HELD_DWELL
+    if not outcome:
+        return "NO_OUTCOME"
+    if not outcome.get("touched", True):
+        return "NO_CONTACT"
+    if outcome.get("peak_qdot", 0.0) > 3.0 or outcome.get("peak_coin_speed", 0.0) > 1.5:
+        return "MOTION_CONTRACT_BREACH"
+    if outcome.get("dtz_end_mm", 1e9) > CENTER_TOL * 1000 * 2:      # >40 mm: the coin never got near the target zone
+        return "NEVER_REACHED_ZONE"
+    if outcome.get("k6_max_dwell", 0) < HELD_DWELL:
+        return "REACHED_BUT_NO_SETTLE"                              # got near the zone but never held for the dwell
+    return "OTHER"
+
+
+def assemble_funnel(dedup: dict[str, Any], delivering: list[dict[str, Any]], not_deliverable: list[dict[str, Any]], *,
+                    certified_seeds: list[int], heldout_seeds: tuple[int, ...] = HELDOUT_SEEDS,
+                    frozen_seeds: tuple[int, ...] = FROZEN_SEEDS) -> dict[str, Any]:
+    """The certified→usable funnel (pure; shared by the live pass and the post-processor). Joins near_dup_of / dev_eligible
+    into each per-cradle record, classifies non-deliverable failure modes, computes the funnel counts + delivery yield,
+    and the NEW-state distribution (K6_DELIVERABLE / CERTIFIED_BUT_NOT_DELIVERABLE_UNDER_FROZEN_OPTION / NEAR_DUPLICATE /
+    HELD_OUT_NEAR_DUP). ``usable_N`` is the count of unique K6-deliverable dev cradles — the real N-curve x-axis."""
+    by_seed = {r["seed"]: r for r in dedup["rows"]}
+
+    def _join(rec: dict[str, Any]) -> dict[str, Any]:
+        r = by_seed.get(rec["seed"], {})
+        out = {**rec, "near_dup_of": r.get("near_dup_of"), "dev_eligible": r.get("dev_eligible")}
+        if not rec.get("deliverable"):
+            out["failure_mode"] = classify_failure_mode(rec.get("outcome", {}))
+        return out
+
+    deliv = [_join(r) for r in delivering]
+    notdeliv = [_join(r) for r in not_deliverable]
+    n_raw = len([s for s in certified_seeds if s not in heldout_seeds])
+    n_unique = int(dedup["n_dev_eligible"])
+    n_k6 = len(delivering)
+    deliv_seeds = {r["seed"] for r in delivering}
+    dist: dict[str, list[int]] = {"K6_DELIVERABLE": [], "CERTIFIED_BUT_NOT_DELIVERABLE_UNDER_FROZEN_OPTION": [],
+                                  "NEAR_DUPLICATE": [], "HELD_OUT_NEAR_DUP": []}
+    for s in [x for x in certified_seeds if x not in frozen_seeds]:
+        r = by_seed.get(s, {})
+        if r.get("held_out_near_dup"):
+            dist["HELD_OUT_NEAR_DUP"].append(s)
+        elif r.get("near_dup_of") is not None:
+            dist["NEAR_DUPLICATE"].append(s)
+        elif s in deliv_seeds:
+            dist["K6_DELIVERABLE"].append(s)
+        else:
+            dist["CERTIFIED_BUT_NOT_DELIVERABLE_UNDER_FROZEN_OPTION"].append(s)
+    return {"funnel": {"n_raw_dev_candidates": n_raw, "n_near_unique_dev": n_unique, "n_K6_deliverable_dev": n_k6,
+                       "delivery_yield_among_unique": round(n_k6 / max(1, n_unique), 3), "usable_N": n_k6},
+            "new_state_distribution": dist,
+            "deliverable_dev_pool": deliv, "certified_but_not_deliverable_under_frozen_option": notdeliv}
