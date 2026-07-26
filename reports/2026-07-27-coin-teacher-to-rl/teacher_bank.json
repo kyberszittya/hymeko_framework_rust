@@ -1,0 +1,8790 @@
+{
+ "contract": "COIN_6D_TORQUE_THETA_TEACHER_BANK_V1",
+ "base_tag": "coin-physical-feasibility-closed",
+ "base_commit": "a3459629",
+ "date": "2026-07-27",
+ "certified_seeds": [
+  14250,
+  14750,
+  15000,
+  15750
+ ],
+ "split": {
+  "development": [
+   "s1",
+   "s3"
+  ],
+  "held_out": [
+   "s4",
+   "s7"
+  ],
+  "policy": "dev \u03b8 + dev basin augment used for fitting; held-out \u03b8 frozen for evaluation ONLY"
+ },
+ "option_config": {
+  "horizon": 60,
+  "lo": [
+   0.0,
+   0.0,
+   -0.1,
+   1.0,
+   4.0,
+   0.0
+  ],
+  "hi": [
+   0.25,
+   0.3,
+   0.1,
+   28.0,
+   48.0,
+   4.0
+  ],
+  "cem_seed": 20260727,
+  "pop": 56,
+  "iters": 10
+ },
+ "states": [
+  {
+   "state": 0,
+   "tag": "s1",
+   "seed": 14250,
+   "split": "development",
+   "acquire": {
+    "seed": 14250,
+    "certified": true,
+    "axis": "zone_cross",
+    "n_dot": -0.997,
+    "attempts": {
+     "zone_cross": {
+      "both_contact": true,
+      "n_dot": -0.997,
+      "cert_feasible": true,
+      "certified": true
+     },
+     "zone_par": {
+      "both_contact": true,
+      "n_dot": -0.957,
+      "cert_feasible": true,
+      "certified": true
+     }
+    }
+   },
+   "canonical_theta": {
+    "squeeze_mag": 0.0515,
+    "forward_mag": 0.2179,
+    "balance": 0.0164,
+    "ramp_steps": 12.8078,
+    "release_step": 9.2369,
+    "brake_gain": 3.0388
+   },
+   "canonical_theta_vec": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "canonical_source": "cem_best",
+   "cem_optimum_theta": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "cem_optimum_reproduces_at_stored_precision": true,
+   "search": {
+    "cem_seed": 20260727,
+    "pop": 56,
+    "iters": 10,
+    "elite": 8,
+    "passive_drift_mm": 21.659,
+    "history": [
+     {
+      "iter": 0,
+      "best_score": 0.46787,
+      "n_feasible": 19,
+      "best_forward": 0.06483
+     },
+     {
+      "iter": 1,
+      "best_score": 0.46787,
+      "n_feasible": 29,
+      "best_forward": 0.06483
+     },
+     {
+      "iter": 2,
+      "best_score": 0.46787,
+      "n_feasible": 55,
+      "best_forward": 0.06483
+     },
+     {
+      "iter": 3,
+      "best_score": 0.46787,
+      "n_feasible": 56,
+      "best_forward": 0.06483
+     },
+     {
+      "iter": 4,
+      "best_score": 0.46787,
+      "n_feasible": 56,
+      "best_forward": 0.06483
+     },
+     {
+      "iter": 5,
+      "best_score": 0.56145,
+      "n_feasible": 56,
+      "best_forward": 0.0579
+     },
+     {
+      "iter": 6,
+      "best_score": 0.56145,
+      "n_feasible": 56,
+      "best_forward": 0.0579
+     },
+     {
+      "iter": 7,
+      "best_score": 0.56145,
+      "n_feasible": 56,
+      "best_forward": 0.0579
+     },
+     {
+      "iter": 8,
+      "best_score": 0.56145,
+      "n_feasible": 56,
+      "best_forward": 0.0579
+     },
+     {
+      "iter": 9,
+      "best_score": 0.56145,
+      "n_feasible": 56,
+      "best_forward": 0.0579
+     }
+    ]
+   },
+   "snapshot": {
+    "pre_release_hash": "16778d7df544b9e8",
+    "post_release_hash": "16778d7df544b9e8",
+    "operating_point": "EXACT_POST_RELEASE_HANDOFF",
+    "prev_tau": [
+     -1.17125,
+     -0.92913,
+     -0.30883,
+     2.1943
+    ],
+    "q_hold": [
+     -0.62409,
+     -0.62324,
+     -0.46205,
+     2.16965
+    ],
+    "straddle0": -0.9962,
+    "fn0": [
+     2.8378,
+     8.748
+    ],
+    "arm_saturated": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "actuator_lo": [
+     -4.0,
+     -4.0,
+     -4.0,
+     -4.0
+    ],
+    "actuator_hi": [
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "recert_admissible": true
+   },
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 24,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 76.44,
+    "dtz_end_mm": 18.55,
+    "gap_closed": 0.757,
+    "forward_mm": 57.9,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.998,
+    "peak_coin_speed": 0.45,
+    "contact_lost_steps": 31,
+    "score": 0.56145
+   },
+   "replay_ok": true,
+   "deterministic": true,
+   "k6_delivered": true,
+   "trace": [
+    {
+     "t": 1,
+     "phase": "PUSH",
+     "q": [
+      -0.59146,
+      -0.65721,
+      -0.44451,
+      2.12705
+     ],
+     "qdot_max": 0.82571,
+     "coin_xy": [
+      0.0765,
+      0.14014
+     ],
+     "coin_speed": 0.44997,
+     "dtz": 0.07821,
+     "ctrl_post_gov": [
+      -0.53433,
+      -0.93988,
+      -0.3328,
+      2.16696
+     ],
+     "fn_left": 2.9175,
+     "fn_right": 7.3941,
+     "both_contact": true,
+     "straddle": -0.9958,
+     "k6_dwell": 0
+    },
+    {
+     "t": 2,
+     "phase": "PUSH",
+     "q": [
+      -0.59896,
+      -0.66475,
+      -0.44162,
+      2.13097
+     ],
+     "qdot_max": 0.75886,
+     "coin_xy": [
+      0.07753,
+      0.13642
+     ],
+     "coin_speed": 0.29484,
+     "dtz": 0.08082,
+     "ctrl_post_gov": [
+      -0.86286,
+      -0.94683,
+      -0.34821,
+      2.13266
+     ],
+     "fn_left": 6.1194,
+     "fn_right": 3.3285,
+     "both_contact": true,
+     "straddle": -0.9991,
+     "k6_dwell": 0
+    },
+    {
+     "t": 3,
+     "phase": "PUSH",
+     "q": [
+      -0.60563,
+      -0.67205,
+      -0.43747,
+      2.13659
+     ],
+     "qdot_max": 0.70842,
+     "coin_xy": [
+      0.07823,
+      0.13399
+     ],
+     "coin_speed": 0.21656,
+     "dtz": 0.08259,
+     "ctrl_post_gov": [
+      -1.14663,
+      -0.9498,
+      -0.35578,
+      2.09171
+     ],
+     "fn_left": 6.7297,
+     "fn_right": 3.3066,
+     "both_contact": true,
+     "straddle": -0.9996,
+     "k6_dwell": 0
+    },
+    {
+     "t": 4,
+     "phase": "PUSH",
+     "q": [
+      -0.61266,
+      -0.67873,
+      -0.43253,
+      2.14292
+     ],
+     "qdot_max": 0.69243,
+     "coin_xy": [
+      0.07873,
+      0.13214
+     ],
+     "coin_speed": 0.16878,
+     "dtz": 0.08394,
+     "ctrl_post_gov": [
+      -1.11537,
+      -0.94912,
+      -0.35542,
+      2.04364
+     ],
+     "fn_left": 6.6164,
+     "fn_right": 3.2485,
+     "both_contact": true,
+     "straddle": -0.9989,
+     "k6_dwell": 0
+    },
+    {
+     "t": 5,
+     "phase": "PUSH",
+     "q": [
+      -0.61902,
+      -0.68474,
+      -0.42707,
+      2.1488
+     ],
+     "qdot_max": 0.58592,
+     "coin_xy": [
+      0.07897,
+      0.13067
+     ],
+     "coin_speed": 0.13132,
+     "dtz": 0.0849,
+     "ctrl_post_gov": [
+      -1.07224,
+      -0.94517,
+      -0.3472,
+      1.988
+     ],
+     "fn_left": 6.4216,
+     "fn_right": 3.2135,
+     "both_contact": true,
+     "straddle": -0.9964,
+     "k6_dwell": 0
+    },
+    {
+     "t": 6,
+     "phase": "PUSH",
+     "q": [
+      -0.62391,
+      -0.69006,
+      -0.42109,
+      2.15322
+     ],
+     "qdot_max": 0.62212,
+     "coin_xy": [
+      0.07893,
+      0.12954
+     ],
+     "coin_speed": 0.09839,
+     "dtz": 0.08545,
+     "ctrl_post_gov": [
+      -1.01699,
+      -0.93821,
+      -0.3312,
+      1.92433
+     ],
+     "fn_left": 6.1689,
+     "fn_right": 3.197,
+     "both_contact": true,
+     "straddle": -0.9912,
+     "k6_dwell": 0
+    },
+    {
+     "t": 7,
+     "phase": "PUSH",
+     "q": [
+      -0.62672,
+      -0.6947,
+      -0.41445,
+      2.15528
+     ],
+     "qdot_max": 0.69683,
+     "coin_xy": [
+      0.07858,
+      0.12877
+     ],
+     "coin_speed": 0.07709,
+     "dtz": 0.08556,
+     "ctrl_post_gov": [
+      -0.94942,
+      -0.92847,
+      -0.30746,
+      1.85227
+     ],
+     "fn_left": 5.8939,
+     "fn_right": 3.1801,
+     "both_contact": true,
+     "straddle": -0.9838,
+     "k6_dwell": 0
+    },
+    {
+     "t": 8,
+     "phase": "PUSH",
+     "q": [
+      -0.62694,
+      -0.69871,
+      -0.40692,
+      2.15413
+     ],
+     "qdot_max": 0.79945,
+     "coin_xy": [
+      0.07789,
+      0.12842
+     ],
+     "coin_speed": 0.08691,
+     "dtz": 0.08516,
+     "ctrl_post_gov": [
+      -0.86937,
+      -0.91601,
+      -0.27598,
+      1.77159
+     ],
+     "fn_left": 5.6124,
+     "fn_right": 3.1581,
+     "both_contact": true,
+     "straddle": -0.976,
+     "k6_dwell": 0
+    },
+    {
+     "t": 9,
+     "phase": "PUSH",
+     "q": [
+      -0.62415,
+      -0.70212,
+      -0.39817,
+      2.149
+     ],
+     "qdot_max": 0.93404,
+     "coin_xy": [
+      0.07683,
+      0.12856
+     ],
+     "coin_speed": 0.12914,
+     "dtz": 0.0842,
+     "ctrl_post_gov": [
+      -0.77682,
+      -0.90072,
+      -0.23668,
+      1.68221
+     ],
+     "fn_left": 5.3341,
+     "fn_right": 3.1188,
+     "both_contact": true,
+     "straddle": -0.9698,
+     "k6_dwell": 0
+    },
+    {
+     "t": 10,
+     "phase": "PUSH",
+     "q": [
+      -0.61796,
+      -0.70496,
+      -0.3879,
+      2.13921
+     ],
+     "qdot_max": 1.20275,
+     "coin_xy": [
+      0.0754,
+      0.12924
+     ],
+     "coin_speed": 0.18943,
+     "dtz": 0.08262,
+     "ctrl_post_gov": [
+      -0.67197,
+      -0.88229,
+      -0.18938,
+      1.5842
+     ],
+     "fn_left": 5.0485,
+     "fn_right": 3.0649,
+     "both_contact": true,
+     "straddle": -0.9668,
+     "k6_dwell": 0
+    },
+    {
+     "t": 11,
+     "phase": "PUSH",
+     "q": [
+      -0.60804,
+      -0.70726,
+      -0.37574,
+      2.12411
+     ],
+     "qdot_max": 1.75981,
+     "coin_xy": [
+      0.07354,
+      0.13051
+     ],
+     "coin_speed": 0.26042,
+     "dtz": 0.08037,
+     "ctrl_post_gov": [
+      -0.55523,
+      -0.86024,
+      -0.13378,
+      1.47779
+     ],
+     "fn_left": 4.7407,
+     "fn_right": 2.9984,
+     "both_contact": true,
+     "straddle": -0.968,
+     "k6_dwell": 0
+    },
+    {
+     "t": 12,
+     "phase": "PUSH",
+     "q": [
+      -0.59423,
+      -0.70909,
+      -0.36137,
+      2.10444
+     ],
+     "qdot_max": 1.86746,
+     "coin_xy": [
+      0.07124,
+      0.13233
+     ],
+     "coin_speed": 0.30179,
+     "dtz": 0.07745,
+     "ctrl_post_gov": [
+      -0.42716,
+      -0.83399,
+      -0.06948,
+      2.02621
+     ],
+     "fn_left": 3.4558,
+     "fn_right": 2.3556,
+     "both_contact": true,
+     "straddle": -0.9734,
+     "k6_dwell": 0
+    },
+    {
+     "t": 13,
+     "phase": "RELEASE",
+     "q": [
+      -0.57782,
+      -0.71079,
+      -0.34511,
+      2.08478
+     ],
+     "qdot_max": 1.7929,
+     "coin_xy": [
+      0.06866,
+      0.13418
+     ],
+     "coin_speed": 0.31241,
+     "dtz": 0.07428,
+     "ctrl_post_gov": [
+      -0.41529,
+      -0.82018,
+      -0.05599,
+      2.01523
+     ],
+     "fn_left": 3.0374,
+     "fn_right": 2.1171,
+     "both_contact": true,
+     "straddle": -0.9815,
+     "k6_dwell": 0
+    },
+    {
+     "t": 14,
+     "phase": "RELEASE",
+     "q": [
+      -0.56018,
+      -0.71246,
+      -0.32753,
+      2.06507
+     ],
+     "qdot_max": 1.867,
+     "coin_xy": [
+      0.06594,
+      0.13599
+     ],
+     "coin_speed": 0.32171,
+     "dtz": 0.07101,
+     "ctrl_post_gov": [
+      -0.40295,
+      -0.8068,
+      -0.04244,
+      1.9912
+     ],
+     "fn_left": 2.6704,
+     "fn_right": 1.9431,
+     "both_contact": true,
+     "straddle": -0.9891,
+     "k6_dwell": 0
+    },
+    {
+     "t": 15,
+     "phase": "RELEASE",
+     "q": [
+      -0.54209,
+      -0.71403,
+      -0.3091,
+      2.04538
+     ],
+     "qdot_max": 1.86992,
+     "coin_xy": [
+      0.06317,
+      0.13771
+     ],
+     "coin_speed": 0.30899,
+     "dtz": 0.06775,
+     "ctrl_post_gov": [
+      -0.39014,
+      -0.79385,
+      -0.02884,
+      1.95672
+     ],
+     "fn_left": 2.3798,
+     "fn_right": 1.8421,
+     "both_contact": true,
+     "straddle": -0.995,
+     "k6_dwell": 0
+    },
+    {
+     "t": 16,
+     "phase": "RELEASE",
+     "q": [
+      -0.52354,
+      -0.71519,
+      -0.29008,
+      2.02562
+     ],
+     "qdot_max": 1.91456,
+     "coin_xy": [
+      0.06044,
+      0.13922
+     ],
+     "coin_speed": 0.30296,
+     "dtz": 0.06464,
+     "ctrl_post_gov": [
+      -0.37695,
+      -0.7813,
+      -0.01515,
+      1.89475
+     ],
+     "fn_left": 1.9388,
+     "fn_right": 1.6658,
+     "both_contact": true,
+     "straddle": -0.9992,
+     "k6_dwell": 0
+    },
+    {
+     "t": 17,
+     "phase": "RELEASE",
+     "q": [
+      -0.50522,
+      -0.71608,
+      -0.27084,
+      2.00587
+     ],
+     "qdot_max": 1.9165,
+     "coin_xy": [
+      0.05774,
+      0.14066
+     ],
+     "coin_speed": 0.29643,
+     "dtz": 0.0616,
+     "ctrl_post_gov": [
+      -0.3634,
+      -0.76915,
+      -0.00133,
+      1.90073
+     ],
+     "fn_left": 1.4754,
+     "fn_right": 1.3461,
+     "both_contact": true,
+     "straddle": -0.9999,
+     "k6_dwell": 0
+    },
+    {
+     "t": 18,
+     "phase": "RELEASE",
+     "q": [
+      -0.4878,
+      -0.71691,
+      -0.25182,
+      1.98608
+     ],
+     "qdot_max": 1.90635,
+     "coin_xy": [
+      0.05508,
+      0.14209
+     ],
+     "coin_speed": 0.29584,
+     "dtz": 0.05859,
+     "ctrl_post_gov": [
+      -0.34956,
+      -0.7573,
+      0.0,
+      1.88208
+     ],
+     "fn_left": 1.0892,
+     "fn_right": 1.1305,
+     "both_contact": true,
+     "straddle": -0.9981,
+     "k6_dwell": 0
+    },
+    {
+     "t": 19,
+     "phase": "RELEASE",
+     "q": [
+      -0.47147,
+      -0.71768,
+      -0.23334,
+      1.96629
+     ],
+     "qdot_max": 1.86951,
+     "coin_xy": [
+      0.0525,
+      0.14357
+     ],
+     "coin_speed": 0.28863,
+     "dtz": 0.05562,
+     "ctrl_post_gov": [
+      -0.33556,
+      -0.74567,
+      0.0,
+      1.85363
+     ],
+     "fn_left": 0.9061,
+     "fn_right": 0.7109,
+     "both_contact": true,
+     "straddle": -0.9953,
+     "k6_dwell": 0
+    },
+    {
+     "t": 20,
+     "phase": "RELEASE",
+     "q": [
+      -0.45622,
+      -0.71831,
+      -0.21564,
+      1.94648
+     ],
+     "qdot_max": 1.91774,
+     "coin_xy": [
+      0.05003,
+      0.1451
+     ],
+     "coin_speed": 0.28401,
+     "dtz": 0.05272,
+     "ctrl_post_gov": [
+      -0.32144,
+      -0.73417,
+      0.0,
+      1.81431
+     ],
+     "fn_left": 0.775,
+     "fn_right": 0.4719,
+     "both_contact": true,
+     "straddle": -0.992,
+     "k6_dwell": 0
+    },
+    {
+     "t": 21,
+     "phase": "RELEASE",
+     "q": [
+      -0.44198,
+      -0.71874,
+      -0.19884,
+      1.92666
+     ],
+     "qdot_max": 1.89986,
+     "coin_xy": [
+      0.0477,
+      0.1467
+     ],
+     "coin_speed": 0.27597,
+     "dtz": 0.04989,
+     "ctrl_post_gov": [
+      -0.30726,
+      -0.72275,
+      0.0,
+      1.77725
+     ],
+     "fn_left": 0.7057,
+     "fn_right": 0.3308,
+     "both_contact": true,
+     "straddle": -0.9885,
+     "k6_dwell": 0
+    },
+    {
+     "t": 22,
+     "phase": "RELEASE",
+     "q": [
+      -0.42863,
+      -0.71888,
+      -0.18296,
+      1.90681
+     ],
+     "qdot_max": 1.94237,
+     "coin_xy": [
+      0.04551,
+      0.14837
+     ],
+     "coin_speed": 0.26848,
+     "dtz": 0.04714,
+     "ctrl_post_gov": [
+      -0.29302,
+      -0.7114,
+      0.0,
+      1.73129
+     ],
+     "fn_left": 0.573,
+     "fn_right": 0.3782,
+     "both_contact": true,
+     "straddle": -0.9847,
+     "k6_dwell": 0
+    },
+    {
+     "t": 23,
+     "phase": "RELEASE",
+     "q": [
+      -0.41607,
+      -0.71866,
+      -0.168,
+      1.88694
+     ],
+     "qdot_max": 1.93448,
+     "coin_xy": [
+      0.04347,
+      0.15006
+     ],
+     "coin_speed": 0.25781,
+     "dtz": 0.04451,
+     "ctrl_post_gov": [
+      -0.27875,
+      -0.70009,
+      0.0,
+      1.69115
+     ],
+     "fn_left": 0.3469,
+     "fn_right": 0.3368,
+     "both_contact": true,
+     "straddle": -0.9803,
+     "k6_dwell": 0
+    },
+    {
+     "t": 24,
+     "phase": "RELEASE",
+     "q": [
+      -0.40421,
+      -0.71805,
+      -0.15392,
+      1.86704
+     ],
+     "qdot_max": 1.97183,
+     "coin_xy": [
+      0.04147,
+      0.15173
+     ],
+     "coin_speed": 0.2595,
+     "dtz": 0.04193,
+     "ctrl_post_gov": [
+      -0.26444,
+      -0.68883,
+      0.0,
+      1.64038
+     ],
+     "fn_left": 0.2944,
+     "fn_right": 0.3486,
+     "both_contact": true,
+     "straddle": -0.9761,
+     "k6_dwell": 0
+    },
+    {
+     "t": 25,
+     "phase": "RELEASE",
+     "q": [
+      -0.39288,
+      -0.71698,
+      -0.14069,
+      1.8471
+     ],
+     "qdot_max": 1.97017,
+     "coin_xy": [
+      0.03947,
+      0.15338
+     ],
+     "coin_speed": 0.25643,
+     "dtz": 0.03934,
+     "ctrl_post_gov": [
+      -0.2501,
+      -0.67761,
+      0.0,
+      1.5971
+     ],
+     "fn_left": 0.2836,
+     "fn_right": 0.3863,
+     "both_contact": true,
+     "straddle": -0.9726,
+     "k6_dwell": 0
+    },
+    {
+     "t": 26,
+     "phase": "RELEASE",
+     "q": [
+      -0.38191,
+      -0.71542,
+      -0.12825,
+      1.82721
+     ],
+     "qdot_max": 1.99802,
+     "coin_xy": [
+      0.03751,
+      0.15501
+     ],
+     "coin_speed": 0.25188,
+     "dtz": 0.03682,
+     "ctrl_post_gov": [
+      -0.23575,
+      -0.66641,
+      1e-05,
+      1.5239
+     ],
+     "fn_left": 0.2834,
+     "fn_right": 0.4494,
+     "both_contact": true,
+     "straddle": -0.969,
+     "k6_dwell": 0
+    },
+    {
+     "t": 27,
+     "phase": "RELEASE",
+     "q": [
+      -0.37116,
+      -0.71332,
+      -0.11654,
+      1.80736
+     ],
+     "qdot_max": 1.96691,
+     "coin_xy": [
+      0.03562,
+      0.15662
+     ],
+     "coin_speed": 0.24386,
+     "dtz": 0.03437,
+     "ctrl_post_gov": [
+      -0.22137,
+      -0.65524,
+      8e-05,
+      1.53447
+     ],
+     "fn_left": 0.2534,
+     "fn_right": 0.4198,
+     "both_contact": true,
+     "straddle": -0.9647,
+     "k6_dwell": 0
+    },
+    {
+     "t": 28,
+     "phase": "RELEASE",
+     "q": [
+      -0.36051,
+      -0.71067,
+      -0.10547,
+      1.78807
+     ],
+     "qdot_max": 1.89238,
+     "coin_xy": [
+      0.0338,
+      0.15817
+     ],
+     "coin_speed": 0.23174,
+     "dtz": 0.03202,
+     "ctrl_post_gov": [
+      -0.20696,
+      -0.64411,
+      0.0004,
+      1.54498
+     ],
+     "fn_left": 0.2546,
+     "fn_right": 0.4144,
+     "both_contact": true,
+     "straddle": -0.9595,
+     "k6_dwell": 0
+    },
+    {
+     "t": 29,
+     "phase": "RELEASE",
+     "q": [
+      -0.34989,
+      -0.70747,
+      -0.09493,
+      1.7697
+     ],
+     "qdot_max": 1.78701,
+     "coin_xy": [
+      0.03207,
+      0.15959
+     ],
+     "coin_speed": 0.2147,
+     "dtz": 0.02981,
+     "ctrl_post_gov": [
+      -0.19251,
+      -0.63304,
+      0.00142,
+      1.55543
+     ],
+     "fn_left": 0.1875,
+     "fn_right": 0.3342,
+     "both_contact": true,
+     "straddle": -0.9528,
+     "k6_dwell": 0
+    },
+    {
+     "t": 30,
+     "phase": "RELEASE",
+     "q": [
+      -0.3392,
+      -0.70373,
+      -0.08482,
+      1.75249
+     ],
+     "qdot_max": 1.66106,
+     "coin_xy": [
+      0.0305,
+      0.16089
+     ],
+     "coin_speed": 0.19139,
+     "dtz": 0.02781,
+     "ctrl_post_gov": [
+      -0.17799,
+      -0.62204,
+      0.00375,
+      1.56583
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.077,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 31,
+     "phase": "RELEASE",
+     "q": [
+      -0.32837,
+      -0.69946,
+      -0.07502,
+      1.73662
+     ],
+     "qdot_max": 1.52176,
+     "coin_xy": [
+      0.02913,
+      0.16211
+     ],
+     "coin_speed": 0.17532,
+     "dtz": 0.02602,
+     "ctrl_post_gov": [
+      -0.16339,
+      -0.61116,
+      0.00765,
+      1.57616
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0137,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 32,
+     "phase": "RELEASE",
+     "q": [
+      -0.31739,
+      -0.69469,
+      -0.06542,
+      1.72218
+     ],
+     "qdot_max": 1.37482,
+     "coin_xy": [
+      0.02788,
+      0.16322
+     ],
+     "coin_speed": 0.15656,
+     "dtz": 0.02441,
+     "ctrl_post_gov": [
+      -0.14869,
+      -0.60042,
+      0.01218,
+      1.58641
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0033,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 33,
+     "phase": "RELEASE",
+     "q": [
+      -0.30622,
+      -0.68944,
+      -0.05594,
+      1.70924
+     ],
+     "qdot_max": 1.22482,
+     "coin_xy": [
+      0.02678,
+      0.16418
+     ],
+     "coin_speed": 0.1358,
+     "dtz": 0.02298,
+     "ctrl_post_gov": [
+      -0.13387,
+      -0.58984,
+      0.01648,
+      1.59658
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 34,
+     "phase": "RELEASE",
+     "q": [
+      -0.29485,
+      -0.68375,
+      -0.04654,
+      1.69779
+     ],
+     "qdot_max": 1.14444,
+     "coin_xy": [
+      0.02582,
+      0.165
+     ],
+     "coin_speed": 0.11457,
+     "dtz": 0.02177,
+     "ctrl_post_gov": [
+      -0.11894,
+      -0.57941,
+      0.02049,
+      1.60666
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 35,
+     "phase": "RELEASE",
+     "q": [
+      -0.28327,
+      -0.67765,
+      -0.0372,
+      1.68783
+     ],
+     "qdot_max": 1.16587,
+     "coin_xy": [
+      0.02502,
+      0.16567
+     ],
+     "coin_speed": 0.09343,
+     "dtz": 0.02076,
+     "ctrl_post_gov": [
+      -0.1039,
+      -0.56915,
+      0.02442,
+      1.61663
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 36,
+     "phase": "RELEASE",
+     "q": [
+      -0.27147,
+      -0.67118,
+      -0.02791,
+      1.6793
+     ],
+     "qdot_max": 1.18774,
+     "coin_xy": [
+      0.02436,
+      0.16619
+     ],
+     "coin_speed": 0.07242,
+     "dtz": 0.01995,
+     "ctrl_post_gov": [
+      -0.08875,
+      -0.55906,
+      0.02837,
+      1.62648
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 37,
+     "phase": "RELEASE",
+     "q": [
+      -0.25946,
+      -0.66437,
+      -0.01866,
+      1.67216
+     ],
+     "qdot_max": 1.20975,
+     "coin_xy": [
+      0.02386,
+      0.16656
+     ],
+     "coin_speed": 0.05162,
+     "dtz": 0.01934,
+     "ctrl_post_gov": [
+      -0.07349,
+      -0.54912,
+      0.03235,
+      1.6362
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 1
+    },
+    {
+     "t": 38,
+     "phase": "RELEASE",
+     "q": [
+      -0.24722,
+      -0.65726,
+      -0.00945,
+      1.66634
+     ],
+     "qdot_max": 1.23165,
+     "coin_xy": [
+      0.0235,
+      0.16678
+     ],
+     "coin_speed": 0.03125,
+     "dtz": 0.01893,
+     "ctrl_post_gov": [
+      -0.05814,
+      -0.53932,
+      0.03638,
+      1.64578
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 2
+    },
+    {
+     "t": 39,
+     "phase": "RELEASE",
+     "q": [
+      -0.23476,
+      -0.64988,
+      -0.00026,
+      1.66175
+     ],
+     "qdot_max": 1.25325,
+     "coin_xy": [
+      0.0233,
+      0.16687
+     ],
+     "coin_speed": 0.01421,
+     "dtz": 0.0187,
+     "ctrl_post_gov": [
+      -0.04271,
+      -0.52967,
+      0.04042,
+      1.65521
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 3
+    },
+    {
+     "t": 40,
+     "phase": "RELEASE",
+     "q": [
+      -0.22209,
+      -0.64226,
+      0.00889,
+      1.65833
+     ],
+     "qdot_max": 1.27438,
+     "coin_xy": [
+      0.02321,
+      0.16691
+     ],
+     "coin_speed": 0.00538,
+     "dtz": 0.0186,
+     "ctrl_post_gov": [
+      -0.0272,
+      -0.52013,
+      0.04448,
+      1.66447
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 4
+    },
+    {
+     "t": 41,
+     "phase": "RELEASE",
+     "q": [
+      -0.20922,
+      -0.63443,
+      0.01803,
+      1.65598
+     ],
+     "qdot_max": 1.29493,
+     "coin_xy": [
+      0.02318,
+      0.16692
+     ],
+     "coin_speed": 0.00204,
+     "dtz": 0.01857,
+     "ctrl_post_gov": [
+      -0.01161,
+      -0.51071,
+      0.04854,
+      1.67358
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 5
+    },
+    {
+     "t": 42,
+     "phase": "RELEASE",
+     "q": [
+      -0.19617,
+      -0.62642,
+      0.02714,
+      1.65462
+     ],
+     "qdot_max": 1.30848,
+     "coin_xy": [
+      0.02316,
+      0.16692
+     ],
+     "coin_speed": 0.00077,
+     "dtz": 0.01856,
+     "ctrl_post_gov": [
+      0.0,
+      -0.50139,
+      0.05259,
+      1.68253
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 6
+    },
+    {
+     "t": 43,
+     "phase": "RELEASE",
+     "q": [
+      -0.18311,
+      -0.61825,
+      0.03624,
+      1.65417
+     ],
+     "qdot_max": 1.29832,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.00029,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.0,
+      -0.49215,
+      0.05665,
+      1.69135
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 7
+    },
+    {
+     "t": 44,
+     "phase": "RELEASE",
+     "q": [
+      -0.17024,
+      -0.60995,
+      0.04532,
+      1.65455
+     ],
+     "qdot_max": 1.27071,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.00011,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.0,
+      -0.48299,
+      0.0607,
+      1.70004
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 8
+    },
+    {
+     "t": 45,
+     "phase": "RELEASE",
+     "q": [
+      -0.1577,
+      -0.60152,
+      0.05438,
+      1.65567
+     ],
+     "qdot_max": 1.23097,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 4e-05,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.0,
+      -0.4739,
+      0.06474,
+      1.70862
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 9
+    },
+    {
+     "t": 46,
+     "phase": "RELEASE",
+     "q": [
+      -0.14559,
+      -0.593,
+      0.06344,
+      1.65749
+     ],
+     "qdot_max": 1.1836,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 2e-05,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      1e-05,
+      -0.46485,
+      0.06878,
+      1.71711
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 10
+    },
+    {
+     "t": 47,
+     "phase": "RELEASE",
+     "q": [
+      -0.13396,
+      -0.5844,
+      0.07248,
+      1.65992
+     ],
+     "qdot_max": 1.13255,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 1e-05,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      6e-05,
+      -0.45586,
+      0.0728,
+      1.72551
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 11
+    },
+    {
+     "t": 48,
+     "phase": "RELEASE",
+     "q": [
+      -0.12281,
+      -0.57572,
+      0.08151,
+      1.66292
+     ],
+     "qdot_max": 1.08139,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.00021,
+      -0.44691,
+      0.07681,
+      1.73383
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 12
+    },
+    {
+     "t": 49,
+     "phase": "RELEASE",
+     "q": [
+      -0.11213,
+      -0.567,
+      0.09053,
+      1.66643
+     ],
+     "qdot_max": 1.03349,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.0007,
+      -0.438,
+      0.08081,
+      1.74207
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 13
+    },
+    {
+     "t": 50,
+     "phase": "RELEASE",
+     "q": [
+      -0.10187,
+      -0.55823,
+      0.09954,
+      1.6704
+     ],
+     "qdot_max": 0.99194,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.00191,
+      -0.42911,
+      0.0848,
+      1.75025
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 14
+    },
+    {
+     "t": 51,
+     "phase": "RELEASE",
+     "q": [
+      -0.09195,
+      -0.54943,
+      0.10855,
+      1.67478
+     ],
+     "qdot_max": 0.95898,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.00429,
+      -0.42026,
+      0.08878,
+      1.75837
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 15
+    },
+    {
+     "t": 52,
+     "phase": "RELEASE",
+     "q": [
+      -0.08227,
+      -0.5406,
+      0.11755,
+      1.67953
+     ],
+     "qdot_max": 0.93508,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.00787,
+      -0.41144,
+      0.09274,
+      1.76643
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 16
+    },
+    {
+     "t": 53,
+     "phase": "RELEASE",
+     "q": [
+      -0.07277,
+      -0.53176,
+      0.12654,
+      1.68461
+     ],
+     "qdot_max": 0.91868,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.01211,
+      -0.40264,
+      0.09668,
+      1.77443
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 17
+    },
+    {
+     "t": 54,
+     "phase": "RELEASE",
+     "q": [
+      -0.06339,
+      -0.5229,
+      0.13552,
+      1.68999
+     ],
+     "qdot_max": 0.90722,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.01641,
+      -0.39387,
+      0.10061,
+      1.78238
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 18
+    },
+    {
+     "t": 55,
+     "phase": "RELEASE",
+     "q": [
+      -0.05407,
+      -0.51404,
+      0.1445,
+      1.69563
+     ],
+     "qdot_max": 0.89854,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.02055,
+      -0.38511,
+      0.10453,
+      1.79028
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 19
+    },
+    {
+     "t": 56,
+     "phase": "RELEASE",
+     "q": [
+      -0.04482,
+      -0.50518,
+      0.15347,
+      1.7015
+     ],
+     "qdot_max": 0.89138,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.02458,
+      -0.37638,
+      0.10843,
+      1.79814
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 20
+    },
+    {
+     "t": 57,
+     "phase": "RELEASE",
+     "q": [
+      -0.03561,
+      -0.49632,
+      0.16244,
+      1.70758
+     ],
+     "qdot_max": 0.88516,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.02859,
+      -0.36767,
+      0.11231,
+      1.80594
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 21
+    },
+    {
+     "t": 58,
+     "phase": "RELEASE",
+     "q": [
+      -0.02643,
+      -0.48746,
+      0.1714,
+      1.71385
+     ],
+     "qdot_max": 0.88463,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.03262,
+      -0.35898,
+      0.11618,
+      1.8137
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 22
+    },
+    {
+     "t": 59,
+     "phase": "RELEASE",
+     "q": [
+      -0.01729,
+      -0.47861,
+      0.18036,
+      1.72027
+     ],
+     "qdot_max": 0.88401,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.03668,
+      -0.3503,
+      0.12026,
+      1.82142
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 23
+    },
+    {
+     "t": 60,
+     "phase": "RELEASE",
+     "q": [
+      -0.00817,
+      -0.46976,
+      0.18931,
+      1.72684
+     ],
+     "qdot_max": 0.88323,
+     "coin_xy": [
+      0.02316,
+      0.16693
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01855,
+     "ctrl_post_gov": [
+      0.04075,
+      -0.34164,
+      0.12466,
+      1.82909
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 24
+    }
+   ],
+   "basin_candidates": [
+    {
+     "theta": [
+      0.051528,
+      0.225966,
+      0.011466,
+      10.643661,
+      7.436404,
+      2.681807
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 26.68,
+      "gap_closed": 0.651,
+      "forward_mm": 49.87,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0014,
+      "peak_coin_speed": 0.4499,
+      "contact_lost_steps": 32,
+      "score": -0.02668
+     }
+    },
+    {
+     "theta": [
+      0.052853,
+      0.254086,
+      0.00754,
+      11.300046,
+      11.176675,
+      3.167279
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 24,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 16.1,
+      "gap_closed": 0.789,
+      "forward_mm": 60.44,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0365,
+      "peak_coin_speed": 0.4498,
+      "contact_lost_steps": 36,
+      "score": 0.5639
+     }
+    },
+    {
+     "theta": [
+      0.053872,
+      0.192777,
+      0.015873,
+      14.497387,
+      4.0,
+      2.874058
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 19,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 11.84,
+      "gap_closed": 0.845,
+      "forward_mm": 65.4,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9961,
+      "peak_coin_speed": 0.4499,
+      "contact_lost_steps": 26,
+      "score": 0.46816
+     }
+    },
+    {
+     "theta": [
+      0.008722,
+      0.183082,
+      -0.016751,
+      12.236528,
+      4.217812,
+      3.136455
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 27.85,
+      "gap_closed": 0.636,
+      "forward_mm": 54.01,
+      "terminal_coin_speed": 0.0408,
+      "peak_qdot": 2.0439,
+      "peak_coin_speed": 0.4489,
+      "contact_lost_steps": 42,
+      "score": -0.02785
+     }
+    },
+    {
+     "theta": [
+      0.055027,
+      0.212853,
+      -0.028902,
+      11.498776,
+      9.044837,
+      3.079591
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 31.52,
+      "gap_closed": 0.588,
+      "forward_mm": 45.03,
+      "terminal_coin_speed": 0.0027,
+      "peak_qdot": 2.0167,
+      "peak_coin_speed": 0.4487,
+      "contact_lost_steps": 34,
+      "score": -0.03152
+     }
+    },
+    {
+     "theta": [
+      0.050768,
+      0.241779,
+      0.005895,
+      12.536365,
+      9.674338,
+      3.061761
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 22,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 14.69,
+      "gap_closed": 0.808,
+      "forward_mm": 62.08,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9989,
+      "peak_coin_speed": 0.4497,
+      "contact_lost_steps": 34,
+      "score": 0.52531
+     }
+    },
+    {
+     "theta": [
+      0.037067,
+      0.271911,
+      0.030121,
+      9.893528,
+      9.531984,
+      3.246408
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 27.77,
+      "gap_closed": 0.637,
+      "forward_mm": 50.25,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0047,
+      "peak_coin_speed": 0.4504,
+      "contact_lost_steps": 43,
+      "score": -0.02777
+     }
+    },
+    {
+     "theta": [
+      0.047252,
+      0.236339,
+      0.015203,
+      14.429212,
+      14.93345,
+      2.795562
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 19,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 9.84,
+      "gap_closed": 0.871,
+      "forward_mm": 68.34,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0203,
+      "peak_coin_speed": 0.4499,
+      "contact_lost_steps": 38,
+      "score": 0.47016
+     }
+    },
+    {
+     "theta": [
+      0.041079,
+      0.215273,
+      0.039026,
+      14.483051,
+      7.941135,
+      2.906113
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 33.68,
+      "gap_closed": 0.559,
+      "forward_mm": 47.26,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.044,
+      "peak_coin_speed": 0.4506,
+      "contact_lost_steps": 40,
+      "score": -0.03368
+     }
+    },
+    {
+     "theta": [
+      0.045871,
+      0.259035,
+      0.008696,
+      12.069857,
+      10.633153,
+      2.995323
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 21,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 11.72,
+      "gap_closed": 0.847,
+      "forward_mm": 65.05,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0046,
+      "peak_coin_speed": 0.4498,
+      "contact_lost_steps": 40,
+      "score": 0.50828
+     }
+    },
+    {
+     "theta": [
+      0.050957,
+      0.235946,
+      0.010282,
+      15.364467,
+      9.215518,
+      3.248818
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 13,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 10.44,
+      "gap_closed": 0.863,
+      "forward_mm": 67.52,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0313,
+      "peak_coin_speed": 0.4498,
+      "contact_lost_steps": 36,
+      "score": 0.34956
+     }
+    },
+    {
+     "theta": [
+      0.055191,
+      0.278508,
+      0.001429,
+      11.291617,
+      10.0503,
+      3.216285
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 26,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 16.34,
+      "gap_closed": 0.786,
+      "forward_mm": 60.12,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0141,
+      "peak_coin_speed": 0.4496,
+      "contact_lost_steps": 37,
+      "score": 0.60366
+     }
+    },
+    {
+     "theta": [
+      0.047531,
+      0.21234,
+      0.029044,
+      14.071176,
+      5.143544,
+      3.010295
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 24,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 17.91,
+      "gap_closed": 0.766,
+      "forward_mm": 58.87,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0041,
+      "peak_coin_speed": 0.4504,
+      "contact_lost_steps": 38,
+      "score": 0.56209
+     }
+    },
+    {
+     "theta": [
+      0.003607,
+      0.240758,
+      -0.01503,
+      14.646674,
+      5.888732,
+      3.319237
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 9,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 4.4,
+      "gap_closed": 0.942,
+      "forward_mm": 72.29,
+      "terminal_coin_speed": 0.0001,
+      "peak_qdot": 1.9965,
+      "peak_coin_speed": 0.449,
+      "contact_lost_steps": 43,
+      "score": 0.2756
+     }
+    },
+    {
+     "theta": [
+      0.047903,
+      0.191571,
+      0.036175,
+      11.488572,
+      9.034186,
+      2.753213
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 37.75,
+      "gap_closed": 0.506,
+      "forward_mm": 39.59,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0168,
+      "peak_coin_speed": 0.4506,
+      "contact_lost_steps": 36,
+      "score": -0.03775
+     }
+    },
+    {
+     "theta": [
+      0.035876,
+      0.20908,
+      0.006316,
+      12.827141,
+      7.750844,
+      2.930828
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 21.34,
+      "gap_closed": 0.721,
+      "forward_mm": 55.23,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0041,
+      "peak_coin_speed": 0.4496,
+      "contact_lost_steps": 36,
+      "score": -0.02134
+     }
+    },
+    {
+     "theta": [
+      0.083164,
+      0.178641,
+      0.012647,
+      11.271913,
+      4.0,
+      3.303374
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 30.11,
+      "gap_closed": 0.606,
+      "forward_mm": 46.37,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9975,
+      "peak_coin_speed": 0.4499,
+      "contact_lost_steps": 27,
+      "score": -0.03011
+     }
+    },
+    {
+     "theta": [
+      0.050973,
+      0.219829,
+      0.002858,
+      13.912926,
+      7.101283,
+      2.987355
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 18,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 10.14,
+      "gap_closed": 0.867,
+      "forward_mm": 66.88,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9968,
+      "peak_coin_speed": 0.4495,
+      "contact_lost_steps": 32,
+      "score": 0.44986
+     }
+    },
+    {
+     "theta": [
+      0.041574,
+      0.204185,
+      0.027741,
+      12.074262,
+      8.637183,
+      3.0468
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 21.62,
+      "gap_closed": 0.717,
+      "forward_mm": 54.82,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.022,
+      "peak_coin_speed": 0.4503,
+      "contact_lost_steps": 39,
+      "score": -0.02162
+     }
+    },
+    {
+     "theta": [
+      0.077971,
+      0.236274,
+      0.023287,
+      11.438321,
+      4.0,
+      3.380631
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 24,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 17.96,
+      "gap_closed": 0.765,
+      "forward_mm": 58.79,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9886,
+      "peak_coin_speed": 0.4502,
+      "contact_lost_steps": 31,
+      "score": 0.56204
+     }
+    },
+    {
+     "theta": [
+      0.073245,
+      0.214101,
+      0.026154,
+      14.706707,
+      12.528391,
+      3.370498
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 25.06,
+      "gap_closed": 0.672,
+      "forward_mm": 61.95,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0061,
+      "peak_coin_speed": 0.4503,
+      "contact_lost_steps": 30,
+      "score": -0.02506
+     }
+    },
+    {
+     "theta": [
+      0.041249,
+      0.258804,
+      -0.006039,
+      14.901787,
+      11.192871,
+      3.353303
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 12,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 8.77,
+      "gap_closed": 0.885,
+      "forward_mm": 69.21,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0694,
+      "peak_coin_speed": 0.4493,
+      "contact_lost_steps": 38,
+      "score": 0.33123
+     }
+    },
+    {
+     "theta": [
+      0.045969,
+      0.21894,
+      0.000911,
+      9.130009,
+      8.576947,
+      2.688985
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 33.33,
+      "gap_closed": 0.564,
+      "forward_mm": 43.74,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0093,
+      "peak_coin_speed": 0.4496,
+      "contact_lost_steps": 37,
+      "score": -0.03333
+     }
+    },
+    {
+     "theta": [
+      0.014522,
+      0.231553,
+      0.015295,
+      13.795664,
+      5.319293,
+      2.801899
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 22,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 16.51,
+      "gap_closed": 0.784,
+      "forward_mm": 60.35,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0007,
+      "peak_coin_speed": 0.4499,
+      "contact_lost_steps": 44,
+      "score": 0.52349
+     }
+    },
+    {
+     "theta": [
+      0.041146,
+      0.237966,
+      0.014915,
+      13.004762,
+      8.085662,
+      3.454445
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 20,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 10.45,
+      "gap_closed": 0.863,
+      "forward_mm": 66.47,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0288,
+      "peak_coin_speed": 0.4499,
+      "contact_lost_steps": 40,
+      "score": 0.48955
+     }
+    },
+    {
+     "theta": [
+      0.05258,
+      0.216457,
+      0.017091,
+      14.764935,
+      11.425067,
+      3.116454
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 21,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 13.24,
+      "gap_closed": 0.827,
+      "forward_mm": 65.11,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.994,
+      "peak_coin_speed": 0.45,
+      "contact_lost_steps": 34,
+      "score": 0.50676
+     }
+    },
+    {
+     "theta": [
+      0.028035,
+      0.2317,
+      0.004084,
+      15.465845,
+      4.203539,
+      2.989256
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 13,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 7.46,
+      "gap_closed": 0.902,
+      "forward_mm": 69.29,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0075,
+      "peak_coin_speed": 0.4496,
+      "contact_lost_steps": 40,
+      "score": 0.35254
+     }
+    },
+    {
+     "theta": [
+      0.04544,
+      0.213087,
+      0.037786,
+      13.620458,
+      9.214903,
+      3.589229
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 76.44,
+      "dtz_end_mm": 36.18,
+      "gap_closed": 0.527,
+      "forward_mm": 45.91,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0151,
+      "peak_coin_speed": 0.4506,
+      "contact_lost_steps": 40,
+      "score": -0.03618
+     }
+    }
+   ],
+   "n_basin_delivering": 16,
+   "n_basin_near": 12
+  },
+  {
+   "state": 1,
+   "tag": "s3",
+   "seed": 14750,
+   "split": "development",
+   "acquire": {
+    "seed": 14750,
+    "certified": true,
+    "axis": "zone_par",
+    "n_dot": -0.989,
+    "attempts": {
+     "zone_cross": {
+      "both_contact": false,
+      "n_dot": -0.992,
+      "cert_feasible": true,
+      "certified": false
+     },
+     "zone_par": {
+      "both_contact": true,
+      "n_dot": -0.989,
+      "cert_feasible": true,
+      "certified": true
+     }
+    }
+   },
+   "canonical_theta": {
+    "squeeze_mag": 0.195824,
+    "forward_mag": 0.069404,
+    "balance": -0.036993,
+    "ramp_steps": 7.82491,
+    "release_step": 11.181525,
+    "brake_gain": 2.192356
+   },
+   "canonical_theta_vec": [
+    0.195824,
+    0.069404,
+    -0.036993,
+    7.82491,
+    11.181525,
+    2.192356
+   ],
+   "canonical_source": "basin_repair",
+   "cem_optimum_theta": [
+    0.1993,
+    0.0495,
+    -0.0455,
+    8.0926,
+    17.6155,
+    1.5574
+   ],
+   "cem_optimum_reproduces_at_stored_precision": false,
+   "search": {
+    "cem_seed": 20260727,
+    "pop": 56,
+    "iters": 10,
+    "elite": 8,
+    "passive_drift_mm": 20.714,
+    "history": [
+     {
+      "iter": 0,
+      "best_score": 0.50942,
+      "n_feasible": 44,
+      "best_forward": 0.09481
+     },
+     {
+      "iter": 1,
+      "best_score": 0.50942,
+      "n_feasible": 54,
+      "best_forward": 0.09481
+     },
+     {
+      "iter": 2,
+      "best_score": 0.50942,
+      "n_feasible": 56,
+      "best_forward": 0.09481
+     },
+     {
+      "iter": 3,
+      "best_score": 0.50942,
+      "n_feasible": 56,
+      "best_forward": 0.09481
+     },
+     {
+      "iter": 4,
+      "best_score": 0.50942,
+      "n_feasible": 56,
+      "best_forward": 0.09481
+     },
+     {
+      "iter": 5,
+      "best_score": 0.50942,
+      "n_feasible": 56,
+      "best_forward": 0.09481
+     },
+     {
+      "iter": 6,
+      "best_score": 0.50942,
+      "n_feasible": 56,
+      "best_forward": 0.09481
+     },
+     {
+      "iter": 7,
+      "best_score": 0.51375,
+      "n_feasible": 56,
+      "best_forward": 0.08388
+     },
+     {
+      "iter": 8,
+      "best_score": 0.53192,
+      "n_feasible": 56,
+      "best_forward": 0.08296
+     },
+     {
+      "iter": 9,
+      "best_score": 0.53192,
+      "n_feasible": 56,
+      "best_forward": 0.08296
+     }
+    ]
+   },
+   "snapshot": {
+    "pre_release_hash": "ede88da6a0ca5673",
+    "post_release_hash": "ede88da6a0ca5673",
+    "operating_point": "EXACT_POST_RELEASE_HANDOFF",
+    "prev_tau": [
+     -1.03132,
+     -0.13947,
+     -0.25292,
+     1.19997
+    ],
+    "q_hold": [
+     -0.36011,
+     -0.519,
+     -0.29191,
+     1.16494
+    ],
+    "straddle0": -0.9891,
+    "fn0": [
+     2.369,
+     2.5616
+    ],
+    "arm_saturated": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "actuator_lo": [
+     -4.0,
+     -4.0,
+     -4.0,
+     -4.0
+    ],
+    "actuator_hi": [
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "recert_admissible": true
+   },
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 18,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 99.89,
+    "dtz_end_mm": 5.17,
+    "gap_closed": 0.948,
+    "forward_mm": 104.97,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9812,
+    "peak_coin_speed": 0.4511,
+    "contact_lost_steps": 43,
+    "score": 0.45483
+   },
+   "replay_ok": true,
+   "deterministic": true,
+   "k6_delivered": true,
+   "trace": [
+    {
+     "t": 1,
+     "phase": "PUSH",
+     "q": [
+      -0.32825,
+      -0.51574,
+      -0.27369,
+      1.12865
+     ],
+     "qdot_max": 1.17231,
+     "coin_xy": [
+      0.04766,
+      0.22315
+     ],
+     "coin_speed": 0.04459,
+     "dtz": 0.09975,
+     "ctrl_post_gov": [
+      -0.1404,
+      -0.17126,
+      -0.09806,
+      1.28632
+     ],
+     "fn_left": 2.5511,
+     "fn_right": 3.2623,
+     "both_contact": true,
+     "straddle": -0.9909,
+     "k6_dwell": 0
+    },
+    {
+     "t": 2,
+     "phase": "PUSH",
+     "q": [
+      -0.33732,
+      -0.50269,
+      -0.27074,
+      1.1353
+     ],
+     "qdot_max": 1.40498,
+     "coin_xy": [
+      0.04698,
+      0.22271
+     ],
+     "coin_speed": 0.14722,
+     "dtz": 0.09924,
+     "ctrl_post_gov": [
+      -0.1449,
+      -0.20689,
+      0.06077,
+      1.37728
+     ],
+     "fn_left": 4.1559,
+     "fn_right": 4.0068,
+     "both_contact": true,
+     "straddle": -0.9905,
+     "k6_dwell": 0
+    },
+    {
+     "t": 3,
+     "phase": "PUSH",
+     "q": [
+      -0.34605,
+      -0.48769,
+      -0.26358,
+      1.14321
+     ],
+     "qdot_max": 1.55771,
+     "coin_xy": [
+      0.04567,
+      0.22203
+     ],
+     "coin_speed": 0.17177,
+     "dtz": 0.09843,
+     "ctrl_post_gov": [
+      -0.2459,
+      -0.24678,
+      0.18047,
+      1.21808
+     ],
+     "fn_left": 4.6736,
+     "fn_right": 4.7871,
+     "both_contact": true,
+     "straddle": -0.9882,
+     "k6_dwell": 0
+    },
+    {
+     "t": 4,
+     "phase": "PUSH",
+     "q": [
+      -0.35484,
+      -0.47166,
+      -0.25409,
+      1.15116
+     ],
+     "qdot_max": 1.60057,
+     "coin_xy": [
+      0.04432,
+      0.22124
+     ],
+     "coin_speed": 0.15977,
+     "dtz": 0.09753,
+     "ctrl_post_gov": [
+      -0.26533,
+      -0.29126,
+      0.02915,
+      1.1732
+     ],
+     "fn_left": 4.7716,
+     "fn_right": 4.9067,
+     "both_contact": true,
+     "straddle": -0.9842,
+     "k6_dwell": 0
+    },
+    {
+     "t": 5,
+     "phase": "PUSH",
+     "q": [
+      -0.36359,
+      -0.45576,
+      -0.24427,
+      1.15904
+     ],
+     "qdot_max": 1.53699,
+     "coin_xy": [
+      0.04306,
+      0.22034
+     ],
+     "coin_speed": 0.15635,
+     "dtz": 0.09653,
+     "ctrl_post_gov": [
+      -0.27304,
+      -0.34042,
+      0.02089,
+      1.13331
+     ],
+     "fn_left": 5.0056,
+     "fn_right": 5.1826,
+     "both_contact": true,
+     "straddle": -0.9777,
+     "k6_dwell": 0
+    },
+    {
+     "t": 6,
+     "phase": "PUSH",
+     "q": [
+      -0.37234,
+      -0.44085,
+      -0.23441,
+      1.16689
+     ],
+     "qdot_max": 1.40336,
+     "coin_xy": [
+      0.04185,
+      0.21926
+     ],
+     "coin_speed": 0.15882,
+     "dtz": 0.09537,
+     "ctrl_post_gov": [
+      -0.28471,
+      -0.39427,
+      0.02525,
+      1.07698
+     ],
+     "fn_left": 5.2924,
+     "fn_right": 5.5184,
+     "both_contact": true,
+     "straddle": -0.9666,
+     "k6_dwell": 0
+    },
+    {
+     "t": 7,
+     "phase": "PUSH",
+     "q": [
+      -0.38103,
+      -0.42755,
+      -0.22449,
+      1.17467
+     ],
+     "qdot_max": 1.21329,
+     "coin_xy": [
+      0.04068,
+      0.21792
+     ],
+     "coin_speed": 0.17008,
+     "dtz": 0.09398,
+     "ctrl_post_gov": [
+      -0.30223,
+      -0.45277,
+      0.02774,
+      1.02403
+     ],
+     "fn_left": 5.5821,
+     "fn_right": 5.8689,
+     "both_contact": true,
+     "straddle": -0.9467,
+     "k6_dwell": 0
+    },
+    {
+     "t": 8,
+     "phase": "BRAKE",
+     "q": [
+      -0.38969,
+      -0.4165,
+      -0.21503,
+      1.18245
+     ],
+     "qdot_max": 0.94796,
+     "coin_xy": [
+      0.03958,
+      0.21627
+     ],
+     "coin_speed": 0.19581,
+     "dtz": 0.09228,
+     "ctrl_post_gov": [
+      -0.28721,
+      -0.5292,
+      0.05697,
+      1.10977
+     ],
+     "fn_left": 5.7325,
+     "fn_right": 6.1104,
+     "both_contact": true,
+     "straddle": -0.9091,
+     "k6_dwell": 0
+    },
+    {
+     "t": 9,
+     "phase": "BRAKE",
+     "q": [
+      -0.39831,
+      -0.40704,
+      -0.20621,
+      1.19034
+     ],
+     "qdot_max": 0.86784,
+     "coin_xy": [
+      0.03849,
+      0.21425
+     ],
+     "coin_speed": 0.24577,
+     "dtz": 0.09024,
+     "ctrl_post_gov": [
+      -0.3024,
+      -0.4913,
+      0.1731,
+      1.26165
+     ],
+     "fn_left": 5.9078,
+     "fn_right": 6.4209,
+     "both_contact": true,
+     "straddle": -0.8368,
+     "k6_dwell": 0
+    },
+    {
+     "t": 10,
+     "phase": "BRAKE",
+     "q": [
+      -0.4069,
+      -0.39712,
+      -0.1978,
+      1.19824
+     ],
+     "qdot_max": 1.00556,
+     "coin_xy": [
+      0.03718,
+      0.21183
+     ],
+     "coin_speed": 0.32417,
+     "dtz": 0.08779,
+     "ctrl_post_gov": [
+      -0.25793,
+      -0.37187,
+      0.25573,
+      1.40112
+     ],
+     "fn_left": 5.8346,
+     "fn_right": 6.1588,
+     "both_contact": true,
+     "straddle": -0.699,
+     "k6_dwell": 0
+    },
+    {
+     "t": 11,
+     "phase": "BRAKE",
+     "q": [
+      -0.41561,
+      -0.38527,
+      -0.19081,
+      1.20489
+     ],
+     "qdot_max": 1.22114,
+     "coin_xy": [
+      0.03579,
+      0.20896
+     ],
+     "coin_speed": 0.31162,
+     "dtz": 0.08492,
+     "ctrl_post_gov": [
+      -0.21776,
+      -0.29541,
+      0.20802,
+      1.27852
+     ],
+     "fn_left": 3.6037,
+     "fn_right": 5.8854,
+     "both_contact": true,
+     "straddle": -0.4676,
+     "k6_dwell": 0
+    },
+    {
+     "t": 12,
+     "phase": "RELEASE",
+     "q": [
+      -0.42433,
+      -0.37078,
+      -0.18675,
+      1.20905
+     ],
+     "qdot_max": 1.47894,
+     "coin_xy": [
+      0.03515,
+      0.20596
+     ],
+     "coin_speed": 0.28136,
+     "dtz": 0.08193,
+     "ctrl_post_gov": [
+      -0.30687,
+      -0.26439,
+      0.15941,
+      1.26056
+     ],
+     "fn_left": 2.3767,
+     "fn_right": 5.662,
+     "both_contact": true,
+     "straddle": -0.2036,
+     "k6_dwell": 0
+    },
+    {
+     "t": 13,
+     "phase": "RELEASE",
+     "q": [
+      -0.43324,
+      -0.35439,
+      -0.18508,
+      1.21122
+     ],
+     "qdot_max": 1.62446,
+     "coin_xy": [
+      0.03514,
+      0.20294
+     ],
+     "coin_speed": 0.28483,
+     "dtz": 0.07891,
+     "ctrl_post_gov": [
+      -0.22946,
+      -0.23266,
+      0.09553,
+      1.23386
+     ],
+     "fn_left": 1.4456,
+     "fn_right": 4.2104,
+     "both_contact": true,
+     "straddle": 0.0469,
+     "k6_dwell": 0
+    },
+    {
+     "t": 14,
+     "phase": "RELEASE",
+     "q": [
+      -0.44232,
+      -0.33672,
+      -0.18516,
+      1.21183
+     ],
+     "qdot_max": 1.73073,
+     "coin_xy": [
+      0.03524,
+      0.19961
+     ],
+     "coin_speed": 0.32724,
+     "dtz": 0.07558,
+     "ctrl_post_gov": [
+      -0.19708,
+      -0.20053,
+      0.03296,
+      1.20422
+     ],
+     "fn_left": 0.3917,
+     "fn_right": 3.8849,
+     "both_contact": true,
+     "straddle": 0.2797,
+     "k6_dwell": 0
+    },
+    {
+     "t": 15,
+     "phase": "RELEASE",
+     "q": [
+      -0.45151,
+      -0.31859,
+      -0.1859,
+      1.21121
+     ],
+     "qdot_max": 1.75289,
+     "coin_xy": [
+      0.03567,
+      0.1959
+     ],
+     "coin_speed": 0.35208,
+     "dtz": 0.07186,
+     "ctrl_post_gov": [
+      -0.1561,
+      -0.16815,
+      -0.02811,
+      1.1716
+     ],
+     "fn_left": 0.0,
+     "fn_right": 2.7629,
+     "both_contact": true,
+     "straddle": 0.472,
+     "k6_dwell": 0
+    },
+    {
+     "t": 16,
+     "phase": "RELEASE",
+     "q": [
+      -0.46084,
+      -0.30039,
+      -0.18688,
+      1.20952
+     ],
+     "qdot_max": 1.75679,
+     "coin_xy": [
+      0.03627,
+      0.19194
+     ],
+     "coin_speed": 0.38149,
+     "dtz": 0.0679,
+     "ctrl_post_gov": [
+      -0.12945,
+      -0.13566,
+      -0.08754,
+      1.13608
+     ],
+     "fn_left": 0.0,
+     "fn_right": 1.1395,
+     "both_contact": true,
+     "straddle": 0.6144,
+     "k6_dwell": 0
+    },
+    {
+     "t": 17,
+     "phase": "RELEASE",
+     "q": [
+      -0.47022,
+      -0.28222,
+      -0.18801,
+      1.20676
+     ],
+     "qdot_max": 1.75934,
+     "coin_xy": [
+      0.03677,
+      0.18758
+     ],
+     "coin_speed": 0.42974,
+     "dtz": 0.06354,
+     "ctrl_post_gov": [
+      -0.11622,
+      -0.10317,
+      -0.14535,
+      1.09799
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.319,
+     "both_contact": true,
+     "straddle": 0.7175,
+     "k6_dwell": 0
+    },
+    {
+     "t": 18,
+     "phase": "RELEASE",
+     "q": [
+      -0.47956,
+      -0.26403,
+      -0.18941,
+      1.20291
+     ],
+     "qdot_max": 1.77217,
+     "coin_xy": [
+      0.03683,
+      0.18303
+     ],
+     "coin_speed": 0.45114,
+     "dtz": 0.059,
+     "ctrl_post_gov": [
+      -0.11351,
+      -0.0707,
+      -0.20166,
+      1.05771
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0873,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 19,
+     "phase": "RELEASE",
+     "q": [
+      -0.48885,
+      -0.24561,
+      -0.19146,
+      1.19785
+     ],
+     "qdot_max": 1.8058,
+     "coin_xy": [
+      0.03678,
+      0.1786
+     ],
+     "coin_speed": 0.43459,
+     "dtz": 0.05456,
+     "ctrl_post_gov": [
+      -0.12227,
+      -0.03823,
+      -0.25689,
+      1.01596
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 20,
+     "phase": "RELEASE",
+     "q": [
+      -0.49807,
+      -0.22676,
+      -0.1946,
+      1.19146
+     ],
+     "qdot_max": 1.85695,
+     "coin_xy": [
+      0.03675,
+      0.17433
+     ],
+     "coin_speed": 0.41816,
+     "dtz": 0.0503,
+     "ctrl_post_gov": [
+      -0.13442,
+      -0.00582,
+      -0.31135,
+      0.97321
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 21,
+     "phase": "RELEASE",
+     "q": [
+      -0.50721,
+      -0.20757,
+      -0.19915,
+      1.18363
+     ],
+     "qdot_max": 1.87681,
+     "coin_xy": [
+      0.03675,
+      0.17023
+     ],
+     "coin_speed": 0.40181,
+     "dtz": 0.04619,
+     "ctrl_post_gov": [
+      -0.14956,
+      0.0,
+      -0.36528,
+      0.9298
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 22,
+     "phase": "RELEASE",
+     "q": [
+      -0.51628,
+      -0.18837,
+      -0.20548,
+      1.17421
+     ],
+     "qdot_max": 1.86238,
+     "coin_xy": [
+      0.03674,
+      0.16629
+     ],
+     "coin_speed": 0.38552,
+     "dtz": 0.04225,
+     "ctrl_post_gov": [
+      -0.16599,
+      0.0,
+      -0.41889,
+      0.88599
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 23,
+     "phase": "RELEASE",
+     "q": [
+      -0.52536,
+      -0.16968,
+      -0.21374,
+      1.16284
+     ],
+     "qdot_max": 1.79334,
+     "coin_xy": [
+      0.03674,
+      0.16251
+     ],
+     "coin_speed": 0.3693,
+     "dtz": 0.03847,
+     "ctrl_post_gov": [
+      -0.15813,
+      0.0,
+      -0.27225,
+      0.842
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 24,
+     "phase": "RELEASE",
+     "q": [
+      -0.53441,
+      -0.15216,
+      -0.22219,
+      1.14899
+     ],
+     "qdot_max": 1.66511,
+     "coin_xy": [
+      0.03674,
+      0.1589
+     ],
+     "coin_speed": 0.35314,
+     "dtz": 0.03486,
+     "ctrl_post_gov": [
+      -0.14539,
+      0.0,
+      -0.21037,
+      0.79801
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 25,
+     "phase": "RELEASE",
+     "q": [
+      -0.54344,
+      -0.13589,
+      -0.23078,
+      1.13268
+     ],
+     "qdot_max": 1.75033,
+     "coin_xy": [
+      0.03674,
+      0.15544
+     ],
+     "coin_speed": 0.33705,
+     "dtz": 0.0314,
+     "ctrl_post_gov": [
+      -0.15519,
+      0.0,
+      -0.20538,
+      0.75406
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 26,
+     "phase": "RELEASE",
+     "q": [
+      -0.55242,
+      -0.12083,
+      -0.23944,
+      1.11399
+     ],
+     "qdot_max": 1.98117,
+     "coin_xy": [
+      0.03674,
+      0.15215
+     ],
+     "coin_speed": 0.32102,
+     "dtz": 0.02811,
+     "ctrl_post_gov": [
+      -0.16632,
+      0.0,
+      -0.18637,
+      0.7102
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 27,
+     "phase": "RELEASE",
+     "q": [
+      -0.56141,
+      -0.10712,
+      -0.2482,
+      1.09421
+     ],
+     "qdot_max": 1.88578,
+     "coin_xy": [
+      0.03674,
+      0.14901
+     ],
+     "coin_speed": 0.30505,
+     "dtz": 0.02497,
+     "ctrl_post_gov": [
+      -0.14835,
+      0.0,
+      -0.17979,
+      0.92782
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 28,
+     "phase": "RELEASE",
+     "q": [
+      -0.57032,
+      -0.09479,
+      -0.257,
+      1.07439
+     ],
+     "qdot_max": 1.92,
+     "coin_xy": [
+      0.03674,
+      0.14604
+     ],
+     "coin_speed": 0.28915,
+     "dtz": 0.022,
+     "ctrl_post_gov": [
+      -0.15429,
+      3e-05,
+      -0.17371,
+      0.93657
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 29,
+     "phase": "RELEASE",
+     "q": [
+      -0.57918,
+      -0.08351,
+      -0.26587,
+      1.05463
+     ],
+     "qdot_max": 1.86694,
+     "coin_xy": [
+      0.03674,
+      0.14322
+     ],
+     "coin_speed": 0.27331,
+     "dtz": 0.01918,
+     "ctrl_post_gov": [
+      -0.16972,
+      0.00041,
+      -0.16483,
+      0.94286
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 30,
+     "phase": "RELEASE",
+     "q": [
+      -0.58797,
+      -0.0729,
+      -0.27478,
+      1.03486
+     ],
+     "qdot_max": 1.88635,
+     "coin_xy": [
+      0.03674,
+      0.14056
+     ],
+     "coin_speed": 0.25753,
+     "dtz": 0.01653,
+     "ctrl_post_gov": [
+      -0.18816,
+      0.00215,
+      -0.15883,
+      0.94369
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 31,
+     "phase": "RELEASE",
+     "q": [
+      -0.5967,
+      -0.06266,
+      -0.28374,
+      1.01513
+     ],
+     "qdot_max": 1.84746,
+     "coin_xy": [
+      0.03674,
+      0.13806
+     ],
+     "coin_speed": 0.24182,
+     "dtz": 0.01403,
+     "ctrl_post_gov": [
+      -0.20886,
+      0.00526,
+      -0.15193,
+      0.94606
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 32,
+     "phase": "RELEASE",
+     "q": [
+      -0.60537,
+      -0.05259,
+      -0.29275,
+      0.99541
+     ],
+     "qdot_max": 1.85523,
+     "coin_xy": [
+      0.03674,
+      0.13572
+     ],
+     "coin_speed": 0.22617,
+     "dtz": 0.01168,
+     "ctrl_post_gov": [
+      -0.23053,
+      0.00813,
+      -0.14637,
+      0.94748
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 33,
+     "phase": "RELEASE",
+     "q": [
+      -0.61398,
+      -0.04259,
+      -0.3018,
+      0.97572
+     ],
+     "qdot_max": 1.82393,
+     "coin_xy": [
+      0.03674,
+      0.13353
+     ],
+     "coin_speed": 0.21058,
+     "dtz": 0.0095,
+     "ctrl_post_gov": [
+      -0.25384,
+      0.0102,
+      -0.1407,
+      0.95276
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 34,
+     "phase": "RELEASE",
+     "q": [
+      -0.62254,
+      -0.03263,
+      -0.31088,
+      0.95605
+     ],
+     "qdot_max": 1.82699,
+     "coin_xy": [
+      0.03674,
+      0.1315
+     ],
+     "coin_speed": 0.19505,
+     "dtz": 0.00747,
+     "ctrl_post_gov": [
+      -0.27867,
+      0.01191,
+      -0.13606,
+      0.95237
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 35,
+     "phase": "RELEASE",
+     "q": [
+      -0.63104,
+      -0.0227,
+      -0.31999,
+      0.9364
+     ],
+     "qdot_max": 1.80009,
+     "coin_xy": [
+      0.03674,
+      0.12962
+     ],
+     "coin_speed": 0.17959,
+     "dtz": 0.00559,
+     "ctrl_post_gov": [
+      -0.30514,
+      0.01354,
+      -0.13165,
+      0.95677
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 36,
+     "phase": "RELEASE",
+     "q": [
+      -0.6395,
+      -0.01279,
+      -0.32914,
+      0.91678
+     ],
+     "qdot_max": 1.79959,
+     "coin_xy": [
+      0.03674,
+      0.1279
+     ],
+     "coin_speed": 0.16418,
+     "dtz": 0.00388,
+     "ctrl_post_gov": [
+      -0.33306,
+      0.01516,
+      -0.12816,
+      0.95677
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 37,
+     "phase": "RELEASE",
+     "q": [
+      -0.64791,
+      -0.00291,
+      -0.3383,
+      0.89718
+     ],
+     "qdot_max": 1.77612,
+     "coin_xy": [
+      0.03674,
+      0.12633
+     ],
+     "coin_speed": 0.14884,
+     "dtz": 0.00232,
+     "ctrl_post_gov": [
+      -0.36285,
+      0.0168,
+      -0.12474,
+      0.9604
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 38,
+     "phase": "RELEASE",
+     "q": [
+      -0.65628,
+      0.00695,
+      -0.34749,
+      0.87761
+     ],
+     "qdot_max": 1.77294,
+     "coin_xy": [
+      0.03674,
+      0.12491
+     ],
+     "coin_speed": 0.13356,
+     "dtz": 0.00095,
+     "ctrl_post_gov": [
+      -0.39479,
+      0.01846,
+      -0.12188,
+      0.96063
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 39,
+     "phase": "RELEASE",
+     "q": [
+      -0.6646,
+      0.01679,
+      -0.3567,
+      0.85806
+     ],
+     "qdot_max": 1.75216,
+     "coin_xy": [
+      0.03674,
+      0.12365
+     ],
+     "coin_speed": 0.11834,
+     "dtz": 0.00053,
+     "ctrl_post_gov": [
+      -0.43219,
+      0.02013,
+      -0.1189,
+      0.9636
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 40,
+     "phase": "RELEASE",
+     "q": [
+      -0.67287,
+      0.02662,
+      -0.36593,
+      0.83853
+     ],
+     "qdot_max": 1.74699,
+     "coin_xy": [
+      0.03674,
+      0.12254
+     ],
+     "coin_speed": 0.10317,
+     "dtz": 0.00154,
+     "ctrl_post_gov": [
+      -0.47252,
+      0.02182,
+      -0.11616,
+      0.96392
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 41,
+     "phase": "RELEASE",
+     "q": [
+      -0.68111,
+      0.03643,
+      -0.37517,
+      0.81902
+     ],
+     "qdot_max": 1.72833,
+     "coin_xy": [
+      0.03674,
+      0.12158
+     ],
+     "coin_speed": 0.08807,
+     "dtz": 0.00249,
+     "ctrl_post_gov": [
+      -0.5158,
+      0.02352,
+      -0.11352,
+      0.9663
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 42,
+     "phase": "RELEASE",
+     "q": [
+      -0.6893,
+      0.04622,
+      -0.38443,
+      0.79954
+     ],
+     "qdot_max": 1.72168,
+     "coin_xy": [
+      0.03674,
+      0.12077
+     ],
+     "coin_speed": 0.07303,
+     "dtz": 0.00329,
+     "ctrl_post_gov": [
+      -0.56234,
+      0.02523,
+      -0.11121,
+      0.96659
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 43,
+     "phase": "RELEASE",
+     "q": [
+      -0.69745,
+      0.056,
+      -0.3937,
+      0.78006
+     ],
+     "qdot_max": 1.71742,
+     "coin_xy": [
+      0.03674,
+      0.12011
+     ],
+     "coin_speed": 0.05805,
+     "dtz": 0.00395,
+     "ctrl_post_gov": [
+      -0.61266,
+      0.02697,
+      -0.10903,
+      0.95596
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 1
+    },
+    {
+     "t": 44,
+     "phase": "RELEASE",
+     "q": [
+      -0.70556,
+      0.06577,
+      -0.40298,
+      0.76056
+     ],
+     "qdot_max": 1.74092,
+     "coin_xy": [
+      0.03674,
+      0.1196
+     ],
+     "coin_speed": 0.04313,
+     "dtz": 0.00445,
+     "ctrl_post_gov": [
+      -0.66819,
+      0.02872,
+      -0.10709,
+      0.91639
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 2
+    },
+    {
+     "t": 45,
+     "phase": "RELEASE",
+     "q": [
+      -0.71362,
+      0.07553,
+      -0.41227,
+      0.74104
+     ],
+     "qdot_max": 1.74037,
+     "coin_xy": [
+      0.03674,
+      0.11924
+     ],
+     "coin_speed": 0.02827,
+     "dtz": 0.00481,
+     "ctrl_post_gov": [
+      -0.72871,
+      0.0305,
+      -0.10506,
+      0.8807
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 3
+    },
+    {
+     "t": 46,
+     "phase": "RELEASE",
+     "q": [
+      -0.72164,
+      0.08527,
+      -0.42156,
+      0.72149
+     ],
+     "qdot_max": 1.76076,
+     "coin_xy": [
+      0.03674,
+      0.11903
+     ],
+     "coin_speed": 0.01356,
+     "dtz": 0.00502,
+     "ctrl_post_gov": [
+      -0.79592,
+      0.0323,
+      -0.1034,
+      0.84157
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 4
+    },
+    {
+     "t": 47,
+     "phase": "RELEASE",
+     "q": [
+      -0.72939,
+      0.095,
+      -0.43086,
+      0.70194
+     ],
+     "qdot_max": 1.76321,
+     "coin_xy": [
+      0.03674,
+      0.11894
+     ],
+     "coin_speed": 0.00514,
+     "dtz": 0.00511,
+     "ctrl_post_gov": [
+      -0.82664,
+      0.03424,
+      -0.10168,
+      0.80532
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 5
+    },
+    {
+     "t": 48,
+     "phase": "RELEASE",
+     "q": [
+      -0.73624,
+      0.10472,
+      -0.44017,
+      0.68235
+     ],
+     "qdot_max": 1.78117,
+     "coin_xy": [
+      0.03674,
+      0.11891
+     ],
+     "coin_speed": 0.00195,
+     "dtz": 0.00515,
+     "ctrl_post_gov": [
+      -0.76299,
+      0.0363,
+      -0.1001,
+      0.76651
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 6
+    },
+    {
+     "t": 49,
+     "phase": "RELEASE",
+     "q": [
+      -0.74122,
+      0.11442,
+      -0.44947,
+      0.66275
+     ],
+     "qdot_max": 1.78599,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.00074,
+     "dtz": 0.00516,
+     "ctrl_post_gov": [
+      -0.69924,
+      0.03834,
+      -0.09829,
+      0.7298
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 7
+    },
+    {
+     "t": 50,
+     "phase": "RELEASE",
+     "q": [
+      -0.74366,
+      0.12411,
+      -0.45878,
+      0.64312
+     ],
+     "qdot_max": 1.80209,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.00028,
+     "dtz": 0.00516,
+     "ctrl_post_gov": [
+      -0.6354,
+      0.04032,
+      -0.09669,
+      0.69122
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 8
+    },
+    {
+     "t": 51,
+     "phase": "RELEASE",
+     "q": [
+      -0.74311,
+      0.13379,
+      -0.46809,
+      0.62348
+     ],
+     "qdot_max": 1.80874,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.00011,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.57148,
+      0.04225,
+      -0.09511,
+      0.65414
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 9
+    },
+    {
+     "t": 52,
+     "phase": "RELEASE",
+     "q": [
+      -0.73925,
+      0.14347,
+      -0.4774,
+      0.60381
+     ],
+     "qdot_max": 1.82347,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 4e-05,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.50749,
+      0.04416,
+      -0.09369,
+      0.61571
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 10
+    },
+    {
+     "t": 53,
+     "phase": "RELEASE",
+     "q": [
+      -0.73191,
+      0.15313,
+      -0.48671,
+      0.58413
+     ],
+     "qdot_max": 1.83151,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 2e-05,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.44345,
+      0.04603,
+      -0.09231,
+      0.57832
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 11
+    },
+    {
+     "t": 54,
+     "phase": "RELEASE",
+     "q": [
+      -0.72102,
+      0.16278,
+      -0.49602,
+      0.56442
+     ],
+     "qdot_max": 1.84524,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 1e-05,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.37938,
+      0.04788,
+      -0.09105,
+      0.53998
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 12
+    },
+    {
+     "t": 55,
+     "phase": "RELEASE",
+     "q": [
+      -0.70658,
+      0.17242,
+      -0.50532,
+      0.54469
+     ],
+     "qdot_max": 1.85432,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.3153,
+      0.0497,
+      -0.08983,
+      0.50235
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 13
+    },
+    {
+     "t": 56,
+     "phase": "RELEASE",
+     "q": [
+      -0.68865,
+      0.18206,
+      -0.51462,
+      0.52494
+     ],
+     "qdot_max": 1.94728,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.25121,
+      0.0515,
+      -0.08873,
+      0.46404
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 14
+    },
+    {
+     "t": 57,
+     "phase": "RELEASE",
+     "q": [
+      -0.66893,
+      0.1917,
+      -0.52391,
+      0.50517
+     ],
+     "qdot_max": 1.8772,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.56264,
+      0.05245,
+      -0.08766,
+      0.42622
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 15
+    },
+    {
+     "t": 58,
+     "phase": "RELEASE",
+     "q": [
+      -0.64917,
+      0.20132,
+      -0.5332,
+      0.48538
+     ],
+     "qdot_max": 1.88978,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.58541,
+      0.0554,
+      -0.08667,
+      0.3879
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 16
+    },
+    {
+     "t": 59,
+     "phase": "RELEASE",
+     "q": [
+      -0.6295,
+      0.21093,
+      -0.54248,
+      0.46557
+     ],
+     "qdot_max": 1.90019,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.61023,
+      0.05748,
+      -0.08566,
+      0.34991
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 17
+    },
+    {
+     "t": 60,
+     "phase": "RELEASE",
+     "q": [
+      -0.60981,
+      0.22051,
+      -0.55175,
+      0.44574
+     ],
+     "qdot_max": 1.91152,
+     "coin_xy": [
+      0.03674,
+      0.11889
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.00517,
+     "ctrl_post_gov": [
+      -0.62427,
+      0.06046,
+      -0.08448,
+      0.31321
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 18
+    }
+   ],
+   "basin_candidates": [
+    {
+     "theta": [
+      0.200727,
+      0.055995,
+      -0.027832,
+      7.529162,
+      11.592668,
+      1.825622
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 32.56,
+      "gap_closed": 0.674,
+      "forward_mm": 132.01,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0318,
+      "peak_coin_speed": 0.5509,
+      "contact_lost_steps": 44,
+      "score": -0.03256
+     }
+    },
+    {
+     "theta": [
+      0.202497,
+      0.062228,
+      -0.040244,
+      6.788367,
+      21.058666,
+      1.335751
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 17,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 10.64,
+      "gap_closed": 0.893,
+      "forward_mm": 110.53,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9993,
+      "peak_coin_speed": 0.4757,
+      "contact_lost_steps": 44,
+      "score": 0.37936
+     }
+    },
+    {
+     "theta": [
+      0.187813,
+      0.058083,
+      -0.058105,
+      7.531397,
+      18.801859,
+      2.411146
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 35.57,
+      "gap_closed": 0.644,
+      "forward_mm": 64.82,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0155,
+      "peak_coin_speed": 0.2875,
+      "contact_lost_steps": 39,
+      "score": -0.03557
+     }
+    },
+    {
+     "theta": [
+      0.184381,
+      0.046833,
+      -0.085372,
+      9.56986,
+      15.781137,
+      2.247591
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 32.63,
+      "gap_closed": 0.673,
+      "forward_mm": 72.03,
+      "terminal_coin_speed": 0.0354,
+      "peak_qdot": 2.0046,
+      "peak_coin_speed": 0.2997,
+      "contact_lost_steps": 40,
+      "score": -0.03263
+     }
+    },
+    {
+     "theta": [
+      0.184214,
+      0.056773,
+      -0.01265,
+      8.711521,
+      14.173197,
+      1.332792
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 21.75,
+      "gap_closed": 0.782,
+      "forward_mm": 121.64,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0281,
+      "peak_coin_speed": 0.5085,
+      "contact_lost_steps": 44,
+      "score": -0.02175
+     }
+    },
+    {
+     "theta": [
+      0.166834,
+      0.000528,
+      -0.074951,
+      4.074532,
+      11.060481,
+      1.287244
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 17,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 10.08,
+      "gap_closed": 0.899,
+      "forward_mm": 98.5,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0173,
+      "peak_coin_speed": 0.4323,
+      "contact_lost_steps": 41,
+      "score": 0.42992
+     }
+    },
+    {
+     "theta": [
+      0.171828,
+      0.083636,
+      -0.029265,
+      8.424354,
+      20.938154,
+      1.58372
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 33.17,
+      "gap_closed": 0.668,
+      "forward_mm": 67.02,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0973,
+      "peak_coin_speed": 0.348,
+      "contact_lost_steps": 42,
+      "score": -0.06317
+     }
+    },
+    {
+     "theta": [
+      0.229952,
+      0.069943,
+      -0.042194,
+      5.568528,
+      21.758083,
+      1.924768
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 27.38,
+      "gap_closed": 0.726,
+      "forward_mm": 72.79,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0953,
+      "peak_coin_speed": 0.3355,
+      "contact_lost_steps": 42,
+      "score": -0.06738
+     }
+    },
+    {
+     "theta": [
+      0.184768,
+      0.061096,
+      -0.045477,
+      4.082315,
+      15.398825,
+      1.493598
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 34.0,
+      "gap_closed": 0.66,
+      "forward_mm": 68.09,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0295,
+      "peak_coin_speed": 0.3459,
+      "contact_lost_steps": 41,
+      "score": -0.034
+     }
+    },
+    {
+     "theta": [
+      0.195824,
+      0.069404,
+      -0.036993,
+      7.82491,
+      11.181525,
+      2.192356
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 18,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 5.17,
+      "gap_closed": 0.948,
+      "forward_mm": 104.97,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9812,
+      "peak_coin_speed": 0.4511,
+      "contact_lost_steps": 43,
+      "score": 0.45483
+     }
+    },
+    {
+     "theta": [
+      0.188085,
+      0.066649,
+      -0.061366,
+      6.189013,
+      17.669735,
+      1.638584
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 38.74,
+      "gap_closed": 0.612,
+      "forward_mm": 62.98,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0367,
+      "peak_coin_speed": 0.34,
+      "contact_lost_steps": 41,
+      "score": -0.03874
+     }
+    },
+    {
+     "theta": [
+      0.163196,
+      0.031304,
+      -0.031626,
+      9.09945,
+      25.681637,
+      1.063762
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 30.03,
+      "gap_closed": 0.699,
+      "forward_mm": 128.85,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0611,
+      "peak_coin_speed": 0.536,
+      "contact_lost_steps": 43,
+      "score": -0.12003
+     }
+    },
+    {
+     "theta": [
+      0.158084,
+      0.061062,
+      -0.05415,
+      11.249402,
+      18.113205,
+      1.508247
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 28.92,
+      "gap_closed": 0.71,
+      "forward_mm": 110.44,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9957,
+      "peak_coin_speed": 0.4656,
+      "contact_lost_steps": 42,
+      "score": -0.02892
+     }
+    },
+    {
+     "theta": [
+      0.17877,
+      0.051741,
+      -0.04118,
+      9.186554,
+      19.145952,
+      1.865851
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 38.82,
+      "gap_closed": 0.611,
+      "forward_mm": 61.11,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0137,
+      "peak_coin_speed": 0.3528,
+      "contact_lost_steps": 42,
+      "score": -0.04882
+     }
+    },
+    {
+     "theta": [
+      0.172483,
+      0.053101,
+      -0.050595,
+      11.330123,
+      25.110792,
+      1.607112
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 22.27,
+      "gap_closed": 0.777,
+      "forward_mm": 84.29,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0291,
+      "peak_coin_speed": 0.4303,
+      "contact_lost_steps": 43,
+      "score": -0.10227
+     }
+    },
+    {
+     "theta": [
+      0.216557,
+      0.062142,
+      -0.056607,
+      6.594461,
+      19.083637,
+      1.769437
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 35.93,
+      "gap_closed": 0.64,
+      "forward_mm": 64.18,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9836,
+      "peak_coin_speed": 0.3474,
+      "contact_lost_steps": 41,
+      "score": -0.03593
+     }
+    },
+    {
+     "theta": [
+      0.192092,
+      0.038156,
+      -0.020356,
+      4.955706,
+      15.843152,
+      1.311674
+     ],
+     "kind": "delivering",
+     "outcome": {
+      "k6_delivered": true,
+      "k6_max_dwell": 17,
+      "delivery_success": true,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 9.42,
+      "gap_closed": 0.906,
+      "forward_mm": 104.36,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0176,
+      "peak_coin_speed": 0.4652,
+      "contact_lost_steps": 43,
+      "score": 0.43058
+     }
+    },
+    {
+     "theta": [
+      0.210129,
+      0.026688,
+      -0.035566,
+      6.833959,
+      15.99664,
+      1.936283
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 36.94,
+      "gap_closed": 0.63,
+      "forward_mm": 67.6,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0315,
+      "peak_coin_speed": 0.372,
+      "contact_lost_steps": 41,
+      "score": -0.03694
+     }
+    },
+    {
+     "theta": [
+      0.231082,
+      0.065636,
+      -0.083293,
+      6.609407,
+      20.207079,
+      1.778015
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 31.33,
+      "gap_closed": 0.686,
+      "forward_mm": 69.43,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0829,
+      "peak_coin_speed": 0.3312,
+      "contact_lost_steps": 43,
+      "score": -0.06133
+     }
+    },
+    {
+     "theta": [
+      0.192505,
+      0.018315,
+      -0.030637,
+      6.9671,
+      20.402397,
+      1.8379
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 36.65,
+      "gap_closed": 0.633,
+      "forward_mm": 64.02,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 1.9978,
+      "peak_coin_speed": 0.2776,
+      "contact_lost_steps": 40,
+      "score": -0.03665
+     }
+    },
+    {
+     "theta": [
+      0.209163,
+      0.077366,
+      -0.02917,
+      5.037239,
+      15.51631,
+      1.989893
+     ],
+     "kind": "near",
+     "outcome": {
+      "k6_delivered": false,
+      "k6_max_dwell": 0,
+      "delivery_success": false,
+      "touched": true,
+      "dtz_start_mm": 99.89,
+      "dtz_end_mm": 30.39,
+      "gap_closed": 0.696,
+      "forward_mm": 76.45,
+      "terminal_coin_speed": 0.0,
+      "peak_qdot": 2.0167,
+      "peak_coin_speed": 0.3956,
+      "contact_lost_steps": 42,
+      "score": -0.03039
+     }
+    }
+   ],
+   "n_basin_delivering": 4,
+   "n_basin_near": 17
+  },
+  {
+   "state": 2,
+   "tag": "s4",
+   "seed": 15000,
+   "split": "held_out",
+   "acquire": {
+    "seed": 15000,
+    "certified": true,
+    "axis": "zone_par",
+    "n_dot": -0.957,
+    "attempts": {
+     "zone_cross": {
+      "both_contact": true,
+      "n_dot": 0.898,
+      "cert_feasible": false,
+      "certified": false
+     },
+     "zone_par": {
+      "both_contact": true,
+      "n_dot": -0.957,
+      "cert_feasible": true,
+      "certified": true
+     }
+    }
+   },
+   "canonical_theta": {
+    "squeeze_mag": 0.0681,
+    "forward_mag": 0.2023,
+    "balance": -0.0297,
+    "ramp_steps": 10.4443,
+    "release_step": 6.8406,
+    "brake_gain": 2.2844
+   },
+   "canonical_theta_vec": [
+    0.0681,
+    0.2023,
+    -0.0297,
+    10.4443,
+    6.8406,
+    2.2844
+   ],
+   "canonical_source": "cem_best",
+   "cem_optimum_theta": [
+    0.0681,
+    0.2023,
+    -0.0297,
+    10.4443,
+    6.8406,
+    2.2844
+   ],
+   "cem_optimum_reproduces_at_stored_precision": true,
+   "search": {
+    "cem_seed": 20260727,
+    "pop": 56,
+    "iters": 10,
+    "elite": 8,
+    "passive_drift_mm": 0.998,
+    "history": [
+     {
+      "iter": 0,
+      "best_score": -0.05233,
+      "n_feasible": 50,
+      "best_forward": 0.11892
+     },
+     {
+      "iter": 1,
+      "best_score": 0.02272,
+      "n_feasible": 53,
+      "best_forward": 0.08319
+     },
+     {
+      "iter": 2,
+      "best_score": 0.20196,
+      "n_feasible": 56,
+      "best_forward": 0.07803
+     },
+     {
+      "iter": 3,
+      "best_score": 0.20196,
+      "n_feasible": 56,
+      "best_forward": 0.07803
+     },
+     {
+      "iter": 4,
+      "best_score": 0.22307,
+      "n_feasible": 56,
+      "best_forward": 0.08488
+     },
+     {
+      "iter": 5,
+      "best_score": 0.26536,
+      "n_feasible": 56,
+      "best_forward": 0.08244
+     },
+     {
+      "iter": 6,
+      "best_score": 0.27545,
+      "n_feasible": 56,
+      "best_forward": 0.08231
+     },
+     {
+      "iter": 7,
+      "best_score": 0.28629,
+      "n_feasible": 56,
+      "best_forward": 0.08529
+     },
+     {
+      "iter": 8,
+      "best_score": 0.3055,
+      "n_feasible": 56,
+      "best_forward": 0.08327
+     },
+     {
+      "iter": 9,
+      "best_score": 0.32552,
+      "n_feasible": 56,
+      "best_forward": 0.08273
+     }
+    ]
+   },
+   "snapshot": {
+    "pre_release_hash": "8f2abf5e34f177e4",
+    "post_release_hash": "8f2abf5e34f177e4",
+    "operating_point": "EXACT_POST_RELEASE_HANDOFF",
+    "prev_tau": [
+     -0.57984,
+     -0.91429,
+     -0.06333,
+     1.30486
+    ],
+    "q_hold": [
+     -0.70059,
+     -0.77016,
+     -0.33317,
+     1.58385
+    ],
+    "straddle0": -0.9563,
+    "fn0": [
+     0.6133,
+     1.5025
+    ],
+    "arm_saturated": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "actuator_lo": [
+     -4.0,
+     -4.0,
+     -4.0,
+     -4.0
+    ],
+    "actuator_hi": [
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "recert_admissible": true
+   },
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 10,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 96.06,
+    "dtz_end_mm": 14.5,
+    "gap_closed": 0.849,
+    "forward_mm": 82.88,
+    "terminal_coin_speed": 0.1649,
+    "peak_qdot": 1.4157,
+    "peak_coin_speed": 0.2629,
+    "contact_lost_steps": 53,
+    "score": 0.2855
+   },
+   "replay_ok": true,
+   "deterministic": true,
+   "k6_delivered": true,
+   "trace": [
+    {
+     "t": 1,
+     "phase": "PUSH",
+     "q": [
+      -0.66022,
+      -0.79628,
+      -0.28766,
+      1.59479
+     ],
+     "qdot_max": 1.31364,
+     "coin_xy": [
+      0.06965,
+      0.14263
+     ],
+     "coin_speed": 0.04768,
+     "dtz": 0.09581,
+     "ctrl_post_gov": [
+      -0.55072,
+      -0.89807,
+      -0.04185,
+      1.35837
+     ],
+     "fn_left": 0.3791,
+     "fn_right": 1.1143,
+     "both_contact": true,
+     "straddle": -0.9499,
+     "k6_dwell": 0
+    },
+    {
+     "t": 2,
+     "phase": "PUSH",
+     "q": [
+      -0.66152,
+      -0.8006,
+      -0.28182,
+      1.58106
+     ],
+     "qdot_max": 1.41571,
+     "coin_xy": [
+      0.06903,
+      0.14248
+     ],
+     "coin_speed": 0.07841,
+     "dtz": 0.09518,
+     "ctrl_post_gov": [
+      -0.50791,
+      -0.88132,
+      -0.0049,
+      1.41624
+     ],
+     "fn_left": 0.1951,
+     "fn_right": 0.7947,
+     "both_contact": true,
+     "straddle": -0.9424,
+     "k6_dwell": 0
+    },
+    {
+     "t": 3,
+     "phase": "PUSH",
+     "q": [
+      -0.66168,
+      -0.80643,
+      -0.27367,
+      1.5671
+     ],
+     "qdot_max": 1.37399,
+     "coin_xy": [
+      0.0681,
+      0.14235
+     ],
+     "coin_speed": 0.10776,
+     "dtz": 0.09424,
+     "ctrl_post_gov": [
+      -0.4514,
+      -0.86417,
+      0.02841,
+      1.47854
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.5993,
+     "both_contact": true,
+     "straddle": -0.9358,
+     "k6_dwell": 0
+    },
+    {
+     "t": 4,
+     "phase": "PUSH",
+     "q": [
+      -0.66013,
+      -0.81316,
+      -0.26382,
+      1.55412
+     ],
+     "qdot_max": 1.23112,
+     "coin_xy": [
+      0.06689,
+      0.14228
+     ],
+     "coin_speed": 0.13119,
+     "dtz": 0.09303,
+     "ctrl_post_gov": [
+      -0.38117,
+      -0.84687,
+      0.00451,
+      1.54494
+     ],
+     "fn_left": 0.0148,
+     "fn_right": 0.586,
+     "both_contact": true,
+     "straddle": -0.9301,
+     "k6_dwell": 0
+    },
+    {
+     "t": 5,
+     "phase": "PUSH",
+     "q": [
+      -0.65652,
+      -0.82045,
+      -0.2533,
+      1.54294
+     ],
+     "qdot_max": 1.03902,
+     "coin_xy": [
+      0.06545,
+      0.14233
+     ],
+     "coin_speed": 0.15283,
+     "dtz": 0.0916,
+     "ctrl_post_gov": [
+      -0.2972,
+      -0.82961,
+      0.00183,
+      1.61512
+     ],
+     "fn_left": 0.2449,
+     "fn_right": 0.912,
+     "both_contact": true,
+     "straddle": -0.9247,
+     "k6_dwell": 0
+    },
+    {
+     "t": 6,
+     "phase": "PUSH",
+     "q": [
+      -0.65069,
+      -0.82819,
+      -0.2427,
+      1.53403
+     ],
+     "qdot_max": 1.01776,
+     "coin_xy": [
+      0.06379,
+      0.14252
+     ],
+     "coin_speed": 0.17473,
+     "dtz": 0.08996,
+     "ctrl_post_gov": [
+      -0.19947,
+      -0.81251,
+      0.00215,
+      1.68881
+     ],
+     "fn_left": 0.3166,
+     "fn_right": 1.4817,
+     "both_contact": true,
+     "straddle": -0.9187,
+     "k6_dwell": 0
+    },
+    {
+     "t": 7,
+     "phase": "PUSH",
+     "q": [
+      -0.64256,
+      -0.83621,
+      -0.23232,
+      1.52765
+     ],
+     "qdot_max": 0.96974,
+     "coin_xy": [
+      0.06191,
+      0.14283
+     ],
+     "coin_speed": 0.19844,
+     "dtz": 0.08811,
+     "ctrl_post_gov": [
+      -0.08798,
+      -0.74154,
+      0.00461,
+      1.76577
+     ],
+     "fn_left": 0.3966,
+     "fn_right": 2.2488,
+     "both_contact": true,
+     "straddle": -0.9115,
+     "k6_dwell": 0
+    },
+    {
+     "t": 8,
+     "phase": "PUSH",
+     "q": [
+      -0.63227,
+      -0.84424,
+      -0.22223,
+      1.52387
+     ],
+     "qdot_max": 1.10908,
+     "coin_xy": [
+      0.05979,
+      0.14325
+     ],
+     "coin_speed": 0.22156,
+     "dtz": 0.08605,
+     "ctrl_post_gov": [
+      0.00064,
+      -0.69853,
+      0.01096,
+      1.84578
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.0276,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 9,
+     "phase": "PUSH",
+     "q": [
+      -0.62075,
+      -0.85228,
+      -0.21226,
+      1.52276
+     ],
+     "qdot_max": 1.15939,
+     "coin_xy": [
+      0.05747,
+      0.14366
+     ],
+     "coin_speed": 0.23246,
+     "dtz": 0.08379,
+     "ctrl_post_gov": [
+      0.00018,
+      -0.67369,
+      0.01775,
+      1.92857
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.5458,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 10,
+     "phase": "PUSH",
+     "q": [
+      -0.60924,
+      -0.86031,
+      -0.2023,
+      1.52448
+     ],
+     "qdot_max": 1.10825,
+     "coin_xy": [
+      0.05504,
+      0.14391
+     ],
+     "coin_speed": 0.23547,
+     "dtz": 0.08139,
+     "ctrl_post_gov": [
+      0.0003,
+      -0.65048,
+      0.02164,
+      2.01383
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.0267,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 11,
+     "phase": "RELEASE",
+     "q": [
+      -0.59851,
+      -0.86837,
+      -0.19252,
+      1.52821
+     ],
+     "qdot_max": 0.99613,
+     "coin_xy": [
+      0.05258,
+      0.14393
+     ],
+     "coin_speed": 0.23139,
+     "dtz": 0.07896,
+     "ctrl_post_gov": [
+      0.00155,
+      -0.62644,
+      0.03157,
+      1.99037
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.2261,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 12,
+     "phase": "RELEASE",
+     "q": [
+      -0.5889,
+      -0.87645,
+      -0.18299,
+      1.53254
+     ],
+     "qdot_max": 0.87242,
+     "coin_xy": [
+      0.05018,
+      0.14378
+     ],
+     "coin_speed": 0.22445,
+     "dtz": 0.07655,
+     "ctrl_post_gov": [
+      0.01394,
+      -0.585,
+      0.05109,
+      1.96695
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.9664,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 13,
+     "phase": "RELEASE",
+     "q": [
+      -0.58041,
+      -0.88459,
+      -0.17376,
+      1.53608
+     ],
+     "qdot_max": 0.79626,
+     "coin_xy": [
+      0.04785,
+      0.14334
+     ],
+     "coin_speed": 0.22282,
+     "dtz": 0.07419,
+     "ctrl_post_gov": [
+      0.10429,
+      -0.52687,
+      0.09143,
+      1.94359
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.3136,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 14,
+     "phase": "RELEASE",
+     "q": [
+      -0.57214,
+      -0.89267,
+      -0.1645,
+      1.53821
+     ],
+     "qdot_max": 0.86312,
+     "coin_xy": [
+      0.04552,
+      0.14273
+     ],
+     "coin_speed": 0.24233,
+     "dtz": 0.0718,
+     "ctrl_post_gov": [
+      0.15688,
+      -0.54037,
+      0.09253,
+      1.92017
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.3545,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 15,
+     "phase": "RELEASE",
+     "q": [
+      -0.56343,
+      -0.90069,
+      -0.15515,
+      1.53951
+     ],
+     "qdot_max": 0.83977,
+     "coin_xy": [
+      0.04309,
+      0.14182
+     ],
+     "coin_speed": 0.24663,
+     "dtz": 0.06929,
+     "ctrl_post_gov": [
+      0.06128,
+      -0.63994,
+      0.07445,
+      1.89661
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.3621,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 16,
+     "phase": "RELEASE",
+     "q": [
+      -0.55507,
+      -0.90871,
+      -0.14591,
+      1.53981
+     ],
+     "qdot_max": 0.80664,
+     "coin_xy": [
+      0.0407,
+      0.14087
+     ],
+     "coin_speed": 0.23978,
+     "dtz": 0.06682,
+     "ctrl_post_gov": [
+      0.10076,
+      -0.61003,
+      0.0911,
+      1.87281
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.6012,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 17,
+     "phase": "RELEASE",
+     "q": [
+      -0.54686,
+      -0.9167,
+      -0.13665,
+      1.53885
+     ],
+     "qdot_max": 0.86654,
+     "coin_xy": [
+      0.03834,
+      0.14003
+     ],
+     "coin_speed": 0.25139,
+     "dtz": 0.06439,
+     "ctrl_post_gov": [
+      0.12423,
+      -0.65246,
+      0.09425,
+      1.84884
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.1452,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 18,
+     "phase": "RELEASE",
+     "q": [
+      -0.53809,
+      -0.92469,
+      -0.12718,
+      1.53771
+     ],
+     "qdot_max": 0.82846,
+     "coin_xy": [
+      0.0359,
+      0.13877
+     ],
+     "coin_speed": 0.2629,
+     "dtz": 0.06187,
+     "ctrl_post_gov": [
+      0.03691,
+      -0.69572,
+      0.05991,
+      1.82477
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.8752,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 19,
+     "phase": "RELEASE",
+     "q": [
+      -0.5302,
+      -0.93269,
+      -0.11807,
+      1.53589
+     ],
+     "qdot_max": 0.77353,
+     "coin_xy": [
+      0.03362,
+      0.13753
+     ],
+     "coin_speed": 0.21655,
+     "dtz": 0.05952,
+     "ctrl_post_gov": [
+      0.09828,
+      -0.60595,
+      0.11364,
+      1.80073
+     ],
+     "fn_left": 0.0,
+     "fn_right": 5.3709,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 20,
+     "phase": "RELEASE",
+     "q": [
+      -0.52307,
+      -0.94071,
+      -0.10893,
+      1.53282
+     ],
+     "qdot_max": 0.83007,
+     "coin_xy": [
+      0.03147,
+      0.13678
+     ],
+     "coin_speed": 0.21627,
+     "dtz": 0.05733,
+     "ctrl_post_gov": [
+      0.0962,
+      -0.67263,
+      0.11606,
+      1.77683
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.4252,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 21,
+     "phase": "RELEASE",
+     "q": [
+      -0.51633,
+      -0.94871,
+      -0.09991,
+      1.52888
+     ],
+     "qdot_max": 0.79304,
+     "coin_xy": [
+      0.02939,
+      0.13611
+     ],
+     "coin_speed": 0.20138,
+     "dtz": 0.05523,
+     "ctrl_post_gov": [
+      0.07237,
+      -0.66063,
+      0.13342,
+      1.75313
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.4507,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 22,
+     "phase": "RELEASE",
+     "q": [
+      -0.51011,
+      -0.95668,
+      -0.09092,
+      1.52398
+     ],
+     "qdot_max": 0.80626,
+     "coin_xy": [
+      0.02739,
+      0.13557
+     ],
+     "coin_speed": 0.19387,
+     "dtz": 0.05322,
+     "ctrl_post_gov": [
+      0.04849,
+      -0.72856,
+      0.14792,
+      1.72965
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.473,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 23,
+     "phase": "RELEASE",
+     "q": [
+      -0.5044,
+      -0.96464,
+      -0.08201,
+      1.51814
+     ],
+     "qdot_max": 0.79109,
+     "coin_xy": [
+      0.02546,
+      0.13516
+     ],
+     "coin_speed": 0.18348,
+     "dtz": 0.05129,
+     "ctrl_post_gov": [
+      0.02457,
+      -0.71132,
+      0.1691,
+      1.70641
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.4727,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 24,
+     "phase": "RELEASE",
+     "q": [
+      -0.49943,
+      -0.97256,
+      -0.07322,
+      1.51109
+     ],
+     "qdot_max": 0.80088,
+     "coin_xy": [
+      0.02362,
+      0.13505
+     ],
+     "coin_speed": 0.17567,
+     "dtz": 0.04945,
+     "ctrl_post_gov": [
+      0.00063,
+      -0.79904,
+      0.20625,
+      1.68343
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.4513,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 25,
+     "phase": "RELEASE",
+     "q": [
+      -0.49483,
+      -0.98044,
+      -0.06442,
+      1.50309
+     ],
+     "qdot_max": 0.81688,
+     "coin_xy": [
+      0.02182,
+      0.13505
+     ],
+     "coin_speed": 0.17187,
+     "dtz": 0.04765,
+     "ctrl_post_gov": [
+      -0.02333,
+      -0.77236,
+      0.20102,
+      1.66068
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.4519,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 26,
+     "phase": "RELEASE",
+     "q": [
+      -0.49089,
+      -0.98809,
+      -0.05585,
+      1.494
+     ],
+     "qdot_max": 0.953,
+     "coin_xy": [
+      0.02011,
+      0.13531
+     ],
+     "coin_speed": 0.16884,
+     "dtz": 0.04594,
+     "ctrl_post_gov": [
+      -0.04729,
+      -0.82083,
+      0.30186,
+      1.63816
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.3933,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 27,
+     "phase": "RELEASE",
+     "q": [
+      -0.48726,
+      -0.99546,
+      -0.04712,
+      1.48418
+     ],
+     "qdot_max": 0.99426,
+     "coin_xy": [
+      0.01842,
+      0.13556
+     ],
+     "coin_speed": 0.16418,
+     "dtz": 0.04426,
+     "ctrl_post_gov": [
+      -0.07124,
+      -0.82328,
+      0.2213,
+      1.61584
+     ],
+     "fn_left": 0.0,
+     "fn_right": 5.3448,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 28,
+     "phase": "RELEASE",
+     "q": [
+      -0.48447,
+      -1.00251,
+      -0.03861,
+      1.47324
+     ],
+     "qdot_max": 1.14959,
+     "coin_xy": [
+      0.01684,
+      0.13613
+     ],
+     "coin_speed": 0.17105,
+     "dtz": 0.0427,
+     "ctrl_post_gov": [
+      -0.09518,
+      -0.82581,
+      0.3188,
+      1.59374
+     ],
+     "fn_left": 0.0,
+     "fn_right": 5.193,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 29,
+     "phase": "RELEASE",
+     "q": [
+      -0.48254,
+      -1.0091,
+      -0.03011,
+      1.46107
+     ],
+     "qdot_max": 1.24937,
+     "coin_xy": [
+      0.01536,
+      0.137
+     ],
+     "coin_speed": 0.1699,
+     "dtz": 0.04126,
+     "ctrl_post_gov": [
+      -0.11911,
+      -0.82852,
+      0.32231,
+      1.5718
+     ],
+     "fn_left": 0.0,
+     "fn_right": 5.0619,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 30,
+     "phase": "RELEASE",
+     "q": [
+      -0.48107,
+      -1.01493,
+      -0.02158,
+      1.4482
+     ],
+     "qdot_max": 1.29642,
+     "coin_xy": [
+      0.01393,
+      0.13782
+     ],
+     "coin_speed": 0.16,
+     "dtz": 0.03988,
+     "ctrl_post_gov": [
+      -0.143,
+      -0.83151,
+      0.30215,
+      1.54996
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.9505,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 31,
+     "phase": "RELEASE",
+     "q": [
+      -0.47999,
+      -1.0199,
+      -0.01312,
+      1.43489
+     ],
+     "qdot_max": 1.33477,
+     "coin_xy": [
+      0.01255,
+      0.13858
+     ],
+     "coin_speed": 0.15255,
+     "dtz": 0.03857,
+     "ctrl_post_gov": [
+      -0.16685,
+      -0.83475,
+      0.33288,
+      1.52824
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.1389,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 32,
+     "phase": "RELEASE",
+     "q": [
+      -0.47868,
+      -1.02376,
+      -0.00447,
+      1.42193
+     ],
+     "qdot_max": 1.24237,
+     "coin_xy": [
+      0.01107,
+      0.13891
+     ],
+     "coin_speed": 0.14827,
+     "dtz": 0.03714,
+     "ctrl_post_gov": [
+      -0.19068,
+      -0.83819,
+      0.24241,
+      1.50665
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.1209,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 33,
+     "phase": "RELEASE",
+     "q": [
+      -0.47712,
+      -1.02654,
+      0.00409,
+      1.40966
+     ],
+     "qdot_max": 1.20384,
+     "coin_xy": [
+      0.00954,
+      0.13888
+     ],
+     "coin_speed": 0.14536,
+     "dtz": 0.03562,
+     "ctrl_post_gov": [
+      -0.2145,
+      -0.8417,
+      0.27216,
+      1.48528
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.0701,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 34,
+     "phase": "RELEASE",
+     "q": [
+      -0.47577,
+      -1.02852,
+      0.01263,
+      1.39772
+     ],
+     "qdot_max": 1.16765,
+     "coin_xy": [
+      0.00802,
+      0.1388
+     ],
+     "coin_speed": 0.14786,
+     "dtz": 0.0341,
+     "ctrl_post_gov": [
+      -0.23833,
+      -0.84515,
+      0.28217,
+      1.46423
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.025,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 35,
+     "phase": "RELEASE",
+     "q": [
+      -0.47474,
+      -1.02983,
+      0.02112,
+      1.38606
+     ],
+     "qdot_max": 1.14571,
+     "coin_xy": [
+      0.00651,
+      0.13869
+     ],
+     "coin_speed": 0.14407,
+     "dtz": 0.03259,
+     "ctrl_post_gov": [
+      -0.26217,
+      -0.84854,
+      0.30291,
+      1.44348
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.9702,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 36,
+     "phase": "RELEASE",
+     "q": [
+      -0.47418,
+      -1.03059,
+      0.02956,
+      1.37454
+     ],
+     "qdot_max": 1.139,
+     "coin_xy": [
+      0.00504,
+      0.13862
+     ],
+     "coin_speed": 0.14092,
+     "dtz": 0.03112,
+     "ctrl_post_gov": [
+      -0.28602,
+      -0.85186,
+      0.32545,
+      1.42301
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.9112,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 37,
+     "phase": "RELEASE",
+     "q": [
+      -0.47433,
+      -1.03097,
+      0.03783,
+      1.36287
+     ],
+     "qdot_max": 1.19839,
+     "coin_xy": [
+      0.00366,
+      0.13872
+     ],
+     "coin_speed": 0.12981,
+     "dtz": 0.02977,
+     "ctrl_post_gov": [
+      -0.30987,
+      -0.85512,
+      0.39403,
+      1.4028
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.4437,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 38,
+     "phase": "RELEASE",
+     "q": [
+      -0.47561,
+      -1.03118,
+      0.04609,
+      1.35041
+     ],
+     "qdot_max": 1.2425,
+     "coin_xy": [
+      0.00245,
+      0.13919
+     ],
+     "coin_speed": 0.13044,
+     "dtz": 0.02863,
+     "ctrl_post_gov": [
+      -0.33373,
+      -0.85839,
+      0.4097,
+      1.3828
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.7328,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 39,
+     "phase": "RELEASE",
+     "q": [
+      -0.47729,
+      -1.03092,
+      0.05434,
+      1.33799
+     ],
+     "qdot_max": 1.22337,
+     "coin_xy": [
+      0.0012,
+      0.1395
+     ],
+     "coin_speed": 0.12372,
+     "dtz": 0.02745,
+     "ctrl_post_gov": [
+      -0.35757,
+      -0.86175,
+      0.38621,
+      1.36289
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.1727,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 40,
+     "phase": "RELEASE",
+     "q": [
+      -0.47977,
+      -1.03037,
+      0.06246,
+      1.32523
+     ],
+     "qdot_max": 1.29596,
+     "coin_xy": [
+      8e-05,
+      0.13993
+     ],
+     "coin_speed": 0.11729,
+     "dtz": 0.02644,
+     "ctrl_post_gov": [
+      -0.3814,
+      -0.8652,
+      0.49893,
+      1.34311
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.5281,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 41,
+     "phase": "RELEASE",
+     "q": [
+      -0.48296,
+      -1.02947,
+      0.0706,
+      1.31224
+     ],
+     "qdot_max": 1.29694,
+     "coin_xy": [
+      -0.00097,
+      0.14037
+     ],
+     "coin_speed": 0.10794,
+     "dtz": 0.02551,
+     "ctrl_post_gov": [
+      -0.40521,
+      -0.86875,
+      0.42555,
+      1.32341
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.8168,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 42,
+     "phase": "RELEASE",
+     "q": [
+      -0.48669,
+      -1.02805,
+      0.07892,
+      1.29931
+     ],
+     "qdot_max": 1.25378,
+     "coin_xy": [
+      -0.002,
+      0.1407
+     ],
+     "coin_speed": 0.11493,
+     "dtz": 0.02458,
+     "ctrl_post_gov": [
+      -0.42901,
+      -0.87241,
+      0.34153,
+      1.30376
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.3165,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 43,
+     "phase": "RELEASE",
+     "q": [
+      -0.49049,
+      -1.02581,
+      0.08721,
+      1.28707
+     ],
+     "qdot_max": 1.18405,
+     "coin_xy": [
+      -0.00315,
+      0.14073
+     ],
+     "coin_speed": 0.11056,
+     "dtz": 0.02347,
+     "ctrl_post_gov": [
+      -0.45279,
+      -0.87618,
+      0.31279,
+      1.28414
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.2096,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 44,
+     "phase": "RELEASE",
+     "q": [
+      -0.4945,
+      -1.02289,
+      0.09554,
+      1.27541
+     ],
+     "qdot_max": 1.13787,
+     "coin_xy": [
+      -0.00433,
+      0.14059
+     ],
+     "coin_speed": 0.11706,
+     "dtz": 0.0223,
+     "ctrl_post_gov": [
+      -0.47656,
+      -0.87997,
+      0.32491,
+      1.26465
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.1205,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 45,
+     "phase": "RELEASE",
+     "q": [
+      -0.49885,
+      -1.01952,
+      0.10383,
+      1.26418
+     ],
+     "qdot_max": 1.10049,
+     "coin_xy": [
+      -0.00549,
+      0.1404
+     ],
+     "coin_speed": 0.11061,
+     "dtz": 0.02113,
+     "ctrl_post_gov": [
+      -0.50034,
+      -0.88376,
+      0.3352,
+      1.2453
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.0111,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 46,
+     "phase": "RELEASE",
+     "q": [
+      -0.50367,
+      -1.01585,
+      0.1121,
+      1.25322
+     ],
+     "qdot_max": 1.08077,
+     "coin_xy": [
+      -0.00661,
+      0.14019
+     ],
+     "coin_speed": 0.10908,
+     "dtz": 0.01999,
+     "ctrl_post_gov": [
+      -0.52412,
+      -0.88753,
+      0.3513,
+      1.22606
+     ],
+     "fn_left": 0.0,
+     "fn_right": 2.9025,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 47,
+     "phase": "RELEASE",
+     "q": [
+      -0.50899,
+      -1.01201,
+      0.12032,
+      1.24245
+     ],
+     "qdot_max": 1.06559,
+     "coin_xy": [
+      -0.00768,
+      0.13999
+     ],
+     "coin_speed": 0.10262,
+     "dtz": 0.01891,
+     "ctrl_post_gov": [
+      -0.5479,
+      -0.89131,
+      0.36416,
+      1.20693
+     ],
+     "fn_left": 0.0,
+     "fn_right": 2.7776,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 48,
+     "phase": "RELEASE",
+     "q": [
+      -0.51485,
+      -1.00809,
+      0.12852,
+      1.23178
+     ],
+     "qdot_max": 1.05851,
+     "coin_xy": [
+      -0.0087,
+      0.13979
+     ],
+     "coin_speed": 0.0993,
+     "dtz": 0.01787,
+     "ctrl_post_gov": [
+      -0.57168,
+      -0.89509,
+      0.37852,
+      1.18788
+     ],
+     "fn_left": 0.0,
+     "fn_right": 2.6447,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 49,
+     "phase": "RELEASE",
+     "q": [
+      -0.52141,
+      -1.00421,
+      0.13651,
+      1.22099
+     ],
+     "qdot_max": 1.11159,
+     "coin_xy": [
+      -0.00958,
+      0.13967
+     ],
+     "coin_speed": 0.06335,
+     "dtz": 0.017,
+     "ctrl_post_gov": [
+      -0.59545,
+      -0.89888,
+      0.42973,
+      1.16887
+     ],
+     "fn_left": 0.0,
+     "fn_right": 2.7688,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 50,
+     "phase": "RELEASE",
+     "q": [
+      -0.52918,
+      -1.00067,
+      0.14383,
+      1.20942
+     ],
+     "qdot_max": 1.18598,
+     "coin_xy": [
+      -0.01003,
+      0.13995
+     ],
+     "coin_speed": 0.04692,
+     "dtz": 0.01665,
+     "ctrl_post_gov": [
+      -0.59523,
+      -0.90272,
+      0.50578,
+      1.14988
+     ],
+     "fn_left": 0.0,
+     "fn_right": 2.4834,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 1
+    },
+    {
+     "t": 51,
+     "phase": "RELEASE",
+     "q": [
+      -0.53717,
+      -0.9974,
+      0.15095,
+      1.19729
+     ],
+     "qdot_max": 1.23104,
+     "coin_xy": [
+      -0.01031,
+      0.14032
+     ],
+     "coin_speed": 0.04822,
+     "dtz": 0.01651,
+     "ctrl_post_gov": [
+      -0.5333,
+      -0.90668,
+      0.49118,
+      1.13073
+     ],
+     "fn_left": 0.0,
+     "fn_right": 2.3451,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 2
+    },
+    {
+     "t": 52,
+     "phase": "RELEASE",
+     "q": [
+      -0.54512,
+      -0.99429,
+      0.15787,
+      1.18492
+     ],
+     "qdot_max": 1.2358,
+     "coin_xy": [
+      -0.01052,
+      0.14064
+     ],
+     "coin_speed": 0.03067,
+     "dtz": 0.01643,
+     "ctrl_post_gov": [
+      -0.61536,
+      -0.91078,
+      0.47684,
+      1.11139
+     ],
+     "fn_left": 0.0,
+     "fn_right": 1.9136,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 3
+    },
+    {
+     "t": 53,
+     "phase": "RELEASE",
+     "q": [
+      -0.55311,
+      -0.99128,
+      0.16462,
+      1.17255
+     ],
+     "qdot_max": 1.23309,
+     "coin_xy": [
+      -0.01072,
+      0.14086
+     ],
+     "coin_speed": 0.02997,
+     "dtz": 0.01632,
+     "ctrl_post_gov": [
+      -0.60054,
+      -0.91501,
+      0.46275,
+      1.09187
+     ],
+     "fn_left": 0.0,
+     "fn_right": 1.7679,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 4
+    },
+    {
+     "t": 54,
+     "phase": "RELEASE",
+     "q": [
+      -0.56091,
+      -0.98822,
+      0.17107,
+      1.16028
+     ],
+     "qdot_max": 1.21548,
+     "coin_xy": [
+      -0.01096,
+      0.14102
+     ],
+     "coin_speed": 0.03034,
+     "dtz": 0.01616,
+     "ctrl_post_gov": [
+      -0.71408,
+      -0.91935,
+      0.44889,
+      1.07218
+     ],
+     "fn_left": 0.0,
+     "fn_right": 1.5428,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 5
+    },
+    {
+     "t": 55,
+     "phase": "RELEASE",
+     "q": [
+      -0.5684,
+      -0.9848,
+      0.17702,
+      1.14822
+     ],
+     "qdot_max": 1.19257,
+     "coin_xy": [
+      -0.01124,
+      0.14116
+     ],
+     "coin_speed": 0.03303,
+     "dtz": 0.01596,
+     "ctrl_post_gov": [
+      -0.73775,
+      -0.92378,
+      0.43517,
+      1.0524
+     ],
+     "fn_left": 0.0,
+     "fn_right": 1.3466,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 6
+    },
+    {
+     "t": 56,
+     "phase": "RELEASE",
+     "q": [
+      -0.57563,
+      -0.98112,
+      0.18255,
+      1.1364
+     ],
+     "qdot_max": 1.16635,
+     "coin_xy": [
+      -0.01155,
+      0.14129
+     ],
+     "coin_speed": 0.03217,
+     "dtz": 0.01573,
+     "ctrl_post_gov": [
+      -0.7614,
+      -0.92829,
+      0.42151,
+      1.03257
+     ],
+     "fn_left": 0.0,
+     "fn_right": 1.0841,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 7
+    },
+    {
+     "t": 57,
+     "phase": "RELEASE",
+     "q": [
+      -0.58274,
+      -0.9773,
+      0.18775,
+      1.12485
+     ],
+     "qdot_max": 1.14141,
+     "coin_xy": [
+      -0.01183,
+      0.14136
+     ],
+     "coin_speed": 0.02759,
+     "dtz": 0.01551,
+     "ctrl_post_gov": [
+      -0.78504,
+      -0.93287,
+      0.40783,
+      1.01276
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.8495,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 8
+    },
+    {
+     "t": 58,
+     "phase": "RELEASE",
+     "q": [
+      -0.5899,
+      -0.97345,
+      0.19257,
+      1.11348
+     ],
+     "qdot_max": 1.12712,
+     "coin_xy": [
+      -0.01212,
+      0.14145
+     ],
+     "coin_speed": 0.03374,
+     "dtz": 0.01529,
+     "ctrl_post_gov": [
+      -0.80866,
+      -0.9375,
+      0.3941,
+      0.99298
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.8375,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 9
+    },
+    {
+     "t": 59,
+     "phase": "RELEASE",
+     "q": [
+      -0.59726,
+      -0.96964,
+      0.19698,
+      1.10222
+     ],
+     "qdot_max": 1.12072,
+     "coin_xy": [
+      -0.01247,
+      0.14164
+     ],
+     "coin_speed": 0.0465,
+     "dtz": 0.01506,
+     "ctrl_post_gov": [
+      -0.83228,
+      -0.9422,
+      0.38028,
+      0.97327
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.8543,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 10
+    },
+    {
+     "t": 60,
+     "phase": "RELEASE",
+     "q": [
+      -0.60489,
+      -0.96594,
+      0.20101,
+      1.09102
+     ],
+     "qdot_max": 1.10774,
+     "coin_xy": [
+      -0.01319,
+      0.14178
+     ],
+     "coin_speed": 0.16486,
+     "dtz": 0.0145,
+     "ctrl_post_gov": [
+      -0.85588,
+      -0.94697,
+      0.36631,
+      0.95366
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.1342,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    }
+   ]
+  },
+  {
+   "state": 3,
+   "tag": "s7",
+   "seed": 15750,
+   "split": "held_out",
+   "acquire": {
+    "seed": 15750,
+    "certified": true,
+    "axis": "zone_par",
+    "n_dot": -0.996,
+    "attempts": {
+     "zone_cross": {
+      "both_contact": true,
+      "n_dot": -0.762,
+      "cert_feasible": false,
+      "certified": false
+     },
+     "zone_par": {
+      "both_contact": true,
+      "n_dot": -0.996,
+      "cert_feasible": true,
+      "certified": true
+     }
+    }
+   },
+   "canonical_theta": {
+    "squeeze_mag": 0.157,
+    "forward_mag": 0.1729,
+    "balance": 0.0133,
+    "ramp_steps": 8.6476,
+    "release_step": 5.3654,
+    "brake_gain": 1.4752
+   },
+   "canonical_theta_vec": [
+    0.157,
+    0.1729,
+    0.0133,
+    8.6476,
+    5.3654,
+    1.4752
+   ],
+   "canonical_source": "cem_best",
+   "cem_optimum_theta": [
+    0.157,
+    0.1729,
+    0.0133,
+    8.6476,
+    5.3654,
+    1.4752
+   ],
+   "cem_optimum_reproduces_at_stored_precision": true,
+   "search": {
+    "cem_seed": 20260727,
+    "pop": 56,
+    "iters": 10,
+    "elite": 8,
+    "passive_drift_mm": 26.553,
+    "history": [
+     {
+      "iter": 0,
+      "best_score": -0.09846,
+      "n_feasible": 56,
+      "best_forward": 0.03927
+     },
+     {
+      "iter": 1,
+      "best_score": 0.44052,
+      "n_feasible": 56,
+      "best_forward": 0.1251
+     },
+     {
+      "iter": 2,
+      "best_score": 0.44052,
+      "n_feasible": 56,
+      "best_forward": 0.1251
+     },
+     {
+      "iter": 3,
+      "best_score": 0.44052,
+      "n_feasible": 56,
+      "best_forward": 0.1251
+     },
+     {
+      "iter": 4,
+      "best_score": 0.44052,
+      "n_feasible": 56,
+      "best_forward": 0.1251
+     },
+     {
+      "iter": 5,
+      "best_score": 0.44052,
+      "n_feasible": 56,
+      "best_forward": 0.1251
+     },
+     {
+      "iter": 6,
+      "best_score": 0.44052,
+      "n_feasible": 56,
+      "best_forward": 0.1251
+     },
+     {
+      "iter": 7,
+      "best_score": 0.44052,
+      "n_feasible": 56,
+      "best_forward": 0.1251
+     },
+     {
+      "iter": 8,
+      "best_score": 0.44116,
+      "n_feasible": 56,
+      "best_forward": 0.12358
+     },
+     {
+      "iter": 9,
+      "best_score": 0.44192,
+      "n_feasible": 56,
+      "best_forward": 0.12667
+     }
+    ]
+   },
+   "snapshot": {
+    "pre_release_hash": "92d07f22ff72e960",
+    "post_release_hash": "92d07f22ff72e960",
+    "operating_point": "EXACT_POST_RELEASE_HANDOFF",
+    "prev_tau": [
+     -1.20218,
+     0.1017,
+     0.39298,
+     1.59455
+    ],
+    "q_hold": [
+     -0.92669,
+     -0.06252,
+     -0.26342,
+     1.34146
+    ],
+    "straddle0": -0.996,
+    "fn0": [
+     5.169,
+     4.8858
+    ],
+    "arm_saturated": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "actuator_lo": [
+     -4.0,
+     -4.0,
+     -4.0,
+     -4.0
+    ],
+    "actuator_hi": [
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "recert_admissible": true
+   },
+   "outcome": {
+    "k6_delivered": true,
+    "k6_max_dwell": 18,
+    "delivery_success": true,
+    "touched": true,
+    "dtz_start_mm": 137.73,
+    "dtz_end_mm": 18.06,
+    "gap_closed": 0.869,
+    "forward_mm": 126.71,
+    "terminal_coin_speed": 0.0,
+    "peak_qdot": 1.9795,
+    "peak_coin_speed": 0.4363,
+    "contact_lost_steps": 52,
+    "score": 0.44194
+   },
+   "replay_ok": true,
+   "deterministic": true,
+   "k6_delivered": true,
+   "trace": [
+    {
+     "t": 1,
+     "phase": "PUSH",
+     "q": [
+      -0.89193,
+      -0.02835,
+      -0.27755,
+      1.30837
+     ],
+     "qdot_max": 0.66999,
+     "coin_xy": [
+      0.07938,
+      0.18626
+     ],
+     "coin_speed": 0.35152,
+     "dtz": 0.13596,
+     "ctrl_post_gov": [
+      -1.07651,
+      0.15981,
+      0.29679,
+      1.64897
+     ],
+     "fn_left": 3.7722,
+     "fn_right": 4.6471,
+     "both_contact": true,
+     "straddle": -1.0,
+     "k6_dwell": 0
+    },
+    {
+     "t": 2,
+     "phase": "PUSH",
+     "q": [
+      -0.89899,
+      -0.02154,
+      -0.27142,
+      1.31514
+     ],
+     "qdot_max": 0.77185,
+     "coin_xy": [
+      0.07677,
+      0.18364
+     ],
+     "coin_speed": 0.38147,
+     "dtz": 0.13265,
+     "ctrl_post_gov": [
+      -0.93794,
+      0.22368,
+      0.21596,
+      1.71345
+     ],
+     "fn_left": 2.7773,
+     "fn_right": 4.9222,
+     "both_contact": true,
+     "straddle": -0.9825,
+     "k6_dwell": 0
+    },
+    {
+     "t": 3,
+     "phase": "PUSH",
+     "q": [
+      -0.90619,
+      -0.01312,
+      -0.26595,
+      1.32305
+     ],
+     "qdot_max": 0.8495,
+     "coin_xy": [
+      0.07366,
+      0.18148
+     ],
+     "coin_speed": 0.37056,
+     "dtz": 0.12903,
+     "ctrl_post_gov": [
+      -0.78651,
+      0.14771,
+      0.15961,
+      1.58322
+     ],
+     "fn_left": 2.063,
+     "fn_right": 4.9804,
+     "both_contact": true,
+     "straddle": -0.9329,
+     "k6_dwell": 0
+    },
+    {
+     "t": 4,
+     "phase": "PUSH",
+     "q": [
+      -0.91224,
+      -0.00463,
+      -0.26129,
+      1.33084
+     ],
+     "qdot_max": 0.79175,
+     "coin_xy": [
+      0.07052,
+      0.17969
+     ],
+     "coin_speed": 0.35432,
+     "dtz": 0.12551,
+     "ctrl_post_gov": [
+      -0.62233,
+      0.15047,
+      0.13341,
+      1.53691
+     ],
+     "fn_left": 2.2473,
+     "fn_right": 5.0191,
+     "both_contact": true,
+     "straddle": -0.8629,
+     "k6_dwell": 0
+    },
+    {
+     "t": 5,
+     "phase": "PUSH",
+     "q": [
+      -0.91623,
+      0.00385,
+      -0.25694,
+      1.33864
+     ],
+     "qdot_max": 0.81988,
+     "coin_xy": [
+      0.06696,
+      0.17786
+     ],
+     "coin_speed": 0.43632,
+     "dtz": 0.12156,
+     "ctrl_post_gov": [
+      -0.44549,
+      0.20404,
+      0.14182,
+      1.44406
+     ],
+     "fn_left": 3.8604,
+     "fn_right": 3.2889,
+     "both_contact": true,
+     "straddle": -0.7557,
+     "k6_dwell": 0
+    },
+    {
+     "t": 6,
+     "phase": "PUSH",
+     "q": [
+      -0.91738,
+      0.01223,
+      -0.25194,
+      1.34622
+     ],
+     "qdot_max": 0.76248,
+     "coin_xy": [
+      0.06347,
+      0.17503
+     ],
+     "coin_speed": 0.42875,
+     "dtz": 0.11741,
+     "ctrl_post_gov": [
+      -0.25607,
+      0.26091,
+      0.19298,
+      1.41131
+     ],
+     "fn_left": 1.8811,
+     "fn_right": 3.5362,
+     "both_contact": true,
+     "straddle": -0.5978,
+     "k6_dwell": 0
+    },
+    {
+     "t": 7,
+     "phase": "PUSH",
+     "q": [
+      -0.91743,
+      0.02046,
+      -0.2465,
+      1.35384
+     ],
+     "qdot_max": 0.80454,
+     "coin_xy": [
+      0.06032,
+      0.17212
+     ],
+     "coin_speed": 0.39406,
+     "dtz": 0.11358,
+     "ctrl_post_gov": [
+      -0.05416,
+      0.41412,
+      0.28513,
+      1.61639
+     ],
+     "fn_left": 1.1287,
+     "fn_right": 3.9714,
+     "both_contact": true,
+     "straddle": -0.436,
+     "k6_dwell": 0
+    },
+    {
+     "t": 8,
+     "phase": "PUSH",
+     "q": [
+      -0.91651,
+      0.0287,
+      -0.2405,
+      1.36131
+     ],
+     "qdot_max": 0.76036,
+     "coin_xy": [
+      0.05712,
+      0.16998
+     ],
+     "coin_speed": 0.35954,
+     "dtz": 0.10994,
+     "ctrl_post_gov": [
+      0.16016,
+      0.4523,
+      0.40759,
+      1.62937
+     ],
+     "fn_left": 0.9935,
+     "fn_right": 4.3901,
+     "both_contact": true,
+     "straddle": -0.2941,
+     "k6_dwell": 0
+    },
+    {
+     "t": 9,
+     "phase": "RELEASE",
+     "q": [
+      -0.9149,
+      0.0369,
+      -0.23435,
+      1.3689
+     ],
+     "qdot_max": 0.79996,
+     "coin_xy": [
+      0.05385,
+      0.16848
+     ],
+     "coin_speed": 0.34362,
+     "dtz": 0.10639,
+     "ctrl_post_gov": [
+      0.11,
+      0.48473,
+      0.38652,
+      1.72345
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.4957,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 10,
+     "phase": "RELEASE",
+     "q": [
+      -0.91359,
+      0.04506,
+      -0.22903,
+      1.37656
+     ],
+     "qdot_max": 0.77699,
+     "coin_xy": [
+      0.05075,
+      0.16728
+     ],
+     "coin_speed": 0.30853,
+     "dtz": 0.1031,
+     "ctrl_post_gov": [
+      0.0599,
+      0.49812,
+      0.36115,
+      1.77773
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.4114,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 11,
+     "phase": "RELEASE",
+     "q": [
+      -0.91308,
+      0.05321,
+      -0.22504,
+      1.3843
+     ],
+     "qdot_max": 0.79912,
+     "coin_xy": [
+      0.04799,
+      0.16621
+     ],
+     "coin_speed": 0.27324,
+     "dtz": 0.10016,
+     "ctrl_post_gov": [
+      0.00988,
+      0.51014,
+      0.33231,
+      1.82623
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.3057,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 12,
+     "phase": "RELEASE",
+     "q": [
+      -0.91362,
+      0.06132,
+      -0.22261,
+      1.39208
+     ],
+     "qdot_max": 0.78757,
+     "coin_xy": [
+      0.04565,
+      0.16517
+     ],
+     "coin_speed": 0.2313,
+     "dtz": 0.09764,
+     "ctrl_post_gov": [
+      -0.04006,
+      0.51781,
+      0.30069,
+      1.85454
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.1436,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 13,
+     "phase": "RELEASE",
+     "q": [
+      -0.91522,
+      0.06942,
+      -0.22177,
+      1.3999
+     ],
+     "qdot_max": 0.80034,
+     "coin_xy": [
+      0.04372,
+      0.16416
+     ],
+     "coin_speed": 0.19583,
+     "dtz": 0.09553,
+     "ctrl_post_gov": [
+      -0.08991,
+      0.52122,
+      0.26687,
+      1.8777
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.9685,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 14,
+     "phase": "RELEASE",
+     "q": [
+      -0.91658,
+      0.07781,
+      -0.22065,
+      1.40783
+     ],
+     "qdot_max": 0.84242,
+     "coin_xy": [
+      0.04185,
+      0.16314
+     ],
+     "coin_speed": 0.2566,
+     "dtz": 0.09347,
+     "ctrl_post_gov": [
+      -0.13968,
+      0.31333,
+      0.23128,
+      1.45267
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.6673,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 15,
+     "phase": "RELEASE",
+     "q": [
+      -0.91453,
+      0.08607,
+      -0.21489,
+      1.41554
+     ],
+     "qdot_max": 0.7517,
+     "coin_xy": [
+      0.03904,
+      0.16207
+     ],
+     "coin_speed": 0.32793,
+     "dtz": 0.0905,
+     "ctrl_post_gov": [
+      -0.18934,
+      0.30771,
+      0.19423,
+      1.52414
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.8119,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 16,
+     "phase": "RELEASE",
+     "q": [
+      -0.91083,
+      0.09431,
+      -0.20666,
+      1.42331
+     ],
+     "qdot_max": 0.88173,
+     "coin_xy": [
+      0.03568,
+      0.16096
+     ],
+     "coin_speed": 0.36416,
+     "dtz": 0.08698,
+     "ctrl_post_gov": [
+      -0.23888,
+      0.34553,
+      0.09922,
+      1.61329
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.8444,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 17,
+     "phase": "RELEASE",
+     "q": [
+      -0.90674,
+      0.10249,
+      -0.19802,
+      1.43113
+     ],
+     "qdot_max": 0.84625,
+     "coin_xy": [
+      0.03217,
+      0.15983
+     ],
+     "coin_speed": 0.36239,
+     "dtz": 0.08331,
+     "ctrl_post_gov": [
+      -0.28826,
+      0.35269,
+      0.03789,
+      1.64316
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.6744,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 18,
+     "phase": "RELEASE",
+     "q": [
+      -0.90265,
+      0.1107,
+      -0.18981,
+      1.43901
+     ],
+     "qdot_max": 0.82474,
+     "coin_xy": [
+      0.0287,
+      0.15881
+     ],
+     "coin_speed": 0.35193,
+     "dtz": 0.0797,
+     "ctrl_post_gov": [
+      -0.33747,
+      0.34116,
+      0.0507,
+      1.58438
+     ],
+     "fn_left": 0.0,
+     "fn_right": 5.7855,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 19,
+     "phase": "RELEASE",
+     "q": [
+      -0.89808,
+      0.11885,
+      -0.1819,
+      1.44683
+     ],
+     "qdot_max": 0.77851,
+     "coin_xy": [
+      0.02524,
+      0.15834
+     ],
+     "coin_speed": 0.34573,
+     "dtz": 0.07622,
+     "ctrl_post_gov": [
+      -0.38649,
+      0.3362,
+      0.02952,
+      1.60348
+     ],
+     "fn_left": 0.0,
+     "fn_right": 5.5084,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 20,
+     "phase": "RELEASE",
+     "q": [
+      -0.89348,
+      0.12696,
+      -0.17487,
+      1.45468
+     ],
+     "qdot_max": 0.81463,
+     "coin_xy": [
+      0.02175,
+      0.15806
+     ],
+     "coin_speed": 0.35026,
+     "dtz": 0.07275,
+     "ctrl_post_gov": [
+      -0.43534,
+      0.35639,
+      -0.0124,
+      1.62709
+     ],
+     "fn_left": 0.0,
+     "fn_right": 5.2029,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 21,
+     "phase": "RELEASE",
+     "q": [
+      -0.8892,
+      0.13502,
+      -0.16919,
+      1.46256
+     ],
+     "qdot_max": 0.78725,
+     "coin_xy": [
+      0.01815,
+      0.15782
+     ],
+     "coin_speed": 0.38229,
+     "dtz": 0.06919,
+     "ctrl_post_gov": [
+      -0.48403,
+      0.35448,
+      -0.05789,
+      1.63214
+     ],
+     "fn_left": 0.0,
+     "fn_right": 4.8447,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 22,
+     "phase": "RELEASE",
+     "q": [
+      -0.88549,
+      0.14294,
+      -0.16506,
+      1.47046
+     ],
+     "qdot_max": 0.79695,
+     "coin_xy": [
+      0.01415,
+      0.15776
+     ],
+     "coin_speed": 0.41021,
+     "dtz": 0.06528,
+     "ctrl_post_gov": [
+      -0.53256,
+      0.38581,
+      -0.10479,
+      1.6453
+     ],
+     "fn_left": 0.0,
+     "fn_right": 3.752,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 23,
+     "phase": "RELEASE",
+     "q": [
+      -0.88238,
+      0.15078,
+      -0.16238,
+      1.47836
+     ],
+     "qdot_max": 0.7779,
+     "coin_xy": [
+      0.01004,
+      0.15716
+     ],
+     "coin_speed": 0.42139,
+     "dtz": 0.06115,
+     "ctrl_post_gov": [
+      -0.58097,
+      0.35866,
+      -0.15315,
+      1.55713
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.3553,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 24,
+     "phase": "RELEASE",
+     "q": [
+      -0.87963,
+      0.15824,
+      -0.16087,
+      1.48625
+     ],
+     "qdot_max": 0.73789,
+     "coin_xy": [
+      0.0063,
+      0.15509
+     ],
+     "coin_speed": 0.43037,
+     "dtz": 0.05702,
+     "ctrl_post_gov": [
+      -0.62925,
+      0.33127,
+      -0.20263,
+      1.5552
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0696,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 25,
+     "phase": "RELEASE",
+     "q": [
+      -0.8776,
+      0.16497,
+      -0.16076,
+      1.49415
+     ],
+     "qdot_max": 0.73305,
+     "coin_xy": [
+      0.00281,
+      0.15261
+     ],
+     "coin_speed": 0.41923,
+     "dtz": 0.05309,
+     "ctrl_post_gov": [
+      -0.67727,
+      0.30342,
+      -0.25256,
+      1.55735
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 26,
+     "phase": "RELEASE",
+     "q": [
+      -0.87649,
+      0.17075,
+      -0.16218,
+      1.50207
+     ],
+     "qdot_max": 0.74705,
+     "coin_xy": [
+      -0.0005,
+      0.1502
+     ],
+     "coin_speed": 0.39802,
+     "dtz": 0.0494,
+     "ctrl_post_gov": [
+      -0.72499,
+      0.27506,
+      -0.30274,
+      1.55574
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 27,
+     "phase": "RELEASE",
+     "q": [
+      -0.87638,
+      0.17541,
+      -0.1652,
+      1.51
+     ],
+     "qdot_max": 0.74536,
+     "coin_xy": [
+      -0.00365,
+      0.14794
+     ],
+     "coin_speed": 0.37595,
+     "dtz": 0.04596,
+     "ctrl_post_gov": [
+      -0.77243,
+      0.24625,
+      -0.3531,
+      1.55079
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 28,
+     "phase": "RELEASE",
+     "q": [
+      -0.87729,
+      0.17884,
+      -0.16988,
+      1.51794
+     ],
+     "qdot_max": 0.75558,
+     "coin_xy": [
+      -0.00664,
+      0.14584
+     ],
+     "coin_speed": 0.35399,
+     "dtz": 0.04276,
+     "ctrl_post_gov": [
+      -0.81967,
+      0.2171,
+      -0.40361,
+      1.54659
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 29,
+     "phase": "RELEASE",
+     "q": [
+      -0.87921,
+      0.18099,
+      -0.17622,
+      1.52588
+     ],
+     "qdot_max": 0.75502,
+     "coin_xy": [
+      -0.00948,
+      0.1439
+     ],
+     "coin_speed": 0.33216,
+     "dtz": 0.03981,
+     "ctrl_post_gov": [
+      -0.86676,
+      0.18772,
+      -0.45426,
+      1.53838
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 30,
+     "phase": "RELEASE",
+     "q": [
+      -0.88213,
+      0.18184,
+      -0.18412,
+      1.53382
+     ],
+     "qdot_max": 0.83308,
+     "coin_xy": [
+      -0.01215,
+      0.14211
+     ],
+     "coin_speed": 0.31046,
+     "dtz": 0.0371,
+     "ctrl_post_gov": [
+      -0.91379,
+      0.15823,
+      -0.42238,
+      1.52878
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 31,
+     "phase": "RELEASE",
+     "q": [
+      -0.88586,
+      0.18147,
+      -0.19247,
+      1.54176
+     ],
+     "qdot_max": 0.77305,
+     "coin_xy": [
+      -0.01467,
+      0.14047
+     ],
+     "coin_speed": 0.28891,
+     "dtz": 0.03462,
+     "ctrl_post_gov": [
+      -0.96083,
+      0.12876,
+      -0.28338,
+      1.57628
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 32,
+     "phase": "RELEASE",
+     "q": [
+      -0.89025,
+      0.18,
+      -0.20092,
+      1.54969
+     ],
+     "qdot_max": 0.81016,
+     "coin_xy": [
+      -0.01703,
+      0.13899
+     ],
+     "coin_speed": 0.26751,
+     "dtz": 0.03238,
+     "ctrl_post_gov": [
+      -1.00793,
+      0.09939,
+      -0.2804,
+      1.56075
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 33,
+     "phase": "RELEASE",
+     "q": [
+      -0.89521,
+      0.17749,
+      -0.20949,
+      1.55759
+     ],
+     "qdot_max": 0.79817,
+     "coin_xy": [
+      -0.01923,
+      0.13766
+     ],
+     "coin_speed": 0.24628,
+     "dtz": 0.03036,
+     "ctrl_post_gov": [
+      -1.05514,
+      0.0702,
+      -0.24375,
+      1.63425
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 34,
+     "phase": "RELEASE",
+     "q": [
+      -0.90065,
+      0.17402,
+      -0.21813,
+      1.56542
+     ],
+     "qdot_max": 0.79647,
+     "coin_xy": [
+      -0.02128,
+      0.13648
+     ],
+     "coin_speed": 0.22525,
+     "dtz": 0.02854,
+     "ctrl_post_gov": [
+      -1.10249,
+      0.04123,
+      -0.23463,
+      1.56419
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 35,
+     "phase": "RELEASE",
+     "q": [
+      -0.90651,
+      0.1697,
+      -0.22686,
+      1.57285
+     ],
+     "qdot_max": 0.79646,
+     "coin_xy": [
+      -0.02317,
+      0.13546
+     ],
+     "coin_speed": 0.20445,
+     "dtz": 0.02693,
+     "ctrl_post_gov": [
+      -1.15,
+      0.01253,
+      -0.21368,
+      1.59077
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 36,
+     "phase": "RELEASE",
+     "q": [
+      -0.91276,
+      0.16458,
+      -0.23566,
+      1.58
+     ],
+     "qdot_max": 0.79269,
+     "coin_xy": [
+      -0.02491,
+      0.13458
+     ],
+     "coin_speed": 0.18392,
+     "dtz": 0.0255,
+     "ctrl_post_gov": [
+      -1.19769,
+      -0.01588,
+      -0.20014,
+      1.56922
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 37,
+     "phase": "RELEASE",
+     "q": [
+      -0.91934,
+      0.15878,
+      -0.24452,
+      1.58664
+     ],
+     "qdot_max": 0.79114,
+     "coin_xy": [
+      -0.0265,
+      0.13386
+     ],
+     "coin_speed": 0.16373,
+     "dtz": 0.02423,
+     "ctrl_post_gov": [
+      -1.24556,
+      -0.04398,
+      -0.18881,
+      1.5478
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 38,
+     "phase": "RELEASE",
+     "q": [
+      -0.92622,
+      0.15236,
+      -0.25345,
+      1.59261
+     ],
+     "qdot_max": 0.78819,
+     "coin_xy": [
+      -0.02793,
+      0.13329
+     ],
+     "coin_speed": 0.144,
+     "dtz": 0.0231,
+     "ctrl_post_gov": [
+      -1.29361,
+      -0.07178,
+      -0.17902,
+      1.52648
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 39,
+     "phase": "RELEASE",
+     "q": [
+      -0.93337,
+      0.14543,
+      -0.26242,
+      1.59779
+     ],
+     "qdot_max": 0.78524,
+     "coin_xy": [
+      -0.02921,
+      0.13286
+     ],
+     "coin_speed": 0.12488,
+     "dtz": 0.02211,
+     "ctrl_post_gov": [
+      -1.34184,
+      -0.09925,
+      -0.17085,
+      1.50523
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 40,
+     "phase": "RELEASE",
+     "q": [
+      -0.94079,
+      0.13805,
+      -0.27144,
+      1.60211
+     ],
+     "qdot_max": 0.78185,
+     "coin_xy": [
+      -0.03034,
+      0.13258
+     ],
+     "coin_speed": 0.10665,
+     "dtz": 0.02121,
+     "ctrl_post_gov": [
+      -1.39025,
+      -0.12641,
+      -0.16355,
+      1.48404
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 41,
+     "phase": "RELEASE",
+     "q": [
+      -0.94847,
+      0.13031,
+      -0.28051,
+      1.60551
+     ],
+     "qdot_max": 0.77716,
+     "coin_xy": [
+      -0.03131,
+      0.13245
+     ],
+     "coin_speed": 0.09002,
+     "dtz": 0.02041,
+     "ctrl_post_gov": [
+      -1.43883,
+      -0.15326,
+      -0.1569,
+      1.46288
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 42,
+     "phase": "RELEASE",
+     "q": [
+      -0.95639,
+      0.1223,
+      -0.28961,
+      1.60794
+     ],
+     "qdot_max": 0.79642,
+     "coin_xy": [
+      -0.03214,
+      0.1324
+     ],
+     "coin_speed": 0.07469,
+     "dtz": 0.01972,
+     "ctrl_post_gov": [
+      -1.47312,
+      -0.17045,
+      -0.15035,
+      1.44171
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 0
+    },
+    {
+     "t": 43,
+     "phase": "RELEASE",
+     "q": [
+      -0.96428,
+      0.11417,
+      -0.29873,
+      1.60933
+     ],
+     "qdot_max": 0.79893,
+     "coin_xy": [
+      -0.03281,
+      0.13238
+     ],
+     "coin_speed": 0.05965,
+     "dtz": 0.01914,
+     "ctrl_post_gov": [
+      -1.44193,
+      -0.16413,
+      -0.15003,
+      1.42049
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 1
+    },
+    {
+     "t": 44,
+     "phase": "RELEASE",
+     "q": [
+      -0.9722,
+      0.10607,
+      -0.30789,
+      1.60966
+     ],
+     "qdot_max": 0.78578,
+     "coin_xy": [
+      -0.03334,
+      0.13237
+     ],
+     "coin_speed": 0.04471,
+     "dtz": 0.0187,
+     "ctrl_post_gov": [
+      -1.53719,
+      -0.19084,
+      -0.14346,
+      1.39917
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 2
+    },
+    {
+     "t": 45,
+     "phase": "RELEASE",
+     "q": [
+      -0.98003,
+      0.09792,
+      -0.31702,
+      1.60892
+     ],
+     "qdot_max": 0.8083,
+     "coin_xy": [
+      -0.03372,
+      0.13237
+     ],
+     "coin_speed": 0.02984,
+     "dtz": 0.01838,
+     "ctrl_post_gov": [
+      -1.46111,
+      -0.19931,
+      -0.14975,
+      1.3777
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 3
+    },
+    {
+     "t": 46,
+     "phase": "RELEASE",
+     "q": [
+      -0.98832,
+      0.08873,
+      -0.32709,
+      1.60557
+     ],
+     "qdot_max": 1.00539,
+     "coin_xy": [
+      -0.03394,
+      0.13237
+     ],
+     "coin_speed": 0.01503,
+     "dtz": 0.01819,
+     "ctrl_post_gov": [
+      -0.68209,
+      -0.04037,
+      -0.03122,
+      1.35603
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 4
+    },
+    {
+     "t": 47,
+     "phase": "RELEASE",
+     "q": [
+      -0.99632,
+      0.07843,
+      -0.33695,
+      1.5974
+     ],
+     "qdot_max": 1.01606,
+     "coin_xy": [
+      -0.03404,
+      0.13237
+     ],
+     "coin_speed": 0.00569,
+     "dtz": 0.01811,
+     "ctrl_post_gov": [
+      -0.70397,
+      -0.00444,
+      -0.03724,
+      1.33403
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 5
+    },
+    {
+     "t": 48,
+     "phase": "RELEASE",
+     "q": [
+      -1.00428,
+      0.06825,
+      -0.3466,
+      1.58586
+     ],
+     "qdot_max": 1.27928,
+     "coin_xy": [
+      -0.03408,
+      0.13237
+     ],
+     "coin_speed": 0.00216,
+     "dtz": 0.01807,
+     "ctrl_post_gov": [
+      -0.71477,
+      -0.00576,
+      -0.06179,
+      1.31156
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 6
+    },
+    {
+     "t": 49,
+     "phase": "RELEASE",
+     "q": [
+      -1.01218,
+      0.05825,
+      -0.35606,
+      1.57206
+     ],
+     "qdot_max": 1.46372,
+     "coin_xy": [
+      -0.03409,
+      0.13237
+     ],
+     "coin_speed": 0.00082,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.69065,
+      -0.00911,
+      -0.07958,
+      1.28852
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 7
+    },
+    {
+     "t": 50,
+     "phase": "RELEASE",
+     "q": [
+      -1.02007,
+      0.04833,
+      -0.36552,
+      1.55662
+     ],
+     "qdot_max": 1.60813,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 0.00031,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.67659,
+      -0.01157,
+      -0.0813,
+      1.2649
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 8
+    },
+    {
+     "t": 51,
+     "phase": "RELEASE",
+     "q": [
+      -1.02794,
+      0.03846,
+      -0.37495,
+      1.53988
+     ],
+     "qdot_max": 1.72494,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 0.00012,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.65924,
+      -0.01356,
+      -0.08382,
+      1.2407
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 9
+    },
+    {
+     "t": 52,
+     "phase": "RELEASE",
+     "q": [
+      -1.03581,
+      0.02861,
+      -0.38435,
+      1.52208
+     ],
+     "qdot_max": 1.82276,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 4e-05,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.64187,
+      -0.01508,
+      -0.08649,
+      1.21593
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 10
+    },
+    {
+     "t": 53,
+     "phase": "RELEASE",
+     "q": [
+      -1.04366,
+      0.01878,
+      -0.39374,
+      1.50337
+     ],
+     "qdot_max": 1.90657,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 2e-05,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.62285,
+      -0.01635,
+      -0.08902,
+      1.19064
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 11
+    },
+    {
+     "t": 54,
+     "phase": "RELEASE",
+     "q": [
+      -1.05148,
+      0.00896,
+      -0.4031,
+      1.48389
+     ],
+     "qdot_max": 1.9795,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 1e-05,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.60341,
+      -0.01763,
+      -0.09233,
+      1.16484
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 12
+    },
+    {
+     "t": 55,
+     "phase": "RELEASE",
+     "q": [
+      -1.05929,
+      -0.00083,
+      -0.41246,
+      1.46394
+     ],
+     "qdot_max": 1.97318,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.59275,
+      -0.0196,
+      -0.09177,
+      1.21165
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 13
+    },
+    {
+     "t": 56,
+     "phase": "RELEASE",
+     "q": [
+      -1.06708,
+      -0.01058,
+      -0.42182,
+      1.44399
+     ],
+     "qdot_max": 1.97163,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.58296,
+      -0.02183,
+      -0.09144,
+      1.19787
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 14
+    },
+    {
+     "t": 57,
+     "phase": "RELEASE",
+     "q": [
+      -1.07485,
+      -0.02031,
+      -0.43118,
+      1.42405
+     ],
+     "qdot_max": 1.96548,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.57334,
+      -0.0241,
+      -0.09114,
+      1.18518
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 15
+    },
+    {
+     "t": 58,
+     "phase": "RELEASE",
+     "q": [
+      -1.0826,
+      -0.03001,
+      -0.44053,
+      1.40412
+     ],
+     "qdot_max": 1.96298,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.56413,
+      -0.0264,
+      -0.09066,
+      1.17222
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 16
+    },
+    {
+     "t": 59,
+     "phase": "RELEASE",
+     "q": [
+      -1.09034,
+      -0.03969,
+      -0.44987,
+      1.3842
+     ],
+     "qdot_max": 1.95693,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.55525,
+      -0.02873,
+      -0.09025,
+      1.16012
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 17
+    },
+    {
+     "t": 60,
+     "phase": "RELEASE",
+     "q": [
+      -1.09805,
+      -0.04934,
+      -0.45921,
+      1.36429
+     ],
+     "qdot_max": 1.95368,
+     "coin_xy": [
+      -0.0341,
+      0.13237
+     ],
+     "coin_speed": 0.0,
+     "dtz": 0.01806,
+     "ctrl_post_gov": [
+      -0.5468,
+      -0.03109,
+      -0.08992,
+      1.14784
+     ],
+     "fn_left": 0.0,
+     "fn_right": 0.0,
+     "both_contact": false,
+     "straddle": null,
+     "k6_dwell": 18
+    }
+   ]
+  }
+ ],
+ "gate": {
+  "all_canonical_replay": true,
+  "all_canonical_k6": true,
+  "n_delivered": 4,
+  "n_replay_ok": 4,
+  "n_states": 4,
+  "k6_by_frozen_monitor_only": true,
+  "no_pin_teleport_or_coin_edit": true,
+  "passed": true
+ },
+ "smoke": false,
+ "peak_rss_gb": 0.228,
+ "wall_s": 195.9
+}

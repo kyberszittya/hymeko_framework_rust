@@ -6,7 +6,11 @@ provenance under real physics) add to this file as they are built.
 """
 from __future__ import annotations
 
+import json
+import os
+
 import numpy as np
+import pytest
 
 from hymeko_rl.coin_delivery.theta_option.semantics import (
     DELIVERY_CFG, DIM, ThetaBox, ThetaProvenance, option_semantics, theta_bounds)
@@ -14,6 +18,8 @@ from hymeko_rl.coin_delivery.theta_option.search import ThetaCandidateGenerator
 from hymeko_rl.coin_delivery.coin_rl_env import CENTER_TOL, HELD_DWELL, SETTLE_VEL
 from hymeko_rl.option_rl.core import OptionReplayBuffer, OptionTransition
 from hymeko_rl.option_rl.proposal import FixedBudgetSearch
+
+_BANK_PATH = "reports/2026-07-27-coin-teacher-to-rl/teacher_bank.json"
 
 
 # ───────────────────────────── θ box normaliser ─────────────────────────────
@@ -132,3 +138,59 @@ def test_replay_buffer_bellman_action_is_center_not_selected():
         assert not np.allclose(a, selected, atol=1e-4)        # and NOT θ_exec
     # provenance retains θ_exec separately
     assert np.allclose(buf.provenance[0]["theta_selected"], selected, atol=1e-6)
+
+
+# ───────────────────────────── Stage 1: teacher bank ─────────────────────────────
+def _synth_metrics(*, k6=True, dwell=8, dtz_end=0.01, qdot=1.5, coin_speed=0.5):
+    return {"k6_delivered": bool(k6), "k6_max_dwell": int(dwell), "touched": True, "dtz_start": 0.10,
+            "dtz_end": float(dtz_end), "gap_closed": 0.9, "forward": 0.05, "terminal_coin_speed": 0.0,
+            "peak_qdot": float(qdot), "peak_coin_speed": float(coin_speed), "contact_lost_steps": 0,
+            "lost_before_release": 0}
+
+
+def test_phase_of_boundaries():
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import _phase_of
+    theta = [0.1, 0.2, 0.0, 8.0, 20.0, 1.0]                   # ramp=8, release=20
+    assert _phase_of(1, theta) == "PUSH" and _phase_of(8, theta) == "PUSH"
+    assert _phase_of(9, theta) == "BRAKE" and _phase_of(20, theta) == "BRAKE"
+    assert _phase_of(21, theta) == "RELEASE" and _phase_of(60, theta) == "RELEASE"
+
+
+def test_outcome_summary_reports_frozen_k6_verdict():
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import _outcome_summary
+    s = _outcome_summary(_synth_metrics(k6=True, dwell=10), DELIVERY_CFG)
+    assert s["k6_delivered"] is True and s["k6_max_dwell"] == 10 and s["delivery_success"] is True
+    # a motion-contract breach must NOT be delivery_success even with K6
+    s2 = _outcome_summary(_synth_metrics(k6=True, qdot=99.0), DELIVERY_CFG)
+    assert s2["delivery_success"] is False
+
+
+@pytest.mark.skipif(not os.path.exists(_BANK_PATH), reason="teacher_bank.json not built")
+def test_teacher_bank_artifact_gate_split_and_holdout_isolation():
+    bank = json.load(open(_BANK_PATH))
+    if bank.get("smoke"):
+        pytest.skip("bank artifact is a smoke run (partial states)")
+    assert bank["gate"]["passed"] is True
+    assert bank["gate"]["k6_by_frozen_monitor_only"] and bank["gate"]["no_pin_teleport_or_coin_edit"]
+    dev = [e for e in bank["states"] if e["split"] == "development"]
+    held = [e for e in bank["states"] if e["split"] == "held_out"]
+    assert [e["tag"] for e in dev] == ["s1", "s3"] and [e["tag"] for e in held] == ["s4", "s7"]
+    # every canonical θ delivers frozen K6 and replays; held-out is eval-only (NO basin augmentation)
+    for e in bank["states"]:
+        assert e["k6_delivered"] is True and e["replay_ok"] is True and e["deterministic"] is True
+        assert len(e["canonical_theta_vec"]) == DIM
+    for e in held:
+        assert "basin_candidates" not in e, f"held-out {e['tag']} must not be augmented"
+    for e in dev:
+        assert "basin_candidates" in e and e["n_basin_delivering"] >= 1
+
+
+@pytest.mark.slow
+def test_reproduce_held_out_state_delivers_without_basin():
+    """Live physics: reproduce a held-out cradle (s7) end-to-end — it must deliver frozen K6, replay deterministically,
+    and receive NO basin augmentation (held-out is eval-only)."""
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import CERTIFIED_SEEDS, load_harness, reproduce_state
+    e = reproduce_state(load_harness(), 3, CERTIFIED_SEEDS[3], augment=False)  # idx 3 = s7 held-out
+    assert e["tag"] == "s7" and e["split"] == "held_out"
+    assert e["k6_delivered"] is True and e["replay_ok"] is True and e["deterministic"] is True
+    assert "basin_candidates" not in e

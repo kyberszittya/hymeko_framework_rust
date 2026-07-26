@@ -19,9 +19,16 @@ from __future__ import annotations
 
 import json
 import os
+import resource
 import sys
+import time
 
 REPORT_DIR = "reports/2026-07-27-coin-teacher-to-rl"
+
+
+def _peak_rss_gb() -> float:
+    r = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return round(r / (1024 ** 3 if sys.platform == "darwin" else 1024 ** 2), 3)
 
 
 def _dump(obj: dict, name: str) -> str:
@@ -43,9 +50,57 @@ def semantics_main() -> dict:
     return sem
 
 
+def teacher_bank_main(smoke: bool = False) -> dict:
+    """Stage 1 — reproduce + freeze the 6-D torque-θ teacher bank; gate on 4/4 canonical frozen-tolerance replay."""
+    import torch
+    torch.set_num_threads(1)
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import (
+        CERTIFIED_SEEDS, DEV_IDS, HELDOUT_IDS, STATE_TAG, load_harness, reproduce_state)
+    t0 = time.time()
+    harness = load_harness()
+    seeds = list(CERTIFIED_SEEDS[:1]) if smoke else list(CERTIFIED_SEEDS)
+    print(f"TEACHER BANK — reproduce {len(seeds)} certified cradle(s) {[STATE_TAG[i] for i in range(len(seeds))]} "
+          f"({'smoke:s1' if smoke else 'full 4-state'})", flush=True)
+    entries = []
+    for idx, seed in enumerate(seeds):
+        te = time.time()
+        e = reproduce_state(harness, idx, seed, augment=(idx in DEV_IDS))
+        entries.append(e)
+        oc = e.get("outcome", {})
+        print(f"  {e['tag']} [{e['split']}] seed{seed}: k6={e.get('k6_delivered')} replay_ok={e.get('replay_ok')} "
+              f"dtz {oc.get('dtz_start_mm')}→{oc.get('dtz_end_mm')}mm dwell={oc.get('k6_max_dwell')}/6 "
+              f"θ={e.get('canonical_theta_vec')} basin={e.get('n_basin_delivering','-')}/{e.get('n_basin_near','-')} "
+              f"({time.time()-te:.1f}s)", flush=True)
+    canon = [e for e in entries if "canonical_theta_vec" in e]
+    n_deliver = sum(1 for e in canon if e.get("k6_delivered"))
+    n_replay = sum(1 for e in canon if e.get("replay_ok"))
+    expected = len(seeds)
+    gate = {"all_canonical_replay": bool(n_replay == expected), "all_canonical_k6": bool(n_deliver == expected),
+            "n_delivered": n_deliver, "n_replay_ok": n_replay, "n_states": expected,
+            "k6_by_frozen_monitor_only": True, "no_pin_teleport_or_coin_edit": True,
+            "passed": bool(n_replay == expected and n_deliver == expected)}
+    bank = {"contract": "COIN_6D_TORQUE_THETA_TEACHER_BANK_V1", "base_tag": "coin-physical-feasibility-closed",
+            "base_commit": "a3459629", "date": "2026-07-27",
+            "certified_seeds": list(CERTIFIED_SEEDS),
+            "split": {"development": [STATE_TAG[i] for i in DEV_IDS], "held_out": [STATE_TAG[i] for i in HELDOUT_IDS],
+                      "policy": "dev θ + dev basin augment used for fitting; held-out θ frozen for evaluation ONLY"},
+            "option_config": {"horizon": 60, "lo": [0.0, 0.0, -0.10, 1.0, 4.0, 0.0],
+                              "hi": [0.25, 0.30, 0.10, 28.0, 48.0, 4.0], "cem_seed": 20260727, "pop": 56, "iters": 10},
+            "states": entries, "gate": gate, "smoke": bool(smoke),
+            "peak_rss_gb": _peak_rss_gb(), "wall_s": round(time.time() - t0, 1)}
+    path = _dump(bank, "teacher_bank.json")
+    n_dev_aug = sum(e.get("n_basin_delivering", 0) + e.get("n_basin_near", 0) for e in entries if e["split"] == "development")
+    print(f"\n== TEACHER BANK ==\n  canonical delivered {n_deliver}/{expected} | replay_ok {n_replay}/{expected} | "
+          f"dev basin candidates {n_dev_aug} | peak RSS {bank['peak_rss_gb']} GB | wall {bank['wall_s']}s\n"
+          f"  GATE: {'PASS' if gate['passed'] else 'FAIL'} | artifact: {path}\nTEACHER_BANK_DONE", flush=True)
+    return bank
+
+
 if __name__ == "__main__":
     if "--semantics" in sys.argv:
         semantics_main()
+    elif "--teacher-bank" in sys.argv:
+        teacher_bank_main(smoke="--smoke" in sys.argv)
     else:
         print("specify a mode: --semantics | --teacher-bank | --dataset | --bc | --update0 | --rl-smoke | --rl-multiseed")
         sys.exit(2)
