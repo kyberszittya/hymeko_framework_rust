@@ -1,0 +1,179 @@
+"""R4 closed-loop basin-aware intent correction — the mandatory Stage-3 tests (frozen contract
+`reports/2026-07-27-coin-r4-closed-loop-intent-contract.md`). Tests 1-6, 8, 10 drive the PURE law / phase machine with
+synthetic inputs (fast, no physics); the GOLDEN + decoder contract (7, 9) drive real dev snapshots and are marked slow.
+No held-out data (s4/s7) is used for design here.
+
+The delivering strategy is PUSH-then-COAST (build momentum, RELEASE, coast into the zone under friction). The load-bearing
+guarantees tested here:
+  * GOLDEN — the closed-loop rollout under a constant controller reproduces the frozen option BIT-IDENTICALLY.
+  * zero-residual identity — a benign, on-plan response yields ≈0 correction (C0 in unit form).
+  * coast monotonicity — more forward momentum ⇒ the coast-in phase can only ADVANCE toward RELEASE, never revert.
+  * contact monotonicity, mirror equivariance, phase monotonicity, energy/stopping algebra, budget provenance,
+    decoder contract, no-teacher, determinism.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from hymeko_rl.coin_delivery.theta_option.closed_loop_intent import (
+    BRAKE, PUSH, RELEASE, ClosedLoopController, CorrectionParams, IntentCorrector, PhaseMachine, coast_reach,
+    coastin_phase)
+from hymeko_rl.coin_delivery.theta_option.closed_loop_state import (
+    braking_decel, brake_work, kinetic_energy, over_speed, stopping_distance)
+from hymeko_rl.coin_delivery.theta_option.physical_intent import PhysicalIntent
+from hymeko_rl.coin_delivery.theta_option.semantics import ThetaBox
+
+FWD, PEAKV, LAT, SQZ, BRK_E, BRK_D, REL = range(7)
+
+
+def _intent(**kw) -> PhysicalIntent:
+    base = dict(forward_drive=0.04, peak_velocity=0.30, lateral=0.0, squeeze=0.05,
+                brake_entry=0.20, braking_demand=0.60, release=0.30)
+    base.update(kw)
+    return PhysicalIntent(**base)
+
+
+class _Resp:
+    """A synthetic ResponseState-duck exposing only the fields the corrector reads."""
+
+    def __init__(self, *, dtz=0.05, v_parallel=0.2, v_perpendicular=0.0, coin_spin=0.0, coin_speed=0.2,
+                 both_contact=True, fn=(1.0, 1.0)):
+        self.dtz, self.v_parallel, self.v_perpendicular, self.coin_spin = dtz, v_parallel, v_perpendicular, coin_spin
+        self.coin_speed, self.both_contact, self.fn = coin_speed, both_contact, tuple(fn)
+
+
+# ── energy / stopping algebra (physics-free) ────────────────────────────────────────────────────────────────────────
+def test_energy_stopping_equivalence_and_guard():
+    """E_kin > W_brake ⇔ d_stop > d_safe (mass-free guard); a vanishing authority reads as over-speed (floored)."""
+    for v in (0.05, 0.263, 0.45, 0.7):
+        a_brake, d_safe, m = 0.4, 0.06, 0.05
+        assert (kinetic_energy(m, v) > brake_work(m, a_brake, d_safe)) == over_speed(stopping_distance(v, a_brake), d_safe)
+    assert braking_decel(0.0, 0.05) > 0.0
+    assert stopping_distance(0.5, 1.0) > stopping_distance(0.3, 1.0)
+    assert stopping_distance(0.5, 2.0) < stopping_distance(0.5, 1.0)
+
+
+def test_coast_reach_monotone():
+    assert coast_reach(0.5, 0.5) > coast_reach(0.3, 0.5)       # more speed ⇒ more reach
+    assert coast_reach(0.5, 1.0) < coast_reach(0.5, 0.5)       # more friction ⇒ less reach
+    assert coast_reach(-0.3, 0.5) == 0.0                       # a receding coin reaches 0
+
+
+# ── 1. ZERO-RESIDUAL IDENTITY — a benign, on-plan response yields ≈0 correction ─────────────────────────────────────
+def test_1_zero_residual_identity():
+    c = IntentCorrector(CorrectionParams())                    # k_forward_deficit = 0 by default
+    intent = _intent(squeeze=0.05)                             # squeeze below the push cap
+    resp = _Resp(dtz=0.05, v_parallel=0.2, both_contact=True, fn=(1.0, 1.0), v_perpendicular=0.0)
+    out, log = c.correct(intent, resp, was_swapped=False)
+    assert np.allclose(out.to_vector(), intent.to_vector(), atol=1e-9), (log, out.to_vector())
+    assert log["fired"] == []
+
+
+# ── 2. OVER-CONTROL / COAST MONOTONICITY — more momentum ⇒ phase only ADVANCES toward RELEASE, never reverts ─────────
+def test_2_coast_phase_monotone_in_momentum():
+    p = CorrectionParams()
+    # holding geometry fixed, a faster coin reaches a phase ≥ a slower coin's (never earlier→PUSH after RELEASE)
+    prev = PUSH
+    for v in np.linspace(0.0, 1.2, 25):
+        ph = coastin_phase(dtz=0.10, v_parallel=float(v), p=p, elapsed=10, phase_floor=PUSH)
+        assert ph >= prev - 0  # phase is non-decreasing in speed (PUSH -> RELEASE -> BRAKE-trim on strong overshoot)
+        prev = max(prev, PUSH)
+    assert coastin_phase(0.10, 0.05, p, elapsed=10, phase_floor=PUSH) == PUSH        # too slow ⇒ keep building
+    assert coastin_phase(0.10, 0.31, p, elapsed=10, phase_floor=PUSH) == RELEASE     # reach in the coast-in band
+    assert coastin_phase(0.10, 0.70, p, elapsed=10, phase_floor=PUSH) == BRAKE       # strong overshoot ⇒ trim/arrest
+    assert coastin_phase(0.10, 0.31, p, elapsed=2, phase_floor=PUSH) == PUSH         # min-push guard holds first
+    assert coastin_phase(0.10, 0.90, p, elapsed=2, phase_floor=PUSH) == BRAKE        # overshoot beats the min-push guard
+
+
+# ── 3. CONTACT-RISK MONOTONICITY — lower contact margin ⇒ more squeeze, never more push ─────────────────────────────
+def test_3_contact_risk_monotone():
+    c = IntentCorrector(CorrectionParams())
+    intent = _intent(squeeze=0.08)
+    o_h, _ = c.correct(intent, _Resp(both_contact=True, fn=(1.0, 1.0)), was_swapped=False)
+    o_r, _ = c.correct(intent, _Resp(both_contact=True, fn=(0.01, 0.01)), was_swapped=False)
+    o_l, _ = c.correct(intent, _Resp(both_contact=False, fn=(0.0, 0.0)), was_swapped=False)
+    assert o_r.to_vector()[SQZ] >= o_h.to_vector()[SQZ]
+    assert o_l.to_vector()[SQZ] >= o_h.to_vector()[SQZ]
+    assert o_r.to_vector()[FWD] == o_h.to_vector()[FWD]        # contact risk never changes forward
+
+
+# ── 4. MIRROR EQUIVARIANCE — mirrored response ⇒ mirrored (canonical-invariant) Δintent; decoded balance flips ───────
+def test_4_mirror_equivariance():
+    c = IntentCorrector(CorrectionParams())
+    intent = _intent(lateral=0.0)
+    out_a, _ = c.correct(intent, _Resp(v_perpendicular=0.08, coin_spin=0.2), was_swapped=False)
+    out_b, _ = c.correct(intent, _Resp(v_perpendicular=-0.08, coin_spin=-0.2), was_swapped=True)
+    assert np.allclose(out_a.to_vector(), out_b.to_vector(), atol=1e-9)   # canonical Δintent mirror-invariant
+    from hymeko_rl.coin_delivery.theta_option.authority_decoder import decode_from_canonical
+    gc = {"forward_push_reach": np.array([0.08]), "brake_opposed_reach": np.array([0.08]),
+          "lateral_reach_pair": np.array([0.09, 0.09]), "normal_force_reach_pair": np.array([0.2, 0.2])}
+    r0 = decode_from_canonical(out_a, gc, False, 0.3, 60.0)
+    r1 = decode_from_canonical(out_a, gc, True, 0.3, 60.0)
+    assert np.isclose(r0.physical_theta[2], -r1.physical_theta[2], atol=1e-9)      # balance flips
+    for j in (0, 1, 3, 4, 5):
+        assert np.isclose(r0.physical_theta[j], r1.physical_theta[j], atol=1e-9)
+
+
+# ── 6. PHASE MONOTONICITY — PUSH→BRAKE→RELEASE only; force_phase advances; neutral on a constant θ ──────────────────
+def test_6_phase_monotone_and_neutral():
+    pm = PhaseMachine()
+    theta = np.array([0.1, 0.2, 0.0, 6.0, 12.0, 1.5])
+    phases = []
+    for t in range(1, 17):
+        out, ph = pm.step(theta, t)
+        phases.append(ph)
+        assert np.array_equal(out, theta), (t, out)             # constant θ, force_phase=PUSH ⇒ no-op on θ
+    assert phases == sorted(phases) and set(phases) <= {PUSH, BRAKE, RELEASE}
+    pm2 = PhaseMachine()
+    pm2.step(theta, 5, force_phase=RELEASE)                     # state forces RELEASE early
+    _o, ph = pm2.step(theta, 6, force_phase=PUSH)              # a later PUSH request cannot revert
+    assert ph == RELEASE
+
+
+# ── 8. TOTAL SEARCH-BUDGET PROVENANCE (unit: the corrector/phase add no candidates) ────────────────────────────────
+def test_8_budget_semantics_unit():
+    from hymeko_rl.coin_delivery.theta_option.search import search_semantics
+    for b in (0, 1, 4, 8):
+        s = search_semantics(b)
+        assert s["n_total_candidates"] == max(1, b) and s["budget_counts_total_candidates"]
+
+
+# ── 10. DETERMINISM — same (intent, response, sw) ⇒ identical Δintent ───────────────────────────────────────────────
+def test_10_determinism():
+    c = IntentCorrector(CorrectionParams())
+    intent = _intent(squeeze=0.25)
+    resp = _Resp(v_perpendicular=0.09, fn=(0.02, 0.02), both_contact=True)
+    a, la = c.correct(intent, resp, was_swapped=True)
+    b, lb = c.correct(intent, resp, was_swapped=True)
+    assert np.array_equal(a.to_vector(), b.to_vector()) and la == lb
+
+
+# ── 7. GOLDEN (constant-controller ≡ rollout_primitive) + 9. NO TEACHER FALLBACK + DECODER CONTRACT — slow ──────────
+@pytest.mark.slow
+def test_7_9_golden_physical():
+    import json
+    from hymeko_rl.coin_delivery.forward_displacement import rollout_primitive
+    from hymeko_rl.coin_delivery.theta_option.closed_loop_rollout import ConstantController, closed_loop_rollout
+    from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
+    from hymeko_rl.coin_delivery.theta_option.physical_intent import extract_teacher_intent
+    from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
+    from hymeko_rl.coin_delivery.theta_option.teacher_bank import load_harness
+    bank = json.load(open("reports/2026-07-27-coin-teacher-to-rl/teacher_bank.json"))
+    box = ThetaBox()
+    panel = build_panel(load_harness(), bank)
+    for ps in panel:
+        if ps.split != "development":
+            continue
+        th = np.asarray(ps.teacher_theta, np.float64)
+        m_ref = rollout_primitive(ps.snap, tuple(th), DELIVERY_CFG)
+        m_cl = closed_loop_rollout(ps.snap, ConstantController(th), DELIVERY_CFG)
+        assert np.array_equal(np.asarray(m_ref["coin_trace"]), np.asarray(m_cl["coin_trace"])), ps.tag
+        for k in ("k6_delivered", "k6_max_dwell", "dtz_end", "peak_qdot", "peak_coin_speed", "forward",
+                  "release_step", "lost_before_release", "forward_at_release"):
+            assert m_ref[k] == m_cl[k], (ps.tag, k, m_ref[k], m_cl[k])
+        # DECODER CONTRACT + NO TEACHER FALLBACK: the coast-in controller's step-1 θ is bounded/legal, not the teacher θ
+        intent, _ = extract_teacher_intent(ps.snap, th)
+        ctrl = ClosedLoopController(ps.snap, intent, box.clip(th), IntentCorrector(CorrectionParams()), CorrectionParams())
+        eff = ctrl.theta_for_step(ps.snap.branch(), 1, ps.snap.prev_tau)
+        assert np.all(eff >= box.lo - 1e-6) and np.all(eff <= box.hi + 1e-6)
