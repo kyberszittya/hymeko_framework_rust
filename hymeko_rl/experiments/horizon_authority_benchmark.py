@@ -28,6 +28,7 @@ from hymeko_rl.coin_delivery.horizon_authority import (  # noqa: E402
 from hymeko_rl.coin_delivery.mobile_conditioning import ConditionConfig, condition_mobile_handoff  # noqa: E402
 from hymeko_rl.coin_delivery.torque_authority import (  # noqa: E402
     TorqueAuthorityConfig, analyse_state_btau, decide_btau_route)
+from hymeko_rl.coin_delivery.forward_displacement import ForwardConfig, cem_search  # noqa: E402
 from hymeko_rl.experiments.bv_identification_benchmark import (  # noqa: E402
     CERTIFIED_SEEDS, _load_frozen, acquire_certified_straddle)
 from hymeko_rl.experiments.video_coin_variants import _setup  # noqa: E402
@@ -306,8 +307,130 @@ def _plot_route_b(states: list[dict], path: str) -> None:
     plt.close(fig)
 
 
+def _plot_forward(states: list[dict], path: str) -> None:
+    """Stage-3 figure: (1) per-state forward displacement vs its frozen threshold (5× passive) with success flag;
+    (2) the best-θ coin trajectories in the (forward, cross) plane."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    ana = [(e["tag"], e["search"]) for e in states if e.get("search", {}).get("best_metrics")]
+    if not ana:
+        return
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4.6))
+    x = np.arange(len(ana))
+    fwd = [s["best_metrics"]["forward"] * 1000 for _, s in ana]
+    thr = [s["threshold"] * 1000 for _, s in ana]
+    colors = ["tab:green" if s["success"] else "tab:red" for _, s in ana]
+    ax[0].bar(x, fwd, color=colors, label="forward (mm)")
+    ax[0].plot(x, thr, "k_", markersize=22, markeredgewidth=2, label="threshold = 5× passive")
+    ax[0].set_xticks(x)
+    ax[0].set_xticklabels([t for t, _ in ana])
+    ax[0].set_ylabel("forward displacement (mm)")
+    ax[0].set_title("controlled forward displacement vs threshold\n(green=success)")
+    ax[0].legend(fontsize=8)
+    for tag, s in ana:
+        tr = np.asarray(s["best_metrics"]["coin_trace"])
+        if tr.size:
+            tr = (tr - tr[0]) * 1000
+            ax[1].plot(tr[:, 0], tr[:, 1], marker=".", label=f"{tag}{'✓' if s['success'] else ''}")
+    ax[1].set_xlabel("x (mm)")
+    ax[1].set_ylabel("y (mm)")
+    ax[1].set_title("best-θ coin trajectory (world frame)")
+    ax[1].legend(fontsize=8)
+    ax[1].axis("equal")
+    fig.suptitle("Stage 3 — CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT (slew-admissible Δτ primitive)")
+    fig.tight_layout()
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+
+
+def _render_forward_gif(snap, theta, path) -> bool:
+    """Render the best-θ controlled-push rollout to a GIF (mandatory §9 graphical output). Returns True on success."""
+    try:
+        import imageio.v2 as imageio
+        import mujoco
+        from hymeko_rl.coin_delivery.forward_displacement import ForwardConfig, rollout_primitive
+        from hymeko_rl.experiments.video_coin_variants import _cam
+    except Exception:
+        return False
+    frames, holder = [], {}
+
+    def hook(rl, _t):
+        if "r" not in holder:
+            holder["r"] = mujoco.Renderer(rl.inner.model, height=480, width=640)
+        holder["r"].update_scene(rl.inner.data, camera=_cam())
+        frames.append(np.asarray(holder["r"].render(), np.uint8).copy())
+    rollout_primitive(snap, tuple(theta), ForwardConfig(), frame_hook=hook)
+    if "r" in holder:
+        holder["r"].close()
+    if not frames:
+        return False
+    imageio.mimsave(path, frames, duration=0.12)
+    return True
+
+
+def forward_main(smoke=False):
+    """Stage 3 — CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT via short-horizon torque-primitive CEM search."""
+    import torch
+    torch.set_num_threads(1)
+    os.makedirs(REPORT_DIR, exist_ok=True)
+    t_start = time.time()
+    stack, cfg_coop, v2, mu = _load_frozen()
+    fcfg = ForwardConfig()
+    pi0, base, forbidden = _setup()
+    seeds = CERTIFIED_SEEDS[:2] if smoke else CERTIFIED_SEEDS
+    print(f"FORWARD DISPLACEMENT — torque-primitive CEM | μ={mu:.3f} H={fcfg.horizon} pop={fcfg.pop} iters={fcfg.iters} "
+          f"| seeds={seeds} ({'smoke:dev' if smoke else 'full'})", flush=True)
+    states = []
+    for idx, seed in enumerate(seeds):
+        t0 = time.time()
+        rl, saved, handoff, meta = acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg_coop, seed, tries=3)
+        entry = {"state": idx, "tag": STATE_TAG.get(idx, f"s{idx}"), "seed": seed,
+                 "split": ("development" if idx in DEV_IDS else "held_out")}
+        if rl is None:
+            entry["skipped"] = "no certified straddle"
+            states.append(entry)
+            print(f"  {entry['tag']}: no certified straddle ({time.time()-t0:.1f}s)", flush=True)
+            continue
+        try:
+            snap = CradleSnapshot(rl, stack, saved, handoff["prev_tau"], handoff["q_target"],
+                                  release_coin=True, coast_mu=mu, cfg=BvConfig())
+            res = cem_search(snap, fcfg)
+            entry["search"] = res
+            if res["success"] and res["best_theta"] is not None:
+                gif = f"{REPORT_DIR}/forward_push_{entry['tag']}.gif"
+                entry["gif"] = gif if _render_forward_gif(snap, res["best_theta"], gif) else None
+            bm = res["best_metrics"] or {}
+            print(f"  {entry['tag']} seed{seed} [{entry['split']}]: passive={res['passive_drift']*1000:.2f}mm "
+                  f"thresh={res['threshold']*1000:.2f}mm | best fwd={bm.get('forward',0)*1000:.2f}mm "
+                  f"cross={bm.get('cross',0)*1000:.2f}mm fn_push={bm.get('min_fn_push')} "
+                  f"lost_pre_rel={bm.get('lost_before_release')} term_v={bm.get('terminal_coin_speed',0):.2f} "
+                  f"peak_qdot={bm.get('peak_qdot',0):.2f} θ={res['best_theta']} → SUCCESS={res['success']} "
+                  f"({time.time()-t0:.1f}s)", flush=True)
+        except InvalidCradleSnapshot as e:
+            entry["invalid"] = str(e)
+            print(f"  {entry['tag']}: invalid snapshot — {e}", flush=True)
+        states.append(entry)
+    n_success = sum(1 for e in states if e.get("search", {}).get("success"))
+    peak_rss_gb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 ** 3 if sys.platform == "darwin" else 1024 ** 2)
+    manifest = {"contract": "CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT", "session": "H2_SESSION_2_STAGE3",
+                "date": "2026-07-27", "decision_variable": "slew-admissible Δτ torque primitive (5 params)",
+                "frozen_split": {"development": ["s1", "s3"], "held_out": ["s4", "s7"]},
+                "success_predicate": "forward >= max(5mm, 5x passive) AND forward > 5x passive AND cross <= forward "
+                "AND motion contract held AND no pin", "n_states": len(seeds), "n_success": n_success, "states": states,
+                "peak_rss_gb": round(peak_rss_gb, 3), "wall_s": round(time.time() - t_start, 1)}
+    art = f"{REPORT_DIR}/controlled_insertion.json"
+    json.dump(manifest, open(art, "w"), indent=1, default=float)
+    _plot_forward(states, f"{REPORT_DIR}/controlled_forward_displacement.png")
+    print(f"\n== FORWARD DISPLACEMENT ==\n  successes: {n_success}/{len([s for s in states if 'search' in s])} "
+          f"| peak RSS {peak_rss_gb:.2f} GB | wall {manifest['wall_s']}s\n  artifact: {art}\nFORWARD_DONE", flush=True)
+    return manifest
+
+
 if __name__ == "__main__":
     if "--route-b" in sys.argv:
         route_b_main(smoke="--smoke" in sys.argv)
+    elif "--forward" in sys.argv:
+        forward_main(smoke="--smoke" in sys.argv)
     else:
         main(smoke="--smoke" in sys.argv, condition="--condition" in sys.argv)

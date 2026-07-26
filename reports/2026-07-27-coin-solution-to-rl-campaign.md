@@ -207,3 +207,44 @@ L/R balance, ramp duration, release time) → short-horizon **CEM/MPC search** (
 first **`CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT`** (≥ 5 mm target-directed, > 5× passive drift, bounded
 cross-track, no motion-contract breach, no pin) → mobile composition → BC / update-0 on the low-dim primitive params →
 matched SAC / TD3 in that option space.
+
+---
+
+## Stage 3 — CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT (PASS — 2/4 incl. held-out)
+
+**Primitive (`forward_displacement.py`).** From the exact free-coin handoff, a 5-param torque primitive
+θ = (squeeze_mag, forward_mag, balance, ramp_steps, release_step) maps, per control step, to a slew-admissible
+increment `Δτ_cmd_t` (|Δτ_cmd| ≤ τ̇·dt) built from the LIVE geometry: `squeeze_dir` = normalized (inward_L + inward_R)
+(grip; analytic tip Jacobian), `forward_dir` = normalized (Jᵀe_par|_L + Jᵀe_par|_R) (push both tips toward the zone,
+`e_par` = direction_to_zone), `balance` shifts the push between arms; the schedule ramps the push+grip up, holds
+(coast), then relaxes the grip at `release_step`. Applied as `a = clip(prev_tau + Δτ_cmd, lo, hi)` then the governor —
+the same governed stack as Route B. Bounded CEM (pop 32, iters 6, deterministic) maximises a physical objective
+(forward displacement, hard-excluded on a motion-contract breach / coin-speed blow-up / net-backward, soft-shaped
+toward a controlled release), H = 16 steps.
+
+**Success certificate (external, physical — not reward):** forward ≥ max(5 mm, 5× passive) ∧ forward > 5× passive ∧
+cross ≤ forward ∧ **dual contact retained through the push phase** (`lost_before_release = 0`, `min_fn_push ≥ 0.05 N`) ∧
+**controlled release** (terminal coin speed ≤ 1.0 m/s) ∧ no motion-contract breach ∧ no pin. Passive drift is the honest
+**position-hold** baseline (pd servo at q_hold — a torque hold is not stationary, its residual torque pushes the coin).
+
+**Result (`controlled_insertion.json`):**
+
+| state | split | passive (mm) | threshold (mm) | forward (mm) | cross (mm) | fn_push (N) | term v (m/s) | peak q̇ | **success** |
+|---|---|---|---|---|---|---|---|---|---|
+| s1 | dev | 10.30 | 51.5 | 40.2 | 2.1 | 0.60 | 0.37 | 2.01 | no (below 5× bar) |
+| **s3** | **dev** | 4.49 | 22.4 | **42.4** | 10.4 | 2.56 | 0.99 | 1.58 | **YES** |
+| **s4** | **held-out** | 0.70 | 5.0 | **38.7** | 4.7 | 0.55 | 0.34 | 1.35 | **YES** |
+| s7 | held-out | 24.35 | 121.8 | 81.5 | 13.3 | 0.90 | 0.99 | 1.37 | no (below 5× bar) |
+
+**The coin moves — controlled — on a development AND a held-out state.** s3 (dev, 42 mm) and s4 (held-out, 39 mm) meet
+the full certificate: contact retained through the push, controlled release, predominantly forward, no motion breach,
+no pin. s1 and s7 produce equally *controlled* pushes (40 / 82 mm, contact retained, controlled release) but their
+coins **intrinsically slide forward 10 / 24 mm even under a position hold** (the cradle sits on a slope), so their
+5×-passive bars (51 / 122 mm) are very high — the controlled push still adds a real 3.3–3.9× over passive there, just
+not 5×. The Stage-3 gate (≥ 2 certified successes ∧ ≥ 1 held-out ∧ forward clearly exceeds passive ∧ no motion breach)
+is **met**.
+
+**Milestone: `CONTROLLED_BIMANUAL_FORWARD_COIN_DISPLACEMENT`.** Tests: 3 pure predicate/score tests + 1 integration
+(s3 controlled push). Graphical output: `controlled_forward_displacement.png` (forward-vs-threshold bars + best-θ coin
+trajectories) and non-static GIFs `forward_push_s3.gif` / `forward_push_s4.gif` (16 frames, verified real coin motion).
+Peak RSS 0.31 GB, wall 135 s. No new deps (imageio already present).
