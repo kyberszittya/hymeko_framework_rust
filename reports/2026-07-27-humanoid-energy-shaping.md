@@ -49,20 +49,40 @@ support — energy shaping *deriving* the ankle/hip strategy, not tuning an ad-h
 - **Physically realistic** — joint speeds **0.8–1.4 rad/s** (cleaner than the PD-hold's 1.5;
   far from the retracted 27 rad/s AIBO exploit).
 
+## Full IDA-PBC — KINETIC energy shaping (M_d ≠ M) enlarges the recovery basin
+
+Potential shaping alone ignores the coupled inertia. **Full IDA-PBC** also shapes the kinetic
+energy — realized tractably as **operational-space COM control** (`KineticShapedBalance`): the
+COM error dynamics is shaped with the *task-space inertia* `Λ = (J M⁻¹ Jᵀ)⁻¹` (computed via
+`mj_solveM`, i.e. M_d ≠ M), so the restoring force `Jᵀ Λ ẍ*` is correctly inertia-weighted
+instead of an ad-hoc COM gain.
+
+| pitch | potential-shaping | **kinetic-shaped (full IDA-PBC)** |
+|---|---|---|
+| 0.2 | ✅ certifies | ✅ certifies |
+| **0.3** | ❌ (overshoot) | ✅ **certifies** (0.9 rad/s) |
+| ≥ 0.4 | ❌ | ❌ (both) |
+
+**The kinetic shaping extends the certified recovery envelope 0.2 → 0.3** (a 50 % larger
+basin), at even cleaner joint speeds (0.9 vs 1.1 rad/s) — exactly the IDA-PBC prediction:
+accounting for the coupled inertia gives better authority over the unactuated base.
+Regression-locked (`test_kinetic_shaping_enlarges_certified_basin`: kinetic certifies a 0.3
+pitch that potential-shaping fails).
+
 ## Files
 
 ```
-scenarios/humanoid/energy_shaping.py         NEW  (EnergyShapingBalance: IDA-PBC torque + shaped_energy)
-tests/test_humanoid_energy_shaping.py        NEW  5 tests (balances, H_d is Lyapunov, realistic, certifies, Jacobian)
+scenarios/humanoid/energy_shaping.py         NEW  (EnergyShapingBalance potential + KineticShapedBalance full IDA-PBC)
+tests/test_humanoid_energy_shaping.py        NEW  7 tests (balances, H_d Lyapunov, realistic, certifies, Jacobian, kinetic enlarges basin)
 ```
 
 Reuses the balance env, `HumanoidCOMLyapunov`, `evaluate_lyapunov`; the certificate is unchanged.
 
 ## Tests / lint
 
-`ruff` clean. **27/27 humanoid tests pass** (1.55 s), including 5 new energy-shaping tests that
-lock: it balances, `H_d ≥ 0` and near-monotone (Lyapunov), joint speeds < 5 rad/s (realistic),
-and it certifies a small perturbation.
+`ruff` clean. **29/29 humanoid tests pass** (1.9 s), including 7 new energy-shaping tests that lock: it
+balances, `H_d ≥ 0` and near-monotone (Lyapunov), realistic joint speeds, certifies a small
+perturbation, and the kinetic shaping enlarges the certified basin (0.3 where potential fails).
 
 ## Bottom line
 

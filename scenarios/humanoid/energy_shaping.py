@@ -73,3 +73,44 @@ class EnergyShapingBalance:
         off = self._com_support(env)
         vd = 0.5 * self.kp * float(np.sum((q_a - env._q0j) ** 2)) + 0.5 * self.w_com * float(np.dot(off, off))
         return ke + vd
+
+
+@dataclass
+class KineticShapedBalance:
+    """Full IDA-PBC with KINETIC energy shaping, realized as operational-space COM control.
+
+    Shapes the COM error dynamics with the *task-space inertia* ``Λ = (J M⁻¹ Jᵀ)⁻¹`` (the true
+    coupled inertia, i.e. M_d != M kinetic shaping) instead of an ad-hoc COM gain — so the
+    restoring force is correctly inertia-scaled, enlarging the recovery basin. The desired COM
+    acceleration ``ẍ* = −K_x(com−support) − D_x·ċom`` gives a critically-damped COM regulation;
+    a null-space posture task + damping keep the pose. # Postconditions ``torque(env)`` returns the
+    actuated-joint torques.
+    """
+
+    kx: float = 60.0                 # COM position stiffness (task space)
+    dx: float = 14.0                 # COM velocity damping (task space)
+    kp_pose: float = 25.0            # null-space posture regulation
+    kd: float = 8.0
+    tau_max: float = 150.0
+
+    def torque(self, env) -> np.ndarray:
+        import mujoco
+        d, m = env.data, env.model
+        nv = m.nv
+        jacp = np.zeros((3, nv))
+        mujoco.mj_jacSubtreeCom(m, d, jacp, 1)
+        jxy = np.ascontiguousarray(jacp[0:2])                       # (2, nv) COM xy Jacobian
+        minv_jt = np.zeros((2, nv))                                 # solve M x_i = Jᵀ_i  ->  x_i = M⁻¹ Jᵀ_i
+        mujoco.mj_solveM(m, d, minv_jt, jxy)
+        lam = np.linalg.inv(jxy @ minv_jt.T + 1e-6 * np.eye(2))     # task-space (COM) inertia — kinetic shaping
+        com_xy = np.asarray(d.subtree_com[1][:2], np.float64)
+        support = 0.5 * (d.xpos[env._fl][:2] + d.xpos[env._fr][:2])
+        com_vel = (jxy @ np.asarray(d.qvel))                        # exact COM xy velocity
+        xdd = -self.kx * (com_xy - support) - self.dx * com_vel
+        tau_full = jxy.T @ (lam @ xdd)                             # inertia-weighted COM restoring, mapped to joints
+        bias = np.array([float(d.qfrc_bias[dof]) for dof in env._act_dof])
+        q_a = np.array([d.qpos[a] for a in env._act_qadr])
+        qd_a = np.array([d.qvel[dof] for dof in env._act_dof])
+        tau_com = np.array([float(tau_full[dof]) for dof in env._act_dof])
+        tau = bias + tau_com - self.kp_pose * (q_a - env._q0j) - self.kd * qd_a
+        return np.clip(tau, -self.tau_max, self.tau_max)

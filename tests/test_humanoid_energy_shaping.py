@@ -8,24 +8,25 @@ import pytest
 pytest.importorskip("mujoco")
 
 from scenarios.humanoid.balance_env import BalanceConfig, HumanoidBalanceEnv  # noqa: E402
-from scenarios.humanoid.energy_shaping import EnergyShapingBalance  # noqa: E402
+from scenarios.humanoid.energy_shaping import EnergyShapingBalance, KineticShapedBalance  # noqa: E402
 from scenarios.humanoid.lyapunov import evaluate_lyapunov  # noqa: E402
 
 
-def _rollout(pitch: float, steps: int = 500):
+def _rollout(pitch: float, steps: int = 500, ctrl=None):
     env = HumanoidBalanceEnv(cfg=BalanceConfig(max_steps=steps), seed=0)
     mj, m, d = env._mj, env.model, env.data
-    ctrl = EnergyShapingBalance()
+    ctrl = ctrl or EnergyShapingBalance()
     d.qpos[:] = env._q0
     d.qpos[env._base + 2] = 0.80
     d.qvel[:] = 0.0
     d.qvel[4] = pitch
     mj.mj_forward(m, d)
     Hs, Vs, up, mjv = [], [], 0, 0.0
+    energy = getattr(ctrl, "shaped_energy", lambda _e: 0.0)        # kinetic controller has no shaped_energy
     for k in range(steps):
         d.ctrl[:] = ctrl.torque(env)
         mj.mj_step(m, d)
-        Hs.append(ctrl.shaped_energy(env))
+        Hs.append(energy(env))
         Vs.append(env.V(env._com_sig()))
         sig = env._com_sig()
         if sig["uprightness"] > 0.6 and float(d.xpos[env._pelvis, 2]) > 0.55:
@@ -61,3 +62,16 @@ def test_com_jacobian_term_shape() -> None:
     env.reset(seed=0)
     j = EnergyShapingBalance()._com_jac_xy(env)
     assert j.shape == (2, env.model.nu)               # d(com_xy)/d(q_actuated)
+
+
+def test_kinetic_shaping_enlarges_certified_basin() -> None:
+    # full IDA-PBC (task-space COM inertia = kinetic shaping) certifies pitch 0.3 where potential-only fails
+    _e, _c, _H, v_pot, _u, _m = _rollout(0.3, ctrl=EnergyShapingBalance())
+    _e2, _c2, _H2, v_kin, _u2, _m2 = _rollout(0.3, ctrl=KineticShapedBalance())
+    assert not evaluate_lyapunov(v_pot)["passes"]     # potential-shaping fails a 0.3 pitch
+    assert evaluate_lyapunov(v_kin)["passes"]         # kinetic shaping (larger basin) certifies it
+
+
+def test_kinetic_shaping_realistic() -> None:
+    _e, _c, _H, _V, up, mjv = _rollout(0.3, ctrl=KineticShapedBalance())
+    assert up >= 495 and mjv < 5.0                    # balances + realistic joint speeds
