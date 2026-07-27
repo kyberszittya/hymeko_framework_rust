@@ -96,6 +96,23 @@ def test_r5_coast_estimator():
     assert e4.estimate() == e4.a_hi                            # clamped to the physical band
 
 
+# ── R6: the release-certificate monitor latches only after N consecutive certified frames ──────────────────────────
+def test_r6_release_cert_monitor(monkeypatch):
+    import hymeko_rl.coin_delivery.theta_option.release_certificate as rc
+    seq = iter([True, True, False, True, True, True, True])    # a transient (2) then a real 4-in-a-row
+    monkeypatch.setattr(rc, "release_certificate", lambda rl, p=None: (next(seq), {}))
+    mon = rc.ReleaseCertMonitor(rc.ReleaseCertParams(n_frames=3))
+    armed = [mon.update(None, t)[0] for t in range(1, 8)]
+    assert armed == [False, False, False, False, False, True, True]   # arms only on the 3rd consecutive True (t=6)
+    assert mon.armed and mon.armed_at == 6                     # monotone: stays armed
+
+
+def test_r6_release_cert_params():
+    from hymeko_rl.coin_delivery.theta_option.release_certificate import ReleaseCertParams
+    p = ReleaseCertParams()
+    assert p.settle_tol < 0.06 and p.n_frames >= 1            # tighter than K6 settle; needs ≥1 confirming frame
+
+
 # ── 1. ZERO-RESIDUAL IDENTITY — a benign, on-plan response yields ≈0 correction ─────────────────────────────────────
 def test_1_zero_residual_identity():
     c = IntentCorrector(CorrectionParams())                    # k_forward_deficit = 0 by default
