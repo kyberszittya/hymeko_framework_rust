@@ -519,6 +519,62 @@ def c1_projection(n_seg: int = 6, pop: int = 40, n_iter: int = 5) -> dict:
     return out
 
 
+# ── R10-C2 — APPROACH momentum-build mechanism gate (dev s1 only; staged C2-A..D) ────────────────────────────────────
+def _run_approach(snap: Any, ap: Any, *, enabled: bool = True) -> dict:
+    """Roll the HybridApproachController on a cradle; capture peak v_par, min dtz, K6, safety, and the approach exit."""
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import HybridApproachController
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    ctrl = HybridApproachController(snap, TipTransportParams(), ap, DELIVERY_CFG, enabled=enabled)
+    acc = {"v": -1e9, "d": 1e9}
+
+    def hook(rl: Any, t: int) -> None:
+        u, d = rl.inner.direction_to_zone()
+        vel = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
+        acc["v"] = max(acc["v"], float(np.dot(vel, np.asarray(u, np.float64)[:2])))
+        acc["d"] = min(acc["d"], float(d))
+    m = velocity_rollout(snap, ctrl, DELIVERY_CFG, frame_hook=hook)
+    safe = bool(m["peak_coin_speed"] <= 1.5 and m["peak_qdot"] <= 3.0)
+    return {"qdot_approach": ap.qdot_approach, "launch": [ap.launch_vlo, ap.launch_vhi], "peak_vpar": round(acc["v"], 4),
+            "min_dtz_mm": round(acc["d"] * 1000, 1), "dtz_end_mm": round(float(m["dtz_end"]) * 1000, 1),
+            "k6": bool(safe and delivery_success(m, DELIVERY_CFG)), "safe": safe, "exit_step": ctrl.approach_exit_step,
+            "exit_reason": ctrl.exit_reason, "peak_qdot": round(float(m["peak_qdot"]), 3),
+            "peak_coin": round(float(m["peak_coin_speed"]), 3)}
+
+
+def c2_mechanism() -> dict:
+    """R10-C2 — does the APPROACH momentum-build mode materially exceed the 0.154 forward-velocity ceiling (safely), exit via
+    a causal guard, hand off to the frozen brake, and (staged) reach s1 K6? Dev s1 only; blind/validation states untouched."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    bank = json.load(open(BANK))
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}["s1"].snap
+    grid = [ApproachParams(qdot_approach=q, launch_vlo=lo, launch_vhi=lo + 0.20)
+            for q in (1.6, 2.0, 2.4, 2.8) for lo in (0.15, 0.25, 0.35)]
+    runs = [_run_approach(snap, ap) for ap in grid]
+    scaffold = _run_approach(snap, ApproachParams(), enabled=False)          # disabled ⇒ the frozen scaffold
+    best = max(runs, key=lambda r: (r["k6"], -r["dtz_end_mm"]))
+    max_v = max(runs, key=lambda r: r["peak_vpar"] if r["safe"] else -1e9)
+    c2a = bool(any(r["peak_vpar"] > 0.154 and r["safe"] for r in runs))
+    c2b = bool(any(r["exit_reason"] in ("LAUNCH", "REACHABILITY") and r["safe"] for r in runs))
+    c2c = bool(any(r["exit_step"] is not None and r["safe"] for r in runs))
+    c2d = bool(best["k6"])
+    verdict = ("APPROACH_MOMENTUM_MODE_DELIVERS_S1" if c2d else
+               "APPROACH_BUILDS_MOMENTUM_BUT_NO_S1_K6" if c2a else "APPROACH_PRIMITIVE_DOES_NOT_BUILD_MOMENTUM")
+    out = {"contract": "COIN_R9_R10C2_APPROACH_MECHANISM", "cradle": "s1", "scaffold_ceiling_peak_vpar": 0.154,
+           "scaffold_disabled_repro": scaffold, "max_peak_vpar_run": max_v, "best_delivery_run": best,
+           "C2A_peak_vpar_exceeds_ceiling_safely": c2a, "C2B_exits_via_causal_guard": c2b,
+           "C2C_hands_off_to_brake": c2c, "C2D_reaches_s1_k6": c2d, "verdict": verdict, "n_configs": len(runs),
+           "runs": runs, "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10c2_approach_mechanism.json", "w"), indent=1, default=float)
+    print(f"   scaffold(disabled) peak_vpar {scaffold['peak_vpar']} dtz {scaffold['dtz_end_mm']}mm | "
+          f"MAX approach peak_vpar {max_v['peak_vpar']} (safe {max_v['safe']}) | best {best['dtz_end_mm']}mm K6 {best['k6']} "
+          f"exit {best['exit_reason']}@{best['exit_step']}\n"
+          f"   C2-A {c2a} | C2-B {c2b} | C2-C {c2c} | C2-D {c2d}\n== R10-C2 ==\n  {verdict} | wall {out['wall_s']}s\n"
+          f"R9_C2_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
@@ -532,6 +588,8 @@ def main(argv: "list[str]") -> None:
         c0_trace_audit()
     elif "--c1" in argv:
         c1_projection()
+    elif "--c2" in argv:
+        c2_mechanism()
     elif "--stage3" in argv:
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)

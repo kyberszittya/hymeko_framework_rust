@@ -1,0 +1,254 @@
+{
+ "contract": "COIN_R9_R10C2_APPROACH_MECHANISM",
+ "cradle": "s1",
+ "scaffold_ceiling_peak_vpar": 0.154,
+ "scaffold_disabled_repro": {
+  "qdot_approach": 2.2,
+  "launch": [
+   0.2,
+   0.42
+  ],
+  "peak_vpar": 0.085,
+  "min_dtz_mm": 57.7,
+  "dtz_end_mm": 57.7,
+  "k6": false,
+  "safe": true,
+  "exit_step": null,
+  "exit_reason": null,
+  "peak_qdot": 0.963,
+  "peak_coin": 0.357
+ },
+ "max_peak_vpar_run": {
+  "qdot_approach": 2.8,
+  "launch": [
+   0.25,
+   0.45
+  ],
+  "peak_vpar": 0.3162,
+  "min_dtz_mm": 50.0,
+  "dtz_end_mm": 50.0,
+  "k6": false,
+  "safe": true,
+  "exit_step": 5,
+  "exit_reason": "LAUNCH",
+  "peak_qdot": 1.942,
+  "peak_coin": 0.359
+ },
+ "best_delivery_run": {
+  "qdot_approach": 2.8,
+  "launch": [
+   0.25,
+   0.45
+  ],
+  "peak_vpar": 0.3162,
+  "min_dtz_mm": 50.0,
+  "dtz_end_mm": 50.0,
+  "k6": false,
+  "safe": true,
+  "exit_step": 5,
+  "exit_reason": "LAUNCH",
+  "peak_qdot": 1.942,
+  "peak_coin": 0.359
+ },
+ "C2A_peak_vpar_exceeds_ceiling_safely": true,
+ "C2B_exits_via_causal_guard": true,
+ "C2C_hands_off_to_brake": true,
+ "C2D_reaches_s1_k6": false,
+ "verdict": "APPROACH_BUILDS_MOMENTUM_BUT_NO_S1_K6",
+ "n_configs": 12,
+ "runs": [
+  {
+   "qdot_approach": 1.6,
+   "launch": [
+    0.15,
+    0.35
+   ],
+   "peak_vpar": 0.1573,
+   "min_dtz_mm": 56.4,
+   "dtz_end_mm": 56.4,
+   "k6": false,
+   "safe": true,
+   "exit_step": 4,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.469,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 1.6,
+   "launch": [
+    0.25,
+    0.45
+   ],
+   "peak_vpar": 0.2091,
+   "min_dtz_mm": 50.2,
+   "dtz_end_mm": 50.2,
+   "k6": false,
+   "safe": true,
+   "exit_step": 19,
+   "exit_reason": "SAFETY",
+   "peak_qdot": 1.469,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 1.6,
+   "launch": [
+    0.35,
+    0.55
+   ],
+   "peak_vpar": 0.2091,
+   "min_dtz_mm": 50.2,
+   "dtz_end_mm": 50.2,
+   "k6": false,
+   "safe": true,
+   "exit_step": 19,
+   "exit_reason": "SAFETY",
+   "peak_qdot": 1.469,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.0,
+   "launch": [
+    0.15,
+    0.35
+   ],
+   "peak_vpar": 0.1957,
+   "min_dtz_mm": 55.9,
+   "dtz_end_mm": 55.9,
+   "k6": false,
+   "safe": true,
+   "exit_step": 4,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.67,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.0,
+   "launch": [
+    0.25,
+    0.45
+   ],
+   "peak_vpar": 0.2671,
+   "min_dtz_mm": 50.8,
+   "dtz_end_mm": 50.8,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.787,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.0,
+   "launch": [
+    0.35,
+    0.55
+   ],
+   "peak_vpar": 0.2671,
+   "min_dtz_mm": 50.8,
+   "dtz_end_mm": 50.8,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "REACHABILITY",
+   "peak_qdot": 1.787,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.4,
+   "launch": [
+    0.15,
+    0.35
+   ],
+   "peak_vpar": 0.2388,
+   "min_dtz_mm": 55.0,
+   "dtz_end_mm": 55.0,
+   "k6": false,
+   "safe": true,
+   "exit_step": 4,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 2.011,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.4,
+   "launch": [
+    0.25,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 50.1,
+   "dtz_end_mm": 50.1,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.4,
+   "launch": [
+    0.35,
+    0.55
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 50.1,
+   "dtz_end_mm": 50.1,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "REACHABILITY",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.8,
+   "launch": [
+    0.15,
+    0.35
+   ],
+   "peak_vpar": 0.2453,
+   "min_dtz_mm": 54.4,
+   "dtz_end_mm": 54.4,
+   "k6": false,
+   "safe": true,
+   "exit_step": 4,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.942,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.8,
+   "launch": [
+    0.25,
+    0.45
+   ],
+   "peak_vpar": 0.3162,
+   "min_dtz_mm": 50.0,
+   "dtz_end_mm": 50.0,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.942,
+   "peak_coin": 0.359
+  },
+  {
+   "qdot_approach": 2.8,
+   "launch": [
+    0.35,
+    0.55
+   ],
+   "peak_vpar": 0.3162,
+   "min_dtz_mm": 50.0,
+   "dtz_end_mm": 50.0,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "REACHABILITY",
+   "peak_qdot": 1.942,
+   "peak_coin": 0.359
+  }
+ ],
+ "wall_s": 93.9
+}
