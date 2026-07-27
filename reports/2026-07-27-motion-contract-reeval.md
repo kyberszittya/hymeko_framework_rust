@@ -54,13 +54,32 @@ contact forces the governor can't cap). Two honest facts remain:
 - it is **still a sprawl, not a step**, and **still slightly airborne** — not a valid protective
   step. Full realism needs also a lower torque authority / no-launch constraint.
 
+## Result 3 — the AIBO actually WALKS forward to the goal (the real point, and it's realistic)
+
+The push-recovery sprawl was a distraction. The **actual task** — walk forward to the goal —
+the `SteeredTrotGait` already does, and does **realistically**:
+
+| forward | max joint speed | foot lift | airborne | reaches goal |
+|---|---|---|---|---|
+| 0.71 m | **5.4 rad/s** (<< the 27 exploit; governor barely triggers) | 2–3 cm (low-clearance trot) | never launches | **yes, dist → 0.29 m** |
+
+`aibo_walk_to_goal.mp4`: the AIBO trots forward to the goal marker with a **foot-contact gait
+diagram** showing the diagonal stepping (the `fr` row's swing bars interrupt stance), telemetry
+showing distance/forward-progress/joint-speed/feet-down, all under the motion contract. It is a
+**real walk** — genuine diagonal-trot stepping, realistic joint speeds, feet lifting 2–3 cm, no
+launch — not the sprawl and not an exploit. (A slight bounce exists — all feet briefly ~1.5 cm
+up — but the feet never clear >3 cm and the robot never launches; regression-tested
+`max_lift < 6 cm`, `joint speed < 10 rad/s`, forward > 0.3 m.)
+
 ## Files
 
 ```
 scenarios/aibo/motion_contract.py        NEW  (JointVelocityGovernor — directional, braking-preserving)
 scenarios/aibo/render_capture_step.py    +governor applied; telemetry shows max_jointspd; honest title
-tests/test_aibo_motion_contract.py       NEW  (governor cuts the exploit; preserves braking)
+tests/test_aibo_motion_contract.py       NEW  (governor cuts exploit; preserves braking; forward-walk realistic)
+scenarios/aibo/render_walk_to_goal.py    NEW  (AIBO walks to goal + foot-contact gait diagram, under contract)
 reports/2026-07-27-aibo-lyapunov/aibo_capture_step.{mp4,gif}  re-rendered under the contract
+reports/2026-07-27-aibo-lyapunov/aibo_walk_to_goal.{mp4,gif}  NEW (the real deliverable: forward walk)
 ```
 
 ## Tests / lint

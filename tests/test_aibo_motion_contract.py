@@ -50,3 +50,24 @@ def test_governor_preserves_braking_and_shape() -> None:
     a = np.ones(env.model.nu, np.float32)            # at spawn all joints ~0 speed -> nothing cut
     out = gov.govern(env, a)
     assert out.shape == a.shape and np.allclose(out, a)
+
+
+def test_forward_trot_walk_is_realistic() -> None:
+    # the actual task: the AIBO WALKS forward (diagonal trot) with realistic joint speeds, never airborne
+    import mujoco
+
+    from scenarios.aibo.locomotion_gait import SteeredTrotGait
+    env = QuadrupedGoalEnv(base="free", task="goal", goal_distance=1.5, reach_radius=0.12, max_steps=900)
+    gait, gov = SteeredTrotGait(), JointVelocityGovernor(v_max=8.0)
+    paws = {k: mujoco.mj_name2id(env.model, mujoco.mjtObj.mjOBJ_BODY, "paw_" + k) for k in ("fl", "fr", "bl", "br")}
+    env.reset(seed=0)
+    x0 = float(env.data.xpos[env.torso, 0])
+    z0 = {k: float(env.data.xpos[v, 2]) for k, v in paws.items()}
+    peak, max_lift = 0.0, 0.0
+    for _ in range(900):
+        env.step(gov.govern(env, gait.action(env, yaw_cmd=0.0, drive=1.0)))
+        peak = max(peak, gov.max_joint_speed(env))
+        max_lift = max(max_lift, max(float(env.data.xpos[v, 2]) - z0[k] for k, v in paws.items()))
+    assert float(env.data.xpos[env.torso, 0]) - x0 > 0.3      # walked forward
+    assert peak < 10.0                                        # realistic joint speeds (not the 27 rad/s exploit)
+    assert max_lift < 0.06                                    # low-clearance trot, never launches (exploit was 0.36 m)
