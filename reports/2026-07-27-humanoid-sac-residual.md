@@ -78,6 +78,24 @@ Root cause (interesting, honest): the **reward (−2V, an integral) and the cert
 spike V on a seed. ANNEAL + best-ckpt closes the gap operationally; a peak-V-aware reward
 is the principled future fix.
 
+## Robustness frontier (measured, push-to-fall)
+
+Escalating the pitch-rate kick maps the honest boundary (seed 0, both signs sampled):
+
+| kick | PD-hold | SAC residual |
+|---|---|---|
+| 0.8–1.6 | survives, not certified | survives, **CERTIFIED** |
+| 2.0–2.6 | survives, not certified | survives, not certified |
+| 3.2 | survives (500) | falls (496) |
+| ≥ 4.0 | **FALLS** (~200 steps ≈ 0.2 s) | **FALLS** (~200 steps) |
+
+Two honest limits: (1) the residual extends the **certified** envelope to ~1.6 (from
+~0.3), generalizing well past its 0.4–0.8 training band; (2) beyond ~4.0 the humanoid
+**tips over** — a hard physical limit, and far out-of-distribution (3.2) the residual can
+even slightly *reduce* raw survival (it optimizes certified stability, not survival). The
+`humanoid_balance_frontier.mp4` video shows this: residual CERTIFIED (1.6) → SURVIVES with
+a big sway (2.6) → **FELL** (4.5, a genuine tip-over).
+
 ## Files touched (all scenario-side, non-core)
 
 ```
