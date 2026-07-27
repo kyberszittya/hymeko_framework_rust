@@ -1,0 +1,109 @@
+{
+ "contract": "COIN_R9_STAGE3_DELIVERY_TD3",
+ "curriculum": "C",
+ "smoke": false,
+ "reward_weights": {
+  "w_progress": 8.0,
+  "w_contact": 0.05,
+  "w_reversal": 2.0,
+  "w_overspeed": 1.0,
+  "w_variation": 0.5,
+  "w_terminal": 10.0,
+  "w_lowspeed": 5.0,
+  "w_unsafe": 10.0
+ },
+ "config": {
+  "gamma": 0.98,
+  "lr": 0.0003,
+  "batch": 128,
+  "warmup_rollouts": 20,
+  "total_rollouts": 400,
+  "updates_per_rollout": 8,
+  "eval_every": 50,
+  "tau_polyak": 0.01,
+  "policy_delay": 2,
+  "target_noise": 0.1,
+  "noise_clip": 0.2,
+  "expl_noise": 0.15,
+  "control_interval": 4,
+  "reward_scale": 10.0
+ },
+ "dev_tags": [
+  "s1",
+  "s3"
+ ],
+ "runs": [
+  {
+   "seed": 0,
+   "distill_loss": 0.0,
+   "update0_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 35.7,
+    "safe": 2,
+    "n": 2
+   },
+   "best_val_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 35.8,
+    "safe": 2,
+    "n": 2
+   },
+   "final_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 35.9,
+    "safe": 2,
+    "n": 2
+   },
+   "ckpt": "reports/2026-07-27-coin-r9-causal-residual-delivery/ckpts/r9_C_seed0_best_val.pt"
+  },
+  {
+   "seed": 1,
+   "distill_loss": 0.0,
+   "update0_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 35.7,
+    "safe": 2,
+    "n": 2
+   },
+   "best_val_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 36.0,
+    "safe": 2,
+    "n": 2
+   },
+   "final_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 36.6,
+    "safe": 2,
+    "n": 2
+   },
+   "ckpt": "reports/2026-07-27-coin-r9-causal-residual-delivery/ckpts/r9_C_seed1_best_val.pt"
+  },
+  {
+   "seed": 2,
+   "distill_loss": 0.0,
+   "update0_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 35.7,
+    "safe": 2,
+    "n": 2
+   },
+   "best_val_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 35.7,
+    "safe": 2,
+    "n": 2
+   },
+   "final_dev": {
+    "k6": 1,
+    "mean_dtz_mm": 36.1,
+    "safe": 2,
+    "n": 2
+   },
+   "ckpt": "reports/2026-07-27-coin-r9-causal-residual-delivery/ckpts/r9_C_seed2_best_val.pt"
+  }
+ ],
+ "dev_k6_best_median": 1,
+ "gate_strict_k6_dev_2of2": false,
+ "wall_s": 139.4
+}

@@ -155,9 +155,57 @@ def stage3_train(curriculum: str = "A", seeds: tuple = (0, 1, 2), smoke: bool = 
     return out
 
 
+def _ceiling_on_cradle(snap: Any, a_r8: np.ndarray, params: Any, bounds: Any, dbounds: Any, n: int, seed: int) -> dict:
+    """Sweep CONSTANT bounded Δa over the frozen R8 champion on ONE cradle; return the best achievable dtz_end + whether any
+    bounded residual delivers strict K6. This is the residual-DELIVERY CEILING (measure it before blaming the optimiser)."""
+    from hymeko_rl.coin_delivery.theta_option.r9_causal_residual import ConstantDeltaActor
+    rng = np.random.default_rng(seed)
+    grid = [np.zeros(3)] + [np.eye(3)[i] * s for i in range(3) for s in (-1.0, 1.0)] + \
+           [np.clip(rng.uniform(-1, 1, 3), -1, 1) for _ in range(n)]
+    best_dtz, delivered, best_a = 1e9, False, None
+    for a in grid:
+        adapter = R9CausalResidualAdapter(snap, a_r8, ConstantDeltaActor(a), params, bounds, dbounds, control_interval=1, cfg=DELIVERY_CFG)
+        from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+        m = velocity_rollout(snap, adapter, DELIVERY_CFG)
+        safe = m["peak_coin_speed"] <= 1.5 and m["peak_qdot"] <= 3.0
+        if safe and float(m["dtz_end"]) < best_dtz:
+            best_dtz, best_a = float(m["dtz_end"]), [round(float(x), 3) for x in a]
+        if safe and bool(delivery_success(m, DELIVERY_CFG)):
+            delivered = True
+    return {"best_dtz_end_mm": round(best_dtz * 1000, 1), "any_bounded_residual_delivers": delivered, "best_a": best_a}
+
+
+def stage3_ceiling_diag(n: int = 120) -> dict:
+    """Discriminating test: the residual-delivery CEILING per dev cradle. If s1 is NOT deliverable by ANY bounded Δa over
+    the R8 champion, the STAGE-3 stall is STRUCTURAL (bound too small / need a different base), not an optimiser failure."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    bank = json.load(open(BANK))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    actor = _r8_champion()
+    from hymeko_rl.coin_delivery.theta_option.r9_causal_residual import DeltaBounds
+    params, bounds, dbounds = TipTransportParams(), ResidualBounds(), DeltaBounds()
+    per = {}
+    for tag in DEV_TAGS:
+        a_r8 = _r8_base_residual(actor, panel[tag].snap, params, bounds)
+        c = _ceiling_on_cradle(panel[tag].snap, a_r8, params, bounds, dbounds, n, seed=hash(tag) % 9999)
+        per[tag] = c
+        print(f"   {tag}: best_dtz {c['best_dtz_end_mm']}mm delivers={c['any_bounded_residual_delivers']} best_a={c['best_a']}", flush=True)
+    diag = "STRUCTURAL_BOUND_INSUFFICIENT" if not all(v["any_bounded_residual_delivers"] for v in per.values()) \
+        else "OPTIMISER_OR_REWARD_LIMITED"
+    out = {"contract": "COIN_R9_STAGE3_RESIDUAL_CEILING", "delta_bounds": dbounds.__dict__, "n_samples": n, "per_state": per,
+           "all_dev_deliverable_by_bounded_residual": all(v["any_bounded_residual_delivers"] for v in per.values()),
+           "diagnosis": diag, "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/stage3_residual_ceiling.json", "w"), indent=1, default=float)
+    print(f"\n== R9 STAGE 3 CEILING ==\n  diagnosis: {diag} | wall {out['wall_s']}s\nR9_DIAG_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
+    elif "--diag" in argv:
+        stage3_ceiling_diag()
     elif "--stage3" in argv:
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)
