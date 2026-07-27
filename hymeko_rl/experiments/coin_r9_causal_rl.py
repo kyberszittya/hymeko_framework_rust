@@ -363,6 +363,98 @@ def m0_base_coverage() -> dict:
     return out
 
 
+# ── R10-C0 — event-aligned teacher/scaffold trace audit (localise the physical d.o.f. the scaffold cannot express) ─────
+def _phys_hook(store: list):
+    """A frame_hook capturing the SAME physical signals for any rollout (teacher via rollout_primitive OR scaffold via
+    velocity_rollout): dtz, coin speed, along/cross-track velocity, spin, L/R contact force + imbalance, contact, qdot."""
+    from hymeko_rl.coin_delivery.contact_velocity import primary_fingertip_contacts
+    from hymeko_rl.coin_delivery.forward_displacement import _coin_speed
+    from hymeko_rl.coin_delivery.theta_option.residual_adapter import _coin_spin
+
+    def hook(rl: Any, t: int) -> None:
+        u, dtz = rl.inner.direction_to_zone()
+        uu = np.asarray(u, np.float64)[:2]
+        vel = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
+        con = primary_fingertip_contacts(rl)
+        fnl = float(con["left"]["fn"]) if con["left"] is not None else 0.0
+        fnr = float(con["right"]["fn"]) if con["right"] is not None else 0.0
+        store.append({"t": int(t), "dtz_mm": float(dtz) * 1000, "speed": float(_coin_speed(rl)),
+                      "v_par": float(np.dot(vel, uu)), "v_lat": float(np.dot(vel, np.array([-uu[1], uu[0]]))),
+                      "spin": float(_coin_spin(rl)), "fn_l": fnl, "fn_r": fnr,
+                      "contact": int(fnl > 0 or fnr > 0), "qdot_max": float(np.max(np.abs(rl.inner.data.qvel[:4])))})
+    return hook
+
+
+def _summ(tr: list) -> dict:
+    """PHASE-structured signature of a physical trace — the APPROACH→HOLD/TRANSPORT→BRAKE/SETTLE→RELEASE phase events +
+    the signals that distinguish each phase (peak speed, deceleration, stored energy at release, transport reach, lateral)."""
+    dtz = [r["dtz_mm"] for r in tr]
+    spd = [r["speed"] for r in tr]
+    con = [r["contact"] for r in tr]
+    pk = max(spd) if spd else 0.0
+    pk_t = int(np.argmax(spd)) if spd else 0
+    t_brake = next((r["t"] for r in tr[pk_t:] if r["speed"] < 0.8 * pk), None)       # first sustained decel after peak speed
+    return {"peak_vpar": round(max(r["v_par"] for r in tr), 4), "peak_speed": round(pk, 4),
+            "terminal_speed": round(spd[-1], 4), "decel_ratio": round(1.0 - spd[-1] / (pk + 1e-9), 3),
+            "max_abs_vlat": round(max(abs(r["v_lat"]) for r in tr), 4),
+            "max_abs_imbalance": round(max(abs(r["fn_l"] - r["fn_r"]) for r in tr), 4),
+            "min_dtz_mm": round(min(dtz), 1), "reaches_zone": bool(min(dtz) <= 20.0), "terminal_dtz_mm": round(dtz[-1], 1),
+            "contact_frac": round(float(np.mean(con)), 3),
+            "t_first_contact": next((r["t"] for r in tr if r["contact"] == 1), None), "t_peak_speed": pk_t,
+            "t_brake_onset": t_brake, "t_zone_entry": next((r["t"] for r in tr if r["dtz_mm"] <= 20.0), None),
+            "t_contact_lost": next((r["t"] for r in tr if r["contact"] == 0 and r["t"] > 3), len(tr))}
+
+
+def _c0_classify(teach: dict, scaf: dict) -> "tuple[str, list]":
+    """Localise which trajectory PHASE the monolithic scaffold fails to represent (the hybrid-mode axis)."""
+    clues = []
+    if not scaf["reaches_zone"] and teach["reaches_zone"]:
+        clues.append(f"APPROACH/TRANSPORT: scaffold never reaches zone (min_dtz {scaf['min_dtz_mm']} vs {teach['min_dtz_mm']})")
+    if scaf["t_brake_onset"] is None and teach["t_brake_onset"] is not None:
+        clues.append("BRAKE: scaffold shows NO distinct deceleration phase (no brake primitive)")
+    if scaf["decel_ratio"] < 0.5 * teach["decel_ratio"]:
+        clues.append(f"BRAKE: scaffold barely decelerates (decel_ratio {scaf['decel_ratio']} vs {teach['decel_ratio']})")
+    if scaf["terminal_speed"] > 2 * teach["terminal_speed"] + 1e-3:
+        clues.append(f"RELEASE/SETTLE: scaffold retains stored energy (terminal_speed {scaf['terminal_speed']} vs {teach['terminal_speed']})")
+    if teach["max_abs_vlat"] > 2 * scaf["max_abs_vlat"] + 1e-3:
+        clues.append(f"HOLD: teacher uses lateral trim the scaffold suppresses (|v_lat| {teach['max_abs_vlat']} vs {scaf['max_abs_vlat']})")
+    if not scaf["reaches_zone"]:
+        prim = "APPROACH_TRANSPORT_PHASE_INSUFFICIENT"
+    elif scaf["terminal_speed"] > teach["terminal_speed"] + 0.05:
+        prim = "BRAKE_SETTLE_PHASE_INSUFFICIENT"
+    else:
+        prim = "RELEASE_TIMING_PHASE"
+    return prim, clues
+
+
+def c0_trace_audit() -> dict:
+    """R10-C0 — compare the DELIVERING s1 teacher vs the non-delivering scaffold (R8 base) on the same physical signals;
+    localise which d.o.f. the tip-transport servo cannot express. No training; s1 (dev) only."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.forward_displacement import rollout_primitive
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    bank = json.load(open(BANK))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    snap = panel["s1"].snap
+    a_r8 = _r8_base_residual(_r8_champion(), snap, TipTransportParams(), ResidualBounds())
+    t_store: list = []
+    rollout_primitive(snap, tuple(_teacher_theta(bank, "s1")), DELIVERY_CFG, frame_hook=_phys_hook(t_store))
+    s_store: list = []
+    velocity_rollout(snap, ResidualTipAdapter(snap, ConstantResidualActor(a_r8), TipTransportParams(), ResidualBounds(),
+                                              DELIVERY_CFG), DELIVERY_CFG, frame_hook=_phys_hook(s_store))
+    teach, scaf = _summ(t_store), _summ(s_store)
+    case, clues = _c0_classify(teach, scaf)
+    out = {"contract": "COIN_R9_R10C0_TRACE_AUDIT", "cradle": "s1", "teacher": teach, "scaffold_r8_base": scaf,
+           "primary_case": case, "missing_dof_clues": clues,
+           "note": "delivering teacher vs non-delivering scaffold on identical physical signals; localises the d.o.f. gap "
+                   "that R10-C2's minimal new near primitive must supply (NOT a proof).", "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10c0_trace_audit.json", "w"), indent=1, default=float)
+    print(f"   teacher s1: {teach}\n   scaffold  s1: {scaf}\n   CASE: {case}\n   clues: {clues}\n"
+          f"== R10-C0 ==\n  wall {out['wall_s']}s\nR9_C0_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
@@ -372,6 +464,8 @@ def main(argv: "list[str]") -> None:
         reach_audit()
     elif "--m0" in argv:
         m0_base_coverage()
+    elif "--c0" in argv:
+        c0_trace_audit()
     elif "--stage3" in argv:
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)

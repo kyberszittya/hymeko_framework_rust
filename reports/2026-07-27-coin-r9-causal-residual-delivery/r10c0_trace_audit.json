@@ -1,0 +1,44 @@
+{
+ "contract": "COIN_R9_R10C0_TRACE_AUDIT",
+ "cradle": "s1",
+ "teacher": {
+  "peak_vpar": 0.3216,
+  "peak_speed": 0.45,
+  "terminal_speed": 0.0,
+  "decel_ratio": 1.0,
+  "max_abs_vlat": 0.3419,
+  "max_abs_imbalance": 4.4766,
+  "min_dtz_mm": 18.5,
+  "reaches_zone": true,
+  "terminal_dtz_mm": 18.5,
+  "contact_frac": 0.55,
+  "t_first_contact": 1,
+  "t_peak_speed": 0,
+  "t_brake_onset": 2,
+  "t_zone_entry": 36,
+  "t_contact_lost": 34
+ },
+ "scaffold_r8_base": {
+  "peak_vpar": 0.1085,
+  "peak_speed": 0.3587,
+  "terminal_speed": 0.0,
+  "decel_ratio": 1.0,
+  "max_abs_vlat": 0.2932,
+  "max_abs_imbalance": 4.9174,
+  "min_dtz_mm": 53.5,
+  "reaches_zone": false,
+  "terminal_dtz_mm": 53.5,
+  "contact_frac": 0.5,
+  "t_first_contact": 1,
+  "t_peak_speed": 0,
+  "t_brake_onset": 2,
+  "t_zone_entry": null,
+  "t_contact_lost": 31
+ },
+ "primary_case": "APPROACH_TRANSPORT_PHASE_INSUFFICIENT",
+ "missing_dof_clues": [
+  "APPROACH/TRANSPORT: scaffold never reaches zone (min_dtz 53.5 vs 18.5)"
+ ],
+ "note": "delivering teacher vs non-delivering scaffold on identical physical signals; localises the d.o.f. gap that R10-C2's minimal new near primitive must supply (NOT a proof).",
+ "wall_s": 93.9
+}

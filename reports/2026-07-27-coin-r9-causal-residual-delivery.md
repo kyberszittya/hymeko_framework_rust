@@ -26,6 +26,7 @@ and release certificate are unchanged.
 | **S3 ceiling** (constant sweep) | s1 best_dtz **52.3 mm, delivers=False** over ~130 constant bounded Δa; s3 17.7 mm delivers=True (measured; *not* a non-existence proof) |
 | **R10-0 reachability** (decisive) | teacher s1 **18.5 mm K6 ✓** (feasible); temporal CEM s1 **51.8 mm declared / 46.2 mm full-range — no delivery**; s3 delivers in-search ⇒ **Case C `BASE_OR_RESIDUAL_BASIS_INSUFFICIENT`** |
 | **R10-B0** base-coverage (M0) | scaffold-param CEM on s1 (zero residual) = **50.5 mm, no delivery**; default scaffold zero-residual delivers *neither* (s3 262.7 / s1 57.7 — s3 needs the R8 residual); s1/s3 geometrically separable ⇒ **`NEAR_BASE_NOT_IN_SCAFFOLD_FAMILY`** — the scaffold *strategy*, not just its base-center, is insufficient for s1 |
+| **R10-C0** phase trace audit | teacher vs scaffold on s1 ⇒ **`APPROACH_TRANSPORT_PHASE_INSUFFICIENT`**: scaffold peak v_par **0.109 vs teacher 0.322** (1/3), min_dtz 53.5 vs 18.5; brake/settle *fine* (decel 1.0, term-speed 0). The monolithic distance-proportional velocity servo has **no distinct APPROACH/momentum-build phase** |
 
 ## The finding (measured / inferred)
 
@@ -60,23 +61,47 @@ R9 does **not** deliver on dev, so nothing downstream is claimed: no validation 
 untouched, no delivery is asserted without strict K6 (process rule honored). R8's result stands unchanged. The R9 negative is
 **preserved**, with a decisive ceiling that localizes the blocker to the residual **bound over the frozen base**.
 
-## R10 direction (Case C + M0 → the scaffold STRATEGY is the limit, not the base-center or bound)
+## R10 direction — the real axis is a PHASE-STRUCTURED HYBRID PROGRAM, not near/far cradle modes
 
-Two decisive audits ran before any retraining, and they narrow R10 sharply:
+Three converging audits (reach 46.2 mm · M0 50.5 mm · C0 `APPROACH_TRANSPORT_PHASE_INSUFFICIENT`) reframe the problem. The
+modes are **not** "near cradle" vs "far cradle" — they are the trajectory's physical **phases**, each with a different goal
+and a different usable action basis. The current monolithic tip-transport servo squeezes them into one distance-proportional
+control law + 3 residual channels, and C0 shows it lacks a distinct **APPROACH/momentum-build** phase (it under-transports s1
+because `v_ref = k_d·d_remain` slows near the target instead of building momentum). Correct architecture:
 
-- **R10-A (bound growth) — SKIP:** full-range reachability already failed.
-- **R10-B (state-conditioned base *within* the tip-transport scaffold) — INSUFFICIENT alone:** M0 shows re-tuning the
-  scaffold parameters does not deliver s1 either (50.5 mm). A soft `w(s,h)`-gated mixture of two *tip-transport* bases will
-  still be trapped in the same non-delivering strategy for s1. (The gate *is* feasible — s1/s3 separate on causal geometry.)
-- **R10-C (a DIFFERENT near controller / a missing residual channel) — now PRIMARY:** project the delivering s1 teacher
-  trace into the scaffold+residual coordinates to identify the d.o.f. the tip-transport servo cannot express (candidates:
-  explicit release-timing, lateral alignment, preload-decay). The near controller for s1 likely needs that d.o.f.; the far
-  (s3) regime keeps the tip-transport base. Then a small bounded residual + a causal gate over {near-controller, far-base}.
-- **R10-D:** TD3 over the chosen bases; validation s4/s7; single blind f1–f4 opening.
+```
+structured state + response history
+            ↓
+      causal MODE gate  ── m_{t+1} = g(m_t, s_t, h_t, certificate)
+   ↙        ↓        ↓        ↘
+APPROACH   HOLD    BRAKE    RELEASE
+(fwd effort (transport (decel demand (NO actor action —
+ acquire    target,    non-reversing  R6 certificate
+ squeeze)   squeeze,   stop, squeeze  guard only)
+            balance)   decay)
+   ↘        ↓        ↓        ↙
+        small bounded residual per mode
+            ↓
+        release certificate (R6, sole authority)
+```
 
-Gate sequence unchanged (R10-B0 done → B1 update-zero → B2 teacher-projection/reachability → B3 causal gate dev 2/2 → B4
-residual TD3 → B5 validation → B6 freeze → B7 blind open). The 20 mm K6 tolerance, physics, motion limits and certificate stay
-fixed. s4/s7 remain validation-only; the blind panel opens once, after the R10 champion freeze.
+- **The near/far cradle difference is guard TIMING**, not two worlds: how long in APPROACH/TRANSPORT, when to switch to BRAKE,
+  from what state to start squeeze-decay. Same hybrid program, different guard schedule (s1 needs a longer/stronger APPROACH).
+- **Per-mode local action bases:** APPROACH = forward effort + acquisition squeeze; HOLD = transport target + squeeze +
+  balance/slip; BRAKE = deceleration demand + non-reversing stop + squeeze-decay; RELEASE = certificate guard only.
+- **The gate** learns mode + control from structured state + history — *not* a single dtz threshold (C0/M0 show s1/s3 separate
+  on dtz0, but that is 2 points; the gate input is initial/current distance, contact geometry, short-prefix response,
+  tip–coin slip, momentum build-up, authority/preload history). Start with a hand dev gate, then learned mode inference.
+
+This is the minimal instance of the program goal: **automatic discovery + learning of a hybrid dynamical system** (modes,
+per-mode continuous dynamics/policy, and mode-transition guards learned jointly) from structured physical interaction —
+HyMeKo as the representation, CIP as the execution protocol, learning the mode structure/guards/bases, not just the action.
+
+Refined gates: **R10-C0 done** → C1 event-aligned per-phase teacher-vs-scaffold divergence + unexplained-component
+localisation → C2 minimal per-mode primitives justified by the phase audit (APPROACH primitive first) → C3 near K6 s1 / far
+K6 s3 with the mode program → C4 causal gate dev 2/2 → C5 bounded per-mode residual TD3 → C6 validation s4/s7 → C7 champion
+freeze → **C8 single blind f1–f4 opening**. The 20 mm K6 tolerance, physics, motion limits and R6 certificate stay fixed;
+s4/s7 remain validation-only; the blind panel opens once, after the R10 champion freeze.
 
 ## Artifacts
 
