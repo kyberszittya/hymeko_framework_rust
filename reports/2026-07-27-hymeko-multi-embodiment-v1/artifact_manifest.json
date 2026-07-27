@@ -1,0 +1,56 @@
+{
+  "note": "GIFs are .gitignored (repo policy *.gif); regenerate with the command below. Every run needs the venv + a built hymeko CLI (target/release/hymeko). SIMULATION only.",
+  "requires": {
+    "python": "3.11 venv",
+    "mujoco": "3.10.0",
+    "hymeko_cli": "target/release/hymeko (cargo build -p hymeko_cli)"
+  },
+  "artifacts": {
+    "pick_place": {
+      "gif_filename": "reports/2026-07-27-cip-pick-place/pnp_trajectory.gif",
+      "generating_command": "PYTHONPATH=. python -m scenarios.pick_place.run_pnp --seed 1 --gif",
+      "source_commit": "fde8aa8ddb751094ae614679e29968cf11e4be5c",
+      "config_hash": "sha256:887499daf75b9cf9",
+      "config_files": [
+        "scenarios/pick_place/cip_pnp_01.hymeko.yaml",
+        "scenarios/pick_place/run_pnp.py",
+        "scenarios/pick_place/adapter.py"
+      ],
+      "committed_outputs": {
+        "reports/2026-07-27-cip-pick-place/pnp_gates.json": "sha256:ccc3686724e0c888",
+        "reports/2026-07-27-cip-pick-place/pnp_trajectory.png": "sha256:0538136ecdd83be0"
+      }
+    },
+    "humanoid": {
+      "gif_filename": "reports/2026-07-27-cip-humanoid/hum_trajectory.gif",
+      "generating_command": "PYTHONPATH=. python -m scenarios.humanoid.run_hum --gif",
+      "source_commit": "f8c0718b8d9c69ffeca6b68745c6b778d0deab23",
+      "config_hash": "sha256:134a39f89e86f46b",
+      "config_files": [
+        "scenarios/humanoid/cip_hum_01.hymeko.yaml",
+        "scenarios/humanoid/run_hum.py",
+        "scenarios/humanoid/adapter.py"
+      ],
+      "committed_outputs": {
+        "reports/2026-07-27-cip-humanoid/hum_gates.json": "sha256:3165f9cf0da88d34",
+        "reports/2026-07-27-cip-humanoid/hum_trajectory.png": "sha256:dcde14a44329e2c9"
+      }
+    },
+    "aibo": {
+      "gif_filename": "reports/2026-07-27-cip-aibo/aibo_trajectory.gif",
+      "generating_command": "PYTHONPATH=. python -m scenarios.aibo.run_aibo --gif",
+      "source_commit": "95330d55be24e3f58cd9e15c4a04a679d4d6cb38",
+      "config_hash": "sha256:269d72768b126acd",
+      "config_files": [
+        "scenarios/aibo/cip_aibo_01.hymeko.yaml",
+        "scenarios/aibo/run_aibo.py",
+        "scenarios/aibo/adapter.py",
+        "scenarios/aibo/locomotion_gait.py"
+      ],
+      "committed_outputs": {
+        "reports/2026-07-27-cip-aibo/aibo_gates.json": "sha256:fc095169696d66ed",
+        "reports/2026-07-27-cip-aibo/aibo_trajectory.png": "sha256:c4487563660b0024"
+      }
+    }
+  }
+}
