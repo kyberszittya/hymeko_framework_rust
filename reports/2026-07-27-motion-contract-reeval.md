@@ -71,6 +71,20 @@ launch — not the sprawl and not an exploit. (A slight bounce exists — all fe
 up — but the feet never clear >3 cm and the robot never launches; regression-tested
 `max_lift < 6 cm`, `joint speed < 10 rad/s`, forward > 0.3 m.)
 
+## Result 4 — both follow-ups hit walls (honest, closes the step thread)
+
+- **(a) Refine the walk:** the baseline trot (hip 0.7 / knee 0.3 / freq 1.2) is already
+  near-optimal. Raising amplitude/frequency *slows* forward progress (0.58 → 0.39 m) and pushes
+  joint speed toward the cap, while foot clearance barely moves (3 → 4.5 cm, limited by the short
+  legs). No parameter "refinement" wins — more would need a different gait or learned locomotion.
+- **(b) Real single-leg recovery step, under the contract:** still **FAILS** — CERT False
+  (Vfinal 0.79–2.05), all four feet still go airborne (max_feet_off 4), joint speed 16 rad/s
+  from **landing impacts** (the velocity governor caps actuator torque, not contact forces).
+  Lifting a leg during a fast lateral fall destabilizes the support legs — the **same wall as
+  the humanoid**. Reactive stepping does not capture the push; only the (retracted) exploit-sprawl
+  "recovered." A real protective step needs **whole-body MPC with contact scheduling + a no-launch
+  constraint** (or a learned recovery gait) — a focused controls project, unaddressed here.
+
 ## Files
 
 ```
