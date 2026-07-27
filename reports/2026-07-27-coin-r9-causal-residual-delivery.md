@@ -1,7 +1,13 @@
 # Coin-R9 — delivery-focused causal residual TD3 over the frozen R8 champion
 
 **Date:** 2026-07-27 · **Branch:** `recovery/coin-r9-causal-residual-delivery` (worktree `hymeko_coin_r9_wt`, off tag `coin-r8-bounded-residual-heldout-improvement-v1`)
-**STAGE 3/4 verdict:** `R9A_BOUNDED_CAUSAL_RESIDUAL_STRUCTURALLY_CANNOT_DELIVER_S1` (a localized `CURRENT_CAUSAL_RESIDUAL_FORMULATION_INSUFFICIENT`) — the dev gate (strict K6 on **both** s1 and s3) is **not** reached; **STAGES 5–6 not entered; the sealed blind final panel remains SEALED_NOT_EVALUATED.**
+**STAGE 3/4 verdict (evidence-based, R10-0 reachability):** `R9A_RESIDUAL_BASIS_OVER_FROZEN_R8_BASE_CANNOT_EXPRESS_S1_DELIVERY` (Case **C**, `BASE_OR_RESIDUAL_BASIS_INSUFFICIENT`) — the dev gate (strict K6 on **both** s1 and s3) is **not** reached; **STAGES 5–6 not entered; the sealed blind final panel remains SEALED_NOT_EVALUATED.**
+
+> **Correction (verdict wording).** An earlier draft labelled the constant-sweep result `STRUCTURAL_BOUND_INSUFFICIENT`. That
+> **overclaimed** — a constant Δa sweep + 3 TD3 seeds cannot prove no temporal residual delivers s1. The precise measured
+> statement is `CURRENT_BOUNDED_RESIDUAL_NEIGHBOURHOOD_HAS_NO_DEMONSTRATED_S1_DELIVERY`; the **R10-0 reachability audit** below
+> then upgraded the localisation to **Case C** with proper positive controls — separating the *measured ceiling* from
+> *mathematically-proven impossibility* (the CEM is still an existence search, not a non-existence proof).
 
 ## Mission
 
@@ -17,7 +23,8 @@ and release certificate are unchanged.
 | **S1** blind final panel | **SEALED** — 4 fresh cradles (f1–f4, seeds 17750/18250/16500/19500, dtz0 0.051–0.131) by a generation-geometry-only rule; `SEALED_NOT_EVALUATED` (`final_panel_manifest.json`). s4/s7 demoted to validation. |
 | **S2** update-zero identity | **`R9_UPDATE_ZERO_REPRODUCES_R8_CHAMPION`** — Δa≡0 reproduces the R8 champion full trace bit-for-bit (dev 2/2, max diff `0.00e+00`) |
 | **S3** delivery TD3 (Curriculum C, 3 seeds) | **NO dev-gate cross** — all seeds stuck at the R8 champion's K6 **1/2**, dtz ~36 mm, safe 2/2; best_val ≈ update-0 |
-| **S3 ceiling** (discriminating) | **`STRUCTURAL_BOUND_INSUFFICIENT`** — s1 best_dtz **52.3 mm, delivers=False** over ~130 bounded Δa; s3 17.7 mm delivers=True |
+| **S3 ceiling** (constant sweep) | s1 best_dtz **52.3 mm, delivers=False** over ~130 constant bounded Δa; s3 17.7 mm delivers=True (measured; *not* a non-existence proof) |
+| **R10-0 reachability** (decisive) | teacher s1 **18.5 mm K6 ✓** (feasible); temporal CEM s1 **51.8 mm declared / 46.2 mm full-range — no delivery**; s3 delivers in-search ⇒ **Case C `BASE_OR_RESIDUAL_BASIS_INSUFFICIENT`** |
 
 ## The finding (measured / inferred)
 
@@ -28,15 +35,20 @@ and release certificate are unchanged.
 - **Measured (ceiling).** No bounded Δa over the frozen R8 champion delivers s1: the constant-residual sweep bottoms out at
   **52.3 mm** (vs the R8 base's 53.5 mm — essentially no gain), and the temporal TD3 matched it (~53 mm). The bounded
   residual space over this base **does not contain an s1-delivering solution**.
-- **Inferred (localized, NOT a single-cause guess).** The stall is **structural, not optimizer/reward**: TD3 found nothing
-  better because nothing better exists within the declared bound. The frozen R8 champion's s1 base
-  (`a_R8[s1] = [+0.68, −0.99, +0.97]`) sits in a **non-delivering basin** that a bounded (±0.25 fwd / ±0.04 sqz / ±0.25 stop)
-  increment cannot escape. Temporal freedom and per-step control (R9's addition) do not help here because the *reachable set*
-  is bound-limited, not schedule-limited.
-- **Consequence.** R9-B (terminal-phase shaping) would **not** help — it is still a bounded residual, and the ceiling covers
-  all bounded residuals regardless of the reward. Per the R9 process rule, a larger correction space / a different base / a
-  richer policy is **R10, not a silent R9 modification**. s1 is deliverable by *some* θ (the oracle witness), so the task is
-  feasible — just not from the R8 champion's s1 basin under a bounded nudge.
+- **R10-0 reachability audit (the decisive test, with positive controls).** Teacher θ delivers s1 (18.5 mm, K6 — **feasible**)
+  and the CEM finds delivery for s3 (declared 17.5 mm K6, full 17.3 mm K6 — **the search works**). Over the frozen R8 base,
+  a temporal Δa-sequence CEM reaches only **s1 = 51.8 mm at the declared ±bound and 46.2 mm at FULL range** (a_exec spanning
+  [−1,1], any schedule) — **no delivery at any magnitude or schedule**.
+- **Inferred (evidence-based, Case C).** This rules out **Case B** (magnitude — full range also fails) and the obvious
+  **Case A** (optimiser — a thorough temporal CEM, far beyond TD3, found nothing within bound while it *did* find s3). The
+  frozen R8 champion's s1 base `a_R8[s1] = [+0.68, −0.99, +0.97]` (near the squeeze/stop channel edges) + the 3 residual
+  channels **cannot express** an s1-delivering behaviour — `BASE_OR_RESIDUAL_BASIS_INSUFFICIENT`. NOT a claim of proven
+  impossibility: the CEM is an existence search; the honest statement is *no delivering residual sequence was found even at
+  full range, with the teacher/s3 positive controls validating feasibility and the search.*
+- **Consequence.** R9-B (terminal-phase shaping) would **not** help — still a bounded residual over the same base; the
+  full-range reachability covers it. A *larger* symmetric bound would **not** help either (full range already failed). The
+  blocker is the **base / residual coordinate basis**, not the bound. One R8 champion is the wrong base for both the far
+  (s3/s4) and near (s1/s7) regimes — its s1 base sits where no residual reaches delivery.
 
 ## Honest scope / no overclaim
 
@@ -44,11 +56,21 @@ R9 does **not** deliver on dev, so nothing downstream is claimed: no validation 
 untouched, no delivery is asserted without strict K6 (process rule honored). R8's result stands unchanged. The R9 negative is
 **preserved**, with a decisive ceiling that localizes the blocker to the residual **bound over the frozen base**.
 
-## Next discriminating test (for R10, not run here)
+## R10 direction (Case C confirmed → base/basis, not bound)
 
-Re-run the ceiling with **enlarged Δa bounds** (and/or a re-selected base) on s1: if a larger bound delivers s1, the limit is
-purely the nudge magnitude (a bound choice); if not, s1 needs a different *strategy* than the R8 champion's tip-referenced
-push — a base/architecture change (R10). Keep the 20 mm K6 tolerance fixed either way.
+The reachability audit already ran the decisive test, so R10 skips blind bound-growth and blind retraining:
+
+- **R10-A (bound growth) — SKIP:** full-range reachability already failed, so a larger bound will not deliver s1.
+- **R10-B (base recentering / multimode base) — PRIMARY:** one frozen R8 champion is the wrong base for both regimes. Use a
+  **state-conditioned base** (a far-transport base + a near-target base), selected from **causal geometry + response
+  history** — *not* cradle ID — with a small bounded residual TD3 on top. The s1 near-regime gets a base from which a bounded
+  residual *can* reach the zone.
+- **R10-C (new residual channel) — only if a teacher-trace projection shows the missing d.o.f.** (e.g. release-timing,
+  lateral, preload-decay) that the current 3 channels cannot express.
+- **R10-D:** TD3 training over the chosen base(s); then validation on s4/s7; then the single blind f1–f4 opening.
+
+The 20 mm K6 tolerance, physics, motion limits and certificate stay fixed. s4/s7 remain validation-only; the blind panel
+opens once, after the R10 champion freeze.
 
 ## Artifacts
 

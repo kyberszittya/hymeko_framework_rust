@@ -32,6 +32,18 @@ def test_r9_zero_delta_a_exec_is_base():
         assert np.array_equal(a_exec0, a_clip)          # Δa=0 ⇒ a_exec == a_R8 (the update-zero identity, in algebra)
 
 
+def test_r9_segment_delta_actor():
+    """The reachability-search actor emits the right piecewise-constant Δa per decision and clips to [-1,1]."""
+    from hymeko_rl.coin_delivery.theta_option.r9_causal_residual import SegmentDeltaActor
+    seg = np.array([[0.5, 0.0, 0.0], [-0.5, 1.0, 0.0], [2.0, 0.0, -1.0]])   # last row must clip
+    a = SegmentDeltaActor(seg, n_decisions=6)
+    outs = [a(np.zeros(CAUSAL_DIM)) for _ in range(6)]
+    assert np.allclose(outs[0], [0.5, 0.0, 0.0]) and np.allclose(outs[2], [-0.5, 1.0, 0.0])
+    assert np.allclose(outs[4], [1.0, 0.0, -1.0])                # 2.0 clipped to 1.0
+    a.reset()
+    assert a.i == 0 and np.allclose(a(np.zeros(CAUSAL_DIM)), [0.5, 0.0, 0.0])
+
+
 def test_r9_slew_clamp():
     """A per-decision increment is slew-limited to |Δa_t − Δa_{t-1}| ≤ slew per role (anti-chatter)."""
     b = DeltaBounds()

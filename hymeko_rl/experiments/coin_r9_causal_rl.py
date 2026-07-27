@@ -192,8 +192,10 @@ def stage3_ceiling_diag(n: int = 120) -> dict:
         c = _ceiling_on_cradle(panel[tag].snap, a_r8, params, bounds, dbounds, n, seed=hash(tag) % 9999)
         per[tag] = c
         print(f"   {tag}: best_dtz {c['best_dtz_end_mm']}mm delivers={c['any_bounded_residual_delivers']} best_a={c['best_a']}", flush=True)
-    diag = "STRUCTURAL_BOUND_INSUFFICIENT" if not all(v["any_bounded_residual_delivers"] for v in per.values()) \
-        else "OPTIMISER_OR_REWARD_LIMITED"
+    # NOTE: a CONSTANT-Δa sweep is not a reachability CERTIFICATE — it does not prove no TEMPORAL sequence delivers s1.
+    # It measures whether the searched (constant) family demonstrates delivery. The decisive test is `--reach` (R10-0).
+    diag = "NO_DEMONSTRATED_DELIVERY_IN_CONSTANT_BOUNDED_FAMILY" \
+        if not all(v["any_bounded_residual_delivers"] for v in per.values()) else "CONSTANT_BOUNDED_RESIDUAL_DELIVERS"
     out = {"contract": "COIN_R9_STAGE3_RESIDUAL_CEILING", "delta_bounds": dbounds.__dict__, "n_samples": n, "per_state": per,
            "all_dev_deliverable_by_bounded_residual": all(v["any_bounded_residual_delivers"] for v in per.values()),
            "diagnosis": diag, "wall_s": round(time.time() - t0, 1)}
@@ -202,11 +204,97 @@ def stage3_ceiling_diag(n: int = 120) -> dict:
     return out
 
 
+# ── R10-0 — residual REACHABILITY audit (teacher control + temporal-sequence CEM at declared vs full-range bound) ──────
+def _teacher_theta(bank: dict, tag: str) -> "np.ndarray | None":
+    for s in bank["states"]:
+        if s["tag"] == tag:
+            return np.asarray(s["canonical_theta_vec"], np.float64)
+    return None
+
+
+def _teacher_delivers(snap: Any, theta: np.ndarray) -> dict:
+    """Positive control: does the frozen K6 TEACHER θ deliver this cradle (it is deliverable by SOME controller)?"""
+    from hymeko_rl.coin_delivery.forward_displacement import rollout_primitive
+    m = rollout_primitive(snap, tuple(theta), DELIVERY_CFG)
+    return {"dtz_end_mm": round(float(m["dtz_end"]) * 1000, 1), "k6": bool(delivery_success(m, DELIVERY_CFG))}
+
+
+def _reach_search(snap: Any, a_r8: np.ndarray, dbounds: Any, params: Any, bounds: Any, *, n_seg: int = 6, pop: int = 48,
+                  n_iter: int = 6, elite: int = 8, seed: int = 0) -> dict:
+    """CEM over a per-frame Δa SEQUENCE (n_seg piecewise segments) minimising s-cradle dtz_end within `dbounds`. Returns the
+    best safe dtz_end + whether strict K6 was reached by ANY searched temporal sequence."""
+    from hymeko_rl.coin_delivery.theta_option.r9_causal_residual import SegmentDeltaActor
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    rng = np.random.default_rng(seed)
+    n_dec, dim = int(DELIVERY_CFG.horizon), n_seg * 3
+    mu, sig = np.zeros(dim), 0.7 * np.ones(dim)
+    best_dtz, best = 1e9, {"dtz_end_mm": None, "k6": False, "safe": False}
+    for _ in range(n_iter):
+        cand = np.clip(mu[None] + sig[None] * rng.standard_normal((pop, dim)), -1, 1)
+        scores = []
+        for c in cand:
+            adapter = R9CausalResidualAdapter(snap, a_r8, SegmentDeltaActor(c.reshape(n_seg, 3), n_dec), params, bounds,
+                                              dbounds, control_interval=1, cfg=DELIVERY_CFG)
+            m = velocity_rollout(snap, adapter, DELIVERY_CFG)
+            safe = m["peak_coin_speed"] <= 1.5 and m["peak_qdot"] <= 3.0
+            dtz = float(m["dtz_end"]) if safe else 1e9
+            scores.append(dtz)
+            if dtz < best_dtz:
+                best_dtz = dtz
+                best = {"dtz_end_mm": round(dtz * 1000, 1), "k6": bool(safe and delivery_success(m, DELIVERY_CFG)),
+                        "safe": bool(safe)}
+        order = np.argsort(scores)[:elite]
+        mu = cand[order].mean(0)
+        sig = np.clip(cand[order].std(0), 0.05, 1.0)
+    return best
+
+
+def _reach_case(s1: dict) -> str:
+    if s1["reach_declared_bound"]["k6"]:
+        return "A_LEARNABLE_WITHIN_DECLARED_BOUND_TD3_MISSED"      # a bounded temporal residual DOES deliver → learning-limited
+    if s1["reach_full_range"]["k6"]:
+        return "B_RESIDUAL_MAGNITUDE_LIMIT_CONFIRMED"              # only a larger residual delivers → per-channel bound growth
+    return "C_BASE_OR_RESIDUAL_BASIS_INSUFFICIENT"                 # even full-range temporal residual fails → base/basis change
+
+
+def reach_audit(n_seg: int = 6, pop: int = 48, n_iter: int = 6) -> dict:
+    """R10-0 — the DECISIVE test. Confirms the teacher delivers (feasible), then CEM-searches the temporal residual sequence
+    over the frozen R8 base at the DECLARED ±bound and at FULL range. Classifies A (learnable) / B (magnitude) / C (base)."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.theta_option.r9_causal_residual import DeltaBounds
+    bank = json.load(open(BANK))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    actor = _r8_champion()
+    params, bounds = TipTransportParams(), ResidualBounds()
+    declared = DeltaBounds()
+    full = DeltaBounds(d_fwd_vel=1.0, d_squeeze=0.15, d_stop_gain=1.0, slew=1.0)   # a_exec spans the full R8 residual range
+    per: dict[str, Any] = {}
+    for tag in DEV_TAGS:
+        snap, a_r8 = panel[tag].snap, _r8_base_residual(actor, panel[tag].snap, params, bounds)
+        per[tag] = {"teacher": _teacher_delivers(snap, _teacher_theta(bank, tag)),
+                    "reach_declared_bound": _reach_search(snap, a_r8, declared, params, bounds, n_seg=n_seg, pop=pop, n_iter=n_iter, seed=1),
+                    "reach_full_range": _reach_search(snap, a_r8, full, params, bounds, n_seg=n_seg, pop=pop, n_iter=n_iter, seed=2)}
+        print(f"   {tag}: teacher {per[tag]['teacher']} | declared {per[tag]['reach_declared_bound']} | "
+              f"full {per[tag]['reach_full_range']}", flush=True)
+    case = _reach_case(per["s1"])
+    out = {"contract": "COIN_R9_R10_0_REACHABILITY_AUDIT", "n_seg": n_seg, "search": {"pop": pop, "n_iter": n_iter},
+           "per_state": per, "s1_case": case,
+           "note": "a POSITIVE (teacher) control confirms feasibility; the CEM is an existence search, not a proof of "
+                   "non-existence — a null result is NO_DEMONSTRATED_DELIVERY, strengthened by the full-range search.",
+           "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10_0_reachability.json", "w"), indent=1, default=float)
+    print(f"\n== R10-0 REACHABILITY ==\n  s1 CASE: {case} | wall {out['wall_s']}s\nR9_REACH_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
     elif "--diag" in argv:
         stage3_ceiling_diag()
+    elif "--reach" in argv:
+        reach_audit()
     elif "--stage3" in argv:
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)

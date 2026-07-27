@@ -1,0 +1,45 @@
+{
+ "contract": "COIN_R9_R10_0_REACHABILITY_AUDIT",
+ "n_seg": 6,
+ "search": {
+  "pop": 48,
+  "n_iter": 6
+ },
+ "per_state": {
+  "s1": {
+   "teacher": {
+    "dtz_end_mm": 18.5,
+    "k6": true
+   },
+   "reach_declared_bound": {
+    "dtz_end_mm": 51.8,
+    "k6": false,
+    "safe": true
+   },
+   "reach_full_range": {
+    "dtz_end_mm": 46.2,
+    "k6": false,
+    "safe": true
+   }
+  },
+  "s3": {
+   "teacher": {
+    "dtz_end_mm": 5.2,
+    "k6": true
+   },
+   "reach_declared_bound": {
+    "dtz_end_mm": 17.5,
+    "k6": true,
+    "safe": true
+   },
+   "reach_full_range": {
+    "dtz_end_mm": 17.3,
+    "k6": true,
+    "safe": true
+   }
+  }
+ },
+ "s1_case": "C_BASE_OR_RESIDUAL_BASIS_INSUFFICIENT",
+ "note": "a POSITIVE (teacher) control confirms feasibility; the CEM is an existence search, not a proof of non-existence \u2014 a null result is NO_DEMONSTRATED_DELIVERY, strengthened by the full-range search.",
+ "wall_s": 127.4
+}

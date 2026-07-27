@@ -68,6 +68,24 @@ class ConstantDeltaActor:
         return np.asarray(self.d, np.float64).ravel()[:3]
 
 
+class SegmentDeltaActor:
+    """Emits a per-DECISION unit Δa from `n_seg` piecewise-constant segments spanning `n_decisions` decisions — the temporal
+    residual-sequence parameterisation for the R10-0 reachability search (NOT a learned policy)."""
+
+    def __init__(self, segments: np.ndarray, n_decisions: int) -> None:
+        self.seg = np.clip(np.asarray(segments, np.float64).reshape(-1, 3), -1.0, 1.0)
+        self.n_dec = max(1, int(n_decisions))
+        self.i = 0
+
+    def reset(self) -> None:
+        self.i = 0
+
+    def __call__(self, causal_state: np.ndarray) -> np.ndarray:
+        idx = min(int(self.i * len(self.seg) / self.n_dec), len(self.seg) - 1)
+        self.i += 1
+        return self.seg[idx]
+
+
 class R9CausalResidualAdapter(ResidualTipAdapter):
     """Frozen R8 base residual `a_R8` + a bounded causal Δa from `delta_actor`, emitted every `control_interval` frames and
     held between. `a_exec = clip(a_R8 + Δa·bounds_scale)` drives the SAME servo. Bellman action = the (unit) Δa emission.
