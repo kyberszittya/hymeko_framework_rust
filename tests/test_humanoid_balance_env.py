@@ -99,3 +99,15 @@ def test_eval_balance_helper_end_to_end() -> None:
                                 action_dim=env.model.nu, action_scale=1.0, hidden=32)
     frac, lyap_rate = _eval_balance(env, actor, [1234, 1235])
     assert 0.0 <= frac <= 1.0 and 0.0 <= lyap_rate <= 1.0
+
+
+def test_render_rollout_frames_smoke() -> None:
+    # exercises the video render path; skips gracefully where no GL context exists (headless CI)
+    from scenarios.humanoid.render_balance_video import _H, _W, rollout_frames
+    env = HumanoidBalanceEnv(max_steps=12, seed=0)
+    try:
+        frames, ev = rollout_frames(env, lambda _o: np.zeros(env.model.nu), 0)
+    except Exception as exc:                                       # no offscreen GL backend
+        pytest.skip(f"no MuJoCo render context: {exc}")
+    assert frames and frames[0].shape == (_H, _W, 3)
+    assert np.all(np.isfinite(frames[0])) and "passes" in ev
