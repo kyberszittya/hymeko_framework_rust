@@ -84,3 +84,38 @@ not: return stored energy as an airborne launch** (+35 cm vs +0.5 cm). The remai
 — so a real hop must load the spring dynamically (body weight / landing), a passive SLIP limit cycle.
 That closed-loop hopping controller on the articulated model is the honest next step; the elastic
 mechanism and its energy return are certified here.
+
+---
+
+## Follow-up — spring-hop TO A GOAL (`scenarios/aibo/spring_hop_gait.py`)
+
+User: "designate a goal it must reach." A green reach disk is placed a forward distance ahead; the
+spring-legged AIBO reaches it with **repeated upright spring hops**. `SpringHopGait.run()` loops a
+hop cycle: **LOAD** (crouch the knee springs) → **LAUNCH** (release = passive-spring vertical lift +
+a motor-limited hip-flex push whose magnitude ∝ remaining distance) → **RESTABILIZE** (PD-hold the
+full standing posture back to q0). Steers by the sign/size of the push; stops within the reach radius.
+
+**Result:** reaches an **x = start + 0.8 m** goal in **9 hops** (0.6 m in 7), **upright every hop**
+(min uprightness 0.94, never flips), returning to standing height (~0.18 m) between hops.
+
+**Honest torque budget (your "50 N·m" point applied consistently):** *every* leg actuator torque is
+clamped to a realistic motor — the forward hip push ≤ **5 N·m**, and the posture-hold restabilizer
+≤ **8 N·m** (a regression test asserts both). Only the **vertical lift is the fast passive spring**;
+the horizontal drive is a real ≤5 N·m actuator, not an injected velocity.
+
+Video `aibo_spring_hop_goal.mp4` (+ `.gif`): the AIBO hops forward, phase-labelled (LOAD/LAUNCH/
+SETTLE), remaining-distance + uprightness overlaid, and finishes standing **on the green goal disk**.
+
+```
+scenarios/aibo/spring_hop_gait.py            NEW  (SpringHopGait: LOAD->LAUNCH->RESTABILIZE hop-to-goal, HopToGoalResult)
+scenarios/aibo/render_spring_hop_goal_video.py NEW  (goal-disk hop-to-goal video)
+tests/test_aibo_spring_hop_gait.py           NEW  7 tests
+reports/2026-07-27-aibo-hop/aibo_spring_hop_goal.{mp4,gif}  NEW
+```
+
+**Tests:** 7/7 gait tests (reaches goal, stays upright, monotone forward progress, farther goal =
+more hops, push ≤5 N·m + all torque ≤8 N·m, goal>0 validated, deterministic); full AIBO suite 56/56.
+
+**Bottom line:** with a designated goal, the spring-legged AIBO **reaches it by hopping** — passive
+elastic lift, motor-limited forward drive, upright throughout. This is the goal-directed hopping
+locomotion the rigid legs could not do, and it stays inside the honest torque budget.
