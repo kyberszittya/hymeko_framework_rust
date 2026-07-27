@@ -76,7 +76,11 @@ def main() -> None:
     args = ap.parse_args()
     if args.lateral:                                             # strong lateral push: scaffold survives but 0/12 certifies
         out = Path("reports/2026-07-27-humanoid-lateral-step")
-        train_cfg = BalanceConfig(perturb_lo=0.0, perturb_hi=0.0, push_lat_lo=1.8, push_lat_hi=3.0, delta_scale=1.0)
+        # 1-step-CAPTURABLE band: fixed-stance certifies lateral only to ~0.5 m/s (measured), so
+        # 0.8-1.5 is where it FAILS (0/12) but the capture point is within reach. Plus (2) foot-clearance
+        # actuation (delta_scale) + (3) capture-point step-shaping (w_step); Lyapunov = reward-indep gate.
+        train_cfg = BalanceConfig(perturb_lo=0.0, perturb_hi=0.0, push_lat_lo=0.8, push_lat_hi=1.5,
+                                  delta_scale=1.0, w_step=0.5)
         envelope = [train_cfg.push_lat_lo, train_cfg.push_lat_hi]
     else:
         out, train_cfg = _OUT, _TRAIN

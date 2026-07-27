@@ -51,6 +51,7 @@ class BalanceConfig:
     perturb_hi: float = 0.3
     push_lat_lo: float = 0.0         # reset LATERAL push range (base y-velocity m/s), sign random
     push_lat_hi: float = 0.0         # >0 exercises the frontal-plane (abduction/roll) protective response
+    w_step: float = 0.0              # capture-point step-shaping reward weight (>0 encourages a protective step)
     fall_uprightness: float = 0.6
     fall_pelvis_z: float = 0.55
 
@@ -147,6 +148,20 @@ class HumanoidBalanceEnv:
         self._t = 0
         return self._obs(), {}
 
+    def _capture_step(self) -> tuple[float, float]:
+        """LIPM capture-point step shaping: reward a foot placed at the lateral capture point.
+
+        Returns (step_bonus in (0,1], nearest-foot-to-capture-point error). The capture point
+        xi_y = com_y + com_y_vel·sqrt(com_z/g) is where a protective foot should land to arrest
+        the lateral fall (Pratt/Koolen capturability, the Vukobratović-lineage step criterion).
+        """
+        com = self.data.subtree_com[1]
+        com_y_vel = float(self.data.qvel[1])                       # base lateral velocity ~ COM lateral velocity
+        xi_y = float(com[1]) + com_y_vel * float(np.sqrt(max(float(com[2]), 0.1) / 9.81))
+        err = min(abs(float(self.data.xpos[self._fl, 1]) - xi_y),
+                  abs(float(self.data.xpos[self._fr, 1]) - xi_y))
+        return float(np.exp(-err / 0.08)), err
+
     def step(self, action):
         a = np.clip(np.asarray(action, np.float64), -1.0, 1.0)
         q_target = self._q0j + a * self.cfg.delta_scale
@@ -163,4 +178,8 @@ class HumanoidBalanceEnv:
                    and float(self.data.xpos[self._pelvis, 2]) > self.cfg.fall_pelvis_z)
         fell = (not upright) or not np.all(np.isfinite(self.data.qpos))
         reward = 1.0 - 2.0 * v - 0.001 * float(np.sum(a * a))       # alive - Lyapunov - control cost
-        return self._obs(), float(reward), bool(fell), bool(self._t >= self.max_steps), {"V": v, "upright": upright}
+        info = {"V": v, "upright": upright}
+        if self.cfg.w_step > 0.0:                                  # capture-point step shaping (opt-in)
+            step_bonus, info["capture_err"] = self._capture_step()
+            reward += self.cfg.w_step * step_bonus
+        return self._obs(), float(reward), bool(fell), bool(self._t >= self.max_steps), info

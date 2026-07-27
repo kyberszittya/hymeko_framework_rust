@@ -61,9 +61,9 @@ recentering = needs a step = not learned here.** An honest, informative negative
 ## Files touched
 
 ```
-scenarios/humanoid/balance_env.py         +push_lat_lo/hi (lateral push perturbation)
-scenarios/humanoid/run_humanoid_sac.py    +--lateral mode (config + out dir); best-ckpt fallback guard
-reports/2026-07-27-humanoid-lateral-step/{sac_residual_gates.json, humanoid_sac_residual_best.pt}
+scenarios/humanoid/balance_env.py         +push_lat_lo/hi (lateral push) + w_step (capture-point step shaping) + _capture_step()
+scenarios/humanoid/run_humanoid_sac.py    +--lateral mode (1-step-reachable band, delta_scale, w_step); best-ckpt guard
+reports/2026-07-27-humanoid-lateral-step/{sac_residual_gates.json, humanoid_sac_residual_best.pt, sac_train_*.log}
 ```
 
 ## Tests / lint
@@ -71,18 +71,43 @@ reports/2026-07-27-humanoid-lateral-step/{sac_residual_gates.json, humanoid_sac_
 `ruff` clean. Balance-env tests pass (8/8) with the new `push_lat` field. The certificate was
 **not** modified. Peak RSS ≈ 0.3 GB, wall ≈ 10 min.
 
-## Next (to actually get a protective step)
+## Levers (2) foot-clearance + (3) step-shaping reward — tried, still negative
 
-The step needs one of: (1) a real **capture-point / N-step-capturability** stepping
-controller (place the swing foot at the capture point) as the scaffold, then residual RL;
-(2) **higher foot-clearance actuation** (larger delta_scale or a swing-phase action mode) so
-a foot reliably clears; (3) a **stepping-specific reward** (reward foot placement under the
-COM), keeping the Lyapunov certificate as the reward-independent gate. None is claimed here.
+Per the follow-up, I added **(2)** a `w_step` **capture-point step-shaping** reward
+(`xi_y = com_y + com_y_vel·√(com_z/g)`; reward a foot near the capture point — the
+Pratt/Koolen capturability criterion, the Vukobratović-lineage step condition) and **(3)**
+**higher foot-clearance actuation** (delta_scale up to 1.8). The Lyapunov certificate stayed
+the reward-independent gate. Three residual runs, all **0/12 certified**:
 
-## Bottom line
+| run | push | delta_scale · w_step | certified | foot-lift (vs fixed) | capture_err (vs fixed) | Vfinal (vs fixed) |
+|---|---|---|---|---|---|---|
+| v1 | 1.8–3.0 | 1.0 · 0 | 0/12 | +0.01 m | — | +0.19 (worse) |
+| v2 | 1.8–3.0 | 1.8 · 1.0 | 0/12 | **+0.13 m** (step gesture) | +0.02 (no better) | −0.23 |
+| v3 | **0.8–1.5** (1-step-reachable) | 1.0 · 0.5 | 0/12 | +0.07 m | +0.02 (no better) | **+0.50 (worse)** |
 
-On the Vukobratović 16-DOF humanoid, the frontal PD is a strong lateral balancer, but a
-learned residual **does not** extend certification to strong lateral pushes (0/12, matches
-scaffold) — lateral recovery-to-rest requires a genuine protective step, which is marginal on
-this model and not discovered by residual RL. Reported honestly as a cross-plane negative;
-the sagittal positive stands.
+Measured boundary: **fixed-stance certifies lateral pushes only to ~0.5 m/s** (0.75 at 0.5,
+0 at ≥0.7), so v3 targeted the band where the scaffold fails but the capture point is within
+reach. Findings:
+
+- **A step *gesture* emerges** with clearance+shaping (v2 foot-lift 0.256 m vs 0.130 m
+  passive) — the levers do induce more foot motion.
+- **But never a *functional* capture-point step:** `capture_err` is **not reduced** in any
+  run (the lifted foot is not placed to catch the COM), and certification stays 0/12.
+- **The residual often makes it slightly worse** (v1/v3 Vfinal higher) — its step gestures
+  disrupt the strong frontal-PD near-recovery more than they help.
+
+## Bottom line (robust, 3 honest attempts)
+
+On the Vukobratović 16-DOF humanoid the frontal-plane fixed-stance PD is a **strong lateral
+balancer**, and a learned residual — even with **capture-point step-shaping and higher foot
+clearance**, and even in the **1-step-reachable band** — **does not** extend Lyapunov
+certification to lateral pushes (0/12 across three configs; often slightly worse). A step
+*gesture* is inducible, but a *functional* protective step (place the swing foot at the
+capture point, recenter the COM to rest) is not discovered by residual RL on this model.
+
+This is a robust **cross-plane dissociation**: the **sagittal** residual extended
+certification **0 → 12/12** (in-plane ankle/hip recentering is a learnable bounded residual);
+the **lateral** residual does not (recentering needs a step). Reported honestly as a negative
+across the tried levers; the sagittal positive stands. A genuine protective step would need a
+model-based capture-point stepping *scaffold* (not a residual over the fixed stance) or a
+richer swing-phase actuation — future work, not claimed.
