@@ -98,17 +98,32 @@ GUIDED_COAST_INSUFFICIENT                       (C2.7: 50.9 mm, worse than full 
 ⇒ POST_COAST_CLOSED_LOOP_REACQUIRE_REQUIRED
 ```
 
-## Next (de-risk first, per the R0–R4 ladder)
+## C2.8 RE-ACQUIRE feasibility (`--c28`, R0/R1) — the hard primitive EXISTS
 
-Build/measure the **RE-ACQUIRE contact primitive** as its own feasibility audit *before* wiring the full C3 program: R0
-geometric reachability (tips reach the coasting coin, no collision / state-edit) → R1 gentle first contact (no fling/reversal)
-→ R2 bilateral re-acquire (stabilise with small squeeze, low added impulse) → R3 settle authority (the frozen BRAKE/SETTLE
-nulls the residual 10–35 mm from the reacquired state) → R4 full chain APPROACH→COAST→RE-ACQUIRE→SETTLE→K6. Metrics beyond
-final dtz: re-acquire success, first-contact impulse, dtz change at contact, reversal, spin, contact retention, wrench,
-settle time, K6 dwell. Then C3 (manual hybrid, s1 ∧ s3 strict K6, safety 2/2). Settle/K6 cert + physics frozen; blind panel
-sealed. **Scientific through-line:** the same soft-frictional uncertainty recurs at every abstraction level — R1–R7 (fixed
-law), R8–R9 (bounded residual), R10 (open-loop coast) — and the answer is always the same: a next *closed-loop*, measurement-
-discovered mode that re-acquires control after the uncertainty realises.
+A RE-ACQUIRE phase (gently catch the coasting coin with a bounded forward joint-velocity + a **ramped, impulse-limited**
+squeeze, gated on the coin's closing velocity and the reachable corridor) was measured on s1 across release timings:
+
+| gate | result |
+|---|---|
+| **R0** geometric reachability (tips reach the coasting coin, safe) | **12/12** ✓ |
+| **R1** gentle re-grip (bilateral contact re-forms, no fling, dtz push ≤ 5 mm) | **9/12** ✓ |
+| **R4** full chain reaches s1 K6 | 0/12 — best chain **31.0 mm** |
+
+**`REACQUIRE_FEASIBLE_SETTLE_NOT_YET`.** The hard contact primitive the guided-coast couldn't replace **exists in the physics
+and is gentle** — the tips reliably catch the coasting coin and re-grip without knocking it away. The full chain reaches
+**31 mm** (the closest of the entire arc: beats released 33, guided 51, held 48). The residual gap is **R3**: the frozen
+settle, run from the reacquired state at ~31 mm, cannot null the last ~11 mm — the *distance-proportional under-transport
+recurs at small scale*. So the re-acquire should catch **closer** to the zone (or add a tiny forward nudge before the settle).
+
+## Next (narrow — R3/R4 only)
+
+Tune the re-acquire *catch point* / settle authority to close the last ~11 mm on s1 (catch closer via a tighter
+`reacq_corridor_hi` + `reacq_vclose`, or a small forward nudge into the settle), then R4 full chain s1 K6, then C3 (manual
+hybrid, s1 ∧ s3 strict K6, safety 2/2). Settle/K6 cert + physics frozen; blind panel sealed. **Scientific through-line:** the
+same soft-frictional uncertainty recurs at every abstraction level — R1–R7 (fixed law), R8–R9 (bounded residual), R10
+(open-loop coast) — and the answer is always a next *closed-loop*, measurement-discovered mode that re-acquires control after
+the uncertainty realises. Three modes are now **discovered from the physics**: APPROACH (C1 unexpressible component),
+RELEASED_COAST (C2.5), RE-ACQUIRE (C2.8) — a hybrid system grown by measurement, not a hand-drawn state machine.
 
 ## Artifacts / gates
 
