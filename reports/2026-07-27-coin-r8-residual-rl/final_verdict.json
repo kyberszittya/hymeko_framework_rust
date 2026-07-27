@@ -1,0 +1,32 @@
+{
+ "contract": "COIN_R8_CORRECTED_GATE_FINAL",
+ "date": "2026-07-27",
+ "campaign": "coin-R8 tip-referenced bounded-residual RL under the corrected RL-authorization gate",
+ "branch": "recovery/coin-r8-tip-referenced-residual-rl",
+ "worktree": "hymeko_coin_r8_wt (isolated from main; concurrent coin-toss session untouched)",
+ "gate_sequence": "S0 feasibility -> S1 safe scaffold -> S2 update-zero identity -> S3 learnability -> S4 matched SAC/TD3 dev -> S5 frozen held-out",
+ "rl_authorised_by": ["S2 UPDATE_ZERO_RESIDUAL_IDENTITY_PASS", "S3 RESIDUAL_LEARNABILITY_SIGNAL_PASS"],
+ "gates": {
+  "S0_physical_feasibility": "PASS",
+  "S1_safe_scaffold": "PASS (8e73b261)",
+  "S2_update_zero_identity": "PASS bit-exact, max diff 0.00e+00 (a7bd37a8)",
+  "S3_learnability": "RESIDUAL_LEARNABILITY_SIGNAL_PASS; robust top-decile enrichment 1.379 IQR[1.30,1.53], 0.76 of 25 splits (eb1cbd7c)",
+  "S4_matched_dev": "TD3 median delta +0.123 over scaffold, boot-CI [0.116,0.133], 3/3 seeds, s3 K6-delivered all seeds; SAC delta +0.02 (ea2eb8eb)",
+  "S5_heldout_frozen": "RESIDUAL_RL_IMPROVES_HELDOUT_WITHOUT_DELIVERY"
+ },
+ "s5_detail": {
+  "champion": {"algo": "td3", "seed": 2},
+  "one_shot": true,
+  "heldout_scaffold_return": -0.1687,
+  "heldout_rl_return": -0.0377,
+  "heldout_delta_over_scaffold": 0.131,
+  "per_cradle": {"s4": {"scaffold_mm": 266.0, "rl_mm": 30.2, "k6": false, "safe": true},
+                 "s7": {"scaffold_mm": 50.9, "rl_mm": 45.2, "k6": false, "safe": true}},
+  "heldout_k6_delivered": "0/2"
+ },
+ "final_verdict": "BOUNDED_RESIDUAL_RL_GENERALISES_TO_HELDOUT_BUT_DOES_NOT_YET_DELIVER",
+ "measured": "dev-only-trained bounded residual over the safe scaffold transfers to held-out (mean gap 16.9cm->3.8cm, safe), the FIRST held-out generalization in the R1->R8 arc; delivers K6 on 1/2 dev cradles; does NOT deliver K6 on held-out (s4 misses 20mm tol by ~10mm, s7 by ~25mm)",
+ "distinguishes_from_R1_R7": "R1 flat / R2 relational / R3 intent-decoder / R4-R7 deterministic feedback ALL held flat 0/2 with no improvement; the learned bounded residual over a working scaffold amortizes where full-theta/full-intent learning did not",
+ "next_hypothesis": "per-step closed-loop residual (S3: coherent>constant) and/or richer initiation fingerprint to close the last ~10-25mm to held-out K6; a NEW stage, not a reinterpretation",
+ "integrity": "all hard constraints preserved; no CORE.YAML edits; held-out s4/s7 seen exactly once at S5"
+}
