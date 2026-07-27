@@ -1,0 +1,31 @@
+{
+ "contract": "COIN_RELEASE_GUARD_G0",
+ "cradles": [
+  "s1",
+  "s3"
+ ],
+ "n_coast_branches": 38,
+ "determinism_bit_identical": true,
+ "global_landing_iqr_mm": 231.8,
+ "conditional_landing_residual_mm": 9.5,
+ "conditional_over_global": 0.041,
+ "n_reach_zone": 0,
+ "zone_selection_loo_accuracy": 1.0,
+ "feature_landing_corr": {
+  "squeeze": 0.821,
+  "v_lat": 0.812,
+  "spin": 0.627,
+  "v_par": 0.514,
+  "impulse_hist": 0.502,
+  "d_remaining_mm": 0.49,
+  "t_since_contact": 0.185,
+  "dv_par": 0.103,
+  "imbalance": 0.085
+ },
+ "landing_min_mm": 27.6,
+ "landing_max_mm": 425.0,
+ "verdict": "NO_RELEASE_LANDS_IN_ZONE",
+ "plot": "reports/2026-07-27-coin-r9-causal-residual-delivery/release_guard_g0.png",
+ "wall_s": 94.4,
+ "reading": "deterministic sim \u21d2 the coast spread is a FUNCTION of the release state; if the state-conditioned residual \u226a the global spread and delivering releases are selectable, a learned release guard is legitimate (G1/G2). If not, the observable state aliases landings and new sensing/probing is needed."
+}
