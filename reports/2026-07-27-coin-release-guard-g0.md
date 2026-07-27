@@ -71,3 +71,37 @@ confirmed. If the coin still stalls before dtz 23 mm, the stiction is deeper and
 `…/release_guard_g0.json`, `release_guard_g0.png`; module `coin_release_guard.py` (`--g0`). ruff clean; all fns < CC 15;
 CORE.YAML untouched; blind panel sealed; held-out s4/s7 never touched. Determinism, global/conditional spread, and the
 teacher release-state comparison are all reproducible from the committed code.
+
+---
+
+## VELOCITY_FLOOR / KINETIC transport (built + hand-audited) — mechanism validated, contact-maintenance is the learnable skill
+
+Built a KINETIC phase in `HybridApproachController` (`kinetic_transport=True`): after APPROACH builds momentum, hand to a
+**sustained transport-velocity** servo (`base_qref = clip(k_q·v_floor, 0, kinetic_vcap)` — constant, *not* the
+distance-proportional `k_d·d_remain` that decays to 0 and stictions the coin) with a **light grip**, releasing to a passive
+coast once the coin is close-AND-moving. It preempts LAUNCH/REACHABILITY (KINETIC owns the release). Default
+`kinetic_transport=False` ⇒ update-zero (a default controller never enters KINETIC; test-asserted).
+
+**Diagnosis against the teacher trace (the design driver).** The teacher transports at **fn ≈ 0.95 N** (light grip → the coin
+**slides**) with **sustained v_par ≈ 0.25** to dtz 30 mm, then the grip fades and it releases at 23 mm / v_par 0.13 → coasts
+to 18.5 mm. Two hand-tuning failure modes were measured and fixed in turn: (1) a **firm grip** (fn 3–4 N) *clamps* the coin —
+it oscillates in place and stalls (bounces backward); (2) flooring the servo at the *release* velocity (0.13) capped by the
+base `v_max` pushes at only ~0.65 rad/s — the coin decelerates and stalls. The sustained-transport + light-grip design fixes
+both **in direction**: the coin now **transports while moving, 75 → 48 mm, with no stiction stall** — a genuine win over the
+R1 wall that arrested every prior from-rest attempt (R3-C, C3-D).
+
+**But hand-tuning does not reach the release corridor.** A grip × momentum sweep (qdot_approach ∈ {2.4, 2.8}, kinetic_squeeze
+∈ {0.08…0.16}, v_floor ∈ {0.20…0.32}) **loses the delicate light bilateral contact at ~48–56 mm** (fn fades to 0 as the coin
+slides ahead of the tips), well short of the teacher's 23 mm release point — best min_dtz **48 mm**, still worse than the
+27.6 mm free-coast. **`VELOCITY_FLOOR_RELEASE_MANIFOLD` does NOT pass by hand-tuning** (0 in-zone releases).
+
+**Conclusion.** The strategy is confirmed correct (keep the coin moving — no stiction stall), and the barrier is now precisely
+localised to **maintaining delicate light contact while the coin slides to a close-and-moving release** — the teacher's
+optimized-θ skill. This is the legitimate learning target the release-guard line was opened for: G0 already proved the
+coast-landing is state-observable (residual 9.5 mm), so a small learned/searched transport-and-release policy (grip + push
+profile that holds contact to the corridor, with the G0 predictor as the release guard) is the well-posed next step — not more
+hand grip-tuning. If a bounded search over the KINETIC transport still cannot hold contact to a delivering release, the
+strategic pivot stands.
+
+Verdict: `COAST_LANDING_STATE_OBSERVABLE · KINETIC_TRANSPORTS_WITHOUT_STALL · LIGHT_CONTACT_MAINTENANCE_IS_THE_LEARNABLE_SKILL`.
+Gates: KINETIC mode `hybrid_approach.py`; 8 tests pass; ruff clean; all fns < CC 15; CORE.YAML untouched; blind sealed; s4/s7 untouched.
