@@ -11,12 +11,15 @@ certificate fails, regardless of the success certificates.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Mapping, Protocol, runtime_checkable
+from typing import Any, Callable, Mapping, Optional, Protocol, runtime_checkable
 
 from .._frozen import freeze_mapping
 from .option import ResponseTrace
 from .structured_state import StructuredStateLike
 from ..language.schema_v0 import CertificateKind
+
+#: Extracts a scalar quantity from ``(state, trace)`` for a threshold certificate.
+ScalarExtractor = Callable[[StructuredStateLike, ResponseTrace], float]
 
 #: A predicate reads only state + trace. The absence of a reward parameter is
 #: the machine-checkable guarantee of reward-independence.
@@ -66,6 +69,58 @@ def any_of(name: str, kind: CertificateKind, *certs: Certificate) -> Certificate
         return any(c.evaluate(state, trace) for c in certs)
 
     return Certificate(name, kind, _fn)
+
+
+def threshold_certificate(
+    name: str,
+    kind: CertificateKind,
+    extract: ScalarExtractor,
+    *,
+    lower: Optional[float] = None,
+    upper: Optional[float] = None,
+) -> Certificate:
+    """Generic scalar-threshold certificate: passes iff ``lower <= x <= upper``.
+
+    ``extract`` reads a scalar from ``(state, trace)`` (never a reward). Either
+    bound may be ``None`` (one-sided). This unifies the recurring
+    "keep-quantity-within-a-bound" safety/success predicates across embodiments:
+    e.g. AIBO ``speed_bounded_at_stop`` (upper on body speed), pick-place
+    bounded-terminal release (upper on residual velocity), humanoid joint-velocity
+    bound (upper on ``max_qvel``), reach/placed tolerances (upper on a distance).
+
+    # Preconditions ``lower is None or upper is None or lower <= upper``.
+    """
+    if lower is not None and upper is not None and lower > upper:
+        raise ValueError(f"threshold_certificate {name!r}: lower {lower} > upper {upper}")
+
+    def _fn(state: StructuredStateLike, trace: ResponseTrace) -> bool:
+        x = float(extract(state, trace))
+        ok = True
+        if lower is not None:
+            ok = ok and x >= lower
+        if upper is not None:
+            ok = ok and x <= upper
+        return ok
+
+    return Certificate(name, kind, _fn)
+
+
+def stability_certificate(
+    name: str,
+    uprightness: ScalarExtractor,
+    *,
+    min_uprightness: float = 0.5,
+) -> Certificate:
+    """Generic SAFETY no-fall / support certificate.
+
+    Passes iff the extracted uprightness / support-margin scalar stays at or above
+    ``min_uprightness``. A genuine implementer is the AIBO (torso uprightness on a
+    free base); a floating-base humanoid is a second implementer. Task-independent:
+    it never names a scenario signal — the caller supplies the extractor.
+    """
+    return threshold_certificate(
+        name, CertificateKind.SAFETY, uprightness, lower=min_uprightness
+    )
 
 
 @dataclass(frozen=True)
