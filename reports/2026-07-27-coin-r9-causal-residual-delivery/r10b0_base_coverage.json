@@ -1,0 +1,46 @@
+{
+ "contract": "COIN_R9_R10B0_BASE_COVERAGE",
+ "far_base": "default TipTransportParams",
+ "far_base_s3": {
+  "dtz_end_mm": 262.7,
+  "k6": false,
+  "safe": true
+ },
+ "far_base_s1": {
+  "dtz_end_mm": 57.7,
+  "k6": false,
+  "safe": true
+ },
+ "near_base_s1_search": {
+  "dtz_end_mm": 50.5,
+  "k6": false,
+  "params": [
+   8.1107,
+   0.22,
+   6.5014,
+   0.4505,
+   0.0877,
+   0.1481
+  ]
+ },
+ "near_base_on_s3": {
+  "dtz_end_mm": 341.4,
+  "k6": false,
+  "safe": true
+ },
+ "init_geometry": {
+  "s1": {
+   "dtz0_mm": 76.4,
+   "coin_x0": 0.0758
+  },
+  "s3": {
+   "dtz0_mm": 99.9,
+   "coin_x0": 0.0477
+  }
+ },
+ "gate_separable_by_dtz0": true,
+ "two_base_viable": false,
+ "verdict": "NEAR_BASE_NOT_IN_SCAFFOLD_FAMILY",
+ "note": "near base built from dev s1 ONLY; far base = default; s4/s7 untouched. If NEAR_BASE_NOT_IN_SCAFFOLD_FAMILY, s1 needs a different near CONTROLLER / 4th channel, not just a recentered base.",
+ "wall_s": 105.9
+}

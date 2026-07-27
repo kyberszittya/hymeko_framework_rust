@@ -17,6 +17,13 @@
  "diagnosis": "the frozen R8 champion's s1 base + the 3 residual channels cannot EXPRESS an s1-delivering behaviour at any magnitude or temporal schedule; one champion is the wrong base for both far (s3/s4) and near (s1/s7) regimes",
  "downstream": "STAGES 5-6 NOT entered; blind final panel remains SEALED_NOT_EVALUATED; no delivery claimed without strict K6",
  "r9b_assessment": "R9-B (terminal-phase shaping) would NOT help (still a bounded residual over the same base; full-range reachability covers it)",
- "r10_direction": "SKIP blind bound growth (R10-A) and blind retrain. PRIMARY = R10-B state-conditioned base (far-transport + near-target base by causal geometry+history, NOT cradle ID) + small bounded residual TD3. R10-C new channel only if a teacher-trace projection shows a missing d.o.f. Then R10-D train -> validation s4/s7 -> single blind f1-f4 opening. 20mm K6 tol fixed.",
+ "r10_b0_m0_base_coverage": {
+  "far_base_default_zero_residual": {"s3_dtz_mm": 262.7, "s1_dtz_mm": 57.7, "note": "s3 delivers ONLY with the R8 residual, not zero-residual"},
+  "near_base_scaffold_param_CEM_s1": {"best_dtz_mm": 50.5, "k6": false},
+  "gate_separable_by_dtz0": true,
+  "verdict": "NEAR_BASE_NOT_IN_SCAFFOLD_FAMILY",
+  "reading": "re-tuning the tip-transport scaffold params does NOT deliver s1 either (50.5mm); with reach's full-residual 46.2mm, the SCAFFOLD STRATEGY (tip-referenced velocity servo + 3 channels), not just its base-center, is insufficient for s1 in the examined space"
+ },
+ "r10_direction": "SKIP bound growth (R10-A) and blind retrain. R10-B (two bases WITHIN the tip-transport scaffold) INSUFFICIENT ALONE (M0: scaffold-param retune 50.5mm). PRIMARY = R10-C: project the delivering s1 teacher trace into scaffold+residual coords to find the missing d.o.f. (release-timing/lateral/preload-decay) -> a DIFFERENT near controller for s1 + tip-transport far base for s3 + small residual + causal gate (separable). Then R10-D train -> validation s4/s7 -> single blind f1-f4 opening. 20mm K6 tol fixed.",
  "integrity": "all hard constraints preserved; CORE.YAML untouched; s4/s7 validation-only and UNSEEN; blind panel never evaluated"
 }

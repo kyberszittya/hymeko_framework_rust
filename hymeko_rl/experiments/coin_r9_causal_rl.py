@@ -288,6 +288,81 @@ def reach_audit(n_seg: int = 6, pop: int = 48, n_iter: int = 6) -> dict:
     return out
 
 
+# ── R10-B0 — M0 base-coverage audit (find a NEAR base for s1 by re-tuning the scaffold; far base = R8/default) ─────────
+_M0_LO = np.array([1.0, 0.04, 2.0, 0.2, 0.02, 0.08])       # k_d, v_max, k_q, k_v, settle_speed, squeeze_hold
+_M0_HI = np.array([10.0, 0.25, 10.0, 2.0, 0.12, 0.22])
+
+
+def _tp_from_vec(v: np.ndarray) -> Any:
+    return TipTransportParams(k_d=float(v[0]), v_max=float(v[1]), k_q=float(v[2]), k_v=float(v[3]),
+                              settle_speed=float(v[4]), squeeze_hold=float(v[5]))
+
+
+def _base_delivers(snap: Any, tp: Any) -> dict:
+    """Roll the tip-transport scaffold (zero residual) with params `tp`; return dtz_end + strict K6 + safety."""
+    from hymeko_rl.coin_delivery.theta_option.tip_transport import TipReferencedController
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    m = velocity_rollout(snap, TipReferencedController(snap, tp, DELIVERY_CFG), DELIVERY_CFG)
+    safe = bool(m["peak_coin_speed"] <= 1.5 and m["peak_qdot"] <= 3.0)
+    return {"dtz_end_mm": round(float(m["dtz_end"]) * 1000, 1), "k6": bool(safe and delivery_success(m, DELIVERY_CFG)), "safe": safe}
+
+
+def _init_geo(snap: Any) -> dict:
+    from hymeko_rl.coin_delivery.forward_displacement import _coin_xy
+    rl = snap.branch()
+    _u, dtz0 = rl.inner.direction_to_zone()
+    return {"dtz0_mm": round(float(dtz0) * 1000, 1), "coin_x0": round(float(np.asarray(_coin_xy(rl), np.float64)[0]), 4)}
+
+
+def _near_base_search(snap: Any, *, n_iter: int = 8, pop: int = 40, elite: int = 8, seed: int = 0) -> dict:
+    """CEM over the scaffold params (dev s1 ONLY) for a NEAR base that delivers s1 with ZERO residual."""
+    rng = np.random.default_rng(seed)
+    mu, sig = (_M0_LO + _M0_HI) / 2, (_M0_HI - _M0_LO) / 4
+    best_dtz, best = 1e9, {"dtz_end_mm": None, "k6": False, "params": None}
+    for _ in range(n_iter):
+        cand = np.clip(mu[None] + sig[None] * rng.standard_normal((pop, 6)), _M0_LO, _M0_HI)
+        scores = []
+        for c in cand:
+            r = _base_delivers(snap, _tp_from_vec(c))
+            dtz = r["dtz_end_mm"] if r["safe"] else 1e9
+            scores.append(dtz)
+            if dtz < best_dtz:
+                best_dtz = dtz
+                best = {"dtz_end_mm": r["dtz_end_mm"], "k6": r["k6"], "params": [round(float(x), 4) for x in c]}
+        order = np.argsort(scores)[:elite]
+        mu = cand[order].mean(0)
+        sig = np.clip(cand[order].std(0), (_M0_HI - _M0_LO) * 0.02, _M0_HI - _M0_LO)
+    return best
+
+
+def m0_base_coverage() -> dict:
+    """R10-B0 — can a re-tuned NEAR base deliver s1 (dev-s1-only) while the FAR (default) base delivers s3, and are s1/s3
+    causally separable for a gate? Answers whether the two-base R10-B is viable BEFORE any TD3."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    bank = json.load(open(BANK))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    far = TipTransportParams()
+    far_s3, far_s1 = _base_delivers(panel["s3"].snap, far), _base_delivers(panel["s1"].snap, far)
+    near_s1 = _near_base_search(panel["s1"].snap)
+    near_on_s3 = _base_delivers(panel["s3"].snap, _tp_from_vec(near_s1["params"])) if near_s1["params"] else None
+    geo = {t: _init_geo(panel[t].snap) for t in DEV_TAGS}
+    separable = bool(abs(geo["s1"]["dtz0_mm"] - geo["s3"]["dtz0_mm"]) > 10.0)
+    viable = bool(near_s1["k6"] and far_s3["k6"] and separable)
+    verdict = "TWO_BASE_R10B_VIABLE" if viable else (
+        "NEAR_BASE_NOT_IN_SCAFFOLD_FAMILY" if not near_s1["k6"] else "GATE_OR_FAR_BASE_ISSUE")
+    out = {"contract": "COIN_R9_R10B0_BASE_COVERAGE", "far_base": "default TipTransportParams",
+           "far_base_s3": far_s3, "far_base_s1": far_s1, "near_base_s1_search": near_s1, "near_base_on_s3": near_on_s3,
+           "init_geometry": geo, "gate_separable_by_dtz0": separable, "two_base_viable": viable, "verdict": verdict,
+           "note": "near base built from dev s1 ONLY; far base = default; s4/s7 untouched. If NEAR_BASE_NOT_IN_SCAFFOLD_"
+                   "FAMILY, s1 needs a different near CONTROLLER / 4th channel, not just a recentered base.",
+           "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10b0_base_coverage.json", "w"), indent=1, default=float)
+    print(f"   far base: s3 {far_s3} · s1 {far_s1}\n   near base (s1-tuned): {near_s1} · on s3 {near_on_s3}\n"
+          f"   geometry {geo} separable={separable}\n== R10-B0 ==\n  {verdict} | wall {out['wall_s']}s\nR9_M0_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
@@ -295,6 +370,8 @@ def main(argv: "list[str]") -> None:
         stage3_ceiling_diag()
     elif "--reach" in argv:
         reach_audit()
+    elif "--m0" in argv:
+        m0_base_coverage()
     elif "--stage3" in argv:
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)
