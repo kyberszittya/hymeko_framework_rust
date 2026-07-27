@@ -163,18 +163,45 @@ class HybridApproachController(TipReferencedController):
         return None
 
     def _base_targets(self, rl: Any, t: int) -> "dict[str, Any]":
+        """Thin phase dispatcher — each hybrid mode owns its own target method; REGULATE/HOLD/BRAKE/RELEASE = frozen scaffold."""
         if self.phase == CARRY:
             return self._carry_targets(rl, t)
         if self.phase == REACQUIRE:
             return self._reacquire_targets(rl, t)
-        if self.phase == RELEASE and self.ap.reacquire and self.reacquire_start is None:
-            _e, dtz, v_par = self._live(rl)                      # C2.8: re-acquire once the coasting coin slows into the corridor
-            if v_par < self.ap.reacq_vclose and dtz <= self.ap.reacq_corridor_hi:
-                self.phase = REACQUIRE
-                self.reacquire_start = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1), "t": int(t)}
-                return self._reacquire_targets(rl, t)
+        if self.phase == RELEASE:
+            rt = self._maybe_reacquire(rl, t)
+            if rt is not None:
+                return rt
         if self.phase != APPROACH:
-            return super()._base_targets(rl, t)                  # REGULATE/HOLD/BRAKE/RELEASE = the frozen scaffold
+            return super()._base_targets(rl, t)
+        return self._approach_targets(rl, t)
+
+    def _maybe_reacquire(self, rl: Any, t: int) -> "dict | None":
+        """C2.8 — from a RELEASED_COAST, enter RE-ACQUIRE once the coin slows (closing velocity) into the reachable corridor."""
+        if not (self.ap.reacquire and self.reacquire_start is None):
+            return None
+        _e, dtz, v_par = self._live(rl)
+        if v_par < self.ap.reacq_vclose and dtz <= self.ap.reacq_corridor_hi:
+            self.phase = REACQUIRE
+            self.reacquire_start = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1), "t": int(t)}
+            return self._reacquire_targets(rl, t)
+        return None
+
+    def _approach_exit(self, rl: Any, t: int, v_par: float, dtz: float) -> "dict[str, Any]":
+        """APPROACH exit → CARRY (if configured) then the frozen brake."""
+        self.approach_exit_step, self.exit_reason = int(t), self.exit_reason
+        self.approach_end = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1)}
+        if self.ap.carry_steps > 0:
+            self.phase = CARRY
+            self._carry_remaining = int(self.ap.carry_steps)
+            return self._carry_targets(rl, t)
+        self.phase = REGULATE
+        self.brake_start = self.approach_end
+        return super()._base_targets(rl, t)
+
+    def _approach_targets(self, rl: Any, t: int) -> "dict[str, Any]":
+        """APPROACH_MOMENTUM_BUILD: distance-independent forward joint-velocity + acquisition squeeze until a causal exit
+        (or a C2.6 coast-entry RELEASE) fires."""
         e_par, dtz, v_par = self._live(rl)
         con = primary_fingertip_contacts(rl)
         both = con["left"] is not None and con["right"] is not None
@@ -187,17 +214,9 @@ class HybridApproachController(TipReferencedController):
             return super()._base_targets(rl, t)
         self._impulse += max(v_par, 0.0) * float(self.snap.stack.control_dt)
         self._approach_steps += 1
-        reason = self._exit_approach(dtz, v_par, both, contact_risk)
-        if reason is not None:                                   # APPROACH exit → CARRY (if any) then the frozen brake
-            self.approach_exit_step, self.exit_reason = int(t), reason
-            self.approach_end = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1)}
-            if self.ap.carry_steps > 0:
-                self.phase = CARRY
-                self._carry_remaining = int(self.ap.carry_steps)
-                return self._carry_targets(rl, t)
-            self.phase = REGULATE
-            self.brake_start = self.approach_end
-            return super()._base_targets(rl, t)
+        self.exit_reason = self._exit_approach(dtz, v_par, both, contact_risk)
+        if self.exit_reason is not None:
+            return self._approach_exit(rl, t, v_par, dtz)
         fwd_dir, sqz_dir = self._directions(rl, e_par, _coin_xy(rl))
         return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,
                 "base_qref": float(self.ap.qdot_approach), "base_sqz": float(self.ap.acquire_squeeze), "both": both,
