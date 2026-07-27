@@ -95,6 +95,16 @@ which is itself a signal that the deliverable dev basin is narrow.)*
 - The **oracle** 4/4 confirms the search + physics + frozen decoder are sound; the sole cause of the miss is the correction,
   not the machinery.
 
+**Audit — why the open-loop baseline reads 1/4 here but the R3 frozen panel was 2/4 (NOT a regression).** The R3/R1/R2 panel
+deploys draw a *per-state, per-head* search seed `np.random.default_rng(90000 + i·131 + K)` (`coin_theta_rl_benchmark.py`),
+whereas `coin_r4_gates.py` uses a single *uniform* seed `90000` for every state so the CL/OL/oracle conditions are compared
+under identical search noise. The decoder, the R3 predictor (NW, bandwidth 3.0, same 6-dev set), the option, and the physics
+are byte-for-byte identical to R3 — only the search-jitter stream differs. s3's *predicted*-intent delivery is
+**search-seed-fragile**: it delivers at its R3 seed (90131+K) but misses at the uniform 90000 (it lands ~37 mm short — a
+budget-8 jitter that R3's seed happened to escape and this one did not). This is a signal that the dev deliverable basin is
+narrow, not a decoder/predictor regression. The R4 comparison is *internally* consistent (CL, OL, oracle all at seed 90000);
+the canonical R3 open-loop baseline remains 2/4.
+
 ## 5. Why a single deterministic law is insufficient (localised, per the contract)
 
 - **Cradle-specific settle-timing.** The real coast deceleration is not a single constant — the teacher traces imply
