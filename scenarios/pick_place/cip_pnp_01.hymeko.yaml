@@ -1,0 +1,92 @@
+# CIP-PNP-01 --- Acquire / Carry / Place scenario contract (HyMeKo control language, schema v0).
+# Declares the pick-and-place embodiment for the CIP-0 runtime. Realized by the
+# arm+gripper PickPlaceEnv (fanuc_pick_env) + scripted expert v3. Validated by
+# hymeko_control.language.validate.
+schema_version: v0
+name: cip_pnp_01_acquire_carry_place
+
+entities:
+  - {id: arm, kind: body, attributes: {dof: 6, model: fanuc_lrmate}}
+  - {id: j0, kind: joint}
+  - {id: j1, kind: joint}
+  - {id: j2, kind: joint}
+  - {id: j3, kind: joint}
+  - {id: j4, kind: joint}
+  - {id: j5, kind: joint}
+  - {id: gripper, kind: body, attributes: {fingers: 2}}
+  - {id: object, kind: object, attributes: {shape: box, mass: 0.15}}
+  - {id: target_bin, kind: target, attributes: {kind: bin, place_radius: 0.075}}
+  - {id: encoders, kind: sensor}
+  - {id: contact_sensor, kind: sensor}
+  - {id: fsm, kind: controller, attributes: {realizer: scripted_expert_v3}}
+
+morphology:
+  - {kind: kinematic, source: arm, target: j0}
+  - {kind: kinematic, source: j0, target: j1}
+  - {kind: kinematic, source: j1, target: j2}
+  - {kind: kinematic, source: j2, target: j3}
+  - {kind: kinematic, source: j3, target: j4}
+  - {kind: kinematic, source: j4, target: j5}
+  - {kind: kinematic, source: j5, target: gripper}
+  - {kind: actuation, source: j0, target: arm}
+  - {kind: dynamic, source: gripper, target: object}
+
+ports:
+  - {id: j0.tau, kind: actuation, owner: j0}
+  - {id: j1.tau, kind: actuation, owner: j1}
+  - {id: grip.cmd, kind: actuation, owner: gripper}
+  - {id: enc.q, kind: observation, owner: encoders}
+  - {id: fingertip.contact, kind: contact, owner: gripper}
+  - {id: object.pose, kind: observation, owner: object}
+  - {id: object.support, kind: constraint, owner: object}
+
+physics:
+  - {name: link_inertia, role: energy_storage}
+  - {name: gripper_aperture_spring, role: energy_storage}
+  - {name: joint_friction, role: dissipation}
+  - {name: kinematic_chain, role: interconnection}
+  - {name: fingertip_object_contact, role: contact}
+  - {name: object_on_support, role: constraint}
+
+hybrid:
+  initial_mode: APPROACH
+  modes:
+    - {name: APPROACH}
+    - {name: ACQUIRE}
+    - {name: GRASP}
+    - {name: LIFT, reset: {grip_settle_counter: 0.0}}
+    - {name: CARRY}
+    - {name: PLACE}
+    - {name: RELEASE}
+    - {name: SETTLE, reset: {settle_dwell_counter: 0.0}}
+  transitions:
+    - {source: APPROACH, dest: ACQUIRE, guard: effector_reached_pregrasp}
+    - {source: ACQUIRE, dest: GRASP, guard: bilateral_contact}
+    - {source: ACQUIRE, dest: APPROACH, guard: pregrasp_lost}
+    - {source: GRASP, dest: LIFT, guard: grip_settled}
+    - {source: GRASP, dest: ACQUIRE, guard: contact_lost}
+    - {source: LIFT, dest: CARRY, guard: lifted_above_clearance}
+    - {source: LIFT, dest: GRASP, guard: object_dropped}
+    - {source: CARRY, dest: PLACE, guard: over_target}
+    - {source: PLACE, dest: RELEASE, guard: at_place_pose}
+    - {source: PLACE, dest: CARRY, guard: target_overshoot}
+    - {source: RELEASE, dest: SETTLE, guard: gripper_released}
+
+task:
+  intents:
+    - {name: approach_velocity, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: acquisition_demand, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: grasp_force, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: lift_clearance, lower: 0.0, upper: 0.2, unit: m}
+    - {name: transport_velocity, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: target_correction, lower: -0.5, upper: 0.5, unit: m}
+    - {name: placement_force, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: release_demand, lower: 0.0, upper: 1.0, unit: norm}
+  authorities:
+    - {name: reach_authority, source: observed, provenance: "joint-limit + IK reachability of the pre-grasp pose"}
+    - {name: grip_authority, source: observed, provenance: "bilateral fingertip contact + aperture (both_contact)"}
+    - {name: transport_authority, source: observed, provenance: "retained contact while lifted (drop margin)"}
+  certificates:
+    - {name: placed_and_settled, kind: success, predicate: "placed_stable AND settled dwell held"}
+    - {name: object_not_dropped, kind: safety, predicate: "no on_ground while lifted AND no death"}
+    - {name: contact_retained_in_carry, kind: safety, predicate: "bilateral contact held throughout CARRY"}
