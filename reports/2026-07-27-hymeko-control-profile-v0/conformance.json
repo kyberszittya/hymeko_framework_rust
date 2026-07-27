@@ -1,0 +1,66 @@
+{
+  "suite": "hymeko_control.conformance",
+  "totals": {
+    "tests": 11,
+    "failures": 0,
+    "errors": 0,
+    "time_s": 0.023
+  },
+  "tests": [
+    {
+      "name": "test_00_full_lifecycle_reaches_certified_hold",
+      "status": "passed",
+      "time_s": 0.001
+    },
+    {
+      "name": "test_01_schema_validation",
+      "status": "passed",
+      "time_s": 0.0
+    },
+    {
+      "name": "test_02_causal_observation",
+      "status": "passed",
+      "time_s": 0.0
+    },
+    {
+      "name": "test_03_legal_mode_transitions",
+      "status": "passed",
+      "time_s": 0.0
+    },
+    {
+      "name": "test_04_bounded_physical_intent",
+      "status": "passed",
+      "time_s": 0.0
+    },
+    {
+      "name": "test_05_authority_provenance",
+      "status": "passed",
+      "time_s": 0.0
+    },
+    {
+      "name": "test_06_deterministic_decoding",
+      "status": "passed",
+      "time_s": 0.0
+    },
+    {
+      "name": "test_07_option_execution_provenance",
+      "status": "passed",
+      "time_s": 0.0
+    },
+    {
+      "name": "test_08_certificate_independent_of_reward",
+      "status": "passed",
+      "time_s": 0.001
+    },
+    {
+      "name": "test_09_no_hidden_state_modification",
+      "status": "passed",
+      "time_s": 0.0
+    },
+    {
+      "name": "test_10_shared_core_import_isolation",
+      "status": "passed",
+      "time_s": 0.004
+    }
+  ]
+}

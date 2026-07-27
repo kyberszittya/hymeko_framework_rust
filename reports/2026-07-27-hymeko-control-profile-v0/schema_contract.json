@@ -1,0 +1,55 @@
+{
+  "schema_version": "v0",
+  "required_sections": [
+    "schema_version",
+    "name",
+    "entities",
+    "morphology",
+    "ports",
+    "physics",
+    "hybrid",
+    "task"
+  ],
+  "required_hybrid_keys": [
+    "modes",
+    "transitions",
+    "initial_mode"
+  ],
+  "required_task_keys": [
+    "intents",
+    "authorities",
+    "certificates"
+  ],
+  "entity_kinds": [
+    "body",
+    "joint",
+    "object",
+    "target",
+    "sensor",
+    "controller"
+  ],
+  "port_kinds": [
+    "effort",
+    "flow",
+    "actuation",
+    "observation",
+    "contact",
+    "constraint"
+  ],
+  "relation_kinds": [
+    "kinematic",
+    "dynamic",
+    "actuation"
+  ],
+  "physics_roles": [
+    "energy_storage",
+    "dissipation",
+    "interconnection",
+    "contact",
+    "constraint"
+  ],
+  "certificate_kinds": [
+    "success",
+    "safety"
+  ]
+}

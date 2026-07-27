@@ -1,0 +1,79 @@
+{
+  "cip_version": "CIP-0",
+  "profile_version": "hymeko-control-profile-v0",
+  "lifecycle": [
+    "OBSERVE",
+    "IDENTIFY_MODE",
+    "FORM_INTENT",
+    "MEASURE_AUTHORITY",
+    "DECODE",
+    "EXECUTE_OPTION",
+    "MEASURE_RESPONSE",
+    "CERTIFY",
+    "TRANSITION"
+  ],
+  "adapter_interface": {
+    "observe": "() -> StructuredStateLike",
+    "identify_mode": "(state) -> str (declared mode)",
+    "form_intent": "(state, task) -> PhysicalIntent (bounded)",
+    "measure_authority": "(state, mode) -> AuthorityMap (provenance)",
+    "decode": "(intent, authority) -> ExecutableOption (deterministic)",
+    "execute": "(option) -> ResponseTrace (references option)",
+    "certify": "(state, trace) -> CertificateResult (reward-independent)",
+    "transition": "(mode, certificate) -> str (legal transition)"
+  },
+  "value_types": {
+    "StructuredStateLike": [
+      "t",
+      "phase",
+      "signal(name)",
+      "flat()"
+    ],
+    "PhysicalIntent": [
+      "components",
+      "bounds",
+      "is_bounded()",
+      "clipped()"
+    ],
+    "AuthorityMap": [
+      "channels",
+      "value(name)",
+      "provenance(name)",
+      "require_provenance()"
+    ],
+    "ExecutableOption": [
+      "name",
+      "mode",
+      "command",
+      "initiation",
+      "termination",
+      "provenance"
+    ],
+    "ResponseTrace": [
+      "option",
+      "commands",
+      "signals",
+      "end",
+      "provenance",
+      "references()"
+    ],
+    "CertificateResult": [
+      "passed",
+      "success_passed",
+      "safety_passed",
+      "per_certificate"
+    ]
+  },
+  "enforced_invariants": [
+    "causal observation (tick t non-decreasing)",
+    "identified mode exists in ControlModel",
+    "physical intent within declared bounds",
+    "authority channel carries source + provenance",
+    "decode deterministic in (intent, authority)",
+    "response trace references executed option",
+    "certificate independent of reward (no reward param)",
+    "mode transition legal in declarative model",
+    "runtime never mutates adapter value objects",
+    "shared core imports no torch / hymeko_rl / scenario module"
+  ]
+}
