@@ -41,19 +41,27 @@ def heading_error(env: object) -> float:
 
 @dataclass(frozen=True)
 class SteeredTrotGait:
-    """Diagonal PD-trot with a yaw command via differential L/R stride amplitude.
+    """Diagonal PD-trot with a BIDIRECTIONAL yaw command via reduce-inner stride.
+
+    Yaw is produced by SLOWING the inner (turn-side) legs' stride while the outer
+    legs keep nominal amplitude -- a differential-drive skid-steer that never
+    amplifies a side above nominal and adds no abduction bias. That symmetry is
+    what makes it stable in BOTH turn directions (the earlier amplify-outer +
+    abduction primitive over-drove one diagonal and tipped: see
+    reports/2026-07-27-aibo-simple-scenarios / the yaw diagnostic).
+
+    Convention: ``yaw_cmd > 0`` turns LEFT (CCW, +yaw); ``yaw_cmd < 0`` turns
+    RIGHT (CW). ``drive=0`` -> PD stand-hold. ``yaw_cmd=0`` -> straight trot.
 
     # Preconditions env exposes ``_leg_qadr``, ``_act_dofs``, ``_q0``, ``pd_kp``,
-    ``pd_kd``, ``ctrl_range``, ``frame_skip``, 4 legs x 3 joints (abduct/flex/knee).
-    # Postconditions ``action(env, yaw_cmd, drive)`` returns ``(n_actions,)`` in
-    ``[-1, 1]``. ``drive=0`` -> PD stand-hold; ``yaw_cmd<0`` turns the stable way.
+    ``pd_kd``, ``ctrl_range``, ``frame_skip``, 4 legs x 3 joints (fl,fr,bl,br).
+    # Postconditions ``action(env, yaw_cmd, drive)`` returns ``(n_actions,)`` in ``[-1, 1]``.
     """
 
     hip_amp: float = 0.7
     knee_amp: float = 0.3
     freq: float = 1.2
     steer_gain: float = 0.9
-    abd_gain: float = 0.35
 
     def action(self, env: object, yaw_cmd: float = 0.0, drive: float = 1.0) -> np.ndarray:
         t = int(getattr(env, "_step", 0)) * int(env.frame_skip) * float(env.model.opt.timestep)
@@ -63,11 +71,11 @@ class SteeredTrotGait:
         target = np.asarray(env._q0)[env._leg_qadr].copy()
         for leg in range(len(target) // 3):
             base = 3 * leg
-            side = 1.0 - self.steer_gain * yaw_cmd if leg in (0, 2) \
-                else 1.0 + self.steer_gain * yaw_cmd
-            target[base + 0] += (-self.abd_gain * yaw_cmd if leg in (0, 2)
-                                 else self.abd_gain * yaw_cmd)
-            target[base + 1] += drive * self.hip_amp * max(0.05, side) * np.sin(ph + _DIAG_PHASE[leg])
+            is_left = leg in (0, 2)
+            # +yaw turns LEFT -> reduce LEFT (inner) legs; -yaw turns RIGHT -> reduce RIGHT.
+            inner = is_left if yaw_cmd >= 0 else (not is_left)
+            side = (1.0 - self.steer_gain * abs(yaw_cmd)) if inner else 1.0
+            target[base + 1] += drive * self.hip_amp * max(0.1, side) * np.sin(ph + _DIAG_PHASE[leg])
             target[base + 2] += drive * self.knee_amp * np.sin(ph + _DIAG_PHASE[leg] + np.pi)
         tau = -env.pd_kp * (q - target) - env.pd_kd * qd
         return np.clip(tau / env.ctrl_range, -1.0, 1.0).astype(np.float32)
