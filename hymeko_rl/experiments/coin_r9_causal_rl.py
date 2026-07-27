@@ -385,24 +385,27 @@ def _phys_hook(store: list):
     return hook
 
 
+def _phase_events(tr: list, pk: float, pk_t: int) -> dict:
+    """The APPROACH→BRAKE→ZONE→RELEASE phase-transition event times of a physical trace (extracted to keep _summ under CC15)."""
+    return {"t_first_contact": next((r["t"] for r in tr if r["contact"] == 1), None), "t_peak_speed": pk_t,
+            "t_brake_onset": next((r["t"] for r in tr[pk_t:] if r["speed"] < 0.8 * pk), None),  # first sustained decel after peak
+            "t_zone_entry": next((r["t"] for r in tr if r["dtz_mm"] <= 20.0), None),
+            "t_contact_lost": next((r["t"] for r in tr if r["contact"] == 0 and r["t"] > 3), len(tr))}
+
+
 def _summ(tr: list) -> dict:
-    """PHASE-structured signature of a physical trace — the APPROACH→HOLD/TRANSPORT→BRAKE/SETTLE→RELEASE phase events +
-    the signals that distinguish each phase (peak speed, deceleration, stored energy at release, transport reach, lateral)."""
+    """PHASE-structured signature of a physical trace — the phase events (via _phase_events) + the signals that distinguish
+    each phase (peak speed, deceleration, stored energy at release, transport reach, lateral)."""
     dtz = [r["dtz_mm"] for r in tr]
     spd = [r["speed"] for r in tr]
-    con = [r["contact"] for r in tr]
     pk = max(spd) if spd else 0.0
     pk_t = int(np.argmax(spd)) if spd else 0
-    t_brake = next((r["t"] for r in tr[pk_t:] if r["speed"] < 0.8 * pk), None)       # first sustained decel after peak speed
     return {"peak_vpar": round(max(r["v_par"] for r in tr), 4), "peak_speed": round(pk, 4),
             "terminal_speed": round(spd[-1], 4), "decel_ratio": round(1.0 - spd[-1] / (pk + 1e-9), 3),
             "max_abs_vlat": round(max(abs(r["v_lat"]) for r in tr), 4),
             "max_abs_imbalance": round(max(abs(r["fn_l"] - r["fn_r"]) for r in tr), 4),
             "min_dtz_mm": round(min(dtz), 1), "reaches_zone": bool(min(dtz) <= 20.0), "terminal_dtz_mm": round(dtz[-1], 1),
-            "contact_frac": round(float(np.mean(con)), 3),
-            "t_first_contact": next((r["t"] for r in tr if r["contact"] == 1), None), "t_peak_speed": pk_t,
-            "t_brake_onset": t_brake, "t_zone_entry": next((r["t"] for r in tr if r["dtz_mm"] <= 20.0), None),
-            "t_contact_lost": next((r["t"] for r in tr if r["contact"] == 0 and r["t"] > 3), len(tr))}
+            "contact_frac": round(float(np.mean([r["contact"] for r in tr])), 3), **_phase_events(tr, pk, pk_t)}
 
 
 def _c0_classify(teach: dict, scaf: dict) -> "tuple[str, list]":
@@ -546,36 +549,52 @@ def _run_approach(snap: Any, ap: Any, *, enabled: bool = True) -> dict:
             "reacquire_start": getattr(ctrl, "reacquire_start", None), "reacquire_end": getattr(ctrl, "reacquire_end", None)}
 
 
+def _c28_sweep(snap: Any, base: dict) -> list:
+    """Release at a grid of steps → coast to various dtz → attempt a gentle re-acquire; one row per release step."""
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    runs = []
+    for k in range(3, 15, 1):
+        r = _run_approach(snap, ApproachParams(**base, release_at_step=k, reacquire=True))
+        rs, re = r.get("reacquire_start"), r.get("reacquire_end")
+        push = (round(re["dtz_mm"] - rs["dtz_mm"], 1) if rs and re else None)   # +ve ⇒ re-acquire pushed the coin AWAY
+        runs.append({"release_step": k, "reached_corridor": bool(rs), "regrip_success": bool(re and re.get("success")),
+                     "dtz_push_mm": push, "v_par_at_regrip": (re or {}).get("v_par_at_regrip"),
+                     "dtz_end_mm": r["dtz_end_mm"], "k6": r["k6"], "safe": r["safe"], "min_dtz_mm": r["min_dtz_mm"]})
+    return runs
+
+
+def _gentle_regrips(runs: list, success_key: str) -> list:
+    """Rows that re-gripped successfully, safely, without shoving the coin away (push ≤ 5mm) — the shared 'gentle catch' filter."""
+    return [r for r in runs if r[success_key] and r["safe"] and (r["dtz_push_mm"] is None or r["dtz_push_mm"] <= 5.0)]
+
+
+def _safe_best(runs: list) -> "dict | None":
+    return min([r for r in runs if r["safe"]], key=lambda r: r["dtz_end_mm"]) if any(r["safe"] for r in runs) else None
+
+
+def _c28_verdict(delivered: list, gentle: list, reached: list) -> str:
+    if delivered:
+        return "REACQUIRE_CHAIN_DELIVERS_S1"                                  # R4 pass
+    if gentle:
+        return "REACQUIRE_FEASIBLE_SETTLE_NOT_YET"                            # R0/R1 pass, R3/R4 tuning
+    return "REACQUIRE_CONTACT_NOT_STABILISED" if reached else "REACQUIRE_GEOMETRICALLY_UNREACHABLE"
+
+
 def c28_reacquire_audit() -> dict:
     """R10-C2.8 (R0/R1) — does a post-coast RE-ACQUIRE primitive EXIST? After RELEASED_COAST, gently catch the coasting coin
     (bounded forward velocity + ramped squeeze) once it slows into the reachable corridor, then hand to the frozen settle.
     Measures reachability (R0), gentle re-grip without fling (R1), and the full chain K6 (R4). Dev s1 only; settle/cert frozen."""
     t0 = time.time()
     os.makedirs(OUT, exist_ok=True)
-    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
     snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
     base = {"qdot_approach": 1.6, "launch_vlo": 5.0, "launch_vhi": 6.0, "impulse_budget": 10.0, "max_steps": 40,
             "acquire_squeeze": 0.2}
-    runs = []
-    for k in range(3, 15, 1):                                                # release at various steps → coast to various dtz
-        r = _run_approach(snap, ApproachParams(**base, release_at_step=k, reacquire=True))
-        rs, re = r.get("reacquire_start"), r.get("reacquire_end")
-        dtz_push = (round(re["dtz_mm"] - rs["dtz_mm"], 1) if rs and re else None)   # +ve ⇒ re-acquire pushed the coin AWAY
-        runs.append({"release_step": k, "reached_corridor": bool(rs), "regrip_success": bool(re and re.get("success")),
-                     "dtz_push_mm": dtz_push, "v_par_at_regrip": (re or {}).get("v_par_at_regrip"),
-                     "dtz_end_mm": r["dtz_end_mm"], "k6": r["k6"], "safe": r["safe"], "min_dtz_mm": r["min_dtz_mm"]})
+    runs = _c28_sweep(snap, base)
     reached = [r for r in runs if r["reached_corridor"] and r["safe"]]
-    gentle = [r for r in reached if r["regrip_success"] and (r["dtz_push_mm"] is None or r["dtz_push_mm"] <= 5.0)]
+    gentle = _gentle_regrips(reached, "regrip_success")
     delivered = [r for r in gentle if r["k6"]]
-    best = min([r for r in runs if r["safe"]], key=lambda r: r["dtz_end_mm"]) if runs else None
-    if delivered:
-        verdict = "REACQUIRE_CHAIN_DELIVERS_S1"                               # R4 pass
-    elif gentle:
-        verdict = "REACQUIRE_FEASIBLE_SETTLE_NOT_YET"                         # R0/R1 pass, R3/R4 tuning
-    elif reached:
-        verdict = "REACQUIRE_CONTACT_NOT_STABILISED"                         # R0 pass, R1 fails (fling / no stable re-grip)
-    else:
-        verdict = "REACQUIRE_GEOMETRICALLY_UNREACHABLE"                      # R0 fails
+    best = _safe_best(runs)
+    verdict = _c28_verdict(delivered, gentle, reached)
     out = {"contract": "COIN_R9_R10C28_REACQUIRE", "cradle": "s1", "R0_reached": len(reached), "R1_gentle": len(gentle),
            "R4_delivered": len(delivered), "verdict": verdict, "best_chain": best, "n_runs": len(runs), "runs": runs,
            "wall_s": round(time.time() - t0, 1)}
@@ -645,30 +664,38 @@ def c26_coast_guard_audit() -> dict:
     return out
 
 
+def _c25_variants(snap: Any, base: dict) -> list:
+    """HELD (retained grip × forward-effort × duration) + diagnostic PASSIVE_RELEASE branches after a fixed momentum-build."""
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    variants = [("HELD", cq, cs, ApproachParams(**base, carry_qref=cq, carry_steps=cs))
+                for cq in (0.0, 0.5, 1.0) for cs in (0, 2, 4, 6, 8, 10)]
+    variants += [("PASSIVE_RELEASE", 0.0, cs, ApproachParams(**base, carry_steps=cs, carry_release=True))
+                 for cs in (2, 4, 6, 8, 10)]
+    return [{"mode": m, "carry_qref": cq, "carry_steps": cs, **_run_approach(snap, ap)} for m, cq, cs, ap in variants]
+
+
+def _c25_verdict(best_held: "dict | None", best_rel: "dict | None") -> str:
+    if best_held and best_held["k6"]:
+        return "HELD_MOMENTUM_CARRY_DELIVERS_S1"                          # keep the R6 rest certificate
+    if best_rel and best_rel["k6"]:
+        return "RELEASED_COAST_DELIVERS_S1"                              # need launch/release guard ≠ final settle cert
+    return "HANDOFF_TRANSPORT_MODE_NOT_YET_IDENTIFIED"                   # active carry primitive still missing
+
+
 def c25_handoff_audit() -> dict:
     """R10-C2.5 — handoff phase-existence audit: is the second mode HELD_MOMENTUM_CARRY (grip retained) or a teacher-like
     PASSIVE_RELEASE coast? Sweeps carry (held forward-effort × duration) + a diagnostic released-coast branch after a fixed
     momentum-building APPROACH; classifies which handoff reaches s1 K6. Dev s1 only; brake/cert/physics frozen."""
     t0 = time.time()
     os.makedirs(OUT, exist_ok=True)
-    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
     snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
     base = {"qdot_approach": 2.4, "launch_vlo": 0.28, "launch_vhi": 0.45}
-    variants = [("HELD", cq, cs, ApproachParams(**base, carry_qref=cq, carry_steps=cs))
-                for cq in (0.0, 0.5, 1.0) for cs in (0, 2, 4, 6, 8, 10)]
-    variants += [("PASSIVE_RELEASE", 0.0, cs, ApproachParams(**base, carry_steps=cs, carry_release=True))
-                 for cs in (2, 4, 6, 8, 10)]
-    runs = [{"mode": m, "carry_qref": cq, "carry_steps": cs, **_run_approach(snap, ap)} for m, cq, cs, ap in variants]
+    runs = _c25_variants(snap, base)
     held = [r for r in runs if r["mode"] == "HELD" and r["safe"]]
     rel = [r for r in runs if r["mode"] == "PASSIVE_RELEASE" and r["safe"]]
     best_held = max(held, key=lambda r: (r["k6"], -r["dtz_end_mm"])) if held else None
     best_rel = max(rel, key=lambda r: (r["k6"], -r["dtz_end_mm"])) if rel else None
-    if best_held and best_held["k6"]:
-        verdict = "HELD_MOMENTUM_CARRY_DELIVERS_S1"                       # keep the R6 rest certificate
-    elif best_rel and best_rel["k6"]:
-        verdict = "RELEASED_COAST_DELIVERS_S1"                           # need launch/release guard ≠ final settle cert
-    else:
-        verdict = "HANDOFF_TRANSPORT_MODE_NOT_YET_IDENTIFIED"            # active carry primitive still missing
+    verdict = _c25_verdict(best_held, best_rel)
     out = {"contract": "COIN_R9_R10C25_HANDOFF_AUDIT", "cradle": "s1", "approach_base": base,
            "best_held": best_held, "best_passive_release": best_rel, "verdict": verdict, "n_variants": len(runs),
            "runs": runs, "wall_s": round(time.time() - t0, 1)}
@@ -714,6 +741,27 @@ def c2_mechanism() -> dict:
     return out
 
 
+def _c27_variants(snap: Any, base: dict) -> list:
+    """GUIDED (light contact: squeeze × effort × duration) sweep + FULL_GRIP / RELEASED contrast baselines (C2.5 held/released)."""
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    variants = [("GUIDED", sq, cq, cs, ApproachParams(**base, carry_steps=cs, carry_qref=cq, carry_squeeze=sq))
+                for sq in (0.02, 0.04, 0.06, 0.10) for cq in (0.0, 0.2) for cs in (4, 8, 12, 16)]
+    variants += [("FULL_GRIP", 0.14, 1.0, cs, ApproachParams(**base, carry_steps=cs, carry_qref=1.0, carry_squeeze=0.14))
+                 for cs in (4, 8, 12)]
+    variants += [("RELEASED", 0.0, 0.0, cs, ApproachParams(**base, carry_steps=cs, carry_release=True))
+                 for cs in (6, 10)]
+    return [{"mode": m, "carry_squeeze": sq, "carry_qref": cq, "carry_steps": cs, **_run_approach(snap, ap)}
+            for m, sq, cq, cs, ap in variants]
+
+
+def _c27_verdict(best_g: "dict | None") -> str:
+    if best_g and best_g["k6"]:
+        return "POST_COAST_GUIDED_COAST_MODE_LOAD_BEARING"
+    if best_g and best_g["dtz_end_mm"] < 33.0 - 1.0:                          # meaningfully closer than the released-coast 33mm
+        return "GUIDED_COAST_PROMISING_NEEDS_SETTLE_TUNING"
+    return "GUIDED_COAST_INSUFFICIENT_REACQUIRE_NEEDED"
+
+
 def c27_guided_coast_audit() -> dict:
     """R10-C2.7 — post-coast feasibility: is a GUIDED_COAST (light contact = low squeeze + tiny forward effort, so the coin
     coasts but keeps observability/correction authority) between full-grip (over-dissipates, 48mm) and full-release (no
@@ -721,26 +769,13 @@ def c27_guided_coast_audit() -> dict:
     contrast baselines are the C2.5 held/released numbers. Dev s1 only; settle/cert/physics frozen."""
     t0 = time.time()
     os.makedirs(OUT, exist_ok=True)
-    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
     snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
     base = {"qdot_approach": 2.4, "launch_vlo": 0.28, "launch_vhi": 0.45}
-    variants = [("GUIDED", sq, cq, cs, ApproachParams(**base, carry_steps=cs, carry_qref=cq, carry_squeeze=sq))
-                for sq in (0.02, 0.04, 0.06, 0.10) for cq in (0.0, 0.2) for cs in (4, 8, 12, 16)]
-    variants += [("FULL_GRIP", 0.14, 1.0, cs, ApproachParams(**base, carry_steps=cs, carry_qref=1.0, carry_squeeze=0.14))
-                 for cs in (4, 8, 12)]                                       # C2.5 held baseline
-    variants += [("RELEASED", 0.0, 0.0, cs, ApproachParams(**base, carry_steps=cs, carry_release=True))
-                 for cs in (6, 10)]                                          # C2.5 released baseline
-    runs = [{"mode": m, "carry_squeeze": sq, "carry_qref": cq, "carry_steps": cs, **_run_approach(snap, ap)}
-            for m, sq, cq, cs, ap in variants]
+    runs = _c27_variants(snap, base)
     guided = [r for r in runs if r["mode"] == "GUIDED" and r["safe"]]
     best_g = min(guided, key=lambda r: r["dtz_end_mm"]) if guided else None
     best_all = min([r for r in runs if r["safe"]], key=lambda r: r["dtz_end_mm"])
-    if best_g and best_g["k6"]:
-        verdict = "POST_COAST_GUIDED_COAST_MODE_LOAD_BEARING"
-    elif best_g and best_g["dtz_end_mm"] < 33.0 - 1.0:                        # meaningfully closer than the released-coast 33mm
-        verdict = "GUIDED_COAST_PROMISING_NEEDS_SETTLE_TUNING"
-    else:
-        verdict = "GUIDED_COAST_INSUFFICIENT_REACQUIRE_NEEDED"
+    verdict = _c27_verdict(best_g)
     out = {"contract": "COIN_R9_R10C27_GUIDED_COAST", "cradle": "s1", "baselines": {"held_48mm": 48.4, "released_33mm": 33.0},
            "best_guided": best_g, "best_overall_safe": best_all, "verdict": verdict, "n_variants": len(runs), "runs": runs,
            "wall_s": round(time.time() - t0, 1)}
@@ -752,16 +787,9 @@ def c27_guided_coast_audit() -> dict:
     return out
 
 
-def c29_catchpoint_audit() -> dict:
-    """R10-R3-A — catch-point timing audit (NO new action basis; the whole controller is unchanged, only the re-acquire
-    corridor + closing-velocity are swept). Decides H1 (settle fine, catch too early) vs H2 (a micro-transport d.o.f. is
-    missing): is there a LATER catch-point where the re-grip is still gentle AND the frozen settle finishes s1 to K6?"""
-    t0 = time.time()
-    os.makedirs(OUT, exist_ok=True)
+def _c29_sweep(snap: Any, base: dict) -> list:
+    """Sweep release timing × catch-corridor × closing-velocity; one row per (k, hi, vc) re-acquire attempt."""
     from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
-    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
-    base = {"qdot_approach": 1.6, "launch_vlo": 5.0, "launch_vhi": 6.0, "impulse_budget": 10.0, "max_steps": 40,
-            "acquire_squeeze": 0.2, "reacquire": True}
     runs = []
     for k in (4, 6, 8, 10, 12):                                              # release timing → coast-landing variation
         for hi in (0.023, 0.026, 0.029, 0.033):                             # catch-when-dtz ≤ hi (tighter = later, closer catch)
@@ -773,16 +801,25 @@ def c29_catchpoint_audit() -> dict:
                              "success": bool(re and re.get("success")), "dtz_push_mm": push,
                              "settle_entry_mm": (re or {}).get("dtz_mm"), "dtz_end_mm": r["dtz_end_mm"], "k6": r["k6"],
                              "safe": r["safe"], "v_regrip": (re or {}).get("v_par_at_regrip")})
-    gentle = [r for r in runs if r["success"] and r["safe"] and (r["dtz_push_mm"] is None or r["dtz_push_mm"] <= 5.0)]
+    return runs
+
+
+def c29_catchpoint_audit() -> dict:
+    """R10-R3-A — catch-point timing audit (NO new action basis; the whole controller is unchanged, only the re-acquire
+    corridor + closing-velocity are swept). Decides H1 (settle fine, catch too early) vs H2 (a micro-transport d.o.f. is
+    missing): is there a LATER catch-point where the re-grip is still gentle AND the frozen settle finishes s1 to K6?"""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
+    base = {"qdot_approach": 1.6, "launch_vlo": 5.0, "launch_vhi": 6.0, "impulse_budget": 10.0, "max_steps": 40,
+            "acquire_squeeze": 0.2, "reacquire": True}
+    runs = _c29_sweep(snap, base)
+    gentle = _gentle_regrips(runs, "success")
     delivered = [r for r in gentle if r["k6"]]
     closest = min(gentle, key=lambda r: r["settle_entry_mm"] or 1e9) if gentle else None
-    best = min([r for r in runs if r["safe"]], key=lambda r: r["dtz_end_mm"]) if runs else None
-    if delivered:
-        verdict = "REACQUIRE_TIMING_CLOSES_S1"                               # H1: catch-timing alone delivers → no new mode
-    elif gentle:
-        verdict = "MICRO_TRANSPORT_MODE_REQUIRED"                            # H2: gentle catch reachable but settle never closes
-    else:
-        verdict = "REACQUIRE_TIMING_INSUFFICIENT"
+    best = _safe_best(runs)
+    verdict = ("REACQUIRE_TIMING_CLOSES_S1" if delivered else            # H1: catch-timing alone delivers → no new mode
+               "MICRO_TRANSPORT_MODE_REQUIRED" if gentle else "REACQUIRE_TIMING_INSUFFICIENT")  # H2 vs unreachable
     out = {"contract": "COIN_R9_R3A_CATCHPOINT", "cradle": "s1", "n_gentle": len(gentle), "n_delivered": len(delivered),
            "closest_gentle_catch": closest, "best_chain": best, "verdict": verdict, "n_runs": len(runs), "runs": runs,
            "wall_s": round(time.time() - t0, 1)}
@@ -793,6 +830,21 @@ def c29_catchpoint_audit() -> dict:
           f"   best chain {best['dtz_end_mm'] if best else None}mm K6 {best['k6'] if best else None}\n"
           f"== R10-R3-A ==\n  {verdict} | wall {out['wall_s']}s\nR9_R3A_DONE", flush=True)
     return out
+
+
+def _c30_sweep(snap: Any, reacq: dict) -> list:
+    """Sweep the bounded micro-transport (forward-effort × impulse-budget × velocity-cap) over the FIXED C2.8 re-acquire."""
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    runs = []
+    for mf in (0.6, 1.0, 1.6):                                                               # the transport is ~28mm, NOT micro
+        for mib in (0.08, 0.16, 0.30):
+            for vc in (1.2, 1.8):
+                r = _run_approach(snap, ApproachParams(**reacq, micro_transport=True, micro_forward=mf, micro_max_steps=22,
+                                                       micro_impulse_budget=mib, micro_vcap_qref=vc))
+                runs.append({"micro_forward": mf, "micro_impulse_budget": mib, "vcap": vc, "dtz_end_mm": r["dtz_end_mm"],
+                             "min_dtz_mm": r["min_dtz_mm"], "k6": r["k6"], "safe": r["safe"],
+                             "reacq_success": bool((r.get("reacquire_end") or {}).get("success"))})
+    return runs
 
 
 def c30_micro_transport_audit() -> dict:
@@ -808,25 +860,13 @@ def c30_micro_transport_audit() -> dict:
     off = _run_approach(snap, ApproachParams(**reacq))
     zero = _run_approach(snap, ApproachParams(**reacq, micro_transport=True, micro_forward=0.0))
     update_zero = bool(abs(off["dtz_end_mm"] - zero["dtz_end_mm"]) < 0.1)                    # R3-B0
-    runs = []
-    for mf in (0.6, 1.0, 1.6):                                                               # the transport is ~28mm, NOT micro
-        for mib in (0.08, 0.16, 0.30):
-            for vc in (1.2, 1.8):
-                r = _run_approach(snap, ApproachParams(**reacq, micro_transport=True, micro_forward=mf, micro_max_steps=22,
-                                                       micro_impulse_budget=mib, micro_vcap_qref=vc))
-                runs.append({"micro_forward": mf, "micro_impulse_budget": mib, "vcap": vc, "dtz_end_mm": r["dtz_end_mm"],
-                             "min_dtz_mm": r["min_dtz_mm"], "k6": r["k6"], "safe": r["safe"],
-                             "reacq_success": bool((r.get("reacquire_end") or {}).get("success"))})
+    runs = _c30_sweep(snap, reacq)
     valid = [r for r in runs if r["safe"] and r["reacq_success"]]
     delivered = [r for r in valid if r["k6"]]
     best = min(valid, key=lambda r: r["dtz_end_mm"]) if valid else None
     progressed = bool(best and best["dtz_end_mm"] < off["dtz_end_mm"] - 1.0)
-    if delivered:
-        verdict = "MICRO_TRANSPORT_CLOSES_S1"                                                # R3-C PASS
-    elif progressed:
-        verdict = "MICRO_TRANSPORT_PROGRESSES_BUT_NO_K6"
-    else:
-        verdict = "MICRO_TRANSPORT_INSUFFICIENT"
+    verdict = ("MICRO_TRANSPORT_CLOSES_S1" if delivered else                                 # R3-C PASS
+               "MICRO_TRANSPORT_PROGRESSES_BUT_NO_K6" if progressed else "MICRO_TRANSPORT_INSUFFICIENT")
     out = {"contract": "COIN_R9_R3BC_MICRO_TRANSPORT", "cradle": "s1", "base_c28_dtz_mm": off["dtz_end_mm"],
            "R3B0_update_zero_identity": update_zero, "micro_zero_dtz_mm": zero["dtz_end_mm"], "best_micro": best,
            "n_delivered": len(delivered), "verdict": verdict, "n_runs": len(runs), "runs": runs,
@@ -901,40 +941,93 @@ def c31_velocity_matched_capture(pop: int = 48, n_iter: int = 6, elite: int = 10
     return out
 
 
+def _regrade_k6(store: list, tol_mm: float, vthr: float, dwell: int) -> bool:
+    """Re-grade a captured (dtz_mm, speed) trace at arbitrary K6 thresholds: max run of consecutive in-zone-at-rest steps ≥ dwell."""
+    run = best = 0
+    for r in store:
+        run = run + 1 if (r["dtz_mm"] <= tol_mm and r["speed"] < vthr) else 0
+        best = max(best, run)
+    return bool(best >= dwell)
+
+
+def _k6_components(store: list) -> dict:
+    """Decompose success into K6-Z (spatial) / K6-V (dynamic) / K6-D (persistence) at the FROZEN thresholds (20mm, 0.06, 6)."""
+    min_dtz = min(r["dtz_mm"] for r in store)
+    return {"min_dtz_mm": round(min_dtz, 1), "terminal_dtz_mm": round(store[-1]["dtz_mm"], 1),
+            "terminal_speed": round(store[-1]["speed"], 4), "K6Z_reached_zone": bool(min_dtz <= 20.0),
+            "K6D_max_dwell_frozen": _max_dwell(store, 20.0, 0.06),
+            "K6F_frozen": _regrade_k6(store, 20.0, 0.06, 6)}
+
+
+def _max_dwell(store: list, tol_mm: float, vthr: float) -> int:
+    run = best = 0
+    for r in store:
+        run = run + 1 if (r["dtz_mm"] <= tol_mm and r["speed"] < vthr) else 0
+        best = max(best, run)
+    return int(best)
+
+
+def k6_decomposition_audit() -> dict:
+    """K6-decomposition audit (re-evaluation, NOT a controller search): for representative trajectories decompose success into
+    K6-Z/V/D and run a pre-registered tolerance/speed/dwell sensitivity table — to see WHETHER runs fail spatially (outside the
+    zone) vs dynamically vs persistence, and whether the frozen 20mm is load-bearing. Does NOT choose K6 from policy results."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.forward_displacement import rollout_primitive
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import HybridApproachController
+    from hymeko_rl.coin_delivery.theta_option.tip_transport import TipReferencedController
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    bank = json.load(open(BANK))
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}["s1"].snap
+    traces = {}
+    sc: list = []
+    velocity_rollout(snap, TipReferencedController(snap, TipTransportParams(), DELIVERY_CFG), DELIVERY_CFG, frame_hook=_phys_hook(sc))
+    traces["scaffold"] = sc
+    te: list = []
+    rollout_primitive(snap, tuple(_teacher_theta(bank, "s1")), DELIVERY_CFG, frame_hook=_phys_hook(te))
+    traces["teacher"] = te
+    hy: list = []
+    vmc_ap = _c31_ap([1.0, 0.2, 2, 0.03, 0.5, 0.1])                # representative velocity-matched-capture config (C3-D family)
+    velocity_rollout(snap, HybridApproachController(snap, TipTransportParams(), vmc_ap, DELIVERY_CFG), DELIVERY_CFG, frame_hook=_phys_hook(hy))
+    traces["hybrid_vmc"] = hy
+    per = {name: _k6_components(st) for name, st in traces.items()}
+    sens = {f"tol{t}_v{v}_d{d}": {name: _regrade_k6(st, float(t), v, d) for name, st in traces.items()}
+            for t in (15, 20, 25, 30) for v in (0.06,) for d in (6,)}
+    out = {"contract": "COIN_R9_K6_DECOMPOSITION", "cradle": "s1", "frozen_thresholds": {"tol_mm": 20, "speed": 0.06, "dwell": 6},
+           "per_trajectory": per, "tolerance_sensitivity": sens,
+           "reading": ("if the hybrid runs fail K6Z (min_dtz > 20mm) while the teacher passes at 20mm, the failure is SPATIAL "
+                       "(not dynamic/persistence) and widening the zone REDEFINES the task; the release-guard and the final "
+                       "K6-settle monitor are separate objects and should not be coupled as a pre-release rest certificate."),
+           "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/k6_decomposition.json", "w"), indent=1, default=float)
+    for name, c in per.items():
+        print(f"   {name}: min_dtz {c['min_dtz_mm']}mm reached_zone {c['K6Z_reached_zone']} term_speed {c['terminal_speed']} "
+              f"dwell {c['K6D_max_dwell_frozen']} K6F {c['K6F_frozen']}", flush=True)
+    print(f"   tolerance sensitivity (v0.06 d6): {{tol: {[t for t in (15, 20, 25, 30)]}}}", flush=True)
+    for t in (15, 20, 25, 30):
+        print(f"     tol {t}mm: " + ", ".join(f"{n} {sens[f'tol{t}_v0.06_d6'][n]}" for n in per), flush=True)
+    print(f"== K6 DECOMPOSITION ==\n  wall {out['wall_s']}s\nR9_K6DECOMP_DONE", flush=True)
+    return out
+
+
+_AUDITS = {"--stage2": stage2_update_zero_identity, "--diag": stage3_ceiling_diag, "--reach": reach_audit,
+           "--m0": m0_base_coverage, "--c0": c0_trace_audit, "--c1": c1_projection, "--c2": c2_mechanism,
+           "--c25": c25_handoff_audit, "--c26": c26_coast_guard_audit, "--c27": c27_guided_coast_audit,
+           "--c28": c28_reacquire_audit, "--c29": c29_catchpoint_audit, "--c30": c30_micro_transport_audit,
+           "--c31": c31_velocity_matched_capture, "--k6decomp": k6_decomposition_audit}
+
+
 def main(argv: "list[str]") -> None:
-    if "--stage2" in argv:
-        stage2_update_zero_identity()
-    elif "--c31" in argv:
-        c31_velocity_matched_capture()
-    elif "--c30" in argv:
-        c30_micro_transport_audit()
-    elif "--c29" in argv:
-        c29_catchpoint_audit()
-    elif "--c27" in argv:
-        c27_guided_coast_audit()
-    elif "--c28" in argv:
-        c28_reacquire_audit()
-    elif "--diag" in argv:
-        stage3_ceiling_diag()
-    elif "--reach" in argv:
-        reach_audit()
-    elif "--m0" in argv:
-        m0_base_coverage()
-    elif "--c0" in argv:
-        c0_trace_audit()
-    elif "--c1" in argv:
-        c1_projection()
-    elif "--c2" in argv:
-        c2_mechanism()
-    elif "--c25" in argv:
-        c25_handoff_audit()
-    elif "--c26" in argv:
-        c26_coast_guard_audit()
-    elif "--stage3" in argv:
+    if "--stage3" in argv:                                        # parameterised (curriculum / smoke) — kept explicit
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)
-    else:
-        print("usage: coin_r9_causal_rl.py --stage2 | --stage3 [--curriculum=A|B|C] [--smoke]", flush=True)
+        return
+    for flag, fn in _AUDITS.items():
+        if flag in argv:
+            fn()
+            return
+    print("usage: coin_r9_causal_rl.py --stage2/--stage3/--diag/--reach/--m0/--c0..c31/--k6decomp [--curriculum=A|B|C] [--smoke]",
+          flush=True)
 
 
 if __name__ == "__main__":

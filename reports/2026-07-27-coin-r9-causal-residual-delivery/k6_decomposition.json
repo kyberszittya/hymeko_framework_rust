@@ -1,0 +1,59 @@
+{
+ "contract": "COIN_R9_K6_DECOMPOSITION",
+ "cradle": "s1",
+ "frozen_thresholds": {
+  "tol_mm": 20,
+  "speed": 0.06,
+  "dwell": 6
+ },
+ "per_trajectory": {
+  "scaffold": {
+   "min_dtz_mm": 57.7,
+   "terminal_dtz_mm": 57.7,
+   "terminal_speed": 0.0002,
+   "K6Z_reached_zone": false,
+   "K6D_max_dwell_frozen": 0,
+   "K6F_frozen": false
+  },
+  "teacher": {
+   "min_dtz_mm": 18.5,
+   "terminal_dtz_mm": 18.5,
+   "terminal_speed": 0.0,
+   "K6Z_reached_zone": true,
+   "K6D_max_dwell_frozen": 24,
+   "K6F_frozen": true
+  },
+  "hybrid_vmc": {
+   "min_dtz_mm": 48.7,
+   "terminal_dtz_mm": 48.7,
+   "terminal_speed": 0.0,
+   "K6Z_reached_zone": false,
+   "K6D_max_dwell_frozen": 0,
+   "K6F_frozen": false
+  }
+ },
+ "tolerance_sensitivity": {
+  "tol15_v0.06_d6": {
+   "scaffold": false,
+   "teacher": false,
+   "hybrid_vmc": false
+  },
+  "tol20_v0.06_d6": {
+   "scaffold": false,
+   "teacher": true,
+   "hybrid_vmc": false
+  },
+  "tol25_v0.06_d6": {
+   "scaffold": false,
+   "teacher": true,
+   "hybrid_vmc": false
+  },
+  "tol30_v0.06_d6": {
+   "scaffold": false,
+   "teacher": true,
+   "hybrid_vmc": false
+  }
+ },
+ "reading": "if the hybrid runs fail K6Z (min_dtz > 20mm) while the teacher passes at 20mm, the failure is SPATIAL (not dynamic/persistence) and widening the zone REDEFINES the task; the release-guard and the final K6-settle monitor are separate objects and should not be coupled as a pre-release rest certificate.",
+ "wall_s": 93.5
+}
