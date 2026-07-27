@@ -1,0 +1,12 @@
+{
+ "contract": "COIN_R8_CORRECTED_RL_GATE_V1",
+ "date": "2026-07-27",
+ "branch": "recovery/coin-r8-tip-referenced-residual-rl",
+ "base_commit": "8e73b261",
+ "rationale": "old gate (deterministic 4/4 before RL) was circular; a SAFE scaffold is required, deterministic 4/4 is NOT a justified RL prerequisite",
+ "kept_hard": ["no teleport", "no coin-state edit", "no hidden force", "no teacher fallback at deploy", "no oracle action injection", "unchanged torque/slew/joint-vel/collision/motion contracts", "reward independent of frozen K6", "exact Bellman action + provenance", "held-out s4/s7 excluded from ALL training/replay/hyperparameter/threshold/architecture", "update-zero reproduces the scaffold", "release only via R6 certificate", "oracle = feasibility witness only"],
+ "gates": {"S0": "physical solvability (oracle 4/4) = HAVE", "S1": "safe scaffold (bounded/stable/anti-windup; K6 NOT required) = PASS", "S2": "update-zero identity", "S3": "learnability signal (dev)", "S4": "matched SAC/TD3 dev (beat baseline, no safety regress)", "S5": "frozen held-out one-shot"},
+ "residual": {"over": "frozen R8 tip-referenced scaffold", "roles": ["d_fwd_vel", "d_squeeze", "d_stop_gain"], "bellman_action": "actor emission a in [-1,1]^3 ONLY", "provenance_never_bellman": ["base target", "corrected target", "clipped residual", "torque target", "executed torque", "certificate/controller internals"], "release": "certificate-gated shield, not a free actor bit"},
+ "dev_states": ["s1", "s3"], "held_out_states": ["s4", "s7"],
+ "rl_authorised_after": "S1 && S2 && S3", "sac_td3_status": "S2 in progress; not started"
+}

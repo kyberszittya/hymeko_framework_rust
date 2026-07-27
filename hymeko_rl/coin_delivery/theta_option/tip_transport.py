@@ -88,7 +88,10 @@ class TipReferencedController:
         sqz = inward / (np.linalg.norm(inward) + 1e-12)
         return fwd, sqz
 
-    def dtau_for_step(self, rl: Any, t: int, prev_tau: np.ndarray) -> np.ndarray:
+    def _base_targets(self, rl: Any, t: int) -> "dict[str, Any]":
+        """Compute the scaffold's per-step base targets (with the cert/phase/squeeze side-effects). Split out so a residual
+        adapter can inject a bounded δ over the SAME base without re-implementing the servo. # Postconditions: base_qref ∈
+        [0, qdot_max]; base_sqz ∈ [squeeze_min, squeeze_hold]; phase/cert/_sqz updated exactly as the frozen scaffold."""
         e_par, dtz, v_par = self._live(rl)
         coin = _coin_xy(rl)
         con = primary_fingertip_contacts(rl)
@@ -99,23 +102,33 @@ class TipReferencedController:
         if armed:
             self.phase = RELEASE
         fwd_dir, sqz_dir = self._directions(rl, e_par, coin)
-        if self.phase == RELEASE:
-            dtau = -0.5 * self._sqz * sqz_dir                  # relax grip; the settled coin stays
-        else:
+        base_qref = 0.0
+        if self.phase != RELEASE:
             d_remain = max(dtz - CENTER_TOL, 0.0)
-            v_ref = velocity_ref(d_remain, self.p.k_d, self.p.v_max)          # coin approach-speed reference → 0 at zone
-            qdot_ref_mag = float(np.clip(self.p.k_q * v_ref, 0.0, self.p.qdot_max))  # bounded joint-velocity reference
-            qdot_ref = qdot_ref_mag * fwd_dir
-            qdot = np.asarray(rl.inner.data.qvel[:4], np.float64)
-            dtau = self.p.k_v * (qdot_ref - qdot)              # torque-target joint-velocity servo (slew = anti-windup)
+            base_qref = float(np.clip(self.p.k_q * velocity_ref(d_remain, self.p.k_d, self.p.v_max), 0.0, self.p.qdot_max))
             settling = (dtz < CENTER_TOL) and (abs(v_par) < self.p.settle_speed)
             if settling and not contact_risk:
                 self._sqz = max(self.p.squeeze_min, self._sqz * self.p.squeeze_decay)
             elif contact_risk:
                 self._sqz = self.p.squeeze_hold
-            dtau = dtau + self._sqz * sqz_dir
-        dtau = np.clip(np.asarray(dtau, np.float64), -self.slew, self.slew)
-        self.trace.append({"t": int(t), "phase": int(self.phase), "dtz_mm": round(dtz * 1000, 2),
-                           "v_par": round(v_par, 5), "qdot_max": round(float(np.max(np.abs(rl.inner.data.qvel[:4]))), 4),
+        return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": self.phase == RELEASE,
+                "base_qref": base_qref, "base_sqz": float(self._sqz), "both": both, "contact_risk": contact_risk, "con": con}
+
+    def _servo(self, rl: Any, bt: "dict[str, Any]", qref: float, sqz: float, kv: float) -> np.ndarray:
+        """The slew-admissible Δτ for the (possibly residual-corrected) targets. In RELEASE: relax the grip; else: the
+        joint-velocity servo + grip. # Postconditions: |Δτ| ≤ slew; identical to the frozen scaffold when
+        (qref,sqz,kv) = (base_qref, base_sqz, k_v)."""
+        if bt["in_release"]:
+            dtau = -0.5 * sqz * bt["sqz_dir"]
+        else:
+            qdot = np.asarray(rl.inner.data.qvel[:4], np.float64)
+            dtau = kv * (qref * bt["fwd_dir"] - qdot) + sqz * bt["sqz_dir"]
+        return np.clip(np.asarray(dtau, np.float64), -self.slew, self.slew)
+
+    def dtau_for_step(self, rl: Any, t: int, prev_tau: np.ndarray) -> np.ndarray:
+        bt = self._base_targets(rl, t)
+        dtau = self._servo(rl, bt, bt["base_qref"], bt["base_sqz"], self.p.k_v)
+        self.trace.append({"t": int(t), "phase": int(self.phase), "dtz_mm": round(bt["dtz"] * 1000, 2),
+                           "v_par": round(bt["v_par"], 5), "qdot_max": round(float(np.max(np.abs(rl.inner.data.qvel[:4]))), 4),
                            "sqz": round(self._sqz, 4)})
         return dtau

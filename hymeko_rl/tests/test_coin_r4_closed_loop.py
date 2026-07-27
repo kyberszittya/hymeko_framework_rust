@@ -157,6 +157,23 @@ def test_r8_tip_transport_ref_bounded():
     assert np.clip(p.k_q * velocity_ref(0.0, p.k_d, p.v_max), 0.0, p.qdot_max) == 0.0   # zero reference at the zone
 
 
+# ── R8 S2: the residual is bounded and identity-at-zero (pure; the full-trace identity is the S2 physics harness) ────
+def test_r8_residual_zero_and_bounds():
+    from hymeko_rl.coin_delivery.theta_option.residual_adapter import RESIDUAL_ROLES, ResidualBounds, ZeroActor
+    assert len(RESIDUAL_ROLES) == 3
+    b = ResidualBounds()
+    assert np.all(b.vec() > 0) and b.kv_lo < 1.0 < b.kv_hi        # nonzero bounds; gain window straddles 1 (identity)
+    # zero actor ⇒ zero emission ⇒ zero residual ⇒ base targets unchanged (clip identity at 0)
+    a = ZeroActor()(np.arange(11.0))
+    assert np.array_equal(a, np.zeros(3))
+    d = np.clip(a, -1.0, 1.0) * b.vec()
+    assert np.array_equal(d, np.zeros(3))                        # residual added to the base = +0
+    base_qref, base_sqz, k_v = 0.7, 0.11, 0.6                    # arbitrary in-range base targets
+    assert float(np.clip(base_qref + d[0], 0.0, 1.0)) == base_qref
+    assert float(np.clip(base_sqz + d[1], 0.06, 0.14)) == base_sqz
+    assert k_v * float(np.clip(1.0 + d[2], b.kv_lo, b.kv_hi)) == k_v   # kv·(1+0) = kv exactly
+
+
 # ── 1. ZERO-RESIDUAL IDENTITY — a benign, on-plan response yields ≈0 correction ─────────────────────────────────────
 def test_1_zero_residual_identity():
     c = IntentCorrector(CorrectionParams())                    # k_forward_deficit = 0 by default
