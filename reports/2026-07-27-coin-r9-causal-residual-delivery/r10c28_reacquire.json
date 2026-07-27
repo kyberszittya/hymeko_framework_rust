@@ -1,0 +1,155 @@
+{
+ "contract": "COIN_R9_R10C28_REACQUIRE",
+ "cradle": "s1",
+ "R0_reached": 12,
+ "R1_gentle": 9,
+ "R4_delivered": 0,
+ "verdict": "REACQUIRE_FEASIBLE_SETTLE_NOT_YET",
+ "best_chain": {
+  "release_step": 3,
+  "reached_corridor": true,
+  "regrip_success": false,
+  "dtz_push_mm": -6.1,
+  "v_par_at_regrip": 0.0,
+  "dtz_end_mm": 31.0,
+  "k6": false,
+  "safe": true,
+  "min_dtz_mm": 31.0
+ },
+ "n_runs": 12,
+ "runs": [
+  {
+   "release_step": 3,
+   "reached_corridor": true,
+   "regrip_success": false,
+   "dtz_push_mm": -6.1,
+   "v_par_at_regrip": 0.0,
+   "dtz_end_mm": 31.0,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 31.0
+  },
+  {
+   "release_step": 4,
+   "reached_corridor": true,
+   "regrip_success": false,
+   "dtz_push_mm": -5.7,
+   "v_par_at_regrip": 0.0,
+   "dtz_end_mm": 41.8,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 41.8
+  },
+  {
+   "release_step": 5,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": 0.0,
+   "v_par_at_regrip": 0.0939,
+   "dtz_end_mm": 57.4,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 57.4
+  },
+  {
+   "release_step": 6,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": -2.2,
+   "v_par_at_regrip": 0.0292,
+   "dtz_end_mm": 61.1,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 61.1
+  },
+  {
+   "release_step": 7,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": 0.7,
+   "v_par_at_regrip": 0.0298,
+   "dtz_end_mm": 58.0,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 58.0
+  },
+  {
+   "release_step": 8,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": 0.0,
+   "v_par_at_regrip": 0.1,
+   "dtz_end_mm": 50.3,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 50.3
+  },
+  {
+   "release_step": 9,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": 0.0,
+   "v_par_at_regrip": 0.1537,
+   "dtz_end_mm": 49.8,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 49.8
+  },
+  {
+   "release_step": 10,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": 0.0,
+   "v_par_at_regrip": 0.155,
+   "dtz_end_mm": 53.2,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 53.2
+  },
+  {
+   "release_step": 11,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": 0.0,
+   "v_par_at_regrip": 0.1509,
+   "dtz_end_mm": 48.6,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 48.6
+  },
+  {
+   "release_step": 12,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": 0.0,
+   "v_par_at_regrip": 0.1404,
+   "dtz_end_mm": 48.6,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 48.6
+  },
+  {
+   "release_step": 13,
+   "reached_corridor": true,
+   "regrip_success": true,
+   "dtz_push_mm": 0.0,
+   "v_par_at_regrip": 0.1565,
+   "dtz_end_mm": 47.5,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 47.5
+  },
+  {
+   "release_step": 14,
+   "reached_corridor": true,
+   "regrip_success": false,
+   "dtz_push_mm": -7.2,
+   "v_par_at_regrip": 0.0154,
+   "dtz_end_mm": 43.1,
+   "k6": false,
+   "safe": true,
+   "min_dtz_mm": 43.1
+  }
+ ],
+ "wall_s": 93.6
+}

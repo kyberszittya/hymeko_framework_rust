@@ -29,6 +29,7 @@ from hymeko_rl.coin_delivery.theta_option.tip_transport import (
 
 APPROACH = -1                                     # the momentum-build phase, BEFORE the scaffold's REGULATE(0)/RELEASE(1)
 CARRY = -2                                        # the candidate handoff phase (held-carry or passive-release), before REGULATE
+REACQUIRE = -3                                    # C2.8: re-acquire contact after a RELEASED_COAST, then hand to the frozen settle
 
 
 @dataclass
@@ -55,6 +56,12 @@ class ApproachParams:
     guard_amax: float = 1.0                       # m/s² — HIGH end (→ shortest coast); interval NOT a point estimate (R5 lesson)
     corridor_hi: float = 0.020                    # m — the target corridor (the frozen 20 mm K6 zone)
     guard_margin: float = 0.004                   # m — uncertainty margin for the robust interval containment
+    reacquire: bool = False                       # C2.8 R0/R1: after RELEASED_COAST, re-acquire contact when the coin slows in the corridor
+    reacq_vclose: float = 0.16                    # m/s — start re-acquire only once the coin's closing velocity is BELOW this
+    reacq_corridor_hi: float = 0.070              # m — coin must be within this reachable-contact corridor to re-acquire
+    reacq_qref: float = 0.35                       # rad/s — gentle forward joint-velocity to catch the coasting coin
+    reacq_squeeze_step: float = 0.02              # N·m/step — RAMPED squeeze (not stepped) — impulse-limited re-grip
+    reacq_max_steps: int = 18                     # re-acquire horizon guard
 
 
 class HybridApproachController(TipReferencedController):
@@ -81,6 +88,31 @@ class HybridApproachController(TipReferencedController):
         self.approach_end: "dict | None" = None                  # (v_par, dtz) at APPROACH→CARRY/REGULATE
         self.brake_start: "dict | None" = None                   # (v_par, dtz) handed to the frozen brake
         self.release_state: "dict | None" = None                 # (v_par, dtz, t) at a C2.6 coast-entry RELEASE
+        self._reacq_sqz = self.p.squeeze_min
+        self._reacq_steps = 0
+        self.reacquire_start: "dict | None" = None               # coast state when re-acquire began
+        self.reacquire_end: "dict | None" = None                 # {dtz, steps, success, first_contact_dv} at re-grip / timeout
+
+    def _reacquire_targets(self, rl: Any, t: int) -> "dict[str, Any]":
+        """C2.8 RE-ACQUIRE: gently catch the coasting coin (bounded forward joint-velocity) and RAMP the squeeze (impulse-
+        limited) until bilateral contact re-forms, then hand to the frozen BRAKE/SETTLE. # Post: minimise first-contact
+        impulse; do not command raw torque; monotone → REGULATE."""
+        e_par, dtz, v_par = self._live(rl)
+        con = primary_fingertip_contacts(rl)
+        both = con["left"] is not None and con["right"] is not None
+        fn_min = min(float(con["left"]["fn"]) if con["left"] else 0.0, float(con["right"]["fn"]) if con["right"] else 0.0)
+        self._reacq_sqz = min(self.p.squeeze_hold, self._reacq_sqz + self.ap.reacq_squeeze_step)
+        self._reacq_steps += 1
+        reacquired = both and fn_min > self.ap.fn_min_safe
+        if reacquired or self._reacq_steps > self.ap.reacq_max_steps:
+            self.phase = REGULATE
+            self.reacquire_end = {"dtz_mm": round(dtz * 1000, 1), "steps": self._reacq_steps, "success": bool(reacquired),
+                                  "v_par_at_regrip": round(v_par, 4)}
+            return super()._base_targets(rl, t)
+        fwd_dir, sqz_dir = self._directions(rl, e_par, _coin_xy(rl))
+        return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,
+                "base_qref": float(self.ap.reacq_qref), "base_sqz": float(self._reacq_sqz), "both": both,
+                "contact_risk": False, "con": con}
 
     def _guard_fires(self, v_par: float, dtz: float, both: bool) -> bool:
         """ROBUST coast-entry guard (R5 lesson: no online post-release friction estimate — use the observed deceleration
@@ -133,6 +165,14 @@ class HybridApproachController(TipReferencedController):
     def _base_targets(self, rl: Any, t: int) -> "dict[str, Any]":
         if self.phase == CARRY:
             return self._carry_targets(rl, t)
+        if self.phase == REACQUIRE:
+            return self._reacquire_targets(rl, t)
+        if self.phase == RELEASE and self.ap.reacquire and self.reacquire_start is None:
+            _e, dtz, v_par = self._live(rl)                      # C2.8: re-acquire once the coasting coin slows into the corridor
+            if v_par < self.ap.reacq_vclose and dtz <= self.ap.reacq_corridor_hi:
+                self.phase = REACQUIRE
+                self.reacquire_start = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1), "t": int(t)}
+                return self._reacquire_targets(rl, t)
         if self.phase != APPROACH:
             return super()._base_targets(rl, t)                  # REGULATE/HOLD/BRAKE/RELEASE = the frozen scaffold
         e_par, dtz, v_par = self._live(rl)

@@ -542,7 +542,48 @@ def _run_approach(snap: Any, ap: Any, *, enabled: bool = True) -> dict:
             "exit_reason": ctrl.exit_reason, "peak_qdot": round(float(m["peak_qdot"]), 3),
             "peak_coin": round(float(m["peak_coin_speed"]), 3),
             "approach_end": getattr(ctrl, "approach_end", None), "brake_start": getattr(ctrl, "brake_start", None),
-            "carry_distance_mm": carry_dist, "release_state": getattr(ctrl, "release_state", None)}
+            "carry_distance_mm": carry_dist, "release_state": getattr(ctrl, "release_state", None),
+            "reacquire_start": getattr(ctrl, "reacquire_start", None), "reacquire_end": getattr(ctrl, "reacquire_end", None)}
+
+
+def c28_reacquire_audit() -> dict:
+    """R10-C2.8 (R0/R1) — does a post-coast RE-ACQUIRE primitive EXIST? After RELEASED_COAST, gently catch the coasting coin
+    (bounded forward velocity + ramped squeeze) once it slows into the reachable corridor, then hand to the frozen settle.
+    Measures reachability (R0), gentle re-grip without fling (R1), and the full chain K6 (R4). Dev s1 only; settle/cert frozen."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
+    base = {"qdot_approach": 1.6, "launch_vlo": 5.0, "launch_vhi": 6.0, "impulse_budget": 10.0, "max_steps": 40,
+            "acquire_squeeze": 0.2}
+    runs = []
+    for k in range(3, 15, 1):                                                # release at various steps → coast to various dtz
+        r = _run_approach(snap, ApproachParams(**base, release_at_step=k, reacquire=True))
+        rs, re = r.get("reacquire_start"), r.get("reacquire_end")
+        dtz_push = (round(re["dtz_mm"] - rs["dtz_mm"], 1) if rs and re else None)   # +ve ⇒ re-acquire pushed the coin AWAY
+        runs.append({"release_step": k, "reached_corridor": bool(rs), "regrip_success": bool(re and re.get("success")),
+                     "dtz_push_mm": dtz_push, "v_par_at_regrip": (re or {}).get("v_par_at_regrip"),
+                     "dtz_end_mm": r["dtz_end_mm"], "k6": r["k6"], "safe": r["safe"], "min_dtz_mm": r["min_dtz_mm"]})
+    reached = [r for r in runs if r["reached_corridor"] and r["safe"]]
+    gentle = [r for r in reached if r["regrip_success"] and (r["dtz_push_mm"] is None or r["dtz_push_mm"] <= 5.0)]
+    delivered = [r for r in gentle if r["k6"]]
+    best = min([r for r in runs if r["safe"]], key=lambda r: r["dtz_end_mm"]) if runs else None
+    if delivered:
+        verdict = "REACQUIRE_CHAIN_DELIVERS_S1"                               # R4 pass
+    elif gentle:
+        verdict = "REACQUIRE_FEASIBLE_SETTLE_NOT_YET"                         # R0/R1 pass, R3/R4 tuning
+    elif reached:
+        verdict = "REACQUIRE_CONTACT_NOT_STABILISED"                         # R0 pass, R1 fails (fling / no stable re-grip)
+    else:
+        verdict = "REACQUIRE_GEOMETRICALLY_UNREACHABLE"                      # R0 fails
+    out = {"contract": "COIN_R9_R10C28_REACQUIRE", "cradle": "s1", "R0_reached": len(reached), "R1_gentle": len(gentle),
+           "R4_delivered": len(delivered), "verdict": verdict, "best_chain": best, "n_runs": len(runs), "runs": runs,
+           "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10c28_reacquire.json", "w"), indent=1, default=float)
+    print(f"   R0 reached corridor {len(reached)}/{len(runs)} | R1 gentle re-grip {len(gentle)} | R4 delivered {len(delivered)}\n"
+          f"   best chain: {best['dtz_end_mm'] if best else None}mm K6 {best['k6'] if best else None}\n"
+          f"== R10-C2.8 ==\n  {verdict} | wall {out['wall_s']}s\nR9_C28_DONE", flush=True)
+    return out
 
 
 def _coast_branches(snap: Any, coll: dict) -> list:
@@ -716,6 +757,8 @@ def main(argv: "list[str]") -> None:
         stage2_update_zero_identity()
     elif "--c27" in argv:
         c27_guided_coast_audit()
+    elif "--c28" in argv:
+        c28_reacquire_audit()
     elif "--diag" in argv:
         stage3_ceiling_diag()
     elif "--reach" in argv:
