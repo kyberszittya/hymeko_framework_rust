@@ -1,0 +1,26 @@
+{
+  "verdict": "RESIDUAL_EXTENDS_CERTIFIED_ENVELOPE",
+  "envelope_perturb": [
+    0.4,
+    0.8
+  ],
+  "pd_hold_certified_rate": 0.0,
+  "sac_residual_certified_rate": 0.333,
+  "certified_rate_delta": 0.333,
+  "pd_hold_upright_fraction": 1.0,
+  "sac_residual_upright_fraction": 1.0,
+  "eval_curve_certified_rate": [
+    1.0,
+    0.333,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.167,
+    0.167,
+    0.0,
+    0.5
+  ],
+  "total_steps": 150000,
+  "note": "SIMULATION. Bounded residual over the CERTIFIED PD-hold-q0 scaffold (a=0). Lyapunov reward; reward-INDEPENDENT lyapunov_certificate is the gate. Baseline = PD-hold on the identical seeds -> delta is the pure RL value-add."
+}

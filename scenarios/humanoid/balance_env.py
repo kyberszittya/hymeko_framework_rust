@@ -1,16 +1,30 @@
-"""Floating-base HyMeKo humanoid balance env for SAC (gym 5-tuple).
+"""Floating-base HyMeKo humanoid balance env (gym 5-tuple), position-servo action.
 
-The LQR path stalled on contact-consistent equilibrium + contact-mode-robust
-linearization; SAC sidesteps both. The reward is driven by the COM Lyapunov energy
-(reward = alive − w·V − control cost), and the reward-independent
-``lyapunov_certificate`` is the success/safety gate (evaluated separately, never in
-the reward). Gravity-comp (qfrc_bias) is a feedforward physics term (it does NOT
-balance — it tips); SAC learns the balancing residual torque on top.
+Two measured corrections over the first (torque) version, both diagnosed by
+measurement, not guessed (`reports/2026-07-27-humanoid-sac-diagnosis`):
+
+1. **`h_ref` was mis-referenced** — the reward/Lyapunov reference was 0.818 (a
+   pelvis-top height) but the true *standing COM* height is ~0.645, so the old
+   reward asked the humanoid to lift its COM 14 cm above where it stands. Fixed.
+2. **Torque action model had too little authority** (SAC saturated ±50 N·m on 40 %
+   of steps). Replaced with a **position-servo (PD-to-target) action space**:
+   ``tau = clip(kp·(q0 + a·delta − q) − kv·qvel + qfrc_bias, ±tau_max)``. The action
+   commands a bounded joint-target *offset* around the nominal pose; a stiff PD
+   tracks it. This is the standard high-authority action space for RL balance.
+
+By construction **a = 0 is the PD-hold-``q0`` controller**, which is a *certified*
+balance baseline (passes the unchanged Lyapunov certificate for pitch-rate
+perturbations up to ~0.30). SAC therefore learns a **bounded residual over a
+certified scaffold** (coin-R8 regime), not from scratch. The reward is driven by the
+COM Lyapunov energy; the reward-independent ``lyapunov_certificate`` is the eval-only
+gate. Gains (kp=60, kv=10) are the stable ceiling for this model's Euler @ 1 ms
+integrator — kp≳150 diverges.
 """
 
 from __future__ import annotations
 
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +34,23 @@ from .lyapunov import HumanoidCOMLyapunov
 
 _REPO = Path(__file__).resolve().parents[2]
 _SRC = _REPO / "data" / "robotics" / "humanoid.hymeko"
+
+
+@dataclass(frozen=True)
+class BalanceConfig:
+    """Env + position-servo + task parameters (all measured/justified in the module doc)."""
+
+    max_steps: int = 500
+    h_ref: float = 0.645             # measured standing COM height (was mis-set 0.818)
+    kp: float = 60.0                 # PD-target stiffness (stable ceiling ~80 at Euler 1 ms)
+    kv: float = 10.0                 # PD-target damping
+    tau_max: float = 150.0           # per-joint torque limit (N·m)
+    delta_scale: float = 0.4         # action -> joint-target offset (rad) around q0
+    base_z0: float = 0.80            # reset base height (feet in contact, COM over support)
+    perturb_lo: float = 0.0          # reset pitch-rate perturbation range (rad/s), sign random
+    perturb_hi: float = 0.3
+    fall_uprightness: float = 0.6
+    fall_pelvis_z: float = 0.55
 
 
 def _cli() -> Path:
@@ -43,23 +74,36 @@ def _build():
 
 
 class HumanoidBalanceEnv:
-    """gym-5-tuple floating-humanoid balance env. Action = 12 normalised joint torques."""
+    """gym-5-tuple floating humanoid balance. Action = bounded joint-target offset (12).
 
-    def __init__(self, max_steps: int = 500, torque: float = 50.0, seed: int = 0) -> None:
+    Preconditions: the emitted humanoid model exists and the CLI is built.
+    Postconditions: ``reset`` returns a finite obs at a feet-on-floor pose; ``step``
+    applies a stable position-servo and returns a finite 5-tuple. Invariant: a = 0 is
+    the certified PD-hold-``q0`` scaffold.
+    """
+
+    def __init__(self, cfg: BalanceConfig | None = None, *, max_steps: int | None = None,
+                 seed: int = 0) -> None:
+        self.cfg = cfg or BalanceConfig()
+        if max_steps is not None:                                      # back-compat kwarg
+            self.cfg = BalanceConfig(**{**self.cfg.__dict__, "max_steps": max_steps})
         self._mj, self.model = _build()
         self.data = self._mj.MjData(self.model)
         self._mj.mj_forward(self.model, self.data)
         self._q0 = self.data.qpos.copy()
-        self._base = int(self.model.jnt_qposadr[self._mj.mj_name2id(self.model, self._mj.mjtObj.mjOBJ_JOINT, "base")])
-        self._h_ref = 0.818
+        self._base = int(self.model.jnt_qposadr[self._mj.mj_name2id(
+            self.model, self._mj.mjtObj.mjOBJ_JOINT, "base")])
         self._pelvis = self._mj.mj_name2id(self.model, self._mj.mjtObj.mjOBJ_BODY, "pelvis")
         self._fl = self._mj.mj_name2id(self.model, self._mj.mjtObj.mjOBJ_BODY, "foot_l")
         self._fr = self._mj.mj_name2id(self.model, self._mj.mjtObj.mjOBJ_BODY, "foot_r")
-        self._act_dof = [int(self.model.jnt_dofadr[self.model.actuator_trnid[i, 0]]) for i in range(self.model.nu)]
-        self._act_qadr = [int(self.model.jnt_qposadr[self.model.actuator_trnid[i, 0]]) for i in range(self.model.nu)]
+        self._act_dof = [int(self.model.jnt_dofadr[self.model.actuator_trnid[i, 0]])
+                         for i in range(self.model.nu)]
+        self._act_qadr = [int(self.model.jnt_qposadr[self.model.actuator_trnid[i, 0]])
+                          for i in range(self.model.nu)]
+        self._q0j = np.array([self.data.qpos[a] for a in self._act_qadr])   # nominal joint pose
+        self._h_ref = self.cfg.h_ref
         self.V = HumanoidCOMLyapunov(h_ref=self._h_ref)
-        self.max_steps = max_steps
-        self.torque = torque
+        self.max_steps = self.cfg.max_steps
         self._rng = np.random.default_rng(seed)
         self._t = 0
         obs = self._obs()
@@ -90,26 +134,28 @@ class HumanoidBalanceEnv:
         if seed is not None:
             self._rng = np.random.default_rng(seed)
         self.data.qpos[:] = self._q0
-        self.data.qpos[self._base + 2] = 0.80
+        self.data.qpos[self._base + 2] = self.cfg.base_z0
         self.data.qvel[:] = 0.0
-        self.data.qvel[4] = float(self._rng.uniform(-0.1, 0.1))   # small pitch-rate perturbation
+        sign = 1.0 if self._rng.random() < 0.5 else -1.0
+        self.data.qvel[4] = sign * float(self._rng.uniform(self.cfg.perturb_lo, self.cfg.perturb_hi))
         self._mj.mj_forward(self.model, self.data)
         self._t = 0
         return self._obs(), {}
 
     def step(self, action):
         a = np.clip(np.asarray(action, np.float64), -1.0, 1.0)
-        tau = np.zeros(self.model.nu)
-        for i, dof in enumerate(self._act_dof):
-            tau[i] = a[i] * self.torque + float(self.data.qfrc_bias[dof])   # gravity-comp + SAC residual
+        q_target = self._q0j + a * self.cfg.delta_scale
+        tau = np.empty(self.model.nu)
+        for i, (dof, qa) in enumerate(zip(self._act_dof, self._act_qadr)):
+            servo = self.cfg.kp * (q_target[i] - self.data.qpos[qa]) - self.cfg.kv * self.data.qvel[dof]
+            tau[i] = np.clip(servo + float(self.data.qfrc_bias[dof]), -self.cfg.tau_max, self.cfg.tau_max)
         self.data.ctrl[:] = tau
         self._mj.mj_step(self.model, self.data)
         self._t += 1
         sig = self._com_sig()
         v = self.V(sig)
-        upright = sig["uprightness"] > 0.6 and float(self.data.xpos[self._pelvis, 2]) > 0.55
+        upright = (sig["uprightness"] > self.cfg.fall_uprightness
+                   and float(self.data.xpos[self._pelvis, 2]) > self.cfg.fall_pelvis_z)
         fell = (not upright) or not np.all(np.isfinite(self.data.qpos))
         reward = 1.0 - 2.0 * v - 0.001 * float(np.sum(a * a))       # alive - Lyapunov - control cost
-        terminated = fell
-        truncated = self._t >= self.max_steps
-        return self._obs(), float(reward), bool(terminated), bool(truncated), {"V": v, "upright": upright}
+        return self._obs(), float(reward), bool(fell), bool(self._t >= self.max_steps), {"V": v, "upright": upright}

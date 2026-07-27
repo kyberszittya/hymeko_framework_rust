@@ -31,7 +31,7 @@ VFn = Callable[[dict], float]
 class HumanoidCOMLyapunov:
     """Whole-body COM Lyapunov energy over the balance error."""
 
-    h_ref: float = 0.818
+    h_ref: float = 0.645        # MEASURED standing COM height (was mis-set to 0.818, a pelvis-top height)
     w_h: float = 4.0
     w_xy: float = 2.0
     w_v: float = 0.3

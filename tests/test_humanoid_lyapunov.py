@@ -10,8 +10,8 @@ from scenarios.humanoid.lyapunov import (
 
 
 def test_com_lyapunov_zero_at_equilibrium() -> None:
-    V = HumanoidCOMLyapunov(h_ref=0.818)
-    eq = {"com_z": 0.818, "com_xy_off": 0.0, "com_speed": 0.0, "uprightness": 1.0}
+    V = HumanoidCOMLyapunov(h_ref=0.645)             # measured standing COM height
+    eq = {"com_z": 0.645, "com_xy_off": 0.0, "com_speed": 0.0, "uprightness": 1.0}
     assert V(eq) == 0.0
     fallen = {"com_z": 0.4, "com_xy_off": 0.2, "com_speed": 2.0, "uprightness": 0.3}
     assert V(fallen) > 1.0
@@ -38,10 +38,10 @@ def test_certificate_discriminates() -> None:
     cert = lyapunov_certificate("balance", HumanoidCOMLyapunov())
 
     class _Stable:
-        signals = ({"com_z": 0.818, "com_xy_off": 0.0, "com_speed": 0.0, "uprightness": 1.0},) * 20
+        signals = ({"com_z": 0.645, "com_xy_off": 0.0, "com_speed": 0.0, "uprightness": 1.0},) * 20
 
     class _Fall:
-        signals = tuple({"com_z": 0.818 - 0.02 * k, "com_xy_off": 0.01 * k,
+        signals = tuple({"com_z": 0.645 - 0.02 * k, "com_xy_off": 0.01 * k,
                          "com_speed": 0.1 * k, "uprightness": 1.0} for k in range(20))
 
     assert cert.evaluate(None, _Stable()) is True
