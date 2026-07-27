@@ -35,14 +35,33 @@ one remaining — and stopped rather than spiral.
    (the pose is mid-tip / feet penetrate). Without `qacc ≈ 0`, the linearization is
    about a non-equilibrium → `|K|` huge → the closed loop diverges (falls in ~0.3 s).
 
+## Equilibrium-solver + sagittal-LQR pursued (option 1) — substantial progress, not robust
+
+Implemented obstacle-3's fix: a `scipy.least_squares` equilibrium over
+`(base_z, ankle, hip, knee, torso, u)` minimizing the (tipping-mode-weighted)
+forward `qacc`. Outcome:
+
+- `|qacc|` cut from **80 / 1.7e4 → ~10**; at a *leaned* equilibrium (ankle −0.042)
+  the sagittal-LQR gain became **sane: |K| ≈ 6165** (was 8.5e7), and the closed loop
+  stood **624 steps (~0.6 s)** (was 23) before tipping.
+- But it does **not robustly balance**: `|K|` swings **6165 ↔ 8.9e7** with the
+  contact configuration (6 vs 14 active foot contacts), and the residual `qacc ≈ 10`
+  is a persistent disturbance that tips it at ~0.6 s.
+
+Root difficulty: the least_squares equilibrium plateaus at `|qacc| ≈ 10` (an exact
+`qacc = 0` static pose with the feet contact appears to need a constrained QP that
+handles the contact wrench explicitly, not an unconstrained residual min), and the
+one-timestep contact linearization is **highly contact-mode sensitive**.
+
 ## Honest conclusion
 
-A certified LQR balance baseline for this floating humanoid is a **focused controls
-build**, not a quick smoke: it needs a **proper static-equilibrium solver** (a QP:
-minimize ‖qacc‖ over `(q, u)` subject to the feet-contact and unactuated-base
-constraints) **plus** the sagittal-subspace reduction (obstacle 2). Obstacles 1 and 2
-are solved; obstacle 3 is the remaining work. This is real and worth doing, but
-rushing the equilibrium solver risks a wrong result.
+A **robust** certified LQR baseline for this floating humanoid is a genuine, hard
+focused controls **research** effort — obstacles 1 and 2 are solved, and the
+equilibrium solver got real traction (624 steps, sane gains), but robust balance
+needs a **contact-consistent equilibrium QP** (explicit contact wrench) and a
+**contact-mode-robust linearization** (averaging / contact-implicit). That is
+beyond a quick smoke; rushing it risks a wrong result. **SAC-from-scratch under the
+Lyapunov reward + certificate gate sidesteps all of it** and is the pragmatic path.
 
 ## Why SAC-from-scratch is the pragmatic alternative
 
