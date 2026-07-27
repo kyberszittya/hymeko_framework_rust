@@ -455,6 +455,70 @@ def c0_trace_audit() -> dict:
     return out
 
 
+def _scaffold_peak_vpar(snap: Any, a_r8: np.ndarray, dbounds: Any, seg: np.ndarray, n_dec: int) -> "tuple[float, float, bool]":
+    """Roll the scaffold+segment residual; return (peak forward coin velocity, dtz_end, safe). Peak v_par = APPROACH effort."""
+    from hymeko_rl.coin_delivery.theta_option.r9_causal_residual import SegmentDeltaActor
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    adapter = R9CausalResidualAdapter(snap, a_r8, SegmentDeltaActor(seg, n_dec), TipTransportParams(), ResidualBounds(),
+                                      dbounds, control_interval=1, cfg=DELIVERY_CFG)
+    peak = {"v": -1e9}
+
+    def hook(rl: Any, t: int) -> None:
+        u, _d = rl.inner.direction_to_zone()
+        vel = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
+        peak["v"] = max(peak["v"], float(np.dot(vel, np.asarray(u, np.float64)[:2])))
+    m = velocity_rollout(snap, adapter, DELIVERY_CFG, frame_hook=hook)
+    return peak["v"], float(m["dtz_end"]), bool(m["peak_coin_speed"] <= 1.5 and m["peak_qdot"] <= 3.0)
+
+
+def c1_projection(n_seg: int = 6, pop: int = 40, n_iter: int = 5) -> dict:
+    """R10-C1 — is the APPROACH forward-effort/impulse the UNEXPRESSIBLE component of the current 3-channel basis? CEM
+    MAXIMISES the scaffold's peak forward coin velocity on s1 over the full residual range; compares to the teacher's peak.
+    A large gap localises r_perp to APPROACH forward-effort ⇒ justifies a dedicated APPROACH impulse primitive (C2)."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.forward_displacement import rollout_primitive
+    from hymeko_rl.coin_delivery.theta_option.r9_causal_residual import DeltaBounds
+    bank = json.load(open(BANK))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    snap = panel["s1"].snap
+    a_r8 = _r8_base_residual(_r8_champion(), snap, TipTransportParams(), ResidualBounds())
+    t_store: list = []
+    rollout_primitive(snap, tuple(_teacher_theta(bank, "s1")), DELIVERY_CFG, frame_hook=_phys_hook(t_store))
+    teach_peak = round(max(r["v_par"] for r in t_store), 4)
+    full = DeltaBounds(d_fwd_vel=1.0, d_squeeze=0.15, d_stop_gain=1.0, slew=1.0)
+    rng, n_dec, dim = np.random.default_rng(3), int(DELIVERY_CFG.horizon), n_seg * 3
+    mu, sig = np.zeros(dim), 0.7 * np.ones(dim)
+    best = {"peak_vpar": -1e9, "dtz_end_mm": None}
+    for _ in range(n_iter):
+        cand = np.clip(mu[None] + sig[None] * rng.standard_normal((pop, dim)), -1, 1)
+        pk = []
+        for c in cand:
+            v, dtz, safe = _scaffold_peak_vpar(snap, a_r8, full, c.reshape(n_seg, 3), n_dec)
+            pk.append(v if safe else -1e9)
+            if safe and v > best["peak_vpar"]:
+                best = {"peak_vpar": round(v, 4), "dtz_end_mm": round(dtz * 1000, 1)}
+        order = np.argsort(pk)[::-1][:8]
+        mu = cand[order].mean(0)
+        sig = np.clip(cand[order].std(0), 0.05, 1.0)
+    gap = round(teach_peak - best["peak_vpar"], 4)
+    localised = bool(best["peak_vpar"] < 0.7 * teach_peak)
+    out = {"contract": "COIN_R9_R10C1_APPROACH_EFFORT_PROJECTION", "cradle": "s1",
+           "teacher_peak_vpar": teach_peak, "scaffold_max_peak_vpar_full_residual": best["peak_vpar"],
+           "gap": gap, "scaffold_best_effort_dtz_mm": best["dtz_end_mm"],
+           "r_perp_localised_to_approach_forward_effort": localised,
+           "reading": ("even MAXIMISING forward effort over the full residual range, the scaffold cannot approach the "
+                       "teacher's peak forward velocity ⇒ the APPROACH momentum-build is the unexpressible component of the "
+                       "current 3-channel basis; a dedicated APPROACH impulse primitive (C2) is justified" if localised else
+                       "scaffold can match the teacher's peak forward velocity ⇒ APPROACH effort is expressible; look "
+                       "elsewhere (HOLD/BRAKE/RELEASE phase)"), "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10c1_approach_projection.json", "w"), indent=1, default=float)
+    print(f"   teacher peak v_par {teach_peak} | scaffold MAX peak v_par (full residual) {best['peak_vpar']} "
+          f"(best-effort dtz {best['dtz_end_mm']}mm) | gap {gap} | approach-unexpressible {localised}\n"
+          f"== R10-C1 ==\n  wall {out['wall_s']}s\nR9_C1_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
@@ -466,6 +530,8 @@ def main(argv: "list[str]") -> None:
         m0_base_coverage()
     elif "--c0" in argv:
         c0_trace_audit()
+    elif "--c1" in argv:
+        c1_projection()
     elif "--stage3" in argv:
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)

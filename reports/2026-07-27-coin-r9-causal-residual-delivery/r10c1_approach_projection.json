@@ -1,0 +1,11 @@
+{
+ "contract": "COIN_R9_R10C1_APPROACH_EFFORT_PROJECTION",
+ "cradle": "s1",
+ "teacher_peak_vpar": 0.3216,
+ "scaffold_max_peak_vpar_full_residual": 0.1539,
+ "gap": 0.1677,
+ "scaffold_best_effort_dtz_mm": 56.5,
+ "r_perp_localised_to_approach_forward_effort": true,
+ "reading": "even MAXIMISING forward effort over the full residual range, the scaffold cannot approach the teacher's peak forward velocity \u21d2 the APPROACH momentum-build is the unexpressible component of the current 3-channel basis; a dedicated APPROACH impulse primitive (C2) is justified",
+ "wall_s": 96.1
+}

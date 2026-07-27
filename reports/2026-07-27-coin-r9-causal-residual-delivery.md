@@ -27,6 +27,7 @@ and release certificate are unchanged.
 | **R10-0 reachability** (decisive) | teacher s1 **18.5 mm K6 ✓** (feasible); temporal CEM s1 **51.8 mm declared / 46.2 mm full-range — no delivery**; s3 delivers in-search ⇒ **Case C `BASE_OR_RESIDUAL_BASIS_INSUFFICIENT`** |
 | **R10-B0** base-coverage (M0) | scaffold-param CEM on s1 (zero residual) = **50.5 mm, no delivery**; default scaffold zero-residual delivers *neither* (s3 262.7 / s1 57.7 — s3 needs the R8 residual); s1/s3 geometrically separable ⇒ **`NEAR_BASE_NOT_IN_SCAFFOLD_FAMILY`** — the scaffold *strategy*, not just its base-center, is insufficient for s1 |
 | **R10-C0** phase trace audit | teacher vs scaffold on s1 ⇒ **`APPROACH_TRANSPORT_PHASE_INSUFFICIENT`**: scaffold peak v_par **0.109 vs teacher 0.322** (1/3), min_dtz 53.5 vs 18.5; brake/settle *fine* (decel 1.0, term-speed 0). The monolithic distance-proportional velocity servo has **no distinct APPROACH/momentum-build phase** |
+| **R10-C1** approach-effort projection | CEM *maximising* scaffold peak v_par over the full residual range = **0.154 vs teacher 0.322** (< half, gap 0.168) ⇒ **`r⊥` localised to APPROACH forward-effort** — the momentum-build is **structurally unexpressible** by the 3-channel basis ⇒ a dedicated APPROACH impulse primitive (C2) is justified |
 
 ## The finding (measured / inferred)
 
