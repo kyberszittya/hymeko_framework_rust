@@ -24,7 +24,8 @@ from hymeko_rl.coin_delivery.coin_rl_env import CENTER_TOL
 from hymeko_rl.coin_delivery.contact_velocity import CradleSnapshot, primary_fingertip_contacts
 from hymeko_rl.coin_delivery.forward_displacement import _coin_xy
 from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
-from hymeko_rl.coin_delivery.theta_option.tip_transport import REGULATE, TipReferencedController, TipTransportParams
+from hymeko_rl.coin_delivery.theta_option.tip_transport import (
+    REGULATE, RELEASE, TipReferencedController, TipTransportParams)
 
 APPROACH = -1                                     # the momentum-build phase, BEFORE the scaffold's REGULATE(0)/RELEASE(1)
 CARRY = -2                                        # the candidate handoff phase (held-carry or passive-release), before REGULATE
@@ -47,6 +48,12 @@ class ApproachParams:
     carry_steps: int = 0                          # C2.5 handoff duration between APPROACH and BRAKE (0 = direct handoff)
     carry_qref: float = 0.0                       # rad/s forward joint-velocity held during carry (0 = HELD_ZERO; >0 = HELD_LOW)
     carry_release: bool = False                   # True = PASSIVE_RELEASE (relax grip, coast free) — DIAGNOSTIC branch only
+    release_at_step: int = -1                     # C2.6 data-collection: force RELEASED_COAST at this step (−1 = off)
+    coast_guard: bool = False                     # C2.6 deploy: RELEASE when the ROBUST predicted coast-landing ⊆ corridor
+    guard_amin: float = 0.3                       # m/s² — LOW end of the observed released-coast deceleration (→ longest coast)
+    guard_amax: float = 1.0                       # m/s² — HIGH end (→ shortest coast); interval NOT a point estimate (R5 lesson)
+    corridor_hi: float = 0.020                    # m — the target corridor (the frozen 20 mm K6 zone)
+    guard_margin: float = 0.004                   # m — uncertainty margin for the robust interval containment
 
 
 class HybridApproachController(TipReferencedController):
@@ -72,6 +79,20 @@ class HybridApproachController(TipReferencedController):
         self.exit_reason: "str | None" = None
         self.approach_end: "dict | None" = None                  # (v_par, dtz) at APPROACH→CARRY/REGULATE
         self.brake_start: "dict | None" = None                   # (v_par, dtz) handed to the frozen brake
+        self.release_state: "dict | None" = None                 # (v_par, dtz, t) at a C2.6 coast-entry RELEASE
+
+    def _guard_fires(self, v_par: float, dtz: float, both: bool) -> bool:
+        """ROBUST coast-entry guard (R5 lesson: no online post-release friction estimate — use the observed deceleration
+        INTERVAL). The passive stop distance is d_stop ∈ [v²/2·a_max, v²/2·a_min]; fire only when the WHOLE predicted landing
+        interval lands in [−margin, corridor_hi] (least coast still reaches the zone; most coast does not overshoot). # Post:
+        release only from bilateral contact with real forward momentum."""
+        if (not both) or v_par <= 0.02:
+            return False
+        ds_min = v_par * v_par / (2.0 * self.ap.guard_amax)      # least coast (high deceleration)
+        ds_max = v_par * v_par / (2.0 * self.ap.guard_amin)      # most coast (low deceleration)
+        landing_far, landing_close = dtz - ds_min, dtz - ds_max
+        m = self.ap.guard_margin
+        return bool(landing_far <= self.ap.corridor_hi + m and landing_close >= -m)
 
     def _carry_targets(self, rl: Any, t: int) -> "dict[str, Any]":
         """The candidate handoff phase (C2.5): HELD (grip retained, forward effort `carry_qref`) or PASSIVE_RELEASE (relax
@@ -118,6 +139,11 @@ class HybridApproachController(TipReferencedController):
         both = con["left"] is not None and con["right"] is not None
         fn_min = min(float(con["left"]["fn"]) if con["left"] else 0.0, float(con["right"]["fn"]) if con["right"] else 0.0)
         contact_risk = (not both) or (fn_min < self.ap.fn_min_safe)
+        if (self.ap.release_at_step >= 0 and t >= self.ap.release_at_step) or \
+                (self.ap.coast_guard and self._guard_fires(v_par, dtz, both)):
+            self.phase = RELEASE                                 # C2.6 coast-entry RELEASE (launch guard, ≠ the settle cert)
+            self.release_state = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1), "t": int(t)}
+            return super()._base_targets(rl, t)
         self._impulse += max(v_par, 0.0) * float(self.snap.stack.control_dt)
         self._approach_steps += 1
         reason = self._exit_approach(dtz, v_par, both, contact_risk)

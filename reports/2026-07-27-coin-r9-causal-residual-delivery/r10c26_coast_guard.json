@@ -1,0 +1,163 @@
+{
+ "contract": "COIN_R9_R10C26_COAST_GUARD",
+ "n_branches": 12,
+ "a_coast_range": [
+  0.506,
+  1.263
+ ],
+ "a_spread": 2.5,
+ "branches": [
+  {
+   "release_step": 4,
+   "v": 0.1557,
+   "d_release_mm": 78.2,
+   "landing_mm": 41.8,
+   "a_coast": 0.333,
+   "k6": false
+  },
+  {
+   "release_step": 5,
+   "v": 0.2065,
+   "d_release_mm": 76.4,
+   "landing_mm": 65.3,
+   "a_coast": 1.9208,
+   "k6": false
+  },
+  {
+   "release_step": 6,
+   "v": 0.1603,
+   "d_release_mm": 74.6,
+   "landing_mm": 68.3,
+   "a_coast": 2.0394,
+   "k6": false
+  },
+  {
+   "release_step": 7,
+   "v": 0.1021,
+   "d_release_mm": 73.3,
+   "landing_mm": 67.9,
+   "a_coast": 0.9652,
+   "k6": false
+  },
+  {
+   "release_step": 8,
+   "v": 0.0917,
+   "d_release_mm": 72.3,
+   "landing_mm": 63.4,
+   "a_coast": 0.4724,
+   "k6": false
+  },
+  {
+   "release_step": 9,
+   "v": 0.1256,
+   "d_release_mm": 71.2,
+   "landing_mm": 43.1,
+   "a_coast": 0.2807,
+   "k6": false
+  },
+  {
+   "release_step": 10,
+   "v": 0.157,
+   "d_release_mm": 69.8,
+   "landing_mm": 50.6,
+   "a_coast": 0.6419,
+   "k6": false
+  },
+  {
+   "release_step": 11,
+   "v": 0.1584,
+   "d_release_mm": 68.2,
+   "landing_mm": 58.4,
+   "a_coast": 1.2801,
+   "k6": false
+  },
+  {
+   "release_step": 12,
+   "v": 0.1476,
+   "d_release_mm": 66.7,
+   "landing_mm": 57.6,
+   "a_coast": 1.197,
+   "k6": false
+  },
+  {
+   "release_step": 13,
+   "v": 0.1496,
+   "d_release_mm": 65.2,
+   "landing_mm": 54.5,
+   "a_coast": 1.0458,
+   "k6": false
+  },
+  {
+   "release_step": 14,
+   "v": 0.1588,
+   "d_release_mm": 63.6,
+   "landing_mm": 49.3,
+   "a_coast": 0.8817,
+   "k6": false
+  },
+  {
+   "release_step": 15,
+   "v": 0.164,
+   "d_release_mm": 62.0,
+   "landing_mm": 47.4,
+   "a_coast": 0.9211,
+   "k6": false
+  }
+ ],
+ "deploy_s1": {
+  "qdot_approach": 1.6,
+  "launch": [
+   5.0,
+   6.0
+  ],
+  "peak_vpar": 0.2065,
+  "min_dtz_mm": 49.1,
+  "dtz_end_mm": 49.1,
+  "k6": false,
+  "safe": true,
+  "exit_step": 22,
+  "exit_reason": "SAFETY",
+  "peak_qdot": 1.501,
+  "peak_coin": 0.359,
+  "approach_end": {
+   "v_par": 0.1258,
+   "dtz_mm": 51.8
+  },
+  "brake_start": {
+   "v_par": 0.1258,
+   "dtz_mm": 51.8
+  },
+  "carry_distance_mm": 0.0,
+  "release_state": null
+ },
+ "deploy_s3": {
+  "qdot_approach": 1.6,
+  "launch": [
+   5.0,
+   6.0
+  ],
+  "peak_vpar": 1.1332,
+  "min_dtz_mm": 25.1,
+  "dtz_end_mm": 347.3,
+  "k6": false,
+  "safe": true,
+  "exit_step": 8,
+  "exit_reason": "REACHABILITY",
+  "peak_qdot": 0.968,
+  "peak_coin": 1.266,
+  "approach_end": {
+   "v_par": 0.2763,
+   "dtz_mm": 86.2
+  },
+  "brake_start": {
+   "v_par": 0.2763,
+   "dtz_mm": 86.2
+  },
+  "carry_distance_mm": 0.0,
+  "release_state": null
+ },
+ "verdict": "RELEASE_GUARD_PREDICTION_INSUFFICIENT",
+ "s1_k6": false,
+ "s3_k6": false,
+ "wall_s": 87.0
+}

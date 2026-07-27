@@ -542,7 +542,66 @@ def _run_approach(snap: Any, ap: Any, *, enabled: bool = True) -> dict:
             "exit_reason": ctrl.exit_reason, "peak_qdot": round(float(m["peak_qdot"]), 3),
             "peak_coin": round(float(m["peak_coin_speed"]), 3),
             "approach_end": getattr(ctrl, "approach_end", None), "brake_start": getattr(ctrl, "brake_start", None),
-            "carry_distance_mm": carry_dist}
+            "carry_distance_mm": carry_dist, "release_state": getattr(ctrl, "release_state", None)}
+
+
+def _coast_branches(snap: Any, coll: dict) -> list:
+    """C2.6 data-collection: force RELEASED_COAST at a grid of steps; from each (v_release, d_release, landing) estimate the
+    passive coast deceleration a_coast = v²/2·coast_dist. No online a estimate is USED for control — this only bounds it."""
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    out = []
+    for k in range(2, 16, 1):
+        r = _run_approach(snap, ApproachParams(**coll, release_at_step=k))
+        rs = r.get("release_state")
+        if not (rs and r["safe"]):
+            continue
+        v, d, land = rs["v_par"], rs["dtz_mm"] / 1000.0, r["min_dtz_mm"] / 1000.0
+        coast = d - land
+        if v > 0.03 and coast > 0.003:
+            out.append({"release_step": k, "v": round(v, 4), "d_release_mm": rs["dtz_mm"], "landing_mm": r["min_dtz_mm"],
+                        "a_coast": round(v * v / (2.0 * coast), 4), "k6": r["k6"]})
+    return out
+
+
+def c26_coast_guard_audit() -> dict:
+    """R10-C2.6 — a ROBUST coast-entry guard (R5 lesson: interval, not point, coast estimate). Collect passive-coast branches
+    on s1, bound the deceleration [a_min,a_max], then deploy `coast_guard` (RELEASE when the predicted landing ⊆ corridor) on
+    s1 (target) + s3 (check). Verdicts: RELEASED_COAST_MODE_LOAD_BEARING / RELEASE_GUARD_PREDICTION_INSUFFICIENT /
+    COAST_DYNAMICS_TOO_UNCERTAIN_FOR_CURRENT_GUARD."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}
+    coll = {"qdot_approach": 1.6, "launch_vlo": 5.0, "launch_vhi": 6.0, "impulse_budget": 10.0, "max_steps": 40,
+            "acquire_squeeze": 0.2}                                       # gentler push + firmer grip → contact holds to release
+    branches = _coast_branches(panel["s1"].snap, coll)
+    if len(branches) < 3:
+        out = {"contract": "COIN_R9_R10C26_COAST_GUARD", "verdict": "COAST_DATA_INSUFFICIENT", "branches": branches,
+               "wall_s": round(time.time() - t0, 1)}
+        json.dump(out, open(f"{OUT}/r10c26_coast_guard.json", "w"), indent=1, default=float)
+        print(f"== R10-C2.6 ==\n  COAST_DATA_INSUFFICIENT ({len(branches)} branches)\nR9_C26_DONE", flush=True)
+        return out
+    a_vals = [b["a_coast"] for b in branches]
+    a_min, a_max = round(float(np.percentile(a_vals, 20)), 3), round(float(np.percentile(a_vals, 80)), 3)
+    spread = round(a_max / max(a_min, 1e-3), 2)
+    gp = {**coll, "coast_guard": True, "guard_amin": a_min, "guard_amax": a_max}
+    dep_s1 = _run_approach(panel["s1"].snap, ApproachParams(**gp))
+    dep_s3 = _run_approach(panel["s3"].snap, ApproachParams(**gp))
+    if dep_s1["k6"]:
+        verdict = "RELEASED_COAST_MODE_LOAD_BEARING"
+    elif spread > 3.5:
+        verdict = "COAST_DYNAMICS_TOO_UNCERTAIN_FOR_CURRENT_GUARD"
+    else:
+        verdict = "RELEASE_GUARD_PREDICTION_INSUFFICIENT"
+    out = {"contract": "COIN_R9_R10C26_COAST_GUARD", "n_branches": len(branches), "a_coast_range": [a_min, a_max],
+           "a_spread": spread, "branches": branches, "deploy_s1": dep_s1, "deploy_s3": dep_s3, "verdict": verdict,
+           "s1_k6": dep_s1["k6"], "s3_k6": dep_s3["k6"], "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10c26_coast_guard.json", "w"), indent=1, default=float)
+    print(f"   coast a∈[{a_min},{a_max}] spread {spread} from {len(branches)} branches\n"
+          f"   deploy s1: dtz {dep_s1['dtz_end_mm']}mm K6 {dep_s1['k6']} rel@{(dep_s1.get('release_state') or {}).get('t')} | "
+          f"s3: dtz {dep_s3['dtz_end_mm']}mm K6 {dep_s3['k6']}\n== R10-C2.6 ==\n  {verdict} | wall {out['wall_s']}s\n"
+          f"R9_C26_DONE", flush=True)
+    return out
 
 
 def c25_handoff_audit() -> dict:
@@ -631,6 +690,8 @@ def main(argv: "list[str]") -> None:
         c2_mechanism()
     elif "--c25" in argv:
         c25_handoff_audit()
+    elif "--c26" in argv:
+        c26_coast_guard_audit()
     elif "--stage3" in argv:
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)
