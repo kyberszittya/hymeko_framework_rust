@@ -87,3 +87,40 @@ def test_r10_approach_bounds_and_no_regression():
     assert 0.0 < ap.launch_vlo < ap.launch_vhi                        # a band, not a point (anti-chatter)
     assert ap.impulse_budget > 0 and ap.max_steps > 0                 # bounded effort + horizon guards exist
     assert APPROACH < REGULATE                                        # APPROACH precedes the scaffold phases (monotone order)
+
+
+def test_r10_kinetic_velocity_floor_contract():
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import KINETIC, ApproachParams, HybridApproachController
+    from hymeko_rl.coin_delivery.theta_option.tip_transport import REGULATE
+    ap = ApproachParams()
+    assert ap.kinetic_transport is False                             # opt-in: default OFF ⇒ existing behaviour is update-zero unchanged
+    assert KINETIC < REGULATE                                        # KINETIC is a pre-scaffold transport phase (monotone order)
+    assert 0.0 < ap.kinetic_entry_v <= ap.v_floor                    # enter while moving; sustain at/above the entry velocity
+    assert 0.0 < ap.kinetic_release_vmin < ap.v_floor                # release still moving but below the sustain (natural decel)
+    assert ap.kinetic_vcap > 0 and ap.kinetic_squeeze > 0 and ap.kinetic_release_hi > 0
+    c = object.__new__(HybridApproachController)                     # unit-test the exit routing purely (no physics)
+    c._impulse, c._approach_steps = 0.0, 0
+    c.ap = ApproachParams(kinetic_transport=True, kinetic_entry_v=0.10)
+    assert c._exit_approach(dtz=0.06, v_par=0.30, both=True, contact_risk=False) == "KINETIC"   # would be LAUNCH without kinetic → preempted
+    assert c._exit_approach(dtz=0.06, v_par=0.30, both=True, contact_risk=True) == "SAFETY"     # safety still overrides
+    assert c._exit_approach(dtz=0.06, v_par=0.05, both=True, contact_risk=False) is None         # below entry velocity ⇒ keep building
+
+
+def test_r10_kinetic_transports_without_stiction_stall():
+    import json
+
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams, HybridApproachController
+    from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
+    from hymeko_rl.coin_delivery.theta_option.tip_transport import TipTransportParams
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    from hymeko_rl.experiments.coin_r9_causal_rl import BANK, _load_harness, build_panel
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
+    ap = ApproachParams(qdot_approach=2.4, acquire_squeeze=0.10, kinetic_transport=True, v_floor=0.26,
+                        kinetic_vcap=1.8, kinetic_squeeze=0.10, kinetic_entry_v=0.10, kinetic_max_steps=50)
+    c = HybridApproachController(snap, TipTransportParams(), ap, DELIVERY_CFG)
+    m = velocity_rollout(snap, c, DELIVERY_CFG)
+    assert c._kinetic_steps > 0                                      # the KINETIC phase actually ran (_kinetic_targets exercised)
+    assert m["peak_coin_speed"] <= 1.5 and m["peak_qdot"] <= 3.0     # motion-contract safe (no fling)
+    c0 = HybridApproachController(snap, TipTransportParams(), ApproachParams(), DELIVERY_CFG)   # default = kinetic OFF
+    velocity_rollout(snap, c0, DELIVERY_CFG)
+    assert c0._kinetic_steps == 0                                    # update-zero: a default controller never enters KINETIC

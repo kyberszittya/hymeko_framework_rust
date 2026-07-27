@@ -31,6 +31,7 @@ APPROACH = -1                                     # the momentum-build phase, BE
 CARRY = -2                                        # the candidate handoff phase (held-carry or passive-release), before REGULATE
 REACQUIRE = -3                                    # C2.8: re-acquire contact after a RELEASED_COAST, then hand to the frozen settle
 MICRO = -4                                        # R3-B: bounded micro-transport (delta_forward over the settle) after re-acquire
+KINETIC = -5                                       # G0: VELOCITY_FLOOR transport — keep v_par ≥ v_floor (no stiction) to a close-and-moving release
 
 
 @dataclass
@@ -72,6 +73,14 @@ class ApproachParams:
     micro_impulse_budget: float = 0.04            # m — small ∑ v_par·dt budget for the micro-transport (mandatory exit)
     micro_max_steps: int = 12                     # short micro-transport horizon (mandatory exit)
     micro_brake_entry_hi: float = 0.018           # m — hand to the frozen settle once dtz ≤ this (brake-entry state)
+    kinetic_transport: bool = False               # G0: after APPROACH, hold a VELOCITY FLOOR (never let the coin stiction) to a close-and-moving release
+    v_floor: float = 0.22                         # m/s — SUSTAINED transport-velocity reference (teacher holds ≈0.25 to the corridor, decelerates only at the very end); constant, not distance-proportional
+    kinetic_vcap: float = 1.5                     # rad/s — hard cap on the sustained joint-velocity reference (bounds the momentum)
+    kinetic_squeeze: float = 0.06                 # N·m — LIGHT grip during transport (teacher fn≈0.95N: coin SLIDES, does not clamp/stall); firm grip stictions the coin
+    kinetic_release_hi: float = 0.026             # m — RELEASE (passive coast) once the moving coin reaches this corridor (the teacher-like close+moving manifold)
+    kinetic_release_vmin: float = 0.05            # m/s — release only while still genuinely moving (above this) — the anti-stiction condition
+    kinetic_entry_v: float = 0.10                 # m/s — hand APPROACH → KINETIC once the coin is genuinely moving+gripped (preempts LAUNCH/REACHABILITY)
+    kinetic_max_steps: int = 40                   # kinetic-transport horizon guard (mandatory safe exit to the frozen brake)
 
 
 class HybridApproachController(TipReferencedController):
@@ -104,6 +113,7 @@ class HybridApproachController(TipReferencedController):
         self.reacquire_end: "dict | None" = None                 # {dtz, steps, success, first_contact_dv} at re-grip / timeout
         self._micro_impulse = 0.0
         self._micro_steps = 0
+        self._kinetic_steps = 0
 
     def _micro_targets(self, rl: Any, t: int) -> "dict[str, Any]":
         """R3-B MICRO-TRANSPORT: the FROZEN settle targets + a bounded `delta_forward` on the joint-velocity reference, applied
@@ -181,16 +191,48 @@ class HybridApproachController(TipReferencedController):
                 "base_qref": float(self.ap.carry_qref), "base_sqz": float(self.ap.carry_squeeze), "both": both,
                 "contact_risk": not both, "con": con}
 
+    def _kinetic_targets(self, rl: Any, t: int) -> "dict[str, Any]":
+        """VELOCITY_FLOOR / KINETIC_TRANSPORT (G0): hold the coin's forward-velocity reference at ≥ v_floor (it decelerates
+        naturally but never reaches 0 → never enters the R1 stiction regime) until it reaches the close-AND-moving release
+        corridor, then RELEASE to a passive coast. Bounded velocity cap (no momentum rebuild); mandatory safe exits
+        (contact-loss / horizon → the frozen brake). # Post: release only from bilateral contact with genuine forward motion;
+        base_qref ∈ [0, kinetic_vcap]."""
+        e_par, dtz, v_par = self._live(rl)
+        con = primary_fingertip_contacts(rl)
+        both = con["left"] is not None and con["right"] is not None
+        fn_min = min(float(con["left"]["fn"]) if con["left"] else 0.0, float(con["right"]["fn"]) if con["right"] else 0.0)
+        contact_risk = (not both) or (fn_min < self.ap.fn_min_safe)
+        self._kinetic_steps += 1
+        if contact_risk or self._kinetic_steps >= self.ap.kinetic_max_steps:     # mandatory safe fallback to the frozen brake
+            self.phase = REGULATE
+            self.brake_start = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1)}
+            return super()._base_targets(rl, t)
+        if dtz <= self.ap.kinetic_release_hi and v_par >= self.ap.kinetic_release_vmin:   # close + STILL MOVING ⇒ passive release
+            self.phase = RELEASE
+            self.release_state = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1), "t": int(t)}
+            return super()._base_targets(rl, t)
+        # SUSTAINED transport velocity (the teacher holds v_par ≈ 0.25 to the corridor with a LIGHT grip, decelerating only at
+        # the very end) — a CONSTANT reference, NOT the distance-proportional servo (which decays to 0 and stictions the coin).
+        base_qref = max(0.0, min(self.p.k_q * self.ap.v_floor, self.ap.kinetic_vcap))
+        fwd_dir, sqz_dir = self._directions(rl, e_par, _coin_xy(rl))
+        return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,
+                "base_qref": float(base_qref), "base_sqz": float(self.ap.kinetic_squeeze), "both": both,
+                "contact_risk": contact_risk, "con": con}
+
     def _exit_approach(self, dtz: float, v_par: float, both: bool, contact_risk: bool) -> "str | None":
         """First applicable monotone exit guard (safety ≻ launch ≻ reachability ≻ budget ≻ horizon); None ⇒ keep approaching.
         No future/K6/oracle info enters the guard — only measured causal state."""
         if contact_risk:
             return "SAFETY"
-        if both and self.ap.launch_vlo <= v_par <= self.ap.launch_vhi:
-            return "LAUNCH"
-        d_remain = max(dtz - CENTER_TOL, 0.0)
-        if v_par > 0.0 and v_par * v_par >= 2.0 * self.ap.coast_decel * d_remain:
-            return "REACHABILITY"
+        if self.ap.kinetic_transport:                                        # KINETIC OWNS the release → preempt LAUNCH/REACHABILITY
+            if both and v_par >= self.ap.kinetic_entry_v:                    # hand to VELOCITY_FLOOR as soon as genuinely moving+gripped
+                return "KINETIC"
+        else:
+            if both and self.ap.launch_vlo <= v_par <= self.ap.launch_vhi:
+                return "LAUNCH"
+            d_remain = max(dtz - CENTER_TOL, 0.0)
+            if v_par > 0.0 and v_par * v_par >= 2.0 * self.ap.coast_decel * d_remain:
+                return "REACHABILITY"
         if self._impulse >= self.ap.impulse_budget:
             return "BUDGET"
         if self._approach_steps >= self.ap.max_steps:
@@ -205,6 +247,8 @@ class HybridApproachController(TipReferencedController):
             return self._reacquire_targets(rl, t)
         if self.phase == MICRO:
             return self._micro_targets(rl, t)
+        if self.phase == KINETIC:
+            return self._kinetic_targets(rl, t)
         if self.phase == RELEASE:
             rt = self._maybe_reacquire(rl, t)
             if rt is not None:
@@ -228,6 +272,9 @@ class HybridApproachController(TipReferencedController):
         """APPROACH exit → CARRY (if configured) then the frozen brake."""
         self.approach_exit_step, self.exit_reason = int(t), self.exit_reason
         self.approach_end = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1)}
+        if self.ap.kinetic_transport and self.exit_reason == "KINETIC":         # G0: velocity-floor transport, not the distance-proportional brake
+            self.phase = KINETIC
+            return self._kinetic_targets(rl, t)
         if self.ap.carry_steps > 0:
             self.phase = CARRY
             self._carry_remaining = int(self.ap.carry_steps)
