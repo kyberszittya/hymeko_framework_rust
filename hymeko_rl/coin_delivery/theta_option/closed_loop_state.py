@@ -19,7 +19,7 @@ floored so a vanishing authority reads as *un-brakable* (conservatively over-spe
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -62,6 +62,48 @@ def over_speed(d_stop: float, d_safe: float) -> bool:
     """The mass-free stopping guard d_stop > d_safe, identical in sign to E_kin > W_brake (both divide out m_coin·a_brake).
     # Postconditions: True ⇔ the coin cannot stop before the zone at the reachable braking authority."""
     return bool(float(d_stop) > float(d_safe))
+
+
+# ── R5: online effective-coast-deceleration estimator (physics-free; unit-tested directly) ────────────────────────────
+@dataclass
+class CoastEstimator:
+    """Online estimate of the effective coast deceleration `â_eff` from the coin's own along-track velocity decay — the R5
+    fix for R4's fixed `a_friction` (which mistimed release per cradle). A sample `−Δv∥/Δt` is admitted only from a window
+    where the coin is genuinely coasting/braking: no active forward push, speed above `v_min` (stable ratio), and physically
+    decelerating (Δv∥ < 0). The estimate is the robust MEDIAN over the last `k_est` samples, clamped to a physical band; a
+    prior is used below `n_min` samples. Deterministic; no future / K6 / teacher.
+
+    # Preconditions: `update` is called once per control step with the (prev, now) along-track velocities and whether the
+    step drove an active forward push. # Postconditions: `estimate()` ∈ [a_lo, a_hi]; equals `a_prior` below n_min samples;
+    invariant to sample order except through the sliding window; a single outlier cannot move the median by more than one
+    rank."""
+
+    a_prior: float = 0.55
+    a_lo: float = 0.20
+    a_hi: float = 1.20
+    v_min: float = 0.08
+    k_est: int = 8
+    n_min: int = 2
+    _samples: "list[float]" = field(default_factory=list)
+
+    def update(self, v_prev: float, v_now: float, dt: float, *, active_push: bool) -> None:
+        if active_push or float(v_prev) <= self.v_min or float(dt) <= _EPS:
+            return
+        dvdt = (float(v_now) - float(v_prev)) / float(dt)
+        if dvdt >= 0.0:                                        # accelerating / flat ⇒ not a coast sample
+            return
+        self._samples.append(-dvdt)
+        if len(self._samples) > self.k_est:
+            self._samples.pop(0)
+
+    def estimate(self) -> float:
+        if len(self._samples) < self.n_min:
+            return float(self.a_prior)
+        return float(np.clip(np.median(self._samples), self.a_lo, self.a_hi))
+
+    @property
+    def n_samples(self) -> int:
+        return len(self._samples)
 
 
 # ── the probe reference (captured at the probe start; deltas are measured against it) ────────────────────────────────

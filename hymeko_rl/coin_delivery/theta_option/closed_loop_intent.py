@@ -28,7 +28,7 @@ from hymeko_rl.coin_delivery.contact_velocity import CradleSnapshot
 from hymeko_rl.coin_delivery.theta_option.authority_decoder import DecoderResult, decode_from_canonical
 from hymeko_rl.coin_delivery.theta_option.canonical_frame import canonicalise, r1_grouped_features
 from hymeko_rl.coin_delivery.theta_option.closed_loop_state import (
-    MeasureContext, ProbeReference, ResponseState, measure_response)
+    CoastEstimator, MeasureContext, ProbeReference, ResponseState, measure_response)
 from hymeko_rl.coin_delivery.theta_option.directional_authority import contact_internal_authority, object_authority
 from hymeko_rl.coin_delivery.theta_option.physical_intent import INTENT_HI, INTENT_LO, PhysicalIntent, slew_of
 from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG, ThetaBox
@@ -48,8 +48,17 @@ class CorrectionParams:
     # coast-settle a fast coin defers to its decoded open-loop θ (which already delivers — "do no harm"); the coast-in
     # applies only to coast-type cradles. ∞ by default ⇒ uniform coast-in (passthrough OFF).
     passthrough_reach: float = float("inf")  # object forward_push_reach above which the controller passes the decoded θ through
+    # R5 adaptive coast identification (OFF by default ⇒ exact R4 behaviour): estimate â_eff online + a grip-held
+    # brake-probe to seed the estimate before the first release decision.
+    adaptive: bool = False                  # use the online CoastEstimator's â_eff instead of the fixed a_friction
+    probe_steps: int = 3                    # grip-hold coast-probe length after the push (seeds â_eff; holds a fast coin)
+    probe_brake_gain: float = 0.0           # brake gain DURING the probe: 0 ⇒ pure grip-hold coast ⇒ â_eff ≈ friction (NOT
+                                            #   the decoded brake gain, which measures braking, not coasting — the A0 bug)
+    est_a_lo: float = 0.20                  # â_eff clamp band
+    est_a_hi: float = 1.20
+    est_k: int = 8                          # estimator sliding window
     # coast-in phase trigger
-    a_friction: float = 0.55                # m/s² — coast deceleration for the reach model  v²/(2·a_friction)
+    a_friction: float = 0.55                # m/s² — coast deceleration (R4 fixed model; R5 prior when adaptive)
     release_zone: float = 0.02              # m — coast target is dtz − release_zone (coast into the zone)
     coast_safety: float = 1.0               # release when coast_reach ≥ coast_safety·(dtz − release_zone)
     overshoot_margin: float = 0.06          # m — BRAKE-trim only if coast_reach exceeds the target by this much
@@ -85,7 +94,7 @@ def coast_reach(v_parallel: float, a_friction: float) -> float:
 
 
 def coastin_phase(dtz: float, v_parallel: float, p: CorrectionParams, elapsed: int, phase_floor: int,
-                  min_push: "int | None" = None) -> int:
+                  min_push: "int | None" = None, a_eff: "float | None" = None) -> int:
     """The coast-in brake-vs-coast DECISION applied AFTER the decoded push window. PUSH (build/extend) while the momentum
     cannot yet coast to the zone; RELEASE once it can (coast in, NO brake); BRAKE only if a large overshoot is predicted
     (a fast / brake-hold cradle like s3). ``min_push`` (default the decoded θ ramp, else `p.min_push_steps`) is the build
@@ -94,7 +103,7 @@ def coastin_phase(dtz: float, v_parallel: float, p: CorrectionParams, elapsed: i
     returns PUSH once RELEASE/BRAKE was reached."""
     mp = int(p.min_push_steps if min_push is None else min_push)
     target = max(float(dtz) - p.release_zone, 0.0)
-    reach = coast_reach(v_parallel, p.a_friction)
+    reach = coast_reach(v_parallel, p.a_friction if a_eff is None else a_eff)   # R5: online â_eff replaces the fixed coast
     # Overshoot detection comes FIRST — a fast / brake-hold cradle (s3) must arrest the moment it has too much momentum,
     # even inside the build window, or it accelerates past the grip and flies through the zone.
     if reach >= target + p.overshoot_margin:
@@ -245,6 +254,10 @@ class ClosedLoopController:
         self.ref: ProbeReference | None = None
         self.corrections: list[dict[str, Any]] = []
         self.responses: list[dict[str, Any]] = []
+        self.est = CoastEstimator(a_prior=self.p.a_friction, a_lo=self.p.est_a_lo, a_hi=self.p.est_a_hi, k_est=self.p.est_k)
+        self._prev_v: float | None = None
+        self._prev_push = False
+        self.a_eff_trace: list[dict[str, Any]] = []
 
     @property
     def phase(self) -> int:
@@ -295,11 +308,27 @@ class ClosedLoopController:
         # (max(ramp,t)) then gives a correct ramp-up then a full push, so the coin is NOT under-pushed. Only θ[4] (release)
         # is neutralised so the θ never self-releases; the coast-in ``force_phase`` decides RELEASE (coast) vs BRAKE
         # (overshoot). Only the MAGNITUDE roles (squeeze/forward/brake_gain/balance) come from the decode.
+        # R5: feed the online coast estimator with this step's along-track velocity change (valid only on a no-active-push
+        # decelerating step), then read â_eff; a grip-held BRAKE-probe after the push seeds the estimate + holds a fast coin.
+        if self._prev_v is not None:
+            self.est.update(self._prev_v, v_par, self.ctx.control_dt, active_push=self._prev_push)
         theta_mag = self.cur_theta.copy()
         ramp = int(round(float(theta_mag[3])))
         theta_mag[4] = self.horizon
-        want = coastin_phase(dtz, v_par, self.p, elapsed=t, phase_floor=self.pm.phase, min_push=ramp)
-        eff, _phase = self.pm.step(theta_mag, t, force_phase=want)
+        if self.p.adaptive:
+            a_eff = self.est.estimate()
+            probe_end = ramp + self.p.probe_steps
+            if ramp < t <= probe_end and self.pm.phase < RELEASE:
+                want = max(self.pm.phase, BRAKE)               # grip-hold probe: measure â_eff without releasing the coin
+                theta_mag[5] = self.p.probe_brake_gain         # ≈0 brake ⇒ the coin coasts under FRICTION, grip held
+            else:
+                want = coastin_phase(dtz, v_par, self.p, elapsed=t, phase_floor=self.pm.phase, min_push=probe_end, a_eff=a_eff)
+            self.a_eff_trace.append({"t": int(t), "a_eff": round(float(a_eff), 5), "n": self.est.n_samples,
+                                     "v_par": round(float(v_par), 5), "phase": _PHASE_NAME[want]})
+        else:
+            want = coastin_phase(dtz, v_par, self.p, elapsed=t, phase_floor=self.pm.phase, min_push=ramp)
+        eff, phase = self.pm.step(theta_mag, t, force_phase=want)
+        self._prev_v, self._prev_push = v_par, (phase == PUSH)
         return self.box.clip(eff)
 
 

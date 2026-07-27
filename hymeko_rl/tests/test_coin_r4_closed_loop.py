@@ -60,6 +60,42 @@ def test_coast_reach_monotone():
     assert coast_reach(-0.3, 0.5) == 0.0                       # a receding coin reaches 0
 
 
+# ── R5: the online coast-deceleration estimator (physics-free) ──────────────────────────────────────────────────────
+def test_r5_coast_estimator():
+    from hymeko_rl.coin_delivery.theta_option.closed_loop_state import CoastEstimator
+    # recovers a known constant deceleration a=0.6 from a decaying-velocity window
+    e = CoastEstimator()
+    v, dt = 0.5, 0.05
+    for _ in range(6):
+        vn = v - 0.6 * dt
+        e.update(v, vn, dt, active_push=False)
+        v = vn
+    assert np.isclose(e.estimate(), 0.6, atol=1e-6) and e.n_samples == 6
+    # rejects invalid samples: active push, low speed, accelerating
+    e2 = CoastEstimator()
+    e2.update(0.3, 0.28, 0.05, active_push=True)               # active push
+    e2.update(0.02, 0.01, 0.05, active_push=False)             # below v_min
+    e2.update(0.3, 0.35, 0.05, active_push=False)              # accelerating
+    assert e2.n_samples == 0 and e2.estimate() == e2.a_prior   # ⇒ prior
+    # robust to one outlier (median), clamps to the band, prior below n_min
+    e3 = CoastEstimator()
+    v = 0.5
+    for k in range(5):
+        a = 0.6 if k != 2 else 3.0
+        vn = v - a * dt
+        e3.update(v, vn, dt, active_push=False)
+        v = max(vn, 0.1)
+    assert np.isclose(e3.estimate(), 0.6, atol=1e-6)           # outlier does not move the median
+    assert CoastEstimator().estimate() == 0.55                 # below n_min ⇒ prior
+    e4 = CoastEstimator()
+    v = 0.5
+    for _ in range(4):
+        vn = v - 5.0 * dt
+        e4.update(v, vn, dt, active_push=False)
+        v = max(vn, 0.2)
+    assert e4.estimate() == e4.a_hi                            # clamped to the physical band
+
+
 # ── 1. ZERO-RESIDUAL IDENTITY — a benign, on-plan response yields ≈0 correction ─────────────────────────────────────
 def test_1_zero_residual_identity():
     c = IntentCorrector(CorrectionParams())                    # k_forward_deficit = 0 by default
