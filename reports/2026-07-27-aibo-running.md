@@ -47,13 +47,24 @@ reports/2026-07-27-aibo-hop/running_mpc.png  NEW
 capturability Lyapunov bounded (< 0.1) every stride, friction-feasible unilateral forces, and the
 human embodiment runs too.
 
+## Full-body realisation — attempted, and it hits the model's physical limit (honest)
+
+Mapped the planned ground reaction force to the AIBO's legs via each foot's contact Jacobian
+(`τ = Σ J_footᵀ·F/4`, applied during stance, under the motion contract, planned for the real 5.71 kg
+mass). Result: the torso rises only **+0.019 m** (planned +0.65 m) and **never leaves the ground**
+(0/60 airborne) — at **realistic joint speeds (3.2 rad/s, not an exploit)**. The legs simply cannot
+extend fast/far enough to launch the body: the ground-reaction *impulse* is available in the
+centroidal model, but the **short-legged full-body model cannot transmit it into a flight** (the same
+short-leg wall that blocks the protective step). So the **execution layer is physically insufficient
+on this model, not exploity** — a real jump needs longer / springier legs or a higher-fidelity model.
+
 ## Bottom line
 
-Running is simulated as a **centroidal limit cycle** — a periodic hopping gait with a ballistic
-flight per stride, advancing at steady speed, the capturability Lyapunov bounded every stride. This
-is the honest realisation of the user's insight (a *planned* loss of static stability inside the
-Lyapunov region), now as a continuous run rather than a single hop, for both the AIBO and the human.
-The next layer is the **full-body realisation** — mapping the planned ground reaction force to joint
-torques through the contact Jacobian, under the motion contract, to execute the run on the actual
-22-DOF / 16-DOF models (a marginal ask on the short-legged models; centroidal planning is the part
-that is clean and certified here).
+Running is simulated as a **certified centroidal limit cycle** — a periodic hopping gait with a
+ballistic flight per stride, steady forward speed, capturability bounded every stride, for both the
+AIBO and the human. That **planning layer is clean and certified** and realises the user's insight (a
+*planned*, bounded loss of static stability). The **full-body execution**, however, **hits the
+simplified model's physical wall** — the AIBO's short legs launch the body only +2 cm (never
+airborne), realistically but insufficiently. Honest split: *planning* works; *execution* needs a
+model that can actually jump. The Hamiltonian/optimal-control arc (energy-shaping → IDA-PBC → PMP →
+capturability MPC) is complete at the level the models support.
