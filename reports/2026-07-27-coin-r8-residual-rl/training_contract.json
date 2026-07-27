@@ -1,0 +1,52 @@
+{
+ "contract": "COIN_R8_S4_TRAINING_CONTRACT",
+ "date": "2026-07-27",
+ "gate": "S4_MATCHED_SAC_TD3_DEV",
+ "authorised_by": [
+  "S2 UPDATE_ZERO_RESIDUAL_IDENTITY_PASS",
+  "S3 RESIDUAL_LEARNABILITY_SIGNAL_PASS"
+ ],
+ "bellman_action": "actor residual a in [-1,1]^3 (constant per option); everything else is provenance",
+ "reward": "K6-INDEPENDENT option_return (\u2212dtz_end \u2212 0.05\u00b7terminal_coin_speed), safety-gated; NEVER the frozen K6 flag",
+ "obs_dim": 11,
+ "act_dim": 3,
+ "dev_cradles": [
+  "s1",
+  "s3"
+ ],
+ "held_out_excluded": [
+  "s4",
+  "s7"
+ ],
+ "algorithms": [
+  "sac",
+  "td3"
+ ],
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "smoke": false,
+ "hyperparameters": {
+  "gamma": 0.99,
+  "lr": 0.0003,
+  "batch": 64,
+  "warmup_options": 40,
+  "total_options": 600,
+  "updates_per_option": 2,
+  "eval_every": 75,
+  "alpha": 0.1,
+  "policy_delay": 2,
+  "expl_noise": 0.2
+ },
+ "reward_certification": {
+  "update0_return": -0.1684,
+  "best_probe_return": -0.0978,
+  "reward_certified": true
+ },
+ "replay_dev_only": true,
+ "update0": "actor mean distilled to 0 = the S2 safe scaffold",
+ "selection": "best_val on DEV option_return; held-out s4/s7 one-shot at S5 only",
+ "integrity": "no teleport / hidden force / teacher fallback / oracle injection; torque/slew/collision/motion contracts unchanged; release stays R6-certificate-gated"
+}

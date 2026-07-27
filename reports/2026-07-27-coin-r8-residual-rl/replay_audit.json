@@ -1,0 +1,79 @@
+{
+ "contract": "COIN_R8_S4_REPLAY_AUDIT",
+ "dev_only_world": true,
+ "dev_tags": [
+  "s1",
+  "s3"
+ ],
+ "held_out_excluded": [
+  "s4",
+  "s7"
+ ],
+ "bellman_action_is_actor_residual": true,
+ "framework_note": "train_semi_mdp stores OptionTransition.action = the actor emission a; the env applies exactly that a \u2014 executed torque / corrected targets are provenance, never presented as the action.",
+ "probes": [
+  {
+   "a": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "bellman==clip(a)": true,
+   "residual==clip(a)*bounds": true
+  },
+  {
+   "a": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "bellman==clip(a)": true,
+   "residual==clip(a)*bounds": true
+  },
+  {
+   "a": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "bellman==clip(a)": true,
+   "residual==clip(a)*bounds": true
+  },
+  {
+   "a": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "bellman==clip(a)": true,
+   "residual==clip(a)*bounds": true
+  },
+  {
+   "a": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "bellman==clip(a)": true,
+   "residual==clip(a)*bounds": true
+  },
+  {
+   "a": [
+    1.5,
+    -1.5,
+    0.7
+   ],
+   "bellman==clip(a)": true,
+   "residual==clip(a)*bounds": true
+  },
+  {
+   "a": [
+    0.3,
+    -0.4,
+    0.9
+   ],
+   "bellman==clip(a)": true,
+   "residual==clip(a)*bounds": true
+  }
+ ]
+}

@@ -1,0 +1,124 @@
+{
+ "contract": "COIN_R8_S4_TD3",
+ "runs": [
+  {
+   "algo": "td3",
+   "seed": 0,
+   "distill_loss": 0.0,
+   "update0_dev_return": -0.1684,
+   "best_val_dev_return": -0.0527,
+   "delta_over_update0": 0.1157,
+   "per_cradle": [
+    {
+     "tag": "s1",
+     "ret": -0.0874,
+     "dtz_end_mm": 86.2,
+     "k6": false,
+     "safe": true,
+     "peak_coin": 0.356
+    },
+    {
+     "tag": "s3",
+     "ret": -0.018,
+     "dtz_end_mm": 18.0,
+     "k6": true,
+     "safe": true,
+     "peak_coin": 0.44
+    }
+   ],
+   "eval_points": 8,
+   "ckpt": "reports/2026-07-27-coin-r8-residual-rl/ckpts/td3_seed0_best_val.pt"
+  },
+  {
+   "algo": "td3",
+   "seed": 1,
+   "distill_loss": 0.0,
+   "update0_dev_return": -0.1684,
+   "best_val_dev_return": -0.0469,
+   "delta_over_update0": 0.1215,
+   "per_cradle": [
+    {
+     "tag": "s1",
+     "ret": -0.0759,
+     "dtz_end_mm": 75.2,
+     "k6": false,
+     "safe": true,
+     "peak_coin": 0.356
+    },
+    {
+     "tag": "s3",
+     "ret": -0.0178,
+     "dtz_end_mm": 17.8,
+     "k6": true,
+     "safe": true,
+     "peak_coin": 0.446
+    }
+   ],
+   "eval_points": 8,
+   "ckpt": "reports/2026-07-27-coin-r8-residual-rl/ckpts/td3_seed1_best_val.pt"
+  },
+  {
+   "algo": "td3",
+   "seed": 2,
+   "distill_loss": 0.0,
+   "update0_dev_return": -0.1684,
+   "best_val_dev_return": -0.0357,
+   "delta_over_update0": 0.1327,
+   "per_cradle": [
+    {
+     "tag": "s1",
+     "ret": -0.0535,
+     "dtz_end_mm": 53.5,
+     "k6": false,
+     "safe": true,
+     "peak_coin": 0.359
+    },
+    {
+     "tag": "s3",
+     "ret": -0.0179,
+     "dtz_end_mm": 17.9,
+     "k6": true,
+     "safe": true,
+     "peak_coin": 0.443
+    }
+   ],
+   "eval_points": 8,
+   "ckpt": "reports/2026-07-27-coin-r8-residual-rl/ckpts/td3_seed2_best_val.pt"
+  }
+ ],
+ "summary": {
+  "n_seeds": 3,
+  "best_val_dev_return_median": -0.0469,
+  "best_val_dev_return_iqr": [
+   -0.0498,
+   -0.0413
+  ],
+  "delta_over_update0_median": 0.1215,
+  "delta_ci": {
+   "stat": 0.1233,
+   "lo": 0.11569999999999998,
+   "hi": 0.1327,
+   "n": 3
+  },
+  "per_seed": [
+   {
+    "seed": 0,
+    "update0_dev_return": -0.1684,
+    "best_val_dev_return": -0.0527,
+    "delta_over_update0": 0.1157
+   },
+   {
+    "seed": 1,
+    "update0_dev_return": -0.1684,
+    "best_val_dev_return": -0.0469,
+    "delta_over_update0": 0.1215
+   },
+   {
+    "seed": 2,
+    "update0_dev_return": -0.1684,
+    "best_val_dev_return": -0.0357,
+    "delta_over_update0": 0.1327
+   }
+  ]
+ }
+}

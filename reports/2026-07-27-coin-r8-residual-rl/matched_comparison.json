@@ -1,0 +1,28 @@
+{
+ "contract": "COIN_R8_S4_MATCHED_COMPARISON",
+ "update0_dev_return": -0.1684,
+ "sac_dev_median": -0.1484,
+ "td3_dev_median": -0.0469,
+ "sac_dev_ci": {
+  "stat": -0.14916666666666667,
+  "lo": -0.151,
+  "hi": -0.1481,
+  "n": 3
+ },
+ "td3_dev_ci": {
+  "stat": -0.0451,
+  "lo": -0.0527,
+  "hi": -0.0357,
+  "n": 3
+ },
+ "sac_beats_update0": true,
+ "td3_beats_update0": true,
+ "dev_champion": {
+  "algo": "td3",
+  "seed": 2,
+  "dev_return": -0.0357,
+  "ckpt": "reports/2026-07-27-coin-r8-residual-rl/ckpts/td3_seed2_best_val.pt"
+ },
+ "note": "champion selected on DEV return only; held-out s4/s7 remain unseen until the single frozen S5 eval.",
+ "wall_s": 223.9
+}
