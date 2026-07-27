@@ -1,0 +1,68 @@
+{
+  "gates": {
+    "AIBO-0": true,
+    "AIBO-1": true,
+    "AIBO-2": true,
+    "AIBO-3": false,
+    "AIBO-4": false
+  },
+  "highest_genuine_passed": "AIBO-2",
+  "physical_vs_simulated": "SIMULATED (no physical AIBO hardware this session)",
+  "blocked": {
+    "AIBO-3": "robust approach-ALIGN-stop: scripted yaw is stable in one direction only; arbitrary-bearing pursuit not reliable on the weak scripted gait",
+    "AIBO-4": "needs a robust steerable gait (tuned or RL walk policy) AND/OR physical AIBO + SDK"
+  },
+  "informational": {
+    "onaxis_approach_stop_hold_certified": true,
+    "yaw_authority_measured_dps": -3.6404271473111383,
+    "note": "Aibo CAN turn (yaw authority demonstrated); on-axis approach+stop+hold is certified. These are SIMULATED, not hardware."
+  },
+  "seed": 0,
+  "interface_audit": {
+    "forward": {
+      "dx_m": 0.4602811010768147,
+      "fwd_speed_mps": 0.11507027526920367,
+      "dyaw_deg": 9.144466633858912,
+      "yaw_rate_dps": 2.286116658464728,
+      "latency_steps": 10,
+      "min_upright": 0.9961008828805805
+    },
+    "turn_stable": {
+      "dx_m": 0.056842825091149456,
+      "fwd_speed_mps": 0.014210706272787364,
+      "dyaw_deg": -14.561708589244553,
+      "yaw_rate_dps": -3.6404271473111383,
+      "latency_steps": 12,
+      "min_upright": 0.9931373959617181
+    },
+    "turn_other": {
+      "dx_m": -0.043570189444692244,
+      "fwd_speed_mps": -0.021785094722346122,
+      "dyaw_deg": -1.0975622320903513,
+      "yaw_rate_dps": -0.5487811160451757,
+      "latency_steps": 9,
+      "min_upright": -0.4445378399325091
+    }
+  },
+  "summary": {
+    "visited_modes": [
+      "STAND",
+      "ALIGN",
+      "WALK",
+      "DECELERATE",
+      "STOP",
+      "HOLD"
+    ],
+    "final_mode": "HOLD",
+    "final_certificate_passed": true,
+    "reached": true,
+    "halted": true,
+    "held": true,
+    "fell": false,
+    "final_dist": 0.41312690292322074,
+    "n_ticks": 6,
+    "n_steps": 1230
+  },
+  "plot": "aibo_trajectory.png",
+  "gif": "reports/2026-07-27-cip-aibo/aibo_trajectory.gif"
+}
