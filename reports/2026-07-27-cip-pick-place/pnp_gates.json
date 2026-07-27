@@ -1,0 +1,39 @@
+{
+  "gates": {
+    "PNP-0": true,
+    "PNP-1": true,
+    "PNP-2": true,
+    "PNP-3": true,
+    "PNP-4": true
+  },
+  "highest_passed": "PNP-4",
+  "seed": 1,
+  "expert_version": 3,
+  "summary": {
+    "visited_modes": [
+      "APPROACH",
+      "GRASP",
+      "LIFT",
+      "CARRY",
+      "PLACE",
+      "LIFT",
+      "GRASP",
+      "RELEASE",
+      "LIFT",
+      "RELEASE"
+    ],
+    "final_mode": "SETTLE",
+    "final_certificate_passed": true,
+    "both_contact_ever": true,
+    "max_lifted": 0.06033793091773987,
+    "dropped": false,
+    "any_death": false,
+    "carry_contact_ok": true,
+    "placed_stable_final": true,
+    "reached_chain_max": 6,
+    "n_ticks": 10,
+    "n_steps": 484
+  },
+  "plot": "pnp_trajectory.png",
+  "gif": "reports/2026-07-27-cip-pick-place/pnp_trajectory.gif"
+}
