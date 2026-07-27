@@ -14,8 +14,11 @@ from .certificate import (
     CertificateSuite,
     Predicate,
     PredicateFn,
+    ScalarExtractor,
     all_of,
     any_of,
+    stability_certificate,
+    threshold_certificate,
 )
 from .option import (
     AffineAuthorityDecoder,
@@ -46,8 +49,11 @@ __all__ = [
     "CertificateSuite",
     "Predicate",
     "PredicateFn",
+    "ScalarExtractor",
     "all_of",
     "any_of",
+    "stability_certificate",
+    "threshold_certificate",
     "AffineAuthorityDecoder",
     "Decoder",
     "ExecutableOption",
