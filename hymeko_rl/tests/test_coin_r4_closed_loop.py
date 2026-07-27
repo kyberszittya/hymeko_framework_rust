@@ -144,6 +144,19 @@ def test_r7_non_reversing_stop():
     assert non_reversing_accel(5.0, 0.2, dt) == 5.0           # positive accel never touched
 
 
+# ── R8: the tip-referenced scaffold's joint-velocity reference is bounded and decays to zero at the zone ────────────
+def test_r8_tip_transport_ref_bounded():
+    from hymeko_rl.coin_delivery.theta_option.tip_transport import TipTransportParams
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_ref
+    p = TipTransportParams()
+    assert p.qdot_max <= 2.0 and p.v_max <= 0.30             # ≤ joint_vel_safe; bounded approach speed
+    # the joint-velocity reference qdot_ref_mag = clip(k_q·v_ref, 0, qdot_max) is bounded and 0 at the zone
+    for d_remain in (0.0, 0.02, 0.05, 0.2, 1.0):
+        q = float(np.clip(p.k_q * velocity_ref(d_remain, p.k_d, p.v_max), 0.0, p.qdot_max))
+        assert 0.0 <= q <= p.qdot_max
+    assert np.clip(p.k_q * velocity_ref(0.0, p.k_d, p.v_max), 0.0, p.qdot_max) == 0.0   # zero reference at the zone
+
+
 # ── 1. ZERO-RESIDUAL IDENTITY — a benign, on-plan response yields ≈0 correction ─────────────────────────────────────
 def test_1_zero_residual_identity():
     c = IntentCorrector(CorrectionParams())                    # k_forward_deficit = 0 by default
