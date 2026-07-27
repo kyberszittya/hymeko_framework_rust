@@ -34,10 +34,11 @@ REGULATE, RELEASE = 0, 1
 class TipTransportParams:
     """FROZEN (dev-tuned) tip-referenced servo parameters; the release certificate carries its own tolerances."""
 
+    # S1-safe gains (dev-selected: all 4 cradles within the motion contract — coin peak ≤ 1.20 < 1.5, joints ≤ 1.08 < 3.0).
     k_d: float = 4.0                        # 1/s — coin approach-speed reference v_ref = k_d·d_remain
-    v_max: float = 0.30                     # m/s — bounded approach speed
-    k_q: float = 8.0                        # (rad/s)/(m/s) — coin-speed → joint-speed reference scale
-    qdot_max: float = 2.0                   # rad/s — hard cap on the joint-velocity reference (≤ joint_vel_safe)
+    v_max: float = 0.14                     # m/s — bounded approach speed
+    k_q: float = 5.0                        # (rad/s)/(m/s) — coin-speed → joint-speed reference scale
+    qdot_max: float = 1.0                   # rad/s — hard cap on the joint-velocity reference (≤ joint_vel_safe)
     k_v: float = 0.6                        # N·m per (rad/s) — joint-velocity servo gain (torque increment)
     settle_speed: float = 0.05              # m/s — below this, in-zone ⇒ decay the grip
     squeeze_min: float = 0.06               # N·m — minimum grip to retain contact
