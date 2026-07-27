@@ -1,0 +1,87 @@
+# CIP-HUM-01 --- Stand / Shift-Support / Reach / Touch / Retract / Recover.
+# HyMeKo control-language contract (schema v0) for a whole-body reach task.
+# NB: the available HyMeKo humanoid (data/robotics/humanoid.hymeko) is FIXED-BASE
+# (welded pelvis) --- the balance / support-margin / no-fall certificate below is
+# therefore VACUOUS on it and is NOT genuinely exercised (see the report). A
+# genuine version needs a floating-base humanoid + a balance controller.
+schema_version: v0
+name: cip_hum_01_stand_reach_recover
+
+entities:
+  - {id: pelvis, kind: body, attributes: {root: true, fixed_base: true}}
+  - {id: torso, kind: body}
+  - {id: head, kind: body}
+  - {id: upper_arm_l, kind: body}
+  - {id: forearm_l, kind: body, attributes: {role: reach_effector}}
+  - {id: foot_l, kind: body, attributes: {role: support}}
+  - {id: foot_r, kind: body, attributes: {role: support}}
+  - {id: abdomen, kind: joint}
+  - {id: shoulder_l, kind: joint}
+  - {id: elbow_l, kind: joint}
+  - {id: hip_l, kind: joint}
+  - {id: knee_l, kind: joint}
+  - {id: reach_target, kind: target}
+  - {id: imu, kind: sensor}
+  - {id: balance_ctrl, kind: controller, attributes: {realizer: scripted_pd_reach}}
+
+morphology:
+  - {kind: kinematic, source: pelvis, target: torso}
+  - {kind: kinematic, source: torso, target: upper_arm_l}
+  - {kind: kinematic, source: upper_arm_l, target: forearm_l}
+  - {kind: kinematic, source: pelvis, target: hip_l}
+  - {kind: kinematic, source: hip_l, target: knee_l}
+  - {kind: actuation, source: shoulder_l, target: upper_arm_l}
+  - {kind: dynamic, source: pelvis, target: foot_l}
+
+ports:
+  - {id: shoulder_l.tau, kind: actuation, owner: shoulder_l}
+  - {id: elbow_l.tau, kind: actuation, owner: elbow_l}
+  - {id: hip_l.tau, kind: actuation, owner: hip_l}
+  - {id: imu.orientation, kind: observation, owner: imu}
+  - {id: foot_l.contact, kind: contact, owner: foot_l}
+  - {id: foot_r.contact, kind: contact, owner: foot_r}
+  - {id: pelvis.support, kind: constraint, owner: pelvis}
+
+physics:
+  - {name: link_inertia, role: energy_storage}
+  - {name: joint_elasticity, role: energy_storage}
+  - {name: joint_damping, role: dissipation}
+  - {name: kinematic_tree, role: interconnection}
+  - {name: foot_ground_contact, role: contact}
+  - {name: base_weld, role: constraint, attributes: {note: "fixed base --- no floating root"}}
+
+hybrid:
+  initial_mode: STAND
+  modes:
+    - {name: STAND}
+    - {name: SHIFT_SUPPORT}
+    - {name: REACH}
+    - {name: TOUCH, reset: {touch_dwell: 0.0}}
+    - {name: RETRACT}
+    - {name: RECOVER, reset: {recover_dwell: 0.0}}
+  transitions:
+    - {source: STAND, dest: SHIFT_SUPPORT, guard: stand_settled}
+    - {source: SHIFT_SUPPORT, dest: REACH, guard: support_shifted}
+    - {source: REACH, dest: TOUCH, guard: effector_at_target}
+    - {source: REACH, dest: SHIFT_SUPPORT, guard: reach_aborted}
+    - {source: TOUCH, dest: RETRACT, guard: touch_held}
+    - {source: RETRACT, dest: RECOVER, guard: effector_home}
+    - {source: RECOVER, dest: STAND, guard: recover_incomplete}
+
+task:
+  intents:
+    - {name: com_shift, lower: -0.2, upper: 0.2, unit: m}
+    - {name: support_margin_demand, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: ee_target_velocity, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: torso_orientation, lower: -0.5, upper: 0.5, unit: rad}
+    - {name: contact_force_demand, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: damping_demand, lower: 0.0, upper: 1.0, unit: norm}
+    - {name: recovery_demand, lower: 0.0, upper: 1.0, unit: norm}
+  authorities:
+    - {name: support_authority, source: assumed, provenance: "VACUOUS on fixed base: welded pelvis, no fall possible"}
+    - {name: reach_authority, source: observed, provenance: "left-arm joint-limit reachability of the target config"}
+    - {name: actuation_authority, source: observed, provenance: "PD torque headroom on actuated joints"}
+  certificates:
+    - {name: stand_reach_recover, kind: success, predicate: "effector reached target AND returned home stable"}
+    - {name: joint_limits_bounded, kind: safety, predicate: "all joints in range, |qvel| bounded, no divergence"}
+    - {name: support_margin_maintained, kind: safety, predicate: "torso upright (VACUOUS on fixed base)"}
