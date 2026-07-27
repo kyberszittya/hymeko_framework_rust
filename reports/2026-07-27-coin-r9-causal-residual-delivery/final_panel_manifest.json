@@ -1,0 +1,180 @@
+{
+ "contract": "COIN_R9_FINAL_PANEL",
+ "status": "SEALED_NOT_EVALUATED",
+ "date": "2026-07-27",
+ "purpose": "fresh unseen cradles for the single STAGE-6 R9 evaluation; s4/s7 are now validation-only",
+ "generation_rule": "seed=14000+250*si over FIXED fresh si-list; structural straddle certification (no delivery); read t=0 geometry only; sort by dtz0, pick rank {0,n//3,2n//3,n-1} spanning SHORT->LONG transport; scene+object IDENTICAL to R8 (cylinder coin, same zone) to isolate cradle-config transfer; NO policy/oracle/reward/K6 used in selection",
+ "candidate_si": [
+  2,
+  5,
+  6,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24
+ ],
+ "frozen_panel_seeds_excluded": [
+  14250,
+  14750,
+  15000,
+  15750
+ ],
+ "n_candidates": 20,
+ "n_certified": 5,
+ "scene": "compose_planar_scene defaults from load_harness (cylinder coin) \u2014 same physical regime as R8",
+ "env_physics_hash16": {
+  "planar_grasp_env": "e4df07207d37a7d3",
+  "teacher_bank": "8b74d3ae3b04faaf",
+  "velocity_transport": "c3a6559d6a23441c",
+  "motion_contract": "6d60264d50024f27"
+ },
+ "source_tag": "coin-r8-bounded-residual-heldout-improvement-v1",
+ "branch": "recovery/coin-r9-causal-residual-delivery",
+ "head": "26fe620e853cb8029d60c7aa758e51d29a8e1462",
+ "panel": [
+  {
+   "final_tag": "f1",
+   "seed": 17750,
+   "si": 15,
+   "axis": "zone_par",
+   "n_dot": -0.999,
+   "transport_rank": 0,
+   "post_release_hash": "21ec40fb48861f39",
+   "geometry": {
+    "dtz0": 0.0514,
+    "coin_x0": 0.08143,
+    "coin_y0": 0.13002,
+    "zone_dir": [
+     -0.9933,
+     -0.1157
+    ],
+    "straddle0": -0.9993,
+    "fn0": [
+     2.5999,
+     5.8435
+    ]
+   }
+  },
+  {
+   "final_tag": "f2",
+   "seed": 18250,
+   "si": 17,
+   "axis": "zone_cross",
+   "n_dot": -0.986,
+   "transport_rank": 1,
+   "post_release_hash": "f663e1691b5394db",
+   "geometry": {
+    "dtz0": 0.0976,
+    "coin_x0": 0.04074,
+    "coin_y0": 0.24452,
+    "zone_dir": [
+     -0.278,
+     -0.9606
+    ],
+    "straddle0": -0.9861,
+    "fn0": [
+     1.3135,
+     2.5388
+    ]
+   }
+  },
+  {
+   "final_tag": "f3",
+   "seed": 16500,
+   "si": 10,
+   "axis": "zone_cross",
+   "n_dot": -0.999,
+   "transport_rank": 2,
+   "post_release_hash": "eff0b7d8948691aa",
+   "geometry": {
+    "dtz0": 0.11232,
+    "coin_x0": 0.09969,
+    "coin_y0": 0.18615,
+    "zone_dir": [
+     -0.9752,
+     -0.2214
+    ],
+    "straddle0": -0.9989,
+    "fn0": [
+     6.212,
+     6.3209
+    ]
+   }
+  },
+  {
+   "final_tag": "f4",
+   "seed": 19500,
+   "si": 22,
+   "axis": "zone_cross",
+   "n_dot": -0.97,
+   "transport_rank": 3,
+   "post_release_hash": "5e0e5b8f1add93fc",
+   "geometry": {
+    "dtz0": 0.13143,
+    "coin_x0": -0.00162,
+    "coin_y0": 0.25377,
+    "zone_dir": [
+     -0.2375,
+     -0.9714
+    ],
+    "straddle0": -0.9694,
+    "fn0": [
+     1.6828,
+     1.5248
+    ]
+   }
+  }
+ ],
+ "all_certified": [
+  {
+   "si": 10,
+   "seed": 16500,
+   "axis": "zone_cross",
+   "dtz0": 0.11232,
+   "coin_x0": 0.09969
+  },
+  {
+   "si": 12,
+   "seed": 17000,
+   "axis": "zone_cross",
+   "dtz0": 0.10644,
+   "coin_x0": -0.00986
+  },
+  {
+   "si": 15,
+   "seed": 17750,
+   "axis": "zone_par",
+   "dtz0": 0.0514,
+   "coin_x0": 0.08143
+  },
+  {
+   "si": 17,
+   "seed": 18250,
+   "axis": "zone_cross",
+   "dtz0": 0.0976,
+   "coin_x0": 0.04074
+  },
+  {
+   "si": 22,
+   "seed": 19500,
+   "axis": "zone_cross",
+   "dtz0": 0.13143,
+   "coin_x0": -0.00162
+  }
+ ],
+ "seal": "DO NOT run scaffold/oracle/R8/R9 on this panel; DO NOT read dtz_end/K6/reward until the frozen R9 checkpoint at STAGE 6.",
+ "wall_s": 460.1
+}

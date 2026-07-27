@@ -1,0 +1,35 @@
+{
+ "contract": "COIN_R9_STAGE0_PREFLIGHT",
+ "date": "2026-07-27",
+ "mission": "push the coin into the strict K6 zone (delivery-focused causal residual TD3)",
+ "source_tag": "coin-r8-bounded-residual-heldout-improvement-v1",
+ "source_tag_commit": "26fe620e853cb8029d60c7aa758e51d29a8e1462",
+ "branch": "recovery/coin-r9-causal-residual-delivery",
+ "head": "26fe620e853cb8029d60c7aa758e51d29a8e1462",
+ "r8_champion_ckpt": "reports/2026-07-27-coin-r8-residual-rl/ckpts/td3_seed2_best_val.pt",
+ "r8_champion_ckpt_sha16": "71e7653bec04335a",
+ "r8_champion": {
+  "algo": "td3",
+  "seed": 2,
+  "note": "base residual is the FROZEN R8 actor's PER-CRADLE mean(init_obs), NOT a single constant; recorded per-cradle in STAGE2 update-zero"
+ },
+ "scaffold": "theta_option/tip_transport.py TipReferencedController (frozen S1 defaults)",
+ "scaffold_sha16": "d5ae774e8bc97460",
+ "residual_adapter_sha16": "8f7ef29eb0b1adb0",
+ "reward": "K6-INDEPENDENT option_return (-dtz_end -0.05*terminal_coin_speed, safety-gated); NEVER the K6 boolean",
+ "certificate": "theta_option/release_certificate.py (R6, SOLE release authority; no free release bit)",
+ "certificate_sha16": "b62461ec89e3e945",
+ "velocity_rollout_sha16": "c3a6559d6a23441c",
+ "motion_contract_sha16": "6d60264d50024f27",
+ "development_states": [
+  "s1",
+  "s3"
+ ],
+ "validation_states": [
+  "s4",
+  "s7 (now VALIDATION, no longer held-out)"
+ ],
+ "final_panel": "SEALED in STAGE 1 (fresh, unseen; opened once at STAGE 6)",
+ "hard_constraints": "no teleport/coin-edit/hidden-force/teacher-fallback/free-release-bit; unchanged torque/motion/certificate; reward independent from K6; exact Bellman provenance; 20mm K6 tol UNCHANGED",
+ "working_tree_status": "?? experiments/2026_07_22_coin_v3_learning/rl_entry/carry_proposal_balltip_fresh_v1.pt\n?? experiments/2026_07_22_coin_v3_learning/rl_entry/carry_proposal_balltip_v1.pt\n?? experiments/2026_07_22_coin_v3_learning/rl_entry/carry_proposal_o2_box_v1.pt\n?? experiments/2026_07_22_coin_v3_learning/rl_entry/carry_proposal_o2_hold_v1.pt\n?? experiments/2026_07_22_coin_v3_learning/rl_entry/carry_rl_balltip_sac_seed0_bestval.pt\n?? experiments/2026_07_22_coin_v3_learning/rl_entry/carry_rl_balltip_sac_seed1_bestval.pt\n?? experiments/2026_07_22_coin_v3_learning/rl_entry/carry_rl_balltip_td3_seed0_bestval.pt\n?? experiments/2026_07_22_coin_v3_learning/rl_entry/carry_rl_balltip_td3_seed1_bestval.pt"
+}
