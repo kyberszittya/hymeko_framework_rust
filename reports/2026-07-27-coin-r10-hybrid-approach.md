@@ -79,14 +79,36 @@ looser-guard problem — a looser guard would gamble against the R5 wall).
 when the post-release friction spans a factor ~2.5. The releasing itself is fine; the missing element is a **closed-loop
 correction after the coast**.
 
-## Next
+## C2.7 post-coast feasibility (`--c27`) — guided-coast ruled out, re-acquire required
 
-The hybrid program needs one more mode: **APPROACH_MOMENTUM_BUILD → RELEASED_COAST → RE-ACQUIRE/SETTLE → K6 certificate** —
-after the coast brings the coin *near* the zone (robustly, even if not inside), re-acquire contact and run the already-working
-BRAKE/SETTLE to null the residual error, then the frozen K6 cert grades. (Alternatively a tighter, more-repeatable coast, if
-achievable — but the R5 wall argues for the closed-loop settle.) Then C3 (manual hybrid, s1 ∧ s3 strict K6, safety 2/2). The
-settle/K6 certificate and physics stay frozen; the blind panel stays sealed. The modes keep being *discovered by measurement*
-(APPROACH from C1's unexpressible component; RELEASED_COAST from C2.5; the coast-uncertainty wall from C2.6), not hand-drawn.
+Before committing the re-acquire into a full program, the easier compromise was tested: a **GUIDED_COAST** (light contact —
+low squeeze + tiny effort — so the coin coasts but keeps correction authority), the physically-attractive middle between
+full-grip (over-dissipates, 48 mm) and full-release (no authority, 33 mm). Result: the best guided-coast reaches only
+**50.9 mm** on s1 (even at squeeze 0.02) — **worse than full release** (the tips still drag/dissipate). **`GUIDED_COAST_
+INSUFFICIENT_REACQUIRE_NEEDED`.** The easier mode does not exist in this physics; the harder closed-loop **RE-ACQUIRE** is
+genuinely required.
+
+## Verdict chain (measured)
+
+```
+APPROACH_MOMENTUM_MODE_LOAD_BEARING            (C2:   peak v_par 0.316 ≈ teacher 0.322)
+RELEASED_COAST_MODE_PROMISING                  (C2.5: 33 mm, the closest handoff)
+ROBUST_OPEN_LOOP_COAST_ENTRY_UNAVAILABLE       (C2.6: coast a∈[0.51,1.26], guard can't fit the 20 mm corridor = R5 wall)
+GUIDED_COAST_INSUFFICIENT                       (C2.7: 50.9 mm, worse than full release)
+⇒ POST_COAST_CLOSED_LOOP_REACQUIRE_REQUIRED
+```
+
+## Next (de-risk first, per the R0–R4 ladder)
+
+Build/measure the **RE-ACQUIRE contact primitive** as its own feasibility audit *before* wiring the full C3 program: R0
+geometric reachability (tips reach the coasting coin, no collision / state-edit) → R1 gentle first contact (no fling/reversal)
+→ R2 bilateral re-acquire (stabilise with small squeeze, low added impulse) → R3 settle authority (the frozen BRAKE/SETTLE
+nulls the residual 10–35 mm from the reacquired state) → R4 full chain APPROACH→COAST→RE-ACQUIRE→SETTLE→K6. Metrics beyond
+final dtz: re-acquire success, first-contact impulse, dtz change at contact, reversal, spin, contact retention, wrench,
+settle time, K6 dwell. Then C3 (manual hybrid, s1 ∧ s3 strict K6, safety 2/2). Settle/K6 cert + physics frozen; blind panel
+sealed. **Scientific through-line:** the same soft-frictional uncertainty recurs at every abstraction level — R1–R7 (fixed
+law), R8–R9 (bounded residual), R10 (open-loop coast) — and the answer is always the same: a next *closed-loop*, measurement-
+discovered mode that re-acquires control after the uncertainty realises.
 
 ## Artifacts / gates
 
