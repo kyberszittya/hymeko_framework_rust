@@ -1,0 +1,86 @@
+{
+ "contract": "COIN_R9_STAGE2_UPDATE_ZERO",
+ "date": "2026-07-27",
+ "tolerance": 1e-09,
+ "base": "frozen R8 champion TD3 seed2 (coin-r8-bounded-residual-heldout-improvement-v1)",
+ "delta_bounds": {
+  "d_fwd_vel": 0.25,
+  "d_squeeze": 0.04,
+  "d_stop_gain": 0.25,
+  "slew": 0.15
+ },
+ "bellman_action": "Delta a in [-1,1]^3 (causal increment) ONLY; a_R8 base / a_exec / targets / torque = provenance",
+ "per_state": {
+  "s1": {
+   "a_r8": [
+    0.680193,
+    -0.99364,
+    0.965242
+   ],
+   "trace_identity": true,
+   "coin_trace_bit_equal": true,
+   "delta_zero_and_a_exec_is_base": true,
+   "n_steps": 60,
+   "max_step_diff": {
+    "coin": 0.0,
+    "coin_vel": 0.0,
+    "qvel": 0.0,
+    "dtz": 0.0,
+    "speed": 0.0,
+    "fn_l": 0.0,
+    "fn_r": 0.0
+   },
+   "max_metric_diff": {
+    "dtz_start": 0.0,
+    "dtz_end": 0.0,
+    "forward": 0.0,
+    "cross": 0.0,
+    "peak_qdot": 0.0,
+    "peak_coin_speed": 0.0,
+    "terminal_coin_speed": 0.0,
+    "k6_max_dwell": 0.0,
+    "contact_lost_steps": 0.0,
+    "lost_before_release": 0.0,
+    "release_step": 0.0,
+    "gap_closed": 0.0
+   }
+  },
+  "s3": {
+   "a_r8": [
+    -0.995034,
+    -0.903091,
+    0.953865
+   ],
+   "trace_identity": true,
+   "coin_trace_bit_equal": true,
+   "delta_zero_and_a_exec_is_base": true,
+   "n_steps": 60,
+   "max_step_diff": {
+    "coin": 0.0,
+    "coin_vel": 0.0,
+    "qvel": 0.0,
+    "dtz": 0.0,
+    "speed": 0.0,
+    "fn_l": 0.0,
+    "fn_r": 0.0
+   },
+   "max_metric_diff": {
+    "dtz_start": 0.0,
+    "dtz_end": 0.0,
+    "forward": 0.0,
+    "cross": 0.0,
+    "peak_qdot": 0.0,
+    "peak_coin_speed": 0.0,
+    "terminal_coin_speed": 0.0,
+    "k6_max_dwell": 0.0,
+    "contact_lost_steps": 0.0,
+    "lost_before_release": 0.0,
+    "release_step": 0.0,
+    "gap_closed": 0.0
+   }
+  }
+ },
+ "passed": true,
+ "verdict": "R9_UPDATE_ZERO_REPRODUCES_R8_CHAMPION",
+ "wall_s": 90.7
+}
