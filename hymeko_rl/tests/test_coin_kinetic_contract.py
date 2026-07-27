@@ -243,6 +243,47 @@ def test_kinetic_clone_controller_frozen_approach_and_bounded(s1_snap):
     assert all(r["kind"] in ("FROZEN", "KINETIC_CLONE") for r in clone.clone_trace)
 
 
+def test_residual_policy_zero_init_and_reward_ignores_raw_vpar():
+    """R0/R1 pure checks: a zero-initialised residual policy outputs exactly 0 (update-zero identity precondition), and the
+    task-tied reward does NOT reward raw v_par magnitude (only progress / close+moving / K6, minus stall/clamp/etc.)."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_rl as krl
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import NormStats
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualActor, ResidualBounds, ResidualPolicy
+    ract = ResidualActor(ResidualPolicy(zero_init=True), NormStats(_np.zeros(41), _np.ones(41)))
+    assert _np.abs(ract.act(_np.random.randn(41))).max() == 0.0 and ResidualBounds().alpha >= 0
+    m = {"peak_qdot": 2.0, "peak_coin_speed": 0.4, "k6_delivered": False}
+    slow = [{"kind": "KINETIC_CLONE", "v_par": 0.15, "fn_l": 1.0, "fn_r": 1.0, "dtz_mm": 50.0}]
+    fast = [{"kind": "KINETIC_CLONE", "v_par": 0.60, "fn_l": 1.0, "fn_r": 1.0, "dtz_mm": 50.0}]
+    r_slow, _ = krl.kinetic_reward(m, 40.0, slow, baseline_mm=46.2)
+    r_fast, _ = krl.kinetic_reward(m, 40.0, fast, baseline_mm=46.2)
+    assert r_slow == r_fast                                             # same landing ⇒ same reward regardless of v_par magnitude
+    stalled = [{"kind": "KINETIC_CLONE", "v_par": -0.05, "fn_l": 1.0, "fn_r": 1.0, "dtz_mm": 50.0}]
+    r_stall, dec = krl.kinetic_reward(m, 40.0, stalled, baseline_mm=46.2)
+    assert r_stall < r_slow and dec["stalls"] == 1                      # a stall is penalised
+
+
+def test_residual_update_zero_identity_full_chain(s1_snap):
+    """R0 gate as a test: a zero residual over the clone reproduces the K2 clone bit-for-bit on the full frozen chain."""
+    import numpy as _np
+    import torch
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_rl as krl
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor, KineticClone, KineticCloneController, NormStats
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    from hymeko_rl.experiments.coin_kinetic_r1_rl import CLONE_CKPT
+    ckpt = torch.load(CLONE_CKPT, weights_only=False)
+    model = KineticClone(hidden=ckpt["hidden"])
+    model.load_state_dict(ckpt["state_dict"])
+    norm = NormStats(_np.array(ckpt["norm"]["mean"]), _np.array(ckpt["norm"]["std"]))
+    m_clone = velocity_rollout(s1_snap, KineticCloneController(s1_snap, CloneActor(model, norm)), DELIVERY_CFG)
+    m_zero, _dtz, _kin = krl.deploy_residual(s1_snap, CloneActor(model, norm), _np.zeros(4), ResidualBounds(alpha=0.15))
+    assert _np.array_equal(_np.asarray(m_clone["coin_trace"]), _np.asarray(m_zero["coin_trace"]))   # bit-identical
+    assert bool(m_clone["k6_delivered"]) == bool(m_zero["k6_delivered"])
+
+
 def test_receding_horizon_relabel_first_action_only_deterministic(s1_entry):
     r = kc.receding_horizon_relabel(s1_entry.tsnap, budget=0)
     assert r.first_action.shape == (4,) and r.first_action_norm.shape == (4,)

@@ -153,12 +153,17 @@ class KineticCloneController(HybridApproachController):
         self._obs_hist: list = []
         self.clone_trace: list[dict[str, Any]] = []
 
+    def _transport_action(self, rl: Any, obs: np.ndarray) -> np.ndarray:
+        """The 4-D bounded KINETIC transport action (clone only). A bounded-residual subclass extends this to add
+        ``α·tanh δ_ψ``; at zero residual it must return exactly this. # Postconditions: in [−1, 1]^4."""
+        return np.clip(np.asarray(self.actor.act(obs), np.float64).ravel()[:ACT_DIM], -1.0, 1.0)
+
     def dtau_for_step(self, rl: Any, t: int, prev_tau: np.ndarray) -> np.ndarray:
         bt = self._base_targets(rl, t)                                        # runs the frozen phase machine (may transition)
         if self.phase == KINETIC and not bt["in_release"]:                    # the KINETIC transport state ⇒ the clone acts
             obs, hframe = kinetic_observe(rl, self._obs_hist)
             self._obs_hist.append(hframe)
-            a = np.clip(np.asarray(self.actor.act(obs), np.float64).ravel()[:ACT_DIM], -1.0, 1.0)
+            a = self._transport_action(rl, obs)
             dtau = np.clip(a * self.slew, -self.slew, self.slew)
             self._log_clone(rl, t, "KINETIC_CLONE", bt, a)
             return dtau

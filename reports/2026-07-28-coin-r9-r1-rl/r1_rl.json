@@ -1,0 +1,190 @@
+{
+ "contract": "COIN_KINETIC_R1_RL_V1",
+ "seed": 0,
+ "alpha": 0.15,
+ "total_options": 120,
+ "r0": {
+  "gate": "RESIDUAL_UPDATE_ZERO_IDENTITY_PASS",
+  "clone_min_dtz_mm": 46.202,
+  "zero_residual_min_dtz_mm": 46.202,
+  "coin_trace_bit_identical": true
+ },
+ "clone_baseline_mm": 46.2,
+ "td3": {
+  "algo": "td3",
+  "distill_loss": 0.0,
+  "best_residual": [
+   0.996,
+   -0.594,
+   0.3636,
+   -0.9864
+  ],
+  "min_dtz_mm": 39.56,
+  "improved_over_clone": true,
+  "k6": false,
+  "peak_qdot": 2.012,
+  "peak_coin_speed": 0.407,
+  "reward_decomp": {
+   "progress": 6.645,
+   "corridor": 0.0,
+   "k6": 0.0,
+   "stall": -0.0,
+   "clamp": -0.0,
+   "reversal": -0.0,
+   "early_loss": -12.0,
+   "safety": 0.0,
+   "safe": true,
+   "stalls": 0,
+   "clamps": 0,
+   "reversals": 0
+  },
+  "history_tail": [
+   {
+    "it": 60,
+    "dev_score": -46.2017614050204,
+    "aux": {
+     "min_dtz": 46.2,
+     "k6": false,
+     "improved": false,
+     "residual": [
+      -0.0,
+      -0.0,
+      -0.0,
+      -0.0
+     ]
+    },
+    "train_recent": 0.0,
+    "q_mean": 0.02
+   },
+   {
+    "it": 90,
+    "dev_score": -41.58761863629614,
+    "aux": {
+     "min_dtz": 41.59,
+     "k6": false,
+     "improved": true,
+     "residual": [
+      0.893,
+      -0.165,
+      -0.383,
+      -0.656
+     ]
+    },
+    "train_recent": 0.0,
+    "q_mean": -0.24
+   },
+   {
+    "it": 120,
+    "dev_score": -39.557059357068866,
+    "aux": {
+     "min_dtz": 39.56,
+     "k6": false,
+     "improved": true,
+     "residual": [
+      0.996,
+      -0.594,
+      0.364,
+      -0.986
+     ]
+    },
+    "train_recent": 0.0,
+    "q_mean": -0.19
+   }
+  ]
+ },
+ "sac": {
+  "algo": "sac",
+  "distill_loss": 0.0,
+  "best_residual": [
+   0.5756,
+   0.1081,
+   0.3174,
+   -0.411
+  ],
+  "min_dtz_mm": 44.74,
+  "improved_over_clone": true,
+  "k6": false,
+  "peak_qdot": 2.009,
+  "peak_coin_speed": 0.4,
+  "reward_decomp": {
+   "progress": 1.461,
+   "corridor": 0.0,
+   "k6": 0.0,
+   "stall": -0.0,
+   "clamp": -0.0,
+   "reversal": -0.0,
+   "early_loss": -12.0,
+   "safety": 0.0,
+   "safe": true,
+   "stalls": 0,
+   "clamps": 0,
+   "reversals": 0
+  },
+  "history_tail": [
+   {
+    "it": 60,
+    "dev_score": -46.201757789243494,
+    "aux": {
+     "min_dtz": 46.2,
+     "k6": false,
+     "improved": false,
+     "residual": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "train_recent": 0.0,
+    "q_mean": 0.02
+   },
+   {
+    "it": 90,
+    "dev_score": -44.740692201252585,
+    "aux": {
+     "min_dtz": 44.74,
+     "k6": false,
+     "improved": true,
+     "residual": [
+      0.576,
+      0.108,
+      0.317,
+      -0.411
+     ]
+    },
+    "train_recent": 0.0,
+    "q_mean": -0.29
+   },
+   {
+    "it": 120,
+    "dev_score": -45.419930681955975,
+    "aux": {
+     "min_dtz": 45.42,
+     "k6": false,
+     "improved": true,
+     "residual": [
+      0.562,
+      0.281,
+      0.337,
+      -0.454
+     ]
+    },
+    "train_recent": 0.0,
+    "q_mean": -0.22
+   }
+  ]
+ },
+ "best_algo": "td3",
+ "best_min_dtz_mm": 39.56,
+ "verdict": "RESIDUAL_LEARNABILITY_SIGNAL_PASS",
+ "matched": {
+  "same_env": true,
+  "same_cfg": true,
+  "same_seed": 0,
+  "same_init_obs": true,
+  "same_bounds_alpha": 0.15,
+  "obs_dim": 41,
+  "act_dim": 4
+ },
+ "wall_s": 28.4
+}
