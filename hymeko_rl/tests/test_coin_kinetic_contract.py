@@ -130,6 +130,26 @@ def test_freeze_kinetic_entry_deterministic_and_admissible(s1_entry, s1_snap):
     assert s1_entry.entry_v_par >= ApproachParams().kinetic_entry_v - 1e-3   # entered while genuinely moving
 
 
+def test_kinetic_bank_neighbourhood_deterministic_and_diverse(s1_entry):
+    """The K1 neighbourhood generator is deterministic (same seed ⇒ same admissible states + descriptors) and produces a
+    physically-diverse, admissibility-gated 4/8/4 set — legal perturbed-control branches, not state edits."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_bank as kb
+    acc1, rej1 = kb.generate_neighbourhood(s1_entry.tsnap)
+    acc2, rej2 = kb.generate_neighbourhood(s1_entry.tsnap)
+    assert len(acc1) + len(rej1) == len(kb.NEIGHBOURHOOD_SPECS) == 16
+    assert len(acc1) >= 12                                              # most perturbations stay admissible
+    assert [a["provenance"]["label"] for a in acc1] == [a["provenance"]["label"] for a in acc2]   # deterministic set
+    assert all(a1["descriptor"] == a2["descriptor"] for a1, a2 in zip(acc1, acc2))                 # deterministic descriptors
+    for a in acc1:                                                     # every accepted state is a branchable admissible snapshot
+        assert a["tsnap"].admissibility().admissible
+        assert a["tsnap"].branch().inner.data.qpos.shape[0] >= 4
+    vpar = [a["descriptor"]["v_par"] for a in acc1]
+    fnmin = [a["descriptor"]["fn_min"] for a in acc1]
+    assert max(vpar) - min(vpar) > 0.1 and max(fnmin) - min(fnmin) > 0.5   # genuine spread (velocity + contact-force range)
+    cats = {a["provenance"]["category"] for a in acc1}
+    assert cats == {"easy", "medium", "edge"}                          # all three strata represented
+
+
 def test_receding_horizon_relabel_first_action_only_deterministic(s1_entry):
     r = kc.receding_horizon_relabel(s1_entry.tsnap, budget=0)
     assert r.first_action.shape == (4,) and r.first_action_norm.shape == (4,)
