@@ -1,0 +1,341 @@
+{
+ "contract": "COIN_KINETIC_R2_RL_V1",
+ "seed": 0,
+ "alpha": 0.15,
+ "total_options": 600,
+ "r2_update_zero_identity": true,
+ "clone_baseline_mm": 46.2,
+ "td3": {
+  "algo": "td3",
+  "distill_loss": 0.0,
+  "min_dtz_mm": 39.58,
+  "exit_dtz_mm": 50.66,
+  "k6": false,
+  "safe": true,
+  "released": false,
+  "reward_decomp": {
+   "follow": 9.42,
+   "clamp": 0.0,
+   "slow": 0.79,
+   "neg": 0.0,
+   "reversal": 0.0,
+   "terminal": -20.66,
+   "exit_dtz_mm": 50.66,
+   "released": false
+  },
+  "state_dependence": {
+   "residual_std": 0.9747,
+   "corr": {
+    "fn": 0.952,
+    "dtz": 0.821,
+    "v_par": 0.844,
+    "norm_fn": 0.139,
+    "norm_dtz": 0.604,
+    "norm_v_par": 0.2
+   },
+   "max_corr": 0.952,
+   "n_steps": 9,
+   "varies": true,
+   "tracks_state": true,
+   "residuals": [
+    [
+     0.9995,
+     -1.0,
+     1.0,
+     1.0
+    ],
+    [
+     1.0,
+     -1.0,
+     0.9956,
+     1.0
+    ],
+    [
+     1.0,
+     -1.0,
+     -0.9996,
+     0.9968
+    ],
+    [
+     1.0,
+     -1.0,
+     -1.0,
+     -0.9999
+    ],
+    [
+     1.0,
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    [
+     1.0,
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    [
+     1.0,
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    [
+     1.0,
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    [
+     1.0,
+     -1.0,
+     -1.0,
+     -1.0
+    ]
+   ]
+  },
+  "milestone_240": {
+   "it": 240,
+   "champion": [
+    1,
+    0,
+    0,
+    -53.73,
+    -38.81,
+    -0.1429
+   ],
+   "aux": {
+    "min_dtz": 38.81,
+    "exit_dtz": 53.73,
+    "k6": false,
+    "residual_std": 0.968,
+    "jerk": 0.1429
+   }
+  },
+  "final_champion": {
+   "it": 600,
+   "champion": [
+    1,
+    0,
+    0,
+    -60.85,
+    -39.58,
+    -0.1
+   ],
+   "aux": {
+    "min_dtz": 39.58,
+    "exit_dtz": 60.85,
+    "k6": false,
+    "residual_std": 0.9428,
+    "jerk": 0.1
+   }
+  },
+  "event_trace": [
+   {
+    "dtz_mm": 77.99,
+    "v_par": 0.19447,
+    "fn": 2.676
+   },
+   {
+    "dtz_mm": 75.5,
+    "v_par": 0.28669,
+    "fn": 0.829
+   },
+   {
+    "dtz_mm": 72.28,
+    "v_par": 0.34286,
+    "fn": 0.571
+   },
+   {
+    "dtz_mm": 68.59,
+    "v_par": 0.37931,
+    "fn": 0.613
+   },
+   {
+    "dtz_mm": 64.77,
+    "v_par": 0.366,
+    "fn": 0.336
+   },
+   {
+    "dtz_mm": 61.0,
+    "v_par": 0.36987,
+    "fn": 0.312
+   },
+   {
+    "dtz_mm": 57.3,
+    "v_par": 0.35693,
+    "fn": 0.222
+   },
+   {
+    "dtz_mm": 53.84,
+    "v_par": 0.32422,
+    "fn": 0.123
+   },
+   {
+    "dtz_mm": 50.66,
+    "v_par": 0.30418,
+    "fn": 0.068
+   }
+  ]
+ },
+ "sac": {
+  "algo": "sac",
+  "distill_loss": 0.0,
+  "min_dtz_mm": 40.89,
+  "exit_dtz_mm": 57.12,
+  "k6": false,
+  "safe": true,
+  "released": false,
+  "reward_decomp": {
+   "follow": 7.49,
+   "clamp": 0.0,
+   "slow": 0.12,
+   "neg": 0.0,
+   "reversal": 0.0,
+   "terminal": -27.12,
+   "exit_dtz_mm": 57.12,
+   "released": false
+  },
+  "state_dependence": {
+   "residual_std": 0.3226,
+   "corr": {
+    "fn": 0.915,
+    "dtz": 0.913,
+    "v_par": 0.946,
+    "norm_fn": 0.106,
+    "norm_dtz": 0.331,
+    "norm_v_par": 0.061
+   },
+   "max_corr": 0.946,
+   "n_steps": 7,
+   "varies": true,
+   "tracks_state": true,
+   "residuals": [
+    [
+     0.6184,
+     -0.0966,
+     0.031,
+     0.3084
+    ],
+    [
+     0.584,
+     -0.1803,
+     0.1773,
+     0.1933
+    ],
+    [
+     0.2985,
+     -0.0192,
+     -0.0496,
+     0.028
+    ],
+    [
+     0.3022,
+     -0.1096,
+     -0.1598,
+     0.016
+    ],
+    [
+     0.4422,
+     -0.1774,
+     -0.6321,
+     0.0623
+    ],
+    [
+     0.4546,
+     -0.072,
+     -0.7154,
+     0.0062
+    ],
+    [
+     0.2718,
+     0.1745,
+     -0.5904,
+     -0.0336
+    ]
+   ]
+  },
+  "milestone_240": {
+   "it": 240,
+   "champion": [
+    1,
+    0,
+    0,
+    -57.2,
+    -41.17,
+    -0.1033
+   ],
+   "aux": {
+    "min_dtz": 41.17,
+    "exit_dtz": 57.2,
+    "k6": false,
+    "residual_std": 0.2756,
+    "jerk": 0.1033
+   }
+  },
+  "final_champion": {
+   "it": 600,
+   "champion": [
+    1,
+    0,
+    0,
+    -60.95,
+    -43.93,
+    -0.1113
+   ],
+   "aux": {
+    "min_dtz": 43.93,
+    "exit_dtz": 60.95,
+    "k6": false,
+    "residual_std": 0.269,
+    "jerk": 0.1113
+   }
+  },
+  "event_trace": [
+   {
+    "dtz_mm": 77.99,
+    "v_par": 0.19447,
+    "fn": 2.676
+   },
+   {
+    "dtz_mm": 75.5,
+    "v_par": 0.28484,
+    "fn": 0.773
+   },
+   {
+    "dtz_mm": 72.3,
+    "v_par": 0.33921,
+    "fn": 0.429
+   },
+   {
+    "dtz_mm": 68.64,
+    "v_par": 0.3732,
+    "fn": 0.462
+   },
+   {
+    "dtz_mm": 64.77,
+    "v_par": 0.38174,
+    "fn": 0.391
+   },
+   {
+    "dtz_mm": 60.9,
+    "v_par": 0.37497,
+    "fn": 0.267
+   },
+   {
+    "dtz_mm": 57.12,
+    "v_par": 0.37023,
+    "fn": 0.066
+   }
+  ]
+ },
+ "best_algo": "td3",
+ "gates": {
+  "R2A_state_dependence": true,
+  "R2B_contact_frontier": true,
+  "R3_close_moving_manifold": false,
+  "R4_k6_delivery": false
+ },
+ "verdict": "CONTACT_RETENTION_FRONTIER_ADVANCES",
+ "wall_s": 73.3
+}

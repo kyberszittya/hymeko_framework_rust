@@ -84,6 +84,12 @@ class CloneActor:
             a, self.h = self.model(torch.from_numpy(x).view(1, 1, -1), self.h)
         return a.view(-1).numpy().astype(np.float64)
 
+    def hidden_vec(self) -> np.ndarray:
+        """The frozen clone's current GRU hidden state as a flat vector (the causal temporal summary a bounded residual may
+        condition on). # Postconditions: length-`hidden`; zeros before the first `act` (deterministic)."""
+        hid = int(self.model.gru.hidden_size)
+        return np.zeros(hid, np.float64) if self.h is None else self.h.detach().view(-1).numpy().astype(np.float64)
+
 
 @dataclass
 class CloneTrainConfig:

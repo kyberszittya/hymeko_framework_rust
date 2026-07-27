@@ -284,6 +284,46 @@ def test_residual_update_zero_identity_full_chain(s1_snap):
     assert bool(m_clone["k6_delivered"]) == bool(m_zero["k6_delivered"])
 
 
+def test_reward2_light_contact_progress_and_state_dependent_contact_loss():
+    """R2 reward pure checks: light-contact forward progress is rewarded, a heavy clamp is penalised, and the contact-loss
+    penalty is STATE-DEPENDENT — losing contact far from the zone is punished, a close-and-moving release is not."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_rl2 as krl2
+    light = [{"dtz_mm": 70.0, "v_par": 0.3, "fn_l": 1.0, "fn_r": 1.0}, {"dtz_mm": 66.0, "v_par": 0.3, "fn_l": 1.0, "fn_r": 1.0}]
+    r_light, _d = krl2.reward2(light, entry_dtz=74.0, min_dtz=50.0, k6=False, safe=True)
+    assert r_light[0] > 0 and r_light[1] < r_light[0] + 100                 # light-contact progress is rewarded per step
+    clamp = [{"dtz_mm": 70.0, "v_par": 0.3, "fn_l": 5.0, "fn_r": 5.0}]      # heavy clamp (fn>4) — no follow, a clamp penalty
+    r_clamp, dc = krl2.reward2(clamp, entry_dtz=74.0, min_dtz=50.0, k6=False, safe=True)
+    assert dc["clamp"] > 0 and r_clamp[0] < 0
+    far = krl2.reward2([{"dtz_mm": 60.0, "v_par": 0.3, "fn_l": 1.0, "fn_r": 1.0}], 74.0, 46.0, False, True)[1]
+    near = krl2.reward2([{"dtz_mm": 26.0, "v_par": 0.1, "fn_l": 1.0, "fn_r": 1.0}], 30.0, 18.0, False, True)[1]
+    assert near["terminal"] > far["terminal"]                              # close+moving release ≫ early contact loss
+    assert near["released"] and not far["released"]
+
+
+def test_temporal_residual_update_zero_identity(s1_snap):
+    """R2 update-zero: a zero-initialised per-step temporal residual reproduces the K2 clone bit-for-bit on the full chain."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor, KineticClone, KineticCloneController, NormStats
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import (
+        AUG_DIM, KineticTemporalResidualController, TemporalResidualPolicy, deterministic_residual)
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    from hymeko_rl.experiments.coin_kinetic_r1_rl import CLONE_CKPT
+    import torch
+    assert AUG_DIM == 41 + 64 + 4
+    ckpt = torch.load(CLONE_CKPT, weights_only=False)
+    model = KineticClone(hidden=ckpt["hidden"])
+    model.load_state_dict(ckpt["state_dict"])
+    norm = NormStats(_np.array(ckpt["norm"]["mean"]), _np.array(ckpt["norm"]["std"]))
+    mc = velocity_rollout(s1_snap, KineticCloneController(s1_snap, CloneActor(model, norm)), DELIVERY_CFG)
+    zpol = deterministic_residual(TemporalResidualPolicy(zero_init=True))
+    ctrl = KineticTemporalResidualController(s1_snap, CloneActor(model, norm), zpol, ResidualBounds(alpha=0.15))
+    mz = velocity_rollout(s1_snap, ctrl, DELIVERY_CFG)
+    assert _np.array_equal(_np.asarray(mc["coin_trace"]), _np.asarray(mz["coin_trace"]))   # bit-identical
+    assert ctrl.aug_trace and ctrl.aug_trace[0][0].shape[0] == AUG_DIM                      # augmented state has clone hidden
+
+
 def test_receding_horizon_relabel_first_action_only_deterministic(s1_entry):
     r = kc.receding_horizon_relabel(s1_entry.tsnap, budget=0)
     assert r.first_action.shape == (4,) and r.first_action_norm.shape == (4,)
