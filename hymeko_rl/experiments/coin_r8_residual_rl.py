@@ -15,14 +15,19 @@ import time
 from typing import Any
 
 import numpy as np
+import torch
 
 from hymeko_rl.coin_delivery.forward_displacement import _coin_speed, _coin_xy, delivery_success
 from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
 from hymeko_rl.coin_delivery.theta_option.residual_adapter import (
     RESIDUAL_ROLES, ConstantResidualActor, ResidualBounds, ResidualTipAdapter, SequenceResidualActor, ZeroActor)
+from hymeko_rl.coin_delivery.theta_option.residual_option_env import (
+    ACT_DIM, OBS_DIM, ResidualOptionEnv, ResidualRLConfig, distill_zero_residual, residual_init_obs)
 from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
 from hymeko_rl.coin_delivery.theta_option.tip_transport import TipReferencedController, TipTransportParams
 from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+from hymeko_rl.option_rl import bootstrap_ci
+from hymeko_rl.option_rl.agents import make_actor, train_semi_mdp
 
 OUT = "reports/2026-07-27-coin-r8-residual-rl"
 REPORT_DIR = "reports/2026-07-27-coin-teacher-to-rl"
@@ -344,6 +349,187 @@ def s3_learnability(smoke: bool = False) -> dict:
     return out
 
 
+# ── S4 — matched SAC/TD3 residual-option RL (DEVELOPMENT ONLY; authorised by S2 & S3) ────────────────────────────────
+HELD_OUT_TAGS = ("s4", "s7")                            # excluded from S2–S4; seen ONCE, frozen, at S5
+
+
+def _dev_cradles(panel: dict, params: Any, bounds: Any) -> list:
+    """(tag, snap, init_obs) for the DEV cradles only — the residual option env's entire world."""
+    return [(t, panel[t].snap, residual_init_obs(panel[t].snap, params, bounds)) for t in DEV_TAGS]
+
+
+def _actor_residual(actor: Any, obs: np.ndarray) -> np.ndarray:
+    """The actor's DETERMINISTIC mean residual for an initiation obs (the deploy-time action)."""
+    with torch.no_grad():
+        ot = torch.as_tensor(np.asarray(obs, np.float32)[None])
+        a = actor.mean_action(ot)[0].numpy() if hasattr(actor, "mean_action") else actor(ot)[0].numpy()
+    return np.asarray(a, np.float64)
+
+
+def _eval_on_cradles(actor: Any, cradles: list, params: Any, bounds: Any) -> "tuple[float, list]":
+    """Mean K6-independent option_return of the actor's MEAN residual over a cradle set + per-cradle detail. The dev
+    selection metric (S4); reused UNCHANGED for the frozen held-out eval (S5)."""
+    rets, per = [], []
+    for tag, snap, obs in cradles:
+        r = _eval_actor(snap, ConstantResidualActor(_actor_residual(actor, obs)), params, bounds)
+        rets.append(r["ret"])
+        per.append({"tag": tag, "ret": round(r["ret"], 4), "dtz_end_mm": round(r["dtz_end"] * 1000, 1),
+                    "k6": bool(r["k6"]), "safe": bool(r["safe"]), "peak_coin": round(r["peak_coin"], 3)})
+    return round(float(np.mean(rets)), 4), per
+
+
+def _dev_eval_fn(cradles: list, params: Any, bounds: Any):
+    """dev_eval_fn(actor) -> (score, aux) for train_semi_mdp; selection = mean dev option_return (higher is better)."""
+    def _fn(actor: Any) -> "tuple[float, dict]":
+        score, per = _eval_on_cradles(actor, cradles, params, bounds)
+        return score, {"deliv": sum(p["k6"] for p in per), "safe": sum(p["safe"] for p in per)}
+    return _fn
+
+
+def _scaffold_return(cradles: list, params: Any, bounds: Any) -> float:
+    """Mean K6-independent option_return of the ZERO residual (the frozen safe scaffold = the update-0 baseline)."""
+    return round(float(np.mean([_eval_actor(s, ZeroActor(), params, bounds)["ret"] for _t, s, _o in cradles])), 4)
+
+
+def _s4_reward_cert(cradles: list, params: Any, bounds: Any, base: float) -> dict:
+    """Certify the training reward is NOT anti-aligned: the best of a small residual probe out-returns the update-zero
+    scaffold on the dev cradles (a positive residual IS rewarded). The §3 pre-launch reward gate, at S4 launch."""
+    best = base
+    for a in (np.array([-0.6, 0.0, 0.0]), np.array([0.6, 0.0, 0.0]), np.array([-0.6, 0.0, 0.6]), np.array([0.0, 0.5, -0.4])):
+        best = max(best, float(np.mean([_eval_actor(s, ConstantResidualActor(a), params, bounds)["ret"] for _t, s, _o in cradles])))
+    return {"update0_return": round(base, 4), "best_probe_return": round(best, 4), "reward_certified": bool(best > base + 1e-4)}
+
+
+def _s4_replay_audit(env: Any, bounds: Any) -> dict:
+    """PROVE (a) DEV-ONLY world (env tags ⊆ DEV_TAGS, disjoint from held-out ⇒ nothing held-out can enter replay); and
+    (b) BELLMAN = RESIDUAL — over a probe grid, the recorded Bellman action equals the clipped emission and the EXECUTED
+    residual equals clip(a)·bounds; no torque/target is ever the action; a=0 executes a zero residual (the S2 identity)."""
+    tags = set(env.tags)
+    dev_only = bool(tags <= set(DEV_TAGS) and tags.isdisjoint(HELD_OUT_TAGS))
+    vec = bounds.vec()
+    probes, ok = [], True
+    for a in (np.zeros(3), np.array([1.0, 0, 0]), np.array([-1.0, 0, 0]), np.array([0, 1.0, 0]),
+              np.array([0, 0, 1.0]), np.array([1.5, -1.5, 0.7]), np.array([0.3, -0.4, 0.9])):
+        env.reset(0)
+        _s2, _r, _d, info = env.step(a)
+        ac = np.clip(a, -1.0, 1.0)
+        ba_ok = bool(np.allclose(info["bellman_action"], ac.astype(np.float32), atol=1e-6))
+        res_ok = bool(np.allclose(info["executed_residual"], (ac * vec).astype(np.float32), atol=1e-6))
+        probes.append({"a": [round(float(x), 2) for x in a], "bellman==clip(a)": ba_ok, "residual==clip(a)*bounds": res_ok})
+        ok = ok and ba_ok and res_ok
+    return {"contract": "COIN_R8_S4_REPLAY_AUDIT", "dev_only_world": dev_only, "dev_tags": sorted(tags),
+            "held_out_excluded": list(HELD_OUT_TAGS), "bellman_action_is_actor_residual": ok,
+            "framework_note": "train_semi_mdp stores OptionTransition.action = the actor emission a; the env applies exactly "
+                              "that a — executed torque / corrected targets are provenance, never presented as the action.",
+            "probes": probes}
+
+
+def _write_training_contract(cfg: Any, seeds: tuple, cert: dict, audit: dict, smoke: bool) -> None:
+    hp = ("gamma", "lr", "batch", "warmup_options", "total_options", "updates_per_option", "eval_every", "alpha",
+          "policy_delay", "expl_noise")
+    json.dump({"contract": "COIN_R8_S4_TRAINING_CONTRACT", "date": "2026-07-27", "gate": "S4_MATCHED_SAC_TD3_DEV",
+               "authorised_by": ["S2 UPDATE_ZERO_RESIDUAL_IDENTITY_PASS", "S3 RESIDUAL_LEARNABILITY_SIGNAL_PASS"],
+               "bellman_action": "actor residual a in [-1,1]^3 (constant per option); everything else is provenance",
+               "reward": "K6-INDEPENDENT option_return (−dtz_end − 0.05·terminal_coin_speed), safety-gated; NEVER the frozen K6 flag",
+               "obs_dim": OBS_DIM, "act_dim": ACT_DIM, "dev_cradles": list(DEV_TAGS), "held_out_excluded": list(HELD_OUT_TAGS),
+               "algorithms": ["sac", "td3"], "seeds": list(seeds), "smoke": bool(smoke),
+               "hyperparameters": {k: getattr(cfg, k) for k in hp}, "reward_certification": cert,
+               "replay_dev_only": audit["dev_only_world"], "update0": "actor mean distilled to 0 = the S2 safe scaffold",
+               "selection": "best_val on DEV option_return; held-out s4/s7 one-shot at S5 only",
+               "integrity": "no teleport / hidden force / teacher fallback / oracle injection; torque/slew/collision/motion "
+                            "contracts unchanged; release stays R6-certificate-gated"},
+              open(f"{OUT}/training_contract.json", "w"), indent=1, default=float)
+
+
+def _s4_run_seed(algo: str, cradles: list, cfg: Any, seed: int, params: Any, bounds: Any) -> dict:
+    """One matched run: make actor, distil update-0 = scaffold, train_semi_mdp on the dev env, evaluate the dev-selected
+    best_val. Returns the per-run record (with the best_val state_dict under `_ckpt`)."""
+    actor = make_actor(algo, OBS_DIM, ACT_DIM)
+    obs0 = np.stack([c[2] for c in cradles]).astype(np.float32)
+    distill_loss = distill_zero_residual(actor, obs0, seed=seed)
+    upd0 = _eval_on_cradles(actor, cradles, params, bounds)[0]
+    env = ResidualOptionEnv(cradles, option_return, params=params, bounds=bounds, seed=seed)
+    ckpts, hist = train_semi_mdp(algo, env, actor, _dev_eval_fn(cradles, params, bounds), cfg.to_semi_mdp(),
+                                 obs_dim=OBS_DIM, act_dim=ACT_DIM, log=lambda s: print(s, flush=True), seed=seed)
+    best = make_actor(algo, OBS_DIM, ACT_DIM)
+    best.load_state_dict(ckpts["best_val"])
+    best_score, best_per = _eval_on_cradles(best, cradles, params, bounds)
+    return {"algo": algo, "seed": seed, "distill_loss": round(distill_loss, 6), "update0_dev_return": round(upd0, 4),
+            "best_val_dev_return": best_score, "delta_over_update0": round(best_score - upd0, 4), "per_cradle": best_per,
+            "eval_points": len(hist), "_ckpt": ckpts["best_val"]}
+
+
+def _s4_summarise(runs: list) -> dict:
+    """Median/IQR + bootstrap CI of best_val dev-return and Δ-over-update0 across seeds (RL carve-out: multi-seed median)."""
+    dev = [r["best_val_dev_return"] for r in runs]
+    dlt = [r["delta_over_update0"] for r in runs]
+    return {"n_seeds": len(runs), "best_val_dev_return_median": round(float(np.median(dev)), 4),
+            "best_val_dev_return_iqr": [round(float(np.percentile(dev, 25)), 4), round(float(np.percentile(dev, 75)), 4)],
+            "delta_over_update0_median": round(float(np.median(dlt)), 4), "delta_ci": bootstrap_ci(dlt),
+            "per_seed": [{k: r[k] for k in ("seed", "update0_dev_return", "best_val_dev_return", "delta_over_update0")} for r in runs]}
+
+
+def _s4_compare(results: dict, base: float) -> dict:
+    """Matched SAC-vs-TD3 comparison on DEV + the dev-selected champion (selection is on DEV return ONLY — held-out unseen)."""
+    sac = [r["best_val_dev_return"] for r in results["sac"]]
+    td3 = [r["best_val_dev_return"] for r in results["td3"]]
+    sac_m, td3_m = float(np.median(sac)), float(np.median(td3))
+    champ = max(((a, r) for a in ("sac", "td3") for r in results[a]), key=lambda x: x[1]["best_val_dev_return"])
+    return {"contract": "COIN_R8_S4_MATCHED_COMPARISON", "update0_dev_return": round(base, 4),
+            "sac_dev_median": round(sac_m, 4), "td3_dev_median": round(td3_m, 4),
+            "sac_dev_ci": bootstrap_ci(sac), "td3_dev_ci": bootstrap_ci(td3),
+            "sac_beats_update0": bool(sac_m > base + 1e-4), "td3_beats_update0": bool(td3_m > base + 1e-4),
+            "dev_champion": {"algo": champ[0], "seed": champ[1]["seed"], "dev_return": champ[1]["best_val_dev_return"],
+                             "ckpt": champ[1]["ckpt"]},
+            "note": "champion selected on DEV return only; held-out s4/s7 remain unseen until the single frozen S5 eval."}
+
+
+def s4_matched_rl(seeds: tuple = (0, 1, 2), smoke: bool = False) -> dict:
+    """S4 — matched SAC/TD3 residual-option RL on the DEV cradles. Pre-training gates (dev-only replay, Bellman=residual,
+    reward alignment) → matched multi-seed runs → SAC-vs-TD3 comparison + dev-selected champion. Held-out untouched."""
+    t0 = time.time()
+    os.makedirs(f"{OUT}/ckpts", exist_ok=True)
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    params, bounds = TipTransportParams(), ResidualBounds()
+    cradles = _dev_cradles(panel, params, bounds)
+    cfg = (ResidualRLConfig(total_options=60, warmup_options=15, eval_every=20, batch=16)   # smoke exercises the update path
+           if smoke else ResidualRLConfig())
+    if smoke:
+        seeds = (0,)
+    audit = _s4_replay_audit(ResidualOptionEnv(cradles, option_return, params=params, bounds=bounds, seed=0), bounds)
+    base = _scaffold_return(cradles, params, bounds)
+    cert = _s4_reward_cert(cradles, params, bounds, base)
+    _write_training_contract(cfg, seeds, cert, audit, smoke)
+    json.dump(audit, open(f"{OUT}/replay_audit.json", "w"), indent=1, default=float)
+    print(f"  S4 pre-gates: dev_only={audit['dev_only_world']} bellman==residual={audit['bellman_action_is_actor_residual']} "
+          f"reward_cert={cert['reward_certified']} (update0 {base})", flush=True)
+    if not (audit["dev_only_world"] and audit["bellman_action_is_actor_residual"] and cert["reward_certified"]):
+        out = {"contract": "COIN_R8_S4", "status": "HALTED_PRE_TRAINING_GATE", "audit": audit, "reward_cert": cert}
+        json.dump(out, open(f"{OUT}/matched_comparison.json", "w"), indent=1, default=float)
+        print("  S4 HALTED — a pre-training integrity gate failed; no training run started.\nR8_S4_DONE", flush=True)
+        return out
+    results: dict[str, list] = {}
+    for algo in ("sac", "td3"):
+        runs = []
+        for seed in seeds:
+            print(f"\n  ── {algo.upper()} seed {seed} ──", flush=True)
+            r = _s4_run_seed(algo, cradles, cfg, seed, params, bounds)
+            torch.save(r.pop("_ckpt"), f"{OUT}/ckpts/{algo}_seed{seed}_best_val.pt")
+            r["ckpt"] = f"{OUT}/ckpts/{algo}_seed{seed}_best_val.pt"
+            runs.append(r)
+        results[algo] = runs
+        json.dump({"contract": f"COIN_R8_S4_{algo.upper()}", "runs": runs, "summary": _s4_summarise(runs)},
+                  open(f"{OUT}/{algo}_results.json", "w"), indent=1, default=float)
+    comp = _s4_compare(results, base)
+    comp["wall_s"] = round(time.time() - t0, 1)
+    json.dump(comp, open(f"{OUT}/matched_comparison.json", "w"), indent=1, default=float)
+    print(f"\n== S4 ==\n  update0 dev-return {base} | SAC {comp['sac_dev_median']} | TD3 {comp['td3_dev_median']} | "
+          f"champion {comp['dev_champion']['algo']} seed {comp['dev_champion']['seed']} ({comp['dev_champion']['dev_return']}) "
+          f"| wall {comp['wall_s']}s\nR8_S4_DONE", flush=True)
+    return comp
+
+
 def _load_harness() -> Any:
     from hymeko_rl.coin_delivery.theta_option.teacher_bank import load_harness
     return load_harness()
@@ -354,8 +540,10 @@ def main(argv: "list[str]") -> None:
         s2_update_zero_identity(smoke="--smoke" in argv)
     elif "--s3" in argv:
         s3_learnability(smoke="--smoke" in argv)
+    elif "--s4" in argv:
+        s4_matched_rl(smoke="--smoke" in argv)
     else:
-        print("usage: coin_r8_residual_rl.py --s2 | --s3 | (S4/S5 modes added as gates pass)", flush=True)
+        print("usage: coin_r8_residual_rl.py --s2 | --s3 | --s4 [--smoke] | (S5 added when S4 passes)", flush=True)
 
 
 if __name__ == "__main__":

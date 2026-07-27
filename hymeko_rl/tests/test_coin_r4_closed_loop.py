@@ -174,6 +174,39 @@ def test_r8_residual_zero_and_bounds():
     assert k_v * float(np.clip(1.0 + d[2], b.kv_lo, b.kv_hi)) == k_v   # kv·(1+0) = kv exactly
 
 
+# ── R8 S4: the residual-option env is DEV-ONLY and its Bellman action = the clipped residual (no physics; stubbed) ───
+def test_r8_residual_option_env_contract(monkeypatch):
+    import hymeko_rl.coin_delivery.theta_option.residual_option_env as roe
+
+    class _FakeAdapter:                                          # avoids real physics: records the residual it would apply
+        def __init__(self, snap, actor, *a, **k):
+            self.provenance = [{"residual": (np.clip(np.asarray(actor.a, np.float64), -1, 1) * roe.ResidualBounds().vec())}]
+
+    monkeypatch.setattr(roe, "ResidualTipAdapter", _FakeAdapter)
+    monkeypatch.setattr(roe, "velocity_rollout", lambda snap, ad, cfg: {
+        "dtz_end": 0.05, "peak_coin_speed": 0.3, "peak_qdot": 1.0, "terminal_coin_speed": 0.1, "k6_max_dwell": 0})
+    monkeypatch.setattr(roe, "delivery_success", lambda m, cfg: False)
+    cradles = [("s1", object(), np.zeros(11, np.float32)), ("s3", object(), np.ones(11, np.float32))]
+    env = roe.ResidualOptionEnv(cradles, reward_fn=lambda m: -m["dtz_end"], seed=0)
+    assert env.tags == ["s1", "s3"] and set(env.tags).isdisjoint({"s4", "s7"})   # DEV-ONLY world
+    o = env.reset(0)
+    assert o.shape == (11,)
+    _s2, r, done, info = env.step(np.array([1.5, -1.5, 0.7]))    # out-of-range action must be clipped
+    assert done is True and abs(r - (-0.05)) < 1e-6 and info["tau"] == 1.0
+    assert np.allclose(info["bellman_action"], [1.0, -1.0, 0.7])                 # Bellman action = clip(a)
+    assert np.allclose(info["executed_residual"], np.array([1.0, -1.0, 0.7]) * roe.ResidualBounds().vec())
+
+
+def test_r8_distill_zero_residual_reproduces_scaffold():
+    from hymeko_rl.coin_delivery.theta_option.residual_option_env import distill_zero_residual
+    from hymeko_rl.option_rl.agents import make_actor
+    for algo in ("sac", "td3"):
+        actor = make_actor(algo, 11, 3)
+        obs = np.random.default_rng(0).standard_normal((2, 11)).astype(np.float32)
+        loss = distill_zero_residual(actor, obs, epochs=400, seed=0)
+        assert loss < 1e-3                                       # update-0 mean residual ≈ 0 ⇒ reproduces the safe scaffold
+
+
 # ── 1. ZERO-RESIDUAL IDENTITY — a benign, on-plan response yields ≈0 correction ─────────────────────────────────────
 def test_1_zero_residual_identity():
     c = IntentCorrector(CorrectionParams())                    # k_forward_deficit = 0 by default
