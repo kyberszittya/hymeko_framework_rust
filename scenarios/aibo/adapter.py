@@ -33,7 +33,7 @@ from hymeko_control.cip.structured_state import ControlState, StructuredStateLik
 from hymeko_control.language.ir import ControlModel
 
 from .certificate import aibo_certificate_suite
-from .locomotion_gait import SteeredTrotGait, heading_error
+from .locomotion_gait import SteeredTrotGait, body_yaw, heading_error
 
 CHAIN_A = ("STAND", "ALIGN", "WALK", "DECELERATE", "STOP", "HOLD")
 _INTENT_ORDER = (
@@ -49,9 +49,11 @@ class AIBOCIPAdapter:
     model: ControlModel
     seed: int = 0
     goal_distance: float = 0.8
+    goal_bearing_deg: float = 0.0     # off-axis waypoint bearing (SIM-03 uses +/-10, +/-20)
     reach_target: float = 0.42        # waypoint stop tolerance (env reach_radius is smaller)
     decel_dist: float = 0.52
-    align_tol: float = 0.25
+    align_tol: float = 0.20
+    orient_tol: float = 0.44          # ~25 deg: orientation-at-stop tolerance
     stop_speed: float = 0.06
     settle_steps: int = 150
     dwell_steps: int = 200
@@ -67,8 +69,16 @@ class AIBOCIPAdapter:
         from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
         self._env = QuadrupedGoalEnv(base="free", task="goal",
                                      goal_distance=self.goal_distance,
-                                     reach_radius=0.12, max_steps=20000)
+                                     reach_radius=0.12, max_steps=40000)
         self._env.reset(seed=self.seed)
+        # place the waypoint at the requested bearing (0 = on-axis, straight ahead)
+        th = np.radians(self.goal_bearing_deg)
+        tx = float(self._env.data.xpos[self._env.torso, 0])
+        ty = float(self._env.data.xpos[self._env.torso, 1])
+        self._env.goal = np.array(
+            [tx + self.goal_distance * np.cos(th), ty + self.goal_distance * np.sin(th)],
+            np.float32)
+        self._env._prev_dist = self._env.dist_to_goal()
         self._bounds = self.model.intent_bounds()
 
     # -- signals --------------------------------------------------------
@@ -80,6 +90,7 @@ class AIBOCIPAdapter:
         return {
             "dist_to_goal": float(self._env.dist_to_goal()),
             "heading_error": float(heading_error(self._env)),
+            "body_yaw": float(body_yaw(self._env)),
             "speed": self._speed(),
             "uprightness": float(self._env._torso_uprightness()),
             "finite": 1.0 if np.all(np.isfinite(self._env.data.qacc)) else 0.0,
@@ -88,13 +99,19 @@ class AIBOCIPAdapter:
     def _control(self, mode: str, s: dict[str, float]) -> np.ndarray:
         if mode in ("STAND", "STOP", "HOLD"):
             return self._gait.action(self._env, yaw_cmd=0.0, drive=0.0)
+        # bidirectional pure-pursuit: yaw proportional to heading error (both signs),
+        # forward drive scaled by alignment. Same law across ALIGN/WALK/DECELERATE;
+        # only the drive envelope differs by phase.
+        herr = s["heading_error"]
+        yaw = float(np.clip(1.1 * herr, -0.8, 0.8))
+        align = max(0.3, float(np.cos(np.clip(herr, -np.pi, np.pi))))
         if mode == "ALIGN":
-            yaw = -0.5 if s["heading_error"] < -self.align_tol else (
-                -0.5 if abs(s["heading_error"]) > self.align_tol else 0.0)
-            return self._gait.action(self._env, yaw_cmd=yaw, drive=0.7)
-        if mode == "WALK":
-            return self._gait.action(self._env, yaw_cmd=0.0, drive=1.0)
-        return self._gait.action(self._env, yaw_cmd=0.0, drive=0.7)  # DECELERATE
+            drive = 0.5 * align
+        elif mode == "WALK":
+            drive = align * float(np.clip(s["dist_to_goal"] / 0.6, 0.5, 1.0))
+        else:  # DECELERATE: keep enough stride to actually close the last stretch
+            drive = 0.85 * align * float(np.clip(s["dist_to_goal"] / 0.5, 0.6, 1.0))
+        return self._gait.action(self._env, yaw_cmd=yaw, drive=drive)
 
     def _exit(self, mode: str, s: dict[str, float], steps: int) -> bool:
         if mode == "STAND":
@@ -198,6 +215,8 @@ class AIBOCIPAdapter:
                 "reached": last["dist_to_goal"] <= self.reach_target,
                 "halted": last["speed"] <= self.stop_speed,
                 "held": self._mode == "HOLD" and steps >= self.dwell_steps and not fell,
+                "orientation_error": abs(last["heading_error"]),
+                "oriented": abs(last["heading_error"]) <= self.orient_tol,
             },
         )
 

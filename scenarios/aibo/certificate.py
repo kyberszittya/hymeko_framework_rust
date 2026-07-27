@@ -11,9 +11,10 @@ from hymeko_control.language.schema_v0 import CertificateKind
 
 
 def _approach_align_stop(_state, trace) -> bool:
-    """SUCCESS: waypoint reached, body halted, held for dwell (at the HOLD option)."""
+    """SUCCESS: waypoint reached, oriented within tolerance, body halted, held for dwell."""
     p = trace.provenance
-    return bool(p.get("held") and p.get("reached") and p.get("halted"))
+    return bool(p.get("held") and p.get("reached") and p.get("halted")
+                and p.get("oriented", True))
 
 
 def _no_fall(_state, trace) -> bool:
