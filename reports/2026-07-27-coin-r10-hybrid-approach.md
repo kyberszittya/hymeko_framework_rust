@@ -66,13 +66,27 @@ duration is the wrong release *state* — it wants a **reachability-gated releas
 which forces the design question the R6 rest-certificate raises: a **pre-zone launch/release guard is distinct from the final
 settle/K6 certificate**. Correct current verdict: `APPROACH_MOMENTUM_MODE_LOAD_BEARING` + `HANDOFF_TRANSPORT_MODE_NOT_YET_IDENTIFIED`.
 
+## C2.6 robust coast-entry guard (`--c26`) — the R5 wall re-appears
+
+Per the R5 lesson (the post-release coast friction is unobservable before release), the guard uses the **interval**, not a
+point estimate: `d_stop ∈ [v²/2·a_max, v²/2·a_min]`, fire only when the *whole* predicted landing interval ⊆ the corridor.
+12 passive-coast branches on s1 bound the deceleration at **a ∈ [0.51, 1.26] m/s² (spread 2.5)**. Deployed, the robust guard
+**never fires** (s1 ends 49.1 mm): the interval width (~30 mm) exceeds the 20 mm corridor, so a firing state where the
+long-coast (low-a) branch does not overshoot does not exist. Verdict **`RELEASE_GUARD_PREDICTION_INSUFFICIENT`** (not a
+looser-guard problem — a looser guard would gamble against the R5 wall).
+
+**This is the R5 observability wall at the hybrid-mode level:** an *open-loop* released-coast cannot reliably hit a 20 mm zone
+when the post-release friction spans a factor ~2.5. The releasing itself is fine; the missing element is a **closed-loop
+correction after the coast**.
+
 ## Next
 
-The most promising path is a **reachability-gated RELEASED_COAST**: APPROACH builds momentum → when the coin can coast into
-the zone (reachability), release under a *launch* guard (separate from the R6 settle certificate) → coast → SETTLE. Contrast
-with an active HELD_MOMENTUM_CARRY primitive if the coast proves too sensitive. Then C3 (manual hybrid program, s1 ∧ s3
-strict K6, safety 2/2). The final settle/K6 certificate and the physics stay frozen; the blind panel stays sealed. This is
-genuine hybrid-system identification — the modes are discovered from the unexpressible teacher components, not drawn on by hand.
+The hybrid program needs one more mode: **APPROACH_MOMENTUM_BUILD → RELEASED_COAST → RE-ACQUIRE/SETTLE → K6 certificate** —
+after the coast brings the coin *near* the zone (robustly, even if not inside), re-acquire contact and run the already-working
+BRAKE/SETTLE to null the residual error, then the frozen K6 cert grades. (Alternatively a tighter, more-repeatable coast, if
+achievable — but the R5 wall argues for the closed-loop settle.) Then C3 (manual hybrid, s1 ∧ s3 strict K6, safety 2/2). The
+settle/K6 certificate and physics stay frozen; the blind panel stays sealed. The modes keep being *discovered by measurement*
+(APPROACH from C1's unexpressible component; RELEASED_COAST from C2.5; the coast-uncertainty wall from C2.6), not hand-drawn.
 
 ## Artifacts / gates
 
