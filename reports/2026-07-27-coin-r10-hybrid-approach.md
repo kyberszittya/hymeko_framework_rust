@@ -130,3 +130,56 @@ RELEASED_COAST (C2.5), RE-ACQUIRE (C2.8) — a hybrid system grown by measuremen
 `reports/2026-07-27-coin-r9-causal-residual-delivery/r10c2_approach_mechanism.json`; code `theta_option/hybrid_approach.py`,
 harness `--c2`; tests `test_coin_r9.py` (causal exit-guard logic + bounds/monotone-order). ruff clean; no fn ≥ CC 15;
 CORE.YAML untouched; blind panel never evaluated.
+
+---
+
+## R3-A → R3-C → C3-D → K6-decomposition (2026-07-27, added) — the true wall localised
+
+**R3-A catch-point (H1 vs H2).** Swept release-timing × catch-corridor × closing-velocity with the controller unchanged.
+Gentle catches reachable, but the frozen settle never closed s1 → **`MICRO_TRANSPORT_MODE_REQUIRED`** (H2): catch-timing
+alone does not deliver; a transport d.o.f. is missing. (Corrected an earlier read: the *gentle* re-grips land ~47–53 mm, not
+31 mm — the 31 mm chain was a non-gentle catch.)
+
+**R3-B/C micro-transport.** One bounded `delta_forward` over the FROZEN settle after the fixed C2.8 re-acquire.
+`R3-B0` update-zero holds bit-exact (`micro_forward=0` ≡ base). Best nudge 49.4 mm, no K6 → **`MICRO_TRANSPORT_INSUFFICIENT`**.
+Deep finding: the gentle re-grip **stops** the coin (~48 mm), and transport-from-stopped hits the **R1 soft-frictional wall**
+— grip-transport (tip push) does not translate into coin motion. Fundamental tension: gentle re-grip needs stopping;
+delivery needs momentum *through* the re-grip.
+
+**C3-D velocity-matched capture (rho = v_after/v_before).** Mass in-process CEM (288 evals) over 6 capture params for a
+capture that **moves with the coin** (tip velocity ≈ coin `v_par`, grip after an onset delay). Result: **rho = 1.0** — the
+momentum-preservation tension is **resolved**; a legal post-coast contact that fully preserves momentum EXISTS (vs the
+stopping re-grip's rho≈0). But delivery still fails (47.4 mm): the preserved momentum cannot be *used* — grip-transport hits
+the same R1 wall, and the capture fires near the coast landing (coin already slow). Only **free coast** moves the coin, and it
+stops at ~31–58 mm short of the zone.
+
+**K6-decomposition audit (`--k6decomp`).** Re-graded representative s1 trajectories by K6-Z (spatial ≤20 mm) / K6-V (dynamic
+settle) / K6-D (persistence) + a pre-registered tolerance sensitivity table (a *re-evaluation*, not a controller search):
+
+| trajectory | min_dtz | reached zone | terminal speed | dwell | K6-F |
+|---|---|---|---|---|---|
+| scaffold | 57.7 mm | **no** | 0.0002 | 0 | False |
+| teacher | 18.5 mm | yes | 0.0 | 24 | **True** |
+| hybrid_vmc | 48.7 mm | **no** | 0.0 | 0 | False |
+
+Tolerance sweep (speed 0.06, dwell 6): teacher passes at 20/25/30 mm; the hybrid fails at **every** tolerance up to 30 mm
+(needs ≥50 mm). Reading: the hybrid comes to **rest** (terminal speed ~0, so K6-V/K6-D are *not* the failing terms) but
+**outside** the zone — the failure is **purely SPATIAL (K6-Z)**. The frozen K6 is **not** requiring the impossible (the
+teacher clears it at 18.5 mm), and loosening it to 25/30 mm would rescue nothing while ≥50 mm would *redefine* the task.
+
+**Architectural adoption (from the user's K6 discussion).** The **launch/release guard** ("safe to release now, will the
+free coast land in the corridor?") and the **final K6 settle certificate** ("did the coin end at rest in the zone?") are two
+separate objects; the campaign coupled them too tightly (a pre-release *rest* certificate is the wrong abstraction for a
+delivery that is necessarily post-release motion). Correct pipeline: `APPROACH_MOMENTUM_BUILD → LAUNCH/RELEASE GUARD →
+RELEASED_COAST → (optional closed-loop correction) → FINAL SETTLE → K6-F`. This is now adopted — but it is **orthogonal** to
+the barrier: even with the separation, the coin rests at 48 mm, not 20 mm.
+
+**Localised barrier (measured, not asserted).** The coin can be moved **only** by free coast (grip-transport / capture cannot
+finely translate it — R1 wall, confirmed by R3-C *and* C3-D rho=1.0-but-no-K6). The free coast from the APPROACH momentum
+stops at ~48–58 mm. The teacher delivers by **release timing/momentum** (its coast lands at 18.5 mm), which C2.6 found bounded
+by **coast uncertainty** for a point-estimate guard. So the remaining s1 lever is **coast-landing precision** (a
+per-cradle-tuned or learned release guard) — **not** more capture/transport tuning (dead end) and **not** K6 recalibration
+(correctly calibrated). This is the strategic-pivot boundary the mass search was set to find.
+
+Artifacts: `…/r10r3a_catchpoint.json`, `r10r3bc_micro_transport.json`, `r10r3d_velocity_matched_capture.json`,
+`k6_decomposition.json`; harness `--c29/--c30/--c31/--k6decomp`. ruff clean; all fns < CC 15; CORE.YAML untouched; blind sealed.
