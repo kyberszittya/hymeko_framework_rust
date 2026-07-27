@@ -1,0 +1,65 @@
+% plan.tikz — architecture / dataflow for the first learned s1 KINETIC delivery (K0–K4).
+% Standalone tikzpicture; \input by plan.tex. Compiles under tectonic with the tikz libraries
+% loaded in plan.tex (arrows.meta, positioning, fit, backgrounds, calc).
+\begin{tikzpicture}[
+    font=\small,
+    frozen/.style={draw=black!70, fill=blue!6,  rounded corners, align=center, inner sep=4pt, minimum height=8mm},
+    learn/.style ={draw=red!70,   fill=red!8,   rounded corners, align=center, inner sep=4pt, minimum height=8mm, very thick},
+    guard/.style ={draw=black!60, fill=green!8, rounded corners, align=center, inner sep=4pt, minimum height=8mm},
+    io/.style    ={draw=black!40, fill=black!4, align=center, inner sep=3pt, font=\footnotesize},
+    flow/.style  ={-{Stealth[length=2.2mm]}, thick},
+    dashflow/.style={-{Stealth[length=2.2mm]}, thick, dashed},
+  ]
+
+  % ---- deployment chain (left→right): the runtime controller on dev s1 -------------------------
+  \node[frozen] (app)  {\textbf{APPROACH}\\momentum build\\{\footnotesize\itshape frozen}};
+  \node[frozen, right=9mm of app] (entry) {\textbf{KINETIC entry}\\$v_\parallel\!\ge\!0.10$, both\\{\footnotesize\itshape frozen \& hashed (K0)}};
+  \node[learn, right=9mm of entry] (kin) {\textbf{learned KINETIC}\\coin-following\\bounded residual\\over \texttt{\_kinetic\_targets}};
+  \node[guard, right=9mm of kin] (g0) {\textbf{G0 release}\\guard\\{\footnotesize landing pred.}};
+  \node[frozen, right=8mm of g0] (coast) {\textbf{passive}\\coast\\{\footnotesize\itshape frozen}};
+  \node[frozen, right=7mm of coast] (k6) {\textbf{K6}\\{\footnotesize 20\,mm $\wedge$}\\{\footnotesize $0.06$ $\wedge$ dwell 6}};
+
+  \draw[flow] (app) -- (entry);
+  \draw[flow] (entry) -- (kin);
+  \draw[flow] (kin) -- (g0);
+  \draw[flow] (g0) -- (coast);
+  \draw[flow] (coast) -- (k6);
+
+  \node[io, below=3mm of kin, text width=42mm] (act)
+    {\textbf{action basis} (bounded, no raw $\tau$):\\ common-fwd $\cdot$ squeeze $\cdot$ L/R diff $\cdot$ normal};
+  \draw[flow] (act) -- (kin);
+
+  \node[io, above=3mm of kin, text width=46mm] (obs)
+    {\textbf{policy input} \texttt{kinetic\_observe}:\\ coin $(d_{tz},v_\parallel,v_{lat},\mathrm{spin})$; per-side tip$\to$coin pos/vel, $f_n$, slip; $q,\dot q$; prev act; hist; dist-to-corridor};
+  \draw[flow] (obs) -- (kin);
+
+  % ---- the offline learning machinery that PRODUCES the learned KINETIC block ------------------
+  \node[frozen, below=20mm of entry, text width=34mm] (K1)
+    {\textbf{K1 feedback bank}\\perturbed-\emph{control} branches\\from frozen entry\\(\emph{no state edit})};
+  \node[learn, right=7mm of K1, text width=30mm] (relabel)
+    {\textbf{K0 relabel}\\receding-horizon teacher\\first-action label only};
+  \node[learn, below=8mm of kin, text width=30mm] (K2)
+    {\textbf{K2 clone}\\GRU over causal hist\\closed-loop gate\\(\emph{not} cross-cradle $R^2$)};
+  \node[learn, right=7mm of K2, text width=26mm] (K3)
+    {\textbf{K3 DAgger}\\relabel visited states\\iterate to stability};
+  \node[guard, below=8mm of K3, text width=26mm] (K4)
+    {\textbf{K4 bounded RL}\\\emph{only if needed}\\finish, not discover};
+
+  \draw[flow] (K1) -- (relabel);
+  \draw[flow] (relabel) -- (K2);
+  \draw[flow] (K2) -- (K3);
+  \draw[flow] (K3) -- (K4);
+  \draw[dashflow] (K2.north) to[out=90,in=270] (kin.south east);   % clone becomes the deployed KINETIC block
+  \draw[dashflow] (K3.north) -- (K2.south);                        % DAgger feeds new labels back into the clone
+
+  % teacher provenance: offline expert, NEVER in deployment
+  \node[io, below=3mm of relabel, text width=40mm] (teacher)
+    {\textbf{teacher} = $\theta$-primitive CEM \emph{or} \texttt{plan\_first\_action} MPC.\\ K6 positive control (K0 smoke). \textbf{Offline only} — never deployed.};
+  \draw[dashflow] (teacher) -- (relabel);
+
+  % ---- boundary annotation ---------------------------------------------------------------------
+  \begin{scope}[on background layer]
+    \node[draw=blue!40, dashed, rounded corners, fit=(app)(entry)(coast)(k6), inner sep=6pt, label={[blue!60]above:{\itshape FROZEN contract: physics, motion, K6, coast}}] {};
+  \end{scope}
+
+\end{tikzpicture}

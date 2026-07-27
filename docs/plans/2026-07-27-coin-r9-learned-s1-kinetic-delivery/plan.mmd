@@ -1,0 +1,56 @@
+%% plan.mmd — Mermaid views for the first learned s1 KINETIC delivery (K0–K4).
+%% Three diagrams: (1) deployment dataflow, (2) K0 relabel + K3 DAgger sequence, (3) KINETIC phase state machine.
+
+%% ---------------------------------------------------------------------------
+%% (1) Deployment dataflow — the runtime controller on dev s1 (frozen vs learned)
+%% ---------------------------------------------------------------------------
+flowchart LR
+    subgraph FROZEN["FROZEN contract: physics · motion · K6 · coast"]
+        A["APPROACH<br/>momentum build"] --> E["KINETIC entry<br/>v_par ≥ 0.10 ∧ both<br/>(frozen + hashed, K0)"]
+        C["passive coast"] --> K["K6 monitor<br/>20mm ∧ 0.06 m/s ∧ dwell6"]
+    end
+    E --> KIN["LEARNED KINETIC<br/>coin-following<br/>bounded residual over _kinetic_targets"]
+    KIN --> G["G0 release guard<br/>landing predictor"]
+    G --> C
+    OBS["kinetic_observe:<br/>coin d_tz,v_par,v_lat,spin ·<br/>per-side tip→coin pos/vel,f_n,slip ·<br/>q,qdot · prev act · hist · dist-to-corridor"] --> KIN
+    ACT["action basis (bounded, no raw τ):<br/>common-fwd · squeeze · L/R diff · normal"] --> KIN
+    KIN -. deployed policy = learned clone only .-> K
+
+%% ---------------------------------------------------------------------------
+%% (2) K0 label + K3 DAgger loop — teacher is OFFLINE, never deployed
+%% ---------------------------------------------------------------------------
+sequenceDiagram
+    autonumber
+    participant Clone as Learned KINETIC clone
+    participant Env as Frozen env (s1)
+    participant TS as TransportSnapshot
+    participant Teacher as Receding-horizon teacher (OFFLINE)
+    participant Bank as Feedback bank
+
+    Note over Clone,Env: K3 DAgger iteration (K0 supplies the relabel contract)
+    Clone->>Env: velocity_rollout(dtau_for_step)  [KINETIC segment]
+    Env-->>TS: capture mid-transport state (deepcopy / qpos,qvel)
+    TS->>TS: admissibility() = dual-contact ∧ straddle ∧ motion-ok
+    alt admissible
+        TS->>Teacher: receding_horizon_relabel(warm=canonical θ)
+        Teacher->>Teacher: CEM replan → strict-K6 scored lookahead
+        Teacher-->>Bank: FIRST action label only (no future in actor input)
+    else inadmissible / no delivering replan
+        TS-->>Bank: reject (log rejection rate, no silent drop)
+    end
+    Bank->>Clone: retrain (BC) → closed-loop gate on s1
+    Note over Clone,Env: repeat until closed-loop delivery stabilises
+
+%% ---------------------------------------------------------------------------
+%% (3) KINETIC controller phase machine (monotone; frozen scaffold + learned residual)
+%% ---------------------------------------------------------------------------
+stateDiagram-v2
+    [*] --> APPROACH
+    APPROACH --> KINETIC: both and v_par >= kinetic_entry_v (0.10)
+    APPROACH --> REGULATE: SAFETY / BUDGET / HORIZON (frozen fallback)
+    KINETIC --> KINETIC: learned residual holds light contact (a=0 => hand-tuned identity)
+    KINETIC --> RELEASE: d_tz <= release_hi and v_par >= release_vmin (G0 guard)
+    KINETIC --> REGULATE: contact-risk / kinetic_max_steps (frozen brake)
+    RELEASE --> COAST: passive (grip relaxed)
+    COAST --> K6: dtz <= 20mm and speed < 0.06 for 6 frames
+    K6 --> [*]: FIRST_LEARNED_S1_K6_DELIVERY

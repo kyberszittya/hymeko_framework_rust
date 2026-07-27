@@ -1,0 +1,217 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!55!black, urlcolor=blue!55!black}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\ok}{\textcolor{green!50!black}{\textbf{PASS}}}
+\newcommand{\halt}{\textcolor{red!70!black}{\textbf{HALT}}}
+
+\title{\textbf{Plan --- First Learned s1 KINETIC Delivery}\\[2pt]
+\large A causal, teacher-labelled coin-following torque policy over the frozen scaffold (K0--K4)}
+\author{HyMeKo coin-delivery campaign \quad(\code{recovery/coin-r9-causal-residual-delivery})}
+\date{2026-07-27}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent The mechanical picture is settled and the K6 monitor is not the blocker. On dev cradle \code{s1}
+(seed 14250) the $\theta$-primitive teacher delivers strict K6 (min $d_{tz}\!\approx\!18.5$\,mm; release at
+$d_{tz}\!\approx\!23$\,mm, $v_\parallel\!\approx\!0.131$; passive coast into the zone). The frozen
+\code{APPROACH\_MOMENTUM\_BUILD} reaches teacher-close momentum ($v_\parallel\!\approx\!0.316$ vs teacher $0.322$);
+the \code{VELOCITY\_FLOOR/KINETIC} mode transports the coin \emph{while moving} (no stiction stall) from $75$\,mm to
+$\approx\!48$--$51$\,mm; but neither hand-tuning nor a 6-param position-varying profile (216 CEM evals) holds the delicate
+light contact to the $20$--$30$\,mm release corridor. \textbf{The single missing skill is a learned, causal KINETIC
+torque policy that follows the moving coin in light contact to a close-and-moving release.} This plan builds it and only
+it, targeting exactly one success gate: \code{FIRST\_LEARNED\_S1\_K6\_DELIVERY}. No new atlas, no clustering, no
+diagnostic arc. \emph{Deliver the coin.}
+\end{abstract}
+
+\section{Scope and goal}
+\textbf{Goal.} A learned KINETIC coin-following policy, deployed with no teacher/oracle in the loop, delivers the
+\code{s1} coin into the strict K6 zone. \textbf{Architecture (frozen $\leftrightarrow$ learned boundary):}
+\begin{center}\itshape frozen APPROACH $\rightarrow$ learned local KINETIC coin-following $\rightarrow$ G0 release guard
+$\rightarrow$ frozen passive coast $\rightarrow$ frozen K6.\end{center}
+\textbf{Non-goals (explicit stop conditions).} No return to hand-tuned transport profiles. No five-cradle atlas before
+the first learned s1 delivery (only what the s1 feedback bank strictly needs). The secondary local-policy atlas
+(LIGHT-slide \{s1/14250, 17750\}; FIRM-guided \{s3/14750, 19500, 16500\}) is deferred until after this gate.
+
+\begin{figure}[h]\centering\input{plan.tikz}
+\caption{Deployment chain (top) and the offline machinery that produces the learned KINETIC block (bottom). The teacher
+is an \emph{offline} label source, never deployed. Blue = frozen; red = learned; green = guard.}\end{figure}
+
+\section{The frozen contract (must hold at every step)}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item Physics + motion contract unchanged (\code{env/motion\_contract.py}, governed $\Delta\tau$, slew, joint/coin
+  speed hard caps). All torque enters through the existing \code{\_servo}$\to$governor stack; no raw actuator writes.
+  \item K6 monitor unchanged: \code{CENTER\_TOL}$=0.02$\,m, \code{SETTLE\_VEL}$=0.06$\,m/s, \code{HELD\_DWELL}$=6$
+  (\code{coin\_rl\_env.py:13--15}); authoritative verdict \code{delivery\_success(m,cfg)}
+  (\code{forward\_displacement.py:232}).
+  \item \code{s4}/\code{s7} validation-only; \code{f1--f4} \code{SEALED\_NOT\_EVALUATED}; not opened before the first
+  s1 delivery.
+  \item No teleport, no coin-state edit, no hidden force, no illegal oracle deployment. The teacher is used
+  \emph{offline} to label; the deployed policy is the learned clone only.
+\end{itemize}
+
+\section{Affected files}
+\textbf{CORE.YAML items touched: none} (verified against \code{CORE.YAML}: the coin RL work is entirely outside
+\code{hymeko\_core}/\code{hymeko\_query}/\code{hymeko\_client}/\code{hymeko\_daemon}/\code{parser} and touches no
+pinned dependency). All new code lives under \code{hymeko\_rl/} (a non-core crate-adjacent Python package) and
+\code{tests/}/\code{reports/}/\code{docs/plans/} (allowlisted).
+
+\smallskip\noindent\textbf{This change (K0) --- new files only:}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{hymeko\_rl/coin\_delivery/theta\_option/kinetic\_contract.py} --- the K0 module:
+  \code{TransportSnapshot} (duck-typed, branchable mid-transport snapshot), \code{freeze\_kinetic\_entry}
+  (deterministic frozen KINETIC-entry snapshot on s1), \code{kinetic\_observe} (the \emph{single} canonical feature
+  extractor used by both bank-build and deploy), \code{receding\_horizon\_relabel} (teacher first-action label from a
+  transport snapshot), \code{KineticEntry}/\code{TransportAdmissibility} dataclasses.
+  \item \code{hymeko\_rl/experiments/coin\_kinetic\_positive\_control.py} --- the K0 positive-control smoke: the two
+  candidate teachers replanned from the frozen KINETIC entry $\to$ strict-K6 verdict on s1 $\to$ pick the relabeler.
+  \item \code{hymeko\_rl/tests/test\_coin\_kinetic\_contract.py} --- unit + integration tests.
+  \item \code{reports/2026-07-27-coin-r9-learned-s1-kinetic-delivery-k0.md} --- the K0 report.
+\end{itemize}
+\textbf{Later milestones (planned, not built in K0):} \code{kinetic\_feedback\_bank.py} (K1),
+\code{kinetic\_clone.py}\,+\,a \code{KineticResidualController} in \code{hybrid\_approach.py}'s residual style (K2),
+\code{kinetic\_dagger.py} (K3), \code{landing\_guard.py} (G0 predictor promoted to a fittable object),
+optional \code{kinetic\_bounded\_rl.py} (K4). \textbf{Read-only reuse:} \code{contact\_velocity.py}
+(\code{CradleSnapshot.branch}), \code{forward\_displacement.py} (\code{cem\_search}, \code{rollout\_primitive},
+\code{delivery\_success}), \code{coin\_v3\_receding\_horizon.py} (\code{plan\_first\_action}, \code{\_snapshot}/\code{\_restore}),
+\code{theta\_option/hybrid\_approach.py} (KINETIC phase), \code{theta\_option/velocity\_transport.py}
+(\code{velocity\_rollout}), \code{theta\_option/residual\_adapter.py} (bounded-residual pattern),
+\code{theta\_option/teacher\_bank.py} (\code{load\_harness}, \code{acquire\_snapshot}).
+
+\section{Interface changes (signatures, contracts)}
+All additive; no existing signature changes. Key new contracts:
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{TransportSnapshot} --- duck-types the subset of \code{CradleSnapshot} the teacher needs
+  (\code{.branch()$\to$deepcopy}, \code{.stack}, \code{.prev\_tau}, \code{.lo}, \code{.hi}, \code{.q\_hold}) built from an
+  \emph{arbitrary} mid-transport live \code{rl} \emph{without} the B\textsubscript{v} straddle gate.
+  \textbf{Post:} \code{branch()} is bit-identical across calls (deterministic deepcopy); \code{admissibility()} reports
+  (dual contact, straddle sign, motion-contract) as a \emph{query}, never a silent raise.
+  \item \code{kinetic\_observe(rl, hist) $\to$ (feat: np.ndarray, hframe: list)} --- extends the frozen
+  \code{\_kinetic\_feats} (\code{coin\_kinetic\_bc.py:41}) with per-side tip$\to$coin relative position/velocity, per-side
+  slip, and distance-to-release-corridor. \textbf{Pre:} live \code{rl}. \textbf{Post:} identical output whether called
+  in batch (bank build) or streaming (deploy) --- the ``batch $=$ streaming'' invariant; \emph{no future/teacher/K6 leak}.
+  \item \code{receding\_horizon\_relabel(tsnap, teacher, *, budget, warm) $\to$ RelabelResult} --- runs the chosen
+  receding-horizon teacher from \code{tsnap}, returns \code{(first\_action, delivers\_k6, teacher\_provenance)}.
+  \textbf{Contract:} only the FIRST action is exported as a label; the teacher's lookahead is baked into the label, never
+  into the policy input. Deterministic given \code{(tsnap, budget, seed)}.
+  \item \code{freeze\_kinetic\_entry(seed=14250, params) $\to$ KineticEntry} --- rolls the frozen
+  \code{HybridApproachController(kinetic\_transport=True)} via \code{velocity\_rollout} until phase
+  \code{APPROACH$\to$KINETIC}, captures $(q_{pos},q_{vel},$prev\_tau, phase state$)$ at that step, content-hashes it.
+  \textbf{Post:} same seed/params $\Rightarrow$ bit-identical hash.
+\end{itemize}
+
+\section{Test strategy (per layer)}
+\textbf{Unit} (\code{test\_coin\_kinetic\_contract.py}, \code{cargo}-fast, deterministic seeds):
+\code{TransportSnapshot.branch()} bit-identity across two calls; \code{kinetic\_observe} batch$=$stream identity on a
+fixed rollout; \code{kinetic\_observe} contains no future/teacher/K6 field (schema assertion + a leak probe: a shuffled
+future must not change the vector); \code{freeze\_kinetic\_entry} hash determinism; a first-action label is length-4 and
+governed-admissible.
+\textbf{Integration:} from the frozen KINETIC entry, one teacher replan produces a governed action; a short
+teacher-labelled closed segment stays within the motion contract.
+\textbf{Positive-control smoke (production scale, 1 seed):} the chosen teacher, replanned from the frozen s1 KINETIC
+entry, delivers strict K6 (\code{delivery\_success} True). This is the load-bearing K0 measurement; if it fails, \halt{}
+and localise (feature/history, teacher instability, action basis, or optimisation blocker) --- do \emph{not} conclude the
+skill is unlearnable (the teacher is a physical positive control).
+\textbf{Coverage:} every new public/private function exercised by $\ge 1$ new test; \code{kinetic\_observe} and the
+relabeler get regression tests that would fail against a naive (leaky / non-deterministic) implementation.
+
+\section{Performance budget}
+\textbf{Measured anchors (this host, Apple-Silicon, \code{.venv} py3.11.15, mujoco 3.10.0):} one governed rollout
+$\approx 0.83$\,s at peak RSS $0.24$\,GB; heaviest existing coin tests peak $\approx 0.20$\,GB; a full delivery CEM
+(\code{DELIVERY\_CFG}, pop 32 $\times$ iters 6) $\approx 38$\,s/cradle (scout: 911\,s / 24).
+\textbf{K0 budget:} unit+integration suite $<120$\,s wall; positive-control smoke $\le 5$\,min (one seed, one/both
+teachers, warm-started local CEM); \textbf{peak RSS $< 1$\,GB} (hard cap 16\,GB, never approached).
+\textbf{Downstream budget (declared now for K1/K3):} a warm-started local relabel (CEM pop 16 $\times$ iters 3, centred
+on the s1 canonical $\theta$) targets $\approx 5$--$10$\,s/label; a $\sim\!200$-label bank $\approx 20$--$30$\,min,
+\emph{checkpointed}; policy inference (small GRU) $\ll 1$\,ms/step. A relabel-cost measurement in K0 reconciles this
+before any multi-hour K1 run (per the $>2\times$ wall-estimate halt rule).
+
+\section{Risk anticipation}
+\textbf{Performance-contract preservation.} The learned KINETIC block is a \emph{bounded residual over}
+\code{\_kinetic\_targets} (the \code{ResidualTipAdapter} pattern): at action $a=0$ it reproduces the hand-tuned KINETIC
+\emph{bit-for-bit} (update-zero identity, asserted). It inherits every contract the KINETIC branch already enforces ---
+\code{kinetic\_vcap} on the joint-velocity reference, the light-grip \code{fn\_min\_safe} contact-risk fallback,
+\code{kinetic\_max\_steps} horizon guard, and the slew/governor clip in \code{\_servo}. New action axes (L/R
+differential, contact-normal) are added \emph{inside} the same \code{clip($\cdot$,$\pm$slew)$\to$governor} path;
+they cannot exceed the torque/slew/joint-speed limits. The G0 release remains guarded by the existing
+\code{kinetic\_release\_hi}/\code{kinetic\_release\_vmin} condition (and, later, the fittable landing guard) --- the
+policy shapes the transport, it does not own an unshielded release bit.
+
+\smallskip\noindent\textbf{Worst-case input / production scale.} Target dataset $=$ dev \code{s1} (seed 14250),
+canonical $\theta=[0.0515,0.2179,0.0164,12.8078,9.2369,3.0388]$, teacher min $d_{tz}$ 18.5\,mm. The worst-case runtime
+input is a KINETIC-transport state where the coin has \emph{slid ahead of the tips} (the measured $\approx$48\,mm
+contact-loss failure): \code{admissibility()} must flag it, the relabeler must reject states from which no delivering
+replan exists (logged rejection rate, no silent truncation), and the deployed policy's contact-risk fallback must hand to
+the frozen brake rather than chase with raw torque. The bank must \emph{cover} these near-loss states (that is where the
+skill lives), which is why K1 branches perturbed \emph{control} (not state edits) and K3 DAgger relabels the clone's own
+visited states.
+
+\smallskip\noindent\textbf{Named latent-contract greps (done):} \code{hybrid\_approach.py} comments ``KINETIC OWNS the
+release'', ``preempt LAUNCH/REACHABILITY'', ``release only from genuine forward motion'' --- the residual must not
+subvert these; the update-zero test + the frozen release condition enforce it.
+
+\section{Rollback path}
+K0 adds only new files; rollback $=$ delete them (no existing behaviour changes; the default
+\code{HybridApproachController} still has \code{kinetic\_transport=False}, update-zero). Each later milestone is a separate
+commit gated on its own test; a failed K$n$ reverts to K$(n{-}1)$ without touching the frozen scaffold. The frozen KINETIC
+entry is content-hashed, so a regression is detectable by hash mismatch.
+
+\section{Milestone ladder (executable)}
+\begin{description}[leftmargin=1.6em,style=nextline,nosep]
+  \item[K0 --- snapshot \& expert contract \emph{(this change)}] Freeze the KINETIC-entry state; build
+  \code{TransportSnapshot} + \code{kinetic\_observe} + \code{receding\_horizon\_relabel}; \textbf{verify the teacher is a
+  K6 positive control from the entry} (the gate that de-risks everything). First-action labels only; batch$=$stream
+  features; no future info in the actor input.
+  \item[K1 --- local feedback bank (small, step-wise)] \textbf{Re-measure cost first:} 8--16 representative relabels
+  warm-started from the entry-delivering $\theta$ (squeeze $\approx 0$) with a \emph{box-wide} legal window; report cost +
+  success-rate; reconcile the $\approx$17\,s/label estimate ($>2\times$ halt rule) \emph{before} sizing the bank. Then
+  step-wise: \textbf{K1-A} 32 labels (schema, diversity, replan success-rate, cost audit); \textbf{K1-B} 128 labels (first
+  feedback-clone + closed-loop smoke); \textbf{K1-C} 256--512 \emph{only if needed}, from DAgger-visited states (not more
+  teacher-neighbour samples). Bank quality $=$ \emph{distinct physical states / successful replans / v\_par--slip--force--
+  geometry spread / first-action variance} --- \textbf{not} sample count. Branch perturbed \emph{control} (\code{v\_floor},
+  \code{kinetic\_squeeze}, L/R imbalance, prev-action noise, teacher-trace neighbourhoods) through real physics ---
+  \emph{physically legal, snapshot-branched, not state-edited}. Relabel each admissible state (K0). Log rejection rate.
+  \item[K2 --- closed-loop clone] Small structured encoder $+$ GRU over the causal history $\to$ the bounded KINETIC
+  action basis, BC on the K1 bank. \textbf{Gate \code{LOCAL\_KINETIC\_FEEDBACK\_SKILL\_PASS} (not BC-loss / action-$R^2$):}
+  the actor, running \emph{without the teacher}, from entry-neighbourhood perturbations stably holds-or-correctly-releases the
+  moving coin, improves reach to the close-and-moving release manifold, does not re-clamp, and reaches strict s1 K6 at least
+  once. (The prior BC's \code{CROSS\_CRADLE\_BC\_UNDERPOWERED} was small-$N$/2-cradle; here it is single-cradle by design ---
+  cross-cradle $R^2$ is not the gate.)
+  \item[K3 --- DAgger / receding-horizon correction] Roll the clone, relabel its own visited states with the teacher
+  (first-action only, teacher never deployed), retrain until closed-loop delivery stabilises --- the feedback data the
+  prior BC lacked.
+  \item[K4 --- bounded RL (only if needed)] A small bounded residual over the clone \emph{only} if it reliably reaches
+  the release corridor but the final K6 needs fine correction. RL finishes; it does not discover a missing primitive.
+\end{description}
+
+\section{Gate ladder}
+\begin{enumerate}[nosep,leftmargin=1.6em]
+  \item \code{REPLAN\_FROM\_KINETIC\_ENTRY\_DELIVERS\_S1} \emph{(K0 --- done)}: a legal causally-replanned torque primitive
+  from the frozen entry reaches strict K6 (min $d_{tz}$ 15.7\,mm). The interface-side positive control for the learned skill
+  --- \textbf{not} a learned delivery; the teacher/CEM still runs the loop.
+  \item \code{LOCAL\_KINETIC\_FEEDBACK\_SKILL\_PASS} \emph{(K2 --- next real gate)}: the learned actor, \emph{teacher-free},
+  holds-or-correctly-releases the moving coin over entry-neighbourhood perturbations, improves release-manifold reach, does not
+  re-clamp, and reaches strict s1 K6 at least once. Not BC-loss / action-$R^2$.
+  \item \code{FIRST\_LEARNED\_S1\_K6\_DELIVERY} \emph{(campaign gate)}: learned KINETIC policy the sole thing in the loop; no
+  teacher/oracle in deployment; strict K6 \ok{}; safety \ok{}; physics + monitor unchanged; deterministic replay; full
+  provenance; a video/GIF artifact; an event-aligned trace (APPROACH exit, KINETIC entry, contact-force profile,
+  $v_\parallel$, release state, passive landing, K6 dwell).
+\end{enumerate}
+
+\section{Empty-plan-dir hygiene}
+If this plan is abandoned before K0 lands, delete
+\code{docs/plans/2026-07-27-coin-r9-learned-s1-kinetic-delivery/} in the same session --- an empty/orphan plan dir reads
+as in-progress work and must not linger.
+
+\end{document}
