@@ -1,0 +1,40 @@
+{
+  "gates": {
+    "HUM-0": true,
+    "HUM-1": true,
+    "HUM-2": false,
+    "HUM-3": false,
+    "HUM-4": false
+  },
+  "highest_genuine_passed": "HUM-1",
+  "blocked": {
+    "HUM-2": "no floating base: support-shift instability is impossible to test",
+    "HUM-3": "reach is genuine but 'support certificate holds' is vacuous (fixed base)",
+    "HUM-4": "no balance/recovery controller for a floating-base humanoid"
+  },
+  "informational": {
+    "kinematic_reach_completed": true,
+    "kinematic_recover_completed": true,
+    "note": "reach cycle runs, but is NOT a genuine HUM-4 (balance vacuous)"
+  },
+  "summary": {
+    "visited_modes": [
+      "STAND",
+      "SHIFT_SUPPORT",
+      "REACH",
+      "TOUCH",
+      "RETRACT",
+      "RECOVER"
+    ],
+    "reached_target": true,
+    "recover_home_ok": true,
+    "limits_ok_all": true,
+    "no_divergence": true,
+    "stand_stable": true,
+    "cycle_reached_recover": true,
+    "n_ticks": 6,
+    "n_steps": 2879
+  },
+  "plot": "hum_trajectory.png",
+  "gif": "reports/2026-07-27-cip-humanoid/hum_trajectory.gif"
+}
