@@ -1,0 +1,97 @@
+{
+ "contract": "COIN_KINETIC_POSITIVE_CONTROL_SMOKE_V1",
+ "seed": 14250,
+ "entry": {
+  "seed": 14250,
+  "entry_step": 4,
+  "state_hash": "ce343c478d2a0cb7",
+  "entry_dtz_mm": 75.75,
+  "entry_v_par": 0.2488,
+  "admissible": true,
+  "straddle_dot": -0.9971,
+  "fn_min": 2.7031,
+  "qdot_max": 1.8944
+ },
+ "rows": [
+  {
+   "case": "handoff+canonical_theta",
+   "delivers_k6": true,
+   "k6_max_dwell": 24,
+   "min_dtz_mm": 18.55,
+   "dtz_end_mm": 18.55,
+   "peak_qdot": 1.998,
+   "peak_coin_speed": 0.45
+  },
+  {
+   "case": "handoff+full_cem",
+   "delivers_k6": true,
+   "k6_max_dwell": 24,
+   "min_dtz_mm": 18.55,
+   "dtz_end_mm": 18.55,
+   "peak_qdot": 1.998,
+   "peak_coin_speed": 0.45,
+   "theta": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ]
+  },
+  {
+   "case": "entry+canonical_theta",
+   "delivers_k6": false,
+   "k6_max_dwell": 0,
+   "min_dtz_mm": 54.38,
+   "dtz_end_mm": 74.81,
+   "peak_qdot": 2.016,
+   "peak_coin_speed": 0.389
+  },
+  {
+   "case": "entry+full_cem",
+   "delivers_k6": true,
+   "k6_max_dwell": 32,
+   "min_dtz_mm": 15.68,
+   "dtz_end_mm": 15.68,
+   "peak_qdot": 2.006,
+   "peak_coin_speed": 0.36,
+   "theta": [
+    0.0,
+    0.2714,
+    -0.057,
+    16.5378,
+    8.7978,
+    3.4604
+   ]
+  },
+  {
+   "case": "entry+warm_local_cem",
+   "delivers_k6": false,
+   "k6_max_dwell": 0,
+   "min_dtz_mm": 20.68,
+   "dtz_end_mm": 20.68,
+   "peak_qdot": 2.007,
+   "peak_coin_speed": 0.301,
+   "theta": [
+    0.0654,
+    0.1712,
+    -0.0085,
+    9.9025,
+    10.5339,
+    3.0935
+   ]
+  },
+  {
+   "case": "handoff+kinetic_scaffold",
+   "delivers_k6": false,
+   "k6_max_dwell": 0,
+   "min_dtz_mm": 50.58,
+   "dtz_end_mm": 50.58,
+   "peak_qdot": 2.006,
+   "peak_coin_speed": 0.359
+  }
+ ],
+ "verdict": "REPLAN_FROM_KINETIC_ENTRY_DELIVERS_S1",
+ "wall_s": 52.6
+}
