@@ -1,0 +1,20 @@
+{
+  "verdict": "SAC_PARTIAL",
+  "final_upright_fraction": 0.589,
+  "final_lyapunov_pass_rate": 0.0,
+  "eval_curve_upright_fraction": [
+    0.299,
+    0.511,
+    0.522,
+    0.44,
+    0.626,
+    0.933,
+    0.689,
+    0.668,
+    0.684,
+    0.59
+  ],
+  "total_steps": 150000,
+  "reward": "alive - 2*V(COM Lyapunov) - 1e-3*|a|^2",
+  "note": "SIMULATION. SAC-from-scratch (no certified baseline). Lyapunov reward; the reward-INDEPENDENT lyapunov_certificate is the success/safety gate (eval only). Gravity-comp is a physics feedforward (it tips alone); SAC learns the balance residual."
+}
