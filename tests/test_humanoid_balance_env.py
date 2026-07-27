@@ -106,8 +106,9 @@ def test_render_rollout_frames_smoke() -> None:
     from scenarios.humanoid.render_balance_video import _H, _W, rollout_frames
     env = HumanoidBalanceEnv(max_steps=12, seed=0)
     try:
-        frames, ev = rollout_frames(env, lambda _o: np.zeros(env.model.nu), 0)
+        frames, telem, ev = rollout_frames(env, lambda _o: np.zeros(env.model.nu), 0)
     except Exception as exc:                                       # no offscreen GL backend
         pytest.skip(f"no MuJoCo render context: {exc}")
     assert frames and frames[0].shape == (_H, _W, 3)
+    assert len(telem) == len(frames) and "bounded" in telem[0]
     assert np.all(np.isfinite(frames[0])) and "passes" in ev
