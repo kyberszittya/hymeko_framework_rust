@@ -33,7 +33,7 @@ _W, _H, _STRIDE, _FPS = 470, 430, 8, 25
 _TITLE_H, _CODE_H = 46, 178
 _INK, _DIM = (235, 235, 235), (150, 150, 150)
 _OK, _BAD = (60, 200, 110), (235, 90, 90)
-_BEARING, _GDIST, _REACH = 28.0, 0.9, 0.42
+_BEARING, _GDIST, _REACH = 28.0, 0.9, 0.30      # smaller goal -> crisper reach + clearer good/bad gap
 
 _HYMEKO = [
     ("HyMeKo model  data/robotics/quadruped.hymeko  (Aibo ERS-1000, 22 DOF)", _OK),
@@ -110,7 +110,7 @@ def rollout(env, V, *, pursue: bool, fixed_cam: bool = False):
         cam.azimuth, cam.elevation, cam.distance = 60.0, -32.0, 2.1
     gait = SteeredTrotGait()
     frames, telem, vs, path, done, k = [], [], [], [], False, 0
-    while not done and k < 2400:
+    while not done and k < 2900:
         d = float(env.dist_to_goal())
         herr = float(heading_error(env))
         spd = _speed(env)
