@@ -105,3 +105,38 @@ strategic pivot stands.
 
 Verdict: `COAST_LANDING_STATE_OBSERVABLE · KINETIC_TRANSPORTS_WITHOUT_STALL · LIGHT_CONTACT_MAINTENANCE_IS_THE_LEARNABLE_SKILL`.
 Gates: KINETIC mode `hybrid_approach.py`; 8 tests pass; ruff clean; all fns < CC 15; CORE.YAML untouched; blind sealed; s4/s7 untouched.
+
+---
+
+## G-VF bounded CEM over the KINETIC transport profile — FAIL (strategic-pivot boundary)
+
+Generalised KINETIC to a **6-param position-varying profile** (forward taper `v_hi → v_lo` + squeeze decay `→ 0` near release —
+the teacher's shape) and ran a bounded CEM (216 evals, s1 dev) with a **lexicographic scorer on the realized contact**
+(safety ≻ K6 ≻ reached-moving-release ≻ light-contact-maintained ≻ no-sign-reversal ≻ closeness; clamp + early-contact-loss
+penalties scored on *measured* fn, not the squeeze command). Snapshot: `release_guard_gvf.json`.
+
+| quantity | value |
+|---|---|
+| teacher positive control | **K6 True** (task feasible from the same cradle) |
+| best K6 / released | **False / False** |
+| best min_dtz | **50.9 mm** (converged from iteration 1 — flat) |
+| best contact_frac / sign-reversals | 0.69 / **0** (smooth, well-contacted transport) |
+| verdict | **`KINETIC_CANNOT_HOLD_CONTACT_TO_CORRIDOR`** (the user's FAIL condition) |
+
+**Reading.** The "keep the coin moving" strategy is **validated** — the searched profile transports the coin smoothly with
+good light contact (69%, zero sign-reversals, no stiction). But **no profile holds contact past ~50 mm** to the 20–30 mm
+release corridor (an earlier qdot 2.4–2.8 momentum sweep also plateaued at ~48 mm — it is not a momentum limit). The teacher
+(positive control, K6 True) proves a solution exists in the **full torque-primitive θ space**. Therefore the limit is the
+**hand/profile servo's tip-trajectory**: it pushes the tips toward the *zone*, but does not **track the sliding coin** the way
+the teacher's learned θ does, so contact is lost at ~50 mm. The remaining gap is precisely the **coin-following tip-trajectory
+to a close-and-moving release** — what θ encodes and a deterministic scaffold + parametric profile cannot.
+
+**Strategic-pivot boundary (per the pre-registered stop condition).** Not more profile/squeeze tuning. Two options:
+1. **A small learned KINETIC torque policy** over the transport segment only (θ *is* a learned torque primitive; learn the
+   coin-following tip-trajectory that hand-design can't, with the G0 predictor as the release guard). Keeps the validated
+   "keep it moving" strategy; puts the learning exactly where the measurement says the skill lives.
+2. **Accept the arc negative**: fine transport-to-close is a per-cradle learned skill (the teacher's θ); the deterministic
+   *single-controller* generalization goal is not reachable by hand-design — it requires learning.
+
+Gates: KINETIC profile `hybrid_approach.py`; search `coin_release_guard.py --gvfsearch`; 8 tests pass; ruff clean; all
+fns < CC 15; CORE.YAML untouched; blind sealed; s4/s7 untouched; teacher = positive control.
