@@ -51,9 +51,10 @@ class KineticTemporalResidualController(KineticCloneController):
     K2 clone; |Δτ| ≤ slew; no teacher; release/coast/K6 downstream unchanged."""
 
     def __init__(self, snap: Any, clone: CloneActor, residual_fn: Callable[[np.ndarray], np.ndarray],
-                 bounds: ResidualBounds = ResidualBounds(), **kw: Any) -> None:
+                 bounds: ResidualBounds = ResidualBounds(), *, start_kinetic: "dict | None" = None, **kw: Any) -> None:
         self.residual_fn = residual_fn
         self.bounds = bounds
+        self._start_kinetic = start_kinetic     # {clone_hidden, prev_res} for a segment-local frontier restart (else None)
         super().__init__(snap, clone, **kw)
 
     def reset(self) -> None:
@@ -61,6 +62,12 @@ class KineticTemporalResidualController(KineticCloneController):
         self._prev_res = np.zeros(ACT_DIM, np.float64)
         self.aug_trace: list[tuple[np.ndarray, np.ndarray]] = []
         self.residual_trace: list[dict[str, Any]] = []
+        if self._start_kinetic is not None:     # segment-local restart: begin IN the KINETIC phase with the restored state
+            from hymeko_rl.coin_delivery.theta_option.hybrid_approach import KINETIC as _KIN
+            self.phase = _KIN
+            self._kinetic_steps = 0
+            self.actor.set_hidden(self._start_kinetic.get("clone_hidden"))
+            self._prev_res = np.asarray(self._start_kinetic.get("prev_res", np.zeros(ACT_DIM)), np.float64).copy()
 
     def _augmented_state(self, obs: np.ndarray) -> np.ndarray:
         """[ norm(41-D obs) · frozen clone GRU hidden · previous residual ] — the causal state δ_ψ conditions on. The clone

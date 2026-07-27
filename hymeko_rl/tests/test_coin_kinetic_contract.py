@@ -221,8 +221,6 @@ def test_kinetic_clone_controller_frozen_approach_and_bounded(s1_snap):
     from hymeko_rl.coin_delivery.coin_strict_markov_ablation import step_ablation
     from hymeko_rl.env.motion_contract import govern_torque
     import mujoco
-    saw_clone = False
-
     def _gc(_m, d):
         d.ctrl[:4] = govern_torque(d.ctrl[:4], d.qvel[:4], s1_snap.stack.gov)
     mujoco.set_mjcb_control(_gc)
@@ -231,7 +229,6 @@ def test_kinetic_clone_controller_frozen_approach_and_bounded(s1_snap):
             dc = clone.dtau_for_step(rl_c, t, prev_c)
             assert _np.max(_np.abs(dc)) <= clone.slew + 1e-9           # bounded by slew
             if clone.clone_trace[-1]["kind"] == "KINETIC_CLONE":
-                saw_clone = True
                 break
             dr = ref.dtau_for_step(rl_r, t, prev_c)
             assert _np.allclose(dc, dr, atol=0.0)                      # APPROACH Δτ identical to the frozen scaffold
@@ -322,6 +319,98 @@ def test_temporal_residual_update_zero_identity(s1_snap):
     mz = velocity_rollout(s1_snap, ctrl, DELIVERY_CFG)
     assert _np.array_equal(_np.asarray(mc["coin_trace"]), _np.asarray(mz["coin_trace"]))   # bit-identical
     assert ctrl.aug_trace and ctrl.aug_trace[0][0].shape[0] == AUG_DIM                      # augmented state has clone hidden
+
+
+def test_champion_key3_stall_aware_and_reward3_envelope():
+    """R3-B pure checks: the stall-aware champion ranks a clean-moving policy above a closer-but-stalled one, and reward3 adds a
+    velocity-envelope penalty when v_par falls below the distance-dependent floor."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_rl3 as krl3
+    clean = krl3.champion_key3(min_dtz=40, exit_dtz=52, k6=False, safe=True, released=False, jerk=0.1,
+                               has_clamp=False, has_stall=False, has_reversal=False)
+    stalled_closer = krl3.champion_key3(min_dtz=45, exit_dtz=47, k6=False, safe=True, released=False, jerk=0.1,
+                                        has_clamp=False, has_stall=True, has_reversal=True)
+    assert clean > stalled_closer                                      # cleanliness ranks above a lower contact-exit dtz
+    below = [{"dtz_mm": 50.0, "v_par": 0.05, "fn_l": 0.5, "fn_r": 0.5}]   # v_par 0.05 << envelope floor 0.18 at 50 mm
+    _r, d_below = krl3.reward3(below, entry_dtz=55.0, min_dtz=45.0, k6=False, safe=True)
+    above = [{"dtz_mm": 50.0, "v_par": 0.30, "fn_l": 0.5, "fn_r": 0.5}]
+    _r2, d_above = krl3.reward3(above, entry_dtz=55.0, min_dtz=45.0, k6=False, safe=True)
+    assert d_below["envelope"] > 0 and d_above["envelope"] == 0        # slow-gripping is penalised; fast is not
+    assert krl3.envelope_floor(50.0) >= krl3.envelope_floor(25.0)      # the floor relaxes toward the release corridor
+
+
+@pytest.fixture(scope="module")
+def r3b_frontiers(s1_snap):
+    """The clone (zero-init temporal residual) as a fast deterministic 'champion': capture its healthy interior frontiers
+    (63–73 mm) and its edge state (58–63 mm, the 61 mm contact-loss boundary), plus the uninterrupted coin trace — the shared
+    fixture for the four hybrid-boundary restart tests."""
+    import numpy as _np
+    import torch
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_rl3 as krl3
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor, KineticClone, NormStats
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import (
+        KineticTemporalResidualController, TemporalResidualPolicy, deterministic_residual)
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    from hymeko_rl.experiments.coin_kinetic_r1_rl import CLONE_CKPT
+    ckpt = torch.load(CLONE_CKPT, weights_only=False)
+    model = KineticClone(hidden=ckpt["hidden"])
+    model.load_state_dict(ckpt["state_dict"])
+    norm = NormStats(_np.array(ckpt["norm"]["mean"]), _np.array(ckpt["norm"]["std"]))
+    zpol = TemporalResidualPolicy(zero_init=True)
+    b = ResidualBounds(alpha=0.15)
+    healthy, _b1 = krl3.capture_frontiers(s1_snap, CloneActor(model, norm), zpol, b, dtz_lo=63.0, dtz_hi=73.0)
+    _h2, boundary = krl3.capture_frontiers(s1_snap, CloneActor(model, norm), zpol, b, dtz_lo=58.0, dtz_hi=63.0)
+    uc = _np.asarray(velocity_rollout(s1_snap, KineticTemporalResidualController(
+        s1_snap, CloneActor(model, norm), deterministic_residual(zpol), b), DELIVERY_CFG)["coin_trace"])
+    return {"model": model, "norm": norm, "bounds": b, "zpol": zpol, "healthy": healthy, "boundary": boundary, "uc": uc}
+
+
+def test_healthy_frontier_restart_one_step_identity(r3b_frontiers):
+    """HEALTHY_FRONTIER_RESTART_ONE_STEP_IDENTITY: restarting from a healthy frontier reproduces the uninterrupted continuation
+    for one step (bit-tight; the off-by-one guard). Multi-step divergence is chaotic (stiff contact) and NOT asserted."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import KineticTemporalResidualController, deterministic_residual
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    fx = r3b_frontiers
+    assert fx["healthy"]
+    f = fx["healthy"][0]
+    rc = KineticTemporalResidualController(f, CloneActor(fx["model"], fx["norm"]), deterministic_residual(fx["zpol"]),
+                                           fx["bounds"], start_kinetic=f.start_state())
+    rct = _np.asarray(velocity_rollout(f, rc, DELIVERY_CFG)["coin_trace"])
+    one_step = float(_np.linalg.norm(rct[0] - fx["uc"][f.step_index - 1]))     # coin_trace[i] = coin AFTER step i+1
+    assert one_step < 5e-5                                                     # < 0.05 mm — one-step restart is exact
+
+
+def test_healthy_frontier_restart_continuation(r3b_frontiers):
+    """HEALTHY_FRONTIER_RESTART_CONTINUATION: a healthy frontier restarts into MULTIPLE valid KINETIC transitions (interior,
+    not a mode boundary), moving and physically consistent."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_rl3 as krl3
+    fx = r3b_frontiers
+    assert fx["healthy"] and all(f.restart_steps >= krl3.N_EXIT_MARGIN for f in fx["healthy"])
+    assert all(f.v_par > 0 and 0.0 < f.guard_margin_fn < krl3.krl2.FN_LIGHT for f in fx["healthy"])
+
+
+def test_boundary_frontier_rejected(r3b_frontiers):
+    """BOUNDARY_FRONTIER_REJECTED: the ~61 mm edge-of-contact-loss snapshot is classified as a hybrid-boundary state (restart <
+    N_EXIT_MARGIN), NOT admitted as a curriculum frontier — the hybrid-guard-boundary-aliasing case."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_rl3 as krl3
+    fx = r3b_frontiers
+    assert fx["boundary"] and any(58.0 <= f.dtz_mm <= 63.0 for f in fx["boundary"])
+    assert all(f.restart_steps < krl3.N_EXIT_MARGIN for f in fx["boundary"])   # boundary states restart-alias (few/no steps)
+
+
+def test_r2_champion_frontier_capture_properties(r3b_frontiers):
+    """R2_CHAMPION_FRONTIER_CAPTURE: several healthy frontiers captured with the required properties — positive v_par, light
+    non-degenerate force, no stall, complete restorable causal state (clone hidden + prev residual + prev_tau), restart yields
+    real KINETIC transitions."""
+    fx = r3b_frontiers
+    assert len(fx["healthy"]) >= 2
+    for f in fx["healthy"]:
+        assert f.clone_hidden is not None and f.prev_res.shape[0] == 4 and f.prev_tau.shape[0] == 4
+        assert f.v_par > 0 and f.guard_margin_fn > 0 and f.frames_since_entry >= 2 and f.restart_steps >= 2
 
 
 def test_receding_horizon_relabel_first_action_only_deterministic(s1_entry):

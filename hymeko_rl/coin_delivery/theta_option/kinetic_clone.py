@@ -90,6 +90,15 @@ class CloneActor:
         hid = int(self.model.gru.hidden_size)
         return np.zeros(hid, np.float64) if self.h is None else self.h.detach().view(-1).numpy().astype(np.float64)
 
+    def hidden_tensor(self) -> "torch.Tensor | None":
+        """The raw GRU hidden state (for capturing/restoring a mid-transport clone state at a legal frontier snapshot)."""
+        return None if self.h is None else self.h.detach().clone()
+
+    def set_hidden(self, h: "torch.Tensor | None") -> None:
+        """Restore the GRU hidden state (segment-local restart from a captured frontier). # Postconditions: subsequent `act`
+        continues the clone's temporal state from `h`."""
+        self.h = None if h is None else h.detach().clone()
+
 
 @dataclass
 class CloneTrainConfig:

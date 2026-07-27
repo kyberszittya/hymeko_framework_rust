@@ -169,9 +169,12 @@ def _dev_eval(snap: Any, clone: CloneActor, bounds: ResidualBounds, w: Reward2We
 
 def train_perstep(algo: str, snap: Any, clone: CloneActor, bounds: ResidualBounds, w: Reward2Weights,
                   cfg: PerStepConfig, *, seed: int = 0, warm_actor: Any = None, cfg_env: Any = DELIVERY_CFG,
-                  log: Callable = print) -> "tuple[Any, list]":
+                  log: Callable = print, collect_override: "Callable | None" = None,
+                  champion_override: "Callable | None" = None) -> "tuple[Any, list]":
     """Compact matched per-step TD3/SAC over δ_ψ. Reuses `DetActor`/`GaussActor`/`QNet`/`_polyak`; keeps the BEST checkpoint by
-    the lexicographic champion. # Postconditions: returns (best_actor, history)."""
+    the lexicographic champion. ``collect_override(rfn) -> transitions`` and ``champion_override(actor) -> (key, aux)`` let a
+    curriculum (R3-B) inject its own episode source + champion without duplicating the update loop (defaults = the R2 behaviour).
+    # Postconditions: returns (best_actor, history)."""
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
     actor = warm_actor if warm_actor is not None else make_actor(algo, AUG_DIM, ACT_DIM)
@@ -184,12 +187,14 @@ def train_perstep(algo: str, snap: Any, clone: CloneActor, bounds: ResidualBound
         at.load_state_dict(actor.state_dict())
     qopt = torch.optim.Adam(list(q1.parameters()) + list(q2.parameters()), cfg.lr)
     aopt = torch.optim.Adam(actor.parameters(), cfg.lr)
-    replay, ev = _Replay(), _dev_eval(snap, clone, bounds, w, cfg_env)
+    replay = _Replay()
+    ev = champion_override if champion_override is not None else _dev_eval(snap, clone, bounds, w, cfg_env)
     best_key, best_actor, history, upd = None, copy.deepcopy(actor), [], 0
     for it in range(cfg.total_options):
         rfn = (exploring_residual(actor, algo, cfg.expl_noise, rng) if it >= cfg.warmup_options
                else (lambda _a: np.clip(rng.uniform(-1, 1, ACT_DIM), -1, 1).astype(np.float32)))
-        for tr in collect_episode(snap, clone, rfn, bounds, w, cfg_env).transitions:
+        trans = collect_override(rfn) if collect_override is not None else collect_episode(snap, clone, rfn, bounds, w, cfg_env).transitions
+        for tr in trans:
             replay.add(tr)
         if len(replay) >= cfg.batch and it >= cfg.warmup_options:
             for _ in range(cfg.updates_per_option):
