@@ -530,6 +530,97 @@ def s4_matched_rl(seeds: tuple = (0, 1, 2), smoke: bool = False) -> dict:
     return comp
 
 
+# ── S5 — the SINGLE frozen held-out evaluation (s4, s7 seen ONCE; no retuning, no reselection) ───────────────────────
+def _scaffold_eval(cradles: list, params: Any, bounds: Any) -> "tuple[float, list]":
+    """The update-0 SCAFFOLD baseline (ZeroActor) on a cradle set — the honest reference the learned residual must beat."""
+    rets, per = [], []
+    for tag, snap, _obs in cradles:
+        r = _eval_actor(snap, ZeroActor(), params, bounds)
+        rets.append(r["ret"])
+        per.append({"tag": tag, "ret": round(r["ret"], 4), "dtz_end_mm": round(r["dtz_end"] * 1000, 1),
+                    "k6": bool(r["k6"]), "safe": bool(r["safe"])})
+    return round(float(np.mean(rets)), 4), per
+
+
+def _s5_verdict(scaffold: float, rl_ret: float, sc_per: list, rl_per: list) -> str:
+    """Graded honest held-out verdict (primary axis = dtz_end vs the scaffold; delivery is the ceiling)."""
+    safe = all(p["safe"] for p in rl_per)
+    deliveries = sum(p["k6"] for p in rl_per)
+    mean_up = rl_ret > scaffold + 1e-3
+    per_up = all(r["dtz_end_mm"] <= s["dtz_end_mm"] + 1.0 for r, s in zip(rl_per, sc_per))
+    if not safe:
+        return "RESIDUAL_RL_UNSAFE_ON_HELDOUT"
+    if deliveries == len(rl_per):
+        return "RESIDUAL_RL_DELIVERS_HELDOUT"
+    if mean_up and per_up:
+        return "RESIDUAL_RL_IMPROVES_HELDOUT_WITHOUT_DELIVERY"
+    if mean_up:
+        return "RESIDUAL_RL_IMPROVES_HELDOUT_MEAN_ONLY_MIXED_PER_CRADLE"
+    return "CURRENT_RESIDUAL_RL_DOES_NOT_GENERALISE_TO_HELDOUT"
+
+
+def _s5_plot(dev_sc: list, dev_rl: list, held_sc: list, held_rl: list, path: str) -> bool:
+    """Grouped bar: scaffold vs champion dtz_end (mm) on dev + held-out cradles. Returns False if matplotlib is unavailable."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return False
+    rows = [("dev " + p["tag"], s["dtz_end_mm"], p["dtz_end_mm"]) for s, p in zip(dev_sc, dev_rl)] + \
+           [("held " + p["tag"], s["dtz_end_mm"], p["dtz_end_mm"]) for s, p in zip(held_sc, held_rl)]
+    x = np.arange(len(rows))
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.bar(x - 0.2, [r[1] for r in rows], 0.4, label="scaffold (update-0)", color="#888")
+    ax.bar(x + 0.2, [r[2] for r in rows], 0.4, label="residual RL (champion)", color="#2a7")
+    ax.axhline(20.0, ls="--", c="r", lw=1, label="K6 tol (20mm)")
+    ax.set_xticks(x)
+    ax.set_xticklabels([r[0] for r in rows])
+    ax.set_ylabel("dtz_end (mm) — lower is better")
+    ax.set_title("R8 S4/S5 — residual RL vs frozen scaffold")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+    return True
+
+
+def s5_heldout(smoke: bool = False) -> dict:
+    """S5 — evaluate the DEV-selected champion (from matched_comparison.json) ONCE on the held-out cradles. No training, no
+    retuning, no reselection. Writes heldout_frozen_result.json + a scaffold-vs-RL plot; emits the final campaign verdict."""
+    t0 = time.time()
+    comp = json.load(open(f"{OUT}/matched_comparison.json"))
+    if comp.get("status") == "HALTED_PRE_TRAINING_GATE":
+        print("  S5 BLOCKED — S4 halted at a pre-training gate; no champion to evaluate.\nR8_S5_DONE", flush=True)
+        return {"contract": "COIN_R8_S5", "status": "BLOCKED_S4_HALTED"}
+    champ = comp["dev_champion"]
+    bank = json.load(open(f"{REPORT_DIR}/teacher_bank.json"))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    params, bounds = TipTransportParams(), ResidualBounds()
+    held = [(t, panel[t].snap, residual_init_obs(panel[t].snap, params, bounds)) for t in HELD_OUT_TAGS]
+    dev = _dev_cradles(panel, params, bounds)
+    actor = make_actor(champ["algo"], OBS_DIM, ACT_DIM)
+    actor.load_state_dict(torch.load(champ["ckpt"]))
+    held_sc, held_sc_per = _scaffold_eval(held, params, bounds)
+    dev_sc, dev_sc_per = _scaffold_eval(dev, params, bounds)
+    held_rl, held_rl_per = _eval_on_cradles(actor, held, params, bounds)
+    dev_rl, dev_rl_per = _eval_on_cradles(actor, dev, params, bounds)
+    verdict = _s5_verdict(held_sc, held_rl, held_sc_per, held_rl_per)
+    plotted = _s5_plot(dev_sc_per, dev_rl_per, held_sc_per, held_rl_per, f"{OUT}/s5_heldout.png")
+    out = {"contract": "COIN_R8_S5_HELDOUT_FROZEN", "date": "2026-07-27", "one_shot": True,
+           "champion": champ, "held_out_tags": list(HELD_OUT_TAGS),
+           "heldout_scaffold_return": held_sc, "heldout_rl_return": held_rl,
+           "heldout_delta_over_scaffold": round(held_rl - held_sc, 4),
+           "heldout_scaffold_per_cradle": held_sc_per, "heldout_rl_per_cradle": held_rl_per,
+           "dev_scaffold_return": dev_sc, "dev_rl_return": dev_rl, "dev_rl_per_cradle": dev_rl_per,
+           "verdict": verdict, "plot": bool(plotted), "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/heldout_frozen_result.json", "w"), indent=1, default=float)
+    print(f"\n== S5 (frozen held-out) ==\n  champion {champ['algo']} seed {champ['seed']} | "
+          f"held-out scaffold {held_sc} → RL {held_rl} (Δ {out['heldout_delta_over_scaffold']}) | "
+          f"VERDICT: {verdict} | wall {out['wall_s']}s\nR8_S5_DONE", flush=True)
+    return out
+
+
 def _load_harness() -> Any:
     from hymeko_rl.coin_delivery.theta_option.teacher_bank import load_harness
     return load_harness()
@@ -542,8 +633,10 @@ def main(argv: "list[str]") -> None:
         s3_learnability(smoke="--smoke" in argv)
     elif "--s4" in argv:
         s4_matched_rl(smoke="--smoke" in argv)
+    elif "--s5" in argv:
+        s5_heldout(smoke="--smoke" in argv)
     else:
-        print("usage: coin_r8_residual_rl.py --s2 | --s3 | --s4 [--smoke] | (S5 added when S4 passes)", flush=True)
+        print("usage: coin_r8_residual_rl.py --s2 | --s3 | --s4 [--smoke] | --s5", flush=True)
 
 
 if __name__ == "__main__":
