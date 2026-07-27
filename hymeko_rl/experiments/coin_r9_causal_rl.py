@@ -673,9 +673,49 @@ def c2_mechanism() -> dict:
     return out
 
 
+def c27_guided_coast_audit() -> dict:
+    """R10-C2.7 — post-coast feasibility: is a GUIDED_COAST (light contact = low squeeze + tiny forward effort, so the coin
+    coasts but keeps observability/correction authority) between full-grip (over-dissipates, 48mm) and full-release (no
+    authority, 33mm) the missing mode? Sweeps guided-coast (squeeze × effort × duration) then the frozen settle on s1; the
+    contrast baselines are the C2.5 held/released numbers. Dev s1 only; settle/cert/physics frozen."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
+    base = {"qdot_approach": 2.4, "launch_vlo": 0.28, "launch_vhi": 0.45}
+    variants = [("GUIDED", sq, cq, cs, ApproachParams(**base, carry_steps=cs, carry_qref=cq, carry_squeeze=sq))
+                for sq in (0.02, 0.04, 0.06, 0.10) for cq in (0.0, 0.2) for cs in (4, 8, 12, 16)]
+    variants += [("FULL_GRIP", 0.14, 1.0, cs, ApproachParams(**base, carry_steps=cs, carry_qref=1.0, carry_squeeze=0.14))
+                 for cs in (4, 8, 12)]                                       # C2.5 held baseline
+    variants += [("RELEASED", 0.0, 0.0, cs, ApproachParams(**base, carry_steps=cs, carry_release=True))
+                 for cs in (6, 10)]                                          # C2.5 released baseline
+    runs = [{"mode": m, "carry_squeeze": sq, "carry_qref": cq, "carry_steps": cs, **_run_approach(snap, ap)}
+            for m, sq, cq, cs, ap in variants]
+    guided = [r for r in runs if r["mode"] == "GUIDED" and r["safe"]]
+    best_g = min(guided, key=lambda r: r["dtz_end_mm"]) if guided else None
+    best_all = min([r for r in runs if r["safe"]], key=lambda r: r["dtz_end_mm"])
+    if best_g and best_g["k6"]:
+        verdict = "POST_COAST_GUIDED_COAST_MODE_LOAD_BEARING"
+    elif best_g and best_g["dtz_end_mm"] < 33.0 - 1.0:                        # meaningfully closer than the released-coast 33mm
+        verdict = "GUIDED_COAST_PROMISING_NEEDS_SETTLE_TUNING"
+    else:
+        verdict = "GUIDED_COAST_INSUFFICIENT_REACQUIRE_NEEDED"
+    out = {"contract": "COIN_R9_R10C27_GUIDED_COAST", "cradle": "s1", "baselines": {"held_48mm": 48.4, "released_33mm": 33.0},
+           "best_guided": best_g, "best_overall_safe": best_all, "verdict": verdict, "n_variants": len(runs), "runs": runs,
+           "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10c27_guided_coast.json", "w"), indent=1, default=float)
+    bg = (f"{best_g['dtz_end_mm']}mm K6 {best_g['k6']} (sqz {best_g['carry_squeeze']} qref {best_g['carry_qref']} steps "
+          f"{best_g['carry_steps']})" if best_g else "none-safe")
+    print(f"   best GUIDED {bg}\n   best overall-safe {best_all['mode']} {best_all['dtz_end_mm']}mm K6 {best_all['k6']}\n"
+          f"== R10-C2.7 ==\n  {verdict} | wall {out['wall_s']}s\nR9_C27_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
+    elif "--c27" in argv:
+        c27_guided_coast_audit()
     elif "--diag" in argv:
         stage3_ceiling_diag()
     elif "--reach" in argv:

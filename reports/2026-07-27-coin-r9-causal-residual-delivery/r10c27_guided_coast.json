@@ -1,0 +1,1183 @@
+{
+ "contract": "COIN_R9_R10C27_GUIDED_COAST",
+ "cradle": "s1",
+ "baselines": {
+  "held_48mm": 48.4,
+  "released_33mm": 33.0
+ },
+ "best_guided": {
+  "mode": "GUIDED",
+  "carry_squeeze": 0.02,
+  "carry_qref": 0.2,
+  "carry_steps": 4,
+  "qdot_approach": 2.4,
+  "launch": [
+   0.28,
+   0.45
+  ],
+  "peak_vpar": 0.3058,
+  "min_dtz_mm": 50.9,
+  "dtz_end_mm": 50.9,
+  "k6": false,
+  "safe": true,
+  "exit_step": 5,
+  "exit_reason": "LAUNCH",
+  "peak_qdot": 1.969,
+  "peak_coin": 0.359,
+  "approach_end": {
+   "v_par": 0.3058,
+   "dtz_mm": 75.3
+  },
+  "brake_start": {
+   "v_par": -0.1137,
+   "dtz_mm": 70.3
+  },
+  "carry_distance_mm": 5.0,
+  "release_state": null
+ },
+ "best_overall_safe": {
+  "mode": "RELEASED",
+  "carry_squeeze": 0.0,
+  "carry_qref": 0.0,
+  "carry_steps": 10,
+  "qdot_approach": 2.4,
+  "launch": [
+   0.28,
+   0.45
+  ],
+  "peak_vpar": 0.3574,
+  "min_dtz_mm": 33.0,
+  "dtz_end_mm": 33.0,
+  "k6": false,
+  "safe": true,
+  "exit_step": 5,
+  "exit_reason": "LAUNCH",
+  "peak_qdot": 2.036,
+  "peak_coin": 0.37,
+  "approach_end": {
+   "v_par": 0.3058,
+   "dtz_mm": 75.3
+  },
+  "brake_start": {
+   "v_par": 0.2032,
+   "dtz_mm": 46.0
+  },
+  "carry_distance_mm": 29.3,
+  "release_state": null
+ },
+ "verdict": "GUIDED_COAST_INSUFFICIENT_REACQUIRE_NEEDED",
+ "n_variants": 37,
+ "runs": [
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.02,
+   "carry_qref": 0.0,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 51.1,
+   "dtz_end_mm": 51.1,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.1248,
+    "dtz_mm": 70.5
+   },
+   "carry_distance_mm": 4.8,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.02,
+   "carry_qref": 0.0,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 53.1,
+   "dtz_end_mm": 53.1,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0093,
+    "dtz_mm": 72.7
+   },
+   "carry_distance_mm": 2.6,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.02,
+   "carry_qref": 0.0,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 55.2,
+   "dtz_end_mm": 55.2,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0118,
+    "dtz_mm": 73.9
+   },
+   "carry_distance_mm": 1.4,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.02,
+   "carry_qref": 0.0,
+   "carry_steps": 16,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 57.2,
+   "dtz_end_mm": 57.2,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0344,
+    "dtz_mm": 74.7
+   },
+   "carry_distance_mm": 0.6,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.02,
+   "carry_qref": 0.2,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 50.9,
+   "dtz_end_mm": 50.9,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.1137,
+    "dtz_mm": 70.3
+   },
+   "carry_distance_mm": 5.0,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.02,
+   "carry_qref": 0.2,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 51.8,
+   "dtz_end_mm": 51.8,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0491,
+    "dtz_mm": 71.6
+   },
+   "carry_distance_mm": 3.7,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.02,
+   "carry_qref": 0.2,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 52.9,
+   "dtz_end_mm": 52.9,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0212,
+    "dtz_mm": 71.7
+   },
+   "carry_distance_mm": 3.6,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.02,
+   "carry_qref": 0.2,
+   "carry_steps": 16,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 53.8,
+   "dtz_end_mm": 53.8,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0057,
+    "dtz_mm": 71.1
+   },
+   "carry_distance_mm": 4.2,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.04,
+   "carry_qref": 0.0,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 51.2,
+   "dtz_end_mm": 51.2,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.1255,
+    "dtz_mm": 70.5
+   },
+   "carry_distance_mm": 4.8,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.04,
+   "carry_qref": 0.0,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 53.3,
+   "dtz_end_mm": 53.3,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0065,
+    "dtz_mm": 72.8
+   },
+   "carry_distance_mm": 2.5,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.04,
+   "carry_qref": 0.0,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 55.7,
+   "dtz_end_mm": 55.7,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0153,
+    "dtz_mm": 74.2
+   },
+   "carry_distance_mm": 1.1,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.04,
+   "carry_qref": 0.0,
+   "carry_steps": 16,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 58.0,
+   "dtz_end_mm": 58.0,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0407,
+    "dtz_mm": 75.2
+   },
+   "carry_distance_mm": 0.1,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.04,
+   "carry_qref": 0.2,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 50.9,
+   "dtz_end_mm": 50.9,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.1139,
+    "dtz_mm": 70.4
+   },
+   "carry_distance_mm": 4.9,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.04,
+   "carry_qref": 0.2,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 52.1,
+   "dtz_end_mm": 52.1,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0445,
+    "dtz_mm": 71.7
+   },
+   "carry_distance_mm": 3.6,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.04,
+   "carry_qref": 0.2,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 53.3,
+   "dtz_end_mm": 53.3,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0169,
+    "dtz_mm": 72.0
+   },
+   "carry_distance_mm": 3.3,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.04,
+   "carry_qref": 0.2,
+   "carry_steps": 16,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 54.4,
+   "dtz_end_mm": 54.4,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0112,
+    "dtz_mm": 71.6
+   },
+   "carry_distance_mm": 3.7,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.06,
+   "carry_qref": 0.0,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 51.2,
+   "dtz_end_mm": 51.2,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.1261,
+    "dtz_mm": 70.5
+   },
+   "carry_distance_mm": 4.8,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.06,
+   "carry_qref": 0.0,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 53.6,
+   "dtz_end_mm": 53.6,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0053,
+    "dtz_mm": 73.0
+   },
+   "carry_distance_mm": 2.3,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.06,
+   "carry_qref": 0.0,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 56.2,
+   "dtz_end_mm": 56.2,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0198,
+    "dtz_mm": 74.6
+   },
+   "carry_distance_mm": 0.7,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.06,
+   "carry_qref": 0.0,
+   "carry_steps": 16,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 58.9,
+   "dtz_end_mm": 58.9,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0473,
+    "dtz_mm": 75.7
+   },
+   "carry_distance_mm": -0.4,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.06,
+   "carry_qref": 0.2,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 51.0,
+   "dtz_end_mm": 51.0,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.1141,
+    "dtz_mm": 70.4
+   },
+   "carry_distance_mm": 4.9,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.06,
+   "carry_qref": 0.2,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 52.3,
+   "dtz_end_mm": 52.3,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0399,
+    "dtz_mm": 71.8
+   },
+   "carry_distance_mm": 3.5,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.06,
+   "carry_qref": 0.2,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 53.7,
+   "dtz_end_mm": 53.7,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0126,
+    "dtz_mm": 72.3
+   },
+   "carry_distance_mm": 3.0,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.06,
+   "carry_qref": 0.2,
+   "carry_steps": 16,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 55.1,
+   "dtz_end_mm": 55.1,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0168,
+    "dtz_mm": 72.2
+   },
+   "carry_distance_mm": 3.1,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.1,
+   "carry_qref": 0.0,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 51.3,
+   "dtz_end_mm": 51.3,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.1269,
+    "dtz_mm": 70.5
+   },
+   "carry_distance_mm": 4.8,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.1,
+   "carry_qref": 0.0,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 54.1,
+   "dtz_end_mm": 54.1,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0046,
+    "dtz_mm": 73.3
+   },
+   "carry_distance_mm": 2.0,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.1,
+   "carry_qref": 0.0,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 57.4,
+   "dtz_end_mm": 57.4,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.029,
+    "dtz_mm": 75.3
+   },
+   "carry_distance_mm": 0.0,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.1,
+   "carry_qref": 0.0,
+   "carry_steps": 16,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 60.8,
+   "dtz_end_mm": 60.8,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.061,
+    "dtz_mm": 76.8
+   },
+   "carry_distance_mm": -1.5,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.1,
+   "carry_qref": 0.2,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 51.1,
+   "dtz_end_mm": 51.1,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.1145,
+    "dtz_mm": 70.4
+   },
+   "carry_distance_mm": 4.9,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.1,
+   "carry_qref": 0.2,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 52.8,
+   "dtz_end_mm": 52.8,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0307,
+    "dtz_mm": 72.1
+   },
+   "carry_distance_mm": 3.2,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.1,
+   "carry_qref": 0.2,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 54.8,
+   "dtz_end_mm": 54.8,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.0038,
+    "dtz_mm": 72.9
+   },
+   "carry_distance_mm": 2.4,
+   "release_state": null
+  },
+  {
+   "mode": "GUIDED",
+   "carry_squeeze": 0.1,
+   "carry_qref": 0.2,
+   "carry_steps": 16,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 56.7,
+   "dtz_end_mm": 56.7,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0283,
+    "dtz_mm": 73.2
+   },
+   "carry_distance_mm": 2.1,
+   "release_state": null
+  },
+  {
+   "mode": "FULL_GRIP",
+   "carry_squeeze": 0.14,
+   "carry_qref": 1.0,
+   "carry_steps": 4,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 49.6,
+   "dtz_end_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": -0.0272,
+    "dtz_mm": 69.6
+   },
+   "carry_distance_mm": 5.7,
+   "release_state": null
+  },
+  {
+   "mode": "FULL_GRIP",
+   "carry_squeeze": 0.14,
+   "carry_qref": 1.0,
+   "carry_steps": 8,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 48.4,
+   "dtz_end_mm": 48.4,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.106,
+    "dtz_mm": 66.5
+   },
+   "carry_distance_mm": 8.8,
+   "release_state": null
+  },
+  {
+   "mode": "FULL_GRIP",
+   "carry_squeeze": 0.14,
+   "carry_qref": 1.0,
+   "carry_steps": 12,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3058,
+   "min_dtz_mm": 48.6,
+   "dtz_end_mm": 48.6,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 1.969,
+   "peak_coin": 0.359,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.111,
+    "dtz_mm": 63.3
+   },
+   "carry_distance_mm": 12.0,
+   "release_state": null
+  },
+  {
+   "mode": "RELEASED",
+   "carry_squeeze": 0.0,
+   "carry_qref": 0.0,
+   "carry_steps": 6,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3574,
+   "min_dtz_mm": 48.9,
+   "dtz_end_mm": 48.9,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 2.036,
+   "peak_coin": 0.37,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.2814,
+    "dtz_mm": 55.8
+   },
+   "carry_distance_mm": 19.5,
+   "release_state": null
+  },
+  {
+   "mode": "RELEASED",
+   "carry_squeeze": 0.0,
+   "carry_qref": 0.0,
+   "carry_steps": 10,
+   "qdot_approach": 2.4,
+   "launch": [
+    0.28,
+    0.45
+   ],
+   "peak_vpar": 0.3574,
+   "min_dtz_mm": 33.0,
+   "dtz_end_mm": 33.0,
+   "k6": false,
+   "safe": true,
+   "exit_step": 5,
+   "exit_reason": "LAUNCH",
+   "peak_qdot": 2.036,
+   "peak_coin": 0.37,
+   "approach_end": {
+    "v_par": 0.3058,
+    "dtz_mm": 75.3
+   },
+   "brake_start": {
+    "v_par": 0.2032,
+    "dtz_mm": 46.0
+   },
+   "carry_distance_mm": 29.3,
+   "release_state": null
+  }
+ ],
+ "wall_s": 93.0
+}

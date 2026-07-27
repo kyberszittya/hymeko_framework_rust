@@ -47,6 +47,7 @@ class ApproachParams:
     fn_min_safe: float = 0.05                     # N — below this on either tip ⇒ contact-loss risk ⇒ safe exit
     carry_steps: int = 0                          # C2.5 handoff duration between APPROACH and BRAKE (0 = direct handoff)
     carry_qref: float = 0.0                       # rad/s forward joint-velocity held during carry (0 = HELD_ZERO; >0 = HELD_LOW)
+    carry_squeeze: float = 0.14                   # N·m grip during held carry (C2.7 GUIDED_COAST = LOW ⇒ light contact, coasts)
     carry_release: bool = False                   # True = PASSIVE_RELEASE (relax grip, coast free) — DIAGNOSTIC branch only
     release_at_step: int = -1                     # C2.6 data-collection: force RELEASED_COAST at this step (−1 = off)
     coast_guard: bool = False                     # C2.6 deploy: RELEASE when the ROBUST predicted coast-landing ⊆ corridor
@@ -110,7 +111,7 @@ class HybridApproachController(TipReferencedController):
             return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": True,
                     "base_qref": 0.0, "base_sqz": float(self._sqz), "both": both, "contact_risk": not both, "con": con}
         return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,
-                "base_qref": float(self.ap.carry_qref), "base_sqz": float(self.p.squeeze_hold), "both": both,
+                "base_qref": float(self.ap.carry_qref), "base_sqz": float(self.ap.carry_squeeze), "both": both,
                 "contact_risk": not both, "con": con}
 
     def _exit_approach(self, dtz: float, v_par: float, both: bool, contact_risk: bool) -> "str | None":
