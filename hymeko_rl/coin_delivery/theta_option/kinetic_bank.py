@@ -148,3 +148,73 @@ def generate_neighbourhood(entry_tsnap: TransportSnapshot, *,
             continue
         accepted.append({"tsnap": tsnap, "descriptor": state_descriptor(tsnap), "provenance": prov})
     return accepted, rejected
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# K1-A — a diverse candidate sampler + a labelled-state extractor that carries the 41-D observation with faithful history
+# --------------------------------------------------------------------------------------------------------------------
+def _gen_theta(spec: PerturbSpec) -> np.ndarray:
+    return _clip_theta(np.asarray(GEN_BASE_THETA, np.float64) + np.asarray(spec.dtheta, np.float64))
+
+
+def _advance_with_history(entry_tsnap: TransportSnapshot, spec: PerturbSpec, seed: int) -> "tuple[Any, list, np.ndarray]":
+    """Advance the entry `spec.k` steps under the perturbed generation θ while accumulating the canonical `kinetic_observe`
+    compact-frame history (so the bank observation carries the same short causal history a deployed controller would have at
+    that state). # Postconditions: returns (Capture, hist[k frames], gen_theta); reuses the K0 `roll_until` step kernel."""
+    theta = _gen_theta(spec)
+    ctrl = _ThetaScheduleController(entry_tsnap, theta, spec.noise_slew_frac, np.random.default_rng(seed))
+    hist: list = []
+
+    def _stop(_c: Any, rl: Any, t: int) -> bool:
+        _f, hframe = kinetic_observe(rl, hist)
+        hist.append(hframe)
+        return t >= spec.k
+
+    cap = roll_until(entry_tsnap, ctrl, DELIVERY_CFG, stop_when=_stop)
+    return cap, hist, theta
+
+
+def labeled_state(entry_tsnap: TransportSnapshot, spec: PerturbSpec, *, seed: int) -> "tuple[dict | None, dict]":
+    """One K1-A candidate: a legal perturbed-control branch + (if admissible) its canonical 41-D observation with faithful
+    history, physical descriptor, and provenance. # Postconditions: returns (record | None, provenance); None ⇒ the branch left
+    the admissible set (an inadmissible attempt). The observation's history uses the frames BEFORE this state (`hist[:-1]`),
+    matching deploy-time streaming; NO teacher/future/K6 information enters it."""
+    cap, hist, theta = _advance_with_history(entry_tsnap, spec, seed)
+    tsnap = TransportSnapshot.from_live(cap.rl, entry_tsnap.stack, cap.prev_tau)
+    adm = tsnap.admissibility()
+    prov = {"category": spec.category, "label": spec.label, "k": spec.k, "noise_slew_frac": spec.noise_slew_frac,
+            "gen_theta": [round(float(x), 4) for x in theta], "admissible": adm.admissible,
+            "straddle_dot": adm.straddle_dot, "fn_min": adm.fn_min, "qdot_max": adm.qdot_max}
+    if not adm.admissible:
+        return None, prov
+    obs, _hf = kinetic_observe(tsnap.branch(), hist[:-1])   # history = frames before this state (deploy-time convention)
+    return {"tsnap": tsnap, "obs": obs, "descriptor": state_descriptor(tsnap), "provenance": prov}, prov
+
+
+def sample_specs(n: int, *, seed: int = 20260728) -> list[PerturbSpec]:
+    """`n` diverse candidate perturbations spanning the entry neighbourhood — a 30/50/20 easy/medium/edge mix, with the edge
+    family drawing near-slip (light grip + strong push), clamp (heavy grip + weak push), and asymmetry (large balance) modes so
+    the sampled set covers light-contact, near-slip, and asymmetric-contact regimes. Deterministic given `seed`.
+    # Postconditions: a length-`n` list of `PerturbSpec` (only squeeze/forward/balance offsets; ramp/release/brake fixed)."""
+    rng = np.random.default_rng(seed)
+    fams = rng.choice(np.array(["easy", "medium", "edge"]), size=n, p=[0.3, 0.5, 0.2])
+    specs: list[PerturbSpec] = []
+    for i, fam in enumerate(fams):
+        if fam == "easy":
+            dth = (rng.uniform(-0.01, 0.02), rng.uniform(-0.03, 0.03), rng.uniform(-0.02, 0.02))
+            k, noise = int(rng.integers(2, 5)), 0.0
+        elif fam == "medium":
+            dth = (rng.uniform(-0.02, 0.06), rng.uniform(-0.06, 0.06), rng.uniform(-0.06, 0.06))
+            k, noise = int(rng.integers(4, 8)), float(rng.choice([0.02, 0.03, 0.05]))
+        else:
+            mode = rng.choice(np.array(["slip", "clamp", "asym"]))
+            if mode == "slip":
+                dth = (rng.uniform(-0.05, -0.02), rng.uniform(0.06, 0.12), rng.uniform(-0.03, 0.03))
+            elif mode == "clamp":
+                dth = (rng.uniform(0.08, 0.14), rng.uniform(-0.12, -0.06), 0.0)
+            else:
+                dth = (rng.uniform(-0.02, 0.04), rng.uniform(0.0, 0.08), float(rng.choice([-1.0, 1.0])) * rng.uniform(0.08, 0.12))
+            k, noise = int(rng.integers(6, 10)), float(rng.choice([0.04, 0.06]))
+        specs.append(PerturbSpec(str(fam), f"{fam}_{i:02d}", (float(dth[0]), float(dth[1]), float(dth[2]), 0.0, 0.0, 0.0),
+                                 k, float(noise)))
+    return specs

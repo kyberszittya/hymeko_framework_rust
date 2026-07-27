@@ -1,0 +1,99 @@
+{
+ "contract": "COIN_KINETIC_K1A_BANK_V1",
+ "seed": 14250,
+ "entry": {
+  "seed": 14250,
+  "entry_step": 4,
+  "state_hash": "ce343c478d2a0cb7",
+  "entry_dtz_mm": 75.75,
+  "entry_v_par": 0.2488,
+  "admissible": true,
+  "straddle_dot": -0.9971,
+  "fn_min": 2.7031,
+  "qdot_max": 1.8944
+ },
+ "target_accepted": 32,
+ "max_attempts": 48,
+ "attempts_used": 37,
+ "n_feedback": 32,
+ "n_terminal_failure": 5,
+ "n_inadmissible": 0,
+ "category_counts": {
+  "easy": 9,
+  "medium": 19,
+  "edge": 4
+ },
+ "k6_delivering_labels": 22,
+ "cost_s": {
+  "median": 4.77,
+  "p90": 5.25,
+  "max": 5.5
+ },
+ "state_spread": {
+  "v_par": {
+   "min": -0.0277,
+   "max": 0.2774,
+   "std": 0.0584
+  },
+  "slip": {
+   "min": 0.0615,
+   "max": 0.4758,
+   "std": 0.0921
+  },
+  "fn_min": {
+   "min": 0.5028,
+   "max": 3.5776,
+   "std": 0.7691
+  },
+  "fn_imbalance": {
+   "min": 0.0204,
+   "max": 0.4725,
+   "std": 0.1116
+  },
+  "dtz_mm": {
+   "min": 54.7,
+   "max": 70.39,
+   "std": 3.6068
+  }
+ },
+ "distinct_states": {
+  "min_pairwise": 0.1168,
+  "mean_pairwise": 2.889,
+  "near_duplicates": 2
+ },
+ "first_action": {
+  "pairwise_diversity": 0.2741,
+  "scale": 0.20527,
+  "mean": [
+   -0.26129,
+   -0.13071,
+   0.16237,
+   -0.26128
+  ],
+  "std": [
+   0.13248,
+   0.06609,
+   0.12324,
+   0.10998
+  ],
+  "range": [
+   0.56295,
+   0.26335,
+   0.69194,
+   0.38282
+  ]
+ },
+ "bank_hash": "bc36e0521982bd36",
+ "deterministic_repeat": [
+  {
+   "label": "medium_00",
+   "max_abs_first_action_diff": 0.0
+  },
+  {
+   "label": "medium_19",
+   "max_abs_first_action_diff": 0.0
+  }
+ ],
+ "verdict": "K1A_BANK_READY",
+ "wall_s": 214.8
+}

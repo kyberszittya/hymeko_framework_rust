@@ -150,6 +150,32 @@ def test_kinetic_bank_neighbourhood_deterministic_and_diverse(s1_entry):
     assert cats == {"easy", "medium", "edge"}                          # all three strata represented
 
 
+def test_sample_specs_deterministic_and_covers_strata():
+    """The K1-A candidate sampler is deterministic and spans the easy/medium/edge strata; it perturbs only the first three θ
+    dims (squeeze/forward/balance), leaving ramp/release/brake fixed."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_bank as kb
+    s1 = kb.sample_specs(48)
+    s2 = kb.sample_specs(48)
+    assert len(s1) == 48
+    assert [s.label for s in s1] == [s.label for s in s2]                # deterministic
+    assert {s.category for s in s1} == {"easy", "medium", "edge"}        # all three strata sampled
+    assert all(s.dtheta[3] == 0.0 and s.dtheta[4] == 0.0 and s.dtheta[5] == 0.0 for s in s1)   # only sqz/fwd/bal perturbed
+    assert any(s.category == "edge" and s.dtheta[0] < 0 and s.dtheta[1] > 0.05 for s in s1)     # a near-slip edge mode present
+
+
+def test_labeled_state_carries_41d_obs_no_leak(s1_entry):
+    """A K1-A labelled state carries the canonical 41-D observation (history = frames before the state) and an admissible
+    snapshot; the observation is finite and never carries teacher/future/K6 info (structural + purity of kinetic_observe)."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_bank as kb
+    spec = kb.PerturbSpec("easy", "probe", (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), 3, 0.0)
+    rec, prov = kb.labeled_state(s1_entry.tsnap, spec, seed=1)
+    assert rec is not None and prov["admissible"]                       # an easy 3-step advance stays admissible
+    assert rec["obs"].shape[0] == len(kc.FEATURE_NAMES) == 41 and np.all(np.isfinite(rec["obs"]))
+    assert rec["tsnap"].admissibility().admissible
+    rec2, _ = kb.labeled_state(s1_entry.tsnap, spec, seed=1)            # deterministic obs
+    assert np.array_equal(rec["obs"], rec2["obs"])
+
+
 def test_receding_horizon_relabel_first_action_only_deterministic(s1_entry):
     r = kc.receding_horizon_relabel(s1_entry.tsnap, budget=0)
     assert r.first_action.shape == (4,) and r.first_action_norm.shape == (4,)
