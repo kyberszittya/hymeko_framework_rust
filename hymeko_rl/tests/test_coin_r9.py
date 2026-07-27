@@ -52,3 +52,37 @@ def test_r9_slew_clamp():
     slewed = np.clip(raw, prev - b.slew, prev + b.slew)
     assert np.all(np.abs(slewed - prev) <= b.slew + 1e-12)
     assert np.allclose(slewed, [b.slew, 0.2 - b.slew, -0.1 + b.slew])
+
+
+# ── R10-C2: the APPROACH momentum-build mode — causal exit-guard logic (pure, no physics) ────────────────────────────
+def test_r10_approach_exit_guards():
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import APPROACH, ApproachParams, HybridApproachController
+    c = object.__new__(HybridApproachController)                 # bypass physics __init__ to unit-test the guard logic
+    c.ap = ApproachParams()
+    c._impulse, c._approach_steps = 0.0, 0
+    assert APPROACH == -1
+    # SAFETY overrides everything (even a valid launch state)
+    assert c._exit_approach(dtz=0.10, v_par=0.30, both=True, contact_risk=True) == "SAFETY"
+    # LAUNCH only inside the band AND with bilateral contact
+    assert c._exit_approach(0.10, 0.30, True, False) == "LAUNCH"
+    assert c._exit_approach(0.10, 0.30, False, False) != "LAUNCH"     # no bilateral contact
+    assert c._exit_approach(0.10, 0.10, True, False) is None          # below the launch band, keep approaching
+    # REACHABILITY: v_par² ≥ 2·coast_decel·d_remain (can coast into the zone)
+    assert c._exit_approach(0.05, 0.30, True, False) == "REACHABILITY"   # d_remain 0.03, 0.09 ≥ 2·0.5·0.03=0.03
+    # BUDGET and HORIZON are mandatory exits far from the zone with no launch/reach
+    c._impulse = 1.0
+    assert c._exit_approach(1.0, 0.05, True, False) == "BUDGET"
+    c._impulse, c._approach_steps = 0.0, 99
+    assert c._exit_approach(1.0, 0.05, True, False) == "HORIZON"
+    c._approach_steps = 0
+    assert c._exit_approach(1.0, 0.05, True, False) is None          # far, slow, in-budget ⇒ keep building momentum
+
+
+def test_r10_approach_bounds_and_no_regression():
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import APPROACH, ApproachParams
+    from hymeko_rl.coin_delivery.theta_option.tip_transport import REGULATE
+    ap = ApproachParams()
+    assert ap.qdot_approach > 1.0 and ap.qdot_approach < 3.0          # above the settle cap, under the hard motion limit
+    assert 0.0 < ap.launch_vlo < ap.launch_vhi                        # a band, not a point (anti-chatter)
+    assert ap.impulse_budget > 0 and ap.max_steps > 0                 # bounded effort + horizon guards exist
+    assert APPROACH < REGULATE                                        # APPROACH precedes the scaffold phases (monotone order)
