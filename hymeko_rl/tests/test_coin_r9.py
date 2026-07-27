@@ -124,3 +124,20 @@ def test_r10_kinetic_transports_without_stiction_stall():
     c0 = HybridApproachController(snap, TipTransportParams(), ApproachParams(), DELIVERY_CFG)   # default = kinetic OFF
     velocity_rollout(snap, c0, DELIVERY_CFG)
     assert c0._kinetic_steps == 0                                    # update-zero: a default controller never enters KINETIC
+
+
+def test_kinetic_bc_collect_and_actor():
+    import json
+
+    import torch
+
+    from hymeko_rl.experiments.coin_kinetic_bc import _KineticActor, collect_teacher_transport
+    from hymeko_rl.experiments.coin_r9_causal_rl import BANK, _load_harness, _teacher_theta, build_panel
+    bank = json.load(open(BANK))
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}["s1"].snap
+    feats, acts = collect_teacher_transport(snap, _teacher_theta(bank, "s1"))
+    assert len(feats) == len(acts) and len(feats) > 0               # aligned, non-empty transport-segment demos
+    assert acts.shape[1] == 4 and np.abs(acts).max() <= 1.0 + 1e-6  # dtau normalised to the tanh actor's range
+    actor = _KineticActor(feats.shape[1], 4, h=16)
+    out = actor.action_mean(torch.as_tensor(feats[:2], dtype=torch.float32))
+    assert tuple(out.shape) == (2, 4) and float(out.abs().max()) <= 1.0    # tanh-bounded prediction

@@ -1,0 +1,53 @@
+{
+ "contract": "COIN_KINETIC_BC_CROSS_CRADLE",
+ "cradles": [
+  "s1",
+  "s3"
+ ],
+ "feature_dim": 26,
+ "action_dim": 4,
+ "hist_depth": 2,
+ "min_demos_per_cradle": 8,
+ "teacher_theta_per_cradle": {
+  "s1": [
+   0.051,
+   0.218,
+   0.016,
+   12.808,
+   9.237,
+   3.039
+  ],
+  "s3": [
+   0.196,
+   0.069,
+   -0.037,
+   7.825,
+   11.182,
+   2.192
+  ]
+ },
+ "teacher_action_magnitude": {
+  "s1": 0.113,
+  "s3": 0.453
+ },
+ "train_s1_test_s3": {
+  "within_mse": 0.0,
+  "cross_mse": 1.36961,
+  "cross_r2": -7.403,
+  "final_train_loss": 0.0,
+  "n_train": 8,
+  "n_test": 10
+ },
+ "train_s3_test_s1": {
+  "within_mse": 6e-05,
+  "cross_mse": 0.85412,
+  "cross_r2": -208.897,
+  "final_train_loss": 6e-05,
+  "n_train": 10,
+  "n_test": 8
+ },
+ "cross_cradle_r2_mean": -108.15,
+ "verdict": "CROSS_CRADLE_BC_UNDERPOWERED",
+ "wall_s": 95.8,
+ "reading": "UNDERPOWERED: only 2 dev cradles (s4/s7 held-out validation-only) with ~8-10 transport steps each, and the two teacher \u03b8 are strategically OPPOSITE (s1 light-squeeze/strong-push vs s3 firm-squeeze/gentle-push) \u2014 a 2-cradle train/test cannot distinguish generalization from noise. The BC memorises each cradle (within-MSE\u22480); the NEXT decisive test is the WITHIN-cradle closed-loop deploy (does the cloned transport reach the corridor on the SAME cradle), then more dev cradles for a real generalization claim."
+}
