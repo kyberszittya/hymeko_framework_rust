@@ -186,19 +186,31 @@ def _eval_candidate(dev: list, a: np.ndarray, kind: str, seq: np.ndarray, base: 
     return rows, kres
 
 
+def _safe_positive_rate(flags: list) -> float:
+    """Fraction of (safe AND positive) over `(safe, positive, *rest)` tuples; 0.0 if empty. # Post: in [0,1]."""
+    return round(float(np.mean([a and b for a, b, *_ in flags])), 4) if flags else 0.0
+
+
+def _improvement_stats(dvals: list) -> "tuple[float, float]":
+    """(median, max) of the positive-improvement values (metres); (0.0, 0.0) if empty."""
+    if not dvals:
+        return 0.0, 0.0
+    return round(float(np.median(dvals)), 5), round(float(np.max(dvals)), 5)
+
+
 def _candidate_summary(rows: list, per_kind: dict) -> dict:
     """Safe / positive / safe-positive rates + improvement distribution + coherence effect over the candidate rows."""
     all_t = [(x["safe"], x["d_return"] > 1e-4) for x in rows]
     dvals = [x["d_return"] for x in rows if x["safe"] and x["d_return"] > 1e-4]
-    sp = lambda v: round(float(np.mean([a and b for a, b, *_ in v])), 4) if v else 0.0     # noqa: E731
+    med, mx = _improvement_stats(dvals)
+    by_kind = {k: _safe_positive_rate(v) for k, v in per_kind.items()}
     return {"n_candidates_evaluated": len(rows), "safe_rate": round(float(np.mean([s for s, _ in all_t])), 4),
             "positive_rate": round(float(np.mean([p for _, p in all_t])), 4),
             "safe_positive_rate": round(float(np.mean([s and p for s, p in all_t])), 4),
-            "improvement_median_m": round(float(np.median(dvals)), 5) if dvals else 0.0,
-            "improvement_max_m": round(float(np.max(dvals)), 5) if dvals else 0.0,
+            "improvement_median_m": med, "improvement_max_m": mx,
             "best_dtz_end_m": round(float(min(x["dtz_end"] for x in rows)), 4),
-            "safe_positive_by_kind": {k: sp(v) for k, v in per_kind.items()},
-            "temporal_coherence_helps": bool(sp(per_kind["coherent"]) > sp(per_kind["constant"]) + 0.02)}
+            "safe_positive_by_kind": by_kind,
+            "temporal_coherence_helps": bool(by_kind["coherent"] > by_kind["constant"] + 0.02)}
 
 
 def s3_candidates(dev: list, params: Any, bounds: Any, seed: int = 7001) -> "tuple[dict, list]":
