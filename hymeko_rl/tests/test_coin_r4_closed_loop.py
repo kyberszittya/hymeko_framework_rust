@@ -113,6 +113,37 @@ def test_r6_release_cert_params():
     assert p.settle_tol < 0.06 and p.n_frames >= 1            # tighter than K6 settle; needs ≥1 confirming frame
 
 
+# ── R7 (V0): the velocity-servo primitive algebra — bounded velocity, saturating NON-REVERSING stop ─────────────────
+def test_r7_velocity_ref_bounded():
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_ref
+    assert velocity_ref(0.0, 4.0, 0.35) == 0.0                # zero reference at the zone
+    assert velocity_ref(-0.1, 4.0, 0.35) == 0.0               # never negative behind the zone
+    assert velocity_ref(1.0, 4.0, 0.35) == 0.35               # clipped to v_max
+    assert velocity_ref(0.05, 4.0, 0.35) == 0.2               # proportional in the mid-range
+    assert velocity_ref(0.08, 4.0, 0.35) > velocity_ref(0.04, 4.0, 0.35)   # decays toward the zone
+
+
+def test_r7_accel_cmd_saturates():
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import accel_cmd
+    assert accel_cmd(1.0, 0.0, 12.0, 4.0, 8.0) == 4.0         # saturated push
+    assert accel_cmd(0.0, 1.0, 12.0, 4.0, 8.0) == -8.0        # saturated decel
+    assert -8.0 <= accel_cmd(0.31, 0.30, 12.0, 4.0, 8.0) <= 4.0
+
+
+def test_r7_non_reversing_stop():
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import non_reversing_accel
+    dt = 0.02
+    # positive motion + a decel that WOULD reverse ⇒ clamped so next-step velocity is exactly 0 (never negative)
+    for v in (0.05, 0.2, 0.45):
+        a = non_reversing_accel(-1000.0, v, dt)
+        assert abs((v + a * dt)) < 1e-9                        # brought to rest, not reversed
+        assert v + a * dt >= 0.0
+    # a decel that does NOT reverse is unchanged; a receding/zero coin is unchanged
+    assert non_reversing_accel(-1.0, 0.5, dt) == -1.0
+    assert non_reversing_accel(-1000.0, -0.3, dt) == -1000.0
+    assert non_reversing_accel(5.0, 0.2, dt) == 5.0           # positive accel never touched
+
+
 # ── 1. ZERO-RESIDUAL IDENTITY — a benign, on-plan response yields ≈0 correction ─────────────────────────────────────
 def test_1_zero_residual_identity():
     c = IntentCorrector(CorrectionParams())                    # k_forward_deficit = 0 by default
