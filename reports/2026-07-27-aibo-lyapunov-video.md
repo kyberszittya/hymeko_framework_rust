@@ -37,6 +37,15 @@ metric-integrity check (a certificate everything passes is worthless): the rewar
 Representative mid-frame (step 1801): pursuit d 0.46 m, herr +10°, V 0.019, descent+conv OK;
 negative herr +125°, V 2.40, descent+conv no.
 
+## Second video — the AIBO **reaches the goal** (`aibo_reach_goal.mp4`)
+
+A single-panel, fixed-camera cut framing the whole start→goal traverse, with the **goal
+rendered in the 3D scene** (a translucent green reach-zone disk + pole via `mjv_initGeom`)
+so the viewer watches the dog trot up to a visible target. It **reaches at step 2025**,
+settles to **final d = 0.42 m** inside the reach zone (`GOAL REACHED` badge, minimap dot
+inside the circle), **CERT PASS** — V decays to 0.039. The certified pursuit genuinely
+arrives, aligns, and stops at the waypoint.
+
 ## Files
 
 ```
