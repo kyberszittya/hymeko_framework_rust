@@ -1,0 +1,17 @@
+{
+ "contract": "COIN_R8_S3_2_CANDIDATE_SEARCH",
+ "n_candidates_evaluated": 240,
+ "safe_rate": 1.0,
+ "positive_rate": 0.5083,
+ "safe_positive_rate": 0.5083,
+ "improvement_median_m": 0.0058,
+ "improvement_max_m": 0.25385,
+ "best_dtz_end_m": 0.0252,
+ "safe_positive_by_kind": {
+  "constant": 0.5125,
+  "piecewise": 0.4625,
+  "coherent": 0.55
+ },
+ "temporal_coherence_helps": true,
+ "n_rows": 240
+}

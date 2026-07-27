@@ -229,28 +229,47 @@ def s3_candidates(dev: list, params: Any, bounds: Any, seed: int = 7001) -> "tup
     return _candidate_summary(rows, per_kind), rows
 
 
-def _rank_metrics(x: np.ndarray, y: np.ndarray) -> dict:
-    """Cross-validated ridge DIFFERENCE-predictor rankability: Spearman, pairwise accuracy, top-10% enrichment."""
+def _rank_once(x: np.ndarray, y: np.ndarray, tr: np.ndarray, te: np.ndarray, rng: Any) -> "tuple[float, float, float]":
+    """One train/test half-split of the ridge difference-predictor → (spearman, pairwise_acc, top10_enrichment)."""
+    xb = np.hstack([x, np.ones((len(y), 1))])
+    w = np.linalg.lstsq(xb[tr].T @ xb[tr] + 1e-3 * np.eye(xb.shape[1]), xb[tr].T @ y[tr], rcond=None)[0]
+    pred, yt = xb[te] @ w, y[te]
+    rp = np.argsort(np.argsort(pred)).astype(float)
+    ry = np.argsort(np.argsort(yt)).astype(float)
+    spear = float(np.corrcoef(rp, ry)[0, 1]) if len(te) > 2 else 0.0
+    base_pos = float(np.mean(yt > 0))
+    top = np.argsort(pred)[::-1][: max(1, len(te) // 10)]
+    enrich = float(np.mean(yt[top] > 0) / (base_pos + 1e-9)) if base_pos > 0 else 0.0
+    pairs = rng.integers(0, len(te), (200, 2))
+    hits = [(pred[i] > pred[j]) == (yt[i] > yt[j]) for i, j in pairs if yt[i] != yt[j]]
+    return spear, (float(np.mean(hits)) if hits else 0.5), enrich
+
+
+def _rank_metrics(x: np.ndarray, y: np.ndarray, n_splits: int = 25) -> dict:
+    """ROBUST rankability of the ridge difference-predictor Δreturn(state, residual): median + IQR + threshold-hit
+    fraction over `n_splits` random half-splits (§3 multi-seed discipline — a single split is a point estimate, not a
+    verdict). # Post: `spearman`/`pairwise_acc`/`top10_enrichment` are MEDIANS; `frac_*` are the share of splits crossing
+    each single-metric threshold."""
     n = len(y)
     if n < 8:
-        return {"spearman": 0.0, "pairwise_acc": 0.5, "top10_enrichment": 1.0, "n": n}
+        return {"spearman": 0.0, "pairwise_acc": 0.5, "top10_enrichment": 1.0, "n": n, "n_splits": 0}
     rng = np.random.default_rng(11)
-    idx = rng.permutation(n)
-    tr, te = idx[: n // 2], idx[n // 2:]
-    xb = np.hstack([x, np.ones((n, 1))])
-    w = np.linalg.lstsq(xb[tr].T @ xb[tr] + 1e-3 * np.eye(xb.shape[1]), xb[tr].T @ y[tr], rcond=None)[0]
-    pred = xb[te] @ w
-    def _rank(v: np.ndarray) -> np.ndarray:
-        return np.argsort(np.argsort(v)).astype(float)
-    rp, ry = _rank(pred), _rank(y[te])
-    spear = float(np.corrcoef(rp, ry)[0, 1]) if len(te) > 2 else 0.0
-    base_pos = float(np.mean(y[te] > 0))
-    k = max(1, len(te) // 10)
-    top = np.argsort(pred)[::-1][:k]
-    enrich = round(float(np.mean(y[te][top] > 0) / (base_pos + 1e-9)), 3) if base_pos > 0 else 0.0
-    pairs = rng.integers(0, len(te), (200, 2))
-    acc = float(np.mean([(pred[i] > pred[j]) == (y[te][i] > y[te][j]) for i, j in pairs if y[te][i] != y[te][j]]))
-    return {"spearman": round(spear, 3), "pairwise_acc": round(acc, 3), "top10_enrichment": enrich, "n": int(n)}
+    sp, pa, en = [], [], []
+    for _ in range(n_splits):
+        idx = rng.permutation(n)
+        s, a, e = _rank_once(x, y, idx[: n // 2], idx[n // 2:], rng)
+        sp.append(s)
+        pa.append(a)
+        en.append(e)
+    sp_a, pa_a, en_a = np.array(sp), np.array(pa), np.array(en)
+    def _iqr(v: np.ndarray) -> list:
+        return [round(float(np.percentile(v, 25)), 3), round(float(np.percentile(v, 75)), 3)]
+    return {"spearman": round(float(np.median(sp_a)), 3), "spearman_iqr": _iqr(sp_a),
+            "pairwise_acc": round(float(np.median(pa_a)), 3), "pairwise_iqr": _iqr(pa_a),
+            "top10_enrichment": round(float(np.median(en_a)), 3), "top10_iqr": _iqr(en_a),
+            "frac_spear_gt_0p2": round(float(np.mean(sp_a > 0.2)), 3),
+            "frac_top10_gt_1p3": round(float(np.mean(en_a > 1.3)), 3),
+            "frac_pair_gt_0p6": round(float(np.mean(pa_a > 0.6)), 3), "n": int(n), "n_splits": int(n_splits)}
 
 
 def _s3_rank(rows: list) -> "tuple[dict, int]":
@@ -270,7 +289,10 @@ def _s3_verdict(sens: dict, cand: dict, rank: dict) -> "tuple[str, dict]":
     effective = [r for r in sens if sens[r]["class"] in ("EFFECTIVE", "WEAK")]
     has_effect = bool(effective) and not any(sens[r]["class"] == "UNSAFE" for r in sens)
     has_positive = cand["safe_positive_rate"] > 0.02
-    rankable = rank["spearman"] > 0.2 or rank["top10_enrichment"] > 1.3 or rank["pairwise_acc"] > 0.6
+    # ROBUST rankability: a MAJORITY of resampled splits must cross a single-metric threshold (a marginal median on one
+    # split is not a verdict, §3). Falls back to the single-split keys when the robust `frac_*` are absent (n<8 case).
+    rankable = (rank.get("frac_spear_gt_0p2", 0.0) > 0.5 or rank.get("frac_top10_gt_1p3", 0.0) > 0.5
+                or rank.get("frac_pair_gt_0p6", 0.0) > 0.5)
     if has_effect and has_positive and rankable:
         v = "RESIDUAL_LEARNABILITY_SIGNAL_PASS"
     elif has_effect and not has_positive:

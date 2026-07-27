@@ -1,0 +1,26 @@
+{
+ "contract": "COIN_R8_S3_1_SENSITIVITY",
+ "per_role": {
+  "d_fwd_vel": {
+   "mean_abs_dtz_change_m": 0.05116,
+   "unsafe": false,
+   "class": "EFFECTIVE"
+  },
+  "d_squeeze": {
+   "mean_abs_dtz_change_m": 0.00715,
+   "unsafe": false,
+   "class": "WEAK"
+  },
+  "d_stop_gain": {
+   "mean_abs_dtz_change_m": 0.00947,
+   "unsafe": false,
+   "class": "WEAK"
+  }
+ },
+ "effective_roles": [
+  "d_fwd_vel",
+  "d_squeeze",
+  "d_stop_gain"
+ ],
+ "inert_or_unsafe": []
+}

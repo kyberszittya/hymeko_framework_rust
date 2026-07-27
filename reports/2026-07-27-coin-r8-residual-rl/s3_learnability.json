@@ -1,0 +1,51 @@
+{
+ "contract": "COIN_R8_S3_LEARNABILITY",
+ "sensitivity": {
+  "d_fwd_vel": "EFFECTIVE",
+  "d_squeeze": "WEAK",
+  "d_stop_gain": "WEAK"
+ },
+ "candidate": {
+  "n_candidates_evaluated": 240,
+  "safe_rate": 1.0,
+  "positive_rate": 0.5083,
+  "safe_positive_rate": 0.5083,
+  "improvement_median_m": 0.0058,
+  "improvement_max_m": 0.25385,
+  "best_dtz_end_m": 0.0252,
+  "safe_positive_by_kind": {
+   "constant": 0.5125,
+   "piecewise": 0.4625,
+   "coherent": 0.55
+  },
+  "temporal_coherence_helps": true
+ },
+ "rankability": {
+  "spearman": 0.129,
+  "spearman_iqr": [
+   0.077,
+   0.191
+  ],
+  "pairwise_acc": 0.528,
+  "pairwise_iqr": [
+   0.487,
+   0.55
+  ],
+  "top10_enrichment": 1.379,
+  "top10_iqr": [
+   1.304,
+   1.525
+  ],
+  "frac_spear_gt_0p2": 0.2,
+  "frac_top10_gt_1p3": 0.76,
+  "frac_pair_gt_0p6": 0.0,
+  "n": 240,
+  "n_splits": 25
+ },
+ "has_effect": true,
+ "has_safe_positive": true,
+ "rankable": true,
+ "verdict": "RESIDUAL_LEARNABILITY_SIGNAL_PASS",
+ "rl_authorised": true,
+ "wall_s": 99.8
+}

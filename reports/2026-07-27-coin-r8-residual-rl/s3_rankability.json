@@ -1,0 +1,25 @@
+{
+ "contract": "COIN_R8_S3_3_RANKABILITY",
+ "spearman": 0.129,
+ "spearman_iqr": [
+  0.077,
+  0.191
+ ],
+ "pairwise_acc": 0.528,
+ "pairwise_iqr": [
+  0.487,
+  0.55
+ ],
+ "top10_enrichment": 1.379,
+ "top10_iqr": [
+  1.304,
+  1.525
+ ],
+ "frac_spear_gt_0p2": 0.2,
+ "frac_top10_gt_1p3": 0.76,
+ "frac_pair_gt_0p6": 0.0,
+ "n": 240,
+ "n_splits": 25,
+ "n_safe_rows": 240,
+ "predictor": "cross-validated ridge difference-predictor delta_return(state,residual)"
+}
