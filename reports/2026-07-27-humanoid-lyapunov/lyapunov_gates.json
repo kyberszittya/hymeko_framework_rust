@@ -1,0 +1,25 @@
+{
+  "verdict": "HUMANOID_FLOATING_FAILS_LYAPUNOV_BALANCE_CONTROLLER_PREREQUISITE",
+  "floating_base_naive_control": {
+    "V0": 0.0,
+    "Vfinal": 4024.7601,
+    "Vmax": 4024.7601,
+    "descent_fraction": 0.05,
+    "nonnegative": true,
+    "converged": false,
+    "bounded": false,
+    "passes": false
+  },
+  "fixed_base_constrained": {
+    "V0": 0.0,
+    "Vfinal": 0.0,
+    "Vmax": 0.0,
+    "descent_fraction": 1.0,
+    "nonnegative": true,
+    "converged": true,
+    "bounded": true,
+    "passes": true
+  },
+  "discriminates": true,
+  "note": "SIMULATION. Floating-base HyMeKo humanoid (runtime freejoint) COLLAPSES under naive gravity-comp PD -> COM-Lyapunov V diverges -> certificate REJECTS (rigorous balance-controller prerequisite for HUM-2/3/4). Fixed-base cannot fall -> V~0 -> passes VACUOUSLY (consistent with HUM-1 'balance vacuous'). Same generic Lyapunov certificate AIBO PASSED with a real controller -> it discriminates across embodiments."
+}
