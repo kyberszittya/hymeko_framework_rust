@@ -67,8 +67,9 @@ def test_r10_approach_exit_guards():
     assert c._exit_approach(0.10, 0.30, True, False) == "LAUNCH"
     assert c._exit_approach(0.10, 0.30, False, False) != "LAUNCH"     # no bilateral contact
     assert c._exit_approach(0.10, 0.10, True, False) is None          # below the launch band, keep approaching
-    # REACHABILITY: v_par² ≥ 2·coast_decel·d_remain (can coast into the zone)
-    assert c._exit_approach(0.05, 0.30, True, False) == "REACHABILITY"   # d_remain 0.03, 0.09 ≥ 2·0.5·0.03=0.03
+    # REACHABILITY: v_par² ≥ 2·coast_decel·d_remain, with v_par ABOVE the launch band so LAUNCH does not pre-empt it
+    assert c.ap.launch_vhi < 0.5
+    assert c._exit_approach(0.05, 0.5, True, False) == "REACHABILITY"    # d_remain 0.03, 0.25 ≥ 2·0.5·0.03=0.03
     # BUDGET and HORIZON are mandatory exits far from the zone with no launch/reach
     c._impulse = 1.0
     assert c._exit_approach(1.0, 0.05, True, False) == "BUDGET"
