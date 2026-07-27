@@ -21,8 +21,9 @@ from typing import Any
 import numpy as np
 
 from hymeko_rl.coin_delivery.coin_rl_env import CENTER_TOL
+from hymeko_rl.coin_delivery.forward_displacement import delivery_success
 from hymeko_rl.experiments.coin_r9_causal_rl import (
-    BANK, DELIVERY_CFG, OUT, TipTransportParams, _load_harness, _phys_hook, build_panel)
+    BANK, DELIVERY_CFG, OUT, TipTransportParams, _load_harness, _phys_hook, _teacher_theta, build_panel)
 
 # G0 sweep grid: the pre-release-state distribution is spanned by APPROACH momentum × release timing (dev cradles s1, s3 only).
 _G0_CRADLES = ("s1", "s3")
@@ -201,11 +202,125 @@ def g0_conditional_observability() -> dict:
     return out
 
 
+# G-VF search space — the 6-param position-varying KINETIC transport profile (v_hi, v_lo, taper_dtz, sqz_transport, decay_onset, release_hi)
+_VF_LO = np.array([0.18, 0.10, 0.028, 0.05, 0.026, 0.020])
+_VF_HI = np.array([0.34, 0.16, 0.044, 0.16, 0.040, 0.030])
+
+
+def _vf_ap(v: np.ndarray) -> Any:
+    """Profile candidate → ApproachParams (taper/decay breakpoints clamped strictly above the release corridor)."""
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    rel = float(v[5])
+    return ApproachParams(qdot_approach=2.6, acquire_squeeze=0.12, impulse_budget=12.0, max_steps=30, fn_min_safe=0.02,
+                          kinetic_transport=True, kinetic_profile=True, kinetic_vcap=1.9, kinetic_entry_v=0.10,
+                          kinetic_max_steps=55, kinetic_release_vmin=0.05, kinetic_release_hi=rel,
+                          k_v_hi=float(v[0]), k_v_lo=float(v[1]), k_taper_dtz=max(float(v[2]), rel + 0.005),
+                          k_sqz_transport=float(v[3]), k_decay_onset=max(float(v[4]), rel + 0.003))
+
+
+def _kinetic_rollout(snap: Any, ap: Any) -> "tuple[list, dict, Any]":
+    """Roll the KINETIC controller with a PHASE-aware hook capturing per-step (dtz, v_par, realized fn, contact, is-KINETIC)."""
+    from hymeko_rl.coin_delivery.contact_velocity import primary_fingertip_contacts
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import KINETIC, HybridApproachController
+    from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
+    ctrl = HybridApproachController(snap, TipTransportParams(), ap, DELIVERY_CFG)
+    traj: list = []
+
+    def hook(rl: Any, t: int) -> None:
+        u, d = rl.inner.direction_to_zone()
+        uu = np.asarray(u, np.float64)[:2]
+        vel = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
+        con = primary_fingertip_contacts(rl)
+        fnl = float(con["left"]["fn"]) if con["left"] else 0.0
+        fnr = float(con["right"]["fn"]) if con["right"] else 0.0
+        traj.append({"dtz_mm": float(d) * 1000, "v_par": float(np.dot(vel, uu)), "fn_min": min(fnl, fnr),
+                     "contact": int(fnl > 0 or fnr > 0), "kinetic": ctrl.phase == KINETIC})
+    m = velocity_rollout(snap, ctrl, DELIVERY_CFG, frame_hook=hook)
+    return traj, m, ctrl
+
+
+def _kinetic_metrics(kine: list, rel_hi_mm: float) -> dict:
+    """REALIZED-contact quality over the KINETIC steps: sign reversals, light-contact fraction, clamp (fn too high) + early
+    contact-loss (fn=0 before the corridor) penalties — scored on measured fn, not the squeeze command."""
+    signs = [1 if r["v_par"] > 0.02 else (-1 if r["v_par"] < -0.02 else 0) for r in kine]
+    return {"reversals": sum(1 for a, b in zip(signs, signs[1:]) if a * b < 0),
+            "contact_frac": sum(1 for r in kine if 0.03 < r["fn_min"] < 1.8) / max(len(kine), 1),
+            "clamp_pen": sum(max(0.0, r["fn_min"] - 1.8) for r in kine),
+            "loss_pen": sum(1 for r in kine if r["contact"] == 0 and r["dtz_mm"] > rel_hi_mm + 3.0)}
+
+
+def _vf_score(traj: list, m: dict, ctrl: Any, rel_hi_mm: float) -> "tuple[float, dict]":
+    """Lexicographic-ish scalar over the REALIZED trajectory: safety ≻ K6 ≻ reached-moving-release ≻ light-contact-maintained ≻
+    no-sign-reversal ≻ closeness (clamp / early-contact-loss penalised via _kinetic_metrics)."""
+    if not (m["peak_coin_speed"] <= 1.5 and m["peak_qdot"] <= 3.0):
+        return -1e9, {"safe": False}
+    rel = getattr(ctrl, "release_state", None)
+    k6 = bool(delivery_success(m, DELIVERY_CFG))
+    q = _kinetic_metrics([r for r in traj if r["kinetic"]], rel_hi_mm)
+    min_dtz = min((r["dtz_mm"] for r in traj), default=999.0)
+    rel_vpar = float((rel or {}).get("v_par", 0.0))
+    score = (1e6 * int(k6) + 1e4 * int(rel is not None) + 2e3 * q["contact_frac"] - 300 * q["reversals"]
+             - 40 * q["clamp_pen"] - 60 * q["loss_pen"] - min_dtz + 50 * max(0.0, rel_vpar))
+    return score, {"safe": True, "k6": k6, "released": rel is not None, "rel_dtz": (rel or {}).get("dtz_mm"),
+                   "rel_vpar": round(rel_vpar, 3), "min_dtz_mm": round(min_dtz, 1),
+                   "contact_frac": round(q["contact_frac"], 2), "reversals": q["reversals"],
+                   "clamp_pen": round(q["clamp_pen"], 2), "loss_pen": q["loss_pen"],
+                   "dtz_end_mm": round(float(m["dtz_end"]) * 1000, 1)}
+
+
+def _vf_generation(snap: Any, cand: np.ndarray, best: dict) -> "tuple[list, dict]":
+    scored = []
+    for c in cand:
+        traj, m, ctrl = _kinetic_rollout(snap, _vf_ap(c))
+        s, info = _vf_score(traj, m, ctrl, float(c[5]) * 1000)
+        scored.append(s)
+        if s > best["score"]:
+            best = {"score": round(s, 1), "params": [round(float(x), 4) for x in c], **info}
+    return scored, best
+
+
+def gvf_search(pop: int = 36, n_iter: int = 6, elite: int = 8) -> dict:
+    """G-VF — bounded CEM over the 6-param KINETIC transport PROFILE: a feasibility/oracle search for a close+moving release
+    whose ACTUAL passive coast delivers s1 K6. Dev s1 only; physics/K6/coast/settle/blind/s4-s7 all frozen (only the in-grip
+    transport profile is searched). Teacher = positive control from the same cradle."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.forward_displacement import rollout_primitive
+    bank = json.load(open(BANK))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    snap = panel["s1"].snap
+    rng = np.random.default_rng(77)
+    mu, sig, best, hist = (_VF_LO + _VF_HI) / 2, (_VF_HI - _VF_LO) / 4, {"score": -1e9}, []
+    for it in range(n_iter):
+        cand = (_VF_LO[None] + (_VF_HI - _VF_LO)[None] * rng.random((pop, 6)) if it == 0
+                else np.clip(mu[None] + sig[None] * rng.standard_normal((pop, 6)), _VF_LO, _VF_HI))
+        scored, best = _vf_generation(snap, cand, best)
+        idx = np.argsort(scored)[-elite:]
+        mu, sig = cand[idx].mean(0), cand[idx].std(0) + 1e-4
+        hist.append({"iter": it, "k6": best.get("k6"), "min_dtz": best.get("min_dtz_mm"), "contact": best.get("contact_frac")})
+        print(f"[gvf {it + 1}/{n_iter}] k6 {best.get('k6')} released {best.get('released')} rel_dtz {best.get('rel_dtz')} "
+              f"min_dtz {best.get('min_dtz_mm')}mm contact {best.get('contact_frac')} rev {best.get('reversals')}", flush=True)
+    teacher_k6 = bool(delivery_success(rollout_primitive(snap, tuple(_teacher_theta(bank, "s1")), DELIVERY_CFG), DELIVERY_CFG))
+    verdict = ("VELOCITY_FLOOR_RELEASE_MANIFOLD_PASS" if best.get("k6") else
+               "KINETIC_REACHES_MOVING_RELEASE_NO_K6" if best.get("released") else
+               "KINETIC_CANNOT_HOLD_CONTACT_TO_CORRIDOR")
+    out = {"contract": "COIN_RELEASE_GUARD_GVF_SEARCH", "cradle": "s1", "n_evals": pop * n_iter, "best": best,
+           "teacher_positive_control_k6": teacher_k6, "history": hist, "verdict": verdict, "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/release_guard_gvf.json", "w"), indent=1, default=float)
+    print(f"   teacher positive control K6 {teacher_k6} | {pop * n_iter} evals\n"
+          f"   best: k6 {best.get('k6')} released {best.get('released')} rel_dtz {best.get('rel_dtz')}mm rel_vpar "
+          f"{best.get('rel_vpar')} min_dtz {best.get('min_dtz_mm')}mm contact_frac {best.get('contact_frac')}\n"
+          f"== G-VF (KINETIC transport search) ==\n  {verdict} | wall {out['wall_s']}s\nRELEASE_GVF_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--g0" in argv:
         g0_conditional_observability()
+    elif "--gvfsearch" in argv:
+        gvf_search()
     else:
-        print("usage: coin_release_guard.py --g0", flush=True)
+        print("usage: coin_release_guard.py --g0 | --gvfsearch", flush=True)
 
 
 if __name__ == "__main__":

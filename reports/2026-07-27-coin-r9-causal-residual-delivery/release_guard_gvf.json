@@ -1,0 +1,68 @@
+{
+ "contract": "COIN_RELEASE_GUARD_GVF_SEARCH",
+ "cradle": "s1",
+ "n_evals": 216,
+ "best": {
+  "score": 1241.9,
+  "params": [
+   0.34,
+   0.1436,
+   0.0429,
+   0.0924,
+   0.0338,
+   0.0229
+  ],
+  "safe": true,
+  "k6": false,
+  "released": false,
+  "rel_dtz": null,
+  "rel_vpar": 0.0,
+  "min_dtz_mm": 50.9,
+  "contact_frac": 0.69,
+  "reversals": 0,
+  "clamp_pen": 2.3,
+  "loss_pen": 0,
+  "dtz_end_mm": 50.9
+ },
+ "teacher_positive_control_k6": true,
+ "history": [
+  {
+   "iter": 0,
+   "k6": false,
+   "min_dtz": 50.7,
+   "contact": 0.69
+  },
+  {
+   "iter": 1,
+   "k6": false,
+   "min_dtz": 51.5,
+   "contact": 0.69
+  },
+  {
+   "iter": 2,
+   "k6": false,
+   "min_dtz": 51.0,
+   "contact": 0.69
+  },
+  {
+   "iter": 3,
+   "k6": false,
+   "min_dtz": 51.0,
+   "contact": 0.69
+  },
+  {
+   "iter": 4,
+   "k6": false,
+   "min_dtz": 50.9,
+   "contact": 0.69
+  },
+  {
+   "iter": 5,
+   "k6": false,
+   "min_dtz": 50.9,
+   "contact": 0.69
+  }
+ ],
+ "verdict": "KINETIC_CANNOT_HOLD_CONTACT_TO_CORRIDOR",
+ "wall_s": 96.1
+}

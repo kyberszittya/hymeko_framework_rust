@@ -80,6 +80,12 @@ class ApproachParams:
     kinetic_release_hi: float = 0.026             # m — RELEASE (passive coast) once the moving coin reaches this corridor (the teacher-like close+moving manifold)
     kinetic_release_vmin: float = 0.05            # m/s — release only while still genuinely moving (above this) — the anti-stiction condition
     kinetic_entry_v: float = 0.10                 # m/s — hand APPROACH → KINETIC once the coin is genuinely moving+gripped (preempts LAUNCH/REACHABILITY)
+    kinetic_profile: bool = False                 # G-VF search: POSITION-VARYING (forward, squeeze) profile instead of constant v_floor / kinetic_squeeze
+    k_v_hi: float = 0.26                           # m/s — sustained transport velocity (far from release) — the teacher holds ≈0.25
+    k_v_lo: float = 0.13                           # m/s — tapered forward velocity near release (teacher releases s1 at ≈0.131)
+    k_taper_dtz: float = 0.034                     # m — begin tapering the forward velocity (v_hi → v_lo) below this dtz
+    k_sqz_transport: float = 0.10                  # N·m — light transport squeeze level (coin slides, does not clamp)
+    k_decay_onset: float = 0.030                   # m — begin decaying the squeeze → 0 below this dtz (the grip fades before release, like the teacher)
     kinetic_max_steps: int = 40                   # kinetic-transport horizon guard (mandatory safe exit to the frozen brake)
 
 
@@ -191,32 +197,40 @@ class HybridApproachController(TipReferencedController):
                 "base_qref": float(self.ap.carry_qref), "base_sqz": float(self.ap.carry_squeeze), "both": both,
                 "contact_risk": not both, "con": con}
 
+    def _kinetic_profile(self, dtz: float) -> "tuple[float, float]":
+        """Position-varying (forward-velocity, squeeze) profile — the teacher's shape: a SUSTAINED transport velocity with a
+        forward taper (v_hi → v_lo) + a squeeze decay to ~0 as the coin nears the release corridor (the grip fades before
+        release). Piecewise-linear in dtz (m); both segments clamp to [release_hi, breakpoint]."""
+        rel = self.ap.kinetic_release_hi
+        v_frac = max(0.0, min(1.0, (dtz - rel) / max(self.ap.k_taper_dtz - rel, 1e-6)))
+        s_frac = max(0.0, min(1.0, (dtz - rel) / max(self.ap.k_decay_onset - rel, 1e-6)))
+        return self.ap.k_v_lo + (self.ap.k_v_hi - self.ap.k_v_lo) * v_frac, self.ap.k_sqz_transport * s_frac
+
     def _kinetic_targets(self, rl: Any, t: int) -> "dict[str, Any]":
-        """VELOCITY_FLOOR / KINETIC_TRANSPORT (G0): hold the coin's forward-velocity reference at ≥ v_floor (it decelerates
-        naturally but never reaches 0 → never enters the R1 stiction regime) until it reaches the close-AND-moving release
-        corridor, then RELEASE to a passive coast. Bounded velocity cap (no momentum rebuild); mandatory safe exits
-        (contact-loss / horizon → the frozen brake). # Post: release only from bilateral contact with genuine forward motion;
-        base_qref ∈ [0, kinetic_vcap]."""
+        """VELOCITY_FLOOR / KINETIC_TRANSPORT (G0/G-VF): sustain the coin's forward velocity (constant v_floor, or a
+        position-varying profile) so it decelerates naturally but never reaches 0 → never enters the R1 stiction regime, until
+        it reaches the close-AND-moving release corridor, then RELEASE to a passive coast. Bounded velocity cap; the release is
+        checked BEFORE the safe fallback so the intentional squeeze-decay near release does not false-trigger it. # Post:
+        release only from genuine forward motion; base_qref ∈ [0, kinetic_vcap]."""
         e_par, dtz, v_par = self._live(rl)
         con = primary_fingertip_contacts(rl)
         both = con["left"] is not None and con["right"] is not None
         fn_min = min(float(con["left"]["fn"]) if con["left"] else 0.0, float(con["right"]["fn"]) if con["right"] else 0.0)
         contact_risk = (not both) or (fn_min < self.ap.fn_min_safe)
         self._kinetic_steps += 1
-        if contact_risk or self._kinetic_steps >= self.ap.kinetic_max_steps:     # mandatory safe fallback to the frozen brake
-            self.phase = REGULATE
-            self.brake_start = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1)}
-            return super()._base_targets(rl, t)
         if dtz <= self.ap.kinetic_release_hi and v_par >= self.ap.kinetic_release_vmin:   # close + STILL MOVING ⇒ passive release
             self.phase = RELEASE
             self.release_state = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1), "t": int(t)}
             return super()._base_targets(rl, t)
-        # SUSTAINED transport velocity (the teacher holds v_par ≈ 0.25 to the corridor with a LIGHT grip, decelerating only at
-        # the very end) — a CONSTANT reference, NOT the distance-proportional servo (which decays to 0 and stictions the coin).
-        base_qref = max(0.0, min(self.p.k_q * self.ap.v_floor, self.ap.kinetic_vcap))
+        if contact_risk or self._kinetic_steps >= self.ap.kinetic_max_steps:     # else contact-loss / horizon ⇒ safe fallback to brake
+            self.phase = REGULATE
+            self.brake_start = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1)}
+            return super()._base_targets(rl, t)
+        v_ref, sqz = self._kinetic_profile(dtz) if self.ap.kinetic_profile else (self.ap.v_floor, self.ap.kinetic_squeeze)
+        base_qref = max(0.0, min(self.p.k_q * v_ref, self.ap.kinetic_vcap))
         fwd_dir, sqz_dir = self._directions(rl, e_par, _coin_xy(rl))
         return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,
-                "base_qref": float(base_qref), "base_sqz": float(self.ap.kinetic_squeeze), "both": both,
+                "base_qref": float(base_qref), "base_sqz": float(sqz), "both": both,
                 "contact_risk": contact_risk, "con": con}
 
     def _exit_approach(self, dtz: float, v_par: float, both: bool, contact_risk: bool) -> "str | None":
