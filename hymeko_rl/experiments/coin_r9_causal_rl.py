@@ -752,9 +752,54 @@ def c27_guided_coast_audit() -> dict:
     return out
 
 
+def c29_catchpoint_audit() -> dict:
+    """R10-R3-A — catch-point timing audit (NO new action basis; the whole controller is unchanged, only the re-acquire
+    corridor + closing-velocity are swept). Decides H1 (settle fine, catch too early) vs H2 (a micro-transport d.o.f. is
+    missing): is there a LATER catch-point where the re-grip is still gentle AND the frozen settle finishes s1 to K6?"""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
+    base = {"qdot_approach": 1.6, "launch_vlo": 5.0, "launch_vhi": 6.0, "impulse_budget": 10.0, "max_steps": 40,
+            "acquire_squeeze": 0.2, "reacquire": True}
+    runs = []
+    for k in (4, 6, 8, 10, 12):                                              # release timing → coast-landing variation
+        for hi in (0.023, 0.026, 0.029, 0.033):                             # catch-when-dtz ≤ hi (tighter = later, closer catch)
+            for vc in (0.10, 0.20):                                          # max closing velocity to start re-acquire
+                r = _run_approach(snap, ApproachParams(**base, release_at_step=k, reacq_corridor_hi=hi, reacq_vclose=vc))
+                rs, re = r.get("reacquire_start"), r.get("reacquire_end")
+                push = (round(re["dtz_mm"] - rs["dtz_mm"], 1) if rs and re else None)
+                runs.append({"release": k, "corridor_hi_mm": round(hi * 1000, 0), "vclose": vc,
+                             "success": bool(re and re.get("success")), "dtz_push_mm": push,
+                             "settle_entry_mm": (re or {}).get("dtz_mm"), "dtz_end_mm": r["dtz_end_mm"], "k6": r["k6"],
+                             "safe": r["safe"], "v_regrip": (re or {}).get("v_par_at_regrip")})
+    gentle = [r for r in runs if r["success"] and r["safe"] and (r["dtz_push_mm"] is None or r["dtz_push_mm"] <= 5.0)]
+    delivered = [r for r in gentle if r["k6"]]
+    closest = min(gentle, key=lambda r: r["settle_entry_mm"] or 1e9) if gentle else None
+    best = min([r for r in runs if r["safe"]], key=lambda r: r["dtz_end_mm"]) if runs else None
+    if delivered:
+        verdict = "REACQUIRE_TIMING_CLOSES_S1"                               # H1: catch-timing alone delivers → no new mode
+    elif gentle:
+        verdict = "MICRO_TRANSPORT_MODE_REQUIRED"                            # H2: gentle catch reachable but settle never closes
+    else:
+        verdict = "REACQUIRE_TIMING_INSUFFICIENT"
+    out = {"contract": "COIN_R9_R3A_CATCHPOINT", "cradle": "s1", "n_gentle": len(gentle), "n_delivered": len(delivered),
+           "closest_gentle_catch": closest, "best_chain": best, "verdict": verdict, "n_runs": len(runs), "runs": runs,
+           "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10r3a_catchpoint.json", "w"), indent=1, default=float)
+    cc = (f"settle-entry {closest['settle_entry_mm']}mm → end {closest['dtz_end_mm']}mm K6 {closest['k6']}"
+          if closest else "none")
+    print(f"   gentle catches {len(gentle)}/{len(runs)} | delivered {len(delivered)} | closest gentle: {cc}\n"
+          f"   best chain {best['dtz_end_mm'] if best else None}mm K6 {best['k6'] if best else None}\n"
+          f"== R10-R3-A ==\n  {verdict} | wall {out['wall_s']}s\nR9_R3A_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
+    elif "--c29" in argv:
+        c29_catchpoint_audit()
     elif "--c27" in argv:
         c27_guided_coast_audit()
     elif "--c28" in argv:
