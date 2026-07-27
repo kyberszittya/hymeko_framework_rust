@@ -63,6 +63,9 @@ class ApproachParams:
     reacq_qref: float = 0.35                       # rad/s — gentle forward joint-velocity to catch the coasting coin
     reacq_squeeze_step: float = 0.02              # N·m/step — RAMPED squeeze (not stepped) — impulse-limited re-grip
     reacq_max_steps: int = 18                     # re-acquire horizon guard
+    reacq_velocity_match: bool = False            # C3-D: track the coin's forward velocity (move WITH it) so the grip forms at low RELATIVE speed
+    reacq_match_gain: float = 1.0                 # tip joint-velocity reference = clip(k_q·gain·coin_v_par, 0, qdot_max) — velocity match
+    reacq_squeeze_onset: int = 0                  # steps to hold the grip OFF (velocity-match first) before ramping the squeeze
     micro_transport: bool = False                 # R3-B: a MICRO-TRANSPORT (one bounded delta_forward channel) after re-acquire
     micro_forward: float = 0.0                    # rad/s bounded delta_forward added to the settle qref (0 = update-zero = C2.8)
     micro_vcap_qref: float = 0.9                  # rad/s hard cap on the nudged joint-velocity reference (low velocity cap)
@@ -125,21 +128,26 @@ class HybridApproachController(TipReferencedController):
         con = primary_fingertip_contacts(rl)
         both = con["left"] is not None and con["right"] is not None
         fn_min = min(float(con["left"]["fn"]) if con["left"] else 0.0, float(con["right"]["fn"]) if con["right"] else 0.0)
-        self._reacq_sqz = min(self.p.squeeze_hold, self._reacq_sqz + self.ap.reacq_squeeze_step)
+        if self._reacq_steps >= self.ap.reacq_squeeze_onset:     # velocity-match first, ramp the grip only AFTER the onset delay
+            self._reacq_sqz = min(self.p.squeeze_hold, self._reacq_sqz + self.ap.reacq_squeeze_step)
         self._reacq_steps += 1
         reacquired = both and fn_min > self.ap.fn_min_safe
         if reacquired or self._reacq_steps > self.ap.reacq_max_steps:
+            v0 = (self.reacquire_start or {}).get("v_par", 0.0)
             self.reacquire_end = {"dtz_mm": round(dtz * 1000, 1), "steps": self._reacq_steps, "success": bool(reacquired),
-                                  "v_par_at_regrip": round(v_par, 4)}
+                                  "v_par_at_regrip": round(v_par, 4),                    # rho = momentum retention through capture
+                                  "rho": round(v_par / v0, 3) if abs(v0) > 1e-3 else 0.0}
             if reacquired and self.ap.micro_transport:           # R3-B: bridge the last ~11 mm before the frozen settle
                 self.phase = MICRO
                 return self._micro_targets(rl, t)
             self.phase = REGULATE
             return super()._base_targets(rl, t)
+        # velocity-MATCHED catch: track the coin's forward speed so the grip forms at low RELATIVE velocity (momentum-preserving)
+        qref = (float(min(self.p.k_q * self.ap.reacq_match_gain * max(v_par, 0.0), self.p.qdot_max))
+                if self.ap.reacq_velocity_match else float(self.ap.reacq_qref))
         fwd_dir, sqz_dir = self._directions(rl, e_par, _coin_xy(rl))
         return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,
-                "base_qref": float(self.ap.reacq_qref), "base_sqz": float(self._reacq_sqz), "both": both,
-                "contact_risk": False, "con": con}
+                "base_qref": qref, "base_sqz": float(self._reacq_sqz), "both": both, "contact_risk": False, "con": con}
 
     def _guard_fires(self, v_par: float, dtz: float, both: bool) -> bool:
         """ROBUST coast-entry guard (R5 lesson: no online post-release friction estimate — use the observed deceleration

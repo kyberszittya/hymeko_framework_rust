@@ -1,0 +1,25 @@
+{
+ "contract": "COIN_R9_R3D_VELOCITY_MATCHED_CAPTURE",
+ "cradle": "s1",
+ "search": {
+  "pop": 48,
+  "n_iter": 6
+ },
+ "best": {
+  "score": 52.6,
+  "rho": 1.0,
+  "dtz_end_mm": 47.4,
+  "k6": false,
+  "params": [
+   1.7662,
+   0.2368,
+   3.6529,
+   0.0482,
+   0.1086,
+   0.1489
+  ]
+ },
+ "verdict": "MOMENTUM_PARTIALLY_PRESERVED_BUT_NO_K6",
+ "n_evals": 288,
+ "wall_s": 105.1
+}

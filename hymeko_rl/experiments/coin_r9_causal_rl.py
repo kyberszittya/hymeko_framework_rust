@@ -840,9 +840,72 @@ def c30_micro_transport_audit() -> dict:
     return out
 
 
+_C31_LO = np.array([0.5, 0.10, 0.0, 0.01, 0.0, 0.03])           # match_gain, vclose, squeeze_onset, squeeze_step, micro_fwd, micro_budget
+_C31_HI = np.array([2.2, 0.30, 6.0, 0.06, 1.0, 0.20])
+
+
+def _c31_ap(v: np.ndarray) -> Any:
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    return ApproachParams(qdot_approach=1.6, launch_vlo=5.0, launch_vhi=6.0, impulse_budget=10.0, max_steps=40,
+                          acquire_squeeze=0.2, reacquire=True, reacq_velocity_match=True, release_at_step=11,
+                          reacq_max_steps=22, micro_transport=True, micro_max_steps=22, micro_vcap_qref=1.5,
+                          reacq_match_gain=float(v[0]), reacq_vclose=float(v[1]), reacq_squeeze_onset=int(round(v[2])),
+                          reacq_squeeze_step=float(v[3]), micro_forward=float(v[4]), micro_impulse_budget=float(v[5]))
+
+
+def _c31_score(snap: Any, v: np.ndarray) -> "tuple[float, dict]":
+    """Lexicographic-ish scalar: legal/safe+capture gate, then K6 ≻ momentum-retention rho ≻ closeness."""
+    r = _run_approach(snap, _c31_ap(v))
+    re = r.get("reacquire_end") or {}
+    if not (r["safe"] and re.get("success")):
+        return -1e9, {"safe": r["safe"], "captured": bool(re.get("success"))}
+    rho = float(re.get("rho", 0.0))
+    return 1000.0 * int(r["k6"]) + 100.0 * rho - r["dtz_end_mm"], {"rho": rho, "dtz_end_mm": r["dtz_end_mm"],
+                                                                   "k6": r["k6"], "params": [round(float(x), 4) for x in v]}
+
+
+def c31_velocity_matched_capture(pop: int = 48, n_iter: int = 6, elite: int = 10) -> dict:
+    """R10-C3-D — VELOCITY_MATCHED_CAPTURE mass search: does a post-coast contact that MOVES WITH the coin (tip velocity ≈
+    coin v_par, grip after the onset delay) preserve momentum (rho ≫ 0) instead of arresting it, and reach s1 K6? In-process
+    Sobol/LHS→CEM over 6 capture params (efficient for the ms-scale catch branches). Dev s1 only; settle/cert/physics frozen."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
+    rng = np.random.default_rng(31)
+    mu, sig, best = (_C31_LO + _C31_HI) / 2, (_C31_HI - _C31_LO) / 4, {"score": -1e9, "rho": 0.0, "k6": False}
+    for it in range(n_iter):
+        cand = (_C31_LO[None] + (_C31_HI - _C31_LO)[None] * rng.random((pop, 6)) if it == 0
+                else np.clip(mu[None] + sig[None] * rng.standard_normal((pop, 6)), _C31_LO, _C31_HI))
+        scored = []
+        for c in cand:
+            s, info = _c31_score(snap, c)
+            scored.append(s)
+            if s > best["score"]:
+                best = {"score": round(s, 2), **info}
+        order = np.argsort(scored)[::-1][:elite]
+        mu = cand[order].mean(0)
+        sig = np.clip(cand[order].std(0), (_C31_HI - _C31_LO) * 0.03, _C31_HI - _C31_LO)
+        print(f"    [c31 iter {it+1}/{n_iter}] best score {best['score']} rho {best.get('rho')} k6 {best.get('k6')} "
+              f"dtz {best.get('dtz_end_mm')}mm", flush=True)
+    if best.get("k6"):
+        verdict = "VELOCITY_MATCHED_CAPTURE_PASS"
+    elif best.get("rho", 0.0) > 0.3:
+        verdict = "MOMENTUM_PARTIALLY_PRESERVED_BUT_NO_K6"
+    else:
+        verdict = "MOMENTUM_NOT_PRESERVED_BY_CAPTURE"
+    out = {"contract": "COIN_R9_R3D_VELOCITY_MATCHED_CAPTURE", "cradle": "s1", "search": {"pop": pop, "n_iter": n_iter},
+           "best": best, "verdict": verdict, "n_evals": pop * n_iter, "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10r3d_velocity_matched_capture.json", "w"), indent=1, default=float)
+    print(f"\n== R10-C3-D (velocity-matched capture) ==\n  {verdict} | best rho {best.get('rho')} K6 {best.get('k6')} "
+          f"dtz {best.get('dtz_end_mm')}mm | {out['n_evals']} evals | wall {out['wall_s']}s\nR9_C31_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
+    elif "--c31" in argv:
+        c31_velocity_matched_capture()
     elif "--c30" in argv:
         c30_micro_transport_audit()
     elif "--c29" in argv:
