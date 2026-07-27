@@ -1,0 +1,46 @@
+{
+  "verdict": "HANDTUNED_BALANCE_FAILS_LYAPUNOV_RL_OR_LQR_WARRANTED",
+  "cases": {
+    "fixed_base_constrained": {
+      "V0": 0.0,
+      "Vfinal": 0.0,
+      "Vmax": 0.0,
+      "descent_fraction": 1.0,
+      "nonnegative": true,
+      "converged": true,
+      "bounded": true,
+      "passes": true,
+      "upright_steps": 3999
+    },
+    "floating_floor_gravcomp_PD": {
+      "V0": 0.045,
+      "Vfinal": 1.8248,
+      "Vmax": 1.8747,
+      "descent_fraction": 0.97,
+      "nonnegative": true,
+      "converged": false,
+      "bounded": false,
+      "passes": false,
+      "upright_steps": 1169
+    },
+    "floating_floor_ankle_strategy": {
+      "V0": 0.045,
+      "Vfinal": 1.8442,
+      "Vmax": 1.9152,
+      "descent_fraction": 0.96,
+      "nonnegative": true,
+      "converged": false,
+      "bounded": false,
+      "passes": false,
+      "upright_steps": 1419
+    }
+  },
+  "sac_readiness": {
+    "task_is_genuine": "floating humanoid falls (tips ~1.2s) without a real balance loop",
+    "handtuned_insufficient": true,
+    "lyapunov_as_reward_independent_gate": "V is a natural cost; lyapunov_certificate is the reward-independent success/safety certificate an RL run must not change",
+    "regime": "NO certified hand-tuned baseline -> SAC-from-scratch (genuine RL), OR a model-based LQR baseline enables residual RL (coin-R8 pattern)",
+    "not_run": "SAC not trained here; this is a feasibility + readiness assessment"
+  },
+  "note": "SIMULATION. Floor added (the earlier floating test had none). Sagittal 2D humanoid; hand-tuned PD + ankle strategy still tip -> Lyapunov rejects -> LQR/SAC is the tool."
+}
