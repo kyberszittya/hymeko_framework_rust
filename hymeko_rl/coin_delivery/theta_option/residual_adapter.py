@@ -41,6 +41,33 @@ class ZeroActor:
         return np.zeros(3, np.float64)
 
 
+@dataclass
+class ConstantResidualActor:
+    """Emits a FIXED residual a for every step (S3 sensitivity + constant candidates). # Postconditions: length-3."""
+
+    a: np.ndarray
+
+    def __call__(self, obs: np.ndarray) -> np.ndarray:
+        return np.asarray(self.a, np.float64).ravel()[:3]
+
+
+class SequenceResidualActor:
+    """Emits a per-step residual from a precomputed sequence (S3 piecewise / temporally-coherent / noise candidates); holds
+    the last value past the end. Deterministic given the sequence. # Postconditions: each call returns a length-3 vector."""
+
+    def __init__(self, seq: np.ndarray) -> None:
+        self.seq = np.asarray(seq, np.float64).reshape(-1, 3)
+        self.i = 0
+
+    def reset(self) -> None:
+        self.i = 0
+
+    def __call__(self, obs: np.ndarray) -> np.ndarray:
+        a = self.seq[min(self.i, len(self.seq) - 1)]
+        self.i += 1
+        return a
+
+
 @dataclass(frozen=True)
 class ResidualBounds:
     """Physical bounds the tanh actor emission `a ∈ [-1,1]^3` scales into (added to the base targets). Deliberately small —
@@ -70,15 +97,17 @@ class ResidualTipAdapter(TipReferencedController):
 
     def __init__(self, snap: CradleSnapshot, actor: Actor, params: TipTransportParams = TipTransportParams(),
                  bounds: ResidualBounds = ResidualBounds(), cfg: Any = DELIVERY_CFG) -> None:
-        super().__init__(snap, params, cfg)
-        self.actor = actor
+        self.actor = actor                                     # set BEFORE super().__init__ (it calls self.reset())
         self.bounds = bounds
         self.horizon = float(cfg.horizon)
+        super().__init__(snap, params, cfg)
 
     def reset(self) -> None:
         super().reset()
         self.provenance: list[dict[str, Any]] = []
         self.last_bellman_action: np.ndarray | None = None
+        if hasattr(self.actor, "reset"):
+            self.actor.reset()
 
     def _observe(self, rl: Any, t: int, bt: "dict[str, Any]") -> np.ndarray:
         con = bt["con"]
