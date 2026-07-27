@@ -9,6 +9,7 @@ is the passive spring, covered by the spring_leg tests).
 from __future__ import annotations
 
 import mujoco
+import numpy as np
 import pytest
 
 from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
@@ -67,6 +68,22 @@ def test_forward_push_stays_motor_limited(model: mujoco.MjModel) -> None:
     gait.run(on_step=hook)
     assert peak_push <= 5.0 + 1e-6       # the forward drive never exceeds hip_tau_cap
     assert peak_any <= 8.0 + 1e-6        # NO leg actuator torque exceeds the realistic motor cap
+
+
+def test_catch_preserves_forward_momentum(model: mujoco.MjModel) -> None:
+    # the catch must NOT brake to a stand between strides — the forward velocity stays alive so the
+    # gait flows forward with its momentum (the fix for "stops to stabilise instead of continuing").
+    bv = int(model.jnt_dofadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "base")])
+    catch_vx = []
+
+    def hook(d, phase, hop):
+        if phase == "catch":
+            catch_vx.append(float(d.qvel[bv]))
+
+    SpringHopGait(model, goal_distance=1.2).run(on_step=hook)
+    catch_vx = np.array(catch_vx)
+    assert catch_vx.mean() > 0.3              # net forward momentum carried through the catch
+    assert (catch_vx > 0.05).mean() > 0.7     # forward-moving in the large majority of catch steps
 
 
 def test_goal_distance_must_be_positive(model: mujoco.MjModel) -> None:

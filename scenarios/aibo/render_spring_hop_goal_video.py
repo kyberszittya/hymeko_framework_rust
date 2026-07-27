@@ -31,9 +31,9 @@ _GOAL_D, _REACH = 0.8, 0.12
 
 _HYMEKO = [
     ("HyMeKo model  data/robotics/quadruped.hymeko  (Aibo ERS-1000, 22 DOF)  — spring variant", _OK),
-    ("goal: reach x = start + 0.8 m  (green reach disk, radius 0.12 m) by repeated forward hops", _INK),
-    ("each hop: LOAD crouch springs -> LAUNCH passive-spring lift + motor-limited hip push (<=5 N.m)", _OK),
-    ("          -> SETTLE PD-hold standing posture (all torque <= 8 N.m) ; stays upright every hop", _OK),
+    ("goal: reach x = start + 0.8 m  (green reach disk, radius 0.12 m) by continuous forward hops", _INK),
+    ("each stride: LOAD crouch springs -> LAUNCH passive-spring lift + motor-limited hip push (<=5 N.m)", _OK),
+    ("  -> CATCH keep upright + KEEP MOMENTUM (small sustained drive, no braking) ; flows forward", _OK),
 ]
 
 
@@ -68,7 +68,7 @@ def _rollout(model):
                 return
         if st["goal_x"] is None and phase != "stand":
             st["goal_x"] = st["x_start"] + _GOAL_D
-        stride = 3 if phase == "launch" else (18 if phase == "settle" else 1)
+        stride = {"launch": 3, "catch": 5, "arrive": 16}.get(phase, 1)
         st["n"] += 1
         if st["n"] % stride:
             return
