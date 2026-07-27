@@ -176,6 +176,73 @@ def test_labeled_state_carries_41d_obs_no_leak(s1_entry):
     assert np.array_equal(rec["obs"], rec2["obs"])
 
 
+def test_clone_batch_equals_streaming_and_bounded():
+    """The K2 clone's recurrent forward is batch == streaming (a sequence at once equals step-by-step with the carried hidden
+    state), deterministic on replay, and tanh-bounded — the deploy-time controls."""
+    import numpy as _np
+    import torch
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_clone as kcl
+    from hymeko_rl.experiments.coin_kinetic_k2_clone import BANK
+    bank = json.loads(BANK.read_text())
+    model, norm, hist = kcl.train_clone(bank, kcl.CloneTrainConfig(epochs=40), seed=0)
+    assert hist[-1] < hist[0]                                            # BC loss decreased
+    obs = _np.array([r["obs"] for r in bank], _np.float64)
+    model.eval()
+    with torch.no_grad():
+        batched = model(torch.tensor(norm.apply(obs), dtype=torch.float32).view(1, -1, kcl.OBS_DIM))[0]
+        batched = batched.view(-1, kcl.ACT_DIM).numpy()
+    actor = kcl.CloneActor(model, norm)
+    actor.reset()
+    streamed = _np.array([actor.act(o) for o in obs], _np.float64)
+    assert float(_np.max(_np.abs(batched - streamed))) < 1e-5           # batch == streaming
+    actor.reset()
+    streamed2 = _np.array([actor.act(o) for o in obs], _np.float64)
+    assert _np.array_equal(streamed, streamed2)                         # deterministic hidden-state reset + replay
+    assert _np.abs(streamed).max() <= 1.0 + 1e-6                        # tanh-bounded action basis
+
+
+def test_kinetic_clone_controller_frozen_approach_and_bounded(s1_snap):
+    """The clone controller leaves the frozen APPROACH untouched (its APPROACH-phase Δτ equals the frozen scaffold's), the
+    clone acts ONLY in the KINETIC phase, and every emitted Δτ is within the slew bound — no teacher in the loop."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_clone as kcl
+    from hymeko_rl.coin_delivery.theta_option.tip_transport import TipTransportParams
+    from hymeko_rl.experiments.coin_kinetic_k2_clone import BANK
+    bank = json.loads(BANK.read_text())
+    model, norm, _h = kcl.train_clone(bank, kcl.CloneTrainConfig(epochs=10), seed=0)
+    clone = kcl.KineticCloneController(s1_snap, kcl.CloneActor(model, norm))
+    ref = HybridApproachController(s1_snap, TipTransportParams(), ApproachParams(kinetic_transport=True), DELIVERY_CFG)
+    clone.reset()
+    ref.reset()
+    rl_c, rl_r = s1_snap.branch(), s1_snap.branch()
+    prev_c = _np.asarray(s1_snap.prev_tau, _np.float64).copy()
+    from hymeko_rl.coin_delivery.coin_strict_markov_ablation import step_ablation
+    from hymeko_rl.env.motion_contract import govern_torque
+    import mujoco
+    saw_clone = False
+
+    def _gc(_m, d):
+        d.ctrl[:4] = govern_torque(d.ctrl[:4], d.qvel[:4], s1_snap.stack.gov)
+    mujoco.set_mjcb_control(_gc)
+    try:
+        for t in range(1, 8):                                          # first few steps are the frozen APPROACH
+            dc = clone.dtau_for_step(rl_c, t, prev_c)
+            assert _np.max(_np.abs(dc)) <= clone.slew + 1e-9           # bounded by slew
+            if clone.clone_trace[-1]["kind"] == "KINETIC_CLONE":
+                saw_clone = True
+                break
+            dr = ref.dtau_for_step(rl_r, t, prev_c)
+            assert _np.allclose(dc, dr, atol=0.0)                      # APPROACH Δτ identical to the frozen scaffold
+            prev_c = _np.clip(prev_c + dc, s1_snap.lo, s1_snap.hi)
+            step_ablation(rl_c, _np.asarray(prev_c, _np.float32), "A")
+            step_ablation(rl_r, _np.asarray(prev_c, _np.float32), "A")
+    finally:
+        mujoco.set_mjcb_control(None)
+    assert all(r["kind"] in ("FROZEN", "KINETIC_CLONE") for r in clone.clone_trace)
+
+
 def test_receding_horizon_relabel_first_action_only_deterministic(s1_entry):
     r = kc.receding_horizon_relabel(s1_entry.tsnap, budget=0)
     assert r.first_action.shape == (4,) and r.first_action_norm.shape == (4,)

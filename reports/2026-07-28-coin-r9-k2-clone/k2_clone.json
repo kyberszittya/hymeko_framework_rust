@@ -1,0 +1,707 @@
+{
+ "contract": "COIN_KINETIC_K2_CLONE_V1",
+ "seed": 14250,
+ "n_labels": 32,
+ "bc_fit": {
+  "final_loss": 0.000622,
+  "loss_at_0": 0.031502,
+  "loss_curve_tail": [
+   0.000628,
+   0.000626,
+   0.000626,
+   0.000624,
+   0.000622
+  ]
+ },
+ "streaming_equals_batch_max_gap": 1.4901161193847656e-07,
+ "closed_loop": {
+  "k6_delivered": false,
+  "min_dtz_mm": 46.2,
+  "dtz_end_mm": 46.2,
+  "peak_qdot": 2.0,
+  "peak_coin_speed": 0.38,
+  "transport": {
+   "kinetic_steps": 6,
+   "entry_step": 4,
+   "exit_step": 9,
+   "entry_dtz_mm": 77.99,
+   "exit_dtz_mm": 61.42,
+   "v_par_min": 0.1945,
+   "v_par_max": 0.3702,
+   "v_par_final": 0.3659,
+   "fn_min_transport": 0.1608,
+   "fn_max_transport": 2.6758,
+   "stall_steps": 0,
+   "sign_reversals": 0
+  }
+ },
+ "grade": {
+  "gate": "LOCAL_KINETIC_FEEDBACK_SKILL_PASS",
+  "next": "TD3_VS_SAC",
+  "kept_moving": true,
+  "past_plateau": true,
+  "reached_corridor": false,
+  "k6_delivered": false,
+  "safe": true,
+  "min_dtz_mm": 46.2
+ },
+ "seed_audit": [
+  {
+   "seed": 0,
+   "final_loss": 0.000622,
+   "min_dtz_mm": 46.2,
+   "kinetic_steps": 6,
+   "v_par_min": 0.1945,
+   "k6": false
+  },
+  {
+   "seed": 1,
+   "final_loss": 0.000643,
+   "min_dtz_mm": 47.78,
+   "kinetic_steps": 6,
+   "v_par_min": 0.1945,
+   "k6": false
+  },
+  {
+   "seed": 2,
+   "final_loss": 0.000414,
+   "min_dtz_mm": 56.21,
+   "kinetic_steps": 6,
+   "v_par_min": 0.1945,
+   "k6": false
+  }
+ ],
+ "event_trace": [
+  {
+   "t": 1,
+   "kind": "FROZEN",
+   "phase": -1,
+   "dtz_mm": 76.44,
+   "v_par": -0.00046,
+   "fn_l": 2.8378,
+   "fn_r": 8.748,
+   "action": null
+  },
+  {
+   "t": 2,
+   "kind": "FROZEN",
+   "phase": -1,
+   "dtz_mm": 77.58,
+   "v_par": -0.20675,
+   "fn_l": 2.5329,
+   "fn_r": 7.4504,
+   "action": null
+  },
+  {
+   "t": 3,
+   "kind": "FROZEN",
+   "phase": -1,
+   "dtz_mm": 78.9,
+   "v_par": -0.01964,
+   "fn_l": 3.9728,
+   "fn_r": 2.6578,
+   "action": null
+  },
+  {
+   "t": 4,
+   "kind": "KINETIC_CLONE",
+   "phase": -5,
+   "dtz_mm": 77.99,
+   "v_par": 0.19447,
+   "fn_l": 3.0761,
+   "fn_r": 2.6758,
+   "action": [
+    0.06543,
+    -0.00147,
+    0.24725,
+    0.00031
+   ]
+  },
+  {
+   "t": 5,
+   "kind": "KINETIC_CLONE",
+   "phase": -5,
+   "dtz_mm": 75.52,
+   "v_par": 0.28008,
+   "fn_l": 1.7874,
+   "fn_r": 0.7763,
+   "action": [
+    0.05028,
+    -0.12571,
+    0.08028,
+    -0.23638
+   ]
+  },
+  {
+   "t": 6,
+   "kind": "KINETIC_CLONE",
+   "phase": -5,
+   "dtz_mm": 72.4,
+   "v_par": 0.32745,
+   "fn_l": 0.8719,
+   "fn_r": 0.4054,
+   "action": [
+    -0.02759,
+    -0.12805,
+    0.05091,
+    -0.31613
+   ]
+  },
+  {
+   "t": 7,
+   "kind": "KINETIC_CLONE",
+   "phase": -5,
+   "dtz_mm": 68.9,
+   "v_par": 0.35483,
+   "fn_l": 0.2656,
+   "fn_r": 0.1608,
+   "action": [
+    -0.07655,
+    -0.0213,
+    0.02168,
+    -0.19268
+   ]
+  },
+  {
+   "t": 8,
+   "kind": "KINETIC_CLONE",
+   "phase": -5,
+   "dtz_mm": 65.18,
+   "v_par": 0.37021,
+   "fn_l": 0.3696,
+   "fn_r": 0.3141,
+   "action": [
+    -0.14101,
+    -0.02514,
+    0.0111,
+    -0.32711
+   ]
+  },
+  {
+   "t": 9,
+   "kind": "KINETIC_CLONE",
+   "phase": -5,
+   "dtz_mm": 61.42,
+   "v_par": 0.3659,
+   "fn_l": 0.2396,
+   "fn_r": 0.2082,
+   "action": [
+    -0.17228,
+    -0.04645,
+    -0.01271,
+    -0.40469
+   ]
+  },
+  {
+   "t": 10,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 57.72,
+   "v_par": 0.36524,
+   "fn_l": 0.0171,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 11,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 54.59,
+   "v_par": 0.251,
+   "fn_l": 1.2341,
+   "fn_r": 0.5568,
+   "action": null
+  },
+  {
+   "t": 12,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 52.97,
+   "v_par": 0.0696,
+   "fn_l": 4.2883,
+   "fn_r": 3.2321,
+   "action": null
+  },
+  {
+   "t": 13,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 53.02,
+   "v_par": -0.0905,
+   "fn_l": 1.9401,
+   "fn_r": 6.1017,
+   "action": null
+  },
+  {
+   "t": 14,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 53.83,
+   "v_par": -0.06798,
+   "fn_l": 1.7776,
+   "fn_r": 2.8566,
+   "action": null
+  },
+  {
+   "t": 15,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 54.22,
+   "v_par": -0.0208,
+   "fn_l": 0.8825,
+   "fn_r": 1.1361,
+   "action": null
+  },
+  {
+   "t": 16,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 54.19,
+   "v_par": 0.0294,
+   "fn_l": 0.3341,
+   "fn_r": 0.261,
+   "action": null
+  },
+  {
+   "t": 17,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 53.68,
+   "v_par": 0.0687,
+   "fn_l": 0.3377,
+   "fn_r": 0.3138,
+   "action": null
+  },
+  {
+   "t": 18,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 53.07,
+   "v_par": 0.05041,
+   "fn_l": 2.0633,
+   "fn_r": 1.8123,
+   "action": null
+  },
+  {
+   "t": 19,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 52.69,
+   "v_par": 0.02506,
+   "fn_l": 2.2,
+   "fn_r": 2.3094,
+   "action": null
+  },
+  {
+   "t": 20,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 52.42,
+   "v_par": 0.02693,
+   "fn_l": 1.0076,
+   "fn_r": 1.4934,
+   "action": null
+  },
+  {
+   "t": 21,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 52.14,
+   "v_par": 0.02899,
+   "fn_l": 0.4232,
+   "fn_r": 0.5639,
+   "action": null
+  },
+  {
+   "t": 22,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 51.77,
+   "v_par": 0.0461,
+   "fn_l": 0.1225,
+   "fn_r": 0.1097,
+   "action": null
+  },
+  {
+   "t": 23,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 51.25,
+   "v_par": 0.0546,
+   "fn_l": 0.5654,
+   "fn_r": 0.5491,
+   "action": null
+  },
+  {
+   "t": 24,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 50.77,
+   "v_par": 0.04023,
+   "fn_l": 1.1086,
+   "fn_r": 1.1539,
+   "action": null
+  },
+  {
+   "t": 25,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 50.42,
+   "v_par": 0.02983,
+   "fn_l": 0.8453,
+   "fn_r": 1.0779,
+   "action": null
+  },
+  {
+   "t": 26,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 50.12,
+   "v_par": 0.02942,
+   "fn_l": 0.3174,
+   "fn_r": 0.5505,
+   "action": null
+  },
+  {
+   "t": 27,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 49.8,
+   "v_par": 0.03388,
+   "fn_l": 0.145,
+   "fn_r": 0.2026,
+   "action": null
+  },
+  {
+   "t": 28,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 49.41,
+   "v_par": 0.04403,
+   "fn_l": 0.0585,
+   "fn_r": 0.1223,
+   "action": null
+  },
+  {
+   "t": 29,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 48.97,
+   "v_par": 0.0442,
+   "fn_l": 0.2847,
+   "fn_r": 0.3814,
+   "action": null
+  },
+  {
+   "t": 30,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 48.56,
+   "v_par": 0.03673,
+   "fn_l": 0.3418,
+   "fn_r": 0.4989,
+   "action": null
+  },
+  {
+   "t": 31,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 48.22,
+   "v_par": 0.03079,
+   "fn_l": 0.1723,
+   "fn_r": 0.3351,
+   "action": null
+  },
+  {
+   "t": 32,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 47.92,
+   "v_par": 0.02792,
+   "fn_l": 0.0713,
+   "fn_r": 0.1238,
+   "action": null
+  },
+  {
+   "t": 33,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 47.63,
+   "v_par": 0.03032,
+   "fn_l": 0.0135,
+   "fn_r": 0.0431,
+   "action": null
+  },
+  {
+   "t": 34,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 47.32,
+   "v_par": 0.03243,
+   "fn_l": 0.0,
+   "fn_r": 0.0524,
+   "action": null
+  },
+  {
+   "t": 35,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 47.0,
+   "v_par": 0.03037,
+   "fn_l": 0.0,
+   "fn_r": 0.0656,
+   "action": null
+  },
+  {
+   "t": 36,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.72,
+   "v_par": 0.02456,
+   "fn_l": 0.0,
+   "fn_r": 0.0479,
+   "action": null
+  },
+  {
+   "t": 37,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.51,
+   "v_par": 0.01765,
+   "fn_l": 0.0,
+   "fn_r": 0.0307,
+   "action": null
+  },
+  {
+   "t": 38,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.36,
+   "v_par": 0.01154,
+   "fn_l": 0.0,
+   "fn_r": 0.0331,
+   "action": null
+  },
+  {
+   "t": 39,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.27,
+   "v_par": 0.00636,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 40,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.23,
+   "v_par": 0.0024,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 41,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.21,
+   "v_par": 0.00091,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 42,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.21,
+   "v_par": 0.00034,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 43,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.00013,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 44,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 5e-05,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 45,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 2e-05,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 46,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 1e-05,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 47,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 48,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 49,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 50,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 51,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 52,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 53,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 54,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 55,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 56,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 57,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 58,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 59,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  },
+  {
+   "t": 60,
+   "kind": "FROZEN",
+   "phase": 0,
+   "dtz_mm": 46.2,
+   "v_par": 0.0,
+   "fn_l": 0.0,
+   "fn_r": 0.0,
+   "action": null
+  }
+ ],
+ "wall_s": 22.4
+}
