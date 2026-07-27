@@ -1,0 +1,38 @@
+{
+  "cip_version": "CIP-0",
+  "profile_tag": "hymeko-control-profile-v0",
+  "core_tag": "hymeko-control-core-v1",
+  "lifecycle": [
+    "OBSERVE",
+    "IDENTIFY_MODE",
+    "FORM_INTENT",
+    "MEASURE_AUTHORITY",
+    "DECODE",
+    "EXECUTE_OPTION",
+    "MEASURE_RESPONSE",
+    "CERTIFY",
+    "TRANSITION"
+  ],
+  "adapter_interface": [
+    "observe",
+    "identify_mode",
+    "form_intent",
+    "measure_authority",
+    "decode",
+    "execute",
+    "certify",
+    "transition"
+  ],
+  "enforced_invariants": [
+    "causal observation",
+    "legal mode transitions",
+    "bounded physical intent",
+    "authority provenance",
+    "deterministic decoding",
+    "option execution provenance",
+    "certificate independence from reward",
+    "no hidden state modification",
+    "shared-core import isolation"
+  ],
+  "dependency_rule": "scenario adapter -> core only; core imports no scenario, no torch"
+}

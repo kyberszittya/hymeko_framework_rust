@@ -1,0 +1,56 @@
+{
+  "dimensions": [
+    "schema validation",
+    "causal observation",
+    "mode legality",
+    "intent bounds",
+    "authority provenance",
+    "decoder determinism",
+    "option provenance",
+    "external certificate",
+    "no hidden state edit",
+    "core isolation"
+  ],
+  "pick_place": {
+    "schema validation": "pass",
+    "causal observation": "pass",
+    "mode legality": "pass",
+    "intent bounds": "pass",
+    "authority provenance": "pass",
+    "decoder determinism": "pass",
+    "option provenance": "pass",
+    "external certificate": "pass",
+    "no hidden state edit": "pass",
+    "core isolation": "pass",
+    "scenario_smoke": "PNP-4 (complete certified acquire-carry-place)",
+    "physical": "simulation"
+  },
+  "humanoid": {
+    "schema validation": "pass",
+    "causal observation": "pass",
+    "mode legality": "pass",
+    "intent bounds": "pass",
+    "authority provenance": "pass",
+    "decoder determinism": "pass",
+    "option provenance": "pass",
+    "external certificate": "pass",
+    "no hidden state edit": "pass",
+    "core isolation": "pass",
+    "scenario_smoke": "HUM-1 (fixed-base stand; balance vacuous -> HUM-2/3/4 blocked)",
+    "physical": "simulation"
+  },
+  "aibo": {
+    "schema validation": "pass",
+    "causal observation": "pass",
+    "mode legality": "pass",
+    "intent bounds": "pass",
+    "authority provenance": "pass",
+    "decoder determinism": "pass",
+    "option provenance": "pass",
+    "external certificate": "pass",
+    "no hidden state edit": "pass",
+    "core isolation": "pass",
+    "scenario_smoke": "AIBO-2 (fwd+yaw authority; on-axis approach-stop-hold certified; robust align + hardware blocked)",
+    "physical": "simulation"
+  }
+}

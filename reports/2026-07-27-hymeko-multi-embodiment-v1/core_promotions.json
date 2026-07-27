@@ -1,0 +1,35 @@
+{
+  "promoted": [
+    {
+      "name": "threshold_certificate",
+      "module": "hymeko_control.cip.certificate",
+      "why": "unifies keep-a-quantity-within-a-bound predicates; caller supplies extractor (no scenario signal in core)",
+      "genuine_implementers": [
+        "aibo.speed_bounded_at_stop",
+        "aibo.no_fall(uprightness)",
+        "pick_place.bounded-terminal",
+        "humanoid.joint_velocity"
+      ]
+    },
+    {
+      "name": "stability_certificate",
+      "module": "hymeko_control.cip.certificate",
+      "why": "generic no-fall / support-margin safety cert; genuine implementer = AIBO free-base uprightness",
+      "genuine_implementers": [
+        "aibo.no_fall"
+      ],
+      "second_implementer": "floating-base humanoid (future)"
+    }
+  ],
+  "deferred": [
+    {
+      "name": "support/stability certificate on humanoid",
+      "reason": "vacuous on fixed-base humanoid until a floating base exists"
+    },
+    {
+      "name": "model-based PD realizer / response-audit helper",
+      "reason": "MuJoCo-dependent -> scenario-side helper, not stdlib core"
+    }
+  ],
+  "rule": "additive only; stdlib-only; reward-independence preserved; 15 core conformance tests pass"
+}

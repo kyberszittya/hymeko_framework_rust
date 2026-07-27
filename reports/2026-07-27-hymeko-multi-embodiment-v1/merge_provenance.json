@@ -1,0 +1,23 @@
+{
+  "base_commit": "819f35fcee6d643e6346c7728776ab6277531d2f",
+  "base_tag": "OPTION_RL_STRUCTURED_TEMPORAL_RUNTIME_V1",
+  "profile_commit": "2210e4c95b0a44573bbee2bdac794b7b5419130a",
+  "core_commit": "66d0d7a3c1df0f6994ea3aae8848e0a0df8b72e3",
+  "pick_place_commit": "c70b7c58d099829e7a85b0fe5175fb3847317ffc",
+  "multi_embodiment_head": "b9d02d0de16f6cda720e118bae52d3a46c9e8de9",
+  "merge_order": [
+    "core->pick_place",
+    "core->humanoid",
+    "core->aibo",
+    "pick-place->multi",
+    "humanoid->multi",
+    "aibo->multi"
+  ],
+  "no_ff": true,
+  "rerere_enabled": true,
+  "scenario_branches": {
+    "pick_place": "fde8aa8ddb751094ae614679e29968cf11e4be5c",
+    "humanoid": "f8c0718b8d9c69ffeca6b68745c6b778d0deab23",
+    "aibo": "95330d55be24e3f58cd9e15c4a04a679d4d6cb38"
+  }
+}

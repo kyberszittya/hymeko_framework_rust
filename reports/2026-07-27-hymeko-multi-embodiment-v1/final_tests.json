@@ -1,0 +1,21 @@
+{
+  "integrated_branch": "integration/hymeko-multi-embodiment-v1",
+  "suite": "tests/ + hymeko_control/conformance/tests",
+  "totals": {
+    "passed": 30,
+    "failed": 0
+  },
+  "breakdown": {
+    "core_conformance": 15,
+    "pick_place_conformance": 5,
+    "humanoid_conformance": 5,
+    "aibo_conformance": 5
+  },
+  "lint": "ruff clean (all scenarios + core)",
+  "import_isolation": {
+    "core": "clean",
+    "pick_place->others": "clean",
+    "humanoid->others": "clean",
+    "aibo->others": "clean"
+  }
+}
