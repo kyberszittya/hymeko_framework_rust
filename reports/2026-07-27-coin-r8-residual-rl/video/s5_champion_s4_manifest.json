@@ -1,0 +1,31 @@
+{
+ "contract": "COIN_R8_S5_CHAMPION_VIDEO_MANIFEST",
+ "purpose": "deterministic reproduction for visualization only",
+ "held_out_state": "s4",
+ "champion_algo": "td3",
+ "seed": 2,
+ "checkpoint": "reports/2026-07-27-coin-r8-residual-rl/ckpts/td3_seed2_best_val.pt",
+ "checkpoint_sha256_16": "71e7653bec04335a",
+ "launch_commit": "5a884775911c4814fb0eea651e98496b3e56304a",
+ "config_hash_16": "3aa568353e416f69",
+ "recorded_result_hash_16": "1ff7c5c72a8157b4",
+ "rendering_command": "python -m hymeko_rl.experiments.video_coin_r8_residual",
+ "reproduced_champion_residual_a_star": [
+  -0.940361,
+  -0.739474,
+  0.808998
+ ],
+ "reproduced_dtz_end_mm": {
+  "scaffold": 266.0,
+  "champion": 30.2
+ },
+ "recorded_dtz_end_mm": {
+  "scaffold": 266.0,
+  "champion": 30.2
+ },
+ "determinism_gate": "PASS (reproduced == recorded)",
+ "n_frames": 100,
+ "gif": "reports/2026-07-27-coin-r8-residual-rl/video/s5_champion_s4_transfer.gif",
+ "gif_sha256_16": "37ae1a3b084226ee",
+ "plot": "reports/2026-07-27-coin-r8-residual-rl/video/s5_champion_s4_signals.png"
+}
