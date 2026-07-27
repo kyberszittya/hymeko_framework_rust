@@ -10,7 +10,7 @@ pytest.importorskip("mujoco")
 from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv  # noqa: E402
 
 from scenarios.aibo.capture_step import (  # noqa: E402
-    CapturePointStepper,
+    CapturePointWidening,
     PushRecoveryLyapunov,
     capture_point_y,
     recover_v_series,
@@ -39,10 +39,10 @@ def test_push_recovery_lyapunov_zero_at_equilibrium() -> None:
     assert V(env) < 0.15                              # spawn is near upright, centred, at rest
 
 
-def test_capture_step_certifies_a_push_the_stand_cannot() -> None:
+def test_capture_widening_certifies_a_push_the_stand_cannot() -> None:
     env = _env()
     V = PushRecoveryLyapunov()
-    stepper = CapturePointStepper()
+    stepper = CapturePointWidening()
     stand = evaluate_lyapunov(recover_v_series(env, None, 1.0, steps=300, V=V))
     step = evaluate_lyapunov(recover_v_series(env, stepper, 1.0, steps=300, V=V))
     assert not stand["passes"]                        # passive stand does NOT recover from a 1.0 m/s push
@@ -53,5 +53,5 @@ def test_capture_step_certifies_a_push_the_stand_cannot() -> None:
 def test_stepper_action_shape_and_bounds() -> None:
     env = _env()
     env.reset(seed=0)
-    a = CapturePointStepper().action(env)
+    a = CapturePointWidening().action(env)
     assert a.shape == (env.model.nu,) and np.all(np.abs(a) <= 1.0 + 1e-6)

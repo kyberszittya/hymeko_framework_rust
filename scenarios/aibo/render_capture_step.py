@@ -20,7 +20,7 @@ from PIL import Image, ImageDraw
 
 from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
 
-from .capture_step import CapturePointStepper, PushRecoveryLyapunov, capture_point_y
+from .capture_step import CapturePointWidening, PushRecoveryLyapunov, capture_point_y
 from .locomotion_gait import SteeredTrotGait
 from .lyapunov import evaluate_lyapunov
 from .render_lyapunov_video import _INK, _OK, _font, _sparkline, _strip
@@ -33,9 +33,9 @@ _PUSH = 1.0
 
 _HYMEKO = [
     ("HyMeKo model  data/robotics/quadruped.hymeko  (Aibo ERS-1000, 22 DOF)", _OK),
-    ("  leg x4 : hip_abduct(AXIS_X) -> hip_flex(Y) -> knee(Y)     // abduction = frontal-plane step", _INK),
+    ("  leg x4 : hip_abduct(AXIS_X) -> hip_flex(Y) -> knee(Y)     // abduction = frontal-plane WIDENING", _INK),
     ("capture point (LIPM)  xi_y = com_y + com_y_vel * sqrt(com_z / g)", _OK),
-    ("capture-point step  : widen the stance toward xi_y  (abduct legs, scaled by |xi_y - com_y|)", _OK),
+    ("capture-point WIDENING (sprawl reflex, NOT a step): abduct legs apart toward xi_y", _OK),
     ("push-recovery V = 1/2[ w_up(1-up)^2 + w_v|v|^2 + w_off|com_lat|^2 ]", _OK),
     ("certificate (reward-independent) :  V>=0 & descent>=0.9 & V_final<=0.05", _OK),
 ]
@@ -103,13 +103,14 @@ def main() -> None:
     def _env():
         return QuadrupedGoalEnv(base="free", task="goal", goal_distance=0.8, reach_radius=0.12, max_steps=400)
     clips = [
-        (*_rollout(_env(), None), "passive stand"),
-        (*_rollout(_env(), CapturePointStepper()), "capture-point step"),
+        (*_rollout(_env(), None), "passive stand (falls)"),
+        (*_rollout(_env(), CapturePointWidening()), "capture-point WIDENING (sprawl, not a step)"),
     ]
     width = _W * len(clips)
     title = _strip(width, _TITLE_H, [(
-        f"AIBO lateral-push recovery ({_PUSH} m/s):  passive stand  vs  capture-point protective step",
-        _INK)], mono=False, pad=14)
+        f"AIBO push recovery ({_PUSH} m/s): stand vs capture-point WIDENING "
+        "-- sprawl NOT a step, + DYNAMICS EXPLOIT (26.9 rad/s, airborne) -> not robot-transferable",
+        _BAD)], mono=False, pad=14)
     code = _strip(width, _CODE_H, _HYMEKO, mono=True, pad=10)
     n = max(len(f) for f, _t, _e, _ti in clips)
     composed = []

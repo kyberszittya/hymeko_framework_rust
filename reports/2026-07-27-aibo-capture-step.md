@@ -1,8 +1,24 @@
-# AIBO model-based capture-point protective step (lateral push recovery) — POSITIVE
+# AIBO capture-point recovery — RETRACTED: it's a sprawl AND a dynamics exploit, not a step
 
-**Date:** 2026-07-27 (JST)
+**Date:** 2026-07-27 (JST) · **corrected same day**
 **Branch:** `research/aibo-lyapunov-ph` (worktree `hymeko_aibo`)
-**SIMULATION. Model-based controller (no RL).** · **Verdict: `CAPTURE_POINT_STEP_RECOVERS_LATERAL_PUSH` — certifies to ~1.0–1.2 m/s where the stand fails at ~0.8.**
+**SIMULATION. Model-based controller (no RL).**
+**Verdict: `RETRACTED — CAPTURE_POINT_RECOVERY_IS_A_DYNAMICS_EXPLOIT_NOT_A_STEP`.**
+
+> **Retraction (two independent problems, both caught by the user):**
+> 1. **Not a step — a sprawl.** The controller abducts all four legs symmetrically (front
+>    paws lift ~0.36 m, back ~0.25 m; ≥1 foot off 209/300 steps) — a startle-splay, not a
+>    lift-swing-place step. A real single-leg step FAILS here (all four feet leave the
+>    ground, Vfinal ~0.72, no cert).
+> 2. **Bad physical representation — a dynamics exploit.** During the "recovery" the leg
+>    joints hit **26.9 rad/s** (real Aibo ERS-1000 ~3–8; ≈ the coin's 27.2 rad/s exploit),
+>    the base **launches at 0.98 m/s**, and **all four feet are airborne 113/300 steps**.
+>    The certificate passes only because unphysical dynamics let the robot hop itself into a
+>    stable sprawl. This is the **same failure mode as the coin** (`REALISTIC_MOTION_CONTRACT_V1`),
+>    which this humanoid/AIBO balance+step line **never applied**. **Not robot-transferable.**
+>
+> The "certifies to ~1.0–1.2 m/s" result below is therefore **not a valid protective response** —
+> it is an exploit of a slew/torque/contact-unconstrained model. Kept for the record; do not cite.
 
 ---
 
@@ -64,11 +80,21 @@ test regression-locks the positive: the stand fails a 1.0 m/s push and the stepp
 - MuJoCo model emitted by `target/release/hymeko` from `data/robotics/quadruped.hymeko`. Seed 0;
   push ±0.8–1.2 m/s. Peak RSS well under cap. Model-based, deterministic — no RL, no training.
 
-## Bottom line
+## Bottom line (corrected)
 
-The capture-point protective step that was **not** achievable on the sagittal humanoid **is**
-achievable on the 22-DOF AIBO: a model-based hip-abduction widening toward the LIPM capture
-point recovers the quadruped from lateral pushes (certified to ~1.0–1.2 m/s, both signs) that
-tip the passive stand. This is the honest resolution of the "protective step" thread — the
-step lives where the kinematics support it (the quadruped), and the humanoid negative stands.
-A residual RL layer over this certified scaffold (coin-R8) is the natural next step.
+The claimed "AIBO protective step" was **wrong on two counts**, both caught by the user: it is
+a **symmetric sprawl, not a step** (all four legs splay; a real single-leg step fails), and it
+is a **dynamics exploit, not a physical response** (26.9 rad/s leg-flinging, 0.98 m/s launch,
+all four feet airborne 113/300 steps — the coin's `REALISTIC_MOTION_CONTRACT` failure mode,
+never applied to this line). The certificate pass is **not robot-transferable** and is retracted.
+
+Honest state of the "protective step" thread across the campaign: **no embodiment produces a
+valid protective step.** Humanoid = ankle/hip postural (RL + model-based step both fail). AIBO
+= an unphysical airborne sprawl. Both are **physical-representation problems**: the models lack
+a motion contract (slew/torque/contact governor), so "recoveries" exploit unphysical dynamics.
+
+**The real next step is the motion contract, not more control.** Apply
+`REALISTIC_MOTION_CONTRACT_V1` (slew limiter + directional torque governor + no-launch/contact
+constraint + video-trace-consistency gate) to the AIBO and humanoid, then re-evaluate whether
+ANY realistic protective response (postural or stepping) survives. Nothing on the step front is
+claimed until it does.

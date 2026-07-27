@@ -1,15 +1,20 @@
-"""Model-based capture-point protective step for the AIBO (lateral push recovery).
+"""Model-based capture-point stance-WIDENING (sprawl reflex) for the AIBO lateral push recovery.
 
-Unlike the sagittal humanoid (where a step underperforms the frontal PD — see
-hymeko_humanoid/reports/2026-07-27-humanoid-lateral-step.md), the 22-DOF quadruped's
-legs abduct freely, so a **capture-point step** is genuinely effective: when a lateral
-push drives the LIPM capture point ``xi_y = com_y + com_y_vel·sqrt(com_z/g)`` toward the
-edge of support, the controller widens the stance toward ``xi_y`` (abduct the legs apart,
-scaled by the capture-point excursion) to place support under the falling COM.
+HONEST NAMING (corrected): this is **not a step**. Measured, the controller abducts ALL
+four legs outward roughly symmetrically (front paws ~0.36 m, back ~0.25 m; >=1 foot off
+209/300 steps) — a startle-like *sprawl* that lowers the COM and widens the base toward the
+LIPM capture point ``xi_y = com_y + com_y_vel·sqrt(com_z/g)``, catching the lateral fall. A
+real protective *step* (keep 3 legs planted, lift + swing + place ONE leg) does NOT work
+here: commanding a single-leg swing makes all four feet leave the ground (max 4 off) and
+fails to certify (Vfinal ~0.72). So the quadruped recovers by widening, not stepping.
 
-Verified: this recovers the AIBO to rest (push-recovery Lyapunov V -> 0, the unchanged
-generic certificate) for lateral pushes up to ~1.3 m/s, where the passive stand FALLS.
-This is a scaffold (no RL); residual RL over it is future work.
+DYNAMICS EXPLOIT (retracted): the widening "recovery" is ALSO physically unrealistic — the
+leg joints hit 26.9 rad/s (real Aibo ~3-8; ~ the coin's 27.2 rad/s exploit), the base
+launches at 0.98 m/s, and all four feet are airborne 113/300 steps. It certifies only
+because the model has no slew/torque/contact governor (REALISTIC_MOTION_CONTRACT_V1 was
+never applied to this line). So the certificate pass is NOT robot-transferable. A valid
+protective response needs (a) a realistic motion contract, then (b) contact-scheduled
+dynamically-balanced stepping (whole-body MPC / a learned gait). Both unaddressed here.
 """
 
 from __future__ import annotations
@@ -51,8 +56,12 @@ class PushRecoveryLyapunov:
 
 
 @dataclass
-class CapturePointStepper:
-    """Reactive capture-point widening: abduct the legs toward ``xi_y`` to catch a lateral fall.
+class CapturePointWidening:
+    """Reactive capture-point stance-WIDENING (sprawl reflex) — NOT a step.
+
+    Abducts all legs apart toward ``xi_y`` to widen the base under a lateral fall. Measured to
+    be a symmetric sprawl (all four paws splay), not a single-leg step; a real step fails here
+    (see module docstring).
 
     # Preconditions env exposes ``_torso_uprightness``, ``ctrl_range``, the trot's PD fields,
     and 4 legs x {hip_abduct, hip_flex, knee}. # Postconditions ``action(env)`` returns a
