@@ -1,0 +1,22 @@
+{
+ "contract": "COIN_R9_STAGE3_VERDICT",
+ "date": "2026-07-27",
+ "verdict": "R9A_BOUNDED_CAUSAL_RESIDUAL_STRUCTURALLY_CANNOT_DELIVER_S1",
+ "maps_to_allowed": "CURRENT_CAUSAL_RESIDUAL_FORMULATION_INSUFFICIENT",
+ "dev_gate": "strict K6 on BOTH s1 and s3 = NOT REACHED",
+ "s3": "delivers K6 via the frozen R8 base (17.7mm)",
+ "s1": "NOT deliverable by any bounded Delta a over the R8 champion (constant ceiling 52.3mm; temporal TD3 ~53mm; zone 20mm)",
+ "diagnosis": "STRUCTURAL_BOUND_INSUFFICIENT (not optimiser/reward): TD3 found nothing better because the bounded residual space over the frozen R8 base contains no s1-delivering solution",
+ "s1_base_residual": [0.68, -0.99, 0.97],
+ "delta_bounds": {"d_fwd_vel": 0.25, "d_squeeze": 0.04, "d_stop_gain": 0.25, "slew": 0.15},
+ "measured": {
+  "stage3_C_dev_k6": "1/2 all 3 seeds (s3 only), dtz ~36mm, safe 2/2",
+  "update_zero": "reproduces R8 champion bit-exact (distill loss 0.0)",
+  "ceiling_s1_best_dtz_mm": 52.3,
+  "ceiling_s3_best_dtz_mm": 17.7
+ },
+ "downstream": "STAGES 5-6 NOT entered; blind final panel remains SEALED_NOT_EVALUATED; no delivery claimed without strict K6",
+ "r9b_assessment": "R9-B terminal-phase shaping would NOT help (still a bounded residual; ceiling covers all bounded residuals)",
+ "next": "R10 (NOT a silent R9 change): re-run ceiling with enlarged Delta a bounds and/or a re-selected base on s1; if a larger bound delivers s1 -> bound-magnitude limit; else s1 needs a different strategy than the R8 tip-referenced push (base/architecture change). 20mm K6 tolerance stays fixed.",
+ "integrity": "all hard constraints preserved; CORE.YAML untouched; s4/s7 validation-only and UNSEEN this stage; blind panel never evaluated"
+}

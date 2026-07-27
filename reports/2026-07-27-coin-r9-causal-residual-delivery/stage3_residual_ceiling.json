@@ -1,0 +1,33 @@
+{
+ "contract": "COIN_R9_STAGE3_RESIDUAL_CEILING",
+ "delta_bounds": {
+  "d_fwd_vel": 0.25,
+  "d_squeeze": 0.04,
+  "d_stop_gain": 0.25,
+  "slew": 0.15
+ },
+ "n_samples": 120,
+ "per_state": {
+  "s1": {
+   "best_dtz_end_mm": 52.3,
+   "any_bounded_residual_delivers": false,
+   "best_a": [
+    0.191,
+    0.63,
+    -0.816
+   ]
+  },
+  "s3": {
+   "best_dtz_end_mm": 17.7,
+   "any_bounded_residual_delivers": true,
+   "best_a": [
+    -0.542,
+    -0.091,
+    -0.533
+   ]
+  }
+ },
+ "all_dev_deliverable_by_bounded_residual": false,
+ "diagnosis": "STRUCTURAL_BOUND_INSUFFICIENT",
+ "wall_s": 96.9
+}
