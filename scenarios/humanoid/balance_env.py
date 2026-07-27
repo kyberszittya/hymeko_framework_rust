@@ -49,6 +49,8 @@ class BalanceConfig:
     base_z0: float = 0.80            # reset base height (feet in contact, COM over support)
     perturb_lo: float = 0.0          # reset pitch-rate perturbation range (rad/s), sign random
     perturb_hi: float = 0.3
+    push_lat_lo: float = 0.0         # reset LATERAL push range (base y-velocity m/s), sign random
+    push_lat_hi: float = 0.0         # >0 exercises the frontal-plane (abduction/roll) protective response
     fall_uprightness: float = 0.6
     fall_pelvis_z: float = 0.55
 
@@ -138,6 +140,9 @@ class HumanoidBalanceEnv:
         self.data.qvel[:] = 0.0
         sign = 1.0 if self._rng.random() < 0.5 else -1.0
         self.data.qvel[4] = sign * float(self._rng.uniform(self.cfg.perturb_lo, self.cfg.perturb_hi))
+        if self.cfg.push_lat_hi > 0.0:                          # lateral push (exercises frontal DOF)
+            lsign = 1.0 if self._rng.random() < 0.5 else -1.0
+            self.data.qvel[1] = lsign * float(self._rng.uniform(self.cfg.push_lat_lo, self.cfg.push_lat_hi))
         self._mj.mj_forward(self.model, self.data)
         self._t = 0
         return self._obs(), {}

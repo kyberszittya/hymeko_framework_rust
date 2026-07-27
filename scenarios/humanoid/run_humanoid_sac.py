@@ -71,10 +71,19 @@ def _eval_pd_hold(env, seeds) -> tuple[float, float]:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--steps", type=int, default=150_000)
+    ap.add_argument("--lateral", action="store_true",
+                    help="train the residual on strong LATERAL pushes (frontal-plane protective response)")
     args = ap.parse_args()
-    _OUT.mkdir(parents=True, exist_ok=True)
+    if args.lateral:                                             # strong lateral push: scaffold survives but 0/12 certifies
+        out = Path("reports/2026-07-27-humanoid-lateral-step")
+        train_cfg = BalanceConfig(perturb_lo=0.0, perturb_hi=0.0, push_lat_lo=1.8, push_lat_hi=3.0, delta_scale=1.0)
+        envelope = [train_cfg.push_lat_lo, train_cfg.push_lat_hi]
+    else:
+        out, train_cfg = _OUT, _TRAIN
+        envelope = [train_cfg.perturb_lo, train_cfg.perturb_hi]
+    out.mkdir(parents=True, exist_ok=True)
 
-    env = HumanoidBalanceEnv(cfg=_TRAIN, seed=0)
+    env = HumanoidBalanceEnv(cfg=train_cfg, seed=0)
     obs_dim = int(env.observation_space.shape[0])
     act_dim = int(env.action_space.shape[0])
     torch.manual_seed(0)
@@ -85,7 +94,7 @@ def main() -> None:
     test_seeds = list(range(3000, 3012))                         # held-out: reported ONCE
     base_frac, base_rate = _eval_pd_hold(env, test_seeds)        # certified scaffold baseline (test)
 
-    best_path = _OUT / "humanoid_sac_residual_best.pt"
+    best_path = out / "humanoid_sac_residual_best.pt"
     best = {"rate": -1.0}                                        # closure capture (not global state)
 
     def eval_fn(e, a) -> float:
@@ -102,6 +111,8 @@ def main() -> None:
     curve = train_sac(actor, critics, env, cfg, eval_fn=eval_fn)
 
     final_frac, final_rate = _eval_balance(env, actor, test_seeds)   # naive last checkpoint (test)
+    if not best_path.exists():                                       # no eval ran (very short run) -> use final
+        torch.save(actor.state_dict(), best_path)
     best_actor, _ = build_sac("mlp", obs_dim=obs_dim, flat_dim=obs_dim,
                               action_dim=act_dim, action_scale=1.0, hidden=128)
     best_actor.load_state_dict(torch.load(best_path))
@@ -111,7 +122,7 @@ def main() -> None:
         "verdict": ("RESIDUAL_EXTENDS_CERTIFIED_ENVELOPE" if delta > 0.15
                     else "RESIDUAL_MATCHES_SCAFFOLD" if abs(delta) <= 0.15
                     else "RESIDUAL_REGRESSES_SCAFFOLD"),
-        "envelope_perturb": [_TRAIN.perturb_lo, _TRAIN.perturb_hi],
+        "envelope_perturb": envelope,
         "pd_hold_certified_rate_test": round(base_rate, 3),
         "sac_best_val_certified_rate_val": round(best["rate"], 3),
         "sac_best_val_certified_rate_test": round(best_rate, 3),
@@ -126,7 +137,7 @@ def main() -> None:
                 "identical test seeds. VAL seeds select the checkpoint; TEST seeds reported once. "
                 "sac_last vs sac_best exposes training (in)stability under the peak-V certificate.",
     }
-    (_OUT / "sac_residual_gates.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    (out / "sac_residual_gates.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: result[k] for k in
                       ("verdict", "pd_hold_certified_rate_test", "sac_best_val_certified_rate_test",
                        "sac_last_certified_rate_test", "certified_rate_delta_test",
