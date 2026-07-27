@@ -1,0 +1,206 @@
+{
+ "contract": "COIN_LOCAL_ATLAS_SCOUT_V1",
+ "scope": "reconnaissance_only_no_clustering_no_bc",
+ "n_scouted": 24,
+ "n_certified": 9,
+ "n_deliverable_dev": 5,
+ "held_out_seeds": [
+  15000,
+  15750
+ ],
+ "blind_status": "f1-f4 SEALED (untouched)",
+ "s4_s7_status": "held-out validation-only (excluded from training profiles)",
+ "atlas": [
+  {
+   "seed": 14250,
+   "is_frozen_seed": true,
+   "held_out": false,
+   "deliverable": true,
+   "canonical_theta": [
+    0.0515,
+    0.2179,
+    0.0164,
+    12.8078,
+    9.2369,
+    3.0388
+   ],
+   "canonical_source": "cem_best",
+   "teacher_physics": {
+    "peak_vpar": 0.3216,
+    "mean_vpar": 0.0957,
+    "peak_fn": 3.328,
+    "mean_fn_contact": 1.542,
+    "contact_fraction": 0.55,
+    "release_dtz_mm": 84.2,
+    "release_vpar": 0.1246,
+    "sign_reversals": 0,
+    "min_dtz_mm": 18.5
+   }
+  },
+  {
+   "seed": 14750,
+   "is_frozen_seed": true,
+   "held_out": false,
+   "deliverable": true,
+   "canonical_theta": [
+    0.203578,
+    0.055342,
+    -0.047739,
+    4.643692,
+    19.946047,
+    1.388089
+   ],
+   "canonical_source": "basin_repair",
+   "teacher_physics": {
+    "peak_vpar": 0.381,
+    "mean_vpar": 0.1325,
+    "peak_fn": 6.198,
+    "mean_fn_contact": 3.092,
+    "contact_fraction": 0.3,
+    "release_dtz_mm": 54.5,
+    "release_vpar": 0.3495,
+    "sign_reversals": 0,
+    "min_dtz_mm": 15.3
+   }
+  },
+  {
+   "seed": 15000,
+   "is_frozen_seed": true,
+   "held_out": true,
+   "deliverable": true,
+   "canonical_theta": [
+    0.0681,
+    0.2023,
+    -0.0297,
+    10.4443,
+    6.8406,
+    2.2844
+   ],
+   "canonical_source": "cem_best"
+  },
+  {
+   "seed": 15750,
+   "is_frozen_seed": true,
+   "held_out": true,
+   "deliverable": true,
+   "canonical_theta": [
+    0.157,
+    0.1729,
+    0.0133,
+    8.6476,
+    5.3654,
+    1.4752
+   ],
+   "canonical_source": "cem_best"
+  },
+  {
+   "seed": 16500,
+   "is_frozen_seed": false,
+   "held_out": false,
+   "deliverable": true,
+   "canonical_theta": [
+    0.0389,
+    0.114,
+    0.0233,
+    15.5399,
+    16.1924,
+    3.1535
+   ],
+   "canonical_source": "cem_best",
+   "teacher_physics": {
+    "peak_vpar": 0.6522,
+    "mean_vpar": 0.1645,
+    "peak_fn": 6.248,
+    "mean_fn_contact": 3.761,
+    "contact_fraction": 0.25,
+    "release_dtz_mm": 48.9,
+    "release_vpar": 0.6522,
+    "sign_reversals": 1,
+    "min_dtz_mm": 5.5
+   }
+  },
+  {
+   "seed": 17000,
+   "is_frozen_seed": false,
+   "held_out": false,
+   "deliverable": false,
+   "canonical_theta": [
+    0.1098,
+    0.1441,
+    -0.0768,
+    3.6223,
+    16.4306,
+    2.0739
+   ],
+   "canonical_source": "cem_best_NONDELIVERING"
+  },
+  {
+   "seed": 17750,
+   "is_frozen_seed": false,
+   "held_out": false,
+   "deliverable": true,
+   "canonical_theta": [
+    0.0349,
+    0.1932,
+    0.1,
+    4.1972,
+    20.5702,
+    1.9756
+   ],
+   "canonical_source": "cem_best",
+   "teacher_physics": {
+    "peak_vpar": 0.2571,
+    "mean_vpar": 0.062,
+    "peak_fn": 3.183,
+    "mean_fn_contact": 1.393,
+    "contact_fraction": 0.4,
+    "release_dtz_mm": 35.1,
+    "release_vpar": 0.1645,
+    "sign_reversals": 0,
+    "min_dtz_mm": 16.4
+   }
+  },
+  {
+   "seed": 18250,
+   "is_frozen_seed": false,
+   "held_out": false,
+   "deliverable": false,
+   "canonical_theta": [
+    0.0596,
+    0.0262,
+    -0.0476,
+    15.5114,
+    16.6412,
+    2.1899
+   ],
+   "canonical_source": "cem_best_NONDELIVERING"
+  },
+  {
+   "seed": 19500,
+   "is_frozen_seed": false,
+   "held_out": false,
+   "deliverable": true,
+   "canonical_theta": [
+    0.158,
+    0.143,
+    -0.0432,
+    12.4194,
+    16.4224,
+    3.2824
+   ],
+   "canonical_source": "cem_best",
+   "teacher_physics": {
+    "peak_vpar": 0.5319,
+    "mean_vpar": 0.188,
+    "peak_fn": 7.645,
+    "mean_fn_contact": 2.987,
+    "contact_fraction": 0.317,
+    "release_dtz_mm": 97.2,
+    "release_vpar": 0.3413,
+    "sign_reversals": 0,
+    "min_dtz_mm": 17.0
+   }
+  }
+ ],
+ "wall_s": 911.0
+}
