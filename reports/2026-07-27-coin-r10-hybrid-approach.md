@@ -49,11 +49,30 @@ momentum** before the coin reaches the zone (it *is* the settle law). The missin
 phase** between APPROACH and BRAKE — carry the momentum to the target corridor, *then* brake — and possibly a coast-in
 handoff (the R4/R5 push-then-coast question, gated by the R6 rest certificate). **BRAKE was not modified.**
 
-## Next (C2 refinement → C3)
+## C2.5 handoff phase-existence audit (`--c25`) — which second mode?
 
-Add the **HOLD/TRANSPORT** mode (maintain momentum / bounded coast to the target corridor; no active slowing) between
-APPROACH and BRAKE, and/or make APPROACH exit on REACHABILITY rather than an early LAUNCH; re-run C2-D; then C3 (manual
-hybrid program, s1 ∧ s3 strict K6, safety 2/2, R6 unchanged). The blind panel stays sealed.
+To decide whether the transport mode is **HELD_MOMENTUM_CARRY** (grip retained) or a teacher-like **RELEASED_COAST** (the
+teacher loses contact at step 34 and coasts into the zone at 36), a CARRY phase (held forward-effort × duration, or a
+passive-release coast) was swept between APPROACH and the frozen BRAKE on s1:
+
+| handoff | best | K6 |
+|---|---|---|
+| HELD carry (qref 1.0, 8 steps) | 48.4 mm | ✗ |
+| **PASSIVE_RELEASE coast (10 steps)** | **33.0 mm** | ✗ |
+
+**`HANDOFF_TRANSPORT_MODE_NOT_YET_IDENTIFIED`** — neither delivers, so the handoff is **not a few carry frames**. The
+released-coast (33 mm) beats held-carry (48 mm), pointing to the teacher-like mechanism, but a **fixed** carry-then-release
+duration is the wrong release *state* — it wants a **reachability-gated release** (release when `v_par² ≥ 2·a·d_remain`),
+which forces the design question the R6 rest-certificate raises: a **pre-zone launch/release guard is distinct from the final
+settle/K6 certificate**. Correct current verdict: `APPROACH_MOMENTUM_MODE_LOAD_BEARING` + `HANDOFF_TRANSPORT_MODE_NOT_YET_IDENTIFIED`.
+
+## Next
+
+The most promising path is a **reachability-gated RELEASED_COAST**: APPROACH builds momentum → when the coin can coast into
+the zone (reachability), release under a *launch* guard (separate from the R6 settle certificate) → coast → SETTLE. Contrast
+with an active HELD_MOMENTUM_CARRY primitive if the coast proves too sensitive. Then C3 (manual hybrid program, s1 ∧ s3
+strict K6, safety 2/2). The final settle/K6 certificate and the physics stay frozen; the blind panel stays sealed. This is
+genuine hybrid-system identification — the modes are discovered from the unexpressible teacher components, not drawn on by hand.
 
 ## Artifacts / gates
 
