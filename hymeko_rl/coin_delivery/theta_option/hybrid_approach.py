@@ -30,6 +30,7 @@ from hymeko_rl.coin_delivery.theta_option.tip_transport import (
 APPROACH = -1                                     # the momentum-build phase, BEFORE the scaffold's REGULATE(0)/RELEASE(1)
 CARRY = -2                                        # the candidate handoff phase (held-carry or passive-release), before REGULATE
 REACQUIRE = -3                                    # C2.8: re-acquire contact after a RELEASED_COAST, then hand to the frozen settle
+MICRO = -4                                        # R3-B: bounded micro-transport (delta_forward over the settle) after re-acquire
 
 
 @dataclass
@@ -62,6 +63,12 @@ class ApproachParams:
     reacq_qref: float = 0.35                       # rad/s — gentle forward joint-velocity to catch the coasting coin
     reacq_squeeze_step: float = 0.02              # N·m/step — RAMPED squeeze (not stepped) — impulse-limited re-grip
     reacq_max_steps: int = 18                     # re-acquire horizon guard
+    micro_transport: bool = False                 # R3-B: a MICRO-TRANSPORT (one bounded delta_forward channel) after re-acquire
+    micro_forward: float = 0.0                    # rad/s bounded delta_forward added to the settle qref (0 = update-zero = C2.8)
+    micro_vcap_qref: float = 0.9                  # rad/s hard cap on the nudged joint-velocity reference (low velocity cap)
+    micro_impulse_budget: float = 0.04            # m — small ∑ v_par·dt budget for the micro-transport (mandatory exit)
+    micro_max_steps: int = 12                     # short micro-transport horizon (mandatory exit)
+    micro_brake_entry_hi: float = 0.018           # m — hand to the frozen settle once dtz ≤ this (brake-entry state)
 
 
 class HybridApproachController(TipReferencedController):
@@ -92,6 +99,23 @@ class HybridApproachController(TipReferencedController):
         self._reacq_steps = 0
         self.reacquire_start: "dict | None" = None               # coast state when re-acquire began
         self.reacquire_end: "dict | None" = None                 # {dtz, steps, success, first_contact_dv} at re-grip / timeout
+        self._micro_impulse = 0.0
+        self._micro_steps = 0
+
+    def _micro_targets(self, rl: Any, t: int) -> "dict[str, Any]":
+        """R3-B MICRO-TRANSPORT: the FROZEN settle targets + a bounded `delta_forward` on the joint-velocity reference, applied
+        only in a legal transport state (bilateral contact, no reversal, above the brake-entry corridor, within impulse/horizon
+        budget). `micro_forward = 0` ⇒ exactly the settle (update-zero identity). Exits to the frozen settle at brake-entry or
+        on any budget/safety guard — it does NOT drive to K6."""
+        bt = super()._base_targets(rl, t)                         # the frozen REGULATE/settle base (velocity_ref + squeeze)
+        self._micro_steps += 1
+        legal = (bt["both"] and not bt["contact_risk"] and bt["v_par"] >= -0.01 and bt["dtz"] > self.ap.micro_brake_entry_hi
+                 and self._micro_impulse < self.ap.micro_impulse_budget and self._micro_steps <= self.ap.micro_max_steps)
+        if not legal:                                            # brake-entry reached / budget spent / unsafe ⇒ frozen settle
+            self.phase = REGULATE
+            return bt
+        self._micro_impulse += max(bt["v_par"], 0.0) * float(self.snap.stack.control_dt)
+        return {**bt, "base_qref": float(min(bt["base_qref"] + self.ap.micro_forward, self.ap.micro_vcap_qref))}
 
     def _reacquire_targets(self, rl: Any, t: int) -> "dict[str, Any]":
         """C2.8 RE-ACQUIRE: gently catch the coasting coin (bounded forward joint-velocity) and RAMP the squeeze (impulse-
@@ -105,9 +129,12 @@ class HybridApproachController(TipReferencedController):
         self._reacq_steps += 1
         reacquired = both and fn_min > self.ap.fn_min_safe
         if reacquired or self._reacq_steps > self.ap.reacq_max_steps:
-            self.phase = REGULATE
             self.reacquire_end = {"dtz_mm": round(dtz * 1000, 1), "steps": self._reacq_steps, "success": bool(reacquired),
                                   "v_par_at_regrip": round(v_par, 4)}
+            if reacquired and self.ap.micro_transport:           # R3-B: bridge the last ~11 mm before the frozen settle
+                self.phase = MICRO
+                return self._micro_targets(rl, t)
+            self.phase = REGULATE
             return super()._base_targets(rl, t)
         fwd_dir, sqz_dir = self._directions(rl, e_par, _coin_xy(rl))
         return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,
@@ -168,6 +195,8 @@ class HybridApproachController(TipReferencedController):
             return self._carry_targets(rl, t)
         if self.phase == REACQUIRE:
             return self._reacquire_targets(rl, t)
+        if self.phase == MICRO:
+            return self._micro_targets(rl, t)
         if self.phase == RELEASE:
             rt = self._maybe_reacquire(rl, t)
             if rt is not None:

@@ -1,0 +1,203 @@
+{
+ "contract": "COIN_R9_R3BC_MICRO_TRANSPORT",
+ "cradle": "s1",
+ "base_c28_dtz_mm": 47.5,
+ "R3B0_update_zero_identity": true,
+ "micro_zero_dtz_mm": 47.5,
+ "best_micro": {
+  "micro_forward": 0.6,
+  "micro_impulse_budget": 0.08,
+  "vcap": 1.8,
+  "dtz_end_mm": 49.5,
+  "min_dtz_mm": 49.5,
+  "k6": false,
+  "safe": true,
+  "reacq_success": true
+ },
+ "n_delivered": 0,
+ "verdict": "MICRO_TRANSPORT_INSUFFICIENT",
+ "n_runs": 18,
+ "runs": [
+  {
+   "micro_forward": 0.6,
+   "micro_impulse_budget": 0.08,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 0.6,
+   "micro_impulse_budget": 0.08,
+   "vcap": 1.8,
+   "dtz_end_mm": 49.5,
+   "min_dtz_mm": 49.5,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 0.6,
+   "micro_impulse_budget": 0.16,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 0.6,
+   "micro_impulse_budget": 0.16,
+   "vcap": 1.8,
+   "dtz_end_mm": 49.5,
+   "min_dtz_mm": 49.5,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 0.6,
+   "micro_impulse_budget": 0.3,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 0.6,
+   "micro_impulse_budget": 0.3,
+   "vcap": 1.8,
+   "dtz_end_mm": 49.5,
+   "min_dtz_mm": 49.5,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.0,
+   "micro_impulse_budget": 0.08,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.0,
+   "micro_impulse_budget": 0.08,
+   "vcap": 1.8,
+   "dtz_end_mm": 50.3,
+   "min_dtz_mm": 50.3,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.0,
+   "micro_impulse_budget": 0.16,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.0,
+   "micro_impulse_budget": 0.16,
+   "vcap": 1.8,
+   "dtz_end_mm": 50.3,
+   "min_dtz_mm": 50.3,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.0,
+   "micro_impulse_budget": 0.3,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.0,
+   "micro_impulse_budget": 0.3,
+   "vcap": 1.8,
+   "dtz_end_mm": 50.3,
+   "min_dtz_mm": 50.3,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.6,
+   "micro_impulse_budget": 0.08,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.6,
+   "micro_impulse_budget": 0.08,
+   "vcap": 1.8,
+   "dtz_end_mm": 49.9,
+   "min_dtz_mm": 49.9,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.6,
+   "micro_impulse_budget": 0.16,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.6,
+   "micro_impulse_budget": 0.16,
+   "vcap": 1.8,
+   "dtz_end_mm": 49.9,
+   "min_dtz_mm": 49.9,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.6,
+   "micro_impulse_budget": 0.3,
+   "vcap": 1.2,
+   "dtz_end_mm": 49.6,
+   "min_dtz_mm": 49.6,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  },
+  {
+   "micro_forward": 1.6,
+   "micro_impulse_budget": 0.3,
+   "vcap": 1.8,
+   "dtz_end_mm": 49.9,
+   "min_dtz_mm": 49.9,
+   "k6": false,
+   "safe": true,
+   "reacq_success": true
+  }
+ ],
+ "wall_s": 90.6
+}

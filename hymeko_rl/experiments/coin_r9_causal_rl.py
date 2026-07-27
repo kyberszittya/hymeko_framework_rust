@@ -795,9 +795,56 @@ def c29_catchpoint_audit() -> dict:
     return out
 
 
+def c30_micro_transport_audit() -> dict:
+    """R10-R3-B/C — the minimal MICRO-TRANSPORT (one bounded delta_forward over the FROZEN settle) after re-acquire. R3-B0:
+    micro_forward=0 reproduces the C2.8 base (update-zero). R3-C: a bounded nudge closes s1 to strict K6 with the settle/cert
+    UNCHANGED. The re-acquire config is FIXED (the C2.8-proven one) so a win is attributable to the micro-transport ALONE."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
+    reacq = {"qdot_approach": 1.6, "launch_vlo": 5.0, "launch_vhi": 6.0, "impulse_budget": 10.0, "max_steps": 40,
+             "acquire_squeeze": 0.2, "reacquire": True, "release_at_step": 13, "reacq_max_steps": 22}   # best gentle re-grip (47.5mm)
+    off = _run_approach(snap, ApproachParams(**reacq))
+    zero = _run_approach(snap, ApproachParams(**reacq, micro_transport=True, micro_forward=0.0))
+    update_zero = bool(abs(off["dtz_end_mm"] - zero["dtz_end_mm"]) < 0.1)                    # R3-B0
+    runs = []
+    for mf in (0.6, 1.0, 1.6):                                                               # the transport is ~28mm, NOT micro
+        for mib in (0.08, 0.16, 0.30):
+            for vc in (1.2, 1.8):
+                r = _run_approach(snap, ApproachParams(**reacq, micro_transport=True, micro_forward=mf, micro_max_steps=22,
+                                                       micro_impulse_budget=mib, micro_vcap_qref=vc))
+                runs.append({"micro_forward": mf, "micro_impulse_budget": mib, "vcap": vc, "dtz_end_mm": r["dtz_end_mm"],
+                             "min_dtz_mm": r["min_dtz_mm"], "k6": r["k6"], "safe": r["safe"],
+                             "reacq_success": bool((r.get("reacquire_end") or {}).get("success"))})
+    valid = [r for r in runs if r["safe"] and r["reacq_success"]]
+    delivered = [r for r in valid if r["k6"]]
+    best = min(valid, key=lambda r: r["dtz_end_mm"]) if valid else None
+    progressed = bool(best and best["dtz_end_mm"] < off["dtz_end_mm"] - 1.0)
+    if delivered:
+        verdict = "MICRO_TRANSPORT_CLOSES_S1"                                                # R3-C PASS
+    elif progressed:
+        verdict = "MICRO_TRANSPORT_PROGRESSES_BUT_NO_K6"
+    else:
+        verdict = "MICRO_TRANSPORT_INSUFFICIENT"
+    out = {"contract": "COIN_R9_R3BC_MICRO_TRANSPORT", "cradle": "s1", "base_c28_dtz_mm": off["dtz_end_mm"],
+           "R3B0_update_zero_identity": update_zero, "micro_zero_dtz_mm": zero["dtz_end_mm"], "best_micro": best,
+           "n_delivered": len(delivered), "verdict": verdict, "n_runs": len(runs), "runs": runs,
+           "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10r3bc_micro_transport.json", "w"), indent=1, default=float)
+    bm = (f"{best['dtz_end_mm']}mm K6 {best['k6']} (fwd {best['micro_forward']} imp {best['micro_impulse_budget']} vcap "
+          f"{best['vcap']})" if best else "none")
+    print(f"   R3-B0 update-zero {update_zero} (off {off['dtz_end_mm']}mm == micro0 {zero['dtz_end_mm']}mm)\n"
+          f"   best micro {bm} | base {off['dtz_end_mm']}mm | delivered {len(delivered)}\n"
+          f"== R10-R3-B/C ==\n  {verdict} | wall {out['wall_s']}s\nR9_R3BC_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
+    elif "--c30" in argv:
+        c30_micro_transport_audit()
     elif "--c29" in argv:
         c29_catchpoint_audit()
     elif "--c27" in argv:
