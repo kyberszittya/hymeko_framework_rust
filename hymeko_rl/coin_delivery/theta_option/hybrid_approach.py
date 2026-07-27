@@ -26,13 +26,15 @@ from hymeko_rl.coin_delivery.forward_displacement import _coin_xy
 from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
 from hymeko_rl.coin_delivery.theta_option.tip_transport import REGULATE, TipReferencedController, TipTransportParams
 
-APPROACH = -1                                     # the new momentum-build phase, BEFORE the scaffold's REGULATE(0)/RELEASE(1)
+APPROACH = -1                                     # the momentum-build phase, BEFORE the scaffold's REGULATE(0)/RELEASE(1)
+CARRY = -2                                        # the candidate handoff phase (held-carry or passive-release), before REGULATE
 
 
 @dataclass
 class ApproachParams:
     """Physically-interpretable APPROACH basis (frozen for a run). `qdot_approach` is distance-INDEPENDENT and may exceed the
-    S1-safe settle cap (1.0) but stays under the motion-contract hard limit (governed to ≤ joint hard cap)."""
+    S1-safe settle cap (1.0) but stays under the motion-contract hard limit (governed to ≤ joint hard cap). The `carry_*`
+    fields parameterise the C2.5 handoff phase-existence audit (held-momentum-carry vs teacher-like released-coast)."""
 
     qdot_approach: float = 2.2                    # rad/s — distance-independent forward joint-velocity demand (momentum build)
     acquire_squeeze: float = 0.16                 # N·m — grip to retain bilateral contact under the stronger push
@@ -42,6 +44,9 @@ class ApproachParams:
     impulse_budget: float = 0.6                   # m — bounded ∑ v_par·dt effort budget (mandatory exit)
     max_steps: int = 24                           # APPROACH horizon guard (mandatory safe exit)
     fn_min_safe: float = 0.05                     # N — below this on either tip ⇒ contact-loss risk ⇒ safe exit
+    carry_steps: int = 0                          # C2.5 handoff duration between APPROACH and BRAKE (0 = direct handoff)
+    carry_qref: float = 0.0                       # rad/s forward joint-velocity held during carry (0 = HELD_ZERO; >0 = HELD_LOW)
+    carry_release: bool = False                   # True = PASSIVE_RELEASE (relax grip, coast free) — DIAGNOSTIC branch only
 
 
 class HybridApproachController(TipReferencedController):
@@ -62,8 +67,30 @@ class HybridApproachController(TipReferencedController):
         self.phase = APPROACH if self.enabled else REGULATE      # start in APPROACH (or the frozen scaffold if disabled)
         self._impulse = 0.0
         self._approach_steps = 0
+        self._carry_remaining = 0
         self.approach_exit_step: "int | None" = None
         self.exit_reason: "str | None" = None
+        self.approach_end: "dict | None" = None                  # (v_par, dtz) at APPROACH→CARRY/REGULATE
+        self.brake_start: "dict | None" = None                   # (v_par, dtz) handed to the frozen brake
+
+    def _carry_targets(self, rl: Any, t: int) -> "dict[str, Any]":
+        """The candidate handoff phase (C2.5): HELD (grip retained, forward effort `carry_qref`) or PASSIVE_RELEASE (relax
+        grip, coast free) for `carry_steps`, then monotone handoff to the frozen BRAKE."""
+        e_par, dtz, v_par = self._live(rl)
+        con = primary_fingertip_contacts(rl)
+        both = con["left"] is not None and con["right"] is not None
+        if self._carry_remaining <= 0:                           # carry done → hand to the frozen servo/brake THIS step
+            self.phase = REGULATE
+            self.brake_start = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1)}
+            return super()._base_targets(rl, t)
+        self._carry_remaining -= 1
+        fwd_dir, sqz_dir = self._directions(rl, e_par, _coin_xy(rl))
+        if self.ap.carry_release:                                # PASSIVE_RELEASE (diagnostic): relax the grip, coin coasts
+            return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": True,
+                    "base_qref": 0.0, "base_sqz": float(self._sqz), "both": both, "contact_risk": not both, "con": con}
+        return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,
+                "base_qref": float(self.ap.carry_qref), "base_sqz": float(self.p.squeeze_hold), "both": both,
+                "contact_risk": not both, "con": con}
 
     def _exit_approach(self, dtz: float, v_par: float, both: bool, contact_risk: bool) -> "str | None":
         """First applicable monotone exit guard (safety ≻ launch ≻ reachability ≻ budget ≻ horizon); None ⇒ keep approaching.
@@ -82,6 +109,8 @@ class HybridApproachController(TipReferencedController):
         return None
 
     def _base_targets(self, rl: Any, t: int) -> "dict[str, Any]":
+        if self.phase == CARRY:
+            return self._carry_targets(rl, t)
         if self.phase != APPROACH:
             return super()._base_targets(rl, t)                  # REGULATE/HOLD/BRAKE/RELEASE = the frozen scaffold
         e_par, dtz, v_par = self._live(rl)
@@ -92,9 +121,15 @@ class HybridApproachController(TipReferencedController):
         self._impulse += max(v_par, 0.0) * float(self.snap.stack.control_dt)
         self._approach_steps += 1
         reason = self._exit_approach(dtz, v_par, both, contact_risk)
-        if reason is not None:
-            self.phase = REGULATE                                # monotone handoff to the frozen servo/brake THIS step
+        if reason is not None:                                   # APPROACH exit → CARRY (if any) then the frozen brake
             self.approach_exit_step, self.exit_reason = int(t), reason
+            self.approach_end = {"v_par": round(v_par, 4), "dtz_mm": round(dtz * 1000, 1)}
+            if self.ap.carry_steps > 0:
+                self.phase = CARRY
+                self._carry_remaining = int(self.ap.carry_steps)
+                return self._carry_targets(rl, t)
+            self.phase = REGULATE
+            self.brake_start = self.approach_end
             return super()._base_targets(rl, t)
         fwd_dir, sqz_dir = self._directions(rl, e_par, _coin_xy(rl))
         return {"dtz": dtz, "v_par": v_par, "fwd_dir": fwd_dir, "sqz_dir": sqz_dir, "in_release": False,

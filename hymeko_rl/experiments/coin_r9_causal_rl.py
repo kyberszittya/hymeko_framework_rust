@@ -534,11 +534,50 @@ def _run_approach(snap: Any, ap: Any, *, enabled: bool = True) -> dict:
         acc["d"] = min(acc["d"], float(d))
     m = velocity_rollout(snap, ctrl, DELIVERY_CFG, frame_hook=hook)
     safe = bool(m["peak_coin_speed"] <= 1.5 and m["peak_qdot"] <= 3.0)
+    carry_dist = (round(ctrl.approach_end["dtz_mm"] - ctrl.brake_start["dtz_mm"], 1)
+                  if getattr(ctrl, "approach_end", None) and getattr(ctrl, "brake_start", None) else None)
     return {"qdot_approach": ap.qdot_approach, "launch": [ap.launch_vlo, ap.launch_vhi], "peak_vpar": round(acc["v"], 4),
             "min_dtz_mm": round(acc["d"] * 1000, 1), "dtz_end_mm": round(float(m["dtz_end"]) * 1000, 1),
             "k6": bool(safe and delivery_success(m, DELIVERY_CFG)), "safe": safe, "exit_step": ctrl.approach_exit_step,
             "exit_reason": ctrl.exit_reason, "peak_qdot": round(float(m["peak_qdot"]), 3),
-            "peak_coin": round(float(m["peak_coin_speed"]), 3)}
+            "peak_coin": round(float(m["peak_coin_speed"]), 3),
+            "approach_end": getattr(ctrl, "approach_end", None), "brake_start": getattr(ctrl, "brake_start", None),
+            "carry_distance_mm": carry_dist}
+
+
+def c25_handoff_audit() -> dict:
+    """R10-C2.5 — handoff phase-existence audit: is the second mode HELD_MOMENTUM_CARRY (grip retained) or a teacher-like
+    PASSIVE_RELEASE coast? Sweeps carry (held forward-effort × duration) + a diagnostic released-coast branch after a fixed
+    momentum-building APPROACH; classifies which handoff reaches s1 K6. Dev s1 only; brake/cert/physics frozen."""
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True)
+    from hymeko_rl.coin_delivery.theta_option.hybrid_approach import ApproachParams
+    snap = {ps.tag: ps for ps in build_panel(_load_harness(), json.load(open(BANK)))}["s1"].snap
+    base = {"qdot_approach": 2.4, "launch_vlo": 0.28, "launch_vhi": 0.45}
+    variants = [("HELD", cq, cs, ApproachParams(**base, carry_qref=cq, carry_steps=cs))
+                for cq in (0.0, 0.5, 1.0) for cs in (0, 2, 4, 6, 8, 10)]
+    variants += [("PASSIVE_RELEASE", 0.0, cs, ApproachParams(**base, carry_steps=cs, carry_release=True))
+                 for cs in (2, 4, 6, 8, 10)]
+    runs = [{"mode": m, "carry_qref": cq, "carry_steps": cs, **_run_approach(snap, ap)} for m, cq, cs, ap in variants]
+    held = [r for r in runs if r["mode"] == "HELD" and r["safe"]]
+    rel = [r for r in runs if r["mode"] == "PASSIVE_RELEASE" and r["safe"]]
+    best_held = max(held, key=lambda r: (r["k6"], -r["dtz_end_mm"])) if held else None
+    best_rel = max(rel, key=lambda r: (r["k6"], -r["dtz_end_mm"])) if rel else None
+    if best_held and best_held["k6"]:
+        verdict = "HELD_MOMENTUM_CARRY_DELIVERS_S1"                       # keep the R6 rest certificate
+    elif best_rel and best_rel["k6"]:
+        verdict = "RELEASED_COAST_DELIVERS_S1"                           # need launch/release guard ≠ final settle cert
+    else:
+        verdict = "HANDOFF_TRANSPORT_MODE_NOT_YET_IDENTIFIED"            # active carry primitive still missing
+    out = {"contract": "COIN_R9_R10C25_HANDOFF_AUDIT", "cradle": "s1", "approach_base": base,
+           "best_held": best_held, "best_passive_release": best_rel, "verdict": verdict, "n_variants": len(runs),
+           "runs": runs, "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/r10c25_handoff_audit.json", "w"), indent=1, default=float)
+    bh = f"{best_held['dtz_end_mm']}mm K6 {best_held['k6']} (qref {best_held['carry_qref']} steps {best_held['carry_steps']})" if best_held else "none-safe"
+    br = f"{best_rel['dtz_end_mm']}mm K6 {best_rel['k6']} (steps {best_rel['carry_steps']})" if best_rel else "none-safe"
+    print(f"   best HELD {bh}\n   best PASSIVE_RELEASE {br}\n== R10-C2.5 ==\n  {verdict} | wall {out['wall_s']}s\nR9_C25_DONE",
+          flush=True)
+    return out
 
 
 def c2_mechanism() -> dict:
@@ -590,6 +629,8 @@ def main(argv: "list[str]") -> None:
         c1_projection()
     elif "--c2" in argv:
         c2_mechanism()
+    elif "--c25" in argv:
+        c25_handoff_audit()
     elif "--stage3" in argv:
         cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
         stage3_train(curriculum=cur, smoke="--smoke" in argv)
