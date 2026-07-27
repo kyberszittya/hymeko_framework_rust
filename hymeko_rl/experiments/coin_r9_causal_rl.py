@@ -20,7 +20,10 @@ import torch
 
 from hymeko_rl.coin_delivery.theta_option.deploy import build_panel
 from hymeko_rl.coin_delivery.theta_option.r9_causal_residual import (
-    DeltaBounds, R9CausalResidualAdapter, ZeroDeltaActor)
+    CAUSAL_DIM, DeltaBounds, R9CausalResidualAdapter, ZeroDeltaActor)
+from hymeko_rl.coin_delivery.theta_option.r9_delivery_train import (
+    ACT_DIM as _R9_ACT, DeliveryReward, R9TD3Config, _dev_eval, train_causal_td3)
+from hymeko_rl.option_rl.agents import DetActor
 from hymeko_rl.coin_delivery.theta_option.residual_adapter import ConstantResidualActor, ResidualBounds, ResidualTipAdapter
 from hymeko_rl.coin_delivery.theta_option.residual_option_env import OBS_DIM, ACT_DIM, residual_init_obs
 from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
@@ -101,11 +104,65 @@ def stage2_update_zero_identity() -> dict:
     return out
 
 
+# ── STAGE 3 — per-decision delivery-focused TD3 (development cradles only) ────────────────────────────────────────────
+CURRICULA = {
+    "A": DeliveryReward(w_terminal=2.0, w_lowspeed=0.0, w_reversal=3.0),   # trajectory shaping (reduce fling/reversal, hold contact)
+    "B": DeliveryReward(w_terminal=6.0, w_lowspeed=3.0, w_reversal=3.0),   # terminal approach (slow near target, don't stop short)
+    "C": DeliveryReward(w_terminal=10.0, w_lowspeed=5.0, w_reversal=2.0)}  # strict delivery (enter 20mm zone, settle)
+
+
+def _dev_cradles(panel: dict, actor: Any, params: Any, bounds: Any) -> list:
+    """(tag, snap, a_R8) for the DEV cradles — a_R8 = the frozen R8 champion's constant residual per cradle."""
+    return [(t, panel[t].snap, _r8_base_residual(actor, panel[t].snap, params, bounds)) for t in DEV_TAGS]
+
+
+def _eval_ckpt(state: dict, dev: list, cfg: Any) -> dict:
+    pol = DetActor(CAUSAL_DIM, _R9_ACT)
+    pol.load_state_dict(state)
+    return _dev_eval(pol, dev, cfg)
+
+
+def stage3_train(curriculum: str = "A", seeds: tuple = (0, 1, 2), smoke: bool = False) -> dict:
+    """STAGE 3 — train the causal residual TD3 on dev cradles under a curriculum reward. Reports update-0 (≈R8 champion),
+    best_val and final dev delivery per seed. Dev-only; s4/s7 and the blind panel are untouched."""
+    t0 = time.time()
+    os.makedirs(f"{OUT}/ckpts", exist_ok=True)
+    bank = json.load(open(BANK))
+    panel = {ps.tag: ps for ps in build_panel(_load_harness(), bank)}
+    params, bounds = TipTransportParams(), ResidualBounds()
+    dev = _dev_cradles(panel, _r8_champion(), params, bounds)
+    reward = CURRICULA[curriculum]
+    cfg = R9TD3Config(total_rollouts=30, warmup_rollouts=8, eval_every=10) if smoke else R9TD3Config()
+    if smoke:
+        seeds = (0,)
+    runs = []
+    for seed in seeds:
+        print(f"\n  ── curriculum {curriculum} · seed {seed} ──", flush=True)
+        ckpts, info = train_causal_td3(dev, reward, cfg, seed=seed, log=lambda s: print(s, flush=True))
+        upd0, best, final = (_eval_ckpt(ckpts[k], dev, cfg) for k in ("update0", "best_val", "final"))
+        torch.save(ckpts["best_val"], f"{OUT}/ckpts/r9_{curriculum}_seed{seed}_best_val.pt")
+        runs.append({"seed": seed, "distill_loss": info["distill_loss"], "update0_dev": upd0, "best_val_dev": best,
+                     "final_dev": final, "ckpt": f"{OUT}/ckpts/r9_{curriculum}_seed{seed}_best_val.pt"})
+        print(f"    seed {seed}: update0 K6 {upd0['k6']}/{upd0['n']} dtz {upd0['mean_dtz_mm']}mm -> "
+              f"best_val K6 {best['k6']}/{best['n']} dtz {best['mean_dtz_mm']}mm (distill {info['distill_loss']})", flush=True)
+    out = {"contract": "COIN_R9_STAGE3_DELIVERY_TD3", "curriculum": curriculum, "smoke": bool(smoke),
+           "reward_weights": reward.__dict__, "config": cfg.__dict__, "dev_tags": list(DEV_TAGS), "runs": runs,
+           "dev_k6_best_median": int(np.median([r["best_val_dev"]["k6"] for r in runs])),
+           "gate_strict_k6_dev_2of2": bool(any(r["best_val_dev"]["k6"] == 2 for r in runs)), "wall_s": round(time.time() - t0, 1)}
+    json.dump(out, open(f"{OUT}/stage3_{curriculum}{'_smoke' if smoke else ''}.json", "w"), indent=1, default=float)
+    print(f"\n== R9 STAGE 3 ({curriculum}) ==\n  dev best K6 median {out['dev_k6_best_median']}/2 | "
+          f"any 2/2 {out['gate_strict_k6_dev_2of2']} | wall {out['wall_s']}s\nR9_STAGE3_DONE", flush=True)
+    return out
+
+
 def main(argv: "list[str]") -> None:
     if "--stage2" in argv:
         stage2_update_zero_identity()
+    elif "--stage3" in argv:
+        cur = next((a.split("=")[1] for a in argv if a.startswith("--curriculum=")), "A")
+        stage3_train(curriculum=cur, smoke="--smoke" in argv)
     else:
-        print("usage: coin_r9_causal_rl.py --stage2 | (stage3-6 added as gates pass)", flush=True)
+        print("usage: coin_r9_causal_rl.py --stage2 | --stage3 [--curriculum=A|B|C] [--smoke]", flush=True)
 
 
 if __name__ == "__main__":
