@@ -33,6 +33,20 @@ def _cert_pass(env, seed, act_fn) -> bool:
     return evaluate_lyapunov(vs)["passes"]
 
 
+def test_vukobratovic_frontal_plane_dof() -> None:
+    # the kinematic upgrade: hip abduction + ankle roll (AXIS_X) per leg -> nu 12 -> 16
+    env = HumanoidBalanceEnv(max_steps=5, seed=0)
+    mj, m = env._mj, env.model
+    assert m.nu == 16
+    jnames = {mj.mj_id2name(m, mj.mjtObj.mjOBJ_JOINT, m.actuator_trnid[i, 0]) for i in range(m.nu)}
+    assert {"hip_l_ab", "hip_r_ab", "ankle_l_roll", "ankle_r_roll"} <= jnames
+    for i in range(m.nu):                                          # the 4 new joints rotate about X
+        n = mj.mj_id2name(m, mj.mjtObj.mjOBJ_JOINT, m.actuator_trnid[i, 0])
+        if n in {"hip_l_ab", "hip_r_ab", "ankle_l_roll", "ankle_r_roll"}:
+            axis = m.jnt_axis[m.actuator_trnid[i, 0]]
+            assert abs(axis[0]) > 0.99                             # AXIS_X (frontal plane)
+
+
 def test_spaces_and_step_contract() -> None:
     env = HumanoidBalanceEnv(max_steps=40, seed=0)
     obs, _info = env.reset(seed=0)

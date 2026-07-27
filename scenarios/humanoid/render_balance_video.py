@@ -181,7 +181,7 @@ def _env(pr: float) -> HumanoidBalanceEnv:
 def main() -> None:
     _OUT.mkdir(parents=True, exist_ok=True)
     actor = _load_actor(_env(0.7))
-    zero = np.zeros(12)
+    zero = np.zeros(_env(0.7).model.nu)
     res = _greedy
 
     compare = [
@@ -193,7 +193,7 @@ def main() -> None:
                   "-> Lyapunov certificate", "humanoid_balance_compare")
 
     frontier = [
-        (*rollout_frames(_env(1.6), lambda o: res(actor, o), 0), "residual  kick 1.6"),
+        (*rollout_frames(_env(0.8), lambda o: res(actor, o), 0), "residual  kick 0.8"),
         (*rollout_frames(_env(2.6), lambda o: res(actor, o), 0), "residual  kick 2.6"),
         (*rollout_frames(_env(4.5), lambda o: res(actor, o), 0), "residual  kick 4.5"),
     ]

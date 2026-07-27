@@ -9,7 +9,11 @@
 //                              +--hip_{l,r}(Y)--> thigh_X --knee_X(Y)--> shin_X --ankle_X(Y)--> foot_X
 //                                                      +--shoulder_{l,r}(Y)--> upper_arm_X --elbow_X(Y)--> forearm_X
 //
-// 13 revolute joints (all AXIS_Y = sagittal flex, the plane of forward walking) + a floating base. The
+// 17 revolute joints + a floating base: 13 sagittal AXIS_Y (flex, the plane of forward walking) plus
+// 4 frontal AXIS_X (hip abduction L/R, ankle roll L/R) so the kinematics follows the Vukobratović
+// anthropomorphic model — hip 2-DOF (abduct+flex), ankle 2-DOF (roll+pitch) — enabling lateral weight
+// transfer. The added rotations use tiny massless coupler bodies (hip_ab_*, ank_rl_*), since the MJCF
+// emitter maps one <body> per joint. The
 // env promotes @base to a MuJoCo <freejoint> + floor (as QuadrupedGoalEnv does), so it can stand, fall,
 // and step forward. Origins are mid-link, in the parent joint's frame. Validate via `hymeko validate`.
 
@@ -44,6 +48,15 @@ humanoid: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geomet
     upper_arm_r: meta_kinematics.kinematics.elements.link { mass 2.0; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.035, 0.28]; } visual -> link_geometry; collision -> link_geometry; color -> humanoid.limb_color; origin [0.0, 0.0, -0.14]; }
     forearm_r:   meta_kinematics.kinematics.elements.link { mass 1.5; link_geometry: meta_kinematics.kinematics.geometry.cylinder { dimension [0.030, 0.26]; } visual -> link_geometry; collision -> link_geometry; color -> humanoid.limb_color; origin [0.0, 0.0, -0.13]; }
 
+    // === Vukobratović frontal-plane linkages: massless coupler bodies giving the hip a 2nd
+    //     rotation (abduction, AXIS_X) and the ankle a 2nd rotation (roll/eversion, AXIS_X).
+    //     One coupler per added axis — the MJCF emitter maps one <body> per joint, so a
+    //     multi-axis joint is expressed as chained 1-DOF joints through a tiny coupler link. ===
+    hip_ab_l: meta_kinematics.kinematics.elements.link { mass 0.1; link_geometry: meta_kinematics.kinematics.geometry.sphere { dimension [0.02]; } visual -> link_geometry; collision -> link_geometry; color -> humanoid.body_color; origin [0.0, 0.0, 0.0]; }
+    hip_ab_r: meta_kinematics.kinematics.elements.link { mass 0.1; link_geometry: meta_kinematics.kinematics.geometry.sphere { dimension [0.02]; } visual -> link_geometry; collision -> link_geometry; color -> humanoid.body_color; origin [0.0, 0.0, 0.0]; }
+    ank_rl_l: meta_kinematics.kinematics.elements.link { mass 0.1; link_geometry: meta_kinematics.kinematics.geometry.sphere { dimension [0.02]; } visual -> link_geometry; collision -> link_geometry; color -> humanoid.limb_color; origin [0.0, 0.0, 0.0]; }
+    ank_rl_r: meta_kinematics.kinematics.elements.link { mass 0.1; link_geometry: meta_kinematics.kinematics.geometry.sphere { dimension [0.02]; } visual -> link_geometry; collision -> link_geometry; color -> humanoid.limb_color; origin [0.0, 0.0, 0.0]; }
+
     // === Floating base: world -> pelvis at standing height 0.95 m (env promotes to <freejoint> + floor) ===
     @base: meta_kinematics.kinematics.conti_joint {
         (+ world [[0.0, 0.0, 0.95], [0.0, 0.0, 0.0]], - pelvis, - meta_kinematics.kinematics.axes.AXIS_Z);
@@ -53,13 +66,18 @@ humanoid: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geomet
     @abdomen: meta_kinematics.kinematics.rev_joint { (+ pelvis [[0.0, 0.0, 0.05], [0.0,0.0,0.0]], - torso, - meta_kinematics.kinematics.axes.AXIS_Y); }
     @neck:    meta_kinematics.kinematics.rev_joint { (+ torso  [[0.0, 0.0, 0.24], [0.0,0.0,0.0]], - head,  - meta_kinematics.kinematics.axes.AXIS_Y); }
 
-    // === Leg joints: hip (pelvis corner -> thigh) · knee (thigh end -> shin) · ankle (shin end -> foot) ===
-    @hip_l:   meta_kinematics.kinematics.rev_joint { (+ pelvis [[0.0,  0.09, -0.05], [0.0,0.0,0.0]], - thigh_l, - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @knee_l:  meta_kinematics.kinematics.rev_joint { (+ thigh_l [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - shin_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @ankle_l: meta_kinematics.kinematics.rev_joint { (+ shin_l  [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - foot_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @hip_r:   meta_kinematics.kinematics.rev_joint { (+ pelvis [[0.0, -0.09, -0.05], [0.0,0.0,0.0]], - thigh_r, - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @knee_r:  meta_kinematics.kinematics.rev_joint { (+ thigh_r [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - shin_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @ankle_r: meta_kinematics.kinematics.rev_joint { (+ shin_r  [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - foot_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    // === Leg joints (Vukobratović anthropomorphic): hip = abduction(X)+flexion(Y) via hip_ab
+    //     coupler · knee(Y) · ankle = roll(X)+pitch(Y) via ank_rl coupler ===
+    @hip_l_ab:     meta_kinematics.kinematics.rev_joint { (+ pelvis  [[0.0,  0.09, -0.05], [0.0,0.0,0.0]], - hip_ab_l, - meta_kinematics.kinematics.axes.AXIS_X); }
+    @hip_l:        meta_kinematics.kinematics.rev_joint { (+ hip_ab_l [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - thigh_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @knee_l:       meta_kinematics.kinematics.rev_joint { (+ thigh_l [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - shin_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @ankle_l_roll: meta_kinematics.kinematics.rev_joint { (+ shin_l  [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - ank_rl_l, - meta_kinematics.kinematics.axes.AXIS_X); }
+    @ankle_l:      meta_kinematics.kinematics.rev_joint { (+ ank_rl_l [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - foot_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @hip_r_ab:     meta_kinematics.kinematics.rev_joint { (+ pelvis  [[0.0, -0.09, -0.05], [0.0,0.0,0.0]], - hip_ab_r, - meta_kinematics.kinematics.axes.AXIS_X); }
+    @hip_r:        meta_kinematics.kinematics.rev_joint { (+ hip_ab_r [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - thigh_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @knee_r:       meta_kinematics.kinematics.rev_joint { (+ thigh_r [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - shin_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @ankle_r_roll: meta_kinematics.kinematics.rev_joint { (+ shin_r  [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - ank_rl_r, - meta_kinematics.kinematics.axes.AXIS_X); }
+    @ankle_r:      meta_kinematics.kinematics.rev_joint { (+ ank_rl_r [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - foot_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
 
     // === Arm joints: shoulder (torso -> upper_arm) · elbow (upper_arm end -> forearm) ===
     @shoulder_l: meta_kinematics.kinematics.rev_joint { (+ torso     [[0.0,  0.16, 0.20], [0.0,0.0,0.0]], - upper_arm_l, - meta_kinematics.kinematics.axes.AXIS_Y); }
