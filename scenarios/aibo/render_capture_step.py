@@ -23,6 +23,7 @@ from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
 from .capture_step import CapturePointWidening, PushRecoveryLyapunov, capture_point_y
 from .locomotion_gait import SteeredTrotGait
 from .lyapunov import evaluate_lyapunov
+from .motion_contract import JointVelocityGovernor
 from .render_lyapunov_video import _INK, _OK, _font, _sparkline, _strip
 
 _OUT = Path("reports/2026-07-27-aibo-lyapunov")
@@ -50,20 +51,23 @@ def _rollout(env, controller):
     cam.azimuth, cam.elevation, cam.distance = 180.0, -14.0, 1.7   # FRONT view (see the lateral fall)
     V = PushRecoveryLyapunov()
     stand = SteeredTrotGait()
+    gov = JointVelocityGovernor(v_max=8.0)                        # realistic-motion contract (no 27 rad/s)
     env.reset(seed=0)
     env.data.qvel[1] = _PUSH
     mujoco.mj_forward(env.model, env.data)
-    frames, telem, vs, done, k = [], [], [], False, 0
+    frames, telem, vs, mjv, done, k = [], [], [], 0.0, False, 0
     while not done and k < 400:
         a = controller.action(env) if controller is not None else stand.action(env, yaw_cmd=0.0, drive=0.0)
+        a = gov.govern(env, a)                                    # apply the motion contract
         _o, _r, term, trunc, _i = env.step(a)
         vs.append(V(env))
+        mjv = max(mjv, gov.max_joint_speed(env))
         if k % _STRIDE == 0:
             cam.lookat[:] = [float(env.data.xpos[env.torso, 0]), float(env.data.xpos[env.torso, 1]), 0.12]
             r.update_scene(env.data, cam)
             frames.append(r.render().copy())
             telem.append({"k": k + 1, "up": float(env._torso_uprightness()),
-                          "v": float(np.hypot(*np.asarray(env.data.qvel)[:2])),
+                          "v": float(np.hypot(*np.asarray(env.data.qvel)[:2])), "jv": mjv,
                           "off": float(capture_point_y(env) - env.data.subtree_com[1][1]),
                           "V": vs[-1], "vs": list(vs),
                           "descent": _descent(vs), "converged": vs[-1] <= 0.05})
@@ -87,7 +91,7 @@ def _panel(frame, title, t, ok) -> np.ndarray:
     d.text((8, 8), title, font=_font(15), fill=(255, 255, 255))
     d.text((img.width - 92, 8), "CERT PASS" if ok else "CERT FAIL", font=_font(14), fill=(255, 255, 255))
     fp = _font(13, mono=True)
-    d.text((8, 36), f"step {t['k']:>3}  up {t['up']:.2f}  v {t['v']:.2f}  cap_off {t['off']:+.2f}",
+    d.text((8, 36), f"step {t['k']:>3}  up {t['up']:.2f}  v {t['v']:.2f}  max_jointspd {t.get('jv', 0):.1f} rad/s",
            font=fp, fill=_INK)
     d.text((8, 53), f"V {t['V']:.3f}  descent {'OK' if t['descent'] else 'no'}  conv {'OK' if t['converged'] else 'no'}",
            font=fp, fill=(_OK if t["descent"] and t["converged"] else _BAD))
@@ -108,9 +112,9 @@ def main() -> None:
     ]
     width = _W * len(clips)
     title = _strip(width, _TITLE_H, [(
-        f"AIBO push recovery ({_PUSH} m/s): stand vs capture-point WIDENING "
-        "-- sprawl NOT a step, + DYNAMICS EXPLOIT (26.9 rad/s, airborne) -> not robot-transferable",
-        _BAD)], mono=False, pad=14)
+        f"AIBO push recovery ({_PUSH} m/s) UNDER MOTION CONTRACT (joints capped ~8 rad/s): "
+        "stand vs capture-point WIDENING (a sprawl, not a step)",
+        _INK)], mono=False, pad=14)
     code = _strip(width, _CODE_H, _HYMEKO, mono=True, pad=10)
     n = max(len(f) for f, _t, _e, _ti in clips)
     composed = []
