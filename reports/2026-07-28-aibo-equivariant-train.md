@@ -4,6 +4,11 @@
 **SIMULATION.** Plan: `docs/plans/2026-07-28-aibo-symmetry-closure/`.
 **Verdict: `POST_HOC_SYMMETRIZE_BEATS_IN_LOOP_EQUIVARIANCE` — impose symmetry AFTER discovery, not during.**
 
+> **⚠️ Single-seed — see `reports/2026-07-29-aibo-symmetry-multiseed.md` for the multi-seed correction.**
+> The ordering holds (in-loop **never** two-sided, 0/3 seeds; post-hoc best) but the crisp "0.60 vs 0.20"
+> numbers below were a lucky seed: crab discovery is seed-fragile and post-hoc only amortises a *discovered*
+> crab (2/3 seeds). Read the numbers here as one draw, not the distribution.
+
 ---
 
 ## The build
