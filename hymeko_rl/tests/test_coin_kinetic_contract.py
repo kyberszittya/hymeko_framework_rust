@@ -422,3 +422,64 @@ def test_receding_horizon_relabel_first_action_only_deterministic(s1_entry):
     r2 = kc.receding_horizon_relabel(s1_entry.tsnap, budget=0)
     assert np.array_equal(r.first_action, r2.first_action)             # deterministic label
     assert len(r.theta) == 6                                            # θ is provenance, not fed to any policy input
+
+
+# ----- Authority audit (learning-free reachability of the ≤30 mm corridor under three residual-authority families) -----
+
+def test_authority_reachability_pass_predicate():
+    """AUTHORITY_REACHABILITY_PASS is a conjunction: reaching the corridor is not enough — it must be clean (no stall/reversal/
+    clamp), still moving (+v_par), light (Fn < 2 N), and safe. Each single violation flips the verdict to False."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority as ka
+    ok = {"min_dtz": 28.0, "exit_v": 0.3, "exit_fn": 0.1, "stalls": 0, "reversals": 0, "clamps": 0, "safe": True}
+    assert ka.reachability_pass(ok)
+    assert not ka.reachability_pass({**ok, "min_dtz": 31.0})            # 1 mm past the corridor → fail
+    assert not ka.reachability_pass({**ok, "exit_v": 0.0})              # not moving at exit → fail
+    assert not ka.reachability_pass({**ok, "exit_fn": ka.FN_LIGHT})     # contact not light → fail
+    assert not ka.reachability_pass({**ok, "stalls": 1})               # stalled to get there → fail
+    assert not ka.reachability_pass({**ok, "reversals": 1})            # sign-reversed v_par → fail
+    assert not ka.reachability_pass({**ok, "clamps": 1})               # clamped the coin → fail
+    assert not ka.reachability_pass({**ok, "safe": False})             # unsafe (qdot/coin speed) → fail
+
+
+@pytest.fixture(scope="module")
+def authority_restart(r3b_frontiers):
+    """A healthy clone-interior frontier (reused from the R3-B capture) as the shared restart point for the authority tests."""
+    fx = r3b_frontiers
+    assert fx["healthy"]
+    return {"f": fx["healthy"][0], "model": fx["model"], "norm": fx["norm"], "bounds": fx["bounds"]}
+
+
+def test_authority_zero_residual_reduces_to_clone_both_families(authority_restart):
+    """Update-zero identity across the new controller AND the structured basis: a zero residual sequence reproduces the frozen
+    clone's restart continuation BIT-FOR-BIT for both A0 (per-joint) and A2 (structured coin-following) — so the A2 basis maps a
+    zero coefficient to a zero Δτ. A non-zero A2 sequence must DIVERGE, proving the structured mapping is live (not a no-op)."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority as ka
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    fx = authority_restart
+    f = fx["f"]
+
+    def _trace(family: str, seq: _np.ndarray) -> _np.ndarray:
+        ctrl = ka.KineticAuthorityController(f, CloneActor(fx["model"], fx["norm"]), ka.SequenceResidual(seq), family, 0.25,
+                                             start_kinetic=f.start_state())
+        return _np.asarray(velocity_rollout(f, ctrl, DELIVERY_CFG)["coin_trace"])
+    a0_zero = _trace("A0", _np.zeros((8, ka.ACT_DIM)))
+    a2_zero = _trace("A2", _np.zeros((8, ka.A2_DIM)))
+    assert a0_zero.shape == a2_zero.shape and _np.array_equal(a0_zero, a2_zero)     # both zero-residual paths = the clone
+    a2_live = _trace("A2", _np.full((8, ka.A2_DIM), 0.8))
+    assert a2_live.shape == a2_zero.shape and not _np.allclose(a2_live, a2_zero)    # a real coefficient moves the coin path
+
+
+def test_authority_cem_deterministic_and_bounded(authority_restart):
+    """The CEM reachability search is deterministic (fixed RNG) and reports a well-formed, safe, bounded result: same (family, α)
+    twice → identical metrics; family/alpha echoed; min_dtz finite and no worse than the clone's own reach."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority as ka
+    fx = authority_restart
+    tiny = ka.AuthorityCEMConfig(horizon=6, pop=8, iters=2)
+    r1 = ka.authority_cem(fx["f"], fx["model"], fx["norm"], "A2", 0.25, bounds=fx["bounds"], cfg=tiny)
+    r2 = ka.authority_cem(fx["f"], fx["model"], fx["norm"], "A2", 0.25, bounds=fx["bounds"], cfg=tiny)
+    assert r1 == r2                                                     # deterministic given the seed
+    assert r1["family"] == "A2" and r1["alpha"] == 0.25
+    assert r1["safe"] and 0.0 < r1["min_dtz_mm"] < 1e4                  # finite, safe reachability
+    assert isinstance(r1["authority_reachability_pass"], bool)

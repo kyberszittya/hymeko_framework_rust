@@ -1,0 +1,166 @@
+{
+ "contract": "COIN_KINETIC_AUTHORITY_AUDIT_V1",
+ "seed": 0,
+ "corridor_mm": 30.0,
+ "frontiers_mm": [
+  57.3,
+  53.84
+ ],
+ "families": [
+  {
+   "family": "A0",
+   "alpha": 0.15
+  },
+  {
+   "family": "A1",
+   "alpha": 0.2
+  },
+  {
+   "family": "A1",
+   "alpha": 0.25
+  },
+  {
+   "family": "A1",
+   "alpha": 0.3
+  },
+  {
+   "family": "A2",
+   "alpha": 0.25
+  }
+ ],
+ "results": [
+  {
+   "frontier_mm": 57.3,
+   "family": "A0",
+   "alpha": 0.15,
+   "min_dtz_mm": 36.91,
+   "exit_v_par": 0.3336,
+   "exit_fn": 0.0654,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 57.3,
+   "family": "A1",
+   "alpha": 0.2,
+   "min_dtz_mm": 36.73,
+   "exit_v_par": 0.3388,
+   "exit_fn": 0.0923,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 57.3,
+   "family": "A1",
+   "alpha": 0.25,
+   "min_dtz_mm": 36.53,
+   "exit_v_par": 0.344,
+   "exit_fn": 0.0909,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 57.3,
+   "family": "A1",
+   "alpha": 0.3,
+   "min_dtz_mm": 36.37,
+   "exit_v_par": 0.3491,
+   "exit_fn": 0.0944,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 57.3,
+   "family": "A2",
+   "alpha": 0.25,
+   "min_dtz_mm": 36.14,
+   "exit_v_par": 0.3573,
+   "exit_fn": 0.1454,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 53.84,
+   "family": "A0",
+   "alpha": 0.15,
+   "min_dtz_mm": 37.29,
+   "exit_v_par": 0.3242,
+   "exit_fn": 0.1226,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 53.84,
+   "family": "A1",
+   "alpha": 0.2,
+   "min_dtz_mm": 37.16,
+   "exit_v_par": 0.3242,
+   "exit_fn": 0.1226,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 53.84,
+   "family": "A1",
+   "alpha": 0.25,
+   "min_dtz_mm": 37.01,
+   "exit_v_par": 0.3242,
+   "exit_fn": 0.1226,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 53.84,
+   "family": "A1",
+   "alpha": 0.3,
+   "min_dtz_mm": 36.87,
+   "exit_v_par": 0.3242,
+   "exit_fn": 0.1226,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  },
+  {
+   "frontier_mm": 53.84,
+   "family": "A2",
+   "alpha": 0.25,
+   "min_dtz_mm": 36.8,
+   "exit_v_par": 0.3242,
+   "exit_fn": 0.1226,
+   "stalls": 0,
+   "reversals": 0,
+   "clamps": 0,
+   "safe": true,
+   "authority_reachability_pass": false
+  }
+ ],
+ "smallest_passing": null,
+ "verdict": "CURRENT_RESIDUAL_AUTHORITY_INSUFFICIENT",
+ "wall_s": 128.3
+}
