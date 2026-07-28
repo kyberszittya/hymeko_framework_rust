@@ -1,0 +1,532 @@
+{
+ "contract": "R2_UNDER_H1_MULTISEED_V1",
+ "immutable_source": "41510cac",
+ "host": "Hajdus-MacBook-Pro.local",
+ "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+ "tag": "coin-r9-r2-first-learned-s1-k6-explicit-handoff-reset",
+ "seeds": [
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24
+ ],
+ "records": [
+  {
+   "seed": 13,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 9.2,
+   "k6_strict": true,
+   "min_dtz": 5.41,
+   "first_k6_option": 175,
+   "final_aux": {
+    "min_dtz": 5.41,
+    "exit_dtz": 27.25,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 12,
+    "min_dtz_mm": 5.41,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 14,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 1.2,
+   "k6_strict": true,
+   "min_dtz": 8.15,
+   "first_k6_option": 25,
+   "final_aux": {
+    "min_dtz": 8.15,
+    "exit_dtz": 26.31,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 20,
+    "min_dtz_mm": 8.15,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 15,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 7.8,
+   "k6_strict": true,
+   "min_dtz": 14.21,
+   "first_k6_option": 150,
+   "final_aux": {
+    "min_dtz": 14.21,
+    "exit_dtz": 27.1,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 20,
+    "min_dtz_mm": 14.21,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 16,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 11.4,
+   "k6_strict": true,
+   "min_dtz": 1.8,
+   "first_k6_option": 225,
+   "final_aux": {
+    "min_dtz": 1.8,
+    "exit_dtz": 26.07,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 9,
+    "min_dtz_mm": 1.8,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 17,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 3.8,
+   "k6_strict": true,
+   "min_dtz": 4.98,
+   "first_k6_option": 75,
+   "final_aux": {
+    "min_dtz": 4.98,
+    "exit_dtz": 26.15,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 10,
+    "min_dtz_mm": 4.98,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 18,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 17.6,
+   "k6_strict": true,
+   "min_dtz": 2.83,
+   "first_k6_option": 350,
+   "final_aux": {
+    "min_dtz": 2.83,
+    "exit_dtz": 26.72,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 15,
+    "min_dtz_mm": 2.83,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 19,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 8.8,
+   "k6_strict": true,
+   "min_dtz": 4.26,
+   "first_k6_option": 175,
+   "final_aux": {
+    "min_dtz": 4.26,
+    "exit_dtz": 27.16,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 17,
+    "min_dtz_mm": 4.26,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 20,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 12.1,
+   "k6_strict": true,
+   "min_dtz": 9.61,
+   "first_k6_option": 225,
+   "final_aux": {
+    "min_dtz": 9.61,
+    "exit_dtz": 26.24,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 9,
+    "min_dtz_mm": 9.61,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 21,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 14.8,
+   "k6_strict": true,
+   "min_dtz": 5.02,
+   "first_k6_option": 250,
+   "final_aux": {
+    "min_dtz": 5.02,
+    "exit_dtz": 26.46,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 6,
+    "min_dtz_mm": 5.02,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 22,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 33.4,
+   "k6_strict": false,
+   "min_dtz": 28.69,
+   "first_k6_option": null,
+   "final_aux": {
+    "min_dtz": 28.69,
+    "exit_dtz": 31.4,
+    "k6": false,
+    "k6_strict": false,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": null
+  },
+  {
+   "seed": 23,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 8.1,
+   "k6_strict": true,
+   "min_dtz": 1.69,
+   "first_k6_option": 150,
+   "final_aux": {
+    "min_dtz": 1.69,
+    "exit_dtz": 26.55,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 6,
+    "min_dtz_mm": 1.69,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  },
+  {
+   "seed": 24,
+   "host": "Hajdus-MacBook-Pro.local",
+   "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+   "wall_s": 14.7,
+   "k6_strict": true,
+   "min_dtz": 3.38,
+   "first_k6_option": 275,
+   "final_aux": {
+    "min_dtz": 3.38,
+    "exit_dtz": 27.39,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "verification": {
+    "delivery_success": true,
+    "k6_dwell": 12,
+    "min_dtz_mm": 3.38,
+    "n_handoff_reset": 1,
+    "reset_before_policy": true,
+    "teacher_absent": true,
+    "deterministic": true,
+    "safe": true,
+    "stall_clamp_reversal": [
+     0,
+     0,
+     0
+    ],
+    "clean": true
+   }
+  }
+ ],
+ "aggregate": {
+  "n_seeds": 12,
+  "k6_verified": 11,
+  "k6_rate": 0.9167,
+  "wilson95": [
+   0.6461,
+   0.9851
+  ],
+  "safety_violations": [],
+  "R2_H1_MULTISEED_REPRODUCTION_PASS": true,
+  "R2_H1_RELIABLE_LEARNING_PASS": false,
+  "options_to_first_k6": {
+   "vals": [
+    175,
+    25,
+    150,
+    225,
+    75,
+    350,
+    175,
+    225,
+    250,
+    150,
+    275
+   ],
+   "median": 175.0,
+   "min": 25,
+   "max": 350
+  },
+  "min_dtz_mm": {
+   "vals": [
+    5.41,
+    8.15,
+    14.21,
+    1.8,
+    4.98,
+    2.83,
+    4.26,
+    9.61,
+    5.02,
+    1.69,
+    3.38
+   ],
+   "median": 5.0,
+   "min": 1.69,
+   "max": 14.21
+  },
+  "k6_dwell": {
+   "vals": [
+    12,
+    20,
+    20,
+    9,
+    10,
+    15,
+    17,
+    9,
+    6,
+    6,
+    12
+   ],
+   "median": 12.0,
+   "min": 6,
+   "max": 20
+  },
+  "stall_clamp_reversal_total": [
+   0,
+   0,
+   0
+  ],
+  "failures": [
+   {
+    "seed": 22,
+    "min_dtz": 28.69,
+    "clean": true,
+    "safe": true
+   }
+  ]
+ },
+ "wall_s": 166.4
+}

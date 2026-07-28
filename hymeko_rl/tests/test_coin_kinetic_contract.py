@@ -750,3 +750,27 @@ def test_direct_vs_reset_handoff_are_distinct_contracts(s1_snap, clone_mn, r2_fn
     assert not any(r["kind"] == "HANDOFF_RESET" for r in h0c.clone_trace)      # H0 (direct) has no reset event
     assert any(r["kind"] == "HANDOFF_RESET" for r in h1c.clone_trace)          # H1 (explicit) does
     assert abs(_min_dtz_mm(s1_snap, h0) - _min_dtz_mm(s1_snap, h1)) > 1.0      # the two contracts reach materially different states
+
+
+def test_r2_h1_collect_and_eval_wellformed(s1_snap, clone_mn):
+    """The R2-under-H1 training hooks reuse the tested curriculum through the H1 controller: `make_collect_r2_h1` yields
+    per-step transitions and `make_eval_r2_h1` returns a well-formed champion (k6_strict, single HANDOFF_RESET) — with a
+    zero-init residual, no training needed."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_r2_h1 as r2h1
+    from hymeko_rl.coin_delivery.theta_option import kinetic_rl2 as krl2
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import ACT_DIM, CloneActor
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import AUG_DIM
+    from hymeko_rl.coin_delivery.theta_option.kinetic_authority_unlock import zero_init_detactor
+    from hymeko_rl.option_rl.agents import make_actor
+    m, norm = clone_mn["model"], clone_mn["norm"]
+
+    def cf():
+        return CloneActor(m, norm)
+    bounds, w = ResidualBounds(alpha=r2h1.R2_ALPHA), krl2.Reward2Weights()
+    actor = zero_init_detactor(make_actor("td3", AUG_DIM, ACT_DIM))
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import deterministic_residual
+    trans = r2h1.make_collect_r2_h1(s1_snap, cf, bounds, w)(deterministic_residual(actor))
+    assert isinstance(trans, list) and trans and len(trans[0]) == 5            # (s,a,r,s2,done) per-step transitions
+    key, aux = r2h1.make_eval_r2_h1(s1_snap, cf, bounds, w)(actor)
+    assert "k6_strict" in aux and isinstance(aux["k6_strict"], bool) and key[0] == int(aux["k6_strict"])

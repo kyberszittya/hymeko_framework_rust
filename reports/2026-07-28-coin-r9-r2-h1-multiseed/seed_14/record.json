@@ -1,0 +1,40 @@
+{
+ "seed": 14,
+ "host": "Hajdus-MacBook-Pro.local",
+ "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+ "wall_s": 1.2,
+ "k6_strict": true,
+ "min_dtz": 8.15,
+ "first_k6_option": 25,
+ "final_aux": {
+  "min_dtz": 8.15,
+  "exit_dtz": 26.31,
+  "k6": true,
+  "k6_strict": true,
+  "safe": true,
+  "clean": true,
+  "released": true,
+  "stall_pen": 0.0,
+  "clamp_pen": 0.0,
+  "reversal_pen": 0.0
+ },
+ "verification": {
+  "delivery_success": true,
+  "k6_dwell": 20,
+  "min_dtz_mm": 8.15,
+  "n_handoff_reset": 1,
+  "reset_before_policy": true,
+  "teacher_absent": true,
+  "deterministic": true,
+  "safe": true,
+  "stall_clamp_reversal": [
+   0,
+   0,
+   0
+  ],
+  "clean": true
+ },
+ "history": [
+  "    [td3 it 25/600] champ (1, 1, 1, -8.15, 1, -0.041) {'min_dtz': 8.15, 'exit_dtz': 26.31, 'k6': True, 'k6_strict': True, 'safe': True, 'clean': True, 'released': True, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 467"
+ ]
+}

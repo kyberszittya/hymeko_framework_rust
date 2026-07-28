@@ -1,0 +1,53 @@
+{
+ "seed": 10,
+ "host": "Hajdus-MacBook-Pro.local",
+ "commit": "41510cac73e2fef1fc9811916b04fbc294c54af5",
+ "wall_s": 18.9,
+ "k6_strict": true,
+ "min_dtz": 15.25,
+ "first_k6_option": 350,
+ "final_aux": {
+  "min_dtz": 15.25,
+  "exit_dtz": 27.23,
+  "k6": true,
+  "k6_strict": true,
+  "safe": true,
+  "clean": true,
+  "released": true,
+  "stall_pen": 0.0,
+  "clamp_pen": 0.0,
+  "reversal_pen": 0.0
+ },
+ "verification": {
+  "delivery_success": true,
+  "k6_dwell": 15,
+  "min_dtz_mm": 15.25,
+  "n_handoff_reset": 1,
+  "reset_before_policy": true,
+  "teacher_absent": true,
+  "deterministic": true,
+  "safe": true,
+  "stall_clamp_reversal": [
+   0,
+   0,
+   0
+  ],
+  "clean": true
+ },
+ "history": [
+  "    [td3 it 25/600] champ (0, 1, 1, -51.12, 0, -0.0604) {'min_dtz': 51.12, 'exit_dtz': 55.0, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 477",
+  "    [td3 it 50/600] champ (0, 1, 1, -46.41, 0, -0.0656) {'min_dtz': 46.41, 'exit_dtz': 49.45, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 986",
+  "    [td3 it 75/600] champ (0, 1, 1, -44.85, 0, -0.0796) {'min_dtz': 44.85, 'exit_dtz': 47.91, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 1423",
+  "    [td3 it 100/600] champ (0, 1, 1, -45.48, 0, -0.1024) {'min_dtz': 45.48, 'exit_dtz': 49.29, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 1878",
+  "    [td3 it 125/600] champ (0, 1, 1, -45.53, 0, -0.0846) {'min_dtz': 45.53, 'exit_dtz': 48.99, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 2358",
+  "    [td3 it 150/600] champ (0, 1, 1, -43.6, 0, -0.0976) {'min_dtz': 43.6, 'exit_dtz': 47.48, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 2843",
+  "    [td3 it 175/600] champ (0, 1, 1, -45.23, 0, -0.0999) {'min_dtz': 45.23, 'exit_dtz': 48.35, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 3319",
+  "    [td3 it 200/600] champ (0, 1, 1, -45.18, 0, -0.0599) {'min_dtz': 45.18, 'exit_dtz': 49.21, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 3790",
+  "    [td3 it 225/600] champ (0, 1, 1, -45.05, 0, -0.0671) {'min_dtz': 45.05, 'exit_dtz': 49.15, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 4259",
+  "    [td3 it 250/600] champ (0, 1, 1, -44.98, 0, -0.069) {'min_dtz': 44.98, 'exit_dtz': 48.81, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 4706",
+  "    [td3 it 275/600] champ (0, 1, 1, -46.11, 0, -0.0794) {'min_dtz': 46.11, 'exit_dtz': 49.16, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 5147",
+  "    [td3 it 300/600] champ (0, 1, 1, -46.04, 0, -0.1028) {'min_dtz': 46.04, 'exit_dtz': 50.56, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 5598",
+  "    [td3 it 325/600] champ (0, 1, 1, -44.27, 0, -0.1267) {'min_dtz': 44.27, 'exit_dtz': 47.65, 'k6': False, 'k6_strict': False, 'safe': True, 'clean': True, 'released': False, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 6071",
+  "    [td3 it 350/600] champ (1, 1, 1, -15.25, 1, -0.0746) {'min_dtz': 15.25, 'exit_dtz': 27.23, 'k6': True, 'k6_strict': True, 'safe': True, 'clean': True, 'released': True, 'stall_pen': 0.0, 'clamp_pen': 0.0, 'reversal_pen': 0.0} | replay 6700"
+ ]
+}
