@@ -1,0 +1,2 @@
+# large demo videos live in a GitHub Release / artifact storage, not repo history (SHA256 in the manifest)
+*.mp4

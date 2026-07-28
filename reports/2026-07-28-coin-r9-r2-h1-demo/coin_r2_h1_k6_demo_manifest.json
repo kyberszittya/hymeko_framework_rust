@@ -1,0 +1,47 @@
+{
+ "artifact": "coin_r2_h1_k6_demo",
+ "commit": "d55f5017d4d5e6c4e8b2ffaa21b0b5fcc3c86d7b",
+ "controller": "R2",
+ "contract": "H1_EXPLICIT_HANDOFF_RESET",
+ "tag": "coin-r9-r2-h1-multiseed-reproduced-v1",
+ "policy": {
+  "seed": 1,
+  "checkpoint": "reports/2026-07-28-coin-r9-r2-h1-multiseed/seed_01/checkpoint.json",
+  "checkpoint_sha256": "e466cbec75fde94ba0e072193a70468f328fabf8b314f3f4a41890cd1621922e"
+ },
+ "environment": {
+  "python": "3.11.15",
+  "mujoco": "3.10.0",
+  "numpy": "2.4.6",
+  "torch": "2.12.0",
+  "platform": "macOS-26.5.2-arm64-arm-64bit"
+ },
+ "strict_k6": {
+  "delivery_success": true,
+  "k6_dwell": 17,
+  "min_dtz_mm": 0.98,
+  "n_handoff_reset": 1,
+  "stall_clamp_reversal": [
+   0,
+   0,
+   0
+  ],
+  "safe": true
+ },
+ "started_from": "canonical_cradle (not a frozen snapshot)",
+ "teacher_free": true,
+ "videos": {
+  "hero": {
+   "file": "coin_r2_h1_k6_demo_hero.mp4",
+   "sha256": "873809351ebdd19b7bdc5f81b685f9b9dbe2ac9b8c8aa3fad15b793b5f9e6469"
+  },
+  "diagnostic": {
+   "file": "coin_r2_h1_k6_demo.mp4",
+   "sha256": "9166a66a502900e19404cfa9a2c8fb029e903c2ddf2f1f296a453870ee9d5a6c"
+  }
+ },
+ "trace": {
+  "file": "coin_r2_h1_k6_demo_trace.json",
+  "sha256": "7c897d155453f93938929995731aaf8e4ef1e0a7f2bded12d34bdd06252412a3"
+ }
+}
