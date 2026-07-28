@@ -670,3 +670,83 @@ def test_champion_key_unlock_and_expl_noise_scaling():
     assert k6 > clean_close > dirty_closer                              # strict K6 ≻ … ≻ clean ≻ (closer-but-dirty)
     assert abs(ku.expl_noise_for(ku.C1_BETA) * ku.C1_BETA - ku.R2_APPLIED_NOISE) < 1e-9    # applied noise β-invariant
     assert ku.expl_noise_for(ku.C2_BETA) < ku.expl_noise_for(ku.C1_BETA)                   # larger β ⇒ smaller normalised σ
+
+
+# ----- Explicit APPROACH→KINETIC handoff-reset contract (H0 direct vs H1 explicit reset) -----
+
+@pytest.fixture(scope="module")
+def r2_fn_from_ckpt():
+    """A frozen R2 residual fn rebuilt from a committed multiseed checkpoint (no 300-option regen)."""
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import deterministic_residual
+    from hymeko_rl.experiments.coin_kinetic_ablation import CKPT_DIR, _rebuild
+    ck = json.load(open(CKPT_DIR / "seed_02" / "checkpoint.json"))
+    return deterministic_residual(_rebuild(ck["r2_champ_state"]))
+
+
+def test_handoff_reset_online_equals_frozen_entry(s1_snap, clone_mn, r2_fn_from_ckpt):
+    """`HANDOFF_RESET_EXPLICIT` + `ONLINE_FROZEN_ENTRY_EQUIVALENCE`: H1 emits exactly one HANDOFF_RESET before the first
+    KINETIC_CLONE, and its online post-reset state reproduces the offline frozen entry BIT-EXACTLY (dtz/qpos/prev_tau Δ = 0).
+    So the frozen entry is a legitimate first-class online mode, not a privileged snapshot."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_contract as _kc
+    from hymeko_rl.coin_delivery.theta_option import kinetic_handoff_reset as hr
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    m, norm = clone_mn["model"], clone_mn["norm"]
+    ctrl = hr.HandoffResetTemporalController(s1_snap, CloneActor(m, norm), r2_fn_from_ckpt, ResidualBounds())
+    velocity_rollout(s1_snap, ctrl, DELIVERY_CFG)
+    kinds = [r["kind"] for r in ctrl.clone_trace]
+    assert kinds.count("HANDOFF_RESET") == 1                                   # exactly one explicit reset
+    assert kinds.index("HANDOFF_RESET") < kinds.index("KINETIC_CLONE")         # …before the first policy action
+    entry = _kc.freeze_kinetic_entry(s1_snap)
+    e_q = _np.asarray(entry.tsnap.branch().inner.data.qpos[:4])
+    online_q = _online_qpos(s1_snap, m, norm, r2_fn_from_ckpt)
+    assert float(_np.max(_np.abs(e_q - online_q))) < 1e-9                      # online post-reset qpos == frozen entry, bit-exact
+
+
+def _online_qpos(snap, model, norm, r2_fn):
+    """The qpos immediately after H1's HANDOFF_RESET step (the online frozen entry)."""
+    import copy as _copy
+
+    import mujoco as _mj
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.coin_strict_markov_ablation import step_ablation
+    from hymeko_rl.coin_delivery.theta_option import kinetic_handoff_reset as hr
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.env.motion_contract import govern_torque
+    ctrl = hr.HandoffResetTemporalController(snap, CloneActor(model, norm), r2_fn, ResidualBounds())
+    ctrl.reset()
+    rl, prev = snap.branch(), _np.asarray(snap.prev_tau, _np.float64).copy()
+    _mj.set_mjcb_control(lambda _m, dt: dt.ctrl[:4].__setitem__(slice(None), govern_torque(dt.ctrl[:4], dt.qvel[:4], snap.stack.gov)))
+    try:
+        for t in range(1, DELIVERY_CFG.horizon + 1):
+            nb = len([r for r in ctrl.clone_trace if r["kind"] == "HANDOFF_RESET"])
+            prev = _np.clip(prev + ctrl.dtau_for_step(rl, t, prev), snap.lo, snap.hi)
+            step_ablation(rl, _np.asarray(prev, _np.float32), "A")
+            if len([r for r in ctrl.clone_trace if r["kind"] == "HANDOFF_RESET"]) > nb:
+                return _np.asarray(_copy.deepcopy(rl).inner.data.qpos[:4])
+    finally:
+        _mj.set_mjcb_control(None)
+    return _np.zeros(4)
+
+
+def test_direct_vs_reset_handoff_are_distinct_contracts(s1_snap, clone_mn, r2_fn_from_ckpt):
+    """H0 DIRECT_HANDOFF and H1 EXPLICIT_HANDOFF_RESET are genuinely different controllers: the direct chain has no reset event
+    and reaches a different min_dtz than the reset chain (the extra servo step is load-bearing, not cosmetic)."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_handoff_reset as hr
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import KineticTemporalResidualController
+    from hymeko_rl.experiments.coin_kinetic_positive_control import _min_dtz_mm
+    m, norm = clone_mn["model"], clone_mn["norm"]
+    b = ResidualBounds()
+    h0c = KineticTemporalResidualController(s1_snap, CloneActor(m, norm), r2_fn_from_ckpt, b)
+    h0 = velocity_rollout(s1_snap, h0c, DELIVERY_CFG)
+    h1c = hr.HandoffResetTemporalController(s1_snap, CloneActor(m, norm), r2_fn_from_ckpt, b)
+    h1 = velocity_rollout(s1_snap, h1c, DELIVERY_CFG)
+    assert not any(r["kind"] == "HANDOFF_RESET" for r in h0c.clone_trace)      # H0 (direct) has no reset event
+    assert any(r["kind"] == "HANDOFF_RESET" for r in h1c.clone_trace)          # H1 (explicit) does
+    assert abs(_min_dtz_mm(s1_snap, h0) - _min_dtz_mm(s1_snap, h1)) > 1.0      # the two contracts reach materially different states

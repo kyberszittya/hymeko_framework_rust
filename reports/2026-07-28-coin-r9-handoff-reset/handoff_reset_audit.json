@@ -1,0 +1,135 @@
+{
+ "contract": "EXPLICIT_HANDOFF_RESET_ONLINE_EQUIVALENCE_V1",
+ "immutable_source": "85c5eca6",
+ "beta": 0.85,
+ "runs": {
+  "H0_direct_cloneR2": {
+   "k6": false,
+   "k6_dwell": 0,
+   "min_dtz_mm": 39.58,
+   "dtz_end_mm": 39.58,
+   "safe": true,
+   "n_handoff_reset": 0,
+   "reset_before_policy": false
+  },
+  "H1_reset_cloneR2": {
+   "k6": true,
+   "k6_dwell": 13,
+   "min_dtz_mm": 16.86,
+   "dtz_end_mm": 18.16,
+   "safe": true,
+   "n_handoff_reset": 1,
+   "reset_before_policy": true
+  },
+  "H0_direct_FULL": {
+   "k6": false,
+   "k6_dwell": 0,
+   "min_dtz_mm": 38.19,
+   "dtz_end_mm": 38.19,
+   "safe": true,
+   "n_handoff_reset": 0,
+   "reset_before_policy": false
+  },
+  "H1_reset_FULL": {
+   "k6": true,
+   "k6_dwell": 15,
+   "min_dtz_mm": 19.14,
+   "dtz_end_mm": 23.64,
+   "safe": true,
+   "n_handoff_reset": 1,
+   "reset_before_policy": true
+  },
+  "E0_frozen_cloneR2": {
+   "k6": true,
+   "k6_dwell": 17,
+   "min_dtz_mm": 16.86,
+   "dtz_end_mm": 18.16,
+   "safe": true,
+   "n_handoff_reset": 0,
+   "reset_before_policy": false
+  }
+ },
+ "online_post_reset": {
+  "qpos": [
+   -0.581416,
+   -0.636091,
+   -0.399809,
+   2.086476
+  ],
+  "qvel": [
+   1.263182,
+   0.751218,
+   1.312366,
+   -1.894412
+  ],
+  "coin_xy": [
+   0.073188,
+   0.139055
+  ],
+  "dtz_mm": 75.7483,
+  "disk_vel": [
+   -0.194318,
+   0.16517
+  ],
+  "spin": -0.161856,
+  "fn_l": 2.70312,
+  "fn_r": 2.93051,
+  "prev_tau": [
+   -0.253558,
+   -0.685224,
+   -0.364897,
+   1.692617
+  ],
+  "t_reset": 4
+ },
+ "frozen_entry": {
+  "qpos": [
+   -0.581416,
+   -0.636091,
+   -0.399809,
+   2.086476
+  ],
+  "qvel": [
+   1.263182,
+   0.751218,
+   1.312366,
+   -1.894412
+  ],
+  "coin_xy": [
+   0.073188,
+   0.139055
+  ],
+  "dtz_mm": 75.7483,
+  "disk_vel": [
+   -0.194318,
+   0.16517
+  ],
+  "spin": -0.161856,
+  "fn_l": 2.70312,
+  "fn_r": 2.93051,
+  "prev_tau": [
+   -0.253558,
+   -0.685224,
+   -0.364897,
+   1.692617
+  ]
+ },
+ "online_vs_frozen_equiv": {
+  "dtz_mm": 0.0,
+  "qpos": 0.0,
+  "qvel": 0.0,
+  "coin_xy": 0.0,
+  "disk_vel": 0.0,
+  "spin": 0.0,
+  "fn_l": 0.0,
+  "fn_r": 0.0,
+  "prev_tau": 0.0
+ },
+ "gates": {
+  "HANDOFF_RESET_EXPLICIT_PASS": true,
+  "ONLINE_FROZEN_ENTRY_EQUIVALENCE_PASS": true,
+  "END_TO_END_R2_K6_UNDER_EXPLICIT_RESET_PASS": true
+ },
+ "verdict": "R2_IS_FIRST_LEARNED_K6_UNDER_EXPLICIT_HANDOFF_RESET",
+ "wall_s": 21.9
+}
