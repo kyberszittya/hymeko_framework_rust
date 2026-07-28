@@ -1,0 +1,152 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!55!black, urlcolor=blue!55!black}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\ok}{\textcolor{green!50!black}{\textbf{PASS}}}
+\newcommand{\halt}{\textcolor{red!70!black}{\textbf{HALT}}}
+
+\title{\textbf{Plan --- Phase-Shaped Moving-Precursor Dynamic Capture}\\[2pt]
+\large READY $\rightarrow$ moving handoff $\rightarrow$ frozen downstream $\rightarrow$ strict K6 (structured CEM, no TD3)}
+\author{HyMeKo coin-delivery campaign \quad(\code{recovery/coin-r9-causal-residual-delivery})}
+\date{2026-07-28}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Stage 1A solved \code{HOME\_V1}$\rightarrow$\code{READY} analytically. Stage 1B closes the last, contact-rich
+transition into the frozen downstream. The decisive reframing: the cradle handoff $(q^\star,\dot q^\star,\tau^\star)$ is
+\emph{not} a global capture target but a \textbf{phase-point of a moving orbit} --- $q$ is the position and $\dot q$ the
+\emph{tangent} of the same trajectory, $\tau^\star$ the control-history memory. Hitting all three jointly under a
+terminal-state objective is ill-conditioned (position \emph{xor} velocity, measured). Instead we arrive \emph{moving
+along the orbit's tangent}: a quintic terminal segment drives the tips from \code{READY} to a backward-tangent precursor
+$q_{\mathrm{pre}}(\Delta t)=q^\star-\Delta t\,\dot q^\star$ with terminal velocity $\approx\dot q^\star$; the $\tau$
+preload ramps \emph{during} that moving segment (applying $\tau^\star$ afterward accelerates the arm out of the
+deliverable velocity band); and a short residual under a low-dimensional structured CEM closes the margin. The frozen
+APPROACH$\rightarrow$HANDOFF\_RESET$\rightarrow$R2$\rightarrow$coast then generates the coupling itself. Positive control
+already in hand: \textbf{strict K6 reproduced 3/3 independent planner seeds} (min $d_{tz}$ 2.0/9.7/10.9\,mm, safe, distinct
+parameters), no state edit, no snapshot injection. This plan formalises it and freezes the traces. \emph{Join the orbit;
+do not reconstruct the terminal.}
+\end{abstract}
+
+\section{Scope and goal}
+\textbf{Goal.} A deterministic structured planner that, from the frozen \code{READY} shell, drives a phase-shaped moving
+precursor into the frozen downstream and delivers strict K6 --- reproducibly across $\ge 3$ planner seeds, teacher-free,
+no state edit. \textbf{Chain:}
+\begin{center}\itshape HOME\_V1 $\to$ frozen analytic transit $\to$ READY $\to$ phase-shaped moving precursor (quintic +
+during-segment preload + short residual) $\to$ frozen APPROACH $\to$ HANDOFF\_RESET $\to$ R2 $\to$ strict K6.\end{center}
+\textbf{Non-goals.} No TD3 (this is the positive control that gates it). No modification of the frozen downstream, the
+analytic transit, or the physics/monitor. No re-characterisation of a different deliverable basin unless this fork
+regresses (that is fork B, deferred).
+
+\begin{figure}[h]\centering\input{plan.tikz}
+\caption{The phase-shaped capture (red) splices the frozen analytic transit (blue) into the frozen downstream (blue) by a
+quintic moving segment onto the backward-tangent precursor tube; the structured CEM (orange) searches only bounded
+structural parameters. The cradle handoff is a phase-point of the moving orbit, not a static target.}\end{figure}
+
+\section{The frozen contract (must hold at every step)}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item Physics + motion contract + K6 monitor unchanged; every torque through the existing
+  \code{step\_ablation}$\to$governor stack; no raw actuator writes, no teleport, no coin-state edit, no hidden force in
+  the deployed chain. State-editing appears \emph{only} as a characterisation tool (basin/tube mapping), never deployed.
+  \item Frozen downstream imported as-is: \code{HandoffResetTemporalController} (APPROACH $\to$ HANDOFF\_RESET $\to$ R2
+  $\alpha{=}0.15$ $\to$ coast), \code{velocity\_rollout}, \code{delivery\_success}. \code{git diff} empty on them.
+  \item Frozen upstream: the Stage 1A analytic transit (\code{planar\_geometric\_approach}, committed \code{eb09a16a})
+  produces \code{READY}; unchanged. \code{HOME\_STATE\_V1\_GENERIC} retained.
+  \item \code{s4}/\code{s7} validation-only; \code{f1--f4} \code{SEALED}. No tag moved.
+\end{itemize}
+
+\section{Affected files}
+\textbf{CORE.YAML items touched: none.} New code under \code{hymeko\_rl/} + \code{tests/}/\code{reports/}/\code{docs/plans/}.
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{hymeko\_rl/coin\_delivery/theta\_option/moving\_precapture.py} --- \code{HandoffReference} (the cradle
+  phase-point + backward-tangent precursor), \code{QuinticSegment} (position+velocity BVP), \code{CaptureParams} +
+  \code{CaptureSearchSpec}, \code{PhaseShapeCapture} (quintic track + during-segment preload ramp + residual, through
+  the governed servo), \code{FrozenDownstream} (thin adapter over the frozen controller), \code{plan\_capture} (the
+  structured CEM), \code{execute\_home\_to\_k6} (full chain).
+  \item \code{hymeko\_rl/experiments/coin\_kinetic\_moving\_precapture.py} --- 3-seed reachability gate + boundary tests
+  + saved traces + provenance JSON.
+  \item \code{hymeko\_rl/tests/test\_moving\_precapture.py} --- unit + integration + boundary + perf.
+  \item \code{reports/2026-07-28-moving-precapture-dynamic-handoff.md} --- the report.
+\end{itemize}
+\textbf{Read-only reuse:} \code{planar\_geometric\_approach} (READY), \code{teacher\_bank} (cradle), \code{kinetic\_*}
+frozen downstream, \code{env/motion\_contract} (governor).
+
+\section{Interface changes}
+All additive.
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{HandoffReference.from\_cradle(cradle) $\to$ HandoffReference} with $(q^\star,\dot q^\star,\tau^\star)$ and
+  \code{precursor(n, dt) $\to$ q\_pre}. \textbf{Post:} deterministic; \code{precursor(0,\_)}$=q^\star$.
+  \item \code{QuinticSegment(q0,v0,qf,vf,T)} with \code{eval(t) $\to$ (q,v)}. \textbf{Post:} boundary conditions met
+  ($q(0),\dot q(0),q(T),\dot q(T)$; $\ddot q(0){=}\ddot q(T){=}0$), verified by test.
+  \item \code{PhaseShapeCapture(ready, ref, params).roll() $\to$ CaptureOutcome} --- governed-servo roll; reports the
+  terminal snapshot, direction cosine to $\dot q^\star$, velocity scale, $\Delta\tau$ to $\tau^\star$, contact, safety.
+  \textbf{Post:} deterministic given \code{(ready, params)}; no state edit.
+  \item \code{plan\_capture(ready, ref, spec, seed, downstream) $\to$ (CaptureParams, CaptureResult)} --- CEM over the
+  bounded structural vector $(\Delta t, s, \text{preload\_start}, b_{\max}, \text{2 residual knots})$, scored by the
+  frozen downstream ($0$ if K6 else min $d_{tz}$; safety hard-penalised). \textbf{Post:} deterministic given seed.
+\end{itemize}
+
+\section{Test strategy}
+\textbf{Unit:} quintic BVP boundary conditions; backward-tangent precursor ($q_{\mathrm{pre}}(0){=}q^\star$, monotone
+recession); \code{HandoffReference} determinism; \code{PhaseShapeCapture.roll} determinism + no-state-edit (coin
+canonical at start); the tube-membership predicate (direction cosine wide / preload tight, from the measured tolerances)
+as a regression fixture. \textbf{Integration:} the full chain from \code{HOME\_V1} delivers strict K6 for at least one
+seed (\code{MOVING\_PRECAPTURE\_TO\_HANDOFF}); a naive \emph{post}-segment preload ramp \emph{fails} the velocity-tube
+(regression proving the during-segment ramp is load-bearing). \textbf{Boundary:} \code{READY\_TO\_CAPTURE\_ONE\_STEP\_
+IDENTITY} (offline READY $=$ one online capture step from READY); \code{TRANSIT\_TO\_CAPTURE\_CONTINUATION};
+exactly-one TRANSIT$\to$CAPTURE and one REACH\_TO\_APPROACH; an off-by-one boundary rejected. \textbf{Perf:} a single
+capture+downstream evaluation wall-bounded; median over 5.
+\textbf{Coverage:} every new public/private function exercised by $\ge 1$ new test.
+
+\section{Performance budget}
+\textbf{Anchors (Apple-Silicon, py3.11.15, mujoco 3.10.0):} one capture ($\sim$20 steps) + one downstream rollout
+($\sim$80 steps) $\approx 0.1$\,s; CEM $\sim$14 iters $\times$ 44 pop $\approx$ 620 evals $\approx$ 60\,s/seed;
+3 seeds $\approx 3$\,min, \emph{checkpointed per seed}. \textbf{Peak RSS $<1$\,GB} (hard cap 16\,GB). The reachability
+run reports peak RSS + wall on exit; unit suite $<120$\,s.
+
+\section{Risk anticipation}
+\textbf{Performance-contract preservation.} The capture adds no new torque authority: every command passes the same
+\code{step\_ablation}$\to$\code{govern\_torque} clip (slew, torque, joint/coin-speed caps). The residual is bounded
+($\pm$slew) and enters inside that clip.
+\smallskip\noindent\textbf{Worst-case / the load-bearing coupling.} $\tau^\star$ ($\lVert\cdot\rVert{=}2.67$) is the
+\emph{accelerating} torque ($\dot q$ jumps $0.66\to1.07$ in one downstream step). Applying it \emph{after} the moving
+segment drives velocity to $\sim 2\times$ the deliverable band (measured). Mitigation = ramp the preload \emph{during}
+the decelerating quintic, with the terminal-velocity scale $s$ compensating; the CEM searches (preload\_start, $b_{\max}$,
+$s$) jointly. The deliverable tube is tight on preload ($\Delta\tau\lesssim0.13$) and wide on direction (cos $0.85$--$1.0$)
+--- the plan targets the wide axis loosely and the tight axis via the during-segment ramp. The precursor must keep the
+coin canonical until legal contact (checked) and stay safe (\code{peak\_qdot}$\le3$, \code{peak\_coin\_speed}$\le1.5$).
+\smallskip\noindent\textbf{Reproducibility.} $\ge3$ \emph{independent} seeds must each deliver, and preferably not the
+same parameter vector (the 3 measured differ: $s\in\{0.08,0.28,0.31\}$). Seeds, chosen parameters, and full causal traces
+are saved.
+
+\section{Rollback path}
+New files only; rollback $=$ delete. The frozen transit + downstream are untouched, so a regression reverts to the Stage
+1A commit \code{eb09a16a} with no side effects.
+
+\section{Gate ladder}
+\begin{enumerate}[nosep,leftmargin=1.6em]
+  \item \code{H\_DYN\_RECLASSIFIED\_AS\_LOCAL\_CONTINUATION\_BASIN} (done, diagnostic): the handoff is a moving
+  phase-point; direction-wide / preload-tight tube; backward-tangent tube deliverable for $n{=}0..5$.
+  \item \code{MOVING\_PRECAPTURE\_TO\_HANDOFF\_PASS}: the phase-shaped chain from \code{HOME\_V1} delivers strict K6
+  (one seed), safe, no state edit.
+  \item \code{HOME\_V1\_TO\_DYNAMIC\_HANDOFF\_REACHABILITY\_PASS}: $\ge3$ independent planner seeds each deliver strict
+  K6, safe, deterministic replay, exactly-one boundary transitions, full provenance + saved traces.
+  \item \emph{(next, not here)} freeze $\to$ TD3 (\code{HOME\_V1\_START\_STRICT\_K6}); or fork B if this regresses.
+\end{enumerate}
+\textbf{Stop logic.} $\ge3$ K6 $\Rightarrow$ save traces, freeze, commit, \halt{} before TD3. Precursor reached but no
+K6 $\Rightarrow$ fork B (reachable-deliverable-basin, direct downstream score). Do not modify the frozen downstream.
+
+\section{Empty-plan-dir hygiene}
+If abandoned before the module lands, delete \code{docs/plans/2026-07-28-moving-precapture-dynamic-handoff/} this session.
+
+\end{document}

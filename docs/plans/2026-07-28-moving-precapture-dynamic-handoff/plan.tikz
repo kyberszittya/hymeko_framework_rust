@@ -1,0 +1,37 @@
+% plan.tikz — phase-shaped moving-precursor capture: READY -> moving handoff -> frozen downstream -> K6.
+\begin{tikzpicture}[
+    font=\small,
+    frozen/.style={draw=black!70, fill=blue!6,   rounded corners, align=center, inner sep=4pt, minimum height=8mm},
+    capture/.style={draw=red!70,  fill=red!8,    rounded corners, align=center, inner sep=4pt, minimum height=8mm, very thick},
+    cem/.style   ={draw=orange!80!black, fill=orange!10, rounded corners, align=center, inner sep=3pt, font=\footnotesize},
+    io/.style    ={draw=black!40, fill=black!4, align=center, inner sep=3pt, font=\footnotesize},
+    flow/.style  ={-{Stealth[length=2.2mm]}, thick},
+    dashflow/.style={-{Stealth[length=2.2mm]}, thick, dashed},
+  ]
+  \node[frozen] (v1) {\textbf{HOME\_V1}\\generic};
+  \node[frozen, right=7mm of v1] (tr) {\textbf{analytic}\\transit\\{\footnotesize eb09a16a}};
+  \node[frozen, right=7mm of tr] (ready) {\textbf{READY}\\55\,mm shell\\{\footnotesize static audit}};
+  \node[capture, right=8mm of ready] (quin) {\textbf{quintic moving}\\segment $\to q_{\mathrm{pre}}$\\$\dot q(T)\!\approx\!\dot q^\star$};
+  \node[capture, right=8mm of quin] (pre) {\textbf{during-segment}\\preload ramp\\$+$ short residual};
+  \node[frozen, right=8mm of pre] (down) {\textbf{APPROACH}\\HANDOFF\_RESET\\R2 $\to$ coast $\to$ \textbf{K6}};
+
+  \draw[flow] (v1) -- (tr); \draw[flow] (tr) -- (ready);
+  \draw[flow] (ready) -- (quin) node[midway,above,font=\footnotesize]{splice};
+  \draw[flow] (quin) -- (pre);
+  \draw[flow] (pre) -- (down) node[midway,above,font=\footnotesize]{moving handoff};
+
+  \node[cem, above=7mm of pre, text width=52mm] (cem)
+    {\textbf{structured CEM} (bounded, low-dim): precursor $\Delta t$ $\cdot$ velocity scale $s$ $\cdot$ preload-start $\cdot$ $b_{\max}$ $\cdot$ 2 residual knots. Score = frozen-downstream strict K6 (else min $d_{tz}$), safety-gated};
+  \draw[flow] (cem) -- (pre);
+
+  \node[io, below=6mm of quin, text width=52mm] (tube)
+    {\textbf{backward-tangent tube} $q_{\mathrm{pre}}(\Delta t)\!=\!q^\star\!-\!\Delta t\,\dot q^\star$: deliverable $n{=}0..5$; direction cos $0.85$--$1.0$ (wide), preload $\Delta\tau\!\lesssim\!0.13$ (tight)};
+  \draw[flow] (tube) -- (quin);
+
+  \begin{scope}[on background layer]
+    \node[draw=red!45, dashed, rounded corners, fit=(quin)(pre), inner sep=7pt,
+      label={[red!65]below:{\itshape this change: phase-shaped capture (no TD3)}}] {};
+    \node[draw=blue!40, dashed, rounded corners, fit=(v1)(ready), inner sep=6pt,
+      label={[blue!60]above:{\itshape frozen upstream}}] {};
+  \end{scope}
+\end{tikzpicture}

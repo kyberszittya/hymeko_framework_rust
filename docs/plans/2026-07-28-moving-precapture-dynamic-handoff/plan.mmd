@@ -1,0 +1,35 @@
+%% plan.mmd — phase-shaped moving-precursor capture: planning + execution sequence, and the mode state machine.
+
+sequenceDiagram
+    autonumber
+    participant Ref as HandoffReference (q*,qvel*,tau*)
+    participant Q as QuinticSegment
+    participant Cap as PhaseShapeCapture
+    participant CEM as structured CEM planner
+    participant Down as Frozen downstream
+
+    Note over Ref,Down: REFRAMING — cradle handoff is a phase-point of a MOVING orbit (q=pos, qvel=tangent, tau=history)
+    Ref->>Ref: from_cradle -> (q*, qvel*, tau*); precursor q_pre(dt) = q* - dt*qvel*
+    Note over Q,Cap: OFFLINE PLAN (deterministic per seed, no state edit)
+    CEM->>Cap: sample bounded params (dt, s, preload_start, bmax, 2 residual knots)
+    Cap->>Q: quintic READY -> q_pre, terminal velocity s*qvel*
+    Cap->>Cap: track quintic (governed servo) + residual
+    Cap->>Cap: ramp prev_tau -> tau* DURING the moving segment (not after — post-hoc accelerates out of tube)
+    Cap->>Down: terminal moving snapshot
+    Down-->>CEM: strict K6? min_dtz, safe
+    CEM->>CEM: elite-refit; stop on first K6
+
+    Note over Cap,Down: verdicts
+    Cap-->>CEM: MOVING_PRECAPTURE_TO_HANDOFF (1 seed K6)
+    CEM-->>CEM: HOME_V1_TO_DYNAMIC_HANDOFF_REACHABILITY (>=3 independent seeds K6, deterministic, traces saved)
+
+    %% ---- mode state machine ----
+    %% stateDiagram-v2
+    %%   [*] --> HOME_V1
+    %%   HOME_V1 --> TRANSIT: analytic q_ref (frozen)
+    %%   TRANSIT --> READY: coin unperturbed, tips on assigned sides
+    %%   READY --> MOVING_PRECAPTURE: splice (quintic moving segment begins)
+    %%   MOVING_PRECAPTURE --> MOVING_PRECAPTURE: track + during-segment preload ramp
+    %%   MOVING_PRECAPTURE --> APPROACH: moving handoff (on the orbit tangent) [frozen downstream]
+    %%   APPROACH --> K6: HANDOFF_RESET -> R2 -> coast
+    %%   K6 --> [*]
