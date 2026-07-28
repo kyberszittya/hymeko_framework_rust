@@ -57,6 +57,19 @@ def test_transient_basis_hits_its_knots():
     assert np.array_equal(tpo.transient_basis(tpo.TRANSIENT_KNOT_PHASES[1], k1, k2), k2)
 
 
+def test_transient_basis_is_c1_at_knots_and_boundaries():
+    """The upgraded (Catmull-Rom) transient basis is C1: continuous first derivative at the interior knots and zero slope
+    at both endpoints (a linear-interp basis would fail the knot-continuity assertion)."""
+    k1, k2 = np.array([1.0, -2.0, 0.5, 3.0]), np.array([-1.0, 2.0, -0.5, 1.0])
+    h = 1e-6
+    for knot in tpo.TRANSIENT_KNOT_PHASES:
+        left = (tpo.transient_basis(knot, k1, k2) - tpo.transient_basis(knot - h, k1, k2)) / h
+        right = (tpo.transient_basis(knot + h, k1, k2) - tpo.transient_basis(knot, k1, k2)) / h
+        assert np.allclose(left, right, atol=1e-3)                                  # continuous first derivative (C1)
+    assert np.allclose((tpo.transient_basis(h, k1, k2) - tpo.transient_basis(0.0, k1, k2)) / h, 0.0, atol=1e-3)
+    assert np.allclose((tpo.transient_basis(1.0, k1, k2) - tpo.transient_basis(1.0 - h, k1, k2)) / h, 0.0, atol=1e-3)
+
+
 def test_terminal_basis_is_a_zero_to_one_ramp():
     assert tpo.terminal_basis(0.0) == 0.0 and tpo.terminal_basis(1.0) == 1.0
     assert tpo.terminal_basis(0.5) == pytest.approx(0.5)

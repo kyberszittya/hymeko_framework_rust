@@ -111,12 +111,34 @@ def decode_theta(z_hat: np.ndarray, slew: float, scales: ThetaScales = ThetaScal
 # --------------------------------------------------------------------------------------------------------------------
 # Phase bases: transient (pinned to 0 at both ends) + terminal ramp (0 -> 1)
 # --------------------------------------------------------------------------------------------------------------------
+_NODES = (0.0, TRANSIENT_KNOT_PHASES[0], TRANSIENT_KNOT_PHASES[1], 1.0)     # x0..x3 of the transient spline
+
+
+def _catmull_rom_clamped(phase: float, y: "tuple[float, float, float, float]") -> float:
+    """Clamped Catmull-Rom (cubic Hermite) through the 4 fixed nodes ``_NODES`` with node values ``y`` and **zero end
+    tangents**. C1 everywhere (adjacent segments share the interior tangent) with zero slope at ``phase in {0,1}``; it
+    interpolates every node exactly. Linear in ``y`` (so linear in the knots) and returns ``0`` for all-zero ``y``."""
+    x = _NODES
+    m = (0.0, (y[2] - y[0]) / (x[2] - x[0]), (y[3] - y[1]) / (x[3] - x[1]), 0.0)   # clamped Catmull-Rom tangents
+    if phase <= x[0]:
+        return y[0]
+    if phase >= x[3]:
+        return y[3]
+    s = 2 if phase > x[2] else (1 if phase > x[1] else 0)                          # segment [x_s, x_{s+1}]
+    h = x[s + 1] - x[s]
+    t = (phase - x[s]) / h
+    t2, t3 = t * t, t * t * t
+    return ((2 * t3 - 3 * t2 + 1) * y[s] + (t3 - 2 * t2 + t) * h * m[s]
+            + (-2 * t3 + 3 * t2) * y[s + 1] + (t3 - t2) * h * m[s + 1])
+
+
 def transient_basis(phase: float, k1: np.ndarray, k2: np.ndarray) -> np.ndarray:
-    """Per-joint transient offset: linear interpolation through ``(0,0), (1/3,k1), (2/3,k2), (1,0)``. Pinned to ``0`` at
-    ``phase in {0,1}`` (``psi_k(0)=psi_k(1)=0``) so the option modifies the middle of the path with no unnoticed endpoint
-    drift. # Postconditions: returns ``0`` exactly at ``phase in {0,1}`` and when ``k1=k2=0``."""
-    xs = (0.0, TRANSIENT_KNOT_PHASES[0], TRANSIENT_KNOT_PHASES[1], 1.0)
-    return np.array([np.interp(phase, xs, (0.0, float(k1[j]), float(k2[j]), 0.0)) for j in range(4)])
+    """Per-joint transient offset: a **C1** clamped Catmull-Rom spline through ``(0,0), (1/3,k1), (2/3,k2), (1,0)`` — a
+    physically smooth (continuous first derivative) mid-path correction, pinned to ``0`` with zero slope at ``phase in
+    {0,1}`` (``psi_k(0)=psi_k(1)=0``) so there is no unnoticed endpoint drift and no slope kink at the handoff. It hits
+    both knots exactly (``k1`` at 1/3, ``k2`` at 2/3). # Postconditions: returns ``0`` exactly at ``phase in {0,1}`` and
+    when ``k1=k2=0``; C1 at the interior knots (tested)."""
+    return np.array([_catmull_rom_clamped(phase, (0.0, float(k1[j]), float(k2[j]), 0.0)) for j in range(4)])
 
 
 def terminal_basis(phase: float) -> float:

@@ -1,0 +1,843 @@
+{
+ "contract": "STRUCTURED_OPTION_ADMISSIBILITY_V1",
+ "parent_commit": "c8e90e11",
+ "boundary": "3 (coordinate conditioning + episodic admissibility) \u2014 NO training/reward/actor-update",
+ "measurement_contract": {
+  "sigmas": [
+   0.05,
+   0.1,
+   0.2
+  ],
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "episodes_per_seed_scale": 32,
+  "panel_n": 16,
+  "single_theta_per_episode": true,
+  "per_step_noise": false,
+  "smoke": false
+ },
+ "nominal_zero_theta_k6": {
+  "k6": true,
+  "min_dtz_mm": 2.79,
+  "safe": true,
+  "handoff_resets": 1
+ },
+ "frozen_normalization_D": [
+  1.0,
+  0.5832,
+  0.5,
+  2.0,
+  2.0,
+  1.2288,
+  1.7171,
+  1.5421,
+  2.0,
+  0.5,
+  0.5,
+  1.0951,
+  0.9746,
+  0.7706,
+  0.8877
+ ],
+ "terminal_offset_audit": {
+  "slew": 0.3,
+  "requested_magnitude_note": 2.0,
+  "probes": {
+   "joint0_pos": {
+    "requested": [
+     0.3,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "executed": [
+     0.39741,
+     0.0,
+     0.00155,
+     -0.20596
+    ],
+    "rel_err": 0.7595,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     true,
+     true,
+     false,
+     false
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "joint0_neg": {
+    "requested": [
+     -0.3,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "executed": [
+     -0.70451,
+     0.0,
+     0.00277,
+     -0.36433
+    ],
+    "rel_err": 1.8147,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     false,
+     true,
+     false,
+     false
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "joint1_pos": {
+    "requested": [
+     0.0,
+     0.3,
+     0.0,
+     0.0
+    ],
+    "executed": [
+     -0.00046,
+     1.04287,
+     0.00076,
+     -0.1187
+    ],
+    "rel_err": 2.5076,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "action_clipped": [
+     false,
+     true,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "joint1_neg": {
+    "requested": [
+     0.0,
+     -0.3,
+     0.0,
+     0.0
+    ],
+    "executed": [
+     3e-05,
+     -1.72516,
+     -0.00029,
+     0.0387
+    ],
+    "rel_err": 4.7523,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     false,
+     true,
+     false,
+     false
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "joint2_pos": {
+    "requested": [
+     0.0,
+     0.0,
+     0.3,
+     0.0
+    ],
+    "executed": [
+     0.0,
+     0.0,
+     0.37265,
+     -0.19858
+    ],
+    "rel_err": 0.7048,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     false,
+     true,
+     false,
+     false
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "joint2_neg": {
+    "requested": [
+     0.0,
+     0.0,
+     -0.3,
+     0.0
+    ],
+    "executed": [
+     0.0,
+     0.0,
+     -1.95329,
+     -0.18828
+    ],
+    "rel_err": 5.5466,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     false,
+     true,
+     true,
+     false
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "joint3_pos": {
+    "requested": [
+     0.0,
+     0.0,
+     0.0,
+     0.3
+    ],
+    "executed": [
+     0.0,
+     0.0,
+     -0.0013,
+     0.33394
+    ],
+    "rel_err": 0.1132,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     false,
+     true,
+     false,
+     false
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "joint3_neg": {
+    "requested": [
+     0.0,
+     0.0,
+     0.0,
+     -0.3
+    ],
+    "executed": [
+     -0.19862,
+     0.0,
+     -0.00679,
+     -0.24426
+    ],
+    "rel_err": 0.688,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     false,
+     true,
+     false,
+     true
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "combo0": {
+    "requested": [
+     0.3,
+     -0.3,
+     0.3,
+     -0.3
+    ],
+    "executed": [
+     0.3931,
+     -1.72516,
+     0.37265,
+     -0.24946
+    ],
+    "rel_err": 2.3849,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     true,
+     true,
+     false,
+     true
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "combo1": {
+    "requested": [
+     -0.3,
+     -0.3,
+     0.3,
+     0.3
+    ],
+    "executed": [
+     -0.70451,
+     -1.72516,
+     0.37265,
+     0.33401
+    ],
+    "rel_err": 2.4727,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     false,
+     true,
+     false,
+     false
+    ],
+    "action_clipped": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "combo2": {
+    "requested": [
+     0.3,
+     0.3,
+     -0.3,
+     -0.3
+    ],
+    "executed": [
+     0.39741,
+     1.04287,
+     -1.95329,
+     -0.2417
+    ],
+    "rel_err": 3.0268,
+    "sign_correct": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "tracked_or_saturated": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "slew_limited": [
+     true,
+     false,
+     true,
+     true
+    ],
+    "action_clipped": [
+     false,
+     true,
+     false,
+     false
+    ],
+    "torque_clamped": [
+     false,
+     false,
+     false,
+     false
+    ]
+   }
+  },
+  "all_single_sign_correct": true,
+  "all_single_tracked_or_saturated": true
+ },
+ "local_sensitivity": {
+  "singular_values": [
+   8.8127,
+   5.3405,
+   4.8771,
+   4.1877,
+   3.8267,
+   3.7279,
+   2.6014,
+   1.9295,
+   1.4764,
+   0.8401,
+   0.7229,
+   0.6639
+  ],
+  "effective_rank": 12,
+  "stable_rank": 2.451,
+  "terminal_state_dead_dims": [],
+  "terminal_state_collinear_pairs": [
+   [
+    8,
+    12,
+    0.996
+   ]
+  ],
+  "task_dead_dims": [],
+  "task_redundant_pairs": [],
+  "per_dim_effect": [
+   1.01547,
+   1.74115,
+   2.73277,
+   0.47005,
+   0.18766,
+   0.82638,
+   0.59137,
+   0.65852,
+   0.20266,
+   2.11339,
+   2.04273,
+   0.92733,
+   1.0419,
+   1.31783,
+   1.14399
+  ],
+  "per_dim_min_dtz_sens": [
+   -72.9,
+   18.4,
+   25.55,
+   131.15,
+   159.8,
+   33.3,
+   14.7,
+   -23.3,
+   -153.6,
+   45.6,
+   -29.5,
+   19.4,
+   -49.2,
+   13.3,
+   19.55
+  ],
+  "per_dim_action_rms": [
+   1.00834,
+   1.56544,
+   0.84588,
+   1.8914,
+   0.10463,
+   0.23287,
+   1.88018,
+   1.10403,
+   0.09622,
+   0.2185,
+   1.43709,
+   1.7577,
+   0.12609,
+   0.78467,
+   1.50053
+  ]
+ },
+ "sigma_table": {
+  "sigma_0.05": {
+   "sigma": 0.05,
+   "per_seed": {
+    "0": {
+     "k6": 1,
+     "safety_violation": 0,
+     "boundary_violation": 0,
+     "informative": 31,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 1,
+      "b10_25": 0,
+      "b25_50": 30,
+      "ge50": 1
+     },
+     "mean_clip_frac": 0.1445,
+     "dev_std": 0.10656,
+     "min_dtz_median": 38.2,
+     "n": 32
+    },
+    "1": {
+     "k6": 3,
+     "safety_violation": 0,
+     "boundary_violation": 1,
+     "informative": 28,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 2,
+      "b10_25": 1,
+      "b25_50": 28,
+      "ge50": 1
+     },
+     "mean_clip_frac": 0.168,
+     "dev_std": 0.11794,
+     "min_dtz_median": 38.53,
+     "n": 32
+    },
+    "2": {
+     "k6": 3,
+     "safety_violation": 0,
+     "boundary_violation": 0,
+     "informative": 29,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 3,
+      "b10_25": 0,
+      "b25_50": 28,
+      "ge50": 1
+     },
+     "mean_clip_frac": 0.1406,
+     "dev_std": 0.08472,
+     "min_dtz_median": 37.8,
+     "n": 32
+    }
+   },
+   "safety_violations": 0,
+   "boundary_violations": 1,
+   "degenerate_total": 0,
+   "k6_seeds": 3,
+   "informative_seeds": 3,
+   "clip_dominates": false,
+   "admissible": false
+  },
+  "sigma_0.1": {
+   "sigma": 0.1,
+   "per_seed": {
+    "0": {
+     "k6": 1,
+     "safety_violation": 0,
+     "boundary_violation": 0,
+     "informative": 31,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 1,
+      "b10_25": 0,
+      "b25_50": 31,
+      "ge50": 0
+     },
+     "mean_clip_frac": 0.1449,
+     "dev_std": 0.0921,
+     "min_dtz_median": 38.64,
+     "n": 32
+    },
+    "1": {
+     "k6": 3,
+     "safety_violation": 0,
+     "boundary_violation": 1,
+     "informative": 28,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 3,
+      "b10_25": 0,
+      "b25_50": 27,
+      "ge50": 2
+     },
+     "mean_clip_frac": 0.1707,
+     "dev_std": 0.09062,
+     "min_dtz_median": 38.07,
+     "n": 32
+    },
+    "2": {
+     "k6": 2,
+     "safety_violation": 0,
+     "boundary_violation": 1,
+     "informative": 29,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 1,
+      "b10_25": 1,
+      "b25_50": 27,
+      "ge50": 3
+     },
+     "mean_clip_frac": 0.1359,
+     "dev_std": 0.08086,
+     "min_dtz_median": 38.17,
+     "n": 32
+    }
+   },
+   "safety_violations": 0,
+   "boundary_violations": 2,
+   "degenerate_total": 0,
+   "k6_seeds": 3,
+   "informative_seeds": 3,
+   "clip_dominates": false,
+   "admissible": false
+  },
+  "sigma_0.2": {
+   "sigma": 0.2,
+   "per_seed": {
+    "0": {
+     "k6": 1,
+     "safety_violation": 0,
+     "boundary_violation": 0,
+     "informative": 31,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 1,
+      "b10_25": 0,
+      "b25_50": 27,
+      "ge50": 4
+     },
+     "mean_clip_frac": 0.1422,
+     "dev_std": 0.16663,
+     "min_dtz_median": 39.32,
+     "n": 32
+    },
+    "1": {
+     "k6": 0,
+     "safety_violation": 0,
+     "boundary_violation": 2,
+     "informative": 30,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 0,
+      "b10_25": 0,
+      "b25_50": 28,
+      "ge50": 4
+     },
+     "mean_clip_frac": 0.1734,
+     "dev_std": 0.16099,
+     "min_dtz_median": 40.7,
+     "n": 32
+    },
+    "2": {
+     "k6": 0,
+     "safety_violation": 0,
+     "boundary_violation": 1,
+     "informative": 31,
+     "near_boundary": 0,
+     "degenerate": 0,
+     "bands": {
+      "lt10": 0,
+      "b10_25": 0,
+      "b25_50": 24,
+      "ge50": 8
+     },
+     "mean_clip_frac": 0.1434,
+     "dev_std": 0.16447,
+     "min_dtz_median": 39.54,
+     "n": 32
+    }
+   },
+   "safety_violations": 0,
+   "boundary_violations": 3,
+   "degenerate_total": 0,
+   "k6_seeds": 1,
+   "informative_seeds": 3,
+   "clip_dominates": false,
+   "admissible": false
+  }
+ },
+ "proposed_smallest_admissible_sigma": null,
+ "recommendation": {
+  "sigma": 0.05,
+  "residual_boundary_regressions": 1,
+  "note": "smallest sigma clean on safety + K6 + informative + clipping; residual = SAFE boundary-route variation only (reset != 1), a review call on tolerance vs a smaller sigma"
+ },
+ "verdicts": {
+  "TERMINAL_OFFSET_TRACKING": "PASS",
+  "LOCAL_THETA_SENSITIVITY": "PASS"
+ },
+ "non_claims": [
+  "NO reward-driven policy trained",
+  "NO actor update",
+  "sigma freeze is approved SEPARATELY",
+  "TD3/SAC/PPO do not start until the sigma is frozen"
+ ]
+}
