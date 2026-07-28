@@ -1,0 +1,39 @@
+% plan.tikz -- R11.3 per-scenario demonstration pipeline dataflow.
+\begin{tikzpicture}[
+    font=\small,
+    st/.style   ={draw=black!70, fill=blue!6, rounded corners, align=center, inner sep=3pt, minimum height=7.5mm, text width=20mm},
+    deploy/.style={draw=green!55!black, fill=green!8, rounded corners, align=center, inner sep=3pt, minimum height=7.5mm, text width=20mm},
+    teach/.style ={draw=red!70, fill=red!8, rounded corners, align=center, inner sep=3pt, minimum height=7.5mm, text width=20mm, very thick},
+    sink/.style  ={draw=orange!85!black, fill=orange!12, rounded corners, align=center, inner sep=3pt, minimum height=7.5mm, text width=22mm},
+    rej/.style   ={draw=red!55!black, fill=red!5, rounded corners, align=center, inner sep=3pt, minimum height=7.5mm, text width=22mm},
+    a/.style     ={-{Stealth[length=2mm]}, thick},
+    lab/.style   ={font=\scriptsize, fill=white, inner sep=1pt},
+  ]
+  \node[st]     (zh)  {EXACT\_ZERO\_HOME};
+  \node[st, right=8mm of zh]  (ic)  {IC certificate};
+  \node[st, right=8mm of ic]  (ad)  {admissibility};
+  \node[deploy, right=8mm of ad] (rr) {RRT reach\\{\scriptsize deployed}};
+  \node[st, below=7mm of rr]  (hd)  {precontact handoff};
+  \node[teach, left=8mm of hd] (cem) {CEM teacher\\{\scriptsize capture/deliver}};
+  \node[st, left=8mm of cem]  (k6)  {strict K6 /\\classified fail};
+  \node[sink, below=8mm of k6] (rec) {DemonstrationRecord\\{\scriptsize + provenance + energy}};
+  \node[sink, right=10mm of rec] (bank) {JSONL bank\\{\scriptsize replay-verified}};
+  \node[rej, above=6mm of ad] (rp) {rejection panel\\{\scriptsize INVALID\_INITIAL\_CONDITION}};
+
+  \draw[a] (zh) -- (ic);
+  \draw[a] (ic) -- (ad);
+  \draw[a] (ad) -- (rr) node[lab,midway,above]{admissible};
+  \draw[a] (ad) -- (rp) node[lab,midway,left]{invalid};
+  \draw[a] (rr) -- (hd);
+  \draw[a] (hd) -- (cem);
+  \draw[a] (cem) -- (k6);
+  \draw[a] (k6) -- (rec);
+  \draw[a] (rec) -- (bank);
+  \draw[a] (rp) to[out=0,in=90] (rec.north);
+
+  \begin{scope}[on background layer]
+    \node[draw=green!45!black, dashed, rounded corners, fit=(rr), inner sep=4pt] {};
+    \node[draw=red!45, dashed, rounded corners, fit=(cem), inner sep=4pt,
+      label={[red!65,font=\scriptsize]below:{teacher only}}] {};
+  \end{scope}
+\end{tikzpicture}

@@ -1,0 +1,137 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.15cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!55!black, urlcolor=blue!55!black}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\gate}[1]{\textcolor{blue!55!black}{\texttt{\small #1}}}
+\newcommand{\halt}{\textcolor{red!70!black}{\textbf{HALT}}}
+
+\title{\textbf{Plan --- R11.3: Coin/Target Demonstration-Bank Pilot}\\[2pt]
+\large Certificate-gated demonstration \emph{generation} (no BC/RL/refinement): one teacher-solved rollout per
+coin/target scenario, from the exact zero home through strict K6 or a \emph{classified} failure, with full provenance +
+measured energy ledger. Pilot first (\(\sim\)12 admissible scenarios + an invalid panel), then \halt{} for review.}
+\author{HyMeKo coin-delivery campaign \quad(\code{feature/r11-3-coin-target-demo-bank}, from R11.2 \code{fb5b43a2})}
+\date{2026-07-29}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent R11.2 (committed) built the HyMeKo IR + initial-condition / energy / provenance certificates. R11.3 uses them to
+\emph{generate demonstrations}: for each coin/target scenario, run the certified pipeline EXACT\_ZERO\_HOME $\to$ IC
+certificate $\to$ admissibility $\to$ \textbf{deployed} RRT reach $\to$ precontact handoff $\to$ \textbf{per-instance CEM
+capture/delivery teacher} $\to$ strict K6 or a classified failure, and record everything (IC cert, sample ID, admissibility,
+RRT path + reach cert, coin/target poses, relative goal vector, handoff descriptor, mode trace M0--M7, teacher params,
+actions/observations, contact sequence, K6 result, failure class, measured energy ledger, energy-transition certificates,
+provenance + content hash). \textbf{This boundary is generation only} --- no BC, no RL, no policy assimilation, no geometry
+refinement, no transition optimization, no Hamiltonian reward shaping. A \emph{pilot} ($\sim$12 admissible scenarios + a
+separate invalid-initial-condition panel) proves the pipeline before the full bank is generated. Verdict target:
+\gate{R11\_3\_COIN\_TARGET\_DEMONSTRATION\_PIPELINE\_PASS}.
+\end{abstract}
+
+\section{Scope, non-goals, boundary}
+\textbf{Overnight extension (2026-07-30).} This plan's initial failure taxonomy was extended to \textbf{14 classes}
+(adding \code{GOAL\_SET\_EMPTY}, \code{PREMATURE\_CONTACT}, \code{PRECONTACT\_HANDOFF\_INVALID} vs.
+\code{CAPTURE\_/DELIVERY\_TEACHER\_FAILURE}, \code{PROVENANCE\_FAILURE}, \code{ENERGY\_LEDGER\_INCOMPLETE}) to separate the
+R11.3 teacher-generation-contract gap (reach lands outside the teacher's admissible handoff manifold) from downstream
+capture/delivery failures; the pilot was gated (14 checks) and, on PASS, a bounded bank of 64 scenarios $\times \leq 3$
+teacher seeds ($\leq 192$ attempts) was generated with a coverage analysis. See the report for the final state.\\[2pt]
+\textbf{Goal.} A reusable, certificate-gated demonstration generator + on-disk bank, validated by a small pilot.
+\textbf{Roles (unchanged from R11.2).} RRT-Connect is the \emph{deployed} geometric planner (reach). The \textbf{CEM
+capture/delivery is a training teacher only}; every teacher-produced trajectory is labelled as such in provenance and is
+\emph{never} presented as teacher-free deployment. \textbf{Hard non-goals for R11.3:} no BC, no RL, no policy assimilation,
+no geometry/timing refinement, no transition optimization, no Hamiltonian reward shaping, no energy \emph{optimization}
+(the ledger is measured, per the R11.2 two-level contract). \textbf{Stop after the pilot report} for review; the full bank
+is generated only after the pilot verdict.
+
+\section{Per-scenario pipeline}
+For each scenario $(x_c, x_g)$:
+\begin{enumerate}[nosep,leftmargin=1.6em]
+  \item Build EXACT\_ZERO\_HOME; \code{certify\_zero\_home} $\Rightarrow$ IC certificate (must be valid, else the rollout is
+  void, not a failure sample).
+  \item \code{coin\_admissibility}$(x_c)$ + target-in-bounds. \textbf{Inadmissible $\Rightarrow$ \code{INVALID\_INITIAL\_CONDITION}:
+  rejected \emph{before} planning, ledgered in the rejection panel, and \emph{excluded from the success denominator}.}
+  \item Deployed RRT reach (from R11.1) $\Rightarrow$ reach certificate (path + clearance).
+  \item Precontact handoff $\Rightarrow$ \code{HandoffDescriptor} (complete).
+  \item Per-instance CEM capture/delivery teacher (re-solved for this scenario) toward the target zone.
+  \item Strict-K6 evaluation $\Rightarrow$ success \emph{or} a specific \code{FailureClass}.
+  \item Emit provenance (with content hash) + measured energy ledger + energy-transition certificates.
+\end{enumerate}
+See \code{plan.tikz} for the dataflow and \code{plan.mmd} for the decision/failure branches.
+
+\begin{figure}[h]\centering\input{plan.tikz}\caption{The R11.3 per-scenario demonstration pipeline. Green = the
+deployed geometric planner (RRT reach); red = the CEM \emph{teacher} (training only, labelled in provenance); every stage
+emits into the record, which is serialized to the JSONL bank. An inadmissible start is rejected \emph{before} planning into
+the separate rejection panel (never in the success denominator); any downstream stage can terminate in a specific
+\code{FailureClass}.}\end{figure}
+
+\section{Scenario design (disjoint IDs; no interpolation leakage)}
+The \textbf{target} is the delivery zone $(\code{\_zone\_x},\code{\_zone\_y})$; the \textbf{relative goal vector} is
+$\Delta x_g = x_g - x_c$. Pilot set ($\sim$12 admissible + an invalid panel), each a stable scenario ID assigned to a
+\code{train}/\code{dev}/\code{test} split (disjoint):
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item canonical coin + canonical target;
+  \item coin + target translated together (relative vector fixed --- G0);
+  \item shifted coin, canonical relative target vector (G0/G2);
+  \item fixed coin, changed target direction (G1) --- realized by relocating the zone where the sim honors it, else a
+  classified delivery/target-entry failure (an honest teacher-capability datum, not a hidden gap);
+  \item $\geq 1$ diagonal coin/target case;
+  \item $\geq 1$ invalid-initial-condition case (e.g. \code{right +5cm}) in the separate rejection panel.
+\end{itemize}
+
+\section{Storage schema (one record per rollout)}
+\code{DemonstrationRecord}: IC certificate; distribution sample ID; admissibility result + rejection reason; RRT path +
+reach certificate; coin pose; target pose; relative goal vector; precontact handoff descriptor; mode trace M0--M7; teacher
+capture + delivery parameters; actions; observations; contact sequence; strict-K6 result; failure classification; measured
+energy ledger; energy-transition certificates; rollout provenance + content hash. Serialized to JSONL; a \code{replay}
+reconstructs the scenario + result and must reproduce the recorded content hash.
+
+\section{Failure taxonomy (enum --- never collapsed to one label)}
+\code{FailureClass}: \code{INVALID\_INITIAL\_CONDITION}, \code{REACH\_PLANNER\_FAILURE}, \code{REACH\_EXECUTION\_FAILURE},
+\code{PREMATURE\_COIN\_MOTION}, \code{CAPTURE\_FAILURE}, \code{DELIVERY\_FAILURE}, \code{TARGET\_ENTRY\_OVERSHOOT},
+\code{SETTLE\_K6\_FAILURE}, \code{SAFETY\_FAILURE}. Each rollout ends in exactly one of \{success, one of these\}.
+
+\section{Affected files (new; branch from the R11.2 commit; no CORE.YAML items)}
+\code{hymeko\_rl/coin\_delivery/demo\_bank/} (\code{scenario.py} coin/target scenario + disjoint grid;
+\code{failure\_class.py} the enum + \code{classify}; \code{record.py} \code{DemonstrationRecord} + serialize/hash/replay;
+\code{pipeline.py} \code{run\_scenario} (the certified pipeline, reusing \code{ir\_adapter} + RRT + CEM teacher);
+\code{store.py} \code{DemonstrationBank} JSONL read/write). \code{hymeko\_rl/experiments/r11\_3\_demo\_pilot.py} (pilot
+runner). \code{hymeko\_rl/tests/test\_r11\_3\_demo\_bank.py} (pilot gates). Reuse \code{hymeko\_rl.ir},
+\code{coin\_delivery.ir\_adapter}, \code{coin\_zero\_home\_rrt}, the frozen CEM teacher + downstream.
+
+\section{Pilot gates}
+\gate{EVERY\_ROLLOUT\_FROM\_VALID\_EXACT\_ZERO\_CERTIFICATE},
+\gate{DISJOINT\_TRAIN\_DEV\_TEST\_SCENARIO\_IDS},
+\gate{INVALID\_STARTS\_REJECTED\_AND\_LEDGERED},
+\gate{NO\_CEM\_USE\_HIDDEN\_FROM\_PROVENANCE},
+\gate{EACH\_SUCCESS\_LINKS\_K6\_TO\_PROVENANCE\_HASH},
+\gate{EACH\_ROLLOUT\_HAS\_COMPLETE\_MODE\_TRACE},
+\gate{EACH\_ROLLOUT\_HAS\_COMPLETE\_MEASURED\_ENERGY\_LEDGER},
+\gate{SERIALIZATION\_REPLAY\_REPRODUCES\_SCENARIO\_AND\_RESULT},
+\gate{NO\_TEACHER\_TRAJECTORY\_LABELLED\_TEACHER\_FREE}.
+
+\section{Test / perf / risk / rollback}
+\textbf{Tests}: unit (scenario grid disjointness, failure \code{classify}, record serialize/hash/replay round-trip,
+rejection accounting) fast; integration (one full pilot rollout: canonical success + one classified failure + one rejected
+invalid) slow. \textbf{Determinism}: fixed seeds; RRT seed pinned; content hash float-rounded to 1e-9.
+\textbf{Perf}: pilot $\sim$12 scenarios $\times$ (reach + CEM capture $\approx$ the R11.2 slow-test cost per instance);
+reconcile the wall estimate ($>2\times$ rule) before the run; well under the 16\,GB RSS cap (CPU, no training).
+\textbf{Risk}: (i) shifted-coin / changed-target scenarios may not deliver K6 with the canonical teacher --- that is a
+\emph{classified failure}, recorded honestly, never an impossibility claim; (ii) zone relocation may not be honored by the
+downstream --- if so, target-variation scenarios classify as delivery/target-entry failures and this is stated in the pilot
+report; (iii) leakage --- train/dev/test IDs disjoint by construction ([[held-out panel is single-use]]).
+\textbf{Rollback}: new package + experiment + test; rollback = delete. No existing file modified.
+
+\section{Stop logic}
+Run the pilot, verify the nine gates, write the pilot report, and \halt{}. \textbf{No BC/RL/refinement, and no full-bank
+generation, until the pilot verdict} \gate{R11\_3\_COIN\_TARGET\_DEMONSTRATION\_PIPELINE\_PASS} \textbf{is reviewed.}
+
+\end{document}

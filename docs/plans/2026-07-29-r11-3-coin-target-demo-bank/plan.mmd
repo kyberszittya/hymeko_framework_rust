@@ -1,0 +1,56 @@
+%% plan.mmd - R11.3 per-scenario decision flow with the failure taxonomy (never one generic label).
+
+flowchart TD
+    S["scenario (coin pose, target pose, relative goal vector, split ID)"]
+    IC{"exact-zero IC certificate valid?"}
+    VOID["VOID rollout (not a failure sample) - fix the home build"]
+    AD{"admissible? (start collision-free + goal set + target in bounds)"}
+    REJ["INVALID_INITIAL_CONDITION<br/>rejection panel - NOT in the success denominator"]
+    RR{"RRT reach found + executed?"}
+    RPF["REACH_PLANNER_FAILURE"]
+    REF["REACH_EXECUTION_FAILURE"]
+    PCM{"precontact coin motion &le; threshold?"}
+    PMF["PREMATURE_COIN_MOTION"]
+    CAP{"CEM capture succeeded?"}
+    CF["CAPTURE_FAILURE"]
+    DEL{"delivery toward target?"}
+    DF["DELIVERY_FAILURE"]
+    TE{"target entry without overshoot?"}
+    TEO["TARGET_ENTRY_OVERSHOOT"]
+    SAFE{"safety contract held throughout?"}
+    SF["SAFETY_FAILURE"]
+    K6{"strict K6 (settle + centered)?"}
+    SKF["SETTLE_K6_FAILURE"]
+    OK["SUCCESS - link K6 to provenance content hash"]
+    REC["emit DemonstrationRecord: provenance + measured energy ledger + mode trace M0-M7<br/>serialize to JSONL; replay must reproduce scenario + result + hash"]
+
+    S --> IC
+    IC -- no --> VOID
+    IC -- yes --> AD
+    AD -- no --> REJ --> REC
+    AD -- yes --> RR
+    RR -- no path --> RPF --> REC
+    RR -- exec fail --> REF --> REC
+    RR -- ok --> PCM
+    PCM -- no --> PMF --> REC
+    PCM -- yes --> CAP
+    CAP -- no --> CF --> REC
+    CAP -- yes --> DEL
+    DEL -- no --> DF --> REC
+    DEL -- yes --> TE
+    TE -- overshoot --> TEO --> REC
+    TE -- ok --> SAFE
+    SAFE -- no --> SF --> REC
+    SAFE -- yes --> K6
+    K6 -- no --> SKF --> REC
+    K6 -- yes --> OK --> REC
+
+    classDef ok fill:#dbf5db,stroke:#2a7;
+    classDef fail fill:#f5dbdb,stroke:#c33;
+    classDef rej fill:#f5e6db,stroke:#c73;
+    class OK ok;
+    class RPF,REF,PMF,CF,DF,TEO,SF,SKF fail;
+    class REJ,VOID rej;
+
+    %% Generation only: no BC / RL / refinement / energy shaping at R11.3.
+    %% Stop after the pilot report; verdict R11_3_COIN_TARGET_DEMONSTRATION_PIPELINE_PASS gates the full bank.

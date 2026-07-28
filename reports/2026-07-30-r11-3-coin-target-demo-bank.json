@@ -1,0 +1,135 @@
+{
+  "admissible_scenarios": 64,
+  "energy_claims": [
+    "ENERGY_LEDGER_COMPLETE",
+    "ENERGY_BALANCE_RESIDUAL_RECORDED"
+  ],
+  "energy_ledger_complete_fraction": 1.0,
+  "failure_class_counts_all_attempts": {
+    "capture_teacher_failure": 18,
+    "delivery_teacher_failure": 84,
+    "premature_coin_motion": 5,
+    "settle_k6_failure": 68
+  },
+  "failure_class_counts_best": {
+    "capture_teacher_failure": 2,
+    "delivery_teacher_failure": 21,
+    "settle_k6_failure": 33
+  },
+  "k6_rate": 0.125,
+  "k6_scenarios": 8,
+  "min_dtz_mm": {
+    "max": 76.44,
+    "median": 36.995,
+    "min": 7.22,
+    "n": 64
+  },
+  "non_claims": [
+    "NO_HAMILTONIAN_OPTIMALITY_CLAIM",
+    "NO_ENERGY_CONSERVATION_CLAIM",
+    "NO_TEACHER_FREE_DEPLOYMENT_CLAIM"
+  ],
+  "planning_time_s": {
+    "max": 0.215,
+    "median": 0.066,
+    "min": 0.008,
+    "n": 183
+  },
+  "precontact_motion_max_mm": 9.36,
+  "premature_contacts_total": 0,
+  "reach_found_fraction": 1.0,
+  "rejected_attempts": 0,
+  "rejection_reasons": {},
+  "scenarios_without_positive_demo": [
+    "bank_c0_0",
+    "bank_c0_1",
+    "bank_c0_2",
+    "bank_c1_+0.01_+0.00",
+    "bank_c1_+0.01_+0.02",
+    "bank_c1_+0.01_+0.03",
+    "bank_c1_+0.01_-0.02",
+    "bank_c1_+0.03_+0.00",
+    "bank_c1_+0.03_+0.02",
+    "bank_c1_+0.03_-0.02",
+    "bank_c1_-0.01_+0.00",
+    "bank_c1_-0.01_+0.02",
+    "bank_c1_-0.01_+0.03",
+    "bank_c1_-0.03_+0.00",
+    "bank_c1_-0.03_+0.02",
+    "bank_c1_-0.03_+0.03",
+    "bank_c1_-0.03_-0.02",
+    "bank_c2_+0.015_+0.000",
+    "bank_c2_+0.015_+0.015",
+    "bank_c2_+0.015_+0.025",
+    "bank_c2_+0.015_-0.015",
+    "bank_c2_+0.015_-0.025",
+    "bank_c2_+0.025_+0.000",
+    "bank_c2_+0.025_+0.015",
+    "bank_c2_+0.025_+0.025",
+    "bank_c2_+0.025_-0.015",
+    "bank_c2_+0.025_-0.025",
+    "bank_c2_-0.015_+0.000",
+    "bank_c2_-0.015_+0.015",
+    "bank_c2_-0.015_+0.025",
+    "bank_c2_-0.025_+0.000",
+    "bank_c2_-0.025_+0.015",
+    "bank_c2_-0.025_+0.025",
+    "bank_c2_-0.025_-0.025",
+    "bank_c3_r5_a+15",
+    "bank_c3_r5_a+30",
+    "bank_c3_r5_a+45",
+    "bank_c3_r5_a-45",
+    "bank_c3_r6_a+15",
+    "bank_c3_r6_a+30",
+    "bank_c3_r6_a+45",
+    "bank_c3_r6_a-15",
+    "bank_c3_r6_a-30",
+    "bank_c3_r6_a-45",
+    "bank_c3_r7_a+15",
+    "bank_c3_r7_a+30",
+    "bank_c3_r7_a+45",
+    "bank_c3_r7_a-15",
+    "bank_c3_r7_a-30",
+    "bank_c3_r7_a-45",
+    "bank_c3_r9_a+15",
+    "bank_c3_r9_a+30",
+    "bank_c3_r9_a+45",
+    "bank_c3_r9_a-15",
+    "bank_c3_r9_a-30",
+    "bank_c3_r9_a-45"
+  ],
+  "split_counts": {
+    "dev": 10,
+    "test": 9,
+    "train": 45
+  },
+  "stage_coverage": {
+    "C0": {
+      "k6": 1,
+      "k6_rate": 0.25,
+      "scenarios": 4
+    },
+    "C1": {
+      "k6": 2,
+      "k6_rate": 0.125,
+      "scenarios": 16
+    },
+    "C2": {
+      "k6": 3,
+      "k6_rate": 0.15,
+      "scenarios": 20
+    },
+    "C3": {
+      "k6": 2,
+      "k6_rate": 0.083,
+      "scenarios": 24
+    }
+  },
+  "total_attempts": 183,
+  "w_actuator_pos": {
+    "max": 32.569,
+    "median": 8.487,
+    "min": 2.663,
+    "n": 183
+  }
+}
