@@ -20,7 +20,7 @@ import numpy as np
 
 from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
 
-from .locomotion_gait import SteeredTrotGait, heading_error
+from .locomotion_gait import _DIAG_PHASE, SteeredTrotGait, heading_error
 from .motion_contract import JointVelocityGovernor
 
 
@@ -31,7 +31,7 @@ class ResidualTrotConfig:
     dist_lo: float = 0.5
     dist_hi: float = 0.75
     bearing_deg: float = 40.0            # goals sampled in bearing ∈ [−bearing_deg, +bearing_deg]
-    residual_mode: str = "leg"           # "leg" = 12-dim raw-target residual | "steer" = 2-dim (Δyaw, Δdrive) gait-param residual
+    residual_mode: str = "leg"           # "leg" = 12-dim raw-target residual | "steer" = 2-dim (Δyaw, Δdrive) gait-param residual | "phase" = 12-dim residual PHASE-GATED per leg (synced to the trot cycle, preserves the limit cycle)
     residual_scale: float = 0.25         # bounded residual (coin-R8): a small correction over the gait
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
     drive_res_scale: float = 0.5         # steer mode: bound on the learned speed correction
@@ -81,7 +81,7 @@ class ResidualTrotEnv:
         self._rng = np.random.default_rng(self.seed)
         self._prev_dist = 0.0
         self._step_i = 0
-        act_dim = int(self._env.action_space.shape[0]) if self.cfg.residual_mode == "leg" else 2
+        act_dim = int(self._env.action_space.shape[0]) if self.cfg.residual_mode in ("leg", "phase") else 2
         self.action_space = _Box(act_dim, seed=self.seed)
         self.observation_space = _Box(9, low=-5.0, high=5.0)
         self.max_steps = self.cfg.max_steps
@@ -132,13 +132,21 @@ class ResidualTrotEnv:
         r = np.clip(np.asarray(residual, dtype=np.float64), -1.0, 1.0)
         return np.clip(base + self.cfg.residual_scale * r, -1.0, 1.0)
 
+    def phase_gates(self) -> np.ndarray:
+        """Per-leg phase gate ``g_l = ½(1 + sin(ph + DIAG_PHASE_l)) ∈ [0, 1]`` — synced to each leg's
+        trot stride, so a gated residual pulses in phase with the gait (preserving the limit cycle)."""
+        ph = self._phase()
+        return np.array([0.5 * (1.0 + np.sin(ph + _DIAG_PHASE[leg])) for leg in range(4)],
+                        dtype=np.float64)
+
     def _apply(self, residual: np.ndarray) -> None:
         """Compose the residual with the gait per mode and step the underlying env.
 
-        - ``leg``  : a raw 12-dim residual on the gait's leg targets (``blend_action``).
-        - ``steer``: a 2-dim ``(Δyaw, Δdrive)`` residual on the gait's STEERING + SPEED *parameters*
-          — it modulates the gait call, leaving the periodic limit cycle intact (never touches the
-          raw per-leg output).
+        - ``leg``  : a raw 12-dim residual on the gait's leg targets (``blend_action``) — breaks phase.
+        - ``steer``: a 2-dim ``(Δyaw, Δdrive)`` residual on the gait's STEERING + SPEED *parameters*.
+        - ``phase``: a 12-dim residual GATED per leg by its trot phase (``phase_gates``) — it only acts
+          on each leg in sync with that leg's stride, so it can bias differential stance thrust to
+          steer while leaving the periodic limit cycle intact.
         """
         env = self._env
         dist = float(env.dist_to_goal())
@@ -151,6 +159,8 @@ class ResidualTrotEnv:
             final = self._gov.govern(env, self._gait.action(env, yaw_cmd=yaw, drive=drive))
         else:
             base = self._gov.govern(env, self._gait.action(env, yaw_cmd=pursuit, drive=base_drive))
+            if self.cfg.residual_mode == "phase":
+                r = (r.reshape(4, 3) * self.phase_gates()[:, None]).reshape(-1)   # gate per leg by stride phase
             final = self.blend_action(base, r)
         env.step(final)
 

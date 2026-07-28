@@ -75,6 +75,27 @@ def test_zero_residual_matches_pure_scaffold_in_both_modes() -> None:
     assert md_leg == pytest.approx(md_steer, abs=1e-6)
 
 
+def test_phase_mode_action_dim_and_gates() -> None:
+    ph = ResidualTrotEnv(ResidualTrotConfig(residual_mode="phase"), seed=0)
+    ph.reset(seed=1)
+    assert ph.action_space.shape == (12,)
+    for _ in range(20):                              # gates are a valid per-leg [0,1] phase envelope
+        g = ph.phase_gates()
+        assert g.shape == (4,)
+        assert np.all(g >= -1e-9) and np.all(g <= 1.0 + 1e-9)
+        assert g.sum() == pytest.approx(2.0, abs=1e-9)   # diagonal pairs are complementary -> total 2
+        ph._apply(np.zeros(12))
+
+
+def test_phase_zero_residual_matches_pure_scaffold() -> None:
+    # a = 0 in phase mode must apply the pure scaffold (the gate multiplies a zero residual -> 0).
+    ph = ResidualTrotEnv(ResidualTrotConfig(residual_mode="phase"), seed=0)
+    leg = ResidualTrotEnv(ResidualTrotConfig(residual_mode="leg"), seed=0)
+    md_ph, _o, _u = ph.rollout_min_dist(lambda _o: np.zeros(12), (0.6, 20), seed=321, horizon=500)
+    md_leg, _o2, _u2 = leg.rollout_min_dist(lambda _o: np.zeros(12), (0.6, 20), seed=321, horizon=500)
+    assert md_ph == pytest.approx(md_leg, abs=1e-6)
+
+
 def test_reward_rewards_progress(env: ResidualTrotEnv) -> None:
     # force a STRAIGHT goal (the scaffold's strength) so progress is unambiguous, then check the
     # progress reward is positive as the scaffold closes distance.
