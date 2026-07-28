@@ -56,15 +56,22 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--steps", type=int, default=30_000)
     ap.add_argument("--gait", default="diag", choices=("diag", "bound"))
+    ap.add_argument("--warmstart", action="store_true",
+                    help="init the base from the raw active-crab MLP (break-symmetry-to-DISCOVER first), then "
+                         "continue equivariant (impose-symmetry-to-GENERALISE) — the best-of-both probe")
     args = ap.parse_args()
     _OUT.mkdir(parents=True, exist_ok=True)
 
     env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="flat", gait_phase=args.gait), seed=0)
     torch.manual_seed(0)
     base, critics = build_sac("mlp", obs_dim=9, flat_dim=9, action_dim=4, action_scale=1.0, hidden=128)
+    if args.warmstart:
+        raw = _OUT / "aibo_residual_trot_omni_best.pt"          # the unconstrained policy that DISCOVERED the +y crab
+        base.load_state_dict(torch.load(raw))
     actor = MirrorEquivariantActor(base, mirror_obs_flat, mirror_pre_act)
 
-    best_path = _OUT / f"aibo_equivariant_mlp_{args.gait}_best.pt"
+    tag = f"{args.gait}{'_warmstart' if args.warmstart else ''}"
+    best_path = _OUT / f"aibo_equivariant_mlp_{tag}_best.pt"
     best = {"rate": -1.0}
 
     def eval_fn(e, a) -> float:
@@ -95,7 +102,8 @@ def main() -> None:
         "note": "SIMULATION. In-loop hard mirror-equivariant MLP (Reynolds-symmetrized mean), omni crab, "
                 "flat validated mirror. Equivariant BY CONSTRUCTION -> two-sided if it learns any crab.",
     }
-    (_OUT / f"result_equivariant_mlp_{args.gait}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    result["warmstart"] = args.warmstart
+    (_OUT / f"result_equivariant_mlp_{tag}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: result[k] for k in ("verdict", "equivariance_residual")}, indent=2))
     print("test +y/-y:", test["plus_y"], test["minus_y"], "| reach", test["reach_rate"])
 

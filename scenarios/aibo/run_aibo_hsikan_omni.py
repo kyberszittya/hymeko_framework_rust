@@ -75,6 +75,9 @@ def main() -> None:
     ap.add_argument("--gait", default="diag", choices=("diag", "bound", "pace", "pronk"),
                     help="base-gait phase (Phase A): diag (trot, asymmetric — default) | bound (front/back, "
                          "instantaneously LEFT-RIGHT SYMMETRIC — the symmetric-scaffold test for a two-sided crab)")
+    ap.add_argument("--hidden", type=int, default=64, help="backbone width (128 = MLP-matched, to escape the null residual)")
+    ap.add_argument("--explore", action="store_true",
+                    help="stronger exploration (AUTO alpha) to break the ride-the-scaffold null-residual local optimum")
     args = ap.parse_args()
     _OUT.mkdir(parents=True, exist_ok=True)
     tag = f"{args.kind}_{args.head}"
@@ -86,6 +89,10 @@ def main() -> None:
         tag += f"_{args.skip}"
     if args.gait != "diag":
         tag += f"_{args.gait}"
+    if args.hidden != 64:
+        tag += f"_h{args.hidden}"
+    if args.explore:
+        tag += "_explore"
 
     env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="leg_hypergraph",
                                              leg_hg_symmetric=args.symmetric, gait_phase=args.gait), seed=0)
@@ -93,7 +100,7 @@ def main() -> None:
     torch.manual_seed(0)
 
     def _build():
-        kw = dict(obs_dim=feat, flat_dim=n * feat, action_dim=4, action_scale=1.0, hidden=64,
+        kw = dict(obs_dim=feat, flat_dim=n * feat, action_dim=4, action_scale=1.0, hidden=args.hidden,
                   actor_head=args.head, hg_state=env.hg, skip=args.skip)  # skip: mixture/sa_hsikan ignore it
         if args.head == "per_node":
             kw["act_vertices"] = env._abd_vtx
@@ -111,10 +118,11 @@ def main() -> None:
             torch.save(a.state_dict(), best_path)
         return rate
 
+    _alpha = (dict(alpha_mode=AlphaMode.AUTO, init_alpha=0.1) if args.explore
+              else dict(alpha_mode=AlphaMode.ANNEAL, init_alpha=0.1, alpha_final=0.005, anneal_frac=0.6))
     cfg = SACConfig(total_steps=args.steps, start_steps=1_000, batch_size=128, update_every=3,
                     eval_every=max(args.steps // 4, 1_000), log_every=4_000, seed=0,
-                    struct_entropy_coef=args.hstar,          # H★ structural-exploration seat (0 = off)
-                    alpha_mode=AlphaMode.ANNEAL, init_alpha=0.1, alpha_final=0.005, anneal_frac=0.6)
+                    struct_entropy_coef=args.hstar, **_alpha)  # H★ seat + exploration schedule
     train_sac(actor, critics, env, cfg, eval_fn=eval_fn)
 
     if not best_path.exists():

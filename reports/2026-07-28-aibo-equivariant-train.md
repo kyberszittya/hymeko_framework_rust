@@ -42,6 +42,16 @@ action** (it *is* the mirror Phase B used), but it belongs as a **post-hoc proje
 training-time constraint. This is a clean, slightly counter-intuitive lesson: equivariance is a
 generalisation prior, and applying it before the behaviour exists prevents the behaviour from forming.
 
+## Warm-start probe — also degrades (with a confound)
+
+Warm-starting the equivariant actor from the raw active-crab policy (discover-then-constrain) *also*
+collapsed to reach 0.20 / symmetric-null. **Confound:** the critic was fresh (not warm-started), so the
+untrained critic misled the good actor before it converged — so this does not cleanly isolate the
+constraint. But combined with the from-scratch result, the practical conclusion is unchanged and
+strengthened: **post-hoc symmetrization at deploy is the robust winner (0.60, two-sided); every in-loop
+variant tried degrades to symmetric-null (0.20).** A clean warm-start (actor + critic together) is the
+open follow-up if in-loop equivariance is to be salvaged.
+
 ## Bearing on the HSiKAN thread
 
 The trained HSiKAN had a **null residual** (rode the scaffold) — it never discovered an active crab, so
