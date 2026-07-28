@@ -23,23 +23,48 @@ trained MLP (flat obs), on a **symmetric** held-out grid (±20°, ±40°). Two h
   left/right symmetry axis *in the structure* so the signed propagation routes the demand
   differentially (something a flat MLP cannot represent).
 
-## Result — all three converge to the SAME one-sided crab
+## Result — all FOUR converge to the SAME one-sided crab
 
 | architecture | reach (test) | +y | −y |
 |---|---|---|---|
 | MLP (flat, 9-D) | 0.40 | 1/2 | **0/2** |
 | signedkan (kinematic hg) | 0.40 | 1/2 | **0/2** |
 | signedkan (symmetric-signs hg) | 0.40 | 1/2 | **0/2** |
+| signedkan + **H★ structural-entropy exploration** | 0.40 | 1/2 | **0/2** |
 
-`SIGNEDKAN_MATCHES_MLP` in **both** sign schemes. The structure propagation — even with the left/right
-symmetry *explicitly encoded in the hypergraph signs* — does **not** confer a symmetric crab; all
-three reach +20° but not −20°/±40°. So the −y failure is **not a representation gap** (the MLP could
+`SIGNEDKAN_MATCHES_MLP` across **all four**. Neither the structure propagation, nor the left/right
+symmetry *explicitly encoded in the hypergraph signs*, nor the **HSiKAN-only structural-entropy
+exploration H★** confers a symmetric crab; all reach +20° but not −20°/±40° (the signedkan variants
+do get −20° marginally closer — min-dist ~0.15–0.20 vs the MLP's ~0.55 — but never cross the 0.12
+reach threshold). So the −y failure is **not a representation gap** (the MLP could
 already represent it) — it is a **dynamics asymmetry**: the AIBO's lateral crab is physically easier
 on one side (the +y probe crabbed cleanly; −y was weaker / prone to tip). SAC converges to the same
 one-sided local optimum regardless of the architecture. Consistent with the campaign's **PnP
 R-HSiKAN ablation (HSiKAN ≈ MLP)**: for these small action spaces the structural prior adds no
-measured advantage. Caveats: 1 seed, 30k steps, a 5-vertex hg — but three architectures converging is
+measured advantage. Caveats: 1 seed, 30k steps, a 5-vertex hg — but four architectures converging is
 a robust signal.
+
+## H★ structural-entropy exploration (user's "entropy backpropagation")
+
+H★ is the Shannon entropy of the signedkan's per-vertex activation energy (`star_entropy.py`) — a
+structural exploration signal an MLP **cannot** produce (no per-vertex activations). Wired into the
+SAC actor objective as a **guarded, backward-compatible seat** (`SACConfig.struct_entropy_coef`,
+default 0, HSiKAN-only; mirrors the existing `mech_coef` seat — `+ coef·H★` in the actor bonus).
+Because the −y failure is a **local-optimum / exploration** problem, this was the sharpest test of
+"what HSiKAN buys" beyond the mapping — and it **still matches MLP** (coef 0.3 did not drive SAC out
+of the one-sided crab). This corroborates the dynamics-limited reading: the +y/−y asymmetry is not a
+matter of *exploring* the −y crab but of the −y crab being physically harder.
+
+## SA-HSiKAN + Steiner-config hypergraphs (user's next idea) — scope
+
+`sa_hsikan` (Two-Hop Signed Propagation) is a built `POLICY_KINDS` variant; Steiner systems (Fano
+plane etc.) are balanced designs that guarantee pairwise coverage, so two-hop propagation over a
+Steiner overlay **mixes globally in 2 hops**. That accelerates structural reasoning on **large**
+hypergraphs where mixing takes many hops — but the omni's minimal **5-vertex** leg hg already mixes
+in ~2 hops (a star from the torso), so a Steiner overlay would not move this task. Its natural
+testbed is the **full-body 33-vertex hg** (on GPU/katolab, where the Triton CR kernel engages) or a
+vision hypergraph — a mixing-limited problem, not the dynamics-limited crab. Recorded as the next
+direction, deliberately *not* run on the exhausted omni task.
 
 ## How we sped it up (the user's Chebyshev-CR question)
 

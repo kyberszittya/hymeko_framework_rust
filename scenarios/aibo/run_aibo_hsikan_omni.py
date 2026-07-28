@@ -62,9 +62,13 @@ def main() -> None:
     ap.add_argument("--steps", type=int, default=120_000)
     ap.add_argument("--symmetric", action="store_true",
                     help="encode the LEFT/RIGHT symmetry axis in the leg-hg signs (the sharper test)")
+    ap.add_argument("--hstar", type=float, default=0.0,
+                    help="structural entropy H★ exploration coef (HSiKAN-only seat) — escape the crab local optimum")
     args = ap.parse_args()
     _OUT.mkdir(parents=True, exist_ok=True)
     tag = "signedkan_sym" if args.symmetric else "signedkan"
+    if args.hstar > 0.0:
+        tag += f"_hstar{args.hstar:g}"
 
     env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="leg_hypergraph",
                                              leg_hg_symmetric=args.symmetric), seed=0)
@@ -86,6 +90,7 @@ def main() -> None:
 
     cfg = SACConfig(total_steps=args.steps, start_steps=1_000, batch_size=128, update_every=3,
                     eval_every=max(args.steps // 4, 1_000), log_every=4_000, seed=0,
+                    struct_entropy_coef=args.hstar,          # H★ structural-exploration seat (0 = off)
                     alpha_mode=AlphaMode.ANNEAL, init_alpha=0.1, alpha_final=0.005, anneal_frac=0.6)
     train_sac(actor, critics, env, cfg, eval_fn=eval_fn)
 
