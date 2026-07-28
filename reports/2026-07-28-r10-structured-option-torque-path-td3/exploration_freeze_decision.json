@@ -1,0 +1,37 @@
+{
+ "decision": {
+  "verdict": "STRUCTURED_THETA_EXPLORATION_REVIEW_ACCEPTED",
+  "sigma": 0.05,
+  "strict_preregistered_admissibility": false,
+  "reviewed_training_admissibility": true,
+  "exception": "1/96 safe boundary-route variation (reset != 1)",
+  "physical_safety_violations": "0/96",
+  "source_commit": "be4cf935",
+  "reset_ne_1_contract": [
+   "NOT unsafe",
+   "NOT in positive replay",
+   "terminal boundary-penalty",
+   "own boundary_route_variation category",
+   "counts as FAILURE in evaluation"
+  ]
+ },
+ "frozen_D": [
+  1.0,
+  0.5832159355552171,
+  0.5,
+  2.0,
+  2.0,
+  1.2288103986489867,
+  1.7171496112568918,
+  1.542056507947858,
+  2.0,
+  0.5,
+  0.5,
+  1.0950502640421496,
+  0.9746322914071653,
+  0.7705626678950782,
+  0.8876543728311997
+ ],
+ "sigma": 0.05,
+ "note": "Boundary-4 pre-training freeze. Strict admissibility did NOT pass; research-review-accepted training distribution only."
+}
