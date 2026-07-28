@@ -1,0 +1,70 @@
+{
+ "contract": "R10_STAGE1_REACH_TARGET_CHARACTERIZATION",
+ "immutable_source": "6d62b53e",
+ "finding": "PRECONTACT_STRADDLE_ENTRY is a DYNAMIC hybrid state, not a static pose",
+ "cradle_dynamic_state": {
+  "q": [
+   -0.5836,
+   -0.6513,
+   -0.4457,
+   2.1245
+  ],
+  "coin_xy": [
+   0.0758,
+   0.1428
+  ],
+  "qvel_arms": [
+   -0.454,
+   -0.428,
+   0.01,
+   0.213
+  ],
+  "coin_vel": [
+   0.0002,
+   -0.0006
+  ],
+  "prev_tau": [
+   -1.1712,
+   -0.9291,
+   -0.3088,
+   2.1943
+  ],
+  "contacts": {
+   "L": true,
+   "R": true,
+   "fn_L": 2.838,
+   "fn_R": 8.748
+  }
+ },
+ "state_set_delivery": {
+  "zero_qvel_zero_prevtau": {
+   "min_dtz_mm": 37.77,
+   "k6": false
+  },
+  "real_qvel_real_prevtau": {
+   "min_dtz_mm": 0.98,
+   "k6": true,
+   "dwell": 37
+  },
+  "zero_qvel_real_prevtau": {
+   "min_dtz_mm": 34.17,
+   "k6": false
+  }
+ },
+ "naive_reach_probes": {
+  "pd_servo_to_cradle_q": {
+   "reached_geometry": true,
+   "coin_perturbation_mm": 42.5,
+   "downstream_k6": false
+  },
+  "cem_perturbation_penalized": {
+   "coin_perturbation_mm": 1.0,
+   "bilateral_contact": "1/2 (unilateral)",
+   "downstream_k6": false
+  }
+ },
+ "verdict": "REACH_TARGET_IS_VELOCITY_MATCHED_DYNAMIC_STRADDLE",
+ "implication": "PRECONTACT_STRADDLE_ENTRY_V1 must include qvel (arm momentum) + prev_tau + bilateral asymmetric contact; a static-pose reach does NOT compose. Define the dynamic target contract before the reach RL (do not train against a static target).",
+ "downstream_frozen": true,
+ "no_rl_started": true
+}
