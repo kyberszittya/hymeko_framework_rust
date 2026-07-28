@@ -63,6 +63,8 @@ class ResidualTrotConfig:
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
     drive_res_scale: float = 0.5         # steer mode: bound on the learned speed correction
     reach_radius: float = 0.12
+    turn_first_deg: float = 0.0          # if |heading error| exceeds this, cut forward drive to TURN IN PLACE toward the goal first (0 = off: walk-and-arc, which never faces wide-bearing goals)
+    turn_drive: float = 0.15             # forward drive while turning in place (turn_first_deg > 0)
     max_steps: int = 800
     v_max: float = 8.0                   # motion-contract joint-speed cap
     progress_w: float = 12.0
@@ -245,6 +247,16 @@ class ResidualTrotEnv:
         return np.array([0.5 * (1.0 + np.sin(ph + self._phase_pat[leg])) for leg in range(4)],
                         dtype=np.float64)
 
+    def _base_drive(self, herr: float, dist: float) -> float:
+        """Forward-drive command: 0 within the reach radius; else 1.0, capped to ``turn_drive`` while the
+        heading error is wide (``turn_first_deg`` > 0) so the robot turns toward a wide-bearing goal before
+        arcing past it. # Preconditions ``dist >= 0``. # Postconditions returns a drive in ``[0, 1]``."""
+        if dist <= self.cfg.reach_radius:
+            return 0.0
+        if self.cfg.turn_first_deg > 0.0 and abs(herr) > float(np.deg2rad(self.cfg.turn_first_deg)):
+            return float(self.cfg.turn_drive)
+        return 1.0
+
     def _apply(self, residual: np.ndarray) -> None:
         """Compose the residual with the gait per mode and step the underlying env.
 
@@ -256,8 +268,9 @@ class ResidualTrotEnv:
         """
         env = self._env
         dist = float(env.dist_to_goal())
-        pursuit = float(np.clip(1.1 * float(heading_error(env)), -0.6, 0.6))
-        base_drive = 0.0 if dist <= self.cfg.reach_radius else 1.0
+        herr = float(heading_error(env))
+        pursuit = float(np.clip(1.1 * herr, -0.6, 0.6))
+        base_drive = self._base_drive(herr, dist)
         r = np.clip(np.asarray(residual, dtype=np.float64), -1.0, 1.0)
         if self.cfg.residual_mode == "steer":
             yaw = float(np.clip(pursuit + self.cfg.yaw_res_scale * r[0], -0.6, 0.6))
