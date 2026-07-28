@@ -25,13 +25,15 @@ from .residual_trot import ResidualTrotConfig, ResidualTrotEnv
 
 _OUT = Path("reports/2026-07-29-aibo-turn-rl")
 _TEST = [(d, b) for d in (0.5, 0.7) for b in (0, 20, -20, 40, -40, 90, -90, 135, -135)]
-_VAL = [(0.6, 90), (0.6, -90), (0.6, 135)]                 # the wide bearings = the headroom
+# VAL spans difficulties: mid bearings (must PRESERVE) + wide (the headroom) — so mean-dist selection
+# catches a residual that destroys the easy goals while chasing the hard ones.
+_VAL = [(0.6, 40), (0.6, -40), (0.6, 90), (0.6, -90), (0.6, 135)]
 
 
 def _cfg_env(obs_mode: str) -> ResidualTrotEnv:
     return ResidualTrotEnv(ResidualTrotConfig(
-        residual_mode="leg", obs_mode=obs_mode, heading_mode="turn_then_walk",
-        bearing_deg=135.0, dist_lo=0.5, dist_hi=0.7, max_steps=1600), seed=0)
+        residual_mode="phase", obs_mode=obs_mode, heading_mode="turn_then_walk",
+        residual_scale=0.12, bearing_deg=135.0, dist_lo=0.5, dist_hi=0.7, max_steps=1600), seed=0)
 
 
 def _greedy(actor):
@@ -41,12 +43,21 @@ def _greedy(actor):
     return fn
 
 
-def _reach(env: ResidualTrotEnv, act_fn, grid=_TEST, horizon=2400) -> float:
-    hit = 0
+def _eval(env: ResidualTrotEnv, act_fn, grid=_TEST, horizon=2400) -> "tuple[float, float]":
+    """Return ``(reach_rate, mean_min_dist)``. mean_min_dist is the DENSE selection signal — binary reach
+    is 0 across the wide-bearing VAL early on, giving no gradient to pick a checkpoint (the bug that made
+    the first run select an untrained checkpoint)."""
+    hit = 0.0
+    dists = []
     for i, (d, b) in enumerate(grid):
-        _md, ok, up = env.rollout_min_dist(act_fn, (d, b), seed=500 + i, horizon=horizon)
-        hit += int(bool(ok and up > 0.5))
-    return round(hit / len(grid), 3)
+        md, ok, up = env.rollout_min_dist(act_fn, (d, b), seed=500 + i, horizon=horizon)
+        hit += float(bool(ok and up > 0.5))
+        dists.append(md)
+    return round(hit / len(grid), 3), round(float(sum(dists) / len(dists)), 4)
+
+
+def _reach(env: ResidualTrotEnv, act_fn, grid=_TEST, horizon=2400) -> float:
+    return _eval(env, act_fn, grid, horizon)[0]
 
 
 def _train(kind: str, seed: int, steps: int) -> float:
@@ -59,14 +70,14 @@ def _train(kind: str, seed: int, steps: int) -> float:
         n = env._n_vtx
         actor, critics = build_sac("signedkan", obs_dim=4, flat_dim=n * 4, action_dim=12,
                                    action_scale=1.0, hidden=64, actor_head="pooled", hg_state=env.hg)
-    best = {"rate": -1.0, "sd": None}
+    best = {"dist": 1e9, "sd": None}
 
     def eval_fn(e, a) -> float:
-        r = _reach(e, _greedy(a), _VAL, horizon=1600)
-        if r > best["rate"]:
-            best["rate"] = r
+        reach, mean_dist = _eval(e, _greedy(a), _VAL, horizon=1600)
+        if mean_dist < best["dist"]:                       # select by DENSE mean-distance, not binary reach
+            best["dist"] = mean_dist
             best["sd"] = {k: v.detach().clone() for k, v in a.state_dict().items()}
-        return r
+        return reach
 
     cfg = SACConfig(total_steps=steps, start_steps=1_000, batch_size=256, update_every=2,
                     eval_every=max(steps // 4, 1_000), log_every=steps, seed=seed,
