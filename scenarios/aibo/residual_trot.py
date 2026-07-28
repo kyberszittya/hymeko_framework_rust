@@ -57,6 +57,7 @@ class ResidualTrotConfig:
     abd_scale: float = 0.5               # omni mode: bound on the learned per-leg abduction (lateral) amplitude
     obs_mode: str = "flat"               # "flat" = 9-D vector (MLP) | "hypergraph" = (n_vertices, 4) per-vertex on the body's kinematic hypergraph (for signedkan/hsikan structure propagation)
     leg_hg_symmetric: bool = False       # leg_hypergraph mode: encode the LEFT/RIGHT symmetry axis in the hg signs
+    mirror_augment: bool = False         # omni/flat: randomly present the LEFT-RIGHT-MIRRORED task each episode → a symmetry-preserved policy that reaches BOTH crab sides (breaks the symmetry-breaking one-sided optimum)
     residual_scale: float = 0.25         # bounded residual (coin-R8): a small correction over the gait
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
     drive_res_scale: float = 0.5         # steer mode: bound on the learned speed correction
@@ -158,9 +159,10 @@ class ResidualTrotEnv:
         vy = float(env.data.cvel[env.torso, 4])
         wz = float(env.data.cvel[env.torso, 2])
         ph = self._phase()
-        return np.array([dist, np.cos(herr), np.sin(herr), vx, vy, wz,
-                         np.sin(ph), np.cos(ph), float(env.data.xmat[env.torso].reshape(3, 3)[2, 2])],
-                        dtype=np.float32)
+        obs = np.array([dist, np.cos(herr), np.sin(herr), vx, vy, wz,
+                        np.sin(ph), np.cos(ph), float(env.data.xmat[env.torso].reshape(3, 3)[2, 2])],
+                       dtype=np.float32)
+        return self.mirror_obs(obs) if getattr(self, "_mirror", False) else obs
 
     def _obs_hypergraph(self) -> np.ndarray:
         """Per-vertex ``(n_vertices, 4)`` obs on the body's kinematic hypergraph, for structure
@@ -205,7 +207,23 @@ class ResidualTrotEnv:
         self._sample_goal()
         self._prev_dist = float(self._env.dist_to_goal())
         self._step_i = 0
+        self._mirror = bool(self.cfg.mirror_augment and self._rng.random() < 0.5)  # mirrored episode?
         return self._obs(), {}
+
+    @staticmethod
+    def mirror_obs(o: np.ndarray) -> np.ndarray:
+        """Left-right mirror of the flat obs [dist, cos(herr), sin(herr), vx, vy, wz, sin(ph), cos(ph), up]:
+        flip the lateral goal (sin herr), lateral+yaw velocity, AND the gait phase by π (sin/cos ph) — the
+        π-shift the diagonal trot needs to be left-right symmetric."""
+        m = np.asarray(o, np.float32).copy()
+        m[[2, 4, 5, 6, 7]] *= -1.0
+        return m
+
+    @staticmethod
+    def mirror_act(a: np.ndarray) -> np.ndarray:
+        """Left-right mirror of the 4-D omni abduction [fl,fr,bl,br] → [−fr,−fl,−br,−bl] (swap sides + sign)."""
+        a = np.asarray(a, np.float64)
+        return -a[[1, 0, 3, 2]]
 
     def blend_action(self, base: np.ndarray, residual: np.ndarray) -> np.ndarray:
         """Bounded residual over the scaffold: ``clip(base + scale·clip(residual, ±1), ±1)``.
@@ -258,6 +276,8 @@ class ResidualTrotEnv:
 
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict]:
         residual = np.clip(np.asarray(action, dtype=np.float64), -1.0, 1.0)
+        if getattr(self, "_mirror", False):
+            residual = self.mirror_act(residual)          # policy acts in the mirrored view; un-mirror to apply
         self._apply(residual)
         self._step_i += 1
         dist = float(self._env.dist_to_goal())
@@ -284,6 +304,7 @@ class ResidualTrotEnv:
                          horizon: int | None = None) -> tuple[float, bool, float]:
         """Roll ``act_fn`` toward a FIXED (dist, bearing_deg) goal; return (min_dist, reached, min_upright)."""
         d, bdeg = goal
+        self._mirror = False                              # eval is always the un-mirrored real task
         self._env.reset(seed=seed)
         b = bdeg * np.pi / 180.0
         tx = float(self._env.data.xpos[self._env.torso, 0])

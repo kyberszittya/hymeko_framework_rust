@@ -184,6 +184,32 @@ def test_leg_hypergraph_zero_residual_is_pure_scaffold() -> None:
     assert md_f == pytest.approx(md_l, abs=1e-6)         # a=0 = the identical scaffold regardless of obs
 
 
+def test_mirror_obs_and_act_are_involutions() -> None:
+    o = np.arange(9, dtype=np.float32) + 1.0
+    assert np.allclose(ResidualTrotEnv.mirror_obs(ResidualTrotEnv.mirror_obs(o)), o)
+    a = np.array([0.2, -0.3, 0.5, -0.1])
+    assert np.allclose(ResidualTrotEnv.mirror_act(ResidualTrotEnv.mirror_act(a)), a)
+
+
+def test_mirror_obs_flips_lateral_and_phase() -> None:
+    o = np.ones(9, dtype=np.float32)
+    m = ResidualTrotEnv.mirror_obs(o)
+    assert m[2] == -1 and m[4] == -1 and m[5] == -1 and m[6] == -1 and m[7] == -1  # sin(herr),vy,wz,sin/cos(ph)
+    assert m[0] == 1 and m[1] == 1 and m[3] == 1 and m[8] == 1                     # dist,cos(herr),vx,up unchanged
+
+
+def test_mirror_act_swaps_sides_with_sign() -> None:
+    a = np.array([1.0, 2.0, 3.0, 4.0])       # [fl, fr, bl, br]
+    assert np.allclose(ResidualTrotEnv.mirror_act(a), [-2.0, -1.0, -4.0, -3.0])   # [-fr, -fl, -br, -bl]
+
+
+def test_eval_is_never_mirrored() -> None:
+    # a mirror-augmented env must still evaluate on the REAL (un-mirrored) task.
+    env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", mirror_augment=True), seed=0)
+    env.rollout_min_dist(lambda _o: np.zeros(4), (0.6, 20), seed=1, horizon=50)
+    assert env._mirror is False
+
+
 def test_reward_rewards_progress(env: ResidualTrotEnv) -> None:
     # force a STRAIGHT goal (the scaffold's strength) so progress is unambiguous, then check the
     # progress reward is positive as the scaffold closes distance.

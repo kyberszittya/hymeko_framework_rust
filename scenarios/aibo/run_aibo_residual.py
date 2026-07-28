@@ -51,11 +51,12 @@ def main() -> None:
                          "per-leg PHASE-GATED leg targets (phase), or per-leg ABDUCTION for lateral "
                          "omnidirectional crab (omni — the richer action space)")
     ap.add_argument("--smoke", action="store_true", help="short production-scale smoke run")
+    ap.add_argument("--mirror", action="store_true", help="mirror-augment training (symmetry preservation, both crab sides)")
     args = ap.parse_args()
     steps = 3_000 if args.smoke else args.steps
     _OUT.mkdir(parents=True, exist_ok=True)
 
-    env = ResidualTrotEnv(ResidualTrotConfig(residual_mode=args.mode), seed=0)
+    env = ResidualTrotEnv(ResidualTrotConfig(residual_mode=args.mode, mirror_augment=args.mirror), seed=0)
     obs_dim = int(env.observation_space.shape[0])
     act_dim = int(env.action_space.shape[0])
     torch.manual_seed(0)
@@ -65,7 +66,8 @@ def main() -> None:
     zero = np.zeros(act_dim, np.float32)
     base_rate, base_dist = _reach_rate(env, lambda _o: zero, _TEST_GRID)   # scaffold baseline (test)
 
-    best_path = _OUT / f"aibo_residual_trot_{args.mode}_best.pt"
+    _msuf = "_mirror" if args.mirror else ""
+    best_path = _OUT / f"aibo_residual_trot_{args.mode}{_msuf}_best.pt"
     best = {"rate": -1.0}
 
     def eval_fn(e, a) -> float:
@@ -104,7 +106,7 @@ def main() -> None:
         "note": "SIMULATION. Bounded residual (scale 0.25) over the trot-gait scaffold (a=0), multi-goal "
                 "(dist 0.5-0.75, bearing +-40). Baseline = scaffold on the same held-out grid.",
     }
-    tag = "smoke" if args.smoke else args.mode
+    tag = "smoke" if args.smoke else (args.mode + ("_mirror" if args.mirror else ""))
     (_OUT / f"result_{tag}.json").write_text(
         json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
