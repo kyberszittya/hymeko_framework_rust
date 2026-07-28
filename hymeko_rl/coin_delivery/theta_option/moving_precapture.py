@@ -177,18 +177,33 @@ class PhaseShapeCapture:
     def _track(self, coeffs: "tuple[np.ndarray, ...]", params: CaptureParams) -> "tuple[Any, np.ndarray]":
         rl = self.ready.branch()
         prev = self.prev0.copy()
-        dt = self.ref.control_dt
         knot_t = np.linspace(0, len(params.residual) - 1, params.steps)
         for i in range(params.steps):
-            q_ref, v_ref = quintic_eval(coeffs, i * dt)
-            data = rl.inner.data
-            servo = np.clip(params.kp * (q_ref - data.qpos[:4]) + params.kd * (v_ref - data.qvel[:4]),
-                            -self.slew, self.slew)
-            res = self._residual(params.residual, knot_t, i) * self.slew
-            target = self._preload_blend(prev + servo + res, i, params)
-            prev = np.clip(prev + np.clip(target - prev, -self.slew, self.slew), self.lo, self.hi)
-            step_ablation(rl, np.asarray(prev, np.float32), "A")
+            prev = self.apply_step(rl, prev, self.scaffold_action(rl, prev, i, coeffs, params, knot_t))
         return rl, prev
+
+    def scaffold_action(self, rl: Any, prev: np.ndarray, i: int, coeffs: "tuple[np.ndarray, ...]",
+                        params: CaptureParams, knot_t: np.ndarray) -> np.ndarray:
+        """The scaffold's per-step slew-normalised action in [-1,1]^4 (servo + residual-knots + preload blend).
+
+        This is ``u_pi0(phase)`` in the action-preserving residual ``u = clip(u_pi0 + alpha*tanh(delta), -1, 1)``.
+        """
+        q_ref, v_ref = quintic_eval(coeffs, i * self.ref.control_dt)
+        data = rl.inner.data
+        servo = np.clip(params.kp * (q_ref - data.qpos[:4]) + params.kd * (v_ref - data.qvel[:4]),
+                        -self.slew, self.slew)
+        res = self._residual(params.residual, knot_t, i) * self.slew
+        target = self._preload_blend(prev + servo + res, i, params)
+        return np.clip(target - prev, -self.slew, self.slew) / self.slew
+
+    def apply_step(self, rl: Any, prev: np.ndarray, action: np.ndarray) -> np.ndarray:
+        """Apply a slew-normalised action through the governed step; return the new ``prev`` (last commanded torque).
+
+        # Preconditions: ``action`` in [-1,1]^4. Passing ``scaffold_action(...)`` reproduces the scaffold exactly.
+        """
+        prev = np.clip(prev + np.clip(action, -1.0, 1.0) * self.slew, self.lo, self.hi)
+        step_ablation(rl, np.asarray(prev, np.float32), "A")
+        return prev
 
     @staticmethod
     def _residual(knots: np.ndarray, knot_t: np.ndarray, i: int) -> np.ndarray:

@@ -1,0 +1,140 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!55!black, urlcolor=blue!55!black}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\ok}{\textcolor{green!50!black}{\textbf{PASS}}}
+\newcommand{\halt}{\textcolor{red!70!black}{\textbf{HALT}}}
+
+\title{\textbf{Plan --- Reward-Driven TD3 Dynamic Capture (Stage 2)}\\[2pt]
+\large An action-preserving residual over the frozen phase-shaped scaffold; the claim is robustness, not re-derivation}
+\author{HyMeKo coin-delivery campaign \quad(\code{recovery/coin-r9-causal-residual-delivery})}
+\date{2026-07-28}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Stage 1B proved a structured phase-shaped moving-precursor capture delivers strict K6 from \code{HOME\_V1}
+(3/3 seeds, frozen downstream). This RL is genuinely justified: not re-learning known kinematics, but turning a
+\emph{proven, reachable} moving contact-handoff into a state-dependent, \emph{robust} capture policy. The critical
+scientific rule: a TD3 that merely reproduces the canonical-start CEM profile proves nothing (the scaffold already
+solves it). The claim is \code{TD3\_IMPROVES\_OVER\_FROZEN\_SCAFFOLD\_PASS} --- the learned policy must beat both the
+frozen scaffold \emph{and} a BC-only checkpoint on a \emph{pre-registered} perturbation panel (small admissible READY /
+coin-state / actuator-state variations), with no safety regression. We freeze one scaffold \code{$\pi_0$} by an
+\emph{outcome-independent} rule (structural-parameter medoid), wrap it action-preservingly ($u=\mathrm{clip}(u_{\pi_0}(\phi)
++\alpha\tanh\delta_\theta(s),-1,1)$; zero residual $\equiv\pi_0$, bit-exact, tested before training), and train a genuine
+reward-driven TD3 residual over only READY$\to$capture$\to$REACH\_TO\_APPROACH --- everything else frozen. \emph{Learn the
+recovery, not the trajectory.}
+\end{abstract}
+
+\section{Scope and goal}
+\textbf{Goal.} A learned TD3 residual capture policy, deployed with no CEM/teacher in the loop, that (i) delivers
+teacher-free canonical \code{HOME\_V1}$\to$strict K6 and (ii) \emph{improves robustness} over the frozen scaffold and
+BC-only on a pre-registered development perturbation panel. \textbf{Deployed chain:}
+\begin{center}\itshape HOME\_V1 $\to$ frozen analytic transit $\to$ learned TD3 dynamic capture $\to$ frozen APPROACH
+$\to$ HANDOFF\_RESET $\to$ frozen R2 $\to$ strict K6.\end{center}
+\textbf{Non-goals (explicit stops).} No full multiseed panel; no SAC/PPO comparison; no Hamiltonian/energy/entropy
+experiments. No modification of the frozen downstream, the analytic transit, or physics/safety/K6. This is the bounded
+first campaign only.
+
+\begin{figure}[h]\centering\input{plan.tikz}\caption{The TD3 residual (red) wraps the frozen scaffold $\pi_0$ (blue)
+action-preservingly; training scores the full end-to-end rollout through the frozen downstream. The learning claim is
+measured on a pre-registered perturbation panel against scaffold and BC-only baselines.}\end{figure}
+
+\section{The frozen contract}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item Frozen and imported as-is: \code{HOME\_STATE\_V1}, the analytic HOME$\to$READY transit (\code{eb09a16a}), the
+  Stage-1B scaffold machinery (\code{moving\_precapture}, \code{d6974b95}), APPROACH / HANDOFF\_RESET / R2 / coast, and
+  physics / safety / strict-K6. \code{git diff} empty on all.
+  \item TD3 controls \emph{only} READY$\to$DYNAMIC\_CAPTURE$\to$REACH\_TO\_APPROACH, via the real 4-D slew-normalised
+  \emph{residual} action, through the governed \code{step\_ablation} stack. No teacher / future info; no state edit; no
+  online CEM once training begins.
+  \item \code{s4}/\code{s7} validation-only; \code{f1--f4} \code{SEALED}. Development seeds only. No tag moved.
+\end{itemize}
+
+\section{Affected files}
+\textbf{CORE.YAML items touched: none.} \textbf{Reuse (read-only):} \code{option\_rl.agents} (\code{train\_semi\_mdp},
+\code{make\_actor}, \code{OptionEnv}/\code{OptionTransition}, \code{SemiMDPConfig} --- the dim-generic TD3/SAC engine);
+\code{kinetic\_authority\_unlock} (\code{zero\_init\_detactor}, \code{deterministic\_residual}, \code{champion\_key\_unlock},
+\code{expl\_noise\_for}); \code{moving\_precapture} (scaffold). \textbf{New:}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{coin\_delivery/theta\_option/capture\_rl.py} --- \code{freeze\_scaffold} (medoid selection),
+  \code{ResidualCaptureController} (action-preserving wrapper), \code{capture\_observation} (causal Markov state),
+  \code{capture\_reward} (K6-dominated bounded shaping), \code{CaptureOptionEnv} (reset/step over the frozen scaffold +
+  downstream), \code{PerturbationPanel} (pre-registered), the 3-way \code{evaluate} + BC init.
+  \item \code{experiments/coin\_kinetic\_capture\_td3.py} --- identity test $\to$ BC $\to$ 3-seed TD3 $\to$ 3-way panel
+  eval $\to$ gates $\to$ provenance/traces.
+  \item \code{tests/test\_capture\_rl.py}; \code{reports/2026-07-28-td3-capture-reward-driven.md}.
+\end{itemize}
+
+\section{Interface changes}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{freeze\_scaffold(results) $\to$ CaptureParams} --- the structural-parameter \emph{medoid} of the K6
+  solutions (outcome-independent; \emph{not} best min\_dtz). \textbf{Post:} deterministic; documented rule.
+  \item \code{ResidualCaptureController(ready, ref, pi0, residual\_fn, alpha)} --- rolls the scaffold with
+  $u=\mathrm{clip}(u_{\pi_0}(\phi)+\alpha\tanh\delta(s),-1,1)$. \textbf{Post:} \code{residual\_fn}$\equiv0$ reproduces
+  $\pi_0$ \emph{bit-exact} (asserted by \code{IDENTITY} test).
+  \item \code{CaptureOptionEnv} --- \code{reset()$\to$s}; \code{step(a)$\to$(s2,r,done,info)}; on the terminal capture
+  step, rolls the frozen downstream and adds the strict-K6-dominated terminal reward. \code{info} carries k6, safe,
+  min\_dtz, boundary counts.
+  \item \code{evaluate(actor|pi0, panel) $\to$ metrics} --- K6 rate + Wilson CI, handoff margins, safety, on the
+  pre-registered panel; used identically for scaffold / BC-only / post-TD3.
+\end{itemize}
+
+\section{Test strategy}
+\textbf{Unit:} medoid selection determinism + outcome-independence; \code{capture\_observation} schema + no future/teacher
+leak; reward monotonicity (K6 dominates shaping); panel determinism. \textbf{Integration/identity (load-bearing):}
+\code{RESIDUAL\_ZERO\_IS\_SCAFFOLD\_IDENTITY} --- zero residual reproduces $\pi_0$'s rollout \emph{bit-exact}; the wrapped
+scaffold at $\alpha{=}0$ delivers the same K6/min\_dtz as \code{moving\_precapture}. \textbf{Smoke (production scale, 1
+seed):} a short TD3 run improves panel K6 over BC-only/scaffold (else \halt{} and localise --- reward, obs, or exploration).
+\textbf{Boundary:} exactly-one READY$\to$CAPTURE / REACH\_TO\_APPROACH / HANDOFF\_RESET; deterministic replay.
+\textbf{Coverage:} every new function exercised.
+
+\section{Performance budget}
+One capture episode + downstream $\approx 0.1$\,s; \code{total\_options}$\le600$/seed, eval every 25; 3 seeds
+$\approx$ 10--20\,min, \emph{checkpointed per seed}. \textbf{Peak RSS $<2$\,GB} (torch actor/critic; hard cap 16\,GB).
+Unit suite $<180$\,s. The run reports peak RSS + wall on exit; wall-estimate reconciled before launch (per the $>2\times$
+halt rule).
+
+\section{Risk anticipation}
+\textbf{Performance-contract preservation.} The residual is bounded ($\alpha\tanh$, then the clip to $[-1,1]$ and the
+$\times$slew$\to$governor); it cannot exceed the slew/torque/joint-speed caps. Zero residual is bit-exact $\pi_0$, so the
+worst case is never worse than the proven scaffold. \textbf{The scientific trap.} Canonical-start K6 is \emph{necessary
+but not sufficient} --- $\pi_0$ already passes it. The reward-driven claim rides entirely on the pre-registered
+perturbation panel and the 3-way (scaffold / BC-only / post-TD3) comparison; the panel + selection rule are fixed
+\emph{before} any TD3 run and never tuned to results. \textbf{Reward hygiene.} Terminal strict-K6 dominates the bounded
+shaping so the policy cannot farm a ``good handoff score / bad downstream'' side-path (the failure mode seen in Stage 1B
+coordinate-matching). \textbf{Worst-case input:} admissible READY tracking error + coin-state + actuator-state
+perturbations (the panel) --- the regime where the fixed scaffold is expected to degrade and a state-dependent policy
+should recover.
+
+\section{Rollback path}
+New files only; rollback $=$ delete. Zero-residual identity guarantees a revert to $\pi_0$ (\code{d6974b95}) with no
+behaviour change. Each checkpoint (\code{update0}/BC/best) is saved; a bad post-TD3 reverts to BC-only or scaffold.
+
+\section{Gate ladder + stop logic}
+\begin{enumerate}[nosep,leftmargin=1.6em]
+  \item \code{RESIDUAL\_ZERO\_IS\_SCAFFOLD\_IDENTITY\_PASS} (before training).
+  \item \code{HOME\_V1\_START\_STRICT\_K6\_PASS}: post-TD3, teacher-free canonical HOME$\to$K6 (necessary).
+  \item \code{TD3\_CAPTURE\_REWARD\_DRIVEN\_PASS}: reward-driven improvement over the BC-only checkpoint.
+  \item \code{TD3\_IMPROVES\_OVER\_FROZEN\_SCAFFOLD\_PASS}: post-TD3 beats \emph{both} $\pi_0$ and BC-only on the
+  pre-registered panel (higher K6 rate / better handoff margin), no safety regression --- \emph{the} learning claim.
+\end{enumerate}
+\textbf{Stop logic.} Freeze the \emph{first} checkpoint meeting all of: teacher-free canonical K6; improvement over
+BC-only; improvement over scaffold on the panel; no safety/stall/clamp/reversal; exactly-one each boundary transition;
+deterministic replay. Then commit and \halt{} --- no full multiseed, no SAC/PPO, no energy experiments. If the panel
+improvement fails, \halt{} and localise (reward shaping, observation, exploration), do \emph{not} widen scope.
+
+\section{Empty-plan-dir hygiene}
+If abandoned before the module lands, delete \code{docs/plans/2026-07-28-td3-capture-reward-driven/} this session.
+
+\end{document}

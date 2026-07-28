@@ -1,0 +1,37 @@
+% plan.tikz — reward-driven TD3 residual over the frozen phase-shaped capture scaffold.
+\begin{tikzpicture}[
+    font=\small,
+    frozen/.style={draw=black!70, fill=blue!6,   rounded corners, align=center, inner sep=4pt, minimum height=8mm},
+    learn/.style ={draw=red!70,   fill=red!8,    rounded corners, align=center, inner sep=4pt, minimum height=8mm, very thick},
+    eval/.style  ={draw=orange!80!black, fill=orange!10, rounded corners, align=center, inner sep=3pt, font=\footnotesize},
+    io/.style    ={draw=black!40, fill=black!4, align=center, inner sep=3pt, font=\footnotesize},
+    flow/.style  ={-{Stealth[length=2.2mm]}, thick},
+    dashflow/.style={-{Stealth[length=2.2mm]}, thick, dashed},
+  ]
+  \node[frozen] (ready) {\textbf{READY}\\{\footnotesize frozen transit}};
+  \node[frozen, right=6mm of ready] (pi0) {\textbf{scaffold} $\pi_0$\\{\footnotesize medoid; phase-shaped}};
+  \node[learn, right=6mm of pi0] (res) {\textbf{TD3 residual}\\$u\!=\!\mathrm{clip}(u_{\pi_0}\!+\!\alpha\tanh\delta,\pm1)$\\{\footnotesize zero$\equiv\pi_0$ bit-exact}};
+  \node[frozen, right=7mm of res] (down) {\textbf{APPROACH}\\HANDOFF\_RESET\\R2 $\to$ \textbf{K6}};
+
+  \draw[flow] (ready) -- (pi0); \draw[flow] (pi0) -- (res);
+  \draw[flow] (res) -- (down) node[midway,above,font=\footnotesize]{moving handoff};
+
+  \node[io, below=6mm of res, text width=52mm] (obs)
+    {\textbf{causal Markov obs}: q, qvel, prev\_tau, coin pose/vel, contact/force, capture phase, guard/mode. No teacher/future};
+  \draw[flow] (obs) -- (res);
+  \node[io, above=6mm of res, text width=48mm] (rew)
+    {\textbf{reward}: end-to-end via frozen downstream; strict-K6 DOMINATES bounded shaping (q/qvel, cos, preload-band, contact, min\_dtz)};
+  \draw[flow] (rew) -- (res);
+
+  \node[eval, below=13mm of down, text width=58mm] (panel)
+    {\textbf{pre-registered perturbation panel} (dev seeds): admissible READY-tracking / coin-state / actuator-state variations. \textbf{3-way eval}: scaffold $\pi_0$ vs BC-only vs post-TD3. Claim = post-TD3 beats BOTH, no safety regression};
+  \draw[dashflow] (down) -- (panel);
+
+  \begin{scope}[on background layer]
+    \node[draw=red!45, dashed, rounded corners, fit=(res), inner sep=7pt,
+      label={[red!65]below:{\itshape this change: residual only (train\_semi\_mdp engine)}}] {};
+    \node[draw=blue!40, dashed, rounded corners, fit=(ready)(pi0), inner sep=5pt] {};
+    \node[draw=blue!40, dashed, rounded corners, fit=(down), inner sep=5pt,
+      label={[blue!60]above:{\itshape FROZEN}}] {};
+  \end{scope}
+\end{tikzpicture}

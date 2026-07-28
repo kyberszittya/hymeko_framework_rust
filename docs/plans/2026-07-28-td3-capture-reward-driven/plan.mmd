@@ -1,0 +1,39 @@
+%% plan.mmd — reward-driven TD3 capture: training + the 3-way learning-claim evaluation.
+
+sequenceDiagram
+    autonumber
+    participant S1B as Stage 1B solutions (3 seeds)
+    participant Pi0 as scaffold pi_0
+    participant Env as CaptureOptionEnv
+    participant TD3 as train_semi_mdp (reused engine)
+    participant Panel as pre-registered perturbation panel
+
+    Note over S1B,Pi0: OUTCOME-INDEPENDENT freeze (NOT best min_dtz)
+    S1B->>Pi0: structural-parameter medoid -> pi_0
+    Pi0->>Env: action-preserving wrap u = clip(u_pi0(phase) + alpha*tanh(delta(s)), -1, 1)
+    Note over Env: IDENTITY GATE before training — zero residual reproduces pi_0 BIT-EXACT
+
+    Note over Env,TD3: WARM START + TRAIN (dev seeds only; no online CEM/teacher)
+    S1B->>TD3: small BC init from 3 saved traces -> BC-only checkpoint (evaluated separately)
+    loop <= 600 capture episodes/seed, eval every 25
+        TD3->>Env: reset -> obs; step(residual) -> per-step shaping reward
+        Env->>Env: terminal step -> roll FROZEN downstream -> strict-K6-dominated terminal reward
+        Env-->>TD3: OptionTransition (k6, safe, min_dtz, boundary counts)
+        TD3->>Panel: dev_eval_fn(actor) -> K6 rate + Wilson CI on the panel
+    end
+
+    Note over Panel: THE LEARNING CLAIM (3-way)
+    Panel->>Panel: evaluate scaffold pi_0
+    Panel->>Panel: evaluate BC-only
+    Panel->>Panel: evaluate post-TD3
+    Panel-->>TD3: TD3_IMPROVES_OVER_FROZEN_SCAFFOLD requires post-TD3 > BOTH, no safety regression
+    Note over TD3: freeze FIRST checkpoint meeting all gates -> commit -> STOP (no multiseed, no SAC/PPO, no energy)
+
+    %% stateDiagram-v2
+    %%   [*] --> IDENTITY
+    %%   IDENTITY --> BC: zero-residual == pi_0 bit-exact
+    %%   BC --> TD3_TRAIN
+    %%   TD3_TRAIN --> PANEL_EVAL: eval checkpoint
+    %%   PANEL_EVAL --> FREEZE: post-TD3 > scaffold AND > BC-only on panel, safe, boundaries exact
+    %%   PANEL_EVAL --> TD3_TRAIN: not yet
+    %%   FREEZE --> [*]

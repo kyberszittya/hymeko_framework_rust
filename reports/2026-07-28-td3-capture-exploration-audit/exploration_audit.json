@@ -1,0 +1,102 @@
+{
+ "contract": "CAPTURE_EXPLORATION_AUDIT_V1",
+ "immutable_scaffold_source": "d6974b95",
+ "medoid": {
+  "s": 0.3793,
+  "preload_start": 0.4573,
+  "bmax": 0.4098,
+  "residual_norm": 0.892
+ },
+ "identity": {
+  "bit_exact_scaffold": true,
+  "actor_output_exactly_zero": true,
+  "k6": true,
+  "min_dtz_mm": 2.79,
+  "terminal_dtau_to_taustar": 0.875
+ },
+ "exploration_ladder_nominal": {
+  "iid": {
+   "sigma_0.005": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.893
+   },
+   "sigma_0.05": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.893
+   },
+   "sigma_0.15": {
+    "k6_preserve": 0.083,
+    "mean_terminal_dtau": 0.901
+   },
+   "sigma_0.3": {
+    "k6_preserve": 0.083,
+    "mean_terminal_dtau": 0.893
+   },
+   "sigma_0.6": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.895
+   }
+  },
+  "smooth": {
+   "sigma_0.005": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.891
+   },
+   "sigma_0.05": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.896
+   },
+   "sigma_0.15": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.894
+   },
+   "sigma_0.3": {
+    "k6_preserve": 0.083,
+    "mean_terminal_dtau": 0.885
+   },
+   "sigma_0.6": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.865
+   }
+  },
+  "zeroint": {
+   "sigma_0.005": {
+    "k6_preserve": 0.167,
+    "mean_terminal_dtau": 0.891
+   },
+   "sigma_0.05": {
+    "k6_preserve": 0.25,
+    "mean_terminal_dtau": 0.896
+   },
+   "sigma_0.15": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.896
+   },
+   "sigma_0.3": {
+    "k6_preserve": 0.25,
+    "mean_terminal_dtau": 0.886
+   },
+   "sigma_0.6": {
+    "k6_preserve": 0.0,
+    "mean_terminal_dtau": 0.882
+   }
+  }
+ },
+ "verdicts": {
+  "REAL_MEDOID_SCAFFOLD_IDENTITY_PASS": true,
+  "IID_STEPWISE_RESIDUAL_EXPLORATION_INADMISSIBLE": true,
+  "CRADLE_CENTERED_PRELOAD_METRIC_INVALID_FOR_MEDOID_SCAFFOLD": true
+ },
+ "non_claims": [
+  "RL is NOT blocked",
+  "reactive policies are NOT shown impossible",
+  "zero-integral noise is NOT sufficient",
+  "terminal-preload random-walk mechanism is IMPLIED (action definition + coherent-vs-IID), NOT directly isolated by the mis-centred dtau metric",
+  "NO reward-driven capture policy yet"
+ ],
+ "external_probe_results": {
+  "stepwise_IID_MPC_recovery": "0/7",
+  "temporally_coherent_episode_correction_recovery": "8/8",
+  "note": "coherence is strongly-implied load-bearing; see report for commands"
+ }
+}
