@@ -122,6 +122,68 @@ def test_omni_residual_produces_lateral_motion() -> None:
     assert dy > 0.05                                 # measurable lateral displacement (~0.1-0.2 m)
 
 
+def test_hypergraph_obs_is_per_vertex() -> None:
+    hg = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="hypergraph"), seed=0)
+    obs, _ = hg.reset(seed=1)
+    assert obs.ndim == 2 and obs.shape[1] == 4          # (n_vertices, 4) per-vertex features
+    assert obs.shape[0] == hg._n_vtx
+    assert hg._abd_vtx == [25, 29, 6, 10]               # the 4 hip-abduction actuator vertices
+
+
+def test_hypergraph_obs_carries_signed_lateral_demand() -> None:
+    hg = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="hypergraph"), seed=0)
+    hg.reset(seed=1)
+    inner = hg._env
+    tx, ty = float(inner.data.xpos[inner.torso, 0]), float(inner.data.xpos[inner.torso, 1])
+    inner.goal = np.array([tx + 0.5, ty + 0.4], np.float32)
+    left = float(hg._obs()[0, 3])
+    inner.goal = np.array([tx + 0.5, ty - 0.4], np.float32)
+    right = float(hg._obs()[0, 3])
+    assert np.sign(left) != np.sign(right)              # the structure gets a signed lateral demand
+
+
+def test_zero_residual_identical_across_obs_modes() -> None:
+    # a = 0 is the pure forward-trot scaffold regardless of the residual policy's obs encoding.
+    flat = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="flat"), seed=0)
+    hg = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="hypergraph"), seed=0)
+    md_f, _o, _u = flat.rollout_min_dist(lambda _o: np.zeros(4), (0.6, 20), seed=321, horizon=400)
+    md_h, _o2, _u2 = hg.rollout_min_dist(lambda _o: np.zeros(4), (0.6, 20), seed=321, horizon=400)
+    assert md_f == pytest.approx(md_h, abs=1e-6)
+
+
+def test_minimal_leg_hypergraph_structure() -> None:
+    from scenarios.aibo.residual_trot import minimal_leg_hypergraph
+    hg = minimal_leg_hypergraph()
+    assert hg.n_vertices == 5                            # torso + 4 legs (crab-relevant structure only)
+    assert hg.vertex_labels == ("torso", "fl", "fr", "bl", "br")
+    assert hg.edges.shape == (8, 2)                      # torso↔each leg, down/up arcs
+    assert set(np.asarray(hg.signs).tolist()) == {1, -1}  # signed (down +1 / up -1)
+
+
+def test_symmetric_leg_hypergraph_encodes_left_right_signs() -> None:
+    from scenarios.aibo.residual_trot import minimal_leg_hypergraph
+    kin = minimal_leg_hypergraph(symmetric=False)
+    sym = minimal_leg_hypergraph(symmetric=True)
+    # symmetric hg flips the right legs' (fr=2, br=4) torso arc signs vs the kinematic hg
+    assert not np.array_equal(kin.signs, sym.signs)
+    assert np.asarray(sym.signs).tolist() == [1, -1, -1, 1, 1, -1, -1, 1]
+
+
+def test_leg_hypergraph_obs_is_five_by_four() -> None:
+    lhg = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="leg_hypergraph"), seed=0)
+    obs, _ = lhg.reset(seed=1)
+    assert obs.shape == (5, 4)                           # (torso + 4 legs, features)
+    assert lhg._abd_vtx == [1, 2, 3, 4]                  # the 4 leg vertices
+
+
+def test_leg_hypergraph_zero_residual_is_pure_scaffold() -> None:
+    flat = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="flat"), seed=0)
+    lhg = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="leg_hypergraph"), seed=0)
+    md_f, _o, _u = flat.rollout_min_dist(lambda _o: np.zeros(4), (0.6, 20), seed=321, horizon=400)
+    md_l, _o2, _u2 = lhg.rollout_min_dist(lambda _o: np.zeros(4), (0.6, 20), seed=321, horizon=400)
+    assert md_f == pytest.approx(md_l, abs=1e-6)         # a=0 = the identical scaffold regardless of obs
+
+
 def test_reward_rewards_progress(env: ResidualTrotEnv) -> None:
     # force a STRAIGHT goal (the scaffold's strength) so progress is unambiguous, then check the
     # progress reward is positive as the scaffold closes distance.

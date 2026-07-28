@@ -16,12 +16,34 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import mujoco
 import numpy as np
 
 from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
 
 from .locomotion_gait import _DIAG_PHASE, SteeredTrotGait, heading_error
 from .motion_contract import JointVelocityGovernor
+
+LEGS = ("fl", "fr", "bl", "br")  # leg order (matches _DIAG_PHASE and the hip_abduct_{leg} joints)
+_LEFT = (0, 2)                    # fl, bl are the LEFT legs (fr, br are right) — the crab symmetry axis
+
+
+def minimal_leg_hypergraph(symmetric: bool = False):
+    """A 5-vertex leg hypergraph (torso + 4 legs) — the crab-relevant structure only, ~6× cheaper than
+    the full 33-vertex body hg. ``symmetric=False``: plain kinematic arcs torso↔leg (down +1 / up −1).
+    ``symmetric=True``: the torso↔leg SIGNS encode the LEFT/RIGHT symmetry axis (left legs fl,bl +1;
+    right legs fr,br −1), so the signed propagation routes the torso's lateral goal-demand
+    DIFFERENTIALLY to the two sides — a symmetric crab the flat MLP cannot represent."""
+    from hymeko_rl.agents.hypergraph_state import HypergraphState
+    labels = ("torso", "fl", "fr", "bl", "br")
+    edges = np.array([(0, 1), (1, 0), (0, 2), (2, 0), (0, 3), (3, 0), (0, 4), (4, 0)], dtype=np.int64)
+    if symmetric:                                        # left legs (1,3) +1, right legs (2,4) −1
+        signs = np.array([1, -1, -1, 1, 1, -1, -1, 1], dtype=np.int64)
+        tag = "aibo_leg_min_sym_v1"
+    else:
+        signs = np.array([1, -1, 1, -1, 1, -1, 1, -1], dtype=np.int64)
+        tag = "aibo_leg_min_v1"
+    return HypergraphState(labels, edges, signs, topo_hash=tag)
 
 
 @dataclass(frozen=True)
@@ -33,6 +55,8 @@ class ResidualTrotConfig:
     bearing_deg: float = 40.0            # goals sampled in bearing ∈ [−bearing_deg, +bearing_deg]
     residual_mode: str = "leg"           # "leg" = 12-dim raw-target residual | "steer" = 2-dim (Δyaw, Δdrive) gait-param residual | "phase" = 12-dim residual PHASE-GATED per leg | "omni" = 4-dim per-leg ABDUCTION amplitude (phase-locked lateral crab over the forward trot — the RICHER action space, adds lateral DOF the trot leaves unused)
     abd_scale: float = 0.5               # omni mode: bound on the learned per-leg abduction (lateral) amplitude
+    obs_mode: str = "flat"               # "flat" = 9-D vector (MLP) | "hypergraph" = (n_vertices, 4) per-vertex on the body's kinematic hypergraph (for signedkan/hsikan structure propagation)
+    leg_hg_symmetric: bool = False       # leg_hypergraph mode: encode the LEFT/RIGHT symmetry axis in the hg signs
     residual_scale: float = 0.25         # bounded residual (coin-R8): a small correction over the gait
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
     drive_res_scale: float = 0.5         # steer mode: bound on the learned speed correction
@@ -49,8 +73,8 @@ class ResidualTrotConfig:
 class _Box:
     """Minimal Box space (shape + uniform sample) — enough for the repo SAC driver."""
 
-    def __init__(self, dim: int, low: float = -1.0, high: float = 1.0, seed: int = 0) -> None:
-        self.shape = (dim,)
+    def __init__(self, dim, low: float = -1.0, high: float = 1.0, seed: int = 0) -> None:
+        self.shape = dim if isinstance(dim, tuple) else (dim,)
         self._lo, self._hi = low, high
         self._rng = np.random.default_rng(seed)
 
@@ -85,7 +109,20 @@ class ResidualTrotEnv:
         _dims = {"leg": 12, "phase": 12, "steer": 2, "omni": 4}
         act_dim = _dims[self.cfg.residual_mode]
         self.action_space = _Box(act_dim, seed=self.seed)
-        self.observation_space = _Box(9, low=-5.0, high=5.0)
+        if self.cfg.obs_mode == "hypergraph":
+            self._abd_vtx = self._abduction_vertices()
+            self.hg = self._env.hg                                # the body's full kinematic hypergraph
+            self._n_vtx = int(self._env.hg.n_vertices)
+            self.observation_space = _Box((self._n_vtx, 4), low=-5.0, high=5.0)  # (N vertices, feat)
+        elif self.cfg.obs_mode == "leg_hypergraph":
+            self.hg = minimal_leg_hypergraph(symmetric=self.cfg.leg_hg_symmetric)  # 5-vertex leg-only hg
+            self._abd_vtx = [1, 2, 3, 4]                          # the 4 leg vertices (torso is vertex 0)
+            self._n_vtx = 5
+            self._abd_dof = [int(self._env.model.jnt_dofadr[mujoco.mj_name2id(
+                self._env.model, mujoco.mjtObj.mjOBJ_JOINT, f"hip_abduct_{leg}")]) for leg in LEGS]
+            self.observation_space = _Box((5, 4), low=-5.0, high=5.0)
+        else:
+            self.observation_space = _Box(9, low=-5.0, high=5.0)
         self.max_steps = self.cfg.max_steps
         self.model = self._env.model
 
@@ -103,7 +140,17 @@ class ResidualTrotEnv:
             self._env.model.opt.timestep)
         return 2.0 * np.pi * self._gait.freq * t
 
+    def _abduction_vertices(self) -> list[int]:
+        """Hypergraph vertices of the 4 hip-abduction actuators (child body b → vertex b-1)."""
+        return [int(self._env.model.jnt_bodyid[
+            mujoco.mj_name2id(self._env.model, mujoco.mjtObj.mjOBJ_JOINT, f"hip_abduct_{leg}")]) - 1
+            for leg in LEGS]
+
     def _obs(self) -> np.ndarray:
+        if self.cfg.obs_mode == "hypergraph":
+            return self._obs_hypergraph()
+        if self.cfg.obs_mode == "leg_hypergraph":
+            return self._obs_leg_hypergraph()
         env = self._env
         dist = float(env.dist_to_goal())
         herr = float(heading_error(env))
@@ -114,6 +161,41 @@ class ResidualTrotEnv:
         return np.array([dist, np.cos(herr), np.sin(herr), vx, vy, wz,
                          np.sin(ph), np.cos(ph), float(env.data.xmat[env.torso].reshape(3, 3)[2, 2])],
                         dtype=np.float32)
+
+    def _obs_hypergraph(self) -> np.ndarray:
+        """Per-vertex ``(n_vertices, 4)`` obs on the body's kinematic hypergraph, for structure
+        propagation (signedkan): native ``[qpos, qvel]`` + per-leg gait phase + a GLOBAL lateral
+        goal-demand. The signed hyperedges route the lateral demand to the per-leg abduction with the
+        structure's signs — so a symmetric crab is representable via weight-sharing, unlike a flat MLP.
+        """
+        env = self._env
+        nf = np.asarray(env.node_features(), np.float32)          # (N, 2): torso [dx, fwd_vel]; leg [qpos, qvel]
+        out = np.zeros((nf.shape[0], 4), np.float32)
+        out[:, :2] = nf
+        ph = self._phase()
+        for leg, vtx in enumerate(self._abd_vtx):                 # per-leg gait phase on the abduction vertices
+            out[vtx, 2] = float(np.sin(ph + _DIAG_PHASE[leg]))
+        herr, dist = float(heading_error(env)), float(env.dist_to_goal())
+        out[:, 3] = float(np.clip(np.sin(herr) * dist, -1.0, 1.0))  # GLOBAL signed lateral goal-demand
+        return out
+
+    def _obs_leg_hypergraph(self) -> np.ndarray:
+        """Minimal ``(5, 4)`` per-vertex obs on the leg-only hypergraph: torso vertex carries the goal
+        (forward + lateral) + body velocity; each leg vertex carries its abduction state + gait phase +
+        the shared lateral demand. The signed hyperedges route the torso's lateral goal to the legs;
+        the per-node weight-sharing makes the crab symmetric across the left/right legs."""
+        env = self._env
+        herr, dist = float(heading_error(env)), float(env.dist_to_goal())
+        lat = float(np.clip(np.sin(herr) * dist, -1.0, 1.0))
+        fwd = float(np.cos(herr) * dist)
+        out = np.zeros((5, 4), np.float32)
+        out[0] = [fwd, lat, float(env.data.cvel[env.torso, 3]), float(env.data.cvel[env.torso, 2])]
+        ph = self._phase()
+        for leg in range(4):
+            out[leg + 1] = [float(env.data.qpos[self._env._leg_qadr[3 * leg]]),
+                            float(env.data.qvel[self._abd_dof[leg]]),
+                            float(np.sin(ph + _DIAG_PHASE[leg])), lat]
+        return out
 
     # -- gym-like API ----------------------------------------------------------
     def reset(self, seed: int | None = None) -> tuple[np.ndarray, dict]:
