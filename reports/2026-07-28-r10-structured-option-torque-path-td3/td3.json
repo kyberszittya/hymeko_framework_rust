@@ -1,0 +1,144 @@
+{
+ "contract": "STRUCTURED_OPTION_TD3_V1",
+ "parent_commit": "4697d263",
+ "boundary": "4b (conservative structured-option TD3) \u2014 HOME-start, sigma=0.05 frozen, D frozen",
+ "measurement_contract": {
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "episodes_per_seed": 400,
+  "eval_every": 25,
+  "train_perturbations": 32,
+  "eval_panel": 16,
+  "train_seed": 12345,
+  "eval_panel_seed": 90210,
+  "no_exploration_at_eval": true,
+  "smoke": false
+ },
+ "exploration_freeze": {
+  "verdict": "STRUCTURED_THETA_EXPLORATION_REVIEW_ACCEPTED",
+  "sigma": 0.05,
+  "strict_preregistered_admissibility": false,
+  "reviewed_training_admissibility": true,
+  "exception": "1/96 safe boundary-route variation (reset != 1)",
+  "physical_safety_violations": "0/96",
+  "source_commit": "be4cf935",
+  "reset_ne_1_contract": [
+   "NOT unsafe",
+   "NOT in positive replay",
+   "terminal boundary-penalty",
+   "own boundary_route_variation category",
+   "counts as FAILURE in evaluation"
+  ]
+ },
+ "per_seed": [
+  {
+   "seed": 0,
+   "released": false,
+   "gate": {
+    "spearman_q_vs_reward": 0.025,
+    "q_corrective": 0.152,
+    "q_medoid": 0.207,
+    "q_destructive": 0.146,
+    "n_corrective": 12,
+    "n_destructive": 26,
+    "bucket_order_ok": false,
+    "passed": false
+   },
+   "scaffold": {
+    "n": 16,
+    "k6": 1,
+    "k6_rate": 0.062,
+    "safe": 16,
+    "boundary": 0,
+    "mean_min_dtz": 36.56,
+    "nominal_k6": true
+   },
+   "post": {
+    "n": 16,
+    "k6": 1,
+    "k6_rate": 0.062,
+    "safe": 16,
+    "boundary": 0,
+    "mean_min_dtz": 36.56,
+    "nominal_k6": true
+   },
+   "improved": false
+  },
+  {
+   "seed": 1,
+   "released": false,
+   "gate": {
+    "spearman_q_vs_reward": 0.139,
+    "q_corrective": 0.236,
+    "q_medoid": 0.227,
+    "q_destructive": 0.144,
+    "n_corrective": 19,
+    "n_destructive": 17,
+    "bucket_order_ok": true,
+    "passed": false
+   },
+   "scaffold": {
+    "n": 16,
+    "k6": 1,
+    "k6_rate": 0.062,
+    "safe": 16,
+    "boundary": 0,
+    "mean_min_dtz": 36.56,
+    "nominal_k6": true
+   },
+   "post": {
+    "n": 16,
+    "k6": 1,
+    "k6_rate": 0.062,
+    "safe": 16,
+    "boundary": 0,
+    "mean_min_dtz": 36.56,
+    "nominal_k6": true
+   },
+   "improved": false
+  },
+  {
+   "seed": 2,
+   "released": false,
+   "gate": {
+    "spearman_q_vs_reward": -0.021,
+    "q_corrective": 0.256,
+    "q_medoid": 0.288,
+    "q_destructive": 0.248,
+    "n_corrective": 26,
+    "n_destructive": 18,
+    "bucket_order_ok": false,
+    "passed": false
+   },
+   "scaffold": {
+    "n": 16,
+    "k6": 1,
+    "k6_rate": 0.062,
+    "safe": 16,
+    "boundary": 0,
+    "mean_min_dtz": 36.56,
+    "nominal_k6": true
+   },
+   "post": {
+    "n": 16,
+    "k6": 1,
+    "k6_rate": 0.062,
+    "safe": 16,
+    "boundary": 0,
+    "mean_min_dtz": 36.56,
+    "nominal_k6": true
+   },
+   "improved": false
+  }
+ ],
+ "n_improved": 0,
+ "verdict": "STRUCTURED_OPTION_TD3_NO_IMPROVEMENT_WITHIN_FROZEN_BUDGET",
+ "non_claims": [
+  "nominal K6 is NOT the claim (the scaffold already has it)",
+  "eval on the DEV panel (not a final held-out transfer claim); s4/s7 sealed",
+  "no RL-impossibility claim; NO_IMPROVEMENT is bounded to this frozen budget"
+ ]
+}
