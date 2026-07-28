@@ -68,6 +68,10 @@ def main() -> None:
                     help="backbone: signedkan | mixture (HSiKAN+MLP gated MoE, Kato's mixed) | ...")
     ap.add_argument("--head", default="per_node", choices=("per_node", "pooled"),
                     help="per_node (each action from its vertex) | pooled (the whole structured LATENT -> action)")
+    ap.add_argument("--skip", default="none", choices=("none", "residual", "highway"),
+                    help="per-layer skip in the signed-KAN backbone: none (plain signed-conv, the default so far) "
+                         "| residual | highway (the Schmidhuber gate — the 'H' in HSiKAN). Ignored by "
+                         "mixture/sa_hsikan (structural constants).")
     args = ap.parse_args()
     _OUT.mkdir(parents=True, exist_ok=True)
     tag = f"{args.kind}_{args.head}"
@@ -75,6 +79,8 @@ def main() -> None:
         tag += "_sym"
     if args.hstar > 0.0:
         tag += f"_hstar{args.hstar:g}"
+    if args.skip != "none":
+        tag += f"_{args.skip}"
 
     env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="leg_hypergraph",
                                              leg_hg_symmetric=args.symmetric), seed=0)
@@ -83,7 +89,7 @@ def main() -> None:
 
     def _build():
         kw = dict(obs_dim=feat, flat_dim=n * feat, action_dim=4, action_scale=1.0, hidden=64,
-                  actor_head=args.head, hg_state=env.hg)
+                  actor_head=args.head, hg_state=env.hg, skip=args.skip)  # skip: mixture/sa_hsikan ignore it
         if args.head == "per_node":
             kw["act_vertices"] = env._abd_vtx
         return build_sac(args.kind, **kw)
