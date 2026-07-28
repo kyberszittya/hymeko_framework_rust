@@ -1,24 +1,22 @@
 {
-  "n_seeds": 5,
+  "n_seeds": 3,
   "seeds": [
     0,
     1,
-    2,
-    3,
-    4
+    2
   ],
-  "steps": 30000,
+  "steps": 25000,
   "aggregate": {
     "raw": {
-      "two_sided_seeds": 0,
+      "two_sided_seeds": 1,
       "median_reach": 0.4
     },
     "post_hoc": {
       "two_sided_seeds": 2,
-      "median_reach": 0.4
+      "median_reach": 0.6
     },
     "in_loop": {
-      "two_sided_seeds": 1,
+      "two_sided_seeds": 0,
       "median_reach": 0.4
     }
   },
@@ -38,23 +36,23 @@
         "two_sided": false
       },
       "in_loop": {
-        "reach": 0.2,
+        "reach": 0.4,
         "plus_y": 0,
-        "minus_y": 1,
+        "minus_y": 2,
         "two_sided": false
       }
     },
     {
       "seed": 1,
       "raw": {
-        "reach": 0.4,
+        "reach": 0.8,
         "plus_y": 1,
-        "minus_y": 0,
-        "two_sided": false
+        "minus_y": 2,
+        "two_sided": true
       },
       "post_hoc": {
-        "reach": 0.8,
-        "plus_y": 2,
+        "reach": 0.6,
+        "plus_y": 1,
         "minus_y": 1,
         "two_sided": true
       },
@@ -69,62 +67,20 @@
       "seed": 2,
       "raw": {
         "reach": 0.4,
-        "plus_y": 1,
-        "minus_y": 0,
-        "two_sided": false
-      },
-      "post_hoc": {
-        "reach": 0.4,
-        "plus_y": 1,
-        "minus_y": 0,
-        "two_sided": false
-      },
-      "in_loop": {
-        "reach": 0.6,
-        "plus_y": 2,
-        "minus_y": 0,
-        "two_sided": false
-      }
-    },
-    {
-      "seed": 3,
-      "raw": {
-        "reach": 0.0,
-        "plus_y": 0,
-        "minus_y": 0,
-        "two_sided": false
-      },
-      "post_hoc": {
-        "reach": 1.0,
-        "plus_y": 2,
-        "minus_y": 2,
-        "two_sided": true
-      },
-      "in_loop": {
-        "reach": 0.6,
-        "plus_y": 1,
-        "minus_y": 2,
-        "two_sided": true
-      }
-    },
-    {
-      "seed": 4,
-      "raw": {
-        "reach": 0.4,
-        "plus_y": 1,
-        "minus_y": 0,
-        "two_sided": false
-      },
-      "post_hoc": {
-        "reach": 0.4,
-        "plus_y": 1,
-        "minus_y": 0,
-        "two_sided": false
-      },
-      "in_loop": {
-        "reach": 0.4,
         "plus_y": 0,
         "minus_y": 1,
+        "two_sided": false
+      },
+      "post_hoc": {
+        "reach": 0.8,
+        "plus_y": 2,
+        "minus_y": 1,
+        "two_sided": true
+      },
+      "in_loop": {
+        "reach": 0.6,
+        "plus_y": 2,
+        "minus_y": 0,
         "two_sided": false
       }
     }

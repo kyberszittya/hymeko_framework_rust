@@ -45,11 +45,30 @@ recipes across **3 seeds** (0,1,2; 25k) and reports the distribution, not a poin
   (it fails regardless), but the post-hoc rate would firm up at 30k / more seeds.
 - **3 seeds** shows variance but is below the repo's 5-iteration bar; 5 seeds at 30k is the clean rerun.
 
-## Bottom line
+## Clean rerun (5 seeds, 30k) — walks the advantage back further
 
-The direction is right (post-hoc > in-loop; in-loop never two-sided), but the crisp single-seed numbers
-were not representative — **crab discovery is seed-fragile, and post-hoc only amortises a crab that was
-discovered**. Reported as a distribution with its caveats, superseding the single-seed headline.
+The non-corner-cut rerun (seeds 0-4, 30k, the tested budget):
+
+| recipe | two-sided seeds | median reach |
+|---|---|---|
+| raw | **0/5** | 0.40 |
+| post-hoc symmetrize | **2/5** | 0.40 |
+| in-loop equivariant | **1/5** | 0.40 |
+
+**All three recipes have the SAME median reach (0.40).** The symmetry manipulations do **not** improve the
+overall goal-reach rate — they only shuffle *which* goals are hit. Post-hoc's edge is **marginal** (2/5 vs
+1/5 two-sided), and the 3-seed "in-loop 0/3, post-hoc 0.60" was noise: at 5 seeds in-loop reaches both on
+1 seed and post-hoc's median is 0.40, not 0.60. So the honest, final statement is: **post-hoc
+symmetrization gives at most a small, unreliable improvement in reaching both lateral sides, and changes
+the overall goal-reach rate essentially not at all.**
+
+## Bottom line (superseded twice — the honest end)
+
+The single-seed headline (post-hoc 0.60 ≫ in-loop 0.20) did not survive multi-seed. At 5 seeds / 30k the
+recipes are **tied on goal-reach (all 0.40)**; post-hoc's only, marginal, benefit is a slightly higher
+chance of reaching *both* lateral sides (2/5). The crab-symmetry axis, rigorously measured, **barely moves
+the actual objective (reaching the target)** — which is the empirical case for refocusing off crab-symmetry
+and onto the goal-reaching bottleneck (turning / heading control) directly.
 
 ## Files
 
