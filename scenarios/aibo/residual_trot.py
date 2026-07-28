@@ -31,7 +31,8 @@ class ResidualTrotConfig:
     dist_lo: float = 0.5
     dist_hi: float = 0.75
     bearing_deg: float = 40.0            # goals sampled in bearing ∈ [−bearing_deg, +bearing_deg]
-    residual_mode: str = "leg"           # "leg" = 12-dim raw-target residual | "steer" = 2-dim (Δyaw, Δdrive) gait-param residual | "phase" = 12-dim residual PHASE-GATED per leg (synced to the trot cycle, preserves the limit cycle)
+    residual_mode: str = "leg"           # "leg" = 12-dim raw-target residual | "steer" = 2-dim (Δyaw, Δdrive) gait-param residual | "phase" = 12-dim residual PHASE-GATED per leg | "omni" = 4-dim per-leg ABDUCTION amplitude (phase-locked lateral crab over the forward trot — the RICHER action space, adds lateral DOF the trot leaves unused)
+    abd_scale: float = 0.5               # omni mode: bound on the learned per-leg abduction (lateral) amplitude
     residual_scale: float = 0.25         # bounded residual (coin-R8): a small correction over the gait
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
     drive_res_scale: float = 0.5         # steer mode: bound on the learned speed correction
@@ -81,7 +82,8 @@ class ResidualTrotEnv:
         self._rng = np.random.default_rng(self.seed)
         self._prev_dist = 0.0
         self._step_i = 0
-        act_dim = int(self._env.action_space.shape[0]) if self.cfg.residual_mode in ("leg", "phase") else 2
+        _dims = {"leg": 12, "phase": 12, "steer": 2, "omni": 4}
+        act_dim = _dims[self.cfg.residual_mode]
         self.action_space = _Box(act_dim, seed=self.seed)
         self.observation_space = _Box(9, low=-5.0, high=5.0)
         self.max_steps = self.cfg.max_steps
@@ -157,6 +159,14 @@ class ResidualTrotEnv:
             yaw = float(np.clip(pursuit + self.cfg.yaw_res_scale * r[0], -0.6, 0.6))
             drive = float(np.clip(base_drive + self.cfg.drive_res_scale * r[1], 0.0, 1.5))
             final = self._gov.govern(env, self._gait.action(env, yaw_cmd=yaw, drive=drive))
+        elif self.cfg.residual_mode == "omni":
+            base = self._gov.govern(env, self._gait.action(env, yaw_cmd=pursuit, drive=base_drive))
+            ph = self._phase()
+            final = base.copy()
+            for leg in range(4):                          # per-leg abduction, phase-locked -> lateral crab
+                idx = 3 * leg                             # abduction is action index 3*leg+0
+                lateral = self.cfg.abd_scale * r[leg] * np.sin(ph + _DIAG_PHASE[leg])
+                final[idx] = float(np.clip(final[idx] + lateral, -1.0, 1.0))
         else:
             base = self._gov.govern(env, self._gait.action(env, yaw_cmd=pursuit, drive=base_drive))
             if self.cfg.residual_mode == "phase":

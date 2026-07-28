@@ -46,9 +46,10 @@ def _reach_rate(env: ResidualTrotEnv, act_fn, grid, seed0: int = 500) -> tuple[f
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--steps", type=int, default=60_000)
-    ap.add_argument("--mode", choices=("leg", "steer", "phase"), default="leg",
+    ap.add_argument("--mode", choices=("leg", "steer", "phase", "omni"), default="leg",
                     help="residual over raw leg targets (leg), gait steering+speed params (steer), "
-                         "or per-leg PHASE-GATED leg targets (phase)")
+                         "per-leg PHASE-GATED leg targets (phase), or per-leg ABDUCTION for lateral "
+                         "omnidirectional crab (omni — the richer action space)")
     ap.add_argument("--smoke", action="store_true", help="short production-scale smoke run")
     args = ap.parse_args()
     steps = 3_000 if args.smoke else args.steps

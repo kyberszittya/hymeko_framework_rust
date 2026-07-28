@@ -96,6 +96,32 @@ def test_phase_zero_residual_matches_pure_scaffold() -> None:
     assert md_ph == pytest.approx(md_leg, abs=1e-6)
 
 
+def test_omni_mode_has_four_dim_abduction_action() -> None:
+    omni = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni"), seed=0)
+    omni.reset(seed=1)
+    assert omni.action_space.shape == (4,)           # per-leg abduction amplitude (the lateral DOF)
+
+
+def test_omni_zero_residual_matches_pure_scaffold() -> None:
+    omni = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni"), seed=0)
+    leg = ResidualTrotEnv(ResidualTrotConfig(residual_mode="leg"), seed=0)
+    md_o, _o, _u = omni.rollout_min_dist(lambda _o: np.zeros(4), (0.6, 20), seed=321, horizon=500)
+    md_l, _o2, _u2 = leg.rollout_min_dist(lambda _o: np.zeros(12), (0.6, 20), seed=321, horizon=500)
+    assert md_o == pytest.approx(md_l, abs=1e-6)     # a=0 = the identical forward trot in both
+
+
+def test_omni_residual_produces_lateral_motion() -> None:
+    # the richer action space: a constant per-leg abduction residual crabs the body SIDEWAYS — the
+    # lateral DOF the sagittal trot leaves unused, which is what reaches off-axis goals without turning.
+    env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni"), seed=0)
+    env.reset(seed=1)
+    y0 = float(env._env.data.xpos[env._env.torso, 1])
+    for _ in range(400):
+        env.step(np.array([1.0, 1.0, 1.0, 1.0]))     # full abduction amplitude, phase-locked
+    dy = abs(float(env._env.data.xpos[env._env.torso, 1]) - y0)
+    assert dy > 0.05                                 # measurable lateral displacement (~0.1-0.2 m)
+
+
 def test_reward_rewards_progress(env: ResidualTrotEnv) -> None:
     # force a STRAIGHT goal (the scaffold's strength) so progress is unambiguous, then check the
     # progress reward is positive as the scaffold closes distance.
