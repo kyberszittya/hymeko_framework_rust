@@ -33,11 +33,11 @@ def _greedy(actor, obs) -> np.ndarray:
         return actor.action_mean(t).squeeze(0).cpu().numpy()
 
 
-def _reach_rate(env: ResidualTrotEnv, act_fn, grid, seed0: int = 500) -> tuple[float, float]:
+def _reach_rate(env: ResidualTrotEnv, act_fn, grid, seed0: int = 500, horizon: int = 1200) -> tuple[float, float]:
     """Return (reach rate within reach_radius, mean min-distance) on a fixed goal grid."""
     reached, dists = 0, []
     for i, goal in enumerate(grid):
-        md, ok, _up = env.rollout_min_dist(act_fn, goal, seed=seed0 + i, horizon=1200)
+        md, ok, _up = env.rollout_min_dist(act_fn, goal, seed=seed0 + i, horizon=horizon)
         reached += int(ok)
         dists.append(md)
     return reached / len(grid), float(np.mean(dists))

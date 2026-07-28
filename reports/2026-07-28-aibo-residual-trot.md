@@ -60,14 +60,21 @@ forward trot — the AIBO's third leg DOF, which the sagittal gait leaves idle. 
 crab-walk** (measured ~0.1–0.2 m sideways, upright), so the learned policy reaches off-axis goals by
 **side-stepping** instead of turning — bypassing the whole turn/stability wall.
 
-**Measured (best-val, upright):** the omni residual reaches **2/5** held-out goals vs the scaffold's
-**1/5** — it reaches the straight goal **and the +20° off-axis goal** (min-dist 0.12, upright 0.99),
-the **first off-axis reach in the entire arc**. It is the only mode with a non-zero validation curve
-(peaks 0.25 then the entropy anneal destabilises it — the best-val checkpoint captures it). Honest
-limits: the crab is **asymmetric** (reaches +20° but not −20° — the persistent diagonal-gait bias) and
-**limited range** (±40° still out of reach). So it's a **real but modest positive**: the richer action
-space is the lever, and a learned controller uses it — but symmetric, wide-range omnidirectional
-reaching needs more (a symmetric crab + range + training stability).
+**Measured (best-val, upright):** the omni residual reaches **2/5** held-out goals at the standard
+1200-step horizon vs the scaffold's **1/5** — the straight goal **and the +20° off-axis goal**
+(min-dist 0.12, upright 0.99), the **first off-axis reach in the entire arc**. It is the only mode
+with a non-zero validation curve (peaks 0.25 then the entropy anneal destabilises it — best-val
+captures it).
+
+**Range extends with horizon.** The crab is slow (~0.2 m lateral / 600 steps), so given more time the
+same policy reaches farther: at a **2400-step** horizon it reaches **3/5** — the straight goal, **+20°
+AND +40°** (`aibo_omni_crab.mp4`: it **crab-walks 0.34 m sideways to reach the +40° goal, upright, no
+turning used**). Honest limits: the learned crab is **one-sided** (reaches +20°/+40° on the +y side
+but **not −20°/−40°** — the policy converged to a single crab direction, the persistent diagonal
+asymmetry); a longer-episode retrain to symmetrise it **regressed** (1/5, training-stability
+sensitive). So a **real but modest, asymmetric positive**: the richer action space is the lever and a
+learned controller uses it (up to +40° on one side), but symmetric wide-range reaching needs more
+(symmetric crab + training stability).
 
 **Why omni works where the sagittal residuals didn't:** abduction is **orthogonal** to the fore-aft
 trot, so the residual adds a lateral DOF *without* perturbing the limit cycle (the leg residual broke
