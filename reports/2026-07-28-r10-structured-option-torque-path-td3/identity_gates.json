@@ -1,0 +1,71 @@
+{
+ "contract": "STRUCTURED_OPTION_TORQUE_PATH_IDENTITY_V1",
+ "boundary": "coordinate identity gates (pre-training) \u2014 NO training, NO exploration, NO SAC/PPO",
+ "immutable_scaffold_source": "d6974b95",
+ "parent": "4d983d4f",
+ "theta_dim": 15,
+ "medoid": {
+  "s": 0.3793,
+  "preload_start": 0.4573,
+  "bmax": 0.4098,
+  "residual_norm": 0.8916
+ },
+ "actor_output_exactly_zero": true,
+ "bit_exact_fields": {
+  "structured_params": true,
+  "physical_action_trace": true,
+  "executable_torque_path": true,
+  "contact_event_trace": true,
+  "qpos_vs_scaffold": true,
+  "qvel_vs_scaffold": true,
+  "prev_tau_vs_scaffold": true,
+  "prev_tau_vs_reference": true,
+  "downstream_input_qpos": true,
+  "downstream_kind_trace": true,
+  "termination_step": true,
+  "strict_k6_result": true
+ },
+ "non_bit_exact_fields": [],
+ "zero_policy_k6": {
+  "k6": true,
+  "min_dtz_mm": 2.79,
+  "safe": true
+ },
+ "scaffold_reference_k6": {
+  "k6": true,
+  "min_dtz_mm": 2.79,
+  "safe": true
+ },
+ "terminal_offset_zero_theta": {
+  "err_norm": 0.0,
+  "requested": [
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "executed": [
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ]
+ },
+ "saturation_masks_zero_theta": {
+  "steps": 20,
+  "slew_limited_step_joint": 16,
+  "action_clipped_any": false,
+  "torque_clamped_step_joint": 0
+ },
+ "verdicts": {
+  "TORQUE_PATH_ZERO_DELTA_IDENTITY_PASS": true,
+  "TORQUE_PATH_BIT_EXACT_SCAFFOLD_PASS": true,
+  "OPTION_ZERO_POLICY_K6_PASS": true
+ },
+ "non_claims": [
+  "NO reward-driven policy trained",
+  "NO structured exploration run",
+  "TERMINAL_OFFSET_TRACKING at non-zero dtau_T + exploration admissibility are the NEXT boundary",
+  "SAC/PPO deferred until this coordinate is frozen"
+ ]
+}

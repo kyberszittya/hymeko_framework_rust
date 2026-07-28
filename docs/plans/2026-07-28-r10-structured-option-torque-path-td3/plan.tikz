@@ -1,0 +1,48 @@
+% plan.tikz — R10.2 structured-option torque-path coordinate over the frozen phase-shaped scaffold.
+% One theta at READY -> desired-torque path -> deterministic slew tracker -> governed step_ablation.
+\begin{tikzpicture}[
+    font=\small,
+    frozen/.style={draw=black!70, fill=blue!6,   rounded corners, align=center, inner sep=4pt, minimum height=8mm},
+    learn/.style ={draw=red!70,   fill=red!8,    rounded corners, align=center, inner sep=4pt, minimum height=8mm, very thick},
+    track/.style ={draw=green!55!black, fill=green!7, rounded corners, align=center, inner sep=4pt, minimum height=8mm, very thick},
+    eval/.style  ={draw=orange!80!black, fill=orange!10, rounded corners, align=center, inner sep=3pt, font=\footnotesize},
+    io/.style    ={draw=black!40, fill=black!4, align=center, inner sep=3pt, font=\footnotesize},
+    flow/.style  ={-{Stealth[length=2.2mm]}, thick},
+    dashflow/.style={-{Stealth[length=2.2mm]}, thick, dashed},
+  ]
+  \node[frozen] (ready) {\textbf{READY}\\{\footnotesize frozen transit}};
+  \node[learn, right=7mm of ready] (theta) {\textbf{structured option} $\theta$\\{\footnotesize emitted ONCE at READY}\\$(\Delta s,\Delta p,\Delta b,c_1,c_2,\Delta\tau_T)$};
+  \node[frozen, below=7mm of theta] (pi0) {\textbf{medoid scaffold} $\pi_0$\\{\footnotesize $\tau_0(\phi)$: nominal torque path}};
+  \node[track, right=8mm of theta] (des) {\textbf{desired path} $\tau_{\mathrm{des}}(\phi)$\\$=\tau_0^\theta(\phi)+\sum_k c_k\psi_k+\psi_T\Delta\tau_T$};
+  \node[track, below=7mm of des] (trk) {\textbf{det.\ slew tracker}\\$a_t\!=\!\mathrm{clip}\big(\frac{\tau_{\mathrm{des}}(\phi_{t+1})-\text{prev}_t}{\Delta\tau_{\max}},\pm1\big)$\\{\footnotesize $\theta{=}0\equiv\pi_0$ bit-exact}};
+  \node[frozen, right=8mm of des] (down) {\textbf{APPROACH}\\HANDOFF\_RESET\\R2 $\to$ coast $\to$ \textbf{K6}};
+
+  \draw[flow] (ready) -- (theta);
+  \draw[flow] (pi0) -- (theta) node[midway,left,font=\footnotesize]{$\tau_0$};
+  \draw[flow] (theta) -- (des);
+  \draw[flow] (des) -- (trk) node[midway,left,font=\footnotesize]{track};
+  \draw[flow] (trk.east) to[out=0,in=-135] (down.west);
+  \draw[flow] (des) -- (down) node[midway,above,font=\footnotesize]{moving handoff};
+
+  \node[io, below=7mm of trk, text width=60mm] (gov)
+    {\textbf{governed step\_ablation} (reused): $\mathrm{clip}\to\times\Delta\tau_{\max}\to$ governor. All torque/slew/joint caps + ``no state edit'' inherited. \emph{Offset enters BEFORE this stage}};
+  \draw[flow] (trk) -- (gov);
+
+  \node[io, above=6mm of theta, text width=52mm] (obs)
+    {\textbf{causal READY obs} ($\phi{=}0$): q, qvel, prev\_tau, coin pose/vel, contact, handoff-rel deltas. No teacher/future. \emph{Exploration: one Gaussian on $\theta$ per episode}};
+  \draw[flow] (obs) -- (theta);
+
+  \node[eval, below=13mm of down, text width=56mm] (panel)
+    {\textbf{frozen dev perturbation panel} (16 admissible READY/actuator states; training draws from a DISJOINT RNG). \textbf{3-way}: scaffold vs zero-actor vs post-TD3. Claim = post-TD3 $>$ scaffold, $\ge2/3$ seeds, nominal K6 + safety + boundaries preserved};
+  \draw[dashflow] (down) -- (panel);
+
+  \begin{scope}[on background layer]
+    \node[draw=red!45, dashed, rounded corners, fit=(theta), inner sep=6pt,
+      label={[red!65]above:{\itshape learned: one $\theta$ / episode}}] {};
+    \node[draw=green!45!black, dashed, rounded corners, fit=(des)(trk), inner sep=6pt,
+      label={[green!45!black]below:{\itshape deterministic; coherent by construction}}] {};
+    \node[draw=blue!40, dashed, rounded corners, fit=(ready)(pi0), inner sep=5pt] {};
+    \node[draw=blue!40, dashed, rounded corners, fit=(down), inner sep=5pt,
+      label={[blue!60]above:{\itshape FROZEN}}] {};
+  \end{scope}
+\end{tikzpicture}

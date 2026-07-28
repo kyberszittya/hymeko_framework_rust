@@ -1,0 +1,50 @@
+%% plan.mmd - R10.2 structured-option torque-path TD3: the GATED protocol (stop at each boundary).
+
+sequenceDiagram
+    autonumber
+    participant S1B as Stage 1B solutions (3 seeds)
+    participant Pi0 as medoid scaffold pi_0 / tau_0(phi)
+    participant Act as torque_path_option (decoder + bases + tracker)
+    participant Env as StructuredOptionCaptureEnv
+    participant TD3 as train_semi_mdp (reused engine)
+    participant Panel as frozen dev perturbation panel
+
+    Note over S1B,Pi0: OUTCOME-INDEPENDENT freeze (structural-parameter medoid, NOT best min_dtz)
+    S1B->>Pi0: freeze_scaffold -> pi_0
+    Pi0->>Act: record_phase_tube -> q0(phi), qvel0(phi), tau0(phi) -- the ONLY shaping reference, no tau_star
+
+    Note over Act: BOUNDARY 1 - coordinate identity gates (BEFORE any training)
+    Act->>Act: theta=0 gives a_t = clip(a_pi0(phi) + 0/slew, +-1) == a_pi0 [TORQUE_PATH_ZERO_DELTA_IDENTITY]
+    Act->>Act: terminal qpos/qvel/prev == PhaseShapeCapture.roll(pi0) [TORQUE_PATH_BIT_EXACT_SCAFFOLD]
+    Act->>Pi0: zero-theta roll -> frozen downstream -> strict K6 [OPTION_ZERO_POLICY_K6]
+
+    Note over Act,Env: BOUNDARY 2 - episodic-only exploration admissibility (max 3 pre-registered scales)
+    Act->>Env: requested Delta_tau_T vs executed prev-tau0(1) match [TERMINAL_OFFSET_TRACKING / NO_PRELOAD_RANDOM_WALK]
+    Env->>Env: smallest scale - preserved K6 + safe near-failures + distinct trajectories [STRUCTURED_THETA_EXPLORATION_ADMISSIBLE]
+
+    Note over Env,TD3: BOUNDARY 3 - bounded TD3 (dev perturbations only, no online CEM/teacher/state-edit)
+    loop max 400 option-episodes/seed x 3 seeds, eval every 25 (NO exploration)
+        TD3->>Env: reset -> READY obs (phi=0), step(theta) with ONE Gaussian on theta per episode
+        Env->>Env: torque-path roll -> FROZEN downstream -> strict-K6-dominated terminal reward + phase-tube shaping
+        Env-->>TD3: OptionTransition (terminal, tau=capture steps, k6, safe, min_dtz, boundary counts)
+        TD3->>Panel: dev_eval_fn(mean-action actor) -> K6 rate + Wilson CI (frozen panel)
+    end
+
+    Note over Panel: THE LEARNING CLAIM (3-way, paired)
+    Panel->>Panel: evaluate frozen scaffold pi_0
+    Panel->>Panel: evaluate zero-actor (== scaffold, consistency check)
+    Panel->>Panel: evaluate post-TD3
+    Panel-->>TD3: STRUCTURED_OPTION_TD3_IMPROVES_OVER_SCAFFOLD requires post-TD3 > scaffold in at least 2 of 3 seeds
+    Note over TD3: nominal K6 + safety + boundaries preserved, else STRUCTURED_OPTION_TD3_NO_IMPROVEMENT_WITHIN_FROZEN_BUDGET
+    Note over TD3: commit -> STOP (no 24-seed R10.3, no SAC/PPO R10.4, no energy R15)
+
+    %% stateDiagram-v2 - the gate ladder (stop at each boundary)
+    %%   [*] --> IDENTITY
+    %%   IDENTITY --> ADMISSIBLE: zero-theta == pi_0 bit-exact AND strict K6
+    %%   IDENTITY --> HALT: not bit-exact -> coordinate wrong, do NOT train
+    %%   ADMISSIBLE --> TD3_TRAIN: terminal-offset tracks AND an episodic scale is admissible
+    %%   ADMISSIBLE --> HALT: no admissible scale -> re-scope scales, not the coordinate
+    %%   TD3_TRAIN --> PANEL_EVAL: eval checkpoint (no exploration)
+    %%   PANEL_EVAL --> FREEZE: post-TD3 > scaffold on panel, at least 2 of 3 seeds, nominal K6 + safe + boundaries
+    %%   PANEL_EVAL --> TD3_TRAIN: not yet (max 400 options/seed)
+    %%   FREEZE --> [*]

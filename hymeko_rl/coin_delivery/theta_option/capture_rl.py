@@ -189,9 +189,10 @@ def policy_residual(actor: Any) -> Callable[[np.ndarray], np.ndarray]:
     return fn
 
 
-def make_zero_actor(seed: int = 0) -> Any:
-    """A TD3 residual actor zero-initialised on its output head — its residual output is *exactly* zero (verified), so
-    the composed action is bit-exact ``pi_0``. Used by the identity gate."""
+def make_zero_actor(seed: int = 0, act_dim: int = ACT_DIM) -> Any:
+    """A TD3 actor zero-initialised on its output head — its output is *exactly* zero (verified), so a composed/decoded
+    action is bit-exact ``pi_0``. Used by the identity gates. ``act_dim`` defaults to the 4-D residual head; pass
+    ``act_dim=THETA_DIM`` for the 15-D structured-option head (R10.2) — dimension-generic by reuse, not a near-copy."""
     from hymeko_rl.coin_delivery.theta_option.kinetic_authority_unlock import zero_init_detactor
     torch.manual_seed(seed)
-    return zero_init_detactor(make_actor("td3", OBS_DIM, ACT_DIM))
+    return zero_init_detactor(make_actor("td3", OBS_DIM, act_dim))

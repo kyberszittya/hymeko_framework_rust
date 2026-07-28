@@ -1,0 +1,258 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!55!black, urlcolor=blue!55!black}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\ok}{\textcolor{green!50!black}{\textbf{PASS}}}
+\newcommand{\halt}{\textcolor{red!70!black}{\textbf{HALT}}}
+\newcommand{\slew}{\ensuremath{\Delta\tau_{\max}}}
+
+\title{\textbf{Plan --- R10.2 Structured-Option Torque-Path TD3 (Stage 2, corrected coordinate)}\\[2pt]
+\large One structured $\theta$ at READY $\to$ a scaffold-relative desired-torque path $\to$ a deterministic slew tracker.
+Exploration is temporally coherent \emph{by construction}; zero-$\theta$ is the medoid scaffold bit-exact.}
+\author{HyMeKo coin-delivery campaign \quad(\code{recovery/coin-r9-causal-residual-delivery}, parent \code{4d983d4f})}
+\date{2026-07-28}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Stage 1B proved a phase-shaped moving-precursor capture delivers strict K6 from \code{HOME\_V1} (3/3 seeds,
+frozen downstream). The Stage-2 audit (\code{4d983d4f}) then established a \emph{negative-first} result: the previous
+action coordinate --- a per-step slew-normalised residual $u=\mathrm{clip}(u_{\pi_0}(\phi)+\alpha\tanh\delta_\theta(s),\pm1)$
+whose $\delta_\theta$ is re-evaluated \emph{each step} --- makes vanilla TD3 explore with per-step IID Gaussian noise that
+\emph{integrates into the actuator preload} ($\delta\tau_T\!\approx\!\alpha\slew\sum_t\varepsilon_t$), removing the delivery
+at every tested scale, while a temporally-\emph{coherent} correction recovers $8/8$. The fix is not to abandon TD3 but to
+\textbf{move the action out of the per-step slew-increment coordinate}. The learned decision is made \emph{once, at READY},
+as a bounded structured option
+$\theta=(\Delta s,\Delta p,\Delta b,\;c_1,c_2\in\mathbb{R}^4,\;\Delta\tau_T\in\mathbb{R}^4)\in\mathbb{R}^{15}$;
+the per-step physical action is a \emph{deterministic tracker} of the resulting smooth desired-torque path
+$\tau_{\mathrm{des}}(\phi)=\tau_0^\theta(\phi)+\sum_k c_k\psi_k(\phi)+\psi_T(\phi)\,\Delta\tau_T$, so exploration is
+temporally coherent by construction. \textbf{This is a coordinate-freeze plan, not yet a learning claim.} Three identity
+gates are verified \emph{before any training} (zero-$\theta$ $\equiv$ medoid scaffold bit-exact on the \emph{same} code path
+$\Rightarrow$ strict K6); then episodic-only exploration admissibility (incl.\ terminal-offset tracking / no preload
+random-walk); only then a bounded 3-seed TD3 whose success is \emph{improvement over the frozen scaffold under
+perturbation}, never nominal K6 (the scaffold already has it). No SAC/PPO until this coordinate is frozen.
+\end{abstract}
+
+\section{Scope and goal}
+\textbf{Goal.} Freeze a \emph{correct} structured-option torque-path action coordinate over the frozen Stage-1B scaffold,
+prove its zero-$\theta$ identity and exploration admissibility, and run one bounded reward-driven TD3 campaign whose claim
+is \emph{state-dependent robustness improvement over the frozen scaffold}, deployed with no CEM/teacher/state-edit in the
+loop. \textbf{Deployed chain (unchanged physically):}
+\begin{center}\itshape HOME\_V1 $\to$ frozen analytic transit $\to$ READY $\to$ \textbf{structured-option torque-path
+capture} $\to$ frozen APPROACH $\to$ HANDOFF\_RESET $\to$ frozen R2 $\to$ coast/settle $\to$ strict K6.\end{center}
+\textbf{Non-goals (explicit stops).} No SAC/PPO (deferred to R10.4, only after this coordinate freezes); no 24-seed
+reproduction (R10.3); no variable-geometry / variable-coin work (R11+); no Hamiltonian/energy experiments (R15). No
+re-opening the retired per-step IID / cradle-centred-$\tau^\star$ path. This is the bounded coordinate-freeze $+$ 3-seed
+smoke only.
+
+\begin{figure}[h]\centering\input{plan.tikz}\caption{The learned decision is a single structured option $\theta$ emitted
+at READY (red); a deterministic tracker (green) converts the resulting smooth desired-torque path into per-step
+slew-normalised commands through the \emph{same} governed \code{step\_ablation} stack the scaffold uses. At $\theta{=}0$ the
+tracker is the medoid scaffold $\pi_0$ (blue) bit-exact. The claim is measured on the frozen dev perturbation panel against
+scaffold and zero-actor baselines.}\end{figure}
+
+\section{What changed from the retired coordinate (\code{4d983d4f} audit)}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{Decision cadence.} Retired: a residual $\delta_\theta(s)$ re-evaluated \emph{every step} (per-step action).
+  New: one $\theta$ emitted \emph{once at READY} (episode-fixed); the per-step action is a fixed deterministic function of
+  $\theta$ and the phase.
+  \item \textbf{Exploration geometry.} Retired: \code{train\_semi\_mdp}'s Gaussian is added to the per-step residual
+  $\Rightarrow$ IID slew-increment noise that random-walks the preload. New: the \emph{same} engine's per-option Gaussian is
+  added to $\theta$ $\Rightarrow$ one coherent structured perturbation per episode. \emph{The coordinate change is what makes
+  the reused engine admissible.}
+  \item \textbf{Preload.} Retired: terminal preload is a hidden noise integral. New: preload change is the explicit,
+  bounded terminal-offset block $\Delta\tau_T$ with a fixed basis $\psi_T(0){=}0,\psi_T(1){=}1$; requested-vs-executed
+  offset is gated (\code{TERMINAL\_OFFSET\_TRACKING} / \code{NO\_PRELOAD\_RANDOM\_WALK}).
+  \item \textbf{Reward reference.} Retired: cradle-centred $\tau^\star$ preload metric --- \emph{invalidated} (medoid
+  terminal $\lVert\text{prev}-\tau^\star\rVert\!\approx\!0.88$, not $0$). New: shaping is \emph{scaffold-phase-tube}-relative
+  only ($q-q_0(\phi),\ \dot q-\dot q_0(\phi),\ \text{prev}-\tau_0(\phi)$); every $\tau^\star$ term removed.
+\end{itemize}
+
+\section{The action coordinate (interface + contracts)}
+Let $\pi_0$ be the frozen medoid scaffold (structural-parameter medoid of the 3 Stage-1B K6 solutions;
+\code{freeze\_scaffold}), with nominal params $(s,p,b,\text{residual})$ and per-step slew-normalised action
+$a_{\pi_0}(\phi)=\mathrm{clip}(\text{target}(\phi)-\text{prev},-\slew,\slew)/\slew\in[-1,1]^4$ where
+$\slew=\tau_{\mathrm{rate}}\!\cdot\!\text{control\_dt}$ (\code{PhaseShapeCapture.scaffold\_action}).
+
+\textbf{Structured option (emitted once at READY):}
+$\theta=(\Delta s,\Delta p,\Delta b,c_1,c_2,\Delta\tau_T)\in\mathbb{R}^{15}$, decoded from the actor's tanh-bounded output
+$\hat z\in[-1,1]^{15}$ by fixed, pre-registered per-block scales (a \code{StructuredOption} dataclass; $\hat z{=}0\Rightarrow$
+all offsets exactly $0$).
+
+\textbf{Structurally-reshaped nominal.} $\tau_0^\theta(\phi)$ is the scaffold nominal under the perturbed params
+$(s{+}\Delta s,\,p{+}\Delta p,\,b{+}\Delta b)$; at $\theta{=}0$ these are bit-identical to $(s,p,b)$ (since $x+0.0=x$), so the
+quintic coefficients and preload blend are bit-identical.
+
+\textbf{Additive torque-path offset.} $o_\theta(\phi)=\sum_{k\in\{1,2\}} c_k\,\psi_k(\phi)+\psi_T(\phi)\,\Delta\tau_T$ with
+transient bases $\psi_k(0){=}\psi_k(1){=}0$ (a knot spline pinned to $0$ at both endpoints --- modifies the middle, no
+unnoticed endpoint drift) and terminal basis $\psi_T(0){=}0,\psi_T(1){=}1$ (a monotone ramp; the preload change is explicit
+and bounded, never a noise integral).
+
+\textbf{Deterministic per-step tracker (the key).} The desired torque path is
+$\tau_{\mathrm{des}}(\phi)=\tau_0^\theta(\phi)+o_\theta(\phi)$, tracked by
+\[
+a_t=\mathrm{clip}\!\Big(\tfrac{\tau_{\mathrm{des}}(\phi_{t+1})-\text{prev}_t}{\slew},-1,1\Big),\qquad
+\text{prev}_{t+1}=\mathrm{clip}(\text{prev}_t+\mathrm{clip}(a_t,\pm1)\,\slew,\ \text{lo},\text{hi}),
+\]
+a tracking form that cannot accumulate action error (it re-references the \emph{current} \code{prev}$_t$ each step). No
+per-step residual noise is ever added after this conversion.
+
+\textbf{Bit-exact realisation (float-exactness contract).} A literal $(\tau_{\mathrm{des}}-\text{prev})/\slew$ would route
+$a_{\pi_0}$ through a $\slew$-divide-then-multiply round-trip and lose bit-exactness at $\theta{=}0$. Instead the tracker is
+computed as
+$a_t=\mathrm{clip}\big(a_{\pi_0}^\theta(\phi)+o_\theta(\phi)/\slew,\,-1,1\big)$, injecting the offset into the scaffold's
+\emph{un-normalised} numerator $\mathrm{clip}(\text{target}-\text{prev},-\slew,\slew)$ via the reused
+\code{scaffold\_action}/\code{apply\_step}. This is algebraically the same $\tau_{\mathrm{des}}$ tracker with
+$\tau_0^\theta(\phi)=\text{prev}+\mathrm{clip}(\text{target}-\text{prev},-\slew,\slew)$, and at $\theta{=}0$ ($o_\theta\!\equiv\!0$)
+reduces to $\mathrm{clip}(a_{\pi_0},-1,1)=a_{\pi_0}$ \emph{on the identical code path}.
+
+\textbf{Contracts inherited from the scaffold (\S CLAUDE.md 2 risk):} every command passes \code{step\_ablation} $+$ governor
+$+$ the final \code{clip}$\to\!\times\slew$; torque / slew / joint-speed caps and ``no state edit, no hidden force'' hold by
+\emph{reuse}, not re-implementation. The one new degree of freedom is the explicit terminal preload $\Delta\tau_T$, which the
+tracking-gate keeps inside the scaffold's tight-on-preload deliverable band.
+
+\section{The frozen contract}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item Frozen and imported as-is: \code{HOME\_STATE\_V1}, the analytic HOME$\to$READY transit (\code{eb09a16a}), the
+  Stage-1B scaffold (\code{moving\_precapture}, \code{d6974b95}: \code{PhaseShapeCapture}, \code{scaffold\_action},
+  \code{apply\_step}, \code{FrozenDownstream}, \code{HandoffReference}), APPROACH / HANDOFF\_RESET / R2 / coast, and
+  physics / safety / strict-K6. \code{git diff} empty on all.
+  \item The structured option controls \emph{only} READY$\to$capture; the frozen downstream generates the rest. No teacher /
+  future info; no state edit; no online CEM once training begins.
+  \item \code{s4}/\code{s7} untouched (validation-only, \emph{not read} here); \code{f1--f4} \code{SEALED}; development
+  perturbations only, drawn from a training RNG \emph{disjoint} from the frozen dev panel. No tag moved.
+\end{itemize}
+
+\section{Affected files}
+\textbf{CORE.YAML items touched: none} (empty list; escalation not required). \textbf{Reuse (read-only):}
+\code{option\_rl.core} (\code{OptionEnv}, \code{OptionTransition}, \code{smdp\_target}), \code{option\_rl.agents}
+(\code{train\_semi\_mdp}, \code{make\_actor}, \code{SemiMDPConfig} --- the dim-generic TD3/SAC engine);
+\code{moving\_precapture} (\code{PhaseShapeCapture}, \code{scaffold\_action}, \code{apply\_step}, \code{FrozenDownstream});
+\code{capture\_rl} (\code{freeze\_scaffold}, \code{capture\_observation}, \code{perturbation\_panel},
+\code{perturb\_ready}, \code{evaluate\_on\_panel}, \code{make\_zero\_actor}); \code{kinetic\_authority\_unlock}
+(\code{zero\_init\_detactor}). \textbf{New:}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{coin\_delivery/theta\_option/torque\_path\_option.py} --- the action module: \code{StructuredOption} $+$
+  $\theta$-decoder, the phase bases $\psi_k,\psi_T$, \code{TorquePathCaptureRoll} (reuses \code{scaffold\_action} /
+  \code{apply\_step}; injects $o_\theta/\slew$), the nominal phase-tube recorder \code{record\_phase\_tube}, and the
+  terminal-offset audit \code{terminal\_offset\_tracking}. Pure action coordinate; no reward, no trainer.
+  \item \code{coin\_delivery/theta\_option/torque\_path\_env.py} --- \code{StructuredOptionCaptureEnv} (an
+  \code{OptionEnv}: reset $\to$ perturbed-READY causal obs; step($\theta$) $\to$ torque-path roll $+$ frozen downstream $+$
+  terminal reward), the phase-tube shaping reward \code{phase\_tube\_reward}, and the training-perturbation sampler
+  (disjoint from the dev panel).
+  \item \code{experiments/coin\_kinetic\_structured\_option\_gates.py} --- the pre-training gate verifier: the three
+  identity gates $\to$ terminal-offset tracking $\to$ $\le3$-scale exploration admissibility. Imports no trainer; emits
+  \code{reports/2026-07-28-r10-structured-option-torque-path-td3/gates.json}.
+  \item \code{experiments/coin\_kinetic\_structured\_option\_td3.py} --- the campaign (only after gates \ok): 3-seed TD3,
+  $\le400$ option-episodes/seed, eval every 25 (no exploration), 3-way frozen-panel compare, gate verdict, provenance.
+  \item \code{tests/test\_torque\_path\_option.py}; \code{reports/2026-07-28-r10-structured-option-torque-path-td3.md}.
+  \item \emph{Additive, non-core:} \code{capture\_rl.make\_zero\_actor} gains an optional \code{act\_dim} (default 4;
+  preserves the existing test) so a 15-D zero-$\theta$ actor is built by reuse, not a near-copy (\S6.1).
+\end{itemize}
+
+\section{Interface changes}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{decode\_theta($\hat z\in[-1,1]^{15}$, scales) $\to$ StructuredOption}. \textbf{Pre:} $\lVert\hat z\rVert_\infty\le1$.
+  \textbf{Post:} deterministic; $\hat z{=}0\Rightarrow$ every offset exactly $0.0$ (identity precondition).
+  \item \code{TorquePathCaptureRoll(ready, ref, stack, pi0, coin0, scales).rollout($\hat z$) $\to$ \{snapshot, obs, acts,
+  prev, tube\_dev\}}. \textbf{Post:} $\hat z{=}0$ reproduces \code{PhaseShapeCapture.roll(pi0)} \emph{bit-exact} (asserted by
+  the identity gate); every step passes the governed stack.
+  \item \code{record\_phase\_tube(ready, ref, stack, pi0) $\to$ \{q0($\phi$), qvel0($\phi$), tau0($\phi$)\}} --- the medoid
+  reference trajectory; the \emph{only} shaping reference (no $\tau^\star$).
+  \item \code{StructuredOptionCaptureEnv} --- \code{reset(idx)$\to$s} (perturbed-READY causal obs at $\phi{=}0$);
+  \code{step($\hat z$)$\to$(s2,R,done,info)} rolls the torque-path capture $+$ frozen downstream, returns the
+  strict-K6-dominated terminal reward; \code{info} carries \code{tau}, k6, safe, min\_dtz, boundary counts,
+  terminal-offset error, tube deviation. Each option is terminal ($\gamma^\tau$ bootstrap collapses to the reward).
+  \item \code{evaluate\_on\_panel(policy, \dots)} (reused) --- K6 rate $+$ Wilson CI $+$ safety $+$ one-reset frac on the
+  frozen dev panel; identical for scaffold / zero-actor / post-TD3.
+\end{itemize}
+
+\section{Reward (K6-dominant; shaping is phase-tube-relative only)}
+$R=w_{K6}\,\mathbf{1}[\text{strict K6}] + w_{d}\,\rho(\text{min\_dtz}) - w_{s}\,\mathbf{1}[\lnot\text{safe}]
+- w_{b}\,(\text{boundary violations}) - w_{\phi}\,\bar S_\theta$, where the \emph{only} shaping term is the bounded
+phase-tube deviation $\bar S_\theta=\frac1N\sum_t \big(\lambda_q\lVert q-q_0(\phi)\rVert^2 + \lambda_v\lVert\dot q-\dot
+q_0(\phi)\rVert^2 + \lambda_\tau\lVert\text{prev}-\tau_0(\phi)\rVert^2\big)$. Weights are set so
+$w_{K6}\gg\sup|\text{shaping}|$: strict K6 cannot be out-farmed by tube-hugging, and the tube is shaping, never a target
+(it \emph{is} the zero-$\theta$ trajectory, so hugging it $\to$ the scaffold, not an exploit). \textbf{No cradle-$\tau^\star$
+term anywhere.}
+
+\section{Test strategy}
+\textbf{Unit:} $\theta$-decoder ($\hat z{=}0\Rightarrow$ exact-$0$ offsets; scale bounds; determinism); phase bases
+($\psi_k(0){=}\psi_k(1){=}0$, $\psi_T(0){=}0,\psi_T(1){=}1$); phase-tube recorder shape/finiteness; reward K6-dominance
+(shaping cannot flip the sign of a K6 vs non-K6 pair); training-perturbation sampler disjoint from the dev panel.
+\textbf{Integration / identity (load-bearing, before training):}
+\code{TORQUE\_PATH\_ZERO\_DELTA\_IDENTITY} (real 15-D zero-init actor $\Rightarrow$ $\theta{=}0$ $\Rightarrow$ per-step
+action bit-exact $a_{\pi_0}$), \code{TORQUE\_PATH\_BIT\_EXACT\_SCAFFOLD} (terminal qpos/qvel/prev bit-exact to
+\code{PhaseShapeCapture.roll(pi0)}), \code{OPTION\_ZERO\_POLICY\_K6} (zero-$\theta$ $\to$ frozen downstream $\to$ strict K6).
+\textbf{Terminal-offset tracking:} requested $\Delta\tau_T$ vs executed terminal $\text{prev}-\tau_0(1)$ agree within a
+slew/contact tolerance (\code{NO\_PRELOAD\_RANDOM\_WALK}). \textbf{Smoke (production scale, 1 seed):} a short TD3 run over the
+real dev-scale env (real mujoco, full downstream horizon) executes end-to-end and improves panel K6 over the zero-actor,
+else \halt{} and localise (reward, obs, exploration scale). \textbf{Boundary:} exactly-one HANDOFF\_RESET; deterministic
+replay given the seed. \textbf{Coverage:} every new function/method exercised; the identity gate is the regression test that
+would fail against a non-bit-exact tracker.
+
+\section{Performance budget}
+One option (capture $\sim$20 steps $+$ downstream horizon 80) $\approx 0.1$--$0.2$\,s. Gates ($\le3$ scales $\times$ a small
+panel) $\approx$ 1--3\,min. TD3: $\le400$ options/seed, eval every 25, 3 seeds $\approx$ 15--35\,min, \emph{checkpointed per
+seed}. \textbf{Peak RSS $<2$\,GB} (a $31{\to}256{\to}256{\to}15$ actor $+$ two critics; hard cap 16\,GB, \code{systemd-run}
+not required at this size but RSS reported on exit). Unit suite target $<180$\,s. Wall estimate reconciled against the
+Stage-1B/audit baselines before launch (\S11 $>2\times$ rule); measured median/IQR/worst over $\ge5$ eval repeats for any
+reported latency.
+
+\section{Risk anticipation}
+\textbf{Performance-contract preservation.} The new torque-path branch inherits \emph{every} cap the scaffold enforced
+because it \emph{reuses} \code{apply\_step} (the identical $\mathrm{clip}\to\times\slew\to$ governor $\to$ \code{step\_ablation}
+stage); the offset enters \emph{before} that stage and is itself bounded ($c_k,\Delta\tau_T$ from a tanh-bounded actor
+$\times$ fixed scales). Zero-$\theta$ is bit-exact $\pi_0$, so the worst case is never worse than the proven scaffold.
+\textbf{The float-exactness trap.} A literal $\tau_{\mathrm{des}}$-tracker loses the $\theta{=}0$ identity to a
+$/\slew\!\cdot\!\slew$ round-trip; the numerator-injection realisation avoids it and is the reason the identity gate is
+bit-exact rather than ``$\approx$''. \textbf{The scientific trap.} Nominal K6 is necessary-not-sufficient ($\pi_0$ has it);
+the claim rides entirely on paired panel improvement over the frozen scaffold in $\ge2/3$ seeds, on a panel fixed
+\emph{before} any TD3 run and never tuned to results. \textbf{Preload random-walk (the retired failure).} Structurally
+prevented: exploration is episode-fixed on $\theta$, and $\Delta\tau_T$ has an explicit fixed basis --- the
+\code{TERMINAL\_OFFSET\_TRACKING} gate proves the executed preload matches the requested one under clipping/slew/contact.
+\textbf{Worst-case input.} Production scale here $=$ the frozen dev panel (16 admissible READY / actuator-state
+perturbations, \code{sig\_q}=0.02, \code{sig\_v}=0.06, \code{sig\_tau}=0.05) through the full downstream horizon 80 under
+real mujoco 3.10, $\times$ 3 seeds $\times$ 400 options --- not a toy fixture; the 1-seed production smoke exercises exactly
+this before the multi-seed queue.
+
+\section{Rollback path}
+New files only, plus one additive \code{act\_dim} kwarg on \code{make\_zero\_actor}; rollback $=$ delete the new files and
+revert the kwarg. The zero-$\theta$ bit-exact identity guarantees a revert to $\pi_0$ (\code{d6974b95}) with no behaviour
+change. Each checkpoint (\code{update0}/\code{best\_val}/\code{final}) is saved per seed; a regressing post-TD3 reverts to
+the zero-actor ($\equiv$ scaffold).
+
+\section{Gate ladder + stop logic}
+\begin{enumerate}[nosep,leftmargin=1.6em]
+  \item \textbf{(before training)} \code{TORQUE\_PATH\_ZERO\_DELTA\_IDENTITY\_PASS}, \code{TORQUE\_PATH\_BIT\_EXACT\_SCAFFOLD\_PASS},
+  \code{OPTION\_ZERO\_POLICY\_K6\_PASS}. Any failure $\Rightarrow$ \halt{} (the coordinate is wrong; do not train).
+  \item \textbf{(before training)} \code{TERMINAL\_OFFSET\_TRACKING\_PASS} $+$ \code{STRUCTURED\_THETA\_EXPLORATION\_ADMISSIBLE}:
+  the smallest of $\le3$ pre-registered episodic scales giving \emph{both} preserved nominal successes and safe near-boundary
+  failures and genuinely distinct trajectories, with executed $\Delta\tau_T$ matching the request
+  (\code{NO\_PRELOAD\_RANDOM\_WALK}). If no scale is admissible $\Rightarrow$ \halt{} and re-scope the scales (not the
+  coordinate).
+  \item \textbf{(training)} \code{STRUCTURED\_OPTION\_TD3\_IMPROVES\_OVER\_SCAFFOLD\_PASS}: post-TD3 beats the frozen scaffold
+  (paired, same panel members) in $\ge2/3$ seeds while \emph{preserving} nominal HOME\_V1 K6, safety, and every boundary
+  contract. Else emit only \code{STRUCTURED\_OPTION\_TD3\_NO\_IMPROVEMENT\_WITHIN\_FROZEN\_BUDGET} --- \emph{never} an
+  RL-impossibility claim.
+\end{enumerate}
+\textbf{Stop logic.} Each numbered gate is a \emph{boundary}: verify, report, and stop for review before the next. After
+the TD3 verdict, commit and \halt{} --- no 24-seed reproduction (R10.3), no SAC/PPO (R10.4), no energy experiments. If a gate
+fails, \halt{} and localise within the current coordinate; do not widen scope.
+
+\section{Empty-plan-dir hygiene}
+If abandoned before the action module lands, delete \code{docs/plans/2026-07-28-r10-structured-option-torque-path-td3/} this
+session. The retired \code{docs/plans/2026-07-28-td3-capture-reward-driven/} is \emph{kept} as the audited-negative record
+of the superseded coordinate (its \code{plan.pdf} documents why the per-step residual was refuted).
+
+\end{document}
