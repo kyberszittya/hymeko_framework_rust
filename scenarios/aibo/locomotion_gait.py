@@ -17,6 +17,22 @@ import numpy as np
 # leg order fl(0), fr(1), bl(2), br(3); left legs {0,2}, right legs {1,3}
 _DIAG_PHASE = (0.0, float(np.pi), float(np.pi), 0.0)
 
+_PI = float(np.pi)
+# Named left-right base-gait phase patterns (leg order fl,fr,bl,br). The distinction that matters for
+# the crab-symmetry campaign is INSTANTANEOUS left-right symmetry:
+#   diag  = diagonal trot (fl,br) vs (fr,bl) — instantaneously left-right ASYMMETRIC (the measured
+#           root of the omni-crab one-sidedness; see reports/2026-07-28-aibo-crab-symmetry-resolved.md)
+#   bound = front pair vs back pair — instantaneously left-right SYMMETRIC (fl==fr, bl==br): the
+#           symmetric substrate Phase A tests (does a symmetric scaffold let the crab reach both sides?)
+#   pace  = left pair vs right pair — the two SIDES are half a period apart (still not instantaneous)
+#   pronk = all four in phase — symmetric but ~no net locomotion (degenerate control)
+GAIT_PHASES: "dict[str, tuple[float, float, float, float]]" = {
+    "diag": (0.0, _PI, _PI, 0.0),
+    "bound": (0.0, 0.0, _PI, _PI),
+    "pace": (0.0, _PI, 0.0, _PI),
+    "pronk": (0.0, 0.0, 0.0, 0.0),
+}
+
 
 def body_yaw(env: object) -> float:
     """World-frame yaw of the torso (radians)."""
@@ -62,6 +78,7 @@ class SteeredTrotGait:
     knee_amp: float = 0.3
     freq: float = 1.2
     steer_gain: float = 0.9
+    phase: "tuple[float, float, float, float]" = _DIAG_PHASE   # per-leg gait phase (default = diagonal trot)
 
     def action(self, env: object, yaw_cmd: float = 0.0, drive: float = 1.0) -> np.ndarray:
         t = int(getattr(env, "_step", 0)) * int(env.frame_skip) * float(env.model.opt.timestep)
@@ -75,7 +92,7 @@ class SteeredTrotGait:
             # +yaw turns LEFT -> reduce LEFT (inner) legs; -yaw turns RIGHT -> reduce RIGHT.
             inner = is_left if yaw_cmd >= 0 else (not is_left)
             side = (1.0 - self.steer_gain * abs(yaw_cmd)) if inner else 1.0
-            target[base + 1] += drive * self.hip_amp * max(0.1, side) * np.sin(ph + _DIAG_PHASE[leg])
-            target[base + 2] += drive * self.knee_amp * np.sin(ph + _DIAG_PHASE[leg] + np.pi)
+            target[base + 1] += drive * self.hip_amp * max(0.1, side) * np.sin(ph + self.phase[leg])
+            target[base + 2] += drive * self.knee_amp * np.sin(ph + self.phase[leg] + np.pi)
         tau = -env.pd_kp * (q - target) - env.pd_kd * qd
         return np.clip(tau / env.ctrl_range, -1.0, 1.0).astype(np.float32)

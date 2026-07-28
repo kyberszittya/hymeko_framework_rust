@@ -72,6 +72,9 @@ def main() -> None:
                     help="per-layer skip in the signed-KAN backbone: none (plain signed-conv, the default so far) "
                          "| residual | highway (the Schmidhuber gate — the 'H' in HSiKAN). Ignored by "
                          "mixture/sa_hsikan (structural constants).")
+    ap.add_argument("--gait", default="diag", choices=("diag", "bound", "pace", "pronk"),
+                    help="base-gait phase (Phase A): diag (trot, asymmetric — default) | bound (front/back, "
+                         "instantaneously LEFT-RIGHT SYMMETRIC — the symmetric-scaffold test for a two-sided crab)")
     args = ap.parse_args()
     _OUT.mkdir(parents=True, exist_ok=True)
     tag = f"{args.kind}_{args.head}"
@@ -81,9 +84,11 @@ def main() -> None:
         tag += f"_hstar{args.hstar:g}"
     if args.skip != "none":
         tag += f"_{args.skip}"
+    if args.gait != "diag":
+        tag += f"_{args.gait}"
 
     env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="leg_hypergraph",
-                                             leg_hg_symmetric=args.symmetric), seed=0)
+                                             leg_hg_symmetric=args.symmetric, gait_phase=args.gait), seed=0)
     n, feat = env._n_vtx, 4
     torch.manual_seed(0)
 
@@ -119,7 +124,7 @@ def main() -> None:
     hsikan = _reach(env, _greedy(best_actor), _TEST_GRID, horizon=2000)
 
     # MLP baseline (flat obs) on the SAME symmetric grid
-    mlp_env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="flat"), seed=0)
+    mlp_env = ResidualTrotEnv(ResidualTrotConfig(residual_mode="omni", obs_mode="flat", gait_phase=args.gait), seed=0)
     mlp_actor, _ = build_sac("mlp", obs_dim=9, flat_dim=9, action_dim=4, action_scale=1.0, hidden=128)
     mlp = None
     if _MLP_CKPT.exists():

@@ -21,7 +21,7 @@ import numpy as np
 
 from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
 
-from .locomotion_gait import _DIAG_PHASE, SteeredTrotGait, heading_error
+from .locomotion_gait import GAIT_PHASES, SteeredTrotGait, heading_error
 from .motion_contract import JointVelocityGovernor
 
 LEGS = ("fl", "fr", "bl", "br")  # leg order (matches _DIAG_PHASE and the hip_abduct_{leg} joints)
@@ -57,6 +57,7 @@ class ResidualTrotConfig:
     abd_scale: float = 0.5               # omni mode: bound on the learned per-leg abduction (lateral) amplitude
     obs_mode: str = "flat"               # "flat" = 9-D vector (MLP) | "hypergraph" = (n_vertices, 4) per-vertex on the body's kinematic hypergraph (for signedkan/hsikan structure propagation)
     leg_hg_symmetric: bool = False       # leg_hypergraph mode: encode the LEFT/RIGHT symmetry axis in the hg signs
+    gait_phase: str = "diag"             # base-gait phase pattern (GAIT_PHASES): "diag" (trot, asymmetric — default) | "bound" (front/back, instantaneously LEFT-RIGHT SYMMETRIC — the symmetric-scaffold test) | "pace" | "pronk"
     mirror_augment: bool = False         # omni/flat: randomly present the LEFT-RIGHT-MIRRORED task each episode → a symmetry-preserved policy that reaches BOTH crab sides (breaks the symmetry-breaking one-sided optimum)
     residual_scale: float = 0.25         # bounded residual (coin-R8): a small correction over the gait
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
@@ -102,7 +103,10 @@ class ResidualTrotEnv:
     def __post_init__(self) -> None:
         self._env = QuadrupedGoalEnv(base="free", task="goal", goal_distance=self.cfg.dist_hi,
                                      reach_radius=self.cfg.reach_radius, max_steps=self.cfg.max_steps)
-        self._gait = SteeredTrotGait()
+        if self.cfg.gait_phase not in GAIT_PHASES:
+            raise ValueError(f"gait_phase must be one of {tuple(GAIT_PHASES)}; got {self.cfg.gait_phase!r}")
+        self._phase_pat = GAIT_PHASES[self.cfg.gait_phase]        # per-leg gait phase (diag=asymmetric, bound=symmetric)
+        self._gait = SteeredTrotGait(phase=self._phase_pat)
         self._gov = JointVelocityGovernor(v_max=self.cfg.v_max)
         self._rng = np.random.default_rng(self.seed)
         self._prev_dist = 0.0
@@ -176,7 +180,7 @@ class ResidualTrotEnv:
         out[:, :2] = nf
         ph = self._phase()
         for leg, vtx in enumerate(self._abd_vtx):                 # per-leg gait phase on the abduction vertices
-            out[vtx, 2] = float(np.sin(ph + _DIAG_PHASE[leg]))
+            out[vtx, 2] = float(np.sin(ph + self._phase_pat[leg]))
         herr, dist = float(heading_error(env)), float(env.dist_to_goal())
         out[:, 3] = float(np.clip(np.sin(herr) * dist, -1.0, 1.0))  # GLOBAL signed lateral goal-demand
         return out
@@ -196,7 +200,7 @@ class ResidualTrotEnv:
         for leg in range(4):
             out[leg + 1] = [float(env.data.qpos[self._env._leg_qadr[3 * leg]]),
                             float(env.data.qvel[self._abd_dof[leg]]),
-                            float(np.sin(ph + _DIAG_PHASE[leg])), lat]
+                            float(np.sin(ph + self._phase_pat[leg])), lat]
         return out
 
     # -- gym-like API ----------------------------------------------------------
@@ -238,7 +242,7 @@ class ResidualTrotEnv:
         """Per-leg phase gate ``g_l = ½(1 + sin(ph + DIAG_PHASE_l)) ∈ [0, 1]`` — synced to each leg's
         trot stride, so a gated residual pulses in phase with the gait (preserving the limit cycle)."""
         ph = self._phase()
-        return np.array([0.5 * (1.0 + np.sin(ph + _DIAG_PHASE[leg])) for leg in range(4)],
+        return np.array([0.5 * (1.0 + np.sin(ph + self._phase_pat[leg])) for leg in range(4)],
                         dtype=np.float64)
 
     def _apply(self, residual: np.ndarray) -> None:
@@ -265,7 +269,7 @@ class ResidualTrotEnv:
             final = base.copy()
             for leg in range(4):                          # per-leg abduction, phase-locked -> lateral crab
                 idx = 3 * leg                             # abduction is action index 3*leg+0
-                lateral = self.cfg.abd_scale * r[leg] * np.sin(ph + _DIAG_PHASE[leg])
+                lateral = self.cfg.abd_scale * r[leg] * np.sin(ph + self._phase_pat[leg])
                 final[idx] = float(np.clip(final[idx] + lateral, -1.0, 1.0))
         else:
             base = self._gov.govern(env, self._gait.action(env, yaw_cmd=pursuit, drive=base_drive))
