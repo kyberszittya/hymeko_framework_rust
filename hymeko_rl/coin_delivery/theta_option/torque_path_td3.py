@@ -50,8 +50,9 @@ class TD3Config:
     updates_per_episode: int = 2
     reward_scale: float = 10.0
     policy_delay: int = 2
-    rank_thetas: int = 6               # exploration thetas per panel state for the ranking gate
+    rank_thetas: int = 4               # exploration thetas per panel state for the ranking gate
     rank_spearman_min: float = 0.3     # a meaningfully-positive Q-vs-reward rank correlation (sanity beside bucket order)
+    max_gate_checks: int = 6           # bound the (expensive) gate checks; if none pass, the actor stays at the scaffold
 
 
 @dataclass
@@ -228,6 +229,18 @@ def _learn_updates(nets: _Nets, main: OptionReplayBuffer, positives: OptionRepla
     return upd
 
 
+def _gate_due(cfg: TD3Config, released: bool, upd: int, eval_point: bool, gate_checks: int) -> bool:
+    return bool(eval_point and not released and upd >= cfg.critic_warmup_updates and gate_checks < cfg.max_gate_checks)
+
+
+def _maybe_gate(nets: _Nets, eval_env: StructuredOptionCaptureEnv, d_norm: np.ndarray, sigma: float,
+                rng: np.random.Generator, cfg: TD3Config, upd: int, gate_checks: int, log: Any, seed: int) -> tuple:
+    """Run the (expensive) ranking gate once and report (gate, released, gate_checks). Caller guards frequency/bounds."""
+    gate = ranking_gate(nets, eval_env, d_norm, sigma, rng, cfg)
+    log(f"    [seed {seed}] ranking gate {gate_checks + 1}/{cfg.max_gate_checks} @upd {upd}: {gate}")
+    return gate, gate["passed"], gate_checks + 1
+
+
 def train_seed(rig: dict, train_perts: list, eval_perts: list, seed: int, cfg: TD3Config,
                d_norm: np.ndarray, sigma: float, log: Any = print) -> dict:
     """One conservative TD3 seed: zero-init actor -> critic-only warm-up -> ranking gate -> (release) -> eval/25.
@@ -242,7 +255,7 @@ def train_seed(rig: dict, train_perts: list, eval_perts: list, seed: int, cfg: T
     n_anchor = _seed_positives(env, positives, cfg)
     scaffold_eval = eval_actor(zero_init_detactor(make_actor("td3", OBS_DIM, THETA_DIM)), eval_env)
 
-    history, upd, released, gate = [], 0, False, None
+    history, upd, released, gate, gate_checks = [], 0, False, None, 0
     obs = env.reset()
     for it in range(cfg.total_episodes):
         a = _act(nets.actor, obs, d_norm, sigma, rng, explore=True)
@@ -252,13 +265,14 @@ def train_seed(rig: dict, train_perts: list, eval_perts: list, seed: int, cfg: T
         if info["class"] == "k6":
             positives.add(tr)
         obs = env.reset()
+        eval_point = (it + 1) % cfg.eval_every == 0 or it == cfg.total_episodes - 1
         if len(main) >= cfg.batch and it >= cfg.warmup_episodes:
             upd = _learn_updates(nets, main, positives, cfg, rng, released, upd)
-            if not released and upd >= cfg.critic_warmup_updates:
-                gate = ranking_gate(nets, eval_env, d_norm, sigma, rng, cfg)
-                released = gate["passed"]
-                log(f"    [seed {seed}] ranking gate @upd {upd}: {gate}")
-        if (it + 1) % cfg.eval_every == 0 or it == cfg.total_episodes - 1:
+            # Check the (expensive) ranking gate only at eval points, bounded — never per episode.
+            if _gate_due(cfg, released, upd, eval_point, gate_checks):
+                gate, released, gate_checks = _maybe_gate(nets, eval_env, d_norm, sigma, rng, cfg, upd, gate_checks, log,
+                                                          seed)
+        if eval_point:
             ev = eval_actor(nets.actor, eval_env)
             history.append({"it": it + 1, "released": released, "eval": ev})
             log(f"    [seed {seed} it {it+1}] released={released} eval={ev}")
