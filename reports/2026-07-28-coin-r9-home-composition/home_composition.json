@@ -1,0 +1,33 @@
+{
+ "contract": "HOME_STATE_V1",
+ "immutable_source": "d55f5017",
+ "home_q": [
+  -0.9,
+  -1.4,
+  0.0,
+  2.7
+ ],
+ "policy_checkpoint": "reports/2026-07-28-coin-r9-r2-h1-multiseed/seed_01/checkpoint.json",
+ "composition": {
+  "home_contacts": [
+   false,
+   false
+  ],
+  "kind_counts": {
+   "FROZEN": 60
+  },
+  "reached_kinetic": false,
+  "n_handoff_reset": 0,
+  "min_dtz_mm": 76.44,
+  "k6": false,
+  "k6_dwell": 0,
+  "dtz_end_mm": 76.44,
+  "safe": true
+ },
+ "gates": {
+  "HOME_REACH_PASS": false,
+  "HOME_TO_HANDOFF_PASS": false,
+  "HOME_TO_K6_PASS": false
+ },
+ "verdict": "HOME_START_COMPOSITION_NEEDS_UPSTREAM_REACH_SKILL"
+}
