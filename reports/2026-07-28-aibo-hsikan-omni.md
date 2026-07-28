@@ -23,26 +23,37 @@ trained MLP (flat obs), on a **symmetric** held-out grid (±20°, ±40°). Two h
   left/right symmetry axis *in the structure* so the signed propagation routes the demand
   differentially (something a flat MLP cannot represent).
 
-## Result — all FOUR converge to the SAME one-sided crab
+## Result — the one-sided crab is a SYMMETRY-BREAKING optimum (6 architectures)
 
-| architecture | reach (test) | +y | −y |
-|---|---|---|---|
-| MLP (flat, 9-D) | 0.40 | 1/2 | **0/2** |
-| signedkan (kinematic hg) | 0.40 | 1/2 | **0/2** |
-| signedkan (symmetric-signs hg) | 0.40 | 1/2 | **0/2** |
-| signedkan + **H★ structural-entropy exploration** | 0.40 | 1/2 | **0/2** |
+| architecture | head | reach (test) | +y | −y |
+|---|---|---|---|---|
+| MLP (flat, 9-D) | — | 0.40 | **1/2** | 0/2 |
+| signedkan (kinematic hg) | per_node | 0.40 | **1/2** | 0/2 |
+| signedkan (symmetric-signs hg) | per_node | 0.40 | **1/2** | 0/2 |
+| signedkan + H★ exploration | per_node | 0.40 | **1/2** | 0/2 |
+| signedkan (intermediate LATENT) | pooled | 0.40 | **1/2** | 0/2 |
+| **mixture (HSiKAN+MLP gated MoE)** | pooled | 0.40 | 0/2 | **1/2** |
 
-`SIGNEDKAN_MATCHES_MLP` across **all four**. Neither the structure propagation, nor the left/right
-symmetry *explicitly encoded in the hypergraph signs*, nor the **HSiKAN-only structural-entropy
-exploration H★** confers a symmetric crab; all reach +20° but not −20°/±40° (the signedkan variants
-do get −20° marginally closer — min-dist ~0.15–0.20 vs the MLP's ~0.55 — but never cross the 0.12
-reach threshold). So the −y failure is **not a representation gap** (the MLP could
-already represent it) — it is a **dynamics asymmetry**: the AIBO's lateral crab is physically easier
-on one side (the +y probe crabbed cleanly; −y was weaker / prone to tip). SAC converges to the same
-one-sided local optimum regardless of the architecture. Consistent with the campaign's **PnP
-R-HSiKAN ablation (HSiKAN ≈ MLP)**: for these small action spaces the structural prior adds no
-measured advantage. Caveats: 1 seed, 30k steps, a 5-vertex hg — but four architectures converging is
-a robust signal.
+**Every architecture reaches exactly 2/5 and is ONE-SIDED — but the mixture converges to the *other*
+side** (−y instead of +y). This refines the earlier reading: the −y crab is **not dynamics-impossible**
+(the mixture *did* reach −20°), and it is **not a pure representation/exploration gap** (5 other
+architectures reach +y but not −y). It is a **symmetry-breaking convergence**: the +y/−y crab is
+(near-)symmetric, SAC breaks the symmetry and commits to *one* side, and the architecture/init merely
+selects **which** side — none reaches **both**. (The mixture's auto-verdict `FIXES_CRAB_ASYMMETRY` is
+a **false positive** of the runner's rule: −y improved but +y was lost; reach is unchanged at 2/5.)
+
+So the honest finding — testing the user's "intermediate latent" and Kato's "mixed HSiKAN+MLP":
+- **Intermediate latent** (signedkan, pooled head over the structured latent, not per-vertex readout)
+  = still +y-only, matches MLP.
+- **Mixture** (learned per-state gate blending HSiKAN + MLP) = flips to −y-only — *different* but not
+  *better* (2/5). Structure/mixing changes **which** symmetry is broken, not **whether** it breaks.
+
+**The lever for reaching BOTH sides is symmetry PRESERVATION** (mirror-augmented training: for each
++y goal add the mirrored −y goal with mirrored obs/action; or a symmetry-EQUIVARIANT policy), not
+more expressive structure — no single asymmetric-training run reaches both. Consistent with PnP
+R-HSiKAN (HSiKAN ≈ MLP on reach) but sharper: the bottleneck is a **broken symmetry**, and the
+architecture influences the broken direction. Caveats: 1 seed, 30k, 5-vertex hg — but six
+architectures all landing at one-sided-2/5 is a robust signal.
 
 ## H★ structural-entropy exploration (user's "entropy backpropagation")
 

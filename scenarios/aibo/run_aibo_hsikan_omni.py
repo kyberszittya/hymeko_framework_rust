@@ -64,9 +64,15 @@ def main() -> None:
                     help="encode the LEFT/RIGHT symmetry axis in the leg-hg signs (the sharper test)")
     ap.add_argument("--hstar", type=float, default=0.0,
                     help="structural entropy H★ exploration coef (HSiKAN-only seat) — escape the crab local optimum")
+    ap.add_argument("--kind", default="signedkan", choices=("signedkan", "mixture", "hsikan", "sa_hsikan"),
+                    help="backbone: signedkan | mixture (HSiKAN+MLP gated MoE, Kato's mixed) | ...")
+    ap.add_argument("--head", default="per_node", choices=("per_node", "pooled"),
+                    help="per_node (each action from its vertex) | pooled (the whole structured LATENT -> action)")
     args = ap.parse_args()
     _OUT.mkdir(parents=True, exist_ok=True)
-    tag = "signedkan_sym" if args.symmetric else "signedkan"
+    tag = f"{args.kind}_{args.head}"
+    if args.symmetric:
+        tag += "_sym"
     if args.hstar > 0.0:
         tag += f"_hstar{args.hstar:g}"
 
@@ -74,9 +80,15 @@ def main() -> None:
                                              leg_hg_symmetric=args.symmetric), seed=0)
     n, feat = env._n_vtx, 4
     torch.manual_seed(0)
-    actor, critics = build_sac("signedkan", obs_dim=feat, flat_dim=n * feat, action_dim=4,
-                               action_scale=1.0, hidden=64, actor_head="per_node",
-                               act_vertices=env._abd_vtx, hg_state=env.hg)
+
+    def _build():
+        kw = dict(obs_dim=feat, flat_dim=n * feat, action_dim=4, action_scale=1.0, hidden=64,
+                  actor_head=args.head, hg_state=env.hg)
+        if args.head == "per_node":
+            kw["act_vertices"] = env._abd_vtx
+        return build_sac(args.kind, **kw)
+
+    actor, critics = _build()
 
     best_path = _OUT / f"aibo_residual_trot_omni_{tag}_best.pt"
     best = {"rate": -1.0}
@@ -96,9 +108,7 @@ def main() -> None:
 
     if not best_path.exists():
         torch.save(actor.state_dict(), best_path)
-    best_actor, _ = build_sac("signedkan", obs_dim=feat, flat_dim=n * feat, action_dim=4,
-                              action_scale=1.0, hidden=64, actor_head="per_node",
-                              act_vertices=env._abd_vtx, hg_state=env.hg)
+    best_actor, _ = _build()
     best_actor.load_state_dict(torch.load(best_path))
     hsikan = _reach(env, _greedy(best_actor), _TEST_GRID, horizon=2000)
 
