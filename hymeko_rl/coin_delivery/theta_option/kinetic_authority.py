@@ -36,23 +36,28 @@ CORRIDOR_MM = 30.0
 FN_LIGHT = 2.0
 
 
-def a2_structured_u(rl: Any, coeffs: np.ndarray, e_par: np.ndarray) -> np.ndarray:
-    """Map the 5-D A2 coefficients to a 4-D joint correction via the LIVE tip Jacobians: left/right forward-follow (each tip
-    toward the zone), common squeeze (inward grip), left/right differential, common tangential pursuit (both tips along the
-    coin's sliding velocity). # Postconditions: length-4; each direction unit-norm so a coefficient is a bounded push."""
+def a2_basis_matrix(rl: Any, e_par: np.ndarray) -> np.ndarray:
+    """The 5 structured coin-following directions as the columns of a 4×5 joint-space matrix, from the LIVE tip Jacobians:
+    left/right forward-follow (each tip toward the zone), common squeeze (inward grip), left/right differential, common
+    tangential pursuit (both tips along the coin's sliding velocity). # Postconditions: shape (4, 5); columns 2–4 unit-norm.
+    Single source of the A2 basis — `a2_structured_u` (control) and the torque-span projection (diagnostic) both read it."""
     gl, gr = _fingertip_geoms(rl.inner.model)
     coin = _coin_xy(rl)
     l_fwd, r_fwd = arm_jac_dir(rl, gl, _LEFT_DOF, e_par), arm_jac_dir(rl, gr, _RIGHT_DOF, e_par)
     inward = arm_inward_geom(rl, gl, _LEFT_DOF, coin) + arm_inward_geom(rl, gr, _RIGHT_DOF, coin)
     squeeze = inward / (np.linalg.norm(inward) + 1e-12)
-    balance = l_fwd - r_fwd
-    balance = balance / (np.linalg.norm(balance) + 1e-12)
+    balance = (l_fwd - r_fwd) / (np.linalg.norm(l_fwd - r_fwd) + 1e-12)
     v = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
     vdir = v / (np.linalg.norm(v) + 1e-9)
     tang = arm_jac_dir(rl, gl, _LEFT_DOF, vdir) + arm_jac_dir(rl, gr, _RIGHT_DOF, vdir)
     tang = tang / (np.linalg.norm(tang) + 1e-12)
-    c = np.asarray(coeffs, np.float64).ravel()[:A2_DIM]
-    return c[0] * l_fwd + c[1] * r_fwd + c[2] * squeeze + c[3] * balance + c[4] * tang
+    return np.column_stack([l_fwd, r_fwd, squeeze, balance, tang])
+
+
+def a2_structured_u(rl: Any, coeffs: np.ndarray, e_par: np.ndarray) -> np.ndarray:
+    """Map the 5-D A2 coefficients to a 4-D joint correction through the structured basis (`a2_basis_matrix`).
+    # Postconditions: length-4; a zero coefficient maps to a zero Δτ (update-zero identity)."""
+    return a2_basis_matrix(rl, e_par) @ np.asarray(coeffs, np.float64).ravel()[:A2_DIM]
 
 
 class SequenceResidual:

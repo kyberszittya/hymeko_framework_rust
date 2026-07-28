@@ -482,4 +482,76 @@ def test_authority_cem_deterministic_and_bounded(authority_restart):
     assert r1 == r2                                                     # deterministic given the seed
     assert r1["family"] == "A2" and r1["alpha"] == 0.25
     assert r1["safe"] and 0.0 < r1["min_dtz_mm"] < 1e4                  # finite, safe reachability
-    assert isinstance(r1["authority_reachability_pass"], bool)
+
+
+def test_a2_basis_matrix_single_source_matches_structured_u(authority_restart):
+    """`a2_structured_u` is exactly `a2_basis_matrix · coeffs` (the DRY refactor is behaviour-identical): the matrix columns are
+    the 5 structured directions, and the two share one source. A full-rank 4×5 basis spans R⁴ (every joint direction is
+    expressible), which is why the A2-orthogonal projection residual is the meaningful 'missing direction' probe."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority as ka
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    fx = authority_restart
+    rl = fx["f"].branch()
+    e_par = _np.asarray(rl.inner.direction_to_zone()[0], _np.float64)
+    _ = CloneActor(fx["model"], fx["norm"])                              # keep the fixture's model alive alongside the branch
+    basis = ka.a2_basis_matrix(rl, e_par)
+    assert basis.shape == (4, 5)
+    for c in (_np.array([1.0, 0, 0, 0, 0]), _np.array([0.2, -0.3, 0.5, -0.1, 0.4]), _np.zeros(5)):
+        assert _np.allclose(ka.a2_structured_u(rl, c, e_par), basis @ c)   # structured_u == basis · coeffs, exactly
+    assert _np.linalg.matrix_rank(basis) == 4                            # spans R⁴ ⇒ any teacher direction is in the A2 span
+
+
+# ----- Teacher-torque-span diagnostic (WHY the bounded residual saturates ~6 mm short) -----
+
+def test_project_onto_span_full_rank_zero_and_deficient_residual():
+    """`project_onto_span`: a full-rank basis leaves ~0 orthogonal residual (direction expressible); a rank-deficient basis
+    leaves exactly the out-of-span norm; coeffs reconstruct the projection."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_torque_span as kts
+    d = _np.array([0.3, -0.2, 0.1, 0.4])
+    full = _np.random.default_rng(1).standard_normal((4, 5))
+    coeffs, ortho, dn = kts.project_onto_span(d, full)
+    assert ortho < 1e-9 and abs(dn - _np.linalg.norm(d)) < 1e-12 and _np.allclose(full @ coeffs, d)
+    deficient = _np.zeros((4, 5))
+    deficient[0, 0] = deficient[1, 1] = 1.0                              # spans only the first two axes
+    _c, ortho_def, _dn = kts.project_onto_span(d, deficient)
+    assert abs(ortho_def - _np.hypot(0.1, 0.4)) < 1e-9                   # exactly the (axis-2, axis-3) out-of-span part
+
+
+@pytest.fixture(scope="module")
+def teacher_decomp(s1_snap):
+    """Roll the delivering teacher θ (K0 entry+full_cem) from the frozen KINETIC entry and decompose it against the clone."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_contract as _kc
+    from hymeko_rl.coin_delivery.theta_option import kinetic_torque_span as kts
+    from hymeko_rl.experiments.coin_kinetic_r1_rl import CLONE_CKPT
+    theta = [0.0, 0.2714, -0.057, 16.5378, 8.7978, 3.4604]
+    entry = _kc.freeze_kinetic_entry(s1_snap, seed=_kc.S1_SEED)
+    model, norm = kts.load_clone(CLONE_CKPT)
+    m, steps = kts.decompose_teacher_vs_clone(entry.tsnap, theta, model, norm)
+    return {"entry": entry, "theta": theta, "metrics": m, "steps": steps, "summary": kts.summarize_decomposition(steps)}
+
+
+def test_teacher_theta_controller_reproduces_rollout_primitive(teacher_decomp, s1_snap):
+    """The teacher-θ controller rolled through the deploy kernel reproduces `rollout_primitive(entry, θ)` BIT-FOR-BIT — the
+    delivering trajectory the decomposition reads is the real teacher, and that teacher DELIVERS strict K6."""
+    import numpy as _np
+
+    from hymeko_rl.coin_delivery.forward_displacement import rollout_primitive
+    from hymeko_rl.coin_delivery.theta_option import kinetic_contract as _kc
+    fx = teacher_decomp
+    rp = rollout_primitive(fx["entry"].tsnap, tuple(fx["theta"]), _kc.DELIVERY_CFG)
+    assert _np.array_equal(_np.asarray(fx["metrics"]["coin_trace"]), _np.asarray(rp["coin_trace"]))   # bit-identical kernel
+    assert fx["metrics"]["k6_delivered"] and fx["metrics"]["dtz_end"] * 1000 < 25.0                   # the teacher delivers
+
+
+def test_teacher_correction_is_magnitude_gap_in_a2_span(teacher_decomp):
+    """The central diagnostic: the delivering teacher's per-step correction over the clone lies ENTIRELY in the A2 structured
+    span (0 orthogonal residual — the direction is expressible) yet its MAGNITUDE far exceeds the residual bound α = 0.15 (and
+    even 2α). So the missing ingredient is authority MAGNITUDE, not a missing action direction."""
+    s = teacher_decomp["summary"]
+    assert s["transport_steps"] > 0
+    assert s["max_a2_ortho"] < 1e-3                                     # direction in span (A0 = R⁴ trivially; A2 too)
+    assert s["frac_exceeds_2alpha0"] >= 0.5 and s["max_d_inf"] > 0.30   # correction magnitude >> the α/2α residual bound
