@@ -1,0 +1,172 @@
+{
+ "contract": "APPROACH_TO_KINETIC_HANDOFF_SEMANTIC_EQUIVALENCE_V1",
+ "immutable_source": "2478a35d",
+ "E0_frozen_entry": {
+  "t_first": 1,
+  "prestep": {
+   "qpos": [
+    -0.581416,
+    -0.636091,
+    -0.399809,
+    2.086476
+   ],
+   "qvel": [
+    1.263182,
+    0.751218,
+    1.312366,
+    -1.894412
+   ],
+   "coin_xy": [
+    0.073188,
+    0.139055
+   ],
+   "dtz_mm": 75.7483,
+   "disk_vel": [
+    -0.194318,
+    0.16517
+   ],
+   "spin": -0.161856,
+   "fn_l": 2.70312,
+   "fn_r": 2.93051,
+   "ctrl_phase": -5,
+   "ctrl_kinetic_steps": 0,
+   "ctrl_prev_tau": [
+    -0.253558,
+    -0.685224,
+    -0.364897,
+    1.692617
+   ],
+   "ctrl_prev_res": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ctrl_clone_hidden_norm": null,
+   "ctrl_obs_hist_len": 0
+  },
+  "metrics": {
+   "k6": true,
+   "k6_dwell": 17,
+   "min_dtz_mm": 16.86,
+   "dtz_end_mm": 18.16,
+   "safe": true
+  },
+  "first_actions": {
+   "residual": [
+    0.99595,
+    -0.99987,
+    0.99997,
+    1.0
+   ],
+   "u": [
+    -0.04837,
+    -0.24033,
+    0.27751,
+    -0.05973
+   ]
+  }
+ },
+ "E1_natural_chain": {
+  "t_first": 4,
+  "prestep": {
+   "qpos": [
+    -0.591291,
+    -0.644621,
+    -0.414503,
+    2.104876
+   ],
+   "qvel": [
+    0.637103,
+    0.969482,
+    1.657572,
+    -1.771492
+   ],
+   "coin_xy": [
+    0.075064,
+    0.137802
+   ],
+   "dtz_mm": 77.9918,
+   "disk_vel": [
+    -0.17707,
+    0.081168
+   ],
+   "spin": -0.256329,
+   "fn_l": 3.07612,
+   "fn_r": 2.67575,
+   "ctrl_phase": -5,
+   "ctrl_kinetic_steps": 0,
+   "ctrl_prev_tau": [
+    -0.271247,
+    -0.385224,
+    -0.064897,
+    1.392617
+   ],
+   "ctrl_prev_res": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ctrl_clone_hidden_norm": null,
+   "ctrl_obs_hist_len": 0
+  },
+  "metrics": {
+   "k6": false,
+   "k6_dwell": 0,
+   "min_dtz_mm": 39.58,
+   "dtz_end_mm": 39.58,
+   "safe": true
+  },
+  "first_actions": {
+   "residual": [
+    0.99953,
+    -1.0,
+    1.0,
+    1.0
+   ],
+   "u": [
+    0.21536,
+    -0.15147,
+    0.39725,
+    0.15031
+   ]
+  }
+ },
+ "E2_pause_resume": {
+  "k6": false,
+  "k6_dwell": 0,
+  "min_dtz_mm": 39.29,
+  "one_step_norm": 0.0,
+  "continuation_max": 0.0
+ },
+ "E3_reconstructed": {
+  "k6": false,
+  "k6_dwell": 0,
+  "min_dtz_mm": 39.29
+ },
+ "E0_vs_E1_prestep_diff": {
+  "coin_xy": 0.001876,
+  "ctrl_kinetic_steps": 0,
+  "ctrl_obs_hist_len": 0,
+  "ctrl_phase": 0,
+  "ctrl_prev_res": 0.0,
+  "ctrl_prev_tau": 0.3,
+  "disk_vel": 0.084002,
+  "dtz_mm": 2.2435,
+  "fn_l": 0.373,
+  "fn_r": 0.25476,
+  "qpos": 0.0184,
+  "qvel": 0.626079,
+  "spin": 0.094473
+ },
+ "gates": {
+  "NATURAL_HANDOFF_CAPTURE_PASS": true,
+  "PAUSE_RESUME_ONE_STEP_IDENTITY_PASS": true,
+  "PAUSE_RESUME_CONTINUATION_PASS": true,
+  "FROZEN_ENTRY_EQUIVALENCE_PASS": false,
+  "END_TO_END_R2_K6_PASS": false
+ },
+ "verdict": "FROZEN_ENTRY_IS_A_DISPLACED_PRIVILEGED_HANDOFF",
+ "wall_s": 22.5
+}
