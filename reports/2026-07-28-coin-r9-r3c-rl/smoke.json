@@ -1,0 +1,91 @@
+{
+ "contract": "COIN_KINETIC_R3C_AUTHORITY_UNLOCK_V1",
+ "smoke": true,
+ "frontiers_mm": [
+  57.3,
+  53.84
+ ],
+ "families": {
+  "C1": 0.85
+ },
+ "seeds": [
+  0
+ ],
+ "phase_a": 600,
+ "phase_b": 0,
+ "results": [
+  {
+   "family": "C1",
+   "beta": 0.85,
+   "seed": 0,
+   "phase_a_aux": {
+    "min_dtz": 7.96,
+    "exit_dtz": 27.16,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "phase": "A",
+   "final_aux": {
+    "min_dtz": 7.96,
+    "exit_dtz": 27.16,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": true,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   },
+   "k6_strict": true,
+   "min_dtz": 7.96
+  }
+ ],
+ "best": {
+  "family": "C1",
+  "seed": 0,
+  "beta": 0.85,
+  "min_dtz": 7.96,
+  "final_aux": {
+   "min_dtz": 7.96,
+   "exit_dtz": 27.16,
+   "k6": true,
+   "k6_strict": true,
+   "safe": true,
+   "clean": true,
+   "released": true,
+   "stall_pen": 0.0,
+   "clamp_pen": 0.0,
+   "reversal_pen": 0.0
+  }
+ },
+ "frozen": {
+  "frozen": true,
+  "replay_deterministic": true,
+  "teacher_absent": true,
+  "family": "C1",
+  "beta": 0.85,
+  "seed": 0,
+  "min_dtz": 7.96,
+  "final_aux": {
+   "min_dtz": 7.96,
+   "exit_dtz": 27.16,
+   "k6": true,
+   "k6_strict": true,
+   "safe": true,
+   "clean": true,
+   "released": true,
+   "stall_pen": 0.0,
+   "clamp_pen": 0.0,
+   "reversal_pen": 0.0
+  }
+ },
+ "verdict": "FIRST_LEARNED_S1_K6_DELIVERY",
+ "wall_s": 50.5
+}

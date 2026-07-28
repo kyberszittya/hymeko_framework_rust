@@ -177,11 +177,15 @@ def capture_frontiers(snap: Any, clone: CloneActor, actor: Any, bounds: Residual
 # Curriculum collection + champion (injected into the tested train_perstep loop)
 # --------------------------------------------------------------------------------------------------------------------
 def collect_episode3(start: Any, clone: CloneActor, residual_fn: Callable[[np.ndarray], np.ndarray], bounds: ResidualBounds,
-                     w: krl2.Reward2Weights, envelope_w: float, *, frontier: bool, cfg: Any = DELIVERY_CFG) -> krl2.Episode:
+                     w: krl2.Reward2Weights, envelope_w: float, *, frontier: bool, cfg: Any = DELIVERY_CFG,
+                     make_controller: "Callable | None" = None) -> krl2.Episode:
     """One episode from either the KINETIC entry (full chain) or a legal frontier snapshot (segment-local restart), scored by
-    `reward3`. # Postconditions: per-step transitions terminal at the KINETIC exit; no state edit / teacher."""
+    `reward3`. ``make_controller(start, clone, residual_fn, bounds, **kw)`` swaps the controller (default = the R2 temporal
+    residual; R3-C injects the action-preserving authority-expansion controller) without duplicating the reward/transition code.
+    # Postconditions: per-step transitions terminal at the KINETIC exit; no state edit / teacher."""
     kw = {"start_kinetic": start.start_state()} if frontier else {}
-    controller = KineticTemporalResidualController(start, clone, residual_fn, bounds, **kw)
+    build = make_controller if make_controller is not None else KineticTemporalResidualController
+    controller = build(start, clone, residual_fn, bounds, **kw)
     m = velocity_rollout(start, controller, cfg)
     kin = [r for r in controller.clone_trace if r["kind"] == "KINETIC_CLONE"]
     aug = controller.aug_trace
@@ -201,14 +205,16 @@ def collect_episode3(start: Any, clone: CloneActor, residual_fn: Callable[[np.nd
 
 def make_collect3(entry_snap: Any, frontiers: list[FrontierSnapshot], clone_factory: Callable[[], CloneActor],
                   bounds: ResidualBounds, w: krl2.Reward2Weights, *, frac_frontier: float = 0.5, envelope_w: float = ENVELOPE_W,
-                  seed: int = 0) -> Callable:
-    """A `collect_override(residual_fn) -> transitions` that draws 50 % KINETIC-entry / 50 % frontier episodes (deterministic)."""
+                  seed: int = 0, make_controller: "Callable | None" = None) -> Callable:
+    """A `collect_override(residual_fn) -> transitions` drawing (1−frac)·KINETIC-entry / frac·frontier episodes (deterministic).
+    ``make_controller`` swaps the controller (R3-C authority expansion); default = the R2 temporal residual."""
     rng = np.random.default_rng(seed)
 
     def collect(residual_fn: Callable[[np.ndarray], np.ndarray]) -> list:
         use_frontier = bool(frontiers) and rng.random() < frac_frontier
         start = frontiers[int(rng.integers(0, len(frontiers)))] if use_frontier else entry_snap
-        return collect_episode3(start, clone_factory(), residual_fn, bounds, w, envelope_w, frontier=use_frontier).transitions
+        return collect_episode3(start, clone_factory(), residual_fn, bounds, w, envelope_w, frontier=use_frontier,
+                                make_controller=make_controller).transitions
     return collect
 
 

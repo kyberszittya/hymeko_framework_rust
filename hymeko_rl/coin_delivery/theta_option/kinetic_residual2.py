@@ -25,6 +25,13 @@ CLONE_HIDDEN = 64
 AUG_DIM = 41 + CLONE_HIDDEN + ACT_DIM          # 109 — [norm obs · clone hidden · prev residual]
 
 
+def augmented_state(actor: CloneActor, obs: np.ndarray, prev_res: np.ndarray) -> np.ndarray:
+    """The causal augmented state a per-step residual conditions on: [ norm(41-D obs) · frozen clone GRU hidden (h_clone,t, read
+    AFTER the clone processed this obs) · previous residual ]. Single source, so the R2 residual and the R3-C authority-expansion
+    head build an identical state (the bit-exact update-zero identity depends on it). # Postconditions: length AUG_DIM, float64."""
+    return np.concatenate([actor.norm.apply(obs), actor.hidden_vec(), np.asarray(prev_res, np.float64)]).astype(np.float64)
+
+
 class TemporalResidualPolicy(nn.Module):
     """Deterministic per-step residual δ_ψ over the augmented state (MLP → tanh). ``zero_init`` zeroes the final layer so the
     residual is exactly 0 everywhere at init (the update-zero identity). # Postconditions: output in (−1, 1)^ACT_DIM."""
@@ -70,9 +77,9 @@ class KineticTemporalResidualController(KineticCloneController):
             self._prev_res = np.asarray(self._start_kinetic.get("prev_res", np.zeros(ACT_DIM)), np.float64).copy()
 
     def _augmented_state(self, obs: np.ndarray) -> np.ndarray:
-        """[ norm(41-D obs) · frozen clone GRU hidden · previous residual ] — the causal state δ_ψ conditions on. The clone
-        hidden is read AFTER the clone processed this obs (h_clone,t)."""
-        return np.concatenate([self.actor.norm.apply(obs), self.actor.hidden_vec(), self._prev_res]).astype(np.float64)
+        """[ norm(41-D obs) · frozen clone GRU hidden · previous residual ] — the causal state δ_ψ conditions on (`augmented_state`
+        is the shared single source; the clone hidden is read AFTER the clone processed this obs, h_clone,t)."""
+        return augmented_state(self.actor, obs, self._prev_res)
 
     def _transport_action(self, rl: Any, obs: np.ndarray) -> np.ndarray:
         u_clone = np.clip(np.asarray(self.actor.act(obs), np.float64).ravel()[:ACT_DIM], -1.0, 1.0)   # sets the clone hidden

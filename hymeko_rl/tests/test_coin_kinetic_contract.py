@@ -555,3 +555,118 @@ def test_teacher_correction_is_magnitude_gap_in_a2_span(teacher_decomp):
     assert s["transport_steps"] > 0
     assert s["max_a2_ortho"] < 1e-3                                     # direction in span (A0 = R⁴ trivially; A2 too)
     assert s["frac_exceeds_2alpha0"] >= 0.5 and s["max_d_inf"] > 0.30   # correction magnitude >> the α/2α residual bound
+
+
+# ----- R3-C action-preserving authority unlock (the mandatory pre-RL gate) -----
+
+@pytest.fixture(scope="module")
+def clone_mn():
+    """The frozen K2 clone (model, norm) — the shared scaffold for the R3-C construction tests."""
+    import numpy as _np
+    import torch
+
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import KineticClone, NormStats
+    from hymeko_rl.experiments.coin_kinetic_r1_rl import CLONE_CKPT
+    ckpt = torch.load(CLONE_CKPT, weights_only=False)
+    model = KineticClone(hidden=ckpt["hidden"])
+    model.load_state_dict(ckpt["state_dict"])
+    model.eval()
+    return {"model": model, "norm": NormStats(_np.array(ckpt["norm"]["mean"]), _np.array(ckpt["norm"]["std"]))}
+
+
+def test_zero_init_detactor_exact_zero():
+    """`zero_init_detactor` yields a DetActor that outputs EXACTLY 0 for arbitrary inputs (the bit-exact zero expansion head)."""
+    import torch
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority_unlock as ku
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import AUG_DIM
+    from hymeko_rl.coin_delivery.theta_option.kinetic_rl2 import ACT_DIM
+    from hymeko_rl.option_rl.agents import make_actor
+    actor = ku.zero_init_detactor(make_actor("td3", AUG_DIM, ACT_DIM))
+    with torch.no_grad():
+        for x in (torch.zeros(4, AUG_DIM), torch.randn(4, AUG_DIM), 10.0 * torch.randn(4, AUG_DIM)):
+            assert float(actor(x).abs().max()) == 0.0
+
+
+def test_authority_expansion_update_zero_identity(s1_snap, clone_mn):
+    """`AUTHORITY_EXPANSION_UPDATE_ZERO_IDENTITY`: with a zero expansion head, the unlock controller is BIT-IDENTICAL to the
+    frozen R2 residual controller (`u = clip(u_clone + 0.15·a_R2, −1, 1)`) for BOTH families — regardless of β. Uses an arbitrary
+    fixed frozen r2_fn (the identity is a property of the construction, not of the specific R2 champion)."""
+    import numpy as _np
+    import torch
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority_unlock as ku
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import (
+        AUG_DIM, KineticTemporalResidualController, TemporalResidualPolicy, deterministic_residual)
+    from hymeko_rl.coin_delivery.theta_option.kinetic_rl2 import ACT_DIM
+    from hymeko_rl.option_rl.agents import make_actor
+    m, norm = clone_mn["model"], clone_mn["norm"]
+    torch.manual_seed(7)
+    r2_fn = deterministic_residual(TemporalResidualPolicy())            # an arbitrary FIXED frozen R2-style head (non-zero)
+    b = ResidualBounds(alpha=ku.ALPHA0)
+    ref = velocity_rollout(s1_snap, KineticTemporalResidualController(s1_snap, CloneActor(m, norm), r2_fn, b), DELIVERY_CFG)
+    for beta in (ku.C1_BETA, ku.C2_BETA):
+        exp = ku.zero_init_detactor(make_actor("td3", AUG_DIM, ACT_DIM))
+        ctrl = ku.AuthorityUnlockController(s1_snap, CloneActor(m, norm), deterministic_residual(exp), b,
+                                            r2_fn=r2_fn, beta=beta)
+        got = velocity_rollout(s1_snap, ctrl, DELIVERY_CFG)
+        assert _np.array_equal(_np.asarray(got["coin_trace"]), _np.asarray(ref["coin_trace"]))   # bit-identical, any β
+
+
+def test_authority_unlock_action_slew_safe_under_large_beta(s1_snap, clone_mn):
+    """Safety is the final clip + slew + governor, INDEPENDENT of β: a non-zero expansion at the largest β keeps every applied
+    Δτ within the slew bound and the rollout inside the motion contract (peak_qdot ≤ 3, coin speed ≤ 1.5)."""
+    import torch
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority_unlock as ku
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import (
+        TemporalResidualPolicy, deterministic_residual)
+    m, norm = clone_mn["model"], clone_mn["norm"]
+    torch.manual_seed(3)
+    r2_fn = deterministic_residual(TemporalResidualPolicy())
+    exp_fn = deterministic_residual(TemporalResidualPolicy())           # a real non-zero expansion head
+    ctrl = ku.AuthorityUnlockController(s1_snap, CloneActor(m, norm), exp_fn, ResidualBounds(alpha=ku.ALPHA0),
+                                        r2_fn=r2_fn, beta=ku.C2_BETA)
+    mo = velocity_rollout(s1_snap, ctrl, DELIVERY_CFG)
+    slew = float(s1_snap.stack.tau_rate * s1_snap.stack.control_dt)
+    kin = [r for r in ctrl.residual_trace]
+    assert kin and all(max(abs(x) for x in r["u"]) <= 1.0 + 1e-9 for r in kin)          # every action in [-1,1]
+    assert mo["peak_qdot"] <= 3.0 and mo["peak_coin_speed"] <= 1.5 and slew > 0         # motion contract holds at β=1.85
+
+
+def test_authority_unlock_deterministic_replay(s1_snap, clone_mn):
+    """Deterministic reset/replay: two rollouts of the same unlock controller policy produce bit-identical coin traces."""
+    import numpy as _np
+    import torch
+
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority_unlock as ku
+    from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
+    from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import (
+        TemporalResidualPolicy, deterministic_residual)
+    m, norm = clone_mn["model"], clone_mn["norm"]
+    torch.manual_seed(11)
+    r2_fn = deterministic_residual(TemporalResidualPolicy())
+    exp_fn = deterministic_residual(TemporalResidualPolicy())
+    b = ResidualBounds(alpha=ku.ALPHA0)
+
+    def _roll():
+        c = ku.AuthorityUnlockController(s1_snap, CloneActor(m, norm), exp_fn, b, r2_fn=r2_fn, beta=ku.C1_BETA)
+        return _np.asarray(velocity_rollout(s1_snap, c, DELIVERY_CFG)["coin_trace"])
+    assert _np.array_equal(_roll(), _roll())
+
+
+def test_champion_key_unlock_and_expl_noise_scaling():
+    """Pure R3-C checks: the freeze order ranks strict K6 above everything and cleanliness above min_dtz; the exploration σ is
+    β-scaled so the APPLIED noise β·σ is β-invariant (a larger β is not larger physical exploration)."""
+    from hymeko_rl.coin_delivery.theta_option import kinetic_authority_unlock as ku
+    k6 = ku.champion_key_unlock(k6=True, safe=True, clean=False, min_dtz=45, released=False)
+    clean_close = ku.champion_key_unlock(k6=False, safe=True, clean=True, min_dtz=30, released=True)
+    dirty_closer = ku.champion_key_unlock(k6=False, safe=True, clean=False, min_dtz=25, released=True)
+    assert k6 > clean_close > dirty_closer                              # strict K6 ≻ … ≻ clean ≻ (closer-but-dirty)
+    assert abs(ku.expl_noise_for(ku.C1_BETA) * ku.C1_BETA - ku.R2_APPLIED_NOISE) < 1e-9    # applied noise β-invariant
+    assert ku.expl_noise_for(ku.C2_BETA) < ku.expl_noise_for(ku.C1_BETA)                   # larger β ⇒ smaller normalised σ

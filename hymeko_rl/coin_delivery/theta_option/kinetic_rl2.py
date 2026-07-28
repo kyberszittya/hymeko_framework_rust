@@ -170,11 +170,13 @@ def _dev_eval(snap: Any, clone: CloneActor, bounds: ResidualBounds, w: Reward2We
 def train_perstep(algo: str, snap: Any, clone: CloneActor, bounds: ResidualBounds, w: Reward2Weights,
                   cfg: PerStepConfig, *, seed: int = 0, warm_actor: Any = None, cfg_env: Any = DELIVERY_CFG,
                   log: Callable = print, collect_override: "Callable | None" = None,
-                  champion_override: "Callable | None" = None) -> "tuple[Any, list]":
+                  champion_override: "Callable | None" = None, stop_when: "Callable | None" = None) -> "tuple[Any, list]":
     """Compact matched per-step TD3/SAC over δ_ψ. Reuses `DetActor`/`GaussActor`/`QNet`/`_polyak`; keeps the BEST checkpoint by
     the lexicographic champion. ``collect_override(rfn) -> transitions`` and ``champion_override(actor) -> (key, aux)`` let a
     curriculum (R3-B) inject its own episode source + champion without duplicating the update loop (defaults = the R2 behaviour).
-    # Postconditions: returns (best_actor, history)."""
+    ``stop_when(key, aux) -> bool`` (checked at each eval) requests an EARLY STOP once the target is met (R3-C: the first strict
+    learned K6) so the champion is frozen immediately without burning the rest of the budget. # Postconditions: returns
+    (best_actor, history)."""
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
     actor = warm_actor if warm_actor is not None else make_actor(algo, AUG_DIM, ACT_DIM)
@@ -235,4 +237,7 @@ def train_perstep(algo: str, snap: Any, clone: CloneActor, bounds: ResidualBound
             log(f"    [{algo} it {it+1}/{cfg.total_options}] champ {key} {aux} | replay {len(replay)}")
             if best_key is None or key > best_key:
                 best_key, best_actor = key, copy.deepcopy(actor)
+            if stop_when is not None and stop_when(key, aux):        # target met (R3-C first strict K6) ⇒ freeze immediately
+                history.append({"it": it + 1, "early_stop": True, "aux": aux})
+                break
     return best_actor, history
