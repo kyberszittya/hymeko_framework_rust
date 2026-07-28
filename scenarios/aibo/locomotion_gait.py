@@ -34,6 +34,40 @@ GAIT_PHASES: "dict[str, tuple[float, float, float, float]]" = {
 }
 
 
+# Diagonal rotational-couple sign per leg (fl,fr,bl,br): diagonal pairs stride in OPPOSITE directions,
+# producing a yaw couple about the body centre — a far stronger turn than reduce-inner skid-steer.
+_ROT_COUPLE = (1.0, -1.0, -1.0, 1.0)
+
+
+@dataclass(frozen=True)
+class RotationalTurnGait:
+    """In-place turn by a diagonal stride COUPLE — fl,br stride forward while fr,bl stride backward (for
+    ``turn > 0`` = CCW/+yaw; sign flips the couple). Unlike :class:`SteeredTrotGait`'s reduce-inner
+    skid-steer (~19°/1000 steps, weak), this generates a real yaw couple: measured ~47°/1000 steps and
+    upright at ``turn=1.0``, rising toward ~169°/1000 (but tipping) past ``turn≈1.5`` — so the turn rate
+    trades against stability, the frontier a learned controller can push.
+
+    # Preconditions env exposes the ``SteeredTrotGait`` interface (``_leg_qadr``, ``_q0``, PD gains, …).
+    # Postconditions ``action(env, turn)`` returns ``(n_actions,)`` PD torques in ``[-1, 1]``."""
+
+    hip_amp: float = 0.7
+    knee_amp: float = 0.3
+    freq: float = 1.2
+
+    def action(self, env: object, turn: float = 0.0) -> np.ndarray:
+        t = int(getattr(env, "_step", 0)) * int(env.frame_skip) * float(env.model.opt.timestep)
+        ph = 2.0 * np.pi * self.freq * t
+        q = np.asarray(env.data.qpos)[env._leg_qadr]
+        qd = np.asarray(env.data.qvel)[env._act_dofs]
+        target = np.asarray(env._q0)[env._leg_qadr].copy()
+        for leg in range(len(target) // 3):
+            base = 3 * leg
+            target[base + 1] += turn * self.hip_amp * _ROT_COUPLE[leg] * np.sin(ph + _DIAG_PHASE[leg])
+            target[base + 2] += self.knee_amp * np.sin(ph + _DIAG_PHASE[leg] + np.pi)   # normal lift/plant
+        tau = -env.pd_kp * (q - target) - env.pd_kd * qd
+        return np.clip(tau / env.ctrl_range, -1.0, 1.0).astype(np.float32)
+
+
 def body_yaw(env: object) -> float:
     """World-frame yaw of the torso (radians)."""
     m = np.asarray(env.data.xmat[env.torso]).reshape(3, 3)

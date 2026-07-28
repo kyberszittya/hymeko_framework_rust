@@ -51,12 +51,32 @@ gait the script cannot. And — the user's point — this is exactly where **HSi
 needed no structure, hence HSiKAN ≈ MLP there). Turning is the structured coordination problem HSiKAN was
 meant for.
 
+## Action-space check → FIX: the rotational-couple turn (0.11 → 0.50 goal-reach)
+
+Before RL, the cheap check (does the *action space* allow strong turning?). Hand-crafted turn patterns,
+yaw authority:
+
+| pattern | yaw °/1000 | upright |
+|---|---|---|
+| skid-steer (scripted) | 19 | 1.0 |
+| aggressive spin / abduction-row | −11 … −8 | tips |
+| **rotational hip couple** (diagonal legs OPPOSITE: fl+,fr−,bl−,br+) `g=1.0` | **47** | **0.98** |
+| rotational hip couple `g=1.5` | 169 | −0.34 (tips) |
+
+**The action space turns fine — the script used the wrong pattern.** The rotational couple (diagonal
+pairs stride in opposite directions → a real yaw couple) is 2.5× the skid-steer and stable at `g=1.0`,
+with headroom to ~169°/1000 (tipping) — a rate-vs-stability frontier. Wiring a **turn-then-walk** scaffold
+(rotational couple to face the goal, then trot in) lifts goal-reach **0.11 → 0.50** (9/18; near-to-mid
+bearings 0/±20/±40 and +90° now reach). Delivered as `RotationalTurnGait` + `heading_mode="turn_then_walk"`
+(default `"arc"` unchanged).
+
 ## Next (proposed)
 
-A **turning / goal-reaching RL problem**: reward = reduce heading error + reach the goal; action = a
-residual on the gait's turn/steer (or raw leg targets); compare **HSiKAN (structural) vs MLP (flat)** on
-turn-rate and goal-reach across bearings. First establish that *any* learned policy can turn effectively
-(fixing the mechanism wall), then test whether structure helps.
+The turn-then-walk scaffold (0.50) is now a **working base to residual over** (as the trot was for the
+crab). The wide bearings (±135°) and the occasional tip at the turn→walk transition are the headroom. A
+bounded-residual RL over this scaffold — reward = reduce heading error + reach — is the refinement, and
+the natural **HSiKAN vs MLP** test: routing the heading error through the body structure into the
+coordinated turn-couple + walk transition is the whole-body-coordination problem where structure may help.
 
 ## Files / tests
 

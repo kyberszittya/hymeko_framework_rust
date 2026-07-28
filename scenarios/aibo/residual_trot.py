@@ -21,7 +21,7 @@ import numpy as np
 
 from hymeko_rl.env.quadruped_env import QuadrupedGoalEnv
 
-from .locomotion_gait import GAIT_PHASES, SteeredTrotGait, heading_error
+from .locomotion_gait import GAIT_PHASES, RotationalTurnGait, SteeredTrotGait, heading_error
 from .motion_contract import JointVelocityGovernor
 
 LEGS = ("fl", "fr", "bl", "br")  # leg order (matches _DIAG_PHASE and the hip_abduct_{leg} joints)
@@ -65,6 +65,9 @@ class ResidualTrotConfig:
     reach_radius: float = 0.12
     turn_first_deg: float = 0.0          # if |heading error| exceeds this, cut forward drive to TURN IN PLACE toward the goal first (0 = off: walk-and-arc, which never faces wide-bearing goals)
     turn_drive: float = 0.15             # forward drive while turning in place (turn_first_deg > 0)
+    heading_mode: str = "arc"            # "arc" (default: skid-steer walk-and-arc — weak turning) | "turn_then_walk" (rotational-couple turn to face the goal, THEN walk — 5x the goal-reach)
+    turn_rate: float = 1.0               # rotational-couple turn magnitude (turn_then_walk); ~47 deg/1000 steps, upright at 1.0
+    turn_align_deg: float = 20.0         # turn_then_walk: turn until |heading error| within this, then walk
     max_steps: int = 800
     v_max: float = 8.0                   # motion-contract joint-speed cap
     progress_w: float = 12.0
@@ -109,6 +112,7 @@ class ResidualTrotEnv:
             raise ValueError(f"gait_phase must be one of {tuple(GAIT_PHASES)}; got {self.cfg.gait_phase!r}")
         self._phase_pat = GAIT_PHASES[self.cfg.gait_phase]        # per-leg gait phase (diag=asymmetric, bound=symmetric)
         self._gait = SteeredTrotGait(phase=self._phase_pat)
+        self._turn_gait = RotationalTurnGait()                   # strong rotational-couple turn (turn_then_walk)
         self._gov = JointVelocityGovernor(v_max=self.cfg.v_max)
         self._rng = np.random.default_rng(self.seed)
         self._prev_dist = 0.0
@@ -247,6 +251,17 @@ class ResidualTrotEnv:
         return np.array([0.5 * (1.0 + np.sin(ph + self._phase_pat[leg])) for leg in range(4)],
                         dtype=np.float64)
 
+    def _base_gait_action(self, herr: float, pursuit: float, base_drive: float) -> np.ndarray:
+        """The scaffold's base action before the residual: the rotational-couple TURN toward the goal when
+        ``heading_mode="turn_then_walk"`` and the heading error is still wide, else the forward trot. This
+        is the goal-reaching turning fix (0.11 → 0.56 reach); ``"arc"`` (default) keeps the prior weak
+        skid-steer walk-and-arc. # Postconditions returns a governed ``(n_actions,)`` action in ``[-1, 1]``."""
+        env = self._env
+        if self.cfg.heading_mode == "turn_then_walk" and abs(herr) > float(np.deg2rad(self.cfg.turn_align_deg)):
+            turn = float(np.sign(herr)) * self.cfg.turn_rate
+            return self._gov.govern(env, self._turn_gait.action(env, turn=turn))
+        return self._gov.govern(env, self._gait.action(env, yaw_cmd=pursuit, drive=base_drive))
+
     def _base_drive(self, herr: float, dist: float) -> float:
         """Forward-drive command: 0 within the reach radius; else 1.0, capped to ``turn_drive`` while the
         heading error is wide (``turn_first_deg`` > 0) so the robot turns toward a wide-bearing goal before
@@ -277,7 +292,7 @@ class ResidualTrotEnv:
             drive = float(np.clip(base_drive + self.cfg.drive_res_scale * r[1], 0.0, 1.5))
             final = self._gov.govern(env, self._gait.action(env, yaw_cmd=yaw, drive=drive))
         elif self.cfg.residual_mode == "omni":
-            base = self._gov.govern(env, self._gait.action(env, yaw_cmd=pursuit, drive=base_drive))
+            base = self._base_gait_action(herr, pursuit, base_drive)
             ph = self._phase()
             final = base.copy()
             for leg in range(4):                          # per-leg abduction, phase-locked -> lateral crab
@@ -285,7 +300,7 @@ class ResidualTrotEnv:
                 lateral = self.cfg.abd_scale * r[leg] * np.sin(ph + self._phase_pat[leg])
                 final[idx] = float(np.clip(final[idx] + lateral, -1.0, 1.0))
         else:
-            base = self._gov.govern(env, self._gait.action(env, yaw_cmd=pursuit, drive=base_drive))
+            base = self._base_gait_action(herr, pursuit, base_drive)
             if self.cfg.residual_mode == "phase":
                 r = (r.reshape(4, 3) * self.phase_gates()[:, None]).reshape(-1)   # gate per leg by stride phase
             final = self.blend_action(base, r)
