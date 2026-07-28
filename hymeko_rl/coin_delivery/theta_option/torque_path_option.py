@@ -221,13 +221,16 @@ class TorquePathCaptureRoll:
         b = float(np.clip(self.pi0.bmax + opt.dbmax, 0.0, 1.0))
         return replace(self.pi0, s=s, preload_start=p, bmax=b)
 
-    def rollout(self, z_hat: np.ndarray) -> dict:
+    def rollout(self, z_hat: np.ndarray, frame_hook: "Any | None" = None) -> dict:
         """Execute the structured-option torque-path capture; return the terminal snapshot + full per-step trace.
 
         Returned trace keys: ``snapshot`` (downstream input), ``obs`` (causal Markov states), ``acts`` (physical action
         trace ``a_t``), ``desired_path`` (``tau_des(phi_{t+1})`` = executed commanded torque), ``prev`` (terminal
         commanded torque), ``masks`` (per-step :class:`StepMasks`), ``contacts`` (per-step fingertip contact count),
         ``option`` (decoded :class:`StructuredOption`), ``params`` (structural params used).
+
+        ``frame_hook(rl, i)`` (optional) is called READ-ONLY after each governed step for visualisation; it must not
+        mutate ``rl`` and therefore never changes the result (the zero-theta identity is preserved).
         """
         opt = decode_theta(z_hat, self.slew, self.scales)
         params = self.structural_params(opt)
@@ -252,6 +255,8 @@ class TorquePathCaptureRoll:
                 desired.append(prev.copy())                    # executable torque path = executed commanded torque
                 masks.append(_step_masks(a_pi0, offset_norm, prev_before, prev, self.slew, self.cap.lo, self.cap.hi))
                 contacts.append(_fingertip_count(rl))
+                if frame_hook is not None:
+                    frame_hook(rl, i)          # read-only visualisation hook; must not mutate rl
         finally:
             mujoco.set_mjcb_control(None)
         snap = kc.TransportSnapshot.from_live(copy.deepcopy(rl), self.stack, prev.copy())

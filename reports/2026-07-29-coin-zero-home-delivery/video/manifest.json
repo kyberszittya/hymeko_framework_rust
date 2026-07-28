@@ -1,0 +1,36 @@
+{
+ "contract": "COIN_ZERO_HOME_DELIVERY_VIDEO",
+ "purpose": "deterministic visualization only (selects nothing)",
+ "start_state": "q=[0,0,0,0], qdot=0 (true zero home; both arms fully extended)",
+ "chain": "EXACT_ZERO_HOME -> task-space 3-shell IK reach -> READY -> re-solved capture -> frozen downstream -> K6",
+ "k6": true,
+ "min_dtz_mm": 11.54,
+ "reach_metrics": {
+  "first_frame_q": [
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "reach_qerr": 0.0665,
+  "min_tip_coin_clr_mm": 47.9,
+  "coin_moved_before_capture_mm": 0.0,
+  "reach_contacts": 0,
+  "tip_l_err_mm": 4.1,
+  "tip_r_err_mm": 6.3
+ },
+ "reach_frames": 310,
+ "capture_frames": 20,
+ "delivery_frames": 80,
+ "n_frames": 465,
+ "trace_consistency": {
+  "n": 410,
+  "telem_span": 73.9972,
+  "frames_vary": true
+ },
+ "launch_commit": "fb68182521e40e8b4d8cf364977b278ae8e9fc37",
+ "mp4": "reports/2026-07-29-coin-zero-home-delivery/video/zero_home_to_k6.mp4",
+ "gif": "reports/2026-07-29-coin-zero-home-delivery/video/zero_home_to_k6.gif",
+ "gif_sha256_16": "51d3276f1373575b",
+ "rendering_command": "python -m hymeko_rl.experiments.video_coin_zero_home"
+}
