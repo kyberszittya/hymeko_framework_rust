@@ -1,0 +1,449 @@
+{
+ "seed": 12,
+ "host": "Hajdus-MacBook-Pro.local",
+ "commit": "8a0c1c7bb3207e5e437a1b6d8f370f1ee0ab45c1",
+ "config_hash": "d5a1056e0c154ade",
+ "wall_s": 7.2,
+ "phase": "A",
+ "k6_strict": true,
+ "min_dtz": 18.98,
+ "final_aux": {
+  "min_dtz": 18.98,
+  "exit_dtz": 44.08,
+  "k6": true,
+  "k6_strict": true,
+  "safe": true,
+  "clean": true,
+  "released": false,
+  "stall_pen": 0.0,
+  "clamp_pen": 0.0,
+  "reversal_pen": 0.0
+ },
+ "phase_a_aux": {
+  "min_dtz": 18.98,
+  "exit_dtz": 44.08,
+  "k6": true,
+  "k6_strict": true,
+  "safe": true,
+  "clean": true,
+  "released": false,
+  "stall_pen": 0.0,
+  "clamp_pen": 0.0,
+  "reversal_pen": 0.0
+ },
+ "phase_b_aux": null,
+ "first_k6_option": 200,
+ "verification": {
+  "delivery_success": true,
+  "k6_delivered": true,
+  "k6_dwell": 36,
+  "min_dtz_mm": 18.98,
+  "dtz_end_mm": 18.98,
+  "touched": true,
+  "teacher_absent": true,
+  "clamp_frames": 0,
+  "peak_qdot": 2.04,
+  "peak_coin_speed": 0.328,
+  "safe": true,
+  "deterministic": true
+ },
+ "history": [
+  {
+   "it": 25,
+   "aux": {
+    "min_dtz": 37.84,
+    "exit_dtz": 55.53,
+    "k6": false,
+    "k6_strict": false,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   }
+  },
+  {
+   "it": 50,
+   "aux": {
+    "min_dtz": 62.16,
+    "exit_dtz": 63.15,
+    "k6": false,
+    "k6_strict": false,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   }
+  },
+  {
+   "it": 75,
+   "aux": {
+    "min_dtz": 57.5,
+    "exit_dtz": 61.87,
+    "k6": false,
+    "k6_strict": false,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   }
+  },
+  {
+   "it": 100,
+   "aux": {
+    "min_dtz": 52.59,
+    "exit_dtz": 60.76,
+    "k6": false,
+    "k6_strict": false,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   }
+  },
+  {
+   "it": 125,
+   "aux": {
+    "min_dtz": 48.49,
+    "exit_dtz": 66.6,
+    "k6": false,
+    "k6_strict": false,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   }
+  },
+  {
+   "it": 150,
+   "aux": {
+    "min_dtz": 28.47,
+    "exit_dtz": 50.08,
+    "k6": false,
+    "k6_strict": false,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   }
+  },
+  {
+   "it": 175,
+   "aux": {
+    "min_dtz": 30.3,
+    "exit_dtz": 58.08,
+    "k6": false,
+    "k6_strict": false,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   }
+  },
+  {
+   "it": 200,
+   "aux": {
+    "min_dtz": 18.98,
+    "exit_dtz": 44.08,
+    "k6": true,
+    "k6_strict": true,
+    "safe": true,
+    "clean": true,
+    "released": false,
+    "stall_pen": 0.0,
+    "clamp_pen": 0.0,
+    "reversal_pen": 0.0
+   }
+  }
+ ],
+ "trace": [
+  {
+   "t": 1,
+   "dtz_mm": 75.75,
+   "v_par": 0.24883,
+   "fn_l": 2.7031,
+   "fn_r": 2.9305,
+   "a_r2": [
+    0.99595,
+    -0.99987,
+    0.99997,
+    1.0
+   ],
+   "r_ex": [
+    1.0,
+    -0.99931,
+    0.99999,
+    -1.0
+   ],
+   "u": [
+    0.80163,
+    -1.0,
+    1.0,
+    -0.90972
+   ]
+  },
+  {
+   "t": 2,
+   "dtz_mm": 72.87,
+   "v_par": 0.31469,
+   "fn_l": 1.6976,
+   "fn_r": 1.5224,
+   "a_r2": [
+    1.0,
+    -1.0,
+    -0.86543,
+    0.99782
+   ],
+   "r_ex": [
+    1.0,
+    -0.99863,
+    0.99894,
+    -0.99991
+   ],
+   "u": [
+    0.57147,
+    -1.0,
+    0.64586,
+    -1.0
+   ]
+  },
+  {
+   "t": 3,
+   "dtz_mm": 69.85,
+   "v_par": 0.23694,
+   "fn_l": 2.8031,
+   "fn_r": 2.5101,
+   "a_r2": [
+    0.99786,
+    -0.99939,
+    0.49989,
+    0.99425
+   ],
+   "r_ex": [
+    1.0,
+    0.99745,
+    0.99997,
+    -0.9986
+   ],
+   "u": [
+    0.642,
+    0.39858,
+    0.78464,
+    -1.0
+   ]
+  },
+  {
+   "t": 4,
+   "dtz_mm": 66.86,
+   "v_par": 0.31362,
+   "fn_l": 0.4861,
+   "fn_r": 0.1667,
+   "a_r2": [
+    1.0,
+    -0.99994,
+    -0.99885,
+    -0.90915
+   ],
+   "r_ex": [
+    1.0,
+    1.0,
+    0.99813,
+    0.99995
+   ],
+   "u": [
+    0.72306,
+    0.37401,
+    0.65898,
+    0.40077
+   ]
+  },
+  {
+   "t": 5,
+   "dtz_mm": 63.67,
+   "v_par": 0.27279,
+   "fn_l": 1.7567,
+   "fn_r": 1.7531,
+   "a_r2": [
+    0.99999,
+    -0.99998,
+    -0.99829,
+    -0.15075
+   ],
+   "r_ex": [
+    1.0,
+    1.0,
+    0.99757,
+    0.99147
+   ],
+   "u": [
+    0.6568,
+    0.32265,
+    0.5319,
+    0.46803
+   ]
+  },
+  {
+   "t": 6,
+   "dtz_mm": 60.52,
+   "v_par": 0.32569,
+   "fn_l": 0.4026,
+   "fn_r": 0.3647,
+   "a_r2": [
+    1.0,
+    -0.99989,
+    -0.9999,
+    -0.99972
+   ],
+   "r_ex": [
+    1.0,
+    1.0,
+    0.99902,
+    1.0
+   ],
+   "u": [
+    0.61031,
+    0.32628,
+    0.60439,
+    0.3742
+   ]
+  },
+  {
+   "t": 7,
+   "dtz_mm": 57.24,
+   "v_par": 0.30914,
+   "fn_l": 1.1087,
+   "fn_r": 0.7762,
+   "a_r2": [
+    1.0,
+    -1.0,
+    -0.99994,
+    -0.96194
+   ],
+   "r_ex": [
+    1.0,
+    0.99999,
+    0.97095,
+    0.99307
+   ],
+   "u": [
+    0.53117,
+    0.25344,
+    0.49108,
+    0.2494
+   ]
+  },
+  {
+   "t": 8,
+   "dtz_mm": 53.94,
+   "v_par": 0.32755,
+   "fn_l": 0.3688,
+   "fn_r": 0.3884,
+   "a_r2": [
+    1.0,
+    -0.99996,
+    -0.99994,
+    -0.99985
+   ],
+   "r_ex": [
+    1.0,
+    1.0,
+    0.99759,
+    0.99995
+   ],
+   "u": [
+    0.42066,
+    0.20053,
+    0.40431,
+    0.19179
+   ]
+  },
+  {
+   "t": 9,
+   "dtz_mm": 50.6,
+   "v_par": 0.32566,
+   "fn_l": 0.2836,
+   "fn_r": 0.2822,
+   "a_r2": [
+    1.0,
+    -1.0,
+    -0.99998,
+    -0.99898
+   ],
+   "r_ex": [
+    1.0,
+    0.99998,
+    0.99988,
+    0.99966
+   ],
+   "u": [
+    0.43185,
+    0.21546,
+    0.40611,
+    0.17491
+   ]
+  },
+  {
+   "t": 10,
+   "dtz_mm": 47.29,
+   "v_par": 0.31992,
+   "fn_l": 0.2445,
+   "fn_r": 0.2886,
+   "a_r2": [
+    1.0,
+    -1.0,
+    -0.99998,
+    -0.99994
+   ],
+   "r_ex": [
+    1.0,
+    1.0,
+    0.99998,
+    0.99997
+   ],
+   "u": [
+    0.37182,
+    0.18351,
+    0.35874,
+    0.17055
+   ]
+  },
+  {
+   "t": 11,
+   "dtz_mm": 44.08,
+   "v_par": 0.31179,
+   "fn_l": 0.1573,
+   "fn_r": 0.2146,
+   "a_r2": [
+    1.0,
+    -1.0,
+    -0.99999,
+    -0.99992
+   ],
+   "r_ex": [
+    1.0,
+    0.99966,
+    1.0,
+    0.99997
+   ],
+   "u": [
+    0.36398,
+    0.19126,
+    0.37658,
+    0.17283
+   ]
+  }
+ ]
+}

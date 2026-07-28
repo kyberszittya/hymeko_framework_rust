@@ -1,0 +1,3 @@
+# per-seed policy checkpoints: 4MB each, redundant shared R2 state, deterministically regenerable from the seed
+checkpoint.json
+first_k6_checkpoint.json
