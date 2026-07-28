@@ -1,0 +1,165 @@
+{
+  "verdict": "CODESIGN_NO_IMPROVEMENT_TRADEOFF_FUNDAMENTAL",
+  "baseline_upright_reach": 0.2,
+  "baseline_mean_min_dist": 0.361,
+  "best_point": {
+    "stance": 0.062,
+    "sign": 1.0,
+    "amp": 0.7,
+    "forward": 0.337,
+    "turn": 14.0,
+    "turn_upright": 0.996
+  },
+  "best_upright_reach": 0.2,
+  "best_mean_min_dist": 0.361,
+  "reach_delta": 0.0,
+  "profile_frontier": [
+    {
+      "stance": 0.085,
+      "sign": 1.0,
+      "amp": 0.7,
+      "forward": 0.351,
+      "turn": -21.4,
+      "turn_upright": 0.91,
+      "score": 0.535
+    },
+    {
+      "stance": 0.062,
+      "sign": 1.0,
+      "amp": 0.7,
+      "forward": 0.337,
+      "turn": 14.0,
+      "turn_upright": 0.996,
+      "score": 0.35
+    },
+    {
+      "stance": 0.1,
+      "sign": -1.0,
+      "amp": 0.7,
+      "forward": 0.11,
+      "turn": -69.2,
+      "turn_upright": 0.705,
+      "score": 0.275
+    },
+    {
+      "stance": 0.1,
+      "sign": 1.0,
+      "amp": 0.7,
+      "forward": -0.068,
+      "turn": -37.7,
+      "turn_upright": 0.947,
+      "score": 0.17
+    },
+    {
+      "stance": 0.062,
+      "sign": 1.0,
+      "amp": 1.1,
+      "forward": 0.257,
+      "turn": -37.6,
+      "turn_upright": -0.459,
+      "score": -1.0
+    },
+    {
+      "stance": 0.062,
+      "sign": -1.0,
+      "amp": 0.7,
+      "forward": 0.084,
+      "turn": 0.3,
+      "turn_upright": -0.304,
+      "score": -1.0
+    },
+    {
+      "stance": 0.062,
+      "sign": -1.0,
+      "amp": 1.1,
+      "forward": 0.206,
+      "turn": -162.5,
+      "turn_upright": -0.557,
+      "score": -1.0
+    },
+    {
+      "stance": 0.085,
+      "sign": 1.0,
+      "amp": 1.1,
+      "forward": 0.28,
+      "turn": -29.1,
+      "turn_upright": -0.47,
+      "score": -1.0
+    },
+    {
+      "stance": 0.085,
+      "sign": -1.0,
+      "amp": 0.7,
+      "forward": 0.436,
+      "turn": 18.0,
+      "turn_upright": -0.566,
+      "score": -1.0
+    },
+    {
+      "stance": 0.085,
+      "sign": -1.0,
+      "amp": 1.1,
+      "forward": 0.19,
+      "turn": 12.3,
+      "turn_upright": -0.523,
+      "score": -1.0
+    },
+    {
+      "stance": 0.1,
+      "sign": 1.0,
+      "amp": 1.1,
+      "forward": 0.178,
+      "turn": -13.0,
+      "turn_upright": -0.553,
+      "score": -1.0
+    },
+    {
+      "stance": 0.1,
+      "sign": -1.0,
+      "amp": 1.1,
+      "forward": 0.09,
+      "turn": 52.5,
+      "turn_upright": -0.69,
+      "score": -1.0
+    }
+  ],
+  "evaluated_top3": [
+    {
+      "stance": 0.085,
+      "sign": 1.0,
+      "amp": 0.7,
+      "forward": 0.351,
+      "turn": -21.4,
+      "turn_upright": 0.91,
+      "score": 0.535,
+      "reach_rate": 0.0,
+      "upright_reach_rate": 0.0,
+      "mean_min_dist": 0.528
+    },
+    {
+      "stance": 0.062,
+      "sign": 1.0,
+      "amp": 0.7,
+      "forward": 0.337,
+      "turn": 14.0,
+      "turn_upright": 0.996,
+      "score": 0.35,
+      "reach_rate": 0.2,
+      "upright_reach_rate": 0.2,
+      "mean_min_dist": 0.361
+    },
+    {
+      "stance": 0.1,
+      "sign": -1.0,
+      "amp": 0.7,
+      "forward": 0.11,
+      "turn": -69.2,
+      "turn_upright": 0.705,
+      "score": 0.275,
+      "reach_rate": 0.0,
+      "upright_reach_rate": 0.0,
+      "mean_min_dist": 0.473
+    }
+  ],
+  "note": "SIMULATION. Scripted co-design: stance width x gait (sign, amp), turn-then-walk pursuit. Upright reach on a held-out (dist x bearing) grid. Baseline = canonical trot."
+}
