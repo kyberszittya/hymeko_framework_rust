@@ -1,0 +1,44 @@
+%% plan.mmd — Geometric Approach layer: sequence (offline plan + online transit) and the state machine.
+%% Two diagrams: (1) planning+execution sequence, (2) mode state machine with the READY guard.
+
+sequenceDiagram
+    autonumber
+    participant Obj as Object geometry (coin)
+    participant Tgt as ApproachTargets seam
+    participant IK as PlanarArm2R (analytic)
+    participant Plan as plan_collision_free_transit
+    participant Ctrl as GeometricTransitController
+    participant Down as Frozen downstream
+
+    Note over Obj,Tgt: OFFLINE PLAN (deterministic, no RL/BC)
+    Obj->>Tgt: contact points, normals, sides
+    Tgt->>IK: pre-contact targets p* = p_contact - d_pre * n (L/R sides)
+    IK->>IK: calibrate (theta_b, s0, o1, s1) from FK
+    IK->>Plan: ik_cont(tip, prev) per waypoint (branch = argmin ||wrap(q - q_prev)||)
+    Plan->>Plan: tip path (radial-out -> keep-out arc -> radial-in)
+    Plan->>Plan: validate EVERY waypoint (keep-out, r_base<0.298, limits, step<=slew, self-collision)
+    alt far-side route (left tip)
+        Plan-->>Plan: REJECT (far edge 0.316 > 0.30 reach) -> TransitInfeasible
+    else near-base route
+        Plan-->>Ctrl: densified slew-feasible q_ref
+    end
+    opt arms interfere on simultaneous swing
+        Plan-->>Ctrl: sequential fallback (right-to-shell, then left)
+    end
+
+    Note over Ctrl,Down: ONLINE TRANSIT (governed servo, no state edit)
+    Ctrl->>Ctrl: step_ablation -> govern_torque track q_ref
+    Ctrl-->>Ctrl: gates: coin_pert ~0, 0 contact, single branch, reach READY
+    Ctrl->>Down: terminal READY TransportSnapshot (one-step boundary identity)
+    Down->>Down: [NEXT] dynamic capture -> APPROACH -> HANDOFF_RESET -> R2 -> K6
+
+    %% ---- mode state machine ----
+    %% stateDiagram-v2
+    %%   [*] --> HOME_V1
+    %%   HOME_V1 --> TRANSIT: analytic q_ref ready
+    %%   TRANSIT --> TRANSIT: validated waypoint, step <= slew
+    %%   TRANSIT --> READY: both tips in pre-capture band, coin unperturbed
+    %%   READY --> DYNAMIC_CAPTURE: guard (tips on assigned sides, keep-out ok, no contact, coin still, no pending branch switch)
+    %%   DYNAMIC_CAPTURE --> APPROACH: H_dyn membership [NEXT milestone]
+    %%   APPROACH --> K6: frozen HANDOFF_RESET -> R2 -> coast
+    %%   K6 --> [*]

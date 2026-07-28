@@ -1,0 +1,189 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!55!black, urlcolor=blue!55!black}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\ok}{\textcolor{green!50!black}{\textbf{PASS}}}
+\newcommand{\halt}{\textcolor{red!70!black}{\textbf{HALT}}}
+
+\title{\textbf{Plan --- Object-Generic Geometric Approach Layer}\\[2pt]
+\large Explicit closed-form branch-continuous planar IK transit \code{HOME}$\rightarrow$\code{READY} (no RL, no BC)}
+\author{HyMeKo coin-delivery campaign \quad(\code{recovery/coin-r9-causal-residual-delivery})}
+\date{2026-07-28}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent The stricter compositional benchmark starts the arms at a collision-free home posture and asks the frozen
+learned stack to deliver strict K6. The audit (\code{HOME\_START\_COMPOSITION\_NEEDS\_UPSTREAM\_REACH\_SKILL}) showed the
+frozen \code{APPROACH} has no reach-to-contact capability, so a \emph{single} upstream skill is missing:
+\code{HOME}$\rightarrow$pre-capture \code{READY}. The key realisation of this plan is that for a \textbf{planar 2R arm this
+upstream skill is not a learning problem at all} --- the inverse kinematics has an exact closed form (Siciliano), with
+exactly two elbow branches selected by the sign of $q_2$. We therefore build the reach as an \textbf{object-generic
+Geometric Approach layer}: object geometry $\rightarrow$ approach side $\rightarrow$ pre-contact tip targets
+$p^\star=p_{\text{contact}}-d_{\text{pre}}\,\hat n$ $\rightarrow$ analytic branch-continuous IK along a collision-free
+tip-space path $\rightarrow$ \code{READY}, time-parameterised under the frozen slew/torque contract. Learning is reserved
+for what kinematics cannot cover --- the contact-rich \emph{dynamic capture} (velocity-matched straddle for a coin) and
+the existing R2 transport. A learning-free positive control is already in hand: from the retained generic home
+\code{V1} the analytic transit reaches the pre-capture shell with \textbf{coin perturbation $0.0$\,mm, zero contact,
+single elbow branch, slew-feasible (max joint step $0.069\ll0.300$)}. This plan formalises that probe into an audited,
+tested module and its contracts. \emph{Kinematics where kinematics suffices; learning only at the contact.}
+\end{abstract}
+
+\section{Scope and goal}
+\textbf{Goal.} A deterministic, auditable \code{HOME}$\rightarrow$\code{READY} transit for the two-arm planar gripper,
+built entirely from explicit closed-form 2R IK + a collision-free tip-space path, with \emph{no RL and no BC}.
+\textbf{Architecture (the reusable layer boundary):}
+\begin{center}\itshape GEOMETRIC APPROACH (explicit, this change) $\rightarrow$ READY / pre-contact manifold
+$\rightarrow$ learned local contact skill (dynamic capture) $\rightarrow$ frozen APPROACH $\rightarrow$ HANDOFF\_RESET
+$\rightarrow$ R2 $\rightarrow$ K6.\end{center}
+\textbf{Non-goals (explicit stop conditions).} No RL and no BC in this change (they are justified only for amortising the
+planner across many geometries/obstacles, which the current fixed planar problem does not need --- analytic IK is more
+precise, simpler, and auditable). No modification of the frozen downstream (APPROACH / HANDOFF\_RESET / R2 / coast / K6
+/ physics / safety). No dynamic-capture CEM and no TD3 in this change --- they are the \emph{next} milestones, committed
+separately.
+
+\begin{figure}[h]\centering\input{plan.tikz}
+\caption{The object-generic Geometric Approach layer (red, this change) transits \code{HOME}$\rightarrow$\code{READY} by
+explicit analytic IK over a collision-free tip path; everything downstream (blue frozen, orange learned-elsewhere) is
+untouched. The object-geometry seam (green) makes the pre-contact targets swappable per object (coin straddle today).}
+\end{figure}
+
+\section{The frozen contract (must hold at every step)}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item Physics + motion contract unchanged (\code{env/motion\_contract.py}: governed $\Delta\tau$, slew cap
+  $=\code{tau\_rate}\cdot\code{control\_dt}\approx0.30$, joint/coin speed hard caps). Every torque enters through the
+  existing \code{step\_ablation}$\to$governor stack; no raw actuator writes, no teleport, no coin-state edit, no hidden
+  force in deployment. State-editing appears \emph{only} as an offline characterisation/calibration probe, never in the
+  deployed transit.
+  \item K6 monitor and the entire learned downstream (\code{HANDOFF\_RESET}, R2 $\alpha=0.15$, release/coast) unchanged
+  and imported \emph{as-is}; \code{git diff} on those modules must be empty.
+  \item \code{HOME\_STATE\_V1} is \emph{retained verbatim} (\code{[-0.9,-1.4,0.0,2.7]}, committed \code{6d62b53e}); it is
+  documented, not overwritten. \code{HOME\_STATE\_V2\_READY} is a \emph{new} sibling contract, not a redefinition of V1.
+  \item \code{s4}/\code{s7} validation-only; \code{f1--f4} \code{SEALED}; not opened by this change.
+\end{itemize}
+
+\section{Affected files}
+\textbf{CORE.YAML items touched: none} (the coin RL work is entirely outside \code{hymeko\_core}/\code{hymeko\_query}/
+\code{hymeko\_client}/\code{hymeko\_daemon}/\code{parser} and touches no pinned dependency). All new code lives under
+\code{hymeko\_rl/} + \code{tests/}/\code{reports/}/\code{docs/plans/}.
+\smallskip\noindent\textbf{This change --- new files only:}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{hymeko\_rl/coin\_delivery/theta\_option/planar\_geometric\_approach.py} --- the layer: \code{PlanarArm2R}
+  (calibrated closed-form IK), the \code{ApproachTargets} protocol + \code{CoinStraddleTargets} (object-geometry seam),
+  \code{plan\_collision\_free\_transit} (tip-space arc path + per-waypoint validation + sequential fallback +
+  time-parameterisation), \code{GeometricTransitController} (rolls the reference through the governed servo).
+  \item \code{hymeko\_rl/coin\_delivery/theta\_option/home\_states.py} --- \code{HomeState} dataclass +
+  \code{HOME\_STATE\_V1\_GENERIC} and \code{HOME\_STATE\_V2\_READY} contracts + \code{build\_home\_snapshot}
+  (single source; the ad-hoc \code{build\_home\_state} in the composition experiment re-exports from here).
+  \item \code{hymeko\_rl/experiments/coin\_kinetic\_geometric\_transit.py} --- the transit gates + provenance JSON.
+  \item \code{hymeko\_rl/tests/test\_planar\_geometric\_approach.py} --- unit + integration + a lightweight perf assert.
+  \item \code{reports/2026-07-28-planar-geometric-approach-transit.md} --- the report.
+\end{itemize}
+\textbf{Read-only reuse:} \code{forward\_displacement.py} (\code{\_fingertip\_geoms}, \code{\_coin\_xy},
+\code{primary\_fingertip\_contacts}), \code{theta\_option/kinetic\_contract.py} (\code{TransportSnapshot.from\_live}),
+\code{coin\_strict\_markov\_ablation.py} (\code{step\_ablation}), \code{env/motion\_contract.py} (\code{govern\_torque}),
+\code{teacher\_bank.py} (\code{acquire\_snapshot}, \code{load\_harness}). \textbf{Later (not built here):}
+\code{coin\_kinetic\_dynamic\_capture.py} (short receding CEM from READY), then a TD3 capture.
+
+\section{Interface changes (signatures, contracts)}
+All additive; no existing signature changes.
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \code{PlanarArm2R(shoulder\_dof, elbow\_dof, base, tip\_geom, l1, l2)} with \code{calibrate(model, snapshot)}
+  measuring $(\theta_b,s_0,o_1,s_1)$ from FK geometry. \code{ik(tip, branch)$\to$(a,b)} exact closed form; \code{ik\_cont
+  (tip, prev)} picks the branch minimising $\lVert\mathrm{wrap}(q-q_{\text{prev}})\rVert$. \textbf{Pre:} \code{tip} inside
+  the annulus $(\lvert l_1-l_2\rvert,\,l_1+l_2)$. \textbf{Post:} $\mathrm{FK}(\code{ik}(t))=t$ to $<10^{-3}$\,m
+  (round-trip, asserted); the returned branch has constant $\mathrm{sign}(b)$ along a continuous in-annulus path.
+  \item \code{ApproachTargets} protocol: \code{precontact(model, snapshot)$\to$(tipL$^\star$, tipR$^\star$,
+  branchL, branchR)}. \code{CoinStraddleTargets(shell\_dist)} is the coin instance (two tips at the shell radius on the
+  assigned sides). The seam is what a pyramid/prism instance would replace --- \emph{no} coin logic elsewhere.
+  \item \code{plan\_collision\_free\_transit(home, targets, arm\_L, arm\_R, cfg)$\to$TransitPlan} --- builds each arm's
+  tip path (radial-out $\to$ keep-out arc $\to$ radial-in to the assigned side), solves branch-continuous IK per
+  waypoint, \textbf{validates every interpolated state} (tip$\to$coin keep-out, link$\to$coin clearance, in-annulus /
+  non-singular $r_{\text{base}}<r_{\max}$, joint limits, per-step $\le$ slew), and returns a densified, slew-feasible
+  \code{q\_ref} trajectory. On a per-arm infeasibility it retries the alternative arc direction, then falls back to
+  \emph{sequential} (right-to-shell then left) execution; it never silently truncates --- an unroutable request raises
+  \code{TransitInfeasible} with the failing waypoint/reason.
+  \item \code{GeometricTransitController.roll(home)$\to$TransitResult} --- governed-servo tracking of \code{q\_ref};
+  reports reached-shell error, coin perturbation, min tip$\to$coin clearance, contact count, peak qvel, and the terminal
+  \code{TransportSnapshot} that the READY $\to$ capture boundary consumes. \textbf{Post:} deterministic given
+  \code{(home, plan)}.
+\end{itemize}
+
+\section{Test strategy (per layer)}
+\textbf{Unit} (\code{test\_planar\_geometric\_approach.py}, deterministic seeds): calibration recovers
+$(\theta_b,s_0,o_1,s_1)$ and round-trips V1/V2/shell to $0$\,mm; \code{ik\_cont} maintains elbow sign across a fine arc
+(a regression that would fail for a naive numerical DLS that hops branches); \code{ik} raises/clamps outside the annulus;
+\code{plan\_collision\_free\_transit} \emph{rejects} a path forced over the unreachable far side (\code{TransitInfeasible})
+and \emph{accepts} the near-base route; the produced \code{q\_ref} has max step $<$ slew; \code{CoinStraddleTargets} puts
+the two targets on opposite assigned sides at the shell radius.
+\textbf{Integration:} the full V1$\to$READY roll satisfies the four transit gates below on the canonical s1 coin.
+\textbf{Regression:} a coarse (corner-cutting) path must fail \code{COIN\_UNPERTURBED} (the 100\,mm-knock failure mode we
+measured), proving the densification/validation is load-bearing.
+\textbf{Boundary:} \code{REACH\_TO\_APPROACH\_ONE\_STEP\_IDENTITY} --- the terminal READY snapshot, advanced one online
+step, equals the offline READY state (no double phase-machine invocation, the boundary lesson); and an off-by-one
+mis-timed boundary is \emph{rejected}.
+\textbf{Coverage:} every new public/private function exercised by $\ge1$ new test.
+
+\section{Performance budget}
+\textbf{Measured anchors (this host, Apple-Silicon, \code{.venv} py3.11.15, mujoco 3.10.0):} the full transit probe (151
+waypoints $\times$ 3 substeps + hold) runs in $<1$\,s at RSS $<0.3$\,GB; calibration is $\sim$8 FK evals. \textbf{Budget:}
+unit+integration+boundary suite $<90$\,s wall; \textbf{peak RSS $<1$\,GB} (hard cap 16\,GB, never approached). The perf
+test asserts a numerical wall bound ($<3$\,s median over 5 iterations) and RSS bound on the transit roll.
+
+\section{Risk anticipation}
+\textbf{Performance-contract preservation.} The transit adds \emph{no} new torque authority: \code{q\_ref} is tracked by
+the \emph{same} \code{step\_ablation}$\to$\code{govern\_torque} stack the rest of the system uses, so the slew, torque,
+and joint/coin-speed caps are inherited unchanged. The densification guarantees per-step $\le$ slew \emph{before}
+tracking, so the servo never has to cut a corner into the coin.
+\smallskip\noindent\textbf{Worst-case input / production scale.} The load-bearing geometric fact: the coin centre sits
+$0.271$\,m from each arm base while the arm reach is $l_1+l_2=0.30$\,m, so the coin's \emph{far} edge
+($0.271+r_{\text{keepout}}\approx0.316>0.30$) is \emph{unreachable}. The left tip therefore \emph{must} route the
+near-base way (dir $=-1$); the naive over-the-top arc drives IK onto the singular circle ($r_{\text{base}}\to0.30$,
+$c\to\pm1$) and the tracker then knocks the coin ($\sim$100\,mm, measured). \textbf{Mitigation:} the planner validates
+$r_{\text{base}}<r_{\max}=0.298$ at every waypoint and rejects the far-side route, and the near-base arc is verified to
+stay non-singular (elbow bend $\gtrsim20^\circ$ at $r_{\text{base}}=0.291$). The near-base swing must also clear the
+opposite arm and its links (self-collision check per waypoint) --- the sequential fallback exists precisely for the case
+where the two arms' simultaneous near-base swings would interfere.
+\smallskip\noindent\textbf{V2 singularity note.} \code{HOME\_STATE\_V2\_READY}'s left tip sits at $r_{\text{base}}=0.300$
+(exactly full extension, $q_1\approx0$). V2 is used as a \emph{ready-set target region}, not a hard pose to track through
+the singular point; the transit approaches READY \emph{radially inward} (away from the singularity), and the READY guard
+tolerances (not a single pose) absorb the last millimetres.
+
+\section{Rollback path}
+New files only; rollback $=$ delete them (no existing behaviour changes; \code{HOME\_STATE\_V1} untouched). The
+capture-CEM and TD3 milestones are separate later commits, each gated on its own test; a failure reverts to this transit
+without touching the frozen scaffold.
+
+\section{Gate ladder}
+\begin{enumerate}[nosep,leftmargin=1.6em]
+  \item \code{SINGLE\_BRANCH\_MAINTAINED\_PASS}: the analytic IK holds one elbow sign per arm across the whole path
+  (no topological switch; the far side is unreachable so the near-base branch is forced and consistent).
+  \item \code{COIN\_UNPERTURBED\_DURING\_TRANSIT\_PASS}: coin displacement $\le\varepsilon$ ($\approx1$\,mm) and zero
+  fingertip contact across the roll.
+  \item \code{TRANSIT\_REACHES\_READY\_PASS}: both tips arrive inside the READY / pre-capture band (shell radius
+  $\pm$ tol), qvel small.
+  \item \code{HOME\_V1\_TO\_READY\_COLLISION\_FREE\_PASS} \emph{(this change's headline gate)}: all of the above hold on
+  the retained generic \code{V1}, with per-waypoint validation and no state edit.
+  \item \code{REACH\_TO\_APPROACH\_ONE\_STEP\_IDENTITY\_PASS} \emph{(boundary)}: offline READY $=$ one online step from
+  READY; an off-by-one is rejected.
+  \item \emph{(Next milestones, not this change)} \code{HOME\_V1\_TO\_DYNAMIC\_HANDOFF\_REACHABILITY\_PASS} ($\ge3$
+  planner seeds, short capture CEM from READY reaches $H_{\text{dyn}}$), then \code{HOME\_V1\_START\_STRICT\_K6\_PASS}
+  (TD3 finishes; teacher-free). If the capture reaches $H_{\text{dyn}}$ but K6 fails, \halt{} and correct the certificate
+  --- do not tune the frozen downstream.
+\end{enumerate}
+
+\section{Empty-plan-dir hygiene}
+If abandoned before the transit module lands, delete
+\code{docs/plans/2026-07-28-planar-geometric-approach-transit/} in the same session.
+
+\end{document}

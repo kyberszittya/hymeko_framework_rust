@@ -1,0 +1,43 @@
+{
+ "contract": "PLANAR_GEOMETRIC_APPROACH_V1",
+ "immutable_downstream": "d55f5017",
+ "home": "HOME_STATE_V1_GENERIC",
+ "home_q": [
+  -0.9,
+  -1.4,
+  0.0,
+  2.7
+ ],
+ "ready_shell": {
+  "shell_dist_m": 0.055,
+  "side_left_deg": 107.0,
+  "side_right_deg": -118.0
+ },
+ "transit": {
+  "mode": "simultaneous",
+  "single_branch": true,
+  "coin_pert_mm": 0.0,
+  "min_clearance_mm": 40.2,
+  "contacts": 0,
+  "peak_qvel": 2.045,
+  "reached_qerr": 0.0745,
+  "ready_tips": {
+   "dist_L_mm": 61.8,
+   "side_L_deg": 111.5,
+   "dist_R_mm": 51.5,
+   "side_R_deg": -111.5
+  }
+ },
+ "gates": {
+  "SINGLE_BRANCH_MAINTAINED_PASS": true,
+  "COIN_UNPERTURBED_DURING_TRANSIT_PASS": true,
+  "TRANSIT_REACHES_READY_PASS": true,
+  "READY_HANDOFF_DETERMINISTIC_PASS": true,
+  "HOME_V1_TO_READY_COLLISION_FREE_PASS": true
+ },
+ "negative_controls": {
+  "singular_v2_start_rejected": true,
+  "far_side_left_route_rejected": true
+ },
+ "verdict": "HOME_V1_TO_READY_COLLISION_FREE_TRANSIT_PASS"
+}

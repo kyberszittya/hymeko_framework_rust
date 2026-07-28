@@ -1,0 +1,50 @@
+% plan.tikz — object-generic Geometric Approach layer: HOME -> READY by explicit analytic IK.
+% Standalone tikzpicture; \input by plan.tex (arrows.meta, positioning, fit, backgrounds, calc).
+\begin{tikzpicture}[
+    font=\small,
+    frozen/.style={draw=black!70, fill=blue!6,   rounded corners, align=center, inner sep=4pt, minimum height=8mm},
+    geom/.style  ={draw=red!70,   fill=red!8,    rounded corners, align=center, inner sep=4pt, minimum height=8mm, very thick},
+    learn/.style ={draw=orange!80!black, fill=orange!10, rounded corners, align=center, inner sep=4pt, minimum height=8mm},
+    seam/.style  ={draw=green!55!black, fill=green!8, rounded corners, align=center, inner sep=3pt, font=\footnotesize},
+    io/.style    ={draw=black!40, fill=black!4, align=center, inner sep=3pt, font=\footnotesize},
+    flow/.style  ={-{Stealth[length=2.2mm]}, thick},
+    dashflow/.style={-{Stealth[length=2.2mm]}, thick, dashed},
+  ]
+
+  % ---- runtime chain (left -> right) --------------------------------------------------------------
+  \node[frozen] (v1) {\textbf{HOME\_V1}\\generic, retained\\{\footnotesize\itshape topology bench}};
+  \node[geom, right=8mm of v1] (ik) {\textbf{analytic 2R IK}\\closed form, branch-\\continuous (Siciliano)};
+  \node[geom, right=8mm of ik] (path) {\textbf{collision-free}\\tip path + per-wpt\\validation + retime};
+  \node[frozen, right=8mm of path] (ready) {\textbf{READY}\\pre-capture shell\\{\footnotesize coin\_pert 0, no contact}};
+  \node[learn, right=8mm of ready] (cap) {\textbf{dynamic}\\capture\\{\footnotesize (next: CEM/TD3)}};
+  \node[frozen, right=7mm of cap] (down) {\textbf{APPROACH}\\HANDOFF\_RESET\\R2 $\to$ coast $\to$ \textbf{K6}};
+
+  \draw[flow] (v1) -- (ik);
+  \draw[flow] (ik) -- (path);
+  \draw[flow] (path) -- (ready);
+  \draw[flow] (ready) -- (cap) node[midway,above,font=\footnotesize]{boundary};
+  \draw[flow] (cap) -- (down);
+
+  % object-geometry seam feeding the pre-contact targets
+  \node[seam, above=7mm of ik, text width=44mm] (seam)
+    {\textbf{object geometry seam} \texttt{ApproachTargets}:\\ side assignment $\cdot$ $p^\star=p_{\text{contact}}-d_{\text{pre}}\hat n$\\ coin straddle today; pyramid/prism swap here};
+  \draw[flow] (seam) -- (ik);
+
+  % what enters the IK/path: only causal robot+object state
+  \node[io, below=6mm of path, text width=50mm] (val)
+    {\textbf{per-waypoint validation:} tip$\to$coin keep-out $\cdot$ link clearance $\cdot$ $r_{\text{base}}\!<\!0.298$ (non-singular) $\cdot$ joint limits $\cdot$ step $\le$ slew $\cdot$ self-collision};
+  \draw[flow] (val) -- (path);
+
+  \node[io, below=6mm of ik, text width=42mm] (route)
+    {\textbf{left tip: near-base route forced}\\ far edge $0.316>0.30$ reach $\Rightarrow$ unreachable;\\ dir$=-1$; sequential fallback if arms interfere};
+  \draw[flow] (route) -- (ik);
+
+  % ---- boundary annotations ----------------------------------------------------------------------
+  \begin{scope}[on background layer]
+    \node[draw=red!45, dashed, rounded corners, fit=(ik)(path), inner sep=7pt,
+      label={[red!65]below:{\itshape this change: explicit, no RL / no BC}}] {};
+    \node[draw=blue!40, dashed, rounded corners, fit=(cap)(down), inner sep=6pt,
+      label={[blue!60]above:{\itshape FROZEN downstream (imported as-is)}}] {};
+  \end{scope}
+
+\end{tikzpicture}

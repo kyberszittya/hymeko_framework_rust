@@ -18,38 +18,27 @@ import json
 from pathlib import Path
 from typing import Any
 
-import mujoco
-import numpy as np
 
-from hymeko_rl.coin_delivery.forward_displacement import _coin_xy, delivery_success, primary_fingertip_contacts
+from hymeko_rl.coin_delivery.forward_displacement import delivery_success, primary_fingertip_contacts
 from hymeko_rl.coin_delivery.theta_option import kinetic_contract as kc
 from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
 from hymeko_rl.coin_delivery.theta_option.kinetic_handoff_reset import HandoffResetTemporalController
 from hymeko_rl.coin_delivery.theta_option.kinetic_residual import ResidualBounds
 from hymeko_rl.coin_delivery.theta_option.kinetic_residual2 import deterministic_residual
 from hymeko_rl.coin_delivery.theta_option.semantics import DELIVERY_CFG
+from hymeko_rl.coin_delivery.theta_option.home_states import HOME_STATE_V1_GENERIC, build_home_snapshot
 from hymeko_rl.coin_delivery.theta_option.velocity_transport import velocity_rollout
 from hymeko_rl.experiments.coin_kinetic_ablation import _rebuild
 from hymeko_rl.experiments.coin_kinetic_positive_control import _min_dtz_mm
 
 OUT = Path("reports/2026-07-28-coin-r9-home-composition")
 CKPT = Path("reports/2026-07-28-coin-r9-r2-h1-multiseed/seed_01/checkpoint.json")
-HOME_Q = np.array([-0.9, -1.4, 0.0, 2.7])        # HOME_STATE_V1: both arms retracted, no contact (tips ~130–160 mm from coin)
+HOME_Q = HOME_STATE_V1_GENERIC.q                 # single source: HOME_STATE_V1_GENERIC (both arms retracted, no contact)
 
 
 def build_home_state(cradle: Any) -> Any:
-    """A `HOME_STATE_V1` snapshot: coin at the canonical s1 cradle, arms at the fixed home q, qdot = 0, prev_tau = 0, no contact.
-    # Postconditions: branchable snapshot duck-typing the rollout interface; no straddle assumed (built via `from_live`)."""
-    rl = cradle.branch()
-    d, m = rl.inner.data, rl.inner.model
-    coin = _coin_xy(cradle.branch())
-    d.qpos[:4] = HOME_Q
-    d.qpos[4:6] = coin
-    d.qpos[6] = 0.0
-    d.qvel[:] = 0.0
-    d.ctrl[:] = 0.0
-    mujoco.mj_forward(m, d)
-    return kc.TransportSnapshot.from_live(rl, cradle.stack, np.zeros(4))
+    """A `HOME_STATE_V1_GENERIC` snapshot — thin re-export of the single source in ``home_states.build_home_snapshot``."""
+    return build_home_snapshot(cradle, HOME_STATE_V1_GENERIC)
 
 
 def compose(home: Any, clone_factory: Any, r2_fn: Any) -> dict:
