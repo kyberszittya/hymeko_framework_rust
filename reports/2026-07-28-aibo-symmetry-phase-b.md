@@ -67,6 +67,35 @@ verified positive, not a noisy A/B. Natural follow-up: **train** with the symmet
 hard-equivariant actor) rather than wrapping a trained policy — expected to reach ±20° both sides
 natively and possibly extend range.
 
+## "HSiKAN?" — the equivariance principle is backbone-agnostic, but the *trained* HSiKAN has nothing to symmetrize
+
+The wrap-and-symmetrize trick fixed the MLP. Does it fix the HSiKAN? Applying an exact mirror over the
+**leg-hypergraph** obs (swap fl↔fr / bl↔br vertices + flip the lateral features, empirically pinned via
+the +20°/−20° obs at a symmetric start) to the trained `signedkan` per-node omni policy: **no** — and an
+**exhaustive search over every valid feature-flip mirror finds none** that makes it two-sided. But this
+is **not** an equivariance failure. The diagnostic reveals why:
+
+| policy | ‖raw action‖ | ‖mirror term‖ | ‖symmetrized‖ |
+|---|---|---|---|
+| MLP | **0.822** | 0.615 | 0.712 |
+| signedkan | **0.066** | 0.067 | 0.060 |
+
+The trained **signedkan learned a near-ZERO residual** (~0.066, an order of magnitude below the MLP's
+active crab ~0.82) — it **rides the scaffold** instead of learning an active abduction crab. There is
+almost nothing to symmetrize. Its +y-only reach is inherited from a **scaffold turning asymmetry**
+(a=0 scaffold: +20° min_dist 0.141 vs −20° 0.221 — the known `SteeredTrotGait` one-way yaw bias), which
+the tiny residual only bridges on the +y side; it is **not a learned crab at all**. This re-characterises
+the earlier "HSiKAN ≈ MLP, both reach 0.40" result: they reach 0.40 by **different means** — the MLP by an
+active symmetrizable crab, the HSiKAN by near-null scaffold-riding.
+
+So the honest answer: (1) the mirror-equivariance **principle is backbone-agnostic** (`symmetrize` wraps
+any policy; proven on the MLP); (2) it only helps a policy that **learned an active crab** to symmetrize;
+(3) the trained HSiKAN did not, so for HSiKAN the lever is first to make it **use its abduction authority**
+(exploration / training), then equivariance makes it two-sided — best done by **training a hard-equivariant
+HSiKAN in the loop** (symmetrization inside the actor), the natural follow-up. The `Z_2` equivariance and
+the sunflower `S_4` structural prior remain orthogonal and composable; neither manufactures a crab the
+policy never learned.
+
 ## Files / tests
 
 ```
