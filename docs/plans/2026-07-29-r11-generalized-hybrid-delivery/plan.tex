@@ -1,0 +1,231 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.15cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!55!black, urlcolor=blue!55!black}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\ok}{\textcolor{green!50!black}{\textbf{PASS}}}
+\newcommand{\done}{\textcolor{green!50!black}{\textbf{DONE}}}
+\newcommand{\halt}{\textcolor{red!70!black}{\textbf{HALT}}}
+\newcommand{\gate}[1]{\textcolor{blue!55!black}{\texttt{\small #1}}}
+
+\title{\textbf{Plan --- R11 v2: Exact-Zero Generalized Hybrid Delivery + Hamiltonian Refinement}\\[2pt]
+\large From the true zero reset $q=[0,0,0,0]$ to a teacher-free, coin/target-conditioned hybrid manipulation policy,
+optimized for geometry, time, transition smoothness, and Hamiltonian energy flow --- strict K6 and safety preserved.}
+\author{HyMeKo coin-delivery campaign \quad(\code{recovery/coin-r9-causal-residual-delivery}, parent \code{021a1e54})}
+\date{2026-07-29}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent R11.0 (\done, \code{021a1e54}) proved a positive control: from the exact zero reset a Cartesian reach + a
+READY-specific CEM capture + the frozen downstream delivers strict K6 (min\_dtz 11.54\,mm, coin untouched 0.0\,mm, first
+frame $[0,0,0,0]$). R11.1 (\done) replaced the fragile 3-shell reach with a robust 4-DOF RRT-Connect that generalizes over
+the coin grid (9/10, $\sim$0.5\,s). The remaining bottleneck is \emph{not} the reach but \textbf{capture/delivery
+generalization}: the learned R2 residual and the handoff orbit are canonical-only, so a coin shifted $\geq$2--3\,cm follows
+the wrong orbit and misses (28--66\,mm). R11 (this plan) builds the rest: a HyMeKo hybrid IR (initial-condition
+certificate, modes $M_0\!\to\!M_7$, transitions with handoff + energy descriptors), a coin/target demonstration bank, a
+\textbf{coin/target-conditioned teacher-free} capture--delivery policy (BC $\to$ reward-driven RL), and joint refinement of
+reach geometry, timing, hybrid-transition smoothness, and \textbf{Hamiltonian energy flow}. Every result starts from
+$q=[0,0,0,0]$ in one continuous episode; strict K6, safety, no-premature-contact, and no-teleport are hard constraints.
+\textbf{This is a program-level plan; implementation is gated, one boundary at a time, R11.2 first.}
+\end{abstract}
+
+\section{Scope and goal}
+\textbf{Goal.} A robust, coin/target-conditioned, \emph{teacher-free} hybrid policy that generalizes from the exact zero
+home over $x_{\mathrm{coin}}\!\sim\!\mathcal D_{\mathrm{coin}}$, $x_{\mathrm{target}}\!\sim\!\mathcal D_{\mathrm{target}}$
+and, subject to strict K6 + safety, minimizes path length, total $T_{\mathrm{ZERO}\to\mathrm{K6}}$, transition jerk/jumps,
+and Hamiltonian energy cost. \textbf{Deployed episode (one continuous rollout):}
+\begin{center}\itshape EXACT\_ZERO\_HOME $\to$ collision-free reach $\to$ precontact alignment $\to$ capture $\to$
+controlled delivery $\to$ target entry $\to$ settle $\to$ strict K6.\end{center}
+\textbf{Non-goals / hard stops.} No READY-snapshot start, no staging HOME, no un-executed pre-positioning, no
+transit omitted from the time/energy ledger, \textbf{no CEM/teacher at deployment}, and never report one planner's failure
+as a physical impossibility. No RL run before its coordinate + reward + demo bank are frozen and its gate passes.
+
+\begin{figure}[h]\centering\input{plan.tikz}\caption{The hybrid mode automaton $M_0\!\to\!M_7$. Each edge is a
+\code{HybridTransition} carrying a guard, a handoff descriptor $h_i$, and an energy descriptor $\Delta H_i$. The reach
+($M_0\!\to\!M_2$) is a solved geometric planner (RRT-Connect); the learned, coin/target-conditioned policy owns capture
+through settle ($M_2\!\to\!M_7$); energy-shaping targets ride on the transitions.}\end{figure}
+
+\section{Frozen positive controls (R11.0 / R11.1 --- do not modify)}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{R11.0} \code{EXACT\_ZERO\_HOME\_TO\_STRICT\_K6\_BASELINE\_PASS}: zero home $\to$ 3-shell IK reach $\to$
+  READY-specific CEM capture $\to$ frozen downstream $\to$ strict K6 (11.54\,mm). CEM is a \emph{teacher/oracle}, not
+  deployment. The only learned component in this chain is the frozen R2 residual.
+  \item \textbf{R11.1} \code{ZERO\_HOME\_RRT\_REACH\_GRID\_PASS\_WITH\_CLEARANCE\_TIGHTENING\_PENDING}: 4-DOF RRT-Connect,
+  goal set of collision-free precontact configs, inflated-coin + inter-arm collision checks. Residual: $\sim$2--4\,mm
+  precontact nudge in a few executions (clearance tightening), and \code{right +5\,cm} is an invalid initial condition.
+  \item Frozen and reused (never the task start): the downstream (HANDOFF\_RESET/R2/coast), physics, strict-K6 + safety
+  monitors, the collision contract. \code{s4}/\code{s7} untouched; \code{f1--f4} sealed.
+  \item \textbf{Two components, two roles --- do not conflate.} \textbf{RRT-Connect is a certified, deterministic,
+  \emph{deployed} geometric planner} (M1$\to$M2): it also serves as positive control, fallback, and an optional
+  demonstration source, and is \emph{legitimately present at final deployment} --- the RL never has to relearn what the
+  geometric planner solves robustly in $\sim$0.5\,s. Only the \textbf{per-instance CEM capture/delivery solve is
+  teacher-only} (demonstration generator, prohibited at final deployment). \emph{Teacher-free} therefore means:
+  \textbf{no per-instance CEM / oracle / precomputed delivery orbit} --- it does \emph{not} mean ``no deterministic RRT.''
+\end{itemize}
+
+\section{Task contract (first-class, verifiable)}
+\textbf{Initial condition} \code{EXACT\_ZERO\_HOME\_V1}: $q{=}[0,0,0,0]$, $\dot q{=}0$, \code{prev\_tau}$=0$, empty
+controller memory, empty contact set, coin velocity $0$, \code{sim.step}$=0$, no snapshot parent, no teacher state.
+Coin/target poses are a \emph{separate} init distribution, not part of HOME. \textbf{Every rollout} emits an
+\code{INITIAL\_CONDITION\_CERTIFICATE} (exact $q$/$\dot q$, zero memory, empty contacts, zero object velocity, step $0$, no
+injection/staging); a \code{ZERO\_HOME$\to$K6} claim is valid only with a passing certificate, over one continuous episode.
+
+\section{Hybrid system + energy model}
+\textbf{Modes} $M_0$ ZERO\_HOME, $M_1$ FREE\_REACH, $M_2$ PRECONTACT\_ALIGNMENT, $M_3$ CAPTURE, $M_4$
+CONTROLLED\_DELIVERY, $M_5$ TARGET\_ENTRY, $M_6$ SETTLE, $M_7$ K6\_SUCCESS. \textbf{Transitions} carry
+$h_i=(q,\dot q,\tau_{\mathrm{prev}},x_c,\dot x_c,x_g,\mathcal C,e_{\mathrm{phase}},m_i,m_{i+1})$ and an
+\code{EnergyTransitionCertificate}. \textbf{Per-mode Hamiltonian}
+$H_m(z)=T_m+V_m+E_{\mathrm{contact},m}$ with port-Hamiltonian dynamics
+$\dot z=(J_m(z)-R_m(z))\nabla H_m(z)+G_m(z)u$ ($J_m{=}{-}J_m^\top$ energy-conserving, $R_m\succeq0$ dissipation). Reset
+$z^+=\Delta_{m\to n}(z^-)$; energy jump $\Delta H_{m\to n}=H_n(z^+)-H_m(z^-)$; episode ledger
+$H(T)-H(0)=W_{\mathrm{act}}+W_{\mathrm{ext}}-E_{\mathrm{diss}}-E_{\mathrm{impact}}+\varepsilon_{\mathrm{num}}$. Positive and
+negative actuator work $W_\pm=\int\sum_i\max(\pm\tau_i\dot q_i,0)\,dt$ are tracked \emph{separately} (they must not cancel).
+
+\textbf{Two-level energy contract --- do not claim conservation yet.} Under MuJoCo contact, damping, actuator governance,
+and numerical integration, not every energy term is exactly recoverable. R11.2 delivers only the \emph{measurement}
+level: a \code{MeasuredEnergyLedger} per mode/transition (robot $E_k$, coin $E_k$, PE where relevant, $W_+$, $W_-$,
+contact impulse, damping/dissipation proxy, pre- and post-transition energy, numerical residual). The R11.2
+\code{EnergyTransitionCertificate} asserts \gate{ENERGY\_LEDGER\_COMPLETE} + \gate{ENERGY\_BALANCE\_RESIDUAL\_RECORDED} ---
+never \gate{HAMILTONIAN\_CONSERVATION\_PASS}. The \emph{modelled} level (\code{ModelledHamiltonianCertificate}: which
+residual band is physically/numerically acceptable, and any conservation verdict) is calibrated later, at R11.8.
+
+\section{Coin/target-conditioned delivery (the real bottleneck)}
+Policy state $s_t=(q_t,\dot q_t,x_c,\dot x_c,x_g,\Delta x_{\mathrm{goal}},\mathcal C_t,h_t)$ with
+$\Delta x_{\mathrm{goal}}=x_g-x_c$ (absolute pose kept --- same relative vector needs different joint strategy at different
+workspace points). The policy \emph{forms} the strategy from geometry; it does not store one canonical orbit. The
+\textbf{CEM teacher} re-derives the whole capture--delivery orbit per instance to build demonstrations (training only);
+\textbf{deployment uses no CEM, no oracle, no per-instance lookup, no precomputed delivery orbit} --- but the deterministic
+RRT reach (M1$\to$M2) \emph{is} a legitimate deployed component (see \S2). Teacher-free constrains the learned
+capture/delivery, not the certified geometric planner.
+
+\section{Distributions --- certificate-filtered, not a raw rectangle}
+$\mathcal D_{\mathrm{coin}}=(\text{geometric sample region})\cap(\text{valid initial-condition set})$: a coin pose is
+\emph{admissible} only if exact-zero HOME is collision-free, initial clearance $\geq5$\,mm, coin inside environment
+bounds, a legal precontact goal set is nonempty, and RRT finds a certified reach within budget with precontact coin
+displacement $\leq1$\,mm. \textbf{First region} about $c^\star=[0.076,0.143]$: $\Delta x\in[-0.05,+0.03]$,
+$\Delta y\in[-0.04,+0.03]$\,m, \emph{after} certificate filtering. \code{right +5\,cm} is
+\code{INVALID\_INITIAL\_CONDITION} --- excluded from the policy-success \emph{denominator}, reported in a separate
+rejection-rate metric, never a ``hard negative.'' The current 2--4\,mm precontact nudge must first be closed with larger
+obstacle inflation; only precontact-motion-gate-passing rollouts enter the demonstration bank.
+\textbf{Disjoint grids (no interpolation leakage, [[held-out panel is single-use]]):} \emph{train} $\Delta x\in\{-4,-2,0,
++2\}$, $\Delta y\in\{-3,-1,+1,+3\}$\,cm (admissible pairs); \emph{dev} the half-shifted interior $\Delta x\in\{-3,-1,+1,
++3\}$, $\Delta y\in\{-2,0,+2\}$\,cm (train-excluded); \emph{final} edge-near admissible points, diagonals, continuous
+random cell-interior samples, plus a separate invalid-initial-condition rejection panel.
+\textbf{Target = relative goal vector, staged generalization.} \textbf{G0} translation control
+($x_c'=x_c+\delta,\ x_g'=x_g+\delta$; relative delivery vector fixed --- tests transfer to another absolute workspace
+point). \textbf{G1} target-direction ($\Delta x_g=r[\cos\alpha,\sin\alpha]$, $r\in[0.05,0.09]$\,m,
+$\alpha\in[\alpha^\star-45^\circ,\alpha^\star+45^\circ]$). \textbf{G2} full coin$\times$direction$\times$distance
+(only after G0/G1; each pair checked: target in bounds, no invalid overlap, a physical delivery path exists, the strict-K6
+region fits). \textbf{R11.3 curriculum} C0 canonical/canonical $\to$ C1 shifted-together $\to$ C2 varied coin + fixed
+relative goal $\to$ C3 fixed coin + varied target dir/dist $\to$ C4 varied$\times$varied $\to$ C5 unseen continuous panel
+--- far more diagnostic than one large 2-D product distribution.
+
+\section{Optimization objective (lexicographic)}
+\textbf{Hard:} valid initial-condition certificate; collision/safety contract; no forbidden precontact coin motion;
+strict K6; teacher-free deployment. \textbf{Secondary} (over valid-K6 episodes):
+$J=\lambda_T T+\lambda_L L+\lambda_J J_{\mathrm{jerk}}+\lambda_W W_+ +\lambda_D E_{\mathrm{diss}}+\lambda_I
+E_{\mathrm{impact}}+\lambda_H J_{\Delta H}+\lambda_S T_{\mathrm{settle}}$, with $J_{\Delta H}=\sum_i\psi_i(\Delta
+H_i,W_{\mathrm{act},i},E_{\mathrm{impact},i})$ and $\psi_i$ asymmetric (heavily penalize unexplained positive energy
+injection, penalize needless impact loss, permit physically-expected dissipation, reward hitting the mode-wise energy
+window). Constrained: $\min_\pi J$ s.t. $P(\mathrm{K6})\geq P(\mathrm{baseline})-\varepsilon$,
+$N_{\mathrm{safety}}=N_{\mathrm{invalid\ init}}=N_{\mathrm{premature\ contact}}=0$.
+
+\section{Affected files (new; no CORE.YAML items)}
+\textbf{HyMeKo IR} \code{hymeko\_ir/} (initial\_condition, initial\_distribution, initial\_condition\_certificate,
+hybrid\_mode, hybrid\_transition, transition\_guard, state\_invariant, handoff\_descriptor, measured\_energy\_ledger,
+energy\_transition\_certificate, modelled\_hamiltonian\_certificate [R11.8], hamiltonian\_mode [R11.8],
+rollout\_provenance). \textbf{Hybrid RL runtime} \code{hybrid\_rl/} (structured\_plan,
+reach\_planner\_adapter, capture\_delivery\_policy, transition\_policy, energy\_shaping\_policy, temporal\_schedule,
+transition\_blend, constrained\_objective, trajectory\_metrics, energy\_ledger, positive\_replay, deployment\_guard).
+\textbf{Coin adapter} \code{coin\_delivery/} (exact\_zero\_initial\_condition, coin\_target\_distribution, rrt\_reach [from
+\code{coin\_zero\_home\_rrt}], precontact\_goal\_set, coin\_collision\_contract, capture\_mode, delivery\_mode,
+k6\_certificate, coin\_hamiltonian, coin\_energy\_metrics, coin\_reward). Reuse \code{option\_rl} (SAC/TD3),
+\code{coin\_zero\_home\_reach/rrt} (RRT is a \emph{deployed} component), the frozen downstream + per-instance CEM as the
+\emph{training} teacher only.
+
+\section{Gated phase ladder (each a stop-boundary; verdicts)}
+\begin{enumerate}[nosep,leftmargin=1.7em]
+  \item \textbf{R11.0} \done\ \gate{EXACT\_ZERO\_HOME\_TO\_STRICT\_K6\_BASELINE\_PASS}.
+  \item \textbf{R11.1} \done\ \gate{ZERO\_HOME\_RRT\_REACH\_GRID\_PASS\_WITH\_CLEARANCE\_TIGHTENING\_PENDING}.
+  \item \textbf{R11.2 (NEXT)} HyMeKo initial-condition + hybrid-mode/transition IR + certificates. Non-RL, verifiable.
+  \gate{INITIAL\_CONDITION\_CERTIFICATE\_PASS} + IR round-trip tests. \emph{This plan's first implementation boundary.}
+  \item \textbf{R11.3} coin/target demonstration bank (sample $\to$ RRT reach $\to$ per-instance capture+delivery
+  re-solve $\to$ K6/failure), disjoint train/dev/final grids. \gate{COIN\_TARGET\_DEMONSTRATION\_COVERAGE\_PASS}.
+  \item \textbf{R11.4} conditioned capture--delivery BC; teacher-free replay on part of the dev grid.
+  \gate{CONDITIONED\_CAPTURE\_DELIVERY\_ASSIMILATION\_PASS}.
+  \item \textbf{R11.5} reward-driven delivery generalization (SAC primary).
+  \gate{ZERO\_HOME\_COIN\_TARGET\_DELIVERY\_GENERALIZATION\_PASS}.
+  \item \textbf{R11.6} reach geometry + timing refinement (contract frozen). \gate{ZERO\_HOME\_REACH\_REFINEMENT\_PASS}.
+  \item \textbf{R11.7} hybrid transition smoothing. \gate{HYBRID\_TRANSITION\_SMOOTHING\_PASS}.
+  \item \textbf{R11.8} Hamiltonian energy refinement. \gate{HAMILTONIAN\_HYBRID\_ENERGY\_REFINEMENT\_PASS}.
+  \item \textbf{R11.9} joint geometry/timing/transition/capture/delivery/energy RL.
+  \gate{ZERO\_HOME\_GENERALIZED\_HAMILTONIAN\_HYBRID\_RL\_PASS}.
+  \item \textbf{R11.10} teacher-free final deployment (8+ seeds, unseen grid).
+  \gate{TEACHER\_FREE\_ZERO\_HOME\_GENERALIZED\_DELIVERY\_PASS}.
+\end{enumerate}
+See \code{plan.mmd} for the gated sequence.
+
+\section{R11.2 --- first boundary (concrete, GO)}
+\textbf{Deliverable (narrow scope):} \code{InitialCondition}, \code{InitialDistribution},
+\code{InitialConditionCertificate}, \code{HybridMode} ($M_0..M_7$), \code{HybridTransition}, \code{TransitionGuard},
+\code{StateInvariant}, \code{HandoffDescriptor}, \code{MeasuredEnergyLedger}, \code{EnergyTransitionCertificate},
+\code{RolloutProvenance}; the coin \code{exact\_zero\_initial\_condition} adapter, the \code{k6\_certificate} adapter, and
+\code{RRT rollout instrumentation} (emit IC certificate + provenance per rollout). All typed dataclasses with
+\code{debug\_assert}-style validators (Design-by-Contract, \S8). Purely additive; existing behavior unchanged.
+\textbf{Interfaces:} \code{InitialCondition.certify(rollout\_state) $\to$ Certificate|raises};
+\code{HybridMode} enum + per-mode \code{StateInvariant}; \code{HybridTransition(source,target,guard,reset\_map,handoff,
+energy\_cert)}; \code{RolloutProvenance} (git SHA, seed, IC cert, coin/target pose, mode/transition trace, measured ledger).
+\textbf{The 10 R11.2 gates:}
+\gate{EXACT\_ZERO\_INITIAL\_CONDITION\_CERTIFICATE\_PASS},
+\gate{INITIAL\_DISTRIBUTION\_ADMISSIBILITY\_PASS},
+\gate{ROLLOUT\_STATE\_CONTINUITY\_PASS},
+\gate{NO\_SNAPSHOT\_INJECTION\_PASS},
+\gate{HYBRID\_MODE\_TRACE\_VALID\_PASS},
+\gate{HYBRID\_TRANSITION\_GUARDS\_PASS},
+\gate{HANDOFF\_DESCRIPTOR\_COMPLETE\_PASS},
+\gate{MEASURED\_ENERGY\_LEDGER\_COMPLETE\_PASS},
+\gate{ENERGY\_BALANCE\_RESIDUAL\_RECORDED\_PASS},
+\gate{K6\_CERTIFICATE\_PROVENANCE\_LINK\_PASS}.
+The energy-ledger gate proves measurement \emph{completeness}, not optimality or conservation.
+\textbf{Tests:} certificate passes on a fresh zero-home rollout and \emph{fails} on each violation (nonzero $\dot q$,
+nonempty contacts, injected snapshot, \code{step}$\neq0$, out-of-bounds coin); mode invariants; transition guard/reset
+round-trip; ledger balance recorded; provenance hash determinism.
+\textbf{Explicitly NOT in R11.2:} no demonstration generation, no CEM grid, no BC, no RL, no Hamiltonian reward, no energy
+shaping, no new planner, no policy training. Energy is \emph{measured}, never optimized.
+
+\section{Test / performance / risk (\S3, \S4, program-level)}
+\textbf{Tests} at every boundary: unit (validators, invariants, metrics, energy ledger balance), integration (one
+continuous zero-home episode), and --- for RL boundaries --- a 1-seed production-scale smoke before any multi-seed queue.
+\textbf{Determinism:} fixed seeds; RRT seed pinned; energy ledger reproducible. \textbf{Perf:} demo-bank + RL run under the
+16\,GB RSS cap, checkpointed per seed; wall estimate reconciled ($>2\times$ rule) before any overnight run.
+\textbf{Risk:} (i) delivery may not generalize even with conditioning (the R10.2/knife-edge precedent) --- gated by
+\gate{...GENERALIZATION\_PASS}, else report \code{NO\_GENERALIZATION\_WITHIN\_BUDGET}, never impossibility; (ii)
+energy-shaping could trade K6 for efficiency --- the lexicographic hard-constraint on K6/safety forbids it; (iii) demo
+grids must be disjoint (train/dev/final) to avoid leakage ([[held-out panel is single-use]]).
+\textbf{Deployment guard:} deploy only if IC certificate valid, nominal K6 preserved, generalization $\geq$ baseline, zero
+safety regression, bounded precontact motion + energy injection, no unexplained transition energy jump, no CEM/teacher
+call, action in the certified envelope; else \code{DEPLOYMENT\_FALLBACK\_TO\_RRT\_PLUS\_CERTIFIED\_SCAFFOLD} (also from
+exact zero).
+
+\section{Rollback + hygiene}
+New \code{hymeko\_ir/} + \code{hybrid\_rl/} packages and coin-adapter files; rollback $=$ delete. The IR wiring into the
+reach modules is additive (certificate + provenance emission), revertible without behavior change. Each RL checkpoint saved
+per seed; a regressing policy falls back to the RRT+certified-scaffold baseline. If R11 is abandoned before R11.2 lands,
+delete \code{docs/plans/2026-07-29-r11-generalized-hybrid-delivery/} this session.
+
+\section{Stop logic}
+Each numbered phase is a boundary: implement, verify its gate, write the report, and \halt{} for review before the next.
+No SAC/PPO/TD3 run before its boundary's coordinate + reward + demo bank are frozen and its ranking/coverage gate passes.
+\textbf{This plan itself is the R11 boundary-0 artifact: no R11.2 code begins until it is approved.}
+
+\end{document}

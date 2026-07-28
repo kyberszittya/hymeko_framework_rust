@@ -1,0 +1,38 @@
+% plan.tikz -- R11 hybrid mode automaton M0..M7 with per-transition handoff + energy descriptors.
+\begin{tikzpicture}[
+    font=\small,
+    mode/.style ={draw=black!70, fill=blue!6, rounded corners, align=center, inner sep=3.5pt, minimum height=8mm, minimum width=20mm},
+    reach/.style={draw=green!55!black, fill=green!7, rounded corners, align=center, inner sep=3.5pt, minimum height=8mm, minimum width=20mm},
+    learn/.style={draw=red!70, fill=red!8, rounded corners, align=center, inner sep=3.5pt, minimum height=8mm, minimum width=20mm, very thick},
+    goal/.style ={draw=orange!85!black, fill=orange!12, rounded corners, align=center, inner sep=3.5pt, minimum height=8mm, minimum width=20mm},
+    tr/.style   ={-{Stealth[length=2.2mm]}, thick},
+    lab/.style  ={font=\scriptsize, align=center, fill=white, inner sep=1pt},
+  ]
+  \node[mode]  (m0) {$M_0$\\\textbf{ZERO\_HOME}\\{\scriptsize $q,\dot q=0$}};
+  \node[reach, right=13mm of m0] (m1) {$M_1$\\\textbf{FREE\_REACH}\\{\scriptsize RRT-Connect}};
+  \node[reach, right=13mm of m1] (m2) {$M_2$\\\textbf{PRECONTACT}\\{\scriptsize align}};
+  \node[learn, below=10mm of m2] (m3) {$M_3$\\\textbf{CAPTURE}};
+  \node[learn, left=13mm of m3] (m4) {$M_4$\\\textbf{DELIVERY}\\{\scriptsize target-cond.}};
+  \node[learn, left=13mm of m4] (m5) {$M_5$\\\textbf{TARGET\_ENTRY}\\{\scriptsize brake}};
+  \node[mode,  below=10mm of m5] (m6) {$M_6$\\\textbf{SETTLE}};
+  \node[goal,  right=13mm of m6] (m7) {$M_7$\\\textbf{K6\_SUCCESS}};
+
+  \draw[tr] (m0) -- (m1) node[lab,midway,above]{IC cert};
+  \draw[tr] (m1) -- (m2) node[lab,midway,above]{clearance};
+  \draw[tr] (m2) -- (m3) node[lab,midway,right]{contact};
+  \draw[tr] (m3) -- (m4) node[lab,midway,above]{preload};
+  \draw[tr] (m4) -- (m5) node[lab,midway,above]{near goal};
+  \draw[tr] (m5) -- (m6) node[lab,midway,left]{low $E_k$};
+  \draw[tr] (m6) -- (m7) node[lab,midway,above]{dwell};
+
+  \node[lab, below=1mm of m3, text=red!60!black] {$h_i,\ \Delta H_i$ per edge};
+
+  \begin{scope}[on background layer]
+    \node[draw=green!45!black, dashed, rounded corners, fit=(m1)(m2), inner sep=6pt,
+      label={[green!45!black]above:{\itshape solved: certified RRT reach (deployed, not a teacher)}}] {};
+    \node[draw=red!45, dashed, rounded corners, fit=(m3)(m4)(m5), inner sep=6pt,
+      label={[red!65]below:{\itshape learned: coin/target-conditioned teacher-free policy + energy shaping}}] {};
+    \node[draw=blue!40, dashed, rounded corners, fit=(m0), inner sep=4pt] {};
+    \node[draw=orange!70!black, dashed, rounded corners, fit=(m7), inner sep=4pt] {};
+  \end{scope}
+\end{tikzpicture}

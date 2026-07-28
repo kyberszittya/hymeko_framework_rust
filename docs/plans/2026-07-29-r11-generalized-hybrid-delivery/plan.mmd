@@ -1,0 +1,31 @@
+%% plan.mmd - R11 gated phase ladder (stop at each boundary; R11.2 is the next implementation boundary).
+
+flowchart TD
+    R110["R11.0 exact-zero K6 baseline (DONE 021a1e54)<br/>EXACT_ZERO_HOME_TO_STRICT_K6_BASELINE_PASS"]
+    R111["R11.1 robust RRT reach (DONE)<br/>ZERO_HOME_RRT_REACH_GRID_PASS_WITH_CLEARANCE_TIGHTENING_PENDING"]
+    R112["R11.2 HyMeKo IR + IC certificate + measured energy ledger (NEXT, non-RL, no conservation verdict)<br/>10 gates incl. EXACT_ZERO_INITIAL_CONDITION_CERTIFICATE_PASS / MEASURED_ENERGY_LEDGER_COMPLETE_PASS"]
+    R113["R11.3 coin/target demonstration bank (teacher re-solve per instance)<br/>COIN_TARGET_DEMONSTRATION_COVERAGE_PASS"]
+    R114["R11.4 conditioned capture-delivery BC (teacher-free replay)<br/>CONDITIONED_CAPTURE_DELIVERY_ASSIMILATION_PASS"]
+    R115["R11.5 reward-driven delivery generalization (SAC primary)<br/>ZERO_HOME_COIN_TARGET_DELIVERY_GENERALIZATION_PASS"]
+    R116["R11.6 reach geometry + timing refinement<br/>ZERO_HOME_REACH_REFINEMENT_PASS"]
+    R117["R11.7 hybrid transition smoothing<br/>HYBRID_TRANSITION_SMOOTHING_PASS"]
+    R118["R11.8 Hamiltonian energy refinement<br/>HAMILTONIAN_HYBRID_ENERGY_REFINEMENT_PASS"]
+    R119["R11.9 joint geometry/timing/transition/capture/delivery/energy RL<br/>ZERO_HOME_GENERALIZED_HAMILTONIAN_HYBRID_RL_PASS"]
+    R1110["R11.10 teacher-free final deployment (8+ seeds, unseen grid)<br/>TEACHER_FREE_ZERO_HOME_GENERALIZED_DELIVERY_PASS"]
+
+    R110 --> R111 --> R112 --> R113 --> R114 --> R115
+    R115 --> R116 --> R117 --> R118 --> R119 --> R1110
+
+    R112 -. "hard constraints threaded through every phase" .-> HC
+    HC["exact IC certificate + strict K6 + safety + no premature contact + no teleport + teacher-free deploy<br/>teacher-free = no per-instance CEM/oracle/precomputed orbit; deterministic RRT reach IS a deployed component<br/>else DEPLOYMENT_FALLBACK_TO_RRT_PLUS_CERTIFIED_SCAFFOLD (also from exact zero)"]
+
+    classDef done fill:#dbf5db,stroke:#2a7,stroke-width:2px;
+    classDef next fill:#dbe6f5,stroke:#37c,stroke-width:2px;
+    classDef hard fill:#f5e6db,stroke:#c73,stroke-width:1px;
+    class R110,R111 done;
+    class R112 next;
+    class HC hard;
+
+    %% STOP-AT-EACH-BOUNDARY: implement a phase, verify its gate, write the report, HALT for review, then the next.
+    %% No SAC/TD3/PPO run before that phase's coordinate + reward + demo bank are frozen and its gate passes.
+    %% This plan is R11 boundary-0: no R11.2 code begins until it is approved.
