@@ -10,9 +10,12 @@ import numpy as np
 import pytest
 
 import hymeko_rl.coin_delivery.theta_option.moving_precapture as mp
+from hymeko_rl.coin_delivery.demo_bank import pipeline as P
 from hymeko_rl.coin_delivery.theta_option.moving_precapture import (
     BILATERAL_TRANSIENT,
     CaptureOutcome,
+    CaptureParams,
+    CaptureResult,
     CaptureSearchSpec,
     GRASP_CERTIFIED,
     GraspObjective,
@@ -25,6 +28,8 @@ from hymeko_rl.coin_delivery.theta_option.moving_precapture import (
     _rank_key,
     _select_elite,
     _solution_found,
+    is_certified_grasp,
+    rank_capture,
 )
 
 
@@ -179,3 +184,38 @@ def test_select_elite_hybrid_reserves_min_dtz_slots() -> None:
     assert elite.shape[0] == spec.elite
     assert {200.0, 201.0, 202.0}.issubset(thetas)          # the 3 min_dtz-best are reserved
     assert sum(1 for t in thetas if t >= 200.0) == obj.dtz_elite  # exactly dtz_elite reserved slots
+
+
+def _cap_result(seed: int, **kw) -> CaptureResult:
+    return CaptureResult(seed=seed, params=CaptureParams(), outcome=_oc(**kw))
+
+
+def _mock_budget(monkeypatch: pytest.MonkeyPatch, by_seed: dict) -> None:
+    def fake_plan_capture(_ready, _ref, _stack, _down, *, seed, spec=None):  # matches plan_capture signature
+        return by_seed[seed]
+    monkeypatch.setattr(mp, "plan_capture", fake_plan_capture)
+
+
+def test_best_capture_grasp_aware_prefers_certified_over_nudge_k6(monkeypatch: pytest.MonkeyPatch) -> None:
+    """R11.4A integration: across the teacher budget, the grasp-aware pipeline picks a certified grasp over a closer
+    nudge-K6 — and the None (regression) path reproduces the legacy nudge-K6 pick."""
+    by_seed = {
+        0: _cap_result(0, contacts=0, k6=True, min_dtz_mm=5.0, first_contact_relvel=0.3),   # nudge-K6 (ungrasped)
+        1: _cap_result(1, contacts=2, bilateral_dwell=5, min_dtz_mm=30.0),                  # certified grasp, no K6
+        2: _cap_result(2, contacts=0, k6=False, min_dtz_mm=40.0),
+    }
+    _mock_budget(monkeypatch, by_seed)
+    rig = {"ref": None, "stack": None, "down": None}
+    best = P._best_capture(rig, None, 0, 3, GraspObjective())
+    assert best.outcome.contacts == 2 and not best.outcome.k6                                # grasp-aware -> certified grasp
+    legacy = P._best_capture(rig, None, 0, 3, None)
+    assert legacy.outcome.k6 and legacy.outcome.contacts == 0                                # legacy -> nudge-K6 (the old bug)
+
+
+def test_best_capture_early_exits_only_on_certified_grasped_k6(monkeypatch: pytest.MonkeyPatch) -> None:
+    grasped_k6 = {0: _cap_result(0, contacts=2, bilateral_dwell=6, k6=True, min_dtz_mm=6.0)}
+    _mock_budget(monkeypatch, {**{s: _cap_result(s, contacts=0, min_dtz_mm=99.0) for s in range(3)}, **grasped_k6})
+    rig = {"ref": None, "stack": None, "down": None}
+    best = P._best_capture(rig, None, 0, 3, GraspObjective())
+    assert is_certified_grasp(best.outcome, GraspObjective()) and best.outcome.k6           # stops on the certified grasped-K6
+    assert rank_capture(best.outcome, GraspObjective())[0] == GRASP_CERTIFIED

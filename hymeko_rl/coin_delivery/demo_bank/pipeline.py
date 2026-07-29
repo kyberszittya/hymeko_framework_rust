@@ -30,6 +30,7 @@ from hymeko_rl.coin_delivery.demo_bank.scenario import CoinTargetScenario, Scena
 from hymeko_rl.coin_delivery.forward_displacement import primary_fingertip_contacts
 from hymeko_rl.coin_delivery.theta_option import kinetic_contract as kc
 from hymeko_rl.coin_delivery.theta_option import planar_geometric_approach as pga
+from hymeko_rl.coin_delivery.theta_option.moving_precapture import GraspObjective
 from hymeko_rl.experiments import coin_zero_home_reach as Z
 from hymeko_rl.experiments import coin_zero_home_rrt as R
 from hymeko_rl.ir import (
@@ -53,12 +54,18 @@ def _finite_or_none(x: float, ndigits: int = 4) -> Optional[float]:
 @dataclass(frozen=True)
 class PipelineConfig:
     """Pilot pipeline knobs. ``teacher_budget`` caps the CEM re-solve seeds; the reach config keeps precontact coin motion
-    at ~0 mm (the governed transit already satisfies the <=1 mm contract)."""
+    at ~0 mm (the governed transit already satisfies the <=1 mm contract).
+
+    ``grasp_objective`` selects the capture-teacher mode (R11.4A integration): the default is the grasp-aware objective
+    (ranks candidates by grasp class → delivery, hybrid elite) so the pipeline no longer accepts an ungrasped nudge as a
+    capture success. Setting it to ``None`` restores the bit-exact grasp-agnostic (min_dtz/K6) capture for regression.
+    """
 
     thresholds: ClassifyThresholds = ClassifyThresholds()
     teacher_budget: int = 3
     substeps: int = 6
     hold_steps: int = 160
+    grasp_objective: "GraspObjective | None" = GraspObjective()
 
 
 def _zone_xy(rl: Any) -> tuple[float, float]:
@@ -164,7 +171,7 @@ def _assemble_reach(rig: dict[str, Any], rl: Any, coin: np.ndarray, arm_l: pga.P
                                 mode_to=HybridMode.CAPTURE)
     ledger = A.measured_reach_ledger(0.0, rl, probe)
     ready = kc.TransportSnapshot.from_live(copy.deepcopy(rl), stack, prev.copy())
-    result = _best_capture(rig, ready, seed, config.teacher_budget)
+    result = _best_capture(rig, ready, seed, config.teacher_budget, config.grasp_objective)
     return _ReachCapture(ready=ready, reach=reach, reach_contacts=reach_contacts, n_goals=n_goals,
                          planning_time_s=planning_time_s,
                          min_link_clr_mm=_min_link_clr_mm(coin, np.asarray(d.qpos[:4], float), arm_l, arm_r),
@@ -173,9 +180,29 @@ def _assemble_reach(rig: dict[str, Any], rl: Any, coin: np.ndarray, arm_l: pga.P
                          zone=zone, target_honored=honored, result=result)
 
 
-def _best_capture(rig: dict[str, Any], ready: Any, seed: int, budget: int) -> Any:
-    """CEM teacher re-solve over up to ``budget`` seeds (early-exit on a clean strict-K6). Reuses the frozen teacher."""
+def _best_capture(rig: dict[str, Any], ready: Any, seed: int, budget: int,
+                  grasp_objective: "GraspObjective | None") -> Any:
+    """CEM teacher re-solve over up to ``budget`` seeds. Grasp-aware (default) ranks candidates by grasp class → delivery
+    (consistent with the in-CEM ranking) and stops only on a certified grasped-K6; ``grasp_objective=None`` restores the
+    bit-exact grasp-agnostic ``(k6, min_dtz)`` re-solve."""
     from hymeko_rl.coin_delivery.theta_option import moving_precapture as mp
+    if grasp_objective is None:
+        return _best_capture_legacy(rig, ready, seed, budget, mp)
+    spec = mp.CaptureSearchSpec(grasp_objective=grasp_objective)
+    best: "tuple[Any, Any] | None" = None
+    for sd in range(seed, seed + budget):
+        res = mp.plan_capture(ready, rig["ref"], rig["stack"], rig["down"], seed=sd, spec=spec)
+        key = mp.rank_capture(res.outcome, grasp_objective)
+        if best is None or key < best[0]:
+            best = (key, res)
+        if res.outcome.k6 and res.outcome.min_dtz_mm < 10 and mp.is_certified_grasp(res.outcome, grasp_objective):
+            break
+    assert best is not None
+    return best[1]
+
+
+def _best_capture_legacy(rig: dict[str, Any], ready: Any, seed: int, budget: int, mp: Any) -> Any:
+    """Bit-exact prior grasp-agnostic re-solve: best by ``(k6, -min_dtz)``, early-exit on a tight K6."""
     best = None
     for sd in range(seed, seed + budget):
         res = mp.plan_capture(ready, rig["ref"], rig["stack"], rig["down"], seed=sd)

@@ -378,6 +378,23 @@ def _grasp_class(outcome: CaptureOutcome, dwell_target: int) -> int:
     return NO_CONTACT
 
 
+def rank_capture(outcome: CaptureOutcome, obj: "GraspObjective | None") -> Any:
+    """Public grasp-aware ranking key for a capture outcome (lower = better); ``obj=None`` = the grasp-agnostic scalar.
+
+    Lets the demo-bank pipeline pick the best capture across the teacher budget with the SAME semantics the in-CEM search
+    uses, instead of re-deriving a `(k6, min_dtz)` ladder at the layer boundary.
+    """
+    return _rank_key(outcome, obj)
+
+
+def is_certified_grasp(outcome: CaptureOutcome, obj: "GraspObjective | None") -> bool:
+    """True iff ``outcome`` is a delivery-ready held bilateral grasp (top GRASP_CERTIFIED class) under ``obj``.
+
+    Used to gate the capture-teacher budget's early-exit and downstream success on an actual grasp (never a nudge-K6).
+    """
+    return obj is not None and _grasp_class(outcome, obj.dwell_target) == GRASP_CERTIFIED
+
+
 def _rank_key(outcome: CaptureOutcome, obj: "GraspObjective | None" = None) -> Any:
     """Candidate ranking key (lower = better).
 
