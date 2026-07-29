@@ -1,0 +1,38 @@
+%% plan.mmd - R11.4A recovery sequence + gates (measure delivery/settle energy before optimizing).
+
+flowchart TD
+    START["from R11.3 5b3995e1: 8/64 K6; blocker = frozen R2 delivery does not generalize"]
+    INSTR["extend MeasuredEnergyLedger across capture->delivery->target-entry->settle<br/>(measure BEFORE optimizing; conservation_verdict still refuses)"]
+    A["Phase A - settle failures (33 best / 68 all-attempt): cheapest recoverable<br/>search braking onset, entry speed, release timing, damping, dwell, rebound"]
+    B["Phase B - delivery failures (21 best): search push dir, transport duration, force/torque, mid-course, braking"]
+    C["Phase C - capture failures (2): DEPRIORITIZED, kept a distinct class"]
+    MATCH["matched analysis: same scenario baseline vs re-solved, matched distance/direction/handoff bands"]
+    PILOT["bounded pilot: 12 settle + 8 delivery + 2 control; <=5 seeds/scenario; retain ALL; link provenance"]
+    GATE{"pilot gates: exact-zero cert, RRT deployed, teacher labelled, real geometry,<br/>entry+settle energy complete, no conservation claim, replay/serialize,<br/>no safety regression; RECOVERY >=50% settle scenarios to K6; >=1 delivery recovers"}
+    PASS["R11_4A_TARGET_CONDITIONED_DELIVERY_TEACHER_PILOT_PASS"]
+    INSUF["R11_4A_PIPELINE_PASS_TEACHER_RECOVERY_INSUFFICIENT (infra ok, recovery short) - STOP, report honestly"]
+    COV{"full 64-bank coverage gate: >=70% K6, >=50% per stage, multi-region, disjoint splits, no single-orbit region"}
+    COVPASS["TARGET_CONDITIONED_DELIVERY_TEACHER_COVERAGE_PASS -> only THEN R11.4B BC / R11.5 RL"]
+    HALT["HALT for review"]
+
+    START --> INSTR --> A --> MATCH
+    A --> B --> MATCH
+    B --> C
+    MATCH --> PILOT --> GATE
+    GATE -- recovery met --> PASS
+    GATE -- infra ok, recovery short --> INSUF
+    PASS --> COV
+    COV -- pass --> COVPASS
+    COV -- fail --> HALT
+    INSUF --> HALT
+
+    classDef done fill:#dbf5db,stroke:#2a7;
+    classDef new fill:#f5dbdb,stroke:#c33;
+    classDef gate fill:#f5e6db,stroke:#c73;
+    class START done;
+    class A,B,C,INSTR new;
+    class GATE,COV gate;
+
+    %% Promotion of the energy-surplus hypothesis PLAUSIBLE->SUPPORTED requires MATCHED-scenario evidence:
+    %% reduced target-entry KE / improved target-directed energy ratio + reduced overshoot/rebound + improved K6 + no safety regression.
+    %% Generation/diagnosis only: no BC/RL/refinement in R11.4A.

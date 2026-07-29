@@ -1,0 +1,24 @@
+{
+  "attempt_level_counts": {
+    "capture_to_delivery_regrasp_failure": 137,
+    "delivery_failure_after_valid_grasp": 18,
+    "k6_with_valid_delivery_mode": 7,
+    "k6_without_delivery_mode_transition": 1,
+    "settle_failure_after_valid_grasp": 20
+  },
+  "derived_version": "r11.4a0-derived-v1",
+  "former_k6_scenarios": 8,
+  "k6_with_valid_delivery_mode": 7,
+  "k6_without_delivery_mode_transition_nudge": 1,
+  "n_attempts": 183,
+  "n_scenarios": 64,
+  "note": "derived labels only; the R11.3 bank is NOT rewritten",
+  "proxy": "contacts==2 <=> grasped handoff <=> delivery-mode (verified on exact-replay set)",
+  "scenario_best_counts": {
+    "capture_to_delivery_regrasp_failure": 30,
+    "delivery_failure_after_valid_grasp": 12,
+    "k6_with_valid_delivery_mode": 7,
+    "k6_without_delivery_mode_transition": 1,
+    "settle_failure_after_valid_grasp": 14
+  }
+}

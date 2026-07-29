@@ -1,0 +1,40 @@
+% plan.tikz -- R11.4A pipeline: target-conditioned delivery+settle teacher replaces the frozen R2 downstream.
+\begin{tikzpicture}[
+    font=\small,
+    st/.style    ={draw=black!70, fill=blue!5, rounded corners, align=center, inner sep=3pt, minimum height=8mm, text width=17mm},
+    reach/.style ={draw=green!55!black, fill=green!8, rounded corners, align=center, inner sep=3pt, minimum height=8mm, text width=17mm},
+    capt/.style   ={draw=blue!60, fill=blue!10, rounded corners, align=center, inner sep=3pt, minimum height=8mm, text width=17mm},
+    new/.style   ={draw=red!70, fill=red!8, rounded corners, align=center, inner sep=3pt, minimum height=8mm, text width=17mm, very thick},
+    goal/.style  ={draw=orange!85!black, fill=orange!12, rounded corners, align=center, inner sep=3pt, minimum height=8mm, text width=15mm},
+    a/.style     ={-{Stealth[length=2mm]}, thick},
+    lab/.style   ={font=\scriptsize, fill=white, inner sep=1pt},
+  ]
+  \node[st]    (zh) {ZERO\_HOME};
+  \node[reach, right=6mm of zh] (rr) {RRT reach\\{\scriptsize deployed}};
+  \node[st, right=6mm of rr]    (hd) {precontact handoff};
+  \node[capt, right=6mm of hd]   (cp) {capture solve\\{\scriptsize CEM}};
+  \node[new, below=9mm of cp]   (dl) {delivery solve\\{\scriptsize $\to\hat u_{\mathrm{zone}}$}};
+  \node[new, left=6mm of dl]    (br) {target-entry braking};
+  \node[new, left=6mm of br]    (rl) {release /\\contact-mode};
+  \node[new, left=6mm of rl]    (se) {settle solve\\{\scriptsize dwell}};
+  \node[goal, below=9mm of se]  (k6) {strict K6};
+
+  \draw[a] (zh) -- (rr);
+  \draw[a] (rr) -- (hd);
+  \draw[a] (hd) -- (cp);
+  \draw[a] (cp) -- (dl);
+  \draw[a] (dl) -- (br);
+  \draw[a] (br) -- (rl);
+  \draw[a] (rl) -- (se);
+  \draw[a] (se) -- (k6);
+
+  \node[draw=red!55!black, dashed, rounded corners, inner sep=3pt, below=1mm of dl, text=red!60!black,
+        font=\scriptsize, text width=42mm, align=center]
+        (rep) {\textbf{replaces frozen R2 downstream} --- per-scenario CEM over \code{rollout\_primitive}, target-conditioned};
+
+  \begin{scope}[on background layer]
+    \node[draw=orange!70!black, dashed, rounded corners, fit=(cp)(dl)(br)(rl)(se), inner sep=9pt,
+      label={[orange!70!black,font=\scriptsize]below:{phase-marked energy ledger: capture $\to$ delivery $\to$ entry $\to$ settle}}] {};
+    \node[draw=red!45, dashed, rounded corners, fit=(dl)(br)(rl)(se), inner sep=4pt] {};
+  \end{scope}
+\end{tikzpicture}

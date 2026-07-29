@@ -1,0 +1,177 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.1cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!55!black, urlcolor=blue!55!black}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\gate}[1]{\textcolor{blue!55!black}{\texttt{\small #1}}}
+\newcommand{\halt}{\textcolor{red!70!black}{\textbf{HALT}}}
+
+\title{\textbf{Plan --- R11.4A: Target-Conditioned Delivery + Settle Teacher (with phase energy instrumentation)}\\[2pt]
+\large Replace the frozen canonical R2 downstream with a per-instance solver that re-derives the post-capture
+delivery/target-entry/settle trajectory for the \emph{actual} coin/target geometry. Measure delivery+settle energy before
+optimizing it. Generation/diagnosis only --- no BC/RL/refinement. Pilot, then \halt{}.}
+\author{HyMeKo coin-delivery campaign \quad(\code{feature/r11-4a-target-conditioned-delivery-teacher}, from R11.3 \code{5b3995e1})}
+\date{2026-07-30}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent R11.3 proved the demonstration \emph{infrastructure} (exact-zero certificates, deployed RRT reach, valid
+precontact handoffs, real target relocation) and localized the blocker: the \textbf{frozen canonical downstream (R2) does
+not generalize} --- 8/64 strict-K6, failures concentrated in \emph{delivery} (21) and \emph{target-entry/settle} (33
+scenario-best; 68 at the all-attempt level) with \textbf{0 \code{precontact\_handoff\_invalid}}. A capture-phase proxy is
+\emph{suggestive} (successes have lower terminal velocity scale) but \textbf{unproven} without delivery/settle energy.
+R11.4A replaces the frozen R2 delivery with a \textbf{target-conditioned delivery+settle teacher}: a per-scenario CEM over
+the structured \code{forward\_displacement.rollout\_primitive} (deliver mode), which already pushes/brakes/releases/settles
+the coin toward \code{direction\_to\_zone} (the relocatable target) and monitors the frozen K6 certificate. R11.4A also
+extends \code{MeasuredEnergyLedger} across capture$\to$delivery$\to$target-entry$\to$settle so the energy-surplus mechanism
+becomes a \emph{measured} claim. \textbf{Measure before optimizing; promote PLAUSIBLE$\to$SUPPORTED only under matched
+scenarios.} A bounded pilot (12 settle + 8 delivery + 2 control), then \halt{}. Verdict:
+\gate{R11\_4A\_TARGET\_CONDITIONED\_DELIVERY\_TEACHER\_PILOT\_PASS} or
+\gate{R11\_4A\_PIPELINE\_PASS\_TEACHER\_RECOVERY\_INSUFFICIENT}.
+\end{abstract}
+
+\section{Binding review refinements}
+\textbf{(1) Prove target-conditioning, pre-pilot.} Contract tests: relocating the target changes
+\code{direction\_to\_zone}; rotating it rotates the primary push; braking + the K6 monitor use the \emph{same} relocated
+zone; no hidden canonical target / absolute R2 reference; the relocated target is the rollout's \emph{terminal} goal, not
+a report field. Gates \gate{TARGET\_RELOCATION\_PROPAGATES\_THROUGH\_DELIVERY\_PASS},
+\gate{NO\_CANONICAL\_DELIVERY\_ORBIT\_DEPENDENCY\_PASS}. \textbf{(2) Phase A opens dimensions incrementally:} freeze the
+early push \{squeeze, forward, balance\}; the CEM searches \emph{only} \{brake onset (\code{ramp}), brake gain, release
+timing, entry-speed target, settle damping, settle dwell, rebound suppression\}. Only if that is insufficient open
+\{forward magnitude, delivery duration, direction correction, balance, ramp\}. This distinguishes energy-shedding from
+"needed a new orbit." \textbf{(3) Energy is NOT an optimization objective in this pilot} --- the CEM is driven by
+K6/safety/progress/overshoot (the existing \code{score}); the energy ledger is observer/diagnostic only, so a lower
+target-entry energy in the winners is \emph{discovered}, not fitted. Energy becomes an explicit objective no earlier than
+R11.8. \textbf{(4) Instrumentation proven non-invasive:} the phase hook/energy read must not change control-call order,
+physics-step count, event timing, RNG consumption, or the trajectory. Gate
+\gate{ENERGY\_INSTRUMENTATION\_NONINVASIVE\_PASS} --- same seed+params, hook vs. no-hook rollout bit-exact (or within a
+pre-declared tolerance). (The \code{rollout\_primitive} \code{frame\_hook} is contractually non-behavioural; this gate
+proves it.) \textbf{(5) Full provenance per attempt:} coin/target geometry, relative goal vector, capture outcome,
+delivery + settle params, phase-event timestamps, target-entry state, energy ledger, K6 result, failure class, teacher
+seed, provenance hash --- BC needs the geometry/handoff/energy context, not just the actions. \textbf{Settle-extension
+coordinate} (separate block, normalized + scenario-relative): \code{entry\_speed\_target}, \code{brake\_onset\_distance}
+(fraction of remaining delivery distance, not absolute mm), \code{settle\_damping}, \code{settle\_dwell},
+\code{rebound\_gain}. \textbf{Pilot selection}: the 12 settle-failures span C0--C3, short + long delivery distances,
+differing target directions, and low + high capture \code{vel\_scale} --- not one easy settle cured twelve times.
+
+\section{Scope, non-goals}
+\textbf{Goal.} A per-instance target-conditioned delivery+settle solver that re-derives the post-capture trajectory from
+the current coin pose/velocity, target pose, relative goal vector, robot + contact state, and handoff descriptor --- never
+reusing a frozen canonical delivery orbit as the executable solution. \textbf{Non-goals (hard):} no BC, no SAC/TD3/PPO, no
+policy assimilation, no reach refinement, no Hamiltonian reward shaping. \textbf{Roles unchanged:} RRT deployed; every
+CEM/search call is a labelled training teacher in provenance; no teacher-free label. \textbf{Two-level energy contract
+preserved:} measured ledger + residuals only; \code{conservation\_verdict()} continues to refuse
+(\gate{HAMILTONIAN\_CONSERVATION\_PASS} is R11.8).
+
+\section{Established (R11.3) --- do not overclaim}
+Exact-zero certificates work; deployed RRT reach generalizes over the admissible coin region; precontact handoffs valid;
+target relocation real + correctly represented (C3 \code{entry\_dtz} 50--90\,mm matches r=5--9\,cm); failures localize to
+delivery + target-entry/settle; the frozen downstream does not generalize. The capture-phase proxy (successes
+\code{vel\_scale} 1.56 vs settle-failures 1.80; reach work + capture direction flat) \textbf{supports but does not prove}:
+\emph{excess/poorly-directed energy at target entry contributes to delivery/settle failure.} \textbf{Not a confirmed
+mechanism until delivery+settle energy is measured directly.}
+
+\section{Teacher pipeline}
+\begin{center}\itshape EXACT\_ZERO\_HOME $\to$ deployed RRT reach $\to$ precontact handoff $\to$ capture solve $\to$
+\textbf{target-conditioned delivery solve $\to$ target-entry braking $\to$ release / contact-mode $\to$ settle solve}
+$\to$ strict K6.\end{center}
+The delivery+settle stages are re-derived per instance. \textbf{Grounding:} the executable primitive is the existing
+\code{forward\_displacement.rollout\_primitive} in \code{deliver} mode --- its PUSH/BRAKE/RELEASE schedule already aims at
+\code{direction\_to\_zone} (relocatable target), brakes on measured coin speed, and monitors the frozen K6 certificate
+(\code{dtz}$\le$CENTER\_TOL $\wedge$ speed$<$SETTLE\_VEL, HELD\_DWELL, touched). R11.4A wraps it in a per-scenario CEM
+search and \textbf{replaces \code{FrozenDownstream.deliver} (R2)} with it. See \code{plan.tikz}.
+
+\section{Searchable teacher parameters}
+A structured coordinate (bounded, inside safety/torque/slew/collision/contact contracts), mapping onto the primitive +
+settle extension: \textbf{delivery direction} (target-conditioned push via \code{e\_par}=$\hat u_{\mathrm{zone}}$, lateral
+balance correction, goal-vector alignment); \textbf{magnitude/duration} (forward force/torque scale, transport duration /
+ramp, velocity target, acceleration profile); \textbf{target-entry braking} (braking onset by remaining distance, brake
+gain, desired entry speed, velocity-feedback term); \textbf{release/contact} (release timing, preload reduction,
+contact-mode continuation vs. switch, optional guided coast); \textbf{settle} (terminal-velocity target, settle damping,
+dwell duration, rebound suppression, strict-K6 dwell verification). No raw per-step torques.
+
+\section{Delivery + settle energy instrumentation}
+Extend \code{MeasuredEnergyLedger} across capture / delivery / target entry / settle (phase-marked frame hook on the
+rollout). Record per phase: robot $E_k$; coin translational $E_k$; coin rotational $E_k$ (if available); $W_+$; $W_-$;
+contact impulse; impact-energy proxy; dissipation proxy; and energy \emph{after capture}, \emph{at target entry}, \emph{at
+braking onset}, \emph{at release}, \emph{at settle start}, \emph{at K6 / terminal failure}; numerical residual. Derived:
+$T_{\mathrm{coin,entry}}$, $H_{\mathrm{entry}}$, $\Delta H_{\mathrm{capture}\to\mathrm{entry}}$,
+$\Delta H_{\mathrm{entry}\to\mathrm{settle}}$, and target-directed-coin-energy $/\,W_+$. The certificate still asserts only
+\gate{ENERGY\_LEDGER\_COMPLETE}/\gate{ENERGY\_BALANCE\_RESIDUAL\_RECORDED}; \code{conservation\_verdict()} refuses.
+
+\section{Recovery sequence}
+\textbf{Phase A --- settle failures first} (cheapest recoverable: coin already in the vicinity). Search braking onset,
+target-entry speed, release timing, damping, dwell, rebound suppression. Compare frozen canonical downstream vs.
+target-conditioned teacher; measure recovery-to-K6, $T_{\mathrm{coin,entry}}$, overshoot, rebound, settle time, actuator
+work, safety. \textbf{Phase B --- delivery failures} (after settle recovery verified): search push direction, transport
+duration, force/torque magnitude, mid-course correction, braking profile. \textbf{Phase C --- capture failures}
+(deprioritized; kept a distinct class; not until delivery+settle coverage improves).
+
+\section{Matched mechanism analysis}
+No pooled energy comparisons. Compare the \emph{same} coin/target scenario across teacher variants, within matched
+delivery-distance bands, matched target-direction bands, matched initial handoff quality. The energy-surplus hypothesis is
+promoted PLAUSIBLE$\to$SUPPORTED \emph{only if} recovery is associated --- within matched scenarios --- with reduced
+$T_{\mathrm{coin,entry}}$ (or improved target-directed energy ratio), reduced overshoot/rebound, improved strict-K6, and no
+safety regression.
+
+\section{Pilot scope + gates}
+\textbf{Scope:} $\sim$12 scenario-best settle failures + 8 delivery failures + 2 success controls (canonical/translated).
+Per scenario: retain the frozen baseline; run $\le 5$ teacher seeds / search restarts; retain \emph{every} attempt; never
+overwrite failures with later successes; link all to provenance hashes. Bounded search only. \textbf{Gates:} exact-zero
+certificate preserved; RRT deployed; all teacher calls labelled in provenance; delivery uses the actual coin+target
+geometry; target-entry + settle energy ledgers complete; no conservation claim; failure classes distinct; serialization +
+replay pass; no safety/boundary regression. \textbf{Scientific recovery gate:} $\ge 50\%$ of selected settle-failure
+scenarios recover to strict K6. \textbf{Diagnostic delivery gate:} $\ge 1$ previously-failed noncanonical delivery
+scenario recovers. \textbf{Verdict:} \gate{R11\_4A\_TARGET\_CONDITIONED\_DELIVERY\_TEACHER\_PILOT\_PASS}; if infra passes
+but recovery does not, \gate{R11\_4A\_PIPELINE\_PASS\_TEACHER\_RECOVERY\_INSUFFICIENT} --- stop + report honestly.
+
+\section{Full coverage target (after pilot PASS only)}
+Extend across the 64-scenario bank; require $\ge 70\%$ admissible scenarios with $\ge 1$ strict-K6; $\ge 50\%$ positive
+coverage in each C0--C3 stage; positives across multiple coin+target regions; disjoint train/dev/test positives; no
+geometric region represented by a single canonical orbit. Verdict
+\gate{TARGET\_CONDITIONED\_DELIVERY\_TEACHER\_COVERAGE\_PASS}. If it fails, do not start BC.
+
+\section{Affected files (new; from \code{5b3995e1}; no CORE.YAML items)}
+\code{hymeko\_rl/coin\_delivery/delivery\_teacher/} (\code{solver.py} target-conditioned delivery+settle CEM over the
+\code{rollout\_primitive} coordinate; \code{phase\_energy.py} phase-marked energy ledger extension + derived quantities;
+\code{record.py} delivery-attempt record (extends the R11.3 schema with delivery/settle/energy fields + baseline vs
+re-solved); \code{matched\_analysis.py} matched-scenario comparison; \code{failure\_transition.py} baseline$\to$re-solved
+failure-class transitions). \code{hymeko\_rl/experiments/r11\_4a\_pilot.py}, \code{r11\_4a\_report.py}.
+\code{hymeko\_rl/tests/test\_r11\_4a\_delivery\_teacher.py}. Reuse \code{forward\_displacement.rollout\_primitive} (the
+target-directed delivery/settle primitive --- \emph{do not reimplement}), \code{demo\_bank} (scenario/record/store),
+\code{ir}/\code{ir\_adapter}, \code{coin\_zero\_home\_rrt}, \code{moving\_precapture.plan\_capture} (capture).
+
+\section{Reports, visualizations, validation}
+\textbf{Reports:} \code{reports/2026-07-30-r11-4a-target-conditioned-delivery-teacher.\{md,json\}} --- recovery by original
+failure class, scenario-wise teacher success, stage coverage, target-entry energy distributions, matched
+SUCCESS\,vs\,SETTLE comparisons, braking/release parameter distributions, overshoot/rebound + settle-time stats, $W_\pm$,
+residual completeness, exact claims/non-claims. \textbf{Figures:} coin/target recovery map, failure-class transition
+matrix, target-entry $E_k$ baseline vs re-solved, overshoot/rebound, settle time, $W_+$, energy traces for representative
+success/failure pairs. \textbf{Tests:} goal-vector propagation; relocated target honored throughout delivery; delivery
+energy-ledger boundaries; target-entry event detection; braking-onset / release / settle event logging; teacher provenance
+labelling; matched-scenario analysis; no conservation verdict; replay + serialization; failure-class stability. Run R11.2
++ R11.3 + R11.4A tests + targeted coin-delivery regressions; \code{ruff}, \code{mypy --strict}, \code{radon}. Do not weaken
+existing tests.
+
+\section{Stop logic}
+Production-scale smoke (1 scenario) before any queue; reconcile the wall estimate ($>2\times$ rule). Run the bounded pilot,
+verify the gates, write the pilot report, commit only then, push fast-forward, and \halt{} for review. \textbf{No R11.4B
+BC or R11.5 RL until the full-coverage gate passes.} \emph{Measure delivery+settle energy before optimizing it.}
+\textbf{This plan is the R11.4A boundary-0 artifact --- no solver code begins until it is approved.}
+
+\begin{figure}[h]\centering\input{plan.tikz}\caption{R11.4A pipeline. Green = deployed RRT reach; blue = existing capture
+teacher; \textbf{red = the new target-conditioned delivery+settle CEM} (over \code{rollout\_primitive}, aimed at
+\code{direction\_to\_zone}) that replaces the frozen R2 downstream; orange = phase-marked energy ledger spanning
+capture$\to$delivery$\to$entry$\to$settle.}\end{figure}
+
+\end{document}
