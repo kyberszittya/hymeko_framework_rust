@@ -99,13 +99,14 @@ def summarize(rows: "list[dict]") -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=DEFAULT_BANK)
-    ap.add_argument("--limit", type=int, default=0, help="smoke: first N scenarios (0 = all 64)")
+    ap.add_argument("--limit", type=int, default=0, help="smoke/chunk: at most N scenarios (0 = all remaining)")
+    ap.add_argument("--offset", type=int, default=0, help="skip the first N scenarios (for parallel chunking across cores)")
     args = ap.parse_args()
     rig = _rig()
     cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=160)
     scenarios = build_bank_scenarios()
-    if args.limit > 0:
-        scenarios = scenarios[:args.limit]
+    end = args.offset + args.limit if args.limit > 0 else len(scenarios)
+    scenarios = scenarios[args.offset:end]
     args.out.parent.mkdir(parents=True, exist_ok=True)
     t0 = time.perf_counter()
     rows, attempts = measure(rig, cfg, scenarios, args.out)
