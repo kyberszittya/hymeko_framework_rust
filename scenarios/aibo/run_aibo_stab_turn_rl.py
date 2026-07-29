@@ -32,20 +32,22 @@ _VAL = [(0.6, 90), (0.6, -90), (0.6, 135), (0.6, -135)]                         
 _HORIZON = 2400
 
 
-def _cfg(balance_w: float = 0.0, stability_w: float = 0.0, require_facing_deg: float = 40.0) -> ResidualTrotConfig:
+def _cfg(balance_w: float = 0.0, stability_w: float = 0.0, require_facing_deg: float = 25.0) -> ResidualTrotConfig:
     """The STABILIZED fast-turn scaffold (a = 0 ≈ 0.79 reach, upright) + the stab residual over it.
 
     ``balance_w``/``stability_w`` default to 0: the structured representation ALREADY keeps the scaffold
     upright, so the dense per-step stay-upright reward (which the broken leg-mode needed) only creates a
     survive-without-reaching optimum here — it must not drown the sparse reach bonus.
 
-    ``require_facing_deg`` (default 40): success needs to arrive FACING the goal, not drift into it
-    backwards — the rotational-couple turn drifts, so position-only reach let both scaffold and RL enter
-    wide goals at ~180° (caught 2026-07-30). ``heading_w`` is raised so facing is a real objective, not a
-    weak per-step nudge drowned by progress."""
+    ``require_facing_deg`` (default 25): success needs to arrive FACING the goal, not drift into it
+    backwards. The scaffold is now the SWING-LIFTED turn (upright without crouch+widen, arrives ~12° head-on
+    on ≤90° bearings but still leaves the widest 135° unfaced in-horizon) — the genuine RL headroom is the
+    wide 135°: the stab residual (rate/crouch/widen/lean) modulates over the clean turn to face it, where
+    the scripted gait is already at its ceiling for ≤90°. ``heading_w`` raised so facing is a real objective."""
     return ResidualTrotConfig(
         residual_mode="stab", obs_mode="flat", heading_mode="turn_then_walk",
-        turn_rate=1.3, stab_crouch=0.5, stab_widen=0.4,           # the validated stabilized scaffold
+        turn_rate=1.2, turn_swing_lift=0.35, turn_lift_off=2.9, turn_freq=1.6,   # the swing-lifted (head-on) turn
+        turn_align_deg=15, stab_crouch=0.0, stab_widen=0.0,       # upright without crouch+widen; RL may add them
         balance_w=balance_w, stability_w=stability_w,
         require_facing_deg=require_facing_deg, heading_w=2.5,     # arrive ALIGNED, not backwards
         bearing_deg=135.0, dist_lo=0.5, dist_hi=0.7, max_steps=1600)

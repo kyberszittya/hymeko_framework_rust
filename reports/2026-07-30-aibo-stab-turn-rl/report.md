@@ -86,6 +86,30 @@ upright-without-stab + a cleaner homing walk. The widest 135° bearing still doe
 horizon. A perfectly in-place turn (≈0 excursion) would need a stepping/repositioning turn primitive
 (further work); this is the pragmatic improvement that removes the backward entry.
 
+## RL over the new (swing-lift) scaffold — HELD-OUT reveals overfitting (RL still doesn't win)
+
+Re-ran the anchored stab-RL over the swing-lifted scaffold (the genuine remaining headroom = the wide 135°
+the scripted gait leaves unfaced). On the training/eval seeds (`500+i`) it looked like a clean win — RL
+0.79–0.86 vs scaffold 0.571, **beats 3/3**. But the `best-on-TEST` checkpoint is selected on those exact
+seeds, so a **held-out** re-eval was mandatory:
+
+| reach (require_facing 25°) | train seeds 500+i | held-out 700+i | held-out 900+i |
+|---|---|---|---|
+| scaffold a=0 (swing-lift gait) | 0.571 | **0.929** | **0.857** |
+| RL seed 0 / 1 / 2 | 0.79–0.86 | 0.786 | 0.64–0.79 |
+
+The scaffold's 0.571 was an **unlucky train-seed slice**: on held-out seeds the scripted swing-lift gait is
+**robustly 0.86–0.93**, and the **RL is WORSE (0.64–0.79)** — the RL **overfit** the checkpoint-selection
+seeds. So RL still does **not** beat the scaffold; the third honest evaporation of an RL edge in this task
+(position-only → facing → held-out). The scripted swing-lift gait is the deploy; RL's value here is nil-to-
+negative. (Same discipline as `feedback-heldout-panel-is-single-use` / the coin held-out arc.)
+
+## Companion evening run — humanoid forward walk
+
+A 150-iteration parallel-CEM footstep-walk run (toe-extension + learned toe-off, `humanoid_toe2.hymeko`)
+reached **+0.274 m over 60/60 footsteps** (scaffold a=0 falls backward −0.475 m) — reproducing the ~+0.287 m
+mechanism-capped forward-walk ceiling. `hymeko_humanoid/experiments/2026_07_30_humanoid_evening/`.
+
 ## Honest scope
 
 - **The representation is the headline and the durable result** (0.5 → 0.786, upright, and the double
