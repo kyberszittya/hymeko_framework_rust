@@ -85,7 +85,20 @@ def _train(kind: str, seed: int, steps: int) -> float:
     train_sac(actor, critics, env, cfg, eval_fn=eval_fn)
     if best["sd"] is not None:
         actor.load_state_dict(best["sd"])
-    return _reach(env, _greedy(actor))
+        torch.save(best["sd"], _OUT / f"turn_{kind}_seed{seed}_best.pt")   # persist for post-hoc analysis
+    reach, per_goal = _eval_per_goal(env, _greedy(actor))
+    return {"reach": reach, "per_goal": per_goal}
+
+
+def _eval_per_goal(env: ResidualTrotEnv, act_fn, grid=_TEST, horizon=2400) -> "tuple[float, list]":
+    hit = 0.0
+    per = []
+    for i, (d, b) in enumerate(grid):
+        md, ok, up = env.rollout_min_dist(act_fn, (d, b), seed=500 + i, horizon=horizon)
+        v = bool(ok and up > 0.5)
+        hit += float(v)
+        per.append({"dist": d, "bearing": b, "min_dist": round(md, 3), "reached": v})
+    return round(hit / len(grid), 3), per
 
 
 def main() -> None:
@@ -103,17 +116,23 @@ def main() -> None:
     for seed in args.seeds:
         row = {"seed": seed, "mlp": _train("mlp", seed, args.steps), "hsikan": _train("hsikan", seed, args.steps)}
         per_seed.append(row)
-        print(f"seed {seed}: scaffold {scaffold} | mlp {row['mlp']} | hsikan {row['hsikan']}")
+        print(f"seed {seed}: scaffold {scaffold} | mlp {row['mlp']['reach']} | hsikan {row['hsikan']['reach']}")
 
-    agg = {k: {"median_reach": median(r[k] for r in per_seed), "max_reach": max(r[k] for r in per_seed)}
-           for k in ("mlp", "hsikan")}
+    def _agg(k: str) -> dict:
+        reaches = [r[k]["reach"] for r in per_seed]
+        return {"median_reach": median(reaches), "max_reach": max(reaches), "reaches": reaches,
+                "beats_scaffold_seeds": sum(x > scaffold for x in reaches)}   # the ceiling question
+
+    agg = {k: _agg(k) for k in ("mlp", "hsikan")}
     result = {"scaffold_reach": scaffold, "n_seeds": len(args.seeds), "steps": args.steps,
               "aggregate": agg, "per_seed": per_seed,
-              "note": "SIMULATION. Bounded leg-residual over turn_then_walk, wide bearings (+-135). MLP (flat) "
-                      "vs HSiKAN (signedkan/body-hg, pooled). Does structure help the whole-body turning?"}
-    (_OUT / "result_turn_rl.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    print(f"\nscaffold {scaffold} | MLP median {agg['mlp']['median_reach']} max {agg['mlp']['max_reach']} "
-          f"| HSiKAN median {agg['hsikan']['median_reach']} max {agg['hsikan']['max_reach']}")
+              "note": "SIMULATION. Bounded phase-residual over turn_then_walk, wide bearings (+-135). MLP (flat) "
+                      "vs HSiKAN (signedkan/33-vtx body-hg, pooled). beats_scaffold_seeds = the ceiling test."}
+    (_OUT / "result_turn_rl_multiseed.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    for k in ("mlp", "hsikan"):
+        a = agg[k]
+        print(f"{k:7s}: reaches {a['reaches']} | median {a['median_reach']} max {a['max_reach']} "
+              f"| beats scaffold {a['beats_scaffold_seeds']}/{len(args.seeds)}")
 
 
 if __name__ == "__main__":
