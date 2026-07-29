@@ -30,6 +30,7 @@ from hymeko_rl.coin_delivery.forward_displacement import (
 # Phase A search: the θ indices are (0 squeeze, 1 forward, 2 balance, 3 ramp, 4 release, 5 brake_gain).
 PHASE_A_SEARCH = (3, 4, 5)                    # brake onset (=push duration), release timing, brake gain
 PHASE_A_FROZEN = {0: 0.12, 1: 0.15, 2: 0.0}  # nominal grip + forward push + no lateral bias (early push held fixed)
+FULL_SEARCH = (0, 1, 2, 3, 4, 5)             # Phase B: open the whole push (squeeze, forward magnitude, balance) too
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,17 @@ class DeliveryResult:
     min_dtz_mm: float
     measurements: dict[str, Any]
     energy: PhaseEnergyLedger
+
+
+def full_transport_spec(horizon: int = 90) -> DeliverySearchSpec:
+    """R11.5 delivery spec: open the WHOLE push (all 6 θ) with an EXTENDED horizon, for the ~40-90 mm coin transports from
+    a certified grasp to a relocated target. The shelved Phase-A default (frozen push, horizon 36) was tuned for short
+    transports and cannot generalize: measured on bank_c0_0 the coin starts 85.6 mm out and is still moving toward the
+    zone when a 36-step horizon ends (26.3 mm). With the full push open + horizon 90 the same state reaches strict K6."""
+    return DeliverySearchSpec(
+        search_idx=FULL_SEARCH, frozen={},
+        lo=(0.04, 0.04, -0.12, 2.0, 8.0, 0.0), hi=(0.20, 0.45, 0.12, 30.0, 55.0, 3.5),
+        init_std=(0.05, 0.10, 0.06, 6.0, 10.0, 0.9), horizon=horizon, pop=40, iters=8, elite=10)
 
 
 def _config(spec: DeliverySearchSpec) -> ForwardConfig:
