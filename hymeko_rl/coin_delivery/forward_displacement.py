@@ -84,15 +84,28 @@ def _coin_speed(rl) -> float:
     return float(np.linalg.norm(np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]))
 
 
+def _velocity_damp_dir(rl, gl, gr, v_coin, sp) -> np.ndarray:
+    """Unit joint torque driving both tips opposite to the coin velocity (decelerate the coin through the contacts)."""
+    if sp <= 1e-4:
+        return np.zeros(4)
+    neg = -v_coin / sp
+    d = arm_jac_dir(rl, gl, _LEFT_DOF, neg) + arm_jac_dir(rl, gr, _RIGHT_DOF, neg)
+    return d / (np.linalg.norm(d) + 1e-12)
+
+
 def _schedule_increment(rl, th, t, e_par, step, coin) -> np.ndarray:
-    """The slew-admissible Δτ_cmd at control step ``t`` (1-based) for the 6-param primitive
-    ``th`` = (squeeze, forward, balance, ramp, release, brake_gain). Three phases (grip maintained until release):
+    """The slew-admissible Δτ_cmd at control step ``t`` (1-based) for the primitive
+    ``th`` = (squeeze, forward, balance, ramp, release, brake_gain[, settle_gain]). Phases (grip maintained until release):
       * PUSH   (t ≤ ramp):     ramped forward push toward the zone + grip + L/R balance
       * BRAKE  (ramp < t ≤ release): VELOCITY-FEEDBACK brake — a decelerating increment ∝ measured coin speed, driving
                                the tips opposite to the coin velocity (through the contacts) + grip. Not a timed impulse.
-      * RELEASE(t > release):  relax the grip and let the (now slow) coin settle.
+      * RELEASE/SETTLE(t > release): with the optional 7th param ``settle_gain > 0``, hold a LIGHT grip + continue the
+                               velocity-feedback damp to bring the coin to rest in the zone (rebound suppression — the
+                               target-entry→settle→certificate transition). ``settle_gain == 0`` (or a 6-vector θ) is the
+                               ORIGINAL behaviour: relax the grip and coast. Backward-compatible.
     All slew-admissible (clipped to ±step) and, downstream, motion-governed."""
-    sqz, fwd, bal, ramp, rel, brake_gain = th
+    sqz, fwd, bal, ramp, rel, brake_gain = th[:6]
+    settle_gain = float(th[6]) if len(th) > 6 else 0.0
     gl, gr = _fingertip_geoms(rl.inner.model)
     inward = arm_inward_geom(rl, gl, _LEFT_DOF, coin) + arm_inward_geom(rl, gr, _RIGHT_DOF, coin)
     squeeze_dir = inward / (np.linalg.norm(inward) + 1e-12)
@@ -104,13 +117,12 @@ def _schedule_increment(rl, th, t, e_par, step, coin) -> np.ndarray:
     elif t <= rel:                                        # BRAKE — velocity feedback (decelerate the coin via the grip)
         v_coin = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
         sp = float(np.linalg.norm(v_coin))
-        brake_dir = np.zeros(4)
-        if sp > 1e-4:
-            neg = -v_coin / sp
-            brake_dir = arm_jac_dir(rl, gl, _LEFT_DOF, neg) + arm_jac_dir(rl, gr, _RIGHT_DOF, neg)
-            brake_dir = brake_dir / (np.linalg.norm(brake_dir) + 1e-12)
-        dtau = sqz * squeeze_dir + brake_gain * sp * brake_dir
-    else:                                                 # RELEASE — relax the grip, let the coin settle
+        dtau = sqz * squeeze_dir + brake_gain * sp * _velocity_damp_dir(rl, gl, gr, v_coin, sp)
+    elif settle_gain > 0.0:                               # SETTLE — light grip + damp to rest (rebound suppression)
+        v_coin = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
+        sp = float(np.linalg.norm(v_coin))
+        dtau = 0.3 * sqz * squeeze_dir + settle_gain * sp * _velocity_damp_dir(rl, gl, gr, v_coin, sp)
+    else:                                                 # RELEASE — relax the grip, let the coin coast (original 6-θ)
         dtau = -0.5 * sqz * squeeze_dir
     return np.clip(dtau, -step, step)
 

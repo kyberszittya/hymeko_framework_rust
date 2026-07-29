@@ -1,5 +1,12 @@
 """Tests for the R11.5 delivery-teacher pilot's pure config + gate logic."""
-from hymeko_rl.coin_delivery.delivery_teacher.solver import FULL_SEARCH, full_transport_spec
+import numpy as np
+
+from hymeko_rl.coin_delivery.delivery_teacher.solver import (
+    FULL_SEARCH,
+    _settle_spec,
+    full_transport_settle_spec,
+    full_transport_spec,
+)
 from hymeko_rl.experiments.r11_5_delivery_teacher_pilot import _pilot_passed, gate
 
 
@@ -11,6 +18,22 @@ def test_full_transport_spec_opens_all_dims_and_extends_horizon() -> None:
     assert len(s.lo) == len(s.hi) == len(s.init_std) == 6
     assert all(lo < hi for lo, hi in zip(s.lo, s.hi))
     assert full_transport_spec(horizon=120).horizon == 120
+
+
+def test_full_transport_settle_spec_adds_only_the_settle_dim() -> None:
+    s = full_transport_settle_spec()
+    assert len(s.search_idx) == 7 and s.theta_dim == 7 and s.hi[6] == 4.0 and s.lo[6] == 0.0
+
+
+def test_settle_spec_freezes_transport_searches_only_settle() -> None:
+    """The two-stage stage-2 spec: transport θ[0:6] FROZEN at the given values, search ONLY settle_gain (θ[6])."""
+    sp = _settle_spec((0.1, 0.2, 0.0, 10.0, 15.0, 1.5), horizon=90, settle_hi=4.0)
+    assert sp.search_idx == (6,) and sp.theta_dim == 7 and sp.horizon == 90
+    assert set(sp.frozen.keys()) == {0, 1, 2, 3, 4, 5} and sp.frozen[1] == 0.2 and sp.frozen[4] == 15.0
+    assert sp.lo == (0.0,) and sp.hi == (4.0,)
+    theta = sp.assemble(np.array([2.5]))                               # settle=2.5 on the frozen transport
+    assert len(theta) == 7 and theta[6] == 2.5 and theta[1] == 0.2 and theta[4] == 15.0
+    assert theta[6] == 0.0 or sp.assemble(np.array([0.0]))[6] == 0.0   # settle_gain=0 reproduces the transport
 
 
 def test_pilot_passed_predicate() -> None:

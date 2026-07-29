@@ -19,7 +19,11 @@ import time
 from pathlib import Path
 
 from hymeko_rl.coin_delivery.delivery_teacher.regrasp_characterize import characterize_delivery
-from hymeko_rl.coin_delivery.delivery_teacher.solver import full_transport_spec, solve_delivery
+from hymeko_rl.coin_delivery.delivery_teacher.solver import (
+    full_transport_spec,
+    solve_delivery,
+    solve_delivery_with_settle,
+)
 from hymeko_rl.coin_delivery.demo_bank import PipelineConfig, build_bank_scenarios
 from hymeko_rl.coin_delivery.demo_bank import pipeline as P
 from hymeko_rl.coin_delivery.theta_option import planar_geometric_approach as pga
@@ -48,11 +52,11 @@ def _certified_grasp_snap(rig, cfg, conf, obj, scen):
     return None, -1
 
 
-def _teacher_best(snap, spec):
-    """Up to RESTARTS solve_delivery restarts on the SAME snap; keep best by (k6, -min_dtz), early-exit on K6."""
+def _teacher_best(snap, solve_fn):
+    """Up to RESTARTS restarts on the SAME snap; keep best by (k6, -min_dtz), early-exit on K6."""
     best = None
     for s in range(RESTARTS):
-        res = solve_delivery(snap, seed=s, spec=spec)
+        res = solve_fn(snap, s)
         if best is None or (res.k6, -res.min_dtz_mm) > (best.k6, -best.min_dtz_mm):
             best = res
         if res.k6:
@@ -60,13 +64,13 @@ def _teacher_best(snap, spec):
     return best
 
 
-def run_one(rig, cfg, conf, obj, spec, sid: str, split: str) -> dict:
+def run_one(rig, cfg, conf, obj, solve_fn, sid: str, split: str) -> dict:
     scen = next(s for s in build_bank_scenarios() if s.scenario_id == sid)
     snap, cap_seed = _certified_grasp_snap(rig, cfg, conf, obj, scen)
     if snap is None:
         return {"scenario_id": sid, "split": split, "certified": False, "recovered": False, "note": "no certified grasp"}
     base = characterize_delivery(snap, rig["down"])
-    t = _teacher_best(snap, spec)
+    t = _teacher_best(snap, solve_fn)
     m, e = t.measurements, t.energy
     return {
         "scenario_id": sid, "split": split, "certified": True, "capture_seed": cap_seed,
@@ -107,19 +111,22 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--offset", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0, help="0 = all 12 pilots")
+    ap.add_argument("--settle", action="store_true", help="use the settle-coordinate spec (transport + settle_gain)")
     args = ap.parse_args()
     rig = _rig()
     cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=160)
     obj = GraspObjective()
     conf = PipelineConfig(teacher_budget=3, grasp_objective=obj)
-    spec = full_transport_spec()
+    tspec = full_transport_spec()
+    solve_fn = ((lambda snap, s: solve_delivery_with_settle(snap, s)) if args.settle
+                else (lambda snap, s: solve_delivery(snap, s, tspec)))
     pilots = PILOTS[args.offset:(args.offset + args.limit if args.limit else len(PILOTS))]
     args.out.parent.mkdir(parents=True, exist_ok=True)
     rows = []
     with args.out.open("w", encoding="utf-8") as fh:
         for i, (sid, split) in enumerate(pilots, 1):
             t0 = time.perf_counter()
-            r = run_one(rig, cfg, conf, obj, spec, sid, split)
+            r = run_one(rig, cfg, conf, obj, solve_fn, sid, split)
             fh.write(json.dumps(r) + "\n")
             fh.flush()
             rows.append(r)
