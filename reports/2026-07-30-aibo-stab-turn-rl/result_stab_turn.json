@@ -3,25 +3,17 @@
   "horizon": 2400,
   "steps": 15000,
   "rl": {
-    "median": 0.8215,
-    "max": 0.857,
-    "beats_scaffold": 2
+    "median": 0.786,
+    "max": 0.786,
+    "beats_scaffold": 0
   },
   "per_seed": [
     {
       "seed": 0,
-      "rl": 0.857
-    },
-    {
-      "seed": 1,
       "rl": 0.786
     },
     {
       "seed": 2,
-      "rl": 0.857
-    },
-    {
-      "seed": 3,
       "rl": 0.786
     }
   ],
