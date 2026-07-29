@@ -52,6 +52,25 @@ def test_zmp_is_finite() -> None:
     assert len(foot_bodies(e.model)) == 2
 
 
+def test_capture_point_and_capturability_levels() -> None:
+    from hymeko_control.stability import capture_point, capturability_level
+    from scenarios.humanoid.zmp_stability import foot_bodies
+    e = _env(0.0)
+    e.reset(seed=0)
+    e.step(np.zeros(e.model.nu, np.float32))
+    feet = foot_bodies(e.model)
+    cp = capture_point(e.model, e.data)
+    assert cp.shape == (2,) and np.all(np.isfinite(cp))
+    lvl, m0, m1 = capturability_level(e.data, cp, feet, (0.09, 0.05), 0.30)
+    assert lvl == 0 and m0 > 0.0                            # standing: capture point in support (0-step)
+    # a capture point far outside support + one step of reach is 1-step (must step) then uncapturable
+    far = cp + np.array([0.25, 0.0])
+    l1, _m0, _m1 = capturability_level(e.data, far, feet, (0.09, 0.05), 0.30)
+    assert l1 == 1                                          # outside support, inside 1-step reach -> MUST step
+    lz, _a, _b = capturability_level(e.data, cp + np.array([0.6, 0.0]), feet, (0.09, 0.05), 0.30)
+    assert lz == 2                                          # beyond one step -> not capturable
+
+
 def test_certificate_fn_passes_positive_fails_negative() -> None:
     cert = zmp_balance_certificate()
     ok = SimpleNamespace(signals=[{"zmp_margin": 0.08}, {"zmp_margin": 0.04}])
