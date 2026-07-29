@@ -106,12 +106,25 @@ So RL learns a **genuine, stable, sustained forward-walking gait** (+0.20 m over
 throughout, no gaming) where hand-tuned control fell backward — the real deliverable. Video
 `humanoid_forward_walk.mp4`. Forward *speed* is slow (~3 mm/footstep), mechanism-limited by the small feet.
 
-**Push-off / toe (first attempt — honest negative):** a separate articulated-toe model
-(`humanoid_toe.hymeko`, `model_src`/`toe_off` knobs, default toe-less unchanged, 55 tests green) with a
-scripted toe-off (70 N·m stance-toe plantarflexion during swing) trained **worse** — it destabilises and
-falls at step 2. The aggressive scripted toe-off + the shorter split foot hurt more than the push-off
-helps. Raising the forward-speed ceiling with the toe needs a gentler, better-timed (or learned) toe-off —
-not the crude scripted push-off tried here.
+**Push-off / toe.** First attempt (honest negative): `humanoid_toe.hymeko` **split** the foot (0.20 → 0.13)
+to add the toe + a **scripted** 70 N·m toe-off during **swing** — trained *worse* (+0.099 m at toe_off = 0
+because the shorter foot lost support; any scripted toe-off destabilised, falling at 2–3 steps). Two fixes:
+(1) the toe as a forward **extension** (`humanoid_toe2.hymeko` — keep the full 0.20 foot, add the toe ahead),
+and (2) a **learned** toe-off in the action (3rd action dim, applied in **late stance** as the foot rolls
+off). Re-trained:
+
+| model | forward | footsteps | toe-off |
+|---|---|---|---|
+| toe-less | +0.20 m | 60/60 | — |
+| **toe-extension + LEARNED toe-off** | **+0.287 m (+44%)** | **60/60** | learned, `\|a₂\|≈1.0` (fully used) |
+
+The learned toe-off is **genuine** (per-step +4.8 mm, terminal 4 steps only 7% — not a lunge) and **actively
+used** (the policy commands full push-off every step). **Done correctly — the articulated toe as an
+extension + a learned late-stance toe-off — the push-off raises the forward-speed ceiling +44%.** Video
+`humanoid_forward_walk_toe.mp4`. This closes both threads: RL supplies the stable forward gait (the
+control/learning limit, not a mechanism wall), and the toe/push-off raises its speed (the mechanism lever) —
+each validated with honest scope, and the naive versions of both (gamed reward, crude scripted toe-off)
+caught and corrected.
 
 ## Open items / follow-ups
 

@@ -44,8 +44,10 @@ class FootstepConfig:
     max_footsteps: int = 80         # episode length in footsteps
     fall_uprightness: float = 0.55
     fall_pelvis_z: float = 0.55
-    model_src: str = "humanoid.hymeko"   # "humanoid_toe.hymeko" = the articulated-toe (push-off) model
+    model_src: str = "humanoid.hymeko"   # "humanoid_toe2.hymeko" = the articulated-toe (push-off) model
     toe_off: float = 0.0            # scripted toe-off torque (N·m) on the stance toe during swing (push-off); needs the toe model
+    learn_toe: bool = False         # expand the action with a LEARNED toe-off (applied in LATE stance) — the RL finds the push-off
+    toe_off_scale: float = 60.0     # action[2] in [-1,1] -> toe-off torque (N·m)
 
 
 class HumanoidFootstepEnv:
@@ -74,7 +76,8 @@ class HumanoidFootstepEnv:
         self._dt = float(self.model.opt.timestep)
         self._omega = float(np.sqrt(9.81 / self.cfg.t_step and 0.645)) or 3.9  # set precisely in reset
         self._rng = np.random.default_rng(seed)
-        self.action_space = spaces.Box(-1.0, 1.0, (2,), np.float32)
+        act_dim = 3 if (self.cfg.learn_toe and self._toe_act) else 2   # +1 for the learned toe-off
+        self.action_space = spaces.Box(-1.0, 1.0, (act_dim,), np.float32)
         obs = self.reset(seed=seed)[0]
         self.observation_space = spaces.Box(-np.inf, np.inf, obs.shape, np.float32)
 
@@ -173,7 +176,8 @@ class HumanoidFootstepEnv:
         nominal = np.array([r_anchor[0] + cfg.forward_stride,
                             -np.sign(r_anchor[1]) * cfg.nominal_dy if r_anchor[1] != 0
                             else (cfg.nominal_dy if swing == "L" else -cfg.nominal_dy)])
-        foothold = nominal + cfg.residual_xy * a
+        foothold = nominal + cfg.residual_xy * a[:2]
+        toe_cmd = float(a[2]) if a.shape[0] >= 3 else 0.0    # learned toe-off magnitude for this step
         # nominal periodic DCM offset from the stance foot (sagittal centred, lateral toward the next foot)
         s_offset = np.array([0.0, -2.0 * r_anchor[1] / (1.0 + np.exp(self._omega * cfg.t_step))])
         n_tick = int(cfg.t_step / self._dt)
@@ -194,8 +198,14 @@ class HumanoidFootstepEnv:
                 fvel = jp_sw @ np.asarray(self.data.qvel)
                 acc_sw = 600.0 * (np.array([xt, yt, zt]) - fpos) - 48.0 * fvel
                 extra = None
-                if cfg.toe_off != 0.0 and self._stance in self._toe_act:   # toe-off push-off on the stance toe
-                    extra = {self._toe_act[self._stance]: cfg.toe_off * float(np.sin(np.pi * ph))}
+                if self._stance in self._toe_act:          # toe-off push-off on the stance toe
+                    toe_t = 0.0
+                    if cfg.learn_toe and ph > 0.5:          # LEARNED toe-off, ramped over LATE stance (roll-off)
+                        toe_t = toe_cmd * cfg.toe_off_scale * (ph - 0.5) / 0.5
+                    elif cfg.toe_off != 0.0:               # or a fixed scripted toe-off
+                        toe_t = cfg.toe_off * float(np.sin(np.pi * ph))
+                    if toe_t != 0.0:
+                        extra = {self._toe_act[self._stance]: toe_t}
                 self._tick([stance_b], acc_com, Task(jp_sw, acc_sw, 110.0), extra_tau=extra)
             if self._be._com_sig()["uprightness"] < cfg.fall_uprightness:
                 fell = True

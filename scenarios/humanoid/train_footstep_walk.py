@@ -25,22 +25,22 @@ import numpy as np
 from scenarios.humanoid.footstep_env import FootstepConfig, HumanoidFootstepEnv
 
 def _cfg(fwd_stride: float, w_forward: float, max_footsteps: int, fall_penalty: float = 25.0,
-         model_src: str = "humanoid.hymeko", toe_off: float = 0.0) -> FootstepConfig:
+         model_src: str = "humanoid.hymeko", toe_off: float = 0.0, learn_toe: bool = False) -> FootstepConfig:
     # heavy fall penalty + the per-step forward cap (in FootstepConfig) => the policy must walk forward
-    # SUSTAINABLY, not lunge into a terminal fall (which gamed the earlier reward). model_src/toe_off select
-    # the articulated-toe (push-off) model + a scripted toe-off.
+    # SUSTAINABLY, not lunge into a terminal fall (which gamed the earlier reward). model_src selects the
+    # articulated-toe (push-off) model; learn_toe adds a LEARNED late-stance toe-off to the action.
     return FootstepConfig(max_footsteps=max_footsteps, forward_stride=fwd_stride,
                           w_forward=w_forward, residual_xy=0.06, fall_penalty=fall_penalty,
-                          model_src=model_src, toe_off=toe_off)
+                          model_src=model_src, toe_off=toe_off, learn_toe=learn_toe)
 
 
-def _dim(obs_dim: int) -> int:
-    return 2 * obs_dim + 2                    # a linear foothold policy: a = tanh(W·obs + b)
+def _dim(obs_dim: int, act_dim: int = 2) -> int:
+    return act_dim * obs_dim + act_dim       # a linear policy: a = tanh(W·obs + b) (2-d foothold, +1 if learned toe-off)
 
 
-def policy(theta: np.ndarray, obs: np.ndarray, obs_dim: int) -> np.ndarray:
-    w = theta[:2 * obs_dim].reshape(2, obs_dim)
-    b = theta[2 * obs_dim:]
+def policy(theta: np.ndarray, obs: np.ndarray, obs_dim: int, act_dim: int = 2) -> np.ndarray:
+    w = theta[:act_dim * obs_dim].reshape(act_dim, obs_dim)
+    b = theta[act_dim * obs_dim:]
     return np.tanh(w @ obs + b)
 
 
@@ -48,11 +48,11 @@ def rollout(theta: np.ndarray, cfg: FootstepConfig, seed: int = 0) -> "tuple[flo
     """One episode; returns (return, footsteps survived, net forward displacement)."""
     env = HumanoidFootstepEnv(cfg, seed=seed)
     obs, _ = env.reset(seed=seed)
-    od = obs.shape[0]
+    od, ad = obs.shape[0], env.action_space.shape[0]
     px0 = float(env.data.xpos[env._pel, 0])
     ret, steps = 0.0, 0
     for _ in range(cfg.max_footsteps):
-        obs, r, done, trunc, info = env.step(policy(theta, obs, od).astype(np.float32))
+        obs, r, done, trunc, info = env.step(policy(theta, obs, od, ad).astype(np.float32))
         ret += r
         steps = info["steps"]
         if done or trunc:
@@ -68,7 +68,7 @@ def _eval(args):
 def train(iters: int, pop: int, elite: int, cfg: FootstepConfig, workers: int, out: Path) -> np.ndarray:
     env0 = HumanoidFootstepEnv(cfg, seed=0)
     od = env0.observation_space.shape[0]
-    dim = _dim(od)
+    dim = _dim(od, env0.action_space.shape[0])
     rng = np.random.default_rng(0)
     mu, sig = np.zeros(dim), np.ones(dim) * 0.5
     best = (-1e9, np.zeros(dim), 0, -1e9)                          # (ret, theta, steps, fwd)
@@ -113,11 +113,12 @@ def main() -> None:
     ap.add_argument("--out", type=str, default=os.environ.get("HYMEKO_OUT", "experiments/humanoid_fwalk"))
     ap.add_argument("--model_src", type=str, default=os.environ.get("HYMEKO_MODEL", "humanoid.hymeko"))
     ap.add_argument("--toe_off", type=float, default=float(os.environ.get("HYMEKO_TOE_OFF", "0.0")))
+    ap.add_argument("--learn_toe", action="store_true", default=bool(int(os.environ.get("HYMEKO_LEARN_TOE", "0"))))
     ap.add_argument("--render", action="store_true")
     ap.add_argument("--policy", type=str, default="")
     args = ap.parse_args()
     cfg = _cfg(args.fwd_stride, args.w_forward, args.max_footsteps,
-               model_src=args.model_src, toe_off=args.toe_off)
+               model_src=args.model_src, toe_off=args.toe_off, learn_toe=args.learn_toe)
     if args.render:
         render(Path(args.policy or Path(args.out) / "best_policy.npy"), cfg, Path(args.out))
         return
@@ -129,7 +130,7 @@ def render(policy_path: Path, cfg: FootstepConfig, out: Path) -> None:
     import mujoco
     theta = np.load(policy_path)
     env = HumanoidFootstepEnv(cfg, seed=0)
-    od = env.observation_space.shape[0]
+    od, ad = env.observation_space.shape[0], env.action_space.shape[0]
     obs, _ = env.reset(seed=0)
     env.model.vis.global_.offwidth, env.model.vis.global_.offheight = 520, 460
     r = mujoco.Renderer(env.model, height=460, width=520)
@@ -138,7 +139,7 @@ def render(policy_path: Path, cfg: FootstepConfig, out: Path) -> None:
     cam.azimuth, cam.elevation, cam.distance = 90.0, -8.0, 2.4
     frames, px0 = [], float(env.data.xpos[env._pel, 0])
     for _ in range(cfg.max_footsteps):
-        a = policy(theta, obs, od).astype(np.float32)
+        a = policy(theta, obs, od, ad).astype(np.float32)
         # render mid-footstep frames by stepping the env's internal loop is not exposed; snapshot per footstep
         obs, _rw, done, trunc, info = env.step(a)
         cam.lookat[:] = [float(env.data.xpos[env._pel, 0]), float(env.data.xpos[env._pel, 1]), 0.5]
