@@ -138,10 +138,14 @@ class GraspObjective:
     numeric terms only breaking ties *within* a class — so there are no cross-class weights to tune, and no hand-coded
     parameter bounds (``preload_start``/``bmax`` are left to the search; the score, not a rule, prefers the held grasp).
 
-    ``dwell_target`` is the only knob: the minimum consecutive bilateral-contact steps for the top GRASP_CERTIFIED class.
+    ``dwell_target`` is the minimum consecutive bilateral-contact steps for the top GRASP_CERTIFIED class. ``dtz_elite``
+    reserves that many CEM elite slots for the overall min_dtz-best candidates (a *hybrid elite*): the grasp-class elite
+    alone floods the abundant low-preload held grasps and never samples the narrow high-preload deliverable basin the
+    min_dtz elite finds (measured on bank_c0_3 seed-3), so a few delivery-gradient elites keep that basin in view.
     """
 
     dwell_target: int = 4
+    dtz_elite: int = 3
 
 
 @dataclass(frozen=True)
@@ -412,6 +416,32 @@ def _solution_found(best: "tuple[Any, np.ndarray, CaptureOutcome] | None", obj: 
     return obj is None or _grasp_class(best[2], obj.dwell_target) == GRASP_CERTIFIED
 
 
+def _select_elite(cand: "list[tuple[Any, CaptureOutcome, np.ndarray]]", spec: CaptureSearchSpec,
+                  obj: "GraspObjective | None") -> np.ndarray:
+    """The CEM elite that drives the mean/std update, as a stack of theta vectors.
+
+    Default (``obj is None``): top ``spec.elite`` by rank — bit-exact to the prior ``scored.sort``. Grasp-aware: a HYBRID
+    elite — ``spec.elite - obj.dtz_elite`` slots by the grasp-aware rank plus ``obj.dtz_elite`` slots by overall min_dtz,
+    so the search keeps covering BOTH the grasp basin and the min_dtz (deliverable) basin. Ranking alone cannot pick a
+    deliverable grasp the search never samples (bank_c0_3 seed-3).
+    """
+    by_rank = sorted(range(len(cand)), key=lambda i: cand[i][0])
+    if obj is None:
+        return np.stack([cand[i][2] for i in by_rank[:spec.elite]])
+    n_dtz = min(obj.dtz_elite, spec.elite)
+    chosen = list(by_rank[:spec.elite - n_dtz])
+    seen = set(chosen)
+    by_dtz = sorted(range(len(cand)),
+                    key=lambda i: cand[i][1].min_dtz_mm if not np.isnan(cand[i][1].min_dtz_mm) else 1e9)
+    for i in by_dtz:
+        if len(chosen) >= spec.elite:
+            break
+        if i not in seen:
+            chosen.append(i)
+            seen.add(i)
+    return np.stack([cand[i][2] for i in chosen])
+
+
 @dataclass(frozen=True)
 class CaptureResult:
     """A solved capture: the winning parameters, its outcome, and the seed (for deterministic replay + provenance)."""
@@ -435,18 +465,17 @@ def plan_capture(ready: Any, ref: HandoffReference, stack: Any, downstream: Froz
     mean[:3] = [0.6, 0.5, 0.5]                       # priors: s_raw, preload_start, bmax
     std = np.full(dim, spec.init_std)
     obj = spec.grasp_objective
-    best: "tuple[float, np.ndarray, CaptureOutcome] | None" = None
+    best: "tuple[Any, np.ndarray, CaptureOutcome] | None" = None
     for _ in range(spec.iters):
         pop = mean[None] + std[None] * rng.standard_normal((spec.population, dim))
-        scored = []
+        cand: "list[tuple[Any, CaptureOutcome, np.ndarray]]" = []
         for theta in pop:
             out = _evaluate(theta, cap, spec, downstream)
-            cost = _rank_key(out, obj)
-            scored.append((cost, theta))
-            if best is None or cost < best[0]:
-                best = (cost, theta, out)
-        scored.sort(key=lambda z: z[0])
-        elite = np.stack([theta for _, theta in scored[:spec.elite]])
+            key = _rank_key(out, obj)
+            cand.append((key, out, theta))
+            if best is None or key < best[0]:
+                best = (key, theta, out)
+        elite = _select_elite(cand, spec, obj)
         mean, std = elite.mean(0), elite.std(0) * 0.88 + 1e-3
         if _solution_found(best, obj):
             break

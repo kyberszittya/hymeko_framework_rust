@@ -13,6 +13,7 @@ import hymeko_rl.coin_delivery.theta_option.moving_precapture as mp
 from hymeko_rl.coin_delivery.theta_option.moving_precapture import (
     BILATERAL_TRANSIENT,
     CaptureOutcome,
+    CaptureSearchSpec,
     GRASP_CERTIFIED,
     GraspObjective,
     NO_CONTACT,
@@ -22,6 +23,7 @@ from hymeko_rl.coin_delivery.theta_option.moving_precapture import (
     _NO_DELAY,
     _grasp_class,
     _rank_key,
+    _select_elite,
     _solution_found,
 )
 
@@ -147,3 +149,33 @@ def test_contact_trace_observe_tracks_dwell_and_first_steps(monkeypatch: pytest.
     assert tr.first_relvel == pytest.approx(0.12)     # coin speed at first any-contact
     assert tr.second_relvel == pytest.approx(0.12)    # coin speed at first bilateral contact
     assert tr.coin_disp_mm == pytest.approx(11.0)     # peak displacement 0.011 m -> 11 mm
+
+
+def test_select_elite_default_is_topk_by_rank_bit_exact() -> None:
+    """obj=None must reproduce the prior ``scored.sort(...)[:elite]`` selection exactly."""
+    spec = CaptureSearchSpec()
+    rng = np.random.default_rng(0)
+    cand = [(float(rng.random()), _oc(min_dtz_mm=1.0), np.array([float(i)])) for i in range(30)]
+    elite = _select_elite(cand, spec, None)
+    manual = np.stack([c[2] for c in sorted(cand, key=lambda z: z[0])[:spec.elite]])
+    assert elite.shape[0] == spec.elite
+    assert np.array_equal(elite, manual)
+
+
+def test_select_elite_hybrid_reserves_min_dtz_slots() -> None:
+    """The hybrid elite keeps the min_dtz (deliverable) basin in view: held grasps with poor delivery must not crowd out
+    the overall min_dtz-best candidates — the fix for the bank_c0_3 seed-3 search-support miss."""
+    obj = GraspObjective()  # dtz_elite=3
+    spec = CaptureSearchSpec(grasp_objective=obj)  # elite=9
+    cand = []
+    for i in range(9):  # 9 held grasps, top rank class but non-deliverable min_dtz 30..38
+        o = _oc(contacts=2, bilateral_dwell=5, min_dtz_mm=30.0 + i)
+        cand.append((_rank_key(o, obj), o, np.array([100.0 + i])))
+    for i in range(3):  # 3 ungrasped nudges with excellent min_dtz 1..3 (deliverable-basin proxies)
+        o = _oc(contacts=0, min_dtz_mm=1.0 + i, first_contact_relvel=0.3)
+        cand.append((_rank_key(o, obj), o, np.array([200.0 + i])))
+    elite = _select_elite(cand, spec, obj)
+    thetas = elite.flatten().tolist()
+    assert elite.shape[0] == spec.elite
+    assert {200.0, 201.0, 202.0}.issubset(thetas)          # the 3 min_dtz-best are reserved
+    assert sum(1 for t in thetas if t >= 200.0) == obj.dtz_elite  # exactly dtz_elite reserved slots
