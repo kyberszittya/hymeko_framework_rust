@@ -25,13 +25,18 @@ import numpy as np
 from scenarios.humanoid.footstep_env import FootstepConfig, HumanoidFootstepEnv
 
 def _cfg(fwd_stride: float, w_forward: float, max_footsteps: int, fall_penalty: float = 25.0,
-         model_src: str = "humanoid.hymeko", toe_off: float = 0.0, learn_toe: bool = False) -> FootstepConfig:
+         model_src: str = "humanoid.hymeko", toe_off: float = 0.0, learn_toe: bool = False,
+         step_h: float = 0.04, swing_weight: float = 110.0, forward_cap: float = 0.05,
+         t_step: float = 0.42, ds_frac: float = 0.42) -> FootstepConfig:
     # heavy fall penalty + the per-step forward cap (in FootstepConfig) => the policy must walk forward
     # SUSTAINABLY, not lunge into a terminal fall (which gamed the earlier reward). model_src selects the
-    # articulated-toe (push-off) model; learn_toe adds a LEARNED late-stance toe-off to the action.
+    # articulated-toe (push-off) model; learn_toe adds a LEARNED late-stance toe-off; step_h/swing_weight
+    # make the swing foot actually LIFT (clear the ground) instead of shuffling.
     return FootstepConfig(max_footsteps=max_footsteps, forward_stride=fwd_stride,
                           w_forward=w_forward, residual_xy=0.06, fall_penalty=fall_penalty,
-                          model_src=model_src, toe_off=toe_off, learn_toe=learn_toe)
+                          model_src=model_src, toe_off=toe_off, learn_toe=learn_toe,
+                          step_h=step_h, swing_weight=swing_weight, forward_cap=forward_cap,
+                          t_step=t_step, ds_frac=ds_frac)
 
 
 def _dim(obs_dim: int, act_dim: int = 2) -> int:
@@ -65,12 +70,14 @@ def _eval(args):
     return rollout(theta, cfg)
 
 
-def train(iters: int, pop: int, elite: int, cfg: FootstepConfig, workers: int, out: Path) -> np.ndarray:
+def train(iters: int, pop: int, elite: int, cfg: FootstepConfig, workers: int, out: Path,
+          warm: "np.ndarray | None" = None) -> np.ndarray:
     env0 = HumanoidFootstepEnv(cfg, seed=0)
     od = env0.observation_space.shape[0]
     dim = _dim(od, env0.action_space.shape[0])
     rng = np.random.default_rng(0)
-    mu, sig = np.zeros(dim), np.ones(dim) * 0.5
+    mu = warm.copy() if (warm is not None and warm.shape[0] == dim) else np.zeros(dim)  # warm-start (curriculum)
+    sig = np.ones(dim) * (0.25 if warm is not None else 0.5)
     best = (-1e9, np.zeros(dim), 0, -1e9)                          # (ret, theta, steps, fwd)
     out.mkdir(parents=True, exist_ok=True)
     journal = (out / "journal.jsonl").open("w")
@@ -114,15 +121,25 @@ def main() -> None:
     ap.add_argument("--model_src", type=str, default=os.environ.get("HYMEKO_MODEL", "humanoid.hymeko"))
     ap.add_argument("--toe_off", type=float, default=float(os.environ.get("HYMEKO_TOE_OFF", "0.0")))
     ap.add_argument("--learn_toe", action="store_true", default=bool(int(os.environ.get("HYMEKO_LEARN_TOE", "0"))))
+    ap.add_argument("--step_h", type=float, default=float(os.environ.get("HYMEKO_STEP_H", "0.04")))
+    ap.add_argument("--swing_weight", type=float, default=float(os.environ.get("HYMEKO_SWING_W", "110")))
+    ap.add_argument("--fall_penalty", type=float, default=float(os.environ.get("HYMEKO_FALL_PEN", "25")))
+    ap.add_argument("--forward_cap", type=float, default=float(os.environ.get("HYMEKO_FWD_CAP", "0.05")))
+    ap.add_argument("--t_step", type=float, default=float(os.environ.get("HYMEKO_TSTEP", "0.42")))
+    ap.add_argument("--ds_frac", type=float, default=float(os.environ.get("HYMEKO_DSFRAC", "0.42")))
+    ap.add_argument("--warm", type=str, default="")   # warm-start policy .npy (curriculum from a working gait)
     ap.add_argument("--render", action="store_true")
     ap.add_argument("--policy", type=str, default="")
     args = ap.parse_args()
-    cfg = _cfg(args.fwd_stride, args.w_forward, args.max_footsteps,
-               model_src=args.model_src, toe_off=args.toe_off, learn_toe=args.learn_toe)
+    cfg = _cfg(args.fwd_stride, args.w_forward, args.max_footsteps, fall_penalty=args.fall_penalty,
+               model_src=args.model_src, toe_off=args.toe_off, learn_toe=args.learn_toe,
+               step_h=args.step_h, swing_weight=args.swing_weight, forward_cap=args.forward_cap,
+               t_step=args.t_step, ds_frac=args.ds_frac)
     if args.render:
         render(Path(args.policy or Path(args.out) / "best_policy.npy"), cfg, Path(args.out))
         return
-    train(args.iters, args.pop, args.elite, cfg, args.workers, Path(args.out))
+    warm = np.load(args.warm) if args.warm else None
+    train(args.iters, args.pop, args.elite, cfg, args.workers, Path(args.out), warm=warm)
 
 
 def render(policy_path: Path, cfg: FootstepConfig, out: Path) -> None:

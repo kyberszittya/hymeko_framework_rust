@@ -34,6 +34,7 @@ class FootstepConfig:
     ds_frac: float = 0.42           # fraction of the step in double support (load transfer)
     kdcm: float = 1.8               # DCM ZMP-tracking gain
     step_h: float = 0.04            # swing-foot apex clearance (m)
+    swing_weight: float = 110.0     # WBC swing-foot task weight (raise to actually LIFT the foot, not shuffle)
     wf: float = 0.07                # swing-foot wrench-cost weight (load transfer)
     nominal_dy: float = 0.084       # nominal lateral half-stance (the fixed-march foothold)
     residual_xy: float = 0.05       # action -> foothold residual scale (m), bounded
@@ -206,7 +207,7 @@ class HumanoidFootstepEnv:
                         toe_t = cfg.toe_off * float(np.sin(np.pi * ph))
                     if toe_t != 0.0:
                         extra = {self._toe_act[self._stance]: toe_t}
-                self._tick([stance_b], acc_com, Task(jp_sw, acc_sw, 110.0), extra_tau=extra)
+                self._tick([stance_b], acc_com, Task(jp_sw, acc_sw, cfg.swing_weight), extra_tau=extra)
             if self._be._com_sig()["uprightness"] < cfg.fall_uprightness:
                 fell = True
                 break
