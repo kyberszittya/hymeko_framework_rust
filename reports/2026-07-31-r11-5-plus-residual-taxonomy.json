@@ -1,0 +1,868 @@
+{
+  "gate": {
+    "uncovered": 24,
+    "unique": 24,
+    "by_category": {
+      "CAPTURE_SUPPORT_FAILURE": 10,
+      "CONTACT_LOSS_DURING_DELIVERY": 4,
+      "INSUFFICIENT_TRANSPORT_PROGRESS": 10
+    },
+    "verdict": "R11_5_PLUS_RESIDUAL_TAXONOMY_COMPLETE"
+  },
+  "by_category": {
+    "CAPTURE_SUPPORT_FAILURE": [
+      "bank_c1_+0.01_+0.02",
+      "bank_c1_+0.01_+0.03",
+      "bank_c1_+0.03_+0.02",
+      "bank_c1_+0.03_+0.03",
+      "bank_c1_-0.01_+0.00",
+      "bank_c2_+0.015_+0.015",
+      "bank_c2_+0.015_+0.025",
+      "bank_c2_+0.025_+0.015",
+      "bank_c2_+0.025_+0.025",
+      "bank_c2_-0.015_+0.000"
+    ],
+    "CONTACT_LOSS_DURING_DELIVERY": [
+      "bank_c1_-0.01_+0.03",
+      "bank_c1_-0.03_+0.02",
+      "bank_c1_-0.03_+0.03",
+      "bank_c2_-0.025_+0.015"
+    ],
+    "INSUFFICIENT_TRANSPORT_PROGRESS": [
+      "bank_c2_-0.015_+0.015",
+      "bank_c2_-0.015_+0.025",
+      "bank_c2_-0.025_+0.025",
+      "bank_c3_r5_a-45",
+      "bank_c3_r6_a-45",
+      "bank_c3_r7_a+15",
+      "bank_c3_r7_a-45",
+      "bank_c3_r9_a+15",
+      "bank_c3_r9_a+30",
+      "bank_c3_r9_a-45"
+    ]
+  },
+  "records": [
+    {
+      "scenario_id": "bank_c1_+0.01_+0.03",
+      "curriculum_stage": "c1",
+      "split": "dev",
+      "coin_pose": [
+        0.0858,
+        0.1728
+      ],
+      "target_pose": [
+        0.0161,
+        0.2043
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "CAPTURE_FAIL",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c1_+0.03_+0.02",
+      "curriculum_stage": "c1",
+      "split": "test",
+      "coin_pose": [
+        0.1058,
+        0.1628
+      ],
+      "target_pose": [
+        0.0361,
+        0.1943
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "CAPTURE_FAIL",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c1_+0.03_+0.03",
+      "curriculum_stage": "c1",
+      "split": "test",
+      "coin_pose": [
+        0.1058,
+        0.1728
+      ],
+      "target_pose": [
+        0.0361,
+        0.2043
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "CAPTURE_FAIL",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c2_+0.015_+0.025",
+      "curriculum_stage": "c2",
+      "split": "dev",
+      "coin_pose": [
+        0.0908,
+        0.1678
+      ],
+      "target_pose": [
+        0.0211,
+        0.1993
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "CAPTURE_FAIL",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c2_+0.025_+0.015",
+      "curriculum_stage": "c2",
+      "split": "test",
+      "coin_pose": [
+        0.1008,
+        0.1578
+      ],
+      "target_pose": [
+        0.0311,
+        0.1893
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "CAPTURE_FAIL",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c2_+0.025_+0.025",
+      "curriculum_stage": "c2",
+      "split": "test",
+      "coin_pose": [
+        0.1008,
+        0.1678
+      ],
+      "target_pose": [
+        0.0311,
+        0.1993
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "CAPTURE_FAIL",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c1_+0.01_+0.02",
+      "curriculum_stage": "c1",
+      "split": "train",
+      "coin_pose": [
+        0.0858,
+        0.1628
+      ],
+      "target_pose": [
+        0.0161,
+        0.1943
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "stochastic_regen"
+    },
+    {
+      "scenario_id": "bank_c1_-0.01_+0.00",
+      "curriculum_stage": "c1",
+      "split": "train",
+      "coin_pose": [
+        0.0658,
+        0.1428
+      ],
+      "target_pose": [
+        -0.0039,
+        0.1743
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "stochastic_regen"
+    },
+    {
+      "scenario_id": "bank_c1_-0.01_+0.03",
+      "curriculum_stage": "c1",
+      "split": "train",
+      "coin_pose": [
+        0.0658,
+        0.1728
+      ],
+      "target_pose": [
+        -0.0039,
+        0.2043
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 126.71,
+      "min_dtz_mm": 75.48,
+      "max_coin_progress_mm": 21.5,
+      "gap_closed_final": -0.705,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.1453,
+      "lost_before_release": 39,
+      "release_step": 47,
+      "residual_class": "CONTACT_LOSS_DURING_DELIVERY",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c1_-0.03_+0.02",
+      "curriculum_stage": "c1",
+      "split": "train",
+      "coin_pose": [
+        0.0458,
+        0.1628
+      ],
+      "target_pose": [
+        -0.0239,
+        0.1943
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 160.71,
+      "min_dtz_mm": 79.01,
+      "max_coin_progress_mm": -73.3,
+      "gap_closed_final": -1.079,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.1833,
+      "lost_before_release": 44,
+      "release_step": 49,
+      "residual_class": "CONTACT_LOSS_DURING_DELIVERY",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c1_-0.03_+0.03",
+      "curriculum_stage": "c1",
+      "split": "train",
+      "coin_pose": [
+        0.0458,
+        0.1728
+      ],
+      "target_pose": [
+        -0.0239,
+        0.2043
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 159.34,
+      "min_dtz_mm": 77.77,
+      "max_coin_progress_mm": -33.4,
+      "gap_closed_final": -1.088,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.1773,
+      "lost_before_release": 10,
+      "release_step": 15,
+      "residual_class": "CONTACT_LOSS_DURING_DELIVERY",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c2_+0.015_+0.015",
+      "curriculum_stage": "c2",
+      "split": "train",
+      "coin_pose": [
+        0.0908,
+        0.1578
+      ],
+      "target_pose": [
+        0.0211,
+        0.1893
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "stochastic_regen"
+    },
+    {
+      "scenario_id": "bank_c2_-0.015_+0.000",
+      "curriculum_stage": "c2",
+      "split": "train",
+      "coin_pose": [
+        0.0608,
+        0.1428
+      ],
+      "target_pose": [
+        -0.0089,
+        0.1743
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": false,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE",
+      "kinetic_reached": null,
+      "min_dtz_mm": null,
+      "final_dtz_mm": null,
+      "max_coin_progress_mm": null,
+      "gap_closed_final": null,
+      "zone_entry_step": null,
+      "max_k6_dwell": null,
+      "entry_speed": null,
+      "residual_class": "CAPTURE_SUPPORT_FAILURE",
+      "capture_subtype": "stochastic_regen"
+    },
+    {
+      "scenario_id": "bank_c2_-0.015_+0.015",
+      "curriculum_stage": "c2",
+      "split": "train",
+      "coin_pose": [
+        0.0608,
+        0.1578
+      ],
+      "target_pose": [
+        -0.0089,
+        0.1893
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 70.52,
+      "min_dtz_mm": 70.52,
+      "max_coin_progress_mm": 35.2,
+      "gap_closed_final": 0.319,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.0998,
+      "lost_before_release": 0,
+      "release_step": 15,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c2_-0.015_+0.025",
+      "curriculum_stage": "c2",
+      "split": "train",
+      "coin_pose": [
+        0.0608,
+        0.1678
+      ],
+      "target_pose": [
+        -0.0089,
+        0.1993
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 48.01,
+      "min_dtz_mm": 48.01,
+      "max_coin_progress_mm": 32.2,
+      "gap_closed_final": 0.401,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.0,
+      "lost_before_release": 4,
+      "release_step": 8,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c2_-0.025_+0.015",
+      "curriculum_stage": "c2",
+      "split": "train",
+      "coin_pose": [
+        0.0508,
+        0.1578
+      ],
+      "target_pose": [
+        -0.0189,
+        0.1893
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 160.55,
+      "min_dtz_mm": 84.88,
+      "max_coin_progress_mm": -69.6,
+      "gap_closed_final": -0.962,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.3226,
+      "lost_before_release": 44,
+      "release_step": 49,
+      "residual_class": "CONTACT_LOSS_DURING_DELIVERY",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c2_-0.025_+0.025",
+      "curriculum_stage": "c2",
+      "split": "train",
+      "coin_pose": [
+        0.0508,
+        0.1678
+      ],
+      "target_pose": [
+        -0.0189,
+        0.1993
+      ],
+      "relative_target_vector": [
+        -0.0697,
+        0.0315
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 47.56,
+      "min_dtz_mm": 47.37,
+      "max_coin_progress_mm": 88.7,
+      "gap_closed_final": 0.385,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.1147,
+      "lost_before_release": 0,
+      "release_step": 17,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r5_a-45",
+      "curriculum_stage": "c3",
+      "split": "train",
+      "coin_pose": [
+        0.0758,
+        0.1428
+      ],
+      "target_pose": [
+        0.0581,
+        0.1896
+      ],
+      "relative_target_vector": [
+        -0.0177,
+        0.0468
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 31.14,
+      "min_dtz_mm": 31.14,
+      "max_coin_progress_mm": 24.4,
+      "gap_closed_final": 0.439,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.0,
+      "lost_before_release": 0,
+      "release_step": 11,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r6_a-45",
+      "curriculum_stage": "c3",
+      "split": "train",
+      "coin_pose": [
+        0.0758,
+        0.1428
+      ],
+      "target_pose": [
+        0.0546,
+        0.1989
+      ],
+      "relative_target_vector": [
+        -0.0212,
+        0.0561
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 42.26,
+      "min_dtz_mm": 42.26,
+      "max_coin_progress_mm": 22.9,
+      "gap_closed_final": 0.351,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.0,
+      "lost_before_release": 0,
+      "release_step": 18,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r7_a+15",
+      "curriculum_stage": "c3",
+      "split": "train",
+      "coin_pose": [
+        0.0758,
+        0.1428
+      ],
+      "target_pose": [
+        0.0067,
+        0.1541
+      ],
+      "relative_target_vector": [
+        -0.0691,
+        0.0113
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 22.36,
+      "min_dtz_mm": 22.36,
+      "max_coin_progress_mm": 61.4,
+      "gap_closed_final": 0.703,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.0,
+      "lost_before_release": 0,
+      "release_step": 8,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r7_a-45",
+      "curriculum_stage": "c3",
+      "split": "train",
+      "coin_pose": [
+        0.0758,
+        0.1428
+      ],
+      "target_pose": [
+        0.0511,
+        0.2083
+      ],
+      "relative_target_vector": [
+        -0.0247,
+        0.0655
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 38.89,
+      "min_dtz_mm": 38.89,
+      "max_coin_progress_mm": 37.0,
+      "gap_closed_final": 0.475,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.0,
+      "lost_before_release": 0,
+      "release_step": 19,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r9_a+15",
+      "curriculum_stage": "c3",
+      "split": "test",
+      "coin_pose": [
+        0.0758,
+        0.1428
+      ],
+      "target_pose": [
+        -0.013,
+        0.1574
+      ],
+      "relative_target_vector": [
+        -0.0888,
+        0.0146
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 35.2,
+      "min_dtz_mm": 35.2,
+      "max_coin_progress_mm": 68.1,
+      "gap_closed_final": 0.634,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.0,
+      "lost_before_release": 0,
+      "release_step": 8,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r9_a+30",
+      "curriculum_stage": "c3",
+      "split": "test",
+      "coin_pose": [
+        0.0758,
+        0.1428
+      ],
+      "target_pose": [
+        -0.0138,
+        0.1339
+      ],
+      "relative_target_vector": [
+        -0.0896,
+        -0.0089
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 40.86,
+      "min_dtz_mm": 40.86,
+      "max_coin_progress_mm": 57.9,
+      "gap_closed_final": 0.586,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.1408,
+      "lost_before_release": 0,
+      "release_step": 8,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r9_a-45",
+      "curriculum_stage": "c3",
+      "split": "dev",
+      "coin_pose": [
+        0.0758,
+        0.1428
+      ],
+      "target_pose": [
+        0.044,
+        0.227
+      ],
+      "relative_target_vector": [
+        -0.0318,
+        0.0842
+      ],
+      "certified_grasp": true,
+      "first_successful_restart": null,
+      "existing_failure_class": "DELIVERY_FAILURE_AFTER_VALID_GRASP",
+      "final_dtz_mm": 55.56,
+      "min_dtz_mm": 55.56,
+      "max_coin_progress_mm": 56.1,
+      "gap_closed_final": 0.415,
+      "kinetic_reached": true,
+      "max_k6_dwell": 0,
+      "zone_entry_step": null,
+      "entry_speed": 0.0,
+      "lost_before_release": 0,
+      "release_step": 14,
+      "residual_class": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "capture_subtype": ""
+    }
+  ],
+  "pilot": [
+    {
+      "scenario_id": "bank_c1_+0.01_+0.03",
+      "split": "dev",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c1_+0.03_+0.02",
+      "split": "test",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c1_+0.01_+0.02",
+      "split": "train",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "stochastic_regen"
+    },
+    {
+      "scenario_id": "bank_c1_-0.01_+0.00",
+      "split": "train",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "stochastic_regen"
+    },
+    {
+      "scenario_id": "bank_c1_-0.01_+0.03",
+      "split": "train",
+      "category": "CONTACT_LOSS_DURING_DELIVERY",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c1_-0.03_+0.02",
+      "split": "train",
+      "category": "CONTACT_LOSS_DURING_DELIVERY",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c1_-0.03_+0.03",
+      "split": "train",
+      "category": "CONTACT_LOSS_DURING_DELIVERY",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c2_-0.025_+0.015",
+      "split": "train",
+      "category": "CONTACT_LOSS_DURING_DELIVERY",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r9_a-45",
+      "split": "dev",
+      "category": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r9_a+15",
+      "split": "test",
+      "category": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r7_a+15",
+      "split": "train",
+      "category": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c2_-0.015_+0.015",
+      "split": "train",
+      "category": "INSUFFICIENT_TRANSPORT_PROGRESS",
+      "subtype": ""
+    }
+  ]
+}
