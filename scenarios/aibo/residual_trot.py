@@ -58,6 +58,8 @@ class ResidualTrotConfig:
     obs_mode: str = "flat"               # "flat" = 9-D vector (MLP) | "hypergraph" = (n_vertices, 4) per-vertex on the body's kinematic hypergraph (for signedkan/hsikan structure propagation)
     leg_hg_symmetric: bool = False       # leg_hypergraph mode: encode the LEFT/RIGHT symmetry axis in the hg signs
     gait_phase: str = "diag"             # base-gait phase pattern (GAIT_PHASES): "diag" (trot, asymmetric — default) | "bound" (front/back, instantaneously LEFT-RIGHT SYMMETRIC — the symmetric-scaffold test) | "pace" | "pronk"
+    swing_lift: float = 0.0              # >0: swing-gated knee lift = a REAL step (paw clears ~13 cm) instead of the ~2 cm sinusoidal shuffle. 0.40 + gait_freq 1.4 = visible stepping, upright, forward
+    gait_freq: float = 1.2               # gait clock frequency; 1.4 pairs with swing_lift for clean stepping
     mirror_augment: bool = False         # omni/flat: randomly present the LEFT-RIGHT-MIRRORED task each episode → a symmetry-preserved policy that reaches BOTH crab sides (breaks the symmetry-breaking one-sided optimum)
     residual_scale: float = 0.25         # bounded residual (coin-R8): a small correction over the gait
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
@@ -68,6 +70,20 @@ class ResidualTrotConfig:
     heading_mode: str = "arc"            # "arc" (default: skid-steer walk-and-arc — weak turning) | "turn_then_walk" (rotational-couple turn to face the goal, THEN walk — 5x the goal-reach)
     turn_rate: float = 1.0               # rotational-couple turn magnitude (turn_then_walk); ~47 deg/1000 steps, upright at 1.0
     turn_align_deg: float = 20.0         # turn_then_walk: turn until |heading error| within this, then walk
+    # --- structured stabilization representation (the DOF the leg/omni/phase modes lack) ---------------
+    # The fast rotational turn tips in ROLL (measured: roll diverges −48° while pitch stays small). The
+    # physical counters are a LOWER CoM (crouch = symmetric knee flexion) and a WIDER support polygon
+    # (widen = mirrored hip abduction) — DOF that exist at the joint level but no prior action space
+    # exposed. With a constant crouch+widen the turn stays upright at turn_rate 1.3 and reach jumps
+    # 0.14 → 0.86 (probed). These make the STABILIZED-turn scaffold (a=0); the "stab" residual mode then
+    # learns a STATE-DEPENDENT modulation (turn faster where stable, brace harder where tipping).
+    stab_crouch: float = 0.0             # constant symmetric knee flexion added while turning (lower CoM); ~0.5 stabilizes turn_rate 1.3
+    stab_widen: float = 0.0              # constant mirrored hip abduction while turning (wider stance); ~0.4 stabilizes; >0.5 over-widens
+    stab_lean: float = 0.0               # constant left/right knee-differential roll bias (lean into the turn); usually 0 at a=0
+    rate_res_scale: float = 0.4          # stab mode: bound on the learned turn-rate modulation (fraction of turn_rate)
+    crouch_res_scale: float = 0.3        # stab mode: bound on the learned crouch modulation
+    widen_res_scale: float = 0.2         # stab mode: bound on the learned stance-width modulation
+    lean_res_scale: float = 0.3          # stab mode: bound on the learned roll/lean modulation
     balance_w: float = 0.0               # reward weight on the foot-support balance entropy H_bal (0=off); dense stay-upright signal for FAST turning (H_bal≈1 weight spread over 4 feet, →0 tipping) — the movement/balance-grounded entropy
     stability_w: float = 0.0             # reward weight on the DYNAMIC stability margin (0=off): a ZMP-family PREDICTIVE signal — capture-point-in-support (translational) + low torso tilt-rate (rotational, the one that fires for spin-tipping); +1 stable, −1 about to tip (fires ~40 steps BEFORE the fall, unlike the reactive H_bal)
     max_steps: int = 800
@@ -113,15 +129,16 @@ class ResidualTrotEnv:
         if self.cfg.gait_phase not in GAIT_PHASES:
             raise ValueError(f"gait_phase must be one of {tuple(GAIT_PHASES)}; got {self.cfg.gait_phase!r}")
         self._phase_pat = GAIT_PHASES[self.cfg.gait_phase]        # per-leg gait phase (diag=asymmetric, bound=symmetric)
-        self._gait = SteeredTrotGait(phase=self._phase_pat)
-        self._turn_gait = RotationalTurnGait()                   # strong rotational-couple turn (turn_then_walk)
+        self._gait = SteeredTrotGait(phase=self._phase_pat, swing_lift=self.cfg.swing_lift,
+                                     freq=self.cfg.gait_freq)
+        self._turn_gait = RotationalTurnGait(swing_lift=self.cfg.swing_lift, freq=self.cfg.gait_freq)  # rotational-couple turn
         self._paw_bodies = [int(mujoco.mj_name2id(self._env.model, mujoco.mjtObj.mjOBJ_BODY, f"paw_{lg}"))
                             for lg in LEGS]                      # feet, for the balance (support) entropy
         self._gov = JointVelocityGovernor(v_max=self.cfg.v_max)
         self._rng = np.random.default_rng(self.seed)
         self._prev_dist = 0.0
         self._step_i = 0
-        _dims = {"leg": 12, "phase": 12, "steer": 2, "omni": 4}
+        _dims = {"leg": 12, "phase": 12, "steer": 2, "omni": 4, "stab": 4}
         act_dim = _dims[self.cfg.residual_mode]
         self.action_space = _Box(act_dim, seed=self.seed)
         if self.cfg.obs_mode == "hypergraph":
@@ -292,16 +309,52 @@ class ResidualTrotEnv:
         tilt_margin = float(np.tanh(1.5 * (1.5 - tilt_rate)))                       # +1 low rate (stable), −1 high
         return 0.5 * (cp_margin + tilt_margin)                                      # both must hold to be stable
 
-    def _base_gait_action(self, herr: float, pursuit: float, base_drive: float) -> np.ndarray:
+    #: per-leg (fl, fr, bl, br) left/right mirror sign — widen/lean map to opposite abduction/knee per side
+    _SIDE_SIGN = np.array([+1.0, -1.0, +1.0, -1.0])
+
+    def _stab_offset(self, crouch: float, widen: float, lean: float) -> np.ndarray:
+        """Structured stabilization offset (12-dim, [abduct, flex, knee] per leg) for the fast turn.
+
+        The measured tip is a ROLL divergence; the physical counters are a lower CoM and a wider base:
+        - ``crouch`` → symmetric knee flexion (all legs) — lowers the CoM, the dominant stabilizer;
+        - ``widen``  → mirrored hip abduction (left/right opposite) — widens the support polygon;
+        - ``lean``   → left/right knee-differential — a roll bias to lean into the turn.
+
+        This is the low-dim, physically-meaningful action representation the ``leg``/``omni``/``phase``
+        modes lack (raw targets, sinusoidal-only abduction). # Postconditions: 12-vector, before the
+        outer ``clip(base + off, ±1)``; zero offset when crouch = widen = lean = 0 (no scaffold change)."""
+        off = np.zeros(12)
+        for leg in range(4):
+            off[3 * leg + 2] += crouch + lean * self._SIDE_SIGN[leg]   # knee: crouch (sym) + roll bias (diff)
+            off[3 * leg + 0] += widen * self._SIDE_SIGN[leg]           # abduct: widen stance (mirror per side)
+        return off
+
+    def _base_gait_action(self, herr: float, pursuit: float, base_drive: float, *,
+                          crouch: float | None = None, widen: float | None = None,
+                          lean: float | None = None, rate_mult: float = 1.0) -> np.ndarray:
         """The scaffold's base action before the residual: the rotational-couple TURN toward the goal when
         ``heading_mode="turn_then_walk"`` and the heading error is still wide, else the forward trot. This
         is the goal-reaching turning fix (0.11 → 0.56 reach); ``"arc"`` (default) keeps the prior weak
-        skid-steer walk-and-arc. # Postconditions returns a governed ``(n_actions,)`` action in ``[-1, 1]``."""
+        skid-steer walk-and-arc.
+
+        The turn carries the structured stabilization offset (``crouch``/``widen``/``lean``, defaulting to
+        the ``stab_*`` config) so ``a = 0`` is the STABILIZED fast turn; ``rate_mult`` scales the turn rate
+        (the ``stab`` residual modulates both). Defaults reproduce the prior behaviour exactly (cfg stab_*
+        default 0, rate_mult 1). # Postconditions returns a governed ``(n_actions,)`` action in ``[-1, 1]``."""
         env = self._env
+        crouch = self.cfg.stab_crouch if crouch is None else crouch
+        widen = self.cfg.stab_widen if widen is None else widen
+        lean = self.cfg.stab_lean if lean is None else lean
         if self.cfg.heading_mode == "turn_then_walk" and abs(herr) > float(np.deg2rad(self.cfg.turn_align_deg)):
-            turn = float(np.sign(herr)) * self.cfg.turn_rate
-            return self._gov.govern(env, self._turn_gait.action(env, turn=turn))
-        return self._gov.govern(env, self._gait.action(env, yaw_cmd=pursuit, drive=base_drive))
+            turn = float(np.sign(herr)) * self.cfg.turn_rate * rate_mult
+            raw = self._turn_gait.action(env, turn=turn)
+            if crouch or widen or lean:                               # stabilize the fast turn (roll counter)
+                raw = np.clip(raw + self._stab_offset(crouch, widen, lean), -1.0, 1.0)
+            return self._gov.govern(env, raw)
+        raw = self._gait.action(env, yaw_cmd=pursuit, drive=base_drive)
+        if crouch or widen or lean:                                  # keep the brace through the walk-in too
+            raw = np.clip(raw + self._stab_offset(crouch, widen, lean), -1.0, 1.0)
+        return self._gov.govern(env, raw)
 
     def _base_drive(self, herr: float, dist: float) -> float:
         """Forward-drive command: 0 within the reach radius; else 1.0, capped to ``turn_drive`` while the
@@ -321,6 +374,9 @@ class ResidualTrotEnv:
         - ``phase``: a 12-dim residual GATED per leg by its trot phase (``phase_gates``) — it only acts
           on each leg in sync with that leg's stride, so it can bias differential stance thrust to
           steer while leaving the periodic limit cycle intact.
+        - ``stab`` : a 4-dim STRUCTURED residual ``(Δrate, Δcrouch, Δwiden, Δlean)`` that modulates the
+          fast turn's rate + the physical roll-stabilization DOF, state-dependently, around the
+          ``stab_*`` scaffold. The action representation the other modes lack (see ``_stab_offset``).
         """
         env = self._env
         dist = float(env.dist_to_goal())
@@ -328,7 +384,14 @@ class ResidualTrotEnv:
         pursuit = float(np.clip(1.1 * herr, -0.6, 0.6))
         base_drive = self._base_drive(herr, dist)
         r = np.clip(np.asarray(residual, dtype=np.float64), -1.0, 1.0)
-        if self.cfg.residual_mode == "steer":
+        if self.cfg.residual_mode == "stab":
+            rate_mult = 1.0 + self.cfg.rate_res_scale * float(r[0])           # turn faster where stable / ease off where tipping
+            crouch = self.cfg.stab_crouch + self.cfg.crouch_res_scale * float(r[1])
+            widen = self.cfg.stab_widen + self.cfg.widen_res_scale * float(r[2])
+            lean = self.cfg.stab_lean + self.cfg.lean_res_scale * float(r[3])
+            final = self._base_gait_action(herr, pursuit, base_drive, crouch=crouch, widen=widen,
+                                           lean=lean, rate_mult=rate_mult)   # already governed
+        elif self.cfg.residual_mode == "steer":
             yaw = float(np.clip(pursuit + self.cfg.yaw_res_scale * r[0], -0.6, 0.6))
             drive = float(np.clip(base_drive + self.cfg.drive_res_scale * r[1], 0.0, 1.5))
             final = self._gov.govern(env, self._gait.action(env, yaw_cmd=yaw, drive=drive))
