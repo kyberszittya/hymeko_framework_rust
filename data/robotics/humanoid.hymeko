@@ -25,6 +25,16 @@ humanoid: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geomet
 {
     world: meta_kinematics.kinematics.elements.frame {}
 
+    // === Anatomical joint limits (deg) — measured flex directions; prevents hyperextension / wrong-way bend ===
+    hip_flex_lim  { lower -120.0; upper 25.0;  effort 50.0; velocity 1.0; }   // forward flex (neg) / extension (pos)
+    knee_lim      { lower -5.0;   upper 150.0; effort 50.0; velocity 1.0; }   // flex (pos); no hyperextension
+    ankle_lim     { lower -40.0;  upper 40.0;  effort 50.0; velocity 1.0; }   // dorsi/plantar
+    hip_ab_lim    { lower -30.0;  upper 45.0;  effort 50.0; velocity 1.0; }   // abduction (X)
+    ankle_roll_lim{ lower -25.0;  upper 25.0;  effort 50.0; velocity 1.0; }
+    shoulder_lim  { lower -150.0; upper 60.0;  effort 50.0; velocity 1.0; }   // forward flex (neg) / extension (pos)
+    elbow_lim     { lower -150.0; upper 5.0;   effort 50.0; velocity 1.0; }   // flex (neg); no hyperextension
+    spine_lim     { lower -45.0;  upper 45.0;  effort 50.0; velocity 1.0; }
+
     body_color [0.25, 0.45, 0.85, 1.0];
     limb_color [0.85, 0.55, 0.20, 1.0];
     head_color [0.90, 0.80, 0.35, 1.0];
@@ -63,25 +73,25 @@ humanoid: meta_kinematics.kinematics.elements, meta_kinematics.kinematics.geomet
     }
 
     // === Trunk joints (sagittal) ===
-    @abdomen: meta_kinematics.kinematics.rev_joint { (+ pelvis [[0.0, 0.0, 0.05], [0.0,0.0,0.0]], - torso, - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @neck:    meta_kinematics.kinematics.rev_joint { (+ torso  [[0.0, 0.0, 0.24], [0.0,0.0,0.0]], - head,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @abdomen: meta_kinematics.kinematics.rev_joint { limit -> spine_lim; (+ pelvis [[0.0, 0.0, 0.05], [0.0,0.0,0.0]], - torso, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @neck:    meta_kinematics.kinematics.rev_joint { limit -> spine_lim; (+ torso  [[0.0, 0.0, 0.24], [0.0,0.0,0.0]], - head,  - meta_kinematics.kinematics.axes.AXIS_Y); }
 
     // === Leg joints (Vukobratović anthropomorphic): hip = abduction(X)+flexion(Y) via hip_ab
     //     coupler · knee(Y) · ankle = roll(X)+pitch(Y) via ank_rl coupler ===
-    @hip_l_ab:     meta_kinematics.kinematics.rev_joint { (+ pelvis  [[0.0,  0.09, -0.05], [0.0,0.0,0.0]], - hip_ab_l, - meta_kinematics.kinematics.axes.AXIS_X); }
-    @hip_l:        meta_kinematics.kinematics.rev_joint { (+ hip_ab_l [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - thigh_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @knee_l:       meta_kinematics.kinematics.rev_joint { (+ thigh_l [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - shin_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @ankle_l_roll: meta_kinematics.kinematics.rev_joint { (+ shin_l  [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - ank_rl_l, - meta_kinematics.kinematics.axes.AXIS_X); }
-    @ankle_l:      meta_kinematics.kinematics.rev_joint { (+ ank_rl_l [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - foot_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @hip_r_ab:     meta_kinematics.kinematics.rev_joint { (+ pelvis  [[0.0, -0.09, -0.05], [0.0,0.0,0.0]], - hip_ab_r, - meta_kinematics.kinematics.axes.AXIS_X); }
-    @hip_r:        meta_kinematics.kinematics.rev_joint { (+ hip_ab_r [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - thigh_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @knee_r:       meta_kinematics.kinematics.rev_joint { (+ thigh_r [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - shin_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @ankle_r_roll: meta_kinematics.kinematics.rev_joint { (+ shin_r  [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - ank_rl_r, - meta_kinematics.kinematics.axes.AXIS_X); }
-    @ankle_r:      meta_kinematics.kinematics.rev_joint { (+ ank_rl_r [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - foot_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @hip_l_ab:     meta_kinematics.kinematics.rev_joint { limit -> hip_ab_lim; (+ pelvis  [[0.0,  0.09, -0.05], [0.0,0.0,0.0]], - hip_ab_l, - meta_kinematics.kinematics.axes.AXIS_X); }
+    @hip_l:        meta_kinematics.kinematics.rev_joint { limit -> hip_flex_lim; (+ hip_ab_l [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - thigh_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @knee_l:       meta_kinematics.kinematics.rev_joint { limit -> knee_lim; (+ thigh_l [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - shin_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @ankle_l_roll: meta_kinematics.kinematics.rev_joint { limit -> ankle_roll_lim; (+ shin_l  [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - ank_rl_l, - meta_kinematics.kinematics.axes.AXIS_X); }
+    @ankle_l:      meta_kinematics.kinematics.rev_joint { limit -> ankle_lim; (+ ank_rl_l [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - foot_l,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @hip_r_ab:     meta_kinematics.kinematics.rev_joint { limit -> hip_ab_lim; (+ pelvis  [[0.0, -0.09, -0.05], [0.0,0.0,0.0]], - hip_ab_r, - meta_kinematics.kinematics.axes.AXIS_X); }
+    @hip_r:        meta_kinematics.kinematics.rev_joint { limit -> hip_flex_lim; (+ hip_ab_r [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - thigh_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @knee_r:       meta_kinematics.kinematics.rev_joint { limit -> knee_lim; (+ thigh_r [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - shin_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @ankle_r_roll: meta_kinematics.kinematics.rev_joint { limit -> ankle_roll_lim; (+ shin_r  [[0.0, 0.0, -0.34], [0.0,0.0,0.0]], - ank_rl_r, - meta_kinematics.kinematics.axes.AXIS_X); }
+    @ankle_r:      meta_kinematics.kinematics.rev_joint { limit -> ankle_lim; (+ ank_rl_r [[0.0, 0.0, 0.0], [0.0,0.0,0.0]], - foot_r,  - meta_kinematics.kinematics.axes.AXIS_Y); }
 
     // === Arm joints: shoulder (torso -> upper_arm) · elbow (upper_arm end -> forearm) ===
-    @shoulder_l: meta_kinematics.kinematics.rev_joint { (+ torso     [[0.0,  0.16, 0.20], [0.0,0.0,0.0]], - upper_arm_l, - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @elbow_l:    meta_kinematics.kinematics.rev_joint { (+ upper_arm_l [[0.0, 0.0, -0.28], [0.0,0.0,0.0]], - forearm_l,   - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @shoulder_r: meta_kinematics.kinematics.rev_joint { (+ torso     [[0.0, -0.16, 0.20], [0.0,0.0,0.0]], - upper_arm_r, - meta_kinematics.kinematics.axes.AXIS_Y); }
-    @elbow_r:    meta_kinematics.kinematics.rev_joint { (+ upper_arm_r [[0.0, 0.0, -0.28], [0.0,0.0,0.0]], - forearm_r,   - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @shoulder_l: meta_kinematics.kinematics.rev_joint { limit -> shoulder_lim; (+ torso     [[0.0,  0.16, 0.20], [0.0,0.0,0.0]], - upper_arm_l, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @elbow_l:    meta_kinematics.kinematics.rev_joint { limit -> elbow_lim; (+ upper_arm_l [[0.0, 0.0, -0.28], [0.0,0.0,0.0]], - forearm_l,   - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @shoulder_r: meta_kinematics.kinematics.rev_joint { limit -> shoulder_lim; (+ torso     [[0.0, -0.16, 0.20], [0.0,0.0,0.0]], - upper_arm_r, - meta_kinematics.kinematics.axes.AXIS_Y); }
+    @elbow_r:    meta_kinematics.kinematics.rev_joint { limit -> elbow_lim; (+ upper_arm_r [[0.0, 0.0, -0.28], [0.0,0.0,0.0]], - forearm_r,   - meta_kinematics.kinematics.axes.AXIS_Y); }
 }
