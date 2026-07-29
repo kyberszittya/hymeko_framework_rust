@@ -58,14 +58,15 @@ def _teacher_best(snap, solve_fn, restarts=RESTARTS, seed_offset=0):
     """Up to ``restarts`` restarts on the SAME snap; keep best by (k6, -min_dtz), early-exit on K6. A larger bounded
     restart budget converts CEM-search variance (fixed-grasp K6-rate p) into recovery: P(>=1 K6) = 1-(1-p)^restarts.
     ``seed_offset`` shifts the CEM seeds to sample a different realization (stability re-gate)."""
-    best = None
-    for s in range(seed_offset, seed_offset + restarts):
+    best, win = None, -1
+    for i, s in enumerate(range(seed_offset, seed_offset + restarts)):
         res = solve_fn(snap, s)
         if best is None or (res.k6, -res.min_dtz_mm) > (best.k6, -best.min_dtz_mm):
             best = res
         if res.k6:
+            win = i                                                   # 0-based restart index of the first K6
             break
-    return best
+    return best, win
 
 
 def run_one(rig, cfg, conf, obj, solve_fn, sid: str, split: str, restarts=RESTARTS, capture_seeds=3,
@@ -75,14 +76,14 @@ def run_one(rig, cfg, conf, obj, solve_fn, sid: str, split: str, restarts=RESTAR
     if snap is None:
         return {"scenario_id": sid, "split": split, "certified": False, "recovered": False, "note": "no certified grasp"}
     base = characterize_delivery(snap, rig["down"])
-    t = _teacher_best(snap, solve_fn, restarts, seed_offset)
+    t, winning_restart = _teacher_best(snap, solve_fn, restarts, seed_offset)
     m, e = t.measurements, t.energy
     return {
         "scenario_id": sid, "split": split, "certified": True, "capture_seed": cap_seed,
         "base_r2_k6": bool(base.k6), "base_r2_kinetic": bool(base.reaches_kinetic),
         "base_r2_dtz_mm": round(float(base.min_dtz_mm), 2),
         "teacher_k6": bool(t.k6), "teacher_dtz_mm": t.min_dtz_mm, "teacher_safe": bool(t.safe),
-        "recovered": bool(t.k6 and not base.k6), "theta": list(t.theta),
+        "recovered": bool(t.k6 and not base.k6), "theta": list(t.theta), "winning_restart": int(winning_restart),
         "coin_progress_mm": round(float(m.get("forward", 0.0)) * 1000, 1),
         "gap_closed": round(float(m.get("gap_closed", 0.0)), 3),
         "target_entry_speed": round(float(m.get("terminal_speed", 0.0)), 3),

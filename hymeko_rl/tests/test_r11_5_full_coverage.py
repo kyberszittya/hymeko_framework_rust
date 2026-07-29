@@ -3,9 +3,11 @@ from pathlib import Path
 
 from hymeko_rl.experiments.r11_5_full_coverage import (
     R11_4A_BANK,
+    _base_coverage_ok,
     _cclass,
     _count_by_class,
     _coverage_passed,
+    _coverage_verdict,
     bank_facts,
 )
 
@@ -28,6 +30,21 @@ def test_coverage_passed_predicate() -> None:
     assert _coverage_passed(46, cov_ok, sp, 1, True, True) is False              # a nudge-only K6
     assert _coverage_passed(46, cov_ok, sp, 0, False, True) is False             # safety regression
     assert _coverage_passed(46, cov_ok, sp, 0, True, False) is False             # incomplete energy
+
+
+def test_coverage_verdict_three_way() -> None:
+    """PASS / global-with-geometry-gap / insufficient — the far-C3 shortfall must NOT collapse to INSUFFICIENT."""
+    cov_ok = {"c0": 1.0, "c1": 0.6, "c2": 0.5, "c3": 0.7}
+    cov_gap = {**cov_ok, "c3": 0.4}                          # global fine, one hard class <50%
+    sp = {"train": 30, "dev": 2, "test": 1}
+    assert _coverage_verdict(46, cov_ok, sp, 0, True, True) == "R11_5_TARGET_CONDITIONED_DELIVERY_TEACHER_COVERAGE_PASS"
+    assert _coverage_verdict(46, cov_gap, sp, 0, True, True) == "R11_5_GLOBAL_COVERAGE_PASS_WITH_HARD_GEOMETRY_GAP"
+    assert _coverage_verdict(44, cov_ok, sp, 0, True, True) == "R11_5_TEACHER_COVERAGE_INSUFFICIENT"   # <45 overall
+    # a base-gate failure (no test-split recovery) is INSUFFICIENT even if per-class geometry is fine
+    assert _coverage_verdict(46, cov_ok, {"train": 30, "dev": 2, "test": 0}, 0, True, True) == "R11_5_TEACHER_COVERAGE_INSUFFICIENT"
+    # base-ok, but the ONLY shortfall being a class threshold routes to the geometry-gap verdict, never INSUFFICIENT
+    assert _base_coverage_ok(46, sp, 0, True, True) is True
+    assert _base_coverage_ok(44, sp, 0, True, True) is False
 
 
 def test_bank_facts_enumerates_the_51_failures_and_7_r2() -> None:
