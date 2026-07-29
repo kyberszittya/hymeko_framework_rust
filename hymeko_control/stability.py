@@ -64,6 +64,30 @@ def support_margin_weighted(data, zmp_xy: np.ndarray, bodies: "list[int]", *,
     return float(rad - float(np.hypot(*(zmp_xy - c))))
 
 
+def capture_point(model, data) -> np.ndarray:
+    """The LIPM capture point ``ξ = CoM_xy + CoM_vel_xy·√(CoM_z / g)`` — where the CoM would come to rest.
+
+    The translational capturability measure (Pratt/Koolen): if ``ξ`` is inside the support polygon the robot
+    can stop WITHOUT stepping (0-step capturable); if outside, it must step. # Postconditions ``(2,)``."""
+    g = float(-model.opt.gravity[2]) or 9.81
+    com = np.asarray(data.subtree_com[0])
+    vel = np.asarray(data.subtree_linvel[0])
+    return com[:2] + vel[:2] * float(np.sqrt(max(com[2], 1e-3) / g))
+
+
+def capturability_level(data, cp: np.ndarray, bodies: "list[int]",
+                        foot_half: "tuple[float, float]", max_step: float) -> "tuple[int, float, float]":
+    """Pratt/Koolen N-step capturability of the capture point ``cp``:
+    ``0`` = 0-step capturable (``cp`` in the support box: balance in place),
+    ``1`` = 1-step capturable (``cp`` in support ⊕ one step of reach ``max_step``: MUST step),
+    ``2`` = not capturable within one step (fall). # Postconditions returns ``(level, m0, m1)`` — the
+    signed margins to the 0-step and 1-step boundaries (``> 0`` = inside)."""
+    m0 = support_margin_box(data, cp, bodies, foot_half)
+    m1 = support_margin_box(data, cp, bodies, (foot_half[0] + max_step, foot_half[1] + max_step))
+    level = 0 if m0 > 0.0 else (1 if m1 > 0.0 else 2)
+    return level, m0, m1
+
+
 def zmp_support_certificate(name: str = "zmp_in_support") -> Certificate:
     """CIP-0 SAFETY certificate: the Vukobratović ZMP stays inside the support polygon throughout.
 
