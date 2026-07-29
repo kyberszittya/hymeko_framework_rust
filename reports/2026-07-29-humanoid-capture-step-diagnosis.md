@@ -57,3 +57,28 @@ reports/2026-07-29-humanoid-capture-step-diagnosis.md   NEW  (diagnostic; no con
 
 CORE.YAML: none. SIMULATION. No code shipped: a capture-point step controller cannot function while the
 action space yields 0 foot clearance — reporting the diagnosis instead (CLAUDE.md: no broken feature).
+
+## Addendum — the dynamic (Lyapunov-region) step, tested; root cause = the planted stance
+
+The step is not static: it passes through a temporarily-unstable state (ZMP leaves support, the CoM
+"falls" toward the stance foot to build momentum) but stays inside the **capturable / Lyapunov region**,
+then the swing foot catches it. Tested this **dynamically** (a lateral sway pulse to build CoM momentum,
+timed swing-foot lift, low posture stiffness) and with a direct Jacobian ``τ = Jᵀf``:
+
+- Dynamic sway + lift (posture-Kp 2–10, sway/lift forces to 300/250 N): **swing-foot rise +0.000 m**.
+- **Sanity check** — how far can the CoM even move laterally? A **220 N** lateral pelvis force shifts the
+  CoM only **0.039 m** (0.046 m even with *zero* posture PD, free joints); neither foot unloads or lifts;
+  the pelvis stays upright (the planted feet hold it). To unload one foot the CoM must reach ~0.09 m
+  (over the stance foot) — it gets halfway, stiffly.
+
+**Root cause:** the humanoid (34.6 kg, feet 0.18 m apart, 25 firm ground contacts, balance-tuned) is a
+very *stably-planted* double-support stance — excellent for the certified in-place balance, but too stiff
+to afford the **dynamic double→single-support weight transfer** a step requires. The double-support closed
+kinematic chain resists the lateral CoM travel; the chicken-and-egg (unload a foot ⇐ CoM over the other ⇐
+shift weight ⇐ unload) does not break under any tested excitation. The user's dynamic-Lyapunov framing is
+correct; **this model cannot execute it.**
+
+**Enabling a step is a first-class MODEL change** (per CLAUDE.md): a narrower initial stance (less CoM
+travel to unload), a lighter/taller build, or an explicit swing-phase / lateral-sway mechanism in the
+`.hymeko` — a deliberate design decision, not a control tweak. The capture-point target (part 2) is ready
+to drive it once the model affords the maneuver.
