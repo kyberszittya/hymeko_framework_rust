@@ -68,6 +68,7 @@ class ResidualTrotConfig:
     heading_mode: str = "arc"            # "arc" (default: skid-steer walk-and-arc — weak turning) | "turn_then_walk" (rotational-couple turn to face the goal, THEN walk — 5x the goal-reach)
     turn_rate: float = 1.0               # rotational-couple turn magnitude (turn_then_walk); ~47 deg/1000 steps, upright at 1.0
     turn_align_deg: float = 20.0         # turn_then_walk: turn until |heading error| within this, then walk
+    balance_w: float = 0.0               # reward weight on the foot-support balance entropy H_bal (0=off); dense stay-upright signal for FAST turning (H_bal≈1 weight spread over 4 feet, →0 tipping) — the movement/balance-grounded entropy
     max_steps: int = 800
     v_max: float = 8.0                   # motion-contract joint-speed cap
     progress_w: float = 12.0
@@ -113,6 +114,8 @@ class ResidualTrotEnv:
         self._phase_pat = GAIT_PHASES[self.cfg.gait_phase]        # per-leg gait phase (diag=asymmetric, bound=symmetric)
         self._gait = SteeredTrotGait(phase=self._phase_pat)
         self._turn_gait = RotationalTurnGait()                   # strong rotational-couple turn (turn_then_walk)
+        self._paw_bodies = [int(mujoco.mj_name2id(self._env.model, mujoco.mjtObj.mjOBJ_BODY, f"paw_{lg}"))
+                            for lg in LEGS]                      # feet, for the balance (support) entropy
         self._gov = JointVelocityGovernor(v_max=self.cfg.v_max)
         self._rng = np.random.default_rng(self.seed)
         self._prev_dist = 0.0
@@ -251,6 +254,19 @@ class ResidualTrotEnv:
         return np.array([0.5 * (1.0 + np.sin(ph + self._phase_pat[leg])) for leg in range(4)],
                         dtype=np.float64)
 
+    def foot_support_entropy(self) -> float:
+        """Balance entropy H_bal: normalized Shannon entropy of the per-foot ground-support distribution
+        (support ∝ how low each paw is). 1.0 = weight spread evenly over all 4 feet (balanced), →0 = weight
+        on one foot (tipping). The movement/balance-grounded entropy — cleanly flags tipping (measured
+        H≈1.0 upright, →0 when it falls). # Postconditions returns a float in ``[0, 1]``."""
+        h = np.array([float(self._env.data.xpos[b, 2]) for b in self._paw_bodies])
+        stance = np.maximum(0.0, 0.06 - h)                       # planted weight ~ how far below 6cm the foot is
+        total = float(stance.sum())
+        if total < 1e-8:
+            return 0.0                                           # all feet airborne → no support (degenerate)
+        p = stance / total
+        return float(-(p * np.log(p + 1e-8)).sum() / np.log(len(self._paw_bodies)))
+
     def _base_gait_action(self, herr: float, pursuit: float, base_drive: float) -> np.ndarray:
         """The scaffold's base action before the residual: the rotational-couple TURN toward the goal when
         ``heading_mode="turn_then_walk"`` and the heading error is still wide, else the forward trot. This
@@ -322,6 +338,8 @@ class ResidualTrotEnv:
         reward = (self.cfg.progress_w * progress
                   + self.cfg.heading_w * float(np.cos(herr))
                   - self.cfg.ctrl_w * float(np.sum(residual ** 2)))
+        if self.cfg.balance_w > 0.0:
+            reward += self.cfg.balance_w * self.foot_support_entropy()   # dense stay-upright signal (fast-turn)
         if reached:
             reward += self.cfg.reach_bonus
         if fell:
