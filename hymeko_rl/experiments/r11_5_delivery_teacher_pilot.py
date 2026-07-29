@@ -42,10 +42,11 @@ PILOTS = [
 ]
 
 
-def _certified_grasp_snap(rig, cfg, conf, obj, scen, capture_seeds=3):
+def _certified_grasp_snap(rig, cfg, conf, obj, scen, capture_seeds=3, seed_offset=0):
     """Regenerate a certified bilateral grasp for the scenario (the shared A/B input); None if none within the budget.
-    ``capture_seeds`` sets how many capture regens to try (a larger budget hedges the handoff-quality grasp variance)."""
-    for seed in range(capture_seeds):
+    ``capture_seeds`` sets how many capture regens to try (a larger budget hedges the handoff-quality grasp variance);
+    ``seed_offset`` samples a different realization (for the stability re-gate)."""
+    for seed in range(seed_offset, seed_offset + capture_seeds):
         home, coin = Z._home_with_coin(rig, scen.coin_xy)
         _r, rc = P._do_reach_and_capture(rig, scen, coin, home, cfg, conf, seed)
         if rc is not None and is_certified_grasp(rc.result.outcome, obj):
@@ -53,11 +54,12 @@ def _certified_grasp_snap(rig, cfg, conf, obj, scen, capture_seeds=3):
     return None, -1
 
 
-def _teacher_best(snap, solve_fn, restarts=RESTARTS):
+def _teacher_best(snap, solve_fn, restarts=RESTARTS, seed_offset=0):
     """Up to ``restarts`` restarts on the SAME snap; keep best by (k6, -min_dtz), early-exit on K6. A larger bounded
-    restart budget converts CEM-search variance (fixed-grasp K6-rate p) into recovery: P(>=1 K6) = 1-(1-p)^restarts."""
+    restart budget converts CEM-search variance (fixed-grasp K6-rate p) into recovery: P(>=1 K6) = 1-(1-p)^restarts.
+    ``seed_offset`` shifts the CEM seeds to sample a different realization (stability re-gate)."""
     best = None
-    for s in range(restarts):
+    for s in range(seed_offset, seed_offset + restarts):
         res = solve_fn(snap, s)
         if best is None or (res.k6, -res.min_dtz_mm) > (best.k6, -best.min_dtz_mm):
             best = res
@@ -66,13 +68,14 @@ def _teacher_best(snap, solve_fn, restarts=RESTARTS):
     return best
 
 
-def run_one(rig, cfg, conf, obj, solve_fn, sid: str, split: str, restarts=RESTARTS, capture_seeds=3) -> dict:
+def run_one(rig, cfg, conf, obj, solve_fn, sid: str, split: str, restarts=RESTARTS, capture_seeds=3,
+            seed_offset=0) -> dict:
     scen = next(s for s in build_bank_scenarios() if s.scenario_id == sid)
-    snap, cap_seed = _certified_grasp_snap(rig, cfg, conf, obj, scen, capture_seeds)
+    snap, cap_seed = _certified_grasp_snap(rig, cfg, conf, obj, scen, capture_seeds, seed_offset)
     if snap is None:
         return {"scenario_id": sid, "split": split, "certified": False, "recovered": False, "note": "no certified grasp"}
     base = characterize_delivery(snap, rig["down"])
-    t = _teacher_best(snap, solve_fn, restarts)
+    t = _teacher_best(snap, solve_fn, restarts, seed_offset)
     m, e = t.measurements, t.energy
     return {
         "scenario_id": sid, "split": split, "certified": True, "capture_seed": cap_seed,
@@ -116,6 +119,7 @@ def main() -> None:
     ap.add_argument("--settle", action="store_true", help="use the settle-coordinate spec (transport + settle_gain)")
     ap.add_argument("--restarts", type=int, default=RESTARTS, help="delivery CEM restarts per scenario (bounded budget R)")
     ap.add_argument("--capture-seeds", type=int, default=3, help="certified-grasp regen attempts (hedge handoff variance)")
+    ap.add_argument("--seed-offset", type=int, default=0, help="shift capture+CEM seeds for a different realization (stability re-gate)")
     args = ap.parse_args()
     rig = _rig()
     cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=160)
@@ -130,7 +134,7 @@ def main() -> None:
     with args.out.open("w", encoding="utf-8") as fh:
         for i, (sid, split) in enumerate(pilots, 1):
             t0 = time.perf_counter()
-            r = run_one(rig, cfg, conf, obj, solve_fn, sid, split, args.restarts, args.capture_seeds)
+            r = run_one(rig, cfg, conf, obj, solve_fn, sid, split, args.restarts, args.capture_seeds, args.seed_offset)
             fh.write(json.dumps(r) + "\n")
             fh.flush()
             rows.append(r)
