@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from scenarios.aibo.locomotion_gait import body_yaw, heading_error
 from scenarios.aibo.residual_trot import ResidualTrotConfig, ResidualTrotEnv
 
 _GRID = [(d, b) for d in (0.5, 0.7) for b in (0, 40, -40, 90, -90, 135, -135)]
@@ -88,6 +89,42 @@ def test_residual_is_a_bounded_modulation() -> None:
     env.reset(seed=3)
     d0b = [env.step(np.zeros(4, np.float32))[1] for _ in range(30)]
     assert np.allclose(d0, d0b)                           # a = 0 is deterministic (same scaffold)
+
+
+def _reach_heading(face_deg: float, bearing: float = 90.0) -> "float | None":
+    """Drive the a=0 scaffold to a wide goal; return |heading err| (deg) at the reach that COUNTS, or None."""
+    cfg = ResidualTrotConfig(residual_mode="stab", obs_mode="flat", heading_mode="turn_then_walk",
+                             turn_rate=1.3, stab_crouch=0.5, stab_widen=0.4,
+                             require_facing_deg=face_deg, max_steps=2400)
+    env = ResidualTrotEnv(cfg, seed=0)
+    e = env._env
+    e.reset(seed=505)
+    tx, ty = float(e.data.xpos[e.torso, 0]), float(e.data.xpos[e.torso, 1])
+    yaw = body_yaw(e)
+    b = np.deg2rad(bearing)
+    e.goal = np.array([tx + 0.6 * np.cos(yaw + b), ty + 0.6 * np.sin(yaw + b)], np.float32)
+    env._prev_dist = float(e.dist_to_goal())
+    for _ in range(2400):
+        _o, _r, _term, _t, info = env.step(np.zeros(4, np.float32))
+        if info["reached"]:
+            return abs(float(np.degrees(heading_error(e))))
+    return None
+
+
+def test_require_facing_rejects_backward_entry() -> None:
+    """The rotational-couple turn DRIFTS into wide goals BACKWARDS; require_facing makes success ALIGNED.
+
+    Position-only reach (default) counts a goal entered facing ~180°; with require_facing the reach that
+    counts is within the tolerance. This pins the 2026-07-30 finding (the turn goes in from behind)."""
+    h_pos = _reach_heading(0.0)                       # position-only: enters the wide goal backwards
+    assert h_pos is not None and h_pos > 90.0         # confirms the drift-in-backwards behaviour
+    h_fac = _reach_heading(40.0)                      # require facing: any reach that counts is aligned
+    assert h_fac is None or h_fac <= 40.0 + 1e-6
+
+
+def test_require_facing_default_off_is_position_only() -> None:
+    """Regression: require_facing_deg defaults to 0 → the prior position-only reach semantics are unchanged."""
+    assert ResidualTrotConfig().require_facing_deg == 0.0
 
 
 def test_existing_leg_mode_unchanged() -> None:

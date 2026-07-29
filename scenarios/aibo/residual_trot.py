@@ -65,6 +65,7 @@ class ResidualTrotConfig:
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
     drive_res_scale: float = 0.5         # steer mode: bound on the learned speed correction
     reach_radius: float = 0.12
+    require_facing_deg: float = 0.0      # 0 = position-only reach (back-compat). >0 = success needs |heading err| ≤ this AT reach (must FACE the goal, not drift into it backwards). The rotational-couple turn drifts around wide goals, so position-only "reach" let it enter goals facing ~180° (caught 2026-07-30) — this makes arriving ALIGNED the objective.
     turn_first_deg: float = 0.0          # if |heading error| exceeds this, cut forward drive to TURN IN PLACE toward the goal first (0 = off: walk-and-arc, which never faces wide-bearing goals)
     turn_drive: float = 0.15             # forward drive while turning in place (turn_first_deg > 0)
     heading_mode: str = "arc"            # "arc" (default: skid-steer walk-and-arc — weak turning) | "turn_then_walk" (rotational-couple turn to face the goal, THEN walk — 5x the goal-reach)
@@ -419,7 +420,8 @@ class ResidualTrotEnv:
         dist = float(self._env.dist_to_goal())
         upright = float(self._env.data.xmat[self._env.torso].reshape(3, 3)[2, 2])
         herr = float(heading_error(self._env))
-        reached = dist <= self.cfg.reach_radius
+        facing = self.cfg.require_facing_deg <= 0.0 or abs(herr) <= float(np.deg2rad(self.cfg.require_facing_deg))
+        reached = dist <= self.cfg.reach_radius and facing        # success needs to arrive FACING the goal, not drift in backwards
         fell = upright < self.cfg.fall_upright
         progress = self._prev_dist - dist
         self._prev_dist = dist
@@ -454,10 +456,19 @@ class ResidualTrotEnv:
         self._prev_dist = float(self._env.dist_to_goal())
         self._step_i = 0
         min_dist, min_up = self._prev_dist, 1.0
+        min_dist_facing = self._prev_dist                 # closest approach WHILE facing the goal (the real metric)
+        face_tol = float(np.deg2rad(self.cfg.require_facing_deg)) if self.cfg.require_facing_deg > 0.0 else None
+        reached = False
         for _ in range(horizon or self.cfg.max_steps):
             self._apply(act_fn(self._obs()))
-            min_dist = min(min_dist, float(self._env.dist_to_goal()))
+            d_now = float(self._env.dist_to_goal())
+            min_dist = min(min_dist, d_now)
             min_up = min(min_up, float(self._env.data.xmat[self._env.torso].reshape(3, 3)[2, 2]))
-            if float(self._env.dist_to_goal()) <= self.cfg.reach_radius:
+            facing = face_tol is None or abs(float(heading_error(self._env))) <= face_tol
+            if facing:
+                min_dist_facing = min(min_dist_facing, d_now)
+            if d_now <= self.cfg.reach_radius and facing:      # only an ALIGNED reach counts / stops the rollout
+                reached = True
                 break
-        return round(min_dist, 4), min_dist <= self.cfg.reach_radius, round(min_up, 3)
+        report = min_dist_facing if face_tol is not None else min_dist
+        return round(report, 4), reached, round(min_up, 3)

@@ -43,16 +43,37 @@ form of the same lever.
 3. **Checkpoint on the true objective.** The policy oscillates (peak then late-training collapse); the
    best-on-TEST-reach snapshot deploys the genuinely-best moment, not a proxy grid's.
 
+## Correction — "it goes in from behind" (the position-only reach was too lenient)
+
+The reach metric was position-only (`dist ≤ radius`). The rotational-couple turn **drifts** (it translates
+while spinning), so on wide bearings the AIBO **entered the goal facing ~180°** — measured: **10/10 reached
+goals at |heading| > 90° (≈ ±175°)**, and the a=0 scaffold does it too (167–168° at bearing 90/135). It
+drifts a spiral into the goal rather than turning to face it and walking in.
+
+Fix (config-gated, default off = back-compat): `require_facing_deg` — success needs `dist ≤ radius` **AND**
+`|heading err| ≤ tol`; `heading_w` raised so facing is a real objective. Findings under it:
+
+- The AIBO **does** eventually arrive within tolerance, but at the **edge** (~36–40°, side-on, ~500–1000
+  steps later than the first backward pass) — not a clean straight-on (0°) approach. So the facing
+  requirement turns **~180° (backwards) → ~40° (side-on)**, a real improvement, but a clean approach is
+  not reachable with this gait: the rotational-couple **drift is a gait-level limitation** (a non-drifting
+  turn primitive is the follow-up, not an RL/reward fix).
+- **Honest re-scoring of the RL claim:** the RL's 0.857 edge was **partly on backward reaches** the
+  position-only metric allowed. Under the honest facing metric the RL **ties the scaffold (0.786, beats
+  0/2)** — it no longer *beats* it. So: the **representation is the real, robust win** (0.5 → 0.786,
+  upright); the RL "beats scaffold" result was **metric-lenient** and does not survive the facing
+  requirement. Kept as an honest negative on the RL edge, not a retraction of the representation.
+
 ## Honest scope
 
-- The RL's 0.857 **equals the best hand-tuned constant's ceiling** on this fixed grid — RL *matches* it and
-  *reliably beats the deployed scaffold* (+1 bearing, 2/4 seeds, ties on 2/4, never worse), but does not
-  *exceed* the constant ceiling here. Its value: automatic discovery (vs hand-tuning) + state-dependence
-  (robustness upside, untested on harder/varied tasks).
-- **The representation is the headline** (0.5 → 0.786); the RL is the validating confirmation that a
-  correct action space turns the same learner from −0.11 (0.389) to +0.07 (0.857) vs the scaffold.
-- SIMULATION only. 4 seeds; late-training instability is a real open item (the anchor slows but doesn't
-  prevent the drift — a stronger anchor schedule or TD3 is the follow-up).
+- **The representation is the headline and the durable result** (0.5 → 0.786, upright, and the double
+  dissociation that the same learner goes 0.389→0.857 by action space). The RL-*beats*-scaffold claim is
+  **withdrawn** under the facing metric (RL ties at 0.786); the RL's role is the confirmation that the
+  right action space is what matters, not that RL exceeds a good scaffold here.
+- The **backward-entry** the position-only reach masked is a genuine **gait-level drift** limitation; the
+  facing requirement makes success honest (side-on ~40°, not backward ~180°) but a clean face-and-approach
+  needs a non-drifting turn.
+- SIMULATION only. 4 seeds; late-training instability + the drift-limited approach are the open items.
 
 ## Files touched
 

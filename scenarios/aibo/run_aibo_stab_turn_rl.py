@@ -32,17 +32,22 @@ _VAL = [(0.6, 90), (0.6, -90), (0.6, 135), (0.6, -135)]                         
 _HORIZON = 2400
 
 
-def _cfg(balance_w: float = 0.0, stability_w: float = 0.0) -> ResidualTrotConfig:
+def _cfg(balance_w: float = 0.0, stability_w: float = 0.0, require_facing_deg: float = 40.0) -> ResidualTrotConfig:
     """The STABILIZED fast-turn scaffold (a = 0 ≈ 0.79 reach, upright) + the stab residual over it.
 
     ``balance_w``/``stability_w`` default to 0: the structured representation ALREADY keeps the scaffold
     upright, so the dense per-step stay-upright reward (which the broken leg-mode needed) only creates a
-    survive-without-reaching optimum here — it must not drown the sparse reach bonus. Progress + reach
-    are the aligned objective."""
+    survive-without-reaching optimum here — it must not drown the sparse reach bonus.
+
+    ``require_facing_deg`` (default 40): success needs to arrive FACING the goal, not drift into it
+    backwards — the rotational-couple turn drifts, so position-only reach let both scaffold and RL enter
+    wide goals at ~180° (caught 2026-07-30). ``heading_w`` is raised so facing is a real objective, not a
+    weak per-step nudge drowned by progress."""
     return ResidualTrotConfig(
         residual_mode="stab", obs_mode="flat", heading_mode="turn_then_walk",
         turn_rate=1.3, stab_crouch=0.5, stab_widen=0.4,           # the validated stabilized scaffold
         balance_w=balance_w, stability_w=stability_w,
+        require_facing_deg=require_facing_deg, heading_w=2.5,     # arrive ALIGNED, not backwards
         bearing_deg=135.0, dist_lo=0.5, dist_hi=0.7, max_steps=1600)
 
 
