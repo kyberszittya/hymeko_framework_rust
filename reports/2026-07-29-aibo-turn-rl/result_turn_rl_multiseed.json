@@ -1,0 +1,1410 @@
+{
+  "scaffold_reach": 0.5,
+  "n_seeds": 6,
+  "steps": 25000,
+  "aggregate": {
+    "mlp": {
+      "median_reach": 0.444,
+      "max_reach": 0.556,
+      "reaches": [
+        0.389,
+        0.444,
+        0.444,
+        0.5,
+        0.556,
+        0.444
+      ],
+      "beats_scaffold_seeds": 1
+    },
+    "hsikan": {
+      "median_reach": 0.4445,
+      "max_reach": 0.556,
+      "reaches": [
+        0.389,
+        0.333,
+        0.556,
+        0.5,
+        0.5,
+        0.222
+      ],
+      "beats_scaffold_seeds": 1
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "mlp": {
+        "reach": 0.389,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.14,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.171,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.256,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.329,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.347,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.197,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.185,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.419,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.349,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.53,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.438,
+            "reached": false
+          }
+        ]
+      },
+      "hsikan": {
+        "reach": 0.389,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.193,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.125,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.306,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.355,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.153,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.284,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.132,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.354,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.252,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.478,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.435,
+            "reached": false
+          }
+        ]
+      }
+    },
+    {
+      "seed": 1,
+      "mlp": {
+        "reach": 0.444,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.204,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.287,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.482,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.467,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.426,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.194,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.356,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.503,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.48,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.666,
+            "reached": false
+          }
+        ]
+      },
+      "hsikan": {
+        "reach": 0.333,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.154,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.165,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.197,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.292,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.382,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.29,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.236,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.453,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.364,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.446,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.488,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.483,
+            "reached": false
+          }
+        ]
+      }
+    },
+    {
+      "seed": 2,
+      "mlp": {
+        "reach": 0.444,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.181,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.143,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.291,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.369,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.121,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.124,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.289,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.421,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.477,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.453,
+            "reached": false
+          }
+        ]
+      },
+      "hsikan": {
+        "reach": 0.556,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.201,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.297,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.342,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.206,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.406,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.351,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.478,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.432,
+            "reached": false
+          }
+        ]
+      }
+    },
+    {
+      "seed": 3,
+      "mlp": {
+        "reach": 0.5,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.339,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.44,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.441,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.152,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.207,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.261,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.502,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.632,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.653,
+            "reached": false
+          }
+        ]
+      },
+      "hsikan": {
+        "reach": 0.5,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.201,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.229,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.389,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.34,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.266,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.425,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.461,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.397,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.543,
+            "reached": false
+          }
+        ]
+      }
+    },
+    {
+      "seed": 4,
+      "mlp": {
+        "reach": 0.556,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.257,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.297,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.35,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.126,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.29,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.415,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.48,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.441,
+            "reached": false
+          }
+        ]
+      },
+      "hsikan": {
+        "reach": 0.5,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.177,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.303,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.36,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.395,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.198,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.295,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.412,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.488,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.447,
+            "reached": false
+          }
+        ]
+      }
+    },
+    {
+      "seed": 5,
+      "mlp": {
+        "reach": 0.444,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.205,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.195,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.187,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.35,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.412,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.22,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.118,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.275,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.416,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.529,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.482,
+            "reached": false
+          }
+        ]
+      },
+      "hsikan": {
+        "reach": 0.222,
+        "per_goal": [
+          {
+            "dist": 0.5,
+            "bearing": 0,
+            "min_dist": 0.259,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": -20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.5,
+            "bearing": 40,
+            "min_dist": 0.139,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -40,
+            "min_dist": 0.184,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 90,
+            "min_dist": 0.146,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -90,
+            "min_dist": 0.338,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": 135,
+            "min_dist": 0.341,
+            "reached": false
+          },
+          {
+            "dist": 0.5,
+            "bearing": -135,
+            "min_dist": 0.325,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 0,
+            "min_dist": 0.56,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 20,
+            "min_dist": 0.171,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -20,
+            "min_dist": 0.119,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 40,
+            "min_dist": 0.384,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -40,
+            "min_dist": 0.12,
+            "reached": true
+          },
+          {
+            "dist": 0.7,
+            "bearing": 90,
+            "min_dist": 0.401,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -90,
+            "min_dist": 0.67,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": 135,
+            "min_dist": 0.505,
+            "reached": false
+          },
+          {
+            "dist": 0.7,
+            "bearing": -135,
+            "min_dist": 0.589,
+            "reached": false
+          }
+        ]
+      }
+    }
+  ],
+  "note": "SIMULATION. Bounded phase-residual over turn_then_walk, wide bearings (+-135). MLP (flat) vs HSiKAN (signedkan/33-vtx body-hg, pooled). beats_scaffold_seeds = the ceiling test."
+}

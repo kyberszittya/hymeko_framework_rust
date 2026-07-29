@@ -47,6 +47,27 @@ here. Across the whole AIBO campaign the robust finding stands: **HSiKAN ≈ MLP
 the structural prior neither helps the crab (simple push) nor the turn (coordination), and the leverage
 was always in the *mechanism / action space* (the rotational couple), not the policy class.
 
+## Ceiling test (6 seeds) — the "HSiKAN uniquely beats the scaffold" hint was seed noise
+
+The 3-seed run had HSiKAN's best (0.556) as the *only* run to exceed the 0.50 scaffold (MLP max 0.444) —
+a genuine-looking ceiling signal, worth testing. Rerun at **6 seeds**, saving checkpoints + the
+`beats_scaffold` count:
+
+| | reaches (6 seeds) | median | max | beats scaffold |
+|---|---|---|---|---|
+| MLP | 0.389, 0.444, 0.444, 0.5, **0.556**, 0.444 | 0.444 | 0.556 | **1/6** |
+| HSiKAN | 0.389, 0.333, **0.556**, 0.5, 0.5, 0.222 | 0.444 | 0.556 | **1/6** |
+
+**The hint dissolved.** With more seeds the MLP *also* reaches 0.556 and beats the scaffold (seed 4) — so
+"HSiKAN uniquely exceeds the scaffold" was a 3-seed artifact. Both beat it **exactly 1/6**, identical
+median (0.444) and max (0.556); HSiKAN is if anything **more variable** (worst 0.222 vs MLP 0.389).
+
+**Winner analysis — the clincher.** The two 0.556 winners (HSiKAN seed 2, MLP seed 4) reach the **same
+goals**: both *gain* exactly (90°, 0.5) and (−20°, 0.7) — the scaffold's near-misses (90° sat at 0.158,
+just over the 0.12 threshold) — and each *loses* one far goal (40°/−40° at 0.7). The HSiKAN winner does
+**nothing structurally different** from the MLP winner; both just nudge the same near-misses over the line
+at the cost of a far goal. No structural mechanism, same trade, same goals.
+
 ## Honest caveats
 
 3 seeds (below the repo's 5-iteration bar) — but the qualitative reading (tie; residual ≤ scaffold) is
