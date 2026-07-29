@@ -42,9 +42,10 @@ PILOTS = [
 ]
 
 
-def _certified_grasp_snap(rig, cfg, conf, obj, scen):
-    """Regenerate a certified bilateral grasp for the scenario (the shared A/B input); None if none within the budget."""
-    for seed in range(3):
+def _certified_grasp_snap(rig, cfg, conf, obj, scen, capture_seeds=3):
+    """Regenerate a certified bilateral grasp for the scenario (the shared A/B input); None if none within the budget.
+    ``capture_seeds`` sets how many capture regens to try (a larger budget hedges the handoff-quality grasp variance)."""
+    for seed in range(capture_seeds):
         home, coin = Z._home_with_coin(rig, scen.coin_xy)
         _r, rc = P._do_reach_and_capture(rig, scen, coin, home, cfg, conf, seed)
         if rc is not None and is_certified_grasp(rc.result.outcome, obj):
@@ -52,10 +53,11 @@ def _certified_grasp_snap(rig, cfg, conf, obj, scen):
     return None, -1
 
 
-def _teacher_best(snap, solve_fn):
-    """Up to RESTARTS restarts on the SAME snap; keep best by (k6, -min_dtz), early-exit on K6."""
+def _teacher_best(snap, solve_fn, restarts=RESTARTS):
+    """Up to ``restarts`` restarts on the SAME snap; keep best by (k6, -min_dtz), early-exit on K6. A larger bounded
+    restart budget converts CEM-search variance (fixed-grasp K6-rate p) into recovery: P(>=1 K6) = 1-(1-p)^restarts."""
     best = None
-    for s in range(RESTARTS):
+    for s in range(restarts):
         res = solve_fn(snap, s)
         if best is None or (res.k6, -res.min_dtz_mm) > (best.k6, -best.min_dtz_mm):
             best = res
@@ -64,13 +66,13 @@ def _teacher_best(snap, solve_fn):
     return best
 
 
-def run_one(rig, cfg, conf, obj, solve_fn, sid: str, split: str) -> dict:
+def run_one(rig, cfg, conf, obj, solve_fn, sid: str, split: str, restarts=RESTARTS, capture_seeds=3) -> dict:
     scen = next(s for s in build_bank_scenarios() if s.scenario_id == sid)
-    snap, cap_seed = _certified_grasp_snap(rig, cfg, conf, obj, scen)
+    snap, cap_seed = _certified_grasp_snap(rig, cfg, conf, obj, scen, capture_seeds)
     if snap is None:
         return {"scenario_id": sid, "split": split, "certified": False, "recovered": False, "note": "no certified grasp"}
     base = characterize_delivery(snap, rig["down"])
-    t = _teacher_best(snap, solve_fn)
+    t = _teacher_best(snap, solve_fn, restarts)
     m, e = t.measurements, t.energy
     return {
         "scenario_id": sid, "split": split, "certified": True, "capture_seed": cap_seed,
@@ -112,6 +114,8 @@ def main() -> None:
     ap.add_argument("--offset", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0, help="0 = all 12 pilots")
     ap.add_argument("--settle", action="store_true", help="use the settle-coordinate spec (transport + settle_gain)")
+    ap.add_argument("--restarts", type=int, default=RESTARTS, help="delivery CEM restarts per scenario (bounded budget R)")
+    ap.add_argument("--capture-seeds", type=int, default=3, help="certified-grasp regen attempts (hedge handoff variance)")
     args = ap.parse_args()
     rig = _rig()
     cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=160)
@@ -126,7 +130,7 @@ def main() -> None:
     with args.out.open("w", encoding="utf-8") as fh:
         for i, (sid, split) in enumerate(pilots, 1):
             t0 = time.perf_counter()
-            r = run_one(rig, cfg, conf, obj, solve_fn, sid, split)
+            r = run_one(rig, cfg, conf, obj, solve_fn, sid, split, args.restarts, args.capture_seeds)
             fh.write(json.dumps(r) + "\n")
             fh.flush()
             rows.append(r)
