@@ -39,9 +39,13 @@ class FootstepConfig:
     residual_xy: float = 0.05       # action -> foothold residual scale (m), bounded
     forward_stride: float = 0.0     # >0: the nominal foothold ADVANCES +x each step (forward-walking scaffold)
     w_forward: float = 0.0          # reward weight on forward progress (+x pelvis displacement per step)
+    forward_cap: float = 0.05       # per-step forward reward is CAPPED here (m) — a single lunge/fall can't game it
+    fall_penalty: float = 5.0       # penalty on a fall; large enough that lunging-into-a-fall never pays
     max_footsteps: int = 80         # episode length in footsteps
     fall_uprightness: float = 0.55
     fall_pelvis_z: float = 0.55
+    model_src: str = "humanoid.hymeko"   # "humanoid_toe.hymeko" = the articulated-toe (push-off) model
+    toe_off: float = 0.0            # scripted toe-off torque (N·m) on the stance toe during swing (push-off); needs the toe model
 
 
 class HumanoidFootstepEnv:
@@ -54,11 +58,17 @@ class HumanoidFootstepEnv:
 
     def __init__(self, cfg: FootstepConfig | None = None, *, seed: int = 0) -> None:
         self.cfg = cfg or FootstepConfig()
-        self._be = HumanoidBalanceEnv(BalanceConfig(perturb_lo=0.0, perturb_hi=0.0), seed=seed)
+        self._be = HumanoidBalanceEnv(
+            BalanceConfig(perturb_lo=0.0, perturb_hi=0.0, model_src=self.cfg.model_src), seed=seed)
         self.model, self.data = self._be.model, self._be.data
         self._mj = mujoco
         self.wbc = WholeBodyController(self.model, self.data, self._be._act_dof, "base")
         self._fl, self._fr, self._pel = self._be._fl, self._be._fr, self._be._pelvis
+        self._toe_act = {}                                 # 'L'/'R' -> index (in act_dof) of that foot's toe joint
+        for side, jn in (("L", "toe_flex_l"), ("R", "toe_flex_r")):
+            jid = int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, jn))
+            if jid >= 0 and int(self.model.jnt_dofadr[jid]) in self._be._act_dof:
+                self._toe_act[side] = self._be._act_dof.index(int(self.model.jnt_dofadr[jid]))
         self._q0 = self._be._q0j.copy()
         self._act_q = self._be._act_qadr
         self._dt = float(self.model.opt.timestep)
@@ -113,7 +123,9 @@ class HumanoidFootstepEnv:
         self._t = 0
         return self._obs(), {}
 
-    def _tick(self, contacts, acc_com, swing_task, force_cost=None):
+    _tick_cb = None                                        # optional callable(env) run after each WBC tick
+
+    def _tick(self, contacts, acc_com, swing_task, force_cost=None, extra_tau=None):
         d = self.data
         _jp, jr = self.wbc.body_jacobian(self._pel)
         acc_pel = 140.0 * self.wbc.orientation_error(d.xmat[self._pel].reshape(3, 3), self._pelR0) \
@@ -123,8 +135,13 @@ class HumanoidFootstepEnv:
         if swing_task is not None:
             tasks.insert(1, swing_task)
         tau = self.wbc.solve(contacts, tasks, force_cost=force_cost)
+        if extra_tau is not None:                          # e.g. a scripted toe-off push-off torque
+            for i, t in extra_tau.items():
+                tau[i] += t
         d.ctrl[:] = np.clip(tau, -150.0, 150.0)
         mujoco.mj_step(self.model, d)
+        if self._tick_cb is not None:                      # optional per-tick hook (rendering, logging)
+            self._tick_cb(self)
 
     def _dcm_com_accel(self, r_anchor: np.ndarray, s_offset: np.ndarray, t: float) -> np.ndarray:
         """DCM tracking of the nominal periodic reference ``ξ_ref = r_anchor + s·e^{ωt}`` (Englsberger law),
@@ -176,7 +193,10 @@ class HumanoidFootstepEnv:
                 fpos = np.asarray(self.data.xpos[swing_b])
                 fvel = jp_sw @ np.asarray(self.data.qvel)
                 acc_sw = 600.0 * (np.array([xt, yt, zt]) - fpos) - 48.0 * fvel
-                self._tick([stance_b], acc_com, Task(jp_sw, acc_sw, 110.0))
+                extra = None
+                if cfg.toe_off != 0.0 and self._stance in self._toe_act:   # toe-off push-off on the stance toe
+                    extra = {self._toe_act[self._stance]: cfg.toe_off * float(np.sin(np.pi * ph))}
+                self._tick([stance_b], acc_com, Task(jp_sw, acc_sw, 110.0), extra_tau=extra)
             if self._be._com_sig()["uprightness"] < cfg.fall_uprightness:
                 fell = True
                 break
@@ -189,7 +209,9 @@ class HumanoidFootstepEnv:
         xi = self._dcm()
         centre_off = float(abs(xi[1]))                     # DCM LATERAL distance from the walking centre
         fwd = float(self.data.xpos[self._pel, 0]) - pel_x0   # forward (+x) pelvis progress this footstep
-        reward = 1.0 - 2.0 * centre_off - 0.01 * float(a @ a) + cfg.w_forward * fwd - (5.0 if fell else 0.0)
+        fwd_r = float(np.clip(fwd, -cfg.forward_cap, cfg.forward_cap))   # capped: a single lunge/fall can't game it
+        reward = (1.0 - 2.0 * centre_off - 0.01 * float(a @ a)
+                  + cfg.w_forward * fwd_r - (cfg.fall_penalty if fell else 0.0))
         done = fell
         trunc = self._t >= cfg.max_footsteps
         return self._obs(), float(reward), bool(done), bool(trunc), {

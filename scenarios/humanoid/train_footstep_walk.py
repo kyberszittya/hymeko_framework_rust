@@ -24,9 +24,14 @@ import numpy as np
 
 from scenarios.humanoid.footstep_env import FootstepConfig, HumanoidFootstepEnv
 
-def _cfg(fwd_stride: float, w_forward: float, max_footsteps: int) -> FootstepConfig:
+def _cfg(fwd_stride: float, w_forward: float, max_footsteps: int, fall_penalty: float = 25.0,
+         model_src: str = "humanoid.hymeko", toe_off: float = 0.0) -> FootstepConfig:
+    # heavy fall penalty + the per-step forward cap (in FootstepConfig) => the policy must walk forward
+    # SUSTAINABLY, not lunge into a terminal fall (which gamed the earlier reward). model_src/toe_off select
+    # the articulated-toe (push-off) model + a scripted toe-off.
     return FootstepConfig(max_footsteps=max_footsteps, forward_stride=fwd_stride,
-                          w_forward=w_forward, residual_xy=0.06)
+                          w_forward=w_forward, residual_xy=0.06, fall_penalty=fall_penalty,
+                          model_src=model_src, toe_off=toe_off)
 
 
 def _dim(obs_dim: int) -> int:
@@ -106,10 +111,13 @@ def main() -> None:
     ap.add_argument("--w_forward", type=float, default=float(os.environ.get("HYMEKO_W_FORWARD", "45.0")))
     ap.add_argument("--max_footsteps", type=int, default=60)
     ap.add_argument("--out", type=str, default=os.environ.get("HYMEKO_OUT", "experiments/humanoid_fwalk"))
+    ap.add_argument("--model_src", type=str, default=os.environ.get("HYMEKO_MODEL", "humanoid.hymeko"))
+    ap.add_argument("--toe_off", type=float, default=float(os.environ.get("HYMEKO_TOE_OFF", "0.0")))
     ap.add_argument("--render", action="store_true")
     ap.add_argument("--policy", type=str, default="")
     args = ap.parse_args()
-    cfg = _cfg(args.fwd_stride, args.w_forward, args.max_footsteps)
+    cfg = _cfg(args.fwd_stride, args.w_forward, args.max_footsteps,
+               model_src=args.model_src, toe_off=args.toe_off)
     if args.render:
         render(Path(args.policy or Path(args.out) / "best_policy.npy"), cfg, Path(args.out))
         return

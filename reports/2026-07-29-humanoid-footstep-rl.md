@@ -88,6 +88,31 @@ the WBC + DCM + footstep-RL stack generalises across lateral AND forward walking
 modest (~2 mm/footstep, survival-prioritised) — scaling it needs more training (SAC/TD3 vs CEM), an MLP
 policy, reward shaping, and/or the articulated toe (a higher push-off ceiling). No fast-forward claim.
 
+## Scaled training (parallel CEM) + the honest forward result
+
+Parallel CEM (many-core, katolab-launchable via `scripts/kato15/footstep_walk_run.sh`) found a much better
+policy — but the first result (**+0.79 m**) was a **reward-gaming artifact**: the trajectory creeps ~2 mm/step
+for 40 steps then **lunges/falls forward 0.7 m** in the last 4 steps (episode ends at the fall). Caught by
+inspecting the per-step trajectory. **Retracted.** Fixed the reward (per-step forward **cap** ±0.05 m so a
+single lunge can't dominate, + a heavy `fall_penalty`). Re-trained:
+
+| | genuine sustained forward | footsteps | note |
+|---|---|---|---|
+| hand-tuned control | −0.5 m (falls backward) | 4 | — |
+| RL, gamed reward | "+0.79 m" | 48 (fell) | terminal lunge — **retracted** |
+| **RL, anti-gaming reward** | **+0.20 m** | **60/60 upright** | per-step +3.3 mm, no lunge — **genuine** |
+
+So RL learns a **genuine, stable, sustained forward-walking gait** (+0.20 m over 60 footsteps, upright
+throughout, no gaming) where hand-tuned control fell backward — the real deliverable. Video
+`humanoid_forward_walk.mp4`. Forward *speed* is slow (~3 mm/footstep), mechanism-limited by the small feet.
+
+**Push-off / toe (first attempt — honest negative):** a separate articulated-toe model
+(`humanoid_toe.hymeko`, `model_src`/`toe_off` knobs, default toe-less unchanged, 55 tests green) with a
+scripted toe-off (70 N·m stance-toe plantarflexion during swing) trained **worse** — it destabilises and
+falls at step 2. The aggressive scripted toe-off + the shorter split foot hurt more than the push-off
+helps. Raising the forward-speed ceiling with the toe needs a gentler, better-timed (or learned) toe-off —
+not the crude scripted push-off tried here.
+
 ## Open items / follow-ups
 
 - Full SAC/TD3 training via `option_rl` (the production path) for an indefinitely-stable learned gait, then

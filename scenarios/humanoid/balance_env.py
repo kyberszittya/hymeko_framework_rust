@@ -54,6 +54,7 @@ class BalanceConfig:
     w_step: float = 0.0              # capture-point step-shaping reward weight (>0 encourages a protective step)
     fall_uprightness: float = 0.6
     fall_pelvis_z: float = 0.55
+    model_src: str = "humanoid.hymeko"   # model variant to emit (e.g. "humanoid_toe.hymeko" for the toe/push-off model)
 
 
 def _cli() -> Path:
@@ -64,9 +65,11 @@ def _cli() -> Path:
     raise FileNotFoundError("hymeko CLI not built")
 
 
-def _build():
+def _build(model_src: str = "humanoid.hymeko"):
     import mujoco
-    xml = subprocess.run([str(_cli()), "emit", "-f", "mjcf", str(_SRC), "-n", "humanoid"],
+    src = _REPO / "data" / "robotics" / model_src
+    name = Path(model_src).stem                        # the .hymeko model block name = the file stem
+    xml = subprocess.run([str(_cli()), "emit", "-f", "mjcf", str(src), "-n", name],
                          capture_output=True, text=True, check=True).stdout
     xml = xml.replace('<joint name="base" type="hinge" axis="0 0 1"/>', '<freejoint name="base"/>')
     xml = xml.replace('<motor name="act_base" joint="base" gear="1"/>\n    ', '')  # unactuated base
@@ -90,7 +93,7 @@ class HumanoidBalanceEnv:
         self.cfg = cfg or BalanceConfig()
         if max_steps is not None:                                      # back-compat kwarg
             self.cfg = BalanceConfig(**{**self.cfg.__dict__, "max_steps": max_steps})
-        self._mj, self.model = _build()
+        self._mj, self.model = _build(self.cfg.model_src)
         self.data = self._mj.MjData(self.model)
         self._mj.mj_forward(self.model, self.data)
         self._q0 = self.data.qpos.copy()
