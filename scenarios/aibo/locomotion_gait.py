@@ -39,6 +39,15 @@ GAIT_PHASES: "dict[str, tuple[float, float, float, float]]" = {
 _ROT_COUPLE = (1.0, -1.0, -1.0, 1.0)
 
 
+def _knee_lift(gait: object, arg: float) -> float:
+    """Per-leg knee-target offset. ``swing_lift > 0`` gives a swing-GATED lift — the paw clears the ground
+    only during the forward swing (a real step, negative = paw up), instead of the sinusoidal ``knee_amp``
+    shuffle (both legs bobbing every cycle, ~2 cm clearance). Shared by both gaits (DRY)."""
+    if getattr(gait, "swing_lift", 0.0) > 0.0:
+        return -gait.swing_lift * max(0.0, float(np.sin(arg + gait.lift_off)))
+    return gait.knee_amp * float(np.sin(arg + np.pi))
+
+
 @dataclass(frozen=True)
 class RotationalTurnGait:
     """In-place turn by a diagonal stride COUPLE — fl,br stride forward while fr,bl stride backward (for
@@ -53,6 +62,8 @@ class RotationalTurnGait:
     hip_amp: float = 0.7
     knee_amp: float = 0.3
     freq: float = 1.2
+    swing_lift: float = 0.0      # >0: swing-GATED knee lift (real foot clearance, not the sinusoidal shuffle)
+    lift_off: float = 1.5708     # lift phase offset (~pi/2 = lift during the forward swing)
 
     def action(self, env: object, turn: float = 0.0) -> np.ndarray:
         t = int(getattr(env, "_step", 0)) * int(env.frame_skip) * float(env.model.opt.timestep)
@@ -63,7 +74,7 @@ class RotationalTurnGait:
         for leg in range(len(target) // 3):
             base = 3 * leg
             target[base + 1] += turn * self.hip_amp * _ROT_COUPLE[leg] * np.sin(ph + _DIAG_PHASE[leg])
-            target[base + 2] += self.knee_amp * np.sin(ph + _DIAG_PHASE[leg] + np.pi)   # normal lift/plant
+            target[base + 2] += _knee_lift(self, ph + _DIAG_PHASE[leg])   # foot clearance
         tau = -env.pd_kp * (q - target) - env.pd_kd * qd
         return np.clip(tau / env.ctrl_range, -1.0, 1.0).astype(np.float32)
 
@@ -113,6 +124,8 @@ class SteeredTrotGait:
     freq: float = 1.2
     steer_gain: float = 0.9
     phase: "tuple[float, float, float, float]" = _DIAG_PHASE   # per-leg gait phase (default = diagonal trot)
+    swing_lift: float = 0.0      # >0: swing-gated knee lift (real foot clearance) instead of the shuffle
+    lift_off: float = 1.5708
 
     def action(self, env: object, yaw_cmd: float = 0.0, drive: float = 1.0) -> np.ndarray:
         t = int(getattr(env, "_step", 0)) * int(env.frame_skip) * float(env.model.opt.timestep)
@@ -127,6 +140,6 @@ class SteeredTrotGait:
             inner = is_left if yaw_cmd >= 0 else (not is_left)
             side = (1.0 - self.steer_gain * abs(yaw_cmd)) if inner else 1.0
             target[base + 1] += drive * self.hip_amp * max(0.1, side) * np.sin(ph + self.phase[leg])
-            target[base + 2] += drive * self.knee_amp * np.sin(ph + self.phase[leg] + np.pi)
+            target[base + 2] += drive * _knee_lift(self, ph + self.phase[leg])
         tau = -env.pd_kp * (q - target) - env.pd_kd * qd
         return np.clip(tau / env.ctrl_range, -1.0, 1.0).astype(np.float32)

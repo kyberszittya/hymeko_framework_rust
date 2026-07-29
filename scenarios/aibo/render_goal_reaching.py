@@ -46,9 +46,11 @@ def _clip(bearing: float, dist: float = 0.6, horizon: int = 4200):
     r = mujoco.Renderer(env.model, height=_H, width=_W)
     cam = mujoco.MjvCamera()
     cam.type = mujoco.mjtCamera.mjCAMERA_FREE
-    cam.azimuth, cam.elevation, cam.distance = 50.0, -32.0, 2.6
+    # pulled back + shallower so the turn wobble is small in frame (was 2.6 / -32, too close = shaky)
+    cam.azimuth, cam.elevation, cam.distance = 50.0, -22.0, 4.2
     env.reset(seed=1)
     tx, ty = float(env.data.xpos[env.torso, 0]), float(env.data.xpos[env.torso, 1])
+    look = np.array([tx, ty], np.float64)                     # low-pass-filtered lookat (steady, no jitter)
     yaw = float(np.arctan2(env.data.xmat[env.torso].reshape(3, 3)[1, 0], env.data.xmat[env.torso].reshape(3, 3)[0, 0]))
     b = np.deg2rad(bearing)
     env.goal = np.array([tx + dist * np.cos(yaw + b), ty + dist * np.sin(yaw + b)], np.float32)
@@ -62,7 +64,9 @@ def _clip(bearing: float, dist: float = 0.6, horizon: int = 4200):
         herr = np.rad2deg(heading_error(env))
         reached = d <= 0.12
         if k % _STRIDE == 0:
-            cam.lookat[:] = [float(env.data.xpos[env.torso, 0]), float(env.data.xpos[env.torso, 1]), 0.10]
+            tgt = np.array([float(env.data.xpos[env.torso, 0]), float(env.data.xpos[env.torso, 1])])
+            look = 0.90 * look + 0.10 * tgt                   # heavy low-pass: follows slowly, ignores wobble
+            cam.lookat[:] = [look[0], look[1], 0.10]
             r.update_scene(env.data, cam)
             _goal_marker(r.scene, env.goal, reached)
             phase = ("REACHED", _OK) if reached else (("TURNING to face goal", _INK) if abs(herr) > 20 else ("WALKING to goal", _INK))
