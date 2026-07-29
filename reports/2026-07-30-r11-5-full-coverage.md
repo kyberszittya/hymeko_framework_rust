@@ -1,7 +1,11 @@
 # R11.5 — Target-Conditioned Delivery Teacher, Full-51 Coverage
 
 **Date:** 2026-07-30
-**Verdict:** `R11_5_TEACHER_COVERAGE_INSUFFICIENT` — **40/64** covered (pre-registered threshold ≥ 45/64).
+**Verdict (pre-registered gate):** `R11_5_TEACHER_COVERAGE_INSUFFICIENT` — **40/64** covered (threshold ≥ 45/64).
+**Campaign framing (the accurate name — teacher-generalization is *proven*, this is a narrow recovery boundary):**
+`R11_5_BASE_TRANSPORT_COORDINATE_REACHES_40_OF_64` + `R11_5_PLUS_RESIDUAL_RECOVERY_REQUIRED`. The base transport
+coordinate covers 40/64; closing the last 5 needs targeted recovery (§ *Complete failure taxonomy* + *R11.5+ recovery
+plan* below), **not** a new theory, more restarts, or BC at 40/64.
 **Arc:** R11 generalized hybrid delivery — R11.4A (grasp reliability) → **R11.5 (delivery generalization)**.
 
 ---
@@ -73,39 +77,53 @@ Held-out generalization is **not** the problem: dev 88 %, test 60 %, both well p
 
 ---
 
-## Failure attribution (51 = 33 recovered + 4 capture-quality + 14 certified-not-delivered)
+## Complete failure taxonomy — all 24 uncovered (not the partial 9)
 
-### Capture-quality failures (4) — no certified grasp in 5 seeds
-All small c1/c2 perturbations (train): `bank_c1_-0.01_+0.00`, `bank_c1_+0.01_+0.02`, `bank_c2_-0.015_+0.000`,
-`bank_c2_+0.015_+0.015`. These never reached the delivery teacher — the grasp itself could not be re-established. This
-is an **upstream capture-reliability** gap, and it directly explains part of the c1/c2 drag.
+The **24 uncovered = 64 − 40** = 6 baseline `CAPTURE_FAIL` (never certified in the R11.4A re-measure, never attempted) +
+18 non-recovered attempts (4 that failed to re-certify a grasp in 5 seeds + 14 certified-but-not-delivered). Every one is
+assigned exactly one mutually-exclusive category **from its measured trace** (`hymeko_rl/experiments/r11_5_failure_taxonomy.py`,
+`taxonomy.json`). The discriminator that matters is **`gap_closed` sign** — forward coin motion with a *widening* gap is
+directional, not progress. The 24 collapse to **three** categories (5 of the 8 defined categories are empty):
 
-### Certified-but-not-delivered (14) — grasp OK, delivery CEM (R=11) missed K6
-Sorted by final coin-to-zone distance:
-| band | count | scenarios |
-|---|---|---|
-| **zone-near** (≤ 30 mm) | **1** | `bank_c3_r7_a+15` (22.4 mm) — only plausibly budget-fixable case |
-| mid (31–70 mm) | 9 | c3 angled (`r5_a-45`, `r9_a+15`, `r7_a-45`, `r9_a+30`, `r6_a-45`, `r9_a-45`) + c2 (`-0.025_+0.025`, `-0.015_+0.025`, `-0.015_+0.015`) |
-| **far tail (126–161 mm)** | **4** | `bank_c1_-0.01_+0.03` (127), `bank_c1_-0.03_+0.03` (159), `bank_c2_-0.025_+0.015` (161), `bank_c1_-0.03_+0.02` (161) — all c1/c2 **negative-x** |
+| category | n | signature | scenarios |
+|---|---|---|---|
+| **CAPTURE_SUPPORT_FAILURE** | **10** | no certified grasp reached the delivery teacher | 6 systematic **+/+** (`c1_+0.01_+0.03`, `c1_+0.03_+0.02/+0.03`, `c2_+0.015_+0.025`, `c2_+0.025_+0.015/+0.025`) + 4 stochastic-regen (`c1_+0.01_+0.02`, `c1_-0.01_+0.00`, `c2_+0.015_+0.015`, `c2_-0.015_+0.000`) |
+| **DIRECTIONAL_BIAS** | **4** | driven, but net **away** from target (`gap_closed < 0`, dtz 127–161 mm) — all **negative-x** | `c1_-0.01_+0.03`, `c1_-0.03_+0.02`, `c1_-0.03_+0.03`, `c2_-0.025_+0.015` |
+| **INSUFFICIENT_PROGRESS** | **10** | moved toward target, closed 32–70 % of the gap, stalled short (`gap_closed > 0`, `entry_speed = 0`) | `c3_r7_a+15` (22 mm), `c3_r5/r6/r7_a-45`, `c3_r9_a+15/+30/-45`, `c2_-0.015_+0.015/+0.025`, `c2_-0.025_+0.025` |
 
-The far tail is **not** near-miss and **not** variance: the teacher leaves the coin 12–16 cm from the zone. That is a
-**structural limit of the current transport coordinate** for the far/negative-x handoff geometry — a redesign lever,
-not a budget lever.
+**Empty categories (also a finding):** `HANDOFF_TO_KINETIC_FAILURE = 0` — every certified case *did* get the coin
+moving (`coin_progress ≠ 0`), so the R2/kinetic handoff is **not** the bottleneck; `ZONE_*_FAILURE = 0` — nothing entered
+the 20 mm zone (all `entry_speed = 0`, so no too-fast-to-settle case); `CONTACT_LOSS = 0` as a distinct cause —
+`contact_lost_steps` is uniformly high (57–86/90), which is **kinetic-normal** (post-push flight), not discriminative.
 
-### Restart-index histogram (winning restart of first K6)
-`r0: 24 · r1: 5 · r2: 1 · r3: 1 · r4: 1 · r5: 1` → R=5-vs-R=11 marginal gain **+1**.
+**Correction to this report's own earlier draft:** the capture-support gap is **10, not 4** — the 6 systematic +/+
+baseline cases were invisible in the 51-run because they were never attempted. And the residual is **direction +
+magnitude of transport**, not a physical limit: the negative-x coin→target line simply does not coincide with the force
+direction the grasp can transfer, so a single PUSH drives the coin off-axis. That is a **control-program** fix, not new
+physics. Restart-index histogram confirms budget is spent: `r0:24 · r1:5 · r2:1 · r3:1 · r4:1 · r5:1` → R=5→R=11 gain **+1**.
 
 ---
 
-## What the next lever is (and is not)
+## R11.5+ targeted recovery plan (development starts now — the Mac run is valid for diagnosis; kato14 rerun is a later reproduction gate, not a precondition)
 
-- **NOT more restarts** — proven ~useless at population scale (+1 over R=5).
-- **Capture reliability on small c1/c2 perturbations** — 4 states never formed a certified grasp; recovering them is
-  worth up to +4 coverage and is upstream of delivery.
-- **Delivery-teacher support for the far/negative-x handoff geometry** — the 126–161 mm tail is a structural transport
-  limit; closing it needs a coordinate/objective change, which is a *new* R11.5+ design decision (out of this frozen
-  protocol's scope), not a re-run.
-- **1 genuine zone-near** (`c3_r7_a+15`, 22.4 mm) is the only case a modest budget/tolerance nudge might flip.
+**A. Capture-support recovery** (the 10 `CAPTURE_SUPPORT_FAILURE`). Reuse the already-PASS grasp-aware objective; audit
+whether a good candidate is generated and, if so, why it never reaches the elite. **No controller change** — only
+proposal/support or elite-diversity, with **scenario-relative** capture sampling (no hand offsets). Target ≥ 2/4 new
+certified grasps → same target-conditioned delivery teacher → strict K6.
+
+**B. Negative-x transport coordinate** (the 4 `DIRECTIONAL_BIAS` + progress-lifting for the 10 `INSUFFICIENT_PROGRESS`).
+A **two-phase target-relative program** reusing the *same* primitive in two short segments — **ALIGN / RECENTER →
+TRANSPORT TOWARD TARGET → BRAKE / RELEASE** — plus profile/horizon/braking-onset freedom for the stall cases. Not a
+single longer PUSH, not new physics, not a whole new controller.
+
+**Bounded 12-scenario pilot** (`select_pilot`, deterministic — not a re-run of all 51): 4 capture-support (2 systematic
++/+ hardest, 2 stochastic-regen), 4 negative-x (the whole `DIRECTIONAL_BIAS` tail, structurally all-train), 4
+`INSUFFICIENT_PROGRESS` (dev `c3_r9_a-45` + test `c3_r9_a+15` + nearest/farthest train — so the transport fix is
+validated off-train). **Gate:** ≥ 6/12 recovery (2-scenario margin over the +5 needed), ≥ 2 capture-support, ≥ 2
+negative-x, safety 12/12, 0 nudge-only K6, energy/provenance complete → **`R11_5_PLUS_RESIDUAL_RECOVERY_PILOT_PASS`**.
+Then run the improved teacher on the **24** failures only (not the stable 40) + a regression control panel; **final gate ≥
+47/64** (2-scenario margin for the kato14 reproduction), C0–C3 each ≥ 50 %, dev/test positive, 0 nudge-K6, 0 safety
+regression, 100 % provenance/energy.
 
 ---
 

@@ -1,0 +1,351 @@
+{
+  "uncovered": 24,
+  "by_category": {
+    "CAPTURE_SUPPORT_FAILURE": [
+      "bank_c1_+0.01_+0.02",
+      "bank_c1_+0.01_+0.03",
+      "bank_c1_+0.03_+0.02",
+      "bank_c1_+0.03_+0.03",
+      "bank_c1_-0.01_+0.00",
+      "bank_c2_+0.015_+0.015",
+      "bank_c2_+0.015_+0.025",
+      "bank_c2_+0.025_+0.015",
+      "bank_c2_+0.025_+0.025",
+      "bank_c2_-0.015_+0.000"
+    ],
+    "DIRECTIONAL_BIAS": [
+      "bank_c1_-0.01_+0.03",
+      "bank_c1_-0.03_+0.02",
+      "bank_c1_-0.03_+0.03",
+      "bank_c2_-0.025_+0.015"
+    ],
+    "INSUFFICIENT_PROGRESS": [
+      "bank_c2_-0.015_+0.015",
+      "bank_c2_-0.015_+0.025",
+      "bank_c2_-0.025_+0.025",
+      "bank_c3_r5_a-45",
+      "bank_c3_r6_a-45",
+      "bank_c3_r7_a+15",
+      "bank_c3_r7_a-45",
+      "bank_c3_r9_a+15",
+      "bank_c3_r9_a+30",
+      "bank_c3_r9_a-45"
+    ]
+  },
+  "records": [
+    {
+      "scenario_id": "bank_c1_+0.01_+0.03",
+      "split": "dev",
+      "cclass": "c1",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c1_+0.03_+0.02",
+      "split": "test",
+      "cclass": "c1",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c1_+0.03_+0.03",
+      "split": "test",
+      "cclass": "c1",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c2_+0.015_+0.025",
+      "split": "dev",
+      "cclass": "c2",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c2_+0.025_+0.015",
+      "split": "test",
+      "cclass": "c2",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c2_+0.025_+0.025",
+      "split": "test",
+      "cclass": "c2",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c1_+0.01_+0.02",
+      "split": "train",
+      "cclass": "c1",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "stochastic_regen",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c1_-0.01_+0.00",
+      "split": "train",
+      "cclass": "c1",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "stochastic_regen",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c1_-0.01_+0.03",
+      "split": "train",
+      "cclass": "c1",
+      "category": "DIRECTIONAL_BIAS",
+      "subtype": "",
+      "dtz_mm": 126.79,
+      "gap_closed": -0.706,
+      "coin_progress_mm": 21.4
+    },
+    {
+      "scenario_id": "bank_c1_-0.03_+0.02",
+      "split": "train",
+      "cclass": "c1",
+      "category": "DIRECTIONAL_BIAS",
+      "subtype": "",
+      "dtz_mm": 160.71,
+      "gap_closed": -1.079,
+      "coin_progress_mm": -73.3
+    },
+    {
+      "scenario_id": "bank_c1_-0.03_+0.03",
+      "split": "train",
+      "cclass": "c1",
+      "category": "DIRECTIONAL_BIAS",
+      "subtype": "",
+      "dtz_mm": 159.34,
+      "gap_closed": -1.088,
+      "coin_progress_mm": -33.4
+    },
+    {
+      "scenario_id": "bank_c2_+0.015_+0.015",
+      "split": "train",
+      "cclass": "c2",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "stochastic_regen",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c2_-0.015_+0.000",
+      "split": "train",
+      "cclass": "c2",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "stochastic_regen",
+      "dtz_mm": null,
+      "gap_closed": null,
+      "coin_progress_mm": null
+    },
+    {
+      "scenario_id": "bank_c2_-0.015_+0.015",
+      "split": "train",
+      "cclass": "c2",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 69.97,
+      "gap_closed": 0.324,
+      "coin_progress_mm": 35.8
+    },
+    {
+      "scenario_id": "bank_c2_-0.015_+0.025",
+      "split": "train",
+      "cclass": "c2",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 47.8,
+      "gap_closed": 0.404,
+      "coin_progress_mm": 32.4
+    },
+    {
+      "scenario_id": "bank_c2_-0.025_+0.015",
+      "split": "train",
+      "cclass": "c2",
+      "category": "DIRECTIONAL_BIAS",
+      "subtype": "",
+      "dtz_mm": 160.55,
+      "gap_closed": -0.962,
+      "coin_progress_mm": -69.6
+    },
+    {
+      "scenario_id": "bank_c2_-0.025_+0.025",
+      "split": "train",
+      "cclass": "c2",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 47.6,
+      "gap_closed": 0.384,
+      "coin_progress_mm": 88.6
+    },
+    {
+      "scenario_id": "bank_c3_r5_a-45",
+      "split": "train",
+      "cclass": "c3",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 31.21,
+      "gap_closed": 0.438,
+      "coin_progress_mm": 24.3
+    },
+    {
+      "scenario_id": "bank_c3_r6_a-45",
+      "split": "train",
+      "cclass": "c3",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 41.66,
+      "gap_closed": 0.36,
+      "coin_progress_mm": 23.5
+    },
+    {
+      "scenario_id": "bank_c3_r7_a+15",
+      "split": "train",
+      "cclass": "c3",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 22.36,
+      "gap_closed": 0.703,
+      "coin_progress_mm": 61.4
+    },
+    {
+      "scenario_id": "bank_c3_r7_a-45",
+      "split": "train",
+      "cclass": "c3",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 38.76,
+      "gap_closed": 0.476,
+      "coin_progress_mm": 37.2
+    },
+    {
+      "scenario_id": "bank_c3_r9_a+15",
+      "split": "test",
+      "cclass": "c3",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 35.5,
+      "gap_closed": 0.631,
+      "coin_progress_mm": 68.0
+    },
+    {
+      "scenario_id": "bank_c3_r9_a+30",
+      "split": "test",
+      "cclass": "c3",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 40.86,
+      "gap_closed": 0.586,
+      "coin_progress_mm": 57.9
+    },
+    {
+      "scenario_id": "bank_c3_r9_a-45",
+      "split": "dev",
+      "cclass": "c3",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": "",
+      "dtz_mm": 55.57,
+      "gap_closed": 0.415,
+      "coin_progress_mm": 56.1
+    }
+  ],
+  "pilot": [
+    {
+      "scenario_id": "bank_c1_+0.01_+0.03",
+      "split": "dev",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c1_+0.03_+0.02",
+      "split": "test",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "systematic_pp"
+    },
+    {
+      "scenario_id": "bank_c1_+0.01_+0.02",
+      "split": "train",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "stochastic_regen"
+    },
+    {
+      "scenario_id": "bank_c1_-0.01_+0.00",
+      "split": "train",
+      "category": "CAPTURE_SUPPORT_FAILURE",
+      "subtype": "stochastic_regen"
+    },
+    {
+      "scenario_id": "bank_c1_-0.01_+0.03",
+      "split": "train",
+      "category": "DIRECTIONAL_BIAS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c1_-0.03_+0.02",
+      "split": "train",
+      "category": "DIRECTIONAL_BIAS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c1_-0.03_+0.03",
+      "split": "train",
+      "category": "DIRECTIONAL_BIAS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c2_-0.025_+0.015",
+      "split": "train",
+      "category": "DIRECTIONAL_BIAS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r9_a-45",
+      "split": "dev",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r9_a+15",
+      "split": "test",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c3_r7_a+15",
+      "split": "train",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": ""
+    },
+    {
+      "scenario_id": "bank_c2_-0.015_+0.015",
+      "split": "train",
+      "category": "INSUFFICIENT_PROGRESS",
+      "subtype": ""
+    }
+  ]
+}
