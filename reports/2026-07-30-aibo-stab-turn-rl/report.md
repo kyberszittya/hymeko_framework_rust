@@ -64,6 +64,28 @@ Fix (config-gated, default off = back-compat): `require_facing_deg` — success 
   upright); the RL "beats scaffold" result was **metric-lenient** and does not survive the facing
   requirement. Kept as an honest negative on the RL edge, not a retraction of the representation.
 
+## The new gait — a swing-lifted turn arrives head-on (the drift fix)
+
+The drift is because the rotational couple **drags its swing feet**. Lifting them at the right phase
+(`turn_swing_lift` 0.35, `turn_lift_off` 2.9, `turn_freq` 1.6; config-gated, default 0 = prior turn) makes
+the turn **upright without the crouch+widen stabilization**, so the AIBO turns to face then walks straight
+in. Controlled comparison (a=0 scaffold, mean |heading| at aligned reach over a 7-goal wide grid):
+
+| turn scaffold | mean \|heading\| at reach | reached |
+|---|---|---|
+| OLD drifting turn + crouch/widen stab (align 20°) | ~24° (side-on) | 6/7 |
+| drifting turn, align 15°, no stab | ~17° | **1/7** (tips/fails) |
+| **NEW swing-lifted turn, align 15°, no stab** | **~12° (head-on; several 4–7°)** | **6/7** |
+
+The swing-lift — **not** just the tighter align — is load-bearing (6/7 vs 1/7 at the same align+no-stab).
+Video `aibo_clean_turn_compare.mp4`: OLD reaches the 90° goal at −24° (angled), NEW at ~0–4° (facing).
+
+**Honest scope on the drift claim:** the win is an **end-to-end head-on arrival** (24°→12° mean), NOT a
+big single-turn drift cut — a bare turn's *max* lateral excursion is similar (~12 cm both); the benefit is
+upright-without-stab + a cleaner homing walk. The widest 135° bearing still doesn't fully face in the
+horizon. A perfectly in-place turn (≈0 excursion) would need a stepping/repositioning turn primitive
+(further work); this is the pragmatic improvement that removes the backward entry.
+
 ## Honest scope
 
 - **The representation is the headline and the durable result** (0.5 → 0.786, upright, and the double

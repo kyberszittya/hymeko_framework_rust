@@ -60,6 +60,14 @@ class ResidualTrotConfig:
     gait_phase: str = "diag"             # base-gait phase pattern (GAIT_PHASES): "diag" (trot, asymmetric — default) | "bound" (front/back, instantaneously LEFT-RIGHT SYMMETRIC — the symmetric-scaffold test) | "pace" | "pronk"
     swing_lift: float = 0.0              # >0: swing-gated knee lift = a REAL step (paw clears ~13 cm) instead of the ~2 cm sinusoidal shuffle. 0.40 + gait_freq 1.4 = visible stepping, upright, forward
     gait_freq: float = 1.2               # gait clock frequency; 1.4 pairs with swing_lift for clean stepping
+    # --- LOW-DRIFT in-place turn (the rotational couple DRAGS its swing feet → ~17 cm lateral drift / 90°,
+    # which spirals the body around wide goals so it enters them BACKWARDS). Lifting the swing feet at the
+    # right phase turns nearly IN PLACE (measured ~2 cm/90° at turn_swing_lift 0.35, lift_off 2.9, freq 1.6)
+    # → the AIBO can turn to FACE the goal then walk straight in (arrives ~5° for bearings ≤90°). Defaults
+    # 0/gait_freq reproduce the prior drifting turn exactly.
+    turn_swing_lift: float = 0.0         # >0: lift the turn's swing feet (0.35 ≈ 8× less drift, still upright)
+    turn_lift_off: float = 1.5708        # turn swing-lift phase (2.9 minimises drift for the diagonal couple)
+    turn_freq: float = 0.0               # turn clock (0 = use gait_freq; 1.6 pairs with the low-drift lift)
     mirror_augment: bool = False         # omni/flat: randomly present the LEFT-RIGHT-MIRRORED task each episode → a symmetry-preserved policy that reaches BOTH crab sides (breaks the symmetry-breaking one-sided optimum)
     residual_scale: float = 0.25         # bounded residual (coin-R8): a small correction over the gait
     yaw_res_scale: float = 0.5           # steer mode: bound on the learned steering correction (rad)
@@ -132,7 +140,10 @@ class ResidualTrotEnv:
         self._phase_pat = GAIT_PHASES[self.cfg.gait_phase]        # per-leg gait phase (diag=asymmetric, bound=symmetric)
         self._gait = SteeredTrotGait(phase=self._phase_pat, swing_lift=self.cfg.swing_lift,
                                      freq=self.cfg.gait_freq)
-        self._turn_gait = RotationalTurnGait(swing_lift=self.cfg.swing_lift, freq=self.cfg.gait_freq)  # rotational-couple turn
+        self._turn_gait = RotationalTurnGait(                     # rotational-couple turn; low-drift when turn_swing_lift>0
+            swing_lift=self.cfg.turn_swing_lift or self.cfg.swing_lift,
+            lift_off=self.cfg.turn_lift_off,
+            freq=self.cfg.turn_freq or self.cfg.gait_freq)
         self._paw_bodies = [int(mujoco.mj_name2id(self._env.model, mujoco.mjtObj.mjOBJ_BODY, f"paw_{lg}"))
                             for lg in LEGS]                      # feet, for the balance (support) entropy
         self._gov = JointVelocityGovernor(v_max=self.cfg.v_max)
