@@ -69,6 +69,7 @@ class ResidualTrotConfig:
     turn_rate: float = 1.0               # rotational-couple turn magnitude (turn_then_walk); ~47 deg/1000 steps, upright at 1.0
     turn_align_deg: float = 20.0         # turn_then_walk: turn until |heading error| within this, then walk
     balance_w: float = 0.0               # reward weight on the foot-support balance entropy H_bal (0=off); dense stay-upright signal for FAST turning (H_bal≈1 weight spread over 4 feet, →0 tipping) — the movement/balance-grounded entropy
+    stability_w: float = 0.0             # reward weight on the DYNAMIC stability margin (0=off): a ZMP-family PREDICTIVE signal — capture-point-in-support (translational) + low torso tilt-rate (rotational, the one that fires for spin-tipping); +1 stable, −1 about to tip (fires ~40 steps BEFORE the fall, unlike the reactive H_bal)
     max_steps: int = 800
     v_max: float = 8.0                   # motion-contract joint-speed cap
     progress_w: float = 12.0
@@ -267,6 +268,30 @@ class ResidualTrotEnv:
         p = stance / total
         return float(-(p * np.log(p + 1e-8)).sum() / np.log(len(self._paw_bodies)))
 
+    def dynamic_stability(self) -> float:
+        """A ZMP-family PREDICTIVE stability margin in ``[-1, 1]`` (+1 stable, −1 about to tip), combining:
+        (a) **capture-point in support** (translational): the CoM's capture point ``CoM_xy + v·√(z/g)`` vs the
+        stance-weighted support region; (b) **low torso tilt-rate** (rotational): the roll+pitch angular
+        speed — the signal that actually fires for the AIBO's spin-tipping, ~40 steps BEFORE the fall (the
+        reactive foot-support H_bal only flags it after). Both are physically grounded and anticipatory.
+        # Postconditions returns a float in ``[-1, 1]``."""
+        r = self._env
+        com = np.asarray(r.data.subtree_com[0])
+        g = float(-r.model.opt.gravity[2]) or 9.81
+        vel = np.asarray(r.data.subtree_linvel[0])
+        cp = com[:2] + vel[:2] * float(np.sqrt(max(com[2], 1e-3) / g))
+        feet = np.array([r.data.xpos[b][:2] for b in self._paw_bodies])
+        w = np.maximum(0.0, 0.06 - np.array([r.data.xpos[b][2] for b in self._paw_bodies]))
+        if w.sum() < 1e-6:
+            cp_margin = -1.0
+        else:
+            c = (feet * w[:, None]).sum(0) / w.sum()
+            rad = float(np.sqrt(((feet - c) ** 2).sum(1) * w).sum() / w.sum())
+            cp_margin = float(np.tanh(3.0 * (rad - float(np.linalg.norm(cp - c)))))
+        tilt_rate = float(np.linalg.norm(np.asarray(r.data.cvel[r.torso])[0:2]))   # roll+pitch angular speed
+        tilt_margin = float(np.tanh(1.5 * (1.5 - tilt_rate)))                       # +1 low rate (stable), −1 high
+        return 0.5 * (cp_margin + tilt_margin)                                      # both must hold to be stable
+
     def _base_gait_action(self, herr: float, pursuit: float, base_drive: float) -> np.ndarray:
         """The scaffold's base action before the residual: the rotational-couple TURN toward the goal when
         ``heading_mode="turn_then_walk"`` and the heading error is still wide, else the forward trot. This
@@ -340,6 +365,8 @@ class ResidualTrotEnv:
                   - self.cfg.ctrl_w * float(np.sum(residual ** 2)))
         if self.cfg.balance_w > 0.0:
             reward += self.cfg.balance_w * self.foot_support_entropy()   # dense stay-upright signal (fast-turn)
+        if self.cfg.stability_w > 0.0:
+            reward += self.cfg.stability_w * self.dynamic_stability()     # PREDICTIVE ZMP-family stability (anticipatory)
         if reached:
             reward += self.cfg.reach_bonus
         if fell:

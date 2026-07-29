@@ -31,10 +31,11 @@ _VAL = [(0.6, 40), (0.6, -40), (0.6, 90), (0.6, -90), (0.6, 135)]
 _HORIZON = 2400                                            # SHORT horizon = the speed pressure (stable turn = 0.56 here)
 
 
-def _cfg_env(obs_mode: str, balance_w: float) -> ResidualTrotEnv:
+def _cfg_env(obs_mode: str, balance_w: float, stability_w: float = 0.0) -> ResidualTrotEnv:
     return ResidualTrotEnv(ResidualTrotConfig(
         residual_mode="leg", obs_mode=obs_mode, heading_mode="turn_then_walk", residual_scale=0.4,
-        balance_w=balance_w, bearing_deg=135.0, dist_lo=0.5, dist_hi=0.7, max_steps=1600), seed=0)
+        balance_w=balance_w, stability_w=stability_w,
+        bearing_deg=135.0, dist_lo=0.5, dist_hi=0.7, max_steps=1600), seed=0)
 
 
 def _greedy(actor):
@@ -54,9 +55,9 @@ def _eval(env: ResidualTrotEnv, act_fn, grid=_TEST, horizon=_HORIZON) -> "tuple[
     return round(hit / len(grid), 3), round(float(np.mean(dists)), 4)
 
 
-def _train(kind: str, balance_w: float, seed: int, steps: int) -> float:
+def _train(kind: str, balance_w: float, stability_w: float, seed: int, steps: int) -> float:
     obs_mode = "flat" if kind == "mlp" else "hypergraph"
-    env = _cfg_env(obs_mode, balance_w)
+    env = _cfg_env(obs_mode, balance_w, stability_w)
     torch.manual_seed(seed)
     if kind == "mlp":
         actor, critics = build_sac("mlp", obs_dim=9, flat_dim=9, action_dim=12, action_scale=1.0, hidden=128)
@@ -92,17 +93,19 @@ def main() -> None:
     zfn = lambda o: np.zeros(12, dtype=np.float32)  # noqa: E731
     scaffold = _eval(_cfg_env("flat", 0.0), zfn)[0]        # a=0 turn_then_walk at horizon 2400 (the 0.56 baseline)
 
-    conds = [("mlp_balance", "mlp", 0.5), ("mlp_nobalance", "mlp", 0.0), ("hsikan_balance", "hsikan", 0.5)]
+    # (name, kind, balance_w, stability_w): isolate the PREDICTIVE stability signal + the HSiKAN structure
+    conds = [("mlp_bal_stab", "mlp", 0.5, 1.0), ("mlp_bal_only", "mlp", 0.5, 0.0),
+             ("hsikan_bal_stab", "hsikan", 0.5, 1.0)]
     per_seed = []
     for seed in args.seeds:
         row = {"seed": seed}
-        for name, kind, bw in conds:
-            row[name] = _train(kind, bw, seed, args.steps)
+        for name, kind, bw, sw in conds:
+            row[name] = _train(kind, bw, sw, seed, args.steps)
         per_seed.append(row)
-        print(f"seed {seed}: scaffold {scaffold} | " + " | ".join(f"{n} {row[n]}" for n, _, _ in conds))
+        print(f"seed {seed}: scaffold {scaffold} | " + " | ".join(f"{n} {row[n]}" for n, _, _, _ in conds))
 
     agg = {n: {"median": median(r[n] for r in per_seed), "max": max(r[n] for r in per_seed),
-               "beats_scaffold": sum(r[n] > scaffold for r in per_seed)} for n, _, _ in conds}
+               "beats_scaffold": sum(r[n] > scaffold for r in per_seed)} for n, _, _, _ in conds}
     result = {"scaffold_reach_h2400": scaffold, "horizon": _HORIZON, "n_seeds": len(args.seeds),
               "steps": args.steps, "aggregate": agg, "per_seed": per_seed,
               "note": "SIMULATION. Leg-residual (scale 0.4) over turn_then_walk, WIDE bearings, SHORT horizon "
@@ -110,7 +113,7 @@ def main() -> None:
                       "w/o tipping vs the 0.56 stable scaffold, and does HSiKAN structure help?"}
     (_OUT / "result_fast_turn.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(f"\nscaffold(h2400) {scaffold}")
-    for n, _, _ in conds:
+    for n, _, _, _ in conds:
         print(f"  {n:15s}: median {agg[n]['median']} max {agg[n]['max']} beats_scaffold {agg[n]['beats_scaffold']}/{len(args.seeds)}")
 
 
