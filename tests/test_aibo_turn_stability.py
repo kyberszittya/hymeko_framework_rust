@@ -38,7 +38,7 @@ def test_zmp_is_finite() -> None:
     pv = np.asarray(rt._env.data.subtree_linvel[0]).copy()
     ph = np.asarray(rt._env.data.subtree_angmom[0]).copy()
     rt._env.step(rt._gov.govern(rt._env, _turn.action(rt._env, turn=1.0)))
-    zmp, _v, _h = vukobratovic_zmp(rt._env, pv, ph, dt)
+    zmp, _v, _h = vukobratovic_zmp(rt._env.model, rt._env.data, pv, ph, dt)
     assert zmp.shape == (2,) and np.all(np.isfinite(zmp))
 
 
