@@ -82,3 +82,19 @@ correct; **this model cannot execute it.**
 travel to unload), a lighter/taller build, or an explicit swing-phase / lateral-sway mechanism in the
 `.hymeko` — a deliberate design decision, not a control tweak. The capture-point target (part 2) is ready
 to drive it once the model affords the maneuver.
+
+## Addendum 2 — narrow-stance model change tested: confirms the direction, does not solve it
+
+Per the model-change decision, tested the cheapest option: a **narrower initial stance** (adduct the hips
+in the reset pose → foot spacing 0.171 m → 0.128 m at adduct 0.15, still upright; adduct 0.3 breaks the
+pose to 0.54 m). From the narrow stance, a dynamic Jacobian sway + swing-foot lift gives **swing-foot rise
++0.004–0.005 m** (vs +0.000 at the wide stance) — the CoM still moves only ~0.01 m and the wrong way under
+the ``Jᵀf`` sway. So narrowing the stance **marginally helps and confirms the direction** (less CoM travel
+→ some foot clearance), but does **not** produce a step: ~0.005 m ≪ the ~0.03–0.05 m needed.
+
+**Honest conclusion:** a working humanoid step needs **both** a model change (narrower stance and/or a
+lighter/taller build with more sway authority) **and** a dedicated **whole-body stepping controller** (a
+proper CoM trajectory + swing-foot placement + double→single→double phase timing — the core of bipedal
+locomotion), not the quick Jacobian sway tried here. This is a substantial, deliberate design effort; the
+capture-point target (part 2) + the ZMP/capturability certificates (parts 1-2) are the ready substrate for
+it. No step controller shipped (the ~0.005 m clearance is not a step; CLAUDE.md: no broken feature).
