@@ -93,6 +93,11 @@ class ResidualTrotConfig:
     crouch_res_scale: float = 0.3        # stab mode: bound on the learned crouch modulation
     widen_res_scale: float = 0.2         # stab mode: bound on the learned stance-width modulation
     lean_res_scale: float = 0.3          # stab mode: bound on the learned roll/lean modulation
+    # On the SWING-LIFT scaffold crouch+widen are dead DOF (it is upright without them); the live lever that
+    # faces wide bearings is the turn-vs-walk ALIGN threshold (a per-bearing-align oracle lifts held-out reach
+    # 0.75→0.93). >0 REPURPOSES the residual's crouch slot (r[1]) to modulate the align threshold instead —
+    # the RL sees the bearing (cos/sin herr in obs) and can learn a bearing-conditioned align.
+    align_res_scale: float = 0.0         # degrees of learned align modulation (0 = off; r[1]=crouch as usual)
     balance_w: float = 0.0               # reward weight on the foot-support balance entropy H_bal (0=off); dense stay-upright signal for FAST turning (H_bal≈1 weight spread over 4 feet, →0 tipping) — the movement/balance-grounded entropy
     stability_w: float = 0.0             # reward weight on the DYNAMIC stability margin (0=off): a ZMP-family PREDICTIVE signal — capture-point-in-support (translational) + low torso tilt-rate (rotational, the one that fires for spin-tipping); +1 stable, −1 about to tip (fires ~40 steps BEFORE the fall, unlike the reactive H_bal)
     max_steps: int = 800
@@ -343,7 +348,8 @@ class ResidualTrotEnv:
 
     def _base_gait_action(self, herr: float, pursuit: float, base_drive: float, *,
                           crouch: float | None = None, widen: float | None = None,
-                          lean: float | None = None, rate_mult: float = 1.0) -> np.ndarray:
+                          lean: float | None = None, rate_mult: float = 1.0,
+                          align_deg: float | None = None) -> np.ndarray:
         """The scaffold's base action before the residual: the rotational-couple TURN toward the goal when
         ``heading_mode="turn_then_walk"`` and the heading error is still wide, else the forward trot. This
         is the goal-reaching turning fix (0.11 → 0.56 reach); ``"arc"`` (default) keeps the prior weak
@@ -357,7 +363,8 @@ class ResidualTrotEnv:
         crouch = self.cfg.stab_crouch if crouch is None else crouch
         widen = self.cfg.stab_widen if widen is None else widen
         lean = self.cfg.stab_lean if lean is None else lean
-        if self.cfg.heading_mode == "turn_then_walk" and abs(herr) > float(np.deg2rad(self.cfg.turn_align_deg)):
+        align = self.cfg.turn_align_deg if align_deg is None else align_deg   # RL-modulated turn-vs-walk threshold
+        if self.cfg.heading_mode == "turn_then_walk" and abs(herr) > float(np.deg2rad(align)):
             turn = float(np.sign(herr)) * self.cfg.turn_rate * rate_mult
             raw = self._turn_gait.action(env, turn=turn)
             if crouch or widen or lean:                               # stabilize the fast turn (roll counter)
@@ -398,11 +405,16 @@ class ResidualTrotEnv:
         r = np.clip(np.asarray(residual, dtype=np.float64), -1.0, 1.0)
         if self.cfg.residual_mode == "stab":
             rate_mult = 1.0 + self.cfg.rate_res_scale * float(r[0])           # turn faster where stable / ease off where tipping
-            crouch = self.cfg.stab_crouch + self.cfg.crouch_res_scale * float(r[1])
-            widen = self.cfg.stab_widen + self.cfg.widen_res_scale * float(r[2])
             lean = self.cfg.stab_lean + self.cfg.lean_res_scale * float(r[3])
-            final = self._base_gait_action(herr, pursuit, base_drive, crouch=crouch, widen=widen,
-                                           lean=lean, rate_mult=rate_mult)   # already governed
+            if self.cfg.align_res_scale > 0.0:                               # swing-lift scaffold: r[1] is the ALIGN lever
+                align = float(np.clip(self.cfg.turn_align_deg + self.cfg.align_res_scale * float(r[1]), 5.0, 30.0))
+                final = self._base_gait_action(herr, pursuit, base_drive, crouch=0.0, widen=0.0,
+                                               lean=lean, rate_mult=rate_mult, align_deg=align)
+            else:                                                            # fast-turn scaffold: r[1]/r[2] are crouch/widen
+                crouch = self.cfg.stab_crouch + self.cfg.crouch_res_scale * float(r[1])
+                widen = self.cfg.stab_widen + self.cfg.widen_res_scale * float(r[2])
+                final = self._base_gait_action(herr, pursuit, base_drive, crouch=crouch, widen=widen,
+                                               lean=lean, rate_mult=rate_mult)   # already governed
         elif self.cfg.residual_mode == "steer":
             yaw = float(np.clip(pursuit + self.cfg.yaw_res_scale * r[0], -0.6, 0.6))
             drive = float(np.clip(base_drive + self.cfg.drive_res_scale * r[1], 0.0, 1.5))

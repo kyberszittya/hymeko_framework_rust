@@ -47,7 +47,8 @@ def _cfg(balance_w: float = 0.0, stability_w: float = 0.0, require_facing_deg: f
     return ResidualTrotConfig(
         residual_mode="stab", obs_mode="flat", heading_mode="turn_then_walk",
         turn_rate=1.2, turn_swing_lift=0.35, turn_lift_off=2.9, turn_freq=1.6,   # the swing-lifted (head-on) turn
-        turn_align_deg=15, stab_crouch=0.0, stab_widen=0.0,       # upright without crouch+widen; RL may add them
+        turn_align_deg=15, stab_crouch=0.0, stab_widen=0.0,       # upright without crouch+widen (dead DOF here)
+        align_res_scale=8.0,                                     # THE lever: RL modulates the turn-vs-walk align threshold (bearing-conditioned)
         balance_w=balance_w, stability_w=stability_w,
         require_facing_deg=require_facing_deg, heading_w=2.5,     # arrive ALIGNED, not backwards
         bearing_deg=135.0, dist_lo=0.5, dist_hi=0.7, max_steps=1600)

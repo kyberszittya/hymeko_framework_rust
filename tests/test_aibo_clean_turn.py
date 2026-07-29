@@ -77,6 +77,24 @@ def test_swing_lift_turn_beats_drifting_turn_end_to_end() -> None:
     assert lift_n > drift_n + 2                               # the swing-lift (not the align) does the work
 
 
+def test_align_lever_repurposes_crouch_slot_gated() -> None:
+    """align_res_scale>0 turns the stab residual's dead crouch slot (r[1]) into the turn-vs-walk ALIGN lever.
+
+    On the swing-lift scaffold crouch+widen are dead DOF; the live lever that faces wide bearings is the
+    align threshold (per-bearing-align oracle 0.75→0.93 held-out). This checks the lever is wired + gated:
+    a=0 is the scaffold, r[1] changes the align (hence the rollout), and default (0) leaves crouch behaviour.
+    """
+    common = dict(residual_mode="stab", obs_mode="flat", heading_mode="turn_then_walk", turn_rate=1.2,
+                  turn_swing_lift=0.35, turn_lift_off=2.9, turn_freq=1.6, turn_align_deg=15,
+                  align_res_scale=8.0, require_facing_deg=25, max_steps=1600)
+    env = ResidualTrotEnv(ResidualTrotConfig(**common), seed=0)
+    md0 = env.rollout_min_dist(lambda o: np.zeros(4, np.float32), (0.6, 90), seed=707, horizon=2400)[0]
+    md1 = env.rollout_min_dist(lambda o: np.array([0.0, -1.0, 0.0, 0.0], np.float32),                # r[1] → align 7°
+                               (0.6, 90), seed=707, horizon=2400)[0]
+    assert md0 != md1                                                       # the align lever changes the outcome
+    assert ResidualTrotConfig().align_res_scale == 0.0                      # default off → r[1] = crouch, unchanged
+
+
 def test_turn_fields_default_to_prior_drifting_turn() -> None:
     """Regression: the low-drift turn is opt-in — defaults rebuild the prior rotational couple unchanged."""
     cfg = ResidualTrotConfig()

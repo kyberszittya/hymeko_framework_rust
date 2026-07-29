@@ -104,6 +104,28 @@ seeds. So RL still does **not** beat the scaffold; the third honest evaporation 
 (position-only → facing → held-out). The scripted swing-lift gait is the deploy; RL's value here is nil-to-
 negative. (Same discipline as `feedback-heldout-panel-is-single-use` / the coin held-out arc.)
 
+## The align lever — right representation, still overfits (4th evaporation)
+
+The overfitting above is partly a **representation** mismatch: on the swing-lift scaffold crouch+widen are
+**dead DOF** (it's upright without them), so the stab residual modulates mostly-useless axes. The live lever
+that faces wide bearings is the **turn-vs-walk align threshold** — a per-bearing-align **oracle** lifts
+held-out reach **0.75 → 0.93** (21→26 / 28). So a config-gated `align_res_scale` repurposes the residual's
+dead crouch slot (`r[1]`) into an align modulation; the obs already carries the bearing (`cos/sin herr`), so
+the RL *can* learn a bearing-conditioned align. Re-trained + **held-out eval**:
+
+| reach (require_facing 25°) | train 500 | held700 | held900 | held-out mean |
+|---|---|---|---|---|
+| scaffold a=0 (swing-lift, align15) | 0.571 | 0.929 | 0.857 | **0.893** |
+| RL align-lever seed 0 / 1 / 2 | 0.64–0.86 | 0.57–0.79 | 0.64–0.86 | 0.61–0.79 |
+
+**On train seeds RL beats 3/3; on held-out the scaffold wins (0.893 vs RL 0.61–0.79) — overfits AGAIN**
+(the 4th evaporation: position-only → facing → swing-lift-RL → align-lever-RL). **The nuance:** the
+representation was *correct* (the align lever has real oracle headroom), but **correct representation is
+necessary, not sufficient** — the `align → facing` mapping is **seed-sensitive** (the residual drift makes
+"the right align for a bearing" partly seed-luck, not a clean generalisable function), so the RL learns the
+train-seeds' noise. **The robust answer stays the scripted scaffold (fixed align15, ~0.89 held-out).**
+`align_res_scale` shipped config-gated (default 0 = unchanged) as a validated-negative representation lever.
+
 ## Companion evening run — humanoid forward walk
 
 A 150-iteration parallel-CEM footstep-walk run (toe-extension + learned toe-off, `humanoid_toe2.hymeko`)
