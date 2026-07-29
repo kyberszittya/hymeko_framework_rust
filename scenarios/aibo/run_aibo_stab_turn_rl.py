@@ -77,7 +77,7 @@ def _eval(env: ResidualTrotEnv, act_fn, grid=_TEST, horizon=_HORIZON) -> "tuple[
 
 
 def _train(seed: int, steps: int, balance_w: float = 0.0, stability_w: float = 0.0,
-           anchor: float = 1.0) -> float:
+           anchor: float = 1.0, save_path: "Path | None" = None) -> float:
     env = ResidualTrotEnv(_cfg(balance_w, stability_w), seed=seed)
     torch.manual_seed(seed)
     actor, critics = build_sac("mlp", obs_dim=9, flat_dim=9, action_dim=4, action_scale=1.0, hidden=128)
@@ -100,6 +100,9 @@ def _train(seed: int, steps: int, balance_w: float = 0.0, stability_w: float = 0
     train_sac(actor, critics, env, cfg, eval_fn=eval_fn, dagger_teacher=teacher)
     if best["sd"] is not None:
         actor.load_state_dict(best["sd"])
+    if save_path is not None and best["sd"] is not None:
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(best["sd"], save_path)                                    # best-on-TEST actor, for rendering/deploy
     return _eval(env, _greedy(actor))[0]                                      # reach on the full TEST grid
 
 
@@ -110,11 +113,13 @@ def main() -> None:
     ap.add_argument("--balance_w", type=float, default=0.0)   # 0 = aligned reach reward (default); >0 re-adds dense survive
     ap.add_argument("--stability_w", type=float, default=0.0)
     ap.add_argument("--anchor", type=float, default=1.0)      # rollout-anchor to the a=0 scaffold (0 = unanchored, collapses)
+    ap.add_argument("--save", type=str, default="")           # dir to save each seed's best-on-TEST actor (for render/deploy)
     args = ap.parse_args()
     _OUT.mkdir(parents=True, exist_ok=True)
 
     scaffold = _eval(ResidualTrotEnv(_cfg(), seed=0), lambda o: np.zeros(4, np.float32))[0]  # a = 0 stabilized scaffold
-    per_seed = [{"seed": s, "rl": _train(s, args.steps, args.balance_w, args.stability_w, args.anchor)}
+    per_seed = [{"seed": s, "rl": _train(s, args.steps, args.balance_w, args.stability_w, args.anchor,
+                                         Path(args.save) / f"stab_actor_seed{s}.pt" if args.save else None)}
                 for s in args.seeds]
     for r in per_seed:
         print(f"seed {r['seed']}: stab scaffold(a=0) {scaffold} | RL {r['rl']}", flush=True)
