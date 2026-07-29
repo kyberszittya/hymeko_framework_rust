@@ -25,7 +25,7 @@ import mujoco
 import numpy as np
 
 from hymeko_rl.coin_delivery.coin_strict_markov_ablation import step_ablation
-from hymeko_rl.coin_delivery.forward_displacement import delivery_success, primary_fingertip_contacts
+from hymeko_rl.coin_delivery.forward_displacement import _coin_xy, delivery_success, primary_fingertip_contacts
 from hymeko_rl.coin_delivery.theta_option import kinetic_contract as kc
 from hymeko_rl.coin_delivery.theta_option.kinetic_clone import CloneActor
 from hymeko_rl.coin_delivery.theta_option.kinetic_handoff_reset import HandoffResetTemporalController
@@ -36,6 +36,7 @@ from hymeko_rl.env.motion_contract import govern_torque
 
 R2_ALPHA = 0.15
 CAPTURE_HORIZON = 80
+_NO_DELAY = 999                                    # sentinel: the two tips never both made contact
 
 
 # --------------------------------------------------------------------------------------------------------------------
@@ -102,7 +103,12 @@ class CaptureParams:
 
 @dataclass(frozen=True)
 class CaptureOutcome:
-    """Result of a phase-shaped capture: the terminal snapshot + the tube-diagnostic metrics + downstream verdict."""
+    """Result of a phase-shaped capture: the terminal snapshot + the tube-diagnostic metrics + downstream verdict.
+
+    The ``bilateral_dwell`` / ``*_contact_relvel`` / ``coin_disp_capture_mm`` fields are read-only contact-formation
+    diagnostics recorded *during* the roll (non-invasive: they never touch the sim). They default to the no-contact values
+    so the grasp-agnostic default cost and every existing consumer are unaffected.
+    """
 
     snapshot: Any
     cos_dir: float                 # cosine(terminal qvel, qvel_star)
@@ -112,11 +118,39 @@ class CaptureOutcome:
     k6: bool = False
     min_dtz_mm: float = float("nan")
     safe: bool = True
+    bilateral_dwell: int = 0                       # max consecutive both-tips-in-contact steps during the roll
+    first_contact_relvel: float = float("nan")     # coin speed at the first tip contact (impact softness proxy)
+    second_contact_relvel: float = float("nan")    # coin speed at the first BILATERAL contact (soft-seat proxy)
+    coin_disp_capture_mm: float = float("nan")     # peak coin displacement during the roll (ejection guard)
+    left_right_contact_delay: int = _NO_DELAY      # steps between first-left and first-right contact (999 if never both)
+    terminal_coin_speed: float = 0.0               # coin speed at the last step (grasp stability proxy)
+
+
+@dataclass(frozen=True)
+class GraspObjective:
+    """Opt-in grasp-aware CANDIDATE RANKING for the capture CEM (a class-based lexicographic rank, not a weighted sum).
+
+    The differential audit (bank_c0_3 seed-0 vs seed-1) showed the released capture fails by a *left-tip miss* under an
+    early/strong preload, while the grasped one seats both tips near-simultaneously and holds ~8 steps. The default cost
+    rewards only K6/min_dtz, so a held bilateral grasp is incidental — and an ungrasped nudge can win on min_dtz or even K6.
+
+    The fix ranks candidates by a grasp CLASS first (a NO_CONTACT nudge can never outrank a real grasp on min_dtz), with
+    numeric terms only breaking ties *within* a class — so there are no cross-class weights to tune, and no hand-coded
+    parameter bounds (``preload_start``/``bmax`` are left to the search; the score, not a rule, prefers the held grasp).
+
+    ``dwell_target`` is the only knob: the minimum consecutive bilateral-contact steps for the top GRASP_CERTIFIED class.
+    """
+
+    dwell_target: int = 4
 
 
 @dataclass(frozen=True)
 class CaptureSearchSpec:
-    """Bounds for the structured CEM (bounded structural parameters only — never raw per-step torques)."""
+    """Bounds for the structured CEM (bounded structural parameters only — never raw per-step torques).
+
+    ``grasp_objective`` is opt-in: ``None`` (default) keeps the grasp-agnostic K6/min_dtz cost and early-exit bit-exact;
+    setting it turns on the richer grasp-aware shaping + a grasped-only early-exit.
+    """
 
     s_max: float = 0.6
     steps: int = 20
@@ -127,11 +161,63 @@ class CaptureSearchSpec:
     iters: int = 14
     elite: int = 9
     init_std: float = 0.35
+    grasp_objective: "GraspObjective | None" = None
 
 
 # --------------------------------------------------------------------------------------------------------------------
 # The phase-shaped capture roller
 # --------------------------------------------------------------------------------------------------------------------
+@dataclass
+class _ContactTrace:
+    """Read-only per-step observation of contact formation during a capture roll.
+
+    # Invariants: never writes sim state (only reads contacts + coin kinematics), so the roll dynamics — and therefore
+    #   every existing CaptureOutcome field — are bit-identical whether or not this trace is recorded.
+    """
+
+    coin0: np.ndarray
+    dwell: int = 0
+    max_dwell: int = 0
+    first_l_step: int = -1
+    first_r_step: int = -1
+    first_relvel: float = float("nan")
+    second_relvel: float = float("nan")
+    coin_disp_mm: float = 0.0
+    terminal_coin_speed: float = 0.0
+
+    def observe(self, rl: Any, i: int) -> None:
+        con = primary_fingertip_contacts(rl)
+        cl, cr = con["left"] is not None, con["right"] is not None
+        speed = float(np.linalg.norm(np.asarray(rl.inner._planar_metrics.disk_vel, float)[:2]))
+        self._note_first_contacts(cl, cr, i, speed)
+        self.dwell = self.dwell + 1 if (cl and cr) else 0
+        self.max_dwell = max(self.max_dwell, self.dwell)
+        self.coin_disp_mm = max(self.coin_disp_mm, float(np.linalg.norm(_coin_xy(rl) - self.coin0)) * 1000)
+        self.terminal_coin_speed = speed
+
+    def _note_first_contacts(self, cl: bool, cr: bool, i: int, speed: float) -> None:
+        """Record the first left/right contact step."""
+        if cl and self.first_l_step < 0:
+            self.first_l_step = i
+        if cr and self.first_r_step < 0:
+            self.first_r_step = i
+        self._note_relvels(cl, cr, speed)
+
+    def _note_relvels(self, cl: bool, cr: bool, speed: float) -> None:
+        """Record the coin speed at the first any-contact and the first bilateral-contact step (impact-softness proxies)."""
+        if (cl or cr) and np.isnan(self.first_relvel):
+            self.first_relvel = speed
+        if cl and cr and np.isnan(self.second_relvel):
+            self.second_relvel = speed
+
+    @property
+    def contact_delay(self) -> int:
+        """Steps between the first left and first right contact (``_NO_DELAY`` if the two never both contacted)."""
+        if self.first_l_step >= 0 and self.first_r_step >= 0:
+            return abs(self.first_l_step - self.first_r_step)
+        return _NO_DELAY
+
+
 class PhaseShapeCapture:
     """Roll a phase-shaped moving precursor from READY through the governed servo (no state edit, no hidden force).
 
@@ -161,10 +247,10 @@ class PhaseShapeCapture:
         coeffs = quintic_coeffs(self.q0, self.v0, q_pre, params.s * self.ref.qvel_star, params.steps * dt)
         mujoco.set_mjcb_control(self._governor())
         try:
-            rl, prev = self._track(coeffs, params)
+            rl, prev, trace = self._track(coeffs, params)
         finally:
             mujoco.set_mjcb_control(None)
-        return self._outcome(rl, prev)
+        return self._outcome(rl, prev, trace)
 
     def _governor(self) -> Callable:
         gov = self.stack.gov
@@ -174,13 +260,16 @@ class PhaseShapeCapture:
 
         return cb
 
-    def _track(self, coeffs: "tuple[np.ndarray, ...]", params: CaptureParams) -> "tuple[Any, np.ndarray]":
+    def _track(self, coeffs: "tuple[np.ndarray, ...]",
+               params: CaptureParams) -> "tuple[Any, np.ndarray, _ContactTrace]":
         rl = self.ready.branch()
         prev = self.prev0.copy()
         knot_t = np.linspace(0, len(params.residual) - 1, params.steps)
+        trace = _ContactTrace(coin0=_coin_xy(rl))
         for i in range(params.steps):
             prev = self.apply_step(rl, prev, self.scaffold_action(rl, prev, i, coeffs, params, knot_t))
-        return rl, prev
+            trace.observe(rl, i)                                     # read-only: does not perturb the roll
+        return rl, prev, trace
 
     def scaffold_action(self, rl: Any, prev: np.ndarray, i: int, coeffs: "tuple[np.ndarray, ...]",
                         params: CaptureParams, knot_t: np.ndarray) -> np.ndarray:
@@ -218,7 +307,7 @@ class PhaseShapeCapture:
         weight = params.bmax * (frac - params.preload_start) / (1.0 - params.preload_start + 1e-9)
         return (1.0 - weight) * target + weight * self.ref.tau_star
 
-    def _outcome(self, rl: Any, prev: np.ndarray) -> CaptureOutcome:
+    def _outcome(self, rl: Any, prev: np.ndarray, trace: _ContactTrace) -> CaptureOutcome:
         d = rl.inner.data
         qv = d.qvel[:4]
         speed = float(np.linalg.norm(qv))
@@ -227,7 +316,12 @@ class PhaseShapeCapture:
         snap = kc.TransportSnapshot.from_live(copy.deepcopy(rl), self.stack, prev.copy())
         return CaptureOutcome(snapshot=snap, cos_dir=round(cos, 3), vel_scale=round(speed / (self.ref.speed + 1e-9), 3),
                               dtau=round(float(np.linalg.norm(prev - self.ref.tau_star)), 3),
-                              contacts=int(con["left"] is not None) + int(con["right"] is not None))
+                              contacts=int(con["left"] is not None) + int(con["right"] is not None),
+                              bilateral_dwell=trace.max_dwell, first_contact_relvel=round(trace.first_relvel, 4),
+                              second_contact_relvel=round(trace.second_relvel, 4),
+                              coin_disp_capture_mm=round(trace.coin_disp_mm, 2),
+                              left_right_contact_delay=trace.contact_delay,
+                              terminal_coin_speed=round(trace.terminal_coin_speed, 4))
 
 
 # --------------------------------------------------------------------------------------------------------------------
@@ -263,11 +357,44 @@ def _theta_to_params(theta: np.ndarray, spec: CaptureSearchSpec) -> CaptureParam
                          residual=theta[3:].reshape(spec.knots, 4), steps=spec.steps, kp=spec.kp, kd=spec.kd)
 
 
-def _cost(outcome: CaptureOutcome) -> float:
-    """Lexicographic-flavoured cost: unsafe is hard-penalised; else 0 on K6 or min_dtz."""
+GRASP_CERTIFIED, BILATERAL_TRANSIENT, SINGLE_CONTACT_ONLY, NO_CONTACT, SAFETY_FAILURE = 0, 1, 2, 3, 4
+
+
+def _grasp_class(outcome: CaptureOutcome, dwell_target: int) -> int:
+    """Rank a candidate's grasp quality into a class (lower = better). This is the dominant ranking signal: no numeric
+    min_dtz/K6 advantage lets a lower class outrank a higher one — a NO_CONTACT nudge can never beat a real grasp."""
     if not outcome.safe:
-        return 1e3
-    return 0.0 if outcome.k6 else outcome.min_dtz_mm
+        return SAFETY_FAILURE
+    if outcome.contacts == 2 and outcome.bilateral_dwell >= dwell_target:
+        return GRASP_CERTIFIED                                      # both tips held for the required dwell -> delivery-ready
+    if outcome.bilateral_dwell > 0 or not np.isnan(outcome.second_contact_relvel):
+        return BILATERAL_TRANSIENT                                  # both tips touched at some point but not held
+    if not np.isnan(outcome.first_contact_relvel):
+        return SINGLE_CONTACT_ONLY                                  # only one tip ever contacted
+    return NO_CONTACT
+
+
+def _rank_key(outcome: CaptureOutcome, obj: "GraspObjective | None" = None) -> Any:
+    """Candidate ranking key (lower = better).
+
+    Default (``obj is None``) reproduces the original grasp-agnostic scalar cost exactly. With ``obj`` set, returns a
+    class-based lexicographic tuple whose ordering was fixed by the A/B on bank_c0_3:
+
+    1. grasp CLASS (a NO_CONTACT nudge can never outrank a real grasp — this is the fix for the ranking-contract bug);
+    2. within a class, DOWNSTREAM DELIVERY (min_dtz): dwell is a *classification* criterion, not a ranking one — ranking
+       held grasps by dwell picked stable-but-undeliverable grasps (near-zero preload) and regressed valid K6 to 0, so
+       delivery decides among grasps of the same class;
+    3. then dwell / left-right delay / terminal coin speed as stability tie-breaks.
+
+    No cross-class weights, no hand-coded param bounds. Postcondition: ``obj is None`` -> the exact prior float cost.
+    """
+    if not outcome.safe:
+        return 1e3 if obj is None else (SAFETY_FAILURE, 1e3, 0, _NO_DELAY, 0.0)
+    if obj is None:
+        return 0.0 if outcome.k6 else outcome.min_dtz_mm
+    md = outcome.min_dtz_mm if not np.isnan(outcome.min_dtz_mm) else 1e3
+    return (_grasp_class(outcome, obj.dwell_target), round(md, 2), -outcome.bilateral_dwell,
+            outcome.left_right_contact_delay, round(outcome.terminal_coin_speed, 3))
 
 
 def _evaluate(theta: np.ndarray, cap: PhaseShapeCapture, spec: CaptureSearchSpec,
@@ -276,6 +403,13 @@ def _evaluate(theta: np.ndarray, cap: PhaseShapeCapture, spec: CaptureSearchSpec
     out = cap.roll(params)
     k6, md, safe = downstream.deliver(out.snapshot)
     return replace(out, k6=k6, min_dtz_mm=md, safe=safe)
+
+
+def _solution_found(best: "tuple[Any, np.ndarray, CaptureOutcome] | None", obj: "GraspObjective | None") -> bool:
+    """CEM stopping condition: any K6 (default) — or, when grasp-aware, only a *held* grasped K6 (never a nudge-K6)."""
+    if best is None or not best[2].k6:
+        return False
+    return obj is None or _grasp_class(best[2], obj.dwell_target) == GRASP_CERTIFIED
 
 
 @dataclass(frozen=True)
@@ -300,20 +434,21 @@ def plan_capture(ready: Any, ref: HandoffReference, stack: Any, downstream: Froz
     mean = np.zeros(dim)
     mean[:3] = [0.6, 0.5, 0.5]                       # priors: s_raw, preload_start, bmax
     std = np.full(dim, spec.init_std)
+    obj = spec.grasp_objective
     best: "tuple[float, np.ndarray, CaptureOutcome] | None" = None
     for _ in range(spec.iters):
         pop = mean[None] + std[None] * rng.standard_normal((spec.population, dim))
         scored = []
         for theta in pop:
             out = _evaluate(theta, cap, spec, downstream)
-            cost = _cost(out)
+            cost = _rank_key(out, obj)
             scored.append((cost, theta))
             if best is None or cost < best[0]:
                 best = (cost, theta, out)
         scored.sort(key=lambda z: z[0])
         elite = np.stack([theta for _, theta in scored[:spec.elite]])
         mean, std = elite.mean(0), elite.std(0) * 0.88 + 1e-3
-        if best is not None and best[2].k6:
+        if _solution_found(best, obj):
             break
     assert best is not None
     return CaptureResult(seed=seed, params=_theta_to_params(best[1], spec), outcome=best[2])
