@@ -39,6 +39,7 @@ class FlightGaitConfig:
     w_flight: float = 2.0            # explicit reward for a genuine flight phase (both feet up)
     w_ctrl: float = 0.0005
     fall_z: float = 0.55             # pelvis-z below this = fallen
+    model_src: str = "humanoid.hymeko"   # model variant (e.g. humanoid_toe2.hymeko for the toe/push-off foot)
 
 
 class FlightGaitEnv:
@@ -51,7 +52,7 @@ class FlightGaitEnv:
 
     def __init__(self, cfg: FlightGaitConfig | None = None, seed: int = 0) -> None:
         self.cfg = cfg or FlightGaitConfig()
-        self._mj, self.model = _build("humanoid.hymeko")
+        self._mj, self.model = _build(self.cfg.model_src)
         self.data = self._mj.MjData(self.model)
         self._mj.mj_forward(self.model, self.data)
         self._q0 = self.data.qpos.copy()
@@ -93,13 +94,16 @@ class FlightGaitEnv:
         tgt = self._q0j.copy()
         for side, (hi, ki, ai) in enumerate(zip(self.LEG["hip"], self.LEG["knee"], self.LEG["ankle"])):
             legph = ph + side * np.pi                          # right leg is half a cycle behind the left
-            s, c = np.sin(legph), np.cos(legph)
-            # push-off pulse: sharp positive lobe in late stance (legph near 0/2pi), zero in swing
-            push = max(0.0, np.cos(legph)) ** 3
-            tgt[hi] = self._q0j[hi] + p["lean"] - p["hip_amp"] * s               # hip: swing fore-aft + lean
-            tgt[ki] = self._q0j[ki] + p["knee_crouch"] + p["knee_amp"] * (0.5 - 0.5 * c) \
-                - p["push_amp"] * push                                          # knee: crouch, extend to push off
-            tgt[ai] = self._q0j[ai] + p["ankle_amp"] * s + p["push_amp"] * 0.5 * push  # ankle: plantarflex to launch
+            # PHASE OFFSETS (hip_off/knee_off/ankle_off) let the CEM TIME the push-off to the leg-behind
+            # position so propulsion is FORWARD — without them the push-off fired at a fixed (neutral-hip)
+            # phase and the legs drove the body BACKWARD (2026-07-30 fix; the offsets were dead params).
+            hip_ph = legph + p["hip_off"]
+            push = max(0.0, np.cos(legph + p["knee_off"])) ** 3                  # push-off pulse, tunable timing
+            tgt[hi] = self._q0j[hi] + p["lean"] - p["hip_amp"] * np.sin(hip_ph)  # hip: swing fore-aft (phased) + lean
+            tgt[ki] = self._q0j[ki] + p["knee_crouch"] + p["knee_amp"] * (0.5 - 0.5 * np.cos(hip_ph)) \
+                - p["push_amp"] * push                                          # knee: crouch (with hip) + push-off extend
+            tgt[ai] = self._q0j[ai] + p["ankle_amp"] * np.sin(legph + p["ankle_off"]) \
+                + p["push_amp"] * 0.5 * push                                    # ankle: plantarflex (phased) + launch
         for arm in self.ARM:                                                    # arms counter-swing (momentum)
             side = 0 if arm == self.ARM[0] else 1
             tgt[arm] = self._q0j[arm] + p["arm_amp"] * np.sin(ph + side * np.pi)
