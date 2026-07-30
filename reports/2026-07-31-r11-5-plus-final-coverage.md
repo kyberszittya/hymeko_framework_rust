@@ -114,8 +114,32 @@ Branch `feature/r11-4a-target-conditioned-delivery-teacher`. Host: Mac (darwin 2
 idempotent. Bank sha `6cacd30b`; taxonomy sha in `reports/2026-07-31-r11-5-plus-residual-taxonomy.json`. Deterministic
 seeds. Energy diagnostic-only. No CORE.YAML edits, no dependency changes.
 
+## kato14 cross-host reproduction (official numbers, `reports/2026-07-31-kato14-full51-repro/`, `...-recovery-pilot-kato14.json`)
+Re-ran on kato14 (Linux x86-64, 32 cores; same venv — mujoco 3.10.0 / numpy 2.4.6 / torch 2.12.0) after the lab network
+came back. Code + data rsynced; 30 R11.5+ unit tests pass on kato14.
+
+| benchmark | Mac | kato14 | reproduced? |
+|---|---|---|---|
+| full-51 coverage | **40/64** (33 rec, 47 cert) | **38/64** (31 rec, 51 cert) | ✓ verdict `INSUFFICIENT` both; ±2 near-boundary variance |
+| pilot verdict | `..._RECOVERY_INSUFFICIENT` | `..._RECOVERY_INSUFFICIENT` | ✓ |
+| **two_stage_adds** | **0** | **0** | ✓ **the two-stage ALIGN is dead on both hosts** |
+| negative-x recovered | 0/4 (all `ALIGNMENT_FAILURE`) | 0/4 (all `ALIGNMENT_FAILURE`) | ✓ |
+| pilot recovered | 1/12 | 3/12 (all INSUFFICIENT, via single-stage) | qualitatively (both < 6 gate) |
+
+**What is host-robust:** the honest negative — `two_stage_adds = 0` (the ALIGN coordinate never helps), CONTACT_LOSS
+unrecoverable in scope, verdict INSUFFICIENT. **What is host-variable:** which *near-boundary* INSUFFICIENT scenarios
+flip to K6 (Mac 1, kato14 3 in the pilot; full-51 38 vs 40). kato14 also re-certified **all 51** capture grasps (Mac 47)
+— its capture is marginally more reliable. Both movements are cross-architecture MuJoCo variance on scenarios sitting
+right at the 20 mm K6 boundary — which **corroborates the grasp-quality lead**: these residuals deliver to K6 with a
+good-enough grasp via the *existing* single-stage transport, independent of the (dead) two-stage coordinate.
+
 ## Recommended BC GO / NO-GO
-**NO-GO for BC.** Coverage (40/64) is below the 45-formal / 47-margin gate, and the residual is a *mechanism* limit, not
-a data/tuning gap — BC on 40/64 would bake in the coordinate-bound ceiling. Recommended next frontier (R11.5++, a new
-gated task): capture-geometry / regrasp for +/+ and negative-x targets — i.e. the mechanism change the bounded evidence
-now justifies.
+**NO-GO for BC.** Coverage (38–40/64) is below the 45-formal / 47-margin gate, and BC on it would bake in the current
+ceiling. **Recommended next lever (R11.5++, sharpened by the cross-host reproduction): deliverability-ranked capture-grasp
+selection.** The two-stage ALIGN is dead (`two_stage_adds = 0`, both hosts); the transport coordinate is NOT the
+INSUFFICIENT bottleneck — the *grasp* is (near-boundary INSUFFICIENT scenarios deliver to K6 via the **existing**
+single-stage transport whenever a good-enough grasp is found; 3/4 on kato14). Concretely: extend the grasp-aware capture
+CEM to rank certified grasps by their **delivered dtz** (not just grasp class), over a larger seed budget — an in-scope
+extension of the R11.4A ranking, not a new controller. This directly targets the 10 INSUFFICIENT residuals (the plausible
++7 toward 47/64) and is the honest, evidence-backed continuation. CONTACT_LOSS (4) + +/+ CAPTURE_SUPPORT (10) remain a
+harder regrasp/reposition problem for later.
