@@ -24,8 +24,10 @@ import numpy as np
 
 from scenarios.humanoid.flight_gait import PDIM, FlightGaitConfig, FlightGaitEnv
 
-_MU0 = np.array([2.0, 0.5, 0.0, 0.5, 0.0, 0.3, 0.3, 0.0, 0.8, 0.0, 0.4])   # a flight-producing seed
-_SIG0 = np.array([0.5, 0.4, 0.2, 0.4, 0.2, 0.3, 0.3, 0.2, 0.5, 0.3, 0.3])
+# warm-start from the FORWARD-timed phases (hip_off/knee_off/ankle_off found by the direction fix), with wide
+# sigma on the phase offsets so the CEM can retime for forward+flight instead of the backward local optimum.
+_MU0 = np.array([2.2, 0.6, -3.3, 0.5, 0.4, 0.3, 0.3, 0.6, 1.2, 0.0, 0.4])
+_SIG0 = np.array([0.5, 0.4, 1.2, 0.4, 1.2, 0.3, 0.4, 1.2, 0.6, 0.3, 0.3])
 
 
 def _cfg(w_flight: float, w_forward: float) -> FlightGaitConfig:
