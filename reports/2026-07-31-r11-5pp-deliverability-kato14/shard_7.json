@@ -1,0 +1,191 @@
+{
+  "gate": {
+    "n": 1,
+    "scenarios_with_grasps": 1,
+    "material_dtz_improvement": "0/1",
+    "ranked_k6": "1/1",
+    "recovered_by_ranking": 0,
+    "all_safe": true,
+    "all_certified": true,
+    "any_deliverable": true,
+    "verdict": "CAPTURE_DELIVERABILITY_RANKING_CONTRACT_GAP"
+  },
+  "rows": [
+    {
+      "scenario_id": "bank_c3_r9_a+15",
+      "split": "test",
+      "selection_kind": "DELIVERY_ORACLE_RANKED_CAPTURE_TEACHER",
+      "teacher_only": true,
+      "n_grasps": 3,
+      "n_deliverable_k6": 2,
+      "all_certified": true,
+      "all_safe": true,
+      "current_seed": 1,
+      "current_k6": true,
+      "current_dtz_mm": 19.14,
+      "ranked_seed": 4,
+      "ranked_k6": true,
+      "ranked_dtz_mm": 17.0,
+      "recovered_by_ranking": false,
+      "material_dtz_improvement": false,
+      "candidates": [
+        {
+          "seed": 1,
+          "capture": {
+            "n": 3.0,
+            "s": 0.395,
+            "preload_start": 0.0,
+            "bmax": 0.7669
+          },
+          "bilateral_dwell": 6,
+          "contact_delay": 1,
+          "first_contact_relvel": 0.0095,
+          "second_contact_relvel": 0.1171,
+          "coin_disp_capture_mm": 6.12,
+          "terminal_coin_speed": 0.1039,
+          "handoff": {
+            "q": [
+              -0.5083,
+              -0.7365,
+              -0.3504,
+              2.1117
+            ],
+            "qdot": [
+              -0.7416,
+              -0.2591,
+              0.626,
+              0.4913
+            ],
+            "prev_tau": [
+              -0.9507,
+              -0.8073,
+              -0.2086,
+              2.1785
+            ],
+            "coin_xy": [
+              0.0782,
+              0.1372
+            ],
+            "coin_vel": [
+              0.0076,
+              -0.1036
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 19.14,
+            "final_dtz_mm": 19.14,
+            "gap_closed": 0.795,
+            "forward_mm": 78.6,
+            "k6": true,
+            "safe": true
+          }
+        },
+        {
+          "seed": 4,
+          "capture": {
+            "n": 3.0,
+            "s": 0.2267,
+            "preload_start": 0.405,
+            "bmax": 0.7615
+          },
+          "bilateral_dwell": 4,
+          "contact_delay": 2,
+          "first_contact_relvel": 0.0668,
+          "second_contact_relvel": 0.148,
+          "coin_disp_capture_mm": 6.33,
+          "terminal_coin_speed": 0.0456,
+          "handoff": {
+            "q": [
+              -0.524,
+              -0.6751,
+              -0.3703,
+              2.1103
+            ],
+            "qdot": [
+              -0.7331,
+              -0.1968,
+              0.2523,
+              0.4625
+            ],
+            "prev_tau": [
+              -0.9416,
+              -0.7446,
+              -0.2319,
+              2.2146
+            ],
+            "coin_xy": [
+              0.0804,
+              0.1385
+            ],
+            "coin_vel": [
+              0.0055,
+              -0.0453
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 17.0,
+            "final_dtz_mm": 17.0,
+            "gap_closed": 0.822,
+            "forward_mm": 85.8,
+            "k6": true,
+            "safe": true
+          }
+        },
+        {
+          "seed": 9,
+          "capture": {
+            "n": 3.0,
+            "s": 0.3473,
+            "preload_start": 0.0102,
+            "bmax": 0.9924
+          },
+          "bilateral_dwell": 4,
+          "contact_delay": 1,
+          "first_contact_relvel": 0.2167,
+          "second_contact_relvel": 0.3014,
+          "coin_disp_capture_mm": 12.72,
+          "terminal_coin_speed": 0.1909,
+          "handoff": {
+            "q": [
+              -0.7985,
+              -0.1735,
+              -0.4004,
+              2.1628
+            ],
+            "qdot": [
+              -0.4539,
+              -0.7806,
+              1.0259,
+              0.811
+            ],
+            "prev_tau": [
+              -1.0268,
+              -0.8443,
+              -0.1834,
+              2.3189
+            ],
+            "coin_xy": [
+              0.0821,
+              0.1317
+            ],
+            "coin_vel": [
+              0.0505,
+              -0.1841
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 34.91,
+            "final_dtz_mm": 34.91,
+            "gap_closed": 0.646,
+            "forward_mm": 75.8,
+            "k6": false,
+            "safe": true
+          }
+        }
+      ]
+    }
+  ]
+}
