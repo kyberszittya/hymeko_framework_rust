@@ -30,18 +30,19 @@ _MU0 = np.array([2.2, 0.6, -3.3, 0.5, 0.4, 0.3, 0.3, 0.6, 1.2, 0.0, 0.4])
 _SIG0 = np.array([0.5, 0.4, 1.2, 0.4, 1.2, 0.3, 0.4, 1.2, 0.6, 0.3, 0.3])
 
 
-def _cfg(w_flight: float, w_forward: float) -> FlightGaitConfig:
+def _cfg(w_flight: float, w_forward: float, model_src: str = "humanoid.hymeko") -> FlightGaitConfig:
     # w_flight up => bigger, more visible hops; w_forward up => faster. The CEM balances against falling.
-    return FlightGaitConfig(steps=900, w_flight=w_flight, w_forward=w_forward)
+    return FlightGaitConfig(steps=900, w_flight=w_flight, w_forward=w_forward, model_src=model_src)
 
 
-def _eval(args: "tuple[np.ndarray, float, float]") -> "tuple[float, float, float, float]":
-    theta, wf, wfo = args
-    return FlightGaitEnv(_cfg(wf, wfo), seed=0).rollout(theta, seed=0)
+def _eval(args: "tuple[np.ndarray, float, float, str]") -> "tuple[float, float, float, float]":
+    theta, wf, wfo, model = args
+    return FlightGaitEnv(_cfg(wf, wfo, model), seed=0).rollout(theta, seed=0)
 
 
 def train(iters: int, pop: int, elite: int, workers: int, out: Path,
-          w_flight: float = 3.0, w_forward: float = 6.0, seed: int = 0) -> np.ndarray:
+          w_flight: float = 3.0, w_forward: float = 6.0, seed: int = 0,
+          model_src: str = "humanoid.hymeko") -> np.ndarray:
     rng = np.random.default_rng(seed)
     mu, sig = _MU0.copy(), _SIG0.copy()
     best = (-1e9, _MU0.copy(), 0.0, 0.0, 0.0)                  # (ret, theta, fwd, flight, upright)
@@ -49,7 +50,7 @@ def train(iters: int, pop: int, elite: int, workers: int, out: Path,
     journal = (out / "journal.jsonl").open("w")
     for it in range(iters):
         cand = mu + sig * rng.standard_normal((pop, PDIM))
-        args = [(c, w_flight, w_forward) for c in cand]
+        args = [(c, w_flight, w_forward, model_src) for c in cand]
         if workers > 1:
             with ProcessPoolExecutor(max_workers=workers) as ex:
                 res = list(ex.map(_eval, args))
@@ -70,7 +71,7 @@ def train(iters: int, pop: int, elite: int, workers: int, out: Path,
     np.save(out / "best_gait.npy", best[1])
     (out / "result.json").write_text(json.dumps({
         "best_fwd": best[2], "best_flight": best[3], "best_upright": best[4],
-        "w_flight": w_flight, "w_forward": w_forward, "iters": iters, "pop": pop}, indent=2))
+        "w_flight": w_flight, "w_forward": w_forward, "model_src": model_src, "iters": iters, "pop": pop}, indent=2))
     print(f"[flight] DONE fwd={best[2]:+.3f} flight={best[3]*100:.0f}% upright={best[4]*100:.0f}%", flush=True)
     return best[1]
 
@@ -80,7 +81,9 @@ def render(gait_path: Path, out: Path) -> None:
     import mujoco
     from PIL import Image, ImageDraw, ImageFont
     theta = np.load(gait_path)
-    env = FlightGaitEnv(FlightGaitConfig(steps=900), seed=0)
+    res = gait_path.parent / "result.json"
+    model_src = json.loads(res.read_text()).get("model_src", "humanoid.hymeko") if res.exists() else "humanoid.hymeko"
+    env = FlightGaitEnv(FlightGaitConfig(steps=900, model_src=model_src), seed=0)
     env.reset(seed=0)
     env.model.vis.global_.offwidth, env.model.vis.global_.offheight = 560, 432
     r = mujoco.Renderer(env.model, height=432, width=560)
@@ -132,6 +135,7 @@ def main() -> None:
     ap.add_argument("--w_flight", type=float, default=3.0)
     ap.add_argument("--w_forward", type=float, default=6.0)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--model_src", type=str, default="humanoid.hymeko")
     ap.add_argument("--out", type=str, default="experiments/humanoid_flight")
     ap.add_argument("--render", action="store_true")
     args = ap.parse_args()
@@ -139,7 +143,7 @@ def main() -> None:
         render(Path(args.out) / "best_gait.npy", Path(args.out))
         return
     train(args.iters, args.pop, args.elite, args.workers, Path(args.out),
-          w_flight=args.w_flight, w_forward=args.w_forward, seed=args.seed)
+          w_flight=args.w_flight, w_forward=args.w_forward, seed=args.seed, model_src=args.model_src)
 
 
 if __name__ == "__main__":
