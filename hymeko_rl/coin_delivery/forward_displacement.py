@@ -23,6 +23,7 @@ NO pin, NO teleport, NO hidden force, NO τ_rate change, V2/V4 read-only.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 import mujoco
 import numpy as np
@@ -196,6 +197,63 @@ def rollout_primitive(snap: CradleSnapshot, theta, cfg: ForwardConfig, *, frame_
             "lost_before_release": lost_before_release, "release_step": rel,
             "straddle_min": (None if straddle_min == 1.0 else straddle_min),
             "min_fn_push": (None if min_fn_push == 1e9 else float(min_fn_push)), "coin_trace": [c.tolist() for c in trace]}
+
+
+def rotate2d(v: np.ndarray, deg: float) -> np.ndarray:
+    """Rotate a 2-vector by ``deg`` degrees (scenario-relative direction correction — never a world-frame rule)."""
+    r = np.radians(deg)
+    c, s = np.cos(r), np.sin(r)
+    v = np.asarray(v, np.float64)
+    return np.array([c * v[0] - s * v[1], s * v[0] + c * v[1]], np.float64)
+
+
+def run_align_segment(snap: CradleSnapshot, e_par_align: np.ndarray, align_theta: "tuple[float, ...]",
+                      cfg: ForwardConfig, n_steps: int) -> "tuple[Any, np.ndarray, dict[str, Any]]":
+    """TARGET_RELATIVE_ALIGNMENT_PHASE: run ``n_steps`` of the primitive's PUSH schedule toward ``e_par_align`` (a
+    scenario-relative correction direction), grip maintained, on a fresh branch of ``snap``. This is NOT a shorter first
+    PUSH toward the zone — it drives the coin toward a *virtual* intermediate direction to set up a favourable
+    force-transfer state for the transport phase that follows.
+
+    Reuses the exact same ``_schedule_increment`` PUSH physics (``align_theta`` = (squeeze, forward, balance, ramp, rel,
+    brake_gain) with ramp = n_steps, rel > n_steps so the whole segment stays in PUSH — no brake/release).
+
+    # Preconditions: ``snap`` a certified-grasp handoff; ``n_steps >= 1``; ``e_par_align`` a unit 2-vector.
+    # Postconditions: returns the LIVE post-align branch ``rl`` (to build the transport snapshot from), the last governed
+    #   ``prev_tau``, and read-only ALIGN metrics (velocity-direction cosine vs the TRUE target, lateral speed, grasp
+    #   retention, coin displacement). No state edit, no hidden force — every command passes the governed step.
+    """
+    rl = snap.branch()
+    e_par_true, _dtz = rl.inner.direction_to_zone()
+    e_par_true = np.asarray(e_par_true, np.float64)
+    coin0 = _coin_xy(rl)
+    step = float(snap.stack.tau_rate * snap.stack.control_dt)
+    prev_tau = snap.prev_tau.copy()
+
+    def _gcb(_mo, dt):
+        dt.ctrl[:4] = govern_torque(dt.ctrl[:4], dt.qvel[:4], snap.stack.gov)
+
+    mujoco.set_mjcb_control(_gcb)
+    lost = 0
+    try:
+        for t in range(1, n_steps + 1):
+            coin = _coin_xy(rl)
+            dtau = _schedule_increment(rl, align_theta, t, e_par_align, step, coin)
+            prev_tau = np.clip(prev_tau + dtau, snap.lo, snap.hi)
+            step_ablation(rl, np.asarray(prev_tau, np.float32), "A")
+            con = primary_fingertip_contacts(rl)
+            if not (con["left"] is not None and con["right"] is not None):
+                lost += 1
+    finally:
+        mujoco.set_mjcb_control(None)
+    v_coin = np.asarray(rl.inner._planar_metrics.disk_vel, np.float64)[:2]
+    sp = float(np.linalg.norm(v_coin))
+    cos_true = float(v_coin @ e_par_true / sp) if sp > 1e-6 else 1.0
+    lateral = float(abs(v_coin @ np.array([-e_par_true[1], e_par_true[0]])))
+    con = primary_fingertip_contacts(rl)
+    held = con["left"] is not None and con["right"] is not None
+    metrics = {"cos_true": round(cos_true, 4), "lateral_speed": round(lateral, 4), "grasp_held": bool(held),
+               "lost_steps": int(lost), "coin_disp_mm": round(float(np.linalg.norm(_coin_xy(rl) - coin0)) * 1000, 2)}
+    return rl, prev_tau, metrics
 
 
 def passive_drift(snap: CradleSnapshot, cfg: ForwardConfig) -> float:

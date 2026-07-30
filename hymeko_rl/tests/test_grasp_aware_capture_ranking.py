@@ -219,3 +219,18 @@ def test_best_capture_early_exits_only_on_certified_grasped_k6(monkeypatch: pyte
     best = P._best_capture(rig, None, 0, 3, GraspObjective())
     assert is_certified_grasp(best.outcome, GraspObjective()) and best.outcome.k6           # stops on the certified grasped-K6
     assert rank_capture(best.outcome, GraspObjective())[0] == GRASP_CERTIFIED
+
+
+def test_candidate_hook_observes_every_candidate_and_is_bit_exact(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The Phase-2 audit instrumentation: ``candidate_hook`` sees every evaluated outcome and does not perturb the search
+    (the returned CaptureResult is identical with and without the hook)."""
+    monkeypatch.setattr(mp, "PhaseShapeCapture", lambda *a: object())
+    outcome = _oc(safe=True, k6=False, min_dtz_mm=50.0)                                       # no K6 -> no early exit
+    monkeypatch.setattr(mp, "_evaluate", lambda _theta, _cap, _spec, _down: outcome)
+    spec = CaptureSearchSpec(population=3, iters=2, grasp_objective=GraspObjective())
+    seen: list = []
+    res_hook = mp.plan_capture(None, None, None, None, seed=0, spec=spec, candidate_hook=seen.append)
+    res_none = mp.plan_capture(None, None, None, None, seed=0, spec=spec)
+    assert len(seen) == spec.population * spec.iters and all(o is outcome for o in seen)      # every candidate observed
+    assert res_hook.outcome is res_none.outcome                                              # hook does not change the result
+    assert np.array_equal(res_hook.params.residual, res_none.params.residual)

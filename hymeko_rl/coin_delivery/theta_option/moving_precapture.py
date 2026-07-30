@@ -469,11 +469,14 @@ class CaptureResult:
 
 
 def plan_capture(ready: Any, ref: HandoffReference, stack: Any, downstream: FrozenDownstream, *, seed: int,
-                 spec: CaptureSearchSpec = CaptureSearchSpec()) -> CaptureResult:
+                 spec: CaptureSearchSpec = CaptureSearchSpec(),
+                 candidate_hook: "Callable[[CaptureOutcome], None] | None" = None) -> CaptureResult:
     """Structured CEM over the bounded capture parameters, scored by the frozen downstream (stops on the first K6).
 
     # Preconditions: ``ready`` is the frozen analytic-transit READY snapshot; ``ref`` the cradle phase-point.
     # Postconditions: deterministic given ``seed``; the returned params reproduce the outcome via ``PhaseShapeCapture``.
+    # ``candidate_hook`` (optional) observes every evaluated ``CaptureOutcome`` — read-only audit instrumentation, does not
+    #   touch the search (``None`` is bit-exact to the prior behaviour).
     """
     cap = PhaseShapeCapture(ready, ref, stack)
     dim = 3 + spec.knots * 4
@@ -488,6 +491,8 @@ def plan_capture(ready: Any, ref: HandoffReference, stack: Any, downstream: Froz
         cand: "list[tuple[Any, CaptureOutcome, np.ndarray]]" = []
         for theta in pop:
             out = _evaluate(theta, cap, spec, downstream)
+            if candidate_hook is not None:
+                candidate_hook(out)                  # read-only observer; never affects the search
             key = _rank_key(out, obj)
             cand.append((key, out, theta))
             if best is None or key < best[0]:
