@@ -1,0 +1,257 @@
+{
+  "gate": {
+    "n": 5,
+    "scenarios_with_deliverable": "3/5",
+    "all_safe": true,
+    "all_stable": true,
+    "barren_saturated": true,
+    "verdict": "R11_5_PLUS_CAPTURE_POPULATION_GROWTH_PASS"
+  },
+  "rows": [
+    {
+      "scenario_id": "bank_c2_-0.015_+0.025",
+      "selection_kind": "DELIVERY_ORACLE_RANKED_CAPTURE_TEACHER",
+      "teacher_only": true,
+      "curve": [
+        {
+          "budget": 5,
+          "certified": 2,
+          "unique_descriptors": 2,
+          "deliverable": 0,
+          "best_dtz_mm": 47.8,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 10,
+          "certified": 4,
+          "unique_descriptors": 4,
+          "deliverable": 0,
+          "best_dtz_mm": 38.45,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 20,
+          "certified": 6,
+          "unique_descriptors": 6,
+          "deliverable": 1,
+          "best_dtz_mm": 12.82,
+          "first_deliverable_seed": 15,
+          "marginal_deliverable": 1
+        },
+        {
+          "budget": 40,
+          "certified": 16,
+          "unique_descriptors": 16,
+          "deliverable": 4,
+          "best_dtz_mm": 12.82,
+          "first_deliverable_seed": 15,
+          "marginal_deliverable": 3
+        }
+      ],
+      "certified_at_max": 16,
+      "deliverable_at_max": 4,
+      "best_dtz_mm": 12.82,
+      "saturated": false,
+      "all_safe": true,
+      "all_stable": true
+    },
+    {
+      "scenario_id": "bank_c3_r5_a-45",
+      "selection_kind": "DELIVERY_ORACLE_RANKED_CAPTURE_TEACHER",
+      "teacher_only": true,
+      "curve": [
+        {
+          "budget": 5,
+          "certified": 3,
+          "unique_descriptors": 3,
+          "deliverable": 0,
+          "best_dtz_mm": 22.29,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 10,
+          "certified": 3,
+          "unique_descriptors": 3,
+          "deliverable": 0,
+          "best_dtz_mm": 22.29,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 20,
+          "certified": 7,
+          "unique_descriptors": 7,
+          "deliverable": 1,
+          "best_dtz_mm": 18.45,
+          "first_deliverable_seed": 18,
+          "marginal_deliverable": 1
+        },
+        {
+          "budget": 40,
+          "certified": 14,
+          "unique_descriptors": 14,
+          "deliverable": 2,
+          "best_dtz_mm": 18.45,
+          "first_deliverable_seed": 18,
+          "marginal_deliverable": 1
+        }
+      ],
+      "certified_at_max": 14,
+      "deliverable_at_max": 2,
+      "best_dtz_mm": 18.45,
+      "saturated": false,
+      "all_safe": true,
+      "all_stable": true
+    },
+    {
+      "scenario_id": "bank_c3_r6_a-45",
+      "selection_kind": "DELIVERY_ORACLE_RANKED_CAPTURE_TEACHER",
+      "teacher_only": true,
+      "curve": [
+        {
+          "budget": 5,
+          "certified": 3,
+          "unique_descriptors": 3,
+          "deliverable": 0,
+          "best_dtz_mm": 33.34,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 10,
+          "certified": 3,
+          "unique_descriptors": 3,
+          "deliverable": 0,
+          "best_dtz_mm": 33.34,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 20,
+          "certified": 7,
+          "unique_descriptors": 7,
+          "deliverable": 0,
+          "best_dtz_mm": 30.98,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 40,
+          "certified": 15,
+          "unique_descriptors": 15,
+          "deliverable": 0,
+          "best_dtz_mm": 30.98,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        }
+      ],
+      "certified_at_max": 15,
+      "deliverable_at_max": 0,
+      "best_dtz_mm": 30.98,
+      "saturated": true,
+      "all_safe": true,
+      "all_stable": true
+    },
+    {
+      "scenario_id": "bank_c3_r7_a-45",
+      "selection_kind": "DELIVERY_ORACLE_RANKED_CAPTURE_TEACHER",
+      "teacher_only": true,
+      "curve": [
+        {
+          "budget": 5,
+          "certified": 2,
+          "unique_descriptors": 2,
+          "deliverable": 0,
+          "best_dtz_mm": 23.87,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 10,
+          "certified": 2,
+          "unique_descriptors": 2,
+          "deliverable": 0,
+          "best_dtz_mm": 23.87,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 20,
+          "certified": 5,
+          "unique_descriptors": 5,
+          "deliverable": 0,
+          "best_dtz_mm": 23.87,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 40,
+          "certified": 12,
+          "unique_descriptors": 12,
+          "deliverable": 1,
+          "best_dtz_mm": 19.49,
+          "first_deliverable_seed": 37,
+          "marginal_deliverable": 1
+        }
+      ],
+      "certified_at_max": 12,
+      "deliverable_at_max": 1,
+      "best_dtz_mm": 19.49,
+      "saturated": false,
+      "all_safe": true,
+      "all_stable": true
+    },
+    {
+      "scenario_id": "bank_c3_r9_a-45",
+      "selection_kind": "DELIVERY_ORACLE_RANKED_CAPTURE_TEACHER",
+      "teacher_only": true,
+      "curve": [
+        {
+          "budget": 5,
+          "certified": 3,
+          "unique_descriptors": 3,
+          "deliverable": 0,
+          "best_dtz_mm": 56.12,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 10,
+          "certified": 3,
+          "unique_descriptors": 3,
+          "deliverable": 0,
+          "best_dtz_mm": 56.12,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 20,
+          "certified": 7,
+          "unique_descriptors": 7,
+          "deliverable": 0,
+          "best_dtz_mm": 50.09,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 40,
+          "certified": 14,
+          "unique_descriptors": 14,
+          "deliverable": 0,
+          "best_dtz_mm": 30.46,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        }
+      ],
+      "certified_at_max": 14,
+      "deliverable_at_max": 0,
+      "best_dtz_mm": 30.46,
+      "saturated": true,
+      "all_safe": true,
+      "all_stable": true
+    }
+  ]
+}

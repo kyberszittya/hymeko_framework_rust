@@ -1,0 +1,61 @@
+{
+  "gate": {
+    "n": 1,
+    "scenarios_with_deliverable": "1/1",
+    "all_safe": true,
+    "all_stable": true,
+    "barren_saturated": true,
+    "verdict": "R11_5_PLUS_CAPTURE_PROPOSAL_SUPPORT_LIMITED"
+  },
+  "rows": [
+    {
+      "scenario_id": "bank_c3_r5_a-45",
+      "selection_kind": "DELIVERY_ORACLE_RANKED_CAPTURE_TEACHER",
+      "teacher_only": true,
+      "curve": [
+        {
+          "budget": 5,
+          "certified": 3,
+          "unique_descriptors": 3,
+          "deliverable": 0,
+          "best_dtz_mm": 22.29,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 10,
+          "certified": 3,
+          "unique_descriptors": 3,
+          "deliverable": 0,
+          "best_dtz_mm": 22.29,
+          "first_deliverable_seed": null,
+          "marginal_deliverable": 0
+        },
+        {
+          "budget": 20,
+          "certified": 7,
+          "unique_descriptors": 7,
+          "deliverable": 1,
+          "best_dtz_mm": 18.45,
+          "first_deliverable_seed": 18,
+          "marginal_deliverable": 1
+        },
+        {
+          "budget": 40,
+          "certified": 14,
+          "unique_descriptors": 14,
+          "deliverable": 2,
+          "best_dtz_mm": 18.45,
+          "first_deliverable_seed": 18,
+          "marginal_deliverable": 1
+        }
+      ],
+      "certified_at_max": 14,
+      "deliverable_at_max": 2,
+      "best_dtz_mm": 18.45,
+      "saturated": false,
+      "all_safe": true,
+      "all_stable": true
+    }
+  ]
+}
