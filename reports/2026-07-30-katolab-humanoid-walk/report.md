@@ -46,7 +46,33 @@ weight to force lift-off, corrected metric):
 genuine (but subtle, ~1 cm) flight phase. Video `humanoid_flight_hop.mp4` (F3, 13 % airborne): a real
 contact-verified flight phase, in place.
 
-## Conclusion — the wall is a mechanism limit, confirmed two ways
+## ⭐ RETRACTION — the "wall" was TWO bugs of mine, not a mechanism limit (user caught it)
+
+The user rejected the wall: *"the legs move the wrong way, of course it doesn't go forward — why did you go
+back to the old model?"* Both points were right:
+
+1. **Leg-direction bug.** The flight gait's `_phase_targets` left `hip_off`/`knee_off`/`ankle_off` (phase
+   offsets) in the theta vector but **unused** — so the push-off fired at a fixed (neutral-hip) phase, not
+   timed to the leg-behind position, and drove the body **backward**; the CEM could not fix it (dead DOF,
+   the same failure class as the AIBO dead crouch/widen). Wiring them in → the gait goes **forward**.
+2. **Wrong model.** `flight_gait` was hardcoded to the base `humanoid.hymeko`; the toe/push-off foot
+   (`humanoid_toe2`) is what gives lift-off. Made the model a config axis.
+
+With both fixed, the flight XOR forward tradeoff **dissolves** (katolab CEM, fixed gait, toe2 model):
+
+| config | best_fwd | best_flight | upright |
+|---|---|---|---|
+| base model (G1/G2) | +0.15–0.16 m | **0 %** | 100 % (grounded shuffle — base foot can't push off) |
+| **toe2, flight wt 8 (G4)** | **+0.100 m** | **41 %** | 100 % |
+| toe2, flight wt 4 (G3) | +0.052 m | 37 % | 100 % |
+
+**A genuine dynamic flight-phase running gait: +0.10 m forward, 41 % of the stride fully airborne (both feet
+off, contact-verified), upright throughout.** Video `humanoid_flight_RUN.mp4` (31/75 airborne frames, the
+forward counter climbs 0.00 → 0.10 m). **The earlier "mechanism wall" conclusion is WITHDRAWN** — it was a
+leg-direction bug + the wrong model, not a mechanism limit. (The WBC-footstep shuffle-vs-lunge finding in
+Part 1 still stands for *that* quasi-static stack; the flight gait is the momentum-based path that works.)
+
+## (superseded) Conclusion — the wall is a mechanism limit, confirmed two ways
 
 Across **both** control paradigms, on katolab, with corrected metrics: **visible forward motion trades off
 against foot lift / flight.** The binding constraint is the **model/mechanism** — small feet (~5 cm, no
