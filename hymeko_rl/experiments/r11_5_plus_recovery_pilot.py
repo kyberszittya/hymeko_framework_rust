@@ -50,11 +50,14 @@ def _best(solve: Any, snap: Any, restarts: int) -> DeliveryResult:
 
 def run_scenario(rig: "dict[str, Any]", cfg: Any, conf: PipelineConfig, obj: GraspObjective, sid: str, category: str,
                  split: str, restarts: int) -> "dict[str, Any]":
+    if category == "CAPTURE_SUPPORT_FAILURE":                 # established honest-negative (Phase-2 audit: bilateral never forms)
+        return {"scenario_id": sid, "category": category, "split": split, "certified": False, "recovered": False,
+                "note": "capture-support honest-negative (Phase-2 audit) — not re-run"}
     scen = next(s for s in build_bank_scenarios() if s.scenario_id == sid)
     snap, seed = _certified_grasp_snap(rig, cfg, conf, obj, scen, capture_seeds=5)  # type: ignore[no-untyped-call]  # untyped MuJoCo glue
     if snap is None:
         return {"scenario_id": sid, "category": category, "split": split, "certified": False, "recovered": False,
-                "note": "no certified grasp (capture-support honest-negative)"}
+                "note": "no certified grasp"}
     r2 = characterize_delivery(snap, rig["down"])
     tspec = full_transport_spec()
     single = _best(lambda sn, s: solve_delivery(sn, s, tspec), snap, restarts)
@@ -102,7 +105,7 @@ def main() -> None:
     rig = _rig()
     cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=160)
     obj = GraspObjective()
-    conf = PipelineConfig(teacher_budget=3, grasp_objective=obj)
+    conf = PipelineConfig(teacher_budget=1, grasp_objective=obj)   # 1 capture/seed to find A certified grasp (delivery arms do the recovery test)
     rows = []
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.with_suffix(".jsonl").open("w", encoding="utf-8") as fh:
