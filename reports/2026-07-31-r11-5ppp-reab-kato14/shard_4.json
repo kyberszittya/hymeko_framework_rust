@@ -1,0 +1,507 @@
+{
+  "gate": {
+    "n": 1,
+    "scenarios_with_grasps": 1,
+    "a0_k6": "0/1",
+    "a1_k6": "0/1",
+    "a2_k6": "1/1",
+    "population_depth_gain": 0,
+    "ranking_gain": 1,
+    "a2_over_a0": 1,
+    "a2_not_worse_than_a1": true,
+    "all_safe": true,
+    "all_certified": true,
+    "verdict": "R11_5_PLUS_DELIVERABILITY_RANKED_ENLARGED_POPULATION_INSUFFICIENT"
+  },
+  "rows": [
+    {
+      "scenario_id": "bank_c3_r6_a-45",
+      "split": "train",
+      "selection_kind": "DELIVERY_ORACLE_RANKED_CAPTURE_TEACHER",
+      "teacher_only": true,
+      "n_grasps": 9,
+      "n_deliverable_k6": 2,
+      "all_certified": true,
+      "all_safe": true,
+      "a0_seed": 1,
+      "a0_k6": false,
+      "a0_dtz_mm": 32.58,
+      "a1_seed": 1,
+      "a1_k6": false,
+      "a1_dtz_mm": 32.58,
+      "a2_seed": 16,
+      "a2_k6": true,
+      "a2_dtz_mm": 12.14,
+      "candidates": [
+        {
+          "seed": 1,
+          "capture": {
+            "n": 3.0,
+            "s": 0.2147,
+            "preload_start": 0.2028,
+            "bmax": 0.3867
+          },
+          "bilateral_dwell": 4,
+          "contact_delay": 0,
+          "first_contact_relvel": 0.0016,
+          "second_contact_relvel": 0.0016,
+          "coin_disp_capture_mm": 2.58,
+          "terminal_coin_speed": 0.1023,
+          "handoff": {
+            "q": [
+              -0.5089,
+              -0.6447,
+              -0.4344,
+              2.1449
+            ],
+            "qdot": [
+              -0.774,
+              0.3393,
+              -0.3297,
+              0.1535
+            ],
+            "prev_tau": [
+              -0.8348,
+              -0.7211,
+              -0.2737,
+              2.154
+            ],
+            "coin_xy": [
+              0.0782,
+              0.142
+            ],
+            "coin_vel": [
+              0.085,
+              -0.0569
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 32.58,
+            "final_dtz_mm": 32.58,
+            "gap_closed": 0.472,
+            "forward_mm": 48.5,
+            "k6": false,
+            "safe": true
+          }
+        },
+        {
+          "seed": 4,
+          "capture": {
+            "n": 3.0,
+            "s": 0.2821,
+            "preload_start": 0.4532,
+            "bmax": 0.5054
+          },
+          "bilateral_dwell": 5,
+          "contact_delay": 0,
+          "first_contact_relvel": 0.0737,
+          "second_contact_relvel": 0.0737,
+          "coin_disp_capture_mm": 5.59,
+          "terminal_coin_speed": 0.1061,
+          "handoff": {
+            "q": [
+              -0.5117,
+              -0.6727,
+              -0.3954,
+              2.1056
+            ],
+            "qdot": [
+              -0.7632,
+              0.0958,
+              -0.7299,
+              0.1646
+            ],
+            "prev_tau": [
+              -0.8086,
+              -0.6724,
+              -0.4912,
+              2.0411
+            ],
+            "coin_xy": [
+              0.0809,
+              0.1405
+            ],
+            "coin_vel": [
+              0.1051,
+              0.0148
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 41.27,
+            "final_dtz_mm": 41.27,
+            "gap_closed": 0.356,
+            "forward_mm": 40.6,
+            "k6": false,
+            "safe": true
+          }
+        },
+        {
+          "seed": 16,
+          "capture": {
+            "n": 3.0,
+            "s": 0.2701,
+            "preload_start": 0.7347,
+            "bmax": 0.5442
+          },
+          "bilateral_dwell": 4,
+          "contact_delay": 3,
+          "first_contact_relvel": 0.2799,
+          "second_contact_relvel": 0.2285,
+          "coin_disp_capture_mm": 11.47,
+          "terminal_coin_speed": 0.0346,
+          "handoff": {
+            "q": [
+              -0.7397,
+              -0.1727,
+              -0.4844,
+              2.1167
+            ],
+            "qdot": [
+              0.157,
+              -0.8815,
+              0.4964,
+              0.5251
+            ],
+            "prev_tau": [
+              -0.7688,
+              -2.5885,
+              -0.2167,
+              2.4064
+            ],
+            "coin_xy": [
+              0.0855,
+              0.148
+            ],
+            "coin_vel": [
+              0.0125,
+              -0.0323
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 12.14,
+            "final_dtz_mm": 12.14,
+            "gap_closed": 0.796,
+            "forward_mm": 55.9,
+            "k6": true,
+            "safe": true
+          }
+        },
+        {
+          "seed": 17,
+          "capture": {
+            "n": 3.0,
+            "s": 0.4538,
+            "preload_start": 0.2896,
+            "bmax": 0.4473
+          },
+          "bilateral_dwell": 4,
+          "contact_delay": 0,
+          "first_contact_relvel": 0.0332,
+          "second_contact_relvel": 0.0332,
+          "coin_disp_capture_mm": 4.11,
+          "terminal_coin_speed": 0.0826,
+          "handoff": {
+            "q": [
+              -0.5159,
+              -0.6824,
+              -0.3877,
+              2.0977
+            ],
+            "qdot": [
+              -0.7757,
+              -0.6795,
+              -0.5502,
+              -0.0125
+            ],
+            "prev_tau": [
+              -0.8808,
+              -0.7559,
+              -0.3669,
+              1.9222
+            ],
+            "coin_xy": [
+              0.0791,
+              0.1404
+            ],
+            "coin_vel": [
+              0.0825,
+              0.0043
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 22.21,
+            "final_dtz_mm": 22.21,
+            "gap_closed": 0.65,
+            "forward_mm": 53.0,
+            "k6": false,
+            "safe": true
+          }
+        },
+        {
+          "seed": 19,
+          "capture": {
+            "n": 3.0,
+            "s": 0.3766,
+            "preload_start": 0.4614,
+            "bmax": 0.4693
+          },
+          "bilateral_dwell": 4,
+          "contact_delay": 1,
+          "first_contact_relvel": 0.0001,
+          "second_contact_relvel": 0.1094,
+          "coin_disp_capture_mm": 5.07,
+          "terminal_coin_speed": 0.1036,
+          "handoff": {
+            "q": [
+              -0.5089,
+              -0.6672,
+              -0.3816,
+              2.1017
+            ],
+            "qdot": [
+              -0.7541,
+              0.3983,
+              -0.7367,
+              0.057
+            ],
+            "prev_tau": [
+              -0.8647,
+              -0.5487,
+              -0.9332,
+              1.9323
+            ],
+            "coin_xy": [
+              0.0801,
+              0.1402
+            ],
+            "coin_vel": [
+              0.1008,
+              0.0242
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 41.31,
+            "final_dtz_mm": 41.31,
+            "gap_closed": 0.355,
+            "forward_mm": 23.5,
+            "k6": false,
+            "safe": true
+          }
+        },
+        {
+          "seed": 20,
+          "capture": {
+            "n": 3.0,
+            "s": 0.2861,
+            "preload_start": 0.5732,
+            "bmax": 0.6614
+          },
+          "bilateral_dwell": 5,
+          "contact_delay": 0,
+          "first_contact_relvel": 0.0125,
+          "second_contact_relvel": 0.0125,
+          "coin_disp_capture_mm": 4.99,
+          "terminal_coin_speed": 0.1045,
+          "handoff": {
+            "q": [
+              -0.5164,
+              -0.6676,
+              -0.39,
+              2.1032
+            ],
+            "qdot": [
+              -0.7475,
+              0.0678,
+              -0.7418,
+              0.2327
+            ],
+            "prev_tau": [
+              -0.8566,
+              -0.7183,
+              -0.9039,
+              2.0905
+            ],
+            "coin_xy": [
+              0.0801,
+              0.1402
+            ],
+            "coin_vel": [
+              0.1045,
+              -0.0009
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 40.51,
+            "final_dtz_mm": 40.51,
+            "gap_closed": 0.367,
+            "forward_mm": 23.8,
+            "k6": false,
+            "safe": true
+          }
+        },
+        {
+          "seed": 23,
+          "capture": {
+            "n": 3.0,
+            "s": 0.1581,
+            "preload_start": 0.4855,
+            "bmax": 0.5209
+          },
+          "bilateral_dwell": 4,
+          "contact_delay": 1,
+          "first_contact_relvel": 0.0001,
+          "second_contact_relvel": 0.0947,
+          "coin_disp_capture_mm": 4.88,
+          "terminal_coin_speed": 0.0822,
+          "handoff": {
+            "q": [
+              -0.5179,
+              -0.664,
+              -0.4032,
+              2.1092
+            ],
+            "qdot": [
+              -0.73,
+              -0.067,
+              -0.4608,
+              0.0978
+            ],
+            "prev_tau": [
+              -1.0103,
+              -0.7753,
+              -0.3231,
+              2.0726
+            ],
+            "coin_xy": [
+              0.0798,
+              0.14
+            ],
+            "coin_vel": [
+              0.0818,
+              -0.0083
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 32.94,
+            "final_dtz_mm": 32.94,
+            "gap_closed": 0.486,
+            "forward_mm": 42.7,
+            "k6": false,
+            "safe": true
+          }
+        },
+        {
+          "seed": 27,
+          "capture": {
+            "n": 3.0,
+            "s": 0.1061,
+            "preload_start": 0.2427,
+            "bmax": 0.5143
+          },
+          "bilateral_dwell": 4,
+          "contact_delay": 2,
+          "first_contact_relvel": 0.0599,
+          "second_contact_relvel": 0.2197,
+          "coin_disp_capture_mm": 8.66,
+          "terminal_coin_speed": 0.0774,
+          "handoff": {
+            "q": [
+              -0.5291,
+              -0.671,
+              -0.3986,
+              2.1359
+            ],
+            "qdot": [
+              -0.8001,
+              0.1021,
+              -0.4328,
+              0.1845
+            ],
+            "prev_tau": [
+              -0.6921,
+              -0.5943,
+              -0.2991,
+              2.0732
+            ],
+            "coin_xy": [
+              0.0819,
+              0.1366
+            ],
+            "coin_vel": [
+              0.0774,
+              0.0008
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 32.44,
+            "final_dtz_mm": 32.44,
+            "gap_closed": 0.523,
+            "forward_mm": 60.5,
+            "k6": false,
+            "safe": true
+          }
+        },
+        {
+          "seed": 30,
+          "capture": {
+            "n": 3.0,
+            "s": 0.0,
+            "preload_start": 0.6272,
+            "bmax": 0.1297
+          },
+          "bilateral_dwell": 8,
+          "contact_delay": 3,
+          "first_contact_relvel": 0.3066,
+          "second_contact_relvel": 0.1535,
+          "coin_disp_capture_mm": 17.81,
+          "terminal_coin_speed": 0.0433,
+          "handoff": {
+            "q": [
+              -0.7865,
+              -0.1609,
+              -0.4909,
+              2.1482
+            ],
+            "qdot": [
+              0.374,
+              -0.8059,
+              0.6651,
+              0.1058
+            ],
+            "prev_tau": [
+              -1.0827,
+              -1.115,
+              -0.3583,
+              2.1199
+            ],
+            "coin_xy": [
+              0.0883,
+              0.1386
+            ],
+            "coin_vel": [
+              -0.0303,
+              0.0309
+            ]
+          },
+          "delivery": {
+            "kinetic": true,
+            "min_dtz_mm": 15.46,
+            "final_dtz_mm": 15.46,
+            "gap_closed": 0.776,
+            "forward_mm": 53.7,
+            "k6": true,
+            "safe": true
+          }
+        }
+      ]
+    }
+  ]
+}
