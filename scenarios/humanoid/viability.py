@@ -88,6 +88,18 @@ def control_torque(theta, thetadot, cfg: ViabilityConfig):
     return cfg.mgl * np.sin(theta) - cfg.k * _wrap(theta - cfg.target) - cfg.kd * thetadot
 
 
+def closed_loop_step(theta, thetadot, cfg: ViabilityConfig):
+    r"""One semi-implicit Euler step of the closed loop ``I θ̈ = −mgl sinθ − b θ̇ + τ``.
+
+    The single shared integrator for both the rollout labeller and the Lyapunov certificate's lookahead —
+    so the certified boundary is about the SAME dynamics that produced the labels. # Post: returns (θ⁺, θ̇⁺).
+    """
+    tau = control_torque(theta, thetadot, cfg)
+    thetadot = thetadot + (-cfg.mgl * np.sin(theta) - cfg.b * thetadot + tau) / cfg.inertia * cfg.dt
+    theta = theta + thetadot * cfg.dt
+    return theta, thetadot
+
+
 def _grid(cfg: ViabilityConfig, offset: float = 0.0) -> np.ndarray:
     """(N,2) grid of (θ, θ̇) over θ∈θ*±π, θ̇∈±θ̇max. ``offset`` (in cells) shifts a disjoint held-out grid."""
     n = cfg.grid_n
@@ -114,10 +126,7 @@ def sample_viability(cfg: ViabilityConfig, offset: float = 0.0) -> "tuple[np.nda
     fell = np.zeros(len(x), dtype=bool)
     anti = cfg.target + math.pi
     for _ in range(int(round(cfg.horizon / cfg.dt))):
-        tau = control_torque(theta, thetadot, cfg)
-        thetaddot = (-cfg.mgl * np.sin(theta) - cfg.b * thetadot + tau) / cfg.inertia
-        thetadot = thetadot + thetaddot * cfg.dt
-        theta = theta + thetadot * cfg.dt
+        theta, thetadot = closed_loop_step(theta, thetadot, cfg)
         fell |= np.abs(_wrap(theta - anti)) < cfg.antipode_tol
     settled = (np.abs(_wrap(theta - cfg.target)) < cfg.settled_tol) & (np.abs(thetadot) < cfg.settled_vtol)
     return x, (settled & ~fell).astype(int)
@@ -180,3 +189,85 @@ def validate_boundary(model: LearnedBoundary, cfg: ViabilityConfig) -> dict:
             "err_recover": float(np.mean(y_pred[y_true == 1] != 1)) if np.any(y_true == 1) else 0.0,
             "err_fall": float(np.mean(y_pred[y_true == 0] != 0)) if np.any(y_true == 0) else 0.0,
             "n": int(len(x))}
+
+
+class LyapunovCertificate:
+    r"""M1 — a certificate, not a classifier: a learnable PSD quadratic Lyapunov function ``V(x)=zᵀ(LLᵀ+εI)z``.
+
+    Its sublevel set ``{V ≤ c}`` is a VERIFIED forward-invariant recoverable region: ``V ⪰ 0``, ``V(x*)=0``, and
+    along the closed loop ``V`` decreases without crossing the saddle on the certified set. The pendulum closed
+    loop is linear in ``z = (wrap(θ−θ*), θ̇)``, so a quadratic ``V`` is the exact form; it is fit numpy-only with
+    the analytic gradient of the discrete-decrease hinge and seeded by ``H_d`` (``P₀ = diag(½k, ½I)``). The neural
+    (torch) certificate — for a nonlinear basin (M2) — is the §1 escalation, not needed here.
+
+    # Preconditions: a stabilising ``cfg`` (``k > 0``). # Postconditions: ``V(x*)=0``, ``V ⪰ 0``.
+    """
+
+    def __init__(self, cfg: ViabilityConfig, lookahead: int = 25, eps: float = 1e-3,
+                 seed_from_hd: bool = True) -> None:
+        self.cfg, self.lookahead, self.eps = cfg, lookahead, eps
+        self._chol = (np.diag([math.sqrt(0.5 * cfg.k), math.sqrt(0.5 * cfg.inertia)])   # P₀ = the H_d form
+                      if seed_from_hd else np.eye(2))
+
+    def _features(self, x: np.ndarray) -> np.ndarray:
+        return np.stack([_wrap(x[:, 0] - self.cfg.target), x[:, 1]], axis=1)    # z = (u, θ̇), zero at the target
+
+    def matrix(self) -> np.ndarray:
+        return self._chol @ self._chol.T + self.eps * np.eye(2)                 # PSD by construction
+
+    def value(self, x: np.ndarray) -> np.ndarray:
+        z = self._features(x)
+        return np.einsum("ni,ij,nj->n", z, self.matrix(), z)
+
+    def _lookahead(self, x: np.ndarray) -> "tuple[np.ndarray, np.ndarray]":
+        """Advance every state ``lookahead`` closed-loop steps; return (x⁺, crossed-the-saddle mask)."""
+        theta, thetadot = x[:, 0].copy(), x[:, 1].copy()
+        anti = self.cfg.target + math.pi
+        crossed = np.zeros(len(x), dtype=bool)
+        for _ in range(self.lookahead):
+            theta, thetadot = closed_loop_step(theta, thetadot, self.cfg)
+            crossed |= np.abs(_wrap(theta - anti)) < self.cfg.antipode_tol
+        return np.stack([theta, thetadot], axis=1), crossed
+
+    def fit(self, x: np.ndarray, iters: int = 3000, lr: float = 2e-3, tol: float = 1e-6) -> "LyapunovCertificate":
+        r"""Shape ``V`` to decrease on the non-crossing region: minimise ``Σ relu(V(x⁺)−V(x))``.
+
+        ``∂(zᵀLLᵀz)/∂L = 2 (z zᵀ) L`` is the exact gradient; the crossing mask is dynamics-only (P-free), so it is
+        computed once. # Preconditions: ``len(x) > 0``.
+        """
+        if len(x) == 0:
+            raise ValueError("fit requires at least one sample")
+        xp, crossed = self._lookahead(x)
+        za, zpa = self._features(x)[~crossed], self._features(xp)[~crossed]
+        for _ in range(iters):
+            p = self.matrix()
+            active = (np.einsum("ni,ij,nj->n", zpa, p, zpa) - np.einsum("ni,ij,nj->n", za, p, za)) > tol
+            if not active.any():
+                break
+            zi, zpi = za[active], zpa[active]
+            self._chol = self._chol - lr * np.tril(2.0 * (zpi.T @ zpi - zi.T @ zi) @ self._chol / len(x))
+        return self
+
+    def certified_level(self, x: np.ndarray, tol: float = 1e-6) -> float:
+        """Largest ``c`` s.t. ``{V ≤ c}`` neither increases ``V`` nor crosses the saddle (over dense sample ``x``)."""
+        v = self.value(x)
+        xp, crossed = self._lookahead(x)
+        bad = crossed | (self.value(xp) - v > tol)
+        return float(v[bad].min()) if bad.any() else float(v.max())
+
+    def verify(self, cfg: "ViabilityConfig | None" = None) -> dict:
+        """Dense-sample the certified sublevel set: its level, its violation rate, and IoU vs the analytic ROA."""
+        cfg = cfg or self.cfg
+        x = _grid(cfg, offset=0.5)                                              # held-out (shifted) grid
+        v = self.value(x)
+        xp, crossed = self._lookahead(x)
+        level = self.certified_level(x)
+        inside = v <= level
+        bad = crossed | (self.value(xp) - v > 1e-6)
+        certified, roa = inside.astype(int), analytic_labels(x, cfg)
+        inter = int(np.sum((certified == 1) & (roa == 1)))
+        union = int(np.sum((certified == 1) | (roa == 1)))
+        return {"certified_level": level,
+                "violation_rate": float(np.mean(bad[inside])) if inside.any() else 0.0,
+                "iou_vs_analytic": float(inter / union) if union else 1.0,
+                "n_certified": int(inside.sum()), "n": int(len(x))}
