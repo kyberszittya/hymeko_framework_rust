@@ -18,6 +18,7 @@ from scenarios.humanoid.symbolic_ph import (
     ida_pbc_potential_shaping,
     mechanical_ph,
     pendulum_ph,
+    planar_chain_ph,
     two_link_leg_ph,
 )
 
@@ -126,6 +127,29 @@ def test_two_link_leg_mass_matrix_is_symmetric() -> None:
     M = leg["M"]
     assert sp.simplify(M[0, 1] - M[1, 0]) == 0
     assert M[0, 0].has(sp.cos)                               # inertial coupling depends on the knee angle
+
+
+def test_planar_chain_leg_mass_matrix_is_spd_and_configuration_dependent() -> None:
+    """The 3-link sagittal leg (hip–knee–ankle) M(q) is symmetric, SPD, and coupled through the joint angles."""
+    leg = planar_chain_ph(masses=[4.0, 3.0, 0.5], lengths=[0.34, 0.34, 0.10])
+    M = leg["M"]
+    assert M.shape == (3, 3)
+    assert sp.simplify(M - M.T) == sp.zeros(3, 3)             # symmetric metric
+    assert M[0, 1].has(sp.cos)                                # hip–knee inertial coupling is config-dependent
+    q = leg["q"]
+    Mn = np.array(M.subs({q[0]: 0.1, q[1]: 0.3, q[2]: -0.2})).astype(float)
+    assert np.all(np.linalg.eigvalsh(Mn) > 0)                 # SPD at a representative configuration
+
+
+def test_planar_chain_reduces_to_the_hand_derived_two_link_leg() -> None:
+    """Cross-validation: the general N-link M(q) at n=2 matches the independently hand-derived 2-link M(q)."""
+    chain = planar_chain_ph(masses=[3.0, 2.0], lengths=[0.4, 0.4])
+    hand = two_link_leg_ph(m1=3.0, m2=2.0, l1=0.4, l2=0.4)
+    qc, qh = chain["q"], hand["q"]
+    for a, b in [(0.0, 0.0), (0.2, 0.5), (-0.3, 0.7)]:
+        Mc = np.array(chain["M"].subs({qc[0]: a, qc[1]: b})).astype(float)
+        Mh = np.array(hand["M"].subs({qh[0]: a, qh[1]: b})).astype(float)
+        assert np.allclose(Mc, Mh, atol=1e-9)                # two independent derivations agree numerically
 
 
 def test_mechanical_ph_rejects_singular_mass_matrix() -> None:

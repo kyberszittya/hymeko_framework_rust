@@ -91,6 +91,42 @@ def two_link_leg_ph(m1: float = 3.0, m2: float = 2.0, l1: float = 0.4, l2: float
     return mechanical_ph([q1, q2], [d1, d2], M, V, D=sp.eye(2) * sp.Float(0.05), S=sp.eye(2))
 
 
+def planar_chain_ph(masses: "list[float]", lengths: "list[float]", g: float = 9.81,
+                    damping: float = 0.05) -> dict:
+    r"""Symbolic port-Hamiltonian of a planar N-link chain — the humanoid's sagittal leg/arm building block.
+
+    The full 22-DOF humanoid mass matrix is intractable in closed form, but its sagittal chains are not: this
+    derives M(q) = Σ mᵢ JᵢᵀJᵢ + Σ Iᵢ (∂φᵢ/∂q)ᵀ(∂φᵢ/∂q) (CoM-Jacobian composition) and V(q) = Σ mᵢ g yᵢ for a
+    chain of ``n = len(masses)`` links with relative joint angles, then the pH form. n=3 is the hip–knee–ankle
+    leg; the humanoid's M is the block composition of two such legs + two arms + the torso about the base.
+    """
+    n = len(masses)
+    q = list(sp.symbols(f"q1:{n + 1}", real=True))
+    qd = list(sp.symbols(f"qd1:{n + 1}", real=True))          # qd1..qdn (avoid the '1dot' range-parse trap)
+    phi = [sum(q[: i + 1], sp.Integer(0)) for i in range(n)]   # absolute link angle = cumulative joint angles
+    lc = [sp.Rational(1, 2) * sp.Float(lengths[i]) for i in range(n)]
+    M = sp.zeros(n, n)
+    V = sp.Integer(0)
+    for i in range(n):
+        px = sum(sp.Float(lengths[j]) * sp.cos(phi[j]) for j in range(i)) + lc[i] * sp.cos(phi[i])
+        py = sum(sp.Float(lengths[j]) * sp.sin(phi[j]) for j in range(i)) + lc[i] * sp.sin(phi[i])
+        Jx = sp.Matrix([[sp.diff(px, qk) for qk in q]])
+        Jy = sp.Matrix([[sp.diff(py, qk) for qk in q]])
+        Jphi = sp.Matrix([[1 if k <= i else 0 for k in range(n)]])
+        Ii = sp.Float(masses[i]) * sp.Float(lengths[i]) ** 2 / 12
+        M += sp.Float(masses[i]) * (Jx.T * Jx + Jy.T * Jy) + Ii * (Jphi.T * Jphi)
+        V += sp.Float(masses[i]) * sp.Float(g) * py
+    # trig-simplify per entry (fast) — the FULL momentum Hamiltonian needs M⁻¹, intractable for n≥3 in closed
+    # form (trivial numerically); the symbolic deliverable is M(q), V and the gravity torque G = ∂V/∂q.
+    M = M.applyfunc(sp.trigsimp)
+    qdv = sp.Matrix(qd)
+    kinetic = sp.Rational(1, 2) * (qdv.T * M * qdv)[0, 0]     # H in velocity form (no inverse)
+    G = sp.Matrix([sp.trigsimp(sp.diff(V, qk)) for qk in q])  # gravity generalised force
+    return {"q": q, "qdot": qd, "M": M, "V": sp.trigsimp(V), "G": G, "kinetic": kinetic, "n": n,
+            "D": sp.eye(n) * sp.Float(damping),
+            "note": "H = ½q̇ᵀMq̇ + V ; pH momentum form p=Mq̇, ẋ=(J−R)∂H+gτ (M⁻¹ evaluated numerically for n≥3)"}
+
+
 def flexible_link_pde() -> dict:
     r"""PDE port-Hamiltonian hook — a 1-D vibrating string/flexible link on a spatial domain.
 
