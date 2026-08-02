@@ -28,6 +28,20 @@ def _ph():
     return HumanoidPortHamiltonian(m, d, mj), mj, m, d
 
 
+def test_ph_is_generated_from_the_hymeko_source() -> None:
+    """generate → describe: the pH system is produced FROM a HyMeKo model file, with a role provenance."""
+    from scenarios.humanoid.port_hamiltonian import HumanoidPortHamiltonian
+    ph = HumanoidPortHamiltonian.from_hymeko("humanoid.hymeko")
+    pr = ph.provenance()
+    assert pr["source"] == "humanoid.hymeko"
+    assert pr["revolute_joints"] >= 16 and pr["actuator_ports (nu)"] >= 16   # the .hymeko's joints → q + ports
+    assert pr["total_mass_kg"] > 25.0                                        # geometry+inertias → the M metric's mass
+    assert "M(q)" in pr["roles"]["elements + geometry (bodies, inertias)"]   # the storage-metric role is recorded
+    ph.data.qpos[2] = 0.9
+    ph._mj.mj_forward(ph.model, ph.data)
+    assert ph.hamiltonian() > 0                                             # a valid Hamiltonian was generated
+
+
 def test_mass_matrix_is_symmetric_positive_definite() -> None:
     """The kinetic-energy metric M(q) must be SPD — the storage is a genuine energy."""
     ph, _mj, _m, d = _ph()

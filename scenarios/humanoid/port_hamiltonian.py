@@ -50,8 +50,42 @@ class PHStructure:
     potential: float
 
 
+#: how a HyMeKo model's elements map onto the port-Hamiltonian roles — the generate → describe bridge.
+#: (The .hymeko file supplies the STRUCTURE; the CLI emits it to MJCF, from which the pH quantities below
+#:  are read. A future HyMeKo pH vocabulary would annotate these roles in the source directly.)
+HYMEKO_TO_PH = {
+    "elements + geometry (bodies, inertias)": "M(q) — the kinetic-energy STORAGE metric",
+    "world gravity + body heights": "V(q) — the potential-energy STORAGE",
+    "axes + revolute joints": "generalised coordinates q (and momenta p = M q̇)",
+    "joint effort limits (actuators)": "S — the input PORTS (y = Sᵀ q̇)",
+    "joint velocity / damping": "R = diag(0, D) — the DISSIPATION",
+    "kinematic tree (parent → child)": "J = [[0, I], [−I, 0]] — the INTERCONNECTION (symplectic)",
+}
+
+
 class HumanoidPortHamiltonian:
     """Derive + verify the port-Hamiltonian form of the MuJoCo humanoid dynamics."""
+
+    @classmethod
+    def from_hymeko(cls, model_src: str = "humanoid.hymeko") -> "HumanoidPortHamiltonian":
+        """GENERATE the pH system from a HyMeKo source file (the CLI emits it to MJCF; the pH is read off it)."""
+        from scenarios.humanoid.balance_env import _build   # emits the .hymeko via the hymeko CLI
+        mj, model = _build(model_src)
+        data = mj.MjData(model)
+        mj.mj_forward(model, data)
+        self = cls(model, data, mj)
+        self.model_src = model_src
+        return self
+
+    def provenance(self) -> dict:
+        """Report the HyMeKo → pH mapping realised for THIS model: counts + the role table."""
+        n_rev = int(sum(1 for j in range(self.model.njnt)
+                        if self.model.jnt_type[j] in (self._mj.mjtJoint.mjJNT_HINGE, self._mj.mjtJoint.mjJNT_SLIDE)))
+        return {"source": getattr(self, "model_src", "<in-memory>"),
+                "bodies": int(self.model.nbody), "revolute_joints": n_rev,
+                "dof (nv)": self.nv, "actuator_ports (nu)": self.nu,
+                "total_mass_kg": round(float(self.model.body_mass.sum()), 2),
+                "roles": HYMEKO_TO_PH}
 
     def __init__(self, model, data, mj) -> None:
         self._mj, self.model, self.data = mj, model, data
