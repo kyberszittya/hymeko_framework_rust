@@ -36,6 +36,11 @@ class TrackConfig:
     kd_com: float = 22.0
     kp_com_z: float = 260.0          # VERTICAL CoM gain — higher, to recover the height lost each flight (anti-sink)
     kd_com_z: float = 34.0
+    com_z0: float = 0.0              # target RUNNING CoM height (m); 0 = use the standing CoM. Lower (~0.55) gives the
+    #                                  legs push-off range (a straight-legged target has none → the CoM sinks to a crouch)
+    ki_com_z: float = 800.0          # VERTICAL integral gain (Raibert-style): compensates the persistent per-cycle
+    #                                  flight-energy loss that pure PD leaves as a slow sink
+    z_int_clip: float = 0.12         # integral wind-up clamp (m·s) on the vertical height-error integral
     pel_w: float = 40.0              # pelvis-orientation task weight (raise to hold the torso UPRIGHT vs the forward dive)
     pel_kp: float = 140.0
     post_w: float = 0.4              # posture-task weight (raise to resist the progressive running crouch / sink)
@@ -44,6 +49,8 @@ class TrackConfig:
     com_w: float = 150.0             # WBC CoM-task weight (raise so the WBC realises the plan's CoM accel over swing/posture)
     swing_h: float = 0.07            # swing-foot apex clearance during stance (m)
     swing_w: float = 120.0           # WBC swing-foot task weight
+    capture: bool = True             # place the landing foot at the CAPTURE POINT (x_com + v·√(z/g)) — closed-loop balance
+    cap_offset: float = 0.02         # extra foot-ahead-of-capture-point offset (m); >0 = brake, <0 = accelerate
     land_w: float = 60.0             # WBC both-feet task weight during flight (reach for landing)
     base_z0: float = 0.80            # reset pelvis height; settle plants the feet
     settle: int = 60
@@ -80,6 +87,7 @@ class CentroidalRunner:
         self._floor = self._mj.mj_name2id(self.model, self._mj.mjtObj.mjOBJ_GEOM, "floor")
 
     def reset(self) -> None:
+        self._z_int = 0.0                                     # Raibert vertical-integral state
         self._mj.mj_resetData(self.model, self.data)
         self.data.qpos[:] = self._q0
         self.data.qpos[self._base + 2] = self.cfg.base_z0
@@ -120,7 +128,12 @@ class CentroidalRunner:
         com, comv = self._com(), self._com_vel()
         kp = np.array([self.cfg.kp_com, self.cfg.kp_com, self.cfg.kp_com_z])
         kd = np.array([self.cfg.kd_com, self.cfg.kd_com, self.cfg.kd_com_z])
-        return ff + kp * (com_des - com) + kd * (comv_des - comv)
+        dt = float(self.model.opt.timestep)
+        self._z_int = float(np.clip(self._z_int + (com_des[2] - com[2]) * dt,   # Raibert vertical integral (anti-sink)
+                                    -self.cfg.z_int_clip, self.cfg.z_int_clip))
+        acc = ff + kp * (com_des - com) + kd * (comv_des - comv)
+        acc[2] += self.cfg.ki_com_z * self._z_int
+        return acc
 
     def run(self, n_strides: int = 6, render_cb=None) -> "tuple[float, float, float, bool]":
         """Track the plan for ``n_strides`` alternating strides. Returns (net forward, flight frac, upright, fell)."""
@@ -142,11 +155,17 @@ class CentroidalRunner:
             for k in range(ns_st):
                 frac = k / ns_st
                 ip = min(int(frac * (p.com.shape[0] * p.t_stance / (p.t_stance + p.t_flight))), len(p.com) - 1)
-                com_des = com0 + np.array([base_shift + p.com[ip, 0], 0.0, p.com[ip, 1] - p.com[0, 1]])
+                z_target = self.cfg.com_z0 if self.cfg.com_z0 > 0 else com0[2]   # crouched running height (push-off range)
+                com_des = np.array([com0[0] + base_shift + p.com[ip, 0], 0.0,
+                                    z_target + p.com[ip, 1] - p.com[0, 1]])
                 comv_des = np.array([p.vel[ip, 0], 0.0, p.vel[ip, 1]])
                 ff = np.array([p.force[ip, 0] / self._mass, 0.0,
                                self.cfg.push_boost * p.force[ip, 1] / self._mass - G])
                 acc_com = self._com_accel_task(com_des, comv_des, ff)
+                if self.cfg.capture:                              # CLOSED-LOOP: land the foot at the capture point
+                    com, comv = self._com(), self._com_vel()
+                    cp_x = com[0] + comv[0] * np.sqrt(max(com[2], 0.1) / G)
+                    sw_land = np.array([cp_x + self.cfg.cap_offset, sw_start[1], sw_start[2]])
                 sw = sw_start + frac * (sw_land - sw_start)
                 sw[2] = sw_start[2] + self.cfg.swing_h * np.sin(np.pi * frac)   # clearance arc
                 tasks = [Task(self.wbc.com_jacobian(), acc_com, self.cfg.com_w),
