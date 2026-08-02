@@ -49,6 +49,7 @@ class TrackConfig:
     com_w: float = 150.0             # WBC CoM-task weight (raise so the WBC realises the plan's CoM accel over swing/posture)
     swing_h: float = 0.07            # swing-foot apex clearance during stance (m)
     swing_w: float = 120.0           # WBC swing-foot task weight
+    ub_w: float = 30.0               # UPPER-BODY hold weight — keeps the torso vertical (abdomen upright) vs the dive
     capture: bool = True             # place the landing foot at the CAPTURE POINT (x_com + v·√(z/g)) — closed-loop balance
     cap_offset: float = 0.02         # extra foot-ahead-of-capture-point offset (m); >0 = brake, <0 = accelerate
     land_w: float = 60.0             # WBC both-feet task weight during flight (reach for landing)
@@ -112,6 +113,20 @@ class CentroidalRunner:
     def _com_vel(self) -> np.ndarray:
         return self.wbc.com_jacobian() @ np.asarray(self.data.qvel)
 
+    #: upper-body actuator indices (abdomen, neck, shoulders, elbows) — held UPRIGHT so the torso does not
+    #: pitch forward while the legs run (the pelvis staying level is not enough; the abdomen bends)
+    _UPPER = (0, 1, 12, 13, 14, 15)
+
+    def _upper_body_task(self, weight: float, kp: float = 220.0, kd: float = 30.0) -> Task:
+        nv = self.model.nv
+        jac = np.zeros((len(self._UPPER), nv))
+        acc = np.zeros(len(self._UPPER))
+        for r, i in enumerate(self._UPPER):
+            dof, qa = self._act_dof[i], self._act_q[i]
+            jac[r, dof] = 1.0
+            acc[r] = kp * (self._q0j[i] - self.data.qpos[qa]) - kd * self.data.qvel[dof]
+        return Task(jac, acc, weight)
+
     def _pelvis_task(self) -> Task:
         _jp, jr = self.wbc.body_jacobian(self._pel)
         acc = self.cfg.pel_kp * self.wbc.orientation_error(self.data.xmat[self._pel].reshape(3, 3), self._pelR0) \
@@ -170,6 +185,7 @@ class CentroidalRunner:
                 sw[2] = sw_start[2] + self.cfg.swing_h * np.sin(np.pi * frac)   # clearance arc
                 tasks = [Task(self.wbc.com_jacobian(), acc_com, self.cfg.com_w),
                          self._foot_task(swing, sw, self.cfg.swing_w), self._pelvis_task(),
+                         self._upper_body_task(self.cfg.ub_w),
                          self.wbc.posture_task(self._q0j, self._act_q, self.cfg.post_kp, self.cfg.post_kp*0.5, self.cfg.post_w)]
                 self.data.ctrl[:] = self.wbc.solve([stance], tasks)   # single-support: one 6D contact, no unload
                 self._mj.mj_step(self.model, self.data)
@@ -186,6 +202,7 @@ class CentroidalRunner:
                 land_st = foot0 + np.array([p.stride, 0.0, 0.0])   # the (old) stance foot swings up too, next-next
                 tasks = [self._foot_task(swing, land_sw, self.cfg.land_w),
                          self._foot_task(stance, land_st, self.cfg.land_w * 0.5), self._pelvis_task(),
+                         self._upper_body_task(self.cfg.ub_w),
                          self.wbc.posture_task(self._q0j, self._act_q, self.cfg.post_kp, self.cfg.post_kp*0.5, self.cfg.post_w)]
                 self.data.ctrl[:] = self.wbc.solve([], tasks)     # NO contact = flight
                 self._mj.mj_step(self.model, self.data)
