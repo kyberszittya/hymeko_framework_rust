@@ -28,6 +28,26 @@ def _ph():
     return HumanoidPortHamiltonian(m, d, mj), mj, m, d
 
 
+def test_hymeko_ph_role_vocabulary_reads_from_source() -> None:
+    """The source-level pH vocabulary: a HyMeKo model tags elements with energy roles, and we read them."""
+    from scenarios.humanoid.port_hamiltonian import read_ph_roles
+    roles = read_ph_roles("data/robotics/pendulum_ph.hymeko")
+    kinds = {v["role"] for v in roles.values()}
+    assert {"energy_storage", "dissipation", "effort_port", "interconnection"} <= kinds
+    store = next(v["props"] for v in roles.values() if v["role"] == "energy_storage")
+    assert store["mass"] == 1.0 and store["gravity"] == 9.81       # the leaf element's own properties
+    assert next(v["props"] for v in roles.values() if v["role"] == "dissipation")["coefficient"] == 0.1
+
+
+def test_symbolic_ph_generated_from_hymeko_role_annotations() -> None:
+    """generate → describe end to end: the symbolic Hamiltonian is built from the source's pH-role tags."""
+    from scenarios.humanoid.port_hamiltonian import pendulum_from_hymeko_roles
+    ph = pendulum_from_hymeko_roles("data/robotics/pendulum_ph.hymeko")
+    th, p0 = ph["q"][0], ph["p"][0]
+    assert sp.simplify(ph["H"] - (sp.Rational(1, 2) * p0 ** 2 + 9.81 * (1 - sp.cos(th)))) == 0
+    assert sp.simplify(ph["f"][1] - (-0.1 * p0 + ph["tau"][0] - 9.81 * sp.sin(th))) == 0   # damping from source
+
+
 def test_ph_is_generated_from_the_hymeko_source() -> None:
     """generate → describe: the pH system is produced FROM a HyMeKo model file, with a role provenance."""
     from scenarios.humanoid.port_hamiltonian import HumanoidPortHamiltonian

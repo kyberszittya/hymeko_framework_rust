@@ -1,0 +1,25 @@
+// port_hamiltonian.hymeko — a HyMeKo vocabulary MODULE for port-Hamiltonian system descriptions.
+//
+// Adds the pH role vocabulary to the language WITHOUT a grammar change: like meta_kinematics defines
+// `link`/`joint`/`sensor` via <isa>, this defines the energy roles a HyMeKo model annotates its elements
+// with, so the port-Hamiltonian description (H = ½pᵀM⁻¹p + V ; ẋ = (J−R)∂H + gτ) can be GENERATED from
+// the source. A model imports it (@"port_hamiltonian.hymeko";) and tags each element with a role.
+port_hamiltonian
+{
+
+}
+ph {
+    // the four structural roles of an input-state-output port-Hamiltonian system
+    roles {
+        meta_energy_element {}
+        energy_storage:  + <isa> meta_energy_element {}   // contributes to H (kinetic metric M or potential V)
+        dissipation:     + <isa> meta_energy_element {}   // contributes to R = Rᵀ ⪰ 0  (removes energy)
+        interconnection: + <isa> meta_energy_element {}   // contributes to J = −Jᵀ    (energy-conserving)
+        port:            + <isa> meta_energy_element {}   // contributes to g  (effort/flow boundary)
+    }
+    // Dirac-structure port kinds (collocated effort e and flow f, power p = eᵀf)
+    ports {
+        effort_port: + <isa> ph.roles.port {}
+        flow_port:   + <isa> ph.roles.port {}
+    }
+}

@@ -1,0 +1,20 @@
+// pendulum_ph.hymeko — a damped actuated pendulum described DIRECTLY in port-Hamiltonian roles.
+//
+// Demonstrates the source-level pH vocabulary: each element is tagged with the energy role it plays, so
+// the Hamiltonian H = ½p²/(mℓ²) + mgℓ(1−cosθ) and the pH form ẋ=(J−R)∂H+gτ are GENERATED from the source.
+pendulum_ph_description {
+    @"port_hamiltonian.hymeko";
+}
+
+pendulum: port_hamiltonian.ph.roles.meta_energy_element
+{
+    // kinetic + potential energy storage (H): the swinging mass on a rigid rod
+    bob:     port_hamiltonian.ph.roles.energy_storage  { mass 1.0; length 1.0; gravity 9.81; }
+    // dissipation (R): viscous joint damping removes energy
+    damping: port_hamiltonian.ph.roles.dissipation     { coefficient 0.1; }
+    // input port (g): the actuator torque — an effort port, collocated with the joint velocity (flow)
+    torque:  port_hamiltonian.ph.ports.effort_port     { effort 20.0; }
+    rate:    port_hamiltonian.ph.ports.flow_port       {}
+    // interconnection (J): the pivot couples angle-storage and momentum-storage symplectically
+    pivot:   port_hamiltonian.ph.roles.interconnection {}
+}

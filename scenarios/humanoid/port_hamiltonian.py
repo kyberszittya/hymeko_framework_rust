@@ -150,6 +150,41 @@ class HumanoidPortHamiltonian:
         return dH, integ, mismatch
 
 
+def read_ph_roles(hymeko_path: str) -> dict:
+    r"""Read the port-Hamiltonian ROLE annotations a HyMeKo source assigns to its elements.
+
+    A model that imports ``port_hamiltonian.hymeko`` tags each element with an energy role
+    (``port_hamiltonian.ph.roles.energy_storage`` / ``.dissipation`` / ``.interconnection`` /
+    ``.ports.effort_port`` …). This returns ``{element: {"role": r, "props": {k: v}}}`` — the source-level
+    pH description, ready to build H/R/J/g from. (A lightweight reader over the validated source; a full
+    query would go through the CLI's transform pipeline.)
+    """
+    import re
+    from pathlib import Path
+    text = Path(hymeko_path).read_text()
+    text = re.sub(r"//[^\n]*", "", text)                     # strip line comments
+    pat = re.compile(r"(\w+)\s*:\s*port_hamiltonian\.ph\.(?:roles|ports)\.(\w+)\s*\{([^{}]*)\}")  # leaf braces only
+    out = {}
+    for name, role, body in pat.findall(text):
+        props = {}
+        for m in re.finditer(r"(\w+)\s+([-\d.]+)", body):
+            props[m.group(1)] = float(m.group(2))
+        out[name] = {"role": role, "props": props}
+    return out
+
+
+def pendulum_from_hymeko_roles(hymeko_path: str) -> dict:
+    """Build the symbolic pendulum pH FROM its HyMeKo pH-role annotations (source → symbolic system)."""
+    from scenarios.humanoid.symbolic_ph import pendulum_ph
+    roles = read_ph_roles(hymeko_path)
+    store = next((v["props"] for v in roles.values() if v["role"] == "energy_storage"), {})
+    diss = next((v["props"] for v in roles.values() if v["role"] == "dissipation"), {})
+    ph = pendulum_ph(m=store.get("mass", 1.0), ell=store.get("length", 1.0),
+                     g=store.get("gravity", 9.81), b=diss.get("coefficient", 0.1))
+    ph["roles"] = roles
+    return ph
+
+
 def centroidal_hamiltonian(mass: float, com_z: float, p_lin: np.ndarray, ang_mom: float,
                            inertia: float, g: float = 9.81) -> float:
     r"""The CENTROIDAL port-Hamiltonian energy: the momentum-level reduction ``centroidal_run`` optimises.
