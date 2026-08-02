@@ -13,6 +13,20 @@ def _seed_theta() -> np.ndarray:
     return np.array([d[p] for p in _P], np.float64)
 
 
+def test_phase_offset_params_are_live_not_dead() -> None:
+    """Regression: hip_off/knee_off/ankle_off were in theta but UNUSED in _phase_targets, so the push-off
+    fired at a fixed phase and the legs drove the body BACKWARD (the CEM could not retime it). Each offset
+    must actually move the joint targets — a phase shift changes the produced action."""
+    env = FlightGaitEnv(FlightGaitConfig(steps=50), seed=0)
+    env.reset(seed=0)
+    base = _seed_theta()
+    t0 = env._phase_targets(base, ph=0.7)
+    for name in ("hip_off", "knee_off", "ankle_off"):
+        shifted = base.copy()
+        shifted[_P.index(name)] += 1.0                       # a 1 rad phase shift on this offset
+        assert not np.allclose(env._phase_targets(shifted, ph=0.7), t0), f"{name} is a DEAD parameter"
+
+
 def test_rollout_is_finite_and_deterministic() -> None:
     env = FlightGaitEnv(FlightGaitConfig(steps=200), seed=0)
     r0 = env.rollout(_seed_theta(), seed=0)
