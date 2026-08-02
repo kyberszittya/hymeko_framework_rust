@@ -1,0 +1,7 @@
+{"scenario_id": "bank_c0_0", "split": "train", "dtz_mm": 2.65, "base_k6": true, "survival": {"0.005": 1.0, "0.01": 1.0, "0.02": 1.0, "0.05": 1.0}}
+{"scenario_id": "bank_c0_2", "split": "train", "dtz_mm": 6.27, "base_k6": true, "survival": {"0.005": 1.0, "0.01": 1.0, "0.02": 0.833, "0.05": 1.0}}
+{"scenario_id": "bank_c0_1", "split": "dev", "dtz_mm": 8.43, "base_k6": true, "survival": {"0.005": 1.0, "0.01": 1.0, "0.02": 1.0, "0.05": 1.0}}
+{"scenario_id": "bank_c1_-0.03_-0.02", "split": "train", "dtz_mm": 1.56, "base_k6": true, "survival": {"0.005": 1.0, "0.01": 1.0, "0.02": 1.0, "0.05": 1.0}}
+{"scenario_id": "bank_c1_-0.03_+0.00", "split": "train", "dtz_mm": 7.99, "base_k6": true, "survival": {"0.005": 0.0, "0.01": 0.0, "0.02": 0.0, "0.05": 0.0}}
+{"scenario_id": "bank_c1_-0.03_+0.02", "split": "train", "dtz_mm": 19.5, "base_k6": true, "survival": {"0.005": 0.833, "0.01": 0.5, "0.02": 0.833, "0.05": 0.0}}
+{"scenario_id": "bank_c1_-0.03_+0.03", "split": "train", "dtz_mm": 14.63, "base_k6": true, "survival": {"0.005": 1.0, "0.01": 0.333, "0.02": 0.0, "0.05": 0.333}}
