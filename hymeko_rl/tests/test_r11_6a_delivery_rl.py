@@ -59,6 +59,12 @@ def test_gate_action_coordinate_insufficient_when_cannot_beat_warmstart() -> Non
     assert g["verdict"] == "R11_6A_ACTION_COORDINATE_INSUFFICIENT"
 
 
+def test_gate_rl_unstable_when_train_collapses_below_warmstart() -> None:
+    # v1 shape: mean train 0.454 well below the 0.932 warm-start = TD3 destabilized it (drift / critic collapse).
+    g = gate([_seed(0.454, 0.429)], {"k6": 0.0, "safe": 1.0}, {"train": {"k6": 0.932}, "dev": {"k6": 0.286}})
+    assert g["verdict"] == "R11_6A_RL_UNSTABLE"
+
+
 def test_gate_reward_misspecified_when_unsafe() -> None:
     g = gate([_seed(0.70, 0.55, safe=0.5)], {"k6": 0.1, "safe": 1.0}, {"train": {"k6": 0.3}, "dev": {"k6": 0.3}})
     assert g["verdict"] == "R11_6A_REWARD_MISSPECIFIED"

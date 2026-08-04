@@ -116,6 +116,10 @@ class CoinDeliveryThetaOptionEnv:
     def indices(self, split: str) -> "list[int]":
         return [i for i, h in enumerate(self._h) if h.split == split]
 
+    def teacher_action(self, idx: int) -> np.ndarray:
+        """Scenario ``idx``'s teacher theta in box-normalized action space (for immutable positive-replay seeding)."""
+        return theta_to_box(self._h[idx].teacher_theta).astype(np.float32)
+
     def warmstart_data(self) -> "tuple[np.ndarray, np.ndarray]":
         """(standardized train obs, teacher theta in box-normalized action space) for BC-initializing the actor —
         the teacher is a warm-start reference, not an imitation target the policy must keep."""
