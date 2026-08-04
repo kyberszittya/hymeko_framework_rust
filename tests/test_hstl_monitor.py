@@ -37,10 +37,14 @@ def test_python_htl_backend_is_robust_stl() -> None:
     assert not mon.satisfied() and abs(mon.robustness() + 0.1) < 1e-9
 
 
-def test_rust_backend_is_a_documented_slot() -> None:
-    """The Rust hymeko_monitor binding is not built here — the factory says so clearly, and rejects unknowns."""
-    with pytest.raises(NotImplementedError):
-        make_monitor("G(m >= 0)", "rust")
+def test_rust_backend_parity_with_python() -> None:
+    """The Rust (hymeko.HtlMonitor) backend is bit-identical to the Python engine on the same stream."""
+    pytest.importorskip("hymeko")                                   # the built pyo3 extension; skip in a headless build
+    rust = make_monitor("G(m >= 0)", "rust")
+    py = make_monitor("G(m >= 0)", "python")
+    for t, m in enumerate([0.5, 0.4, 0.42, 0.1, -0.05, 0.2, -0.2]):
+        assert abs(rust.observe(t, {"m": m}) - py.observe(t, {"m": m})) < 1e-9
+    assert rust.satisfied() == py.satisfied()
     with pytest.raises(ValueError):
         make_monitor("G(m >= 0)", "nonsense")
 

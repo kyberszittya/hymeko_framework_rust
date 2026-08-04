@@ -255,6 +255,29 @@ class LyapunovCertificate:
         bad = crossed | (self.value(xp) - v > tol)
         return float(v[bad].min()) if bad.any() else float(v.max())
 
+    def formal_verify(self, cfg: ViabilityConfig) -> dict:
+        r"""EXACT (LMI) formal guarantee — replaces sampling for the linear pendulum closed loop.
+
+        Inside the well the closed loop is linear, ``z⁺ = M z`` (``M`` the H-step semi-implicit flow on
+        ``z=(u,θ̇)``), so a quadratic ``V=zᵀPz`` decreases EVERYWHERE iff the discrete-Lyapunov inequality
+        ``Q = MᵀPM − P ⪯ 0`` holds — an eigenvalue check, not a sample. The largest sublevel provably inside the
+        well (no saddle cross) is ``c = π² / (P⁻¹)_{00}``. Returns the algebraic verdict + that formal level.
+
+        # Preconditions: ``cfg`` the closed loop this certificate was fit on. # Postconditions: ``formal_level``
+        #   is sound (V provably decreases on ``{V ≤ formal_level}``) when ``decreasing`` is true.
+        """
+        dt, k, inertia, damp = cfg.dt, cfg.k, cfg.inertia, cfg.b + cfg.kd
+        a = dt * damp / inertia
+        step = np.array([[1.0 - dt * dt * k / inertia, dt * (1.0 - a)],   # one semi-implicit step on (u, θ̇)
+                         [-dt * k / inertia, 1.0 - a]])
+        flow = np.linalg.matrix_power(step, self.lookahead)
+        p = self.matrix()
+        q = flow.T @ p @ flow - p                                          # discrete-Lyapunov residual
+        max_eig = float(np.linalg.eigvalsh(q).max())
+        formal_level = float(math.pi ** 2 / np.linalg.inv(p)[0, 0])        # {V≤c} ⊂ {|u|<π} ⇔ c ≤ this
+        return {"decreasing": bool(max_eig <= 1e-9), "max_eig_Q": max_eig,
+                "formal_level": formal_level, "guaranteed": bool(max_eig <= 1e-9 and formal_level > 0)}
+
     def verify(self, cfg: "ViabilityConfig | None" = None) -> dict:
         """Dense-sample the certified sublevel set: its level, its violation rate, and IoU vs the analytic ROA."""
         cfg = cfg or self.cfg

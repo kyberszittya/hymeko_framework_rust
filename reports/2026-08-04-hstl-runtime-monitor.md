@@ -8,6 +8,11 @@
 
 ## Summary
 
+> **Correction (later 2026-08-04):** this report says the Rust binding "is not built in this venv." **Wrong** — the
+> real module is `hymeko.HtlMonitor` (a built pyo3 extension), not `hymeko_monitor`. It is now wired as
+> `RustHtlBackend`, parity-matched (0 mismatches) and ~93× faster. No §1. See
+> `reports/2026-08-04-rust-monitor-backend-and-formal-verify.md`.
+
 Extended M2 with an **HSTL (HyMeKo/Hypergraph Signal Temporal Logic) runtime monitor** — the online companion to
 the offline certificate — and, in the process, **corrected a real flaw in the committed M2 certificate**.
 

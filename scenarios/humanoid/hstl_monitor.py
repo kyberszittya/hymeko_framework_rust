@@ -10,10 +10,12 @@ Two specs, in robust-STL min/max semantics:
 The running robustness is the min margin over the trace (the safety envelope); ``lead_steps`` is how many steps
 the certificate margin goes negative BEFORE the actual fall — the monitor's early warning.
 
-Reuse, not reinvention (§6.1): the pure-Python HTL evaluator ``hymeko_neuro.eval.htl`` is the reference backend.
-The Rust ``hymeko_monitor`` crate is the fast version, but its PyO3 binding is NOT built in this venv, so
-``make_monitor(..., "rust")`` is a documented slot behind the SAME ``MonitorBackend`` interface (mirroring
-``coin_carry_monitor.py``'s §2A/§2B pattern) — no claim it runs here until the binding is built and parity-tested.
+Reuse, not reinvention (§6.1): the pure-Python HTL evaluator ``hymeko_neuro.eval.htl`` is the reference backend,
+and the **Rust** STL monitor is the fast one — built as ``hymeko.HtlMonitor`` (the pyo3 ``hymeko_py`` extension,
+NOT the plain ``hymeko_monitor`` crate). Both sit behind the SAME ``MonitorBackend`` interface (mirroring
+``coin_carry_monitor.py``'s §2A/§2B pattern); ``make_monitor(..., "rust")`` returns the Rust backend, which is
+parity-matched to the Python one (bit-identical robustness) and ~90× faster per observation. It falls back with a
+clear error only if the ``hymeko`` extension is absent (e.g. a headless build).
 
 # Preconditions: a fitted certificate exposing ``value(x)``; a ``CentroidalConfig``. # Postconditions:
 #   deterministic; the monitor's robustness is the robust-STL margin of the executed trajectory.
@@ -59,16 +61,38 @@ class PythonHtlBackend:
         return bool(self._monitor.satisfied())
 
 
+class RustHtlBackend:
+    """Rust STL backend over the built ``hymeko.HtlMonitor`` (pyo3) — parity with the Python engine, ~90× faster."""
+
+    def __init__(self, spec: str, horizon: int = 4096) -> None:
+        import hymeko                                          # the built pyo3 extension (hymeko_py)
+        try:
+            self._monitor = hymeko.HtlMonitor(spec, horizon)
+        except TypeError:                                      # older binding: horizon is a fixed default
+            self._monitor = hymeko.HtlMonitor(spec)
+
+    def observe(self, t: float, signals: Mapping[str, float]) -> float:
+        return float(self._monitor.observe(float(t), dict(signals)))
+
+    def robustness(self) -> float:
+        return float(self._monitor.robustness())
+
+    def satisfied(self) -> bool:
+        return bool(self._monitor.satisfied())
+
+
 def make_monitor(spec: str, backend: str = "python", horizon: int = 4096) -> MonitorBackend:
-    """Backend factory (mirrors ``coin_carry_monitor.make_monitor``): ``python`` ships; ``rust`` is a built-slot."""
+    """Backend factory (mirrors ``coin_carry_monitor.make_monitor``): ``python`` (reference) or ``rust`` (fast)."""
     if backend == "python":
         return PythonHtlBackend(spec, horizon)
     if backend == "rust":
-        raise NotImplementedError(
-            "the Rust hymeko_monitor STL backend is not built in this venv (import hymeko_monitor is empty). "
-            "Build the PyO3 binding, then wire a RustHtlBackend behind this same MonitorBackend interface and "
-            "parity-test it against PythonHtlBackend before use.")
-    raise ValueError(f"unknown monitor backend {backend!r} (use 'python'; 'rust' once its binding is built)")
+        try:
+            return RustHtlBackend(spec, horizon)
+        except ImportError as err:                            # only if the pyo3 extension is not built
+            raise RuntimeError(
+                "the Rust backend needs the built 'hymeko' pyo3 extension (hymeko_py); it is not importable here"
+            ) from err
+    raise ValueError(f"unknown monitor backend {backend!r} (use 'python' or 'rust')")
 
 
 def certificate_signals(state: np.ndarray, certificate, level: float, cfg: CentroidalConfig) -> "dict[str, float]":

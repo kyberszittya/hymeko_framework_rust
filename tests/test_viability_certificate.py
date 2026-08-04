@@ -61,6 +61,24 @@ def test_hd_seed_is_load_bearing() -> None:
     assert seeded >= unseeded + 0.2                                      # the seed does the heavy lifting
 
 
+def test_formal_verify_is_exact_for_the_seeded_certificate() -> None:
+    """LMI formal guarantee: Q=MᵀPM−P ⪯ 0 (V provably decreases), formal level = the barrier c*, tighter than sampling."""
+    cfg = ViabilityConfig(grid_n=41)
+    x, _ = sample_viability(cfg)
+    cert = LyapunovCertificate(cfg, seed_from_hd=True).fit(x)
+    fv = cert.formal_verify(cfg)
+    assert fv["decreasing"] and fv["guaranteed"]                     # exact discrete-Lyapunov inequality holds
+    assert abs(fv["formal_level"] - separatrix_level(cfg)) / separatrix_level(cfg) < 0.02   # = c*
+    assert fv["formal_level"] >= cert.certified_level(x) - 1e-9       # sound level ≥ the conservative sampling one
+
+
+def test_formal_verify_rejects_a_non_lyapunov_certificate() -> None:
+    """An unfit identity metric is not a Lyapunov function for the semi-implicit flow — the LMI catches it."""
+    cfg = ViabilityConfig()
+    fv = LyapunovCertificate(cfg, seed_from_hd=False).formal_verify(cfg)   # P ≈ I, no fit
+    assert not fv["decreasing"] and fv["max_eig_Q"] > 0.0
+
+
 def test_shared_closed_loop_step_matches_the_manual_integrator() -> None:
     """Refactor / one-shared-step contract: closed_loop_step equals the inline control + semi-implicit update."""
     cfg = ViabilityConfig()
