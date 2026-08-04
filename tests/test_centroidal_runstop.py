@@ -86,6 +86,28 @@ def test_neural_rl_beats_tuned_linear_on_held_out(trained) -> None:
     assert rl["fall_rate"] <= 0.05                               # and it stops without falling
 
 
+def test_shield_makes_random_policies_safe() -> None:
+    """(2) Cert/monitor shield — safe exploration by construction: random policies fall without it, never with it."""
+    cfg, pc = RunStopConfig(), PolicyConfig()
+    states = mixed_set(cfg, offset=0.5)
+    rng = np.random.RandomState(0)
+    unshielded_max, shielded_max = 0.0, 0.0
+    for _ in range(15):
+        p = rng.standard_normal(_n_params(pc)) * 1.2
+        unshielded_max = max(unshielded_max, episode(p, states, cfg, pc, shield=False)[1].mean())
+        shielded_max = max(shielded_max, episode(p, states, cfg, pc, shield=True)[1].mean())
+    assert unshielded_max > 0.1                                  # random policies DO fall without the shield
+    assert shielded_max == 0.0                                   # and NEVER fall with it (safe by construction)
+
+
+def test_shielded_training_is_safe_and_capable() -> None:
+    """Training inside the shield: zero falls held-out, and most of the stop-success retained."""
+    cfg = RunStopConfig()
+    params = train_cem(cfg, PolicyConfig(iters=15), shield=True)
+    report = evaluate(params, cfg, PolicyConfig(), offset=0.5, shield=True)
+    assert report["fall_rate"] == 0.0 and report["stop_success"] > 0.8
+
+
 def test_training_is_deterministic() -> None:
     cfg, pc = RunStopConfig(), PolicyConfig(iters=5, pop=24)
     assert np.allclose(train_cem(cfg, pc), train_cem(cfg, pc))

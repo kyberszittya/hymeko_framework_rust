@@ -95,11 +95,30 @@ def _features(state: np.ndarray, targ: np.ndarray, t: float, cfg: RunStopConfig)
     return np.stack([state[:, 0], state[:, 1], state[:, 2], targ, phase], axis=1)
 
 
+def safety_shield(fx: np.ndarray, a: np.ndarray, state: np.ndarray, cfg: RunStopConfig,
+                  buffer: float = 0.55, tau: float = 0.45) -> "tuple[np.ndarray, np.ndarray]":
+    r"""A model-predictive safety shield — makes exploration safe by construction.
+
+    The fall is relative-degree-2 (``a → L → pitch``), so reacting to ``|pitch|`` alone is too late: the shield
+    activates on the **predicted** pitch ``pitch + (L/I)·τ`` (where the current angular momentum is taking the
+    torso). As that predicted margin drops below ``buffer`` it blends the action toward the safe fallback — **stop
+    braking** (the destabilising input to ``L``) and drive the L-port to **oppose the predicted pitch**
+    (``a → −sign·a_max``) — so any policy explores without falling. Graded (smooth) to avoid thrashing.
+    """
+    pitch_pred = state[:, 2] + (state[:, 1] / cfg.inertia) * tau   # where the current L is taking the pitch
+    w = np.clip((buffer - (cfg.fall_pitch - np.abs(pitch_pred))) / buffer, 0.0, 1.0)   # 0 far, 1 at the predicted edge
+    fx_s = (1.0 - w) * fx                                    # cut braking as the predicted edge nears
+    a_s = (1.0 - w) * a + w * (-np.sign(pitch_pred) * cfg.a_max)
+    return np.clip(fx_s, -cfg.fx_max, cfg.fx_max), np.clip(a_s, -cfg.a_max, cfg.a_max)
+
+
 def episode(params: "np.ndarray | None", x0: np.ndarray, cfg: RunStopConfig, pc: PolicyConfig,
-            gains: "tuple[float, float]" = (4.0, 1.0)) -> "tuple[np.ndarray, np.ndarray, np.ndarray]":
+            gains: "tuple[float, float]" = (4.0, 1.0), shield: bool = False,
+            ) -> "tuple[np.ndarray, np.ndarray, np.ndarray]":
     """Roll the policy (``params``) or the tuned linear baseline (``params=None``) → (stopped, fell, min_margin).
 
     ``min_margin`` is the HSTL robustness of ``G(fall_margin>0)`` (= min over the episode of ``fall_pitch−|pitch|``).
+    With ``shield=True`` every action is passed through :func:`safety_shield` (safe exploration).
     """
     v_run = x0[:, 0].copy()
     state = x0.astype(float).copy()
@@ -113,6 +132,8 @@ def episode(params: "np.ndarray | None", x0: np.ndarray, cfg: RunStopConfig, pc:
             a = np.clip(-gains[1] * state[:, 1], -cfg.a_max, cfg.a_max)
         else:
             fx, a = policy_actions(params, _features(state, targ, t, cfg), pc, cfg)
+        if shield:
+            fx, a = safety_shield(fx, a, state, cfg)
         state = runstop_step(state, t, fx, a, cfg)
         min_margin = np.minimum(min_margin, cfg.fall_pitch - np.abs(state[:, 2]))
         fell |= np.abs(state[:, 2]) > cfg.fall_pitch
@@ -129,7 +150,7 @@ def mixed_set(cfg: RunStopConfig, n: int = 8, offset: float = 0.0) -> np.ndarray
     return np.stack([vv.ravel(), ll.ravel(), pp.ravel()], axis=1)
 
 
-def train_cem(cfg: RunStopConfig, pc: PolicyConfig) -> np.ndarray:
+def train_cem(cfg: RunStopConfig, pc: PolicyConfig, shield: bool = False) -> np.ndarray:
     """CEM on the policy parameters, maximising stop-success + the HSTL-robustness shaping term (train set)."""
     rng = np.random.RandomState(pc.seed)
     x0 = mixed_set(cfg, offset=0.0)
@@ -139,15 +160,16 @@ def train_cem(cfg: RunStopConfig, pc: PolicyConfig) -> np.ndarray:
         pop = mean + std * rng.standard_normal((pc.pop, dim))
         scores = np.empty(pc.pop)
         for j, p in enumerate(pop):
-            stopped, _, margin = episode(p, x0, cfg, pc)
+            stopped, _, margin = episode(p, x0, cfg, pc, shield=shield)
             scores[j] = stopped.mean() + pc.w_margin * margin.mean()
         elite = pop[np.argsort(scores)[-pc.elite:]]
         mean, std = elite.mean(axis=0), elite.std(axis=0) + 1e-6
     return mean
 
 
-def evaluate(params: "np.ndarray | None", cfg: RunStopConfig, pc: PolicyConfig, offset: float = 0.5) -> dict:
+def evaluate(params: "np.ndarray | None", cfg: RunStopConfig, pc: PolicyConfig, offset: float = 0.5,
+             shield: bool = False) -> dict:
     """Held-out (by default) stop-success + mean HSTL robustness for a policy or the tuned linear baseline."""
-    stopped, fell, margin = episode(params, mixed_set(cfg, offset=offset), cfg, pc)
+    stopped, fell, margin = episode(params, mixed_set(cfg, offset=offset), cfg, pc, shield=shield)
     return {"stop_success": float(stopped.mean()), "fall_rate": float(fell.mean()),
             "mean_robustness": float(margin.mean()), "n": int(len(stopped))}
