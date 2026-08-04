@@ -115,6 +115,20 @@ def _make_dev_eval(env: CoinDeliveryThetaOptionEnv, dev_idx: "list[int]") -> Any
     return fn
 
 
+def _make_combined_eval(env: CoinDeliveryThetaOptionEnv, dev_idx: "list[int]", train_sub: "list[int]",
+                        ws_train_sub: float, margin: float) -> Any:
+    """Selection metric that requires the checkpoint be valid on train AND dev (the fix for the v2 dev-only pathology
+    that picked train-collapsed dev-lucky checkpoints): score = dev K6 IF the train subset is preserved
+    (>= warm-start - margin), else -1 (disqualified). With update0 (the warm-start) as the floor, best_val is the
+    train-preserving checkpoint with the best dev — or the warm-start if none improves dev without breaking train."""
+    def fn(actor: Any) -> "tuple[float, dict[str, float]]":
+        dev = eval_actor(actor, env, dev_idx)["k6"]
+        trn = eval_actor(actor, env, train_sub)["k6"]
+        preserved = trn >= ws_train_sub - margin
+        return (dev if preserved else -1.0), {"dev": dev, "train_sub": trn, "preserved": float(preserved)}
+    return fn
+
+
 def teacher_positives(env: CoinDeliveryThetaOptionEnv, reward_scale: float) -> "list[OptionTransition]":
     """Immutable positive transitions — the teacher theta rolled out on each train scenario (state, z_teacher, reward).
     Seeded into a never-evicted buffer and mixed into every minibatch so the critic keeps the known-good region
@@ -201,7 +215,7 @@ def train_td3_anchored(env: CoinDeliveryThetaOptionEnv, actor: Any, dev_eval_fn:
     for p in positives:
         pos.add(p)
     ckpts = {"update0": copy.deepcopy(actor.state_dict()), "best_val": copy.deepcopy(actor.state_dict())}
-    best: float = -1e9
+    best: float = float(dev_eval_fn(actor)[0])         # floor = the warm-start (update0); only a better ckpt replaces it
     upd = 0
     history: list = []
     scorerun: list = []
@@ -230,12 +244,12 @@ def train_td3_anchored(env: CoinDeliveryThetaOptionEnv, actor: Any, dev_eval_fn:
 
 
 def train_seed(env: CoinDeliveryThetaOptionEnv, base_actor: Any, dev_idx: "list[int]", seed: int,
-               cfg: SemiMDPConfig, positives: "list[OptionTransition]", positive_frac: float) -> dict[str, Any]:
+               cfg: SemiMDPConfig, positives: "list[OptionTransition]", positive_frac: float, eval_fn: Any) -> dict[str, Any]:
     actor = copy.deepcopy(base_actor)
     if positive_frac > 0.0 and positives:
-        ckpts, history = train_td3_anchored(env, actor, _make_dev_eval(env, dev_idx), cfg, positives, positive_frac, seed)
+        ckpts, history = train_td3_anchored(env, actor, eval_fn, cfg, positives, positive_frac, seed)
     else:
-        ckpts, history = train_semi_mdp("td3", env, actor, _make_dev_eval(env, dev_idx), cfg,
+        ckpts, history = train_semi_mdp("td3", env, actor, eval_fn, cfg,
                                         obs_dim=env.obs_dim, act_dim=env.act_dim, seed=seed)
     best = make_actor("td3", env.obs_dim, env.act_dim)
     best.load_state_dict(ckpts["best_val"])
@@ -243,30 +257,39 @@ def train_seed(env: CoinDeliveryThetaOptionEnv, base_actor: Any, dev_idx: "list[
             "dev": eval_actor(best, env, dev_idx), "final_dev": history[-1]["dev_score"] if history else 0.0}
 
 
-def _r11_6a_verdict(passed: bool, tr: float, safe: bool, warmstart_train: float) -> str:
-    if passed:
-        return "R11_6A_REWARD_DRIVEN_DELIVERY_LEARNS"
+_TRAIN_PRESERVE_MARGIN = 0.15     # train may not fall more than this below the warm-start (else the anchor failed)
+_DEV_GAIN_MARGIN = 0.05           # dev must beat the warm-start by at least this to count as improvement
+
+
+def _r11_6a_verdict(tr: float, dv: float, safe: bool, ws_tr: float, ws_dv: float, n_seeds: int, n_dev_gain: int) -> str:
+    """Success criteria (per the user's refinement): a dev-lucky checkpoint does not count. IMPROVEMENT_PASS requires
+    train preserved AND dev-mean improved over the BC warm-start AND the gain across a majority of seeds. Train-preserved
+    but dev flat = the anchor prevented forgetting but online TD3 found no further gain on the seen distribution."""
     if not safe:
-        return "R11_6A_REWARD_MISSPECIFIED"                    # found unsafe/degenerate optima
-    if tr < warmstart_train - 0.15:
-        return "R11_6A_RL_UNSTABLE"                            # DEGRADED the warm-start (drift / critic collapse)
-    if tr < 0.60:
-        return "R11_6A_ACTION_COORDINATE_INSUFFICIENT"         # preserved but can't beat the teacher warm-start
-    return "R11_6A_OPTIMIZATION_STALLED"
+        return "R11_6A_REWARD_MISSPECIFIED"                   # unsafe / degenerate optima
+    if tr < ws_tr - _TRAIN_PRESERVE_MARGIN:
+        return "R11_6A_RL_UNSTABLE"                           # forgot the warm-start (v1: no anchor)
+    improved = dv > ws_dv + _DEV_GAIN_MARGIN and dv >= 0.50 and n_dev_gain >= (n_seeds + 1) // 2
+    if improved:
+        return "R11_6A_REWARD_DRIVEN_DELIVERY_IMPROVEMENT_PASS"
+    return "R11_6A_POSITIVE_REPLAY_PREVENTS_FORGETTING_STALLED"
 
 
 def gate(seeds: "list[dict]", box_center: dict, warmstart: dict) -> dict[str, Any]:
-    """R11.6A PASS: mean train K6 >= .60, mean dev K6 >= .50, 0 safety regression, and beats box-center + the R11.4B BC
-    held-out (0.25) — i.e. RL amortizes delivery (no per-instance search) where BC could not even fit train (0.386)."""
+    """R11.6A verdict on the seen certified-handoff distribution. IMPROVEMENT_PASS = train preserved (>= warm-start-0.15),
+    dev-mean improves over the BC warm-start by >=0.05 AND reaches >=0.50, across a majority of seeds, 0 safety regression.
+    Train-preserved-but-dev-flat = PREVENTS_FORGETTING_STALLED (BC already solved R11.6A; TD3 adds nothing here — dev
+    generalization is R11.6B). Train-collapsed = RL_UNSTABLE."""
+    ws_tr, ws_dv = warmstart["train"]["k6"], warmstart["dev"]["k6"]
     tr = round(float(np.mean([s["train"]["k6"] for s in seeds])), 3)
     dv = round(float(np.mean([s["dev"]["k6"] for s in seeds])), 3)
     safe = all(s["train"]["safe"] >= 0.999 and s["dev"]["safe"] >= 0.999 for s in seeds)
-    beats = dv > box_center["k6"] and dv > BC_HELD_OUT_REF
-    passed = tr >= 0.60 and dv >= 0.50 and safe and beats
-    verdict = _r11_6a_verdict(passed, tr, safe, warmstart["train"]["k6"])
+    n_dev_gain = sum(1 for s in seeds if s["dev"]["k6"] > ws_dv + 1e-9)
+    verdict = _r11_6a_verdict(tr, dv, safe, ws_tr, ws_dv, len(seeds), n_dev_gain)
     return {"mean_train_k6": tr, "mean_dev_k6": dv, "safety_ok": safe, "box_center_k6": box_center["k6"],
-            "warmstart_train_k6": warmstart["train"]["k6"], "warmstart_dev_k6": warmstart["dev"]["k6"],
-            "bc_heldout_ref": BC_HELD_OUT_REF, "beats_baselines": beats, "per_seed": seeds, "verdict": verdict}
+            "warmstart_train_k6": ws_tr, "warmstart_dev_k6": ws_dv, "seeds_with_dev_gain": f"{n_dev_gain}/{len(seeds)}",
+            "train_preserved": tr >= ws_tr - _TRAIN_PRESERVE_MARGIN, "bc_heldout_ref": BC_HELD_OUT_REF,
+            "per_seed": seeds, "verdict": verdict}
 
 
 def main() -> None:
@@ -281,6 +304,9 @@ def main() -> None:
     ap.add_argument("--expl-noise", type=float, default=0.2, help="TD3 exploration std (lower = gentler around warm-start)")
     ap.add_argument("--positive-frac", type=float, default=0.25,
                     help="fraction of each minibatch from the immutable teacher positive buffer (v2); 0 = v1 generic TD3")
+    ap.add_argument("--select", choices=("combined", "dev"), default="combined",
+                    help="checkpoint selection: 'combined' (dev subject to train preserved, v2.1) or 'dev' (v2)")
+    ap.add_argument("--train-sub", type=int, default=14, help="train-subset size for the combined selection metric")
     args = ap.parse_args()
 
     ctx = bc_context()
@@ -299,10 +325,16 @@ def main() -> None:
 
     cfg = SemiMDPConfig(total_options=args.total_options, warmup_options=args.warmup, expl_noise=args.expl_noise)
     positives = teacher_positives(env, cfg.reward_scale) if args.positive_frac > 0.0 else []
-    print(f"positives: {len(positives)} teacher transitions (frac {args.positive_frac})", flush=True)
+    print(f"positives: {len(positives)} teacher transitions (frac {args.positive_frac}); select={args.select}", flush=True)
+    if args.select == "combined":
+        train_sub = env.indices("train")[:args.train_sub]
+        ws_train_sub = eval_actor(base, env, train_sub)["k6"]
+        eval_fn = _make_combined_eval(env, dev_idx, train_sub, ws_train_sub, _TRAIN_PRESERVE_MARGIN)
+    else:
+        eval_fn = _make_dev_eval(env, dev_idx)
     seeds = []
     for s in range(args.seeds):
-        res = train_seed(env, base, dev_idx, s, cfg, positives, args.positive_frac)
+        res = train_seed(env, base, dev_idx, s, cfg, positives, args.positive_frac, eval_fn)
         print(f"[seed {s}] train {res['train']} dev {res['dev']}", flush=True)
         seeds.append(res)
 

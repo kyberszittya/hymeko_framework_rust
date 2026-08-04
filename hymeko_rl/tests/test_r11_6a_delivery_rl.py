@@ -11,6 +11,7 @@ from hymeko_rl.coin_delivery.theta_option.delivery_theta_env import (
     box_to_theta,
     theta_to_box,
 )
+import hymeko_rl.experiments.r11_6a_delivery_rl as R
 from hymeko_rl.experiments.r11_6a_delivery_rl import gate
 
 
@@ -49,20 +50,29 @@ def _seed(train: float, dev: float, safe: float = 1.0) -> dict:
     return {"seed": 0, "train": {"k6": train, "safe": safe}, "dev": {"k6": dev, "safe": safe}, "final_dev": dev}
 
 
-def test_gate_pass() -> None:
-    g = gate([_seed(0.70, 0.55)], {"k6": 0.1, "safe": 1.0}, {"train": {"k6": 0.3}, "dev": {"k6": 0.3}})
-    assert g["verdict"] == "R11_6A_REWARD_DRIVEN_DELIVERY_LEARNS" and g["beats_baselines"]
+def test_gate_improvement_pass() -> None:
+    # train preserved (0.70 >= 0.30-0.15) AND dev improves over the warm-start (0.55 > 0.30+0.05, >= 0.50), the seed gains.
+    g = gate([_seed(0.70, 0.55)], {"k6": 0.1, "safe": 1.0}, {"train": {"k6": 0.30}, "dev": {"k6": 0.30}})
+    assert g["verdict"] == "R11_6A_REWARD_DRIVEN_DELIVERY_IMPROVEMENT_PASS" and g["train_preserved"]
 
 
-def test_gate_action_coordinate_insufficient_when_cannot_beat_warmstart() -> None:
-    g = gate([_seed(0.30, 0.20)], {"k6": 0.1, "safe": 1.0}, {"train": {"k6": 0.30}, "dev": {"k6": 0.30}})
-    assert g["verdict"] == "R11_6A_ACTION_COORDINATE_INSUFFICIENT"
-
-
-def test_gate_rl_unstable_when_train_collapses_below_warmstart() -> None:
+def test_gate_rl_unstable_when_train_collapses() -> None:
     # v1 shape: mean train 0.454 well below the 0.932 warm-start = TD3 destabilized it (drift / critic collapse).
     g = gate([_seed(0.454, 0.429)], {"k6": 0.0, "safe": 1.0}, {"train": {"k6": 0.932}, "dev": {"k6": 0.286}})
-    assert g["verdict"] == "R11_6A_RL_UNSTABLE"
+    assert g["verdict"] == "R11_6A_RL_UNSTABLE" and not g["train_preserved"]
+
+
+def test_gate_prevents_forgetting_when_train_held_but_dev_flat() -> None:
+    # v2 likely shape: the anchor holds train (~ warm-start) but dev stays ~ warm-start -> no improvement, not a failure.
+    g = gate([_seed(0.90, 0.29)], {"k6": 0.0, "safe": 1.0}, {"train": {"k6": 0.932}, "dev": {"k6": 0.286}})
+    assert g["verdict"] == "R11_6A_POSITIVE_REPLAY_PREVENTS_FORGETTING_STALLED" and g["train_preserved"]
+
+
+def test_gate_improvement_needs_seed_majority() -> None:
+    # mean dev 0.503 >= 0.50 but only 1/3 seeds beat the warm-start dev (0.30) -> majority fails -> not an improvement.
+    seeds = [_seed(0.90, 0.95), _seed(0.90, 0.28), _seed(0.90, 0.28)]
+    g = gate(seeds, {"k6": 0.0, "safe": 1.0}, {"train": {"k6": 0.90}, "dev": {"k6": 0.30}})
+    assert g["verdict"] == "R11_6A_POSITIVE_REPLAY_PREVENTS_FORGETTING_STALLED" and g["seeds_with_dev_gain"] == "1/3"
 
 
 def test_gate_reward_misspecified_when_unsafe() -> None:
@@ -70,6 +80,11 @@ def test_gate_reward_misspecified_when_unsafe() -> None:
     assert g["verdict"] == "R11_6A_REWARD_MISSPECIFIED"
 
 
-def test_gate_optimization_stalled_when_dev_low_but_safe() -> None:
-    g = gate([_seed(0.70, 0.40)], {"k6": 0.1, "safe": 1.0}, {"train": {"k6": 0.3}, "dev": {"k6": 0.3}})
-    assert g["verdict"] == "R11_6A_OPTIMIZATION_STALLED"
+def test_combined_eval_disqualifies_train_collapse(monkeypatch: pytest.MonkeyPatch) -> None:
+    # train_sub idx = [0], dev idx = [1]; warm-start train_sub = 0.85, margin 0.15 => preserve floor 0.70.
+    monkeypatch.setattr(R, "eval_actor", lambda a, e, idx: {"k6": (0.30 if idx == [0] else 0.60), "safe": 1.0})
+    score, aux = R._make_combined_eval(None, [1], [0], 0.85, 0.15)(object())
+    assert score == -1.0 and aux["preserved"] == 0.0                  # dev-lucky but train collapsed -> disqualified
+    monkeypatch.setattr(R, "eval_actor", lambda a, e, idx: {"k6": (0.80 if idx == [0] else 0.60), "safe": 1.0})
+    score2, aux2 = R._make_combined_eval(None, [1], [0], 0.85, 0.15)(object())
+    assert score2 == 0.60 and aux2["preserved"] == 1.0               # train preserved -> score = dev

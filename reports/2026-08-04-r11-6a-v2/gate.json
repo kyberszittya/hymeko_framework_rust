@@ -1,0 +1,49 @@
+{
+  "mean_train_k6": 0.636,
+  "mean_dev_k6": 0.334,
+  "safety_ok": true,
+  "box_center_k6": 0.0,
+  "warmstart_train_k6": 0.841,
+  "warmstart_dev_k6": 0.286,
+  "bc_heldout_ref": 0.25,
+  "beats_baselines": true,
+  "per_seed": [
+    {
+      "seed": 0,
+      "train": {
+        "k6": 0.227,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.429,
+        "safe": 1.0
+      },
+      "final_dev": 0.429
+    },
+    {
+      "seed": 1,
+      "train": {
+        "k6": 0.841,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.286,
+        "safe": 1.0
+      },
+      "final_dev": 0.143
+    },
+    {
+      "seed": 2,
+      "train": {
+        "k6": 0.841,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.286,
+        "safe": 1.0
+      },
+      "final_dev": 0.0
+    }
+  ],
+  "verdict": "R11_6A_RL_UNSTABLE"
+}
