@@ -59,10 +59,12 @@ class CentroidalConfig:
         return self.ts + self.tf
 
 
-def centroidal_step(state: np.ndarray, t: float, cfg: CentroidalConfig) -> np.ndarray:
+def centroidal_step(state: np.ndarray, t: float, cfg: CentroidalConfig, l_residual=0.0) -> np.ndarray:
     r"""One semi-implicit step of the L-regulated centroidal closed loop. ``state`` columns = (z, ż, L, pitch).
 
-    The single shared integrator for the rollout labeller and the certificate lookahead. # Post: same shape.
+    The single shared integrator for the rollout labeller, the certificate lookahead, and RL. ``l_residual`` is an
+    optional (scalar or per-row) corrective L-torque — the learned port on top of the scripted regulation; it
+    defaults to 0, so every existing caller is unchanged. # Post: same shape.
     """
     z, zd, ll, pitch = state[:, 0], state[:, 1], state[:, 2], state[:, 3]
     stance = (t % cfg.cycle) < cfg.ts
@@ -70,7 +72,7 @@ def centroidal_step(state: np.ndarray, t: float, cfg: CentroidalConfig) -> np.nd
     zdd = np.where(stance, push - cfg.grav, -cfg.grav)           # flight = ballistic
     zd = zd + zdd * cfg.dt
     z = z + zd * cfg.dt
-    ldot = np.where(stance, cfg.torque_bias, 0.0) - cfg.l_damp * ll   # contact torque (stance) − port damping
+    ldot = np.where(stance, cfg.torque_bias, 0.0) - cfg.l_damp * ll + l_residual   # scripted port + learned residual
     ll = ll + ldot * cfg.dt
     pitch = pitch + (ll / cfg.inertia) * cfg.dt - cfg.pitch_gain * pitch * cfg.dt   # ∫L/I − attitude hold
     return np.stack([z, zd, ll, pitch], axis=1)
