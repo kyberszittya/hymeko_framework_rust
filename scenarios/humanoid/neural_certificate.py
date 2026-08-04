@@ -47,23 +47,30 @@ class NeuralLyapunovCertificate(nn.Module):
         super().__init__()
         torch.manual_seed(seed)
         self.cfg, self.lookahead = cfg, lookahead
-        self._xstar = torch.tensor([[cfg.z0, 0.0, 0.0, 0.0]], dtype=torch.float32)
+        # The fall dynamics are decoupled: (z, ż) is a stable SLIP gait, only (L, pitch) governs falling. So V is
+        # over the fall-relevant error subspace (L, pitch) — constant on the z-bounce limit cycle (V decreases
+        # genuinely, not spuriously oscillating), which the full-state version did not (it collapsed the level).
+        self._errstar = torch.zeros((1, 2), dtype=torch.float32)
         self.phi = nn.Sequential(
-            nn.Linear(4, hidden), nn.Tanh(),
+            nn.Linear(2, hidden), nn.Tanh(),
             nn.Linear(hidden, hidden), nn.Tanh(),
             nn.Linear(hidden, feat),
         )
 
+    @staticmethod
+    def _err(x: torch.Tensor) -> torch.Tensor:
+        return x[:, 2:4]                                     # (L, pitch): the converging error coordinates
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        d = self.phi(x) - self.phi(self._xstar)              # V = ‖φ(x)−φ(x*)‖²  ⇒  V⪰0, V(x*)=0
+        d = self.phi(self._err(x)) - self.phi(self._errstar)   # V = ‖φ(L,pitch)−φ(0,0)‖²  ⇒  V⪰0, V(x*)=0
         return (d * d).sum(dim=1)
 
     def value(self, x: np.ndarray) -> np.ndarray:
         with torch.no_grad():
             return self.forward(torch.as_tensor(x, dtype=torch.float32)).numpy()
 
-    def fit(self, x0: np.ndarray, iters: int = 400, lr: float = 3e-3, margin: float = 1e-3,
-            sep: float = 1.0) -> "NeuralLyapunovCertificate":
+    def fit(self, x0: np.ndarray, iters: int = 800, lr: float = 3e-3, margin: float = 1e-3,
+            sep: float = 2.0) -> "NeuralLyapunovCertificate":
         r"""Shape ``V`` to decrease on non-falling states and be high on falling ones (so ``{V≤c}`` excludes falls).
 
         The lookahead (dynamics, no grad) is precomputed once; only ``V`` carries gradients. # Pre: ``len(x0)>0``.

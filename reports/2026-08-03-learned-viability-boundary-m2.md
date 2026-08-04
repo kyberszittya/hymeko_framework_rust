@@ -1,5 +1,16 @@
 # M2 — neural Lyapunov certificate of the centroidal capturability basin
 
+> **Correction (2026-08-04, from the M2⁺ monitor work):** building the runtime monitor exposed that the
+> full-state certificate's `certified_level` was **grid-fragile** — the target is a limit cycle (`z` bounces),
+> so `V=‖φ(x)−φ(x*)‖²` over the full state oscillates and the level collapsed on grids near nominal (the
+> committed 0.0004 / 0.45 came from a held-out grid that happened to avoid it). **Fix:** the certificate now acts
+> on the **fall-relevant subspace `(L, pitch)`** (the `(z,ż)` gait is decoupled from the fall), giving a robust
+> level ≈ 4.0 with fall-violation ≈ 0.028 and IoU ≈ 0.48. Honest caveat: at this (strong) regulation the basin is
+> **pitch-dominated** (`L` weakly coupled), so the certificate is a valid but only *mildly*-nonlinear demo;
+> softening the regulation makes `L` matter but turns the target into a limit cycle a point-Lyapunov `V` cannot
+> certify — **limit-cycle-aware certification is the honest follow-up.** See `reports/2026-08-04-hstl-runtime-monitor.md`.
+
+
 **Date:** 2026-08-03
 **Plan:** `docs/plans/2026-08-02-learned-viability-boundary/` (M2 addendum; on disk, gitignored per repo convention)
 **Branch/worktree:** `research/humanoid-com-lyapunov` @ `hymeko_humanoid` (head at start `8d5ebadf`)

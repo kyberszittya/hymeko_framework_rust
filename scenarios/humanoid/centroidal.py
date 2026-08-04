@@ -33,6 +33,10 @@ class CentroidalConfig:
     inertia: float = 1.6             # torso inertia about the pitch axis
     kz: float = 260.0                # stance vertical spring
     dz: float = 45.0                 # stance vertical damping
+    # NOTE: at this (strong) regulation the fall is pitch-dominated (L is weakly coupled), so the basin is close
+    # to {|pitch| < fall_pitch} and the (L,pitch) certificate is a valid but only mildly-nonlinear demonstration.
+    # Softening the regulation makes L genuinely matter, but then the attractor is a LIMIT CYCLE (L_ss, pitch_ss)
+    # and a point-Lyapunov V collapses — limit-cycle-aware certification is the honest follow-up (see the report).
     torque_bias: float = 2.4         # (r_foot−r_com)×F bias on L during stance
     l_damp: float = 9.5              # L-port regulation gain (foot placement + arm swing)
     pitch_gain: float = 7.0          # torso-pitch attitude regulation
