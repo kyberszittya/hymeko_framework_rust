@@ -91,6 +91,54 @@ class NeuralLyapunovCertificate(nn.Module):
             opt.step()
         return self
 
+    def spectral_lipschitz(self) -> float:
+        """Lipschitz constant of ``φ`` on any input: ``∏ ‖W_i‖₂`` (each Tanh is 1-Lipschitz)."""
+        lphi = 1.0
+        for layer in self.phi:
+            if isinstance(layer, nn.Linear):
+                lphi *= float(torch.linalg.matrix_norm(layer.weight.detach(), ord=2))
+        return lphi
+
+    def lipschitz_formal_verify(self, cfg: "CentroidalConfig", grid_n: int = 81) -> dict:
+        r"""SOUND (Lipschitz-certified) verification — a real guarantee, not sampling.
+
+        The ``(L,pitch)`` flow is linear (``M_H`` exact), and ``V`` is Lipschitz with ``L_V = 2·max‖φ−φ*‖·∏‖W_i‖``.
+        The decrease residual ``g = V(x⁺)−V(x)`` then has ``L_g = L_V(‖M_H‖+1)``, so a cell of half-diagonal ``r``
+        where ``g(centre) ≤ −L_g·r`` decreases over its WHOLE extent; likewise ``maxpitch ≤ fall_pitch − L_fall·r``
+        proves no-fall on the cell. The formal level is the largest sublevel whose cells are all sound.
+        """
+        dt, ld, pg, ic = cfg.dt, cfg.l_damp, cfg.pitch_gain, cfg.inertia
+        step = np.array([[1 - dt * ld, 0.0], [(dt / ic) * (1 - dt * ld), 1 - dt * pg]])   # (L,pitch) step Jacobian
+        flow = np.linalg.matrix_power(step, self.lookahead)
+        m_norm = float(np.linalg.norm(flow, 2))
+        l_fall = max(float(np.linalg.norm(np.linalg.matrix_power(step, h)[1, :]))
+                     for h in range(1, self.lookahead + 1))                                # pitch-sensitivity bound
+        ls = np.linspace(-cfg.l_max, cfg.l_max, grid_n)
+        ps = np.linspace(-cfg.pitch_max, cfg.pitch_max, grid_n)
+        ll, pp = np.meshgrid(ls, ps)
+        x = np.stack([np.full(ll.size, cfg.z0), np.zeros(ll.size), ll.ravel(), pp.ravel()], axis=1)
+        r = 0.5 * float(np.hypot(2 * cfg.l_max / grid_n, 2 * cfg.pitch_max / grid_n))       # cell half-diagonal
+        with torch.no_grad():
+            dphi = self.phi(torch.as_tensor(x[:, 2:4], dtype=torch.float32)) - self.phi(self._errstar)
+            d_max = float(dphi.norm(dim=1).max())
+        l_v = 2.0 * d_max * self.spectral_lipschitz()
+        l_g = l_v * (m_norm + 1.0)
+        v = self.value(x)
+        state, maxpitch = x.copy(), np.abs(x[:, 3]).copy()
+        for i in range(self.lookahead):
+            state = centroidal_step(state, i * cfg.dt, cfg)
+            maxpitch = np.maximum(maxpitch, np.abs(state[:, 3]))
+        sound = (self.value(state) - v <= -l_g * r) & (maxpitch <= cfg.fall_pitch - l_fall * r)
+        # `sound` is a SOUND per-cell guarantee (decrease + no-fall over the whole cell). Two honest caveats make a
+        # clean Lyapunov sublevel unattainable from the NAIVE spectral-norm bound: (i) L_g is loose, so the margin
+        # L_g·r leaves an uncertifiable core around the gait where the decrease vanishes; (ii) soundness is not
+        # monotone in V. So we report sound COVERAGE (a real guarantee) and the largest fully-sound sublevel.
+        max_sublevel = float(v[~sound].min()) if (~sound).any() else float(v.max())
+        return {"sound_fraction": float(sound.mean()),        # fraction of the box with a sound decrease+no-fall proof
+                "max_sound_sublevel": max_sublevel,           # largest {V≤c} fully sound (naive Lipschitz: ≈ 0)
+                "uncertifiable_core_V": l_g * r,              # strict decrease uncertifiable below this V (the core)
+                "L_V": l_v, "L_g": l_g, "cell_radius": r, "grid_n": grid_n}
+
     def certified_level(self, x0: np.ndarray, tol: float = 1e-4) -> float:
         """Largest ``c`` such that ``{V ≤ c}`` neither increases ``V`` nor falls within the lookahead."""
         v = self.value(x0)

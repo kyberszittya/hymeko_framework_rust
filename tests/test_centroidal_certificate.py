@@ -66,6 +66,17 @@ def test_neural_certificate_covers_the_basin_nontrivially(fitted) -> None:
     assert report["iou_vs_recoverable"] >= 0.40
 
 
+def test_lipschitz_formal_verify_is_sound_and_refines(fitted) -> None:
+    """SOUND (Lipschitz) per-cell decrease+no-fall guarantee: coverage refines and the core shrinks as r→0."""
+    cert, cfg, _ = fitted
+    coarse = cert.lipschitz_formal_verify(cfg, grid_n=81)
+    fine = cert.lipschitz_formal_verify(cfg, grid_n=161)
+    assert 0.0 <= coarse["sound_fraction"] <= 1.0
+    assert fine["sound_fraction"] > coarse["sound_fraction"]              # sound coverage improves with resolution
+    assert fine["uncertifiable_core_V"] < coarse["uncertifiable_core_V"]  # the uncertifiable core shrinks (∝ r)
+    assert cert.spectral_lipschitz() > 0.0                               # finite positive Lipschitz bound
+
+
 def test_neural_certificate_fit_is_deterministic() -> None:
     """Same seed ⇒ identical certificate (torch CPU + numpy, no RNG in fit beyond seeded init)."""
     cfg = CentroidalConfig(grid_n=7)
