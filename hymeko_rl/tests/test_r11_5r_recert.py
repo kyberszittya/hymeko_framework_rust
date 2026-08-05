@@ -1,5 +1,8 @@
 """Tests for the R11.5R re-certification teacher gate + B1 dataset row (synthetic records)."""
-from hymeko_rl.experiments.r11_5r_robust_teacher import _b1_sample, teacher_gate
+import json
+from pathlib import Path
+
+from hymeko_rl.experiments.r11_5r_robust_teacher import _b1_sample, _merge_rows, _write_b1_dataset, teacher_gate
 
 
 def _row(sid: str, split: str, status: str, t0: float = 0.30, t1: float = 0.90) -> dict:
@@ -33,3 +36,15 @@ def test_teacher_gate_survival_over_k6_scenarios_only() -> None:
 def test_b1_sample_uses_chosen_theta() -> None:
     s = _b1_sample(_row("s0", "dev", "WIDE_RECERTIFIED"))
     assert s["theta"] == [0.1] * 6 and s["k6"] is True and s["scenario_id"] == "s0" and s["split"] == "dev"
+
+
+def test_merge_and_b1_dataset_roundtrip(tmp_path: Path) -> None:
+    rows = [_row("w0", "train", "WIDE_RECERTIFIED"), _row("n0", "train", "NARROW_ONLY"),
+            _row("k0", "dev", "NO_NOMINAL_K6"), {"scenario_id": "nc", "split": "test", "status": "NO_CAPTURE"}]
+    (tmp_path / "recert_000.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    merged = _merge_rows(tmp_path)
+    assert len(merged) == 4                                                   # NO_CAPTURE stays in the merged record
+    n = _write_b1_dataset(merged, tmp_path / "dataset_b1")
+    assert n == 3                                                            # ...but is excluded from the B1 dataset
+    emitted = [json.loads(x) for x in (tmp_path / "dataset_b1" / "extract_000.jsonl").read_text().splitlines()]
+    assert {e["scenario_id"] for e in emitted} == {"w0", "n0", "k0"} and all(e["k6"] for e in emitted)

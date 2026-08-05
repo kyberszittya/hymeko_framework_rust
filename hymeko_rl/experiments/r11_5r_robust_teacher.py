@@ -114,13 +114,50 @@ def _slice(seq: list, offset: int, limit: int) -> list:
     return seq[offset:(offset + limit if limit else len(seq))]
 
 
+def _merge_rows(out_dir: Path) -> "list[dict]":
+    """Every re-certification row across the parallel shards (recert_*.jsonl)."""
+    rows: list[dict] = []
+    for f in sorted(glob.glob(str(out_dir / "recert_*.jsonl"))):
+        for line in Path(f).open():
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
+
+
+def _write_b1_dataset(rows: "list[dict]", b1_dir: Path) -> int:
+    """Emit the B1 (robust-recertified) dataset in the R11.4B BcSample shard format — SAME scenarios/splits as B0, the
+    robust theta where WIDE_RECERTIFIED, the nominal fallback (== the B0 theta) elsewhere. Returns the row count."""
+    b1_dir.mkdir(parents=True, exist_ok=True)
+    usable = [r for r in rows if r.get("status") in (_WIDE, _NARROW, _NO_K6)]      # NO_CAPTURE has no theta to emit
+    with (b1_dir / "extract_000.jsonl").open("w", encoding="utf-8") as fh:
+        for r in usable:
+            fh.write(json.dumps(_b1_sample(r)) + "\n")
+    return len(usable)
+
+
+def _run_merge(args: argparse.Namespace) -> None:
+    """Merge the shards, write merged.json (gate + rows), and emit the B1 dataset for the same-size BC re-run."""
+    rows = _merge_rows(args.out)
+    gate = teacher_gate(rows)
+    (args.out / "merged.json").write_text(json.dumps({"gate": gate, "rows": rows}, indent=2), encoding="utf-8")
+    n_b1 = _write_b1_dataset(rows, args.out / "dataset_b1")
+    print(f"merged {len(rows)} rows -> merged.json; B1 dataset {n_b1} rows -> {args.out / 'dataset_b1'}", flush=True)
+    print("=== R11.5R TEACHER GATE ===", flush=True)
+    print(json.dumps(gate, indent=2), flush=True)
+    print("R11_5R_MERGE_DONE", flush=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset-dir", type=Path, default=R11_4B_DATASET)
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--offset", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--merge", action="store_true", help="merge shards + emit merged.json and the B1 dataset (no recert)")
     args = ap.parse_args()
+    if args.merge:
+        _run_merge(args)
+        return
     cfg, conf, obj = bc_context()
     rcfg = RobustTeacherConfig()
     bank = PerturbationBank(SCALES, max(rcfg.k_screen, rcfg.k_refine, rcfg.k_stress), seed=BANK_SEED)
