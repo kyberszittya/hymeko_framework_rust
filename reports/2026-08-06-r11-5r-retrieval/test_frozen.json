@@ -1,0 +1,37 @@
+{
+  "note": "R11.5R retrieval-characterization TEST-SPLIT result -- FINAL and SPENT. Per the single-use held-out discipline: these 5 test scenarios were revealed by this characterization; any future densification MUST define a NEW untouched test panel and must NOT generate demos on these points (else 'learning the exam'). R11.6C may evaluate this test split ONCE more, only after the composition system is frozen.",
+  "test_scenarios": [
+    "bank_c1_+0.03_+0.00",
+    "bank_c2_+0.025_+0.000",
+    "bank_c3_r9_a+15",
+    "bank_c3_r9_a+30",
+    "bank_c3_r9_a+45"
+  ],
+  "dev_scenarios": [
+    "bank_c0_1",
+    "bank_c1_+0.03_-0.02",
+    "bank_c2_+0.025_-0.015",
+    "bank_c2_+0.025_-0.025",
+    "bank_c3_r7_a+45",
+    "bank_c3_r9_a-15",
+    "bank_c3_r9_a-30"
+  ],
+  "test_result_std_nearest": {
+    "bank_c1_+0.03_+0.00": false,
+    "bank_c2_+0.025_+0.000": false,
+    "bank_c3_r9_a+15": false,
+    "bank_c3_r9_a+30": false,
+    "bank_c3_r9_a+45": false
+  },
+  "test_result_std_weighted3": {
+    "bank_c1_+0.03_+0.00": false,
+    "bank_c2_+0.025_+0.000": false,
+    "bank_c3_r9_a+15": true,
+    "bank_c3_r9_a+30": false,
+    "bank_c3_r9_a+45": false
+  },
+  "test_held_out_coverage": {
+    "std_nearest": 0.0,
+    "std_weighted3": 0.2
+  }
+}

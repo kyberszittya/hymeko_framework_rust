@@ -7,6 +7,8 @@ from hymeko_rl.coin_delivery.delivery_bc.retrieval import (
     RetrievalDeliveryPolicy,
     RetrievalDeploymentCertificate,
     SelectRule,
+    freeze_table,
+    load_frozen,
 )
 
 _MID = (THETA_LO + THETA_HI) / 2.0
@@ -69,3 +71,21 @@ def test_certificate_deployable() -> None:
     c = RetrievalDeploymentCertificate(True, True, True, 1, "nearest", True, 0.61, 0.33, 0.20)
     assert c.is_deployable()
     assert not RetrievalDeploymentCertificate(True, False, True, 1, "nearest", True, 0.6, 0.3, 0.2).is_deployable()
+
+
+def test_config_json_roundtrip() -> None:
+    cfg = RetrievalConfig(standardize=False, k=3, select=SelectRule.DIST_WEIGHTED)
+    assert RetrievalConfig.from_json(cfg.to_json()) == cfg
+
+
+def test_freeze_table_roundtrips_to_identical_policy() -> None:
+    X, T, surv = _data(seed=3)
+    cfg = RetrievalConfig(standardize=True, k=3, select=SelectRule.DIST_WEIGHTED)
+    spec = freeze_table([f"s{i}" for i in range(len(X))], X, T, surv, cfg)
+    loaded = load_frozen(spec)                                    # self-contained: no bank access
+    direct = RetrievalDeliveryPolicy.fit(X, T, surv, cfg)
+    for q in (X[0] + 0.05, np.zeros(5)):
+        assert np.allclose(loaded.predict(q), direct.predict(q))
+    control = load_frozen(spec, config=RetrievalConfig(True, 1, SelectRule.NEAREST))    # same table, control config
+    base = RetrievalDeliveryPolicy.fit(X, T, surv, RetrievalConfig(True, 1, SelectRule.NEAREST))
+    assert np.allclose(control.predict(X[2] + 0.05), base.predict(X[2] + 0.05))

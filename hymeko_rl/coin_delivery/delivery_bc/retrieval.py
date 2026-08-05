@@ -30,6 +30,13 @@ class RetrievalConfig:
     k: int = 1
     select: SelectRule = SelectRule.NEAREST
 
+    def to_json(self) -> "dict[str, object]":
+        return {"standardize": self.standardize, "k": self.k, "select": self.select.value}
+
+    @staticmethod
+    def from_json(d: "dict[str, object]") -> "RetrievalConfig":
+        return RetrievalConfig(bool(d["standardize"]), int(d["k"]), SelectRule(str(d["select"])))
+
 
 @dataclass(frozen=True)
 class RetrievalDeploymentCertificate:
@@ -99,3 +106,22 @@ class RetrievalDeliveryPolicy:
         w = 1.0 / (d[idx] + 1e-9)                                     # DIST_WEIGHTED
         w = w / w.sum()
         return (w[:, None] * self._theta[idx]).sum(0)
+
+
+def freeze_table(scenario_ids: "list[str]", X: np.ndarray, Theta: np.ndarray, survival: np.ndarray,
+                 config: RetrievalConfig) -> "dict[str, object]":
+    """Serialize a SELF-CONTAINED frozen deployment table (raw descriptors + robust theta + survival + config). The
+    table is the whole policy — no dependency on re-deriving it from the bank at load time."""
+    return {"scenario_ids": list(scenario_ids),
+            "X": np.asarray(X, np.float64).tolist(),
+            "theta": np.asarray(Theta, np.float64).tolist(),
+            "survival": np.asarray(survival, np.float64).tolist(),
+            "config": config.to_json()}
+
+
+def load_frozen(spec: "dict[str, object]", config: "RetrievalConfig | None" = None) -> "RetrievalDeliveryPolicy":
+    """Reconstruct a policy from a frozen table (deterministic re-fit). ``config`` overrides the stored one (e.g. to run
+    the in-distribution control on the same table); default uses the frozen config."""
+    cfg = config if config is not None else RetrievalConfig.from_json(spec["config"])       # type: ignore[arg-type]
+    return RetrievalDeliveryPolicy.fit(np.asarray(spec["X"], np.float64), np.asarray(spec["theta"], np.float64),
+                                       np.asarray(spec["survival"], np.float64), cfg)

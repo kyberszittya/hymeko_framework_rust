@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,8 @@ from hymeko_rl.coin_delivery.delivery_bc.retrieval import (
     RetrievalDeliveryPolicy,
     RetrievalDeploymentCertificate,
     SelectRule,
+    freeze_table,
+    load_frozen,
 )
 from hymeko_rl.experiments.r11_4b_conditioned_bc import _load_dataset
 
@@ -135,16 +138,42 @@ def _run_merge(args: argparse.Namespace) -> None:
     print("R11_5R_RETRIEVAL_DONE", flush=True)
 
 
+# the shipped deployment configs (user: std_weighted3 = best generalizer PRIMARY, std_nearest = in-distribution control)
+PRIMARY_CFG = dict(CELLS)["std_weighted3"]
+CONTROL_CFG = dict(CELLS)["std_nearest"]
+
+
+def _run_freeze(args: argparse.Namespace) -> None:
+    """Write the SELF-CONTAINED frozen deployment artifact (train robust-theta table + primary/control config +
+    characterization + provenance). R11.6C loads this — the retrieval policy is shipped as a frozen baseline."""
+    samples = _load_dataset(args.dataset_dir)
+    X, T, S, _idx = _train_table(samples, survival_map(args.recert))
+    train_ids = sorted(s.scenario_id for s in samples if s.split == "train")
+    table = freeze_table(train_ids, X, T, S, PRIMARY_CFG)
+    char = json.loads((args.out / "retrieval.json").read_text()) if (args.out / "retrieval.json").exists() else {}
+    table_md5 = hashlib.md5(json.dumps(table["X"], sort_keys=True).encode()).hexdigest()   # noqa: S324 (integrity id, not security)
+    payload = {"table": table, "primary_config": PRIMARY_CFG.to_json(), "control_config": CONTROL_CFG.to_json(),
+               "n_train": len(train_ids), "characterization": char.get("cells", {}),
+               "certificate": char.get("certificate", {}),
+               "provenance": {"dataset_dir": str(args.dataset_dir), "recert": str(args.recert), "table_md5": table_md5}}
+    out = args.out / "frozen_policy.json"
+    out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    pol = load_frozen(table)                                    # sanity: the artifact round-trips to a usable policy
+    _ = pol.predict(np.asarray(table["X"], np.float64)[0])
+    print(f"FROZEN_POLICY_WRITTEN {out} n_train={len(train_ids)} md5={table_md5} primary={PRIMARY_CFG.select.value}",
+          flush=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--phase", choices=("eval", "merge"), required=True)
+    ap.add_argument("--phase", choices=("eval", "merge", "freeze"), required=True)
     ap.add_argument("--dataset-dir", type=Path, default=B1_DATASET)
     ap.add_argument("--recert", type=Path, default=RECERT)
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--offset", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
-    {"eval": _run_eval, "merge": _run_merge}[args.phase](args)
+    {"eval": _run_eval, "merge": _run_merge, "freeze": _run_freeze}[args.phase](args)
 
 
 if __name__ == "__main__":
