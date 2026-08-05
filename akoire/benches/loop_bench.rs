@@ -53,10 +53,16 @@ fn bench_hotaru_plan(c: &mut Criterion) {
         required_edges: vec!["e_ab".to_string(), "e_bc".to_string()],
     };
 
+    let kyosei = Kyosei::default();
     c.bench_function("hotaru_search_plan_two_edge", |b| {
         b.iter(|| {
-            let planner =
-                SearchHotaru::plan(black_box(""), black_box(&menu), black_box(&objectives), 256);
+            let planner = SearchHotaru::plan(
+                black_box(""),
+                black_box(&menu),
+                black_box(&objectives),
+                black_box(&kyosei),
+                256,
+            );
             black_box(planner);
         });
     });

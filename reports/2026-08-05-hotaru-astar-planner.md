@@ -122,3 +122,59 @@ Git SHA `aff5057c` (branch `research/humanoid-com-lyapunov`); working tree at st
 change (all under `akoire/`). Toolchain: `rustc 1.96.1`, `cargo test`/`clippy`/`rustfmt`/`criterion` (§10
 pins). Host: macOS (darwin 25.5), Apple Silicon. Deterministic: A\* is seed-free (monotonic-counter
 tie-break); no dataset, no GPU.
+
+---
+
+## Update — Kyosei arity filter (#2) + unifying `SearchProblem` framework (#3)
+
+Two additive increments on top of the kickoff (planned in `docs/plans/.../plan.tex` §Addendum, committed
+after the first commit `2b2b2c52`). Both non-core, no new dependency.
+
+### (2) Kyosei arity filter
+The planner now respects `Kyosei::max_arity` (the physical arity bound). Wired as a **neighbour filter**:
+a successor whose applied state contains any hyperedge of arity > `max_arity` is dropped, so the search
+only traverses arity-respecting states. Arity = `EdgeInner.bases.len()` (referenced-vertex count) read
+from the parsed AST via the new `engine::preview_edges(source) -> Option<Vec<(String, usize)>>`;
+`preview_edge_names` / `collect_edge_names` were refactored to derive from the one traversal (§6.1).
+`SearchHotaru::plan`/`search` gained a `kyosei: &Kyosei` parameter (5 params, under the §6.5 config-struct
+threshold). It is a **filter, not a heuristic** — the parser's arity is exact.
+
+- **Regression test** (`kyosei_arity_bound_prunes_high_arity_edges`): a menu whose only route to the goal
+  needs a 3-ary edge → `max_arity 2` ⇒ `plan` returns `None` (goal unreachable); `max_arity 3` ⇒ the plan
+  reaches it. Would have failed against the prior (arity-blind) implementation.
+
+### (3) Unifying `SearchProblem` framework
+Extracted the planner interface the "reused by both" ask needs: `trait SearchProblem { type Node; type
+Edge; start; neighbours; is_goal; heuristic }` + `fn solve<P: SearchProblem>(&P, max_expansions) ->
+AstarResult<P::Edge>` (delegates to the closure-based `astar`). HOTARU's search is now a
+`HiveDeltaProblem` implementing `SearchProblem` (structure-synthesis instance), solved by `solve`. A
+second instance — a 4-connected occupancy-**grid** `SearchProblem` (the shape a footstep planner takes) —
+is added under test and proves the *same* framework spans **structure** (HIVE-delta) and **motion**.
+
+- **Honest scope**: the humanoid footstep planner lives in Python (`scenarios/humanoid`); it *mirrors*
+  this interface rather than sharing the Rust trait across the FFI boundary. The in-crate grid instance
+  (`solve_drives_a_motion_grid_problem`: detours a two-cell wall, optimal path length 7) is the Rust-side
+  generality proof.
+
+### Files touched (delta vs `2b2b2c52`)
+| File | +/− | notes |
+|---|---|---|
+| `akoire/src/search.rs` | +90 / 0 | `SearchProblem` trait + `solve` + grid `SearchProblem` test |
+| `akoire/src/hotaru.rs` | +112 / −43 | `HiveDeltaProblem` (`impl SearchProblem`) + `kyosei` param + `search` via `solve` + Kyosei test |
+| `akoire/src/engine.rs` | +27 / −11 | `preview_edges` (arity); `preview_edge_names`/`collect_edge_names` derive from one traversal |
+| `akoire/src/lib.rs` | +2 / −2 | export `solve`, `SearchProblem`, `preview_edges` |
+| `akoire/benches/loop_bench.rs` | +8 / −2 | `kyosei` arg |
+| `akoire/tests/hotaru_search.rs` | +4 / −2 | `kyosei` arg |
+
+### Test / gate results (after #2 + #3)
+- `cargo test -p akoire` → **29 pass / 0 fail** (23 lib + 6 integration across 3 binaries) + 1 ignored
+  doctest. New: `solve_drives_a_motion_grid_problem`, `kyosei_arity_bound_prunes_high_arity_edges`.
+- `cargo clippy -p akoire --no-deps --all-targets -- -D warnings` → clean; `cargo fmt -- --check` → clean.
+- **Perf:** `hotaru_search_plan_two_edge` median **32.0 µs** [31.90, 32.07] (was 31.4 µs; arity filter adds
+  `preview_edges` per neighbour — within noise, no regression). Deterministic expansion budget unchanged
+  (≤16).
+
+### §6.5 anti-patterns (update)
+None. `SearchProblem` is the Strategy/Template interface the user asked for (not over-patterning — §7); the
+Kyosei axis is a `kyosei` parameter, not a new `plan_*` variant (§6.5 #1/#5); the AST traversal is unified
+(§6.1). No new `unwrap`/`expect` in non-test code.

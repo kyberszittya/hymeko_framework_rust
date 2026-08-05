@@ -30,7 +30,8 @@ fn wants(edges: &[&str]) -> Objectives {
 #[test]
 fn planned_hotaru_drives_loop_to_convergence() {
     let objectives = wants(&["e_ab", "e_bc"]);
-    let planner = SearchHotaru::plan("", &menu(), &objectives, 256).expect("goal reachable");
+    let planner = SearchHotaru::plan("", &menu(), &objectives, &Kyosei::default(), 256)
+        .expect("goal reachable");
     let plan_len = planner.remaining();
     assert_eq!(plan_len, 3, "optimal plan = base, e_ab, e_bc");
 
@@ -63,7 +64,8 @@ fn planner_planned_for_less_exhausts_against_stricter_goal() {
     // Planner plans only for `e_ab`; the loop's objective additionally needs `e_bc`. Every planned
     // delta is still accepted, but the plan runs dry before the stricter goal ⇒ Exhausted (not a
     // spin, not a false Converged) — the loop's Exhausted branch, reached through a real planner.
-    let planner = SearchHotaru::plan("", &menu(), &wants(&["e_ab"]), 256).expect("reachable");
+    let planner = SearchHotaru::plan("", &menu(), &wants(&["e_ab"]), &Kyosei::default(), 256)
+        .expect("reachable");
     let plan_len = planner.remaining();
     assert_eq!(plan_len, 2, "base, e_ab");
 

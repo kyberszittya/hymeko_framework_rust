@@ -6,9 +6,9 @@
 
 use std::collections::VecDeque;
 
-use crate::context::{CognitiveContext, Objectives};
-use crate::engine::preview_edge_names;
-use crate::search::{astar, AstarResult};
+use crate::context::{CognitiveContext, Kyosei, Objectives};
+use crate::engine::{preview_edge_names, preview_edges};
+use crate::search::{solve, AstarResult, SearchProblem};
 use crate::synthesize::{CognitiveSynthesizer, Refinement};
 
 /// A named candidate mutation in HIVE-delta space.
@@ -102,14 +102,15 @@ impl HotaruPlanner for ScriptedHotaru {
 /// A HOTARU planner that *derives* its delta sequence by A\* search over the implicit HIVE-delta
 /// space, instead of replaying a fixed script.
 ///
-/// [`SearchHotaru::plan`] runs [`crate::search::astar`] from a seed source over a menu of candidate
-/// deltas: a node is an accumulated HyQL source, an edge is an applied [`HiveDelta`] (cost one), a
-/// successor is kept only if it *parses* (via [`preview_edge_names`] — the parser is the feasibility
-/// oracle, so ordering constraints such as "the host block before an edge that references it" are
-/// enforced for free), and the goal is a state whose edge names satisfy the [`Objectives`]. The
-/// planner then streams the resulting delta sequence through [`HotaruPlanner::next_delta`], so it
-/// drops into the existing [`HotaruSynthesizer`]/[`crate::CognitiveLoop`] unchanged — kicking the
-/// loop off with a *derived* plan rather than a hand-written script.
+/// [`SearchHotaru::plan`] runs the [`SearchProblem`] search (via [`crate::search::solve`]) from a
+/// seed source over a menu of candidate deltas: a node is an accumulated HyQL source, an edge is an
+/// applied [`HiveDelta`] (cost one), a successor is kept only if it *parses* **and** respects the
+/// [`Kyosei`] arity bound (the parser is the feasibility oracle, so ordering constraints such as
+/// "the host block before an edge that references it" are enforced for free), and the goal is a
+/// state whose edge names satisfy the [`Objectives`]. The planner then streams the resulting delta
+/// sequence through [`HotaruPlanner::next_delta`], so it drops into the existing
+/// [`HotaruSynthesizer`]/[`crate::CognitiveLoop`] unchanged — kicking the loop off with a *derived*
+/// plan rather than a hand-written script.
 #[derive(Debug, Clone, Default)]
 pub struct SearchHotaru {
     plan: VecDeque<HiveDelta>,
@@ -132,9 +133,10 @@ impl SearchHotaru {
         seed: &str,
         menu: &[HiveDelta],
         objectives: &Objectives,
+        kyosei: &Kyosei,
         max_expansions: usize,
     ) -> Option<Self> {
-        Self::search(seed, menu, objectives, max_expansions)
+        Self::search(seed, menu, objectives, kyosei, max_expansions)
             .actions
             .map(|deltas| Self {
                 plan: deltas.into_iter().collect(),
@@ -142,38 +144,21 @@ impl SearchHotaru {
     }
 
     /// The raw A\* search behind [`plan`](Self::plan): returns the full [`AstarResult`] (path +
-    /// effort stats). Kept separate so the perf test can assert the deterministic expansion budget
-    /// without a second copy of the neighbour/goal/heuristic closures.
+    /// effort stats). Kept separate so the perf test can assert the deterministic expansion budget.
     fn search(
         seed: &str,
         menu: &[HiveDelta],
         objectives: &Objectives,
+        kyosei: &Kyosei,
         max_expansions: usize,
     ) -> AstarResult<HiveDelta> {
         debug_assert!(max_expansions >= 1, "max_expansions must be >= 1");
-        astar(
-            seed.to_string(),
-            // neighbours: apply each delta; keep only distinct, parseable successors.
-            |src: &String| {
-                let mut succ: Vec<(HiveDelta, String, f64)> = Vec::new();
-                for delta in menu {
-                    let next = delta.lower(src).0;
-                    if next != *src && preview_edge_names(&next).is_some() {
-                        succ.push((delta.clone(), next, 1.0));
-                    }
-                }
-                succ
-            },
-            // is_goal: a committed (non-empty, parseable) state with all required edges present.
-            |src: &String| match preview_edge_names(src) {
-                Some(names) => !src.trim().is_empty() && objectives.satisfied_edges(&names),
-                None => false,
-            },
-            // heuristic: required edges still missing (admissible — see `Objectives::missing_edges`).
-            |src: &String| {
-                preview_edge_names(src).map_or(objectives.required_edges.len() as f64, |names| {
-                    objectives.missing_edges(&names) as f64
-                })
+        solve(
+            &HiveDeltaProblem {
+                seed,
+                menu,
+                objectives,
+                kyosei,
             },
             max_expansions,
         )
@@ -190,6 +175,61 @@ impl HotaruPlanner for SearchHotaru {
     /// Streams the pre-computed plan; ignores the context (the plan is fixed by the search).
     fn next_delta(&mut self, _ctx: &CognitiveContext<'_>) -> Option<HiveDelta> {
         self.plan.pop_front()
+    }
+}
+
+/// HOTARU's structure-synthesis search expressed as a [`SearchProblem`] (so it runs through the same
+/// [`crate::search::solve`] framework the motion/grid problem uses). A node is an accumulated HyQL
+/// source, an edge is an applied [`HiveDelta`] (cost one). A successor is kept only if it parses
+/// **and** every edge respects the [`Kyosei`] arity bound (the parser's arity is the exact oracle —
+/// not a heuristic); the goal is a committed state whose edge names satisfy the [`Objectives`]; the
+/// heuristic is the admissible missing-edge count.
+struct HiveDeltaProblem<'a> {
+    seed: &'a str,
+    menu: &'a [HiveDelta],
+    objectives: &'a Objectives,
+    kyosei: &'a Kyosei,
+}
+
+impl SearchProblem for HiveDeltaProblem<'_> {
+    type Node = String;
+    type Edge = HiveDelta;
+
+    fn start(&self) -> String {
+        self.seed.to_string()
+    }
+
+    fn neighbours(&self, src: &String) -> Vec<(HiveDelta, String, f64)> {
+        let mut succ = Vec::new();
+        for delta in self.menu {
+            let next = delta.lower(src).0;
+            if next == *src {
+                continue; // no-op delta
+            }
+            // Feasible only if it parses AND every edge is within the Kyosei arity bound.
+            if let Some(edges) = preview_edges(&next) {
+                if edges
+                    .iter()
+                    .all(|(_, arity)| *arity <= self.kyosei.max_arity)
+                {
+                    succ.push((delta.clone(), next, 1.0));
+                }
+            }
+        }
+        succ
+    }
+
+    fn is_goal(&self, src: &String) -> bool {
+        match preview_edge_names(src) {
+            Some(names) => !src.trim().is_empty() && self.objectives.satisfied_edges(&names),
+            None => false,
+        }
+    }
+
+    fn heuristic(&self, src: &String) -> f64 {
+        preview_edge_names(src).map_or(self.objectives.required_edges.len() as f64, |names| {
+            self.objectives.missing_edges(&names) as f64
+        })
     }
 }
 
@@ -233,7 +273,14 @@ mod search_tests {
             preview_edge_names("Rig {\n  a;\n  b;\n  c;\n}").is_some(),
             "base block parses"
         );
-        let planner = SearchHotaru::plan("", &menu(), &wants(&["e_ab", "e_bc"]), 256).unwrap();
+        let planner = SearchHotaru::plan(
+            "",
+            &menu(),
+            &wants(&["e_ab", "e_bc"]),
+            &Kyosei::default(),
+            256,
+        )
+        .unwrap();
         assert_eq!(
             planner.plan.front().map(HiveDelta::name),
             Some("base"),
@@ -245,7 +292,8 @@ mod search_tests {
     fn plan_reaches_goal_and_skips_distractor() {
         let m = menu();
         let obj = wants(&["e_ab", "e_bc"]);
-        let planner = SearchHotaru::plan("", &m, &obj, 256).expect("goal is reachable");
+        let planner =
+            SearchHotaru::plan("", &m, &obj, &Kyosei::default(), 256).expect("goal is reachable");
         let deltas: Vec<&str> = planner.plan.iter().map(HiveDelta::name).collect();
         assert_eq!(
             deltas,
@@ -265,7 +313,13 @@ mod search_tests {
     fn search_meets_expansion_budget() {
         // Deterministic performance budget (CLAUDE.md §3): the two-edge goal is found within a
         // bounded number of node expansions, and the returned path is the 3-delta optimum.
-        let r = SearchHotaru::search("", &menu(), &wants(&["e_ab", "e_bc"]), 256);
+        let r = SearchHotaru::search(
+            "",
+            &menu(),
+            &wants(&["e_ab", "e_bc"]),
+            &Kyosei::default(),
+            256,
+        );
         let actions = r.actions.expect("goal reachable");
         assert_eq!(actions.len(), 3, "optimal plan length");
         assert!(
@@ -286,7 +340,7 @@ mod search_tests {
         // makes "base before edge" hold when the grammar demands it).
         let m = menu();
         let obj = wants(&["e_ab", "e_bc"]);
-        let planner = SearchHotaru::plan("", &m, &obj, 256).unwrap();
+        let planner = SearchHotaru::plan("", &m, &obj, &Kyosei::default(), 256).unwrap();
         let deltas: Vec<HiveDelta> = planner.plan.iter().cloned().collect();
         for k in 1..=deltas.len() {
             let prefix = apply_all("", &deltas[..k]);
@@ -302,7 +356,7 @@ mod search_tests {
         // No menu delta can produce an edge named "nope" ⇒ the search exhausts and returns None.
         let m = menu();
         let obj = wants(&["nope"]);
-        assert!(SearchHotaru::plan("", &m, &obj, 256).is_none());
+        assert!(SearchHotaru::plan("", &m, &obj, &Kyosei::default(), 256).is_none());
     }
 
     #[test]
@@ -310,7 +364,22 @@ mod search_tests {
         let m = menu();
         let obj = wants(&["e_ab", "e_bc"]);
         // A tiny budget cannot reach the two-edge goal ⇒ None (no spin, bounded work).
-        assert!(SearchHotaru::plan("", &m, &obj, 1).is_none());
+        assert!(SearchHotaru::plan("", &m, &obj, &Kyosei::default(), 1).is_none());
+    }
+
+    #[test]
+    fn kyosei_arity_bound_prunes_high_arity_edges() {
+        // The only route to the goal needs a 3-ary edge (`@e_abc : a, b, c`).
+        let m = vec![
+            HiveDelta::replace_source("base", "Rig {\n  a;\n  b;\n  c;\n}"),
+            HiveDelta::append_source("e_abc", "@e_abc : a, b, c { }"),
+        ];
+        let obj = wants(&["e_abc"]);
+        // max_arity 2 ⇒ the 3-ary edge is infeasible ⇒ goal unreachable (filter, not just heuristic).
+        assert!(SearchHotaru::plan("", &m, &obj, &Kyosei { max_arity: 2 }, 256).is_none());
+        // max_arity 3 ⇒ the edge is admissible ⇒ the goal is reached.
+        let planner = SearchHotaru::plan("", &m, &obj, &Kyosei { max_arity: 3 }, 256).unwrap();
+        assert_eq!(planner.remaining(), 2, "base, e_abc");
     }
 }
 

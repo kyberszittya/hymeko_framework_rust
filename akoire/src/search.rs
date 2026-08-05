@@ -153,6 +153,43 @@ where
     actions
 }
 
+/// A planning problem the [`solve`] framework can search — the one planner interface reused across
+/// domains. An implementor supplies a start node, an on-demand successor relation, a goal predicate,
+/// and an (ideally admissible) heuristic; the framework contributes the A\* search.
+///
+/// HOTARU's structure-synthesis search (`hotaru::HiveDeltaProblem`, `Node = HyQL source`,
+/// `Edge = HiveDelta`) is one implementor; a motion/grid search (`Node = cell`, `Edge = step`) is
+/// another (see the tests). The humanoid footstep planner (Python `scenarios/humanoid`) *mirrors*
+/// this same shape on the other side of the FFI boundary.
+pub trait SearchProblem {
+    /// A search state. Must be hashable so visited states collapse.
+    type Node: Clone + Eq + Hash;
+    /// An action / edge label recorded along the solution path.
+    type Edge: Clone;
+
+    /// The initial state.
+    fn start(&self) -> Self::Node;
+    /// Successors of `node` as `(edge, next_node, cost)`, generated on demand.
+    fn neighbours(&self, node: &Self::Node) -> Vec<(Self::Edge, Self::Node, f64)>;
+    /// Whether `node` satisfies the goal.
+    fn is_goal(&self, node: &Self::Node) -> bool;
+    /// Estimated remaining cost from `node` to a goal (admissible ⇒ optimal path).
+    fn heuristic(&self, node: &Self::Node) -> f64;
+}
+
+/// Solve a [`SearchProblem`] with the A\* core. The trait-based entry point of the planner framework;
+/// it simply adapts the problem's methods to [`astar`]'s closures, so the same search serves every
+/// domain that implements [`SearchProblem`].
+pub fn solve<P: SearchProblem>(problem: &P, max_expansions: usize) -> AstarResult<P::Edge> {
+    astar(
+        problem.start(),
+        |n| problem.neighbours(n),
+        |n| problem.is_goal(n),
+        |n| problem.heuristic(n),
+        max_expansions,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -230,5 +267,58 @@ mod tests {
         );
         assert_eq!(res.actions, Some(vec![]));
         assert_eq!(res.expansions, 0);
+    }
+
+    /// A motion-flavoured `SearchProblem`: a 4-connected occupancy grid with obstacles — the same
+    /// shape a footstep planner takes. Proves the `SearchProblem`/`solve` framework spans *motion*,
+    /// not just HOTARU's structure-synthesis search (the "reused by both" claim, Rust-side).
+    struct GridProblem {
+        w: i32,
+        h: i32,
+        goal: (i32, i32),
+        blocked: Vec<(i32, i32)>,
+    }
+
+    impl SearchProblem for GridProblem {
+        type Node = (i32, i32);
+        type Edge = (i32, i32); // the cell stepped into
+
+        fn start(&self) -> Self::Node {
+            (0, 0)
+        }
+        fn neighbours(&self, n: &Self::Node) -> Vec<(Self::Edge, Self::Node, f64)> {
+            [(-1, 0), (1, 0), (0, -1), (0, 1)]
+                .iter()
+                .map(|(di, dj)| (n.0 + di, n.1 + dj))
+                .filter(|c| c.0 >= 0 && c.0 < self.w && c.1 >= 0 && c.1 < self.h)
+                .filter(|c| !self.blocked.contains(c))
+                .map(|c| (c, c, 1.0))
+                .collect()
+        }
+        fn is_goal(&self, n: &Self::Node) -> bool {
+            *n == self.goal
+        }
+        fn heuristic(&self, n: &Self::Node) -> f64 {
+            ((self.goal.0 - n.0).abs() + (self.goal.1 - n.1).abs()) as f64 // Manhattan (admissible)
+        }
+    }
+
+    #[test]
+    fn solve_drives_a_motion_grid_problem() {
+        // A wall at column x=1 for rows y=0,1 (gap at y=2): a straight run to (3,0) is blocked, so
+        // the shortest plan detours up and over.
+        let prob = GridProblem {
+            w: 4,
+            h: 4,
+            goal: (3, 0),
+            blocked: vec![(1, 0), (1, 1)],
+        };
+        let res = solve(&prob, 1000);
+        let path = res.actions.expect("goal reachable");
+        assert_eq!(path.first(), Some(&(0, 1))); // straight is walled, so the first step is forced up
+        assert_eq!(path.last(), Some(&(3, 0))); // ends at the goal
+        assert!(!path.iter().any(|c| prob.blocked.contains(c))); // never steps into the wall
+                                                                 // Manhattan distance 3, plus a +4 detour (up 2 to clear the two-cell wall, back down 2).
+        assert_eq!(path.len(), 7);
     }
 }
