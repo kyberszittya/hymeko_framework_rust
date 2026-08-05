@@ -144,6 +144,22 @@ def _python_plan(start_id: int, neighbours: "Callable[[int], Iterable[tuple[int,
     return None if node_path is None else node_path[1:]  # drop start ⇒ the stepped-into footholds
 
 
+def solve_astar(start_id: int, neighbours: "Callable[[int], Iterable[tuple[int, float]]]",
+                is_goal: "Callable[[int], bool]", heuristic: "Callable[[int], float]", *,
+                max_expansions: int = 200_000,
+                backend: Backend = Backend.AUTO) -> "list[int] | None":
+    r"""Solve an integer-node A\* problem on the shared engine — the reusable dispatch both
+    :func:`plan_footsteps` and the corridor planner run through.
+
+    ``neighbours(node) -> [(next_id, cost), …]`` (generated on demand). Returns the node-id path from
+    the first step to the goal (``start`` excluded), or ``None`` if unreachable. The rust backend is
+    the bound ``akoire::astar``; the python backend is the reference A\* fallback.
+    """
+    if _select_backend(backend) is Backend.RUST:
+        return _rust_astar_plan()(start_id, neighbours, is_goal, heuristic, max_expansions)
+    return _python_plan(start_id, neighbours, is_goal, heuristic, max_expansions)
+
+
 def plan_footsteps(field: SteppingField, start: "tuple[int, int]", goal: "tuple[int, int]", *,
                    backend: Backend = Backend.AUTO,
                    max_expansions: int = 200_000) -> "list[tuple[int, int]] | None":
@@ -158,20 +174,12 @@ def plan_footsteps(field: SteppingField, start: "tuple[int, int]", goal: "tuple[
     assert field.passable(start), "start must be a passable foothold"
     assert field.passable(goal), "goal must be a passable foothold"
     goal_id = field.cell_id(goal)
-
-    def neighbours(node: int) -> "list[tuple[int, float]]":
-        return field.neighbours_id(node)
-
-    def is_goal(node: int) -> bool:
-        return node == goal_id
-
-    def heuristic(node: int) -> float:
-        return field.heuristic_id(node, goal)
-
-    if _select_backend(backend) is Backend.RUST:
-        rust_plan = _rust_astar_plan()
-        path_ids = rust_plan(field.cell_id(start), neighbours, is_goal, heuristic, max_expansions)
-    else:
-        path_ids = _python_plan(field.cell_id(start), neighbours, is_goal, heuristic, max_expansions)
-
+    path_ids = solve_astar(
+        field.cell_id(start),
+        field.neighbours_id,
+        lambda node: node == goal_id,
+        lambda node: field.heuristic_id(node, goal),
+        max_expansions=max_expansions,
+        backend=backend,
+    )
     return None if path_ids is None else [field.id_cell(n) for n in path_ids]

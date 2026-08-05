@@ -49,6 +49,9 @@ class FootstepConfig:
     toe_off: float = 0.0            # scripted toe-off torque (N·m) on the stance toe during swing (push-off); needs the toe model
     learn_toe: bool = False         # expand the action with a LEARNED toe-off (applied in LATE stance) — the RL finds the push-off
     toe_off_scale: float = 60.0     # action[2] in [-1,1] -> toe-off torque (N·m)
+    target_conditioned: bool = False  # append the commanded forward foothold target to the obs (for a
+    #   target-conditioned policy that steps WHERE told — see stepping_stone_demo / train_target_footstep)
+    w_target: float = 0.0           # reward weight on foot-to-target accuracy (target_conditioned only)
 
 
 class HumanoidFootstepEnv:
@@ -105,11 +108,15 @@ class HumanoidFootstepEnv:
         sf = np.asarray(d.xpos[stance_b])
         xi = self._dcm()
         m = d.xmat[self._pel].reshape(3, 3)
+        tail = [com[2] - self._zc, m[2, 2], m[0, 2], 1.0 if self._stance == "L" else -1.0]
+        if self.cfg.target_conditioned:                    # forward target offset from the stance foot
+            tx = self._plan_forward_x if self._plan_forward_x is not None else float(sf[0])
+            tail.append(float(tx) - float(sf[0]))
         return np.concatenate([
             xi - sf[:2],                                   # DCM relative to stance foot (the key signal)
             com[:2] - sf[:2],                              # CoM relative to stance foot
             (self.wbc.com_jacobian() @ np.asarray(d.qvel))[:2],   # CoM planar velocity
-            [com[2] - self._zc, m[2, 2], m[0, 2], 1.0 if self._stance == "L" else -1.0],
+            tail,
         ]).astype(np.float32)
 
     # ---- gym API ----
@@ -128,6 +135,8 @@ class HumanoidFootstepEnv:
         return self._obs(), {}
 
     _tick_cb = None                                        # optional callable(env) run after each WBC tick
+    _plan_forward_x = None                                 # if set, overrides this step's forward foothold
+    #   target (absolute world x) — a planner drives the coarse foothold, the action stays the residual
 
     def _tick(self, contacts, acc_com, swing_task, force_cost=None, extra_tau=None):
         d = self.data
@@ -177,6 +186,8 @@ class HumanoidFootstepEnv:
         nominal = np.array([r_anchor[0] + cfg.forward_stride,
                             -np.sign(r_anchor[1]) * cfg.nominal_dy if r_anchor[1] != 0
                             else (cfg.nominal_dy if swing == "L" else -cfg.nominal_dy)])
+        if self._plan_forward_x is not None:               # a planner commands the coarse forward foothold
+            nominal[0] = float(self._plan_forward_x)
         foothold = nominal + cfg.residual_xy * a[:2]
         toe_cmd = float(a[2]) if a.shape[0] >= 3 else 0.0    # learned toe-off magnitude for this step
         # nominal periodic DCM offset from the stance foot (sagittal centred, lateral toward the next foot)
@@ -223,6 +234,9 @@ class HumanoidFootstepEnv:
         fwd_r = float(np.clip(fwd, -cfg.forward_cap, cfg.forward_cap))   # capped: a single lunge/fall can't game it
         reward = (1.0 - 2.0 * centre_off - 0.01 * float(a @ a)
                   + cfg.w_forward * fwd_r - (cfg.fall_penalty if fell else 0.0))
+        if cfg.target_conditioned and self._plan_forward_x is not None:
+            swung_b = self._fl if self._stance == "L" else self._fr   # the foot that just landed
+            reward -= cfg.w_target * abs(float(self.data.xpos[swung_b, 0]) - float(self._plan_forward_x))
         done = fell
         trunc = self._t >= cfg.max_footsteps
         return self._obs(), float(reward), bool(done), bool(trunc), {
