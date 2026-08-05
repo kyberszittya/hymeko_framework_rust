@@ -10,6 +10,7 @@
 pub mod interface_python;
 pub mod cycles;
 pub mod hymeko_parse;
+pub mod planner;
 pub mod quadtree;
 
 use pyo3::prelude::*;
@@ -53,6 +54,10 @@ fn hymeko(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // scoring stays on GPU in Python via a callback). See
     // docs/plans/2026-05-16-gomb-soma-quadtree-triton/plan.tex.
     m.add_function(wrap_pyfunction!(crate::quadtree::build_quadtree_rs, m)?)?;
+
+    // Shared A* planner engine (akoire::astar) — the same search HOTARU uses, bound for the
+    // Python footstep planner (scenarios/humanoid/footstep_planner.py). Approved §1 dep 2026-08-06.
+    m.add_function(wrap_pyfunction!(crate::planner::astar_plan, m)?)?;
 
     Ok(())
 }

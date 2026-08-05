@@ -2246,6 +2246,7 @@ dependencies = [
 name = "hymeko_py"
 version = "0.1.0"
 dependencies = [
+ "akoire",
  "arrow",
  "ciborium",
  "dashmap 6.1.0",
