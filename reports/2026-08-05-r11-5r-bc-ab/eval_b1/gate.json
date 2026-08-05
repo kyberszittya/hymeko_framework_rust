@@ -1,0 +1,41 @@
+{
+  "n": 56,
+  "rates": {
+    "mean_theta": {
+      "train": 0.364,
+      "dev": 0.429,
+      "test": 0.2
+    },
+    "nearest_schedule": {
+      "train": 1.0,
+      "dev": 0.571,
+      "test": 0.0
+    },
+    "ridge": {
+      "train": 0.523,
+      "dev": 0.143,
+      "test": 0.2
+    },
+    "mlp_bc": {
+      "train": 0.523,
+      "dev": 0.143,
+      "test": 0.2
+    },
+    "frozen_r2": {
+      "train": 0.136,
+      "dev": 0.0,
+      "test": 0.0
+    }
+  },
+  "held_out": {
+    "mean_theta": 0.333,
+    "nearest_schedule": 0.333,
+    "ridge": 0.167,
+    "mlp_bc": 0.167,
+    "frozen_r2": 0.0
+  },
+  "best_simple_baseline_held": 0.333,
+  "bc_safe": true,
+  "teacher_theta_reproduces_k6": true,
+  "verdict": "BC_REPRESENTATION_INSUFFICIENT"
+}
