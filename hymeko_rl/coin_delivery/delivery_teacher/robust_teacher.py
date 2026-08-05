@@ -9,7 +9,6 @@ a progressive funnel (screen 0.5% -> refine 1% -> stress 2%) keeps it economical
 """
 from __future__ import annotations
 
-import dataclasses
 from dataclasses import dataclass
 from typing import Any
 
@@ -95,12 +94,18 @@ class RobustSolveResult:
                                             bool(r["safe"]))
 
 
-def robust_cem(snap: Any, spec: Any, cfg: RobustTeacherConfig, bank: PerturbationBank, seed: int) -> RobustSolveResult:
+def robust_cem(snap: Any, spec: Any, cfg: RobustTeacherConfig, bank: PerturbationBank, seed: int,
+               init_theta: "np.ndarray | None" = None) -> RobustSolveResult:
     """CEM over the frozen search structure (``spec`` pop/iters/elite) but ranked by the lexicographic robust key (no
-    early-exit — keep searching for higher survival even after K6 is reached). Accounts nominal vs perturbation rollouts."""
+    early-exit — keep searching for higher survival even after K6 is reached). ``init_theta`` warm-starts the mean at the
+    NOMINAL theta (so K6 is guaranteed in the neighborhood and the CEM REFINES it toward wider basins — the fair A/B and
+    the literal hypothesis); ``None`` falls back to the box centre. Accounts nominal vs perturbation rollouts."""
     rng = np.random.default_rng(seed)
     dim = len(spec.search_idx)
-    mean = np.array([(spec.lo[j] + spec.hi[j]) / 2.0 for j in range(dim)], np.float64)
+    if init_theta is not None:
+        mean = np.array([float(init_theta[idx]) for idx in spec.search_idx], np.float64)
+    else:
+        mean = np.array([(spec.lo[j] + spec.hi[j]) / 2.0 for j in range(dim)], np.float64)
     std = np.array(spec.init_std, np.float64)
     best: "tuple[tuple, np.ndarray, dict] | None" = None
     proposals = nom_rolls = pert_rolls = 0

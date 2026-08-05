@@ -52,7 +52,7 @@ def recertify_one(cfg: Any, conf: Any, obj: Any, rcfg: RobustTeacherConfig, bank
     snap = rc.result.outcome.snapshot
     t0_theta = np.array(smp.theta, np.float64)
     t0_surv, t0_cvar, _n = survival_at(snap, t0_theta, REFINE, rcfg.k_refine, bank, rcfg.cvar_alpha)
-    t1 = robust_cem(snap, full_transport_spec(), rcfg, bank, seed=0)
+    t1 = robust_cem(snap, full_transport_spec(), rcfg, bank, seed=0, init_theta=t0_theta)   # warm-start from nominal theta
     status = recert_status(t1.record, rcfg)
     chosen = [float(v) for v in (t1.theta if status == "WIDE_RECERTIFIED" else t0_theta)]
     return {"scenario_id": smp.scenario_id, "split": smp.split, "seed": smp.seed, "source": smp.source, "status": status,
