@@ -1,0 +1,51 @@
+=== R11.5R RETRIEVAL CHARACTERIZATION ===
+{
+  "cells": {
+    "std_nearest": {
+      "train_loo": 0.591,
+      "dev": 0.571,
+      "test": 0.0,
+      "held": 0.333,
+      "dtz_held": 22.97
+    },
+    "std_widest3": {
+      "train_loo": 0.591,
+      "dev": 0.571,
+      "test": 0.0,
+      "held": 0.333,
+      "dtz_held": 22.97
+    },
+    "std_weighted3": {
+      "train_loo": 0.432,
+      "dev": 0.571,
+      "test": 0.2,
+      "held": 0.417,
+      "dtz_held": 22.64
+    },
+    "raw_nearest": {
+      "train_loo": 0.273,
+      "dev": 0.429,
+      "test": 0.0,
+      "held": 0.25,
+      "dtz_held": 47.19
+    },
+    "raw_widest3": {
+      "train_loo": 0.295,
+      "dev": 0.429,
+      "test": 0.0,
+      "held": 0.25,
+      "dtz_held": 34.61
+    },
+    "raw_weighted3": {
+      "train_loo": 0.227,
+      "dev": 0.286,
+      "test": 0.2,
+      "held": 0.25,
+      "dtz_held": 31.11
+    }
+  },
+  "best_cell": "std_weighted3",
+  "is_deployable": true,
+  "verdict": "R11_5R_RETRIEVAL_DEPLOYABLE_BELOW_050"
+}
+R11_5R_RETRIEVAL_DONE
