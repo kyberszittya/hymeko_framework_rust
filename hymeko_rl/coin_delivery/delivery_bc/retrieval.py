@@ -98,6 +98,24 @@ class RetrievalDeliveryPolicy:
         idx = np.argsort(d)[:k]
         return clip_theta(self._select(idx, d))
 
+    def support_distance(self, x: np.ndarray) -> float:
+        """Distance from a query to its NEAREST table row (in the policy's metric) — the retrieval-support signal. A
+        large value means the query is outside the demonstrated support (candidate ``RETRIEVAL_OUT_OF_SUPPORT``)."""
+        return float(self._distances(x, None).min())
+
+    def table_coverage_radius(self, percentile: float = 95.0) -> float:
+        """The table's own coverage radius: the ``percentile`` of each row's distance to its nearest OTHER row. A query
+        beyond this is extrapolating past where the demonstrations sit densely. Pure function of the frozen table."""
+        n = self._table.shape[0]
+        if n < 2:
+            return float("inf")
+        nn = []
+        for i in range(n):
+            d = np.linalg.norm(self._table - self._table[i], axis=1)
+            d[i] = np.inf
+            nn.append(float(d.min()))
+        return float(np.percentile(nn, percentile))
+
     def _select(self, idx: np.ndarray, d: np.ndarray) -> np.ndarray:
         if self._cfg.select is SelectRule.NEAREST:
             return self._theta[int(idx[0])]
