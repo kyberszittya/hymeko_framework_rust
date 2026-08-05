@@ -1,0 +1,29 @@
+=== R11.6C EXACT-ZERO COMPOSITION GATE ===
+{
+  "verdict": "R11_6C_EXACT_ZERO_RETRIEVAL_COMPOSITION_PASS",
+  "primary_success": {
+    "train-like": 1.0,
+    "dev": 0.571,
+    "parked": 0.0
+  },
+  "primary_k6": {
+    "train-like": 1.0,
+    "dev": 0.571,
+    "parked": 0.0
+  },
+  "n_cert": 48,
+  "n_safety": 0,
+  "taxonomy": {
+    "train-like": {
+      "exact_zero_delivered": 44
+    },
+    "dev": {
+      "exact_zero_delivered": 4,
+      "delivery_failure_in_support": 3
+    },
+    "parked": {
+      "capture_no_certified_grasp": 2
+    }
+  }
+}
+R11_6C_COMPOSITION_DONE
