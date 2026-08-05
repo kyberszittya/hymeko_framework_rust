@@ -102,7 +102,7 @@ def teacher_gate(rows: "list[dict]") -> dict[str, Any]:
     good, train, k6 = _partition(rows)                                       # k6 = nominal-K6 (survival is meaningful)
     n_wide = sum(1 for r in train if r["status"] == _WIDE)
     frac_wide = round(n_wide / len(train), 3) if train else 0.0
-    delivered = 7 + len(k6)                                                   # 7 frozen-R2 + chosen theta delivers K6
+    delivered = 7 + len(good)                     # 7 frozen-R2 + every chosen theta delivers K6 (robust or nominal fallback)
     surv_gain, mean_t0, mean_t1 = _survival_stats(k6)
     return {"n": len(good), "train_wide_frac": frac_wide, "n_wide": n_wide, "status_counts": _status_counts(good),
             "nominal_coverage": f"{delivered}/64", "mean_survival_gain_t1_minus_t0": surv_gain,
