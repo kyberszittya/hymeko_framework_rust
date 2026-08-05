@@ -1,0 +1,109 @@
+{
+  "a2_mean_train_k6": 0.841,
+  "a2_mean_dev_k6": 0.286,
+  "a2_mean_dev_robust": 0.286,
+  "a0_bc_dev_k6": 0.286,
+  "dev_gain_scenarios": 0,
+  "seeds_with_dev_gain": "0/3",
+  "train_no_collapse": true,
+  "safety_ok": true,
+  "verdict": "R11_6B_ROBUST_OBJECTIVE_STABLE_BUT_NO_GENERALIZATION_GAIN",
+  "a1_nominal_reference": {
+    "mean_dev_k6": 0.286,
+    "mean_dev_robust": 0.286
+  },
+  "a1": [
+    {
+      "seed": 0,
+      "train": {
+        "k6": 0.841,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.286,
+        "safe": 1.0
+      },
+      "dev_robust": {
+        "nominal": 0.286,
+        "robust": 0.286
+      }
+    },
+    {
+      "seed": 1,
+      "train": {
+        "k6": 0.841,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.286,
+        "safe": 1.0
+      },
+      "dev_robust": {
+        "nominal": 0.286,
+        "robust": 0.286
+      }
+    },
+    {
+      "seed": 2,
+      "train": {
+        "k6": 0.841,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.286,
+        "safe": 1.0
+      },
+      "dev_robust": {
+        "nominal": 0.286,
+        "robust": 0.286
+      }
+    }
+  ],
+  "a2": [
+    {
+      "seed": 0,
+      "train": {
+        "k6": 0.841,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.286,
+        "safe": 1.0
+      },
+      "dev_robust": {
+        "nominal": 0.286,
+        "robust": 0.286
+      }
+    },
+    {
+      "seed": 1,
+      "train": {
+        "k6": 0.841,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.286,
+        "safe": 1.0
+      },
+      "dev_robust": {
+        "nominal": 0.286,
+        "robust": 0.286
+      }
+    },
+    {
+      "seed": 2,
+      "train": {
+        "k6": 0.841,
+        "safe": 1.0
+      },
+      "dev": {
+        "k6": 0.286,
+        "safe": 1.0
+      },
+      "dev_robust": {
+        "nominal": 0.286,
+        "robust": 0.286
+      }
+    }
+  ]
+}
