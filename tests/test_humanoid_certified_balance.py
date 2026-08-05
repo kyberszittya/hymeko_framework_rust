@@ -32,3 +32,10 @@ def test_monitor_flags_a_fall_with_early_warning() -> None:
     report = monitor_balance(4.5, seed=0)
     assert report["fell"] and not report["satisfied"] and report["robustness"] <= 0.05
     assert 0 <= report["warn_step"] <= report["fall_step"] and report["lead_steps"] > 0
+
+
+def test_lateral_push_viability_bound() -> None:
+    """The scaffold's lateral-push viability boundary is a sharp cliff (~2.3 m/s); above it, in-place fails."""
+    from scenarios.humanoid.humanoid_certified_balance import lateral_push_bound, lateral_push_recovers
+    assert 1.5 < lateral_push_bound(seeds=range(6)) < 3.0
+    assert lateral_push_recovers(3.0, range(4)) == 0.0        # a hard cliff — no gradual stepping-recoverable band

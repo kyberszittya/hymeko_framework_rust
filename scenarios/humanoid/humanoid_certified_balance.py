@@ -59,6 +59,32 @@ def recoverable_bound(seeds=range(8), lo: float = 2.0, hi: float = 6.0, tol: flo
     return lo
 
 
+def lateral_push_recovers(push: float, seeds) -> float:
+    """Fraction of lateral pushes the certified scaffold recovers (the push-dimension of the viability region)."""
+    env = HumanoidBalanceEnv(BalanceConfig(perturb_lo=0.0, perturb_hi=0.0, push_lat_lo=push, push_lat_hi=push))
+    survived = 0
+    for s in seeds:
+        env.reset(seed=s)
+        fell = False
+        for _ in range(env.max_steps):
+            _o, _r, fell, _t, _i = env.step(np.zeros(env.model.nu))
+            if fell:
+                break
+        survived += int(not fell)
+    return survived / len(seeds)
+
+
+def lateral_push_bound(seeds=range(8), lo: float = 1.0, hi: float = 3.0, tol: float = 0.15) -> float:
+    """Bisection for the largest lateral push the scaffold fully recovers (a sharp cliff in this env, ~2.3 m/s)."""
+    while hi - lo > tol:
+        mid = 0.5 * (lo + hi)
+        if lateral_push_recovers(mid, seeds) >= 0.999:
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
 def monitor_balance(perturb: float, seed: int, warn_band: float = 0.1) -> dict:
     """Run the scaffold under a perturbation through the HSTL monitor; return the verdict, robustness and lead."""
     env = HumanoidBalanceEnv(BalanceConfig(perturb_lo=perturb, perturb_hi=perturb))
