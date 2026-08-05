@@ -28,11 +28,12 @@ The robust reward drove the greedy actor's train nominal to **zero** — *faster
 checkpoint after it 120 had collapsed train.
 
 **Why:** the robust reward *penalizes* narrow θ (CVaR tail + the survival term), so it actively pushes the actor **off** the
-narrow warm-start. But there is **no reachable wide-basin policy that still delivers the training scenarios** — the
-*demonstrations are narrow* (R11.4B: 18/56 narrow; even the "wide" 38 are memorized knife-edges, and the reachable policy
-space from a narrow warm-start contains no wide-basin *delivering* policy). So the actor drifts to a non-delivering policy
-(train 0), and selection falls back to the warm-start. **The robust reward cannot manufacture wide-basin policies that do
-not exist in the reachable space.**
+narrow warm-start — but **TD3, from that narrow warm-start, in this action space and budget, did not *find* a wide-basin
+policy that still delivers the training scenarios.** So the actor drifts to a non-delivering policy (train 0), and selection
+falls back to the warm-start. **Scope of the claim (important):** this does NOT prove no reachable wide-basin policy exists —
+only that RL did not reach one from a narrow base here. The clean falsification is teacher-side: search for wide-basin θ at
+demonstration generation (R11.5R). If the *teacher* finds wide-basin θ for the same scenarios, the narrowness was an
+artifact of nominal-K6 optimization, not an intrinsic limit.
 
 ## Interpretation (chain across R11.4B → R11.6A → R11.6B)
 - **R11.4B:** narrow teacher θ ⇒ BC can memorize train but not generalize (0.29 held-out).
@@ -41,17 +42,18 @@ not exist in the reachable space.**
 - **R11.6B:** a robustness *reward* cannot fix generalization either — it destabilizes the narrow warm-start without a
   reachable wide-basin replacement. **The bottleneck is the demonstrations, not the reward, the algorithm, or the anchor.**
 
-## Next — the robustness-aware TEACHER (unifies R11.4B's parked idea with R11.6)
-Move the robustness from the RL reward to **demonstration generation**: re-solve/re-certify each delivery with a
-**basin-aware CEM objective** (reward K6 that survives a θ-neighborhood — the R11.4B parked "robustness-aware teacher"
-using exactly the R11.6B `WideBasinDeliveryCertificate` as the CEM score). This yields **wide-basin demonstrations** ⇒ a
-**wide-basin BC warm-start** ⇒ then BC generalizes better *and* RL can preserve + improve from a wide base (the RL drift is
-a symptom of the narrow base). This is the one move the whole R11.4B→R11.6 chain has been pointing at. It is **not** per-step
-RL and **not** more raw demos — it is *better-shaped* demos.
+## Next — R11.5R Robust Delivery Teacher Re-certification (the clean falsification)
+Move the robustness from the RL reward to **demonstration generation** (R11.5R; R11.6C stays reserved for exact-zero
+composition). The teacher optimized nominal K6, so it often *picked* narrow θ-basins; a teacher that searches directly for
+local K6-survival may find **wider, more learnable, more transferable** delivery programs for the *same* scenarios. This is
+the next clean falsification of "does a reachable wide-basin θ exist per scenario?".
 
-Concretely, R11.6C-teacher: for each scenario, CEM over θ maximizing `survival_rate` (from `robust_rollout`) subject to
-nominal K6 + safety; keep the wide-basin θ as the new certified demonstration; re-run R11.4B BC and R11.6A/B on the
-re-certified bank. Only if wide demos *exist* and still fail to generalize is the limit true geometry coverage.
+Concretely: a two-arm teacher A/B (T0 nominal vs T1 robust) on the same scenarios/proposal-seeds, T1 scoring lexicographic
+(safety → nominal K6 → survival 0.5% → 1% → CVaR-dtz → 2% stress) with a progressive-perturbation funnel; re-certify the
+bank (`WIDE_RECERTIFIED` / `NARROW_ONLY` / `NO_NOMINAL_K6`, keeping the nominal fallback); then re-run the R11.4B BC harness
+**at the same size** (B0 nominal vs B1 robust bank) to isolate the effect of demonstration *quality* on generalization —
+only then RL from the wider warm-start. `WideBasinDeliveryCertificate` + `robust_rollout` are reused as the teacher's CEM
+score. Not per-step RL, not more raw demos — *better-shaped* demos.
 
 ## Files touched (all non-core)
 - `hymeko_rl/coin_delivery/theta_option/robust_delivery.py` (`RobustDeliveryReward`, `robust_rollout`,
