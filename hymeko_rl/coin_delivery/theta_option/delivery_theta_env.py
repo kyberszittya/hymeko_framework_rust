@@ -116,6 +116,9 @@ class CoinDeliveryThetaOptionEnv:
     def indices(self, split: str) -> "list[int]":
         return [i for i, h in enumerate(self._h) if h.split == split]
 
+    def handoff_id(self, idx: int) -> str:
+        return self._h[idx].scenario_id
+
     def teacher_action(self, idx: int) -> np.ndarray:
         """Scenario ``idx``'s teacher theta in box-normalized action space (for immutable positive-replay seeding)."""
         return theta_to_box(self._h[idx].teacher_theta).astype(np.float32)
