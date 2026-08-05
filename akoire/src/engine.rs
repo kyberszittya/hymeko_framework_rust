@@ -76,6 +76,23 @@ impl HymekoEngine {
     }
 }
 
+/// Dry-run parse (non-mutating): `Some(edge_names)` if `source` parses, `None` on a syntax error.
+///
+/// The search planner ([`crate::hotaru::SearchHotaru`]) uses this as its feasibility + edge oracle,
+/// so a candidate HIVE-delta state is vetted through the *same* parser boundary
+/// [`HymekoEngine::evaluate`] gate-keeps with — never a re-implemented check. Unlike `evaluate`,
+/// it commits nothing, so a planner may probe arbitrarily many hypothetical states.
+///
+/// # Postconditions
+/// `Some(names)` ⇒ `parser::parse_description(source)` succeeded and `names` are its edge names;
+/// `None` ⇒ it failed. No state is mutated.
+#[must_use]
+pub fn preview_edge_names(source: &str) -> Option<Vec<String>> {
+    parser::parse_description(source)
+        .ok()
+        .map(|ast| collect_edge_names(&ast))
+}
+
 /// Extract every edge name from a parsed description (depth-first, including
 /// edges nested in node/edge bodies). Returns owned strings so the result
 /// outlives the borrowed AST.

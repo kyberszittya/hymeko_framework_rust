@@ -20,12 +20,14 @@ pub mod context;
 pub mod engine;
 pub mod hotaru;
 pub mod loop_driver;
+pub mod search;
 pub mod synthesize;
 
 pub use context::{Ambience, CognitiveContext, Goal, Intent, Kyosei, Objectives};
-pub use engine::{ErrorFeedback, EvalOutcome, HymekoEngine};
-pub use hotaru::{HiveDelta, HotaruPlanner, HotaruSynthesizer, ScriptedHotaru};
+pub use engine::{preview_edge_names, ErrorFeedback, EvalOutcome, HymekoEngine};
+pub use hotaru::{HiveDelta, HotaruPlanner, HotaruSynthesizer, ScriptedHotaru, SearchHotaru};
 pub use loop_driver::{CognitiveLoop, LoopReport, Termination};
+pub use search::{astar, AstarResult};
 pub use synthesize::{CognitiveSynthesizer, Refinement, ScriptedSynthesizer};
 
 #[cfg(test)]

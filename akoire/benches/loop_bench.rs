@@ -10,7 +10,10 @@ use std::hint::black_box;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use akoire::{CognitiveLoop, HymekoEngine, Intent, Kyosei, Objectives, ScriptedSynthesizer};
+use akoire::{
+    CognitiveLoop, HiveDelta, HymekoEngine, Intent, Kyosei, Objectives, ScriptedSynthesizer,
+    SearchHotaru,
+};
 
 const VALID_WITH_JOINT: &str = "RobotArm {\n  base;\n  link1;\n}\n@joint : base, link1 { }";
 
@@ -36,5 +39,28 @@ fn bench_loop_round(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_loop_round);
+/// A\* planning cost for HOTARU: the kickoff path (`SearchHotaru::plan` over the delta menu).
+/// Reports median / IQR; the asserted numeric budget lives in the unit test
+/// (`search_meets_expansion_budget`, a deterministic expansion count) — this is wall-time provenance.
+fn bench_hotaru_plan(c: &mut Criterion) {
+    let menu = vec![
+        HiveDelta::replace_source("base", "Rig {\n  a;\n  b;\n  c;\n}"),
+        HiveDelta::append_source("e_ab", "@e_ab : a, b { }"),
+        HiveDelta::append_source("e_bc", "@e_bc : b, c { }"),
+        HiveDelta::append_source("dist", "@dist : a, c { }"),
+    ];
+    let objectives = Objectives {
+        required_edges: vec!["e_ab".to_string(), "e_bc".to_string()],
+    };
+
+    c.bench_function("hotaru_search_plan_two_edge", |b| {
+        b.iter(|| {
+            let planner =
+                SearchHotaru::plan(black_box(""), black_box(&menu), black_box(&objectives), 256);
+            black_box(planner);
+        });
+    });
+}
+
+criterion_group!(benches, bench_loop_round, bench_hotaru_plan);
 criterion_main!(benches);

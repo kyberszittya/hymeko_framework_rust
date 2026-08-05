@@ -36,6 +36,33 @@ pub struct Objectives {
     pub required_edges: Vec<String>,
 }
 
+impl Objectives {
+    /// True when every required edge name appears in `edge_names`.
+    ///
+    /// The edge-set core of [`Goal::satisfied`], factored out (single source of truth, CLAUDE.md
+    /// §6.1) so the search planner can score a *candidate's* edge names without constructing an
+    /// [`Ambience`]. With no required edges this is vacuously true — [`Goal::satisfied`] adds the
+    /// "state actually committed" condition on top.
+    #[must_use]
+    pub fn satisfied_edges(&self, edge_names: &[String]) -> bool {
+        self.required_edges
+            .iter()
+            .all(|req| edge_names.iter().any(|e| e == req))
+    }
+
+    /// How many required edges are still missing from `edge_names`.
+    ///
+    /// The admissible A\* heuristic for HOTARU's delta search: each menu delta adds at most one
+    /// required edge and every delta costs one, so this never overestimates the remaining steps.
+    #[must_use]
+    pub fn missing_edges(&self, edge_names: &[String]) -> usize {
+        self.required_edges
+            .iter()
+            .filter(|req| !edge_names.iter().any(|e| e == *req))
+            .count()
+    }
+}
+
 /// Physical limits the synthesizer must respect (`physicsKyosei` port).
 ///
 /// Carried into the [`CognitiveContext`] so an agent-backed synthesizer can
@@ -147,8 +174,49 @@ impl Goal for Objectives {
         if self.required_edges.is_empty() {
             return ambience.generation() > 0;
         }
-        self.required_edges
-            .iter()
-            .all(|req| ambience.edge_names().iter().any(|e| e == req))
+        self.satisfied_edges(ambience.edge_names())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn wants(edges: &[&str]) -> Objectives {
+        Objectives {
+            required_edges: edges.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn satisfied_edges_normal_and_negative() {
+        let obj = wants(&["joint", "gripper"]);
+        let present = [
+            "joint".to_string(),
+            "gripper".to_string(),
+            "extra".to_string(),
+        ];
+        assert!(obj.satisfied_edges(&present));
+        assert!(!obj.satisfied_edges(&["joint".to_string()])); // gripper missing
+        assert!(!obj.satisfied_edges(&[])); // both missing
+    }
+
+    #[test]
+    fn satisfied_edges_empty_required_is_vacuous() {
+        // The edge-set core is vacuously true with no requirements; `Goal::satisfied` adds the
+        // "state committed" condition on top (tested via the loop). Boundary case.
+        assert!(wants(&[]).satisfied_edges(&[]));
+    }
+
+    #[test]
+    fn missing_edges_counts_absent_requirements() {
+        let obj = wants(&["joint", "gripper"]);
+        assert_eq!(obj.missing_edges(&[]), 2);
+        assert_eq!(obj.missing_edges(&["joint".to_string()]), 1);
+        assert_eq!(
+            obj.missing_edges(&["joint".to_string(), "gripper".to_string()]),
+            0
+        );
+        assert_eq!(wants(&[]).missing_edges(&[]), 0); // no requirements ⇒ nothing missing
     }
 }
