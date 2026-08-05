@@ -1,0 +1,17 @@
+// runstop_ports.hymeko — the port-refinement HIERARCHY for run-stop, expressed as <isa> chains.
+// The COARSE model's single abstract angular-momentum port is REFINED into a stance-only foot port and a
+// flight-capable reaction-wheel arm port — each <isa> the abstract port. The <isa> chain IS the model-
+// refinement hierarchy the RL policy is warm-started through (see scenarios/humanoid/hierarchical_runstop.py).
+runstop_ports
+{
+
+}
+rsp {
+    port_kinds {
+        // level 0 — the coarse abstraction: ONE abstract angular-momentum control port
+        angular_momentum_port {}
+        // level 1 — refined into two concrete ports
+        foot_port:               + <isa> angular_momentum_port {}
+        arm_reaction_wheel_port: + <isa> angular_momentum_port {}
+    }
+}
