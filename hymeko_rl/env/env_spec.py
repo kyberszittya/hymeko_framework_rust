@@ -13,7 +13,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from hymeko_rl.env._profile import read_bundle
+from hymeko_rl.env._profile import parse_fields, read_bundle
+from hymeko_rl.env.object_spec import COIN_OBJECT, ObjectSpec
 
 # A 4-tuple sampling box: (x_lo, x_hi, y_lo, y_hi).
 Box = tuple[float, float, float, float]
@@ -46,6 +47,11 @@ class EnvSpec:
     y_max: float = 0.45
     success_steps: int = 5
     disk_radius: float = 0.02
+    # The manipulated object's FULL physical description (R11.7A unification). Read from the same `disk`
+    # config term as `disk_radius`, so shape/mass/friction/damping are HyMeKo-sourced rather than
+    # `PlanarGraspEnv`/`compose_planar_scene` kwargs. `disk_radius` is kept as the (equal) scalar the
+    # current builder call already consumes; `object.radius == disk_radius` by construction in `from_hymeko`.
+    object: ObjectSpec = COIN_OBJECT
     # Contact-quality contract (v2 physics; declared by an optional `contact` config term). Off by default
     # → v1 abstract fingertip-only prototype (the coin passes through the arm bodies). On → arm bodies
     # physically collide with the coin; a non-fingertip arm↔coin contact is a non-preferred contact, tracked
@@ -71,8 +77,12 @@ class EnvSpec:
         z, s, w, su = (terms["target_zone"], terms["coin_spawn"],
                        terms["workspace"], terms["success"])
         c = terms.get("contact", "")          # optional: declares the v2 contact-legality contract
+        # The object's full physical description from the same `disk` term (string `shape`/`family`
+        # supported ⇒ parsed via the shared `parse_fields`, not the scalar-only `_num`).
+        obj = ObjectSpec.from_fields(parse_fields(terms["disk"]))
         return cls(
-            disk_radius=_num(terms["disk"], "radius", 0.02),
+            object=obj,
+            disk_radius=obj.radius,          # kept equal to object.radius (the builder call reads disk_radius)
             zone_half=_num(z, "half", 0.04),
             zone_region=(_num(z, "rx_lo", -0.05), _num(z, "rx_hi", 0.05),
                          _num(z, "ry_lo", 0.10), _num(z, "ry_hi", 0.18)),

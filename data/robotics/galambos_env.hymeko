@@ -25,8 +25,12 @@ galambos_env: p, e
     // Success: 5 consecutive in-zone steps.
     @succ:   p.success     { steps 5.0; }
 
-    // The disk (small — it is a disk, not a coin): radius 0.02 m.
-    @dsk:    p.disk        { radius 0.02; }
+    // The manipulated OBJECT — full physical identity in HyMeKo (R11.7A unification), not split into
+    // Python kwargs. OBJ_O0 = the reference coin: a round disk, radius 0.02 m, 0.02 m half-thickness,
+    // slide-damping 2.5 (planar table drag), spin-damping 0.8; MuJoCo-default density; no frictionloss.
+    // Object variants (OBJ_O1..O4) are other `p.disk` declarations (shape/radius_y/density/frictionloss),
+    // NOT pipeline edits. Every field here equals the builder's current coin defaults, so O0 is unchanged.
+    @dsk:    p.disk        { shape "cylinder"; family "coin"; radius 0.02; half 0.02; damping 2.5; spin_damping 0.8; frictionloss 0.0; }
 
     @env_spec: e.env_spec {
         (+ zone, + spawn, + bounds, + succ, + dsk);

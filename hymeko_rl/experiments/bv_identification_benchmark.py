@@ -26,7 +26,9 @@ from hymeko_rl.coin_delivery.contact_pair_scenario import set_material, setup_ma
 from hymeko_rl.coin_delivery.contact_velocity import (  # noqa: E402
     BvConfig, CradleSnapshot, InvalidCradleSnapshot, identify_Bv, one_step_vrel, onesided_Bv, replay_consistency, validate_Bv)
 from hymeko_rl.coin_delivery.cooperative_launch import CooperativeConfig, straddle_directed_acquire, tip_midpoint  # noqa: E402
+from hymeko_rl.env.env_spec import EnvSpec  # noqa: E402
 from hymeko_rl.env.governed_arm import V3Stack  # noqa: E402
+from hymeko_rl.env.planar_grasp_env import _PLANAR_ENV  # noqa: E402
 from hymeko_rl.experiments.video_coin_variants import _reconstruct, _setup  # noqa: E402
 
 OUT = "reports/2026-07-25-coin-dynamics-contract-v2"
@@ -45,8 +47,12 @@ def _load_frozen():
     return stack, CooperativeConfig(coast_mu=mu), v2, mu
 
 
-def _make_env(pi0, base, forbidden, v2, seed, tries):
-    rl, _gate = _reconstruct(pi0, base, forbidden, coin_shape="cylinder", hx=0.020, hy=None, seed_lo=seed, tries=tries)
+def _make_env(pi0, base, forbidden, v2, seed, tries, object_spec=None):
+    # R11.7A unification: the manipuland comes from the HyMeKo scene (galambos_env.hymeko → EnvSpec.object),
+    # not a hardcoded coin literal. `object_spec` overrides for OBJ_O1..O4 variants; None ⇒ the scene's object
+    # (the reference coin), so O0 is bit-identical to the frozen path.
+    obj = object_spec if object_spec is not None else EnvSpec.from_hymeko(_PLANAR_ENV).object
+    rl, _gate = _reconstruct(pi0, base, forbidden, seed_lo=seed, tries=tries, object_spec=obj)
     tg, adr, _bt, _bd = setup_material_decoupling(rl)
     set_material(rl, tg, adr, v2["tip_coin_friction"], v2["coin_slide_viscous_damping"], v2["coin_slide_coulomb_frictionloss"])
     return rl

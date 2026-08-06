@@ -32,6 +32,8 @@ from hymeko_rl.coin_delivery.coin_carry_structured import (  # noqa: E402
     CENTER_TOL, HELD_DWELL, structured_carry_rollout, structured_random_best_with_support)
 from hymeko_rl.coin_delivery.coin_late_start import build_boundary_panel, reconstruct_handoff  # noqa: E402
 from hymeko_rl.coin_delivery.coin_markov_ablation_train import make_late_actor55_from_pi0  # noqa: E402
+from hymeko_rl.coin_delivery.manipulation_rig import RobotContract, build_manipulation_rig  # noqa: E402
+from hymeko_rl.env.object_spec import ObjectSpec, Shape  # noqa: E402
 from hymeko_rl.coin_delivery.rl_clip_actor import load_frozen_clip_actor  # noqa: E402
 from hymeko_rl.viz.rollout_overlay import (  # noqa: E402
     InfoPanel, StatusBar, TimeSeriesPanel, assert_trace_render_consistency, encode_clip, hstack, overlay_frames,
@@ -145,22 +147,38 @@ def _pair(pi0, base, rl, gate, *, shape):
     return clip, manifest
 
 
-def _reconstruct(pi0, base, forbidden, *, coin_shape, hx, hy, seed_lo, tries=16):
+# The R11.6C exact-zero robot contract: the ball-tip embodiment (POINT geom + ball-tip arm transform),
+# orthogonal to the manipuland. Both the video variants and bv/`_make_env` reconstruct under it.
+BALLTIP_ROBOT = RobotContract(geom="POINT", arm_mjcf_transform=_ball_tf, label="balltip")
+
+
+def _reconstruct(pi0, base, forbidden, *, coin_shape="cylinder", hx=_R, hy=None, seed_lo, tries=16,
+                 object_spec=None):
     """Pick a DELIVERING demo state with VISIBLE travel: reconstruct several fresh handoffs, run a quick expert, and
     rank by (delivers, longest approach). The fresh-reconstruct distribution rarely delivers, so a demonstration must
     select a deliverable state — and among those, the one with the longest approach (highest ``completion`` = K6-step)
-    so the clip shows real motion, not a 0.5 s snap. Scans all candidates (no early break)."""
+    so the clip shows real motion, not a 0.5 s snap. Scans all candidates (no early break).
+
+    The manipuland is a single :class:`ObjectSpec` (R11.7A unification): ``object_spec`` overrides when given
+    (the HyMeKo-sourced object), else it is built from the back-compat ``coin_shape``/``hx``/``hy`` kwargs so
+    the ~10 existing coin callers are unchanged. Reconstruction routes through :func:`build_manipulation_rig`
+    so both this video path and bv's ``_make_env`` share one object→model generator.
+
+    .. deprecated:: R11.7A
+       The loose ``coin_shape``/``hx``/``hy`` kwargs are legacy back-compat for the pre-unification coin
+       callers. New callers pass a typed ``object_spec``. Physical removal is deferred to post-U6 (nothing
+       legacy is deleted while the object variants are still validated against it)."""
+    obj = object_spec if object_spec is not None else ObjectSpec(
+        shape=Shape.from_str(coin_shape), radius=hx, radius_y=hy)
     ls, _c, _s = build_boundary_panel(pi0, range(seed_lo, seed_lo + 1600), forbidden, want=tries, families=FAMS,
                                       strict_primary=(0,), strict_fill=(), per_seed_cap=3)
-    rk = {"geom": "POINT", "arm_mjcf_transform": _ball_tf, "coin_shape": coin_shape, "disk_radius_override": hx}
-    if hy is not None:
-        rk["disk_radius_y_override"] = hy
     best = None
     for one in ls:
         try:
-            rl, gate, _h, _r = reconstruct_handoff(pi0, one, **rk)
+            rig = build_manipulation_rig(pi0, one, object_spec=obj, robot=BALLTIP_ROBOT)
         except ValueError:
             continue
+        rl, gate = rig.rl, rig.gate
         if int(rl._strict) != 0:
             continue
         _th, out, _sup = structured_random_best_with_support(copy.deepcopy(rl), copy.deepcopy(gate), pi0, base,
@@ -169,7 +187,10 @@ def _reconstruct(pi0, base, forbidden, *, coin_shape, hx, hy, seed_lo, tries=16)
         score = (int(out["k6"]), int(out["completion"]) if out["k6"] else int(out["max_dwell"]))
         if best is None or score > best[2]:
             best = (rl, gate, score)
-    return (best[0], best[1]) if best else reconstruct_handoff(pi0, ls[0], **rk)[:2]
+    if best:
+        return best[0], best[1]
+    fallback = build_manipulation_rig(pi0, ls[0], object_spec=obj, robot=BALLTIP_ROBOT)
+    return fallback.rl, fallback.gate
 
 
 def video_04_disk_sizes(pi0, base, forbidden):

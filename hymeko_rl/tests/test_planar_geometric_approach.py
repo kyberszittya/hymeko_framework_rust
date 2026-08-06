@@ -215,3 +215,19 @@ def test_transit_wall_time_budget(home, coin):
         pga.execute_transit(home, HOME_STATE_V1_GENERIC.q, tgt, cfg)
         times.append(time.perf_counter() - t0)
     assert float(np.median(times)) < 3.0, f"transit median wall {np.median(times):.2f}s exceeds 3 s"
+
+
+def test_straddle_for_object_scales_with_footprint() -> None:
+    # R11.7A U3b: the straddle standoff is footprint-aware. O0 reproduction: the reference coin footprint
+    # (0.02) yields exactly the historical 0.055 shell_dist, so the coin's reach geometry is unchanged.
+    coin = np.array([0.0, 0.16])
+    st_coin = pga.CoinStraddleTargets.for_object(coin, 0.02)
+    assert st_coin.shell_dist == pytest.approx(0.055)
+    # A larger footprint pushes the pre-contact tips proportionally farther from the object centre.
+    st_big = pga.CoinStraddleTargets.for_object(coin, 0.04)
+    assert st_big.shell_dist == pytest.approx(0.04 + 0.02 + 0.015)
+    d_coin = float(np.linalg.norm(st_coin.precontact().tip_left - coin))
+    d_big = float(np.linalg.norm(st_big.precontact().tip_left - coin))
+    assert d_big > d_coin
+    with pytest.raises(AssertionError):
+        pga.CoinStraddleTargets.for_object(coin, 0.0)

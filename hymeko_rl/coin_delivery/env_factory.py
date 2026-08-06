@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from hymeko_rl.env.object_spec import ObjectSpec
 from hymeko_rl.env.planar_grasp_env import PlanarGraspEnv, with_fingertip_clamp, with_fingertip_shape
 
 # canonical constants (were experiment module-level; behaviour identical)
@@ -41,10 +42,15 @@ def _fingertip_kwargs(embodiment: str) -> dict:
 def make_coin_env(*, embodiment: str = "POINT", difficulty: float = 0.3, deliver: bool = True, coord: bool = False,
                   max_steps: int = COIN_MAX_STEPS, treatment_hymeko: str = COORD_HYMEKO,
                   arm_mjcf_transform=None, coin_shape: str = "cylinder", disk_radius_override=None,
-                  disk_radius_y_override=None) -> PlanarGraspEnv:
+                  disk_radius_y_override=None, object_spec: "ObjectSpec | None" = None) -> PlanarGraspEnv:
     """Build the canonical planar Coin env. ``embodiment`` selects the fingertip geometry (POINT golden, …). ``deliver``
     loads the v2b delivery reward; ``coord`` (wins if both set) loads the coordination reward; else the PlanarGraspEnv
-    default. Reward-in-hymeko. # Preconditions ``embodiment`` in :data:`VALID_EMBODIMENTS`. # Postconditions
+    default. Reward-in-hymeko.
+
+    The manipuland is a single :class:`ObjectSpec` (R11.7A unification): ``object_spec`` overrides when given —
+    supplying shape/size AND density/friction/damping (closing the mass/friction plumbing gap) — else the
+    back-compat loose ``coin_shape``/``disk_radius_override``/``disk_radius_y_override`` kwargs are used (no
+    density/friction, as before). # Preconditions ``embodiment`` in :data:`VALID_EMBODIMENTS`. # Postconditions
     ``env.reward_file`` names the active reward source. # Errors ``ValueError`` on an unknown embodiment (fail loud)."""
     if embodiment not in VALID_EMBODIMENTS:
         raise ValueError(f"embodiment must be one of {VALID_EMBODIMENTS}; got {embodiment!r}")
@@ -52,9 +58,11 @@ def make_coin_env(*, embodiment: str = "POINT", difficulty: float = 0.3, deliver
     if arm_mjcf_transform is not None:                                 # a variant supplies its whole arm MJCF (overrides
         kw["arm_mjcf_transform"] = arm_mjcf_transform                  # the embodiment's default transform; used by the
                                                                        # BALLTIP robot-variant matched-panel regression)
+    obj_kw = object_spec.planar_env_kwargs() if object_spec is not None else {
+        "coin_shape": coin_shape, "disk_radius_override": disk_radius_override,
+        "disk_radius_y_override": disk_radius_y_override}
     env = PlanarGraspEnv(robot_source="hymeko_spec", scene_source="hymeko_spec", max_steps=max_steps,
-                         difficulty=difficulty, coin_shape=coin_shape, disk_radius_override=disk_radius_override,
-                         disk_radius_y_override=disk_radius_y_override, **kw)
+                         difficulty=difficulty, **obj_kw, **kw)
     if coord or deliver:
         from hymeko_rl.env.reward import RewardSpec
         src = treatment_hymeko if coord else DELIVER_V2B

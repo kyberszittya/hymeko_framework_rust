@@ -77,15 +77,17 @@ class HandoffRecord:
 
 
 def replay_pi0(pi0, seed: int, *, horizon: int = 360, stop_at: "int | None" = None, coin_shape: str = "cylinder",
-               disk_radius_override=None, disk_radius_y_override=None, arm_mjcf_transform=None, geom: "str | None" = None):
+               disk_radius_override=None, disk_radius_y_override=None, arm_mjcf_transform=None, geom: "str | None" = None,
+               object_spec=None):
     """Replay the frozen ``pi_0`` from neutral ``reset(seed)``. If ``stop_at`` is None, return the list of per-step
     :class:`HandoffRecord` (one per env step, BEFORE that step's action). Otherwise stop after ``stop_at`` steps and
     return ``(rl, gate, history, record_at_stop)`` — the LIVE env positioned at the handoff to begin the late episode.
     ``coin_shape`` / ``disk_radius_override`` / ``arm_mjcf_transform`` / ``geom`` drive OBJECT_TO_TARGET_VARIANTS and the
-    ball-tip embodiment (defaults ⇒ the frozen canonical E0 clamp on the frozen coin)."""
+    ball-tip embodiment (defaults ⇒ the frozen canonical E0 clamp on the frozen coin). ``object_spec`` (R11.7A) supplies
+    the full manipuland incl. mass/friction when given (overrides the loose object kwargs)."""
     rl = CoinRL4Dof(horizon=horizon, geom=geom, arm_mjcf_transform=arm_mjcf_transform,
                     coin_shape=coin_shape, disk_radius_override=disk_radius_override,
-                    disk_radius_y_override=disk_radius_y_override)
+                    disk_radius_y_override=disk_radius_y_override, object_spec=object_spec)
     o = rl.reset(int(seed))
     gate = StableEngagementGate(StableEngagementConfig())
     hist = ResidualCriticStateV2(); hist.reset(o)
@@ -132,12 +134,15 @@ class LateStart:
 
 
 def reconstruct_handoff(pi0, ls: "LateStart", *, horizon: int = 360, coin_shape: str = "cylinder",
-                        disk_radius_override=None, disk_radius_y_override=None, arm_mjcf_transform=None, geom: "str | None" = None):
+                        disk_radius_override=None, disk_radius_y_override=None, arm_mjcf_transform=None,
+                        geom: "str | None" = None, object_spec=None):
     """Replay to ``ls.prefix_steps`` and return ``(rl, gate, history, record)`` at the handoff (LIVE env). The object /
-    embodiment overrides (defaults ⇒ frozen canonical) reconstruct the SAME (seed, prefix) handoff on a VARIANT coin/robot."""
+    embodiment overrides (defaults ⇒ frozen canonical) reconstruct the SAME (seed, prefix) handoff on a VARIANT coin/robot.
+    ``object_spec`` (R11.7A) is the single-carrier manipuland (shape/size/mass/friction); it overrides the loose object
+    kwargs when given (the canonical generator :func:`manipulation_rig.build_manipulation_rig` passes it)."""
     return replay_pi0(pi0, ls.seed, horizon=horizon, stop_at=ls.prefix_steps, coin_shape=coin_shape,
                       disk_radius_override=disk_radius_override, disk_radius_y_override=disk_radius_y_override,
-                      arm_mjcf_transform=arm_mjcf_transform, geom=geom)
+                      arm_mjcf_transform=arm_mjcf_transform, geom=geom, object_spec=object_spec)
 
 
 def verify_reconstruction(pi0, ls: "LateStart", *, horizon: int = 360) -> dict:

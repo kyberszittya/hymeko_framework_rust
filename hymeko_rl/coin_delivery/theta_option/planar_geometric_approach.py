@@ -61,6 +61,12 @@ class ApproachTargets(Protocol):
     def precontact(self) -> PrecontactTargets: ...
 
 
+# Straddle standoff geometry (R11.7A): shell_dist = object footprint + fingertip radius + surface margin. For the
+# reference coin (footprint 0.02) this reproduces the historical 0.055.
+_FINGERTIP_R = 0.02
+_SURFACE_MARGIN = 0.015
+
+
 @dataclass(frozen=True)
 class CoinStraddleTargets:
     """Coin instance of ``ApproachTargets``: two tips at the shell radius on opposite assigned sides of the coin.
@@ -73,6 +79,22 @@ class CoinStraddleTargets:
     shell_dist: float = 0.055           # 55 mm tip-centre distance: 15 mm surface margin (fingertip r=coin r=0.02)
     side_left_deg: float = 107.0
     side_right_deg: float = -118.0
+
+    @classmethod
+    def for_object(cls, coin: np.ndarray, footprint_radius: float, *, fingertip_radius: float = _FINGERTIP_R,
+                   margin: float = _SURFACE_MARGIN, side_left_deg: float = 107.0,
+                   side_right_deg: float = -118.0) -> "CoinStraddleTargets":
+        """Straddle targets sized to the object footprint (R11.7A): the pre-contact tips sit at
+        ``footprint_radius + fingertip_radius + margin`` from the object centre, so a larger disk or a box
+        gets a proportionally wider straddle instead of the coin's fixed 0.055.
+
+        # Preconditions ``footprint_radius > 0`` (use :meth:`ObjectSpec.footprint_radius`).
+        # Postconditions for the reference coin (``footprint_radius=0.02``) the shell_dist is exactly 0.055,
+          so O0's reach geometry is unchanged.
+        """
+        assert footprint_radius > 0.0, f"footprint_radius must be > 0, got {footprint_radius}"
+        return cls(coin=coin, shell_dist=footprint_radius + fingertip_radius + margin,
+                   side_left_deg=side_left_deg, side_right_deg=side_right_deg)
 
     def precontact(self) -> PrecontactTargets:
         al, ar = np.radians(self.side_left_deg), np.radians(self.side_right_deg)
