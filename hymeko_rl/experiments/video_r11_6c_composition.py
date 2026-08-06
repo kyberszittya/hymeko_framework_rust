@@ -89,9 +89,19 @@ def deliver_clip(sid: str, smp: Any, fp: dict, Xs: np.ndarray, std: Standardizer
             "final_dtz": round(float(m["dtz_end"]) * 1000, 2), "n": len(film.frames)}
 
 
+REACH_STRIDE, CAPTURE_STRIDE = 4, 2         # the reach hold + capture are mostly static -> subsample them (keep delivery)
+
+
+def _stride(frames: list, dtz: list, k: int) -> "tuple[list, list]":
+    """Keep every k-th frame (and dtz), always including the last -> compress a slow, near-static phase."""
+    idx = sorted(set(range(0, len(frames), k)) | ({len(frames) - 1} if frames else set()))
+    return [frames[i] for i in idx], [dtz[i] for i in idx]
+
+
 def opening_clip(theta: np.ndarray) -> list:
     """The full uncut chain from the true zero home: HOME q=[0,0,0,0] -> reach -> capture -> retrieval-theta transport
-    -> strict K6. First frame is exactly q=[0,0,0,0]; no snapshot teleport, no staged handoff."""
+    -> strict K6. First frame is exactly q=[0,0,0,0]; no snapshot teleport, no staged handoff. The near-static reach/
+    capture phases are frame-subsampled so the wall-clock lands on the delivery; the delivery plays at full rate."""
     rig = _rig()
     cfg = dataclasses.replace(pga.TransitConfig(), substeps=6, hold_steps=160)
     reach_film = _Filmer(_cam())
@@ -107,10 +117,13 @@ def opening_clip(theta: np.ndarray) -> list:
     m = rollout_primitive(snap, clip_theta(theta), CLOSED_LOOP_CFG, frame_hook=deliv_film)
     deliv_film.close()
     k6 = bool(delivery_success(m, CLOSED_LOOP_CFG))
-    frames = reach_film.frames + cap_film.frames + deliv_film.frames
-    dtz = np.asarray(reach_film.dtz_mm + cap_film.dtz_mm + deliv_film.dtz_mm, np.float64)
-    phases = (["REACH"] * len(reach_film.frames) + ["CAPTURE"] * len(cap_film.frames)
-              + ["TRANSPORT"] * len(deliv_film.frames))
+    rf, rd = _stride(reach_film.frames, reach_film.dtz_mm, REACH_STRIDE)
+    cf, cd = _stride(cap_film.frames, cap_film.dtz_mm, CAPTURE_STRIDE)
+    print(f"    reach {len(reach_film.frames)}->{len(rf)} | capture {len(cap_film.frames)}->{len(cf)} | "
+          f"delivery {len(deliv_film.frames)} (full)", flush=True)
+    frames = rf + cf + deliv_film.frames
+    dtz = np.asarray(rd + cd + deliv_film.dtz_mm, np.float64)
+    phases = ["REACH"] * len(rf) + ["CAPTURE"] * len(cf) + ["TRANSPORT"] * len(deliv_film.frames)
     end = f"STRICT K6  {m['dtz_end'] * 1000:.1f}mm" if k6 else f"{m['dtz_end'] * 1000:.0f}mm"
     n = len(frames)
 
