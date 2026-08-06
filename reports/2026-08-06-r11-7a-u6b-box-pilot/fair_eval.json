@@ -1,0 +1,187 @@
+{
+ "variant": "O4-S",
+ "n_seeds": 5,
+ "n_rollouts": 10,
+ "n_reached_delivery": 6,
+ "by_policy": {
+  "top1_nearest": {
+   "k6": 0,
+   "n": 6
+  },
+  "k3_weighted": {
+   "k6": 1,
+   "n": 6
+  }
+ },
+ "any_dev_k6": true,
+ "records": [
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 0,
+   "policy": "top1_nearest",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 29.96,
+   "support": 5.9848
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 0,
+   "policy": "k3_weighted",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 53.3,
+   "support": 5.9848
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 1,
+   "policy": "-",
+   "reached_delivery": false,
+   "outcome": "precontact_handoff_invalid",
+   "taxon": "precontact_handoff_invalid",
+   "k6": false
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 2,
+   "policy": "top1_nearest",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 28.74,
+   "support": 4.7572
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 2,
+   "policy": "k3_weighted",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 37.66,
+   "support": 4.7572
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 3,
+   "policy": "top1_nearest",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 28.39,
+   "support": 3.9017
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 3,
+   "policy": "k3_weighted",
+   "reached_delivery": true,
+   "outcome": "exact_zero_delivered",
+   "taxon": "exact_zero_delivered",
+   "k6": true,
+   "dtz_mm": 17.72,
+   "support": 3.9017
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 4,
+   "policy": "top1_nearest",
+   "reached_delivery": true,
+   "outcome": "retrieval_out_of_support",
+   "taxon": "retrieval_out_of_support",
+   "k6": false,
+   "dtz_mm": 30.0,
+   "support": 7.5009
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 4,
+   "policy": "k3_weighted",
+   "reached_delivery": true,
+   "outcome": "retrieval_out_of_support",
+   "taxon": "retrieval_out_of_support",
+   "k6": false,
+   "dtz_mm": 47.92,
+   "support": 7.5009
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 0,
+   "policy": "-",
+   "reached_delivery": false,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "k6": false
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 1,
+   "policy": "top1_nearest",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 56.67,
+   "support": 6.0532
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 1,
+   "policy": "k3_weighted",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 32.67,
+   "support": 6.0532
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 2,
+   "policy": "-",
+   "reached_delivery": false,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "k6": false
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 3,
+   "policy": "-",
+   "reached_delivery": false,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "k6": false
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 4,
+   "policy": "top1_nearest",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 38.5,
+   "support": 5.1908
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 4,
+   "policy": "k3_weighted",
+   "reached_delivery": true,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "dtz_mm": 93.5,
+   "support": 5.1908
+  }
+ ]
+}

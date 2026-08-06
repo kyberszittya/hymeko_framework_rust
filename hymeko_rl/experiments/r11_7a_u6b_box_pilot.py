@@ -26,7 +26,7 @@ import numpy as np
 from hymeko_rl.coin_delivery.delivery_bc.dataset import (
     bc_context, best_theta_full, descriptor, full_transport_spec, reconstruct_capture, scenario_by_id)
 from hymeko_rl.coin_delivery.delivery_bc.retrieval import RetrievalConfig, RetrievalDeliveryPolicy, SelectRule
-from hymeko_rl.coin_delivery.exact_zero_composition import compose_one
+from hymeko_rl.coin_delivery.exact_zero_composition import compose_one, deliver_record, reach_capture_descriptor
 from hymeko_rl.coin_delivery.object_curriculum import variant
 from hymeko_rl.experiments.coin_kinetic_capture_exploration_audit import _rig
 
@@ -174,13 +174,71 @@ def _summarize_eval(bank: dict, records: list[dict]) -> dict[str, Any]:
     }
 
 
+# ---- fairer eval: more seeds + retrieval-config diagnostic (bank frozen) --------------------------
+def _policy_of(bank: dict, k: int, rule: SelectRule) -> "RetrievalDeliveryPolicy | None":
+    samples = bank["samples"]
+    if len(samples) < k:
+        return None
+    X = np.asarray([s["x"] for s in samples], np.float64)
+    Theta = np.asarray([s["theta"] for s in samples], np.float64)
+    survival = np.ones(len(samples), np.float64)
+    return RetrievalDeliveryPolicy.fit(X, Theta, survival, RetrievalConfig(standardize=True, k=k, select=rule))
+
+
+def run_fair_eval(n_seeds: int = 5) -> int:
+    """Fairer retrieval test: N_seeds/dev-scenario, and BOTH the top-1 deploy baseline and a k=3 distance-weighted
+    diagnostic applied to the SAME reached snapshot (reach+capture run once per (scenario,seed) — retrieval-config-
+    independent). Characterizes whether the box can clear a dev K6 at all, vs the capture-seed inconsistency."""
+    if not _BANK.exists():
+        print(f"no bank at {_BANK}; run `bank` first", flush=True)
+        return 2
+    bank = json.loads(_BANK.read_text())
+    policies = {"top1_nearest": _policy_of(bank, 1, SelectRule.NEAREST),
+                "k3_weighted": _policy_of(bank, 3, SelectRule.DIST_WEIGHTED)}
+    policies = {k: v for k, v in policies.items() if v is not None}
+    cfg, conf, obj = bc_context()
+    rig = _rig(object_spec=variant(_VARIANT).object_spec)
+    records: list[dict[str, Any]] = []
+    for sid in BOX_DEV:
+        for seed in range(n_seeds):
+            h = reach_capture_descriptor(rig, scenario_by_id(sid), seed, cfg, conf, obj)
+            if h.record is not None:                             # reach/capture failed — policy-independent
+                taxon = _TAXON.get(h.record.outcome_class, h.record.outcome_class)
+                records.append({"scenario_id": sid, "seed": seed, "policy": "-", "reached_delivery": False,
+                                "outcome": h.record.outcome_class, "taxon": taxon, "k6": False})
+                print(f"[{sid:22s} s{seed}] PRE-DELIVERY {h.record.outcome_class:26s} ({taxon})", flush=True)
+                continue
+            for pname, pol in policies.items():
+                rec = deliver_record(scenario_by_id(sid), seed, h.snap, h.x, pol, _SUPPORT_RADIUS)
+                records.append({"scenario_id": sid, "seed": seed, "policy": pname, "reached_delivery": True,
+                                "outcome": rec.outcome_class, "taxon": _TAXON.get(rec.outcome_class, rec.outcome_class),
+                                "k6": bool(rec.k6), "dtz_mm": rec.dtz_mm, "support": rec.support_dist})
+                print(f"[{sid:22s} s{seed}] {pname:13s} {rec.outcome_class:26s} k6={rec.k6} dtz={rec.dtz_mm}", flush=True)
+
+    reached = [r for r in records if r["reached_delivery"]]
+    by_policy = {p: {"k6": sum(1 for r in reached if r["policy"] == p and r["k6"]),
+                     "n": sum(1 for r in reached if r["policy"] == p)} for p in policies}
+    n_pairs = len({(r["scenario_id"], r["seed"]) for r in records})
+    n_reached = len({(r["scenario_id"], r["seed"]) for r in reached})
+    res = {"variant": _VARIANT, "n_seeds": n_seeds, "n_rollouts": n_pairs, "n_reached_delivery": n_reached,
+           "by_policy": by_policy, "any_dev_k6": any(v["k6"] > 0 for v in by_policy.values()), "records": records}
+    (_OUT / "fair_eval.json").write_text(json.dumps(res, indent=1, default=str))
+    summary = {p: f"{v['k6']}/{v['n']}" for p, v in by_policy.items()}
+    print(f"\nFAIR EVAL: {n_reached}/{n_pairs} rollouts reached delivery. "
+          f"per-policy dev K6: {summary} | any_dev_K6={res['any_dev_k6']}")
+    print(f"wrote {_OUT / 'fair_eval.json'}")
+    return 0 if res["any_dev_k6"] else 1
+
+
 def main() -> int:
     phase = sys.argv[1] if len(sys.argv) > 1 else "bank"
     if phase == "bank":
         return run_bank()
     if phase == "eval":
         return run_eval()
-    print(f"unknown phase {phase!r}; use 'bank' or 'eval'", flush=True)
+    if phase == "fair_eval":
+        return run_fair_eval(int(sys.argv[2]) if len(sys.argv) > 2 else 5)
+    print(f"unknown phase {phase!r}; use 'bank' | 'eval' | 'fair_eval'", flush=True)
     return 2
 
 
