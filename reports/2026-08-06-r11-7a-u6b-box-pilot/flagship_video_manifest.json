@@ -1,0 +1,12 @@
+{
+ "certificate": "R11_7A_FIRST_NONCIRCULAR_EXACT_ZERO_K6_CERTIFICATE",
+ "scenario_id": "bank_c2_+0.015_+0.015",
+ "seed": 3,
+ "variant": "O4-S",
+ "k6": true,
+ "final_dtz_mm": 17.72,
+ "n_frames": 64,
+ "theta_provenance": "k3_weighted distance-blend of the 3 nearest bank theta (an INTERPOLATION, not a stored teacher theta). The delivery is real physics under the frozen certified K6 monitor; the producing policy is not robust.",
+ "mp4": "reports/2026-08-06-r11-7a-u6b-box-pilot/flagship_box_exact_zero_k6.mp4",
+ "gif": "reports/2026-08-06-r11-7a-u6b-box-pilot/flagship_box_exact_zero_k6.gif"
+}
