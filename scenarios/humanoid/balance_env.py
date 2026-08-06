@@ -52,6 +52,9 @@ class BalanceConfig:
     push_lat_lo: float = 0.0         # reset LATERAL push range (base y-velocity m/s), sign random
     push_lat_hi: float = 0.0         # >0 exercises the frontal-plane (abduction/roll) protective response
     w_step: float = 0.0              # capture-point step-shaping reward weight (>0 encourages a protective step)
+    w_velocity: float = 0.0          # reward weight on forward (+x) base velocity — >0 turns the balance
+    #   task into a DIRECT LOCOMOTION task on the position-servo action (see train_balance_walk)
+    vel_cap: float = 0.6             # forward-velocity reward is capped here (m/s) so a lunge/fall can't game it
     fall_uprightness: float = 0.6
     fall_pelvis_z: float = 0.55
     model_src: str = "humanoid.hymeko"   # model variant to emit (e.g. "humanoid_toe.hymeko" for the toe/push-off model)
@@ -182,6 +185,10 @@ class HumanoidBalanceEnv:
         fell = (not upright) or not np.all(np.isfinite(self.data.qpos))
         reward = 1.0 - 2.0 * v - 0.001 * float(np.sum(a * a))       # alive - Lyapunov - control cost
         info = {"V": v, "upright": upright}
+        if self.cfg.w_velocity > 0.0:                              # DIRECT LOCOMOTION: reward forward base velocity
+            fwd_v = float(np.clip(self.data.qvel[0], -self.cfg.vel_cap, self.cfg.vel_cap))
+            reward += self.cfg.w_velocity * fwd_v
+            info["fwd_v"] = fwd_v
         if self.cfg.w_step > 0.0:                                  # capture-point step shaping (opt-in)
             step_bonus, info["capture_err"] = self._capture_step()
             reward += self.cfg.w_step * step_bonus

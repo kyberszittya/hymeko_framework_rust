@@ -52,6 +52,8 @@ class FootstepConfig:
     target_conditioned: bool = False  # append the commanded forward foothold target to the obs (for a
     #   target-conditioned policy that steps WHERE told — see stepping_stone_demo / train_target_footstep)
     w_target: float = 0.0           # reward weight on foot-to-target accuracy (target_conditioned only)
+    w_upright: float = 0.0          # reward weight penalising torso lean (uprightness<1) — a CLEANER,
+    #   less forward-leaning gait when >0 (default 0 keeps the original marching reward)
 
 
 class HumanoidFootstepEnv:
@@ -233,7 +235,8 @@ class HumanoidFootstepEnv:
         fwd = float(self.data.xpos[self._pel, 0]) - pel_x0   # forward (+x) pelvis progress this footstep
         fwd_r = float(np.clip(fwd, -cfg.forward_cap, cfg.forward_cap))   # capped: a single lunge/fall can't game it
         reward = (1.0 - 2.0 * centre_off - 0.01 * float(a @ a)
-                  + cfg.w_forward * fwd_r - (cfg.fall_penalty if fell else 0.0))
+                  + cfg.w_forward * fwd_r - (cfg.fall_penalty if fell else 0.0)
+                  - cfg.w_upright * (1.0 - sig["uprightness"]))   # penalise torso lean (0 when upright)
         if cfg.target_conditioned and self._plan_forward_x is not None:
             swung_b = self._fl if self._stance == "L" else self._fr   # the foot that just landed
             reward -= cfg.w_target * abs(float(self.data.xpos[swung_b, 0]) - float(self._plan_forward_x))

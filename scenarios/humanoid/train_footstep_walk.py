@@ -27,16 +27,17 @@ from scenarios.humanoid.footstep_env import FootstepConfig, HumanoidFootstepEnv
 def _cfg(fwd_stride: float, w_forward: float, max_footsteps: int, fall_penalty: float = 25.0,
          model_src: str = "humanoid.hymeko", toe_off: float = 0.0, learn_toe: bool = False,
          step_h: float = 0.04, swing_weight: float = 110.0, forward_cap: float = 0.05,
-         t_step: float = 0.42, ds_frac: float = 0.42) -> FootstepConfig:
+         t_step: float = 0.42, ds_frac: float = 0.42, w_upright: float = 0.0) -> FootstepConfig:
     # heavy fall penalty + the per-step forward cap (in FootstepConfig) => the policy must walk forward
     # SUSTAINABLY, not lunge into a terminal fall (which gamed the earlier reward). model_src selects the
     # articulated-toe (push-off) model; learn_toe adds a LEARNED late-stance toe-off; step_h/swing_weight
-    # make the swing foot actually LIFT (clear the ground) instead of shuffling.
+    # make the swing foot actually LIFT (clear the ground) instead of shuffling; w_upright>0 penalises the
+    # torso lean for a cleaner, more erect gait.
     return FootstepConfig(max_footsteps=max_footsteps, forward_stride=fwd_stride,
                           w_forward=w_forward, residual_xy=0.06, fall_penalty=fall_penalty,
                           model_src=model_src, toe_off=toe_off, learn_toe=learn_toe,
                           step_h=step_h, swing_weight=swing_weight, forward_cap=forward_cap,
-                          t_step=t_step, ds_frac=ds_frac)
+                          t_step=t_step, ds_frac=ds_frac, w_upright=w_upright)
 
 
 def _dim(obs_dim: int, act_dim: int = 2) -> int:
@@ -127,6 +128,7 @@ def main() -> None:
     ap.add_argument("--forward_cap", type=float, default=float(os.environ.get("HYMEKO_FWD_CAP", "0.05")))
     ap.add_argument("--t_step", type=float, default=float(os.environ.get("HYMEKO_TSTEP", "0.42")))
     ap.add_argument("--ds_frac", type=float, default=float(os.environ.get("HYMEKO_DSFRAC", "0.42")))
+    ap.add_argument("--w_upright", type=float, default=float(os.environ.get("HYMEKO_W_UPRIGHT", "0.0")))
     ap.add_argument("--warm", type=str, default="")   # warm-start policy .npy (curriculum from a working gait)
     ap.add_argument("--render", action="store_true")
     ap.add_argument("--policy", type=str, default="")
@@ -134,7 +136,7 @@ def main() -> None:
     cfg = _cfg(args.fwd_stride, args.w_forward, args.max_footsteps, fall_penalty=args.fall_penalty,
                model_src=args.model_src, toe_off=args.toe_off, learn_toe=args.learn_toe,
                step_h=args.step_h, swing_weight=args.swing_weight, forward_cap=args.forward_cap,
-               t_step=args.t_step, ds_frac=args.ds_frac)
+               t_step=args.t_step, ds_frac=args.ds_frac, w_upright=args.w_upright)
     if args.render:
         render(Path(args.policy or Path(args.out) / "best_policy.npy"), cfg, Path(args.out))
         return
