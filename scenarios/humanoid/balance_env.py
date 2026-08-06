@@ -55,6 +55,8 @@ class BalanceConfig:
     w_velocity: float = 0.0          # reward weight on forward (+x) base velocity — >0 turns the balance
     #   task into a DIRECT LOCOMOTION task on the position-servo action (see train_balance_walk)
     vel_cap: float = 0.6             # forward-velocity reward is capped here (m/s) so a lunge/fall can't game it
+    torque_action: bool = False      # action = DIRECT gravity-compensated torque (no q0 anchoring) instead of
+    #   the position-servo — lets a policy leave the standing pose and SUSTAIN a walking gait
     fall_uprightness: float = 0.6
     fall_pelvis_z: float = 0.55
     model_src: str = "humanoid.hymeko"   # model variant to emit (e.g. "humanoid_toe.hymeko" for the toe/push-off model)
@@ -170,11 +172,16 @@ class HumanoidBalanceEnv:
 
     def step(self, action):
         a = np.clip(np.asarray(action, np.float64), -1.0, 1.0)
-        q_target = self._q0j + a * self.cfg.delta_scale
         tau = np.empty(self.model.nu)
-        for i, (dof, qa) in enumerate(zip(self._act_dof, self._act_qadr)):
-            servo = self.cfg.kp * (q_target[i] - self.data.qpos[qa]) - self.cfg.kv * self.data.qvel[dof]
-            tau[i] = np.clip(servo + float(self.data.qfrc_bias[dof]), -self.cfg.tau_max, self.cfg.tau_max)
+        if self.cfg.torque_action:                                 # DIRECT gravity-compensated torque (no q0
+            for i, dof in enumerate(self._act_dof):                #   anchoring) — for a sustained WALKING gait
+                cmd = a[i] * self.cfg.tau_max + float(self.data.qfrc_bias[dof])
+                tau[i] = np.clip(cmd, -self.cfg.tau_max, self.cfg.tau_max)
+        else:
+            q_target = self._q0j + a * self.cfg.delta_scale
+            for i, (dof, qa) in enumerate(zip(self._act_dof, self._act_qadr)):
+                servo = self.cfg.kp * (q_target[i] - self.data.qpos[qa]) - self.cfg.kv * self.data.qvel[dof]
+                tau[i] = np.clip(servo + float(self.data.qfrc_bias[dof]), -self.cfg.tau_max, self.cfg.tau_max)
         self.data.ctrl[:] = tau
         self._mj.mj_step(self.model, self.data)
         self._t += 1
