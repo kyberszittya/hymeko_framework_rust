@@ -36,15 +36,21 @@ S1B = Path("reports/2026-07-28-moving-precapture-dynamic-handoff/moving_precaptu
 CKPT = Path("reports/2026-07-28-coin-r9-r2-h1-multiseed/seed_01/checkpoint.json")
 
 
-def _rig() -> dict:
+def _rig(object_spec: Any = None) -> dict:
+    """Build the exact-zero capture rig. ``object_spec`` (R11.7A U6) selects the manipuland — the certified
+    straddle cradle, the reach straddle standoff (footprint-aware), and the model all follow it; None ⇒ the
+    HyMeKo scene's reference coin (the frozen O0 rig)."""
     from hymeko_rl.coin_delivery.theta_option.teacher_bank import acquire_snapshot, load_harness
     from hymeko_rl.experiments.coin_kinetic_r2_rl import _load_clone
     model, norm = _load_clone()
-    cradle, _ = acquire_snapshot(load_harness(), kc.S1_SEED)
+    cradle, _ = acquire_snapshot(load_harness(), kc.S1_SEED, object_spec=object_spec)
     coin = _coin_xy(cradle.branch())
     home = build_home_snapshot(cradle, HOME_STATE_V1_GENERIC)
-    ready = pga.execute_transit(home, HOME_STATE_V1_GENERIC.q, pga.CoinStraddleTargets(coin=coin),
-                                pga.TransitConfig()).ready_snapshot
+    # Footprint-aware straddle (R11.7A U3b): a larger/box object gets a proportionally wider standoff; the
+    # reference coin (footprint 0.02) reproduces the historical 0.055.
+    straddle = (pga.CoinStraddleTargets.for_object(coin, object_spec.footprint_radius())
+                if object_spec is not None else pga.CoinStraddleTargets(coin=coin))
+    ready = pga.execute_transit(home, HOME_STATE_V1_GENERIC.q, straddle, pga.TransitConfig()).ready_snapshot
     ref = mp.HandoffReference.from_cradle(cradle)
     r2_fn = deterministic_residual(_rebuild(json.load(open(CKPT))["r2_actor_state"]))
     down = mp.FrozenDownstream(model, norm, r2_fn, cradle.stack)
@@ -52,7 +58,7 @@ def _rig() -> dict:
                              bmax=r["params"]["bmax"], residual=np.array(r["params"]["residual"]))
             for r in json.load(open(S1B))["seeds"]]
     return {"cradle": cradle, "ready": ready, "ref": ref, "down": down, "coin": coin,
-            "pi0": crl.freeze_scaffold(sols), "stack": cradle.stack}
+            "pi0": crl.freeze_scaffold(sols), "stack": cradle.stack, "object_spec": object_spec}
 
 
 def _identity(rig: dict) -> dict:

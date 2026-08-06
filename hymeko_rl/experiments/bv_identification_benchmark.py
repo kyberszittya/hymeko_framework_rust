@@ -58,11 +58,12 @@ def _make_env(pi0, base, forbidden, v2, seed, tries, object_spec=None):
     return rl
 
 
-def acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg, seed, tries):
+def acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg, seed, tries, object_spec=None):
     """Acquire a CERTIFIED both-contact straddle cradle (keep the pin), exporting the exact handoff controller state.
     Source gate (fix per review): both_contact ∧ internal-force certificate feasible ∧ straddle (n_dot<0). Sweeps the two
-    audit axes and takes the most-negative-ndot certified hit. Returns (rl, pin_saved, handoff, meta) or (None,…)."""
-    rl0 = _make_env(pi0, base, forbidden, v2, seed, tries)
+    audit axes and takes the most-negative-ndot certified hit. Returns (rl, pin_saved, handoff, meta) or (None,…).
+    ``object_spec`` (R11.7A U6) selects the manipuland; None ⇒ the HyMeKo scene's reference coin."""
+    rl0 = _make_env(pi0, base, forbidden, v2, seed, tries, object_spec=object_spec)
     mid = tip_midpoint(rl0)
     u, _dtz = rl0.inner.direction_to_zone()
     e = np.asarray(u, np.float64)
@@ -70,7 +71,7 @@ def acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg, seed, tries
     best = None
     attempts = {}
     for name, ax in axes.items():
-        rl = _make_env(pi0, base, forbidden, v2, seed, tries)
+        rl = _make_env(pi0, base, forbidden, v2, seed, tries, object_spec=object_spec)
         out = straddle_directed_acquire(rl, stack, mid.astype(np.float32), ax, cfg=cfg, keep_pin=True)
         cert_ok = bool(out["both_contact"] and out["cradle_certificate"]["feasible"] and out["straddle"]["straddles"])
         attempts[name] = {"both_contact": bool(out["both_contact"]), "n_dot": out["straddle"]["n_dot"],

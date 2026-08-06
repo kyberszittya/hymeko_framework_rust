@@ -1,0 +1,330 @@
+{
+ "verdict": "R11_7A_OBJECT_VARIANT_GENERATION_SMOKE_PASS",
+ "gate_pass": true,
+ "n_rollouts": 24,
+ "n_model_contract_failures": 0,
+ "static_contracts_ok": true,
+ "mass_differs_per_variant": {
+  "O1-L": true,
+  "O2-M": true,
+  "O4-S": true
+ },
+ "static": {
+  "O0": {
+   "handle_ok": true,
+   "mass": 0.0502654824574367,
+   "inertia": [
+    1.1729e-05,
+    1.1729e-05,
+    1.0053e-05
+   ],
+   "geom_type": 5,
+   "friction": 1.0,
+   "collision_ok": true,
+   "shape": "cylinder",
+   "radius": 0.02,
+   "density": null,
+   "exact_zero_reset_ok": true
+  },
+  "O1-L": {
+   "handle_ok": true,
+   "mass": 0.050265450287527914,
+   "inertia": [
+    1.394e-05,
+    1.394e-05,
+    1.4476e-05
+   ],
+   "geom_type": 5,
+   "friction": 1.0,
+   "collision_ok": true,
+   "shape": "cylinder",
+   "radius": 0.024,
+   "density": 694.4444,
+   "exact_zero_reset_ok": true
+  },
+  "O2-M": {
+   "handle_ok": true,
+   "mass": 0.1005309649148734,
+   "inertia": [
+    2.3457e-05,
+    2.3457e-05,
+    2.0106e-05
+   ],
+   "geom_type": 5,
+   "friction": 1.0,
+   "collision_ok": true,
+   "shape": "cylinder",
+   "radius": 0.02,
+   "density": 2000.0,
+   "exact_zero_reset_ok": true
+  },
+  "O4-S": {
+   "handle_ok": true,
+   "mass": 0.05026526404,
+   "inertia": [
+    1.1966e-05,
+    1.1966e-05,
+    1.0527e-05
+   ],
+   "geom_type": 6,
+   "friction": 1.0,
+   "collision_ok": true,
+   "shape": "box",
+   "radius": 0.0177245,
+   "density": null,
+   "exact_zero_reset_ok": true
+  }
+ },
+ "taxonomy_counts": {
+  "capture_no_certified_grasp": 7,
+  "OK_CERTIFIED_CAPTURE": 17
+ },
+ "certified_capture_by_variant": {
+  "O0": 4,
+  "O1-L": 4,
+  "O2-M": 4,
+  "O4-S": 5
+ },
+ "rollouts": [
+  {
+   "variant_id": "O0",
+   "position": "center",
+   "seed": 0,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": false
+  },
+  {
+   "variant_id": "O0",
+   "position": "center",
+   "seed": 1,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": false
+  },
+  {
+   "variant_id": "O0",
+   "position": "offcenter",
+   "seed": 0,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O0",
+   "position": "offcenter",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O0",
+   "position": "far",
+   "seed": 0,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O0",
+   "position": "far",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O1-L",
+   "position": "center",
+   "seed": 0,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": false
+  },
+  {
+   "variant_id": "O1-L",
+   "position": "center",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O1-L",
+   "position": "offcenter",
+   "seed": 0,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O1-L",
+   "position": "offcenter",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O1-L",
+   "position": "far",
+   "seed": 0,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": false
+  },
+  {
+   "variant_id": "O1-L",
+   "position": "far",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O2-M",
+   "position": "center",
+   "seed": 0,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": false
+  },
+  {
+   "variant_id": "O2-M",
+   "position": "center",
+   "seed": 1,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": false
+  },
+  {
+   "variant_id": "O2-M",
+   "position": "offcenter",
+   "seed": 0,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O2-M",
+   "position": "offcenter",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O2-M",
+   "position": "far",
+   "seed": 0,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O2-M",
+   "position": "far",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O4-S",
+   "position": "center",
+   "seed": 0,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": false
+  },
+  {
+   "variant_id": "O4-S",
+   "position": "center",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O4-S",
+   "position": "offcenter",
+   "seed": 0,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O4-S",
+   "position": "offcenter",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O4-S",
+   "position": "far",
+   "seed": 0,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  },
+  {
+   "variant_id": "O4-S",
+   "position": "far",
+   "seed": 1,
+   "outcome": "CERTIFIED_CAPTURE",
+   "taxon": "OK_CERTIFIED_CAPTURE",
+   "model_contract_ok": true,
+   "reach_ran": true,
+   "certified_capture": true
+  }
+ ]
+}

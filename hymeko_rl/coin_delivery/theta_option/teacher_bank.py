@@ -36,11 +36,13 @@ def load_harness() -> tuple[Any, ...]:
     return pi0, base, forbidden, v2, stack, cfg_coop, mu
 
 
-def acquire_snapshot(harness: tuple[Any, ...], seed: int, *, tries: int = 3) -> tuple[Any, ...]:
+def acquire_snapshot(harness: tuple[Any, ...], seed: int, *, tries: int = 3, object_spec: Any = None) -> tuple[Any, ...]:
     """Acquire the certified straddle at ``seed`` and build the free-coin `CradleSnapshot` (the exact frozen handoff).
-    Returns (snap|None, acquire_meta). Deterministic given the frozen harness + seed."""
+    Returns (snap|None, acquire_meta). Deterministic given the frozen harness + seed. ``object_spec`` (R11.7A U6)
+    selects the manipuland; None ⇒ the HyMeKo scene's reference coin (the frozen O0 behaviour)."""
     pi0, base, forbidden, v2, stack, cfg_coop, mu = harness
-    rl, saved, handoff, meta = acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg_coop, seed, tries=tries)
+    rl, saved, handoff, meta = acquire_certified_straddle(pi0, base, forbidden, v2, stack, cfg_coop, seed,
+                                                          tries=tries, object_spec=object_spec)
     if rl is None:
         return None, meta
     from hymeko_rl.coin_delivery.contact_velocity import BvConfig

@@ -129,7 +129,11 @@ def do_reach(rig: dict, cfg: pga.TransitConfig, frame_hook: Any = None, coin_xy:
     rl = home.branch()
     gl, gr = pga._fingertip_geoms(rl.inner.model)
     lo, hi = np.asarray(home.lo, float), np.asarray(home.hi, float)
-    straddle = pga.CoinStraddleTargets(coin=coin).precontact()
+    # Footprint-aware straddle (R11.7A U3b): a variant object (bigger/box) gets a proportionally wider standoff
+    # via its ObjectSpec footprint; the reference coin (or a rig with no object_spec) keeps the 0.055 default.
+    _obj = rig.get("object_spec")
+    straddle = (pga.CoinStraddleTargets.for_object(coin, _obj.footprint_radius())
+                if _obj is not None else pga.CoinStraddleTargets(coin=coin)).precontact()
     tl0, tr0 = rl.inner.data.geom_xpos[gl][:2].copy(), rl.inner.data.geom_xpos[gr][:2].copy()
     traj_l = _plan_arm(tl0, _angle(straddle.tip_left, coin), coin, arm_l, cfg)
     traj_r = _plan_arm(tr0, _angle(straddle.tip_right, coin), coin, arm_r, cfg)
