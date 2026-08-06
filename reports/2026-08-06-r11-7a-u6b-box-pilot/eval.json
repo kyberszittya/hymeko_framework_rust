@@ -1,0 +1,115 @@
+{
+ "verdict": "R11_7A_BOX_RETRIEVAL_PILOT_FAIL",
+ "gate_pass": false,
+ "variant": "O4-S",
+ "bank_samples": 7,
+ "bank_certified_captures": 84,
+ "bank_teacher_k6": 66,
+ "dev_k6": 0,
+ "n_model_contract_failures": 0,
+ "taxonomy": {
+  "delivery_failure_in_support": 2,
+  "precontact_handoff_invalid": 1,
+  "capture_no_certified_grasp": 1
+ },
+ "records": [
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 0,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "safe": true,
+   "dtz_mm": 29.96,
+   "support": 5.9848
+  },
+  {
+   "scenario_id": "bank_c2_+0.015_+0.015",
+   "seed": 1,
+   "outcome": "precontact_handoff_invalid",
+   "taxon": "precontact_handoff_invalid",
+   "k6": false,
+   "safe": false,
+   "dtz_mm": 0.0,
+   "support": 0.0
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 0,
+   "outcome": "capture_no_certified_grasp",
+   "taxon": "capture_no_certified_grasp",
+   "k6": false,
+   "safe": false,
+   "dtz_mm": 0.0,
+   "support": 0.0
+  },
+  {
+   "scenario_id": "bank_c3_r6_a+15",
+   "seed": 1,
+   "outcome": "delivery_failure_in_support",
+   "taxon": "delivery_failure_in_support",
+   "k6": false,
+   "safe": true,
+   "dtz_mm": 56.67,
+   "support": 6.0532
+  }
+ ],
+ "per_scenario_bank": {
+  "bank_c0_1": {
+   "certified_capture": 10,
+   "teacher_k6": 4,
+   "has_sample": true,
+   "best_dtz_mm": 11.17,
+   "wall_s": 1047.2
+  },
+  "bank_c1_+0.01_+0.00": {
+   "certified_capture": 14,
+   "teacher_k6": 11,
+   "has_sample": true,
+   "best_dtz_mm": 12.45,
+   "wall_s": 1056.2
+  },
+  "bank_c1_+0.01_+0.03": {
+   "certified_capture": 2,
+   "teacher_k6": 0,
+   "has_sample": false,
+   "best_dtz_mm": null,
+   "wall_s": 709.6
+  },
+  "bank_c2_+0.015_+0.000": {
+   "certified_capture": 16,
+   "teacher_k6": 14,
+   "has_sample": true,
+   "best_dtz_mm": 3.23,
+   "wall_s": 771.6
+  },
+  "bank_c2_+0.015_-0.015": {
+   "certified_capture": 16,
+   "teacher_k6": 14,
+   "has_sample": true,
+   "best_dtz_mm": 10.15,
+   "wall_s": 771.1
+  },
+  "bank_c2_+0.025_+0.000": {
+   "certified_capture": 12,
+   "teacher_k6": 12,
+   "has_sample": true,
+   "best_dtz_mm": 14.36,
+   "wall_s": 616.6
+  },
+  "bank_c3_r6_a-30": {
+   "certified_capture": 6,
+   "teacher_k6": 4,
+   "has_sample": true,
+   "best_dtz_mm": 3.9,
+   "wall_s": 701.8
+  },
+  "bank_c3_r7_a-15": {
+   "certified_capture": 8,
+   "teacher_k6": 7,
+   "has_sample": true,
+   "best_dtz_mm": 2.61,
+   "wall_s": 638.6
+  }
+ }
+}
