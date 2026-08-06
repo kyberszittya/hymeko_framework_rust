@@ -1,0 +1,76 @@
+{
+  "lambda": 1.0,
+  "train_loso_k6": 0.455,
+  "deployment_train_like": 0.5,
+  "dev_top1_k6": 0.571,
+  "baseline_dev_k6": 0.571,
+  "beats_baseline": false,
+  "c3_far_k6": "1/3",
+  "c3_detail": {
+    "bank_c3_r7_a+45": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": true,
+      "dtz": 22.88
+    },
+    "bank_c3_r9_a-30": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": false,
+      "dtz": 28.53
+    },
+    "bank_c3_r9_a-15": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": false,
+      "dtz": 32.76
+    }
+  },
+  "coefficients": {
+    "typical": -0.473,
+    "p90": 0.832,
+    "iqr": 0.851,
+    "k6_rate": -5.229,
+    "contact_rate": 0.767,
+    "d_req": 2.147,
+    "bearing": 0.505,
+    "d_req_minus_typical": 1.345,
+    "d_req_minus_p90": 0.357,
+    "angle_gap": 1.391
+  },
+  "verdict": "R11_6D_HANDOFF_CONDITIONING_NO_GAIN",
+  "dev_selected": {
+    "bank_c0_1": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": true,
+      "dtz": 13.67
+    },
+    "bank_c1_+0.03_-0.02": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": true,
+      "dtz": 8.95
+    },
+    "bank_c2_+0.025_-0.015": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": true,
+      "dtz": 5.42
+    },
+    "bank_c2_+0.025_-0.025": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": false,
+      "dtz": 27.23
+    },
+    "bank_c3_r7_a+45": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": true,
+      "dtz": 22.88
+    },
+    "bank_c3_r9_a-15": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": false,
+      "dtz": 32.76
+    },
+    "bank_c3_r9_a-30": {
+      "top1": "bank_c3_r7_a+15",
+      "k6": false,
+      "dtz": 28.53
+    }
+  }
+}
