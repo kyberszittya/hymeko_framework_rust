@@ -41,20 +41,22 @@ BOX_TRAIN = (
 BOX_DEV = ("bank_c2_+0.015_+0.015", "bank_c3_r6_a+15")
 BOX_TEST = ("bank_c2_+0.025_+0.015", "bank_c1_+0.01_+0.02")     # SEALED until dev-freeze
 
+_BANK_DENSE = _OUT / "bank_dense.json"   # R11.7B: keep ALL certified-K6 θ per scenario (coverage densification)
 _N_CAPTURE = 20        # capture population (seeds) per train scenario
 _R_DELIVERY = 5        # teacher delivery-search restarts
 _SUPPORT_RADIUS = 6.14  # descriptor-space support radius (R11.6C), for RETRIEVAL_OUT_OF_SUPPORT
 
 
 # ---- bank generation -----------------------------------------------------------------------------
-def _gen_train_bank(rig: dict, cfg: Any, conf: Any, obj: Any) -> dict[str, Any]:
-    """Per train scenario, sweep N capture seeds; for each certified grasp run R teacher restarts; keep the
-    best K6 (x, theta). One bank entry per scenario that yields any K6."""
+def _gen_train_bank(rig: dict, cfg: Any, conf: Any, obj: Any, keep_all: bool = False) -> dict[str, Any]:
+    """Per train scenario, sweep N capture seeds; for each certified grasp run R teacher restarts. ``keep_all``
+    stores EVERY certified-K6 (x, theta) (the coverage-densification bank, R11.7B); otherwise the best-of-1 per
+    scenario (the original sparse bank)."""
     samples: list[dict[str, Any]] = []
     per_scen: dict[str, Any] = {}
     for sid in BOX_TRAIN:
         scen = scenario_by_id(sid)
-        best: "tuple[float, list[float], list[float], int] | None" = None
+        scen_samples: list[dict[str, Any]] = []
         counts = {"certified_capture": 0, "teacher_k6": 0}
         t0 = time.perf_counter()
         for seed in range(_N_CAPTURE):
@@ -67,35 +69,36 @@ def _gen_train_bank(rig: dict, cfg: Any, conf: Any, obj: Any) -> dict[str, Any]:
             if not k6:
                 continue
             counts["teacher_k6"] += 1
-            if best is None or dtz < best[0]:
-                x = descriptor(scen, rc, snap)
-                best = (float(dtz), [float(v) for v in x], [float(t) for t in theta], seed)
+            x = descriptor(scen, rc, snap)
+            scen_samples.append({"scenario_id": sid, "seed": seed, "x": [float(v) for v in x],
+                                 "theta": [float(t) for t in theta], "k6": True, "dtz_mm": round(float(dtz), 2)})
         dt = time.perf_counter() - t0
-        per_scen[sid] = {**counts, "has_sample": best is not None,
-                         "best_dtz_mm": (round(best[0], 2) if best else None), "wall_s": round(dt, 1)}
-        if best is not None:
-            samples.append({"scenario_id": sid, "seed": best[3], "x": best[1], "theta": best[2],
-                            "k6": True, "dtz_mm": round(best[0], 2)})
+        kept = scen_samples if keep_all else (
+            [min(scen_samples, key=lambda s: s["dtz_mm"])] if scen_samples else [])
+        samples.extend(kept)
+        best_dtz = min((s["dtz_mm"] for s in scen_samples), default=None)
+        per_scen[sid] = {**counts, "n_kept": len(kept), "best_dtz_mm": best_dtz, "wall_s": round(dt, 1)}
         print(f"[{sid:24s}] certified={counts['certified_capture']}/{_N_CAPTURE} k6={counts['teacher_k6']} "
-              f"sample={'Y' if best else 'N'} best_dtz={per_scen[sid]['best_dtz_mm']} ({dt:.0f}s)", flush=True)
+              f"kept={len(kept)} best_dtz={best_dtz} ({dt:.0f}s)", flush=True)
     return {"samples": samples, "per_scenario": per_scen}
 
 
-def run_bank() -> int:
+def run_bank(keep_all: bool = False) -> int:
     _OUT.mkdir(parents=True, exist_ok=True)
+    out_path = _BANK_DENSE if keep_all else _BANK
     cfg, conf, obj = bc_context()
     t0 = time.perf_counter()
     rig = _rig(object_spec=variant(_VARIANT).object_spec)
-    print(f"box rig built in {time.perf_counter() - t0:.0f}s; generating bank "
-          f"({len(BOX_TRAIN)} train × N={_N_CAPTURE} × R={_R_DELIVERY})…", flush=True)
-    bank = _gen_train_bank(rig, cfg, conf, obj)
-    bank["meta"] = {"variant": _VARIANT, "n_capture": _N_CAPTURE, "r_delivery": _R_DELIVERY,
+    print(f"box rig built in {time.perf_counter() - t0:.0f}s; generating {'DENSE ' if keep_all else ''}bank "
+          f"({len(BOX_TRAIN)} train × N={_N_CAPTURE} × R={_R_DELIVERY}, keep_all={keep_all})…", flush=True)
+    bank = _gen_train_bank(rig, cfg, conf, obj, keep_all=keep_all)
+    bank["meta"] = {"variant": _VARIANT, "n_capture": _N_CAPTURE, "r_delivery": _R_DELIVERY, "keep_all": keep_all,
                     "train": list(BOX_TRAIN), "dev": list(BOX_DEV), "test": list(BOX_TEST),
                     "total_wall_s": round(time.perf_counter() - t0, 1)}
-    _BANK.write_text(json.dumps(bank, indent=1))
-    n = len(bank["samples"])
-    print(f"\nBANK_DONE: {n}/{len(BOX_TRAIN)} train scenarios yielded a K6 teacher sample "
-          f"({bank['meta']['total_wall_s'] / 60:.1f} min). wrote {_BANK}", flush=True)
+    out_path.write_text(json.dumps(bank, indent=1))
+    n, scen_hit = len(bank["samples"]), sum(1 for v in bank["per_scenario"].values() if v["n_kept"] > 0)
+    print(f"\nBANK_DONE: {n} samples from {scen_hit}/{len(BOX_TRAIN)} train scenarios "
+          f"({bank['meta']['total_wall_s'] / 60:.1f} min). wrote {out_path}", flush=True)
     return 0 if n > 0 else 1
 
 
@@ -234,11 +237,13 @@ def main() -> int:
     phase = sys.argv[1] if len(sys.argv) > 1 else "bank"
     if phase == "bank":
         return run_bank()
+    if phase == "bank_dense":
+        return run_bank(keep_all=True)
     if phase == "eval":
         return run_eval()
     if phase == "fair_eval":
         return run_fair_eval(int(sys.argv[2]) if len(sys.argv) > 2 else 5)
-    print(f"unknown phase {phase!r}; use 'bank' | 'eval' | 'fair_eval'", flush=True)
+    print(f"unknown phase {phase!r}; use 'bank' | 'bank_dense' | 'eval' | 'fair_eval'", flush=True)
     return 2
 
 

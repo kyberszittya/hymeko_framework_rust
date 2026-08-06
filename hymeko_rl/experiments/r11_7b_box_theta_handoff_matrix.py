@@ -71,8 +71,8 @@ def _policies(bank: dict) -> dict[str, RetrievalDeliveryPolicy]:
     return out
 
 
-def run() -> int:
-    bank = json.loads(_BANK.read_text())
+def run(bank_path: Path = _BANK, out_suffix: str = "") -> int:
+    bank = json.loads(bank_path.read_text())
     thetas = [np.asarray(s["theta"], np.float64) for s in bank["samples"]]
     theta_src = [s["scenario_id"] for s in bank["samples"]]
     pols = _policies(bank)
@@ -134,13 +134,13 @@ def run() -> int:
                         "descriptor": [round(float(v), 6) for v in x]}
 
     res = _summarize(rows, bank, flagship, model_fp, hymeko_hash)
-    (_OUT / "theta_handoff_matrix.json").write_text(json.dumps({"rows": rows, **res}, indent=1, default=str))
-    if flagship is not None:
+    res["bank"] = str(bank_path)
+    (_OUT / f"theta_handoff_matrix{out_suffix}.json").write_text(json.dumps({"rows": rows, **res}, indent=1, default=str))
+    if flagship is not None and out_suffix == "":              # freeze the flagship only on the primary (sparse) audit
         (_OUT / "flagship_certificate.json").write_text(json.dumps(flagship, indent=1, default=str))
-    print(f"\nAUDIT VERDICT: {res['audit_verdict']}")
+    print(f"\nAUDIT VERDICT: {res['audit_verdict']} (bank={bank_path.name}, {len(bank['samples'])} θ)")
     print(f"  reached delivery: {res['n_reached']} | with a delivering bank θ: {res['n_coverage_ok']} | "
           f"selection-gap (θ exists, top-1 misses): {res['n_selection_gap']}")
-    print(f"  flagship frozen: {flagship is not None} -> {_OUT / 'flagship_certificate.json'}")
     return 0
 
 
@@ -167,4 +167,9 @@ def _summarize(rows: list[dict], bank: dict, flagship: "dict | None", model_fp: 
 if __name__ == "__main__":
     import sys
 
+    # optional arg: bank filename under the pilot dir (e.g. bank_dense.json) → suffixed matrix output
+    if len(sys.argv) > 1:
+        bp = _OUT / sys.argv[1]
+        suffix = "_dense" if "dense" in sys.argv[1] else "_" + bp.stem
+        sys.exit(run(bp, suffix))
     sys.exit(run())
